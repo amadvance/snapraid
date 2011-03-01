@@ -1,0 +1,13 @@
+INSTALL
+=======
+
+As root or user type:
+
+    ./configure
+    make
+
+and as root to install the programs and the documentation
+type:
+
+    make install
+
