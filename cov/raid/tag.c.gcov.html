@@ -1,0 +1,221 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - raid/tag.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">raid</a> - tag.c<span style="font-size: 80%;"> (source / <a href="tag.c.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">26</td>
+            <td class="headerCovTableEntry">26</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2015-05-12</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">11</td>
+            <td class="headerCovTableEntry">11</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (C) 2013 Andrea Mazzoleni
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * This program is free software: you can redistribute it and/or modify
+<span class="lineNum">       5 </span>            :  * it under the terms of the GNU General Public License as published by
+<span class="lineNum">       6 </span>            :  * the Free Software Foundation, either version 2 of the License, or
+<span class="lineNum">       7 </span>            :  * (at your option) any later version.
+<span class="lineNum">       8 </span>            :  *
+<span class="lineNum">       9 </span>            :  * This program is distributed in the hope that it will be useful,
+<span class="lineNum">      10 </span>            :  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      11 </span>            :  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      12 </span>            :  * GNU General Public License for more details.
+<span class="lineNum">      13 </span>            :  */
+<span class="lineNum">      14 </span>            : 
+<span class="lineNum">      15 </span>            : #include &quot;internal.h&quot;
+<span class="lineNum">      16 </span>            : 
+<span class="lineNum">      17 </span>            : static struct raid_func {
+<span class="lineNum">      18 </span>            :         const char *name;
+<span class="lineNum">      19 </span>            :         void *p;
+<span class="lineNum">      20 </span>            : } RAID_FUNC[] = {
+<span class="lineNum">      21 </span>            :         { &quot;int8&quot;, raid_gen3_int8 },
+<span class="lineNum">      22 </span>            :         { &quot;int8&quot;, raid_gen4_int8 },
+<span class="lineNum">      23 </span>            :         { &quot;int8&quot;, raid_gen5_int8 },
+<span class="lineNum">      24 </span>            :         { &quot;int8&quot;, raid_gen6_int8 },
+<span class="lineNum">      25 </span>            :         { &quot;int32&quot;, raid_gen1_int32 },
+<span class="lineNum">      26 </span>            :         { &quot;int64&quot;, raid_gen1_int64 },
+<span class="lineNum">      27 </span>            :         { &quot;int32&quot;, raid_gen2_int32 },
+<span class="lineNum">      28 </span>            :         { &quot;int64&quot;, raid_gen2_int64 },
+<span class="lineNum">      29 </span>            :         { &quot;int32&quot;, raid_genz_int32 },
+<span class="lineNum">      30 </span>            :         { &quot;int64&quot;, raid_genz_int64 },
+<span class="lineNum">      31 </span>            :         { &quot;int8&quot;, raid_rec1_int8 },
+<span class="lineNum">      32 </span>            :         { &quot;int8&quot;, raid_rec2_int8 },
+<span class="lineNum">      33 </span>            :         { &quot;int8&quot;, raid_recX_int8 },
+<span class="lineNum">      34 </span>            : 
+<span class="lineNum">      35 </span>            : #ifdef CONFIG_X86
+<span class="lineNum">      36 </span>            : #ifdef CONFIG_SSE2
+<span class="lineNum">      37 </span>            :         { &quot;sse2&quot;, raid_gen1_sse2 },
+<span class="lineNum">      38 </span>            :         { &quot;sse2&quot;, raid_gen2_sse2 },
+<span class="lineNum">      39 </span>            :         { &quot;sse2&quot;, raid_genz_sse2 },
+<span class="lineNum">      40 </span>            : #endif
+<span class="lineNum">      41 </span>            : #ifdef CONFIG_SSSE3
+<span class="lineNum">      42 </span>            :         { &quot;ssse3&quot;, raid_gen3_ssse3 },
+<span class="lineNum">      43 </span>            :         { &quot;ssse3&quot;, raid_gen4_ssse3 },
+<span class="lineNum">      44 </span>            :         { &quot;ssse3&quot;, raid_gen5_ssse3 },
+<span class="lineNum">      45 </span>            :         { &quot;ssse3&quot;, raid_gen6_ssse3 },
+<span class="lineNum">      46 </span>            :         { &quot;ssse3&quot;, raid_rec1_ssse3 },
+<span class="lineNum">      47 </span>            :         { &quot;ssse3&quot;, raid_rec2_ssse3 },
+<span class="lineNum">      48 </span>            :         { &quot;ssse3&quot;, raid_recX_ssse3 },
+<span class="lineNum">      49 </span>            : #endif
+<span class="lineNum">      50 </span>            : #ifdef CONFIG_AVX2
+<span class="lineNum">      51 </span>            :         { &quot;avx2&quot;, raid_gen1_avx2 },
+<span class="lineNum">      52 </span>            :         { &quot;avx2&quot;, raid_gen2_avx2 },
+<span class="lineNum">      53 </span>            :         { &quot;avx2&quot;, raid_rec1_avx2 },
+<span class="lineNum">      54 </span>            :         { &quot;avx2&quot;, raid_rec2_avx2 },
+<span class="lineNum">      55 </span>            :         { &quot;avx2&quot;, raid_recX_avx2 },
+<span class="lineNum">      56 </span>            : #endif
+<span class="lineNum">      57 </span>            : #endif
+<span class="lineNum">      58 </span>            : 
+<span class="lineNum">      59 </span>            : #ifdef CONFIG_X86_64
+<span class="lineNum">      60 </span>            : #ifdef CONFIG_SSE2
+<span class="lineNum">      61 </span>            :         { &quot;sse2e&quot;, raid_gen2_sse2ext },
+<span class="lineNum">      62 </span>            :         { &quot;sse2e&quot;, raid_genz_sse2ext },
+<span class="lineNum">      63 </span>            : #endif
+<span class="lineNum">      64 </span>            : #ifdef CONFIG_SSSE3
+<span class="lineNum">      65 </span>            :         { &quot;ssse3e&quot;, raid_gen3_ssse3ext },
+<span class="lineNum">      66 </span>            :         { &quot;ssse3e&quot;, raid_gen4_ssse3ext },
+<span class="lineNum">      67 </span>            :         { &quot;ssse3e&quot;, raid_gen5_ssse3ext },
+<span class="lineNum">      68 </span>            :         { &quot;ssse3e&quot;, raid_gen6_ssse3ext },
+<span class="lineNum">      69 </span>            : #endif
+<span class="lineNum">      70 </span>            : #ifdef CONFIG_AVX2
+<span class="lineNum">      71 </span>            :         { &quot;avx2e&quot;, raid_gen3_avx2ext },
+<span class="lineNum">      72 </span>            :         { &quot;avx2e&quot;, raid_genz_avx2ext },
+<span class="lineNum">      73 </span>            :         { &quot;avx2e&quot;, raid_gen4_avx2ext },
+<span class="lineNum">      74 </span>            :         { &quot;avx2e&quot;, raid_gen5_avx2ext },
+<span class="lineNum">      75 </span>            :         { &quot;avx2e&quot;, raid_gen6_avx2ext },
+<span class="lineNum">      76 </span>            : #endif
+<span class="lineNum">      77 </span>            : #endif
+<span class="lineNum">      78 </span>            :         { 0, 0 }
+<a name="79"><span class="lineNum">      79 </span>            : };</a>
+<span class="lineNum">      80 </span>            : 
+<span class="lineNum">      81 </span><span class="lineCov">         52 : static const char *raid_tag(void *func)</span>
+<span class="lineNum">      82 </span>            : {
+<span class="lineNum">      83 </span><span class="lineCov">         52 :         struct raid_func *i = RAID_FUNC;</span>
+<span class="lineNum">      84 </span>            : 
+<span class="lineNum">      85 </span><span class="lineCov">        994 :         while (i-&gt;name != 0) {</span>
+<span class="lineNum">      86 </span><span class="lineCov">        942 :                 if (i-&gt;p == func)</span>
+<span class="lineNum">      87 </span><span class="lineCov">         52 :                         return i-&gt;name;</span>
+<span class="lineNum">      88 </span><span class="lineCov">        890 :                 ++i;</span>
+<span class="lineNum">      89 </span>            :         }
+<span class="lineNum">      90 </span>            : 
+<span class="lineNum">      91 </span>            :         /* LCOV_EXCL_START */
+<span class="lineNum">      92 </span>            :         return &quot;unknown&quot;;
+<span class="lineNum">      93 </span>            :         /* LCOV_EXCL_STOP */
+<a name="94"><span class="lineNum">      94 </span>            : }</a>
+<span class="lineNum">      95 </span>            : 
+<span class="lineNum">      96 </span><span class="lineCov">          4 : const char *raid_gen1_tag(void)</span>
+<span class="lineNum">      97 </span>            : {
+<span class="lineNum">      98 </span><span class="lineCov">          4 :         return raid_tag(raid_gen_ptr[0]);</span>
+<a name="99"><span class="lineNum">      99 </span>            : }</a>
+<span class="lineNum">     100 </span>            : 
+<span class="lineNum">     101 </span><span class="lineCov">          4 : const char *raid_gen2_tag(void)</span>
+<span class="lineNum">     102 </span>            : {
+<span class="lineNum">     103 </span><span class="lineCov">          4 :         return raid_tag(raid_gen_ptr[1]);</span>
+<a name="104"><span class="lineNum">     104 </span>            : }</a>
+<span class="lineNum">     105 </span>            : 
+<span class="lineNum">     106 </span><span class="lineCov">          4 : const char *raid_genz_tag(void)</span>
+<span class="lineNum">     107 </span>            : {
+<span class="lineNum">     108 </span><span class="lineCov">          4 :         return raid_tag(raid_genz_ptr);</span>
+<a name="109"><span class="lineNum">     109 </span>            : }</a>
+<span class="lineNum">     110 </span>            : 
+<span class="lineNum">     111 </span><span class="lineCov">          4 : const char *raid_gen3_tag(void)</span>
+<span class="lineNum">     112 </span>            : {
+<span class="lineNum">     113 </span><span class="lineCov">          4 :         return raid_tag(raid_gen_ptr[2]);</span>
+<a name="114"><span class="lineNum">     114 </span>            : }</a>
+<span class="lineNum">     115 </span>            : 
+<span class="lineNum">     116 </span><span class="lineCov">          4 : const char *raid_gen4_tag(void)</span>
+<span class="lineNum">     117 </span>            : {
+<span class="lineNum">     118 </span><span class="lineCov">          4 :         return raid_tag(raid_gen_ptr[3]);</span>
+<a name="119"><span class="lineNum">     119 </span>            : }</a>
+<span class="lineNum">     120 </span>            : 
+<span class="lineNum">     121 </span><span class="lineCov">          4 : const char *raid_gen5_tag(void)</span>
+<span class="lineNum">     122 </span>            : {
+<span class="lineNum">     123 </span><span class="lineCov">          4 :         return raid_tag(raid_gen_ptr[4]);</span>
+<a name="124"><span class="lineNum">     124 </span>            : }</a>
+<span class="lineNum">     125 </span>            : 
+<span class="lineNum">     126 </span><span class="lineCov">          4 : const char *raid_gen6_tag(void)</span>
+<span class="lineNum">     127 </span>            : {
+<span class="lineNum">     128 </span><span class="lineCov">          4 :         return raid_tag(raid_gen_ptr[5]);</span>
+<a name="129"><span class="lineNum">     129 </span>            : }</a>
+<span class="lineNum">     130 </span>            : 
+<span class="lineNum">     131 </span><span class="lineCov">          4 : const char *raid_rec1_tag(void)</span>
+<span class="lineNum">     132 </span>            : {
+<span class="lineNum">     133 </span><span class="lineCov">          4 :         return raid_tag(raid_rec_ptr[0]);</span>
+<a name="134"><span class="lineNum">     134 </span>            : }</a>
+<span class="lineNum">     135 </span>            : 
+<span class="lineNum">     136 </span><span class="lineCov">          4 : const char *raid_rec2_tag(void)</span>
+<span class="lineNum">     137 </span>            : {
+<span class="lineNum">     138 </span><span class="lineCov">          4 :         return raid_tag(raid_rec_ptr[1]);</span>
+<a name="139"><span class="lineNum">     139 </span>            : }</a>
+<span class="lineNum">     140 </span>            : 
+<span class="lineNum">     141 </span><span class="lineCov">         16 : const char *raid_recX_tag(void)</span>
+<span class="lineNum">     142 </span>            : {
+<span class="lineNum">     143 </span><span class="lineCov">         16 :         return raid_tag(raid_rec_ptr[2]);</span>
+<span class="lineNum">     144 </span>            : }
+<span class="lineNum">     145 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

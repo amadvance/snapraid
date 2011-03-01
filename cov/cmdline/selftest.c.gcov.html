@@ -1,0 +1,530 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - cmdline/selftest.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">cmdline</a> - selftest.c<span style="font-size: 80%;"> (source / <a href="selftest.c.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">114</td>
+            <td class="headerCovTableEntry">130</td>
+            <td class="headerCovTableEntryMed">87.7 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2015-05-12</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">7</td>
+            <td class="headerCovTableEntry">7</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (C) 2011 Andrea Mazzoleni
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * This program is free software: you can redistribute it and/or modify
+<span class="lineNum">       5 </span>            :  * it under the terms of the GNU General Public License as published by
+<span class="lineNum">       6 </span>            :  * the Free Software Foundation, either version 3 of the License, or
+<span class="lineNum">       7 </span>            :  * (at your option) any later version.
+<span class="lineNum">       8 </span>            :  *
+<span class="lineNum">       9 </span>            :  * This program is distributed in the hope that it will be useful,
+<span class="lineNum">      10 </span>            :  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      11 </span>            :  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      12 </span>            :  * GNU General Public License for more details.
+<span class="lineNum">      13 </span>            :  *
+<span class="lineNum">      14 </span>            :  * You should have received a copy of the GNU General Public License
+<span class="lineNum">      15 </span>            :  * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+<span class="lineNum">      16 </span>            :  */
+<span class="lineNum">      17 </span>            : 
+<span class="lineNum">      18 </span>            : #include &quot;portable.h&quot;
+<span class="lineNum">      19 </span>            : 
+<span class="lineNum">      20 </span>            : #include &quot;snapraid.h&quot;
+<span class="lineNum">      21 </span>            : #include &quot;util.h&quot;
+<span class="lineNum">      22 </span>            : #include &quot;raid/raid.h&quot;
+<span class="lineNum">      23 </span>            : #include &quot;raid/cpu.h&quot;
+<span class="lineNum">      24 </span>            : #include &quot;raid/combo.h&quot;
+<span class="lineNum">      25 </span>            : #include &quot;raid/internal.h&quot;
+<span class="lineNum">      26 </span>            : #include &quot;raid/test.h&quot;
+<span class="lineNum">      27 </span>            : #include &quot;elem.h&quot;
+<span class="lineNum">      28 </span>            : #include &quot;state.h&quot;
+<span class="lineNum">      29 </span>            : #include &quot;support.h&quot;
+<span class="lineNum">      30 </span>            : #include &quot;tommyds/tommyhash.h&quot;
+<span class="lineNum">      31 </span>            : #include &quot;tommyds/tommyarray.h&quot;
+<span class="lineNum">      32 </span>            : #include &quot;tommyds/tommyarrayblk.h&quot;
+<span class="lineNum">      33 </span>            : #include &quot;tommyds/tommyarrayblkof.h&quot;
+<span class="lineNum">      34 </span>            : #include &quot;tommyds/tommyhashdyn.h&quot;
+<span class="lineNum">      35 </span>            : 
+<span class="lineNum">      36 </span>            : struct hash32_test_vector {
+<span class="lineNum">      37 </span>            :         const char* data;
+<span class="lineNum">      38 </span>            :         int len;
+<span class="lineNum">      39 </span>            :         uint32_t digest;
+<span class="lineNum">      40 </span>            : };
+<span class="lineNum">      41 </span>            : 
+<span class="lineNum">      42 </span>            : struct hash64_test_vector {
+<span class="lineNum">      43 </span>            :         const char* data;
+<span class="lineNum">      44 </span>            :         int len;
+<span class="lineNum">      45 </span>            :         uint64_t digest;
+<span class="lineNum">      46 </span>            : };
+<span class="lineNum">      47 </span>            : 
+<span class="lineNum">      48 </span>            : struct hash_test_vector {
+<span class="lineNum">      49 </span>            :         const char* data;
+<span class="lineNum">      50 </span>            :         int len;
+<span class="lineNum">      51 </span>            :         unsigned char digest[HASH_SIZE];
+<span class="lineNum">      52 </span>            : };
+<span class="lineNum">      53 </span>            : 
+<span class="lineNum">      54 </span>            : /**
+<span class="lineNum">      55 </span>            :  * Test vectors for tommy_hash32
+<span class="lineNum">      56 </span>            :  */
+<span class="lineNum">      57 </span>            : static struct hash32_test_vector TEST_HASH32[] = {
+<span class="lineNum">      58 </span>            :         { &quot;&quot;, 0, 0x8614384c },
+<span class="lineNum">      59 </span>            :         { &quot;a&quot;, 1, 0x12c16c36 },
+<span class="lineNum">      60 </span>            :         { &quot;abc&quot;, 3, 0xc58e8af5 },
+<span class="lineNum">      61 </span>            :         { &quot;message digest&quot;, 14, 0x006b32f1 },
+<span class="lineNum">      62 </span>            :         { &quot;abcdefghijklmnopqrstuvwxyz&quot;, 26, 0x7e6fcfe0 },
+<span class="lineNum">      63 </span>            :         { &quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789&quot;, 62, 0x8604adf8 },
+<span class="lineNum">      64 </span>            :         { &quot;The quick brown fox jumps over the lazy dog&quot;, 43, 0xdeba3d3a },
+<span class="lineNum">      65 </span>            :         { &quot;\x00&quot;, 1, 0x4a7d1c33 },
+<span class="lineNum">      66 </span>            :         { &quot;\x16\x27&quot;, 2, 0x8b50899b },
+<span class="lineNum">      67 </span>            :         { &quot;\xe2\x56\xb4&quot;, 3, 0x60406493 },
+<span class="lineNum">      68 </span>            :         { &quot;\xc9\x4d\x9c\xda&quot;, 4, 0xa049144a },
+<span class="lineNum">      69 </span>            :         { &quot;\x79\xf1\x29\x69\x5d&quot;, 5, 0x4da2c2f1 },
+<span class="lineNum">      70 </span>            :         { &quot;\x00\x7e\xdf\x1e\x31\x1c&quot;, 6, 0x59de30cf },
+<span class="lineNum">      71 </span>            :         { &quot;\x2a\x4c\xe1\xff\x9e\x6f\x53&quot;, 7, 0x219e149c },
+<span class="lineNum">      72 </span>            :         { &quot;\xba\x02\xab\x18\x30\xc5\x0e\x8a&quot;, 8, 0x25067520 },
+<span class="lineNum">      73 </span>            :         { &quot;\xec\x4e\x7a\x72\x1e\x71\x2a\xc9\x33&quot;, 9, 0xa1f368d8 },
+<span class="lineNum">      74 </span>            :         { &quot;\xfd\xe2\x9c\x0f\x72\xb7\x08\xea\xd0\x78&quot;, 10, 0x805fc63d },
+<span class="lineNum">      75 </span>            :         { &quot;\x65\xc4\x8a\xb8\x80\x86\x9a\x79\x00\xb7\xae&quot;, 11, 0x7f75dd0f },
+<span class="lineNum">      76 </span>            :         { &quot;\x77\xe9\xd7\x80\x0e\x3f\x5c\x43\xc8\xc2\x46\x39&quot;, 12, 0xb9154382 },
+<span class="lineNum">      77 </span>            :         { 0, 0, 0 }
+<span class="lineNum">      78 </span>            : };
+<span class="lineNum">      79 </span>            : 
+<span class="lineNum">      80 </span>            : /**
+<span class="lineNum">      81 </span>            :  * Test vectors for tommy_hash64
+<span class="lineNum">      82 </span>            :  */
+<span class="lineNum">      83 </span>            : static struct hash64_test_vector TEST_HASH64[] = {
+<span class="lineNum">      84 </span>            :         { &quot;&quot;, 0, 0x8614384cb5165fbfULL },
+<span class="lineNum">      85 </span>            :         { &quot;a&quot;, 1, 0x1a2e0298a8e94a3dULL },
+<span class="lineNum">      86 </span>            :         { &quot;abc&quot;, 3, 0x7555796b7a7d21ebULL },
+<span class="lineNum">      87 </span>            :         { &quot;message digest&quot;, 14, 0x9411a57d04b92fb4ULL },
+<span class="lineNum">      88 </span>            :         { &quot;abcdefghijklmnopqrstuvwxyz&quot;, 26, 0x3ca3f8d2b4e69832ULL },
+<span class="lineNum">      89 </span>            :         { &quot;ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789&quot;, 62, 0x6dae542ba0015a4dULL },
+<span class="lineNum">      90 </span>            :         { &quot;The quick brown fox jumps over the lazy dog&quot;, 43, 0xe06d8cbb3d2ea1a6ULL },
+<span class="lineNum">      91 </span>            :         { &quot;\x00&quot;, 1, 0x201e664fb5f2c021ULL },
+<span class="lineNum">      92 </span>            :         { &quot;\x16\x27&quot;, 2, 0xef42fa8032c4b775ULL },
+<span class="lineNum">      93 </span>            :         { &quot;\xe2\x56\xb4&quot;, 3, 0x6e6c498a6688466cULL },
+<span class="lineNum">      94 </span>            :         { &quot;\xc9\x4d\x9c\xda&quot;, 4, 0x5195005419905423ULL },
+<span class="lineNum">      95 </span>            :         { &quot;\x79\xf1\x29\x69\x5d&quot;, 5, 0x221235b48afee7c1ULL },
+<span class="lineNum">      96 </span>            :         { &quot;\x00\x7e\xdf\x1e\x31\x1c&quot;, 6, 0x1b1f18b9266f095bULL },
+<span class="lineNum">      97 </span>            :         { &quot;\x2a\x4c\xe1\xff\x9e\x6f\x53&quot;, 7, 0x2cbafa8e741d49caULL },
+<span class="lineNum">      98 </span>            :         { &quot;\xba\x02\xab\x18\x30\xc5\x0e\x8a&quot;, 8, 0x4677f04c06e0758dULL },
+<span class="lineNum">      99 </span>            :         { &quot;\xec\x4e\x7a\x72\x1e\x71\x2a\xc9\x33&quot;, 9, 0x5afe09e8214e2163ULL },
+<span class="lineNum">     100 </span>            :         { &quot;\xfd\xe2\x9c\x0f\x72\xb7\x08\xea\xd0\x78&quot;, 10, 0x115b6276d209fab6ULL },
+<span class="lineNum">     101 </span>            :         { &quot;\x65\xc4\x8a\xb8\x80\x86\x9a\x79\x00\xb7\xae&quot;, 11, 0xd0636d2f01cf3a3eULL },
+<span class="lineNum">     102 </span>            :         { &quot;\x77\xe9\xd7\x80\x0e\x3f\x5c\x43\xc8\xc2\x46\x39&quot;, 12, 0x6d259f5fef74f93eULL },
+<span class="lineNum">     103 </span>            :         { 0, 0, 0 }
+<span class="lineNum">     104 </span>            : };
+<span class="lineNum">     105 </span>            : 
+<span class="lineNum">     106 </span>            : /**
+<span class="lineNum">     107 </span>            :  * Test vectors for MurmorHash3_x86_128
+<span class="lineNum">     108 </span>            :  */
+<span class="lineNum">     109 </span>            : static struct hash_test_vector TEST_MURMUR3[] = {
+<span class="lineNum">     110 </span>            : #include &quot;murmur3test.c&quot;
+<span class="lineNum">     111 </span>            :         { 0, 0, { 0 } }
+<span class="lineNum">     112 </span>            : };
+<span class="lineNum">     113 </span>            : 
+<span class="lineNum">     114 </span>            : /**
+<span class="lineNum">     115 </span>            :  * Test vectors for SpookyHash_128
+<span class="lineNum">     116 </span>            :  */
+<span class="lineNum">     117 </span>            : static struct hash_test_vector TEST_SPOOKY2[] = {
+<span class="lineNum">     118 </span>            : #include &quot;spooky2test.c&quot;
+<span class="lineNum">     119 </span>            :         { 0, 0, { 0 } }
+<span class="lineNum">     120 </span>            : };
+<span class="lineNum">     121 </span>            : 
+<a name="122"><span class="lineNum">     122 </span>            : #define HASH_TEST_MAX 512 /* tests are never longer than 512 bytes */</a>
+<span class="lineNum">     123 </span>            : 
+<span class="lineNum">     124 </span><span class="lineCov">          1 : static void test_hash(void)</span>
+<span class="lineNum">     125 </span>            : {
+<span class="lineNum">     126 </span>            :         unsigned i;
+<span class="lineNum">     127 </span>            :         unsigned char* seed_aligned;
+<span class="lineNum">     128 </span>            :         void* seed_alloc;
+<span class="lineNum">     129 </span>            :         unsigned char* buffer_aligned;
+<span class="lineNum">     130 </span>            :         void* buffer_alloc;
+<span class="lineNum">     131 </span>            :         uint32_t seed32;
+<span class="lineNum">     132 </span>            :         uint64_t seed64;
+<span class="lineNum">     133 </span>            : 
+<span class="lineNum">     134 </span><span class="lineCov">          1 :         seed_aligned = malloc_nofail_align(HASH_SIZE, &amp;seed_alloc);</span>
+<span class="lineNum">     135 </span><span class="lineCov">          1 :         buffer_aligned = malloc_nofail_align(HASH_TEST_MAX, &amp;buffer_alloc);</span>
+<span class="lineNum">     136 </span>            : 
+<span class="lineNum">     137 </span><span class="lineCov">          1 :         seed32 = 0xa766795d;</span>
+<span class="lineNum">     138 </span><span class="lineCov">          1 :         seed64 = 0x2f022773a766795dULL;</span>
+<span class="lineNum">     139 </span>            : 
+<span class="lineNum">     140 </span><span class="lineCov">          1 :         seed_aligned[0] = 0x5d;</span>
+<span class="lineNum">     141 </span><span class="lineCov">          1 :         seed_aligned[1] = 0x79;</span>
+<span class="lineNum">     142 </span><span class="lineCov">          1 :         seed_aligned[2] = 0x66;</span>
+<span class="lineNum">     143 </span><span class="lineCov">          1 :         seed_aligned[3] = 0xa7;</span>
+<span class="lineNum">     144 </span><span class="lineCov">          1 :         seed_aligned[4] = 0x73;</span>
+<span class="lineNum">     145 </span><span class="lineCov">          1 :         seed_aligned[5] = 0x27;</span>
+<span class="lineNum">     146 </span><span class="lineCov">          1 :         seed_aligned[6] = 0x02;</span>
+<span class="lineNum">     147 </span><span class="lineCov">          1 :         seed_aligned[7] = 0x2f;</span>
+<span class="lineNum">     148 </span><span class="lineCov">          1 :         seed_aligned[8] = 0x6a;</span>
+<span class="lineNum">     149 </span><span class="lineCov">          1 :         seed_aligned[9] = 0xa1;</span>
+<span class="lineNum">     150 </span><span class="lineCov">          1 :         seed_aligned[10] = 0x9e;</span>
+<span class="lineNum">     151 </span><span class="lineCov">          1 :         seed_aligned[11] = 0xc1;</span>
+<span class="lineNum">     152 </span><span class="lineCov">          1 :         seed_aligned[12] = 0x14;</span>
+<span class="lineNum">     153 </span><span class="lineCov">          1 :         seed_aligned[13] = 0x8c;</span>
+<span class="lineNum">     154 </span><span class="lineCov">          1 :         seed_aligned[14] = 0x9e;</span>
+<span class="lineNum">     155 </span><span class="lineCov">          1 :         seed_aligned[15] = 0x43;</span>
+<span class="lineNum">     156 </span>            : 
+<span class="lineNum">     157 </span><span class="lineCov">         20 :         for (i = 0; TEST_HASH32[i].data; ++i) {</span>
+<span class="lineNum">     158 </span>            :                 uint32_t digest;
+<span class="lineNum">     159 </span><span class="lineCov">         19 :                 memcpy(buffer_aligned, TEST_HASH32[i].data, TEST_HASH32[i].len);</span>
+<span class="lineNum">     160 </span><span class="lineCov">         19 :                 digest = tommy_hash_u32(seed32, buffer_aligned, TEST_MURMUR3[i].len);</span>
+<span class="lineNum">     161 </span><span class="lineCov">         19 :                 if (digest != TEST_HASH32[i].digest) {</span>
+<span class="lineNum">     162 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     163 </span>            :                         log_fatal(&quot;Failed hash32 test\n&quot;);
+<span class="lineNum">     164 </span>            :                         exit(EXIT_FAILURE);
+<span class="lineNum">     165 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     166 </span>            :                 }
+<span class="lineNum">     167 </span>            :         }
+<span class="lineNum">     168 </span>            : 
+<span class="lineNum">     169 </span><span class="lineCov">         20 :         for (i = 0; TEST_HASH64[i].data; ++i) {</span>
+<span class="lineNum">     170 </span>            :                 uint64_t digest;
+<span class="lineNum">     171 </span><span class="lineCov">         19 :                 memcpy(buffer_aligned, TEST_HASH64[i].data, TEST_HASH64[i].len);</span>
+<span class="lineNum">     172 </span><span class="lineCov">         19 :                 digest = tommy_hash_u64(seed64, buffer_aligned, TEST_MURMUR3[i].len);</span>
+<span class="lineNum">     173 </span><span class="lineCov">         19 :                 if (digest != TEST_HASH64[i].digest) {</span>
+<span class="lineNum">     174 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     175 </span>            :                         log_fatal(&quot;Failed hash64 test\n&quot;);
+<span class="lineNum">     176 </span>            :                         exit(EXIT_FAILURE);
+<span class="lineNum">     177 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     178 </span>            :                 }
+<span class="lineNum">     179 </span>            :         }
+<span class="lineNum">     180 </span>            : 
+<span class="lineNum">     181 </span>            : 
+<span class="lineNum">     182 </span><span class="lineCov">        264 :         for (i = 0; TEST_MURMUR3[i].data; ++i) {</span>
+<span class="lineNum">     183 </span>            :                 unsigned char digest[HASH_SIZE];
+<span class="lineNum">     184 </span><span class="lineCov">        263 :                 memcpy(buffer_aligned, TEST_MURMUR3[i].data, TEST_MURMUR3[i].len);</span>
+<span class="lineNum">     185 </span><span class="lineCov">        263 :                 memhash(HASH_MURMUR3, seed_aligned, digest, buffer_aligned, TEST_MURMUR3[i].len);</span>
+<span class="lineNum">     186 </span><span class="lineCov">        263 :                 if (memcmp(digest, TEST_MURMUR3[i].digest, HASH_SIZE) != 0) {</span>
+<span class="lineNum">     187 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     188 </span>            :                         log_fatal(&quot;Failed Murmur3 test\n&quot;);
+<span class="lineNum">     189 </span>            :                         exit(EXIT_FAILURE);
+<span class="lineNum">     190 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     191 </span>            :                 }
+<span class="lineNum">     192 </span>            :         }
+<span class="lineNum">     193 </span>            : 
+<span class="lineNum">     194 </span><span class="lineCov">        264 :         for (i = 0; TEST_SPOOKY2[i].data; ++i) {</span>
+<span class="lineNum">     195 </span>            :                 unsigned char digest[HASH_SIZE];
+<span class="lineNum">     196 </span><span class="lineCov">        263 :                 memcpy(buffer_aligned, TEST_SPOOKY2[i].data, TEST_SPOOKY2[i].len);</span>
+<span class="lineNum">     197 </span><span class="lineCov">        263 :                 memhash(HASH_SPOOKY2, seed_aligned, digest, buffer_aligned, TEST_SPOOKY2[i].len);</span>
+<span class="lineNum">     198 </span><span class="lineCov">        263 :                 if (memcmp(digest, TEST_SPOOKY2[i].digest, HASH_SIZE) != 0) {</span>
+<span class="lineNum">     199 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     200 </span>            :                         log_fatal(&quot;Failed Spooky2 test\n&quot;);
+<span class="lineNum">     201 </span>            :                         exit(EXIT_FAILURE);
+<span class="lineNum">     202 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     203 </span>            :                 }
+<span class="lineNum">     204 </span>            :         }
+<span class="lineNum">     205 </span>            : 
+<span class="lineNum">     206 </span><span class="lineCov">          1 :         free(buffer_alloc);</span>
+<span class="lineNum">     207 </span><span class="lineCov">          1 :         free(seed_alloc);</span>
+<span class="lineNum">     208 </span><span class="lineCov">          1 : }</span>
+<span class="lineNum">     209 </span>            : 
+<span class="lineNum">     210 </span>            : struct crc_test_vector {
+<span class="lineNum">     211 </span>            :         const char* data;
+<span class="lineNum">     212 </span>            :         int len;
+<span class="lineNum">     213 </span>            :         uint32_t digest;
+<span class="lineNum">     214 </span>            : };
+<span class="lineNum">     215 </span>            : 
+<span class="lineNum">     216 </span>            : /**
+<span class="lineNum">     217 </span>            :  * Test vectors for CRC32C (Castagnoli)
+<span class="lineNum">     218 </span>            :  */
+<span class="lineNum">     219 </span>            : static struct crc_test_vector TEST_CRC32C[] = {
+<span class="lineNum">     220 </span>            :         { &quot;&quot;, 0, 0 },
+<span class="lineNum">     221 </span>            :         { &quot;\x61&quot;, 1, 0xc1d04330 },
+<span class="lineNum">     222 </span>            :         { &quot;\x66\x6f\x6f&quot;, 3, 0xcfc4ae1d },
+<span class="lineNum">     223 </span>            :         { &quot;\x68\x65\x6c\x6c\x6f\x20\x77\x6f\x72\x6c\x64&quot;, 11, 0xc99465aa },
+<span class="lineNum">     224 </span>            :         { &quot;\x68\x65\x6c\x6c\x6f\x20&quot;, 6, 0x7e627e58 },
+<span class="lineNum">     225 </span>            :         { &quot;\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00&quot;, 32, 0x8a9136aa },
+<span class="lineNum">     226 </span>            :         { &quot;\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff\xff&quot;, 32, 0x62a8ab43 },
+<span class="lineNum">     227 </span>            :         { &quot;\x1f\x1e\x1d\x1c\x1b\x1a\x19\x18\x17\x16\x15\x14\x13\x12\x11\x10\x0f\x0e\x0d\x0c\x0b\x0a\x09\x08\x07\x06\x05\x04\x03\x02\x01\x00&quot;, 32, 0x113fdb5c },
+<span class="lineNum">     228 </span>            :         { &quot;\x01\xc0\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x14\x00\x00\x00\x00\x00\x04\x00\x00\x00\x00\x14\x00\x00\x00\x18\x28\x00\x00\x00\x00\x00\x00\x00\x02\x00\x00\x00\x00\x00\x00\x00&quot;, 48, 0xd9963a56 },
+<span class="lineNum">     229 </span>            :         { &quot;\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f&quot;, 32, 0x46dd794e },
+<span class="lineNum">     230 </span>            :         { &quot;\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27\x28&quot;, 40, 0x0e2c157f },
+<span class="lineNum">     231 </span>            :         { &quot;\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x3a\x3b\x3c\x3d\x3e\x3f\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4a\x4b\x4c\x4d\x4e\x4f\x50&quot;, 40, 0xe980ebf6 },
+<span class="lineNum">     232 </span>            :         { &quot;\x51\x52\x53\x54\x55\x56\x57\x58\x59\x5a\x5b\x5c\x5d\x5e\x5f\x60\x61\x62\x63\x64\x65\x66\x67\x68\x69\x6a\x6b\x6c\x6d\x6e\x6f\x70\x71\x72\x73\x74\x75\x76\x77\x78&quot;, 40, 0xde74bded },
+<span class="lineNum">     233 </span>            :         { &quot;\x79\x7a\x7b\x7c\x7d\x7e\x7f\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f\xa0&quot;, 40, 0xd579c862 },
+<span class="lineNum">     234 </span>            :         { &quot;\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8&quot;, 40, 0xba979ad0 },
+<span class="lineNum">     235 </span>            :         { &quot;\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef\xf0&quot;, 40, 0x2b29d913 },
+<span class="lineNum">     236 </span>            :         { &quot;\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f\x10\x11\x12\x13\x14\x15\x16\x17\x18\x19\x1a\x1b\x1c\x1d\x1e\x1f\x20\x21\x22\x23\x24\x25\x26\x27\x28\x29\x2a\x2b\x2c\x2d\x2e\x2f\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x3a\x3b\x3c\x3d\x3e\x3f\x40\x41\x42\x43\x44\x45\x46\x47\x48\x49\x4a\x4b\x4c\x4d\x4e\x4f\x50\x51\x52\x53\x54\x55\x56\x57\x58\x59\x5a\x5b\x5c\x5d\x5e\x5f\x60\x61\x62\x63\x64\x65\x66\x67\x68\x69\x6a\x6b\x6c\x6d\x6e\x6f\x70\x71\x72\x73\x74\x75\x76\x77\x78\x79\x7a\x7b\x7c\x7d\x7e\x7f\x80\x81\x82\x83\x84\x85\x86\x87\x88\x89\x8a\x8b\x8c\x8d\x8e\x8f\x90\x91\x92\x93\x94\x95\x96\x97\x98\x99\x9a\x9b\x9c\x9d\x9e\x9f\xa0\xa1\xa2\xa3\xa4\xa5\xa6\xa7\xa8\xa9\xaa\xab\xac\xad\xae\xaf\xb0\xb1\xb2\xb3\xb4\xb5\xb6\xb7\xb8\xb9\xba\xbb\xbc\xbd\xbe\xbf\xc0\xc1\xc2\xc3\xc4\xc5\xc6\xc7\xc8\xc9\xca\xcb\xcc\xcd\xce\xcf\xd0\xd1\xd2\xd3\xd4\xd5\xd6\xd7\xd8\xd9\xda\xdb\xdc\xdd\xde\xdf\xe0\xe1\xe2\xe3\xe4\xe5\xe6\xe7\xe8\xe9\xea\xeb\xec\xed\xee\xef\xf0&quot;, 240, 0x24c5d375 },
+<span class="lineNum">     237 </span>            :         { 0, 0, 0 }
+<a name="238"><span class="lineNum">     238 </span>            : };</a>
+<span class="lineNum">     239 </span>            : 
+<span class="lineNum">     240 </span><span class="lineCov">          1 : static void test_crc32c(void)</span>
+<span class="lineNum">     241 </span>            : {
+<span class="lineNum">     242 </span>            :         unsigned i;
+<span class="lineNum">     243 </span>            : 
+<span class="lineNum">     244 </span><span class="lineCov">         18 :         for (i = 0; TEST_CRC32C[i].data; ++i) {</span>
+<span class="lineNum">     245 </span>            :                 uint32_t digest;
+<span class="lineNum">     246 </span><span class="lineCov">         17 :                 digest = crc32c(0, (const unsigned char*)TEST_CRC32C[i].data, TEST_CRC32C[i].len);</span>
+<span class="lineNum">     247 </span><span class="lineCov">         17 :                 if (digest != TEST_CRC32C[i].digest) {</span>
+<span class="lineNum">     248 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     249 </span>            :                         log_fatal(&quot;Failed CRC32C test\n&quot;);
+<span class="lineNum">     250 </span>            :                         exit(EXIT_FAILURE);
+<span class="lineNum">     251 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     252 </span>            :                 }
+<span class="lineNum">     253 </span>            :         }
+<span class="lineNum">     254 </span><span class="lineCov">          1 : }</span>
+<span class="lineNum">     255 </span>            : 
+<span class="lineNum">     256 </span>            : /**
+<span class="lineNum">     257 </span>            :  * Size of tommy data structures.
+<span class="lineNum">     258 </span>            :  */
+<a name="259"><span class="lineNum">     259 </span>            : #define TOMMY_SIZE 256</a>
+<span class="lineNum">     260 </span>            : 
+<span class="lineNum">     261 </span><span class="lineCov">        384 : static int tommy_test_search(const void* arg, const void* obj)</span>
+<span class="lineNum">     262 </span>            : {
+<span class="lineNum">     263 </span><span class="lineCov">        384 :         return arg != obj;</span>
+<span class="lineNum">     264 </span>            : }
+<span class="lineNum">     265 </span>            : 
+<a name="266"><span class="lineNum">     266 </span>            : static unsigned tommy_test_foreach_count;</a>
+<span class="lineNum">     267 </span>            : 
+<span class="lineNum">     268 </span><span class="lineCov">        256 : static void tommy_test_foreach(void* obj)</span>
+<span class="lineNum">     269 </span>            : {
+<span class="lineNum">     270 </span>            :         (void)obj;
+<span class="lineNum">     271 </span>            : 
+<span class="lineNum">     272 </span><span class="lineCov">        256 :         ++tommy_test_foreach_count;</span>
+<a name="273"><span class="lineNum">     273 </span><span class="lineCov">        256 : }</span></a>
+<span class="lineNum">     274 </span>            : 
+<span class="lineNum">     275 </span><span class="lineCov">        256 : static void tommy_test_foreach_arg(void* void_arg, void* obj)</span>
+<span class="lineNum">     276 </span>            : {
+<span class="lineNum">     277 </span><span class="lineCov">        256 :         unsigned* arg = void_arg;</span>
+<span class="lineNum">     278 </span>            : 
+<span class="lineNum">     279 </span>            :         (void)obj;
+<span class="lineNum">     280 </span>            : 
+<span class="lineNum">     281 </span><span class="lineCov">        256 :         ++*arg;</span>
+<a name="282"><span class="lineNum">     282 </span><span class="lineCov">        256 : }</span></a>
+<span class="lineNum">     283 </span>            : 
+<span class="lineNum">     284 </span><span class="lineCov">          1 : static void test_tommy(void)</span>
+<span class="lineNum">     285 </span>            : {
+<span class="lineNum">     286 </span>            :         tommy_array array;
+<span class="lineNum">     287 </span>            :         tommy_arrayblk arrayblk;
+<span class="lineNum">     288 </span>            :         tommy_arrayblkof arrayblkof;
+<span class="lineNum">     289 </span>            :         tommy_list list;
+<span class="lineNum">     290 </span>            :         tommy_hashdyn hashdyn;
+<span class="lineNum">     291 </span>            :         tommy_hashdyn_node node[TOMMY_SIZE];
+<span class="lineNum">     292 </span>            :         unsigned i;
+<span class="lineNum">     293 </span>            : 
+<span class="lineNum">     294 </span><span class="lineCov">          1 :         tommy_array_init(&amp;array);</span>
+<span class="lineNum">     295 </span><span class="lineCov">          1 :         tommy_arrayblk_init(&amp;arrayblk);</span>
+<span class="lineNum">     296 </span><span class="lineCov">          1 :         tommy_arrayblkof_init(&amp;arrayblkof, sizeof(unsigned));</span>
+<span class="lineNum">     297 </span>            : 
+<span class="lineNum">     298 </span><span class="lineCov">        257 :         for (i = 0; i &lt; TOMMY_SIZE; ++i) {</span>
+<span class="lineNum">     299 </span><span class="lineCov">        256 :                 tommy_array_insert(&amp;array, &amp;node[i]);</span>
+<span class="lineNum">     300 </span><span class="lineCov">        256 :                 tommy_arrayblk_insert(&amp;arrayblk, &amp;node[i]);</span>
+<span class="lineNum">     301 </span><span class="lineCov">        256 :                 tommy_arrayblkof_grow(&amp;arrayblkof, i + 1);</span>
+<span class="lineNum">     302 </span><span class="lineCov">        256 :                 *(unsigned*)tommy_arrayblkof_ref(&amp;arrayblkof, i) = i;</span>
+<span class="lineNum">     303 </span>            :         }
+<span class="lineNum">     304 </span>            : 
+<span class="lineNum">     305 </span><span class="lineCov">          1 :         if (tommy_array_memory_usage(&amp;array) &lt; TOMMY_SIZE * sizeof(void*))</span>
+<span class="lineNum">     306 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     307 </span><span class="lineCov">          1 :         if (tommy_arrayblk_memory_usage(&amp;arrayblk) &lt; TOMMY_SIZE * sizeof(void*))</span>
+<span class="lineNum">     308 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     309 </span><span class="lineCov">          1 :         if (tommy_arrayblkof_memory_usage(&amp;arrayblkof) &lt; TOMMY_SIZE * sizeof(unsigned))</span>
+<span class="lineNum">     310 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     311 </span>            : 
+<span class="lineNum">     312 </span><span class="lineCov">        257 :         for (i = 0; i &lt; TOMMY_SIZE; ++i) {</span>
+<span class="lineNum">     313 </span><span class="lineCov">        256 :                 if (tommy_array_get(&amp;array, i) != &amp;node[i])</span>
+<span class="lineNum">     314 </span><span class="lineNoCov">          0 :                         goto bail;</span>
+<span class="lineNum">     315 </span><span class="lineCov">        256 :                 if (tommy_arrayblk_get(&amp;arrayblk, i) != &amp;node[i])</span>
+<span class="lineNum">     316 </span><span class="lineNoCov">          0 :                         goto bail;</span>
+<span class="lineNum">     317 </span><span class="lineCov">        256 :                 if (*(unsigned*)tommy_arrayblkof_ref(&amp;arrayblkof, i) != i)</span>
+<span class="lineNum">     318 </span><span class="lineNoCov">          0 :                         goto bail;</span>
+<span class="lineNum">     319 </span>            :         }
+<span class="lineNum">     320 </span>            : 
+<span class="lineNum">     321 </span><span class="lineCov">          1 :         tommy_arrayblkof_done(&amp;arrayblkof);</span>
+<span class="lineNum">     322 </span><span class="lineCov">          1 :         tommy_arrayblk_done(&amp;arrayblk);</span>
+<span class="lineNum">     323 </span><span class="lineCov">          1 :         tommy_array_done(&amp;array);</span>
+<span class="lineNum">     324 </span>            : 
+<span class="lineNum">     325 </span><span class="lineCov">          1 :         tommy_list_init(&amp;list);</span>
+<span class="lineNum">     326 </span>            : 
+<span class="lineNum">     327 </span><span class="lineCov">          1 :         if (!tommy_list_empty(&amp;list))</span>
+<span class="lineNum">     328 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     329 </span>            : 
+<span class="lineNum">     330 </span><span class="lineCov">          1 :         if (tommy_list_tail(&amp;list))</span>
+<span class="lineNum">     331 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     332 </span>            : 
+<span class="lineNum">     333 </span><span class="lineCov">          1 :         if (tommy_list_head(&amp;list))</span>
+<span class="lineNum">     334 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     335 </span>            : 
+<span class="lineNum">     336 </span><span class="lineCov">          1 :         tommy_hashdyn_init(&amp;hashdyn);</span>
+<span class="lineNum">     337 </span>            : 
+<span class="lineNum">     338 </span><span class="lineCov">        257 :         for (i = 0; i &lt; TOMMY_SIZE; ++i)</span>
+<span class="lineNum">     339 </span><span class="lineCov">        256 :                 tommy_hashdyn_insert(&amp;hashdyn, &amp;node[i], &amp;node[i], i % 64);</span>
+<span class="lineNum">     340 </span>            : 
+<span class="lineNum">     341 </span><span class="lineCov">          1 :         if (tommy_hashdyn_count(&amp;hashdyn) != TOMMY_SIZE)</span>
+<span class="lineNum">     342 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     343 </span>            : 
+<span class="lineNum">     344 </span><span class="lineCov">          1 :         if (tommy_hashdyn_memory_usage(&amp;hashdyn) &lt; TOMMY_SIZE * sizeof(void*))</span>
+<span class="lineNum">     345 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     346 </span>            : 
+<span class="lineNum">     347 </span><span class="lineCov">          1 :         tommy_test_foreach_count = 0;</span>
+<span class="lineNum">     348 </span><span class="lineCov">          1 :         tommy_hashdyn_foreach(&amp;hashdyn, tommy_test_foreach);</span>
+<span class="lineNum">     349 </span><span class="lineCov">          1 :         if (tommy_test_foreach_count != TOMMY_SIZE)</span>
+<span class="lineNum">     350 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     351 </span>            : 
+<span class="lineNum">     352 </span><span class="lineCov">          1 :         tommy_test_foreach_count = 0;</span>
+<span class="lineNum">     353 </span><span class="lineCov">          1 :         tommy_hashdyn_foreach_arg(&amp;hashdyn, tommy_test_foreach_arg, &amp;tommy_test_foreach_count);</span>
+<span class="lineNum">     354 </span><span class="lineCov">          1 :         if (tommy_test_foreach_count != TOMMY_SIZE)</span>
+<span class="lineNum">     355 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     356 </span>            : 
+<span class="lineNum">     357 </span><span class="lineCov">        129 :         for (i = 0; i &lt; TOMMY_SIZE / 2; ++i)</span>
+<span class="lineNum">     358 </span><span class="lineCov">        128 :                 tommy_hashdyn_remove_existing(&amp;hashdyn, &amp;node[i]);</span>
+<span class="lineNum">     359 </span>            : 
+<span class="lineNum">     360 </span><span class="lineCov">        129 :         for (i = 0; i &lt; TOMMY_SIZE / 2; ++i)</span>
+<span class="lineNum">     361 </span><span class="lineCov">        128 :                 if (tommy_hashdyn_remove(&amp;hashdyn, tommy_test_search, &amp;node[i], i % 64) != 0)</span>
+<span class="lineNum">     362 </span><span class="lineNoCov">          0 :                         goto bail;</span>
+<span class="lineNum">     363 </span>            : 
+<span class="lineNum">     364 </span><span class="lineCov">        129 :         for (i = TOMMY_SIZE / 2; i &lt; TOMMY_SIZE; ++i)</span>
+<span class="lineNum">     365 </span><span class="lineCov">        128 :                 if (tommy_hashdyn_remove(&amp;hashdyn, tommy_test_search, &amp;node[i], i % 64) == 0)</span>
+<span class="lineNum">     366 </span><span class="lineNoCov">          0 :                         goto bail;</span>
+<span class="lineNum">     367 </span>            : 
+<span class="lineNum">     368 </span><span class="lineCov">          1 :         if (tommy_hashdyn_count(&amp;hashdyn) != 0)</span>
+<span class="lineNum">     369 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     370 </span>            : 
+<span class="lineNum">     371 </span><span class="lineCov">          1 :         tommy_hashdyn_done(&amp;hashdyn);</span>
+<span class="lineNum">     372 </span>            : 
+<span class="lineNum">     373 </span><span class="lineCov">          1 :         return;</span>
+<span class="lineNum">     374 </span>            : bail:
+<span class="lineNum">     375 </span>            :         /* LCOV_EXCL_START */
+<span class="lineNum">     376 </span>            :         log_fatal(&quot;Failed tommy test\n&quot;);
+<span class="lineNum">     377 </span>            :         exit(EXIT_FAILURE);
+<span class="lineNum">     378 </span>            :         /* LCOV_EXCL_STOP */
+<a name="379"><span class="lineNum">     379 </span>            : }</a>
+<span class="lineNum">     380 </span>            : 
+<span class="lineNum">     381 </span><span class="lineCov">          1 : void selftest(void)</span>
+<span class="lineNum">     382 </span>            : {
+<span class="lineNum">     383 </span><span class="lineCov">          1 :         log_tag(&quot;selftest:\n&quot;);</span>
+<span class="lineNum">     384 </span><span class="lineCov">          1 :         log_flush();</span>
+<span class="lineNum">     385 </span>            : 
+<span class="lineNum">     386 </span><span class="lineCov">          1 :         msg_progress(&quot;Self test...\n&quot;);</span>
+<span class="lineNum">     387 </span>            : 
+<span class="lineNum">     388 </span>            :         /* large file check */
+<span class="lineNum">     389 </span>            :         if (sizeof(off_t) &lt; sizeof(uint64_t)) {
+<span class="lineNum">     390 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     391 </span>            :                 log_fatal(&quot;Missing support for large files\n&quot;);
+<span class="lineNum">     392 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     393 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     394 </span>            :         }
+<span class="lineNum">     395 </span>            : 
+<span class="lineNum">     396 </span><span class="lineCov">          1 :         test_hash();</span>
+<span class="lineNum">     397 </span><span class="lineCov">          1 :         test_crc32c();</span>
+<span class="lineNum">     398 </span><span class="lineCov">          1 :         test_tommy();</span>
+<span class="lineNum">     399 </span><span class="lineCov">          1 :         if (raid_selftest() != 0) {</span>
+<span class="lineNum">     400 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     401 </span>            :                 log_fatal(&quot;Failed SELF test\n&quot;);
+<span class="lineNum">     402 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     403 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     404 </span>            :         }
+<span class="lineNum">     405 </span><span class="lineCov">          1 :         if (raid_test_sort() != 0) {</span>
+<span class="lineNum">     406 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     407 </span>            :                 log_fatal(&quot;Failed SORT test\n&quot;);
+<span class="lineNum">     408 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     409 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     410 </span>            :         }
+<span class="lineNum">     411 </span><span class="lineCov">          1 :         if (raid_test_insert() != 0) {</span>
+<span class="lineNum">     412 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     413 </span>            :                 log_fatal(&quot;Failed INSERT test\n&quot;);
+<span class="lineNum">     414 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     415 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     416 </span>            :         }
+<span class="lineNum">     417 </span><span class="lineCov">          1 :         if (raid_test_combo() != 0) {</span>
+<span class="lineNum">     418 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     419 </span>            :                 log_fatal(&quot;Failed COMBO test\n&quot;);
+<span class="lineNum">     420 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     421 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     422 </span>            :         }
+<span class="lineNum">     423 </span><span class="lineCov">          1 :         if (raid_test_par(RAID_MODE_VANDERMONDE, 32, 256) != 0) {</span>
+<span class="lineNum">     424 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     425 </span>            :                 log_fatal(&quot;Failed GEN Vandermonde test\n&quot;);
+<span class="lineNum">     426 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     427 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     428 </span>            :         }
+<span class="lineNum">     429 </span><span class="lineCov">          1 :         if (raid_test_rec(RAID_MODE_VANDERMONDE, 12, 256) != 0) {</span>
+<span class="lineNum">     430 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     431 </span>            :                 log_fatal(&quot;Failed REC Vandermonde test\n&quot;);
+<span class="lineNum">     432 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     433 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     434 </span>            :         }
+<span class="lineNum">     435 </span><span class="lineCov">          1 :         if (raid_test_par(RAID_MODE_CAUCHY, 32, 256) != 0) {</span>
+<span class="lineNum">     436 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     437 </span>            :                 log_fatal(&quot;Failed GEN Cauchy test\n&quot;);
+<span class="lineNum">     438 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     439 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     440 </span>            :         }
+<span class="lineNum">     441 </span><span class="lineCov">          1 :         if (raid_test_rec(RAID_MODE_CAUCHY, 12, 256) != 0) {</span>
+<span class="lineNum">     442 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     443 </span>            :                 log_fatal(&quot;Failed REC Cauchy test\n&quot;);
+<span class="lineNum">     444 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     445 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     446 </span>            :         }
+<span class="lineNum">     447 </span><span class="lineCov">          1 :         if (raid_test_par(RAID_MODE_CAUCHY, 1, 256) != 0) {</span>
+<span class="lineNum">     448 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     449 </span>            :                 log_fatal(&quot;Failed GEN Cauchy test sigle data disk\n&quot;);
+<span class="lineNum">     450 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     451 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     452 </span>            :         }
+<span class="lineNum">     453 </span><span class="lineCov">          1 : }</span>
+<span class="lineNum">     454 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

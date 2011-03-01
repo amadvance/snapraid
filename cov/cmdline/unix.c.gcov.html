@@ -1,0 +1,1092 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - cmdline/unix.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">cmdline</a> - unix.c<span style="font-size: 80%;"> (source / <a href="unix.c.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">227</td>
+            <td class="headerCovTableEntry">289</td>
+            <td class="headerCovTableEntryMed">78.5 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2015-05-12</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">21</td>
+            <td class="headerCovTableEntry">23</td>
+            <td class="headerCovTableEntryHi">91.3 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (C) 2013 Andrea Mazzoleni
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * This program is free software: you can redistribute it and/or modify
+<span class="lineNum">       5 </span>            :  * it under the terms of the GNU General Public License as published by
+<span class="lineNum">       6 </span>            :  * the Free Software Foundation, either version 3 of the License, or
+<span class="lineNum">       7 </span>            :  * (at your option) any later version.
+<span class="lineNum">       8 </span>            :  *
+<span class="lineNum">       9 </span>            :  * This program is distributed in the hope that it will be useful,
+<span class="lineNum">      10 </span>            :  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      11 </span>            :  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      12 </span>            :  * GNU General Public License for more details.
+<span class="lineNum">      13 </span>            :  *
+<span class="lineNum">      14 </span>            :  * You should have received a copy of the GNU General Public License
+<span class="lineNum">      15 </span>            :  * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+<span class="lineNum">      16 </span>            :  */
+<span class="lineNum">      17 </span>            : 
+<span class="lineNum">      18 </span>            : #include &quot;portable.h&quot;
+<span class="lineNum">      19 </span>            : 
+<span class="lineNum">      20 </span>            : #ifndef __MINGW32__ /* Only for Unix */
+<span class="lineNum">      21 </span>            : 
+<span class="lineNum">      22 </span>            : #include &quot;support.h&quot;
+<span class="lineNum">      23 </span>            : 
+<span class="lineNum">      24 </span>            : /**
+<span class="lineNum">      25 </span>            :  * Exit codes.
+<span class="lineNum">      26 </span>            :  */
+<span class="lineNum">      27 </span>            : int exit_success = 0;
+<span class="lineNum">      28 </span>            : int exit_failure = 1;
+<a name="29"><span class="lineNum">      29 </span>            : int exit_sync_needed = 2;</a>
+<span class="lineNum">      30 </span>            : 
+<span class="lineNum">      31 </span><span class="lineCov">    1721022 : int open_noatime(const char* file, int flags)</span>
+<span class="lineNum">      32 </span>            : {
+<span class="lineNum">      33 </span>            : #ifdef O_NOATIME
+<span class="lineNum">      34 </span><span class="lineCov">    1721022 :         int f = open(file, flags | O_NOATIME);</span>
+<span class="lineNum">      35 </span>            : 
+<span class="lineNum">      36 </span>            :         /* only root is allowed to use O_NOATIME, in case retry without it */
+<span class="lineNum">      37 </span><span class="lineCov">    1721022 :         if (f == -1 &amp;&amp; errno == EPERM)</span>
+<span class="lineNum">      38 </span><span class="lineNoCov">          0 :                 f = open(file, flags);</span>
+<span class="lineNum">      39 </span><span class="lineCov">    1721022 :         return f;</span>
+<span class="lineNum">      40 </span>            : #else
+<span class="lineNum">      41 </span>            :         return open(file, flags);
+<span class="lineNum">      42 </span>            : #endif
+<a name="43"><span class="lineNum">      43 </span>            : }</a>
+<span class="lineNum">      44 </span>            : 
+<span class="lineNum">      45 </span><span class="lineNoCov">          0 : int dirent_hidden(struct dirent* dd)</span>
+<span class="lineNum">      46 </span>            : {
+<span class="lineNum">      47 </span><span class="lineNoCov">          0 :         return dd-&gt;d_name[0] == '.';</span>
+<a name="48"><span class="lineNum">      48 </span>            : }</a>
+<span class="lineNum">      49 </span>            : 
+<span class="lineNum">      50 </span><span class="lineNoCov">          0 : const char* stat_desc(struct stat* st)</span>
+<span class="lineNum">      51 </span>            : {
+<span class="lineNum">      52 </span><span class="lineNoCov">          0 :         if (S_ISREG(st-&gt;st_mode))</span>
+<span class="lineNum">      53 </span><span class="lineNoCov">          0 :                 return &quot;regular&quot;;</span>
+<span class="lineNum">      54 </span><span class="lineNoCov">          0 :         if (S_ISDIR(st-&gt;st_mode))</span>
+<span class="lineNum">      55 </span><span class="lineNoCov">          0 :                 return &quot;directory&quot;;</span>
+<span class="lineNum">      56 </span><span class="lineNoCov">          0 :         if (S_ISCHR(st-&gt;st_mode))</span>
+<span class="lineNum">      57 </span><span class="lineNoCov">          0 :                 return &quot;character&quot;;</span>
+<span class="lineNum">      58 </span><span class="lineNoCov">          0 :         if (S_ISBLK(st-&gt;st_mode))</span>
+<span class="lineNum">      59 </span><span class="lineNoCov">          0 :                 return &quot;block-device&quot;;</span>
+<span class="lineNum">      60 </span><span class="lineNoCov">          0 :         if (S_ISFIFO(st-&gt;st_mode))</span>
+<span class="lineNum">      61 </span><span class="lineNoCov">          0 :                 return &quot;fifo&quot;;</span>
+<span class="lineNum">      62 </span><span class="lineNoCov">          0 :         if (S_ISLNK(st-&gt;st_mode))</span>
+<span class="lineNum">      63 </span><span class="lineNoCov">          0 :                 return &quot;link&quot;;</span>
+<span class="lineNum">      64 </span><span class="lineNoCov">          0 :         if (S_ISLNK(st-&gt;st_mode))</span>
+<span class="lineNum">      65 </span><span class="lineNoCov">          0 :                 return &quot;symbolic-link&quot;;</span>
+<span class="lineNum">      66 </span><span class="lineNoCov">          0 :         if (S_ISSOCK(st-&gt;st_mode))</span>
+<span class="lineNum">      67 </span><span class="lineNoCov">          0 :                 return &quot;socket&quot;;</span>
+<span class="lineNum">      68 </span><span class="lineNoCov">          0 :         return &quot;unknown&quot;;</span>
+<span class="lineNum">      69 </span>            : }
+<span class="lineNum">      70 </span>            : 
+<span class="lineNum">      71 </span>            : #if HAVE_FSTATAT
+<span class="lineNum">      72 </span>            : /**
+<span class="lineNum">      73 </span>            :  * This function get the UUID using the /dev/disk/by-uuid/ links.
+<a name="74"><span class="lineNum">      74 </span>            :  * Comparing with the libblkid library, it works also from not root processes.</a>
+<span class="lineNum">      75 </span>            :  */
+<span class="lineNum">      76 </span><span class="lineCov">       2129 : int devuuid(uint64_t device, char* uuid, size_t uuid_size)</span>
+<span class="lineNum">      77 </span>            : {
+<span class="lineNum">      78 </span>            :         int ret;
+<span class="lineNum">      79 </span>            :         DIR* d;
+<span class="lineNum">      80 </span>            :         struct dirent* dd;
+<span class="lineNum">      81 </span>            :         struct stat st;
+<span class="lineNum">      82 </span>            : 
+<span class="lineNum">      83 </span>            :         /* scan the UUID directory searching for the device */
+<span class="lineNum">      84 </span><span class="lineCov">       2129 :         d = opendir(&quot;/dev/disk/by-uuid&quot;);</span>
+<span class="lineNum">      85 </span><span class="lineCov">       2129 :         if (!d) {</span>
+<span class="lineNum">      86 </span>            :                 /* directory missing?, likely we are not in Linux */
+<span class="lineNum">      87 </span><span class="lineNoCov">          0 :                 return -1;</span>
+<span class="lineNum">      88 </span>            :         }
+<span class="lineNum">      89 </span>            : 
+<span class="lineNum">      90 </span><span class="lineCov">      36193 :         while ((dd = readdir(d)) != 0) {</span>
+<span class="lineNum">      91 </span>            :                 /* skip &quot;.&quot; and &quot;..&quot; files, UUIDs never start with '.' */
+<span class="lineNum">      92 </span><span class="lineCov">      34064 :                 if (dd-&gt;d_name[0] == '.')</span>
+<span class="lineNum">      93 </span><span class="lineCov">       4258 :                         continue;</span>
+<span class="lineNum">      94 </span>            : 
+<span class="lineNum">      95 </span><span class="lineCov">      29806 :                 ret = fstatat(dirfd(d), dd-&gt;d_name, &amp;st, 0);</span>
+<span class="lineNum">      96 </span><span class="lineCov">      29806 :                 if (ret != 0) {</span>
+<span class="lineNum">      97 </span>            :                         /* generic error, ignore and continue the search */
+<span class="lineNum">      98 </span><span class="lineNoCov">          0 :                         continue;</span>
+<span class="lineNum">      99 </span>            :                 }
+<span class="lineNum">     100 </span>            : 
+<span class="lineNum">     101 </span>            :                 /* if it matches, we have the uuid */
+<span class="lineNum">     102 </span><span class="lineCov">      29806 :                 if (S_ISBLK(st.st_mode) &amp;&amp; st.st_rdev == (dev_t)device) {</span>
+<span class="lineNum">     103 </span>            :                         /* found */
+<span class="lineNum">     104 </span><span class="lineCov">       2129 :                         pathcpy(uuid, uuid_size, dd-&gt;d_name);</span>
+<span class="lineNum">     105 </span><span class="lineCov">       2129 :                         closedir(d);</span>
+<span class="lineNum">     106 </span><span class="lineCov">       2129 :                         return 0;</span>
+<span class="lineNum">     107 </span>            :                 }
+<span class="lineNum">     108 </span>            :         }
+<span class="lineNum">     109 </span>            : 
+<span class="lineNum">     110 </span>            :         /* not found */
+<span class="lineNum">     111 </span><span class="lineNoCov">          0 :         closedir(d);</span>
+<span class="lineNum">     112 </span><span class="lineNoCov">          0 :         return -1;</span>
+<span class="lineNum">     113 </span>            : }
+<span class="lineNum">     114 </span>            : #else
+<span class="lineNum">     115 </span>            : int devuuid(uint64_t device, char* uuid, size_t uuid_size)
+<span class="lineNum">     116 </span>            : {
+<span class="lineNum">     117 </span>            :         (void)device;
+<span class="lineNum">     118 </span>            :         (void)uuid;
+<span class="lineNum">     119 </span>            :         (void)uuid_size;
+<span class="lineNum">     120 </span>            : 
+<span class="lineNum">     121 </span>            :         /* not supported */
+<span class="lineNum">     122 </span>            :         return -1;
+<span class="lineNum">     123 </span>            : }
+<a name="124"><span class="lineNum">     124 </span>            : #endif</a>
+<span class="lineNum">     125 </span>            : 
+<span class="lineNum">     126 </span><span class="lineCov">      11430 : int filephy(const char* path, uint64_t size, uint64_t* physical)</span>
+<span class="lineNum">     127 </span>            : {
+<span class="lineNum">     128 </span>            : #if HAVE_LINUX_FIEMAP_H
+<span class="lineNum">     129 </span>            :         /* In Linux gets the real physical address of the file */
+<span class="lineNum">     130 </span>            :         /* Note that FIEMAP doesn't require root permission */
+<span class="lineNum">     131 </span>            :         int f;
+<span class="lineNum">     132 </span>            :         struct {
+<span class="lineNum">     133 </span>            :                 struct fiemap fiemap;
+<span class="lineNum">     134 </span>            :                 struct fiemap_extent extent;
+<span class="lineNum">     135 </span>            :         } fm;
+<span class="lineNum">     136 </span>            :         unsigned int blknum;
+<span class="lineNum">     137 </span>            : 
+<span class="lineNum">     138 </span><span class="lineCov">      11430 :         f = open(path, O_RDONLY);</span>
+<span class="lineNum">     139 </span><span class="lineCov">      11430 :         if (f == -1) {</span>
+<span class="lineNum">     140 </span><span class="lineNoCov">          0 :                 return -1;</span>
+<span class="lineNum">     141 </span>            :         }
+<span class="lineNum">     142 </span>            : 
+<span class="lineNum">     143 </span>            :         /* first try with FIEMAP */
+<span class="lineNum">     144 </span>            :         /* if works for ext2, ext3, ext4, xfs, btrfs */
+<span class="lineNum">     145 </span><span class="lineCov">      11430 :         memset(&amp;fm, 0, sizeof(fm));</span>
+<span class="lineNum">     146 </span><span class="lineCov">      11430 :         fm.fiemap.fm_start = 0;</span>
+<span class="lineNum">     147 </span><span class="lineCov">      11430 :         fm.fiemap.fm_length = ~0ULL;</span>
+<span class="lineNum">     148 </span><span class="lineCov">      11430 :         fm.fiemap.fm_flags = FIEMAP_FLAG_SYNC; /* required to ensure that just created files report a valid address and not 0 */</span>
+<span class="lineNum">     149 </span><span class="lineCov">      11430 :         fm.fiemap.fm_extent_count = 1; /* we are interested only at the first block */</span>
+<span class="lineNum">     150 </span>            : 
+<span class="lineNum">     151 </span><span class="lineCov">      11430 :         if (ioctl(f, FS_IOC_FIEMAP, &amp;fm) != -1) {</span>
+<span class="lineNum">     152 </span><span class="lineCov">      11430 :                 *physical = fm.fiemap.fm_extents[0].fe_physical + FILEPHY_REAL_OFFSET;</span>
+<span class="lineNum">     153 </span><span class="lineCov">      11430 :                 if (close(f) == -1)</span>
+<span class="lineNum">     154 </span><span class="lineNoCov">          0 :                         return -1;</span>
+<span class="lineNum">     155 </span><span class="lineCov">      11430 :                 return 0;</span>
+<span class="lineNum">     156 </span>            :         }
+<span class="lineNum">     157 </span>            : 
+<span class="lineNum">     158 </span>            :         /* if the file is empty, FIBMAP doesn't work, and we don't even try to use it */
+<span class="lineNum">     159 </span><span class="lineNoCov">          0 :         if (size == 0) {</span>
+<span class="lineNum">     160 </span><span class="lineNoCov">          0 :                 *physical = FILEPHY_WITHOUT_OFFSET;</span>
+<span class="lineNum">     161 </span><span class="lineNoCov">          0 :                 if (close(f) == -1)</span>
+<span class="lineNum">     162 </span><span class="lineNoCov">          0 :                         return -1;</span>
+<span class="lineNum">     163 </span><span class="lineNoCov">          0 :                 return 0;</span>
+<span class="lineNum">     164 </span>            :         }
+<span class="lineNum">     165 </span>            : 
+<span class="lineNum">     166 </span>            :         /* then try with FIBMAP */
+<span class="lineNum">     167 </span>            :         /* it works for jfs, reiserfs, ntfs-3g */
+<span class="lineNum">     168 </span>            :         /* in exfat it always returns 0, that it's anyway better than the fake inodes */
+<span class="lineNum">     169 </span><span class="lineNoCov">          0 :         blknum = 0; /* first block */</span>
+<span class="lineNum">     170 </span><span class="lineNoCov">          0 :         if (ioctl(f, FIBMAP, &amp;blknum) != -1) {</span>
+<span class="lineNum">     171 </span><span class="lineNoCov">          0 :                 *physical = blknum + FILEPHY_REAL_OFFSET;</span>
+<span class="lineNum">     172 </span><span class="lineNoCov">          0 :                 if (close(f) == -1)</span>
+<span class="lineNum">     173 </span><span class="lineNoCov">          0 :                         return -1;</span>
+<span class="lineNum">     174 </span><span class="lineNoCov">          0 :                 return 0;</span>
+<span class="lineNum">     175 </span>            :         }
+<span class="lineNum">     176 </span>            : 
+<span class="lineNum">     177 </span>            :         /* otherwise don't use anything, and keep the directory traversal order */
+<span class="lineNum">     178 </span>            :         /* at now this should happen only for vfat */
+<span class="lineNum">     179 </span>            :         /* and it's surely better than using fake inodes */
+<span class="lineNum">     180 </span><span class="lineNoCov">          0 :         *physical = FILEPHY_UNREPORTED_OFFSET;</span>
+<span class="lineNum">     181 </span><span class="lineNoCov">          0 :         if (close(f) == -1)</span>
+<span class="lineNum">     182 </span><span class="lineNoCov">          0 :                 return -1;</span>
+<span class="lineNum">     183 </span>            : #else
+<span class="lineNum">     184 </span>            :         /* In a generic Unix use a dummy value for all the files */
+<span class="lineNum">     185 </span>            :         /* We don't want to risk to use the inode without knowing */
+<span class="lineNum">     186 </span>            :         /* if it really improves performance. */
+<span class="lineNum">     187 </span>            :         /* In this way we keep them in the directory traversal order */
+<span class="lineNum">     188 </span>            :         /* that at least keeps files in the same directory together. */
+<span class="lineNum">     189 </span>            :         /* Note also that in newer filesystem with snapshot, like ZFS, */
+<span class="lineNum">     190 </span>            :         /* the inode doesn't represent even less the disk position, because files */
+<span class="lineNum">     191 </span>            :         /* are not overwritten in place, but rewritten in another location */
+<span class="lineNum">     192 </span>            :         /* of the disk. */
+<span class="lineNum">     193 </span>            :         *physical = FILEPHY_UNREPORTED_OFFSET;
+<span class="lineNum">     194 </span>            : 
+<span class="lineNum">     195 </span>            :         (void)path; /* not used here */
+<span class="lineNum">     196 </span>            :         (void)size;
+<span class="lineNum">     197 </span>            : #endif
+<span class="lineNum">     198 </span>            : 
+<span class="lineNum">     199 </span><span class="lineNoCov">          0 :         return 0;</span>
+<a name="200"><span class="lineNum">     200 </span>            : }</a>
+<span class="lineNum">     201 </span>            : 
+<span class="lineNum">     202 </span><span class="lineCov">       1903 : int fsinfo(const char* path, int* has_persistent_inode, uint64_t* total_space, uint64_t* free_space)</span>
+<span class="lineNum">     203 </span>            : {
+<span class="lineNum">     204 </span>            : #if HAVE_STATFS &amp;&amp; HAVE_STRUCT_STATFS_F_TYPE
+<span class="lineNum">     205 </span>            :         struct statfs st;
+<span class="lineNum">     206 </span>            : 
+<span class="lineNum">     207 </span><span class="lineCov">       1903 :         if (statfs(path, &amp;st) != 0) {</span>
+<span class="lineNum">     208 </span>            :                 char dir[PATH_MAX];
+<span class="lineNum">     209 </span>            :                 char* slash;
+<span class="lineNum">     210 </span>            : 
+<span class="lineNum">     211 </span><span class="lineCov">          6 :                 if (errno != ENOENT) {</span>
+<span class="lineNum">     212 </span><span class="lineNoCov">          0 :                         return -1;</span>
+<span class="lineNum">     213 </span>            :                 }
+<span class="lineNum">     214 </span>            : 
+<span class="lineNum">     215 </span>            :                 /* if it doesn't exist, we assume a file */
+<span class="lineNum">     216 </span>            :                 /* and we check for the containing dir */
+<span class="lineNum">     217 </span><span class="lineCov">          6 :                 if (strlen(path) + 1 &gt; sizeof(dir)) {</span>
+<span class="lineNum">     218 </span><span class="lineNoCov">          0 :                         errno = ENAMETOOLONG;</span>
+<span class="lineNum">     219 </span><span class="lineNoCov">          0 :                         return -1;</span>
+<span class="lineNum">     220 </span>            :                 }
+<span class="lineNum">     221 </span>            : 
+<span class="lineNum">     222 </span><span class="lineCov">          6 :                 strcpy(dir, path);</span>
+<span class="lineNum">     223 </span>            : 
+<span class="lineNum">     224 </span><span class="lineCov">          6 :                 slash = strrchr(dir, '/');</span>
+<span class="lineNum">     225 </span><span class="lineCov">          6 :                 if (!slash)</span>
+<span class="lineNum">     226 </span><span class="lineNoCov">          0 :                         return -1;</span>
+<span class="lineNum">     227 </span>            : 
+<span class="lineNum">     228 </span><span class="lineCov">          6 :                 *slash = 0;</span>
+<span class="lineNum">     229 </span><span class="lineCov">          6 :                 if (statfs(dir, &amp;st) != 0)</span>
+<span class="lineNum">     230 </span><span class="lineNoCov">          0 :                         return -1;</span>
+<span class="lineNum">     231 </span>            :         }
+<span class="lineNum">     232 </span>            : 
+<span class="lineNum">     233 </span>            :         /* to get the fs type check &quot;man stat&quot; or &quot;stat -f -t FILE&quot; */
+<span class="lineNum">     234 </span><span class="lineCov">       1903 :         if (has_persistent_inode)</span>
+<span class="lineNum">     235 </span><span class="lineCov">        413 :                 switch (st.f_type) {</span>
+<span class="lineNum">     236 </span>            :                 case 0x65735546 : /* FUSE, &quot;fuseblk&quot; in the stat command */
+<span class="lineNum">     237 </span>            :                 case 0x4d44 : /* VFAT, &quot;msdos&quot; in the stat command */
+<span class="lineNum">     238 </span><span class="lineNoCov">          0 :                         *has_persistent_inode = 0;</span>
+<span class="lineNum">     239 </span><span class="lineNoCov">          0 :                         break;</span>
+<span class="lineNum">     240 </span>            :                 default :
+<span class="lineNum">     241 </span>            :                         /* by default assume yes */
+<span class="lineNum">     242 </span><span class="lineCov">        413 :                         *has_persistent_inode = 1;</span>
+<span class="lineNum">     243 </span><span class="lineCov">        413 :                         break;</span>
+<span class="lineNum">     244 </span>            :                 }
+<span class="lineNum">     245 </span>            : 
+<span class="lineNum">     246 </span><span class="lineCov">       1903 :         if (total_space)</span>
+<span class="lineNum">     247 </span><span class="lineCov">       1490 :                 *total_space = st.f_bsize * (uint64_t)st.f_blocks;</span>
+<span class="lineNum">     248 </span><span class="lineCov">       1903 :         if (free_space)</span>
+<span class="lineNum">     249 </span><span class="lineCov">       1490 :                 *free_space = st.f_bsize * (uint64_t)st.f_bfree;</span>
+<span class="lineNum">     250 </span>            : #else
+<span class="lineNum">     251 </span>            :         (void)path;
+<span class="lineNum">     252 </span>            : 
+<span class="lineNum">     253 </span>            :         /* by default assume yes */
+<span class="lineNum">     254 </span>            :         if (has_persistent_inode)
+<span class="lineNum">     255 </span>            :                 *has_persistent_inode = 1;
+<span class="lineNum">     256 </span>            :         if (total_space)
+<span class="lineNum">     257 </span>            :                 *total_space = 0;
+<span class="lineNum">     258 </span>            :         if (free_space)
+<span class="lineNum">     259 </span>            :                 *free_space = 0;
+<span class="lineNum">     260 </span>            : #endif
+<span class="lineNum">     261 </span>            : 
+<span class="lineNum">     262 </span><span class="lineCov">       1903 :         return 0;</span>
+<a name="263"><span class="lineNum">     263 </span>            : }</a>
+<span class="lineNum">     264 </span>            : 
+<span class="lineNum">     265 </span><span class="lineCov">    1810494 : uint64_t tick(void)</span>
+<span class="lineNum">     266 </span>            : {
+<span class="lineNum">     267 </span>            : #if HAVE_MACH_ABSOLUTE_TIME
+<span class="lineNum">     268 </span>            :         /* for Mac OS X */
+<span class="lineNum">     269 </span>            :         return mach_absolute_time();
+<span class="lineNum">     270 </span>            : #elif HAVE_CLOCK_GETTIME &amp;&amp; (defined(CLOCK_MONOTONIC) || defined(CLOCK_MONOTONIC_RAW))
+<span class="lineNum">     271 </span>            :         /* for Linux */
+<span class="lineNum">     272 </span>            :         struct timespec tv;
+<span class="lineNum">     273 </span>            : 
+<span class="lineNum">     274 </span>            :         /* nanosecond precision with clock_gettime() */
+<span class="lineNum">     275 </span>            : #if defined(CLOCK_MONOTONIC_RAW)
+<span class="lineNum">     276 </span><span class="lineCov">    1810494 :         if (clock_gettime(CLOCK_MONOTONIC_RAW, &amp;tv) != 0) {</span>
+<span class="lineNum">     277 </span>            : #else
+<span class="lineNum">     278 </span>            :         if (clock_gettime(CLOCK_MONOTONIC, &amp;tv) != 0) {
+<span class="lineNum">     279 </span>            : #endif
+<span class="lineNum">     280 </span><span class="lineNoCov">          0 :                 return 0;</span>
+<span class="lineNum">     281 </span>            :         }
+<span class="lineNum">     282 </span>            : 
+<span class="lineNum">     283 </span><span class="lineCov">    1810494 :         return tv.tv_sec * 1000000000ULL + tv.tv_nsec;</span>
+<span class="lineNum">     284 </span>            : #else
+<span class="lineNum">     285 </span>            :         /* other platforms */
+<span class="lineNum">     286 </span>            :         struct timeval tv;
+<span class="lineNum">     287 </span>            : 
+<span class="lineNum">     288 </span>            :         /* microsecond precision with gettimeofday() */
+<span class="lineNum">     289 </span>            :         if (gettimeofday(&amp;tv, 0) != 0) {
+<span class="lineNum">     290 </span>            :                 return 0;
+<span class="lineNum">     291 </span>            :         }
+<span class="lineNum">     292 </span>            : 
+<span class="lineNum">     293 </span>            :         return tv.tv_sec * 1000000ULL + tv.tv_usec;
+<span class="lineNum">     294 </span>            : #endif
+<a name="295"><span class="lineNum">     295 </span>            : }</a>
+<span class="lineNum">     296 </span>            : 
+<span class="lineNum">     297 </span><span class="lineCov">         36 : uint64_t tick_ms(void)</span>
+<span class="lineNum">     298 </span>            : {
+<span class="lineNum">     299 </span>            :         struct timeval tv;
+<span class="lineNum">     300 </span>            : 
+<span class="lineNum">     301 </span><span class="lineCov">         36 :         if (gettimeofday(&amp;tv, 0) != 0)</span>
+<span class="lineNum">     302 </span><span class="lineNoCov">          0 :                 return 0;</span>
+<span class="lineNum">     303 </span>            : 
+<span class="lineNum">     304 </span><span class="lineCov">         36 :         return tv.tv_sec * 1000ULL + tv.tv_usec / 1000;</span>
+<a name="305"><span class="lineNum">     305 </span>            : }</a>
+<span class="lineNum">     306 </span>            : 
+<span class="lineNum">     307 </span><span class="lineCov">        252 : int randomize(void* ptr, size_t size)</span>
+<span class="lineNum">     308 </span>            : {
+<span class="lineNum">     309 </span>            :         int f;
+<span class="lineNum">     310 </span>            :         ssize_t ret;
+<span class="lineNum">     311 </span>            : 
+<span class="lineNum">     312 </span><span class="lineCov">        252 :         f = open(&quot;/dev/urandom&quot;, O_RDONLY);</span>
+<span class="lineNum">     313 </span><span class="lineCov">        252 :         if (f == -1)</span>
+<span class="lineNum">     314 </span><span class="lineNoCov">          0 :                 return -1;</span>
+<span class="lineNum">     315 </span>            : 
+<span class="lineNum">     316 </span><span class="lineCov">        252 :         ret = read(f, ptr, size);</span>
+<span class="lineNum">     317 </span><span class="lineCov">        252 :         if (ret &lt; 0 || (size_t)ret != size) {</span>
+<span class="lineNum">     318 </span><span class="lineNoCov">          0 :                 close(f);</span>
+<span class="lineNum">     319 </span><span class="lineNoCov">          0 :                 return -1;</span>
+<span class="lineNum">     320 </span>            :         }
+<span class="lineNum">     321 </span>            : 
+<span class="lineNum">     322 </span><span class="lineCov">        252 :         if (close(f) != 0)</span>
+<span class="lineNum">     323 </span><span class="lineNoCov">          0 :                 return -1;</span>
+<span class="lineNum">     324 </span>            : 
+<span class="lineNum">     325 </span><span class="lineCov">        252 :         return 0;</span>
+<span class="lineNum">     326 </span>            : }
+<span class="lineNum">     327 </span>            : 
+<span class="lineNum">     328 </span>            : /**
+<span class="lineNum">     329 </span>            :  * Read a file extracting the contained device number in %u:%u format.
+<span class="lineNum">     330 </span>            :  * Returns 0 on error.
+<a name="331"><span class="lineNum">     331 </span>            :  */</a>
+<span class="lineNum">     332 </span>            : #if HAVE_LINUX_DEVICE
+<span class="lineNum">     333 </span><span class="lineCov">         86 : static dev_t devread(const char* path)</span>
+<span class="lineNum">     334 </span>            : {
+<span class="lineNum">     335 </span>            :         int f;
+<span class="lineNum">     336 </span>            :         int ret;
+<span class="lineNum">     337 </span>            :         char buf[64];
+<span class="lineNum">     338 </span>            :         char* e;
+<span class="lineNum">     339 </span>            :         unsigned ma;
+<span class="lineNum">     340 </span>            :         unsigned mi;
+<span class="lineNum">     341 </span>            : 
+<span class="lineNum">     342 </span><span class="lineCov">         86 :         f = open(path, O_RDONLY);</span>
+<span class="lineNum">     343 </span><span class="lineCov">         86 :         if (f == -1) {</span>
+<span class="lineNum">     344 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     345 </span>            :                 log_fatal(&quot;Failed to open '%s'.\n&quot;, path);
+<span class="lineNum">     346 </span>            :                 return 0;
+<span class="lineNum">     347 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     348 </span>            :         }
+<span class="lineNum">     349 </span>            : 
+<span class="lineNum">     350 </span><span class="lineCov">         86 :         ret = read(f, buf, sizeof(buf));</span>
+<span class="lineNum">     351 </span><span class="lineCov">         86 :         if (ret &lt; 0) {</span>
+<span class="lineNum">     352 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     353 </span>            :                 close(f);
+<span class="lineNum">     354 </span>            :                 log_fatal(&quot;Failed to read '%s'.\n&quot;, path);
+<span class="lineNum">     355 </span>            :                 return 0;
+<span class="lineNum">     356 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     357 </span>            :         }
+<span class="lineNum">     358 </span><span class="lineCov">         86 :         if (ret == sizeof(buf)) {</span>
+<span class="lineNum">     359 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     360 </span>            :                 close(f);
+<span class="lineNum">     361 </span>            :                 log_fatal(&quot;Too long read '%s'.\n&quot;, path);
+<span class="lineNum">     362 </span>            :                 return 0;
+<span class="lineNum">     363 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     364 </span>            :         }
+<span class="lineNum">     365 </span>            : 
+<span class="lineNum">     366 </span><span class="lineCov">         86 :         buf[ret] = 0;</span>
+<span class="lineNum">     367 </span>            : 
+<span class="lineNum">     368 </span><span class="lineCov">         86 :         ma = strtoul(buf, &amp;e, 10);</span>
+<span class="lineNum">     369 </span><span class="lineCov">         86 :         if (*e != ':') {</span>
+<span class="lineNum">     370 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     371 </span>            :                 close(f);
+<span class="lineNum">     372 </span>            :                 log_fatal(&quot;Invalid format in '%s' for '%s'.\n&quot;, path, buf);
+<span class="lineNum">     373 </span>            :                 return 0;
+<span class="lineNum">     374 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     375 </span>            :         }
+<span class="lineNum">     376 </span>            : 
+<span class="lineNum">     377 </span><span class="lineCov">         86 :         mi = strtoul(e+1, &amp;e, 10);</span>
+<span class="lineNum">     378 </span><span class="lineCov">         86 :         if (*e != 0 &amp;&amp; !isspace(*e)) {</span>
+<span class="lineNum">     379 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     380 </span>            :                 close(f);
+<span class="lineNum">     381 </span>            :                 log_fatal(&quot;Invalid format in '%s' for '%s'.\n&quot;, path, buf);
+<span class="lineNum">     382 </span>            :                 return 0;
+<span class="lineNum">     383 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     384 </span>            :         }
+<span class="lineNum">     385 </span>            : 
+<span class="lineNum">     386 </span><span class="lineCov">         86 :         ret = close(f);</span>
+<span class="lineNum">     387 </span><span class="lineCov">         86 :         if (ret != 0) {</span>
+<span class="lineNum">     388 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     389 </span>            :                 log_fatal(&quot;Failed to close '%s'.\n&quot;, path);
+<span class="lineNum">     390 </span>            :                 return 0;
+<span class="lineNum">     391 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     392 </span>            :         }
+<span class="lineNum">     393 </span>            : 
+<span class="lineNum">     394 </span><span class="lineCov">         86 :         return makedev(ma, mi);</span>
+<span class="lineNum">     395 </span>            : }
+<span class="lineNum">     396 </span>            : #endif
+<span class="lineNum">     397 </span>            : 
+<span class="lineNum">     398 </span>            : #if HAVE_LINUX_DEVICE
+<span class="lineNum">     399 </span>            : /**
+<a name="400"><span class="lineNum">     400 </span>            :  * Get the device file from the device number.</a>
+<span class="lineNum">     401 </span>            :  */
+<span class="lineNum">     402 </span><span class="lineCov">         97 : static int devresolve(dev_t device, char* path, size_t path_size)</span>
+<span class="lineNum">     403 </span>            : {
+<span class="lineNum">     404 </span>            :         struct stat st;
+<span class="lineNum">     405 </span>            :         char buf[PATH_MAX];
+<span class="lineNum">     406 </span>            :         int ret;
+<span class="lineNum">     407 </span>            : 
+<span class="lineNum">     408 </span>            :         /* default device path from device number */
+<span class="lineNum">     409 </span><span class="lineCov">         97 :         pathprint(path, path_size, &quot;/dev/block/%u:%u&quot;, major(device), minor(device));</span>
+<span class="lineNum">     410 </span>            : 
+<span class="lineNum">     411 </span>            :         /* resolve the link from /dev/block */
+<span class="lineNum">     412 </span><span class="lineCov">         97 :         ret = readlink(path, buf, sizeof(buf));</span>
+<span class="lineNum">     413 </span><span class="lineCov">         96 :         if (ret &lt; 0) {</span>
+<span class="lineNum">     414 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     415 </span>            :                 log_fatal(&quot;Failed to readlink '%s'.\n&quot;, path);
+<span class="lineNum">     416 </span>            :                 return -1;
+<span class="lineNum">     417 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     418 </span>            :         }
+<span class="lineNum">     419 </span><span class="lineCov">         96 :         if (ret == sizeof(buf)) {</span>
+<span class="lineNum">     420 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     421 </span>            :                 log_fatal(&quot;Too long readlink '%s'.\n&quot;, path);
+<span class="lineNum">     422 </span>            :                 return -1;
+<span class="lineNum">     423 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     424 </span>            :         }
+<span class="lineNum">     425 </span>            : 
+<span class="lineNum">     426 </span><span class="lineCov">         96 :         buf[ret] = 0;</span>
+<span class="lineNum">     427 </span>            : 
+<span class="lineNum">     428 </span><span class="lineCov">         96 :         if (buf[0] != '.' || buf[1] != '.' || buf[2] != '/') {</span>
+<span class="lineNum">     429 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     430 </span>            :                 log_fatal(&quot;Unexpected link '%s' at '%s'.\n&quot;, buf, path);
+<span class="lineNum">     431 </span>            :                 return -1;
+<span class="lineNum">     432 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     433 </span>            :         }
+<span class="lineNum">     434 </span>            : 
+<span class="lineNum">     435 </span>            :         /* set the real device path */
+<span class="lineNum">     436 </span><span class="lineCov">         97 :         pathprint(path, path_size, &quot;/dev/%s&quot;, buf + 3);</span>
+<span class="lineNum">     437 </span>            : 
+<span class="lineNum">     438 </span>            :         /* check the device */
+<span class="lineNum">     439 </span><span class="lineCov">         97 :         if (stat(path, &amp;st) != 0) {</span>
+<span class="lineNum">     440 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     441 </span>            :                 log_fatal(&quot;Failed to stat '%s'.\n&quot;, path);
+<span class="lineNum">     442 </span>            :                 return -1;
+<span class="lineNum">     443 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     444 </span>            :         }
+<span class="lineNum">     445 </span><span class="lineCov">         96 :         if (st.st_rdev != device) {</span>
+<span class="lineNum">     446 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     447 </span>            :                 log_fatal(&quot;Unexpected device '%u:%u' instead of '%u:%u' for '%s'.\n&quot;, major(st.st_rdev), minor(st.st_rdev), major(device), minor(device), path);
+<span class="lineNum">     448 </span>            :                 return -1;
+<span class="lineNum">     449 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     450 </span>            :         }
+<span class="lineNum">     451 </span>            : 
+<span class="lineNum">     452 </span><span class="lineCov">         96 :         return 0;</span>
+<span class="lineNum">     453 </span>            : }
+<span class="lineNum">     454 </span>            : #endif
+<span class="lineNum">     455 </span>            : 
+<span class="lineNum">     456 </span>            : /**
+<span class="lineNum">     457 </span>            :  * Read a device tree filling the specified list of disk_t entries.
+<a name="458"><span class="lineNum">     458 </span>            :  */</a>
+<span class="lineNum">     459 </span>            : #if HAVE_LINUX_DEVICE
+<span class="lineNum">     460 </span><span class="lineCov">         72 : static int devtree(const char* name, const char* custom, dev_t device, devinfo_t* parent, tommy_list* list)</span>
+<span class="lineNum">     461 </span>            : {
+<span class="lineNum">     462 </span>            :         char path[PATH_MAX];
+<span class="lineNum">     463 </span>            :         DIR* d;
+<span class="lineNum">     464 </span><span class="lineCov">         72 :         int slaves = 0;</span>
+<span class="lineNum">     465 </span>            : 
+<span class="lineNum">     466 </span><span class="lineCov">         72 :         pathprint(path, sizeof(path), &quot;/sys/dev/block/%u:%u/slaves&quot;, major(device), minor(device));</span>
+<span class="lineNum">     467 </span>            : 
+<span class="lineNum">     468 </span>            :         /* check if there is a slaves list */
+<span class="lineNum">     469 </span><span class="lineCov">         72 :         d = opendir(path);</span>
+<span class="lineNum">     470 </span><span class="lineCov">         72 :         if (d != 0) {</span>
+<span class="lineNum">     471 </span>            :                 struct dirent* dd;
+<span class="lineNum">     472 </span>            : 
+<span class="lineNum">     473 </span><span class="lineCov">        180 :                 while ((dd = readdir(d)) != 0) {</span>
+<span class="lineNum">     474 </span><span class="lineCov">        108 :                         if (dd-&gt;d_name[0] != '.') {</span>
+<span class="lineNum">     475 </span>            :                                 /* for each slave, expand the full potential tree */
+<span class="lineNum">     476 </span><span class="lineCov">         36 :                                 pathprint(path, sizeof(path), &quot;/sys/dev/block/%u:%u/slaves/%s/dev&quot;, major(device), minor(device), dd-&gt;d_name);</span>
+<span class="lineNum">     477 </span>            : 
+<span class="lineNum">     478 </span><span class="lineCov">         36 :                                 device = devread(path);</span>
+<span class="lineNum">     479 </span><span class="lineCov">         36 :                                 if (!device) {</span>
+<span class="lineNum">     480 </span>            :                                         /* LCOV_EXCL_START */
+<span class="lineNum">     481 </span>            :                                         closedir(d);
+<span class="lineNum">     482 </span>            :                                         return -1;
+<span class="lineNum">     483 </span>            :                                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     484 </span>            :                                 }
+<span class="lineNum">     485 </span>            : 
+<span class="lineNum">     486 </span><span class="lineCov">         36 :                                 if (devtree(name, custom, device, parent, list) != 0) {</span>
+<span class="lineNum">     487 </span>            :                                         /* LCOV_EXCL_START */
+<span class="lineNum">     488 </span>            :                                         closedir(d);
+<span class="lineNum">     489 </span>            :                                         return -1;
+<span class="lineNum">     490 </span>            :                                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     491 </span>            :                                 }
+<span class="lineNum">     492 </span>            : 
+<span class="lineNum">     493 </span><span class="lineCov">         36 :                                 ++slaves;</span>
+<span class="lineNum">     494 </span>            :                         }
+<span class="lineNum">     495 </span>            :                 }
+<span class="lineNum">     496 </span>            : 
+<span class="lineNum">     497 </span><span class="lineCov">         36 :                 closedir(d);</span>
+<span class="lineNum">     498 </span>            :         }
+<span class="lineNum">     499 </span>            : 
+<span class="lineNum">     500 </span>            :         /* if no slaves found */
+<span class="lineNum">     501 </span><span class="lineCov">         72 :         if (!slaves) {</span>
+<span class="lineNum">     502 </span>            :                 /* this is a raw device */
+<span class="lineNum">     503 </span>            :                 devinfo_t* devinfo;
+<span class="lineNum">     504 </span>            : 
+<span class="lineNum">     505 </span>            :                 /* check if it's a real device */
+<span class="lineNum">     506 </span><span class="lineCov">         36 :                 pathprint(path, sizeof(path), &quot;/sys/dev/block/%u:%u/device&quot;, major(device), minor(device));</span>
+<span class="lineNum">     507 </span><span class="lineCov">         36 :                 if (access(path, F_OK) != 0) {</span>
+<span class="lineNum">     508 </span>            :                         /* get the parent device */
+<span class="lineNum">     509 </span><span class="lineCov">         36 :                         pathprint(path, sizeof(path), &quot;/sys/dev/block/%u:%u/../dev&quot;, major(device), minor(device));</span>
+<span class="lineNum">     510 </span>            : 
+<span class="lineNum">     511 </span><span class="lineCov">         36 :                         device = devread(path);</span>
+<span class="lineNum">     512 </span><span class="lineCov">         36 :                         if (!device) {</span>
+<span class="lineNum">     513 </span>            :                                 /* LCOV_EXCL_START */
+<span class="lineNum">     514 </span>            :                                 return -1;
+<span class="lineNum">     515 </span>            :                                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     516 </span>            :                         }
+<span class="lineNum">     517 </span>            :                 }
+<span class="lineNum">     518 </span>            : 
+<span class="lineNum">     519 </span>            :                 /* get the device file */
+<span class="lineNum">     520 </span><span class="lineCov">         36 :                 if (devresolve(device, path, sizeof(path)) != 0) {</span>
+<span class="lineNum">     521 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     522 </span>            :                         return -1;
+<span class="lineNum">     523 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     524 </span>            :                 }
+<span class="lineNum">     525 </span>            : 
+<span class="lineNum">     526 </span><span class="lineCov">         36 :                 devinfo = calloc_nofail(1, sizeof(devinfo_t));</span>
+<span class="lineNum">     527 </span>            : 
+<span class="lineNum">     528 </span><span class="lineCov">         36 :                 devinfo-&gt;device = device;</span>
+<span class="lineNum">     529 </span><span class="lineCov">         36 :                 pathcpy(devinfo-&gt;name, sizeof(devinfo-&gt;name), name);</span>
+<span class="lineNum">     530 </span><span class="lineCov">         36 :                 pathcpy(devinfo-&gt;smartctl, sizeof(devinfo-&gt;smartctl), custom);</span>
+<span class="lineNum">     531 </span><span class="lineCov">         36 :                 pathcpy(devinfo-&gt;file, sizeof(devinfo-&gt;file), path);</span>
+<span class="lineNum">     532 </span><span class="lineCov">         36 :                 devinfo-&gt;parent = parent;</span>
+<span class="lineNum">     533 </span>            : 
+<span class="lineNum">     534 </span>            :                 /* insert in the list */
+<span class="lineNum">     535 </span><span class="lineCov">         36 :                 tommy_list_insert_tail(list, &amp;devinfo-&gt;node, devinfo);</span>
+<span class="lineNum">     536 </span>            :         }
+<span class="lineNum">     537 </span>            : 
+<span class="lineNum">     538 </span><span class="lineCov">         72 :         return 0;</span>
+<span class="lineNum">     539 </span>            : }
+<span class="lineNum">     540 </span>            : #endif
+<span class="lineNum">     541 </span>            : 
+<span class="lineNum">     542 </span>            : /**
+<span class="lineNum">     543 </span>            :  * Scan all the devices.
+<span class="lineNum">     544 </span>            :  *
+<span class="lineNum">     545 </span>            :  * If a device is already in, it's not added again.
+<a name="546"><span class="lineNum">     546 </span>            :  */</a>
+<span class="lineNum">     547 </span>            : #if HAVE_LINUX_DEVICE
+<span class="lineNum">     548 </span><span class="lineCov">          1 : static int devscan(tommy_list* list)</span>
+<span class="lineNum">     549 </span>            : {
+<span class="lineNum">     550 </span>            :         char dir[PATH_MAX];
+<span class="lineNum">     551 </span>            :         DIR* d;
+<span class="lineNum">     552 </span>            :         struct dirent* dd;
+<span class="lineNum">     553 </span>            : 
+<span class="lineNum">     554 </span><span class="lineCov">          1 :         pathprint(dir, sizeof(dir), &quot;/sys/dev/block/&quot;);</span>
+<span class="lineNum">     555 </span>            : 
+<span class="lineNum">     556 </span>            :         /* check if there is a slaves list */
+<span class="lineNum">     557 </span><span class="lineCov">          1 :         d = opendir(dir);</span>
+<span class="lineNum">     558 </span><span class="lineCov">          1 :         if (d == 0) {</span>
+<span class="lineNum">     559 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     560 </span>            :                 log_fatal(&quot;Failed to open dir '%s'.\n&quot;, dir);
+<span class="lineNum">     561 </span>            :                 return -1;
+<span class="lineNum">     562 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     563 </span>            :         }
+<span class="lineNum">     564 </span>            : 
+<span class="lineNum">     565 </span><span class="lineCov">         75 :         while ((dd = readdir(d)) != 0) {</span>
+<span class="lineNum">     566 </span><span class="lineCov">         73 :                 if (dd-&gt;d_name[0] != '.') {</span>
+<span class="lineNum">     567 </span>            :                         char path[PATH_MAX];
+<span class="lineNum">     568 </span>            : 
+<span class="lineNum">     569 </span><span class="lineCov">         71 :                         pathprint(path, sizeof(path), &quot;/sys/dev/block/%s/device&quot;, dd-&gt;d_name);</span>
+<span class="lineNum">     570 </span>            : 
+<span class="lineNum">     571 </span>            :                         /* check if it's a real device */
+<span class="lineNum">     572 </span><span class="lineCov">         71 :                         if (access(path, F_OK) == 0) {</span>
+<span class="lineNum">     573 </span>            :                                 tommy_node* i;
+<span class="lineNum">     574 </span>            :                                 dev_t device;
+<span class="lineNum">     575 </span>            : 
+<span class="lineNum">     576 </span><span class="lineCov">         14 :                                 pathprint(path, sizeof(path), &quot;/sys/dev/block/%s/dev&quot;, dd-&gt;d_name);</span>
+<span class="lineNum">     577 </span>            : 
+<span class="lineNum">     578 </span><span class="lineCov">         14 :                                 device = devread(path);</span>
+<span class="lineNum">     579 </span><span class="lineCov">         14 :                                 if (!device) {</span>
+<span class="lineNum">     580 </span>            :                                         /* LCOV_EXCL_START */
+<span class="lineNum">     581 </span>            :                                         closedir(d);
+<span class="lineNum">     582 </span>            :                                         return -1;
+<span class="lineNum">     583 </span>            :                                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     584 </span>            :                                 }
+<span class="lineNum">     585 </span>            : 
+<span class="lineNum">     586 </span>            :                                 /* check if already present */
+<span class="lineNum">     587 </span><span class="lineCov">        248 :                                 for (i = tommy_list_head(list); i != 0; i = i-&gt;next) {</span>
+<span class="lineNum">     588 </span><span class="lineCov">        235 :                                         devinfo_t* devinfo = i-&gt;data;</span>
+<span class="lineNum">     589 </span><span class="lineCov">        235 :                                         if (devinfo-&gt;device == device)</span>
+<span class="lineNum">     590 </span><span class="lineCov">          1 :                                                 break;</span>
+<span class="lineNum">     591 </span>            :                                 }
+<span class="lineNum">     592 </span>            : 
+<span class="lineNum">     593 </span>            :                                 /* if not found */
+<span class="lineNum">     594 </span><span class="lineCov">         14 :                                 if (i == 0) {</span>
+<span class="lineNum">     595 </span>            :                                         devinfo_t* devinfo;
+<span class="lineNum">     596 </span>            : 
+<span class="lineNum">     597 </span>            :                                         /* get the device file */
+<span class="lineNum">     598 </span><span class="lineCov">         13 :                                         if (devresolve(device, path, sizeof(path)) != 0) {</span>
+<span class="lineNum">     599 </span>            :                                                 /* LCOV_EXCL_START */
+<span class="lineNum">     600 </span>            :                                                 closedir(d);
+<span class="lineNum">     601 </span>            :                                                 return -1;
+<span class="lineNum">     602 </span>            :                                                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     603 </span>            :                                         }
+<span class="lineNum">     604 </span>            : 
+<span class="lineNum">     605 </span><span class="lineCov">         13 :                                         devinfo = calloc_nofail(1, sizeof(devinfo_t));</span>
+<span class="lineNum">     606 </span>            : 
+<span class="lineNum">     607 </span><span class="lineCov">         13 :                                         devinfo-&gt;device = device;</span>
+<span class="lineNum">     608 </span><span class="lineCov">         13 :                                         pathcpy(devinfo-&gt;file, sizeof(devinfo-&gt;file), path);</span>
+<span class="lineNum">     609 </span>            : 
+<span class="lineNum">     610 </span>            :                                         /* insert in the list */
+<span class="lineNum">     611 </span><span class="lineCov">         13 :                                         tommy_list_insert_tail(list, &amp;devinfo-&gt;node, devinfo);</span>
+<span class="lineNum">     612 </span>            :                                 }
+<span class="lineNum">     613 </span>            :                         }
+<span class="lineNum">     614 </span>            :                 }
+<span class="lineNum">     615 </span>            :         }
+<span class="lineNum">     616 </span>            : 
+<span class="lineNum">     617 </span><span class="lineCov">          1 :         closedir(d);</span>
+<span class="lineNum">     618 </span><span class="lineCov">          1 :         return 0;</span>
+<span class="lineNum">     619 </span>            : }
+<span class="lineNum">     620 </span>            : #endif
+<span class="lineNum">     621 </span>            : 
+<span class="lineNum">     622 </span>            : /**
+<a name="623"><span class="lineNum">     623 </span>            :  * Gets SMART attributes.</a>
+<span class="lineNum">     624 </span>            :  */
+<span class="lineNum">     625 </span><span class="lineCov">         25 : static int devsmart(dev_t device, const char* name, const char* custom, uint64_t* smart, char* serial)</span>
+<span class="lineNum">     626 </span>            : {
+<span class="lineNum">     627 </span>            :         char cmd[128];
+<span class="lineNum">     628 </span>            :         char file[128];
+<span class="lineNum">     629 </span>            :         FILE* f;
+<span class="lineNum">     630 </span>            :         int ret;
+<span class="lineNum">     631 </span>            : 
+<span class="lineNum">     632 </span><span class="lineCov">         25 :         snprintf(file, sizeof(file), &quot;/dev/block/%u:%u&quot;, major(device), minor(device));</span>
+<span class="lineNum">     633 </span>            : 
+<span class="lineNum">     634 </span>            :         /* if there is a custom command */
+<span class="lineNum">     635 </span><span class="lineCov">         25 :         if (custom[0]) {</span>
+<span class="lineNum">     636 </span>            :                 char option[128];
+<span class="lineNum">     637 </span><span class="lineCov">          2 :                 snprintf(option, sizeof(option), custom, file);</span>
+<span class="lineNum">     638 </span><span class="lineCov">          2 :                 snprintf(cmd, sizeof(cmd), &quot;smartctl -a %s&quot;, option);</span>
+<span class="lineNum">     639 </span>            :         } else {
+<span class="lineNum">     640 </span><span class="lineCov">         23 :                 snprintf(cmd, sizeof(cmd), &quot;smartctl -a %s&quot;, file);</span>
+<span class="lineNum">     641 </span>            :         }
+<span class="lineNum">     642 </span>            : 
+<span class="lineNum">     643 </span><span class="lineCov">         25 :         log_tag(&quot;smartctl:%s:%s:run: %s\n&quot;, file, name, cmd);</span>
+<span class="lineNum">     644 </span>            : 
+<span class="lineNum">     645 </span><span class="lineCov">         25 :         f = popen(cmd, &quot;r&quot;);</span>
+<span class="lineNum">     646 </span><span class="lineCov">         25 :         if (!f) {</span>
+<span class="lineNum">     647 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     648 </span>            :                 log_fatal(&quot;Failed to run '%s' (from popen).\n&quot;, cmd);
+<span class="lineNum">     649 </span>            :                 return -1;
+<span class="lineNum">     650 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     651 </span>            :         }
+<span class="lineNum">     652 </span>            : 
+<span class="lineNum">     653 </span><span class="lineCov">         25 :         if (smartctl_attribute(f, file, name, smart, serial) != 0) {</span>
+<span class="lineNum">     654 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     655 </span>            :                 pclose(f);
+<span class="lineNum">     656 </span>            :                 return -1;
+<span class="lineNum">     657 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     658 </span>            :         }
+<span class="lineNum">     659 </span>            : 
+<span class="lineNum">     660 </span><span class="lineCov">         25 :         ret = pclose(f);</span>
+<span class="lineNum">     661 </span>            : 
+<span class="lineNum">     662 </span><span class="lineCov">         25 :         log_tag(&quot;smartctl:%s:%s:ret: %x\n&quot;, file, name, ret);</span>
+<span class="lineNum">     663 </span>            : 
+<span class="lineNum">     664 </span><span class="lineCov">         25 :         if (!WIFEXITED(ret)) {</span>
+<span class="lineNum">     665 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     666 </span>            :                 log_fatal(&quot;Failed to run '%s' (not exited).\n&quot;, cmd);
+<span class="lineNum">     667 </span>            :                 return -1;
+<span class="lineNum">     668 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     669 </span>            :         }
+<span class="lineNum">     670 </span><span class="lineCov">         25 :         if (WEXITSTATUS(ret) == 127) {</span>
+<span class="lineNum">     671 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     672 </span>            :                 log_fatal(&quot;Failed to run '%s' (from sh).\n&quot;, cmd);
+<span class="lineNum">     673 </span>            :                 return -1;
+<span class="lineNum">     674 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     675 </span>            :         }
+<span class="lineNum">     676 </span>            : 
+<span class="lineNum">     677 </span>            :         /* store the return smartctl return value */
+<span class="lineNum">     678 </span><span class="lineNoCov">          0 :         smart[SMART_FLAGS] = WEXITSTATUS(ret);</span>
+<span class="lineNum">     679 </span>            : 
+<span class="lineNum">     680 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     681 </span>            : }
+<span class="lineNum">     682 </span>            : 
+<span class="lineNum">     683 </span>            : /**
+<span class="lineNum">     684 </span>            :  * Spin down a specific device.
+<a name="685"><span class="lineNum">     685 </span>            :  */</a>
+<span class="lineNum">     686 </span>            : #if HAVE_LINUX_DEVICE
+<span class="lineNum">     687 </span><span class="lineCov">         12 : static int devdown(dev_t device, const char* name, const char* custom)</span>
+<span class="lineNum">     688 </span>            : {
+<span class="lineNum">     689 </span>            :         char cmd[128];
+<span class="lineNum">     690 </span>            :         char file[128];
+<span class="lineNum">     691 </span>            :         FILE* f;
+<span class="lineNum">     692 </span>            :         int ret;
+<span class="lineNum">     693 </span>            : 
+<span class="lineNum">     694 </span><span class="lineCov">         12 :         snprintf(file, sizeof(file), &quot;/dev/block/%u:%u&quot;, major(device), minor(device));</span>
+<span class="lineNum">     695 </span>            : 
+<span class="lineNum">     696 </span>            :         /* if there is a custom command */
+<span class="lineNum">     697 </span><span class="lineCov">         12 :         if (custom[0]) {</span>
+<span class="lineNum">     698 </span>            :                 char option[128];
+<span class="lineNum">     699 </span><span class="lineCov">          2 :                 snprintf(option, sizeof(option), custom, file);</span>
+<span class="lineNum">     700 </span><span class="lineCov">          2 :                 snprintf(cmd, sizeof(cmd), &quot;smartctl -s standby,now %s&quot;, option);</span>
+<span class="lineNum">     701 </span>            :         } else {
+<span class="lineNum">     702 </span><span class="lineCov">         10 :                 snprintf(cmd, sizeof(cmd), &quot;smartctl -s standby,now %s&quot;, file);</span>
+<span class="lineNum">     703 </span>            :         }
+<span class="lineNum">     704 </span>            : 
+<span class="lineNum">     705 </span><span class="lineCov">         12 :         log_tag(&quot;smartctl:%s:%s:run: %s\n&quot;, file, name, cmd);</span>
+<span class="lineNum">     706 </span>            : 
+<span class="lineNum">     707 </span><span class="lineCov">         12 :         f = popen(cmd, &quot;r&quot;);</span>
+<span class="lineNum">     708 </span><span class="lineCov">         12 :         if (!f) {</span>
+<span class="lineNum">     709 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     710 </span>            :                 log_fatal(&quot;Failed to run '%s' (from popen).\n&quot;, cmd);
+<span class="lineNum">     711 </span>            :                 return -1;
+<span class="lineNum">     712 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     713 </span>            :         }
+<span class="lineNum">     714 </span>            : 
+<span class="lineNum">     715 </span><span class="lineCov">         12 :         if (smartctl_flush(f, file, name) != 0) {</span>
+<span class="lineNum">     716 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     717 </span>            :                 pclose(f);
+<span class="lineNum">     718 </span>            :                 return -1;
+<span class="lineNum">     719 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     720 </span>            :         }
+<span class="lineNum">     721 </span>            : 
+<span class="lineNum">     722 </span><span class="lineCov">         12 :         ret = pclose(f);</span>
+<span class="lineNum">     723 </span>            : 
+<span class="lineNum">     724 </span><span class="lineCov">         12 :         log_tag(&quot;smartctl:%s:%s:ret: %x\n&quot;, file, name, ret);</span>
+<span class="lineNum">     725 </span>            : 
+<span class="lineNum">     726 </span><span class="lineCov">         12 :         if (!WIFEXITED(ret)) {</span>
+<span class="lineNum">     727 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     728 </span>            :                 log_fatal(&quot;Failed to run '%s' (not exited).\n&quot;, cmd);
+<span class="lineNum">     729 </span>            :                 return -1;
+<span class="lineNum">     730 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     731 </span>            :         }
+<span class="lineNum">     732 </span><span class="lineCov">         12 :         if (WEXITSTATUS(ret) == 127) {</span>
+<span class="lineNum">     733 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     734 </span>            :                 log_fatal(&quot;Failed to run '%s' (from sh).\n&quot;, cmd);
+<span class="lineNum">     735 </span>            :                 return -1;
+<span class="lineNum">     736 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     737 </span>            :         }
+<span class="lineNum">     738 </span><span class="lineNoCov">          0 :         if (WEXITSTATUS(ret) != 0) {</span>
+<span class="lineNum">     739 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     740 </span>            :                 log_fatal(&quot;Failed to run '%s' with return code %xh.\n&quot;, cmd, WEXITSTATUS(ret));
+<span class="lineNum">     741 </span>            :                 return -1;
+<span class="lineNum">     742 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     743 </span>            :         }
+<span class="lineNum">     744 </span>            : 
+<span class="lineNum">     745 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     746 </span>            : }
+<span class="lineNum">     747 </span>            : #endif
+<span class="lineNum">     748 </span>            : 
+<span class="lineNum">     749 </span>            : /**
+<span class="lineNum">     750 </span>            :  * Spin up a device.
+<span class="lineNum">     751 </span>            :  *
+<span class="lineNum">     752 </span>            :  * There isn't a defined way to spin up a device,
+<a name="753"><span class="lineNum">     753 </span>            :  * so we just do a generic write.</a>
+<span class="lineNum">     754 </span>            :  */
+<span class="lineNum">     755 </span><span class="lineCov">         12 : static int devup(const char* mount)</span>
+<span class="lineNum">     756 </span>            : {
+<span class="lineNum">     757 </span>            :         int ret;
+<span class="lineNum">     758 </span>            :         char path[PATH_MAX];
+<span class="lineNum">     759 </span>            : 
+<span class="lineNum">     760 </span>            :         /* add a temporary name used for writing */
+<span class="lineNum">     761 </span><span class="lineCov">         12 :         pathprint(path, sizeof(path), &quot;%s.snapraid-spinup&quot;, mount);</span>
+<span class="lineNum">     762 </span>            : 
+<span class="lineNum">     763 </span>            :         /* do a generic write, and immediately undo it */
+<span class="lineNum">     764 </span><span class="lineCov">         12 :         ret = mkdir(path, 0);</span>
+<span class="lineNum">     765 </span><span class="lineCov">         12 :         if (ret != 0 &amp;&amp; errno != EEXIST) {</span>
+<span class="lineNum">     766 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     767 </span>            :                 log_fatal(&quot;Failed to create dir '%s'.\n&quot;, path);
+<span class="lineNum">     768 </span>            :                 return -1;
+<span class="lineNum">     769 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     770 </span>            :         }
+<span class="lineNum">     771 </span>            : 
+<span class="lineNum">     772 </span>            :         /* removes the just created dir */
+<span class="lineNum">     773 </span><span class="lineCov">         12 :         rmdir(path);</span>
+<span class="lineNum">     774 </span>            : 
+<span class="lineNum">     775 </span><span class="lineCov">         12 :         return 0;</span>
+<span class="lineNum">     776 </span>            : }
+<span class="lineNum">     777 </span>            : 
+<span class="lineNum">     778 </span>            : /**
+<span class="lineNum">     779 </span>            :  * Thread for spinning up.
+<span class="lineNum">     780 </span>            :  *
+<span class="lineNum">     781 </span>            :  * Note that filling up the devinfo object is done inside this thread,
+<span class="lineNum">     782 </span>            :  * to avoid to block the main thread if the device need to be spin up
+<a name="783"><span class="lineNum">     783 </span>            :  * to handle stat/resolve requests.</a>
+<span class="lineNum">     784 </span>            :  */
+<span class="lineNum">     785 </span><span class="lineCov">         12 : static void* thread_spinup(void* arg)</span>
+<span class="lineNum">     786 </span>            : {
+<span class="lineNum">     787 </span><span class="lineCov">         12 :         devinfo_t* devinfo = arg;</span>
+<span class="lineNum">     788 </span>            :         struct stat st;
+<span class="lineNum">     789 </span>            :         uint64_t start;
+<span class="lineNum">     790 </span>            : 
+<span class="lineNum">     791 </span><span class="lineCov">         12 :         start = tick_ms();</span>
+<span class="lineNum">     792 </span>            : 
+<span class="lineNum">     793 </span>            :         /* first get the device number, this usually doesn't trigger a thread_spinup */
+<span class="lineNum">     794 </span><span class="lineCov">         12 :         if (stat(devinfo-&gt;mount, &amp;st) != 0) {</span>
+<span class="lineNum">     795 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     796 </span>            :                 log_fatal(&quot;Failed to stat device '%s'.\n&quot;, devinfo-&gt;mount);
+<span class="lineNum">     797 </span>            :                 return (void*)-1;
+<span class="lineNum">     798 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     799 </span>            :         }
+<span class="lineNum">     800 </span>            : 
+<span class="lineNum">     801 </span>            :         /* set the device number for printing */
+<span class="lineNum">     802 </span><span class="lineCov">         12 :         devinfo-&gt;device = st.st_dev;</span>
+<span class="lineNum">     803 </span>            : 
+<span class="lineNum">     804 </span>            : #if HAVE_LINUX_DEVICE
+<span class="lineNum">     805 </span>            :         /* get the device file, but only in Linux and only for the message */
+<span class="lineNum">     806 </span><span class="lineCov">         12 :         if (devresolve(devinfo-&gt;device, devinfo-&gt;file, sizeof(devinfo-&gt;file)) != 0) {</span>
+<span class="lineNum">     807 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     808 </span>            :                 return (void*)-1;
+<span class="lineNum">     809 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     810 </span>            :         }
+<span class="lineNum">     811 </span>            : #endif
+<span class="lineNum">     812 </span>            : 
+<span class="lineNum">     813 </span><span class="lineCov">         12 :         if (devup(devinfo-&gt;mount) != 0) {</span>
+<span class="lineNum">     814 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     815 </span>            :                 return (void*)-1;
+<span class="lineNum">     816 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     817 </span>            :         }
+<span class="lineNum">     818 </span>            : 
+<span class="lineNum">     819 </span>            : #if HAVE_LINUX_DEVICE
+<span class="lineNum">     820 </span><span class="lineCov">         12 :         msg_status(&quot;Spunup device '%s' for disk '%s' in %&quot; PRIu64 &quot; ms.\n&quot;, devinfo-&gt;file, devinfo-&gt;name, tick_ms() - start);</span>
+<span class="lineNum">     821 </span>            : #else
+<span class="lineNum">     822 </span>            :         msg_status(&quot;Spunup device '%u:%u' for disk '%s' in %&quot; PRIu64 &quot; ms.\n&quot;, major(devinfo-&gt;device), minor(devinfo-&gt;device), devinfo-&gt;name, tick_ms() - start);
+<span class="lineNum">     823 </span>            : #endif
+<span class="lineNum">     824 </span>            : 
+<span class="lineNum">     825 </span><span class="lineCov">         12 :         return 0;</span>
+<span class="lineNum">     826 </span>            : }
+<span class="lineNum">     827 </span>            : 
+<span class="lineNum">     828 </span>            : /**
+<a name="829"><span class="lineNum">     829 </span>            :  * Thread for spinning down.</a>
+<span class="lineNum">     830 </span>            :  */
+<span class="lineNum">     831 </span><span class="lineCov">         12 : static void* thread_spindown(void* arg)</span>
+<span class="lineNum">     832 </span>            : {
+<span class="lineNum">     833 </span>            : #if HAVE_LINUX_DEVICE
+<span class="lineNum">     834 </span><span class="lineCov">         12 :         devinfo_t* devinfo = arg;</span>
+<span class="lineNum">     835 </span>            :         uint64_t start;
+<span class="lineNum">     836 </span>            : 
+<span class="lineNum">     837 </span><span class="lineCov">         12 :         start = tick_ms();</span>
+<span class="lineNum">     838 </span>            : 
+<span class="lineNum">     839 </span><span class="lineCov">         12 :         if (devdown(devinfo-&gt;device, devinfo-&gt;name, devinfo-&gt;smartctl) != 0) {</span>
+<span class="lineNum">     840 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     841 </span>            :                 return (void*)-1;
+<span class="lineNum">     842 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     843 </span>            :         }
+<span class="lineNum">     844 </span>            : 
+<span class="lineNum">     845 </span><span class="lineNoCov">          0 :         msg_status(&quot;Spundown device '%s' for disk '%s' in %&quot; PRIu64 &quot; ms.\n&quot;, devinfo-&gt;file, devinfo-&gt;name, tick_ms() - start);</span>
+<span class="lineNum">     846 </span>            : 
+<span class="lineNum">     847 </span><span class="lineNoCov">          0 :         return 0;</span>
+<span class="lineNum">     848 </span>            : #else
+<span class="lineNum">     849 </span>            :         (void)arg;
+<span class="lineNum">     850 </span>            :         return (void*)-1;
+<span class="lineNum">     851 </span>            : #endif
+<span class="lineNum">     852 </span>            : }
+<span class="lineNum">     853 </span>            : 
+<span class="lineNum">     854 </span>            : /**
+<a name="855"><span class="lineNum">     855 </span>            :  * Thread for getting smart info.</a>
+<span class="lineNum">     856 </span>            :  */
+<span class="lineNum">     857 </span><span class="lineCov">         25 : static void* thread_smart(void* arg)</span>
+<span class="lineNum">     858 </span>            : {
+<span class="lineNum">     859 </span><span class="lineCov">         25 :         devinfo_t* devinfo = arg;</span>
+<span class="lineNum">     860 </span>            : 
+<span class="lineNum">     861 </span><span class="lineCov">         25 :         if (devsmart(devinfo-&gt;device, devinfo-&gt;name, devinfo-&gt;smartctl, devinfo-&gt;smart, devinfo-&gt;smart_serial) != 0) {</span>
+<span class="lineNum">     862 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     863 </span>            :                 return (void*)-1;
+<span class="lineNum">     864 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     865 </span>            :         }
+<span class="lineNum">     866 </span>            : 
+<span class="lineNum">     867 </span><span class="lineNoCov">          0 :         return 0;</span>
+<a name="868"><span class="lineNum">     868 </span>            : }</a>
+<span class="lineNum">     869 </span>            : 
+<span class="lineNum">     870 </span><span class="lineCov">          3 : static int device_thread(tommy_list* list, void* (*func)(void* arg))</span>
+<span class="lineNum">     871 </span>            : {
+<span class="lineNum">     872 </span><span class="lineCov">          3 :         int fail = 0;</span>
+<span class="lineNum">     873 </span>            :         tommy_node* i;
+<span class="lineNum">     874 </span>            : 
+<span class="lineNum">     875 </span>            : #if HAVE_PTHREAD_CREATE
+<span class="lineNum">     876 </span>            :         /* starts all threads */
+<span class="lineNum">     877 </span><span class="lineCov">         52 :         for (i = tommy_list_head(list); i != 0; i = i-&gt;next) {</span>
+<span class="lineNum">     878 </span><span class="lineCov">         49 :                 devinfo_t* devinfo = i-&gt;data;</span>
+<span class="lineNum">     879 </span>            : 
+<span class="lineNum">     880 </span><span class="lineCov">         49 :                 if (pthread_create(&amp;devinfo-&gt;thread, 0, func, devinfo) != 0) {</span>
+<span class="lineNum">     881 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     882 </span>            :                         log_fatal(&quot;Failed to create thread.\n&quot;);
+<span class="lineNum">     883 </span>            :                         exit(EXIT_FAILURE);
+<span class="lineNum">     884 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     885 </span>            :                 }
+<span class="lineNum">     886 </span>            :         }
+<span class="lineNum">     887 </span>            : 
+<span class="lineNum">     888 </span>            :         /* joins all threads */
+<span class="lineNum">     889 </span><span class="lineCov">         52 :         for (i = tommy_list_head(list); i != 0; i = i-&gt;next) {</span>
+<span class="lineNum">     890 </span><span class="lineCov">         49 :                 devinfo_t* devinfo = i-&gt;data;</span>
+<span class="lineNum">     891 </span>            :                 void* retval;
+<span class="lineNum">     892 </span>            : 
+<span class="lineNum">     893 </span><span class="lineCov">         49 :                 if (pthread_join(devinfo-&gt;thread, &amp;retval) != 0) {</span>
+<span class="lineNum">     894 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     895 </span>            :                         log_fatal(&quot;Failed to join thread.\n&quot;);
+<span class="lineNum">     896 </span>            :                         exit(EXIT_FAILURE);
+<span class="lineNum">     897 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     898 </span>            :                 }
+<span class="lineNum">     899 </span>            : 
+<span class="lineNum">     900 </span><span class="lineCov">         49 :                 if (retval != 0)</span>
+<span class="lineNum">     901 </span><span class="lineCov">         37 :                         ++fail;</span>
+<span class="lineNum">     902 </span>            :         }
+<span class="lineNum">     903 </span>            : #else
+<span class="lineNum">     904 </span>            :         for (i = tommy_list_head(list); i != 0; i = i-&gt;next) {
+<span class="lineNum">     905 </span>            :                 devinfo_t* devinfo = i-&gt;data;
+<span class="lineNum">     906 </span>            : 
+<span class="lineNum">     907 </span>            :                 if (func(devinfo) != 0)
+<span class="lineNum">     908 </span>            :                         ++fail;
+<span class="lineNum">     909 </span>            :         }
+<span class="lineNum">     910 </span>            : #endif
+<span class="lineNum">     911 </span><span class="lineCov">          3 :         if (fail != 0) {</span>
+<span class="lineNum">     912 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     913 </span>            :                 return -1;
+<span class="lineNum">     914 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     915 </span>            :         }
+<span class="lineNum">     916 </span>            : 
+<span class="lineNum">     917 </span><span class="lineCov">          1 :         return 0;</span>
+<a name="918"><span class="lineNum">     918 </span>            : }</a>
+<span class="lineNum">     919 </span>            : 
+<span class="lineNum">     920 </span><span class="lineCov">          4 : int devquery(tommy_list* high, tommy_list* low, int operation)</span>
+<span class="lineNum">     921 </span>            : {
+<span class="lineNum">     922 </span>            :         tommy_node* i;
+<span class="lineNum">     923 </span><span class="lineCov">          4 :         void* (*func)(void* arg) = 0;</span>
+<span class="lineNum">     924 </span>            : 
+<span class="lineNum">     925 </span>            : #if HAVE_LINUX_DEVICE
+<span class="lineNum">     926 </span><span class="lineCov">          4 :         if (operation != DEVICE_UP) {</span>
+<span class="lineNum">     927 </span>            :                 struct stat st;
+<span class="lineNum">     928 </span>            :                 /* sysfs and devfs interfaces are required */
+<span class="lineNum">     929 </span><span class="lineCov">          3 :                 if (stat(&quot;/sys/dev/block&quot;, &amp;st) != 0) {</span>
+<span class="lineNum">     930 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     931 </span>            :                         log_fatal(&quot;Missing interface /sys/dev/block.\n&quot;);
+<span class="lineNum">     932 </span>            :                         return -1;
+<span class="lineNum">     933 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     934 </span>            :                 }
+<span class="lineNum">     935 </span><span class="lineCov">          3 :                 if (stat(&quot;/dev/block&quot;, &amp;st) != 0) {</span>
+<span class="lineNum">     936 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     937 </span>            :                         log_fatal(&quot;Missing interface /dev/block.\n&quot;);
+<span class="lineNum">     938 </span>            :                         return -1;
+<span class="lineNum">     939 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     940 </span>            :                 }
+<span class="lineNum">     941 </span>            : 
+<span class="lineNum">     942 </span>            :                 /* for each device */
+<span class="lineNum">     943 </span><span class="lineCov">         39 :                 for (i = tommy_list_head(high); i != 0; i = i-&gt;next) {</span>
+<span class="lineNum">     944 </span><span class="lineCov">         36 :                         devinfo_t* devinfo = i-&gt;data;</span>
+<span class="lineNum">     945 </span>            : 
+<span class="lineNum">     946 </span>            :                         /* get the device file */
+<span class="lineNum">     947 </span><span class="lineCov">         36 :                         if (devresolve(devinfo-&gt;device, devinfo-&gt;file, sizeof(devinfo-&gt;file)) != 0) {</span>
+<span class="lineNum">     948 </span>            :                                 /* LCOV_EXCL_START */
+<span class="lineNum">     949 </span>            :                                 log_fatal(&quot;Failed to resolve device '%u:%u'.\n&quot;, major(devinfo-&gt;device), minor(devinfo-&gt;device));
+<span class="lineNum">     950 </span>            :                                 return -1;
+<span class="lineNum">     951 </span>            :                                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     952 </span>            :                         }
+<span class="lineNum">     953 </span>            : 
+<span class="lineNum">     954 </span>            :                         /* expand the tree of devices */
+<span class="lineNum">     955 </span><span class="lineCov">         36 :                         if (devtree(devinfo-&gt;name, devinfo-&gt;smartctl, devinfo-&gt;device, devinfo, low) != 0) {</span>
+<span class="lineNum">     956 </span>            :                                 /* LCOV_EXCL_START */
+<span class="lineNum">     957 </span>            :                                 log_fatal(&quot;Failed to expand device '%u:%u'.\n&quot;, major(devinfo-&gt;device), minor(devinfo-&gt;device));
+<span class="lineNum">     958 </span>            :                                 return -1;
+<span class="lineNum">     959 </span>            :                                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     960 </span>            :                         }
+<span class="lineNum">     961 </span>            :                 }
+<span class="lineNum">     962 </span>            :         }
+<span class="lineNum">     963 </span>            : #endif
+<span class="lineNum">     964 </span>            : 
+<span class="lineNum">     965 </span><span class="lineCov">          4 :         if (operation == DEVICE_UP) {</span>
+<span class="lineNum">     966 </span>            :                 /* duplicate the high */
+<span class="lineNum">     967 </span><span class="lineCov">         13 :                 for (i = tommy_list_head(high); i != 0; i = i-&gt;next) {</span>
+<span class="lineNum">     968 </span><span class="lineCov">         12 :                         devinfo_t* devinfo = i-&gt;data;</span>
+<span class="lineNum">     969 </span>            :                         devinfo_t* entry;
+<span class="lineNum">     970 </span>            : 
+<span class="lineNum">     971 </span><span class="lineCov">         12 :                         entry = calloc_nofail(1, sizeof(devinfo_t));</span>
+<span class="lineNum">     972 </span>            : 
+<span class="lineNum">     973 </span><span class="lineCov">         12 :                         entry-&gt;device = devinfo-&gt;device;</span>
+<span class="lineNum">     974 </span><span class="lineCov">         12 :                         pathcpy(entry-&gt;name, sizeof(entry-&gt;name), devinfo-&gt;name);</span>
+<span class="lineNum">     975 </span><span class="lineCov">         12 :                         pathcpy(entry-&gt;mount, sizeof(entry-&gt;mount), devinfo-&gt;mount);</span>
+<span class="lineNum">     976 </span>            : 
+<span class="lineNum">     977 </span>            :                         /* insert in the high */
+<span class="lineNum">     978 </span><span class="lineCov">         12 :                         tommy_list_insert_tail(low, &amp;entry-&gt;node, entry);</span>
+<span class="lineNum">     979 </span>            :                 }
+<span class="lineNum">     980 </span>            :         }
+<span class="lineNum">     981 </span>            : 
+<span class="lineNum">     982 </span>            : #if HAVE_LINUX_DEVICE
+<span class="lineNum">     983 </span>            :         /* add other devices */
+<span class="lineNum">     984 </span><span class="lineCov">          4 :         if (operation == DEVICE_SMART) {</span>
+<span class="lineNum">     985 </span><span class="lineCov">          1 :                 if (devscan(low) != 0) {</span>
+<span class="lineNum">     986 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     987 </span>            :                         log_fatal(&quot;Failed to list other devices.\n&quot;);
+<span class="lineNum">     988 </span>            :                         return -1;
+<span class="lineNum">     989 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     990 </span>            :                 }
+<span class="lineNum">     991 </span>            :         }
+<span class="lineNum">     992 </span>            : #endif
+<span class="lineNum">     993 </span>            : 
+<span class="lineNum">     994 </span><span class="lineCov">          4 :         switch (operation) {</span>
+<span class="lineNum">     995 </span><span class="lineCov">          1 :         case DEVICE_UP : func = thread_spinup; break;</span>
+<span class="lineNum">     996 </span><span class="lineCov">          1 :         case DEVICE_DOWN : func = thread_spindown; break;</span>
+<span class="lineNum">     997 </span><span class="lineCov">          1 :         case DEVICE_SMART : func = thread_smart; break;</span>
+<span class="lineNum">     998 </span>            :         }
+<span class="lineNum">     999 </span>            : 
+<span class="lineNum">    1000 </span><span class="lineCov">          4 :         if (!func)</span>
+<span class="lineNum">    1001 </span><span class="lineCov">          1 :                 return 0;</span>
+<span class="lineNum">    1002 </span>            : 
+<span class="lineNum">    1003 </span><span class="lineCov">          3 :         return device_thread(low, func);</span>
+<a name="1004"><span class="lineNum">    1004 </span>            : }</a>
+<span class="lineNum">    1005 </span>            : 
+<span class="lineNum">    1006 </span><span class="lineCov">        240 : void os_init(int opt)</span>
+<span class="lineNum">    1007 </span>            : {
+<span class="lineNum">    1008 </span>            :         (void)opt;
+<a name="1009"><span class="lineNum">    1009 </span><span class="lineCov">        240 : }</span></a>
+<span class="lineNum">    1010 </span>            : 
+<span class="lineNum">    1011 </span><span class="lineCov">        222 : void os_done(void)</span>
+<span class="lineNum">    1012 </span>            : {
+<span class="lineNum">    1013 </span><span class="lineCov">        222 : }</span>
+<span class="lineNum">    1014 </span>            : 
+<span class="lineNum">    1015 </span>            : #endif
+<span class="lineNum">    1016 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

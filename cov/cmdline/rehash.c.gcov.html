@@ -1,0 +1,174 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - cmdline/rehash.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">cmdline</a> - rehash.c<span style="font-size: 80%;"> (source / <a href="rehash.c.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">19</td>
+            <td class="headerCovTableEntry">20</td>
+            <td class="headerCovTableEntryHi">95.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2015-05-12</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (C) 2013 Andrea Mazzoleni
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * This program is free software: you can redistribute it and/or modify
+<span class="lineNum">       5 </span>            :  * it under the terms of the GNU General Public License as published by
+<span class="lineNum">       6 </span>            :  * the Free Software Foundation, either version 3 of the License, or
+<span class="lineNum">       7 </span>            :  * (at your option) any later version.
+<span class="lineNum">       8 </span>            :  *
+<span class="lineNum">       9 </span>            :  * This program is distributed in the hope that it will be useful,
+<span class="lineNum">      10 </span>            :  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      11 </span>            :  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      12 </span>            :  * GNU General Public License for more details.
+<span class="lineNum">      13 </span>            :  *
+<span class="lineNum">      14 </span>            :  * You should have received a copy of the GNU General Public License
+<span class="lineNum">      15 </span>            :  * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+<span class="lineNum">      16 </span>            :  */
+<span class="lineNum">      17 </span>            : 
+<span class="lineNum">      18 </span>            : #include &quot;portable.h&quot;
+<span class="lineNum">      19 </span>            : 
+<span class="lineNum">      20 </span>            : #include &quot;util.h&quot;
+<span class="lineNum">      21 </span>            : #include &quot;elem.h&quot;
+<span class="lineNum">      22 </span>            : #include &quot;import.h&quot;
+<span class="lineNum">      23 </span>            : #include &quot;state.h&quot;
+<span class="lineNum">      24 </span>            : #include &quot;parity.h&quot;
+<span class="lineNum">      25 </span>            : #include &quot;handle.h&quot;
+<span class="lineNum">      26 </span>            : #include &quot;raid/raid.h&quot;
+<span class="lineNum">      27 </span>            : 
+<span class="lineNum">      28 </span>            : /****************************************************************************/
+<a name="29"><span class="lineNum">      29 </span>            : /* rehash */</a>
+<span class="lineNum">      30 </span>            : 
+<span class="lineNum">      31 </span><span class="lineCov">          1 : void state_rehash(struct snapraid_state* state)</span>
+<span class="lineNum">      32 </span>            : {
+<span class="lineNum">      33 </span>            :         block_off_t blockmax;
+<span class="lineNum">      34 </span>            :         block_off_t i;
+<span class="lineNum">      35 </span>            : 
+<span class="lineNum">      36 </span><span class="lineCov">          1 :         blockmax = parity_allocated_size(state);</span>
+<span class="lineNum">      37 </span>            : 
+<span class="lineNum">      38 </span>            :         /* check if a rehash is already in progress */
+<span class="lineNum">      39 </span><span class="lineCov">          1 :         if (state-&gt;prevhash != HASH_UNDEFINED) {</span>
+<span class="lineNum">      40 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">      41 </span>            :                 log_fatal(&quot;You already have a rehash in progress.\n&quot;);
+<span class="lineNum">      42 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">      43 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">      44 </span>            :         }
+<span class="lineNum">      45 </span>            : 
+<span class="lineNum">      46 </span><span class="lineCov">          1 :         if (state-&gt;hash == state-&gt;besthash) {</span>
+<span class="lineNum">      47 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">      48 </span>            :                 log_fatal(&quot;You are already using the best hash for your platform.\n&quot;);
+<span class="lineNum">      49 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">      50 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">      51 </span>            :         }
+<span class="lineNum">      52 </span>            : 
+<span class="lineNum">      53 </span>            :         /* copy the present hash as previous one */
+<span class="lineNum">      54 </span><span class="lineCov">          1 :         state-&gt;prevhash = state-&gt;hash;</span>
+<span class="lineNum">      55 </span><span class="lineCov">          1 :         memcpy(state-&gt;prevhashseed, state-&gt;hashseed, HASH_SIZE);</span>
+<span class="lineNum">      56 </span>            : 
+<span class="lineNum">      57 </span>            :         /* set the new hash and seed */
+<span class="lineNum">      58 </span><span class="lineCov">          1 :         state-&gt;hash = state-&gt;besthash;</span>
+<span class="lineNum">      59 </span><span class="lineCov">          1 :         if (randomize(state-&gt;hashseed, HASH_SIZE) != 0) {</span>
+<span class="lineNum">      60 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">      61 </span>            :                 log_fatal(&quot;Failed to get random values.\n&quot;);
+<span class="lineNum">      62 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">      63 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">      64 </span>            :         }
+<span class="lineNum">      65 </span>            : 
+<span class="lineNum">      66 </span>            :         /* mark all the block for rehashing */
+<span class="lineNum">      67 </span><span class="lineCov">       9200 :         for (i = 0; i &lt; blockmax; ++i) {</span>
+<span class="lineNum">      68 </span>            :                 snapraid_info info;
+<span class="lineNum">      69 </span>            : 
+<span class="lineNum">      70 </span>            :                 /* if it's unused */
+<span class="lineNum">      71 </span><span class="lineCov">       9199 :                 info = info_get(&amp;state-&gt;infoarr, i);</span>
+<span class="lineNum">      72 </span><span class="lineCov">       9199 :                 if (info == 0) {</span>
+<span class="lineNum">      73 </span>            :                         /* skip it */
+<span class="lineNum">      74 </span><span class="lineNoCov">          0 :                         continue;</span>
+<span class="lineNum">      75 </span>            :                 }
+<span class="lineNum">      76 </span>            : 
+<span class="lineNum">      77 </span><span class="lineCov">       9199 :                 if (info_get_rehash(info)) {</span>
+<span class="lineNum">      78 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">      79 </span>            :                         log_fatal(&quot;Internal inconsistency for a rehash already in progress\n&quot;);
+<span class="lineNum">      80 </span>            :                         exit(EXIT_FAILURE);
+<span class="lineNum">      81 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">      82 </span>            :                 }
+<span class="lineNum">      83 </span>            : 
+<span class="lineNum">      84 </span>            :                 /* enable the rehash */
+<span class="lineNum">      85 </span><span class="lineCov">       9199 :                 info = info_set_rehash(info);</span>
+<span class="lineNum">      86 </span>            : 
+<span class="lineNum">      87 </span>            :                 /* save it */
+<span class="lineNum">      88 </span><span class="lineCov">       9199 :                 info_set(&amp;state-&gt;infoarr, i, info);</span>
+<span class="lineNum">      89 </span>            :         }
+<span class="lineNum">      90 </span>            : 
+<span class="lineNum">      91 </span>            :         /* save the new content file */
+<span class="lineNum">      92 </span><span class="lineCov">          1 :         state-&gt;need_write = 1;</span>
+<span class="lineNum">      93 </span>            : 
+<span class="lineNum">      94 </span><span class="lineCov">          1 :         msg_status(&quot;A rehash is now scheduled. It will take place progressively in the next\n&quot;);</span>
+<span class="lineNum">      95 </span><span class="lineCov">          1 :         msg_status(&quot;'sync' and 'scrub' commands. You can check the rehash progress using the\n&quot;);</span>
+<span class="lineNum">      96 </span><span class="lineCov">          1 :         msg_status(&quot;'status' command.\n&quot;);</span>
+<span class="lineNum">      97 </span><span class="lineCov">          1 : }</span>
+<span class="lineNum">      98 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

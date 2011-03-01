@@ -1,0 +1,261 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - raid/check.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">raid</a> - check.c<span style="font-size: 80%;"> (source / <a href="check.c.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">60</td>
+            <td class="headerCovTableEntry">60</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2015-05-12</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (C) 2015 Andrea Mazzoleni
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * This program is free software: you can redistribute it and/or modify
+<span class="lineNum">       5 </span>            :  * it under the terms of the GNU General Public License as published by
+<span class="lineNum">       6 </span>            :  * the Free Software Foundation, either version 2 of the License, or
+<span class="lineNum">       7 </span>            :  * (at your option) any later version.
+<span class="lineNum">       8 </span>            :  *
+<span class="lineNum">       9 </span>            :  * This program is distributed in the hope that it will be useful,
+<span class="lineNum">      10 </span>            :  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      11 </span>            :  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      12 </span>            :  * GNU General Public License for more details.
+<span class="lineNum">      13 </span>            :  */
+<span class="lineNum">      14 </span>            : 
+<span class="lineNum">      15 </span>            : #include &quot;internal.h&quot;
+<span class="lineNum">      16 </span>            : #include &quot;combo.h&quot;
+<span class="lineNum">      17 </span>            : #include &quot;gf.h&quot;
+<span class="lineNum">      18 </span>            : 
+<span class="lineNum">      19 </span>            : /**
+<span class="lineNum">      20 </span>            :  * Validate the provided failed blocks.
+<span class="lineNum">      21 </span>            :  *
+<span class="lineNum">      22 </span>            :  * This function checks if the specified failed blocks satisfy the redundancy
+<span class="lineNum">      23 </span>            :  * information using the data from the known valid parity blocks.
+<span class="lineNum">      24 </span>            :  *
+<span class="lineNum">      25 </span>            :  * It's similar at raid_check(), just with a different format for arguments.
+<span class="lineNum">      26 </span>            :  *
+<span class="lineNum">      27 </span>            :  * The number of failed blocks @nr must be strictly less than the number of
+<span class="lineNum">      28 </span>            :  * parities @nv, because you need one more parity to validate the recovering.
+<span class="lineNum">      29 </span>            :  *
+<span class="lineNum">      30 </span>            :  * No data or parity blocks are modified.
+<span class="lineNum">      31 </span>            :  *
+<span class="lineNum">      32 </span>            :  * @nr Number of failed data blocks.
+<span class="lineNum">      33 </span>            :  * @id[] Vector of @nr indexes of the failed data blocks.
+<span class="lineNum">      34 </span>            :  *   The indexes start from 0. They must be in order.
+<span class="lineNum">      35 </span>            :  * @nv Number of valid parity blocks.
+<span class="lineNum">      36 </span>            :  * @ip[] Vector of @nv indexes of the valid parity blocks.
+<span class="lineNum">      37 </span>            :  *   The indexes start from 0. They must be in order.
+<span class="lineNum">      38 </span>            :  * @nd Number of data blocks.
+<span class="lineNum">      39 </span>            :  * @size Size of the blocks pointed by @v. It must be a multipler of 64.
+<span class="lineNum">      40 </span>            :  * @v Vector of pointers to the blocks of data and parity.
+<span class="lineNum">      41 </span>            :  *   It has (@nd + @ip[@nv - 1] + 1) elements. The starting elements are the
+<span class="lineNum">      42 </span>            :  *   blocks for data, following with the parity blocks.
+<span class="lineNum">      43 </span>            :  *   Each block has @size bytes. 
+<a name="44"><span class="lineNum">      44 </span>            :  * @return 0 if the check is satisfied. -1 otherwise.</a>
+<span class="lineNum">      45 </span>            :  */
+<span class="lineNum">      46 </span><span class="lineCov">      11255 : static int raid_validate(int nr, int *id, int nv, int *ip, int nd, size_t size, void **vv)</span>
+<span class="lineNum">      47 </span>            : {
+<span class="lineNum">      48 </span><span class="lineCov">      11255 :         uint8_t **v = (uint8_t **)vv;</span>
+<span class="lineNum">      49 </span>            :         const uint8_t *T[RAID_PARITY_MAX][RAID_PARITY_MAX];
+<span class="lineNum">      50 </span>            :         uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
+<span class="lineNum">      51 </span>            :         uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
+<span class="lineNum">      52 </span>            :         size_t i;
+<span class="lineNum">      53 </span>            :         int j, k, l;
+<span class="lineNum">      54 </span>            : 
+<span class="lineNum">      55 </span><span class="lineCov">      11255 :         BUG_ON(nr &gt;= nv);</span>
+<span class="lineNum">      56 </span>            : 
+<span class="lineNum">      57 </span>            :         /* setup the coefficients matrix */
+<span class="lineNum">      58 </span><span class="lineCov">      41316 :         for (j = 0; j &lt; nr; ++j)</span>
+<span class="lineNum">      59 </span><span class="lineCov">     119934 :                 for (k = 0; k &lt; nr; ++k)</span>
+<span class="lineNum">      60 </span><span class="lineCov">     179746 :                         G[j * nr + k] = A(ip[j], id[k]);</span>
+<span class="lineNum">      61 </span>            : 
+<span class="lineNum">      62 </span>            :         /* invert it to solve the system of linear equations */
+<span class="lineNum">      63 </span><span class="lineCov">      11255 :         raid_invert(G, V, nr);</span>
+<span class="lineNum">      64 </span>            : 
+<span class="lineNum">      65 </span>            :         /* get multiplication tables */
+<span class="lineNum">      66 </span><span class="lineCov">      41316 :         for (j = 0; j &lt; nr; ++j)</span>
+<span class="lineNum">      67 </span><span class="lineCov">     119934 :                 for (k = 0; k &lt; nr; ++k)</span>
+<span class="lineNum">      68 </span><span class="lineCov">     179746 :                         T[j][k] = table(V[j * nr + k]);</span>
+<span class="lineNum">      69 </span>            : 
+<span class="lineNum">      70 </span>            :         /* check all positions */
+<span class="lineNum">      71 </span><span class="lineCov">      35831 :         for (i = 0; i &lt; size; ++i) {</span>
+<span class="lineNum">      72 </span>            :                 uint8_t p[RAID_PARITY_MAX];
+<span class="lineNum">      73 </span>            : 
+<span class="lineNum">      74 </span>            :                 /* get parity */
+<span class="lineNum">      75 </span><span class="lineCov">     151819 :                 for (j = 0; j &lt; nv; ++j)</span>
+<span class="lineNum">      76 </span><span class="lineCov">     115994 :                         p[j] = v[nd + ip[j]][i];</span>
+<span class="lineNum">      77 </span>            : 
+<span class="lineNum">      78 </span>            :                 /* compute delta parity, skipping broken disks */
+<span class="lineNum">      79 </span><span class="lineCov">     609025 :                 for (j = 0, k = 0; j &lt; nd; ++j) {</span>
+<span class="lineNum">      80 </span>            :                         uint8_t b;
+<span class="lineNum">      81 </span>            : 
+<span class="lineNum">      82 </span>            :                         /* skip broken disks */
+<span class="lineNum">      83 </span><span class="lineCov">     573200 :                         if (k &lt; nr &amp;&amp; id[k] == j) {</span>
+<span class="lineNum">      84 </span><span class="lineCov">      66916 :                                 ++k;</span>
+<span class="lineNum">      85 </span><span class="lineCov">      66916 :                                 continue;</span>
+<span class="lineNum">      86 </span>            :                         }
+<span class="lineNum">      87 </span>            : 
+<span class="lineNum">      88 </span><span class="lineCov">     506284 :                         b = v[j][i];</span>
+<span class="lineNum">      89 </span><span class="lineCov">    2094442 :                         for (l = 0; l &lt; nv; ++l)</span>
+<span class="lineNum">      90 </span><span class="lineCov">    1588158 :                                 p[l] ^= gfmul[b][gfgen[ip[l]][j]];</span>
+<span class="lineNum">      91 </span>            :                 }
+<span class="lineNum">      92 </span>            : 
+<span class="lineNum">      93 </span>            :                 /* reconstruct data */
+<span class="lineNum">      94 </span><span class="lineCov">     102741 :                 for (j = 0; j &lt; nr; ++j) {</span>
+<span class="lineNum">      95 </span><span class="lineCov">      66916 :                         uint8_t b = 0;</span>
+<span class="lineNum">      96 </span><span class="lineCov">      66916 :                         int idj = id[j];</span>
+<span class="lineNum">      97 </span>            : 
+<span class="lineNum">      98 </span>            :                         /* recompute the data */
+<span class="lineNum">      99 </span><span class="lineCov">     234594 :                         for (k = 0; k &lt; nr; ++k)</span>
+<span class="lineNum">     100 </span><span class="lineCov">     167678 :                                 b ^= T[j][k][p[k]];</span>
+<span class="lineNum">     101 </span>            : 
+<span class="lineNum">     102 </span>            :                         /* add the parity contribution of the reconstructed data */
+<span class="lineNum">     103 </span><span class="lineCov">     166984 :                         for (l = nr; l &lt; nv; ++l)</span>
+<span class="lineNum">     104 </span><span class="lineCov">     100068 :                                 p[l] ^= gfmul[b][gfgen[ip[l]][idj]];</span>
+<span class="lineNum">     105 </span>            :                 }
+<span class="lineNum">     106 </span>            : 
+<span class="lineNum">     107 </span>            :                 /* check that the final parity is 0 */
+<span class="lineNum">     108 </span><span class="lineCov">      60482 :                 for (l = nr; l &lt; nv; ++l)</span>
+<span class="lineNum">     109 </span><span class="lineCov">      35906 :                         if (p[l] != 0)</span>
+<span class="lineNum">     110 </span><span class="lineCov">      11249 :                                 return -1;</span>
+<span class="lineNum">     111 </span>            :         }
+<span class="lineNum">     112 </span>            : 
+<span class="lineNum">     113 </span><span class="lineCov">          6 :         return 0;</span>
+<a name="114"><span class="lineNum">     114 </span>            : }</a>
+<span class="lineNum">     115 </span>            : 
+<span class="lineNum">     116 </span><span class="lineCov">      11255 : int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v)</span>
+<span class="lineNum">     117 </span>            : {
+<span class="lineNum">     118 </span>            :         /* valid parity index */
+<span class="lineNum">     119 </span>            :         int ip[RAID_PARITY_MAX];
+<span class="lineNum">     120 </span>            :         int vp;
+<span class="lineNum">     121 </span>            :         int rd;
+<span class="lineNum">     122 </span>            :         int i, j;
+<span class="lineNum">     123 </span>            : 
+<span class="lineNum">     124 </span>            :         /* enforce limit on size */
+<span class="lineNum">     125 </span><span class="lineCov">      11255 :         BUG_ON(size % 64 != 0);</span>
+<span class="lineNum">     126 </span>            : 
+<span class="lineNum">     127 </span>            :         /* enforce limit on number of failures */
+<span class="lineNum">     128 </span><span class="lineCov">      11255 :         BUG_ON(nr &gt;= np); /* &gt;= because we check with extra parity */</span>
+<span class="lineNum">     129 </span><span class="lineCov">      11255 :         BUG_ON(np &gt; RAID_PARITY_MAX);</span>
+<span class="lineNum">     130 </span>            : 
+<span class="lineNum">     131 </span>            :         /* enforce order in index vector */
+<span class="lineNum">     132 </span><span class="lineCov">      11255 :         BUG_ON(nr &gt;= 2 &amp;&amp; ir[0] &gt;= ir[1]);</span>
+<span class="lineNum">     133 </span><span class="lineCov">      11255 :         BUG_ON(nr &gt;= 3 &amp;&amp; ir[1] &gt;= ir[2]);</span>
+<span class="lineNum">     134 </span><span class="lineCov">      11255 :         BUG_ON(nr &gt;= 4 &amp;&amp; ir[2] &gt;= ir[3]);</span>
+<span class="lineNum">     135 </span><span class="lineCov">      11255 :         BUG_ON(nr &gt;= 5 &amp;&amp; ir[3] &gt;= ir[4]);</span>
+<span class="lineNum">     136 </span><span class="lineCov">      11255 :         BUG_ON(nr &gt;= 6 &amp;&amp; ir[4] &gt;= ir[5]);</span>
+<span class="lineNum">     137 </span>            : 
+<span class="lineNum">     138 </span>            :         /* enforce limit on index vector */
+<span class="lineNum">     139 </span><span class="lineCov">      11255 :         BUG_ON(nr &gt; 0 &amp;&amp; ir[nr-1] &gt;= nd + np);</span>
+<span class="lineNum">     140 </span>            : 
+<span class="lineNum">     141 </span>            :         /* count failed data disk */
+<span class="lineNum">     142 </span><span class="lineCov">      11255 :         rd = 0;</span>
+<span class="lineNum">     143 </span><span class="lineCov">      52571 :         while (rd &lt; nr &amp;&amp; ir[rd] &lt; nd)</span>
+<span class="lineNum">     144 </span><span class="lineCov">      30061 :                 ++rd;</span>
+<span class="lineNum">     145 </span>            : 
+<span class="lineNum">     146 </span>            :         /* put valid parities into ip[] */
+<span class="lineNum">     147 </span><span class="lineCov">      11255 :         vp = 0;</span>
+<span class="lineNum">     148 </span><span class="lineCov">      76488 :         for (i = rd, j = 0; j &lt; np; ++j) {</span>
+<span class="lineNum">     149 </span>            :                 /* if parity is failed */
+<span class="lineNum">     150 </span><span class="lineCov">      65233 :                 if (i &lt; nr &amp;&amp; ir[i] == nd + j) {</span>
+<span class="lineNum">     151 </span>            :                         /* skip broken parity */
+<span class="lineNum">     152 </span><span class="lineCov">      10664 :                         ++i;</span>
+<span class="lineNum">     153 </span>            :                 } else {
+<span class="lineNum">     154 </span>            :                         /* store valid parity */
+<span class="lineNum">     155 </span><span class="lineCov">      54569 :                         ip[vp] = j;</span>
+<span class="lineNum">     156 </span><span class="lineCov">      54569 :                         ++vp;</span>
+<span class="lineNum">     157 </span>            :                 }
+<span class="lineNum">     158 </span>            :         }
+<span class="lineNum">     159 </span>            : 
+<span class="lineNum">     160 </span><span class="lineCov">      11255 :         return raid_validate(rd, ir, vp, ip, nd, size, v);</span>
+<a name="161"><span class="lineNum">     161 </span>            : }</a>
+<span class="lineNum">     162 </span>            : 
+<span class="lineNum">     163 </span><span class="lineCov">          7 : int raid_scan(int *ir, int nd, int np, size_t size, void **v)</span>
+<span class="lineNum">     164 </span>            : {
+<span class="lineNum">     165 </span>            :         int r;
+<span class="lineNum">     166 </span>            : 
+<span class="lineNum">     167 </span>            :         /* check the special case of no failure */
+<span class="lineNum">     168 </span><span class="lineCov">          7 :         if (np != 0 &amp;&amp; raid_check(0, 0, nd, np, size, v) == 0)</span>
+<span class="lineNum">     169 </span><span class="lineCov">          1 :                 return 0;</span>
+<span class="lineNum">     170 </span>            : 
+<span class="lineNum">     171 </span>            :         /* for each number of possible failures */
+<span class="lineNum">     172 </span><span class="lineCov">         16 :         for (r = 1; r &lt; np; ++r) {</span>
+<span class="lineNum">     173 </span>            :                 /* try all combinations of r failures on n disks */
+<span class="lineNum">     174 </span><span class="lineCov">         15 :                 combination_first(r, nd + np, ir);</span>
+<span class="lineNum">     175 </span>            :                 do {
+<span class="lineNum">     176 </span>            :                         /* verify if the combination is a valid one */
+<span class="lineNum">     177 </span><span class="lineCov">      11249 :                         if (raid_check(r, ir, nd, np, size, v) == 0)</span>
+<span class="lineNum">     178 </span><span class="lineCov">          5 :                                 return r;</span>
+<span class="lineNum">     179 </span><span class="lineCov">      22488 :                 } while (combination_next(r, nd + np, ir));</span>
+<span class="lineNum">     180 </span>            :         }
+<span class="lineNum">     181 </span>            : 
+<span class="lineNum">     182 </span>            :         /* no solution found */
+<span class="lineNum">     183 </span><span class="lineCov">          1 :         return -1;</span>
+<span class="lineNum">     184 </span>            : }
+<span class="lineNum">     185 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

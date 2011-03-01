@@ -1,0 +1,662 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - raid/raid.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">raid</a> - raid.c<span style="font-size: 80%;"> (source / <a href="raid.c.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">123</td>
+            <td class="headerCovTableEntry">123</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2015-05-12</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">9</td>
+            <td class="headerCovTableEntry">9</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (C) 2013 Andrea Mazzoleni
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * This program is free software: you can redistribute it and/or modify
+<span class="lineNum">       5 </span>            :  * it under the terms of the GNU General Public License as published by
+<span class="lineNum">       6 </span>            :  * the Free Software Foundation, either version 2 of the License, or
+<span class="lineNum">       7 </span>            :  * (at your option) any later version.
+<span class="lineNum">       8 </span>            :  *
+<span class="lineNum">       9 </span>            :  * This program is distributed in the hope that it will be useful,
+<span class="lineNum">      10 </span>            :  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      11 </span>            :  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      12 </span>            :  * GNU General Public License for more details.
+<span class="lineNum">      13 </span>            :  */
+<span class="lineNum">      14 </span>            : 
+<span class="lineNum">      15 </span>            : #include &quot;internal.h&quot;
+<span class="lineNum">      16 </span>            : #include &quot;gf.h&quot;
+<span class="lineNum">      17 </span>            : 
+<span class="lineNum">      18 </span>            : /*
+<span class="lineNum">      19 </span>            :  * This is a RAID implementation working in the Galois Field GF(2^8) with
+<span class="lineNum">      20 </span>            :  * the primitive polynomial x^8 + x^4 + x^3 + x^2 + 1 (285 decimal), and
+<span class="lineNum">      21 </span>            :  * supporting up to six parity levels.
+<span class="lineNum">      22 </span>            :  *
+<span class="lineNum">      23 </span>            :  * For RAID5 and RAID6 it works as as described in the H. Peter Anvin's
+<span class="lineNum">      24 </span>            :  * paper &quot;The mathematics of RAID-6&quot; [1]. Please refer to this paper for a
+<span class="lineNum">      25 </span>            :  * complete explanation.
+<span class="lineNum">      26 </span>            :  *
+<span class="lineNum">      27 </span>            :  * To support triple parity, it was first evaluated and then dropped, an
+<span class="lineNum">      28 </span>            :  * extension of the same approach, with additional parity coefficients set
+<span class="lineNum">      29 </span>            :  * as powers of 2^-1, with equations:
+<span class="lineNum">      30 </span>            :  *
+<span class="lineNum">      31 </span>            :  * P = sum(Di)
+<span class="lineNum">      32 </span>            :  * Q = sum(2^i * Di)
+<span class="lineNum">      33 </span>            :  * R = sum(2^-i * Di) with 0&lt;=i&lt;N
+<span class="lineNum">      34 </span>            :  *
+<span class="lineNum">      35 </span>            :  * This approach works well for triple parity and it's very efficient,
+<span class="lineNum">      36 </span>            :  * because we can implement very fast parallel multiplications and
+<span class="lineNum">      37 </span>            :  * divisions by 2 in GF(2^8).
+<span class="lineNum">      38 </span>            :  *
+<span class="lineNum">      39 </span>            :  * It's also similar at the approach used by ZFS RAIDZ3, with the
+<span class="lineNum">      40 </span>            :  * difference that ZFS uses powers of 4 instead of 2^-1.
+<span class="lineNum">      41 </span>            :  *
+<span class="lineNum">      42 </span>            :  * Unfortunately it doesn't work beyond triple parity, because whatever
+<span class="lineNum">      43 </span>            :  * value we choose to generate the power coefficients to compute other
+<span class="lineNum">      44 </span>            :  * parities, the resulting equations are not solvable for some
+<span class="lineNum">      45 </span>            :  * combinations of missing disks.
+<span class="lineNum">      46 </span>            :  *
+<span class="lineNum">      47 </span>            :  * This is expected, because the Vandermonde matrix used to compute the
+<span class="lineNum">      48 </span>            :  * parity has no guarantee to have all submatrices not singular
+<span class="lineNum">      49 </span>            :  * [2, Chap 11, Problem 7] and this is a requirement to have
+<span class="lineNum">      50 </span>            :  * a MDS (Maximum Distance Separable) code [2, Chap 11, Theorem 8].
+<span class="lineNum">      51 </span>            :  *
+<span class="lineNum">      52 </span>            :  * To overcome this limitation, we use a Cauchy matrix [3][4] to compute
+<span class="lineNum">      53 </span>            :  * the parity. A Cauchy matrix has the property to have all the square
+<span class="lineNum">      54 </span>            :  * submatrices not singular, resulting in always solvable equations,
+<span class="lineNum">      55 </span>            :  * for any combination of missing disks.
+<span class="lineNum">      56 </span>            :  *
+<span class="lineNum">      57 </span>            :  * The problem of this approach is that it requires the use of
+<span class="lineNum">      58 </span>            :  * generic multiplications, and not only by 2 or 2^-1, potentially
+<span class="lineNum">      59 </span>            :  * affecting badly the performance.
+<span class="lineNum">      60 </span>            :  *
+<span class="lineNum">      61 </span>            :  * Hopefully there is a method to implement parallel multiplications
+<span class="lineNum">      62 </span>            :  * using SSSE3 or AVX2 instructions [1][5]. Method competitive with the
+<span class="lineNum">      63 </span>            :  * computation of triple parity using power coefficients.
+<span class="lineNum">      64 </span>            :  *
+<span class="lineNum">      65 </span>            :  * Another important property of the Cauchy matrix is that we can setup
+<span class="lineNum">      66 </span>            :  * the first two rows with coeffients equal at the RAID5 and RAID6 approach
+<span class="lineNum">      67 </span>            :  * decribed, resulting in a compatible extension, and requiring SSSE3
+<span class="lineNum">      68 </span>            :  * or AVX2 instructions only if triple parity or beyond is used.
+<span class="lineNum">      69 </span>            :  *
+<span class="lineNum">      70 </span>            :  * The matrix is also adjusted, multipling each row by a constant factor
+<span class="lineNum">      71 </span>            :  * to make the first column of all 1, to optimize the computation for
+<span class="lineNum">      72 </span>            :  * the first disk.
+<span class="lineNum">      73 </span>            :  *
+<span class="lineNum">      74 </span>            :  * This results in the matrix A[row,col] defined as:
+<span class="lineNum">      75 </span>            :  *
+<span class="lineNum">      76 </span>            :  * 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01...
+<span class="lineNum">      77 </span>            :  * 01 02 04 08 10 20 40 80 1d 3a 74 e8 cd 87 13 26 4c 98 2d 5a b4 75...
+<span class="lineNum">      78 </span>            :  * 01 f5 d2 c4 9a 71 f1 7f fc 87 c1 c6 19 2f 40 55 3d ba 53 04 9c 61...
+<span class="lineNum">      79 </span>            :  * 01 bb a6 d7 c7 07 ce 82 4a 2f a5 9b b6 60 f1 ad e7 f4 06 d2 df 2e...
+<span class="lineNum">      80 </span>            :  * 01 97 7f 9c 7c 18 bd a2 58 1a da 74 70 a3 e5 47 29 07 f5 80 23 e9...
+<span class="lineNum">      81 </span>            :  * 01 2b 3f cf 73 2c d6 ed cb 74 15 78 8a c1 17 c9 89 68 21 ab 76 3b...
+<span class="lineNum">      82 </span>            :  *
+<span class="lineNum">      83 </span>            :  * This matrix supports 6 level of parity, one for each row, for up to 251
+<span class="lineNum">      84 </span>            :  * data disks, one for each column, with all the 377,342,351,231 square
+<span class="lineNum">      85 </span>            :  * submatrices not singular, verified also with brute-force.
+<span class="lineNum">      86 </span>            :  *
+<span class="lineNum">      87 </span>            :  * This matrix can be extended to support any number of parities, just
+<span class="lineNum">      88 </span>            :  * adding additional rows, and removing one column for each new row.
+<span class="lineNum">      89 </span>            :  * (see mktables.c for more details in how the matrix is generated)
+<span class="lineNum">      90 </span>            :  *
+<span class="lineNum">      91 </span>            :  * In details, parity is computed as:
+<span class="lineNum">      92 </span>            :  *
+<span class="lineNum">      93 </span>            :  * P = sum(Di)
+<span class="lineNum">      94 </span>            :  * Q = sum(2^i *  Di)
+<span class="lineNum">      95 </span>            :  * R = sum(A[2,i] * Di)
+<span class="lineNum">      96 </span>            :  * S = sum(A[3,i] * Di)
+<span class="lineNum">      97 </span>            :  * T = sum(A[4,i] * Di)
+<span class="lineNum">      98 </span>            :  * U = sum(A[5,i] * Di) with 0&lt;=i&lt;N
+<span class="lineNum">      99 </span>            :  *
+<span class="lineNum">     100 </span>            :  * To recover from a failure of six disks at indexes x,y,z,h,v,w,
+<span class="lineNum">     101 </span>            :  * with 0&lt;=x&lt;y&lt;z&lt;h&lt;v&lt;w&lt;N, we compute the parity of the available N-6
+<span class="lineNum">     102 </span>            :  * disks as:
+<span class="lineNum">     103 </span>            :  *
+<span class="lineNum">     104 </span>            :  * Pa = sum(Di)
+<span class="lineNum">     105 </span>            :  * Qa = sum(2^i * Di)
+<span class="lineNum">     106 </span>            :  * Ra = sum(A[2,i] * Di)
+<span class="lineNum">     107 </span>            :  * Sa = sum(A[3,i] * Di)
+<span class="lineNum">     108 </span>            :  * Ta = sum(A[4,i] * Di)
+<span class="lineNum">     109 </span>            :  * Ua = sum(A[5,i] * Di) with 0&lt;=i&lt;N,i!=x,i!=y,i!=z,i!=h,i!=v,i!=w.
+<span class="lineNum">     110 </span>            :  *
+<span class="lineNum">     111 </span>            :  * And if we define:
+<span class="lineNum">     112 </span>            :  *
+<span class="lineNum">     113 </span>            :  * Pd = Pa + P
+<span class="lineNum">     114 </span>            :  * Qd = Qa + Q
+<span class="lineNum">     115 </span>            :  * Rd = Ra + R
+<span class="lineNum">     116 </span>            :  * Sd = Sa + S
+<span class="lineNum">     117 </span>            :  * Td = Ta + T
+<span class="lineNum">     118 </span>            :  * Ud = Ua + U
+<span class="lineNum">     119 </span>            :  *
+<span class="lineNum">     120 </span>            :  * we can sum these two sets of equations, obtaining:
+<span class="lineNum">     121 </span>            :  *
+<span class="lineNum">     122 </span>            :  * Pd =          Dx +          Dy +          Dz +          Dh +          Dv +          Dw
+<span class="lineNum">     123 </span>            :  * Qd =    2^x * Dx +    2^y * Dy +    2^z * Dz +    2^h * Dh +    2^v * Dv +    2^w * Dw
+<span class="lineNum">     124 </span>            :  * Rd = A[2,x] * Dx + A[2,y] * Dy + A[2,z] * Dz + A[2,h] * Dh + A[2,v] * Dv + A[2,w] * Dw
+<span class="lineNum">     125 </span>            :  * Sd = A[3,x] * Dx + A[3,y] * Dy + A[3,z] * Dz + A[3,h] * Dh + A[3,v] * Dv + A[3,w] * Dw
+<span class="lineNum">     126 </span>            :  * Td = A[4,x] * Dx + A[4,y] * Dy + A[4,z] * Dz + A[4,h] * Dh + A[4,v] * Dv + A[4,w] * Dw
+<span class="lineNum">     127 </span>            :  * Ud = A[5,x] * Dx + A[5,y] * Dy + A[5,z] * Dz + A[5,h] * Dh + A[5,v] * Dv + A[5,w] * Dw
+<span class="lineNum">     128 </span>            :  *
+<span class="lineNum">     129 </span>            :  * A linear system always solvable because the coefficients matrix is
+<span class="lineNum">     130 </span>            :  * always not singular due the properties of the matrix A[].
+<span class="lineNum">     131 </span>            :  *
+<span class="lineNum">     132 </span>            :  * Resulting speed in x64, with 8 data disks, using a stripe of 256 KiB,
+<span class="lineNum">     133 </span>            :  * for a Core i5-4670K Haswell Quad-Core 3.4GHz is:
+<span class="lineNum">     134 </span>            :  *
+<span class="lineNum">     135 </span>            :  *             int8   int32   int64    sse2   ssse3    avx2
+<span class="lineNum">     136 </span>            :  *   gen1             13339   25438   45438           50588
+<span class="lineNum">     137 </span>            :  *   gen2              4115    6514   21840           32201
+<span class="lineNum">     138 </span>            :  *   gen3       814                           10154   18613
+<span class="lineNum">     139 </span>            :  *   gen4       620                            7569   14229
+<span class="lineNum">     140 </span>            :  *   gen5       496                            5149   10051
+<span class="lineNum">     141 </span>            :  *   gen6       413                            4239    8190
+<span class="lineNum">     142 </span>            :  *
+<span class="lineNum">     143 </span>            :  * Values are in MiB/s of data processed by a single thread, not counting
+<span class="lineNum">     144 </span>            :  * generated parity.
+<span class="lineNum">     145 </span>            :  *
+<span class="lineNum">     146 </span>            :  * You can replicate these results in your machine using the
+<span class="lineNum">     147 </span>            :  * &quot;raid/test/speedtest.c&quot; program.
+<span class="lineNum">     148 </span>            :  *
+<span class="lineNum">     149 </span>            :  * For comparison, the triple parity computation using the power
+<span class="lineNum">     150 </span>            :  * coeffients &quot;1,2,2^-1&quot; is only a little faster than the one based on
+<span class="lineNum">     151 </span>            :  * the Cauchy matrix if SSSE3 or AVX2 is present.
+<span class="lineNum">     152 </span>            :  *
+<span class="lineNum">     153 </span>            :  *             int8   int32   int64    sse2   ssse3    avx2
+<span class="lineNum">     154 </span>            :  *   genz              2337    2874   10920           18944
+<span class="lineNum">     155 </span>            :  *
+<span class="lineNum">     156 </span>            :  * In conclusion, the use of power coefficients, and specifically powers
+<span class="lineNum">     157 </span>            :  * of 1,2,2^-1, is the best option to implement triple parity in CPUs
+<span class="lineNum">     158 </span>            :  * without SSSE3 and AVX2.
+<span class="lineNum">     159 </span>            :  * But if a modern CPU with SSSE3 or AVX2 is available, the Cauchy
+<span class="lineNum">     160 </span>            :  * matrix is the best option because it provides a fast and general
+<span class="lineNum">     161 </span>            :  * approach working for any number of parities.
+<span class="lineNum">     162 </span>            :  *
+<span class="lineNum">     163 </span>            :  * References:
+<span class="lineNum">     164 </span>            :  * [1] Anvin, &quot;The mathematics of RAID-6&quot;, 2004
+<span class="lineNum">     165 </span>            :  * [2] MacWilliams, Sloane, &quot;The Theory of Error-Correcting Codes&quot;, 1977
+<span class="lineNum">     166 </span>            :  * [3] Blomer, &quot;An XOR-Based Erasure-Resilient Coding Scheme&quot;, 1995
+<span class="lineNum">     167 </span>            :  * [4] Roth, &quot;Introduction to Coding Theory&quot;, 2006
+<span class="lineNum">     168 </span>            :  * [5] Plank, &quot;Screaming Fast Galois Field Arithmetic Using Intel SIMD Instructions&quot;, 2013
+<span class="lineNum">     169 </span>            :  */
+<span class="lineNum">     170 </span>            : 
+<span class="lineNum">     171 </span>            : /**
+<span class="lineNum">     172 </span>            :  * Generator matrix currently used.
+<span class="lineNum">     173 </span>            :  */
+<a name="174"><span class="lineNum">     174 </span>            : const uint8_t (*raid_gfgen)[256];</a>
+<span class="lineNum">     175 </span>            : 
+<span class="lineNum">     176 </span><span class="lineCov">        480 : void raid_mode(int mode)</span>
+<span class="lineNum">     177 </span>            : {
+<span class="lineNum">     178 </span><span class="lineCov">        480 :         if (mode == RAID_MODE_VANDERMONDE) {</span>
+<span class="lineNum">     179 </span><span class="lineCov">          2 :                 raid_gen_ptr[2] = raid_genz_ptr;</span>
+<span class="lineNum">     180 </span><span class="lineCov">          2 :                 raid_gfgen = gfvandermonde;</span>
+<span class="lineNum">     181 </span>            :         } else {
+<span class="lineNum">     182 </span><span class="lineCov">        478 :                 raid_gen_ptr[2] = raid_gen3_ptr;</span>
+<span class="lineNum">     183 </span><span class="lineCov">        478 :                 raid_gfgen = gfcauchy;</span>
+<span class="lineNum">     184 </span>            :         }
+<span class="lineNum">     185 </span><span class="lineCov">        480 : }</span>
+<span class="lineNum">     186 </span>            : 
+<span class="lineNum">     187 </span>            : /**
+<span class="lineNum">     188 </span>            :  * Buffer filled with 0 used in recovering.
+<span class="lineNum">     189 </span>            :  */
+<a name="190"><span class="lineNum">     190 </span>            : static void *raid_zero_block;</a>
+<span class="lineNum">     191 </span>            : 
+<span class="lineNum">     192 </span><span class="lineCov">        187 : void raid_zero(void *zero)</span>
+<span class="lineNum">     193 </span>            : {
+<span class="lineNum">     194 </span><span class="lineCov">        187 :         raid_zero_block = zero;</span>
+<span class="lineNum">     195 </span><span class="lineCov">        187 : }</span>
+<span class="lineNum">     196 </span>            : 
+<span class="lineNum">     197 </span>            : /*
+<span class="lineNum">     198 </span>            :  * Forwarders for parity computation.
+<span class="lineNum">     199 </span>            :  *
+<span class="lineNum">     200 </span>            :  * These functions compute the parity blocks from the provided data.
+<span class="lineNum">     201 </span>            :  *
+<span class="lineNum">     202 </span>            :  * The number of parities to compute is implicit in the position in the
+<span class="lineNum">     203 </span>            :  * forwarder vector. Position at index #i, computes (#i+1) parities.
+<span class="lineNum">     204 </span>            :  *
+<span class="lineNum">     205 </span>            :  * All these functions give the guarantee that parities are written
+<span class="lineNum">     206 </span>            :  * in order. First parity P, then parity Q, and so on.
+<span class="lineNum">     207 </span>            :  * This allows to specify the same memory buffer for multiple parities
+<span class="lineNum">     208 </span>            :  * knowning that you'll get the latest written one.
+<span class="lineNum">     209 </span>            :  * This characteristic is used by the raid_delta_gen() function to
+<span class="lineNum">     210 </span>            :  * avoid to damage unused parities in recovering.
+<span class="lineNum">     211 </span>            :  *
+<span class="lineNum">     212 </span>            :  * @nd Number of data blocks
+<span class="lineNum">     213 </span>            :  * @size Size of the blocks pointed by @v. It must be a multipler of 64.
+<span class="lineNum">     214 </span>            :  * @v Vector of pointers to the blocks of data and parity.
+<span class="lineNum">     215 </span>            :  *   It has (@nd + #parities) elements. The starting elements are the blocks
+<span class="lineNum">     216 </span>            :  *   for data, following with the parity blocks.
+<span class="lineNum">     217 </span>            :  *   Each block has @size bytes.
+<span class="lineNum">     218 </span>            :  */
+<span class="lineNum">     219 </span>            : void (*raid_gen_ptr[RAID_PARITY_MAX])(int nd, size_t size, void **vv);
+<span class="lineNum">     220 </span>            : void (*raid_gen3_ptr)(int nd, size_t size, void **vv);
+<a name="221"><span class="lineNum">     221 </span>            : void (*raid_genz_ptr)(int nd, size_t size, void **vv);</a>
+<span class="lineNum">     222 </span>            : 
+<span class="lineNum">     223 </span><span class="lineCov">    1196804 : void raid_gen(int nd, int np, size_t size, void **v)</span>
+<span class="lineNum">     224 </span>            : {
+<span class="lineNum">     225 </span>            :         /* enforce limit on size */
+<span class="lineNum">     226 </span><span class="lineCov">    1196804 :         BUG_ON(size % 64 != 0);</span>
+<span class="lineNum">     227 </span>            : 
+<span class="lineNum">     228 </span>            :         /* enforce limit on number of failures */
+<span class="lineNum">     229 </span><span class="lineCov">    1196804 :         BUG_ON(np &lt; 1);</span>
+<span class="lineNum">     230 </span><span class="lineCov">    1196804 :         BUG_ON(np &gt; RAID_PARITY_MAX);</span>
+<span class="lineNum">     231 </span>            : 
+<span class="lineNum">     232 </span><span class="lineCov">    1196804 :         raid_gen_ptr[np - 1](nd, size, v);</span>
+<span class="lineNum">     233 </span><span class="lineCov">    1196804 : }</span>
+<span class="lineNum">     234 </span>            : 
+<span class="lineNum">     235 </span>            : /**
+<span class="lineNum">     236 </span>            :  * Inverts the square matrix M of size nxn into V.
+<span class="lineNum">     237 </span>            :  *
+<span class="lineNum">     238 </span>            :  * This is not a general matrix inversion because we assume the matrix M
+<span class="lineNum">     239 </span>            :  * to have all the square submatrix not singular.
+<span class="lineNum">     240 </span>            :  * We use Gauss elimination to invert.
+<span class="lineNum">     241 </span>            :  *
+<span class="lineNum">     242 </span>            :  * @M Matrix to invert with @n rows and @n columns.
+<span class="lineNum">     243 </span>            :  * @V Destination matrix where the result is put.
+<a name="244"><span class="lineNum">     244 </span>            :  * @n Number of rows and columns of the matrix.</a>
+<span class="lineNum">     245 </span>            :  */
+<span class="lineNum">     246 </span><span class="lineCov">     172492 : void raid_invert(uint8_t *M, uint8_t *V, int n)</span>
+<span class="lineNum">     247 </span>            : {
+<span class="lineNum">     248 </span>            :         int i, j, k;
+<span class="lineNum">     249 </span>            : 
+<span class="lineNum">     250 </span>            :         /* set the identity matrix in V */
+<span class="lineNum">     251 </span><span class="lineCov">     797645 :         for (i = 0; i &lt; n; ++i)</span>
+<span class="lineNum">     252 </span><span class="lineCov">    3220636 :                 for (j = 0; j &lt; n; ++j)</span>
+<span class="lineNum">     253 </span><span class="lineCov">    2595483 :                         V[i * n + j] = i == j;</span>
+<span class="lineNum">     254 </span>            : 
+<span class="lineNum">     255 </span>            :         /* for each element in the diagonal */
+<span class="lineNum">     256 </span><span class="lineCov">     797645 :         for (k = 0; k &lt; n; ++k) {</span>
+<span class="lineNum">     257 </span>            :                 uint8_t f;
+<span class="lineNum">     258 </span>            : 
+<span class="lineNum">     259 </span>            :                 /* the diagonal element cannot be 0 because */
+<span class="lineNum">     260 </span>            :                 /* we are inverting matrices with all the square */
+<span class="lineNum">     261 </span>            :                 /* submatrices not singular */
+<span class="lineNum">     262 </span><span class="lineCov">     625153 :                 BUG_ON(M[k * n + k] == 0);</span>
+<span class="lineNum">     263 </span>            : 
+<span class="lineNum">     264 </span>            :                 /* make the diagonal element to be 1 */
+<span class="lineNum">     265 </span><span class="lineCov">    1250306 :                 f = inv(M[k * n + k]);</span>
+<span class="lineNum">     266 </span><span class="lineCov">    3220636 :                 for (j = 0; j &lt; n; ++j) {</span>
+<span class="lineNum">     267 </span><span class="lineCov">    5190966 :                         M[k * n + j] = mul(f, M[k * n + j]);</span>
+<span class="lineNum">     268 </span><span class="lineCov">    5190966 :                         V[k * n + j] = mul(f, V[k * n + j]);</span>
+<span class="lineNum">     269 </span>            :                 }
+<span class="lineNum">     270 </span>            : 
+<span class="lineNum">     271 </span>            :                 /* make all the elements over and under the diagonal */
+<span class="lineNum">     272 </span>            :                 /* to be zero */
+<span class="lineNum">     273 </span><span class="lineCov">    3220636 :                 for (i = 0; i &lt; n; ++i) {</span>
+<span class="lineNum">     274 </span><span class="lineCov">    2595483 :                         if (i == k)</span>
+<span class="lineNum">     275 </span><span class="lineCov">     625153 :                                 continue;</span>
+<span class="lineNum">     276 </span><span class="lineCov">    1970330 :                         f = M[i * n + k];</span>
+<span class="lineNum">     277 </span><span class="lineCov">   11280588 :                         for (j = 0; j &lt; n; ++j) {</span>
+<span class="lineNum">     278 </span><span class="lineCov">   18620516 :                                 M[i * n + j] ^= mul(f, M[k * n + j]);</span>
+<span class="lineNum">     279 </span><span class="lineCov">   18620516 :                                 V[i * n + j] ^= mul(f, V[k * n + j]);</span>
+<span class="lineNum">     280 </span>            :                         }
+<span class="lineNum">     281 </span>            :                 }
+<span class="lineNum">     282 </span>            :         }
+<span class="lineNum">     283 </span><span class="lineCov">     172492 : }</span>
+<span class="lineNum">     284 </span>            : 
+<span class="lineNum">     285 </span>            : /**
+<span class="lineNum">     286 </span>            :  * Computes the parity without the missing data blocks
+<span class="lineNum">     287 </span>            :  * and store it in the buffers of such data blocks.
+<span class="lineNum">     288 </span>            :  *
+<a name="289"><span class="lineNum">     289 </span>            :  * This is the parity expressed as Pa,Qa,Ra,Sa,Ta,Ua in the equations.</a>
+<span class="lineNum">     290 </span>            :  */
+<span class="lineNum">     291 </span><span class="lineCov">     171154 : void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v)</span>
+<span class="lineNum">     292 </span>            : {
+<span class="lineNum">     293 </span>            :         void *p[RAID_PARITY_MAX];
+<span class="lineNum">     294 </span>            :         void *pa[RAID_PARITY_MAX];
+<span class="lineNum">     295 </span>            :         int i, j;
+<span class="lineNum">     296 </span>            :         int np;
+<span class="lineNum">     297 </span>            :         void *latest;
+<span class="lineNum">     298 </span>            : 
+<span class="lineNum">     299 </span>            :         /* total number of parities we are going to process */
+<span class="lineNum">     300 </span>            :         /* they are both the used and the unused ones */
+<span class="lineNum">     301 </span><span class="lineCov">     171154 :         np = ip[nr - 1] + 1;</span>
+<span class="lineNum">     302 </span>            : 
+<span class="lineNum">     303 </span>            :         /* latest missing data block */
+<span class="lineNum">     304 </span><span class="lineCov">     171154 :         latest = v[id[nr - 1]];</span>
+<span class="lineNum">     305 </span>            : 
+<span class="lineNum">     306 </span>            :         /* setup pointers for delta computation */
+<span class="lineNum">     307 </span><span class="lineCov">     872118 :         for (i = 0, j = 0; i &lt; np; ++i) {</span>
+<span class="lineNum">     308 </span>            :                 /* keep a copy of the original parity vector */
+<span class="lineNum">     309 </span><span class="lineCov">     700964 :                 p[i] = v[nd + i];</span>
+<span class="lineNum">     310 </span>            : 
+<span class="lineNum">     311 </span><span class="lineCov">     700964 :                 if (ip[j] == i) {</span>
+<span class="lineNum">     312 </span>            :                         /*
+<span class="lineNum">     313 </span>            :                          * Set used parities to point to the missing
+<span class="lineNum">     314 </span>            :                          * data blocks.
+<span class="lineNum">     315 </span>            :                          *
+<span class="lineNum">     316 </span>            :                          * The related data blocks are instead set
+<span class="lineNum">     317 </span>            :                          * to point to the &quot;zero&quot; buffer.
+<span class="lineNum">     318 </span>            :                          */
+<span class="lineNum">     319 </span>            : 
+<span class="lineNum">     320 </span>            :                         /* the latest parity to use ends the for loop and */
+<span class="lineNum">     321 </span>            :                         /* then it cannot happen to process more of them */
+<span class="lineNum">     322 </span><span class="lineCov">     605141 :                         BUG_ON(j &gt;= nr);</span>
+<span class="lineNum">     323 </span>            : 
+<span class="lineNum">     324 </span>            :                         /* buffer for missing data blocks */
+<span class="lineNum">     325 </span><span class="lineCov">     605141 :                         pa[j] = v[id[j]];</span>
+<span class="lineNum">     326 </span>            : 
+<span class="lineNum">     327 </span>            :                         /* set at zero the missing data blocks */
+<span class="lineNum">     328 </span><span class="lineCov">     605141 :                         v[id[j]] = raid_zero_block;</span>
+<span class="lineNum">     329 </span>            : 
+<span class="lineNum">     330 </span>            :                         /* compute the parity over the missing data blocks */
+<span class="lineNum">     331 </span><span class="lineCov">     605141 :                         v[nd + i] = pa[j];</span>
+<span class="lineNum">     332 </span>            : 
+<span class="lineNum">     333 </span>            :                         /* check for the next used entry */
+<span class="lineNum">     334 </span><span class="lineCov">     605141 :                         ++j;</span>
+<span class="lineNum">     335 </span>            :                 } else {
+<span class="lineNum">     336 </span>            :                         /*
+<span class="lineNum">     337 </span>            :                          * Unused parities are going to be rewritten with
+<span class="lineNum">     338 </span>            :                          * not significative data, becase we don't have
+<span class="lineNum">     339 </span>            :                          * functions able to compute only a subset of
+<span class="lineNum">     340 </span>            :                          * parities.
+<span class="lineNum">     341 </span>            :                          *
+<span class="lineNum">     342 </span>            :                          * To avoid this, we reuse parity buffers,
+<span class="lineNum">     343 </span>            :                          * assuming that all the parity functions write
+<span class="lineNum">     344 </span>            :                          * parities in order.
+<span class="lineNum">     345 </span>            :                          *
+<span class="lineNum">     346 </span>            :                          * We assign the unused parity block to the same
+<span class="lineNum">     347 </span>            :                          * block of the latest used parity that we know it
+<span class="lineNum">     348 </span>            :                          * will be written.
+<span class="lineNum">     349 </span>            :                          *
+<span class="lineNum">     350 </span>            :                          * This means that this block will be written
+<span class="lineNum">     351 </span>            :                          * multiple times and only the latest write will
+<span class="lineNum">     352 </span>            :                          * contain the correct data.
+<span class="lineNum">     353 </span>            :                          */
+<span class="lineNum">     354 </span><span class="lineCov">      95823 :                         v[nd + i] = latest;</span>
+<span class="lineNum">     355 </span>            :                 }
+<span class="lineNum">     356 </span>            :         }
+<span class="lineNum">     357 </span>            : 
+<span class="lineNum">     358 </span>            :         /* all the parities have to be processed */
+<span class="lineNum">     359 </span><span class="lineCov">     171154 :         BUG_ON(j != nr);</span>
+<span class="lineNum">     360 </span>            : 
+<span class="lineNum">     361 </span>            :         /* recompute the parity, note that np may be smaller than the */
+<span class="lineNum">     362 </span>            :         /* total number of parities available */
+<span class="lineNum">     363 </span><span class="lineCov">     171154 :         raid_gen(nd, np, size, v);</span>
+<span class="lineNum">     364 </span>            : 
+<span class="lineNum">     365 </span>            :         /* restore data buffers as before */
+<span class="lineNum">     366 </span><span class="lineCov">     776295 :         for (j = 0; j &lt; nr; ++j)</span>
+<span class="lineNum">     367 </span><span class="lineCov">     605141 :                 v[id[j]] = pa[j];</span>
+<span class="lineNum">     368 </span>            : 
+<span class="lineNum">     369 </span>            :         /* restore parity buffers as before */
+<span class="lineNum">     370 </span><span class="lineCov">     872118 :         for (i = 0; i &lt; np; ++i)</span>
+<span class="lineNum">     371 </span><span class="lineCov">     700964 :                 v[nd + i] = p[i];</span>
+<span class="lineNum">     372 </span><span class="lineCov">     171154 : }</span>
+<span class="lineNum">     373 </span>            : 
+<span class="lineNum">     374 </span>            : /**
+<span class="lineNum">     375 </span>            :  * Recover failure of one data block for PAR1.
+<span class="lineNum">     376 </span>            :  *
+<span class="lineNum">     377 </span>            :  * Starting from the equation:
+<span class="lineNum">     378 </span>            :  *
+<span class="lineNum">     379 </span>            :  * Pd = Dx
+<span class="lineNum">     380 </span>            :  *
+<span class="lineNum">     381 </span>            :  * and solving we get:
+<span class="lineNum">     382 </span>            :  *
+<a name="383"><span class="lineNum">     383 </span>            :  * Dx = Pd</a>
+<span class="lineNum">     384 </span>            :  */
+<span class="lineNum">     385 </span><span class="lineCov">     100552 : void raid_rec1of1(int *id, int nd, size_t size, void **v)</span>
+<span class="lineNum">     386 </span>            : {
+<span class="lineNum">     387 </span>            :         void *p;
+<span class="lineNum">     388 </span>            :         void *pa;
+<span class="lineNum">     389 </span>            : 
+<span class="lineNum">     390 </span>            :         /* for PAR1 we can directly compute the missing block */
+<span class="lineNum">     391 </span>            :         /* and we don't need to use the zero buffer */
+<span class="lineNum">     392 </span><span class="lineCov">     100552 :         p = v[nd];</span>
+<span class="lineNum">     393 </span><span class="lineCov">     100552 :         pa = v[id[0]];</span>
+<span class="lineNum">     394 </span>            : 
+<span class="lineNum">     395 </span>            :         /* use the parity as missing data block */
+<span class="lineNum">     396 </span><span class="lineCov">     100552 :         v[id[0]] = p;</span>
+<span class="lineNum">     397 </span>            : 
+<span class="lineNum">     398 </span>            :         /* compute the parity over the missing data block */
+<span class="lineNum">     399 </span><span class="lineCov">     100552 :         v[nd] = pa;</span>
+<span class="lineNum">     400 </span>            : 
+<span class="lineNum">     401 </span>            :         /* compute */
+<span class="lineNum">     402 </span><span class="lineCov">     100552 :         raid_gen(nd, 1, size, v);</span>
+<span class="lineNum">     403 </span>            : 
+<span class="lineNum">     404 </span>            :         /* restore as before */
+<span class="lineNum">     405 </span><span class="lineCov">     100552 :         v[id[0]] = pa;</span>
+<span class="lineNum">     406 </span><span class="lineCov">     100552 :         v[nd] = p;</span>
+<span class="lineNum">     407 </span><span class="lineCov">     100552 : }</span>
+<span class="lineNum">     408 </span>            : 
+<span class="lineNum">     409 </span>            : /**
+<span class="lineNum">     410 </span>            :  * Recover failure of two data blocks for PAR2.
+<span class="lineNum">     411 </span>            :  *
+<span class="lineNum">     412 </span>            :  * Starting from the equations:
+<span class="lineNum">     413 </span>            :  *
+<span class="lineNum">     414 </span>            :  * Pd = Dx + Dy
+<span class="lineNum">     415 </span>            :  * Qd = 2^id[0] * Dx + 2^id[1] * Dy
+<span class="lineNum">     416 </span>            :  *
+<span class="lineNum">     417 </span>            :  * and solving we get:
+<span class="lineNum">     418 </span>            :  *
+<span class="lineNum">     419 </span>            :  *               1                     2^(-id[0])
+<span class="lineNum">     420 </span>            :  * Dy = ------------------- * Pd + ------------------- * Qd
+<span class="lineNum">     421 </span>            :  *      2^(id[1]-id[0]) + 1        2^(id[1]-id[0]) + 1
+<span class="lineNum">     422 </span>            :  *
+<span class="lineNum">     423 </span>            :  * Dx = Dy + Pd
+<span class="lineNum">     424 </span>            :  *
+<span class="lineNum">     425 </span>            :  * with conditions:
+<span class="lineNum">     426 </span>            :  *
+<span class="lineNum">     427 </span>            :  * 2^id[0] != 0
+<span class="lineNum">     428 </span>            :  * 2^(id[1]-id[0]) + 1 != 0
+<span class="lineNum">     429 </span>            :  *
+<a name="430"><span class="lineNum">     430 </span>            :  * That are always satisfied for any 0&lt;=id[0]&lt;id[1]&lt;255.</a>
+<span class="lineNum">     431 </span>            :  */
+<span class="lineNum">     432 </span><span class="lineCov">        132 : void raid_rec2of2_int8(int *id, int *ip, int nd, size_t size, void **vv)</span>
+<span class="lineNum">     433 </span>            : {
+<span class="lineNum">     434 </span><span class="lineCov">        132 :         uint8_t **v = (uint8_t **)vv;</span>
+<span class="lineNum">     435 </span>            :         size_t i;
+<span class="lineNum">     436 </span>            :         uint8_t *p;
+<span class="lineNum">     437 </span>            :         uint8_t *pa;
+<span class="lineNum">     438 </span>            :         uint8_t *q;
+<span class="lineNum">     439 </span>            :         uint8_t *qa;
+<span class="lineNum">     440 </span>            :         const uint8_t *T[2];
+<span class="lineNum">     441 </span>            : 
+<span class="lineNum">     442 </span>            :         /* get multiplication tables */
+<span class="lineNum">     443 </span><span class="lineCov">        528 :         T[0] = table(inv(pow2(id[1] - id[0]) ^ 1));</span>
+<span class="lineNum">     444 </span><span class="lineCov">        660 :         T[1] = table(inv(pow2(id[0]) ^ pow2(id[1])));</span>
+<span class="lineNum">     445 </span>            : 
+<span class="lineNum">     446 </span>            :         /* compute delta parity */
+<span class="lineNum">     447 </span><span class="lineCov">        132 :         raid_delta_gen(2, id, ip, nd, size, vv);</span>
+<span class="lineNum">     448 </span>            : 
+<span class="lineNum">     449 </span><span class="lineCov">        132 :         p = v[nd];</span>
+<span class="lineNum">     450 </span><span class="lineCov">        132 :         q = v[nd + 1];</span>
+<span class="lineNum">     451 </span><span class="lineCov">        132 :         pa = v[id[0]];</span>
+<span class="lineNum">     452 </span><span class="lineCov">        132 :         qa = v[id[1]];</span>
+<span class="lineNum">     453 </span>            : 
+<span class="lineNum">     454 </span><span class="lineCov">      33924 :         for (i = 0; i &lt; size; ++i) {</span>
+<span class="lineNum">     455 </span>            :                 /* delta */
+<span class="lineNum">     456 </span><span class="lineCov">      33792 :                 uint8_t Pd = p[i] ^ pa[i];</span>
+<span class="lineNum">     457 </span><span class="lineCov">      33792 :                 uint8_t Qd = q[i] ^ qa[i];</span>
+<span class="lineNum">     458 </span>            : 
+<span class="lineNum">     459 </span>            :                 /* reconstruct */
+<span class="lineNum">     460 </span><span class="lineCov">      33792 :                 uint8_t Dy = T[0][Pd] ^ T[1][Qd];</span>
+<span class="lineNum">     461 </span><span class="lineCov">      33792 :                 uint8_t Dx = Pd ^ Dy;</span>
+<span class="lineNum">     462 </span>            : 
+<span class="lineNum">     463 </span>            :                 /* set */
+<span class="lineNum">     464 </span><span class="lineCov">      33792 :                 pa[i] = Dx;</span>
+<span class="lineNum">     465 </span><span class="lineCov">      33792 :                 qa[i] = Dy;</span>
+<span class="lineNum">     466 </span>            :         }
+<span class="lineNum">     467 </span><span class="lineCov">        132 : }</span>
+<span class="lineNum">     468 </span>            : 
+<span class="lineNum">     469 </span>            : /*
+<span class="lineNum">     470 </span>            :  * Forwarders for data recovery.
+<span class="lineNum">     471 </span>            :  *
+<span class="lineNum">     472 </span>            :  * These functions recover data blocks using the specified parity
+<span class="lineNum">     473 </span>            :  * to recompute the missing data.
+<span class="lineNum">     474 </span>            :  *
+<span class="lineNum">     475 </span>            :  * Note that the format of vectors @id/@ip is different than raid_rec().
+<span class="lineNum">     476 </span>            :  * For example, in the vector @ip the first parity is represented with the
+<span class="lineNum">     477 </span>            :  * value 0 and not @nd.
+<span class="lineNum">     478 </span>            :  *
+<span class="lineNum">     479 </span>            :  * @nr Number of failed data blocks to recover.
+<span class="lineNum">     480 </span>            :  * @id[] Vector of @nr indexes of the data blocks to recover.
+<span class="lineNum">     481 </span>            :  *   The indexes start from 0. They must be in order.
+<span class="lineNum">     482 </span>            :  * @ip[] Vector of @nr indexes of the parity blocks to use in the recovering.
+<span class="lineNum">     483 </span>            :  *   The indexes start from 0. They must be in order.
+<span class="lineNum">     484 </span>            :  * @nd Number of data blocks.
+<span class="lineNum">     485 </span>            :  * @np Number of parity blocks.
+<span class="lineNum">     486 </span>            :  * @size Size of the blocks pointed by @v. It must be a multipler of 64.
+<span class="lineNum">     487 </span>            :  * @v Vector of pointers to the blocks of data and parity.
+<span class="lineNum">     488 </span>            :  *   It has (@nd + @np) elements. The starting elements are the blocks
+<span class="lineNum">     489 </span>            :  *   for data, following with the parity blocks.
+<span class="lineNum">     490 </span>            :  *   Each block has @size bytes.
+<span class="lineNum">     491 </span>            :  */
+<span class="lineNum">     492 </span>            : void (*raid_rec_ptr[RAID_PARITY_MAX])(
+<a name="493"><span class="lineNum">     493 </span>            :         int nr, int *id, int *ip, int nd, size_t size, void **vv);</a>
+<span class="lineNum">     494 </span>            : 
+<span class="lineNum">     495 </span><span class="lineCov">        901 : void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v)</span>
+<span class="lineNum">     496 </span>            : {
+<span class="lineNum">     497 </span>            :         int nrd; /* number of data blocks to recover */
+<span class="lineNum">     498 </span>            :         int nrp; /* number of parity blocks to recover */
+<span class="lineNum">     499 </span>            : 
+<span class="lineNum">     500 </span>            :         /* enforce limit on size */
+<span class="lineNum">     501 </span><span class="lineCov">        901 :         BUG_ON(size % 64 != 0);</span>
+<span class="lineNum">     502 </span>            : 
+<span class="lineNum">     503 </span>            :         /* enforce limit on number of failures */
+<span class="lineNum">     504 </span><span class="lineCov">        901 :         BUG_ON(nr &gt; np);</span>
+<span class="lineNum">     505 </span><span class="lineCov">        901 :         BUG_ON(np &gt; RAID_PARITY_MAX);</span>
+<span class="lineNum">     506 </span>            : 
+<span class="lineNum">     507 </span>            :         /* enforce order in index vector */
+<span class="lineNum">     508 </span><span class="lineCov">        901 :         BUG_ON(nr &gt;= 2 &amp;&amp; ir[0] &gt;= ir[1]);</span>
+<span class="lineNum">     509 </span><span class="lineCov">        901 :         BUG_ON(nr &gt;= 3 &amp;&amp; ir[1] &gt;= ir[2]);</span>
+<span class="lineNum">     510 </span><span class="lineCov">        901 :         BUG_ON(nr &gt;= 4 &amp;&amp; ir[2] &gt;= ir[3]);</span>
+<span class="lineNum">     511 </span><span class="lineCov">        901 :         BUG_ON(nr &gt;= 5 &amp;&amp; ir[3] &gt;= ir[4]);</span>
+<span class="lineNum">     512 </span><span class="lineCov">        901 :         BUG_ON(nr &gt;= 6 &amp;&amp; ir[4] &gt;= ir[5]);</span>
+<span class="lineNum">     513 </span>            : 
+<span class="lineNum">     514 </span>            :         /* enforce limit on index vector */
+<span class="lineNum">     515 </span><span class="lineCov">        901 :         BUG_ON(nr &gt; 0 &amp;&amp; ir[nr-1] &gt;= nd + np);</span>
+<span class="lineNum">     516 </span>            : 
+<span class="lineNum">     517 </span>            :         /* count the number of data blocks to recover */
+<span class="lineNum">     518 </span><span class="lineCov">        901 :         nrd = 0;</span>
+<span class="lineNum">     519 </span><span class="lineCov">       3607 :         while (nrd &lt; nr &amp;&amp; ir[nrd] &lt; nd)</span>
+<span class="lineNum">     520 </span><span class="lineCov">       1805 :                 ++nrd;</span>
+<span class="lineNum">     521 </span>            : 
+<span class="lineNum">     522 </span>            :         /* all the remaining are parity */
+<span class="lineNum">     523 </span><span class="lineCov">        901 :         nrp = nr - nrd;</span>
+<span class="lineNum">     524 </span>            : 
+<span class="lineNum">     525 </span>            :         /* enforce limit on number of failures */
+<span class="lineNum">     526 </span><span class="lineCov">        901 :         BUG_ON(nrd &gt; nd);</span>
+<span class="lineNum">     527 </span><span class="lineCov">        901 :         BUG_ON(nrp &gt; np);</span>
+<span class="lineNum">     528 </span>            : 
+<span class="lineNum">     529 </span>            :         /* if failed data is present */
+<span class="lineNum">     530 </span><span class="lineCov">        901 :         if (nrd != 0) {</span>
+<span class="lineNum">     531 </span>            :                 int ip[RAID_PARITY_MAX];
+<span class="lineNum">     532 </span>            :                 int i, j, k;
+<span class="lineNum">     533 </span>            : 
+<span class="lineNum">     534 </span>            :                 /* setup the vector of parities to use */
+<span class="lineNum">     535 </span><span class="lineCov">       6258 :                 for (i = 0, j = 0, k = 0; i &lt; np; ++i) {</span>
+<span class="lineNum">     536 </span><span class="lineCov">       5359 :                         if (j &lt; nrp &amp;&amp; ir[nrd + j] == nd + i) {</span>
+<span class="lineNum">     537 </span>            :                                 /* this parity has to be recovered */
+<span class="lineNum">     538 </span><span class="lineCov">         22 :                                 ++j;</span>
+<span class="lineNum">     539 </span>            :                         } else {
+<span class="lineNum">     540 </span>            :                                 /* this parity is used for recovering */
+<span class="lineNum">     541 </span><span class="lineCov">       5337 :                                 ip[k] = i;</span>
+<span class="lineNum">     542 </span><span class="lineCov">       5337 :                                 ++k;</span>
+<span class="lineNum">     543 </span>            :                         }
+<span class="lineNum">     544 </span>            :                 }
+<span class="lineNum">     545 </span>            : 
+<span class="lineNum">     546 </span>            :                 /* recover the nrd data blocks specified in ir[], */
+<span class="lineNum">     547 </span>            :                 /* using the first nrd parity in ip[] for recovering */
+<span class="lineNum">     548 </span><span class="lineCov">        899 :                 raid_rec_ptr[nrd - 1](nrd, ir, ip, nd, size, v);</span>
+<span class="lineNum">     549 </span>            :         }
+<span class="lineNum">     550 </span>            : 
+<span class="lineNum">     551 </span>            :         /* recompute all the parities up to the last bad one */
+<span class="lineNum">     552 </span><span class="lineCov">        901 :         if (nrp != 0)</span>
+<span class="lineNum">     553 </span><span class="lineCov">         12 :                 raid_gen(nd, ir[nr - 1] - nd + 1, size, v);</span>
+<a name="554"><span class="lineNum">     554 </span><span class="lineCov">        901 : }</span></a>
+<span class="lineNum">     555 </span>            : 
+<span class="lineNum">     556 </span><span class="lineCov">     213294 : void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v)</span>
+<span class="lineNum">     557 </span>            : {
+<span class="lineNum">     558 </span>            :         /* enforce limit on size */
+<span class="lineNum">     559 </span><span class="lineCov">     213294 :         BUG_ON(size % 64 != 0);</span>
+<span class="lineNum">     560 </span>            : 
+<span class="lineNum">     561 </span>            :         /* enforce limit on number of failures */
+<span class="lineNum">     562 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt; nd);</span>
+<span class="lineNum">     563 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt; RAID_PARITY_MAX);</span>
+<span class="lineNum">     564 </span>            : 
+<span class="lineNum">     565 </span>            :         /* enforce order in index vector for data */
+<span class="lineNum">     566 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt;= 2 &amp;&amp; id[0] &gt;= id[1]);</span>
+<span class="lineNum">     567 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt;= 3 &amp;&amp; id[1] &gt;= id[2]);</span>
+<span class="lineNum">     568 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt;= 4 &amp;&amp; id[2] &gt;= id[3]);</span>
+<span class="lineNum">     569 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt;= 5 &amp;&amp; id[3] &gt;= id[4]);</span>
+<span class="lineNum">     570 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt;= 6 &amp;&amp; id[4] &gt;= id[5]);</span>
+<span class="lineNum">     571 </span>            : 
+<span class="lineNum">     572 </span>            :         /* enforce limit on index vector for data */
+<span class="lineNum">     573 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt; 0 &amp;&amp; id[nr-1] &gt;= nd);</span>
+<span class="lineNum">     574 </span>            : 
+<span class="lineNum">     575 </span>            :         /* enforce order in index vector for parity */
+<span class="lineNum">     576 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt;= 2 &amp;&amp; ip[0] &gt;= ip[1]);</span>
+<span class="lineNum">     577 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt;= 3 &amp;&amp; ip[1] &gt;= ip[2]);</span>
+<span class="lineNum">     578 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt;= 4 &amp;&amp; ip[2] &gt;= ip[3]);</span>
+<span class="lineNum">     579 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt;= 5 &amp;&amp; ip[3] &gt;= ip[4]);</span>
+<span class="lineNum">     580 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt;= 6 &amp;&amp; ip[4] &gt;= ip[5]);</span>
+<span class="lineNum">     581 </span>            : 
+<span class="lineNum">     582 </span>            :         /* if failed data is present */
+<span class="lineNum">     583 </span><span class="lineCov">     213294 :         if (nr != 0)</span>
+<span class="lineNum">     584 </span><span class="lineCov">     213292 :                 raid_rec_ptr[nr - 1](nr, id, ip, nd, size, v);</span>
+<span class="lineNum">     585 </span><span class="lineCov">     213294 : }</span>
+<span class="lineNum">     586 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

@@ -1,0 +1,528 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - raid/test.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">raid</a> - test.c<span style="font-size: 80%;"> (source / <a href="test.c.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">140</td>
+            <td class="headerCovTableEntry">140</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2015-05-12</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">7</td>
+            <td class="headerCovTableEntry">7</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (C) 2013 Andrea Mazzoleni
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * This program is free software: you can redistribute it and/or modify
+<span class="lineNum">       5 </span>            :  * it under the terms of the GNU General Public License as published by
+<span class="lineNum">       6 </span>            :  * the Free Software Foundation, either version 2 of the License, or
+<span class="lineNum">       7 </span>            :  * (at your option) any later version.
+<span class="lineNum">       8 </span>            :  *
+<span class="lineNum">       9 </span>            :  * This program is distributed in the hope that it will be useful,
+<span class="lineNum">      10 </span>            :  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      11 </span>            :  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      12 </span>            :  * GNU General Public License for more details.
+<span class="lineNum">      13 </span>            :  */
+<span class="lineNum">      14 </span>            : 
+<span class="lineNum">      15 </span>            : #include &quot;internal.h&quot;
+<span class="lineNum">      16 </span>            : #include &quot;cpu.h&quot;
+<span class="lineNum">      17 </span>            : #include &quot;combo.h&quot;
+<span class="lineNum">      18 </span>            : #include &quot;memory.h&quot;
+<span class="lineNum">      19 </span>            : 
+<span class="lineNum">      20 </span>            : /**
+<a name="21"><span class="lineNum">      21 </span>            :  * Binomial coefficient of n over r.</a>
+<span class="lineNum">      22 </span>            :  */
+<span class="lineNum">      23 </span><span class="lineCov">        120 : static int ibc(int n, int r)</span>
+<span class="lineNum">      24 </span>            : {
+<span class="lineNum">      25 </span><span class="lineCov">        120 :         if (r == 0 || n == r)</span>
+<span class="lineNum">      26 </span><span class="lineCov">         63 :                 return 1;</span>
+<span class="lineNum">      27 </span>            :         else
+<span class="lineNum">      28 </span><span class="lineCov">         57 :                 return ibc(n - 1, r - 1) + ibc(n - 1, r);</span>
+<span class="lineNum">      29 </span>            : }
+<span class="lineNum">      30 </span>            : 
+<span class="lineNum">      31 </span>            : /**
+<a name="32"><span class="lineNum">      32 </span>            :  * Power n ^ r;</a>
+<span class="lineNum">      33 </span>            :  */
+<span class="lineNum">      34 </span><span class="lineCov">          6 : static int ipow(int n, int r)</span>
+<span class="lineNum">      35 </span>            : {
+<span class="lineNum">      36 </span><span class="lineCov">          6 :         int v = 1;</span>
+<span class="lineNum">      37 </span>            : 
+<span class="lineNum">      38 </span><span class="lineCov">         33 :         while (r) {</span>
+<span class="lineNum">      39 </span><span class="lineCov">         21 :                 v *= n;</span>
+<span class="lineNum">      40 </span><span class="lineCov">         21 :                 --r;</span>
+<span class="lineNum">      41 </span>            :         }
+<span class="lineNum">      42 </span><span class="lineCov">          6 :         return v;</span>
+<a name="43"><span class="lineNum">      43 </span>            : }</a>
+<span class="lineNum">      44 </span>            : 
+<span class="lineNum">      45 </span><span class="lineCov">          1 : int raid_test_combo(void)</span>
+<span class="lineNum">      46 </span>            : {
+<span class="lineNum">      47 </span>            :         int r;
+<span class="lineNum">      48 </span>            :         int count;
+<span class="lineNum">      49 </span>            :         int p[RAID_PARITY_MAX];
+<span class="lineNum">      50 </span>            : 
+<span class="lineNum">      51 </span><span class="lineCov">          7 :         for (r = 1; r &lt;= RAID_PARITY_MAX; ++r) {</span>
+<span class="lineNum">      52 </span>            :                 /* count combination (r of RAID_PARITY_MAX) elements */
+<span class="lineNum">      53 </span><span class="lineCov">          6 :                 count = 0;</span>
+<span class="lineNum">      54 </span>            :                 combination_first(r, RAID_PARITY_MAX, p);
+<span class="lineNum">      55 </span>            : 
+<span class="lineNum">      56 </span>            :                 do {
+<span class="lineNum">      57 </span><span class="lineCov">         63 :                         ++count;</span>
+<span class="lineNum">      58 </span><span class="lineCov">         63 :                 } while (combination_next(r, RAID_PARITY_MAX, p));</span>
+<span class="lineNum">      59 </span>            : 
+<span class="lineNum">      60 </span><span class="lineCov">          6 :                 if (count != ibc(RAID_PARITY_MAX, r)) {</span>
+<span class="lineNum">      61 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">      62 </span>            :                         return -1;
+<span class="lineNum">      63 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">      64 </span>            :                 }
+<span class="lineNum">      65 </span>            :         }
+<span class="lineNum">      66 </span>            : 
+<span class="lineNum">      67 </span><span class="lineCov">          7 :         for (r = 1; r &lt;= RAID_PARITY_MAX; ++r) {</span>
+<span class="lineNum">      68 </span>            :                 /* count permutation (r of RAID_PARITY_MAX) elements */
+<span class="lineNum">      69 </span><span class="lineCov">          6 :                 count = 0;</span>
+<span class="lineNum">      70 </span>            :                 permutation_first(r, RAID_PARITY_MAX, p);
+<span class="lineNum">      71 </span>            : 
+<span class="lineNum">      72 </span>            :                 do {
+<span class="lineNum">      73 </span><span class="lineCov">      55986 :                         ++count;</span>
+<span class="lineNum">      74 </span><span class="lineCov">      55986 :                 } while (permutation_next(r, RAID_PARITY_MAX, p));</span>
+<span class="lineNum">      75 </span>            : 
+<span class="lineNum">      76 </span><span class="lineCov">          6 :                 if (count != ipow(RAID_PARITY_MAX, r)) {</span>
+<span class="lineNum">      77 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">      78 </span>            :                         return -1;
+<span class="lineNum">      79 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">      80 </span>            :                 }
+<span class="lineNum">      81 </span>            :         }
+<span class="lineNum">      82 </span>            : 
+<span class="lineNum">      83 </span><span class="lineCov">          1 :         return 0;</span>
+<a name="84"><span class="lineNum">      84 </span>            : }</a>
+<span class="lineNum">      85 </span>            : 
+<span class="lineNum">      86 </span><span class="lineCov">          1 : int raid_test_insert(void)</span>
+<span class="lineNum">      87 </span>            : {
+<span class="lineNum">      88 </span>            :         int p[RAID_PARITY_MAX];
+<span class="lineNum">      89 </span>            :         int r;
+<span class="lineNum">      90 </span>            : 
+<span class="lineNum">      91 </span><span class="lineCov">          7 :         for (r = 1; r &lt;= RAID_PARITY_MAX; ++r) {</span>
+<span class="lineNum">      92 </span>            :                 permutation_first(r, RAID_PARITY_MAX, p);
+<span class="lineNum">      93 </span>            :                 do {
+<span class="lineNum">      94 </span>            :                         int i[RAID_PARITY_MAX];
+<span class="lineNum">      95 </span>            :                         int j;
+<span class="lineNum">      96 </span>            : 
+<span class="lineNum">      97 </span>            :                         /* insert in order */
+<span class="lineNum">      98 </span><span class="lineCov">     380712 :                         for (j = 0; j &lt; r; ++j)</span>
+<span class="lineNum">      99 </span><span class="lineCov">     324726 :                                 raid_insert(j, i, p[j]);</span>
+<span class="lineNum">     100 </span>            : 
+<span class="lineNum">     101 </span>            :                         /* check order */
+<span class="lineNum">     102 </span><span class="lineCov">     324726 :                         for (j = 1; j &lt; r; ++j) {</span>
+<span class="lineNum">     103 </span><span class="lineCov">     268740 :                                 if (i[j - 1] &gt; i[j]) {</span>
+<span class="lineNum">     104 </span>            :                                         /* LCOV_EXCL_START */
+<span class="lineNum">     105 </span>            :                                         return -1;
+<span class="lineNum">     106 </span>            :                                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     107 </span>            :                                 }
+<span class="lineNum">     108 </span>            :                         }
+<span class="lineNum">     109 </span><span class="lineCov">      55986 :                 } while (permutation_next(r, RAID_PARITY_MAX, p));</span>
+<span class="lineNum">     110 </span>            :         }
+<span class="lineNum">     111 </span>            : 
+<span class="lineNum">     112 </span><span class="lineCov">          1 :         return 0;</span>
+<a name="113"><span class="lineNum">     113 </span>            : }</a>
+<span class="lineNum">     114 </span>            : 
+<span class="lineNum">     115 </span><span class="lineCov">          1 : int raid_test_sort(void)</span>
+<span class="lineNum">     116 </span>            : {
+<span class="lineNum">     117 </span>            :         int p[RAID_PARITY_MAX];
+<span class="lineNum">     118 </span>            :         int r;
+<span class="lineNum">     119 </span>            : 
+<span class="lineNum">     120 </span><span class="lineCov">          7 :         for (r = 1; r &lt;= RAID_PARITY_MAX; ++r) {</span>
+<span class="lineNum">     121 </span>            :                 permutation_first(r, RAID_PARITY_MAX, p);
+<span class="lineNum">     122 </span>            :                 do {
+<span class="lineNum">     123 </span>            :                         int i[RAID_PARITY_MAX];
+<span class="lineNum">     124 </span>            :                         int j;
+<span class="lineNum">     125 </span>            : 
+<span class="lineNum">     126 </span>            :                         /* make a copy */
+<span class="lineNum">     127 </span><span class="lineCov">     380712 :                         for (j = 0; j &lt; r; ++j)</span>
+<span class="lineNum">     128 </span><span class="lineCov">     324726 :                                 i[j] = p[j];</span>
+<span class="lineNum">     129 </span>            : 
+<span class="lineNum">     130 </span><span class="lineCov">      55986 :                         raid_sort(r, i);</span>
+<span class="lineNum">     131 </span>            : 
+<span class="lineNum">     132 </span>            :                         /* check order */
+<span class="lineNum">     133 </span><span class="lineCov">     324726 :                         for (j = 1; j &lt; r; ++j) {</span>
+<span class="lineNum">     134 </span><span class="lineCov">     268740 :                                 if (i[j - 1] &gt; i[j]) {</span>
+<span class="lineNum">     135 </span>            :                                         /* LCOV_EXCL_START */
+<span class="lineNum">     136 </span>            :                                         return -1;
+<span class="lineNum">     137 </span>            :                                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     138 </span>            :                                 }
+<span class="lineNum">     139 </span>            :                         }
+<span class="lineNum">     140 </span><span class="lineCov">      55986 :                 } while (permutation_next(r, RAID_PARITY_MAX, p));</span>
+<span class="lineNum">     141 </span>            :         }
+<span class="lineNum">     142 </span>            : 
+<span class="lineNum">     143 </span><span class="lineCov">          1 :         return 0;</span>
+<a name="144"><span class="lineNum">     144 </span>            : }</a>
+<span class="lineNum">     145 </span>            : 
+<span class="lineNum">     146 </span><span class="lineCov">          2 : int raid_test_rec(int mode, int nd, size_t size)</span>
+<span class="lineNum">     147 </span>            : {
+<span class="lineNum">     148 </span>            :         void (*f[RAID_PARITY_MAX][4])(
+<span class="lineNum">     149 </span>            :                 int nr, int *id, int *ip, int nd, size_t size, void **vbuf);
+<span class="lineNum">     150 </span>            :         void *v_alloc;
+<span class="lineNum">     151 </span>            :         void **v;
+<span class="lineNum">     152 </span>            :         void **data;
+<span class="lineNum">     153 </span>            :         void **parity;
+<span class="lineNum">     154 </span>            :         void **test;
+<span class="lineNum">     155 </span>            :         void *data_save[RAID_PARITY_MAX];
+<span class="lineNum">     156 </span>            :         void *parity_save[RAID_PARITY_MAX];
+<span class="lineNum">     157 </span>            :         void *waste;
+<span class="lineNum">     158 </span>            :         int nv;
+<span class="lineNum">     159 </span>            :         int id[RAID_PARITY_MAX];
+<span class="lineNum">     160 </span>            :         int ip[RAID_PARITY_MAX];
+<span class="lineNum">     161 </span>            :         int i;
+<span class="lineNum">     162 </span>            :         int j;
+<span class="lineNum">     163 </span>            :         int nr;
+<span class="lineNum">     164 </span>            :         int nf[RAID_PARITY_MAX];
+<span class="lineNum">     165 </span>            :         int np;
+<span class="lineNum">     166 </span>            : 
+<span class="lineNum">     167 </span><span class="lineCov">          2 :         raid_mode(mode);</span>
+<span class="lineNum">     168 </span><span class="lineCov">          2 :         if (mode == RAID_MODE_CAUCHY)</span>
+<span class="lineNum">     169 </span><span class="lineCov">          1 :                 np = RAID_PARITY_MAX;</span>
+<span class="lineNum">     170 </span>            :         else
+<span class="lineNum">     171 </span><span class="lineCov">          1 :                 np = 3;</span>
+<span class="lineNum">     172 </span>            : 
+<span class="lineNum">     173 </span><span class="lineCov">          2 :         nv = nd + np * 2 + 2;</span>
+<span class="lineNum">     174 </span>            : 
+<span class="lineNum">     175 </span><span class="lineCov">          2 :         v = raid_malloc_vector(nd, nv, size, &amp;v_alloc);</span>
+<span class="lineNum">     176 </span><span class="lineCov">          2 :         if (!v) {</span>
+<span class="lineNum">     177 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     178 </span>            :                 return -1;
+<span class="lineNum">     179 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     180 </span>            :         }
+<span class="lineNum">     181 </span>            : 
+<span class="lineNum">     182 </span><span class="lineCov">          2 :         data = v;</span>
+<span class="lineNum">     183 </span><span class="lineCov">          2 :         parity = v + nd;</span>
+<span class="lineNum">     184 </span><span class="lineCov">          2 :         test = v + nd + np;</span>
+<span class="lineNum">     185 </span>            : 
+<span class="lineNum">     186 </span><span class="lineCov">         11 :         for (i = 0; i &lt; np; ++i)</span>
+<span class="lineNum">     187 </span><span class="lineCov">          9 :                 parity_save[i] = parity[i];</span>
+<span class="lineNum">     188 </span>            : 
+<span class="lineNum">     189 </span><span class="lineCov">          2 :         memset(v[nv - 2], 0, size);</span>
+<span class="lineNum">     190 </span><span class="lineCov">          2 :         raid_zero(v[nv - 2]);</span>
+<span class="lineNum">     191 </span>            : 
+<span class="lineNum">     192 </span><span class="lineCov">          2 :         waste = v[nv - 1];</span>
+<span class="lineNum">     193 </span>            : 
+<span class="lineNum">     194 </span>            :         /* fill with pseudo-random data with the arbitrary seed &quot;1&quot; */
+<span class="lineNum">     195 </span><span class="lineCov">          2 :         raid_mrand_vector(1, nd, size, v);</span>
+<span class="lineNum">     196 </span>            : 
+<span class="lineNum">     197 </span>            :         /* setup recov functions */
+<span class="lineNum">     198 </span><span class="lineCov">         11 :         for (i = 0; i &lt; np; ++i) {</span>
+<span class="lineNum">     199 </span><span class="lineCov">          9 :                 nf[i] = 0;</span>
+<span class="lineNum">     200 </span><span class="lineCov">          9 :                 if (i == 0) {</span>
+<span class="lineNum">     201 </span><span class="lineCov">          2 :                         f[i][nf[i]++] = raid_rec1_int8;</span>
+<span class="lineNum">     202 </span>            : #ifdef CONFIG_X86
+<span class="lineNum">     203 </span>            : #ifdef CONFIG_SSSE3
+<span class="lineNum">     204 </span><span class="lineCov">          2 :                         if (raid_cpu_has_ssse3())</span>
+<span class="lineNum">     205 </span><span class="lineCov">          2 :                                 f[i][nf[i]++] = raid_rec1_ssse3;</span>
+<span class="lineNum">     206 </span>            : #endif
+<span class="lineNum">     207 </span>            : #ifdef CONFIG_AVX2
+<span class="lineNum">     208 </span><span class="lineCov">          2 :                         if (raid_cpu_has_avx2())</span>
+<span class="lineNum">     209 </span><span class="lineCov">          2 :                                 f[i][nf[i]++] = raid_rec1_avx2;</span>
+<span class="lineNum">     210 </span>            : #endif
+<span class="lineNum">     211 </span>            : #endif
+<span class="lineNum">     212 </span><span class="lineCov">          7 :                 } else if (i == 1) {</span>
+<span class="lineNum">     213 </span><span class="lineCov">          2 :                         f[i][nf[i]++] = raid_rec2_int8;</span>
+<span class="lineNum">     214 </span>            : #ifdef CONFIG_X86
+<span class="lineNum">     215 </span>            : #ifdef CONFIG_SSSE3
+<span class="lineNum">     216 </span><span class="lineCov">          2 :                         if (raid_cpu_has_ssse3())</span>
+<span class="lineNum">     217 </span><span class="lineCov">          2 :                                 f[i][nf[i]++] = raid_rec2_ssse3;</span>
+<span class="lineNum">     218 </span>            : #endif
+<span class="lineNum">     219 </span>            : #ifdef CONFIG_AVX2
+<span class="lineNum">     220 </span><span class="lineCov">          2 :                         if (raid_cpu_has_avx2())</span>
+<span class="lineNum">     221 </span><span class="lineCov">          2 :                                 f[i][nf[i]++] = raid_rec2_avx2;</span>
+<span class="lineNum">     222 </span>            : #endif
+<span class="lineNum">     223 </span>            : #endif
+<span class="lineNum">     224 </span>            :                 } else {
+<span class="lineNum">     225 </span><span class="lineCov">          5 :                         f[i][nf[i]++] = raid_recX_int8;</span>
+<span class="lineNum">     226 </span>            : #ifdef CONFIG_X86
+<span class="lineNum">     227 </span>            : #ifdef CONFIG_SSSE3
+<span class="lineNum">     228 </span><span class="lineCov">          5 :                         if (raid_cpu_has_ssse3())</span>
+<span class="lineNum">     229 </span><span class="lineCov">          5 :                                 f[i][nf[i]++] = raid_recX_ssse3;</span>
+<span class="lineNum">     230 </span>            : #endif
+<span class="lineNum">     231 </span>            : #ifdef CONFIG_AVX2
+<span class="lineNum">     232 </span><span class="lineCov">          5 :                         if (raid_cpu_has_avx2())</span>
+<span class="lineNum">     233 </span><span class="lineCov">          5 :                                 f[i][nf[i]++] = raid_recX_avx2;</span>
+<span class="lineNum">     234 </span>            : #endif
+<span class="lineNum">     235 </span>            : #endif
+<span class="lineNum">     236 </span>            :                 }
+<span class="lineNum">     237 </span>            :         }
+<span class="lineNum">     238 </span>            : 
+<span class="lineNum">     239 </span>            :         /* compute the parity */
+<span class="lineNum">     240 </span><span class="lineCov">          2 :         raid_gen_ref(nd, np, size, v);</span>
+<span class="lineNum">     241 </span>            : 
+<span class="lineNum">     242 </span>            :         /* set all the parity to the waste v */
+<span class="lineNum">     243 </span><span class="lineCov">         11 :         for (i = 0; i &lt; np; ++i)</span>
+<span class="lineNum">     244 </span><span class="lineCov">          9 :                 parity[i] = waste;</span>
+<span class="lineNum">     245 </span>            : 
+<span class="lineNum">     246 </span>            :         /* all parity levels */
+<span class="lineNum">     247 </span><span class="lineCov">         11 :         for (nr = 1; nr &lt;= np; ++nr) {</span>
+<span class="lineNum">     248 </span>            :                 /* all combinations (nr of nd) disks */
+<span class="lineNum">     249 </span>            :                 combination_first(nr, nd, id);
+<span class="lineNum">     250 </span>            :                 do {
+<span class="lineNum">     251 </span>            :                         /* all combinations (nr of np) parities */
+<span class="lineNum">     252 </span>            :                         combination_first(nr, np, ip);
+<span class="lineNum">     253 </span>            :                         do {
+<span class="lineNum">     254 </span>            :                                 /* for each recover function */
+<span class="lineNum">     255 </span><span class="lineCov">      76068 :                                 for (j = 0; j &lt; nf[nr - 1]; ++j) {</span>
+<span class="lineNum">     256 </span>            :                                         /* set */
+<span class="lineNum">     257 </span><span class="lineCov">     283095 :                                         for (i = 0; i &lt; nr; ++i) {</span>
+<span class="lineNum">     258 </span>            :                                                 /* remove the missing data */
+<span class="lineNum">     259 </span><span class="lineCov">     226044 :                                                 data_save[i] = data[id[i]];</span>
+<span class="lineNum">     260 </span><span class="lineCov">     226044 :                                                 data[id[i]] = test[i];</span>
+<span class="lineNum">     261 </span>            :                                                 /* set the parity to use */
+<span class="lineNum">     262 </span><span class="lineCov">     226044 :                                                 parity[ip[i]] = parity_save[ip[i]];</span>
+<span class="lineNum">     263 </span>            :                                         }
+<span class="lineNum">     264 </span>            : 
+<span class="lineNum">     265 </span>            :                                         /* recover */
+<span class="lineNum">     266 </span><span class="lineCov">      57051 :                                         f[nr - 1][j](nr, id, ip, nd, size, v);</span>
+<span class="lineNum">     267 </span>            : 
+<span class="lineNum">     268 </span>            :                                         /* check */
+<span class="lineNum">     269 </span><span class="lineCov">     283095 :                                         for (i = 0; i &lt; nr; ++i) {</span>
+<span class="lineNum">     270 </span><span class="lineCov">     226044 :                                                 if (memcmp(test[i], data_save[i], size) != 0) {</span>
+<span class="lineNum">     271 </span>            :                                                         /* LCOV_EXCL_START */
+<span class="lineNum">     272 </span>            :                                                         goto bail;
+<span class="lineNum">     273 </span>            :                                                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     274 </span>            :                                                 }
+<span class="lineNum">     275 </span>            :                                         }
+<span class="lineNum">     276 </span>            : 
+<span class="lineNum">     277 </span>            :                                         /* restore */
+<span class="lineNum">     278 </span><span class="lineCov">     283095 :                                         for (i = 0; i &lt; nr; ++i) {</span>
+<span class="lineNum">     279 </span>            :                                                 /* restore the data */
+<span class="lineNum">     280 </span><span class="lineCov">     226044 :                                                 data[id[i]] = data_save[i];</span>
+<span class="lineNum">     281 </span>            :                                                 /* restore the parity */
+<span class="lineNum">     282 </span><span class="lineCov">     226044 :                                                 parity[ip[i]] = waste;</span>
+<span class="lineNum">     283 </span>            :                                         }
+<span class="lineNum">     284 </span>            :                                 }
+<span class="lineNum">     285 </span><span class="lineCov">      19017 :                         } while (combination_next(nr, np, ip));</span>
+<span class="lineNum">     286 </span><span class="lineCov">       2807 :                 } while (combination_next(nr, nd, id));</span>
+<span class="lineNum">     287 </span>            :         }
+<span class="lineNum">     288 </span>            : 
+<span class="lineNum">     289 </span><span class="lineCov">          2 :         free(v_alloc);</span>
+<span class="lineNum">     290 </span><span class="lineCov">          2 :         free(v);</span>
+<span class="lineNum">     291 </span><span class="lineCov">          2 :         return 0;</span>
+<span class="lineNum">     292 </span>            : 
+<span class="lineNum">     293 </span>            : bail:
+<span class="lineNum">     294 </span>            :         /* LCOV_EXCL_START */
+<span class="lineNum">     295 </span>            :         free(v_alloc);
+<span class="lineNum">     296 </span>            :         free(v);
+<span class="lineNum">     297 </span>            :         return -1;
+<span class="lineNum">     298 </span>            :         /* LCOV_EXCL_STOP */
+<a name="299"><span class="lineNum">     299 </span>            : }</a>
+<span class="lineNum">     300 </span>            : 
+<span class="lineNum">     301 </span><span class="lineCov">          3 : int raid_test_par(int mode, int nd, size_t size)</span>
+<span class="lineNum">     302 </span>            : {
+<span class="lineNum">     303 </span>            :         void (*f[64])(int nd, size_t size, void **vbuf);
+<span class="lineNum">     304 </span>            :         void *v_alloc;
+<span class="lineNum">     305 </span>            :         void **v;
+<span class="lineNum">     306 </span>            :         int nv;
+<span class="lineNum">     307 </span>            :         int i, j;
+<span class="lineNum">     308 </span>            :         int nf;
+<span class="lineNum">     309 </span>            :         int np;
+<span class="lineNum">     310 </span>            : 
+<span class="lineNum">     311 </span><span class="lineCov">          3 :         raid_mode(mode);</span>
+<span class="lineNum">     312 </span><span class="lineCov">          3 :         if (mode == RAID_MODE_CAUCHY)</span>
+<span class="lineNum">     313 </span><span class="lineCov">          2 :                 np = RAID_PARITY_MAX;</span>
+<span class="lineNum">     314 </span>            :         else
+<span class="lineNum">     315 </span><span class="lineCov">          1 :                 np = 3;</span>
+<span class="lineNum">     316 </span>            : 
+<span class="lineNum">     317 </span><span class="lineCov">          3 :         nv = nd + np * 2;</span>
+<span class="lineNum">     318 </span>            : 
+<span class="lineNum">     319 </span><span class="lineCov">          3 :         v = raid_malloc_vector(nd, nv, size, &amp;v_alloc);</span>
+<span class="lineNum">     320 </span><span class="lineCov">          3 :         if (!v) {</span>
+<span class="lineNum">     321 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     322 </span>            :                 return -1;
+<span class="lineNum">     323 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     324 </span>            :         }
+<span class="lineNum">     325 </span>            : 
+<span class="lineNum">     326 </span>            :         /* check memory */
+<span class="lineNum">     327 </span><span class="lineCov">          3 :         if (raid_mtest_vector(nv, size, v) != 0) {</span>
+<span class="lineNum">     328 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     329 </span>            :                 goto bail;
+<span class="lineNum">     330 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     331 </span>            :         }
+<span class="lineNum">     332 </span>            : 
+<span class="lineNum">     333 </span>            :         /* fill with pseudo-random data with the arbitrary seed &quot;2&quot; */
+<span class="lineNum">     334 </span><span class="lineCov">          3 :         raid_mrand_vector(2, nv, size, v);</span>
+<span class="lineNum">     335 </span>            : 
+<span class="lineNum">     336 </span>            :         /* compute the parity */
+<span class="lineNum">     337 </span><span class="lineCov">          3 :         raid_gen_ref(nd, np, size, v);</span>
+<span class="lineNum">     338 </span>            : 
+<span class="lineNum">     339 </span>            :         /* copy in back buffers */
+<span class="lineNum">     340 </span><span class="lineCov">         18 :         for (i = 0; i &lt; np; ++i)</span>
+<span class="lineNum">     341 </span><span class="lineCov">         15 :                 memcpy(v[nd + np + i], v[nd + i], size);</span>
+<span class="lineNum">     342 </span>            : 
+<span class="lineNum">     343 </span>            :         /* load all the available functions */
+<span class="lineNum">     344 </span><span class="lineCov">          3 :         nf = 0;</span>
+<span class="lineNum">     345 </span>            : 
+<span class="lineNum">     346 </span><span class="lineCov">          3 :         f[nf++] = raid_gen1_int32;</span>
+<span class="lineNum">     347 </span><span class="lineCov">          3 :         f[nf++] = raid_gen1_int64;</span>
+<span class="lineNum">     348 </span><span class="lineCov">          3 :         f[nf++] = raid_gen2_int32;</span>
+<span class="lineNum">     349 </span><span class="lineCov">          3 :         f[nf++] = raid_gen2_int64;</span>
+<span class="lineNum">     350 </span>            : 
+<span class="lineNum">     351 </span>            : #ifdef CONFIG_X86
+<span class="lineNum">     352 </span>            : #ifdef CONFIG_SSE2
+<span class="lineNum">     353 </span><span class="lineCov">          3 :         if (raid_cpu_has_sse2()) {</span>
+<span class="lineNum">     354 </span><span class="lineCov">          3 :                 f[nf++] = raid_gen1_sse2;</span>
+<span class="lineNum">     355 </span><span class="lineCov">          3 :                 f[nf++] = raid_gen2_sse2;</span>
+<span class="lineNum">     356 </span>            : #ifdef CONFIG_X86_64
+<span class="lineNum">     357 </span>            :                 f[nf++] = raid_gen2_sse2ext;
+<span class="lineNum">     358 </span>            : #endif
+<span class="lineNum">     359 </span>            :         }
+<span class="lineNum">     360 </span>            : #endif
+<span class="lineNum">     361 </span>            : 
+<span class="lineNum">     362 </span>            : #ifdef CONFIG_AVX2
+<span class="lineNum">     363 </span><span class="lineCov">          3 :         if (raid_cpu_has_avx2()) {</span>
+<span class="lineNum">     364 </span><span class="lineCov">          3 :                 f[nf++] = raid_gen1_avx2;</span>
+<span class="lineNum">     365 </span><span class="lineCov">          3 :                 f[nf++] = raid_gen2_avx2;</span>
+<span class="lineNum">     366 </span>            :         }
+<span class="lineNum">     367 </span>            : #endif
+<span class="lineNum">     368 </span>            : #endif /* CONFIG_X86 */
+<span class="lineNum">     369 </span>            : 
+<span class="lineNum">     370 </span><span class="lineCov">          3 :         if (mode == RAID_MODE_CAUCHY) {</span>
+<span class="lineNum">     371 </span><span class="lineCov">          2 :                 f[nf++] = raid_gen3_int8;</span>
+<span class="lineNum">     372 </span><span class="lineCov">          2 :                 f[nf++] = raid_gen4_int8;</span>
+<span class="lineNum">     373 </span><span class="lineCov">          2 :                 f[nf++] = raid_gen5_int8;</span>
+<span class="lineNum">     374 </span><span class="lineCov">          2 :                 f[nf++] = raid_gen6_int8;</span>
+<span class="lineNum">     375 </span>            : 
+<span class="lineNum">     376 </span>            : #ifdef CONFIG_X86
+<span class="lineNum">     377 </span>            : #ifdef CONFIG_SSSE3
+<span class="lineNum">     378 </span><span class="lineCov">          2 :                 if (raid_cpu_has_ssse3()) {</span>
+<span class="lineNum">     379 </span><span class="lineCov">          2 :                         f[nf++] = raid_gen3_ssse3;</span>
+<span class="lineNum">     380 </span><span class="lineCov">          2 :                         f[nf++] = raid_gen4_ssse3;</span>
+<span class="lineNum">     381 </span><span class="lineCov">          2 :                         f[nf++] = raid_gen5_ssse3;</span>
+<span class="lineNum">     382 </span><span class="lineCov">          2 :                         f[nf++] = raid_gen6_ssse3;</span>
+<span class="lineNum">     383 </span>            : #ifdef CONFIG_X86_64
+<span class="lineNum">     384 </span>            :                         f[nf++] = raid_gen3_ssse3ext;
+<span class="lineNum">     385 </span>            :                         f[nf++] = raid_gen4_ssse3ext;
+<span class="lineNum">     386 </span>            :                         f[nf++] = raid_gen5_ssse3ext;
+<span class="lineNum">     387 </span>            :                         f[nf++] = raid_gen6_ssse3ext;
+<span class="lineNum">     388 </span>            : #endif
+<span class="lineNum">     389 </span>            :                 }
+<span class="lineNum">     390 </span>            : #endif
+<span class="lineNum">     391 </span>            : 
+<span class="lineNum">     392 </span>            : #ifdef CONFIG_AVX2
+<span class="lineNum">     393 </span>            : #ifdef CONFIG_X86_64
+<span class="lineNum">     394 </span>            :                 if (raid_cpu_has_avx2()) {
+<span class="lineNum">     395 </span>            :                         f[nf++] = raid_gen3_avx2ext;
+<span class="lineNum">     396 </span>            :                         f[nf++] = raid_gen4_avx2ext;
+<span class="lineNum">     397 </span>            :                         f[nf++] = raid_gen5_avx2ext;
+<span class="lineNum">     398 </span>            :                         f[nf++] = raid_gen6_avx2ext;
+<span class="lineNum">     399 </span>            :                 }
+<span class="lineNum">     400 </span>            : #endif
+<span class="lineNum">     401 </span>            : #endif
+<span class="lineNum">     402 </span>            : #endif /* CONFIG_X86 */
+<span class="lineNum">     403 </span>            :         } else {
+<span class="lineNum">     404 </span><span class="lineCov">          1 :                 f[nf++] = raid_genz_int32;</span>
+<span class="lineNum">     405 </span><span class="lineCov">          1 :                 f[nf++] = raid_genz_int64;</span>
+<span class="lineNum">     406 </span>            : 
+<span class="lineNum">     407 </span>            : #ifdef CONFIG_X86
+<span class="lineNum">     408 </span>            : #ifdef CONFIG_SSE2
+<span class="lineNum">     409 </span><span class="lineCov">          1 :                 if (raid_cpu_has_sse2()) {</span>
+<span class="lineNum">     410 </span><span class="lineCov">          1 :                         f[nf++] = raid_genz_sse2;</span>
+<span class="lineNum">     411 </span>            : #ifdef CONFIG_X86_64
+<span class="lineNum">     412 </span>            :                         f[nf++] = raid_genz_sse2ext;
+<span class="lineNum">     413 </span>            : #endif
+<span class="lineNum">     414 </span>            :                 }
+<span class="lineNum">     415 </span>            : #endif
+<span class="lineNum">     416 </span>            : 
+<span class="lineNum">     417 </span>            : #ifdef CONFIG_AVX2
+<span class="lineNum">     418 </span>            : #ifdef CONFIG_X86_64
+<span class="lineNum">     419 </span>            :                 if (raid_cpu_has_avx2())
+<span class="lineNum">     420 </span>            :                         f[nf++] = raid_genz_avx2ext;
+<span class="lineNum">     421 </span>            : #endif
+<span class="lineNum">     422 </span>            : #endif
+<span class="lineNum">     423 </span>            : #endif /* CONFIG_X86 */
+<span class="lineNum">     424 </span>            :         }
+<span class="lineNum">     425 </span>            : 
+<span class="lineNum">     426 </span>            :         /* check all the functions */
+<span class="lineNum">     427 </span><span class="lineCov">         46 :         for (j = 0; j &lt; nf; ++j) {</span>
+<span class="lineNum">     428 </span>            :                 /* compute parity */
+<span class="lineNum">     429 </span><span class="lineCov">         43 :                 f[j](nd, size, v);</span>
+<span class="lineNum">     430 </span>            : 
+<span class="lineNum">     431 </span>            :                 /* check it */
+<span class="lineNum">     432 </span><span class="lineCov">        268 :                 for (i = 0; i &lt; np; ++i) {</span>
+<span class="lineNum">     433 </span><span class="lineCov">        225 :                         if (memcmp(v[nd + np + i], v[nd + i], size) != 0) {</span>
+<span class="lineNum">     434 </span>            :                                 /* LCOV_EXCL_START */
+<span class="lineNum">     435 </span>            :                                 goto bail;
+<span class="lineNum">     436 </span>            :                                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     437 </span>            :                         }
+<span class="lineNum">     438 </span>            :                 }
+<span class="lineNum">     439 </span>            :         }
+<span class="lineNum">     440 </span>            : 
+<span class="lineNum">     441 </span><span class="lineCov">          3 :         free(v_alloc);</span>
+<span class="lineNum">     442 </span><span class="lineCov">          3 :         free(v);</span>
+<span class="lineNum">     443 </span><span class="lineCov">          3 :         return 0;</span>
+<span class="lineNum">     444 </span>            : 
+<span class="lineNum">     445 </span>            : bail:
+<span class="lineNum">     446 </span>            :         /* LCOV_EXCL_START */
+<span class="lineNum">     447 </span>            :         free(v_alloc);
+<span class="lineNum">     448 </span>            :         free(v);
+<span class="lineNum">     449 </span>            :         return -1;
+<span class="lineNum">     450 </span>            :         /* LCOV_EXCL_STOP */
+<span class="lineNum">     451 </span>            : }
+<span class="lineNum">     452 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

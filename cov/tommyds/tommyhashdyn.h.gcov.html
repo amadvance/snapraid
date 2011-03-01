@@ -1,0 +1,371 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - tommyds/tommyhashdyn.h</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">tommyds</a> - tommyhashdyn.h<span style="font-size: 80%;"> (source / <a href="tommyhashdyn.h.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">11</td>
+            <td class="headerCovTableEntry">11</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2015-05-12</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (c) 2010, Andrea Mazzoleni. All rights reserved.
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * Redistribution and use in source and binary forms, with or without
+<span class="lineNum">       5 </span>            :  * modification, are permitted provided that the following conditions
+<span class="lineNum">       6 </span>            :  * are met:
+<span class="lineNum">       7 </span>            :  *
+<span class="lineNum">       8 </span>            :  * 1. Redistributions of source code must retain the above copyright
+<span class="lineNum">       9 </span>            :  *    notice, this list of conditions and the following disclaimer.
+<span class="lineNum">      10 </span>            :  *
+<span class="lineNum">      11 </span>            :  * 2. Redistributions in binary form must reproduce the above copyright
+<span class="lineNum">      12 </span>            :  *    notice, this list of conditions and the following disclaimer in the
+<span class="lineNum">      13 </span>            :  *    documentation and/or other materials provided with the distribution.
+<span class="lineNum">      14 </span>            :  *
+<span class="lineNum">      15 </span>            :  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
+<span class="lineNum">      16 </span>            :  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+<span class="lineNum">      17 </span>            :  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+<span class="lineNum">      18 </span>            :  * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+<span class="lineNum">      19 </span>            :  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+<span class="lineNum">      20 </span>            :  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+<span class="lineNum">      21 </span>            :  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+<span class="lineNum">      22 </span>            :  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+<span class="lineNum">      23 </span>            :  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+<span class="lineNum">      24 </span>            :  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+<span class="lineNum">      25 </span>            :  * POSSIBILITY OF SUCH DAMAGE.
+<span class="lineNum">      26 </span>            :  */
+<span class="lineNum">      27 </span>            : 
+<span class="lineNum">      28 </span>            : /** \file
+<span class="lineNum">      29 </span>            :  * Dynamic chained hashtable.
+<span class="lineNum">      30 </span>            :  *
+<span class="lineNum">      31 </span>            :  * This hashtable resizes dynamically. It starts with the minimal size of 16 buckets, it doubles
+<span class="lineNum">      32 </span>            :  * the size then it reaches a load factor greater than 0.5 and it halves the size with a load
+<span class="lineNum">      33 </span>            :  * factor lower than 0.125.
+<span class="lineNum">      34 </span>            :  *
+<span class="lineNum">      35 </span>            :  * All the elements are reallocated in a single resize operation done inside
+<span class="lineNum">      36 </span>            :  * tommy_hashdyn_insert() or tommy_hashdyn_remove().
+<span class="lineNum">      37 </span>            :  *
+<span class="lineNum">      38 </span>            :  * Note that the resize operation takes approximatively 100 [ms] with 1 million of elements,
+<span class="lineNum">      39 </span>            :  * and 1 [second] with 10 millions. This could be a problem in real-time applications.
+<span class="lineNum">      40 </span>            :  *
+<span class="lineNum">      41 </span>            :  * The resize also fragment the heap, as it involves allocating a double-sized table, copy elements,
+<span class="lineNum">      42 </span>            :  * and deallocating the older table. Leaving a big hole in the heap.
+<span class="lineNum">      43 </span>            :  *
+<span class="lineNum">      44 </span>            :  * The ::tommy_hashlin hashtable fixes both problems.
+<span class="lineNum">      45 </span>            :  *
+<span class="lineNum">      46 </span>            :  * To initialize the hashtable you have to call tommy_hashdyn_init().
+<span class="lineNum">      47 </span>            :  *
+<span class="lineNum">      48 </span>            :  * \code
+<span class="lineNum">      49 </span>            :  * tommy_hashslin hashdyn;
+<span class="lineNum">      50 </span>            :  *
+<span class="lineNum">      51 </span>            :  * tommy_hashdyn_init(&amp;hashdyn);
+<span class="lineNum">      52 </span>            :  * \endcode
+<span class="lineNum">      53 </span>            :  *
+<span class="lineNum">      54 </span>            :  * To insert elements in the hashtable you have to call tommy_hashdyn_insert() for
+<span class="lineNum">      55 </span>            :  * each element.
+<span class="lineNum">      56 </span>            :  * In the insertion call you have to specify the address of the node, the
+<span class="lineNum">      57 </span>            :  * address of the object, and the hash value of the key to use.
+<span class="lineNum">      58 </span>            :  * The address of the object is used to initialize the tommy_node::data field
+<span class="lineNum">      59 </span>            :  * of the node, and the hash to initialize the tommy_node::key field.
+<span class="lineNum">      60 </span>            :  *
+<span class="lineNum">      61 </span>            :  * \code
+<span class="lineNum">      62 </span>            :  * struct object {
+<span class="lineNum">      63 </span>            :  *     tommy_node node;
+<span class="lineNum">      64 </span>            :  *     // other fields
+<span class="lineNum">      65 </span>            :  *     int value;
+<span class="lineNum">      66 </span>            :  * };
+<span class="lineNum">      67 </span>            :  *
+<span class="lineNum">      68 </span>            :  * struct object* obj = malloc(sizeof(struct object)); // creates the object
+<span class="lineNum">      69 </span>            :  *
+<span class="lineNum">      70 </span>            :  * obj-&gt;value = ...; // initializes the object
+<span class="lineNum">      71 </span>            :  *
+<span class="lineNum">      72 </span>            :  * tommy_hashdyn_insert(&amp;hashdyn, &amp;obj-&gt;node, obj, tommy_inthash_u32(obj-&gt;value)); // inserts the object
+<span class="lineNum">      73 </span>            :  * \endcode
+<span class="lineNum">      74 </span>            :  *
+<span class="lineNum">      75 </span>            :  * To find and element in the hashtable you have to call tommy_hashtable_search()
+<span class="lineNum">      76 </span>            :  * providing a comparison function, its argument, and the hash of the key to search.
+<span class="lineNum">      77 </span>            :  *
+<span class="lineNum">      78 </span>            :  * \code
+<span class="lineNum">      79 </span>            :  * int compare(const void* arg, const void* obj)
+<span class="lineNum">      80 </span>            :  * {
+<span class="lineNum">      81 </span>            :  *     return *(const int*)arg != ((const struct object*)obj)-&gt;value;
+<span class="lineNum">      82 </span>            :  * }
+<span class="lineNum">      83 </span>            :  *
+<span class="lineNum">      84 </span>            :  * int value_to_find = 1;
+<span class="lineNum">      85 </span>            :  * struct object* obj = tommy_hashdyn_search(&amp;hashdyn, compare, &amp;value_to_find, tommy_inthash_u32(value_to_find));
+<span class="lineNum">      86 </span>            :  * if (!obj) {
+<span class="lineNum">      87 </span>            :  *     // not found
+<span class="lineNum">      88 </span>            :  * } else {
+<span class="lineNum">      89 </span>            :  *     // found
+<span class="lineNum">      90 </span>            :  * }
+<span class="lineNum">      91 </span>            :  * \endcode
+<span class="lineNum">      92 </span>            :  *
+<span class="lineNum">      93 </span>            :  * To iterate over all the elements in the hashtable with the same key, you have to
+<span class="lineNum">      94 </span>            :  * use tommy_hashdyn_bucket() and follow the tommy_node::next pointer until NULL.
+<span class="lineNum">      95 </span>            :  * You have also to check explicitely for the key, as the bucket may contains
+<span class="lineNum">      96 </span>            :  * different keys.
+<span class="lineNum">      97 </span>            :  *
+<span class="lineNum">      98 </span>            :  * \code
+<span class="lineNum">      99 </span>            :  * int value_to_find = 1;
+<span class="lineNum">     100 </span>            :  * tommy_node* i = tommy_hashdyn_bucket(&amp;hashdyn, tommy_inthash_u32(value_to_find));
+<span class="lineNum">     101 </span>            :  * while (i) {
+<span class="lineNum">     102 </span>            :  *     struct object* obj = i-&gt;data; // gets the object pointer
+<span class="lineNum">     103 </span>            :  *
+<span class="lineNum">     104 </span>            :  *     if (obj-&gt;value == value_to_find) {
+<span class="lineNum">     105 </span>            :  *         printf(&quot;%d\n&quot;, obj-&gt;value); // process the object
+<span class="lineNum">     106 </span>            :  *     }
+<span class="lineNum">     107 </span>            :  *
+<span class="lineNum">     108 </span>            :  *     i = i-&gt;next; // goes to the next element
+<span class="lineNum">     109 </span>            :  * }
+<span class="lineNum">     110 </span>            :  * \endcode
+<span class="lineNum">     111 </span>            :  *
+<span class="lineNum">     112 </span>            :  * To remove an element from the hashtable you have to call tommy_hashdyn_remove()
+<span class="lineNum">     113 </span>            :  * providing a comparison function, its argument, and the hash of the key to search
+<span class="lineNum">     114 </span>            :  * and remove.
+<span class="lineNum">     115 </span>            :  *
+<span class="lineNum">     116 </span>            :  * \code
+<span class="lineNum">     117 </span>            :  * struct object* obj = tommy_hashdyn_remove(&amp;hashdyn, compare, &amp;value_to_remove, tommy_inthash_u32(value_to_remove));
+<span class="lineNum">     118 </span>            :  * if (obj) {
+<span class="lineNum">     119 </span>            :  *     free(obj); // frees the object allocated memory
+<span class="lineNum">     120 </span>            :  * }
+<span class="lineNum">     121 </span>            :  * \endcode
+<span class="lineNum">     122 </span>            :  *
+<span class="lineNum">     123 </span>            :  * To destroy the hashtable you have to remove all the elements, and deinitialize
+<span class="lineNum">     124 </span>            :  * the hashtable calling tommy_hashdyn_done().
+<span class="lineNum">     125 </span>            :  *
+<span class="lineNum">     126 </span>            :  * \code
+<span class="lineNum">     127 </span>            :  * tommy_hashdyn_done(&amp;hashdyn);
+<span class="lineNum">     128 </span>            :  * \endcode
+<span class="lineNum">     129 </span>            :  *
+<span class="lineNum">     130 </span>            :  * If you need to iterate over all the elements in the hashtable, you can use
+<span class="lineNum">     131 </span>            :  * tommy_hashdyn_foreach() or tommy_hashdyn_foreach_arg().
+<span class="lineNum">     132 </span>            :  * If you need a more precise control with a real iteration, you have to insert
+<span class="lineNum">     133 </span>            :  * all the elements also in a ::tommy_list, and use the list to iterate.
+<span class="lineNum">     134 </span>            :  * See the \ref multiindex example for more detail.
+<span class="lineNum">     135 </span>            :  */
+<span class="lineNum">     136 </span>            : 
+<span class="lineNum">     137 </span>            : #ifndef __TOMMYHASHDYN_H
+<span class="lineNum">     138 </span>            : #define __TOMMYHASHDYN_H
+<span class="lineNum">     139 </span>            : 
+<span class="lineNum">     140 </span>            : #include &quot;tommyhash.h&quot;
+<span class="lineNum">     141 </span>            : 
+<span class="lineNum">     142 </span>            : /******************************************************************************/
+<span class="lineNum">     143 </span>            : /* hashdyn */
+<span class="lineNum">     144 </span>            : 
+<span class="lineNum">     145 </span>            : /** \internal
+<span class="lineNum">     146 </span>            :  * Initial and minimal size of the hashtable expressed as a power of 2.
+<span class="lineNum">     147 </span>            :  * The initial size is 2^TOMMY_HASHDYN_BIT.
+<span class="lineNum">     148 </span>            :  */
+<span class="lineNum">     149 </span>            : #define TOMMY_HASHDYN_BIT 4
+<span class="lineNum">     150 </span>            : 
+<span class="lineNum">     151 </span>            : /**
+<span class="lineNum">     152 </span>            :  * Hashtable node.
+<span class="lineNum">     153 </span>            :  * This is the node that you have to include inside your objects.
+<span class="lineNum">     154 </span>            :  */
+<span class="lineNum">     155 </span>            : typedef tommy_node tommy_hashdyn_node;
+<span class="lineNum">     156 </span>            : 
+<span class="lineNum">     157 </span>            : /**
+<span class="lineNum">     158 </span>            :  * Hashtable container type.
+<span class="lineNum">     159 </span>            :  * \note Don't use internal fields directly, but access the container only using functions.
+<span class="lineNum">     160 </span>            :  */
+<span class="lineNum">     161 </span>            : typedef struct tommy_hashdyn_struct {
+<span class="lineNum">     162 </span>            :         tommy_hashdyn_node** bucket; /**&lt; Hash buckets. One list for each hash modulus. */
+<span class="lineNum">     163 </span>            :         tommy_uint_t bucket_bit; /**&lt; Bits used in the bit mask. */
+<span class="lineNum">     164 </span>            :         tommy_count_t bucket_max; /**&lt; Number of buckets. */
+<span class="lineNum">     165 </span>            :         tommy_count_t bucket_mask; /**&lt; Bit mask to access the buckets. */
+<span class="lineNum">     166 </span>            :         tommy_count_t count; /**&lt; Number of elements. */
+<span class="lineNum">     167 </span>            : } tommy_hashdyn;
+<span class="lineNum">     168 </span>            : 
+<span class="lineNum">     169 </span>            : /**
+<span class="lineNum">     170 </span>            :  * Initializes the hashtable.
+<span class="lineNum">     171 </span>            :  */
+<span class="lineNum">     172 </span>            : void tommy_hashdyn_init(tommy_hashdyn* hashdyn);
+<span class="lineNum">     173 </span>            : 
+<span class="lineNum">     174 </span>            : /**
+<span class="lineNum">     175 </span>            :  * Deinitializes the hashtable.
+<span class="lineNum">     176 </span>            :  *
+<span class="lineNum">     177 </span>            :  * You can call this function with elements still contained,
+<span class="lineNum">     178 </span>            :  * but such elements are not going to be freed by this call.
+<span class="lineNum">     179 </span>            :  */
+<span class="lineNum">     180 </span>            : void tommy_hashdyn_done(tommy_hashdyn* hashdyn);
+<span class="lineNum">     181 </span>            : 
+<span class="lineNum">     182 </span>            : /**
+<span class="lineNum">     183 </span>            :  * Inserts an element in the hashtable.
+<span class="lineNum">     184 </span>            :  */
+<span class="lineNum">     185 </span>            : void tommy_hashdyn_insert(tommy_hashdyn* hashdyn, tommy_hashdyn_node* node, void* data, tommy_hash_t hash);
+<span class="lineNum">     186 </span>            : 
+<span class="lineNum">     187 </span>            : /**
+<span class="lineNum">     188 </span>            :  * Searches and removes an element from the hashtable.
+<span class="lineNum">     189 </span>            :  * You have to provide a compare function and the hash of the element you want to remove.
+<span class="lineNum">     190 </span>            :  * If the element is not found, 0 is returned.
+<span class="lineNum">     191 </span>            :  * If more equal elements are present, the first one is removed.
+<span class="lineNum">     192 </span>            :  * \param cmp Compare function called with cmp_arg as first argument and with the element to compare as a second one.
+<span class="lineNum">     193 </span>            :  * The function should return 0 for equal elements, anything other for different elements.
+<span class="lineNum">     194 </span>            :  * \param cmp_arg Compare argument passed as first argument of the compare function.
+<span class="lineNum">     195 </span>            :  * \param hash Hash of the element to find and remove.
+<span class="lineNum">     196 </span>            :  * \return The removed element, or 0 if not found.
+<span class="lineNum">     197 </span>            :  */
+<span class="lineNum">     198 </span>            : void* tommy_hashdyn_remove(tommy_hashdyn* hashdyn, tommy_search_func* cmp, const void* cmp_arg, tommy_hash_t hash);
+<span class="lineNum">     199 </span>            : 
+<span class="lineNum">     200 </span>            : /**
+<span class="lineNum">     201 </span>            :  * Gets the bucket of the specified hash.
+<span class="lineNum">     202 </span>            :  * The bucket is guaranteed to contain ALL the elements with the specified hash,
+<span class="lineNum">     203 </span>            :  * but it can contain also others.
+<span class="lineNum">     204 </span>            :  * You can access elements in the bucket following the ::next pointer until 0.
+<span class="lineNum">     205 </span>            :  * \param hash Hash of the element to find.
+<a name="206"><span class="lineNum">     206 </span>            :  * \return The head of the bucket, or 0 if empty.</a>
+<span class="lineNum">     207 </span>            :  */
+<span class="lineNum">     208 </span><span class="lineCov">    3016498 : tommy_inline tommy_hashdyn_node* tommy_hashdyn_bucket(tommy_hashdyn* hashdyn, tommy_hash_t hash)</span>
+<span class="lineNum">     209 </span>            : {
+<span class="lineNum">     210 </span><span class="lineCov">    3016498 :         return hashdyn-&gt;bucket[hash &amp; hashdyn-&gt;bucket_mask];</span>
+<span class="lineNum">     211 </span>            : }
+<span class="lineNum">     212 </span>            : 
+<span class="lineNum">     213 </span>            : /**
+<span class="lineNum">     214 </span>            :  * Searches an element in the hashtable.
+<span class="lineNum">     215 </span>            :  * You have to provide a compare function and the hash of the element you want to find.
+<span class="lineNum">     216 </span>            :  * If more equal elements are present, the first one is returned.
+<span class="lineNum">     217 </span>            :  * \param cmp Compare function called with cmp_arg as first argument and with the element to compare as a second one.
+<span class="lineNum">     218 </span>            :  * The function should return 0 for equal elements, anything other for different elements.
+<span class="lineNum">     219 </span>            :  * \param cmp_arg Compare argument passed as first argument of the compare function.
+<span class="lineNum">     220 </span>            :  * \param hash Hash of the element to find.
+<a name="221"><span class="lineNum">     221 </span>            :  * \return The first element found, or 0 if none.</a>
+<span class="lineNum">     222 </span>            :  */
+<span class="lineNum">     223 </span><span class="lineCov">    3016498 : tommy_inline void* tommy_hashdyn_search(tommy_hashdyn* hashdyn, tommy_search_func* cmp, const void* cmp_arg, tommy_hash_t hash)</span>
+<span class="lineNum">     224 </span>            : {
+<span class="lineNum">     225 </span><span class="lineCov">    3016498 :         tommy_hashdyn_node* i = tommy_hashdyn_bucket(hashdyn, hash);</span>
+<span class="lineNum">     226 </span>            : 
+<span class="lineNum">     227 </span><span class="lineCov">    6702222 :         while (i) {</span>
+<span class="lineNum">     228 </span>            :                 /* we first check if the hash matches, as in the same bucket we may have multiples hash values */
+<span class="lineNum">     229 </span><span class="lineCov">    1684040 :                 if (i-&gt;key == hash &amp;&amp; cmp(cmp_arg, i-&gt;data) == 0)</span>
+<span class="lineNum">     230 </span><span class="lineCov">    1014814 :                         return i-&gt;data;</span>
+<span class="lineNum">     231 </span><span class="lineCov">     669226 :                 i = i-&gt;next;</span>
+<span class="lineNum">     232 </span>            :         }
+<span class="lineNum">     233 </span><span class="lineCov">    2001684 :         return 0;</span>
+<span class="lineNum">     234 </span>            : }
+<span class="lineNum">     235 </span>            : 
+<span class="lineNum">     236 </span>            : /**
+<span class="lineNum">     237 </span>            :  * Removes an element from the hashtable.
+<span class="lineNum">     238 </span>            :  * You must already have the address of the element to remove.
+<span class="lineNum">     239 </span>            :  * \return The tommy_node::data field of the node removed.
+<span class="lineNum">     240 </span>            :  */
+<span class="lineNum">     241 </span>            : void* tommy_hashdyn_remove_existing(tommy_hashdyn* hashdyn, tommy_hashdyn_node* node);
+<span class="lineNum">     242 </span>            : 
+<span class="lineNum">     243 </span>            : /**
+<span class="lineNum">     244 </span>            :  * Calls the specified function for each element in the hashtable.
+<span class="lineNum">     245 </span>            :  *
+<span class="lineNum">     246 </span>            :  * You can use this function to deallocate all the elements inserted.
+<span class="lineNum">     247 </span>            :  *
+<span class="lineNum">     248 </span>            :  * \code
+<span class="lineNum">     249 </span>            :  * tommy_hashdyn hashdyn;
+<span class="lineNum">     250 </span>            :  *
+<span class="lineNum">     251 </span>            :  * // initializes the hashtable
+<span class="lineNum">     252 </span>            :  * tommy_hashdyn_init(&amp;hashdyn);
+<span class="lineNum">     253 </span>            :  *
+<span class="lineNum">     254 </span>            :  * ...
+<span class="lineNum">     255 </span>            :  *
+<span class="lineNum">     256 </span>            :  * // creates an object
+<span class="lineNum">     257 </span>            :  * struct object* obj = malloc(sizeof(struct object));
+<span class="lineNum">     258 </span>            :  *
+<span class="lineNum">     259 </span>            :  * ...
+<span class="lineNum">     260 </span>            :  *
+<span class="lineNum">     261 </span>            :  * // insert it in the hashtable
+<span class="lineNum">     262 </span>            :  * tommy_hashdyn_insert(&amp;hashdyn, &amp;obj-&gt;node, obj, tommy_inthash_u32(obj-&gt;value));
+<span class="lineNum">     263 </span>            :  *
+<span class="lineNum">     264 </span>            :  * ...
+<span class="lineNum">     265 </span>            :  *
+<span class="lineNum">     266 </span>            :  * // deallocates all the objects iterating the hashtable
+<span class="lineNum">     267 </span>            :  * tommy_hashdyn_foreach(&amp;hashdyn, free);
+<span class="lineNum">     268 </span>            :  *
+<span class="lineNum">     269 </span>            :  * // deallocates the hashtable
+<span class="lineNum">     270 </span>            :  * tommy_hashdyn_done(&amp;hashdyn);
+<span class="lineNum">     271 </span>            :  * \endcode
+<span class="lineNum">     272 </span>            :  */
+<span class="lineNum">     273 </span>            : void tommy_hashdyn_foreach(tommy_hashdyn* hashdyn, tommy_foreach_func* func);
+<span class="lineNum">     274 </span>            : 
+<span class="lineNum">     275 </span>            : /**
+<span class="lineNum">     276 </span>            :  * Calls the specified function with an argument for each element in the hashtable.
+<span class="lineNum">     277 </span>            :  */
+<span class="lineNum">     278 </span>            : void tommy_hashdyn_foreach_arg(tommy_hashdyn* hashdyn, tommy_foreach_arg_func* func, void* arg);
+<span class="lineNum">     279 </span>            : 
+<span class="lineNum">     280 </span>            : /**
+<a name="281"><span class="lineNum">     281 </span>            :  * Gets the number of elements.</a>
+<span class="lineNum">     282 </span>            :  */
+<span class="lineNum">     283 </span><span class="lineCov">          3 : tommy_inline tommy_count_t tommy_hashdyn_count(tommy_hashdyn* hashdyn)</span>
+<span class="lineNum">     284 </span>            : {
+<span class="lineNum">     285 </span><span class="lineCov">          3 :         return hashdyn-&gt;count;</span>
+<span class="lineNum">     286 </span>            : }
+<span class="lineNum">     287 </span>            : 
+<span class="lineNum">     288 </span>            : /**
+<span class="lineNum">     289 </span>            :  * Gets the size of allocated memory.
+<span class="lineNum">     290 </span>            :  * It includes the size of the ::tommy_hashdyn_node of the stored elements.
+<span class="lineNum">     291 </span>            :  */
+<span class="lineNum">     292 </span>            : tommy_size_t tommy_hashdyn_memory_usage(tommy_hashdyn* hashdyn);
+<span class="lineNum">     293 </span>            : 
+<span class="lineNum">     294 </span>            : #endif
+<span class="lineNum">     295 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

@@ -1,0 +1,345 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - raid/cpu.h</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">raid</a> - cpu.h<span style="font-size: 80%;"> (source / <a href="cpu.h.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">55</td>
+            <td class="headerCovTableEntry">66</td>
+            <td class="headerCovTableEntryMed">83.3 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2015-05-12</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">11</td>
+            <td class="headerCovTableEntry">11</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (C) 2013 Andrea Mazzoleni
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * This program is free software: you can redistribute it and/or modify
+<span class="lineNum">       5 </span>            :  * it under the terms of the GNU General Public License as published by
+<span class="lineNum">       6 </span>            :  * the Free Software Foundation, either version 2 of the License, or
+<span class="lineNum">       7 </span>            :  * (at your option) any later version.
+<span class="lineNum">       8 </span>            :  *
+<span class="lineNum">       9 </span>            :  * This program is distributed in the hope that it will be useful,
+<span class="lineNum">      10 </span>            :  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      11 </span>            :  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      12 </span>            :  * GNU General Public License for more details.
+<span class="lineNum">      13 </span>            :  */
+<span class="lineNum">      14 </span>            : 
+<span class="lineNum">      15 </span>            : #ifndef __RAID_CPU_H
+<span class="lineNum">      16 </span>            : #define __RAID_CPU_H
+<span class="lineNum">      17 </span>            : 
+<a name="18"><span class="lineNum">      18 </span>            : #ifdef CONFIG_X86</a>
+<span class="lineNum">      19 </span>            : 
+<span class="lineNum">      20 </span><span class="lineCov">       1879 : static inline void raid_cpuid(uint32_t func_eax, uint32_t sub_ecx, uint32_t *reg)</span>
+<span class="lineNum">      21 </span>            : {
+<span class="lineNum">      22 </span><span class="lineCov">       1879 :         asm volatile (</span>
+<span class="lineNum">      23 </span>            : #if defined(__i386__) &amp;&amp; defined(__PIC__)
+<span class="lineNum">      24 </span>            :                 /* allow compilation in PIC mode saving ebx */
+<span class="lineNum">      25 </span>            :                 &quot;xchgl %%ebx, %1\n&quot;
+<span class="lineNum">      26 </span>            :                 &quot;cpuid\n&quot;
+<span class="lineNum">      27 </span>            :                 &quot;xchgl %%ebx, %1\n&quot;
+<span class="lineNum">      28 </span>            :                 : &quot;=a&quot; (reg[0]), &quot;=r&quot; (reg[1]), &quot;=c&quot; (reg[2]), &quot;=d&quot; (reg[3])
+<span class="lineNum">      29 </span>            :                 : &quot;0&quot; (func_eax), &quot;2&quot; (sub_ecx)
+<span class="lineNum">      30 </span>            : #else
+<span class="lineNum">      31 </span>            :                 &quot;cpuid\n&quot;
+<span class="lineNum">      32 </span><span class="lineCov">       1879 :                 : &quot;=a&quot; (reg[0]), &quot;=b&quot; (reg[1]), &quot;=c&quot; (reg[2]), &quot;=d&quot; (reg[3])</span>
+<span class="lineNum">      33 </span>            :                 : &quot;0&quot; (func_eax), &quot;2&quot; (sub_ecx)
+<span class="lineNum">      34 </span>            : #endif
+<span class="lineNum">      35 </span>            :         );
+<a name="36"><span class="lineNum">      36 </span><span class="lineCov">       1879 : }</span></a>
+<span class="lineNum">      37 </span>            : 
+<span class="lineNum">      38 </span><span class="lineCov">         23 : static inline void raid_xgetbv(uint32_t* reg)</span>
+<span class="lineNum">      39 </span>            : {
+<span class="lineNum">      40 </span>            :         /* get the value of the Extended Control Register ecx=0 */
+<span class="lineNum">      41 </span><span class="lineCov">         23 :         asm volatile (</span>
+<span class="lineNum">      42 </span>            :                 /* uses a direct encoding of the XGETBV instruction as only recent */
+<span class="lineNum">      43 </span>            :                 /* assemblers support it. */
+<span class="lineNum">      44 </span>            :                 /* the next line is equivalent at: &quot;xgetbv\n&quot; */
+<span class="lineNum">      45 </span>            :                 &quot;.byte 0x0f, 0x01, 0xd0\n&quot;
+<span class="lineNum">      46 </span><span class="lineCov">         23 :                 : &quot;=a&quot; (reg[0]), &quot;=d&quot; (reg[3])</span>
+<span class="lineNum">      47 </span>            :                 : &quot;c&quot; (0)
+<span class="lineNum">      48 </span>            :         );
+<span class="lineNum">      49 </span><span class="lineCov">         23 : }</span>
+<span class="lineNum">      50 </span>            : 
+<a name="51"><span class="lineNum">      51 </span>            : #define CPU_VENDOR_MAX 13</a>
+<span class="lineNum">      52 </span>            : 
+<span class="lineNum">      53 </span><span class="lineCov">        249 : static inline void raid_cpu_info(char *vendor, unsigned *family, unsigned *model)</span>
+<span class="lineNum">      54 </span>            : {
+<span class="lineNum">      55 </span>            :         uint32_t reg[4];
+<span class="lineNum">      56 </span>            :         unsigned f, ef, m, em;
+<span class="lineNum">      57 </span>            : 
+<span class="lineNum">      58 </span><span class="lineCov">        249 :         raid_cpuid(0, 0, reg);</span>
+<span class="lineNum">      59 </span>            : 
+<span class="lineNum">      60 </span><span class="lineCov">        249 :         ((uint32_t*)vendor)[0] = reg[1];</span>
+<span class="lineNum">      61 </span><span class="lineCov">        249 :         ((uint32_t*)vendor)[1] = reg[3];</span>
+<span class="lineNum">      62 </span><span class="lineCov">        249 :         ((uint32_t*)vendor)[2] = reg[2];</span>
+<span class="lineNum">      63 </span><span class="lineCov">        249 :         vendor[12] = 0;</span>
+<span class="lineNum">      64 </span>            : 
+<span class="lineNum">      65 </span><span class="lineCov">        249 :         raid_cpuid(1, 0, reg);</span>
+<span class="lineNum">      66 </span>            : 
+<span class="lineNum">      67 </span><span class="lineCov">        249 :         f = (reg[0] &gt;&gt; 8) &amp; 0xF;</span>
+<span class="lineNum">      68 </span><span class="lineCov">        249 :         ef = (reg[0] &gt;&gt; 20) &amp; 0xFF;</span>
+<span class="lineNum">      69 </span><span class="lineCov">        249 :         m = (reg[0] &gt;&gt; 4) &amp; 0xF;</span>
+<span class="lineNum">      70 </span><span class="lineCov">        249 :         em = (reg[0] &gt;&gt; 16) &amp; 0xF;</span>
+<span class="lineNum">      71 </span>            : 
+<span class="lineNum">      72 </span><span class="lineCov">        249 :         if (strcmp(vendor, &quot;AuthenticAMD&quot;) == 0) {</span>
+<span class="lineNum">      73 </span><span class="lineNoCov">          0 :                 if (f &lt; 15) {</span>
+<span class="lineNum">      74 </span><span class="lineNoCov">          0 :                         *family = f;</span>
+<span class="lineNum">      75 </span><span class="lineNoCov">          0 :                         *model = m;</span>
+<span class="lineNum">      76 </span>            :                 } else {
+<span class="lineNum">      77 </span><span class="lineNoCov">          0 :                         *family = f + ef;</span>
+<span class="lineNum">      78 </span><span class="lineNoCov">          0 :                         *model = m + (em &lt;&lt; 4);</span>
+<span class="lineNum">      79 </span>            :                 }
+<span class="lineNum">      80 </span>            :         } else {
+<span class="lineNum">      81 </span><span class="lineCov">        249 :                 *family = f + ef;</span>
+<span class="lineNum">      82 </span><span class="lineCov">        249 :                 *model = m + (em &lt;&lt; 4);</span>
+<span class="lineNum">      83 </span>            :         }
+<a name="84"><span class="lineNum">      84 </span><span class="lineCov">        249 : }</span></a>
+<span class="lineNum">      85 </span>            : 
+<span class="lineNum">      86 </span><span class="lineCov">       1070 : static inline int raid_cpu_match_sse(uint32_t cpuid_1_ecx, uint32_t cpuid_1_edx)</span>
+<span class="lineNum">      87 </span>            : {
+<span class="lineNum">      88 </span>            :         uint32_t reg[4];
+<span class="lineNum">      89 </span>            : 
+<span class="lineNum">      90 </span><span class="lineCov">       1070 :         raid_cpuid(1, 0, reg);</span>
+<span class="lineNum">      91 </span><span class="lineCov">       1070 :         if ((reg[2] &amp; cpuid_1_ecx) != cpuid_1_ecx)</span>
+<span class="lineNum">      92 </span><span class="lineCov">         18 :                 return 0;</span>
+<span class="lineNum">      93 </span><span class="lineCov">       1052 :         if ((reg[3] &amp; cpuid_1_edx) != cpuid_1_edx)</span>
+<span class="lineNum">      94 </span><span class="lineNoCov">          0 :                 return 0;</span>
+<span class="lineNum">      95 </span>            : 
+<span class="lineNum">      96 </span><span class="lineCov">       1052 :         return 1;</span>
+<a name="97"><span class="lineNum">      97 </span>            : }</a>
+<span class="lineNum">      98 </span>            : 
+<span class="lineNum">      99 </span><span class="lineCov">        288 : static inline int raid_cpu_match_avx(uint32_t cpuid_1_ecx, uint32_t cpuid_7_ebx, uint32_t xcr0)</span>
+<span class="lineNum">     100 </span>            : {
+<span class="lineNum">     101 </span>            :         uint32_t reg[4];
+<span class="lineNum">     102 </span>            : 
+<span class="lineNum">     103 </span><span class="lineCov">        288 :         raid_cpuid(1, 0, reg);</span>
+<span class="lineNum">     104 </span><span class="lineCov">        288 :         if ((reg[2] &amp; cpuid_1_ecx) != cpuid_1_ecx)</span>
+<span class="lineNum">     105 </span><span class="lineCov">        265 :                 return 0;</span>
+<span class="lineNum">     106 </span>            : 
+<span class="lineNum">     107 </span><span class="lineCov">         23 :         raid_xgetbv(reg);</span>
+<span class="lineNum">     108 </span><span class="lineCov">         23 :         if ((reg[0] &amp; xcr0) != xcr0)</span>
+<span class="lineNum">     109 </span><span class="lineNoCov">          0 :                 return 0;</span>
+<span class="lineNum">     110 </span>            : 
+<span class="lineNum">     111 </span><span class="lineCov">         23 :         raid_cpuid(7, 0, reg);</span>
+<span class="lineNum">     112 </span><span class="lineCov">         23 :         if ((reg[1] &amp; cpuid_7_ebx) != cpuid_7_ebx)</span>
+<span class="lineNum">     113 </span><span class="lineNoCov">          0 :                 return 0;</span>
+<span class="lineNum">     114 </span>            : 
+<span class="lineNum">     115 </span><span class="lineCov">         23 :         return 1;</span>
+<a name="116"><span class="lineNum">     116 </span>            : }</a>
+<span class="lineNum">     117 </span>            : 
+<span class="lineNum">     118 </span><span class="lineCov">        276 : static inline int raid_cpu_has_sse2(void)</span>
+<span class="lineNum">     119 </span>            : {
+<span class="lineNum">     120 </span>            :         /*
+<span class="lineNum">     121 </span>            :          * Intel® 64 and IA-32 Architectures Software Developer's Manual
+<span class="lineNum">     122 </span>            :          * 325462-048US September 2013
+<span class="lineNum">     123 </span>            :          *
+<span class="lineNum">     124 </span>            :          * 11.6.2 Checking for SSE/SSE2 Support
+<span class="lineNum">     125 </span>            :          * Before an application attempts to use the SSE and/or SSE2 extensions, it should check
+<span class="lineNum">     126 </span>            :          * that they are present on the processor:
+<span class="lineNum">     127 </span>            :          * 1. Check that the processor supports the CPUID instruction. Bit 21 of the EFLAGS
+<span class="lineNum">     128 </span>            :          * register can be used to check processor's support the CPUID instruction.
+<span class="lineNum">     129 </span>            :          * 2. Check that the processor supports the SSE and/or SSE2 extensions (true if
+<span class="lineNum">     130 </span>            :          * CPUID.01H:EDX.SSE[bit 25] = 1 and/or CPUID.01H:EDX.SSE2[bit 26] = 1).
+<span class="lineNum">     131 </span>            :          */
+<span class="lineNum">     132 </span><span class="lineCov">        276 :         return raid_cpu_match_sse(</span>
+<span class="lineNum">     133 </span>            :                 0,
+<span class="lineNum">     134 </span>            :                 1 &lt;&lt; 26); /* SSE2 */
+<a name="135"><span class="lineNum">     135 </span>            : }</a>
+<span class="lineNum">     136 </span>            : 
+<span class="lineNum">     137 </span><span class="lineCov">        530 : static inline int raid_cpu_has_ssse3(void)</span>
+<span class="lineNum">     138 </span>            : {
+<span class="lineNum">     139 </span>            :         /*
+<span class="lineNum">     140 </span>            :          * Intel® 64 and IA-32 Architectures Software Developer's Manual
+<span class="lineNum">     141 </span>            :          * 325462-048US September 2013
+<span class="lineNum">     142 </span>            :          *
+<span class="lineNum">     143 </span>            :          * 12.7.2 Checking for SSSE3 Support
+<span class="lineNum">     144 </span>            :          * Before an application attempts to use the SSSE3 extensions, the application should
+<span class="lineNum">     145 </span>            :          * follow the steps illustrated in Section 11.6.2, &quot;Checking for SSE/SSE2 Support.&quot;
+<span class="lineNum">     146 </span>            :          * Next, use the additional step provided below:
+<span class="lineNum">     147 </span>            :          * Check that the processor supports SSSE3 (if CPUID.01H:ECX.SSSE3[bit 9] = 1).
+<span class="lineNum">     148 </span>            :          */
+<span class="lineNum">     149 </span><span class="lineCov">        530 :         return raid_cpu_match_sse(</span>
+<span class="lineNum">     150 </span>            :                 1 &lt;&lt; 9, /* SSSE3 */
+<span class="lineNum">     151 </span>            :                 1 &lt;&lt; 26); /* SSE2 */
+<a name="152"><span class="lineNum">     152 </span>            : }</a>
+<span class="lineNum">     153 </span>            : 
+<span class="lineNum">     154 </span><span class="lineCov">        264 : static inline int raid_cpu_has_crc32(void)</span>
+<span class="lineNum">     155 </span>            : {
+<span class="lineNum">     156 </span>            :         /*
+<span class="lineNum">     157 </span>            :          * Intel® 64 and IA-32 Architectures Software Developer's Manual
+<span class="lineNum">     158 </span>            :          * 325462-048US September 2013
+<span class="lineNum">     159 </span>            :          *
+<span class="lineNum">     160 </span>            :          * 12.12.3 Checking for SSE4.2 Support
+<span class="lineNum">     161 </span>            :          * ...
+<span class="lineNum">     162 </span>            :          * Before an application attempts to use the CRC32 instruction, it must check
+<span class="lineNum">     163 </span>            :          * that the processor supports SSE4.2 (if CPUID.01H:ECX.SSE4_2[bit 20] = 1).
+<span class="lineNum">     164 </span>            :          */
+<span class="lineNum">     165 </span><span class="lineCov">        264 :         return raid_cpu_match_sse(</span>
+<span class="lineNum">     166 </span>            :                 1 &lt;&lt; 20, /* CRC32 */
+<span class="lineNum">     167 </span>            :                 0);
+<a name="168"><span class="lineNum">     168 </span>            : }</a>
+<span class="lineNum">     169 </span>            : 
+<span class="lineNum">     170 </span><span class="lineCov">        288 : static inline int raid_cpu_has_avx2(void)</span>
+<span class="lineNum">     171 </span>            : {
+<span class="lineNum">     172 </span>            :         /*
+<span class="lineNum">     173 </span>            :          * Intel Architecture Instruction Set Extensions Programming Reference
+<span class="lineNum">     174 </span>            :          * 319433-022 October 2014
+<span class="lineNum">     175 </span>            :          *
+<span class="lineNum">     176 </span>            :          * 14.3 Detection of AVX instructions
+<span class="lineNum">     177 </span>            :          * 1) Detect CPUID.1:ECX.OSXSAVE[bit 27] = 1 (XGETBV enabled for application use1)
+<span class="lineNum">     178 </span>            :          * 2) Issue XGETBV and verify that XCR0[2:1] = `11b' (XMM state and YMM state are enabled by OS).
+<span class="lineNum">     179 </span>            :          * 3) detect CPUID.1:ECX.AVX[bit 28] = 1 (AVX instructions supported).
+<span class="lineNum">     180 </span>            :          * (Step 3 can be done in any order relative to 1 and 2)
+<span class="lineNum">     181 </span>            :          *
+<span class="lineNum">     182 </span>            :          * 14.7.1 Detection of AVX2
+<span class="lineNum">     183 </span>            :          * Hardware support for AVX2 is indicated by CPUID.(EAX=07H, ECX=0H):EBX.AVX2[bit 5]=1.
+<span class="lineNum">     184 </span>            :          * Application Software must identify that hardware supports AVX, after that it must
+<span class="lineNum">     185 </span>            :          * also detect support for AVX2 by checking CPUID.(EAX=07H, ECX=0H):EBX.AVX2[bit 5].
+<span class="lineNum">     186 </span>            :          */
+<span class="lineNum">     187 </span><span class="lineCov">        288 :         return raid_cpu_match_avx(</span>
+<span class="lineNum">     188 </span>            :                 (1 &lt;&lt; 27) | (1 &lt;&lt; 28), /* OSXSAVE and AVX */
+<span class="lineNum">     189 </span>            :                 1 &lt;&lt; 5, /* AVX2 */
+<span class="lineNum">     190 </span>            :                 3 &lt;&lt; 1); /* OS saves XMM and YMM registers */
+<span class="lineNum">     191 </span>            : }
+<span class="lineNum">     192 </span>            : 
+<span class="lineNum">     193 </span>            : static inline int raid_cpu_has_avx512bw(void)
+<span class="lineNum">     194 </span>            : {
+<span class="lineNum">     195 </span>            :         /*
+<span class="lineNum">     196 </span>            :          * Intel Architecture Instruction Set Extensions Programming Reference
+<span class="lineNum">     197 </span>            :          * 319433-022 October 2014
+<span class="lineNum">     198 </span>            :          *
+<span class="lineNum">     199 </span>            :          * 2.2 Detection of 512-bit Instruction Groups of Intel AVX-512 Family
+<span class="lineNum">     200 </span>            :          * 1) Detect CPUID.1:ECX.OSXSAVE[bit 27] = 1 (XGETBV enabled for application use)
+<span class="lineNum">     201 </span>            :          * 2) Execute XGETBV and verify that XCR0[7:5] = `111b' (OPMASK state, upper 256-bit of
+<span class="lineNum">     202 </span>            :          * ZMM0-ZMM15 and ZMM16-ZMM31 state are enabled by OS) and that XCR0[2:1] = `11b'
+<span class="lineNum">     203 </span>            :          * (XMM state and YMM state are enabled by OS).
+<span class="lineNum">     204 </span>            :          * 3) Verify both CPUID.0x7.0:EBX.AVX512F[bit 16] = 1, CPUID.0x7.0:EBX.AVX512BW[bit 30] = 1.
+<span class="lineNum">     205 </span>            :          */
+<span class="lineNum">     206 </span>            : 
+<span class="lineNum">     207 </span>            :         /* note that intentionally we don't check for AVX and AVX2 */
+<span class="lineNum">     208 </span>            :         /* because the documentation doesn't require that */
+<span class="lineNum">     209 </span>            :         return raid_cpu_match_avx(
+<span class="lineNum">     210 </span>            :                 1 &lt;&lt; 27, /* XSAVE/XGETBV */
+<span class="lineNum">     211 </span>            :                 (1 &lt;&lt; 16) | (1 &lt;&lt; 30), /* AVX512F and AVX512BW */
+<span class="lineNum">     212 </span>            :                 (3 &lt;&lt; 1) | (7 &lt;&lt; 5)); /* OS saves XMM, YMM and ZMM registers */
+<span class="lineNum">     213 </span>            : }
+<span class="lineNum">     214 </span>            : 
+<span class="lineNum">     215 </span>            : /**
+<span class="lineNum">     216 </span>            :  * Check if the processor has a slow MULT implementation.
+<a name="217"><span class="lineNum">     217 </span>            :  * If yes, it's better to use a hash not based on multiplication.</a>
+<span class="lineNum">     218 </span>            :  */
+<span class="lineNum">     219 </span><span class="lineCov">        241 : static inline int raid_cpu_has_slowmult(void)</span>
+<span class="lineNum">     220 </span>            : {
+<span class="lineNum">     221 </span>            :         char vendor[CPU_VENDOR_MAX];
+<span class="lineNum">     222 </span>            :         unsigned family;
+<span class="lineNum">     223 </span>            :         unsigned model;
+<span class="lineNum">     224 </span>            : 
+<span class="lineNum">     225 </span><span class="lineCov">        241 :         raid_cpu_info(vendor, &amp;family, &amp;model);</span>
+<span class="lineNum">     226 </span>            : 
+<span class="lineNum">     227 </span><span class="lineCov">        241 :         if (strcmp(vendor, &quot;GenuineIntel&quot;) == 0) {</span>
+<span class="lineNum">     228 </span>            :                 /*
+<span class="lineNum">     229 </span>            :                  * Intel Atom
+<span class="lineNum">     230 </span>            :                  * Murmur3 based on MUL instruction, is a lot slower
+<span class="lineNum">     231 </span>            :                  * than Spooky2 based on SHIFTs.
+<span class="lineNum">     232 </span>            :                  * Like: 378 MB/s vs 3413 MB/s
+<span class="lineNum">     233 </span>            :                  */
+<span class="lineNum">     234 </span><span class="lineCov">        241 :                 if (family == 6 &amp;&amp; model == 28)</span>
+<span class="lineNum">     235 </span><span class="lineNoCov">          0 :                         return 1;</span>
+<span class="lineNum">     236 </span>            :         }
+<span class="lineNum">     237 </span>            : 
+<span class="lineNum">     238 </span><span class="lineCov">        241 :         return 0;</span>
+<span class="lineNum">     239 </span>            : }
+<span class="lineNum">     240 </span>            : 
+<span class="lineNum">     241 </span>            : /**
+<span class="lineNum">     242 </span>            :  * Check if the processor has a slow extended set of SSE registers.
+<a name="243"><span class="lineNum">     243 </span>            :  * If yes, it's better to limit the unroll to the firsrt 8 registers.</a>
+<span class="lineNum">     244 </span>            :  */
+<span class="lineNum">     245 </span><span class="lineCov">          4 : static inline int raid_cpu_has_slowextendedreg(void)</span>
+<span class="lineNum">     246 </span>            : {
+<span class="lineNum">     247 </span>            :         char vendor[CPU_VENDOR_MAX];
+<span class="lineNum">     248 </span>            :         unsigned family;
+<span class="lineNum">     249 </span>            :         unsigned model;
+<span class="lineNum">     250 </span>            : 
+<span class="lineNum">     251 </span><span class="lineCov">          4 :         raid_cpu_info(vendor, &amp;family, &amp;model);</span>
+<span class="lineNum">     252 </span>            : 
+<span class="lineNum">     253 </span><span class="lineCov">          4 :         if (strcmp(vendor, &quot;AuthenticAMD&quot;) == 0) {</span>
+<span class="lineNum">     254 </span>            :                 /*
+<span class="lineNum">     255 </span>            :                  * AMD Bulldozer
+<span class="lineNum">     256 </span>            :                  * PAR1/PAR2 implementations using 16 SSE registers are slower
+<span class="lineNum">     257 </span>            :                  * than ones using only the first 8 registers.
+<span class="lineNum">     258 </span>            :                  * Like: 4465 MB/s vs 4922 MB/s.
+<span class="lineNum">     259 </span>            :                  */
+<span class="lineNum">     260 </span><span class="lineNoCov">          0 :                 if (family == 21)</span>
+<span class="lineNum">     261 </span><span class="lineNoCov">          0 :                         return 1;</span>
+<span class="lineNum">     262 </span>            :         }
+<span class="lineNum">     263 </span>            : 
+<span class="lineNum">     264 </span><span class="lineCov">          4 :         return 0;</span>
+<span class="lineNum">     265 </span>            : }
+<span class="lineNum">     266 </span>            : #endif
+<span class="lineNum">     267 </span>            : 
+<span class="lineNum">     268 </span>            : #endif
+<span class="lineNum">     269 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

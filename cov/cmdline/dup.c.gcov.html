@@ -1,0 +1,232 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - cmdline/dup.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">cmdline</a> - dup.c<span style="font-size: 80%;"> (source / <a href="dup.c.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">56</td>
+            <td class="headerCovTableEntry">60</td>
+            <td class="headerCovTableEntryHi">93.3 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2015-05-12</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">5</td>
+            <td class="headerCovTableEntry">5</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (C) 2011 Andrea Mazzoleni
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * This program is free software: you can redistribute it and/or modify
+<span class="lineNum">       5 </span>            :  * it under the terms of the GNU General Public License as published by
+<span class="lineNum">       6 </span>            :  * the Free Software Foundation, either version 3 of the License, or
+<span class="lineNum">       7 </span>            :  * (at your option) any later version.
+<span class="lineNum">       8 </span>            :  *
+<span class="lineNum">       9 </span>            :  * This program is distributed in the hope that it will be useful,
+<span class="lineNum">      10 </span>            :  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      11 </span>            :  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      12 </span>            :  * GNU General Public License for more details.
+<span class="lineNum">      13 </span>            :  *
+<span class="lineNum">      14 </span>            :  * You should have received a copy of the GNU General Public License
+<span class="lineNum">      15 </span>            :  * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+<span class="lineNum">      16 </span>            :  */
+<span class="lineNum">      17 </span>            : 
+<span class="lineNum">      18 </span>            : #include &quot;portable.h&quot;
+<span class="lineNum">      19 </span>            : 
+<span class="lineNum">      20 </span>            : #include &quot;support.h&quot;
+<span class="lineNum">      21 </span>            : #include &quot;util.h&quot;
+<span class="lineNum">      22 </span>            : #include &quot;elem.h&quot;
+<span class="lineNum">      23 </span>            : #include &quot;state.h&quot;
+<span class="lineNum">      24 </span>            : #include &quot;parity.h&quot;
+<span class="lineNum">      25 </span>            : #include &quot;handle.h&quot;
+<span class="lineNum">      26 </span>            : 
+<span class="lineNum">      27 </span>            : /****************************************************************************/
+<span class="lineNum">      28 </span>            : /* dup */
+<span class="lineNum">      29 </span>            : 
+<span class="lineNum">      30 </span>            : struct snapraid_hash {
+<span class="lineNum">      31 </span>            :         struct snapraid_disk* disk; /**&lt; Disk. */
+<span class="lineNum">      32 </span>            :         struct snapraid_file* file; /**&lt; File. */
+<span class="lineNum">      33 </span>            :         unsigned char hash[HASH_SIZE]; /**&lt; Hash of the whole file. */
+<span class="lineNum">      34 </span>            : 
+<span class="lineNum">      35 </span>            :         /* nodes for data structures */
+<span class="lineNum">      36 </span>            :         tommy_hashdyn_node node;
+<a name="37"><span class="lineNum">      37 </span>            : };</a>
+<span class="lineNum">      38 </span>            : 
+<span class="lineNum">      39 </span><span class="lineCov">      16957 : struct snapraid_hash* hash_alloc(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)</span>
+<span class="lineNum">      40 </span>            : {
+<span class="lineNum">      41 </span>            :         struct snapraid_hash* hash;
+<span class="lineNum">      42 </span>            :         block_off_t i;
+<span class="lineNum">      43 </span>            :         unsigned char* buf;
+<span class="lineNum">      44 </span>            : 
+<span class="lineNum">      45 </span><span class="lineCov">      16957 :         hash = malloc_nofail(sizeof(struct snapraid_hash));</span>
+<span class="lineNum">      46 </span><span class="lineCov">      16957 :         hash-&gt;disk = disk;</span>
+<span class="lineNum">      47 </span><span class="lineCov">      16957 :         hash-&gt;file = file;</span>
+<span class="lineNum">      48 </span>            : 
+<span class="lineNum">      49 </span><span class="lineCov">      16957 :         buf = malloc_nofail(file-&gt;blockmax * HASH_SIZE);</span>
+<span class="lineNum">      50 </span>            : 
+<span class="lineNum">      51 </span>            :         /* set the back pointer */
+<span class="lineNum">      52 </span><span class="lineCov">      58818 :         for (i = 0; i &lt; file-&gt;blockmax; ++i) {</span>
+<span class="lineNum">      53 </span><span class="lineCov">      41861 :                 memcpy(buf + i * HASH_SIZE, file-&gt;blockvec[i].hash, HASH_SIZE);</span>
+<span class="lineNum">      54 </span>            : 
+<span class="lineNum">      55 </span><span class="lineCov">      41861 :                 if (!block_has_updated_hash(&amp;file-&gt;blockvec[i])) {</span>
+<span class="lineNum">      56 </span><span class="lineNoCov">          0 :                         free(buf);</span>
+<span class="lineNum">      57 </span><span class="lineNoCov">          0 :                         free(hash);</span>
+<span class="lineNum">      58 </span><span class="lineNoCov">          0 :                         return 0;</span>
+<span class="lineNum">      59 </span>            :                 }
+<span class="lineNum">      60 </span>            :         }
+<span class="lineNum">      61 </span>            : 
+<span class="lineNum">      62 </span><span class="lineCov">      16957 :         memhash(state-&gt;besthash, state-&gt;hashseed, hash-&gt;hash, buf, file-&gt;blockmax * HASH_SIZE);</span>
+<span class="lineNum">      63 </span>            : 
+<span class="lineNum">      64 </span><span class="lineCov">      16957 :         free(buf);</span>
+<span class="lineNum">      65 </span>            : 
+<span class="lineNum">      66 </span><span class="lineCov">      16957 :         return hash;</span>
+<a name="67"><span class="lineNum">      67 </span>            : }</a>
+<span class="lineNum">      68 </span>            : 
+<span class="lineNum">      69 </span><span class="lineCov">      16957 : static inline tommy_uint32_t hash_hash(struct snapraid_hash* hash)</span>
+<span class="lineNum">      70 </span>            : {
+<span class="lineNum">      71 </span><span class="lineCov">      16957 :         return tommy_hash_u32(0, hash-&gt;hash, HASH_SIZE);</span>
+<a name="72"><span class="lineNum">      72 </span>            : }</a>
+<span class="lineNum">      73 </span>            : 
+<span class="lineNum">      74 </span><span class="lineCov">      16957 : void hash_free(struct snapraid_hash* hash)</span>
+<span class="lineNum">      75 </span>            : {
+<span class="lineNum">      76 </span><span class="lineCov">      16957 :         free(hash);</span>
+<a name="77"><span class="lineNum">      77 </span><span class="lineCov">      16957 : }</span></a>
+<span class="lineNum">      78 </span>            : 
+<span class="lineNum">      79 </span><span class="lineCov">          2 : int hash_compare(const void* void_arg, const void* void_data)</span>
+<span class="lineNum">      80 </span>            : {
+<span class="lineNum">      81 </span><span class="lineCov">          2 :         const char* arg = void_arg;</span>
+<span class="lineNum">      82 </span><span class="lineCov">          2 :         const struct snapraid_hash* hash = void_data;</span>
+<span class="lineNum">      83 </span>            : 
+<span class="lineNum">      84 </span><span class="lineCov">          2 :         return memcmp(arg, hash-&gt;hash, HASH_SIZE);</span>
+<a name="85"><span class="lineNum">      85 </span>            : }</a>
+<span class="lineNum">      86 </span>            : 
+<span class="lineNum">      87 </span><span class="lineCov">          3 : void state_dup(struct snapraid_state* state)</span>
+<span class="lineNum">      88 </span>            : {
+<span class="lineNum">      89 </span>            :         tommy_hashdyn hashset;
+<span class="lineNum">      90 </span>            :         tommy_node* i;
+<span class="lineNum">      91 </span>            :         unsigned count;
+<span class="lineNum">      92 </span>            :         data_off_t size;
+<span class="lineNum">      93 </span>            : 
+<span class="lineNum">      94 </span><span class="lineCov">          3 :         tommy_hashdyn_init(&amp;hashset);</span>
+<span class="lineNum">      95 </span>            : 
+<span class="lineNum">      96 </span><span class="lineCov">          3 :         count = 0;</span>
+<span class="lineNum">      97 </span><span class="lineCov">          3 :         size = 0;</span>
+<span class="lineNum">      98 </span>            : 
+<span class="lineNum">      99 </span><span class="lineCov">          3 :         msg_progress(&quot;Comparing...\n&quot;);</span>
+<span class="lineNum">     100 </span>            : 
+<span class="lineNum">     101 </span>            :         /* for each disk */
+<span class="lineNum">     102 </span><span class="lineCov">         21 :         for (i = state-&gt;disklist; i != 0; i = i-&gt;next) {</span>
+<span class="lineNum">     103 </span>            :                 tommy_node* j;
+<span class="lineNum">     104 </span><span class="lineCov">         18 :                 struct snapraid_disk* disk = i-&gt;data;</span>
+<span class="lineNum">     105 </span>            : 
+<span class="lineNum">     106 </span>            :                 /* for each file */
+<span class="lineNum">     107 </span><span class="lineCov">      16997 :                 for (j = disk-&gt;filelist; j != 0; j = j-&gt;next) {</span>
+<span class="lineNum">     108 </span><span class="lineCov">      16979 :                         struct snapraid_file* file = j-&gt;data;</span>
+<span class="lineNum">     109 </span>            :                         struct snapraid_hash* hash;
+<span class="lineNum">     110 </span>            :                         tommy_hash_t hash32;
+<span class="lineNum">     111 </span>            : 
+<span class="lineNum">     112 </span>            :                         /* if empty, skip it */
+<span class="lineNum">     113 </span><span class="lineCov">      16979 :                         if (file-&gt;size == 0)</span>
+<span class="lineNum">     114 </span><span class="lineCov">         22 :                                 continue;</span>
+<span class="lineNum">     115 </span>            : 
+<span class="lineNum">     116 </span><span class="lineCov">      16957 :                         hash = hash_alloc(state, disk, file);</span>
+<span class="lineNum">     117 </span>            : 
+<span class="lineNum">     118 </span>            :                         /* if no hash, skip it */
+<span class="lineNum">     119 </span><span class="lineCov">      16957 :                         if (!hash)</span>
+<span class="lineNum">     120 </span><span class="lineNoCov">          0 :                                 continue;</span>
+<span class="lineNum">     121 </span>            : 
+<span class="lineNum">     122 </span><span class="lineCov">      16957 :                         hash32 = hash_hash(hash);</span>
+<span class="lineNum">     123 </span>            : 
+<span class="lineNum">     124 </span><span class="lineCov">      16957 :                         struct snapraid_hash* dup = tommy_hashdyn_search(&amp;hashset, hash_compare, hash-&gt;hash, hash32);</span>
+<span class="lineNum">     125 </span><span class="lineCov">      16957 :                         if (dup) {</span>
+<span class="lineNum">     126 </span><span class="lineCov">          2 :                                 ++count;</span>
+<span class="lineNum">     127 </span><span class="lineCov">          2 :                                 size += dup-&gt;file-&gt;size;</span>
+<span class="lineNum">     128 </span><span class="lineCov">          2 :                                 log_tag(&quot;dup:%s:%s:%s:%s:%&quot; PRIu64 &quot;: dup\n&quot;, disk-&gt;name, esc(file-&gt;sub), dup-&gt;disk-&gt;name, esc(dup-&gt;file-&gt;sub), dup-&gt;file-&gt;size);</span>
+<span class="lineNum">     129 </span><span class="lineCov">          2 :                                 printf(&quot;%12&quot; PRIu64 &quot; %s%s = %s%s\n&quot;, file-&gt;size, disk-&gt;dir, file-&gt;sub, dup-&gt;disk-&gt;dir, dup-&gt;file-&gt;sub);</span>
+<span class="lineNum">     130 </span><span class="lineCov">          2 :                                 hash_free(hash);</span>
+<span class="lineNum">     131 </span>            :                         } else {
+<span class="lineNum">     132 </span><span class="lineCov">      16955 :                                 tommy_hashdyn_insert(&amp;hashset, &amp;hash-&gt;node, hash, hash32);</span>
+<span class="lineNum">     133 </span>            :                         }
+<span class="lineNum">     134 </span>            :                 }
+<span class="lineNum">     135 </span>            :         }
+<span class="lineNum">     136 </span>            : 
+<span class="lineNum">     137 </span><span class="lineCov">          3 :         tommy_hashdyn_foreach(&amp;hashset, (tommy_foreach_func*)hash_free);</span>
+<span class="lineNum">     138 </span><span class="lineCov">          3 :         tommy_hashdyn_done(&amp;hashset);</span>
+<span class="lineNum">     139 </span>            : 
+<span class="lineNum">     140 </span><span class="lineCov">          3 :         msg_status(&quot;\n&quot;);</span>
+<span class="lineNum">     141 </span><span class="lineCov">          3 :         msg_status(&quot;%8u duplicates, for %&quot; PRIu64 &quot; GB\n&quot;, count, size / GIGA);</span>
+<span class="lineNum">     142 </span><span class="lineCov">          3 :         if (count)</span>
+<span class="lineNum">     143 </span><span class="lineCov">          2 :                 msg_status(&quot;There are duplicates!\n&quot;);</span>
+<span class="lineNum">     144 </span>            :         else
+<span class="lineNum">     145 </span><span class="lineCov">          1 :                 msg_status(&quot;No duplicates\n&quot;);</span>
+<span class="lineNum">     146 </span>            : 
+<span class="lineNum">     147 </span><span class="lineCov">          3 :         log_tag(&quot;summary:dup_count:%u\n&quot;, count);</span>
+<span class="lineNum">     148 </span><span class="lineCov">          3 :         log_tag(&quot;summary:dup_size:%&quot; PRIu64 &quot;\n&quot;, size);</span>
+<span class="lineNum">     149 </span><span class="lineCov">          3 :         if (count == 0) {</span>
+<span class="lineNum">     150 </span><span class="lineCov">          1 :                 log_tag(&quot;summary:exit:unique\n&quot;);</span>
+<span class="lineNum">     151 </span>            :         } else {
+<span class="lineNum">     152 </span><span class="lineCov">          2 :                 log_tag(&quot;summary:exit:dup\n&quot;);</span>
+<span class="lineNum">     153 </span>            :         }
+<span class="lineNum">     154 </span><span class="lineCov">          3 :         log_flush();</span>
+<span class="lineNum">     155 </span><span class="lineCov">          3 : }</span>
+<span class="lineNum">     156 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

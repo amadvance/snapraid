@@ -1,0 +1,498 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - cmdline/portable.h</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">cmdline</a> - portable.h<span style="font-size: 80%;"> (source / <a href="portable.h.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2015-05-12</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (C) 2011 Andrea Mazzoleni
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * This program is free software: you can redistribute it and/or modify
+<span class="lineNum">       5 </span>            :  * it under the terms of the GNU General Public License as published by
+<span class="lineNum">       6 </span>            :  * the Free Software Foundation, either version 3 of the License, or
+<span class="lineNum">       7 </span>            :  * (at your option) any later version.
+<span class="lineNum">       8 </span>            :  *
+<span class="lineNum">       9 </span>            :  * This program is distributed in the hope that it will be useful,
+<span class="lineNum">      10 </span>            :  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      11 </span>            :  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      12 </span>            :  * GNU General Public License for more details.
+<span class="lineNum">      13 </span>            :  *
+<span class="lineNum">      14 </span>            :  * You should have received a copy of the GNU General Public License
+<span class="lineNum">      15 </span>            :  * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+<span class="lineNum">      16 </span>            :  */
+<span class="lineNum">      17 </span>            : 
+<span class="lineNum">      18 </span>            : #ifndef __PORTABLE_H
+<span class="lineNum">      19 </span>            : #define __PORTABLE_H
+<span class="lineNum">      20 </span>            : 
+<span class="lineNum">      21 </span>            : #if HAVE_CONFIG_H
+<span class="lineNum">      22 </span>            : #include &quot;config.h&quot; /* Use &quot; to include first in the same directory of this file */
+<span class="lineNum">      23 </span>            : #endif
+<span class="lineNum">      24 </span>            : 
+<span class="lineNum">      25 </span>            : /***************************************************************************/
+<span class="lineNum">      26 </span>            : /* Config */
+<span class="lineNum">      27 </span>            : 
+<span class="lineNum">      28 </span>            : #ifdef __MINGW32__
+<span class="lineNum">      29 </span>            : /**
+<span class="lineNum">      30 </span>            :  * Enable the GNU printf functions instead of using the MSVCRT ones.
+<span class="lineNum">      31 </span>            :  *
+<span class="lineNum">      32 </span>            :  * Note that this is the default if _POSIX is also defined.
+<span class="lineNum">      33 </span>            :  * To disable it you have to set it to 0.
+<span class="lineNum">      34 </span>            :  */
+<span class="lineNum">      35 </span>            : #define __USE_MINGW_ANSI_STDIO 1
+<span class="lineNum">      36 </span>            : 
+<span class="lineNum">      37 </span>            : /*
+<span class="lineNum">      38 </span>            :  * Define the MSVCRT version targetting Windows XP.
+<span class="lineNum">      39 </span>            :  */
+<span class="lineNum">      40 </span>            : #define __MSVCRT_VERSION__ 0x0601
+<span class="lineNum">      41 </span>            : 
+<span class="lineNum">      42 </span>            : /**
+<span class="lineNum">      43 </span>            :  * Include Windows XP headers.
+<span class="lineNum">      44 </span>            :  *
+<span class="lineNum">      45 </span>            :  * Like for CreateHardLinkW().
+<span class="lineNum">      46 </span>            :  */
+<span class="lineNum">      47 </span>            : #define _WIN32_WINNT 0x501
+<span class="lineNum">      48 </span>            : 
+<span class="lineNum">      49 </span>            : #include &lt;windows.h&gt;
+<span class="lineNum">      50 </span>            : #endif
+<span class="lineNum">      51 </span>            : 
+<span class="lineNum">      52 </span>            : /**
+<span class="lineNum">      53 </span>            :  * Specify the format attribute for printf.
+<span class="lineNum">      54 </span>            :  */
+<span class="lineNum">      55 </span>            : #ifdef __MINGW32__
+<span class="lineNum">      56 </span>            : #if defined(__USE_MINGW_ANSI_STDIO) &amp;&amp; __USE_MINGW_ANSI_STDIO == 1
+<span class="lineNum">      57 </span>            : #define attribute_printf gnu_printf /* GNU format */
+<span class="lineNum">      58 </span>            : #else
+<span class="lineNum">      59 </span>            : #define attribute_printf ms_printf /* MSVCRT format */
+<span class="lineNum">      60 </span>            : #endif
+<span class="lineNum">      61 </span>            : #else
+<span class="lineNum">      62 </span>            : #define attribute_printf printf /* GNU format is the default one */
+<span class="lineNum">      63 </span>            : #endif
+<span class="lineNum">      64 </span>            : 
+<span class="lineNum">      65 </span>            : /**
+<span class="lineNum">      66 </span>            :  * Compiler extension
+<span class="lineNum">      67 </span>            :  */
+<span class="lineNum">      68 </span>            : #ifndef __always_inline
+<span class="lineNum">      69 </span>            : #define __always_inline inline __attribute__((always_inline))
+<span class="lineNum">      70 </span>            : #endif
+<span class="lineNum">      71 </span>            : 
+<span class="lineNum">      72 </span>            : /**
+<span class="lineNum">      73 </span>            :  * Architecture.
+<span class="lineNum">      74 </span>            :  */
+<span class="lineNum">      75 </span>            : #if defined(__i386__)
+<span class="lineNum">      76 </span>            : #define CONFIG_X86 1
+<span class="lineNum">      77 </span>            : #define CONFIG_X86_32 1
+<span class="lineNum">      78 </span>            : #endif
+<span class="lineNum">      79 </span>            : 
+<span class="lineNum">      80 </span>            : #if defined(__x86_64__)
+<span class="lineNum">      81 </span>            : #define CONFIG_X86 1
+<span class="lineNum">      82 </span>            : #define CONFIG_X86_64 1
+<span class="lineNum">      83 </span>            : #endif
+<span class="lineNum">      84 </span>            : 
+<span class="lineNum">      85 </span>            : /**
+<span class="lineNum">      86 </span>            :  * Includes some platform specific headers.
+<span class="lineNum">      87 </span>            :  */
+<span class="lineNum">      88 </span>            : #if HAVE_SYS_PARAM_H
+<span class="lineNum">      89 </span>            : #include &lt;sys/param.h&gt;
+<span class="lineNum">      90 </span>            : #endif
+<span class="lineNum">      91 </span>            : 
+<span class="lineNum">      92 </span>            : #if HAVE_SYS_MOUNT_H
+<span class="lineNum">      93 </span>            : #include &lt;sys/mount.h&gt;
+<span class="lineNum">      94 </span>            : #endif
+<span class="lineNum">      95 </span>            : 
+<span class="lineNum">      96 </span>            : #if HAVE_SYS_VFS_H
+<span class="lineNum">      97 </span>            : #include &lt;sys/vfs.h&gt;
+<span class="lineNum">      98 </span>            : #endif
+<span class="lineNum">      99 </span>            : 
+<span class="lineNum">     100 </span>            : #if HAVE_SYS_STATFS_H
+<span class="lineNum">     101 </span>            : #include &lt;sys/statfs.h&gt;
+<span class="lineNum">     102 </span>            : #endif
+<span class="lineNum">     103 </span>            : 
+<span class="lineNum">     104 </span>            : #if HAVE_SYS_FILE_H
+<span class="lineNum">     105 </span>            : #include &lt;sys/file.h&gt;
+<span class="lineNum">     106 </span>            : #endif
+<span class="lineNum">     107 </span>            : 
+<span class="lineNum">     108 </span>            : #if HAVE_SYS_IOCTL_H
+<span class="lineNum">     109 </span>            : #include &lt;sys/ioctl.h&gt;
+<span class="lineNum">     110 </span>            : #endif
+<span class="lineNum">     111 </span>            : 
+<span class="lineNum">     112 </span>            : #if HAVE_LINUX_FS_H
+<span class="lineNum">     113 </span>            : #include &lt;linux/fs.h&gt;
+<span class="lineNum">     114 </span>            : #endif
+<span class="lineNum">     115 </span>            : 
+<span class="lineNum">     116 </span>            : #if HAVE_LINUX_FIEMAP_H
+<span class="lineNum">     117 </span>            : #include &lt;linux/fiemap.h&gt;
+<span class="lineNum">     118 </span>            : #endif
+<span class="lineNum">     119 </span>            : 
+<span class="lineNum">     120 </span>            : /**
+<span class="lineNum">     121 </span>            :  * Includes some standard headers.
+<span class="lineNum">     122 </span>            :  */
+<span class="lineNum">     123 </span>            : #include &lt;stdio.h&gt;
+<span class="lineNum">     124 </span>            : #include &lt;stdlib.h&gt; /* On many systems (e.g., Darwin), `stdio.h' is a prerequisite. */
+<span class="lineNum">     125 </span>            : #include &lt;stdarg.h&gt;
+<span class="lineNum">     126 </span>            : #include &lt;string.h&gt;
+<span class="lineNum">     127 </span>            : #include &lt;ctype.h&gt;
+<span class="lineNum">     128 </span>            : #include &lt;fcntl.h&gt;
+<span class="lineNum">     129 </span>            : #include &lt;assert.h&gt;
+<span class="lineNum">     130 </span>            : #include &lt;errno.h&gt;
+<span class="lineNum">     131 </span>            : #include &lt;signal.h&gt;
+<span class="lineNum">     132 </span>            : #include &lt;limits.h&gt;
+<span class="lineNum">     133 </span>            : 
+<span class="lineNum">     134 </span>            : #if HAVE_STDINT_H
+<span class="lineNum">     135 </span>            : #include &lt;stdint.h&gt;
+<span class="lineNum">     136 </span>            : #endif
+<span class="lineNum">     137 </span>            : 
+<span class="lineNum">     138 </span>            : #if HAVE_INTTYPES_H
+<span class="lineNum">     139 </span>            : #include &lt;inttypes.h&gt;
+<span class="lineNum">     140 </span>            : #endif
+<span class="lineNum">     141 </span>            : 
+<span class="lineNum">     142 </span>            : #if HAVE_UNISTD_H
+<span class="lineNum">     143 </span>            : #include &lt;unistd.h&gt;
+<span class="lineNum">     144 </span>            : #endif
+<span class="lineNum">     145 </span>            : 
+<span class="lineNum">     146 </span>            : #if TIME_WITH_SYS_TIME
+<span class="lineNum">     147 </span>            : #include &lt;sys/time.h&gt;
+<span class="lineNum">     148 </span>            : #include &lt;time.h&gt;
+<span class="lineNum">     149 </span>            : #else
+<span class="lineNum">     150 </span>            : #if HAVE_SYS_TIME_H
+<span class="lineNum">     151 </span>            : #include &lt;sys/time.h&gt;
+<span class="lineNum">     152 </span>            : #else
+<span class="lineNum">     153 </span>            : #include &lt;time.h&gt;
+<span class="lineNum">     154 </span>            : #endif
+<span class="lineNum">     155 </span>            : #endif
+<span class="lineNum">     156 </span>            : 
+<span class="lineNum">     157 </span>            : #if HAVE_MACH_MACH_TIME_H
+<span class="lineNum">     158 </span>            : #include &lt;mach/mach_time.h&gt;
+<span class="lineNum">     159 </span>            : #endif
+<span class="lineNum">     160 </span>            : 
+<span class="lineNum">     161 </span>            : #if HAVE_DIRENT_H
+<span class="lineNum">     162 </span>            : #include &lt;dirent.h&gt;
+<span class="lineNum">     163 </span>            : #define NAMLEN(dirent) strlen((dirent)-&gt;d_name)
+<span class="lineNum">     164 </span>            : #else
+<span class="lineNum">     165 </span>            : #define dirent direct
+<span class="lineNum">     166 </span>            : #define NAMLEN(dirent) (dirent)-&gt;d_namlen
+<span class="lineNum">     167 </span>            : #if HAVE_SYS_NDIR_H
+<span class="lineNum">     168 </span>            : #include &lt;sys/ndir.h&gt;
+<span class="lineNum">     169 </span>            : #endif
+<span class="lineNum">     170 </span>            : #if HAVE_SYS_DIR_H
+<span class="lineNum">     171 </span>            : #include &lt;sys/dir.h&gt;
+<span class="lineNum">     172 </span>            : #endif
+<span class="lineNum">     173 </span>            : #if HAVE_NDIR_H
+<span class="lineNum">     174 </span>            : #include &lt;ndir.h&gt;
+<span class="lineNum">     175 </span>            : #endif
+<span class="lineNum">     176 </span>            : #endif
+<span class="lineNum">     177 </span>            : 
+<span class="lineNum">     178 </span>            : #if HAVE_SYS_TYPES_H
+<span class="lineNum">     179 </span>            : #include &lt;sys/types.h&gt;
+<span class="lineNum">     180 </span>            : #endif
+<span class="lineNum">     181 </span>            : 
+<span class="lineNum">     182 </span>            : #if HAVE_SYS_STAT_H
+<span class="lineNum">     183 </span>            : #include &lt;sys/stat.h&gt;
+<span class="lineNum">     184 </span>            : #endif
+<span class="lineNum">     185 </span>            : 
+<span class="lineNum">     186 </span>            : #if HAVE_SYS_WAIT_H
+<span class="lineNum">     187 </span>            : #include &lt;sys/wait.h&gt;
+<span class="lineNum">     188 </span>            : #endif
+<span class="lineNum">     189 </span>            : #ifndef WEXITSTATUS
+<span class="lineNum">     190 </span>            : #define WEXITSTATUS(stat_val) ((unsigned)(stat_val) &gt;&gt; 8)
+<span class="lineNum">     191 </span>            : #endif
+<span class="lineNum">     192 </span>            : #ifndef WIFEXITED
+<span class="lineNum">     193 </span>            : #define WIFEXITED(stat_val) (((stat_val) &amp; 255) == 0)
+<span class="lineNum">     194 </span>            : #endif
+<span class="lineNum">     195 </span>            : 
+<span class="lineNum">     196 </span>            : #if HAVE_GETOPT_H
+<span class="lineNum">     197 </span>            : #include &lt;getopt.h&gt;
+<span class="lineNum">     198 </span>            : #endif
+<span class="lineNum">     199 </span>            : 
+<span class="lineNum">     200 </span>            : #if HAVE_FNMATCH_H
+<span class="lineNum">     201 </span>            : #include &lt;fnmatch.h&gt;
+<span class="lineNum">     202 </span>            : #else
+<span class="lineNum">     203 </span>            : #include &quot;fnmatch.h&quot;
+<span class="lineNum">     204 </span>            : #endif
+<span class="lineNum">     205 </span>            : 
+<span class="lineNum">     206 </span>            : #if HAVE_PTHREAD_H
+<span class="lineNum">     207 </span>            : #include &lt;pthread.h&gt;
+<span class="lineNum">     208 </span>            : #endif
+<span class="lineNum">     209 </span>            : 
+<span class="lineNum">     210 </span>            : #if HAVE_MATH_H
+<span class="lineNum">     211 </span>            : #include &lt;math.h&gt;
+<span class="lineNum">     212 </span>            : #endif
+<span class="lineNum">     213 </span>            : 
+<span class="lineNum">     214 </span>            : /**
+<span class="lineNum">     215 </span>            :  * Disable case check in Windows.
+<span class="lineNum">     216 </span>            :  */
+<span class="lineNum">     217 </span>            : #ifdef _WIN32
+<span class="lineNum">     218 </span>            : #define FNM_CASEINSENSITIVE_FOR_WIN FNM_CASEFOLD
+<span class="lineNum">     219 </span>            : #else
+<span class="lineNum">     220 </span>            : #define FNM_CASEINSENSITIVE_FOR_WIN 0
+<span class="lineNum">     221 </span>            : #endif
+<span class="lineNum">     222 </span>            : 
+<span class="lineNum">     223 </span>            : #if HAVE_IO_H
+<span class="lineNum">     224 </span>            : #include &lt;io.h&gt;
+<span class="lineNum">     225 </span>            : #endif
+<span class="lineNum">     226 </span>            : 
+<span class="lineNum">     227 </span>            : #if HAVE_GETOPT_LONG
+<span class="lineNum">     228 </span>            : #define SWITCH_GETOPT_LONG(a, b) a
+<span class="lineNum">     229 </span>            : #else
+<span class="lineNum">     230 </span>            : #define SWITCH_GETOPT_LONG(a, b) b
+<span class="lineNum">     231 </span>            : #endif
+<span class="lineNum">     232 </span>            : 
+<span class="lineNum">     233 </span>            : /**
+<span class="lineNum">     234 </span>            :  * Enables lock file support.
+<span class="lineNum">     235 </span>            :  */
+<span class="lineNum">     236 </span>            : #if HAVE_FLOCK &amp;&amp; HAVE_FTRUNCATE
+<span class="lineNum">     237 </span>            : #define HAVE_LOCKFILE 1
+<span class="lineNum">     238 </span>            : #endif
+<span class="lineNum">     239 </span>            : 
+<span class="lineNum">     240 </span>            : /**
+<span class="lineNum">     241 </span>            :  * Includes specific support for Windows or Linux.
+<span class="lineNum">     242 </span>            :  */
+<span class="lineNum">     243 </span>            : #ifdef __MINGW32__
+<span class="lineNum">     244 </span>            : #include &quot;mingw.h&quot;
+<span class="lineNum">     245 </span>            : #else
+<span class="lineNum">     246 </span>            : #include &quot;unix.h&quot;
+<span class="lineNum">     247 </span>            : #endif
+<span class="lineNum">     248 </span>            : 
+<span class="lineNum">     249 </span>            : /**
+<span class="lineNum">     250 </span>            :  * Include list support to have tommy_node.
+<span class="lineNum">     251 </span>            :  */
+<span class="lineNum">     252 </span>            : #include &quot;tommyds/tommylist.h&quot;
+<span class="lineNum">     253 </span>            : 
+<span class="lineNum">     254 </span>            : /**
+<a name="255"><span class="lineNum">     255 </span>            :  * Another name for link() to avoid confusion with local variables called &quot;link&quot;.</a>
+<span class="lineNum">     256 </span>            :  */
+<span class="lineNum">     257 </span><span class="lineCov">         32 : static inline int hardlink(const char* a, const char* b)</span>
+<span class="lineNum">     258 </span>            : {
+<span class="lineNum">     259 </span><span class="lineCov">         32 :         return link(a, b);</span>
+<span class="lineNum">     260 </span>            : }
+<span class="lineNum">     261 </span>            : 
+<span class="lineNum">     262 </span>            : /**
+<span class="lineNum">     263 </span>            :  * Get the device UUID.
+<span class="lineNum">     264 </span>            :  * Returns 0 on success.
+<span class="lineNum">     265 </span>            :  */
+<span class="lineNum">     266 </span>            : int devuuid(uint64_t device, char* uuid, size_t size);
+<span class="lineNum">     267 </span>            : 
+<span class="lineNum">     268 </span>            : /**
+<span class="lineNum">     269 </span>            :  * Physical offset not yet read.
+<span class="lineNum">     270 </span>            :  */
+<span class="lineNum">     271 </span>            : #define FILEPHY_UNREAD_OFFSET 0
+<span class="lineNum">     272 </span>            : 
+<span class="lineNum">     273 </span>            : /**
+<span class="lineNum">     274 </span>            :  * Special value returned when the filesystem doesn't report any offset for unknown reason.
+<span class="lineNum">     275 </span>            :  */
+<span class="lineNum">     276 </span>            : #define FILEPHY_UNREPORTED_OFFSET 1
+<span class="lineNum">     277 </span>            : 
+<span class="lineNum">     278 </span>            : /**
+<span class="lineNum">     279 </span>            :  * Special value returned when the file doesn't have a real offset.
+<span class="lineNum">     280 </span>            :  * For example, because it's stored in the NTFS MFT.
+<span class="lineNum">     281 </span>            :  */
+<span class="lineNum">     282 </span>            : #define FILEPHY_WITHOUT_OFFSET 2
+<span class="lineNum">     283 </span>            : 
+<span class="lineNum">     284 </span>            : /**
+<span class="lineNum">     285 </span>            :  * Value indicating real offsets. All offsets greater or equal at this one are real.
+<span class="lineNum">     286 </span>            :  */
+<span class="lineNum">     287 </span>            : #define FILEPHY_REAL_OFFSET 3
+<span class="lineNum">     288 </span>            : 
+<span class="lineNum">     289 </span>            : /**
+<span class="lineNum">     290 </span>            :  * Get the physcal address of the specified file.
+<span class="lineNum">     291 </span>            :  * This is expected to be just a hint and not necessarely correct or unique.
+<span class="lineNum">     292 </span>            :  * Returns 0 on success.
+<span class="lineNum">     293 </span>            :  */
+<span class="lineNum">     294 </span>            : int filephy(const char* path, uint64_t size, uint64_t* physical);
+<span class="lineNum">     295 </span>            : 
+<span class="lineNum">     296 </span>            : /**
+<span class="lineNum">     297 </span>            :  * Checks if the underline filesystem support persistent inodes.
+<span class="lineNum">     298 </span>            :  * Returns -1 on error, 0 on success.
+<span class="lineNum">     299 </span>            :  */
+<span class="lineNum">     300 </span>            : int fsinfo(const char* path, int* has_persistent_inode, uint64_t* total_space, uint64_t* free_space);
+<span class="lineNum">     301 </span>            : 
+<span class="lineNum">     302 </span>            : /**
+<span class="lineNum">     303 </span>            :  * Get the tick counter value.
+<span class="lineNum">     304 </span>            :  *
+<span class="lineNum">     305 </span>            :  * Note that the frequency is unspecified, because the time measure
+<span class="lineNum">     306 </span>            :  * is meant to be used to compare the ratio between usage times.
+<span class="lineNum">     307 </span>            :  */
+<span class="lineNum">     308 </span>            : uint64_t tick(void);
+<span class="lineNum">     309 </span>            : 
+<span class="lineNum">     310 </span>            : /**
+<span class="lineNum">     311 </span>            :  * Get the tick counter value in millisecond.
+<span class="lineNum">     312 </span>            :  */
+<span class="lineNum">     313 </span>            : uint64_t tick_ms(void);
+<span class="lineNum">     314 </span>            : 
+<span class="lineNum">     315 </span>            : /**
+<span class="lineNum">     316 </span>            :  * Initializes the system.
+<span class="lineNum">     317 </span>            :  */
+<span class="lineNum">     318 </span>            : void os_init(int opt);
+<span class="lineNum">     319 </span>            : 
+<span class="lineNum">     320 </span>            : /**
+<span class="lineNum">     321 </span>            :  * Deintialize the system.
+<span class="lineNum">     322 </span>            :  */
+<span class="lineNum">     323 </span>            : void os_done(void);
+<span class="lineNum">     324 </span>            : 
+<span class="lineNum">     325 </span>            : /**
+<span class="lineNum">     326 </span>            :  * Log file.
+<span class="lineNum">     327 </span>            :  *
+<span class="lineNum">     328 </span>            :  * This stream if fully buffered.
+<span class="lineNum">     329 </span>            :  *
+<span class="lineNum">     330 </span>            :  * If no log file is selected, it's 0.
+<span class="lineNum">     331 </span>            :  */
+<span class="lineNum">     332 </span>            : FILE* stdlog;
+<span class="lineNum">     333 </span>            : 
+<span class="lineNum">     334 </span>            : /**
+<span class="lineNum">     335 </span>            :  * Exit codes for testing.
+<span class="lineNum">     336 </span>            :  */
+<span class="lineNum">     337 </span>            : int exit_success;
+<span class="lineNum">     338 </span>            : int exit_failure;
+<span class="lineNum">     339 </span>            : int exit_sync_needed;
+<span class="lineNum">     340 </span>            : #undef EXIT_SUCCESS
+<span class="lineNum">     341 </span>            : #undef EXIT_FAILURE
+<span class="lineNum">     342 </span>            : #define EXIT_SUCCESS exit_success
+<span class="lineNum">     343 </span>            : #define EXIT_FAILURE exit_failure
+<span class="lineNum">     344 </span>            : #define EXIT_SYNC_NEEDED exit_sync_needed
+<span class="lineNum">     345 </span>            : 
+<span class="lineNum">     346 </span>            : /**
+<span class="lineNum">     347 </span>            :  * Fill memory with psudeo-random values.
+<span class="lineNum">     348 </span>            :  */
+<span class="lineNum">     349 </span>            : int randomize(void* ptr, size_t size);
+<span class="lineNum">     350 </span>            : 
+<span class="lineNum">     351 </span>            : /**
+<span class="lineNum">     352 </span>            :  * Additional SMART attributes.
+<span class="lineNum">     353 </span>            :  */
+<span class="lineNum">     354 </span>            : #define SMART_ERROR 256 /**&lt; ATA Error count. */
+<span class="lineNum">     355 </span>            : #define SMART_SIZE 257 /**&lt; Size in bytes. */
+<span class="lineNum">     356 </span>            : #define SMART_ROTATION_RATE 258 /**&lt; Rotation speed. 0 for SSD. */
+<span class="lineNum">     357 </span>            : #define SMART_FLAGS 259 /**&lt; Flags returned by smartctl. */
+<span class="lineNum">     358 </span>            : 
+<span class="lineNum">     359 </span>            : /**
+<span class="lineNum">     360 </span>            :  * SMART attributes count.
+<span class="lineNum">     361 </span>            :  */
+<span class="lineNum">     362 </span>            : #define SMART_COUNT 260
+<span class="lineNum">     363 </span>            : 
+<span class="lineNum">     364 </span>            : /**
+<span class="lineNum">     365 </span>            :  * Flags returned by smartctl.
+<span class="lineNum">     366 </span>            :  */
+<span class="lineNum">     367 </span>            : #define SMARTCTL_FLAG_UNSUPPORTED (1 &lt;&lt; 0) /**&lt; Device not recognized, requiring the -d option. */
+<span class="lineNum">     368 </span>            : #define SMARTCTL_FLAG_OPEN (1 &lt;&lt; 1) /**&lt; Device open or identification failed. */
+<span class="lineNum">     369 </span>            : #define SMARTCTL_FLAG_COMMAND (1 &lt;&lt; 2) /**&lt; Some SMART or ATA commands failed. This is a common error, also happening with full info gathering. */
+<span class="lineNum">     370 </span>            : #define SMARTCTL_FLAG_FAIL (1 &lt;&lt; 3) /**&lt; SMART status check returned &quot;DISK FAILING&quot;. */
+<span class="lineNum">     371 </span>            : #define SMARTCTL_FLAG_PREFAIL (1 &lt;&lt; 4) /**&lt; We found prefail Attributes &lt;= threshold. */
+<span class="lineNum">     372 </span>            : #define SMARTCTL_FLAG_PREFAIL_LOGGED (1 &lt;&lt; 5) /**&lt; SMART status check returned &quot;DISK OK&quot; but we found that some (usage or prefail) Attributes have been &lt;= threshold at some time in the past. */
+<span class="lineNum">     373 </span>            : #define SMARTCTL_FLAG_ERROR (1 &lt;&lt; 6) /**&lt; The device error log contains records of errors. */
+<span class="lineNum">     374 </span>            : #define SMARTCTL_FLAG_ERROR_LOGGED (1 &lt;&lt; 7) /**&lt; The device self-test log contains records of errors. */
+<span class="lineNum">     375 </span>            : 
+<span class="lineNum">     376 </span>            : /**
+<span class="lineNum">     377 </span>            :  * SMART max attribute length.
+<span class="lineNum">     378 </span>            :  */
+<span class="lineNum">     379 </span>            : #define SMART_MAX 64
+<span class="lineNum">     380 </span>            : 
+<span class="lineNum">     381 </span>            : /**
+<span class="lineNum">     382 </span>            :  * Value for unassigned SMART attribute.
+<span class="lineNum">     383 </span>            :  */
+<span class="lineNum">     384 </span>            : #define SMART_UNASSIGNED 0xFFFFFFFFFFFFFFFFULL
+<span class="lineNum">     385 </span>            : 
+<span class="lineNum">     386 </span>            : /**
+<span class="lineNum">     387 </span>            :  * Device info entry.
+<span class="lineNum">     388 </span>            :  */
+<span class="lineNum">     389 </span>            : struct devinfo_struct {
+<span class="lineNum">     390 </span>            :         uint64_t device; /**&lt; Device ID. */
+<span class="lineNum">     391 </span>            :         char name[PATH_MAX]; /**&lt; Name of the disk. */
+<span class="lineNum">     392 </span>            :         char mount[PATH_MAX]; /**&lt; Mount point or other contained directory. */
+<span class="lineNum">     393 </span>            :         char smartctl[PATH_MAX]; /**&lt; Options for smartctl. */
+<span class="lineNum">     394 </span>            :         char file[PATH_MAX]; /**&lt; File device. */
+<span class="lineNum">     395 </span>            : #ifdef _WIN32
+<span class="lineNum">     396 </span>            :         char wfile[PATH_MAX]; /**&lt; File device in Windows format. Like \\.\PhysicalDriveX, or \\?\Volume{X}. */
+<span class="lineNum">     397 </span>            : #endif
+<span class="lineNum">     398 </span>            :         struct devinfo_struct* parent; /**&lt; Pointer at the parent if any. */
+<span class="lineNum">     399 </span>            :         uint64_t smart[SMART_COUNT]; /**&lt; SMART raw attributes. */
+<span class="lineNum">     400 </span>            :         char smart_serial[SMART_MAX]; /**&lt; SMART serial number. */
+<span class="lineNum">     401 </span>            : #if HAVE_PTHREAD_CREATE
+<span class="lineNum">     402 </span>            :         pthread_t thread;
+<span class="lineNum">     403 </span>            : #endif
+<span class="lineNum">     404 </span>            :         tommy_node node;
+<span class="lineNum">     405 </span>            : };
+<span class="lineNum">     406 </span>            : typedef struct devinfo_struct devinfo_t;
+<span class="lineNum">     407 </span>            : 
+<span class="lineNum">     408 </span>            : #define DEVICE_LIST 0
+<span class="lineNum">     409 </span>            : #define DEVICE_DOWN 1
+<span class="lineNum">     410 </span>            : #define DEVICE_UP 2
+<span class="lineNum">     411 </span>            : #define DEVICE_SMART 3
+<span class="lineNum">     412 </span>            : 
+<span class="lineNum">     413 </span>            : /**
+<span class="lineNum">     414 </span>            :  * Query all the &quot;high&quot; level devices with the specified operation,
+<span class="lineNum">     415 </span>            :  * and produces a list of &quot;low&quot; level devices to operate on.
+<span class="lineNum">     416 </span>            :  *
+<span class="lineNum">     417 </span>            :  * The passed &quot;low&quot; device list must be already initialized.
+<span class="lineNum">     418 </span>            :  */
+<span class="lineNum">     419 </span>            : int devquery(tommy_list* high, tommy_list* low, int operation);
+<span class="lineNum">     420 </span>            : 
+<span class="lineNum">     421 </span>            : #endif
+<span class="lineNum">     422 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

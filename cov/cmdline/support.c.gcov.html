@@ -1,0 +1,918 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - cmdline/support.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">cmdline</a> - support.c<span style="font-size: 80%;"> (source / <a href="support.c.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">232</td>
+            <td class="headerCovTableEntry">308</td>
+            <td class="headerCovTableEntryMed">75.3 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2015-05-12</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">29</td>
+            <td class="headerCovTableEntry">34</td>
+            <td class="headerCovTableEntryMed">85.3 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (C) 2011 Andrea Mazzoleni
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * This program is free software: you can redistribute it and/or modify
+<span class="lineNum">       5 </span>            :  * it under the terms of the GNU General Public License as published by
+<span class="lineNum">       6 </span>            :  * the Free Software Foundation, either version 3 of the License, or
+<span class="lineNum">       7 </span>            :  * (at your option) any later version.
+<span class="lineNum">       8 </span>            :  *
+<span class="lineNum">       9 </span>            :  * This program is distributed in the hope that it will be useful,
+<span class="lineNum">      10 </span>            :  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      11 </span>            :  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      12 </span>            :  * GNU General Public License for more details.
+<span class="lineNum">      13 </span>            :  *
+<span class="lineNum">      14 </span>            :  * You should have received a copy of the GNU General Public License
+<span class="lineNum">      15 </span>            :  * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+<span class="lineNum">      16 </span>            :  */
+<span class="lineNum">      17 </span>            : 
+<span class="lineNum">      18 </span>            : #include &quot;portable.h&quot;
+<span class="lineNum">      19 </span>            : 
+<span class="lineNum">      20 </span>            : #include &quot;support.h&quot;
+<span class="lineNum">      21 </span>            : 
+<span class="lineNum">      22 </span>            : /****************************************************************************/
+<span class="lineNum">      23 </span>            : /* print */
+<span class="lineNum">      24 </span>            : 
+<span class="lineNum">      25 </span>            : int msg_level = 0;
+<span class="lineNum">      26 </span>            : 
+<span class="lineNum">      27 </span>            : /**
+<span class="lineNum">      28 </span>            :  * Mutex used for printf.
+<span class="lineNum">      29 </span>            :  *
+<span class="lineNum">      30 </span>            :  * In Windows printf() is not atomic, and multiple threads
+<span class="lineNum">      31 </span>            :  * will have output interleaved.
+<span class="lineNum">      32 </span>            :  *
+<span class="lineNum">      33 </span>            :  * Note that even defining __USE_MINGW_ANSI_STDIO the problem persists.
+<span class="lineNum">      34 </span>            :  *
+<span class="lineNum">      35 </span>            :  * See for example:
+<span class="lineNum">      36 </span>            :  *
+<span class="lineNum">      37 </span>            :  * Weird output when I use pthread and printf.
+<span class="lineNum">      38 </span>            :  * http://stackoverflow.com/questions/13190254/weird-output-when-i-use-pthread-and-printf
+<span class="lineNum">      39 </span>            :  *
+<span class="lineNum">      40 </span>            :  * This is also required in other OS because we split output in stdlog in
+<span class="lineNum">      41 </span>            :  * two fprintf calls.
+<span class="lineNum">      42 </span>            :  */
+<span class="lineNum">      43 </span>            : static pthread_mutex_t msg_lock = PTHREAD_MUTEX_INITIALIZER;
+<span class="lineNum">      44 </span>            : 
+<span class="lineNum">      45 </span>            : /*
+<span class="lineNum">      46 </span>            :  * Note that in the following functions we always flush both
+<span class="lineNum">      47 </span>            :  * stdout and stderr, because we want to ensure that they mixes
+<span class="lineNum">      48 </span>            :  * well when redirected to files
+<span class="lineNum">      49 </span>            :  *
+<span class="lineNum">      50 </span>            :  * The buffering is similar at the &quot;line buffered&quot; one, that
+<span class="lineNum">      51 </span>            :  * is not available on Windows, so we emulate it in this way.
+<span class="lineNum">      52 </span>            :  *
+<span class="lineNum">      53 </span>            :  * For stdlog flushing is limited. To ensure flushing the
+<span class="lineNum">      54 </span>            :  * caller should use log_flush().
+<a name="55"><span class="lineNum">      55 </span>            :  */</a>
+<span class="lineNum">      56 </span>            : 
+<span class="lineNum">      57 </span><span class="lineCov">        784 : void log_fatal(const char* format, ...)</span>
+<span class="lineNum">      58 </span>            : {
+<span class="lineNum">      59 </span>            :         va_list ap;
+<span class="lineNum">      60 </span>            : 
+<span class="lineNum">      61 </span><span class="lineCov">        784 :         pthread_mutex_lock(&amp;msg_lock);</span>
+<span class="lineNum">      62 </span>            : 
+<span class="lineNum">      63 </span><span class="lineCov">        784 :         if (stdlog) {</span>
+<span class="lineNum">      64 </span><span class="lineCov">         92 :                 va_start(ap, format);</span>
+<span class="lineNum">      65 </span><span class="lineCov">         92 :                 fprintf(stdlog, &quot;msg:fatal: &quot;);</span>
+<span class="lineNum">      66 </span><span class="lineCov">         92 :                 vfprintf(stdlog, format, ap);</span>
+<span class="lineNum">      67 </span><span class="lineCov">         92 :                 fflush(stdlog);</span>
+<span class="lineNum">      68 </span><span class="lineCov">         92 :                 va_end(ap);</span>
+<span class="lineNum">      69 </span>            :         }
+<span class="lineNum">      70 </span>            : 
+<span class="lineNum">      71 </span><span class="lineCov">        784 :         va_start(ap, format);</span>
+<span class="lineNum">      72 </span><span class="lineCov">        784 :         vfprintf(stderr, format, ap);</span>
+<span class="lineNum">      73 </span><span class="lineCov">        784 :         fflush(stderr);</span>
+<span class="lineNum">      74 </span><span class="lineCov">        784 :         va_end(ap);</span>
+<span class="lineNum">      75 </span>            : 
+<span class="lineNum">      76 </span><span class="lineCov">        784 :         pthread_mutex_unlock(&amp;msg_lock);</span>
+<a name="77"><span class="lineNum">      77 </span><span class="lineCov">        784 : }</span></a>
+<span class="lineNum">      78 </span>            : 
+<span class="lineNum">      79 </span><span class="lineCov">     725185 : void log_error(const char* format, ...)</span>
+<span class="lineNum">      80 </span>            : {
+<span class="lineNum">      81 </span>            :         va_list ap;
+<span class="lineNum">      82 </span>            : 
+<span class="lineNum">      83 </span><span class="lineCov">     725185 :         pthread_mutex_lock(&amp;msg_lock);</span>
+<span class="lineNum">      84 </span>            : 
+<span class="lineNum">      85 </span><span class="lineCov">     725185 :         if (stdlog) {</span>
+<span class="lineNum">      86 </span><span class="lineCov">     723277 :                 va_start(ap, format);</span>
+<span class="lineNum">      87 </span><span class="lineCov">     723277 :                 fprintf(stdlog, &quot;msg:error: &quot;);</span>
+<span class="lineNum">      88 </span><span class="lineCov">     723277 :                 vfprintf(stdlog, format, ap);</span>
+<span class="lineNum">      89 </span><span class="lineCov">     723277 :                 fflush(stdlog);</span>
+<span class="lineNum">      90 </span><span class="lineCov">     723277 :                 va_end(ap);</span>
+<span class="lineNum">      91 </span>            :         } else {
+<span class="lineNum">      92 </span><span class="lineCov">       1908 :                 va_start(ap, format);</span>
+<span class="lineNum">      93 </span><span class="lineCov">       1908 :                 vfprintf(stderr, format, ap);</span>
+<span class="lineNum">      94 </span><span class="lineCov">       1908 :                 fflush(stderr);</span>
+<span class="lineNum">      95 </span><span class="lineCov">       1908 :                 va_end(ap);</span>
+<span class="lineNum">      96 </span>            :         }
+<span class="lineNum">      97 </span>            : 
+<span class="lineNum">      98 </span><span class="lineCov">     725185 :         pthread_mutex_unlock(&amp;msg_lock);</span>
+<a name="99"><span class="lineNum">      99 </span><span class="lineCov">     725185 : }</span></a>
+<span class="lineNum">     100 </span>            : 
+<span class="lineNum">     101 </span><span class="lineCov">      11738 : void log_expected(const char* format, ...)</span>
+<span class="lineNum">     102 </span>            : {
+<span class="lineNum">     103 </span>            :         va_list ap;
+<span class="lineNum">     104 </span>            : 
+<span class="lineNum">     105 </span><span class="lineCov">      11738 :         pthread_mutex_lock(&amp;msg_lock);</span>
+<span class="lineNum">     106 </span>            : 
+<span class="lineNum">     107 </span><span class="lineCov">      11738 :         if (stdlog) {</span>
+<span class="lineNum">     108 </span><span class="lineCov">      11738 :                 va_start(ap, format);</span>
+<span class="lineNum">     109 </span><span class="lineCov">      11738 :                 fprintf(stdlog, &quot;msg:expected: &quot;);</span>
+<span class="lineNum">     110 </span><span class="lineCov">      11738 :                 vfprintf(stdlog, format, ap);</span>
+<span class="lineNum">     111 </span><span class="lineCov">      11738 :                 fflush(stdlog);</span>
+<span class="lineNum">     112 </span><span class="lineCov">      11738 :                 va_end(ap);</span>
+<span class="lineNum">     113 </span>            :         }
+<span class="lineNum">     114 </span>            : 
+<span class="lineNum">     115 </span><span class="lineCov">      11738 :         pthread_mutex_unlock(&amp;msg_lock);</span>
+<a name="116"><span class="lineNum">     116 </span><span class="lineCov">      11738 : }</span></a>
+<span class="lineNum">     117 </span>            : 
+<span class="lineNum">     118 </span><span class="lineCov">    4036583 : void log_tag(const char* format, ...)</span>
+<span class="lineNum">     119 </span>            : {
+<span class="lineNum">     120 </span>            :         va_list ap;
+<span class="lineNum">     121 </span>            : 
+<span class="lineNum">     122 </span><span class="lineCov">    4036583 :         pthread_mutex_lock(&amp;msg_lock);</span>
+<span class="lineNum">     123 </span>            : 
+<span class="lineNum">     124 </span><span class="lineCov">    4036583 :         if (stdlog) {</span>
+<span class="lineNum">     125 </span><span class="lineCov">    2951533 :                 va_start(ap, format);</span>
+<span class="lineNum">     126 </span><span class="lineCov">    2951533 :                 vfprintf(stdlog, format, ap);</span>
+<span class="lineNum">     127 </span>            :                 /* here we intentionally don't flush */
+<span class="lineNum">     128 </span>            :                 /* to make the output faster */
+<span class="lineNum">     129 </span><span class="lineCov">    2951533 :                 va_end(ap);</span>
+<span class="lineNum">     130 </span>            :         }
+<span class="lineNum">     131 </span>            : 
+<span class="lineNum">     132 </span><span class="lineCov">    4036583 :         pthread_mutex_unlock(&amp;msg_lock);</span>
+<a name="133"><span class="lineNum">     133 </span><span class="lineCov">    4036583 : }</span></a>
+<span class="lineNum">     134 </span>            : 
+<span class="lineNum">     135 </span><span class="lineCov">       1055 : void log_flush(void)</span>
+<span class="lineNum">     136 </span>            : {
+<span class="lineNum">     137 </span><span class="lineCov">       1055 :         pthread_mutex_lock(&amp;msg_lock);</span>
+<span class="lineNum">     138 </span>            : 
+<span class="lineNum">     139 </span><span class="lineCov">       1055 :         if (stdlog)</span>
+<span class="lineNum">     140 </span><span class="lineCov">        316 :                 fflush(stdlog);</span>
+<span class="lineNum">     141 </span><span class="lineCov">       1055 :         fflush(stdout);</span>
+<span class="lineNum">     142 </span><span class="lineCov">       1055 :         fflush(stderr);</span>
+<span class="lineNum">     143 </span>            : 
+<span class="lineNum">     144 </span><span class="lineCov">       1055 :         pthread_mutex_unlock(&amp;msg_lock);</span>
+<a name="145"><span class="lineNum">     145 </span><span class="lineCov">       1055 : }</span></a>
+<span class="lineNum">     146 </span>            : 
+<span class="lineNum">     147 </span><span class="lineCov">        544 : void msg_status(const char* format, ...)</span>
+<span class="lineNum">     148 </span>            : {
+<span class="lineNum">     149 </span>            :         va_list ap;
+<span class="lineNum">     150 </span>            : 
+<span class="lineNum">     151 </span><span class="lineCov">        544 :         pthread_mutex_lock(&amp;msg_lock);</span>
+<span class="lineNum">     152 </span>            : 
+<span class="lineNum">     153 </span><span class="lineCov">        544 :         if (stdlog) {</span>
+<span class="lineNum">     154 </span><span class="lineCov">        270 :                 va_start(ap, format);</span>
+<span class="lineNum">     155 </span><span class="lineCov">        270 :                 fprintf(stdlog, &quot;msg:status: &quot;);</span>
+<span class="lineNum">     156 </span><span class="lineCov">        270 :                 vfprintf(stdlog, format, ap);</span>
+<span class="lineNum">     157 </span><span class="lineCov">        270 :                 fflush(stdlog);</span>
+<span class="lineNum">     158 </span><span class="lineCov">        270 :                 va_end(ap);</span>
+<span class="lineNum">     159 </span>            :         }
+<span class="lineNum">     160 </span>            : 
+<span class="lineNum">     161 </span><span class="lineCov">        544 :         if (msg_level &gt;= MSG_STATUS) {</span>
+<span class="lineNum">     162 </span><span class="lineCov">        544 :                 va_start(ap, format);</span>
+<span class="lineNum">     163 </span><span class="lineCov">        544 :                 vfprintf(stdout, format, ap);</span>
+<span class="lineNum">     164 </span><span class="lineCov">        544 :                 fflush(stdout);</span>
+<span class="lineNum">     165 </span><span class="lineCov">        544 :                 va_end(ap);</span>
+<span class="lineNum">     166 </span>            :         }
+<span class="lineNum">     167 </span>            : 
+<span class="lineNum">     168 </span><span class="lineCov">        544 :         pthread_mutex_unlock(&amp;msg_lock);</span>
+<a name="169"><span class="lineNum">     169 </span><span class="lineCov">        544 : }</span></a>
+<span class="lineNum">     170 </span>            : 
+<span class="lineNum">     171 </span><span class="lineCov">     297699 : void msg_info(const char* format, ...)</span>
+<span class="lineNum">     172 </span>            : {
+<span class="lineNum">     173 </span>            :         va_list ap;
+<span class="lineNum">     174 </span>            : 
+<span class="lineNum">     175 </span><span class="lineCov">     297699 :         pthread_mutex_lock(&amp;msg_lock);</span>
+<span class="lineNum">     176 </span>            : 
+<span class="lineNum">     177 </span>            :         /* don't output in stdlog as these messages */
+<span class="lineNum">     178 </span>            :         /* are always paired with a msg_tag() call */
+<span class="lineNum">     179 </span>            : 
+<span class="lineNum">     180 </span><span class="lineCov">     297699 :         if (msg_level &gt;= MSG_INFO) {</span>
+<span class="lineNum">     181 </span><span class="lineCov">      28823 :                 va_start(ap, format);</span>
+<span class="lineNum">     182 </span><span class="lineCov">      28823 :                 vfprintf(stdout, format, ap);</span>
+<span class="lineNum">     183 </span><span class="lineCov">      28823 :                 fflush(stdout);</span>
+<span class="lineNum">     184 </span><span class="lineCov">      28823 :                 va_end(ap);</span>
+<span class="lineNum">     185 </span>            :         }
+<span class="lineNum">     186 </span>            : 
+<span class="lineNum">     187 </span><span class="lineCov">     297699 :         pthread_mutex_unlock(&amp;msg_lock);</span>
+<a name="188"><span class="lineNum">     188 </span><span class="lineCov">     297699 : }</span></a>
+<span class="lineNum">     189 </span>            : 
+<span class="lineNum">     190 </span><span class="lineCov">       2807 : void msg_progress(const char* format, ...)</span>
+<span class="lineNum">     191 </span>            : {
+<span class="lineNum">     192 </span>            :         va_list ap;
+<span class="lineNum">     193 </span>            : 
+<span class="lineNum">     194 </span><span class="lineCov">       2807 :         pthread_mutex_lock(&amp;msg_lock);</span>
+<span class="lineNum">     195 </span>            : 
+<span class="lineNum">     196 </span><span class="lineCov">       2807 :         if (stdlog) {</span>
+<span class="lineNum">     197 </span><span class="lineCov">        713 :                 va_start(ap, format);</span>
+<span class="lineNum">     198 </span><span class="lineCov">        713 :                 fprintf(stdlog, &quot;msg:progress: &quot;);</span>
+<span class="lineNum">     199 </span><span class="lineCov">        713 :                 vfprintf(stdlog, format, ap);</span>
+<span class="lineNum">     200 </span><span class="lineCov">        713 :                 fflush(stdlog);</span>
+<span class="lineNum">     201 </span><span class="lineCov">        713 :                 va_end(ap);</span>
+<span class="lineNum">     202 </span>            :         }
+<span class="lineNum">     203 </span>            : 
+<span class="lineNum">     204 </span><span class="lineCov">       2807 :         if (msg_level &gt;= MSG_PROGRESS) {</span>
+<span class="lineNum">     205 </span><span class="lineCov">        139 :                 va_start(ap, format);</span>
+<span class="lineNum">     206 </span><span class="lineCov">        139 :                 vfprintf(stdout, format, ap);</span>
+<span class="lineNum">     207 </span><span class="lineCov">        139 :                 fflush(stdout);</span>
+<span class="lineNum">     208 </span><span class="lineCov">        139 :                 va_end(ap);</span>
+<span class="lineNum">     209 </span>            :         }
+<span class="lineNum">     210 </span>            : 
+<span class="lineNum">     211 </span><span class="lineCov">       2807 :         pthread_mutex_unlock(&amp;msg_lock);</span>
+<a name="212"><span class="lineNum">     212 </span><span class="lineCov">       2807 : }</span></a>
+<span class="lineNum">     213 </span>            : 
+<span class="lineNum">     214 </span><span class="lineCov">        917 : void msg_bar(const char* format, ...)</span>
+<span class="lineNum">     215 </span>            : {
+<span class="lineNum">     216 </span>            :         va_list ap;
+<span class="lineNum">     217 </span>            : 
+<span class="lineNum">     218 </span><span class="lineCov">        917 :         pthread_mutex_lock(&amp;msg_lock);</span>
+<span class="lineNum">     219 </span>            : 
+<span class="lineNum">     220 </span>            :         /* don't output in stdlog as these messages */
+<span class="lineNum">     221 </span>            :         /* are intended for screen only */
+<span class="lineNum">     222 </span>            :         /* also don't flush stdout as they are intended to be partial messages */
+<span class="lineNum">     223 </span>            : 
+<span class="lineNum">     224 </span><span class="lineCov">        917 :         if (msg_level &gt;= MSG_BAR) {</span>
+<span class="lineNum">     225 </span><span class="lineNoCov">          0 :                 va_start(ap, format);</span>
+<span class="lineNum">     226 </span><span class="lineNoCov">          0 :                 vfprintf(stdout, format, ap);</span>
+<span class="lineNum">     227 </span><span class="lineNoCov">          0 :                 va_end(ap);</span>
+<span class="lineNum">     228 </span>            :         }
+<span class="lineNum">     229 </span>            : 
+<span class="lineNum">     230 </span><span class="lineCov">        917 :         pthread_mutex_unlock(&amp;msg_lock);</span>
+<a name="231"><span class="lineNum">     231 </span><span class="lineCov">        917 : }</span></a>
+<span class="lineNum">     232 </span>            : 
+<span class="lineNum">     233 </span><span class="lineCov">     126750 : void msg_verbose(const char* format, ...)</span>
+<span class="lineNum">     234 </span>            : {
+<span class="lineNum">     235 </span>            :         va_list ap;
+<span class="lineNum">     236 </span>            : 
+<span class="lineNum">     237 </span><span class="lineCov">     126750 :         pthread_mutex_lock(&amp;msg_lock);</span>
+<span class="lineNum">     238 </span>            : 
+<span class="lineNum">     239 </span><span class="lineCov">     126750 :         if (stdlog) {</span>
+<span class="lineNum">     240 </span><span class="lineCov">     125246 :                 va_start(ap, format);</span>
+<span class="lineNum">     241 </span><span class="lineCov">     125246 :                 fprintf(stdlog, &quot;msg:verbose: &quot;);</span>
+<span class="lineNum">     242 </span><span class="lineCov">     125246 :                 vfprintf(stdlog, format, ap);</span>
+<span class="lineNum">     243 </span><span class="lineCov">     125246 :                 fflush(stdlog);</span>
+<span class="lineNum">     244 </span><span class="lineCov">     125246 :                 va_end(ap);</span>
+<span class="lineNum">     245 </span>            :         }
+<span class="lineNum">     246 </span>            : 
+<span class="lineNum">     247 </span><span class="lineCov">     126750 :         if (msg_level &gt;= MSG_VERBOSE) {</span>
+<span class="lineNum">     248 </span><span class="lineCov">         83 :                 va_start(ap, format);</span>
+<span class="lineNum">     249 </span><span class="lineCov">         83 :                 vfprintf(stdout, format, ap);</span>
+<span class="lineNum">     250 </span><span class="lineCov">         83 :                 fflush(stdout);</span>
+<span class="lineNum">     251 </span><span class="lineCov">         83 :                 va_end(ap);</span>
+<span class="lineNum">     252 </span>            :         }
+<span class="lineNum">     253 </span>            : 
+<span class="lineNum">     254 </span><span class="lineCov">     126750 :         pthread_mutex_unlock(&amp;msg_lock);</span>
+<a name="255"><span class="lineNum">     255 </span><span class="lineCov">     126750 : }</span></a>
+<span class="lineNum">     256 </span>            : 
+<span class="lineNum">     257 </span><span class="lineCov">        423 : void msg_flush(void)</span>
+<span class="lineNum">     258 </span>            : {
+<span class="lineNum">     259 </span><span class="lineCov">        423 :         pthread_mutex_lock(&amp;msg_lock);</span>
+<span class="lineNum">     260 </span>            : 
+<span class="lineNum">     261 </span><span class="lineCov">        423 :         fflush(stdout);</span>
+<span class="lineNum">     262 </span><span class="lineCov">        423 :         fflush(stderr);</span>
+<span class="lineNum">     263 </span>            : 
+<span class="lineNum">     264 </span><span class="lineCov">        423 :         pthread_mutex_unlock(&amp;msg_lock);</span>
+<span class="lineNum">     265 </span><span class="lineCov">        423 : }</span>
+<span class="lineNum">     266 </span>            : 
+<span class="lineNum">     267 </span>            : /**
+<span class="lineNum">     268 </span>            :  * Number of buffers for esc().
+<span class="lineNum">     269 </span>            :  */
+<span class="lineNum">     270 </span>            : #define ESC_MAX 4
+<span class="lineNum">     271 </span>            : 
+<span class="lineNum">     272 </span>            : /**
+<span class="lineNum">     273 </span>            :  * Buffer table to allow multiple calls to esc().
+<span class="lineNum">     274 </span>            :  */
+<span class="lineNum">     275 </span>            : static char esc_table[ESC_MAX][PATH_MAX*2+1];
+<span class="lineNum">     276 </span>            : 
+<span class="lineNum">     277 </span>            : /**
+<span class="lineNum">     278 </span>            :  * Next buffer to use.
+<span class="lineNum">     279 </span>            :  */
+<span class="lineNum">     280 </span>            : static unsigned esc_index = 0;
+<span class="lineNum">     281 </span>            : 
+<span class="lineNum">     282 </span>            : #define ESCAPE(from,to) \
+<span class="lineNum">     283 </span>            :         case from : \
+<span class="lineNum">     284 </span>            :                 if (p == end) \
+<span class="lineNum">     285 </span>            :                         goto bail; \
+<span class="lineNum">     286 </span>            :                 *p++ = '\\'; \
+<span class="lineNum">     287 </span>            :                 if (p == end) \
+<span class="lineNum">     288 </span>            :                         goto bail; \
+<span class="lineNum">     289 </span>            :                 *p++ = to; \
+<a name="290"><span class="lineNum">     290 </span>            :                 break</a>
+<span class="lineNum">     291 </span>            : 
+<span class="lineNum">     292 </span><span class="lineCov">    3589269 : const char* esc(const char* str)</span>
+<span class="lineNum">     293 </span>            : {
+<span class="lineNum">     294 </span><span class="lineCov">    3589269 :         char* begin = esc_table[esc_index];</span>
+<span class="lineNum">     295 </span><span class="lineCov">    3589269 :         char* end = begin + PATH_MAX;</span>
+<span class="lineNum">     296 </span><span class="lineCov">    3589269 :         char* p = begin;</span>
+<span class="lineNum">     297 </span>            : 
+<span class="lineNum">     298 </span>            :         /* next call uses the next buffer */
+<span class="lineNum">     299 </span><span class="lineCov">    3589269 :         esc_index = (esc_index + 1) % ESC_MAX;</span>
+<span class="lineNum">     300 </span>            : 
+<span class="lineNum">     301 </span>            :         /* copy string with escaping */
+<span class="lineNum">     302 </span><span class="lineCov">   53647568 :         while (*str) {</span>
+<span class="lineNum">     303 </span><span class="lineCov">   46469030 :                 char c = *str;</span>
+<span class="lineNum">     304 </span>            : 
+<span class="lineNum">     305 </span><span class="lineCov">   46469030 :                 switch (c) {</span>
+<span class="lineNum">     306 </span>            : 
+<span class="lineNum">     307 </span><span class="lineNoCov">          0 :                 ESCAPE('\n', 'n');</span>
+<span class="lineNum">     308 </span><span class="lineNoCov">          0 :                 ESCAPE('\r', 'r');</span>
+<span class="lineNum">     309 </span><span class="lineNoCov">          0 :                 ESCAPE(':', 'd');</span>
+<span class="lineNum">     310 </span><span class="lineNoCov">          0 :                 ESCAPE('\\', '\\');</span>
+<span class="lineNum">     311 </span>            : 
+<span class="lineNum">     312 </span>            :                 default:
+<span class="lineNum">     313 </span><span class="lineCov">   46469030 :                         if (p == end)</span>
+<span class="lineNum">     314 </span><span class="lineNoCov">          0 :                                 goto bail;</span>
+<span class="lineNum">     315 </span><span class="lineCov">   46469030 :                         *p++ = c;</span>
+<span class="lineNum">     316 </span><span class="lineCov">   46469030 :                         break;</span>
+<span class="lineNum">     317 </span>            :                 }
+<span class="lineNum">     318 </span>            : 
+<span class="lineNum">     319 </span><span class="lineCov">   46469030 :                 ++str;</span>
+<span class="lineNum">     320 </span>            :         }
+<span class="lineNum">     321 </span>            : 
+<span class="lineNum">     322 </span>            :         /* put final 0 */
+<span class="lineNum">     323 </span><span class="lineCov">    3589269 :         if (p == end)</span>
+<span class="lineNum">     324 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     325 </span><span class="lineCov">    3589269 :         *p = 0;</span>
+<span class="lineNum">     326 </span>            : 
+<span class="lineNum">     327 </span><span class="lineCov">    7178538 :         return begin;</span>
+<span class="lineNum">     328 </span>            : 
+<span class="lineNum">     329 </span>            : bail:
+<span class="lineNum">     330 </span>            :         /* LCOV_EXCL_START */
+<span class="lineNum">     331 </span>            :         log_fatal(&quot;Escape too long\n&quot;);
+<span class="lineNum">     332 </span>            :         exit(EXIT_FAILURE);
+<span class="lineNum">     333 </span>            :         /* LCOV_EXCL_STOP */
+<a name="334"><span class="lineNum">     334 </span>            : }</a>
+<span class="lineNum">     335 </span>            : 
+<span class="lineNum">     336 </span><span class="lineNoCov">          0 : char* polish(char* s)</span>
+<span class="lineNum">     337 </span>            : {
+<span class="lineNum">     338 </span><span class="lineNoCov">          0 :         char* i = s;</span>
+<span class="lineNum">     339 </span>            : 
+<span class="lineNum">     340 </span><span class="lineNoCov">          0 :         while (*i) {</span>
+<span class="lineNum">     341 </span><span class="lineNoCov">          0 :                 if (isspace(*i) || !isprint(*i))</span>
+<span class="lineNum">     342 </span><span class="lineNoCov">          0 :                         *i = ' ';</span>
+<span class="lineNum">     343 </span><span class="lineNoCov">          0 :                 ++i;</span>
+<span class="lineNum">     344 </span>            :         }
+<span class="lineNum">     345 </span>            : 
+<span class="lineNum">     346 </span><span class="lineNoCov">          0 :         return s;</span>
+<span class="lineNum">     347 </span>            : }
+<span class="lineNum">     348 </span>            : 
+<span class="lineNum">     349 </span>            : /****************************************************************************/
+<a name="350"><span class="lineNum">     350 </span>            : /* path */</a>
+<span class="lineNum">     351 </span>            : 
+<span class="lineNum">     352 </span><span class="lineCov">    6804242 : void pathcpy(char* dst, size_t size, const char* src)</span>
+<span class="lineNum">     353 </span>            : {
+<span class="lineNum">     354 </span><span class="lineCov">    6804242 :         size_t len = strlen(src);</span>
+<span class="lineNum">     355 </span>            : 
+<span class="lineNum">     356 </span><span class="lineCov">    6804242 :         if (len + 1 &gt; size) {</span>
+<span class="lineNum">     357 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     358 </span>            :                 log_fatal(&quot;Path too long\n&quot;);
+<span class="lineNum">     359 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     360 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     361 </span>            :         }
+<span class="lineNum">     362 </span>            : 
+<span class="lineNum">     363 </span><span class="lineCov">    6804242 :         memcpy(dst, src, len + 1);</span>
+<a name="364"><span class="lineNum">     364 </span><span class="lineCov">    6804242 : }</span></a>
+<span class="lineNum">     365 </span>            : 
+<span class="lineNum">     366 </span><span class="lineCov">        237 : void pathcat(char* dst, size_t size, const char* src)</span>
+<span class="lineNum">     367 </span>            : {
+<span class="lineNum">     368 </span><span class="lineCov">        237 :         size_t dst_len = strlen(dst);</span>
+<span class="lineNum">     369 </span><span class="lineCov">        237 :         size_t src_len = strlen(src);</span>
+<span class="lineNum">     370 </span>            : 
+<span class="lineNum">     371 </span><span class="lineCov">        237 :         if (dst_len + src_len + 1 &gt; size) {</span>
+<span class="lineNum">     372 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     373 </span>            :                 log_fatal(&quot;Path too long\n&quot;);
+<span class="lineNum">     374 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     375 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     376 </span>            :         }
+<span class="lineNum">     377 </span>            : 
+<span class="lineNum">     378 </span><span class="lineCov">        237 :         memcpy(dst + dst_len, src, src_len + 1);</span>
+<a name="379"><span class="lineNum">     379 </span><span class="lineCov">        237 : }</span></a>
+<span class="lineNum">     380 </span>            : 
+<span class="lineNum">     381 </span><span class="lineCov">        780 : void pathcatc(char* dst, size_t size, char c)</span>
+<span class="lineNum">     382 </span>            : {
+<span class="lineNum">     383 </span><span class="lineCov">        780 :         size_t dst_len = strlen(dst);</span>
+<span class="lineNum">     384 </span>            : 
+<span class="lineNum">     385 </span><span class="lineCov">        780 :         if (dst_len + 2 &gt; size) {</span>
+<span class="lineNum">     386 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     387 </span>            :                 log_fatal(&quot;Path too long\n&quot;);
+<span class="lineNum">     388 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     389 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     390 </span>            :         }
+<span class="lineNum">     391 </span>            : 
+<span class="lineNum">     392 </span><span class="lineCov">        780 :         dst[dst_len] = c;</span>
+<span class="lineNum">     393 </span><span class="lineCov">        780 :         dst[dst_len + 1] = 0;</span>
+<a name="394"><span class="lineNum">     394 </span><span class="lineCov">        780 : }</span></a>
+<span class="lineNum">     395 </span>            : 
+<span class="lineNum">     396 </span><span class="lineCov">       8384 : void pathimport(char* dst, size_t size, const char* src)</span>
+<span class="lineNum">     397 </span>            : {
+<span class="lineNum">     398 </span><span class="lineCov">       8384 :         pathcpy(dst, size, src);</span>
+<span class="lineNum">     399 </span>            : 
+<span class="lineNum">     400 </span>            : #ifdef _WIN32
+<span class="lineNum">     401 </span>            :         /* convert all Windows '\' to C '/' */
+<span class="lineNum">     402 </span>            :         while (*dst) {
+<span class="lineNum">     403 </span>            :                 if (*dst == '\\')
+<span class="lineNum">     404 </span>            :                         *dst = '/';
+<span class="lineNum">     405 </span>            :                 ++dst;
+<span class="lineNum">     406 </span>            :         }
+<span class="lineNum">     407 </span>            : #endif
+<a name="408"><span class="lineNum">     408 </span><span class="lineCov">       8384 : }</span></a>
+<span class="lineNum">     409 </span>            : 
+<span class="lineNum">     410 </span><span class="lineCov">      17568 : void pathexport(char* dst, size_t size, const char* src)</span>
+<span class="lineNum">     411 </span>            : {
+<span class="lineNum">     412 </span><span class="lineCov">      17568 :         pathcpy(dst, size, src);</span>
+<span class="lineNum">     413 </span>            : 
+<span class="lineNum">     414 </span>            : #ifdef _WIN32
+<span class="lineNum">     415 </span>            :         /* convert all C '/' to Windows '\' */
+<span class="lineNum">     416 </span>            :         while (*dst) {
+<span class="lineNum">     417 </span>            :                 if (*dst == '/')
+<span class="lineNum">     418 </span>            :                         *dst = '\\';
+<span class="lineNum">     419 </span>            :                 ++dst;
+<span class="lineNum">     420 </span>            :         }
+<span class="lineNum">     421 </span>            : #endif
+<a name="422"><span class="lineNum">     422 </span><span class="lineCov">      17568 : }</span></a>
+<span class="lineNum">     423 </span>            : 
+<span class="lineNum">     424 </span><span class="lineCov">   49788380 : void pathprint(char* dst, size_t size, const char* format, ...)</span>
+<span class="lineNum">     425 </span>            : {
+<span class="lineNum">     426 </span>            :         size_t len;
+<span class="lineNum">     427 </span>            :         va_list ap;
+<span class="lineNum">     428 </span>            : 
+<span class="lineNum">     429 </span><span class="lineCov">   49788380 :         va_start(ap, format);</span>
+<span class="lineNum">     430 </span><span class="lineCov">   49788380 :         len = vsnprintf(dst, size, format, ap);</span>
+<span class="lineNum">     431 </span><span class="lineCov">   49788380 :         va_end(ap);</span>
+<span class="lineNum">     432 </span>            : 
+<span class="lineNum">     433 </span><span class="lineCov">   49788380 :         if (len &gt;= size) {</span>
+<span class="lineNum">     434 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     435 </span>            :                 log_fatal(&quot;Path too long\n&quot;);
+<span class="lineNum">     436 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     437 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     438 </span>            :         }
+<a name="439"><span class="lineNum">     439 </span><span class="lineCov">   49788380 : }</span></a>
+<span class="lineNum">     440 </span>            : 
+<span class="lineNum">     441 </span><span class="lineCov">       7165 : void pathslash(char* dst, size_t size)</span>
+<span class="lineNum">     442 </span>            : {
+<span class="lineNum">     443 </span><span class="lineCov">       7165 :         size_t len = strlen(dst);</span>
+<span class="lineNum">     444 </span>            : 
+<span class="lineNum">     445 </span><span class="lineCov">       7165 :         if (len &gt; 0 &amp;&amp; dst[len - 1] != '/') {</span>
+<span class="lineNum">     446 </span><span class="lineCov">       5754 :                 if (len + 2 &gt;= size) {</span>
+<span class="lineNum">     447 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     448 </span>            :                         log_fatal(&quot;Path too long\n&quot;);
+<span class="lineNum">     449 </span>            :                         exit(EXIT_FAILURE);
+<span class="lineNum">     450 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     451 </span>            :                 }
+<span class="lineNum">     452 </span>            : 
+<span class="lineNum">     453 </span><span class="lineCov">       5754 :                 dst[len] = '/';</span>
+<span class="lineNum">     454 </span><span class="lineCov">       5754 :                 dst[len + 1] = 0;</span>
+<span class="lineNum">     455 </span>            :         }
+<a name="456"><span class="lineNum">     456 </span><span class="lineCov">       7165 : }</span></a>
+<span class="lineNum">     457 </span>            : 
+<span class="lineNum">     458 </span><span class="lineCov">         30 : void pathcut(char* dst)</span>
+<span class="lineNum">     459 </span>            : {
+<span class="lineNum">     460 </span><span class="lineCov">         30 :         char* slash = strrchr(dst, '/');</span>
+<span class="lineNum">     461 </span><span class="lineCov">         30 :         if (slash)</span>
+<span class="lineNum">     462 </span><span class="lineCov">         30 :                 slash[1] = 0;</span>
+<span class="lineNum">     463 </span>            :         else
+<span class="lineNum">     464 </span><span class="lineNoCov">          0 :                 dst[0] = 0;</span>
+<a name="465"><span class="lineNum">     465 </span><span class="lineCov">         30 : }</span></a>
+<span class="lineNum">     466 </span>            : 
+<span class="lineNum">     467 </span><span class="lineCov">   49935952 : int pathcmp(const char* a, const char* b)</span>
+<span class="lineNum">     468 </span>            : {
+<span class="lineNum">     469 </span>            : #ifdef _WIN32
+<span class="lineNum">     470 </span>            :         char ai[PATH_MAX];
+<span class="lineNum">     471 </span>            :         char bi[PATH_MAX];
+<span class="lineNum">     472 </span>            : 
+<span class="lineNum">     473 </span>            :         /* import to convert \ to / */
+<span class="lineNum">     474 </span>            :         pathimport(ai, sizeof(ai), a);
+<span class="lineNum">     475 </span>            :         pathimport(bi, sizeof(bi), b);
+<span class="lineNum">     476 </span>            : 
+<span class="lineNum">     477 </span>            :         /* case insensitive compare in Windows */
+<span class="lineNum">     478 </span>            :         return stricmp(ai, bi);
+<span class="lineNum">     479 </span>            : #else
+<span class="lineNum">     480 </span><span class="lineCov">   49935952 :         return strcmp(a, b);</span>
+<span class="lineNum">     481 </span>            : #endif
+<span class="lineNum">     482 </span>            : }
+<span class="lineNum">     483 </span>            : 
+<span class="lineNum">     484 </span>            : /****************************************************************************/
+<a name="485"><span class="lineNum">     485 </span>            : /* filesystem */</a>
+<span class="lineNum">     486 </span>            : 
+<span class="lineNum">     487 </span><span class="lineCov">     794947 : int mkancestor(const char* file)</span>
+<span class="lineNum">     488 </span>            : {
+<span class="lineNum">     489 </span>            :         char dir[PATH_MAX];
+<span class="lineNum">     490 </span>            :         struct stat st;
+<span class="lineNum">     491 </span>            :         char* c;
+<span class="lineNum">     492 </span>            : 
+<span class="lineNum">     493 </span><span class="lineCov">     794947 :         pathcpy(dir, sizeof(dir), file);</span>
+<span class="lineNum">     494 </span>            : 
+<span class="lineNum">     495 </span><span class="lineCov">     794947 :         c = strrchr(dir, '/');</span>
+<span class="lineNum">     496 </span><span class="lineCov">     794947 :         if (!c) {</span>
+<span class="lineNum">     497 </span>            :                 /* no ancestor */
+<span class="lineNum">     498 </span><span class="lineNoCov">          0 :                 return 0;</span>
+<span class="lineNum">     499 </span>            :         }
+<span class="lineNum">     500 </span>            : 
+<span class="lineNum">     501 </span>            :         /* clear the file */
+<span class="lineNum">     502 </span><span class="lineCov">     794947 :         *c = 0;</span>
+<span class="lineNum">     503 </span>            : 
+<span class="lineNum">     504 </span>            :         /* if it's the root dir */
+<span class="lineNum">     505 </span><span class="lineCov">     794947 :         if (*dir == 0) {</span>
+<span class="lineNum">     506 </span>            :                 /* nothing more to do */
+<span class="lineNum">     507 </span><span class="lineNoCov">          0 :                 return 0;</span>
+<span class="lineNum">     508 </span>            :         }
+<span class="lineNum">     509 </span>            : 
+<span class="lineNum">     510 </span>            : #ifdef _WIN32
+<span class="lineNum">     511 </span>            :         /* if it's a drive specificaion like &quot;C:&quot; */
+<span class="lineNum">     512 </span>            :         if (isalpha(dir[0]) &amp;&amp; dir[1] == ':' &amp;&amp; dir[2] == 0) {
+<span class="lineNum">     513 </span>            :                 /* nothing more to do */
+<span class="lineNum">     514 </span>            :                 return 0;
+<span class="lineNum">     515 </span>            :         }
+<span class="lineNum">     516 </span>            : #endif
+<span class="lineNum">     517 </span>            : 
+<span class="lineNum">     518 </span>            :         /*
+<span class="lineNum">     519 </span>            :          * Check if the dir already exists using lstat().
+<span class="lineNum">     520 </span>            :          *
+<span class="lineNum">     521 </span>            :          * Note that in Windows when dealing with read-only media
+<span class="lineNum">     522 </span>            :          * you cannot try to create the directory, and expecting
+<span class="lineNum">     523 </span>            :          * the EEXIST error because the call will fail with ERROR_WRITE_PROTECTED.
+<span class="lineNum">     524 </span>            :          *
+<span class="lineNum">     525 </span>            :          * Also in Windows it's better to use lstat() than stat() because it
+<span class="lineNum">     526 </span>            :          * doen't need to open the dir with CreateFile().
+<span class="lineNum">     527 </span>            :          */
+<span class="lineNum">     528 </span><span class="lineCov">     794947 :         if (lstat(dir, &amp;st) == 0) {</span>
+<span class="lineNum">     529 </span>            :                 /* it already exists */
+<span class="lineNum">     530 </span><span class="lineCov">     794867 :                 return 0;</span>
+<span class="lineNum">     531 </span>            :         }
+<span class="lineNum">     532 </span>            : 
+<span class="lineNum">     533 </span>            :         /* recursively create them all */
+<span class="lineNum">     534 </span><span class="lineCov">         80 :         if (mkancestor(dir) != 0) {</span>
+<span class="lineNum">     535 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     536 </span>            :                 return -1;
+<span class="lineNum">     537 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     538 </span>            :         }
+<span class="lineNum">     539 </span>            : 
+<span class="lineNum">     540 </span>            :         /* create it */
+<span class="lineNum">     541 </span><span class="lineCov">         80 :         if (mkdir(dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) != 0) {</span>
+<span class="lineNum">     542 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     543 </span>            :                 log_fatal(&quot;Error creating directory '%s'. %s.\n&quot;, dir, strerror(errno));
+<span class="lineNum">     544 </span>            :                 return -1;
+<span class="lineNum">     545 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     546 </span>            :         }
+<span class="lineNum">     547 </span>            : 
+<span class="lineNum">     548 </span><span class="lineCov">         80 :         return 0;</span>
+<a name="549"><span class="lineNum">     549 </span>            : }</a>
+<span class="lineNum">     550 </span>            : 
+<span class="lineNum">     551 </span><span class="lineCov">     119773 : int fmtime(int f, int64_t mtime_sec, int mtime_nsec)</span>
+<span class="lineNum">     552 </span>            : {
+<span class="lineNum">     553 </span>            : #if HAVE_FUTIMENS
+<span class="lineNum">     554 </span>            :         struct timespec tv[2];
+<span class="lineNum">     555 </span>            : #else
+<span class="lineNum">     556 </span>            :         struct timeval tv[2];
+<span class="lineNum">     557 </span>            : #endif
+<span class="lineNum">     558 </span>            :         int ret;
+<span class="lineNum">     559 </span>            : 
+<span class="lineNum">     560 </span>            : #if HAVE_FUTIMENS /* futimens() is preferred because it gives nanosecond precision */
+<span class="lineNum">     561 </span><span class="lineCov">     119773 :         tv[0].tv_sec = mtime_sec;</span>
+<span class="lineNum">     562 </span><span class="lineCov">     119773 :         if (mtime_nsec != STAT_NSEC_INVALID)</span>
+<span class="lineNum">     563 </span><span class="lineCov">     119773 :                 tv[0].tv_nsec = mtime_nsec;</span>
+<span class="lineNum">     564 </span>            :         else
+<span class="lineNum">     565 </span><span class="lineNoCov">          0 :                 tv[0].tv_nsec = 0;</span>
+<span class="lineNum">     566 </span><span class="lineCov">     119773 :         tv[1].tv_sec = tv[0].tv_sec;</span>
+<span class="lineNum">     567 </span><span class="lineCov">     119773 :         tv[1].tv_nsec = tv[0].tv_nsec;</span>
+<span class="lineNum">     568 </span>            : 
+<span class="lineNum">     569 </span><span class="lineCov">     119773 :         ret = futimens(f, tv);</span>
+<span class="lineNum">     570 </span>            : #elif HAVE_FUTIMES /* fallback to futimes() if nanosecond precision is not available */
+<span class="lineNum">     571 </span>            :         tv[0].tv_sec = mtime_sec;
+<span class="lineNum">     572 </span>            :         if (mtime_nsec != STAT_NSEC_INVALID)
+<span class="lineNum">     573 </span>            :                 tv[0].tv_usec = mtime_nsec / 1000;
+<span class="lineNum">     574 </span>            :         else
+<span class="lineNum">     575 </span>            :                 tv[0].tv_usec = 0;
+<span class="lineNum">     576 </span>            :         tv[1].tv_sec = tv[0].tv_sec;
+<span class="lineNum">     577 </span>            :         tv[1].tv_usec = tv[0].tv_usec;
+<span class="lineNum">     578 </span>            : 
+<span class="lineNum">     579 </span>            :         ret = futimes(f, tv);
+<span class="lineNum">     580 </span>            : #elif HAVE_FUTIMESAT /* fallback to futimesat() for Solaris, it only has futimesat() */
+<span class="lineNum">     581 </span>            :         tv[0].tv_sec = mtime_sec;
+<span class="lineNum">     582 </span>            :         if (mtime_nsec != STAT_NSEC_INVALID)
+<span class="lineNum">     583 </span>            :                 tv[0].tv_usec = mtime_nsec / 1000;
+<span class="lineNum">     584 </span>            :         else
+<span class="lineNum">     585 </span>            :                 tv[0].tv_usec = 0;
+<span class="lineNum">     586 </span>            :         tv[1].tv_sec = tv[0].tv_sec;
+<span class="lineNum">     587 </span>            :         tv[1].tv_usec = tv[0].tv_usec;
+<span class="lineNum">     588 </span>            : 
+<span class="lineNum">     589 </span>            :         ret = futimesat(f, 0, tv);
+<span class="lineNum">     590 </span>            : #else
+<span class="lineNum">     591 </span>            : #error No function available to set file timestamps with sub-second precision
+<span class="lineNum">     592 </span>            : #endif
+<span class="lineNum">     593 </span>            : 
+<span class="lineNum">     594 </span><span class="lineCov">     119773 :         return ret;</span>
+<span class="lineNum">     595 </span>            : }
+<span class="lineNum">     596 </span>            : 
+<span class="lineNum">     597 </span>            : /****************************************************************************/
+<span class="lineNum">     598 </span>            : /* memory */
+<span class="lineNum">     599 </span>            : 
+<a name="600"><span class="lineNum">     600 </span>            : static size_t mcounter;</a>
+<span class="lineNum">     601 </span>            : 
+<span class="lineNum">     602 </span><span class="lineCov">        426 : size_t malloc_counter(void)</span>
+<span class="lineNum">     603 </span>            : {
+<span class="lineNum">     604 </span><span class="lineCov">        426 :         return mcounter;</span>
+<a name="605"><span class="lineNum">     605 </span>            : }</a>
+<span class="lineNum">     606 </span>            : 
+<span class="lineNum">     607 </span><span class="lineNoCov">          0 : static ssize_t malloc_print(int f, const char* str)</span>
+<span class="lineNum">     608 </span>            : {
+<span class="lineNum">     609 </span><span class="lineNoCov">          0 :         ssize_t len = 0;</span>
+<span class="lineNum">     610 </span><span class="lineNoCov">          0 :         while (str[len])</span>
+<span class="lineNum">     611 </span><span class="lineNoCov">          0 :                 ++len;</span>
+<span class="lineNum">     612 </span><span class="lineNoCov">          0 :         return write(f, str, len);</span>
+<a name="613"><span class="lineNum">     613 </span>            : }</a>
+<span class="lineNum">     614 </span>            : 
+<span class="lineNum">     615 </span><span class="lineNoCov">          0 : static ssize_t malloc_printn(int f, size_t value)</span>
+<span class="lineNum">     616 </span>            : {
+<span class="lineNum">     617 </span>            :         char buf[32];
+<span class="lineNum">     618 </span>            :         int i;
+<span class="lineNum">     619 </span>            : 
+<span class="lineNum">     620 </span><span class="lineNoCov">          0 :         if (!value)</span>
+<span class="lineNum">     621 </span><span class="lineNoCov">          0 :                 return write(f, &quot;0&quot;, 1);</span>
+<span class="lineNum">     622 </span>            : 
+<span class="lineNum">     623 </span><span class="lineNoCov">          0 :         i = sizeof(buf);</span>
+<span class="lineNum">     624 </span><span class="lineNoCov">          0 :         while (value) {</span>
+<span class="lineNum">     625 </span><span class="lineNoCov">          0 :                 buf[--i] = (value % 10) + '0';</span>
+<span class="lineNum">     626 </span><span class="lineNoCov">          0 :                 value /= 10;</span>
+<span class="lineNum">     627 </span>            :         }
+<span class="lineNum">     628 </span>            : 
+<span class="lineNum">     629 </span><span class="lineNoCov">          0 :         return write(f, buf + i, sizeof(buf) - i);</span>
+<a name="630"><span class="lineNum">     630 </span>            : }</a>
+<span class="lineNum">     631 </span>            : 
+<span class="lineNum">     632 </span><span class="lineNoCov">          0 : void malloc_fail(size_t size)</span>
+<span class="lineNum">     633 </span>            : {
+<span class="lineNum">     634 </span>            :         /* don't use printf to avoid any possible extra allocation */
+<span class="lineNum">     635 </span>            :         /* LCOV_EXCL_START */
+<span class="lineNum">     636 </span>            :         int f = 2; /* stderr */
+<span class="lineNum">     637 </span>            : 
+<span class="lineNum">     638 </span>            :         malloc_print(f, &quot;Failed for Low Memory!\n&quot;);
+<span class="lineNum">     639 </span>            :         malloc_print(f, &quot;Allocating &quot;);
+<span class="lineNum">     640 </span>            :         malloc_printn(f, size);
+<span class="lineNum">     641 </span>            :         malloc_print(f, &quot; bytes.\n&quot;);
+<span class="lineNum">     642 </span>            :         malloc_print(f, &quot;Already allocated &quot;);
+<span class="lineNum">     643 </span>            :         malloc_printn(f, malloc_counter());
+<span class="lineNum">     644 </span>            :         malloc_print(f, &quot; bytes.\n&quot;);
+<span class="lineNum">     645 </span>            :         if (sizeof(void*) == 4) {
+<span class="lineNum">     646 </span>            :                 malloc_print(f, &quot;You are currently using a 32 bits executable.\n&quot;);
+<span class="lineNum">     647 </span>            :                 malloc_print(f, &quot;If you have more than 4GB of memory, please upgrade to a 64 bits one.\n&quot;);
+<span class="lineNum">     648 </span>            :         }
+<span class="lineNum">     649 </span>            :         /* LCOV_EXCL_STOP */
+<a name="650"><span class="lineNum">     650 </span><span class="lineNoCov">          0 : }</span></a>
+<span class="lineNum">     651 </span>            : 
+<span class="lineNum">     652 </span><span class="lineCov">   10377145 : void* malloc_nofail(size_t size)</span>
+<span class="lineNum">     653 </span>            : {
+<span class="lineNum">     654 </span><span class="lineCov">   10377145 :         void* ptr = malloc(size);</span>
+<span class="lineNum">     655 </span>            : 
+<span class="lineNum">     656 </span><span class="lineCov">   10377145 :         if (!ptr) {</span>
+<span class="lineNum">     657 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     658 </span>            :                 malloc_fail(size);
+<span class="lineNum">     659 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     660 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     661 </span>            :         }
+<span class="lineNum">     662 </span>            : 
+<span class="lineNum">     663 </span>            : #ifndef CHECKER /* Don't preinitialize when running for valgrind */
+<span class="lineNum">     664 </span>            :         /* Here we preinitialize the memory to ensure that the OS is really allocating it */
+<span class="lineNum">     665 </span>            :         /* and not only reserving the addressable space. */
+<span class="lineNum">     666 </span>            :         /* Otherwise we are risking that the OOM (Out Of Memory) killer in Linux will kill the process. */
+<span class="lineNum">     667 </span>            :         /* Filling the memory doesn't ensure to disable OOM, but it increase a lot the chances to */
+<span class="lineNum">     668 </span>            :         /* get a real error from malloc() instead than a process killed. */
+<span class="lineNum">     669 </span>            :         /* Note that calloc() doesn't have the same effect. */
+<span class="lineNum">     670 </span><span class="lineCov">   10377145 :         memset(ptr, 0xA5, size);</span>
+<span class="lineNum">     671 </span>            : #endif
+<span class="lineNum">     672 </span>            : 
+<span class="lineNum">     673 </span><span class="lineCov">   10377145 :         mcounter += size;</span>
+<span class="lineNum">     674 </span>            : 
+<span class="lineNum">     675 </span><span class="lineCov">   10377145 :         return ptr;</span>
+<a name="676"><span class="lineNum">     676 </span>            : }</a>
+<span class="lineNum">     677 </span>            : 
+<span class="lineNum">     678 </span><span class="lineCov">      13324 : void* calloc_nofail(size_t count, size_t size)</span>
+<span class="lineNum">     679 </span>            : {
+<span class="lineNum">     680 </span>            :         void* ptr;
+<span class="lineNum">     681 </span>            : 
+<span class="lineNum">     682 </span><span class="lineCov">      13324 :         size *= count;</span>
+<span class="lineNum">     683 </span>            : 
+<span class="lineNum">     684 </span>            :         /* see the note in malloc_nofail() of why we don't use calloc() */
+<span class="lineNum">     685 </span><span class="lineCov">      13324 :         ptr = malloc(size);</span>
+<span class="lineNum">     686 </span>            : 
+<span class="lineNum">     687 </span><span class="lineCov">      13324 :         if (!ptr) {</span>
+<span class="lineNum">     688 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     689 </span>            :                 malloc_fail(size);
+<span class="lineNum">     690 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     691 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     692 </span>            :         }
+<span class="lineNum">     693 </span>            : 
+<span class="lineNum">     694 </span><span class="lineCov">      13324 :         memset(ptr, 0, size);</span>
+<span class="lineNum">     695 </span>            : 
+<span class="lineNum">     696 </span><span class="lineCov">      13324 :         mcounter += size;</span>
+<span class="lineNum">     697 </span>            : 
+<span class="lineNum">     698 </span><span class="lineCov">      13324 :         return ptr;</span>
+<a name="699"><span class="lineNum">     699 </span>            : }</a>
+<span class="lineNum">     700 </span>            : 
+<span class="lineNum">     701 </span><span class="lineCov">    5657552 : char* strdup_nofail(const char* str)</span>
+<span class="lineNum">     702 </span>            : {
+<span class="lineNum">     703 </span>            :         size_t size;
+<span class="lineNum">     704 </span>            :         char* ptr;
+<span class="lineNum">     705 </span>            : 
+<span class="lineNum">     706 </span><span class="lineCov">    5657552 :         size = strlen(str) + 1;</span>
+<span class="lineNum">     707 </span>            : 
+<span class="lineNum">     708 </span><span class="lineCov">    5657552 :         ptr = malloc(size);</span>
+<span class="lineNum">     709 </span>            : 
+<span class="lineNum">     710 </span><span class="lineCov">    5657552 :         if (!ptr) {</span>
+<span class="lineNum">     711 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     712 </span>            :                 malloc_fail(size);
+<span class="lineNum">     713 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     714 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     715 </span>            :         }
+<span class="lineNum">     716 </span>            : 
+<span class="lineNum">     717 </span><span class="lineCov">    5657552 :         memcpy(ptr, str, size);</span>
+<span class="lineNum">     718 </span>            : 
+<span class="lineNum">     719 </span><span class="lineCov">    5657552 :         mcounter += size;</span>
+<span class="lineNum">     720 </span>            : 
+<span class="lineNum">     721 </span><span class="lineCov">    5657552 :         return ptr;</span>
+<span class="lineNum">     722 </span>            : }
+<span class="lineNum">     723 </span>            : 
+<span class="lineNum">     724 </span>            : /****************************************************************************/
+<span class="lineNum">     725 </span>            : /* smartctl */
+<span class="lineNum">     726 </span>            : 
+<span class="lineNum">     727 </span>            : /**
+<span class="lineNum">     728 </span>            :  * Matches a string with the specified pattern.
+<span class="lineNum">     729 </span>            :  * Like sscanf() a space match any sequence of spaces.
+<a name="730"><span class="lineNum">     730 </span>            :  * Returns 0 if it matches.</a>
+<span class="lineNum">     731 </span>            :  */
+<span class="lineNum">     732 </span><span class="lineNoCov">          0 : static int smatch(const char* str, const char* pattern)</span>
+<span class="lineNum">     733 </span>            : {
+<span class="lineNum">     734 </span><span class="lineNoCov">          0 :         while (*pattern) {</span>
+<span class="lineNum">     735 </span><span class="lineNoCov">          0 :                 if (isspace(*pattern)) {</span>
+<span class="lineNum">     736 </span><span class="lineNoCov">          0 :                         ++pattern;</span>
+<span class="lineNum">     737 </span><span class="lineNoCov">          0 :                         while (isspace(*str))</span>
+<span class="lineNum">     738 </span><span class="lineNoCov">          0 :                                 ++str;</span>
+<span class="lineNum">     739 </span><span class="lineNoCov">          0 :                 } else if (*pattern == *str) {</span>
+<span class="lineNum">     740 </span><span class="lineNoCov">          0 :                         ++pattern;</span>
+<span class="lineNum">     741 </span><span class="lineNoCov">          0 :                         ++str;</span>
+<span class="lineNum">     742 </span>            :                 } else
+<span class="lineNum">     743 </span><span class="lineNoCov">          0 :                         return -1;</span>
+<span class="lineNum">     744 </span>            :         }
+<span class="lineNum">     745 </span>            : 
+<span class="lineNum">     746 </span><span class="lineNoCov">          0 :         return 0;</span>
+<a name="747"><span class="lineNum">     747 </span>            : }</a>
+<span class="lineNum">     748 </span>            : 
+<span class="lineNum">     749 </span><span class="lineCov">         25 : int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* smart, char* serial)</span>
+<span class="lineNum">     750 </span>            : {
+<span class="lineNum">     751 </span>            :         unsigned i;
+<span class="lineNum">     752 </span>            :         int inside;
+<span class="lineNum">     753 </span>            : 
+<span class="lineNum">     754 </span>            :         /* preclear attribute */
+<span class="lineNum">     755 </span><span class="lineCov">         25 :         *serial = 0;</span>
+<span class="lineNum">     756 </span><span class="lineCov">       6525 :         for (i = 0; i &lt; SMART_COUNT; ++i)</span>
+<span class="lineNum">     757 </span><span class="lineCov">       6500 :                 smart[i] = SMART_UNASSIGNED;</span>
+<span class="lineNum">     758 </span>            : 
+<span class="lineNum">     759 </span>            :         /* read the file */
+<span class="lineNum">     760 </span><span class="lineCov">         25 :         inside = 0;</span>
+<span class="lineNum">     761 </span>            :         while (1) {
+<span class="lineNum">     762 </span>            :                 char buf[256];
+<span class="lineNum">     763 </span>            :                 char attr[64];
+<span class="lineNum">     764 </span>            :                 unsigned id;
+<span class="lineNum">     765 </span>            :                 uint64_t raw;
+<span class="lineNum">     766 </span>            :                 char* s;
+<span class="lineNum">     767 </span>            : 
+<span class="lineNum">     768 </span><span class="lineCov">         25 :                 s = fgets(buf, sizeof(buf), f);</span>
+<span class="lineNum">     769 </span><span class="lineCov">         25 :                 if (s == 0)</span>
+<span class="lineNum">     770 </span><span class="lineCov">         25 :                         break;</span>
+<span class="lineNum">     771 </span>            : 
+<span class="lineNum">     772 </span>            :                 /* remove extraneous chars */
+<span class="lineNum">     773 </span><span class="lineNoCov">          0 :                 s = polish(buf);</span>
+<span class="lineNum">     774 </span>            : 
+<span class="lineNum">     775 </span><span class="lineNoCov">          0 :                 log_tag(&quot;smartctl:%s:%s:out: %s\n&quot;, file, name, s);</span>
+<span class="lineNum">     776 </span>            : 
+<span class="lineNum">     777 </span>            :                 /* skip initial spaces */
+<span class="lineNum">     778 </span><span class="lineNoCov">          0 :                 while (isspace(*s))</span>
+<span class="lineNum">     779 </span><span class="lineNoCov">          0 :                         ++s;</span>
+<span class="lineNum">     780 </span>            : 
+<span class="lineNum">     781 </span><span class="lineNoCov">          0 :                 if (*s == 0) {</span>
+<span class="lineNum">     782 </span><span class="lineNoCov">          0 :                         inside = 0;</span>
+<span class="lineNum">     783 </span><span class="lineNoCov">          0 :                 } else if (smatch(s, &quot;ID#&quot;) == 0) {</span>
+<span class="lineNum">     784 </span><span class="lineNoCov">          0 :                         inside = 1;</span>
+<span class="lineNum">     785 </span><span class="lineNoCov">          0 :                 } else if (smatch(s, &quot;No Errors Logged&quot;) == 0) {</span>
+<span class="lineNum">     786 </span><span class="lineNoCov">          0 :                         smart[SMART_ERROR] = 0;</span>
+<span class="lineNum">     787 </span><span class="lineNoCov">          0 :                 } else if (sscanf(s, &quot;ATA Error Count: %&quot; SCNu64, &amp;raw) == 1) {</span>
+<span class="lineNum">     788 </span><span class="lineNoCov">          0 :                         smart[SMART_ERROR] = raw;</span>
+<span class="lineNum">     789 </span><span class="lineNoCov">          0 :                 } else if (sscanf(s, &quot;Serial Number: %63s&quot;, serial) == 1) {</span>
+<span class="lineNum">     790 </span><span class="lineNoCov">          0 :                 } else if (smatch(s, &quot;Rotation Rate: Solid State&quot;) == 0) {</span>
+<span class="lineNum">     791 </span><span class="lineNoCov">          0 :                         smart[SMART_ROTATION_RATE] = 0;</span>
+<span class="lineNum">     792 </span><span class="lineNoCov">          0 :                 } else if (sscanf(s, &quot;Rotation Rate: %&quot; SCNu64, &amp;smart[SMART_ROTATION_RATE]) == 1) {</span>
+<span class="lineNum">     793 </span><span class="lineNoCov">          0 :                 } else if (sscanf(s, &quot;User Capacity: %63s&quot;, attr) == 1) {</span>
+<span class="lineNum">     794 </span><span class="lineNoCov">          0 :                         smart[SMART_SIZE] = 0;</span>
+<span class="lineNum">     795 </span><span class="lineNoCov">          0 :                         for (i = 0; attr[i]; ++i) {</span>
+<span class="lineNum">     796 </span><span class="lineNoCov">          0 :                                 if (isdigit(attr[i])) {</span>
+<span class="lineNum">     797 </span><span class="lineNoCov">          0 :                                         smart[SMART_SIZE] *= 10;</span>
+<span class="lineNum">     798 </span><span class="lineNoCov">          0 :                                         smart[SMART_SIZE] += attr[i] - '0';</span>
+<span class="lineNum">     799 </span>            :                                 }
+<span class="lineNum">     800 </span>            :                         }
+<span class="lineNum">     801 </span><span class="lineNoCov">          0 :                 } else if (inside) {</span>
+<span class="lineNum">     802 </span><span class="lineNoCov">          0 :                         if (sscanf(s, &quot;%u %*s %*s %*s %*s %*s %*s %*s %*s %&quot; SCNu64, &amp;id, &amp;raw) != 2) {</span>
+<span class="lineNum">     803 </span>            :                                 /* LCOV_EXCL_START */
+<span class="lineNum">     804 </span>            :                                 log_fatal(&quot;Invalid smartctl line '%s'.\n&quot;, s);
+<span class="lineNum">     805 </span>            :                                 return -1;
+<span class="lineNum">     806 </span>            :                                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     807 </span>            :                         }
+<span class="lineNum">     808 </span>            : 
+<span class="lineNum">     809 </span><span class="lineNoCov">          0 :                         if (id &gt;= 256) {</span>
+<span class="lineNum">     810 </span>            :                                 /* LCOV_EXCL_START */
+<span class="lineNum">     811 </span>            :                                 log_fatal(&quot;Invalid SMART id '%u'.\n&quot;, id);
+<span class="lineNum">     812 </span>            :                                 return -1;
+<span class="lineNum">     813 </span>            :                                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     814 </span>            :                         }
+<span class="lineNum">     815 </span>            : 
+<span class="lineNum">     816 </span><span class="lineNoCov">          0 :                         smart[id] = raw;</span>
+<span class="lineNum">     817 </span>            :                 }
+<span class="lineNum">     818 </span><span class="lineNoCov">          0 :         }</span>
+<span class="lineNum">     819 </span>            : 
+<span class="lineNum">     820 </span><span class="lineCov">         25 :         return 0;</span>
+<a name="821"><span class="lineNum">     821 </span>            : }</a>
+<span class="lineNum">     822 </span>            : 
+<span class="lineNum">     823 </span><span class="lineCov">         12 : int smartctl_flush(FILE* f, const char* file, const char* name)</span>
+<span class="lineNum">     824 </span>            : {
+<span class="lineNum">     825 </span>            :         /* read the file */
+<span class="lineNum">     826 </span>            :         while (1) {
+<span class="lineNum">     827 </span>            :                 char buf[256];
+<span class="lineNum">     828 </span>            :                 char* s;
+<span class="lineNum">     829 </span>            : 
+<span class="lineNum">     830 </span><span class="lineCov">         12 :                 s = fgets(buf, sizeof(buf), f);</span>
+<span class="lineNum">     831 </span><span class="lineCov">         12 :                 if (s == 0)</span>
+<span class="lineNum">     832 </span><span class="lineCov">         12 :                         break;</span>
+<span class="lineNum">     833 </span>            : 
+<span class="lineNum">     834 </span>            :                 /* remove extraneous chars */
+<span class="lineNum">     835 </span><span class="lineNoCov">          0 :                 s = polish(buf);</span>
+<span class="lineNum">     836 </span>            : 
+<span class="lineNum">     837 </span><span class="lineNoCov">          0 :                 log_tag(&quot;smartctl:%s:%s:out: %s\n&quot;, file, name, s);</span>
+<span class="lineNum">     838 </span><span class="lineNoCov">          0 :         }</span>
+<span class="lineNum">     839 </span>            : 
+<span class="lineNum">     840 </span><span class="lineCov">         24 :         return 0;</span>
+<span class="lineNum">     841 </span>            : }
+<span class="lineNum">     842 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

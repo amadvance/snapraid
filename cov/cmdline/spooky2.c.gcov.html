@@ -1,0 +1,249 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - cmdline/spooky2.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">cmdline</a> - spooky2.c<span style="font-size: 80%;"> (source / <a href="spooky2.c.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">20</td>
+            <td class="headerCovTableEntry">20</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2015-05-12</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (C) 2013 Andrea Mazzoleni
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * This program is free software: you can redistribute it and/or modify
+<span class="lineNum">       5 </span>            :  * it under the terms of the GNU General Public License as published by
+<span class="lineNum">       6 </span>            :  * the Free Software Foundation, either version 3 of the License, or
+<span class="lineNum">       7 </span>            :  * (at your option) any later version.
+<span class="lineNum">       8 </span>            :  *
+<span class="lineNum">       9 </span>            :  * This program is distributed in the hope that it will be useful,
+<span class="lineNum">      10 </span>            :  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      11 </span>            :  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      12 </span>            :  * GNU General Public License for more details.
+<span class="lineNum">      13 </span>            :  *
+<span class="lineNum">      14 </span>            :  * You should have received a copy of the GNU General Public License
+<span class="lineNum">      15 </span>            :  * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+<span class="lineNum">      16 </span>            :  */
+<span class="lineNum">      17 </span>            : 
+<span class="lineNum">      18 </span>            : /*
+<span class="lineNum">      19 </span>            :  * Derivative work from SpookyV2.cpp/h
+<span class="lineNum">      20 </span>            :  *
+<span class="lineNum">      21 </span>            :  * WARNING!!!! Note that this implementation doesn't use the short hash optimization
+<span class="lineNum">      22 </span>            :  * resulting in different hashes for any length shorter than 192 bytes
+<span class="lineNum">      23 </span>            :  *
+<span class="lineNum">      24 </span>            :  * SpookyHash
+<span class="lineNum">      25 </span>            :  * http://burtleburtle.net/bob/hash/spooky.html
+<span class="lineNum">      26 </span>            :  *
+<span class="lineNum">      27 </span>            :  * Exact source used as reference:
+<span class="lineNum">      28 </span>            :  * http://burtleburtle.net/bob/c/SpookyV2.h
+<span class="lineNum">      29 </span>            :  * http://burtleburtle.net/bob/c/SpookyV2.cpp
+<span class="lineNum">      30 </span>            :  */
+<span class="lineNum">      31 </span>            : 
+<span class="lineNum">      32 </span>            : // Spooky Hash
+<span class="lineNum">      33 </span>            : // A 128-bit noncryptographic hash, for checksums and table lookup
+<span class="lineNum">      34 </span>            : // By Bob Jenkins.  Public domain.
+<span class="lineNum">      35 </span>            : //   Oct 31 2010: published framework, disclaimer ShortHash isn't right
+<span class="lineNum">      36 </span>            : //   Nov 7 2010: disabled ShortHash
+<span class="lineNum">      37 </span>            : //   Oct 31 2011: replace End, ShortMix, ShortEnd, enable ShortHash again
+<span class="lineNum">      38 </span>            : //   April 10 2012: buffer overflow on platforms without unaligned reads
+<span class="lineNum">      39 </span>            : //   July 12 2012: was passing out variables in final to in/out in short
+<span class="lineNum">      40 </span>            : //   July 30 2012: I reintroduced the buffer overflow
+<span class="lineNum">      41 </span>            : //   August 5 2012: SpookyV2: d = should be d += in short hash, and remove extra mix from long hash
+<span class="lineNum">      42 </span>            : //
+<span class="lineNum">      43 </span>            : // Up to 3 bytes/cycle for long messages.  Reasonably fast for short messages.
+<span class="lineNum">      44 </span>            : // All 1 or 2 bit deltas achieve avalanche within 1% bias per output bit.
+<span class="lineNum">      45 </span>            : //
+<span class="lineNum">      46 </span>            : // This was developed for and tested on 64-bit x86-compatible processors.
+<span class="lineNum">      47 </span>            : // It assumes the processor is little-endian.  There is a macro
+<span class="lineNum">      48 </span>            : // controlling whether unaligned reads are allowed (by default they are).
+<span class="lineNum">      49 </span>            : // This should be an equally good hash on big-endian machines, but it will
+<span class="lineNum">      50 </span>            : // compute different results on them than on little-endian machines.
+<span class="lineNum">      51 </span>            : //
+<span class="lineNum">      52 </span>            : // Google's CityHash has similar specs to SpookyHash, and CityHash is faster
+<span class="lineNum">      53 </span>            : // on new Intel boxes.  MD4 and MD5 also have similar specs, but they are orders
+<span class="lineNum">      54 </span>            : // of magnitude slower.  CRCs are two or more times slower, but unlike
+<span class="lineNum">      55 </span>            : // SpookyHash, they have nice math for combining the CRCs of pieces to form
+<span class="lineNum">      56 </span>            : // the CRCs of wholes.  There are also cryptographic hashes, but those are even
+<span class="lineNum">      57 </span>            : // slower than MD5.
+<span class="lineNum">      58 </span>            : //
+<span class="lineNum">      59 </span>            : 
+<span class="lineNum">      60 </span>            : #define Mix(data, s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11) \
+<span class="lineNum">      61 </span>            :         s0 += data[0];   s2 ^= s10;  s11 ^= s0;   s0 = util_rotl64(s0, 11);   s11 += s1; \
+<span class="lineNum">      62 </span>            :         s1 += data[1];   s3 ^= s11;  s0 ^= s1;   s1 = util_rotl64(s1, 32);   s0 += s2; \
+<span class="lineNum">      63 </span>            :         s2 += data[2];   s4 ^= s0;   s1 ^= s2;   s2 = util_rotl64(s2, 43);   s1 += s3; \
+<span class="lineNum">      64 </span>            :         s3 += data[3];   s5 ^= s1;   s2 ^= s3;   s3 = util_rotl64(s3, 31);   s2 += s4; \
+<span class="lineNum">      65 </span>            :         s4 += data[4];   s6 ^= s2;   s3 ^= s4;   s4 = util_rotl64(s4, 17);   s3 += s5; \
+<span class="lineNum">      66 </span>            :         s5 += data[5];   s7 ^= s3;   s4 ^= s5;   s5 = util_rotl64(s5, 28);   s4 += s6; \
+<span class="lineNum">      67 </span>            :         s6 += data[6];   s8 ^= s4;   s5 ^= s6;   s6 = util_rotl64(s6, 39);   s5 += s7; \
+<span class="lineNum">      68 </span>            :         s7 += data[7];   s9 ^= s5;   s6 ^= s7;   s7 = util_rotl64(s7, 57);   s6 += s8; \
+<span class="lineNum">      69 </span>            :         s8 += data[8];   s10 ^= s6;   s7 ^= s8;   s8 = util_rotl64(s8, 55);   s7 += s9; \
+<span class="lineNum">      70 </span>            :         s9 += data[9];   s11 ^= s7;   s8 ^= s9;   s9 = util_rotl64(s9, 54);   s8 += s10; \
+<span class="lineNum">      71 </span>            :         s10 += data[10];  s0 ^= s8;   s9 ^= s10;  s10 = util_rotl64(s10, 22);  s9 += s11; \
+<span class="lineNum">      72 </span>            :         s11 += data[11];  s1 ^= s9;   s10 ^= s11;  s11 = util_rotl64(s11, 46);  s10 += s0;
+<span class="lineNum">      73 </span>            : 
+<span class="lineNum">      74 </span>            : #define EndPartial(h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11) \
+<span class="lineNum">      75 </span>            :         h11 += h1;   h2 ^= h11;  h1 = util_rotl64(h1, 44); \
+<span class="lineNum">      76 </span>            :         h0 += h2;   h3 ^= h0;   h2 = util_rotl64(h2, 15); \
+<span class="lineNum">      77 </span>            :         h1 += h3;   h4 ^= h1;   h3 = util_rotl64(h3, 34); \
+<span class="lineNum">      78 </span>            :         h2 += h4;   h5 ^= h2;   h4 = util_rotl64(h4, 21); \
+<span class="lineNum">      79 </span>            :         h3 += h5;   h6 ^= h3;   h5 = util_rotl64(h5, 38); \
+<span class="lineNum">      80 </span>            :         h4 += h6;   h7 ^= h4;   h6 = util_rotl64(h6, 33); \
+<span class="lineNum">      81 </span>            :         h5 += h7;   h8 ^= h5;   h7 = util_rotl64(h7, 10); \
+<span class="lineNum">      82 </span>            :         h6 += h8;   h9 ^= h6;   h8 = util_rotl64(h8, 13); \
+<span class="lineNum">      83 </span>            :         h7 += h9;   h10 ^= h7;   h9 = util_rotl64(h9, 38); \
+<span class="lineNum">      84 </span>            :         h8 += h10;  h11 ^= h8;   h10 = util_rotl64(h10, 53); \
+<span class="lineNum">      85 </span>            :         h9 += h11;  h0 ^= h9;   h11 = util_rotl64(h11, 42); \
+<span class="lineNum">      86 </span>            :         h10 += h0;   h1 ^= h10;  h0 = util_rotl64(h0, 54);
+<span class="lineNum">      87 </span>            : 
+<span class="lineNum">      88 </span>            : #define End(data, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11) \
+<span class="lineNum">      89 </span>            :         h0 += data[0];  h1 += data[1];  h2 += data[2];    h3 += data[3]; \
+<span class="lineNum">      90 </span>            :         h4 += data[4];  h5 += data[5];  h6 += data[6];    h7 += data[7]; \
+<span class="lineNum">      91 </span>            :         h8 += data[8];  h9 += data[9];  h10 += data[10];   h11 += data[11]; \
+<span class="lineNum">      92 </span>            :         EndPartial(h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11); \
+<span class="lineNum">      93 </span>            :         EndPartial(h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11); \
+<span class="lineNum">      94 </span>            :         EndPartial(h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);
+<span class="lineNum">      95 </span>            : 
+<span class="lineNum">      96 </span>            : // number of uint64_t's in internal state
+<span class="lineNum">      97 </span>            : #define sc_numVars 12
+<span class="lineNum">      98 </span>            : 
+<span class="lineNum">      99 </span>            : // size of the internal state
+<span class="lineNum">     100 </span>            : #define sc_blockSize (sc_numVars * 8)
+<span class="lineNum">     101 </span>            : 
+<span class="lineNum">     102 </span>            : //
+<span class="lineNum">     103 </span>            : // sc_const: a constant which:
+<span class="lineNum">     104 </span>            : //  * is not zero
+<span class="lineNum">     105 </span>            : //  * is odd
+<span class="lineNum">     106 </span>            : //  * is a not-very-regular mix of 1's and 0's
+<span class="lineNum">     107 </span>            : //  * does not need any other special mathematical properties
+<span class="lineNum">     108 </span>            : //
+<a name="109"><span class="lineNum">     109 </span>            : #define sc_const 0xdeadbeefdeadbeefLL</a>
+<span class="lineNum">     110 </span>            : 
+<span class="lineNum">     111 </span><span class="lineCov">    3471988 : void SpookyHash128(const void* data, size_t size, const uint8_t* seed, uint8_t* digest)</span>
+<span class="lineNum">     112 </span>            : {
+<span class="lineNum">     113 </span>            :         uint64_t h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11;
+<span class="lineNum">     114 </span>            :         uint64_t buf[sc_numVars];
+<span class="lineNum">     115 </span>            :         size_t nblocks;
+<span class="lineNum">     116 </span>            :         const uint64_t* blocks;
+<span class="lineNum">     117 </span>            :         const uint64_t* end;
+<span class="lineNum">     118 </span>            :         size_t remainder;
+<span class="lineNum">     119 </span>            : #if WORDS_BIGENDIAN
+<span class="lineNum">     120 </span>            :         unsigned i;
+<span class="lineNum">     121 </span>            : #endif
+<span class="lineNum">     122 </span>            : 
+<span class="lineNum">     123 </span><span class="lineCov">    3471988 :         h9 = ((const uint64_t*)seed)[0];</span>
+<span class="lineNum">     124 </span><span class="lineCov">    3471988 :         h10 = ((const uint64_t*)seed)[1];</span>
+<span class="lineNum">     125 </span>            : 
+<span class="lineNum">     126 </span>            : #if WORDS_BIGENDIAN
+<span class="lineNum">     127 </span>            :         h9 = util_swap64(h9);
+<span class="lineNum">     128 </span>            :         h10 = util_swap64(h10);
+<span class="lineNum">     129 </span>            : #endif
+<span class="lineNum">     130 </span>            : 
+<span class="lineNum">     131 </span><span class="lineCov">    3471988 :         h0 = h3 = h6 = h9;</span>
+<span class="lineNum">     132 </span><span class="lineCov">    3471988 :         h1 = h4 = h7 = h10;</span>
+<span class="lineNum">     133 </span><span class="lineCov">    3471988 :         h2 = h5 = h8 = h11 = sc_const;</span>
+<span class="lineNum">     134 </span>            : 
+<span class="lineNum">     135 </span><span class="lineCov">    3471988 :         nblocks = size / sc_blockSize;</span>
+<span class="lineNum">     136 </span><span class="lineCov">    3471988 :         blocks = data;</span>
+<span class="lineNum">     137 </span><span class="lineCov">    3471988 :         end = blocks + nblocks * sc_numVars;</span>
+<span class="lineNum">     138 </span>            : 
+<span class="lineNum">     139 </span>            :         /* body */
+<span class="lineNum">     140 </span><span class="lineCov">   34947661 :         while (blocks &lt; end) {</span>
+<span class="lineNum">     141 </span>            : #if WORDS_BIGENDIAN
+<span class="lineNum">     142 </span>            :                 for (i = 0; i &lt; sc_numVars; ++i)
+<span class="lineNum">     143 </span>            :                         buf[i] = util_swap64(blocks[i]);
+<span class="lineNum">     144 </span>            :                 Mix(buf, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);
+<span class="lineNum">     145 </span>            : #else
+<span class="lineNum">     146 </span><span class="lineCov">   28003685 :                 Mix(blocks, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);</span>
+<span class="lineNum">     147 </span>            : #endif
+<span class="lineNum">     148 </span><span class="lineCov">   28003685 :                 blocks += sc_numVars;</span>
+<span class="lineNum">     149 </span>            :         }
+<span class="lineNum">     150 </span>            : 
+<span class="lineNum">     151 </span>            :         /* tail */
+<span class="lineNum">     152 </span><span class="lineCov">    3471988 :         remainder = (size - ((const uint8_t*)end - (const uint8_t*)data));</span>
+<span class="lineNum">     153 </span><span class="lineCov">    3471988 :         memcpy(buf, end, remainder);</span>
+<span class="lineNum">     154 </span><span class="lineCov">    3471988 :         memset(((uint8_t*)buf) + remainder, 0, sc_blockSize - remainder);</span>
+<span class="lineNum">     155 </span><span class="lineCov">    3471988 :         ((uint8_t*)buf)[sc_blockSize - 1] = remainder;</span>
+<span class="lineNum">     156 </span>            : 
+<span class="lineNum">     157 </span>            :         /* finalization */
+<span class="lineNum">     158 </span>            : #if WORDS_BIGENDIAN
+<span class="lineNum">     159 </span>            :         for (i = 0; i &lt; sc_numVars; ++i)
+<span class="lineNum">     160 </span>            :                 buf[i] = util_swap64(buf[i]);
+<span class="lineNum">     161 </span>            : #endif
+<span class="lineNum">     162 </span>            : 
+<span class="lineNum">     163 </span><span class="lineCov">    3471988 :         End(buf, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);</span>
+<span class="lineNum">     164 </span>            : 
+<span class="lineNum">     165 </span>            : #if WORDS_BIGENDIAN
+<span class="lineNum">     166 </span>            :         h0 = util_swap64(h0);
+<span class="lineNum">     167 </span>            :         h1 = util_swap64(h1);
+<span class="lineNum">     168 </span>            : #endif
+<span class="lineNum">     169 </span>            : 
+<span class="lineNum">     170 </span><span class="lineCov">    3471988 :         ((uint64_t*)digest)[0] = h0;</span>
+<span class="lineNum">     171 </span><span class="lineCov">    3471988 :         ((uint64_t*)digest)[1] = h1;</span>
+<span class="lineNum">     172 </span><span class="lineCov">    3471988 : }</span>
+<span class="lineNum">     173 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

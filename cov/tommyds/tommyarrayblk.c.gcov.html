@@ -1,0 +1,158 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - tommyds/tommyarrayblk.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">tommyds</a> - tommyarrayblk.c<span style="font-size: 80%;"> (source / <a href="tommyarrayblk.c.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">23</td>
+            <td class="headerCovTableEntry">23</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2015-05-12</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (c) 2013, Andrea Mazzoleni. All rights reserved.
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * Redistribution and use in source and binary forms, with or without
+<span class="lineNum">       5 </span>            :  * modification, are permitted provided that the following conditions
+<span class="lineNum">       6 </span>            :  * are met:
+<span class="lineNum">       7 </span>            :  *
+<span class="lineNum">       8 </span>            :  * 1. Redistributions of source code must retain the above copyright
+<span class="lineNum">       9 </span>            :  *    notice, this list of conditions and the following disclaimer.
+<span class="lineNum">      10 </span>            :  *
+<span class="lineNum">      11 </span>            :  * 2. Redistributions in binary form must reproduce the above copyright
+<span class="lineNum">      12 </span>            :  *    notice, this list of conditions and the following disclaimer in the
+<span class="lineNum">      13 </span>            :  *    documentation and/or other materials provided with the distribution.
+<span class="lineNum">      14 </span>            :  *
+<span class="lineNum">      15 </span>            :  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
+<span class="lineNum">      16 </span>            :  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+<span class="lineNum">      17 </span>            :  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+<span class="lineNum">      18 </span>            :  * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+<span class="lineNum">      19 </span>            :  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+<span class="lineNum">      20 </span>            :  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+<span class="lineNum">      21 </span>            :  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+<span class="lineNum">      22 </span>            :  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+<span class="lineNum">      23 </span>            :  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+<span class="lineNum">      24 </span>            :  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+<span class="lineNum">      25 </span>            :  * POSSIBILITY OF SUCH DAMAGE.
+<span class="lineNum">      26 </span>            :  */
+<span class="lineNum">      27 </span>            : 
+<span class="lineNum">      28 </span>            : #include &quot;tommyarrayblk.h&quot;
+<span class="lineNum">      29 </span>            : 
+<span class="lineNum">      30 </span>            : /******************************************************************************/
+<a name="31"><span class="lineNum">      31 </span>            : /* array */</a>
+<span class="lineNum">      32 </span>            : 
+<span class="lineNum">      33 </span><span class="lineCov">       1412 : void tommy_arrayblk_init(tommy_arrayblk* array)</span>
+<span class="lineNum">      34 </span>            : {
+<span class="lineNum">      35 </span><span class="lineCov">       1412 :         tommy_array_init(&amp;array-&gt;block);</span>
+<span class="lineNum">      36 </span>            : 
+<span class="lineNum">      37 </span><span class="lineCov">       1412 :         array-&gt;count = 0;</span>
+<a name="38"><span class="lineNum">      38 </span><span class="lineCov">       1412 : }</span></a>
+<span class="lineNum">      39 </span>            : 
+<span class="lineNum">      40 </span><span class="lineCov">       1304 : void tommy_arrayblk_done(tommy_arrayblk* array)</span>
+<span class="lineNum">      41 </span>            : {
+<span class="lineNum">      42 </span>            :         tommy_count_t i;
+<span class="lineNum">      43 </span>            : 
+<span class="lineNum">      44 </span><span class="lineCov">       4177 :         for (i = 0; i &lt; tommy_array_size(&amp;array-&gt;block); ++i)</span>
+<span class="lineNum">      45 </span><span class="lineCov">       2873 :                 tommy_free(tommy_array_get(&amp;array-&gt;block, i));</span>
+<span class="lineNum">      46 </span>            : 
+<span class="lineNum">      47 </span><span class="lineCov">       1304 :         tommy_array_done(&amp;array-&gt;block);</span>
+<a name="48"><span class="lineNum">      48 </span><span class="lineCov">       1304 : }</span></a>
+<span class="lineNum">      49 </span>            : 
+<span class="lineNum">      50 </span><span class="lineCov">    3814742 : void tommy_arrayblk_grow(tommy_arrayblk* array, tommy_count_t count)</span>
+<span class="lineNum">      51 </span>            : {
+<span class="lineNum">      52 </span>            :         tommy_count_t block_max;
+<span class="lineNum">      53 </span>            :         tommy_count_t block_mac;
+<span class="lineNum">      54 </span>            : 
+<span class="lineNum">      55 </span><span class="lineCov">    3814742 :         if (array-&gt;count &gt;= count)</span>
+<span class="lineNum">      56 </span><span class="lineCov">    4033192 :                 return;</span>
+<span class="lineNum">      57 </span><span class="lineCov">    3596292 :         array-&gt;count = count;</span>
+<span class="lineNum">      58 </span>            : 
+<span class="lineNum">      59 </span><span class="lineCov">    3596292 :         block_max = (count + TOMMY_ARRAYBLK_SIZE - 1) / TOMMY_ARRAYBLK_SIZE;</span>
+<span class="lineNum">      60 </span><span class="lineCov">    3596292 :         block_mac = tommy_array_size(&amp;array-&gt;block);</span>
+<span class="lineNum">      61 </span>            : 
+<span class="lineNum">      62 </span><span class="lineCov">    3596292 :         if (block_mac &lt; block_max) {</span>
+<span class="lineNum">      63 </span>            :                 /* grow the block array */
+<span class="lineNum">      64 </span><span class="lineCov">       3036 :                 tommy_array_grow(&amp;array-&gt;block, block_max);</span>
+<span class="lineNum">      65 </span>            : 
+<span class="lineNum">      66 </span>            :                 /* allocate new blocks */
+<span class="lineNum">      67 </span><span class="lineCov">       9108 :                 while (block_mac &lt; block_max) {</span>
+<span class="lineNum">      68 </span><span class="lineCov">       3036 :                         void** ptr = tommy_cast(void**, tommy_calloc(TOMMY_ARRAYBLK_SIZE, sizeof(void*)));</span>
+<span class="lineNum">      69 </span>            : 
+<span class="lineNum">      70 </span>            :                         /* set the new block */
+<span class="lineNum">      71 </span><span class="lineCov">       3036 :                         tommy_array_set(&amp;array-&gt;block, block_mac, ptr);</span>
+<span class="lineNum">      72 </span>            : 
+<span class="lineNum">      73 </span><span class="lineCov">       3036 :                         ++block_mac;</span>
+<span class="lineNum">      74 </span>            :                 }
+<span class="lineNum">      75 </span>            :         }
+<a name="76"><span class="lineNum">      76 </span>            : }</a>
+<span class="lineNum">      77 </span>            : 
+<span class="lineNum">      78 </span><span class="lineCov">          1 : tommy_size_t tommy_arrayblk_memory_usage(tommy_arrayblk* array)</span>
+<span class="lineNum">      79 </span>            : {
+<span class="lineNum">      80 </span><span class="lineCov">          1 :         return tommy_array_memory_usage(&amp;array-&gt;block) + tommy_array_size(&amp;array-&gt;block) * TOMMY_ARRAYBLK_SIZE * sizeof(void*);</span>
+<span class="lineNum">      81 </span>            : }
+<span class="lineNum">      82 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

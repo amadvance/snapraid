@@ -1,0 +1,486 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - tommyds/tommytypes.h</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">tommyds</a> - tommytypes.h<span style="font-size: 80%;"> (source / <a href="tommytypes.h.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2015-05-12</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (c) 2010, Andrea Mazzoleni. All rights reserved.
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * Redistribution and use in source and binary forms, with or without
+<span class="lineNum">       5 </span>            :  * modification, are permitted provided that the following conditions
+<span class="lineNum">       6 </span>            :  * are met:
+<span class="lineNum">       7 </span>            :  *
+<span class="lineNum">       8 </span>            :  * 1. Redistributions of source code must retain the above copyright
+<span class="lineNum">       9 </span>            :  *    notice, this list of conditions and the following disclaimer.
+<span class="lineNum">      10 </span>            :  *
+<span class="lineNum">      11 </span>            :  * 2. Redistributions in binary form must reproduce the above copyright
+<span class="lineNum">      12 </span>            :  *    notice, this list of conditions and the following disclaimer in the
+<span class="lineNum">      13 </span>            :  *    documentation and/or other materials provided with the distribution.
+<span class="lineNum">      14 </span>            :  *
+<span class="lineNum">      15 </span>            :  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
+<span class="lineNum">      16 </span>            :  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+<span class="lineNum">      17 </span>            :  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+<span class="lineNum">      18 </span>            :  * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+<span class="lineNum">      19 </span>            :  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+<span class="lineNum">      20 </span>            :  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+<span class="lineNum">      21 </span>            :  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+<span class="lineNum">      22 </span>            :  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+<span class="lineNum">      23 </span>            :  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+<span class="lineNum">      24 </span>            :  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+<span class="lineNum">      25 </span>            :  * POSSIBILITY OF SUCH DAMAGE.
+<span class="lineNum">      26 </span>            :  */
+<span class="lineNum">      27 </span>            : 
+<span class="lineNum">      28 </span>            : /** \file
+<span class="lineNum">      29 </span>            :  * Generic types.
+<span class="lineNum">      30 </span>            :  */
+<span class="lineNum">      31 </span>            : 
+<span class="lineNum">      32 </span>            : #ifndef __TOMMYTYPES_H
+<span class="lineNum">      33 </span>            : #define __TOMMYTYPES_H
+<span class="lineNum">      34 </span>            : 
+<span class="lineNum">      35 </span>            : /******************************************************************************/
+<span class="lineNum">      36 </span>            : /* types */
+<span class="lineNum">      37 </span>            : 
+<span class="lineNum">      38 </span>            : #include &lt;stddef.h&gt;
+<span class="lineNum">      39 </span>            : 
+<span class="lineNum">      40 </span>            : #if defined(_MSC_VER)
+<span class="lineNum">      41 </span>            : typedef unsigned tommy_uint32_t; /**&lt; Generic uint32_t type. */
+<span class="lineNum">      42 </span>            : typedef unsigned _int64 tommy_uint64_t; /**&lt; Generic uint64_t type. */
+<span class="lineNum">      43 </span>            : typedef size_t tommy_uintptr_t; /**&lt; Generic uintptr_t type. */
+<span class="lineNum">      44 </span>            : #else
+<span class="lineNum">      45 </span>            : #include &lt;stdint.h&gt;
+<span class="lineNum">      46 </span>            : typedef uint32_t tommy_uint32_t; /**&lt; Generic uint32_t type. */
+<span class="lineNum">      47 </span>            : typedef uint64_t tommy_uint64_t; /**&lt; Generic uint64_t type. */
+<span class="lineNum">      48 </span>            : typedef uintptr_t tommy_uintptr_t; /**&lt; Generic uintptr_t type. */
+<span class="lineNum">      49 </span>            : #endif
+<span class="lineNum">      50 </span>            : typedef size_t tommy_size_t; /**&lt; Generic size_t type. */
+<span class="lineNum">      51 </span>            : typedef ptrdiff_t tommy_ptrdiff_t; /**&lt; Generic ptrdiff_t type. */
+<span class="lineNum">      52 </span>            : typedef int tommy_bool_t; /**&lt; Generic boolean type. */
+<span class="lineNum">      53 </span>            : 
+<span class="lineNum">      54 </span>            : /**
+<span class="lineNum">      55 </span>            :  * Generic unsigned integer type.
+<span class="lineNum">      56 </span>            :  *
+<span class="lineNum">      57 </span>            :  * It has no specific size, as is used to store only small values.
+<span class="lineNum">      58 </span>            :  * To make the code more efficient, a full 32 bit integer is used.
+<span class="lineNum">      59 </span>            :  */
+<span class="lineNum">      60 </span>            : typedef tommy_uint32_t tommy_uint_t;
+<span class="lineNum">      61 </span>            : 
+<span class="lineNum">      62 </span>            : /**
+<span class="lineNum">      63 </span>            :  * Generic unsigned integer for counting objects.
+<span class="lineNum">      64 </span>            :  *
+<span class="lineNum">      65 </span>            :  * TommyDS doesn't support more than 2^32-1 objects.
+<span class="lineNum">      66 </span>            :  */
+<span class="lineNum">      67 </span>            : typedef tommy_uint32_t tommy_count_t;
+<span class="lineNum">      68 </span>            : 
+<span class="lineNum">      69 </span>            : /** \internal
+<span class="lineNum">      70 </span>            :  * Type cast required for the C++ compilation.
+<span class="lineNum">      71 </span>            :  * When compiling in C++ we cannot convert a void* pointer to another pointer.
+<span class="lineNum">      72 </span>            :  * In such case we need an explicit cast.
+<span class="lineNum">      73 </span>            :  */
+<span class="lineNum">      74 </span>            : #ifdef __cplusplus
+<span class="lineNum">      75 </span>            : #define tommy_cast(type, value) static_cast&lt;type&gt;(value)
+<span class="lineNum">      76 </span>            : #else
+<span class="lineNum">      77 </span>            : #define tommy_cast(type, value) (value)
+<span class="lineNum">      78 </span>            : #endif
+<span class="lineNum">      79 </span>            : 
+<span class="lineNum">      80 </span>            : /******************************************************************************/
+<span class="lineNum">      81 </span>            : /* heap */
+<span class="lineNum">      82 </span>            : 
+<span class="lineNum">      83 </span>            : /* by default uses malloc/calloc/realloc/free */
+<span class="lineNum">      84 </span>            : 
+<span class="lineNum">      85 </span>            : /**
+<span class="lineNum">      86 </span>            :  * Generic malloc(), calloc(), realloc() and free() functions.
+<span class="lineNum">      87 </span>            :  * Redefine them to what you need. By default they map to the C malloc(), calloc(), realloc() and free().
+<span class="lineNum">      88 </span>            :  */
+<span class="lineNum">      89 </span>            : #if !defined(tommy_malloc) || !defined(tommy_calloc) || !defined(tommy_realloc) || !defined(tommy_free)
+<span class="lineNum">      90 </span>            : #include &lt;stdlib.h&gt;
+<span class="lineNum">      91 </span>            : #endif
+<span class="lineNum">      92 </span>            : #if !defined(tommy_malloc)
+<span class="lineNum">      93 </span>            : #define tommy_malloc malloc
+<span class="lineNum">      94 </span>            : #endif
+<span class="lineNum">      95 </span>            : #if !defined(tommy_calloc)
+<span class="lineNum">      96 </span>            : #define tommy_calloc calloc
+<span class="lineNum">      97 </span>            : #endif
+<span class="lineNum">      98 </span>            : #if !defined(tommy_realloc)
+<span class="lineNum">      99 </span>            : #define tommy_realloc realloc
+<span class="lineNum">     100 </span>            : #endif
+<span class="lineNum">     101 </span>            : #if !defined(tommy_free)
+<span class="lineNum">     102 </span>            : #define tommy_free free
+<span class="lineNum">     103 </span>            : #endif
+<span class="lineNum">     104 </span>            : 
+<span class="lineNum">     105 </span>            : /******************************************************************************/
+<span class="lineNum">     106 </span>            : /* modificators */
+<span class="lineNum">     107 </span>            : 
+<span class="lineNum">     108 </span>            : /** \internal
+<span class="lineNum">     109 </span>            :  * Definition of the inline keyword if available.
+<span class="lineNum">     110 </span>            :  */
+<span class="lineNum">     111 </span>            : #if !defined(tommy_inline)
+<span class="lineNum">     112 </span>            : #if defined(_MSC_VER) || defined(__GNUC__)
+<span class="lineNum">     113 </span>            : #define tommy_inline static __inline
+<span class="lineNum">     114 </span>            : #else
+<span class="lineNum">     115 </span>            : #define tommy_inline static
+<span class="lineNum">     116 </span>            : #endif
+<span class="lineNum">     117 </span>            : #endif
+<span class="lineNum">     118 </span>            : 
+<span class="lineNum">     119 </span>            : /** \internal
+<span class="lineNum">     120 </span>            :  * Definition of the restrict keyword if available.
+<span class="lineNum">     121 </span>            :  */
+<span class="lineNum">     122 </span>            : #if !defined(tommy_restrict)
+<span class="lineNum">     123 </span>            : #if __STDC_VERSION__ &gt;= 199901L
+<span class="lineNum">     124 </span>            : #define tommy_restrict restrict
+<span class="lineNum">     125 </span>            : #elif defined(_MSC_VER) || defined(__GNUC__)
+<span class="lineNum">     126 </span>            : #define tommy_restrict __restrict
+<span class="lineNum">     127 </span>            : #else
+<span class="lineNum">     128 </span>            : #define tommy_restrict
+<span class="lineNum">     129 </span>            : #endif
+<span class="lineNum">     130 </span>            : #endif
+<span class="lineNum">     131 </span>            : 
+<span class="lineNum">     132 </span>            : /** \internal
+<span class="lineNum">     133 </span>            :  * Hints the compiler that a condition is likely true.
+<span class="lineNum">     134 </span>            :  */
+<span class="lineNum">     135 </span>            : #if !defined(tommy_likely)
+<span class="lineNum">     136 </span>            : #if defined(__GNUC__)
+<span class="lineNum">     137 </span>            : #define tommy_likely(x) __builtin_expect(!!(x), 1)
+<span class="lineNum">     138 </span>            : #else
+<span class="lineNum">     139 </span>            : #define tommy_likely(x) (x)
+<span class="lineNum">     140 </span>            : #endif
+<span class="lineNum">     141 </span>            : #endif
+<span class="lineNum">     142 </span>            : 
+<span class="lineNum">     143 </span>            : /** \internal
+<span class="lineNum">     144 </span>            :  * Hints the compiler that a condition is likely false.
+<span class="lineNum">     145 </span>            :  */
+<span class="lineNum">     146 </span>            : #if !defined(tommy_unlikely)
+<span class="lineNum">     147 </span>            : #if defined(__GNUC__)
+<span class="lineNum">     148 </span>            : #define tommy_unlikely(x) __builtin_expect(!!(x), 0)
+<span class="lineNum">     149 </span>            : #else
+<span class="lineNum">     150 </span>            : #define tommy_unlikely(x) (x)
+<span class="lineNum">     151 </span>            : #endif
+<span class="lineNum">     152 </span>            : #endif
+<span class="lineNum">     153 </span>            : 
+<span class="lineNum">     154 </span>            : /******************************************************************************/
+<span class="lineNum">     155 </span>            : /* key */
+<span class="lineNum">     156 </span>            : 
+<span class="lineNum">     157 </span>            : /**
+<span class="lineNum">     158 </span>            :  * Key type used in indexed data structures to store the key or the hash value.
+<span class="lineNum">     159 </span>            :  */
+<span class="lineNum">     160 </span>            : typedef tommy_uint32_t tommy_key_t;
+<span class="lineNum">     161 </span>            : 
+<span class="lineNum">     162 </span>            : /**
+<span class="lineNum">     163 </span>            :  * Bits into the ::tommy_key_t type.
+<span class="lineNum">     164 </span>            :  */
+<span class="lineNum">     165 </span>            : #define TOMMY_KEY_BIT (sizeof(tommy_key_t) * 8)
+<span class="lineNum">     166 </span>            : 
+<span class="lineNum">     167 </span>            : /******************************************************************************/
+<span class="lineNum">     168 </span>            : /* node */
+<span class="lineNum">     169 </span>            : 
+<span class="lineNum">     170 </span>            : /**
+<span class="lineNum">     171 </span>            :  * Data structure node.
+<span class="lineNum">     172 </span>            :  * This node type is shared between all the data structures and used to store some
+<span class="lineNum">     173 </span>            :  * info directly into the objects you want to store.
+<span class="lineNum">     174 </span>            :  *
+<span class="lineNum">     175 </span>            :  * A typical declaration is:
+<span class="lineNum">     176 </span>            :  * \code
+<span class="lineNum">     177 </span>            :  * struct object {
+<span class="lineNum">     178 </span>            :  *     tommy_node node;
+<span class="lineNum">     179 </span>            :  *     // other fields
+<span class="lineNum">     180 </span>            :  * };
+<span class="lineNum">     181 </span>            :  * \endcode
+<span class="lineNum">     182 </span>            :  */
+<span class="lineNum">     183 </span>            : typedef struct tommy_node_struct {
+<span class="lineNum">     184 </span>            :         /**
+<span class="lineNum">     185 </span>            :          * Next node.
+<span class="lineNum">     186 </span>            :          * The tail node has it at 0, like a 0 terminated list.
+<span class="lineNum">     187 </span>            :          */
+<span class="lineNum">     188 </span>            :         struct tommy_node_struct* next;
+<span class="lineNum">     189 </span>            : 
+<span class="lineNum">     190 </span>            :         /**
+<span class="lineNum">     191 </span>            :          * Previous node.
+<span class="lineNum">     192 </span>            :          * The head node points to the tail node, like a circular list.
+<span class="lineNum">     193 </span>            :          */
+<span class="lineNum">     194 </span>            :         struct tommy_node_struct* prev;
+<span class="lineNum">     195 </span>            : 
+<span class="lineNum">     196 </span>            :         /**
+<span class="lineNum">     197 </span>            :          * Pointer at the object containing the node.
+<span class="lineNum">     198 </span>            :          * This field is initialized when inserting nodes into a data structure.
+<span class="lineNum">     199 </span>            :          */
+<span class="lineNum">     200 </span>            :         void* data;
+<span class="lineNum">     201 </span>            : 
+<span class="lineNum">     202 </span>            :         /**
+<span class="lineNum">     203 </span>            :          * Key used to store the node.
+<span class="lineNum">     204 </span>            :          * With hashtables this field is used to store the hash value.
+<span class="lineNum">     205 </span>            :          * With lists this field is not used.
+<span class="lineNum">     206 </span>            :          */
+<span class="lineNum">     207 </span>            :         tommy_key_t key;
+<span class="lineNum">     208 </span>            : } tommy_node;
+<span class="lineNum">     209 </span>            : 
+<span class="lineNum">     210 </span>            : /******************************************************************************/
+<span class="lineNum">     211 </span>            : /* compare */
+<span class="lineNum">     212 </span>            : 
+<span class="lineNum">     213 </span>            : /**
+<span class="lineNum">     214 </span>            :  * Compare function for elements.
+<span class="lineNum">     215 </span>            :  * \param obj_a Pointer at the first object to compare.
+<span class="lineNum">     216 </span>            :  * \param obj_b Pointer at the second object to compare.
+<span class="lineNum">     217 </span>            :  * \return &lt;0 if the first element is less than the second, ==0 equal, &gt;0 if greather.
+<span class="lineNum">     218 </span>            :  *
+<span class="lineNum">     219 </span>            :  * This function is like the C strcmp().
+<span class="lineNum">     220 </span>            :  *
+<span class="lineNum">     221 </span>            :  * \code
+<span class="lineNum">     222 </span>            :  * struct object {
+<span class="lineNum">     223 </span>            :  *     tommy_node node;
+<span class="lineNum">     224 </span>            :  *     int value;
+<span class="lineNum">     225 </span>            :  * };
+<span class="lineNum">     226 </span>            :  *
+<span class="lineNum">     227 </span>            :  * int compare(const void* obj_a, const void* obj_b)
+<span class="lineNum">     228 </span>            :  * {
+<span class="lineNum">     229 </span>            :  *     if (((const struct object*)obj_a)-&gt;value &lt; ((const struct object*)obj_b)-&gt;value)
+<span class="lineNum">     230 </span>            :  *         return -1;
+<span class="lineNum">     231 </span>            :  *     if (((const struct object*)obj_a)-&gt;value &gt; ((const struct object*)obj_b)-&gt;value)
+<span class="lineNum">     232 </span>            :  *         return 1;
+<span class="lineNum">     233 </span>            :  *     return 0;
+<span class="lineNum">     234 </span>            :  * }
+<span class="lineNum">     235 </span>            :  *
+<span class="lineNum">     236 </span>            :  * tommy_list_sort(&amp;list, compare);
+<span class="lineNum">     237 </span>            :  * \endcode
+<span class="lineNum">     238 </span>            :  *
+<span class="lineNum">     239 </span>            :  */
+<span class="lineNum">     240 </span>            : typedef int tommy_compare_func(const void* obj_a, const void* obj_b);
+<span class="lineNum">     241 </span>            : 
+<span class="lineNum">     242 </span>            : /**
+<span class="lineNum">     243 </span>            :  * Search function for elements.
+<span class="lineNum">     244 </span>            :  * \param arg Pointer at the value to search.
+<span class="lineNum">     245 </span>            :  * \param obj Pointer at the object to compare to.
+<span class="lineNum">     246 </span>            :  * \return ==0 if the value matches the element. !=0 if different.
+<span class="lineNum">     247 </span>            :  *
+<span class="lineNum">     248 </span>            :  * Note that the first argument is a pointer to the value to search and
+<span class="lineNum">     249 </span>            :  * the second one is a pointer to the object to compare.
+<span class="lineNum">     250 </span>            :  * They are pointers of two different types.
+<span class="lineNum">     251 </span>            :  *
+<span class="lineNum">     252 </span>            :  * \code
+<span class="lineNum">     253 </span>            :  * struct object {
+<span class="lineNum">     254 </span>            :  *     tommy_node node;
+<span class="lineNum">     255 </span>            :  *     int value;
+<span class="lineNum">     256 </span>            :  * };
+<span class="lineNum">     257 </span>            :  *
+<span class="lineNum">     258 </span>            :  * int compare(const void* arg, const void* obj)
+<span class="lineNum">     259 </span>            :  * {
+<span class="lineNum">     260 </span>            :  *     return *(const int*)arg != ((const struct object*)obj)-&gt;value;
+<span class="lineNum">     261 </span>            :  * }
+<span class="lineNum">     262 </span>            :  *
+<span class="lineNum">     263 </span>            :  * int value_to_find = 1;
+<span class="lineNum">     264 </span>            :  * struct object* obj = tommy_hashtable_search(&amp;hashtable, compare, &amp;value_to_find, tommy_inthash_u32(value_to_find));
+<span class="lineNum">     265 </span>            :  * if (!obj) {
+<span class="lineNum">     266 </span>            :  *     // not found
+<span class="lineNum">     267 </span>            :  * } else {
+<span class="lineNum">     268 </span>            :  *     // found
+<span class="lineNum">     269 </span>            :  * }
+<span class="lineNum">     270 </span>            :  * \endcode
+<span class="lineNum">     271 </span>            :  *
+<span class="lineNum">     272 </span>            :  */
+<span class="lineNum">     273 </span>            : typedef int tommy_search_func(const void* arg, const void* obj);
+<span class="lineNum">     274 </span>            : 
+<span class="lineNum">     275 </span>            : /**
+<span class="lineNum">     276 </span>            :  * Foreach function.
+<span class="lineNum">     277 </span>            :  * \param obj Pointer at the object to iterate.
+<span class="lineNum">     278 </span>            :  *
+<span class="lineNum">     279 </span>            :  * A typical example is to use free() to deallocate all the objects in a list.
+<span class="lineNum">     280 </span>            :  * \code
+<span class="lineNum">     281 </span>            :  * tommy_list_foreach(&amp;list, (tommy_foreach_func*)free);
+<span class="lineNum">     282 </span>            :  * \endcode
+<span class="lineNum">     283 </span>            :  */
+<span class="lineNum">     284 </span>            : typedef void tommy_foreach_func(void* obj);
+<span class="lineNum">     285 </span>            : 
+<span class="lineNum">     286 </span>            : /**
+<span class="lineNum">     287 </span>            :  * Foreach function with an argument.
+<span class="lineNum">     288 </span>            :  * \param arg Pointer at a generic argument.
+<span class="lineNum">     289 </span>            :  * \param obj Pointer at the object to iterate.
+<span class="lineNum">     290 </span>            :  */
+<span class="lineNum">     291 </span>            : typedef void tommy_foreach_arg_func(void* arg, void* obj);
+<span class="lineNum">     292 </span>            : 
+<span class="lineNum">     293 </span>            : /******************************************************************************/
+<span class="lineNum">     294 </span>            : /* bit hacks */
+<span class="lineNum">     295 </span>            : 
+<span class="lineNum">     296 </span>            : #if defined(_MSC_VER) &amp;&amp; !defined(__cplusplus)
+<span class="lineNum">     297 </span>            : #include &lt;intrin.h&gt;
+<span class="lineNum">     298 </span>            : #pragma intrinsic(_BitScanReverse)
+<span class="lineNum">     299 </span>            : #pragma intrinsic(_BitScanForward)
+<span class="lineNum">     300 </span>            : #endif
+<span class="lineNum">     301 </span>            : 
+<span class="lineNum">     302 </span>            : /** \internal
+<span class="lineNum">     303 </span>            :  * Integer log2 for constants.
+<span class="lineNum">     304 </span>            :  * You can use it only for exact power of 2 up to 256.
+<span class="lineNum">     305 </span>            :  */
+<span class="lineNum">     306 </span>            : #define TOMMY_ILOG2(value) ((value) == 256 ? 8 : (value) == 128 ? 7 : (value) == 64 ? 6 : (value) == 32 ? 5 : (value) == 16 ? 4 : (value) == 8 ? 3 : (value) == 4 ? 2 : (value) == 2 ? 1 : 0)
+<span class="lineNum">     307 </span>            : 
+<span class="lineNum">     308 </span>            : /**
+<span class="lineNum">     309 </span>            :  * Bit scan reverse or integer log2.
+<span class="lineNum">     310 </span>            :  * Return the bit index of the most significant 1 bit.
+<span class="lineNum">     311 </span>            :  *
+<span class="lineNum">     312 </span>            :  * If no bit is set, the result is undefined.
+<span class="lineNum">     313 </span>            :  * To force a return 0 in this case, you can use tommy_ilog2_u32(value | 1).
+<span class="lineNum">     314 </span>            :  *
+<span class="lineNum">     315 </span>            :  * Other interesting ways for bitscan are at:
+<span class="lineNum">     316 </span>            :  *
+<span class="lineNum">     317 </span>            :  * Bit Twiddling Hacks
+<span class="lineNum">     318 </span>            :  * http://graphics.stanford.edu/~seander/bithacks.html
+<span class="lineNum">     319 </span>            :  *
+<span class="lineNum">     320 </span>            :  * Chess Programming BitScan
+<span class="lineNum">     321 </span>            :  * http://chessprogramming.wikispaces.com/BitScan
+<span class="lineNum">     322 </span>            :  *
+<span class="lineNum">     323 </span>            :  * \param value Value to scan. 0 is not allowed.
+<a name="324"><span class="lineNum">     324 </span>            :  * \return The index of the most significant bit set.</a>
+<span class="lineNum">     325 </span>            :  */
+<span class="lineNum">     326 </span><span class="lineCov">   58148940 : tommy_inline tommy_uint_t tommy_ilog2_u32(tommy_uint32_t value)</span>
+<span class="lineNum">     327 </span>            : {
+<span class="lineNum">     328 </span>            : #if defined(_MSC_VER)
+<span class="lineNum">     329 </span>            :         unsigned long count;
+<span class="lineNum">     330 </span>            :         _BitScanReverse(&amp;count, value);
+<span class="lineNum">     331 </span>            :         return count;
+<span class="lineNum">     332 </span>            : #elif defined(__GNUC__)
+<span class="lineNum">     333 </span>            :         /*
+<span class="lineNum">     334 </span>            :          * GCC implements __builtin_clz(x) as &quot;__builtin_clz(x) = bsr(x) ^ 31&quot;
+<span class="lineNum">     335 </span>            :          *
+<span class="lineNum">     336 </span>            :          * Where &quot;x ^ 31 = 31 - x&quot;, but gcc does not optimize &quot;31 - __builtin_clz(x)&quot; to bsr(x),
+<span class="lineNum">     337 </span>            :          * but generates 31 - (bsr(x) xor 31).
+<span class="lineNum">     338 </span>            :          *
+<span class="lineNum">     339 </span>            :          * So we write &quot;__builtin_clz(x) ^ 31&quot; instead of &quot;31 - __builtin_clz(x)&quot;,
+<span class="lineNum">     340 </span>            :          * to allow the double xor to be optimized out.
+<span class="lineNum">     341 </span>            :          */
+<span class="lineNum">     342 </span><span class="lineCov">   58148940 :         return __builtin_clz(value) ^ 31;</span>
+<span class="lineNum">     343 </span>            : #else
+<span class="lineNum">     344 </span>            :         /* Find the log base 2 of an N-bit integer in O(lg(N)) operations with multiply and lookup */
+<span class="lineNum">     345 </span>            :         /* from http://graphics.stanford.edu/~seander/bithacks.html */
+<span class="lineNum">     346 </span>            :         static unsigned char TOMMY_DE_BRUIJN_INDEX_ILOG2[32] = {
+<span class="lineNum">     347 </span>            :                 0, 9, 1, 10, 13, 21, 2, 29, 11, 14, 16, 18, 22, 25, 3, 30,
+<span class="lineNum">     348 </span>            :                 8, 12, 20, 28, 15, 17, 24, 7, 19, 27, 23, 6, 26, 5, 4, 31
+<span class="lineNum">     349 </span>            :         };
+<span class="lineNum">     350 </span>            : 
+<span class="lineNum">     351 </span>            :         value |= value &gt;&gt; 1;
+<span class="lineNum">     352 </span>            :         value |= value &gt;&gt; 2;
+<span class="lineNum">     353 </span>            :         value |= value &gt;&gt; 4;
+<span class="lineNum">     354 </span>            :         value |= value &gt;&gt; 8;
+<span class="lineNum">     355 </span>            :         value |= value &gt;&gt; 16;
+<span class="lineNum">     356 </span>            : 
+<span class="lineNum">     357 </span>            :         return TOMMY_DE_BRUIJN_INDEX_ILOG2[(tommy_uint32_t)(value * 0x07C4ACDDU) &gt;&gt; 27];
+<span class="lineNum">     358 </span>            : #endif
+<span class="lineNum">     359 </span>            : }
+<span class="lineNum">     360 </span>            : 
+<span class="lineNum">     361 </span>            : /**
+<span class="lineNum">     362 </span>            :  * Bit scan forward or trailing zero count.
+<span class="lineNum">     363 </span>            :  * Return the bit index of the least significant 1 bit.
+<span class="lineNum">     364 </span>            :  *
+<span class="lineNum">     365 </span>            :  * If no bit is set, the result is undefined.
+<span class="lineNum">     366 </span>            :  * \param value Value to scan. 0 is not allowed.
+<a name="367"><span class="lineNum">     367 </span>            :  * \return The index of the least significant bit set.</a>
+<span class="lineNum">     368 </span>            :  */
+<span class="lineNum">     369 </span><span class="lineCov">       1403 : tommy_inline tommy_uint_t tommy_ctz_u32(tommy_uint32_t value)</span>
+<span class="lineNum">     370 </span>            : {
+<span class="lineNum">     371 </span>            : #if defined(_MSC_VER)
+<span class="lineNum">     372 </span>            :         unsigned long count;
+<span class="lineNum">     373 </span>            :         _BitScanForward(&amp;count, value);
+<span class="lineNum">     374 </span>            :         return count;
+<span class="lineNum">     375 </span>            : #elif defined(__GNUC__)
+<span class="lineNum">     376 </span><span class="lineCov">       1403 :         return __builtin_ctz(value);</span>
+<span class="lineNum">     377 </span>            : #else
+<span class="lineNum">     378 </span>            :         /* Count the consecutive zero bits (trailing) on the right with multiply and lookup */
+<span class="lineNum">     379 </span>            :         /* from http://graphics.stanford.edu/~seander/bithacks.html */
+<span class="lineNum">     380 </span>            :         static const unsigned char TOMMY_DE_BRUIJN_INDEX_CTZ[32] = {
+<span class="lineNum">     381 </span>            :                 0, 1, 28, 2, 29, 14, 24, 3, 30, 22, 20, 15, 25, 17, 4, 8,
+<span class="lineNum">     382 </span>            :                 31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9
+<span class="lineNum">     383 </span>            :         };
+<span class="lineNum">     384 </span>            : 
+<span class="lineNum">     385 </span>            :         return TOMMY_DE_BRUIJN_INDEX_CTZ[(tommy_uint32_t)(((value &amp; - value) * 0x077CB531U)) &gt;&gt; 27];
+<span class="lineNum">     386 </span>            : #endif
+<span class="lineNum">     387 </span>            : }
+<span class="lineNum">     388 </span>            : 
+<span class="lineNum">     389 </span>            : /**
+<span class="lineNum">     390 </span>            :  * Rounds up to the next power of 2.
+<span class="lineNum">     391 </span>            :  * For the value 0, the result is undefined.
+<span class="lineNum">     392 </span>            :  * \return The smallest power of 2 not less than the specified value.
+<span class="lineNum">     393 </span>            :  */
+<span class="lineNum">     394 </span>            : tommy_inline tommy_uint32_t tommy_roundup_pow2_u32(tommy_uint32_t value)
+<span class="lineNum">     395 </span>            : {
+<span class="lineNum">     396 </span>            :         /* Round up to the next highest power of 2 */
+<span class="lineNum">     397 </span>            :         /* from http://www-graphics.stanford.edu/~seander/bithacks.html */
+<span class="lineNum">     398 </span>            : 
+<span class="lineNum">     399 </span>            :         --value;
+<span class="lineNum">     400 </span>            :         value |= value &gt;&gt; 1;
+<span class="lineNum">     401 </span>            :         value |= value &gt;&gt; 2;
+<span class="lineNum">     402 </span>            :         value |= value &gt;&gt; 4;
+<span class="lineNum">     403 </span>            :         value |= value &gt;&gt; 8;
+<span class="lineNum">     404 </span>            :         value |= value &gt;&gt; 16;
+<span class="lineNum">     405 </span>            :         ++value;
+<span class="lineNum">     406 </span>            : 
+<span class="lineNum">     407 </span>            :         return value;
+<span class="lineNum">     408 </span>            : }
+<span class="lineNum">     409 </span>            : #endif
+<span class="lineNum">     410 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

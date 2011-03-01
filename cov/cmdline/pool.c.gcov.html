@@ -1,0 +1,338 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - cmdline/pool.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">cmdline</a> - pool.c<span style="font-size: 80%;"> (source / <a href="pool.c.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">64</td>
+            <td class="headerCovTableEntry">68</td>
+            <td class="headerCovTableEntryHi">94.1 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2015-05-12</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntry">3</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (C) 2013 Andrea Mazzoleni
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * This program is free software: you can redistribute it and/or modify
+<span class="lineNum">       5 </span>            :  * it under the terms of the GNU General Public License as published by
+<span class="lineNum">       6 </span>            :  * the Free Software Foundation, either version 3 of the License, or
+<span class="lineNum">       7 </span>            :  * (at your option) any later version.
+<span class="lineNum">       8 </span>            :  *
+<span class="lineNum">       9 </span>            :  * This program is distributed in the hope that it will be useful,
+<span class="lineNum">      10 </span>            :  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      11 </span>            :  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      12 </span>            :  * GNU General Public License for more details.
+<span class="lineNum">      13 </span>            :  *
+<span class="lineNum">      14 </span>            :  * You should have received a copy of the GNU General Public License
+<span class="lineNum">      15 </span>            :  * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+<span class="lineNum">      16 </span>            :  */
+<span class="lineNum">      17 </span>            : 
+<span class="lineNum">      18 </span>            : #include &quot;portable.h&quot;
+<span class="lineNum">      19 </span>            : 
+<span class="lineNum">      20 </span>            : #include &quot;support.h&quot;
+<span class="lineNum">      21 </span>            : #include &quot;elem.h&quot;
+<span class="lineNum">      22 </span>            : #include &quot;state.h&quot;
+<span class="lineNum">      23 </span>            : 
+<span class="lineNum">      24 </span>            : /**
+<span class="lineNum">      25 </span>            :  * Clean a directory tree removing all the symlinks and empty directories.
+<a name="26"><span class="lineNum">      26 </span>            :  * Return == 0 if the directory is empty, and it can be removed</a>
+<span class="lineNum">      27 </span>            :  */
+<span class="lineNum">      28 </span><span class="lineCov">          5 : static int clean_dir(struct snapraid_state* state, const char* dir)</span>
+<span class="lineNum">      29 </span>            : {
+<span class="lineNum">      30 </span>            :         DIR* d;
+<span class="lineNum">      31 </span><span class="lineCov">          5 :         int ignored = 0;</span>
+<span class="lineNum">      32 </span>            : 
+<span class="lineNum">      33 </span><span class="lineCov">          5 :         d = opendir(dir);</span>
+<span class="lineNum">      34 </span><span class="lineCov">          5 :         if (!d) {</span>
+<span class="lineNum">      35 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">      36 </span>            :                 log_fatal(&quot;Error opening pool directory '%s'. %s.\n&quot;, dir, strerror(errno));
+<span class="lineNum">      37 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">      38 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">      39 </span>            :         }
+<span class="lineNum">      40 </span>            : 
+<span class="lineNum">      41 </span>            :         while (1) {
+<span class="lineNum">      42 </span>            :                 char path_next[PATH_MAX];
+<span class="lineNum">      43 </span>            :                 struct stat st;
+<span class="lineNum">      44 </span>            :                 const char* name;
+<span class="lineNum">      45 </span>            :                 struct dirent* dd;
+<span class="lineNum">      46 </span>            : 
+<span class="lineNum">      47 </span>            :                 /* clear errno to detect erroneous conditions */
+<span class="lineNum">      48 </span><span class="lineCov">       5759 :                 errno = 0;</span>
+<span class="lineNum">      49 </span><span class="lineCov">       5759 :                 dd = readdir(d);</span>
+<span class="lineNum">      50 </span><span class="lineCov">       5759 :                 if (dd == 0 &amp;&amp; errno != 0) {</span>
+<span class="lineNum">      51 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">      52 </span>            :                         log_fatal(&quot;Error reading pool directory '%s'. %s.\n&quot;, dir, strerror(errno));
+<span class="lineNum">      53 </span>            :                         exit(EXIT_FAILURE);
+<span class="lineNum">      54 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">      55 </span>            :                 }
+<span class="lineNum">      56 </span><span class="lineCov">       5759 :                 if (dd == 0 &amp;&amp; errno == 0) {</span>
+<span class="lineNum">      57 </span><span class="lineCov">          5 :                         break; /* finished */</span>
+<span class="lineNum">      58 </span>            :                 }
+<span class="lineNum">      59 </span>            : 
+<span class="lineNum">      60 </span>            :                 /* skip &quot;.&quot; and &quot;..&quot; files */
+<span class="lineNum">      61 </span><span class="lineCov">       5754 :                 name = dd-&gt;d_name;</span>
+<span class="lineNum">      62 </span><span class="lineCov">       5754 :                 if (name[0] == '.' &amp;&amp; (name[1] == 0 || (name[1] == '.' &amp;&amp; name[2] == 0)))</span>
+<span class="lineNum">      63 </span><span class="lineCov">         10 :                         continue;</span>
+<span class="lineNum">      64 </span>            : 
+<span class="lineNum">      65 </span><span class="lineCov">       5744 :                 pathprint(path_next, sizeof(path_next), &quot;%s%s&quot;, dir, name);</span>
+<span class="lineNum">      66 </span>            : 
+<span class="lineNum">      67 </span>            : #if HAVE_STRUCT_DIRENT_D_STAT
+<span class="lineNum">      68 </span>            :                 /* convert dirent to lstat result */
+<span class="lineNum">      69 </span>            :                 dirent_lstat(dd, &amp;st);
+<span class="lineNum">      70 </span>            : 
+<span class="lineNum">      71 </span>            :                 /* if the st_mode field is missing, takes care to fill it using normal lstat() */
+<span class="lineNum">      72 </span>            :                 /* at now this can happen only in Windows */
+<span class="lineNum">      73 </span>            :                 if (st.st_mode == 0) {
+<span class="lineNum">      74 </span>            :                         if (lstat(path_next, &amp;st) != 0) {
+<span class="lineNum">      75 </span>            :                                 /* LCOV_EXCL_START */
+<span class="lineNum">      76 </span>            :                                 log_fatal(&quot;Error in stat file/directory '%s'. %s.\n&quot;, path_next, strerror(errno));
+<span class="lineNum">      77 </span>            :                                 exit(EXIT_FAILURE);
+<span class="lineNum">      78 </span>            :                                 /* LCOV_EXCL_STOP */
+<span class="lineNum">      79 </span>            :                         }
+<span class="lineNum">      80 </span>            :                 }
+<span class="lineNum">      81 </span>            : #else
+<span class="lineNum">      82 </span>            :                 /* get lstat info about the file */
+<span class="lineNum">      83 </span><span class="lineCov">       5744 :                 if (lstat(path_next, &amp;st) != 0) {</span>
+<span class="lineNum">      84 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">      85 </span>            :                         log_fatal(&quot;Error in stat file/directory '%s'. %s.\n&quot;, path_next, strerror(errno));
+<span class="lineNum">      86 </span>            :                         exit(EXIT_FAILURE);
+<span class="lineNum">      87 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">      88 </span>            :                 }
+<span class="lineNum">      89 </span>            : #endif
+<span class="lineNum">      90 </span>            : 
+<span class="lineNum">      91 </span><span class="lineCov">       5744 :                 if (S_ISLNK(st.st_mode)) {</span>
+<span class="lineNum">      92 </span>            :                         int ret;
+<span class="lineNum">      93 </span>            : 
+<span class="lineNum">      94 </span>            :                         /* delete the link */
+<span class="lineNum">      95 </span><span class="lineCov">       5742 :                         ret = remove(path_next);</span>
+<span class="lineNum">      96 </span><span class="lineCov">       5742 :                         if (ret &lt; 0) {</span>
+<span class="lineNum">      97 </span>            :                                 /* LCOV_EXCL_START */
+<span class="lineNum">      98 </span>            :                                 log_fatal(&quot;Error removing symlink '%s'. %s.\n&quot;, path_next, strerror(errno));
+<span class="lineNum">      99 </span>            :                                 exit(EXIT_FAILURE);
+<span class="lineNum">     100 </span>            :                                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     101 </span>            :                         }
+<span class="lineNum">     102 </span><span class="lineCov">          2 :                 } else if (S_ISDIR(st.st_mode)) {</span>
+<span class="lineNum">     103 </span>            :                         /* recurse */
+<span class="lineNum">     104 </span><span class="lineCov">          2 :                         pathslash(path_next, sizeof(path_next));</span>
+<span class="lineNum">     105 </span><span class="lineCov">          2 :                         if (clean_dir(state, path_next) == 0) {</span>
+<span class="lineNum">     106 </span>            :                                 int ret;
+<span class="lineNum">     107 </span>            : 
+<span class="lineNum">     108 </span>            :                                 /* directory is empty, try to remove it */
+<span class="lineNum">     109 </span><span class="lineCov">          2 :                                 ret = rmdir(path_next);</span>
+<span class="lineNum">     110 </span><span class="lineCov">          2 :                                 if (ret &lt; 0) {</span>
+<span class="lineNum">     111 </span>            : #ifdef _WIN32
+<span class="lineNum">     112 </span>            :                                         if (errno == EACCES) {
+<span class="lineNum">     113 </span>            :                                                 /* in Windows just ignore EACCES errors removing directories */
+<span class="lineNum">     114 </span>            :                                                 /* because it could happen that the directory is in use */
+<span class="lineNum">     115 </span>            :                                                 /* and it cannot be removed */
+<span class="lineNum">     116 </span>            :                                                 log_fatal(&quot;Directory '%s' not removed because it's in use.\n&quot;, path_next);
+<span class="lineNum">     117 </span>            :                                                 ignored = 1;
+<span class="lineNum">     118 </span>            :                                         } else
+<span class="lineNum">     119 </span>            : #endif
+<span class="lineNum">     120 </span>            :                                         {
+<span class="lineNum">     121 </span>            :                                                 /* LCOV_EXCL_START */
+<span class="lineNum">     122 </span>            :                                                 log_fatal(&quot;Error removing pool directory '%s'. %s.\n&quot;, path_next, strerror(errno));
+<span class="lineNum">     123 </span>            :                                                 exit(EXIT_FAILURE);
+<span class="lineNum">     124 </span>            :                                                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     125 </span>            :                                         }
+<span class="lineNum">     126 </span>            :                                 }
+<span class="lineNum">     127 </span>            :                         } else {
+<span class="lineNum">     128 </span>            :                                 /* something was ignored inside the subdir */
+<span class="lineNum">     129 </span><span class="lineNoCov">          0 :                                 ignored = 1;</span>
+<span class="lineNum">     130 </span>            :                         }
+<span class="lineNum">     131 </span>            :                 } else {
+<span class="lineNum">     132 </span><span class="lineNoCov">          0 :                         ignored = 1;</span>
+<span class="lineNum">     133 </span><span class="lineNoCov">          0 :                         msg_verbose(&quot;Ignoring pool file '%s'\n&quot;, path_next);</span>
+<span class="lineNum">     134 </span>            :                 }
+<span class="lineNum">     135 </span><span class="lineCov">       5754 :         }</span>
+<span class="lineNum">     136 </span>            : 
+<span class="lineNum">     137 </span><span class="lineCov">          5 :         if (closedir(d) != 0) {</span>
+<span class="lineNum">     138 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     139 </span>            :                 log_fatal(&quot;Error closing pool directory '%s'. %s.\n&quot;, dir, strerror(errno));
+<span class="lineNum">     140 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     141 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     142 </span>            :         }
+<span class="lineNum">     143 </span>            : 
+<span class="lineNum">     144 </span><span class="lineCov">          5 :         return ignored;</span>
+<span class="lineNum">     145 </span>            : }
+<span class="lineNum">     146 </span>            : 
+<span class="lineNum">     147 </span>            : /**
+<a name="148"><span class="lineNum">     148 </span>            :  * Creates a link to the specified disk entry.</a>
+<span class="lineNum">     149 </span>            :  */
+<span class="lineNum">     150 </span><span class="lineCov">      17568 : static void make_link(const char* pool_dir, const char* share_dir, struct snapraid_disk* disk, const char* sub)</span>
+<span class="lineNum">     151 </span>            : {
+<span class="lineNum">     152 </span>            :         char path[PATH_MAX];
+<span class="lineNum">     153 </span>            :         char linkto[PATH_MAX];
+<span class="lineNum">     154 </span>            :         char linkto_exported[PATH_MAX];
+<span class="lineNum">     155 </span>            :         int ret;
+<span class="lineNum">     156 </span>            : 
+<span class="lineNum">     157 </span>            :         /* make the source path */
+<span class="lineNum">     158 </span><span class="lineCov">      17568 :         pathprint(path, sizeof(path), &quot;%s%s&quot;, pool_dir, sub);</span>
+<span class="lineNum">     159 </span>            : 
+<span class="lineNum">     160 </span>            :         /* make the linkto path */
+<span class="lineNum">     161 </span><span class="lineCov">      17568 :         if (share_dir[0] != 0) {</span>
+<span class="lineNum">     162 </span>            :                 /* with a shared directory, use it */
+<span class="lineNum">     163 </span><span class="lineCov">      17568 :                 pathprint(linkto, sizeof(linkto), &quot;%s%s/%s&quot;, share_dir, disk-&gt;name, sub);</span>
+<span class="lineNum">     164 </span>            :         } else {
+<span class="lineNum">     165 </span>            :                 /* without a share directory, use the local disk paths */
+<span class="lineNum">     166 </span><span class="lineNoCov">          0 :                 pathprint(linkto, sizeof(linkto), &quot;%s%s&quot;, disk-&gt;dir, sub);</span>
+<span class="lineNum">     167 </span>            :         }
+<span class="lineNum">     168 </span>            : 
+<span class="lineNum">     169 </span>            :         /* create the ancestor directories */
+<span class="lineNum">     170 </span><span class="lineCov">      17568 :         ret = mkancestor(path);</span>
+<span class="lineNum">     171 </span><span class="lineCov">      17568 :         if (ret != 0) {</span>
+<span class="lineNum">     172 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     173 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     174 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     175 </span>            :         }
+<span class="lineNum">     176 </span>            : 
+<span class="lineNum">     177 </span>            :         /* convert back slashes */
+<span class="lineNum">     178 </span><span class="lineCov">      17568 :         pathexport(linkto_exported, sizeof(linkto_exported), linkto);</span>
+<span class="lineNum">     179 </span>            : 
+<span class="lineNum">     180 </span>            :         /* create the symlink */
+<span class="lineNum">     181 </span><span class="lineCov">      17568 :         ret = symlink(linkto_exported, path);</span>
+<span class="lineNum">     182 </span><span class="lineCov">      17568 :         if (ret != 0) {</span>
+<span class="lineNum">     183 </span><span class="lineCov">        523 :                 if (errno == EEXIST) {</span>
+<span class="lineNum">     184 </span><span class="lineCov">        523 :                         log_fatal(&quot;WARNING! Duplicate pooling for '%s'\n&quot;, path);</span>
+<span class="lineNum">     185 </span>            : #ifdef _WIN32
+<span class="lineNum">     186 </span>            :                 } else if (errno == EPERM) {
+<span class="lineNum">     187 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     188 </span>            :                         log_fatal(&quot;You must run as Adminstrator to be able to create symlinks.\n&quot;);
+<span class="lineNum">     189 </span>            :                         exit(EXIT_FAILURE);
+<span class="lineNum">     190 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     191 </span>            : #endif
+<span class="lineNum">     192 </span>            :                 } else {
+<span class="lineNum">     193 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     194 </span>            :                         log_fatal(&quot;Error writing symlink '%s'. %s.\n&quot;, path, strerror(errno));
+<span class="lineNum">     195 </span>            :                         exit(EXIT_FAILURE);
+<span class="lineNum">     196 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     197 </span>            :                 }
+<span class="lineNum">     198 </span>            :         }
+<a name="199"><span class="lineNum">     199 </span><span class="lineCov">      17568 : }</span></a>
+<span class="lineNum">     200 </span>            : 
+<span class="lineNum">     201 </span><span class="lineCov">          3 : void state_pool(struct snapraid_state* state)</span>
+<span class="lineNum">     202 </span>            : {
+<span class="lineNum">     203 </span>            :         tommy_node* i;
+<span class="lineNum">     204 </span>            :         char pool_dir[PATH_MAX];
+<span class="lineNum">     205 </span>            :         char share_dir[PATH_MAX];
+<span class="lineNum">     206 </span>            :         unsigned count;
+<span class="lineNum">     207 </span>            : 
+<span class="lineNum">     208 </span><span class="lineCov">          3 :         if (state-&gt;pool[0] == 0) {</span>
+<span class="lineNum">     209 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     210 </span>            :                 log_fatal(&quot;To use the 'pool' command you must set the pool directory in the configuration file\n&quot;);
+<span class="lineNum">     211 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     212 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     213 </span>            :         }
+<span class="lineNum">     214 </span>            : 
+<span class="lineNum">     215 </span><span class="lineCov">          3 :         msg_progress(&quot;Cleaning...\n&quot;);</span>
+<span class="lineNum">     216 </span>            : 
+<span class="lineNum">     217 </span>            :         /* pool directory with final slash */
+<span class="lineNum">     218 </span><span class="lineCov">          3 :         pathprint(pool_dir, sizeof(pool_dir), &quot;%s&quot;, state-&gt;pool);</span>
+<span class="lineNum">     219 </span><span class="lineCov">          3 :         pathslash(pool_dir, sizeof(pool_dir));</span>
+<span class="lineNum">     220 </span>            : 
+<span class="lineNum">     221 </span>            :         /* share directory with final slash */
+<span class="lineNum">     222 </span><span class="lineCov">          3 :         pathprint(share_dir, sizeof(share_dir), &quot;%s&quot;, state-&gt;share);</span>
+<span class="lineNum">     223 </span><span class="lineCov">          3 :         pathslash(share_dir, sizeof(share_dir));</span>
+<span class="lineNum">     224 </span>            : 
+<span class="lineNum">     225 </span>            :         /* first clear the previous pool tree */
+<span class="lineNum">     226 </span><span class="lineCov">          3 :         clean_dir(state, pool_dir);</span>
+<span class="lineNum">     227 </span>            : 
+<span class="lineNum">     228 </span><span class="lineCov">          3 :         msg_progress(&quot;Pooling...\n&quot;);</span>
+<span class="lineNum">     229 </span>            : 
+<span class="lineNum">     230 </span>            :         /* for each disk */
+<span class="lineNum">     231 </span><span class="lineCov">          3 :         count = 0;</span>
+<span class="lineNum">     232 </span><span class="lineCov">         21 :         for (i = state-&gt;disklist; i != 0; i = i-&gt;next) {</span>
+<span class="lineNum">     233 </span>            :                 tommy_node* j;
+<span class="lineNum">     234 </span><span class="lineCov">         18 :                 struct snapraid_disk* disk = i-&gt;data;</span>
+<span class="lineNum">     235 </span>            : 
+<span class="lineNum">     236 </span>            :                 /* for each file */
+<span class="lineNum">     237 </span><span class="lineCov">      16997 :                 for (j = disk-&gt;filelist; j != 0; j = j-&gt;next) {</span>
+<span class="lineNum">     238 </span><span class="lineCov">      16979 :                         struct snapraid_file* file = j-&gt;data;</span>
+<span class="lineNum">     239 </span><span class="lineCov">      16979 :                         make_link(pool_dir, share_dir, disk, file-&gt;sub);</span>
+<span class="lineNum">     240 </span><span class="lineCov">      16979 :                         ++count;</span>
+<span class="lineNum">     241 </span>            :                 }
+<span class="lineNum">     242 </span>            : 
+<span class="lineNum">     243 </span>            :                 /* for each link */
+<span class="lineNum">     244 </span><span class="lineCov">        607 :                 for (j = disk-&gt;linklist; j != 0; j = j-&gt;next) {</span>
+<span class="lineNum">     245 </span><span class="lineCov">        589 :                         struct snapraid_link* link = j-&gt;data;</span>
+<span class="lineNum">     246 </span><span class="lineCov">        589 :                         make_link(pool_dir, share_dir, disk, link-&gt;sub);</span>
+<span class="lineNum">     247 </span><span class="lineCov">        589 :                         ++count;</span>
+<span class="lineNum">     248 </span>            :                 }
+<span class="lineNum">     249 </span>            : 
+<span class="lineNum">     250 </span>            :                 /* we ignore empty dirs in disk-&gt;dir */
+<span class="lineNum">     251 </span>            :         }
+<span class="lineNum">     252 </span>            : 
+<span class="lineNum">     253 </span><span class="lineCov">          3 :         if (count)</span>
+<span class="lineNum">     254 </span><span class="lineCov">          2 :                 msg_status(&quot;%u links created\n&quot;, count);</span>
+<span class="lineNum">     255 </span>            :         else
+<span class="lineNum">     256 </span><span class="lineCov">          1 :                 msg_status(&quot;No link created\n&quot;);</span>
+<span class="lineNum">     257 </span>            : 
+<span class="lineNum">     258 </span><span class="lineCov">          3 :         log_tag(&quot;summary:link_count::%u\n&quot;, count);</span>
+<span class="lineNum">     259 </span><span class="lineCov">          3 :         log_tag(&quot;summary:exit:ok\n&quot;);</span>
+<span class="lineNum">     260 </span><span class="lineCov">          3 :         log_flush();</span>
+<span class="lineNum">     261 </span><span class="lineCov">          3 : }</span>
+<span class="lineNum">     262 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

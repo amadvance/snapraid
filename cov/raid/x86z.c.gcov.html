@@ -1,0 +1,331 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - raid/x86z.c</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">raid</a> - x86z.c<span style="font-size: 80%;"> (source / <a href="x86z.c.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">35</td>
+            <td class="headerCovTableEntry">35</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2015-05-12</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (C) 2013 Andrea Mazzoleni
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * This program is free software: you can redistribute it and/or modify
+<span class="lineNum">       5 </span>            :  * it under the terms of the GNU General Public License as published by
+<span class="lineNum">       6 </span>            :  * the Free Software Foundation, either version 2 of the License, or
+<span class="lineNum">       7 </span>            :  * (at your option) any later version.
+<span class="lineNum">       8 </span>            :  *
+<span class="lineNum">       9 </span>            :  * This program is distributed in the hope that it will be useful,
+<span class="lineNum">      10 </span>            :  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      11 </span>            :  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      12 </span>            :  * GNU General Public License for more details.
+<span class="lineNum">      13 </span>            :  */
+<span class="lineNum">      14 </span>            : 
+<span class="lineNum">      15 </span>            : #include &quot;internal.h&quot;
+<span class="lineNum">      16 </span>            : 
+<span class="lineNum">      17 </span>            : #if defined(CONFIG_X86) &amp;&amp; defined(CONFIG_SSE2)
+<span class="lineNum">      18 </span>            : static const struct gfzconst16 {
+<span class="lineNum">      19 </span>            :         uint8_t poly[16];
+<span class="lineNum">      20 </span>            :         uint8_t half[16];
+<span class="lineNum">      21 </span>            :         uint8_t low7[16];
+<span class="lineNum">      22 </span>            : } gfzconst16 __aligned(64) =
+<span class="lineNum">      23 </span>            : {
+<span class="lineNum">      24 </span>            :         {
+<span class="lineNum">      25 </span>            :                 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d,
+<span class="lineNum">      26 </span>            :                 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d
+<span class="lineNum">      27 </span>            :         },
+<span class="lineNum">      28 </span>            :         {
+<span class="lineNum">      29 </span>            :                 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e,
+<span class="lineNum">      30 </span>            :                 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e
+<span class="lineNum">      31 </span>            :         },
+<span class="lineNum">      32 </span>            :         {
+<span class="lineNum">      33 </span>            :                 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+<span class="lineNum">      34 </span>            :                 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f
+<span class="lineNum">      35 </span>            :         }
+<span class="lineNum">      36 </span>            : };
+<span class="lineNum">      37 </span>            : #endif
+<span class="lineNum">      38 </span>            : 
+<span class="lineNum">      39 </span>            : #if defined(CONFIG_X86) &amp;&amp; defined(CONFIG_SSE2)
+<span class="lineNum">      40 </span>            : /*
+<a name="41"><span class="lineNum">      41 </span>            :  * GENz (triple parity with powers of 2^-1) SSE2 implementation</a>
+<span class="lineNum">      42 </span>            :  */
+<span class="lineNum">      43 </span><span class="lineCov">       1175 : void raid_genz_sse2(int nd, size_t size, void **vv)</span>
+<span class="lineNum">      44 </span>            : {
+<span class="lineNum">      45 </span><span class="lineCov">       1175 :         uint8_t **v = (uint8_t**)vv;</span>
+<span class="lineNum">      46 </span>            :         uint8_t *p;
+<span class="lineNum">      47 </span>            :         uint8_t *q;
+<span class="lineNum">      48 </span>            :         uint8_t *r;
+<span class="lineNum">      49 </span>            :         int d, l;
+<span class="lineNum">      50 </span>            :         size_t i;
+<span class="lineNum">      51 </span>            : 
+<span class="lineNum">      52 </span><span class="lineCov">       1175 :         l = nd - 1;</span>
+<span class="lineNum">      53 </span><span class="lineCov">       1175 :         p = v[nd];</span>
+<span class="lineNum">      54 </span><span class="lineCov">       1175 :         q = v[nd + 1];</span>
+<span class="lineNum">      55 </span><span class="lineCov">       1175 :         r = v[nd + 2];</span>
+<span class="lineNum">      56 </span>            : 
+<span class="lineNum">      57 </span>            :         raid_sse_begin();
+<span class="lineNum">      58 </span>            : 
+<span class="lineNum">      59 </span><span class="lineCov">       1175 :         asm volatile (&quot;movdqa %0,%%xmm7&quot; : : &quot;m&quot; (gfzconst16.poly[0]));</span>
+<span class="lineNum">      60 </span><span class="lineCov">       1175 :         asm volatile (&quot;movdqa %0,%%xmm3&quot; : : &quot;m&quot; (gfzconst16.half[0]));</span>
+<span class="lineNum">      61 </span><span class="lineCov">       1175 :         asm volatile (&quot;movdqa %0,%%xmm6&quot; : : &quot;m&quot; (gfzconst16.low7[0]));</span>
+<span class="lineNum">      62 </span>            : 
+<span class="lineNum">      63 </span><span class="lineCov">    1362151 :         for (i = 0; i &lt; size; i += 16) {</span>
+<span class="lineNum">      64 </span><span class="lineCov">    1360976 :                 asm volatile (&quot;movdqa %0,%%xmm0&quot; : : &quot;m&quot; (v[l][i]));</span>
+<span class="lineNum">      65 </span><span class="lineCov">    1360976 :                 asm volatile (&quot;movdqa %xmm0,%xmm1&quot;);</span>
+<span class="lineNum">      66 </span><span class="lineCov">    1360976 :                 asm volatile (&quot;movdqa %xmm0,%xmm2&quot;);</span>
+<span class="lineNum">      67 </span><span class="lineCov">   10958080 :                 for (d = l - 1; d &gt;= 0; --d) {</span>
+<span class="lineNum">      68 </span><span class="lineCov">    9597104 :                         asm volatile (&quot;pxor %xmm4,%xmm4&quot;);</span>
+<span class="lineNum">      69 </span><span class="lineCov">    9597104 :                         asm volatile (&quot;pcmpgtb %xmm1,%xmm4&quot;);</span>
+<span class="lineNum">      70 </span><span class="lineCov">    9597104 :                         asm volatile (&quot;paddb %xmm1,%xmm1&quot;);</span>
+<span class="lineNum">      71 </span><span class="lineCov">    9597104 :                         asm volatile (&quot;pand %xmm7,%xmm4&quot;);</span>
+<span class="lineNum">      72 </span><span class="lineCov">    9597104 :                         asm volatile (&quot;pxor %xmm4,%xmm1&quot;);</span>
+<span class="lineNum">      73 </span>            : 
+<span class="lineNum">      74 </span><span class="lineCov">    9597104 :                         asm volatile (&quot;movdqa %xmm2,%xmm4&quot;);</span>
+<span class="lineNum">      75 </span><span class="lineCov">    9597104 :                         asm volatile (&quot;pxor %xmm5,%xmm5&quot;);</span>
+<span class="lineNum">      76 </span><span class="lineCov">    9597104 :                         asm volatile (&quot;psllw $7,%xmm4&quot;);</span>
+<span class="lineNum">      77 </span><span class="lineCov">    9597104 :                         asm volatile (&quot;psrlw $1,%xmm2&quot;);</span>
+<span class="lineNum">      78 </span><span class="lineCov">    9597104 :                         asm volatile (&quot;pcmpgtb %xmm4,%xmm5&quot;);</span>
+<span class="lineNum">      79 </span><span class="lineCov">    9597104 :                         asm volatile (&quot;pand %xmm6,%xmm2&quot;);</span>
+<span class="lineNum">      80 </span><span class="lineCov">    9597104 :                         asm volatile (&quot;pand %xmm3,%xmm5&quot;);</span>
+<span class="lineNum">      81 </span><span class="lineCov">    9597104 :                         asm volatile (&quot;pxor %xmm5,%xmm2&quot;);</span>
+<span class="lineNum">      82 </span>            : 
+<span class="lineNum">      83 </span><span class="lineCov">    9597104 :                         asm volatile (&quot;movdqa %0,%%xmm4&quot; : : &quot;m&quot; (v[d][i]));</span>
+<span class="lineNum">      84 </span><span class="lineCov">    9597104 :                         asm volatile (&quot;pxor %xmm4,%xmm0&quot;);</span>
+<span class="lineNum">      85 </span><span class="lineCov">    9597104 :                         asm volatile (&quot;pxor %xmm4,%xmm1&quot;);</span>
+<span class="lineNum">      86 </span><span class="lineCov">    9597104 :                         asm volatile (&quot;pxor %xmm4,%xmm2&quot;);</span>
+<span class="lineNum">      87 </span>            :                 }
+<span class="lineNum">      88 </span><span class="lineCov">    1360976 :                 asm volatile (&quot;movntdq %%xmm0,%0&quot; : &quot;=m&quot; (p[i]));</span>
+<span class="lineNum">      89 </span><span class="lineCov">    1360976 :                 asm volatile (&quot;movntdq %%xmm1,%0&quot; : &quot;=m&quot; (q[i]));</span>
+<span class="lineNum">      90 </span><span class="lineCov">    1360976 :                 asm volatile (&quot;movntdq %%xmm2,%0&quot; : &quot;=m&quot; (r[i]));</span>
+<span class="lineNum">      91 </span>            :         }
+<span class="lineNum">      92 </span>            : 
+<span class="lineNum">      93 </span>            :         raid_sse_end();
+<span class="lineNum">      94 </span><span class="lineCov">       1175 : }</span>
+<span class="lineNum">      95 </span>            : #endif
+<span class="lineNum">      96 </span>            : 
+<span class="lineNum">      97 </span>            : #if defined(CONFIG_X86_64) &amp;&amp; defined(CONFIG_SSE2)
+<span class="lineNum">      98 </span>            : /*
+<span class="lineNum">      99 </span>            :  * GENz (triple parity with powers of 2^-1) SSE2 implementation
+<span class="lineNum">     100 </span>            :  *
+<span class="lineNum">     101 </span>            :  * Note that it uses 16 registers, meaning that x64 is required.
+<span class="lineNum">     102 </span>            :  */
+<span class="lineNum">     103 </span>            : void raid_genz_sse2ext(int nd, size_t size, void **vv)
+<span class="lineNum">     104 </span>            : {
+<span class="lineNum">     105 </span>            :         uint8_t **v = (uint8_t**)vv;
+<span class="lineNum">     106 </span>            :         uint8_t *p;
+<span class="lineNum">     107 </span>            :         uint8_t *q;
+<span class="lineNum">     108 </span>            :         uint8_t *r;
+<span class="lineNum">     109 </span>            :         int d, l;
+<span class="lineNum">     110 </span>            :         size_t i;
+<span class="lineNum">     111 </span>            : 
+<span class="lineNum">     112 </span>            :         l = nd - 1;
+<span class="lineNum">     113 </span>            :         p = v[nd];
+<span class="lineNum">     114 </span>            :         q = v[nd + 1];
+<span class="lineNum">     115 </span>            :         r = v[nd + 2];
+<span class="lineNum">     116 </span>            : 
+<span class="lineNum">     117 </span>            :         raid_sse_begin();
+<span class="lineNum">     118 </span>            : 
+<span class="lineNum">     119 </span>            :         asm volatile (&quot;movdqa %0,%%xmm7&quot; : : &quot;m&quot; (gfzconst16.poly[0]));
+<span class="lineNum">     120 </span>            :         asm volatile (&quot;movdqa %0,%%xmm3&quot; : : &quot;m&quot; (gfzconst16.half[0]));
+<span class="lineNum">     121 </span>            :         asm volatile (&quot;movdqa %0,%%xmm11&quot; : : &quot;m&quot; (gfzconst16.low7[0]));
+<span class="lineNum">     122 </span>            : 
+<span class="lineNum">     123 </span>            :         for (i = 0; i &lt; size; i += 32) {
+<span class="lineNum">     124 </span>            :                 asm volatile (&quot;movdqa %0,%%xmm0&quot; : : &quot;m&quot; (v[l][i]));
+<span class="lineNum">     125 </span>            :                 asm volatile (&quot;movdqa %0,%%xmm8&quot; : : &quot;m&quot; (v[l][i + 16]));
+<span class="lineNum">     126 </span>            :                 asm volatile (&quot;movdqa %xmm0,%xmm1&quot;);
+<span class="lineNum">     127 </span>            :                 asm volatile (&quot;movdqa %xmm8,%xmm9&quot;);
+<span class="lineNum">     128 </span>            :                 asm volatile (&quot;movdqa %xmm0,%xmm2&quot;);
+<span class="lineNum">     129 </span>            :                 asm volatile (&quot;movdqa %xmm8,%xmm10&quot;);
+<span class="lineNum">     130 </span>            :                 for (d = l - 1; d &gt;= 0; --d) {
+<span class="lineNum">     131 </span>            :                         asm volatile (&quot;movdqa %xmm2,%xmm6&quot;);
+<span class="lineNum">     132 </span>            :                         asm volatile (&quot;movdqa %xmm10,%xmm14&quot;);
+<span class="lineNum">     133 </span>            :                         asm volatile (&quot;pxor %xmm4,%xmm4&quot;);
+<span class="lineNum">     134 </span>            :                         asm volatile (&quot;pxor %xmm12,%xmm12&quot;);
+<span class="lineNum">     135 </span>            :                         asm volatile (&quot;pxor %xmm5,%xmm5&quot;);
+<span class="lineNum">     136 </span>            :                         asm volatile (&quot;pxor %xmm13,%xmm13&quot;);
+<span class="lineNum">     137 </span>            :                         asm volatile (&quot;psllw $7,%xmm6&quot;);
+<span class="lineNum">     138 </span>            :                         asm volatile (&quot;psllw $7,%xmm14&quot;);
+<span class="lineNum">     139 </span>            :                         asm volatile (&quot;psrlw $1,%xmm2&quot;);
+<span class="lineNum">     140 </span>            :                         asm volatile (&quot;psrlw $1,%xmm10&quot;);
+<span class="lineNum">     141 </span>            :                         asm volatile (&quot;pcmpgtb %xmm1,%xmm4&quot;);
+<span class="lineNum">     142 </span>            :                         asm volatile (&quot;pcmpgtb %xmm9,%xmm12&quot;);
+<span class="lineNum">     143 </span>            :                         asm volatile (&quot;pcmpgtb %xmm6,%xmm5&quot;);
+<span class="lineNum">     144 </span>            :                         asm volatile (&quot;pcmpgtb %xmm14,%xmm13&quot;);
+<span class="lineNum">     145 </span>            :                         asm volatile (&quot;paddb %xmm1,%xmm1&quot;);
+<span class="lineNum">     146 </span>            :                         asm volatile (&quot;paddb %xmm9,%xmm9&quot;);
+<span class="lineNum">     147 </span>            :                         asm volatile (&quot;pand %xmm11,%xmm2&quot;);
+<span class="lineNum">     148 </span>            :                         asm volatile (&quot;pand %xmm11,%xmm10&quot;);
+<span class="lineNum">     149 </span>            :                         asm volatile (&quot;pand %xmm7,%xmm4&quot;);
+<span class="lineNum">     150 </span>            :                         asm volatile (&quot;pand %xmm7,%xmm12&quot;);
+<span class="lineNum">     151 </span>            :                         asm volatile (&quot;pand %xmm3,%xmm5&quot;);
+<span class="lineNum">     152 </span>            :                         asm volatile (&quot;pand %xmm3,%xmm13&quot;);
+<span class="lineNum">     153 </span>            :                         asm volatile (&quot;pxor %xmm4,%xmm1&quot;);
+<span class="lineNum">     154 </span>            :                         asm volatile (&quot;pxor %xmm12,%xmm9&quot;);
+<span class="lineNum">     155 </span>            :                         asm volatile (&quot;pxor %xmm5,%xmm2&quot;);
+<span class="lineNum">     156 </span>            :                         asm volatile (&quot;pxor %xmm13,%xmm10&quot;);
+<span class="lineNum">     157 </span>            : 
+<span class="lineNum">     158 </span>            :                         asm volatile (&quot;movdqa %0,%%xmm4&quot; : : &quot;m&quot; (v[d][i]));
+<span class="lineNum">     159 </span>            :                         asm volatile (&quot;movdqa %0,%%xmm12&quot; : : &quot;m&quot; (v[d][i + 16]));
+<span class="lineNum">     160 </span>            :                         asm volatile (&quot;pxor %xmm4,%xmm0&quot;);
+<span class="lineNum">     161 </span>            :                         asm volatile (&quot;pxor %xmm4,%xmm1&quot;);
+<span class="lineNum">     162 </span>            :                         asm volatile (&quot;pxor %xmm4,%xmm2&quot;);
+<span class="lineNum">     163 </span>            :                         asm volatile (&quot;pxor %xmm12,%xmm8&quot;);
+<span class="lineNum">     164 </span>            :                         asm volatile (&quot;pxor %xmm12,%xmm9&quot;);
+<span class="lineNum">     165 </span>            :                         asm volatile (&quot;pxor %xmm12,%xmm10&quot;);
+<span class="lineNum">     166 </span>            :                 }
+<span class="lineNum">     167 </span>            :                 asm volatile (&quot;movntdq %%xmm0,%0&quot; : &quot;=m&quot; (p[i]));
+<span class="lineNum">     168 </span>            :                 asm volatile (&quot;movntdq %%xmm8,%0&quot; : &quot;=m&quot; (p[i + 16]));
+<span class="lineNum">     169 </span>            :                 asm volatile (&quot;movntdq %%xmm1,%0&quot; : &quot;=m&quot; (q[i]));
+<span class="lineNum">     170 </span>            :                 asm volatile (&quot;movntdq %%xmm9,%0&quot; : &quot;=m&quot; (q[i + 16]));
+<span class="lineNum">     171 </span>            :                 asm volatile (&quot;movntdq %%xmm2,%0&quot; : &quot;=m&quot; (r[i]));
+<span class="lineNum">     172 </span>            :                 asm volatile (&quot;movntdq %%xmm10,%0&quot; : &quot;=m&quot; (r[i + 16]));
+<span class="lineNum">     173 </span>            :         }
+<span class="lineNum">     174 </span>            : 
+<span class="lineNum">     175 </span>            :         raid_sse_end();
+<span class="lineNum">     176 </span>            : }
+<span class="lineNum">     177 </span>            : #endif
+<span class="lineNum">     178 </span>            : 
+<span class="lineNum">     179 </span>            : #if defined(CONFIG_X86_64) &amp;&amp; defined(CONFIG_AVX2)
+<span class="lineNum">     180 </span>            : /*
+<span class="lineNum">     181 </span>            :  * GENz (triple parity with powers of 2^-1) AVX2 implementation
+<span class="lineNum">     182 </span>            :  *
+<span class="lineNum">     183 </span>            :  * Note that it uses 16 registers, meaning that x64 is required.
+<span class="lineNum">     184 </span>            :  */
+<span class="lineNum">     185 </span>            : void raid_genz_avx2ext(int nd, size_t size, void **vv)
+<span class="lineNum">     186 </span>            : {
+<span class="lineNum">     187 </span>            :         uint8_t **v = (uint8_t**)vv;
+<span class="lineNum">     188 </span>            :         uint8_t *p;
+<span class="lineNum">     189 </span>            :         uint8_t *q;
+<span class="lineNum">     190 </span>            :         uint8_t *r;
+<span class="lineNum">     191 </span>            :         int d, l;
+<span class="lineNum">     192 </span>            :         size_t i;
+<span class="lineNum">     193 </span>            : 
+<span class="lineNum">     194 </span>            :         l = nd - 1;
+<span class="lineNum">     195 </span>            :         p = v[nd];
+<span class="lineNum">     196 </span>            :         q = v[nd + 1];
+<span class="lineNum">     197 </span>            :         r = v[nd + 2];
+<span class="lineNum">     198 </span>            : 
+<span class="lineNum">     199 </span>            :         raid_avx_begin();
+<span class="lineNum">     200 </span>            : 
+<span class="lineNum">     201 </span>            :         asm volatile (&quot;vbroadcasti128 %0,%%ymm7&quot; : : &quot;m&quot; (gfzconst16.poly[0]));
+<span class="lineNum">     202 </span>            :         asm volatile (&quot;vbroadcasti128 %0,%%ymm3&quot; : : &quot;m&quot; (gfzconst16.half[0]));
+<span class="lineNum">     203 </span>            :         asm volatile (&quot;vbroadcasti128 %0,%%ymm11&quot; : : &quot;m&quot; (gfzconst16.low7[0]));
+<span class="lineNum">     204 </span>            :         asm volatile (&quot;vpxor %ymm15,%ymm15,%ymm15&quot;);
+<span class="lineNum">     205 </span>            : 
+<span class="lineNum">     206 </span>            :         for (i = 0; i &lt; size; i += 64) {
+<span class="lineNum">     207 </span>            :                 asm volatile (&quot;vmovdqa %0,%%ymm0&quot; : : &quot;m&quot; (v[l][i]));
+<span class="lineNum">     208 </span>            :                 asm volatile (&quot;vmovdqa %0,%%ymm8&quot; : : &quot;m&quot; (v[l][i + 32]));
+<span class="lineNum">     209 </span>            :                 asm volatile (&quot;vmovdqa %ymm0,%ymm1&quot;);
+<span class="lineNum">     210 </span>            :                 asm volatile (&quot;vmovdqa %ymm8,%ymm9&quot;);
+<span class="lineNum">     211 </span>            :                 asm volatile (&quot;vmovdqa %ymm0,%ymm2&quot;);
+<span class="lineNum">     212 </span>            :                 asm volatile (&quot;vmovdqa %ymm8,%ymm10&quot;);
+<span class="lineNum">     213 </span>            :                 for (d = l - 1; d &gt;= 0; --d) {
+<span class="lineNum">     214 </span>            :                         asm volatile (&quot;vpsllw $7,%ymm2,%ymm6&quot;);
+<span class="lineNum">     215 </span>            :                         asm volatile (&quot;vpsllw $7,%ymm10,%ymm14&quot;);
+<span class="lineNum">     216 </span>            :                         asm volatile (&quot;vpsrlw $1,%ymm2,%ymm2&quot;);
+<span class="lineNum">     217 </span>            :                         asm volatile (&quot;vpsrlw $1,%ymm10,%ymm10&quot;);
+<span class="lineNum">     218 </span>            :                         asm volatile (&quot;vpcmpgtb %ymm1,%ymm15,%ymm4&quot;);
+<span class="lineNum">     219 </span>            :                         asm volatile (&quot;vpcmpgtb %ymm9,%ymm15,%ymm12&quot;);
+<span class="lineNum">     220 </span>            :                         asm volatile (&quot;vpcmpgtb %ymm6,%ymm15,%ymm5&quot;);
+<span class="lineNum">     221 </span>            :                         asm volatile (&quot;vpcmpgtb %ymm14,%ymm15,%ymm13&quot;);
+<span class="lineNum">     222 </span>            :                         asm volatile (&quot;vpaddb %ymm1,%ymm1,%ymm1&quot;);
+<span class="lineNum">     223 </span>            :                         asm volatile (&quot;vpaddb %ymm9,%ymm9,%ymm9&quot;);
+<span class="lineNum">     224 </span>            :                         asm volatile (&quot;vpand %ymm11,%ymm2,%ymm2&quot;);
+<span class="lineNum">     225 </span>            :                         asm volatile (&quot;vpand %ymm11,%ymm10,%ymm10&quot;);
+<span class="lineNum">     226 </span>            :                         asm volatile (&quot;vpand %ymm7,%ymm4,%ymm4&quot;);
+<span class="lineNum">     227 </span>            :                         asm volatile (&quot;vpand %ymm7,%ymm12,%ymm12&quot;);
+<span class="lineNum">     228 </span>            :                         asm volatile (&quot;vpand %ymm3,%ymm5,%ymm5&quot;);
+<span class="lineNum">     229 </span>            :                         asm volatile (&quot;vpand %ymm3,%ymm13,%ymm13&quot;);
+<span class="lineNum">     230 </span>            :                         asm volatile (&quot;vpxor %ymm4,%ymm1,%ymm1&quot;);
+<span class="lineNum">     231 </span>            :                         asm volatile (&quot;vpxor %ymm12,%ymm9,%ymm9&quot;);
+<span class="lineNum">     232 </span>            :                         asm volatile (&quot;vpxor %ymm5,%ymm2,%ymm2&quot;);
+<span class="lineNum">     233 </span>            :                         asm volatile (&quot;vpxor %ymm13,%ymm10,%ymm10&quot;);
+<span class="lineNum">     234 </span>            : 
+<span class="lineNum">     235 </span>            :                         asm volatile (&quot;vmovdqa %0,%%ymm4&quot; : : &quot;m&quot; (v[d][i]));
+<span class="lineNum">     236 </span>            :                         asm volatile (&quot;vmovdqa %0,%%ymm12&quot; : : &quot;m&quot; (v[d][i + 32]));
+<span class="lineNum">     237 </span>            :                         asm volatile (&quot;vpxor %ymm4,%ymm0,%ymm0&quot;);
+<span class="lineNum">     238 </span>            :                         asm volatile (&quot;vpxor %ymm4,%ymm1,%ymm1&quot;);
+<span class="lineNum">     239 </span>            :                         asm volatile (&quot;vpxor %ymm4,%ymm2,%ymm2&quot;);
+<span class="lineNum">     240 </span>            :                         asm volatile (&quot;vpxor %ymm12,%ymm8,%ymm8&quot;);
+<span class="lineNum">     241 </span>            :                         asm volatile (&quot;vpxor %ymm12,%ymm9,%ymm9&quot;);
+<span class="lineNum">     242 </span>            :                         asm volatile (&quot;vpxor %ymm12,%ymm10,%ymm10&quot;);
+<span class="lineNum">     243 </span>            :                 }
+<span class="lineNum">     244 </span>            :                 asm volatile (&quot;vmovntdq %%ymm0,%0&quot; : &quot;=m&quot; (p[i]));
+<span class="lineNum">     245 </span>            :                 asm volatile (&quot;vmovntdq %%ymm8,%0&quot; : &quot;=m&quot; (p[i + 32]));
+<span class="lineNum">     246 </span>            :                 asm volatile (&quot;vmovntdq %%ymm1,%0&quot; : &quot;=m&quot; (q[i]));
+<span class="lineNum">     247 </span>            :                 asm volatile (&quot;vmovntdq %%ymm9,%0&quot; : &quot;=m&quot; (q[i + 32]));
+<span class="lineNum">     248 </span>            :                 asm volatile (&quot;vmovntdq %%ymm2,%0&quot; : &quot;=m&quot; (r[i]));
+<span class="lineNum">     249 </span>            :                 asm volatile (&quot;vmovntdq %%ymm10,%0&quot; : &quot;=m&quot; (r[i + 32]));
+<span class="lineNum">     250 </span>            :         }
+<span class="lineNum">     251 </span>            : 
+<span class="lineNum">     252 </span>            :         raid_avx_end();
+<span class="lineNum">     253 </span>            : }
+<span class="lineNum">     254 </span>            : #endif
+<span class="lineNum">     255 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

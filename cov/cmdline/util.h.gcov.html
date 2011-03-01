@@ -1,0 +1,218 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - cmdline/util.h</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">cmdline</a> - util.h<span style="font-size: 80%;"> (source / <a href="util.h.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntry">5</td>
+            <td class="headerCovTableEntryMed">80.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2015-05-12</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (C) 2011 Andrea Mazzoleni
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * This program is free software: you can redistribute it and/or modify
+<span class="lineNum">       5 </span>            :  * it under the terms of the GNU General Public License as published by
+<span class="lineNum">       6 </span>            :  * the Free Software Foundation, either version 3 of the License, or
+<span class="lineNum">       7 </span>            :  * (at your option) any later version.
+<span class="lineNum">       8 </span>            :  *
+<span class="lineNum">       9 </span>            :  * This program is distributed in the hope that it will be useful,
+<span class="lineNum">      10 </span>            :  * but WITHOUT ANY WARRANTY; without even the implied warranty of
+<span class="lineNum">      11 </span>            :  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+<span class="lineNum">      12 </span>            :  * GNU General Public License for more details.
+<span class="lineNum">      13 </span>            :  *
+<span class="lineNum">      14 </span>            :  * You should have received a copy of the GNU General Public License
+<span class="lineNum">      15 </span>            :  * along with this program.  If not, see &lt;http://www.gnu.org/licenses/&gt;.
+<span class="lineNum">      16 </span>            :  */
+<span class="lineNum">      17 </span>            : 
+<span class="lineNum">      18 </span>            : #ifndef __UTIL_H
+<span class="lineNum">      19 </span>            : #define __UTIL_H
+<span class="lineNum">      20 </span>            : 
+<span class="lineNum">      21 </span>            : /****************************************************************************/
+<span class="lineNum">      22 </span>            : /* memory */
+<span class="lineNum">      23 </span>            : 
+<span class="lineNum">      24 </span>            : /**
+<span class="lineNum">      25 </span>            :  * Safe aligned malloc.
+<span class="lineNum">      26 </span>            :  * If no memory is available, it aborts.
+<span class="lineNum">      27 </span>            :  */
+<span class="lineNum">      28 </span>            : void* malloc_nofail_align(size_t size, void** freeptr);
+<span class="lineNum">      29 </span>            : 
+<span class="lineNum">      30 </span>            : /**
+<span class="lineNum">      31 </span>            :  * Safe aligned vector allocation.
+<span class="lineNum">      32 </span>            :  * If no memory is available, it aborts.
+<span class="lineNum">      33 </span>            :  */
+<span class="lineNum">      34 </span>            : void** malloc_nofail_vector_align(int nd, int n, size_t size, void** freeptr);
+<span class="lineNum">      35 </span>            : 
+<span class="lineNum">      36 </span>            : /**
+<span class="lineNum">      37 </span>            :  * Safe allocation with memory test.
+<span class="lineNum">      38 </span>            :  */
+<span class="lineNum">      39 </span>            : void* malloc_nofail_test(size_t size);
+<span class="lineNum">      40 </span>            : 
+<span class="lineNum">      41 </span>            : /**
+<span class="lineNum">      42 </span>            :  * Tests the memory vector for RAM problems.
+<span class="lineNum">      43 </span>            :  * If a problem is found, it crashes.
+<span class="lineNum">      44 </span>            :  */
+<span class="lineNum">      45 </span>            : void mtest_vector(int n, size_t size, void** vv);
+<span class="lineNum">      46 </span>            : 
+<span class="lineNum">      47 </span>            : /****************************************************************************/
+<span class="lineNum">      48 </span>            : /* crc */
+<span class="lineNum">      49 </span>            : 
+<span class="lineNum">      50 </span>            : /**
+<span class="lineNum">      51 </span>            :  * CRC initial value.
+<span class="lineNum">      52 </span>            :  * Using a not zero value allows to detect a leading run of zeros.
+<span class="lineNum">      53 </span>            :  */
+<span class="lineNum">      54 </span>            : #define CRC_IV 0xffffffffU
+<span class="lineNum">      55 </span>            : 
+<span class="lineNum">      56 </span>            : /**
+<span class="lineNum">      57 </span>            :  * CRC-32 (Castagnoli) table.
+<span class="lineNum">      58 </span>            :  */
+<span class="lineNum">      59 </span>            : extern uint32_t CRC32C_0[256];
+<span class="lineNum">      60 </span>            : extern uint32_t CRC32C_1[256];
+<span class="lineNum">      61 </span>            : extern uint32_t CRC32C_2[256];
+<span class="lineNum">      62 </span>            : extern uint32_t CRC32C_3[256];
+<span class="lineNum">      63 </span>            : 
+<span class="lineNum">      64 </span>            : #if HAVE_SSE42
+<span class="lineNum">      65 </span>            : /**
+<span class="lineNum">      66 </span>            :  * If the CPU support the CRC instructions.
+<span class="lineNum">      67 </span>            :  */
+<span class="lineNum">      68 </span>            : extern int crc_x86;
+<span class="lineNum">      69 </span>            : #endif
+<span class="lineNum">      70 </span>            : 
+<span class="lineNum">      71 </span>            : /**
+<a name="72"><span class="lineNum">      72 </span>            :  * Computes CRC-32 (Castagnoli) for a single byte without IV.</a>
+<span class="lineNum">      73 </span>            :  */
+<span class="lineNum">      74 </span><span class="lineCov">  134187612 : static inline uint32_t crc32c_plain(uint32_t crc, unsigned char c)</span>
+<span class="lineNum">      75 </span>            : {
+<span class="lineNum">      76 </span>            : #if HAVE_SSE42
+<span class="lineNum">      77 </span><span class="lineCov">  134187612 :         if (tommy_likely(crc_x86)) {</span>
+<span class="lineNum">      78 </span><span class="lineCov">  134187612 :                 asm(&quot;crc32b %1, %0\n&quot; : &quot;+r&quot; (crc) : &quot;m&quot; (c));</span>
+<span class="lineNum">      79 </span><span class="lineCov">  134187612 :                 return crc;</span>
+<span class="lineNum">      80 </span>            :         } else
+<span class="lineNum">      81 </span>            : #endif
+<span class="lineNum">      82 </span>            :         {
+<span class="lineNum">      83 </span><span class="lineNoCov">          0 :                 return CRC32C_0[(crc ^ c) &amp; 0xff] ^ (crc &gt;&gt; 8);</span>
+<span class="lineNum">      84 </span>            :         }
+<span class="lineNum">      85 </span>            : }
+<span class="lineNum">      86 </span>            : 
+<span class="lineNum">      87 </span>            : /**
+<span class="lineNum">      88 </span>            :  * Computes the CRC-32 (Castagnoli)
+<span class="lineNum">      89 </span>            :  */
+<span class="lineNum">      90 </span>            : uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, unsigned size);
+<span class="lineNum">      91 </span>            : uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size);
+<span class="lineNum">      92 </span>            : uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size);
+<span class="lineNum">      93 </span>            : 
+<span class="lineNum">      94 </span>            : /**
+<span class="lineNum">      95 </span>            :  * Initializes the CRC-32 (Castagnoli) support.
+<span class="lineNum">      96 </span>            :  */
+<span class="lineNum">      97 </span>            : void crc32c_init(void);
+<span class="lineNum">      98 </span>            : 
+<span class="lineNum">      99 </span>            : /****************************************************************************/
+<span class="lineNum">     100 </span>            : /* hash */
+<span class="lineNum">     101 </span>            : 
+<span class="lineNum">     102 </span>            : /**
+<span class="lineNum">     103 </span>            :  * Size of the hash.
+<span class="lineNum">     104 </span>            :  */
+<span class="lineNum">     105 </span>            : 
+<span class="lineNum">     106 </span>            : #define HASH_SIZE 16
+<span class="lineNum">     107 </span>            : 
+<span class="lineNum">     108 </span>            : /**
+<span class="lineNum">     109 </span>            :  * Hash kinds.
+<span class="lineNum">     110 </span>            :  */
+<span class="lineNum">     111 </span>            : #define HASH_UNDEFINED 0
+<span class="lineNum">     112 </span>            : #define HASH_MURMUR3 1
+<span class="lineNum">     113 </span>            : #define HASH_SPOOKY2 2
+<span class="lineNum">     114 </span>            : 
+<span class="lineNum">     115 </span>            : /**
+<span class="lineNum">     116 </span>            :  * Computes the HASH of a memory block.
+<span class="lineNum">     117 </span>            :  * Seed is a 128 bit vector.
+<span class="lineNum">     118 </span>            :  */
+<span class="lineNum">     119 </span>            : void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, unsigned size);
+<span class="lineNum">     120 </span>            : 
+<span class="lineNum">     121 </span>            : /**
+<span class="lineNum">     122 </span>            :  * Return the hash name.
+<span class="lineNum">     123 </span>            :  */
+<span class="lineNum">     124 </span>            : const char* hash_config_name(unsigned kind);
+<span class="lineNum">     125 </span>            : 
+<span class="lineNum">     126 </span>            : /****************************************************************************/
+<span class="lineNum">     127 </span>            : /* lock */
+<span class="lineNum">     128 </span>            : 
+<span class="lineNum">     129 </span>            : /**
+<span class="lineNum">     130 </span>            :  * Creates and locks the lock file.
+<span class="lineNum">     131 </span>            :  * Returns -1 on error, otherwise it's the file handle to pass to lock_unlock().
+<span class="lineNum">     132 </span>            :  */
+<span class="lineNum">     133 </span>            : int lock_lock(const char* file);
+<span class="lineNum">     134 </span>            : 
+<span class="lineNum">     135 </span>            : /**
+<span class="lineNum">     136 </span>            :  * Unlocks the lock file.
+<span class="lineNum">     137 </span>            :  * Returns -1 on error.
+<span class="lineNum">     138 </span>            :  */
+<span class="lineNum">     139 </span>            : int lock_unlock(int f);
+<span class="lineNum">     140 </span>            : 
+<span class="lineNum">     141 </span>            : #endif
+<span class="lineNum">     142 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

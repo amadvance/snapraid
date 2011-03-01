@@ -1,0 +1,190 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - tommyds/tommyarrayblkof.h</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">tommyds</a> - tommyarrayblkof.h<span style="font-size: 80%;"> (source / <a href="tommyarrayblkof.h.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">6</td>
+            <td class="headerCovTableEntry">6</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2015-05-12</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (c) 2013, Andrea Mazzoleni. All rights reserved.
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * Redistribution and use in source and binary forms, with or without
+<span class="lineNum">       5 </span>            :  * modification, are permitted provided that the following conditions
+<span class="lineNum">       6 </span>            :  * are met:
+<span class="lineNum">       7 </span>            :  *
+<span class="lineNum">       8 </span>            :  * 1. Redistributions of source code must retain the above copyright
+<span class="lineNum">       9 </span>            :  *    notice, this list of conditions and the following disclaimer.
+<span class="lineNum">      10 </span>            :  *
+<span class="lineNum">      11 </span>            :  * 2. Redistributions in binary form must reproduce the above copyright
+<span class="lineNum">      12 </span>            :  *    notice, this list of conditions and the following disclaimer in the
+<span class="lineNum">      13 </span>            :  *    documentation and/or other materials provided with the distribution.
+<span class="lineNum">      14 </span>            :  *
+<span class="lineNum">      15 </span>            :  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
+<span class="lineNum">      16 </span>            :  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+<span class="lineNum">      17 </span>            :  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+<span class="lineNum">      18 </span>            :  * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+<span class="lineNum">      19 </span>            :  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+<span class="lineNum">      20 </span>            :  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+<span class="lineNum">      21 </span>            :  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+<span class="lineNum">      22 </span>            :  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+<span class="lineNum">      23 </span>            :  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+<span class="lineNum">      24 </span>            :  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+<span class="lineNum">      25 </span>            :  * POSSIBILITY OF SUCH DAMAGE.
+<span class="lineNum">      26 </span>            :  */
+<span class="lineNum">      27 </span>            : 
+<span class="lineNum">      28 </span>            : /** \file
+<span class="lineNum">      29 </span>            :  * Dynamic array based on blocks of fixed size.
+<span class="lineNum">      30 </span>            :  *
+<span class="lineNum">      31 </span>            :  * This array is able to grow dynamically upon request, without any reallocation.
+<span class="lineNum">      32 </span>            :  *
+<span class="lineNum">      33 </span>            :  * This is very similar at ::tommy_arrayblk, but it allows to store elements of any
+<span class="lineNum">      34 </span>            :  * size and not just pointers.
+<span class="lineNum">      35 </span>            :  *
+<span class="lineNum">      36 </span>            :  * Note that in this case tommy_arrayblkof_ref() returns a pointer at the element,
+<span class="lineNum">      37 </span>            :  * that should be used for getting and setting elements in the array,
+<span class="lineNum">      38 </span>            :  * as generic getter and setter are not available.
+<span class="lineNum">      39 </span>            :  */
+<span class="lineNum">      40 </span>            : 
+<span class="lineNum">      41 </span>            : #ifndef __TOMMYARRAYBLKOF_H
+<span class="lineNum">      42 </span>            : #define __TOMMYARRAYBLKOF_H
+<span class="lineNum">      43 </span>            : 
+<span class="lineNum">      44 </span>            : #include &quot;tommytypes.h&quot;
+<span class="lineNum">      45 </span>            : #include &quot;tommyarray.h&quot;
+<span class="lineNum">      46 </span>            : 
+<span class="lineNum">      47 </span>            : #include &lt;assert.h&gt; /* for assert */
+<span class="lineNum">      48 </span>            : 
+<span class="lineNum">      49 </span>            : /******************************************************************************/
+<span class="lineNum">      50 </span>            : /* array */
+<span class="lineNum">      51 </span>            : 
+<span class="lineNum">      52 </span>            : /**
+<span class="lineNum">      53 </span>            :  * Elements for each block.
+<span class="lineNum">      54 </span>            :  */
+<span class="lineNum">      55 </span>            : #define TOMMY_ARRAYBLKOF_SIZE (4 * 1024)
+<span class="lineNum">      56 </span>            : 
+<span class="lineNum">      57 </span>            : /**
+<span class="lineNum">      58 </span>            :  * Array container type.
+<span class="lineNum">      59 </span>            :  * \note Don't use internal fields directly, but access the container only using functions.
+<span class="lineNum">      60 </span>            :  */
+<span class="lineNum">      61 </span>            : typedef struct tommy_arrayblkof_struct {
+<span class="lineNum">      62 </span>            :         tommy_array block; /**&lt; Array of blocks. */
+<span class="lineNum">      63 </span>            :         tommy_size_t element_size; /**&lt; Size of the stored element in bytes. */
+<span class="lineNum">      64 </span>            :         tommy_count_t count; /**&lt; Number of initialized elements in the array. */
+<span class="lineNum">      65 </span>            : } tommy_arrayblkof;
+<span class="lineNum">      66 </span>            : 
+<span class="lineNum">      67 </span>            : /**
+<span class="lineNum">      68 </span>            :  * Initializes the array.
+<span class="lineNum">      69 </span>            :  * \param element_size Size in byte of the element to store in the array.
+<span class="lineNum">      70 </span>            :  */
+<span class="lineNum">      71 </span>            : void tommy_arrayblkof_init(tommy_arrayblkof* array, tommy_size_t element_size);
+<span class="lineNum">      72 </span>            : 
+<span class="lineNum">      73 </span>            : /**
+<span class="lineNum">      74 </span>            :  * Deinitializes the array.
+<span class="lineNum">      75 </span>            :  */
+<span class="lineNum">      76 </span>            : void tommy_arrayblkof_done(tommy_arrayblkof* array);
+<span class="lineNum">      77 </span>            : 
+<span class="lineNum">      78 </span>            : /**
+<span class="lineNum">      79 </span>            :  * Grows the size up to the specified value.
+<span class="lineNum">      80 </span>            :  * All the new elements in the array are initialized with the 0 value.
+<span class="lineNum">      81 </span>            :  */
+<span class="lineNum">      82 </span>            : void tommy_arrayblkof_grow(tommy_arrayblkof* array, tommy_count_t size);
+<span class="lineNum">      83 </span>            : 
+<span class="lineNum">      84 </span>            : /**
+<span class="lineNum">      85 </span>            :  * Gets a reference of the element at the specified position.
+<span class="lineNum">      86 </span>            :  * You must be sure that space for this position is already
+<a name="87"><span class="lineNum">      87 </span>            :  * allocated calling tommy_arrayblkof_grow().</a>
+<span class="lineNum">      88 </span>            :  */
+<span class="lineNum">      89 </span><span class="lineCov">    6475035 : tommy_inline void* tommy_arrayblkof_ref(tommy_arrayblkof* array, tommy_count_t pos)</span>
+<span class="lineNum">      90 </span>            : {
+<span class="lineNum">      91 </span>            :         unsigned char* base;
+<span class="lineNum">      92 </span>            : 
+<span class="lineNum">      93 </span><span class="lineCov">    6475035 :         assert(pos &lt; array-&gt;count);</span>
+<span class="lineNum">      94 </span>            : 
+<span class="lineNum">      95 </span><span class="lineCov">    6475035 :         base = tommy_cast(unsigned char*, tommy_array_get(&amp;array-&gt;block, pos / TOMMY_ARRAYBLKOF_SIZE));</span>
+<span class="lineNum">      96 </span>            : 
+<span class="lineNum">      97 </span><span class="lineCov">    6475035 :         return base + (pos % TOMMY_ARRAYBLKOF_SIZE) * array-&gt;element_size;</span>
+<span class="lineNum">      98 </span>            : }
+<span class="lineNum">      99 </span>            : 
+<span class="lineNum">     100 </span>            : /**
+<a name="101"><span class="lineNum">     101 </span>            :  * Gets the initialized size of the array.</a>
+<span class="lineNum">     102 </span>            :  */
+<span class="lineNum">     103 </span><span class="lineCov">    5183926 : tommy_inline tommy_count_t tommy_arrayblkof_size(tommy_arrayblkof* array)</span>
+<span class="lineNum">     104 </span>            : {
+<span class="lineNum">     105 </span><span class="lineCov">    5183926 :         return array-&gt;count;</span>
+<span class="lineNum">     106 </span>            : }
+<span class="lineNum">     107 </span>            : 
+<span class="lineNum">     108 </span>            : /**
+<span class="lineNum">     109 </span>            :  * Gets the size of allocated memory.
+<span class="lineNum">     110 </span>            :  */
+<span class="lineNum">     111 </span>            : tommy_size_t tommy_arrayblkof_memory_usage(tommy_arrayblkof* array);
+<span class="lineNum">     112 </span>            : 
+<span class="lineNum">     113 </span>            : #endif
+<span class="lineNum">     114 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

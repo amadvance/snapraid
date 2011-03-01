@@ -1,0 +1,255 @@
+<!doctype html public "-//W3C//DTD XHTML 1.1//EN" "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html>
+<head>
+<link rel="stylesheet" type="text/css" href="style.css" />
+<title>SnapRAID</title>
+<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
+<meta http-equiv="cache-control" content="no-cache" />
+<meta name="description" content="Disk array backup with snapshot raid" />
+<meta name="keywords" content="snapraid snapshot raid backup disk array" />
+<meta name="author" content="Andrea Mazzoleni" />
+<script type="text/javascript">
+
+  var _gaq = _gaq || [];
+  _gaq.push(['_setAccount', 'UA-21967501-1']);
+  _gaq.push(['_trackPageview']);
+
+  (function() {
+    var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+    ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+    var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+  })();
+
+</script>
+</head>
+<body>
+<div id="title">
+</div>
+<div id="bar">
+<a href="index.html">About</a>
+<a href="download.html">Download</a>
+<a href="design.html">Design</a>
+<a href="compare.html">Compare</a>
+<a href="faq.html">FAQ</a>
+<a href="manual.html">Manual</a>
+<a href="https://sourceforge.net/p/snapraid/discussion/1677233/">Forum</a>
+<a href="authors.html">Authors</a>
+</div>
+<div id="main">
+
+
+
+
+<p>
+<span class="bold">SnapRAID</span> is only one of the available <span class="bold">not standard RAID</span> solutions for disk arrays.
+</p>
+
+<p>
+The best known others are:
+<ul>
+<li><a href="http://www.lime-technology.com/">unRAID</a>
+- Commercial and OpenSource GPL2 solution. A modified version of the Linux Reiserfs filesystem with real-time redundancy.
+No integrity checksum is supported.
+</li>
+<li><a href="http://www.flexraid.com/">FlexRAID</a>
+- Commercial and proprietary C++/Java application for Windows, with some limited support for Linux.
+It supports both snapshot redundancy and real-time redundancy, with integrity checksum.
+</li>
+<li><a href="http://www.vilett.com/disParity/forum/">disParity</a>
+- Proprietary .NET application for Windows supporting snapshot redundancy and integrity checksum.
+</li>
+<li><a href="http://en.wikipedia.org/wiki/ZFS">ZFS</a>
+- OpenSource filesystem (but GPL incompatible) with real-time redundancy and integrity checksum.
+</li>
+<li><a href="http://en.wikipedia.org/wiki/btrfs">Btrfs</a>
+- OpenSource filesystem GPL2 with real-time redundancy.
+From Linux 3.9 it supports <a href="http://lwn.net/Articles/536038/">RAID5/6 redundancy</a> and integrity checksums.
+</li>
+<li><a href="http://blogs.msdn.com/b/b8/archive/2012/01/05/virtualizing-storage-for-scale-resiliency-and-efficiency.aspx">Storage Spaces</a>
+- The last contender from Microsoft, and integrated into Windows 8.
+Proprietary with real-time redundancy. Checksumming is not supported, but it could be provided by
+<a href="http://blogs.msdn.com/b/b8/archive/2012/01/16/building-the-next-generation-file-system-for-windows-refs.aspx">ReFS</a>.
+But with some <a href="http://helgeklein.com/blog/2012/03/windows-8-storage-spaces-bugs-and-design-flaws/">limitations</a>.
+</li>
+</ul>
+</p>
+
+<p>
+The main factor to categorize them is when the redundancy information is updated.
+In <span class="bold">real-time</span> solutions the parity data is updated in real-time,
+without an explicit action from the user. Like in standard RAID.
+In <span class="bold">snapshot</span> solutions the parity data is updated only upon
+an explicit request from the user. Like in backups.
+</p>
+
+<p>
+Other important factors are the support of an <span class="bold">integrity</span> checksum
+to identify <a href="http://www.zdnet.com/blog/storage/data-corruption-is-worse-than-you-know/191">silent data corruption</a>
+and the possibility to <span class="bold">fix it</span>,
+if you can <span class="bold">use already filled disk</span>,
+if you can <span class="bold">recover your data from not broken disks</span> when you get too many failures to have a full recover,
+and if <span class="bold">all your disks are spinning when reading one file</span>.
+</p>
+
+<table class="compare">
+<tr><th></th><th><span class="bold">SnapRAID</span></th><th>unRAID</th><th>FlexRAID</th><th>disParity</th><th>ZFS</th><th>Btrfs</th><th>Storage Spaces</th></tr>
+
+<tr><td><span class="bold">Redundancy model</span><br/>Real-time computes parity at real-time like RAID,
+snapshot at request time, like Backup.</td>
+<td>Snapshot</td><td>Real-time</td><td>Real-time<br/>Snapshot</td><td>Snapshot</td><td>Real-time<br/>Snapshot</td><td>Real-time<br/>Snapshot</td><td>Real-time</td></tr>
+
+<tr><td><span class="bold">Integrity</span><br/>
+If data is validated with some kind of checksum,
+and which one is the default.
+<td>Yes<br/>SpookyHash<br/>128 bit</td><td>No</td><td>Yes<br/>Adler32<br/>32 bit</td><td>Yes<br/>MD5<br>128 bit</td><td>Yes<br/>fletcher4<br/>256 bit</td><td>Yes<br/>CRC32C<br/>32 bit</td><td>No</td></tr>
+
+<tr><td><span class="bold">Fix silent errors</span><br/>
+If silent errors are detected and fixed before they can propagate into the parity.
+<td>Yes</td><td>No <a href="#1">[1]</a></td><td>No <a href="#2">[2]</a></td><td>No</td><td>Yes <a href="#3">[3]</a></td><td>Yes <a href="#3">[3]</td><td>No</td></tr>
+
+<!---
+Silent error discussion in UnRAID Forum:
+unRAID vs ZFS
+http://lime-technology.com/forum/index.php?topic=27488
+
+In case of silent error in a data disk unRAID automatically
+fixes the parity hiding the error forever.
+http://lime-technology.com/forum/index.php?topic=29459
+
+Corrective parity check after unclean shutdown
+http://lime-technology.com/forum/index.php?topic=25416
+
+Neil Brown statement about linux-raid NOT doing smart recovery
+to recover silent errors
+http://neil.brown.name/blog/20100211050355
+
+Brahim statement about data-rot
+http://forum.flexraid.com/index.php/topic,23.msg256.html#msg256
+http://forum.flexraid.com/index.php/topic,1753.msg12512.html#msg12512
+http://www.openegg.org/forums/posts/list/727.page
+-->
+
+<tr><td><span class="bold">Number of failures</span><br/>
+How many disk failures are supported? 1 is for RAID5, 2 for RAID6.
+</td>
+<td>1 2 3 4 5 6</td><td>1</td><td>1 2 3 4 5 6+</td><td>1</td><td>1 2 3</td><td>1 2</td><td>1</td></tr>
+
+<tr><td><span class="bold">Other failures</span><br/>If more disks fail than the supported redundancy model,
+is it possible to recover the data in the not failed disks?</td>
+<td>Yes</td><td>Yes</td><td>Yes</td><td>Yes</td><td>No</td><td>No</td><td>No</td></tr>
+
+<tr><td><span class="bold">Power/Noise</span><br/>How many disks are spinning when reading a single file?</td>
+<td>One</td><td>One</td><td>One</td><td>One</td><td>All</td><td>All</td><td>All</td></tr>
+
+<tr><td><span class="bold">Filled disk</span><br/>Can you start with already filled disks?</td>
+<td>Yes</td><td>No<a href="#4">[4]</td><td>Yes</td><td>Yes</td><td>No</td><td>No</td><td>No</td></tr>
+
+<tr><td><span class="bold">Operating system</span><br/>Which OS is supported?</td>
+<td>Linux<br/>Windows<br/>Mac&nbsp;OS&nbsp;X<br/>OpenIndiana<br/>Solaris<br/>BSD</td><td>Linux</td><td>Windows<br/>Linux</td><td>Windows</td><td>Linux <a href="#5">[5]</a><br/>Mac&nbsp;OS&nbsp;X<br/>OpenIndiana<br/>Solaris<br/>BSD</td><td>Linux</td><td>Windows</td></tr>
+
+<tr><td><span class="bold">Age</span><br/>The year of the first official release supporting at least RAID5 redundancy.</td>
+<td>2011</td><td>2005</td><td>2008</td><td>2009</td><td>2005</td><td>2013</td><td>2012</td></tr>
+
+<!---
+ZFS 2009 is the data of the "Triple-Parity RAID-Z" article by Adam Leventhal
+-->
+
+<tr><td><span class="bold">License/Price</span><br/>
+Software license and price.
+</td>
+<td>Open Source GPL3<br/>Free</td><td>Open Source GPL2<br/>89$/129$</td><td>Proprietary<br/>40$/60$</td><td>Proprietary<br/>Free</td><td>Open Source CDDL<br/>Free</td><td>Open Source GPL2<br/>Free</td><td>Proprietary<br/>Windows 8</td></tr>
+
+<tr><td><span class="bold">Interface</span><br/>Which interface is provided? GUI or command line?</td>
+<td>
+command line<br/>or <a href="http://elucidate.codeplex.com/">Elucidate</a> GUI,
+or plugin for for <a href="http://www.openmediavault.org/">OpenMediaVault</a>
+</td><td>command line<br/>GUI</td><td>GUI</td><td>command line</td><td>command line<br/>GUI/Plugins <a href="#6">[6]</a></td><td>command line</td><td>GUI</td></tr>
+
+</table>
+
+<h3>Notes</h3>
+
+<p>
+<a id="1">[1]</a> - unRAID doesn't have any kind of checksum, and it just ignores silent errors.
+Even worse, if a parity error is detected as result of a silent error in the data,
+the parity is automatically recomputed, making impossible to recover the silent error, even manually.
+</p>
+
+<p>
+<a id="2">[2]</a> - Flexraid uses checksums to validate files, but such checksums
+<a href="http://forum.flexraid.com/index.php/topic,3233.0.html">are not verified when data is read to update the parity</a>.
+This means that any silent error present will propagate into the parity,
+making impossible to fix it later, even if it can be still detected comparing the file checksum.
+<br/>
+You can get in a state where the "Validate" operation
+reports errors, but the "Verify" one reports no problem in the parity,
+making impossible to fix the errors.
+</p>
+
+<p>
+<a id="3">[3]</a> - ZFS and Btrfs provide a bit-rot protection at the same level of SnapRAID,
+always checking data before using it.
+In this regards all the three solutions represent the state-of-the-art.
+<br/>
+A cons of ZFS is that the default <a href="http://en.wikipedia.org/wiki/Fletcher%27s_checksum">Fletcher</a>
+checksum is a choice that favorites speed over quality.
+The same for the default CRC32C used by Btrfs.
+The 128 bits <a href="http://burtleburtle.net/bob/hash/spooky.html">SpookyHash</a>
+used by SnapRAID is instead the state-of-the-art in checksumming quality,
+without compromising in speed.
+<br/>
+Another cons of ZFS is that it lacks a fast RAID implementation in assembler.
+It only has a C implementation, that is from two to four times slower than SnapRAID/Btrfs.
+<br/>
+ZFS also uses a sub-optimal RAID-Z3 algorithm, that requires double computations than the equivalent SnapRAID's z-parity.
+<br/>
+Instead, both SnapRAID and Btrfs use top-notch assembler implementations to compute the RAID parity,
+always using the best known RAID algorithm and implementation.
+</p>
+
+<p>
+<a id="4">[4]</a> - unRAID allows to use filled disks but only if they are already
+formatted with the ReiserFS filesystem.
+</p>
+
+<p>
+<a id="5">[5]</a> - ZFS is also available in Linux at kernel level using <a href="http://zfsonlinux.org/">ZFS on Linux</a>.
+</p>
+
+<p>
+<a id="6">[6]</a> - ZFS has external GUIs, like <a href="http://www.napp-it.org/">Napp-it</a>
+and plugins for <a href="http://www.freenas.org/">FreeNAS</a> and <a href="http://www.nas4free.org/">NAS4Free</a>.
+</p>
+
+<p>
+If you think that some information reported is incorrect or simply unfair, please report it in the <a href="https://sourceforge.net/p/snapraid/discussion/1677233/">Forum</a>.
+</p>
+
+
+</div>
+
+<div id="bottombar">
+
+<div style="float: left; width: 50%;">
+<span class="bold">Donate with</span>
+<br/>
+<a href="http://sourceforge.net/p/snapraid/donate/"><img src="paypal.png"/></a>
+
+<!-- <a href="https://coinbase.com/checkouts/ab4deed1c73dca450ff7ea4b10f4f7ce"><img src="bitcoin.png"/></a> -->
+<a href="https://coinkite.com/u/amadvance/"><img src="bitcoin.png"/></a>
+</div>
+
+<div style="float: left; width: 50%;">
+<span class="bold">Find other resources at</span>
+<br/>
+<a href="https://github.com/amadvance/snapraid/"><img src="github.png"/></a>
+<a href="http://sourceforge.net/projects/snapraid/"><img src="sourceforge.png"/></a>
+<a href="https://travis-ci.org/amadvance/snapraid/"><img src="travisci.png"/></a>
+</div>
+
+</div>
+</body>
+</html>
+
+
+
