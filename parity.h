@@ -15,17 +15,26 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "portable.h"
+#ifndef __PARITY_H
+#define __PARITY_H
 
-#include "util.h" /* for safe_malloc */
+/****************************************************************************/
+/* parity */
 
-/* redefine the malloc for tommy use */
-#define tommy_malloc malloc_nofail
-#define tommy_free free
+/**
+ * Computes the size of the parity data in number of blocks.
+ */
+pos_t parity_resize(struct snapraid_state* state);
 
-/* include tommy source */
-#include "tommylist.c"
-#include "tommyhash.c"
-#include "tommyhashdyn.c"
-#include "tommyarray.c"
+int parity_create(const char* path, off_t size);
+
+int parity_open(int ret_on_error, const char* path);
+
+void parity_close(const char* path, int f);
+
+void parity_write(const char* parity_path, int parity_f, pos_t pos, unsigned char* block_buffer, unsigned block_size);
+
+int parity_read(int ret_on_error, const char* parity_path, int parity_f, pos_t pos, unsigned char* block_buffer, unsigned block_size);
+
+#endif
 

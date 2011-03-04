@@ -15,6 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+#ifndef __UTIL_H
+#define __UTIL_H
+
 /****************************************************************************/
 /* string */
 
@@ -167,4 +170,20 @@ static inline char* strdechex(void* void_data, unsigned data_len, char* str)
 
 	return 0;
 }
+
+/****************************************************************************/
+/* memory */
+
+/**
+ * Safe malloc.
+ * If no memory is available, it aborts.
+ */
+void* malloc_nofail(size_t size);
+
+/**
+ * Xor two memory blocks.
+ */
+void memxor(unsigned char* xor, const unsigned char* block, unsigned size);
+
+#endif
 
