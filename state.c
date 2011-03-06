@@ -487,4 +487,3 @@ int state_progress(time_t* start, time_t* last, pos_t blockpos, pos_t blockmax, 
 	return 0;
 }
 
-

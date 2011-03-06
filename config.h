@@ -101,12 +101,6 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #define HAVE_UNISTD_H 1
 
-/* Define to 1 if you have the <utime.h> header file. */
-#define HAVE_UTIME_H 1
-
-/* Define to 1 if `utime(file, NULL)' sets file's timestamp to the present. */
-#define HAVE_UTIME_NULL 1
-
 /* Define to 1 if you have the `vsnprintf' function. */
 #define HAVE_VSNPRINTF 1
 
@@ -126,7 +120,7 @@
 #define PACKAGE_TARNAME "snapraid"
 
 /* Define to the home page for this package. */
-#define PACKAGE_URL ""
+#define PACKAGE_URL "http://snapraid.sourceforge.net"
 
 /* Define to the version of this package. */
 #define PACKAGE_VERSION "0.1"

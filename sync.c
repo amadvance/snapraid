@@ -162,3 +162,4 @@ void state_sync(struct snapraid_state* state, pos_t blockstart)
 
 	parity_close(path, f);
 }
+

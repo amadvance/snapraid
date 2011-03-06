@@ -25,16 +25,16 @@
 /* main */
 
 void version(void) {
-	printf(PACKAGE " v" VERSION " by Andrea Mazzoleni\n");
+	printf(PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
 }
 
 void usage(void) {
 	version();
 
-	printf("Usage: snapraid [options]\n");
+	printf("Usage: " PACKAGE " [options]\n");
 	printf("\n");
 	printf("Options:\n");
-	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE    ", "-c") "  Configuration file (default /etc/snapraid.conf)\n");
+	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE    ", "-c") "  Configuration file (default /etc/" PACKAGE ".conf)\n");
 	printf("  " SWITCH_GETOPT_LONG("-s, --start BLK    ", "-s") "  Start from the specified block number\n");
 	printf("  " SWITCH_GETOPT_LONG("-f, --force        ", "-f") "  Force dangerous operations\n");
 	printf("  " SWITCH_GETOPT_LONG("-v, --verbose      ", "-v") "  Verbose\n");
@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
 	pos_t blockstart;
 
 	/* defaults */
-	conf = "/etc/snapraid.conf";
+	conf = "/etc/" PACKAGE ".conf";
 	verbose = 0;
 	force = 0;
 	blockstart = 0;

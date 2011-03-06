@@ -116,3 +116,4 @@ void disk_free(struct snapraid_disk* disk)
 	tommy_array_done(&disk->blockarr);
 	free(disk);
 }
+

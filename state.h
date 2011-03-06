@@ -69,3 +69,4 @@ void state_check(struct snapraid_state* state, int fix, pos_t blockstart);
 int state_progress(time_t* start, time_t* last, pos_t blockpos, pos_t blockmax, uint64_t count_block, uint64_t count_size);
 
 #endif
+

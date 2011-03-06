@@ -1,5 +1,10 @@
-SNAPRAID
+SnapRAID
 ========
 
+SnapRAID is a backup program for a disk array using redundancy.
+Just like a RAID system but based on snapshots.
 
+The official site of SnapRAID is:
+
+    http://snapraid.sourceforge.net
 

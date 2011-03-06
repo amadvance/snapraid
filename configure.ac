@@ -1,10 +1,10 @@
 dnl Process this file with autoconf to produce a configure script.
-AC_INIT([snapraid], [0.1])
+AC_PREREQ([2.65])
+AC_INIT([snapraid], [0.1], [], [], [http://snapraid.sourceforge.net])
 AM_INIT_AUTOMAKE([foreign no-dependencies])
 AC_CONFIG_SRCDIR([snapraid.c])
 AC_CONFIG_HEADER([config.h])
 AC_CANONICAL_HOST
-AC_COPYRIGHT([Copyright 2011 Andrea Mazzoleni])
 
 dnl Checks for programs.
 AC_PROG_CC
@@ -16,8 +16,7 @@ dnl Checks for header files.
 AC_HEADER_STDC
 AC_HEADER_DIRENT
 AC_HEADER_TIME
-AC_FUNC_UTIME_NULL
-AC_CHECK_HEADERS([unistd.h getopt.h stdint.h])
+AC_CHECK_HEADERS([fcntl.h stddef.h stdint.h stdlib.h string.h sys/time.h unistd.h getopt.h])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -25,10 +24,18 @@ AC_C_INLINE
 AC_C_RESTRICT
 AC_C_VOLATILE
 AC_TYPE_SIZE_T
+AC_TYPE_OFF_T
+AC_TYPE_SIZE_T
+AC_TYPE_SSIZE_T
+AC_TYPE_UINT32_T
+AC_TYPE_UINT64_T
+AC_TYPE_UINT8_T
 
 dnl Checks for library functions.
+AC_FUNC_MALLOC
+AC_CHECK_FUNCS([memset strchr strerror strrchr])
 AC_CHECK_FUNCS([getopt getopt_long snprintf vsnprintf])
-AC_CHECK_FUNCS([fsync fallocate])
+AC_CHECK_FUNCS([ftruncate fsync posix_fallocate posix_fadvise pread pwrite])
 
 dnl Configure for 64 bit files
 CFLAGS="$CFLAGS -D_FILE_OFFSET_BITS=64"

@@ -5,11 +5,23 @@ snapraid_SOURCES = \
 	snapraid.c \
 	getopt.c \
 	md5.c \
-	tommy.c
-
+	tommy.c \
+	util.c \
+	elem.c \
+	state.c \
+	scan.c \
+	sync.c \
+	check.c \
+	parity.c \
+	handle.c
 
 noinst_HEADERS = \
 	portable.h \
+	util.h \
+	elem.h \
+	state.h \
+	parity.h \
+	handle.h \
 	md5.h \
 	tommyarray.h \
 	tommychain.h \
@@ -17,7 +29,6 @@ noinst_HEADERS = \
 	tommyhashdyn.h \
 	tommylist.h \
 	tommytypes.h \
-	util.h \
 	tommyarray.c \
 	tommyhash.c \
 	tommyhashdyn.c \
@@ -30,6 +41,7 @@ EXTRA_DIST = \
 	autogen.sh \
 	noautomake.sh \
 	README AUTHORS HISTORY INSTALL COPYING \
+	snapraid.d snapraid.1 snapraid.txt snapraid.html \
 	test.conf \
 	acinclude.m4
 
@@ -37,7 +49,11 @@ clean-local:
 	rm -f valgrind.log callgrind.log
 	rm -rf test
 
-CHECK = ./snapraid -v -c test.conf sync
+maintainer-clean-local:
+	rm -f README AUTHORS HISTORY INSTALL
+	rm -f snapraid.1 snapraid.txt snapraid.html
+
+CHECK = ./snapraid -v -c test.conf fix
 
 check-local:
 	rm -rf test
@@ -45,14 +61,29 @@ check-local:
 	mkdir test/disk1
 	mkdir test/disk2
 	mkdir test/disk3
+	echo Create some files, sync and check
 	./testgen 1 3 2000
-	./snapraid -v -c $(srcdir)/test.conf sync
-	./snapraid -v -c $(srcdir)/test.conf check
+	./snapraid -c $(srcdir)/test.conf sync
+	./snapraid -c $(srcdir)/test.conf check
+	echo Create some more files, sync and check
 	./testgen 2 3 2000
-	./snapraid -v -c $(srcdir)/test.conf sync
-	./snapraid -v -c $(srcdir)/test.conf check
+	./snapraid -c $(srcdir)/test.conf sync
+	./snapraid -c $(srcdir)/test.conf check 
+	echo Delete some files, fix and check
 	rm test/disk1/a*
-	./snapraid -v -c $(srcdir)/test.conf check
+	./snapraid -c $(srcdir)/test.conf check 2>/dev/null
+	./snapraid -c $(srcdir)/test.conf fix 2>/dev/null
+	./snapraid -c $(srcdir)/test.conf check
+	echo Delete the parity, fix and check
+	rm test/parity
+	./snapraid -c $(srcdir)/test.conf check 2>/dev/null
+	./snapraid -c $(srcdir)/test.conf fix 2>/dev/null
+	./snapraid -c $(srcdir)/test.conf check
+	echo Corrupt the parity, fix and check
+	dd if=/dev/zero of=test/parity bs=1024 count=1000 seek=1000 conv=notrunc
+	./snapraid -c $(srcdir)/test.conf check 2>/dev/null
+	./snapraid -c $(srcdir)/test.conf fix 2>/dev/null
+	./snapraid -c $(srcdir)/test.conf check
 	echo Success!
 
 valgrind:
@@ -80,4 +111,33 @@ cachegrind:
 		-v $(CHECK) \
 		2> cachegrind.log
 		tail cachegrind.log
+
+# Rules for documentation
+
+%.1 : %.d
+	advd2 man < $(srcdir)/$< > $@
+
+%.txt : %.d
+	advd2 txt < $(srcdir)/$< | todos > $@
+
+%.html : %.d
+	advd2 html < $(srcdir)/$< > $@
+
+%.hh : %.d
+	advd2 frame < $(srcdir)/$< > $@
+
+# Windows distribution
+
+DISTWIN = \
+	snapraid.txt \
+	snapraid.html \
+	snapraid.exe \
+	snapraid.rc
+
+distwindows: $(DISTWIN)
+	rm -f $(PACKAGE)-$(VERSION)-windows-x86.zip
+	mkdir tmp
+	cp $(DISTWIN) tmp
+	cd tmp && zip -r ../$(PACKAGE)-$(VERSION)-windows-x86.zip *
+	rm -r tmp
 

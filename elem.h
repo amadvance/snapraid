@@ -39,9 +39,9 @@
 
 /**
  * Basic position type.
- * With a 32 bit and 128k block you can address 256 TB.
+ * With 32 bits and 128k blocks you can address 256 TB.
  */
-typedef unsigned pos_t;
+typedef uint32_t pos_t;
 
 struct snapraid_file;
 
@@ -62,7 +62,7 @@ struct snapraid_file {
 	char sub[PATH_MAX]; /**< Sub path of the file. Without the disk dir. The disk is implicit. */
 	uint64_t size; /**< Size of the file. */
 	struct snapraid_block* blockvec; /**< All the blocks of the file. */
-	unsigned blockmax; /**< Number of blocks. */
+	pos_t blockmax; /**< Number of blocks. */
 	time_t mtime; /**< Modification time. */
 	int is_present; /**< If it's seen as present. */
 
