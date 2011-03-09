@@ -1,0 +1,350 @@
+<html>
+<head>
+<title>SnapRAID Backup For Disk Arrays</title>
+</head>
+<body>
+<center><h2>SnapRAID Backup For Disk Arrays</h2></center>
+<h2><a name="1">1</a> 
+Synopsis
+</h2>
+<pre>
+snapraid [-c, --conf CONFIG] [-s, --start BLOCK]
+&nbsp;&nbsp;&nbsp;&nbsp;[-f, --force] [-v, --verbose] [-e, --exclude PATTERN]
+&nbsp;&nbsp;&nbsp;&nbsp;COMMAND
+</pre>
+<p>
+<pre>
+snapraid [-V, --version] [-h, --help]
+</pre>
+<h2><a name="2">2</a> 
+Description
+</h2>
+SnapRAID is a backup program for a disk array using redundancy.
+<p>
+SnapRAID uses a disk of the array to store redundancy information,
+and it allows to recover from a complete disk failure.
+<p>
+SnapRAID is based on the snapshot concept like a backup program.
+You decide the time to make the "sync" of the redundancy information,
+and you are able to restore all the changes done at a disk of the array,
+until the "sync".
+<p>
+The main features of SnapRAID are:
+<ul>
+<li>
+You can start using SnapRAID with already filled disks.
+You do not have to reformat or copy your data.
+</li>
+<li>
+The disks of the array can have different sizes.
+You have only to use the biggest one for the redundancy data.
+</li>
+<li>
+The data in the disks is not changed in any way.
+It doesn't even need write access at the data.
+</li>
+<li>
+If more than one disk fails, you lose the data only on the failed disks.
+All the data in the other disks is safe.
+</li>
+<li>
+It doesn't lock-in your data.
+You can stop using SnapRAID at any time.
+</li>
+</ul>
+<h2><a name="3">3</a> 
+Misfeatures
+</h2>
+SnapRAID is in between a RAID and a backup program trying to get the best
+benefits of them. Altough it also has some downsides that you should
+consider before using it:
+<ul>
+<li>
+You have different filesystems for each disk.
+Using a RAID you have only a big filesystem.
+</li>
+<li>
+It doesn't stripe data.
+With RAID you get a speed boost with striping.
+</li>
+<li>
+It doesn't support realtime recovery.
+With RAID you do not have to stop working when a disk fails.
+</li>
+<li>
+It's able to recover damages only from a single disk.
+With a Backup you are able to recover from a complete
+failure of the whole disk array.
+</li>
+</ul>
+<h2><a name="4">4</a> 
+Getting Started
+</h2>
+To use SnapRAID you need first to mount all the disks of your disk
+array and select which one to dedicate as redundancy information.
+<p>
+This disk will be dedicated to this pourpuse only, and you should
+not store any other data on it.
+<p>
+You have to pick the biggest disk in the array, as the redundancy
+information may grow in size as the biggest data disk in the array.
+<p>
+Suppose now that you have mounted all your disks in the mount points:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+/mnt/diskpar
+/mnt/disk1
+/mnt/disk2
+/mnt/disk3
+</pre>
+</td></tr></table>
+<p>
+you have to create the configuration file /etc/snapraid.conf with
+the following content:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+parity /mnt/diskpar/parity
+content /mnt/diskpar/content
+disk d1 /mnt/disk1/
+disk d2 /mnt/disk2/
+disk d3 /mnt/disk3/
+</pre>
+</td></tr></table>
+<p>
+At this point you are ready to start the "sync" command to build the
+redundancy information.
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+snapraid sync
+</pre>
+</td></tr></table>
+<p>
+This process will take some hours at best the first time, depending on
+the size of the data already present in the data disks.
+If the disks are empty the process is immediate.
+You can stop it at any time pressing Ctrl+C, and at the next run it
+will start where interrupted.
+<p>
+When this command completes, your data is SAFE.
+<p>
+At this point you can start using your data as you like, and peridiocally
+update the redundancy information running the "sync" command.
+<p>
+To check the integrity of your data you can use the "check" command:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+snapraid check
+</pre>
+</td></tr></table>
+<p>
+If will read all your data, to check if it's correct.
+<p>
+If an error is found, you can use the "fix" command to fix it.
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+snapraid fix
+</pre>
+</td></tr></table>
+<p>
+Note that the fix command will revert your data at the state of the
+last "sync" command executed. It works like a snapshot was taken
+in "sync".
+<h2><a name="5">5</a> 
+Configuration
+</h2>
+SnapRAID requires a configuration file to know where your disk array
+is located, and where storing the redundancy information.
+<p>
+This configuration file is located in /etc/snapraid.conf and
+it should contains the following options:
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+parity FILE
+</strong></td></tr><tr><td>
+Defines the file to use to store the redundancy information.
+It must be placed in a disk dedicated for this porpose with
+as much free space as the biggest disk in the array.
+This option can be used only one time.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+content FILE
+</strong></td></tr><tr><td>
+Defines the file to use to store the content of the redundancy
+organization.
+It must be placed in the same disk of the parity file, or in
+another location, but not in a disk of the array.
+This option can be used only one time.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+disk NAME DIR
+</strong></td></tr><tr><td>
+Defines the name and the mount point of the disks of the array.
+NAME is used to identify the disk, and it must be unique.
+DIR is the mount point of the disk in the filesystem.
+You can change the mount point as you like, as far you
+keep the NAME fixed.
+You should use one option for each disk of the array.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+block_size SIZE_IN_KILOBYTES
+</strong></td></tr><tr><td>
+Defines the basic block size in kilo bytes of
+the redundancy blocks. The default is 128 and it should
+work for most conditions.
+You should use this option only if you do not have enough
+memory to run SnapRAID.
+It requires to run TS*24/BS bytes, where TS is the total
+size in bytes of your disk array, and BS is the block size
+in bytes.
+</td></tr>
+</table>
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+For example with 6 disk of 2 TB and a block size of 128 kB you
+have:
+</td></tr></table>
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+memory = (6 * 2 * 2^40) * 24 / (128 * 2^10) = 2.3 GB
+</pre>
+</td></tr></table>
+<p>
+An example of a typical configuration is:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+parity /mnt/diskpar/parity
+content /mnt/diskpar/content
+disk d1 /mnt/disk1/
+disk d2 /mnt/disk2/
+disk d3 /mnt/disk3/
+block_size 256
+</pre>
+</td></tr></table>
+<h2><a name="6">6</a> 
+Commands
+</h2>
+SnapRAID provides three simple commands that allow to:
+<ul>
+<li>
+Make a backup/snapshot -&gt; "sync"
+</li>
+<li>
+Check for integrity -&gt; "check"
+</li>
+<li>
+Restore the last backup/snapshot -&gt; "fix".
+</li>
+</ul>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+sync
+</strong></td></tr><tr><td>
+Updates the redundancy information. All the modified files
+in the disk array are read, and the redundancy data is
+updated.
+You can stop this process at any time pressing Ctrl+C,
+without losing the work already done.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+check
+</strong></td></tr><tr><td>
+Checks all the files the redundancy data. All the files
+are hashed and compared with the snapshot saved in the
+previous "sync" command.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+fix
+</strong></td></tr><tr><td>
+Checks and fix all the files. It's like "check" but it
+also tries to fix problems reverting the state of the
+disk array at the previous "sync" command.
+</td></tr>
+</table>
+<h2><a name="7">7</a> 
+Options
+</h2>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-c, --conf CONFIG
+</strong></td></tr><tr><td>
+Selects the configuration file. If not specified is assumed
+the file `/etc/snapraid.conf'.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-s, --start BLOCK
+</strong></td></tr><tr><td>
+Starts the processing from the specified
+block number. It could be useful to easy retry to fix
+some specific block, in case of a damaged disk.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-f, --force
+</strong></td></tr><tr><td>
+Forces insecure operations. If snapraid detects
+an unsafe operation, it stops the execution asking you
+to use this option to force the operation.
+For example, it happens if all the files in a disk are
+missing.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-e, --exclude PATTERN
+</strong></td></tr><tr><td>
+This option define an exclusion pattern to be applyed at
+the files with the "sync" command. It has no effect with
+other commands.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-v, --verboe
+</strong></td></tr><tr><td>
+Prints more information in the processing.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-h, --help
+</strong></td></tr><tr><td>
+Prints a short help screen.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-V, --version
+</strong></td></tr><tr><td>
+Prints the program version.
+</td></tr>
+</table>
+<h2><a name="8">8</a> 
+Copyright
+</h2>
+This file is Copyright (C) 2011 Andrea Mazzoleni
+<h2><a name="9">9</a> 
+See Also
+</h2>
+rsync(1)
+</body>
+</html>

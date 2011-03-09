@@ -32,7 +32,7 @@ Description
 	* It doesn't lock-in your data.
 		You can stop using SnapRAID at any time.
 
-Misfeatures
+Limitations
 	SnapRAID is in between a RAID and a backup program trying to get the best
 	benefits of them. Altough it also has some downsides that you should
 	consider before using it:
@@ -144,7 +144,7 @@ Configuration
 		For example with 6 disk of 2 TB and a block size of 128 kB you
 		have:
 
-			:memory = (6 * 2 * 2^40) * 24 / (128 * 2^10) = 2.3 GB
+		:memory = (6 * 2 * 2^40) * 24 / (128 * 2^10) = 2.3 GB
 
 	An example of a typical configuration is:
 
