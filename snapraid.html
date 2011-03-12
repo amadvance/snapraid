@@ -22,12 +22,10 @@ Description
 SnapRAID is a backup program for a disk array using redundancy.
 <p>
 SnapRAID uses a disk of the array to store redundancy information,
-and it allows to recover from a complete disk failure.
+and it allows to recover from a disk failure.
 <p>
-SnapRAID is based on the snapshot concept like a backup program.
-You decide the time to make the "sync" of the redundancy information,
-and you are able to restore all the changes done at a disk of the array,
-until the "sync".
+SnapRAID is mainly targeted for a home media server, where you have
+a lot of big files that rarely change.
 <p>
 The main features of SnapRAID are:
 <ul>
@@ -40,29 +38,53 @@ The disks of the array can have different sizes.
 You have only to use the biggest one for the redundancy data.
 </li>
 <li>
-The data in the disks is not changed in any way.
-It doesn't even need write access at the data.
+If you accidentally delete some files in a disk, you can
+recover them.
 </li>
 <li>
-If more than one disk fails, you lose the data only on the failed disks.
-All the data in the other disks is safe.
+If more than one disk fails, you lose the data only on the
+failed disks. All the data in the other disks is safe.
 </li>
 <li>
 It doesn't lock-in your data.
-You can stop using SnapRAID at any time.
+You can stop using SnapRAID at any time without the
+need to reformat or move data.
 </li>
 </ul>
+<p>
+The official site of SnapRAID is:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+<a href="http://snapraid.sourceforge.net">http://snapraid.sourceforge.net</a>
+</pre>
+</td></tr></table>
 <h2><a name="3">3</a> 
 Limitations
 </h2>
 SnapRAID is in between a RAID and a backup program trying to get the best
-benefits of them. Altough it also has some downsides that you should
-consider before using it:
-<ul>
-<li>
-You have different filesystems for each disk.
+benefits of them. Altought it also has some limitations that you should
+consider before using it.
+<p>
+The main one, is that if a disk fail, and you haven't recently synched,
+you may not able to do a complete recover.
+More specifically, you may be unable to recover up to the size of the
+amount of the changed or deleted files, from the last sync operation.
+This happens even if the files changed or deleted are not in the
+failed disk.
+New added files don't prevent the recovering of the already existing
+files. You may only lose the just added files, if they were on the failed
+disk.
+<p>
+This is the reason because SnapRAID is better suited for data that
+rarely change.
+<p>
+Other limitations are:
+* You have different filesystems for each disk.
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 Using a RAID you have only a big filesystem.
-</li>
+</td></tr></table>
+<ul>
 <li>
 It doesn't stripe data.
 With RAID you get a speed boost with striping.
@@ -81,7 +103,7 @@ failure of the whole disk array.
 Getting Started
 </h2>
 To use SnapRAID you need first to mount all the disks of your disk
-array and select which one to dedicate as redundancy information.
+array and select which one to dedicate at the redundancy information.
 <p>
 This disk will be dedicated to this pourpuse only, and you should
 not store any other data on it.
@@ -123,7 +145,7 @@ snapraid sync
 </td></tr></table>
 <p>
 This process will take some hours at best the first time, depending on
-the size of the data already present in the data disks.
+the size of the data already present in the disks.
 If the disks are empty the process is immediate.
 You can stop it at any time pressing Ctrl+C, and at the next run it
 will start where interrupted.

@@ -11,9 +11,10 @@ type:
 
     make install
 
-then change the example configuration file snapraid.conf to fit
-your needs and copy it in /etc/snapraid.conf.
+then change the example configuration file snapraid.conf.example
+to fit your needs and copy it in /etc/snapraid.conf
 
 The documentation is in the man page:
 
     man snapraid
+

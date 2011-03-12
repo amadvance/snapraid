@@ -1,5 +1,5 @@
 bin_PROGRAMS = snapraid
-check_PROGRAMS = testgen
+check_PROGRAMS = mktest
 
 snapraid_SOURCES = \
 	snapraid.c \
@@ -33,8 +33,8 @@ noinst_HEADERS = \
 	tommyhashdyn.c \
 	tommylist.c
 
-testgen_SOURCES = \
-	testgen.c
+mktest_SOURCES = \
+	mktest.c
 
 EXTRA_DIST = \
 	autogen.sh \
@@ -63,29 +63,34 @@ check-local:
 	mkdir test/disk1
 	mkdir test/disk2
 	mkdir test/disk3
-	echo Create some files, sync and check
-	./testgen 1 3 2000
+	echo --- Create some files, sync and check
+	./mktest generate 1 3 1000 4000
 	./snapraid -c $(srcdir)/test.conf sync
 	./snapraid -c $(srcdir)/test.conf check
-	echo Create some more files, sync and check
-	./testgen 2 3 2000
+	echo --- Create some more files, sync and check
+	./mktest generate 2 3 1000 4000
 	./snapraid -c $(srcdir)/test.conf sync
 	./snapraid -c $(srcdir)/test.conf check 
-	echo Delete some files, fix and check
+	echo --- Delete some files, fix and check
 	rm test/disk1/a*
 	./snapraid -c $(srcdir)/test.conf check 2>/dev/null
 	./snapraid -c $(srcdir)/test.conf fix 2>/dev/null
 	./snapraid -c $(srcdir)/test.conf check
-	echo Delete the parity, fix and check
+	echo --- Delete the parity, fix and check
 	rm test/parity
 	./snapraid -c $(srcdir)/test.conf check 2>/dev/null
 	./snapraid -c $(srcdir)/test.conf fix 2>/dev/null
 	./snapraid -c $(srcdir)/test.conf check
-	echo Corrupt the parity, fix and check
-	dd if=/dev/zero of=test/parity bs=1024 count=1000 seek=1000 conv=notrunc
+	echo --- Corrupt the parity, fix and check
+	./mktest damage 1 10 10000 test/parity
 	./snapraid -c $(srcdir)/test.conf check 2>/dev/null
 	./snapraid -c $(srcdir)/test.conf fix 2>/dev/null
 	./snapraid -c $(srcdir)/test.conf check
+	echo --- Corrupt some files, fix and check
+	./mktest damage 1 1 500 test/disk2/b*
+	./snapraid -c $(srcdir)/test.conf check 2>/dev/null
+	./snapraid -c $(srcdir)/test.conf fix 2>/dev/null
+	./snapraid -c $(srcdir)/test.conf check	
 	echo Success!
 
 valgrind:

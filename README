@@ -2,9 +2,29 @@ SnapRAID
 ========
 
 SnapRAID is a backup program for a disk array using redundancy.
-Just like a RAID system but based on snapshots.
+
+SnapRAID uses a disk of the array to store redundancy information,
+and it allows to recover from a complete disk failure.
+
+SnapRAID is mainly targeted for a home media server, where you have
+a lot of big files that rarely change.
+
+The main features of SnapRAID are:
+
+* You can start using SnapRAID with already filled disks.
+  You do not have to reformat or copy your data.
+* The disks of the array can have different sizes.
+  You have only to use the biggest one for the redundancy data.
+* If you accidentally delete some files in a disk, you can
+  recover them.
+* If more than one disk fails, you lose the data only on the failed disks.
+  All the data in the other disks is safe.
+* It doesn't lock-in your data.
+  You can stop using SnapRAID at any time.
 
 The official site of SnapRAID is:
 
     http://snapraid.sourceforge.net
+
+
 
