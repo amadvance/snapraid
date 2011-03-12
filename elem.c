@@ -23,7 +23,7 @@
 /****************************************************************************/
 /* snapraid */
 
-pos_t block_file_pos(struct snapraid_block* block)
+block_off_t block_file_pos(struct snapraid_block* block)
 {
 	struct snapraid_file* file = block->file;
 
@@ -37,7 +37,7 @@ pos_t block_file_pos(struct snapraid_block* block)
 
 unsigned block_file_size(struct snapraid_block* block, unsigned block_size)
 {
-	pos_t pos = block_file_pos(block);
+	block_off_t pos = block_file_pos(block);
 
 	/* if it's the last block */
 	if (pos + 1 == block->file->blockmax) {
@@ -53,10 +53,10 @@ unsigned block_file_size(struct snapraid_block* block, unsigned block_size)
 	return block_size;
 }
 
-struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t size, time_t mtime)
+struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, time_t mtime)
 {
 	struct snapraid_file* file;
-	pos_t i;
+	block_off_t i;
 
 	file = malloc_nofail(sizeof(struct snapraid_file));
 	snprintf(file->sub, sizeof(file->sub), "%s", sub);

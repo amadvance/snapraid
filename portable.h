@@ -25,14 +25,9 @@
 /***************************************************************************/
 /* Config */
 
-#ifdef __WIN32__
-/* Customize for Windows Mingw/Cygwin */
-#define HAVE_SYS_TYPES_H 1
-#define HAVE_SYS_STAT_H 1
-#define HAVE_DIRENT_H 1
-#define TIME_WITH_SYS_TIME 1
-#define HAVE_SYS_TIME_H 1
-#define HAVE_UNISTD_H 1
+#ifdef __MINGW32__ /* Specific for MINGW */
+#define __MSVCRT_VERSION__ 0x0601 /* Define the MSVCRT version required */
+#include <windows.h>
 #endif
 
 /* Include some standard headers */
@@ -45,6 +40,7 @@
 #include <assert.h>
 #include <errno.h>
 #include <signal.h>
+#include <limits.h>
 
 #if HAVE_STDINT_H
 #include <stdint.h>
@@ -94,12 +90,6 @@
 #include <getopt.h>
 #endif
 
-#if !HAVE_GETOPT
-int getopt(int argc, char * const *argv, const char *options);
-extern char *optarg;
-extern int optind, opterr, optopt;
-#endif
-
 #if HAVE_GETOPT_LONG
 #define SWITCH_GETOPT_LONG(a,b) a
 #else
@@ -108,6 +98,40 @@ extern int optind, opterr, optopt;
 
 #ifndef O_BINARY
 #define O_BINARY 0
+#endif
+
+#ifdef __MINGW32__ /* Specific for MINGW */
+
+/* Remap functions and types for 64 bit support */
+#define stat _stati64
+#define off_t off64_t
+#define lseek lseek64
+#define fstat _fstati64
+#define HAVE_FTRUNCATE 1
+#define ftruncate _chsize_s
+#define HAVE_FSYNC 1
+#define fsync _commit
+
+#define rename windows_atomic_rename
+static inline int windows_atomic_rename(const char* a, const char* b)
+{
+	if (!MoveFileEx(a, b, MOVEFILE_REPLACE_EXISTING)) {
+		switch (GetLastError()) {
+		case ERROR_ACCESS_DENIED :
+			errno = EACCES;
+			break;
+		case ERROR_FILE_NOT_FOUND :
+			errno = ENOENT;
+			break;
+		default :
+			errno = EIO;
+			break;
+		}
+		return -1;
+	}
+
+	return 0;
+}
 #endif
 
 #endif

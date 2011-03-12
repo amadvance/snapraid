@@ -33,11 +33,11 @@ struct snapraid_scan {
  */
 static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
 {
-	pos_t i;
+	block_off_t i;
 
 	/* free all the blocks of the file */
 	for(i=0;i<file->blockmax;++i) {
-		pos_t block_pos = file->blockvec[i].parity_pos;
+		block_off_t block_pos = file->blockvec[i].parity_pos;
 
 		/* adjust the first free position */
 		if (disk->first_free_block > block_pos)
@@ -59,9 +59,9 @@ static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk*
  */
 static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
 {
-	pos_t i;
-	pos_t block_max;
-	pos_t block_pos;
+	block_off_t i;
+	block_off_t block_max;
+	block_off_t block_pos;
 
 	/* allocate the blocks of the file */
 	block_pos = disk->first_free_block;
@@ -91,21 +91,15 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 	tommy_list_insert_tail(&disk->filelist, &file->nodelist, file);
 }
 
-static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, struct snapraid_disk* disk, const char* path, const char* sub)
+static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, struct snapraid_disk* disk, const char* path, const char* sub, const struct stat* st)
 {
-	struct stat st;
 	struct snapraid_file* file;
-
-	if (stat(path, &st) != 0) {
-		fprintf(stderr, "Error in stat file '%s'\n", path);
-		exit(EXIT_FAILURE);
-	}
 
 	/* check if the file already exists */
 	file = tommy_hashdyn_search(&disk->fileset, file_compare, sub, file_hash(sub));
 	if (file) {
 		/* check if the file is the same */
-		if (file->size == st.st_size && file->mtime == st.st_mtime) {
+		if (file->size == st->st_size && file->mtime == st->st_mtime) {
 			/* mark as present */
 			++scan->count_equal;
 			file->is_present = 1;
@@ -121,7 +115,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 
 	/* create the new file */
 	++scan->count_insert;
-	file = file_alloc(state->block_size, sub, st.st_size, st.st_mtime);
+	file = file_alloc(state->block_size, sub, st->st_size, st->st_mtime);
 	file->is_present = 1;
 
 	/* insert it */
@@ -140,13 +134,21 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, s
 	}
 
 	while ((dd = readdir(d)) != 0) {
-		if (dd->d_type == DT_REG) {
-			char path_next[PATH_MAX];
+		char path[PATH_MAX];
+		struct stat st;
+
+		snprintf(path, sizeof(path), "%s%s", dir, dd->d_name);
+
+		if (stat(path, &st) != 0) {
+			fprintf(stderr, "Error in stat file '%s'\n", path);
+			exit(EXIT_FAILURE);
+		}
+
+		if (S_ISREG(st.st_mode)) {
 			char sub_next[PATH_MAX];
-			snprintf(path_next, sizeof(path_next), "%s%s", dir, dd->d_name);
 			snprintf(sub_next, sizeof(sub_next), "%s%s", sub, dd->d_name);
-			scan_file(scan, state, disk, path_next, sub_next);
-		} else if (dd->d_type == DT_DIR) {
+			scan_file(scan, state, disk, path, sub_next, &st);
+		} else if (S_ISDIR(st.st_mode)) {
 			if (strcmp(dd->d_name, ".") != 0 && strcmp(dd->d_name, "..") != 0 && strcmp(dd->d_name, "lost+found") != 0
 			) {
 				char dir_next[PATH_MAX];

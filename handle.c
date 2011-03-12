@@ -165,14 +165,26 @@ void handle_close(struct snapraid_handle* handle)
 int handle_read(int ret_on_error, struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size)
 {
 	ssize_t read_ret;
-	off_t offset;
+	data_off_t offset;
 	unsigned read_size;
 
-	offset = block_file_pos(block) * (off_t)block_size;
+	offset = block_file_pos(block) * (data_off_t)block_size;
 
 	read_size = block_file_size(block, block_size);
 
+#if HAVE_PREAD
 	read_ret = pread(handle->f, block_buffer, read_size, offset);
+#else
+	if (lseek(handle->f, offset, SEEK_SET) != offset) {
+		if (ret_on_error)
+			return ret_on_error;
+
+		fprintf(stderr, "Error seeking file '%s'. %s.\n", handle->path, strerror(errno));
+		exit(EXIT_FAILURE);  
+	}
+
+	read_ret = read(handle->f, block_buffer, read_size);
+#endif
 	if (read_ret != read_size) {
 		if (ret_on_error)
 			return ret_on_error;
@@ -187,14 +199,23 @@ int handle_read(int ret_on_error, struct snapraid_handle* handle, struct snaprai
 void handle_write(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size)
 {
 	ssize_t write_ret;
-	off_t offset;
+	data_off_t offset;
 	unsigned write_size;
 
-	offset = block_file_pos(block) * (off_t)block_size;
+	offset = block_file_pos(block) * (data_off_t)block_size;
 
 	write_size = block_file_size(block, block_size);
 
+#if HAVE_PWRITE
 	write_ret = pwrite(handle->f, block_buffer, write_size, offset);
+#else
+	if (lseek(handle->f, offset, SEEK_SET) != offset) {
+		fprintf(stderr, "Error seeking file '%s'. %s.\n", handle->path, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	write_ret = write(handle->f, block_buffer, write_size);
+#endif    
 	if (write_ret != write_size) {
 		fprintf(stderr, "Error writing file '%s'. %s.\n", handle->path, strerror(errno));
 		exit(EXIT_FAILURE);

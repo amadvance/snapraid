@@ -8,11 +8,13 @@ AC_CANONICAL_HOST
 
 dnl Checks for programs.
 AC_PROG_CC
+AC_USE_SYSTEM_EXTENSIONS
 
 dnl Checks for libraries.
 AC_SYS_LARGEFILE
 
 dnl Checks for header files.
+AC_HEADER_ASSERT
 AC_HEADER_STDC
 AC_HEADER_DIRENT
 AC_HEADER_TIME
@@ -32,16 +34,10 @@ AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
 
 dnl Checks for library functions.
-AC_FUNC_MALLOC
+AC_SYS_LARGEFILE
 AC_CHECK_FUNCS([memset strchr strerror strrchr])
 AC_CHECK_FUNCS([getopt getopt_long snprintf vsnprintf])
-AC_CHECK_FUNCS([ftruncate fsync posix_fallocate posix_fadvise pread pwrite])
-
-dnl Configure for 64 bit files
-CFLAGS="$CFLAGS -D_FILE_OFFSET_BITS=64"
-
-dnl Enable GLIBC symbols
-AC_DEFINE(_GNU_SOURCE,1,[Enable GLIBC symbols])
+AC_CHECK_FUNCS([ftruncate fsync posix_fallocate posix_fadvise pread pwrite fgetc_unlocked ferror_unlocked])
 
 dnl Checks for architecture
 AC_C_BIGENDIAN

@@ -24,7 +24,7 @@
 /**
  * Max length of a line in the configuration and state files.
  */
-#define LINE_MAX 1024
+#define TEXT_LINE_MAX 1024
 
 void state_init(struct snapraid_state* state)
 {
@@ -35,7 +35,7 @@ void state_init(struct snapraid_state* state)
 	tommy_array_init(&state->diskarr);
 
 	if (sizeof(off_t) < sizeof(uint64_t)) {
-		fprintf(stderr, "Internal inconsistency in off_t type size\n");
+		fprintf(stderr, "Missing support for large files\n");
 		exit(EXIT_FAILURE);
 	}
 }
@@ -70,14 +70,14 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 
 	line = 0;
 	while (1) {
-		char buffer[LINE_MAX];
+		char buffer[TEXT_LINE_MAX];
 		char* tag;
 		char* s;
 		int ret;
 
 		++line;
 
-		ret = strgets(buffer, LINE_MAX, f);
+		ret = strgets(buffer, TEXT_LINE_MAX, f);
 		if (ret < 0) {
 			fprintf(stderr, "Error reading the configuration file '%s' at line %u\n", path, line);
 			exit(EXIT_FAILURE);
@@ -182,14 +182,14 @@ void state_read(struct snapraid_state* state)
 	line = 0;
 	block_index = 0;
 	while (1) {
-		char buffer[LINE_MAX];
+		char buffer[TEXT_LINE_MAX];
 		char* tag;
 		char* s;
 		int ret;
 
 		++line;
 
-		ret = strgets(buffer, LINE_MAX, f);
+		ret = strgets(buffer, TEXT_LINE_MAX, f);
 		if (ret < 0) {
 			fprintf(stderr, "Error reading the state file '%s' at line %u\n", path, line);
 			exit(EXIT_FAILURE);
@@ -213,7 +213,7 @@ void state_read(struct snapraid_state* state)
 			char* size;
 			char* mtime;
 			char* sub;
-			uint64_t v_size;
+			data_off_t v_size;
 			uint64_t v_mtime;
 			unsigned i;
 
@@ -279,7 +279,7 @@ void state_read(struct snapraid_state* state)
 		} else if (strcmp(tag, "blk") == 0) {
 			char* pos;
 			char* hash;
-			pos_t v_pos;
+			block_off_t v_pos;
 			struct snapraid_block* block;
 			char* e;
 
@@ -381,7 +381,7 @@ void state_write(struct snapraid_state* state)
 
 		/* for each file */
 		for(j=disk->filelist;j!=0;j=j->next) {
-			pos_t k;
+			block_off_t k;
 			struct snapraid_file* file = j->data;
 			int ret;
 
@@ -423,10 +423,12 @@ void state_write(struct snapraid_state* state)
 		exit(EXIT_FAILURE);
 	}
 
+#if HAVE_FSYNC    
 	if (fsync(fileno(f)) != 0) {
 		fprintf(stderr, "Error writing the state file '%s' in fsync(). %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
+#endif
 
 	if (fclose(f) != 0) {
 		fprintf(stderr, "Error writing the state file '%s' in close(). %s.\n", path, strerror(errno));
@@ -446,7 +448,7 @@ void state_write(struct snapraid_state* state)
 
 #define PROGRESS_CLEAR "          "
 
-int state_progress(time_t* start, time_t* last, pos_t blockpos, pos_t blockmax, uint64_t count_block, uint64_t count_size)
+int state_progress(time_t* start, time_t* last, block_off_t blockpos, block_off_t blockmax, data_off_t count_block, data_off_t count_size)
 {
 	time_t now;
 
@@ -463,7 +465,7 @@ int state_progress(time_t* start, time_t* last, pos_t blockpos, pos_t blockmax, 
 
 		if (delta > 5 && count_block > 0) {
 			unsigned m, h;
-			uint64_t todo = blockmax - blockpos;
+			data_off_t todo = blockmax - blockpos;
 
 			m = todo * delta / (60 * count_block);
 

@@ -46,7 +46,11 @@ static inline int strgets(char* s, unsigned size, FILE* f)
 	int c;
 
 	while (1) {
+#if HAVE_FGETC_UNLOCKED
 		c = fgetc_unlocked(f);
+#else
+	c = fgetc(f);
+#endif        
 
 		if (c == EOF || c == '\n')
 			break;
@@ -59,7 +63,11 @@ static inline int strgets(char* s, unsigned size, FILE* f)
 	}
 
 	if (c == EOF) {
+#if HAVE_FERROR_UNLOCKED
 		if (ferror_unlocked(f)) {
+#else
+		if (ferror(f)) {
+#endif
 			return -1;
 		}
 		if (i == s)

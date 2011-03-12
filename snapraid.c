@@ -79,8 +79,11 @@ int main(int argc, char* argv[])
 	const char* conf;
 	struct snapraid_state state;
 	int operation;
-	pos_t blockstart;
+	block_off_t blockstart;
 
+	/* intercept Ctrl+C */
+	signal(SIGINT, &signal_handler);    
+    
 	/* defaults */
 	conf = "/etc/" PACKAGE ".conf";
 	verbose = 0;
@@ -138,12 +141,6 @@ int main(int argc, char* argv[])
 		fprintf(stderr, "Unknown command '%s'\n", argv[optind]);
 		exit(EXIT_FAILURE);
 	}
-
-	struct sigaction sig;
-	sig.sa_handler = signal_handler;
-	sigemptyset(&sig.sa_mask);
-	sig.sa_flags = 0;
-	sigaction(SIGINT, &sig, 0);
 
 	state_init(&state);
 

@@ -59,14 +59,14 @@ void state_scan(struct snapraid_state* state);
 /**
  * Sync.
  */
-void state_sync(struct snapraid_state* state, pos_t blockstart);
+void state_sync(struct snapraid_state* state, block_off_t blockstart);
 
 /**
  * Check.
  */
-void state_check(struct snapraid_state* state, int fix, pos_t blockstart);
+void state_check(struct snapraid_state* state, int fix, block_off_t blockstart);
 
-int state_progress(time_t* start, time_t* last, pos_t blockpos, pos_t blockmax, uint64_t count_block, uint64_t count_size);
+int state_progress(time_t* start, time_t* last, block_off_t blockpos, block_off_t blockmax, data_off_t count_block, data_off_t count_size);
 
 #endif
 

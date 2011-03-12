@@ -26,16 +26,16 @@
 /****************************************************************************/
 /* sync */
 
-static void state_sync_process(struct snapraid_state* state, int parity_f, pos_t blockstart, pos_t blockmax)
+static void state_sync_process(struct snapraid_state* state, int parity_f, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
 	unsigned diskmax = tommy_array_size(&state->diskarr);
-	pos_t i;
+	block_off_t i;
 	unsigned j;
 	unsigned char* block_buffer;
 	unsigned char* xor_buffer;
-	uint64_t count_size;
-	uint64_t count_block;
+	data_off_t count_size;
+	data_off_t count_block;
 	time_t start;
 	time_t last;
 
@@ -138,17 +138,17 @@ static void state_sync_process(struct snapraid_state* state, int parity_f, pos_t
 	free(xor_buffer);
 }
 
-void state_sync(struct snapraid_state* state, pos_t blockstart)
+void state_sync(struct snapraid_state* state, block_off_t blockstart)
 {
 	char path[PATH_MAX];
-	pos_t blockmax;
-	off_t size;
+	block_off_t blockmax;
+	data_off_t size;
 	int f;
 
 	printf("Syncing...\n");
 
 	blockmax = parity_resize(state);
-	size = blockmax * (off_t)state->block_size;
+	size = blockmax * (data_off_t)state->block_size;
 
 	if (blockstart >= blockmax) {
 		fprintf(stderr, "The specified starting block %u is bigger than the parity size %u.\n", blockstart, blockmax);
@@ -160,6 +160,8 @@ void state_sync(struct snapraid_state* state, pos_t blockstart)
 
 	state_sync_process(state, f, blockstart, blockmax);
 
+	parity_sync(path, f);
+    
 	parity_close(path, f);
 }
 

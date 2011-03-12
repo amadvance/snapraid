@@ -26,17 +26,17 @@
 /****************************************************************************/
 /* check */
 
-static int state_check_process(int ret_on_error, struct snapraid_state* state, int fix, int parity_f, pos_t blockstart, pos_t blockmax)
+static int state_check_process(int ret_on_error, struct snapraid_state* state, int fix, int parity_f, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
 	unsigned diskmax = tommy_array_size(&state->diskarr);
-	pos_t i;
+	block_off_t i;
 	unsigned j;
 	unsigned char* block_buffer;
 	unsigned char* xor_buffer;
 	int ret;
-	uint64_t count_size;
-	uint64_t count_block;
+	data_off_t count_size;
+	data_off_t count_block;
 	time_t start;
 	time_t last;
 	unsigned error;
@@ -271,11 +271,11 @@ static int state_check_process(int ret_on_error, struct snapraid_state* state, i
 	return unrecoverable_error != 0 ? ret_on_error : 0;
 }
 
-void state_check(struct snapraid_state* state, int fix, pos_t blockstart)
+void state_check(struct snapraid_state* state, int fix, block_off_t blockstart)
 {
 	char path[PATH_MAX];
-	pos_t blockmax;
-	off_t size;
+	block_off_t blockmax;
+	data_off_t size;
 	int ret;
 	int f;
 
@@ -285,7 +285,7 @@ void state_check(struct snapraid_state* state, int fix, pos_t blockstart)
 		printf("Checking...\n");
 
 	blockmax = parity_resize(state);
-	size = blockmax * (off_t)state->block_size;
+	size = blockmax * (data_off_t)state->block_size;
 
 	if (blockstart >= blockmax) {
 		fprintf(stderr, "The specified starting block %u is bigger than the parity size %u.\n", blockstart, blockmax);
@@ -313,4 +313,3 @@ void state_check(struct snapraid_state* state, int fix, pos_t blockstart)
 		parity_close(path, f);
 	}
 }
-

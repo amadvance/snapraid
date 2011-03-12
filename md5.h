@@ -20,12 +20,8 @@
  * Still in the public domain.
  */
 
-#ifndef MD5_H
-#define MD5_H
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#ifndef __MD5_H
+#define __MD5_H
 
 #define MD5_SIZE 16
 
@@ -39,8 +35,4 @@ void md5_init(struct md5_t* context);
 void md5_update(struct md5_t* context, const unsigned char* buf, unsigned len);
 void md5_final(struct md5_t* context, unsigned char* digest);
 
-#ifdef __cplusplus
-}
 #endif
-
-#endif /* !MD5_H */

@@ -24,17 +24,19 @@
 /**
  * Computes the size of the parity data in number of blocks.
  */
-pos_t parity_resize(struct snapraid_state* state);
+block_off_t parity_resize(struct snapraid_state* state);
 
-int parity_create(const char* path, off_t size);
+int parity_create(const char* path, data_off_t size);
 
 int parity_open(int ret_on_error, const char* path);
 
+void parity_sync(const char* path, int f);
+
 void parity_close(const char* path, int f);
 
-void parity_write(const char* parity_path, int parity_f, pos_t pos, unsigned char* block_buffer, unsigned block_size);
+void parity_write(const char* parity_path, int parity_f, block_off_t pos, unsigned char* block_buffer, unsigned block_size);
 
-int parity_read(int ret_on_error, const char* parity_path, int parity_f, pos_t pos, unsigned char* block_buffer, unsigned block_size);
+int parity_read(int ret_on_error, const char* parity_path, int parity_f, block_off_t pos, unsigned char* block_buffer, unsigned block_size);
 
 #endif
 

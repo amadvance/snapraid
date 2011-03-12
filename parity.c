@@ -24,10 +24,10 @@
 /****************************************************************************/
 /* parity */
 
-pos_t parity_resize(struct snapraid_state* state)
+block_off_t parity_resize(struct snapraid_state* state)
 {
 	unsigned disk_count = tommy_array_size(&state->diskarr);
-	pos_t parity_block;
+	block_off_t parity_block;
 	unsigned i;
 
 	/* compute the size of the parity file */
@@ -36,7 +36,7 @@ pos_t parity_resize(struct snapraid_state* state)
 		struct snapraid_disk* disk = tommy_array_get(&state->diskarr, i);
 
 		/* start from the declared size */
-		pos_t block = tommy_array_size(&disk->blockarr);
+		block_off_t block = tommy_array_size(&disk->blockarr);
 
 		/* decrease the block until an allocated block */
 		while (block > 0 && tommy_array_get(&disk->blockarr, block - 1) == 0)
@@ -49,7 +49,7 @@ pos_t parity_resize(struct snapraid_state* state)
 	return parity_block;
 }
 
-int parity_create(const char* path, off_t size)
+int parity_create(const char* path, data_off_t size)
 {
 	struct stat st;
 	int ret;
@@ -105,7 +105,9 @@ int parity_create(const char* path, off_t size)
 
 int parity_open(int ret_on_error, const char* path)
 {
+#if HAVE_POSIX_FADVISE
 	int ret;
+#endif    
 	int f;
 
 	f = open(path, O_RDONLY | O_BINARY);
@@ -129,8 +131,9 @@ int parity_open(int ret_on_error, const char* path)
 	return f;
 }
 
-void parity_close(const char* path, int f)
+void parity_sync(const char* path, int f)
 {
+#if HAVE_FSYNC
 	int ret;
 
 	/* ensure that data changes are written to disk */
@@ -141,6 +144,12 @@ void parity_close(const char* path, int f)
 		fprintf(stderr, "Error synching parity file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
+#endif
+}
+
+void parity_close(const char* path, int f)
+{
+	int ret;
 
 	ret = close(f);
 	if (ret != 0) {
@@ -149,14 +158,27 @@ void parity_close(const char* path, int f)
 	}
 }
 
-void parity_write(const char* path, int f, pos_t pos, unsigned char* block_buffer, unsigned block_size)
+void parity_write(const char* path, int f, block_off_t pos, unsigned char* block_buffer, unsigned block_size)
 {
 	ssize_t write_ret;
-	off_t offset;
+	data_off_t offset;
 
-	offset = pos * (off_t)block_size;
+	offset = pos * (data_off_t)block_size;
 
+#if HAVE_PWRITE    
 	write_ret = pwrite(f, block_buffer, block_size, offset);
+#else
+	if (lseek(f, offset, SEEK_SET) != offset) {
+		if (errno == ENOSPC) {
+			fprintf(stderr, "Failed to grow parity file '%s' due lack of space.\n", path);
+		} else {
+			fprintf(stderr, "Error seeking file '%s'. %s.\n", path, strerror(errno));
+		}
+		exit(EXIT_FAILURE);
+	}
+
+	write_ret = write(f, block_buffer, block_size);
+#endif
 	if (write_ret != block_size) {
 		if (errno == ENOSPC) {
 			fprintf(stderr, "Failed to grow parity file '%s' due lack of space.\n", path);
@@ -167,21 +189,34 @@ void parity_write(const char* path, int f, pos_t pos, unsigned char* block_buffe
 	}
 }
 
-int parity_read(int ret_on_error, const char* path, int f, pos_t pos, unsigned char* block_buffer, unsigned block_size)
+int parity_read(int ret_on_error, const char* path, int f, block_off_t pos, unsigned char* block_buffer, unsigned block_size)
 {
 	ssize_t read_ret;
-	off_t offset;
+	data_off_t offset;
 
 	/* if the file is not opened, return an error without trying */
 	if (f == -1 && ret_on_error)
 		return -1;
 
-	offset = pos * (off_t)block_size;
+	offset = pos * (data_off_t)block_size;
 
+#if HAVE_PREAD    
 	read_ret = pread(f, block_buffer, block_size, offset);
+#else
+	if (lseek(f, offset, SEEK_SET) != offset) {
+		if (ret_on_error)
+			return ret_on_error;
+
+		fprintf(stderr, "Error seeking file '%s'. %s.\n", path, strerror(errno));
+		exit(EXIT_FAILURE);    
+	}
+
+	read_ret = read(f, block_buffer, block_size);
+#endif    
 	if (read_ret != block_size) {
 		if (ret_on_error)
 			return ret_on_error;
+
 		fprintf(stderr, "Error reading file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 	}

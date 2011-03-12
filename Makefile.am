@@ -3,7 +3,6 @@ check_PROGRAMS = testgen
 
 snapraid_SOURCES = \
 	snapraid.c \
-	getopt.c \
 	md5.c \
 	tommy.c \
 	util.c \
@@ -131,8 +130,7 @@ cachegrind:
 DISTWIN = \
 	snapraid.txt \
 	snapraid.html \
-	snapraid.exe \
-	snapraid.rc
+	snapraid.exe
 
 distwindows: $(DISTWIN)
 	rm -f $(PACKAGE)-$(VERSION)-windows-x86.zip

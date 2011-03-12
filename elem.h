@@ -38,10 +38,15 @@
 #define POS_INVALID -1
 
 /**
- * Basic position type.
+ * Basic block position type.
  * With 32 bits and 128k blocks you can address 256 TB.
  */
-typedef uint32_t pos_t;
+typedef uint32_t block_off_t;
+
+/**
+ * Basic data position type.
+ */
+typedef uint64_t data_off_t;
 
 struct snapraid_file;
 
@@ -49,7 +54,7 @@ struct snapraid_file;
  * Block of a file.
  */
 struct snapraid_block {
-	pos_t parity_pos; /**< Position of the block in the parity. */
+	block_off_t parity_pos; /**< Position of the block in the parity. */
 	int is_hashed; /**< If the hash of the block is valid. */
 	struct snapraid_file* file; /**< Back pointer to the file owning this block. */
 	unsigned char hash[HASH_MAX]; /**< Hash of the block. */
@@ -60,9 +65,9 @@ struct snapraid_block {
  */
 struct snapraid_file {
 	char sub[PATH_MAX]; /**< Sub path of the file. Without the disk dir. The disk is implicit. */
-	uint64_t size; /**< Size of the file. */
+	data_off_t size; /**< Size of the file. */
 	struct snapraid_block* blockvec; /**< All the blocks of the file. */
-	pos_t blockmax; /**< Number of blocks. */
+	block_off_t blockmax; /**< Number of blocks. */
 	time_t mtime; /**< Modification time. */
 	int is_present; /**< If it's seen as present. */
 
@@ -77,7 +82,7 @@ struct snapraid_file {
 struct snapraid_disk {
 	char name[PATH_MAX]; /**< Name of the disk. */
 	char dir[PATH_MAX]; /**< Mount point of the disk. */
-	pos_t first_free_block; /**< First free searching block. */
+	block_off_t first_free_block; /**< First free searching block. */
 	tommy_list filelist; /**< List of all the files. */
 	tommy_hashdyn fileset; /**< Hashtable by sub of all the files. */
 	tommy_array blockarr; /**< Block array of the disk. */
@@ -86,7 +91,7 @@ struct snapraid_disk {
 /**
  * Get the relative position of a block inside the file.
  */
-pos_t block_file_pos(struct snapraid_block* block);
+block_off_t block_file_pos(struct snapraid_block* block);
 
 /**
  * Get the size in bytes of the block.
@@ -94,7 +99,7 @@ pos_t block_file_pos(struct snapraid_block* block);
  */
 unsigned block_file_size(struct snapraid_block* block, unsigned block_size);
 
-struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t size, time_t mtime);
+struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, time_t mtime);
 
 void file_free(struct snapraid_file* file);
 
@@ -109,7 +114,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir);
 
 void disk_free(struct snapraid_disk* disk);
 
-static inline struct snapraid_block* disk_block_get(struct snapraid_disk* disk, pos_t pos)
+static inline struct snapraid_block* disk_block_get(struct snapraid_disk* disk, block_off_t pos)
 {
 	if (pos < tommy_array_size(&disk->blockarr))
 		return tommy_array_get(&disk->blockarr, pos);
