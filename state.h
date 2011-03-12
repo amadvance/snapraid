@@ -35,10 +35,19 @@ struct snapraid_state {
 	tommy_array diskarr; /**< Disk array. */
 };
 
+/**
+ * Initializes the state.
+ */
 void state_init(struct snapraid_state* state);
 
+/**
+ * Deinitializes the state.
+ */
 void state_done(struct snapraid_state* state);
 
+/**
+ * Read the configuration file.
+ */
 void state_config(struct snapraid_state* state, const char* path, int verbose, int force);
 
 /**
@@ -47,25 +56,28 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 void state_read(struct snapraid_state* state);
 
 /**
- * Write the new state.
+ * Writes the new state.
  */
 void state_write(struct snapraid_state* state);
 
 /**
- * Update the internal state to represent the new state.
+ * Scans all the disks to update the state.
  */
 void state_scan(struct snapraid_state* state);
 
 /**
- * Sync.
+ * Syncs the parity data.
  */
 void state_sync(struct snapraid_state* state, block_off_t blockstart);
 
 /**
- * Check.
+ * Checks (and fixes) all the files and the parity data.
  */
 void state_check(struct snapraid_state* state, int fix, block_off_t blockstart);
 
+/**
+ * Writes the progress.
+ */
 int state_progress(time_t* start, time_t* last, block_off_t blockpos, block_off_t blockmax, data_off_t count_block, data_off_t count_size);
 
 #endif

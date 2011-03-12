@@ -81,7 +81,7 @@ struct snapraid_file {
  */
 struct snapraid_disk {
 	char name[PATH_MAX]; /**< Name of the disk. */
-	char dir[PATH_MAX]; /**< Mount point of the disk. */
+	char dir[PATH_MAX]; /**< Mount point of the disk. It always terminates with /. */
 	block_off_t first_free_block; /**< First free searching block. */
 	tommy_list filelist; /**< List of all the files. */
 	tommy_hashdyn fileset; /**< Hashtable by sub of all the files. */
@@ -89,31 +89,53 @@ struct snapraid_disk {
 };
 
 /**
- * Get the relative position of a block inside the file.
+ * Gets the relative position of a block inside the file.
  */
 block_off_t block_file_pos(struct snapraid_block* block);
 
 /**
- * Get the size in bytes of the block.
- * If it's the last block of a file it could less than block_size.
+ * Gets the size in bytes of the block.
+ * If it's the last block of a file it could be less than block_size.
  */
 unsigned block_file_size(struct snapraid_block* block, unsigned block_size);
 
+/**
+ * Allocates a file.
+ */
 struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, time_t mtime);
 
+/**
+ * Deallocate a file.
+ */
 void file_free(struct snapraid_file* file);
 
+/**
+ * Compares two files by path.
+ */
 int file_compare(const void* void_arg, const void* void_data);
 
+/**
+ * Computes the hash of a file path.
+ */
 static inline tommy_uint32_t file_hash(const char* sub)
 {
 	return tommy_hash_u32(0, sub, strlen(sub));
 }
 
+/**
+ * Allocates a disk.
+ */
 struct snapraid_disk* disk_alloc(const char* name, const char* dir);
 
+/**
+ * Deallocates a disk.
+ */
 void disk_free(struct snapraid_disk* disk);
 
+/**
+ * Gets a specific block of a disk.
+ * Returns 0 if the block is over the end of the disk or not used.
+ */
 static inline struct snapraid_block* disk_block_get(struct snapraid_disk* disk, block_off_t pos)
 {
 	if (pos < tommy_array_size(&disk->blockarr))

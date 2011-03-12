@@ -40,10 +40,19 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file);
  */
 int handle_open(int ret_on_error, struct snapraid_handle* handle, struct snapraid_file* file);
 
+/**
+ * Close a file.
+ */
 void handle_close(struct snapraid_handle* handle);
 
+/**
+ * Read a block from a file.
+ */
 int handle_read(int ret_on_error, struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size);
 
+/**
+ * Writes a block to a file.
+ */
 void handle_write(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size);
 
 #endif

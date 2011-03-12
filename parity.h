@@ -26,17 +26,35 @@
  */
 block_off_t parity_resize(struct snapraid_state* state);
 
+/**
+ * Creates the parity file.
+ */
 int parity_create(const char* path, data_off_t size);
 
+/**
+ * Opens an already existing parity file.
+ */
 int parity_open(int ret_on_error, const char* path);
 
+/**
+ * Flushes the parity file in the disk.
+ */
 void parity_sync(const char* path, int f);
 
+/**
+ * Closes the parity file.
+ */
 void parity_close(const char* path, int f);
 
-void parity_write(const char* parity_path, int parity_f, block_off_t pos, unsigned char* block_buffer, unsigned block_size);
-
+/**
+ * Read a block from the parity file.
+ */
 int parity_read(int ret_on_error, const char* parity_path, int parity_f, block_off_t pos, unsigned char* block_buffer, unsigned block_size);
+
+/**
+ * Writes a block in the parity file.
+ */
+void parity_write(const char* parity_path, int parity_f, block_off_t pos, unsigned char* block_buffer, unsigned block_size);
 
 #endif
 
