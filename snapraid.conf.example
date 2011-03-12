@@ -1,0 +1,27 @@
+# Configuration for snapraid
+
+# Define the block size in kilo bytes (1024 bytes).
+# Format: "block_size SIZE_IN_KB"
+# Default value is 128 -> 128 kilo bytes
+block_size 128
+
+# Define the file to use as parity storage
+# It must me in an different disk than the data disk
+# Format: "parity FILE_PATH"
+parity /mnt/dp/parity
+
+# Define the file to use as content list
+# Format: "content FILE_PATH"
+# It must me in an different disk than the data disk
+# It can be in the same disk used for parity storage
+content /mnt/dp/content
+
+# Define to data disk to use
+# Format: "disk DISK_NAME DISK_MOUNT_POINT"
+disk d1 /mnt/d1/
+disk d2 /mnt/d2/
+disk d3 /mnt/d3/
+disk d4 /mnt/d4/
+disk d5 /mnt/d5/
+disk d6 /mnt/d6/
+

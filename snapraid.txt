@@ -40,7 +40,7 @@ The main features of SnapRAID are:
   You can stop using SnapRAID at any time.
 
 
-3 MISFEATURES
+3 LIMITATIONS
 =============
 
 SnapRAID is in between a RAID and a backup program trying to get the best
@@ -218,12 +218,7 @@ SnapRAID provides three simple commands that allow to:
         For example, it happens if all the files in a disk are
         missing.
 
-    -e, --exclude PATTERN
-        This option define an exclusion pattern to be applyed at
-        the files with the "sync" command. It has no effect with
-        other commands.
-
-    -v, --verboe
+    -v, --verbose
         Prints more information in the processing.
 
     -h, --help

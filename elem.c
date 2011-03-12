@@ -96,6 +96,19 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir)
 	disk = malloc_nofail(sizeof(struct snapraid_disk));
 	snprintf(disk->name, sizeof(disk->name), "%s", name);
 	snprintf(disk->dir, sizeof(disk->dir), "%s", dir);
+
+	/* ensure that the dir terminate with "/" if it isn't empty */
+	if (disk->dir[0] != 0) {
+		char last = disk->dir[strlen(disk->dir) - 1];
+		if (last != '/'
+#ifdef _WIN32
+			&& last != '\\'
+#endif
+		) {
+			snprintf(disk->dir, sizeof(disk->dir), "%s/", dir);
+		}
+	}
+
 	disk->first_free_block = 0;
 	tommy_list_init(&disk->filelist);
 	tommy_hashdyn_init(&disk->fileset);

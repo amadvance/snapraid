@@ -196,12 +196,7 @@ Options
 		For example, it happens if all the files in a disk are
 		missing.
 
-	-e, --exclude PATTERN
-		This option define an exclusion pattern to be applyed at
-		the files with the "sync" command. It has no effect with
-		other commands.
-
-	-v, --verboe
+	-v, --verbose
 		Prints more information in the processing.
 
 	-h, --help

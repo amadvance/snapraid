@@ -42,7 +42,10 @@ EXTRA_DIST = \
 	README AUTHORS HISTORY INSTALL COPYING \
 	snapraid.d snapraid.1 snapraid.txt snapraid.html \
 	test.conf \
+	snapraid.conf.example \
 	acinclude.m4
+
+man_MANS = snapraid.1
 
 clean-local:
 	rm -f valgrind.log callgrind.log
