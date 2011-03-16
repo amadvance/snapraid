@@ -20,16 +20,14 @@ Description
 	The main features of SnapRAID are:
 
 	* You can start using SnapRAID with already filled disks.
-		You do not have to reformat or copy your data.
 	* The disks of the array can have different sizes.
-		You have only to use the biggest one for the redundancy data.
+	* You can add more disks at the array at any time.
 	* If you accidentally delete some files in a disk, you can
 		recover them.
 	* If more than one disk fails, you lose the data only on the
 		failed disks. All the data in the other disks is safe.
-	* It doesn't lock-in your data.
-		You can stop using SnapRAID at any time without the
-		need to reformat or move data.
+	* It doesn't lock-in your data. You can stop using SnapRAID at any
+		time without the need to reformat or move data.
 
 	The official site of SnapRAID is:
 
@@ -148,6 +146,12 @@ Configuration
 		keep the NAME fixed.
 		You should use one option for each disk of the array.
 
+	=exclude GLOB_PATTERN
+		Defines the file or directory patterns to exclude from the sync
+		process. See the PATTERN section for more details in the
+		pattern specifications.
+		This option can be used many times.
+
 	=block_size SIZE_IN_KILOBYTES
 		Defines the basic block size in kilo bytes of
 		the redundancy blocks. The default is 128 and it should
@@ -170,6 +174,9 @@ Configuration
 		:disk d1 /mnt/disk1/
 		:disk d2 /mnt/disk2/
 		:disk d3 /mnt/disk3/
+		:exclude *.bak
+		:exclude /lost+found/
+		:exclude tmp/
 		:block_size 256
 
 Commands
@@ -195,6 +202,45 @@ Commands
 		Checks and fix all the files. It's like "check" but it
 		also tries to fix problems reverting the state of the
 		disk array at the previous "sync" command.
+
+Pattern
+	Patterns are used to define the files and directories to exclude
+	from the redundancy process.
+
+	It makes sense to exclude any file not worth to be saved.
+
+	There are four different types of patterns:
+
+	=FILE
+		Excludes any file named as FILE. You can use any globbing
+		character like * and ?.
+		This pattern is applied only to files and not to directories.
+
+	=DIR/
+		Excludes any directory named DIR. You can use any globbing
+		character like * and ?.
+		This pattern is applied only to directories and not to files.
+
+	=/PATH/FILE
+		Excludes the exact specified file path. You can use any
+		globbing character like * and ? but they never matches a
+		directory slash.
+		This pattern is applied only to files and not to directories.
+
+	=/PATH/DIR/
+		Excludes the exact specified directory path. You can use any
+		globbing character like * and ? but they never matches a
+		directory slash.
+		This pattern is applied only to directories and not to files.
+
+	For example:
+
+		:# Excludes any file named "*.bak"
+		:exclude *.bak
+		:# Excludes the root directory "lost+found"
+		:exclude /lost+found/
+		:# Excludes any directory named "tmp"
+		:exclude tmp/
 
 Options
 	-c, --conf CONFIG

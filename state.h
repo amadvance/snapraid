@@ -29,10 +29,11 @@ extern volatile int global_interrupt;
 struct snapraid_state {
 	int verbose; /**< Verbose output. */
 	int force; /**< Forced dangerous operations. */
-	unsigned block_size; /**< Block size in bytes. */
+	uint32_t block_size; /**< Block size in bytes. */
 	char content[PATH_MAX]; /**< Path of the content file. */
 	char parity[PATH_MAX]; /**< Path of the parity file. */
 	tommy_array diskarr; /**< Disk array. */
+	tommy_list excludelist; /**< List of exclusion. */
 };
 
 /**

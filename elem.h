@@ -48,6 +48,16 @@ typedef uint32_t block_off_t;
  */
 typedef uint64_t data_off_t;
 
+/**
+ * Filter for paths.
+ */
+struct snapraid_filter {
+	char pattern[PATH_MAX]; /**< Filter pattern. */
+	int is_path; /**< If the pattern is only for the complete path. */
+	int is_dir; /**< If the pattern is only for dir. */
+	tommy_node node; /**< Next node in the list. */
+};
+
 struct snapraid_file;
 
 /**
@@ -89,6 +99,22 @@ struct snapraid_disk {
 };
 
 /**
+ * Allocates an exclusion.
+ */
+struct snapraid_filter* filter_alloc(const char* pattern);
+
+/**
+ * Deallocates an exclusion.
+ */
+void filter_free(struct snapraid_filter* filter);
+
+/**
+ * Checks if a path/name matches the pattern.
+ * Returns 0 if it matches.
+ */
+int filter_filter(struct snapraid_filter* filter, const char* path, const char* name, int is_dir);
+
+/**
  * Gets the relative position of a block inside the file.
  */
 block_off_t block_file_pos(struct snapraid_block* block);
@@ -105,7 +131,7 @@ unsigned block_file_size(struct snapraid_block* block, unsigned block_size);
 struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, time_t mtime);
 
 /**
- * Deallocate a file.
+ * Deallocates a file.
  */
 void file_free(struct snapraid_file* file);
 

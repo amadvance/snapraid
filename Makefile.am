@@ -52,8 +52,9 @@ clean-local:
 	rm -rf test
 
 maintainer-clean-local:
-	rm -f README AUTHORS HISTORY INSTALL
 	rm -f snapraid.1 snapraid.txt snapraid.html
+
+# Automatic testing
 
 CHECK = ./snapraid -v -c test.conf fix
 
@@ -90,8 +91,10 @@ check-local:
 	./mktest damage 1 1 500 test/disk2/b*
 	./snapraid -c $(srcdir)/test.conf check 2>/dev/null
 	./snapraid -c $(srcdir)/test.conf fix 2>/dev/null
-	./snapraid -c $(srcdir)/test.conf check	
+	./snapraid -c $(srcdir)/test.conf check
 	echo Success!
+
+# Valgrind testing
 
 valgrind:
 	valgrind \
@@ -129,9 +132,6 @@ cachegrind:
 
 %.html : %.d
 	advd2 html < $(srcdir)/$< > $@
-
-%.hh : %.d
-	advd2 frame < $(srcdir)/$< > $@
 
 # Windows distribution
 

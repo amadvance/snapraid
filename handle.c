@@ -18,6 +18,7 @@
 #include "portable.h"
 
 #include "elem.h"
+#include "util.h"
 #include "handle.h"
 
 /****************************************************************************/
@@ -42,7 +43,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 		}
 	}
 
-	snprintf(handle->path, sizeof(handle->path), "%s%s", handle->disk->dir, file->sub);
+	pathprint(handle->path, sizeof(handle->path), "%s%s", handle->disk->dir, file->sub);
 	handle->f = open(handle->path, O_RDWR | O_CREAT | O_BINARY, 0600);
 
 	if (handle->f == -1) {
@@ -115,7 +116,7 @@ int handle_open(int ret_on_error, struct snapraid_handle* handle, struct snaprai
 		}
 	}
 
-	snprintf(handle->path, sizeof(handle->path), "%s%s", handle->disk->dir, file->sub);
+	pathprint(handle->path, sizeof(handle->path), "%s%s", handle->disk->dir, file->sub);
 	handle->f = open(handle->path, O_RDONLY | O_BINARY);
 
 	if (handle->f == -1) {

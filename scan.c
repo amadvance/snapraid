@@ -29,7 +29,7 @@ struct snapraid_scan {
 };
 
 /**
- * Remove the specified file from the data set.
+ * Removes the specified file from the data set.
  */
 static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
 {
@@ -55,7 +55,7 @@ static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk*
 }
 
 /**
- * Insert the specified file in the data set.
+ * Inserts the specified file in the data set.
  */
 static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
 {
@@ -91,6 +91,9 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 	tommy_list_insert_tail(&disk->filelist, &file->nodelist, file);
 }
 
+/**
+ * Processes a file.
+ */
 static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, struct snapraid_disk* disk, const char* path, const char* sub, const struct stat* st)
 {
 	struct snapraid_file* file;
@@ -122,6 +125,25 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 	scan_file_insert(state, disk, file);
 }
 
+/**
+ * Checks if the specified path/file should be listet.
+ */
+static int scan_filter(struct snapraid_state* state, const char* path, const char* file, int is_dir)
+{
+	tommy_node* node = tommy_list_head(&state->excludelist);
+	while (node) {
+		struct snapraid_filter* filter = node->data;
+		if (filter_filter(filter, path, file, is_dir) == 0)
+			return -1;
+		node = node->next;
+	}
+
+	return 0;
+}
+
+/**
+ * Processes a directory.
+ */
 static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, struct snapraid_disk* disk, const char* dir, const char* sub)
 {
 	DIR* d;
@@ -134,32 +156,43 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, s
 	}
 
 	while ((dd = readdir(d)) != 0) {
-		char path[PATH_MAX];
+		char path_next[PATH_MAX];
+		char sub_next[PATH_MAX];
+		const char* name = dd->d_name;
 		struct stat st;
 
-		snprintf(path, sizeof(path), "%s%s", dir, dd->d_name);
+		pathprint(path_next, sizeof(path_next), "%s%s", dir, name);
+		pathprint(sub_next, sizeof(sub_next), "%s%s", sub, name);
 
-		if (stat(path, &st) != 0) {
-			fprintf(stderr, "Error in stat file '%s'\n", path);
+		if (stat(path_next, &st) != 0) {
+			fprintf(stderr, "Error in stat file '%s'\n", path_next);
 			exit(EXIT_FAILURE);
 		}
 
 		if (S_ISREG(st.st_mode)) {
-			char sub_next[PATH_MAX];
-			snprintf(sub_next, sizeof(sub_next), "%s%s", sub, dd->d_name);
-			scan_file(scan, state, disk, path, sub_next, &st);
+			if (scan_filter(state, sub_next, name, 0) == 0) {
+				scan_file(scan, state, disk, path_next, sub_next, &st);
+			} else {
+				if (state->verbose) {
+					printf("warning: Excluded file '/%s'\n", sub_next);
+				}
+			}
 		} else if (S_ISDIR(st.st_mode)) {
-			if (strcmp(dd->d_name, ".") != 0 && strcmp(dd->d_name, "..") != 0 && strcmp(dd->d_name, "lost+found") != 0
-			) {
-				char dir_next[PATH_MAX];
-				char sub_next[PATH_MAX];
-				snprintf(dir_next, sizeof(dir_next), "%s%s/", dir, dd->d_name);
-				snprintf(sub_next, sizeof(sub_next), "%s%s/", sub, dd->d_name);
-				scan_dir(scan, state, disk, dir_next, sub_next);
+			int is_auto = name[0] == '.' && (name[1] == 0 || (name[1] == '.' && name[2] == 0));
+			if (!is_auto) {
+				if (scan_filter(state, sub_next, name, 1) == 0) {
+					pathslash(path_next, sizeof(path_next));
+					pathslash(sub_next, sizeof(sub_next));
+					scan_dir(scan, state, disk, path_next, sub_next);
+				} else {
+					if (state->verbose) {
+						printf("warning: Excluded directory '/%s'\n", sub_next);
+					}
+				}
 			}
 		} else {
 			if (state->verbose) {
-				printf("warning: File '%s/%s' not processed\n", dir, dd->d_name);
+				printf("warning: Ignored file '/%s'\n", sub_next);
 			}
 		}
 	}

@@ -155,7 +155,7 @@ void state_sync(struct snapraid_state* state, block_off_t blockstart)
 		exit(EXIT_FAILURE);
 	}
 
-	snprintf(path, sizeof(path), "%s", state->parity);
+	pathcpy(path, sizeof(path), state->parity);
 	f = parity_create(path, size);
 
 	state_sync_process(state, f, blockstart, blockmax);

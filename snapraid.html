@@ -31,11 +31,12 @@ The main features of SnapRAID are:
 <ul>
 <li>
 You can start using SnapRAID with already filled disks.
-You do not have to reformat or copy your data.
 </li>
 <li>
 The disks of the array can have different sizes.
-You have only to use the biggest one for the redundancy data.
+</li>
+<li>
+You can add more disks at the array at any time.
 </li>
 <li>
 If you accidentally delete some files in a disk, you can
@@ -46,9 +47,8 @@ If more than one disk fails, you lose the data only on the
 failed disks. All the data in the other disks is safe.
 </li>
 <li>
-It doesn't lock-in your data.
-You can stop using SnapRAID at any time without the
-need to reformat or move data.
+It doesn't lock-in your data. You can stop using SnapRAID at any
+time without the need to reformat or move data.
 </li>
 </ul>
 <p>
@@ -219,6 +219,16 @@ You should use one option for each disk of the array.
 </table>
 <table width="100%" border="0" cellspacing="0" cellpadding="2">
 <tr valign="top" align="left"><td><strong>
+exclude GLOB_PATTERN
+</strong></td></tr><tr><td>
+Defines the file or directory patterns to exclude from the sync
+process. See the PATTERN section for more details in the
+pattern specifications.
+This option can be used many times.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
 block_size SIZE_IN_KILOBYTES
 </strong></td></tr><tr><td>
 Defines the basic block size in kilo bytes of
@@ -252,6 +262,9 @@ content /mnt/diskpar/content
 disk d1 /mnt/disk1/
 disk d2 /mnt/disk2/
 disk d3 /mnt/disk3/
+exclude *.bak
+exclude /lost+found/
+exclude tmp/
 block_size 256
 </pre>
 </td></tr></table>
@@ -300,6 +313,66 @@ disk array at the previous "sync" command.
 </td></tr>
 </table>
 <h2><a name="7">7</a> 
+Pattern
+</h2>
+Patterns are used to define the files and directories to exclude
+from the redundancy process.
+<p>
+It makes sense to exclude any file not worth to be saved.
+<p>
+There are four different types of patterns:
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+FILE
+</strong></td></tr><tr><td>
+Excludes any file named as FILE. You can use any globbing
+character like * and ?.
+This pattern is applied only to files and not to directories.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+DIR/
+</strong></td></tr><tr><td>
+Excludes any directory named DIR. You can use any globbing
+character like * and ?.
+This pattern is applied only to directories and not to files.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+/PATH/FILE
+</strong></td></tr><tr><td>
+Excludes the exact specified file path. You can use any
+globbing character like * and ? but they never matches a
+directory slash.
+This pattern is applied only to files and not to directories.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+/PATH/DIR/
+</strong></td></tr><tr><td>
+Excludes the exact specified directory path. You can use any
+globbing character like * and ? but they never matches a
+directory slash.
+This pattern is applied only to directories and not to files.
+</td></tr>
+</table>
+<p>
+For example:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+# Excludes any file named "*.bak"
+exclude *.bak
+# Excludes the root directory "lost+found"
+exclude /lost+found/
+# Excludes any directory named "tmp"
+exclude tmp/
+</pre>
+</td></tr></table>
+<h2><a name="8">8</a> 
 Options
 </h2>
 <table width="100%" border="0" cellspacing="0" cellpadding="2">
@@ -351,11 +424,11 @@ Prints a short help screen.
 Prints the program version.
 </td></tr>
 </table>
-<h2><a name="8">8</a> 
+<h2><a name="9">9</a> 
 Copyright
 </h2>
 This file is Copyright (C) 2011 Andrea Mazzoleni
-<h2><a name="9">9</a> 
+<h2><a name="10">10</a> 
 See Also
 </h2>
 rsync(1)

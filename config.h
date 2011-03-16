@@ -17,6 +17,9 @@
 /* Define to 1 if you have the `fgetc_unlocked' function. */
 #define HAVE_FGETC_UNLOCKED 1
 
+/* Define to 1 if you have the <fnmatch.h> header file. */
+#define HAVE_FNMATCH_H 1
+
 /* Define to 1 if you have the `fsync' function. */
 #define HAVE_FSYNC 1
 

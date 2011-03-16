@@ -90,6 +90,10 @@
 #include <getopt.h>
 #endif
 
+#if HAVE_FNMATCH_H
+#include <fnmatch.h>
+#endif
+
 #if HAVE_GETOPT_LONG
 #define SWITCH_GETOPT_LONG(a,b) a
 #else

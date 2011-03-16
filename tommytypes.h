@@ -203,6 +203,17 @@ typedef struct tommy_node_struct {
  */
 typedef int tommy_compare_func(const void* void_a, const void* void_b);
 
+/**
+ * Foreach function.
+ */
+typedef void tommy_foreach_func(void* void_a);
+
+/**
+ * Foreach function with an argument.
+ * The argument is always passed as first parameter.
+ */
+typedef void tommy_foreach_arg_func(void* void_arg, void* void_a);
+
 /******************************************************************************/
 /* bit hacks */
 

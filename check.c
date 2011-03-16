@@ -292,7 +292,7 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart)
 		exit(EXIT_FAILURE);
 	}
 
-	snprintf(path, sizeof(path), "%s", state->parity);
+	pathcpy(path, sizeof(path), state->parity);
 	if (fix) {
 		/* if fixing, create the file and open for writing */
 		/* it never fails */

@@ -103,7 +103,7 @@ int main(int argc, char* argv[])
 			conf = optarg;
 			break;
 		case 's' :
-			if (stru(optarg, &blockstart) != 0) {
+			if (stru32(optarg, &blockstart) != 0) {
 				fprintf(stderr, "Invalid start position '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 			}

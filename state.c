@@ -33,6 +33,7 @@ void state_init(struct snapraid_state* state)
 	state->content[0] = 0;
 	state->parity[0] = 0;
 	tommy_array_init(&state->diskarr);
+	tommy_list_init(&state->excludelist);
 
 	if (sizeof(off_t) < sizeof(uint64_t)) {
 		fprintf(stderr, "Missing support for large files\n");
@@ -43,9 +44,11 @@ void state_init(struct snapraid_state* state)
 void state_done(struct snapraid_state* state)
 {
 	unsigned i;
+
 	for(i=0;i<tommy_array_size(&state->diskarr);++i)
 		disk_free(tommy_array_get(&state->diskarr, i));
 	tommy_array_done(&state->diskarr);
+	tommy_list_foreach(&state->excludelist, (tommy_foreach_func*)filter_free);
 }
 
 void state_config(struct snapraid_state* state, const char* path, int verbose, int force)
@@ -97,7 +100,7 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 		s = strtoken(s);
 
 		if (strcmp(tag, "block_size") == 0) {
-			ret = stru(s, &state->block_size);
+			ret = stru32(s, &state->block_size);
 			if (ret != 0) {
 				fprintf(stderr, "Invalid 'block_size' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
@@ -121,17 +124,24 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 				fprintf(stderr, "Multiple 'parity' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
-			snprintf(state->parity, sizeof(state->parity), "%s", s);
+			pathcpy(state->parity, sizeof(state->parity), s);
 		} else if (strcmp(tag, "content") == 0) {
 			if (*state->content) {
 				fprintf(stderr, "Multiple 'content' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
-			snprintf(state->content, sizeof(state->content), "%s", s);
+			pathcpy(state->content, sizeof(state->content), s);
 		} else if (strcmp(tag, "disk") == 0) {
 			char* name = s;
 			s = strtoken(s);
 			tommy_array_insert(&state->diskarr, disk_alloc(name, s));
+		} else if (strcmp(tag, "exclude") == 0) {
+			struct snapraid_filter* filter = filter_alloc(s);
+			if (!filter) {
+				fprintf(stderr, "Invalid 'exclude' specification '%s' in '%s' at line %u\n", s, path, line);
+				exit(EXIT_FAILURE);
+			}
+			tommy_list_insert_tail(&state->excludelist, &filter->node, filter);
 		} else {
 			fprintf(stderr, "Unknown tag '%s' in '%s'\n", tag, path);
 			exit(EXIT_FAILURE);
@@ -164,7 +174,7 @@ void state_read(struct snapraid_state* state)
 	count_file = 0;
 	count_block = 0;
 
-	snprintf(path, sizeof(path), "%s", state->content);
+	pathcpy(path, sizeof(path), state->content);
 	f = fopen(state->content, "r");
 	if (!f) {
 		/* if not found, assume empty */
@@ -292,7 +302,7 @@ void state_read(struct snapraid_state* state)
 			s = strtoken(s);
 			hash = s;
 
-			ret = stru(pos, &v_pos);
+			ret = stru32(pos, &v_pos);
 			if (ret != 0) {
 				fprintf(stderr, "Invalid 'blk' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
@@ -367,7 +377,7 @@ void state_write(struct snapraid_state* state)
 
 	printf("Saving state...\n");
 
-	snprintf(path, sizeof(path), "%s.tmp", state->content);
+	pathprint(path, sizeof(path), "%s.tmp", state->content);
 	f = fopen(path, "w");
 	if (!f) {
 		fprintf(stderr, "Error opening for writing the state file '%s'\n", path);

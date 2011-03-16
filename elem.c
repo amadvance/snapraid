@@ -23,6 +23,81 @@
 /****************************************************************************/
 /* snapraid */
 
+struct snapraid_filter* filter_alloc(const char* pattern)
+{
+	struct snapraid_filter* filter;
+	char* i;
+	char* first;
+	char* last;
+
+	filter = malloc_nofail(sizeof(struct snapraid_filter));
+	pathcpy(filter->pattern, sizeof(filter->pattern), pattern);
+
+	/* find first and last slash */
+	first = 0;
+	last = 0;
+	for(i=filter->pattern;*i;++i) {
+		if (*i == '/') {
+			if (!first)
+				first = i;
+			last = i;
+		}
+	}
+
+	if (first == 0) {
+		/* no slash */
+		filter->is_path = 0;
+		filter->is_dir = 0;
+	} else if (first == last && last[1] == 0) {
+		/* one slash at the end */
+		filter->is_path = 0;
+		filter->is_dir = 1;
+		last[0] = 0;
+	} else {
+		/* at least a slash not at the end */
+		filter->is_path = 1;
+		if (last[1] == 0) {
+			filter->is_dir = 1;
+			last[0] = 0;
+		} else {
+			filter->is_dir = 0;
+		}
+
+		/* a slash must be the first char, as we reject PATH/DIR/FILE */
+		if (filter->pattern[0] != '/') {
+			free(filter);
+			return 0;
+		}
+	}
+
+	return filter;
+}
+
+void filter_free(struct snapraid_filter* filter)
+{
+	free(filter);
+}
+
+int filter_filter(struct snapraid_filter* filter, const char* path, const char* name, int is_dir)
+{
+	/* matches dirs with dirs and files with files */
+	if (filter->is_dir && !is_dir)
+		return -1;
+	if (!filter->is_dir && is_dir)
+		return -1;
+
+	if (filter->is_path) {
+		/* skip initial slash, as always missing from the path */
+		if (fnmatch(filter->pattern + 1, path, FNM_PATHNAME) == 0)
+			return 0;
+	} else {
+		if (fnmatch(filter->pattern, name, 0) == 0)
+			return 0;
+	}
+
+	return -1;
+}
+
 block_off_t block_file_pos(struct snapraid_block* block)
 {
 	struct snapraid_file* file = block->file;
@@ -59,7 +134,7 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_
 	block_off_t i;
 
 	file = malloc_nofail(sizeof(struct snapraid_file));
-	snprintf(file->sub, sizeof(file->sub), "%s", sub);
+	pathcpy(file->sub, sizeof(file->sub), sub);
 	file->size = size;
 	file->blockmax = (size + block_size - 1) / block_size;
 	file->mtime = mtime;
@@ -94,20 +169,11 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir)
 	struct snapraid_disk* disk;
 
 	disk = malloc_nofail(sizeof(struct snapraid_disk));
-	snprintf(disk->name, sizeof(disk->name), "%s", name);
-	snprintf(disk->dir, sizeof(disk->dir), "%s", dir);
+	pathcpy(disk->name, sizeof(disk->name), name);
+	pathcpy(disk->dir, sizeof(disk->dir), dir);
 
 	/* ensure that the dir terminate with "/" if it isn't empty */
-	if (disk->dir[0] != 0) {
-		char last = disk->dir[strlen(disk->dir) - 1];
-		if (last != '/'
-#ifdef _WIN32
-			&& last != '\\'
-#endif
-		) {
-			snprintf(disk->dir, sizeof(disk->dir), "%s/", dir);
-		}
-	}
+	pathslash(disk->dir, sizeof(disk->dir));
 
 	disk->first_free_block = 0;
 	tommy_list_init(&disk->filelist);

@@ -1,8 +1,14 @@
 SnapRAID HISTORY
 ================
 
+0.2 2011/3
+==========
+* Exclusion list of files and directories
+* More automatic tests
+* Better documentation
+
+
 0.1 2011/3
 ==========
-
-* First public release of SnapRAID.
+* First public test release of SnapRAID.
 

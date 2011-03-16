@@ -21,6 +21,9 @@
 /****************************************************************************/
 /* string */
 
+/**
+ * Marks the end of the current token, and move to the next one.
+ */
 static inline char* strtoken(char* s)
 {
 	while (*s && *s != ' ')
@@ -32,6 +35,9 @@ static inline char* strtoken(char* s)
 	return s;
 }
 
+/**
+ * Move to the next token skipping any separator.
+ */
 static inline char* strskip(char* s)
 {
 	while (*s == ' ')
@@ -39,145 +45,54 @@ static inline char* strskip(char* s)
 	return s;
 }
 
-static inline int strgets(char* s, unsigned size, FILE* f)
-{
-	char* i = s;
-	char* send = s + size;
-	int c;
+/**
+ * Gets a text line from a file.
+ * Returns -1 on error, 0 on oef, and 1 if more data is available.
+ */
+int strgets(char* s, unsigned size, FILE* f);
 
-	while (1) {
-#if HAVE_FGETC_UNLOCKED
-		c = fgetc_unlocked(f);
-#else
-	c = fgetc(f);
-#endif        
+/**
+ * Convert a string to a 32 bit unsigned.
+ * Returns 0 on success.
+ */
+int stru32(const char* s, uint32_t* value);
 
-		if (c == EOF || c == '\n')
-			break;
+/**
+ * Convert a string to a 64 bit unsigned.
+ * Returns 0 on success.
+ */
+int stru64(const char* s, uint64_t* value);
 
-		*i++ = c;
+/**
+ * Encodes to hex.
+ */
+void strenchex(char* str, const void* void_data, unsigned data_len);
 
-		if (i == send) {
-			return -1;
-		}
-	}
+/**
+ * Decodes from hex.
+ */
+char* strdechex(void* void_data, unsigned data_len, char* str);
 
-	if (c == EOF) {
-#if HAVE_FERROR_UNLOCKED
-		if (ferror_unlocked(f)) {
-#else
-		if (ferror(f)) {
-#endif
-			return -1;
-		}
-		if (i == s)
-			return 0;
-	}
+/****************************************************************************/
+/* path */
 
-	/* remove ending spaces */
-	while (i != s && isspace(i[-1]))
-		--i;
-	*i = 0;
+/**
+ * Copies a path limiting the size.
+ * Aborts if too long.
+ */
+void pathcpy(char* str, size_t size, const char* src);
 
-	return 1;
-}
+/**
+ * Prints a path.
+ * Aborts if too long.
+ */
+void pathprint(char* str, size_t size, const char* format, ...);
 
-static inline int stru(const char* s, unsigned* value)
-{
-	unsigned v;
-	
-	if (!*s)
-		return -1;
-
-	v = 0;
-	while (*s>='0' && *s<='9') {
-		v *= 10;
-		v += *s - '0';
-		++s;
-	}
-
-	if (*s)
-		return -1;
-
-	*value = v;
-
-	return 0;
-}
-
-static inline int stru64(const char* s, uint64_t* value)
-{
-	uint64_t v;
-
-	if (!*s)
-		return -1;
-
-	v = 0;
-	while (*s>='0' && *s<='9') {
-		v *= 10;
-		v += *s - '0';
-		++s;
-	}
-
-	if (*s)
-		return -1;
-
-	*value = v;
-
-	return 0;
-}
-
-static char strhexset[16] = "0123456789abcdef";
-
-static inline void strenchex(char* str, const void* void_data, unsigned data_len)
-{
-	const unsigned char* data = void_data;
-	unsigned i;
-
-	for(i=0;i<data_len;++i) {
-		unsigned char b = data[i];
-		*str++ = strhexset[b >> 4];
-		*str++ = strhexset[b & 0xF];
-	}
-}
-
-static inline char* strdechex(void* void_data, unsigned data_len, char* str)
-{
-	unsigned char* data = void_data;
-	unsigned i;
-
-	for(i=0;i<data_len;++i) {
-		char c0;
-		char c1;
-		unsigned char b0;
-		unsigned char b1;
-
-		c0 = *str;
-		if (c0 >= 'A' && c0 <= 'F')
-			b0 = c0 - 'A' + 10;
-		else if (c0 >= 'a' && c0 <= 'f')
-			b0 = c0 - 'a' + 10;
-		else if (c0 >= '0' && c0 <= '9')
-			b0 = c0 - '0';
-		else
-			return str;
-		++str;
-
-		c1 = *str;
-		if (c1 >= 'A' && c1 <= 'F')
-			b1 = c1 - 'A' + 10;
-		else if (c1 >= 'a' && c1 <= 'f')
-			b1 = c1 - 'a' + 10;
-		else if (c1 >= '0' && c1 <= '9')
-			b1 = c1 - '0';
-		else
-			return str;
-		++str;
-
-		data[i] = (b0 << 4) | b1;
-	}
-
-	return 0;
-}
+/**
+ * Ensures the presence of a terminating slash, if it isn't empty.
+ * Aborts if too long. 
+ */
+void pathslash(char* str, size_t size);
 
 /****************************************************************************/
 /* memory */

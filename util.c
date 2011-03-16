@@ -19,6 +19,198 @@
 
 #include "util.h"
 
+/****************************************************************************/
+/* string */
+
+int strgets(char* s, unsigned size, FILE* f)
+{
+	char* i = s;
+	char* send = s + size;
+	int c;
+
+	while (1) {
+#if HAVE_FGETC_UNLOCKED
+		c = fgetc_unlocked(f);
+#else
+		c = fgetc(f);
+#endif        
+		if (c == EOF || c == '\n')
+			break;
+
+		*i++ = c;
+
+		if (i == send) {
+			return -1;
+		}
+	}
+
+	if (c == EOF) {
+		if (
+#if HAVE_FERROR_UNLOCKED
+			ferror_unlocked(f)
+#else
+			ferror(f)
+#endif
+		) {
+			return -1;
+		}
+		if (i == s)
+			return 0;
+	}
+
+	/* remove ending spaces */
+	while (i != s && isspace(i[-1]))
+		--i;
+	*i = 0;
+
+	return 1;
+}
+
+int stru32(const char* s, uint32_t* value)
+{
+	uint32_t v;
+	
+	if (!*s)
+		return -1;
+
+	v = 0;
+	while (*s>='0' && *s<='9') {
+		v *= 10;
+		v += *s - '0';
+		++s;
+	}
+
+	if (*s)
+		return -1;
+
+	*value = v;
+
+	return 0;
+}
+
+int stru64(const char* s, uint64_t* value)
+{
+	uint64_t v;
+
+	if (!*s)
+		return -1;
+
+	v = 0;
+	while (*s>='0' && *s<='9') {
+		v *= 10;
+		v += *s - '0';
+		++s;
+	}
+
+	if (*s)
+		return -1;
+
+	*value = v;
+
+	return 0;
+}
+
+static char strhexset[16] = "0123456789abcdef";
+
+void strenchex(char* str, const void* void_data, unsigned data_len)
+{
+	const unsigned char* data = void_data;
+	unsigned i;
+
+	for(i=0;i<data_len;++i) {
+		unsigned char b = data[i];
+		*str++ = strhexset[b >> 4];
+		*str++ = strhexset[b & 0xF];
+	}
+}
+
+char* strdechex(void* void_data, unsigned data_len, char* str)
+{
+	unsigned char* data = void_data;
+	unsigned i;
+
+	for(i=0;i<data_len;++i) {
+		char c0;
+		char c1;
+		unsigned char b0;
+		unsigned char b1;
+
+		c0 = *str;
+		if (c0 >= 'A' && c0 <= 'F')
+			b0 = c0 - 'A' + 10;
+		else if (c0 >= 'a' && c0 <= 'f')
+			b0 = c0 - 'a' + 10;
+		else if (c0 >= '0' && c0 <= '9')
+			b0 = c0 - '0';
+		else
+			return str;
+		++str;
+
+		c1 = *str;
+		if (c1 >= 'A' && c1 <= 'F')
+			b1 = c1 - 'A' + 10;
+		else if (c1 >= 'a' && c1 <= 'f')
+			b1 = c1 - 'a' + 10;
+		else if (c1 >= '0' && c1 <= '9')
+			b1 = c1 - '0';
+		else
+			return str;
+		++str;
+
+		data[i] = (b0 << 4) | b1;
+	}
+
+	return 0;
+}
+
+/****************************************************************************/
+/* path */
+
+void pathcpy(char* str, size_t size, const char* src)
+{
+	size_t len = strlen(src);
+	
+	if (len + 1 >= size) {
+		fprintf(stderr, "Path too long\n");
+		exit(EXIT_FAILURE);
+	}
+
+	memcpy(str, src, len + 1);
+}
+
+void pathprint(char* str, size_t size, const char* format, ...)
+{
+	int len;
+	va_list ap;
+	
+	va_start(ap, format);
+	len = vsnprintf(str, size, format, ap);
+	va_end(ap);
+
+	if (len >= size) {
+		fprintf(stderr, "Path too long\n");
+		exit(EXIT_FAILURE);
+	}
+}
+
+void pathslash(char* str, size_t size)
+{
+	size_t len = strlen(str);
+
+	if (len > 0 && str[len - 1] != '/') {
+		if (len + 2 >= size) {
+			fprintf(stderr, "Path too long\n");
+			exit(EXIT_FAILURE);
+		}
+
+		str[len] = '/';
+		str[len+1] = 0;
+	}
+}
+
+/****************************************************************************/
+/* mem */
+
 void* malloc_nofail(size_t size)
 {
 	void* ptr = malloc(size);
