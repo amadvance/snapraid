@@ -22,7 +22,7 @@
 #include "util.h"
 
 /**
- * Max length of a line in the configuration and state files.
+ * Max length of a line in the configuration and content files.
  */
 #define TEXT_LINE_MAX 1024
 
@@ -181,7 +181,7 @@ void state_read(struct snapraid_state* state)
 		if (errno == ENOENT)
 			return;
 
-		fprintf(stderr, "Error opening the state file '%s'\n", path);
+		fprintf(stderr, "Error opening the content file '%s'\n", path);
 		exit(EXIT_FAILURE);
 	}
 
@@ -201,7 +201,7 @@ void state_read(struct snapraid_state* state)
 
 		ret = strgets(buffer, TEXT_LINE_MAX, f);
 		if (ret < 0) {
-			fprintf(stderr, "Error reading the state file '%s' at line %u\n", path, line);
+			fprintf(stderr, "Error reading the content file '%s' at line %u\n", path, line);
 			exit(EXIT_FAILURE);
 		}
 		if (ret == 0)
@@ -395,13 +395,13 @@ void state_write(struct snapraid_state* state)
 	pathprint(path, sizeof(path), "%s.tmp", state->content);
 	f = fopen(path, "w");
 	if (!f) {
-		fprintf(stderr, "Error opening for writing the state file '%s'\n", path);
+		fprintf(stderr, "Error opening for writing the content file '%s'\n", path);
 		exit(EXIT_FAILURE);
 	}
 
 	ret = fprintf(f, "blksize %u\n", state->block_size);
 	if (ret < 0) {
-		fprintf(stderr, "Error writing the state file '%s' in fprintf(). %s.\n", path, strerror(errno));
+		fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -417,7 +417,7 @@ void state_write(struct snapraid_state* state)
 
 			ret = fprintf(f,"file %s %lld %ld %s\n", disk->name, file->size, file->mtime, file->sub);
 			if (ret < 0) {
-				fprintf(stderr, "Error writing the state file '%s' in fprintf(). %s.\n", path, strerror(errno));
+				fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", path, strerror(errno));
 				exit(EXIT_FAILURE);
 			}
 
@@ -434,7 +434,7 @@ void state_write(struct snapraid_state* state)
 					ret = fprintf(f, "blk %u\n", block->parity_pos);
 				}
 				if (ret < 0) {
-					fprintf(stderr, "Error writing the state file '%s' in fprintf(). %s.\n", path, strerror(errno));
+					fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", path, strerror(errno));
 					exit(EXIT_FAILURE);
 				}
 
@@ -449,24 +449,24 @@ void state_write(struct snapraid_state* state)
 	/* than even in a system crash event we have one valid copy of the file. */
 
 	if (fflush(f) != 0) {
-		fprintf(stderr, "Error writing the state file '%s', in fflush(). %s.\n", path, strerror(errno));
+		fprintf(stderr, "Error writing the content file '%s', in fflush(). %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 #if HAVE_FSYNC    
 	if (fsync(fileno(f)) != 0) {
-		fprintf(stderr, "Error writing the state file '%s' in fsync(). %s.\n", path, strerror(errno));
+		fprintf(stderr, "Error writing the content file '%s' in fsync(). %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 #endif
 
 	if (fclose(f) != 0) {
-		fprintf(stderr, "Error writing the state file '%s' in close(). %s.\n", path, strerror(errno));
+		fprintf(stderr, "Error writing the content file '%s' in close(). %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 	if (rename(path, state->content) != 0) {
-		fprintf(stderr, "Error renaming the state file '%s' to '%s' in rename(). %s.\n", path, state->content, strerror(errno));
+		fprintf(stderr, "Error renaming the content file '%s' to '%s' in rename(). %s.\n", path, state->content, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 

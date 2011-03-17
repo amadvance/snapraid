@@ -129,13 +129,15 @@ Configuration
 		Defines the file to use to store the redundancy information.
 		It must be placed in a disk dedicated for this porpose with
 		as much free space as the biggest disk in the array.
+		Leaving the parity disk reserved for only this file, ensures that
+		it doesn't get fragmented, improving the performance.
 		This option can be used only one time.
 
 	=content FILE
 		Defines the file to use to store the content of the redundancy
 		organization.
-		It must be placed in the same disk of the parity file, or in
-		another location, but not in a disk of the array.
+		It can be placed in the same disk of the parity file, or better
+		in another disk, but NOT in a disk of the array.
 		This option can be used only one time.
 
 	=disk NAME DIR
