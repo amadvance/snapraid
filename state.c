@@ -29,7 +29,7 @@
 void state_init(struct snapraid_state* state)
 {
 	state->verbose = 0;
-	state->block_size = 128*1024; /* default 128 kB */
+	state->block_size = 256 * 1024; /* default 256 kB */
 	state->content[0] = 0;
 	state->parity[0] = 0;
 	tommy_array_init(&state->diskarr);
@@ -166,7 +166,7 @@ void state_read(struct snapraid_state* state)
 	char path[PATH_MAX];
 	struct snapraid_disk* disk;
 	struct snapraid_file* file;
-	unsigned block_index;
+	block_off_t blockidx;
 	unsigned line;
 	unsigned count_file;
 	unsigned count_block;
@@ -190,7 +190,7 @@ void state_read(struct snapraid_state* state)
 	disk = 0;
 	file = 0;
 	line = 0;
-	block_index = 0;
+	blockidx = 0;
 	while (1) {
 		char buffer[TEXT_LINE_MAX];
 		char* tag;
@@ -218,7 +218,66 @@ void state_read(struct snapraid_state* state)
 		tag = s;
 		s = strtoken(s);
 
-		if (strcmp(tag, "file") == 0) {
+		if (strcmp(tag, "blk") == 0) {
+			char* pos;
+			char* hash;
+			block_off_t v_pos;
+			struct snapraid_block* block;
+			char* e;
+
+			if (!file) {
+				fprintf(stderr, "Unexpected 'blk' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			pos = s;
+			s = strtoken(s);
+			hash = s;
+
+			ret = stru32(pos, &v_pos);
+			if (ret != 0) {
+				fprintf(stderr, "Invalid 'blk' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			if (blockidx >= file->blockmax) {
+				fprintf(stderr, "Internal inconsistency in 'blk' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			block = &file->blockvec[blockidx];
+
+			if (block->parity_pos != POS_INVALID) {
+				fprintf(stderr, "Internal inconsistency in 'blk' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			block->parity_pos = v_pos;
+
+			/* set the hash only if present */
+			if (*hash != 0) {
+				e = strdechex(block->hash, HASH_MAX, hash);
+				if (e) {
+					fprintf(stderr, "Invalid 'blk' specification in '%s' at line %u\n", path, line);
+					exit(EXIT_FAILURE);
+				}
+				block->is_hashed = 1;
+			}
+
+			/* insert the block in the block array */
+			tommy_array_grow(&disk->blockarr, block->parity_pos + 1);
+			tommy_array_set(&disk->blockarr, block->parity_pos, block);
+
+			/* check for termination of the block list */
+			++blockidx;
+			if (blockidx == file->blockmax) {
+				file = 0;
+				disk = 0;
+			}
+
+			/* stat */
+			++count_block;
+		} else if (strcmp(tag, "file") == 0) {
 			char* name;
 			char* size;
 			char* mtime;
@@ -276,75 +335,30 @@ void state_read(struct snapraid_state* state)
 			tommy_list_insert_tail(&disk->filelist, &file->nodelist, file);
 
 			/* start the block allocation of the file */
-			block_index = 0;
+			blockidx = 0;
 
 			/* check for empty file */
-			if (block_index == file->blockmax) {
+			if (blockidx == file->blockmax) {
 				file = 0;
 				disk = 0;
 			}
 
 			/* stat */
 			++count_file;
-		} else if (strcmp(tag, "blk") == 0) {
-			char* pos;
-			char* hash;
-			block_off_t v_pos;
-			struct snapraid_block* block;
-			char* e;
+		} else if (strcmp(tag, "blksize") == 0) {
+			block_off_t blksize;
 
-			if (!file) {
-				fprintf(stderr, "Unexpected 'blk' specification in '%s' at line %u\n", path, line);
-				exit(EXIT_FAILURE);
-			}
-
-			pos = s;
-			s = strtoken(s);
-			hash = s;
-
-			ret = stru32(pos, &v_pos);
+			ret = stru32(s, &blksize);
 			if (ret != 0) {
-				fprintf(stderr, "Invalid 'blk' specification in '%s' at line %u\n", path, line);
+				fprintf(stderr, "Invalid 'blksize' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
 
-			if (block_index >= file->blockmax) {
-				fprintf(stderr, "Internal inconsistency in 'blk' specification in '%s' at line %u\n", path, line);
+			if (blksize != state->block_size) {
+				fprintf(stderr, "Mismatching 'blksize' and 'block_size' specification in '%s' at line %u\n", path, line);
+				fprintf(stderr, "Please restore the 'block_size' value in the configuration file to '%u'\n", blksize / 1024);
 				exit(EXIT_FAILURE);
 			}
-
-			block = &file->blockvec[block_index];
-
-			if (block->parity_pos != POS_INVALID) {
-				fprintf(stderr, "Internal inconsistency in 'blk' specification in '%s' at line %u\n", path, line);
-				exit(EXIT_FAILURE);
-			}
-
-			block->parity_pos = v_pos;
-
-			/* set the hash only if present */
-			if (*hash != 0) {
-				e = strdechex(block->hash, HASH_MAX, hash);
-				if (e) {
-					fprintf(stderr, "Invalid 'blk' specification in '%s' at line %u\n", path, line);
-					exit(EXIT_FAILURE);
-				}
-				block->is_hashed = 1;
-			}
-
-			/* insert the block in the block array */
-			tommy_array_grow(&disk->blockarr, block->parity_pos + 1);
-			tommy_array_set(&disk->blockarr, block->parity_pos, block);
-
-			/* check for termination of the block list */
-			++block_index;
-			if (block_index == file->blockmax) {
-				file = 0;
-				disk = 0;
-			}
-
-			/* stat */
-			++count_block;
 		} else {
 			fprintf(stderr, "Unknown tag '%s' in '%s' at line%u\n", tag, path, line);
 			exit(EXIT_FAILURE);
@@ -371,6 +385,7 @@ void state_write(struct snapraid_state* state)
 	unsigned i;
 	unsigned count_file;
 	unsigned count_block;
+	int ret;
 
 	count_file = 0;
 	count_block = 0;
@@ -384,6 +399,12 @@ void state_write(struct snapraid_state* state)
 		exit(EXIT_FAILURE);
 	}
 
+	ret = fprintf(f, "blksize %u\n", state->block_size);
+	if (ret < 0) {
+		fprintf(stderr, "Error writing the state file '%s' in fprintf(). %s.\n", path, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
 	/* for each disk */
 	for(i=0;i<tommy_array_size(&state->diskarr);++i) {
 		tommy_node* j;
@@ -393,7 +414,6 @@ void state_write(struct snapraid_state* state)
 		for(j=disk->filelist;j!=0;j=j->next) {
 			block_off_t k;
 			struct snapraid_file* file = j->data;
-			int ret;
 
 			ret = fprintf(f,"file %s %lld %ld %s\n", disk->name, file->size, file->mtime, file->sub);
 			if (ret < 0) {

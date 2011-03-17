@@ -154,7 +154,7 @@ Configuration
 
 	=block_size SIZE_IN_KILOBYTES
 		Defines the basic block size in kilo bytes of
-		the redundancy blocks. The default is 128 and it should
+		the redundancy blocks. The default is 256 and it should
 		work for most conditions.
 		You should use this option only if you do not have enough
 		memory to run SnapRAID.
@@ -162,10 +162,10 @@ Configuration
 		size in bytes of your disk array, and BS is the block size
 		in bytes.
 
-		For example with 6 disk of 2 TB and a block size of 128 kB you
+		For example with 6 disk of 2 TB and a block size of 256 kB you
 		have:
 
-		:memory = (6 * 2 * 2^40) * 24 / (128 * 2^10) = 2.3 GB
+		:memory = (6 * 2 * 2^40) * 24 / (256 * 2^10) = 1.1 GB
 
 	An example of a typical configuration is:
 

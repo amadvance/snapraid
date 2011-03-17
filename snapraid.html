@@ -232,7 +232,7 @@ This option can be used many times.
 block_size SIZE_IN_KILOBYTES
 </strong></td></tr><tr><td>
 Defines the basic block size in kilo bytes of
-the redundancy blocks. The default is 128 and it should
+the redundancy blocks. The default is 256 and it should
 work for most conditions.
 You should use this option only if you do not have enough
 memory to run SnapRAID.
@@ -243,13 +243,13 @@ in bytes.
 </table>
 <p>
 <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-For example with 6 disk of 2 TB and a block size of 128 kB you
+For example with 6 disk of 2 TB and a block size of 256 kB you
 have:
 </td></tr></table>
 <p>
 <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
-memory = (6 * 2 * 2^40) * 24 / (128 * 2^10) = 2.3 GB
+memory = (6 * 2 * 2^40) * 24 / (256 * 2^10) = 1.1 GB
 </pre>
 </td></tr></table>
 <p>

@@ -31,6 +31,6 @@ exclude /lost+found/
 
 # Define the block size in kilo bytes (1024 bytes).
 # Format: "block_size SIZE_IN_KB"
-# Default value is 128 -> 128 kilo bytes
-block_size 128
+# Default value is 256 -> 256 kilo bytes
+block_size 256
 
