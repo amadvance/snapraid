@@ -127,8 +127,6 @@ static void state_sync_process(struct snapraid_state* state, int parity_f, block
 
 	printf("%u%% completed, %u MB processed\n", i * 100 / blockmax, (unsigned)(count_size / (1024*1024)));
 
-	printf("Done\n");
-
 	for(j=0;j<diskmax;++j) {
 		handle_close(&handle[j]);
 	}
@@ -148,9 +146,10 @@ void state_sync(struct snapraid_state* state, block_off_t blockstart)
 	printf("Syncing...\n");
 
 	blockmax = parity_resize(state);
+
 	size = blockmax * (data_off_t)state->block_size;
 
-	if (blockstart >= blockmax) {
+	if (blockstart > blockmax) {
 		fprintf(stderr, "The specified starting block %u is bigger than the parity size %u.\n", blockstart, blockmax);
 		exit(EXIT_FAILURE);
 	}
@@ -158,7 +157,12 @@ void state_sync(struct snapraid_state* state, block_off_t blockstart)
 	pathcpy(path, sizeof(path), state->parity);
 	f = parity_create(path, size);
 
-	state_sync_process(state, f, blockstart, blockmax);
+	/* skip degenerated cases of empty parity, or skipping all */
+	if (blockstart < blockmax) {
+		state_sync_process(state, f, blockstart, blockmax);
+	} else {
+		printf("Nothing to do\n");
+	}
 
 	parity_sync(path, f);
     

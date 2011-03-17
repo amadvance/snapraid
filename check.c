@@ -245,13 +245,17 @@ static int state_check_process(int ret_on_error, struct snapraid_state* state, i
 
 	printf("%u%% completed, %u MB processed\n", i * 100 / blockmax, (unsigned)(count_size / (1024*1024)));
 
-	if (error || unrecoverable_error) {
+	if (error || recovered_error || unrecoverable_error) {
 		if (error)
-			printf("%u recoverable errors\n", error);
+			printf("%u read errors\n", error);
 		else
-			printf("No recoverable errors\n");
-		if (fix)
-			printf("%u fixed errors\n", recovered_error);
+			printf("No read errors\n");
+		if (fix) {
+			if (recovered_error)
+				printf("%u recovered errors\n", recovered_error);
+			else
+				printf("No recovered errors\n");
+		}
 		if (unrecoverable_error)
 			printf("%u UNRECOVERABLE errors\n", unrecoverable_error);
 		else
@@ -287,7 +291,7 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart)
 	blockmax = parity_resize(state);
 	size = blockmax * (data_off_t)state->block_size;
 
-	if (blockstart >= blockmax) {
+	if (blockstart > blockmax) {
 		fprintf(stderr, "The specified starting block %u is bigger than the parity size %u.\n", blockstart, blockmax);
 		exit(EXIT_FAILURE);
 	}
@@ -303,10 +307,15 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart)
 		f = parity_open(-1, path);
 	}
 
-	ret = state_check_process(-1, state, fix, f, blockstart, blockmax);
-	if (ret == -1) {
-		/* no extra message */
-		exit(EXIT_FAILURE);
+	/* skip degenerated cases of empty parity, or skipping all */
+	if (blockstart < blockmax) {
+		ret = state_check_process(-1, state, fix, f, blockstart, blockmax);
+		if (ret == -1) {
+			/* no extra message */
+			exit(EXIT_FAILURE);
+		}
+	} else {
+		printf("Nothing to do\n");
 	}
 
 	if (f != -1) {

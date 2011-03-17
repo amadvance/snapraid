@@ -4,7 +4,7 @@ Name{number}
 Synopsis
 	:snapraid [-c, --conf CONFIG] [-s, --start BLOCK]
 	:	[-Z, --force-zero] [-E, --force-empty]
-	:	[-v, --verbose] [-e, --exclude PATTERN]
+	:	[-v, --verbose]
 	:	COMMAND
 
 	:snapraid [-V, --version] [-h, --help]

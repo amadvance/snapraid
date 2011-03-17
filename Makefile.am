@@ -64,6 +64,9 @@ check-local:
 	mkdir test/disk1
 	mkdir test/disk2
 	mkdir test/disk3
+	echo --- As empty, sync and check
+	./snapraid -c $(srcdir)/test.conf sync
+	./snapraid -c $(srcdir)/test.conf check
 	echo --- Create some files, sync and check
 	./mktest generate 1 3 1000 4000
 	./snapraid -c $(srcdir)/test.conf sync
