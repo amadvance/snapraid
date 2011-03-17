@@ -39,7 +39,7 @@ mktest_SOURCES = \
 EXTRA_DIST = \
 	autogen.sh \
 	noautomake.sh \
-	README AUTHORS HISTORY INSTALL COPYING \
+	README AUTHORS HISTORY INSTALL COPYING TODO \
 	snapraid.d snapraid.1 snapraid.txt snapraid.html \
 	test.conf \
 	snapraid.conf.example \

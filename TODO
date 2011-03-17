@@ -1,0 +1,27 @@
+SnapRAID TODO
+=============
+
+This is a list of possible TODO for SnapRAID. The order is not relevant.
+
+* Add RAID6 redundancy support.
+There is the very good raid6 library from H. Peter Anvin (hpa) in the Linux Kernel ready to use:
+See:
+http://kernel.org/pub/linux/kernel/people/hpa/raid6.pdf
+http://lxr.linux.no/#linux+v2.6.38/lib/raid6
+
+* Go multithread. We can do it when reading the new state (scan.c) and when syncing (sync.c)
+
+* Implement a faster XOR implementation using SSE2.
+
+* Search for a faster MD5 implementation if exists.
+
+* Evaluate to change from MD5 to FVN HASH.
+See:
+http://isthe.com/chongo/tech/comp/fnv/
+http://cessu.blogspot.com/2007/09/hashing-with-sse2.html (SSE implementation)
+http://isthe.com/chongo/src/fnv/hash_64a.c (C implementation)
+
+* Use the O_NOATIME flag if run as 'root'.
+Anyway a better solution is to mount the disk with the "noatime" and "nodiratime" options.
+
+* During a sync operation periodicallly save the state to do not lose the job done in case of a system crash.
