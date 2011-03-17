@@ -51,13 +51,14 @@ void state_done(struct snapraid_state* state)
 	tommy_list_foreach(&state->excludelist, (tommy_foreach_func*)filter_free);
 }
 
-void state_config(struct snapraid_state* state, const char* path, int verbose, int force)
+void state_config(struct snapraid_state* state, const char* path, int verbose, int force_zero, int force_empty)
 {
 	FILE* f;
 	unsigned line;
 
 	state->verbose = verbose;
-	state->force = force;
+	state->force_zero = force_zero;
+	state->force_empty = force_empty;
 
 	f = fopen(path, "rt");
 	if (!f) {

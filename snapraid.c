@@ -36,7 +36,8 @@ void usage(void) {
 	printf("Options:\n");
 	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE    ", "-c") "  Configuration file (default /etc/" PACKAGE ".conf)\n");
 	printf("  " SWITCH_GETOPT_LONG("-s, --start BLK    ", "-s") "  Start from the specified block number\n");
-	printf("  " SWITCH_GETOPT_LONG("-f, --force        ", "-f") "  Force dangerous operations\n");
+	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero   ", "-Z") "  Force synching of files that get zero size\n");
+	printf("  " SWITCH_GETOPT_LONG("-E, --force-empty  ", "-E") "  Force synching of disks that get empty\n");
 	printf("  " SWITCH_GETOPT_LONG("-v, --verbose      ", "-v") "  Verbose\n");
 	printf("  " SWITCH_GETOPT_LONG("-h, --help         ", "-h") "  Help\n");
 	printf("  " SWITCH_GETOPT_LONG("-V, --version      ", "-V") "  Version\n");
@@ -46,7 +47,8 @@ void usage(void) {
 struct option long_options[] = {
 	{ "conf", 1, 0, 'c' },
 	{ "start", 1, 0, 's' },
-	{ "force", 0, 0, 'f' },
+	{ "force-zero", 0, 0, 'Z' },
+	{ "force-empty", 0, 0, 'E' },
 	{ "verbose", 0, 0, 'v' },
 	{ "help", 0, 0, 'h' },
 	{ "version", 0, 0, 'V' },
@@ -54,7 +56,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:s:fvhV"
+#define OPTIONS "c:s:ZEvhV"
 
 volatile int global_interrupt = 0;
 
@@ -75,7 +77,8 @@ int main(int argc, char* argv[])
 {
 	int c;
 	int verbose;
-	int force;
+	int force_zero;
+	int force_empty;
 	const char* conf;
 	struct snapraid_state state;
 	int operation;
@@ -87,7 +90,8 @@ int main(int argc, char* argv[])
 	/* defaults */
 	conf = "/etc/" PACKAGE ".conf";
 	verbose = 0;
-	force = 0;
+	force_zero = 0;
+	force_empty = 0;
 	blockstart = 0;
 
 	opterr = 0;
@@ -108,8 +112,11 @@ int main(int argc, char* argv[])
 				exit(EXIT_FAILURE);
 			}
 			break;
-		case 'f' :
-			force = 1;
+		case 'Z' :
+			force_zero = 1;
+			break;
+		case 'E' :
+			force_empty = 1;
 			break;
 		case 'v' :
 			verbose = 1;
@@ -144,7 +151,7 @@ int main(int argc, char* argv[])
 
 	state_init(&state);
 
-	state_config(&state, conf, verbose, force);
+	state_config(&state, conf, verbose, force_zero, force_empty);
 
 	if (operation == OPERATION_SYNC) {
 		state_read(&state);

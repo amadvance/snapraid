@@ -3,7 +3,8 @@ Name{number}
 
 Synopsis
 	:snapraid [-c, --conf CONFIG] [-s, --start BLOCK]
-	:	[-f, --force] [-v, --verbose] [-e, --exclude PATTERN]
+	:	[-Z, --force-zero] [-E, --force-empty]
+	:	[-v, --verbose] [-e, --exclude PATTERN]
 	:	COMMAND
 
 	:snapraid [-V, --version] [-h, --help]
@@ -254,12 +255,21 @@ Options
 		block number. It could be useful to easy retry to fix
 		some specific block, in case of a damaged disk.
 
-	-f, --force
-		Forces insecure operations. If snapraid detects
-		an unsafe operation, it stops the execution asking you
-		to use this option to force the operation.
-		For example, it happens if all the files in a disk are
-		missing.
+	-Z, --force-zero
+		Forces the insecure operation of synching a file with zero
+		size that before was not empty.
+		If SnapRAID detects such condition, it stops proceeding
+		unless you specify this option.
+		This allows to easily detect when after a system crash,
+		some accessed files were zeroed.
+
+	-E, --force-empty
+		Forces the insecure operation of synching an empty disk
+		that before was not empty.
+		If SnapRAID detects such condition, it stops proceeding
+		unless you specify this option.
+		This allows to easily detect when a data filesystem is not
+		mounted.
 
 	-v, --verbose
 		Prints more information in the processing.

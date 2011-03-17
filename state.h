@@ -28,7 +28,8 @@ extern volatile int global_interrupt;
 
 struct snapraid_state {
 	int verbose; /**< Verbose output. */
-	int force; /**< Forced dangerous operations. */
+	int force_zero; /**< Forced dangerous operations of synching file now with zero size. */
+	int force_empty; /**< Forced dangerous operations of synching disk now empty. */
 	uint32_t block_size; /**< Block size in bytes. */
 	char content[PATH_MAX]; /**< Path of the content file. */
 	char parity[PATH_MAX]; /**< Path of the parity file. */
@@ -49,7 +50,7 @@ void state_done(struct snapraid_state* state);
 /**
  * Read the configuration file.
  */
-void state_config(struct snapraid_state* state, const char* path, int verbose, int force);
+void state_config(struct snapraid_state* state, const char* path, int verbose, int force_zero, int force_empty);
 
 /**
  * Read the state.

@@ -111,9 +111,11 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 			/* do a safety check to ensure that the common ext4 case of zeroing */
 			/* the size of a file after a crash doesn't propagate to the backup */
 			if (file->size != 0 && st->st_size == 0) {
-				fprintf(stderr, "The file '%s' in disk '%s' at dir '%s' has zero size!\n", sub, disk->name, disk->dir);
-				fprintf(stderr, "If it's really what you want to do, use 'snapraid --force sync\n");
-				exit(EXIT_FAILURE);
+				if (!state->force_zero) {
+					fprintf(stderr, "The file '%s' in disk '%s' at dir '%s' has now zero size!\n", sub, disk->name, disk->dir);
+					fprintf(stderr, "If it's really what you want to sync it, use 'snapraid --force-zero sync\n");
+					exit(EXIT_FAILURE);
+				}
 			}
 		
 			/* remove and reinsert it */
@@ -247,9 +249,9 @@ void state_scan(struct snapraid_state* state)
 
 		/* if all the previous file were removed */
 		if (scan[i].count_equal == 0 && scan[i].count_remove != 0) {
-			if (!state->force) {
+			if (!state->force_empty) {
 				fprintf(stderr, "All the file in disk '%s' at dir '%s' are missing!\n", disk->name, disk->dir);
-				fprintf(stderr, "If it's really what you want to do, use 'snapraid --force sync\n");
+				fprintf(stderr, "If it's really what you want to sync it, use 'snapraid --force-empty sync\n");
 				exit(EXIT_FAILURE);
 			}
 		}

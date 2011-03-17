@@ -9,7 +9,8 @@ Synopsis
 </h2>
 <pre>
 snapraid [-c, --conf CONFIG] [-s, --start BLOCK]
-&nbsp;&nbsp;&nbsp;&nbsp;[-f, --force] [-v, --verbose] [-e, --exclude PATTERN]
+&nbsp;&nbsp;&nbsp;&nbsp;[-Z, --force-zero] [-E, --force-empty]
+&nbsp;&nbsp;&nbsp;&nbsp;[-v, --verbose] [-e, --exclude PATTERN]
 &nbsp;&nbsp;&nbsp;&nbsp;COMMAND
 </pre>
 <p>
@@ -191,6 +192,8 @@ parity FILE
 Defines the file to use to store the redundancy information.
 It must be placed in a disk dedicated for this porpose with
 as much free space as the biggest disk in the array.
+Leaving the parity disk reserved for only this file, ensures that
+it doesn't get fragmented, improving the performance.
 This option can be used only one time.
 </td></tr>
 </table>
@@ -200,8 +203,8 @@ content FILE
 </strong></td></tr><tr><td>
 Defines the file to use to store the content of the redundancy
 organization.
-It must be placed in the same disk of the parity file, or in
-another location, but not in a disk of the array.
+It can be placed in the same disk of the parity file, or better
+in another disk, but NOT in a disk of the array.
 This option can be used only one time.
 </td></tr>
 </table>
@@ -394,13 +397,26 @@ some specific block, in case of a damaged disk.
 </table>
 <table width="100%" border="0" cellspacing="0" cellpadding="2">
 <tr valign="top" align="left"><td><strong>
--f, --force
+-Z, --force-zero
 </strong></td></tr><tr><td>
-Forces insecure operations. If snapraid detects
-an unsafe operation, it stops the execution asking you
-to use this option to force the operation.
-For example, it happens if all the files in a disk are
-missing.
+Forces the insecure operation of synching a file with zero
+size that before was not empty.
+If SnapRAID detects such condition, it stops proceeding
+unless you specify this option.
+This allows to easily detect when after a system crash,
+some accessed files were zeroed.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+-E, --force-empty
+</strong></td></tr><tr><td>
+Forces the insecure operation of synching an empty disk
+that before was not empty.
+If SnapRAID detects such condition, it stops proceeding
+unless you specify this option.
+This allows to easily detect when a data filesystem is not
+mounted.
 </td></tr>
 </table>
 <table width="100%" border="0" cellspacing="0" cellpadding="2">
