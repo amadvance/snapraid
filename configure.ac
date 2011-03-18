@@ -9,6 +9,7 @@ AC_CANONICAL_HOST
 dnl Checks for programs.
 AC_PROG_CC
 AC_USE_SYSTEM_EXTENSIONS
+AC_CHECK_PROG([VALGRIND],[valgrind],[valgrind --leak-check=full --track-fds=yes --error-exitcode=1],[])
 
 dnl Checks for libraries.
 AC_SYS_LARGEFILE

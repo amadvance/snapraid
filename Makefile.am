@@ -65,36 +65,36 @@ check-local:
 	mkdir test/disk2
 	mkdir test/disk3
 	echo --- As empty, sync and check
-	./snapraid -c $(srcdir)/test.conf sync
-	./snapraid -c $(srcdir)/test.conf check
+	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf sync
+	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check
 	echo --- Create some files, sync and check
 	./mktest generate 1 3 1000 4000
-	./snapraid -c $(srcdir)/test.conf sync
-	./snapraid -c $(srcdir)/test.conf check
+	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf sync
+	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check
 	echo --- Create some more files, sync and check
 	./mktest generate 2 3 1000 4000
-	./snapraid -c $(srcdir)/test.conf sync
-	./snapraid -c $(srcdir)/test.conf check 
+	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf sync
+	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check 
 	echo --- Delete some files, fix and check
 	rm test/disk1/a*
-	./snapraid -c $(srcdir)/test.conf check 2>/dev/null
-	./snapraid -c $(srcdir)/test.conf fix 2>/dev/null
-	./snapraid -c $(srcdir)/test.conf check
+	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check 2>/dev/null
+	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf fix 2>/dev/null
+	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check
 	echo --- Delete the parity, fix and check
 	rm test/parity
-	./snapraid -c $(srcdir)/test.conf check 2>/dev/null
-	./snapraid -c $(srcdir)/test.conf fix 2>/dev/null
-	./snapraid -c $(srcdir)/test.conf check
+	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check 2>/dev/null
+	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf fix 2>/dev/null
+	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check
 	echo --- Corrupt the parity, fix and check
 	./mktest damage 1 10 10000 test/parity
-	./snapraid -c $(srcdir)/test.conf check 2>/dev/null
-	./snapraid -c $(srcdir)/test.conf fix 2>/dev/null
-	./snapraid -c $(srcdir)/test.conf check
+	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check 2>/dev/null
+	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf fix 2>/dev/null
+	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check
 	echo --- Corrupt some files, fix and check
 	./mktest damage 1 1 500 test/disk2/b*
-	./snapraid -c $(srcdir)/test.conf check 2>/dev/null
-	./snapraid -c $(srcdir)/test.conf fix 2>/dev/null
-	./snapraid -c $(srcdir)/test.conf check
+	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check 2>/dev/null
+	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf fix 2>/dev/null
+	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check
 	echo Success!
 
 # Valgrind testing
