@@ -29,31 +29,36 @@ struct snapraid_handle {
 };
 
 /**
- * Create a file.
+ * Closes a file, if it's different from the specified one.
+ */
+int handle_close_if_different(struct snapraid_handle* handle, struct snapraid_file* file);
+
+/**
+ * Creates a file.
  * The file is created if missing, and opening with write access.
  */
 int handle_create(struct snapraid_handle* handle, struct snapraid_file* file);
 
 /**
- * Open a file.
+ * Opens a file.
  * The file is opened for reading.
  */
-int handle_open(int ret_on_error, struct snapraid_handle* handle, struct snapraid_file* file);
+int handle_open(struct snapraid_handle* handle, struct snapraid_file* file);
 
 /**
- * Close a file.
+ * Closes a file.
  */
-void handle_close(struct snapraid_handle* handle);
+int handle_close(struct snapraid_handle* handle);
 
 /**
  * Read a block from a file.
  */
-int handle_read(int ret_on_error, struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size);
+int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size);
 
 /**
  * Writes a block to a file.
  */
-void handle_write(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size);
+int handle_write(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size);
 
 #endif
 

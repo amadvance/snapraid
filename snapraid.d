@@ -252,8 +252,8 @@ Options
 
 	-s, --start BLOCK
 		Starts the processing from the specified
-		block number. It could be useful to easy retry to fix
-		some specific block, in case of a damaged disk.
+		block number. It could be useful to easy retry to check or
+		fix some specific block, in case of a damaged disk.
 
 	-Z, --force-zero
 		Forces the insecure operation of synching a file with zero

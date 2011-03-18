@@ -24,4 +24,3 @@ http://isthe.com/chongo/src/fnv/hash_64a.c (C implementation)
 * Use the O_NOATIME flag if run as 'root'.
 Anyway a better solution is to mount the disk with the "noatime" and "nodiratime" options.
 
-* During a sync operation periodicallly save the state to do not lose the job done in case of a system crash.

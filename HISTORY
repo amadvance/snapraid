@@ -5,6 +5,7 @@ SnapRAID HISTORY
 ==========
 * Exclusion list of files and directories
 * More automatic tests
+* Better error management
 * Better documentation
 
 

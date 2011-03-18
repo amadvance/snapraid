@@ -58,13 +58,13 @@ int parity_create(const char* path, data_off_t size)
 	f = open(path, O_RDWR | O_CREAT | O_BINARY, 0600);
 	if (f == -1) {
 		fprintf(stderr, "Error opening parity file '%s'. %s.\n", path, strerror(errno));
-		exit(EXIT_FAILURE);
+		return -1;
 	}
 
 	ret = fstat(f, &st);
 	if (ret != 0) {
 		fprintf(stderr, "Error accessing parity file '%s'. %s.\n", path, strerror(errno));
-		exit(EXIT_FAILURE);
+		goto bail;
 	}
 
 	if (st.st_size < size) {
@@ -81,13 +81,13 @@ int parity_create(const char* path, data_off_t size)
 			} else {
 				fprintf(stderr, "Error growing parity file '%s'. %s.\n", path, strerror(errno));
 			}
-			exit(EXIT_FAILURE);
+			goto bail;
 		}
 	} else if (st.st_size > size) {
 		ret = ftruncate(f, size);
 		if (ret != 0) {
 			fprintf(stderr, "Error truncating parity file '%s'. %s.\n", path, strerror(errno));
-			exit(EXIT_FAILURE);
+			goto bail;
 		}
 	}
 
@@ -96,14 +96,18 @@ int parity_create(const char* path, data_off_t size)
 	ret = posix_fadvise(f, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (ret != 0) {
 		fprintf(stderr, "Error advising parity file '%s'. %s.\n", path, strerror(errno));
-		exit(EXIT_FAILURE);
+		goto bail;
 	}
 #endif
 
 	return f;
+
+bail:
+	close(f);
+	return -1;
 }
 
-int parity_open(int ret_on_error, const char* path)
+int parity_open(const char* path)
 {
 #if HAVE_POSIX_FADVISE
 	int ret;
@@ -112,26 +116,27 @@ int parity_open(int ret_on_error, const char* path)
 
 	f = open(path, O_RDONLY | O_BINARY);
 	if (f == -1) {
-		if (ret_on_error)
-			return -1;
 		fprintf(stderr, "Error opening parity file '%s'. %s.\n", path, strerror(errno));
-		exit(EXIT_FAILURE);
+		return -1;
 	}
 
 #if HAVE_POSIX_FADVISE
 	/* advise sequential access */
 	ret = posix_fadvise(f, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (ret != 0) {
-		/* here we always abort on error, as advise is supposed to never fail */
 		fprintf(stderr, "Error advising parity file '%s'. %s.\n", path, strerror(errno));
-		exit(EXIT_FAILURE);
+		goto bail;
 	}
 #endif
 
 	return f;
+
+bail:
+	close(f);
+	return -1;
 }
 
-void parity_sync(const char* path, int f)
+int parity_sync(const char* path, int f)
 {
 #if HAVE_FSYNC
 	int ret;
@@ -142,30 +147,37 @@ void parity_sync(const char* path, int f)
 	ret = fsync(f);
 	if (ret != 0) {
 		fprintf(stderr, "Error synching parity file '%s'. %s.\n", path, strerror(errno));
-		exit(EXIT_FAILURE);
+		return -1;
 	}
 #endif
+
+	return 0;
 }
 
-void parity_close(const char* path, int f)
+int parity_close(const char* path, int f)
 {
 	int ret;
 
 	ret = close(f);
 	if (ret != 0) {
+		/* This is a serious error, as it may be the result of a failed write */
+		/* identified at later time. */
+		/* In a normal filesystem (not NFS) it should never happen */
 		fprintf(stderr, "Error closing parity file '%s'. %s.\n", path, strerror(errno));
-		exit(EXIT_FAILURE);
+		return -1;
 	}
+
+	return 0;
 }
 
-void parity_write(const char* path, int f, block_off_t pos, unsigned char* block_buffer, unsigned block_size)
+int parity_write(const char* path, int f, block_off_t pos, unsigned char* block_buffer, unsigned block_size)
 {
 	ssize_t write_ret;
 	data_off_t offset;
 
 	offset = pos * (data_off_t)block_size;
 
-#if HAVE_PWRITE    
+#if HAVE_PWRITE
 	write_ret = pwrite(f, block_buffer, block_size, offset);
 #else
 	if (lseek(f, offset, SEEK_SET) != offset) {
@@ -174,7 +186,7 @@ void parity_write(const char* path, int f, block_off_t pos, unsigned char* block
 		} else {
 			fprintf(stderr, "Error seeking file '%s'. %s.\n", path, strerror(errno));
 		}
-		exit(EXIT_FAILURE);
+		return -1;
 	}
 
 	write_ret = write(f, block_buffer, block_size);
@@ -185,40 +197,32 @@ void parity_write(const char* path, int f, block_off_t pos, unsigned char* block
 		} else {
 			fprintf(stderr, "Error writing file '%s'. %s.\n", path, strerror(errno));
 		}
-		exit(EXIT_FAILURE);
+		return -1;
 	}
+
+	return 0;
 }
 
-int parity_read(int ret_on_error, const char* path, int f, block_off_t pos, unsigned char* block_buffer, unsigned block_size)
+int parity_read(const char* path, int f, block_off_t pos, unsigned char* block_buffer, unsigned block_size)
 {
 	ssize_t read_ret;
 	data_off_t offset;
 
-	/* if the file is not opened, return an error without trying */
-	if (f == -1 && ret_on_error)
-		return -1;
-
 	offset = pos * (data_off_t)block_size;
 
-#if HAVE_PREAD    
+#if HAVE_PREAD
 	read_ret = pread(f, block_buffer, block_size, offset);
 #else
 	if (lseek(f, offset, SEEK_SET) != offset) {
-		if (ret_on_error)
-			return ret_on_error;
-
 		fprintf(stderr, "Error seeking file '%s'. %s.\n", path, strerror(errno));
-		exit(EXIT_FAILURE);    
+		return -1;
 	}
 
 	read_ret = read(f, block_buffer, block_size);
 #endif    
 	if (read_ret != block_size) {
-		if (ret_on_error)
-			return ret_on_error;
-
 		fprintf(stderr, "Error reading file '%s'. %s.\n", path, strerror(errno));
-		exit(EXIT_FAILURE);
+		return -1;
 	}
 
 	return block_size;

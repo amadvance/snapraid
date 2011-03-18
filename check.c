@@ -26,7 +26,7 @@
 /****************************************************************************/
 /* check */
 
-static int state_check_process(int ret_on_error, struct snapraid_state* state, int fix, int parity_f, block_off_t blockstart, block_off_t blockmax)
+static int state_check_process(struct snapraid_state* state, int fix, int parity_f, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
 	unsigned diskmax = tommy_array_size(&state->diskarr);
@@ -102,12 +102,24 @@ static int state_check_process(int ret_on_error, struct snapraid_state* state, i
 			if (!block->is_hashed)
 				continue;
 
+			ret = handle_close_if_different(&handle[j], block->file);
+			if (ret == -1) {
+				fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+				fprintf(stderr, "Stopping at block %u\n", i);
+				goto bail;
+			}
+
 			if (fix) {
 				/* if fixing, create the file and open for writing */
-				handle_create(&handle[j],  block->file);
+				ret = handle_create(&handle[j],  block->file);
+				if (ret == -1) {
+					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					fprintf(stderr, "Stopping at block %u\n", i);
+					goto bail;
+				}
 			} else {
 				/* if checking, open the file for reading */
-				ret = handle_open(-1, &handle[j], block->file);
+				ret = handle_open(&handle[j], block->file);
 				if (ret == -1) {
 					/* save the failed block for the parity check */
 					++failed;
@@ -120,7 +132,7 @@ static int state_check_process(int ret_on_error, struct snapraid_state* state, i
 				}
 			}
 
-			read_size = handle_read(-1, &handle[j], block, block_buffer, state->block_size);
+			read_size = handle_read(&handle[j], block, block_buffer, state->block_size);
 			if (read_size == -1) {
 				/* save the failed block for the parity check */
 				++failed;
@@ -155,14 +167,20 @@ static int state_check_process(int ret_on_error, struct snapraid_state* state, i
 			count_size += read_size;
 		}
 
-		if (failed == 0) {
+		if (parity_f == -1) {
+			/* all the cases with no parity file */
+			if (failed != 0) {
+				fprintf(stderr, "%u: UNRECOVERABLE errors for this block\n", i);
+				++unrecoverable_error;
+			}
+		} else if (failed == 0) {
 			int ret;
 			int fixable;
 
 			fixable = 0;
 
 			/* read the parity */
-			ret = parity_read(-1, state->parity, parity_f, i, block_buffer, state->block_size);
+			ret = parity_read(state->parity, parity_f, i, block_buffer, state->block_size);
 			if (ret == -1) {
 				fprintf(stderr, "%u: Parity read error\n", i);
 				++error;
@@ -181,7 +199,12 @@ static int state_check_process(int ret_on_error, struct snapraid_state* state, i
 			if (fix && fixable) {
 				/* fix the parity */
 				/* if all the file hashes are matching, we can recompute the parity */
-				parity_write(state->parity, parity_f, i, xor_buffer, state->block_size);
+				ret = parity_write(state->parity, parity_f, i, xor_buffer, state->block_size);
+				if (ret == -1) {
+					fprintf(stderr, "WARNING! Without a working parity disk, it isn't possible to fix errors on it.\n");
+					fprintf(stderr, "Stopping at block %u\n", i);
+					goto bail;
+				}
 
 				fprintf(stderr, "%u: Fixed\n", i);
 				++recovered_error;
@@ -196,7 +219,7 @@ static int state_check_process(int ret_on_error, struct snapraid_state* state, i
 			fixable = 0;
 
 			/* read the parity */
-			ret = parity_read(-1, state->parity, parity_f, i, block_buffer, state->block_size);
+			ret = parity_read(state->parity, parity_f, i, block_buffer, state->block_size);
 			if (ret == -1) {
 				fprintf(stderr, "%u: Parity read error\n", i);
 				fprintf(stderr, "%u: UNRECOVERABLE errors for this block\n", i);
@@ -225,7 +248,12 @@ static int state_check_process(int ret_on_error, struct snapraid_state* state, i
 			if (fix && fixable) {
 				/* fix the file */
 				/* if only one file is wrong, we already have recomputed it */
-				handle_write(failed_handle, failed_block, block_buffer, state->block_size);
+				ret = handle_write(failed_handle, failed_block, block_buffer, state->block_size);
+				if (ret == -1) {
+					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					fprintf(stderr, "Stopping at block %u\n", i);
+					goto bail;
+				}
 
 				fprintf(stderr, "%u: Fixed\n", i);
 				++recovered_error;
@@ -239,17 +267,30 @@ static int state_check_process(int ret_on_error, struct snapraid_state* state, i
 		++count_block;
 
 		/* progress */
-		if (state_progress(&start, &last, i, blockmax, count_block, count_size))
+		if (state_progress(&start, &last, i, blockmax, count_block, count_size)) {
+			printf("Stopping for interruption at block %u\n", i);
 			break;
+		}
 	}
 
 	printf("%u%% completed, %u MB processed\n", i * 100 / blockmax, (unsigned)(count_size / (1024*1024)));
 
+bail:
+	for(j=0;j<diskmax;++j) {
+		ret = handle_close(&handle[j]);
+		if (ret == -1) {
+			if (fix) {
+				fprintf(stderr, "WARNING! A 'snapraid check' command is highly suggested.\n");
+				/* continue, as we are already exiting */
+			}
+		}
+	}
+
 	if (error || recovered_error || unrecoverable_error) {
 		if (error)
-			printf("%u read errors\n", error);
+			printf("%u read/data errors\n", error);
 		else
-			printf("No read errors\n");
+			printf("No read/data errors\n");
 		if (fix) {
 			if (recovered_error)
 				printf("%u recovered errors\n", recovered_error);
@@ -264,15 +305,15 @@ static int state_check_process(int ret_on_error, struct snapraid_state* state, i
 		printf("No error\n");
 	}
 
-	for(j=0;j<diskmax;++j) {
-		handle_close(&handle[j]);
-	}
-
 	free(handle);
 	free(block_buffer);
 	free(xor_buffer);
 
-	return unrecoverable_error != 0 ? ret_on_error : 0;
+	/* signal if there are unrecoverable errors */
+	if (unrecoverable_error != 0)
+		return -1;
+
+	return 0;
 }
 
 void state_check(struct snapraid_state* state, int fix, block_off_t blockstart)
@@ -292,33 +333,52 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart)
 	size = blockmax * (data_off_t)state->block_size;
 
 	if (blockstart > blockmax) {
-		fprintf(stderr, "The specified starting block %u is bigger than the parity size %u.\n", blockstart, blockmax);
+		fprintf(stderr, "Error in the specified starting block %u. It's bigger than the parity size %u.\n", blockstart, blockmax);
 		exit(EXIT_FAILURE);
 	}
 
 	pathcpy(path, sizeof(path), state->parity);
 	if (fix) {
 		/* if fixing, create the file and open for writing */
-		/* it never fails */
+		/* if it fails, we cannot continue */
 		f = parity_create(path, size);
+		if (f == -1) {
+			fprintf(stderr, "WARNING! Without an accessible parity file, it isn't possible to fix any error.\n");
+			exit(EXIT_FAILURE);
+		}
 	} else {
 		/* if checking, open the file for reading */
-		/* it may fail if the file doesn't exist */
-		f = parity_open(-1, path);
+		/* it may fail if the file doesn't exist, in this case we continue to check the files */
+		f = parity_open(path);
+		if (f == -1) {
+			printf("No accessible parity file, all the errors are going to be UNRECOVERABLE.\n");
+			/* continue anyway */
+		}
 	}
 
 	/* skip degenerated cases of empty parity, or skipping all */
 	if (blockstart < blockmax) {
-		ret = state_check_process(-1, state, fix, f, blockstart, blockmax);
+		ret = state_check_process(state, fix, f, blockstart, blockmax);
 		if (ret == -1) {
-			/* no extra message */
+			if (f != -1) {
+				ret = parity_close(path, f);
+				if (ret != -1) {
+					fprintf(stderr, "WARNING! A 'snapraid check' command is highly suggested.\n");
+					/* continue, as we are already exiting */
+				}
+			}
+			/* exit with a failure code */
 			exit(EXIT_FAILURE);
 		}
-	} else {
-		printf("Nothing to do\n");
 	}
 
+	/* try to close only if opened */
 	if (f != -1) {
-		parity_close(path, f);
+		ret = parity_close(path, f);
+		if (ret == -1) {
+			fprintf(stderr, "WARNING! A 'snapraid check' command is highly suggested.\n");
+			exit(EXIT_FAILURE);
+		}
 	}
 }
+

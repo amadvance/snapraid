@@ -117,7 +117,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 					exit(EXIT_FAILURE);
 				}
 			}
-		
+
 			/* remove and reinsert it */
 			++scan->count_change;
 			--scan->count_insert;

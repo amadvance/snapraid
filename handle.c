@@ -24,31 +24,56 @@
 /****************************************************************************/
 /* handle */
 
-int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
+int handle_close_if_different(struct snapraid_handle* handle, struct snapraid_file* file)
 {
-	struct stat st;
 	int ret;
-
-	/* if already opened, nothing to do */
-	if (handle->file == file && handle->f != -1) {
+	
+	/* if it's the same file, nothing to do */
+	if (handle->file == file) {
 		return 0;
 	}
+
+	/* reset the file */
+	handle->file = 0;
 
 	/* close if already open */
 	if (handle->f != -1) {
 		ret = close(handle->f);
 		if (ret != 0) {
+			/* invalidate for error */
+			handle->f = -1;
+
 			fprintf(stderr, "Error closing file '%s'. %s.\n", handle->file->sub, strerror(errno));
-			exit(EXIT_FAILURE);
+			return -1;
 		}
+	}
+
+	/* reset the descriptor */
+	handle->f = -1;
+
+	return 0;
+}
+
+int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
+{
+	struct stat st;
+	int ret;
+
+	/* if it's the same file, and already opened, nothing to do */
+	if (handle->file == file && handle->f != -1) {
+		return 0;
 	}
 
 	pathprint(handle->path, sizeof(handle->path), "%s%s", handle->disk->dir, file->sub);
 	handle->f = open(handle->path, O_RDWR | O_CREAT | O_BINARY, 0600);
 
 	if (handle->f == -1) {
+		/* invalidate for error */
+		handle->file = 0;
+		handle->f = -1;
+
 		fprintf(stderr, "Error opening file '%s'. %s.\n", handle->path, strerror(errno));
-		exit(EXIT_FAILURE);
+		return -1;
 	}
 
 	/* just opened */
@@ -58,7 +83,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 	ret = fstat(handle->f, &st);
 	if (ret != 0) {
 		fprintf(stderr, "Error accessing file '%s'. %s.\n", handle->path, strerror(errno));
-		exit(EXIT_FAILURE);
+		return -1;
 	}
 
 	if (st.st_size < file->size) {
@@ -75,13 +100,13 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 			} else {
 				fprintf(stderr, "Error growing file '%s'. %s.\n", handle->path, strerror(errno));
 			}
-				exit(EXIT_FAILURE);
+			return -1;
 		}
 	} else if (st.st_size > file->size) {
 		ret = ftruncate(handle->f, file->size);
 		if (ret != 0) {
 			fprintf(stderr, "Error truncating file '%s'. %s.\n", handle->path, strerror(errno));
-			exit(EXIT_FAILURE);
+			return -1;
 		}
 	}
 
@@ -90,30 +115,20 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 	ret = posix_fadvise(handle->f, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (ret != 0) {
 		fprintf(stderr, "Error advising file '%s'. %s.\n", handle->path, strerror(errno));
-		exit(EXIT_FAILURE);
+		return -1;
 	}
 #endif
 
 	return 0;
 }
 
-int handle_open(int ret_on_error, struct snapraid_handle* handle, struct snapraid_file* file)
+int handle_open(struct snapraid_handle* handle, struct snapraid_file* file)
 {
 	int ret;
 
 	/* if already opened, nothing to do */
 	if (handle->file == file && handle->f != -1) {
 		return 0;
-	}
-
-	/* close if already open */
-	if (handle->f != -1) {
-		ret = close(handle->f);
-		if (ret != 0) {
-			/* here we always abort on error, as close is supposed to never fail */
-			fprintf(stderr, "Error closing file '%s'. %s.\n", handle->file->sub, strerror(errno));
-			exit(EXIT_FAILURE);
-		}
 	}
 
 	pathprint(handle->path, sizeof(handle->path), "%s%s", handle->disk->dir, file->sub);
@@ -124,11 +139,8 @@ int handle_open(int ret_on_error, struct snapraid_handle* handle, struct snaprai
 		handle->file = 0;
 		handle->f = -1;
 
-		if (ret_on_error)
-			return ret_on_error;
-
 		fprintf(stderr, "Error opening file '%s'. %s.\n", handle->path, strerror(errno));
-		exit(EXIT_FAILURE);
+		return -1;
 	}
 
 	/* just opened */
@@ -138,32 +150,37 @@ int handle_open(int ret_on_error, struct snapraid_handle* handle, struct snaprai
 	/* advise sequential access */
 	ret = posix_fadvise(handle->f, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (ret != 0) {
-		/* here we always abort on error, as advise is supposed to never fail */
 		fprintf(stderr, "Error advising file '%s'. %s.\n", handle->path, strerror(errno));
-		exit(EXIT_FAILURE);
+		return -1;
 	}
 #endif
 
 	return 0;
 }
 
-void handle_close(struct snapraid_handle* handle)
+int handle_close(struct snapraid_handle* handle)
 {
 	int ret;
 
 	if (handle->f != -1) {
 		ret = close(handle->f);
 		if (ret != 0) {
+			/* invalidate for error */
+			handle->file = 0;
+			handle->f = -1;
+
 			fprintf(stderr, "Error closing file '%s'. %s.\n", handle->file->sub, strerror(errno));
-			exit(EXIT_FAILURE);
+			return -1;
 		}
 	}
 
 	handle->file = 0;
 	handle->f = -1;
+
+	return 0;
 }
 
-int handle_read(int ret_on_error, struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size)
+int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size)
 {
 	ssize_t read_ret;
 	data_off_t offset;
@@ -177,27 +194,21 @@ int handle_read(int ret_on_error, struct snapraid_handle* handle, struct snaprai
 	read_ret = pread(handle->f, block_buffer, read_size, offset);
 #else
 	if (lseek(handle->f, offset, SEEK_SET) != offset) {
-		if (ret_on_error)
-			return ret_on_error;
-
 		fprintf(stderr, "Error seeking file '%s'. %s.\n", handle->path, strerror(errno));
-		exit(EXIT_FAILURE);  
+		return -1;
 	}
 
 	read_ret = read(handle->f, block_buffer, read_size);
 #endif
 	if (read_ret != read_size) {
-		if (ret_on_error)
-			return ret_on_error;
-
 		fprintf(stderr, "Error reading file '%s'. %s.\n", handle->path, strerror(errno));
-		exit(EXIT_FAILURE);
+		return -1;
 	}
 
 	return read_size;
 }
 
-void handle_write(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size)
+int handle_write(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size)
 {
 	ssize_t write_ret;
 	data_off_t offset;
@@ -212,14 +223,16 @@ void handle_write(struct snapraid_handle* handle, struct snapraid_block* block, 
 #else
 	if (lseek(handle->f, offset, SEEK_SET) != offset) {
 		fprintf(stderr, "Error seeking file '%s'. %s.\n", handle->path, strerror(errno));
-		exit(EXIT_FAILURE);
+		return -1;
 	}
 
 	write_ret = write(handle->f, block_buffer, write_size);
 #endif    
 	if (write_ret != write_size) {
 		fprintf(stderr, "Error writing file '%s'. %s.\n", handle->path, strerror(errno));
-		exit(EXIT_FAILURE);
+		return -1;
 	}
+
+	return 0;
 }
 

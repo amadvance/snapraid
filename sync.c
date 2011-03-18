@@ -38,6 +38,7 @@ static void state_sync_process(struct snapraid_state* state, int parity_f, block
 	data_off_t count_block;
 	time_t start;
 	time_t last;
+	int ret;
 
 	block_buffer = malloc_nofail(state->block_size);
 	xor_buffer = malloc_nofail(state->block_size);
@@ -56,6 +57,7 @@ static void state_sync_process(struct snapraid_state* state, int parity_f, block
 
 	for(i=blockstart;i<blockmax;++i) {
 		int unhashed;
+		int ret;
 
 		/* for each disk, search for an unhashed block */
 		unhashed = 0;
@@ -84,9 +86,26 @@ static void state_sync_process(struct snapraid_state* state, int parity_f, block
 			if (!block)
 				continue;
 
-			handle_open(0, &handle[j], block->file);
+			ret = handle_close_if_different(&handle[j], block->file);
+			if (ret == -1) {
+				fprintf(stderr, "WARNING! Without an accessible data disk, it isn't possible to sync.\n");
+				fprintf(stderr, "Stopping at block %u\n", i);
+				goto bail;
+			}
 
-			read_size = handle_read(0, &handle[j], block, block_buffer, state->block_size);
+			ret = handle_open(&handle[j], block->file);
+			if (ret == -1) {
+				fprintf(stderr, "WARNING! Without an accessible data disk, it isn't possible to sync.\n");
+				fprintf(stderr, "Stopping at block %u\n", i);
+				goto bail;
+			}
+
+			read_size = handle_read(&handle[j], block, block_buffer, state->block_size);
+			if (read_size == -1) {
+				fprintf(stderr, "WARNING! Without an accessible data disk, it isn't possible to sync.\n");
+				fprintf(stderr, "Stopping at block %u\n", i);
+				goto bail;
+			}
 
 			/* now compute the hash */
 			md5_init(&md5);
@@ -97,15 +116,14 @@ static void state_sync_process(struct snapraid_state* state, int parity_f, block
 				/* compare the hash */
 				if (memcmp(hash, block->hash, HASH_MAX) != 0) {
 					fprintf(stderr, "%u: Data error for file %s at position %u\n", i, block->file->sub, block_file_pos(block));
+					fprintf(stderr, "WARNING! With errors in the data disk it isn't possible to sync.\n");
 					fprintf(stderr, "Stopping to allow recovery. Try with 'snapraid -s %u fix'\n", i);
-					exit(EXIT_FAILURE);
+					goto bail;
 				}
 			} else {
-				/* copy the hash */
+				/* copy the hash, but doesn't mark the block as hashed */
+				/* this allow on error to do not save the failed computation */
 				memcpy(block->hash, hash, HASH_MAX);
-
-				/* mark the block as hashed */
-				block->is_hashed = 1;
 			}
 
 			/* compute the parity */
@@ -115,20 +133,43 @@ static void state_sync_process(struct snapraid_state* state, int parity_f, block
 		}
 
 		/* write the parity */
-		parity_write(state->parity, parity_f, i, xor_buffer, state->block_size);
+		ret = parity_write(state->parity, parity_f, i, xor_buffer, state->block_size);
+		if (ret == -1) {
+			fprintf(stderr, "WARNING! Without an accessible parity file, it isn't possible to sync.\n");
+			fprintf(stderr, "Stopping at block %u\n", i);
+			goto bail;
+		}
+
+		/* for each disk, mark the blocks as processed */
+		for(j=0;j<diskmax;++j) {
+			struct snapraid_block* block;
+
+			block = disk_block_get(handle[j].disk, i);
+			if (!block)
+				continue;
+
+			block->is_hashed = 1;
+		}
 
 		/* count the number of processed block */
 		++count_block;
 
 		/* progress */
-		if (state_progress(&start, &last, i, blockmax, count_block, count_size))
+		if (state_progress(&start, &last, i, blockmax, count_block, count_size)) {
+			printf("Stopping for interruption at block %u\n", i);
 			break;
+		}
 	}
 
 	printf("%u%% completed, %u MB processed\n", i * 100 / blockmax, (unsigned)(count_size / (1024*1024)));
 
+bail:
 	for(j=0;j<diskmax;++j) {
-		handle_close(&handle[j]);
+		ret = handle_close(&handle[j]);
+		if (ret == -1) {
+			fprintf(stderr, "WARNING! A 'snapraid check' command is highly suggested.\n");
+			/* continue, as we are already exiting */
+		}
 	}
 
 	free(handle);
@@ -141,6 +182,7 @@ void state_sync(struct snapraid_state* state, block_off_t blockstart)
 	char path[PATH_MAX];
 	block_off_t blockmax;
 	data_off_t size;
+	int ret;
 	int f;
 
 	printf("Syncing...\n");
@@ -150,22 +192,32 @@ void state_sync(struct snapraid_state* state, block_off_t blockstart)
 	size = blockmax * (data_off_t)state->block_size;
 
 	if (blockstart > blockmax) {
-		fprintf(stderr, "The specified starting block %u is bigger than the parity size %u.\n", blockstart, blockmax);
+		fprintf(stderr, "Error in the starting block %u. It's bigger than the parity size %u.\n", blockstart, blockmax);
 		exit(EXIT_FAILURE);
 	}
 
 	pathcpy(path, sizeof(path), state->parity);
 	f = parity_create(path, size);
+	if (f == -1) {
+		fprintf(stderr, "WARNING! Without an accessible parity file, it isn't possible to sync.\n");
+		exit(EXIT_FAILURE);
+	}
 
 	/* skip degenerated cases of empty parity, or skipping all */
 	if (blockstart < blockmax) {
 		state_sync_process(state, f, blockstart, blockmax);
-	} else {
-		printf("Nothing to do\n");
 	}
 
-	parity_sync(path, f);
-    
-	parity_close(path, f);
+	ret = parity_sync(path, f);
+	if (ret == -1) {
+		fprintf(stderr, "WARNING! A 'snapraid check' command is highly suggested.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	ret = parity_close(path, f);
+	if (ret == -1) {
+		fprintf(stderr, "WARNING! A 'snapraid check' command is highly suggested.\n");
+		exit(EXIT_FAILURE);
+	}
 }
 

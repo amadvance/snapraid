@@ -513,7 +513,7 @@ int state_progress(time_t* start, time_t* last, block_off_t blockpos, block_off_
 
 	/* stop if requested */
 	if (global_interrupt) {
-		printf("\rStopping for interruption%s\n", PROGRESS_CLEAR);
+		printf("\n");
 		return 1;
 	}
 
