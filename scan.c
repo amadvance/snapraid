@@ -277,5 +277,7 @@ void state_scan(struct snapraid_state* state)
 		printf("\tremoved %d\n", total.count_remove);
 		printf("\tadded %d\n", total.count_insert);
 	}
+
+	free(scan);
 }
 
