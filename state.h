@@ -30,6 +30,7 @@ struct snapraid_state {
 	int verbose; /**< Verbose output. */
 	int force_zero; /**< Forced dangerous operations of synching file now with zero size. */
 	int force_empty; /**< Forced dangerous operations of synching disk now empty. */
+	int need_write; /**< If the state is changed. */
 	uint32_t block_size; /**< Block size in bytes. */
 	char content[PATH_MAX]; /**< Path of the content file. */
 	char parity[PATH_MAX]; /**< Path of the parity file. */
@@ -70,7 +71,7 @@ void state_scan(struct snapraid_state* state);
 /**
  * Syncs the parity data.
  */
-void state_sync(struct snapraid_state* state, block_off_t blockstart);
+int state_sync(struct snapraid_state* state, block_off_t blockstart);
 
 /**
  * Checks (and fixes) all the files and the parity data.

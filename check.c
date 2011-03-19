@@ -106,6 +106,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			if (ret == -1) {
 				fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 				fprintf(stderr, "Stopping at block %u\n", i);
+				++unrecoverable_error;
 				goto bail;
 			}
 
@@ -115,6 +116,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 				if (ret == -1) {
 					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					fprintf(stderr, "Stopping at block %u\n", i);
+					++unrecoverable_error;
 					goto bail;
 				}
 			} else {
@@ -203,6 +205,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 				if (ret == -1) {
 					fprintf(stderr, "WARNING! Without a working parity disk, it isn't possible to fix errors on it.\n");
 					fprintf(stderr, "Stopping at block %u\n", i);
+					++unrecoverable_error;
 					goto bail;
 				}
 
@@ -252,6 +255,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 				if (ret == -1) {
 					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					fprintf(stderr, "Stopping at block %u\n", i);
+					++unrecoverable_error;
 					goto bail;
 				}
 
@@ -281,6 +285,7 @@ bail:
 		if (ret == -1) {
 			if (fix) {
 				fprintf(stderr, "WARNING! A 'snapraid check' command is highly suggested.\n");
+				++unrecoverable_error;
 				/* continue, as we are already exiting */
 			}
 		}
@@ -309,10 +314,8 @@ bail:
 	free(block_buffer);
 	free(xor_buffer);
 
-	/* signal if there are unrecoverable errors */
 	if (unrecoverable_error != 0)
 		return -1;
-
 	return 0;
 }
 
@@ -323,6 +326,7 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart)
 	data_off_t size;
 	int ret;
 	int f;
+	unsigned unrecoverable_error;
 
 	if (fix)
 		printf("Checking and fixing...\n");
@@ -356,19 +360,14 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart)
 		}
 	}
 
+	unrecoverable_error = 0;
+
 	/* skip degenerated cases of empty parity, or skipping all */
 	if (blockstart < blockmax) {
 		ret = state_check_process(state, fix, f, blockstart, blockmax);
 		if (ret == -1) {
-			if (f != -1) {
-				ret = parity_close(path, f);
-				if (ret != -1) {
-					fprintf(stderr, "WARNING! A 'snapraid check' command is highly suggested.\n");
-					/* continue, as we are already exiting */
-				}
-			}
-			/* exit with a failure code */
-			exit(EXIT_FAILURE);
+			++unrecoverable_error;
+			/* continue, as we are already exiting */
 		}
 	}
 
@@ -377,8 +376,12 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart)
 		ret = parity_close(path, f);
 		if (ret == -1) {
 			fprintf(stderr, "WARNING! A 'snapraid check' command is highly suggested.\n");
-			exit(EXIT_FAILURE);
+			++unrecoverable_error;
+			/* continue, as we are already exiting */
 		}
 	}
-}
 
+	/* abort if required */
+	if (unrecoverable_error != 0)
+		exit(EXIT_FAILURE);
+}

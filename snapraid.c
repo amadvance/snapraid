@@ -83,6 +83,7 @@ int main(int argc, char* argv[])
 	struct snapraid_state state;
 	int operation;
 	block_off_t blockstart;
+	int ret;
 
 	/* intercept Ctrl+C */
 	signal(SIGINT, &signal_handler);    
@@ -158,10 +159,16 @@ int main(int argc, char* argv[])
 
 		state_scan(&state);
 
-		state_sync(&state, blockstart);
+		ret = state_sync(&state, blockstart);
 
-		state_write(&state);
-	} else if (operation == OPERATION_CHECK || operation == OPERATION_FIX) {
+		/* save the new state if required */
+		if (state.need_write)
+			state_write(&state);
+
+		/* abort if required by the sync command */
+		if (ret == -1)
+			exit(EXIT_FAILURE);
+	} else {
 		state_read(&state);
 
 		state_check(&state, operation == OPERATION_FIX, blockstart);

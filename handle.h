@@ -26,6 +26,7 @@ struct snapraid_handle {
 	struct snapraid_disk* disk; /**< Disk of the file. */
 	struct snapraid_file* file; /**< File opened. */
 	int f; /**< Handle of the file. */
+	struct stat st; /**< Stat info of the opened file. */
 };
 
 /**

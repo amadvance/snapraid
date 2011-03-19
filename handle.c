@@ -56,7 +56,6 @@ int handle_close_if_different(struct snapraid_handle* handle, struct snapraid_fi
 
 int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 {
-	struct stat st;
 	int ret;
 
 	/* if it's the same file, and already opened, nothing to do */
@@ -79,14 +78,14 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 	/* just opened */
 	handle->file = file;
 
-	/* set the size */
-	ret = fstat(handle->f, &st);
+	/* get the stat info */
+	ret = fstat(handle->f, &handle->st);
 	if (ret != 0) {
 		fprintf(stderr, "Error accessing file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
 	}
 
-	if (st.st_size < file->size) {
+	if (handle->st.st_size < file->size) {
 #if HAVE_POSIX_FALLOCATE
 		/* allocate real space */
 		ret = posix_fallocate(handle->f, 0, file->size);
@@ -102,7 +101,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 			}
 			return -1;
 		}
-	} else if (st.st_size > file->size) {
+	} else if (handle->st.st_size > file->size) {
 		ret = ftruncate(handle->f, file->size);
 		if (ret != 0) {
 			fprintf(stderr, "Error truncating file '%s'. %s.\n", handle->path, strerror(errno));
@@ -145,6 +144,13 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file)
 
 	/* just opened */
 	handle->file = file;
+
+	/* get the stat info */
+	ret = fstat(handle->f, &handle->st);
+	if (ret != 0) {
+		fprintf(stderr, "Error accessing file '%s'. %s.\n", handle->path, strerror(errno));
+		return -1;
+	}
 
 #if HAVE_POSIX_FADVISE
 	/* advise sequential access */

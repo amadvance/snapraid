@@ -26,7 +26,7 @@
 /****************************************************************************/
 /* sync */
 
-static void state_sync_process(struct snapraid_state* state, int parity_f, block_off_t blockstart, block_off_t blockmax)
+static int state_sync_process(struct snapraid_state* state, int parity_f, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
 	unsigned diskmax = tommy_array_size(&state->diskarr);
@@ -39,6 +39,7 @@ static void state_sync_process(struct snapraid_state* state, int parity_f, block
 	time_t start;
 	time_t last;
 	int ret;
+	unsigned unrecoverable_error;
 
 	block_buffer = malloc_nofail(state->block_size);
 	xor_buffer = malloc_nofail(state->block_size);
@@ -49,6 +50,7 @@ static void state_sync_process(struct snapraid_state* state, int parity_f, block
 		handle[i].file = 0;
 		handle[i].f = -1;
 	}
+	unrecoverable_error = 0;
 
 	count_size = 0;
 	count_block = 0;
@@ -88,22 +90,46 @@ static void state_sync_process(struct snapraid_state* state, int parity_f, block
 
 			ret = handle_close_if_different(&handle[j], block->file);
 			if (ret == -1) {
-				fprintf(stderr, "WARNING! Without an accessible data disk, it isn't possible to sync.\n");
+				/* This one is really an unexpected error, because we are only reading */
+				/* and closing a descriptor should never fail */
+				fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to sync.\n");
 				fprintf(stderr, "Stopping at block %u\n", i);
+				++unrecoverable_error;
 				goto bail;
 			}
 
 			ret = handle_open(&handle[j], block->file);
 			if (ret == -1) {
-				fprintf(stderr, "WARNING! Without an accessible data disk, it isn't possible to sync.\n");
+				if (errno == ENOENT) {
+					fprintf(stderr, "Missing file '%s'.\n", handle[j].path);
+					fprintf(stderr, "WARNING! You cannot modify data disk during a sync. Rerun the sync command when finished.\n");
+					fprintf(stderr, "Stopping at block %u\n", i);
+				} else if (errno == EACCES) {
+					fprintf(stderr, "No access at file '%s'.\n", handle[j].path);
+					fprintf(stderr, "WARNING! Please fix the access permission in the data disk.\n");
+					fprintf(stderr, "Stopping at block %u\n", i);
+				} else {
+					fprintf(stderr, "DANGER! Unexpected open error in a data disk, it isn't possible to sync.\n");
+					fprintf(stderr, "Stopping to allow recovery. Try with 'snapraid check'\n");
+				}
+				++unrecoverable_error;
+				goto bail;
+			}
+
+			/* check if the file is changed */
+			if (handle[j].st.st_size != block->file->size || handle[j].st.st_mtime != block->file->mtime) {
+				fprintf(stderr, "Unexpected change at file '%s'.\n", handle[j].path);
+				fprintf(stderr, "WARNING! You cannot modify data disk during a sync. Rerun the sync command when finished.\n");
 				fprintf(stderr, "Stopping at block %u\n", i);
+				++unrecoverable_error;
 				goto bail;
 			}
 
 			read_size = handle_read(&handle[j], block, block_buffer, state->block_size);
 			if (read_size == -1) {
-				fprintf(stderr, "WARNING! Without an accessible data disk, it isn't possible to sync.\n");
-				fprintf(stderr, "Stopping at block %u\n", i);
+				fprintf(stderr, "DANGER! Unexpected read error in a data disk, it isn't possible to sync.\n");
+				fprintf(stderr, "Stopping to allow recovery. Try with 'snapraid check'\n");
+				++unrecoverable_error;
 				goto bail;
 			}
 
@@ -116,8 +142,9 @@ static void state_sync_process(struct snapraid_state* state, int parity_f, block
 				/* compare the hash */
 				if (memcmp(hash, block->hash, HASH_MAX) != 0) {
 					fprintf(stderr, "%u: Data error for file %s at position %u\n", i, block->file->sub, block_file_pos(block));
-					fprintf(stderr, "WARNING! With errors in the data disk it isn't possible to sync.\n");
-					fprintf(stderr, "Stopping to allow recovery. Try with 'snapraid -s %u fix'\n", i);
+					fprintf(stderr, "DANGER! Unexpected data error in a data disk, it isn't possible to sync.\n");
+					fprintf(stderr, "Stopping to allow recovery. Try with 'snapraid -s %u check'\n", i);
+					++unrecoverable_error;
 					goto bail;
 				}
 			} else {
@@ -135,8 +162,9 @@ static void state_sync_process(struct snapraid_state* state, int parity_f, block
 		/* write the parity */
 		ret = parity_write(state->parity, parity_f, i, xor_buffer, state->block_size);
 		if (ret == -1) {
-			fprintf(stderr, "WARNING! Without an accessible parity file, it isn't possible to sync.\n");
+			fprintf(stderr, "DANGER! Write error in the parity disk, it isn't possible to sync.\n");
 			fprintf(stderr, "Stopping at block %u\n", i);
+			++unrecoverable_error;
 			goto bail;
 		}
 
@@ -150,6 +178,9 @@ static void state_sync_process(struct snapraid_state* state, int parity_f, block
 
 			block->is_hashed = 1;
 		}
+
+		/* mark the state as needing write */
+		state->need_write = 1;
 
 		/* count the number of processed block */
 		++count_block;
@@ -167,7 +198,8 @@ bail:
 	for(j=0;j<diskmax;++j) {
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
-			fprintf(stderr, "WARNING! A 'snapraid check' command is highly suggested.\n");
+			fprintf(stderr, "DANGER! Unexpected close error in a data disk.\n");
+			++unrecoverable_error;
 			/* continue, as we are already exiting */
 		}
 	}
@@ -175,15 +207,20 @@ bail:
 	free(handle);
 	free(block_buffer);
 	free(xor_buffer);
+
+	if (unrecoverable_error != 0)
+		return -1;
+	return 0;
 }
 
-void state_sync(struct snapraid_state* state, block_off_t blockstart)
+int state_sync(struct snapraid_state* state, block_off_t blockstart)
 {
 	char path[PATH_MAX];
 	block_off_t blockmax;
 	data_off_t size;
 	int ret;
 	int f;
+	unsigned unrecoverable_error;
 
 	printf("Syncing...\n");
 
@@ -203,21 +240,34 @@ void state_sync(struct snapraid_state* state, block_off_t blockstart)
 		exit(EXIT_FAILURE);
 	}
 
+	unrecoverable_error = 0;
+
 	/* skip degenerated cases of empty parity, or skipping all */
 	if (blockstart < blockmax) {
-		state_sync_process(state, f, blockstart, blockmax);
+		ret = state_sync_process(state, f, blockstart, blockmax);
+		if (ret == -1) {
+			++unrecoverable_error;
+			/* continue, as we are already exiting */
+		}
 	}
 
 	ret = parity_sync(path, f);
 	if (ret == -1) {
-		fprintf(stderr, "WARNING! A 'snapraid check' command is highly suggested.\n");
-		exit(EXIT_FAILURE);
+		fprintf(stderr, "DANGER! Unexpected sync error in parity disk.\n");
+		++unrecoverable_error;
+		/* continue, as we are already exiting */
 	}
 
 	ret = parity_close(path, f);
 	if (ret == -1) {
-		fprintf(stderr, "WARNING! A 'snapraid check' command is highly suggested.\n");
-		exit(EXIT_FAILURE);
+		fprintf(stderr, "DANGER! Unexpected close error in parity disk.\n");
+		++unrecoverable_error;
+		/* continue, as we are already exiting */
 	}
+
+	/* abort if required */
+	if (unrecoverable_error != 0)
+		return -1;
+	return 0;
 }
 

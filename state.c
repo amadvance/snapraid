@@ -29,6 +29,9 @@
 void state_init(struct snapraid_state* state)
 {
 	state->verbose = 0;
+	state->force_zero = 0;
+	state->force_empty = 0;
+	state->need_write = 0;
 	state->block_size = 256 * 1024; /* default 256 kB */
 	state->content[0] = 0;
 	state->parity[0] = 0;
