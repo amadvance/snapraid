@@ -92,6 +92,12 @@
 
 #if HAVE_FNMATCH_H
 #include <fnmatch.h>
+#else
+#include "fnmatch.h"
+#endif
+
+#if HAVE_IO_H
+#include <io.h>
 #endif
 
 #if HAVE_GETOPT_LONG
@@ -112,9 +118,57 @@
 #define lseek lseek64
 #define fstat _fstati64
 #define HAVE_FTRUNCATE 1
-#define ftruncate _chsize_s
+#define ftruncate windows_ftruncate
 #define HAVE_FSYNC 1
 #define fsync _commit
+
+static inline int windows_ftruncate(int fd, off64_t off)
+{
+	HANDLE h;
+	LARGE_INTEGER pos;
+
+	if (fd == -1) {
+		errno = EBADF;
+		return -1;
+	}
+
+	h = (HANDLE)_get_osfhandle(fd);
+	if (h == INVALID_HANDLE_VALUE) {
+		errno = EBADF;
+		return -1;
+	}
+
+	pos.QuadPart = off;
+	if (!SetFilePointerEx(h, pos, 0, FILE_BEGIN)) {
+		DWORD error = GetLastError();
+		switch (error) {
+		case ERROR_INVALID_HANDLE :
+			errno = EBADF;
+			break;
+		default:
+			errno = EIO;
+			break;
+		}
+		return -1;
+	}
+
+	if (!SetEndOfFile(h)) {
+		DWORD error = GetLastError();
+		switch (error) {
+		case ERROR_INVALID_HANDLE :
+			errno = EBADF;
+			break;
+		case ERROR_ACCESS_DENIED :
+			errno = EACCES;
+			break;
+		default:
+			errno = EIO;
+			break;
+		}
+		return -1;
+	}
+	return 0;
+}
 
 #define rename windows_atomic_rename
 static inline int windows_atomic_rename(const char* a, const char* b)

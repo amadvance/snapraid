@@ -10,6 +10,7 @@ dnl Checks for programs.
 AC_PROG_CC
 AC_USE_SYSTEM_EXTENSIONS
 AC_CHECK_PROG([VALGRIND],[valgrind],[valgrind --leak-check=full --track-fds=yes --error-exitcode=1],[])
+AC_CHECK_PROG([WINE],[wine],[wine],[])
 
 dnl Checks for libraries.
 AC_SYS_LARGEFILE
@@ -19,7 +20,7 @@ AC_HEADER_ASSERT
 AC_HEADER_STDC
 AC_HEADER_DIRENT
 AC_HEADER_TIME
-AC_CHECK_HEADERS([fcntl.h stddef.h stdint.h stdlib.h string.h sys/time.h unistd.h getopt.h fnmatch.h])
+AC_CHECK_HEADERS([fcntl.h stddef.h stdint.h stdlib.h string.h sys/time.h unistd.h getopt.h fnmatch.h io.h])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -38,13 +39,20 @@ dnl Checks for library functions.
 AC_SYS_LARGEFILE
 AC_CHECK_FUNCS([memset strchr strerror strrchr])
 AC_CHECK_FUNCS([getopt getopt_long snprintf vsnprintf])
-AC_CHECK_FUNCS([ftruncate fsync posix_fallocate posix_fadvise pread pwrite fgetc_unlocked ferror_unlocked])
+AC_CHECK_FUNCS([ftruncate fsync posix_fallocate posix_fadvise pread pwrite fgetc_unlocked ferror_unlocked fnmatch])
 
 dnl Checks for architecture
 AC_C_BIGENDIAN
 
 dnl Checks for compiler
 AC_CHECK_CC_OPT([-Wall], CFLAGS="$CFLAGS -Wall", [])
+
+dnl Checks for test environment
+AS_CASE([$host],
+       [*-*-mingw*], [TESTENV="$WINE"],
+       [TESTENV="$VALGRIND"]
+)
+AC_SUBST([TESTENV])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

@@ -29,8 +29,8 @@ exclude *.bak
 exclude tmp/
 exclude /lost+found/
 
-# Define the block size in kilo bytes (1024 bytes).
-# Format: "block_size SIZE_IN_KB"
-# Default value is 256 -> 256 kilo bytes
+# Define the block size in kibi bytes (1024 bytes).
+# Format: "block_size SIZE_IN_KiB"
+# Default value is 256 -> 256 kibi bytes -> 262144 bytes
 block_size 256
 

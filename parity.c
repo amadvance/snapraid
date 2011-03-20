@@ -131,9 +131,11 @@ int parity_open(const char* path)
 
 	return f;
 
+#if HAVE_POSIX_FADVISE
 bail:
 	close(f);
 	return -1;
+#endif
 }
 
 int parity_sync(const char* path, int f)

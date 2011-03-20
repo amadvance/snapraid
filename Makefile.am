@@ -12,7 +12,8 @@ snapraid_SOURCES = \
 	sync.c \
 	check.c \
 	parity.c \
-	handle.c
+	handle.c \
+	fnmatch.c
 
 noinst_HEADERS = \
 	portable.h \
@@ -31,7 +32,8 @@ noinst_HEADERS = \
 	tommyarray.c \
 	tommyhash.c \
 	tommyhashdyn.c \
-	tommylist.c
+	tommylist.c \
+	fnmatch.h
 
 mktest_SOURCES = \
 	mktest.c
@@ -65,36 +67,36 @@ check-local:
 	mkdir test/disk2
 	mkdir test/disk3
 	echo --- As empty, sync and check
-	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf sync
-	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
 	echo --- Create some files, sync and check
-	./mktest generate 1 3 1000 4000
-	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf sync
-	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check
+	$(TESTENV) ./mktest$(EXEEXT) generate 1 3 1000 4000
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
 	echo --- Create some more files, sync and check
-	./mktest generate 2 3 1000 4000
-	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf sync
-	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check 
+	$(TESTENV) ./mktest$(EXEEXT) generate 2 3 1000 4000
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check 
 	echo --- Delete some files, fix and check
 	rm test/disk1/a*
-	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check 2>/dev/null
-	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf fix 2>/dev/null
-	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
 	echo --- Delete the parity, fix and check
 	rm test/parity
-	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check 2>/dev/null
-	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf fix 2>/dev/null
-	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
 	echo --- Corrupt the parity, fix and check
-	./mktest damage 1 10 10000 test/parity
-	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check 2>/dev/null
-	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf fix 2>/dev/null
-	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check
+	$(TESTENV) ./mktest$(EXEEXT) damage 1 10 10000 test/parity
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
 	echo --- Corrupt some files, fix and check
-	./mktest damage 1 1 500 test/disk2/b*
-	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check 2>/dev/null
-	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf fix 2>/dev/null
-	$(VALGRIND) ./snapraid -c $(srcdir)/test.conf check
+	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 500 test/disk2/b*
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
 	echo Success!
 
 # Valgrind testing
@@ -141,7 +143,8 @@ cachegrind:
 DISTWIN = \
 	snapraid.txt \
 	snapraid.html \
-	snapraid.exe
+	snapraid.exe \
+	snapraid.conf.example
 
 distwindows: $(DISTWIN)
 	rm -f $(PACKAGE)-$(VERSION)-windows-x86.zip

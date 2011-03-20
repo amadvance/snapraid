@@ -47,7 +47,7 @@ void generate(int disk, int size)
 
 	snprintf(path, sizeof(path), "test/disk%d/%s", disk, name);
 
-	f = fopen(path, "w");
+	f = fopen(path, "wb");
 	if (!f) {
 		fprintf(stderr, "Error writing %s\n", path);
 		exit(EXIT_FAILURE);
@@ -59,7 +59,6 @@ void generate(int disk, int size)
 		--count;
 	}
 
-
 	fclose(f);
 }
 
@@ -70,7 +69,7 @@ void damage(const char* path, int size)
 	off_t start;
 	int count;
 
-	f = fopen(path, "r+");
+	f = fopen(path, "r+b");
 	if (!f) {
 		fprintf(stderr, "Error writing %s\n", path);
 		exit(EXIT_FAILURE);
@@ -130,7 +129,12 @@ int main(int argc, char* argv[])
 
 		for(i=0;i<disk;++i) {
 			for(j=0;j<file;++j) {
-				generate(i+1, rnd(size));
+				if (j == 0)
+					generate(i+1, size);
+				else if (j == 1)
+					generate(i+1, 0);
+				else
+					generate(i+1, rnd(size));
 			}
 		}
 	} else if (strcmp(argv[1], "damage") == 0) {

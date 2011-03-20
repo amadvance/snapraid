@@ -179,7 +179,7 @@ void state_read(struct snapraid_state* state)
 	count_block = 0;
 
 	pathcpy(path, sizeof(path), state->content);
-	f = fopen(state->content, "r");
+	f = fopen(state->content, "rt");
 	if (!f) {
 		/* if not found, assume empty */
 		if (errno == ENOENT)
@@ -397,7 +397,7 @@ void state_write(struct snapraid_state* state)
 	printf("Saving state...\n");
 
 	pathprint(path, sizeof(path), "%s.tmp", state->content);
-	f = fopen(path, "w");
+	f = fopen(path, "wt");
 	if (!f) {
 		fprintf(stderr, "Error opening for writing the content file '%s'\n", path);
 		exit(EXIT_FAILURE);
