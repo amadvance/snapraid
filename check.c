@@ -277,7 +277,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 		}
 	}
 
-	printf("%u%% completed, %u MB processed\n", i * 100 / blockmax, (unsigned)(count_size / (1024*1024)));
+	printf("%u%% completed, %u MiB processed\n", i * 100 / blockmax, (unsigned)(count_size / (1024*1024)));
 
 bail:
 	for(j=0;j<diskmax;++j) {

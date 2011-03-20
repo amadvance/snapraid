@@ -165,10 +165,10 @@ Configuration
 		size in bytes of your disk array, and BS is the block size
 		in bytes.
 
-		For example with 6 disk of 2 TB and a block size of 256 kB you
-		have:
+		For example with 6 disk of 2 TiB and a block size of 256 KiB
+		(1 KiB = 1024 Bytes) you have:
 
-		:memory = (6 * 2 * 2^40) * 24 / (256 * 2^10) = 1.1 GB
+		:memory = (6 * 2 * 2^40) * 24 / (256 * 2^10) = 1.1 GiB
 
 	An example of a typical configuration is:
 

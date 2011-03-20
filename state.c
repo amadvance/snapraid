@@ -32,7 +32,7 @@ void state_init(struct snapraid_state* state)
 	state->force_zero = 0;
 	state->force_empty = 0;
 	state->need_write = 0;
-	state->block_size = 256 * 1024; /* default 256 kB */
+	state->block_size = 256 * 1024; /* default 256 KiB */
 	state->content[0] = 0;
 	state->parity[0] = 0;
 	tommy_array_init(&state->diskarr);
@@ -491,10 +491,10 @@ int state_progress(time_t* start, time_t* last, block_off_t blockpos, block_off_
 	if (*last != now) {
 		time_t delta = now - *start;
 
-		printf("%u%%, %u MB", blockpos * 100 / blockmax, (unsigned)(count_size / (1024*1024)));
+		printf("%u%%, %u MiB", blockpos * 100 / blockmax, (unsigned)(count_size / (1024*1024)));
 
 		if (delta != 0) {
-			printf(", %u MB/s", (unsigned)(count_size / (1024*1024) / delta));
+			printf(", %u MiB/s", (unsigned)(count_size / (1024*1024) / delta));
 		}
 
 		if (delta > 5 && count_block > 0) {
