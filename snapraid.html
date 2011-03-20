@@ -178,100 +178,6 @@ Note that the fix command will revert your data at the state of the
 last "sync" command executed. It works like a snapshot was taken
 in "sync".
 <h2><a name="5">5</a> 
-Configuration
-</h2>
-SnapRAID requires a configuration file to know where your disk array
-is located, and where storing the redundancy information.
-<p>
-This configuration file is located in /etc/snapraid.conf and
-it should contains the following options:
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
-parity FILE
-</strong></td></tr><tr><td>
-Defines the file to use to store the redundancy information.
-It must be placed in a disk dedicated for this porpose with
-as much free space as the biggest disk in the array.
-Leaving the parity disk reserved for only this file, ensures that
-it doesn't get fragmented, improving the performance.
-This option can be used only one time.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
-content FILE
-</strong></td></tr><tr><td>
-Defines the file to use to store the content of the redundancy
-organization.
-It can be placed in the same disk of the parity file, or better
-in another disk, but NOT in a disk of the array.
-This option can be used only one time.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
-disk NAME DIR
-</strong></td></tr><tr><td>
-Defines the name and the mount point of the disks of the array.
-NAME is used to identify the disk, and it must be unique.
-DIR is the mount point of the disk in the filesystem.
-You can change the mount point as you like, as far you
-keep the NAME fixed.
-You should use one option for each disk of the array.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
-exclude GLOB_PATTERN
-</strong></td></tr><tr><td>
-Defines the file or directory patterns to exclude from the sync
-process. See the PATTERN section for more details in the
-pattern specifications.
-This option can be used many times.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
-block_size SIZE_IN_KILOBYTES
-</strong></td></tr><tr><td>
-Defines the basic block size in kilo bytes of
-the redundancy blocks. The default is 256 and it should
-work for most conditions.
-You should use this option only if you do not have enough
-memory to run SnapRAID.
-It requires to run TS*24/BS bytes, where TS is the total
-size in bytes of your disk array, and BS is the block size
-in bytes.
-</td></tr>
-</table>
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-For example with 6 disk of 2 TiB and a block size of 256 KiB
-(1 KiB = 1024 Bytes) you have:
-</td></tr></table>
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
-memory = (6 * 2 * 2^40) * 24 / (256 * 2^10) = 1.1 GiB
-</pre>
-</td></tr></table>
-<p>
-An example of a typical configuration is:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
-parity /mnt/diskpar/parity
-content /mnt/diskpar/content
-disk d1 /mnt/disk1/
-disk d2 /mnt/disk2/
-disk d3 /mnt/disk3/
-exclude *.bak
-exclude /lost+found/
-exclude tmp/
-block_size 256
-</pre>
-</td></tr></table>
-<h2><a name="6">6</a> 
 Commands
 </h2>
 SnapRAID provides three simple commands that allow to:
@@ -315,67 +221,7 @@ also tries to fix problems reverting the state of the
 disk array at the previous "sync" command.
 </td></tr>
 </table>
-<h2><a name="7">7</a> 
-Pattern
-</h2>
-Patterns are used to define the files and directories to exclude
-from the redundancy process.
-<p>
-It makes sense to exclude any file not worth to be saved.
-<p>
-There are four different types of patterns:
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
-FILE
-</strong></td></tr><tr><td>
-Excludes any file named as FILE. You can use any globbing
-character like * and ?.
-This pattern is applied only to files and not to directories.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
-DIR/
-</strong></td></tr><tr><td>
-Excludes any directory named DIR. You can use any globbing
-character like * and ?.
-This pattern is applied only to directories and not to files.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
-/PATH/FILE
-</strong></td></tr><tr><td>
-Excludes the exact specified file path. You can use any
-globbing character like * and ? but they never matches a
-directory slash.
-This pattern is applied only to files and not to directories.
-</td></tr>
-</table>
-<table width="100%" border="0" cellspacing="0" cellpadding="2">
-<tr valign="top" align="left"><td><strong>
-/PATH/DIR/
-</strong></td></tr><tr><td>
-Excludes the exact specified directory path. You can use any
-globbing character like * and ? but they never matches a
-directory slash.
-This pattern is applied only to directories and not to files.
-</td></tr>
-</table>
-<p>
-For example:
-<p>
-<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
-<pre>
-# Excludes any file named "*.bak"
-exclude *.bak
-# Excludes the root directory "lost+found"
-exclude /lost+found/
-# Excludes any directory named "tmp"
-exclude tmp/
-</pre>
-</td></tr></table>
-<h2><a name="8">8</a> 
+<h2><a name="6">6</a> 
 Options
 </h2>
 <table width="100%" border="0" cellspacing="0" cellpadding="2">
@@ -440,11 +286,204 @@ Prints a short help screen.
 Prints the program version.
 </td></tr>
 </table>
+<h2><a name="7">7</a> 
+Configuration
+</h2>
+SnapRAID requires a configuration file to know where your disk array
+is located, and where storing the redundancy information.
+<p>
+This configuration file is located in /etc/snapraid.conf and
+it should contains the following options:
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+parity FILE
+</strong></td></tr><tr><td>
+Defines the file to use to store the redundancy information.
+It must be placed in a disk dedicated for this porpose with
+as much free space as the biggest disk in the array.
+Leaving the parity disk reserved for only this file, ensures that
+it doesn't get fragmented, improving the performance.
+This option can be used only one time.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+content FILE
+</strong></td></tr><tr><td>
+Defines the file to use to store the content of the redundancy
+organization.
+It can be placed in the same disk of the parity file, or better
+in another disk, but NOT in a disk of the array.
+This option can be used only one time.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+disk NAME DIR
+</strong></td></tr><tr><td>
+Defines the name and the mount point of the disks of the array.
+NAME is used to identify the disk, and it must be unique.
+DIR is the mount point of the disk in the filesystem.
+You can change the mount point as you like, as far you
+keep the NAME fixed.
+You should use one option for each disk of the array.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+exclude PATTERN
+</strong></td></tr><tr><td>
+Defines the file or directory patterns to exclude from the sync
+process. See the PATTERN section for more details in the
+pattern specifications.
+This option can be used many times.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+block_size SIZE_IN_KILOBYTES
+</strong></td></tr><tr><td>
+Defines the basic block size in kilo bytes of
+the redundancy blocks. The default is 256 and it should
+work for most conditions.
+You should use this option only if you do not have enough
+memory to run SnapRAID.
+It requires to run TS*24/BS bytes, where TS is the total
+size in bytes of your disk array, and BS is the block size
+in bytes.
+</td></tr>
+</table>
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+For example with 6 disk of 2 TiB and a block size of 256 KiB
+(1 KiB = 1024 Bytes) you have:
+</td></tr></table>
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+memory = (6 * 2 * 2^40) * 24 / (256 * 2^10) = 1.1 GiB
+</pre>
+</td></tr></table>
+<p>
+An example of a typical configuration is:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+parity /mnt/diskpar/parity
+content /mnt/diskpar/content
+disk d1 /mnt/disk1/
+disk d2 /mnt/disk2/
+disk d3 /mnt/disk3/
+exclude *.bak
+exclude /lost+found/
+exclude tmp/
+block_size 256
+</pre>
+</td></tr></table>
+<h2><a name="8">8</a> 
+Pattern
+</h2>
+Patterns are used to define the files and directories to exclude
+from the redundancy process.
+<p>
+It makes sense to exclude any file not worth to be saved.
+<p>
+There are four different types of patterns:
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+FILE
+</strong></td></tr><tr><td>
+Excludes any file named as FILE. You can use any globbing
+character like * and ?.
+This pattern is applied only to files and not to directories.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+DIR/
+</strong></td></tr><tr><td>
+Excludes any directory named DIR. You can use any globbing
+character like * and ?.
+This pattern is applied only to directories and not to files.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+/PATH/FILE
+</strong></td></tr><tr><td>
+Excludes the exact specified file path. You can use any
+globbing character like * and ? but they never matches a
+directory slash.
+This pattern is applied only to files and not to directories.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+/PATH/DIR/
+</strong></td></tr><tr><td>
+Excludes the exact specified directory path. You can use any
+globbing character like * and ? but they never matches a
+directory slash.
+This pattern is applied only to directories and not to files.
+</td></tr>
+</table>
+<p>
+For example:
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+<pre>
+# Excludes any file named "*.bak"
+exclude *.bak
+# Excludes the root directory "lost+found"
+exclude /lost+found/
+# Excludes any directory named "tmp"
+exclude tmp/
+</pre>
+</td></tr></table>
 <h2><a name="9">9</a> 
+Content
+</h2>
+SnapRAID creates a content file describing the content of your disk array.
+You do not have to to modify it, altought the format of this file is
+described here.
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+blk_size SIZE
+</strong></td></tr><tr><td>
+Defines the size of the block in bytes. It must match the size
+defined in the configuration file.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+file DISK SIZE TIME INODE PATH
+</strong></td></tr><tr><td>
+Defines a file in the specified DISK.
+The INODE information is used to identify the file in the 'sync'
+command, allowing to move the file anywhere in disk without
+the need to recompute the parity for it.
+The SIZE and TIME information are used to identify if the file
+changed from the last 'sync' command, and if there is the need
+to recompute the parity.
+The PATH information is used in the 'check' and 'fix' commands
+to identify the file.
+</td></tr>
+</table>
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td><strong>
+blk BLOCK HASH
+</strong></td></tr><tr><td>
+Defines the ordered blocks used by the last defined file.
+BLOCK is the block position in the parity file.
+HASH is the md5 of the block. In the last block of the file,
+the HASH is the hash only of the used part of the block.
+</td></tr>
+</table>
+<h2><a name="10">10</a> 
 Copyright
 </h2>
 This file is Copyright (C) 2011 Andrea Mazzoleni
-<h2><a name="10">10</a> 
+<h2><a name="11">11</a> 
 See Also
 </h2>
 rsync(1)

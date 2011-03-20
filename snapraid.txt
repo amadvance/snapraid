@@ -133,7 +133,72 @@ last "sync" command executed. It works like a snapshot was taken
 in "sync".
 
 
-5 CONFIGURATION
+5 COMMANDS
+==========
+
+SnapRAID provides three simple commands that allow to:
+
+* Make a backup/snapshot -> "sync"
+* Check for integrity -> "check"
+* Restore the last backup/snapshot -> "fix".
+
+    sync
+        Updates the redundancy information. All the modified files
+        in the disk array are read, and the redundancy data is
+        updated.
+        You can stop this process at any time pressing Ctrl+C,
+        without losing the work already done.
+
+    check
+        Checks all the files the redundancy data. All the files
+        are hashed and compared with the snapshot saved in the
+        previous "sync" command.
+
+    fix
+        Checks and fix all the files. It's like "check" but it
+        also tries to fix problems reverting the state of the
+        disk array at the previous "sync" command.
+
+
+6 OPTIONS
+=========
+
+    -c, --conf CONFIG
+        Selects the configuration file. If not specified is assumed
+        the file `/etc/snapraid.conf'.
+
+    -s, --start BLOCK
+        Starts the processing from the specified
+        block number. It could be useful to easy retry to check or
+        fix some specific block, in case of a damaged disk.
+
+    -Z, --force-zero
+        Forces the insecure operation of synching a file with zero
+        size that before was not empty.
+        If SnapRAID detects such condition, it stops proceeding
+        unless you specify this option.
+        This allows to easily detect when after a system crash,
+        some accessed files were zeroed.
+
+    -E, --force-empty
+        Forces the insecure operation of synching an empty disk
+        that before was not empty.
+        If SnapRAID detects such condition, it stops proceeding
+        unless you specify this option.
+        This allows to easily detect when a data filesystem is not
+        mounted.
+
+    -v, --verbose
+        Prints more information in the processing.
+
+    -h, --help
+        Prints a short help screen.
+
+    -V, --version
+        Prints the program version.
+
+
+7 CONFIGURATION
 ===============
 
 SnapRAID requires a configuration file to know where your disk array
@@ -165,7 +230,7 @@ it should contains the following options:
         keep the NAME fixed.
         You should use one option for each disk of the array.
 
-    exclude GLOB_PATTERN
+    exclude PATTERN
         Defines the file or directory patterns to exclude from the sync
         process. See the PATTERN section for more details in the
         pattern specifications.
@@ -199,34 +264,7 @@ An example of a typical configuration is:
     block_size 256
 
 
-6 COMMANDS
-==========
-
-SnapRAID provides three simple commands that allow to:
-
-* Make a backup/snapshot -> "sync"
-* Check for integrity -> "check"
-* Restore the last backup/snapshot -> "fix".
-
-    sync
-        Updates the redundancy information. All the modified files
-        in the disk array are read, and the redundancy data is
-        updated.
-        You can stop this process at any time pressing Ctrl+C,
-        without losing the work already done.
-
-    check
-        Checks all the files the redundancy data. All the files
-        are hashed and compared with the snapshot saved in the
-        previous "sync" command.
-
-    fix
-        Checks and fix all the files. It's like "check" but it
-        also tries to fix problems reverting the state of the
-        disk array at the previous "sync" command.
-
-
-7 PATTERN
+8 PATTERN
 =========
 
 Patterns are used to define the files and directories to exclude
@@ -268,51 +306,42 @@ For example:
     exclude tmp/
 
 
-8 OPTIONS
+9 CONTENT
 =========
 
-    -c, --conf CONFIG
-        Selects the configuration file. If not specified is assumed
-        the file `/etc/snapraid.conf'.
+SnapRAID creates a content file describing the content of your disk array.
+You do not have to to modify it, altought the format of this file is
+described here.
 
-    -s, --start BLOCK
-        Starts the processing from the specified
-        block number. It could be useful to easy retry to check or
-        fix some specific block, in case of a damaged disk.
+    blk_size SIZE
+        Defines the size of the block in bytes. It must match the size
+        defined in the configuration file.
 
-    -Z, --force-zero
-        Forces the insecure operation of synching a file with zero
-        size that before was not empty.
-        If SnapRAID detects such condition, it stops proceeding
-        unless you specify this option.
-        This allows to easily detect when after a system crash,
-        some accessed files were zeroed.
+    file DISK SIZE TIME INODE PATH
+        Defines a file in the specified DISK.
+        The INODE information is used to identify the file in the 'sync'
+        command, allowing to move the file anywhere in disk without
+        the need to recompute the parity for it.
+        The SIZE and TIME information are used to identify if the file
+        changed from the last 'sync' command, and if there is the need
+        to recompute the parity.
+        The PATH information is used in the 'check' and 'fix' commands
+        to identify the file.
 
-    -E, --force-empty
-        Forces the insecure operation of synching an empty disk
-        that before was not empty.
-        If SnapRAID detects such condition, it stops proceeding
-        unless you specify this option.
-        This allows to easily detect when a data filesystem is not
-        mounted.
-
-    -v, --verbose
-        Prints more information in the processing.
-
-    -h, --help
-        Prints a short help screen.
-
-    -V, --version
-        Prints the program version.
+    blk BLOCK HASH
+        Defines the ordered blocks used by the last defined file.
+        BLOCK is the block position in the parity file.
+        HASH is the md5 of the block. In the last block of the file,
+        the HASH is the hash only of the used part of the block.
 
 
-9 COPYRIGHT
-===========
+10 COPYRIGHT
+============
 
 This file is Copyright (C) 2011 Andrea Mazzoleni
 
 
-10 SEE ALSO
+11 SEE ALSO
 ===========
 
 rsync(1)

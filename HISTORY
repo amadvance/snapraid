@@ -3,10 +3,10 @@ SnapRAID HISTORY
 
 0.2 2011/3
 ==========
-* Exclusion list of files and directories
-* More automatic tests
-* Better error management
-* Better documentation
+* Files are identified by inode and not anymore by name.
+* Exclusion list of files and directories.
+* Precise error management.
+* More regression tests.
 
 
 0.1 2011/3
