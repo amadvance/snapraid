@@ -128,7 +128,7 @@ unsigned block_file_size(struct snapraid_block* block, unsigned block_size)
 	return block_size;
 }
 
-struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, time_t mtime)
+struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t size, uint64_t mtime, uint64_t inode)
 {
 	struct snapraid_file* file;
 	block_off_t i;
@@ -138,6 +138,7 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_
 	file->size = size;
 	file->blockmax = (size + block_size - 1) / block_size;
 	file->mtime = mtime;
+	file->inode = inode;
 	file->is_present = 0;
 	file->blockvec = malloc_nofail(file->blockmax * sizeof(struct snapraid_block));
 
@@ -157,11 +158,15 @@ void file_free(struct snapraid_file* file)
 	free(file);
 }
 
-int file_compare(const void* void_arg, const void* void_data)
+int file_inode_compare(const void* void_arg, const void* void_data)
 {
-	const char* arg = void_arg;
+	const uint64_t* arg = void_arg;
 	const struct snapraid_file* file = void_data;
-	return strcmp(arg, file->sub);
+	if (*arg < file->inode)
+		return -1;
+	if (*arg > file->inode)
+		return 1;
+	return 0;
 }
 
 struct snapraid_disk* disk_alloc(const char* name, const char* dir)
@@ -177,7 +182,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir)
 
 	disk->first_free_block = 0;
 	tommy_list_init(&disk->filelist);
-	tommy_hashdyn_init(&disk->fileset);
+	tommy_hashdyn_init(&disk->inodeset);
 	tommy_array_init(&disk->blockarr);
 
 	return disk;
@@ -191,7 +196,7 @@ void disk_free(struct snapraid_disk* disk)
 		node = node->next;
 		file_free(file);
 	}
-	tommy_hashdyn_done(&disk->fileset);
+	tommy_hashdyn_done(&disk->inodeset);
 	tommy_array_done(&disk->blockarr);
 	free(disk);
 }

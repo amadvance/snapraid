@@ -285,9 +285,11 @@ void state_read(struct snapraid_state* state)
 			char* name;
 			char* size;
 			char* mtime;
+			char* inode;
 			char* sub;
-			data_off_t v_size;
+			uint64_t v_size;
 			uint64_t v_mtime;
+			uint64_t v_inode;
 			unsigned i;
 
 			if (file) {
@@ -301,6 +303,8 @@ void state_read(struct snapraid_state* state)
 			s = strtoken(s);
 			mtime = s;
 			s = strtoken(s);
+			inode = s;
+			s = strtoken(s);
 			sub = s;
 
 			ret = stru64(size, &v_size);
@@ -310,6 +314,12 @@ void state_read(struct snapraid_state* state)
 			}
 
 			ret = stru64(mtime, &v_mtime);
+			if (ret != 0) {
+				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = stru64(inode, &v_inode);
 			if (ret != 0) {
 				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
@@ -332,10 +342,10 @@ void state_read(struct snapraid_state* state)
 			}
 
 			/* allocate the file */
-			file = file_alloc(state->block_size, sub, v_size, v_mtime);
+			file = file_alloc(state->block_size, sub, v_size, v_mtime, v_inode);
 
 			/* insert the file in the file containers */
-			tommy_hashdyn_insert(&disk->fileset, &file->nodeset, file, file_hash(file->sub));
+			tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
 			tommy_list_insert_tail(&disk->filelist, &file->nodelist, file);
 
 			/* start the block allocation of the file */
@@ -418,8 +428,15 @@ void state_write(struct snapraid_state* state)
 		for(j=disk->filelist;j!=0;j=j->next) {
 			block_off_t k;
 			struct snapraid_file* file = j->data;
+			uint64_t size;
+			uint64_t mtime;
+			uint64_t inode;
 
-			ret = fprintf(f,"file %s %lld %ld %s\n", disk->name, file->size, file->mtime, file->sub);
+			size = file->size;
+			mtime = file->mtime;
+			inode = file->inode,
+
+			ret = fprintf(f,"file %s %llu %llu %llu %s\n", disk->name, size, mtime, inode, file->sub);
 			if (ret < 0) {
 				fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", path, strerror(errno));
 				exit(EXIT_FAILURE);

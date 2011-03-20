@@ -78,7 +78,8 @@ struct snapraid_file {
 	data_off_t size; /**< Size of the file. */
 	struct snapraid_block* blockvec; /**< All the blocks of the file. */
 	block_off_t blockmax; /**< Number of blocks. */
-	time_t mtime; /**< Modification time. */
+	uint64_t mtime; /**< Modification time. */
+	uint64_t inode; /**< Inode. */
 	int is_present; /**< If it's seen as present. */
 
 	/* nodes for data structures */
@@ -94,7 +95,7 @@ struct snapraid_disk {
 	char dir[PATH_MAX]; /**< Mount point of the disk. It always terminates with /. */
 	block_off_t first_free_block; /**< First free searching block. */
 	tommy_list filelist; /**< List of all the files. */
-	tommy_hashdyn fileset; /**< Hashtable by sub of all the files. */
+	tommy_hashdyn inodeset; /**< Hashtable by inode of all the files. */
 	tommy_array blockarr; /**< Block array of the disk. */
 };
 
@@ -128,7 +129,7 @@ unsigned block_file_size(struct snapraid_block* block, unsigned block_size);
 /**
  * Allocates a file.
  */
-struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, time_t mtime);
+struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t size, uint64_t mtime, uint64_t inode);
 
 /**
  * Deallocates a file.
@@ -136,16 +137,16 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_
 void file_free(struct snapraid_file* file);
 
 /**
- * Compares two files by path.
+ * Compares two files by inode.
  */
-int file_compare(const void* void_arg, const void* void_data);
+int file_inode_compare(const void* void_arg, const void* void_data);
 
 /**
- * Computes the hash of a file path.
+ * Computes the hash of a file inode.
  */
-static inline tommy_uint32_t file_hash(const char* sub)
+static inline tommy_uint32_t file_inode_hash(uint64_t inode)
 {
-	return tommy_hash_u32(0, sub, strlen(sub));
+	return (tommy_uint32_t)tommy_inthash_u64(inode);
 }
 
 /**

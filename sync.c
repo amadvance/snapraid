@@ -117,7 +117,10 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, block_
 			}
 
 			/* check if the file is changed */
-			if (handle[j].st.st_size != block->file->size || handle[j].st.st_mtime != block->file->mtime) {
+			if (handle[j].st.st_size != block->file->size
+				|| handle[j].st.st_mtime != block->file->mtime
+				|| handle[j].st.st_ino != block->file->inode
+			) {
 				fprintf(stderr, "Unexpected change at file '%s'.\n", handle[j].path);
 				fprintf(stderr, "WARNING! You cannot modify data disk during a sync. Rerun the sync command when finished.\n");
 				fprintf(stderr, "Stopping at block %u\n", i);

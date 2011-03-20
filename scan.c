@@ -47,7 +47,7 @@ static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk*
 	}
 
 	/* remove the file from the file containers */
-	tommy_hashdyn_remove_existing(&disk->fileset, &file->nodeset);
+	tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
 	tommy_list_remove_existing(&disk->filelist, &file->nodelist);
 
 	/* deallocate */
@@ -87,7 +87,7 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 	}
 
 	/* insert the file in the file containers */
-	tommy_hashdyn_insert(&disk->fileset, &file->nodeset, file, file_hash(file->sub));
+	tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
 	tommy_list_insert_tail(&disk->filelist, &file->nodelist, file);
 }
 
@@ -97,11 +97,19 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, struct snapraid_disk* disk, const char* path, const char* sub, const struct stat* st)
 {
 	struct snapraid_file* file;
+	uint64_t inode;
 
 	/* check if the file already exists */
-	file = tommy_hashdyn_search(&disk->fileset, file_compare, sub, file_hash(sub));
+	inode = st->st_ino;
+	file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare, &inode, file_inode_hash(inode));
 	if (file) {
-		/* check if the file is the same */
+		/* check if multiple files have the same inode */
+		if (file->is_present) {
+			fprintf(stderr, "Internal inode '%llu' inconsistency for file '%s'\n", inode, sub);
+			exit(EXIT_FAILURE);
+		}
+
+		/* check if the file is not changed */
 		if (file->size == st->st_size && file->mtime == st->st_mtime) {
 			/* mark as present */
 			++scan->count_equal;
@@ -128,7 +136,9 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 
 	/* create the new file */
 	++scan->count_insert;
-	file = file_alloc(state->block_size, sub, st->st_size, st->st_mtime);
+	file = file_alloc(state->block_size, sub, st->st_size, st->st_mtime, st->st_ino);
+
+	/* mark it as present */
 	file->is_present = 1;
 
 	/* insert it */
@@ -168,8 +178,13 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, s
 	while ((dd = readdir(d)) != 0) {
 		char path_next[PATH_MAX];
 		char sub_next[PATH_MAX];
-		const char* name = dd->d_name;
 		struct stat st;
+		const char* name = dd->d_name;
+		int is_auto = name[0] == '.' && (name[1] == 0 || (name[1] == '.' && name[2] == 0));
+
+		/* skip "." and ".." files */
+		if (is_auto)
+			continue;
 
 		pathprint(path_next, sizeof(path_next), "%s%s", dir, name);
 		pathprint(sub_next, sizeof(sub_next), "%s%s", sub, name);
@@ -188,16 +203,13 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, s
 				}
 			}
 		} else if (S_ISDIR(st.st_mode)) {
-			int is_auto = name[0] == '.' && (name[1] == 0 || (name[1] == '.' && name[2] == 0));
-			if (!is_auto) {
-				if (scan_filter(state, sub_next, name, 1) == 0) {
-					pathslash(path_next, sizeof(path_next));
-					pathslash(sub_next, sizeof(sub_next));
-					scan_dir(scan, state, disk, path_next, sub_next);
-				} else {
-					if (state->verbose) {
-						printf("warning: Excluded directory '/%s'\n", sub_next);
-					}
+			if (scan_filter(state, sub_next, name, 1) == 0) {
+				pathslash(path_next, sizeof(path_next));
+				pathslash(sub_next, sizeof(sub_next));
+				scan_dir(scan, state, disk, path_next, sub_next);
+			} else {
+				if (state->verbose) {
+					printf("warning: Excluded directory '/%s'\n", sub_next);
 				}
 			}
 		} else {

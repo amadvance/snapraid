@@ -113,14 +113,113 @@
 #ifdef __MINGW32__ /* Specific for MINGW */
 
 /* Remap functions and types for 64 bit support */
-#define stat _stati64
+#define stat windows_stat
 #define off_t off64_t
 #define lseek lseek64
-#define fstat _fstati64
+#define fstat windows_fstat
 #define HAVE_FTRUNCATE 1
 #define ftruncate windows_ftruncate
 #define HAVE_FSYNC 1
 #define fsync _commit
+#define rename windows_rename
+
+/**
+ * Generic stat information.
+ */
+struct windows_stat {
+	uint64_t st_ino;
+	uint64_t st_size;
+	uint64_t st_mtime;
+	uint32_t st_mode;
+};
+
+/**
+ * Convert Windows info to the Unix stat format.
+ */
+static inline void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, struct windows_stat* st)
+{
+	/* Convert special attributes to a char device */
+	if ((info->dwFileAttributes & (FILE_ATTRIBUTE_DEVICE | FILE_ATTRIBUTE_TEMPORARY | FILE_ATTRIBUTE_OFFLINE | FILE_ATTRIBUTE_VIRTUAL | FILE_ATTRIBUTE_REPARSE_POINT)) != 0) {
+		st->st_mode = S_IFCHR;
+	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+		st->st_mode = S_IFDIR;
+	} else {
+		st->st_mode = S_IFREG;
+	}
+
+	st->st_size = info->nFileSizeHigh;
+	st->st_size <<= 32;
+	st->st_size |= info->nFileSizeLow;
+
+	st->st_mtime = info->ftLastWriteTime.dwHighDateTime;
+	st->st_mtime <<= 32;
+	st->st_mtime |= info->ftLastWriteTime.dwLowDateTime;
+
+	/*
+	 * Convert to unix time
+	 *
+	 * How To Convert a UNIX time_t to a Win32 FILETIME or SYSTEMTIME
+	 * http://support.microsoft.com/kb/167296
+	 */
+	st->st_mtime = (st->st_mtime - 116444736000000000LL) / 10000000;
+
+	st->st_ino = info->nFileIndexHigh;
+	st->st_ino <<= 32;
+	st->st_ino |= info->nFileIndexLow;
+}
+
+static inline int windows_fstat(int fd, struct windows_stat* st)
+{
+	BY_HANDLE_FILE_INFORMATION info;
+	HANDLE h;
+
+	h = (HANDLE)_get_osfhandle(fd);
+	if (h == INVALID_HANDLE_VALUE) {
+		errno = EBADF;
+		return -1;
+	}
+
+	if (!GetFileInformationByHandle(h, &info))  {
+		errno = EIO;
+		return -1;
+	}
+
+	windows_info2stat(&info, st);
+
+	return 0;
+}
+
+static inline int windows_stat(const char* file, struct windows_stat* st)
+{
+	BY_HANDLE_FILE_INFORMATION info;
+	HANDLE h;
+
+	h = CreateFile(file, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+	if (h == INVALID_HANDLE_VALUE) {
+		DWORD error = GetLastError();
+		switch (error) {
+		case ERROR_FILE_NOT_FOUND :
+			errno = ENOENT;
+			break;
+		default:
+			errno = EIO;
+			break;
+		}
+		return -1;
+	}
+
+	if (!GetFileInformationByHandle(h, &info))  {
+		CloseHandle(h);
+		errno = EIO;
+		return -1;
+	}
+
+	windows_info2stat(&info, st);
+
+	CloseHandle(h);
+
+	return 0;
+}
 
 static inline int windows_ftruncate(int fd, off64_t off)
 {
@@ -167,12 +266,19 @@ static inline int windows_ftruncate(int fd, off64_t off)
 		}
 		return -1;
 	}
+
 	return 0;
 }
 
-#define rename windows_atomic_rename
-static inline int windows_atomic_rename(const char* a, const char* b)
+static inline int windows_rename(const char* a, const char* b)
 {
+	/*
+	 * Implements an atomic rename in Windows.
+	 * Not really atomic at now to support XP.
+	 *
+	 * Is an atomic file rename (with overwrite) possible on Windows?
+	 * http://stackoverflow.com/questions/167414/is-an-atomic-file-rename-with-overwrite-possible-on-windows
+	 */
 	if (!MoveFileEx(a, b, MOVEFILE_REPLACE_EXISTING)) {
 		switch (GetLastError()) {
 		case ERROR_ACCESS_DENIED :
