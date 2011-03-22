@@ -42,7 +42,7 @@ EXTRA_DIST = \
 	autogen.sh \
 	noautomake.sh \
 	README AUTHORS HISTORY INSTALL COPYING TODO \
-	snapraid.d snapraid.1 snapraid.txt snapraid.html \
+	snapraid.d snapraid.1 snapraid.txt \
 	test.conf \
 	snapraid.conf.example \
 	acinclude.m4
@@ -50,15 +50,13 @@ EXTRA_DIST = \
 man_MANS = snapraid.1
 
 clean-local:
-	rm -f valgrind.log callgrind.log
+	rm -f valgrind.log callgrind.log cachegrind.log
 	rm -rf test
 
 maintainer-clean-local:
-	rm -f snapraid.1 snapraid.txt snapraid.html
+	rm -f snapraid.1 snapraid.txt
 
 # Automatic testing
-
-CHECK = ./snapraid -v -c test.conf fix
 
 check-local:
 	rm -rf test
@@ -76,9 +74,28 @@ check-local:
 	echo --- Create some more files, sync and check
 	$(TESTENV) ./mktest$(EXEEXT) generate 2 3 1000 4000
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf sync
-	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check 
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
+	echo --- Delete some files and create some new, sync and check
+	rm test/disk1/1*
+	rm test/disk2/2*
+	rm test/disk2/3*
+	$(TESTENV) ./mktest$(EXEEXT) generate 3 3 100 4000
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
 	echo --- Delete some files, fix and check
-	rm test/disk1/a*
+	rm test/disk1/1*
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
+	echo --- Delete some dirs, fix and check
+	rm -r test/disk2/_a
+	rm -r test/disk2/_b
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
+	echo --- Delete a whole disk, fix and check
+	rm -r test/disk3
+	mkdir test/disk3
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf fix 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
@@ -99,7 +116,9 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
 	echo Success!
 
-# Valgrind testing
+# Manual testing
+
+CHECK = ./snapraid -v -c test.conf sync
 
 valgrind:
 	valgrind \
@@ -142,7 +161,6 @@ cachegrind:
 
 DISTWIN = \
 	snapraid.txt \
-	snapraid.html \
 	snapraid.exe \
 	snapraid.conf.example
 
@@ -150,6 +168,11 @@ distwindows: $(DISTWIN)
 	rm -f $(PACKAGE)-$(VERSION)-windows-x86.zip
 	mkdir tmp
 	cp $(DISTWIN) tmp
+	cp README tmp/readme.txt
+	cp AUTHORS tmp/authors.txt
+	cp HISTORY tmp/history.txt
+	cp COPYING tmp/copying.txt
+	cp TODO tmp/todo.txt
 	cd tmp && zip -r ../$(PACKAGE)-$(VERSION)-windows-x86.zip *
 	rm -r tmp
 

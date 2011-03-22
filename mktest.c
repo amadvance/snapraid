@@ -29,23 +29,77 @@ unsigned rnd(unsigned max)
 	return (seed >> 32) % max;
 }
 
+char CHARSET[] = "qwertyuiopasdfghjklzxcvbnm1234567890 .-+";
+#define CHARSET_LEN (sizeof(CHARSET)-1)
+
 void generate(int disk, int size)
 {
 	char path[PATH_MAX];
-	char name[PATH_MAX];
 	FILE* f;
+	char* file;
 	int count;
 	int i;
 	int l;
 
-	l = 1 + rnd(32);
+	snprintf(path, sizeof(path), "test/disk%d/", disk);
+	i = strlen(path);   
 
-	for(i=0;i<l;++i) {
-		name[i] = 'a' + rnd(22);
+	/* add a directory */
+	if (rnd(2) == 0) {
+		path[i++] = '_';
+		path[i++] = 'a' + rnd(2);
+		path[i] = 0;
+
+		/* create it */
+		if (mkdir(path, 0777) != 0) {
+			if (errno != EEXIST) {
+				fprintf(stderr, "Error creating directory %s\n", path);
+				exit(EXIT_FAILURE);
+			}
+		}
+
+		path[i++] = '/';
 	}
-	name[i] = 0;
 
-	snprintf(path, sizeof(path), "test/disk%d/%s", disk, name);
+	/* add another directory */
+	if (rnd(2) == 0) {
+		path[i++] = '_';
+		path[i++] = 'a' + rnd(2);
+		path[i] = 0;
+
+		/* create it */
+		if (mkdir(path, 0777) != 0) {
+			if (errno != EEXIST) {
+				fprintf(stderr, "Error creating directory %s\n", path);
+				exit(EXIT_FAILURE);
+			}
+		}
+
+		path[i++] = '/';
+	}
+   
+	/* add a file */
+	l = 1 + rnd(20);
+	file = path + i;
+	while (l) {
+		path[i++] = CHARSET[rnd(CHARSET_LEN)];
+		--l;
+	}
+	path[i] = 0;
+
+	/* skip some invalid file name, see http://en.wikipedia.org/wiki/Filename */
+	if (strcmp(file, ".") == 0
+		|| strcmp(file, "..") == 0
+		|| strcmp(file, "prn") == 0
+		|| strcmp(file, "con") == 0
+		|| strcmp(file, "nul") == 0
+		|| strcmp(file, "aux") == 0
+		|| file[0] == ' '
+		|| file[strlen(file)-1] == ' '
+		|| file[strlen(file)-1] == '.'
+	) {
+		return;
+	}
 
 	f = fopen(path, "wb");
 	if (!f) {
@@ -139,7 +193,6 @@ int main(int argc, char* argv[])
 		}
 	} else if (strcmp(argv[1], "damage") == 0) {
 		int fail, size;
-		const char* file;
 
 		if (argc < 6) {
 			help();
