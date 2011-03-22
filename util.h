@@ -95,6 +95,24 @@ void pathprint(char* str, size_t size, const char* format, ...);
 void pathslash(char* str, size_t size);
 
 /****************************************************************************/
+/* bit */
+
+static inline int bit_has(unsigned bit, unsigned mask)
+{
+	return (bit & mask) == mask;
+}
+
+static inline unsigned bit_set(unsigned bit, unsigned mask)
+{
+	return bit | mask;
+}
+
+static inline unsigned bit_clear(unsigned bit, unsigned mask)
+{
+	return bit & ~mask;
+}
+
+/****************************************************************************/
 /* memory */
 
 /**
