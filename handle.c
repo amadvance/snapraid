@@ -54,6 +54,46 @@ int handle_close_if_different(struct snapraid_handle* handle, struct snapraid_fi
 	return 0;
 }
 
+static int handle_ancestor(const char* file)
+{
+	char dir[PATH_MAX];
+	char* c;
+	
+	pathcpy(dir, sizeof(dir), file);
+	
+	c = strrchr(dir, '/');
+	if (!c) {
+		/* no ancestor */
+		return 0;
+	}
+
+	/* clear the file */
+	*c = 0;
+
+	if (*dir == 0) {
+		/* nothing more to do */
+		return 0;
+	}
+
+	if (access(dir, F_OK) == 0) {
+		/* the directory/file exists */
+		return 0;
+	}
+
+	/* recursively create them all */
+	if (handle_ancestor(dir) != 0) {
+		return -1;
+	}
+
+	/* create it */
+	if (mkdir(dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) != 0) {
+		fprintf(stderr, "Error creating directory '%s'. %s.\n", dir, strerror(errno));	
+		return -1;
+	}
+	
+	return 0;
+}
+
 int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 {
 	int ret;
@@ -64,8 +104,13 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 	}
 
 	pathprint(handle->path, sizeof(handle->path), "%s%s", handle->disk->dir, file->sub);
-	handle->f = open(handle->path, O_RDWR | O_CREAT | O_BINARY, 0600);
 
+	ret = handle_ancestor(handle->path);
+	if (ret != 0) {
+		return -1;
+	}
+
+	handle->f = open(handle->path, O_RDWR | O_CREAT | O_BINARY, 0600);
 	if (handle->f == -1) {
 		/* invalidate for error */
 		handle->file = 0;
@@ -233,7 +278,7 @@ int handle_write(struct snapraid_handle* handle, struct snapraid_block* block, u
 	}
 
 	write_ret = write(handle->f, block_buffer, write_size);
-#endif    
+#endif
 	if (write_ret != write_size) {
 		fprintf(stderr, "Error writing file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
