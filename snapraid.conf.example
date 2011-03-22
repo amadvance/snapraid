@@ -1,26 +1,23 @@
 # Configuration for snapraid
 
-# Define the file to use as parity storage
-# It must me in an different disk than the data disk
+# Defines the file to use as parity storage
+# It must be in an different disk than the data disks
 # Format: "parity FILE_PATH"
-parity /mnt/dp/parity
+parity /mnt/diskpar/parity
 
-# Define the file to use as content list
+# Defines the file to use as content list
 # Format: "content FILE_PATH"
-# It must me in an different disk than the data disk
+# It must be in an different disk than the data disks
 # It can be in the same disk used for parity storage
-content /mnt/dp/content
+content /mnt/diskpar/content
 
-# Define to data disk to use
+# Defines the data disks to use
 # Format: "disk DISK_NAME DISK_MOUNT_POINT"
-disk d1 /mnt/d1/
-disk d2 /mnt/d2/
-disk d3 /mnt/d3/
-disk d4 /mnt/d4/
-disk d5 /mnt/d5/
-disk d6 /mnt/d6/
+disk d1 /mnt/disk1/
+disk d2 /mnt/disk2/
+disk d3 /mnt/disk3/
 
-# Define files and directories to exclude
+# Defines files and directories to exclude
 # Format: "exclude FILE"
 # Format: "exclude DIR/"
 # Format: "exclude /PATH/FILE"
@@ -29,7 +26,7 @@ exclude *.bak
 exclude tmp/
 exclude /lost+found/
 
-# Define the block size in kibi bytes (1024 bytes).
+# Defines the block size in kibi bytes (1024 bytes).
 # Format: "block_size SIZE_IN_KiB"
 # Default value is 256 -> 256 kibi bytes -> 262144 bytes
 block_size 256
