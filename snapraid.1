@@ -1,0 +1,474 @@
+.TH "SnapRAID Backup For Disk Arrays" 1
+.SH NAME
+snapraid \(hy SnapRAID Backup For Disk Arrays
+.SH SYNOPSIS 
+snapraid [\(hyc, \(hy\(hyconf CONFIG] [\(hys, \(hy\(hystart BLOCK]
+.PD 0
+.PP
+.PD
+	[\(hyZ, \(hy\(hyforce\(hyzero] [\(hyE, \(hy\(hyforce\(hyempty]
+.PD 0
+.PP
+.PD
+	[\(hyv, \(hy\(hyverbose]
+.PD 0
+.PP
+.PD
+	COMMAND
+.PD 0
+.PP
+.PD
+.PP
+snapraid [\(hyV, \(hy\(hyversion] [\(hyh, \(hy\(hyhelp]
+.PD 0
+.PP
+.PD
+.SH DESCRIPTION 
+SnapRAID is a backup program for a disk array using redundancy.
+.PP
+SnapRAID uses a disk of the array to store redundancy information,
+and it allows to recover from a disk failure.
+.PP
+SnapRAID is mainly targeted for a home media center, where you have
+a lot of big files that rarely change.
+.PP
+The main features of SnapRAID are:
+.PD 0
+.IP \(bu
+You can start using SnapRAID with already filled disks.
+.IP \(bu
+The disks of the array can have different sizes.
+.IP \(bu
+You can add more disks at the array at any time.
+.IP \(bu
+If you accidentally delete some files in a disk, you can
+recover them.
+.IP \(bu
+If more than one disk fails, you lose the data only on the
+failed disks. All the data in the other disks is safe.
+.IP \(bu
+It doesn\(cqt lock\(hyin your data. You can stop using SnapRAID at any
+time without the need to reformat or move data.
+.IP \(bu
+All your data is hashed to ensure data integrity.
+.PD
+.PP
+The official site of SnapRAID is:
+.PP
+.RS 4
+http://snapraid.sourceforge.net
+.PD 0
+.PP
+.PD
+.RE
+.SH LIMITATIONS 
+SnapRAID is in between a RAID and a backup program trying to get the best
+benefits of them. Although it also has some limitations that you should
+consider before using it.
+.PP
+The main one, is that if a disk fail, and you haven\(cqt recently synced,
+you may not able to do a complete recover.
+More specifically, you may be unable to recover up to the size of the
+amount of the changed or deleted files, from the last sync operation.
+This happens even if the files changed or deleted are not in the
+failed disk.
+New added files don\(cqt prevent the recovering of the already existing
+files. You may only lose the just added files, if they were on the failed
+disk.
+.PP
+This is the reason because SnapRAID is better suited for data that
+rarely change.
+.PP
+Other limitations are:
+* You have different file\(hysystems for each disk.
+.PP
+.RS 4
+Using a RAID you have only a big file\(hysystem.
+.RE
+.PD 0
+.IP \(bu
+It doesn\(cqt stripe data.
+With RAID you get a speed boost with striping.
+.IP \(bu
+It doesn\(cqt support real\(hytime recovery.
+With RAID you do not have to stop working when a disk fails.
+.IP \(bu
+It\(cqs able to recover damages only from a single disk.
+With a Backup you are able to recover from a complete
+failure of the whole disk array.
+.PD
+.SH GETTING STARTED 
+To use SnapRAID you need first select one disk of your disk array
+to dedicate at the redundancy information.
+.PP
+You have to pick the biggest disk in the array, as the redundancy
+information may grow in size as the biggest data disk in the array.
+.PP
+This disk will be dedicated to this purpose only and you should
+not store other data on it.
+.PP
+Suppose now that you have mounted all your disks in the mount points:
+.PP
+.RS 4
+/mnt/diskpar <\(hy selected disk for parity
+.PD 0
+.PP
+.PD
+/mnt/disk1
+.PD 0
+.PP
+.PD
+/mnt/disk2
+.PD 0
+.PP
+.PD
+/mnt/disk3
+.PD 0
+.PP
+.PD
+.RE
+.PP
+you have to create the configuration file /etc/snapraid.conf with
+the following content:
+.PP
+.RS 4
+parity /mnt/diskpar/parity
+.PD 0
+.PP
+.PD
+content /mnt/diskpar/content
+.PD 0
+.PP
+.PD
+disk d1 /mnt/disk1/
+.PD 0
+.PP
+.PD
+disk d2 /mnt/disk2/
+.PD 0
+.PP
+.PD
+disk d3 /mnt/disk3/
+.PD 0
+.PP
+.PD
+.RE
+.PP
+At this point you are ready to start the \(a"sync\(a" command to build the
+redundancy information.
+.PP
+.RS 4
+snapraid sync
+.PD 0
+.PP
+.PD
+.RE
+.PP
+This process may take some hours the first time, depending on the size
+of the data already present in the disks. If the disks are empty
+the process is immediate.
+.PP
+You can stop it at any time pressing Ctrl+C, and at the next run it
+will start where interrupted.
+.PP
+When this command completes, your data is SAFE.
+.PP
+At this point you can start using your data as you like, and periodically
+update the redundancy information running the \(a"sync\(a" command.
+.PP
+To check the integrity of your data you can use the \(a"check\(a" command:
+.PP
+.RS 4
+snapraid check
+.PD 0
+.PP
+.PD
+.RE
+.PP
+If will read all your data, to check if it\(cqs correct.
+.PP
+If an error is found, you can use the \(a"fix\(a" command to fix it.
+.PP
+.RS 4
+snapraid fix
+.PD 0
+.PP
+.PD
+.RE
+.PP
+Note that the fix command will revert your data at the state of the
+last \(a"sync\(a" command executed. It works like a snapshot was taken
+in \(a"sync\(a".
+.PP
+In this regard snapraid is more like a backup program than a RAID
+system. For example, you can use it to recover from an accidentally
+deleted directory, simply running the fix command.
+.SH COMMANDS 
+SnapRAID provides three simple commands that allow to:
+.PD 0
+.IP \(bu
+Make a backup/snapshot \(hy> \(a"sync\(a"
+.IP \(bu
+Check for integrity \(hy> \(a"check\(a"
+.IP \(bu
+Restore the last backup/snapshot \(hy> \(a"fix\(a".
+.PD
+.TP
+.B sync
+Updates the redundancy information. All the modified files
+in the disk array are read, and the redundancy data is
+updated.
+You can stop this process at any time pressing Ctrl+C,
+without losing the work already done.
+.TP
+.B check
+Checks all the files the redundancy data. All the files
+are hashed and compared with the snapshot saved in the
+previous \(a"sync\(a" command.
+.TP
+.B fix
+Checks and fix all the files. It\(cqs like \(a"check\(a" but it
+also tries to fix problems reverting the state of the
+disk array at the previous \(a"sync\(a" command.
+.SH OPTIONS 
+.TP
+.B \(hyc, \(hy\(hyconf CONFIG
+Selects the configuration file. If not specified is assumed
+the file \(cq/etc/snapraid.conf\(cq in Unix, and \(cqsnapraid.conf\(cq
+in Windows.
+.TP
+.B \(hys, \(hy\(hystart BLOCK
+Starts the processing from the specified
+block number. It could be useful to easy retry to check or
+fix some specific block, in case of a damaged disk.
+.TP
+.B \(hyZ, \(hy\(hyforce\(hyzero
+Forces the insecure operation of syncing a file with zero
+size that before was not empty.
+If SnapRAID detects such condition, it stops proceeding
+unless you specify this option.
+This allows to easily detect when after a system crash,
+some accessed files were zeroed.
+.TP
+.B \(hyE, \(hy\(hyforce\(hyempty
+Forces the insecure operation of syncing an empty disk
+that before was not empty.
+If SnapRAID detects such condition, it stops proceeding
+unless you specify this option.
+This allows to easily detect when a data file\(hysystem is not
+mounted.
+.TP
+.B \(hyv, \(hy\(hyverbose
+Prints more information in the processing.
+.TP
+.B \(hyh, \(hy\(hyhelp
+Prints a short help screen.
+.TP
+.B \(hyV, \(hy\(hyversion
+Prints the program version.
+.SH CONFIGURATION 
+SnapRAID requires a configuration file to know where your disk array
+is located, and where storing the redundancy information.
+.PP
+This configuration file is located in /etc/snapraid.conf and
+it should contains the following options:
+.TP
+.B parity FILE
+Defines the file to use to store the redundancy information.
+It must be placed in a disk dedicated for this purpose with
+as much free space as the biggest disk in the array.
+Leaving the parity disk reserved for only this file, ensures that
+it doesn\(cqt get fragmented, improving the performance.
+This option can be used only one time.
+.TP
+.B content FILE
+Defines the file to use to store the content of the redundancy
+organization.
+It can be placed in the same disk of the parity file, or better
+in another disk, but NOT in a data disk of the array.
+This option can be used only one time.
+.TP
+.B disk NAME DIR
+Defines the name and the mount point of the disks of the array.
+NAME is used to identify the disk, and it must be unique.
+DIR is the mount point of the disk in the file\(hysystem.
+You can change the mount point as you like, as far you
+keep the NAME fixed.
+You should use one option for each disk of the array.
+.TP
+.B exclude PATTERN
+Defines the file or directory patterns to exclude from the sync
+process. See the PATTERN section for more details in the
+pattern specifications.
+This option can be used many times.
+.TP
+.B block_size SIZE_IN_KIBIBYTES
+Defines the basic block size in kibi bytes of
+the redundancy blocks. Where one kibi bytes is 1024 bytes.
+The default is 256 and it should work for most conditions.
+You increase this value if you do not have enough memory
+to run SnapRAID.
+It requires to run something about TS*24/BS bytes, where TS
+is the total size in bytes of your disk array, and BS is the
+block size in bytes.
+.PP
+.RS 4
+For example with 6 disk of 2 TiB and a block size of 256 KiB
+(1 KiB = 1024 Bytes) you have:
+.RE
+.PP
+.RS 4
+memory = (6 * 2 * 2^40) * 24 / (256 * 2^10) = 1.1 GiB
+.PD 0
+.PP
+.PD
+.RE
+.PP
+.RS 4
+You should instead decrease this value if you have a lot of
+small files in the disk array. For each file, even if of few
+bytes, a whole block is always allocated, so you may have a lot
+of unused space.
+.RE
+.PP
+An example of a typical configuration is:
+.PP
+.RS 4
+parity /mnt/diskpar/parity
+.PD 0
+.PP
+.PD
+content /mnt/diskpar/content
+.PD 0
+.PP
+.PD
+disk d1 /mnt/disk1/
+.PD 0
+.PP
+.PD
+disk d2 /mnt/disk2/
+.PD 0
+.PP
+.PD
+disk d3 /mnt/disk3/
+.PD 0
+.PP
+.PD
+exclude *.bak
+.PD 0
+.PP
+.PD
+exclude /lost+found/
+.PD 0
+.PP
+.PD
+exclude tmp/
+.PD 0
+.PP
+.PD
+block_size 256
+.PD 0
+.PP
+.PD
+.RE
+.SH PATTERN 
+Patterns are used to define the files and directories to exclude
+from the redundancy process.
+.PP
+It makes sense to exclude any file not worth to be saved or that
+changes often.
+.PP
+There are four different types of patterns:
+.TP
+.B FILE
+Excludes any file named as FILE. You can use any globbing
+character like * and ?.
+This pattern is applied only to files and not to directories.
+.TP
+.B DIR/
+Excludes any directory named DIR. You can use any globbing
+character like * and ?.
+This pattern is applied only to directories and not to files.
+.TP
+.B /PATH/FILE
+Excludes the exact specified file path. You can use any
+globbing character like * and ? but they never matches a
+directory slash.
+This pattern is applied only to files and not to directories.
+.TP
+.B /PATH/DIR/
+Excludes the exact specified directory path. You can use any
+globbing character like * and ? but they never matches a
+directory slash.
+This pattern is applied only to directories and not to files.
+.PP
+For example:
+.PP
+.RS 4
+# Excludes any file named \(a"*.bak\(a"
+.PD 0
+.PP
+.PD
+exclude *.bak
+.PD 0
+.PP
+.PD
+# Excludes the root directory \(a"/lost+found\(a"
+.PD 0
+.PP
+.PD
+exclude /lost+found/
+.PD 0
+.PP
+.PD
+# Excludes any directory named \(a"tmp\(a"
+.PD 0
+.PP
+.PD
+exclude tmp/
+.PD 0
+.PP
+.PD
+.RE
+.SH CONTENT 
+SnapRAID creates a content file describing the content of your disk array.
+.PP
+You should never change it manually, although the format of this file is
+described here.
+.TP
+.B blk_size SIZE
+Defines the size of the block in bytes. It must match the size
+defined in the configuration file.
+.TP
+.B file DISK SIZE TIME INODE PATH
+Defines a file in the specified DISK.
+The INODE number is used to identify the file in the \(a"sync\(a"
+command, allowing to rename or move the file in disk without
+the need to recompute the parity for it.
+The SIZE and TIME information are used to identify if the file
+changed from the last \(a"sync\(a" command, and if there is the need
+to recompute the parity.
+The PATH information is used in the \(a"check\(a" and \(a"fix\(a" commands
+to identify the file.
+.TP
+.B blk BLOCK HASH
+Defines the ordered parity block list used by the last defined file.
+BLOCK is the block position in the \(a"parity\(a" file.
+0 for the first block, 1 for the second one and so on.
+HASH is the md5 of the block. In the last block of the file,
+the HASH is the hash of only the used part of the block.
+.SH PARITY 
+SnapRAID creates a parity file containing the parity information of your disk array.
+.PP
+It\(cqs a binary file, containing the parity information of all the blocks defined
+in the \(a"content\(a" file.
+.PP
+For all the blocks at a given position, the parity information is computed with
+the XOR operator applied to all the blocks.
+.PP
+When a file block is shorter than the default block size, for example because it\(cqs
+the last block of a file, it\(cqs assumed filled with 0 at the end in the XOR operation.
+.SH COPYRIGHT 
+This file is Copyright (C) 2011 Andrea Mazzoleni
+.SH SEE ALSO 
+rsync(1)
