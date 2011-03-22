@@ -33,7 +33,11 @@ struct snapraid_scan {
  */
 static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
 {
-	block_off_t i;
+	block_off_t i, j;
+	unsigned diskmax = tommy_array_size(&state->diskarr);
+
+	/* state changed */
+	state->need_write = 1;
 
 	/* free all the blocks of the file */
 	for(i=0;i<file->blockmax;++i) {
@@ -43,7 +47,18 @@ static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk*
 		if (disk->first_free_block > block_pos)
 			disk->first_free_block = block_pos;
 
+		/* clear the block */
 		tommy_array_set(&disk->blockarr, block_pos, 0);
+
+		/* invalidate the block of all the other disks */
+		for(j=0;j<diskmax;++j) {
+			struct snapraid_disk* oth_disk = tommy_array_get(&state->diskarr, j);
+			struct snapraid_block* oth_block = disk_block_get(oth_disk, block_pos);
+			if (oth_block) {
+				/* remove the parity info for this block */
+				oth_block->flag = bit_clear(oth_block->flag, BLOCK_HAS_PARITY);
+			}
+		}
 	}
 
 	/* remove the file from the file containers */
@@ -62,6 +77,9 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 	block_off_t i;
 	block_off_t block_max;
 	block_off_t block_pos;
+
+	/* state changed */
+	state->need_write = 1;
 
 	/* allocate the blocks of the file */
 	block_pos = disk->first_free_block;
@@ -119,10 +137,14 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 			/* do a safety check to ensure that the common ext4 case of zeroing */
 			/* the size of a file after a crash doesn't propagate to the backup */
 			if (file->size != 0 && st->st_size == 0) {
-				if (!state->force_zero) {
-					fprintf(stderr, "The file '%s' in disk '%s' at dir '%s' has now zero size!\n", sub, disk->name, disk->dir);
-					fprintf(stderr, "If it's really what you want to sync it, use 'snapraid --force-zero sync\n");
-					exit(EXIT_FAILURE);
+				/* do the check ONLY if the name is the same */
+				/* otherwise it could be a deleted and recreated file */
+				if (strcmp(file->sub, sub) == 0) {
+					if (!state->force_zero) {
+						fprintf(stderr, "The file '%s' in disk '%s' at dir '%s' has now zero size!\n", sub, disk->name, disk->dir);
+						fprintf(stderr, "If it's really what you want to sync it, use 'snapraid --force-zero sync\n");
+						exit(EXIT_FAILURE);
+					}
 				}
 			}
 
@@ -180,10 +202,9 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, s
 		char sub_next[PATH_MAX];
 		struct stat st;
 		const char* name = dd->d_name;
-		int is_auto = name[0] == '.' && (name[1] == 0 || (name[1] == '.' && name[2] == 0));
 
 		/* skip "." and ".." files */
-		if (is_auto)
+		if (name[0] == '.' && (name[1] == 0 || (name[1] == '.' && name[2] == 0)))
 			continue;
 
 		pathprint(path_next, sizeof(path_next), "%s%s", dir, name);
@@ -191,6 +212,12 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, s
 
 		if (stat(path_next, &st) != 0) {
 			fprintf(stderr, "Error in stat file '%s'\n", path_next);
+			exit(EXIT_FAILURE);
+		}
+
+		/* check for not supported file names, mainly derived from the content file format */
+		if (name[0] == 0 || isspace(name[0]) || isspace(name[strlen(name)-1])) {
+			fprintf(stderr, "Unsupported name '%s' in file '%s'\n", name, path_next);
 			exit(EXIT_FAILURE);
 		}
 

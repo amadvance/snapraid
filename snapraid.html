@@ -25,7 +25,7 @@ SnapRAID is a backup program for a disk array using redundancy.
 SnapRAID uses a disk of the array to store redundancy information,
 and it allows to recover from a disk failure.
 <p>
-SnapRAID is mainly targeted for a home media server, where you have
+SnapRAID is mainly targeted for a home media center, where you have
 a lot of big files that rarely change.
 <p>
 The main features of SnapRAID are:
@@ -50,6 +50,9 @@ failed disks. All the data in the other disks is safe.
 <li>
 It doesn't lock-in your data. You can stop using SnapRAID at any
 time without the need to reformat or move data.
+</li>
+<li>
+All your data is hashed to ensure data integrity.
 </li>
 </ul>
 <p>
@@ -103,20 +106,20 @@ failure of the whole disk array.
 <h2><a name="4">4</a> 
 Getting Started
 </h2>
-To use SnapRAID you need first to mount all the disks of your disk
-array and select which one to dedicate at the redundancy information.
-<p>
-This disk will be dedicated to this pourpuse only, and you should
-not store any other data on it.
+To use SnapRAID you need first select one disk of your disk array
+to dedicate at the redundancy information.
 <p>
 You have to pick the biggest disk in the array, as the redundancy
 information may grow in size as the biggest data disk in the array.
+<p>
+This disk will be dedicated to this pourpuse only and you should
+not store other data on it.
 <p>
 Suppose now that you have mounted all your disks in the mount points:
 <p>
 <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
-/mnt/diskpar
+/mnt/diskpar &lt;- selected disk for parity
 /mnt/disk1
 /mnt/disk2
 /mnt/disk3
@@ -145,9 +148,10 @@ snapraid sync
 </pre>
 </td></tr></table>
 <p>
-This process will take some hours at best the first time, depending on
-the size of the data already present in the disks.
-If the disks are empty the process is immediate.
+This process maty take some hours the first time, depending on the size
+of the data already present in the disks. If the disks are empty
+the process is immediate.
+<p>
 You can stop it at any time pressing Ctrl+C, and at the next run it
 will start where interrupted.
 <p>
@@ -177,6 +181,10 @@ snapraid fix
 Note that the fix command will revert your data at the state of the
 last "sync" command executed. It works like a snapshot was taken
 in "sync".
+<p>
+In this regard snapraid is more like a backup program than a RAID
+system. For example, you can use it to recover from an accidentally
+deleted directory, simply running the fix command.
 <h2><a name="5">5</a> 
 Commands
 </h2>
@@ -313,7 +321,7 @@ content FILE
 Defines the file to use to store the content of the redundancy
 organization.
 It can be placed in the same disk of the parity file, or better
-in another disk, but NOT in a disk of the array.
+in another disk, but NOT in a data disk of the array.
 This option can be used only one time.
 </td></tr>
 </table>
@@ -341,16 +349,16 @@ This option can be used many times.
 </table>
 <table width="100%" border="0" cellspacing="0" cellpadding="2">
 <tr valign="top" align="left"><td><strong>
-block_size SIZE_IN_KILOBYTES
+block_size SIZE_IN_KIBIBYTES
 </strong></td></tr><tr><td>
-Defines the basic block size in kilo bytes of
-the redundancy blocks. The default is 256 and it should
-work for most conditions.
-You should use this option only if you do not have enough
-memory to run SnapRAID.
-It requires to run TS*24/BS bytes, where TS is the total
-size in bytes of your disk array, and BS is the block size
-in bytes.
+Defines the basic block size in kibi bytes of
+the redundancy blocks. Where one kibi bytes is 1024 bytes.
+The default is 256 and it should work for most conditions.
+You increase this value if you do not have enough memory
+to run SnapRAID.
+It requires to run something about TS*24/BS bytes, where TS
+is the total size in bytes of your disk array, and BS is the
+block size in bytes.
 </td></tr>
 </table>
 <p>
@@ -363,6 +371,13 @@ For example with 6 disk of 2 TiB and a block size of 256 KiB
 <pre>
 memory = (6 * 2 * 2^40) * 24 / (256 * 2^10) = 1.1 GiB
 </pre>
+</td></tr></table>
+<p>
+<table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
+You should instead decrease this value if you have a lot of
+small files in the disk array. For each file, even if of few
+bytes, a whole block is always allocated, so you may have a lot
+of unused space.
 </td></tr></table>
 <p>
 An example of a typical configuration is:
@@ -386,7 +401,8 @@ Pattern
 Patterns are used to define the files and directories to exclude
 from the redundancy process.
 <p>
-It makes sense to exclude any file not worth to be saved.
+It makes sense to exclude any file not worth to be saved or that
+changes often.
 <p>
 There are four different types of patterns:
 <table width="100%" border="0" cellspacing="0" cellpadding="2">
@@ -429,12 +445,11 @@ This pattern is applied only to directories and not to files.
 </table>
 <p>
 For example:
-<p>
 <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
 # Excludes any file named "*.bak"
 exclude *.bak
-# Excludes the root directory "lost+found"
+# Excludes the root directory "/lost+found"
 exclude /lost+found/
 # Excludes any directory named "tmp"
 exclude tmp/
@@ -444,7 +459,8 @@ exclude tmp/
 Content
 </h2>
 SnapRAID creates a content file describing the content of your disk array.
-You do not have to to modify it, altought the format of this file is
+<p>
+You should never change it manually, altought the format of this file is
 described here.
 <table width="100%" border="0" cellspacing="0" cellpadding="2">
 <tr valign="top" align="left"><td><strong>
@@ -459,13 +475,13 @@ defined in the configuration file.
 file DISK SIZE TIME INODE PATH
 </strong></td></tr><tr><td>
 Defines a file in the specified DISK.
-The INODE information is used to identify the file in the 'sync'
-command, allowing to move the file anywhere in disk without
+The INODE number is used to identify the file in the "sync"
+command, allowing to rename or move the file in disk without
 the need to recompute the parity for it.
 The SIZE and TIME information are used to identify if the file
-changed from the last 'sync' command, and if there is the need
+changed from the last "sync" command, and if there is the need
 to recompute the parity.
-The PATH information is used in the 'check' and 'fix' commands
+The PATH information is used in the "check" and "fix" commands
 to identify the file.
 </td></tr>
 </table>
@@ -473,17 +489,31 @@ to identify the file.
 <tr valign="top" align="left"><td><strong>
 blk BLOCK HASH
 </strong></td></tr><tr><td>
-Defines the ordered blocks used by the last defined file.
-BLOCK is the block position in the parity file.
+Defines the ordered parity block list used by the last defined file.
+BLOCK is the block position in the "parity" file.
+0 for the first block, 1 for the second one and so on.
 HASH is the md5 of the block. In the last block of the file,
-the HASH is the hash only of the used part of the block.
+the HASH is the hash of only the used part of the block.
 </td></tr>
 </table>
 <h2><a name="10">10</a> 
+Parity
+</h2>
+SnapRAID creates a parity file containing the parity information of your disk array.
+<p>
+It's a binary file, containing the parity information of all the blocks defined
+in the "content" file.
+<p>
+For all the blocks at a given position, the parity information is computed with
+the XOR operator applied to all the blocks.
+<p>
+When a file block is shorter than the default block size, for example because it's
+the last block of a file, it's assumed filled with 0 at the end in the XOR operation.
+<h2><a name="11">11</a> 
 Copyright
 </h2>
 This file is Copyright (C) 2011 Andrea Mazzoleni
-<h2><a name="11">11</a> 
+<h2><a name="12">12</a> 
 See Also
 </h2>
 rsync(1)

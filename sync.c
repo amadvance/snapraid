@@ -58,20 +58,21 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, block_
 	last = start;
 
 	for(i=blockstart;i<blockmax;++i) {
-		int unhashed;
+		int one_invalid;
 		int ret;
 
-		/* for each disk, search for an unhashed block */
-		unhashed = 0;
+		/* for each disk */
+		one_invalid = 0;
 		for(j=0;j<diskmax;++j) {
 			struct snapraid_block* block = disk_block_get(handle[j].disk, i);
-			if (block && !block->is_hashed) {
-				unhashed = 1;
+			if (block && !bit_has(block->flag, BLOCK_HAS_HASH | BLOCK_HAS_PARITY)) {
+				one_invalid = 1;
 				break;
 			}
 		}
 
-		if (!unhashed)
+		/* if no invalid block skip */
+		if (!one_invalid)
 			continue;
 
 		/* start with 0 */
@@ -141,7 +142,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, block_
 			md5_update(&md5, block_buffer, read_size);
 			md5_final(&md5, hash);
 
-			if (block->is_hashed) {
+			if (bit_has(block->flag, BLOCK_HAS_HASH)) {
 				/* compare the hash */
 				if (memcmp(hash, block->hash, HASH_MAX) != 0) {
 					fprintf(stderr, "%u: Data error for file %s at position %u\n", i, block->file->sub, block_file_pos(block));
@@ -179,7 +180,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, block_
 			if (!block)
 				continue;
 
-			block->is_hashed = 1;
+			block->flag = bit_set(block->flag, BLOCK_HAS_HASH | BLOCK_HAS_PARITY);
 		}
 
 		/* mark the state as needing write */

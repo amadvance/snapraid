@@ -145,7 +145,7 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t 
 	/* set the back pointer */
 	for(i=0;i<file->blockmax;++i) {
 		file->blockvec[i].parity_pos = POS_INVALID;
-		file->blockvec[i].is_hashed = 0;
+		file->blockvec[i].flag = 0;
 		file->blockvec[i].file = file;
 	}
 

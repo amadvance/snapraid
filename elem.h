@@ -60,12 +60,15 @@ struct snapraid_filter {
 
 struct snapraid_file;
 
+#define BLOCK_HAS_HASH 1 /**< If the hash value is valid. */
+#define BLOCK_HAS_PARITY 2 /**< If the parity block is valid. */
+
 /**
  * Block of a file.
  */
 struct snapraid_block {
 	block_off_t parity_pos; /**< Position of the block in the parity. */
-	int is_hashed; /**< If the hash of the block is valid. */
+	unsigned flag; /**< If the hash of the block is valid. */
 	struct snapraid_file* file; /**< Back pointer to the file owning this block. */
 	unsigned char hash[HASH_MAX]; /**< Hash of the block. */
 };

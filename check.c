@@ -62,23 +62,22 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 	last = start;
 
 	for(i=blockstart;i<blockmax;++i) {
-		int hashed;
 		int failed;
 		struct snapraid_block* failed_block;
 		struct snapraid_handle* failed_handle;
+		int one_hash;
 
-		/* for each disk, search for a hashed block */
-		hashed = 0;
+		/* for each disk */
+		one_hash = 0;
 		for(j=0;j<diskmax;++j) {
 			struct snapraid_block* block = disk_block_get(handle[j].disk, i);
-			if (block && block->is_hashed) {
-				hashed = 1;
-				break;
+			if (block && bit_has(block->flag, BLOCK_HAS_HASH)) {
+				one_hash = 1;
 			}
 		}
 
-		/* if there is at least an hashed block we have to check */
-		if (!hashed)
+		/* if no hashed block skip */
+		if (!one_hash)
 			continue;
 
 		/* start with 0 */
@@ -98,8 +97,10 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			if (!block)
 				continue;
 
-			/* we can check and fix only if the block is hashed */
-			if (!block->is_hashed)
+			/* we try to check and fix only if the block is hashed */
+			/* it could be that a file was added, and not yet synched */
+			/* so we should not include not hashed block in the parity computation */
+			if (!bit_has(block->flag, BLOCK_HAS_HASH))
 				continue;
 
 			ret = handle_close_if_different(&handle[j], block->file);
@@ -385,3 +386,4 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart)
 	if (unrecoverable_error != 0)
 		exit(EXIT_FAILURE);
 }
+

@@ -222,7 +222,7 @@ void state_read(struct snapraid_state* state)
 		tag = s;
 		s = strtoken(s);
 
-		if (strcmp(tag, "blk") == 0) {
+		if (strcmp(tag, "blk") == 0 || strcmp(tag, "inv") == 0) {
 			char* pos;
 			char* hash;
 			block_off_t v_pos;
@@ -265,7 +265,18 @@ void state_read(struct snapraid_state* state)
 					fprintf(stderr, "Invalid 'blk' specification in '%s' at line %u\n", path, line);
 					exit(EXIT_FAILURE);
 				}
-				block->is_hashed = 1;
+
+				block->flag = bit_set(block->flag, BLOCK_HAS_HASH);
+			}
+
+			/* set the parity only if present */
+			if (tag[0] == 'b') /* blk */
+				block->flag = bit_set(block->flag, BLOCK_HAS_PARITY);
+
+			/* parity implies hash */
+			if (bit_has(block->flag, BLOCK_HAS_PARITY) && !bit_has(block->flag, BLOCK_HAS_HASH)) {
+				fprintf(stderr, "Internal inconsistency in 'blk' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
 			}
 
 			/* insert the block in the block array */
@@ -445,14 +456,21 @@ void state_write(struct snapraid_state* state)
 			/* for each block */
 			for(k=0;k<file->blockmax;++k) {
 				struct snapraid_block* block = &file->blockvec[k];
+				const char* tag;
 
-				if (block->is_hashed) {
+				if (bit_has(block->flag, BLOCK_HAS_PARITY)) {
+					tag = "blk";
+				} else {
+					tag = "inv";
+				}
+
+				if (bit_has(block->flag, BLOCK_HAS_HASH)) {
 					char s_hash[HASH_MAX*2+1];
 					strenchex(s_hash, block->hash, HASH_MAX);
 					s_hash[HASH_MAX*2] = 0;
-					ret = fprintf(f, "blk %u %s\n", block->parity_pos, s_hash);
+					ret = fprintf(f, "%s %u %s\n", tag, block->parity_pos, s_hash);
 				} else {
-					ret = fprintf(f, "blk %u\n", block->parity_pos);
+					ret = fprintf(f, "%s %u\n", tag, block->parity_pos);
 				}
 				if (ret < 0) {
 					fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", path, strerror(errno));
@@ -474,7 +492,7 @@ void state_write(struct snapraid_state* state)
 		exit(EXIT_FAILURE);
 	}
 
-#if HAVE_FSYNC    
+#if HAVE_FSYNC
 	if (fsync(fileno(f)) != 0) {
 		fprintf(stderr, "Error writing the content file '%s' in fsync(). %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
