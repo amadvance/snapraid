@@ -122,6 +122,7 @@
 #define HAVE_FSYNC 1
 #define fsync _commit
 #define rename windows_rename
+#define mkdir(a, b) mkdir(a)
 
 /**
  * Generic stat information.
@@ -194,7 +195,7 @@ static inline int windows_stat(const char* file, struct windows_stat* st)
 	BY_HANDLE_FILE_INFORMATION info;
 	HANDLE h;
 
-	h = CreateFile(file, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+	h = CreateFile(file, GENERIC_READ, FILE_SHARE_READ, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		DWORD error = GetLastError();
 		switch (error) {
