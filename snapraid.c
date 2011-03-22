@@ -24,6 +24,15 @@
 /****************************************************************************/
 /* main */
 
+/**
+ * Default configuration file.
+ */
+#ifdef _WIN32
+#define CONF PACKAGE ".conf"
+#else
+#define CONF "/etc/" PACKAGE ".conf"
+#endif
+
 void version(void) {
 	printf(PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
 }
@@ -34,7 +43,7 @@ void usage(void) {
 	printf("Usage: " PACKAGE " [options]\n");
 	printf("\n");
 	printf("Options:\n");
-	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE    ", "-c") "  Configuration file (default /etc/" PACKAGE ".conf)\n");
+	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE    ", "-c") "  Configuration file (default " CONF ")\n");
 	printf("  " SWITCH_GETOPT_LONG("-s, --start BLK    ", "-s") "  Start from the specified block number\n");
 	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero   ", "-Z") "  Force synching of files that get zero size\n");
 	printf("  " SWITCH_GETOPT_LONG("-E, --force-empty  ", "-E") "  Force synching of disks that get empty\n");
@@ -86,10 +95,10 @@ int main(int argc, char* argv[])
 	int ret;
 
 	/* intercept Ctrl+C */
-	signal(SIGINT, &signal_handler);    
-    
+	signal(SIGINT, &signal_handler);
+
 	/* defaults */
-	conf = "/etc/" PACKAGE ".conf";
+	conf = CONF;
 	verbose = 0;
 	force_zero = 0;
 	force_empty = 0;
