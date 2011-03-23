@@ -61,5 +61,12 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
  */
 int handle_write(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size);
 
+/**
+ * Readahead optimization where available.
+ * \note
+ * It doesn't seem to give any speed improvement over posix_fadvise(POSIX_FADV_SEQUENTIAL).
+ */
+int handle_readahead(struct snapraid_handle* handle, struct snapraid_block* block, unsigned block_size);
+
 #endif
 

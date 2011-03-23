@@ -3,6 +3,8 @@ SnapRAID HISTORY
 
 0.2 2011/3
 ==========
+* Second public test release of SnapRAID.
+* Functionally complete in check and fix.
 * Files are identified by inode and not anymore by name.
 * Exclusion list of files and directories.
 * Precise error management.
