@@ -2,11 +2,15 @@
 .SH NAME
 snapraid \(hy SnapRAID Backup For Disk Arrays
 .SH SYNOPSIS 
-snapraid [\(hyc, \(hy\(hyconf CONFIG] [\(hys, \(hy\(hystart BLOCK]
+snapraid [\(hyc, \(hy\(hyconf CONFIG]
 .PD 0
 .PP
 .PD
 	[\(hyZ, \(hy\(hyforce\(hyzero] [\(hyE, \(hy\(hyforce\(hyempty]
+.PD 0
+.PP
+.PD
+	[\(hys, \(hy\(hystart BLKSTART] [\(hyt, \(hy\(hycount BLKCOUNT]
 .PD 0
 .PP
 .PD
@@ -237,11 +241,6 @@ Selects the configuration file. If not specified is assumed
 the file \(cq/etc/snapraid.conf\(cq in Unix, and \(cqsnapraid.conf\(cq
 in Windows.
 .TP
-.B \(hys, \(hy\(hystart BLOCK
-Starts the processing from the specified
-block number. It could be useful to easy retry to check or
-fix some specific block, in case of a damaged disk.
-.TP
 .B \(hyZ, \(hy\(hyforce\(hyzero
 Forces the insecure operation of syncing a file with zero
 size that before was not empty.
@@ -257,6 +256,15 @@ If SnapRAID detects such condition, it stops proceeding
 unless you specify this option.
 This allows to easily detect when a data file\(hysystem is not
 mounted.
+.TP
+.B \(hys, \(hy\(hystart BLKSTART
+Starts the processing from the specified
+block number. It could be useful to easy retry to check
+or fix some specific block, in case of a damaged disk.
+.TP
+.B \(hyt, \(hy\(hycount BLKCOUNT
+Process only the specified number of blocks.
+It\(cqs present mainly for testing.
 .TP
 .B \(hyv, \(hy\(hyverbose
 Prints more information in the processing.

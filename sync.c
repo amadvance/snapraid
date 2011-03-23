@@ -217,7 +217,7 @@ bail:
 	return 0;
 }
 
-int state_sync(struct snapraid_state* state, block_off_t blockstart)
+int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t blockcount)
 {
 	char path[PATH_MAX];
 	block_off_t blockmax;
@@ -235,6 +235,11 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart)
 	if (blockstart > blockmax) {
 		fprintf(stderr, "Error in the starting block %u. It's bigger than the parity size %u.\n", blockstart, blockmax);
 		exit(EXIT_FAILURE);
+	}
+	
+	/* adjust the number of block to process */
+	if (blockcount != 0 && blockstart + blockcount < blockmax) {
+		blockmax = blockstart + blockcount;
 	}
 
 	pathcpy(path, sizeof(path), state->parity);

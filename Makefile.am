@@ -82,6 +82,17 @@ check-local:
 	$(TESTENV) ./mktest$(EXEEXT) generate 3 3 100 4000
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
+	echo --- Delete some files and create some new, sync and check in multiple steps
+	rm test/disk1/4*
+	rm test/disk2/5*
+	rm test/disk2/6*
+	$(TESTENV) ./mktest$(EXEEXT) generate 4 3 100 4000
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf -t 7 sync
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf -t 11 sync
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
 	echo --- Delete some files, fix and check
 	rm test/disk1/1*
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check 2>/dev/null

@@ -71,12 +71,12 @@ void state_scan(struct snapraid_state* state);
 /**
  * Syncs the parity data.
  */
-int state_sync(struct snapraid_state* state, block_off_t blockstart);
+int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t blockcount);
 
 /**
  * Checks (and fixes) all the files and the parity data.
  */
-void state_check(struct snapraid_state* state, int fix, block_off_t blockstart);
+void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, block_off_t blockcount);
 
 /**
  * Writes the progress.

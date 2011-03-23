@@ -43,19 +43,21 @@ void usage(void) {
 	printf("Usage: " PACKAGE " [options]\n");
 	printf("\n");
 	printf("Options:\n");
-	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE    ", "-c") "  Configuration file (default " CONF ")\n");
-	printf("  " SWITCH_GETOPT_LONG("-s, --start BLK    ", "-s") "  Start from the specified block number\n");
-	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero   ", "-Z") "  Force synching of files that get zero size\n");
-	printf("  " SWITCH_GETOPT_LONG("-E, --force-empty  ", "-E") "  Force synching of disks that get empty\n");
-	printf("  " SWITCH_GETOPT_LONG("-v, --verbose      ", "-v") "  Verbose\n");
-	printf("  " SWITCH_GETOPT_LONG("-h, --help         ", "-h") "  Help\n");
-	printf("  " SWITCH_GETOPT_LONG("-V, --version      ", "-V") "  Version\n");
+	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE     ", "-c") "  Configuration file (default " CONF ")\n");
+	printf("  " SWITCH_GETOPT_LONG("-s, --start BLKSTART", "-s") "  Start from the specified block number\n");
+	printf("  " SWITCH_GETOPT_LONG("-t, --count BLKCOUNT", "-t") "  Count of block to process\n");
+	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero    ", "-Z") "  Force synching of files that get zero size\n");
+	printf("  " SWITCH_GETOPT_LONG("-E, --force-empty   ", "-E") "  Force synching of disks that get empty\n");
+	printf("  " SWITCH_GETOPT_LONG("-v, --verbose       ", "-v") "  Verbose\n");
+	printf("  " SWITCH_GETOPT_LONG("-h, --help          ", "-h") "  Help\n");
+	printf("  " SWITCH_GETOPT_LONG("-V, --version       ", "-V") "  Version\n");
 }
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
 	{ "conf", 1, 0, 'c' },
 	{ "start", 1, 0, 's' },
+	{ "count", 1, 0, 't' },
 	{ "force-zero", 0, 0, 'Z' },
 	{ "force-empty", 0, 0, 'E' },
 	{ "verbose", 0, 0, 'v' },
@@ -65,7 +67,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:s:ZEvhV"
+#define OPTIONS "c:s:t:ZEvhV"
 
 volatile int global_interrupt = 0;
 
@@ -92,6 +94,7 @@ int main(int argc, char* argv[])
 	struct snapraid_state state;
 	int operation;
 	block_off_t blockstart;
+	block_off_t blockcount;
 	int ret;
 
 	/* intercept Ctrl+C */
@@ -103,6 +106,7 @@ int main(int argc, char* argv[])
 	force_zero = 0;
 	force_empty = 0;
 	blockstart = 0;
+	blockcount = 0;
 
 	opterr = 0;
 	while ((c =
@@ -119,6 +123,12 @@ int main(int argc, char* argv[])
 		case 's' :
 			if (stru32(optarg, &blockstart) != 0) {
 				fprintf(stderr, "Invalid start position '%s'\n", optarg);
+				exit(EXIT_FAILURE);
+			}
+			break;
+		case 't' :
+			if (stru32(optarg, &blockcount) != 0) {
+				fprintf(stderr, "Invalid count number '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 			}
 			break;
@@ -168,7 +178,7 @@ int main(int argc, char* argv[])
 
 		state_scan(&state);
 
-		ret = state_sync(&state, blockstart);
+		ret = state_sync(&state, blockstart, blockcount);
 
 		/* save the new state if required */
 		if (state.need_write)
@@ -180,7 +190,7 @@ int main(int argc, char* argv[])
 	} else {
 		state_read(&state);
 
-		state_check(&state, operation == OPERATION_FIX, blockstart);
+		state_check(&state, operation == OPERATION_FIX, blockstart, blockcount);
 	}
 
 	state_done(&state);

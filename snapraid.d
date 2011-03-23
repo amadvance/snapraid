@@ -2,8 +2,9 @@ Name{number}
 	snapraid - SnapRAID Backup For Disk Arrays
 
 Synopsis
-	:snapraid [-c, --conf CONFIG] [-s, --start BLOCK]
+	:snapraid [-c, --conf CONFIG]
 	:	[-Z, --force-zero] [-E, --force-empty]
+	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	:	[-v, --verbose]
 	:	COMMAND
 
@@ -155,11 +156,6 @@ Options
 		the file '/etc/snapraid.conf' in Unix, and 'snapraid.conf' 
 		in Windows.
 
-	-s, --start BLOCK
-		Starts the processing from the specified
-		block number. It could be useful to easy retry to check or
-		fix some specific block, in case of a damaged disk.
-
 	-Z, --force-zero
 		Forces the insecure operation of syncing a file with zero
 		size that before was not empty.
@@ -175,6 +171,15 @@ Options
 		unless you specify this option.
 		This allows to easily detect when a data file-system is not
 		mounted.
+
+	-s, --start BLKSTART
+		Starts the processing from the specified
+		block number. It could be useful to easy retry to check
+		or fix some specific block, in case of a damaged disk.
+
+	-t, --count BLKCOUNT
+		Process only the specified number of blocks.
+		It's present mainly for testing.
 
 	-v, --verbose
 		Prints more information in the processing.

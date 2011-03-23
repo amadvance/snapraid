@@ -66,6 +66,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 		struct snapraid_block* failed_block;
 		struct snapraid_handle* failed_handle;
 		int one_hash;
+		int all_parity;
 
 		/* for each disk */
 		one_hash = 0;
@@ -73,6 +74,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			struct snapraid_block* block = disk_block_get(handle[j].disk, i);
 			if (block && bit_has(block->flag, BLOCK_HAS_HASH)) {
 				one_hash = 1;
+				break;
 			}
 		}
 
@@ -83,10 +85,12 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 		/* start with 0 */
 		memset(xor_buffer, 0, state->block_size);
 
-		/* for each disk, process the block */
-		failed = 0;
-		failed_block = 0;
+		all_parity = 1; /* if all hashed block have parity computed */
+		failed = 0; /* number of failed block */
+		failed_block = 0; /* last failed block */
 		failed_handle = 0;
+
+		/* for each disk, process the block */
 		for(j=0;j<diskmax;++j) {
 			int read_size;
 			struct md5_t md5;
@@ -102,6 +106,10 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			/* so we should not include not hashed block in the parity computation */
 			if (!bit_has(block->flag, BLOCK_HAS_HASH))
 				continue;
+
+			/* keep track if at least one hashed block has no parity */
+			if (!bit_has(block->flag, BLOCK_HAS_PARITY))
+				all_parity = 0;
 
 			ret = handle_close_if_different(&handle[j], block->file);
 			if (ret == -1) {
@@ -170,7 +178,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			count_size += read_size;
 		}
 
-		if (parity_f == -1) {
+		if (parity_f == -1 || !all_parity) {
 			/* all the cases with no parity file */
 			if (failed != 0) {
 				fprintf(stderr, "%u: UNRECOVERABLE errors for this block\n", i);
@@ -320,7 +328,7 @@ bail:
 	return 0;
 }
 
-void state_check(struct snapraid_state* state, int fix, block_off_t blockstart)
+void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, block_off_t blockcount)
 {
 	char path[PATH_MAX];
 	block_off_t blockmax;
@@ -340,6 +348,11 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart)
 	if (blockstart > blockmax) {
 		fprintf(stderr, "Error in the specified starting block %u. It's bigger than the parity size %u.\n", blockstart, blockmax);
 		exit(EXIT_FAILURE);
+	}
+
+	/* adjust the number of block to process */
+	if (blockcount != 0 && blockstart + blockcount < blockmax) {
+		blockmax = blockstart + blockcount;
 	}
 
 	pathcpy(path, sizeof(path), state->parity);
