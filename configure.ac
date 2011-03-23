@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.65])
-AC_INIT([snapraid], [0.2], [], [], [http://snapraid.sourceforge.net])
-AM_INIT_AUTOMAKE([foreign no-dependencies])
+AC_INIT([snapraid], [0.3], [], [], [http://snapraid.sourceforge.net])
+AM_INIT_AUTOMAKE([foreign no-dependencies -Wall])
 AC_CONFIG_SRCDIR([snapraid.c])
 AC_CONFIG_HEADER([config.h])
 AC_CANONICAL_HOST
@@ -20,7 +20,8 @@ AC_HEADER_ASSERT
 AC_HEADER_STDC
 AC_HEADER_DIRENT
 AC_HEADER_TIME
-AC_CHECK_HEADERS([fcntl.h stddef.h stdint.h stdlib.h string.h sys/time.h unistd.h getopt.h fnmatch.h io.h])
+AC_CHECK_HEADERS([fcntl.h stddef.h stdint.h stdlib.h string.h limits.h wchar.h wctype.h])
+AC_CHECK_HEADERS([sys/time.h unistd.h getopt.h fnmatch.h io.h])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -37,7 +38,8 @@ AC_TYPE_UINT8_T
 
 dnl Checks for library functions.
 AC_SYS_LARGEFILE
-AC_CHECK_FUNCS([memset strchr strerror strrchr])
+AC_FUNC_MALLOC
+AC_CHECK_FUNCS([memset strchr strerror strrchr mkdir])
 AC_CHECK_FUNCS([getopt getopt_long snprintf vsnprintf])
 AC_CHECK_FUNCS([ftruncate fsync posix_fallocate posix_fadvise pread pwrite fgetc_unlocked ferror_unlocked fnmatch])
 
@@ -52,7 +54,7 @@ AS_CASE([$host],
        [*-*-mingw*], [TESTENV="$WINE"],
        [TESTENV="$VALGRIND"]
 )
-AC_SUBST([TESTENV])
+AC_ARG_VAR([TESTENV], [Test environment])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

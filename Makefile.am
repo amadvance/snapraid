@@ -159,13 +159,13 @@ cachegrind:
 
 # Rules for documentation
 
-%.1 : %.d
+snapraid.1 : snapraid.d
 	advd2 man < $(srcdir)/$< > $@
 
-%.txt : %.d
+snapraid.txt : snapraid.d
 	advd2 txt < $(srcdir)/$< | todos > $@
 
-%.html : %.d
+snapraid.html : snapraid.d
 	advd2 html < $(srcdir)/$< > $@
 
 # Windows distribution
