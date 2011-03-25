@@ -126,5 +126,16 @@ void* malloc_nofail(size_t size);
  */
 void memxor(unsigned char* xor, const unsigned char* block, unsigned size);
 
+/**
+ * Size of MD5 digest.
+ */
+
+#define MD5_SIZE 16
+
+/**
+ * Computes the MD5 of a memory block.
+ */
+void memmd5(void* digest, const void* src, unsigned size);
+
 #endif
 

@@ -1,6 +1,12 @@
 SnapRAID HISTORY
 ================
 
+0.3 2011/4
+==========
+* Added support for OpenSSL crypto library to use its optimized MD5 implementation.
+* Added test vector for MD5.
+* Added a speed test option for MD5.
+
 0.2 2011/3
 ==========
 * Second public test release of SnapRAID.

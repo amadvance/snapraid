@@ -3,7 +3,6 @@ check_PROGRAMS = mktest
 
 snapraid_SOURCES = \
 	snapraid.c \
-	md5.c \
 	tommy.c \
 	util.c \
 	elem.c \

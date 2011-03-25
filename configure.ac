@@ -20,7 +20,7 @@ AC_HEADER_ASSERT
 AC_HEADER_STDC
 AC_HEADER_DIRENT
 AC_HEADER_TIME
-AC_CHECK_HEADERS([fcntl.h stddef.h stdint.h stdlib.h string.h limits.h wchar.h wctype.h])
+AC_CHECK_HEADERS([fcntl.h stddef.h stdint.h stdlib.h string.h limits.h])
 AC_CHECK_HEADERS([sys/time.h unistd.h getopt.h fnmatch.h io.h])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -38,7 +38,6 @@ AC_TYPE_UINT8_T
 
 dnl Checks for library functions.
 AC_SYS_LARGEFILE
-AC_FUNC_MALLOC
 AC_CHECK_FUNCS([memset strchr strerror strrchr mkdir])
 AC_CHECK_FUNCS([getopt getopt_long snprintf vsnprintf])
 AC_CHECK_FUNCS([ftruncate fsync posix_fallocate posix_fadvise pread pwrite fgetc_unlocked ferror_unlocked fnmatch])
@@ -48,6 +47,13 @@ AC_C_BIGENDIAN
 
 dnl Checks for compiler
 AC_CHECK_CC_OPT([-Wall], CFLAGS="$CFLAGS -Wall", [])
+
+AC_ARG_WITH([crypto],
+	[AS_HELP_STRING([--with-crypto],
+	[enable the use of the MD5 fast implementation of the OpenSSL crypto library])],
+	[],
+	[with_crypto=no])
+AS_IF([test "x$with_crypto" != xno], [AC_CHECK_LIB([crypto], [MD5], [], [AC_MSG_FAILURE([--with-crypto was given, but test for OpenSSL crypto library failed])])])
 
 dnl Checks for test environment
 AS_CASE([$host],

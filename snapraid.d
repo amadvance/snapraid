@@ -8,7 +8,7 @@ Synopsis
 	:	[-v, --verbose]
 	:	COMMAND
 
-	:snapraid [-V, --version] [-h, --help]
+	:snapraid [-V, --version] [-h, --help] [-T, --speed-test]
 
 Description
 	SnapRAID is a backup program for a disk array using redundancy.
@@ -183,6 +183,13 @@ Options
 
 	-v, --verbose
 		Prints more information in the processing.
+
+	-T, --speed-test
+		Executes a speed test of the MD5 implementation used.
+		As default, SnapRAID uses a C implementation, but if
+		configured with the --with-crypto option it uses the
+		MD5 implementation of the OpenSSL crypto library usually
+		faster as written in highly optimized assembler.
 
 	-h, --help
 		Prints a short help screen.

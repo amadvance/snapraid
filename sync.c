@@ -81,8 +81,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, block_
 		/* for each disk, process the block */
 		for(j=0;j<diskmax;++j) {
 			int read_size;
-			struct md5_t md5;
-			unsigned char hash[HASH_MAX];
+			unsigned char hash[MD5_SIZE];
 			struct snapraid_block* block;
 
 			block = disk_block_get(handle[j].disk, i);
@@ -138,13 +137,11 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, block_
 			}
 
 			/* now compute the hash */
-			md5_init(&md5);
-			md5_update(&md5, block_buffer, read_size);
-			md5_final(&md5, hash);
+			memmd5(hash, block_buffer, read_size);
 
 			if (bit_has(block->flag, BLOCK_HAS_HASH)) {
 				/* compare the hash */
-				if (memcmp(hash, block->hash, HASH_MAX) != 0) {
+				if (memcmp(hash, block->hash, MD5_SIZE) != 0) {
 					fprintf(stderr, "%u: Data error for file %s at position %u\n", i, block->file->sub, block_file_pos(block));
 					fprintf(stderr, "DANGER! Unexpected data error in a data disk, it isn't possible to sync.\n");
 					fprintf(stderr, "Stopping to allow recovery. Try with 'snapraid -s %u check'\n", i);
@@ -154,7 +151,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, block_
 			} else {
 				/* copy the hash, but doesn't mark the block as hashed */
 				/* this allow on error to do not save the failed computation */
-				memcpy(block->hash, hash, HASH_MAX);
+				memcpy(block->hash, hash, MD5_SIZE);
 			}
 
 			/* compute the parity */

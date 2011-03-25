@@ -18,7 +18,7 @@
 #ifndef __ELEM_H
 #define __ELEM_H
 
-#include "md5.h"
+#include "util.h"
 #include "tommylist.h"
 #include "tommyhash.h"
 #include "tommyhashdyn.h"
@@ -26,11 +26,6 @@
 
 /****************************************************************************/
 /* snapraid */
-
-/**
- * Size of the hash used as a checksum.
- */
-#define HASH_MAX MD5_SIZE
 
 /**
  * Invalid position.
@@ -70,7 +65,7 @@ struct snapraid_block {
 	block_off_t parity_pos; /**< Position of the block in the parity. */
 	unsigned flag; /**< If the hash of the block is valid. */
 	struct snapraid_file* file; /**< Back pointer to the file owning this block. */
-	unsigned char hash[HASH_MAX]; /**< Hash of the block. */
+	unsigned char hash[MD5_SIZE]; /**< Hash of the block. */
 };
 
 /**

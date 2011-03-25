@@ -257,3 +257,21 @@ void memxor(unsigned char* xor, const unsigned char* block, unsigned size)
 	}
 }
 
+#if HAVE_LIBCRYPTO
+#include <openssl/md5.h>
+#else
+#include "md5.c"
+#endif
+
+void memmd5(void* digest, const void* src, unsigned size)
+{
+#if HAVE_LIBCRYPTO
+	MD5((void*)src, size, digest);
+#else
+	struct md5_t md5;
+	md5_init(&md5);
+	md5_update(&md5, src, size);
+	md5_final(&md5, digest);
+#endif
+}
+
