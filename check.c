@@ -35,8 +35,9 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 	unsigned char* block_buffer;
 	unsigned char* xor_buffer;
 	int ret;
-	data_off_t count_size;
-	data_off_t count_block;
+	data_off_t countsize;
+	block_off_t countpos;
+	block_off_t countmax;
 	time_t start;
 	time_t last;
 	unsigned error;
@@ -56,11 +57,11 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 	unrecoverable_error = 0;
 	recovered_error = 0;
 
-	count_size = 0;
-	count_block = 0;
+	countmax = blockmax - blockstart;
+	countsize = 0;
+	countpos = 0;
 	start = time(0);
 	last = start;
-
 	for(i=blockstart;i<blockmax;++i) {
 		int failed;
 		struct snapraid_block* failed_block;
@@ -172,7 +173,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			/* compute the parity */
 			memxor(xor_buffer, block_buffer, read_size);
 
-			count_size += read_size;
+			countsize += read_size;
 		}
 
 		if (parity_f == -1 || !all_parity) {
@@ -271,16 +272,19 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 		}
 
 		/* count the number of processed block */
-		++count_block;
+		++countpos;
 
 		/* progress */
-		if (state_progress(&start, &last, i, blockmax, count_block, count_size)) {
+		if (state_progress(&start, &last, countpos, countmax, countsize)) {
 			printf("Stopping for interruption at block %u\n", i);
 			break;
 		}
 	}
 
-	printf("%u%% completed, %u MiB processed\n", i * 100 / blockmax, (unsigned)(count_size / (1024*1024)));
+	if (countmax)
+		printf("%u%% completed, %u MiB processed\n", countpos * 100 / countmax, (unsigned)(countsize / (1024*1024)));
+	else
+		printf("Nothing to do\n");
 
 bail:
 	for(j=0;j<diskmax;++j) {

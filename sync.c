@@ -34,8 +34,9 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, block_
 	unsigned j;
 	unsigned char* block_buffer;
 	unsigned char* xor_buffer;
-	data_off_t count_size;
-	data_off_t count_block;
+	data_off_t countsize;
+	block_off_t countpos;
+	block_off_t countmax;
 	time_t start;
 	time_t last;
 	int ret;
@@ -52,11 +53,32 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, block_
 	}
 	unrecoverable_error = 0;
 
-	count_size = 0;
-	count_block = 0;
+	/* first count the number of blocks to process */
+	countmax = 0;
+	for(i=blockstart;i<blockmax;++i) {
+		int one_invalid;
+
+		/* for each disk */
+		one_invalid = 0;
+		for(j=0;j<diskmax;++j) {
+			struct snapraid_block* block = disk_block_get(handle[j].disk, i);
+			if (block && !bit_has(block->flag, BLOCK_HAS_HASH | BLOCK_HAS_PARITY)) {
+				one_invalid = 1;
+				break;
+			}
+		}
+
+		/* if no invalid block skip */
+		if (!one_invalid)
+			continue;
+
+		++countmax;
+	}
+
+	countsize = 0;
+	countpos = 0;
 	start = time(0);
 	last = start;
-
 	for(i=blockstart;i<blockmax;++i) {
 		int one_invalid;
 		int ret;
@@ -157,7 +179,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, block_
 			/* compute the parity */
 			memxor(xor_buffer, block_buffer, read_size);
 
-			count_size += read_size;
+			countsize += read_size;
 		}
 
 		/* write the parity */
@@ -184,16 +206,19 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, block_
 		state->need_write = 1;
 
 		/* count the number of processed block */
-		++count_block;
+		++countpos;
 
 		/* progress */
-		if (state_progress(&start, &last, i, blockmax, count_block, count_size)) {
+		if (state_progress(&start, &last, countpos, countmax, countsize)) {
 			printf("Stopping for interruption at block %u\n", i);
 			break;
 		}
 	}
 
-	printf("%u%% completed, %u MiB processed\n", i * 100 / blockmax, (unsigned)(count_size / (1024*1024)));
+	if (countmax)
+		printf("%u%% completed, %u MiB processed\n", countpos * 100 / countmax, (unsigned)(countsize / (1024*1024)));
+	else
+		printf("Nothing to do\n");
 
 bail:
 	for(j=0;j<diskmax;++j) {

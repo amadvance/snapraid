@@ -512,7 +512,7 @@ void state_write(struct snapraid_state* state)
 
 #define PROGRESS_CLEAR "          "
 
-int state_progress(time_t* start, time_t* last, block_off_t blockpos, block_off_t blockmax, data_off_t count_block, data_off_t count_size)
+int state_progress(time_t* start, time_t* last, block_off_t countpos, block_off_t countmax, data_off_t countsize)
 {
 	time_t now;
 
@@ -521,17 +521,17 @@ int state_progress(time_t* start, time_t* last, block_off_t blockpos, block_off_
 	if (*last != now) {
 		time_t delta = now - *start;
 
-		printf("%u%%, %u MiB", blockpos * 100 / blockmax, (unsigned)(count_size / (1024*1024)));
+		printf("%u%%, %u MiB", countpos * 100 / countmax, (unsigned)(countsize / (1024*1024)));
 
 		if (delta != 0) {
-			printf(", %u MiB/s", (unsigned)(count_size / (1024*1024) / delta));
+			printf(", %u MiB/s", (unsigned)(countsize / (1024*1024) / delta));
 		}
 
-		if (delta > 5 && count_block > 0) {
+		if (delta > 5 && countpos > 0) {
 			unsigned m, h;
-			data_off_t todo = blockmax - blockpos;
+			data_off_t todo = countmax - countpos;
 
-			m = todo * delta / (60 * count_block);
+			m = todo * delta / (60 * countpos);
 
 			h = m / 60;
 			m = m % 60;
