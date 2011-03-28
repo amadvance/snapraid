@@ -6,15 +6,18 @@ As root or user type:
     ./configure
     make
 
-and as root to install the programs and the documentation
-type:
+When you have to check for correctness the application simply typing:
+
+    make check
+
+If if terminates with "Success", you can install the application and
+the documentation running as root :
 
     make install
 
-then change the example configuration file snapraid.conf.example
-to fit your needs and copy it in /etc/snapraid.conf
+To start using SnapRAID you have to change the example configuration
+file snapraid.conf.example to fit your needs and copy it in /etc/snapraid.conf
 
-The documentation is in the man page:
+You can have more details in the manpage documentation available with:
 
     man snapraid
-

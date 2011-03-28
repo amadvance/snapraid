@@ -19,7 +19,8 @@ Description
 	SnapRAID is mainly targeted for a home media center, where you have
 	a lot of big files that rarely change.
 
-	The main features of SnapRAID are:
+	Beside the ability to recover from a disk failure, the other
+	features of SnapRAID are:
 
 	* You can start using SnapRAID with already filled disks.
 	* The disks of the array can have different sizes.
