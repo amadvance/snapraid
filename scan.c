@@ -23,6 +23,7 @@
 
 struct snapraid_scan {
 	unsigned count_equal;
+	unsigned count_moved;
 	unsigned count_change;
 	unsigned count_remove;
 	unsigned count_insert;
@@ -112,7 +113,7 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 /**
  * Processes a file.
  */
-static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, struct snapraid_disk* disk, const char* path, const char* sub, const struct stat* st)
+static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, struct snapraid_disk* disk, const char* sub, const struct stat* st)
 {
 	struct snapraid_file* file;
 	uint64_t inode;
@@ -130,8 +131,21 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 		/* check if the file is not changed */
 		if (file->size == st->st_size && file->mtime == st->st_mtime) {
 			/* mark as present */
-			++scan->count_equal;
 			file->is_present = 1;
+
+			/* if the path is different, it means a moved file */
+			if (strcmp(file->sub, sub) != 0) {
+				++scan->count_moved;
+
+				/* save the new name */
+				pathcpy(file->sub, sizeof(file->sub), sub);
+
+				/* we have to save the new name */
+				state->need_write = 1;
+			} else {
+				/* otherwise it's equal */
+				++scan->count_equal;
+			}
 			return;
 		} else {
 			/* do a safety check to ensure that the common ext4 case of zeroing */
@@ -175,7 +189,7 @@ static int scan_filter(struct snapraid_state* state, const char* path, const cha
 	tommy_node* node = tommy_list_head(&state->excludelist);
 	while (node) {
 		struct snapraid_filter* filter = node->data;
-		if (filter_filter(filter, path, file, is_dir) == 0)
+		if (filter_path(filter, path, file, is_dir) == 0)
 			return -1;
 		node = node->next;
 	}
@@ -223,7 +237,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, s
 
 		if (S_ISREG(st.st_mode)) {
 			if (scan_filter(state, sub_next, name, 0) == 0) {
-				scan_file(scan, state, disk, path_next, sub_next, &st);
+				scan_file(scan, state, disk, sub_next, &st);
 			} else {
 				if (state->verbose) {
 					printf("warning: Excluded file '/%s'\n", sub_next);
@@ -258,6 +272,7 @@ void state_scan(struct snapraid_state* state)
 	scan = malloc_nofail(diskmax * sizeof(struct snapraid_scan));
 	for(i=0;i<diskmax;++i) {
 		scan[i].count_equal = 0;
+		scan[i].count_moved = 0;
 		scan[i].count_change = 0;
 		scan[i].count_remove = 0;
 		scan[i].count_insert = 0;
@@ -287,7 +302,7 @@ void state_scan(struct snapraid_state* state)
 		}
 
 		/* if all the previous file were removed */
-		if (scan[i].count_equal == 0 && scan[i].count_remove != 0) {
+		if (scan[i].count_equal == 0 && scan[i].count_moved == 0 && scan[i].count_remove != 0) {
 			if (!state->force_empty) {
 				fprintf(stderr, "All the files in disk '%s' at dir '%s' are missing!\n", disk->name, disk->dir);
 				fprintf(stderr, "If it's really what you want to sync it, use 'snapraid --force-empty sync\n");
@@ -300,18 +315,21 @@ void state_scan(struct snapraid_state* state)
 		struct snapraid_scan total;
 
 		total.count_equal = 0;
+		total.count_moved = 0;
 		total.count_change = 0;
 		total.count_remove = 0;
 		total.count_insert = 0;
 
 		for(i=0;i<diskmax;++i) {
 			total.count_equal += scan[i].count_equal;
+			total.count_moved += scan[i].count_moved;
 			total.count_change += scan[i].count_change;
 			total.count_remove += scan[i].count_remove;
 			total.count_insert += scan[i].count_insert;
 		}
 
 		printf("\tequal %d\n", total.count_equal);
+		printf("\tmoved %d\n", total.count_moved);
 		printf("\tchanged %d\n", total.count_change);
 		printf("\tremoved %d\n", total.count_remove);
 		printf("\tadded %d\n", total.count_insert);
