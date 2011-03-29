@@ -3,6 +3,7 @@ SnapRAID HISTORY
 
 0.3 2011/4
 ==========
+* Better ETA estimation.
 * Added support for OpenSSL crypto library to use its optimized MD5 implementation.
 * Added test vector for MD5.
 * Added a speed test option for MD5.

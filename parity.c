@@ -143,9 +143,9 @@ int parity_sync(const char* path, int f)
 #if HAVE_FSYNC
 	int ret;
 
-	/* ensure that data changes are written to disk */
-	/* this is required to ensure that parity is more updated than content */
-	/* in case of a system crash */
+	/* Ensure that data changes are written to disk. */
+	/* This is required to ensure that parity is more updated than content */
+	/* in case of a system crash. */
 	ret = fsync(f);
 	if (ret != 0) {
 		fprintf(stderr, "Error synching parity file '%s'. %s.\n", path, strerror(errno));
@@ -202,6 +202,9 @@ int parity_write(const char* path, int f, block_off_t pos, unsigned char* block_
 		return -1;
 	}
 
+	/* Here doesn't make sense to call posix_fadvise(..., POSIX_FADV_DONTNEED) because */
+	/* at this time the data is still in not yet written and it cannot be discharged. */
+
 	return 0;
 }
 
@@ -226,6 +229,11 @@ int parity_read(const char* path, int f, block_off_t pos, unsigned char* block_b
 		fprintf(stderr, "Error reading file '%s'. %s.\n", path, strerror(errno));
 		return -1;
 	}
+
+	/* Here isn't needed to call posix_fadvise(..., POSIX_FADV_DONTNEED) because */
+	/* we already advised sequential access with POSIX_FADV_SEQUENTIAL. */
+	/* In Linux 2.6.33 it's enough to ensure that data is not kept in the cache. */
+	/* Better to do nothing and save a syscall for each block. */
 
 	return block_size;
 }

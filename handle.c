@@ -256,6 +256,11 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 		return -1;
 	}
 
+	/* Here isn't needed to call posix_fadvise(..., POSIX_FADV_DONTNEED) because */
+	/* we already advised sequential access with POSIX_FADV_SEQUENTIAL. */
+	/* In Linux 2.6.33 it's enough to ensure that data is not kept in the cache. */
+	/* Better to do nothing and save a syscall for each block. */
+
 	return read_size;
 }
 
@@ -283,6 +288,9 @@ int handle_write(struct snapraid_handle* handle, struct snapraid_block* block, u
 		fprintf(stderr, "Error writing file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
 	}
+
+	/* Here doesn't make sense to call posix_fadvise(..., POSIX_FADV_DONTNEED) because */
+	/* at this time the data is still in not yet written and it cannot be discharged. */
 
 	return 0;
 }
