@@ -57,7 +57,31 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 	unrecoverable_error = 0;
 	recovered_error = 0;
 
-	countmax = blockmax - blockstart;
+	/* first count the number of blocks to process */
+	countmax = 0;
+	for(i=blockstart;i<blockmax;++i) {
+		int one_tocheck;
+
+		/* for each disk */
+		one_tocheck = 0;
+		for(j=0;j<diskmax;++j) {
+			struct snapraid_block* block = disk_block_get(handle[j].disk, i);
+			if (block
+				&& bit_has(block->flag, BLOCK_HAS_HASH) /* only if the block is hashed */
+				&& !block->file->is_filtered /* only if the file is not filtered out */
+			) {
+				one_tocheck = 1;
+				break;
+			}
+		}
+
+		/* if no block to check skip */
+		if (!one_tocheck)
+			continue;
+
+		++countmax;
+	}
+
 	countsize = 0;
 	countpos = 0;
 	start = time(0);
@@ -66,21 +90,24 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 		int failed;
 		struct snapraid_block* failed_block;
 		struct snapraid_handle* failed_handle;
-		int one_hash;
+		int one_tocheck;
 		int all_parity;
 
 		/* for each disk */
-		one_hash = 0;
+		one_tocheck = 0;
 		for(j=0;j<diskmax;++j) {
 			struct snapraid_block* block = disk_block_get(handle[j].disk, i);
-			if (block && bit_has(block->flag, BLOCK_HAS_HASH)) {
-				one_hash = 1;
+			if (block
+				&& bit_has(block->flag, BLOCK_HAS_HASH) /* only if the block is hashed */
+				&& !block->file->is_filtered /* only if the file is not filtered out */
+			) {
+				one_tocheck = 1;
 				break;
 			}
 		}
 
-		/* if no hashed block skip */
-		if (!one_hash)
+		/* if no block to check skip */
+		if (!one_tocheck)
 			continue;
 
 		/* start with 0 */
@@ -88,7 +115,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 
 		all_parity = 1; /* if all hashed block have parity computed */
 		failed = 0; /* number of failed block */
-		failed_block = 0; /* last failed block */
+		failed_block = 0; /* last failed block, but not filtered out */
 		failed_handle = 0;
 
 		/* for each disk, process the block */
@@ -134,8 +161,10 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 				if (ret == -1) {
 					/* save the failed block for the parity check */
 					++failed;
-					failed_block = block;
-					failed_handle = &handle[j];
+					if (!block->file->is_filtered) {
+						failed_block = block;
+						failed_handle = &handle[j];
+					}
 
 					fprintf(stderr, "%u: Open error for file %s at position %u\n", i, block->file->sub, block_file_pos(block));
 					++error;
@@ -147,8 +176,10 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			if (read_size == -1) {
 				/* save the failed block for the parity check */
 				++failed;
-				failed_block = block;
-				failed_handle = &handle[j];
+				if (!block->file->is_filtered) {
+					failed_block = block;
+					failed_handle = &handle[j];
+				}
 
 				fprintf(stderr, "%u: Read error for file %s at position %u\n", i, block->file->sub, block_file_pos(block));
 				++error;
@@ -162,8 +193,10 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			if (memcmp(hash, block->hash, MD5_SIZE) != 0) {
 				/* save the failed block for the parity check */
 				++failed;
-				failed_block = block;
-				failed_handle = &handle[j];
+				if (!block->file->is_filtered) {
+					failed_block = block;
+					failed_handle = &handle[j];
+				}
 
 				fprintf(stderr, "%u: Data error for file %s at position %u\n", i, block->file->sub, block_file_pos(block));
 				++error;
@@ -176,7 +209,9 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			countsize += read_size;
 		}
 
-		if (parity_f == -1 || !all_parity) {
+		if (failed != 0 && !failed_block) {
+			/* if the failed blocks are filtered out, do nothing */
+		} else if (parity_f == -1 || !all_parity) {
 			/* all the cases with no parity file */
 			if (failed != 0) {
 				fprintf(stderr, "%u: UNRECOVERABLE errors for this block\n", i);

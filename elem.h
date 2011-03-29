@@ -79,6 +79,7 @@ struct snapraid_file {
 	uint64_t mtime; /**< Modification time. */
 	uint64_t inode; /**< Inode. */
 	int is_present; /**< If it's seen as present. */
+	int is_filtered; /**< If it's filtered out. */
 
 	/* nodes for data structures */
 	tommy_node nodelist;
@@ -108,10 +109,16 @@ struct snapraid_filter* filter_alloc(const char* pattern);
 void filter_free(struct snapraid_filter* filter);
 
 /**
- * Checks if a path/name matches the pattern.
+ * Filters a path/name.
  * Returns 0 if it matches.
  */
-int filter_filter(struct snapraid_filter* filter, const char* path, const char* name, int is_dir);
+int filter_path(struct snapraid_filter* filter, const char* path, const char* name, int is_dir);
+
+/**
+ * Filters a file.
+ * Returns 0 if it matches.
+ */
+int filter_file(struct snapraid_filter* filter, struct snapraid_file* file);
 
 /**
  * Gets the relative position of a block inside the file.
@@ -133,6 +140,11 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t 
  * Deallocates a file.
  */
 void file_free(struct snapraid_file* file);
+
+/**
+ * Returns the name of the file, without the dir.
+ */
+const char* file_name(struct snapraid_file* file);
 
 /**
  * Compares two files by inode.

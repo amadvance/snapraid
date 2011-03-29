@@ -3,6 +3,8 @@ SnapRAID TODO
 
 This is a list of possible TODO for SnapRAID. The order is not relevant.
 
+* Easy way to find duplicates using the computed hash.
+
 * Add RAID6 redundancy support.
 There is the very good raid6 library from H. Peter Anvin (hpa) in the Linux Kernel ready to use:
 See:

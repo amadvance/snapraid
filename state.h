@@ -79,6 +79,11 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, block_off_t blockcount);
 
 /**
+ * Filter files.
+ */
+void state_filter(struct snapraid_state* state, tommy_list* filterlist);
+
+/**
  * Writes the progress.
  */
 int state_progress(time_t* start, time_t* last, block_off_t countpos, block_off_t countmax, data_off_t countsize);

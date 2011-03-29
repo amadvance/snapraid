@@ -64,33 +64,39 @@ check-local:
 	mkdir test/disk2
 	mkdir test/disk3
 	echo --- As empty, sync and check
-	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) -v -c $(srcdir)/test.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
 	echo --- Create some files, sync and check
 	$(TESTENV) ./mktest$(EXEEXT) generate 1 3 1000 4000
-	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) -v -c $(srcdir)/test.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
 	echo --- Create some more files, sync and check
 	$(TESTENV) ./mktest$(EXEEXT) generate 2 3 1000 4000
-	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) -v -c $(srcdir)/test.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
 	echo --- Delete some files and create some new, sync and check
 	rm test/disk1/1*
 	rm test/disk2/2*
-	rm test/disk2/3*
+	rm test/disk3/3*
 	$(TESTENV) ./mktest$(EXEEXT) generate 3 3 100 4000
-	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) -v -c $(srcdir)/test.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
+	echo --- Move some files, sync and check
+	mv test/disk1/7* test/disk1/_a/
+	mv test/disk2/7* test/disk2/_a/
+	mv test/disk3/7* test/disk3/_a/
+	$(TESTENV) ./snapraid$(EXEEXT) -v -c $(srcdir)/test.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
 	echo --- Delete some files and create some new, sync and check in multiple steps
 	rm test/disk1/4*
 	rm test/disk2/5*
-	rm test/disk2/6*
+	rm test/disk3/6*
 	$(TESTENV) ./mktest$(EXEEXT) generate 4 3 100 4000
-	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf -t 7 sync
+	$(TESTENV) ./snapraid$(EXEEXT) -v -c $(srcdir)/test.conf -t 7 sync
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
-	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf -t 11 sync
+	$(TESTENV) ./snapraid$(EXEEXT) -v -c $(srcdir)/test.conf -t 11 sync
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
-	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) -v -c $(srcdir)/test.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
 	echo --- Delete some files, fix and check
 	rm test/disk1/1*
@@ -109,6 +115,8 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf fix 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
+	echo --- Sync after all the fixes with an empty drive
+	$(TESTENV) ./snapraid$(EXEEXT) -v -E -c $(srcdir)/test.conf sync
 	echo --- Delete the parity, fix and check
 	rm test/parity
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check 2>/dev/null
@@ -124,6 +132,8 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf fix 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
+	echo --- Sync after all the fixes
+	$(TESTENV) ./snapraid$(EXEEXT) -v -c $(srcdir)/test.conf sync
 	echo Success!
 
 # Manual testing

@@ -55,7 +55,7 @@ struct test_vector {
 { "abcdefghijklmnopqrstuvwxyz", { 0xc3, 0xfc, 0xd3, 0xd7, 0x61, 0x92, 0xe4, 0x00, 0x7d, 0xfb, 0x49, 0x6c, 0xca, 0x67, 0xe1, 0x3b } },
 { "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", { 0xd1, 0x74, 0xab, 0x98, 0xd2, 0x77, 0xd9, 0xf5, 0xa5, 0x61, 0x1c, 0x2c, 0x9f, 0x41, 0x9d, 0x9f } },
 { "12345678901234567890123456789012345678901234567890123456789012345678901234567890", { 0x57, 0xed, 0xf4, 0xa2, 0x2b, 0xe3, 0xc9, 0x55, 0xac, 0x49, 0xda, 0x2e, 0x21, 0x07, 0xb6, 0x7a, } },
-{ 0 }
+{ 0, { 0 } }
 };
 
 void selftest(void)
@@ -123,6 +123,7 @@ void usage(void)
 	printf("\n");
 	printf("Options:\n");
 	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE     ", "-c") "  Configuration file (default " CONF ")\n");
+	printf("  " SWITCH_GETOPT_LONG("-f, --filter PATTERN", "-f") "  Filter the files to processs\n");
 	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero    ", "-Z") "  Force synching of files that get zero size\n");
 	printf("  " SWITCH_GETOPT_LONG("-E, --force-empty   ", "-E") "  Force synching of disks that get empty\n");
 	printf("  " SWITCH_GETOPT_LONG("-s, --start BLKSTART", "-s") "  Start from the specified block number\n");
@@ -136,6 +137,7 @@ void usage(void)
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
 	{ "conf", 1, 0, 'c' },
+	{ "filter", 1, 0, 'f' },
 	{ "force-zero", 0, 0, 'Z' },
 	{ "force-empty", 0, 0, 'E' },
 	{ "start", 1, 0, 's' },
@@ -148,7 +150,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:s:t:ZETvhV"
+#define OPTIONS "c:f:s:t:ZETvhV"
 
 volatile int global_interrupt = 0;
 
@@ -177,6 +179,7 @@ int main(int argc, char* argv[])
 	block_off_t blockstart;
 	block_off_t blockcount;
 	int ret;
+	tommy_list filterlist;
 
 	/* defaults */
 	conf = CONF;
@@ -185,6 +188,7 @@ int main(int argc, char* argv[])
 	force_empty = 0;
 	blockstart = 0;
 	blockcount = 0;
+	tommy_list_init(&filterlist);
 
 	opterr = 0;
 	while ((c =
@@ -198,6 +202,14 @@ int main(int argc, char* argv[])
 		case 'c' :
 			conf = optarg;
 			break;
+		case 'f' : {
+			struct snapraid_filter* filter = filter_alloc(optarg);
+			if (!filter) {
+				fprintf(stderr, "Invalid filter specification '%s'\n", optarg);
+				exit(EXIT_FAILURE);
+			}
+			tommy_list_insert_tail(&filterlist, &filter->node, filter);
+			} break;
 		case 's' :
 			if (stru32(optarg, &blockstart) != 0) {
 				fprintf(stderr, "Invalid start position '%s'\n", optarg);
@@ -257,6 +269,12 @@ int main(int argc, char* argv[])
 	state_config(&state, conf, verbose, force_zero, force_empty);
 
 	if (operation == OPERATION_SYNC) {
+
+		if (!tommy_list_empty(&filterlist)) {
+			fprintf(stderr, "You cannot filter with the sync command\n");
+			exit(EXIT_FAILURE);
+		}
+
 		state_read(&state);
 
 		state_scan(&state);
@@ -276,6 +294,8 @@ int main(int argc, char* argv[])
 	} else {
 		state_read(&state);
 
+		state_filter(&state, &filterlist);
+
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);
 
@@ -283,6 +303,7 @@ int main(int argc, char* argv[])
 	}
 
 	state_done(&state);
+	tommy_list_foreach(&filterlist, (tommy_foreach_func*)filter_free);
 
 	return EXIT_SUCCESS;
 }

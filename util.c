@@ -180,7 +180,7 @@ void pathcpy(char* str, size_t size, const char* src)
 
 void pathprint(char* str, size_t size, const char* format, ...)
 {
-	int len;
+	size_t len;
 	va_list ap;
 	
 	va_start(ap, format);

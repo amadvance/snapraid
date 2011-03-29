@@ -2,7 +2,7 @@
 .SH NAME
 snapraid \(hy SnapRAID Backup For Disk Arrays
 .SH SYNOPSIS 
-snapraid [\(hyc, \(hy\(hyconf CONFIG]
+snapraid [\(hyc, \(hy\(hyconf CONFIG] [\(hyf, \(hy\(hyfilter PATTERN]
 .PD 0
 .PP
 .PD
@@ -254,6 +254,14 @@ Selects the configuration file. If not specified is assumed
 the file \(cq/etc/snapraid.conf\(cq in Unix, and \(cqsnapraid.conf\(cq
 in Windows.
 .TP
+.B \(hyf, \(hy\(hyfilter PATTERN
+Filters the files to operate on with the \(a"check\(a" and \(a"fix\(a"
+commands. This option is ignored with the \(a"sync\(a" command.
+See the PATTERN section for more details in the
+pattern specifications.
+This option can be used many times.
+In Unix, ensure to quote globbing chars if used.
+.TP
 .B \(hyZ, \(hy\(hyforce\(hyzero
 Forces the insecure operation of syncing a file with zero
 size that before was not empty.
@@ -326,7 +334,8 @@ You should use one option for each disk of the array.
 .TP
 .B exclude PATTERN
 Defines the file or directory patterns to exclude from the sync
-process. See the PATTERN section for more details in the
+process.
+See the PATTERN section for more details in the
 pattern specifications.
 This option can be used many times.
 .TP
@@ -400,37 +409,36 @@ block_size 256
 .PD
 .RE
 .SH PATTERN 
-Patterns are used to define the files and directories to exclude
-from the redundancy process.
-.PP
-It makes sense to exclude any file not worth to be saved or that
-changes often.
+Patterns are used select a subset of files to exclude or operate on.
 .PP
 There are four different types of patterns:
 .TP
 .B FILE
-Excludes any file named as FILE. You can use any globbing
+Selects any file named as FILE. You can use any globbing
 character like * and ?.
 This pattern is applied only to files and not to directories.
 .TP
 .B DIR/
-Excludes any directory named DIR. You can use any globbing
+Selects any directory named DIR. You can use any globbing
 character like * and ?.
 This pattern is applied only to directories and not to files.
 .TP
 .B /PATH/FILE
-Excludes the exact specified file path. You can use any
+Selects the exact specified file path. You can use any
 globbing character like * and ? but they never matches a
 directory slash.
 This pattern is applied only to files and not to directories.
 .TP
 .B /PATH/DIR/
-Excludes the exact specified directory path. You can use any
+Selects the exact specified directory path. You can use any
 globbing character like * and ? but they never matches a
 directory slash.
 This pattern is applied only to directories and not to files.
 .PP
-For example:
+Note that when globbing char are used in the command line, you have to
+quote them in Unix. Otherwise the shell will try to expand them.
+.PP
+For example, in the configuration file:
 .PP
 .RS 4
 # Excludes any file named \(a"*.bak\(a"
@@ -454,6 +462,23 @@ exclude /lost+found/
 .PP
 .PD
 exclude tmp/
+.PD 0
+.PP
+.PD
+.RE
+.PP
+For example, in the command line:
+.PP
+.RS 4
+# Checks only the .mp3 files.
+.PD 0
+.PP
+.PD
+# Note the \(a"\(a" use to avoid globbing expansion by the shell.
+.PD 0
+.PP
+.PD
+snapraid \(hyf \(a"*.mp3\(a" check
 .PD 0
 .PP
 .PD

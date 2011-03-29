@@ -78,7 +78,7 @@ void filter_free(struct snapraid_filter* filter)
 	free(filter);
 }
 
-int filter_filter(struct snapraid_filter* filter, const char* path, const char* name, int is_dir)
+int filter_path(struct snapraid_filter* filter, const char* path, const char* name, int is_dir)
 {
 	/* matches dirs with dirs and files with files */
 	if (filter->is_dir && !is_dir)
@@ -96,6 +96,12 @@ int filter_filter(struct snapraid_filter* filter, const char* path, const char* 
 	}
 
 	return -1;
+}
+
+int filter_file(struct snapraid_filter* filter, struct snapraid_file* file)
+{
+	/* only partially correct as we are not filtering dirs */
+	return filter_path(filter, file->sub, file_name(file), 0);
 }
 
 block_off_t block_file_pos(struct snapraid_block* block)
@@ -140,6 +146,7 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t 
 	file->mtime = mtime;
 	file->inode = inode;
 	file->is_present = 0;
+	file->is_filtered = 0;
 	file->blockvec = malloc_nofail(file->blockmax * sizeof(struct snapraid_block));
 
 	/* set the back pointer */
@@ -156,6 +163,16 @@ void file_free(struct snapraid_file* file)
 {
 	free(file->blockvec);
 	free(file);
+}
+
+const char* file_name(struct snapraid_file* file)
+{
+	const char* r = strrchr(file->sub, '/');
+	if (!r)
+		r = file->sub;
+	else
+		++r;
+	return r;
 }
 
 int file_inode_compare(const void* void_arg, const void* void_data)

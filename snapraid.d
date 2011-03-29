@@ -2,7 +2,7 @@ Name{number}
 	snapraid - SnapRAID Backup For Disk Arrays
 
 Synopsis
-	:snapraid [-c, --conf CONFIG]
+	:snapraid [-c, --conf CONFIG] [-f, --filter PATTERN]
 	:	[-Z, --force-zero] [-E, --force-empty]
 	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	:	[-v, --verbose]
@@ -169,6 +169,14 @@ Options
 		the file '/etc/snapraid.conf' in Unix, and 'snapraid.conf' 
 		in Windows.
 
+	-f, --filter PATTERN
+		Filters the files to operate on with the "check" and "fix"
+		commands. This option is ignored with the "sync" command.
+		See the PATTERN section for more details in the
+		pattern specifications.
+		This option can be used many times.
+		In Unix, ensure to quote globbing chars if used.
+
 	-Z, --force-zero
 		Forces the insecure operation of syncing a file with zero
 		size that before was not empty.
@@ -242,7 +250,8 @@ Configuration
 
 	=exclude PATTERN
 		Defines the file or directory patterns to exclude from the sync
-		process. See the PATTERN section for more details in the
+		process.
+		See the PATTERN section for more details in the
 		pattern specifications.
 		This option can be used many times.
 
@@ -279,43 +288,47 @@ Configuration
 		:block_size 256
 
 Pattern
-	Patterns are used to define the files and directories to exclude
-	from the redundancy process.
-
-	It makes sense to exclude any file not worth to be saved or that
-	changes often.
+	Patterns are used select a subset of files to exclude or operate on.
 
 	There are four different types of patterns:
 
 	=FILE
-		Excludes any file named as FILE. You can use any globbing
+		Selects any file named as FILE. You can use any globbing
 		character like * and ?.
 		This pattern is applied only to files and not to directories.
 
 	=DIR/
-		Excludes any directory named DIR. You can use any globbing
+		Selects any directory named DIR. You can use any globbing
 		character like * and ?.
 		This pattern is applied only to directories and not to files.
 
 	=/PATH/FILE
-		Excludes the exact specified file path. You can use any
+		Selects the exact specified file path. You can use any
 		globbing character like * and ? but they never matches a
 		directory slash.
 		This pattern is applied only to files and not to directories.
 
 	=/PATH/DIR/
-		Excludes the exact specified directory path. You can use any
+		Selects the exact specified directory path. You can use any
 		globbing character like * and ? but they never matches a
 		directory slash.
 		This pattern is applied only to directories and not to files.
 
-	For example:
+	Note that when globbing char are used in the command line, you have to
+	quote them in Unix. Otherwise the shell will try to expand them.
+
+	For example, in the configuration file:
 		:# Excludes any file named "*.bak"
 		:exclude *.bak
 		:# Excludes the root directory "/lost+found"
 		:exclude /lost+found/
 		:# Excludes any directory named "tmp"
 		:exclude tmp/
+
+	For example, in the command line:
+		:# Checks only the .mp3 files.
+		:# Note the "" use to avoid globbing expansion by the shell.
+		:snapraid -f "*.mp3" check
 
 Content
 	SnapRAID creates a content file describing the content of your disk

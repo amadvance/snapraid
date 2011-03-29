@@ -510,6 +510,56 @@ void state_write(struct snapraid_state* state)
 	}
 }
 
+void state_filter(struct snapraid_state* state, tommy_list* filterlist)
+{
+	unsigned i;
+
+	if (tommy_list_empty(filterlist))
+		return;
+
+	printf("Filtering...\n");
+
+	if (state->verbose) {
+		tommy_node* k;
+		for(k=tommy_list_head(filterlist);k!=0;k=k->next) {
+			struct snapraid_filter* filter = k->data;
+			printf("\t");
+			if (filter->is_path)
+				printf("/");
+			printf("%s", filter->pattern);
+			if (filter->is_dir)
+				printf("/");
+			printf("\n");
+		}
+	}
+
+	/* for each disk */
+	for(i=0;i<tommy_array_size(&state->diskarr);++i) {
+		tommy_node* j;
+		struct snapraid_disk* disk = tommy_array_get(&state->diskarr, i);
+
+		/* for each file */
+		for(j=tommy_list_head(&disk->filelist);j!=0;j=j->next) {
+			tommy_node* k;
+			struct snapraid_file* file = j->data;
+
+			/* filter it out as default */
+			file->is_filtered = 1;
+		
+			/* for each filter */
+			for(k=tommy_list_head(filterlist);k!=0;k=k->next) {
+				struct snapraid_filter* filter = k->data;
+
+				if (filter_file(filter, file) == 0) {
+					/* mark it as filtered */
+					file->is_filtered = 0;
+					break;
+				}
+			}
+		}
+	}
+}
+
 #define PROGRESS_CLEAR "          "
 
 int state_progress(time_t* start, time_t* last, block_off_t countpos, block_off_t countmax, data_off_t countsize)
