@@ -222,19 +222,31 @@ Restore the last backup/snapshot \(hy> \(a"fix\(a".
 .B sync
 Updates the redundancy information. All the modified files
 in the disk array are read, and the redundancy data is
-updated.
+recomputed.
+Files are identified by inode and checked by time and size,
+meaning that you can move them on the disk without triggering
+any redundancy recomputation.
 You can stop this process at any time pressing Ctrl+C,
 without losing the work already done.
+The \(a"content\(a" and \(a"parity\(a" files are modified if necessary.
+The files in the array are NOT modified.
 .TP
 .B check
-Checks all the files the redundancy data. All the files
-are hashed and compared with the snapshot saved in the
-previous \(a"sync\(a" command.
+Checks all the files and the redundancy data.
+All the files are hashed and compared with the snapshot saved
+in the previous \(a"sync\(a" command.
+Files are identified by path, and checked by content.
+Nothing is modified.
 .TP
 .B fix
 Checks and fix all the files. It\(cqs like \(a"check\(a" but it
 also tries to fix problems reverting the state of the
 disk array at the previous \(a"sync\(a" command.
+After a successful \(a"fix\(a", you should also run a \(a"sync\(a"
+command to update the new state of the files.
+The \(a"content\(a" file is NOT modified.
+The \(a"parity\(a" file is modified if necessary.
+The files in the array are modified if necessary.
 .SH OPTIONS 
 .TP
 .B \(hyc, \(hy\(hyconf CONFIG
@@ -447,10 +459,15 @@ exclude tmp/
 .PD
 .RE
 .SH CONTENT 
-SnapRAID creates a content file describing the content of your disk array.
+SnapRAID creates a content file describing the content of your disk
+array.
 .PP
-You should never change it manually, although the format of this file is
-described here.
+It\(cqs a text file, listing all the files in your disk array.
+.PP
+This file is read and written by the \(a"sync\(a" command, and only read by
+\(a"fix\(a" and \(a"check\(a".
+You should never change it manually, although the format of this file
+is described here.
 .TP
 .B blk_size SIZE
 Defines the size of the block in bytes. It must match the size
@@ -473,17 +490,28 @@ BLOCK is the block position in the \(a"parity\(a" file.
 0 for the first block, 1 for the second one and so on.
 HASH is the md5 of the block. In the last block of the file,
 the HASH is the hash of only the used part of the block.
+.TP
+.B inv BLOCK [HASH]
+Like \(a"blk\(a", but inform that the parity of this block is invalid.
+The HASH may be missing if not yet computed.
+This field is used only when you interrupt manually the \(a"sync\(a"
+command.
 .SH PARITY 
-SnapRAID creates a parity file containing the parity information of your disk array.
+SnapRAID creates a parity file containing the redundancy information
+of your disk array.
 .PP
-It\(cqs a binary file, containing the parity information of all the blocks defined
-in the \(a"content\(a" file.
+It\(cqs a binary file, containing the computed parity of all the blocks
+defined in the \(a"content\(a" file.
 .PP
-For all the blocks at a given position, the parity information is computed with
-the XOR operator applied to all the blocks.
+This file is read and written by the \(a"sync\(a" and \(a"fix\(a" commands, and
+only read by \(a"check\(a".
 .PP
-When a file block is shorter than the default block size, for example because it\(cqs
-the last block of a file, it\(cqs assumed filled with 0 at the end in the XOR operation.
+For all the blocks at a given position, the parity information is
+computed with the XOR operator applied to all the blocks.
+.PP
+When a file block is shorter than the default block size, for example
+because it\(cqs the last block of a file, it\(cqs assumed as filled with 0
+at the end.
 .SH COPYRIGHT 
 This file is Copyright (C) 2011 Andrea Mazzoleni
 .SH SEE ALSO 

@@ -137,19 +137,31 @@ Commands
 	=sync
 		Updates the redundancy information. All the modified files
 		in the disk array are read, and the redundancy data is
-		updated.
+		recomputed.
+		Files are identified by inode and checked by time and size,
+		meaning that you can move them on the disk without triggering
+		any redundancy recomputation.
 		You can stop this process at any time pressing Ctrl+C,
 		without losing the work already done.
+		The "content" and "parity" files are modified if necessary.
+		The files in the array are NOT modified.
 
 	=check
-		Checks all the files the redundancy data. All the files
-		are hashed and compared with the snapshot saved in the
-		previous "sync" command.
+		Checks all the files and the redundancy data.
+		All the files are hashed and compared with the snapshot saved
+		in the previous "sync" command.
+		Files are identified by path, and checked by content.
+		Nothing is modified.
 
 	=fix
 		Checks and fix all the files. It's like "check" but it
 		also tries to fix problems reverting the state of the
 		disk array at the previous "sync" command.
+		After a successful "fix", you should also run a "sync"
+		command to update the new state of the files.
+		The "content" file is NOT modified.
+		The "parity" file is modified if necessary.
+		The files in the array are modified if necessary.
 
 Options
 	-c, --conf CONFIG
@@ -306,10 +318,15 @@ Pattern
 		:exclude tmp/
 
 Content
-	SnapRAID creates a content file describing the content of your disk array.
+	SnapRAID creates a content file describing the content of your disk
+	array.
 
-	You should never change it manually, although the format of this file is
-	described here.
+	It's a text file, listing all the files in your disk array.
+
+	This file is read and written by the "sync" command, and only read by
+	"fix" and "check".
+	You should never change it manually, although the format of this file
+	is described here.
 
 	=blk_size SIZE
 		Defines the size of the block in bytes. It must match the size
@@ -333,17 +350,28 @@ Content
 		HASH is the md5 of the block. In the last block of the file,
 		the HASH is the hash of only the used part of the block.
 
+	=inv BLOCK [HASH]
+		Like "blk", but inform that the parity of this block is invalid.
+		The HASH may be missing if not yet computed.
+		This field is used only when you interrupt manually the "sync"
+		command.
+
 Parity
-	SnapRAID creates a parity file containing the parity information of your disk array.
+	SnapRAID creates a parity file containing the redundancy information
+	of your disk array.
 
-	It's a binary file, containing the parity information of all the blocks defined
-	in the "content" file.
-	
-	For all the blocks at a given position, the parity information is computed with
-	the XOR operator applied to all the blocks.
+	It's a binary file, containing the computed parity of all the blocks
+	defined in the "content" file.
 
-	When a file block is shorter than the default block size, for example because it's
-	the last block of a file, it's assumed filled with 0 at the end in the XOR operation.
+	This file is read and written by the "sync" and "fix" commands, and
+	only read by "check".
+
+	For all the blocks at a given position, the parity information is
+	computed with the XOR operator applied to all the blocks.
+
+	When a file block is shorter than the default block size, for example
+	because it's the last block of a file, it's assumed as filled with 0
+	at the end.
 
 Copyright
 	This file is Copyright (C) 2011 Andrea Mazzoleni
