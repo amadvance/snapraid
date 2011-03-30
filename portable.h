@@ -129,8 +129,8 @@
  */
 struct windows_stat {
 	uint64_t st_ino;
-	uint64_t st_size;
-	uint64_t st_mtime;
+	int64_t st_size;
+	int64_t st_mtime;
 	uint32_t st_mode;
 };
 

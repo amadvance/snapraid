@@ -30,7 +30,7 @@
 /**
  * Invalid position.
  */
-#define POS_INVALID -1
+#define POS_INVALID ((block_off_t)-1)
 
 /**
  * Basic block position type.
@@ -40,8 +40,9 @@ typedef uint32_t block_off_t;
 
 /**
  * Basic data position type.
+ * It's signed as file size and offset are usually signed.
  */
-typedef uint64_t data_off_t;
+typedef int64_t data_off_t;
 
 /**
  * Filter for paths.
@@ -76,7 +77,7 @@ struct snapraid_file {
 	data_off_t size; /**< Size of the file. */
 	struct snapraid_block* blockvec; /**< All the blocks of the file. */
 	block_off_t blockmax; /**< Number of blocks. */
-	uint64_t mtime; /**< Modification time. */
+	int64_t mtime; /**< Modification time. */
 	uint64_t inode; /**< Inode. */
 	int is_present; /**< If it's seen as present. */
 	int is_filtered; /**< If it's filtered out. */

@@ -251,7 +251,7 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 
 	read_ret = read(handle->f, block_buffer, read_size);
 #endif
-	if (read_ret != read_size) {
+	if (read_ret != (ssize_t)read_size) { /* conversion is safe because block_size is always small */
 		fprintf(stderr, "Error reading file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
 	}
@@ -284,7 +284,7 @@ int handle_write(struct snapraid_handle* handle, struct snapraid_block* block, u
 
 	write_ret = write(handle->f, block_buffer, write_size);
 #endif
-	if (write_ret != write_size) {
+	if (write_ret != (ssize_t)write_size) { /* conversion is safe because block_size is always small */
 		fprintf(stderr, "Error writing file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
 	}
@@ -295,28 +295,4 @@ int handle_write(struct snapraid_handle* handle, struct snapraid_block* block, u
 	return 0;
 }
 
-int handle_readahead(struct snapraid_handle* handle, struct snapraid_block* block, unsigned block_size)
-{
-#if HAVE_POSIX_FADVISE
-	data_off_t offset;
-	unsigned read_size;
-	int ret;
 
-	/* do nothing if the file is different */
-	if (handle->file != block->file)
-		return 0;
-
-	offset = block_file_pos(block) * (data_off_t)block_size;
-
-	read_size = block_file_size(block, block_size);
-
-	/* advise access of the next block */
-	ret = posix_fadvise(handle->f, offset, read_size, POSIX_FADV_WILLNEED);
-	if (ret != 0) {
-		fprintf(stderr, "Error advising file '%s'. %s.\n", handle->path, strerror(errno));
-		return -1;
-	}
-#endif
-
-	return 0;
-}

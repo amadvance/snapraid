@@ -193,7 +193,7 @@ int parity_write(const char* path, int f, block_off_t pos, unsigned char* block_
 
 	write_ret = write(f, block_buffer, block_size);
 #endif
-	if (write_ret != block_size) {
+	if (write_ret != (ssize_t)block_size) { /* conversion is safe because block_size is always small */
 		if (errno == ENOSPC) {
 			fprintf(stderr, "Failed to grow parity file '%s' due lack of space.\n", path);
 		} else {
@@ -225,7 +225,7 @@ int parity_read(const char* path, int f, block_off_t pos, unsigned char* block_b
 
 	read_ret = read(f, block_buffer, block_size);
 #endif    
-	if (read_ret != block_size) {
+	if (read_ret != (ssize_t)block_size) { /* conversion is safe because block_size is always small */
 		fprintf(stderr, "Error reading file '%s'. %s.\n", path, strerror(errno));
 		return -1;
 	}
