@@ -101,6 +101,13 @@ With RAID you do not have to stop working when a disk fails.
 It\(cqs able to recover damages only from a single disk.
 With a Backup you are able to recover from a complete
 failure of the whole disk array.
+.IP \(bu
+It identifies changes checking file time and size. If you have
+a program that arbitrarily restore the file time, such changes
+are not detected if the size doesn\(cqt change.
+.IP \(bu
+Only the file data is saved. Permissions, time, extended attributes,
+hard\(hylinks, symbolic\(hylinks are not saved.
 .PD
 .SH GETTING STARTED 
 To use SnapRAID you need first select one disk of your disk array

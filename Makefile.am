@@ -22,6 +22,7 @@ noinst_HEADERS = \
 	parity.h \
 	handle.h \
 	md5.h \
+	md5.c \
 	tommyarray.h \
 	tommychain.h \
 	tommyhash.h \
@@ -181,13 +182,14 @@ snapraid.html : snapraid.d
 
 DISTWIN = \
 	snapraid.txt \
-	snapraid.exe \
-	snapraid.conf.example
+	snapraid.exe
 
 distwindows: $(DISTWIN)
 	rm -f $(PACKAGE)-$(VERSION)-windows-x86.zip
 	mkdir tmp
 	cp $(DISTWIN) tmp
+	cp snapraid.conf.example.windows tmp/snapraid.conf.example
+	cp INSTALL.windows tmp/install.txt
 	cp README tmp/readme.txt
 	cp AUTHORS tmp/authors.txt
 	cp HISTORY tmp/history.txt

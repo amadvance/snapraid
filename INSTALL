@@ -11,13 +11,15 @@ When you have to check for correctness the application simply typing:
     make check
 
 If if terminates with "Success", you can install the application and
-the documentation running as root :
+the documentation running as root:
 
-    make install
+    sudo make install
 
 To start using SnapRAID you have to change the example configuration
 file snapraid.conf.example to fit your needs and copy it in /etc/snapraid.conf
 
-You can have more details in the manpage documentation available with:
+To get more help, see the "Getting Started" section in the snapraid manpage
+simply typing:
 
     man snapraid
+

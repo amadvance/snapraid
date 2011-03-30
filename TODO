@@ -13,14 +13,6 @@ http://lxr.linux.no/#linux+v2.6.38/lib/raid6
 
 * Go multithread. We can do it when reading the new state (scan.c) and when syncing (sync.c)
 
-* Implement a faster XOR implementation using SSE2.
-
-* Evaluate to change from MD5 to FVN HASH.
-See:
-http://isthe.com/chongo/tech/comp/fnv/
-http://cessu.blogspot.com/2007/09/hashing-with-sse2.html (SSE implementation)
-http://isthe.com/chongo/src/fnv/hash_64a.c (C implementation)
-
 * Use the O_NOATIME flag if run as 'root'.
 Anyway a better solution is to mount the disk with the "noatime" and "nodiratime" options.
 

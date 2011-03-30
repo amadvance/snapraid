@@ -65,6 +65,11 @@ Limitations
 	* It's able to recover damages only from a single disk.
 		With a Backup you are able to recover from a complete
 		failure of the whole disk array.
+	* It identifies changes checking file time and size. If you have
+		a program that arbitrarily restore the file time, such changes
+		are not detected if the size doesn't change.
+	* Only the file data is saved. Permissions, time, extended attributes,
+		hard-links, symbolic-links are not saved.
 
 Getting Started
 	To use SnapRAID you need first select one disk of your disk array
