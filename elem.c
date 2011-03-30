@@ -100,8 +100,36 @@ int filter_path(struct snapraid_filter* filter, const char* path, const char* na
 
 int filter_file(struct snapraid_filter* filter, struct snapraid_file* file)
 {
-	/* only partially correct as we are not filtering dirs */
-	return filter_path(filter, file->sub, file_name(file), 0);
+	char path[PATH_MAX];
+	char* name;
+	unsigned i;
+
+	pathcpy(path, sizeof(path), file->sub);
+
+	/* filter for all the directory */
+	name = path;
+	for(i=0;path[i] != 0;++i) {
+		if (path[i] == '/') {
+			/* set a terminator */
+			path[i] = 0;
+
+			/* filter the directory */
+			if (filter_path(filter, path, name, 1) == 0)
+				return 0;
+
+			/* restore the slash */
+			path[i] = '/';
+
+			/* next name */
+			name = path + i + 1;
+		}
+	}
+
+	/* filter the final file */
+	if (filter_path(filter, path, name, 0) == 0)
+		return 0;
+
+	return -1;
 }
 
 block_off_t block_file_pos(struct snapraid_block* block)

@@ -240,7 +240,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, s
 				scan_file(scan, state, disk, sub_next, &st);
 			} else {
 				if (state->verbose) {
-					printf("warning: Excluded file '/%s'\n", sub_next);
+					printf("Excluding file '/%s'\n", sub_next);
 				}
 			}
 		} else if (S_ISDIR(st.st_mode)) {
@@ -250,7 +250,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, s
 				scan_dir(scan, state, disk, path_next, sub_next);
 			} else {
 				if (state->verbose) {
-					printf("warning: Excluded directory '/%s'\n", sub_next);
+					printf("Excluding directory '/%s'\n", sub_next);
 				}
 			}
 		} else {

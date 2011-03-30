@@ -523,10 +523,7 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist)
 		tommy_node* k;
 		for(k=tommy_list_head(filterlist);k!=0;k=k->next) {
 			struct snapraid_filter* filter = k->data;
-			printf("\t");
-			if (filter->is_path)
-				printf("/");
-			printf("%s", filter->pattern);
+			printf("\t%s", filter->pattern);
 			if (filter->is_dir)
 				printf("/");
 			printf("\n");
@@ -555,6 +552,10 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist)
 					file->is_filtered = 0;
 					break;
 				}
+			}
+
+			if (state->verbose && !file->is_filtered) {
+				printf("Processing file '%s'\n", file->sub);
 			}
 		}
 	}
