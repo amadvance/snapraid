@@ -132,6 +132,7 @@ struct windows_stat {
 	int64_t st_size;
 	int64_t st_mtime;
 	uint32_t st_mode;
+	uint32_t st_nlink;
 };
 
 /**
@@ -167,6 +168,8 @@ static inline void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, str
 	st->st_ino = info->nFileIndexHigh;
 	st->st_ino <<= 32;
 	st->st_ino |= info->nFileIndexLow;
+
+	st->st_nlink = info->nNumberOfLinks;
 }
 
 static inline int windows_fstat(int fd, struct windows_stat* st)

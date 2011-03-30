@@ -124,8 +124,13 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 	if (file) {
 		/* check if multiple files have the same inode */
 		if (file->is_present) {
-			fprintf(stderr, "Internal inode '%llu' inconsistency for file '%s'\n", inode, sub);
-			exit(EXIT_FAILURE);
+			if (st->st_nlink > 1) {
+				printf("warning: Ignored hardlink '/%s'\n", sub);
+				return;
+			} else {
+				fprintf(stderr, "Internal inode '%llu' inconsistency for file '%s'\n", inode, sub);
+				exit(EXIT_FAILURE);
+			}
 		}
 
 		/* check if the file is not changed */
@@ -255,7 +260,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, s
 			}
 		} else {
 			if (state->verbose) {
-				printf("warning: Ignored file '/%s'\n", sub_next);
+				printf("warning: Ignored special file '/%s'\n", sub_next);
 			}
 		}
 	}
