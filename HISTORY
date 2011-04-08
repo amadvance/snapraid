@@ -1,6 +1,10 @@
 SnapRAID HISTORY
 ================
 
+0.4 2011/4
+==========
+* Added hidden 'dry' command mainly for speed measurement.
+
 0.3 2011/4
 ==========
 * Added --filter option to select a subset of file in check and fix.

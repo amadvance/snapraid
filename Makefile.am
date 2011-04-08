@@ -10,6 +10,7 @@ snapraid_SOURCES = \
 	scan.c \
 	sync.c \
 	check.c \
+	dry.c \
 	parity.c \
 	handle.c \
 	fnmatch.c
@@ -75,6 +76,8 @@ check-local:
 	$(TESTENV) ./mktest$(EXEEXT) generate 2 3 1000 4000
 	$(TESTENV) ./snapraid$(EXEEXT) -v -c $(srcdir)/test.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
+	echo --- Dry
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf dry
 	echo --- Delete some files and create some new, sync and check
 	rm test/disk1/1*
 	rm test/disk2/2*

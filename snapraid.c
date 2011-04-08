@@ -166,6 +166,7 @@ void signal_handler(int signal)
 #define OPERATION_SYNC 0
 #define OPERATION_CHECK 1
 #define OPERATION_FIX 2
+#define OPERATION_DRY 3
 
 int main(int argc, char* argv[])
 {
@@ -257,6 +258,8 @@ int main(int argc, char* argv[])
 		operation = OPERATION_CHECK;
 	} else  if (strcmp(argv[optind], "fix") == 0) {
 		operation = OPERATION_FIX;
+	} else  if (strcmp(argv[optind], "dry") == 0) {
+		operation = OPERATION_DRY;
 	} else {
 		fprintf(stderr, "Unknown command '%s'\n", argv[optind]);
 		exit(EXIT_FAILURE);
@@ -269,7 +272,6 @@ int main(int argc, char* argv[])
 	state_config(&state, conf, verbose, force_zero, force_empty);
 
 	if (operation == OPERATION_SYNC) {
-
 		if (!tommy_list_empty(&filterlist)) {
 			fprintf(stderr, "You cannot filter with the sync command\n");
 			exit(EXIT_FAILURE);
@@ -291,6 +293,15 @@ int main(int argc, char* argv[])
 		/* abort if required by the sync command */
 		if (ret == -1)
 			exit(EXIT_FAILURE);
+	} else if (operation == OPERATION_DRY) {
+		state_read(&state);
+
+		state_filter(&state, &filterlist);
+
+		/* intercept Ctrl+C */
+		signal(SIGINT, &signal_handler);
+
+		state_dry(&state, blockstart, blockcount);
 	} else {
 		state_read(&state);
 
