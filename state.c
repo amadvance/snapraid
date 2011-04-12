@@ -255,7 +255,7 @@ void state_read(struct snapraid_state* state)
 
 			/* set the hash only if present */
 			if (*hash != 0) {
-				e = strdechex(block->hash, MD5_SIZE, hash);
+				e = strdechex(block->hash, HASH_SIZE, hash);
 				if (e) {
 					fprintf(stderr, "Invalid 'blk' specification in '%s' at line %u\n", path, line);
 					exit(EXIT_FAILURE);
@@ -460,9 +460,9 @@ void state_write(struct snapraid_state* state)
 				}
 
 				if (bit_has(block->flag, BLOCK_HAS_HASH)) {
-					char s_hash[MD5_SIZE*2+1];
-					strenchex(s_hash, block->hash, MD5_SIZE);
-					s_hash[MD5_SIZE*2] = 0;
+					char s_hash[HASH_SIZE*2+1];
+					strenchex(s_hash, block->hash, HASH_SIZE);
+					s_hash[HASH_SIZE*2] = 0;
 					ret = fprintf(f, "%s %u %s\n", tag, block->parity_pos, s_hash);
 				} else {
 					ret = fprintf(f, "%s %u\n", tag, block->parity_pos);

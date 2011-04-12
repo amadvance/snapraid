@@ -121,7 +121,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 		/* for each disk, process the block */
 		for(j=0;j<diskmax;++j) {
 			int read_size;
-			unsigned char hash[MD5_SIZE];
+			unsigned char hash[HASH_SIZE];
 			struct snapraid_block* block;
 
 			block = disk_block_get(handle[j].disk, i);
@@ -187,10 +187,10 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			}
 
 			/* now compute the hash */
-			memmd5(hash, block_buffer, read_size);
+			memhash(hash, block_buffer, read_size);
 
 			/* compare the hash */
-			if (memcmp(hash, block->hash, MD5_SIZE) != 0) {
+			if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
 				/* save the failed block for the parity check */
 				++failed;
 				if (!block->file->is_filtered) {
@@ -255,7 +255,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 				++recovered_error;
 			}
 		} else if (failed == 1) {
-			unsigned char hash[MD5_SIZE];
+			unsigned char hash[HASH_SIZE];
 			unsigned failed_size;
 			int ret;
 			int fixable;
@@ -275,10 +275,10 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 				failed_size = block_file_size(failed_block, state->block_size);
 
 				/* now compute the hash */
-				memmd5(hash, block_buffer, failed_size);
+				memhash(hash, block_buffer, failed_size);
 
 				/* compare the hash */
-				if (memcmp(hash, failed_block->hash, MD5_SIZE) != 0) {
+				if (memcmp(hash, failed_block->hash, HASH_SIZE) != 0) {
 					fprintf(stderr, "%u: Parity data error\n", i);
 					fprintf(stderr, "%u: UNRECOVERABLE erros for this block\n", i);
 					++unrecoverable_error;

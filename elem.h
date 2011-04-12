@@ -66,7 +66,7 @@ struct snapraid_block {
 	block_off_t parity_pos; /**< Position of the block in the parity. */
 	unsigned flag; /**< If the hash of the block is valid. */
 	struct snapraid_file* file; /**< Back pointer to the file owning this block. */
-	unsigned char hash[MD5_SIZE]; /**< Hash of the block. */
+	unsigned char hash[HASH_SIZE]; /**< Hash of the block. */
 };
 
 /**

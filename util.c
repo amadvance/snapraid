@@ -263,7 +263,7 @@ void memxor(unsigned char* xor, const unsigned char* block, unsigned size)
 #include "md5.c"
 #endif
 
-void memmd5(void* digest, const void* src, unsigned size)
+void memhash(void* digest, const void* src, unsigned size)
 {
 #if HAVE_LIBCRYPTO
 	MD5((void*)src, size, digest);

@@ -46,7 +46,7 @@
  */
 struct test_vector {
 	const char* data;
-	unsigned char digest[MD5_SIZE];
+	unsigned char digest[HASH_SIZE];
 } TEST[] = {
 { "", { 0xd4, 0x1d, 0x8c, 0xd9, 0x8f, 0x00, 0xb2, 0x04, 0xe9, 0x80, 0x09, 0x98, 0xec, 0xf8, 0x42, 0x7e } },
 { "a", { 0x0c, 0xc1, 0x75, 0xb9, 0xc0, 0xf1, 0xb6, 0xa8, 0x31, 0xc3, 0x99, 0xe2, 0x69, 0x77, 0x26, 0x61 } },
@@ -72,9 +72,9 @@ void selftest(void)
 
 	/* test vectors for MD5. It could be dynamically linked, so we have to test it at runtime */
 	for(i=0;TEST[i].data;++i) {
-		unsigned char digest[MD5_SIZE];
-		memmd5(digest, TEST[i].data, strlen(TEST[i].data));
-		if (memcmp(digest, TEST[i].digest, MD5_SIZE) != 0) {
+		unsigned char digest[HASH_SIZE];
+		memhash(digest, TEST[i].data, strlen(TEST[i].data));
+		if (memcmp(digest, TEST[i].digest, HASH_SIZE) != 0) {
 			fprintf(stderr, "Failed MD5 test vector\n");
 			exit(EXIT_FAILURE);
 		}
@@ -88,7 +88,7 @@ void speed(void)
 	int64_t ds;
 	int64_t dt;
 	unsigned i;
-	unsigned char digest[MD5_SIZE];
+	unsigned char digest[HASH_SIZE];
 
 	unsigned count = 10000;
 	unsigned blocksize = 256 * 1024;
@@ -107,7 +107,7 @@ void speed(void)
 
 	gettimeofday(&start, 0);
 	for(i=0;i<count;++i)
-		memmd5(digest, block, blocksize);
+		memhash(digest, block, blocksize);
 	gettimeofday(&stop, 0);
 
 	ds = blocksize * (int64_t)count;
