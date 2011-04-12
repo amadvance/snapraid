@@ -212,10 +212,9 @@ Options
 
 	-T, --speed-test
 		Executes a speed test of the MD5 implementation used.
-		As default, SnapRAID uses a C implementation, but if
-		configured with the --with-crypto option it uses the
-		MD5 implementation of the OpenSSL crypto library usually
-		faster as written in highly optimized assembler.
+		If available, SnapRAID uses the fast MD5 implementation
+		from the OpenSSL crypto library. Otherwise it uses a
+		slower C implementation.
 
 	-h, --help
 		Prints a short help screen.

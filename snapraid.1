@@ -299,10 +299,9 @@ Prints more information in the processing.
 .TP
 .B \(hyT, \(hy\(hyspeed\(hytest
 Executes a speed test of the MD5 implementation used.
-As default, SnapRAID uses a C implementation, but if
-configured with the \(hy\(hywith\(hycrypto option it uses the
-MD5 implementation of the OpenSSL crypto library usually
-faster as written in highly optimized assembler.
+If available, SnapRAID uses the fast MD5 implementation
+from the OpenSSL crypto library. Otherwise it uses a
+slower C implementation.
 .TP
 .B \(hyh, \(hy\(hyhelp
 Prints a short help screen.

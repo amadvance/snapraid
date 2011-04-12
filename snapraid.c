@@ -94,7 +94,15 @@ void speed(void)
 	unsigned blocksize = 256 * 1024;
 	void* block = malloc_nofail(blocksize);
 
-	printf(PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
+#if HAVE_LIBCRYPTO
+	printf("Using OpenSSL libcrypto MD5\n");
+#else
+	printf("Using portable MD5\n");
+#endif
+#ifdef __GNUC__
+	printf("Compiled with gcc " __VERSION__ "\n");
+#endif
+
 	printf("Hashing speed test...\n");
 
 	gettimeofday(&start, 0);

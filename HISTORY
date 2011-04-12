@@ -4,6 +4,7 @@ SnapRAID HISTORY
 0.4 2011/4
 ==========
 * Added hidden 'dry' command mainly for speed measurement.
+* As default, uses the OpenSSL crypto MD5 implementation.
 
 0.3 2011/4
 ==========
