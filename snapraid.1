@@ -85,12 +85,10 @@ This is the reason because SnapRAID is better suited for data that
 rarely change.
 .PP
 Other limitations are:
-* You have different file\(hysystems for each disk.
-.PP
-.RS 4
-Using a RAID you have only a big file\(hysystem.
-.RE
 .PD 0
+.IP \(bu
+You have different file\(hysystems for each disk.
+Using a RAID you have only a big file\(hysystem.
 .IP \(bu
 It doesn\(cqt stripe data.
 With RAID you get a speed boost with striping.
@@ -116,32 +114,32 @@ to dedicate at the redundancy information.
 You have to pick the biggest disk in the array, as the redundancy
 information may grow in size as the biggest data disk in the array.
 .PP
-This disk will be dedicated to this purpose only and you should
-not store other data on it.
+This disk will be dedicated to store the parity and content metadata
+information. You should not store other data on it.
 .PP
-Suppose now that you have mounted all your disks in the mount points:
+For example, if all your disks are present in:
 .PP
 .RS 4
-/mnt/diskpar <\(hy selected disk for parity
+/mnt/diskpar <\(hy selected disk for parity and metadata content
 .PD 0
 .PP
 .PD
-/mnt/disk1
+/mnt/disk1 <\(hy first disk to backup
 .PD 0
 .PP
 .PD
-/mnt/disk2
+/mnt/disk2  <\(hy second disk to backup
 .PD 0
 .PP
 .PD
-/mnt/disk3
+/mnt/disk3 <\(hy third disk to backup
 .PD 0
 .PP
 .PD
 .RE
 .PP
 you have to create the configuration file /etc/snapraid.conf with
-the following content:
+the following options:
 .PP
 .RS 4
 parity /mnt/diskpar/parity
@@ -161,6 +159,31 @@ disk d2 /mnt/disk2/
 .PP
 .PD
 disk d3 /mnt/disk3/
+.PD 0
+.PP
+.PD
+.RE
+.PP
+If you are in Windows, you should use backslash instead of slash:
+.PP
+.RS 4
+parity E:\(rspar\(rsparity
+.PD 0
+.PP
+.PD
+content E:\(rspar\(rscontent
+.PD 0
+.PP
+.PD
+disk d1 F:\(rsarray\(rs
+.PD 0
+.PP
+.PD
+disk d2 G:\(rsarray\(rs
+.PD 0
+.PP
+.PD
+disk d3 H:\(rsarray\(rs
 .PD 0
 .PP
 .PD
@@ -349,11 +372,11 @@ This option can be used many times.
 Defines the basic block size in kibi bytes of
 the redundancy blocks. Where one kibi bytes is 1024 bytes.
 The default is 256 and it should work for most conditions.
-You increase this value if you do not have enough memory
-to run SnapRAID.
-It requires to run something about TS*24/BS bytes, where TS
-is the total size in bytes of your disk array, and BS is the
-block size in bytes.
+You could increase this value if you do not have enough RAM
+memory to run SnapRAID.
+SnapRAID requires about TS*24/BS bytes of RAM memory.
+Where TS is the total size in bytes of your disk array,
+and BS is the block size in bytes.
 .PP
 .RS 4
 For example with 6 disk of 2 TiB and a block size of 256 KiB
@@ -361,17 +384,24 @@ For example with 6 disk of 2 TiB and a block size of 256 KiB
 .RE
 .PP
 .RS 4
-memory = (6 * 2 * 2^40) * 24 / (256 * 2^10) = 1.1 GiB
+RAM = (6 * 2 * 2^40) * 24 / (256 * 2^10) = 1.1 GiB
 .PD 0
 .PP
 .PD
 .RE
 .PP
 .RS 4
-You should instead decrease this value if you have a lot of
+You could instead decrease this value if you have a lot of
 small files in the disk array. For each file, even if of few
 bytes, a whole block is always allocated, so you may have a lot
 of unused space.
+As approximation, you can assume that half of the block size is
+wasted for each file.
+.RE
+.PP
+.RS 4
+For example, with 10000 files and a 256 KiB block size, you are
+going to waste 1.2 GiB.
 .RE
 .PP
 An example of a typical configuration is:
@@ -415,7 +445,7 @@ block_size 256
 .PD
 .RE
 .SH PATTERN 
-Patterns are used select a subset of files to exclude or operate on.
+Patterns are used to select a subset of files to exclude or operate on.
 .PP
 There are four different types of patterns:
 .TP
@@ -490,10 +520,11 @@ snapraid \(hyf \(a"*.mp3\(a" check
 .PD
 .RE
 .SH CONTENT 
-SnapRAID creates a content file describing the content of your disk
-array.
+SnapRAID creates a metadata content file describing the content of
+your disk array.
 .PP
-It\(cqs a text file, listing all the files in your disk array.
+It\(cqs a text file, listing all the files in your disk array. You do not
+need to understand its format, but it\(cqs described here for documentation.
 .PP
 This file is read and written by the \(a"sync\(a" command, and only read by
 \(a"fix\(a" and \(a"check\(a".
@@ -532,7 +563,8 @@ SnapRAID creates a parity file containing the redundancy information
 of your disk array.
 .PP
 It\(cqs a binary file, containing the computed parity of all the blocks
-defined in the \(a"content\(a" file.
+defined in the \(a"content\(a" file. You do not need to understand its format,
+but it\(cqs described here for documentation.
 .PP
 This file is read and written by the \(a"sync\(a" and \(a"fix\(a" commands, and
 only read by \(a"check\(a".

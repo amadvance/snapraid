@@ -56,6 +56,7 @@ Limitations
 	rarely change.
 
 	Other limitations are:
+
 	* You have different file-systems for each disk.
 		Using a RAID you have only a big file-system.
 	* It doesn't stripe data.
@@ -78,24 +79,32 @@ Getting Started
 	You have to pick the biggest disk in the array, as the redundancy
 	information may grow in size as the biggest data disk in the array.
 
-	This disk will be dedicated to this purpose only and you should
-	not store other data on it.
+	This disk will be dedicated to store the parity and content metadata
+	information. You should not store other data on it.
 
-	Suppose now that you have mounted all your disks in the mount points:
+	For example, if all your disks are present in:
 
-		:/mnt/diskpar <- selected disk for parity
-		:/mnt/disk1
-		:/mnt/disk2
-		:/mnt/disk3
+		:/mnt/diskpar <- selected disk for parity and metadata content
+		:/mnt/disk1 <- first disk to backup
+		:/mnt/disk2  <- second disk to backup
+		:/mnt/disk3 <- third disk to backup
 
 	you have to create the configuration file /etc/snapraid.conf with
-	the following content:
+	the following options:
 
 		:parity /mnt/diskpar/parity
 		:content /mnt/diskpar/content
 		:disk d1 /mnt/disk1/
 		:disk d2 /mnt/disk2/
 		:disk d3 /mnt/disk3/
+
+	If you are in Windows, you should use backslash instead of slash:
+
+		:parity E:\par\parity
+		:content E:\par\content
+		:disk d1 F:\array\
+		:disk d2 G:\array\
+		:disk d3 H:\array\
 
 	At this point you are ready to start the "sync" command to build the
 	redundancy information.
@@ -263,21 +272,26 @@ Configuration
 		Defines the basic block size in kibi bytes of
 		the redundancy blocks. Where one kibi bytes is 1024 bytes.
 		The default is 256 and it should work for most conditions.
-		You increase this value if you do not have enough memory
-		to run SnapRAID.
-		It requires to run something about TS*24/BS bytes, where TS
-		is the total size in bytes of your disk array, and BS is the
-		block size in bytes.
+		You could increase this value if you do not have enough RAM
+		memory to run SnapRAID.
+		SnapRAID requires about TS*24/BS bytes of RAM memory.
+		Where TS is the total size in bytes of your disk array,
+		and BS is the block size in bytes.
 
 		For example with 6 disk of 2 TiB and a block size of 256 KiB
 		(1 KiB = 1024 Bytes) you have:
 
-		:memory = (6 * 2 * 2^40) * 24 / (256 * 2^10) = 1.1 GiB
+		:RAM = (6 * 2 * 2^40) * 24 / (256 * 2^10) = 1.1 GiB
 
-		You should instead decrease this value if you have a lot of
+		You could instead decrease this value if you have a lot of
 		small files in the disk array. For each file, even if of few
 		bytes, a whole block is always allocated, so you may have a lot
 		of unused space.
+		As approximation, you can assume that half of the block size is
+		wasted for each file.
+
+		For example, with 10000 files and a 256 KiB block size, you are
+		going to waste 1.2 GiB.
 
 	An example of a typical configuration is:
 
@@ -292,7 +306,7 @@ Configuration
 		:block_size 256
 
 Pattern
-	Patterns are used select a subset of files to exclude or operate on.
+	Patterns are used to select a subset of files to exclude or operate on.
 
 	There are four different types of patterns:
 
@@ -335,10 +349,11 @@ Pattern
 		:snapraid -f "*.mp3" check
 
 Content
-	SnapRAID creates a content file describing the content of your disk
-	array.
+	SnapRAID creates a metadata content file describing the content of
+	your disk array.
 
-	It's a text file, listing all the files in your disk array.
+	It's a text file, listing all the files in your disk array. You do not
+	need to understand its format, but it's described here for documentation.
 
 	This file is read and written by the "sync" command, and only read by
 	"fix" and "check".
@@ -378,7 +393,8 @@ Parity
 	of your disk array.
 
 	It's a binary file, containing the computed parity of all the blocks
-	defined in the "content" file.
+	defined in the "content" file. You do not need to understand its format,
+	but it's described here for documentation.
 
 	This file is read and written by the "sync" and "fix" commands, and
 	only read by "check".
