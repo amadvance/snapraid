@@ -256,6 +256,11 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 		return -1;
 	}
 
+	/* pad with 0 */
+	if (read_size < block_size) {
+		memset(block_buffer + read_size, 0, block_size - read_size);
+	}
+
 	/* Here isn't needed to call posix_fadvise(..., POSIX_FADV_DONTNEED) because */
 	/* we already advised sequential access with POSIX_FADV_SEQUENTIAL. */
 	/* In Linux 2.6.33 it's enough to ensure that data is not kept in the cache. */

@@ -13,10 +13,14 @@ snapraid_SOURCES = \
 	dry.c \
 	parity.c \
 	handle.c \
-	fnmatch.c
+	fnmatch.c \
+	raid.c \
+	selftest.c \
+	speed.c
 
 noinst_HEADERS = \
 	portable.h \
+	snapraid.h \
 	util.h \
 	elem.h \
 	state.h \
@@ -24,6 +28,7 @@ noinst_HEADERS = \
 	handle.h \
 	md5.h \
 	md5.c \
+	murmurhash3.c \
 	tommyarray.h \
 	tommychain.h \
 	tommyhash.h \
@@ -34,7 +39,9 @@ noinst_HEADERS = \
 	tommyhash.c \
 	tommyhashdyn.c \
 	tommylist.c \
-	fnmatch.h
+	fnmatch.h \
+	cpu.h \
+	raid.h
 
 mktest_SOURCES = \
 	mktest.c
@@ -97,26 +104,26 @@ check-local:
 	rm test/disk3/6*
 	$(TESTENV) ./mktest$(EXEEXT) generate 4 3 100 4000
 	$(TESTENV) ./snapraid$(EXEEXT) -v -c $(srcdir)/test.conf -t 7 sync
-	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
+	$(TESTENV) ./snapraid$(EXEEXT) -R -c $(srcdir)/test.conf check 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -v -c $(srcdir)/test.conf -t 11 sync
-	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
+	$(TESTENV) ./snapraid$(EXEEXT) -R -c $(srcdir)/test.conf check 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -v -c $(srcdir)/test.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
 	echo --- Delete some files, fix and check
 	rm test/disk1/1*
-	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -R -c $(srcdir)/test.conf check 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf fix 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
 	echo --- Delete some dirs, fix and check
 	rm -r test/disk2/_a
 	rm -r test/disk2/_b
-	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -R -c $(srcdir)/test.conf check 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf fix 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
 	echo --- Delete a whole disk, fix and check
 	rm -r test/disk3
 	mkdir test/disk3
-	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -R -c $(srcdir)/test.conf check 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf fix 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
 	echo --- Sync after all the fixes with an empty drive
@@ -128,12 +135,12 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
 	echo --- Corrupt the parity, fix and check
 	$(TESTENV) ./mktest$(EXEEXT) damage 1 10 10000 test/parity
-	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -R -c $(srcdir)/test.conf check 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf fix 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
 	echo --- Corrupt some files, fix and check
 	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 500 test/disk2/b*
-	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -R -c $(srcdir)/test.conf check 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf fix 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test.conf check
 	echo --- Sync after all the fixes
@@ -180,6 +187,9 @@ snapraid.txt : snapraid.d
 
 snapraid.html : snapraid.d
 	advd2 html < $(srcdir)/$< > $@
+
+snapraid.hh : snapraid.d
+	advd2 frame < $(srcdir)/$< > $@
 
 # Windows distribution
 

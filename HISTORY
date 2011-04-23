@@ -1,6 +1,14 @@
 SnapRAID HISTORY
 ================
 
+1.1 2011/5
+==========
+* Added RAID6 support.
+* The default checksum is Murmur3 hash.
+  MD5 is still supported for backward compatibility.
+* The check command returns with an error code if any kind of error is present.
+  Previously it was only if unrecoverable error was present.
+
 1.0 2011/4
 ==========
 * No relevant change.
@@ -25,7 +33,6 @@ SnapRAID HISTORY
 * Exclusion list of files and directories.
 * Precise error management.
 * More regression tests.
-
 
 0.1 2011/3
 ==========

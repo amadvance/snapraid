@@ -1,0 +1,2 @@
+./configure --host=i686-pc-mingw32 --build=`./config.guess` $@
+

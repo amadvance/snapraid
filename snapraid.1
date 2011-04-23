@@ -23,7 +23,7 @@ snapraid [\(hyc, \(hy\(hyconf CONFIG] [\(hyf, \(hy\(hyfilter PATTERN]
 .PP
 .PD
 .PP
-snapraid [\(hyV, \(hy\(hyversion] [\(hyh, \(hy\(hyhelp] [\(hyT, \(hy\(hyspeed\(hytest]
+snapraid [\(hyV, \(hy\(hyversion] [\(hyh, \(hy\(hyhelp]
 .PD 0
 .PP
 .PD
@@ -31,7 +31,7 @@ snapraid [\(hyV, \(hy\(hyversion] [\(hyh, \(hy\(hyhelp] [\(hyT, \(hy\(hyspeed\(h
 SnapRAID is a backup program for a disk array using redundancy.
 .PP
 SnapRAID uses a disk of the array to store redundancy information,
-and it allows to recover from a disk failure.
+and it allows to recover from up to two disk failures.
 .PP
 SnapRAID is mainly targeted for a home media center, where you have
 a lot of big files that rarely change.
@@ -49,7 +49,7 @@ You can add more disks at the array at any time.
 If you accidentally delete some files in a disk, you can
 recover them.
 .IP \(bu
-If more than one disk fails, you lose the data only on the
+If more than two disk fails, you lose the data only on the
 failed disks. All the data in the other disks is safe.
 .IP \(bu
 It doesn\(cqt lock\(hyin your data. You can stop using SnapRAID at any
@@ -96,7 +96,7 @@ With RAID you get a speed boost with striping.
 It doesn\(cqt support real\(hytime recovery.
 With RAID you do not have to stop working when a disk fails.
 .IP \(bu
-It\(cqs able to recover damages only from a single disk.
+It\(cqs able to recover damages only from up to two disks.
 With a Backup you are able to recover from a complete
 failure of the whole disk array.
 .IP \(bu
@@ -109,18 +109,25 @@ hard\(hylinks, symbolic\(hylinks are not saved.
 .PD
 .SH GETTING STARTED 
 To use SnapRAID you need first select one disk of your disk array
-to dedicate at the redundancy information.
+to dedicate at the parity information. With parity you will be able
+to recover from a single disk failure.
 .PP
-You have to pick the biggest disk in the array, as the redundancy
-information may grow in size as the biggest data disk in the array.
+If you want to recover from two disk failures you must reserve
+another disk for the q\(hyparity information.
 .PP
-This disk will be dedicated to store the parity and content metadata
-information. You should not store other data on it.
+For both disks, you have to pick the biggest disks in the array,
+as the redundancy information may grow in size as the biggest data
+disk in the array.
 .PP
-For example, if all your disks are present in:
+This disk will be dedicated to store the parity and q\(hyparity.
+You should not store other data on it, with the exception of
+the content metadata information.
+.PP
+For example, suppose that you are interested only at the parity level
+of protection, and that all your disks are present in:
 .PP
 .RS 4
-/mnt/diskpar <\(hy selected disk for parity and metadata content
+/mnt/diskpar <\(hy selected disk for parity
 .PD 0
 .PP
 .PD
@@ -258,7 +265,7 @@ meaning that you can move them on the disk without triggering
 any redundancy recomputation.
 You can stop this process at any time pressing Ctrl+C,
 without losing the work already done.
-The \(a"content\(a" and \(a"parity\(a" files are modified if necessary.
+The \(a"content\(a", \(a"parity\(a" and \(a"q\(hyparity\(a" files are modified if necessary.
 The files in the array are NOT modified.
 .TP
 .B check
@@ -275,7 +282,7 @@ disk array at the previous \(a"sync\(a" command.
 After a successful \(a"fix\(a", you should also run a \(a"sync\(a"
 command to update the new state of the files.
 The \(a"content\(a" file is NOT modified.
-The \(a"parity\(a" file is modified if necessary.
+The \(a"parity\(a" and \(a"q\(hyparity\(a" files are modified if necessary.
 The files in the array are modified if necessary.
 .SH OPTIONS 
 .TP
@@ -315,16 +322,10 @@ or fix some specific block, in case of a damaged disk.
 .TP
 .B \(hyt, \(hy\(hycount BLKCOUNT
 Process only the specified number of blocks.
-It\(cqs present mainly for testing.
+It\(cqs present mainly for advanced manual recovering.
 .TP
 .B \(hyv, \(hy\(hyverbose
 Prints more information in the processing.
-.TP
-.B \(hyT, \(hy\(hyspeed\(hytest
-Executes a speed test of the MD5 implementation used.
-If available, SnapRAID uses the fast MD5 implementation
-from the OpenSSL crypto library. Otherwise it uses a
-slower C implementation.
 .TP
 .B \(hyh, \(hy\(hyhelp
 Prints a short help screen.
@@ -339,19 +340,29 @@ This configuration file is located in /etc/snapraid.conf and
 it should contains the following options:
 .TP
 .B parity FILE
-Defines the file to use to store the redundancy information.
+Defines the file to use to store the parity information.
 It must be placed in a disk dedicated for this purpose with
 as much free space as the biggest disk in the array.
 Leaving the parity disk reserved for only this file, ensures that
 it doesn\(cqt get fragmented, improving the performance.
-This option can be used only one time.
+This option is mandatory and it can be used only one time.
+.TP
+.B q\(hyparity FILE
+Defines the file to use to store the q\(hyparity information.
+This option is optional, and if present it enables the protection
+from two disk failures.
+It must be placed in a disk dedicated for this purpose with
+as much free space as the biggest disk in the array.
+Leaving the q\(hyparity disk reserved for only this file, ensures that
+it doesn\(cqt get fragmented, improving the performance.
+This option is optional and it can be used only one time.
 .TP
 .B content FILE
 Defines the file to use to store the content of the redundancy
 organization.
 It can be placed in the same disk of the parity file, or better
 in another disk, but NOT in a data disk of the array.
-This option can be used only one time.
+This option is mandatory and it can be used only one time.
 .TP
 .B disk NAME DIR
 Defines the name and the mount point of the disks of the array.
@@ -550,7 +561,7 @@ to identify the file.
 Defines the ordered parity block list used by the last defined file.
 BLOCK is the block position in the \(a"parity\(a" file.
 0 for the first block, 1 for the second one and so on.
-HASH is the md5 of the block. In the last block of the file,
+HASH is the hash of the block. In the last block of the file,
 the HASH is the hash of only the used part of the block.
 .TP
 .B inv BLOCK [HASH]
@@ -559,18 +570,25 @@ The HASH may be missing if not yet computed.
 This field is used only when you interrupt manually the \(a"sync\(a"
 command.
 .SH PARITY 
-SnapRAID creates a parity file containing the redundancy information
-of your disk array.
+SnapRAID creates the parity and q\(hyparity files containing the redundancy
+information of your disk array.
 .PP
-It\(cqs a binary file, containing the computed parity of all the blocks
-defined in the \(a"content\(a" file. You do not need to understand its format,
-but it\(cqs described here for documentation.
+They are binary files, containing the computed redundancy of all the
+blocks defined in the \(a"content\(a" file. You do not need to understand its
+format, but it\(cqs described here for documentation.
 .PP
-This file is read and written by the \(a"sync\(a" and \(a"fix\(a" commands, and
+These files are read and written by the \(a"sync\(a" and \(a"fix\(a" commands, and
 only read by \(a"check\(a".
 .PP
-For all the blocks at a given position, the parity information is
-computed with the XOR operator applied to all the blocks.
+For all the blocks at a given position, the parity and the q\(hyparity
+are computed as specified in:
+.PP
+.RS 4
+kernel.org/pub/linux/kernel/people/hpa/raid6.pdf
+.PD 0
+.PP
+.PD
+.RE
 .PP
 When a file block is shorter than the default block size, for example
 because it\(cqs the last block of a file, it\(cqs assumed as filled with 0

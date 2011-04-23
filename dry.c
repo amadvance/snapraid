@@ -26,13 +26,13 @@
 /****************************************************************************/
 /* dry */
 
-static int state_dry_process(struct snapraid_state* state, int parity_f, block_off_t blockstart, block_off_t blockmax)
+static int state_dry_process(struct snapraid_state* state, int parity_f, int qarity_f, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
 	unsigned diskmax = tommy_array_size(&state->diskarr);
 	block_off_t i;
 	unsigned j;
-	unsigned char* block_buffer;
+	unsigned char* buffer;
 	int ret;
 	data_off_t countsize;
 	block_off_t countpos;
@@ -41,7 +41,7 @@ static int state_dry_process(struct snapraid_state* state, int parity_f, block_o
 	time_t last;
 	unsigned error;
 
-	block_buffer = malloc_nofail(state->block_size);
+	buffer = malloc_nofail(state->block_size);
 
 	handle = malloc_nofail(diskmax * sizeof(struct snapraid_handle));
 	for(i=0;i<diskmax;++i) {
@@ -81,7 +81,7 @@ static int state_dry_process(struct snapraid_state* state, int parity_f, block_o
 				continue;
 			}
 
-			read_size = handle_read(&handle[j], block, block_buffer, state->block_size);
+			read_size = handle_read(&handle[j], block, buffer, state->block_size);
 			if (read_size == -1) {
 				fprintf(stderr, "%u: Read error for file %s at position %u\n", i, block->file->sub, block_file_pos(block));
 				++error;
@@ -92,11 +92,21 @@ static int state_dry_process(struct snapraid_state* state, int parity_f, block_o
 		}
 
 		/* read the parity */
-		ret = parity_read(state->parity, parity_f, i, block_buffer, state->block_size);
+		ret = parity_read(state->parity, parity_f, i, buffer, state->block_size);
 		if (ret == -1) {
 			fprintf(stderr, "%u: Parity read error\n", i);
 			++error;
 		}
+
+		/* read the qarity */
+		if (state->level >= 2) {
+			ret = parity_read(state->qarity, qarity_f, i, buffer, state->block_size);
+			if (ret == -1) {
+				fprintf(stderr, "%u: Syndrome read error\n", i);
+				++error;
+			}
+		}
+		
 
 		/* count the number of processed block */
 		++countpos;
@@ -131,7 +141,7 @@ bail:
 	}
 
 	free(handle);
-	free(block_buffer);
+	free(buffer);
 
 	if (error != 0)
 		return -1;
@@ -140,12 +150,14 @@ bail:
 
 void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t blockcount)
 {
-	char path[PATH_MAX];
+	char parity_path[PATH_MAX];
+	char qarity_path[PATH_MAX];
 	block_off_t blockmax;
 	data_off_t size;
 	int ret;
-	int f;
-	unsigned unrecoverable_error;
+	int parity_f;
+	int qarity_f;
+	unsigned error;
 
 	printf("Drying...\n");
 
@@ -162,37 +174,58 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		blockmax = blockstart + blockcount;
 	}
 
-	pathcpy(path, sizeof(path), state->parity);
+	pathcpy(parity_path, sizeof(parity_path), state->parity);
 	/* if drying, open the file for reading */
 	/* it may fail if the file doesn't exist, in this case we continue to dry the files */
-	f = parity_open(path);
-	if (f == -1) {
+	parity_f = parity_open(parity_path);
+	if (parity_f == -1) {
 		printf("No accessible parity file.\n");
 		/* continue anyway */
 	}
 
-	unrecoverable_error = 0;
+	if (state->level >= 2) {
+		pathcpy(qarity_path, sizeof(qarity_path), state->qarity);
+		qarity_f = parity_open(qarity_path);
+		if (qarity_f == -1) {
+			printf("No accessible qarity file.\n");
+			/* continue anyway */
+		}
+	} else {
+		qarity_f = -1;
+	}
+
+	error = 0;
 
 	/* skip degenerated cases of empty parity, or skipping all */
 	if (blockstart < blockmax) {
-		ret = state_dry_process(state, f, blockstart, blockmax);
+		ret = state_dry_process(state, parity_f, qarity_f, blockstart, blockmax);
 		if (ret == -1) {
-			++unrecoverable_error;
+			++error;
 			/* continue, as we are already exiting */
 		}
 	}
 
 	/* try to close only if opened */
-	if (f != -1) {
-		ret = parity_close(path, f);
+	if (parity_f != -1) {
+		ret = parity_close(parity_path, parity_f);
 		if (ret == -1) {
-			++unrecoverable_error;
+			++error;
 			/* continue, as we are already exiting */
 		}
 	}
 
+	if (state->level >= 2) {
+		if (qarity_f != -1) {
+			ret = parity_close(qarity_path, qarity_f);
+			if (ret == -1) {
+				++error;
+				/* continue, as we are already exiting */
+			}
+		}
+	}
+
 	/* abort if required */
-	if (unrecoverable_error != 0)
+	if (error != 0)
 		exit(EXIT_FAILURE);
 }
 

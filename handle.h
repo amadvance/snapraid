@@ -53,6 +53,7 @@ int handle_close(struct snapraid_handle* handle);
 
 /**
  * Read a block from a file.
+ * If the read block is shorter, it's padded with 0.
  */
 int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size);
 

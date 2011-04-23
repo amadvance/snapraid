@@ -223,6 +223,24 @@ void* malloc_nofail(size_t size)
 	return ptr;
 }
 
+#define ALIGN 256
+
+void* malloc_nofail_align(size_t size, void** freeptr)
+{
+	unsigned char* ptr = malloc_nofail(size + ALIGN);
+	uintptr_t offset;
+
+	*freeptr = ptr;
+
+	offset = ((uintptr_t)ptr) % ALIGN;
+
+	if (offset != 0) {
+		ptr += ALIGN - offset;
+	}
+
+	return ptr;
+}
+
 void memxor(unsigned char* xor, const unsigned char* block, unsigned size)
 {
 	while (size >= 16) {
@@ -263,15 +281,25 @@ void memxor(unsigned char* xor, const unsigned char* block, unsigned size)
 #include "md5.c"
 #endif
 
-void memhash(void* digest, const void* src, unsigned size)
+#include "murmurhash3.c"
+
+void memhash(unsigned kind, void* digest, const void* src, unsigned size)
 {
+	if (kind == HASH_MURMUR3) {
+		MurmurHash3_x86_128(src, size, 0, digest);
+		return;
+	}
+
+	if (kind == HASH_MD5) {
 #if HAVE_LIBCRYPTO
-	MD5((void*)src, size, digest);
+		MD5((void*)src, size, digest);
 #else
-	struct md5_t md5;
-	md5_init(&md5);
-	md5_update(&md5, src, size);
-	md5_final(&md5, digest);
+		struct md5_t md5;
+		md5_init(&md5);
+		md5_update(&md5, src, size);
+		md5_final(&md5, digest);
 #endif
+		return;
+	}
 }
 

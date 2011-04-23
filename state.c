@@ -31,10 +31,15 @@ void state_init(struct snapraid_state* state)
 	state->verbose = 0;
 	state->force_zero = 0;
 	state->force_empty = 0;
+	state->expect_unrecoverable = 0;
+	state->expect_recoverable = 0;
 	state->need_write = 0;
 	state->block_size = 256 * 1024; /* default 256 KiB */
 	state->content[0] = 0;
 	state->parity[0] = 0;
+	state->qarity[0] = 0;
+	state->level = 1; /* default is the lowest protection */
+	state->hash = HASH_MURMUR3; /* default is the fastest */
 	tommy_array_init(&state->diskarr);
 	tommy_list_init(&state->excludelist);
 }
@@ -49,7 +54,7 @@ void state_done(struct snapraid_state* state)
 	tommy_list_foreach(&state->excludelist, (tommy_foreach_func*)filter_free);
 }
 
-void state_config(struct snapraid_state* state, const char* path, int verbose, int force_zero, int force_empty)
+void state_config(struct snapraid_state* state, const char* path, int verbose, int force_zero, int force_empty, int expect_unrecoverable, int expect_recoverable)
 {
 	FILE* f;
 	unsigned line;
@@ -57,6 +62,8 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 	state->verbose = verbose;
 	state->force_zero = force_zero;
 	state->force_empty = force_empty;
+	state->expect_unrecoverable = expect_unrecoverable;
+	state->expect_recoverable = expect_recoverable;
 
 	f = fopen(path, "rt");
 	if (!f) {
@@ -124,6 +131,13 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 				exit(EXIT_FAILURE);
 			}
 			pathcpy(state->parity, sizeof(state->parity), s);
+		} else if (strcmp(tag, "q-parity") == 0) {
+			if (*state->qarity) {
+				fprintf(stderr, "Multiple 'q-parity' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+			pathcpy(state->qarity, sizeof(state->qarity), s);
+			state->level = 2;
 		} else if (strcmp(tag, "content") == 0) {
 			if (*state->content) {
 				fprintf(stderr, "Multiple 'content' specification in '%s' at line %u\n", path, line);
@@ -185,6 +199,10 @@ void state_read(struct snapraid_state* state)
 	}
 
 	printf("Loading state...\n");
+
+	/* start with a MD5 default. */
+	/* it's for compatibility with version 1.0 where MD5 was implicit. */
+	state->hash = HASH_MD5;
 
 	disk = 0;
 	file = 0;
@@ -379,6 +397,15 @@ void state_read(struct snapraid_state* state)
 				fprintf(stderr, "Please restore the 'block_size' value in the configuration file to '%u'\n", blksize / 1024);
 				exit(EXIT_FAILURE);
 			}
+		} else if (strcmp(tag, "checksum") == 0) {
+			if (strcmp(s, "md5") == 0) {
+				state->hash = HASH_MD5;
+			} else if (strcmp(s, "murmur3") == 0) {
+				state->hash = HASH_MURMUR3;
+			} else {
+				fprintf(stderr, "Invalid 'checksum' specification '%s' in '%s' at line %u\n", s, path, line);
+				exit(EXIT_FAILURE);
+			}
 		} else {
 			fprintf(stderr, "Unknown tag '%s' in '%s' at line%u\n", tag, path, line);
 			exit(EXIT_FAILURE);
@@ -420,6 +447,12 @@ void state_write(struct snapraid_state* state)
 	}
 
 	ret = fprintf(f, "blksize %u\n", state->block_size);
+	if (ret < 0) {
+		fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", path, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	ret = fprintf(f, "checksum %s\n", state->hash == HASH_MD5 ? "md5" : "murmur3");
 	if (ret < 0) {
 		fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
@@ -593,7 +626,6 @@ int state_progress(time_t* start, time_t* last, block_off_t countpos, block_off_
 		fflush(stdout);
 		*last = now;
 	}
-
 
 	/* stop if requested */
 	if (global_interrupt) {

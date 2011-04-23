@@ -22,18 +22,94 @@
 #include "state.h"
 #include "parity.h"
 #include "handle.h"
+#include "raid.h"
 
 /****************************************************************************/
 /* check */
 
-static int state_check_process(struct snapraid_state* state, int fix, int parity_f, block_off_t blockstart, block_off_t blockmax)
+struct failed_struct {
+	unsigned index;
+	struct snapraid_block* block;
+	struct snapraid_handle* handle;
+};
+
+/**
+ * Repair errors.
+ * Returns <0 if failure for missing stratey, >0 if data is wrong and we cannot rebuild correctly, 0 on success.
+ * If success, the parity and qarity are computed in the buffer variable.
+ */
+static int repair(struct snapraid_state* state, unsigned i, unsigned diskmax, struct failed_struct* failed, unsigned failed_count, unsigned char** buffer, unsigned char* buffer_parity, unsigned char* buffer_qarity)
+{
+	/* no fix required */
+	if (failed_count == 0) {
+		/* compute parity and qarity to check it */
+		if (state->level == 1) {
+			raid5_gen(buffer, diskmax + state->level, state->block_size);
+		} else {
+			raid6_gen(buffer, diskmax + state->level, state->block_size);
+		}
+
+		return 0;
+	}
+
+	/* fix with RAID5 */
+	if (failed_count == 1 && buffer_parity != 0) {
+		unsigned char hash[HASH_SIZE];
+		unsigned size;
+		unsigned j;
+
+		/* recompute the block */
+		memcpy(buffer[failed[0].index], buffer_parity, state->block_size);
+		for(j=0;j<diskmax;++j) {
+			if (j != failed[0].index) {
+				memxor(buffer[failed[0].index], buffer[j], state->block_size);
+			}
+		}
+
+		size = block_file_size(failed[0].block, state->block_size);
+
+		/* now compute the hash */
+		memhash(state->hash, hash, buffer[failed[0].index], size);
+
+		/* compare the hash */
+		if (memcmp(hash, failed[0].block->hash, HASH_SIZE) != 0) {
+			fprintf(stderr, "%u: Parity data error\n", i);
+			return 1;
+		}
+
+		/* compute parity and qarity to check it */
+		/* we recompute also the just used parity, because we may have used only a small part of it */
+		if (state->level == 1) {
+			raid5_gen(buffer, diskmax + state->level, state->block_size);
+		} else {
+			raid6_gen(buffer, diskmax + state->level, state->block_size);
+		}
+
+		return 0;
+	}
+
+	if (failed_count == 1 && buffer_qarity != 0) {
+		/* TODO RAID6 */
+	}
+
+	if (failed_count == 2 && buffer_parity != 0 && buffer_qarity != 0) {
+		/* TODO RAID6 */
+	}
+
+	/* no more stragety to fix */
+	return -1;
+}
+
+static int state_check_process(struct snapraid_state* state, int fix, int parity_f, int qarity_f, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
 	unsigned diskmax = tommy_array_size(&state->diskarr);
 	block_off_t i;
 	unsigned j;
-	unsigned char* block_buffer;
-	unsigned char* xor_buffer;
+	void* buffer_alloc;
+	unsigned char* buffer_aligned;
+	unsigned char** buffer;
+	unsigned buffermax;
 	int ret;
 	data_off_t countsize;
 	block_off_t countpos;
@@ -44,8 +120,14 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 	unsigned unrecoverable_error;
 	unsigned recovered_error;
 
-	block_buffer = malloc_nofail(state->block_size);
-	xor_buffer = malloc_nofail(state->block_size);
+	/* we need disk + 2 for each parity level buffers */
+	buffermax = diskmax + state->level * 2;
+
+	buffer_aligned = malloc_nofail_align(buffermax * state->block_size, &buffer_alloc);
+	buffer = malloc_nofail(buffermax * sizeof(void*));
+	for(i=0;i<buffermax;++i) {
+		buffer[i] = buffer_aligned + i * state->block_size;
+	}
 
 	handle = malloc_nofail(diskmax * sizeof(struct snapraid_handle));
 	for(i=0;i<diskmax;++i) {
@@ -87,9 +169,8 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 	start = time(0);
 	last = start;
 	for(i=blockstart;i<blockmax;++i) {
-		int failed;
-		struct snapraid_block* failed_block;
-		struct snapraid_handle* failed_handle;
+		struct failed_struct failed[2];
+		unsigned failed_count;
 		int one_tocheck;
 		int all_parity;
 
@@ -110,13 +191,8 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 		if (!one_tocheck)
 			continue;
 
-		/* start with 0 */
-		memset(xor_buffer, 0, state->block_size);
-
 		all_parity = 1; /* if all hashed block have parity computed */
-		failed = 0; /* number of failed block */
-		failed_block = 0; /* last failed block, but not filtered out */
-		failed_handle = 0;
+		failed_count = 0; /* number of failed blocks */
 
 		/* for each disk, process the block */
 		for(j=0;j<diskmax;++j) {
@@ -125,14 +201,20 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			struct snapraid_block* block;
 
 			block = disk_block_get(handle[j].disk, i);
-			if (!block)
+			if (!block) {
+				/* use an empty block */
+				memset(buffer[j], 0, state->block_size);
 				continue;
+			}
 
 			/* we try to check and fix only if the block is hashed */
 			/* it could be that a file was added, and not yet synched */
 			/* so we should not include not hashed block in the parity computation */
-			if (!bit_has(block->flag, BLOCK_HAS_HASH))
+			if (!bit_has(block->flag, BLOCK_HAS_HASH)) {
+				/* use an empty block */
+				memset(buffer[j], 0, state->block_size);
 				continue;
+			}
 
 			/* keep track if at least one hashed block has no parity */
 			if (!bit_has(block->flag, BLOCK_HAS_PARITY))
@@ -160,11 +242,12 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 				ret = handle_open(&handle[j], block->file);
 				if (ret == -1) {
 					/* save the failed block for the parity check */
-					++failed;
-					if (!block->file->is_filtered) {
-						failed_block = block;
-						failed_handle = &handle[j];
+					if (failed_count < 2) {
+						failed[failed_count].index = j;
+						failed[failed_count].block = block;
+						failed[failed_count].handle = &handle[j];
 					}
+					++failed_count;
 
 					fprintf(stderr, "%u: Open error for file %s at position %u\n", i, block->file->sub, block_file_pos(block));
 					++error;
@@ -172,14 +255,15 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 				}
 			}
 
-			read_size = handle_read(&handle[j], block, block_buffer, state->block_size);
+			read_size = handle_read(&handle[j], block, buffer[j], state->block_size);
 			if (read_size == -1) {
 				/* save the failed block for the parity check */
-				++failed;
-				if (!block->file->is_filtered) {
-					failed_block = block;
-					failed_handle = &handle[j];
+				if (failed_count < 2) {
+					failed[failed_count].index = j;
+					failed[failed_count].block = block;
+					failed[failed_count].handle = &handle[j];
 				}
+				++failed_count;
 
 				fprintf(stderr, "%u: Read error for file %s at position %u\n", i, block->file->sub, block_file_pos(block));
 				++error;
@@ -187,123 +271,144 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			}
 
 			/* now compute the hash */
-			memhash(hash, block_buffer, read_size);
+			memhash(state->hash, hash, buffer[j], read_size);
 
 			/* compare the hash */
 			if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
 				/* save the failed block for the parity check */
-				++failed;
-				if (!block->file->is_filtered) {
-					failed_block = block;
-					failed_handle = &handle[j];
+				if (failed_count < 2) {
+					failed[failed_count].index = j;
+					failed[failed_count].block = block;
+					failed[failed_count].handle = &handle[j];
 				}
+				++failed_count;
 
 				fprintf(stderr, "%u: Data error for file %s at position %u\n", i, block->file->sub, block_file_pos(block));
 				++error;
 				continue;
 			}
 
-			/* compute the parity */
-			memxor(xor_buffer, block_buffer, read_size);
-
 			countsize += read_size;
 		}
 
-		if (failed != 0 && !failed_block) {
-			/* if the failed blocks are filtered out, do nothing */
-		} else if (parity_f == -1 || !all_parity) {
-			/* all the cases with no parity file */
-			if (failed != 0) {
-				fprintf(stderr, "%u: UNRECOVERABLE errors for this block\n", i);
-				++unrecoverable_error;
-			}
-		} else if (failed == 0) {
-			int ret;
-			int fixable;
+		{
+			unsigned char* buffer_parity;
+			unsigned char* buffer_qarity;
 
-			fixable = 0;
-
-			/* read the parity */
-			ret = parity_read(state->parity, parity_f, i, block_buffer, state->block_size);
-			if (ret == -1) {
-				fprintf(stderr, "%u: Parity read error\n", i);
-				++error;
-
-				fixable = 1;
+			/* buffers for parity read and not computed */
+			if (state->level == 1) {
+				buffer_parity = buffer[diskmax + 1];
+				buffer_qarity = 0;
 			} else {
-				/* compare it */
-				if (memcmp(xor_buffer, block_buffer, state->block_size) != 0) {
+				buffer_parity = buffer[diskmax + 2];
+				buffer_qarity = buffer[diskmax + 3];
+			}
+		
+			/* read the parity */
+			if (parity_f != -1) {
+				ret = parity_read(state->parity, parity_f, i, buffer_parity, state->block_size);
+				if (ret == -1) {
+					buffer_parity = 0; /* no parity to use */
+
+					fprintf(stderr, "%u: Parity read error\n", i);
+					++error;
+				}
+			} else {
+				buffer_parity = 0;
+			}
+
+			/* read the qarity */
+			if (state->level >= 2) {
+				if (qarity_f != -1) {
+					ret = parity_read(state->qarity, qarity_f, i, buffer_qarity, state->block_size);
+					if (ret == -1) {
+						buffer_qarity = 0; /* no qarity to use */
+
+						fprintf(stderr, "%u: Q-Parity read error\n", i);
+						++error;
+					}
+				} else {
+					buffer_qarity = 0;
+				}
+			}
+
+			ret = repair(state, i, diskmax, failed, failed_count, buffer, buffer_parity, buffer_qarity);
+			if (ret != 0) {
+				/* increment the number of errors */
+				if (ret > 0)
+					error += ret;
+
+				fprintf(stderr, "%u: UNRECOVERABLE error for this block\n", i);
+				++unrecoverable_error;
+			} else {
+				/* check the parity */
+				if (buffer_parity != 0 && memcmp(buffer_parity, buffer[diskmax], state->block_size) != 0) {
+					buffer_parity = 0;
+
 					fprintf(stderr, "%u: Parity data error\n", i);
 					++error;
-
-					fixable = 1;
-				}
-			}
-
-			if (fix && fixable) {
-				/* fix the parity */
-				/* if all the file hashes are matching, we can recompute the parity */
-				ret = parity_write(state->parity, parity_f, i, xor_buffer, state->block_size);
-				if (ret == -1) {
-					fprintf(stderr, "WARNING! Without a working parity disk, it isn't possible to fix errors on it.\n");
-					fprintf(stderr, "Stopping at block %u\n", i);
-					++unrecoverable_error;
-					goto bail;
 				}
 
-				fprintf(stderr, "%u: Fixed\n", i);
-				++recovered_error;
-			}
-		} else if (failed == 1) {
-			unsigned char hash[HASH_SIZE];
-			unsigned failed_size;
-			int ret;
-			int fixable;
+				/* check the qarity */
+				if (state->level >= 2) {
+					if (buffer_qarity != 0 && memcmp(buffer_qarity, buffer[diskmax + 1], state->block_size) != 0) {
+						buffer_qarity = 0;
 
-			fixable = 0;
-
-			/* read the parity */
-			ret = parity_read(state->parity, parity_f, i, block_buffer, state->block_size);
-			if (ret == -1) {
-				fprintf(stderr, "%u: Parity read error\n", i);
-				fprintf(stderr, "%u: UNRECOVERABLE errors for this block\n", i);
-				++unrecoverable_error;
-			} else {
-				/* compute the failed block */
-				memxor(block_buffer, xor_buffer, state->block_size);
-
-				failed_size = block_file_size(failed_block, state->block_size);
-
-				/* now compute the hash */
-				memhash(hash, block_buffer, failed_size);
-
-				/* compare the hash */
-				if (memcmp(hash, failed_block->hash, HASH_SIZE) != 0) {
-					fprintf(stderr, "%u: Parity data error\n", i);
-					fprintf(stderr, "%u: UNRECOVERABLE erros for this block\n", i);
-					++unrecoverable_error;
-				} else {
-					fixable = 1;
-				}
-			}
-
-			if (fix && fixable) {
-				/* fix the file */
-				/* if only one file is wrong, we already have recomputed it */
-				ret = handle_write(failed_handle, failed_block, block_buffer, state->block_size);
-				if (ret == -1) {
-					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
-					fprintf(stderr, "Stopping at block %u\n", i);
-					++unrecoverable_error;
-					goto bail;
+						fprintf(stderr, "%u: Q-Parity data error\n", i);
+						++error;
+					}
 				}
 
-				fprintf(stderr, "%u: Fixed\n", i);
-				++recovered_error;
+				if (fix) {
+					/* update the fixed files */
+					for(j=0;j<failed_count;++j) {
+						/* do not fix if the file filtered out */
+						if (failed[j].block->file->is_filtered)
+							continue;
+
+						ret = handle_write(failed[j].handle, failed[j].block, buffer[failed[j].index], state->block_size);
+						if (ret == -1) {
+							fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+							fprintf(stderr, "Stopping at block %u\n", i);
+							++unrecoverable_error;
+							goto bail;
+						}
+
+						fprintf(stderr, "%u: Fixed data error for file %s at position %u\n", i, failed[j].block->file->sub, block_file_pos(failed[j].block));
+						++recovered_error;
+					}
+
+					/* update the parity */
+					if (buffer_parity == 0 && parity_f != -1) {
+						ret = parity_write(state->parity, parity_f, i, buffer[diskmax], state->block_size);
+						if (ret == -1) {
+							fprintf(stderr, "WARNING! Without a working parity disk, it isn't possible to fix errors on it.\n");
+							fprintf(stderr, "Stopping at block %u\n", i);
+							++unrecoverable_error;
+							goto bail;
+						}
+
+						fprintf(stderr, "%u: Fixed parity error\n", i);
+						++recovered_error;
+					}
+
+					/* update the qarity */
+					if (state->level >= 2) {
+						if (buffer_qarity == 0 && qarity_f != -1) {
+							ret = parity_write(state->qarity, qarity_f, i, buffer[diskmax + 1], state->block_size);
+							if (ret == -1) {
+								fprintf(stderr, "WARNING! Without a working Q-Parity disk, it isn't possible to fix errors on it.\n");
+								fprintf(stderr, "Stopping at block %u\n", i);
+								++unrecoverable_error;
+								goto bail;
+							}
+						}
+
+						fprintf(stderr, "%u: Fixed Q-Parity error\n", i);
+						++recovered_error;
+					}
+				}
 			}
-		} else {
-			fprintf(stderr, "%u: UNRECOVERABLE errors for this block\n", i);
-			++unrecoverable_error;
 		}
 
 		/* count the number of processed block */
@@ -353,22 +458,47 @@ bail:
 	}
 
 	free(handle);
-	free(block_buffer);
-	free(xor_buffer);
+	free(buffer_alloc);
+	free(buffer);
 
-	if (unrecoverable_error != 0)
-		return -1;
+	/* fails if some error are present after the run */
+	if (fix) {
+		if (state->expect_unrecoverable) {
+			if (unrecoverable_error == 0)
+				return -1;
+		} else {
+			if (unrecoverable_error != 0)
+				return -1;
+		}
+	} else {
+		if (state->expect_unrecoverable && state->expect_recoverable) {
+			if (error == 0 || unrecoverable_error == 0)
+				return -1;
+		} else if (state->expect_unrecoverable) {
+			if (unrecoverable_error == 0)
+				return -1;
+		} if (state->expect_recoverable) {
+			if (error == 0)
+				return -1;
+		} else {
+			if (error != 0 || unrecoverable_error != 0)
+				return -1;
+		}
+	}
+
 	return 0;
 }
 
 void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, block_off_t blockcount)
 {
-	char path[PATH_MAX];
+	char parity_path[PATH_MAX];
+	char qarity_path[PATH_MAX];
 	block_off_t blockmax;
 	data_off_t size;
 	int ret;
-	int f;
-	unsigned unrecoverable_error;
+	int parity_f;
+	int qarity_f;
+	unsigned error;
 
 	if (fix)
 		printf("Checking and fixing...\n");
@@ -388,48 +518,81 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, 
 		blockmax = blockstart + blockcount;
 	}
 
-	pathcpy(path, sizeof(path), state->parity);
+	pathcpy(parity_path, sizeof(parity_path), state->parity);
 	if (fix) {
 		/* if fixing, create the file and open for writing */
 		/* if it fails, we cannot continue */
-		f = parity_create(path, size);
-		if (f == -1) {
-			fprintf(stderr, "WARNING! Without an accessible parity file, it isn't possible to fix any error.\n");
+		parity_f = parity_create(parity_path, size);
+		if (parity_f == -1) {
+			fprintf(stderr, "WARNING! Without an accessible Parity file, it isn't possible to fix any error.\n");
 			exit(EXIT_FAILURE);
+		}
+
+		if (state->level >= 2) {
+			pathcpy(qarity_path, sizeof(qarity_path), state->qarity);
+			qarity_f = parity_create(qarity_path, size);
+			if (qarity_f == -1) {
+				fprintf(stderr, "WARNING! Without an accessible Q-Parity file, it isn't possible to fix any error.\n");
+				exit(EXIT_FAILURE);
+			}
+		} else {
+			qarity_f = -1;
 		}
 	} else {
 		/* if checking, open the file for reading */
 		/* it may fail if the file doesn't exist, in this case we continue to check the files */
-		f = parity_open(path);
-		if (f == -1) {
-			printf("No accessible parity file, all the errors are going to be UNRECOVERABLE.\n");
+		parity_f = parity_open(parity_path);
+		if (parity_f == -1) {
+			printf("No accessible Parity file, only files will be checked.\n");
 			/* continue anyway */
+		}
+
+		if (state->level >= 2) {
+			pathcpy(qarity_path, sizeof(qarity_path), state->qarity);
+			qarity_f = parity_open(qarity_path);
+			if (qarity_f == -1) {
+				printf("No accessible Q-Parity file, only files will be checked.\n");
+				/* continue anyway */
+			}
+		} else {
+			qarity_f = -1;
 		}
 	}
 
-	unrecoverable_error = 0;
+	error = 0;
 
 	/* skip degenerated cases of empty parity, or skipping all */
 	if (blockstart < blockmax) {
-		ret = state_check_process(state, fix, f, blockstart, blockmax);
+		ret = state_check_process(state, fix, parity_f, qarity_f, blockstart, blockmax);
 		if (ret == -1) {
-			++unrecoverable_error;
+			++error;
 			/* continue, as we are already exiting */
 		}
 	}
 
 	/* try to close only if opened */
-	if (f != -1) {
-		ret = parity_close(path, f);
+	if (parity_f != -1) {
+		ret = parity_close(parity_path, parity_f);
 		if (ret == -1) {
 			fprintf(stderr, "WARNING! A 'snapraid check' command is highly suggested.\n");
-			++unrecoverable_error;
+			++error;
 			/* continue, as we are already exiting */
 		}
 	}
 
-	/* abort if required */
-	if (unrecoverable_error != 0)
+	if (state->level >= 2) {
+		if (qarity_f != -1) {
+			ret = parity_close(qarity_path, qarity_f);
+			if (ret == -1) {
+				fprintf(stderr, "WARNING! A 'snapraid check' command is highly suggested.\n");
+				++error;
+				/* continue, as we are already exiting */
+			}
+		}
+	}
+
+	/* abort if error are present */
+	if (error != 0)
 		exit(EXIT_FAILURE);
 }
 

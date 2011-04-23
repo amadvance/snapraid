@@ -122,6 +122,12 @@ static inline unsigned bit_clear(unsigned bit, unsigned mask)
 void* malloc_nofail(size_t size);
 
 /**
+ * Safe aligned malloc.
+ * If no memory is available, it aborts.
+ */
+void* malloc_nofail_align(size_t size, void** freeptr);
+
+/**
  * Xor two memory blocks.
  */
 void memxor(unsigned char* xor, const unsigned char* block, unsigned size);
@@ -133,9 +139,15 @@ void memxor(unsigned char* xor, const unsigned char* block, unsigned size);
 #define HASH_SIZE 16
 
 /**
- * Computes the hash of a memory block.
+ * Hash kinds.
  */
-void memhash(void* digest, const void* src, unsigned size);
+#define HASH_MURMUR3 0
+#define HASH_MD5 1
+
+/**
+ * Computes the HASH of a memory block.
+ */
+void memhash(unsigned kind, void* digest, const void* src, unsigned size);
 
 #endif
 
