@@ -178,14 +178,37 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf fix 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf check
 	echo --- Corrupt the parity, fix and check with raid5
-	$(TESTENV) ./mktest$(EXEEXT) damage 1 10 10000 test/parity
+	$(TESTENV) ./mktest$(EXEEXT) damage 1 50 10000 test/parity
 	$(TESTENV) ./snapraid$(EXEEXT) -R -c $(srcdir)/test-raid5.conf check 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid5.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf check
+	echo --- Corrupt the parity and the q-parity, fix and check with raid6
+	$(TESTENV) ./mktest$(EXEEXT) damage 1 50 10000 test/parity
+	$(TESTENV) ./mktest$(EXEEXT) damage 1 50 10000 test/q-parity
+	$(TESTENV) ./snapraid$(EXEEXT) -R -c $(srcdir)/test-raid6.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf fix 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf check
 	echo --- Corrupt some files, fix and check with raid5
 	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 500 test/disk2/b*
 	$(TESTENV) ./snapraid$(EXEEXT) -R -c $(srcdir)/test-raid5.conf check 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid5.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf check
+	echo --- Corrupt some files, fix and check with raid6
+	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 500 test/disk2/_a/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 500 test/disk3/_a/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 500 test/disk2/_a/_b/*
+	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 500 test/disk3/_a/_b/*
+	$(TESTENV) ./snapraid$(EXEEXT) -U -c $(srcdir)/test-raid5.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -R -c $(srcdir)/test-raid6.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf check
+	echo --- Corrupt the parity and some files, fix and check with raid6
+	$(TESTENV) ./mktest$(EXEEXT) damage 1 50 10000 test/parity
+	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 500 test/disk1/_a/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 500 test/disk1/_a/_a/*
+	$(TESTENV) ./snapraid$(EXEEXT) -U -c $(srcdir)/test-raid5.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -R -c $(srcdir)/test-raid6.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf fix 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf check
 	echo --- Sync after all the fixes
 	$(TESTENV) ./snapraid$(EXEEXT) -v -c $(srcdir)/test-raid6.conf sync
