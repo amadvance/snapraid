@@ -21,21 +21,40 @@
 /****************************************************************************/
 /* raid */
 
-void raid5_int32r2(unsigned char** dptr, unsigned diskmax, unsigned block_size);
-void raid5_mmxr2(unsigned char** dptr, unsigned diskmax, unsigned block_size);
-void raid5_sse2r2(unsigned char** dptr, unsigned diskmax, unsigned block_size);
+/**
+ * Syndrome computation.
+ */
+void raid_gen(unsigned level, unsigned char** buffer, unsigned diskmax, unsigned size);
 
-void raid6_int32r2(unsigned char** dptr, unsigned diskmax, unsigned block_size);
-void raid6_mmxr2(unsigned char** dptr, unsigned diskmax, unsigned block_size);
-void raid6_sse2r2(unsigned char** dptr, unsigned diskmax, unsigned block_size);
+/*
+ * Recover failure of one data block.
+ */
+void raid5_recov_data(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila);
 
-extern void (*raid5_gen)(uint8_t** ptrs, unsigned disks, unsigned block_size);
-extern void (*raid6_gen)(uint8_t** ptrs, unsigned disks, unsigned block_size);
+/*
+ * Recover two failed data blocks.
+ */
+void raid6_recov_2data(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, int failb, unsigned char* zero);
+
+/*
+ * Recover failure of one data block plus the P block.
+ */
+void raid6_recov_datap(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, unsigned char* zero);
 
 /**
  * Initializes the RAID system.
  */
 void raid_init(void);
+
+/**
+ * Internal specialized syndrome computation.
+ */
+void raid5_int32r2(unsigned char** dptr, unsigned diskmax, unsigned size);
+void raid5_mmxr2(unsigned char** dptr, unsigned diskmax, unsigned size);
+void raid5_sse2r2(unsigned char** dptr, unsigned diskmax, unsigned size);
+void raid6_int32r2(unsigned char** dptr, unsigned diskmax, unsigned size);
+void raid6_mmxr2(unsigned char** dptr, unsigned diskmax, unsigned size);
+void raid6_sse2r2(unsigned char** dptr, unsigned diskmax, unsigned size);
 
 #endif
 

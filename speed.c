@@ -92,7 +92,7 @@ void speed(void)
 
 	gettimeofday(&start, 0);
 	for(j=0;j<count;++j) {
-		raid5_int32r2(buffer, diskmax + 1, block_size);
+		raid5_int32r2(buffer, diskmax, block_size);
 	}
 	gettimeofday(&stop, 0);
 
@@ -105,7 +105,7 @@ void speed(void)
 	if (cpu_has_mmx()) {
 		gettimeofday(&start, 0);
 		for(j=0;j<count;++j) {
-			raid5_mmxr2(buffer, diskmax + 1, block_size);
+			raid5_mmxr2(buffer, diskmax, block_size);
 		}
 		gettimeofday(&stop, 0);
 
@@ -118,7 +118,7 @@ void speed(void)
 	if (cpu_has_sse2()) {
 		gettimeofday(&start, 0);
 		for(j=0;j<count;++j) {
-			raid5_sse2r2(buffer, diskmax + 1, block_size);
+			raid5_sse2r2(buffer, diskmax, block_size);
 		}
 		gettimeofday(&stop, 0);
 
@@ -131,7 +131,7 @@ void speed(void)
 
 	gettimeofday(&start, 0);
 	for(j=0;j<count;++j) {
-		raid6_int32r2(buffer, diskmax + 2, block_size);
+		raid6_int32r2(buffer, diskmax, block_size);
 	}
 	gettimeofday(&stop, 0);
 
@@ -144,7 +144,7 @@ void speed(void)
 	if (cpu_has_mmx()) {
 		gettimeofday(&start, 0);
 		for(j=0;j<count;++j) {
-			raid6_mmxr2(buffer, diskmax + 2, block_size);
+			raid6_mmxr2(buffer, diskmax, block_size);
 		}
 		gettimeofday(&stop, 0);
 
@@ -157,7 +157,7 @@ void speed(void)
 	if (cpu_has_sse2()) {
 		gettimeofday(&start, 0);
 		for(j=0;j<count;++j) {
-			raid6_sse2r2(buffer, diskmax + 2, block_size);
+			raid6_sse2r2(buffer, diskmax, block_size);
 		}
 		gettimeofday(&stop, 0);
 

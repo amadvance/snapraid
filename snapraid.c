@@ -201,9 +201,9 @@ int main(int argc, char* argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	selftest();
-
 	raid_init();
+
+	selftest();
 
 	state_init(&state);
 

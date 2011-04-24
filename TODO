@@ -14,20 +14,8 @@ completely restored.
 
 * Provide an "include" logic in filtering.
 
-* Add RAID6 redundancy support. There is the very good raid6 library from
-H. Peter Anvin (hpa) in the Linux Kernel ready to use. See:
-http://kernel.org/pub/linux/kernel/people/hpa/raid6.pdf
-http://lxr.linux.no/#linux+v2.6.38/lib/raid6
-
 * Recognize that a file is moved from one disk to another, and if the parity
 data doesn't overlap, do not recompute it.
-
-* Go multithread to speed up the MD5 computation. We can do it when syncing and
-checking.
-
-* Evaluate the new MurmorHash3 to use instead of MD5. It should be faster,
-but unsure of it's reliability. In fact, in MurmorHash2 was found a serious
-issue that suggests to wait some time before using it.
 
 * Use the O_NOATIME flag if run as 'root'. Anyway a better solution is to
 mount the disk with the "noatime" and "nodiratime" options.

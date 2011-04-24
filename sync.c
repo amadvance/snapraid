@@ -189,11 +189,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 		}
 
 		/* compute the parity */
-		if (state->level == 1) {
-			raid5_gen(buffer, diskmax + state->level, state->block_size);
-		} else {
-			raid6_gen(buffer, diskmax + state->level, state->block_size);
-		}
+		raid_gen(state->level, buffer, diskmax, state->block_size);
 
 		/* write the parity */
 		ret = parity_write(state->parity, parity_f, i, buffer[diskmax], state->block_size);

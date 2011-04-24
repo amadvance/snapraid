@@ -38,66 +38,115 @@ struct failed_struct {
  * Returns <0 if failure for missing stratey, >0 if data is wrong and we cannot rebuild correctly, 0 on success.
  * If success, the parity and qarity are computed in the buffer variable.
  */
-static int repair(struct snapraid_state* state, unsigned i, unsigned diskmax, struct failed_struct* failed, unsigned failed_count, unsigned char** buffer, unsigned char* buffer_parity, unsigned char* buffer_qarity)
+static int repair(struct snapraid_state* state, unsigned i, unsigned diskmax, struct failed_struct* failed, unsigned failed_count, unsigned char** buffer, unsigned char* buffer_parity, unsigned char* buffer_qarity, unsigned char* buffer_zero)
 {
+	unsigned char hash[HASH_SIZE];
+	unsigned size;
+	unsigned j;
+	int error = 0;
+
 	/* no fix required */
 	if (failed_count == 0) {
 		/* compute parity and qarity to check it */
-		if (state->level == 1) {
-			raid5_gen(buffer, diskmax + state->level, state->block_size);
-		} else {
-			raid6_gen(buffer, diskmax + state->level, state->block_size);
-		}
-
+		raid_gen(state->level, buffer, diskmax, state->block_size);
 		return 0;
 	}
 
-	/* fix with RAID5 */
 	if (failed_count == 1 && buffer_parity != 0) {
-		unsigned char hash[HASH_SIZE];
-		unsigned size;
-		unsigned j;
+		/* copy the redundancy to use */
+		memcpy(buffer[diskmax], buffer_parity, state->block_size);
 
-		/* recompute the block */
-		memcpy(buffer[failed[0].index], buffer_parity, state->block_size);
-		for(j=0;j<diskmax;++j) {
-			if (j != failed[0].index) {
-				memxor(buffer[failed[0].index], buffer[j], state->block_size);
+		/* recover */
+		raid5_recov_data(buffer, diskmax, state->block_size, failed[0].index);
+
+		for(j=0;j<1;++j) {
+			size = block_file_size(failed[j].block, state->block_size);
+
+			/* now compute the hash */
+			memhash(state->hash, hash, buffer[failed[j].index], size);
+
+			/* compare the hash */
+			if (memcmp(hash, failed[j].block->hash, HASH_SIZE) != 0) {
+				break;
 			}
 		}
 
-		size = block_file_size(failed[0].block, state->block_size);
-
-		/* now compute the hash */
-		memhash(state->hash, hash, buffer[failed[0].index], size);
-
-		/* compare the hash */
-		if (memcmp(hash, failed[0].block->hash, HASH_SIZE) != 0) {
-			fprintf(stderr, "%u: Parity data error\n", i);
-			return 1;
+		if (j==1) {
+			/* compute parity and qarity to check it */
+			/* we recompute everything because we may have used only a small part of the redundancy */
+			raid_gen(state->level, buffer, diskmax, state->block_size);
+			return 0;
 		}
 
-		/* compute parity and qarity to check it */
-		/* we recompute also the just used parity, because we may have used only a small part of it */
-		if (state->level == 1) {
-			raid5_gen(buffer, diskmax + state->level, state->block_size);
-		} else {
-			raid6_gen(buffer, diskmax + state->level, state->block_size);
-		}
-
-		return 0;
+		fprintf(stderr, "%u: Parity data error\n", i);
+		++error;
 	}
 
 	if (failed_count == 1 && buffer_qarity != 0) {
-		/* TODO RAID6 */
+		/* copy the redundancy to use */
+		memcpy(buffer[diskmax+1], buffer_qarity, state->block_size);
+
+		raid6_recov_datap(buffer, diskmax, state->block_size, failed[0].index, buffer_zero);
+
+		for(j=0;j<1;++j) {
+			size = block_file_size(failed[j].block, state->block_size);
+
+			/* now compute the hash */
+			memhash(state->hash, hash, buffer[failed[j].index], size);
+
+			/* compare the hash */
+			if (memcmp(hash, failed[j].block->hash, HASH_SIZE) != 0) {
+				break;
+			}
+		}
+
+		if (j==1) {
+			/* compute parity and qarity to check it */
+			/* we recompute everything because we may have used only a small part of the redundancy */
+			raid_gen(state->level, buffer, diskmax, state->block_size);
+			return 0;
+		}
+
+		fprintf(stderr, "%u: Q-Parity data error\n", i);
+		++error;
 	}
 
 	if (failed_count == 2 && buffer_parity != 0 && buffer_qarity != 0) {
-		/* TODO RAID6 */
+		/* copy the redundancy to use */
+		memcpy(buffer[diskmax], buffer_parity, state->block_size);
+		memcpy(buffer[diskmax+1], buffer_qarity, state->block_size);
+
+		/* recover */
+		raid6_recov_2data(buffer, diskmax, state->block_size, failed[0].index, failed[1].index, buffer_zero);
+
+		for(j=0;j<2;++j) {
+			size = block_file_size(failed[j].block, state->block_size);
+
+			/* now compute the hash */
+			memhash(state->hash, hash, buffer[failed[j].index], size);
+
+			/* compare the hash */
+			if (memcmp(hash, failed[j].block->hash, HASH_SIZE) != 0) {
+				break;
+			}
+		}
+
+		if (j==2) {
+			/* compute parity and qarity to check it */
+			/* we recompute everything because we may have used only a small part of the redundancy */
+			raid_gen(state->level, buffer, diskmax, state->block_size);
+			return 0;
+		}
+
+		fprintf(stderr, "%u: Parity/Q-Parity data error\n", i);
+		++error;
 	}
 
 	/* no more stragety to fix */
-	return -1;
+	if (error)
+		return error;
+	else
+		return -1;
 }
 
 static int state_check_process(struct snapraid_state* state, int fix, int parity_f, int qarity_f, block_off_t blockstart, block_off_t blockmax)
@@ -120,14 +169,15 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 	unsigned unrecoverable_error;
 	unsigned recovered_error;
 
-	/* we need disk + 2 for each parity level buffers */
-	buffermax = diskmax + state->level * 2;
+	/* we need disk + 2 for each parity level buffers + 1 zero buffer */
+	buffermax = diskmax + state->level * 2 + 1;
 
 	buffer_aligned = malloc_nofail_align(buffermax * state->block_size, &buffer_alloc);
 	buffer = malloc_nofail(buffermax * sizeof(void*));
 	for(i=0;i<buffermax;++i) {
 		buffer[i] = buffer_aligned + i * state->block_size;
 	}
+	memset(buffer[buffermax-1], 0, state->block_size);
 
 	handle = malloc_nofail(diskmax * sizeof(struct snapraid_handle));
 	for(i=0;i<diskmax;++i) {
@@ -294,6 +344,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 		{
 			unsigned char* buffer_parity;
 			unsigned char* buffer_qarity;
+			unsigned char* buffer_zero;
 
 			/* buffers for parity read and not computed */
 			if (state->level == 1) {
@@ -303,7 +354,8 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 				buffer_parity = buffer[diskmax + 2];
 				buffer_qarity = buffer[diskmax + 3];
 			}
-		
+			buffer_zero = buffer[buffermax-1];
+
 			/* read the parity */
 			if (parity_f != -1) {
 				ret = parity_read(state->parity, parity_f, i, buffer_parity, state->block_size);
@@ -332,7 +384,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 				}
 			}
 
-			ret = repair(state, i, diskmax, failed, failed_count, buffer, buffer_parity, buffer_qarity);
+			ret = repair(state, i, diskmax, failed, failed_count, buffer, buffer_parity, buffer_qarity, buffer_zero);
 			if (ret != 0) {
 				/* increment the number of errors */
 				if (ret > 0)
@@ -402,10 +454,10 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 								++unrecoverable_error;
 								goto bail;
 							}
-						}
 
-						fprintf(stderr, "%u: Fixed Q-Parity error\n", i);
-						++recovered_error;
+							fprintf(stderr, "%u: Fixed Q-Parity error\n", i);
+							++recovered_error;
+						}
 					}
 				}
 			}
@@ -471,13 +523,10 @@ bail:
 				return -1;
 		}
 	} else {
-		if (state->expect_unrecoverable && state->expect_recoverable) {
-			if (error == 0 || unrecoverable_error == 0)
-				return -1;
-		} else if (state->expect_unrecoverable) {
+		if (state->expect_unrecoverable) {
 			if (unrecoverable_error == 0)
 				return -1;
-		} if (state->expect_recoverable) {
+		} else if (state->expect_recoverable) {
 			if (error == 0)
 				return -1;
 		} else {

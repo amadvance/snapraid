@@ -78,17 +78,138 @@ struct test_vector TEST_MURMUR3[] = {
 { 0, { 0 } }
 };
 
-void selftest(void)
+static void raid5test(unsigned diskmax, unsigned block_size)
+{
+	void* buffer_alloc;
+	unsigned char* buffer_aligned;
+	unsigned char** buffer;
+	unsigned char* buffer_save;
+	unsigned buffermax;
+	unsigned i, j;
+
+	buffermax = diskmax + 1 + 1;
+	buffer_aligned = malloc_nofail_align(buffermax * block_size, &buffer_alloc);
+	buffer = malloc_nofail(buffermax * sizeof(void*));
+	for(i=0;i<buffermax;++i) {
+		buffer[i] = buffer_aligned + i * block_size;
+	}
+	buffer_save = buffer[buffermax-1];
+
+	/* fill with random */
+	for(i=0;i<diskmax;++i) {
+		for(j=0;j<block_size;++j)
+			buffer[i][j] = rand();
+	}
+
+	raid_gen(1, buffer, diskmax, block_size);
+
+	for(i=0;i<diskmax;++i) {
+		/* save the correct one */
+		memcpy(buffer_save, buffer[i], block_size);
+
+		/* destroy it */
+		memset(buffer[i], 0x55, block_size);
+
+		/* recover */
+		raid5_recov_data(buffer, diskmax, block_size, i);
+
+		/* check */
+		if (memcmp(buffer_save, buffer[i], block_size) != 0) {
+			fprintf(stderr, "Failed RAID5 test\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	free(buffer_alloc);
+	free(buffer);
+}
+
+static void raid6test(unsigned diskmax, unsigned block_size)
+{
+	void* buffer_alloc;
+	unsigned char* buffer_aligned;
+	unsigned char** buffer;
+	unsigned char* buffer_save0;
+	unsigned char* buffer_save1;
+	unsigned char* buffer_zero;
+	unsigned buffermax;
+	unsigned i, j;
+
+	buffermax = diskmax + 2 + 2 + 1;
+	buffer_aligned = malloc_nofail_align(buffermax * block_size, &buffer_alloc);
+	buffer = malloc_nofail(buffermax * sizeof(void*));
+	for(i=0;i<buffermax;++i) {
+		buffer[i] = buffer_aligned + i * block_size;
+	}
+	buffer_save0 = buffer[buffermax-3];
+	buffer_save1 = buffer[buffermax-2];
+	buffer_zero = buffer[buffermax-1];
+	memset(buffer_zero, 0, block_size);
+
+	/* fill with random */
+	for(i=0;i<diskmax;++i) {
+		for(j=0;j<block_size;++j)
+			buffer[i][j] = rand();
+	}
+
+	raid_gen(2, buffer, diskmax, block_size);
+
+	/* check 2data */
+	for(i=0;i<diskmax;++i) {
+		for(j=i+1;j<diskmax;++j) {
+			/* save the correct ones */
+			memcpy(buffer_save0, buffer[i], block_size);
+			memcpy(buffer_save1, buffer[j], block_size);
+
+			/* destroy it */
+			memset(buffer[i], 0x55, block_size);
+			memset(buffer[j], 0x55, block_size);
+
+			/* recover */
+			raid6_recov_2data(buffer, diskmax, block_size, i, j, buffer_zero);
+
+			/* check */
+			if (memcmp(buffer_save0, buffer[i], block_size) != 0
+				|| memcmp(buffer_save1, buffer[j], block_size) != 0
+			) {
+				fprintf(stderr, "Failed RAID6 test\n");
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
+
+	/* check datap */
+	for(i=0;i<diskmax;++i) {
+		/* the other is the parity */
+		j = diskmax;
+
+		/* save the correct ones */
+		memcpy(buffer_save0, buffer[i], block_size);
+		memcpy(buffer_save1, buffer[j], block_size);
+
+		/* destroy it */
+		memset(buffer[i], 0x55, block_size);
+		memset(buffer[j], 0x55, block_size);
+
+		/* recover */
+		raid6_recov_datap(buffer, diskmax, block_size, i, buffer_zero);
+
+		/* check */
+		if (memcmp(buffer_save0, buffer[i], block_size) != 0
+			|| memcmp(buffer_save1, buffer[j], block_size) != 0
+		) {
+			fprintf(stderr, "Failed RAID6 test\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	free(buffer_alloc);
+	free(buffer);
+}
+
+static void hashtest(void)
 {
 	unsigned i;
-
-	printf("Self test...\n");
-
-	/* large file check */
-	if (sizeof(off_t) < sizeof(uint64_t)) {
-		fprintf(stderr, "Missing support for large files\n");
-		exit(EXIT_FAILURE);
-	}
 
 	for(i=0;TEST_MD5[i].data;++i) {
 		unsigned char digest[HASH_SIZE];
@@ -106,6 +227,26 @@ void selftest(void)
 			fprintf(stderr, "Failed Murmur3 test vector\n");
 			exit(EXIT_FAILURE);
 		}
+	}
+}
+
+void selftest(void)
+{
+	unsigned i;
+
+	printf("Self test...\n");
+
+	/* large file check */
+	if (sizeof(off_t) < sizeof(uint64_t)) {
+		fprintf(stderr, "Missing support for large files\n");
+		exit(EXIT_FAILURE);
+	}
+
+	hashtest();
+
+	for(i=1;i<19;++i) {
+		raid5test(i, 4096);
+		raid6test(i, 4096);
 	}
 }
 
