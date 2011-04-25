@@ -109,21 +109,23 @@ hard\(hylinks, symbolic\(hylinks are not saved.
 .PD
 .SH GETTING STARTED 
 To use SnapRAID you need first select one disk of your disk array
-to dedicate at the parity information. With parity you will be able
-to recover from a single disk failure.
+to dedicate at the \(a"parity\(a" information. With parity you will be able
+to recover from a single disk failure, like RAID5.
 .PP
-If you want to recover from two disk failures you must reserve
-another disk for the q\(hyparity information.
+If you want to recover from two disk failures, like RAID6, you must
+reserve another disk for the \(a"q\(hyparity\(a" information
 .PP
 For both disks, you have to pick the biggest disks in the array,
 as the redundancy information may grow in size as the biggest data
 disk in the array.
 .PP
-This disk will be dedicated to store the parity and q\(hyparity.
-You should not store other data on it, with the exception of
-the content metadata information.
+This disk will be dedicated to store the \(a"parity\(a" and \(a"q\(hyparity\(a"
+files.
+You should not store other data on them, with the exception of
+a copy the \(a"content\(a" file, that contains the list of all the files
+stored in your array with all the checksums to verify their integrity.
 .PP
-For example, suppose that you are interested only at the parity level
+For example, suppose that you are interested only at one parity level
 of protection, and that all your disks are present in:
 .PP
 .RS 4
@@ -215,7 +217,7 @@ will start where interrupted.
 .PP
 When this command completes, your data is SAFE.
 .PP
-At this point you can start using your data as you like, and periodically
+At this point you can start using your array as you like, and periodically
 update the redundancy information running the \(a"sync\(a" command.
 .PP
 To check the integrity of your data you can use the \(a"check\(a" command:
@@ -244,7 +246,14 @@ in \(a"sync\(a".
 .PP
 In this regard snapraid is more like a backup program than a RAID
 system. For example, you can use it to recover from an accidentally
-deleted directory, simply running the fix command.
+deleted directory, simply running the fix command like.
+.PP
+.RS 4
+snapraid fix \(hyf JUST_DELETED_DIR/
+.PD 0
+.PP
+.PD
+.RE
 .SH COMMANDS 
 SnapRAID provides three simple commands that allow to:
 .PD 0
@@ -341,6 +350,8 @@ it should contains the following options:
 .TP
 .B parity FILE
 Defines the file to use to store the parity information.
+The parity enables the protection from a single disk
+failure, like RAID5.
 It must be placed in a disk dedicated for this purpose with
 as much free space as the biggest disk in the array.
 Leaving the parity disk reserved for only this file, ensures that
@@ -349,8 +360,8 @@ This option is mandatory and it can be used only one time.
 .TP
 .B q\(hyparity FILE
 Defines the file to use to store the q\(hyparity information.
-This option is optional, and if present it enables the protection
-from two disk failures.
+If present, the q\(hyparity enables the protection from two disk
+failures, like RAID6.
 It must be placed in a disk dedicated for this purpose with
 as much free space as the biggest disk in the array.
 Leaving the q\(hyparity disk reserved for only this file, ensures that
@@ -360,9 +371,13 @@ This option is optional and it can be used only one time.
 .B content FILE
 Defines the file to use to store the content of the redundancy
 organization.
-It can be placed in the same disk of the parity file, or better
-in another disk, but NOT in a data disk of the array.
-This option is mandatory and it can be used only one time.
+It can be placed in the same disk of the parity and q\(hyaparity file,
+or better in another disk, but NOT in a data disk of the array.
+This option is mandatory and it can be used more time to save
+more copies of the same files.
+It\(cqs suggested to store at least one copy for each parity disk.
+One more doesn\(cqt hurt, just in case you lose all the parity disks,
+and you still need to check the data integrity.
 .TP
 .B disk NAME DIR
 Defines the name and the mount point of the disks of the array.
@@ -370,6 +385,8 @@ NAME is used to identify the disk, and it must be unique.
 DIR is the mount point of the disk in the file\(hysystem.
 You can change the mount point as you like, as far you
 keep the NAME fixed.
+The specification order is also important, if you change it,
+you will invalidate the q\(hyparity file.
 You should use one option for each disk of the array.
 .TP
 .B exclude PATTERN
@@ -423,6 +440,10 @@ parity /mnt/diskpar/parity
 .PP
 .PD
 content /mnt/diskpar/content
+.PD 0
+.PP
+.PD
+content /var/snapraid/content
 .PD 0
 .PP
 .PD
@@ -531,11 +552,12 @@ snapraid \(hyf \(a"*.mp3\(a" check
 .PD
 .RE
 .SH CONTENT 
-SnapRAID creates a metadata content file describing the content of
-your disk array.
+SnapRAID stores the list of your files in the content file.
 .PP
-It\(cqs a text file, listing all the files in your disk array. You do not
-need to understand its format, but it\(cqs described here for documentation.
+It\(cqs a text file, listing all the files present in your disk array,
+with all the checksums to verify their integrity.
+You do not need to understand its format, but it\(cqs described here
+for documentation.
 .PP
 This file is read and written by the \(a"sync\(a" command, and only read by
 \(a"fix\(a" and \(a"check\(a".
@@ -570,12 +592,13 @@ The HASH may be missing if not yet computed.
 This field is used only when you interrupt manually the \(a"sync\(a"
 command.
 .SH PARITY 
-SnapRAID creates the parity and q\(hyparity files containing the redundancy
-information of your disk array.
+SnapRAID stores the redundancy information of your array in the parity
+and q\(hyparity files.
 .PP
 They are binary files, containing the computed redundancy of all the
-blocks defined in the \(a"content\(a" file. You do not need to understand its
-format, but it\(cqs described here for documentation.
+blocks defined in the \(a"content\(a" file.
+You do not need to understand its format, but it\(cqs described here
+for documentation.
 .PP
 These files are read and written by the \(a"sync\(a" and \(a"fix\(a" commands, and
 only read by \(a"check\(a".

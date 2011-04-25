@@ -74,21 +74,23 @@ Limitations
 
 Getting Started
 	To use SnapRAID you need first select one disk of your disk array
-	to dedicate at the parity information. With parity you will be able
-	to recover from a single disk failure.
+	to dedicate at the "parity" information. With parity you will be able
+	to recover from a single disk failure, like RAID5.
 
-	If you want to recover from two disk failures you must reserve
-	another disk for the q-parity information.
+	If you want to recover from two disk failures, like RAID6, you must
+	reserve another disk for the "q-parity" information
 
 	For both disks, you have to pick the biggest disks in the array,
 	as the redundancy information may grow in size as the biggest data
 	disk in the array.
 
-	This disk will be dedicated to store the parity and q-parity.
-	You should not store other data on it, with the exception of
-	the content metadata information.
+	This disk will be dedicated to store the "parity" and "q-parity"
+	files.
+	You should not store other data on them, with the exception of
+	a copy the "content" file, that contains the list of all the files
+	stored in your array with all the checksums to verify their integrity.
 
-	For example, suppose that you are interested only at the parity level
+	For example, suppose that you are interested only at one parity level
 	of protection, and that all your disks are present in:
 
 		:/mnt/diskpar <- selected disk for parity
@@ -127,7 +129,7 @@ Getting Started
 
 	When this command completes, your data is SAFE.
 
-	At this point you can start using your data as you like, and periodically
+	At this point you can start using your array as you like, and periodically
 	update the redundancy information running the "sync" command.
 
 	To check the integrity of your data you can use the "check" command:
@@ -146,7 +148,9 @@ Getting Started
 
 	In this regard snapraid is more like a backup program than a RAID
 	system. For example, you can use it to recover from an accidentally
-	deleted directory, simply running the fix command.
+	deleted directory, simply running the fix command like.
+
+		:snapraid fix -f JUST_DELETED_DIR/
 
 Commands
 	SnapRAID provides three simple commands that allow to:
@@ -241,6 +245,8 @@ Configuration
 
 	=parity FILE
 		Defines the file to use to store the parity information.
+		The parity enables the protection from a single disk
+		failure, like RAID5.
 		It must be placed in a disk dedicated for this purpose with
 		as much free space as the biggest disk in the array.
 		Leaving the parity disk reserved for only this file, ensures that
@@ -249,8 +255,8 @@ Configuration
 
 	=q-parity FILE
 		Defines the file to use to store the q-parity information.
-		This option is optional, and if present it enables the protection
-		from two disk failures.
+		If present, the q-parity enables the protection from two disk
+		failures, like RAID6.
 		It must be placed in a disk dedicated for this purpose with
 		as much free space as the biggest disk in the array.
 		Leaving the q-parity disk reserved for only this file, ensures that
@@ -260,9 +266,13 @@ Configuration
 	=content FILE
 		Defines the file to use to store the content of the redundancy
 		organization.
-		It can be placed in the same disk of the parity file, or better
-		in another disk, but NOT in a data disk of the array.
-		This option is mandatory and it can be used only one time.
+		It can be placed in the same disk of the parity and q-aparity file,
+		or better in another disk, but NOT in a data disk of the array.
+		This option is mandatory and it can be used more time to save
+		more copies of the same files.
+		It's suggested to store at least one copy for each parity disk.
+		One more doesn't hurt, just in case you lose all the parity disks,
+		and you still need to check the data integrity.
 
 	=disk NAME DIR
 		Defines the name and the mount point of the disks of the array.
@@ -270,6 +280,8 @@ Configuration
 		DIR is the mount point of the disk in the file-system.
 		You can change the mount point as you like, as far you
 		keep the NAME fixed.
+		The specification order is also important, if you change it,
+		you will invalidate the q-parity file.
 		You should use one option for each disk of the array.
 
 	=exclude PATTERN
@@ -308,6 +320,7 @@ Configuration
 
 		:parity /mnt/diskpar/parity
 		:content /mnt/diskpar/content
+		:content /var/snapraid/content
 		:disk d1 /mnt/disk1/
 		:disk d2 /mnt/disk2/
 		:disk d3 /mnt/disk3/
@@ -360,11 +373,12 @@ Pattern
 		:snapraid -f "*.mp3" check
 
 Content
-	SnapRAID creates a metadata content file describing the content of
-	your disk array.
+	SnapRAID stores the list of your files in the content file.
 
-	It's a text file, listing all the files in your disk array. You do not
-	need to understand its format, but it's described here for documentation.
+	It's a text file, listing all the files present in your disk array,
+	with all the checksums to verify their integrity.
+	You do not need to understand its format, but it's described here
+	for documentation.
 
 	This file is read and written by the "sync" command, and only read by
 	"fix" and "check".
@@ -400,12 +414,13 @@ Content
 		command.
 
 Parity
-	SnapRAID creates the parity and q-parity files containing the redundancy
-	information of your disk array.
+	SnapRAID stores the redundancy information of your array in the parity
+	and q-parity files.
 
 	They are binary files, containing the computed redundancy of all the
-	blocks defined in the "content" file. You do not need to understand its
-	format, but it's described here for documentation.
+	blocks defined in the "content" file.
+	You do not need to understand its format, but it's described here
+	for documentation.
 
 	These files are read and written by the "sync" and "fix" commands, and
 	only read by "check".

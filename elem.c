@@ -23,6 +23,21 @@
 /****************************************************************************/
 /* snapraid */
 
+struct snapraid_content* content_alloc(const char* path)
+{
+	struct snapraid_content* content;
+
+	content = malloc_nofail(sizeof(struct snapraid_content));
+	pathcpy(content->content, sizeof(content->content), path);
+
+	return content;
+}
+
+void content_free(struct snapraid_content* content)
+{
+	free(content);
+}
+
 struct snapraid_filter* filter_alloc(const char* pattern)
 {
 	struct snapraid_filter* filter;

@@ -37,11 +37,11 @@ struct snapraid_state {
 	int expect_recoverable; /**< Expect presence of recoverable error in checking. */
 	int need_write; /**< If the state is changed. */
 	uint32_t block_size; /**< Block size in bytes. */
-	char content[PATH_MAX]; /**< Path of the content file. */
 	char parity[PATH_MAX]; /**< Path of the parity file. */
 	char qarity[PATH_MAX]; /**< Path of the qarity file. */
 	unsigned level; /**< Number of parity levels. 1 for RAID5, 2 for RAID6. */
 	unsigned hash; /**< Hash kind used. */
+	tommy_list contentlist; /**< List of content files. */
 	tommy_array diskarr; /**< Disk array. */
 	tommy_list excludelist; /**< List of exclusion. */
 };

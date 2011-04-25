@@ -45,6 +45,14 @@ typedef uint32_t block_off_t;
 typedef int64_t data_off_t;
 
 /**
+ * Content file specification.
+ */
+struct snapraid_content {
+	char content[PATH_MAX]; /**< Path of the content file. */
+	tommy_node node; /**< Next node in the list. */
+};
+
+/**
  * Filter for paths.
  */
 struct snapraid_filter {
@@ -98,6 +106,16 @@ struct snapraid_disk {
 	tommy_hashdyn inodeset; /**< Hashtable by inode of all the files. */
 	tommy_array blockarr; /**< Block array of the disk. */
 };
+
+/**
+ * Allocates a content.
+ */
+struct snapraid_content* content_alloc(const char* path);
+
+/**
+ * Deallocates a content.
+ */
+void content_free(struct snapraid_content* content);
 
 /**
  * Allocates an exclusion.

@@ -35,13 +35,13 @@ void state_init(struct snapraid_state* state)
 	state->expect_recoverable = 0;
 	state->need_write = 0;
 	state->block_size = 256 * 1024; /* default 256 KiB */
-	state->content[0] = 0;
 	state->parity[0] = 0;
 	state->qarity[0] = 0;
 	state->level = 1; /* default is the lowest protection */
 	state->hash = HASH_MURMUR3; /* default is the fastest */
 	tommy_array_init(&state->diskarr);
 	tommy_list_init(&state->excludelist);
+	tommy_list_init(&state->contentlist);
 }
 
 void state_done(struct snapraid_state* state)
@@ -51,6 +51,7 @@ void state_done(struct snapraid_state* state)
 	for(i=0;i<tommy_array_size(&state->diskarr);++i)
 		disk_free(tommy_array_get(&state->diskarr, i));
 	tommy_array_done(&state->diskarr);
+	tommy_list_foreach(&state->contentlist, (tommy_foreach_func*)content_free);
 	tommy_list_foreach(&state->excludelist, (tommy_foreach_func*)filter_free);
 }
 
@@ -58,6 +59,7 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 {
 	FILE* f;
 	unsigned line;
+	unsigned content_count;
 
 	state->verbose = verbose;
 	state->force_zero = force_zero;
@@ -78,6 +80,7 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 	}
 
 	line = 0;
+	content_count = 0;
 	while (1) {
 		char buffer[TEXT_LINE_MAX];
 		char* tag;
@@ -139,11 +142,9 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 			pathcpy(state->qarity, sizeof(state->qarity), s);
 			state->level = 2;
 		} else if (strcmp(tag, "content") == 0) {
-			if (*state->content) {
-				fprintf(stderr, "Multiple 'content' specification in '%s' at line %u\n", path, line);
-				exit(EXIT_FAILURE);
-			}
-			pathcpy(state->content, sizeof(state->content), s);
+			struct snapraid_content* content = content_alloc(s);
+			tommy_list_insert_tail(&state->contentlist, &content->node, content);
+			++content_count;
 		} else if (strcmp(tag, "disk") == 0) {
 			char* name = s;
 			s = strtoken(s);
@@ -163,12 +164,16 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 
 	fclose(f);
 
-	if (!state->parity) {
-		fprintf(stderr, "No 'parity' specification in '%s' at line %u\n", path, line);
+	if (state->parity[0] == 0) {
+		fprintf(stderr, "No 'parity' specification in '%s'\n", path);
 		exit(EXIT_FAILURE);
 	}
-	if (!state->content) {
-		fprintf(stderr, "No 'content' specification in '%s' at line %u\n", path, line);
+	if (content_count == 0) {
+		fprintf(stderr, "No 'content' specification in '%s'\n", path);
+		exit(EXIT_FAILURE);
+	}
+	if (state->qarity[0] != 0 && content_count < 2) {
+		fprintf(stderr, "With 'q-parity' you must have at least two 'content' specifications in '%s'\n", path);
 		exit(EXIT_FAILURE);
 	}
 }
@@ -183,12 +188,14 @@ void state_read(struct snapraid_state* state)
 	unsigned line;
 	unsigned count_file;
 	unsigned count_block;
+	struct snapraid_content* content;
 
 	count_file = 0;
 	count_block = 0;
 
-	pathcpy(path, sizeof(path), state->content);
-	f = fopen(state->content, "rt");
+	content = tommy_list_head(&state->contentlist)->data;
+	pathcpy(path, sizeof(path), content->content);
+	f = fopen(path, "rt");
 	if (!f) {
 		/* if not found, assume empty */
 		if (errno == ENOENT)
@@ -198,7 +205,7 @@ void state_read(struct snapraid_state* state)
 		exit(EXIT_FAILURE);
 	}
 
-	printf("Loading state...\n");
+	printf("Loading state from %s...\n", path);
 
 	/* start with a MD5 default. */
 	/* it's for compatibility with version 1.0 where MD5 was implicit. */
@@ -425,36 +432,36 @@ void state_read(struct snapraid_state* state)
 	}
 }
 
-void state_write(struct snapraid_state* state)
+static void state_write_one(struct snapraid_state* state, const char* path, unsigned* out_count_file, unsigned* out_count_block)
 {
 	FILE* f;
-	char path[PATH_MAX];
-	unsigned i;
+	char tmp[PATH_MAX];
 	unsigned count_file;
 	unsigned count_block;
+	unsigned i;
 	int ret;
 
 	count_file = 0;
 	count_block = 0;
 
-	printf("Saving state...\n");
+	printf("Saving state to %s...\n", path);
 
-	pathprint(path, sizeof(path), "%s.tmp", state->content);
-	f = fopen(path, "wt");
+	pathprint(tmp, sizeof(tmp), "%s.tmp", path);
+	f = fopen(tmp, "wt");
 	if (!f) {
-		fprintf(stderr, "Error opening for writing the content file '%s'\n", path);
+		fprintf(stderr, "Error opening for writing the content file '%s'\n", tmp);
 		exit(EXIT_FAILURE);
 	}
 
 	ret = fprintf(f, "blksize %u\n", state->block_size);
 	if (ret < 0) {
-		fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", path, strerror(errno));
+		fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", tmp, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 	ret = fprintf(f, "checksum %s\n", state->hash == HASH_MD5 ? "md5" : "murmur3");
 	if (ret < 0) {
-		fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", path, strerror(errno));
+		fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", tmp, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
@@ -477,7 +484,7 @@ void state_write(struct snapraid_state* state)
 
 			ret = fprintf(f,"file %s %llu %llu %llu %s\n", disk->name, size, mtime, inode, file->sub);
 			if (ret < 0) {
-				fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", path, strerror(errno));
+				fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", tmp, strerror(errno));
 				exit(EXIT_FAILURE);
 			}
 
@@ -501,7 +508,7 @@ void state_write(struct snapraid_state* state)
 					ret = fprintf(f, "%s %u\n", tag, block->parity_pos);
 				}
 				if (ret < 0) {
-					fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", path, strerror(errno));
+					fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", tmp, strerror(errno));
 					exit(EXIT_FAILURE);
 				}
 
@@ -516,25 +523,44 @@ void state_write(struct snapraid_state* state)
 	/* than even in a system crash event we have one valid copy of the file. */
 
 	if (fflush(f) != 0) {
-		fprintf(stderr, "Error writing the content file '%s', in fflush(). %s.\n", path, strerror(errno));
+		fprintf(stderr, "Error writing the content file '%s', in fflush(). %s.\n", tmp, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 #if HAVE_FSYNC
 	if (fsync(fileno(f)) != 0) {
-		fprintf(stderr, "Error writing the content file '%s' in fsync(). %s.\n", path, strerror(errno));
+		fprintf(stderr, "Error writing the content file '%s' in fsync(). %s.\n", tmp, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 #endif
 
 	if (fclose(f) != 0) {
-		fprintf(stderr, "Error writing the content file '%s' in close(). %s.\n", path, strerror(errno));
+		fprintf(stderr, "Error writing the content file '%s' in close(). %s.\n", tmp, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
-	if (rename(path, state->content) != 0) {
-		fprintf(stderr, "Error renaming the content file '%s' to '%s' in rename(). %s.\n", path, state->content, strerror(errno));
+	if (rename(tmp, path) != 0) {
+		fprintf(stderr, "Error renaming the content file '%s' to '%s' in rename(). %s.\n", tmp, path, strerror(errno));
 		exit(EXIT_FAILURE);
+	}
+
+	if (out_count_file)
+		*out_count_file = count_file;
+	if (out_count_block)
+		*out_count_block = count_block;
+}
+
+void state_write(struct snapraid_state* state)
+{
+	unsigned count_file;
+	unsigned count_block;
+	tommy_node* node;
+
+	node = tommy_list_head(&state->contentlist);
+	while (node) {
+		struct snapraid_content* content = node->data;
+		state_write_one(state, content->content, &count_file, &count_block);
+		node = node->next;
 	}
 
 	if (state->verbose) {
