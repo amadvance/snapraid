@@ -36,15 +36,15 @@ and it allows to recover from up to two disk failures.
 SnapRAID is mainly targeted for a home media center, where you have
 a lot of big files that rarely change.
 .PP
-Beside the ability to recover from a disk failure, the other
+Beside the ability to recover from disk failures, the other
 features of SnapRAID are:
 .PD 0
 .IP \(bu
 You can start using SnapRAID with already filled disks.
 .IP \(bu
-The disks of the array can have different sizes.
+The disks can have different sizes.
 .IP \(bu
-You can add more disks at the array at any time.
+You can add more disks at any time.
 .IP \(bu
 If you accidentally delete some files in a disk, you can
 recover them.
@@ -67,7 +67,7 @@ http://snapraid.sourceforge.net
 .PD
 .RE
 .SH LIMITATIONS 
-SnapRAID is in between a RAID and a backup program trying to get the best
+SnapRAID is in between a RAID and a Backup program trying to get the best
 benefits of them. Although it also has some limitations that you should
 consider before using it.
 .PP
@@ -113,20 +113,20 @@ to dedicate at the \(a"parity\(a" information. With parity you will be able
 to recover from a single disk failure, like RAID5.
 .PP
 If you want to recover from two disk failures, like RAID6, you must
-reserve another disk for the \(a"q\(hyparity\(a" information
+reserve another disk for the \(a"q\(hyparity\(a" information.
 .PP
-For both disks, you have to pick the biggest disks in the array,
+For the parity disks, you have to pick the biggest disks in the array,
 as the redundancy information may grow in size as the biggest data
 disk in the array.
 .PP
-This disk will be dedicated to store the \(a"parity\(a" and \(a"q\(hyparity\(a"
+These disks will be dedicated to store the \(a"parity\(a" and \(a"q\(hyparity\(a"
 files.
 You should not store other data on them, with the exception of
 a copy the \(a"content\(a" file, that contains the list of all the files
 stored in your array with all the checksums to verify their integrity.
 .PP
 For example, suppose that you are interested only at one parity level
-of protection, and that all your disks are present in:
+of protection, and that your disks are present in:
 .PP
 .RS 4
 /mnt/diskpar <\(hy selected disk for parity
@@ -173,7 +173,8 @@ disk d3 /mnt/disk3/
 .PD
 .RE
 .PP
-If you are in Windows, you should use backslash instead of slash:
+If you are in Windows, you should use drive letters and backslash
+instead of slash:
 .PP
 .RS 4
 parity E:\(rspar\(rsparity
@@ -345,8 +346,10 @@ Prints the program version.
 SnapRAID requires a configuration file to know where your disk array
 is located, and where storing the redundancy information.
 .PP
-This configuration file is located in /etc/snapraid.conf and
-it should contains the following options:
+This configuration file is located in /etc/snapraid.conf in Unix or
+in the execution directory in Windows.
+.PP
+It should contains the following options:
 .TP
 .B parity FILE
 Defines the file to use to store the parity information.
@@ -354,7 +357,7 @@ The parity enables the protection from a single disk
 failure, like RAID5.
 It must be placed in a disk dedicated for this purpose with
 as much free space as the biggest disk in the array.
-Leaving the parity disk reserved for only this file, ensures that
+Leaving the parity disk reserved for only this file ensures that
 it doesn\(cqt get fragmented, improving the performance.
 This option is mandatory and it can be used only one time.
 .TP
@@ -364,26 +367,26 @@ If present, the q\(hyparity enables the protection from two disk
 failures, like RAID6.
 It must be placed in a disk dedicated for this purpose with
 as much free space as the biggest disk in the array.
-Leaving the q\(hyparity disk reserved for only this file, ensures that
+Leaving the q\(hyparity disk reserved for only this file ensures that
 it doesn\(cqt get fragmented, improving the performance.
 This option is optional and it can be used only one time.
 .TP
 .B content FILE
-Defines the file to use to store the content of the redundancy
-organization.
+Defines the file to use to store the list and checksum of the
+content of your disk array.
 It can be placed in the same disk of the parity and q\(hyaparity file,
 or better in another disk, but NOT in a data disk of the array.
 This option is mandatory and it can be used more time to save
 more copies of the same files.
 It\(cqs suggested to store at least one copy for each parity disk.
 One more doesn\(cqt hurt, just in case you lose all the parity disks,
-and you still need to check the data integrity.
+and you to be still able to check the data integrity.
 .TP
 .B disk NAME DIR
 Defines the name and the mount point of the disks of the array.
 NAME is used to identify the disk, and it must be unique.
 DIR is the mount point of the disk in the file\(hysystem.
-You can change the mount point as you like, as far you
+You can change the mount point as you like, as long you
 keep the NAME fixed.
 The specification order is also important, if you change it,
 you will invalidate the q\(hyparity file.
@@ -477,10 +480,6 @@ exclude tmp/
 .PD 0
 .PP
 .PD
-block_size 256
-.PD 0
-.PP
-.PD
 .RE
 .SH PATTERN 
 Patterns are used to select a subset of files to exclude or include in
@@ -510,13 +509,12 @@ globbing character like * and ? but they never matches a
 directory slash.
 This pattern is applied only to directories and not to files.
 .PP
-Note that when globbing char are used in the command line, you have to
+Note that when globbing chars are used in the command line, you have to
 quote them in Unix. Otherwise the shell will try to expand them.
 .PP
-In the configuration file, you can use different strategies to define
+In the configuration file, you can use different strategies to filter
 the files to process.
-.PP
-The most simple one is to only use \(a"exclude\(a" rules to remove all the
+The simplest one is to only use \(a"exclude\(a" rules to remove all the
 files and directories you do not want to process. For example:
 .PP
 .RS 4
@@ -627,7 +625,7 @@ snapraid \(hyf \(a"*.mp3\(a" check
 .PD
 .RE
 .SH CONTENT 
-SnapRAID stores the list of your files in the content file.
+SnapRAID stores the list and checksums of your files in the content file.
 .PP
 It\(cqs a text file, listing all the files present in your disk array,
 with all the checksums to verify their integrity.
@@ -682,7 +680,7 @@ For all the blocks at a given position, the parity and the q\(hyparity
 are computed as specified in:
 .PP
 .RS 4
-kernel.org/pub/linux/kernel/people/hpa/raid6.pdf
+http://kernel.org/pub/linux/kernel/people/hpa/raid6.pdf
 .PD 0
 .PP
 .PD

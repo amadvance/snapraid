@@ -19,12 +19,12 @@ Description
 	SnapRAID is mainly targeted for a home media center, where you have
 	a lot of big files that rarely change.
 
-	Beside the ability to recover from a disk failure, the other
+	Beside the ability to recover from disk failures, the other
 	features of SnapRAID are:
 
 	* You can start using SnapRAID with already filled disks.
-	* The disks of the array can have different sizes.
-	* You can add more disks at the array at any time.
+	* The disks can have different sizes.
+	* You can add more disks at any time.
 	* If you accidentally delete some files in a disk, you can
 		recover them.
 	* If more than two disk fails, you lose the data only on the
@@ -38,7 +38,7 @@ Description
 		:http://snapraid.sourceforge.net
 
 Limitations
-	SnapRAID is in between a RAID and a backup program trying to get the best
+	SnapRAID is in between a RAID and a Backup program trying to get the best
 	benefits of them. Although it also has some limitations that you should
 	consider before using it.
 
@@ -78,20 +78,20 @@ Getting Started
 	to recover from a single disk failure, like RAID5.
 
 	If you want to recover from two disk failures, like RAID6, you must
-	reserve another disk for the "q-parity" information
+	reserve another disk for the "q-parity" information.
 
-	For both disks, you have to pick the biggest disks in the array,
+	For the parity disks, you have to pick the biggest disks in the array,
 	as the redundancy information may grow in size as the biggest data
 	disk in the array.
 
-	This disk will be dedicated to store the "parity" and "q-parity"
+	These disks will be dedicated to store the "parity" and "q-parity"
 	files.
 	You should not store other data on them, with the exception of
 	a copy the "content" file, that contains the list of all the files
 	stored in your array with all the checksums to verify their integrity.
 
 	For example, suppose that you are interested only at one parity level
-	of protection, and that all your disks are present in:
+	of protection, and that your disks are present in:
 
 		:/mnt/diskpar <- selected disk for parity
 		:/mnt/disk1 <- first disk to backup
@@ -107,7 +107,8 @@ Getting Started
 		:disk d2 /mnt/disk2/
 		:disk d3 /mnt/disk3/
 
-	If you are in Windows, you should use backslash instead of slash:
+	If you are in Windows, you should use drive letters and backslash
+	instead of slash:
 
 		:parity E:\par\parity
 		:content E:\par\content
@@ -240,8 +241,10 @@ Configuration
 	SnapRAID requires a configuration file to know where your disk array
 	is located, and where storing the redundancy information.
 
-	This configuration file is located in /etc/snapraid.conf and
-	it should contains the following options:
+	This configuration file is located in /etc/snapraid.conf in Unix or
+	in the execution directory in Windows.
+
+	It should contains the following options:
 
 	=parity FILE
 		Defines the file to use to store the parity information.
@@ -249,7 +252,7 @@ Configuration
 		failure, like RAID5.
 		It must be placed in a disk dedicated for this purpose with
 		as much free space as the biggest disk in the array.
-		Leaving the parity disk reserved for only this file, ensures that
+		Leaving the parity disk reserved for only this file ensures that
 		it doesn't get fragmented, improving the performance.
 		This option is mandatory and it can be used only one time.
 
@@ -259,26 +262,26 @@ Configuration
 		failures, like RAID6.
 		It must be placed in a disk dedicated for this purpose with
 		as much free space as the biggest disk in the array.
-		Leaving the q-parity disk reserved for only this file, ensures that
+		Leaving the q-parity disk reserved for only this file ensures that
 		it doesn't get fragmented, improving the performance.
 		This option is optional and it can be used only one time.
 
 	=content FILE
-		Defines the file to use to store the content of the redundancy
-		organization.
+		Defines the file to use to store the list and checksum of the
+		content of your disk array.
 		It can be placed in the same disk of the parity and q-aparity file,
 		or better in another disk, but NOT in a data disk of the array.
 		This option is mandatory and it can be used more time to save
 		more copies of the same files.
 		It's suggested to store at least one copy for each parity disk.
 		One more doesn't hurt, just in case you lose all the parity disks,
-		and you still need to check the data integrity.
+		and you to be still able to check the data integrity.
 
 	=disk NAME DIR
 		Defines the name and the mount point of the disks of the array.
 		NAME is used to identify the disk, and it must be unique.
 		DIR is the mount point of the disk in the file-system.
-		You can change the mount point as you like, as far you
+		You can change the mount point as you like, as long you
 		keep the NAME fixed.
 		The specification order is also important, if you change it,
 		you will invalidate the q-parity file.
@@ -332,7 +335,6 @@ Configuration
 		:exclude *.bak
 		:exclude /lost+found/
 		:exclude tmp/
-		:block_size 256
 
 Pattern
 	Patterns are used to select a subset of files to exclude or include in
@@ -362,13 +364,12 @@ Pattern
 		directory slash.
 		This pattern is applied only to directories and not to files.
 
-	Note that when globbing char are used in the command line, you have to
+	Note that when globbing chars are used in the command line, you have to
 	quote them in Unix. Otherwise the shell will try to expand them.
 
-	In the configuration file, you can use different strategies to define
+	In the configuration file, you can use different strategies to filter
 	the files to process.
-
-	The most simple one is to only use "exclude" rules to remove all the
+	The simplest one is to only use "exclude" rules to remove all the
 	files and directories you do not want to process. For example:
 
 		:# Excludes any file named "*.bak"
@@ -409,7 +410,7 @@ Pattern
 		:snapraid -f "*.mp3" check
 
 Content
-	SnapRAID stores the list of your files in the content file.
+	SnapRAID stores the list and checksums of your files in the content file.
 
 	It's a text file, listing all the files present in your disk array,
 	with all the checksums to verify their integrity.
@@ -464,7 +465,7 @@ Parity
 	For all the blocks at a given position, the parity and the q-parity
 	are computed as specified in:
 
-		:kernel.org/pub/linux/kernel/people/hpa/raid6.pdf
+		:http://kernel.org/pub/linux/kernel/people/hpa/raid6.pdf
 
 	When a file block is shorter than the default block size, for example
 	because it's the last block of a file, it's assumed as filled with 0

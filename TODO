@@ -12,8 +12,6 @@ completely restored.
 
 * Reduce memory occupation removing the flag field in the block structure.
 
-* Provide an "include" logic in filtering.
-
 * Recognize that a file is moved from one disk to another, and if the parity
 data doesn't overlap, do not recompute it.
 
