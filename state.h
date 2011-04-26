@@ -43,7 +43,7 @@ struct snapraid_state {
 	unsigned hash; /**< Hash kind used. */
 	tommy_list contentlist; /**< List of content files. */
 	tommy_array diskarr; /**< Disk array. */
-	tommy_list excludelist; /**< List of exclusion. */
+	tommy_list filterlist; /**< List of inclusion/exclusion. */
 };
 
 /**

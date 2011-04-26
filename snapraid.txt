@@ -307,8 +307,13 @@ it should contains the following options:
         You should use one option for each disk of the array.
 
     exclude PATTERN
-        Defines the file or directory patterns to exclude from the sync
-        process.
+    include PATTERN
+        Defines the file or directory patterns to exclude and include
+        in the sync process.
+        All the patterns are processed in the specified order, and
+        we get the result of the first pattern that matches.
+        If no pattern matches, the file is excluded if the last pattern
+        is an "include", or included if the last pattern is an "exclude".
         See the PATTERN section for more details in the
         pattern specifications.
         This option can be used many times.
@@ -355,7 +360,8 @@ An example of a typical configuration is:
 8 PATTERN
 =========
 
-Patterns are used to select a subset of files to exclude or operate on.
+Patterns are used to select a subset of files to exclude or include in
+the process.
 
 There are four different types of patterns:
 
@@ -384,17 +390,47 @@ There are four different types of patterns:
 Note that when globbing char are used in the command line, you have to
 quote them in Unix. Otherwise the shell will try to expand them.
 
-For example, in the configuration file:
+In the configuration file, you can use different strategies to define
+the files to process.
+
+The most simple one is to only use "exclude" rules to remove all the
+files and directories you do not want to process. For example:
+
     # Excludes any file named "*.bak"
     exclude *.bak
     # Excludes the root directory "/lost+found"
     exclude /lost+found/
-    # Excludes any directory named "tmp"
+    # Excludes any sub-directory named "tmp"
     exclude tmp/
 
-For example, in the command line:
+The opposite way is to define only the file you want to process, using
+only "include" rules. For example:
+
+    # Includes only some directories
+    include /movies/
+    include /musics/
+    include /pictures/
+
+The final way, is to mix "exclude" and "include" rules. In this case take
+care that the order of rules is important. Previous rules have the
+precedence over the later ones.
+To get things simpler you can first have all the "exclude" rules and then
+all the "include" ones. For example:
+
+    # Excludes any file named "*.bak"
+    exclude *.bak
+    # Excludes any sub-directory named "tmp"
+    exclude tmp/
+    # Includes only some directories
+    include /movies/
+    include /musics/
+    include /pictures/
+
+On the command line, using the -f option, you can only use "include"
+patterns. For example:
+
     # Checks only the .mp3 files.
-    # Note the "" use to avoid globbing expansion by the shell.
+    # Note the "" use to avoid globbing expansion by the shell in Unix.
     snapraid -f "*.mp3" check
 
 

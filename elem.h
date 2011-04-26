@@ -59,6 +59,7 @@ struct snapraid_filter {
 	char pattern[PATH_MAX]; /**< Filter pattern. */
 	int is_path; /**< If the pattern is only for the complete path. */
 	int is_dir; /**< If the pattern is only for dir. */
+	int direction; /**< If it's an inclusion (=1) or an exclusion (=-1). */
 	tommy_node node; /**< Next node in the list. */
 };
 
@@ -88,8 +89,7 @@ struct snapraid_file {
 	int64_t mtime; /**< Modification time. */
 	uint64_t inode; /**< Inode. */
 	int is_present; /**< If it's seen as present. */
-	int is_filtered; /**< If it's filtered out. */
-
+	int is_excluded; /**< If it's an excluded file from the processing. */
 	/* nodes for data structures */
 	tommy_node nodelist;
 	tommy_hashdyn_node nodeset;
@@ -120,24 +120,20 @@ void content_free(struct snapraid_content* content);
 /**
  * Allocates an exclusion.
  */
-struct snapraid_filter* filter_alloc(const char* pattern);
+struct snapraid_filter* filter_alloc(int is_include, const char* pattern);
 
 /**
  * Deallocates an exclusion.
  */
 void filter_free(struct snapraid_filter* filter);
 
-/**
- * Filters a path/name.
- * Returns 0 if it matches.
- */
-int filter_path(struct snapraid_filter* filter, const char* path, const char* name, int is_dir);
 
 /**
- * Filters a file.
- * Returns 0 if it matches.
+ * Filters a path.
+ * For each element of the path all the filters are applied, until the first one that matches.
+ * Returns 0 if the files has to be processed.
  */
-int filter_file(struct snapraid_filter* filter, struct snapraid_file* file);
+int filter_path(tommy_list* filterlist, const char* path, int is_dir);
 
 /**
  * Gets the relative position of a block inside the file.

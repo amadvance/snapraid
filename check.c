@@ -200,7 +200,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			struct snapraid_block* block = disk_block_get(handle[j].disk, i);
 			if (block
 				&& bit_has(block->flag, BLOCK_HAS_HASH) /* only if the block is hashed */
-				&& !block->file->is_filtered /* only if the file is not filtered out */
+				&& !block->file->is_excluded /* only if the file is not filtered out */
 			) {
 				one_tocheck = 1;
 				break;
@@ -230,7 +230,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			struct snapraid_block* block = disk_block_get(handle[j].disk, i);
 			if (block
 				&& bit_has(block->flag, BLOCK_HAS_HASH) /* only if the block is hashed */
-				&& !block->file->is_filtered /* only if the file is not filtered out */
+				&& !block->file->is_excluded /* only if the file is not filtered out */
 			) {
 				one_tocheck = 1;
 				break;
@@ -415,7 +415,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 					/* update the fixed files */
 					for(j=0;j<failed_count;++j) {
 						/* do not fix if the file filtered out */
-						if (failed[j].block->file->is_filtered)
+						if (failed[j].block->file->is_excluded)
 							continue;
 
 						ret = handle_write(failed[j].handle, failed[j].block, buffer[failed[j].index], state->block_size);

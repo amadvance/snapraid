@@ -187,22 +187,6 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 }
 
 /**
- * Checks if the specified path/file should be listet.
- */
-static int scan_filter(struct snapraid_state* state, const char* path, const char* file, int is_dir)
-{
-	tommy_node* node = tommy_list_head(&state->excludelist);
-	while (node) {
-		struct snapraid_filter* filter = node->data;
-		if (filter_path(filter, path, file, is_dir) == 0)
-			return -1;
-		node = node->next;
-	}
-
-	return 0;
-}
-
-/**
  * Processes a directory.
  */
 static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, struct snapraid_disk* disk, const char* dir, const char* sub)
@@ -241,7 +225,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, s
 		}
 
 		if (S_ISREG(st.st_mode)) {
-			if (scan_filter(state, sub_next, name, 0) == 0) {
+			if (filter_path(&state->filterlist, sub_next, 0) == 0) {
 				scan_file(scan, state, disk, sub_next, &st);
 			} else {
 				if (state->verbose) {
@@ -249,7 +233,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, s
 				}
 			}
 		} else if (S_ISDIR(st.st_mode)) {
-			if (scan_filter(state, sub_next, name, 1) == 0) {
+			if (filter_path(&state->filterlist, sub_next, 1) == 0) {
 				pathslash(path_next, sizeof(path_next));
 				pathslash(sub_next, sizeof(sub_next));
 				scan_dir(scan, state, disk, path_next, sub_next);

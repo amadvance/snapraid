@@ -38,7 +38,7 @@ void content_free(struct snapraid_content* content)
 	free(content);
 }
 
-struct snapraid_filter* filter_alloc(const char* pattern)
+struct snapraid_filter* filter_alloc(int direction, const char* pattern)
 {
 	struct snapraid_filter* filter;
 	char* i;
@@ -47,6 +47,7 @@ struct snapraid_filter* filter_alloc(const char* pattern)
 
 	filter = malloc_nofail(sizeof(struct snapraid_filter));
 	pathcpy(filter->pattern, sizeof(filter->pattern), pattern);
+	filter->direction = direction;
 
 	/* find first and last slash */
 	first = 0;
@@ -93,35 +94,35 @@ void filter_free(struct snapraid_filter* filter)
 	free(filter);
 }
 
-int filter_path(struct snapraid_filter* filter, const char* path, const char* name, int is_dir)
+static int filter_apply(struct snapraid_filter* filter, const char* path, const char* name, int is_dir)
 {
 	/* matches dirs with dirs and files with files */
 	if (filter->is_dir && !is_dir)
-		return -1;
+		return 0;
 	if (!filter->is_dir && is_dir)
-		return -1;
+		return 0;
 
 	if (filter->is_path) {
 		/* skip initial slash, as always missing from the path */
 		if (fnmatch(filter->pattern + 1, path, FNM_PATHNAME) == 0)
-			return 0;
+			return filter->direction;
 	} else {
 		if (fnmatch(filter->pattern, name, 0) == 0)
-			return 0;
+			return filter->direction;
 	}
 
-	return -1;
+	return 0;
 }
 
-int filter_file(struct snapraid_filter* filter, struct snapraid_file* file)
+static int filter_recurse(struct snapraid_filter* filter, const char* const_path, int is_dir)
 {
 	char path[PATH_MAX];
 	char* name;
 	unsigned i;
 
-	pathcpy(path, sizeof(path), file->sub);
+	pathcpy(path, sizeof(path), const_path);
 
-	/* filter for all the directory */
+	/* filter for all the directories */
 	name = path;
 	for(i=0;path[i] != 0;++i) {
 		if (path[i] == '/') {
@@ -129,8 +130,8 @@ int filter_file(struct snapraid_filter* filter, struct snapraid_file* file)
 			path[i] = 0;
 
 			/* filter the directory */
-			if (filter_path(filter, path, name, 1) == 0)
-				return 0;
+			if (filter_apply(filter, path, name, 1) != 0)
+				return filter->direction;
 
 			/* restore the slash */
 			path[i] = '/';
@@ -141,10 +142,43 @@ int filter_file(struct snapraid_filter* filter, struct snapraid_file* file)
 	}
 
 	/* filter the final file */
-	if (filter_path(filter, path, name, 0) == 0)
-		return 0;
+	if (filter_apply(filter, path, name, is_dir) != 0)
+		return filter->direction;
 
-	return -1;
+	return 0;
+}
+
+int filter_path(tommy_list* filterlist, const char* path, int is_dir)
+{
+	tommy_node* i;
+
+	int direction = 1; /* by default include all */
+
+	/* for each filter */
+	for(i=tommy_list_head(filterlist);i!=0;i=i->next) {
+		int ret;
+		struct snapraid_filter* filter = i->data;
+
+		ret = filter_recurse(filter, path, is_dir);
+		if (ret > 0) {
+			/* include the file */
+			direction = 1;
+			break;
+		} else if (ret < 0) {
+			/* exclude the file */
+			direction = -1;
+			break;
+		} else {
+			/* default is opposite of the last filter */
+			direction = -filter->direction;
+			/* continue with the next one */
+		}
+	}
+
+	if (direction < 0)
+		return -1;
+
+	return 0;
 }
 
 block_off_t block_file_pos(struct snapraid_block* block)
@@ -189,7 +223,7 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t 
 	file->mtime = mtime;
 	file->inode = inode;
 	file->is_present = 0;
-	file->is_filtered = 0;
+	file->is_excluded = 0;
 	file->blockvec = malloc_nofail(file->blockmax * sizeof(struct snapraid_block));
 
 	/* set the back pointer */

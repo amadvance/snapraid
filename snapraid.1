@@ -390,8 +390,14 @@ you will invalidate the q\(hyparity file.
 You should use one option for each disk of the array.
 .TP
 .B exclude PATTERN
-Defines the file or directory patterns to exclude from the sync
-process.
+.TP
+.B include PATTERN
+Defines the file or directory patterns to exclude and include
+in the sync process.
+All the patterns are processed in the specified order, and
+we get the result of the first pattern that matches.
+If no pattern matches, the file is excluded if the last pattern
+is an \(a"include\(a", or included if the last pattern is an \(a"exclude\(a".
 See the PATTERN section for more details in the
 pattern specifications.
 This option can be used many times.
@@ -477,7 +483,8 @@ block_size 256
 .PD
 .RE
 .SH PATTERN 
-Patterns are used to select a subset of files to exclude or operate on.
+Patterns are used to select a subset of files to exclude or include in
+the process.
 .PP
 There are four different types of patterns:
 .TP
@@ -506,7 +513,11 @@ This pattern is applied only to directories and not to files.
 Note that when globbing char are used in the command line, you have to
 quote them in Unix. Otherwise the shell will try to expand them.
 .PP
-For example, in the configuration file:
+In the configuration file, you can use different strategies to define
+the files to process.
+.PP
+The most simple one is to only use \(a"exclude\(a" rules to remove all the
+files and directories you do not want to process. For example:
 .PP
 .RS 4
 # Excludes any file named \(a"*.bak\(a"
@@ -525,7 +536,7 @@ exclude /lost+found/
 .PD 0
 .PP
 .PD
-# Excludes any directory named \(a"tmp\(a"
+# Excludes any sub\(hydirectory named \(a"tmp\(a"
 .PD 0
 .PP
 .PD
@@ -535,14 +546,78 @@ exclude tmp/
 .PD
 .RE
 .PP
-For example, in the command line:
+The opposite way is to define only the file you want to process, using
+only \(a"include\(a" rules. For example:
+.PP
+.RS 4
+# Includes only some directories
+.PD 0
+.PP
+.PD
+include /movies/
+.PD 0
+.PP
+.PD
+include /musics/
+.PD 0
+.PP
+.PD
+include /pictures/
+.PD 0
+.PP
+.PD
+.RE
+.PP
+The final way, is to mix \(a"exclude\(a" and \(a"include\(a" rules. In this case take
+care that the order of rules is important. Previous rules have the
+precedence over the later ones.
+To get things simpler you can first have all the \(a"exclude\(a" rules and then
+all the \(a"include\(a" ones. For example:
+.PP
+.RS 4
+# Excludes any file named \(a"*.bak\(a"
+.PD 0
+.PP
+.PD
+exclude *.bak
+.PD 0
+.PP
+.PD
+# Excludes any sub\(hydirectory named \(a"tmp\(a"
+.PD 0
+.PP
+.PD
+exclude tmp/
+.PD 0
+.PP
+.PD
+# Includes only some directories
+.PD 0
+.PP
+.PD
+include /movies/
+.PD 0
+.PP
+.PD
+include /musics/
+.PD 0
+.PP
+.PD
+include /pictures/
+.PD 0
+.PP
+.PD
+.RE
+.PP
+On the command line, using the \(hyf option, you can only use \(a"include\(a"
+patterns. For example:
 .PP
 .RS 4
 # Checks only the .mp3 files.
 .PD 0
 .PP
 .PD
-# Note the \(a"\(a" use to avoid globbing expansion by the shell.
+# Note the \(a"\(a" use to avoid globbing expansion by the shell in Unix.
 .PD 0
 .PP
 .PD

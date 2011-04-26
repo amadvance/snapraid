@@ -134,7 +134,7 @@ int main(int argc, char* argv[])
 			conf = optarg;
 			break;
 		case 'f' : {
-			struct snapraid_filter* filter = filter_alloc(optarg);
+			struct snapraid_filter* filter = filter_alloc(1, optarg);
 			if (!filter) {
 				fprintf(stderr, "Invalid filter specification '%s'\n", optarg);
 				exit(EXIT_FAILURE);

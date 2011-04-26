@@ -40,8 +40,8 @@ void state_init(struct snapraid_state* state)
 	state->level = 1; /* default is the lowest protection */
 	state->hash = HASH_MURMUR3; /* default is the fastest */
 	tommy_array_init(&state->diskarr);
-	tommy_list_init(&state->excludelist);
 	tommy_list_init(&state->contentlist);
+	tommy_list_init(&state->filterlist);
 }
 
 void state_done(struct snapraid_state* state)
@@ -52,7 +52,7 @@ void state_done(struct snapraid_state* state)
 		disk_free(tommy_array_get(&state->diskarr, i));
 	tommy_array_done(&state->diskarr);
 	tommy_list_foreach(&state->contentlist, (tommy_foreach_func*)content_free);
-	tommy_list_foreach(&state->excludelist, (tommy_foreach_func*)filter_free);
+	tommy_list_foreach(&state->filterlist, (tommy_foreach_func*)filter_free);
 }
 
 void state_config(struct snapraid_state* state, const char* path, int verbose, int force_zero, int force_empty, int expect_unrecoverable, int expect_recoverable)
@@ -150,12 +150,19 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 			s = strtoken(s);
 			tommy_array_insert(&state->diskarr, disk_alloc(name, s));
 		} else if (strcmp(tag, "exclude") == 0) {
-			struct snapraid_filter* filter = filter_alloc(s);
+			struct snapraid_filter* filter = filter_alloc(-1, s);
 			if (!filter) {
 				fprintf(stderr, "Invalid 'exclude' specification '%s' in '%s' at line %u\n", s, path, line);
 				exit(EXIT_FAILURE);
 			}
-			tommy_list_insert_tail(&state->excludelist, &filter->node, filter);
+			tommy_list_insert_tail(&state->filterlist, &filter->node, filter);
+		} else if (strcmp(tag, "include") == 0) {
+			struct snapraid_filter* filter = filter_alloc(1, s);
+			if (!filter) {
+				fprintf(stderr, "Invalid 'include' specification '%s' in '%s' at line %u\n", s, path, line);
+				exit(EXIT_FAILURE);
+			}
+			tommy_list_insert_tail(&state->filterlist, &filter->node, filter);
 		} else {
 			fprintf(stderr, "Unknown tag '%s' in '%s'\n", tag, path);
 			exit(EXIT_FAILURE);
@@ -573,6 +580,7 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist)
 {
 	unsigned i;
 
+	/* if no filter, include all */
 	if (tommy_list_empty(filterlist))
 		return;
 
@@ -596,24 +604,11 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist)
 
 		/* for each file */
 		for(j=tommy_list_head(&disk->filelist);j!=0;j=j->next) {
-			tommy_node* k;
 			struct snapraid_file* file = j->data;
 
-			/* filter it out as default */
-			file->is_filtered = 1;
-		
-			/* for each filter */
-			for(k=tommy_list_head(filterlist);k!=0;k=k->next) {
-				struct snapraid_filter* filter = k->data;
+			file->is_excluded = filter_path(filterlist, file->sub, 0) != 0;
 
-				if (filter_file(filter, file) == 0) {
-					/* mark it as filtered */
-					file->is_filtered = 0;
-					break;
-				}
-			}
-
-			if (state->verbose && !file->is_filtered) {
+			if (state->verbose && !file->is_excluded) {
 				printf("Processing file '%s'\n", file->sub);
 			}
 		}

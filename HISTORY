@@ -3,8 +3,8 @@ SnapRAID HISTORY
 
 1.1 2011/5
 ==========
-* Added RAID6 support.
-* Allow to specify multiple content files.
+* Added RAID6 support and allow to specify multiple content files.
+* Added filtering include logic, where anything not explicitely included is excluded.
 * Changed the default checksum to Murmur3 hash. It's a lot faster than MD5.
   MD5 is still supported for backward compatibility.
 * The check command returns with an error code if any kind of error is present.
