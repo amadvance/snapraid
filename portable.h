@@ -106,11 +106,12 @@
 #define SWITCH_GETOPT_LONG(a,b) b
 #endif
 
-#ifndef O_BINARY
+#ifndef __MINGW32__ /* Specific for Unix */
 #define O_BINARY 0
+#define O_SEQUENTIAL 0
 #endif
 
-#ifdef __MINGW32__ /* Specific for MINGW */
+#ifdef __MINGW32__ /* Specific for Windows MINGW */
 
 /* Remap functions and types for 64 bit support */
 #define stat windows_stat

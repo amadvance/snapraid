@@ -110,7 +110,8 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 		return -1;
 	}
 
-	handle->f = open(handle->path, O_RDWR | O_CREAT | O_BINARY, 0600);
+	/* opening in sequential mode in Windows */
+	handle->f = open(handle->path, O_RDWR | O_CREAT | O_BINARY | O_SEQUENTIAL, 0600);
 	if (handle->f == -1) {
 		/* invalidate for error */
 		handle->file = 0;
@@ -175,8 +176,9 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file)
 		return 0;
 	}
 
+	/* opening in sequential mode in Windows */
 	pathprint(handle->path, sizeof(handle->path), "%s%s", handle->disk->dir, file->sub);
-	handle->f = open(handle->path, O_RDONLY | O_BINARY);
+	handle->f = open(handle->path, O_RDONLY | O_BINARY | O_SEQUENTIAL);
 
 	if (handle->f == -1) {
 		/* invalidate for error */

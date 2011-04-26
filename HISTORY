@@ -9,6 +9,8 @@ SnapRAID HISTORY
   MD5 is still supported for backward compatibility.
 * The check command returns with an error code if any kind of error is present.
   Previously it was only if unrecoverable errors were present.
+* Opening the files in sequential mode in Windows. This should give
+  a light speedup in Windows.
 
 1.0 2011/4
 ==========

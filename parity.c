@@ -55,7 +55,8 @@ int parity_create(const char* path, data_off_t size)
 	int ret;
 	int f;
 
-	f = open(path, O_RDWR | O_CREAT | O_BINARY, 0600);
+	/* opening in sequential mode in Windows */
+	f = open(path, O_RDWR | O_CREAT | O_BINARY | O_SEQUENTIAL, 0600);
 	if (f == -1) {
 		fprintf(stderr, "Error opening parity file '%s'. %s.\n", path, strerror(errno));
 		return -1;
@@ -114,7 +115,8 @@ int parity_open(const char* path)
 #endif    
 	int f;
 
-	f = open(path, O_RDONLY | O_BINARY);
+	/* opening in sequential mode in Windows */
+	f = open(path, O_RDONLY | O_BINARY | O_SEQUENTIAL);
 	if (f == -1) {
 		fprintf(stderr, "Error opening parity file '%s'. %s.\n", path, strerror(errno));
 		return -1;
