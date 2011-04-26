@@ -92,10 +92,12 @@ static int state_dry_process(struct snapraid_state* state, int parity_f, int qar
 		}
 
 		/* read the parity */
-		ret = parity_read(state->parity, parity_f, i, buffer, state->block_size);
-		if (ret == -1) {
-			fprintf(stderr, "%u: Parity read error\n", i);
-			++error;
+		if (parity_f != -1) {
+			ret = parity_read(state->parity, parity_f, i, buffer, state->block_size);
+			if (ret == -1) {
+				fprintf(stderr, "%u: Parity read error\n", i);
+				++error;
+			}
 		}
 
 		/* read the qarity */
