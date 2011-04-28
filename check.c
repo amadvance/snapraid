@@ -317,8 +317,10 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 				}
 
 				/* check if it's a larger file, but not if already notified */
-				if (!file_flag_has(block_file_get(block), FILE_IS_LARGER) && handle[j].st.st_size > block_file_get(block)->size) {
-					fprintf(stderr, "File '%s' is larger than expected.\n", handle->path);
+				if (!file_flag_has(block_file_get(block), FILE_IS_LARGER)
+					&& handle[j].st.st_size > block_file_get(block)->size
+				) {
+					fprintf(stderr, "File '%s' is larger than expected.\n", handle[j].path);
 
 					/* if fragmented, it may be reopened, so store the notification */
 					file_flag_set(block_file_get(block), FILE_IS_LARGER);
