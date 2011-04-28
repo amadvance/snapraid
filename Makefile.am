@@ -279,7 +279,7 @@ cachegrind:
 		tail cachegrind.log
 
 # Rules for documentation
-
+if HAVE_ADVD2
 snapraid.1 : snapraid.d
 	advd2 man < $(srcdir)/$< > $@
 
@@ -291,6 +291,7 @@ snapraid.html : snapraid.d
 
 snapraid.hh : snapraid.d
 	advd2 frame < $(srcdir)/$< > $@
+endif
 
 # Windows distribution
 
