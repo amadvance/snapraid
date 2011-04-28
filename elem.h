@@ -1,4 +1,4 @@
-/*
+0/*
  * Copyright (C) 2011 Andrea Mazzoleni
  *
  * This program is free software: you can redistribute it and/or modify
@@ -73,24 +73,26 @@ struct snapraid_file;
  */
 struct snapraid_block {
 	block_off_t parity_pos; /**< Position of the block in the parity. */
-	unsigned flag; /**< If the hash of the block is valid. */
-	struct snapraid_file* file; /**< Back pointer to the file owning this block. */
+	uintptr_t file_mixed; /**< Back pointer to the file owning this block, mixed with some flags. */
 	unsigned char hash[HASH_SIZE]; /**< Hash of the block. */
 };
+
+#define FILE_IS_PRESENT 1 /**< If it's seen as present. */
+#define FILE_IS_EXCLUDED 2 /**< If it's an excluded file from the processing. */
+#define FILE_IS_LARGER 4 /**< If a larger file was already detected. */
 
 /**
  * File.
  */
 struct snapraid_file {
-	char sub[PATH_MAX]; /**< Sub path of the file. Without the disk dir. The disk is implicit. */
+	int64_t mtime; /**< Modification time. */
+	uint64_t inode; /**< Inode. */
 	data_off_t size; /**< Size of the file. */
 	struct snapraid_block* blockvec; /**< All the blocks of the file. */
 	block_off_t blockmax; /**< Number of blocks. */
-	int64_t mtime; /**< Modification time. */
-	uint64_t inode; /**< Inode. */
-	int is_present; /**< If it's seen as present. */
-	int is_excluded; /**< If it's an excluded file from the processing. */
-	int is_larger; /**< If a larger file was already detected. */
+	unsigned flag; /**< FILE_IS_* flags. */
+	char sub[PATH_MAX]; /**< Sub path of the file. Without the disk dir. The disk is implicit. */
+
 	/* nodes for data structures */
 	tommy_node nodelist;
 	tommy_hashdyn_node nodeset;
@@ -128,13 +130,37 @@ struct snapraid_filter* filter_alloc(int is_include, const char* pattern);
  */
 void filter_free(struct snapraid_filter* filter);
 
-
 /**
  * Filters a path.
  * For each element of the path all the filters are applied, until the first one that matches.
  * Returns 0 if the files has to be processed.
  */
 int filter_path(tommy_list* filterlist, const char* path, int is_dir);
+
+static inline struct snapraid_file* block_file_get(struct snapraid_block* block)
+{
+	return (struct snapraid_file*)(block->file_mixed & ~(uintptr_t)3);
+}
+
+static inline void block_file_set(struct snapraid_block* block, struct snapraid_file* file)
+{
+	block->file_mixed = (block->file_mixed & ~(uintptr_t)3) | (uintptr_t)file;
+}
+
+static inline int block_flag_has(struct snapraid_block* block, unsigned mask)
+{
+	return (block->file_mixed & mask) == mask;
+}
+
+static inline void block_flag_set(struct snapraid_block* block, unsigned mask)
+{
+	block->file_mixed |= mask;
+}
+
+static inline void block_flag_clear(struct snapraid_block* block, unsigned mask)
+{
+	block->file_mixed &= ~(uintptr_t)mask;
+}
 
 /**
  * Gets the relative position of a block inside the file.
@@ -146,6 +172,21 @@ block_off_t block_file_pos(struct snapraid_block* block);
  * If it's the last block of a file it could be less than block_size.
  */
 unsigned block_file_size(struct snapraid_block* block, unsigned block_size);
+
+static inline int file_flag_has(struct snapraid_file* file, unsigned mask)
+{
+	return (file->flag & mask) == mask;
+}
+
+static inline void file_flag_set(struct snapraid_file* file, unsigned mask)
+{
+	file->flag |= mask;
+}
+
+static inline void file_flag_clear(struct snapraid_file* file, unsigned mask)
+{
+	file->flag &= ~mask;
+}
 
 /**
  * Allocates a file.

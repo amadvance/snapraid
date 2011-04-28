@@ -57,7 +57,7 @@ static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk*
 			struct snapraid_block* oth_block = disk_block_get(oth_disk, block_pos);
 			if (oth_block) {
 				/* remove the parity info for this block */
-				oth_block->flag = bit_clear(oth_block->flag, BLOCK_HAS_PARITY);
+				block_flag_clear(oth_block, BLOCK_HAS_PARITY);
 			}
 		}
 	}
@@ -123,7 +123,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 	file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare, &inode, file_inode_hash(inode));
 	if (file) {
 		/* check if multiple files have the same inode */
-		if (file->is_present) {
+		if (file_flag_has(file, FILE_IS_PRESENT)) {
 			if (st->st_nlink > 1) {
 				printf("warning: Ignored hardlink '/%s'\n", sub);
 				return;
@@ -136,7 +136,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 		/* check if the file is not changed */
 		if (file->size == st->st_size && file->mtime == st->st_mtime) {
 			/* mark as present */
-			file->is_present = 1;
+			file_flag_set(file, FILE_IS_PRESENT);
 
 			/* if the path is different, it means a moved file */
 			if (strcmp(file->sub, sub) != 0) {
@@ -180,7 +180,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 	file = file_alloc(state->block_size, sub, st->st_size, st->st_mtime, st->st_ino);
 
 	/* mark it as present */
-	file->is_present = 1;
+	file_flag_set(file, FILE_IS_PRESENT);
 
 	/* insert it */
 	scan_file_insert(state, disk, file);
@@ -284,7 +284,7 @@ void state_scan(struct snapraid_state* state)
 			node = node->next;
 
 			/* remove if not present */
-			if (!file->is_present) {
+			if (!file_flag_has(file, FILE_IS_PRESENT)) {
 				scan_file_remove(state, disk, file);
 				++scan[i].count_remove;
 			}

@@ -71,7 +71,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 		one_invalid = 0;
 		for(j=0;j<diskmax;++j) {
 			struct snapraid_block* block = disk_block_get(handle[j].disk, i);
-			if (block && !bit_has(block->flag, BLOCK_HAS_HASH | BLOCK_HAS_PARITY)) {
+			if (block && !block_flag_has(block, BLOCK_HAS_HASH | BLOCK_HAS_PARITY)) {
 				one_invalid = 1;
 				break;
 			}
@@ -96,7 +96,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 		one_invalid = 0;
 		for(j=0;j<diskmax;++j) {
 			struct snapraid_block* block = disk_block_get(handle[j].disk, i);
-			if (block && !bit_has(block->flag, BLOCK_HAS_HASH | BLOCK_HAS_PARITY)) {
+			if (block && !block_flag_has(block, BLOCK_HAS_HASH | BLOCK_HAS_PARITY)) {
 				one_invalid = 1;
 				break;
 			}
@@ -119,7 +119,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 				continue;
 			}
 
-			ret = handle_close_if_different(&handle[j], block->file);
+			ret = handle_close_if_different(&handle[j], block_file_get(block));
 			if (ret == -1) {
 				/* This one is really an unexpected error, because we are only reading */
 				/* and closing a descriptor should never fail */
@@ -129,7 +129,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 				goto bail;
 			}
 
-			ret = handle_open(&handle[j], block->file);
+			ret = handle_open(&handle[j], block_file_get(block));
 			if (ret == -1) {
 				if (errno == ENOENT) {
 					fprintf(stderr, "Missing file '%s'.\n", handle[j].path);
@@ -148,9 +148,9 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 			}
 
 			/* check if the file is changed */
-			if (handle[j].st.st_size != block->file->size
-				|| handle[j].st.st_mtime != block->file->mtime
-				|| handle[j].st.st_ino != block->file->inode
+			if (handle[j].st.st_size != block_file_get(block)->size
+				|| handle[j].st.st_mtime != block_file_get(block)->mtime
+				|| handle[j].st.st_ino != block_file_get(block)->inode
 			) {
 				fprintf(stderr, "Unexpected change at file '%s'.\n", handle[j].path);
 				fprintf(stderr, "WARNING! You cannot modify data disk during a sync. Rerun the sync command when finished.\n");
@@ -170,10 +170,10 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 			/* now compute the hash */
 			memhash(state->hash, hash, buffer[j], read_size);
 
-			if (bit_has(block->flag, BLOCK_HAS_HASH)) {
+			if (block_flag_has(block, BLOCK_HAS_HASH)) {
 				/* compare the hash */
 				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
-					fprintf(stderr, "%u: Data error for file %s at position %u\n", i, block->file->sub, block_file_pos(block));
+					fprintf(stderr, "%u: Data error for file %s at position %u\n", i, block_file_get(block)->sub, block_file_pos(block));
 					fprintf(stderr, "DANGER! Unexpected data error in a data disk, it isn't possible to sync.\n");
 					fprintf(stderr, "Stopping to allow recovery. Try with 'snapraid -s %u check'\n", i);
 					++unrecoverable_error;
@@ -219,7 +219,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 			if (!block)
 				continue;
 
-			block->flag = bit_set(block->flag, BLOCK_HAS_HASH | BLOCK_HAS_PARITY);
+			block_flag_set(block, BLOCK_HAS_HASH | BLOCK_HAS_PARITY);
 		}
 
 		/* mark the state as needing write */

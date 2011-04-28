@@ -204,8 +204,8 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 		for(j=0;j<diskmax;++j) {
 			struct snapraid_block* block = disk_block_get(handle[j].disk, i);
 			if (block
-				&& bit_has(block->flag, BLOCK_HAS_HASH) /* only if the block is hashed */
-				&& !block->file->is_excluded /* only if the file is not filtered out */
+				&& block_flag_has(block, BLOCK_HAS_HASH) /* only if the block is hashed */
+				&& !file_flag_has(block_file_get(block), FILE_IS_EXCLUDED) /* only if the file is not filtered out */
 			) {
 				one_tocheck = 1;
 				break;
@@ -234,8 +234,8 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 		for(j=0;j<diskmax;++j) {
 			struct snapraid_block* block = disk_block_get(handle[j].disk, i);
 			if (block
-				&& bit_has(block->flag, BLOCK_HAS_HASH) /* only if the block is hashed */
-				&& !block->file->is_excluded /* only if the file is not filtered out */
+				&& block_flag_has(block, BLOCK_HAS_HASH) /* only if the block is hashed */
+				&& !file_flag_has(block_file_get(block), FILE_IS_EXCLUDED) /* only if the file is not filtered out */
 			) {
 				one_tocheck = 1;
 				break;
@@ -265,17 +265,17 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			/* we try to check and fix only if the block is hashed */
 			/* it could be that a file was added, and not yet synched */
 			/* so we should not include not hashed block in the parity computation */
-			if (!bit_has(block->flag, BLOCK_HAS_HASH)) {
+			if (!block_flag_has(block, BLOCK_HAS_HASH)) {
 				/* use an empty block */
 				memset(buffer[j], 0, state->block_size);
 				continue;
 			}
 
 			/* keep track if at least one hashed block has no parity */
-			if (!bit_has(block->flag, BLOCK_HAS_PARITY))
+			if (!block_flag_has(block, BLOCK_HAS_PARITY))
 				all_parity = 0;
 
-			ret = handle_close_if_different(&handle[j], block->file);
+			ret = handle_close_if_different(&handle[j], block_file_get(block));
 			if (ret == -1) {
 				fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 				fprintf(stderr, "Stopping at block %u\n", i);
@@ -285,7 +285,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 
 			if (fix) {
 				/* if fixing, create the file, open for writing and resize if required */
-				ret = handle_create(&handle[j],  block->file);
+				ret = handle_create(&handle[j],  block_file_get(block));
 				if (ret == -1) {
 					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					fprintf(stderr, "Stopping at block %u\n", i);
@@ -301,7 +301,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 				}
 			} else {
 				/* if checking, open the file for reading */
-				ret = handle_open(&handle[j], block->file);
+				ret = handle_open(&handle[j], block_file_get(block));
 				if (ret == -1) {
 					/* save the failed block for the parity check */
 					if (failed_count < 2) {
@@ -311,17 +311,17 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 					}
 					++failed_count;
 
-					fprintf(stderr, "%u: Open error for file %s at position %u\n", i, block->file->sub, block_file_pos(block));
+					fprintf(stderr, "%u: Open error for file %s at position %u\n", i, block_file_get(block)->sub, block_file_pos(block));
 					++error;
 					continue;
 				}
 
 				/* check if it's a larger file, but not if already notified */
-				if (!block->file->is_larger && handle[j].st.st_size > block->file->size) {
+				if (!file_flag_has(block_file_get(block), FILE_IS_LARGER) && handle[j].st.st_size > block_file_get(block)->size) {
 					fprintf(stderr, "File '%s' is larger than expected.\n", handle->path);
 
 					/* if fragmented, it may be reopened, so store the notification */
-					block->file->is_larger = 1;
+					file_flag_set(block_file_get(block), FILE_IS_LARGER);
 
 					/* this is always a recoverable error */
 					++error;
@@ -338,7 +338,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 				}
 				++failed_count;
 
-				fprintf(stderr, "%u: Read error for file %s at position %u\n", i, block->file->sub, block_file_pos(block));
+				fprintf(stderr, "%u: Read error for file %s at position %u\n", i, block_file_get(block)->sub, block_file_pos(block));
 				++error;
 				continue;
 			}
@@ -356,7 +356,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 				}
 				++failed_count;
 
-				fprintf(stderr, "%u: Data error for file %s at position %u\n", i, block->file->sub, block_file_pos(block));
+				fprintf(stderr, "%u: Data error for file %s at position %u\n", i, block_file_get(block)->sub, block_file_pos(block));
 				++error;
 				continue;
 			}
@@ -438,7 +438,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 					/* update the fixed files */
 					for(j=0;j<failed_count;++j) {
 						/* do not fix if the file filtered out */
-						if (failed[j].block->file->is_excluded)
+						if (file_flag_has(block_file_get(failed[j].block), FILE_IS_EXCLUDED))
 							continue;
 
 						ret = handle_write(failed[j].handle, failed[j].block, buffer[failed[j].index], state->block_size);
@@ -449,7 +449,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 							goto bail;
 						}
 
-						fprintf(stderr, "%u: Fixed data error for file %s at position %u\n", i, failed[j].block->file->sub, block_file_pos(failed[j].block));
+						fprintf(stderr, "%u: Fixed data error for file %s at position %u\n", i, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
 						++recovered_error;
 					}
 

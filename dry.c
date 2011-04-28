@@ -66,7 +66,7 @@ static int state_dry_process(struct snapraid_state* state, int parity_f, int qar
 			if (!block)
 				continue;
 
-			ret = handle_close_if_different(&handle[j], block->file);
+			ret = handle_close_if_different(&handle[j], block_file_get(block));
 			if (ret == -1) {
 				fprintf(stderr, "Stopping at block %u\n", i);
 				++error;
@@ -74,16 +74,16 @@ static int state_dry_process(struct snapraid_state* state, int parity_f, int qar
 			}
 
 			/* open the file for reading */
-			ret = handle_open(&handle[j], block->file);
+			ret = handle_open(&handle[j], block_file_get(block));
 			if (ret == -1) {
-				fprintf(stderr, "%u: Open error for file %s at position %u\n", i, block->file->sub, block_file_pos(block));
+				fprintf(stderr, "%u: Open error for file %s at position %u\n", i, block_file_get(block)->sub, block_file_pos(block));
 				++error;
 				continue;
 			}
 
 			read_size = handle_read(&handle[j], block, buffer, state->block_size);
 			if (read_size == -1) {
-				fprintf(stderr, "%u: Read error for file %s at position %u\n", i, block->file->sub, block_file_pos(block));
+				fprintf(stderr, "%u: Read error for file %s at position %u\n", i, block_file_get(block)->sub, block_file_pos(block));
 				++error;
 				continue;
 			}

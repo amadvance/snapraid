@@ -183,7 +183,7 @@ int filter_path(tommy_list* filterlist, const char* path, int is_dir)
 
 block_off_t block_file_pos(struct snapraid_block* block)
 {
-	struct snapraid_file* file = block->file;
+	struct snapraid_file* file = block_file_get(block);
 
 	if (block < file->blockvec || block >= file->blockvec + file->blockmax) {
 		fprintf(stderr, "Internal inconsistency in block %u ownership\n", block->parity_pos);
@@ -198,11 +198,11 @@ unsigned block_file_size(struct snapraid_block* block, unsigned block_size)
 	block_off_t pos = block_file_pos(block);
 
 	/* if it's the last block */
-	if (pos + 1 == block->file->blockmax) {
+	if (pos + 1 == block_file_get(block)->blockmax) {
 		unsigned remainder;
-		if (block->file->size == 0)
+		if (block_file_get(block)->size == 0)
 			return 0;
-		remainder = block->file->size % block_size;
+		remainder = block_file_get(block)->size % block_size;
 		if (remainder == 0)
 			remainder = block_size;
 		return remainder;
@@ -222,16 +222,14 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t 
 	file->blockmax = (size + block_size - 1) / block_size;
 	file->mtime = mtime;
 	file->inode = inode;
-	file->is_present = 0;
-	file->is_excluded = 0;
-	file->is_larger = 0;
+	file->flag = 0;
 	file->blockvec = malloc_nofail(file->blockmax * sizeof(struct snapraid_block));
 
 	/* set the back pointer */
 	for(i=0;i<file->blockmax;++i) {
 		file->blockvec[i].parity_pos = POS_INVALID;
-		file->blockvec[i].flag = 0;
-		file->blockvec[i].file = file;
+		file->blockvec[i].file_mixed = 0;
+		block_file_set(&file->blockvec[i], file);
 	}
 
 	return file;

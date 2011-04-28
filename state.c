@@ -293,15 +293,15 @@ void state_read(struct snapraid_state* state)
 					exit(EXIT_FAILURE);
 				}
 
-				block->flag = bit_set(block->flag, BLOCK_HAS_HASH);
+				block_flag_set(block, BLOCK_HAS_HASH);
 			}
 
 			/* set the parity only if present */
 			if (tag[0] == 'b') /* blk */
-				block->flag = bit_set(block->flag, BLOCK_HAS_PARITY);
+				block_flag_set(block, BLOCK_HAS_PARITY);
 
 			/* parity implies hash */
-			if (bit_has(block->flag, BLOCK_HAS_PARITY) && !bit_has(block->flag, BLOCK_HAS_HASH)) {
+			if (block_flag_has(block, BLOCK_HAS_PARITY) && !block_flag_has(block, BLOCK_HAS_HASH)) {
 				fprintf(stderr, "Internal inconsistency in 'blk' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -500,13 +500,13 @@ static void state_write_one(struct snapraid_state* state, const char* path, unsi
 				struct snapraid_block* block = &file->blockvec[k];
 				const char* tag;
 
-				if (bit_has(block->flag, BLOCK_HAS_PARITY)) {
+				if (block_flag_has(block, BLOCK_HAS_PARITY)) {
 					tag = "blk";
 				} else {
 					tag = "inv";
 				}
 
-				if (bit_has(block->flag, BLOCK_HAS_HASH)) {
+				if (block_flag_has(block, BLOCK_HAS_HASH)) {
 					char s_hash[HASH_SIZE*2+1];
 					strenchex(s_hash, block->hash, HASH_SIZE);
 					s_hash[HASH_SIZE*2] = 0;
@@ -606,9 +606,11 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist)
 		for(j=tommy_list_head(&disk->filelist);j!=0;j=j->next) {
 			struct snapraid_file* file = j->data;
 
-			file->is_excluded = filter_path(filterlist, file->sub, 0) != 0;
+			if (filter_path(filterlist, file->sub, 0) != 0) {
+				file_flag_set(file, FILE_IS_EXCLUDED);
+			}
 
-			if (state->verbose && !file->is_excluded) {
+			if (state->verbose && !file_flag_has(file, FILE_IS_EXCLUDED)) {
 				printf("Processing file '%s'\n", file->sub);
 			}
 		}
