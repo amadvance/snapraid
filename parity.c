@@ -78,16 +78,16 @@ int parity_create(const char* path, data_off_t size)
 #endif
 		if (ret != 0) {
 			if (errno == ENOSPC) {
-				fprintf(stderr, "Failed to grow parity file '%s' due lack of space.\n", path);
+				fprintf(stderr, "Failed to grow parity file '%s' to size %llu due lack of space.\n", path, size);
 			} else {
-				fprintf(stderr, "Error growing parity file '%s'. %s.\n", path, strerror(errno));
+				fprintf(stderr, "Error growing parity file '%s' to size %llu. Do you have enough space? %s.\n", path, size, strerror(errno));
 			}
 			goto bail;
 		}
 	} else if (st.st_size > size) {
 		ret = ftruncate(f, size);
 		if (ret != 0) {
-			fprintf(stderr, "Error truncating parity file '%s'. %s.\n", path, strerror(errno));
+			fprintf(stderr, "Error truncating parity file '%s' to size %llu. %s.\n", path, size, strerror(errno));
 			goto bail;
 		}
 	}
