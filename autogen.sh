@@ -6,6 +6,10 @@ echo "This may take a while ..."
 # Touch the timestamps on all the files since CVS messes them up
 touch configure.ac
 
+# Touch documentation to avoid it's recreation
+touch snapraid.1
+touch snapraid.txt
+
 # Regenerate configuration files
 aclocal
 automake --add-missing --force-missing
