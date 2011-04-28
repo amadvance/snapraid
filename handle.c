@@ -164,6 +164,12 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 	}
 #endif
 
+	/* return the warning condition of a larger file */
+	if (handle->st.st_size > file->size) {
+		fprintf(stderr, "File '%s' truncated to size %llu.\n", handle->path, file->size);
+		return 1;
+	}
+
 	return 0;
 }
 

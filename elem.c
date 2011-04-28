@@ -224,6 +224,7 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t 
 	file->inode = inode;
 	file->is_present = 0;
 	file->is_excluded = 0;
+	file->is_larger = 0;
 	file->blockvec = malloc_nofail(file->blockmax * sizeof(struct snapraid_block));
 
 	/* set the back pointer */

@@ -178,35 +178,68 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf fix 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf check
 	echo --- Corrupt the parity, fix and check with raid5
-	$(TESTENV) ./mktest$(EXEEXT) damage 1 50 10000 test/parity
+	$(TESTENV) ./mktest$(EXEEXT) damage 1 100 10000 test/parity
 	$(TESTENV) ./snapraid$(EXEEXT) -R -c $(srcdir)/test-raid5.conf check 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid5.conf fix 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf check
 	echo --- Corrupt the parity and the q-parity, fix and check with raid6
-	$(TESTENV) ./mktest$(EXEEXT) damage 1 50 10000 test/parity
-	$(TESTENV) ./mktest$(EXEEXT) damage 1 50 10000 test/q-parity
+	$(TESTENV) ./mktest$(EXEEXT) damage 2 100 10000 test/parity
+	$(TESTENV) ./mktest$(EXEEXT) damage 2 100 10000 test/q-parity
 	$(TESTENV) ./snapraid$(EXEEXT) -R -c $(srcdir)/test-raid6.conf check 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf fix 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf check
 	echo --- Corrupt some files, fix and check with raid5
-	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 500 test/disk2/b*
+	$(TESTENV) ./mktest$(EXEEXT) damage 3 1 500 test/disk2/b*
+	$(TESTENV) ./mktest$(EXEEXT) append 3 500 test/disk2/c*
+	$(TESTENV) ./mktest$(EXEEXT) truncate 3 500 test/disk2/d*
 	$(TESTENV) ./snapraid$(EXEEXT) -R -c $(srcdir)/test-raid5.conf check 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid5.conf fix 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf check
 	echo --- Corrupt some files, fix and check with raid6
-	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 500 test/disk2/_a/_a/*
-	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 500 test/disk3/_a/_a/*
-	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 500 test/disk2/_a/_b/*
-	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 500 test/disk3/_a/_b/*
+	$(TESTENV) ./mktest$(EXEEXT) damage 4 1 500 test/disk2/_a/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) damage 4 1 500 test/disk3/_a/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) damage 4 1 500 test/disk2/_a/_b/*
+	$(TESTENV) ./mktest$(EXEEXT) damage 4 1 500 test/disk3/_a/_b/*
+	$(TESTENV) ./mktest$(EXEEXT) append 4 500 test/disk2/_b/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) append 4 500 test/disk3/_b/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) truncate 4 500 test/disk2/_b/_b/*
+	$(TESTENV) ./mktest$(EXEEXT) truncate 4 500 test/disk3/_b/_b/*
+	$(TESTENV) ./snapraid$(EXEEXT) -U -c $(srcdir)/test-raid5.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -R -c $(srcdir)/test-raid6.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf check
+	echo --- Another time with different values
+	$(TESTENV) ./mktest$(EXEEXT) damage 5 2 50 test/disk2/_a/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) damage 5 2 50 test/disk3/_a/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) append 5 500 test/disk2/_a/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) truncate 5 500 test/disk3/_a/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) damage 5 2 50 test/disk2/_a/_b/*
+	$(TESTENV) ./mktest$(EXEEXT) damage 5 2 50 test/disk3/_a/_b/*
+	$(TESTENV) ./mktest$(EXEEXT) append 5 1500 test/disk2/_b/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) append 5 1500 test/disk3/_b/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) truncate 5 1500 test/disk2/_b/_b/*
+	$(TESTENV) ./mktest$(EXEEXT) truncate 5 1500 test/disk3/_b/_b/*
 	$(TESTENV) ./snapraid$(EXEEXT) -U -c $(srcdir)/test-raid5.conf check 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -R -c $(srcdir)/test-raid6.conf check 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf fix 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf check
 	echo --- Corrupt the parity and some files, fix and check with raid6
-	$(TESTENV) ./mktest$(EXEEXT) damage 1 50 10000 test/parity
-	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 500 test/disk1/_a/_a/*
-	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 500 test/disk1/_a/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) damage 6 100 10000 test/parity
+	$(TESTENV) ./mktest$(EXEEXT) damage 6 1 500 test/disk1/_a/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) damage 6 1 500 test/disk1/_a/_b/*
+	$(TESTENV) ./mktest$(EXEEXT) append 6 500 test/disk1/_b/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) truncate 6 500 test/disk1/_b/_b/*
 	$(TESTENV) ./snapraid$(EXEEXT) -U -c $(srcdir)/test-raid5.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -R -c $(srcdir)/test-raid6.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf check
+	echo --- Corrupt the q-parity and some files, fix and check with raid6
+	$(TESTENV) ./mktest$(EXEEXT) damage 7 100 10000 test/q-parity
+	$(TESTENV) ./mktest$(EXEEXT) damage 7 1 500 test/disk1/_a/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) damage 7 1 500 test/disk1/_a/_b/*
+	$(TESTENV) ./mktest$(EXEEXT) append 7 500 test/disk1/_b/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) truncate 7 500 test/disk1/_b/_b/*
+	$(TESTENV) ./snapraid$(EXEEXT) -R -c $(srcdir)/test-raid5.conf check 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -R -c $(srcdir)/test-raid6.conf check 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf fix 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -c $(srcdir)/test-raid6.conf check

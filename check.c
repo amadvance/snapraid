@@ -34,14 +34,40 @@ struct failed_struct {
 };
 
 /**
+ * Checks if a block hash matches the specified buffer.
+ */
+static int blockcmp(struct snapraid_state* state, struct snapraid_block* block, unsigned char* buffer, unsigned char* buffer_zero)
+{
+	unsigned char hash[HASH_SIZE];
+	unsigned size;
+
+	size = block_file_size(block, state->block_size);
+
+	/* now compute the hash of the valid part */
+	memhash(state->hash, hash, buffer, size);
+
+	/* compare the hash */
+	if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
+		return -1;
+	}
+
+	/* compare to the end of the block */
+	if (size < state->block_size) {
+		if (memcmp(buffer + size, buffer_zero + size, state->block_size - size) != 0) {
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+/**
  * Repair errors.
  * Returns <0 if failure for missing stratey, >0 if data is wrong and we cannot rebuild correctly, 0 on success.
  * If success, the parity and qarity are computed in the buffer variable.
  */
 static int repair(struct snapraid_state* state, unsigned i, unsigned diskmax, struct failed_struct* failed, unsigned failed_count, unsigned char** buffer, unsigned char* buffer_parity, unsigned char* buffer_qarity, unsigned char* buffer_zero)
 {
-	unsigned char hash[HASH_SIZE];
-	unsigned size;
 	unsigned j;
 	int error = 0;
 
@@ -60,15 +86,8 @@ static int repair(struct snapraid_state* state, unsigned i, unsigned diskmax, st
 		raid5_recov_data(buffer, diskmax, state->block_size, failed[0].index);
 
 		for(j=0;j<1;++j) {
-			size = block_file_size(failed[j].block, state->block_size);
-
-			/* now compute the hash */
-			memhash(state->hash, hash, buffer[failed[j].index], size);
-
-			/* compare the hash */
-			if (memcmp(hash, failed[j].block->hash, HASH_SIZE) != 0) {
-				break;
-			}
+			if (blockcmp(state, failed[j].block, buffer[failed[j].index], buffer_zero) != 0) 
+				break; 
 		}
 
 		if (j==1) {
@@ -89,15 +108,8 @@ static int repair(struct snapraid_state* state, unsigned i, unsigned diskmax, st
 		raid6_recov_datap(buffer, diskmax, state->block_size, failed[0].index, buffer_zero);
 
 		for(j=0;j<1;++j) {
-			size = block_file_size(failed[j].block, state->block_size);
-
-			/* now compute the hash */
-			memhash(state->hash, hash, buffer[failed[j].index], size);
-
-			/* compare the hash */
-			if (memcmp(hash, failed[j].block->hash, HASH_SIZE) != 0) {
-				break;
-			}
+			if (blockcmp(state, failed[j].block, buffer[failed[j].index], buffer_zero) != 0) 
+				break; 
 		}
 
 		if (j==1) {
@@ -120,15 +132,8 @@ static int repair(struct snapraid_state* state, unsigned i, unsigned diskmax, st
 		raid6_recov_2data(buffer, diskmax, state->block_size, failed[0].index, failed[1].index, buffer_zero);
 
 		for(j=0;j<2;++j) {
-			size = block_file_size(failed[j].block, state->block_size);
-
-			/* now compute the hash */
-			memhash(state->hash, hash, buffer[failed[j].index], size);
-
-			/* compare the hash */
-			if (memcmp(hash, failed[j].block->hash, HASH_SIZE) != 0) {
-				break;
-			}
+			if (blockcmp(state, failed[j].block, buffer[failed[j].index], buffer_zero) != 0) 
+				break; 
 		}
 
 		if (j==2) {
@@ -279,13 +284,20 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			}
 
 			if (fix) {
-				/* if fixing, create the file and open for writing */
+				/* if fixing, create the file, open for writing and resize if required */
 				ret = handle_create(&handle[j],  block->file);
 				if (ret == -1) {
 					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					fprintf(stderr, "Stopping at block %u\n", i);
 					++unrecoverable_error;
 					goto bail;
+				}
+
+				/* notify the warning condition of a file larger than expected */
+				if (ret > 0) {
+					error += ret;
+					/* this is always a recovered error */
+					recovered_error += ret;
 				}
 			} else {
 				/* if checking, open the file for reading */
@@ -302,6 +314,17 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 					fprintf(stderr, "%u: Open error for file %s at position %u\n", i, block->file->sub, block_file_pos(block));
 					++error;
 					continue;
+				}
+
+				/* check if it's a larger file, but not if already notified */
+				if (!block->file->is_larger && handle[j].st.st_size > block->file->size) {
+					fprintf(stderr, "File '%s' is larger than expected.\n", handle->path);
+
+					/* if fragmented, it may be reopened, so store the notification */
+					block->file->is_larger = 1;
+
+					/* this is always a recoverable error */
+					++error;
 				}
 			}
 

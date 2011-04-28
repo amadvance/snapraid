@@ -123,6 +123,9 @@ void damage(const char* path, int size)
 	off_t start;
 	int count;
 
+	if (!size)
+		return;
+
 	f = fopen(path, "r+b");
 	if (!f) {
 		fprintf(stderr, "Error writing %s\n", path);
@@ -135,7 +138,10 @@ void damage(const char* path, int size)
 	}
 
 	/* start at random position inside the file */
-	start = rnd(st.st_size);
+	if (st.st_size)
+		start = rnd(st.st_size);
+	else
+		start = 0;
 	if (fseek(f, start, SEEK_SET) != 0) {
 		fprintf(stderr, "Error seeking %s\n", path);
 		exit(EXIT_FAILURE);
@@ -151,12 +157,74 @@ void damage(const char* path, int size)
 	fclose(f);
 }
 
+void append(const char* path, int size)
+{
+	FILE* f;
+	int count;
+
+	if (!size)
+		return;
+
+	f = fopen(path, "ab");
+	if (!f) {
+		fprintf(stderr, "Error appending %s\n", path);
+		exit(EXIT_FAILURE);
+	}
+
+	/* write garbage, in case also over the end */
+	count = rnd(size);
+	while (count) {
+		fputc(rnd(256), f);
+		--count;
+	}
+
+	fclose(f);
+}
+
+void truncat(const char* path, int size)
+{
+	FILE* f;
+	struct stat st;
+	off_t start;
+	int count;
+
+	if (!size)
+		return;
+
+	f = fopen(path, "r+b");
+	if (!f) {
+		fprintf(stderr, "Error writing %s\n", path);
+		exit(EXIT_FAILURE);
+	}
+
+	if (fstat(fileno(f), &st) != 0) {
+		fprintf(stderr, "Error accessing %s\n", path);
+		exit(EXIT_FAILURE);
+	}
+
+	/* truncate at random position inside the file */
+	count = rnd(size);
+	if (count > st.st_size)
+		count = st.st_size;
+	start = st.st_size - count;
+    
+	if (ftruncate(fileno(f), start) != 0) {
+		fprintf(stderr, "Error truncating %s\n", path);
+		exit(EXIT_FAILURE);
+	}
+
+	fclose(f);
+}
+
+
 void help(void)
 {
 	printf("Test for " PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
 	printf("Usage:\n");
 	printf("\tmktest generate SEED DISK_NUM FILE_NUM FILE_SIZE\n");
 	printf("\tmktest damage SEED FAIL_NUM FAIL_SIZE FILE\n");
+	printf("\tmktest append SEED FAIL_SIZE FILE\n");
+	printf("\tmktest truncate SEED FAIL_SIZE FILE\n");
 }
 
 int main(int argc, char* argv[])
@@ -207,6 +275,34 @@ int main(int argc, char* argv[])
 			for(j=0;j<fail;++j) {
 				damage(argv[i], rnd(size));
 			}
+		}
+	} else if (strcmp(argv[1], "append") == 0) {
+		int size;
+
+		if (argc < 5) {
+			help();
+			exit(EXIT_FAILURE);
+		}
+
+		seed = atoi(argv[2]);
+		size = atoi(argv[3]);
+
+		for(i=4;i<argc;++i) {
+			append(argv[i], rnd(size));
+		}
+	} else if (strcmp(argv[1], "truncate") == 0) {
+		int size;
+
+		if (argc < 5) {
+			help();
+			exit(EXIT_FAILURE);
+		}
+
+		seed = atoi(argv[2]);
+		size = atoi(argv[3]);
+
+		for(i=4;i<argc;++i) {
+			truncat(argv[i], rnd(size));
 		}
 	} else {
 		help();

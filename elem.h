@@ -90,6 +90,7 @@ struct snapraid_file {
 	uint64_t inode; /**< Inode. */
 	int is_present; /**< If it's seen as present. */
 	int is_excluded; /**< If it's an excluded file from the processing. */
+	int is_larger; /**< If a larger file was already detected. */
 	/* nodes for data structures */
 	tommy_node nodelist;
 	tommy_hashdyn_node nodeset;
