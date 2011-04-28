@@ -1,4 +1,4 @@
-0/*
+/*
  * Copyright (C) 2011 Andrea Mazzoleni
  *
  * This program is free software: you can redistribute it and/or modify
