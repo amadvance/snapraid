@@ -85,7 +85,7 @@ void speed(void)
 		}
 	} SPEED_STOP
 
-	printf("memset %llu [MB/s]\n", ds / dt);
+	printf("memset %"PRIu64" [MB/s]\n", ds / dt);
 
 	SPEED_START {
 		for(j=0;j<diskmax;++j) {
@@ -93,7 +93,7 @@ void speed(void)
 		}
 	} SPEED_STOP
 
-	printf("MD5 %llu [MB/s]\n", ds / dt);
+	printf("MD5 %"PRIu64" [MB/s]\n", ds / dt);
 
 	SPEED_START {
 		for(j=0;j<diskmax;++j) {
@@ -101,14 +101,14 @@ void speed(void)
 		}
 	} SPEED_STOP
 
-	printf("Murmur3 %llu [MB/s]\n", ds / dt);
+	printf("Murmur3 %"PRIu64" [MB/s]\n", ds / dt);
 
 	count = 0;
 	SPEED_START {
 		raid5_int32r2(buffer, diskmax, block_size);
 	} SPEED_STOP
 
-	printf("RAID5 int32x2 %llu [MB/s]\n", ds / dt);
+	printf("RAID5 int32x2 %"PRIu64" [MB/s]\n", ds / dt);
 
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_mmx()) {
@@ -116,7 +116,7 @@ void speed(void)
 			raid5_mmxr2(buffer, diskmax, block_size);
 		} SPEED_STOP
 
-		printf("RAID5 mmxx2 %llu [MB/s]\n", ds / dt);
+		printf("RAID5 mmxx2 %"PRIu64" [MB/s]\n", ds / dt);
 	}
 
 	if (cpu_has_sse2()) {
@@ -124,7 +124,7 @@ void speed(void)
 			raid5_sse2r2(buffer, diskmax, block_size);
 		} SPEED_STOP
 
-		printf("RAID5 sse2x2 %llu [MB/s]\n", ds / dt);
+		printf("RAID5 sse2x2 %"PRIu64" [MB/s]\n", ds / dt);
 	}
 #endif
 
@@ -132,7 +132,7 @@ void speed(void)
 		raid6_int32r2(buffer, diskmax, block_size);
 	} SPEED_STOP
 
-	printf("RAID6 int32x2 %llu [MB/s]\n", ds / dt);
+	printf("RAID6 int32x2 %"PRIu64" [MB/s]\n", ds / dt);
 
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_mmx()) {
@@ -140,7 +140,7 @@ void speed(void)
 			raid6_mmxr2(buffer, diskmax, block_size);
 		} SPEED_STOP
 
-		printf("RAID6 mmxx2 %llu [MB/s]\n", ds / dt);
+		printf("RAID6 mmxx2 %"PRIu64" [MB/s]\n", ds / dt);
 	}
 
 	if (cpu_has_sse2()) {
@@ -148,7 +148,7 @@ void speed(void)
 			raid6_sse2r2(buffer, diskmax, block_size);
 		} SPEED_STOP
 
-		printf("RAID6 sse2x2 %llu [MB/s]\n", ds / dt);
+		printf("RAID6 sse2x2 %"PRIu64" [MB/s]\n", ds / dt);
 	}
 #endif
 

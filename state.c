@@ -489,7 +489,7 @@ static void state_write_one(struct snapraid_state* state, const char* path, unsi
 			mtime = file->mtime;
 			inode = file->inode,
 
-			ret = fprintf(f,"file %s %llu %llu %llu %s\n", disk->name, size, mtime, inode, file->sub);
+			ret = fprintf(f,"file %s %"PRIu64" %"PRIu64" %"PRIu64" %s\n", disk->name, size, mtime, inode, file->sub);
 			if (ret < 0) {
 				fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", tmp, strerror(errno));
 				exit(EXIT_FAILURE);

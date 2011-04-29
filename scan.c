@@ -128,7 +128,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 				printf("warning: Ignored hardlink '/%s'\n", sub);
 				return;
 			} else {
-				fprintf(stderr, "Internal inode '%llu' inconsistency for file '%s'\n", inode, sub);
+				fprintf(stderr, "Internal inode '%"PRIu64"' inconsistency for file '%s'\n", inode, sub);
 				exit(EXIT_FAILURE);
 			}
 		}
