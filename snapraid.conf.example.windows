@@ -1,0 +1,44 @@
+# Example configuration for snapraid for Windows
+
+# Defines the file to use as Parity storage
+# It must NOT be in a data disk
+# Format: "parity FILE_PATH"
+parity E:\par\parity
+
+# Defines the file to use as Q-Parity storage
+# If specified, it enables a double failures protection like RAID6
+# It must NOT be in a data disk
+# Format: "q-parity FILE_PATH"
+#q-parity F:\qar\q-parity
+
+# Defines the file to use as content list
+# You can use multiple specification to store more copies of the file
+# It's suggested to have at least N+1 copies of the file, where N is the number of parity files.
+# It must NOT be in a data disk
+# It can be in the disks used for parity storage
+# Format: "content FILE_PATH"
+content E:\par\content
+#content F:\qar\content
+content C:\snapraid\content
+
+# Defines the data disks to use
+# The order is relevant for parity, do not change it
+# Format: "disk DISK_NAME DISK_MOUNT_POINT"
+disk d1 G:\array\
+disk d2 H:\array\
+disk d3 I:\array\
+
+# Defines files and directories to exclude
+# Remember to use the forward slash -> /
+# Format: "exclude FILE"
+# Format: "exclude DIR/"
+# Format: "exclude /PATH/FILE"
+# Format: "exclude /PATH/DIR/"
+exclude *.bak
+exclude tmp/
+
+# Defines the block size in kibi bytes (1024 bytes).
+# Default value is 256 -> 256 kibi bytes -> 262144 bytes
+# Format: "block_size SIZE_IN_KiB"
+block_size 256
+

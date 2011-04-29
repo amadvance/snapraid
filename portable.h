@@ -142,7 +142,7 @@ struct windows_stat {
 static inline void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, struct windows_stat* st)
 {
 	/* Convert special attributes to a char device */
-	if ((info->dwFileAttributes & (FILE_ATTRIBUTE_DEVICE | FILE_ATTRIBUTE_TEMPORARY | FILE_ATTRIBUTE_OFFLINE | FILE_ATTRIBUTE_VIRTUAL | FILE_ATTRIBUTE_REPARSE_POINT)) != 0) {
+	if ((info->dwFileAttributes & (FILE_ATTRIBUTE_DEVICE | FILE_ATTRIBUTE_TEMPORARY | FILE_ATTRIBUTE_OFFLINE | FILE_ATTRIBUTE_REPARSE_POINT)) != 0) {
 		st->st_mode = S_IFCHR;
 	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
 		st->st_mode = S_IFDIR;

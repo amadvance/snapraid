@@ -299,7 +299,7 @@ DISTWIN = \
 	snapraid.txt \
 	snapraid.exe
 
-distwindows: $(DISTWIN)
+distwindows-x86: $(DISTWIN)
 	rm -f $(PACKAGE)-$(VERSION)-windows-x86.zip
 	mkdir tmp
 	cp $(DISTWIN) tmp
@@ -311,5 +311,19 @@ distwindows: $(DISTWIN)
 	cp COPYING tmp/copying.txt
 	cp TODO tmp/todo.txt
 	cd tmp && zip -r ../$(PACKAGE)-$(VERSION)-windows-x86.zip *
+	rm -r tmp
+
+distwindows-x64: $(DISTWIN)
+	rm -f $(PACKAGE)-$(VERSION)-windows-x64.zip
+	mkdir tmp
+	cp $(DISTWIN) tmp
+	cp snapraid.conf.example.windows tmp/snapraid.conf.example
+	cp INSTALL.windows tmp/install.txt
+	cp README tmp/readme.txt
+	cp AUTHORS tmp/authors.txt
+	cp HISTORY tmp/history.txt
+	cp COPYING tmp/copying.txt
+	cp TODO tmp/todo.txt
+	cd tmp && zip -r ../$(PACKAGE)-$(VERSION)-windows-x64.zip *
 	rm -r tmp
 
