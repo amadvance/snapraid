@@ -78,7 +78,7 @@ amount of the changed or deleted files, from the last sync operation.
 This happens even if the files changed or deleted are not in the
 failed disk.
 New added files don\(cqt prevent the recovering of the already existing
-files. You may only lose the just added files, if they were on the failed
+files. You may only lose the just added files, if they are on the failed
 disk.
 .PP
 This is the reason because SnapRAID is better suited for data that
@@ -99,10 +99,6 @@ With RAID you do not have to stop working when a disk fails.
 It\(cqs able to recover damages only from up to two disks.
 With a Backup you are able to recover from a complete
 failure of the whole disk array.
-.IP \(bu
-It identifies changes checking file time and size. If you have
-a program that arbitrarily restore the file time, such changes
-are not detected if the size doesn\(cqt change.
 .IP \(bu
 Only the file data is saved. Permissions, time, extended attributes,
 hard\(hylinks, symbolic\(hylinks are not saved.
@@ -372,20 +368,20 @@ it doesn\(cqt get fragmented, improving the performance.
 This option is optional and it can be used only one time.
 .TP
 .B content FILE
-Defines the file to use to store the list and checksum of the
-content of your disk array.
-It can be placed in the same disk of the parity and q\(hyaparity file,
-or better in another disk, but NOT in a data disk of the array.
+Defines the file to use to store the list and checksums of all the
+files present in your disk array.
+It can be placed in the same disk of the parity and q\(hyaparity files,
+but NOT in a data disk of the array.
 This option is mandatory and it can be used more time to save
 more copies of the same files.
 It\(cqs suggested to store at least one copy for each parity disk.
 One more doesn\(cqt hurt, just in case you lose all the parity disks,
-and you to be still able to check the data integrity.
+and you want to be still able to check the data integrity.
 .TP
 .B disk NAME DIR
 Defines the name and the mount point of the disks of the array.
 NAME is used to identify the disk, and it must be unique.
-DIR is the mount point of the disk in the file\(hysystem.
+DIR is the mount point of the disk in the filesystem.
 You can change the mount point as you like, as long you
 keep the NAME fixed.
 The specification order is also important, if you change it,
@@ -397,8 +393,9 @@ You should use one option for each disk of the array.
 .B include PATTERN
 Defines the file or directory patterns to exclude and include
 in the sync process.
-All the patterns are processed in the specified order, and
-we get the result of the first pattern that matches.
+All the patterns are processed in the specified order.
+If the first pattern that matches is an \(a"exclude\(a" one, the file
+is excluded. If it\(cqs an \(a"include\(a" one the file is included.
 If no pattern matches, the file is excluded if the last pattern
 is an \(a"include\(a", or included if the last pattern is an \(a"exclude\(a".
 See the PATTERN section for more details in the
@@ -406,8 +403,8 @@ pattern specifications.
 This option can be used many times.
 .TP
 .B block_size SIZE_IN_KIBIBYTES
-Defines the basic block size in kibi bytes of
-the redundancy blocks. Where one kibi bytes is 1024 bytes.
+Defines the basic block size in kibi bytes of the redundancy
+blocks. Where one kibi bytes is 1024 bytes.
 The default is 256 and it should work for most conditions.
 You could increase this value if you do not have enough RAM
 memory to run SnapRAID.
@@ -629,17 +626,19 @@ SnapRAID stores the list and checksums of your files in the content file.
 .PP
 It\(cqs a text file, listing all the files present in your disk array,
 with all the checksums to verify their integrity.
+.PP
 You do not need to understand its format, but it\(cqs described here
 for documentation.
 .PP
 This file is read and written by the \(a"sync\(a" command, and only read by
 \(a"fix\(a" and \(a"check\(a".
-You should never change it manually, although the format of this file
-is described here.
 .TP
 .B blk_size SIZE
 Defines the size of the block in bytes. It must match the size
 defined in the configuration file.
+.TP
+.B checksum CHECKSUM
+Defines the checksum kind used. It can be \(a"md5\(a" or \(a"murmur3\(a".
 .TP
 .B file DISK SIZE TIME INODE PATH
 Defines a file in the specified DISK.
@@ -670,6 +669,7 @@ and q\(hyparity files.
 .PP
 They are binary files, containing the computed redundancy of all the
 blocks defined in the \(a"content\(a" file.
+.PP
 You do not need to understand its format, but it\(cqs described here
 for documentation.
 .PP

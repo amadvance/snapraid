@@ -3,7 +3,7 @@ SnapRAID INSTALL for Windows
 
 To start using SnapRAID you have to change the example configuration
 file snapraid.conf.example to fit your needs and copy it with the
-name snapraid.conf in the directory where you executes snapraid.exe.
+name snapraid.conf in the directory where you run snapraid.exe.
 
 To get more help, see the "Getting Started" section in snapraid.txt.
 

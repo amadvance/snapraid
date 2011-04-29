@@ -3,15 +3,19 @@ SnapRAID HISTORY
 
 1.1 2011/5
 ==========
-* Fixed a bug in check when detecting garbage data over the expected end of the file.
-* Added RAID6 support and allow to specify multiple content files.
-* Added filtering include logic, where anything not explicitely included is excluded.
+* Fixed a bug in the check command when detecting garbage data over the
+  expected end of the file. No special action is required to update.
+* Added RAID6 support, and allow to specify multiple content files.
+* Added a filtering include logic, where anything not explicitely included
+  is excluded.
 * Changed the default checksum to Murmur3 hash. It's a lot faster than MD5.
+  You can check the speed with the "snapraid -T" command.
   MD5 is still supported for backward compatibility.
 * The check command returns with an error code if any kind of error is present.
-  Previously it was only if unrecoverable errors were present.
-* Opening the files in sequential mode in Windows. This should give
-  a light speedup in Windows.
+  Previously it was returning an error only if unrecoverable errors were
+  present.
+* Opening the files in sequential mode in Windows. This should give a light
+  speedup in Windows.
 
 1.0 2011/4
 ==========

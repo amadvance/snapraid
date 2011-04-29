@@ -59,7 +59,7 @@ amount of the changed or deleted files, from the last sync operation.
 This happens even if the files changed or deleted are not in the
 failed disk.
 New added files don't prevent the recovering of the already existing
-files. You may only lose the just added files, if they were on the failed
+files. You may only lose the just added files, if they are on the failed
 disk.
 
 This is the reason because SnapRAID is better suited for data that
@@ -76,9 +76,6 @@ Other limitations are:
 * It's able to recover damages only from up to two disks.
   With a Backup you are able to recover from a complete
   failure of the whole disk array.
-* It identifies changes checking file time and size. If you have
-  a program that arbitrarily restore the file time, such changes
-  are not detected if the size doesn't change.
 * Only the file data is saved. Permissions, time, extended attributes,
   hard-links, symbolic-links are not saved.
 
@@ -289,20 +286,20 @@ It should contains the following options:
         This option is optional and it can be used only one time.
 
     content FILE
-        Defines the file to use to store the list and checksum of the
-        content of your disk array.
-        It can be placed in the same disk of the parity and q-aparity file,
-        or better in another disk, but NOT in a data disk of the array.
+        Defines the file to use to store the list and checksums of all the
+        files present in your disk array.
+        It can be placed in the same disk of the parity and q-aparity files,
+        but NOT in a data disk of the array.
         This option is mandatory and it can be used more time to save
         more copies of the same files.
         It's suggested to store at least one copy for each parity disk.
         One more doesn't hurt, just in case you lose all the parity disks,
-        and you to be still able to check the data integrity.
+        and you want to be still able to check the data integrity.
 
     disk NAME DIR
         Defines the name and the mount point of the disks of the array.
         NAME is used to identify the disk, and it must be unique.
-        DIR is the mount point of the disk in the file-system.
+        DIR is the mount point of the disk in the filesystem.
         You can change the mount point as you like, as long you
         keep the NAME fixed.
         The specification order is also important, if you change it,
@@ -313,8 +310,9 @@ It should contains the following options:
     include PATTERN
         Defines the file or directory patterns to exclude and include
         in the sync process.
-        All the patterns are processed in the specified order, and
-        we get the result of the first pattern that matches.
+        All the patterns are processed in the specified order.
+        If the first pattern that matches is an "exclude" one, the file
+        is excluded. If it's an "include" one the file is included.
         If no pattern matches, the file is excluded if the last pattern
         is an "include", or included if the last pattern is an "exclude".
         See the PATTERN section for more details in the
@@ -322,8 +320,8 @@ It should contains the following options:
         This option can be used many times.
 
     block_size SIZE_IN_KIBIBYTES
-        Defines the basic block size in kibi bytes of
-        the redundancy blocks. Where one kibi bytes is 1024 bytes.
+        Defines the basic block size in kibi bytes of the redundancy
+        blocks. Where one kibi bytes is 1024 bytes.
         The default is 256 and it should work for most conditions.
         You could increase this value if you do not have enough RAM
         memory to run SnapRAID.
@@ -442,17 +440,19 @@ SnapRAID stores the list and checksums of your files in the content file.
 
 It's a text file, listing all the files present in your disk array,
 with all the checksums to verify their integrity.
+
 You do not need to understand its format, but it's described here
 for documentation.
 
 This file is read and written by the "sync" command, and only read by
 "fix" and "check".
-You should never change it manually, although the format of this file
-is described here.
 
     blk_size SIZE
         Defines the size of the block in bytes. It must match the size
         defined in the configuration file.
+
+    checksum CHECKSUM
+        Defines the checksum kind used. It can be "md5" or "murmur3".
 
     file DISK SIZE TIME INODE PATH
         Defines a file in the specified DISK.
@@ -487,6 +487,7 @@ and q-parity files.
 
 They are binary files, containing the computed redundancy of all the
 blocks defined in the "content" file.
+
 You do not need to understand its format, but it's described here
 for documentation.
 
