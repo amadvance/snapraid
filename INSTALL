@@ -6,7 +6,7 @@ As root or user type:
     ./configure
     make
 
-When you have to check for correctness the application simply typing:
+When you have to check for correctness the application typing:
 
     make check
 
@@ -19,7 +19,7 @@ To start using SnapRAID you have to change the example configuration
 file snapraid.conf.example to fit your needs and copy it in /etc/snapraid.conf
 
 To get more help, see the "Getting Started" section in the snapraid manpage
-simply typing:
+typing:
 
     man snapraid
 

@@ -22,6 +22,33 @@
 #include "raid.h"
 #include "cpu.h"
 
+/**
+ * Differential us of two timeval.
+ */
+static int64_t diffgettimeofday(struct timeval* start, struct timeval* stop)
+{
+	return 1000000LL * (stop->tv_sec - start->tv_sec) + stop->tv_usec - start->tv_usec;
+}
+
+/**
+ * Start time measurement.
+ */
+#define SPEED_START \
+	count = 0; \
+	gettimeofday(&start, 0); \
+	do { \
+		for(i=0;i<delta;++i)
+
+/**
+ * Stop time measurement.
+ */
+#define SPEED_STOP \
+		count += delta; \
+		gettimeofday(&stop, 0); \
+	} while (diffgettimeofday(&start, &stop) < 1000000LL); \
+	ds = block_size * (int64_t)count * diskmax; \
+	dt = diffgettimeofday(&start, &stop);
+
 void speed(void)
 {
 	struct timeval start;
@@ -31,7 +58,8 @@ void speed(void)
 	unsigned i, j;
 	unsigned char digest[HASH_SIZE];
 
-	unsigned count = 5000;
+	unsigned count;
+	unsigned delta = 100;
 	unsigned block_size = 256 * 1024;
 	unsigned diskmax = 4;
 	void* buffer_alloc;
@@ -51,118 +79,74 @@ void speed(void)
 
 	printf("Speed test with %d disk and %d buffer size...\n", diskmax, block_size);
 
-	gettimeofday(&start, 0);
-	for(i=0;i<count;++i) {
+	SPEED_START {
 		for(j=0;j<diskmax;++j) {
 			memset(buffer[j], j, block_size);
 		}
-	}
-	gettimeofday(&stop, 0);
-
-	ds = block_size * (int64_t)count * diskmax;
-	dt = (int64_t)1000000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec);
+	} SPEED_STOP
 
 	printf("memset %llu [MB/s]\n", ds / dt);
 
-	gettimeofday(&start, 0);
-	for(i=0;i<count;++i) {
+	SPEED_START {
 		for(j=0;j<diskmax;++j) {
 			memhash(HASH_MD5, digest, buffer[j], block_size);
 		}
-	}
-	gettimeofday(&stop, 0);
-
-	ds = block_size * (int64_t)count * diskmax;
-	dt = (int64_t)1000000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec);
+	} SPEED_STOP
 
 	printf("MD5 %llu [MB/s]\n", ds / dt);
 
-	gettimeofday(&start, 0);
-	for(i=0;i<count;++i) {
+	SPEED_START {
 		for(j=0;j<diskmax;++j) {
 			memhash(HASH_MURMUR3, digest, buffer[j], block_size);
 		}
-	}
-	gettimeofday(&stop, 0);
-
-	ds = block_size * (int64_t)count * diskmax;
-	dt = (int64_t)1000000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec);
+	} SPEED_STOP
 
 	printf("Murmur3 %llu [MB/s]\n", ds / dt);
 
-	gettimeofday(&start, 0);
-	for(j=0;j<count;++j) {
+	count = 0;
+	SPEED_START {
 		raid5_int32r2(buffer, diskmax, block_size);
-	}
-	gettimeofday(&stop, 0);
-
-	ds = block_size * (int64_t)count * diskmax;
-	dt = (int64_t)1000000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec);
+	} SPEED_STOP
 
 	printf("RAID5 int32x2 %llu [MB/s]\n", ds / dt);
 
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_mmx()) {
-		gettimeofday(&start, 0);
-		for(j=0;j<count;++j) {
+		SPEED_START {
 			raid5_mmxr2(buffer, diskmax, block_size);
-		}
-		gettimeofday(&stop, 0);
-
-		ds = block_size * (int64_t)count * diskmax;
-		dt = (int64_t)1000000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec);
+		} SPEED_STOP
 
 		printf("RAID5 mmxx2 %llu [MB/s]\n", ds / dt);
 	}
 
 	if (cpu_has_sse2()) {
-		gettimeofday(&start, 0);
-		for(j=0;j<count;++j) {
+		SPEED_START {
 			raid5_sse2r2(buffer, diskmax, block_size);
-		}
-		gettimeofday(&stop, 0);
-
-		ds = block_size * (int64_t)count * diskmax;
-		dt = (int64_t)1000000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec);
+		} SPEED_STOP
 
 		printf("RAID5 sse2x2 %llu [MB/s]\n", ds / dt);
 	}
 #endif
 
-	gettimeofday(&start, 0);
-	for(j=0;j<count;++j) {
+	SPEED_START {
 		raid6_int32r2(buffer, diskmax, block_size);
-	}
-	gettimeofday(&stop, 0);
-
-	ds = block_size * (int64_t)count * diskmax;
-	dt = (int64_t)1000000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec);
+	} SPEED_STOP
 
 	printf("RAID6 int32x2 %llu [MB/s]\n", ds / dt);
 
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_mmx()) {
-		gettimeofday(&start, 0);
-		for(j=0;j<count;++j) {
+		SPEED_START {
 			raid6_mmxr2(buffer, diskmax, block_size);
-		}
-		gettimeofday(&stop, 0);
-
-		ds = block_size * (int64_t)count * diskmax;
-		dt = (int64_t)1000000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec);
+		} SPEED_STOP
 
 		printf("RAID6 mmxx2 %llu [MB/s]\n", ds / dt);
 	}
 
 	if (cpu_has_sse2()) {
-		gettimeofday(&start, 0);
-		for(j=0;j<count;++j) {
+		SPEED_START {
 			raid6_sse2r2(buffer, diskmax, block_size);
-		}
-		gettimeofday(&stop, 0);
-
-		ds = block_size * (int64_t)count * diskmax;
-		dt = (int64_t)1000000 * (stop.tv_sec - start.tv_sec) + (stop.tv_usec - start.tv_usec);
+		} SPEED_STOP
 
 		printf("RAID6 sse2x2 %llu [MB/s]\n", ds / dt);
 	}
