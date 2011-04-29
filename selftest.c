@@ -244,9 +244,9 @@ void selftest(void)
 
 	hashtest();
 
-	for(i=1;i<19;++i) {
-		raid5test(i, 4096);
-		raid6test(i, 4096);
+	for(i=1;i<=33;++i) {
+		raid5test(i, 2048);
+		raid6test(i, 2048);
 	}
 }
 

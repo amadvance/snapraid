@@ -62,21 +62,23 @@ void usage(void)
 struct option long_options[] = {
 	{ "conf", 1, 0, 'c' },
 	{ "filter", 1, 0, 'f' },
-	{ "force-zero", 0, 0, 'Z' },
-	{ "force-empty", 0, 0, 'E' },
 	{ "start", 1, 0, 's' },
 	{ "count", 1, 0, 't' },
+	{ "force-zero", 0, 0, 'Z' },
+	{ "force-empty", 0, 0, 'E' },
+	{ "skip-self-test", 0, 0, 'S' },
+	{ "expect-unrecoverable", 0, 0, 'U' },
+	{ "expect-recoverable", 0, 0, 'R' },
 	{ "speed-test", 0, 0, 'T' },
 	{ "verbose", 0, 0, 'v' },
 	{ "help", 0, 0, 'h' },
 	{ "version", 0, 0, 'V' },
-	{ "expect-unrecoverable", 0, 0, 'U' },
-	{ "expect-recoverable", 0, 0, 'R' },
+
 	{ 0, 0, 0, 0 }
 };
 #endif
 
-#define OPTIONS "c:f:s:t:ZEURTvhV"
+#define OPTIONS "c:f:s:t:ZESURTvhV"
 
 volatile int global_interrupt = 0;
 
@@ -102,6 +104,7 @@ int main(int argc, char* argv[])
 	int force_empty;
 	int expect_unrecoverable;
 	int expect_recoverable;
+	int skip_self_test;
 	const char* conf;
 	struct snapraid_state state;
 	int operation;
@@ -117,6 +120,7 @@ int main(int argc, char* argv[])
 	force_empty = 0;
 	expect_unrecoverable = 0;
 	expect_recoverable = 0;
+	skip_self_test = 0;
 	blockstart = 0;
 	blockcount = 0;
 	tommy_list_init(&filterlist);
@@ -158,6 +162,9 @@ int main(int argc, char* argv[])
 			break;
 		case 'E' :
 			force_empty = 1;
+			break;
+		case 'S' :
+			skip_self_test = 1;
 			break;
 		case 'U' :
 			expect_unrecoverable = 1;
@@ -203,7 +210,8 @@ int main(int argc, char* argv[])
 
 	raid_init();
 
-	selftest();
+	if (!skip_self_test)
+		selftest();
 
 	state_init(&state);
 
