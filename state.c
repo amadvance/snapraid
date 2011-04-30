@@ -195,24 +195,44 @@ void state_read(struct snapraid_state* state)
 	unsigned line;
 	unsigned count_file;
 	unsigned count_block;
-	struct snapraid_content* content;
+	tommy_node* node;
 
 	count_file = 0;
 	count_block = 0;
 
-	content = tommy_list_head(&state->contentlist)->data;
-	pathcpy(path, sizeof(path), content->content);
+	/* iterate over all the available content files and load the first one present */
+	f = 0;
+	node = tommy_list_head(&state->contentlist);
+	while (node) {
+		struct snapraid_content* content = node->data;
+		pathcpy(path, sizeof(path), content->content);
 
-	printf("Loading state from %s...\n", path);
+		printf("Loading state from %s...\n", path);
 
-	f = fopen(path, "rt");
+		f = fopen(path, "rt");
+		if (f != 0) {
+			/* if openend stop the search */
+			break;
+		} else {
+			/* if it's real error of an existing file, abort */
+			if (errno != ENOENT) {
+				fprintf(stderr, "Error opening the content file '%s'\n", path);
+				exit(EXIT_FAILURE);
+			}
+
+			/* otherwise continue */
+			if (node->next) {
+				fprintf(stderr, "Not found, trying with another copy...\n");
+			}
+		}
+
+		node = node->next;
+	}
+
+	/* if not found, assume empty */
 	if (!f) {
-		/* if not found, assume empty */
-		if (errno == ENOENT)
-			return;
-
-		fprintf(stderr, "Error opening the content file '%s'\n", path);
-		exit(EXIT_FAILURE);
+		fprintf(stderr, "No content file found. Assuming empty.\n");
+		return;
 	}
 
 	/* start with a MD5 default. */
