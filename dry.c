@@ -102,10 +102,12 @@ static int state_dry_process(struct snapraid_state* state, int parity_f, int qar
 
 		/* read the qarity */
 		if (state->level >= 2) {
-			ret = parity_read(state->qarity, qarity_f, i, buffer, state->block_size);
-			if (ret == -1) {
-				fprintf(stderr, "%u: Syndrome read error\n", i);
-				++error;
+			if (qarity_f != -1) {
+				ret = parity_read(state->qarity, qarity_f, i, buffer, state->block_size);
+				if (ret == -1) {
+					fprintf(stderr, "%u: Q-Parity read error\n", i);
+					++error;
+				}
 			}
 		}
 		
@@ -177,19 +179,20 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	}
 
 	pathcpy(parity_path, sizeof(parity_path), state->parity);
-	/* if drying, open the file for reading */
+	pathcpy(qarity_path, sizeof(qarity_path), state->qarity);
+
+	/* open the file for reading */
 	/* it may fail if the file doesn't exist, in this case we continue to dry the files */
 	parity_f = parity_open(parity_path);
 	if (parity_f == -1) {
-		printf("No accessible parity file.\n");
+		printf("No accessible Parity file.\n");
 		/* continue anyway */
 	}
 
 	if (state->level >= 2) {
-		pathcpy(qarity_path, sizeof(qarity_path), state->qarity);
 		qarity_f = parity_open(qarity_path);
 		if (qarity_f == -1) {
-			printf("No accessible qarity file.\n");
+			printf("No accessible Q-Parity file.\n");
 			/* continue anyway */
 		}
 	} else {
