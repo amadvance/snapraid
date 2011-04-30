@@ -593,6 +593,8 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, 
 	}
 
 	pathcpy(parity_path, sizeof(parity_path), state->parity);
+	pathcpy(qarity_path, sizeof(qarity_path), state->qarity);
+
 	if (fix) {
 		/* if fixing, create the file and open for writing */
 		/* if it fails, we cannot continue */
@@ -603,7 +605,6 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, 
 		}
 
 		if (state->level >= 2) {
-			pathcpy(qarity_path, sizeof(qarity_path), state->qarity);
 			qarity_f = parity_create(qarity_path, size);
 			if (qarity_f == -1) {
 				fprintf(stderr, "WARNING! Without an accessible Q-Parity file, it isn't possible to fix any error.\n");
@@ -622,7 +623,6 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, 
 		}
 
 		if (state->level >= 2) {
-			pathcpy(qarity_path, sizeof(qarity_path), state->qarity);
 			qarity_f = parity_open(qarity_path);
 			if (qarity_f == -1) {
 				printf("No accessible Q-Parity file, only files will be checked.\n");

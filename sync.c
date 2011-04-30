@@ -287,6 +287,9 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	}
 
 	pathcpy(parity_path, sizeof(parity_path), state->parity);
+	pathcpy(qarity_path, sizeof(qarity_path), state->qarity);
+
+	/* create the file and open for writing */
 	parity_f = parity_create(parity_path, size);
 	if (parity_f == -1) {
 		fprintf(stderr, "WARNING! Without an accessible Parity file, it isn't possible to sync.\n");
@@ -294,7 +297,6 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	}
 
 	if (state->level >= 2) {
-		pathcpy(qarity_path, sizeof(qarity_path), state->qarity);
 		qarity_f = parity_create(qarity_path, size);
 		if (qarity_f == -1) {
 			fprintf(stderr, "WARNING! Without an accessible Q-Parity file, it isn't possible to sync.\n");
