@@ -202,6 +202,9 @@ void state_read(struct snapraid_state* state)
 
 	content = tommy_list_head(&state->contentlist)->data;
 	pathcpy(path, sizeof(path), content->content);
+
+	printf("Loading state from %s...\n", path);
+
 	f = fopen(path, "rt");
 	if (!f) {
 		/* if not found, assume empty */
@@ -211,8 +214,6 @@ void state_read(struct snapraid_state* state)
 		fprintf(stderr, "Error opening the content file '%s'\n", path);
 		exit(EXIT_FAILURE);
 	}
-
-	printf("Loading state from %s...\n", path);
 
 	/* start with a MD5 default. */
 	/* it's for compatibility with version 1.0 where MD5 was implicit. */
