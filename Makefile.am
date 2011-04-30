@@ -62,6 +62,9 @@ man_MANS = snapraid.1
 clean-local:
 	rm -f valgrind.log callgrind.log cachegrind.log
 	rm -rf test
+	rm -f *.gcda *.gcno *.gcov
+	rm -rf cov
+	rm -f lcov.info
 
 maintainer-clean-local:
 	rm -f snapraid.1 snapraid.txt
@@ -278,7 +281,20 @@ cachegrind:
 		2> cachegrind.log
 		tail cachegrind.log
 
+lcov_reset:
+	lcov --directory . -z
+	rm -f ./lcov.info
+
+lcov_capture:
+	lcov --directory . --capture -o lcov.info
+
+lcov_html:
+	rm -rf ./cov
+	mkdir cov
+	genhtml -o ./cov lcov.info
+
 # Rules for documentation
+
 if HAVE_ADVD2
 snapraid.1 : snapraid.d
 	advd2 man < $(srcdir)/$< > $@

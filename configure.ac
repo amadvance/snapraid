@@ -51,6 +51,13 @@ dnl Checks for compiler
 AC_CHECK_CC_OPT([-Wall], CFLAGS="$CFLAGS -Wall", [])
 AC_CHECK_CC_OPT([-Wextra], CFLAGS="$CFLAGS -Wextra", [])
 
+dnl Checks for test environment
+AS_CASE([$host],
+       [*-*-mingw*], [TESTENV="$WINE"],
+       []
+)
+
+dnls Checks for options
 AC_ARG_WITH([crypto],
 	[AS_HELP_STRING([--with-crypto],
 	[enable the use of the MD5 fast implementation of the OpenSSL crypto library])],
@@ -64,13 +71,23 @@ AS_IF([test "x$with_crypto" != xno], [
 	])
 ])
 
-dnl Checks for test environment
-AS_CASE([$host],
-       [*-*-mingw*], [TESTENV="$WINE"],
-       [TESTENV="$VALGRIND"]
-)
-AC_ARG_VAR([TESTENV], [Test environment])
+AC_ARG_ENABLE([coverage],
+	[AS_HELP_STRING([--enable-coverage],[enable the use of gcov for code coverage])],
+	[
+	TESTENV=""
+	CFLAGS="-O0 -g -fprofile-arcs -ftest-coverage"
+	],
+	[])
 
+AC_ARG_ENABLE([valgrind],
+	[AS_HELP_STRING([--enable-valgrind],[enable the use of valgrind in testing])],
+	[
+	TESTENV="$VALGRIND"
+	],
+	[])
+
+
+AC_ARG_VAR([TESTENV], [Test environment])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 
