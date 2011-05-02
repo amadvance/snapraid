@@ -268,7 +268,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir)
 
 	disk = malloc_nofail(sizeof(struct snapraid_disk));
 	pathcpy(disk->name, sizeof(disk->name), name);
-	pathcpy(disk->dir, sizeof(disk->dir), dir);
+	pathimport(disk->dir, sizeof(disk->dir), dir);
 
 	/* ensure that the dir terminate with "/" if it isn't empty */
 	pathslash(disk->dir, sizeof(disk->dir));

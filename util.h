@@ -83,6 +83,13 @@ char* strdechex(void* void_data, unsigned data_len, char* str);
 void pathcpy(char* str, size_t size, const char* src);
 
 /**
+ * Imports a path limiting the size.
+ * In Windows, the last slash, if present, is converted to the C standard.
+ * Aborts if too long.
+ */
+void pathimport(char* str, size_t size, const char* src);
+
+/**
  * Prints a path.
  * Aborts if too long.
  */
