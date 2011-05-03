@@ -26,6 +26,8 @@ SnapRAID HISTORY
   present.
 * Opening the files in sequential mode in Windows. This should give a speedup
   in Windows.
+* In Windows you can use the backslash \ in the filter definitions instead
+  of the forward slash /.
 
 1.0 2011/4
 ==========

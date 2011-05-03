@@ -26,7 +26,7 @@
 // non-native version will be less than optimal.
 
 /* Rotate left */
-inline uint32_t rotl32 ( uint32_t x, int8_t r )
+inline uint32_t rotl32(uint32_t x, int8_t r)
 {
 	return (x << r) | (x >> (32 - r));
 }

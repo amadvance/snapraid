@@ -84,7 +84,7 @@ void pathcpy(char* str, size_t size, const char* src);
 
 /**
  * Imports a path limiting the size.
- * In Windows, the last slash, if present, is converted to the C standard.
+ * In Windows all the backslash are converted to the C standard of forward slash.
  * Aborts if too long.
  */
 void pathimport(char* str, size_t size, const char* src);

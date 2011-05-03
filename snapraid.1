@@ -506,8 +506,7 @@ globbing character like * and ? but they never matches a
 directory slash.
 This pattern is applied only to directories and not to files.
 .PP
-Note that when globbing chars are used in the command line, you have to
-quote them in Unix. Otherwise the shell will try to expand them.
+In Windows you can freely use the backslash \(rs instead of the forward slash /.
 .PP
 In the configuration file, you can use different strategies to filter
 the files to process.
@@ -621,6 +620,9 @@ snapraid \(hyf \(a"*.mp3\(a" check
 .PP
 .PD
 .RE
+.PP
+In Unix, when using globbing chars in the command line, you have to quote them.
+Otherwise the shell will try to expand them.
 .SH CONTENT 
 SnapRAID stores the list and checksums of your files in the content file.
 .PP

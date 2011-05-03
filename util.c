@@ -180,17 +180,14 @@ void pathcpy(char* str, size_t size, const char* src)
 
 void pathimport(char* str, size_t size, const char* src)
 {
-#ifdef _WIN32
-	size_t len;
-#endif
-
 	pathcpy(str, size, src);
 
 #ifdef _WIN32
-	/* convert last \ to / */
-	len = strlen(str);
-	if (len && str[len-1] == '\\') {
-		str[len-1] = '/';
+	/* convert all Windows '\' to '/' */
+	while (*str) {
+		if (*str == '\\')
+			*str = '/';
+		++str;
 	}
 #endif
 }

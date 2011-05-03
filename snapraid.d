@@ -362,8 +362,7 @@ Pattern
 		directory slash.
 		This pattern is applied only to directories and not to files.
 
-	Note that when globbing chars are used in the command line, you have to
-	quote them in Unix. Otherwise the shell will try to expand them.
+	In Windows you can freely use the backslash \ instead of the forward slash /.
 
 	In the configuration file, you can use different strategies to filter
 	the files to process.
@@ -406,6 +405,9 @@ Pattern
 		:# Checks only the .mp3 files.
 		:# Note the "" use to avoid globbing expansion by the shell in Unix.
 		:snapraid -f "*.mp3" check
+
+	In Unix, when using globbing chars in the command line, you have to quote them.
+	Otherwise the shell will try to expand them.
 
 Content
 	SnapRAID stores the list and checksums of your files in the content file.

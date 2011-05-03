@@ -46,7 +46,7 @@ struct snapraid_filter* filter_alloc(int direction, const char* pattern)
 	char* last;
 
 	filter = malloc_nofail(sizeof(struct snapraid_filter));
-	pathcpy(filter->pattern, sizeof(filter->pattern), pattern);
+	pathimport(filter->pattern, sizeof(filter->pattern), pattern);
 	filter->direction = direction;
 
 	/* find first and last slash */
