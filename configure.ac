@@ -57,7 +57,7 @@ AS_CASE([$host],
        []
 )
 
-dnls Checks for options
+dnl Checks for options
 AC_ARG_WITH([crypto],
 	[AS_HELP_STRING([--with-crypto],
 	[enable the use of the MD5 fast implementation of the OpenSSL crypto library])],
