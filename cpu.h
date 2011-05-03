@@ -31,9 +31,19 @@ static inline int cpu_has(uint32_t flag)
 	uint32_t eax = (flag >> 5) ? 0x80000001 : 1;
 	uint32_t edx;
 
-	asm volatile("cpuid"
+	asm volatile(
+#if defined(__i386__)
+		/* allow compilation in PIC mode saving ebx */
+		"push %%ebx\n"
+		"cpuid\n"
+		"pop %%ebx\n"
+		: "+a" (eax), "=d" (edx)
+		: : "ecx");
+#else
+		"cpuid\n"
 		: "+a" (eax), "=d" (edx)
 		: : "ecx", "ebx");
+#endif
 
 	return (edx >> (flag & 31)) & 1;
 }
