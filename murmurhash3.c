@@ -35,7 +35,7 @@ inline uint32_t rotl32 ( uint32_t x, int8_t r )
 #if WORDS_BIGENDIAN
 static inline uint32_t swap32(uint32_t v)
 {
-	return (((v) & 0xff) << 24 | ((v) & 0xff00) << 8 | ((v) & 0xff0000) >> 8 | ((v) >> 24) & 0xff);
+	return ((v & 0xff) << 24) | ((v & 0xff00) << 8) | ((v & 0xff0000) >> 8) | ((v >> 24) & 0xff);
 }
 #else
 static inline uint32_t swap32(uint32_t v)
