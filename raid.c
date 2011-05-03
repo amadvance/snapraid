@@ -64,6 +64,8 @@ void raid5_int32r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 	}
 }
 
+#if defined(__i386__) || defined(__x86_64__)
+
 /*
  * Unrolled-by-2 MMX implementation
  */
@@ -116,6 +118,7 @@ void raid5_sse2r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 
 	asm volatile("sfence" : : : "memory");
 }
+#endif
 
 /* 
  * Repeats an 8 bit nibble to a full 32 bits value.
