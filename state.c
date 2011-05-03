@@ -584,6 +584,9 @@ void state_write(struct snapraid_state* state)
 	unsigned count_block;
 	tommy_node* node;
 
+	count_file = 0;
+	count_block = 0;
+
 	node = tommy_list_head(&state->contentlist);
 	while (node) {
 		struct snapraid_content* content = node->data;
