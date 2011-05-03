@@ -226,6 +226,13 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, s
 
 		if (S_ISREG(st.st_mode)) {
 			if (filter_path(&state->filterlist, sub_next, 0) == 0) {
+				/* check for having read permission */
+				if (access(path_next, R_OK) != 0) {
+					fprintf(stderr, "You do not have read permissions for file '%s'\n", path_next);
+					fprintf(stderr, "Fix the permissions or exclude it in the configuration with:\n\texclude /%s\n", sub_next);
+					fprintf(stderr, "or exclude the whole directory with:\n\texclude /%s\n", sub);
+					exit(EXIT_FAILURE);
+				}
 				scan_file(scan, state, disk, sub_next, &st);
 			} else {
 				if (state->verbose) {
