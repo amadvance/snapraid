@@ -55,6 +55,7 @@ EXTRA_DIST = \
 	test-raid5.conf \
 	test-raid6.conf \
 	snapraid.conf.example \
+	configure.windows-x86 configure.windows-x64 snapraid.conf.example.windows \
 	acinclude.m4
 
 man_MANS = snapraid.1
