@@ -141,7 +141,7 @@ struct windows_stat {
 };
 
 /**
- * Convert Windows info to the Unix stat format.
+ * Converts Windows info to the Unix stat format.
  */
 static inline void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, struct windows_stat* st)
 {
@@ -177,6 +177,64 @@ static inline void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, str
 	st->st_nlink = info->nNumberOfLinks;
 }
 
+/**
+ * Converts Windows findfirst info to the Unix stat format.
+ */
+static inline void windows_finddata2stat(const WIN32_FIND_DATA* info, struct windows_stat* st)
+{
+	/* Convert special attributes to a char device */
+	if ((info->dwFileAttributes & (FILE_ATTRIBUTE_DEVICE | FILE_ATTRIBUTE_TEMPORARY | FILE_ATTRIBUTE_OFFLINE | FILE_ATTRIBUTE_REPARSE_POINT)) != 0) {
+		st->st_mode = S_IFCHR;
+	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+		st->st_mode = S_IFDIR;
+	} else {
+		st->st_mode = S_IFREG;
+	}
+
+	st->st_size = info->nFileSizeHigh;
+	st->st_size <<= 32;
+	st->st_size |= info->nFileSizeLow;
+
+	st->st_mtime = info->ftLastWriteTime.dwHighDateTime;
+	st->st_mtime <<= 32;
+	st->st_mtime |= info->ftLastWriteTime.dwLowDateTime;
+
+	/*
+	 * Convert to unix time
+	 *
+	 * How To Convert a UNIX time_t to a Win32 FILETIME or SYSTEMTIME
+	 * http://support.microsoft.com/kb/167296
+	 */
+	st->st_mtime = (st->st_mtime - 116444736000000000LL) / 10000000;
+
+	/* No inode information available  */
+	st->st_ino = 0;
+
+	/* No link information available  */
+	st->st_nlink = 0;
+}
+
+/**
+ * Converts Windows error to errno.
+ */
+static inline void windows_errno(DWORD error)
+{
+	switch (error) {
+	case ERROR_INVALID_HANDLE :
+		errno = EBADF;
+		break;
+	case ERROR_FILE_NOT_FOUND :
+		errno = ENOENT;
+		break;
+	case ERROR_ACCESS_DENIED :
+		errno = EACCES;
+		break;
+	default:
+		errno = EIO;
+		break;
+	}
+}
+
 static inline int windows_fstat(int fd, struct windows_stat* st)
 {
 	BY_HANDLE_FILE_INFORMATION info;
@@ -189,7 +247,7 @@ static inline int windows_fstat(int fd, struct windows_stat* st)
 	}
 
 	if (!GetFileInformationByHandle(h, &info))  {
-		errno = EIO;
+		windows_errno(GetLastError());
 		return -1;
 	}
 
@@ -198,38 +256,66 @@ static inline int windows_fstat(int fd, struct windows_stat* st)
 	return 0;
 }
 
+/**
+ * Like the C stat() but without inode information.
+ */
 static inline int windows_stat(const char* file, struct windows_stat* st)
+{
+	HANDLE h;
+	WIN32_FIND_DATA data;
+
+	h = FindFirstFile(file,  &data);
+	if (h == INVALID_HANDLE_VALUE) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	if (!FindClose(h)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	windows_finddata2stat(&data, st);
+
+	return 0;
+}
+
+#define HAVE_STAT_INODE 1
+/**
+ * Like the C stat() with inode information.
+ * It doesn't work for all kind of files and directories. For example "\System Volume Information" cannot be opened.
+ */
+static inline int stat_inode(const char* file, struct windows_stat* st)
 {
 	BY_HANDLE_FILE_INFORMATION info;
 	HANDLE h;
 
 	h = CreateFile(file, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
 	if (h == INVALID_HANDLE_VALUE) {
-		DWORD error = GetLastError();
-		switch (error) {
-		case ERROR_FILE_NOT_FOUND :
-			errno = ENOENT;
-			break;
-		default:
-			errno = EIO;
-			break;
-		}
+		windows_errno(GetLastError());
 		return -1;
 	}
 
 	if (!GetFileInformationByHandle(h, &info))  {
+		DWORD error = GetLastError();
 		CloseHandle(h);
-		errno = EIO;
+		windows_errno(error);
+		return -1;
+	}
+
+	if (!CloseHandle(h)) {
+		windows_errno(GetLastError());
 		return -1;
 	}
 
 	windows_info2stat(&info, st);
 
-	CloseHandle(h);
-
 	return 0;
 }
 
+/**
+ * Like the C ftruncate().
+ */
 static inline int windows_ftruncate(int fd, off64_t off)
 {
 	HANDLE h;
@@ -248,37 +334,21 @@ static inline int windows_ftruncate(int fd, off64_t off)
 
 	pos.QuadPart = off;
 	if (!SetFilePointerEx(h, pos, 0, FILE_BEGIN)) {
-		DWORD error = GetLastError();
-		switch (error) {
-		case ERROR_INVALID_HANDLE :
-			errno = EBADF;
-			break;
-		default:
-			errno = EIO;
-			break;
-		}
+		windows_errno(GetLastError());
 		return -1;
 	}
 
 	if (!SetEndOfFile(h)) {
-		DWORD error = GetLastError();
-		switch (error) {
-		case ERROR_INVALID_HANDLE :
-			errno = EBADF;
-			break;
-		case ERROR_ACCESS_DENIED :
-			errno = EACCES;
-			break;
-		default:
-			errno = EIO;
-			break;
-		}
+		windows_errno(GetLastError());
 		return -1;
 	}
 
 	return 0;
 }
 
+/**
+ * Like the C rename().
+ */
 static inline int windows_rename(const char* a, const char* b)
 {
 	/*
@@ -289,17 +359,7 @@ static inline int windows_rename(const char* a, const char* b)
 	 * http://stackoverflow.com/questions/167414/is-an-atomic-file-rename-with-overwrite-possible-on-windows
 	 */
 	if (!MoveFileEx(a, b, MOVEFILE_REPLACE_EXISTING)) {
-		switch (GetLastError()) {
-		case ERROR_ACCESS_DENIED :
-			errno = EACCES;
-			break;
-		case ERROR_FILE_NOT_FOUND :
-			errno = ENOENT;
-			break;
-		default :
-			errno = EIO;
-			break;
-		}
+		windows_errno(GetLastError());
 		return -1;
 	}
 

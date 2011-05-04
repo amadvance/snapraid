@@ -192,47 +192,72 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, struct snapraid_disk* disk, const char* dir, const char* sub)
 {
 	DIR* d;
-	struct dirent* dd;
 
 	d = opendir(dir);
 	if (!d) {
-		fprintf(stderr, "Error accessing directory '%s'. %s.\n", dir, strerror(errno));
+		fprintf(stderr, "Error opening directory '%s'. %s.\n", dir, strerror(errno));
+        fprintf(stderr, "You can exclude it in the config file with:\n\texclude /%s\n", sub);
 		exit(EXIT_FAILURE);
 	}
-
-	while ((dd = readdir(d)) != 0) {
+   
+	while (1) { 
 		char path_next[PATH_MAX];
 		char sub_next[PATH_MAX];
 		struct stat st;
-		const char* name = dd->d_name;
+		const char* name;
+		struct dirent* dd;
+
+		/* clear errno to detect errneous conditions */
+		errno = 0;
+		dd = readdir(d);
+		if (dd == 0 && errno != 0) {
+			fprintf(stderr, "Error reading directory '%s'. %s.\n", dir, strerror(errno));
+			fprintf(stderr, "You can exclude it in the config file with:\n\texclude /%s\n", sub);
+			exit(EXIT_FAILURE);
+		}
+		if (dd == 0 && errno == 0) {
+			break; /* finished */
+		}
 
 		/* skip "." and ".." files */
+		name = dd->d_name;
 		if (name[0] == '.' && (name[1] == 0 || (name[1] == '.' && name[2] == 0)))
 			continue;
+
+		/* check for not supported file names, limitation derived from the content file format */
+		if (name[0] == 0 || isspace(name[0]) || isspace(name[strlen(name)-1])) {
+			fprintf(stderr, "Unsupported name '%s' in file '%s'.\n", name, path_next);
+			exit(EXIT_FAILURE);
+		}
 
 		pathprint(path_next, sizeof(path_next), "%s%s", dir, name);
 		pathprint(sub_next, sizeof(sub_next), "%s%s", sub, name);
 
+		/* get info about the file */
 		if (stat(path_next, &st) != 0) {
-			fprintf(stderr, "Error in stat file/directory '%s'\n", path_next);
-			exit(EXIT_FAILURE);
-		}
-
-		/* check for not supported file names, mainly derived from the content file format */
-		if (name[0] == 0 || isspace(name[0]) || isspace(name[strlen(name)-1])) {
-			fprintf(stderr, "Unsupported name '%s' in file '%s'\n", name, path_next);
+			fprintf(stderr, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 
 		if (S_ISREG(st.st_mode)) {
 			if (filter_path(&state->filterlist, sub_next, 0) == 0) {
-				/* check for having read permission */
+
+				/* check for read permission */
 				if (access(path_next, R_OK) != 0) {
-					fprintf(stderr, "You do not have read permissions for file '%s'\n", path_next);
+					fprintf(stderr, "You do not have read permissions for file '%s'.\n", path_next);
 					fprintf(stderr, "Fix the permissions or exclude it in the configuration with:\n\texclude /%s\n", sub_next);
 					fprintf(stderr, "or exclude the whole directory with:\n\texclude /%s\n", sub);
 					exit(EXIT_FAILURE);
 				}
+
+#if HAVE_STAT_INODE  
+				/* get inode info about the file, Windows needs an additional step */
+				if (stat_inode(path_next, &st) != 0) {
+					fprintf(stderr, "Error in stat_inode file '%s'. %s.\n", path_next, strerror(errno));
+					exit(EXIT_FAILURE);
+				}
+#endif
+
 				scan_file(scan, state, disk, sub_next, &st);
 			} else {
 				if (state->verbose) {
@@ -256,7 +281,10 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, s
 		}
 	}
 
-	closedir(d);
+	if (closedir(d) != 0) {
+		fprintf(stderr, "Error closing directory '%s'. %s.\n", dir, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
 }
 
 void state_scan(struct snapraid_state* state)
