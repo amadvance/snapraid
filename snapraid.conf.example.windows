@@ -35,7 +35,8 @@ disk d3 I:\array\
 # Format: "exclude \PATH\FILE"
 # Format: "exclude \PATH\DIR\"
 exclude *.bak
-exclude AppData\
+exclude Thumbs.db
+exclude \$RECYCLE.BIN\
 exclude \System Volume Information\
 
 # Defines the block size in kibi bytes (1024 bytes).

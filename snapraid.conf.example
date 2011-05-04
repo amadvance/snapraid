@@ -29,12 +29,13 @@ disk d2 /mnt/disk2/
 disk d3 /mnt/disk3/
 
 # Defines files and directories to exclude
+# Remember that all the paths are relative at the mount points
 # Format: "exclude FILE"
 # Format: "exclude DIR/"
 # Format: "exclude /PATH/FILE"
 # Format: "exclude /PATH/DIR/"
 exclude *.bak
-exclude tmp/
+exclude /tmp/
 exclude /lost+found/
 
 # Defines the block size in kibi bytes (1024 bytes).
