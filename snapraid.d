@@ -11,10 +11,10 @@ Synopsis
 	:snapraid [-V, --version] [-h, --help]
 
 Description
-	SnapRAID is a backup program for a disk array using redundancy.
+	SnapRAID is a backup program for a disk array.
 
-	SnapRAID uses a disk of the array to store redundancy information,
-	and it allows to recover from up to two disk failures.
+	SnapRAID stores redundancy information in the disk array,
+	and it allows recovering from up to two disk failures.
 
 	SnapRAID is mainly targeted for a home media center, where you have
 	a lot of big files that rarely change.
@@ -27,11 +27,12 @@ Description
 	* You can add more disks at any time.
 	* If you accidentally delete some files in a disk, you can
 		recover them.
-	* If more than two disk fails, you lose the data only on the
+	* If more than two disks fail, you lose the data only on the
 		failed disks. All the data in the other disks is safe.
 	* It doesn't lock-in your data. You can stop using SnapRAID at any
 		time without the need to reformat or move data.
-	* All your data is hashed to ensure data integrity.
+	* All your data is hashed to ensure data integrity and avoid
+		silent corruption.
 
 	The official site of SnapRAID is:
 
@@ -42,7 +43,7 @@ Limitations
 	benefits of them. Although it also has some limitations that you should
 	consider before using it.
 
-	The main one, is that if a disk fail, and you haven't recently synced,
+	The main one is that if a disk fails, and you haven't recently synced,
 	you may not able to do a complete recover.
 	More specifically, you may be unable to recover up to the size of the
 	amount of the changed or deleted files, from the last sync operation.
@@ -241,7 +242,7 @@ Configuration
 	This configuration file is located in /etc/snapraid.conf in Unix or
 	in the execution directory in Windows.
 
-	It should contains the following options:
+	It should contain the following options:
 
 	=parity FILE
 		Defines the file to use to store the parity information.
@@ -266,7 +267,7 @@ Configuration
 	=content FILE
 		Defines the file to use to store the list and checksums of all the
 		files present in your disk array.
-		It can be placed in the same disk of the parity and q-aparity files,
+		It can be placed in the same disk of the parity and q-parity files,
 		but NOT in a data disk of the array.
 		This option is mandatory and it can be used more time to save
 		more copies of the same files.
@@ -322,7 +323,7 @@ Configuration
 		For example, with 10000 files and a 256 KiB block size, you are
 		going to waste 1.2 GiB.
 
-	An example of a typical configuration is:
+	An example of a typical configuration for Unix is:
 
 		:parity /mnt/diskpar/parity
 		:content /mnt/diskpar/content
@@ -332,7 +333,20 @@ Configuration
 		:disk d3 /mnt/disk3/
 		:exclude *.bak
 		:exclude /lost+found/
-		:exclude tmp/
+		:exclude /tmp/
+
+	An example of a typical configuration for Windows is:
+
+		:parity E:\par\parity
+		:content E:\par\content
+		:content C:\snapraid\content
+		:disk d1 G:\array\
+		:disk d2 H:\array\
+		:disk d3 I:\array\
+		:exclude *.bak
+		:exclude Thumbs.db
+		:exclude \$RECYCLE.BIN\
+		:exclude \System Volume Information\
 
 Pattern
 	Patterns are used to select a subset of files to exclude or include in

@@ -28,10 +28,10 @@ snapraid [\(hyV, \(hy\(hyversion] [\(hyh, \(hy\(hyhelp]
 .PP
 .PD
 .SH DESCRIPTION 
-SnapRAID is a backup program for a disk array using redundancy.
+SnapRAID is a backup program for a disk array.
 .PP
-SnapRAID uses a disk of the array to store redundancy information,
-and it allows to recover from up to two disk failures.
+SnapRAID stores redundancy information in the disk array,
+and it allows recovering from up to two disk failures.
 .PP
 SnapRAID is mainly targeted for a home media center, where you have
 a lot of big files that rarely change.
@@ -49,13 +49,14 @@ You can add more disks at any time.
 If you accidentally delete some files in a disk, you can
 recover them.
 .IP \(bu
-If more than two disk fails, you lose the data only on the
+If more than two disks fail, you lose the data only on the
 failed disks. All the data in the other disks is safe.
 .IP \(bu
 It doesn\(cqt lock\(hyin your data. You can stop using SnapRAID at any
 time without the need to reformat or move data.
 .IP \(bu
-All your data is hashed to ensure data integrity.
+All your data is hashed to ensure data integrity and avoid
+silent corruption.
 .PD
 .PP
 The official site of SnapRAID is:
@@ -71,7 +72,7 @@ SnapRAID is in between a RAID and a Backup program trying to get the best
 benefits of them. Although it also has some limitations that you should
 consider before using it.
 .PP
-The main one, is that if a disk fail, and you haven\(cqt recently synced,
+The main one is that if a disk fails, and you haven\(cqt recently synced,
 you may not able to do a complete recover.
 More specifically, you may be unable to recover up to the size of the
 amount of the changed or deleted files, from the last sync operation.
@@ -345,7 +346,7 @@ is located, and where storing the redundancy information.
 This configuration file is located in /etc/snapraid.conf in Unix or
 in the execution directory in Windows.
 .PP
-It should contains the following options:
+It should contain the following options:
 .TP
 .B parity FILE
 Defines the file to use to store the parity information.
@@ -370,7 +371,7 @@ This option is optional and it can be used only one time.
 .B content FILE
 Defines the file to use to store the list and checksums of all the
 files present in your disk array.
-It can be placed in the same disk of the parity and q\(hyaparity files,
+It can be placed in the same disk of the parity and q\(hyparity files,
 but NOT in a data disk of the array.
 This option is mandatory and it can be used more time to save
 more copies of the same files.
@@ -438,7 +439,7 @@ For example, with 10000 files and a 256 KiB block size, you are
 going to waste 1.2 GiB.
 .RE
 .PP
-An example of a typical configuration is:
+An example of a typical configuration for Unix is:
 .PP
 .RS 4
 parity /mnt/diskpar/parity
@@ -473,7 +474,52 @@ exclude /lost+found/
 .PD 0
 .PP
 .PD
-exclude tmp/
+exclude /tmp/
+.PD 0
+.PP
+.PD
+.RE
+.PP
+An example of a typical configuration for Windows is:
+.PP
+.RS 4
+parity E:\(rspar\(rsparity
+.PD 0
+.PP
+.PD
+content E:\(rspar\(rscontent
+.PD 0
+.PP
+.PD
+content C:\(rssnapraid\(rscontent
+.PD 0
+.PP
+.PD
+disk d1 G:\(rsarray\(rs
+.PD 0
+.PP
+.PD
+disk d2 H:\(rsarray\(rs
+.PD 0
+.PP
+.PD
+disk d3 I:\(rsarray\(rs
+.PD 0
+.PP
+.PD
+exclude *.bak
+.PD 0
+.PP
+.PD
+exclude Thumbs.db
+.PD 0
+.PP
+.PD
+exclude \(rs$RECYCLE.BIN\(rs
+.PD 0
+.PP
+.PD
+exclude \(rsSystem Volume Information\(rs
 .PD 0
 .PP
 .PD
