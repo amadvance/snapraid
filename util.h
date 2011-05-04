@@ -116,10 +116,8 @@ void* malloc_nofail(size_t size);
  */
 void* malloc_nofail_align(size_t size, void** freeptr);
 
-/**
- * Xor two memory blocks.
- */
-void memxor(unsigned char* xor, const unsigned char* block, unsigned size);
+/****************************************************************************/
+/* hash */
 
 /**
  * Size of the hash.

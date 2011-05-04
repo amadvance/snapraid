@@ -255,40 +255,6 @@ void* malloc_nofail_align(size_t size, void** freeptr)
 	return ptr;
 }
 
-void memxor(unsigned char* xor, const unsigned char* block, unsigned size)
-{
-	while (size >= 16) {
-		uint32_t* xor32 = (uint32_t*)xor;
-		const uint32_t* block32 = (const uint32_t*)block;
-		xor32[0] ^= block32[0];
-		xor32[1] ^= block32[1];
-		xor32[2] ^= block32[2];
-		xor32[3] ^= block32[3];
-
-		xor += 16;
-		block += 16;
-		size -= 16;
-	}
-
-	while (size >= 4) {
-		uint32_t* xor32 = (uint32_t*)xor;
-		const uint32_t* block32 = (const uint32_t*)block;
-		xor32[0] ^= block32[0];
-
-		xor += 4;
-		block += 4;
-		size -= 4;
-	}
-
-	while (size != 0) {
-		xor[0] ^= block[0];
-
-		xor += 1;
-		block += 1;
-		size -= 1;
-	}
-}
-
 #if HAVE_LIBCRYPTO
 #include <openssl/md5.h>
 #else

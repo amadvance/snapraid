@@ -17,7 +17,7 @@ SnapRAID HISTORY
   for SSE2 and MMX.
 * Added support for multiple 'content' files. You can save extra copies to be
   able to verify the checksums also if you lose all the 'content' files in the
-  parity drives.
+  parity disks.
 * Added a filtering include logic, where anything not explicitely included
   is excluded. For example, it allow to include only the files in a predefined
   set of directories.
