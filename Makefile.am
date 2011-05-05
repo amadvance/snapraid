@@ -78,6 +78,10 @@ check-local:
 	mkdir test/disk1
 	mkdir test/disk2
 	mkdir test/disk3
+	echo --- Help
+	$(TESTENV) ./snapraid$(EXEEXT) -h
+	echo --- Speed
+	$(TESTENV) ./snapraid$(EXEEXT) -T
 	echo --- As empty, sync and check
 	$(TESTENV) ./snapraid$(EXEEXT) -v -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check
@@ -133,10 +137,12 @@ check-local:
 	rm test/disk2/5*
 	rm test/disk3/6*
 	$(TESTENV) ./mktest$(EXEEXT) generate 4 3 100 4000
-	$(TESTENV) ./snapraid$(EXEEXT) -S -v -c $(srcdir)/test-raid6.conf -t 7 sync
-	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid6.conf check 2>/dev/null
-	$(TESTENV) ./snapraid$(EXEEXT) -S -v -c $(srcdir)/test-raid6.conf -t 11 sync
-	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid6.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -v -c $(srcdir)/test-raid6.conf -t 100 sync
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -v -c $(srcdir)/test-raid6.conf -t 700 sync
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -v -c $(srcdir)/test-raid6.conf -t 1000 sync
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -S -v -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Delete some files, fix and check with raid5

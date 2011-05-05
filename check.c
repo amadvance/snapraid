@@ -228,6 +228,9 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 		unsigned failed_count;
 		int one_tocheck;
 		int all_parity;
+		unsigned char* buffer_parity;
+		unsigned char* buffer_qarity;
+		unsigned char* buffer_zero;
 
 		/* for each disk */
 		one_tocheck = 0;
@@ -263,8 +266,9 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			}
 
 			/* we try to check and fix only if the block is hashed */
-			/* it could be that a file was added, and not yet synched */
-			/* so we should not include not hashed block in the parity computation */
+			/* if no hash is present also no parity is present, */
+			/* but we expect to had it excluded from the parity computation, */
+			/* so it's correct to assume it filled with 0 and DO NOT reset all_parity */
 			if (!block_flag_has(block, BLOCK_HAS_HASH)) {
 				/* use an empty block */
 				memset(buffer[j], 0, state->block_size);
@@ -272,12 +276,14 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			}
 
 			/* keep track if at least one hashed block has no parity */
+			/* if at least one block has no parity, doesn't make sense to check/fix it */
+			/* as errors are the normal condition */
 			if (!block_flag_has(block, BLOCK_HAS_PARITY))
 				all_parity = 0;
 
 			ret = handle_close_if_different(&handle[j], block_file_get(block));
 			if (ret == -1) {
-				fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+				fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to sync.\n");
 				fprintf(stderr, "Stopping at block %u\n", i);
 				++unrecoverable_error;
 				goto bail;
@@ -287,7 +293,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 				/* if fixing, create the file, open for writing and resize if required */
 				ret = handle_create(&handle[j],  block_file_get(block));
 				if (ret == -1) {
-					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					fprintf(stderr, "DANGER! Without a working data disk, it isn't possible to fix errors on it.\n");
 					fprintf(stderr, "Stopping at block %u\n", i);
 					++unrecoverable_error;
 					goto bail;
@@ -366,58 +372,56 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			countsize += read_size;
 		}
 
-		{
-			unsigned char* buffer_parity;
-			unsigned char* buffer_qarity;
-			unsigned char* buffer_zero;
+		/* buffers for parity read and not computed */
+		if (state->level == 1) {
+			buffer_parity = buffer[diskmax + 1];
+			buffer_qarity = 0;
+		} else {
+			buffer_parity = buffer[diskmax + 2];
+			buffer_qarity = buffer[diskmax + 3];
+		}
+		buffer_zero = buffer[buffermax-1];
 
-			/* buffers for parity read and not computed */
-			if (state->level == 1) {
-				buffer_parity = buffer[diskmax + 1];
-				buffer_qarity = 0;
-			} else {
-				buffer_parity = buffer[diskmax + 2];
-				buffer_qarity = buffer[diskmax + 3];
+		/* read the parity */
+		if (parity_f != -1) {
+			ret = parity_read(state->parity, parity_f, i, buffer_parity, state->block_size);
+			if (ret == -1) {
+				buffer_parity = 0; /* no parity to use */
+
+				fprintf(stderr, "%u: Parity read error\n", i);
+				++error;
 			}
-			buffer_zero = buffer[buffermax-1];
+		} else {
+			buffer_parity = 0;
+		}
 
-			/* read the parity */
-			if (parity_f != -1) {
-				ret = parity_read(state->parity, parity_f, i, buffer_parity, state->block_size);
+		/* read the qarity */
+		if (state->level >= 2) {
+			if (qarity_f != -1) {
+				ret = parity_read(state->qarity, qarity_f, i, buffer_qarity, state->block_size);
 				if (ret == -1) {
-					buffer_parity = 0; /* no parity to use */
+					buffer_qarity = 0; /* no qarity to use */
 
-					fprintf(stderr, "%u: Parity read error\n", i);
+					fprintf(stderr, "%u: Q-Parity read error\n", i);
 					++error;
 				}
 			} else {
-				buffer_parity = 0;
+				buffer_qarity = 0;
 			}
+		}
 
-			/* read the qarity */
-			if (state->level >= 2) {
-				if (qarity_f != -1) {
-					ret = parity_read(state->qarity, qarity_f, i, buffer_qarity, state->block_size);
-					if (ret == -1) {
-						buffer_qarity = 0; /* no qarity to use */
+		ret = repair(state, i, diskmax, failed, failed_count, buffer, buffer_parity, buffer_qarity, buffer_zero);
+		if (ret != 0) {
+			/* increment the number of errors */
+			if (ret > 0)
+				error += ret;
 
-						fprintf(stderr, "%u: Q-Parity read error\n", i);
-						++error;
-					}
-				} else {
-					buffer_qarity = 0;
-				}
-			}
-
-			ret = repair(state, i, diskmax, failed, failed_count, buffer, buffer_parity, buffer_qarity, buffer_zero);
-			if (ret != 0) {
-				/* increment the number of errors */
-				if (ret > 0)
-					error += ret;
-
-				fprintf(stderr, "%u: UNRECOVERABLE error for this block\n", i);
-				++unrecoverable_error;
-			} else {
+			fprintf(stderr, "%u: UNRECOVERABLE error for this block\n", i);
+			++unrecoverable_error;
+		} else {
+			/* check parity and q-parity only if all the blocks have it computed */
+			/* if you check/fix after a partial sync, it's OK to have parity errors on the blocks with invalid parity */
+			if (all_parity) {
 				/* check the parity */
 				if (buffer_parity != 0 && memcmp(buffer_parity, buffer[diskmax], state->block_size) != 0) {
 					buffer_parity = 0;
@@ -435,37 +439,42 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 						++error;
 					}
 				}
+			}
 
-				if (fix) {
-					/* update the fixed files */
-					for(j=0;j<failed_count;++j) {
-						/* do not fix if the file filtered out */
-						if (file_flag_has(block_file_get(failed[j].block), FILE_IS_EXCLUDED))
-							continue;
+			if (fix) {
+				/* update the fixed files */
+				for(j=0;j<failed_count;++j) {
+					/* do not fix if the file filtered out */
+					if (file_flag_has(block_file_get(failed[j].block), FILE_IS_EXCLUDED))
+						continue;
 
-						ret = handle_write(failed[j].handle, failed[j].block, buffer[failed[j].index], state->block_size);
-						if (ret == -1) {
-							fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
-							fprintf(stderr, "Stopping at block %u\n", i);
-							++unrecoverable_error;
-							goto bail;
-						}
-
-						fprintf(stderr, "%u: Fixed data error for file %s at position %u\n", i, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
-						++recovered_error;
+					ret = handle_write(failed[j].handle, failed[j].block, buffer[failed[j].index], state->block_size);
+					if (ret == -1) {
+						fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+						fprintf(stderr, "Stopping at block %u\n", i);
+						++unrecoverable_error;
+						goto bail;
 					}
 
+					fprintf(stderr, "%u: Fixed data error for file %s at position %u\n", i, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
+					++recovered_error;
+				}
+
+				/* update parity and q-parity only if all the blocks have it computed */
+				/* if you check/fix after a partial sync, you do not want to fix parity */
+				/* for blocks that are going to have it computed in the sync completion */
+				if (all_parity) {
 					/* update the parity */
 					if (buffer_parity == 0 && parity_f != -1) {
 						ret = parity_write(state->parity, parity_f, i, buffer[diskmax], state->block_size);
 						if (ret == -1) {
-							fprintf(stderr, "WARNING! Without a working parity disk, it isn't possible to fix errors on it.\n");
+							fprintf(stderr, "WARNING! Without a working Parity disk, it isn't possible to fix errors on it.\n");
 							fprintf(stderr, "Stopping at block %u\n", i);
 							++unrecoverable_error;
 							goto bail;
 						}
 
-						fprintf(stderr, "%u: Fixed parity error\n", i);
+						fprintf(stderr, "%u: Fixed Parity error\n", i);
 						++recovered_error;
 					}
 
@@ -507,11 +516,9 @@ bail:
 	for(j=0;j<diskmax;++j) {
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
-			if (fix) {
-				fprintf(stderr, "WARNING! A 'snapraid check' command is highly suggested.\n");
-				++unrecoverable_error;
-				/* continue, as we are already exiting */
-			}
+			fprintf(stderr, "DANGER! Unexpected close error in a data disk.\n");
+			++unrecoverable_error;
+			/* continue, as we are already exiting */
 		}
 	}
 
@@ -648,7 +655,7 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, 
 	if (parity_f != -1) {
 		ret = parity_close(parity_path, parity_f);
 		if (ret == -1) {
-			fprintf(stderr, "WARNING! A 'snapraid check' command is highly suggested.\n");
+			fprintf(stderr, "DANGER! Unexpected close error in Parity disk.\n");
 			++error;
 			/* continue, as we are already exiting */
 		}
@@ -658,7 +665,7 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, 
 		if (qarity_f != -1) {
 			ret = parity_close(qarity_path, qarity_f);
 			if (ret == -1) {
-				fprintf(stderr, "WARNING! A 'snapraid check' command is highly suggested.\n");
+				fprintf(stderr, "DANGER! Unexpected close error in Q-Parity disk.\n");
 				++error;
 				/* continue, as we are already exiting */
 			}
