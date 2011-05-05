@@ -103,7 +103,6 @@ void speed(void)
 
 	printf("Murmur3 %"PRIu64" [MB/s]\n", ds / dt);
 
-	count = 0;
 	SPEED_START {
 		raid5_int32r2(buffer, diskmax, block_size);
 	} SPEED_STOP

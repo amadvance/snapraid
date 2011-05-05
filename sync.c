@@ -219,6 +219,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 			if (!block)
 				continue;
 
+			/* now all the blocks have the hash and the parity computed */
 			block_flag_set(block, BLOCK_HAS_HASH | BLOCK_HAS_PARITY);
 		}
 
@@ -273,7 +274,6 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	printf("Syncing...\n");
 
 	blockmax = parity_resize(state);
-
 	size = blockmax * (data_off_t)state->block_size;
 
 	if (blockstart > blockmax) {
