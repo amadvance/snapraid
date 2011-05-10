@@ -1,6 +1,11 @@
 SnapRAID HISTORY
 ================
 
+1.2 2011/5
+==========
+* Fixed use of file names out of the codepage in Windows. All the names
+  are now stored in UTF8 in the content file.
+
 1.1 2011/5
 ==========
 * Fixed a bug in the check command when detecting garbage data over the

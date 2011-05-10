@@ -83,8 +83,6 @@ check-local:
 	mkdir test/disk3
 	echo --- Help
 	$(TESTENV) ./snapraid$(EXEEXT) -h
-	echo --- Speed
-	$(TESTENV) ./snapraid$(EXEEXT) -T
 	echo --- As empty, sync and check
 	$(TESTENV) ./snapraid$(EXEEXT) -v -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check

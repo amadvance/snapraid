@@ -17,9 +17,65 @@
 
 #include "portable.h"
 
+#ifdef __MINGW32__ /* Only for MingW */
+
 #include "mingw.h"
 
-#ifdef __MINGW32__ /* Only for MingW */
+/**
+ * Number of conversion buffers.
+ */
+#define CONV_ROLL 4
+
+/**
+ * Buffers for UTF16.
+ */
+static unsigned conv_utf16 = 0;
+static wchar_t conv_utf16_buffer[CONV_ROLL][PATH_MAX];
+
+/**
+ * Buffers for UTF8.
+ */
+static unsigned conv_utf8 = 0;
+static char conv_utf8_buffer[CONV_ROLL][PATH_MAX];
+
+/**
+ * Converts from UTF8 to UTF16.
+ */
+static wchar_t* u8tou16(const char* src)
+{
+	int ret;
+
+	if (++conv_utf16 == CONV_ROLL)
+		conv_utf16 = 0;
+
+	ret = MultiByteToWideChar(CP_UTF8, 0, src, -1, conv_utf16_buffer[conv_utf16], sizeof(conv_utf16_buffer[0]) / sizeof(wchar_t));
+
+	if (ret <= 0) {
+		fprintf(stderr, "Error converting name '%s' from UTF-8 to UTF-16\n", src);
+		exit(EXIT_FAILURE);
+	}
+
+	return conv_utf16_buffer[conv_utf16];
+}
+
+/**
+ * Converts from UTF16 to UTF8.
+ */
+static char* u16tou8(const wchar_t* src)
+{
+	int ret;
+
+	if (++conv_utf8 == CONV_ROLL)
+		conv_utf8 = 0;
+
+	ret = WideCharToMultiByte(CP_UTF8, 0, src, -1, conv_utf8_buffer[conv_utf8], sizeof(conv_utf8_buffer[0]), 0, 0);
+	if (ret < 0) {
+		fwprintf(stderr, L"Error converting name %s from UTF-16 to UTF-8\n", src);
+		exit(EXIT_FAILURE);
+	}
+
+	return conv_utf8_buffer[conv_utf8];
+}
 
 /**
  * Converts Windows info to the Unix stat format.
@@ -61,7 +117,7 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, struct win
 /**
  * Converts Windows findfirst info to the Unix stat format.
  */
-static void windows_finddata2stat(const WIN32_FIND_DATA* info, struct windows_stat* st)
+static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_stat* st)
 {
 	/* Convert special attributes to a char device */
 	if ((info->dwFileAttributes & (FILE_ATTRIBUTE_DEVICE | FILE_ATTRIBUTE_TEMPORARY | FILE_ATTRIBUTE_OFFLINE | FILE_ATTRIBUTE_REPARSE_POINT)) != 0) {
@@ -93,6 +149,23 @@ static void windows_finddata2stat(const WIN32_FIND_DATA* info, struct windows_st
 
 	/* No link information available  */
 	st->st_nlink = 0;
+}
+
+static void windows_finddata2dirent(const WIN32_FIND_DATAW* info, struct windows_dirent* dirent)
+{
+	const char* name;
+	size_t len;
+
+	name = u16tou8(info->cFileName);
+	
+	len = strlen(name);
+	
+	if (len + 1 >= sizeof(dirent->d_name)) {
+		fprintf(stderr, "Name too long\n");
+		exit(EXIT_FAILURE);
+	}
+
+	memcpy(dirent->d_name, name, len + 1);
 }
 
 /**
@@ -140,9 +213,9 @@ int windows_fstat(int fd, struct windows_stat* st)
 int windows_stat(const char* file, struct windows_stat* st)
 {
 	HANDLE h;
-	WIN32_FIND_DATA data;
+	WIN32_FIND_DATAW data;
 
-	h = FindFirstFile(file,  &data);
+	h = FindFirstFileW(u8tou16(file),  &data);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -163,7 +236,7 @@ int stat_inode(const char* file, struct windows_stat* st)
 	BY_HANDLE_FILE_INFORMATION info;
 	HANDLE h;
 
-	h = CreateFile(file, 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+	h = CreateFileW(u8tou16(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -225,7 +298,7 @@ int windows_rename(const char* a, const char* b)
 	 * Is an atomic file rename (with overwrite) possible on Windows?
 	 * http://stackoverflow.com/questions/167414/is-an-atomic-file-rename-with-overwrite-possible-on-windows
 	 */
-	if (!MoveFileEx(a, b, MOVEFILE_REPLACE_EXISTING)) {
+	if (!MoveFileExW(u8tou16(a), u8tou16(b), MOVEFILE_REPLACE_EXISTING)) {
 		windows_errno(GetLastError());
 		return -1;
 	}
@@ -233,4 +306,103 @@ int windows_rename(const char* a, const char* b)
 	return 0;
 }
 
+FILE* windows_fopen(const char* file, const char* mode)
+{
+	return _wfopen(u8tou16(file), u8tou16(mode));
+}
+
+int windows_open(const char* file, int flags, ...)
+{
+	return _wopen(u8tou16(file), flags);
+}
+
+windows_dir* windows_opendir(const char* dir)
+{
+	wchar_t* wdir;
+	windows_dir* dirstream;
+	size_t len;
+
+	dirstream = malloc(sizeof(windows_dir));
+	if (!dirstream) {
+		fprintf(stderr, "Low memory\n");
+		exit(EXIT_FAILURE);
+	}
+
+	wdir = u8tou16(dir);
+
+	/* add final / and * */
+	len = wcslen(wdir);
+	if (len!= 0 && wdir[len-1] != '/')
+		wdir[len++] = L'/';
+	wdir[len++] = L'*';
+	wdir[len++] = 0;
+
+	dirstream->h = FindFirstFileW(wdir, &dirstream->data);
+	if (dirstream->h == INVALID_HANDLE_VALUE) {
+		DWORD error = GetLastError();
+
+		if (error == ERROR_FILE_NOT_FOUND) {
+			dirstream->flags = -1; /* empty dir */
+			return dirstream;
+		}
+
+		free(dirstream);
+		windows_errno(error);
+		return 0;
+	}
+
+	dirstream->flags = 1;
+
+	windows_finddata2dirent(&dirstream->data, &dirstream->buffer);
+
+	return dirstream;
+}
+
+struct windows_dirent* windows_readdir(windows_dir* dirstream)
+{
+	if (dirstream->flags == -1) {
+		errno = 0; /* end of stream */
+		return 0;
+	}
+
+	if (dirstream->flags == 1) {
+		dirstream->flags = 0;
+		return &dirstream->buffer;
+	}
+
+	if (!FindNextFileW(dirstream->h, &dirstream->data)) {
+		DWORD error = GetLastError();
+
+		if (error == ERROR_NO_MORE_FILES) {
+			errno = 0; /* end of stream */
+			return 0;
+		}
+
+		windows_errno(error);
+		return 0;
+	}
+
+	windows_finddata2dirent(&dirstream->data, &dirstream->buffer);
+
+	return &dirstream->buffer;
+}
+
+int windows_closedir(windows_dir* dirstream)
+{
+	if (dirstream->h != INVALID_HANDLE_VALUE) {
+		if (!FindClose(dirstream->h)) {
+			DWORD error = GetLastError();
+			free(dirstream);
+
+			windows_errno(error);
+			return -1;
+		}
+	}
+
+	free(dirstream);
+
+	return 0;
+}
+
 #endif
+
