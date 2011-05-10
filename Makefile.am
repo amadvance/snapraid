@@ -16,7 +16,8 @@ snapraid_SOURCES = \
 	fnmatch.c \
 	raid.c \
 	selftest.c \
-	speed.c
+	speed.c \
+	mingw.c
 
 noinst_HEADERS = \
 	portable.h \
@@ -42,10 +43,12 @@ noinst_HEADERS = \
 	fnmatch.h \
 	cpu.h \
 	raid.h \
-	tables.h
+	tables.h \
+	mingw.h
 
 mktest_SOURCES = \
-	mktest.c
+	mktest.c \
+	mingw.c
 
 EXTRA_DIST = \
 	autogen.sh \
