@@ -32,6 +32,7 @@
 #define fopen windows_fopen
 #define open windows_open
 #define stat windows_stat
+#define access windows_access
 #define off_t off64_t
 #define lseek lseek64
 #define fstat windows_fstat
@@ -67,6 +68,11 @@ int windows_fstat(int fd, struct windows_stat* st);
  * Like the C stat() but without inode information.
  */
 int windows_stat(const char* file, struct windows_stat* st);
+
+/**
+ * Like the C access().
+ */
+int windows_access(const char* file, int mode);
 
 /**
  * Like the C stat() with inode information.

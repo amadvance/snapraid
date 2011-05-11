@@ -231,6 +231,11 @@ int windows_stat(const char* file, struct windows_stat* st)
 	return 0;
 }
 
+int windows_access(const char* file, int mode)
+{
+	return _waccess(u8tou16(file), mode);
+}
+
 int stat_inode(const char* file, struct windows_stat* st)
 {
 	BY_HANDLE_FILE_INFORMATION info;
@@ -313,7 +318,17 @@ FILE* windows_fopen(const char* file, const char* mode)
 
 int windows_open(const char* file, int flags, ...)
 {
-	return _wopen(u8tou16(file), flags);
+	va_list args;
+	int ret;
+
+	va_start(args, flags);
+	if ((flags & O_CREAT) != 0)
+		ret = _wopen(u8tou16(file), flags, va_arg(args, int));
+	else
+		ret = _wopen(u8tou16(file), flags);
+	va_end(args);
+
+	return ret;
 }
 
 windows_dir* windows_opendir(const char* dir)
