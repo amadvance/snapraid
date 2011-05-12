@@ -3,6 +3,13 @@ SnapRAID TODO
 
 This is a list of possible TODO for SnapRAID. The order is not relevant.
 
+* Add a checksum for the content file. When reading if the file is invalid,
+skip to another.
+
+* Change the output format allowing a more easy integration with other utilities
+like sort. For example to allow to sort by file, disk or block all the output
+messages in check/fix.
+
 * Easy way to find duplicates using the computed hash.
 
 * Easy way to find files using a specified block.
