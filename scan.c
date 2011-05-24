@@ -22,11 +22,16 @@
 #include "state.h"
 
 struct snapraid_scan {
+	/**
+	 * Counters of changes.
+	 */
 	unsigned count_equal;
 	unsigned count_moved;
 	unsigned count_change;
 	unsigned count_remove;
 	unsigned count_insert;
+
+	tommy_list insert_list; /**< Files to insert. */
 };
 
 /**
@@ -151,6 +156,8 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 				/* otherwise it's equal */
 				++scan->count_equal;
 			}
+
+			/* nothing more to do */
 			return;
 		} else {
 			/* do a safety check to ensure that the common ext4 case of zeroing */
@@ -167,23 +174,26 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 				}
 			}
 
-			/* remove and reinsert it */
+			/* remove it */
 			++scan->count_change;
-			--scan->count_insert;
 			scan_file_remove(state, disk, file);
-			/* continue to insert it */
+
+			/* and continue to reinsert it */
 		}
+	} else {
+		/* create the new file */
+		++scan->count_insert;
+
+		/* and continue to insert it */
 	}
 
-	/* create the new file */
-	++scan->count_insert;
 	file = file_alloc(state->block_size, sub, st->st_size, st->st_mtime, st->st_ino);
 
 	/* mark it as present */
 	file_flag_set(file, FILE_IS_PRESENT);
 
-	/* insert it */
-	scan_file_insert(state, disk, file);
+	/* insert it in the delayed insert list */
+	tommy_list_insert_tail(&scan->insert_list, &file->nodelist, file);
 }
 
 /**
@@ -300,6 +310,7 @@ void state_scan(struct snapraid_state* state)
 		scan[i].count_change = 0;
 		scan[i].count_remove = 0;
 		scan[i].count_insert = 0;
+		tommy_list_init(&scan[i].insert_list);
 	}
 
 	for(i=0;i<diskmax;++i) {
@@ -323,6 +334,18 @@ void state_scan(struct snapraid_state* state)
 				scan_file_remove(state, disk, file);
 				++scan[i].count_remove;
 			}
+		}
+
+		/* insert all the new files, we insert them only after the deletion */
+		node = scan[i].insert_list;
+		while (node) {
+			struct snapraid_file* file = node->data;
+
+			/* next node */
+			node = node->next;
+
+			/* insert it */
+			scan_file_insert(state, disk, file);
 		}
 
 		/* if all the previous file were removed */

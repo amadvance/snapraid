@@ -5,6 +5,7 @@ SnapRAID HISTORY
 ==========
 * Fixed the restore of directory with unicode chars in Windows.
 * Fixed support of file names starting or ending with a space.
+* Removes files before inserting new ones to minimize the parity size.
 
 1.2 2011/5
 ==========
