@@ -1,6 +1,10 @@
 SnapRAID HISTORY
 ================
 
+1.3 2011/5
+==========
+* Fixed the restore of directory with unicode chars in Windows.
+
 1.2 2011/5
 ==========
 * Fixed use of file names out of the codepage in Windows. All the names

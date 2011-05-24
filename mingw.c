@@ -236,6 +236,11 @@ int windows_access(const char* file, int mode)
 	return _waccess(u8tou16(file), mode);
 }
 
+int windows_mkdir(const char* file)
+{
+	return _wmkdir(u8tou16(file));
+}
+
 int stat_inode(const char* file, struct windows_stat* st)
 {
 	BY_HANDLE_FILE_INFORMATION info;

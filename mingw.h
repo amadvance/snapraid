@@ -41,7 +41,7 @@
 #define HAVE_FSYNC 1
 #define fsync _commit
 #define rename windows_rename
-#define mkdir(a, b) mkdir(a)
+#define mkdir(a, b) windows_mkdir(a)
 #define dirent windows_dirent
 #define DIR windows_dir
 #define opendir windows_opendir
@@ -73,6 +73,11 @@ int windows_stat(const char* file, struct windows_stat* st);
  * Like the C access().
  */
 int windows_access(const char* file, int mode);
+
+/**
+ * Like the C mkdir().
+ */
+int windows_mkdir(const char* file);
 
 /**
  * Like the C stat() with inode information.
