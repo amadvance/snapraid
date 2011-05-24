@@ -1,12 +1,17 @@
 SnapRAID TODO
 =============
 
-This is a list of possible TODO for SnapRAID. The order is not relevant.
+This is a list of possible TODO items for SnapRAID. The order is not relevant.
 
-* Add a checksum for the content file. When reading if the file is invalid,
+* If a file cannot be synched, for example because it was changing, of it
+the file name cannot be supported, it's better to do not stop the sync process.
+The sync process should stop only if the error could be caused by a disk
+corruption.
+
+* Adds a checksum for the content file. When reading if the file is invalid,
 skip to another.
 
-* Change the output format allowing a more easy integration with other utilities
+* Changes the output format allowing a more easy integration with other utilities
 like sort. For example to allow to sort by file, disk or block all the output
 messages in check/fix.
 
@@ -14,14 +19,44 @@ messages in check/fix.
 
 * Easy way to find files using a specified block.
 
-* Implement a restore command to recover files, without the integrity check.
+* Implements a restore command to recover files, without the integrity check.
 
 * When fixing, overwrite the present file only if the backuped one can be
 completely restored.
 
-* Recognize that a file is moved from one disk to another, and if the parity
-data doesn't overlap, do not recompute it.
 
-* Use the O_NOATIME flag if run as 'root'. Anyway a better solution is to
-mount the disk with the "noatime" and "nodiratime" options.
+Delayed TODO
+============
+
+This is a list of low priority TODO items. The order is not relevant.
+
+* Recognizes that a file is moved from one disk to another, and if the parity
+data doesn't overlap, do not recompute it.
+- It's going to work only in RAID5 mode and only in special cases.
+
+* Uses the O_NOATIME flag if run as 'root'.
+- A better solution is to mount the disk with the "noatime" mount option.
+Note also that at mount time you can also use the "nodiratime", and this is
+the only way to specify it.
+
+* Implements a multithread sync command.
+- At now it's questionable if it will result in a performance improvment.
+The murmur3 hash, and the RAID5/6 computations are so fast that even a single
+thread should be able to do them.
+Use the "snapraid -T" comment to see the speed.
+Also, all the file operations are already done in background by the OS,
+so no improvement is expect from this side.
+
+* The SSE2 RAID6 computation may be slower than the MMX version.
+See for example this case on a AMD Zacate APU E-350 1.6GHz:
+memset 1812 [MB/s]
+MD5 252 [MB/s]
+Murmur3 1116 [MB/s]
+RAID5 int32x2 1692 [MB/s]
+RAID5 mmxx2 1745 [MB/s]
+RAID5 sse2x2 2481 [MB/s]
+RAID6 int32x2 807 [MB/s]
+RAID6 mmxx2 1304 [MB/s]
+RAID6 sse2x2 787 [MB/s]
+- Waiting for other similar reports. A single one may be a spurious case.
 
