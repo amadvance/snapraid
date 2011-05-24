@@ -737,6 +737,19 @@ http://kernel.org/pub/linux/kernel/people/hpa/raid6.pdf
 When a file block is shorter than the default block size, for example
 because it\(cqs the last block of a file, it\(cqs assumed as filled with 0
 at the end.
+.SH ENCODING 
+SnapRAID in Unix ignores any encoding. It simply read and stores the
+file names with the same encoding used by the filesystem.
+.PP
+In Windows all the names read from the filesystem are converted and
+processed in the UTF\(hy8 format.
+.PP
+To have the file names printed correctly you have to set the Windows
+console in the UTF\(hy8 mode, with the command \(a"chmod 65001\(a", and use
+a TrueType font like \(a"Lucida Console\(a" for the console font.
+Note that it has effect only on the printed file names, if you
+redirect the console output to a file, the resulting file is always
+in the UTF\(hy8 format.
 .SH COPYRIGHT 
 This file is Copyright (C) 2011 Andrea Mazzoleni
 .SH SEE ALSO 

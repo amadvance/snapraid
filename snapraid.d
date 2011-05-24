@@ -488,6 +488,20 @@ Parity
 	because it's the last block of a file, it's assumed as filled with 0
 	at the end.
 
+Encoding
+	SnapRAID in Unix ignores any encoding. It simply read and stores the
+	file names with the same encoding used by the filesystem.
+
+	In Windows all the names read from the filesystem are converted and
+	processed in the UTF-8 format.
+
+	To have the file names printed correctly you have to set the Windows
+	console in the UTF-8 mode, with the command "chmod 65001", and use
+	a TrueType font like "Lucida Console" for the console font.
+	Note that it has effect only on the printed file names, if you
+	redirect the console output to a file, the resulting file is always
+	in the UTF-8 format.
+
 Copyright
 	This file is Copyright (C) 2011 Andrea Mazzoleni
 

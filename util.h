@@ -22,26 +22,16 @@
 /* string */
 
 /**
- * Marks the end of the current token, and move to the next one.
+ * Marks the end of the current token, and skip one and only one separator if present.
  */
 static inline char* strtoken(char* s)
 {
 	while (*s && *s != ' ')
 		++s;
-	if (*s)
-		*s++ = 0;
-	while (*s == ' ')
+	if (*s) {
+		*s = 0;
 		++s;
-	return s;
-}
-
-/**
- * Move to the next token skipping any separator.
- */
-static inline char* strskip(char* s)
-{
-	while (*s == ' ')
-		++s;
+	}
 	return s;
 }
 

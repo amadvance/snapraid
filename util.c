@@ -58,9 +58,10 @@ int strgets(char* s, unsigned size, FILE* f)
 			return 0;
 	}
 
-	/* remove ending spaces */
-	while (i != s && isspace(i[-1]))
+	/* remove ending carrige return to support the Windows CR+LF format */
+	if (i != s && i[-1] == '\r')
 		--i;
+
 	*i = 0;
 
 	return 1;

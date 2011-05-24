@@ -99,9 +99,12 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 
 		/* start */
 		s = buffer;
-		s = strskip(s);
 
-		/* ignore commens and empty lines */
+		/* skip initial spaces */
+		while (*s && isspace(*s))
+			++s;
+
+		/* ignore comments and empty lines */
 		if (*s == '#' || *s == 0)
 			continue;
 
@@ -261,9 +264,12 @@ void state_read(struct snapraid_state* state)
 
 		/* start */
 		s = buffer;
-		s = strskip(s);
 
-		/* ignore commens and empty lines */
+		/* skip initial spaces */
+		while (*s && isspace(*s))
+			++s;
+
+		/* ignore comments and empty lines */
 		if (*s == '#' || *s == 0)
 			continue;
 

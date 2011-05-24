@@ -225,7 +225,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, s
 			continue;
 
 		/* check for not supported file names, limitation derived from the content file format */
-		if (name[0] == 0 || isspace(name[0]) || isspace(name[strlen(name)-1])) {
+		if (name[0] == 0 || strchr(name, '\n') != 0 || name[strlen(name)-1] == '\r') {
 			fprintf(stderr, "Unsupported name '%s' in file '%s'.\n", name, path_next);
 			exit(EXIT_FAILURE);
 		}
