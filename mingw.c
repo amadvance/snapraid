@@ -83,7 +83,9 @@ static char* u16tou8(const wchar_t* src)
 static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, struct windows_stat* st)
 {
 	/* Convert special attributes to a char device */
-	if ((info->dwFileAttributes & (FILE_ATTRIBUTE_DEVICE | FILE_ATTRIBUTE_TEMPORARY | FILE_ATTRIBUTE_OFFLINE | FILE_ATTRIBUTE_REPARSE_POINT)) != 0) {
+	if ((info->dwFileAttributes & FILE_ATTRIBUTE_DEVICE) != 0) {
+		st->st_mode = S_IFBLK;
+	} else if ((info->dwFileAttributes & (FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_TEMPORARY | FILE_ATTRIBUTE_OFFLINE | FILE_ATTRIBUTE_REPARSE_POINT)) != 0) {
 		st->st_mode = S_IFCHR;
 	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
 		st->st_mode = S_IFDIR;
@@ -120,7 +122,9 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, struct win
 static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_stat* st)
 {
 	/* Convert special attributes to a char device */
-	if ((info->dwFileAttributes & (FILE_ATTRIBUTE_DEVICE | FILE_ATTRIBUTE_TEMPORARY | FILE_ATTRIBUTE_OFFLINE | FILE_ATTRIBUTE_REPARSE_POINT)) != 0) {
+	if ((info->dwFileAttributes & FILE_ATTRIBUTE_DEVICE) != 0) {
+		st->st_mode = S_IFBLK;
+	} else if ((info->dwFileAttributes & (FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_TEMPORARY | FILE_ATTRIBUTE_OFFLINE | FILE_ATTRIBUTE_REPARSE_POINT)) != 0) {
 		st->st_mode = S_IFCHR;
 	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
 		st->st_mode = S_IFDIR;
@@ -144,10 +148,10 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 	 */
 	st->st_mtime = (st->st_mtime - 116444736000000000LL) / 10000000;
 
-	/* No inode information available  */
+	/* No inode information available */
 	st->st_ino = 0;
 
-	/* No link information available  */
+	/* No link information available */
 	st->st_nlink = 0;
 }
 
