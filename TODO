@@ -21,9 +21,14 @@ messages in check/fix.
 
 * Implements a restore command to recover files, without the integrity check.
 
+* Allow to filter the files to check/fix based on the drive where they reside.
+
+* Filtered out files should be opened in read-only mode.
+
 * When fixing, overwrite the present file only if the backuped one can be
 completely restored.
 
+* Support to backup also symlinks.
 
 Delayed TODO
 ============
