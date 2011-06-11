@@ -19,7 +19,11 @@ messages in check/fix.
 
 * Easy way to find files using a specified block.
 
-* Implements a restore command to recover files, without the integrity check.
+* Implements an undelete command to recover missing files, without the
+integrity check of the existing ones.
+
+* Rename sync->backup and fix->restore. It seems to me a naming expressing
+better the meaning of the commands. But not yet sure.
 
 * Allow to filter the files to check/fix based on the drive where they reside.
 

@@ -124,7 +124,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 				/* This one is really an unexpected error, because we are only reading */
 				/* and closing a descriptor should never fail */
 				fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to sync.\n");
-				fprintf(stderr, "Stopping at block %u\n", i);
+				printf("Stopping at block %u\n", i);
 				++unrecoverable_error;
 				goto bail;
 			}
@@ -134,14 +134,14 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 				if (errno == ENOENT) {
 					fprintf(stderr, "Missing file '%s'.\n", handle[j].path);
 					fprintf(stderr, "WARNING! You cannot modify data disk during a sync. Rerun the sync command when finished.\n");
-					fprintf(stderr, "Stopping at block %u\n", i);
+					printf("Stopping at block %u\n", i);
 				} else if (errno == EACCES) {
 					fprintf(stderr, "No access at file '%s'.\n", handle[j].path);
 					fprintf(stderr, "WARNING! Please fix the access permission in the data disk.\n");
-					fprintf(stderr, "Stopping at block %u\n", i);
+					printf("Stopping at block %u\n", i);
 				} else {
 					fprintf(stderr, "DANGER! Unexpected open error in a data disk, it isn't possible to sync.\n");
-					fprintf(stderr, "Stopping to allow recovery. Try with 'snapraid check'\n");
+					printf("Stopping to allow recovery. Try with 'snapraid check'\n");
 				}
 				++unrecoverable_error;
 				goto bail;
@@ -159,7 +159,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 				else
 					fprintf(stderr, "Unexpected inode change from %"PRIu64" to %"PRIu64" at file '%s'.\n", block_file_get(block)->inode, handle[j].st.st_ino, handle[j].path);
 				fprintf(stderr, "WARNING! You cannot modify files during a sync. Rerun the sync command when finished.\n");
-				fprintf(stderr, "Stopping at block %u\n", i);
+				printf("Stopping at block %u\n", i);
 				++unrecoverable_error;
 				goto bail;
 			}
@@ -167,7 +167,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 			read_size = handle_read(&handle[j], block, buffer[j], state->block_size);
 			if (read_size == -1) {
 				fprintf(stderr, "DANGER! Unexpected read error in a data disk, it isn't possible to sync.\n");
-				fprintf(stderr, "Stopping to allow recovery. Try with 'snapraid check'\n");
+				printf("Stopping to allow recovery. Try with 'snapraid check'\n");
 				++unrecoverable_error;
 				goto bail;
 			}
@@ -180,7 +180,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
 					fprintf(stderr, "%u: Data error for file %s at position %u\n", i, block_file_get(block)->sub, block_file_pos(block));
 					fprintf(stderr, "DANGER! Unexpected data error in a data disk, it isn't possible to sync.\n");
-					fprintf(stderr, "Stopping to allow recovery. Try with 'snapraid -s %u check'\n", i);
+					printf("Stopping to allow recovery. Try with 'snapraid -s %u check'\n", i);
 					++unrecoverable_error;
 					goto bail;
 				}
@@ -200,7 +200,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 		ret = parity_write(state->parity, parity_f, i, buffer[diskmax], state->block_size);
 		if (ret == -1) {
 			fprintf(stderr, "DANGER! Write error in the Parity disk, it isn't possible to sync.\n");
-			fprintf(stderr, "Stopping at block %u\n", i);
+			printf("Stopping at block %u\n", i);
 			++unrecoverable_error;
 			goto bail;
 		}
@@ -210,7 +210,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 			ret = parity_write(state->qarity, qarity_f, i, buffer[diskmax+1], state->block_size);
 			if (ret == -1) {
 				fprintf(stderr, "DANGER! Write error in the Q-Parity disk, it isn't possible to sync.\n");
-				fprintf(stderr, "Stopping at block %u\n", i);
+				printf("Stopping at block %u\n", i);
 				++unrecoverable_error;
 				goto bail;
 			}
