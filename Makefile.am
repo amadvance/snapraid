@@ -66,6 +66,7 @@ man_MANS = snapraid.1
 clean-local:
 	rm -f valgrind.log callgrind.log cachegrind.log
 	rm -rf test
+	rm -f test.log
 	rm -f *.gcda *.gcno *.gcov
 	rm -rf cov
 	rm -f lcov.info
@@ -77,6 +78,7 @@ maintainer-clean-local:
 
 check-local:
 	rm -rf test
+	rm -f test.log
 	mkdir test
 	mkdir test/disk1
 	mkdir test/disk2
@@ -96,7 +98,7 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) -S -v -c $(srcdir)/test-raid5.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid5.conf check
 	echo --- Extend raid5 to raid6 with fix and check
-	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid6.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid6.conf check 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf fix 2>/dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid5.conf check
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check
@@ -119,17 +121,17 @@ check-local:
 	echo --- Delete one disk, fix and check with raid5
 	rm -r test/disk3
 	mkdir test/disk3
-	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid5.conf check 2>/dev/null
-	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid5.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid5.conf check 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid5.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Delete two disks, fix and check with raid6
 	rm -r test/disk1
 	mkdir test/disk1
 	rm -r test/disk2
 	mkdir test/disk2
-	$(TESTENV) ./snapraid$(EXEEXT) -S -U -c $(srcdir)/test-raid5.conf check 2>/dev/null
-	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid6.conf check 2>/dev/null
-	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -U -c $(srcdir)/test-raid5.conf check 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid6.conf check 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Sync after all the fixes with an empty drive to test -E
 	$(TESTENV) ./snapraid$(EXEEXT) -S -v -E -c $(srcdir)/test-raid6.conf sync
@@ -139,72 +141,72 @@ check-local:
 	rm test/disk3/6*
 	$(TESTENV) ./mktest$(EXEEXT) generate 4 3 100 4000
 	$(TESTENV) ./snapraid$(EXEEXT) -S -v -c $(srcdir)/test-raid6.conf -t 100 sync
-	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) -S -v -c $(srcdir)/test-raid6.conf -t 700 sync
-	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) -S -v -c $(srcdir)/test-raid6.conf -t 1000 sync
-	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) -S -v -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Delete some files, fix and check with raid5
 	rm test/disk1/1*
-	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid5.conf check 2>/dev/null
-	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid5.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid5.conf check 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid5.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Delete some dirs, fix and check with raid5
 	rm -r test/disk2/_a
 	rm -r test/disk2/_b
-	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid5.conf check 2>/dev/null
-	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid5.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid5.conf check 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid5.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Delete some dirs, fix and check with raid6
 	rm -r test/disk2/_a
 	rm -r test/disk2/_b
 	rm -r test/disk3/_a
 	rm -r test/disk3/_b
-	$(TESTENV) ./snapraid$(EXEEXT) -S -U -c $(srcdir)/test-raid5.conf check 2>/dev/null
-	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid6.conf check 2>/dev/null
-	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -U -c $(srcdir)/test-raid5.conf check 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid6.conf check 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Delete the parity, fix and check with raid5
 	rm test/parity
-	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid5.conf check 2>/dev/null
-	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid5.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid5.conf check 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid5.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Delete the parity and the q-parity, fix and check with raid6
 	rm test/parity
 	rm test/q-parity
-	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Delete the parity and a disk, fix and check with raid6
 	rm test/parity
 	rm -r test/disk2/_a
 	rm -r test/disk2/_b
-	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Delete the q-parity and a disk, fix and check with raid6
 	rm test/q-parity
 	rm -r test/disk3/_a
 	rm -r test/disk3/_b
-	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Corrupt the parity, fix and check with raid5
 	$(TESTENV) ./mktest$(EXEEXT) damage 1 100 10000 test/parity
-	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid5.conf check 2>/dev/null
-	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid5.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid5.conf check 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid5.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Corrupt the parity and the q-parity, fix and check with raid6
 	$(TESTENV) ./mktest$(EXEEXT) damage 2 100 10000 test/parity
 	$(TESTENV) ./mktest$(EXEEXT) damage 2 100 10000 test/q-parity
-	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid6.conf check 2>/dev/null
-	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid6.conf check 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Corrupt some files, fix and check with raid5
 	$(TESTENV) ./mktest$(EXEEXT) damage 3 1 500 test/disk2/b*
 	$(TESTENV) ./mktest$(EXEEXT) append 3 500 test/disk2/c*
 	$(TESTENV) ./mktest$(EXEEXT) truncate 3 500 test/disk2/d*
-	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid5.conf check 2>/dev/null
-	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid5.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid5.conf check 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid5.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Corrupt some files, fix and check with raid6
 	$(TESTENV) ./mktest$(EXEEXT) damage 4 1 500 test/disk2/_a/_a/*
@@ -215,9 +217,9 @@ check-local:
 	$(TESTENV) ./mktest$(EXEEXT) append 4 500 test/disk3/_b/_a/*
 	$(TESTENV) ./mktest$(EXEEXT) truncate 4 500 test/disk2/_b/_b/*
 	$(TESTENV) ./mktest$(EXEEXT) truncate 4 500 test/disk3/_b/_b/*
-	$(TESTENV) ./snapraid$(EXEEXT) -S -U -c $(srcdir)/test-raid5.conf check 2>/dev/null
-	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid6.conf check 2>/dev/null
-	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -U -c $(srcdir)/test-raid5.conf check 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid6.conf check 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Another time with different values
 	$(TESTENV) ./mktest$(EXEEXT) damage 5 2 50 test/disk2/_a/_a/*
@@ -230,9 +232,9 @@ check-local:
 	$(TESTENV) ./mktest$(EXEEXT) append 5 1500 test/disk3/_b/_a/*
 	$(TESTENV) ./mktest$(EXEEXT) truncate 5 1500 test/disk2/_b/_b/*
 	$(TESTENV) ./mktest$(EXEEXT) truncate 5 1500 test/disk3/_b/_b/*
-	$(TESTENV) ./snapraid$(EXEEXT) -S -U -c $(srcdir)/test-raid5.conf check 2>/dev/null
-	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid6.conf check 2>/dev/null
-	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -U -c $(srcdir)/test-raid5.conf check 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid6.conf check 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Corrupt the parity and some files, fix and check with raid6
 	$(TESTENV) ./mktest$(EXEEXT) damage 6 100 10000 test/parity
@@ -240,9 +242,9 @@ check-local:
 	$(TESTENV) ./mktest$(EXEEXT) damage 6 1 500 test/disk1/_a/_b/*
 	$(TESTENV) ./mktest$(EXEEXT) append 6 500 test/disk1/_b/_a/*
 	$(TESTENV) ./mktest$(EXEEXT) truncate 6 500 test/disk1/_b/_b/*
-	$(TESTENV) ./snapraid$(EXEEXT) -S -U -c $(srcdir)/test-raid5.conf check 2>/dev/null
-	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid6.conf check 2>/dev/null
-	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -U -c $(srcdir)/test-raid5.conf check 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid6.conf check 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Corrupt the q-parity and some files, fix and check with raid6
 	$(TESTENV) ./mktest$(EXEEXT) damage 7 100 10000 test/q-parity
@@ -250,9 +252,9 @@ check-local:
 	$(TESTENV) ./mktest$(EXEEXT) damage 7 1 500 test/disk1/_a/_b/*
 	$(TESTENV) ./mktest$(EXEEXT) append 7 500 test/disk1/_b/_a/*
 	$(TESTENV) ./mktest$(EXEEXT) truncate 7 500 test/disk1/_b/_b/*
-	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid5.conf check 2>/dev/null
-	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid6.conf check 2>/dev/null
-	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid5.conf check 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) -S -R -c $(srcdir)/test-raid6.conf check 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Sync after all the fixes
 	$(TESTENV) ./snapraid$(EXEEXT) -S -v -c $(srcdir)/test-raid6.conf sync
