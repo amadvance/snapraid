@@ -244,7 +244,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, s
 		pathprint(sub_next, sizeof(sub_next), "%s%s", sub, name);
 
 		/* get info about the file */
-		if (stat(path_next, &st) != 0) {
+		if (lstat(path_next, &st) != 0) {
 			fprintf(stderr, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
 			exit(EXIT_FAILURE);
 		}
