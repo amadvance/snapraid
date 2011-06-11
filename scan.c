@@ -206,7 +206,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, s
 	d = opendir(dir);
 	if (!d) {
 		fprintf(stderr, "Error opening directory '%s'. %s.\n", dir, strerror(errno));
-        fprintf(stderr, "You can exclude it in the config file with:\n\texclude /%s\n", sub);
+		fprintf(stderr, "You can exclude it in the config file with:\n\texclude /%s/\n", sub);
 		exit(EXIT_FAILURE);
 	}
    
@@ -222,7 +222,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, s
 		dd = readdir(d);
 		if (dd == 0 && errno != 0) {
 			fprintf(stderr, "Error reading directory '%s'. %s.\n", dir, strerror(errno));
-			fprintf(stderr, "You can exclude it in the config file with:\n\texclude /%s\n", sub);
+			fprintf(stderr, "You can exclude it in the config file with:\n\texclude /%s/\n", sub);
 			exit(EXIT_FAILURE);
 		}
 		if (dd == 0 && errno == 0) {
@@ -254,13 +254,11 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, s
 
 				/* check for read permission */
 				if (access(path_next, R_OK) != 0) {
-					fprintf(stderr, "You do not have read permissions for file '%s'.\n", path_next);
-					fprintf(stderr, "Fix the permissions or exclude it in the configuration with:\n\texclude /%s\n", sub_next);
-					fprintf(stderr, "or exclude the whole directory with:\n\texclude /%s\n", sub);
-					exit(EXIT_FAILURE);
+					fprintf(stderr, "warning: Ignoring, for missing read permission, file '%s'\n", path_next);
+					continue;
 				}
 
-#if HAVE_STAT_INODE  
+#if HAVE_STAT_INODE
 				/* get inode info about the file, Windows needs an additional step */
 				if (stat_inode(path_next, &st) != 0) {
 					fprintf(stderr, "Error in stat_inode file '%s'. %s.\n", path_next, strerror(errno));
@@ -285,8 +283,12 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, s
 				}
 			}
 		} else {
-			if (state->verbose) {
-				printf("warning: Ignored special file '/%s'\n", sub_next);
+			if (filter_path(&state->filterlist, sub_next, 0) == 0) {
+				fprintf(stderr, "warning: Ignoring special file '%s'\n", path_next);
+			} else {
+				if (state->verbose) {
+					printf("Excluding special file '/%s'\n", sub_next);
+				}
 			}
 		}
 	}

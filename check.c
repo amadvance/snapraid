@@ -291,9 +291,13 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 
 			if (fix) {
 				/* if fixing, create the file, open for writing and resize if required */
-				ret = handle_create(&handle[j],  block_file_get(block));
+				ret = handle_create(&handle[j], block_file_get(block));
 				if (ret == -1) {
-					fprintf(stderr, "DANGER! Without a working data disk, it isn't possible to fix errors on it.\n");
+					if (errno == EACCES) {
+						fprintf(stderr, "WARNING! Please give write permission to the file.\n");
+					} else {
+						fprintf(stderr, "DANGER! Without a working data disk, it isn't possible to fix errors on it.\n");
+					}
 					fprintf(stderr, "Stopping at block %u\n", i);
 					++unrecoverable_error;
 					goto bail;
@@ -450,7 +454,12 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 
 					ret = handle_write(failed[j].handle, failed[j].block, buffer[failed[j].index], state->block_size);
 					if (ret == -1) {
-						fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+						if (errno == EACCES) {
+							fprintf(stderr, "WARNING! Please give write permission to the file.\n");
+						} else {
+							/* we do not use DANGER because for ENOSPC which is not always correctly reported */
+							fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+						}
 						fprintf(stderr, "Stopping at block %u\n", i);
 						++unrecoverable_error;
 						goto bail;
@@ -468,6 +477,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 					if (buffer_parity == 0 && parity_f != -1) {
 						ret = parity_write(state->parity, parity_f, i, buffer[diskmax], state->block_size);
 						if (ret == -1) {
+							/* we do not use DANGER because for ENOSPC which is not always correctly reported */
 							fprintf(stderr, "WARNING! Without a working Parity disk, it isn't possible to fix errors on it.\n");
 							fprintf(stderr, "Stopping at block %u\n", i);
 							++unrecoverable_error;
@@ -483,6 +493,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 						if (buffer_qarity == 0 && qarity_f != -1) {
 							ret = parity_write(state->qarity, qarity_f, i, buffer[diskmax + 1], state->block_size);
 							if (ret == -1) {
+								/* we do not use DANGER because for ENOSPC which is not always correctly reported */
 								fprintf(stderr, "WARNING! Without a working Q-Parity disk, it isn't possible to fix errors on it.\n");
 								fprintf(stderr, "Stopping at block %u\n", i);
 								++unrecoverable_error;

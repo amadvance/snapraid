@@ -82,6 +82,7 @@ int windows_mkdir(const char* file);
 /**
  * Like the C stat() with inode information.
  * It doesn't work for all kind of files and directories. For example "\System Volume Information" cannot be opened.
+ * Note that instead stat() works for all the files.
  */
 #define HAVE_STAT_INODE 1
 int stat_inode(const char* file, struct windows_stat* st);

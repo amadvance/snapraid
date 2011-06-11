@@ -1,6 +1,15 @@
 SnapRAID HISTORY
 ================
 
+1.4 2011/6
+==========
+* Ignoring in sync System and Hidden files in Windows.
+* Files without read permission are ignored in sync.
+* If a file is ignored a warning message is printed. You have to exclude it
+  to remove the warning.
+* In fixing, if a file cannot be written for missing permission, an error is
+  reported only if a write is effectively required.
+
 1.3 2011/5
 ==========
 * Fixed the restore of directory with unicode chars in Windows.

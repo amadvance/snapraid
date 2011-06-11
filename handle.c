@@ -112,6 +112,13 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 
 	/* opening in sequential mode in Windows */
 	handle->f = open(handle->path, O_RDWR | O_CREAT | O_BINARY | O_SEQUENTIAL, 0600);
+
+	/* if failed for missing permission */
+	if (handle->f == -1 && errno == EACCES) {
+		/* retry without requesting write permission */
+		handle->f = open(handle->path, O_RDONLY | O_BINARY | O_SEQUENTIAL);
+	}
+
 	if (handle->f == -1) {
 		/* invalidate for error */
 		handle->file = 0;
@@ -142,6 +149,8 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 		if (ret != 0) {
 			if (errno == ENOSPC) {
 				fprintf(stderr, "Failed to grow file '%s' due lack of space.\n", handle->path);
+			} else if (errno == EACCES) {
+				fprintf(stderr, "Failed to grow file '%s' for missing write permission.\n", handle->path);
 			} else {
 				fprintf(stderr, "Error growing file '%s'. %s.\n", handle->path, strerror(errno));
 			}
@@ -150,7 +159,11 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 	} else if (handle->st.st_size > file->size) {
 		ret = ftruncate(handle->f, file->size);
 		if (ret != 0) {
-			fprintf(stderr, "Error truncating file '%s'. %s.\n", handle->path, strerror(errno));
+			if (errno == EACCES) {
+				fprintf(stderr, "Failed to truncate file '%s' for missing write permission.\n", handle->path);
+			} else {
+				fprintf(stderr, "Error truncating file '%s'. %s.\n", handle->path, strerror(errno));
+			}
 			return -1;
 		}
 	}

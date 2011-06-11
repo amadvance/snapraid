@@ -36,8 +36,10 @@ int handle_close_if_different(struct snapraid_handle* handle, struct snapraid_fi
 
 /**
  * Creates a file.
- * The file is created if missing, and opening with write access.
+ * The file is created if missing, and opened with write access.
  * If the file is larger than expected, the value 1 is returned, and the file is truncated to the correct size.
+ * If the file cannot be opened for write access, it's opened with read-only access.
+ * The read-only access works only if the file has already the correct size and doesn't need to be modified.
  */
 int handle_create(struct snapraid_handle* handle, struct snapraid_file* file);
 
