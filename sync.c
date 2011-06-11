@@ -152,8 +152,13 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 				|| handle[j].st.st_mtime != block_file_get(block)->mtime
 				|| handle[j].st.st_ino != block_file_get(block)->inode
 			) {
-				fprintf(stderr, "Unexpected change at file '%s'.\n", handle[j].path);
-				fprintf(stderr, "WARNING! You cannot modify data disk during a sync. Rerun the sync command when finished.\n");
+				if (handle[j].st.st_size != block_file_get(block)->size)
+					fprintf(stderr, "Unexpected size change at file '%s'.\n", handle[j].path);
+				else if (handle[j].st.st_mtime != block_file_get(block)->mtime)
+					fprintf(stderr, "Unexpected time change at file '%s'.\n", handle[j].path);
+				else
+					fprintf(stderr, "Unexpected inode change from %"PRIu64" to %"PRIu64" at file '%s'.\n", block_file_get(block)->inode, handle[j].st.st_ino, handle[j].path);
+				fprintf(stderr, "WARNING! You cannot modify files during a sync. Rerun the sync command when finished.\n");
 				fprintf(stderr, "Stopping at block %u\n", i);
 				++unrecoverable_error;
 				goto bail;
