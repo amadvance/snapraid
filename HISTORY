@@ -9,6 +9,7 @@ SnapRAID HISTORY
   to remove the warning.
 * In fixing, if a file cannot be written for missing permission, an error is
   reported only if a write is effectively required.
+* Ignores any symbolic links. They are not backuped.
 
 1.3 2011/5
 ==========

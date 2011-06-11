@@ -32,6 +32,7 @@
 #define fopen windows_fopen
 #define open windows_open
 #define stat windows_stat
+#define lstat windows_lstat
 #define access windows_access
 #define off_t off64_t
 #define lseek lseek64
@@ -67,7 +68,7 @@ int windows_fstat(int fd, struct windows_stat* st);
 /**
  * Like the C stat() but without inode information.
  */
-int windows_stat(const char* file, struct windows_stat* st);
+int windows_lstat(const char* file, struct windows_stat* st);
 
 /**
  * Like the C access().
@@ -80,12 +81,12 @@ int windows_access(const char* file, int mode);
 int windows_mkdir(const char* file);
 
 /**
- * Like the C stat() with inode information.
+ * Like the C lstat() with inode information.
  * It doesn't work for all kind of files and directories. For example "\System Volume Information" cannot be opened.
- * Note that instead stat() works for all the files.
+ * Note that instead lstat() works for all the files.
  */
-#define HAVE_STAT_INODE 1
-int stat_inode(const char* file, struct windows_stat* st);
+#define HAVE_LSTAT_INODE 1
+int lstat_inode(const char* file, struct windows_stat* st);
 
 /**
  * Like the C ftruncate().
