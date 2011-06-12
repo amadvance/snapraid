@@ -278,7 +278,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			}
 
 			/* keep track if at least one hashed block has no parity */
-			/* if at least one block has no parity, doesn't make sense to check/fix it */
+			/* if at least one block has no parity, doesn't make sense to check/fix the parity */
 			/* as errors are the normal condition */
 			if (!block_flag_has(block, BLOCK_HAS_PARITY))
 				all_parity = 0;
@@ -305,11 +305,15 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 					goto bail;
 				}
 
-				/* notify the warning condition of a file larger than expected */
-				if (ret > 0) {
-					error += ret;
-					/* this is always a recovered error */
-					recovered_error += ret;
+				/* check if the file was larger and now truncated */
+				if (ret == 1) {
+					fprintf(stderr, "File '%s' is larger than expected.\n", handle[j].path);
+					fprintf(stderr, "%u: Size error for file %s\n", i, block_file_get(block)->sub);
+					++error;
+
+					/* this is already a recovered error */
+					fprintf(stderr, "%u: Fixed size for file %s\n", i, block_file_get(block)->sub);
+					++recovered_error;
 				}
 			} else {
 				/* if checking, open the file for reading */
@@ -331,13 +335,12 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 					&& handle[j].st.st_size > block_file_get(block)->size
 				) {
 					fprintf(stderr, "File '%s' is larger than expected.\n", handle[j].path);
+					fprintf(stderr, "%u: Size error for file %s\n", i, block_file_get(block)->sub);
+					++error;
 
 					/* if fragmented, it may be reopened, so store the notification */
 					/* to prevent to signal and count the error more than one time */
 					file_flag_set(block_file_get(block), FILE_IS_LARGER);
-
-					/* this is always a recoverable error */
-					++error;
 				}
 			}
 

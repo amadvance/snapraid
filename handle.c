@@ -177,9 +177,8 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 	}
 #endif
 
-	/* return the warning condition of a larger file */
+	/* return if the file size was truncated */
 	if (handle->st.st_size > file->size) {
-		fprintf(stderr, "File '%s' truncated to size %"PRIu64".\n", handle->path, file->size);
 		return 1;
 	}
 
@@ -272,8 +271,12 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 
 	read_ret = read(handle->f, block_buffer, read_size);
 #endif
-	if (read_ret != (ssize_t)read_size) { /* conversion is safe because block_size is always small */
+	if (read_ret < 0) {
 		fprintf(stderr, "Error reading file '%s'. %s.\n", handle->path, strerror(errno));
+		return -1;
+	}
+	if (read_ret != (ssize_t)read_size) {
+		fprintf(stderr, "File '%s' is smaller than expected.\n", handle->path);
 		return -1;
 	}
 
