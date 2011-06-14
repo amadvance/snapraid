@@ -24,7 +24,7 @@ integrity check of the existing ones.
 It should restore only missing files, without recovering modified ones
 or check validity of data of existing ones.
 
-* Implement a "dry" command to check the state of files, without doing any operation.
+* Implement a "probe" command to check the state of files, without doing any operation.
 It should prints all the changed, added and removed files.
 Alternatively a -dryrun option for "sync".
 

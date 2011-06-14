@@ -168,7 +168,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 				if (strcmp(file->sub, sub) == 0) {
 					if (!state->force_zero) {
 						fprintf(stderr, "The file '%s' in disk '%s' at dir '%s' has now zero size!\n", sub, disk->name, disk->dir);
-						fprintf(stderr, "If it's really what you want to sync it, use 'snapraid --force-zero sync\n");
+						fprintf(stderr, "If you really want to sync, use 'snapraid --force-zero sync'\n");
 						exit(EXIT_FAILURE);
 					}
 				}
@@ -354,7 +354,7 @@ void state_scan(struct snapraid_state* state)
 		if (scan[i].count_equal == 0 && scan[i].count_moved == 0 && scan[i].count_remove != 0) {
 			if (!state->force_empty) {
 				fprintf(stderr, "All the files in disk '%s' at dir '%s' are missing!\n", disk->name, disk->dir);
-				fprintf(stderr, "If it's really what you want to sync it, use 'snapraid --force-empty sync\n");
+				fprintf(stderr, "If you really want to sync, use 'snapraid --force-empty sync'\n");
 				exit(EXIT_FAILURE);
 			}
 		}
