@@ -37,8 +37,6 @@ static int state_dry_process(struct snapraid_state* state, int parity_f, int qar
 	data_off_t countsize;
 	block_off_t countpos;
 	block_off_t countmax;
-	time_t start;
-	time_t last;
 	unsigned error;
 
 	buffer = malloc_nofail(state->block_size);
@@ -54,8 +52,7 @@ static int state_dry_process(struct snapraid_state* state, int parity_f, int qar
 	countmax = blockmax - blockstart;
 	countsize = 0;
 	countpos = 0;
-	start = time(0);
-	last = start;
+	state_progress_begin(state, blockstart, blockmax, countmax);
 	for(i=blockstart;i<blockmax;++i) {
 		/* for each disk, process the block */
 		for(j=0;j<diskmax;++j) {
@@ -68,7 +65,7 @@ static int state_dry_process(struct snapraid_state* state, int parity_f, int qar
 
 			ret = handle_close_if_different(&handle[j], block_file_get(block));
 			if (ret == -1) {
-				fprintf(stderr, "Stopping at block %u\n", i);
+				printf("Stopping at block %u\n", i);
 				++error;
 				goto bail;
 			}
@@ -76,14 +73,14 @@ static int state_dry_process(struct snapraid_state* state, int parity_f, int qar
 			/* open the file for reading */
 			ret = handle_open(&handle[j], block_file_get(block));
 			if (ret == -1) {
-				fprintf(stderr, "%u: Open error for file %s at position %u\n", i, block_file_get(block)->sub, block_file_pos(block));
+				fprintf(stderr, "error:%u:%s:%s: Open error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 				++error;
 				continue;
 			}
 
 			read_size = handle_read(&handle[j], block, buffer, state->block_size);
 			if (read_size == -1) {
-				fprintf(stderr, "%u: Read error for file %s at position %u\n", i, block_file_get(block)->sub, block_file_pos(block));
+				fprintf(stderr, "error:%u:%s:%s: Read error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 				++error;
 				continue;
 			}
@@ -95,7 +92,7 @@ static int state_dry_process(struct snapraid_state* state, int parity_f, int qar
 		if (parity_f != -1) {
 			ret = parity_read(state->parity, parity_f, i, buffer, state->block_size);
 			if (ret == -1) {
-				fprintf(stderr, "%u: Parity read error\n", i);
+				fprintf(stderr, "error:%u:parity: Read error\n", i);
 				++error;
 			}
 		}
@@ -105,27 +102,22 @@ static int state_dry_process(struct snapraid_state* state, int parity_f, int qar
 			if (qarity_f != -1) {
 				ret = parity_read(state->qarity, qarity_f, i, buffer, state->block_size);
 				if (ret == -1) {
-					fprintf(stderr, "%u: Q-Parity read error\n", i);
+					fprintf(stderr, "error:%u:qarity: Read error\n", i);
 					++error;
 				}
 			}
 		}
-		
 
 		/* count the number of processed block */
 		++countpos;
 
 		/* progress */
-		if (state_progress(&start, &last, countpos, countmax, countsize)) {
-			printf("Stopping for interruption at block %u\n", i);
+		if (state_progress(state, i, countpos, countmax, countsize)) {
 			break;
 		}
 	}
 
-	if (countmax)
-		printf("%u%% completed, %u MiB processed\n", countpos * 100 / countmax, (unsigned)(countsize / (1024*1024)));
-	else
-		printf("Nothing to do\n");
+	state_progress_end(state, countpos, countmax, countsize);
 
 bail:
 	for(j=0;j<diskmax;++j) {

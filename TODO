@@ -11,10 +11,6 @@ corruption.
 * Adds a checksum for the content file. When reading if the file is invalid,
 skip to another.
 
-* Changes the output format allowing a more easy integration with other utilities
-like sort. For example to allow to sort by file, disk or block all the output
-messages in check/fix.
-
 * Easy way to find duplicates using the computed hash.
 
 * Easy way to find files using a specified block.
@@ -23,10 +19,6 @@ messages in check/fix.
 integrity check of the existing ones.
 It should restore only missing files, without recovering modified ones
 or check validity of data of existing ones.
-
-* Implement a "probe" command to check the state of files, without doing any operation.
-It should prints all the changed, added and removed files.
-Alternatively a -dryrun option for "sync".
 
 * Rename sync->backup and fix->restore. It seems to me a naming expressing
 better the meaning of the commands. But not yet sure.

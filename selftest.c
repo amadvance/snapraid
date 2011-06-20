@@ -230,10 +230,15 @@ static void hashtest(void)
 	}
 }
 
-void selftest(void)
+void selftest(int gui)
 {
 	unsigned i;
 
+	if (gui) {
+		fprintf(stderr, "selftest:\n");
+		fflush(stderr);
+	}
+	
 	printf("Self test...\n");
 
 	/* large file check */

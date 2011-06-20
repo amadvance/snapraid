@@ -29,6 +29,7 @@
 void state_init(struct snapraid_state* state)
 {
 	state->verbose = 0;
+	state->gui = 0;
 	state->force_zero = 0;
 	state->force_empty = 0;
 	state->expect_unrecoverable = 0;
@@ -55,17 +56,24 @@ void state_done(struct snapraid_state* state)
 	tommy_list_foreach(&state->filterlist, (tommy_foreach_func*)filter_free);
 }
 
-void state_config(struct snapraid_state* state, const char* path, int verbose, int force_zero, int force_empty, int expect_unrecoverable, int expect_recoverable)
+void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int expect_unrecoverable, int expect_recoverable)
 {
 	FILE* f;
 	unsigned line;
 	unsigned content_count;
 
 	state->verbose = verbose;
+	state->gui = gui;
 	state->force_zero = force_zero;
 	state->force_empty = force_empty;
 	state->expect_unrecoverable = expect_unrecoverable;
 	state->expect_recoverable = expect_recoverable;
+
+	if (state->gui) {
+		fprintf(stderr, "version:%s\n", PACKAGE_VERSION);
+		fprintf(stderr, "conf:%s\n", path);
+		fflush(stderr);
+	}
 
 	f = fopen(path, "rt");
 	if (!f) {
@@ -186,6 +194,23 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 		fprintf(stderr, "With 'q-parity' you must have at least two 'content' specifications in '%s'\n", path);
 		exit(EXIT_FAILURE);
 	}
+
+	if (state->gui) {
+		unsigned i;
+		fprintf(stderr, "blocksize:%u\n", state->block_size);
+		for(i=0;i<tommy_array_size(&state->diskarr);++i) {
+			struct snapraid_disk* disk = tommy_array_get(&state->diskarr, i);
+			fprintf(stderr, "disk:%s:%s\n", disk->name, disk->dir);
+		}
+		if (state->qarity[0] != 0)
+			fprintf(stderr, "mode:raid6\n");
+		else
+			fprintf(stderr, "mode:raid5\n");
+		fprintf(stderr, "parity:%s\n", state->parity);
+		if (state->qarity[0] != 0)
+			fprintf(stderr, "qarity:%s\n", state->qarity);
+		fflush(stderr);
+	}
 }
 
 void state_read(struct snapraid_state* state)
@@ -210,6 +235,10 @@ void state_read(struct snapraid_state* state)
 		struct snapraid_content* content = node->data;
 		pathcpy(path, sizeof(path), content->content);
 
+		if (state->gui) {
+			fprintf(stderr, "content:%s\n", path);
+			fflush(stderr);
+		}
 		printf("Loading state from %s...\n", path);
 
 		f = fopen(path, "rt");
@@ -647,42 +676,80 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist)
 	}
 }
 
+void state_progress_begin(struct snapraid_state* state, block_off_t blockstart, block_off_t blockmax, block_off_t countmax)
+{
+	if (state->gui) {
+		fprintf(stderr,"run:begin:%u:%u:%u\n", blockstart, blockmax, countmax);
+		fflush(stderr);
+	} else {
+		time_t now;
+
+		now = time(0);
+
+		state->progress_start = now;
+		state->progress_last = now;
+	}
+}
+
+void state_progress_end(struct snapraid_state* state, block_off_t countpos, block_off_t countmax, data_off_t countsize)
+{
+	if (state->gui) {
+		fprintf(stderr, "run:end\n");
+		fflush(stderr);
+	} else {
+		unsigned countsize_MiB = (countsize + 1024*1024 - 1) / (1024*1024);
+
+		if (countmax)
+			printf("%u%% completed, %u MiB processed\n", countpos * 100 / countmax, countsize_MiB);
+		else
+			printf("Nothing to do\n");
+	}
+}
+
 #define PROGRESS_CLEAR "          "
 
-int state_progress(time_t* start, time_t* last, block_off_t countpos, block_off_t countmax, data_off_t countsize)
+int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize)
 {
-	time_t now;
+	if (state->gui) {
+		fprintf(stderr, "run:pos:%u:%u:\n", blockpos, countpos);
+		fflush(stderr);
+	} else {
+		time_t now;
 
-	now = time(0);
+		now = time(0);
 
-	if (*last != now) {
-		time_t delta = now - *start;
+		if (state->progress_last != now) {
+			time_t delta = now - state->progress_start;
 
-		printf("%u%%, %u MiB", countpos * 100 / countmax, (unsigned)(countsize / (1024*1024)));
+			printf("%u%%, %u MiB", countpos * 100 / countmax, (unsigned)(countsize / (1024*1024)));
 
-		if (delta != 0) {
-			printf(", %u MiB/s", (unsigned)(countsize / (1024*1024) / delta));
+			if (delta != 0) {
+				printf(", %u MiB/s", (unsigned)(countsize / (1024*1024) / delta));
+			}
+
+			if (delta > 5 && countpos > 0) {
+				unsigned m, h;
+				data_off_t todo = countmax - countpos;
+
+				m = todo * delta / (60 * countpos);
+
+				h = m / 60;
+				m = m % 60;
+
+				printf(", %u:%02u ETA%s", h, m, PROGRESS_CLEAR);
+			}
+			printf("\r");
+			fflush(stdout);
+			state->progress_last = now;
 		}
-
-		if (delta > 5 && countpos > 0) {
-			unsigned m, h;
-			data_off_t todo = countmax - countpos;
-
-			m = todo * delta / (60 * countpos);
-
-			h = m / 60;
-			m = m % 60;
-
-			printf(", %u:%02u ETA%s", h, m, PROGRESS_CLEAR);
-		}
-		printf("\r");
-		fflush(stdout);
-		*last = now;
 	}
 
 	/* stop if requested */
 	if (global_interrupt) {
-		printf("\n");
+		if (!state->gui) {
+			printf("\n");
+			printf("Stopping for interruption at block %u\n", blockpos);
+		}
 		return 1;
 	}
 

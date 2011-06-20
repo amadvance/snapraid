@@ -22,7 +22,7 @@
 /* snapraid */
 
 void speed(void);
-void selftest(void);
+void selftest(int gui);
 
 #endif
 

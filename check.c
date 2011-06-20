@@ -97,7 +97,7 @@ static int repair(struct snapraid_state* state, unsigned i, unsigned diskmax, st
 			return 0;
 		}
 
-		fprintf(stderr, "%u: Parity data error\n", i);
+		fprintf(stderr, "error:%u:parity: Data error\n", i);
 		++error;
 	}
 
@@ -119,7 +119,7 @@ static int repair(struct snapraid_state* state, unsigned i, unsigned diskmax, st
 			return 0;
 		}
 
-		fprintf(stderr, "%u: Q-Parity data error\n", i);
+		fprintf(stderr, "error:%u:qarity: Data error\n", i);
 		++error;
 	}
 
@@ -143,7 +143,7 @@ static int repair(struct snapraid_state* state, unsigned i, unsigned diskmax, st
 			return 0;
 		}
 
-		fprintf(stderr, "%u: Parity/Q-Parity data error\n", i);
+		fprintf(stderr, "error:%u:parity/qarity: Data error\n", i);
 		++error;
 	}
 
@@ -168,8 +168,6 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 	data_off_t countsize;
 	block_off_t countpos;
 	block_off_t countmax;
-	time_t start;
-	time_t last;
 	unsigned error;
 	unsigned unrecoverable_error;
 	unsigned recovered_error;
@@ -224,8 +222,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 
 	countsize = 0;
 	countpos = 0;
-	start = time(0);
-	last = start;
+	state_progress_begin(state, blockstart, blockmax, countmax);
 	for(i=blockstart;i<blockmax;++i) {
 		unsigned failed_count;
 		int one_tocheck;
@@ -308,11 +305,11 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 				/* check if the file was larger and now truncated */
 				if (ret == 1) {
 					fprintf(stderr, "File '%s' is larger than expected.\n", handle[j].path);
-					fprintf(stderr, "%u: Size error for file %s\n", i, block_file_get(block)->sub);
+					fprintf(stderr, "error:%u:%s:%s: Size error\n", i, handle[j].disk->name, block_file_get(block)->sub);
 					++error;
 
 					/* this is already a recovered error */
-					fprintf(stderr, "%u: Fixed size for file %s\n", i, block_file_get(block)->sub);
+					fprintf(stderr, "fixed:%u:%s:%s: Fixed size\n", i, handle[j].disk->name, block_file_get(block)->sub);
 					++recovered_error;
 				}
 			} else {
@@ -325,7 +322,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 					failed[failed_count].handle = &handle[j];
 					++failed_count;
 
-					fprintf(stderr, "%u: Open error for file %s at position %u\n", i, block_file_get(block)->sub, block_file_pos(block));
+					fprintf(stderr, "error:%u:%s:%s: Open error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 					++error;
 					continue;
 				}
@@ -335,7 +332,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 					&& handle[j].st.st_size > block_file_get(block)->size
 				) {
 					fprintf(stderr, "File '%s' is larger than expected.\n", handle[j].path);
-					fprintf(stderr, "%u: Size error for file %s\n", i, block_file_get(block)->sub);
+					fprintf(stderr, "error:%u:%s:%s: Size error\n", i, handle[j].disk->name, block_file_get(block)->sub);
 					++error;
 
 					/* if fragmented, it may be reopened, so store the notification */
@@ -352,7 +349,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				fprintf(stderr, "%u: Read error for file %s at position %u\n", i, block_file_get(block)->sub, block_file_pos(block));
+				fprintf(stderr, "error:%u:%s:%s: Read error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 				++error;
 				continue;
 			}
@@ -368,7 +365,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				fprintf(stderr, "%u: Data error for file %s at position %u\n", i, block_file_get(block)->sub, block_file_pos(block));
+				fprintf(stderr, "error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 				++error;
 				continue;
 			}
@@ -392,7 +389,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			if (ret == -1) {
 				buffer_parity = 0; /* no parity to use */
 
-				fprintf(stderr, "%u: Parity read error\n", i);
+				fprintf(stderr, "error:%u:parity: Read error\n", i);
 				++error;
 			}
 		} else {
@@ -406,7 +403,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 				if (ret == -1) {
 					buffer_qarity = 0; /* no qarity to use */
 
-					fprintf(stderr, "%u: Q-Parity read error\n", i);
+					fprintf(stderr, "error:%u:qarity: Read error\n", i);
 					++error;
 				}
 			} else {
@@ -424,7 +421,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 
 			/* print a list of all the errors in files */
 			for(j=0;j<failed_count;++j) {
-				fprintf(stderr, "%u: Unrecoverable error for file %s at position %u\n", i, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
+				fprintf(stderr, "error:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
 			}
 		} else {
 			/* check parity and q-parity only if all the blocks have it computed */
@@ -434,7 +431,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 				if (buffer_parity != 0 && memcmp(buffer_parity, buffer[diskmax], state->block_size) != 0) {
 					buffer_parity = 0;
 
-					fprintf(stderr, "%u: Parity data error\n", i);
+					fprintf(stderr, "error:%u:parity: Data error\n", i);
 					++error;
 				}
 
@@ -443,7 +440,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 					if (buffer_qarity != 0 && memcmp(buffer_qarity, buffer[diskmax + 1], state->block_size) != 0) {
 						buffer_qarity = 0;
 
-						fprintf(stderr, "%u: Q-Parity data error\n", i);
+						fprintf(stderr, "error:%u:qarity: Data error\n", i);
 						++error;
 					}
 				}
@@ -469,7 +466,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 						goto bail;
 					}
 
-					fprintf(stderr, "%u: Fixed data error for file %s at position %u\n", i, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
+					fprintf(stderr, "fixed:%u:%s:%s: Fixed data error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
 					++recovered_error;
 				}
 
@@ -488,7 +485,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 							goto bail;
 						}
 
-						fprintf(stderr, "%u: Fixed Parity error\n", i);
+						fprintf(stderr, "fixed:%u:parity: Fixed data error\n", i);
 						++recovered_error;
 					}
 
@@ -504,7 +501,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 								goto bail;
 							}
 
-							fprintf(stderr, "%u: Fixed Q-Parity error\n", i);
+							fprintf(stderr, "fixed:%u:qarity: Fixed data error\n", i);
 							++recovered_error;
 						}
 					}
@@ -516,16 +513,12 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 		++countpos;
 
 		/* progress */
-		if (state_progress(&start, &last, countpos, countmax, countsize)) {
-			printf("Stopping for interruption at block %u\n", i);
+		if (state_progress(state, i, countpos, countmax, countsize)) {
 			break;
 		}
 	}
 
-	if (countmax)
-		printf("%u%% completed, %u MiB processed\n", countpos * 100 / countmax, (unsigned)(countsize / (1024*1024)));
-	else
-		printf("Nothing to do\n");
+	state_progress_end(state, countpos, countmax, countsize);
 
 bail:
 	for(j=0;j<diskmax;++j) {

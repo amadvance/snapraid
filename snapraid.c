@@ -71,14 +71,14 @@ struct option long_options[] = {
 	{ "expect-recoverable", 0, 0, 'R' },
 	{ "speed-test", 0, 0, 'T' },
 	{ "verbose", 0, 0, 'v' },
+	{ "gui", 0, 0, 'G' },
 	{ "help", 0, 0, 'h' },
 	{ "version", 0, 0, 'V' },
-
 	{ 0, 0, 0, 0 }
 };
 #endif
 
-#define OPTIONS "c:f:s:t:ZESURTvhV"
+#define OPTIONS "c:f:s:t:ZESURTvhVG"
 
 volatile int global_interrupt = 0;
 
@@ -91,15 +91,17 @@ void signal_handler(int signal)
 	}
 }
 
-#define OPERATION_SYNC 0
-#define OPERATION_CHECK 1
-#define OPERATION_FIX 2
-#define OPERATION_DRY 3
+#define OPERATION_DIFF 0
+#define OPERATION_SYNC 1
+#define OPERATION_CHECK 2
+#define OPERATION_FIX 3
+#define OPERATION_DRY 4
 
 int main(int argc, char* argv[])
 {
 	int c;
 	int verbose;
+	int gui;
 	int force_zero;
 	int force_empty;
 	int expect_unrecoverable;
@@ -116,6 +118,7 @@ int main(int argc, char* argv[])
 	/* defaults */
 	conf = CONF;
 	verbose = 0;
+	gui = 0;
 	force_zero = 0;
 	force_empty = 0;
 	expect_unrecoverable = 0;
@@ -175,6 +178,9 @@ int main(int argc, char* argv[])
 		case 'v' :
 			verbose = 1;
 			break;
+		case 'G' :
+			gui = 1;
+			break;
 		case 'h' :
 			usage();
 			exit(EXIT_SUCCESS);
@@ -195,7 +201,9 @@ int main(int argc, char* argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	if (strcmp(argv[optind], "sync") == 0) {
+	if (strcmp(argv[optind], "diff") == 0) {
+		operation = OPERATION_DIFF;
+	} else if (strcmp(argv[optind], "sync") == 0) {
 		operation = OPERATION_SYNC;
 	} else if (strcmp(argv[optind], "check") == 0) {
 		operation = OPERATION_CHECK;
@@ -211,13 +219,17 @@ int main(int argc, char* argv[])
 	raid_init();
 
 	if (!skip_self_test)
-		selftest();
+		selftest(gui);
 
 	state_init(&state);
 
-	state_config(&state, conf, verbose, force_zero, force_empty, expect_unrecoverable, expect_recoverable);
+	state_config(&state, conf, verbose, gui, force_zero, force_empty, expect_unrecoverable, expect_recoverable);
 
-	if (operation == OPERATION_SYNC) {
+	if (operation == OPERATION_DIFF) {
+		state_read(&state);
+
+		state_scan(&state, 1);
+	} else if (operation == OPERATION_SYNC) {
 		if (!tommy_list_empty(&filterlist)) {
 			fprintf(stderr, "You cannot filter with the sync command\n");
 			exit(EXIT_FAILURE);
@@ -225,7 +237,7 @@ int main(int argc, char* argv[])
 
 		state_read(&state);
 
-		state_scan(&state);
+		state_scan(&state, 0);
 
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);

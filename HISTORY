@@ -1,6 +1,15 @@
 SnapRAID HISTORY
 ================
 
+1.5 2011/6
+==========
+* Changed the output of check/fix to allow a more easily postprocessing
+  with other tools like awk and sort.
+* Added the hidden option -G/--gui to enable the output of progress
+  information for a potential GUI for SnapRAID.
+* Added a new "diff" command to print the list of changes detected
+  at file level.
+
 1.4 2011/6
 ==========
 * Ignoring in sync System and Hidden files in Windows.

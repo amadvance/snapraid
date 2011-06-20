@@ -31,6 +31,7 @@ extern volatile int global_interrupt;
 
 struct snapraid_state {
 	int verbose; /**< Verbose output. */
+	int gui; /**< Gui output. */
 	int force_zero; /**< Forced dangerous operations of synching file now with zero size. */
 	int force_empty; /**< Forced dangerous operations of synching disk now empty. */
 	int expect_unrecoverable; /**< Expect presence of unrecoverable error in checking or fixing. */
@@ -44,6 +45,8 @@ struct snapraid_state {
 	tommy_list contentlist; /**< List of content files. */
 	tommy_array diskarr; /**< Disk array. */
 	tommy_list filterlist; /**< List of inclusion/exclusion. */
+	time_t progress_start; /**< Start of processing for progress visualization. */
+	time_t progress_last; /**< Last update of progress visualization. */
 };
 
 /**
@@ -59,7 +62,7 @@ void state_done(struct snapraid_state* state);
 /**
  * Read the configuration file.
  */
-void state_config(struct snapraid_state* state, const char* path, int verbose, int force_zero, int force_empty, int expect_unrecoverable, int expect_recoverable);
+void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int expect_unrecoverable, int expect_recoverable);
 
 /**
  * Read the state.
@@ -74,7 +77,7 @@ void state_write(struct snapraid_state* state);
 /**
  * Scans all the disks to update the state.
  */
-void state_scan(struct snapraid_state* state);
+void state_scan(struct snapraid_state* state, int output);
 
 /**
  * Syncs the parity data.
@@ -97,9 +100,19 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 void state_filter(struct snapraid_state* state, tommy_list* filterlist);
 
 /**
+ * Begins the progress visualization.
+ */
+void state_progress_begin(struct snapraid_state* state, block_off_t blockstart, block_off_t blockmax, block_off_t countmax);
+
+/**
+ * Ends the progress visualization.
+ */
+void state_progress_end(struct snapraid_state* state, block_off_t countpos, block_off_t countmax, data_off_t countsize);
+
+/**
  * Writes the progress.
  */
-int state_progress(time_t* start, time_t* last, block_off_t countpos, block_off_t countmax, data_off_t countsize);
+int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize);
 
 #endif
 

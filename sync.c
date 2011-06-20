@@ -40,8 +40,6 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 	data_off_t countsize;
 	block_off_t countpos;
 	block_off_t countmax;
-	time_t start;
-	time_t last;
 	int ret;
 	unsigned unrecoverable_error;
 
@@ -86,8 +84,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 
 	countsize = 0;
 	countpos = 0;
-	start = time(0);
-	last = start;
+	state_progress_begin(state, blockstart, blockmax, countmax);
 	for(i=blockstart;i<blockmax;++i) {
 		int one_invalid;
 		int ret;
@@ -235,16 +232,12 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 		++countpos;
 
 		/* progress */
-		if (state_progress(&start, &last, countpos, countmax, countsize)) {
-			printf("Stopping for interruption at block %u\n", i);
+		if (state_progress(state, i, countpos, countmax, countsize)) {
 			break;
 		}
 	}
 
-	if (countmax)
-		printf("%u%% completed, %u MiB processed\n", countpos * 100 / countmax, (unsigned)(countsize / (1024*1024)));
-	else
-		printf("Nothing to do\n");
+	state_progress_end(state, countpos, countmax, countsize);
 
 bail:
 	for(j=0;j<diskmax;++j) {
