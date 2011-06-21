@@ -154,11 +154,17 @@ Getting Started
 Commands
 	SnapRAID provides three simple commands (case sensitive) that allow to:
 
+	* See the files changed from the previous sync -> "diff"
 	* Make a backup/snapshot -> "sync"
 	* Check for integrity -> "check"
 	* Restore the last backup/snapshot -> "fix".
 
 	Take care that they should be written in lower case.
+
+	=diff
+		Lists all the files modified from the last "sync" command that
+		needs to be backuped.
+		Nothing is modified.
 
 	=sync
 		Updates the redundancy information. All the modified files

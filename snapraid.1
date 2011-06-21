@@ -256,6 +256,8 @@ snapraid fix \(hyf JUST_DELETED_DIR/
 SnapRAID provides three simple commands (case sensitive) that allow to:
 .PD 0
 .IP \(bu
+See the files changed from the previous sync \(hy> \(a"diff\(a"
+.IP \(bu
 Make a backup/snapshot \(hy> \(a"sync\(a"
 .IP \(bu
 Check for integrity \(hy> \(a"check\(a"
@@ -264,6 +266,11 @@ Restore the last backup/snapshot \(hy> \(a"fix\(a".
 .PD
 .PP
 Take care that they should be written in lower case.
+.TP
+.B diff
+Lists all the files modified from the last \(a"sync\(a" command that
+needs to be backuped.
+Nothing is modified.
 .TP
 .B sync
 Updates the redundancy information. All the modified files
