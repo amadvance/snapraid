@@ -70,6 +70,7 @@ clean-local:
 	rm -f *.gcda *.gcno *.gcov
 	rm -rf cov
 	rm -f lcov.info
+	rm -f gmon.out
 
 maintainer-clean-local:
 	rm -f snapraid.1 snapraid.txt
@@ -267,7 +268,7 @@ check-local:
 
 # Manual testing
 
-CHECK = ./snapraid -v -c test-raid5.conf sync
+CHECK = ./snapraid -S -c test-raid5.conf diff
 
 valgrind:
 	valgrind \
@@ -284,6 +285,7 @@ callgrind:
 		--tool=callgrind \
 		--dump-instr=yes \
 		--trace-jump=yes \
+		--collect-systime=yes \
 		-v $(CHECK) \
 		2> callgrind.log
 		tail callgrind.log

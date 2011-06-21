@@ -29,11 +29,11 @@ int strgets(char* s, unsigned size, FILE* f)
 	int c;
 
 	while (1) {
-#if HAVE_FGETC_UNLOCKED
-		c = fgetc_unlocked(f);
+#if HAVE_GETC_UNLOCKED
+		c = getc_unlocked(f);
 #else
-		c = fgetc(f);
-#endif        
+		c = getc(f);
+#endif
 		if (c == EOF || c == '\n')
 			break;
 
@@ -137,23 +137,23 @@ char* strdechex(void* void_data, unsigned data_len, char* str)
 		unsigned char b1;
 
 		c0 = *str;
-		if (c0 >= 'A' && c0 <= 'F')
-			b0 = c0 - 'A' + 10;
+		if (c0 >= '0' && c0 <= '9')
+			b0 = c0 - '0';
 		else if (c0 >= 'a' && c0 <= 'f')
 			b0 = c0 - 'a' + 10;
-		else if (c0 >= '0' && c0 <= '9')
-			b0 = c0 - '0';
+		else if (c0 >= 'A' && c0 <= 'F')
+			b0 = c0 - 'A' + 10;
 		else
 			return str;
 		++str;
 
 		c1 = *str;
-		if (c1 >= 'A' && c1 <= 'F')
-			b1 = c1 - 'A' + 10;
+		if (c1 >= '0' && c1 <= '9')
+			b1 = c1 - '0';
 		else if (c1 >= 'a' && c1 <= 'f')
 			b1 = c1 - 'a' + 10;
-		else if (c1 >= '0' && c1 <= '9')
-			b1 = c1 - '0';
+		else if (c1 >= 'A' && c1 <= 'F')
+			b1 = c1 - 'A' + 10;
 		else
 			return str;
 		++str;
