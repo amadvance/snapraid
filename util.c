@@ -55,7 +55,7 @@ int strgets(char* s, unsigned size, FILE* f)
 			return -1;
 		}
 		if (i == s)
-			return 0;
+			return 0; /* return EOF only if nothing was read */
 	}
 
 	/* remove ending carrige return to support the Windows CR+LF format */
@@ -64,7 +64,7 @@ int strgets(char* s, unsigned size, FILE* f)
 
 	*i = 0;
 
-	return 1;
+	return i - s;
 }
 
 int stru32(const char* s, uint32_t* value)

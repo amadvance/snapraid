@@ -3,6 +3,7 @@ SnapRAID HISTORY
 
 1.5 2011/6
 ==========
+* In the configuration file extra space are ignored.
 * Changed the output of check/fix to allow a more easily postprocessing
   with other tools like awk and sort.
 * Added the hidden option -G/--gui to enable the output of progress

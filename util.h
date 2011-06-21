@@ -36,8 +36,27 @@ static inline char* strtoken(char* s)
 }
 
 /**
+ * Like strtoken() but trim spaces.
+ */
+static inline char* strtoken_trim(char* s)
+{
+	while (*s && !isspace(*s))
+		++s;
+	if (*s) {
+		*s = 0;
+		++s;
+	}
+
+	/* skip ending spaces */
+	while (*s && isspace(*s))
+		++s;
+
+	return s;
+}
+
+/**
  * Gets a text line from a file.
- * Returns -1 on error, 0 on oef, and 1 if more data is available.
+ * Returns -1 on error, 0 on oef, or the number of chars read.
  */
 int strgets(char* s, unsigned size, FILE* f);
 

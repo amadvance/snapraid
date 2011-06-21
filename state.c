@@ -108,16 +108,24 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 		/* start */
 		s = buffer;
 
+		/* here we use strtoken_trim() to eat extra spaces inserted by the user */
+
+		/* skip ending spaces */
+		while (ret>0 && isspace(s[ret-1])) {
+			--ret;
+			s[ret] = 0;
+		}
 		/* skip initial spaces */
-		while (*s && isspace(*s))
+		while (*s && isspace(*s)) {
 			++s;
+		}
 
 		/* ignore comments and empty lines */
 		if (*s == '#' || *s == 0)
 			continue;
 
 		tag = s;
-		s = strtoken(s);
+		s = strtoken_trim(s);
 
 		if (strcmp(tag, "block_size") == 0) {
 			ret = stru32(s, &state->block_size);
@@ -158,7 +166,7 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 			++content_count;
 		} else if (strcmp(tag, "disk") == 0) {
 			char* name = s;
-			s = strtoken(s);
+			s = strtoken_trim(s);
 			tommy_array_insert(&state->diskarr, disk_alloc(name, s));
 		} else if (strcmp(tag, "exclude") == 0) {
 			struct snapraid_filter* filter = filter_alloc(-1, s);
@@ -294,9 +302,7 @@ void state_read(struct snapraid_state* state)
 		/* start */
 		s = buffer;
 
-		/* skip initial spaces */
-		while (*s && isspace(*s))
-			++s;
+		/* here we use strtoken() to allow filenames starting and ending with spaces */
 
 		/* ignore comments and empty lines */
 		if (*s == '#' || *s == 0)
@@ -304,7 +310,7 @@ void state_read(struct snapraid_state* state)
 
 		tag = s;
 		s = strtoken(s);
-
+		
 		if (strcmp(tag, "blk") == 0 || strcmp(tag, "inv") == 0) {
 			char* pos;
 			char* hash;
