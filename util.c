@@ -40,7 +40,7 @@ int strgets(char* s, unsigned size, FILE* f)
 		*i++ = c;
 
 		if (i == send) {
-			return -1;
+			return -1; /* return error if the buffer is full */
 		}
 	}
 
@@ -64,7 +64,7 @@ int strgets(char* s, unsigned size, FILE* f)
 
 	*i = 0;
 
-	return i - s;
+	return i - s + 1;
 }
 
 int stru32(const char* s, uint32_t* value)

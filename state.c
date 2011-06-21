@@ -111,6 +111,7 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 		/* here we use strtoken_trim() to eat extra spaces inserted by the user */
 
 		/* skip ending spaces */
+		--ret;
 		while (ret>0 && isspace(s[ret-1])) {
 			--ret;
 			s[ret] = 0;
