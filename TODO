@@ -3,7 +3,7 @@ SnapRAID TODO
 
 This is a list of possible TODO items for SnapRAID. The order is not relevant.
 
-* If a file cannot be synched, for example because it was changing, of it
+* If a file cannot be synched, for example because it was changing, or it
 the file name cannot be supported, it's better to do not stop the sync process.
 The sync process should stop only if the error could be caused by a disk
 corruption.

@@ -311,7 +311,7 @@ void state_read(struct snapraid_state* state)
 
 		tag = s;
 		s = strtoken(s);
-		
+
 		if (strcmp(tag, "blk") == 0 || strcmp(tag, "inv") == 0) {
 			char* pos;
 			char* hash;
