@@ -21,11 +21,6 @@
 #include "state.h"
 #include "util.h"
 
-/**
- * Max length of a line in the configuration and content files.
- */
-#define TEXT_LINE_MAX 1024
-
 void state_init(struct snapraid_state* state)
 {
 	state->verbose = 0;
@@ -87,49 +82,29 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 		exit(EXIT_FAILURE);
 	}
 
-	line = 0;
+	line = 1;
 	content_count = 0;
 	while (1) {
-		char buffer[TEXT_LINE_MAX];
-		char* tag;
-		char* s;
+		char tag[PATH_MAX];
+		char buffer[PATH_MAX];
 		int ret;
+		int c;
 
-		++line;
+		/* skip initial spaces */
+		strgetspace(f);
 
-		ret = strgets(buffer, TEXT_LINE_MAX, f);
-		if (ret < 0) {
+		/* read the command */
+		ret = strgettoken(f, tag, sizeof(tag));
+		if (ret != 0) {
 			fprintf(stderr, "Error reading the configuration file '%s' at line %u\n", path, line);
 			exit(EXIT_FAILURE);
 		}
-		if (ret == 0)
-			break;
 
-		/* start */
-		s = buffer;
-
-		/* here we use strtoken_trim() to eat extra spaces inserted by the user */
-
-		/* skip ending spaces */
-		--ret;
-		while (ret>0 && isspace(s[ret-1])) {
-			--ret;
-			s[ret] = 0;
-		}
-		/* skip initial spaces */
-		while (*s && isspace(*s)) {
-			++s;
-		}
-
-		/* ignore comments and empty lines */
-		if (*s == '#' || *s == 0)
-			continue;
-
-		tag = s;
-		s = strtoken_trim(s);
+		/* skip spaces after the command */
+		strgetspace(f);
 
 		if (strcmp(tag, "block_size") == 0) {
-			ret = stru32(s, &state->block_size);
+			ret = strgetu32(f, &state->block_size);
 			if (ret != 0) {
 				fprintf(stderr, "Invalid 'block_size' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
@@ -153,40 +128,120 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 				fprintf(stderr, "Multiple 'parity' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
-			pathcpy(state->parity, sizeof(state->parity), s);
+
+			ret = strgettoken(f, buffer, sizeof(buffer));
+			if (ret != 0) {
+				fprintf(stderr, "Invalid 'parity' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			pathcpy(state->parity, sizeof(state->parity), buffer);
 		} else if (strcmp(tag, "q-parity") == 0) {
 			if (*state->qarity) {
 				fprintf(stderr, "Multiple 'q-parity' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
-			pathcpy(state->qarity, sizeof(state->qarity), s);
+
+			ret = strgettoken(f, buffer, sizeof(buffer));
+			if (ret != 0) {
+				fprintf(stderr, "Invalid 'q-parity' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			pathcpy(state->qarity, sizeof(state->qarity), buffer);
 			state->level = 2;
 		} else if (strcmp(tag, "content") == 0) {
-			struct snapraid_content* content = content_alloc(s);
+			struct snapraid_content* content;
+
+			ret = strgettoken(f, buffer, sizeof(buffer));
+			if (ret != 0) {
+				fprintf(stderr, "Invalid 'content' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			content = content_alloc(buffer);
+
 			tommy_list_insert_tail(&state->contentlist, &content->node, content);
 			++content_count;
 		} else if (strcmp(tag, "disk") == 0) {
-			char* name = s;
-			s = strtoken_trim(s);
-			tommy_array_insert(&state->diskarr, disk_alloc(name, s));
+			char dir[PATH_MAX];
+
+			ret = strgettoken(f, buffer, sizeof(buffer));
+			if (ret != 0) {
+				fprintf(stderr, "Invalid 'disk' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			strgetspace(f);
+
+			ret = strgettoken(f, dir, sizeof(dir));
+			if (ret != 0) {
+				fprintf(stderr, "Invalid 'disk' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			tommy_array_insert(&state->diskarr, disk_alloc(buffer, dir));
 		} else if (strcmp(tag, "exclude") == 0) {
-			struct snapraid_filter* filter = filter_alloc(-1, s);
+			struct snapraid_filter* filter;
+
+			ret = strgettoken(f, buffer, sizeof(buffer));
+			if (ret != 0) {
+				fprintf(stderr, "Invalid 'exclude' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			filter = filter_alloc(-1, buffer);
 			if (!filter) {
-				fprintf(stderr, "Invalid 'exclude' specification '%s' in '%s' at line %u\n", s, path, line);
+				fprintf(stderr, "Invalid 'exclude' specification '%s' in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 			}
 			tommy_list_insert_tail(&state->filterlist, &filter->node, filter);
 		} else if (strcmp(tag, "include") == 0) {
-			struct snapraid_filter* filter = filter_alloc(1, s);
+			struct snapraid_filter* filter;
+
+			ret = strgettoken(f, buffer, sizeof(buffer));
+			if (ret != 0) {
+				fprintf(stderr, "Invalid 'include' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			filter = filter_alloc(1, buffer);
 			if (!filter) {
-				fprintf(stderr, "Invalid 'include' specification '%s' in '%s' at line %u\n", s, path, line);
+				fprintf(stderr, "Invalid 'include' specification '%s' in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 			}
 			tommy_list_insert_tail(&state->filterlist, &filter->node, filter);
+		} else if (tag[0] == 0) {
+			/* allow empty lines */
+		} else if (tag[0] == '#') {
+			ret = strgetline(f, buffer, sizeof(buffer));
+			if (ret != 0) {
+				fprintf(stderr, "Invalid comment in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
 		} else {
-			fprintf(stderr, "Unknown tag '%s' in '%s'\n", tag, path);
+			fprintf(stderr, "Unknown tag '%s' in '%s' at line %u\n", tag, path, line);
 			exit(EXIT_FAILURE);
 		}
+
+		/* skip final spaces */
+		strgetspace(f);
+
+		/* next line */
+		c = strgetcnl(f);
+		if (c == EOF) {
+			break;
+		}
+		if (c != '\n') {
+			fprintf(stderr, "Extra char '%c' after command specification in '%s' at line %u\n", (char)c, path, line);
+			exit(EXIT_FAILURE);
+		}
+		++line;
+	}
+
+	if (ferror(f)) {
+		fprintf(stderr, "Error reading the configuration file '%s' at line %u\n", path, line);
+		exit(EXIT_FAILURE);
 	}
 
 	fclose(f);
@@ -282,53 +337,71 @@ void state_read(struct snapraid_state* state)
 
 	disk = 0;
 	file = 0;
-	line = 0;
+	line = 1;
 	blockidx = 0;
+
 	while (1) {
-		char buffer[TEXT_LINE_MAX];
-		char* tag;
-		char* s;
+		char buffer[PATH_MAX];
 		int ret;
+		int cmd;
+		int c;
 
-		++line;
-
-		ret = strgets(buffer, TEXT_LINE_MAX, f);
-		if (ret < 0) {
-			fprintf(stderr, "Error reading the content file '%s' at line %u\n", path, line);
+		/* decode the command */
+		cmd = 0;
+		c = strgetc(f);
+		if (c == 'b') {
+			if (strgetc(f) == 'l' && strgetc(f) == 'k') {
+				c = strgetc(f);
+				if (c == ' ') {
+					cmd = 'b';
+				} else if (c == 's' && strgetc(f) == 'i' && strgetc(f) == 'z' && strgetc(f) == 'e' && strgetc(f) == ' ') {
+					cmd = 's';
+				}
+			}
+		} else if (c == 'i') {
+			if (strgetc(f) == 'n' && strgetc(f) == 'v' && strgetc(f) == ' ') {
+				cmd = 'i';
+			}
+		} else if (c == 'f') {
+			if (strgetc(f) == 'i' && strgetc(f) == 'l' && strgetc(f) == 'e' && strgetc(f) == ' ') {
+				cmd = 'f';
+			}
+		} else if (c == 'c') {
+			if (strgetc(f) == 'h' && strgetc(f) == 'e' && strgetc(f) == 'c' && strgetc(f) == 'k'
+				&& strgetc(f) == 's' && strgetc(f) == 'u' && strgetc(f) == 'm' && strgetc(f) == ' ') {
+				cmd = 'c';
+			}
+		} else if (c == '\n') {
+		} else if (c == '\r') {
+			c = strgetc(f);
+			if (c != '\n') {
+				fprintf(stderr, "Unexpected carrige return in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+		} else if (c == '#') {
+			int ret = strgetline(f, buffer, sizeof(buffer));
+			if (ret != 0) {
+				fprintf(stderr, "Invalid comment in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+		} else if (c == EOF) {
+			break;
+		} else {
+			fprintf(stderr, "Unknown char '%c' in '%s' at line %u\n", (char)c, path, line);
 			exit(EXIT_FAILURE);
 		}
-		if (ret == 0)
-			break;
 
-		/* start */
-		s = buffer;
-
-		/* here we use strtoken() to allow filenames starting and ending with spaces */
-
-		/* ignore comments and empty lines */
-		if (*s == '#' || *s == 0)
-			continue;
-
-		tag = s;
-		s = strtoken(s);
-
-		if (strcmp(tag, "blk") == 0 || strcmp(tag, "inv") == 0) {
-			char* pos;
-			char* hash;
+		if (cmd == 'b' || cmd == 'i') {
+			/* "blk"/"inv" command */
 			block_off_t v_pos;
 			struct snapraid_block* block;
-			char* e;
 
 			if (!file) {
 				fprintf(stderr, "Unexpected 'blk' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
 
-			pos = s;
-			s = strtoken(s);
-			hash = s;
-
-			ret = stru32(pos, &v_pos);
+			ret = strgetu32(f, &v_pos);
 			if (ret != 0) {
 				fprintf(stderr, "Invalid 'blk' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
@@ -348,10 +421,20 @@ void state_read(struct snapraid_state* state)
 
 			block->parity_pos = v_pos;
 
-			/* set the hash only if present */
-			if (*hash != 0) {
-				e = strdechex(block->hash, HASH_SIZE, hash);
-				if (e) {
+			/* check if we are at the end of the line */
+			c = strgetcnl(f);
+			if (c == '\n') {
+				/* no hash present */
+				ungetc(c, f);
+			} else {
+				if (c != ' ') {
+					fprintf(stderr, "Invalid 'blk' specification in '%s' at line %u\n", path, line);
+					exit(EXIT_FAILURE);
+				}
+
+				/* set the hash only if present */
+				ret = strgethex(f, block->hash, HASH_SIZE);
+				if (ret != 0) {
 					fprintf(stderr, "Invalid 'blk' specification in '%s' at line %u\n", path, line);
 					exit(EXIT_FAILURE);
 				}
@@ -360,7 +443,7 @@ void state_read(struct snapraid_state* state)
 			}
 
 			/* set the parity only if present */
-			if (tag[0] == 'b') /* blk */
+			if (cmd == 'b')
 				block_flag_set(block, BLOCK_HAS_PARITY);
 
 			/* parity implies hash */
@@ -382,12 +465,10 @@ void state_read(struct snapraid_state* state)
 
 			/* stat */
 			++count_block;
-		} else if (strcmp(tag, "file") == 0) {
-			char* name;
-			char* size;
-			char* mtime;
-			char* inode;
-			char* sub;
+		} else if (cmd == 'f') {
+			/* file */
+			char buffer[PATH_MAX];
+			char sub[PATH_MAX];
 			uint64_t v_size;
 			uint64_t v_mtime;
 			uint64_t v_inode;
@@ -398,29 +479,55 @@ void state_read(struct snapraid_state* state)
 				exit(EXIT_FAILURE);
 			}
 
-			name = s;
-			s = strtoken(s);
-			size = s;
-			s = strtoken(s);
-			mtime = s;
-			s = strtoken(s);
-			inode = s;
-			s = strtoken(s);
-			sub = s;
-
-			ret = stru64(size, &v_size);
+			ret = strgettoken(f, buffer, sizeof(buffer));
 			if (ret != 0) {
 				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
 
-			ret = stru64(mtime, &v_mtime);
+			c = strgetc(f);
+			if (c != ' ') {
+				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = strgetu64(f, &v_size);
 			if (ret != 0) {
 				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
 
-			ret = stru64(inode, &v_inode);
+			c = strgetc(f);
+			if (c != ' ') {
+				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = strgetu64(f, &v_mtime);
+			if (ret != 0) {
+				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			c = strgetc(f);
+			if (c != ' ') {
+				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = strgetu64(f, &v_inode);
+			if (ret != 0) {
+				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			c = strgetc(f);
+			if (c != ' ') {
+				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = strgetline(f, sub, sizeof(sub));
 			if (ret != 0) {
 				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
@@ -434,11 +541,11 @@ void state_read(struct snapraid_state* state)
 			/* find the disk */
 			for(i=0;i<tommy_array_size(&state->diskarr);++i) {
 				disk = tommy_array_get(&state->diskarr, i);
-				if (strcmp(disk->name, name) == 0)
+				if (strcmp(disk->name, buffer) == 0)
 					break;
 			}
 			if (i == tommy_array_size(&state->diskarr)) {
-				fprintf(stderr, "Disk named '%s' not found in '%s' at line %u\n", name, path, line);
+				fprintf(stderr, "Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 			}
 
@@ -460,10 +567,25 @@ void state_read(struct snapraid_state* state)
 
 			/* stat */
 			++count_file;
-		} else if (strcmp(tag, "blksize") == 0) {
+		} else if (cmd == 'c') {
+			ret = strgettoken(f, buffer, sizeof(buffer));
+			if (ret != 0) {
+				fprintf(stderr, "Invalid 'checksum' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			if (strcmp(buffer, "md5") == 0) {
+				state->hash = HASH_MD5;
+			} else if (strcmp(buffer, "murmur3") == 0) {
+				state->hash = HASH_MURMUR3;
+			} else {
+				fprintf(stderr, "Invalid 'checksum' specification '%s' in '%s' at line %u\n", buffer, path, line);
+				exit(EXIT_FAILURE);
+			}
+		} else if (cmd == 's') {
 			block_off_t blksize;
 
-			ret = stru32(s, &blksize);
+			ret = strgetu32(f, &blksize);
 			if (ret != 0) {
 				fprintf(stderr, "Invalid 'blksize' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
@@ -474,19 +596,23 @@ void state_read(struct snapraid_state* state)
 				fprintf(stderr, "Please restore the 'block_size' value in the configuration file to '%u'\n", blksize / 1024);
 				exit(EXIT_FAILURE);
 			}
-		} else if (strcmp(tag, "checksum") == 0) {
-			if (strcmp(s, "md5") == 0) {
-				state->hash = HASH_MD5;
-			} else if (strcmp(s, "murmur3") == 0) {
-				state->hash = HASH_MURMUR3;
-			} else {
-				fprintf(stderr, "Invalid 'checksum' specification '%s' in '%s' at line %u\n", s, path, line);
-				exit(EXIT_FAILURE);
-			}
-		} else {
-			fprintf(stderr, "Unknown tag '%s' in '%s' at line%u\n", tag, path, line);
+		}
+
+		/* next line */
+		c = strgetcnl(f);
+		if (c == EOF) {
+			break;
+		}
+		if (c != '\n') {
+			fprintf(stderr, "Extra char '%c' after command specification in '%s' at line %u\n", (char)c, path, line);
 			exit(EXIT_FAILURE);
 		}
+		++line;
+	}
+
+	if (ferror(f)) {
+		fprintf(stderr, "Error reading the content file '%s' at line %u\n", path, line);
+		exit(EXIT_FAILURE);
 	}
 
 	if (file) {

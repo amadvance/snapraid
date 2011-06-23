@@ -22,57 +22,6 @@
 /* string */
 
 /**
- * Marks the end of the current token, and skip one and only one separator if present.
- */
-static inline char* strtoken(char* s)
-{
-	while (*s && *s != ' ')
-		++s;
-	if (*s) {
-		*s = 0;
-		++s;
-	}
-	return s;
-}
-
-/**
- * Like strtoken() but trim spaces.
- */
-static inline char* strtoken_trim(char* s)
-{
-	while (*s && !isspace(*s))
-		++s;
-	if (*s) {
-		*s = 0;
-		++s;
-	}
-
-	/* skip spaces */
-	while (*s && isspace(*s))
-		++s;
-
-	return s;
-}
-
-/**
- * Gets a text line from a file.
- * Returns -1 on error, 0 on OEF, or the number of chars returned in the buffer, including the ending 0.
- */
-int strgets(char* s, unsigned size, FILE* f);
-
-/**
- * Convert a string to a 32 bit unsigned.
- * Returns 0 on success.
- */
-int stru32(const char* s, uint32_t* value);
-
-/**
- * Convert a string to a 64 bit unsigned.
- * Returns 0 on success.
- */
-int stru64(const char* s, uint64_t* value);
-
-/**
  * Encodes to hex.
  */
 void strenchex(char* str, const void* void_data, unsigned data_len);
@@ -81,6 +30,89 @@ void strenchex(char* str, const void* void_data, unsigned data_len);
  * Decodes from hex.
  */
 char* strdechex(void* void_data, unsigned data_len, char* str);
+
+
+/****************************************************************************/
+/* get */
+
+/**
+ * Get a char from a stream.
+ */
+static inline int strgetc(FILE* f)
+{
+#if HAVE_GETC_UNLOCKED
+	return getc_unlocked(f);
+#else
+	return getc(f);
+#endif
+}
+
+/**
+ * Get a char from a stream, ignoring one '\r'.
+ */
+static inline int strgetcnl(FILE* f)
+{
+	int c;
+
+	c = strgetc(f);
+	if (c == '\r')
+		c = strgetc(f);
+
+	return c;
+}
+
+/**
+ * Read all the spaces and tabs.
+ * Returns the number of spaces and tabs read.
+ */
+static inline int strgetspace(FILE* f)
+{
+	int count = 0;
+	int c;
+
+	c = strgetc(f);
+	while (c == ' ' || c == '\t') {
+		++count;
+		c = strgetc(f);
+	}
+
+	ungetc(c, f);
+	return count;
+}
+
+/**
+ * Read until the first space or tab.
+ * Stops at the first ' ', '\t', '\n' or EOF.
+ * Returns error if the buffer is too small.
+ */
+int strgettoken(FILE* f, char* str, unsigned size);
+
+/**
+ * Read until the end of line.
+ * Stops at the first '\n' or EOF.
+ * Returns error if the buffer is too small.
+ */
+int strgetline(FILE* f, char* str, unsigned size);
+
+/**
+ * Read a 32 bit number.
+ * Stops at the first not digit char or EOF.
+ * Returns error if there isn't enough to read.
+ */
+int strgetu32(FILE* f, uint32_t* value);
+
+/**
+ * Read a 64 bit number.
+ * Stops at the first not digit char.
+ * Returns error if there isn't enough to read.
+ */
+int strgetu64(FILE* f, uint64_t* value);
+
+/**
+ * Read an hexadecimal string of fixed length.
+ * Returns error if there isn't enough to read.
+ */
+int strgethex(FILE* f, void* void_data, unsigned data_len);
 
 /****************************************************************************/
 /* path */

@@ -114,6 +114,7 @@ int main(int argc, char* argv[])
 	block_off_t blockcount;
 	int ret;
 	tommy_list filterlist;
+	char* e;
 
 	/* defaults */
 	conf = CONF;
@@ -149,13 +150,15 @@ int main(int argc, char* argv[])
 			tommy_list_insert_tail(&filterlist, &filter->node, filter);
 			} break;
 		case 's' :
-			if (stru32(optarg, &blockstart) != 0) {
+			blockstart = strtoul(optarg, &e, 0);
+			if (!e || *e) {
 				fprintf(stderr, "Invalid start position '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 			}
 			break;
 		case 't' :
-			if (stru32(optarg, &blockcount) != 0) {
+			blockcount = strtoul(optarg, &e, 0);
+			if (!e || *e) {
 				fprintf(stderr, "Invalid count number '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 			}

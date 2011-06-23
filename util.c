@@ -22,95 +22,6 @@
 /****************************************************************************/
 /* string */
 
-int strgets(char* s, unsigned size, FILE* f)
-{
-	char* i = s;
-	char* send = s + size;
-	int c;
-
-	while (1) {
-#if HAVE_GETC_UNLOCKED
-		c = getc_unlocked(f);
-#else
-		c = getc(f);
-#endif
-		if (c == EOF || c == '\n')
-			break;
-
-		*i++ = c;
-
-		if (i == send) {
-			return -1; /* return error if the buffer is full */
-		}
-	}
-
-	if (c == EOF) {
-		if (
-#if HAVE_FERROR_UNLOCKED
-			ferror_unlocked(f)
-#else
-			ferror(f)
-#endif
-		) {
-			return -1;
-		}
-		if (i == s)
-			return 0; /* return EOF only if nothing was read */
-	}
-
-	/* remove ending carrige return to support the Windows CR+LF format */
-	if (i != s && i[-1] == '\r')
-		--i;
-
-	*i = 0;
-
-	return i - s + 1;
-}
-
-int stru32(const char* s, uint32_t* value)
-{
-	uint32_t v;
-	
-	if (!*s)
-		return -1;
-
-	v = 0;
-	while (*s>='0' && *s<='9') {
-		v *= 10;
-		v += *s - '0';
-		++s;
-	}
-
-	if (*s)
-		return -1;
-
-	*value = v;
-
-	return 0;
-}
-
-int stru64(const char* s, uint64_t* value)
-{
-	uint64_t v;
-
-	if (!*s)
-		return -1;
-
-	v = 0;
-	while (*s>='0' && *s<='9') {
-		v *= 10;
-		v += *s - '0';
-		++s;
-	}
-
-	if (*s)
-		return -1;
-
-	*value = v;
-
-	return 0;
-}
-
 static char strhexset[16] = "0123456789abcdef";
 
 void strenchex(char* str, const void* void_data, unsigned data_len)
@@ -167,6 +78,159 @@ char* strdechex(void* void_data, unsigned data_len, char* str)
 
 		data += 1;
 		str += 2;
+	}
+
+	return 0;
+}
+
+/****************************************************************************/
+/* get */
+
+int strgettoken(FILE* f, char* s, unsigned size)
+{
+	char* i = s;
+	char* send = s + size;
+	int c;
+
+	while (1) {
+		c = strgetc(f);
+		if (c == EOF) {
+			break;
+		}
+		if (c == ' ' || c == '\t') {
+			ungetc(c, f);
+			break;
+		}
+		if (c == '\n') {
+			/* remove ending carrige return to support the Windows CR+LF format */
+			if (i != s && i[-1] == '\r')
+				--i;
+			ungetc(c, f);
+			break;
+		}
+
+		*i++ = c;
+
+		if (i == send)
+			return -1;
+	}
+
+	*i = 0;
+
+	return 0;
+}
+
+int strgetline(FILE* f, char* s, unsigned size)
+{
+	char* i = s;
+	char* send = s + size;
+	int c;
+
+	while (1) {
+		c = strgetc(f);
+		if (c == EOF) {
+			break;
+		}
+		if (c == '\n') {
+			/* remove ending carrige return to support the Windows CR+LF format */
+			if (i != s && i[-1] == '\r')
+				--i;
+			ungetc(c, f);
+			break;
+		}
+
+		*i++ = c;
+
+		if (i == send)
+			return -1;
+	}
+
+	*i = 0;
+
+	return 0;
+}
+
+int strgetu32(FILE* f, uint32_t* value)
+{
+	int c;
+
+	c = strgetc(f);
+	if (c>='0' && c<='9') {
+		uint32_t v;
+
+		v = c - '0';
+
+		c = strgetc(f);
+		while (c>='0' && c<='9') {
+			v *= 10;
+			v += c - '0';
+			c = strgetc(f);
+		}
+
+		*value = v;
+
+		ungetc(c, f);
+		return 0;
+	} else {
+		/* nothing read */
+		return -1;
+	}
+}
+
+int strgetu64(FILE* f, uint64_t* value)
+{
+	int c;
+
+	c = strgetc(f);
+	if (c>='0' && c<='9') {
+		uint64_t v;
+
+		v = c - '0';
+
+		c = strgetc(f);
+		while (c>='0' && c<='9') {
+			v *= 10;
+			v += c - '0';
+			c = strgetc(f);
+		}
+
+		*value = v;
+
+		ungetc(c, f);
+		return 0;
+	} else {
+		/* nothing read */
+		return -1;
+	}
+}
+
+int strgethex(FILE* f, void* void_data, unsigned data_len)
+{
+	unsigned char* data = void_data;
+	unsigned i;
+
+	for(i=0;i<data_len;++i) {
+		unsigned b0;
+		unsigned b1;
+		unsigned b;
+		int c;
+
+		c = strgetc(f);
+		if (c == EOF)
+			return -1;
+		b0 = strdecset[c];
+
+		c = strgetc(f);
+		if (c == EOF)
+			return -1;
+		b1 = strdecset[c];
+
+		b = (b0 << 4) | b1;
+
+		if (b > 0xFF)
+			return -1;
+
+		*data++ = b;
 	}
 
 	return 0;
