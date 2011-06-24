@@ -187,10 +187,6 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 				}
 			}
 
-			/* remove it */
-			++scan->count_change;
-			scan_file_remove(state, disk, file);
-
 			if (state->gui) {
 				fprintf(stderr, "scan:change:%s:%s\n", disk->name, file->sub);
 				fflush(stderr);
@@ -198,6 +194,10 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 			if (output) {
 				printf("Change '%s/%s'\n", disk->name, file->sub);
 			}
+
+			/* remove it */
+			++scan->count_change;
+			scan_file_remove(state, disk, file);
 
 			/* and continue to reinsert it */
 		}
