@@ -152,19 +152,14 @@ Getting Started
 		:snapraid fix -f JUST_DELETED_DIR/
 
 Commands
-	SnapRAID provides three simple commands (case sensitive) that allow to:
+	SnapRAID provides four simple commands that allow to:
 
-	* See the files changed from the previous sync -> "diff"
 	* Make a backup/snapshot -> "sync"
+	* See the files changed from the previous sync -> "diff"
 	* Check for integrity -> "check"
 	* Restore the last backup/snapshot -> "fix".
 
-	Take care that they should be written in lower case.
-
-	=diff
-		Lists all the files modified from the last "sync" command that
-		needs to be backuped.
-		Nothing is modified.
+	Take care that the commands have be written in lower case.
 
 	=sync
 		Updates the redundancy information. All the modified files
@@ -177,6 +172,11 @@ Commands
 		without losing the work already done.
 		The "content", "parity" and "q-parity" files are modified if necessary.
 		The files in the array are NOT modified.
+
+	=diff
+		Lists all the files modified from the last "sync" command that
+		needs to be backuped.
+		Nothing is modified.
 
 	=check
 		Checks all the files and the redundancy data.
@@ -196,7 +196,7 @@ Commands
 		The files in the array are modified if necessary.
 
 Options
-	SnapRAID provides the following options (case sensitive):
+	SnapRAID provides the following options:
 
 	-c, --conf CONFIG
 		Selects the configuration file. If not specified is assumed

@@ -253,24 +253,19 @@ snapraid fix \(hyf JUST_DELETED_DIR/
 .PD
 .RE
 .SH COMMANDS 
-SnapRAID provides three simple commands (case sensitive) that allow to:
+SnapRAID provides four simple commands that allow to:
 .PD 0
 .IP \(bu
-See the files changed from the previous sync \(hy> \(a"diff\(a"
-.IP \(bu
 Make a backup/snapshot \(hy> \(a"sync\(a"
+.IP \(bu
+See the files changed from the previous sync \(hy> \(a"diff\(a"
 .IP \(bu
 Check for integrity \(hy> \(a"check\(a"
 .IP \(bu
 Restore the last backup/snapshot \(hy> \(a"fix\(a".
 .PD
 .PP
-Take care that they should be written in lower case.
-.TP
-.B diff
-Lists all the files modified from the last \(a"sync\(a" command that
-needs to be backuped.
-Nothing is modified.
+Take care that the commands have be written in lower case.
 .TP
 .B sync
 Updates the redundancy information. All the modified files
@@ -283,6 +278,11 @@ You can stop this process at any time pressing Ctrl+C,
 without losing the work already done.
 The \(a"content\(a", \(a"parity\(a" and \(a"q\(hyparity\(a" files are modified if necessary.
 The files in the array are NOT modified.
+.TP
+.B diff
+Lists all the files modified from the last \(a"sync\(a" command that
+needs to be backuped.
+Nothing is modified.
 .TP
 .B check
 Checks all the files and the redundancy data.
@@ -301,7 +301,7 @@ The \(a"content\(a" file is NOT modified.
 The \(a"parity\(a" and \(a"q\(hyparity\(a" files are modified if necessary.
 The files in the array are modified if necessary.
 .SH OPTIONS 
-SnapRAID provides the following options (case sensitive):
+SnapRAID provides the following options:
 .TP
 .B \(hyc, \(hy\(hyconf CONFIG
 Selects the configuration file. If not specified is assumed
