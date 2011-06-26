@@ -824,7 +824,7 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize)
 {
 	if (state->gui) {
-		fprintf(stderr, "run:pos:%u:%u:\n", blockpos, countpos);
+		fprintf(stderr, "run:pos:%u:%u:%"PRIu64"\n", blockpos, countpos, countsize);
 		fflush(stderr);
 	} else {
 		time_t now;
