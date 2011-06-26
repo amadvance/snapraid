@@ -130,10 +130,10 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 		/* check if multiple files have the same inode */
 		if (file_flag_has(file, FILE_IS_PRESENT)) {
 			if (st->st_nlink > 1) {
-				printf("warning: Ignored hardlink '/%s'\n", sub);
+				printf("warning: Ignored hardlink '%s%s'\n", disk->dir, sub);
 				return;
 			} else {
-				fprintf(stderr, "Internal inode '%"PRIu64"' inconsistency for file '%s'\n", inode, sub);
+				fprintf(stderr, "Internal inode '%"PRIu64"' inconsistency for file '%s%s'\n", inode, disk->dir, sub);
 				exit(EXIT_FAILURE);
 			}
 		}
@@ -152,7 +152,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 					fflush(stderr);
 				}
 				if (output) {
-					printf("Move '%s:%s' '%s:%s'\n", disk->name, file->sub, disk->name, sub);
+					printf("Move '%s%s' '%s%s'\n", disk->dir, file->sub, disk->dir, sub);
 				}
 
 				/* save the new name */
@@ -180,7 +180,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 				/* otherwise it could be a deleted and recreated file */
 				if (strcmp(file->sub, sub) == 0) {
 					if (!state->force_zero) {
-						fprintf(stderr, "The file '%s' in disk '%s' at dir '%s' has now zero size!\n", sub, disk->name, disk->dir);
+						fprintf(stderr, "The file '%s%s' has now zero size!\n", disk->dir, sub);
 						fprintf(stderr, "If you really want to sync, use 'snapraid --force-zero sync'\n");
 						exit(EXIT_FAILURE);
 					}
@@ -192,7 +192,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 				fflush(stderr);
 			}
 			if (output) {
-				printf("Update '%s:%s'\n", disk->name, file->sub);
+				printf("Update '%s%s'\n", disk->dir, file->sub);
 			}
 
 			/* remove it */
@@ -251,14 +251,14 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 		if (name[0] == '.' && (name[1] == 0 || (name[1] == '.' && name[2] == 0)))
 			continue;
 
+		pathprint(path_next, sizeof(path_next), "%s%s", dir, name);
+		pathprint(sub_next, sizeof(sub_next), "%s%s", sub, name);
+
 		/* check for not supported file names, limitation derived from the content file format */
 		if (name[0] == 0 || strchr(name, '\n') != 0 || name[strlen(name)-1] == '\r') {
 			fprintf(stderr, "Unsupported name '%s' in file '%s'.\n", name, path_next);
 			exit(EXIT_FAILURE);
 		}
-
-		pathprint(path_next, sizeof(path_next), "%s%s", dir, name);
-		pathprint(sub_next, sizeof(sub_next), "%s%s", sub, name);
 
 		/* get info about the file */
 		if (lstat(path_next, &st) != 0) {
@@ -286,7 +286,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 				scan_file(scan, state, output, disk, sub_next, &st);
 			} else {
 				if (state->verbose) {
-					printf("Excluding file '/%s'\n", sub_next);
+					printf("Excluding file '%s'\n", path_next);
 				}
 			}
 		} else if (S_ISDIR(st.st_mode)) {
@@ -296,7 +296,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 				scan_dir(scan, state, output, disk, path_next, sub_next);
 			} else {
 				if (state->verbose) {
-					printf("Excluding directory '/%s'\n", sub_next);
+					printf("Excluding directory '%s'\n", path_next);
 				}
 			}
 		} else {
@@ -304,7 +304,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 				fprintf(stderr, "warning: Ignoring special file '%s'\n", path_next);
 			} else {
 				if (state->verbose) {
-					printf("Excluding special file '/%s'\n", sub_next);
+					printf("Excluding special file '%s'\n", path_next);
 				}
 			}
 		}
@@ -357,7 +357,7 @@ void state_scan(struct snapraid_state* state, int output)
 					fflush(stderr);
 				}
 				if (output) {
-					printf("Remove '%s:%s'\n", disk->name, file->sub);
+					printf("Remove '%s%s'\n", disk->dir, file->sub);
 				}
 
 				scan_file_remove(state, disk, file);
@@ -380,7 +380,7 @@ void state_scan(struct snapraid_state* state, int output)
 				fflush(stderr);
 			}
 			if (output) {
-				printf("Add '%s:%s'\n", disk->name, file->sub);
+				printf("Add '%s%s'\n", disk->dir, file->sub);
 			}
 
 			/* insert it */
