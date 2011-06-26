@@ -152,7 +152,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 					fflush(stderr);
 				}
 				if (output) {
-					printf("Move '%s/%s' '%s/%s'\n", disk->name, file->sub, disk->name, sub);
+					printf("Move '%s:%s' '%s:%s'\n", disk->name, file->sub, disk->name, sub);
 				}
 
 				/* save the new name */
@@ -188,11 +188,11 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 			}
 
 			if (state->gui) {
-				fprintf(stderr, "scan:change:%s:%s\n", disk->name, file->sub);
+				fprintf(stderr, "scan:update:%s:%s\n", disk->name, file->sub);
 				fflush(stderr);
 			}
 			if (output) {
-				printf("Change '%s/%s'\n", disk->name, file->sub);
+				printf("Update '%s:%s'\n", disk->name, file->sub);
 			}
 
 			/* remove it */
@@ -357,7 +357,7 @@ void state_scan(struct snapraid_state* state, int output)
 					fflush(stderr);
 				}
 				if (output) {
-					printf("Remove '%s/%s'\n", disk->name, file->sub);
+					printf("Remove '%s:%s'\n", disk->name, file->sub);
 				}
 
 				scan_file_remove(state, disk, file);
@@ -380,7 +380,7 @@ void state_scan(struct snapraid_state* state, int output)
 				fflush(stderr);
 			}
 			if (output) {
-				printf("Add '%s/%s'\n", disk->name, file->sub);
+				printf("Add '%s:%s'\n", disk->name, file->sub);
 			}
 
 			/* insert it */
