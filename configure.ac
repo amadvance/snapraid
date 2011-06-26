@@ -37,10 +37,11 @@ AC_TYPE_SSIZE_T
 AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
+AC_TYPE_INT8_T
 
 dnl Checks for library functions.
 AC_SYS_LARGEFILE
-AC_CHECK_FUNCS([memset strchr strerror strrchr mkdir])
+AC_CHECK_FUNCS([memset strchr strerror strrchr mkdir gettimeofday strtoul])
 AC_CHECK_FUNCS([getopt getopt_long snprintf vsnprintf])
 AC_CHECK_FUNCS([ftruncate fsync access posix_fallocate posix_fadvise pread pwrite getc_unlocked ferror_unlocked fnmatch])
 

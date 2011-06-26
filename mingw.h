@@ -20,7 +20,7 @@
 
 #ifdef __MINGW32__ /* Only for MingW */
 
-#include "wchar.h"
+#include <wchar.h>
 
 /**
  * Redefines PATH_MAX to allow long UTF8 names.
