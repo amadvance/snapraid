@@ -390,7 +390,7 @@ void state_scan(struct snapraid_state* state, int output)
 		/* if all the previous file were removed */
 		if (scan[i].count_equal == 0 && scan[i].count_moved == 0 && scan[i].count_remove != 0) {
 			if (!state->force_empty) {
-				fprintf(stderr, "All the files in disk '%s' at dir '%s' are missing!\n", disk->name, disk->dir);
+				fprintf(stderr, "All the files previously present in disk '%s' at dir '%s' are now missing or overwritten!\n", disk->name, disk->dir);
 				fprintf(stderr, "If you really want to sync, use 'snapraid --force-empty sync'\n");
 				exit(EXIT_FAILURE);
 			}
