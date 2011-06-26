@@ -622,6 +622,10 @@ static void state_write_one(struct snapraid_state* state, const char* path, unsi
 
 	printf("Saving state to %s...\n", path);
 
+	/* ignore some special files */
+	if (strcmp(path, "/dev/null") == 0 || strcmp(path, "NUL") == 0)
+		return;
+
 	pathprint(tmp, sizeof(tmp), "%s.tmp", path);
 	f = fopen(tmp, "wt");
 	if (!f) {
