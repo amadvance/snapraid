@@ -32,10 +32,11 @@ completely restored.
 
 * Support to backup also symlinks.
 
-Delayed TODO
-============
 
-This is a list of low priority TODO items. The order is not relevant.
+Rejected TODO
+=============
+
+This is a list of rejected TODO items.
 
 * Recognizes that a file is moved from one disk to another, and if the parity
 data doesn't overlap, do not recompute it.
