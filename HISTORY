@@ -10,6 +10,7 @@ SnapRAID HISTORY
   information for a potential GUI for SnapRAID.
 * Added a new "diff" command to print the list of changes detected
   at file level.
+* Faster loading of content file. Approx 3 times faster.
 
 1.4 2011/6
 ==========

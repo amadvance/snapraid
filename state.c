@@ -70,7 +70,7 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 		fflush(stderr);
 	}
 
-	f = sopen(path);
+	f = sopen_read(path);
 	if (!f) {
 		if (errno == ENOENT) {
 			fprintf(stderr, "No configuration file found at '%s'\n", path);
@@ -305,7 +305,7 @@ void state_read(struct snapraid_state* state)
 		}
 		printf("Loading state from %s...\n", path);
 
-		f = sopen(path);
+		f = sopen_read(path);
 		if (f != 0) {
 			/* if openend stop the search */
 			break;

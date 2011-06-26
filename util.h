@@ -56,7 +56,7 @@ typedef struct stream STREAM;
 /**
  * Open a stream for reading. Like fopen().
  */
-STREAM* sopen(const char* file);
+STREAM* sopen_read(const char* file);
 
 /**
  * Close a stream. Like fclose().
@@ -79,7 +79,7 @@ static inline int sptrlookup(STREAM* s, int size)
 /**
  * Gets the current stream ptr.
  */
-unsigned char* sptrget(STREAM* s)
+static inline unsigned char* sptrget(STREAM* s)
 {
 	return s->pos;
 }
@@ -87,7 +87,7 @@ unsigned char* sptrget(STREAM* s)
 /**
  * Set the current stream ptr.
  */
-void sptrset(STREAM* s, unsigned char* ptr)
+static inline void sptrset(STREAM* s, unsigned char* ptr)
 {
 	s->pos = ptr;
 }

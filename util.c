@@ -86,7 +86,7 @@ char* strdechex(void* void_data, unsigned data_len, char* str)
 /****************************************************************************/
 /* stream */
 
-STREAM* sopen(const char* file)
+STREAM* sopen_read(const char* file)
 {
 	STREAM* s = malloc_nofail(sizeof(STREAM));
 
