@@ -84,28 +84,77 @@ char* strdechex(void* void_data, unsigned data_len, char* str)
 }
 
 /****************************************************************************/
-/* get */
+/* stream */
 
-int strgettoken(FILE* f, char* s, unsigned size)
+STREAM* sopen(const char* file)
 {
-	char* i = s;
-	char* send = s + size;
+	STREAM* s = malloc_nofail(sizeof(STREAM));
+
+	s->f = open(file, O_RDONLY | O_BINARY | O_SEQUENTIAL);
+	if (s->f == -1) {
+		free(s);
+		return 0;
+	}
+
+	s->buffer = malloc_nofail(STREAM_SIZE);
+	s->pos = s->buffer;
+	s->end = s->buffer;
+	s->state = STREAM_OK;
+
+	return s;
+}
+
+void sclose(STREAM* s)
+{
+	close(s->f);
+	free(s->buffer);
+	free(s);
+}
+
+int sflow(STREAM* s)
+{
+	ssize_t ret;
+
+	if (s->state != STREAM_OK)
+		return EOF;
+
+	ret = read(s->f, s->buffer, STREAM_SIZE);
+
+	if (ret < 0) {
+		s->state = STREAM_ERROR;
+		return EOF;
+	}
+	if (ret == 0) {
+		s->state = STREAM_EOF;
+		return EOF;
+	}
+
+	s->pos = s->buffer;
+	s->end = s->buffer + ret;
+
+	return *s->pos++;
+}
+
+int sgettok(STREAM* f, char* str, int size)
+{
+	char* i = str;
+	char* send = str + size;
 	int c;
 
 	while (1) {
-		c = strgetc(f);
+		c = sgetc(f);
 		if (c == EOF) {
 			break;
 		}
 		if (c == ' ' || c == '\t') {
-			ungetc(c, f);
+			sungetc(c, f);
 			break;
 		}
 		if (c == '\n') {
 			/* remove ending carrige return to support the Windows CR+LF format */
-			if (i != s && i[-1] == '\r')
+			if (i != str && i[-1] == '\r')
 				--i;
-			ungetc(c, f);
+			sungetc(c, f);
 			break;
 		}
 
@@ -120,29 +169,52 @@ int strgettoken(FILE* f, char* s, unsigned size)
 	return 0;
 }
 
-int strgetline(FILE* f, char* s, unsigned size)
+int sgetline(STREAM* f, char* str, int size)
 {
-	char* i = s;
-	char* send = s + size;
+	char* i = str;
+	char* send = str + size;
 	int c;
 
-	while (1) {
-		c = strgetc(f);
-		if (c == EOF) {
-			break;
-		}
-		if (c == '\n') {
-			/* remove ending carrige return to support the Windows CR+LF format */
-			if (i != s && i[-1] == '\r')
-				--i;
-			ungetc(c, f);
-			break;
+	/* if there is enough data in memory */
+	if (sptrlookup(f, size)) {
+		unsigned char* pos = sptrget(f);
+
+		while (1) {
+			c = *pos++;
+			if (c == '\n') {
+				/* remove ending carrige return to support the Windows CR+LF format */
+				if (i != str && i[-1] == '\r')
+					--i;
+				--pos;
+				break;
+			}
+
+			*i++ = c;
+
+			if (i == send)
+				return -1;
 		}
 
-		*i++ = c;
+		sptrset(f, pos);
+	} else {
+		while (1) {
+			c = sgetc(f);
+			if (c == EOF) {
+				break;
+			}
+			if (c == '\n') {
+				/* remove ending carrige return to support the Windows CR+LF format */
+				if (i != str && i[-1] == '\r')
+					--i;
+				sungetc(c, f);
+				break;
+			}
 
-		if (i == send)
-			return -1;
+			*i++ = c;
+
+			if (i == send)
+				return -1;
+		}
 	}
 
 	*i = 0;
@@ -150,26 +222,26 @@ int strgetline(FILE* f, char* s, unsigned size)
 	return 0;
 }
 
-int strgetu32(FILE* f, uint32_t* value)
+int sgetu32(STREAM* f, uint32_t* value)
 {
 	int c;
 
-	c = strgetc(f);
+	c = sgetc(f);
 	if (c>='0' && c<='9') {
 		uint32_t v;
 
 		v = c - '0';
 
-		c = strgetc(f);
+		c = sgetc(f);
 		while (c>='0' && c<='9') {
 			v *= 10;
 			v += c - '0';
-			c = strgetc(f);
+			c = sgetc(f);
 		}
 
 		*value = v;
 
-		ungetc(c, f);
+		sungetc(c, f);
 		return 0;
 	} else {
 		/* nothing read */
@@ -177,26 +249,26 @@ int strgetu32(FILE* f, uint32_t* value)
 	}
 }
 
-int strgetu64(FILE* f, uint64_t* value)
+int sgetu64(STREAM* f, uint64_t* value)
 {
 	int c;
 
-	c = strgetc(f);
+	c = sgetc(f);
 	if (c>='0' && c<='9') {
 		uint64_t v;
 
 		v = c - '0';
 
-		c = strgetc(f);
+		c = sgetc(f);
 		while (c>='0' && c<='9') {
 			v *= 10;
 			v += c - '0';
-			c = strgetc(f);
+			c = sgetc(f);
 		}
 
 		*value = v;
 
-		ungetc(c, f);
+		sungetc(c, f);
 		return 0;
 	} else {
 		/* nothing read */
@@ -204,33 +276,63 @@ int strgetu64(FILE* f, uint64_t* value)
 	}
 }
 
-int strgethex(FILE* f, void* void_data, unsigned data_len)
+int sgethex(STREAM* f, void* void_data, int size)
 {
 	unsigned char* data = void_data;
-	unsigned i;
 
-	for(i=0;i<data_len;++i) {
-		unsigned b0;
-		unsigned b1;
-		unsigned b;
-		int c;
+	/* if there is enough data in memory */
+	if (sptrlookup(f, size * 2)) {
+		/* optimized version with all the data in memory */
+		unsigned char* pos = sptrget(f);
+		unsigned x = 0;
 
-		c = strgetc(f);
-		if (c == EOF)
+		while (size--) {
+			unsigned b0;
+			unsigned b1;
+			unsigned b;
+
+			b0 = strdecset[pos[0]];
+			b1 = strdecset[pos[1]];
+			pos += 2;
+
+			b = (b0 << 4) | b1;
+
+			x |= b;
+
+			*data++ = b;
+		}
+
+		/* at the end check if a digit was wrong */
+		if (x > 0xFF) {
 			return -1;
-		b0 = strdecset[c];
+		}
 
-		c = strgetc(f);
-		if (c == EOF)
-			return -1;
-		b1 = strdecset[c];
+		sptrset(f, pos);
+	} else {
+		/* standard version using sgetc() */
+		while (size--) {
+			unsigned b0;
+			unsigned b1;
+			unsigned b;
+			int c;
 
-		b = (b0 << 4) | b1;
+			c = sgetc(f);
+			if (c == EOF)
+				return -1;
+			b0 = strdecset[c];
 
-		if (b > 0xFF)
-			return -1;
+			c = sgetc(f);
+			if (c == EOF)
+				return -1;
+			b1 = strdecset[c];
 
-		*data++ = b;
+			b = (b0 << 4) | b1;
+
+			if (b > 0xFF)
+				return -1;
+
+			*data++ = b;
+		}
 	}
 
 	return 0;

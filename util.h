@@ -31,32 +31,105 @@ void strenchex(char* str, const void* void_data, unsigned data_len);
  */
 char* strdechex(void* void_data, unsigned data_len, char* str);
 
-
 /****************************************************************************/
-/* get */
+/* stream */
+
+#define STREAM_SIZE (64*1024)
+
+#define STREAM_OK 0
+#define STREAM_ERROR -1
+#define STREAM_EOF 1
+
+struct stream {
+	unsigned char* buffer;
+	unsigned char* pos;
+	unsigned char* end;
+	int state;
+	int f;
+};
 
 /**
- * Get a char from a stream.
+ * Opaque STREAM type. Like ::FILE.
  */
-static inline int strgetc(FILE* f)
+typedef struct stream STREAM;
+
+/**
+ * Open a stream for reading. Like fopen().
+ */
+STREAM* sopen(const char* file);
+
+/**
+ * Close a stream. Like fclose().
+ */
+void sclose(STREAM* s);
+
+/**
+ * Fill the stream buffer and read a char.
+ */
+int sflow(STREAM* s);
+
+/**
+ * Checks if the buffer has enough data loaded.
+ */
+static inline int sptrlookup(STREAM* s, int size)
 {
-#if HAVE_GETC_UNLOCKED
-	return getc_unlocked(f);
-#else
-	return getc(f);
-#endif
+	return s->pos + size <= s->end;
+}
+
+/**
+ * Gets the current stream ptr.
+ */
+unsigned char* sptrget(STREAM* s)
+{
+	return s->pos;
+}
+
+/**
+ * Set the current stream ptr.
+ */
+void sptrset(STREAM* s, unsigned char* ptr)
+{
+	s->pos = ptr;
+}
+
+/**
+ * Read a char. Like fgetc().
+ */
+static inline int sgetc(STREAM* s)
+{
+	if (s->pos == s->end)
+		return sflow(s);
+	return *s->pos++;
+}
+
+/**
+ * Unread a char.
+ * Like ungetc() but you have to unget the same char read.
+ */
+static inline void sungetc(int c, STREAM* s)
+{
+	if (c != EOF)
+		--s->pos;
+}
+
+/**
+ * Check the error status. Like ferror().
+ */
+static inline int serror(STREAM* s)
+{
+	return s->state == STREAM_ERROR;
 }
 
 /**
  * Get a char from a stream, ignoring one '\r'.
  */
-static inline int strgetcnl(FILE* f)
+static inline int sgeteol(STREAM* f)
 {
 	int c;
 
-	c = strgetc(f);
+	c = sgetc(f);
 	if (c == '\r')
-		c = strgetc(f);
+		c = sgetc(f);
 
 	return c;
 }
@@ -65,18 +138,18 @@ static inline int strgetcnl(FILE* f)
  * Read all the spaces and tabs.
  * Returns the number of spaces and tabs read.
  */
-static inline int strgetspace(FILE* f)
+static inline int sgetspace(STREAM* f)
 {
 	int count = 0;
 	int c;
 
-	c = strgetc(f);
+	c = sgetc(f);
 	while (c == ' ' || c == '\t') {
 		++count;
-		c = strgetc(f);
+		c = sgetc(f);
 	}
 
-	ungetc(c, f);
+	sungetc(c, f);
 	return count;
 }
 
@@ -85,34 +158,34 @@ static inline int strgetspace(FILE* f)
  * Stops at the first ' ', '\t', '\n' or EOF.
  * Returns error if the buffer is too small.
  */
-int strgettoken(FILE* f, char* str, unsigned size);
+int sgettok(STREAM* f, char* str, int size);
 
 /**
  * Read until the end of line.
  * Stops at the first '\n' or EOF.
  * Returns error if the buffer is too small.
  */
-int strgetline(FILE* f, char* str, unsigned size);
+int sgetline(STREAM* f, char* str, int size);
 
 /**
  * Read a 32 bit number.
  * Stops at the first not digit char or EOF.
  * Returns error if there isn't enough to read.
  */
-int strgetu32(FILE* f, uint32_t* value);
+int sgetu32(STREAM* f, uint32_t* value);
 
 /**
  * Read a 64 bit number.
  * Stops at the first not digit char.
  * Returns error if there isn't enough to read.
  */
-int strgetu64(FILE* f, uint64_t* value);
+int sgetu64(STREAM* f, uint64_t* value);
 
 /**
  * Read an hexadecimal string of fixed length.
  * Returns error if there isn't enough to read.
  */
-int strgethex(FILE* f, void* void_data, unsigned data_len);
+int sgethex(STREAM* f, void* data, int size);
 
 /****************************************************************************/
 /* path */
