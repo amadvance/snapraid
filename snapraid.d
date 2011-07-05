@@ -175,7 +175,7 @@ Commands
 
 	=diff
 		Lists all the files modified from the last "sync" command that
-		needs to be backuped.
+		needs to recompute their redundancy data.
 		Nothing is modified.
 
 	=check
@@ -220,9 +220,10 @@ Options
 		some accessed files were zeroed.
 
 	-E, --force-empty
-		Forces the insecure operation of syncing an empty disk
-		that before was not empty.
-		If SnapRAID detects such condition, it stops proceeding
+		Forces the insecure operation of syncing a disk with all
+		the original files missing.
+		If SnapRAID detects that all the files originally present
+		int the disk are missing or overwritten, it stops proceeding
 		unless you specify this option.
 		This allows to easily detect when a data file-system is not
 		mounted.

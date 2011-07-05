@@ -281,7 +281,7 @@ The files in the array are NOT modified.
 .TP
 .B diff
 Lists all the files modified from the last \(a"sync\(a" command that
-needs to be backuped.
+needs to recompute their redundancy data.
 Nothing is modified.
 .TP
 .B check
@@ -325,9 +325,10 @@ This allows to easily detect when after a system crash,
 some accessed files were zeroed.
 .TP
 .B \(hyE, \(hy\(hyforce\(hyempty
-Forces the insecure operation of syncing an empty disk
-that before was not empty.
-If SnapRAID detects such condition, it stops proceeding
+Forces the insecure operation of syncing a disk with all
+the original files missing.
+If SnapRAID detects that all the files originally present
+int the disk are missing or overwritten, it stops proceeding
 unless you specify this option.
 This allows to easily detect when a data file\(hysystem is not
 mounted.
