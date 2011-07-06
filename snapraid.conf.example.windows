@@ -36,8 +36,8 @@ disk d3 I:\array\
 # Format: "exclude \PATH\DIR\"
 exclude *.bak
 exclude Thumbs.db
-exclude \$RECYCLE.BIN\
-exclude \System Volume Information\
+exclude \$RECYCLE.BIN
+exclude \System Volume Information
 
 # Defines the block size in kibi bytes (1024 bytes).
 # Default value is 256 -> 256 kibi bytes -> 262144 bytes
