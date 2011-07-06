@@ -156,34 +156,39 @@ static inline int sgetspace(STREAM* f)
 /**
  * Read until the first space or tab.
  * Stops at the first ' ', '\t', '\n' or EOF.
- * Returns error if the buffer is too small.
+ * Returns <0 if the buffer is too small, or the number of chars read.
  */
 int sgettok(STREAM* f, char* str, int size);
 
 /**
  * Read until the end of line.
  * Stops at the first '\n' or EOF.
- * Returns error if the buffer is too small.
+ * Returns <0 if the buffer is too small, or the number of chars read.
  */
 int sgetline(STREAM* f, char* str, int size);
 
 /**
+ * Like sgetline() but removes ' ' and '\t' at the end.
+ */
+int sgetlasttok(STREAM* f, char* str, int size);
+
+/**
  * Read a 32 bit number.
  * Stops at the first not digit char or EOF.
- * Returns error if there isn't enough to read.
+ * Returns <0 if there isn't enough to read.
  */
 int sgetu32(STREAM* f, uint32_t* value);
 
 /**
  * Read a 64 bit number.
  * Stops at the first not digit char.
- * Returns error if there isn't enough to read.
+ * Returns <0 if there isn't enough to read.
  */
 int sgetu64(STREAM* f, uint64_t* value);
 
 /**
  * Read an hexadecimal string of fixed length.
- * Returns error if there isn't enough to read.
+ * Returns <0 if there isn't enough to read.
  */
 int sgethex(STREAM* f, void* data, int size);
 

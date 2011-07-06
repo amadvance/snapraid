@@ -166,7 +166,7 @@ int sgettok(STREAM* f, char* str, int size)
 
 	*i = 0;
 
-	return 0;
+	return i - str;
 }
 
 int sgetline(STREAM* f, char* str, int size)
@@ -219,7 +219,24 @@ int sgetline(STREAM* f, char* str, int size)
 
 	*i = 0;
 
-	return 0;
+	return i - str;
+}
+
+int sgetlasttok(STREAM* f, char* str, int size)
+{
+	int ret;
+
+	ret = sgetline(f, str, size);
+	if (ret < 0)
+		return ret;
+
+	while (ret > 0 && (str[ret-1] == ' ' || str[ret-1] == '\t')) {
+		--ret;
+	}
+
+	str[ret] = 0;
+
+	return ret;
 }
 
 int sgetu32(STREAM* f, uint32_t* value)

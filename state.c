@@ -95,7 +95,7 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 
 		/* read the command */
 		ret = sgettok(f, tag, sizeof(tag));
-		if (ret != 0) {
+		if (ret < 0) {
 			fprintf(stderr, "Error reading the configuration file '%s' at line %u\n", path, line);
 			exit(EXIT_FAILURE);
 		}
@@ -105,7 +105,7 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 
 		if (strcmp(tag, "block_size") == 0) {
 			ret = sgetu32(f, &state->block_size);
-			if (ret != 0) {
+			if (ret < 0) {
 				fprintf(stderr, "Invalid 'block_size' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -129,8 +129,8 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 				exit(EXIT_FAILURE);
 			}
 
-			ret = sgettok(f, buffer, sizeof(buffer));
-			if (ret != 0) {
+			ret = sgetlasttok(f, buffer, sizeof(buffer));
+			if (ret < 0) {
 				fprintf(stderr, "Invalid 'parity' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -142,8 +142,8 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 				exit(EXIT_FAILURE);
 			}
 
-			ret = sgettok(f, buffer, sizeof(buffer));
-			if (ret != 0) {
+			ret = sgetlasttok(f, buffer, sizeof(buffer));
+			if (ret < 0) {
 				fprintf(stderr, "Invalid 'q-parity' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -153,8 +153,8 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 		} else if (strcmp(tag, "content") == 0) {
 			struct snapraid_content* content;
 
-			ret = sgettok(f, buffer, sizeof(buffer));
-			if (ret != 0) {
+			ret = sgetlasttok(f, buffer, sizeof(buffer));
+			if (ret < 0) {
 				fprintf(stderr, "Invalid 'content' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -167,15 +167,15 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 			char dir[PATH_MAX];
 
 			ret = sgettok(f, buffer, sizeof(buffer));
-			if (ret != 0) {
+			if (ret < 0) {
 				fprintf(stderr, "Invalid 'disk' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
 
 			sgetspace(f);
 
-			ret = sgettok(f, dir, sizeof(dir));
-			if (ret != 0) {
+			ret = sgetlasttok(f, dir, sizeof(dir));
+			if (ret < 0) {
 				fprintf(stderr, "Invalid 'disk' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -184,8 +184,8 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 		} else if (strcmp(tag, "exclude") == 0) {
 			struct snapraid_filter* filter;
 
-			ret = sgettok(f, buffer, sizeof(buffer));
-			if (ret != 0) {
+			ret = sgetlasttok(f, buffer, sizeof(buffer));
+			if (ret < 0) {
 				fprintf(stderr, "Invalid 'exclude' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -199,8 +199,8 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 		} else if (strcmp(tag, "include") == 0) {
 			struct snapraid_filter* filter;
 
-			ret = sgettok(f, buffer, sizeof(buffer));
-			if (ret != 0) {
+			ret = sgetlasttok(f, buffer, sizeof(buffer));
+			if (ret < 0) {
 				fprintf(stderr, "Invalid 'include' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -215,7 +215,7 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 			/* allow empty lines */
 		} else if (tag[0] == '#') {
 			ret = sgetline(f, buffer, sizeof(buffer));
-			if (ret != 0) {
+			if (ret < 0) {
 				fprintf(stderr, "Invalid comment in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -348,7 +348,7 @@ void state_read(struct snapraid_state* state)
 
 		/* read the command */
 		ret = sgettok(f, tag, sizeof(tag));
-		if (ret != 0) {
+		if (ret < 0) {
 			fprintf(stderr, "Error reading the configuration file '%s' at line %u\n", path, line);
 			exit(EXIT_FAILURE);
 		}
@@ -370,7 +370,7 @@ void state_read(struct snapraid_state* state)
 			}
 
 			ret = sgetu32(f, &v_pos);
-			if (ret != 0) {
+			if (ret < 0) {
 				fprintf(stderr, "Invalid 'blk' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -402,7 +402,7 @@ void state_read(struct snapraid_state* state)
 
 				/* set the hash only if present */
 				ret = sgethex(f, block->hash, HASH_SIZE);
-				if (ret != 0) {
+				if (ret < 0) {
 					fprintf(stderr, "Invalid 'blk' specification in '%s' at line %u\n", path, line);
 					exit(EXIT_FAILURE);
 				}
@@ -448,7 +448,7 @@ void state_read(struct snapraid_state* state)
 			}
 
 			ret = sgettok(f, buffer, sizeof(buffer));
-			if (ret != 0) {
+			if (ret < 0) {
 				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -460,7 +460,7 @@ void state_read(struct snapraid_state* state)
 			}
 
 			ret = sgetu64(f, &v_size);
-			if (ret != 0) {
+			if (ret < 0) {
 				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -472,7 +472,7 @@ void state_read(struct snapraid_state* state)
 			}
 
 			ret = sgetu64(f, &v_mtime);
-			if (ret != 0) {
+			if (ret < 0) {
 				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -484,7 +484,7 @@ void state_read(struct snapraid_state* state)
 			}
 
 			ret = sgetu64(f, &v_inode);
-			if (ret != 0) {
+			if (ret < 0) {
 				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -496,7 +496,7 @@ void state_read(struct snapraid_state* state)
 			}
 
 			ret = sgetline(f, sub, sizeof(sub));
-			if (ret != 0) {
+			if (ret < 0) {
 				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -537,7 +537,7 @@ void state_read(struct snapraid_state* state)
 			++count_file;
 		} else if (strcmp(tag, "checksum") == 0) {
 			ret = sgettok(f, buffer, sizeof(buffer));
-			if (ret != 0) {
+			if (ret < 0) {
 				fprintf(stderr, "Invalid 'checksum' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -554,7 +554,7 @@ void state_read(struct snapraid_state* state)
 			block_off_t blksize;
 
 			ret = sgetu32(f, &blksize);
-			if (ret != 0) {
+			if (ret < 0) {
 				fprintf(stderr, "Invalid 'blksize' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -569,7 +569,7 @@ void state_read(struct snapraid_state* state)
 			sgetspace(f);
 		} else if (tag[0] == '#') {
 			ret = sgetline(f, buffer, sizeof(buffer));
-			if (ret != 0) {
+			if (ret < 0) {
 				fprintf(stderr, "Invalid comment in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
