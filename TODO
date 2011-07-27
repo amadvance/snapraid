@@ -20,6 +20,9 @@ integrity check of the existing ones.
 It should restore only missing files, without recovering modified ones
 or check validity of data of existing ones.
 
+* When fixing also restore the file mtime. If a damage occur the time data
+may be important.
+
 * Rename sync->backup and fix->restore. It seems to me a naming expressing
 better the meaning of the commands. But not yet sure.
 
