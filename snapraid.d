@@ -6,7 +6,7 @@ Synopsis
 	:	[-Z, --force-zero] [-E, --force-empty]
 	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	:	[-v, --verbose]
-	:	COMMAND
+	:	sync|diff|check|fix
 
 	:snapraid [-V, --version] [-h, --help]
 

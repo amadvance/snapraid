@@ -44,7 +44,13 @@ void usage(void)
 {
 	version();
 
-	printf("Usage: " PACKAGE " [options]\n");
+	printf("Usage: " PACKAGE " sync|diff|check|fix [options]\n");
+	printf("\n");
+	printf("Commands:\n");
+	printf("  sync   Syncronize the state of the array of disks\n");
+	printf("  diff   Show the changes that needs to be syncronized\n");
+	printf("  check  Check the array of disks\n");
+	printf("  fix    Fix the array of disks\n");
 	printf("\n");
 	printf("Options:\n");
 	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE     ", "-c") "  Configuration file (default " CONF ")\n");
