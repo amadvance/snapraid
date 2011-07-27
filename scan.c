@@ -187,16 +187,34 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 				}
 			}
 
-			if (state->gui) {
-				fprintf(stderr, "scan:update:%s:%s\n", disk->name, file->sub);
-				fflush(stderr);
-			}
-			if (output) {
-				printf("Update '%s%s'\n", disk->dir, file->sub);
+			if (strcmp(file->sub, sub) == 0) {
+				/* if the name is the same, it's an update */
+				if (state->gui) {
+					fprintf(stderr, "scan:update:%s:%s\n", disk->name, file->sub);
+					fflush(stderr);
+				}
+				if (output) {
+					printf("Update '%s%s'\n", disk->dir, file->sub);
+				}
+
+				++scan->count_change;
+			} else {
+				/* if the name is different, it's an inode reuse */
+				if (state->gui) {
+					fprintf(stderr, "scan:remove:%s:%s\n", disk->name, file->sub);
+					fprintf(stderr, "scan:add:%s:%s\n", disk->name, sub);
+					fflush(stderr);
+				}
+				if (output) {
+					printf("Remove '%s%s'\n", disk->dir, file->sub);
+					printf("Add '%s%s'\n", disk->dir, sub);
+				}
+
+				++scan->count_remove;
+				++scan->count_insert;
 			}
 
 			/* remove it */
-			++scan->count_change;
 			scan_file_remove(state, disk, file);
 
 			/* and continue to reinsert it */

@@ -1,6 +1,10 @@
 SnapRAID HISTORY
 ================
 
+1.6 2011/8
+==========
+* In "diff" now recognizes the reuse of inodes.
+
 1.5 2011/7
 ==========
 * Ignores extra spaces in the configuration file.
