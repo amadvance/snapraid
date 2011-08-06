@@ -507,7 +507,7 @@ Encoding
 	processed in the UTF-8 format.
 
 	To have the file names printed correctly you have to set the Windows
-	console in the UTF-8 mode, with the command "chmod 65001", and use
+	console in the UTF-8 mode, with the command "chcp 65001", and use
 	a TrueType font like "Lucida Console" for the console font.
 	Note that it has effect only on the printed file names, if you
 	redirect the console output to a file, the resulting file is always
