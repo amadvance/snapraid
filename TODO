@@ -11,6 +11,11 @@ corruption.
 * Adds a checksum for the content file. When reading if the file is invalid,
 skip to another.
 
+* In the content file save the timestap of the parity files.
+If they do not match, stop the processing.
+This can be done to avoid to use not syncronized parity and content files,
+resulting in wrong data.
+
 * Easy way to find duplicates using the computed hash.
 
 * Easy way to find files using a specified block.
@@ -20,8 +25,7 @@ integrity check of the existing ones.
 It should restore only missing files, without recovering modified ones
 or check validity of data of existing ones.
 
-* When fixing also restore the file mtime. If a damage occur the time data
-may be important.
+* When fixing also restore the file mtime. If timestamp is also important.
 
 * Rename sync->backup and fix->restore. It seems to me a naming expressing
 better the meaning of the commands. But not yet sure.
