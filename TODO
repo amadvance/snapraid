@@ -3,6 +3,11 @@ SnapRAID TODO
 
 This is a list of possible TODO items for SnapRAID. The order is not relevant.
 
+* Add an option to do not exclude "hidden" file automatically.
+
+* When fixing, before overwriting the present file, make a copy of it just in
+case that the original file cannot be completely recovered.
+
 * If a file cannot be synched, for example because it was changing, or it
 the file name cannot be supported, it's better to do not stop the sync process.
 The sync process should stop only if the error could be caused by a disk
@@ -10,11 +15,6 @@ corruption.
 
 * Adds a checksum for the content file. When reading if the file is invalid,
 skip to another.
-
-* In the content file save the timestap of the parity files.
-If they do not match, stop the processing.
-This can be done to avoid to use not syncronized parity and content files,
-resulting in wrong data.
 
 * Easy way to find duplicates using the computed hash.
 
@@ -25,19 +25,22 @@ integrity check of the existing ones.
 It should restore only missing files, without recovering modified ones
 or check validity of data of existing ones.
 
-* When fixing also restore the file mtime. If timestamp is also important.
-
-* Rename sync->backup and fix->restore. It seems to me a naming expressing
-better the meaning of the commands. But not yet sure.
+* When fixing also restore the file mtime. The timestamp is also important.
 
 * Allow to filter the files to check/fix based on the drive where they reside.
 
 * Filtered out files should be opened in read-only mode.
 
-* When fixing, overwrite the present file only if the backuped one can be
-completely restored.
-
 * Support to backup also symlinks.
+
+* Rename sync->backup and fix->restore. It seems to me a naming expressing
+better the meaning of the commands. But not yet sure.
+
+* In the content file save the timestap of the parity files.
+If they do not match, stop the processing.
+This can be done to avoid to use not syncronized parity and content files,
+resulting in wrong data.
+But take care that if the sync process is killed we need a way to resyncronize them.
 
 
 Rejected TODO
