@@ -337,7 +337,7 @@ int windows_rename(const char* a, const char* b)
 
 int windows_remove(const char* a)
 {
-	if (!_wremove(u8tou16(a))) {
+	if (_wremove(u8tou16(a)) != 0) {
 		windows_errno(GetLastError());
 		return -1;
 	}
