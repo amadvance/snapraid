@@ -42,6 +42,7 @@
 #define HAVE_FSYNC 1
 #define fsync _commit
 #define rename windows_rename
+#define remove windows_remove
 #define mkdir(a, b) windows_mkdir(a)
 #define dirent windows_dirent
 #define DIR windows_dir
@@ -101,6 +102,11 @@ int windows_ftruncate(int fd, off64_t off);
  * Like the C rename().
  */
 int windows_rename(const char* a, const char* b);
+
+/**
+ * Like the C remove().
+ */
+int windows_remove(const char* a);
 
 /**
  * Like the C fopen().

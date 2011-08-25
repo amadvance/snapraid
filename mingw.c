@@ -335,6 +335,16 @@ int windows_rename(const char* a, const char* b)
 	return 0;
 }
 
+int windows_remove(const char* a)
+{
+	if (!_wremove(u8tou16(a))) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	return 0;
+}
+
 FILE* windows_fopen(const char* file, const char* mode)
 {
 	return _wfopen(u8tou16(file), u8tou16(mode));
