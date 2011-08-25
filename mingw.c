@@ -83,9 +83,11 @@ static char* u16tou8(const wchar_t* src)
 static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, struct windows_stat* st)
 {
 	/* Convert special attributes to a char device */
+	/* Note that the FILE_ATTRIBUTE_HIDDEN attribute is intentionally ignored as */
+	/* hidden files should be backuped like any other */
 	if ((info->dwFileAttributes & FILE_ATTRIBUTE_DEVICE) != 0) {
 		st->st_mode = S_IFBLK;
-	} else if ((info->dwFileAttributes & (FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_HIDDEN | FILE_ATTRIBUTE_TEMPORARY | FILE_ATTRIBUTE_OFFLINE | FILE_ATTRIBUTE_REPARSE_POINT)) != 0) {
+	} else if ((info->dwFileAttributes & (FILE_ATTRIBUTE_SYSTEM | FILE_ATTRIBUTE_TEMPORARY | FILE_ATTRIBUTE_OFFLINE | FILE_ATTRIBUTE_REPARSE_POINT)) != 0) {
 		st->st_mode = S_IFCHR;
 	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
 		st->st_mode = S_IFDIR;
@@ -122,11 +124,12 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, struct win
 static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_stat* st)
 {
 	/* Convert special attributes */
+	/* Note that the FILE_ATTRIBUTE_HIDDEN attribute is intentionally ignored as */
+	/* hidden files should be backuped like any other */
 	if ((info->dwFileAttributes & FILE_ATTRIBUTE_DEVICE) != 0) {
 		st->st_mode = S_IFBLK;
 	} else if ((info->dwFileAttributes & (
 			FILE_ATTRIBUTE_SYSTEM /* System files */
-			| FILE_ATTRIBUTE_HIDDEN /* Hidden files */
 			| FILE_ATTRIBUTE_TEMPORARY /* Files going to be deleted on close */
 			| FILE_ATTRIBUTE_OFFLINE
 			| FILE_ATTRIBUTE_REPARSE_POINT /* Symbolic links */

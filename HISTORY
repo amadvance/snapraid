@@ -4,6 +4,7 @@ SnapRAID HISTORY
 1.6 2011/8
 ==========
 * In "diff" now recognizes the reuse of inodes.
+* Windows hidden files are now backuped like any other files.
 
 1.5 2011/7
 ==========

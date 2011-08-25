@@ -3,7 +3,8 @@ SnapRAID TODO
 
 This is a list of possible TODO items for SnapRAID. The order is not relevant.
 
-* Add an option to do not exclude "hidden" file automatically.
+* Support to backup also symlinks. It's important to allow a full backup as
+many software relay on them to store important information.
 
 * When fixing, before overwriting the present file, make a copy of it just in
 case that the original file cannot be completely recovered.
@@ -13,12 +14,18 @@ the file name cannot be supported, it's better to do not stop the sync process.
 The sync process should stop only if the error could be caused by a disk
 corruption.
 
+* In the speed test prints also the whole memory available in the system.
+I may help to detect the slowdown cases.
+
 * Adds a checksum for the content file. When reading if the file is invalid,
 skip to another.
 
 * Easy way to find duplicates using the computed hash.
 
 * Easy way to find files using a specified block.
+
+* Add an option to exclude "hidden" file. In Windows files with the HIDDEN attributes,
+in Unix files starting with '.'.
 
 * Implement an "undelete" command to recover missing files, without the
 integrity check of the existing ones.
@@ -30,8 +37,6 @@ or check validity of data of existing ones.
 * Allow to filter the files to check/fix based on the drive where they reside.
 
 * Filtered out files should be opened in read-only mode.
-
-* Support to backup also symlinks.
 
 * Rename sync->backup and fix->restore. It seems to me a naming expressing
 better the meaning of the commands. But not yet sure.
@@ -76,5 +81,5 @@ RAID5 sse2x2 2481 [MB/s]
 RAID6 int32x2 807 [MB/s]
 RAID6 mmxx2 1304 [MB/s]
 RAID6 sse2x2 787 [MB/s]
-- Waiting for other similar reports. A single one may be a spurious case.
+- It happens in some systems. At now not an high priority issue.
 
