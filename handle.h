@@ -30,6 +30,11 @@ struct snapraid_handle {
 };
 
 /**
+ * Creates all the required directories if missing.
+ */
+int handle_ancestor(const char* file);
+
+/**
  * Closes a file, if it's different from the specified one.
  */
 int handle_close_if_different(struct snapraid_handle* handle, struct snapraid_file* file);

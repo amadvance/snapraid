@@ -48,6 +48,10 @@
 #define opendir windows_opendir
 #define readdir windows_readdir
 #define closedir windows_closedir
+#define O_NOFOLLOW 0
+#define S_ISLNK(mode) 0
+#define readlink(a,b,c) -1
+#define symlink(a,b) -1
 
 /**
  * Generic stat information.
