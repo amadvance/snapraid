@@ -67,8 +67,8 @@ Limitations
 	* It's able to recover damages only from up to two disks.
 		With a Backup you are able to recover from a complete
 		failure of the whole disk array.
-	* Only the file data is saved. Permissions, time, extended attributes,
-		hard-links, symbolic-links are not saved.
+	* Only file data and symlinks are saved. Permissions, time, extended attributes,
+		hard-links are not saved.
 
 Getting Started
 	To use SnapRAID you need first select one disk of your disk array

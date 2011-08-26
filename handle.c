@@ -195,9 +195,10 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file)
 		return 0;
 	}
 
+	pathprint(handle->path, sizeof(handle->path), "%s%s", handle->disk->dir, file->sub);
+	
 	/* opening in sequential mode in Windows */
 	/* do not follow links to ensure to open the real file */
-	pathprint(handle->path, sizeof(handle->path), "%s%s", handle->disk->dir, file->sub);
 	handle->f = open(handle->path, O_RDONLY | O_BINARY | O_SEQUENTIAL | O_NOFOLLOW);
 
 	if (handle->f == -1) {

@@ -31,7 +31,8 @@ struct snapraid_scan {
 	unsigned count_remove;
 	unsigned count_insert;
 
-	tommy_list insert_list; /**< Files to insert. */
+	tommy_list file_insert_list; /**< Files to insert. */
+	tommy_list link_insert_list; /**< Links to insert. */
 };
 
 /**
@@ -228,7 +229,97 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 	file_flag_set(file, FILE_IS_PRESENT);
 
 	/* insert it in the delayed insert list */
-	tommy_list_insert_tail(&scan->insert_list, &file->nodelist, file);
+	tommy_list_insert_tail(&scan->file_insert_list, &file->nodelist, file);
+}
+
+/**
+ * Removes the specified link from the data set.
+ */
+static void scan_link_remove(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_link* link)
+{
+	/* state changed */
+	state->need_write = 1;
+
+	/* remove the file from the link containers */
+	tommy_hashdyn_remove_existing(&disk->linkset, &link->nodeset);
+	tommy_list_remove_existing(&disk->linklist, &link->nodelist);
+
+	/* deallocate */
+	link_free(link);
+}
+
+/**
+ * Inserts the specified link in the data set.
+ */
+static void scan_link_insert(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_link* link)
+{
+	/* state changed */
+	state->need_write = 1;
+
+	/* insert the link in the link containers */
+	tommy_hashdyn_insert(&disk->linkset, &link->nodeset, link, link_name_hash(link->sub));
+	tommy_list_insert_tail(&disk->linklist, &link->nodelist, link);
+}
+
+/**
+ * Processes a symbolic link.
+ */
+static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, int output, struct snapraid_disk* disk, const char* sub, const char* linkto)
+{
+	struct snapraid_link* link;
+
+	/* check if the link already exists */
+	link = tommy_hashdyn_search(&disk->linkset, link_name_compare, sub, link_name_hash(sub));
+	if (link) {
+		/* check if multiple files have the same inode */
+		if (link_flag_has(link, FILE_IS_PRESENT)) {
+			fprintf(stderr, "Internal inconsistency for symlink '%s%s'\n", disk->dir, sub);
+			exit(EXIT_FAILURE);
+		}
+
+		/* mark as present */
+		link_flag_set(link, FILE_IS_PRESENT);
+
+		/* check if the link is not changed */
+		if (strcmp(link->linkto, linkto) == 0) {
+			/* it's equal */
+			++scan->count_equal;
+
+			if (state->gui) {
+				fprintf(stderr, "scan:equal:%s:%s\n", disk->name, link->sub);
+				fflush(stderr);
+			}
+
+			/* nothing more to do */
+			return;
+		} else {
+			/* it's an update */
+			if (state->gui) {
+				fprintf(stderr, "scan:update:%s:%s\n", disk->name, link->sub);
+				fflush(stderr);
+			}
+			if (output) {
+				printf("Update '%s%s'\n", disk->dir, link->sub);
+			}
+
+			++scan->count_change;
+
+			/* update it */
+			pathcpy(link->linkto, sizeof(link->linkto), linkto);
+
+			/* nothing more to do */
+			return;
+		}
+	}
+
+	/* insert it */
+	link = link_alloc(sub, linkto);
+
+	/* mark it as present */
+	link_flag_set(link, FILE_IS_PRESENT);
+
+	/* insert it in the delayed insert list */
+	tommy_list_insert_tail(&scan->link_insert_list, &link->nodelist, link);
 }
 
 /**
@@ -307,6 +398,30 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 					printf("Excluding file '%s'\n", path_next);
 				}
 			}
+		} else if (S_ISLNK(st.st_mode)) {
+			if (filter_path(&state->filterlist, sub_next, 0) == 0) {
+				char subnew[PATH_MAX];
+				int ret;
+
+				ret = readlink(path_next, subnew, sizeof(subnew));
+				if (ret >= PATH_MAX) {
+					fprintf(stderr, "Error in readlink file '%s'. Symlink too long.\n", path_next);
+					exit(EXIT_FAILURE);
+				}
+				if (ret < 0) {
+					fprintf(stderr, "Error in readlink file '%s'. %s.\n", path_next, strerror(errno));
+					exit(EXIT_FAILURE);
+				}
+
+				/* readlink doesn't put the final 0 */
+				subnew[ret] = 0;
+
+				scan_link(scan, state, output, disk, sub_next, subnew);
+			} else {
+				if (state->verbose) {
+					printf("Excluding file '%s'\n", path_next);
+				}
+			}
 		} else if (S_ISDIR(st.st_mode)) {
 			if (filter_path(&state->filterlist, sub_next, 1) == 0) {
 				pathslash(path_next, sizeof(path_next));
@@ -347,7 +462,8 @@ void state_scan(struct snapraid_state* state, int output)
 		scan[i].count_change = 0;
 		scan[i].count_remove = 0;
 		scan[i].count_insert = 0;
-		tommy_list_init(&scan[i].insert_list);
+		tommy_list_init(&scan[i].file_insert_list);
+		tommy_list_init(&scan[i].link_insert_list);
 	}
 
 	for(i=0;i<diskmax;++i) {
@@ -382,8 +498,32 @@ void state_scan(struct snapraid_state* state, int output)
 			}
 		}
 
+		/* check for removed links */
+		node = disk->linklist;
+		while (node) {
+			struct snapraid_link* link = node->data;
+
+			/* next node */
+			node = node->next;
+
+			/* remove if not present */
+			if (!link_flag_has(link, FILE_IS_PRESENT)) {
+				++scan[i].count_remove;
+
+				if (state->gui) {
+					fprintf(stderr, "scan:remove:%s:%s\n", disk->name, link->sub);
+					fflush(stderr);
+				}
+				if (output) {
+					printf("Remove '%s%s'\n", disk->dir, link->sub);
+				}
+
+				scan_link_remove(state, disk, link);
+			}
+		}
+
 		/* insert all the new files, we insert them only after the deletion */
-		node = scan[i].insert_list;
+		node = scan[i].file_insert_list;
 		while (node) {
 			struct snapraid_file* file = node->data;
 
@@ -403,6 +543,29 @@ void state_scan(struct snapraid_state* state, int output)
 
 			/* insert it */
 			scan_file_insert(state, disk, file);
+		}
+
+		/* insert all the new links */
+		node = scan[i].link_insert_list;
+		while (node) {
+			struct snapraid_link* link = node->data;
+
+			/* next node */
+			node = node->next;
+
+			/* create the new link */
+			++scan->count_insert;
+
+			if (state->gui) {
+				fprintf(stderr, "scan:add:%s:%s\n", disk->name, link->sub);
+				fflush(stderr);
+			}
+			if (output) {
+				printf("Add '%s%s'\n", disk->dir, link->sub);
+			}
+
+			/* insert it */
+			scan_link_insert(state, disk, link);
 		}
 
 		/* if all the previous file were removed */

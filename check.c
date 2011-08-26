@@ -220,6 +220,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 		++countmax;
 	}
 
+	/* check all the blocks in files */
 	countsize = 0;
 	countpos = 0;
 	state_progress_begin(state, blockstart, blockmax, countmax);
@@ -515,6 +516,94 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 		/* progress */
 		if (state_progress(state, i, countpos, countmax, countsize)) {
 			break;
+		}
+	}
+
+	/* check all the links */
+	for(i=0;i<diskmax;++i) {
+		tommy_node* node;
+		struct snapraid_disk* disk = tommy_array_get(&state->diskarr, i);
+
+		/* for each link in the disk */
+		node = disk->linklist;
+		while (node) {
+			char path[PATH_MAX];
+			char linkto[PATH_MAX];
+			struct snapraid_link* link;
+			int failed = 0;
+
+			link = node->data;
+			node = node->next; /* next node */
+
+			/* if excluded continue to the next one */
+			if (link_flag_has(link, FILE_IS_EXCLUDED)) {
+				continue;
+			}
+
+			/* read the symlink */
+			pathprint(path, sizeof(path), "%s%s", disk->dir, link->sub);
+			ret = readlink(path, linkto, sizeof(linkto));
+			if (ret < 0) {
+				failed = 1;
+
+				fprintf(stderr, "Error reading symlink '%s'. %s.\n", path, strerror(errno));
+				fprintf(stderr, "symlink_error:%s:%s: Symlink read error\n", disk->name, link->sub);
+				++error;
+			} else if (ret == sizeof(linkto)) {
+				failed = 1;
+
+				fprintf(stderr, "Error reading symlink '%s'. Symlink too long.\n", path);
+				fprintf(stderr, "symlink_error:%s:%s: Symlink read error\n", disk->name, link->sub);
+				++error;
+			} else {
+				linkto[ret] = 0;
+			
+				if (strcmp(linkto, link->linkto) != 0) {
+					failed = 1;
+
+					fprintf(stderr, "symlink_error:%s:%s: Symlink data error '%s' instead of '%s'\n", disk->name, link->sub, linkto, link->linkto);
+					++error;
+				}
+			}
+
+			if (fix && failed) {
+				/* create the ancestor directories */
+				ret = handle_ancestor(path);
+				if (ret != 0) {
+					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					printf("Stopping\n");
+					++unrecoverable_error;
+					goto bail;
+				}
+
+				/* if it exists, it must be deleted before recreating */
+				ret = remove(path);
+				if (ret != 0 && errno != ENOENT) {
+					fprintf(stderr, "Error removing '%s'. %s.\n", path, strerror(errno));
+					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					printf("Stopping\n");
+					++unrecoverable_error;
+					goto bail;
+				}
+
+				/* create it */
+				ret = symlink(link->linkto, path);
+				if (ret != 0) {
+					fprintf(stderr, "Error writing symlink '%s'. %s.\n", path, strerror(errno));
+					if (errno == EACCES) {
+						fprintf(stderr, "WARNING! Please give write permission to the symlink.\n");
+					} else {
+						/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
+						fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					}
+					printf("Stopping\n");
+					++unrecoverable_error;
+					goto bail;
+				}
+
+				fprintf(stderr, "symlink_fixed:%s:%s: Fixed symlink error\n", disk->name, link->sub);
+				++recovered_error;
+			}
 		}
 	}
 

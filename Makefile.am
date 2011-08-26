@@ -92,13 +92,13 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Create some files, sync raid6 and check
-	$(TESTENV) ./mktest$(EXEEXT) generate 1 3 1000 4000
+	$(TESTENV) ./mktest$(EXEEXT) generate 1 3 1500 4000
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -S -v -c $(srcdir)/test-raid6.conf diff
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -S -v -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -S -c $(srcdir)/test-raid5.conf check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Create some more files, sync raid5 and check
-	$(TESTENV) ./mktest$(EXEEXT) generate 2 3 1000 4000
+	$(TESTENV) ./mktest$(EXEEXT) generate 2 3 1500 4000
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -S -v -c $(srcdir)/test-raid5.conf diff
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -S -v -c $(srcdir)/test-raid5.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -S -c $(srcdir)/test-raid5.conf check
@@ -114,7 +114,7 @@ check-local:
 	rm test/disk1/1*
 	rm test/disk2/2*
 	rm test/disk3/3*
-	$(TESTENV) ./mktest$(EXEEXT) generate 3 3 100 4000
+	$(TESTENV) ./mktest$(EXEEXT) generate 3 3 200 4000
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -S -v -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Move some files, sync and check
@@ -144,7 +144,7 @@ check-local:
 	rm test/disk1/4*
 	rm test/disk2/5*
 	rm test/disk3/6*
-	$(TESTENV) ./mktest$(EXEEXT) generate 4 3 100 4000
+	$(TESTENV) ./mktest$(EXEEXT) generate 4 3 200 4000
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -S -v -c $(srcdir)/test-raid6.conf -t 100 sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -S -c $(srcdir)/test-raid6.conf check 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -S -v -c $(srcdir)/test-raid6.conf -t 700 sync
@@ -154,7 +154,7 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -S -v -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -S -c $(srcdir)/test-raid6.conf check
 	echo --- Delete some files, fix and check with raid5
-	rm test/disk1/1*
+	rm test/disk1/8*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -S -R -c $(srcdir)/test-raid5.conf check 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -S -c $(srcdir)/test-raid5.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -S -c $(srcdir)/test-raid6.conf check

@@ -3,11 +3,11 @@ SnapRAID TODO
 
 This is a list of possible TODO items for SnapRAID. The order is not relevant.
 
-* Support to backup also symlinks. It's important to allow a full backup as
-many software relay on them to store important information.
-
 * When fixing, before overwriting the present file, make a copy of it just in
 case that the original file cannot be completely recovered.
+We can always open files in read-only mode, if a write is required, we close it,
+rename it to with a .bak extension, and rewrite it up to the required size.
+The same for symlink if a file with the same name exist or viceversa.
 
 * If a file cannot be synched, for example because it was changing, or it
 the file name cannot be supported, it's better to do not stop the sync process.

@@ -32,23 +32,29 @@ unsigned rnd(unsigned max)
 char CHARSET[] = "qwertyuiopasdfghjklzxcvbnm1234567890 .-+";
 #define CHARSET_LEN (sizeof(CHARSET)-1)
 
+void rnd_name(char* file)
+{
+	int l = 1 + rnd(20);
+	while (l) {
+		*file++ = CHARSET[rnd(CHARSET_LEN)];
+		--l;
+	}
+	*file = 0;
+}
+
 void generate(int disk, int size)
 {
 	char path[PATH_MAX];
-	FILE* f;
 	char* file;
-	int count;
-	int i;
-	int l;
 
 	snprintf(path, sizeof(path), "test/disk%d/", disk);
-	i = strlen(path);   
+	file = path + strlen(path);
 
 	/* add a directory */
 	if (rnd(2) == 0) {
-		path[i++] = '_';
-		path[i++] = 'a' + rnd(2);
-		path[i] = 0;
+		*file++ = '_';
+		*file++ = 'a' + rnd(2);
+		*file = 0;
 
 		/* create it */
 		if (mkdir(path, 0777) != 0) {
@@ -58,14 +64,14 @@ void generate(int disk, int size)
 			}
 		}
 
-		path[i++] = '/';
+		*file++ = '/';
 	}
 
 	/* add another directory */
 	if (rnd(2) == 0) {
-		path[i++] = '_';
-		path[i++] = 'a' + rnd(2);
-		path[i] = 0;
+		*file++ = '_';
+		*file++ = 'a' + rnd(2);
+		*file = 0;
 
 		/* create it */
 		if (mkdir(path, 0777) != 0) {
@@ -75,145 +81,224 @@ void generate(int disk, int size)
 			}
 		}
 
-		path[i++] = '/';
-	}
-   
-	/* add a file */
-	l = 1 + rnd(20);
-	file = path + i;
-	while (l) {
-		path[i++] = CHARSET[rnd(CHARSET_LEN)];
-		--l;
-	}
-	path[i] = 0;
-
-	/* skip some invalid file name, see http://en.wikipedia.org/wiki/Filename */
-	if (strcmp(file, ".") == 0
-		|| strcmp(file, "..") == 0
-		|| strcmp(file, "prn") == 0
-		|| strcmp(file, "con") == 0
-		|| strcmp(file, "nul") == 0
-		|| strcmp(file, "aux") == 0
-		|| file[0] == ' '
-		|| file[strlen(file)-1] == ' '
-		|| file[strlen(file)-1] == '.'
-	) {
-		return;
+		*file++ = '/';
 	}
 
-	f = fopen(path, "wb");
-	if (!f) {
-		fprintf(stderr, "Error writing %s\n", path);
-		exit(EXIT_FAILURE);
+	while (1) {
+		/* add a random file */
+		rnd_name(file);
+
+		/* skip some invalid file name, see http://en.wikipedia.org/wiki/Filename */
+		if (strcmp(file, ".") == 0
+			|| strcmp(file, "..") == 0
+			|| strcmp(file, "prn") == 0
+			|| strcmp(file, "con") == 0
+			|| strcmp(file, "nul") == 0
+			|| strcmp(file, "aux") == 0
+			|| file[0] == ' '
+			|| file[strlen(file)-1] == ' '
+			|| file[strlen(file)-1] == '.'
+		) {
+			continue;
+		}
+
+		break;
 	}
 
-	count = size;
-	while (count) {
-		fputc(rnd(256), f);
-		--count;
+	/* remove the existing file if any */
+	if (remove(path) != 0) {
+		if (errno != ENOENT) {
+			fprintf(stderr, "Error removing file %s\n", path);
+			exit(EXIT_FAILURE);
+		}
 	}
 
-	fclose(f);
+#ifndef WIN32 /* Windows XP doesn't support symlinks */
+	if (rnd(32) == 0) {
+		/* symlink */
+		char linkto[PATH_MAX];
+		int ret;
+
+		rnd_name(linkto);
+
+		ret = symlink(linkto, path);
+		if (ret != 0) {
+			fprintf(stderr, "Error writing symlink %s\n", path);
+			exit(EXIT_FAILURE);
+		}
+	} else
+#endif
+	{
+		/* file */
+		FILE* f;
+		int count;
+	
+		f = fopen(path, "wb");
+		if (!f) {
+			fprintf(stderr, "Error writing file %s\n", path);
+			exit(EXIT_FAILURE);
+		}
+
+		count = size;
+		while (count) {
+			fputc(rnd(256), f);
+			--count;
+		}
+
+		fclose(f);
+	}
 }
 
 void damage(const char* path, int size)
 {
-	FILE* f;
 	struct stat st;
-	off_t start;
-	int count;
 
 	if (!size)
 		return;
 
-	f = fopen(path, "r+b");
-	if (!f) {
-		fprintf(stderr, "Error writing %s\n", path);
-		exit(EXIT_FAILURE);
-	}
-
-	if (fstat(fileno(f), &st) != 0) {
+	if (lstat(path, &st) != 0) {
+		if (errno == ENOENT)
+			return; /* it may be already deleted */
 		fprintf(stderr, "Error accessing %s\n", path);
 		exit(EXIT_FAILURE);
 	}
 
-	/* start at random position inside the file */
-	if (st.st_size)
-		start = rnd(st.st_size);
-	else
-		start = 0;
-	if (fseek(f, start, SEEK_SET) != 0) {
-		fprintf(stderr, "Error seeking %s\n", path);
-		exit(EXIT_FAILURE);
-	}
+	if (S_ISLNK(st.st_mode)) {
+		/* symlink */
+		int ret;
+		
+		ret = remove(path);
+		if (ret != 0) {
+			fprintf(stderr, "Error removing %s\n", path);
+			exit(EXIT_FAILURE);
+		}
+	} else {
+		/* file */
+		FILE* f;
+		off_t start;
+		int count;
 
-	/* write garbage, in case also over the end */
-	count = rnd(size);
-	while (count) {
-		fputc(rnd(256), f);
-		--count;
-	}
+		f = fopen(path, "r+b");
+		if (!f) {
+			fprintf(stderr, "Error writing %s\n", path);
+			exit(EXIT_FAILURE);
+		}
 
-	fclose(f);
+		/* start at random position inside the file */
+		if (st.st_size)
+			start = rnd(st.st_size);
+		else
+			start = 0;
+		if (fseek(f, start, SEEK_SET) != 0) {
+			fprintf(stderr, "Error seeking %s\n", path);
+			exit(EXIT_FAILURE);
+		}
+
+		/* write garbage, in case also over the end */
+		count = rnd(size);
+		while (count) {
+			fputc(rnd(256), f);
+			--count;
+		}
+
+		fclose(f);
+	}
 }
 
 void append(const char* path, int size)
 {
-	FILE* f;
-	int count;
-
-	if (!size)
-		return;
-
-	f = fopen(path, "ab");
-	if (!f) {
-		fprintf(stderr, "Error appending %s\n", path);
-		exit(EXIT_FAILURE);
-	}
-
-	/* write garbage, in case also over the end */
-	count = rnd(size);
-	while (count) {
-		fputc(rnd(256), f);
-		--count;
-	}
-
-	fclose(f);
-}
-
-void truncat(const char* path, int size)
-{
-	FILE* f;
 	struct stat st;
-	off_t start;
-	int count;
 
 	if (!size)
 		return;
 
-	f = fopen(path, "r+b");
-	if (!f) {
-		fprintf(stderr, "Error writing %s\n", path);
-		exit(EXIT_FAILURE);
-	}
-
-	if (fstat(fileno(f), &st) != 0) {
+	if (lstat(path, &st) != 0) {
+		if (errno == ENOENT)
+			return; /* it may be already deleted */
 		fprintf(stderr, "Error accessing %s\n", path);
 		exit(EXIT_FAILURE);
 	}
 
-	/* truncate at random position inside the file */
-	count = rnd(size);
-	if (count > st.st_size)
-		count = st.st_size;
-	start = st.st_size - count;
-    
-	if (ftruncate(fileno(f), start) != 0) {
-		fprintf(stderr, "Error truncating %s\n", path);
+	if (S_ISLNK(st.st_mode)) {
+		/* symlink */
+		int ret;
+		
+		ret = remove(path);
+		if (ret != 0) {
+			fprintf(stderr, "Error removing %s\n", path);
+			exit(EXIT_FAILURE);
+		}
+	} else {
+		/* file */
+
+		FILE* f;
+		int count;
+
+		f = fopen(path, "ab");
+		if (!f) {
+			fprintf(stderr, "Error appending %s\n", path);
+			exit(EXIT_FAILURE);
+		}
+
+		/* write garbage, in case also over the end */
+		count = rnd(size);
+		while (count) {
+			fputc(rnd(256), f);
+			--count;
+		}
+
+		fclose(f);
+	}
+}
+
+void truncat(const char* path, int size)
+{
+	struct stat st;
+
+	if (!size)
+		return;
+
+	if (lstat(path, &st) != 0) {
+		if (errno == ENOENT)
+			return; /* it may be already deleted */
+		fprintf(stderr, "Error accessing %s\n", path);
 		exit(EXIT_FAILURE);
 	}
 
-	fclose(f);
+	if (S_ISLNK(st.st_mode)) {
+		/* symlink */
+		int ret;
+		
+		ret = remove(path);
+		if (ret != 0) {
+			fprintf(stderr, "Error removing %s\n", path);
+			exit(EXIT_FAILURE);
+		}
+	} else {
+		/* file */
+		FILE* f;
+		off_t start;
+		int count;
+
+		f = fopen(path, "r+b");
+		if (!f) {
+			fprintf(stderr, "Error writing %s\n", path);
+			exit(EXIT_FAILURE);
+		}
+
+		/* truncate at random position inside the file */
+		count = rnd(size);
+		if (count > st.st_size)
+			count = st.st_size;
+		start = st.st_size - count;
+    
+		if (ftruncate(fileno(f), start) != 0) {
+			fprintf(stderr, "Error truncating %s\n", path);
+			exit(EXIT_FAILURE);
+		}
+
+		fclose(f);
+	}
 }
 
 

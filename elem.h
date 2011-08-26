@@ -99,6 +99,19 @@ struct snapraid_file {
 };
 
 /**
+ * Symbolic Link.
+ */
+struct snapraid_link {
+	unsigned flag; /**< FILE_IS_* flags. */
+	char sub[PATH_MAX]; /**< Sub path of the file. Without the disk dir. The disk is implicit. */
+	char linkto[PATH_MAX]; /**< Link to. */
+
+	/* nodes for data structures */
+	tommy_node nodelist;
+	tommy_hashdyn_node nodeset;
+}; 
+
+/**
  * Disk.
  */
 struct snapraid_disk {
@@ -107,6 +120,8 @@ struct snapraid_disk {
 	block_off_t first_free_block; /**< First free searching block. */
 	tommy_list filelist; /**< List of all the files. */
 	tommy_hashdyn inodeset; /**< Hashtable by inode of all the files. */
+	tommy_list linklist; /**< List of all the links. */
+	tommy_hashdyn linkset; /**< Hashtable by name of all the links. */
 	tommy_array blockarr; /**< Block array of the disk. */
 };
 
@@ -204,7 +219,7 @@ void file_free(struct snapraid_file* file);
 const char* file_name(struct snapraid_file* file);
 
 /**
- * Compares two files by inode.
+ * Compares a file with an inode.
  */
 int file_inode_compare(const void* void_arg, const void* void_data);
 
@@ -214,6 +229,44 @@ int file_inode_compare(const void* void_arg, const void* void_data);
 static inline tommy_uint32_t file_inode_hash(uint64_t inode)
 {
 	return (tommy_uint32_t)tommy_inthash_u64(inode);
+}
+
+static inline int link_flag_has(struct snapraid_link* link, unsigned mask)
+{
+	return (link->flag & mask) == mask;
+}
+
+static inline void link_flag_set(struct snapraid_link* link, unsigned mask)
+{
+	link->flag |= mask;
+}
+
+static inline void link_flag_clear(struct snapraid_link* link, unsigned mask)
+{
+	link->flag &= ~mask;
+}
+
+/**
+ * Allocates a link.
+ */
+struct snapraid_link* link_alloc(const char* name, const char* link);
+
+/**
+ * Deallocates a link.
+ */
+void link_free(struct snapraid_link* link);
+
+/**
+ * Compare a link with a name.
+ */
+int link_name_compare(const void* void_arg, const void* void_data);
+
+/**
+ * Computes the hash of a link name.
+ */
+static inline tommy_uint32_t link_name_hash(const char* name)
+{
+	return tommy_hash_u32(0, name, strlen(name));
 }
 
 /**

@@ -1,10 +1,11 @@
 SnapRAID HISTORY
 ================
 
-1.6 2011/8
+1.6 2011/9
 ==========
-* In "diff" now recognizes the reuse of inodes.
+* In "diff" now it recognizes the reuse of inodes.
 * Windows hidden files are now backuped like any other files.
+* Symbolic links are now saved in *nix. Not supported in Windows.
 
 1.5 2011/7
 ==========

@@ -287,10 +287,12 @@ void state_read(struct snapraid_state* state)
 	unsigned line;
 	unsigned count_file;
 	unsigned count_block;
+	unsigned count_link;
 	tommy_node* node;
 
 	count_file = 0;
 	count_block = 0;
+	count_link = 0;
 
 	/* iterate over all the available content files and load the first one present */
 	f = 0;
@@ -435,7 +437,6 @@ void state_read(struct snapraid_state* state)
 			++count_block;
 		} else if (strcmp(tag, "file") == 0) {
 			/* file */
-			char buffer[PATH_MAX];
 			char sub[PATH_MAX];
 			uint64_t v_size;
 			uint64_t v_mtime;
@@ -535,6 +536,86 @@ void state_read(struct snapraid_state* state)
 
 			/* stat */
 			++count_file;
+		} else if (strcmp(tag, "symlink") == 0) {
+			/* symlink */
+			char sub[PATH_MAX];
+			char linkto[PATH_MAX];
+			char tokento[32];
+			unsigned i;
+			struct snapraid_link* link;
+
+			ret = sgettok(f, buffer, sizeof(buffer));
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'symlink' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			c = sgetc(f);
+			if (c != ' ') {
+				fprintf(stderr, "Invalid 'symlink' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetline(f, sub, sizeof(sub));
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'symlink' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			c = sgeteol(f);
+			if (c != '\n') {
+				fprintf(stderr, "Invalid 'symlink' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+			++line;
+
+			ret = sgettok(f, tokento, sizeof(tokento));
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'symlink' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+			if (strcmp(tokento, "to") != 0) {
+				fprintf(stderr, "Invalid 'symlink' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			c = sgetc(f);
+			if (c != ' ') {
+				fprintf(stderr, "Invalid 'symlink' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetline(f, linkto, sizeof(linkto));
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'symlink' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			if (!*sub || !*linkto) {
+				fprintf(stderr, "Invalid 'symlink' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			/* find the disk */
+			for(i=0;i<tommy_array_size(&state->diskarr);++i) {
+				disk = tommy_array_get(&state->diskarr, i);
+				if (strcmp(disk->name, buffer) == 0)
+					break;
+			}
+			if (i == tommy_array_size(&state->diskarr)) {
+				fprintf(stderr, "Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			/* allocate the link */
+			link = link_alloc(sub, linkto);
+
+			/* insert the link in the link containers */
+			tommy_hashdyn_insert(&disk->linkset, &link->nodeset, link, link_name_hash(link->sub));
+			tommy_list_insert_tail(&disk->linklist, &link->nodelist, link);
+
+			/* stat */
+			++count_link;
 		} else if (strcmp(tag, "checksum") == 0) {
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
@@ -605,20 +686,23 @@ void state_read(struct snapraid_state* state)
 	if (state->verbose) {
 		printf("\tfile %u\n", count_file);
 		printf("\tblock %u\n", count_block);
+		printf("\tsymlink %u\n", count_link);
 	}
 }
 
-static void state_write_one(struct snapraid_state* state, const char* path, unsigned* out_count_file, unsigned* out_count_block)
+static void state_write_one(struct snapraid_state* state, const char* path, unsigned* out_count_file, unsigned* out_count_block, unsigned* out_count_link)
 {
 	FILE* f;
 	char tmp[PATH_MAX];
 	unsigned count_file;
 	unsigned count_block;
+	unsigned count_link;
 	unsigned i;
 	int ret;
 
 	count_file = 0;
 	count_block = 0;
+	count_link = 0;
 
 	printf("Saving state to %s...\n", path);
 
@@ -697,6 +781,19 @@ static void state_write_one(struct snapraid_state* state, const char* path, unsi
 
 			++count_file;
 		}
+
+		/* for each link */
+		for(j=disk->linklist;j!=0;j=j->next) {
+			struct snapraid_link* link = j->data;
+
+			ret = fprintf(f,"symlink %s %s\nto %s\n", disk->name, link->sub, link->linkto);
+			if (ret < 0) {
+				fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", tmp, strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+
+			++count_link;
+		}
 	}
 
 	/* Use the sequence fflush() -> fsync() -> fclose() -> rename() to ensure */
@@ -728,27 +825,32 @@ static void state_write_one(struct snapraid_state* state, const char* path, unsi
 		*out_count_file = count_file;
 	if (out_count_block)
 		*out_count_block = count_block;
+	if (out_count_link)
+		*out_count_link = count_link;
 }
 
 void state_write(struct snapraid_state* state)
 {
 	unsigned count_file;
 	unsigned count_block;
+	unsigned count_link;
 	tommy_node* node;
 
 	count_file = 0;
 	count_block = 0;
+	count_link = 0;
 
 	node = tommy_list_head(&state->contentlist);
 	while (node) {
 		struct snapraid_content* content = node->data;
-		state_write_one(state, content->content, &count_file, &count_block);
+		state_write_one(state, content->content, &count_file, &count_block, &count_link);
 		node = node->next;
 	}
 
 	if (state->verbose) {
 		printf("\tfile %u\n", count_file);
 		printf("\tblock %u\n", count_block);
+		printf("\tsymlink %u\n", count_link);
 	}
 }
 
@@ -788,6 +890,19 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist)
 
 			if (state->verbose && !file_flag_has(file, FILE_IS_EXCLUDED)) {
 				printf("Processing file '%s'\n", file->sub);
+			}
+		}
+
+		/* for each link */
+		for(j=tommy_list_head(&disk->linklist);j!=0;j=j->next) {
+			struct snapraid_link* link = j->data;
+
+			if (filter_path(filterlist, link->sub, 0) != 0) {
+				link_flag_set(link, FILE_IS_EXCLUDED);
+			}
+
+			if (state->verbose && !link_flag_has(link, FILE_IS_EXCLUDED)) {
+				printf("Processing symlink '%s'\n", link->sub);
 			}
 		}
 	}
