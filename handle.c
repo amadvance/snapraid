@@ -24,36 +24,6 @@
 /****************************************************************************/
 /* handle */
 
-int handle_close_if_different(struct snapraid_handle* handle, struct snapraid_file* file)
-{
-	int ret;
-	
-	/* if it's the same file, nothing to do */
-	if (handle->file == file) {
-		return 0;
-	}
-
-	/* reset the file */
-	handle->file = 0;
-
-	/* close if already open */
-	if (handle->f != -1) {
-		ret = close(handle->f);
-		if (ret != 0) {
-			/* invalidate for error */
-			handle->f = -1;
-
-			fprintf(stderr, "Error closing file '%s'. %s.\n", handle->file->sub, strerror(errno));
-			return -1;
-		}
-	}
-
-	/* reset the descriptor */
-	handle->f = -1;
-
-	return 0;
-}
-
 int handle_ancestor(const char* file)
 {
 	char dir[PATH_MAX];
@@ -236,6 +206,7 @@ int handle_close(struct snapraid_handle* handle)
 {
 	int ret;
 
+	/* close if open */
 	if (handle->f != -1) {
 		ret = close(handle->f);
 		if (ret != 0) {
@@ -248,10 +219,21 @@ int handle_close(struct snapraid_handle* handle)
 		}
 	}
 
+	/* reset the descriptor */
 	handle->file = 0;
 	handle->f = -1;
 
 	return 0;
+}
+
+int handle_close_if_different(struct snapraid_handle* handle, struct snapraid_file* file)
+{
+	/* if it's the same file, nothing to do */
+	if (handle->file == file) {
+		return 0;
+	}
+
+	return handle_close(handle);
 }
 
 int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size)
