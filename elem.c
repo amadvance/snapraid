@@ -193,6 +193,13 @@ block_off_t block_file_pos(struct snapraid_block* block)
 	return block - file->blockvec;
 }
 
+int block_is_last(struct snapraid_block* block)
+{
+	struct snapraid_file* file = block_file_get(block);
+
+	return block == file->blockvec + file->blockmax - 1;
+}
+
 unsigned block_file_size(struct snapraid_block* block, unsigned block_size)
 {
 	block_off_t pos = block_file_pos(block);

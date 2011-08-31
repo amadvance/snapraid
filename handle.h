@@ -35,11 +35,6 @@ struct snapraid_handle {
 int handle_ancestor(const char* file);
 
 /**
- * Closes a file, if it's different from the specified one.
- */
-int handle_close_if_different(struct snapraid_handle* handle, struct snapraid_file* file);
-
-/**
  * Creates a file.
  * The file is created if missing, and opened with write access.
  * If the file has a different size than expected, it's enlarged or truncated to the correct size.
@@ -71,6 +66,11 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
  * Writes a block to a file.
  */
 int handle_write(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size);
+
+/**
+ * Changes the modification time of the file to the saved value.
+ */
+int handle_utime(struct snapraid_handle* handle);
 
 #endif
 

@@ -116,14 +116,17 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 				continue;
 			}
 
-			ret = handle_close_if_different(&handle[j], block_file_get(block));
-			if (ret == -1) {
-				/* This one is really an unexpected error, because we are only reading */
-				/* and closing a descriptor should never fail */
-				fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to sync.\n");
-				printf("Stopping at block %u\n", i);
-				++unrecoverable_error;
-				goto bail;
+			/* if the file is different than the current one, close it */
+			if (handle[j].file != block_file_get(block)) {
+				ret = handle_close(&handle[j]);
+				if (ret == -1) {
+					/* This one is really an unexpected error, because we are only reading */
+					/* and closing a descriptor should never fail */
+					fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to sync.\n");
+					printf("Stopping at block %u\n", i);
+					++unrecoverable_error;
+					goto bail;
+				}
 			}
 
 			ret = handle_open(&handle[j], block_file_get(block));

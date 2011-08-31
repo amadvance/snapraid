@@ -226,16 +226,6 @@ int handle_close(struct snapraid_handle* handle)
 	return 0;
 }
 
-int handle_close_if_different(struct snapraid_handle* handle, struct snapraid_file* file)
-{
-	/* if it's the same file, nothing to do */
-	if (handle->file == file) {
-		return 0;
-	}
-
-	return handle_close(handle);
-}
-
 int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size)
 {
 	ssize_t read_ret;
@@ -309,4 +299,27 @@ int handle_write(struct snapraid_handle* handle, struct snapraid_block* block, u
 	return 0;
 }
 
+int handle_utime(struct snapraid_handle* handle)
+{
+	struct timeval tv[2];
+	int ret;
+
+	/* do nothing if not opened */
+	if (handle->f == -1)
+		return 0;
+
+	tv[0].tv_sec = handle->file->mtime;
+	tv[0].tv_usec = 0;
+
+	tv[1].tv_sec = tv[0].tv_sec;
+	tv[1].tv_usec = tv[0].tv_usec;
+
+	ret = futimes(handle->f, tv);
+	if (ret != 0) {
+		fprintf(stderr, "Error timing file '%s'. %s.\n", handle->file->sub, strerror(errno));
+		return -1;
+	}
+
+	return 0;
+}
 

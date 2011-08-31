@@ -1,7 +1,7 @@
 SnapRAID TODO
 =============
 
-This is a list of possible TODO items for SnapRAID. The order is not relevant.
+This is a list of possible TODO items for SnapRAID.
 
 * When fixing, before overwriting the present file, make a copy of it just in
 case that the original file cannot be completely recovered.
@@ -14,25 +14,20 @@ the file name cannot be supported, it's better to do not stop the sync process.
 The sync process should stop only if the error could be caused by a disk
 corruption.
 
-* In the speed test prints also the whole memory available in the system.
-I may help to detect the slowdown cases.
-
-* Adds a checksum for the content file. When reading if the file is invalid,
-skip to another.
-
 * Easy way to find duplicates using the computed hash.
 
 * Easy way to find files using a specified block.
 
-* Add an option to exclude "hidden" file. In Windows files with the HIDDEN attributes,
-in Unix files starting with '.'.
+* Adds a checksum for the content file. When reading if the file is invalid,
+skip to another.
 
 * Implement an "undelete" command to recover missing files, without the
 integrity check of the existing ones.
 It should restore only missing files, without recovering modified ones
 or check validity of data of existing ones.
 
-* When fixing also restore the file mtime. The timestamp is also important.
+* Add an option to exclude "hidden" file. In Windows files with the HIDDEN attributes,
+in Unix files starting with '.'.
 
 * Allow to filter the files to check/fix based on the drive where they reside.
 
@@ -45,7 +40,7 @@ better the meaning of the commands. But not yet sure.
 If they do not match, stop the processing.
 This can be done to avoid to use not syncronized parity and content files,
 resulting in wrong data.
-But take care that if the sync process is killed we need a way to resyncronize them.
+But if the sync process is killed we need a way to resyncronize them.
 
 
 Rejected TODO

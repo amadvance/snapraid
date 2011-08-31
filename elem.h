@@ -67,6 +67,7 @@ struct snapraid_file;
 
 #define BLOCK_HAS_HASH 1 /**< If the hash value is valid. */
 #define BLOCK_HAS_PARITY 2 /**< If the parity block is valid. */
+#define BLOCK_HAS_MASK 3 /**< Mask of all the flags. Used to mix them inside the file pointer. */
 
 /**
  * Block of a file.
@@ -80,6 +81,8 @@ struct snapraid_block {
 #define FILE_IS_PRESENT 1 /**< If it's seen as present. */
 #define FILE_IS_EXCLUDED 2 /**< If it's an excluded file from the processing. */
 #define FILE_IS_LARGER 4 /**< If a larger file was already detected. */
+#define FILE_IS_DAMAGED 8 /**< If a fix was attempted but it failed. */
+#define FILE_IS_FIXED 16 /**< If a fix was done. */
 
 /**
  * File.
@@ -152,14 +155,20 @@ void filter_free(struct snapraid_filter* filter);
  */
 int filter_path(tommy_list* filterlist, const char* path, int is_dir);
 
+/**
+ * Gets the file containing the block.
+ */
 static inline struct snapraid_file* block_file_get(struct snapraid_block* block)
 {
-	return (struct snapraid_file*)(block->file_mixed & ~(uintptr_t)3);
+	return (struct snapraid_file*)(block->file_mixed & ~(uintptr_t)BLOCK_HAS_MASK);
 }
 
+/**
+ * Sets the file containing the block.
+ */
 static inline void block_file_set(struct snapraid_block* block, struct snapraid_file* file)
 {
-	block->file_mixed = (block->file_mixed & ~(uintptr_t)3) | (uintptr_t)file;
+	block->file_mixed = (block->file_mixed & ~(uintptr_t)BLOCK_HAS_MASK) | (uintptr_t)file;
 }
 
 static inline int block_flag_has(struct snapraid_block* block, unsigned mask)
@@ -181,6 +190,11 @@ static inline void block_flag_clear(struct snapraid_block* block, unsigned mask)
  * Gets the relative position of a block inside the file.
  */
 block_off_t block_file_pos(struct snapraid_block* block);
+
+/**
+ * Checks if the block is the last in the file.
+ */
+int block_is_last(struct snapraid_block* block);
 
 /**
  * Gets the size in bytes of the block.

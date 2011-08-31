@@ -85,14 +85,14 @@ static int repair(struct snapraid_state* state, unsigned i, unsigned diskmax, st
 		/* recover */
 		raid5_recov_data(buffer, diskmax, state->block_size, failed[0].index);
 
+		/* check if the recovered blocks are OK */
 		for(j=0;j<1;++j) {
 			if (blockcmp(state, failed[j].block, buffer[failed[j].index], buffer_zero) != 0) 
 				break; 
 		}
 
 		if (j==1) {
-			/* compute parity and qarity to check it */
-			/* we recompute everything because we may have used only a small part of the redundancy */
+			/* recompute all the redundancy information */
 			raid_gen(state->level, buffer, diskmax, state->block_size);
 			return 0;
 		}
@@ -107,14 +107,14 @@ static int repair(struct snapraid_state* state, unsigned i, unsigned diskmax, st
 
 		raid6_recov_datap(buffer, diskmax, state->block_size, failed[0].index, buffer_zero);
 
+		/* check if the recovered blocks are OK */
 		for(j=0;j<1;++j) {
 			if (blockcmp(state, failed[j].block, buffer[failed[j].index], buffer_zero) != 0) 
 				break; 
 		}
 
 		if (j==1) {
-			/* compute parity and qarity to check it */
-			/* we recompute everything because we may have used only a small part of the redundancy */
+			/* recompute all the redundancy information */
 			raid_gen(state->level, buffer, diskmax, state->block_size);
 			return 0;
 		}
@@ -131,14 +131,14 @@ static int repair(struct snapraid_state* state, unsigned i, unsigned diskmax, st
 		/* recover */
 		raid6_recov_2data(buffer, diskmax, state->block_size, failed[0].index, failed[1].index, buffer_zero);
 
+		/* check if the recovered blocks are OK */
 		for(j=0;j<2;++j) {
 			if (blockcmp(state, failed[j].block, buffer[failed[j].index], buffer_zero) != 0) 
 				break; 
 		}
 
 		if (j==2) {
-			/* compute parity and qarity to check it */
-			/* we recompute everything because we may have used only a small part of the redundancy */
+			/* recompute all the redundancy information */
 			raid_gen(state->level, buffer, diskmax, state->block_size);
 			return 0;
 		}
@@ -281,12 +281,15 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			if (!block_flag_has(block, BLOCK_HAS_PARITY))
 				all_parity = 0;
 
-			ret = handle_close_if_different(&handle[j], block_file_get(block));
-			if (ret == -1) {
-				fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to sync.\n");
-				printf("Stopping at block %u\n", i);
-				++unrecoverable_error;
-				goto bail;
+			/* if the file is different than the current one, close it */
+			if (handle[j].file != block_file_get(block)) {
+				ret = handle_close(&handle[j]);
+				if (ret == -1) {
+					fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to sync.\n");
+					printf("Stopping at block %u\n", i);
+					++unrecoverable_error;
+					goto bail;
+				}
 			}
 
 			if (fix) {
@@ -417,8 +420,14 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			/* increment the number of errors */
 			if (ret > 0)
 				error += ret;
-
 			++unrecoverable_error;
+
+			if (fix) {
+				/* keep track of damaged files */
+				for(j=0;j<failed_count;++j) {
+					file_flag_set(block_file_get(failed[j].block), FILE_IS_DAMAGED);
+				}
+			}
 
 			/* print a list of all the errors in files */
 			for(j=0;j<failed_count;++j) {
@@ -456,6 +465,9 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 
 					ret = handle_write(failed[j].handle, failed[j].block, buffer[failed[j].index], state->block_size);
 					if (ret == -1) {
+						/* mark the file as damaged */
+						file_flag_set(block_file_get(failed[j].block), FILE_IS_DAMAGED);
+
 						if (errno == EACCES) {
 							fprintf(stderr, "WARNING! Please give write permission to the file.\n");
 						} else {
@@ -466,6 +478,9 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 						++unrecoverable_error;
 						goto bail;
 					}
+
+					/* mark the file as fixed */
+					file_flag_set(block_file_get(failed[j].block), FILE_IS_FIXED);
 
 					fprintf(stderr, "fixed:%u:%s:%s: Fixed data error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
 					++recovered_error;
@@ -506,6 +521,66 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 							++recovered_error;
 						}
 					}
+				}
+			}
+		}
+
+		if (fix) {
+			/* for all the files of this block check if we need to fix the modification time */
+			for(j=0;j<diskmax;++j) {
+				struct snapraid_block* block;
+				struct snapraid_file* collide_file;
+				uint64_t inode;
+
+				block = disk_block_get(handle[j].disk, i);
+				if (!block) {
+					/* if no block, no file and nothing to do */
+					continue;
+				}
+
+				/* if it isn't the last block in the file */
+				if (!block_is_last(block)) {
+					/* nothing to do */
+					continue;
+				}
+				
+				/* if the file is not fixed or if it's not fixable */
+				if (!file_flag_has(handle[j].file, FILE_IS_FIXED)
+					|| file_flag_has(handle[j].file, FILE_IS_DAMAGED)) {
+					/* nothing to do */
+					continue;
+				}
+				
+				inode = handle[j].st.st_ino;
+
+				/* search for the corresponding inode */
+				collide_file = tommy_hashdyn_search(&handle[j].disk->inodeset, file_inode_compare, &inode, file_inode_hash(inode));
+
+				/* if the inode is in the database and it refers at a different file name, */
+				/* we can fix the file time ONLY if the time and size allow to differentiates */
+				/* between the two files */
+
+				/* for example, suppose we delete a bunch of files with all the same size and time, */
+				/* when recreating them the inodes may be reused in a different order, */
+				/* and at the next sync some files may have matching inode/size/time even if different name */
+				/* not allowing sync to detect that the file is changed and not renamed */
+				if (!collide_file /* if not in the databse, there is no collision */
+					|| strcmp(collide_file->sub, handle[j].file->sub) == 0 /* if the name is the same, it's the right collision */
+					|| collide_file->size != handle[j].file->size /* if the size is different, the collision is identified */
+					|| collide_file->mtime != handle[j].file->mtime /* if the mtime is different, the collision is identified */
+				) {
+					/* set the original modification time */
+					ret = handle_utime(&handle[j]);
+					if (ret == -1) {
+						/* mark the file as damaged */
+						file_flag_set(handle[j].file, FILE_IS_DAMAGED);
+						fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+						printf("Stopping at block %u\n", i);
+						++unrecoverable_error;
+						goto bail;
+					}
+				} else {
+					fprintf(stderr, "collision:%s:%s:%s: Not setting modification time to avoid inode collision\n", handle[j].disk->name, block_file_get(block)->sub, collide_file->sub);
 				}
 			}
 		}

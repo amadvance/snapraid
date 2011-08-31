@@ -49,6 +49,7 @@
 #define opendir windows_opendir
 #define readdir windows_readdir
 #define closedir windows_closedir
+#define futimes windows_futimes
 #define O_NOFOLLOW 0
 #define S_ISLNK(mode) 0
 #define readlink(a,b,c) -1
@@ -66,12 +67,12 @@ struct windows_stat {
 };
 
 /**
- * Like the C fstat() but without inode information.
+ * Like the C fstat() including the inode information.
  */
 int windows_fstat(int fd, struct windows_stat* st);
 
 /**
- * Like the C stat() but without inode information.
+ * Like the C stat() but without the inode information.
  */
 int windows_lstat(const char* file, struct windows_stat* st);
 
@@ -86,7 +87,7 @@ int windows_access(const char* file, int mode);
 int windows_mkdir(const char* file);
 
 /**
- * Like the C lstat() with inode information.
+ * Like the C lstat() including the inode information.
  * It doesn't work for all kind of files and directories. For example "\System Volume Information" cannot be opened.
  * Note that instead lstat() works for all the files.
  */
@@ -97,6 +98,11 @@ int lstat_inode(const char* file, struct windows_stat* st);
  * Like the C ftruncate().
  */
 int windows_ftruncate(int fd, off64_t off);
+
+/**
+ * Like the C futimes().
+ */
+int windows_futimes(int fd, struct timeval tv[2]);
 
 /**
  * Like the C rename().

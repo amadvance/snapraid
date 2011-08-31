@@ -63,11 +63,14 @@ static int state_dry_process(struct snapraid_state* state, int parity_f, int qar
 			if (!block)
 				continue;
 
-			ret = handle_close_if_different(&handle[j], block_file_get(block));
-			if (ret == -1) {
-				printf("Stopping at block %u\n", i);
-				++error;
-				goto bail;
+			/* if the file is different than the current one, close it */
+			if (handle[j].file != block_file_get(block)) {
+				ret = handle_close(&handle[j]);
+				if (ret == -1) {
+					printf("Stopping at block %u\n", i);
+					++error;
+					goto bail;
+				}
 			}
 
 			/* open the file for reading */
