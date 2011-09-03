@@ -72,19 +72,21 @@ struct option long_options[] = {
 	{ "count", 1, 0, 't' },
 	{ "force-zero", 0, 0, 'Z' },
 	{ "force-empty", 0, 0, 'E' },
-	{ "skip-self-test", 0, 0, 'S' },
-	{ "expect-unrecoverable", 0, 0, 'U' },
-	{ "expect-recoverable", 0, 0, 'R' },
 	{ "speed-test", 0, 0, 'T' },
 	{ "verbose", 0, 0, 'v' },
-	{ "gui", 0, 0, 'G' },
+	{ "gui", 0, 0, 'G' }, /* undocumented GUI interface command */
 	{ "help", 0, 0, 'h' },
 	{ "version", 0, 0, 'V' },
+	/* test specific options, DO NOT USE! */
+	{ "test-skip-self", 0, 0, 'S' },
+	{ "test-kill-after-sync", 0, 0, 'K' },
+	{ "test-expect-unrecoverable", 0, 0, 'U' },
+	{ "test-expect-recoverable", 0, 0, 'R' },
 	{ 0, 0, 0, 0 }
 };
 #endif
 
-#define OPTIONS "c:f:s:t:ZESURTvhVG"
+#define OPTIONS "c:f:s:t:ZETvhVG"
 
 volatile int global_interrupt = 0;
 
@@ -110,9 +112,10 @@ int main(int argc, char* argv[])
 	int gui;
 	int force_zero;
 	int force_empty;
-	int expect_unrecoverable;
-	int expect_recoverable;
-	int skip_self_test;
+	int test_expect_unrecoverable;
+	int test_expect_recoverable;
+	int test_kill_after_sync;
+	int test_skip_self;
 	const char* conf;
 	struct snapraid_state state;
 	int operation;
@@ -128,9 +131,10 @@ int main(int argc, char* argv[])
 	gui = 0;
 	force_zero = 0;
 	force_empty = 0;
-	expect_unrecoverable = 0;
-	expect_recoverable = 0;
-	skip_self_test = 0;
+	test_expect_unrecoverable = 0;
+	test_expect_recoverable = 0;
+	test_kill_after_sync = 0;
+	test_skip_self = 0;
 	blockstart = 0;
 	blockcount = 0;
 	tommy_list_init(&filterlist);
@@ -175,15 +179,6 @@ int main(int argc, char* argv[])
 		case 'E' :
 			force_empty = 1;
 			break;
-		case 'S' :
-			skip_self_test = 1;
-			break;
-		case 'U' :
-			expect_unrecoverable = 1;
-			break;
-		case 'R' :
-			expect_recoverable = 1;
-			break;
 		case 'v' :
 			verbose = 1;
 			break;
@@ -199,6 +194,18 @@ int main(int argc, char* argv[])
 		case 'T' :
 			speed();
 			exit(EXIT_SUCCESS);
+		case 'S' :
+			test_skip_self = 1;
+			break;
+		case 'K' :
+			test_kill_after_sync = 1;
+			break;
+		case 'U' :
+			test_expect_unrecoverable = 1;
+			break;
+		case 'R' :
+			test_expect_recoverable = 1;
+			break;
 		default:
 			fprintf(stderr, "Unknown option '%c'\n", (char)c);
 			exit(EXIT_FAILURE);
@@ -227,12 +234,12 @@ int main(int argc, char* argv[])
 
 	raid_init();
 
-	if (!skip_self_test)
+	if (!test_skip_self)
 		selftest(gui);
 
 	state_init(&state);
 
-	state_config(&state, conf, verbose, gui, force_zero, force_empty, expect_unrecoverable, expect_recoverable);
+	state_config(&state, conf, verbose, gui, force_zero, force_empty, test_expect_unrecoverable, test_expect_recoverable);
 
 	if (operation == OPERATION_DIFF) {
 		state_read(&state);
@@ -251,10 +258,27 @@ int main(int argc, char* argv[])
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);
 
+		/* save the new state before the sync */
+		/* this allow to recover the case of the changes in the array after an aborted sync. */
+		
+		/* for example, think at this case: */
+		/* - add some files at the array */
+		/* - run a sync command, it will recompute the parity adding the new files */
+		/* - abort the sync command before it stores the new content file */
+		/* - delete the not yet synched files from the array */
+		/* - run a new sync command */
+		
+		/* the new sync command has now way to know that the parity file was modified */
+		/* because the files triggering these changes are now deleted */
+		/* and they aren't listed in the content file */
+
+		if (state.need_write)
+			state_write(&state);
+
 		ret = state_sync(&state, blockstart, blockcount);
 
 		/* save the new state if required */
-		if (state.need_write)
+		if (!test_kill_after_sync && state.need_write)
 			state_write(&state);
 
 		/* abort if required by the sync command */

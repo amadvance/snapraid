@@ -852,6 +852,8 @@ void state_write(struct snapraid_state* state)
 		printf("\tblock %u\n", count_block);
 		printf("\tsymlink %u\n", count_link);
 	}
+
+	state->need_write = 0; /* no write needed anymore */
 }
 
 void state_filter(struct snapraid_state* state, tommy_list* filterlist)

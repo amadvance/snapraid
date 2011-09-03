@@ -271,7 +271,7 @@ static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, 
 	/* check if the link already exists */
 	link = tommy_hashdyn_search(&disk->linkset, link_name_compare, sub, link_name_hash(sub));
 	if (link) {
-		/* check if multiple files have the same inode */
+		/* check if multiple files have the same name */
 		if (link_flag_has(link, FILE_IS_PRESENT)) {
 			fprintf(stderr, "Internal inconsistency for symlink '%s%s'\n", disk->dir, sub);
 			exit(EXIT_FAILURE);
@@ -523,6 +523,7 @@ void state_scan(struct snapraid_state* state, int output)
 		}
 
 		/* insert all the new files, we insert them only after the deletion */
+		/* to reuse the just freed space */
 		node = scan[i].file_insert_list;
 		while (node) {
 			struct snapraid_file* file = node->data;

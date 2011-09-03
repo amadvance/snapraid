@@ -1,13 +1,24 @@
 SnapRAID HISTORY
 ================
 
-1.6 2011/9
-==========
-* In "diff" now it recognizes the reuse of inodes.
-* Windows hidden files are now backuped like any other files.
+1.6 2011/9 - THIS UPDATE IS HIGHLY RECOMMENDED!
+===============================================
+* The content file is now saved also at the start of the "sync" command.
+  This avoids parity errors if the sync process aborted without
+  saving the content file and you made changes at the disk array before
+  another "sync" command was done.
+  More specifically, deletions or truncations of not yet synched files
+  after the aborted sync, and before the next sync command, may have damaged
+  the parity data. New file additions were instead safe.
+  If these conditions may have happened to you a "check" command (also
+  with older version of the program) is recommended to ensure the correctness
+  of your parity data.
+* The "diff" command now recognizes the reuse of inodes.
+* Windows hidden files are now saved like any other files.
 * Symbolic links are now saved in *nix. Not supported in Windows.
-* In fixing the original modification time of the files is also restored.
-* The message asking to use the --force-empty option now lists all the empty disks.
+* The "fix" command restores also the original modification time.
+* The message asking to use the --force-empty option now lists all the
+  empty disks.
 
 1.5 2011/7
 ==========
