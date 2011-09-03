@@ -73,8 +73,8 @@ struct snapraid_file;
  * Block of a file.
  */
 struct snapraid_block {
-	block_off_t parity_pos; /**< Position of the block in the parity. */
 	uintptr_t file_mixed; /**< Back pointer to the file owning this block, mixed with some flags. */
+	block_off_t parity_pos; /**< Position of the block in the parity. */
 	unsigned char hash[HASH_SIZE]; /**< Hash of the block. */
 };
 
