@@ -6,7 +6,8 @@ SnapRAID HISTORY
 * In "diff" now it recognizes the reuse of inodes.
 * Windows hidden files are now backuped like any other files.
 * Symbolic links are now saved in *nix. Not supported in Windows.
-* When fixing the original modification time of the files is restored.
+* In fixing the original modification time of the files is also restored.
+* The message asking to use the --force-empty option now lists all the empty disks.
 
 1.5 2011/7
 ==========

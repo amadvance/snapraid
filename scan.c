@@ -454,6 +454,7 @@ void state_scan(struct snapraid_state* state, int output)
 	unsigned diskmax = tommy_array_size(&state->diskarr);
 	unsigned i;
 	struct snapraid_scan* scan;
+	int has_empty;
 
 	scan = malloc_nofail(diskmax * sizeof(struct snapraid_scan));
 	for(i=0;i<diskmax;++i) {
@@ -567,15 +568,27 @@ void state_scan(struct snapraid_state* state, int output)
 			/* insert it */
 			scan_link_insert(state, disk, link);
 		}
+	}
 
-		/* if all the previous file were removed */
+	/* checks for disks where all the previously existing files where removed */
+	has_empty = 0;
+	for(i=0;i<diskmax;++i) {
+		struct snapraid_disk* disk = tommy_array_get(&state->diskarr, i);
+
 		if (scan[i].count_equal == 0 && scan[i].count_moved == 0 && scan[i].count_remove != 0) {
-			if (!state->force_empty) {
-				fprintf(stderr, "All the files previously present in disk '%s' at dir '%s' are now missing or overwritten!\n", disk->name, disk->dir);
-				fprintf(stderr, "If you really want to sync, use 'snapraid --force-empty sync'\n");
-				exit(EXIT_FAILURE);
+			if (!has_empty) {
+				has_empty = 1;
+				fprintf(stderr, "All the files previously present in disk '%s' at dir '%s'", disk->name, disk->dir);
+			} else {
+				fprintf(stderr, ", disk '%s' at dir '%s'", disk->name, disk->dir);
 			}
 		}
+	}
+	if (has_empty) {
+		fprintf(stderr, " are now missing or rewritten!\n");
+		fprintf(stderr, "This happens with an empty disk or when all the files are recreated after a 'fix' command.\n");
+		fprintf(stderr, "If you really want to sync, use 'snapraid --force-empty sync'.\n");
+		exit(EXIT_FAILURE);
 	}
 
 	if (state->verbose || output) {
