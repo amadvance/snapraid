@@ -53,7 +53,7 @@ mktest_SOURCES = \
 EXTRA_DIST = \
 	autogen.sh \
 	noautomake.sh \
-	README AUTHORS HISTORY INSTALL COPYING TODO \
+	README AUTHORS HISTORY INSTALL COPYING TODO TEST \
 	snapraid.d snapraid.1 snapraid.txt \
 	test-raid5.conf \
 	test-raid6.conf \
@@ -76,6 +76,7 @@ maintainer-clean-local:
 	rm -f snapraid.1 snapraid.txt
 
 # Automatic testing
+
 CHECKFLAGS =
 CHECKCOUNT = 2000
 CHECKSIZE = 4000
@@ -271,7 +272,7 @@ check-local:
 
 # Manual testing
 
-CHECK = ./snapraid -S -c test-raid5.conf diff
+MANUAL = ./snapraid -S -c test-raid5.conf sync
 
 valgrind:
 	valgrind \
@@ -279,7 +280,7 @@ valgrind:
 		--track-origins=yes \
 		--read-var-info=yes \
 		--leak-check=full \
-		-v $(CHECK) \
+		-v $(MANUAL) \
 		2> valgrind.log
 		tail valgrind.log
 
@@ -289,14 +290,14 @@ callgrind:
 		--dump-instr=yes \
 		--trace-jump=yes \
 		--collect-systime=yes \
-		-v $(CHECK) \
+		-v $(MANUAL) \
 		2> callgrind.log
 		tail callgrind.log
 
 cachegrind:
 	valgrind \
 		--tool=cachegrind \
-		-v $(CHECK) \
+		-v $(MANUAL) \
 		2> cachegrind.log
 		tail cachegrind.log
 

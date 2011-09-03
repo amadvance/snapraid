@@ -1,0 +1,23 @@
+SnapRAID TEST
+=============
+
+The regression test of SnapRAID is run using the command:
+
+	make check
+
+You can also run the regression test in valgrind with:
+
+	./configure --enable-valgrind
+	make check
+
+To run a coverage test you should use:
+
+	./configure --enable-coverage
+	make lcov_reset
+	make check
+	make lcov_capture
+	make lcov_html
+
+and open the file ./cov/index.html in your browser to see the results.
+
+
