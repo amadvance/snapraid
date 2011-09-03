@@ -75,7 +75,7 @@ consider before using it.
 The main one is that if a disk fails, and you haven\(cqt recently synced,
 you may not able to do a complete recover.
 More specifically, you may be unable to recover up to the size of the
-amount of the changed or deleted files, from the last sync operation.
+amount of the changed or deleted files from the last sync operation.
 This happens even if the files changed or deleted are not in the
 failed disk.
 New added files don\(cqt prevent the recovering of the already existing
@@ -112,7 +112,7 @@ to recover from a single disk failure, like RAID5.
 If you want to recover from two disk failures, like RAID6, you must
 reserve another disk for the \(a"q\(hyparity\(a" information.
 .PP
-For the parity disks, you have to pick the biggest disks in the array,
+As parity disks, you have to pick the biggest disks in the array,
 as the redundancy information may grow in size as the biggest data
 disk in the array.
 .PP
@@ -170,8 +170,8 @@ disk d3 /mnt/disk3/
 .PD
 .RE
 .PP
-If you are in Windows, you should use drive letters and backslash
-instead of slash:
+If you are in Windows, you should use drive letters and backslashes
+instead of slashes:
 .PP
 .RS 4
 parity E:\(rspar\(rsparity
@@ -266,37 +266,40 @@ Restore the last backup/snapshot \(hy> \(a"fix\(a".
 .PD
 .PP
 Take care that the commands have be written in lower case.
-.TP
-.B sync
+.SS sync 
 Updates the redundancy information. All the modified files
 in the disk array are read, and the redundancy data is
 recomputed.
+.PP
 Files are identified by inode and checked by time and size,
 meaning that you can move them on the disk without triggering
 any redundancy recomputation.
+.PP
 You can stop this process at any time pressing Ctrl+C,
 without losing the work already done.
+.PP
 The \(a"content\(a", \(a"parity\(a" and \(a"q\(hyparity\(a" files are modified if necessary.
 The files in the array are NOT modified.
-.TP
-.B diff
+.SS diff 
 Lists all the files modified from the last \(a"sync\(a" command that
-needs to recompute their redundancy data.
+have to recompute their redundancy data.
+.PP
 Nothing is modified.
-.TP
-.B check
+.SS check 
 Checks all the files and the redundancy data.
 All the files are hashed and compared with the snapshot saved
 in the previous \(a"sync\(a" command.
+.PP
 Files are identified by path, and checked by content.
 Nothing is modified.
-.TP
-.B fix
+.SS fix 
 Checks and fix all the files. It\(cqs like \(a"check\(a" but it
 also tries to fix problems reverting the state of the
 disk array at the previous \(a"sync\(a" command.
+.PP
 After a successful \(a"fix\(a", you should also run a \(a"sync\(a"
 command to update the new state of the files.
+.PP
 The \(a"content\(a" file is NOT modified.
 The \(a"parity\(a" and \(a"q\(hyparity\(a" files are modified if necessary.
 The files in the array are modified if necessary.
@@ -304,9 +307,9 @@ The files in the array are modified if necessary.
 SnapRAID provides the following options:
 .TP
 .B \(hyc, \(hy\(hyconf CONFIG
-Selects the configuration file. If not specified is assumed
-the file \(cq/etc/snapraid.conf\(cq in Unix, and \(cqsnapraid.conf\(cq
-in Windows.
+Selects the configuration file. If not specified it\(cqs assumed
+the file \(cq/etc/snapraid.conf\(cq in Unix, and \(cqsnapraid.conf\(cq in
+the current directory in Windows.
 .TP
 .B \(hyf, \(hy\(hyfilter PATTERN
 Filters the files to operate on with the \(a"check\(a" and \(a"fix\(a"
@@ -318,17 +321,19 @@ In Unix, ensure to quote globbing chars if used.
 .TP
 .B \(hyZ, \(hy\(hyforce\(hyzero
 Forces the insecure operation of syncing a file with zero
-size that before was not empty.
+size that before was not.
 If SnapRAID detects such condition, it stops proceeding
 unless you specify this option.
 This allows to easily detect when after a system crash,
 some accessed files were zeroed.
+This is a possible condition in Linux with the ext3/ext4
+filesystems.
 .TP
 .B \(hyE, \(hy\(hyforce\(hyempty
 Forces the insecure operation of syncing a disk with all
 the original files missing.
 If SnapRAID detects that all the files originally present
-int the disk are missing or overwritten, it stops proceeding
+in the disk are missing or rewritten, it stops proceeding
 unless you specify this option.
 This allows to easily detect when a data file\(hysystem is not
 mounted.
@@ -358,98 +363,99 @@ This configuration file is located in /etc/snapraid.conf in Unix or
 in the execution directory in Windows.
 .PP
 It should contain the following options (case sensitive):
-.TP
-.B parity FILE
+.SS parity FILE 
 Defines the file to use to store the parity information.
 The parity enables the protection from a single disk
 failure, like RAID5.
+.PP
 It must be placed in a disk dedicated for this purpose with
 as much free space as the biggest disk in the array.
 Leaving the parity disk reserved for only this file ensures that
 it doesn\(cqt get fragmented, improving the performance.
+.PP
 This option is mandatory and it can be used only one time.
-.TP
-.B q\(hyparity FILE
+.SS q\(hyparity FILE 
 Defines the file to use to store the q\(hyparity information.
 If present, the q\(hyparity enables the protection from two disk
 failures, like RAID6.
+.PP
 It must be placed in a disk dedicated for this purpose with
 as much free space as the biggest disk in the array.
 Leaving the q\(hyparity disk reserved for only this file ensures that
 it doesn\(cqt get fragmented, improving the performance.
+.PP
 This option is optional and it can be used only one time.
-.TP
-.B content FILE
+.SS content FILE 
 Defines the file to use to store the list and checksums of all the
 files present in your disk array.
+.PP
 It can be placed in the same disk of the parity and q\(hyparity files,
 but NOT in a data disk of the array.
+.PP
 This option is mandatory and it can be used more time to save
 more copies of the same files.
+.PP
 It\(cqs suggested to store at least one copy for each parity disk.
 One more doesn\(cqt hurt, just in case you lose all the parity disks,
 and you want to be still able to check the data integrity.
-.TP
-.B disk NAME DIR
+.SS disk NAME DIR 
 Defines the name and the mount point of the disks of the array.
 NAME is used to identify the disk, and it must be unique.
 DIR is the mount point of the disk in the filesystem.
+.PP
 You can change the mount point as you like, as long you
 keep the NAME fixed.
+.PP
 The specification order is also important, if you change it,
 you will invalidate the q\(hyparity file.
+.PP
 You should use one option for each disk of the array.
-.TP
-.B exclude PATTERN
-.TP
-.B include PATTERN
+.SS exclude/include PATTERN 
 Defines the file or directory patterns to exclude and include
 in the sync process.
 All the patterns are processed in the specified order.
+.PP
 If the first pattern that matches is an \(a"exclude\(a" one, the file
 is excluded. If it\(cqs an \(a"include\(a" one the file is included.
 If no pattern matches, the file is excluded if the last pattern
 is an \(a"include\(a", or included if the last pattern is an \(a"exclude\(a".
-See the PATTERN section for more details in the
-pattern specifications.
+.PP
+See the PATTERN section for more details in the pattern
+specifications.
+.PP
 This option can be used many times.
-.TP
-.B block_size SIZE_IN_KIBIBYTES
+.SS block_size SIZE_IN_KIBIBYTES 
 Defines the basic block size in kibi bytes of the redundancy
 blocks. Where one kibi bytes is 1024 bytes.
 The default is 256 and it should work for most conditions.
 You could increase this value if you do not have enough RAM
 memory to run SnapRAID.
-SnapRAID requires about TS*24/BS bytes of RAM memory.
-Where TS is the total size in bytes of your disk array,
-and BS is the block size in bytes.
 .PP
-.RS 4
+As a rule of thumb, with 4GB or more memory use the default 256,
+with 2GB use 512, and with 1GB use 1024.
+.PP
+In more details SnapRAID requires about TS*24/BS bytes
+of RAM memory to run. Where TS is the total size in bytes of
+your disk array, and BS is the block size in bytes.
+.PP
 For example with 6 disk of 2 TiB and a block size of 256 KiB
 (1 KiB = 1024 Bytes) you have:
-.RE
 .PP
-.RS 4
 RAM = (6 * 2 * 2^40) * 24 / (256 * 2^10) = 1.1 GiB
 .PD 0
 .PP
 .PD
-.RE
 .PP
-.RS 4
 You could instead decrease this value if you have a lot of
 small files in the disk array. For each file, even if of few
 bytes, a whole block is always allocated, so you may have a lot
 of unused space.
 As approximation, you can assume that half of the block size is
 wasted for each file.
-.RE
 .PP
-.RS 4
 For example, with 10000 files and a 256 KiB block size, you are
 going to waste 1.2 GiB.
-.RE
-.PP
+.SS Examples 
 An example of a typical configuration for Unix is:
 .PP
 .RS 4
@@ -691,35 +697,37 @@ for documentation.
 .PP
 This file is read and written by the \(a"sync\(a" command, and only read by
 \(a"fix\(a" and \(a"check\(a".
-.TP
-.B blk_size SIZE
+.SS blk_size SIZE 
 Defines the size of the block in bytes. It must match the size
 defined in the configuration file.
-.TP
-.B checksum CHECKSUM
+.SS checksum CHECKSUM 
 Defines the checksum kind used. It can be \(a"md5\(a" or \(a"murmur3\(a".
-.TP
-.B file DISK SIZE TIME INODE PATH
+.SS file DISK SIZE TIME INODE PATH 
 Defines a file in the specified DISK.
+.PP
 The INODE number is used to identify the file in the \(a"sync\(a"
 command, allowing to rename or move the file in disk without
 the need to recompute the parity for it.
+.PP
 The SIZE and TIME information are used to identify if the file
 changed from the last \(a"sync\(a" command, and if there is the need
 to recompute the parity.
+.PP
 The PATH information is used in the \(a"check\(a" and \(a"fix\(a" commands
 to identify the file.
-.TP
-.B blk BLOCK HASH
+.SS blk BLOCK HASH 
 Defines the ordered parity block list used by the last defined file.
+.PP
 BLOCK is the block position in the \(a"parity\(a" file.
 0 for the first block, 1 for the second one and so on.
+.PP
 HASH is the hash of the block. In the last block of the file,
 the HASH is the hash of only the used part of the block.
-.TP
-.B inv BLOCK [HASH]
+.SS inv BLOCK [HASH] 
 Like \(a"blk\(a", but inform that the parity of this block is invalid.
+.PP
 The HASH may be missing if not yet computed.
+.PP
 This field is used only when you interrupt manually the \(a"sync\(a"
 command.
 .SH PARITY 
