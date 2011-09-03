@@ -226,14 +226,18 @@ int parity_read(const char* path, int f, block_off_t pos, unsigned char* block_b
 	}
 
 	read_ret = read(f, block_buffer, block_size);
-#endif    
-	if (read_ret != (ssize_t)block_size) { /* conversion is safe because block_size is always small */
+#endif
+	if (read_ret < 0) {
 		fprintf(stderr, "Error reading file '%s'. %s.\n", path, strerror(errno));
 		return -1;
 	}
+	if (read_ret != (ssize_t)block_size) { /* signed conversion is safe because block_size is always small */
+		fprintf(stderr, "File '%s' is smaller than expected.\n", path);
+		return -1;
+	}
 
-	/* Here isn't needed to call posix_fadvise(..., POSIX_FADV_DONTNEED) because */
-	/* we already advised sequential access with POSIX_FADV_SEQUENTIAL. */
+	/* Here isn't needed to call posix_fadvise(..., POSIX_FADV_DONTNEED) */
+	/* because we already advised sequential access with POSIX_FADV_SEQUENTIAL. */
 	/* In Linux 2.6.33 it's enough to ensure that data is not kept in the cache. */
 	/* Better to do nothing and save a syscall for each block. */
 

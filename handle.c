@@ -250,7 +250,7 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 		fprintf(stderr, "Error reading file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
 	}
-	if (read_ret != (ssize_t)read_size) {
+	if (read_ret != (ssize_t)read_size) { /* signed conversion is safe because block_size is always small */
 		fprintf(stderr, "File '%s' is smaller than expected.\n", handle->path);
 		return -1;
 	}
@@ -260,8 +260,8 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 		memset(block_buffer + read_size, 0, block_size - read_size);
 	}
 
-	/* Here isn't needed to call posix_fadvise(..., POSIX_FADV_DONTNEED) because */
-	/* we already advised sequential access with POSIX_FADV_SEQUENTIAL. */
+	/* Here isn't needed to call posix_fadvise(..., POSIX_FADV_DONTNEED) */
+	/* because we already advised sequential access with POSIX_FADV_SEQUENTIAL. */
 	/* In Linux 2.6.33 it's enough to ensure that data is not kept in the cache. */
 	/* Better to do nothing and save a syscall for each block. */
 
