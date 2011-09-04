@@ -1,13 +1,9 @@
 SnapRAID TODO
 =============
 
-This is a list of possible TODO items for SnapRAID.
+This is the list of TODO items for SnapRAID.
 
-* When fixing, before overwriting the present file, make a copy of it just in
-case that the original file cannot be completely recovered.
-We can always open files in read-only mode, if a write is required, we close it,
-rename it to with a .bak extension, and rewrite it up to the required size.
-The same for symlink if a file with the same name exist or viceversa.
+- v1.7
 
 * Remove the dependency of the 'disk' order specification in the conf file.
 The used order can be defined by SnapRAID and saved in the content file to avoid
@@ -15,10 +11,18 @@ to damage the parity in case the order is changed by the user.
 It will also allow to remove disks from the array when using a dual parity
 configuration, as it's always possible to keep internally dummy empty disks.
 
-* If a file cannot be synched, for example because it was changing, or it
+* When fixing, before overwriting the present file, make a copy of it just in
+case that the original file cannot be completely recovered.
+We can always open files in read-only mode, if a write is required, we close it,
+rename it to with a .bak extension, and rewrite it up to the required size.
+The same for symlink if a file with the same name exist or viceversa.
+
+* If a file cannot be synched, for example because it was changing, or if
 the file name cannot be supported, it's better to do not stop the sync process.
 The sync process should stop only if the error could be caused by a disk
 corruption.
+
+- v1.8
 
 * Easy way to find duplicates using the computed hash.
 
@@ -27,13 +31,24 @@ corruption.
 * Adds a checksum for the content file. When reading if the file is invalid,
 skip to another.
 
+* Add an option to exclude "hidden" file. In Windows files with the HIDDEN attributes,
+in Unix files starting with '.'.
+
+- v2.x
+
 * Implement an "undelete" command to recover missing files, without the
 integrity check of the existing ones.
 It should restore only missing files, without recovering modified ones
 or check validity of data of existing ones.
 
-* Add an option to exclude "hidden" file. In Windows files with the HIDDEN attributes,
-in Unix files starting with '.'.
+* Rename sync->backup and fix->restore. It seems to me a naming expressing
+better the meaning of the commands. But not yet sure.
+
+* Allow to filter the files to check/fix based on the drive where they reside.
+
+* Filtered out files should be opened in read-only mode.
+
+- v3.x
 
 * In the content file, for each block store the last time the hash was checked
 with both "check" and also "sync".
@@ -43,13 +58,6 @@ This could be problematic for the increased memory occupation, and the need
 to update the content file also in check.
 
 * Save the content file in compressed .gz format to save space.
-
-* Allow to filter the files to check/fix based on the drive where they reside.
-
-* Filtered out files should be opened in read-only mode.
-
-* Rename sync->backup and fix->restore. It seems to me a naming expressing
-better the meaning of the commands. But not yet sure.
 
 * In the content file save the timestap of the parity files.
 If they do not match, stop the processing.
