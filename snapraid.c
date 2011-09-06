@@ -64,6 +64,11 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-V, --version       ", "-V") "  Version\n");
 }
 
+#define OPT_TEST_SKIP_SELF 256
+#define OPT_TEST_KILL_AFTER_SYNC 257
+#define OPT_TEST_EXPECT_UNRECOVERABLE 258
+#define OPT_TEST_EXPECT_RECOVERABLE 259
+
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
 	{ "conf", 1, 0, 'c' },
@@ -78,10 +83,10 @@ struct option long_options[] = {
 	{ "help", 0, 0, 'h' },
 	{ "version", 0, 0, 'V' },
 	/* test specific options, DO NOT USE! */
-	{ "test-skip-self", 0, 0, 'S' },
-	{ "test-kill-after-sync", 0, 0, 'K' },
-	{ "test-expect-unrecoverable", 0, 0, 'U' },
-	{ "test-expect-recoverable", 0, 0, 'R' },
+	{ "test-skip-self", 0, 0, OPT_TEST_SKIP_SELF },
+	{ "test-kill-after-sync", 0, 0, OPT_TEST_KILL_AFTER_SYNC },
+	{ "test-expect-unrecoverable", 0, 0, OPT_TEST_EXPECT_UNRECOVERABLE },
+	{ "test-expect-recoverable", 0, 0, OPT_TEST_EXPECT_RECOVERABLE },
 	{ 0, 0, 0, 0 }
 };
 #endif
@@ -194,16 +199,16 @@ int main(int argc, char* argv[])
 		case 'T' :
 			speed();
 			exit(EXIT_SUCCESS);
-		case 'S' :
+		case OPT_TEST_SKIP_SELF :
 			test_skip_self = 1;
 			break;
-		case 'K' :
+		case OPT_TEST_KILL_AFTER_SYNC :
 			test_kill_after_sync = 1;
 			break;
-		case 'U' :
+		case OPT_TEST_EXPECT_UNRECOVERABLE :
 			test_expect_unrecoverable = 1;
 			break;
-		case 'R' :
+		case OPT_TEST_EXPECT_RECOVERABLE :
 			test_expect_recoverable = 1;
 			break;
 		default:
