@@ -161,7 +161,7 @@ Commands
 
 	Take care that the commands have be written in lower case.
 
-    sync
+  sync
 	Updates the redundancy information. All the modified files
 	in the disk array are read, and the redundancy data is
 	recomputed.
@@ -176,13 +176,13 @@ Commands
 	The "content", "parity" and "q-parity" files are modified if necessary.
 	The files in the array are NOT modified.
 
-    diff
+  diff
 	Lists all the files modified from the last "sync" command that
 	have to recompute their redundancy data.
 
 	Nothing is modified.
 
-    check
+  check
 	Checks all the files and the redundancy data.
 	All the files are hashed and compared with the snapshot saved
 	in the previous "sync" command.
@@ -190,7 +190,7 @@ Commands
 	Files are identified by path, and checked by content.
 	Nothing is modified.
 
-    fix
+  fix
 	Checks and fix all the files. It's like "check" but it
 	also tries to fix problems reverting the state of the
 	disk array at the previous "sync" command.
@@ -264,7 +264,7 @@ Configuration
 
 	It should contain the following options (case sensitive):
 
-    parity FILE
+  parity FILE
 	Defines the file to use to store the parity information.
 	The parity enables the protection from a single disk
 	failure, like RAID5.
@@ -276,7 +276,7 @@ Configuration
 
 	This option is mandatory and it can be used only one time.
 
-    q-parity FILE
+  q-parity FILE
 	Defines the file to use to store the q-parity information.
 	If present, the q-parity enables the protection from two disk
 	failures, like RAID6.
@@ -288,7 +288,7 @@ Configuration
 
 	This option is optional and it can be used only one time.
 
-    content FILE
+  content FILE
 	Defines the file to use to store the list and checksums of all the
 	files present in your disk array.
 
@@ -302,7 +302,7 @@ Configuration
 	One more doesn't hurt, just in case you lose all the parity disks,
 	and you want to be still able to check the data integrity.
 
-    disk NAME DIR
+  disk NAME DIR
 	Defines the name and the mount point of the disks of the array.
 	NAME is used to identify the disk, and it must be unique.
 	DIR is the mount point of the disk in the filesystem.
@@ -315,7 +315,7 @@ Configuration
 
 	You should use one option for each disk of the array.
 
-    exclude/include PATTERN
+  exclude/include PATTERN
 	Defines the file or directory patterns to exclude and include
 	in the sync process.
 	All the patterns are processed in the specified order.
@@ -330,7 +330,7 @@ Configuration
 
 	This option can be used many times.
 
-    block_size SIZE_IN_KIBIBYTES
+  block_size SIZE_IN_KIBIBYTES
 	Defines the basic block size in kibi bytes of the redundancy
 	blocks. Where one kibi bytes is 1024 bytes.
 	The default is 256 and it should work for most conditions.
@@ -359,7 +359,7 @@ Configuration
 	For example, with 10000 files and a 256 KiB block size, you are
 	going to waste 1.2 GiB.
 
-    Examples
+  Examples
 	An example of a typical configuration for Unix is:
 
 		:parity /mnt/diskpar/parity
@@ -472,14 +472,14 @@ Content
 	This file is read and written by the "sync" command, and only read by
 	"fix" and "check".
 
-    blk_size SIZE
+  blk_size SIZE
 	Defines the size of the block in bytes. It must match the size
 	defined in the configuration file.
 
-    checksum CHECKSUM
+  checksum CHECKSUM
 	Defines the checksum kind used. It can be "md5" or "murmur3".
 
-    file DISK SIZE TIME INODE PATH
+  file DISK SIZE TIME INODE PATH
 	Defines a file in the specified DISK.
 
 	The INODE number is used to identify the file in the "sync"
@@ -493,7 +493,7 @@ Content
 	The PATH information is used in the "check" and "fix" commands
 	to identify the file.
 
-    blk BLOCK HASH
+  blk BLOCK HASH
 	Defines the ordered parity block list used by the last defined file.
 
 	BLOCK is the block position in the "parity" file.
@@ -502,7 +502,7 @@ Content
 	HASH is the hash of the block. In the last block of the file,
 	the HASH is the hash of only the used part of the block.
 
-    inv BLOCK [HASH]
+  inv BLOCK [HASH]
 	Like "blk", but inform that the parity of this block is invalid.
 
 	The HASH may be missing if not yet computed.

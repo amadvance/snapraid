@@ -177,7 +177,9 @@ SnapRAID provides four simple commands that allow to:
 
 Take care that the commands have be written in lower case.
 
----- 5.0.1 sync ----
+5.1 sync
+--------
+
 Updates the redundancy information. All the modified files
 in the disk array are read, and the redundancy data is
 recomputed.
@@ -192,13 +194,17 @@ without losing the work already done.
 The "content", "parity" and "q-parity" files are modified if necessary.
 The files in the array are NOT modified.
 
----- 5.0.2 diff ----
+5.2 diff
+--------
+
 Lists all the files modified from the last "sync" command that
 have to recompute their redundancy data.
 
 Nothing is modified.
 
----- 5.0.3 check ----
+5.3 check
+---------
+
 Checks all the files and the redundancy data.
 All the files are hashed and compared with the snapshot saved
 in the previous "sync" command.
@@ -206,7 +212,9 @@ in the previous "sync" command.
 Files are identified by path, and checked by content.
 Nothing is modified.
 
----- 5.0.4 fix ----
+5.4 fix
+-------
+
 Checks and fix all the files. It's like "check" but it
 also tries to fix problems reverting the state of the
 disk array at the previous "sync" command.
@@ -286,7 +294,9 @@ in the execution directory in Windows.
 
 It should contain the following options (case sensitive):
 
----- 7.0.1 parity FILE ----
+7.1 parity FILE
+---------------
+
 Defines the file to use to store the parity information.
 The parity enables the protection from a single disk
 failure, like RAID5.
@@ -298,7 +308,9 @@ it doesn't get fragmented, improving the performance.
 
 This option is mandatory and it can be used only one time.
 
----- 7.0.2 q-parity FILE ----
+7.2 q-parity FILE
+-----------------
+
 Defines the file to use to store the q-parity information.
 If present, the q-parity enables the protection from two disk
 failures, like RAID6.
@@ -310,7 +322,9 @@ it doesn't get fragmented, improving the performance.
 
 This option is optional and it can be used only one time.
 
----- 7.0.3 content FILE ----
+7.3 content FILE
+----------------
+
 Defines the file to use to store the list and checksums of all the
 files present in your disk array.
 
@@ -324,7 +338,9 @@ It's suggested to store at least one copy for each parity disk.
 One more doesn't hurt, just in case you lose all the parity disks,
 and you want to be still able to check the data integrity.
 
----- 7.0.4 disk NAME DIR ----
+7.4 disk NAME DIR
+-----------------
+
 Defines the name and the mount point of the disks of the array.
 NAME is used to identify the disk, and it must be unique.
 DIR is the mount point of the disk in the filesystem.
@@ -337,7 +353,9 @@ you will invalidate the q-parity file.
 
 You should use one option for each disk of the array.
 
----- 7.0.5 exclude/include PATTERN ----
+7.5 exclude/include PATTERN
+---------------------------
+
 Defines the file or directory patterns to exclude and include
 in the sync process.
 All the patterns are processed in the specified order.
@@ -352,7 +370,9 @@ specifications.
 
 This option can be used many times.
 
----- 7.0.6 block_size SIZE_IN_KIBIBYTES ----
+7.6 block_size SIZE_IN_KIBIBYTES
+--------------------------------
+
 Defines the basic block size in kibi bytes of the redundancy
 blocks. Where one kibi bytes is 1024 bytes.
 The default is 256 and it should work for most conditions.
@@ -381,7 +401,9 @@ wasted for each file.
 For example, with 10000 files and a 256 KiB block size, you are
 going to waste 1.2 GiB.
 
----- 7.0.7 Examples ----
+7.7 Examples
+------------
+
 An example of a typical configuration for Unix is:
 
     parity /mnt/diskpar/parity
@@ -500,14 +522,20 @@ for documentation.
 This file is read and written by the "sync" command, and only read by
 "fix" and "check".
 
----- 9.0.1 blk_size SIZE ----
+9.1 blk_size SIZE
+-----------------
+
 Defines the size of the block in bytes. It must match the size
 defined in the configuration file.
 
----- 9.0.2 checksum CHECKSUM ----
+9.2 checksum CHECKSUM
+---------------------
+
 Defines the checksum kind used. It can be "md5" or "murmur3".
 
----- 9.0.3 file DISK SIZE TIME INODE PATH ----
+9.3 file DISK SIZE TIME INODE PATH
+----------------------------------
+
 Defines a file in the specified DISK.
 
 The INODE number is used to identify the file in the "sync"
@@ -521,7 +549,9 @@ to recompute the parity.
 The PATH information is used in the "check" and "fix" commands
 to identify the file.
 
----- 9.0.4 blk BLOCK HASH ----
+9.4 blk BLOCK HASH
+------------------
+
 Defines the ordered parity block list used by the last defined file.
 
 BLOCK is the block position in the "parity" file.
@@ -530,7 +560,9 @@ BLOCK is the block position in the "parity" file.
 HASH is the hash of the block. In the last block of the file,
 the HASH is the hash of only the used part of the block.
 
----- 9.0.5 inv BLOCK [HASH] ----
+9.5 inv BLOCK [HASH]
+--------------------
+
 Like "blk", but inform that the parity of this block is invalid.
 
 The HASH may be missing if not yet computed.
