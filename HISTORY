@@ -1,6 +1,12 @@
 SnapRAID HISTORY
 ================
 
+1.7 2011/9
+==========
+* If a file is modified or removed during a sync, the sync process doesn't
+  stop anymore, but it will simply skip the file, resulting in an incomplete
+  sync. Note that the sync will terminate with an error.
+
 1.6 2011/9 - THIS UPDATE IS HIGHLY RECOMMENDED!
 ===============================================
 * The content file is now saved also at the start of the "sync" command.

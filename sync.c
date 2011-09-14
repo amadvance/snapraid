@@ -87,6 +87,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 	state_progress_begin(state, blockstart, blockmax, countmax);
 	for(i=blockstart;i<blockmax;++i) {
 		int one_invalid;
+		int skip_this_block;
 		int ret;
 
 		/* for each disk */
@@ -102,6 +103,9 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 		/* if no invalid block skip */
 		if (!one_invalid)
 			continue;
+
+		/* by default process the block, and skip it if something go wrong */
+		skip_this_block = 0;
 
 		/* for each disk, process the block */
 		for(j=0;j<diskmax;++j) {
@@ -134,7 +138,13 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 				if (errno == ENOENT) {
 					fprintf(stderr, "Missing file '%s'.\n", handle[j].path);
 					fprintf(stderr, "WARNING! You cannot modify data disk during a sync. Rerun the sync command when finished.\n");
-					printf("Stopping at block %u\n", i);
+
+					++unrecoverable_error;
+
+					/* if the file is missing, it means that it was removed during sync */
+					/* this isn't a serious error, so we skip this block, and continue with others */
+					skip_this_block = 1;
+					continue;
 				} else if (errno == EACCES) {
 					fprintf(stderr, "No access at file '%s'.\n", handle[j].path);
 					fprintf(stderr, "WARNING! Please fix the access permission in the data disk.\n");
@@ -143,6 +153,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 					fprintf(stderr, "DANGER! Unexpected open error in a data disk, it isn't possible to sync.\n");
 					printf("Stopping to allow recovery. Try with 'snapraid check'\n");
 				}
+
 				++unrecoverable_error;
 				goto bail;
 			}
@@ -159,9 +170,13 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 				else
 					fprintf(stderr, "Unexpected inode change from %"PRIu64" to %"PRIu64" at file '%s'.\n", block_file_get(block)->inode, handle[j].st.st_ino, handle[j].path);
 				fprintf(stderr, "WARNING! You cannot modify files during a sync. Rerun the sync command when finished.\n");
-				printf("Stopping at block %u\n", i);
+
 				++unrecoverable_error;
-				goto bail;
+
+				/* if the file is charnged, it means that it was modified during sync */
+				/* this isn't a serious error, so we skip this block, and continue with others */
+				skip_this_block = 1;
+				continue;
 			}
 
 			read_size = handle_read(&handle[j], block, buffer[j], state->block_size);
@@ -193,39 +208,43 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 			countsize += read_size;
 		}
 
-		/* compute the parity */
-		raid_gen(state->level, buffer, diskmax, state->block_size);
+		/* if we have read all the data required, proceed with the parity */
+		if (!skip_this_block) {
 
-		/* write the parity */
-		ret = parity_write(state->parity, parity_f, i, buffer[diskmax], state->block_size);
-		if (ret == -1) {
-			fprintf(stderr, "DANGER! Write error in the Parity disk, it isn't possible to sync.\n");
-			printf("Stopping at block %u\n", i);
-			++unrecoverable_error;
-			goto bail;
-		}
+			/* compute the parity */
+			raid_gen(state->level, buffer, diskmax, state->block_size);
 
-		/* write the qarity */
-		if (state->level >= 2) {
-			ret = parity_write(state->qarity, qarity_f, i, buffer[diskmax+1], state->block_size);
+			/* write the parity */
+			ret = parity_write(state->parity, parity_f, i, buffer[diskmax], state->block_size);
 			if (ret == -1) {
-				fprintf(stderr, "DANGER! Write error in the Q-Parity disk, it isn't possible to sync.\n");
+				fprintf(stderr, "DANGER! Write error in the Parity disk, it isn't possible to sync.\n");
 				printf("Stopping at block %u\n", i);
 				++unrecoverable_error;
 				goto bail;
 			}
-		}
 
-		/* for each disk, mark the blocks as processed */
-		for(j=0;j<diskmax;++j) {
-			struct snapraid_block* block;
+			/* write the qarity */
+			if (state->level >= 2) {
+				ret = parity_write(state->qarity, qarity_f, i, buffer[diskmax+1], state->block_size);
+				if (ret == -1) {
+					fprintf(stderr, "DANGER! Write error in the Q-Parity disk, it isn't possible to sync.\n");
+					printf("Stopping at block %u\n", i);
+					++unrecoverable_error;
+					goto bail;
+				}
+			}
 
-			block = disk_block_get(handle[j].disk, i);
-			if (!block)
-				continue;
+			/* for each disk, mark the blocks as processed */
+			for(j=0;j<diskmax;++j) {
+				struct snapraid_block* block;
 
-			/* now all the blocks have the hash and the parity computed */
-			block_flag_set(block, BLOCK_HAS_HASH | BLOCK_HAS_PARITY);
+				block = disk_block_get(handle[j].disk, i);
+				if (!block)
+					continue;
+
+				/* now all the blocks have the hash and the parity computed */
+				block_flag_set(block, BLOCK_HAS_HASH | BLOCK_HAS_PARITY);
+			}
 		}
 
 		/* mark the state as needing write */
