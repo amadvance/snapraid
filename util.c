@@ -358,39 +358,52 @@ int sgethex(STREAM* f, void* void_data, int size)
 /****************************************************************************/
 /* path */
 
-void pathcpy(char* str, size_t size, const char* src)
+void pathcpy(char* dst, size_t size, const char* src)
 {
 	size_t len = strlen(src);
-	
-	if (len + 1 >= size) {
+
+	if (len + 1 > size) {
 		fprintf(stderr, "Path too long\n");
 		exit(EXIT_FAILURE);
 	}
 
-	memcpy(str, src, len + 1);
+	memcpy(dst, src, len + 1);
 }
 
-void pathimport(char* str, size_t size, const char* src)
+void pathcat(char* dst, size_t size, const char* src)
 {
-	pathcpy(str, size, src);
+	size_t dst_len = strlen(dst);
+	size_t src_len = strlen(src);
+
+	if (dst_len + src_len + 1 > size) {
+		fprintf(stderr, "Path too long\n");
+		exit(EXIT_FAILURE);
+	}
+
+	memcpy(dst + dst_len, src, src_len + 1);
+}
+
+void pathimport(char* dst, size_t size, const char* src)
+{
+	pathcpy(dst, size, src);
 
 #ifdef _WIN32
 	/* convert all Windows '\' to '/' */
-	while (*str) {
-		if (*str == '\\')
-			*str = '/';
-		++str;
+	while (*dst) {
+		if (*dst == '\\')
+			*dst = '/';
+		++dst;
 	}
 #endif
 }
 
-void pathprint(char* str, size_t size, const char* format, ...)
+void pathprint(char* dst, size_t size, const char* format, ...)
 {
 	size_t len;
 	va_list ap;
 	
 	va_start(ap, format);
-	len = vsnprintf(str, size, format, ap);
+	len = vsnprintf(dst, size, format, ap);
 	va_end(ap);
 
 	if (len >= size) {
@@ -399,18 +412,18 @@ void pathprint(char* str, size_t size, const char* format, ...)
 	}
 }
 
-void pathslash(char* str, size_t size)
+void pathslash(char* dst, size_t size)
 {
-	size_t len = strlen(str);
+	size_t len = strlen(dst);
 
-	if (len > 0 && str[len - 1] != '/') {
+	if (len > 0 && dst[len - 1] != '/') {
 		if (len + 2 >= size) {
 			fprintf(stderr, "Path too long\n");
 			exit(EXIT_FAILURE);
 		}
 
-		str[len] = '/';
-		str[len+1] = 0;
+		dst[len] = '/';
+		dst[len+1] = 0;
 	}
 }
 

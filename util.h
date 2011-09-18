@@ -199,26 +199,32 @@ int sgethex(STREAM* f, void* data, int size);
  * Copies a path limiting the size.
  * Aborts if too long.
  */
-void pathcpy(char* str, size_t size, const char* src);
+void pathcpy(char* dst, size_t size, const char* src);
+
+/**
+ * Concatenates a path limiting the size.
+ * Aborts if too long.
+ */
+void pathcat(char* dst, size_t size, const char* src);
 
 /**
  * Imports a path limiting the size.
  * In Windows all the backslash are converted to the C standard of forward slash.
  * Aborts if too long.
  */
-void pathimport(char* str, size_t size, const char* src);
+void pathimport(char* dst, size_t size, const char* src);
 
 /**
  * Prints a path.
  * Aborts if too long.
  */
-void pathprint(char* str, size_t size, const char* format, ...);
+void pathprint(char* dst, size_t size, const char* format, ...);
 
 /**
  * Ensures the presence of a terminating slash, if it isn't empty.
  * Aborts if too long. 
  */
-void pathslash(char* str, size_t size);
+void pathslash(char* dst, size_t size);
 
 /****************************************************************************/
 /* memory */
