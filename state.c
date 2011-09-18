@@ -56,6 +56,8 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 	STREAM* f;
 	unsigned line;
 	unsigned content_count;
+	unsigned content_required;
+	tommy_node* i;
 
 	state->verbose = verbose;
 	state->gui = gui;
@@ -83,7 +85,6 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 	}
 
 	line = 1;
-	content_count = 0;
 	while (1) {
 		char tag[PATH_MAX];
 		char buffer[PATH_MAX];
@@ -162,7 +163,6 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 			content = content_alloc(buffer);
 
 			tommy_list_insert_tail(&state->contentlist, &content->node, content);
-			++content_count;
 		} else if (strcmp(tag, "disk") == 0) {
 			char dir[PATH_MAX];
 
@@ -250,12 +250,23 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 		fprintf(stderr, "No 'parity' specification in '%s'\n", path);
 		exit(EXIT_FAILURE);
 	}
+
+	/* count the content files */
+	content_count = 0;
+	for(i=state->contentlist;i!=0;i=i->next) {
+		++content_count;
+	}
 	if (content_count == 0) {
 		fprintf(stderr, "No 'content' specification in '%s'\n", path);
 		exit(EXIT_FAILURE);
 	}
-	if (state->qarity[0] != 0 && content_count < 2) {
-		fprintf(stderr, "With 'q-parity' you must have at least two 'content' specifications in '%s'\n", path);
+	if (state->qarity[0] != 0) {
+		content_required = 2;
+	} else {
+		content_required = 1;
+	}
+	if (content_count < content_required) {
+		fprintf(stderr, "You must have one 'content' file for each parity disk.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -706,8 +717,8 @@ static void state_write_one(struct snapraid_state* state, const char* path, unsi
 
 	printf("Saving state to %s...\n", path);
 
-	/* ignore some special files */
-	if (strcmp(path, "/dev/null") == 0 || strcmp(path, "NUL") == 0)
+	/* ignore some special files, this is an undocument feature */
+	if (strcmp(path, "/dev/null") == 0 || strcmp(path, "NUL") == 0 || strcmp(path, "nul") == 0)
 		return;
 
 	pathprint(tmp, sizeof(tmp), "%s.tmp", path);
@@ -886,7 +897,7 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist)
 		for(j=tommy_list_head(&disk->filelist);j!=0;j=j->next) {
 			struct snapraid_file* file = j->data;
 
-			if (filter_path(filterlist, file->sub, 0) != 0) {
+			if (filter_path(filterlist, file->sub) != 0) {
 				file_flag_set(file, FILE_IS_EXCLUDED);
 			}
 
@@ -899,7 +910,7 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist)
 		for(j=tommy_list_head(&disk->linklist);j!=0;j=j->next) {
 			struct snapraid_link* link = j->data;
 
-			if (filter_path(filterlist, link->sub, 0) != 0) {
+			if (filter_path(filterlist, link->sub) != 0) {
 				link_flag_set(link, FILE_IS_EXCLUDED);
 			}
 

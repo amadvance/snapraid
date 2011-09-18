@@ -14,8 +14,7 @@ parity /mnt/diskpar/parity
 # Defines the file to use as content list
 # You can use multiple specification to store more copies of the file
 # It's suggested to have at least N+1 copies of the file, where N is the number of parity files.
-# It must NOT be in a data disk
-# It can be in the disks used for parity storage
+# It can be in the disks used for data or parity storage
 # Format: "content FILE_PATH"
 content /mnt/diskpar/content
 #content /mnt/diskqar/content

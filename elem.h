@@ -149,11 +149,24 @@ struct snapraid_filter* filter_alloc(int is_include, const char* pattern);
 void filter_free(struct snapraid_filter* filter);
 
 /**
- * Filters a path.
+ * Filters a path using a list of filters.
  * For each element of the path all the filters are applied, until the first one that matches.
- * Returns 0 if the files has to be processed.
+ * Return !=0 if it matches.
  */
-int filter_path(tommy_list* filterlist, const char* path, int is_dir);
+int filter_path(tommy_list* filterlist, const char* sub);
+
+/**
+ * Filters a dir using a list of filters.
+ * For each element of the path all the filters are applied, until the first one that matches.
+ * Return !=0 if it matches.
+ */
+int filter_dir(tommy_list* filterlist, const char* sub);
+
+/**
+ * Filters a path if it's a content file.
+ * Return !=0 if it matches.
+ */
+int filter_content(tommy_list* contentlist, const char* path);
 
 /**
  * Gets the file containing the block.

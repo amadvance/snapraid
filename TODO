@@ -6,8 +6,7 @@ This is the list of TODO items for SnapRAID.
 - v1.7
 
 * Put the content files in the data disks in the default configuration file.
-Also, automatically exclude them from the sync process without the need to add
-an exclusion rule.
+But this requires to have at leas N+1 or them.
 
 * Remove the dependency of the 'disk' order specification in the conf file.
 The used order can be defined by SnapRAID and saved in the content file to avoid

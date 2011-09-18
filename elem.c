@@ -148,7 +148,7 @@ static int filter_recurse(struct snapraid_filter* filter, const char* const_path
 	return 0;
 }
 
-int filter_path(tommy_list* filterlist, const char* path, int is_dir)
+static int filter_element(tommy_list* filterlist, const char* sub, int is_dir)
 {
 	tommy_node* i;
 
@@ -159,7 +159,7 @@ int filter_path(tommy_list* filterlist, const char* path, int is_dir)
 		int ret;
 		struct snapraid_filter* filter = i->data;
 
-		ret = filter_recurse(filter, path, is_dir);
+		ret = filter_recurse(filter, sub, is_dir);
 		if (ret > 0) {
 			/* include the file */
 			direction = 1;
@@ -177,6 +177,33 @@ int filter_path(tommy_list* filterlist, const char* path, int is_dir)
 
 	if (direction < 0)
 		return -1;
+
+	return 0;
+}
+
+int filter_path(tommy_list* filterlist, const char* sub)
+{
+	return filter_element(filterlist, sub, 0);
+}
+
+int filter_dir(tommy_list* filterlist, const char* sub)
+{
+	return filter_element(filterlist, sub, 1);
+}
+
+int filter_content(tommy_list* contentlist, const char* path)
+{
+	tommy_node* i;
+
+	for(i=tommy_list_head(contentlist);i!=0;i=i->next) {
+		struct snapraid_content* content = i->data;
+
+		/* FNM_PATHNAME because we are comparing full path */
+		/* FNM_NOESCAPE because we are comparing paths */
+		/* using fnmatch allows to ignore case in windows */
+		if (fnmatch(content->content, path, FNM_PATHNAME | FNM_NOESCAPE) == 0)
+			return -1;
+	}
 
 	return 0;
 }

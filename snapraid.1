@@ -117,10 +117,13 @@ as the redundancy information may grow in size as the biggest data
 disk in the array.
 .PP
 These disks will be dedicated to store the \(a"parity\(a" and \(a"q\(hyparity\(a"
-files.
-You should not store other data on them, with the exception of
-a copy the \(a"content\(a" file, that contains the list of all the files
-stored in your array with all the checksums to verify their integrity.
+files. You should not store other data in them, with the only
+possible exception of the \(a"content\(a" files.
+.PP
+The list of files is stored in the \(a"content\(a" files, usually
+stored in the parity disks or in other locations.
+These files contain the details of you backup with all the
+checksums to verify its integrity.
 .PP
 For example, suppose that you are interested only at one parity level
 of protection, and that your disks are present in:
@@ -389,15 +392,17 @@ This option is optional and it can be used only one time.
 Defines the file to use to store the list and checksums of all the
 files present in your disk array.
 .PP
-It can be placed in the same disk of the parity and q\(hyparity files,
-but NOT in a data disk of the array.
+It can be placed in the disk used to store data or the parity.
+If you use a data disk, this file is automatically excluded
+from the \(a"sync\(a" process.
 .PP
 This option is mandatory and it can be used more time to save
 more copies of the same files.
 .PP
-It\(cqs suggested to store at least one copy for each parity disk.
-One more doesn\(cqt hurt, just in case you lose all the parity disks,
-and you want to be still able to check the data integrity.
+You have to store at least one copy for each parity disk used.
+It\(cqs suggested to use one more to ensure to always have
+one copy in case of multiple disks damage, to be able to
+check the data integrity of the remaining.
 .SS disk NAME DIR 
 Defines the name and the mount point of the disks of the array.
 NAME is used to identify the disk, and it must be unique.

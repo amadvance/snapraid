@@ -6,6 +6,8 @@ SnapRAID HISTORY
 * If a file is modified or removed during a sync, the sync process doesn't
   stop anymore, but it will simply skip the file, resulting in an incomplete
   sync. Note that the sync will terminate with an error.
+* If the content file is placed in a data disk, it's automatically excluded
+  from the sync process.
 
 1.6 2011/9 - THIS UPDATE IS HIGHLY RECOMMENDED!
 ===============================================
