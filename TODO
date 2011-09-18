@@ -5,6 +5,10 @@ This is the list of TODO items for SnapRAID.
 
 - v1.7
 
+* Put the content files in the data disks in the default configuration file.
+Also, automatically exclude them from the sync process without the need to add
+an exclusion rule.
+
 * Remove the dependency of the 'disk' order specification in the conf file.
 The used order can be defined by SnapRAID and saved in the content file to avoid
 to damage the parity in case the order is changed by the user.
@@ -16,11 +20,6 @@ case that the original file cannot be completely recovered.
 We can always open files in read-only mode, if a write is required, we close it,
 rename it to with a .bak extension, and rewrite it up to the required size.
 The same for symlink if a file with the same name exist or viceversa.
-
-* If a file cannot be synched, for example because it was changing, or if
-the file name cannot be supported, it's better to do not stop the sync process.
-The sync process should stop only if the error could be caused by a disk
-corruption.
 
 - v1.8
 
