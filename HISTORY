@@ -8,6 +8,8 @@ SnapRAID HISTORY
   sync. Note that the sync will terminate with an error.
 * If the content file is placed in a data disk, it's automatically excluded
   from the sync process.
+* Increased by one the minimum number of content files. Before it was only
+  a suggestion, but now it's a requirement in case you put them in data disks.
 
 1.6 2011/9 - THIS UPDATE IS HIGHLY RECOMMENDED!
 ===============================================

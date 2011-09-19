@@ -5,8 +5,10 @@ This is the list of TODO items for SnapRAID.
 
 - v1.7
 
+* Use st_dev to effectively check if data/parity disks are different and
+content files are in different disks.
+
 * Put the content files in the data disks in the default configuration file.
-But this requires to have at leas N+1 or them.
 
 * Remove the dependency of the 'disk' order specification in the conf file.
 The used order can be defined by SnapRAID and saved in the content file to avoid

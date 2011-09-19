@@ -261,12 +261,12 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 		exit(EXIT_FAILURE);
 	}
 	if (state->qarity[0] != 0) {
-		content_required = 2;
+		content_required = 3;
 	} else {
-		content_required = 1;
+		content_required = 2;
 	}
 	if (content_count < content_required) {
-		fprintf(stderr, "You must have one 'content' file for each parity disk.\n");
+		fprintf(stderr, "You must have at least %d 'content' files. One for each parity disk plus one.\n", content_required);
 		exit(EXIT_FAILURE);
 	}
 

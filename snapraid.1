@@ -121,9 +121,12 @@ files. You should not store other data in them, with the only
 possible exception of the \(a"content\(a" files.
 .PP
 The list of files is stored in the \(a"content\(a" files, usually
-stored in the parity disks or in other locations.
-These files contain the details of you backup with all the
+stored in the data, parity or boot disks.
+These files contain the details of your backup with all the
 checksums to verify its integrity.
+The \(a"content\(a" file is stored in multiple copies, each one in a
+different disks, to ensure that in even in case of a multiple disk
+failure at least one copy is available.
 .PP
 For example, suppose that you are interested only at one parity level
 of protection, and that your disks are present in:
@@ -159,6 +162,10 @@ content /mnt/diskpar/content
 .PD 0
 .PP
 .PD
+content /var/snapraid/content
+.PD 0
+.PP
+.PD
 disk d1 /mnt/disk1/
 .PD 0
 .PP
@@ -182,6 +189,10 @@ parity E:\(rspar\(rsparity
 .PP
 .PD
 content E:\(rspar\(rscontent
+.PD 0
+.PP
+.PD
+content C:\(rssnapraid\(rscontent
 .PD 0
 .PP
 .PD
@@ -399,10 +410,8 @@ from the \(a"sync\(a" process.
 This option is mandatory and it can be used more time to save
 more copies of the same files.
 .PP
-You have to store at least one copy for each parity disk used.
-It\(cqs suggested to use one more to ensure to always have
-one copy in case of multiple disks damage, to be able to
-check the data integrity of the remaining.
+You have to store at least one copy for each parity disk used
+plus one. Using some more don\(cqt hurt.
 .SS disk NAME DIR 
 Defines the name and the mount point of the disks of the array.
 NAME is used to identify the disk, and it must be unique.

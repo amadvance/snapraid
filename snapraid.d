@@ -87,9 +87,12 @@ Getting Started
 	possible exception of the "content" files.
 
 	The list of files is stored in the "content" files, usually
-	stored in the parity disks or in other locations.
-	These files contain the details of you backup with all the
+	stored in the data, parity or boot disks.
+	These files contain the details of your backup with all the
 	checksums to verify its integrity.
+	The "content" file is stored in multiple copies, each one in a
+	different disks, to ensure that in even in case of a multiple disk
+	failure at least one copy is available.
 
 	For example, suppose that you are interested only at one parity level
 	of protection, and that your disks are present in:
@@ -104,6 +107,7 @@ Getting Started
 
 		:parity /mnt/diskpar/parity
 		:content /mnt/diskpar/content
+		:content /var/snapraid/content
 		:disk d1 /mnt/disk1/
 		:disk d2 /mnt/disk2/
 		:disk d3 /mnt/disk3/
@@ -113,6 +117,7 @@ Getting Started
 
 		:parity E:\par\parity
 		:content E:\par\content
+		:content C:\snapraid\content
 		:disk d1 F:\array\
 		:disk d2 G:\array\
 		:disk d3 H:\array\
@@ -302,10 +307,8 @@ Configuration
 	This option is mandatory and it can be used more time to save
 	more copies of the same files.
 
-	You have to store at least one copy for each parity disk used.
-	It's suggested to use one more to ensure to always have
-	one copy in case of multiple disks damage, to be able to
-	check the data integrity of the remaining.
+	You have to store at least one copy for each parity disk used
+	plus one. Using some more don't hurt.
 
   disk NAME DIR
 	Defines the name and the mount point of the disks of the array.
