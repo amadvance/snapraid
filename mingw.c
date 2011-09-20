@@ -121,6 +121,8 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, struct win
 	st->st_ino |= info->nFileIndexLow;
 
 	st->st_nlink = info->nNumberOfLinks;
+
+	st->st_dev = info->dwVolumeSerialNumber;
 }
 
 /**
@@ -167,6 +169,9 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 
 	/* No link information available */
 	st->st_nlink = 0;
+
+	/* No device information available */
+	st->st_dev = 0;
 }
 
 static void windows_finddata2dirent(const WIN32_FIND_DATAW* info, struct windows_dirent* dirent)
@@ -259,7 +264,7 @@ int windows_mkdir(const char* file)
 	return _wmkdir(u8tou16(file));
 }
 
-int lstat_inode(const char* file, struct windows_stat* st)
+int lstat_ex(const char* file, struct windows_stat* st)
 {
 	BY_HANDLE_FILE_INFORMATION info;
 	HANDLE h;
@@ -271,6 +276,39 @@ int lstat_inode(const char* file, struct windows_stat* st)
 	 * Use FILE_FLAG_OPEN_REPARSE_POINT to open symbolic links and not the their target.
 	 */
 	h = CreateFileW(u8tou16(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, 0);
+	if (h == INVALID_HANDLE_VALUE) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	if (!GetFileInformationByHandle(h, &info))  {
+		DWORD error = GetLastError();
+		CloseHandle(h);
+		windows_errno(error);
+		return -1;
+	}
+
+	if (!CloseHandle(h)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	windows_info2stat(&info, st);
+
+	return 0;
+}
+
+int windows_stat(const char* file, struct windows_stat* st)
+{
+	BY_HANDLE_FILE_INFORMATION info;
+	HANDLE h;
+
+	/*
+	 * Open the handle of the file.
+	 *
+	 * Use FILE_FLAG_BACKUP_SEMANTICS to open directories and to override the file security checks.
+	 */
+	h = CreateFileW(u8tou16(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;

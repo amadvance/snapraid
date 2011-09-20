@@ -11,8 +11,8 @@ parity /mnt/diskpar/parity
 # Format: "q-parity FILE_PATH"
 #q-parity /mnt/diskqar/q-parity
 
-# Defines the file to use as content list
-# You can use multiple specification to store more copies of the file
+# Defines the files to use as content list
+# You can use multiple specification to store more copies
 # You must have least one copy for each parity file plus one. Some more don't hurt
 # They can be in the disks used for data, parity or boot,
 # but each file must be in a different disk

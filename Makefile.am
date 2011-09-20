@@ -77,7 +77,7 @@ maintainer-clean-local:
 
 # Automatic testing
 
-CHECKFLAGS =
+CHECKFLAGS = --test-skip-device
 CHECKCOUNT = 2000
 CHECKSIZE = 4000
 

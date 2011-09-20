@@ -385,9 +385,9 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 					continue;
 				}
 
-#if HAVE_LSTAT_INODE
+#if HAVE_LSTAT_EX
 				/* get inode info about the file, Windows needs an additional step */
-				if (lstat_inode(path_next, &st) != 0) {
+				if (lstat_ex(path_next, &st) != 0) {
 					fprintf(stderr, "Error in stat_inode file '%s'. %s.\n", path_next, strerror(errno));
 					exit(EXIT_FAILURE);
 				}

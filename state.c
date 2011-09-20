@@ -32,7 +32,9 @@ void state_init(struct snapraid_state* state)
 	state->need_write = 0;
 	state->block_size = 256 * 1024; /* default 256 KiB */
 	state->parity[0] = 0;
+	state->parity_device = 0;
 	state->qarity[0] = 0;
+	state->qarity_device = 0;
 	state->level = 1; /* default is the lowest protection */
 	state->hash = HASH_MURMUR3; /* default is the fastest */
 	tommy_array_init(&state->diskarr);
@@ -51,13 +53,10 @@ void state_done(struct snapraid_state* state)
 	tommy_list_foreach(&state->filterlist, (tommy_foreach_func*)filter_free);
 }
 
-void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int expect_unrecoverable, int expect_recoverable)
+void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int expect_unrecoverable, int expect_recoverable, int skip_device)
 {
 	STREAM* f;
 	unsigned line;
-	unsigned content_count;
-	unsigned content_required;
-	tommy_node* i;
 
 	state->verbose = verbose;
 	state->gui = gui;
@@ -125,6 +124,10 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 			}
 			state->block_size *= 1024;
 		} else if (strcmp(tag, "parity") == 0) {
+			char device[PATH_MAX];
+			char* slash;
+			struct stat st;
+
 			if (*state->parity) {
 				fprintf(stderr, "Multiple 'parity' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
@@ -136,8 +139,26 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 				exit(EXIT_FAILURE);
 			}
 
-			pathcpy(state->parity, sizeof(state->parity), buffer);
+			pathimport(state->parity, sizeof(state->parity), buffer);
+
+			/* get the device of the directory containing the content file */
+			pathimport(device, sizeof(device), buffer);
+			slash = strrchr(device, '/');
+			if (slash)
+				*slash = 0;
+			else
+				pathcpy(device, sizeof(device), ".");
+			if (stat(device, &st) != 0) {
+				fprintf(stderr, "Error accessing 'parity' dir '%s' specification in '%s' at line %u\n", device, path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			state->parity_device = st.st_dev;
 		} else if (strcmp(tag, "q-parity") == 0) {
+			char device[PATH_MAX];
+			char* slash;
+			struct stat st;
+
 			if (*state->qarity) {
 				fprintf(stderr, "Multiple 'q-parity' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
@@ -149,10 +170,29 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 				exit(EXIT_FAILURE);
 			}
 
-			pathcpy(state->qarity, sizeof(state->qarity), buffer);
+			pathimport(state->qarity, sizeof(state->qarity), buffer);
+
+			/* get the device of the directory containing the content file */
+			pathimport(device, sizeof(device), buffer);
+			slash = strrchr(device, '/');
+			if (slash)
+				*slash = 0;
+			else
+				pathcpy(device, sizeof(device), ".");
+			if (stat(device, &st) != 0) {
+				fprintf(stderr, "Error accessing 'qarity' dir '%s' specification in '%s' at line %u\n", device, path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			state->qarity_device = st.st_dev;
+
+			/* we have two level of parity */
 			state->level = 2;
 		} else if (strcmp(tag, "content") == 0) {
 			struct snapraid_content* content;
+			char device[PATH_MAX];
+			char* slash;
+			struct stat st;
 
 			ret = sgetlasttok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
@@ -160,11 +200,25 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 				exit(EXIT_FAILURE);
 			}
 
-			content = content_alloc(buffer);
+			/* get the device of the directory containing the content file */
+			pathimport(device, sizeof(device), buffer);
+			slash = strrchr(device, '/');
+			if (slash)
+				*slash = 0;
+			else
+				pathcpy(device, sizeof(device), ".");
+			if (stat(device, &st) != 0) {
+				fprintf(stderr, "Error accessing 'content' dir '%s' specification in '%s' at line %u\n", device, path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			content = content_alloc(buffer, st.st_dev);
 
 			tommy_list_insert_tail(&state->contentlist, &content->node, content);
 		} else if (strcmp(tag, "disk") == 0) {
 			char dir[PATH_MAX];
+			char device[PATH_MAX];
+			struct stat st;
 
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
@@ -180,7 +234,14 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 				exit(EXIT_FAILURE);
 			}
 
-			tommy_array_insert(&state->diskarr, disk_alloc(buffer, dir));
+			/* get the device of the dir */
+			pathimport(device, sizeof(device), dir);
+			if (stat(device, &st) != 0) {
+				fprintf(stderr, "Error accessing 'disk' '%s' specification in '%s' at line %u\n", dir, device, line);
+				exit(EXIT_FAILURE);
+			}
+
+			tommy_array_insert(&state->diskarr, disk_alloc(buffer, dir, st.st_dev));
 		} else if (strcmp(tag, "exclude") == 0) {
 			struct snapraid_filter* filter;
 
@@ -251,23 +312,73 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 		exit(EXIT_FAILURE);
 	}
 
-	/* count the content files */
-	content_count = 0;
-	for(i=state->contentlist;i!=0;i=i->next) {
-		++content_count;
-	}
-	if (content_count == 0) {
+	if (tommy_list_empty(&state->contentlist)) {
 		fprintf(stderr, "No 'content' specification in '%s'\n", path);
 		exit(EXIT_FAILURE);
 	}
-	if (state->qarity[0] != 0) {
-		content_required = 3;
-	} else {
-		content_required = 2;
+
+	/* count the content files */
+	if (!skip_device) {
+		unsigned content_count;
+		tommy_node* i;
+
+		content_count = 0;
+		for(i=state->contentlist;i!=0;i=i->next) {
+			tommy_node* j;
+			struct snapraid_content* content = i->data;
+
+			/* check if there are others in the same disk */
+			for(j=i->next;j!=0;j=j->next) {
+				struct snapraid_content* other = j->data;
+				if (content->device == other->device) {
+					break;
+				}
+			}
+			if (j != 0) {
+				/* skip it */
+				continue;
+			}
+
+			++content_count;
+		}
+
+		if (content_count < state->level+1) {
+			fprintf(stderr, "You must have at least %d 'content' files in different disks.\n", state->level+1);
+			exit(EXIT_FAILURE);
+		}
 	}
-	if (content_count < content_required) {
-		fprintf(stderr, "You must have at least %d 'content' files. One for each parity disk plus one.\n", content_required);
-		exit(EXIT_FAILURE);
+
+	/* check if all the data and parity disks are different */
+	if (!skip_device) {
+		unsigned j;
+		unsigned diskmax;
+		diskmax = tommy_array_size(&state->diskarr);
+		for(j=0;j<diskmax;++j) {
+			unsigned k;
+			struct snapraid_disk* disk = tommy_array_get(&state->diskarr, j);
+
+			for(k=j+1;k<diskmax;++k) {
+				struct snapraid_disk* other = tommy_array_get(&state->diskarr, k);
+				if (disk->device == other->device) {
+					fprintf(stderr, "Disks '%s' and '%s' are on the same device.\n", disk->dir, other->dir);
+					exit(EXIT_FAILURE);
+				}
+			}
+
+			if (disk->device == state->parity_device) {
+				fprintf(stderr, "Disk '%s' and parity '%s' are on the same device.\n", disk->dir, state->parity);
+				exit(EXIT_FAILURE);
+			}
+
+			if (disk->device == state->qarity_device) {
+				fprintf(stderr, "Disk '%s' and parity '%s' are on the same device.\n", disk->dir, state->qarity);
+				exit(EXIT_FAILURE);
+			}
+		}
+		if (state->parity_device == state->qarity_device) {
+			fprintf(stderr, "Parity '%s' and '%s' are on the same device.\n", state->parity, state->qarity);
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	if (state->gui) {

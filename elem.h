@@ -49,6 +49,7 @@ typedef int64_t data_off_t;
  */
 struct snapraid_content {
 	char content[PATH_MAX]; /**< Path of the content file. */
+	uint64_t device; /**< Device identifier. */
 	tommy_node node; /**< Next node in the list. */
 };
 
@@ -120,6 +121,7 @@ struct snapraid_link {
 struct snapraid_disk {
 	char name[PATH_MAX]; /**< Name of the disk. */
 	char dir[PATH_MAX]; /**< Mount point of the disk. It always terminates with /. */
+	uint64_t device; /**< Device identifier. */
 	block_off_t first_free_block; /**< First free searching block. */
 	tommy_list filelist; /**< List of all the files. */
 	tommy_hashdyn inodeset; /**< Hashtable by inode of all the files. */
@@ -131,7 +133,7 @@ struct snapraid_disk {
 /**
  * Allocates a content.
  */
-struct snapraid_content* content_alloc(const char* path);
+struct snapraid_content* content_alloc(const char* path, uint64_t dev);
 
 /**
  * Deallocates a content.
@@ -299,7 +301,7 @@ static inline tommy_uint32_t link_name_hash(const char* name)
 /**
  * Allocates a disk.
  */
-struct snapraid_disk* disk_alloc(const char* name, const char* dir);
+struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev);
 
 /**
  * Deallocates a disk.

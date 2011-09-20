@@ -23,12 +23,13 @@
 /****************************************************************************/
 /* snapraid */
 
-struct snapraid_content* content_alloc(const char* path)
+struct snapraid_content* content_alloc(const char* path, uint64_t dev)
 {
 	struct snapraid_content* content;
 
 	content = malloc_nofail(sizeof(struct snapraid_content));
 	pathcpy(content->content, sizeof(content->content), path);
+	content->device = dev;
 
 	return content;
 }
@@ -320,7 +321,7 @@ int link_name_compare(const void* void_arg, const void* void_data)
 	return strcmp(arg, link->sub);
 }
 
-struct snapraid_disk* disk_alloc(const char* name, const char* dir)
+struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev)
 {
 	struct snapraid_disk* disk;
 
@@ -331,6 +332,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir)
 	/* ensure that the dir terminate with "/" if it isn't empty */
 	pathslash(disk->dir, sizeof(disk->dir));
 
+	disk->device = dev;
 	disk->first_free_block = 0;
 	tommy_list_init(&disk->filelist);
 	tommy_hashdyn_init(&disk->inodeset);

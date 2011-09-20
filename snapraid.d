@@ -300,7 +300,8 @@ Configuration
 	Defines the file to use to store the list and checksums of all the
 	files present in your disk array.
 
-	It can be placed in the disk used to store data or the parity.
+	It can be placed in the disk used to store data, parity, or
+	any other disk available.
 	If you use a data disk, this file is automatically excluded
 	from the "sync" process.
 

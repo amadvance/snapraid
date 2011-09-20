@@ -68,6 +68,7 @@ void usage(void)
 #define OPT_TEST_KILL_AFTER_SYNC 257
 #define OPT_TEST_EXPECT_UNRECOVERABLE 258
 #define OPT_TEST_EXPECT_RECOVERABLE 259
+#define OPT_TEST_SKIP_DEVICE 260
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -83,10 +84,11 @@ struct option long_options[] = {
 	{ "help", 0, 0, 'h' },
 	{ "version", 0, 0, 'V' },
 	/* test specific options, DO NOT USE! */
-	{ "test-skip-self", 0, 0, OPT_TEST_SKIP_SELF },
 	{ "test-kill-after-sync", 0, 0, OPT_TEST_KILL_AFTER_SYNC },
 	{ "test-expect-unrecoverable", 0, 0, OPT_TEST_EXPECT_UNRECOVERABLE },
 	{ "test-expect-recoverable", 0, 0, OPT_TEST_EXPECT_RECOVERABLE },
+	{ "test-skip-self", 0, 0, OPT_TEST_SKIP_SELF },
+	{ "test-skip-device", 0, 0, OPT_TEST_SKIP_DEVICE },
 	{ 0, 0, 0, 0 }
 };
 #endif
@@ -121,6 +123,7 @@ int main(int argc, char* argv[])
 	int test_expect_recoverable;
 	int test_kill_after_sync;
 	int test_skip_self;
+	int test_skip_device;
 	const char* conf;
 	struct snapraid_state state;
 	int operation;
@@ -140,6 +143,7 @@ int main(int argc, char* argv[])
 	test_expect_recoverable = 0;
 	test_kill_after_sync = 0;
 	test_skip_self = 0;
+	test_skip_device = 0;
 	blockstart = 0;
 	blockcount = 0;
 	tommy_list_init(&filterlist);
@@ -199,9 +203,6 @@ int main(int argc, char* argv[])
 		case 'T' :
 			speed();
 			exit(EXIT_SUCCESS);
-		case OPT_TEST_SKIP_SELF :
-			test_skip_self = 1;
-			break;
 		case OPT_TEST_KILL_AFTER_SYNC :
 			test_kill_after_sync = 1;
 			break;
@@ -210,6 +211,12 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_TEST_EXPECT_RECOVERABLE :
 			test_expect_recoverable = 1;
+			break;
+		case OPT_TEST_SKIP_SELF :
+			test_skip_self = 1;
+			break;
+		case OPT_TEST_SKIP_DEVICE :
+			test_skip_device = 1;
 			break;
 		default:
 			fprintf(stderr, "Unknown option '%c'\n", (char)c);
@@ -244,7 +251,7 @@ int main(int argc, char* argv[])
 
 	state_init(&state);
 
-	state_config(&state, conf, verbose, gui, force_zero, force_empty, test_expect_unrecoverable, test_expect_recoverable);
+	state_config(&state, conf, verbose, gui, force_zero, force_empty, test_expect_unrecoverable, test_expect_recoverable, test_skip_device);
 
 	if (operation == OPERATION_DIFF) {
 		state_read(&state);

@@ -39,7 +39,9 @@ struct snapraid_state {
 	int need_write; /**< If the state is changed. */
 	uint32_t block_size; /**< Block size in bytes. */
 	char parity[PATH_MAX]; /**< Path of the parity file. */
+	uint64_t parity_device; /**< Device identifier of the parity. */
 	char qarity[PATH_MAX]; /**< Path of the qarity file. */
+	uint64_t qarity_device; /**< Device identifier of the qarity. */
 	unsigned level; /**< Number of parity levels. 1 for RAID5, 2 for RAID6. */
 	unsigned hash; /**< Hash kind used. */
 	tommy_list contentlist; /**< List of content files. */
@@ -62,7 +64,7 @@ void state_done(struct snapraid_state* state);
 /**
  * Read the configuration file.
  */
-void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int expect_unrecoverable, int expect_recoverable);
+void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int expect_unrecoverable, int expect_recoverable, int skip_device);
 
 /**
  * Read the state.

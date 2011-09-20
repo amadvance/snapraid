@@ -5,9 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - v1.7
 
-* Use st_dev to effectively check if data/parity disks are different and
-content files are in different disks.
-
 * Put the content files in the data disks in the default configuration file.
 
 * Remove the dependency of the 'disk' order specification in the conf file.
@@ -35,6 +32,8 @@ skip to another.
 in Unix files starting with '.'.
 
 - v2.x
+
+* Remove the old MD5 support.
 
 * Implement an "undelete" command to recover missing files, without the
 integrity check of the existing ones.

@@ -64,17 +64,23 @@ struct windows_stat {
 	int64_t st_mtime;
 	uint32_t st_mode;
 	uint32_t st_nlink;
+	uint32_t st_dev;
 };
 
 /**
- * Like the C fstat() including the inode information.
+ * Like the C fstat() including the inode/device information.
  */
 int windows_fstat(int fd, struct windows_stat* st);
 
 /**
- * Like the C stat() but without the inode information.
+ * Like the C lstat() but without the inode information.
  */
 int windows_lstat(const char* file, struct windows_stat* st);
+
+/**
+ * Like the C stat() including the inode/device information.
+ */
+int windows_stat(const char* file, struct windows_stat* st);
 
 /**
  * Like the C access().
@@ -87,12 +93,12 @@ int windows_access(const char* file, int mode);
 int windows_mkdir(const char* file);
 
 /**
- * Like the C lstat() including the inode information.
+ * Like the C lstat() including the inode/device information.
  * It doesn't work for all kind of files and directories. For example "\System Volume Information" cannot be opened.
  * Note that instead lstat() works for all the files.
  */
-#define HAVE_LSTAT_INODE 1
-int lstat_inode(const char* file, struct windows_stat* st);
+#define HAVE_LSTAT_EX 1
+int lstat_ex(const char* file, struct windows_stat* st);
 
 /**
  * Like the C ftruncate().

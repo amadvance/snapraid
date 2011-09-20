@@ -10,6 +10,8 @@ SnapRAID HISTORY
   from the sync process.
 * Increased by one the minimum number of content files. Before it was only
   a suggestion, but now it's a requirement in case you put them in data disks.
+* Added checks to ensure that data and parity disks are diffent, and to
+  correctly count the number of copies of "content" files in different disks.
 
 1.6 2011/9 - THIS UPDATE IS HIGHLY RECOMMENDED!
 ===============================================
