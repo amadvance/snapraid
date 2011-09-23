@@ -18,6 +18,8 @@
 #ifndef __HANDLE_H
 #define __HANDLE_H
 
+#include "state.h"
+
 /****************************************************************************/
 /* handle */
 
@@ -71,6 +73,13 @@ int handle_write(struct snapraid_handle* handle, struct snapraid_block* block, u
  * Changes the modification time of the file to the saved value.
  */
 int handle_utime(struct snapraid_handle* handle);
+
+/**
+ * Maps the unsorted list of disk to an ordered vector.
+ * \param diskmax The size of the vector.
+ * \return The allocated vector of pointers.
+ */
+struct snapraid_handle* handle_map(struct snapraid_state* state, unsigned* diskmax);
 
 #endif
 

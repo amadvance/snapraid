@@ -323,3 +323,25 @@ int handle_utime(struct snapraid_handle* handle)
 	return 0;
 }
 
+struct snapraid_handle* handle_map(struct snapraid_state* state, unsigned* handlemax)
+{
+	tommy_node* i;
+	unsigned j;
+	struct snapraid_handle* handle;
+
+	/* first count the disks */
+	*handlemax = 0;
+	for(i=state->disklist;i!=0;i=i->next)
+		++*handlemax;
+
+	handle = malloc_nofail(*handlemax * sizeof(struct snapraid_handle));
+
+	/* set the vector */
+	for(i=state->disklist,j=0;i!=0;i=i->next,++j) {
+		handle[j].disk = i->data;
+		handle[j].file = 0;
+		handle[j].f = -1;
+	}
+
+	return handle;
+}

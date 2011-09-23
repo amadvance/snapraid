@@ -45,7 +45,7 @@ struct snapraid_state {
 	unsigned level; /**< Number of parity levels. 1 for RAID5, 2 for RAID6. */
 	unsigned hash; /**< Hash kind used. */
 	tommy_list contentlist; /**< List of content files. */
-	tommy_array diskarr; /**< Disk array. */
+	tommy_list disklist; /**< List of all the disks. */
 	tommy_list filterlist; /**< List of inclusion/exclusion. */
 	time_t progress_start; /**< Start of processing for progress visualization. */
 	time_t progress_last; /**< Last update of progress visualization. */

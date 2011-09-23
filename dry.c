@@ -29,7 +29,7 @@
 static int state_dry_process(struct snapraid_state* state, int parity_f, int qarity_f, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
-	unsigned diskmax = tommy_array_size(&state->diskarr);
+	unsigned diskmax;
 	block_off_t i;
 	unsigned j;
 	unsigned char* buffer;
@@ -39,14 +39,10 @@ static int state_dry_process(struct snapraid_state* state, int parity_f, int qar
 	block_off_t countmax;
 	unsigned error;
 
+	handle = handle_map(state, &diskmax);
+
 	buffer = malloc_nofail(state->block_size);
 
-	handle = malloc_nofail(diskmax * sizeof(struct snapraid_handle));
-	for(i=0;i<diskmax;++i) {
-		handle[i].disk = tommy_array_get(&state->diskarr, i);
-		handle[i].file = 0;
-		handle[i].f = -1;
-	}
 	error = 0;
 
 	countmax = blockmax - blockstart;

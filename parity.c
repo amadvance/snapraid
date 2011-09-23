@@ -26,23 +26,23 @@
 
 block_off_t parity_resize(struct snapraid_state* state)
 {
-	unsigned diskmax = tommy_array_size(&state->diskarr);
 	block_off_t parity_block;
-	unsigned i;
+	tommy_node* i;
 
 	/* compute the size of the parity file */
 	parity_block = 0;
-	for(i=0;i<diskmax;++i) {
-		struct snapraid_disk* disk = tommy_array_get(&state->diskarr, i);
+	for(i=state->disklist;i!=0;i=i->next) {
+		struct snapraid_disk* disk = i->data;
 
 		/* start from the declared size */
 		block_off_t block = tommy_array_size(&disk->blockarr);
 
 		/* decrease the block until an allocated block */
-		while (block > 0 && tommy_array_get(&disk->blockarr, block - 1) == 0)
+		while (block > parity_block && tommy_array_get(&disk->blockarr, block - 1) == 0)
 			--block;
 
-		if (i == 0 || parity_block < block)
+		/* get the highest value */
+		if (block > parity_block)
 			parity_block = block;
 	}
 

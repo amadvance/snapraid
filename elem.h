@@ -128,6 +128,9 @@ struct snapraid_disk {
 	tommy_list linklist; /**< List of all the links. */
 	tommy_hashdyn linkset; /**< Hashtable by name of all the links. */
 	tommy_array blockarr; /**< Block array of the disk. */
+
+	/* nodes for data structures */
+	tommy_node node;
 };
 
 /**

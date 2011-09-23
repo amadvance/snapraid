@@ -37,18 +37,14 @@ void state_init(struct snapraid_state* state)
 	state->qarity_device = 0;
 	state->level = 1; /* default is the lowest protection */
 	state->hash = HASH_MURMUR3; /* default is the fastest */
-	tommy_array_init(&state->diskarr);
+	tommy_list_init(&state->disklist);
 	tommy_list_init(&state->contentlist);
 	tommy_list_init(&state->filterlist);
 }
 
 void state_done(struct snapraid_state* state)
 {
-	unsigned i;
-
-	for(i=0;i<tommy_array_size(&state->diskarr);++i)
-		disk_free(tommy_array_get(&state->diskarr, i));
-	tommy_array_done(&state->diskarr);
+	tommy_list_foreach(&state->disklist, (tommy_foreach_func*)disk_free);
 	tommy_list_foreach(&state->contentlist, (tommy_foreach_func*)content_free);
 	tommy_list_foreach(&state->filterlist, (tommy_foreach_func*)filter_free);
 }
@@ -219,6 +215,7 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 			char dir[PATH_MAX];
 			char device[PATH_MAX];
 			struct stat st;
+			struct snapraid_disk* disk;
 
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
@@ -241,7 +238,9 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 				exit(EXIT_FAILURE);
 			}
 
-			tommy_array_insert(&state->diskarr, disk_alloc(buffer, dir, st.st_dev));
+			disk = disk_alloc(buffer, dir, st.st_dev);
+
+			tommy_list_insert_tail(&state->disklist, &disk->node, disk);
 		} else if (strcmp(tag, "exclude") == 0) {
 			struct snapraid_filter* filter;
 
@@ -350,15 +349,13 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 
 	/* check if all the data and parity disks are different */
 	if (!skip_device) {
-		unsigned j;
-		unsigned diskmax;
-		diskmax = tommy_array_size(&state->diskarr);
-		for(j=0;j<diskmax;++j) {
-			unsigned k;
-			struct snapraid_disk* disk = tommy_array_get(&state->diskarr, j);
+		tommy_node* i;
+		for(i=state->disklist;i!=0;i=i->next) {
+			tommy_node* j;
+			struct snapraid_disk* disk = i->data;
 
-			for(k=j+1;k<diskmax;++k) {
-				struct snapraid_disk* other = tommy_array_get(&state->diskarr, k);
+			for(j=i->next;j!=0;j=j->next) {
+				struct snapraid_disk* other = j->data;
 				if (disk->device == other->device) {
 					fprintf(stderr, "Disks '%s' and '%s' are on the same device.\n", disk->dir, other->dir);
 					exit(EXIT_FAILURE);
@@ -382,10 +379,10 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 	}
 
 	if (state->gui) {
-		unsigned i;
+		tommy_node* i;
 		fprintf(stderr, "blocksize:%u\n", state->block_size);
-		for(i=0;i<tommy_array_size(&state->diskarr);++i) {
-			struct snapraid_disk* disk = tommy_array_get(&state->diskarr, i);
+		for(i=state->disklist;i!=0;i=i->next) {
+			struct snapraid_disk* disk = i->data;
 			fprintf(stderr, "disk:%s:%s\n", disk->name, disk->dir);
 		}
 		if (state->qarity[0] != 0)
@@ -563,7 +560,7 @@ void state_read(struct snapraid_state* state)
 			uint64_t v_size;
 			uint64_t v_mtime;
 			uint64_t v_inode;
-			unsigned i;
+			tommy_node* i;
 
 			if (file) {
 				fprintf(stderr, "Missing 'blk' specification in '%s' at line %u\n", path, line);
@@ -630,12 +627,12 @@ void state_read(struct snapraid_state* state)
 			}
 
 			/* find the disk */
-			for(i=0;i<tommy_array_size(&state->diskarr);++i) {
-				disk = tommy_array_get(&state->diskarr, i);
+			for(i=state->disklist;i!=0;i=i->next) {
+				disk = i->data;
 				if (strcmp(disk->name, buffer) == 0)
 					break;
 			}
-			if (i == tommy_array_size(&state->diskarr)) {
+			if (!i) {
 				fprintf(stderr, "Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -663,7 +660,7 @@ void state_read(struct snapraid_state* state)
 			char sub[PATH_MAX];
 			char linkto[PATH_MAX];
 			char tokento[32];
-			unsigned i;
+			tommy_node* i;
 			struct snapraid_link* link;
 
 			ret = sgettok(f, buffer, sizeof(buffer));
@@ -719,12 +716,12 @@ void state_read(struct snapraid_state* state)
 			}
 
 			/* find the disk */
-			for(i=0;i<tommy_array_size(&state->diskarr);++i) {
-				disk = tommy_array_get(&state->diskarr, i);
+			for(i=state->disklist;i!=0;i=i->next) {
+				disk = i->data;
 				if (strcmp(disk->name, buffer) == 0)
 					break;
 			}
-			if (i == tommy_array_size(&state->diskarr)) {
+			if (!i) {
 				fprintf(stderr, "Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -819,7 +816,7 @@ static void state_write_one(struct snapraid_state* state, const char* path, unsi
 	unsigned count_file;
 	unsigned count_block;
 	unsigned count_link;
-	unsigned i;
+	tommy_node* i;
 	int ret;
 
 	count_file = 0;
@@ -852,9 +849,9 @@ static void state_write_one(struct snapraid_state* state, const char* path, unsi
 	}
 
 	/* for each disk */
-	for(i=0;i<tommy_array_size(&state->diskarr);++i) {
+	for(i=state->disklist;i!=0;i=i->next) {
 		tommy_node* j;
-		struct snapraid_disk* disk = tommy_array_get(&state->diskarr, i);
+		struct snapraid_disk* disk = i->data;
 
 		/* for each file */
 		for(j=disk->filelist;j!=0;j=j->next) {
@@ -980,7 +977,7 @@ void state_write(struct snapraid_state* state)
 
 void state_filter(struct snapraid_state* state, tommy_list* filterlist)
 {
-	unsigned i;
+	tommy_node* i;
 
 	/* if no filter, include all */
 	if (tommy_list_empty(filterlist))
@@ -1000,9 +997,9 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist)
 	}
 
 	/* for each disk */
-	for(i=0;i<tommy_array_size(&state->diskarr);++i) {
+	for(i=state->disklist;i!=0;i=i->next) {
 		tommy_node* j;
-		struct snapraid_disk* disk = tommy_array_get(&state->diskarr, i);
+		struct snapraid_disk* disk = i->data;
 
 		/* for each file */
 		for(j=tommy_list_head(&disk->filelist);j!=0;j=j->next) {

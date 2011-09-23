@@ -157,7 +157,7 @@ static int repair(struct snapraid_state* state, unsigned i, unsigned diskmax, st
 static int state_check_process(struct snapraid_state* state, int fix, int parity_f, int qarity_f, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
-	unsigned diskmax = tommy_array_size(&state->diskarr);
+	unsigned diskmax;
 	block_off_t i;
 	unsigned j;
 	void* buffer_alloc;
@@ -173,6 +173,8 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 	unsigned recovered_error;
 	struct failed_struct* failed;
 
+	handle = handle_map(state, &diskmax);
+
 	/* we need disk + 2 for each parity level buffers + 1 zero buffer */
 	buffermax = diskmax + state->level * 2 + 1;
 
@@ -185,12 +187,6 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 
 	failed = malloc_nofail(diskmax * sizeof(struct failed_struct));
 
-	handle = malloc_nofail(diskmax * sizeof(struct snapraid_handle));
-	for(i=0;i<diskmax;++i) {
-		handle[i].disk = tommy_array_get(&state->diskarr, i);
-		handle[i].file = 0;
-		handle[i].f = -1;
-	}
 	error = 0;
 	unrecoverable_error = 0;
 	recovered_error = 0;
@@ -597,7 +593,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 	/* check all the links */
 	for(i=0;i<diskmax;++i) {
 		tommy_node* node;
-		struct snapraid_disk* disk = tommy_array_get(&state->diskarr, i);
+		struct snapraid_disk* disk = handle[i].disk;
 
 		/* for each link in the disk */
 		node = disk->linklist;

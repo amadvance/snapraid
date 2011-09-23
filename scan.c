@@ -33,6 +33,9 @@ struct snapraid_scan {
 
 	tommy_list file_insert_list; /**< Files to insert. */
 	tommy_list link_insert_list; /**< Links to insert. */
+
+	/* nodes for data structures */
+	tommy_node node;
 };
 
 /**
@@ -40,8 +43,7 @@ struct snapraid_scan {
  */
 static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
 {
-	block_off_t i, j;
-	unsigned diskmax = tommy_array_size(&state->diskarr);
+	block_off_t i;
 
 	/* state changed */
 	state->need_write = 1;
@@ -49,6 +51,7 @@ static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk*
 	/* free all the blocks of the file */
 	for(i=0;i<file->blockmax;++i) {
 		block_off_t block_pos = file->blockvec[i].parity_pos;
+		tommy_node* j;
 
 		/* adjust the first free position */
 		if (disk->first_free_block > block_pos)
@@ -58,8 +61,8 @@ static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk*
 		tommy_array_set(&disk->blockarr, block_pos, 0);
 
 		/* invalidate the block of all the other disks */
-		for(j=0;j<diskmax;++j) {
-			struct snapraid_disk* oth_disk = tommy_array_get(&state->diskarr, j);
+		for(j=state->disklist;j!=0;j=j->next) {
+			struct snapraid_disk* oth_disk = j->data;
 			struct snapraid_block* oth_block = disk_block_get(oth_disk, block_pos);
 			if (oth_block) {
 				/* remove the parity info for this block */
@@ -454,28 +457,31 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 
 void state_scan(struct snapraid_state* state, int output)
 {
-	unsigned diskmax = tommy_array_size(&state->diskarr);
-	unsigned i;
-	struct snapraid_scan* scan;
+	tommy_node* i;
+	tommy_node* j;
+	tommy_list scanlist;
 
-	scan = malloc_nofail(diskmax * sizeof(struct snapraid_scan));
-	for(i=0;i<diskmax;++i) {
-		scan[i].count_equal = 0;
-		scan[i].count_moved = 0;
-		scan[i].count_change = 0;
-		scan[i].count_remove = 0;
-		scan[i].count_insert = 0;
-		tommy_list_init(&scan[i].file_insert_list);
-		tommy_list_init(&scan[i].link_insert_list);
-	}
+	tommy_list_init(&scanlist);
 
-	for(i=0;i<diskmax;++i) {
-		struct snapraid_disk* disk = tommy_array_get(&state->diskarr, i);
+	for(i=state->disklist;i!=0;i=i->next) {
+		struct snapraid_disk* disk = i->data;
+		struct snapraid_scan* scan;
 		tommy_node* node;
+
+		scan = malloc_nofail(sizeof(struct snapraid_scan));
+		scan->count_equal = 0;
+		scan->count_moved = 0;
+		scan->count_change = 0;
+		scan->count_remove = 0;
+		scan->count_insert = 0;
+		tommy_list_init(&scan->file_insert_list);
+		tommy_list_init(&scan->link_insert_list);
+
+		tommy_list_insert_tail(&scanlist, &scan->node, scan);
 
 		printf("Scanning disk %s...\n", disk->name);
 
-		scan_dir(&scan[i], state, output, disk, disk->dir, "");
+		scan_dir(scan, state, output, disk, disk->dir, "");
 
 		/* check for removed files */
 		node = disk->filelist;
@@ -487,7 +493,7 @@ void state_scan(struct snapraid_state* state, int output)
 
 			/* remove if not present */
 			if (!file_flag_has(file, FILE_IS_PRESENT)) {
-				++scan[i].count_remove;
+				++scan->count_remove;
 
 				if (state->gui) {
 					fprintf(stderr, "scan:remove:%s:%s\n", disk->name, file->sub);
@@ -511,7 +517,7 @@ void state_scan(struct snapraid_state* state, int output)
 
 			/* remove if not present */
 			if (!link_flag_has(link, FILE_IS_PRESENT)) {
-				++scan[i].count_remove;
+				++scan->count_remove;
 
 				if (state->gui) {
 					fprintf(stderr, "scan:remove:%s:%s\n", disk->name, link->sub);
@@ -527,7 +533,7 @@ void state_scan(struct snapraid_state* state, int output)
 
 		/* insert all the new files, we insert them only after the deletion */
 		/* to reuse the just freed space */
-		node = scan[i].file_insert_list;
+		node = scan->file_insert_list;
 		while (node) {
 			struct snapraid_file* file = node->data;
 
@@ -550,7 +556,7 @@ void state_scan(struct snapraid_state* state, int output)
 		}
 
 		/* insert all the new links */
-		node = scan[i].link_insert_list;
+		node = scan->link_insert_list;
 		while (node) {
 			struct snapraid_link* link = node->data;
 
@@ -576,10 +582,11 @@ void state_scan(struct snapraid_state* state, int output)
 	/* checks for disks where all the previously existing files where removed */
 	if (!state->force_empty) {
 		int has_empty = 0;
-		for(i=0;i<diskmax;++i) {
-			struct snapraid_disk* disk = tommy_array_get(&state->diskarr, i);
+		for(i=state->disklist,j=scanlist;i!=0;i=i->next,j=j->next) {
+			struct snapraid_disk* disk = i->data;
+			struct snapraid_scan* scan = j->data;
 
-			if (scan[i].count_equal == 0 && scan[i].count_moved == 0 && scan[i].count_remove != 0) {
+			if (scan->count_equal == 0 && scan->count_moved == 0 && scan->count_remove != 0) {
 				if (!has_empty) {
 					has_empty = 1;
 					fprintf(stderr, "All the files previously present in disk '%s' at dir '%s'", disk->name, disk->dir);
@@ -605,12 +612,13 @@ void state_scan(struct snapraid_state* state, int output)
 		total.count_remove = 0;
 		total.count_insert = 0;
 
-		for(i=0;i<diskmax;++i) {
-			total.count_equal += scan[i].count_equal;
-			total.count_moved += scan[i].count_moved;
-			total.count_change += scan[i].count_change;
-			total.count_remove += scan[i].count_remove;
-			total.count_insert += scan[i].count_insert;
+		for(i=scanlist;i!=0;i=i->next) {
+			struct snapraid_scan* scan = i->data;
+			total.count_equal += scan->count_equal;
+			total.count_moved += scan->count_moved;
+			total.count_change += scan->count_change;
+			total.count_remove += scan->count_remove;
+			total.count_insert += scan->count_insert;
 		}
 
 		if (state->verbose) {
@@ -628,6 +636,6 @@ void state_scan(struct snapraid_state* state, int output)
 		}
 	}
 
-	free(scan);
+	tommy_list_foreach(&scanlist, (tommy_foreach_func*)free);
 }
 

@@ -30,7 +30,7 @@
 static int state_sync_process(struct snapraid_state* state, int parity_f, int qarity_f, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
-	unsigned diskmax = tommy_array_size(&state->diskarr);
+	unsigned diskmax;
 	block_off_t i;
 	unsigned j;
 	void* buffer_alloc;
@@ -43,6 +43,9 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 	int ret;
 	unsigned unrecoverable_error;
 
+	/* maps the disks to handles */
+	handle = handle_map(state, &diskmax);
+
 	/* we need disk + 1 for each parity level buffers */
 	buffermax = diskmax + state->level;
 
@@ -52,12 +55,6 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 		buffer[i] = buffer_aligned + i * state->block_size;
 	}
 
-	handle = malloc_nofail(diskmax * sizeof(struct snapraid_handle));
-	for(i=0;i<diskmax;++i) {
-		handle[i].disk = tommy_array_get(&state->diskarr, i);
-		handle[i].file = 0;
-		handle[i].f = -1;
-	}
 	unrecoverable_error = 0;
 
 	/* first count the number of blocks to process */
