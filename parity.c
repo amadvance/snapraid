@@ -26,13 +26,13 @@
 
 block_off_t parity_resize(struct snapraid_state* state)
 {
-	unsigned disk_count = tommy_array_size(&state->diskarr);
+	unsigned diskmax = tommy_array_size(&state->diskarr);
 	block_off_t parity_block;
 	unsigned i;
 
 	/* compute the size of the parity file */
 	parity_block = 0;
-	for(i=0;i<disk_count;++i) {
+	for(i=0;i<diskmax;++i) {
 		struct snapraid_disk* disk = tommy_array_get(&state->diskarr, i);
 
 		/* start from the declared size */
