@@ -38,6 +38,7 @@ void state_init(struct snapraid_state* state)
 	state->level = 1; /* default is the lowest protection */
 	state->hash = HASH_MURMUR3; /* default is the fastest */
 	tommy_list_init(&state->disklist);
+	tommy_list_init(&state->maplist);
 	tommy_list_init(&state->contentlist);
 	tommy_list_init(&state->filterlist);
 }
@@ -45,8 +46,87 @@ void state_init(struct snapraid_state* state)
 void state_done(struct snapraid_state* state)
 {
 	tommy_list_foreach(&state->disklist, (tommy_foreach_func*)disk_free);
+	tommy_list_foreach(&state->maplist, (tommy_foreach_func*)map_free);
 	tommy_list_foreach(&state->contentlist, (tommy_foreach_func*)content_free);
 	tommy_list_foreach(&state->filterlist, (tommy_foreach_func*)filter_free);
+}
+
+/**
+ * Checks the configuration.
+ */
+static void state_config_check(struct snapraid_state* state, const char* path, int skip_device)
+{
+	if (state->parity[0] == 0) {
+		fprintf(stderr, "No 'parity' specification in '%s'\n", path);
+		exit(EXIT_FAILURE);
+	}
+
+	if (tommy_list_empty(&state->contentlist)) {
+		fprintf(stderr, "No 'content' specification in '%s'\n", path);
+		exit(EXIT_FAILURE);
+	}
+
+	/* count the content files */
+	if (!skip_device) {
+		unsigned content_count;
+		tommy_node* i;
+
+		content_count = 0;
+		for(i=state->contentlist;i!=0;i=i->next) {
+			tommy_node* j;
+			struct snapraid_content* content = i->data;
+
+			/* check if there are others in the same disk */
+			for(j=i->next;j!=0;j=j->next) {
+				struct snapraid_content* other = j->data;
+				if (content->device == other->device) {
+					break;
+				}
+			}
+			if (j != 0) {
+				/* skip it */
+				continue;
+			}
+
+			++content_count;
+		}
+
+		if (content_count < state->level+1) {
+			fprintf(stderr, "You must have at least %d 'content' files in different disks.\n", state->level+1);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	/* check if all the data and parity disks are different */
+	if (!skip_device) {
+		tommy_node* i;
+		for(i=state->disklist;i!=0;i=i->next) {
+			tommy_node* j;
+			struct snapraid_disk* disk = i->data;
+
+			for(j=i->next;j!=0;j=j->next) {
+				struct snapraid_disk* other = j->data;
+				if (disk->device == other->device) {
+					fprintf(stderr, "Disks '%s' and '%s' are on the same device.\n", disk->dir, other->dir);
+					exit(EXIT_FAILURE);
+				}
+			}
+
+			if (disk->device == state->parity_device) {
+				fprintf(stderr, "Disk '%s' and parity '%s' are on the same device.\n", disk->dir, state->parity);
+				exit(EXIT_FAILURE);
+			}
+
+			if (disk->device == state->qarity_device) {
+				fprintf(stderr, "Disk '%s' and parity '%s' are on the same device.\n", disk->dir, state->qarity);
+				exit(EXIT_FAILURE);
+			}
+		}
+		if (state->parity_device == state->qarity_device) {
+			fprintf(stderr, "Parity '%s' and '%s' are on the same device.\n", state->parity, state->qarity);
+			exit(EXIT_FAILURE);
+		}
+	}
 }
 
 void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int expect_unrecoverable, int expect_recoverable, int skip_device)
@@ -306,77 +386,7 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 
 	sclose(f);
 
-	if (state->parity[0] == 0) {
-		fprintf(stderr, "No 'parity' specification in '%s'\n", path);
-		exit(EXIT_FAILURE);
-	}
-
-	if (tommy_list_empty(&state->contentlist)) {
-		fprintf(stderr, "No 'content' specification in '%s'\n", path);
-		exit(EXIT_FAILURE);
-	}
-
-	/* count the content files */
-	if (!skip_device) {
-		unsigned content_count;
-		tommy_node* i;
-
-		content_count = 0;
-		for(i=state->contentlist;i!=0;i=i->next) {
-			tommy_node* j;
-			struct snapraid_content* content = i->data;
-
-			/* check if there are others in the same disk */
-			for(j=i->next;j!=0;j=j->next) {
-				struct snapraid_content* other = j->data;
-				if (content->device == other->device) {
-					break;
-				}
-			}
-			if (j != 0) {
-				/* skip it */
-				continue;
-			}
-
-			++content_count;
-		}
-
-		if (content_count < state->level+1) {
-			fprintf(stderr, "You must have at least %d 'content' files in different disks.\n", state->level+1);
-			exit(EXIT_FAILURE);
-		}
-	}
-
-	/* check if all the data and parity disks are different */
-	if (!skip_device) {
-		tommy_node* i;
-		for(i=state->disklist;i!=0;i=i->next) {
-			tommy_node* j;
-			struct snapraid_disk* disk = i->data;
-
-			for(j=i->next;j!=0;j=j->next) {
-				struct snapraid_disk* other = j->data;
-				if (disk->device == other->device) {
-					fprintf(stderr, "Disks '%s' and '%s' are on the same device.\n", disk->dir, other->dir);
-					exit(EXIT_FAILURE);
-				}
-			}
-
-			if (disk->device == state->parity_device) {
-				fprintf(stderr, "Disk '%s' and parity '%s' are on the same device.\n", disk->dir, state->parity);
-				exit(EXIT_FAILURE);
-			}
-
-			if (disk->device == state->qarity_device) {
-				fprintf(stderr, "Disk '%s' and parity '%s' are on the same device.\n", disk->dir, state->qarity);
-				exit(EXIT_FAILURE);
-			}
-		}
-		if (state->parity_device == state->qarity_device) {
-			fprintf(stderr, "Parity '%s' and '%s' are on the same device.\n", state->parity, state->qarity);
-			exit(EXIT_FAILURE);
-		}
-	}
+	state_config_check(state, path, skip_device);
 
 	if (state->gui) {
 		tommy_node* i;
@@ -393,6 +403,108 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 		if (state->qarity[0] != 0)
 			fprintf(stderr, "qarity:%s\n", state->qarity);
 		fflush(stderr);
+	}
+}
+
+/**
+ * Updates the disk mapping if required.
+ */
+static void state_map(struct snapraid_state* state)
+{
+	unsigned hole;
+	tommy_node* i;
+
+	/* removes all the mapping without a disk */
+	/* this happens when a disk is removed from the configuration file */
+	for(i=state->maplist;i!=0;) {
+		struct snapraid_map* map = i->data;
+		struct snapraid_disk* disk;
+		tommy_node* j;
+
+		for(j=state->disklist;j!=0;j=j->next) {
+			disk = j->data;
+			if (strcmp(disk->name, map->name) == 0) {
+				/* disk found */
+				break;
+			}
+		}
+
+		/* go to the next mapping before removing */
+		i = i->next;
+		
+		if (j==0) {
+			/* disk not found, remove the mapping */
+			tommy_list_remove_existing(&state->maplist, &map->node);
+			map_free(map);
+		}
+	}
+
+	/* maps each unmapped disk present in the configuration file in the first available hole */
+	/* this happens when you add disks for the first time in the configuration file */
+	hole = 0; /* first position to try */
+	for(i=state->disklist;i!=0;i=i->next) {
+		struct snapraid_disk* disk = i->data;
+		struct snapraid_map* map;
+		tommy_node* j;
+
+		/* check if the disk is already mapped */
+		for(j=state->maplist;j!=0;j=j->next) {
+			map = j->data;
+			if (strcmp(disk->name, map->name) == 0) {
+				/* mapping found */
+				break;
+			}
+		}
+		if (j!=0)
+			continue;
+
+		/* mapping not found, search for an hole */
+		while (1) {
+			for(j=state->maplist;j!=0;j=j->next) {
+				map = j->data;
+				if (map->position == hole) {
+					/* position already used */
+					break;
+				}
+			}
+			if (j==0) {
+				/* hole found */
+				break;
+			}
+
+			/* try with the next one */
+			++hole;
+		}
+
+		/* insert the new mapping */
+		map = map_alloc(disk->name, hole);
+
+		tommy_list_insert_tail(&state->maplist, &map->node, map);
+	}
+}
+
+/**
+ * Checks the content.
+ */
+static void state_content_check(struct snapraid_state* state, const char* path)
+{
+	tommy_node* i;
+
+	/* checks that any map has different name and position */
+	for(i=state->maplist;i!=0;i=i->next) {
+		struct snapraid_map* map = i->data;
+		tommy_node* j;
+		for(j=i->next;j!=0;j=j->next) {
+			struct snapraid_map* other = j->data;
+			if (strcmp(map->name, other->name) == 0) {
+				fprintf(stderr, "Colliding 'map' disk specification in '%s'\n", path);
+				exit(EXIT_FAILURE);
+			}
+			if (map->position == other->position) {
+				fprintf(stderr, "Colliding 'map' index specification in '%s'\n", path);
+				exit(EXIT_FAILURE);
+			}
+		}
 	}
 }
 
@@ -448,6 +560,9 @@ void state_read(struct snapraid_state* state)
 
 	/* if not found, assume empty */
 	if (!f) {
+		/* create the initial mapping */
+		state_map(state);
+
 		fprintf(stderr, "No content file found. Assuming empty.\n");
 		return;
 	}
@@ -764,6 +879,31 @@ void state_read(struct snapraid_state* state)
 				fprintf(stderr, "Please restore the 'block_size' value in the configuration file to '%u'\n", blksize / 1024);
 				exit(EXIT_FAILURE);
 			}
+		} else if (strcmp(tag, "map") == 0) {
+			struct snapraid_map* map;
+			uint32_t v_pos;
+
+			ret = sgettok(f, buffer, sizeof(buffer));
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'map' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			c = sgetc(f);
+			if (c != ' ') {
+				fprintf(stderr, "Invalid 'map' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetu32(f, &v_pos);
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'map' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			map = map_alloc(buffer, v_pos);
+
+			tommy_list_insert_tail(&state->maplist, &map->node, map);
 		} else if (tag[0] == 0) {
 			/* allow empty lines */
 			sgetspace(f);
@@ -801,6 +941,11 @@ void state_read(struct snapraid_state* state)
 	}
 
 	sclose(f);
+
+	/* update the mapping */
+	state_map(state);
+
+	state_content_check(state, path);
 
 	if (state->verbose) {
 		printf("\tfile %u\n", count_file);
@@ -846,6 +991,16 @@ static void state_write_one(struct snapraid_state* state, const char* path, unsi
 	if (ret < 0) {
 		fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", tmp, strerror(errno));
 		exit(EXIT_FAILURE);
+	}
+
+	/* for each map */
+	for(i=state->maplist;i!=0;i=i->next) {
+		struct snapraid_map* map = i->data;
+		ret = fprintf(f, "map %s %u\n", map->name, map->position);
+		if (ret < 0) {
+			fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", tmp, strerror(errno));
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	/* for each disk */

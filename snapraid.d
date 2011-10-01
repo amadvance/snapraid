@@ -319,9 +319,6 @@ Configuration
 	You can change the mount point as you like, as long you
 	keep the NAME fixed.
 
-	The specification order is also important, if you change it,
-	you will invalidate the q-parity file.
-
 	You should use one option for each disk of the array.
 
   exclude/include PATTERN
@@ -488,13 +485,16 @@ Content
   checksum CHECKSUM
 	Defines the checksum kind used. It can be "md5" or "murmur3".
 
+  map NAME INDEX
+	Defines the position INDEX of the disk NAME in the parity computation.
+
   file DISK SIZE TIME INODE PATH
 	Defines a file in the specified DISK.
 
 	The INODE number is used to identify the file in the "sync"
 	command, allowing to rename or move the file in disk without
 	the need to recompute the parity for it.
-	
+
 	The SIZE and TIME information are used to identify if the file
 	changed from the last "sync" command, and if there is the need
 	to recompute the parity.

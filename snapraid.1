@@ -421,9 +421,6 @@ DIR is the mount point of the disk in the filesystem.
 You can change the mount point as you like, as long you
 keep the NAME fixed.
 .PP
-The specification order is also important, if you change it,
-you will invalidate the q\(hyparity file.
-.PP
 You should use one option for each disk of the array.
 .SS exclude/include PATTERN 
 Defines the file or directory patterns to exclude and include
@@ -717,6 +714,8 @@ Defines the size of the block in bytes. It must match the size
 defined in the configuration file.
 .SS checksum CHECKSUM 
 Defines the checksum kind used. It can be \(a"md5\(a" or \(a"murmur3\(a".
+.SS map NAME INDEX 
+Defines the position INDEX of the disk NAME in the parity computation.
 .SS file DISK SIZE TIME INODE PATH 
 Defines a file in the specified DISK.
 .PP

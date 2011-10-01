@@ -327,21 +327,49 @@ struct snapraid_handle* handle_map(struct snapraid_state* state, unsigned* handl
 {
 	tommy_node* i;
 	unsigned j;
+	unsigned size = 0;
 	struct snapraid_handle* handle;
 
-	/* first count the disks */
-	*handlemax = 0;
-	for(i=state->disklist;i!=0;i=i->next)
-		++*handlemax;
+	/* get the size of the mapping */
+	size = 0;
+	for(i=state->maplist;i!=0;i=i->next) {
+		struct snapraid_map* map = i->data;
+		if (map->position > size)
+			size = map->position;
+	}
+	++size; /* size is one more than the max */
 
-	handle = malloc_nofail(*handlemax * sizeof(struct snapraid_handle));
+	handle = malloc_nofail(size * sizeof(struct snapraid_handle));
 
-	/* set the vector */
-	for(i=state->disklist,j=0;i!=0;i=i->next,++j) {
-		handle[j].disk = i->data;
+	for(j=0;j<size;++j) {
+		/* default for empty position */
+		handle[j].disk = 0;
 		handle[j].file = 0;
 		handle[j].f = -1;
 	}
 
+	/* set the vector */
+	for(i=state->disklist;i!=0;i=i->next) {
+		struct snapraid_map* map;
+		struct snapraid_disk* disk = i->data;
+		tommy_node* k;
+
+		/* search the mapping for this disk */
+		for(k=state->maplist;k!=0;k=k->next) {
+			map = k->data;
+			if (strcmp(disk->name, map->name) == 0)
+				break;
+		}
+		if (k==0) {
+			fprintf(stderr, "Inconsistent disk mapping.\n");
+			exit(EXIT_FAILURE);
+			continue;
+		}
+
+		handle[map->position].disk = disk;
+	}
+
+	*handlemax = size;
 	return handle;
 }
+

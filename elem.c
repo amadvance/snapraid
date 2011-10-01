@@ -363,3 +363,19 @@ void disk_free(struct snapraid_disk* disk)
 	free(disk);
 }
 
+struct snapraid_map* map_alloc(const char* name, unsigned position)
+{
+	struct snapraid_map* map;
+
+	map = malloc_nofail(sizeof(struct snapraid_map));
+	pathcpy(map->name, sizeof(map->name), name);
+	map->position = position;
+
+	return map;
+}
+
+void map_free(struct snapraid_map* map)
+{
+	free(map);
+}
+

@@ -134,6 +134,17 @@ struct snapraid_disk {
 };
 
 /**
+ * Disk mapping.
+ */
+struct snapraid_map {
+	char name[PATH_MAX]; /**< Name of the disk. */
+	unsigned position; /**< Position of the disk in the parity. */
+
+	/* nodes for data structures */
+	tommy_node node;
+};
+
+/**
  * Allocates a content.
  */
 struct snapraid_content* content_alloc(const char* path, uint64_t dev);
@@ -322,6 +333,16 @@ static inline struct snapraid_block* disk_block_get(struct snapraid_disk* disk, 
 	else
 		return 0;
 }
+
+/**
+ * Allocates a disk mapping.
+ */
+struct snapraid_map* map_alloc(const char* name, unsigned position);
+
+/**
+ * Deallocates a disk mapping.
+ */
+void map_free(struct snapraid_map* map);
 
 #endif
 

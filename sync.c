@@ -65,7 +65,9 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 		/* for each disk */
 		one_invalid = 0;
 		for(j=0;j<diskmax;++j) {
-			struct snapraid_block* block = disk_block_get(handle[j].disk, i);
+			struct snapraid_block* block = 0;
+			if (handle[j].disk)
+				block = disk_block_get(handle[j].disk, i);
 			if (block && !block_flag_has(block, BLOCK_HAS_HASH | BLOCK_HAS_PARITY)) {
 				one_invalid = 1;
 				break;
@@ -90,7 +92,9 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 		/* for each disk */
 		one_invalid = 0;
 		for(j=0;j<diskmax;++j) {
-			struct snapraid_block* block = disk_block_get(handle[j].disk, i);
+			struct snapraid_block* block = 0;
+			if (handle[j].disk)
+				block = disk_block_get(handle[j].disk, i);
 			if (block && !block_flag_has(block, BLOCK_HAS_HASH | BLOCK_HAS_PARITY)) {
 				one_invalid = 1;
 				break;
@@ -110,6 +114,14 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 			unsigned char hash[HASH_SIZE];
 			struct snapraid_block* block;
 
+			/* if the disk position is not used */
+			if (!handle[j].disk) {
+				/* use an empty block */
+				memset(buffer[j], 0, state->block_size);
+				continue;
+			}
+
+			/* if the disk block is not used */
 			block = disk_block_get(handle[j].disk, i);
 			if (!block) {
 				/* use an empty block */
@@ -233,9 +245,9 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 
 			/* for each disk, mark the blocks as processed */
 			for(j=0;j<diskmax;++j) {
-				struct snapraid_block* block;
-
-				block = disk_block_get(handle[j].disk, i);
+				struct snapraid_block* block = 0;
+				if (handle[j].disk)
+					block = disk_block_get(handle[j].disk, i);
 				if (!block)
 					continue;
 

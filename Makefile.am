@@ -55,8 +55,7 @@ EXTRA_DIST = \
 	noautomake.sh \
 	README AUTHORS HISTORY INSTALL COPYING TODO TEST \
 	snapraid.d snapraid.1 snapraid.txt \
-	test-raid5.conf \
-	test-raid6.conf \
+	test-raid5.conf test-raid6.conf test-raid6-hole.conf \
 	snapraid.conf.example \
 	configure.windows-x86 configure.windows-x64 snapraid.conf.example.windows \
 	acinclude.m4
@@ -107,12 +106,30 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf check
 	echo --- Extend raid5 to raid6 with fix and check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --test-expect-recoverable -c $(srcdir)/test-raid6.conf check 2>> test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf fix 2>/dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
 	echo --- Dry
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf dry
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf dry
+	echo --- Make a hole
+	mv test/disk2 test/disk2.old
+	mkdir test/disk2
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --force-empty -c $(srcdir)/test-raid6.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
+	echo --- Use the with the hole
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6-hole.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6-hole.conf check
+	rm -r test/disk1/_a
+	rm -r test/disk3/_a
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6-hole.conf fix 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6-hole.conf check
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6-hole.conf dry
+	echo --- Fill the hole
+	rm -r test/disk2
+	mv test/disk2.old test/disk2
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
 	echo --- Delete some files, create some new, sync and check
 	rm test/disk1/1*
 	rm test/disk2/2*
@@ -282,7 +299,7 @@ check-local:
 
 # Manual testing
 
-MANUAL = ./snapraid --test-skip-self -c test-raid5.conf sync
+MANUAL = ./snapraid --test-skip-self --test-skip-device -c test-raid5.conf sync
 
 valgrind:
 	valgrind \

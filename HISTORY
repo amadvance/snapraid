@@ -1,8 +1,8 @@
 SnapRAID HISTORY
 ================
 
-1.7 2011/9
-==========
+1.7 2011/10
+===========
 * If a file is modified or removed during a sync, the sync process doesn't
   stop anymore, but it will simply skip the file, resulting in an incomplete
   sync. Note that the sync will terminate with an error.
@@ -12,6 +12,10 @@ SnapRAID HISTORY
   a suggestion, but now it's a requirement in case you put them in data disks.
 * Added checks to ensure that data and parity disks are diffent, and to
   correctly count the number of copies of "content" files in different disks.
+* Removed the dependency of the 'disk' order specification in the configuration
+  file. The used order is now saved in the content file to avoid to damage the
+  dual parity in case the order is changed by the user.
+  It also allows to remove or add disks from the array when using a dual parity.
 
 1.6 2011/9 - THIS UPDATE IS HIGHLY RECOMMENDED!
 ===============================================

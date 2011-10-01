@@ -357,9 +357,6 @@ DIR is the mount point of the disk in the filesystem.
 You can change the mount point as you like, as long you
 keep the NAME fixed.
 
-The specification order is also important, if you change it,
-you will invalidate the q-parity file.
-
 You should use one option for each disk of the array.
 
 7.5 exclude/include PATTERN
@@ -542,7 +539,12 @@ defined in the configuration file.
 
 Defines the checksum kind used. It can be "md5" or "murmur3".
 
-9.3 file DISK SIZE TIME INODE PATH
+9.3 map NAME INDEX
+------------------
+
+Defines the position INDEX of the disk NAME in the parity computation.
+
+9.4 file DISK SIZE TIME INODE PATH
 ----------------------------------
 
 Defines a file in the specified DISK.
@@ -558,7 +560,7 @@ to recompute the parity.
 The PATH information is used in the "check" and "fix" commands
 to identify the file.
 
-9.4 blk BLOCK HASH
+9.5 blk BLOCK HASH
 ------------------
 
 Defines the ordered parity block list used by the last defined file.
@@ -569,7 +571,7 @@ BLOCK is the block position in the "parity" file.
 HASH is the hash of the block. In the last block of the file,
 the HASH is the hash of only the used part of the block.
 
-9.5 inv BLOCK [HASH]
+9.6 inv BLOCK [HASH]
 --------------------
 
 Like "blk", but inform that the parity of this block is invalid.

@@ -53,9 +53,10 @@ static int state_dry_process(struct snapraid_state* state, int parity_f, int qar
 		/* for each disk, process the block */
 		for(j=0;j<diskmax;++j) {
 			int read_size;
-			struct snapraid_block* block;
+			struct snapraid_block* block = 0;
 
-			block = disk_block_get(handle[j].disk, i);
+			if (handle[j].disk)
+				block = disk_block_get(handle[j].disk, i);
 			if (!block)
 				continue;
 

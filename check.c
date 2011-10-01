@@ -63,7 +63,7 @@ static int blockcmp(struct snapraid_state* state, struct snapraid_block* block, 
 
 /**
  * Repair errors.
- * Returns <0 if failure for missing stratey, >0 if data is wrong and we cannot rebuild correctly, 0 on success.
+ * Returns <0 if failure for missing strategy, >0 if data is wrong and we cannot rebuild correctly, 0 on success.
  * If success, the parity and qarity are computed in the buffer variable.
  */
 static int repair(struct snapraid_state* state, unsigned i, unsigned diskmax, struct failed_struct* failed, unsigned failed_count, unsigned char** buffer, unsigned char* buffer_parity, unsigned char* buffer_qarity, unsigned char* buffer_zero)
@@ -73,7 +73,7 @@ static int repair(struct snapraid_state* state, unsigned i, unsigned diskmax, st
 
 	/* no fix required */
 	if (failed_count == 0) {
-		/* compute parity and qarity to check it */
+		/* recompute only parity and qarity */
 		raid_gen(state->level, buffer, diskmax, state->block_size);
 		return 0;
 	}
@@ -199,7 +199,9 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 		/* for each disk */
 		one_tocheck = 0;
 		for(j=0;j<diskmax;++j) {
-			struct snapraid_block* block = disk_block_get(handle[j].disk, i);
+			struct snapraid_block* block = 0;
+			if (handle[j].disk)
+				block = disk_block_get(handle[j].disk, i);
 			if (block
 				&& block_flag_has(block, BLOCK_HAS_HASH) /* only if the block is hashed */
 				&& !file_flag_has(block_file_get(block), FILE_IS_EXCLUDED) /* only if the file is not filtered out */
@@ -231,7 +233,9 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 		/* for each disk */
 		one_tocheck = 0;
 		for(j=0;j<diskmax;++j) {
-			struct snapraid_block* block = disk_block_get(handle[j].disk, i);
+			struct snapraid_block* block = 0;
+			if (handle[j].disk)
+				block = disk_block_get(handle[j].disk, i);
 			if (block
 				&& block_flag_has(block, BLOCK_HAS_HASH) /* only if the block is hashed */
 				&& !file_flag_has(block_file_get(block), FILE_IS_EXCLUDED) /* only if the file is not filtered out */
@@ -254,6 +258,14 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 			unsigned char hash[HASH_SIZE];
 			struct snapraid_block* block;
 
+			/* if the disk position is not used */
+			if (!handle[j].disk) {
+				/* use an empty block */
+				memset(buffer[j], 0, state->block_size);
+				continue;
+			}
+
+			/* if the disk block is not used */
 			block = disk_block_get(handle[j].disk, i);
 			if (!block) {
 				/* use an empty block */
@@ -524,11 +536,12 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 		if (fix) {
 			/* for all the files of this block check if we need to fix the modification time */
 			for(j=0;j<diskmax;++j) {
-				struct snapraid_block* block;
+				struct snapraid_block* block = 0;
 				struct snapraid_file* collide_file;
 				uint64_t inode;
 
-				block = disk_block_get(handle[j].disk, i);
+				if (handle[j].disk)
+					block = disk_block_get(handle[j].disk, i);
 				if (!block) {
 					/* if no block, no file and nothing to do */
 					continue;
@@ -593,9 +606,13 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 	/* check all the links */
 	for(i=0;i<diskmax;++i) {
 		tommy_node* node;
-		struct snapraid_disk* disk = handle[i].disk;
+		struct snapraid_disk* disk;
+
+		if (!handle[i].disk)
+			continue;
 
 		/* for each link in the disk */
+		disk = handle[i].disk;
 		node = disk->linklist;
 		while (node) {
 			char path[PATH_MAX];
