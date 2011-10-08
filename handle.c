@@ -240,18 +240,18 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 	read_ret = pread(handle->f, block_buffer, read_size, offset);
 #else
 	if (lseek(handle->f, offset, SEEK_SET) != offset) {
-		fprintf(stderr, "Error seeking file '%s'. %s.\n", handle->path, strerror(errno));
+		fprintf(stderr, "Error seeking file '%s' at offset %"PRIu64". %s.\n", handle->path, offset, strerror(errno));
 		return -1;
 	}
 
 	read_ret = read(handle->f, block_buffer, read_size);
 #endif
 	if (read_ret < 0) {
-		fprintf(stderr, "Error reading file '%s'. %s.\n", handle->path, strerror(errno));
+		fprintf(stderr, "Error reading file '%s' at offset %"PRIu64". %s.\n", handle->path, offset, strerror(errno));
 		return -1;
 	}
 	if (read_ret != (ssize_t)read_size) { /* signed conversion is safe because block_size is always small */
-		fprintf(stderr, "File '%s' is smaller than expected.\n", handle->path);
+		fprintf(stderr, "File '%s' is smaller than expected. Read %d bytes instead of %d at offset %"PRIu64".\n", handle->path, (int)read_ret, read_size, offset);
 		return -1;
 	}
 

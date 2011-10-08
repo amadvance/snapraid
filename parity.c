@@ -221,18 +221,18 @@ int parity_read(const char* path, int f, block_off_t pos, unsigned char* block_b
 	read_ret = pread(f, block_buffer, block_size, offset);
 #else
 	if (lseek(f, offset, SEEK_SET) != offset) {
-		fprintf(stderr, "Error seeking file '%s'. %s.\n", path, strerror(errno));
+		fprintf(stderr, "Error seeking file '%s' at offset %"PRIu64". %s.\n", path, offset, strerror(errno));
 		return -1;
 	}
 
 	read_ret = read(f, block_buffer, block_size);
 #endif
 	if (read_ret < 0) {
-		fprintf(stderr, "Error reading file '%s'. %s.\n", path, strerror(errno));
+		fprintf(stderr, "Error reading file '%s' at offset %"PRIu64". %s.\n", path, offset, strerror(errno));
 		return -1;
 	}
 	if (read_ret != (ssize_t)block_size) { /* signed conversion is safe because block_size is always small */
-		fprintf(stderr, "File '%s' is smaller than expected.\n", path);
+		fprintf(stderr, "File '%s' is smaller than expected. Read %d bytes instead of %d at offset %"PRIu64".\n", path, (int)read_ret, block_size, offset);
 		return -1;
 	}
 
