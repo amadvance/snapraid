@@ -21,6 +21,13 @@
 /****************************************************************************/
 /* parity */
 
+struct snapraid_parity {
+	char path[PATH_MAX]; /**< Path of the file. */
+	int f; /**< Handle of the file. */
+	struct stat st; /**< Stat info of the opened file. */
+	data_off_t valid_size; /**< Size of the valid data. */
+};
+
 /**
  * Computes the size of the parity data in number of blocks.
  */
@@ -29,32 +36,32 @@ block_off_t parity_resize(struct snapraid_state* state);
 /**
  * Creates the parity file.
  */
-int parity_create(const char* path, data_off_t size);
+int parity_create(struct snapraid_parity* parity, const char* path, data_off_t size);
 
 /**
  * Opens an already existing parity file.
  */
-int parity_open(const char* path);
+int parity_open(struct snapraid_parity* parity, const char* path);
 
 /**
  * Flushes the parity file in the disk.
  */
-int parity_sync(const char* path, int f);
+int parity_sync(struct snapraid_parity* parity);
 
 /**
  * Closes the parity file.
  */
-int parity_close(const char* path, int f);
+int parity_close(struct snapraid_parity* parity);
 
 /**
  * Read a block from the parity file.
  */
-int parity_read(const char* parity_path, int parity_f, block_off_t pos, unsigned char* block_buffer, unsigned block_size);
+int parity_read(struct snapraid_parity* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size);
 
 /**
  * Writes a block in the parity file.
  */
-int parity_write(const char* parity_path, int parity_f, block_off_t pos, unsigned char* block_buffer, unsigned block_size);
+int parity_write(struct snapraid_parity* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size);
 
 #endif
 

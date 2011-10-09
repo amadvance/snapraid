@@ -29,6 +29,7 @@ struct snapraid_handle {
 	struct snapraid_file* file; /**< File opened. */
 	int f; /**< Handle of the file. */
 	struct stat st; /**< Stat info of the opened file. */
+	data_off_t valid_size; /**< Size of the valid data. */
 };
 
 /**

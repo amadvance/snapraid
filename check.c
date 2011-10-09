@@ -154,7 +154,7 @@ static int repair(struct snapraid_state* state, unsigned i, unsigned diskmax, st
 		return -1;
 }
 
-static int state_check_process(struct snapraid_state* state, int fix, int parity_f, int qarity_f, block_off_t blockstart, block_off_t blockmax)
+static int state_check_process(struct snapraid_state* state, int fix, struct snapraid_parity* parity, struct snapraid_parity* qarity, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
 	unsigned diskmax;
@@ -396,8 +396,8 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 		buffer_zero = buffer[buffermax-1];
 
 		/* read the parity */
-		if (parity_f != -1) {
-			ret = parity_read(state->parity, parity_f, i, buffer_parity, state->block_size);
+		if (parity) {
+			ret = parity_read(parity, i, buffer_parity, state->block_size);
 			if (ret == -1) {
 				buffer_parity = 0; /* no parity to use */
 
@@ -410,8 +410,8 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 
 		/* read the qarity */
 		if (state->level >= 2) {
-			if (qarity_f != -1) {
-				ret = parity_read(state->qarity, qarity_f, i, buffer_qarity, state->block_size);
+			if (qarity) {
+				ret = parity_read(qarity, i, buffer_qarity, state->block_size);
 				if (ret == -1) {
 					buffer_qarity = 0; /* no qarity to use */
 
@@ -439,7 +439,7 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 
 			/* print a list of all the errors in files */
 			for(j=0;j<failed_count;++j) {
-				fprintf(stderr, "error:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
+				fprintf(stderr, "unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
 			}
 		} else {
 			/* check parity and q-parity only if all the blocks have it computed */
@@ -499,8 +499,8 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 				/* for blocks that are going to have it computed in the sync completion */
 				if (all_parity) {
 					/* update the parity */
-					if (buffer_parity == 0 && parity_f != -1) {
-						ret = parity_write(state->parity, parity_f, i, buffer[diskmax], state->block_size);
+					if (buffer_parity == 0 && parity) {
+						ret = parity_write(parity, i, buffer[diskmax], state->block_size);
 						if (ret == -1) {
 							/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
 							fprintf(stderr, "WARNING! Without a working Parity disk, it isn't possible to fix errors on it.\n");
@@ -515,8 +515,8 @@ static int state_check_process(struct snapraid_state* state, int fix, int parity
 
 					/* update the qarity */
 					if (state->level >= 2) {
-						if (buffer_qarity == 0 && qarity_f != -1) {
-							ret = parity_write(state->qarity, qarity_f, i, buffer[diskmax + 1], state->block_size);
+						if (buffer_qarity == 0 && qarity) {
+							ret = parity_write(qarity, i, buffer[diskmax + 1], state->block_size);
 							if (ret == -1) {
 								/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
 								fprintf(stderr, "WARNING! Without a working Q-Parity disk, it isn't possible to fix errors on it.\n");
@@ -758,13 +758,13 @@ bail:
 
 void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, block_off_t blockcount)
 {
-	char parity_path[PATH_MAX];
-	char qarity_path[PATH_MAX];
 	block_off_t blockmax;
 	data_off_t size;
 	int ret;
-	int parity_f;
-	int qarity_f;
+	struct snapraid_parity parity;
+	struct snapraid_parity qarity;
+	struct snapraid_parity* parity_ptr;
+	struct snapraid_parity* qarity_ptr;
 	unsigned error;
 
 	if (fix)
@@ -785,44 +785,47 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, 
 		blockmax = blockstart + blockcount;
 	}
 
-	pathcpy(parity_path, sizeof(parity_path), state->parity);
-	pathcpy(qarity_path, sizeof(qarity_path), state->qarity);
-
 	if (fix) {
 		/* if fixing, create the file and open for writing */
 		/* if it fails, we cannot continue */
-		parity_f = parity_create(parity_path, size);
-		if (parity_f == -1) {
+		parity_ptr = &parity;
+		ret = parity_create(parity_ptr, state->parity, size);
+		if (ret == -1) {
 			fprintf(stderr, "WARNING! Without an accessible Parity file, it isn't possible to fix any error.\n");
 			exit(EXIT_FAILURE);
 		}
 
 		if (state->level >= 2) {
-			qarity_f = parity_create(qarity_path, size);
-			if (qarity_f == -1) {
+			qarity_ptr = &qarity;
+			ret = parity_create(qarity_ptr, state->qarity, size);
+			if (ret == -1) {
 				fprintf(stderr, "WARNING! Without an accessible Q-Parity file, it isn't possible to fix any error.\n");
 				exit(EXIT_FAILURE);
 			}
 		} else {
-			qarity_f = -1;
+			qarity_ptr = 0;
 		}
 	} else {
 		/* if checking, open the file for reading */
 		/* it may fail if the file doesn't exist, in this case we continue to check the files */
-		parity_f = parity_open(parity_path);
-		if (parity_f == -1) {
+		parity_ptr = &parity;
+		ret = parity_open(parity_ptr, state->parity);
+		if (ret == -1) {
 			printf("No accessible Parity file, only files will be checked.\n");
 			/* continue anyway */
+			parity_ptr = 0;
 		}
 
 		if (state->level >= 2) {
-			qarity_f = parity_open(qarity_path);
-			if (qarity_f == -1) {
+			qarity_ptr = &qarity;
+			ret = parity_open(qarity_ptr, state->qarity);
+			if (ret == -1) {
 				printf("No accessible Q-Parity file, only files will be checked.\n");
 				/* continue anyway */
+				qarity_ptr = 0;
 			}
 		} else {
-			qarity_f = -1;
+			qarity_ptr = 0;
 		}
 	}
 
@@ -830,7 +833,7 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, 
 
 	/* skip degenerated cases of empty parity, or skipping all */
 	if (blockstart < blockmax) {
-		ret = state_check_process(state, fix, parity_f, qarity_f, blockstart, blockmax);
+		ret = state_check_process(state, fix, parity_ptr, qarity_ptr, blockstart, blockmax);
 		if (ret == -1) {
 			++error;
 			/* continue, as we are already exiting */
@@ -838,8 +841,8 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, 
 	}
 
 	/* try to close only if opened */
-	if (parity_f != -1) {
-		ret = parity_close(parity_path, parity_f);
+	if (parity_ptr) {
+		ret = parity_close(parity_ptr);
 		if (ret == -1) {
 			fprintf(stderr, "DANGER! Unexpected close error in Parity disk.\n");
 			++error;
@@ -848,8 +851,8 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, 
 	}
 
 	if (state->level >= 2) {
-		if (qarity_f != -1) {
-			ret = parity_close(qarity_path, qarity_f);
+		if (qarity_ptr) {
+			ret = parity_close(qarity_ptr);
 			if (ret == -1) {
 				fprintf(stderr, "DANGER! Unexpected close error in Q-Parity disk.\n");
 				++error;

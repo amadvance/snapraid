@@ -9,13 +9,18 @@ SnapRAID HISTORY
 * If the content file is placed in a data disk, it's automatically excluded
   from the sync process.
 * Increased by one the minimum number of content files. Before it was only
-  a suggestion, but now it's a requirement in case you put them in data disks.
+  a suggestion, but now it's a requirement because you are allowed to put
+  content files in data disks.
 * Added checks to ensure that data and parity disks are diffent, and to
   correctly count the number of copies of "content" files in different disks.
 * Removed the dependency of the 'disk' order specification in the configuration
   file. The used order is now saved in the content file to avoid to damage the
   dual parity in case the order is changed by the user.
   It also allows to remove or add disks from the array when using a dual parity.
+* Improved the 'fix' performance when a lot of files or the parity have to be
+  recreated from scratch.
+* When getting unrecoverable errors, the printed log line now starts with
+  'unrecoverable:' instead of 'error:' to allow an easier identification.
 
 1.6 2011/9 - THIS UPDATE IS HIGHLY RECOMMENDED!
 ===============================================

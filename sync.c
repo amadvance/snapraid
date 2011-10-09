@@ -27,7 +27,7 @@
 /****************************************************************************/
 /* sync */
 
-static int state_sync_process(struct snapraid_state* state, int parity_f, int qarity_f, block_off_t blockstart, block_off_t blockmax)
+static int state_sync_process(struct snapraid_state* state, struct snapraid_parity* parity, struct snapraid_parity* qarity, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
 	unsigned diskmax;
@@ -224,7 +224,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 			raid_gen(state->level, buffer, diskmax, state->block_size);
 
 			/* write the parity */
-			ret = parity_write(state->parity, parity_f, i, buffer[diskmax], state->block_size);
+			ret = parity_write(parity, i, buffer[diskmax], state->block_size);
 			if (ret == -1) {
 				fprintf(stderr, "DANGER! Write error in the Parity disk, it isn't possible to sync.\n");
 				printf("Stopping at block %u\n", i);
@@ -234,7 +234,7 @@ static int state_sync_process(struct snapraid_state* state, int parity_f, int qa
 
 			/* write the qarity */
 			if (state->level >= 2) {
-				ret = parity_write(state->qarity, qarity_f, i, buffer[diskmax+1], state->block_size);
+				ret = parity_write(qarity, i, buffer[diskmax+1], state->block_size);
 				if (ret == -1) {
 					fprintf(stderr, "DANGER! Write error in the Q-Parity disk, it isn't possible to sync.\n");
 					printf("Stopping at block %u\n", i);
@@ -291,13 +291,13 @@ bail:
 
 int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t blockcount)
 {
-	char parity_path[PATH_MAX];
-	char qarity_path[PATH_MAX];
 	block_off_t blockmax;
 	data_off_t size;
 	int ret;
-	int parity_f;
-	int qarity_f;
+	struct snapraid_parity parity;
+	struct snapraid_parity qarity;
+	struct snapraid_parity* parity_ptr;
+	struct snapraid_parity* qarity_ptr;
 	unsigned unrecoverable_error;
 
 	printf("Syncing...\n");
@@ -315,45 +315,44 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		blockmax = blockstart + blockcount;
 	}
 
-	pathcpy(parity_path, sizeof(parity_path), state->parity);
-	pathcpy(qarity_path, sizeof(qarity_path), state->qarity);
-
 	/* create the file and open for writing */
-	parity_f = parity_create(parity_path, size);
-	if (parity_f == -1) {
+	parity_ptr = &parity;
+	ret = parity_create(parity_ptr, state->parity, size);
+	if (ret == -1) {
 		fprintf(stderr, "WARNING! Without an accessible Parity file, it isn't possible to sync.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	if (state->level >= 2) {
-		qarity_f = parity_create(qarity_path, size);
-		if (qarity_f == -1) {
+		qarity_ptr = &qarity;
+		ret = parity_create(qarity_ptr, state->qarity, size);
+		if (ret == -1) {
 			fprintf(stderr, "WARNING! Without an accessible Q-Parity file, it isn't possible to sync.\n");
 			exit(EXIT_FAILURE);
 		}
 	} else {
-		qarity_f = -1;
+		qarity_ptr = 0;
 	}
 
 	unrecoverable_error = 0;
 
 	/* skip degenerated cases of empty parity, or skipping all */
 	if (blockstart < blockmax) {
-		ret = state_sync_process(state, parity_f, qarity_f, blockstart, blockmax);
+		ret = state_sync_process(state, parity_ptr, qarity_ptr, blockstart, blockmax);
 		if (ret == -1) {
 			++unrecoverable_error;
 			/* continue, as we are already exiting */
 		}
 	}
 
-	ret = parity_sync(parity_path, parity_f);
+	ret = parity_sync(parity_ptr);
 	if (ret == -1) {
 		fprintf(stderr, "DANGER! Unexpected sync error in Parity disk.\n");
 		++unrecoverable_error;
 		/* continue, as we are already exiting */
 	}
 
-	ret = parity_close(parity_path, parity_f);
+	ret = parity_close(parity_ptr);
 	if (ret == -1) {
 		fprintf(stderr, "DANGER! Unexpected close error in Parity disk.\n");
 		++unrecoverable_error;
@@ -361,14 +360,14 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	}
 
 	if (state->level >= 2) {
-		ret = parity_sync(qarity_path, qarity_f);
+		ret = parity_sync(qarity_ptr);
 		if (ret == -1) {
 			fprintf(stderr, "DANGER! Unexpected sync error in Q-Parity disk.\n");
 			++unrecoverable_error;
 			/* continue, as we are already exiting */
 		}
 
-		ret = parity_close(qarity_path, qarity_f);
+		ret = parity_close(qarity_ptr);
 		if (ret == -1) {
 			fprintf(stderr, "DANGER! Unexpected close error in Q-Parity disk.\n");
 			++unrecoverable_error;

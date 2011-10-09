@@ -94,6 +94,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 		/* invalidate for error */
 		handle->file = 0;
 		handle->f = -1;
+		handle->valid_size = 0;
 
 		fprintf(stderr, "Error opening file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
@@ -109,25 +110,13 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 		return -1;
 	}
 
-	if (handle->st.st_size < file->size) {
-#if HAVE_POSIX_FALLOCATE
-		/* allocate real space */
-		ret = posix_fallocate(handle->f, 0, file->size);
-#else
-		/* allocate using a sparse file */
-		ret = ftruncate(handle->f, file->size);
-#endif
-		if (ret != 0) {
-			if (errno == ENOSPC) {
-				fprintf(stderr, "Failed to grow file '%s' due lack of space.\n", handle->path);
-			} else if (errno == EACCES) {
-				fprintf(stderr, "Failed to grow file '%s' for missing write permission.\n", handle->path);
-			} else {
-				fprintf(stderr, "Error growing file '%s'. %s.\n", handle->path, strerror(errno));
-			}
-			return -1;
-		}
-	} else if (handle->st.st_size > file->size) {
+	/* get the size of the exising data */
+	handle->valid_size = handle->st.st_size;
+
+	/* Here we only truncate the file and we don't grow it */
+	/* as allocating real space for it would imply a too big performance drop, */
+	/* and allocating sparse space wouldn't improve the safety of subsequent writes. */
+	if (handle->st.st_size > file->size) {
 		ret = ftruncate(handle->f, file->size);
 		if (ret != 0) {
 			if (errno == EACCES) {
@@ -137,6 +126,9 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 			}
 			return -1;
 		}
+
+		/* adjust the size to the truncated size */
+		handle->valid_size = file->size;
 	}
 
 #if HAVE_POSIX_FADVISE
@@ -175,6 +167,7 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file)
 		/* invalidate for error */
 		handle->file = 0;
 		handle->f = -1;
+		handle->valid_size = 0;
 
 		fprintf(stderr, "Error opening file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
@@ -189,6 +182,9 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file)
 		fprintf(stderr, "Error accessing file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
 	}
+
+	/* get the size of the exising data */
+	handle->valid_size = handle->st.st_size;
 
 #if HAVE_POSIX_FADVISE
 	/* advise sequential access */
@@ -213,6 +209,7 @@ int handle_close(struct snapraid_handle* handle)
 			/* invalidate for error */
 			handle->file = 0;
 			handle->f = -1;
+			handle->valid_size = 0;
 
 			fprintf(stderr, "Error closing file '%s'. %s.\n", handle->file->sub, strerror(errno));
 			return -1;
@@ -222,6 +219,7 @@ int handle_close(struct snapraid_handle* handle)
 	/* reset the descriptor */
 	handle->file = 0;
 	handle->f = -1;
+	handle->valid_size = 0;
 
 	return 0;
 }
@@ -233,6 +231,12 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 	unsigned read_size;
 
 	offset = block_file_pos(block) * (data_off_t)block_size;
+
+	/* check if we are going to read only not initialized data */
+	if (offset >= handle->valid_size) {
+		fprintf(stderr, "Reading missing data from file '%s' at offset %"PRIu64".\n", handle->path, offset);
+		return -1;
+	}
 
 	read_size = block_file_size(block, block_size);
 
@@ -293,6 +297,11 @@ int handle_write(struct snapraid_handle* handle, struct snapraid_block* block, u
 		return -1;
 	}
 
+	/* adjust the size of the valid data */
+	if (handle->valid_size < offset + write_size) {
+		handle->valid_size = offset + write_size;
+	}
+
 	/* Here doesn't make sense to call posix_fadvise(..., POSIX_FADV_DONTNEED) because */
 	/* at this time the data is still in not yet written and it cannot be discharged. */
 
@@ -346,6 +355,7 @@ struct snapraid_handle* handle_map(struct snapraid_state* state, unsigned* handl
 		handle[j].disk = 0;
 		handle[j].file = 0;
 		handle[j].f = -1;
+		handle[j].valid_size = 0;
 	}
 
 	/* set the vector */

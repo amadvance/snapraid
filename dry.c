@@ -26,7 +26,7 @@
 /****************************************************************************/
 /* dry */
 
-static int state_dry_process(struct snapraid_state* state, int parity_f, int qarity_f, block_off_t blockstart, block_off_t blockmax)
+static int state_dry_process(struct snapraid_state* state, struct snapraid_parity* parity, struct snapraid_parity* qarity, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
 	unsigned diskmax;
@@ -89,8 +89,8 @@ static int state_dry_process(struct snapraid_state* state, int parity_f, int qar
 		}
 
 		/* read the parity */
-		if (parity_f != -1) {
-			ret = parity_read(state->parity, parity_f, i, buffer, state->block_size);
+		if (parity) {
+			ret = parity_read(parity, i, buffer, state->block_size);
 			if (ret == -1) {
 				fprintf(stderr, "error:%u:parity: Read error\n", i);
 				++error;
@@ -99,8 +99,8 @@ static int state_dry_process(struct snapraid_state* state, int parity_f, int qar
 
 		/* read the qarity */
 		if (state->level >= 2) {
-			if (qarity_f != -1) {
-				ret = parity_read(state->qarity, qarity_f, i, buffer, state->block_size);
+			if (qarity) {
+				ret = parity_read(qarity, i, buffer, state->block_size);
 				if (ret == -1) {
 					fprintf(stderr, "error:%u:qarity: Read error\n", i);
 					++error;
@@ -146,12 +146,12 @@ bail:
 
 void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t blockcount)
 {
-	char parity_path[PATH_MAX];
-	char qarity_path[PATH_MAX];
 	block_off_t blockmax;
 	int ret;
-	int parity_f;
-	int qarity_f;
+	struct snapraid_parity parity;
+	struct snapraid_parity qarity;
+	struct snapraid_parity* parity_ptr;
+	struct snapraid_parity* qarity_ptr;
 	unsigned error;
 
 	printf("Drying...\n");
@@ -168,32 +168,33 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		blockmax = blockstart + blockcount;
 	}
 
-	pathcpy(parity_path, sizeof(parity_path), state->parity);
-	pathcpy(qarity_path, sizeof(qarity_path), state->qarity);
-
 	/* open the file for reading */
 	/* it may fail if the file doesn't exist, in this case we continue to dry the files */
-	parity_f = parity_open(parity_path);
-	if (parity_f == -1) {
+	parity_ptr = &parity;
+	ret = parity_open(parity_ptr, state->parity);
+	if (ret == -1) {
 		printf("No accessible Parity file.\n");
 		/* continue anyway */
+		parity_ptr = 0;
 	}
 
 	if (state->level >= 2) {
-		qarity_f = parity_open(qarity_path);
-		if (qarity_f == -1) {
+		qarity_ptr = &qarity;
+		ret = parity_open(qarity_ptr, state->qarity);
+		if (ret == -1) {
 			printf("No accessible Q-Parity file.\n");
 			/* continue anyway */
+			qarity_ptr = 0;
 		}
 	} else {
-		qarity_f = -1;
+		qarity_ptr = 0;
 	}
 
 	error = 0;
 
 	/* skip degenerated cases of empty parity, or skipping all */
 	if (blockstart < blockmax) {
-		ret = state_dry_process(state, parity_f, qarity_f, blockstart, blockmax);
+		ret = state_dry_process(state, parity_ptr, qarity_ptr, blockstart, blockmax);
 		if (ret == -1) {
 			++error;
 			/* continue, as we are already exiting */
@@ -201,8 +202,8 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	}
 
 	/* try to close only if opened */
-	if (parity_f != -1) {
-		ret = parity_close(parity_path, parity_f);
+	if (parity_ptr) {
+		ret = parity_close(parity_ptr);
 		if (ret == -1) {
 			++error;
 			/* continue, as we are already exiting */
@@ -210,8 +211,8 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	}
 
 	if (state->level >= 2) {
-		if (qarity_f != -1) {
-			ret = parity_close(qarity_path, qarity_f);
+		if (qarity_ptr) {
+			ret = parity_close(qarity_ptr);
 			if (ret == -1) {
 				++error;
 				/* continue, as we are already exiting */

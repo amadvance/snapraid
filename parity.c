@@ -49,98 +49,120 @@ block_off_t parity_resize(struct snapraid_state* state)
 	return parity_block;
 }
 
-int parity_create(const char* path, data_off_t size)
+int parity_create(struct snapraid_parity* parity, const char* path, data_off_t size)
 {
-	struct stat st;
 	int ret;
-	int f;
+
+	pathcpy(parity->path, sizeof(parity->path), path);
 
 	/* opening in sequential mode in Windows */
-	f = open(path, O_RDWR | O_CREAT | O_BINARY | O_SEQUENTIAL, 0600);
-	if (f == -1) {
-		fprintf(stderr, "Error opening parity file '%s'. %s.\n", path, strerror(errno));
+	parity->f = open(parity->path, O_RDWR | O_CREAT | O_BINARY | O_SEQUENTIAL, 0600);
+	if (parity->f == -1) {
+		fprintf(stderr, "Error opening parity file '%s'. %s.\n", parity->path, strerror(errno));
 		return -1;
 	}
 
-	ret = fstat(f, &st);
+	/* get the stat info */
+	ret = fstat(parity->f, &parity->st);
 	if (ret != 0) {
-		fprintf(stderr, "Error accessing parity file '%s'. %s.\n", path, strerror(errno));
+		fprintf(stderr, "Error accessing parity file '%s'. %s.\n", parity->path, strerror(errno));
 		goto bail;
 	}
 
-	if (st.st_size < size) {
+	/* get the size of the exising data */
+	parity->valid_size = parity->st.st_size;
+
+	if (parity->st.st_size < size) {
 #if HAVE_POSIX_FALLOCATE
 		/* allocate real space */
-		ret = posix_fallocate(f, 0, size);
+		ret = posix_fallocate(parity->f, 0, size);
 #else
 		/* allocate using a sparse file */
-		ret = ftruncate(f, size);
+		ret = ftruncate(parity->f, size);
 #endif
 		if (ret != 0) {
 			if (errno == ENOSPC) {
-				fprintf(stderr, "Failed to grow parity file '%s' to size %"PRIu64" due lack of space.\n", path, size);
+				fprintf(stderr, "Failed to grow parity file '%s' to size %"PRIu64" due lack of space.\n", parity->path, size);
 			} else {
-				fprintf(stderr, "Error growing parity file '%s' to size %"PRIu64". Do you have enough space? %s.\n", path, size, strerror(errno));
+				fprintf(stderr, "Error growing parity file '%s' to size %"PRIu64". Do you have enough space? %s.\n", parity->path, size, strerror(errno));
 			}
 			goto bail;
 		}
-	} else if (st.st_size > size) {
-		ret = ftruncate(f, size);
+	} else if (parity->st.st_size > size) {
+		ret = ftruncate(parity->f, size);
 		if (ret != 0) {
-			fprintf(stderr, "Error truncating parity file '%s' to size %"PRIu64". %s.\n", path, size, strerror(errno));
+			fprintf(stderr, "Error truncating parity file '%s' to size %"PRIu64". %s.\n", parity->path, size, strerror(errno));
 			goto bail;
 		}
+
+		/* adjust the size to the truncated size */
+		parity->valid_size = size;
 	}
 
 #if HAVE_POSIX_FADVISE
 	/* advise sequential access */
-	ret = posix_fadvise(f, 0, 0, POSIX_FADV_SEQUENTIAL);
+	ret = posix_fadvise(parity->f, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (ret != 0) {
-		fprintf(stderr, "Error advising parity file '%s'. %s.\n", path, strerror(errno));
+		fprintf(stderr, "Error advising parity file '%s'. %s.\n", parity->path, strerror(errno));
 		goto bail;
 	}
 #endif
 
-	return f;
+	return 0;
 
 bail:
-	close(f);
+	close(parity->f);
+	parity->f = -1;
+	parity->valid_size = 0;
 	return -1;
 }
 
-int parity_open(const char* path)
+int parity_open(struct snapraid_parity* parity, const char* path)
 {
 #if HAVE_POSIX_FADVISE
 	int ret;
 #endif    
-	int f;
+
+	pathcpy(parity->path, sizeof(parity->path), path);
 
 	/* opening in sequential mode in Windows */
-	f = open(path, O_RDONLY | O_BINARY | O_SEQUENTIAL);
-	if (f == -1) {
-		fprintf(stderr, "Error opening parity file '%s'. %s.\n", path, strerror(errno));
+	parity->f = open(parity->path, O_RDONLY | O_BINARY | O_SEQUENTIAL);
+	if (parity->f == -1) {
+		fprintf(stderr, "Error opening parity file '%s'. %s.\n", parity->path, strerror(errno));
 		return -1;
 	}
 
+	/* get the stat info */
+	ret = fstat(parity->f, &parity->st);
+	if (ret != 0) {
+		fprintf(stderr, "Error accessing parity file '%s'. %s.\n", parity->path, strerror(errno));
+		goto bail;
+	}
+
+	/* get the size of the exising data */
+	parity->valid_size = parity->st.st_size;
+
 #if HAVE_POSIX_FADVISE
 	/* advise sequential access */
-	ret = posix_fadvise(f, 0, 0, POSIX_FADV_SEQUENTIAL);
+	ret = posix_fadvise(parity->f, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (ret != 0) {
-		fprintf(stderr, "Error advising parity file '%s'. %s.\n", path, strerror(errno));
+		fprintf(stderr, "Error advising parity file '%s'. %s.\n", parity->path, strerror(errno));
 		goto bail;
 	}
 #endif
 
-	return f;
+	return 0;
 
 #if HAVE_POSIX_FADVISE
 bail:
-	close(f);
+	close(parity->f);
+	parity->f = -1;
+	parity->valid_size = 0;
 	return -1;
 #endif
 }
 
-int parity_sync(const char* path, int f)
+int parity_sync(struct snapraid_parity* parity)
 {
 #if HAVE_FSYNC
 	int ret;
@@ -148,9 +170,9 @@ int parity_sync(const char* path, int f)
 	/* Ensure that data changes are written to disk. */
 	/* This is required to ensure that parity is more updated than content */
 	/* in case of a system crash. */
-	ret = fsync(f);
+	ret = fsync(parity->f);
 	if (ret != 0) {
-		fprintf(stderr, "Error synching parity file '%s'. %s.\n", path, strerror(errno));
+		fprintf(stderr, "Error synching parity file '%s'. %s.\n", parity->path, strerror(errno));
 		return -1;
 	}
 #endif
@@ -158,23 +180,31 @@ int parity_sync(const char* path, int f)
 	return 0;
 }
 
-int parity_close(const char* path, int f)
+int parity_close(struct snapraid_parity* parity)
 {
 	int ret;
 
-	ret = close(f);
+	ret = close(parity->f);
 	if (ret != 0) {
+		/* invalidate for error */
+		parity->f = -1;
+		parity->valid_size = 0;
+
 		/* This is a serious error, as it may be the result of a failed write */
 		/* identified at later time. */
 		/* In a normal filesystem (not NFS) it should never happen */
-		fprintf(stderr, "Error closing parity file '%s'. %s.\n", path, strerror(errno));
+		fprintf(stderr, "Error closing parity file '%s'. %s.\n", parity->path, strerror(errno));
 		return -1;
 	}
+
+	/* reset the descriptor */
+	parity->f = -1;
+	parity->valid_size = 0;
 
 	return 0;
 }
 
-int parity_write(const char* path, int f, block_off_t pos, unsigned char* block_buffer, unsigned block_size)
+int parity_write(struct snapraid_parity* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size)
 {
 	ssize_t write_ret;
 	data_off_t offset;
@@ -182,26 +212,31 @@ int parity_write(const char* path, int f, block_off_t pos, unsigned char* block_
 	offset = pos * (data_off_t)block_size;
 
 #if HAVE_PWRITE
-	write_ret = pwrite(f, block_buffer, block_size, offset);
+	write_ret = pwrite(parity->f, block_buffer, block_size, offset);
 #else
-	if (lseek(f, offset, SEEK_SET) != offset) {
+	if (lseek(parity->f, offset, SEEK_SET) != offset) {
 		if (errno == ENOSPC) {
-			fprintf(stderr, "Failed to grow parity file '%s' due lack of space.\n", path);
+			fprintf(stderr, "Failed to grow parity file '%s' due lack of space.\n", parity->path);
 		} else {
-			fprintf(stderr, "Error seeking file '%s'. %s.\n", path, strerror(errno));
+			fprintf(stderr, "Error seeking file '%s'. %s.\n", parity->path, strerror(errno));
 		}
 		return -1;
 	}
 
-	write_ret = write(f, block_buffer, block_size);
+	write_ret = write(parity->f, block_buffer, block_size);
 #endif
 	if (write_ret != (ssize_t)block_size) { /* conversion is safe because block_size is always small */
 		if (errno == ENOSPC) {
-			fprintf(stderr, "Failed to grow parity file '%s' due lack of space.\n", path);
+			fprintf(stderr, "Failed to grow parity file '%s' due lack of space.\n", parity->path);
 		} else {
-			fprintf(stderr, "Error writing file '%s'. %s.\n", path, strerror(errno));
+			fprintf(stderr, "Error writing file '%s'. %s.\n", parity->path, strerror(errno));
 		}
 		return -1;
+	}
+
+	/* adjust the size of the valid data */
+	if (parity->valid_size < offset + block_size) {
+		parity->valid_size = offset + block_size;
 	}
 
 	/* Here doesn't make sense to call posix_fadvise(..., POSIX_FADV_DONTNEED) because */
@@ -210,29 +245,35 @@ int parity_write(const char* path, int f, block_off_t pos, unsigned char* block_
 	return 0;
 }
 
-int parity_read(const char* path, int f, block_off_t pos, unsigned char* block_buffer, unsigned block_size)
+int parity_read(struct snapraid_parity* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size)
 {
 	ssize_t read_ret;
 	data_off_t offset;
 
 	offset = pos * (data_off_t)block_size;
 
-#if HAVE_PREAD
-	read_ret = pread(f, block_buffer, block_size, offset);
-#else
-	if (lseek(f, offset, SEEK_SET) != offset) {
-		fprintf(stderr, "Error seeking file '%s' at offset %"PRIu64". %s.\n", path, offset, strerror(errno));
+	/* check if we are going to read only not initialized data */
+	if (offset >= parity->valid_size) {
+		fprintf(stderr, "Reading missing data from file '%s' at offset %"PRIu64".\n", parity->path, offset);
 		return -1;
 	}
 
-	read_ret = read(f, block_buffer, block_size);
+#if HAVE_PREAD
+	read_ret = pread(parity->f, block_buffer, block_size, offset);
+#else
+	if (lseek(parity->f, offset, SEEK_SET) != offset) {
+		fprintf(stderr, "Error seeking file '%s' at offset %"PRIu64". %s.\n", parity->path, offset, strerror(errno));
+		return -1;
+	}
+
+	read_ret = read(parity->f, block_buffer, block_size);
 #endif
 	if (read_ret < 0) {
-		fprintf(stderr, "Error reading file '%s' at offset %"PRIu64". %s.\n", path, offset, strerror(errno));
+		fprintf(stderr, "Error reading file '%s' at offset %"PRIu64". %s.\n", parity->path, offset, strerror(errno));
 		return -1;
 	}
 	if (read_ret != (ssize_t)block_size) { /* signed conversion is safe because block_size is always small */
-		fprintf(stderr, "File '%s' is smaller than expected. Read %d bytes instead of %d at offset %"PRIu64".\n", path, (int)read_ret, block_size, offset);
+		fprintf(stderr, "File '%s' is smaller than expected. Read %d bytes instead of %d at offset %"PRIu64".\n", parity->path, (int)read_ret, block_size, offset);
 		return -1;
 	}
 
