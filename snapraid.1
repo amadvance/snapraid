@@ -6,6 +6,10 @@ snapraid [\(hyc, \(hy\(hyconf CONFIG] [\(hyf, \(hy\(hyfilter PATTERN]
 .PD 0
 .PP
 .PD
+	[\(hyN, \(hy\(hyfind\(hyby\(hyname]
+.PD 0
+.PP
+.PD
 	[\(hyZ, \(hy\(hyforce\(hyzero] [\(hyE, \(hy\(hyforce\(hyempty]
 .PD 0
 .PP
@@ -332,6 +336,17 @@ See the PATTERN section for more details in the
 pattern specifications.
 This option can be used many times.
 In Unix, ensure to quote globbing chars if used.
+.TP
+.B \(hyN, \(hy\(hyfind\(hyby\(hyname
+When syncing finds the files by name instead than by inode.
+This option allows a fast sync command after having replaced
+one physical disk with another copying manually the files.
+Without this option the \(cqsync\(cq command would recognize that
+the files were copied to a different disk, and will resync
+them all. Instead, with this option a file with the correct
+name, size and time will be assumed identical at the previous
+one.
+This option has effect only on the \(cqsync\(cq and \(cqdiff\(cq commands.
 .TP
 .B \(hyZ, \(hy\(hyforce\(hyzero
 Forces the insecure operation of syncing a file with zero
@@ -698,6 +713,77 @@ snapraid \(hyf \(a"*.mp3\(a" check
 .PP
 In Unix, when using globbing chars in the command line, you have to quote them.
 Otherwise the shell will try to expand them.
+.SH RECOVERING 
+The worst happened, and you lost a disk!
+.PP
+DO NOT PANIC! You will be able to recover it!
+.PP
+The first thing you have to do is to avoid futher changes at you disk array.
+Disable any remote connections to it, any scheduled processes, including any
+scheduled SnapRAID nightly sync.
+.PP
+Then proceed with the following steps.
+.SS STEP 1 \(hy> Reconfigure 
+You need some space to recover, even better if you have already an additional
+disk, but in case also an external USB or remote one is enough.
+.PP
+Change the SnapRAID configuration and change the \(cqdisk\(cq directory
+of the failed disk to point to the new empty space.
+.SS STEP 2 \(hy> Fix 
+Run the fix command, storing the log in an external file with:
+.PP
+.RS 4
+snapraid fix 2>fix.log
+.PD 0
+.PP
+.PD
+.RE
+.PP
+This command will take a long time.
+.PP
+Take care that you need also few GB free to store the fix.log file, so run it
+from a disk with some free space.
+.PP
+Now you have recovered all the recoverable. If some file is partly or totally
+unrecoverable, it will be renamed adding the \(a".unrecoverable\(a" extension.
+.PP
+You can get a detailed list of all the unrecoverable blocks in the fix.log file
+checking all the lines starting with \(a"unrecoverable:\(a"
+.PP
+If you are not satified of the recovering, you can retry it as many time you wish.
+For example, if you have moved away some files from other disks after the last \(cqsync\(cq,
+you can retry to put them inplace, and retry the \(cqfix\(cq.
+.PP
+If you are satisfied of the recovering, you can now proceed synching the array,
+but take care that after synching you will no more able to retry the
+\(cqfix\(cq command!
+.SS STEP 3 \(hy> Sync 
+Run the \(cqsync\(cq command to resyncronize the array with the new disk.
+.PP
+To avoid a long time sync you have to use the \(cq\(hy\(hyfind\(hyby\(hyname\(cq option to
+tell SnapRAID to ignore the fact that all the recovered files are now in
+a different physical disk, and they don\(cqt need to be synched.
+.PP
+.RS 4
+snapraid \(hy\(hyfind\(hyby\(hyname sync
+.PD 0
+.PP
+.PD
+.RE
+.PP
+If everything was recovered, this command is immediate.
+.SS STEP 4 \(hy> Check 
+As paranoid check, you can now run a whole \(cqcheck\(cq command to ensure that
+everything is OK.
+.PP
+.RS 4
+snapraid check
+.PD 0
+.PP
+.PD
+.RE
+.PP
+This command will take a long time.
 .SH CONTENT 
 SnapRAID stores the list and checksums of your files in the content file.
 .PP

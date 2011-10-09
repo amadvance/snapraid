@@ -21,6 +21,9 @@ SnapRAID HISTORY
   recreated from scratch.
 * When getting unrecoverable errors, the printed log line now starts with
   'unrecoverable:' instead of 'error:' to allow an easier identification.
+* Added a new option '--find-by-name' to allow to sync using only the
+  file path and not the inode. This is useful to avoid long sync
+  when you replace one disk with another copying manually the files.
 
 1.6 2011/9 - THIS UPDATE IS HIGHLY RECOMMENDED!
 ===============================================

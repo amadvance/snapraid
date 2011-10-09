@@ -34,6 +34,7 @@ struct snapraid_state {
 	int gui; /**< Gui output. */
 	int force_zero; /**< Forced dangerous operations of synching file now with zero size. */
 	int force_empty; /**< Forced dangerous operations of synching disk now empty. */
+	int find_by_name; /**< Forced dangerous operations of synching a rewritten disk. */
 	int expect_unrecoverable; /**< Expect presence of unrecoverable error in checking or fixing. */
 	int expect_recoverable; /**< Expect presence of recoverable error in checking. */
 	int need_write; /**< If the state is changed. */
@@ -65,7 +66,7 @@ void state_done(struct snapraid_state* state);
 /**
  * Read the configuration file.
  */
-void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int expect_unrecoverable, int expect_recoverable, int skip_device);
+void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_device);
 
 /**
  * Read the state.

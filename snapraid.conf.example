@@ -35,6 +35,7 @@ disk d3 /mnt/disk3/
 # Format: "exclude /PATH/FILE"
 # Format: "exclude /PATH/DIR/"
 exclude *.bak
+exclude *.unrecoverable
 exclude /tmp/
 exclude /lost+found/
 

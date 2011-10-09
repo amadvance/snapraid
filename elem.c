@@ -297,6 +297,13 @@ int file_inode_compare(const void* void_arg, const void* void_data)
 	return 0;
 }
 
+int file_path_compare(const void* void_arg, const void* void_data)
+{
+	const char* arg = void_arg;
+	const struct snapraid_file* file = void_data;
+	return strcmp(arg, file->sub);
+}
+
 struct snapraid_link* link_alloc(const char* sub, const char* linkto)
 {
 	struct snapraid_link* link;
@@ -336,6 +343,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 	disk->first_free_block = 0;
 	tommy_list_init(&disk->filelist);
 	tommy_hashdyn_init(&disk->inodeset);
+	tommy_hashdyn_init(&disk->pathset);
 	tommy_list_init(&disk->linklist);
 	tommy_hashdyn_init(&disk->linkset);
 	tommy_array_init(&disk->blockarr);
@@ -352,6 +360,7 @@ void disk_free(struct snapraid_disk* disk)
 		file_free(file);
 	}
 	tommy_hashdyn_done(&disk->inodeset);
+	tommy_hashdyn_done(&disk->pathset);
 	node = disk->linklist;
 	while (node) {
 		struct snapraid_link* link = node->data;

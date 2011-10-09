@@ -27,6 +27,7 @@ void state_init(struct snapraid_state* state)
 	state->gui = 0;
 	state->force_zero = 0;
 	state->force_empty = 0;
+	state->find_by_name = 0;
 	state->expect_unrecoverable = 0;
 	state->expect_recoverable = 0;
 	state->need_write = 0;
@@ -129,7 +130,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 	}
 }
 
-void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int expect_unrecoverable, int expect_recoverable, int skip_device)
+void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_device)
 {
 	STREAM* f;
 	unsigned line;
@@ -138,6 +139,7 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 	state->gui = gui;
 	state->force_zero = force_zero;
 	state->force_empty = force_empty;
+	state->find_by_name = find_by_name;
 	state->expect_unrecoverable = expect_unrecoverable;
 	state->expect_recoverable = expect_recoverable;
 
@@ -757,6 +759,7 @@ void state_read(struct snapraid_state* state)
 
 			/* insert the file in the file containers */
 			tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
+			tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
 			tommy_list_insert_tail(&disk->filelist, &file->nodelist, file);
 
 			/* start the block allocation of the file */

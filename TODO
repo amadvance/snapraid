@@ -7,6 +7,10 @@ This is the list of TODO items for SnapRAID.
 
 * When scanning, ensure that each file is in the expected disk.
 
+* If fix fails for unrecoverable parts, rename such files adding ".unrecoverable".
+
+* Check and fix also empty file.
+
 * When fixing, before overwriting the present file, make a copy of it just in
 case that the original file cannot be completely recovered.
 We can always open files in read-only mode, if a write is required, we close it,

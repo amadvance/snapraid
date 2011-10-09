@@ -100,6 +100,7 @@ struct snapraid_file {
 	/* nodes for data structures */
 	tommy_node nodelist;
 	tommy_hashdyn_node nodeset;
+	tommy_hashdyn_node pathset;
 };
 
 /**
@@ -125,6 +126,7 @@ struct snapraid_disk {
 	block_off_t first_free_block; /**< First free searching block. */
 	tommy_list filelist; /**< List of all the files. */
 	tommy_hashdyn inodeset; /**< Hashtable by inode of all the files. */
+	tommy_hashdyn pathset; /**< Hashtable by path of all the files. */
 	tommy_list linklist; /**< List of all the links. */
 	tommy_hashdyn linkset; /**< Hashtable by name of all the links. */
 	tommy_array blockarr; /**< Block array of the disk. */
@@ -272,6 +274,19 @@ int file_inode_compare(const void* void_arg, const void* void_data);
 static inline tommy_uint32_t file_inode_hash(uint64_t inode)
 {
 	return (tommy_uint32_t)tommy_inthash_u64(inode);
+}
+
+/**
+ * Compares a file with a path.
+ */
+int file_path_compare(const void* void_arg, const void* void_data);
+
+/**
+ * Computes the hash of a file path.
+ */
+static inline tommy_uint32_t file_path_hash(const char* sub)
+{
+	return tommy_hash_u32(0, sub, strlen(sub));
 }
 
 static inline int link_flag_has(struct snapraid_link* link, unsigned mask)

@@ -73,6 +73,7 @@ static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk*
 
 	/* remove the file from the file containers */
 	tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
+	tommy_hashdyn_remove_existing(&disk->pathset, &file->pathset);
 	tommy_list_remove_existing(&disk->filelist, &file->nodelist);
 
 	/* deallocate */
@@ -116,6 +117,7 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 
 	/* insert the file in the file containers */
 	tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
+	tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
 	tommy_list_insert_tail(&disk->filelist, &file->nodelist, file);
 }
 
@@ -125,11 +127,16 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, int output, struct snapraid_disk* disk, const char* sub, const struct stat* st)
 {
 	struct snapraid_file* file;
-	uint64_t inode;
 
-	/* check if the file already exists */
-	inode = st->st_ino;
-	file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare, &inode, file_inode_hash(inode));
+	if (state->find_by_name) {
+		/* check if the file path already exists */
+		file = tommy_hashdyn_search(&disk->pathset, file_path_compare, sub, file_path_hash(sub));
+	} else {
+		/* check if the file inode already exists */
+		uint64_t inode = st->st_ino;
+		file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare, &inode, file_inode_hash(inode));
+	}
+
 	if (file) {
 		/* check if multiple files have the same inode */
 		if (file_flag_has(file, FILE_IS_PRESENT)) {
@@ -137,7 +144,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 				printf("warning: Ignored hardlink '%s%s'\n", disk->dir, sub);
 				return;
 			} else {
-				fprintf(stderr, "Internal inode '%"PRIu64"' inconsistency for file '%s%s'\n", inode, disk->dir, sub);
+				fprintf(stderr, "Internal inode '%"PRIu64"' inconsistency for file '%s%s'\n", st->st_ino, disk->dir, sub);
 				exit(EXIT_FAILURE);
 			}
 		}
@@ -147,8 +154,36 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 			/* mark as present */
 			file_flag_set(file, FILE_IS_PRESENT);
 
-			/* if the path is different, it means a moved file */
 			if (strcmp(file->sub, sub) != 0) {
+				/* if the path is different, it means a moved file with the same inode */
+				++scan->count_moved;
+
+				if (file->inode != st->st_ino) {
+					fprintf(stderr, "Internal inode inconsistency for file '%s%s'\n", disk->dir, sub);
+					exit(EXIT_FAILURE);
+				}
+
+				if (state->gui) {
+					fprintf(stderr, "scan:move:%s:%s:%s\n", disk->name, file->sub, sub);
+					fflush(stderr);
+				}
+				if (output) {
+					printf("Move '%s%s' '%s%s'\n", disk->dir, file->sub, disk->dir, sub);
+				}
+
+				/* remove from the set */
+				tommy_hashdyn_remove_existing(&disk->pathset, &file->pathset);
+
+				/* save the new name */
+				pathcpy(file->sub, sizeof(file->sub), sub);
+
+				/* reinsert in the set */
+				tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
+
+				/* we have to save the new name */
+				state->need_write = 1;
+			} else if (file->inode != st->st_ino) {
+				/* if the inode is different, it means a rewritten file with the same path */
 				++scan->count_moved;
 
 				if (state->gui) {
@@ -159,8 +194,14 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 					printf("Move '%s%s' '%s%s'\n", disk->dir, file->sub, disk->dir, sub);
 				}
 
-				/* save the new name */
-				pathcpy(file->sub, sizeof(file->sub), sub);
+				/* remove from the set */
+				tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
+
+				/* save the new inode */
+				file->inode = st->st_ino;
+
+				/* reinsert in the set */
+				tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
 
 				/* we have to save the new name */
 				state->need_write = 1;

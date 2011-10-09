@@ -3,6 +3,7 @@ Name{number}
 
 Synopsis
 	:snapraid [-c, --conf CONFIG] [-f, --filter PATTERN]
+	:	[-N, --find-by-name]
 	:	[-Z, --force-zero] [-E, --force-empty]
 	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	:	[-v, --verbose]
@@ -225,6 +226,17 @@ Options
 		pattern specifications.
 		This option can be used many times.
 		In Unix, ensure to quote globbing chars if used.
+
+	-N, --find-by-name
+		When syncing finds the files by name instead than by inode.
+		This option allows a fast sync command after having replaced
+		one physical disk with another copying manually the files.
+		Without this option the 'sync' command would recognize that
+		the files were copied to a different disk, and will resync
+		them all. Instead, with this option a file with the correct
+		name, size and time will be assumed identical at the previous
+		one.
+		This option has effect only on the 'sync' and 'diff' commands.
 
 	-Z, --force-zero
 		Forces the insecure operation of syncing a file with zero
@@ -465,6 +477,67 @@ Pattern
 
 	In Unix, when using globbing chars in the command line, you have to quote them.
 	Otherwise the shell will try to expand them.
+
+Recovering
+	The worst happened, and you lost a disk!
+
+	DO NOT PANIC! You will be able to recover it!
+
+	The first thing you have to do is to avoid futher changes at you disk array.
+	Disable any remote connections to it, any scheduled processes, including any
+	scheduled SnapRAID nightly sync.
+
+	Then proceed with the following steps.
+
+    STEP 1 -> Reconfigure
+	You need some space to recover, even better if you have already an additional
+	disk, but in case also an external USB or remote one is enough.
+    
+	Change the SnapRAID configuration and change the 'disk' directory
+	of the failed disk to point to the new empty space.
+
+    STEP 2 -> Fix
+	Run the fix command, storing the log in an external file with:
+
+		:snapraid fix 2>fix.log
+
+	This command will take a long time.
+
+	Take care that you need also few GB free to store the fix.log file, so run it
+	from a disk with some free space.
+
+	Now you have recovered all the recoverable. If some file is partly or totally
+	unrecoverable, it will be renamed adding the ".unrecoverable" extension.
+
+	You can get a detailed list of all the unrecoverable blocks in the fix.log file
+	checking all the lines starting with "unrecoverable:"
+
+	If you are not satified of the recovering, you can retry it as many time you wish.
+	For example, if you have moved away some files from other disks after the last 'sync',
+	you can retry to put them inplace, and retry the 'fix'.
+
+	If you are satisfied of the recovering, you can now proceed synching the array,
+	but take care that after synching you will no more able to retry the
+	'fix' command!
+
+    STEP 3 -> Sync
+	Run the 'sync' command to resyncronize the array with the new disk.
+
+	To avoid a long time sync you have to use the '--find-by-name' option to
+	tell SnapRAID to ignore the fact that all the recovered files are now in
+	a different physical disk, and they don't need to be synched.
+
+		:snapraid --find-by-name sync
+
+	If everything was recovered, this command is immediate.
+
+    STEP 4 -> Check
+	As paranoid check, you can now run a whole 'check' command to ensure that
+	everything is OK.
+
+		:snapraid check
+
+	This command will take a long time.
 
 Content
 	SnapRAID stores the list and checksums of your files in the content file.
