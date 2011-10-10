@@ -552,10 +552,31 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					/* nothing to do */
 					continue;
 				}
-				
-				/* if the file is not fixed or if it's not fixable */
-				if (!file_flag_has(handle[j].file, FILE_IS_FIXED)
-					|| file_flag_has(handle[j].file, FILE_IS_DAMAGED)) {
+
+				/* if the file is damaged, meaning that a fix failed */
+				if (file_flag_has(handle[j].file, FILE_IS_DAMAGED)) {
+					/* rename it */
+					char path_from[PATH_MAX];
+					char path_to[PATH_MAX];
+
+					pathprint(path_from, sizeof(path_from), "%s%s", handle[j].disk->dir, handle[j].file->sub);
+					pathprint(path_to, sizeof(path_to), "%s%s.unrecoverable", handle[j].disk->dir, handle[j].file->sub);
+
+					ret = rename(path_from, path_to);
+					if (ret != 0) {
+						fprintf(stderr, "Error renaming  '%s' to '%s'. %s.\n", path_from, path_to, strerror(errno));
+						fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+						printf("Stopping at block %u\n", i);
+						++unrecoverable_error;
+						goto bail;
+					}
+
+					/* and do not set the time */
+					continue;
+				}
+
+				/* if the file is not fixed */
+				if (!file_flag_has(handle[j].file, FILE_IS_FIXED)) {
 					/* nothing to do */
 					continue;
 				}

@@ -318,6 +318,9 @@ disk array at the previous \(a"sync\(a" command.
 After a successful \(a"fix\(a", you should also run a \(a"sync\(a"
 command to update the new state of the files.
 .PP
+All the files that cannot be fixed are renamed adding
+the \(cq.unrecoverable\(cq extension.
+.PP
 The \(a"content\(a" file is NOT modified.
 The \(a"parity\(a" and \(a"q\(hyparity\(a" files are modified if necessary.
 The files in the array are modified if necessary.

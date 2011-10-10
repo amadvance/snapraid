@@ -7,19 +7,16 @@ This is the list of TODO items for SnapRAID.
 
 * When scanning, ensure that each file is in the expected disk.
 
-* If fix fails for unrecoverable parts, rename such files adding ".unrecoverable".
+* Check and fix also empty files.
 
-* Check and fix also empty file.
-
-* When fixing, before overwriting the present file, make a copy of it just in
-case that the original file cannot be completely recovered.
-We can always open files in read-only mode, if a write is required, we close it,
-rename it to with a .bak extension, and rewrite it up to the required size.
-The same for symlink if a file with the same name exist or viceversa.
+* Put a note about configuring readahead size in Linux to improve performance.
+Check https://sourceforge.net/projects/snapraid/forums/forum/1677233/topic/4747452/index/page/1
 
 - v1.8
 
 * Check why saving the content files is so slow. fprintf() is the bottleneck.
+
+* Save all the content files in parallel using multiple threads.
 
 * Put the content files in the data disks in the default configuration file.
 
@@ -37,6 +34,11 @@ in Unix files starting with '.'.
 
 * Remove the old MD5 support.
 
+* A new 'init' command to differentiate the first 'sync' operation.
+This 'init' will work also without a content file, and parity files.
+Instead 'sync' will require all of them.
+This will also help when running with the parity filesystem unmounted.
+
 * Implement an "undelete" command to recover missing files, without the
 integrity check of the existing ones.
 It should restore only missing files, without recovering modified ones
@@ -44,6 +46,17 @@ or check validity of data of existing ones.
 
 * Rename sync->backup and fix->restore. It seems to me a naming expressing
 better the meaning of the commands. But not yet sure.
+
+* When fixing, before overwriting the present file, make a copy of it just in
+case that the original file cannot be completely recovered.
+We can always open files in read-only mode, if a write is required, we close it,
+rename it to with a .bak extension, and rewrite it up to the required size.
+The same for symlink if a file with the same name exist or viceversa.
+
+* Triple parity also called RAID-TP. We can implement it in a compatible way
+with the existing RAID-5 and RAID-6 definining a new r-parity file.
+See http://blogs.oracle.com/ahl/entry/triple_parity_raid_z and
+http://thread.gmane.org/gmane.linux.raid/34195/focus=34236
 
 * Allow to filter the files to check/fix based on the drive where they reside.
 

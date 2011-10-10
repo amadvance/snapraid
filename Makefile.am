@@ -157,7 +157,7 @@ check-local:
 	mkdir test/disk1
 	rm -r test/disk2
 	mkdir test/disk2
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --test-expect-unrecoverable -c $(srcdir)/test-raid5.conf check 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --test-expect-unrecoverable -c $(srcdir)/test-raid5.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --test-expect-recoverable -c $(srcdir)/test-raid6.conf check 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf check
@@ -204,7 +204,7 @@ check-local:
 	rm -r test/disk2/_b
 	rm -r test/disk3/_a
 	rm -r test/disk3/_b
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --test-expect-unrecoverable -c $(srcdir)/test-raid5.conf check 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --test-expect-unrecoverable -c $(srcdir)/test-raid5.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --test-expect-recoverable -c $(srcdir)/test-raid6.conf check 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check

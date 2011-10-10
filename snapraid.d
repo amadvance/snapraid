@@ -207,6 +207,9 @@ Commands
 	After a successful "fix", you should also run a "sync"
 	command to update the new state of the files.
 
+	All the files that cannot be fixed are renamed adding
+	the '.unrecoverable' extension.
+
 	The "content" file is NOT modified.
 	The "parity" and "q-parity" files are modified if necessary.
 	The files in the array are modified if necessary.

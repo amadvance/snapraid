@@ -24,6 +24,8 @@ SnapRAID HISTORY
 * Added a new option '--find-by-name' to allow to sync using only the
   file path and not the inode. This is useful to avoid long sync
   when you replace one disk with another copying manually the files.
+* If 'fix' cannot recover a file, it's renamed adding the '.unrecoverable'
+  extension.
 
 1.6 2011/9 - THIS UPDATE IS HIGHLY RECOMMENDED!
 ===============================================
