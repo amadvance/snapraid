@@ -26,6 +26,7 @@ SnapRAID HISTORY
   when you replace one disk with another copying manually the files.
 * If 'fix' cannot recover a file, it's renamed adding the '.unrecoverable'
   extension.
+* Checking and fixing also empty files with size 0.
 
 1.6 2011/9 - THIS UPDATE IS HIGHLY RECOMMENDED!
 ===============================================

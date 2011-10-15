@@ -624,6 +624,95 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		}
 	}
 
+	/* check all the files with empty size */
+	/* they have no block, and so skipped by previous checks */
+	for(i=0;i<diskmax;++i) {
+		tommy_node* node;
+		struct snapraid_disk* disk;
+
+		if (!handle[i].disk)
+			continue;
+
+		/* for each file in the disk */
+		disk = handle[i].disk;
+		node = disk->filelist;
+		while (node) {
+			char path[PATH_MAX];
+			struct stat st;
+			struct snapraid_file* file;
+			int failed = 0;
+
+			file = node->data;
+			node = node->next; /* next node */
+
+			/* if not empty, it's already checked and continue to the next one */
+			if (file->size != 0) {
+				continue;
+			}
+
+			/* if excluded continue to the next one */
+			if (file_flag_has(file, FILE_IS_EXCLUDED)) {
+				continue;
+			}
+
+			/* stat the file */
+			pathprint(path, sizeof(path), "%s%s", disk->dir, file->sub);
+			ret = stat(path, &st);
+			if (ret == -1) {
+				failed = 1;
+
+				fprintf(stderr, "Error stating empty file '%s'. %s.\n", path, strerror(errno));
+				fprintf(stderr, "error:%s:%s: Empty file stat error\n", disk->name, file->sub);
+				++error;
+			} else if (!S_ISREG(st.st_mode)) {
+				failed = 1;
+
+				fprintf(stderr, "error:%s:%s: Empty file error for not regular file\n", disk->name, file->sub);
+				++error;
+			} else if (st.st_size != 0) {
+				failed = 1;
+
+				fprintf(stderr, "error:%s:%s: Empty file error for size '%"PRIu64"'\n", disk->name, file->sub, st.st_size);
+				++error;
+			}
+
+			if (fix && failed) {
+				int f;
+
+				/* create the ancestor directories */
+				ret = handle_ancestor(path);
+				if (ret != 0) {
+					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					printf("Stopping\n");
+					++unrecoverable_error;
+					goto bail;
+				}
+
+				/* create it */
+				/* do not follow links to ensure to open the real file */
+				f = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_NOFOLLOW, 0600);
+				if (f == -1) {
+					fprintf(stderr, "Error creating empty file '%s'. %s.\n", path, strerror(errno));
+					if (errno == EACCES) {
+						fprintf(stderr, "WARNING! Please give write permission to the file.\n");
+					} else {
+						/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
+						fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					}
+					printf("Stopping\n");
+					++unrecoverable_error;
+					goto bail;
+				}
+
+				/* close it */
+				close(f);
+
+				fprintf(stderr, "fixed:%s:%s: Fixed empty file\n", disk->name, file->sub);
+				++recovered_error;
+			}
+		}
+	}
+
 	/* check all the links */
 	for(i=0;i<diskmax;++i) {
 		tommy_node* node;

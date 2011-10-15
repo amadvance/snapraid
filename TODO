@@ -3,20 +3,17 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
-- v1.7
-
-* When scanning, ensure that each file is in the expected disk.
-
-* Check and fix also empty files.
-
-* Put a note about configuring readahead size in Linux to improve performance.
-Check https://sourceforge.net/projects/snapraid/forums/forum/1677233/topic/4747452/index/page/1
-
 - v1.8
+
+* In fix an existing symlink with the same name of a file to be recovered may stop
+the process making the create() operation to fail.
 
 * Check why saving the content files is so slow. fprintf() is the bottleneck.
 
-* Save all the content files in parallel using multiple threads.
+* Save all the content files in parallel. We can use a single thread writing
+the same stuffs to all the file descriptors.
+This is still safe, as the written data is going to replace the old one
+with an atomic rename operation.
 
 * Put the content files in the data disks in the default configuration file.
 
