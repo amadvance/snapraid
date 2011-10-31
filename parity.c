@@ -119,9 +119,7 @@ bail:
 
 int parity_open(struct snapraid_parity* parity, const char* path)
 {
-#if HAVE_POSIX_FADVISE
 	int ret;
-#endif    
 
 	pathcpy(parity->path, sizeof(parity->path), path);
 
@@ -153,13 +151,11 @@ int parity_open(struct snapraid_parity* parity, const char* path)
 
 	return 0;
 
-#if HAVE_POSIX_FADVISE
 bail:
 	close(parity->f);
 	parity->f = -1;
 	parity->valid_size = 0;
 	return -1;
-#endif
 }
 
 int parity_sync(struct snapraid_parity* parity)
