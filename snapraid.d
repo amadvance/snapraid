@@ -72,9 +72,9 @@ Limitations
 		extended attributes and hard-links are not saved.
 
 Getting Started
-	To use SnapRAID you need first select one disk of your disk array
-	to dedicate at the "parity" information. With parity you will be able
-	to recover from a single disk failure, like RAID5.
+	To use SnapRAID you need to first select one disk of your disk array
+	to dedicate at the "parity" information. With one disk for parity you
+	will be able to recover from a single disk failure, like RAID5.
 
 	If you want to recover from two disk failures, like RAID6, you must
 	reserve another disk for the "q-parity" information.
@@ -92,8 +92,8 @@ Getting Started
 	These files contain the details of your backup with all the
 	checksums to verify its integrity.
 	The "content" file is stored in multiple copies, each one in a
-	different disks, to ensure that in even in case of a multiple disk
-	failure at least one copy is available.
+	different disk, to ensure that in even in case of multiple disk
+	failures at least one copy is available.
 
 	For example, suppose that you are interested only at one parity level
 	of protection, and that your disks are present in:
@@ -168,7 +168,7 @@ Commands
 	* Check for integrity -> "check"
 	* Restore the last backup/snapshot -> "fix".
 
-	Take care that the commands have be written in lower case.
+	Take care that the commands have to be written in lower case.
 
   sync
 	Updates the redundancy information. All the modified files
@@ -202,7 +202,7 @@ Commands
   fix
 	Checks and fix all the files. It's like "check" but it
 	also tries to fix problems reverting the state of the
-	disk array at the previous "sync" command.
+	disk array to the previous "sync" command.
 
 	After a successful "fix", you should also run a "sync"
 	command to update the new state of the files.
@@ -234,17 +234,17 @@ Options
 		When syncing finds the files by name instead than by inode.
 		This option allows a fast sync command after having replaced
 		one physical disk with another copying manually the files.
-		Without this option the 'sync' command would recognize that
-		the files were copied to a different disk, and will resync
-		them all. Instead, with this option a file with the correct
-		name, size and time will be assumed identical at the previous
+		Without this option the 'sync' command recognizes that
+		the files were copied to a different disk, and it will resync
+		them all. Instead, with this option, a file with the correct
+		name, size and time is assumed identical at the previous
 		one.
 		This option has effect only on the 'sync' and 'diff' commands.
 
 	-Z, --force-zero
 		Forces the insecure operation of syncing a file with zero
 		size that before was not.
-		If SnapRAID detects such condition, it stops proceeding
+		If SnapRAID detects a such condition, it stops proceeding
 		unless you specify this option.
 		This allows to easily detect when after a system crash,
 		some accessed files were zeroed.
@@ -342,9 +342,10 @@ Configuration
 	All the patterns are processed in the specified order.
 
 	If the first pattern that matches is an "exclude" one, the file
-	is excluded. If it's an "include" one the file is included.
+	is excluded. If it's an "include" one, the file is included.
 	If no pattern matches, the file is excluded if the last pattern
-	is an "include", or included if the last pattern is an "exclude".
+	specified is an "include", or included if the last pattern
+	specified is an "exclude".
 
 	See the PATTERN section for more details in the pattern
 	specifications.
@@ -493,8 +494,8 @@ Recovering
 	Then proceed with the following steps.
 
     STEP 1 -> Reconfigure
-	You need some space to recover, even better if you have already an additional
-	disk, but in case also an external USB or remote one is enough.
+	You need some space to recover, even better if you already have an additional
+	disk, but in case, also an external USB or remote one is enough.
     
 	Change the SnapRAID configuration and change the 'disk' directory
 	of the failed disk to point to the new empty space.
@@ -509,7 +510,7 @@ Recovering
 	Take care that you need also few GB free to store the fix.log file, so run it
 	from a disk with some free space.
 
-	Now you have recovered all the recoverable. If some file is partly or totally
+	Now you have recovered all the recoverable. If some file is partially or totally
 	unrecoverable, it will be renamed adding the ".unrecoverable" extension.
 
 	You can get a detailed list of all the unrecoverable blocks in the fix.log file
@@ -534,8 +535,8 @@ Recovering
     STEP 4 -> Sync
 	Run the 'sync' command to resyncronize the array with the new disk.
 
-	To avoid a long time sync you have to use the '--find-by-name' option to
-	tell SnapRAID to ignore the fact that all the recovered files are now in
+	To avoid a long time sync you can use the '--find-by-name' option to
+	force SnapRAID to ignore the fact that all the recovered files are now in
 	a different physical disk, and they don't need to be synched.
 
 		:snapraid --find-by-name sync
@@ -618,7 +619,7 @@ Parity
 	at the end.
 
 Encoding
-	SnapRAID in Unix ignores any encoding. It simply read and stores the
+	SnapRAID in Unix ignores any encoding. It simply reads and stores the
 	file names with the same encoding used by the filesystem.
 
 	In Windows all the names read from the filesystem are converted and
@@ -626,7 +627,7 @@ Encoding
 
 	To have the file names printed correctly you have to set the Windows
 	console in the UTF-8 mode, with the command "chcp 65001", and use
-	a TrueType font like "Lucida Console" for the console font.
+	a TrueType font like "Lucida Console" as console font.
 	Note that it has effect only on the printed file names, if you
 	redirect the console output to a file, the resulting file is always
 	in the UTF-8 format.

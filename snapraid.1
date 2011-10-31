@@ -109,9 +109,9 @@ Only file data, time and symlinks are saved. Permissions,
 extended attributes and hard\(hylinks are not saved.
 .PD
 .SH GETTING STARTED 
-To use SnapRAID you need first select one disk of your disk array
-to dedicate at the \(a"parity\(a" information. With parity you will be able
-to recover from a single disk failure, like RAID5.
+To use SnapRAID you need to first select one disk of your disk array
+to dedicate at the \(a"parity\(a" information. With one disk for parity you
+will be able to recover from a single disk failure, like RAID5.
 .PP
 If you want to recover from two disk failures, like RAID6, you must
 reserve another disk for the \(a"q\(hyparity\(a" information.
@@ -129,8 +129,8 @@ stored in the data, parity or boot disks.
 These files contain the details of your backup with all the
 checksums to verify its integrity.
 The \(a"content\(a" file is stored in multiple copies, each one in a
-different disks, to ensure that in even in case of a multiple disk
-failure at least one copy is available.
+different disk, to ensure that in even in case of multiple disk
+failures at least one copy is available.
 .PP
 For example, suppose that you are interested only at one parity level
 of protection, and that your disks are present in:
@@ -283,7 +283,7 @@ Check for integrity \(hy> \(a"check\(a"
 Restore the last backup/snapshot \(hy> \(a"fix\(a".
 .PD
 .PP
-Take care that the commands have be written in lower case.
+Take care that the commands have to be written in lower case.
 .SS sync 
 Updates the redundancy information. All the modified files
 in the disk array are read, and the redundancy data is
@@ -313,7 +313,7 @@ Nothing is modified.
 .SS fix 
 Checks and fix all the files. It\(cqs like \(a"check\(a" but it
 also tries to fix problems reverting the state of the
-disk array at the previous \(a"sync\(a" command.
+disk array to the previous \(a"sync\(a" command.
 .PP
 After a successful \(a"fix\(a", you should also run a \(a"sync\(a"
 command to update the new state of the files.
@@ -344,17 +344,17 @@ In Unix, ensure to quote globbing chars if used.
 When syncing finds the files by name instead than by inode.
 This option allows a fast sync command after having replaced
 one physical disk with another copying manually the files.
-Without this option the \(cqsync\(cq command would recognize that
-the files were copied to a different disk, and will resync
-them all. Instead, with this option a file with the correct
-name, size and time will be assumed identical at the previous
+Without this option the \(cqsync\(cq command recognizes that
+the files were copied to a different disk, and it will resync
+them all. Instead, with this option, a file with the correct
+name, size and time is assumed identical at the previous
 one.
 This option has effect only on the \(cqsync\(cq and \(cqdiff\(cq commands.
 .TP
 .B \(hyZ, \(hy\(hyforce\(hyzero
 Forces the insecure operation of syncing a file with zero
 size that before was not.
-If SnapRAID detects such condition, it stops proceeding
+If SnapRAID detects a such condition, it stops proceeding
 unless you specify this option.
 This allows to easily detect when after a system crash,
 some accessed files were zeroed.
@@ -446,9 +446,10 @@ in the sync process.
 All the patterns are processed in the specified order.
 .PP
 If the first pattern that matches is an \(a"exclude\(a" one, the file
-is excluded. If it\(cqs an \(a"include\(a" one the file is included.
+is excluded. If it\(cqs an \(a"include\(a" one, the file is included.
 If no pattern matches, the file is excluded if the last pattern
-is an \(a"include\(a", or included if the last pattern is an \(a"exclude\(a".
+specified is an \(a"include\(a", or included if the last pattern
+specified is an \(a"exclude\(a".
 .PP
 See the PATTERN section for more details in the pattern
 specifications.
@@ -727,8 +728,8 @@ scheduled SnapRAID nightly sync.
 .PP
 Then proceed with the following steps.
 .SS STEP 1 \(hy> Reconfigure 
-You need some space to recover, even better if you have already an additional
-disk, but in case also an external USB or remote one is enough.
+You need some space to recover, even better if you already have an additional
+disk, but in case, also an external USB or remote one is enough.
 .PP
 Change the SnapRAID configuration and change the \(cqdisk\(cq directory
 of the failed disk to point to the new empty space.
@@ -747,7 +748,7 @@ This command will take a long time.
 Take care that you need also few GB free to store the fix.log file, so run it
 from a disk with some free space.
 .PP
-Now you have recovered all the recoverable. If some file is partly or totally
+Now you have recovered all the recoverable. If some file is partially or totally
 unrecoverable, it will be renamed adding the \(a".unrecoverable\(a" extension.
 .PP
 You can get a detailed list of all the unrecoverable blocks in the fix.log file
@@ -775,8 +776,8 @@ This command will take a long time.
 .SS STEP 4 \(hy> Sync 
 Run the \(cqsync\(cq command to resyncronize the array with the new disk.
 .PP
-To avoid a long time sync you have to use the \(cq\(hy\(hyfind\(hyby\(hyname\(cq option to
-tell SnapRAID to ignore the fact that all the recovered files are now in
+To avoid a long time sync you can use the \(cq\(hy\(hyfind\(hyby\(hyname\(cq option to
+force SnapRAID to ignore the fact that all the recovered files are now in
 a different physical disk, and they don\(cqt need to be synched.
 .PP
 .RS 4
@@ -860,7 +861,7 @@ When a file block is shorter than the default block size, for example
 because it\(cqs the last block of a file, it\(cqs assumed as filled with 0
 at the end.
 .SH ENCODING 
-SnapRAID in Unix ignores any encoding. It simply read and stores the
+SnapRAID in Unix ignores any encoding. It simply reads and stores the
 file names with the same encoding used by the filesystem.
 .PP
 In Windows all the names read from the filesystem are converted and
@@ -868,7 +869,7 @@ processed in the UTF\(hy8 format.
 .PP
 To have the file names printed correctly you have to set the Windows
 console in the UTF\(hy8 mode, with the command \(a"chcp 65001\(a", and use
-a TrueType font like \(a"Lucida Console\(a" for the console font.
+a TrueType font like \(a"Lucida Console\(a" as console font.
 Note that it has effect only on the printed file names, if you
 redirect the console output to a file, the resulting file is always
 in the UTF\(hy8 format.
