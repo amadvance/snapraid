@@ -519,11 +519,19 @@ Recovering
 	For example, if you have moved away some files from other disks after the last 'sync',
 	you can retry to put them inplace, and retry the 'fix'.
 
-	If you are satisfied of the recovering, you can now proceed synching the array,
+	If you are satisfied of the recovering, you can now proceed further,
 	but take care that after synching you will no more able to retry the
 	'fix' command!
 
-    STEP 3 -> Sync
+    STEP 3 -> Check
+	As paranoid check, you can now run a whole 'check' command to ensure that
+	everything is OK.
+
+		:snapraid check
+
+	This command will take a long time.
+
+    STEP 4 -> Sync
 	Run the 'sync' command to resyncronize the array with the new disk.
 
 	To avoid a long time sync you have to use the '--find-by-name' option to
@@ -533,14 +541,6 @@ Recovering
 		:snapraid --find-by-name sync
 
 	If everything was recovered, this command is immediate.
-
-    STEP 4 -> Check
-	As paranoid check, you can now run a whole 'check' command to ensure that
-	everything is OK.
-
-		:snapraid check
-
-	This command will take a long time.
 
 Content
 	SnapRAID stores the list and checksums of your files in the content file.

@@ -757,10 +757,22 @@ If you are not satified of the recovering, you can retry it as many time you wis
 For example, if you have moved away some files from other disks after the last \(cqsync\(cq,
 you can retry to put them inplace, and retry the \(cqfix\(cq.
 .PP
-If you are satisfied of the recovering, you can now proceed synching the array,
+If you are satisfied of the recovering, you can now proceed further,
 but take care that after synching you will no more able to retry the
 \(cqfix\(cq command!
-.SS STEP 3 \(hy> Sync 
+.SS STEP 3 \(hy> Check 
+As paranoid check, you can now run a whole \(cqcheck\(cq command to ensure that
+everything is OK.
+.PP
+.RS 4
+snapraid check
+.PD 0
+.PP
+.PD
+.RE
+.PP
+This command will take a long time.
+.SS STEP 4 \(hy> Sync 
 Run the \(cqsync\(cq command to resyncronize the array with the new disk.
 .PP
 To avoid a long time sync you have to use the \(cq\(hy\(hyfind\(hyby\(hyname\(cq option to
@@ -775,18 +787,6 @@ snapraid \(hy\(hyfind\(hyby\(hyname sync
 .RE
 .PP
 If everything was recovered, this command is immediate.
-.SS STEP 4 \(hy> Check 
-As paranoid check, you can now run a whole \(cqcheck\(cq command to ensure that
-everything is OK.
-.PP
-.RS 4
-snapraid check
-.PD 0
-.PP
-.PD
-.RE
-.PP
-This command will take a long time.
 .SH CONTENT 
 SnapRAID stores the list and checksums of your files in the content file.
 .PP

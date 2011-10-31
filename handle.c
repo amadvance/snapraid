@@ -269,6 +269,12 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 	/* In Linux 2.6.33 it's enough to ensure that data is not kept in the cache. */
 	/* Better to do nothing and save a syscall for each block. */
 
+	/* Here we cannot call posix_fadvise(..., POSIX_FADV_WILLNEED) for the next block */
+	/* because it may be blocking */
+	/* See Ted Ts'o comment in "posix_fadvise(POSIX_FADV_WILLNEED) waits before returning?" */
+	/* at: https://lkml.org/lkml/2010/12/6/122 */
+	/* We relay only on the automatic readahead triggered by POSIX_FADV_SEQUENTIAL. */
+
 	return read_size;
 }
 

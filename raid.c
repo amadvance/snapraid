@@ -221,7 +221,7 @@ void raid6_mmxr2(unsigned char** buffer, unsigned diskmax, unsigned size)
 	q = buffer[z0+2]; /* RS qarity */
 
 	asm volatile("movq %0,%%mm0" : : "m" (raid6_mmx_constants.x1d));
-	asm volatile("pxor %mm5,%mm5");	/* Zero temp */
+	asm volatile("pxor %mm5,%mm5"); /* Zero temp */
 	asm volatile("pxor %mm7,%mm7"); /* Zero temp */
 
 	for(d=0;d<size;d+=16) {

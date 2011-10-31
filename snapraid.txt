@@ -569,11 +569,19 @@ If you are not satified of the recovering, you can retry it as many time you wis
 For example, if you have moved away some files from other disks after the last 'sync',
 you can retry to put them inplace, and retry the 'fix'.
 
-If you are satisfied of the recovering, you can now proceed synching the array,
+If you are satisfied of the recovering, you can now proceed further,
 but take care that after synching you will no more able to retry the
 'fix' command!
 
----- 9.0.3 STEP 3 -> Sync ----
+---- 9.0.3 STEP 3 -> Check ----
+As paranoid check, you can now run a whole 'check' command to ensure that
+everything is OK.
+
+    snapraid check
+
+This command will take a long time.
+
+---- 9.0.4 STEP 4 -> Sync ----
 Run the 'sync' command to resyncronize the array with the new disk.
 
 To avoid a long time sync you have to use the '--find-by-name' option to
@@ -583,14 +591,6 @@ a different physical disk, and they don't need to be synched.
     snapraid --find-by-name sync
 
 If everything was recovered, this command is immediate.
-
----- 9.0.4 STEP 4 -> Check ----
-As paranoid check, you can now run a whole 'check' command to ensure that
-everything is OK.
-
-    snapraid check
-
-This command will take a long time.
 
 
 10 CONTENT
