@@ -1,7 +1,7 @@
 SnapRAID HISTORY
 ================
 
-1.7 2011/10
+1.7 2011/11
 ===========
 * If a file is modified or removed during a sync, the sync process doesn't
   stop anymore, but it will simply skip the file, resulting in an incomplete
