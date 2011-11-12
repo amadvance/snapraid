@@ -16,7 +16,8 @@ SnapRAID HISTORY
 * Removed the dependency of the 'disk' order specification in the configuration
   file. The used order is now saved in the content file to avoid to damage the
   dual parity in case the order is changed by the user.
-  It also allows to remove or add disks from the array when using a dual parity.
+  It easily allows to remove or add disks from the array when using a
+  dual parity.
 * Improved the 'fix' performance when a lot of files or the parity have to be
   recreated from scratch.
 * When getting unrecoverable errors, the printed log line now starts with
