@@ -179,13 +179,13 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
 	echo --- Add some files, sync with abort, delete the new files, sync and check
-	cp -a test/disk1/_a test/disk1/_A
-	cp -a test/disk2/_a test/disk2/_A
-	cp -a test/disk3/_a test/disk3/_A
+	cp -a test/disk1/_a test/disk1/_c
+	cp -a test/disk2/_a test/disk2/_c
+	cp -a test/disk3/_a test/disk3/_c
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --test-kill-after-sync -v -c $(srcdir)/test-raid6.conf sync
-	rm -r test/disk1/_A
-	rm -r test/disk2/_A
-	rm -r test/disk3/_A
+	rm -r test/disk1/_c
+	rm -r test/disk2/_c
+	rm -r test/disk3/_c
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
 	echo --- Delete some files, fix and check with raid5
