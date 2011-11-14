@@ -28,7 +28,7 @@ struct snapraid_content* content_alloc(const char* path, uint64_t dev)
 	struct snapraid_content* content;
 
 	content = malloc_nofail(sizeof(struct snapraid_content));
-	pathcpy(content->content, sizeof(content->content), path);
+	pathimport(content->content, sizeof(content->content), path);
 	content->device = dev;
 
 	return content;
