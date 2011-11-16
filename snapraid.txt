@@ -232,7 +232,7 @@ After a successful "fix", you should also run a "sync"
 command to update the new state of the files.
 
 All the files that cannot be fixed are renamed adding
-the '.unrecoverable' extension.
+the ".unrecoverable" extension.
 
 The "content" file is NOT modified.
 The "parity" and "q-parity" files are modified if necessary.
@@ -246,7 +246,7 @@ SnapRAID provides the following options:
 
     -c, --conf CONFIG
         Selects the configuration file. If not specified it's assumed
-        the file '/etc/snapraid.conf' in Unix, and 'snapraid.conf' in
+        the file "/etc/snapraid.conf" in Unix, and "snapraid.conf" in
         the current directory in Windows.
 
     -f, --filter PATTERN
@@ -260,13 +260,13 @@ SnapRAID provides the following options:
     -N, --find-by-name
         When syncing finds the files by name instead than by inode.
         This option allows a fast sync command after having replaced
-        one physical disk with another copying manually the files.
-        Without this option the 'sync' command recognizes that
+        one physical disk with another, copying manually the files.
+        Without this option the "sync" command recognizes that
         the files were copied to a different disk, and it will resync
         them all. Instead, with this option, a file with the correct
         name, size and time is assumed identical at the previous
         one.
-        This option has effect only on the 'sync' and 'diff' commands.
+        This option has effect only on the "sync" and "diff" commands.
 
     -Z, --force-zero
         Forces the insecure operation of syncing a file with zero
@@ -538,7 +538,7 @@ The worst happened, and you lost a disk!
 DO NOT PANIC! You will be able to recover it!
 
 The first thing you have to do is to avoid futher changes at you disk array.
-Disable any remote connections to it, any scheduled processes, including any
+Disable any remote connection to it, any scheduled process, including any
 scheduled SnapRAID nightly sync.
 
 Then proceed with the following steps.
@@ -547,7 +547,7 @@ Then proceed with the following steps.
 You need some space to recover, even better if you already have an additional
 disk, but in case, also an external USB or remote one is enough.
 
-Change the SnapRAID configuration and change the 'disk' directory
+Change the SnapRAID configuration and change the "disk" directory
 of the failed disk to point to the new empty space.
 
 ---- 9.0.2 STEP 2 -> Fix ----
@@ -567,15 +567,15 @@ You can get a detailed list of all the unrecoverable blocks in the fix.log file
 checking all the lines starting with "unrecoverable:"
 
 If you are not satified of the recovering, you can retry it as many time you wish.
-For example, if you have moved away some files from other disks after the last 'sync',
-you can retry to put them inplace, and retry the 'fix'.
+For example, if you have moved away some files from other disks after the last "sync",
+you can retry to put them inplace, and retry the "fix".
 
 If you are satisfied of the recovering, you can now proceed further,
 but take care that after synching you will no more able to retry the
-'fix' command!
+"fix" command!
 
 ---- 9.0.3 STEP 3 -> Check ----
-As paranoid check, you can now run a whole 'check' command to ensure that
+As paranoid check, you can now run a whole "check" command to ensure that
 everything is OK.
 
     snapraid check
@@ -583,11 +583,11 @@ everything is OK.
 This command will take a long time.
 
 ---- 9.0.4 STEP 4 -> Sync ----
-Run the 'sync' command to resyncronize the array with the new disk.
+Run the "sync" command to resyncronize the array with the new disk.
 
-To avoid a long time sync you can use the '--find-by-name' option to
+To avoid a long time sync you can use the "--find-by-name" option to
 force SnapRAID to ignore the fact that all the recovered files are now in
-a different physical disk, and they don't need to be synched.
+a different physical disk, but they are not changed.
 
     snapraid --find-by-name sync
 
