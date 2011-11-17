@@ -231,14 +231,14 @@ Options
 		In Unix, ensure to quote globbing chars if used.
 
 	-N, --find-by-name
-		When syncing finds the files by name instead than by inode.
+		When syncing finds the files by path instead than by inode.
 		This option allows a fast sync command after having replaced
 		one physical disk with another, copying manually the files.
 		Without this option the "sync" command recognizes that
 		the files were copied to a different disk, and it will resync
-		them all. Instead, with this option, a file with the correct
-		name, size and time is assumed identical at the previous
-		one.
+		them all. With this option, a file with the correct path,
+		size and time is assumed identical at the previous one,
+		and not resynched.
 		This option has effect only on the "sync" and "diff" commands.
 
 	-Z, --force-zero
