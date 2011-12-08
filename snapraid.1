@@ -121,16 +121,15 @@ as the redundancy information may grow in size as the biggest data
 disk in the array.
 .PP
 These disks will be dedicated to store the \(a"parity\(a" and \(a"q\(hyparity\(a"
-files. You should not store other data in them, with the only
-possible exception of the \(a"content\(a" files.
+files. You should not store your data in them.
 .PP
-The list of files is stored in the \(a"content\(a" files, usually
+The list of files is saved in the \(a"content\(a" files, usually
 stored in the data, parity or boot disks.
-These files contain the details of your backup with all the
+These files contain the details of your backup, with all the
 checksums to verify its integrity.
-The \(a"content\(a" file is stored in multiple copies, each one in a
-different disk, to ensure that in even in case of multiple disk
-failures at least one copy is available.
+The \(a"content\(a" file is stored in multiple copies, and each one must
+be in a different disk, to ensure that in even in case of multiple
+disk failures at least one copy is available.
 .PP
 For example, suppose that you are interested only at one parity level
 of protection, and that your disks are present in:
@@ -162,11 +161,15 @@ parity /mnt/diskpar/parity
 .PD 0
 .PP
 .PD
-content /mnt/diskpar/content
+content /var/snapraid/content
 .PD 0
 .PP
 .PD
-content /var/snapraid/content
+content /mnt/disk1/content
+.PD 0
+.PP
+.PD
+content /mnt/disk2/content
 .PD 0
 .PP
 .PD
@@ -192,11 +195,15 @@ parity E:\(rspar\(rsparity
 .PD 0
 .PP
 .PD
-content E:\(rspar\(rscontent
+content C:\(rssnapraid\(rscontent
 .PD 0
 .PP
 .PD
-content C:\(rssnapraid\(rscontent
+content F:\(rsarray\(rscontent
+.PD 0
+.PP
+.PD
+content G:\(rsarray\(rscontent
 .PD 0
 .PP
 .PD

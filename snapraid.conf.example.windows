@@ -17,9 +17,9 @@ parity E:\par\parity
 # They can be in the disks used for data, parity or boot,
 # but each file must be in a different disk
 # Format: "content FILE_PATH"
-content E:\par\content
-#content F:\qar\content
 content C:\snapraid\content
+content G:\array\content
+content H:\array\content
 
 # Defines the data disks to use
 # The order is relevant for parity, do not change it

@@ -10,7 +10,7 @@ When you have to check for correctness the application typing:
 
     make check
 
-If if terminates with "Success", you can install the application and
+If it terminates with "Success", you can install the application and
 the documentation running as root:
 
     sudo make install

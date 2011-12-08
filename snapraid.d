@@ -84,16 +84,15 @@ Getting Started
 	disk in the array.
 
 	These disks will be dedicated to store the "parity" and "q-parity"
-	files. You should not store other data in them, with the only
-	possible exception of the "content" files.
+	files. You should not store your data in them.
 
-	The list of files is stored in the "content" files, usually
+	The list of files is saved in the "content" files, usually
 	stored in the data, parity or boot disks.
-	These files contain the details of your backup with all the
+	These files contain the details of your backup, with all the
 	checksums to verify its integrity.
-	The "content" file is stored in multiple copies, each one in a
-	different disk, to ensure that in even in case of multiple disk
-	failures at least one copy is available.
+	The "content" file is stored in multiple copies, and each one must
+	be in a different disk, to ensure that in even in case of multiple
+	disk failures at least one copy is available.
 
 	For example, suppose that you are interested only at one parity level
 	of protection, and that your disks are present in:
@@ -107,8 +106,9 @@ Getting Started
 	the following options:
 
 		:parity /mnt/diskpar/parity
-		:content /mnt/diskpar/content
 		:content /var/snapraid/content
+		:content /mnt/disk1/content
+		:content /mnt/disk2/content
 		:disk d1 /mnt/disk1/
 		:disk d2 /mnt/disk2/
 		:disk d3 /mnt/disk3/
@@ -117,8 +117,9 @@ Getting Started
 	instead of slashes:
 
 		:parity E:\par\parity
-		:content E:\par\content
 		:content C:\snapraid\content
+		:content F:\array\content
+		:content G:\array\content
 		:disk d1 F:\array\
 		:disk d2 G:\array\
 		:disk d3 H:\array\

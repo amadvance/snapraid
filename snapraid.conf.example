@@ -17,9 +17,9 @@ parity /mnt/diskpar/parity
 # They can be in the disks used for data, parity or boot,
 # but each file must be in a different disk
 # Format: "content FILE_PATH"
-content /mnt/diskpar/content
-#content /mnt/diskqar/content
 content /var/snapraid/content
+content /mnt/disk1/content
+content /mnt/disk2/content
 
 # Defines the data disks to use
 # The order is relevant for parity, do not change it

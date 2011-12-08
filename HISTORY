@@ -1,6 +1,11 @@
 SnapRAID HISTORY
 ================
 
+1.8 2011/12
+===========
+ * The example configuration files now put the content files in the data
+   disks instead than in the parity disks.
+
 1.7 2011/11
 ===========
 * If a file is modified or removed during a sync, the sync process doesn't
