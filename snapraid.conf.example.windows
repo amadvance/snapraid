@@ -28,6 +28,9 @@ disk d1 G:\array\
 disk d2 H:\array\
 disk d3 I:\array\
 
+# Excludes hidden files and directories (uncomment to enable).
+# nohidden
+
 # Defines files and directories to exclude
 # Remember that all the paths are relative at the mount points
 # Format: "exclude FILE"

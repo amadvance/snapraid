@@ -2,7 +2,7 @@ Name{number}
 	snapraid - SnapRAID Backup For Disk Arrays
 
 Synopsis
-	:snapraid [-c, --conf CONFIG] [-f, --filter PATTERN]
+	:snapraid [-c, --conf CONFIG] [-f, --filter PATTERN] [-H, --filter-nohidden]
 	:	[-N, --find-by-name]
 	:	[-Z, --force-zero] [-E, --force-empty]
 	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
@@ -237,6 +237,11 @@ Options
 		This option can be used many times.
 		In Unix, ensure to quote globbing chars if used.
 
+	-H, --filter-nohidden
+		Filter out hidden files and directory. In Unix hidden files are
+		the ones starting with '.'. In Windows they are the ones with the
+		hidden attribute.
+
 	-N, --find-by-name
 		When syncing finds the files by path instead than by inode.
 		This option allows a fast sync command after having replaced
@@ -342,6 +347,10 @@ Configuration
 	keep the NAME fixed.
 
 	You should use one option for each disk of the array.
+
+  nohidden
+	Excludes all the hidden files and directory, like the
+	--filter-nohidden option.
 
   exclude/include PATTERN
 	Defines the file or directory patterns to exclude and include

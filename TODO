@@ -19,20 +19,15 @@ with an atomic rename operation.
 
 * Recheck the 2nd issue reported at: https://sourceforge.net/projects/snapraid/forums/forum/1677233/topic/4747897
 
-* If a directory exist with the same name of a parity/content file be more explicative
+* If a directory exists with the same name of a parity/content file be more explicative
 on the error message. See: https://sourceforge.net/projects/snapraid/forums/forum/1677233/topic/4861034
 Also adding an estension to these files in the configuration file for Windows may help to understand
 that they are files and not directories.
-
-* Put the content files in the data disks in the default configuration file.
 
 * Easy way to find files using a specified block.
 
 * Adds a checksum for the content file. When reading if the file is invalid,
 skip to another.
-
-* Add an option to exclude "hidden" file. In Windows files with the HIDDEN attributes,
-in Unix files starting with '.'.
 
 - v1.9
 

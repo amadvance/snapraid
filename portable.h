@@ -110,13 +110,20 @@
 #define SWITCH_GETOPT_LONG(a,b) b
 #endif
 
-#ifndef __MINGW32__ /* Specific for Unix */
-#define O_BINARY 0
-#define O_SEQUENTIAL 0
-#endif
-
 #ifdef __MINGW32__ /* Specific for MingW */
 #include "mingw.h"
+#else /* Specific for Unix */
+#define O_BINARY 0 /**< Not used in Unix. */
+#define O_SEQUENTIAL 0 /**< In Unix posix_fadvise() shall be used. */
+
+/**
+ * Check if the specified file is hidden.
+ */
+static inline int ishidden(struct dirent* dd, struct stat* st)
+{
+	(void)st;
+	return dd->d_name[0] == '.';
+}
 #endif
 
 #endif

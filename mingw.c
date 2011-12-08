@@ -83,8 +83,6 @@ static char* u16tou8(const wchar_t* src)
 static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, struct windows_stat* st)
 {
 	/* Convert special attributes to a char device */
-	/* Note that the FILE_ATTRIBUTE_HIDDEN attribute is intentionally ignored as */
-	/* hidden files should be backuped like any other */
 	if ((info->dwFileAttributes & FILE_ATTRIBUTE_DEVICE) != 0) {
 		st->st_mode = S_IFBLK;
 	} else if ((info->dwFileAttributes & (
@@ -99,6 +97,9 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, struct win
 	} else {
 		st->st_mode = S_IFREG;
 	}
+
+	/* Store the HIDDEN attribute in a separate field */
+	st->st_ishidden = (info->dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0;
 
 	st->st_size = info->nFileSizeHigh;
 	st->st_size <<= 32;
@@ -131,15 +132,13 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, struct win
 static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_stat* st)
 {
 	/* Convert special attributes */
-	/* Note that the FILE_ATTRIBUTE_HIDDEN attribute is intentionally ignored as */
-	/* hidden files should be backuped like any other */
 	if ((info->dwFileAttributes & FILE_ATTRIBUTE_DEVICE) != 0) {
 		st->st_mode = S_IFBLK;
 	} else if ((info->dwFileAttributes & (
 			FILE_ATTRIBUTE_SYSTEM /* System files */
 			| FILE_ATTRIBUTE_TEMPORARY /* Files going to be deleted on close */
 			| FILE_ATTRIBUTE_OFFLINE
-			| FILE_ATTRIBUTE_REPARSE_POINT /* Symbolic links */
+			| FILE_ATTRIBUTE_REPARSE_POINT /* Symbolic links, not supported so return a character file */
 			)) != 0) {
 		st->st_mode = S_IFCHR;
 	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
@@ -147,6 +146,9 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 	} else {
 		st->st_mode = S_IFREG;
 	}
+
+	/* Store the HIDDEN attribute in a separate field */
+	st->st_ishidden = (info->dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0;
 
 	st->st_size = info->nFileSizeHigh;
 	st->st_size <<= 32;
@@ -533,6 +535,12 @@ int windows_closedir(windows_dir* dirstream)
 	free(dirstream);
 
 	return 0;
+}
+
+int windows_ishidden(struct dirent* dd, struct windows_stat* st)
+{
+	(void)dd;
+	return st->st_ishidden;
 }
 
 #endif

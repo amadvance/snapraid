@@ -27,6 +27,7 @@ void state_init(struct snapraid_state* state)
 	state->gui = 0;
 	state->force_zero = 0;
 	state->force_empty = 0;
+	state->filter_hidden = 0;
 	state->find_by_name = 0;
 	state->expect_unrecoverable = 0;
 	state->expect_recoverable = 0;
@@ -130,7 +131,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 	}
 }
 
-void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_device)
+void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int filter_hidden, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_device)
 {
 	STREAM* f;
 	unsigned line;
@@ -139,6 +140,7 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 	state->gui = gui;
 	state->force_zero = force_zero;
 	state->force_empty = force_empty;
+	state->filter_hidden = filter_hidden;
 	state->find_by_name = find_by_name;
 	state->expect_unrecoverable = expect_unrecoverable;
 	state->expect_recoverable = expect_recoverable;
@@ -323,6 +325,8 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 			disk = disk_alloc(buffer, dir, st.st_dev);
 
 			tommy_list_insert_tail(&state->disklist, &disk->node, disk);
+		} else if (strcmp(tag, "nohidden") == 0) {
+			state->filter_hidden = 1;
 		} else if (strcmp(tag, "exclude") == 0) {
 			struct snapraid_filter* filter;
 

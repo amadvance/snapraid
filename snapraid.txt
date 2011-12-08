@@ -6,7 +6,7 @@
 1 SYNOPSIS
 ==========
 
-snapraid [-c, --conf CONFIG] [-f, --filter PATTERN]
+snapraid [-c, --conf CONFIG] [-f, --filter PATTERN] [-H, --filter-nohidden]
 	[-N, --find-by-name]
 	[-Z, --force-zero] [-E, --force-empty]
 	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
@@ -266,6 +266,11 @@ SnapRAID provides the following options:
         This option can be used many times.
         In Unix, ensure to quote globbing chars if used.
 
+    -H, --filter-nohidden
+        Filter out hidden files and directory. In Unix hidden files are
+        the ones starting with '.'. In Windows they are the ones with the
+        hidden attribute.
+
     -N, --find-by-name
         When syncing finds the files by path instead than by inode.
         This option allows a fast sync command after having replaced
@@ -383,7 +388,13 @@ keep the NAME fixed.
 
 You should use one option for each disk of the array.
 
-7.5 exclude/include PATTERN
+7.5 nohidden
+------------
+
+Excludes all the hidden files and directory, like the
+--filter-nohidden option.
+
+7.6 exclude/include PATTERN
 ---------------------------
 
 Defines the file or directory patterns to exclude and include
@@ -401,7 +412,7 @@ specifications.
 
 This option can be used many times.
 
-7.6 block_size SIZE_IN_KIBIBYTES
+7.7 block_size SIZE_IN_KIBIBYTES
 --------------------------------
 
 Defines the basic block size in kibi bytes of the redundancy
@@ -432,7 +443,7 @@ wasted for each file.
 For example, with 10000 files and a 256 KiB block size, you are
 going to waste 1.2 GiB.
 
-7.7 Examples
+7.8 Examples
 ------------
 
 An example of a typical configuration for Unix is:

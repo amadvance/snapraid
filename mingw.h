@@ -51,6 +51,8 @@
 #define closedir windows_closedir
 #define futimes windows_futimes
 #define O_NOFOLLOW 0
+#define ishidden windows_ishidden
+/* In Windows symbolic links are not supported */
 #define S_ISLNK(mode) 0
 #define readlink(a,b,c) -1
 #define symlink(a,b) -1
@@ -65,6 +67,7 @@ struct windows_stat {
 	uint32_t st_mode;
 	uint32_t st_nlink;
 	uint32_t st_dev;
+	int st_ishidden;
 };
 
 /**
@@ -162,6 +165,11 @@ struct windows_dirent* windows_readdir(windows_dir* dirstream);
  * Like the C closedir().
  */
 int windows_closedir(windows_dir* dirstream);
+
+/**
+ * Like ishidden().
+ */
+int windows_ishidden(struct dirent* dd, struct windows_stat* st);
 
 #endif
 #endif

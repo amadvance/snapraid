@@ -76,6 +76,7 @@ void usage(void)
 struct option long_options[] = {
 	{ "conf", 1, 0, 'c' },
 	{ "filter", 1, 0, 'f' },
+	{ "filter-nohidden", 0, 0, 'H' },
 	{ "start", 1, 0, 's' },
 	{ "count", 1, 0, 't' },
 	{ "force-zero", 0, 0, 'Z' },
@@ -96,7 +97,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:f:s:t:ZENTvhVG"
+#define OPTIONS "c:f:Hs:t:ZENTvhVG"
 
 volatile int global_interrupt = 0;
 
@@ -124,6 +125,7 @@ int main(int argc, char* argv[])
 	int force_zero;
 	int force_empty;
 	int find_by_name;
+	int filter_hidden;
 	int test_expect_unrecoverable;
 	int test_expect_recoverable;
 	int test_kill_after_sync;
@@ -145,6 +147,7 @@ int main(int argc, char* argv[])
 	force_zero = 0;
 	force_empty = 0;
 	find_by_name = 0;
+	filter_hidden = 0;
 	test_expect_unrecoverable = 0;
 	test_expect_recoverable = 0;
 	test_kill_after_sync = 0;
@@ -174,6 +177,9 @@ int main(int argc, char* argv[])
 			}
 			tommy_list_insert_tail(&filterlist, &filter->node, filter);
 			} break;
+		case 'H' :
+			filter_hidden = 1;
+			break;
 		case 's' :
 			blockstart = strtoul(optarg, &e, 0);
 			if (!e || *e) {
@@ -262,7 +268,7 @@ int main(int argc, char* argv[])
 
 	state_init(&state);
 
-	state_config(&state, conf, verbose, gui, force_zero, force_empty, find_by_name, test_expect_unrecoverable, test_expect_recoverable, test_skip_device);
+	state_config(&state, conf, verbose, gui, force_zero, force_empty, filter_hidden, find_by_name, test_expect_unrecoverable, test_expect_recoverable, test_skip_device);
 
 	if (operation == OPERATION_DIFF) {
 		state_read(&state);

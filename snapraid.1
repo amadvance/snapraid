@@ -2,7 +2,7 @@
 .SH NAME
 snapraid \(hy SnapRAID Backup For Disk Arrays
 .SH SYNOPSIS 
-snapraid [\(hyc, \(hy\(hyconf CONFIG] [\(hyf, \(hy\(hyfilter PATTERN]
+snapraid [\(hyc, \(hy\(hyconf CONFIG] [\(hyf, \(hy\(hyfilter PATTERN] [\(hyH, \(hy\(hyfilter\(hynohidden]
 .PD 0
 .PP
 .PD
@@ -352,6 +352,11 @@ pattern specifications.
 This option can be used many times.
 In Unix, ensure to quote globbing chars if used.
 .TP
+.B \(hyH, \(hy\(hyfilter\(hynohidden
+Filter out hidden files and directory. In Unix hidden files are
+the ones starting with \(cq.\(cq. In Windows they are the ones with the
+hidden attribute.
+.TP
 .B \(hyN, \(hy\(hyfind\(hyby\(hyname
 When syncing finds the files by path instead than by inode.
 This option allows a fast sync command after having replaced
@@ -452,6 +457,9 @@ You can change the mount point as you like, as long you
 keep the NAME fixed.
 .PP
 You should use one option for each disk of the array.
+.SS nohidden 
+Excludes all the hidden files and directory, like the
+\(hy\(hyfilter\(hynohidden option.
 .SS exclude/include PATTERN 
 Defines the file or directory patterns to exclude and include
 in the sync process.

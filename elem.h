@@ -167,22 +167,35 @@ struct snapraid_filter* filter_alloc(int is_include, const char* pattern);
 void filter_free(struct snapraid_filter* filter);
 
 /**
+ * Filter hidden files.
+ * Return !=0 if it matches and it should be excluded.
+ */
+static inline int filter_hidden(int enable, struct dirent* dd, struct stat* st)
+{
+	if (enable && ishidden(dd, st)) {
+		return 1; /* filter out */
+	}
+
+	return 0;
+}
+
+/**
  * Filters a path using a list of filters.
  * For each element of the path all the filters are applied, until the first one that matches.
- * Return !=0 if it matches.
+ * Return !=0 if it matches and it should be excluded.
  */
 int filter_path(tommy_list* filterlist, const char* sub);
 
 /**
  * Filters a dir using a list of filters.
  * For each element of the path all the filters are applied, until the first one that matches.
- * Return !=0 if it matches.
+ * Return !=0 if it matches and it should be excluded.
  */
 int filter_dir(tommy_list* filterlist, const char* sub);
 
 /**
  * Filters a path if it's a content file.
- * Return !=0 if it matches.
+ * Return !=0 if it matches and it should be excluded.
  */
 int filter_content(tommy_list* contentlist, const char* path);
 

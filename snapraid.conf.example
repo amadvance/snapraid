@@ -28,6 +28,9 @@ disk d1 /mnt/disk1/
 disk d2 /mnt/disk2/
 disk d3 /mnt/disk3/
 
+# Excludes hidden files and directories (uncomment to enable).
+# nohidden
+
 # Defines files and directories to exclude
 # Remember that all the paths are relative at the mount points
 # Format: "exclude FILE"
