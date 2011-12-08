@@ -49,6 +49,7 @@ void usage(void)
 	printf("Commands:\n");
 	printf("  sync   Syncronize the state of the array of disks\n");
 	printf("  diff   Show the changes that needs to be syncronized\n");
+	printf("  dup    Find duplicate files\n");
 	printf("  check  Check the array of disks\n");
 	printf("  fix    Fix the array of disks\n");
 	printf("\n");
@@ -113,6 +114,7 @@ void signal_handler(int signal)
 #define OPERATION_CHECK 2
 #define OPERATION_FIX 3
 #define OPERATION_DRY 4
+#define OPERATION_DUP 5
 
 int main(int argc, char* argv[])
 {
@@ -246,6 +248,8 @@ int main(int argc, char* argv[])
 		operation = OPERATION_FIX;
 	} else  if (strcmp(argv[optind], "dry") == 0) {
 		operation = OPERATION_DRY;
+	} else  if (strcmp(argv[optind], "dup") == 0) {
+		operation = OPERATION_DUP;
 	} else {
 		fprintf(stderr, "Unknown command '%s'\n", argv[optind]);
 		exit(EXIT_FAILURE);
@@ -312,6 +316,12 @@ int main(int argc, char* argv[])
 		signal(SIGINT, &signal_handler);
 
 		state_dry(&state, blockstart, blockcount);
+	} else if (operation == OPERATION_DUP) {
+		state_read(&state);
+
+		state_filter(&state, &filterlist);
+
+		state_dup(&state);
 	} else {
 		state_read(&state);
 

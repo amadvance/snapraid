@@ -7,7 +7,7 @@ Synopsis
 	:	[-Z, --force-zero] [-E, --force-empty]
 	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	:	[-v, --verbose]
-	:	sync|diff|check|fix
+	:	sync|diff|dup|check|fix
 
 	:snapraid [-V, --version] [-h, --help]
 
@@ -189,6 +189,12 @@ Commands
   diff
 	Lists all the files modified from the last "sync" command that
 	have to recompute their redundancy data.
+
+	Nothing is modified.
+
+  dup
+	Lists all the duplicate files. Two files are assumed equal if their hashes
+	are matching. The effective data is not read.
 
 	Nothing is modified.
 

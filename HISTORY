@@ -3,6 +3,7 @@ SnapRAID HISTORY
 
 1.8 2011/12
 ===========
+ * Added a new "dup" command to find all the duplicate files.
  * The example configuration files now put the content files in the data
    disks instead than in the parity disks.
 

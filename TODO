@@ -26,8 +26,6 @@ that they are files and not directories.
 
 * Put the content files in the data disks in the default configuration file.
 
-* Easy way to find duplicates using the computed hash.
-
 * Easy way to find files using a specified block.
 
 * Adds a checksum for the content file. When reading if the file is invalid,

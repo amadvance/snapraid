@@ -22,7 +22,7 @@ snapraid [\(hyc, \(hy\(hyconf CONFIG] [\(hyf, \(hy\(hyfilter PATTERN]
 .PD 0
 .PP
 .PD
-	sync|diff|check|fix
+	sync|diff|dup|check|fix
 .PD 0
 .PP
 .PD
@@ -308,6 +308,11 @@ The files in the array are NOT modified.
 .SS diff 
 Lists all the files modified from the last \(a"sync\(a" command that
 have to recompute their redundancy data.
+.PP
+Nothing is modified.
+.SS dup 
+Lists all the duplicate files. Two files are assumed equal if their hashes
+are matching. The effective data is not read.
 .PP
 Nothing is modified.
 .SS check 

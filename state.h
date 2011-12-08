@@ -94,9 +94,14 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, block_off_t blockcount);
 
 /**
- * Read the files.
+ * Dry the files.
  */
 void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t blockcount);
+
+/**
+ * Find duplicates.
+ */
+void state_dup(struct snapraid_state* state);
 
 /**
  * Filter files.

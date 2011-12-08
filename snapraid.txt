@@ -11,7 +11,7 @@ snapraid [-c, --conf CONFIG] [-f, --filter PATTERN]
 	[-Z, --force-zero] [-E, --force-empty]
 	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	[-v, --verbose]
-	sync|diff|check|fix
+	sync|diff|dup|check|fix
 
 snapraid [-V, --version] [-h, --help]
 
@@ -212,7 +212,15 @@ have to recompute their redundancy data.
 
 Nothing is modified.
 
-5.3 check
+5.3 dup
+-------
+
+Lists all the duplicate files. Two files are assumed equal if their hashes
+are matching. The effective data is not read.
+
+Nothing is modified.
+
+5.4 check
 ---------
 
 Checks all the files and the redundancy data.
@@ -222,7 +230,7 @@ in the previous "sync" command.
 Files are identified by path, and checked by content.
 Nothing is modified.
 
-5.4 fix
+5.5 fix
 -------
 
 Checks and fix all the files. It's like "check" but it

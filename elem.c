@@ -353,20 +353,10 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 
 void disk_free(struct snapraid_disk* disk)
 {
-	tommy_node* node = disk->filelist;
-	while (node) {
-		struct snapraid_file* file = node->data;
-		node = node->next;
-		file_free(file);
-	}
+	tommy_list_foreach(&disk->filelist, (tommy_foreach_func*)file_free);
 	tommy_hashdyn_done(&disk->inodeset);
 	tommy_hashdyn_done(&disk->pathset);
-	node = disk->linklist;
-	while (node) {
-		struct snapraid_link* link = node->data;
-		node = node->next;
-		link_free(link);
-	}
+	tommy_list_foreach(&disk->linklist, (tommy_foreach_func*)link_free);
 	tommy_hashdyn_done(&disk->linkset);
 	tommy_array_done(&disk->blockarr);
 	free(disk);

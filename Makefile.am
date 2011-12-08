@@ -11,6 +11,7 @@ snapraid_SOURCES = \
 	sync.c \
 	check.c \
 	dry.c \
+	dup.c \
 	parity.c \
 	handle.c \
 	fnmatch.c \
@@ -91,17 +92,20 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -h
 	echo --- As empty, sync and check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(srcdir)/test-raid6.conf diff
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(srcdir)/test-raid6.conf dup
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
 	echo --- Create some files, sync raid6 and check
 	$(TESTENV) ./mktest$(EXEEXT) generate 1 3 $(CHECKCOUNT) $(CHECKSIZE)
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf diff
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf dup
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
 	echo --- Create some more files, sync raid5 and check
 	$(TESTENV) ./mktest$(EXEEXT) generate 2 3 $(CHECKCOUNT) $(CHECKSIZE)
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid5.conf diff
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid5.conf dup
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid5.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf check
 	echo --- Extend raid5 to raid6 with fix and check
@@ -112,7 +116,7 @@ check-local:
 	echo --- Dry
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf dry
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf dry
-	echo --- Make a hole
+	echo --- Make a hole in the disk array
 	mv test/disk2 test/disk2.old
 	mkdir test/disk2
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --force-empty -c $(srcdir)/test-raid6.conf sync
@@ -125,7 +129,7 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6-hole.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6-hole.conf check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6-hole.conf dry
-	echo --- Fill the hole
+	echo --- Fill the hole with a new disk
 	rm -r test/disk2
 	mv test/disk2.old test/disk2
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
