@@ -10,13 +10,6 @@ This is the list of TODO items for SnapRAID.
 * In fix an existing symlink with the same name of a file to be recovered may stop
 the process making the create() operation to fail.
 
-* Check why saving the content files is so slow. fprintf() may be the bottleneck.
-
-* Save all the content files in parallel. We can use a single thread writing
-the same stuffs to all the file descriptors.
-This is still safe, as the written data is going to replace the old one
-with an atomic rename operation.
-
 * Recheck the 2nd issue reported at: https://sourceforge.net/projects/snapraid/forums/forum/1677233/topic/4747897
 
 * If a directory exists with the same name of a parity/content file be more explicative

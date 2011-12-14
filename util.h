@@ -34,18 +34,26 @@ char* strdechex(void* void_data, unsigned data_len, char* str);
 /****************************************************************************/
 /* stream */
 
-#define STREAM_SIZE (64*1024)
+#define STREAM_SIZE (64*1024) /**< Size of the buffer of the stream. */
 
-#define STREAM_OK 0
-#define STREAM_ERROR -1
-#define STREAM_EOF 1
+#define STREAM_STATE_READ 0 /**< The stream is in a normal state of read. */
+#define STREAM_STATE_WRITE 1 /**< The stream is in a normal state of write. */
+#define STREAM_STATE_ERROR -1 /**< An error was encoutered. */
+#define STREAM_STATE_EOF 2 /**< The end of file was encoutered. */
+
+struct stream_handle {
+	int f; /**< Handle of the file. */
+	char path[PATH_MAX]; /**< Path of the file. */
+};
 
 struct stream {
-	unsigned char* buffer;
-	unsigned char* pos;
-	unsigned char* end;
-	int state;
-	int f;
+	unsigned char* buffer; /**< Buffer of the stream. */
+	unsigned char* pos; /**< Current position in the buffer. */
+	unsigned char* end; /**< End position of the buffer. */
+	int state; /**< State of the stream. One of STREAM_STATE. */
+	int state_index; /**< Index of the handle causing a state change. */
+	unsigned handle_size; /**< Number of handles. */
+	struct stream_handle* handle; /**< Set of handles. */
 };
 
 /**
@@ -54,19 +62,42 @@ struct stream {
 typedef struct stream STREAM;
 
 /**
- * Open a stream for reading. Like fopen().
+ * Opens a stream for reading. Like fopen("r").
  */
 STREAM* sopen_read(const char* file);
 
 /**
- * Close a stream. Like fclose().
+ * Opens a stream for writing. Like fopen("w").
  */
-void sclose(STREAM* s);
+STREAM* sopen_write(const char* file);
 
 /**
- * Fill the stream buffer and read a char.
+ * Opens a set of streams for writing. Like fopen("w").
  */
-int sflow(STREAM* s);
+STREAM* sopen_multi_write(unsigned count);
+
+/**
+ * Specifies the file to open.
+ */
+int sopen_multi_file(STREAM* s, unsigned i, const char* file);
+
+/**
+ * Closes a stream. Like fclose().
+ */
+int sclose(STREAM* s);
+
+/**
+ * Fills the read stream buffer and read a char.
+ * \note Don't call this directly, but use sgetc().
+ * \return The char read, or EOF on error.
+ */
+int sfill(STREAM* s);
+
+/**
+ * Flushes the write stream buffer.
+ * \return 0 on success, or EOF on error.
+ */
+int sflush(STREAM* s);
 
 /**
  * Checks if the buffer has enough data loaded.
@@ -85,7 +116,7 @@ static inline unsigned char* sptrget(STREAM* s)
 }
 
 /**
- * Set the current stream ptr.
+ * Sets the current stream ptr.
  */
 static inline void sptrset(STREAM* s, unsigned char* ptr)
 {
@@ -93,17 +124,49 @@ static inline void sptrset(STREAM* s, unsigned char* ptr)
 }
 
 /**
- * Read a char. Like fgetc().
+ * Checks the error status. Like ferror().
+ */
+static inline int serror(STREAM* s)
+{
+	return s->state == STREAM_STATE_ERROR;
+}
+
+/**
+ * Gets the index of the handle that caused the error.
+ */
+static inline int serrorindex(STREAM* s)
+{
+	return s->state_index;
+}
+
+/**
+ * Gets the path of the handle that caused the error.
+ */
+static inline const char* serrorfile(STREAM* s)
+{
+	return s->handle[s->state_index].path;
+}
+
+/**
+ * Sync the stream. Like fsync().
+ */
+int ssync(STREAM* s);
+
+/****************************************************************************/
+/* get */
+
+/**
+ * Reads a char. Like fgetc().
  */
 static inline int sgetc(STREAM* s)
 {
 	if (s->pos == s->end)
-		return sflow(s);
+		return sfill(s);
 	return *s->pos++;
 }
 
 /**
- * Unread a char.
+ * Unreads a char.
  * Like ungetc() but you have to unget the same char read.
  */
 static inline void sungetc(int c, STREAM* s)
@@ -113,15 +176,7 @@ static inline void sungetc(int c, STREAM* s)
 }
 
 /**
- * Check the error status. Like ferror().
- */
-static inline int serror(STREAM* s)
-{
-	return s->state == STREAM_ERROR;
-}
-
-/**
- * Get a char from a stream, ignoring one '\r'.
+ * Gets a char from a stream, ignoring one '\r'.
  */
 static inline int sgeteol(STREAM* f)
 {
@@ -135,7 +190,7 @@ static inline int sgeteol(STREAM* f)
 }
 
 /**
- * Read all the spaces and tabs.
+ * Reads all the spaces and tabs.
  * Returns the number of spaces and tabs read.
  */
 static inline int sgetspace(STREAM* f)
@@ -154,15 +209,15 @@ static inline int sgetspace(STREAM* f)
 }
 
 /**
- * Read until the first space or tab.
+ * Reads until the first space or tab.
  * Stops at the first ' ', '\t', '\n' or EOF.
  * Returns <0 if the buffer is too small, or the number of chars read.
  */
 int sgettok(STREAM* f, char* str, int size);
 
 /**
- * Read until the end of line.
- * Stops at the first '\n' or EOF.
+ * Reads until the end of line.
+ * Stops at the first '\n' or EOF. Note that '\n' is left in the stream.
  * Returns <0 if the buffer is too small, or the number of chars read.
  */
 int sgetline(STREAM* f, char* str, int size);
@@ -173,24 +228,78 @@ int sgetline(STREAM* f, char* str, int size);
 int sgetlasttok(STREAM* f, char* str, int size);
 
 /**
- * Read a 32 bit number.
+ * Reads a 32 bit number.
  * Stops at the first not digit char or EOF.
  * Returns <0 if there isn't enough to read.
  */
 int sgetu32(STREAM* f, uint32_t* value);
 
 /**
- * Read a 64 bit number.
+ * Reads a 64 bit number.
  * Stops at the first not digit char.
  * Returns <0 if there isn't enough to read.
  */
 int sgetu64(STREAM* f, uint64_t* value);
 
 /**
- * Read an hexadecimal string of fixed length.
+ * Reads an hexadecimal string of fixed length.
  * Returns <0 if there isn't enough to read.
  */
 int sgethex(STREAM* f, void* data, int size);
+
+/****************************************************************************/
+/* put */
+
+/**
+ * Writes a char. Like fputc().
+ * Returns 0 on succes or -1 on error.
+ */
+static inline int sputc(int c, STREAM* s)
+{
+	if (s->pos == s->end) {
+		if (sflush(s) != 0)
+			return -1;
+	}
+	*s->pos++ = c;
+	return 0;
+}
+
+/**
+ * Writes a end of line.
+ * Returns 0 on succes or -1 on error.
+ */
+static inline int sputeol(STREAM* s)
+{
+#ifdef _WIN32
+	if (sputc('\r', s) != 0)
+		return -1;
+#endif
+	return sputc('\n', s);
+}
+
+/**
+ * Writes a string.
+ * Returns 0 on succes or -1 on error.
+ */
+int sputs(const char* str, STREAM* f);
+
+/**
+ * Writes a 32 bit number.
+ * Returns 0 on succes or -1 on error.
+ */
+int sputu32(uint32_t value, STREAM* s);
+
+/**
+ * Writes a 64 bit number.
+ * Returns 0 on succes or -1 on error.
+ */
+int sputu64(uint64_t value, STREAM* s);
+
+/**
+ * Writes a hexadecimal string of fixed length.
+ * Returns 0 on succes or -1 on error.
+ */
+int sputhex(const void* void_data, int size, STREAM* s);
 
 /****************************************************************************/
 /* path */

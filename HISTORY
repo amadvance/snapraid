@@ -5,6 +5,7 @@ SnapRAID HISTORY
 ===========
  * Added a new "dup" command to find all the duplicate files.
  * Added a new option "--filter-nohidden" to exclude hidden files.
+ * Faster and parallel writing of content files.
  * The example configuration files now put the content files in the data
    disks instead than in the parity disks.
 

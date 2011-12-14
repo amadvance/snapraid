@@ -280,6 +280,11 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 				exit(EXIT_FAILURE);
 			}
 
+			if (strcmp(buffer, "/dev/null") == 0 || strcmp(buffer, "NUL") == 0 || strcmp(buffer, "nul") == 0) {
+				fprintf(stderr, "You cannot use the null device as 'content' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
 			/* get the device of the directory containing the content file */
 			pathimport(device, sizeof(device), buffer);
 			slash = strrchr(device, '/');
@@ -961,51 +966,79 @@ void state_read(struct snapraid_state* state)
 	}
 }
 
-static void state_write_one(struct snapraid_state* state, const char* path, unsigned* out_count_file, unsigned* out_count_block, unsigned* out_count_link)
+void state_write(struct snapraid_state* state)
 {
-	FILE* f;
-	char tmp[PATH_MAX];
+	STREAM* f;
 	unsigned count_file;
 	unsigned count_block;
 	unsigned count_link;
+	unsigned count_content;
 	tommy_node* i;
-	int ret;
+	unsigned k;
 
 	count_file = 0;
 	count_block = 0;
 	count_link = 0;
 
-	printf("Saving state to %s...\n", path);
+	/* count the content files */
+	count_content = 0;
+	i = tommy_list_head(&state->contentlist);
+	while (i) {
+		struct snapraid_content* content = i->data;
+		printf("Saving state to %s...\n", content->content);
+		++count_content;
+		i = i->next;
+	}
 
-	/* ignore some special files, this is an undocument feature */
-	if (strcmp(path, "/dev/null") == 0 || strcmp(path, "NUL") == 0 || strcmp(path, "nul") == 0)
-		return;
-
-	pathprint(tmp, sizeof(tmp), "%s.tmp", path);
-	f = fopen(tmp, "wt");
+	/* open all the content files */
+	f = sopen_multi_write(count_content);
 	if (!f) {
-		fprintf(stderr, "Error opening for writing the content file '%s'\n", tmp);
+		fprintf(stderr, "Error opening the content files\n");
 		exit(EXIT_FAILURE);
 	}
 
-	ret = fprintf(f, "blksize %u\n", state->block_size);
-	if (ret < 0) {
-		fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", tmp, strerror(errno));
+	k = 0;
+	i = tommy_list_head(&state->contentlist);
+	while (i) {
+		struct snapraid_content* content = i->data;
+		char tmp[PATH_MAX];
+		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
+		if (sopen_multi_file(f, k, tmp) != 0) {
+			fprintf(stderr, "Error operning the content file '%s'. %s.\n", tmp, strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+		++k;
+		i = i->next;
+	}
+
+	sputs("blksize ", f);
+	sputu32(state->block_size, f);
+	sputeol(f);
+	if (serror(f)) {
+		fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
-	ret = fprintf(f, "checksum %s\n", state->hash == HASH_MD5 ? "md5" : "murmur3");
-	if (ret < 0) {
-		fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", tmp, strerror(errno));
+	if (state->hash == HASH_MD5)
+		sputs("checksum md5", f);
+	else
+		sputs("checksum murmur3", f);
+	sputeol(f);
+	if (serror(f)) {
+		fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 	/* for each map */
 	for(i=state->maplist;i!=0;i=i->next) {
 		struct snapraid_map* map = i->data;
-		ret = fprintf(f, "map %s %u\n", map->name, map->position);
-		if (ret < 0) {
-			fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", tmp, strerror(errno));
+		sputs("map ", f);
+		sputs(map->name, f);
+		sputc(' ', f);
+		sputu32(map->position, f);
+		sputeol(f);
+		if (serror(f)) {
+			fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -1027,33 +1060,42 @@ static void state_write_one(struct snapraid_state* state, const char* path, unsi
 			mtime = file->mtime;
 			inode = file->inode,
 
-			ret = fprintf(f,"file %s %"PRIu64" %"PRIu64" %"PRIu64" %s\n", disk->name, size, mtime, inode, file->sub);
-			if (ret < 0) {
-				fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", tmp, strerror(errno));
+			sputs("file ", f);
+			sputs(disk->name, f);
+			sputc(' ', f);
+			sputu64(size, f);
+			sputc(' ', f);
+			sputu64(mtime, f);
+			sputc(' ', f);
+			sputu64(inode, f);
+			sputc(' ', f);
+			sputs(file->sub, f);
+			sputeol(f);
+			if (serror(f)) {
+				fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 				exit(EXIT_FAILURE);
 			}
 
 			/* for each block */
 			for(k=0;k<file->blockmax;++k) {
 				struct snapraid_block* block = &file->blockvec[k];
-				const char* tag;
 
 				if (block_flag_has(block, BLOCK_HAS_PARITY)) {
-					tag = "blk";
+					sputs("blk ", f);
 				} else {
-					tag = "inv";
+					sputs("inv ", f);
 				}
 
 				if (block_flag_has(block, BLOCK_HAS_HASH)) {
-					char s_hash[HASH_SIZE*2+1];
-					strenchex(s_hash, block->hash, HASH_SIZE);
-					s_hash[HASH_SIZE*2] = 0;
-					ret = fprintf(f, "%s %u %s\n", tag, block->parity_pos, s_hash);
+					sputu32(block->parity_pos, f);
+					sputc(' ', f);
+					sputhex(block->hash, HASH_SIZE, f);
 				} else {
-					ret = fprintf(f, "%s %u\n", tag, block->parity_pos);
+					sputu32(block->parity_pos, f);
 				}
-				if (ret < 0) {
-					fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", tmp, strerror(errno));
+				sputeol(f);
+				if (serror(f)) {
+					fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 					exit(EXIT_FAILURE);
 				}
 
@@ -1067,9 +1109,16 @@ static void state_write_one(struct snapraid_state* state, const char* path, unsi
 		for(j=disk->linklist;j!=0;j=j->next) {
 			struct snapraid_link* link = j->data;
 
-			ret = fprintf(f,"symlink %s %s\nto %s\n", disk->name, link->sub, link->linkto);
-			if (ret < 0) {
-				fprintf(stderr, "Error writing the content file '%s' in fprintf(). %s.\n", tmp, strerror(errno));
+			sputs("symlink ", f);
+			sputs(disk->name, f);
+			sputc(' ', f);
+			sputs(link->sub, f);
+			sputeol(f);
+			sputs("to ", f);
+			sputs(link->linkto, f);
+			sputeol(f);
+			if (serror(f)) {
+				fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 				exit(EXIT_FAILURE);
 			}
 
@@ -1080,52 +1129,33 @@ static void state_write_one(struct snapraid_state* state, const char* path, unsi
 	/* Use the sequence fflush() -> fsync() -> fclose() -> rename() to ensure */
 	/* than even in a system crash event we have one valid copy of the file. */
 
-	if (fflush(f) != 0) {
-		fprintf(stderr, "Error writing the content file '%s', in fflush(). %s.\n", tmp, strerror(errno));
+	if (sflush(f) != 0) {
+		fprintf(stderr, "Error writing the content file '%s', in flush(). %s.\n", serrorfile(f), strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 #if HAVE_FSYNC
-	if (fsync(fileno(f)) != 0) {
-		fprintf(stderr, "Error writing the content file '%s' in fsync(). %s.\n", tmp, strerror(errno));
+	if (ssync(f) != 0) {
+		fprintf(stderr, "Error writing the content file '%s' in sync(). %s.\n", serrorfile(f), strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 #endif
 
-	if (fclose(f) != 0) {
-		fprintf(stderr, "Error writing the content file '%s' in close(). %s.\n", tmp, strerror(errno));
+	if (sclose(f) != 0) {
+		fprintf(stderr, "Error writing the content file '%s' in close(). %s.\n", serrorfile(f), strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
-	if (rename(tmp, path) != 0) {
-		fprintf(stderr, "Error renaming the content file '%s' to '%s' in rename(). %s.\n", tmp, path, strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-
-	if (out_count_file)
-		*out_count_file = count_file;
-	if (out_count_block)
-		*out_count_block = count_block;
-	if (out_count_link)
-		*out_count_link = count_link;
-}
-
-void state_write(struct snapraid_state* state)
-{
-	unsigned count_file;
-	unsigned count_block;
-	unsigned count_link;
-	tommy_node* node;
-
-	count_file = 0;
-	count_block = 0;
-	count_link = 0;
-
-	node = tommy_list_head(&state->contentlist);
-	while (node) {
-		struct snapraid_content* content = node->data;
-		state_write_one(state, content->content, &count_file, &count_block, &count_link);
-		node = node->next;
+	i = tommy_list_head(&state->contentlist);
+	while (i) {
+		struct snapraid_content* content = i->data;
+		char tmp[PATH_MAX];
+		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
+		if (rename(tmp, content->content) != 0) {
+			fprintf(stderr, "Error renaming the content file '%s' to '%s' in rename(). %s.\n", tmp, content->content, strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+		i = i->next;
 	}
 
 	if (state->verbose) {

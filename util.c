@@ -90,8 +90,13 @@ STREAM* sopen_read(const char* file)
 {
 	STREAM* s = malloc_nofail(sizeof(STREAM));
 
-	s->f = open(file, O_RDONLY | O_BINARY | O_SEQUENTIAL);
-	if (s->f == -1) {
+	s->handle_size = 1;
+	s->handle = malloc_nofail(sizeof(struct stream_handle));
+
+	pathcpy(s->handle[0].path, sizeof(s->handle[0].path), file);
+	s->handle[0].f = open(file, O_RDONLY | O_BINARY | O_SEQUENTIAL);
+	if (s->handle[0].f == -1) {
+		free(s->handle);
 		free(s);
 		return 0;
 	}
@@ -99,33 +104,117 @@ STREAM* sopen_read(const char* file)
 	s->buffer = malloc_nofail(STREAM_SIZE);
 	s->pos = s->buffer;
 	s->end = s->buffer;
-	s->state = STREAM_OK;
+	s->state = STREAM_STATE_READ;
+	s->state_index = 0;
 
 	return s;
 }
 
-void sclose(STREAM* s)
+STREAM* sopen_multi_write(unsigned count)
 {
-	close(s->f);
-	free(s->buffer);
-	free(s);
+	unsigned i;
+
+	STREAM* s = malloc_nofail(sizeof(STREAM));
+
+	s->handle_size = count;
+	s->handle = malloc_nofail(count * sizeof(struct stream_handle));
+
+	for(i=0;i<count;++i)
+		s->handle[i].f = -1;
+
+	s->buffer = malloc_nofail(STREAM_SIZE);
+	s->pos = s->buffer;
+	s->end = s->buffer + STREAM_SIZE;
+	s->state = STREAM_STATE_WRITE;
+	s->state_index = 0;
+
+	return s;
 }
 
-int sflow(STREAM* s)
+int sopen_multi_file(STREAM* s, unsigned i, const char* file)
+{
+#if HAVE_POSIX_FADVISE
+	int ret;
+#endif
+	int f;
+
+	pathcpy(s->handle[i].path, sizeof(s->handle[i].path), file);
+
+	f = open(file, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_SEQUENTIAL, 0600);
+	if (f == -1) {
+		return -1;
+	}
+
+#if HAVE_POSIX_FADVISE
+	/* advise sequential access */
+	ret = posix_fadvise(f, 0, 0, POSIX_FADV_SEQUENTIAL);
+	if (ret != 0) {
+		close(f);
+		return -1;
+	}
+#endif
+
+	s->handle[i].f = f;
+
+	return 0;
+}
+
+STREAM* sopen_write(const char* file)
+{
+	STREAM* s;
+
+	s = sopen_multi_write(1);
+	if (!s)
+		return 0;
+
+	if (sopen_multi_file(s, 0, file) != 0) {
+		sclose(s);
+		return 0;
+	}
+
+	return s;
+}
+
+int sclose(STREAM* s)
+{
+	int fail = 0;
+	unsigned i;
+
+	if (s->state == STREAM_STATE_WRITE) {
+		if (sflush(s) != 0)
+			fail = 1;
+	}
+
+	for(i=0;i<s->handle_size;++i) {
+		if (close(s->handle[i].f) != 0)
+			fail = 1;
+	}
+
+	free(s->handle);
+	free(s->buffer);
+	free(s);
+
+	if (fail)
+		return -1;
+
+	return 0;
+}
+
+int sfill(STREAM* s)
 {
 	ssize_t ret;
 
-	if (s->state != STREAM_OK)
+	if (s->state != STREAM_STATE_READ)
 		return EOF;
 
-	ret = read(s->f, s->buffer, STREAM_SIZE);
+	ret = read(s->handle[0].f, s->buffer, STREAM_SIZE);
 
 	if (ret < 0) {
-		s->state = STREAM_ERROR;
+		s->state = STREAM_STATE_ERROR;
 		return EOF;
 	}
 	if (ret == 0) {
-		s->state = STREAM_EOF;
+		s->state = STREAM_STATE_EOF;
 		return EOF;
 	}
 
@@ -133,6 +222,34 @@ int sflow(STREAM* s)
 	s->end = s->buffer + ret;
 
 	return *s->pos++;
+}
+
+int sflush(STREAM* s)
+{
+	ssize_t ret;
+	ssize_t size;
+	unsigned i;
+
+	if (s->state != STREAM_STATE_WRITE)
+		return EOF;
+
+	size = s->pos - s->buffer;
+	if (!size)
+		return 0;
+
+	for(i=0;i<s->handle_size;++i) {
+		ret = write(s->handle[i].f, s->buffer, size);
+
+		if (ret != size) {
+			s->state = STREAM_STATE_ERROR;
+			s->state_index = i;
+			return EOF;
+		}
+	}
+
+	s->pos = s->buffer;
+
+	return 0;
 }
 
 int sgettok(STREAM* f, char* str, int size)
@@ -354,6 +471,93 @@ int sgethex(STREAM* f, void* void_data, int size)
 
 	return 0;
 }
+
+int sputs(const char* str, STREAM* f)
+{
+	while (*str) {
+		if (sputc(*str, f) != 0)
+			return -1;
+		++str;
+	}
+
+	return 0;
+}
+
+int sputu32(uint32_t value, STREAM* s)
+{
+	char buf[16];
+	int i;
+
+	if (!value)
+		return sputc('0', s);
+
+	i = sizeof(buf);
+	buf[--i] = 0;
+
+	while (value) {
+		buf[--i] = (value % 10) + '0';
+		value /= 10;
+	}
+
+	return sputs(buf + i, s);
+}
+
+int sputu64(uint64_t value, STREAM* s)
+{
+	char buf[32];
+	int i;
+
+	if (!value)
+		return sputc('0', s);
+	if (value <= 0xFFFFFFFF)
+		return sputu32((uint32_t)value, s);
+
+	i = sizeof(buf);
+	buf[--i] = 0;
+
+	while (value) {
+		buf[--i] = (value % 10) + '0';
+		value /= 10;
+	}
+
+	return sputs(buf + i, s);
+}
+
+int sputhex(const void* void_data, int size, STREAM* f)
+{
+	const unsigned char* data = void_data;
+
+	while (size) {
+		unsigned b = *data;
+
+		if (sputc(strhexset[b >> 4], f) != 0)
+			return -1;
+		if (sputc(strhexset[b & 0xF], f) != 0)
+			return -1;
+
+		++data;
+		--size;
+	}
+
+	return 0;
+}
+
+#if HAVE_FSYNC
+int ssync(STREAM* s)
+{
+	unsigned i;
+
+	for(i=0;i<s->handle_size;++i) {
+		if (fsync(s->handle[i].f) != 0) {
+			s->state = STREAM_STATE_ERROR;
+			s->state_index = i;
+			return -1;
+		}
+	}
+
+	return 0;
+}
+#endif
 
 /****************************************************************************/
 /* path */
