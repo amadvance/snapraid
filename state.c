@@ -1011,7 +1011,7 @@ void state_write(struct snapraid_state* state)
 		i = i->next;
 	}
 
-	sputs("blksize ", f);
+	sputsl("blksize ", f);
 	sputu32(state->block_size, f);
 	sputeol(f);
 	if (serror(f)) {
@@ -1020,9 +1020,9 @@ void state_write(struct snapraid_state* state)
 	}
 
 	if (state->hash == HASH_MD5)
-		sputs("checksum md5", f);
+		sputsl("checksum md5", f);
 	else
-		sputs("checksum murmur3", f);
+		sputsl("checksum murmur3", f);
 	sputeol(f);
 	if (serror(f)) {
 		fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
@@ -1032,7 +1032,7 @@ void state_write(struct snapraid_state* state)
 	/* for each map */
 	for(i=state->maplist;i!=0;i=i->next) {
 		struct snapraid_map* map = i->data;
-		sputs("map ", f);
+		sputsl("map ", f);
 		sputs(map->name, f);
 		sputc(' ', f);
 		sputu32(map->position, f);
@@ -1058,9 +1058,9 @@ void state_write(struct snapraid_state* state)
 
 			size = file->size;
 			mtime = file->mtime;
-			inode = file->inode,
+			inode = file->inode;
 
-			sputs("file ", f);
+			sputsl("file ", f);
 			sputs(disk->name, f);
 			sputc(' ', f);
 			sputu64(size, f);
@@ -1081,9 +1081,9 @@ void state_write(struct snapraid_state* state)
 				struct snapraid_block* block = &file->blockvec[k];
 
 				if (block_flag_has(block, BLOCK_HAS_PARITY)) {
-					sputs("blk ", f);
+					sputsl("blk ", f);
 				} else {
-					sputs("inv ", f);
+					sputsl("inv ", f);
 				}
 
 				if (block_flag_has(block, BLOCK_HAS_HASH)) {
@@ -1109,12 +1109,12 @@ void state_write(struct snapraid_state* state)
 		for(j=disk->linklist;j!=0;j=j->next) {
 			struct snapraid_link* link = j->data;
 
-			sputs("symlink ", f);
+			sputsl("symlink ", f);
 			sputs(disk->name, f);
 			sputc(' ', f);
 			sputs(link->sub, f);
 			sputeol(f);
-			sputs("to ", f);
+			sputsl("to ", f);
 			sputs(link->linkto, f);
 			sputeol(f);
 			if (serror(f)) {

@@ -20,21 +20,9 @@
 #include "util.h"
 
 /****************************************************************************/
-/* string */
+/* hex conversion table */
 
 static char strhexset[16] = "0123456789abcdef";
-
-void strenchex(char* str, const void* void_data, unsigned data_len)
-{
-	const unsigned char* data = void_data;
-	unsigned i;
-
-	for(i=0;i<data_len;++i) {
-		unsigned char b = data[i];
-		*str++ = strhexset[b >> 4];
-		*str++ = strhexset[b & 0xF];
-	}
-}
 
 static unsigned strdecset[256] =
 {
@@ -55,33 +43,6 @@ static unsigned strdecset[256] =
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
 };
-
-char* strdechex(void* void_data, unsigned data_len, char* str)
-{
-	unsigned char* data = void_data;
-	unsigned i;
-
-	for(i=0;i<data_len;++i) {
-		unsigned b0;
-		unsigned b1;
-		unsigned b;
-
-		b0 = strdecset[(unsigned char)str[0]];
-		b1 = strdecset[(unsigned char)str[1]];
-
-		b = (b0 << 4) | b1;
-
-		if (b > 0xFF)
-			return str;
-
-		data[0] = b;
-
-		data += 1;
-		str += 2;
-	}
-
-	return 0;
-}
 
 /****************************************************************************/
 /* stream */
@@ -475,9 +436,34 @@ int sgethex(STREAM* f, void* void_data, int size)
 int sputs(const char* str, STREAM* f)
 {
 	while (*str) {
-		if (sputc(*str, f) != 0)
+		if (sputc(*str++, f) != 0)
 			return -1;
-		++str;
+	}
+
+	return 0;
+}
+
+int swrite(const void* void_data, unsigned size, STREAM* f)
+{
+	const unsigned char* data = void_data;
+
+	/* if there is enough space in memory */
+	if (sptrlookup(f, size)) {
+		/* optimized version with all the data in memory */
+		unsigned char* pos = sptrget(f);
+
+		/* copy it */
+		while (size--) {
+			*pos++ = *data++;
+		}
+
+		sptrset(f, pos);
+	} else {
+		/* standard version using sputc() */
+		while (size--) {
+			if (sputc(*data++, f) != 0)
+				return -1;
+		}
 	}
 
 	return 0;
@@ -492,51 +478,74 @@ int sputu32(uint32_t value, STREAM* s)
 		return sputc('0', s);
 
 	i = sizeof(buf);
-	buf[--i] = 0;
 
 	while (value) {
 		buf[--i] = (value % 10) + '0';
 		value /= 10;
 	}
 
-	return sputs(buf + i, s);
+	return swrite(buf + i, sizeof(buf) - i, s);
 }
 
 int sputu64(uint64_t value, STREAM* s)
 {
 	char buf[32];
+	uint32_t value32;
 	int i;
 
 	if (!value)
 		return sputc('0', s);
-	if (value <= 0xFFFFFFFF)
-		return sputu32((uint32_t)value, s);
 
 	i = sizeof(buf);
-	buf[--i] = 0;
 
-	while (value) {
+	while (value > 0xFFFFFFFF) {
 		buf[--i] = (value % 10) + '0';
 		value /= 10;
 	}
 
-	return sputs(buf + i, s);
+	value32 = (uint32_t)value;
+
+	while (value32) {
+		buf[--i] = (value32 % 10) + '0';
+		value32 /= 10;
+	}
+
+	return swrite(buf + i, sizeof(buf) - i, s);
 }
 
 int sputhex(const void* void_data, int size, STREAM* f)
 {
 	const unsigned char* data = void_data;
 
-	while (size) {
-		unsigned b = *data;
+	/* if there is enough space in memory */
+	if (sptrlookup(f, size * 2)) {
+		/* optimized version with all the data in memory */
+		unsigned char* pos = sptrget(f);
 
-		if (sputc(strhexset[b >> 4], f) != 0)
-			return -1;
-		if (sputc(strhexset[b & 0xF], f) != 0)
-			return -1;
+		while (size) {
+			unsigned b = *data;
 
-		++data;
-		--size;
+			*pos++ = strhexset[b >> 4];
+			*pos++ = strhexset[b & 0xF];
+
+			++data;
+			--size;
+		}
+
+		sptrset(f, pos);
+	} else {
+		/* standard version using sputc() */
+		while (size) {
+			unsigned b = *data;
+
+			if (sputc(strhexset[b >> 4], f) != 0)
+				return -1;
+			if (sputc(strhexset[b & 0xF], f) != 0)
+				return -1;
+
+			++data;
+			--size;
+		}
 	}
 
 	return 0;

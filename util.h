@@ -19,19 +19,6 @@
 #define __UTIL_H
 
 /****************************************************************************/
-/* string */
-
-/**
- * Encodes to hex.
- */
-void strenchex(char* str, const void* void_data, unsigned data_len);
-
-/**
- * Decodes from hex.
- */
-char* strdechex(void* void_data, unsigned data_len, char* str);
-
-/****************************************************************************/
 /* stream */
 
 #define STREAM_SIZE (64*1024) /**< Size of the buffer of the stream. */
@@ -252,7 +239,7 @@ int sgethex(STREAM* f, void* data, int size);
 
 /**
  * Writes a char. Like fputc().
- * Returns 0 on succes or -1 on error.
+ * Returns 0 on success or -1 on error.
  */
 static inline int sputc(int c, STREAM* s)
 {
@@ -266,7 +253,7 @@ static inline int sputc(int c, STREAM* s)
 
 /**
  * Writes a end of line.
- * Returns 0 on succes or -1 on error.
+ * Returns 0 on success or -1 on error.
  */
 static inline int sputeol(STREAM* s)
 {
@@ -279,25 +266,37 @@ static inline int sputeol(STREAM* s)
 
 /**
  * Writes a string.
- * Returns 0 on succes or -1 on error.
+ * Returns 0 on success or -1 on error.
  */
 int sputs(const char* str, STREAM* f);
 
 /**
+ * Write a sized string.
+ * Returns 0 on success or -1 on error.
+ */
+int swrite(const void* data, unsigned size, STREAM* f);
+
+/**
+ * Write a string literal (constant string).
+ * Returns 0 on success or -1 on error.
+ */
+#define sputsl(str, f) swrite(str, sizeof(str) - 1, f)
+
+/**
  * Writes a 32 bit number.
- * Returns 0 on succes or -1 on error.
+ * Returns 0 on success or -1 on error.
  */
 int sputu32(uint32_t value, STREAM* s);
 
 /**
  * Writes a 64 bit number.
- * Returns 0 on succes or -1 on error.
+ * Returns 0 on success or -1 on error.
  */
 int sputu64(uint64_t value, STREAM* s);
 
 /**
  * Writes a hexadecimal string of fixed length.
- * Returns 0 on succes or -1 on error.
+ * Returns 0 on success or -1 on error.
  */
 int sputhex(const void* void_data, int size, STREAM* s);
 
