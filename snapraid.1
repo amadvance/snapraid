@@ -188,22 +188,22 @@ disk d3 /mnt/disk3/
 .RE
 .PP
 If you are in Windows, you should use drive letters and backslashes
-instead of slashes:
+instead of slashes, and if you like, also file extensions.
 .PP
 .RS 4
-parity E:\(rspar\(rsparity
+parity E:\(rspar\(rsparity.par
 .PD 0
 .PP
 .PD
-content C:\(rssnapraid\(rscontent
+content C:\(rssnapraid\(rscontent.lst
 .PD 0
 .PP
 .PD
-content F:\(rsarray\(rscontent
+content F:\(rsarray\(rscontent.lst
 .PD 0
 .PP
 .PD
-content G:\(rsarray\(rscontent
+content G:\(rsarray\(rscontent.lst
 .PD 0
 .PP
 .PD
@@ -826,6 +826,10 @@ defined in the configuration file.
 Defines the checksum kind used. It can be \(a"md5\(a" or \(a"murmur3\(a".
 .SS map NAME INDEX 
 Defines the position INDEX of the disk NAME in the parity computation.
+.SS sign SIGN 
+Signature checksum of the content file to ensure that it doesn\(cqt get
+corrupted. If you want to modify the content file manually, you have
+to remove this line to avoid this check.
 .SS file DISK SIZE TIME INODE PATH 
 Defines a file in the specified DISK.
 .PP

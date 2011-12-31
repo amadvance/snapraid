@@ -531,10 +531,12 @@ void state_read(struct snapraid_state* state)
 	unsigned count_block;
 	unsigned count_link;
 	tommy_node* node;
+	oathash_t hash;
 
 	count_file = 0;
 	count_block = 0;
 	count_link = 0;
+	hash = 0;
 
 	/* iterate over all the available content files and load the first one present */
 	f = 0;
@@ -634,7 +636,16 @@ void state_read(struct snapraid_state* state)
 				exit(EXIT_FAILURE);
 			}
 
+			/* set the parity only if present */
+			if (tag[0] == 'b') {
+				block_flag_set(block, BLOCK_HAS_PARITY);
+				hash = oathash8(hash, 'b');
+			} else {
+				hash = oathash8(hash, 'i');
+			}
+
 			block->parity_pos = v_pos;
+			hash = oathash32(hash, v_pos);
 
 			/* check if we are at the end of the line */
 			c = sgeteol(f);
@@ -653,13 +664,10 @@ void state_read(struct snapraid_state* state)
 					fprintf(stderr, "Invalid 'blk' specification in '%s' at line %u\n", path, line);
 					exit(EXIT_FAILURE);
 				}
+				hash = oathashm(hash, block->hash, HASH_SIZE);
 
 				block_flag_set(block, BLOCK_HAS_HASH);
 			}
-
-			/* set the parity only if present */
-			if (strcmp(tag, "blk") == 0)
-				block_flag_set(block, BLOCK_HAS_PARITY);
 
 			/* parity implies hash */
 			if (block_flag_has(block, BLOCK_HAS_PARITY) && !block_flag_has(block, BLOCK_HAS_HASH)) {
@@ -688,6 +696,8 @@ void state_read(struct snapraid_state* state)
 			uint64_t v_inode;
 			tommy_node* i;
 
+			hash = oathash8(hash, 'f');
+
 			if (file) {
 				fprintf(stderr, "Missing 'blk' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
@@ -698,6 +708,7 @@ void state_read(struct snapraid_state* state)
 				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
+			hash = oathashs(hash, buffer);
 
 			c = sgetc(f);
 			if (c != ' ') {
@@ -710,6 +721,7 @@ void state_read(struct snapraid_state* state)
 				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
+			hash = oathash64(hash, v_size);
 
 			c = sgetc(f);
 			if (c != ' ') {
@@ -722,6 +734,7 @@ void state_read(struct snapraid_state* state)
 				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
+			hash = oathash64(hash, v_mtime);
 
 			c = sgetc(f);
 			if (c != ' ') {
@@ -734,6 +747,7 @@ void state_read(struct snapraid_state* state)
 				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
+			hash = oathash64(hash, v_inode);
 
 			c = sgetc(f);
 			if (c != ' ') {
@@ -751,6 +765,7 @@ void state_read(struct snapraid_state* state)
 				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
+			hash = oathashs(hash, sub);
 
 			/* find the disk */
 			for(i=state->disklist;i!=0;i=i->next) {
@@ -790,11 +805,14 @@ void state_read(struct snapraid_state* state)
 			tommy_node* i;
 			struct snapraid_link* link;
 
+			hash = oathash8(hash, 's');
+
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				fprintf(stderr, "Invalid 'symlink' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
+			hash = oathashs(hash, buffer);
 
 			c = sgetc(f);
 			if (c != ' ') {
@@ -807,6 +825,7 @@ void state_read(struct snapraid_state* state)
 				fprintf(stderr, "Invalid 'symlink' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
+			hash = oathashs(hash, sub);
 
 			c = sgeteol(f);
 			if (c != '\n') {
@@ -836,6 +855,7 @@ void state_read(struct snapraid_state* state)
 				fprintf(stderr, "Invalid 'symlink' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
+			hash = oathashs(hash, linkto);
 
 			if (!*sub || !*linkto) {
 				fprintf(stderr, "Invalid 'symlink' specification in '%s' at line %u\n", path, line);
@@ -863,6 +883,8 @@ void state_read(struct snapraid_state* state)
 			/* stat */
 			++count_link;
 		} else if (strcmp(tag, "checksum") == 0) {
+			hash = oathash8(hash, 'c');
+
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				fprintf(stderr, "Invalid 'checksum' specification in '%s' at line %u\n", path, line);
@@ -871,8 +893,10 @@ void state_read(struct snapraid_state* state)
 
 			if (strcmp(buffer, "md5") == 0) {
 				state->hash = HASH_MD5;
+				hash = oathash8(hash, 'm');
 			} else if (strcmp(buffer, "murmur3") == 0) {
 				state->hash = HASH_MURMUR3;
+				hash = oathash8(hash, 'u');
 			} else {
 				fprintf(stderr, "Invalid 'checksum' specification '%s' in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
@@ -880,11 +904,14 @@ void state_read(struct snapraid_state* state)
 		} else if (strcmp(tag, "blksize") == 0) {
 			block_off_t blksize;
 
+			hash = oathash8(hash, 'z');
+
 			ret = sgetu32(f, &blksize);
 			if (ret < 0) {
 				fprintf(stderr, "Invalid 'blksize' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
+			hash = oathash32(hash, blksize);
 
 			if (blksize != state->block_size) {
 				fprintf(stderr, "Mismatching 'blksize' and 'block_size' specification in '%s' at line %u\n", path, line);
@@ -895,11 +922,14 @@ void state_read(struct snapraid_state* state)
 			struct snapraid_map* map;
 			uint32_t v_pos;
 
+			hash = oathash8(hash, 'm');
+
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				fprintf(stderr, "Invalid 'map' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
+			hash = oathashs(hash, buffer);
 
 			c = sgetc(f);
 			if (c != ' ') {
@@ -912,10 +942,25 @@ void state_read(struct snapraid_state* state)
 				fprintf(stderr, "Invalid 'map' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
+			hash = oathash32(hash, v_pos);
 
 			map = map_alloc(buffer, v_pos);
 
 			tommy_list_insert_tail(&state->maplist, &map->node, map);
+		} else if (strcmp(tag, "sign") == 0) {
+			oathash_t sign;
+
+			ret = sgetu32(f, &sign);
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'sign' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			if (sign != hash) {
+				fprintf(stderr, "Mismatching 'sign' in '%s' at line %u\n", path, line);
+				fprintf(stderr, "Likely this content file is damaged. Use an alternate copy\n");
+				exit(EXIT_FAILURE);
+			}
 		} else if (tag[0] == 0) {
 			/* allow empty lines */
 			sgetspace(f);
@@ -975,10 +1020,12 @@ void state_write(struct snapraid_state* state)
 	unsigned count_content;
 	tommy_node* i;
 	unsigned k;
+	oathash_t hash;
 
 	count_file = 0;
 	count_block = 0;
 	count_link = 0;
+	hash = 0;
 
 	/* count the content files */
 	count_content = 0;
@@ -1012,17 +1059,24 @@ void state_write(struct snapraid_state* state)
 	}
 
 	sputsl("blksize ", f);
+	hash = oathash8(hash, 'z');
 	sputu32(state->block_size, f);
+	hash = oathash32(hash, state->block_size);
 	sputeol(f);
 	if (serror(f)) {
 		fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
-	if (state->hash == HASH_MD5)
+	if (state->hash == HASH_MD5) {
 		sputsl("checksum md5", f);
-	else
+		hash = oathash8(hash, 'c');
+		hash = oathash8(hash, 'm');
+	} else {
 		sputsl("checksum murmur3", f);
+		hash = oathash8(hash, 'c');
+		hash = oathash8(hash, 'u');
+	}
 	sputeol(f);
 	if (serror(f)) {
 		fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
@@ -1033,9 +1087,12 @@ void state_write(struct snapraid_state* state)
 	for(i=state->maplist;i!=0;i=i->next) {
 		struct snapraid_map* map = i->data;
 		sputsl("map ", f);
+		hash = oathash8(hash, 'm');
 		sputs(map->name, f);
+		hash = oathashs(hash, map->name);
 		sputc(' ', f);
 		sputu32(map->position, f);
+		hash = oathash32(hash, map->position);
 		sputeol(f);
 		if (serror(f)) {
 			fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
@@ -1061,15 +1118,21 @@ void state_write(struct snapraid_state* state)
 			inode = file->inode;
 
 			sputsl("file ", f);
+			hash = oathash8(hash, 'f');
 			sputs(disk->name, f);
+			hash = oathashs(hash, disk->name);
 			sputc(' ', f);
 			sputu64(size, f);
+			hash = oathash64(hash, size);
 			sputc(' ', f);
 			sputu64(mtime, f);
+			hash = oathash64(hash, mtime);
 			sputc(' ', f);
 			sputu64(inode, f);
+			hash = oathash64(hash, inode);
 			sputc(' ', f);
 			sputs(file->sub, f);
+			hash = oathashs(hash, file->sub);
 			sputeol(f);
 			if (serror(f)) {
 				fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
@@ -1082,17 +1145,21 @@ void state_write(struct snapraid_state* state)
 
 				if (block_flag_has(block, BLOCK_HAS_PARITY)) {
 					sputsl("blk ", f);
+					hash = oathash8(hash, 'b');
 				} else {
 					sputsl("inv ", f);
+					hash = oathash8(hash, 'i');
 				}
 
+				sputu32(block->parity_pos, f);
+				hash = oathash32(hash, block->parity_pos);
+
 				if (block_flag_has(block, BLOCK_HAS_HASH)) {
-					sputu32(block->parity_pos, f);
 					sputc(' ', f);
 					sputhex(block->hash, HASH_SIZE, f);
-				} else {
-					sputu32(block->parity_pos, f);
+					hash = oathashm(hash, block->hash, HASH_SIZE);
 				}
+
 				sputeol(f);
 				if (serror(f)) {
 					fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
@@ -1110,12 +1177,16 @@ void state_write(struct snapraid_state* state)
 			struct snapraid_link* link = j->data;
 
 			sputsl("symlink ", f);
+			hash = oathash8(hash, 's');
 			sputs(disk->name, f);
+			hash = oathashs(hash, disk->name);
 			sputc(' ', f);
 			sputs(link->sub, f);
+			hash = oathashs(hash, link->sub);
 			sputeol(f);
 			sputsl("to ", f);
 			sputs(link->linkto, f);
+			hash = oathashs(hash, link->linkto);
 			sputeol(f);
 			if (serror(f)) {
 				fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
@@ -1124,6 +1195,14 @@ void state_write(struct snapraid_state* state)
 
 			++count_link;
 		}
+	}
+
+	sputsl("sign ", f);
+	sputu32(hash, f);
+	sputeol(f);
+	if (serror(f)) {
+		fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+		exit(EXIT_FAILURE);
 	}
 
 	/* Use the sequence fflush() -> fsync() -> fclose() -> rename() to ensure */

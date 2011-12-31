@@ -8,6 +8,7 @@ SnapRAID HISTORY
  * Faster and parallel writing of content files.
  * The example configuration files now put the content files in the data
    disks instead than in the parity disks.
+ * Added a checksum at the content file to ensure its integrity.
 
 1.7 2011/11
 ===========

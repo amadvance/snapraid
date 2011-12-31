@@ -3,13 +3,13 @@
 # Defines the file to use as Parity storage
 # It must NOT be in a data disk
 # Format: "parity FILE_PATH"
-parity E:\par\parity
+parity E:\par\parity.par
 
 # Defines the file to use as Q-Parity storage
 # If specified, it enables a double failures protection like RAID6
 # It must NOT be in a data disk
 # Format: "q-parity FILE_PATH"
-#q-parity F:\qar\q-parity
+#q-parity F:\qar\q-parity.par
 
 # Defines the files to use as content list
 # You can use multiple specification to store more copies
@@ -17,9 +17,9 @@ parity E:\par\parity
 # They can be in the disks used for data, parity or boot,
 # but each file must be in a different disk
 # Format: "content FILE_PATH"
-content C:\snapraid\content
-content G:\array\content
-content H:\array\content
+content C:\snapraid\content.lst
+content G:\array\content.lst
+content H:\array\content.lst
 
 # Defines the data disks to use
 # The order is relevant for parity, do not change it

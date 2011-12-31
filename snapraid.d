@@ -114,12 +114,12 @@ Getting Started
 		:disk d3 /mnt/disk3/
 
 	If you are in Windows, you should use drive letters and backslashes
-	instead of slashes:
+	instead of slashes, and if you like, also file extensions.
 
-		:parity E:\par\parity
-		:content C:\snapraid\content
-		:content F:\array\content
-		:content G:\array\content
+		:parity E:\par\parity.par
+		:content C:\snapraid\content.lst
+		:content F:\array\content.lst
+		:content G:\array\content.lst
 		:disk d1 F:\array\
 		:disk d2 G:\array\
 		:disk d3 H:\array\
@@ -580,6 +580,11 @@ Content
 
   map NAME INDEX
 	Defines the position INDEX of the disk NAME in the parity computation.
+
+  sign SIGN
+	Signature checksum of the content file to ensure that it doesn't get
+	corrupted. If you want to modify the content file manually, you have
+	to remove this line to avoid this check.
 
   file DISK SIZE TIME INODE PATH
 	Defines a file in the specified DISK.

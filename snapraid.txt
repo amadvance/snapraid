@@ -32,14 +32,14 @@ features of SnapRAID are:
 
 * You can start using SnapRAID with already filled disks.
 * The disks can have different sizes.
-* You can add more disks at any time.
+* You can add disks at any time.
 * If you accidentally delete some files in a disk, you can
   recover them.
 * If more than two disks fail, you lose the data only on the
   failed disks. All the data in the other disks is safe.
 * It doesn't lock-in your data. You can stop using SnapRAID at any
   time without the need to reformat or move data.
-* All your data is hashed to ensure data integrity and avoid
+* All your data is hashed to ensure data integrity and to avoid
   silent corruption.
 
 The official site of SnapRAID is:
@@ -127,12 +127,12 @@ the following options:
     disk d3 /mnt/disk3/
 
 If you are in Windows, you should use drive letters and backslashes
-instead of slashes:
+instead of slashes, and if you like, also file extensions.
 
-    parity E:\par\parity
-    content C:\snapraid\content
-    content F:\array\content
-    content G:\array\content
+    parity E:\par\parity.par
+    content C:\snapraid\content.lst
+    content F:\array\content.lst
+    content G:\array\content.lst
     disk d1 F:\array\
     disk d2 G:\array\
     disk d3 H:\array\
@@ -644,7 +644,14 @@ Defines the checksum kind used. It can be "md5" or "murmur3".
 
 Defines the position INDEX of the disk NAME in the parity computation.
 
-10.4 file DISK SIZE TIME INODE PATH
+10.4 sign SIGN
+--------------
+
+Signature checksum of the content file to ensure that it doesn't get
+corrupted. If you want to modify the content file manually, you have
+to remove this line to avoid this check.
+
+10.5 file DISK SIZE TIME INODE PATH
 -----------------------------------
 
 Defines a file in the specified DISK.
@@ -660,7 +667,7 @@ to recompute the parity.
 The PATH information is used in the "check" and "fix" commands
 to identify the file.
 
-10.5 blk BLOCK HASH
+10.6 blk BLOCK HASH
 -------------------
 
 Defines the ordered parity block list used by the last defined file.
@@ -671,7 +678,7 @@ BLOCK is the block position in the "parity" file.
 HASH is the hash of the block. In the last block of the file,
 the HASH is the hash of only the used part of the block.
 
-10.6 inv BLOCK [HASH]
+10.7 inv BLOCK [HASH]
 ---------------------
 
 Like "blk", but inform that the parity of this block is invalid.

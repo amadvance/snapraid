@@ -12,13 +12,8 @@ the process making the create() operation to fail.
 
 * If a directory exists with the same name of a parity/content file be more explicative
 on the error message. See: https://sourceforge.net/projects/snapraid/forums/forum/1677233/topic/4861034
-Also adding an estension to these files in the configuration file for Windows may help to understand
-that they are files and not directories.
 
 * Easy way to find files using a specified block.
-
-* Adds a checksum for the content file. When reading if the file is invalid,
-skip to another.
 
 - v1.9
 
