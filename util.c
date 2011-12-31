@@ -643,6 +643,13 @@ void pathslash(char* dst, size_t size)
 /****************************************************************************/
 /* mem */
 
+static size_t mcounter;
+
+size_t malloc_counter(void)
+{
+	return mcounter;
+}
+
 void* malloc_nofail(size_t size)
 {
 	void* ptr = malloc(size);
@@ -651,6 +658,8 @@ void* malloc_nofail(size_t size)
 		fprintf(stderr, "Low memory\n");
 		exit(EXIT_FAILURE);
 	}
+
+	mcounter += size;
 
 	return ptr;
 }

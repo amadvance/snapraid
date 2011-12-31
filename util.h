@@ -338,6 +338,11 @@ void pathslash(char* dst, size_t size);
 /* memory */
 
 /**
+ * Return the size of the allocated memory.
+ */
+size_t malloc_counter(void);
+
+/**
  * Safe malloc.
  * If no memory is available, it aborts.
  */
