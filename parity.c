@@ -75,19 +75,21 @@ int parity_create(struct snapraid_parity* parity, const char* path, data_off_t s
 	if (parity->st.st_size < size) {
 #if HAVE_FALLOCATE
 		/* allocate real space using the specific Linux fallocate() operation. */
-		/* If the underline filesystem doesn't support it, it's going to fail with the ENOSYS error. */
-		/* Note that posix_fallocate() doesn't fail in such case, and fallbacks to write the whole file. */
+		/* If the underline filesystem doesn't support it, this operation fails, */
+		/* instead posix_fallocate() fallbacks to write the whole file. */
 		ret = fallocate(parity->f, 0, 0, size);
 
-		/* fallocate() returns the error number, and it doesn't set errno, just like posix_fallocate() */
-		/* It's not clear if this is correct or a bug, as the official manpage says otherwise */
-		/* http://www.kernel.org/doc/man-pages/online/pages/man2/fallocate.2.html */
-		if (ret > 0) { /* if an error is returned, move it to errno */
+		/* fallocate() returns the error number as positive integer, */
+		/* and in this case it doesn't set errno, just like posix_fallocate() */
+		/* Checking the glibc code (2.11.1 and 2.14.1) it seems that ENOSYS */
+		/* may be returned in errno, so we support both the return way */
+		if (ret > 0) { /* if a positive error is returned, convert it to errno */
 			errno = ret;
 			ret = -1;
 		}
 
-		/* if the operation is not supported, like in ext3 */
+		/* we get EOPNOTSUPP if the operation is not supported, like in ext3/ext2 */
+		/* or ENOSYS with kernel before 2.6.23 */
 		if (errno == EOPNOTSUPP || errno == ENOSYS) {
 			/* fallback using ftruncate() */
 			ret = ftruncate(parity->f, size);
