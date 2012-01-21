@@ -684,5 +684,7 @@ void state_scan(struct snapraid_state* state, int output)
 	}
 
 	tommy_list_foreach(&scanlist, (tommy_foreach_func*)free);
+
+	printf("Using %u MiB of memory.\n", (unsigned)(malloc_counter() / 1024 / 1024));
 }
 

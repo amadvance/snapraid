@@ -1009,8 +1009,6 @@ void state_read(struct snapraid_state* state)
 		printf("\tblock %u\n", count_block);
 		printf("\tsymlink %u\n", count_link);
 	}
-
-	printf("Using %u MiB of memory.\n", (unsigned)(malloc_counter() / 1024 / 1024));
 }
 
 void state_write(struct snapraid_state* state)
