@@ -1,7 +1,7 @@
 SnapRAID HISTORY
 ================
 
-1.8 2011/12
+1.8 2012/1
 ===========
  * Added a new "dup" command to find all the duplicate files.
  * Added a new option "--filter-nohidden" to exclude hidden files.
@@ -9,6 +9,8 @@ SnapRAID HISTORY
  * The example configuration files now put the content files in the data
    disks instead than in the parity disks.
  * Added a checksum at the content file to ensure its integrity.
+ * Using fallocate() instead posix_fallocate() to avoid the very slow
+   posix_fallocate() fallback of writing the whole file.
 
 1.7 2011/11
 ===========

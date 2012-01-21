@@ -73,9 +73,25 @@ int parity_create(struct snapraid_parity* parity, const char* path, data_off_t s
 	parity->valid_size = parity->st.st_size;
 
 	if (parity->st.st_size < size) {
-#if HAVE_POSIX_FALLOCATE
-		/* allocate real space */
-		ret = posix_fallocate(parity->f, 0, size);
+#if HAVE_FALLOCATE
+		/* allocate real space using the specific Linux fallocate() operation. */
+		/* If the underline filesystem doesn't support it, it's going to fail with the ENOSYS error. */
+		/* Note that posix_fallocate() doesn't fail in such case, and fallbacks to write the whole file. */
+		ret = fallocate(parity->f, 0, 0, size);
+
+		/* fallocate() returns the error number, and it doesn't set errno, just like posix_fallocate() */
+		/* It's not clear if this is correct or a bug, as the official manpage says otherwise */
+		/* http://www.kernel.org/doc/man-pages/online/pages/man2/fallocate.2.html */
+		if (ret > 0) { /* if an error is returned, move it to errno */
+			errno = ret;
+			ret = -1;
+		}
+
+		/* if the operation is not supported, like in ext3 */
+		if (errno == EOPNOTSUPP || errno == ENOSYS) {
+			/* fallback using ftruncate() */
+			ret = ftruncate(parity->f, size);
+		}
 #else
 		/* allocate using a sparse file */
 		ret = ftruncate(parity->f, size);
