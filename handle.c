@@ -135,7 +135,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 	/* advise sequential access */
 	ret = posix_fadvise(handle->f, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (ret != 0) {
-		fprintf(stderr, "Error advising file '%s'. %s.\n", handle->path, strerror(errno));
+		fprintf(stderr, "Error advising file '%s'. %s.\n", handle->path, strerror(ret));
 		return -1;
 	}
 #endif
@@ -190,7 +190,7 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file)
 	/* advise sequential access */
 	ret = posix_fadvise(handle->f, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (ret != 0) {
-		fprintf(stderr, "Error advising file '%s'. %s.\n", handle->path, strerror(errno));
+		fprintf(stderr, "Error advising file '%s'. %s.\n", handle->path, strerror(ret));
 		return -1;
 	}
 #endif

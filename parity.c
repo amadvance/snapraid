@@ -119,7 +119,7 @@ int parity_create(struct snapraid_parity* parity, const char* path, data_off_t s
 	/* advise sequential access */
 	ret = posix_fadvise(parity->f, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (ret != 0) {
-		fprintf(stderr, "Error advising parity file '%s'. %s.\n", parity->path, strerror(errno));
+		fprintf(stderr, "Error advising parity file '%s'. %s.\n", parity->path, strerror(ret));
 		goto bail;
 	}
 #endif
@@ -160,7 +160,7 @@ int parity_open(struct snapraid_parity* parity, const char* path)
 	/* advise sequential access */
 	ret = posix_fadvise(parity->f, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (ret != 0) {
-		fprintf(stderr, "Error advising parity file '%s'. %s.\n", parity->path, strerror(errno));
+		fprintf(stderr, "Error advising parity file '%s'. %s.\n", parity->path, strerror(ret));
 		goto bail;
 	}
 #endif
