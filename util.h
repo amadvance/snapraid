@@ -334,6 +334,12 @@ void pathprint(char* dst, size_t size, const char* format, ...);
  */
 void pathslash(char* dst, size_t size);
 
+/**
+ * Compare two paths.
+ * In Windows it's case insentive.
+ */
+int pathcmp(const char* a, const char* b);
+
 /****************************************************************************/
 /* memory */
 

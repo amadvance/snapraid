@@ -640,6 +640,19 @@ void pathslash(char* dst, size_t size)
 	}
 }
 
+int pathcmp(const char* a, const char* b)
+{
+#ifdef _WIN32
+	char ai[PATH_MAX];
+	char bi[PATH_MAX];
+	pathimport(ai, sizeof(ai), a);
+	pathimport(bi, sizeof(bi), b);
+	return stricmp(ai, bi);
+#else
+	return strcmp(a, b);
+#endif
+}
+
 /****************************************************************************/
 /* mem */
 

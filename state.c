@@ -58,6 +58,8 @@ void state_done(struct snapraid_state* state)
  */
 static void state_config_check(struct snapraid_state* state, const char* path, int skip_device)
 {
+	tommy_node* i;
+
 	if (state->parity[0] == 0) {
 		fprintf(stderr, "No 'parity' specification in '%s'\n", path);
 		exit(EXIT_FAILURE);
@@ -68,10 +70,24 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 		exit(EXIT_FAILURE);
 	}
 
+	/* checks for equal paths */
+	for(i=state->contentlist;i!=0;i=i->next) {
+		struct snapraid_content* content = i->data;
+
+		if (pathcmp(state->parity, content->content) == 0) {
+			fprintf(stderr, "Same path used for 'parity' and 'content' as '%s'\n", content->content);
+			exit(EXIT_FAILURE);
+		}
+
+		if (state->qarity[0] != 0 && pathcmp(state->qarity, content->content) == 0) {
+			fprintf(stderr, "Same path used for 'qarity' and 'content' as '%s'\n", content->content);
+			exit(EXIT_FAILURE);
+		}
+	}
+
 	/* count the content files */
 	if (!skip_device) {
 		unsigned content_count;
-		tommy_node* i;
 
 		content_count = 0;
 		for(i=state->contentlist;i!=0;i=i->next) {
@@ -101,7 +117,6 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 
 	/* check if all the data and parity disks are different */
 	if (!skip_device) {
-		tommy_node* i;
 		for(i=state->disklist;i!=0;i=i->next) {
 			tommy_node* j;
 			struct snapraid_disk* disk = i->data;
@@ -119,12 +134,13 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 				exit(EXIT_FAILURE);
 			}
 
-			if (disk->device == state->qarity_device) {
+			if (state->qarity[0] != 0 && disk->device == state->qarity_device) {
 				fprintf(stderr, "Disk '%s' and parity '%s' are on the same device.\n", disk->dir, state->qarity);
 				exit(EXIT_FAILURE);
 			}
 		}
-		if (state->parity_device == state->qarity_device) {
+
+		if (state->qarity[0] != 0 && state->parity_device == state->qarity_device) {
 			fprintf(stderr, "Parity '%s' and '%s' are on the same device.\n", state->parity, state->qarity);
 			exit(EXIT_FAILURE);
 		}
@@ -280,7 +296,7 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 				exit(EXIT_FAILURE);
 			}
 
-			if (strcmp(buffer, "/dev/null") == 0 || strcmp(buffer, "NUL") == 0 || strcmp(buffer, "nul") == 0) {
+			if (pathcmp(buffer, "/dev/null") == 0 || pathcmp(buffer, "NUL") == 0) {
 				fprintf(stderr, "You cannot use the null device as 'content' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
