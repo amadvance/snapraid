@@ -3,7 +3,12 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
-- v1.8
+- v1.9
+
+* Allow to filter the files to check/fix based on the drive where they reside.
+
+* When checking, allow to disable the parity check, thus allowing to read only
+the filtered data to check, and not the one needed to compute the parity.
 
 * In fix an existing symlink with the same name of a file to be recovered may stop
 the process making the create() operation to fail.
@@ -12,15 +17,6 @@ the process making the create() operation to fail.
 
 * If a directory exists with the same name of a parity/content file be more explicative
 on the error message. See: https://sourceforge.net/projects/snapraid/forums/forum/1677233/topic/4861034
-
-* Easy way to find files using a specified block.
-
-- v1.9
-
-* Allow to filter the files to check/fix based on the drive where they reside.
-
-* When checking, allow to disable the parity check, thus allowing to read only
-the filtered data to check, and not the one needed to compute the parity.
 
 - v2.x
 
