@@ -877,10 +877,7 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, 
 	struct snapraid_parity* qarity_ptr;
 	unsigned error;
 
-	if (fix)
-		printf("Checking and fixing...\n");
-	else
-		printf("Checking...\n");
+	printf("Opening parity...\n");
 
 	blockmax = parity_resize(state);
 	size = blockmax * (data_off_t)state->block_size;
@@ -938,6 +935,11 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, 
 			qarity_ptr = 0;
 		}
 	}
+
+	if (fix)
+		printf("Fixing...\n");
+	else
+		printf("Checking...\n");
 
 	error = 0;
 

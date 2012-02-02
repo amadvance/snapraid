@@ -1,6 +1,9 @@
 SnapRAID HISTORY
 ================
 
+1.9 2012/2
+===========
+
 1.8 2012/1
 ===========
  * Added a new "dup" command to find all the duplicate files.
