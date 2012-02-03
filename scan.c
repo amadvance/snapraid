@@ -218,6 +218,8 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 			/* nothing more to do */
 			return;
 		} else {
+			/* here if the file is changed */
+		
 			/* do a safety check to ensure that the common ext4 case of zeroing */
 			/* the size of a file after a crash doesn't propagate to the backup */
 			if (file->size != 0 && st->st_size == 0) {
@@ -264,6 +266,19 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 
 			/* and continue to reinsert it */
 		}
+	} else {
+		/* create the new file */
+		++scan->count_insert;
+
+		if (state->gui) {
+			fprintf(stderr, "scan:add:%s:%s\n", disk->name, sub);
+			fflush(stderr);
+		}
+		if (output) {
+			printf("Add '%s%s'\n", disk->dir, sub);
+		}
+
+		/* and continue to insert it */
 	}
 
 	/* insert it */
@@ -354,6 +369,19 @@ static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, 
 			/* nothing more to do */
 			return;
 		}
+	} else {
+		/* create the new link */
+		++scan->count_insert;
+
+		if (state->gui) {
+			fprintf(stderr, "scan:add:%s:%s\n", disk->name, sub);
+			fflush(stderr);
+		}
+		if (output) {
+			printf("Add '%s%s'\n", disk->dir, sub);
+		}
+
+		/* and continue to insert it */
 	}
 
 	/* insert it */
@@ -587,17 +615,6 @@ void state_scan(struct snapraid_state* state, int output)
 			/* next node */
 			node = node->next;
 
-			/* create the new file */
-			++scan->count_insert;
-
-			if (state->gui) {
-				fprintf(stderr, "scan:add:%s:%s\n", disk->name, file->sub);
-				fflush(stderr);
-			}
-			if (output) {
-				printf("Add '%s%s'\n", disk->dir, file->sub);
-			}
-
 			/* insert it */
 			scan_file_insert(state, disk, file);
 		}
@@ -609,17 +626,6 @@ void state_scan(struct snapraid_state* state, int output)
 
 			/* next node */
 			node = node->next;
-
-			/* create the new link */
-			++scan->count_insert;
-
-			if (state->gui) {
-				fprintf(stderr, "scan:add:%s:%s\n", disk->name, link->sub);
-				fflush(stderr);
-			}
-			if (output) {
-				printf("Add '%s%s'\n", disk->dir, link->sub);
-			}
 
 			/* insert it */
 			scan_link_insert(state, disk, link);
@@ -678,7 +684,7 @@ void state_scan(struct snapraid_state* state, int output)
 
 		if (output) {
 			if (!total.count_moved && !total.count_change && !total.count_remove && !total.count_insert) {
-				printf("No difference\n");
+				printf("No difference.\n");
 			}
 		}
 	}
