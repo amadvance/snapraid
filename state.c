@@ -574,7 +574,7 @@ void state_read(struct snapraid_state* state)
 		} else {
 			/* if it's real error of an existing file, abort */
 			if (errno != ENOENT) {
-				fprintf(stderr, "Error opening the content file '%s'\n", path);
+				fprintf(stderr, "Error opening the content file '%s'. %s.\n", path, strerror(errno));
 				exit(EXIT_FAILURE);
 			}
 
@@ -1107,7 +1107,7 @@ void state_write(struct snapraid_state* state)
 	/* open all the content files */
 	f = sopen_multi_write(count_content);
 	if (!f) {
-		fprintf(stderr, "Error opening the content files\n");
+		fprintf(stderr, "Error opening the content files.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -1118,7 +1118,7 @@ void state_write(struct snapraid_state* state)
 		char tmp[PATH_MAX];
 		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
 		if (sopen_multi_file(f, k, tmp) != 0) {
-			fprintf(stderr, "Error operning the content file '%s'. %s.\n", tmp, strerror(errno));
+			fprintf(stderr, "Error opening the content file '%s'. %s.\n", tmp, strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 		++k;
