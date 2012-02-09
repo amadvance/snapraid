@@ -330,7 +330,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	struct snapraid_parity* qarity_ptr;
 	unsigned unrecoverable_error;
 
-	printf("Opening parity...\n");
+	printf("Initializating...\n");
 
 	blockmax = parity_resize(state);
 	size = blockmax * (data_off_t)state->block_size;
