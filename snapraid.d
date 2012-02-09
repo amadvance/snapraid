@@ -609,10 +609,34 @@ Content
 	HASH is the hash of the block. In the last block of the file,
 	the HASH is the hash of only the used part of the block.
 
-  inv BLOCK [HASH]
+  inv BLOCK HASH
 	Like "blk", but inform that the parity of this block is invalid.
 
-	The HASH may be missing if not yet computed.
+	This field is used only when you interrupt manually the "sync"
+	command.
+
+  new BLOCK
+	Like "blk", but for new allocated blocks for which the hash is not
+	yet computed.
+
+	This field is used only when you interrupt manually the "sync"
+	command.
+
+  chg BLOCK
+	Like "blk", but for reallocated blocks for which the hash is not
+	yet computed.
+
+	This field is used only when you interrupt manually the "sync"
+	command.
+
+  hole DISK
+	Defines the list of blocks that are deleted from a disk.
+
+	This field is used only when you interrupt manually the "sync"
+	command.
+
+  off BLOCK
+	Defines the block deleted from a disk.
 
 	This field is used only when you interrupt manually the "sync"
 	command.

@@ -851,10 +851,30 @@ BLOCK is the block position in the \(a"parity\(a" file.
 .PP
 HASH is the hash of the block. In the last block of the file,
 the HASH is the hash of only the used part of the block.
-.SS inv BLOCK [HASH] 
+.SS inv BLOCK HASH 
 Like \(a"blk\(a", but inform that the parity of this block is invalid.
 .PP
-The HASH may be missing if not yet computed.
+This field is used only when you interrupt manually the \(a"sync\(a"
+command.
+.SS new BLOCK 
+Like \(a"blk\(a", but for new allocated blocks for which the hash is not
+yet computed.
+.PP
+This field is used only when you interrupt manually the \(a"sync\(a"
+command.
+.SS chg BLOCK 
+Like \(a"blk\(a", but for reallocated blocks for which the hash is not
+yet computed.
+.PP
+This field is used only when you interrupt manually the \(a"sync\(a"
+command.
+.SS hole DISK 
+Defines the list of blocks that are deleted from a disk.
+.PP
+This field is used only when you interrupt manually the \(a"sync\(a"
+command.
+.SS off BLOCK 
+Defines the block deleted from a disk.
 .PP
 This field is used only when you interrupt manually the \(a"sync\(a"
 command.

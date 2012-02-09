@@ -139,13 +139,13 @@ check-local:
 	rm test/disk2/2*
 	rm test/disk3/3*
 	$(TESTENV) ./mktest$(EXEEXT) generate 3 3 $(CHECKCOUNT) $(CHECKSIZE)
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
 	echo --- Move some files, sync and check
 	mv test/disk1/7* test/disk1/_a/
 	mv test/disk2/7* test/disk2/_a/
 	mv test/disk3/7* test/disk3/_a/
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
 	echo --- Delete one disk, fix and check with raid5
 	rm -r test/disk3
@@ -154,7 +154,7 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
 	echo --- Sync after all the fixes with an empty drive to test --force-empty
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v --force-empty -c $(srcdir)/test-raid6.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --force-empty -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
 	echo --- Delete two disks, fix and check with raid6
 	rm -r test/disk1
@@ -167,31 +167,85 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
 	echo --- Sync after all the fixes with an empty drive to test --find-by-name
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v --find-by-name -c $(srcdir)/test-raid6.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --find-by-name -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
 	echo --- Delete some files and create some new, sync and check in multiple steps
 	rm test/disk1/4*
 	rm test/disk2/5*
 	rm test/disk3/6*
 	$(TESTENV) ./mktest$(EXEEXT) generate 4 3 $(CHECKCOUNT) $(CHECKSIZE)
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf -t 100 sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf -t 100 sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check 2>> test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf -t 700 sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf -t 700 sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check 2>> test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf -t 1000 sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf -t 1000 sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check 2>> test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
-	echo --- Add some files, sync with abort, delete the new files, sync and check
+	echo --- Abort sync with additions and then delete the new additions
 	cp -a test/disk1/_a test/disk1/_c
 	cp -a test/disk2/_a test/disk2/_c
 	cp -a test/disk3/_a test/disk3/_c
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --test-kill-after-sync -v -c $(srcdir)/test-raid6.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --test-kill-after-sync -c $(srcdir)/test-raid6.conf sync
 	rm -r test/disk1/_c
 	rm -r test/disk2/_c
 	rm -r test/disk3/_c
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
+	echo --- Abort sync late with more additions than deletion and then delete after
+	cp -a test/disk1/_a test/disk1/_c
+	cp -a test/disk1/_b test/disk1/_d
+	mv test/disk1/_a test/_a
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf --test-kill-after-sync sync
+	rm -r test/disk2/_a
+	rm -r test/disk2/_b
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf fix 2>> test.log
+	-rm -r test/disk1/_a
+	rm -r test/disk1/_c
+	rm -r test/disk1/_d
+	mv test/_a test/disk1/_a
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
+	echo --- Abort sync late with more deletions than additions and then delete after
+	cp -a test/disk1/_a test/disk1/_c
+	mv test/disk1/_a test/_a
+	mv test/disk1/_b test/_b
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf --test-kill-after-sync sync
+	rm -r test/disk2/_a
+	rm -r test/disk2/_b
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf fix 2>> test.log
+	-rm -r test/disk1/_a
+	-rm -r test/disk1/_b
+	rm -r test/disk1/_c
+	mv test/_a test/disk1/_a
+	mv test/_b test/disk1/_b
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
+	echo --- Abort sync early with more additions than deletions and then delete after
+	cp -a test/disk1/_a test/disk1/_c
+	cp -a test/disk1/_b test/disk1/_d
+	mv test/disk1/_a test/_a
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf -t 1 --test-kill-after-sync sync
+	rm -r test/disk2/_a
+	rm -r test/disk2/_b
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf fix 2>> test.log
+	-rm -r test/disk1/_a
+	rm -r test/disk1/_c
+	rm -r test/disk1/_d
+	mv test/_a test/disk1/_a
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
+	echo --- Abort sync early with more deletions than additions and then delete after
+	cp -a test/disk1/_a test/disk1/_c
+	mv test/disk1/_a test/_a
+	mv test/disk1/_b test/_b
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf -t 1 --test-kill-after-sync sync
+	rm -r test/disk2/_a
+	rm -r test/disk2/_b
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf fix 2>> test.log
+	-rm -r test/disk1/_a
+	-rm -r test/disk1/_b
+	rm -r test/disk1/_c
+	mv test/_a test/disk1/_a
+	mv test/_b test/disk1/_b
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
 	echo --- Delete some files, fix and check with raid5
 	rm test/disk1/8*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --test-expect-recoverable -c $(srcdir)/test-raid5.conf check 2>> test.log
@@ -301,7 +355,7 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
 	echo --- Sync after all the fixes
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
 	echo Success!
 

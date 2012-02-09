@@ -66,9 +66,48 @@ struct snapraid_filter {
 
 struct snapraid_file;
 
-#define BLOCK_HAS_HASH 1 /**< If the hash value is valid. */
-#define BLOCK_HAS_PARITY 2 /**< If the parity block is valid. */
-#define BLOCK_HAS_MASK 3 /**< Mask of all the flags. Used to mix them inside the file pointer. */
+/**
+ * The block has both the hash and the parity computed.
+ * This is the normal state of a saved block.
+ */
+#define BLOCK_STATE_BLK 0
+
+/**
+ * The block is new and not yet hashed, and it's using a space previously empty.
+ */
+#define BLOCK_STATE_NEW 1
+
+/**
+ * The block has the hash computed, but the parity is invalid.
+ * This happens when the parity is invalidated by a change in another block.
+ */
+#define BLOCK_STATE_INV 2
+
+/**
+ * The block is new and not yet hashed, and it's using the space of a block not existing anymore.
+ * This happens when a new block overwrite a just removed block.
+ */
+#define BLOCK_STATE_CHG 3
+
+/**
+ * Mask used to store the previous states of the block.
+ * Used to mix them inside the file pointer.
+ */
+#define BLOCK_STATE_MASK 3
+
+/**
+ * This block is a deleted one.
+ * Note that this state cannot be stored inside the block,
+ * but it's usually represented by the block ::BLOCK_DELETED.
+ */
+#define BLOCK_STATE_DELETED 4
+
+/**
+ * This block is an empty one.
+ * Note that this state cannot be stored inside the block,
+ * but it's usually represented by the block ::BLOCK_EMPTY.
+ */
+#define BLOCK_STATE_EMPTY 5
 
 /**
  * Block of a file.
@@ -78,6 +117,16 @@ struct snapraid_block {
 	block_off_t parity_pos; /**< Position of the block in the parity. */
 	unsigned char hash[HASH_SIZE]; /**< Hash of the block. */
 };
+
+/**
+ * Block pointer used to mark unused blocks.
+ */
+#define BLOCK_EMPTY 0
+
+/**
+ * Block pointer used to mark deleted blocks.
+ */
+#define BLOCK_DELETED ((struct snapraid_block*)-1)
 
 #define FILE_IS_PRESENT 1 /**< If it's seen as present. */
 #define FILE_IS_EXCLUDED 2 /**< If it's an excluded file from the processing. */
@@ -204,7 +253,7 @@ int filter_content(tommy_list* contentlist, const char* path);
  */
 static inline struct snapraid_file* block_file_get(struct snapraid_block* block)
 {
-	return (struct snapraid_file*)(block->file_mixed & ~(uintptr_t)BLOCK_HAS_MASK);
+	return (struct snapraid_file*)(block->file_mixed & ~(uintptr_t)BLOCK_STATE_MASK);
 }
 
 /**
@@ -212,22 +261,33 @@ static inline struct snapraid_file* block_file_get(struct snapraid_block* block)
  */
 static inline void block_file_set(struct snapraid_block* block, struct snapraid_file* file)
 {
-	block->file_mixed = (block->file_mixed & ~(uintptr_t)BLOCK_HAS_MASK) | (uintptr_t)file;
+	block->file_mixed = (block->file_mixed & ~(uintptr_t)BLOCK_STATE_MASK) | (uintptr_t)file;
 }
 
-static inline int block_flag_has(struct snapraid_block* block, unsigned mask)
+static inline unsigned block_state_get(struct snapraid_block* block)
 {
-	return (block->file_mixed & mask) == mask;
+	return block->file_mixed & BLOCK_STATE_MASK;
 }
 
-static inline void block_flag_set(struct snapraid_block* block, unsigned mask)
+static inline void block_state_set(struct snapraid_block* block, unsigned state)
 {
-	block->file_mixed |= mask;
+	assert(state != BLOCK_STATE_EMPTY && state != BLOCK_STATE_DELETED);
+	block->file_mixed &= ~(uintptr_t)BLOCK_STATE_MASK;
+	block->file_mixed |= state & BLOCK_STATE_MASK;
 }
 
-static inline void block_flag_clear(struct snapraid_block* block, unsigned mask)
+static inline void block_clear_parity(struct snapraid_block* block)
 {
-	block->file_mixed &= ~(uintptr_t)mask;
+	unsigned state = block_state_get(block);
+	if (state == BLOCK_STATE_BLK) {
+		block_state_set(block, BLOCK_STATE_INV);
+	}
+}
+
+static inline int block_has_hash(struct snapraid_block* block)
+{
+	unsigned state = block_state_get(block);
+	return state == BLOCK_STATE_BLK || state == BLOCK_STATE_INV;
 }
 
 /**
@@ -239,6 +299,11 @@ block_off_t block_file_pos(struct snapraid_block* block);
  * Checks if the block is the last in the file.
  */
 int block_is_last(struct snapraid_block* block);
+
+static inline int block_is_valid(struct snapraid_block* block)
+{
+	return block != BLOCK_EMPTY && block != BLOCK_DELETED;
+}
 
 /**
  * Gets the size in bytes of the block.
@@ -359,7 +424,7 @@ static inline struct snapraid_block* disk_block_get(struct snapraid_disk* disk, 
 	if (pos < tommy_array_size(&disk->blockarr))
 		return tommy_array_get(&disk->blockarr, pos);
 	else
-		return 0;
+		return BLOCK_EMPTY;
 }
 
 /**

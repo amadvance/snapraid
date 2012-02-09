@@ -3,6 +3,10 @@ SnapRAID HISTORY
 
 1.9 2012/2
 ===========
+ * Implemented a more sophisticated recovering in case a harddisk failure
+   happens during a 'sync' command.
+   When using RAID6 it improves the chances of recovering data after an
+   aborted 'sync'.
  * Fixed the count of new files.
 
 1.8 2012/1

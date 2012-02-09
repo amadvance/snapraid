@@ -57,16 +57,17 @@ static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk*
 		if (disk->first_free_block > block_pos)
 			disk->first_free_block = block_pos;
 
-		/* clear the block */
-		tommy_array_set(&disk->blockarr, block_pos, 0);
+		/* set the block as deleted */
+		tommy_array_set(&disk->blockarr, block_pos, BLOCK_DELETED);
 
 		/* invalidate the block of all the other disks */
 		for(j=state->disklist;j!=0;j=j->next) {
 			struct snapraid_disk* oth_disk = j->data;
 			struct snapraid_block* oth_block = disk_block_get(oth_disk, block_pos);
-			if (oth_block) {
+
+			if (block_is_valid(oth_block)) {
 				/* remove the parity info for this block */
-				block_flag_clear(oth_block, BLOCK_HAS_PARITY);
+				block_clear_parity(oth_block);
 			}
 		}
 	}
@@ -97,7 +98,7 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 	block_max = tommy_array_size(&disk->blockarr);
 	for(i=0;i<file->blockmax;++i) {
 		/* find a free block */
-		while (block_pos < block_max && tommy_array_get(&disk->blockarr, block_pos) != 0)
+		while (block_pos < block_max && block_is_valid(tommy_array_get(&disk->blockarr, block_pos)))
 			++block_pos;
 
 		/* if not found, allocate a new one */
@@ -106,8 +107,16 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 			tommy_array_grow(&disk->blockarr, block_max);
 		}
 
-		/* set it */
+		/* set the position */
 		file->blockvec[i].parity_pos = block_pos;
+
+		/* set the state depending if the used block was EMPTY or DELETED */
+		if (tommy_array_get(&disk->blockarr, block_pos) == BLOCK_EMPTY)
+			block_state_set(&file->blockvec[i], BLOCK_STATE_NEW);
+		else
+			block_state_set(&file->blockvec[i], BLOCK_STATE_CHG);
+
+		/* store in the disk map */
 		tommy_array_set(&disk->blockarr, block_pos, &file->blockvec[i]);
 	}
 	if (file->blockmax) {

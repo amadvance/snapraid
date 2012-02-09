@@ -65,10 +65,12 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		/* for each disk */
 		one_invalid = 0;
 		for(j=0;j<diskmax;++j) {
-			struct snapraid_block* block = 0;
+			struct snapraid_block* block = BLOCK_EMPTY;
 			if (handle[j].disk)
 				block = disk_block_get(handle[j].disk, i);
-			if (block && !block_flag_has(block, BLOCK_HAS_HASH | BLOCK_HAS_PARITY)) {
+			if (block_is_valid(block)
+				&& block_state_get(block) != BLOCK_STATE_BLK
+			) {
 				one_invalid = 1;
 				break;
 			}
@@ -92,18 +94,36 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		/* for each disk */
 		one_invalid = 0;
 		for(j=0;j<diskmax;++j) {
-			struct snapraid_block* block = 0;
+			struct snapraid_block* block = BLOCK_EMPTY;
 			if (handle[j].disk)
 				block = disk_block_get(handle[j].disk, i);
-			if (block && !block_flag_has(block, BLOCK_HAS_HASH | BLOCK_HAS_PARITY)) {
+			if (block_is_valid(block)
+				&& block_state_get(block) != BLOCK_STATE_BLK
+			) {
 				one_invalid = 1;
 				break;
 			}
 		}
 
 		/* if no invalid block skip */
-		if (!one_invalid)
+		if (!one_invalid) {
+			/* cleanup all the deleted blocks */
+			for(j=0;j<diskmax;++j) {
+				struct snapraid_block* block = BLOCK_EMPTY;
+				if (handle[j].disk)
+					block = disk_block_get(handle[j].disk, i);
+				if (block == BLOCK_DELETED) {
+					/* set it to empty */
+					tommy_array_set(&handle[j].disk->blockarr, i, BLOCK_EMPTY);
+
+					/* mark the state as needing write */
+					state->need_write = 1;
+				}
+			}
+
+			/* skip */
 			continue;
+		}
 
 		/* by default process the block, and skip it if something go wrong */
 		skip_this_block = 0;
@@ -123,7 +143,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 			/* if the disk block is not used */
 			block = disk_block_get(handle[j].disk, i);
-			if (!block) {
+			if (!block_is_valid(block)) {
 				/* use an empty block */
 				memset(buffer[j], 0, state->block_size);
 				continue;
@@ -196,10 +216,12 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				goto bail;
 			}
 
+			countsize += read_size;
+
 			/* now compute the hash */
 			memhash(state->hash, hash, buffer[j], read_size);
 
-			if (block_flag_has(block, BLOCK_HAS_HASH)) {
+			if (block_has_hash(block)) {
 				/* compare the hash */
 				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
 					fprintf(stderr, "%u: Data error for file %s at position %u\n", i, block_file_get(block)->sub, block_file_pos(block));
@@ -213,8 +235,6 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				/* this allow on error to do not save the failed computation */
 				memcpy(block->hash, hash, HASH_SIZE);
 			}
-
-			countsize += read_size;
 		}
 
 		/* if we have read all the data required, proceed with the parity */
@@ -245,14 +265,23 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 			/* for each disk, mark the blocks as processed */
 			for(j=0;j<diskmax;++j) {
-				struct snapraid_block* block = 0;
+				struct snapraid_block* block = BLOCK_EMPTY;
 				if (handle[j].disk)
 					block = disk_block_get(handle[j].disk, i);
-				if (!block)
+
+				if (block == BLOCK_EMPTY) {
+					/* nothing to do */
 					continue;
+				}
+
+				if (block == BLOCK_DELETED) {
+					/* the parity is not updated without this block, so it's now empty */
+					tommy_array_set(&handle[j].disk->blockarr, i, BLOCK_EMPTY);
+					continue;
+				}
 
 				/* now all the blocks have the hash and the parity computed */
-				block_flag_set(block, BLOCK_HAS_HASH | BLOCK_HAS_PARITY);
+				block_state_set(block, BLOCK_STATE_BLK);
 			}
 		}
 
@@ -293,6 +322,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 {
 	block_off_t blockmax;
 	data_off_t size;
+	tommy_node* i;
 	int ret;
 	struct snapraid_parity parity;
 	struct snapraid_parity qarity;
@@ -304,6 +334,22 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	blockmax = parity_resize(state);
 	size = blockmax * (data_off_t)state->block_size;
+
+	/* remove all the deleted blocks over the upper limit */
+	for(i=state->disklist;i!=0;i=i->next) {
+		struct snapraid_disk* disk = i->data;
+		block_off_t diskblockmax = tommy_array_size(&disk->blockarr);
+		block_off_t block;
+
+		for(block=blockmax;block<diskblockmax;++block) {
+			if (tommy_array_get(&disk->blockarr, block) == BLOCK_DELETED) {
+				tommy_array_set(&disk->blockarr, block, BLOCK_EMPTY);
+
+				/* mark the state as needing write */
+				state->need_write = 1;
+			}
+		}
+	}
 
 	if (blockstart > blockmax) {
 		fprintf(stderr, "Error in the starting block %u. It's bigger than the parity size %u.\n", blockstart, blockmax);

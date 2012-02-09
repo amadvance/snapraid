@@ -624,8 +624,8 @@ void state_read(struct snapraid_state* state)
 			sungetc(c, f);
 		}
 
-		if (strcmp(tag, "blk") == 0 || strcmp(tag, "inv") == 0) {
-			/* "blk"/"inv" command */
+		if (strcmp(tag, "blk") == 0 || strcmp(tag, "inv") == 0 || strcmp(tag, "new") == 0 || strcmp(tag, "chg") == 0) {
+			/* "blk"/"inv"/"new"/"chg" command */
 			block_off_t v_pos;
 			struct snapraid_block* block;
 
@@ -653,22 +653,31 @@ void state_read(struct snapraid_state* state)
 			}
 
 			/* set the parity only if present */
-			if (tag[0] == 'b') {
-				block_flag_set(block, BLOCK_HAS_PARITY);
+			switch (tag[0]) {
+			case 'b' :
+				block_state_set(block, BLOCK_STATE_BLK);
 				hash = oathash8(hash, 'b');
-			} else {
+				break;
+			case 'i' :
+				block_state_set(block, BLOCK_STATE_INV);
 				hash = oathash8(hash, 'i');
+				break;
+			case 'n' :
+				block_state_set(block, BLOCK_STATE_NEW);
+				hash = oathash8(hash, 'n');
+				break;
+			case 'c' :
+				block_state_set(block, BLOCK_STATE_CHG);
+				hash = oathash8(hash, 'g');
+				break;
 			}
 
 			block->parity_pos = v_pos;
 			hash = oathash32(hash, v_pos);
 
-			/* check if we are at the end of the line */
-			c = sgeteol(f);
-			if (c == '\n') {
-				/* no hash present */
-				sungetc(c, f);
-			} else {
+			/* read the hash only for some state */
+			if (tag[0] == 'b' || tag[0] == 'i') {
+				c = sgeteol(f);
 				if (c != ' ') {
 					fprintf(stderr, "Invalid 'blk' specification in '%s' at line %u\n", path, line);
 					exit(EXIT_FAILURE);
@@ -681,14 +690,6 @@ void state_read(struct snapraid_state* state)
 					exit(EXIT_FAILURE);
 				}
 				hash = oathashm(hash, block->hash, HASH_SIZE);
-
-				block_flag_set(block, BLOCK_HAS_HASH);
-			}
-
-			/* parity implies hash */
-			if (block_flag_has(block, BLOCK_HAS_PARITY) && !block_flag_has(block, BLOCK_HAS_HASH)) {
-				fprintf(stderr, "Internal inconsistency in 'blk' specification in '%s' at line %u\n", path, line);
-				exit(EXIT_FAILURE);
 			}
 
 			/* insert the block in the block array */
@@ -704,6 +705,28 @@ void state_read(struct snapraid_state* state)
 
 			/* stat */
 			++count_block;
+		} else if (strcmp(tag, "off") == 0) {
+			/* "off" command */
+			block_off_t v_pos;
+
+			hash = oathash8(hash, 'o');
+
+			if (!disk) {
+				fprintf(stderr, "Unexpected 'off' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetu32(f, &v_pos);
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'off' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			hash = oathash32(hash, v_pos);
+
+			/* insert the block in the block array */
+			tommy_array_grow(&disk->blockarr, v_pos + 1);
+			tommy_array_set(&disk->blockarr, v_pos, BLOCK_DELETED);
 		} else if (strcmp(tag, "file") == 0) {
 			/* file */
 			char sub[PATH_MAX];
@@ -813,6 +836,34 @@ void state_read(struct snapraid_state* state)
 
 			/* stat */
 			++count_file;
+		} else if (strcmp(tag, "hole") == 0) {
+			/* hole */
+			tommy_node* i;
+
+			hash = oathash8(hash, 'h');
+
+			if (file) {
+				fprintf(stderr, "Missing 'blk' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgettok(f, buffer, sizeof(buffer));
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'hole' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+			hash = oathashs(hash, buffer);
+
+			/* find the disk */
+			for(i=state->disklist;i!=0;i=i->next) {
+				disk = i->data;
+				if (strcmp(disk->name, buffer) == 0)
+					break;
+			}
+			if (!i) {
+				fprintf(stderr, "Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
+				exit(EXIT_FAILURE);
+			}
 		} else if (strcmp(tag, "symlink") == 0) {
 			/* symlink */
 			char sub[PATH_MAX];
@@ -1123,8 +1174,8 @@ void state_write(struct snapraid_state* state)
 
 		/* for each file */
 		for(j=disk->filelist;j!=0;j=j->next) {
-			block_off_t k;
 			struct snapraid_file* file = j->data;
+			block_off_t k;
 			uint64_t size;
 			uint64_t mtime;
 			uint64_t inode;
@@ -1155,22 +1206,35 @@ void state_write(struct snapraid_state* state)
 				exit(EXIT_FAILURE);
 			}
 
-			/* for each block */
+			/* for each block in the file */
 			for(k=0;k<file->blockmax;++k) {
 				struct snapraid_block* block = &file->blockvec[k];
+				unsigned block_state;
 
-				if (block_flag_has(block, BLOCK_HAS_PARITY)) {
+				block_state = block_state_get(block);
+				switch (block_state) {
+				case BLOCK_STATE_BLK :
 					sputsl("blk ", f);
 					hash = oathash8(hash, 'b');
-				} else {
+					break;
+				case BLOCK_STATE_INV :
 					sputsl("inv ", f);
 					hash = oathash8(hash, 'i');
+					break;
+				case BLOCK_STATE_NEW :
+					sputsl("new ", f);
+					hash = oathash8(hash, 'n');
+					break;
+				case BLOCK_STATE_CHG :
+					sputsl("chg ", f);
+					hash = oathash8(hash, 'g');
+					break;
 				}
 
 				sputu32(block->parity_pos, f);
 				hash = oathash32(hash, block->parity_pos);
 
-				if (block_flag_has(block, BLOCK_HAS_HASH)) {
+				if (block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_INV) {
 					sputc(' ', f);
 					sputhex(block->hash, HASH_SIZE, f);
 					hash = oathashm(hash, block->hash, HASH_SIZE);
@@ -1210,6 +1274,47 @@ void state_write(struct snapraid_state* state)
 			}
 
 			++count_link;
+		}
+
+		{
+			block_off_t k;
+			block_off_t blockmax;
+			int first_deleted;
+			
+			first_deleted = 1;
+			blockmax = tommy_array_size(&disk->blockarr);
+
+			/* for each deleted block in the disk */
+			for(k=0;k<blockmax;++k) {
+				struct snapraid_block* block = tommy_array_get(&disk->blockarr, k);
+				if (block == BLOCK_DELETED) {
+					if (first_deleted) {
+						first_deleted = 0;
+
+						sputsl("hole ", f);
+						hash = oathash8(hash, 'h');
+						sputs(disk->name, f);
+						hash = oathashs(hash, disk->name);
+						sputeol(f);
+						if (serror(f)) {
+							fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+							exit(EXIT_FAILURE);
+						}
+					}
+
+					sputsl("off ", f);
+					hash = oathash8(hash, 'o');
+
+					sputu32(k, f);
+					hash = oathash32(hash, k);
+
+					sputeol(f);
+					if (serror(f)) {
+						fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+						exit(EXIT_FAILURE);
+					}
+				}
+			}
 		}
 	}
 

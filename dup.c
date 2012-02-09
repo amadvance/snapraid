@@ -52,7 +52,7 @@ struct snapraid_hash* hash_alloc(struct snapraid_disk* disk, struct snapraid_fil
 	for(i=0;i<file->blockmax;++i) {
 		memcpy(buf + i * HASH_SIZE, file->blockvec[i].hash, HASH_SIZE);
 
-		if (!block_flag_has(&file->blockvec[i], BLOCK_HAS_HASH)) {
+		if (!block_has_hash(&file->blockvec[i])) {
 			free(buf);
 			return 0;
 		}
