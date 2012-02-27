@@ -1,7 +1,7 @@
 SnapRAID HISTORY
 ================
 
-1.9 2012/2
+1.9 2012/3
 ===========
  * Implemented a more sophisticated recovering in case a harddisk failure
    happens during a 'sync' command.
