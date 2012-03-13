@@ -1139,7 +1139,7 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, 
 	struct snapraid_parity* qarity_ptr;
 	unsigned error;
 
-	printf("Initializating...\n");
+	printf("Initializing...\n");
 
 	blockmax = parity_resize(state);
 	size = blockmax * (data_off_t)state->block_size;
