@@ -8,6 +8,7 @@ SnapRAID HISTORY
    When using RAID6 it improves the chances of recovering data after an
    aborted 'sync'.
  * Fixed the count of new files.
+ * Added a new 'autosave' configuration option to save the intermediate 'sync' state.
  * Supported filesystems with read requests returning less data than requested.
 
 1.8 2012/1
