@@ -263,6 +263,7 @@ int parity_read(struct snapraid_parity* parity, block_off_t pos, unsigned char* 
 {
 	ssize_t read_ret;
 	data_off_t offset;
+	unsigned count;
 
 	offset = pos * (data_off_t)block_size;
 
@@ -272,24 +273,32 @@ int parity_read(struct snapraid_parity* parity, block_off_t pos, unsigned char* 
 		return -1;
 	}
 
-#if HAVE_PREAD
-	read_ret = pread(parity->f, block_buffer, block_size, offset);
-#else
+#if !HAVE_PREAD
 	if (lseek(parity->f, offset, SEEK_SET) != offset) {
 		fprintf(stderr, "Error seeking file '%s' at offset %"PRIu64". %s.\n", parity->path, offset, strerror(errno));
 		return -1;
 	}
-
-	read_ret = read(parity->f, block_buffer, block_size);
 #endif
-	if (read_ret < 0) {
-		fprintf(stderr, "Error reading file '%s' at offset %"PRIu64". %s.\n", parity->path, offset, strerror(errno));
-		return -1;
-	}
-	if (read_ret != (ssize_t)block_size) { /* signed conversion is safe because block_size is always small */
-		fprintf(stderr, "File '%s' is smaller than expected. Read %d bytes instead of %d at offset %"PRIu64".\n", parity->path, (int)read_ret, block_size, offset);
-		return -1;
-	}
+
+	count = 0;
+	do {
+
+#if HAVE_PREAD
+		read_ret = pread(parity->f, block_buffer + count, block_size - count, offset + count);
+#else
+		read_ret = read(parity->f, block_buffer + count, block_size - count);
+#endif
+		if (read_ret < 0) {
+			fprintf(stderr, "Error reading file '%s' at offset %"PRIu64". %s.\n", parity->path, offset, strerror(errno));
+			return -1;
+		}
+		if (read_ret == 0) {
+			fprintf(stderr, "Unexpected end of file '%s' at offset %"PRIu64". %s.\n", parity->path, offset, strerror(errno));
+			return -1;
+		}
+
+		count += read_ret;
+	} while (count < block_size);
 
 	/* Here isn't needed to call posix_fadvise(..., POSIX_FADV_DONTNEED) */
 	/* because we already advised sequential access with POSIX_FADV_SEQUENTIAL. */

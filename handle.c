@@ -229,6 +229,7 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 	ssize_t read_ret;
 	data_off_t offset;
 	unsigned read_size;
+	unsigned count;
 
 	offset = block_file_pos(block) * (data_off_t)block_size;
 
@@ -240,24 +241,34 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 
 	read_size = block_file_size(block, block_size);
 
-#if HAVE_PREAD
-	read_ret = pread(handle->f, block_buffer, read_size, offset);
-#else
+#if !HAVE_PREAD
 	if (lseek(handle->f, offset, SEEK_SET) != offset) {
 		fprintf(stderr, "Error seeking file '%s' at offset %"PRIu64". %s.\n", handle->path, offset, strerror(errno));
 		return -1;
 	}
-
-	read_ret = read(handle->f, block_buffer, read_size);
 #endif
-	if (read_ret < 0) {
-		fprintf(stderr, "Error reading file '%s' at offset %"PRIu64". %s.\n", handle->path, offset, strerror(errno));
-		return -1;
-	}
-	if (read_ret != (ssize_t)read_size) { /* signed conversion is safe because block_size is always small */
-		fprintf(stderr, "File '%s' is smaller than expected. Read %d bytes instead of %d at offset %"PRIu64".\n", handle->path, (int)read_ret, read_size, offset);
-		return -1;
-	}
+
+	count = 0;
+	do {
+
+#if HAVE_PREAD
+		read_ret = pread(handle->f, block_buffer + count, read_size - count, offset + count);
+#else
+		read_ret = read(handle->f, block_buffer + count, read_size - count);
+#endif
+
+		if (read_ret < 0) {
+			fprintf(stderr, "Error reading file '%s' at offset %"PRIu64". %s.\n", handle->path, offset, strerror(errno));
+			return -1;
+		}
+		if (read_ret == 0) {
+			fprintf(stderr, "Unexpected end of file '%s' at offset %"PRIu64". %s.\n", handle->path, offset, strerror(errno));
+			return -1;
+		}
+
+		count += read_ret;
+	} while (count < read_size);
+		
 
 	/* pad with 0 */
 	if (read_size < block_size) {
