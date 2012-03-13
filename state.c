@@ -117,6 +117,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 
 	/* check if all the data and parity disks are different */
 	if (!skip_device) {
+		unsigned diskcount = 0;
 		for(i=state->disklist;i!=0;i=i->next) {
 			tommy_node* j;
 			struct snapraid_disk* disk = i->data;
@@ -138,6 +139,14 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 				fprintf(stderr, "Disk '%s' and parity '%s' are on the same device.\n", disk->dir, state->qarity);
 				exit(EXIT_FAILURE);
 			}
+
+			++diskcount;
+		}
+
+		if (diskcount > 255) {
+			/* RAID6 P/Q parity works for up to 255 drives, no more */
+			fprintf(stderr, "Too many disks. No more than 255.\n");
+			exit(EXIT_FAILURE);
 		}
 
 		if (state->qarity[0] != 0 && state->parity_device == state->qarity_device) {
