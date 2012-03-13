@@ -476,6 +476,12 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			if (block == BLOCK_DELETED) {
 				/* use an empty block */
 				memset(buffer[j], 0, state->block_size);
+				
+				/* mark the parity as invalid, and don't try to check/fix it */
+				/* because it will be recomputed at the next sync */
+				/* note that for sure there is also another block invalidating */
+				/* the parity, but for completeness we invalidate it also here */
+				check_parity = 0;
 
 				/* store it in the failed set, because potentially */
 				/* the parity may be still computed with the previous content */
