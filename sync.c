@@ -40,6 +40,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	data_off_t countsize;
 	block_off_t countpos;
 	block_off_t countmax;
+	uint64_t autosavesize;
 	int ret;
 	unsigned unrecoverable_error;
 
@@ -84,6 +85,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	}
 
 	countsize = 0;
+	autosavesize = 0;
 	countpos = 0;
 	state_progress_begin(state, blockstart, blockmax, countmax);
 	for(i=blockstart;i<blockmax;++i) {
@@ -127,6 +129,11 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 		/* by default process the block, and skip it if something go wrong */
 		skip_this_block = 0;
+
+		/* compute the autosave size for all disk, even if not read */
+		/* this makes sense because the speed should be almost the same */
+		/* if the disks are read in parallel */
+		autosavesize += diskmax * state->block_size;
 
 		/* for each disk, process the block */
 		for(j=0;j<diskmax;++j) {
@@ -294,6 +301,18 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		/* progress */
 		if (state_progress(state, i, countpos, countmax, countsize)) {
 			break;
+		}
+
+		/* autosave */
+		if (state->autosave != 0 && autosavesize >= state->autosave) {
+			autosavesize = 0;
+
+			state_progress_stop(state);
+
+			printf("Autosaving...\n");
+			state_write(state);
+
+			state_progress_restart(state);
 		}
 	}
 

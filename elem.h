@@ -80,6 +80,9 @@ struct snapraid_file;
 /**
  * The block has the hash computed, but the parity is invalid.
  * This happens when the parity is invalidated by a change in another block.
+ * Note that this state is almost reduntant because we can detect that the parity is invalid
+ * also checking the other disks, where for sure exists a block the BLOCK_STATE_CHG/NEW state
+ * or a BLOCK_DELETED block.
  */
 #define BLOCK_STATE_INV 2
 
@@ -300,6 +303,9 @@ block_off_t block_file_pos(struct snapraid_block* block);
  */
 int block_is_last(struct snapraid_block* block);
 
+/**
+ * Checks if the block is a real allocated block.
+ */
 static inline int block_is_valid(struct snapraid_block* block)
 {
 	return block != BLOCK_EMPTY && block != BLOCK_DELETED;

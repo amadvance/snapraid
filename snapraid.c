@@ -124,8 +124,8 @@ int main(int argc, char* argv[])
 	int gui;
 	int force_zero;
 	int force_empty;
-	int find_by_name;
 	int filter_hidden;
+	int find_by_name;
 	int test_expect_unrecoverable;
 	int test_expect_recoverable;
 	int test_kill_after_sync;
@@ -146,8 +146,8 @@ int main(int argc, char* argv[])
 	gui = 0;
 	force_zero = 0;
 	force_empty = 0;
-	find_by_name = 0;
 	filter_hidden = 0;
+	find_by_name = 0;
 	test_expect_unrecoverable = 0;
 	test_expect_recoverable = 0;
 	test_kill_after_sync = 0;

@@ -36,6 +36,7 @@ struct snapraid_state {
 	int force_empty; /**< Forced dangerous operations of synching disk now empty. */
 	int filter_hidden; /**< Filter out hidden files. */
 	int find_by_name; /**< Forced dangerous operations of synching a rewritten disk. */
+	uint64_t autosave; /**< Autosave after the specified amount of data. 0 to disable. */
 	int expect_unrecoverable; /**< Expect presence of unrecoverable error in checking or fixing. */
 	int expect_recoverable; /**< Expect presence of recoverable error in checking. */
 	int need_write; /**< If the state is changed. */
@@ -52,6 +53,8 @@ struct snapraid_state {
 	tommy_list filterlist; /**< List of inclusion/exclusion. */
 	time_t progress_start; /**< Start of processing for progress visualization. */
 	time_t progress_last; /**< Last update of progress visualization. */
+	time_t progress_interruption; /**< Start of the measure interruption. */
+	time_t progress_subtract; /**< Time to subtract for the interruptions. */
 };
 
 /**
@@ -123,6 +126,16 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
  * Writes the progress.
  */
 int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize);
+
+/**
+ * Stop temporarely the progress.
+ */
+void state_progress_stop(struct snapraid_state* state);
+
+/**
+ * Restart the progress.
+ */
+void state_progress_restart(struct snapraid_state* state);
 
 #endif
 

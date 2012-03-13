@@ -47,3 +47,12 @@ exclude /lost+found/
 # Format: "block_size SIZE_IN_KiB"
 block_size 256
 
+# Automatically save the state when synching after the specied amount
+# of GiB processed.
+# This option is useful to avoid to restart from scratch long 'sync'
+# commands interrupted by a machine crash.
+# The SIZE argument is specified in gibi bytes -> 1073741824 bytes
+# Default value is 0, meaning disabled.
+# Format: "autosave_size SIZE_IN_GiB"
+# autosize 500
+

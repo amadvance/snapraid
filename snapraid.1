@@ -353,7 +353,7 @@ This option can be used many times.
 In Unix, ensure to quote globbing chars if used.
 .TP
 .B \(hyH, \(hy\(hyfilter\(hynohidden
-Filter out hidden files and directory. In Unix hidden files are
+Filters out hidden files and directory. In Unix hidden files are
 the ones starting with \(cq.\(cq. In Windows they are the ones with the
 hidden attribute.
 .TP
@@ -482,8 +482,8 @@ The default is 256 and it should work for most conditions.
 You could increase this value if you do not have enough RAM
 memory to run SnapRAID.
 .PP
-As a rule of thumb, with 4GB or more memory use the default 256,
-with 2GB use 512, and with 1GB use 1024.
+As a rule of thumb, with 4 GiB or more memory use the default 256,
+with 2 GiB use 512, and with 1 GiB use 1024.
 .PP
 In more details SnapRAID requires about TS*24/BS bytes
 of RAM memory to run. Where TS is the total size in bytes of
@@ -506,6 +506,13 @@ wasted for each file.
 .PP
 For example, with 10000 files and a 256 KiB block size, you are
 going to waste 1.2 GiB.
+.SS autosave SIZE_IN_GIBIBYTES 
+Automatically save the state when synching after the specied amount
+of GiB processed.
+This option is useful to avoid to restart from scratch long \(cqsync\(cq
+commands interrupted by a machine crash.
+The SIZE argument is specified in gibibytes. Where one gibi bytes
+is 1073741824 bytes.
 .SS Examples 
 An example of a typical configuration for Unix is:
 .PP
@@ -765,7 +772,7 @@ snapraid fix 2>fix.log
 .PP
 This command will take a long time.
 .PP
-Take care that you need also few GB free to store the fix.log file, so run it
+Take care that you need also few gigabytes free to store the fix.log file, so run it
 from a disk with some free space.
 .PP
 Now you have recovered all the recoverable. If some file is partially or totally
@@ -844,7 +851,7 @@ to recompute the parity.
 The PATH information is used in the \(a"check\(a" and \(a"fix\(a" commands
 to identify the file.
 .SS blk BLOCK HASH 
-Defines the ordered parity block list used by the last defined file.
+Defines an ordered parity block, part of the last defined file.
 .PP
 BLOCK is the block position in the \(a"parity\(a" file.
 0 for the first block, 1 for the second one and so on.
@@ -858,13 +865,15 @@ This field is used only when you interrupt manually the \(a"sync\(a"
 command.
 .SS new BLOCK 
 Like \(a"blk\(a", but for new allocated blocks for which the hash is not
-yet computed.
+yet computed, and the stored parity doesn\(cqt take into account this
+new block.
 .PP
 This field is used only when you interrupt manually the \(a"sync\(a"
 command.
 .SS chg BLOCK 
 Like \(a"blk\(a", but for reallocated blocks for which the hash is not
-yet computed.
+yet computed, and the parity is computed using the previous value
+of the block.
 .PP
 This field is used only when you interrupt manually the \(a"sync\(a"
 command.
@@ -874,7 +883,8 @@ Defines the list of blocks that are deleted from a disk.
 This field is used only when you interrupt manually the \(a"sync\(a"
 command.
 .SS off BLOCK 
-Defines the block deleted from a disk.
+Defines a block deleted from a disk, part of the last defined hole,
+for which the parity is computed using the previous value.
 .PP
 This field is used only when you interrupt manually the \(a"sync\(a"
 command.

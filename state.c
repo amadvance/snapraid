@@ -29,6 +29,7 @@ void state_init(struct snapraid_state* state)
 	state->force_empty = 0;
 	state->filter_hidden = 0;
 	state->find_by_name = 0;
+	state->autosave = 0;
 	state->expect_unrecoverable = 0;
 	state->expect_recoverable = 0;
 	state->need_write = 0;
@@ -387,6 +388,24 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 				exit(EXIT_FAILURE);
 			}
 			tommy_list_insert_tail(&state->filterlist, &filter->node, filter);
+		} else if (strcmp(tag, "autosave") == 0) {
+			char* e;
+
+			ret = sgetlasttok(f, buffer, sizeof(buffer));
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'autosave' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			state->autosave = strtoul(buffer, &e, 0);
+
+			if (!e || *e) {
+				fprintf(stderr, "Invalid 'autosave' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			/* convert to GiB */
+			state->autosave *= 1024 * 1024 * 1024;
 		} else if (tag[0] == 0) {
 			/* allow empty lines */
 		} else if (tag[0] == '#') {
@@ -525,6 +544,7 @@ static void state_map(struct snapraid_state* state)
 static void state_content_check(struct snapraid_state* state, const char* path)
 {
 	tommy_node* i;
+	block_off_t j;
 
 	/* checks that any map has different name and position */
 	for(i=state->maplist;i!=0;i=i->next) {
@@ -541,6 +561,48 @@ static void state_content_check(struct snapraid_state* state, const char* path)
 				exit(EXIT_FAILURE);
 			}
 		}
+	}
+
+	/* check the parity validity invariant */
+	for(j=0;1;++j) { /* for all the blocks */
+		int at_least_one = 0;
+		int parity_is_valid = 0;
+		int parity_is_invalid = 0;
+
+		/* for all the disks */
+		for(i=state->disklist;i!=0;i=i->next) {
+			struct snapraid_disk* disk = i->data;
+
+			/* if the block is present */
+			block_off_t size = tommy_array_size(&disk->blockarr);
+			if (j < size) {
+				struct snapraid_block* block = tommy_array_get(&disk->blockarr, j);
+
+				at_least_one = 1;
+
+				if (block == BLOCK_EMPTY) {
+					/* not relevant */
+				} else if (block == BLOCK_DELETED) {
+					parity_is_invalid = 1;
+				} else {
+					switch (block_state_get(block)) {
+					case BLOCK_STATE_BLK : parity_is_valid = 1; break;
+					case BLOCK_STATE_NEW : parity_is_invalid = 1; break;
+					case BLOCK_STATE_INV : parity_is_invalid = 1; break;
+					case BLOCK_STATE_CHG : parity_is_invalid = 1; break;
+					}
+				}
+			}
+		}
+
+		if (parity_is_valid && parity_is_invalid) {
+			fprintf(stderr, "Internal inconsistency in parity validity at block %u\n", j);
+			exit(EXIT_FAILURE);
+		}
+
+		/* stop if reached the end of all the arrays */
+		if (!at_least_one)
+			break;
 	}
 }
 
@@ -735,6 +797,13 @@ void state_read(struct snapraid_state* state)
 
 			/* insert the block in the block array */
 			tommy_array_grow(&disk->blockarr, v_pos + 1);
+
+			/* deleted block must be empty blocks */
+			if (tommy_array_get(&disk->blockarr, v_pos) != 0) {
+				fprintf(stderr, "Internal inconsistency for 'off' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
 			tommy_array_set(&disk->blockarr, v_pos, BLOCK_DELETED);
 		} else if (strcmp(tag, "file") == 0) {
 			/* file */
@@ -1442,6 +1511,7 @@ void state_progress_begin(struct snapraid_state* state, block_off_t blockstart, 
 
 		state->progress_start = now;
 		state->progress_last = now;
+		state->progress_subtract = 0;
 	}
 }
 
@@ -1462,6 +1532,27 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 
 #define PROGRESS_CLEAR "          "
 
+void state_progress_stop(struct snapraid_state* state)
+{
+	time_t now;
+
+	now = time(0);
+
+	printf("\n");
+	
+	state->progress_interruption = now;
+}
+
+void state_progress_restart(struct snapraid_state* state)
+{
+	time_t now;
+
+	now = time(0);
+
+	if (now >= state->progress_interruption) /* avoid degenerated cases when the clock is manually adjusted */
+		state->progress_subtract += now - state->progress_interruption;
+}
+
 int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize)
 {
 	if (state->gui) {
@@ -1473,7 +1564,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 		now = time(0);
 
 		if (state->progress_last != now) {
-			time_t delta = now - state->progress_start;
+			time_t delta = now - state->progress_start - state->progress_subtract;
 
 			printf("%u%%, %u MiB", countpos * 100 / countmax, (unsigned)(countsize / (1024*1024)));
 

@@ -238,7 +238,7 @@ Options
 		In Unix, ensure to quote globbing chars if used.
 
 	-H, --filter-nohidden
-		Filter out hidden files and directory. In Unix hidden files are
+		Filters out hidden files and directory. In Unix hidden files are
 		the ones starting with '.'. In Windows they are the ones with the
 		hidden attribute.
 
@@ -375,8 +375,8 @@ Configuration
 	You could increase this value if you do not have enough RAM
 	memory to run SnapRAID.
 
-	As a rule of thumb, with 4GB or more memory use the default 256,
-	with 2GB use 512, and with 1GB use 1024.
+	As a rule of thumb, with 4 GiB or more memory use the default 256,
+	with 2 GiB use 512, and with 1 GiB use 1024.
 
 	In more details SnapRAID requires about TS*24/BS bytes
 	of RAM memory to run. Where TS is the total size in bytes of
@@ -396,6 +396,14 @@ Configuration
 
 	For example, with 10000 files and a 256 KiB block size, you are
 	going to waste 1.2 GiB.
+
+    autosave SIZE_IN_GIBIBYTES
+	Automatically save the state when synching after the specied amount
+	of GiB processed.
+	This option is useful to avoid to restart from scratch long 'sync'
+	commands interrupted by a machine crash.
+	The SIZE argument is specified in gibibytes. Where one gibi bytes
+	is 1073741824 bytes.
 
   Examples
 	An example of a typical configuration for Unix is:
@@ -523,7 +531,7 @@ Recovering
 
 	This command will take a long time.
 
-	Take care that you need also few GB free to store the fix.log file, so run it
+	Take care that you need also few gigabytes free to store the fix.log file, so run it
 	from a disk with some free space.
 
 	Now you have recovered all the recoverable. If some file is partially or totally
@@ -601,7 +609,7 @@ Content
 	to identify the file.
 
   blk BLOCK HASH
-	Defines the ordered parity block list used by the last defined file.
+	Defines an ordered parity block, part of the last defined file.
 
 	BLOCK is the block position in the "parity" file.
 	0 for the first block, 1 for the second one and so on.
@@ -617,14 +625,16 @@ Content
 
   new BLOCK
 	Like "blk", but for new allocated blocks for which the hash is not
-	yet computed.
+	yet computed, and the stored parity doesn't take into account this
+	new block.
 
 	This field is used only when you interrupt manually the "sync"
 	command.
 
   chg BLOCK
 	Like "blk", but for reallocated blocks for which the hash is not
-	yet computed.
+	yet computed, and the parity is computed using the previous value
+	of the block.
 
 	This field is used only when you interrupt manually the "sync"
 	command.
@@ -636,7 +646,8 @@ Content
 	command.
 
   off BLOCK
-	Defines the block deleted from a disk.
+	Defines a block deleted from a disk, part of the last defined hole,
+	for which the parity is computed using the previous value.
 
 	This field is used only when you interrupt manually the "sync"
 	command.
