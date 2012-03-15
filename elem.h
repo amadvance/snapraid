@@ -69,6 +69,8 @@ struct snapraid_file;
 /**
  * The block has both the hash and the parity computed.
  * This is the normal state of a saved block.
+ * Note that if exists at least one BLOCK_STATE_BLK in a disk, all the other
+ * blocks at the same address in other disks can be only BLOCK_EMPTY or BLOCK_STATE_BLK.
  */
 #define BLOCK_STATE_BLK 0
 
@@ -80,9 +82,6 @@ struct snapraid_file;
 /**
  * The block has the hash computed, but the parity is invalid.
  * This happens when the parity is invalidated by a change in another block.
- * Note that this state is almost reduntant because we can detect that the parity is invalid
- * also checking the other disks, where for sure exists a block the BLOCK_STATE_CHG/NEW state
- * or a BLOCK_DELETED block.
  */
 #define BLOCK_STATE_INV 2
 

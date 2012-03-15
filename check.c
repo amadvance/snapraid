@@ -314,7 +314,7 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 			memset(buffer[failed[j].index], 0, state->block_size);
 			/* note that from now the buffer is definitively lost */
 			/* we can do this only because it's the last retry of recovering */
-			
+
 			/* mark that we have restored an old state */
 			failed[j].is_outofdate = 1;
 		}

@@ -563,7 +563,7 @@ static void state_content_check(struct snapraid_state* state, const char* path)
 		}
 	}
 
-	/* check the parity validity invariant */
+	/* check the parity validity */
 	for(j=0;1;++j) { /* for all the blocks */
 		int at_least_one = 0;
 		int parity_is_valid = 0;
@@ -578,6 +578,7 @@ static void state_content_check(struct snapraid_state* state, const char* path)
 			if (j < size) {
 				struct snapraid_block* block = tommy_array_get(&disk->blockarr, j);
 
+				/* mark if at least one block is addressed */
 				at_least_one = 1;
 
 				if (block == BLOCK_EMPTY) {
@@ -585,16 +586,17 @@ static void state_content_check(struct snapraid_state* state, const char* path)
 				} else if (block == BLOCK_DELETED) {
 					parity_is_invalid = 1;
 				} else {
-					switch (block_state_get(block)) {
-					case BLOCK_STATE_BLK : parity_is_valid = 1; break;
-					case BLOCK_STATE_NEW : parity_is_invalid = 1; break;
-					case BLOCK_STATE_INV : parity_is_invalid = 1; break;
-					case BLOCK_STATE_CHG : parity_is_invalid = 1; break;
+					unsigned state = block_state_get(block);
+					if (state == BLOCK_STATE_BLK) {
+						parity_is_valid = 1;
+					} else {
+						parity_is_invalid = 1;
 					}
 				}
 			}
 		}
 
+		/* we cannot have different blocks reporting both valid and invalid parity */
 		if (parity_is_valid && parity_is_invalid) {
 			fprintf(stderr, "Internal inconsistency in parity validity at block %u\n", j);
 			exit(EXIT_FAILURE);
