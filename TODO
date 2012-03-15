@@ -3,9 +3,7 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
-- v1.9
-
-* Period save of the state during long sync. Like one every TB processed.
+- v1.10
 
 * Allow to filter the files to check/fix based on the drive where they reside.
 
