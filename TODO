@@ -18,6 +18,8 @@ the process making the create() operation to fail.
 * If a directory exists with the same name of a parity/content file be more explicative
 on the error message. See: https://sourceforge.net/projects/snapraid/forums/forum/1677233/topic/4861034
 
+* Support interrupted operations with EINTR. For remote filesystems it could be relevant.
+
 - v2.x
 
 * Remove the old MD5 support.
