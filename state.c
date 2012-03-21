@@ -112,6 +112,14 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 
 		if (content_count < state->level+1) {
 			fprintf(stderr, "You must have at least %d 'content' files in different disks.\n", state->level+1);
+#ifdef _WIN32
+			fprintf(stderr, "If you are 100% sure that this is not the case, you can use the --test-skip-device option to skip this test.\n");
+			fprintf(stderr, "Please also report in the SnapRAID forum the following values:\n");
+			for(i=state->contentlist;i!=0;i=i->next) {
+				struct snapraid_content* content = i->data;
+				fprintf(stderr, "content_device: %"PRIu64"\n", content->device);
+			}
+#endif
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -127,17 +135,35 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 				struct snapraid_disk* other = j->data;
 				if (disk->device == other->device) {
 					fprintf(stderr, "Disks '%s' and '%s' are on the same device.\n", disk->dir, other->dir);
+#ifdef _WIN32
+					fprintf(stderr, "If you are 100% sure that this is not the case, you can use the --test-skip-device option to skip this test.\n");
+					fprintf(stderr, "Please also report in the SnapRAID forum the following values:\n");
+					fprintf(stderr, "disk_device: %"PRIu64"\n", disk->device);
+					fprintf(stderr, "other_device: %"PRIu64"\n", other->device);
+#endif
 					exit(EXIT_FAILURE);
 				}
 			}
 
 			if (disk->device == state->parity_device) {
 				fprintf(stderr, "Disk '%s' and parity '%s' are on the same device.\n", disk->dir, state->parity);
+#ifdef _WIN32
+				fprintf(stderr, "If you are 100% sure that this is not the case, you can use the --test-skip-device option to skip this test.\n");
+				fprintf(stderr, "Please also report in the SnapRAID forum the following values:\n");
+				fprintf(stderr, "disk_device: %"PRIu64"\n", disk->device);
+				fprintf(stderr, "parity_device: %"PRIu64"\n", state->parity_device);
+#endif
 				exit(EXIT_FAILURE);
 			}
 
 			if (state->qarity[0] != 0 && disk->device == state->qarity_device) {
 				fprintf(stderr, "Disk '%s' and parity '%s' are on the same device.\n", disk->dir, state->qarity);
+#ifdef _WIN32
+				fprintf(stderr, "If you are 100% sure that this is not the case, you can use the --test-skip-device option to skip this test.\n");
+				fprintf(stderr, "Please also report in the SnapRAID forum the following values:\n");
+				fprintf(stderr, "disk_device: %"PRIu64"\n", disk->device);
+				fprintf(stderr, "quarity_device: %"PRIu64"\n", state->qarity_device);
+#endif
 				exit(EXIT_FAILURE);
 			}
 
@@ -152,6 +178,12 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 
 		if (state->qarity[0] != 0 && state->parity_device == state->qarity_device) {
 			fprintf(stderr, "Parity '%s' and '%s' are on the same device.\n", state->parity, state->qarity);
+#ifdef _WIN32
+			fprintf(stderr, "If you are 100% sure that this is not the case, you can use the --test-skip-device option to skip this test.\n");
+			fprintf(stderr, "Please also report in the SnapRAID forum the following values:\n");
+			fprintf(stderr, "parity_device: %"PRIu64"\n", state->parity_device);
+			fprintf(stderr, "qarity_device: %"PRIu64"\n", state->qarity_device);
+#endif
 			exit(EXIT_FAILURE);
 		}
 	}
