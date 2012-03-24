@@ -447,7 +447,8 @@ going to waste 1.2 GiB.
 Automatically save the state when synching after the specied amount
 of GiB processed.
 This option is useful to avoid to restart from scratch long 'sync'
-commands interrupted by a machine crash.
+commands interrupted by a machine crash, or any other event that
+may interrupt SnapRAID.
 The SIZE argument is specified in gibibytes. Where one gibi bytes
 is 1073741824 bytes.
 

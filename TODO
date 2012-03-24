@@ -5,6 +5,8 @@ This is the list of TODO items for SnapRAID.
 
 - v1.10
 
+* In Autosave, do not save if we are near the termination.
+
 * Allow to filter the files to check/fix based on the drive where they reside.
 
 * When checking, allow to disable the parity check, thus allowing to read only
@@ -58,6 +60,7 @@ It will allow to define a new "check" command checking only aged blocks
 and skipping recently checked ones.
 This could be problematic for the increased memory occupation, and the need
 to update the content file also in check.
+Maybe a new check command ? Use "refresh" ?
 
 * Save the content file in compressed .gz format to save space.
 
@@ -66,6 +69,7 @@ If they do not match, stop the processing.
 This can be done to avoid to use not syncronized parity and content files,
 resulting in wrong data.
 But if the sync process is killed we need a way to resyncronize them.
+Or maybe we should allow parity never than content, but not viceversa.
 
 
 Rejected TODO
