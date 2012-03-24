@@ -10,7 +10,7 @@ SnapRAID HISTORY
  * Fixed the count of new files.
  * Added a new 'autosave' configuration option to save the intermediate 'sync' state.
  * Supported filesystems with read requests returning less data than requested.
- * In Windows suggest to try --test-skip-device if some device test incorrectly fails.
+ * In Windows ensures that the disk serial number is not zero.
 
 1.8 2012/1
 ===========
