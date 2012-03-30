@@ -2,7 +2,7 @@ SnapRAID HISTORY
 ================
 
 1.9 2012/3
-===========
+==========
  * Implemented a more sophisticated recovering in case a harddisk failure
    happens during a 'sync' command.
    When using RAID6 it improves the chances of recovering data after an
@@ -13,7 +13,7 @@ SnapRAID HISTORY
  * In Windows ensures that the disk serial number is not zero.
 
 1.8 2012/1
-===========
+==========
  * Added a new "dup" command to find all the duplicate files.
  * Added a new option "--filter-nohidden" to exclude hidden files.
  * Faster and parallel writing of content files.

@@ -208,7 +208,14 @@ static void windows_errno(DWORD error)
 	case ERROR_ACCESS_DENIED :
 		errno = EACCES;
 		break;
+	case ERROR_BUFFER_OVERFLOW :
+		errno = ENAMETOOLONG;
+		break;
+	case ERROR_NOT_ENOUGH_MEMORY :
+		errno = ENOMEM;
+		break;
 	default:
+		fprintf(stderr, "Unexpected Windows error %d.\n", error);
 		errno = EIO;
 		break;
 	}
