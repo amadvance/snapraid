@@ -22,6 +22,9 @@ on the error message. See: https://sourceforge.net/projects/snapraid/forums/foru
 
 * Support interrupted operations with EINTR. For remote filesystems it could be relevant.
 
+* In Windows we must be case insensitive, at least for ASCII<128 comparison. For other UTF-8 chars
+is too complex.
+
 - v2.x
 
 * Remove the old MD5 support.

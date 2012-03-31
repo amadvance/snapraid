@@ -159,7 +159,11 @@ Getting Started
 	system. For example, you can use it to recover from an accidentally
 	deleted directory, simply running the fix command like.
 
-		:snapraid fix -f JUST_DELETED_DIR/
+		:snapraid fix -f DIR/
+
+	Or to simply recover one file you can use:
+
+		:snapraid fix -f FILE
 
 Commands
 	SnapRAID provides four simple commands that allow to:

@@ -33,7 +33,7 @@ SnapRAID HISTORY
 * Increased by one the minimum number of content files. Before it was only
   a suggestion, but now it's a requirement because you are allowed to put
   content files in data disks.
-* Added checks to ensure that data and parity disks are diffent, and to
+* Added checks to ensure that data and parity disks are different, and to
   correctly count the number of copies of "content" files in different disks.
 * Removed the dependency of the "disk" order specification in the configuration
   file. The used order is now saved in the content file to avoid to damage the
@@ -54,7 +54,7 @@ SnapRAID HISTORY
 1.6 2011/9
 ==========
 * The content file is now saved also at the start of the "sync" command.
-  This avoids parity errors if the sync process aborted without
+  This avoids parity errors if the sync process is aborted without
   saving the content file and you made changes at the disk array before
   another "sync" command was done.
   More specifically, deletions or truncations of not yet synched files
@@ -89,7 +89,7 @@ SnapRAID HISTORY
   to remove the warning.
 * In fixing, if a file cannot be written for missing permission, an error is
   reported only if a write is effectively required.
-* Ignores any symbolic links. They are not backuped.
+* Ignores any symbolic links. They are not saved.
 
 1.3 2011/5
 ==========
