@@ -1,6 +1,9 @@
 SnapRAID HISTORY
 ================
 
+1.10 2012/4
+===========
+
 1.9 2012/3
 ==========
  * Implemented a more sophisticated recovering in case a harddisk failure
