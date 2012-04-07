@@ -15,15 +15,18 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/* Derivative work from MurmorHash3.cpp from http://code.google.com/p/smhasher/ */
+/*
+ * Derivative work from MurmorHash3.cpp revision r136
+ *
+ * SMHasher & MurmurHash
+ * http://code.google.com/p/smhasher/
+ *
+ * Exact source used as reference:
+ * http://code.google.com/p/smhasher/source/browse/trunk/MurmurHash3.cpp?spec=svn136&r=136
+ */
 
 // MurmurHash3 was written by Austin Appleby, and is placed in the public
 // domain. The author hereby disclaims copyright to this source code.
-
-// Note - The x86 and x64 versions do _not_ produce the same results, as the
-// algorithms are optimized for their respective platforms. You can still
-// compile and run any of them on any platform, but your performance with the
-// non-native version will be less than optimal.
 
 /* Rotate left */
 inline uint32_t rotl32(uint32_t x, int8_t r)
@@ -55,6 +58,37 @@ static inline uint32_t fmix32(uint32_t h)
 	return h;
 }
 
+/*
+ * Warning!
+ * Don't declare these variables static, otherwise the gcc optimizer
+ * may generate very slow code for multiplication with these constants,
+ * like:
+ 
+-> .cpp
+ k1 *= c1;
+-> .asm
+ 152:   8d 14 80                lea    (%eax,%eax,4),%edx
+ 155:   8d 14 90                lea    (%eax,%edx,4),%edx
+ 158:   c1 e2 03                shl    $0x3,%edx
+ 15b:   29 c2                   sub    %eax,%edx
+ 15d:   8d 14 d2                lea    (%edx,%edx,8),%edx
+ 160:   8d 14 90                lea    (%eax,%edx,4),%edx
+ 163:   8d 14 d0                lea    (%eax,%edx,8),%edx
+ 166:   8d 14 90                lea    (%eax,%edx,4),%edx
+ 169:   8d 14 50                lea    (%eax,%edx,2),%edx
+ 16c:   8d 14 90                lea    (%eax,%edx,4),%edx
+ 16f:   8d 14 92                lea    (%edx,%edx,4),%edx
+ 172:   8d 14 50                lea    (%eax,%edx,2),%edx
+ 175:   8d 04 d0                lea    (%eax,%edx,8),%eax
+ 178:   8d 14 c5 00 00 00 00    lea    0x0(,%eax,8),%edx
+ 17f:   29 d0                   sub    %edx,%eax
+
+ * resulting in speeds of 500 MB/s instead of 3000 MB/s.
+ *
+ * Verified with gcc 4.4.4 compiling with :
+ *
+ * g++ -g -c -O2 MurmurHash3.cpp -o MurmurHash3.o
+ */
 uint32_t c1 = 0x239b961b;
 uint32_t c2 = 0xab0e9789;
 uint32_t c3 = 0x38b34ae5;
