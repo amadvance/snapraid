@@ -82,24 +82,32 @@ static char* u16tou8(const wchar_t* src)
  */
 static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, struct windows_stat* st)
 {
-	/* Convert special attributes to a char device */
+	/* Convert special attributes */
 	if ((info->dwFileAttributes & FILE_ATTRIBUTE_DEVICE) != 0) {
 		st->st_mode = S_IFBLK;
-	} else if ((info->dwFileAttributes & (
-			FILE_ATTRIBUTE_SYSTEM /* System files */
-			| FILE_ATTRIBUTE_TEMPORARY /* Files going to be deleted on close */
-			| FILE_ATTRIBUTE_OFFLINE
-			| FILE_ATTRIBUTE_REPARSE_POINT /* Symbolic links */
-			)) != 0) {
+		st->st_desc = "device";
+	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0) { /* System files */
 		st->st_mode = S_IFCHR;
+		st->st_desc = "system";
+	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) { /* Symbolic links */
+		st->st_mode = S_IFCHR;
+		st->st_desc = "reparse-point";
+	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_OFFLINE) != 0) {
+		st->st_mode = S_IFCHR;
+		st->st_desc = "offline";
+	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_TEMPORARY) != 0) { /* Files going to be deleted on close */
+		st->st_mode = S_IFCHR;
+		st->st_desc = "temporary";
 	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
 		st->st_mode = S_IFDIR;
+		st->st_desc = "directory";
 	} else {
 		st->st_mode = S_IFREG;
+		st->st_desc = "regular";
 	}
 
 	/* Store the HIDDEN attribute in a separate field */
-	st->st_ishidden = (info->dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0;
+	st->st_hidden = (info->dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0;
 
 	st->st_size = info->nFileSizeHigh;
 	st->st_size <<= 32;
@@ -134,21 +142,29 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 	/* Convert special attributes */
 	if ((info->dwFileAttributes & FILE_ATTRIBUTE_DEVICE) != 0) {
 		st->st_mode = S_IFBLK;
-	} else if ((info->dwFileAttributes & (
-			FILE_ATTRIBUTE_SYSTEM /* System files */
-			| FILE_ATTRIBUTE_TEMPORARY /* Files going to be deleted on close */
-			| FILE_ATTRIBUTE_OFFLINE
-			| FILE_ATTRIBUTE_REPARSE_POINT /* Symbolic links, not supported so return a character file */
-			)) != 0) {
+		st->st_desc = "device";
+	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0) { /* System files */
 		st->st_mode = S_IFCHR;
+		st->st_desc = "system";
+	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) { /* Symbolic links */
+		st->st_mode = S_IFCHR;
+		st->st_desc = "reparse-point";
+	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_OFFLINE) != 0) {
+		st->st_mode = S_IFCHR;
+		st->st_desc = "offline";
+	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_TEMPORARY) != 0) { /* Files going to be deleted on close */
+		st->st_mode = S_IFCHR;
+		st->st_desc = "temporary";
 	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
 		st->st_mode = S_IFDIR;
+		st->st_desc = "directory";
 	} else {
 		st->st_mode = S_IFREG;
+		st->st_desc = "regular";
 	}
 
 	/* Store the HIDDEN attribute in a separate field */
-	st->st_ishidden = (info->dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0;
+	st->st_hidden = (info->dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0;
 
 	st->st_size = info->nFileSizeHigh;
 	st->st_size <<= 32;
@@ -544,10 +560,15 @@ int windows_closedir(windows_dir* dirstream)
 	return 0;
 }
 
-int windows_ishidden(struct dirent* dd, struct windows_stat* st)
+int windows_stat_hidden(struct dirent* dd, struct windows_stat* st)
 {
 	(void)dd;
-	return st->st_ishidden;
+	return st->st_hidden;
+}
+
+const char* windows_stat_desc(struct stat* st)
+{
+	return st->st_desc;
 }
 
 #endif

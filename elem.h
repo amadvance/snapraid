@@ -223,7 +223,7 @@ void filter_free(struct snapraid_filter* filter);
  */
 static inline int filter_hidden(int enable, struct dirent* dd, struct stat* st)
 {
-	if (enable && ishidden(dd, st)) {
+	if (enable && stat_hidden(dd, st)) {
 		return 1; /* filter out */
 	}
 

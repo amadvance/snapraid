@@ -5,9 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - v1.10
 
-* If a file is excluded, tell more about the reason. For example print if it's a Windows system file,
-or if it has other special attributes.
-
 * In Windows it's possible to workaround the 260 char path length using
 wide char functions and prepending "\\?\".
 Like "\\?\D:\very long path"

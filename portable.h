@@ -119,10 +119,34 @@
 /**
  * Check if the specified file is hidden.
  */
-static inline int ishidden(struct dirent* dd, struct stat* st)
+static inline int stat_hidden(struct dirent* dd, struct stat* st)
 {
 	(void)st;
 	return dd->d_name[0] == '.';
+}
+
+/**
+ * Return a description of the file type.
+ */
+static inline const char* stat_desc(struct stat* st)
+{
+	if (S_ISREG(st.st_mode))
+		return "regular";
+	if (S_ISDIR(st.st_mode))
+		return "directory";
+	if (S_ISCHR(st.st_mode))
+		return "character";
+	if (S_ISBLK(st.st_mode))
+		return "block-device";
+	if (S_ISFIFO(st.st_mode))
+		return "fifo";
+	if (S_ISLNK(st.st_mode))
+		return "link";
+	if (S_ISLNK(st.st_mode))
+		return "symbolic-link";
+	if (S_ISSOCK(st.st_mode))
+		return "socket";
+	return "unknown";
 }
 #endif
 

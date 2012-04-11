@@ -3,6 +3,8 @@ SnapRAID HISTORY
 
 1.10 2012/4
 ===========
+ * If a file is excluded prints explicitely which file attribute caused the
+   exclusion.
 
 1.9 2012/3
 ==========

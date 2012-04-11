@@ -537,10 +537,10 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 				&& filter_content(&state->contentlist, path_next) == 0
 				&& filter_path(&state->filterlist, sub_next) == 0
 			) {
-				fprintf(stderr, "warning: Ignoring special file '%s'\n", path_next);
+				fprintf(stderr, "warning: Ignoring special '%s' file '%s'\n", stat_desc(&st), path_next);
 			} else {
 				if (state->verbose) {
-					printf("Excluding special file '%s'\n", path_next);
+					printf("Excluding special '%s' file '%s'\n", stat_desc(&st), path_next);
 				}
 			}
 		}
