@@ -23,10 +23,10 @@
 #include <wchar.h>
 
 /**
- * Redefines PATH_MAX to allow long UTF8 names.
+ * Redefines PATH_MAX to allow very long paths.
  */
 #undef PATH_MAX
-#define PATH_MAX (1024+64)
+#define PATH_MAX 1024
 
 /* Remap functions and types */
 #define fopen windows_fopen

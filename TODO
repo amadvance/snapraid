@@ -5,15 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - v1.10
 
-* In Windows it's possible to workaround the 260 char path length using
-wide char functions and prepending "\\?\".
-Like "\\?\D:\very long path"
-See: http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx#maxpath
-The problem is that not all the APIs support "\\?\". Check for all of them.
-access -> ? FindFirstFile ?
-mkdir -> CreateDirectoryW
-remove -> DeleteFileW
-
 * In Autosave, do not save if we are near the termination.
 
 * Allow to filter the files to check/fix based on the drive where they reside.

@@ -39,7 +39,7 @@ static unsigned conv_utf8 = 0;
 static char conv_utf8_buffer[CONV_ROLL][PATH_MAX];
 
 /**
- * Converts from UTF8 to UTF16.
+ * Converts a generic string from UTF8 to UTF16.
  */
 static wchar_t* u8tou16(const char* src)
 {
@@ -59,7 +59,7 @@ static wchar_t* u8tou16(const char* src)
 }
 
 /**
- * Converts from UTF16 to UTF8.
+ * Converts a generic string from UTF16 to UTF8.
  */
 static char* u16tou8(const wchar_t* src)
 {
@@ -75,6 +75,83 @@ static char* u16tou8(const wchar_t* src)
 	}
 
 	return conv_utf8_buffer[conv_utf8];
+}
+
+/**
+ * Converts a path to the Windows format.
+ *
+ * The exact operation done is:
+ * - If it's a '\\?\' path, convert any '/' to '\'.
+ * - If it's a disk designator path, like 'D:\' or 'D:/', it prepends '\\?\' to the path and convert any '/' to '\'.
+ * - If it's a UNC path, like ''\\server'', it prepends '\\?\UNC\' to the path and convert any '/' to '\'.
+ * - Otherwise, only the UTF conversion is done. In this case Windows imposes a limit of 260 chars, and automatically convert any '/' to '\'.
+ *
+ * For more details see:
+ * Naming Files, Paths, and Namespaces
+ * http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx#maxpath
+ */
+static wchar_t* convert(const char* src)
+{
+	int ret;
+	wchar_t* dst;
+	int convert_slash;
+	int count;
+
+	if (++conv_utf16 == CONV_ROLL)
+		conv_utf16 = 0;
+
+	dst = conv_utf16_buffer[conv_utf16];
+
+	if (src[0] == '\\' && src[1] == '\\' && src[2] == '?' && src[3] == '\\') {
+		/* if it's already a '\\?\' path */
+
+		/* do nothing */
+	} else if (src[0] == '\\' && src[1] == '\\') {
+		/* if it is a UNC path, like '\\server' */
+
+		/* prefix with '\\?\UNC\' */
+		*dst++ = L'\\';
+		*dst++ = L'\\';
+		*dst++ = L'?';
+		*dst++ = L'\\';
+		*dst++ = L'U';
+		*dst++ = L'N';
+		*dst++ = L'C';
+		*dst++ = L'\\';
+
+		/* skip initial '\\' */
+		src += 2;
+	} else if (src[0] != 0 && src[1] == ':' && (src[2] == '\\' || src[2] == '/')) {
+		/* if it is a disk designator path, like 'D:\' or 'D:/' */
+
+		/* prefix with '\\?\' */
+		*dst++ = L'\\';
+		*dst++ = L'\\';
+		*dst++ = L'?';
+		*dst++ = L'\\';
+	}
+
+	/* chars already used */
+	count = dst - conv_utf16_buffer[conv_utf16];
+
+	ret = MultiByteToWideChar(CP_UTF8, 0, src, -1, dst, sizeof(conv_utf16_buffer[0]) / sizeof(wchar_t) - count);
+
+	if (ret <= 0) {
+		fprintf(stderr, "Error converting name '%s' from UTF-8 to UTF-16\n", src);
+		exit(EXIT_FAILURE);
+	}
+
+	/* convert any / to \ */
+	/* note that in UTF-16, it's not possible to have '/' used as part */
+	/* of a pair of codes representing a single UNICODE char */
+	/* See: http://en.wikipedia.org/wiki/UTF-16 */
+	while (*dst) {
+		if (*dst == L'/')
+			*dst = L'\\';
+		++dst;
+	}
+
+	return conv_utf16_buffer[conv_utf16];
 }
 
 /**
@@ -263,7 +340,7 @@ int windows_lstat(const char* file, struct windows_stat* st)
 	HANDLE h;
 	WIN32_FIND_DATAW data;
 
-	h = FindFirstFileW(u8tou16(file),  &data);
+	h = FindFirstFileW(convert(file),  &data);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -281,12 +358,12 @@ int windows_lstat(const char* file, struct windows_stat* st)
 
 int windows_access(const char* file, int mode)
 {
-	return _waccess(u8tou16(file), mode);
+	return _waccess(convert(file), mode);
 }
 
 int windows_mkdir(const char* file)
 {
-	return _wmkdir(u8tou16(file));
+	return _wmkdir(convert(file));
 }
 
 int lstat_ex(const char* file, struct windows_stat* st)
@@ -300,7 +377,7 @@ int lstat_ex(const char* file, struct windows_stat* st)
 	 * Use FILE_FLAG_BACKUP_SEMANTICS to open directories and to override the file security checks.
 	 * Use FILE_FLAG_OPEN_REPARSE_POINT to open symbolic links and not the their target.
 	 */
-	h = CreateFileW(u8tou16(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, 0);
+	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -333,7 +410,7 @@ int windows_stat(const char* file, struct windows_stat* st)
 	 *
 	 * Use FILE_FLAG_BACKUP_SEMANTICS to open directories and to override the file security checks.
 	 */
-	h = CreateFileW(u8tou16(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -434,7 +511,7 @@ int windows_rename(const char* a, const char* b)
 	 * Is an atomic file rename (with overwrite) possible on Windows?
 	 * http://stackoverflow.com/questions/167414/is-an-atomic-file-rename-with-overwrite-possible-on-windows
 	 */
-	if (!MoveFileExW(u8tou16(a), u8tou16(b), MOVEFILE_REPLACE_EXISTING)) {
+	if (!MoveFileExW(convert(a), u8tou16(b), MOVEFILE_REPLACE_EXISTING)) {
 		windows_errno(GetLastError());
 		return -1;
 	}
@@ -444,7 +521,7 @@ int windows_rename(const char* a, const char* b)
 
 int windows_remove(const char* a)
 {
-	if (_wremove(u8tou16(a)) != 0) {
+	if (_wremove(convert(a)) != 0) {
 		windows_errno(GetLastError());
 		return -1;
 	}
@@ -454,7 +531,7 @@ int windows_remove(const char* a)
 
 FILE* windows_fopen(const char* file, const char* mode)
 {
-	return _wfopen(u8tou16(file), u8tou16(mode));
+	return _wfopen(convert(file), u8tou16(mode));
 }
 
 int windows_open(const char* file, int flags, ...)
@@ -464,9 +541,9 @@ int windows_open(const char* file, int flags, ...)
 
 	va_start(args, flags);
 	if ((flags & O_CREAT) != 0)
-		ret = _wopen(u8tou16(file), flags, va_arg(args, int));
+		ret = _wopen(convert(file), flags, va_arg(args, int));
 	else
-		ret = _wopen(u8tou16(file), flags);
+		ret = _wopen(convert(file), flags);
 	va_end(args);
 
 	return ret;
@@ -484,12 +561,12 @@ windows_dir* windows_opendir(const char* dir)
 		exit(EXIT_FAILURE);
 	}
 
-	wdir = u8tou16(dir);
+	wdir = convert(dir);
 
 	/* add final / and * */
 	len = wcslen(wdir);
-	if (len!= 0 && wdir[len-1] != '/')
-		wdir[len++] = L'/';
+	if (len!= 0 && wdir[len-1] != '\\')
+		wdir[len++] = L'\\';
 	wdir[len++] = L'*';
 	wdir[len++] = 0;
 
