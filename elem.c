@@ -198,11 +198,17 @@ int filter_content(tommy_list* contentlist, const char* path)
 
 	for(i=tommy_list_head(contentlist);i!=0;i=i->next) {
 		struct snapraid_content* content = i->data;
+		char tmp[PATH_MAX];
 
 		/* FNM_PATHNAME because we are comparing full path */
 		/* FNM_NOESCAPE because we are comparing paths */
 		/* using fnmatch allows to ignore case in windows */
 		if (fnmatch(content->content, path, FNM_PATHNAME | FNM_NOESCAPE) == 0)
+			return -1;
+
+		/* exclude also the ".tmp" copy used to save it */
+		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
+		if (fnmatch(tmp, path, FNM_PATHNAME | FNM_NOESCAPE) == 0)
 			return -1;
 	}
 

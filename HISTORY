@@ -7,6 +7,8 @@ SnapRAID HISTORY
    exclusion.
  * Fixed very long paths in Windows. We now always use the special '\\?' prefix
    to remove the 260 chars limitation.
+ * Automatically excludes also the temporary copy of content file,
+   the one with the ".tmp" extension.
 
 1.9 2012/3
 ==========
