@@ -86,6 +86,7 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 	}
 
 	/* check if there is at least a failed block that can be checked for correctness */
+	/* if there isn't, we have to sacrifice a parity block to check that the result is correct */
 	has_hash = 0;
 	for(j=0;j<failed_count;++j) {
 		if (failed[failed_map[j]].block != BLOCK_DELETED /* if the block it not a deleted one */
@@ -101,7 +102,7 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 		/* recover */
 		raid5_recov_data(buffer, diskmax, state->block_size, failed[failed_map[0]].index);
 
-		hash_checked = 0; /* keep track if we check at leat one block */
+		hash_checked = 0; /* keep track if we check at least one block */
 
 		/* check if the recovered blocks are OK */
 		for(j=0;j<1;++j) {
@@ -132,7 +133,7 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 
 		raid6_recov_datap(buffer, diskmax, state->block_size, failed[failed_map[0]].index, buffer_zero);
 
-		hash_checked = 0; /* keep track if we check at leat one block */
+		hash_checked = 0; /* keep track if we check at least one block */
 
 		/* check if the recovered blocks are OK */
 		for(j=0;j<1;++j) {
@@ -183,7 +184,7 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 		/* recover */
 		raid6_recov_2data(buffer, diskmax, state->block_size, failed[failed_map[0]].index, failed[failed_map[1]].index, buffer_zero);
 
-		hash_checked = 0; /* keep track if we check at leat one block */
+		hash_checked = 0; /* keep track if we check at least one block */
 
 		/* check if the recovered blocks are OK */
 		for(j=0;j<2;++j) {
@@ -225,9 +226,14 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 
 	error = 0;
 
+	/* here we have to try two different strategies to recover, because in case the 'sync' */
+	/* process is aborted, we don't know if the parity data is really updated or */
+	/* still represents the state before the 'sync' */
+
 	/* now assume that the parity is already computed for the current state */
+	/* and that we are going to recover the state after the last 'sync'. */
 	/* we need to put in the recovering process only the bad blocks, because all the */
-	/* others already contains the correct data. */
+	/* others already contains the correct data, and the parity is correctly computed for them. */
 	/* this is the normal condition. */
 	n = 0;
 	has_bad = 0; /* keep track if there is at least one block to fix */
@@ -253,30 +259,36 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 
 	ret = repair_step(state, pos, diskmax, failed, map, n, buffer, buffer_parity, buffer_qarity, buffer_zero);
 	if (ret == 0) {
-		/* reprocess the blocks for NEW and CHG ones */
-		/* if they were BAD we have to use some euristics to check if we have recovered  */
-		/* the state before or after the sync */
+		/* reprocess the blocks for NEW and CHG ones, for which we don't have a hash to check */
+		/* if they were BAD we have to use some euristics to ensure that we have recovered  */
+		/* the state after the sync. If unsure, we assume the worst case */
+
 		for(j=0;j<failed_count;++j) {
 			/* we take care only of BAD blocks we have to write back */
 			if (failed[j].is_bad) {
 				unsigned block_state = block_state_get(failed[j].block);
+
 				if (block_state == BLOCK_STATE_NEW) {
-					/* if the block is filled with 0, we have restored it to */
-					/* the state before the last partial 'sync' */
-					/* we ignore the case of a file really filled with 0 */
+					/* if the block is not filled with 0, we are sure to have restored it */
+					/* to the state after the 'sync' */
+					/* if the block is filled with 0, it could be either that the */
+					/* block after the sync is really filled by 0, or that */
+					/* we restored the block before the 'sync'. */
 					if (memcmp(buffer[failed[j].index], buffer_zero, state->block_size) == 0) {
 						/* it may contain garbage */
 						failed[j].is_outofdate = 1;
 					}
 				}
+
 				if (block_state == BLOCK_STATE_CHG) {
 					/* we cannot know if we recoverd the state before or after */
 					/* the partial 'sync' process. */
-					/* Just to be safe, we assume it is garbage */
+					/* just to be safe, we assume it is garbage */
 					failed[j].is_outofdate = 1;
 				}
 			}
 		}
+
 		return 0;
 	}
 	if (ret > 0)
@@ -329,7 +341,10 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 
 	ret = repair_step(state, pos, diskmax, failed, map, n, buffer, buffer_parity, buffer_qarity, buffer_zero);
 	if (ret == 0) {
-		/* reprocess the blocks for NEW and CHG ones */
+		/* reprocess the blocks for NEW and CHG ones, for which we don't have a hash to check */
+
+		/* we know for sure that, even if we have restored them, that we have restored an old state */
+		/* so, we mark all of them as outofdate */
 		for(j=0;j<failed_count;++j) {
 			/* we take care only of BAD blocks we have to write back */
 			if (failed[j].is_bad) {
