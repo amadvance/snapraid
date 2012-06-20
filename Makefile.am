@@ -18,7 +18,8 @@ snapraid_SOURCES = \
 	raid.c \
 	selftest.c \
 	speed.c \
-	mingw.c
+	mingw.c \
+	os.c
 
 noinst_HEADERS = \
 	portable.h \
@@ -45,7 +46,8 @@ noinst_HEADERS = \
 	cpu.h \
 	raid.h \
 	tables.h \
-	mingw.h
+	mingw.h \
+	os.h
 
 mktest_SOURCES = \
 	mktest.c \

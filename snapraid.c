@@ -22,6 +22,7 @@
 #include "elem.h"
 #include "state.h"
 #include "raid.h"
+#include "os.h"
 
 /****************************************************************************/
 /* main */
@@ -139,6 +140,8 @@ int main(int argc, char* argv[])
 	int ret;
 	tommy_list filterlist;
 	char* e;
+
+	os_init();
 
 	/* defaults */
 	conf = CONF;
@@ -341,6 +344,8 @@ int main(int argc, char* argv[])
 
 	state_done(&state);
 	tommy_list_foreach(&filterlist, (tommy_foreach_func*)filter_free);
+
+	os_done();
 
 	return EXIT_SUCCESS;
 }

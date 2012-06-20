@@ -5,6 +5,20 @@ This is the list of TODO items for SnapRAID.
 
 - v1.10
 
+* In the repair() function the euristic to detect if we recovered after the sync, can be extended
+to all the subsequent blocks, because we always proceeed in block order during a sync.
+So, if for a block we can detect that we recovered after a sync, also for all the subsequent blocks
+this is true.
+
+* To list all the hardlink in Windows Vista it's possible to use FindFirstFileNameW/FindNextFileNameW
+See: http://blogs.msdn.com/b/oldnewthing/archive/2011/07/20/10188033.aspx
+
+* Support Symlinks also in Windows.
+See: http://www.codeproject.com/Articles/21202/Reparse-Points-in-Vista
+
+* In Windows to use FILE_FLAG_BACKUP_SEMANTICS we should also get privileges.
+See http://www.codeproject.com/Articles/21202/Reparse-Points-in-Vista.
+
 * In Autosave, do not save if we are near the termination.
 
 * Allow to filter the files to check/fix based on the drive where they reside.
@@ -59,11 +73,11 @@ http://thread.gmane.org/gmane.linux.raid/34195/focus=34236
 
 * In the content file, for each block store the last time the hash was checked
 with both "check" and also "sync".
-It will allow to define a new "check" command checking only aged blocks
+It will allow to define a new "check" command, checking only aged blocks
 and skipping recently checked ones.
-This could be problematic for the increased memory occupation, and the need
-to update the content file also in check.
-Maybe a new check command ? Use "refresh" ?
+A good name could be "scrub".
+This could be problematic for the increased memory occupation.
+The check command could be maintaned independent, and not saving the content file.
 
 * Save the content file in compressed .gz format to save space.
 
