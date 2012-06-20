@@ -79,6 +79,23 @@ int windows_fstat(int fd, struct windows_stat* st);
 
 /**
  * Like the C lstat() but without the inode information.
+ * In Windows the inode information is not reported.
+ * In Windows and in case of hardlinks, the size and the attributes of the file can
+ * be completely bogus, because changes made by other hardlinks are reported in the
+ * directory entry only when the file is opened.
+ *
+ * MSDN CreateHardLinks
+ * http://msdn.microsoft.com/en-us/library/windows/desktop/aa363860%28v=vs.85%29.aspx
+ * 'When you create a hard link on the NTFS file system, the file attribute information'
+ * 'in the directory entry is refreshed only when the file is opened, or when'
+ * 'GetFileInformationByHandle is called with the handle of a specific file.'
+ *
+ * MSDN HardLinks and Junctions
+ * http://msdn.microsoft.com/en-us/library/windows/desktop/aa365006%28v=vs.85%29.aspx
+ * 'However, the directory entry size and attribute information is updated only'
+ * 'for the link through which the change was made.'
+ *
+ * Use lstat_ex() to override these limitations.
  */
 int windows_lstat(const char* file, struct windows_stat* st);
 

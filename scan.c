@@ -482,6 +482,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 
 #if HAVE_LSTAT_EX
 				/* get inode info about the file, Windows needs an additional step */
+				/* also for hardlink, the real size of the file is read only with this function */
 				if (lstat_ex(path_next, &st) != 0) {
 					fprintf(stderr, "Error in stat_inode file '%s'. %s.\n", path_next, strerror(errno));
 					exit(EXIT_FAILURE);
