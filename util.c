@@ -255,6 +255,7 @@ int sgetline(STREAM* f, char* str, int size)
 
 	/* if there is enough data in memory */
 	if (sptrlookup(f, size)) {
+		/* optimized version with all the data in memory */
 		unsigned char* pos = sptrget(f);
 
 		while (1) {

@@ -768,8 +768,27 @@ Then proceed with the following steps.
 You need some space to recover, even better if you already have an additional
 disk, but in case, also an external USB or remote one is enough.
 .PP
-Change the SnapRAID configuration and change the \(a"disk\(a" directory
-of the failed disk to point to the new empty space.
+Change the SnapRAID configuration file and make the \(a"disk\(a" option
+of the failed disk to point to a place where you have enough empty space
+to recover the files.
+.PP
+For example, if you have that disk \(a"d1\(a" failed, you can change:
+.PP
+.RS 4
+disk d1 /mnt/disk1/
+.PD 0
+.PP
+.PD
+.RE
+.PP
+to:
+.PP
+.RS 4
+disk d1 /mnt/new_spare_disk/
+.PD 0
+.PP
+.PD
+.RE
 .SS STEP 2 \(hy> Fix 
 Run the fix command, storing the log in an external file with:
 .PP
@@ -782,8 +801,8 @@ snapraid fix 2>fix.log
 .PP
 This command will take a long time.
 .PP
-Take care that you need also few gigabytes free to store the fix.log file, so run it
-from a disk with some free space.
+Take care that you need also few gigabytes free to store the fix.log file.
+Run it from a disk with some free space.
 .PP
 Now you have recovered all the recoverable. If some file is partially or totally
 unrecoverable, it will be renamed adding the \(a".unrecoverable\(a" extension.
