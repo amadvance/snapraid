@@ -176,6 +176,12 @@ static int filter_element(tommy_list* filterlist, const char* sub, int is_dir)
 		}
 	}
 
+	/* directories are always included by default, otherwise we cannot apply rules */
+	/* to the contained files */
+	if (is_dir)
+		return 0;
+
+	/* files are excluded/included depending of the last rule processed */
 	if (direction < 0)
 		return -1;
 

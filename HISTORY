@@ -3,10 +3,11 @@ SnapRAID HISTORY
 
 1.10 2012/6
 ===========
- * If a file is excluded, it prints explicitely which attribute caused the
-   exclusion.
+ * Fixed directory inclusion, in case the last rule is an "include" one.
  * Fixed very long paths in Windows. We now always use the special '\\?' prefix
    to remove the 260 chars limitation.
+ * If a file is excluded, it prints explicitely which attribute caused the
+   exclusion.   
  * Automatically excludes also the temporary copy of content file,
    the one with the ".tmp" extension.
  * Avoid the Windows system to go in automatic sleep mode when running.
