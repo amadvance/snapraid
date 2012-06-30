@@ -410,6 +410,8 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 			++unrecoverable_error;
 			/* continue, as we are already exiting */
 		}
+	} else {
+		printf("Nothing to do\n");
 	}
 
 	ret = parity_sync(parity_ptr);
