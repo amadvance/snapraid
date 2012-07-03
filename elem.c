@@ -163,12 +163,10 @@ static int filter_element(tommy_list* filterlist, const char* sub, int is_dir)
 		ret = filter_recurse(filter, sub, is_dir);
 		if (ret > 0) {
 			/* include the file */
-			direction = 1;
-			break;
+			return 0;
 		} else if (ret < 0) {
 			/* exclude the file */
-			direction = -1;
-			break;
+			return -1;
 		} else {
 			/* default is opposite of the last filter */
 			direction = -filter->direction;

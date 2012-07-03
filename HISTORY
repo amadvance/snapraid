@@ -1,6 +1,11 @@
 SnapRAID HISTORY
 ================
 
+1.11 2012/7
+===========
+ * Fixed again directories inclusion. Exclusion rules for directories were
+   ignored.
+
 1.10 2012/6
 ===========
  * Fixed directory inclusion, in case the last rule is an "include" one.
