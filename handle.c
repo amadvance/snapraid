@@ -183,7 +183,7 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file)
 		return -1;
 	}
 
-	/* get the size of the exising data */
+	/* get the size of the existing data */
 	handle->valid_size = handle->st.st_size;
 
 #if HAVE_POSIX_FADVISE
@@ -320,27 +320,27 @@ int handle_write(struct snapraid_handle* handle, struct snapraid_block* block, u
 	}
 
 	/* Here doesn't make sense to call posix_fadvise(..., POSIX_FADV_DONTNEED) because */
-	/* at this time the data is still in not yet written and it cannot be discharged. */
+	/* at this time the data is still not yet written and it cannot be discharged. */
 
 	return 0;
 }
 
 int handle_utime(struct snapraid_handle* handle)
 {
-	struct timeval tv[2];
+	struct timespec tv[2];
 	int ret;
 
 	/* do nothing if not opened */
 	if (handle->f == -1)
 		return 0;
 
-	tv[0].tv_sec = handle->file->mtime;
-	tv[0].tv_usec = 0;
+	tv[0].tv_sec = handle->file->mtime_sec;
+	tv[0].tv_nsec = handle->file->mtime_nsec;
 
 	tv[1].tv_sec = tv[0].tv_sec;
-	tv[1].tv_usec = tv[0].tv_usec;
+	tv[1].tv_nsec = tv[0].tv_nsec;
 
-	ret = futimes(handle->f, tv);
+	ret = futimens(handle->f, tv);
 	if (ret != 0) {
 		fprintf(stderr, "Error timing file '%s'. %s.\n", handle->file->sub, strerror(errno));
 		return -1;

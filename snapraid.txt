@@ -673,8 +673,8 @@ Signature checksum of the content file to ensure that it doesn't get
 corrupted. If you want to modify the content file manually, you have
 to remove this line to avoid this check.
 
-10.5 file DISK SIZE TIME INODE PATH
------------------------------------
+10.5 file DISK SIZE TIME_SEC.TIME_NSEC INODE PATH
+-------------------------------------------------
 
 Defines a file in the specified DISK.
 

@@ -140,10 +140,11 @@ struct snapraid_block {
  * File.
  */
 struct snapraid_file {
-	int64_t mtime; /**< Modification time. */
+	int64_t mtime_sec; /**< Modification time. */
 	uint64_t inode; /**< Inode. */
 	data_off_t size; /**< Size of the file. */
 	struct snapraid_block* blockvec; /**< All the blocks of the file. */
+	int mtime_nsec; /**< Modification time nanoseconds. Less than 1000000000. */
 	block_off_t blockmax; /**< Number of blocks. */
 	unsigned flag; /**< FILE_IS_* flags. */
 	char sub[PATH_MAX]; /**< Sub path of the file. Without the disk dir. The disk is implicit. */
@@ -334,7 +335,7 @@ static inline void file_flag_clear(struct snapraid_file* file, unsigned mask)
 /**
  * Allocates a file.
  */
-struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t size, uint64_t mtime, uint64_t inode);
+struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode);
 
 /**
  * Deallocates a file.

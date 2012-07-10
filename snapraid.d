@@ -608,7 +608,7 @@ Content
 	corrupted. If you want to modify the content file manually, you have
 	to remove this line to avoid this check.
 
-  file DISK SIZE TIME INODE PATH
+  file DISK SIZE TIME_SEC.TIME_NSEC INODE PATH
 	Defines a file in the specified DISK.
 
 	The INODE number is used to identify the file in the "sync"

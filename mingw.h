@@ -50,6 +50,7 @@
 #define readdir windows_readdir
 #define closedir windows_closedir
 #define futimes windows_futimes
+#define futimens windows_futimens
 #define O_NOFOLLOW 0
 #define stat_hidden windows_stat_hidden
 #define stat_desc windows_stat_desc
@@ -58,6 +59,10 @@
 #define readlink(a,b,c) -1
 #define symlink(a,b) -1
 
+struct windows_mtim {
+	int tv_nsec;
+};
+
 /**
  * Generic stat information.
  */
@@ -65,6 +70,7 @@ struct windows_stat {
 	uint64_t st_ino;
 	int64_t st_size;
 	int64_t st_mtime;
+	struct windows_mtim st_mtim;
 	uint32_t st_mode;
 	uint32_t st_nlink;
 	uint32_t st_dev;
@@ -131,6 +137,18 @@ int windows_ftruncate(int fd, off64_t off);
  * Like the C futimes().
  */
 int windows_futimes(int fd, struct timeval tv[2]);
+
+struct windows_timespec {
+	int64_t tv_sec;
+	int tv_nsec;
+};
+
+#define timespec windows_timespec
+
+/**
+ * Like the C futimens().
+ */
+int windows_futimens(int fd, struct windows_timespec tv[2]);
 
 /**
  * Like the C rename().

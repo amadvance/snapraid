@@ -256,7 +256,7 @@ unsigned block_file_size(struct snapraid_block* block, unsigned block_size)
 	return block_size;
 }
 
-struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t size, uint64_t mtime, uint64_t inode)
+struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode)
 {
 	struct snapraid_file* file;
 	block_off_t i;
@@ -265,7 +265,8 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t 
 	pathcpy(file->sub, sizeof(file->sub), sub);
 	file->size = size;
 	file->blockmax = (size + block_size - 1) / block_size;
-	file->mtime = mtime;
+	file->mtime_sec = mtime_sec;
+	file->mtime_nsec = mtime_nsec;
 	file->inode = inode;
 	file->flag = 0;
 	file->blockvec = malloc_nofail(file->blockmax * sizeof(struct snapraid_block));

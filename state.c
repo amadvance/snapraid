@@ -841,7 +841,8 @@ void state_read(struct snapraid_state* state)
 			/* file */
 			char sub[PATH_MAX];
 			uint64_t v_size;
-			uint64_t v_mtime;
+			uint64_t v_mtime_sec;
+			uint32_t v_mtime_nsec;
 			uint64_t v_inode;
 			tommy_node* i;
 
@@ -878,14 +879,24 @@ void state_read(struct snapraid_state* state)
 				exit(EXIT_FAILURE);
 			}
 
-			ret = sgetu64(f, &v_mtime);
+			ret = sgetu64(f, &v_mtime_sec);
 			if (ret < 0) {
 				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
-			hash = oathash64(hash, v_mtime);
+			hash = oathash64(hash, v_mtime_sec);
 
 			c = sgetc(f);
+			if (c == '.') { /* the nanosecond field is present only from version 1.13 */
+				ret = sgetu32(f, &v_mtime_nsec);
+				if (ret < 0) {
+					fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
+					exit(EXIT_FAILURE);
+				}
+				hash = oathash32(hash, v_mtime_nsec);
+
+				c = sgetc(f);
+			}
 			if (c != ' ') {
 				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
@@ -928,7 +939,7 @@ void state_read(struct snapraid_state* state)
 			}
 
 			/* allocate the file */
-			file = file_alloc(state->block_size, sub, v_size, v_mtime, v_inode);
+			file = file_alloc(state->block_size, sub, v_size, v_mtime_sec, v_mtime_nsec, v_inode);
 
 			/* insert the file in the file containers */
 			tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
@@ -1287,11 +1298,13 @@ void state_write(struct snapraid_state* state)
 			struct snapraid_file* file = j->data;
 			block_off_t k;
 			uint64_t size;
-			uint64_t mtime;
+			uint64_t mtime_sec;
+			uint32_t mtime_nsec;
 			uint64_t inode;
 
 			size = file->size;
-			mtime = file->mtime;
+			mtime_sec = file->mtime_sec;
+			mtime_nsec = file->mtime_nsec;
 			inode = file->inode;
 
 			sputsl("file ", f);
@@ -1302,8 +1315,11 @@ void state_write(struct snapraid_state* state)
 			sputu64(size, f);
 			hash = oathash64(hash, size);
 			sputc(' ', f);
-			sputu64(mtime, f);
-			hash = oathash64(hash, mtime);
+			sputu64(mtime_sec, f);
+			hash = oathash64(hash, mtime_sec);
+			sputc('.', f);
+			sputu32(mtime_nsec, f);
+			hash = oathash32(hash, mtime_nsec);
 			sputc(' ', f);
 			sputu64(inode, f);
 			hash = oathash64(hash, inode);

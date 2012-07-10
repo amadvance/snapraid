@@ -3,7 +3,7 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
-- v1.11
+- v1.13
 
 * In the repair() function the euristic to detect if we recovered after the sync, can be extended
 to all the subsequent blocks, because we always proceeed in block order during a sync.

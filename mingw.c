@@ -94,7 +94,6 @@ static wchar_t* convert(const char* src)
 {
 	int ret;
 	wchar_t* dst;
-	int convert_slash;
 	int count;
 
 	if (++conv_utf16 == CONV_ROLL)
@@ -159,6 +158,8 @@ static wchar_t* convert(const char* src)
  */
 static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, struct windows_stat* st)
 {
+	uint64_t mtime;
+
 	/* Convert special attributes */
 	if ((info->dwFileAttributes & FILE_ATTRIBUTE_DEVICE) != 0) {
 		st->st_mode = S_IFBLK;
@@ -190,9 +191,9 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, struct win
 	st->st_size <<= 32;
 	st->st_size |= info->nFileSizeLow;
 
-	st->st_mtime = info->ftLastWriteTime.dwHighDateTime;
-	st->st_mtime <<= 32;
-	st->st_mtime |= info->ftLastWriteTime.dwLowDateTime;
+	mtime = info->ftLastWriteTime.dwHighDateTime;
+	mtime <<= 32;
+	mtime |= info->ftLastWriteTime.dwLowDateTime;
 
 	/*
 	 * Convert to unix time
@@ -200,7 +201,9 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, struct win
 	 * How To Convert a UNIX time_t to a Win32 FILETIME or SYSTEMTIME
 	 * http://support.microsoft.com/kb/167296
 	 */
-	st->st_mtime = (st->st_mtime - 116444736000000000LL) / 10000000;
+	mtime -= 116444736000000000LL;
+	st->st_mtime = mtime / 10000000;
+	st->st_mtim.tv_nsec = (mtime % 10000000) * 100;
 
 	st->st_ino = info->nFileIndexHigh;
 	st->st_ino <<= 32;
@@ -216,6 +219,8 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, struct win
  */
 static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_stat* st)
 {
+	uint64_t mtime;
+
 	/* Convert special attributes */
 	if ((info->dwFileAttributes & FILE_ATTRIBUTE_DEVICE) != 0) {
 		st->st_mode = S_IFBLK;
@@ -247,9 +252,9 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 	st->st_size <<= 32;
 	st->st_size |= info->nFileSizeLow;
 
-	st->st_mtime = info->ftLastWriteTime.dwHighDateTime;
-	st->st_mtime <<= 32;
-	st->st_mtime |= info->ftLastWriteTime.dwLowDateTime;
+	mtime = info->ftLastWriteTime.dwHighDateTime;
+	mtime <<= 32;
+	mtime |= info->ftLastWriteTime.dwLowDateTime;
 
 	/*
 	 * Convert to unix time
@@ -257,7 +262,9 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 	 * How To Convert a UNIX time_t to a Win32 FILETIME or SYSTEMTIME
 	 * http://support.microsoft.com/kb/167296
 	 */
-	st->st_mtime = (st->st_mtime - 116444736000000000LL) / 10000000;
+	mtime -= 116444736000000000LL;
+	st->st_mtime = mtime / 10000000;
+	st->st_mtim.tv_nsec = (mtime % 10000000) * 100;
 
 	/* No inode information available */
 	st->st_ino = 0;
@@ -489,6 +496,45 @@ int windows_futimes(int fd, struct timeval tv[2])
 	mtime = tv[0].tv_sec;
 	mtime *= 10000000;
 	mtime += tv[0].tv_usec * 10;
+	mtime += 116444736000000000;
+
+	ft.dwHighDateTime = mtime >> 32;
+	ft.dwLowDateTime = mtime;
+
+	if (!SetFileTime(h, 0, 0, &ft)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	return 0;
+}
+
+int windows_futimens(int fd, struct windows_timespec tv[2])
+{
+	HANDLE h;
+	FILETIME ft;
+	uint64_t mtime;
+
+	if (fd == -1) {
+		errno = EBADF;
+		return -1;
+	}
+
+	h = (HANDLE)_get_osfhandle(fd);
+	if (h == INVALID_HANDLE_VALUE) {
+		errno = EBADF;
+		return -1;
+	}
+
+	/*
+	 * Convert to windows time
+	 *
+	 * How To Convert a UNIX time_t to a Win32 FILETIME or SYSTEMTIME
+	 * http://support.microsoft.com/kb/167296
+	 */
+	mtime = tv[0].tv_sec;
+	mtime *= 10000000;
+	mtime += tv[0].tv_nsec / 100;
 	mtime += 116444736000000000;
 
 	ft.dwHighDateTime = mtime >> 32;

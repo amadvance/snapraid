@@ -172,7 +172,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 		}
 
 		/* check if the file is not changed */
-		if (file->size == st->st_size && file->mtime == st->st_mtime) {
+		if (file->size == st->st_size && file->mtime_sec == st->st_mtime && file->mtime_nsec == st->st_mtim.tv_nsec) {
 			/* mark as present */
 			file_flag_set(file, FILE_IS_PRESENT);
 
@@ -304,7 +304,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 	}
 
 	/* insert it */
-	file = file_alloc(state->block_size, sub, st->st_size, st->st_mtime, st->st_ino);
+	file = file_alloc(state->block_size, sub, st->st_size, st->st_mtime, st->st_mtim.tv_nsec, st->st_ino);
 
 	/* mark it as present */
 	file_flag_set(file, FILE_IS_PRESENT);

@@ -880,7 +880,8 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (!collide_file /* if not in the database, there is no collision */
 					|| strcmp(collide_file->sub, handle[j].file->sub) == 0 /* if the name is the same, it's the right collision */
 					|| collide_file->size != handle[j].file->size /* if the size is different, the collision is identified */
-					|| collide_file->mtime != handle[j].file->mtime /* if the mtime is different, the collision is identified */
+					|| collide_file->mtime_sec != handle[j].file->mtime_sec /* if the mtime is different, the collision is identified */
+					|| collide_file->mtime_nsec != handle[j].file->mtime_nsec
 				) {
 					/* set the original modification time */
 					ret = handle_utime(&handle[j]);
