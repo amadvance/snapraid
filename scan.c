@@ -172,9 +172,22 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 		}
 
 		/* check if the file is not changed */
-		if (file->size == st->st_size && file->mtime_sec == st->st_mtime && file->mtime_nsec == st->st_mtim.tv_nsec) {
+		if (file->size == st->st_size
+			&& file->mtime_sec == st->st_mtime
+			/* always accept the value if it's FILE_MTIME_NSEC_INVALID */
+			/* it happens when upgrading from an old version of SnapRAID */
+			&& (file->mtime_nsec == st->st_mtim.tv_nsec || file->mtime_nsec == FILE_MTIME_NSEC_INVALID)
+		) {
 			/* mark as present */
 			file_flag_set(file, FILE_IS_PRESENT);
+
+			/* update the nano seconds mtime if required */
+			if (file->mtime_nsec == FILE_MTIME_NSEC_INVALID) {
+				file->mtime_nsec = st->st_mtim.tv_nsec;
+
+				/* we have to save the new mtime */
+				state->need_write = 1;
+			}
 
 			if (strcmp(file->sub, sub) != 0) {
 				/* if the path is different, it means a moved file with the same inode */
