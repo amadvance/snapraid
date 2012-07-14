@@ -3,8 +3,12 @@ SnapRAID HISTORY
 
 1.12 2012/7
 ===========
- * Increased the file modification time precision. Now also nanoseconds are counted.
+ * The file modification time is now saved using nanosecond precision.
+   This allows to restore the exact modification time in fix.
    Note that content files written with this version are not backward compatible.
+ * Before starting a sync, we wait for two seconds, to workaround the FAT
+   limitation of having two seconds modification time precision.
+   This a safe measure to be 100% sure to always detect file changes.
 
 1.11 2012/7
 ===========
