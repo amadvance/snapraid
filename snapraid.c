@@ -307,6 +307,16 @@ int main(int argc, char* argv[])
 		if (state.need_write)
 			state_write(&state);
 
+		/* waits some time to ensure that any concurrent modification done at the files, */
+		/* using the same mtime read by the scan process, will be read by sync. */
+		/* Note that any later modification done, potentially not read by sync, will have */
+		/* a different mtime, and it will be syncronized at the next sync. */
+		/* The worst case is the FAT filesystem with a two seconds resolution for mtime. */
+		/* If you don't use FAT, the wait is not needed, because most filesystems have now */
+		/* at least microseconds resolution, but better to be safe. */
+		if (!test_skip_self)
+			sleep(2);
+
 		ret = state_sync(&state, blockstart, blockcount);
 
 		/* save the new state if required */

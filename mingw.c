@@ -694,5 +694,10 @@ const char* windows_stat_desc(struct stat* st)
 	return st->st_desc;
 }
 
+void windows_sleep(unsigned seconds)
+{
+	Sleep(seconds * 1000);
+}
+
 #endif
 

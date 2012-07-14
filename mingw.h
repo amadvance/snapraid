@@ -54,6 +54,7 @@
 #define O_NOFOLLOW 0
 #define stat_hidden windows_stat_hidden
 #define stat_desc windows_stat_desc
+#define sleep windows_sleep
 /* In Windows symbolic links are not supported */
 #define S_ISLNK(mode) 0
 #define readlink(a,b,c) -1
@@ -212,6 +213,11 @@ int windows_stat_hidden(struct dirent* dd, struct windows_stat* st);
  * Like stat_desc().
  */
 const char* windows_stat_desc(struct stat* st);
+
+/**
+ * Like sleep().
+ */
+void windows_sleep(unsigned seconds);
 
 #endif
 #endif
