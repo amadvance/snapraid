@@ -9,6 +9,7 @@ SnapRAID HISTORY
  * Before starting a sync, we wait for two seconds, to workaround the FAT
    limitation of having two seconds modification time precision.
    This a safe measure to be 100% sure to always detect file changes.
+ * Autosave isn't triggered if we are near the end of the process.
 
 1.11 2012/7
 ===========
