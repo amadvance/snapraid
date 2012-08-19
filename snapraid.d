@@ -255,6 +255,9 @@ Options
 		them all. With this option, a file with the correct path,
 		size and time is assumed identical at the previous one,
 		and not resynched.
+		Note that if you use this option, all the hard-links will be
+		stored independently wasting space. So, if you use hard-links,
+		it's better to don't use it.
 		This option has effect only on the "sync" and "diff" commands.
 
 	-Z, --force-zero

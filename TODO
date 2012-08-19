@@ -52,6 +52,21 @@ or check validity of data of existing ones.
 * Rename sync->backup and fix->restore. It seems to me a naming expressing
 better the meaning of the commands. But not yet sure.
 
+* In the "interim" content file during sync, keep the full list of deleted
+files, to be able to restore in case they are put back in their original position.
+We use now the "hole/off" fields to represent this information, but we can define
+a new "deleted (just like file)/blk,inv,chg,new" keeping the hash.
+We must have all the "blk,inv,chg,new" options to be able to address delete file
+starting from an interim content.
+When recovering, the first try assuming updated parity, will ignore all the "deleted"
+entries. The second one, will use them.
+Possible problem is when a new file, overwrite part of the deleted ones.
+We have to keep in memory different block? Duplicate blocks should be allocated
+in a different way ?
+In case we can lose the hash of the deleted ones, because we need only the
+position in the disk. We use them only for recovering, so the block to be
+recovcered will be checked with its own hash.
+
 * When fixing, before overwriting the present file, make a copy of it just in
 case that the original file cannot be completely recovered.
 We can always open files in read-only mode, if a write is required, we close it,
