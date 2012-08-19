@@ -137,9 +137,7 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 		disk->first_free_block = block_pos + 1;
 	}
 
-	/* insert the file in the file containers */
-	tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
-	tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
+	/* note that the file is already added in the file hashtables */
 	tommy_list_insert_tail(&disk->filelist, &file->nodelist, file);
 }
 
@@ -322,7 +320,11 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 	/* mark it as present */
 	file_flag_set(file, FILE_IS_PRESENT);
 
-	/* insert it in the delayed insert list */
+	/* insert the file in the file hashtables, to allow to find duplicate hardlinks */
+	tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
+	tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
+
+	/* insert the file in the delayed block allocation */
 	tommy_list_insert_tail(&scan->file_insert_list, &file->nodelist, file);
 }
 
