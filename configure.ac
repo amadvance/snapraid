@@ -38,12 +38,13 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
 AC_TYPE_INT8_T
+AC_CHECK_MEMBERS([struct stat.st_mtim.tv_nsec, struct stat.st_mtimensec, struct stat.st_mtimespec.tv_nsec], [], [], [[#include <sys/stat.h>]])
 
 dnl Checks for library functions.
 AC_SYS_LARGEFILE
 AC_CHECK_FUNCS([memset strchr strerror strrchr mkdir gettimeofday strtoul])
 AC_CHECK_FUNCS([getopt getopt_long snprintf vsnprintf])
-AC_CHECK_FUNCS([ftruncate fallocate fsync access posix_fallocate posix_fadvise pread pwrite getc_unlocked ferror_unlocked fnmatch])
+AC_CHECK_FUNCS([ftruncate fallocate fsync access posix_fallocate posix_fadvise pread pwrite getc_unlocked ferror_unlocked fnmatch futimes futimens])
 
 dnl Checks for architecture
 AC_C_BIGENDIAN

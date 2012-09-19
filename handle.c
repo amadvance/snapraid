@@ -327,20 +327,39 @@ int handle_write(struct snapraid_handle* handle, struct snapraid_block* block, u
 
 int handle_utime(struct snapraid_handle* handle)
 {
+#if HAVE_FUTIMENS
 	struct timespec tv[2];
+#else
+	struct timeval tv[2];
+#endif
 	int ret;
 
 	/* do nothing if not opened */
 	if (handle->f == -1)
 		return 0;
 
+#if HAVE_FUTIMENS /* futimens is preferred because it gives nanosecond precision */
 	tv[0].tv_sec = handle->file->mtime_sec;
-	tv[0].tv_nsec = handle->file->mtime_nsec;
-
+	if (handle->file->mtime_nsec != FILE_MTIME_NSEC_INVALID)
+		tv[0].tv_nsec = handle->file->mtime_nsec;
+	else
+		tv[0].tv_nsec = 0;
 	tv[1].tv_sec = tv[0].tv_sec;
 	tv[1].tv_nsec = tv[0].tv_nsec;
 
 	ret = futimens(handle->f, tv);
+#else
+	tv[0].tv_sec = handle->file->mtime_sec;
+	if (handle->file->mtime_nsec != FILE_MTIME_NSEC_INVALID)
+		tv[0].tv_usec = handle->file->mtime_nsec / 1000;
+	else
+		tv[0].tv_usec = 0;
+	tv[1].tv_sec = tv[0].tv_sec;
+	tv[1].tv_usec = tv[0].tv_usec;
+
+	ret = futimes(handle->f, tv);
+#endif
+
 	if (ret != 0) {
 		fprintf(stderr, "Error timing file '%s'. %s.\n", handle->file->sub, strerror(errno));
 		return -1;

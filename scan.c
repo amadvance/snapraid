@@ -174,14 +174,16 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 			&& file->mtime_sec == st->st_mtime
 			/* always accept the value if it's FILE_MTIME_NSEC_INVALID */
 			/* it happens when upgrading from an old version of SnapRAID */
-			&& (file->mtime_nsec == st->st_mtim.tv_nsec || file->mtime_nsec == FILE_MTIME_NSEC_INVALID)
+			&& (file->mtime_nsec == STAT_NSEC(st) || file->mtime_nsec == FILE_MTIME_NSEC_INVALID)
 		) {
 			/* mark as present */
 			file_flag_set(file, FILE_IS_PRESENT);
 
 			/* update the nano seconds mtime if required */
-			if (file->mtime_nsec == FILE_MTIME_NSEC_INVALID) {
-				file->mtime_nsec = st->st_mtim.tv_nsec;
+			if (file->mtime_nsec == FILE_MTIME_NSEC_INVALID
+				&& STAT_NSEC(st) != FILE_MTIME_NSEC_INVALID
+			) {
+				file->mtime_nsec = STAT_NSEC(st);
 
 				/* we have to save the new mtime */
 				state->need_write = 1;
@@ -315,7 +317,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 	}
 
 	/* insert it */
-	file = file_alloc(state->block_size, sub, st->st_size, st->st_mtime, st->st_mtim.tv_nsec, st->st_ino);
+	file = file_alloc(state->block_size, sub, st->st_size, st->st_mtime, STAT_NSEC(st), st->st_ino);
 
 	/* mark it as present */
 	file_flag_set(file, FILE_IS_PRESENT);

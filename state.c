@@ -900,7 +900,7 @@ void state_read(struct snapraid_state* state)
 				/* use a special value, meaning that we don't have this information */
 				v_mtime_nsec = FILE_MTIME_NSEC_INVALID;
 			}
-			
+
 			if (c != ' ') {
 				fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
@@ -1303,7 +1303,7 @@ void state_write(struct snapraid_state* state)
 			block_off_t k;
 			uint64_t size;
 			uint64_t mtime_sec;
-			uint32_t mtime_nsec;
+			int32_t mtime_nsec;
 			uint64_t inode;
 
 			size = file->size;
@@ -1321,9 +1321,11 @@ void state_write(struct snapraid_state* state)
 			sputc(' ', f);
 			sputu64(mtime_sec, f);
 			hash = oathash64(hash, mtime_sec);
-			sputc('.', f);
-			sputu32(mtime_nsec, f);
-			hash = oathash32(hash, mtime_nsec);
+			if (mtime_nsec != FILE_MTIME_NSEC_INVALID) {
+				sputc('.', f);
+				sputu32(mtime_nsec, f);
+				hash = oathash32(hash, mtime_nsec);
+			}
 			sputc(' ', f);
 			sputu64(inode, f);
 			hash = oathash64(hash, inode);

@@ -204,13 +204,13 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			/* check if the file is changed */
 			if (handle[j].st.st_size != block_file_get(block)->size
 				|| handle[j].st.st_mtime != block_file_get(block)->mtime_sec
-				|| handle[j].st.st_mtim.tv_nsec != block_file_get(block)->mtime_nsec
+				|| STAT_NSEC(&handle[j].st) != block_file_get(block)->mtime_nsec
 				|| handle[j].st.st_ino != block_file_get(block)->inode
 			) {
 				if (handle[j].st.st_size != block_file_get(block)->size)
 					fprintf(stderr, "Unexpected size change at file '%s'.\n", handle[j].path);
 				else if (handle[j].st.st_mtime != block_file_get(block)->mtime_sec
-					|| handle[j].st.st_mtim.tv_nsec != block_file_get(block)->mtime_nsec)
+					|| STAT_NSEC(&handle[j].st) != block_file_get(block)->mtime_nsec)
 					fprintf(stderr, "Unexpected time change at file '%s'.\n", handle[j].path);
 				else
 					fprintf(stderr, "Unexpected inode change from %"PRIu64" to %"PRIu64" at file '%s'.\n", block_file_get(block)->inode, handle[j].st.st_ino, handle[j].path);

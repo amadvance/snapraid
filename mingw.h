@@ -49,7 +49,7 @@
 #define opendir windows_opendir
 #define readdir windows_readdir
 #define closedir windows_closedir
-#define futimes windows_futimes
+#define HAVE_FUTIMENS 1
 #define futimens windows_futimens
 #define O_NOFOLLOW 0
 #define stat_hidden windows_stat_hidden
@@ -60,10 +60,6 @@
 #define readlink(a,b,c) -1
 #define symlink(a,b) -1
 
-struct windows_mtim {
-	int tv_nsec;
-};
-
 /**
  * Generic stat information.
  */
@@ -71,7 +67,7 @@ struct windows_stat {
 	uint64_t st_ino;
 	int64_t st_size;
 	int64_t st_mtime;
-	struct windows_mtim st_mtim;
+	int32_t st_mtimensec;
 	uint32_t st_mode;
 	uint32_t st_nlink;
 	uint32_t st_dev;

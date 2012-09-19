@@ -112,9 +112,30 @@
 
 #ifdef __MINGW32__ /* Specific for MingW */
 #include "mingw.h"
+
+/* We have nano second support */
+#define STAT_NSEC(st) (st)->st_mtimensec
+
 #else /* Specific for Unix */
+
 #define O_BINARY 0 /**< Not used in Unix. */
 #define O_SEQUENTIAL 0 /**< In Unix posix_fadvise() shall be used. */
+
+/* Check if we have nanoseconds support */
+#if HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
+#define STAT_NSEC(st) (st)->st_mtim.tv_nsec /* Linux */
+#elif HAVE_STRUCT_STAT_ST_MTIMENSEC
+#define STAT_NSEC(st) (st)->st_mtimensec /* FreeBSD, Mac OS X if _POSIX_C_SOURCE defined */
+#elif HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC
+#define STAT_NSEC(st) (st)->st_mtimespec.tv_nsec /* Mac OS X if _POSIX_C_SOURCE not defined */
+#else
+/**
+ * If nanoseconds are not supported, we report the special FILE_MTIME_NSEC_INVALID value,
+ * to mark that it's undefined.
+ * This result in not having it saved into the content file as a dummy 0.
+ */
+#define STAT_NSEC(st) -1
+#endif
 
 /**
  * Check if the specified file is hidden.
