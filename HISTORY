@@ -1,7 +1,7 @@
 SnapRAID HISTORY
 ================
 
-1.12 2012/7
+1.13 2012/?
 ===========
  * The file modification time is now saved using nanosecond precision.
    This allows to restore the exact modification time in fix.
@@ -11,6 +11,11 @@ SnapRAID HISTORY
    This a safe measure to be 100% sure to always detect file changes.
  * Autosave isn't triggered if we are near the end of the process.
  * Fixed hard-links automatic exclusion after the first one.
+
+1.12 2012/9
+=============
+ * Fixed file renaming in Windows during a 'fix' command.
+   This is only a Windows issue, no reason to upgrade for other platforms.
 
 1.11 2012/7
 ===========

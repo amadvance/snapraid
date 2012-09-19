@@ -845,6 +845,16 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					pathprint(path_from, sizeof(path_from), "%s%s", handle[j].disk->dir, handle[j].file->sub);
 					pathprint(path_to, sizeof(path_to), "%s%s.unrecoverable", handle[j].disk->dir, handle[j].file->sub);
 
+					/* ensure to operate on a closed file */
+					ret = handle_close(&handle[j]);
+					if (ret != 0) {
+						fprintf(stderr, "Error closing '%s'. %s.\n", path_from, strerror(errno));
+						fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+						printf("Stopping at block %u\n", i);
+						++unrecoverable_error;
+						goto bail;
+					}
+
 					ret = rename(path_from, path_to);
 					if (ret != 0) {
 						fprintf(stderr, "Error renaming  '%s' to '%s'. %s.\n", path_from, path_to, strerror(errno));

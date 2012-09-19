@@ -56,7 +56,7 @@ mktest_SOURCES = \
 EXTRA_DIST = \
 	autogen.sh \
 	noautomake.sh \
-	README AUTHORS HISTORY INSTALL COPYING TODO TEST \
+	README AUTHORS HISTORY INSTALL COPYING TODO TEST INSTALL.windows \
 	snapraid.d snapraid.1 snapraid.txt \
 	test-raid5.conf test-raid6.conf test-raid6-hole.conf \
 	snapraid.conf.example \
