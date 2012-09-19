@@ -38,7 +38,11 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
 AC_TYPE_INT8_T
-AC_CHECK_MEMBERS([struct stat.st_mtim.tv_nsec, struct stat.st_mtimensec, struct stat.st_mtimespec.tv_nsec], [], [], [[#include <sys/stat.h>]])
+AC_CHECK_MEMBERS([struct stat.st_mtim.tv_nsec, struct stat.st_mtimensec, struct stat.st_mtimespec.tv_nsec], [], [], [[
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+]])
 
 dnl Checks for library functions.
 AC_SYS_LARGEFILE
