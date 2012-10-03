@@ -763,7 +763,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						goto bail;
 					}
 
-					/* if we are not sure that the recovered content uptodate */
+					/* if we are not sure that the recovered content is uptodate */
 					if (failed[j].is_outofdate) {
 						/* mark the file as damaged */
 						file_flag_set(block_file_get(failed[j].block), FILE_IS_DAMAGED);
