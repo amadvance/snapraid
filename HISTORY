@@ -12,6 +12,8 @@ SnapRAID HISTORY
    This a safe measure to be 100% sure to always detect file changes.
  * Autosave isn't triggered if we are near the end of the 'sync' process.
  * Fixed hard-links automatic exclusion after the first one.
+ * Always fill the memory after allocating it to avoid the OOM (Out Of Memory)
+   killer in Linux.
 
 1.12 2012/9
 =============
