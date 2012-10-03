@@ -669,9 +669,18 @@ void* malloc_nofail(size_t size)
 	void* ptr = malloc(size);
 
 	if (!ptr) {
-		fprintf(stderr, "Low memory\n");
+		/* don't use printf to avoid any possible extra allocation */
+		write(2, "Low Memory\n", 11);
 		exit(EXIT_FAILURE);
 	}
+
+	/* Here we preinitialize the memory to ensure that the OS is really allocating it */
+	/* and not only reserving the addressable space. */
+	/* Otherwise we are risking that the OOM (Out Of Memory) killer in Linux will kill the process. */
+	/* Filling the memory doesn't ensure to disable OOM, but it increase a lot the chances to */
+	/* get a real error from malloc() instead than a process killed. */
+	/* Note that calloc() doesn't have the same effect. */
+	memset(ptr, 0xA5, size);
 
 	mcounter += size;
 
