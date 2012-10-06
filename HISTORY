@@ -7,11 +7,14 @@ SnapRAID HISTORY
    This allows to restore the exact modification time in 'fix'.
    The new 'content' files written with this version are not backward compatible,
    but it's still possible to read the old 'content' format.
+ * Fixed hard-links automatic exclusion. All the hardlinks after the first one
+   are now correctly ignored.
+ * If it isn't possible to grow a parity file, prints the list of files outside
+   the maximum size allocated.
+ * Autosave isn't triggered if we are near the end of the 'sync' process.
  * Before starting a 'sync', we wait for two seconds, to workaround the FAT
    limitation of having two seconds modification time precision.
    This a safe measure to be 100% sure to always detect file changes.
- * Autosave isn't triggered if we are near the end of the 'sync' process.
- * Fixed hard-links automatic exclusion after the first one.
  * Always fill the memory after allocating it to avoid the OOM (Out Of Memory)
    killer in Linux.
 

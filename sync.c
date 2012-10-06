@@ -353,6 +353,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 {
 	block_off_t blockmax;
 	data_off_t size;
+	data_off_t size_after;
 	tommy_node* i;
 	int ret;
 	struct snapraid_parity parity;
@@ -394,16 +395,18 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	/* create the file and open for writing */
 	parity_ptr = &parity;
-	ret = parity_create(parity_ptr, state->parity, size);
+	ret = parity_create(parity_ptr, state->parity, size, &size_after);
 	if (ret == -1) {
+		parity_overflow(state, size_after);
 		fprintf(stderr, "WARNING! Without an accessible Parity file, it isn't possible to sync.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	if (state->level >= 2) {
 		qarity_ptr = &qarity;
-		ret = parity_create(qarity_ptr, state->qarity, size);
+		ret = parity_create(qarity_ptr, state->qarity, size, &size_after);
 		if (ret == -1) {
+			parity_overflow(state, size_after);
 			fprintf(stderr, "WARNING! Without an accessible Q-Parity file, it isn't possible to sync.\n");
 			exit(EXIT_FAILURE);
 		}

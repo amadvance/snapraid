@@ -1190,7 +1190,7 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, 
 		/* if fixing, create the file and open for writing */
 		/* if it fails, we cannot continue */
 		parity_ptr = &parity;
-		ret = parity_create(parity_ptr, state->parity, size);
+		ret = parity_create(parity_ptr, state->parity, size, 0);
 		if (ret == -1) {
 			fprintf(stderr, "WARNING! Without an accessible Parity file, it isn't possible to fix any error.\n");
 			exit(EXIT_FAILURE);
@@ -1198,7 +1198,7 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, 
 
 		if (state->level >= 2) {
 			qarity_ptr = &qarity;
-			ret = parity_create(qarity_ptr, state->qarity, size);
+			ret = parity_create(qarity_ptr, state->qarity, size, 0);
 			if (ret == -1) {
 				fprintf(stderr, "WARNING! Without an accessible Q-Parity file, it isn't possible to fix any error.\n");
 				exit(EXIT_FAILURE);

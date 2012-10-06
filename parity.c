@@ -51,11 +51,53 @@ block_off_t parity_resize(struct snapraid_state* state)
 	return parity_block;
 }
 
-int parity_create(struct snapraid_parity* parity, const char* path, data_off_t size)
+void parity_overflow(struct snapraid_state* state, data_off_t size)
+{
+	tommy_node* i;
+	block_off_t blockalloc;
+	int first = 1;
+
+	/* don't report if everything is outside or if the file is not accessible */
+	if (size == 0) {
+		return;
+	}
+
+	blockalloc = size / state->block_size;
+
+	/* for all disks */
+	for(i=state->disklist;i!=0;i=i->next) {
+		struct snapraid_disk* disk = i->data;
+		tommy_node* j;
+
+		/* for all files */
+		for(j=disk->filelist;j!=0;j=j->next) {
+			struct snapraid_file* file = j->data;
+
+			if (file->blockmax > 0) {
+				if (file->blockvec[0].parity_pos > blockalloc) {
+					if (state->gui) {
+						fprintf(stderr, "outofparity:%s:%s\n", disk->name, file->sub);
+						fflush(stderr);
+					}
+					if (first) {
+						first = 0;
+						printf("Files outside the parity:\n");
+					}
+					printf("OutOfParity '%s%s'\n", disk->dir, file->sub);
+				}
+			}
+		}
+	}
+}
+
+int parity_create(struct snapraid_parity* parity, const char* path, data_off_t size, data_off_t* out_size)
 {
 	int ret;
 
 	pathcpy(parity->path, sizeof(parity->path), path);
+
+	if (out_size)
+		*out_size = 0;
 
 	/* opening in sequential mode in Windows */
 	parity->f = open(parity->path, O_RDWR | O_CREAT | O_BINARY | O_SEQUENTIAL, 0600);
@@ -71,10 +113,14 @@ int parity_create(struct snapraid_parity* parity, const char* path, data_off_t s
 		goto bail;
 	}
 
-	/* get the size of the exising data */
+	/* get the size of the existing data */
 	parity->valid_size = parity->st.st_size;
+	if (out_size)
+		*out_size = parity->st.st_size;
 
 	if (parity->st.st_size < size) {
+		int f_ret;
+		int f_errno;
 #if HAVE_FALLOCATE
 		/* allocate real space using the specific Linux fallocate() operation. */
 		/* If the underline filesystem doesn't support it, this operation fails, */
@@ -100,11 +146,27 @@ int parity_create(struct snapraid_parity* parity, const char* path, data_off_t s
 		/* allocate using a sparse file */
 		ret = ftruncate(parity->f, size);
 #endif
+		/* save the state of the grow operation */
+		f_ret = ret;
+		f_errno = errno;
+
+		/* reget the stat info */
+		ret = fstat(parity->f, &parity->st);
 		if (ret != 0) {
-			if (errno == ENOSPC) {
+			fprintf(stderr, "Error accessing parity file '%s'. %s.\n", parity->path, strerror(errno));
+			goto bail;
+		}
+
+		/* return the new size */
+		if (out_size)
+			*out_size = parity->st.st_size;
+
+		/* now check the error */
+		if (f_ret != 0) {
+			if (f_errno == ENOSPC) {
 				fprintf(stderr, "Failed to grow parity file '%s' to size %"PRIu64" due lack of space.\n", parity->path, size);
 			} else {
-				fprintf(stderr, "Error growing parity file '%s' to size %"PRIu64". Do you have enough space? %s.\n", parity->path, size, strerror(errno));
+				fprintf(stderr, "Error growing parity file '%s' to size %"PRIu64". Do you have enough space? %s.\n", parity->path, size, strerror(f_errno));
 			}
 			goto bail;
 		}
@@ -115,7 +177,18 @@ int parity_create(struct snapraid_parity* parity, const char* path, data_off_t s
 			goto bail;
 		}
 
-		/* adjust the size to the truncated size */
+		/* reget the stat info */
+		ret = fstat(parity->f, &parity->st);
+		if (ret != 0) {
+			fprintf(stderr, "Error accessing parity file '%s'. %s.\n", parity->path, strerror(errno));
+			goto bail;
+		}
+
+		/* return the new real size */
+		if (out_size)
+			*out_size = parity->st.st_size;
+
+		/* adjust the valid to the new size */
 		parity->valid_size = size;
 	}
 
@@ -309,4 +382,5 @@ int parity_read(struct snapraid_parity* parity, block_off_t pos, unsigned char* 
 
 	return block_size;
 }
+
 

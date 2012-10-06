@@ -5,19 +5,7 @@ This is the list of TODO items for SnapRAID.
 
 - v1.13
 
-* In the repair() function the euristic to detect if we recovered after the sync, can be extended
-to all the subsequent blocks, because we always proceeed in block order during a sync.
-So, if for a block we can detect that we recovered after a sync, also for all the subsequent blocks
-this is true.
-
-* To list all the hardlink in Windows Vista it's possible to use FindFirstFileNameW/FindNextFileNameW
-See: http://blogs.msdn.com/b/oldnewthing/archive/2011/07/20/10188033.aspx
-
-* Support Symlinks also in Windows.
-See: http://www.codeproject.com/Articles/21202/Reparse-Points-in-Vista
-
-* In Windows to use FILE_FLAG_BACKUP_SEMANTICS we should also get privileges.
-See http://www.codeproject.com/Articles/21202/Reparse-Points-in-Vista.
+* In error growing, print the last file in the bigger data disk.
 
 * Allow to filter the files to check/fix based on the drive where they reside.
 
@@ -31,6 +19,20 @@ the process making the create() operation to fail.
 on the error message. See: https://sourceforge.net/projects/snapraid/forums/forum/1677233/topic/4861034
 
 * Support interrupted operations with EINTR. For remote filesystems it could be relevant.
+
+* In the repair() function the euristic to detect if we recovered after the sync, can be extended
+to all the subsequent blocks, because we always proceeed in block order during a sync.
+So, if for a block we can detect that we recovered after a sync, also for all the subsequent blocks
+this is true.
+
+* In Windows to use FILE_FLAG_BACKUP_SEMANTICS we should also get privileges.
+See http://www.codeproject.com/Articles/21202/Reparse-Points-in-Vista.
+
+* Support Symlinks also in Windows.
+See: http://www.codeproject.com/Articles/21202/Reparse-Points-in-Vista
+
+* To list all the hardlink in Windows Vista it's possible to use FindFirstFileNameW/FindNextFileNameW
+See: http://blogs.msdn.com/b/oldnewthing/archive/2011/07/20/10188033.aspx
 
 * In Windows we must be case insensitive, at least for ASCII<128 comparison. For other UTF-8 chars
 is too complex.

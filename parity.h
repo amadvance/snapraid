@@ -34,9 +34,15 @@ struct snapraid_parity {
 block_off_t parity_resize(struct snapraid_state* state);
 
 /**
- * Creates the parity file.
+ * Reports all the files outside the specified parity size.
  */
-int parity_create(struct snapraid_parity* parity, const char* path, data_off_t size);
+void parity_overflow(struct snapraid_state* state, data_off_t size);
+
+/**
+ * Creates the parity file.
+ * \param out_size Return the final size of the parity file. Returned also in error cases.
+ */
+int parity_create(struct snapraid_parity* parity, const char* path, data_off_t size, data_off_t* out_size);
 
 /**
  * Opens an already existing parity file.
