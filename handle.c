@@ -338,7 +338,7 @@ int handle_utime(struct snapraid_handle* handle)
 	if (handle->f == -1)
 		return 0;
 
-#if HAVE_FUTIMENS /* futimens is preferred because it gives nanosecond precision */
+#if HAVE_FUTIMENS /* futimens() is preferred because it gives nanosecond precision */
 	tv[0].tv_sec = handle->file->mtime_sec;
 	if (handle->file->mtime_nsec != FILE_MTIME_NSEC_INVALID)
 		tv[0].tv_nsec = handle->file->mtime_nsec;
@@ -348,7 +348,7 @@ int handle_utime(struct snapraid_handle* handle)
 	tv[1].tv_nsec = tv[0].tv_nsec;
 
 	ret = futimens(handle->f, tv);
-#else
+#elif HAVE_FUTIMES /* fallback to futimes() if nanosecond precision is not available */
 	tv[0].tv_sec = handle->file->mtime_sec;
 	if (handle->file->mtime_nsec != FILE_MTIME_NSEC_INVALID)
 		tv[0].tv_usec = handle->file->mtime_nsec / 1000;
@@ -358,6 +358,18 @@ int handle_utime(struct snapraid_handle* handle)
 	tv[1].tv_usec = tv[0].tv_usec;
 
 	ret = futimes(handle->f, tv);
+#elif HAVE_FUTIMESAT /* fallback to futimesat() for Solaris, it only has futimesat() */
+	tv[0].tv_sec = handle->file->mtime_sec;
+	if (handle->file->mtime_nsec != FILE_MTIME_NSEC_INVALID)
+		tv[0].tv_usec = handle->file->mtime_nsec / 1000;
+	else
+		tv[0].tv_usec = 0;
+	tv[1].tv_sec = tv[0].tv_sec;
+	tv[1].tv_usec = tv[0].tv_usec;
+
+	ret = futimesat(handle->f, 0, tv);
+#else
+#error No function available to set file timestamps
 #endif
 
 	if (ret != 0) {

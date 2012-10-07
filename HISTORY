@@ -17,6 +17,7 @@ SnapRAID HISTORY
    This a safe measure to be 100% sure to always detect file changes.
  * Always fill the memory after allocating it to avoid the OOM (Out Of Memory)
    killer in Linux.
+ * Fixed compilation in Solaris for lacking both futimes() and futimens().
 
 1.12 2012/9
 =============
