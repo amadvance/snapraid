@@ -10,6 +10,10 @@ snapraid [\(hyc, \(hy\(hyconf CONFIG] [\(hyf, \(hy\(hyfilter PATTERN] [\(hyH, \(
 .PD 0
 .PP
 .PD
+	[\(hyA, \(hy\(hyaudit\(hyonly]
+.PD 0
+.PP
+.PD
 	[\(hyZ, \(hy\(hyforce\(hyzero] [\(hyE, \(hy\(hyforce\(hyempty]
 .PD 0
 .PP
@@ -328,6 +332,8 @@ Nothing is modified.
 Checks all the files and the redundancy data.
 All the files are hashed and compared with the snapshot saved
 in the previous \(a"sync\(a" command.
+If you use the \(hyA, \(hy\(hyaudit\(hyonly option, only the file
+data is checked, and the redundandy data is ignored.
 .PP
 Files are identified by path, and checked by content.
 Nothing is modified.
@@ -355,7 +361,8 @@ the current directory in Windows.
 .TP
 .B \(hyf, \(hy\(hyfilter PATTERN
 Filters the files to operate on with the \(a"check\(a" and \(a"fix\(a"
-commands. This option is ignored with the \(a"sync\(a" command.
+commands.
+This option cannot be used with the \(a"sync\(a" command.
 See the PATTERN section for more details in the
 pattern specifications.
 This option can be used many times.
@@ -365,6 +372,11 @@ In Unix, ensure to quote globbing chars if used.
 Filters out hidden files and directory. In Unix hidden files are
 the ones starting with \(cq.\(cq. In Windows they are the ones with the
 hidden attribute.
+.TP
+.B \(hyA, \(hy\(hyaudit\(hyonly
+When checking, only verify the hash of the files, without
+doing any kind of check on the redundancy data.
+This option can be used only with the \(a"check\(a" command.
 .TP
 .B \(hyN, \(hy\(hyfind\(hyby\(hyname
 When syncing finds the files by path instead than by inode.

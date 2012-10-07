@@ -367,7 +367,7 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 		return -1;
 }
 
-static int state_check_process(struct snapraid_state* state, int fix, struct snapraid_parity* parity, struct snapraid_parity* qarity, block_off_t blockstart, block_off_t blockmax)
+static int state_check_process(struct snapraid_state* state, int check, int fix, struct snapraid_parity* parity, struct snapraid_parity* qarity, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
 	unsigned diskmax;
@@ -439,9 +439,6 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		unsigned failed_count;
 		int one_tocheck;
 		int check_parity;
-		unsigned char* buffer_parity;
-		unsigned char* buffer_qarity;
-		unsigned char* buffer_zero;
 
 		/* for each disk */
 		one_tocheck = 0;
@@ -462,8 +459,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		if (!one_tocheck)
 			continue;
 
-		check_parity = 1; /* if we have to check the parity */
-		failed_count = 0; /* number of failed blocks */
+		/* If we have to check the parity data read from disk. */
+		/* Note that if check==0, we'll anyway skip the full parity check, */
+		/* because we also don't read it at all */
+		check_parity = 1;
+
+		/* keep track of the number of failed blocks */
+		failed_count = 0;
 
 		/* for each disk, process the block */
 		for(j=0;j<diskmax;++j) {
@@ -506,6 +508,15 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].block = BLOCK_DELETED;
 				failed[failed_count].handle = 0;
 				++failed_count;
+				continue;
+			}
+
+			/* if we are only hashing, we can skip excluded files and don't event read them */
+			if (!check && file_flag_has(block_file_get(block), FILE_IS_EXCLUDED)) {
+				/* use an empty block */
+				/* in true, this is unnecessary, becase we are not checking any parity */
+				/* but we keep it for completeness */
+				memset(buffer[j], 0, state->block_size);
 				continue;
 			}
 
@@ -555,7 +566,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					++recovered_error;
 				}
 			} else {
-				/* if checking, open the file for reading */
+				/* if checking or hashing, open the file for reading */
 				ret = handle_open(&handle[j], block_file_get(block));
 				if (ret == -1) {
 					/* save the failed block for the check/fix */
@@ -585,6 +596,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				}
 			}
 
+			/* read from the file */
 			read_size = handle_read(&handle[j], block, buffer[j], state->block_size);
 			if (read_size == -1) {
 				/* save the failed block for the check/fix */
@@ -618,7 +630,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 			/* if the block has the hash */
 			if (block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_INV) {
-				/* now compute the hash */
+				/* compute the hash of the block just read */
 				memhash(state->hash, hash, buffer[j], read_size);
 
 				/* compare the hash */
@@ -638,184 +650,192 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			}
 		}
 
-		/* buffers for parity read and not computed */
-		if (state->level == 1) {
-			buffer_parity = buffer[diskmax + 1];
-			buffer_qarity = 0;
-		} else {
-			buffer_parity = buffer[diskmax + 2];
-			buffer_qarity = buffer[diskmax + 3];
-		}
-		buffer_zero = buffer[buffermax-1];
+		/* now read and check the parity if requested */
+		if (check) {
+			unsigned char* buffer_parity;
+			unsigned char* buffer_qarity;
+			unsigned char* buffer_zero;
 
-		/* read the parity */
-		if (parity) {
-			ret = parity_read(parity, i, buffer_parity, state->block_size);
-			if (ret == -1) {
-				buffer_parity = 0; /* no parity to use */
-
-				fprintf(stderr, "error:%u:parity: Read error\n", i);
-				++error;
+			/* buffers for parity read and not computed */
+			if (state->level == 1) {
+				buffer_parity = buffer[diskmax + 1];
+				buffer_qarity = 0;
+			} else {
+				buffer_parity = buffer[diskmax + 2];
+				buffer_qarity = buffer[diskmax + 3];
 			}
-		} else {
-			buffer_parity = 0;
-		}
+			buffer_zero = buffer[buffermax-1];
 
-		/* read the qarity */
-		if (state->level >= 2) {
-			if (qarity) {
-				ret = parity_read(qarity, i, buffer_qarity, state->block_size);
+			/* read the parity */
+			if (parity) {
+				ret = parity_read(parity, i, buffer_parity, state->block_size);
 				if (ret == -1) {
-					buffer_qarity = 0; /* no qarity to use */
+					buffer_parity = 0; /* no parity to use */
 
-					fprintf(stderr, "error:%u:qarity: Read error\n", i);
+					fprintf(stderr, "error:%u:parity: Read error\n", i);
 					++error;
 				}
 			} else {
-				buffer_qarity = 0;
-			}
-		}
-
-		ret = repair(state, i, diskmax, failed, failed_count, buffer, buffer_parity, buffer_qarity, buffer_zero);
-		if (ret != 0) {
-			/* increment the number of errors */
-			if (ret > 0)
-				error += ret;
-			++unrecoverable_error;
-
-			/* print a list of all the errors in files */
-			for(j=0;j<failed_count;++j) {
-				if (failed[j].is_bad)
-					fprintf(stderr, "unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
+				buffer_parity = 0;
 			}
 
-			if (fix) {
-				/* keep track of damaged files */
-				for(j=0;j<failed_count;++j) {
-					if (failed[j].is_bad)
-						file_flag_set(block_file_get(failed[j].block), FILE_IS_DAMAGED);
-				}
-			}
-		} else {
-			/* check if the recover was only partial */
-			/* note that this could happen only when we have an incomplete 'sync' */
-			/* and that we have recovered is the state before the 'sync' */
-			int partial_recover_error = 0;
+			/* read the qarity */
+			if (state->level >= 2) {
+				if (qarity) {
+					ret = parity_read(qarity, i, buffer_qarity, state->block_size);
+					if (ret == -1) {
+						buffer_qarity = 0; /* no qarity to use */
 
-			/* print a list of all the errors in files */
-			for(j=0;j<failed_count;++j) {
-				if (failed[j].is_bad && failed[j].is_outofdate) {
-					++partial_recover_error;
-					fprintf(stderr, "unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
-				}
-			}
-			if (partial_recover_error != 0) {
-				error += partial_recover_error;
-				++unrecoverable_error;
-			}
-
-			/* check parity and q-parity only if all the blocks have it computed */
-			/* if you check/fix after a partial sync, it's OK to have parity errors on the blocks with invalid parity */
-			if (check_parity) {
-				/* check the parity */
-				if (buffer_parity != 0 && memcmp(buffer_parity, buffer[diskmax], state->block_size) != 0) {
-					buffer_parity = 0;
-
-					fprintf(stderr, "error:%u:parity: Data error\n", i);
-					++error;
-				}
-
-				/* check the qarity */
-				if (state->level >= 2) {
-					if (buffer_qarity != 0 && memcmp(buffer_qarity, buffer[diskmax + 1], state->block_size) != 0) {
-						buffer_qarity = 0;
-
-						fprintf(stderr, "error:%u:qarity: Data error\n", i);
+						fprintf(stderr, "error:%u:qarity: Read error\n", i);
 						++error;
 					}
+				} else {
+					buffer_qarity = 0;
 				}
 			}
 
-			if (fix) {
-				/* update the fixed files */
+			ret = repair(state, i, diskmax, failed, failed_count, buffer, buffer_parity, buffer_qarity, buffer_zero);
+			if (ret != 0) {
+				/* increment the number of errors */
+				if (ret > 0)
+					error += ret;
+				++unrecoverable_error;
+
+				/* print a list of all the errors in files */
 				for(j=0;j<failed_count;++j) {
-					/* nothing to do if it doesn't need recovering */
-					if (!failed[j].is_bad)
-						continue;
-
-					/* do not fix if the file filtered out */
-					if (file_flag_has(block_file_get(failed[j].block), FILE_IS_EXCLUDED))
-						continue;
-
-					ret = handle_write(failed[j].handle, failed[j].block, buffer[failed[j].index], state->block_size);
-					if (ret == -1) {
-						/* mark the file as damaged */
-						file_flag_set(block_file_get(failed[j].block), FILE_IS_DAMAGED);
-
-						if (errno == EACCES) {
-							fprintf(stderr, "WARNING! Please give write permission to the file.\n");
-						} else {
-							/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
-							fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
-						}
-						printf("Stopping at block %u\n", i);
-						++unrecoverable_error;
-						goto bail;
-					}
-
-					/* if we are not sure that the recovered content is uptodate */
-					if (failed[j].is_outofdate) {
-						/* mark the file as damaged */
-						file_flag_set(block_file_get(failed[j].block), FILE_IS_DAMAGED);
-						continue;
-					}
-
-					/* mark the file as fixed */
-					file_flag_set(block_file_get(failed[j].block), FILE_IS_FIXED);
-
-					fprintf(stderr, "fixed:%u:%s:%s: Fixed data error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
-					++recovered_error;
+					if (failed[j].is_bad)
+						fprintf(stderr, "unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
 				}
 
-				/* update parity and q-parity only if all the blocks have it computed */
-				/* if you check/fix after a partial sync, you do not want to fix parity */
-				/* for blocks that are going to have it computed in the sync completion */
+				if (fix) {
+					/* keep track of damaged files */
+					for(j=0;j<failed_count;++j) {
+						if (failed[j].is_bad)
+							file_flag_set(block_file_get(failed[j].block), FILE_IS_DAMAGED);
+					}
+				}
+			} else {
+				/* check if the recover was only partial */
+				/* note that this could happen only when we have an incomplete 'sync' */
+				/* and that we have recovered is the state before the 'sync' */
+				int partial_recover_error = 0;
+
+				/* print a list of all the errors in files */
+				for(j=0;j<failed_count;++j) {
+					if (failed[j].is_bad && failed[j].is_outofdate) {
+						++partial_recover_error;
+						fprintf(stderr, "unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
+					}
+				}
+				if (partial_recover_error != 0) {
+					error += partial_recover_error;
+					++unrecoverable_error;
+				}
+
+				/* check parity and q-parity only if all the blocks have it computed */
+				/* if you check/fix after a partial sync, it's OK to have parity errors on the blocks with invalid parity */
 				if (check_parity) {
-					/* update the parity */
-					if (buffer_parity == 0 && parity) {
-						ret = parity_write(parity, i, buffer[diskmax], state->block_size);
+					/* check the parity */
+					if (buffer_parity != 0 && memcmp(buffer_parity, buffer[diskmax], state->block_size) != 0) {
+						buffer_parity = 0;
+
+						fprintf(stderr, "error:%u:parity: Data error\n", i);
+						++error;
+					}
+
+					/* check the qarity */
+					if (state->level >= 2) {
+						if (buffer_qarity != 0 && memcmp(buffer_qarity, buffer[diskmax + 1], state->block_size) != 0) {
+							buffer_qarity = 0;
+
+							fprintf(stderr, "error:%u:qarity: Data error\n", i);
+							++error;
+						}
+					}
+				}
+
+				if (fix) {
+					/* update the fixed files */
+					for(j=0;j<failed_count;++j) {
+						/* nothing to do if it doesn't need recovering */
+						if (!failed[j].is_bad)
+							continue;
+
+						/* do not fix if the file filtered out */
+						if (file_flag_has(block_file_get(failed[j].block), FILE_IS_EXCLUDED))
+							continue;
+
+						ret = handle_write(failed[j].handle, failed[j].block, buffer[failed[j].index], state->block_size);
 						if (ret == -1) {
-							/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
-							fprintf(stderr, "WARNING! Without a working Parity disk, it isn't possible to fix errors on it.\n");
+							/* mark the file as damaged */
+							file_flag_set(block_file_get(failed[j].block), FILE_IS_DAMAGED);
+
+							if (errno == EACCES) {
+								fprintf(stderr, "WARNING! Please give write permission to the file.\n");
+							} else {
+								/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
+								fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+							}
 							printf("Stopping at block %u\n", i);
 							++unrecoverable_error;
 							goto bail;
 						}
 
-						fprintf(stderr, "fixed:%u:parity: Fixed data error\n", i);
+						/* if we are not sure that the recovered content is uptodate */
+						if (failed[j].is_outofdate) {
+							/* mark the file as damaged */
+							file_flag_set(block_file_get(failed[j].block), FILE_IS_DAMAGED);
+							continue;
+						}
+
+						/* mark the file as fixed */
+						file_flag_set(block_file_get(failed[j].block), FILE_IS_FIXED);
+
+						fprintf(stderr, "fixed:%u:%s:%s: Fixed data error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
 						++recovered_error;
 					}
 
-					/* update the qarity */
-					if (state->level >= 2) {
-						if (buffer_qarity == 0 && qarity) {
-							ret = parity_write(qarity, i, buffer[diskmax + 1], state->block_size);
+					/* update parity and q-parity only if all the blocks have it computed */
+					/* if you check/fix after a partial sync, you do not want to fix parity */
+					/* for blocks that are going to have it computed in the sync completion */
+					if (check_parity) {
+						/* update the parity */
+						if (buffer_parity == 0 && parity) {
+							ret = parity_write(parity, i, buffer[diskmax], state->block_size);
 							if (ret == -1) {
 								/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
-								fprintf(stderr, "WARNING! Without a working Q-Parity disk, it isn't possible to fix errors on it.\n");
+								fprintf(stderr, "WARNING! Without a working Parity disk, it isn't possible to fix errors on it.\n");
 								printf("Stopping at block %u\n", i);
 								++unrecoverable_error;
 								goto bail;
 							}
 
-							fprintf(stderr, "fixed:%u:qarity: Fixed data error\n", i);
+							fprintf(stderr, "fixed:%u:parity: Fixed data error\n", i);
 							++recovered_error;
+						}
+
+						/* update the qarity */
+						if (state->level >= 2) {
+							if (buffer_qarity == 0 && qarity) {
+								ret = parity_write(qarity, i, buffer[diskmax + 1], state->block_size);
+								if (ret == -1) {
+									/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
+									fprintf(stderr, "WARNING! Without a working Q-Parity disk, it isn't possible to fix errors on it.\n");
+									printf("Stopping at block %u\n", i);
+									++unrecoverable_error;
+									goto bail;
+								}
+
+								fprintf(stderr, "fixed:%u:qarity: Fixed data error\n", i);
+								++recovered_error;
+							}
 						}
 					}
 				}
 			}
 		}
 
+		/* now fix if requested */
 		if (fix) {
 			/* for all the files of this block check if we need to fix the modification time */
 			for(j=0;j<diskmax;++j) {
@@ -1124,8 +1144,11 @@ bail:
 		}
 		if (unrecoverable_error)
 			printf("%u UNRECOVERABLE errors\n", unrecoverable_error);
-		else
-			printf("No unrecoverable errors\n");
+		else {
+			/* without checking, we don't know if they are really recoverable or not */
+			if (check)
+				printf("No unrecoverable errors\n");
+		}
 	} else {
 		printf("No error\n");
 	}
@@ -1160,7 +1183,7 @@ bail:
 	return 0;
 }
 
-void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, block_off_t blockcount)
+void state_check(struct snapraid_state* state, int check, int fix, block_off_t blockstart, block_off_t blockcount)
 {
 	block_off_t blockmax;
 	data_off_t size;
@@ -1172,6 +1195,11 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, 
 	unsigned error;
 
 	printf("Initializing...\n");
+
+	if (!check && fix) {
+		fprintf(stderr, "Error in calling, you cannot fix without checking parity.\n");
+		exit(EXIT_FAILURE);
+	}
 
 	blockmax = parity_resize(state);
 	size = blockmax * (data_off_t)state->block_size;
@@ -1206,7 +1234,7 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, 
 		} else {
 			qarity_ptr = 0;
 		}
-	} else {
+	} else if (check) {
 		/* if checking, open the file for reading */
 		/* it may fail if the file doesn't exist, in this case we continue to check the files */
 		parity_ptr = &parity;
@@ -1228,18 +1256,24 @@ void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, 
 		} else {
 			qarity_ptr = 0;
 		}
+	} else {
+		/* otherwise don't use any parity */
+		parity_ptr = 0;
+		qarity_ptr = 0;
 	}
 
 	if (fix)
 		printf("Fixing...\n");
-	else
+	else if (check)
 		printf("Checking...\n");
+	else
+		printf("Hashing...\n");
 
 	error = 0;
 
 	/* skip degenerated cases of empty parity, or skipping all */
 	if (blockstart < blockmax) {
-		ret = state_check_process(state, fix, parity_ptr, qarity_ptr, blockstart, blockmax);
+		ret = state_check_process(state, check, fix, parity_ptr, qarity_ptr, blockstart, blockmax);
 		if (ret == -1) {
 			++error;
 			/* continue, as we are already exiting */

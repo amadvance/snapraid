@@ -4,6 +4,7 @@ Name{number}
 Synopsis
 	:snapraid [-c, --conf CONFIG] [-f, --filter PATTERN] [-H, --filter-nohidden]
 	:	[-N, --find-by-name]
+	:	[-A, --audit-only]
 	:	[-Z, --force-zero] [-E, --force-empty]
 	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	:	[-v, --verbose]
@@ -206,6 +207,8 @@ Commands
 	Checks all the files and the redundancy data.
 	All the files are hashed and compared with the snapshot saved
 	in the previous "sync" command.
+	If you use the -A, --audit-only option, only the file
+	data is checked, and the redundandy data is ignored.
 
 	Files are identified by path, and checked by content.
 	Nothing is modified.
@@ -235,7 +238,8 @@ Options
 
 	-f, --filter PATTERN
 		Filters the files to operate on with the "check" and "fix"
-		commands. This option is ignored with the "sync" command.
+		commands.
+		This option cannot be used with the "sync" command.
 		See the PATTERN section for more details in the
 		pattern specifications.
 		This option can be used many times.
@@ -245,6 +249,11 @@ Options
 		Filters out hidden files and directory. In Unix hidden files are
 		the ones starting with '.'. In Windows they are the ones with the
 		hidden attribute.
+
+	-A, --audit-only
+		When checking, only verify the hash of the files, without
+		doing any kind of check on the redundancy data.
+		This option can be used only with the "check" command.
 
 	-N, --find-by-name
 		When syncing finds the files by path instead than by inode.

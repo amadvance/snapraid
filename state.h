@@ -93,9 +93,11 @@ void state_scan(struct snapraid_state* state, int output);
 int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t blockcount);
 
 /**
- * Checks (and fixes) all the files and the parity data.
+ * Checks (and fixes) all the files and parity data.
+ * \param check If we have to check also the parity.
+ * \param check If we have to fix, after checking. It requires also check==1.
  */
-void state_check(struct snapraid_state* state, int fix, block_off_t blockstart, block_off_t blockcount);
+void state_check(struct snapraid_state* state, int check, int fix, block_off_t blockstart, block_off_t blockcount);
 
 /**
  * Dry the files.
@@ -109,6 +111,7 @@ void state_dup(struct snapraid_state* state);
 
 /**
  * Filter files.
+ * Apply and additional filter to list of file currently loaded.
  */
 void state_filter(struct snapraid_state* state, tommy_list* filterlist);
 

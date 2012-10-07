@@ -83,6 +83,7 @@ struct option long_options[] = {
 	{ "force-zero", 0, 0, 'Z' },
 	{ "force-empty", 0, 0, 'E' },
 	{ "find-by-name", 0, 0, 'N' },
+	{ "audit-only", 0, 0, 'A' },
 	{ "speed-test", 0, 0, 'T' },
 	{ "verbose", 0, 0, 'v' },
 	{ "gui", 0, 0, 'G' }, /* undocumented GUI interface command */
@@ -98,7 +99,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:f:Hs:t:ZENTvhVG"
+#define OPTIONS "c:f:Hs:t:ZENATvhVG"
 
 volatile int global_interrupt = 0;
 
@@ -127,6 +128,7 @@ int main(int argc, char* argv[])
 	int force_empty;
 	int filter_hidden;
 	int find_by_name;
+	int audit_only;
 	int test_expect_unrecoverable;
 	int test_expect_recoverable;
 	int test_kill_after_sync;
@@ -151,6 +153,7 @@ int main(int argc, char* argv[])
 	force_empty = 0;
 	filter_hidden = 0;
 	find_by_name = 0;
+	audit_only = 0;
 	test_expect_unrecoverable = 0;
 	test_expect_recoverable = 0;
 	test_kill_after_sync = 0;
@@ -205,6 +208,9 @@ int main(int argc, char* argv[])
 			break;
 		case 'N' :
 			find_by_name = 1;
+			break;
+		case 'A' :
+			audit_only = 1;
 			break;
 		case 'v' :
 			verbose = 1;
@@ -349,7 +355,10 @@ int main(int argc, char* argv[])
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);
 
-		state_check(&state, operation == OPERATION_FIX, blockstart, blockcount);
+		if (operation == OPERATION_CHECK)
+			state_check(&state, !audit_only, 0, blockstart, blockcount);
+		else /* it's fix */
+			state_check(&state, 1, 1, blockstart, blockcount);
 	}
 
 	state_done(&state);

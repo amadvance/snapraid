@@ -3,6 +3,8 @@ SnapRAID HISTORY
 
 1.13 2012/?
 ===========
+ * Added a new -A option to make the 'check' command to only check file hashes
+   without checking the parity data.
  * The file modification time is now saved using nanosecond precision.
    This allows to restore the exact modification time in 'fix'.
    The new 'content' files written with this version are not backward compatible,
