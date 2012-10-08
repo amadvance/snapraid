@@ -213,7 +213,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					|| STAT_NSEC(&handle[j].st) != block_file_get(block)->mtime_nsec)
 					fprintf(stderr, "Unexpected time change at file '%s'.\n", handle[j].path);
 				else
-					fprintf(stderr, "Unexpected inode change from %"PRIu64" to %"PRIu64" at file '%s'.\n", block_file_get(block)->inode, handle[j].st.st_ino, handle[j].path);
+					fprintf(stderr, "Unexpected inode change from %"PRIu64" to %"PRIu64" at file '%s'.\n", block_file_get(block)->inode, (uint64_t)handle[j].st.st_ino, handle[j].path);
 				fprintf(stderr, "WARNING! You cannot modify files during a sync. Rerun the sync command when finished.\n");
 
 				++unrecoverable_error;
