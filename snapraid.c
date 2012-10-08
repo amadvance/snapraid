@@ -57,6 +57,7 @@ void usage(void)
 	printf("Options:\n");
 	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE     ", "-c") "  Configuration file (default " CONF ")\n");
 	printf("  " SWITCH_GETOPT_LONG("-f, --filter PATTERN", "-f") "  Filter the files to processs\n");
+	printf("  " SWITCH_GETOPT_LONG("-A, --audit-only    ", "-A") "  Check only file data and not parity\n");
 	printf("  " SWITCH_GETOPT_LONG("-N, --find-by-name  ", "-N") "  Find the file by name instead than by inode\n");
 	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero    ", "-Z") "  Force synching of files that get zero size\n");
 	printf("  " SWITCH_GETOPT_LONG("-E, --force-empty   ", "-E") "  Force synching of disks that get empty\n");
