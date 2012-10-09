@@ -188,9 +188,9 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
 	echo --- Abort sync with additions and then delete the new additions
-	cp -a test/disk1/_a test/disk1/_c
-	cp -a test/disk2/_a test/disk2/_c
-	cp -a test/disk3/_a test/disk3/_c
+	cp -pR test/disk1/_a test/disk1/_c
+	cp -pR test/disk2/_a test/disk2/_c
+	cp -pR test/disk3/_a test/disk3/_c
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --test-kill-after-sync -c $(srcdir)/test-raid6.conf sync
 	rm -r test/disk1/_c
 	rm -r test/disk2/_c
@@ -198,8 +198,8 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
 	echo --- Abort sync late with more additions than deletion and then delete after
-	cp -a test/disk1/_a test/disk1/_c
-	cp -a test/disk1/_b test/disk1/_d
+	cp -pR test/disk1/_a test/disk1/_c
+	cp -pR test/disk1/_b test/disk1/_d
 	mv test/disk1/_a test/_a
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf --test-kill-after-sync sync
 	rm -r test/disk2/_a
@@ -211,7 +211,7 @@ check-local:
 	mv test/_a test/disk1/_a
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
 	echo --- Abort sync late with more deletions than additions and then delete after
-	cp -a test/disk1/_a test/disk1/_c
+	cp -pR test/disk1/_a test/disk1/_c
 	mv test/disk1/_a test/_a
 	mv test/disk1/_b test/_b
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf --test-kill-after-sync sync
@@ -225,8 +225,8 @@ check-local:
 	mv test/_b test/disk1/_b
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
 	echo --- Abort sync early with more additions than deletions and then delete after
-	cp -a test/disk1/_a test/disk1/_c
-	cp -a test/disk1/_b test/disk1/_d
+	cp -pR test/disk1/_a test/disk1/_c
+	cp -pR test/disk1/_b test/disk1/_d
 	mv test/disk1/_a test/_a
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf -t 1 --test-kill-after-sync sync
 	rm -r test/disk2/_a
@@ -238,7 +238,7 @@ check-local:
 	mv test/_a test/disk1/_a
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
 	echo --- Abort sync early with more deletions than additions and then delete after
-	cp -a test/disk1/_a test/disk1/_c
+	cp -pR test/disk1/_a test/disk1/_c
 	mv test/disk1/_a test/_a
 	mv test/disk1/_b test/_b
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf -t 1 --test-kill-after-sync sync
