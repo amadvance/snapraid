@@ -352,8 +352,9 @@ bail:
 int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t blockcount)
 {
 	block_off_t blockmax;
+	data_off_t loaded_size;
 	data_off_t size;
-	data_off_t size_after;
+	data_off_t out_size;
 	tommy_node* i;
 	int ret;
 	struct snapraid_parity parity;
@@ -364,10 +365,11 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	printf("Initializing...\n");
 
-	blockmax = parity_resize(state);
+	blockmax = parity_size(state);
 	size = blockmax * (data_off_t)state->block_size;
+	loaded_size = state->loaded_blockmax * (data_off_t)state->block_size;
 
-	/* remove all the deleted blocks over the upper limit */
+	/* remove all the deleted blocks over the new parity size */
 	for(i=state->disklist;i!=0;i=i->next) {
 		struct snapraid_disk* disk = i->data;
 		block_off_t diskblockmax = tommy_array_size(&disk->blockarr);
@@ -395,18 +397,42 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	/* create the file and open for writing */
 	parity_ptr = &parity;
-	ret = parity_create(parity_ptr, state->parity, size, &size_after);
+	ret = parity_create(parity_ptr, state->parity, &out_size);
 	if (ret == -1) {
-		parity_overflow(state, size_after);
+		fprintf(stderr, "WARNING! Without an accessible Parity file, it isn't possible to sync.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	/* if the file is too small */
+	if (out_size < loaded_size) {
+		fprintf(stderr, "DANGER! The Parity file %s is smaller than the expected %lld.\n", state->parity, loaded_size);
+		exit(EXIT_FAILURE);
+	}
+
+	ret = parity_chsize(parity_ptr, size, &out_size);
+	if (ret == -1) {
+		parity_overflow(state, out_size);
 		fprintf(stderr, "WARNING! Without an accessible Parity file, it isn't possible to sync.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	if (state->level >= 2) {
 		qarity_ptr = &qarity;
-		ret = parity_create(qarity_ptr, state->qarity, size, &size_after);
+		ret = parity_create(qarity_ptr, state->qarity, &out_size);
 		if (ret == -1) {
-			parity_overflow(state, size_after);
+			fprintf(stderr, "WARNING! Without an accessible Q-Parity file, it isn't possible to sync.\n");
+			exit(EXIT_FAILURE);
+		}
+
+		/* if the file is too small */
+		if (out_size < loaded_size) {
+			fprintf(stderr, "DANGER! The Q-Parity file %s is smaller than the expected %lld.\n", state->qarity, loaded_size);
+			exit(EXIT_FAILURE);
+		}
+
+		ret = parity_chsize(qarity_ptr, size, &out_size);
+		if (ret == -1) {
+			parity_overflow(state, out_size);
 			fprintf(stderr, "WARNING! Without an accessible Q-Parity file, it isn't possible to sync.\n");
 			exit(EXIT_FAILURE);
 		}

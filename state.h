@@ -51,6 +51,7 @@ struct snapraid_state {
 	tommy_list disklist; /**< List of all the disks. */
 	tommy_list maplist; /**< List of all the disk mappings. */
 	tommy_list filterlist; /**< List of inclusion/exclusion. */
+	block_off_t loaded_blockmax; /**< Previous size of the parity file, computed from the loaded state. */
 	time_t progress_start; /**< Start of processing for progress visualization. */
 	time_t progress_last; /**< Last update of progress visualization. */
 	time_t progress_interruption; /**< Start of the measure interruption. */

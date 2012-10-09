@@ -156,7 +156,7 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	printf("Drying...\n");
 
-	blockmax = parity_resize(state);
+	blockmax = parity_size(state);
 
 	if (blockstart > blockmax) {
 		fprintf(stderr, "Error in the specified starting block %u. It's bigger than the parity size %u.\n", blockstart, blockmax);

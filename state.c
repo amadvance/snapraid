@@ -44,6 +44,7 @@ void state_init(struct snapraid_state* state)
 	tommy_list_init(&state->maplist);
 	tommy_list_init(&state->contentlist);
 	tommy_list_init(&state->filterlist);
+	state->loaded_blockmax = 0;
 }
 
 void state_done(struct snapraid_state* state)
@@ -645,6 +646,7 @@ void state_read(struct snapraid_state* state)
 	struct snapraid_disk* disk;
 	struct snapraid_file* file;
 	block_off_t blockidx;
+	block_off_t blockmax;
 	unsigned line;
 	unsigned count_file;
 	unsigned count_block;
@@ -707,6 +709,7 @@ void state_read(struct snapraid_state* state)
 	file = 0;
 	line = 1;
 	blockidx = 0;
+	blockmax = 0;
 
 	while (1) {
 		char buffer[PATH_MAX];
@@ -747,6 +750,10 @@ void state_read(struct snapraid_state* state)
 				fprintf(stderr, "Internal inconsistency in 'blk' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
+
+			/* keep track of the max block number */
+			if (blockidx > blockmax)
+				blockmax = blockidx;
 
 			block = &file->blockvec[blockidx];
 
@@ -1190,6 +1197,8 @@ void state_read(struct snapraid_state* state)
 	}
 
 	sclose(f);
+
+	state->loaded_blockmax = blockmax;
 
 	/* update the mapping */
 	state_map(state);

@@ -24,7 +24,7 @@
 /****************************************************************************/
 /* parity */
 
-block_off_t parity_resize(struct snapraid_state* state)
+block_off_t parity_size(struct snapraid_state* state)
 {
 	block_off_t parity_block;
 	tommy_node* i;
@@ -90,14 +90,11 @@ void parity_overflow(struct snapraid_state* state, data_off_t size)
 	}
 }
 
-int parity_create(struct snapraid_parity* parity, const char* path, data_off_t size, data_off_t* out_size)
+int parity_create(struct snapraid_parity* parity, const char* path, data_off_t* out_size)
 {
 	int ret;
 
 	pathcpy(parity->path, sizeof(parity->path), path);
-
-	if (out_size)
-		*out_size = 0;
 
 	/* opening in sequential mode in Windows */
 	parity->f = open(parity->path, O_RDWR | O_CREAT | O_BINARY | O_SEQUENTIAL, 0600);
@@ -115,8 +112,20 @@ int parity_create(struct snapraid_parity* parity, const char* path, data_off_t s
 
 	/* get the size of the existing data */
 	parity->valid_size = parity->st.st_size;
-	if (out_size)
-		*out_size = parity->st.st_size;
+	*out_size = parity->st.st_size;
+
+	return 0;
+
+bail:
+	close(parity->f);
+	parity->f = -1;
+	parity->valid_size = 0;
+	return -1;
+}
+
+int parity_chsize(struct snapraid_parity* parity, data_off_t size, data_off_t* out_size)
+{
+	int ret;
 
 	if (parity->st.st_size < size) {
 		int f_ret;
@@ -158,8 +167,7 @@ int parity_create(struct snapraid_parity* parity, const char* path, data_off_t s
 		}
 
 		/* return the new size */
-		if (out_size)
-			*out_size = parity->st.st_size;
+		*out_size = parity->st.st_size;
 
 		/* now check the error */
 		if (f_ret != 0) {
@@ -185,8 +193,7 @@ int parity_create(struct snapraid_parity* parity, const char* path, data_off_t s
 		}
 
 		/* return the new real size */
-		if (out_size)
-			*out_size = parity->st.st_size;
+		*out_size = parity->st.st_size;
 
 		/* adjust the valid to the new size */
 		parity->valid_size = size;
@@ -204,8 +211,6 @@ int parity_create(struct snapraid_parity* parity, const char* path, data_off_t s
 	return 0;
 
 bail:
-	close(parity->f);
-	parity->f = -1;
 	parity->valid_size = 0;
 	return -1;
 }

@@ -1187,6 +1187,7 @@ void state_check(struct snapraid_state* state, int check, int fix, block_off_t b
 {
 	block_off_t blockmax;
 	data_off_t size;
+	data_off_t out_size;
 	int ret;
 	struct snapraid_parity parity;
 	struct snapraid_parity qarity;
@@ -1201,7 +1202,7 @@ void state_check(struct snapraid_state* state, int check, int fix, block_off_t b
 		exit(EXIT_FAILURE);
 	}
 
-	blockmax = parity_resize(state);
+	blockmax = parity_size(state);
 	size = blockmax * (data_off_t)state->block_size;
 
 	if (blockstart > blockmax) {
@@ -1218,17 +1219,29 @@ void state_check(struct snapraid_state* state, int check, int fix, block_off_t b
 		/* if fixing, create the file and open for writing */
 		/* if it fails, we cannot continue */
 		parity_ptr = &parity;
-		ret = parity_create(parity_ptr, state->parity, size, 0);
+		ret = parity_create(parity_ptr, state->parity, &out_size);
 		if (ret == -1) {
 			fprintf(stderr, "WARNING! Without an accessible Parity file, it isn't possible to fix any error.\n");
 			exit(EXIT_FAILURE);
 		}
 
+		ret = parity_chsize(parity_ptr, size, &out_size);
+		if (ret == -1) {
+			fprintf(stderr, "WARNING! Without an accessible Parity file, it isn't possible to sync.\n");
+			exit(EXIT_FAILURE);
+		}
+
 		if (state->level >= 2) {
 			qarity_ptr = &qarity;
-			ret = parity_create(qarity_ptr, state->qarity, size, 0);
+			ret = parity_create(qarity_ptr, state->qarity, &out_size);
 			if (ret == -1) {
 				fprintf(stderr, "WARNING! Without an accessible Q-Parity file, it isn't possible to fix any error.\n");
+				exit(EXIT_FAILURE);
+			}
+
+			ret = parity_chsize(qarity_ptr, size, &out_size);
+			if (ret == -1) {
+				fprintf(stderr, "WARNING! Without an accessible Q-Parity file, it isn't possible to sync.\n");
 				exit(EXIT_FAILURE);
 			}
 		} else {
