@@ -489,7 +489,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 		if (S_ISREG(st.st_mode)) {
 			if (filter_hidden(state->filter_hidden, dd, &st) == 0
 				&& filter_content(&state->contentlist, path_next) == 0
-				&& filter_path(&state->filterlist, sub_next) == 0
+				&& filter_path(&state->filterlist, disk->name, sub_next) == 0
 			) {
 				/* check for read permission */
 				if (access(path_next, R_OK) != 0) {
@@ -514,7 +514,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 			}
 		} else if (S_ISLNK(st.st_mode)) {
 			if (filter_hidden(state->filter_hidden, dd, &st) == 0
-				&& filter_path(&state->filterlist, sub_next) == 0
+				&& filter_path(&state->filterlist, disk->name, sub_next) == 0
 			) {
 				char subnew[PATH_MAX];
 				int ret;
@@ -540,7 +540,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 			}
 		} else if (S_ISDIR(st.st_mode)) {
 			if (filter_hidden(state->filter_hidden, dd, &st) == 0
-				&& filter_dir(&state->filterlist, sub_next) == 0
+				&& filter_dir(&state->filterlist, disk->name, sub_next) == 0
 			) {
 				pathslash(path_next, sizeof(path_next));
 				pathslash(sub_next, sizeof(sub_next));
@@ -553,7 +553,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 		} else {
 			if (filter_hidden(state->filter_hidden, dd, &st) == 0
 				&& filter_content(&state->contentlist, path_next) == 0
-				&& filter_path(&state->filterlist, sub_next) == 0
+				&& filter_path(&state->filterlist, disk->name, sub_next) == 0
 			) {
 				fprintf(stderr, "warning: Ignoring special '%s' file '%s'\n", stat_desc(&st), path_next);
 			} else {

@@ -39,7 +39,7 @@ void content_free(struct snapraid_content* content)
 	free(content);
 }
 
-struct snapraid_filter* filter_alloc(int direction, const char* pattern)
+struct snapraid_filter* filter_alloc_file(int direction, const char* pattern)
 {
 	struct snapraid_filter* filter;
 	char* i;
@@ -60,6 +60,9 @@ struct snapraid_filter* filter_alloc(int direction, const char* pattern)
 			last = i;
 		}
 	}
+
+	/* it's a file filter */
+	filter->is_disk = 0;
 
 	if (first == 0) {
 		/* no slash */
@@ -85,6 +88,28 @@ struct snapraid_filter* filter_alloc(int direction, const char* pattern)
 			free(filter);
 			return 0;
 		}
+	}
+
+	return filter;
+}
+
+struct snapraid_filter* filter_alloc_disk(int direction, const char* pattern)
+{
+	struct snapraid_filter* filter;
+
+	filter = malloc_nofail(sizeof(struct snapraid_filter));
+	pathimport(filter->pattern, sizeof(filter->pattern), pattern);
+	filter->direction = direction;
+
+	/* it's a disk filter */
+	filter->is_disk = 1;
+	filter->is_path = 0;
+	filter->is_dir = 0;
+
+	/* no slash allowed in disk names */
+	if (strchr(filter->pattern, '/') != 0) {
+		free(filter);
+		return 0;
 	}
 
 	return filter;
@@ -149,7 +174,7 @@ static int filter_recurse(struct snapraid_filter* filter, const char* const_path
 	return 0;
 }
 
-static int filter_element(tommy_list* filterlist, const char* sub, int is_dir)
+static int filter_element(tommy_list* filterlist, const char* disk, const char* sub, int is_dir)
 {
 	tommy_node* i;
 
@@ -160,7 +185,16 @@ static int filter_element(tommy_list* filterlist, const char* sub, int is_dir)
 		int ret;
 		struct snapraid_filter* filter = i->data;
 
-		ret = filter_recurse(filter, sub, is_dir);
+		if (filter->is_disk) {
+			/* using fnmatch allows to ignore case in windows */
+			if (fnmatch(filter->pattern, disk, 0) == 0)
+				ret = filter->direction;
+			else
+				ret = 0;
+		} else {
+			ret = filter_recurse(filter, sub, is_dir);
+		}
+
 		if (ret > 0) {
 			/* include the file */
 			return 0;
@@ -186,14 +220,14 @@ static int filter_element(tommy_list* filterlist, const char* sub, int is_dir)
 	return 0;
 }
 
-int filter_path(tommy_list* filterlist, const char* sub)
+int filter_path(tommy_list* filterlist, const char* disk, const char* sub)
 {
-	return filter_element(filterlist, sub, 0);
+	return filter_element(filterlist, disk, sub, 0);
 }
 
-int filter_dir(tommy_list* filterlist, const char* sub)
+int filter_dir(tommy_list* filterlist, const char* disk, const char* sub)
 {
-	return filter_element(filterlist, sub, 1);
+	return filter_element(filterlist, disk, sub, 1);
 }
 
 int filter_content(tommy_list* contentlist, const char* path)
@@ -205,7 +239,7 @@ int filter_content(tommy_list* contentlist, const char* path)
 		char tmp[PATH_MAX];
 
 		/* FNM_PATHNAME because we are comparing full path */
-		/* FNM_NOESCAPE because we are comparing paths */
+		/* FNM_NOESCAPE because the pattern is also a path, surely without escape chars */
 		/* using fnmatch allows to ignore case in windows */
 		if (fnmatch(content->content, path, FNM_PATHNAME | FNM_NOESCAPE) == 0)
 			return -1;

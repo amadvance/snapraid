@@ -398,7 +398,7 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 				exit(EXIT_FAILURE);
 			}
 
-			filter = filter_alloc(-1, buffer);
+			filter = filter_alloc_file(-1, buffer);
 			if (!filter) {
 				fprintf(stderr, "Invalid 'exclude' specification '%s' in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
@@ -413,7 +413,7 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 				exit(EXIT_FAILURE);
 			}
 
-			filter = filter_alloc(1, buffer);
+			filter = filter_alloc_file(1, buffer);
 			if (!filter) {
 				fprintf(stderr, "Invalid 'include' specification '%s' in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
@@ -1538,7 +1538,7 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist)
 		for(j=tommy_list_head(&disk->filelist);j!=0;j=j->next) {
 			struct snapraid_file* file = j->data;
 
-			if (filter_path(filterlist, file->sub) != 0) {
+			if (filter_path(filterlist, disk->name, file->sub) != 0) {
 				file_flag_set(file, FILE_IS_EXCLUDED);
 			}
 
@@ -1551,7 +1551,7 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist)
 		for(j=tommy_list_head(&disk->linklist);j!=0;j=j->next) {
 			struct snapraid_link* link = j->data;
 
-			if (filter_path(filterlist, link->sub) != 0) {
+			if (filter_path(filterlist, disk->name, link->sub) != 0) {
 				link_flag_set(link, FILE_IS_EXCLUDED);
 			}
 

@@ -58,6 +58,7 @@ struct snapraid_content {
  */
 struct snapraid_filter {
 	char pattern[PATH_MAX]; /**< Filter pattern. */
+	int is_disk; /**< If the pattern is a disk one. */
 	int is_path; /**< If the pattern is only for the complete path. */
 	int is_dir; /**< If the pattern is only for dir. */
 	int direction; /**< If it's an inclusion (=1) or an exclusion (=-1). */
@@ -215,9 +216,14 @@ struct snapraid_content* content_alloc(const char* path, uint64_t dev);
 void content_free(struct snapraid_content* content);
 
 /**
- * Allocates an exclusion.
+ * Allocates a filter pattern for files and directories.
  */
-struct snapraid_filter* filter_alloc(int is_include, const char* pattern);
+struct snapraid_filter* filter_alloc_file(int is_include, const char* pattern);
+
+/**
+ * Allocates a filter pattern for disks.
+ */
+struct snapraid_filter* filter_alloc_disk(int is_include, const char* pattern);
 
 /**
  * Deallocates an exclusion.
@@ -242,14 +248,14 @@ static inline int filter_hidden(int enable, struct dirent* dd, struct stat* st)
  * For each element of the path all the filters are applied, until the first one that matches.
  * Return !=0 if it matches and it should be excluded.
  */
-int filter_path(tommy_list* filterlist, const char* sub);
+int filter_path(tommy_list* filterlist, const char* disk, const char* sub);
 
 /**
  * Filters a dir using a list of filters.
  * For each element of the path all the filters are applied, until the first one that matches.
  * Return !=0 if it matches and it should be excluded.
  */
-int filter_dir(tommy_list* filterlist, const char* sub);
+int filter_dir(tommy_list* filterlist, const char* disk, const char* sub);
 
 /**
  * Filters a path if it's a content file.

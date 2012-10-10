@@ -55,17 +55,18 @@ void usage(void)
 	printf("  fix    Fix the array of disks\n");
 	printf("\n");
 	printf("Options:\n");
-	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE     ", "-c") "  Configuration file (default " CONF ")\n");
-	printf("  " SWITCH_GETOPT_LONG("-f, --filter PATTERN", "-f") "  Filter the files to processs\n");
-	printf("  " SWITCH_GETOPT_LONG("-A, --audit-only    ", "-A") "  Check only file data and not parity\n");
-	printf("  " SWITCH_GETOPT_LONG("-N, --find-by-name  ", "-N") "  Find the file by name instead than by inode\n");
-	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero    ", "-Z") "  Force synching of files that get zero size\n");
-	printf("  " SWITCH_GETOPT_LONG("-E, --force-empty   ", "-E") "  Force synching of disks that get empty\n");
-	printf("  " SWITCH_GETOPT_LONG("-s, --start BLKSTART", "-s") "  Start from the specified block number\n");
-	printf("  " SWITCH_GETOPT_LONG("-t, --count BLKCOUNT", "-t") "  Count of block to process\n");
-	printf("  " SWITCH_GETOPT_LONG("-v, --verbose       ", "-v") "  Verbose\n");
-	printf("  " SWITCH_GETOPT_LONG("-h, --help          ", "-h") "  Help\n");
-	printf("  " SWITCH_GETOPT_LONG("-V, --version       ", "-V") "  Version\n");
+	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE       ", "-c") "  Configuration file (default " CONF ")\n");
+	printf("  " SWITCH_GETOPT_LONG("-f, --filter PATTERN  ", "-f") "  Filter the files to process with a pattern\n");
+	printf("  " SWITCH_GETOPT_LONG("-d, --filter-dist NAME", "-f") "  Filter the files to process with a disk name\n");
+	printf("  " SWITCH_GETOPT_LONG("-a, --audit-only      ", "-A") "  Check only file data and not parity\n");
+	printf("  " SWITCH_GETOPT_LONG("-N, --find-by-name    ", "-N") "  Find the files by name instead than by inode\n");
+	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero      ", "-Z") "  Force synching of files that get zero size\n");
+	printf("  " SWITCH_GETOPT_LONG("-E, --force-empty     ", "-E") "  Force synching of disks that get empty\n");
+	printf("  " SWITCH_GETOPT_LONG("-s, --start BLKSTART  ", "-s") "  Start from the specified block number\n");
+	printf("  " SWITCH_GETOPT_LONG("-t, --count BLKCOUNT  ", "-t") "  Count of block to process\n");
+	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
+	printf("  " SWITCH_GETOPT_LONG("-h, --help            ", "-h") "  Help\n");
+	printf("  " SWITCH_GETOPT_LONG("-V, --version         ", "-V") "  Version\n");
 }
 
 #define OPT_TEST_SKIP_SELF 256
@@ -78,13 +79,14 @@ void usage(void)
 struct option long_options[] = {
 	{ "conf", 1, 0, 'c' },
 	{ "filter", 1, 0, 'f' },
+	{ "filter-disk", 1, 0, 'd' },
 	{ "filter-nohidden", 0, 0, 'H' },
 	{ "start", 1, 0, 's' },
 	{ "count", 1, 0, 't' },
 	{ "force-zero", 0, 0, 'Z' },
 	{ "force-empty", 0, 0, 'E' },
 	{ "find-by-name", 0, 0, 'N' },
-	{ "audit-only", 0, 0, 'A' },
+	{ "audit-only", 0, 0, 'a' },
 	{ "speed-test", 0, 0, 'T' },
 	{ "verbose", 0, 0, 'v' },
 	{ "gui", 0, 0, 'G' }, /* undocumented GUI interface command */
@@ -100,7 +102,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:f:Hs:t:ZENATvhVG"
+#define OPTIONS "c:f:d:Hs:t:ZENaTvhVG"
 
 volatile int global_interrupt = 0;
 
@@ -177,7 +179,15 @@ int main(int argc, char* argv[])
 			conf = optarg;
 			break;
 		case 'f' : {
-			struct snapraid_filter* filter = filter_alloc(1, optarg);
+			struct snapraid_filter* filter = filter_alloc_file(1, optarg);
+			if (!filter) {
+				fprintf(stderr, "Invalid filter specification '%s'\n", optarg);
+				exit(EXIT_FAILURE);
+			}
+			tommy_list_insert_tail(&filterlist, &filter->node, filter);
+			} break;
+		case 'd' : {
+			struct snapraid_filter* filter = filter_alloc_disk(1, optarg);
 			if (!filter) {
 				fprintf(stderr, "Invalid filter specification '%s'\n", optarg);
 				exit(EXIT_FAILURE);
@@ -210,7 +220,7 @@ int main(int argc, char* argv[])
 		case 'N' :
 			find_by_name = 1;
 			break;
-		case 'A' :
+		case 'a' :
 			audit_only = 1;
 			break;
 		case 'v' :
@@ -336,6 +346,7 @@ int main(int argc, char* argv[])
 	} else if (operation == OPERATION_DRY) {
 		state_read(&state);
 
+		/* apply the command line filter */
 		state_filter(&state, &filterlist);
 
 		/* intercept Ctrl+C */
@@ -345,12 +356,14 @@ int main(int argc, char* argv[])
 	} else if (operation == OPERATION_DUP) {
 		state_read(&state);
 
+		/* apply the command line filter */
 		state_filter(&state, &filterlist);
 
 		state_dup(&state);
 	} else {
 		state_read(&state);
 
+		/* apply the command line filter */
 		state_filter(&state, &filterlist);
 
 		/* intercept Ctrl+C */

@@ -2,9 +2,10 @@ Name{number}
 	snapraid - SnapRAID Backup For Disk Arrays
 
 Synopsis
-	:snapraid [-c, --conf CONFIG] [-f, --filter PATTERN] [-H, --filter-nohidden]
+	:snapraid [-c, --conf CONFIG]
+	:	[-f, --filter PATTERN] [-d, --filter-disk NAME] [-H, --filter-nohidden]
+	:	[-a, --audit-only]
 	:	[-N, --find-by-name]
-	:	[-A, --audit-only]
 	:	[-Z, --force-zero] [-E, --force-empty]
 	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	:	[-v, --verbose]
@@ -245,12 +246,19 @@ Options
 		This option can be used many times.
 		In Unix, ensure to quote globbing chars if used.
 
+	-d, --filter-disk NAME
+		Filters the files to operate on with the "check" and "fix"
+		commands.
+		This option cannot be used with the "sync" command.
+		You must specify a disk name as named in the configuration
+		file.
+
 	-H, --filter-nohidden
 		Filters out hidden files and directory. In Unix hidden files are
 		the ones starting with '.'. In Windows they are the ones with the
 		hidden attribute.
 
-	-A, --audit-only
+	-a, --audit-only
 		When checking, only verify the hash of the files, without
 		doing any kind of check on the redundancy data.
 		This option can be used only with the "check" command.

@@ -3,8 +3,9 @@ SnapRAID HISTORY
 
 1.13 2012/?
 ===========
- * Added a new -A option to make the 'check' command to only check file hashes
+ * Added a new -a option to make the 'check' command to only check file hashes
    without checking the parity data.
+ * Added a new -d option to filter by disk name.
  * The file modification time is now saved using nanosecond precision.
    This allows to restore the exact modification time in 'fix'.
    The new 'content' files written with this version are not backward compatible,
@@ -20,8 +21,8 @@ SnapRAID HISTORY
  * Always fill the memory after allocating it to avoid the OOM (Out Of Memory)
    killer in Linux.
  * Fixed compilation in Solaris for lacking both futimes() and futimens().
- * Now 'sync' ensures that the parity file are not too small to contains the
-   loaded data.
+ * Now 'sync' ensures that the parity file are not too small to contain the
+   just loaded data.
 
 1.12 2012/9
 =============

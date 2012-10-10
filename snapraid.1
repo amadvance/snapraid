@@ -2,15 +2,19 @@
 .SH NAME
 snapraid \(hy SnapRAID Backup For Disk Arrays
 .SH SYNOPSIS 
-snapraid [\(hyc, \(hy\(hyconf CONFIG] [\(hyf, \(hy\(hyfilter PATTERN] [\(hyH, \(hy\(hyfilter\(hynohidden]
+snapraid [\(hyc, \(hy\(hyconf CONFIG]
+.PD 0
+.PP
+.PD
+	[\(hyf, \(hy\(hyfilter PATTERN] [\(hyd, \(hy\(hyfilter\(hydisk NAME] [\(hyH, \(hy\(hyfilter\(hynohidden]
+.PD 0
+.PP
+.PD
+	[\(hya, \(hy\(hyaudit\(hyonly]
 .PD 0
 .PP
 .PD
 	[\(hyN, \(hy\(hyfind\(hyby\(hyname]
-.PD 0
-.PP
-.PD
-	[\(hyA, \(hy\(hyaudit\(hyonly]
 .PD 0
 .PP
 .PD
@@ -368,12 +372,19 @@ pattern specifications.
 This option can be used many times.
 In Unix, ensure to quote globbing chars if used.
 .TP
+.B \(hyd, \(hy\(hyfilter\(hydisk NAME
+Filters the files to operate on with the \(a"check\(a" and \(a"fix\(a"
+commands.
+This option cannot be used with the \(a"sync\(a" command.
+You must specify a disk name as named in the configuration
+file.
+.TP
 .B \(hyH, \(hy\(hyfilter\(hynohidden
 Filters out hidden files and directory. In Unix hidden files are
 the ones starting with \(cq.\(cq. In Windows they are the ones with the
 hidden attribute.
 .TP
-.B \(hyA, \(hy\(hyaudit\(hyonly
+.B \(hya, \(hy\(hyaudit\(hyonly
 When checking, only verify the hash of the files, without
 doing any kind of check on the redundancy data.
 This option can be used only with the \(a"check\(a" command.
