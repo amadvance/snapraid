@@ -561,7 +561,9 @@ Recovering
     STEP 2 -> Fix
 	Run the fix command, storing the log in an external file with:
 
-		:snapraid fix 2>fix.log
+		:snapraid -d NAME fix 2>fix.log
+
+	Where NAME is the name of the disk, like "d1" as in our previous example.
 
 	This command will take a long time.
 
@@ -586,7 +588,9 @@ Recovering
 	As paranoid check, you can now run a whole "check" command to ensure that
 	everything is OK.
 
-		:snapraid check
+		:snapraid -d NAME check
+
+	Where NAME is the name of the disk, like "d1" as in our previous example.
 
 	This command will take a long time.
 
