@@ -6,7 +6,7 @@ snapraid [\(hyc, \(hy\(hyconf CONFIG]
 .PD 0
 .PP
 .PD
-	[\(hyf, \(hy\(hyfilter PATTERN] [\(hyd, \(hy\(hyfilter\(hydisk NAME] [\(hyH, \(hy\(hyfilter\(hynohidden]
+	[\(hyf, \(hy\(hyfilter PATTERN] [\(hyd, \(hy\(hyfilter\(hydisk NAME]
 .PD 0
 .PP
 .PD
@@ -381,11 +381,6 @@ commands.
 You must specify a disk name as named in the configuration
 file.
 .TP
-.B \(hyH, \(hy\(hyfilter\(hynohidden
-Excludes hidden files and directory.
-In Unix hidden files are the ones starting with \(cq.\(cq.
-In Windows they are the ones with the hidden attribute.
-.TP
 .B \(hya, \(hy\(hyaudit\(hyonly
 When checking, only verify the hash of the files, without
 doing any kind of check on the redundancy data.
@@ -497,8 +492,9 @@ keep the NAME fixed.
 .PP
 You should use one option for each disk of the array.
 .SS nohidden 
-Excludes all the hidden files and directory, like the
-\(hy\(hyfilter\(hynohidden option.
+Excludes all the hidden files and directory.
+In Unix hidden files are the ones starting with \(cq.\(cq.
+In Windows they are the ones with the hidden attribute.
 .SS exclude/include PATTERN 
 Defines the file or directory patterns to exclude and include
 in the sync process.

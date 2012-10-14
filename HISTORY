@@ -1,19 +1,19 @@
 SnapRAID HISTORY
 ================
 
-1.13 2012/?
-===========
+1.13 2012/11
+============
  * Added a new -a option to make the 'check' command to only check file hashes
    without checking the parity data.
  * Added a new -d option to filter by disk name.
  * The file modification time is now saved using nanosecond precision.
    This allows to restore the exact modification time in 'fix'.
-   The new 'content' files written with this version are not backward compatible,
-   but it's still possible to read the old 'content' format.
+   The new 'content' files written with this version are not backward
+   compatible, but it's still possible to read the old 'content' format.
  * Fixed hard-links automatic exclusion. All the hardlinks after the first one
    are now correctly ignored.
- * If it isn't possible to grow a parity file, prints the list of files outside
-   the maximum size allocated.
+ * If it isn't possible to grow a parity file, prints the list of files
+   outside the maximum size allocated.
  * Autosave isn't triggered if we are near the end of the 'sync' process.
  * Before starting a 'sync', we wait for two seconds, to workaround the FAT
    limitation of having two seconds modification time precision.
@@ -23,11 +23,14 @@ SnapRAID HISTORY
  * Fixed compilation in Solaris for lacking both futimes() and futimens().
  * Now 'sync' ensures that the parity file are not too small to contain the
    just loaded data.
+ * Removed the '-H,--filter-nohidden' option. It doesn't make sense to
+   have it as command line option.
+   You must use the 'nohidden' option in the configuration file.
 
 1.12 2012/9
-=============
+===========
  * Fixed file renaming in Windows during a 'fix' command.
-   This is only a Windows issue, no reason to upgrade for other platforms.
+   This is only a Windows only issue, no reason to upgrade for other platforms.
 
 1.11 2012/7
 ===========

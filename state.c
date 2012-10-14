@@ -188,7 +188,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 	
 }
 
-void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int filter_hidden, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_device)
+void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_device)
 {
 	STREAM* f;
 	unsigned line;
@@ -197,7 +197,7 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 	state->gui = gui;
 	state->force_zero = force_zero;
 	state->force_empty = force_empty;
-	state->filter_hidden = filter_hidden;
+	state->filter_hidden = 0;
 	state->find_by_name = find_by_name;
 	state->expect_unrecoverable = expect_unrecoverable;
 	state->expect_recoverable = expect_recoverable;

@@ -71,7 +71,7 @@ void state_done(struct snapraid_state* state);
 /**
  * Reads the configuration file.
  */
-void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int filter_hidden, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_device);
+void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_device);
 
 /**
  * Reads the state.

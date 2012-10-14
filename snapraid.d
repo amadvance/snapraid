@@ -3,7 +3,7 @@ Name{number}
 
 Synopsis
 	:snapraid [-c, --conf CONFIG]
-	:	[-f, --filter PATTERN] [-d, --filter-disk NAME] [-H, --filter-nohidden]
+	:	[-f, --filter PATTERN] [-d, --filter-disk NAME]
 	:	[-a, --audit-only]
 	:	[-N, --find-by-name]
 	:	[-Z, --force-zero] [-E, --force-empty]
@@ -255,11 +255,6 @@ Options
 		You must specify a disk name as named in the configuration
 		file.
 
-	-H, --filter-nohidden
-		Excludes hidden files and directory.
-		In Unix hidden files are the ones starting with '.'.
-		In Windows they are the ones with the hidden attribute.
-
 	-a, --audit-only
 		When checking, only verify the hash of the files, without
 		doing any kind of check on the redundancy data.
@@ -377,8 +372,9 @@ Configuration
 	You should use one option for each disk of the array.
 
   nohidden
-	Excludes all the hidden files and directory, like the
-	--filter-nohidden option.
+	Excludes all the hidden files and directory.
+	In Unix hidden files are the ones starting with '.'.
+	In Windows they are the ones with the hidden attribute.
 
   exclude/include PATTERN
 	Defines the file or directory patterns to exclude and include
