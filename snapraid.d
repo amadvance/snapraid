@@ -238,25 +238,27 @@ Options
 		the current directory in Windows.
 
 	-f, --filter PATTERN
-		Filters the files to operate on with the "check" and "fix"
+		Filters the files to process in the "check" and "fix"
 		commands.
-		This option cannot be used with the "sync" command.
+		Only the files matching the entered pattern are processed.
+		This option can be used many times.
 		See the PATTERN section for more details in the
 		pattern specifications.
-		This option can be used many times.
 		In Unix, ensure to quote globbing chars if used.
+		This option can be used only with the "check" and "fix" commands.
+		Note that it cannot be used with "sync", because "sync" always
+		process the whole array.
 
 	-d, --filter-disk NAME
-		Filters the files to operate on with the "check" and "fix"
+		Filters the files to process in the "check" and "fix"
 		commands.
-		This option cannot be used with the "sync" command.
 		You must specify a disk name as named in the configuration
 		file.
 
 	-H, --filter-nohidden
-		Filters out hidden files and directory. In Unix hidden files are
-		the ones starting with '.'. In Windows they are the ones with the
-		hidden attribute.
+		Excludes hidden files and directory.
+		In Unix hidden files are the ones starting with '.'.
+		In Windows they are the ones with the hidden attribute.
 
 	-a, --audit-only
 		When checking, only verify the hash of the files, without
@@ -275,7 +277,7 @@ Options
 		Note that if you use this option, all the hard-links will be
 		stored independently wasting space. So, if you use hard-links,
 		it's better to don't use it.
-		This option has effect only on the "sync" and "diff" commands.
+		This option can be used only with the "sync" and "diff" commands.
 
 	-Z, --force-zero
 		Forces the insecure operation of syncing a file with zero
@@ -286,6 +288,7 @@ Options
 		some accessed files were zeroed.
 		This is a possible condition in Linux with the ext3/ext4
 		filesystems.
+		This option can be used only with the "sync" command.
 
 	-E, --force-empty
 		Forces the insecure operation of syncing a disk with all
@@ -295,6 +298,7 @@ Options
 		unless you specify this option.
 		This allows to easily detect when a data file-system is not
 		mounted.
+		This option can be used only with the "sync" command.
 
 	-s, --start BLKSTART
 		Starts the processing from the specified

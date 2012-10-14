@@ -145,6 +145,7 @@ int main(int argc, char* argv[])
 	int ret;
 	tommy_list filterlist;
 	char* e;
+	const char* command;
 
 	os_init();
 
@@ -264,7 +265,8 @@ int main(int argc, char* argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	if (strcmp(argv[optind], "diff") == 0) {
+	command = argv[optind];
+	if (strcmp(command, "diff") == 0) {
 		operation = OPERATION_DIFF;
 	} else if (strcmp(argv[optind], "sync") == 0) {
 		operation = OPERATION_SYNC;
@@ -281,6 +283,40 @@ int main(int argc, char* argv[])
 		exit(EXIT_FAILURE);
 	}
 
+	/* check options compatibility */
+	switch (operation) {
+	case OPERATION_CHECK :
+		break;
+	default:
+		if (audit_only) {
+			fprintf(stderr, "You cannot use -A, --audit-only with the '%s' command\n", command);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	switch (operation) {
+	case OPERATION_SYNC :
+	case OPERATION_DIFF :
+		break;
+	default:
+		if (find_by_name) {
+			fprintf(stderr, "You cannot use -N, --find-by-name with the '%s' command\n", command);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	switch (operation) {
+	case OPERATION_CHECK :
+	case OPERATION_FIX :
+	case OPERATION_DRY :
+		break;
+	default:
+		if (!tommy_list_empty(&filterlist)) {
+			fprintf(stderr, "You cannot filter with the '%s' command\n", command);
+			exit(EXIT_FAILURE);
+		}
+	}
+
 	raid_init();
 
 	if (!test_skip_self)
@@ -295,11 +331,6 @@ int main(int argc, char* argv[])
 
 		state_scan(&state, 1);
 	} else if (operation == OPERATION_SYNC) {
-		if (!tommy_list_empty(&filterlist)) {
-			fprintf(stderr, "You cannot filter with the sync command\n");
-			exit(EXIT_FAILURE);
-		}
-
 		state_read(&state);
 
 		state_scan(&state, 0);
@@ -356,9 +387,6 @@ int main(int argc, char* argv[])
 	} else if (operation == OPERATION_DUP) {
 		state_read(&state);
 
-		/* apply the command line filter */
-		state_filter(&state, &filterlist);
-
 		state_dup(&state);
 	} else {
 		state_read(&state);
@@ -369,10 +397,11 @@ int main(int argc, char* argv[])
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);
 
-		if (operation == OPERATION_CHECK)
+		if (operation == OPERATION_CHECK) {
 			state_check(&state, !audit_only, 0, blockstart, blockcount);
-		else /* it's fix */
+		} else { /* it's fix */
 			state_check(&state, 1, 1, blockstart, blockcount);
+		}
 	}
 
 	state_done(&state);

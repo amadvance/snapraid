@@ -364,25 +364,27 @@ the file \(a"/etc/snapraid.conf\(a" in Unix, and \(a"snapraid.conf\(a" in
 the current directory in Windows.
 .TP
 .B \(hyf, \(hy\(hyfilter PATTERN
-Filters the files to operate on with the \(a"check\(a" and \(a"fix\(a"
+Filters the files to process in the \(a"check\(a" and \(a"fix\(a"
 commands.
-This option cannot be used with the \(a"sync\(a" command.
+Only the files matching the entered pattern are processed.
+This option can be used many times.
 See the PATTERN section for more details in the
 pattern specifications.
-This option can be used many times.
 In Unix, ensure to quote globbing chars if used.
+This option can be used only with the \(a"check\(a" and \(a"fix\(a" commands.
+Note that it cannot be used with \(a"sync\(a", because \(a"sync\(a" always
+process the whole array.
 .TP
 .B \(hyd, \(hy\(hyfilter\(hydisk NAME
-Filters the files to operate on with the \(a"check\(a" and \(a"fix\(a"
+Filters the files to process in the \(a"check\(a" and \(a"fix\(a"
 commands.
-This option cannot be used with the \(a"sync\(a" command.
 You must specify a disk name as named in the configuration
 file.
 .TP
 .B \(hyH, \(hy\(hyfilter\(hynohidden
-Filters out hidden files and directory. In Unix hidden files are
-the ones starting with \(cq.\(cq. In Windows they are the ones with the
-hidden attribute.
+Excludes hidden files and directory.
+In Unix hidden files are the ones starting with \(cq.\(cq.
+In Windows they are the ones with the hidden attribute.
 .TP
 .B \(hya, \(hy\(hyaudit\(hyonly
 When checking, only verify the hash of the files, without
@@ -401,7 +403,7 @@ and not resynched.
 Note that if you use this option, all the hard\(hylinks will be
 stored independently wasting space. So, if you use hard\(hylinks,
 it\(cqs better to don\(cqt use it.
-This option has effect only on the \(a"sync\(a" and \(a"diff\(a" commands.
+This option can be used only with the \(a"sync\(a" and \(a"diff\(a" commands.
 .TP
 .B \(hyZ, \(hy\(hyforce\(hyzero
 Forces the insecure operation of syncing a file with zero
@@ -412,6 +414,7 @@ This allows to easily detect when after a system crash,
 some accessed files were zeroed.
 This is a possible condition in Linux with the ext3/ext4
 filesystems.
+This option can be used only with the \(a"sync\(a" command.
 .TP
 .B \(hyE, \(hy\(hyforce\(hyempty
 Forces the insecure operation of syncing a disk with all
@@ -421,6 +424,7 @@ in the disk are missing or rewritten, it stops proceeding
 unless you specify this option.
 This allows to easily detect when a data file\(hysystem is not
 mounted.
+This option can be used only with the \(a"sync\(a" command.
 .TP
 .B \(hys, \(hy\(hystart BLKSTART
 Starts the processing from the specified
