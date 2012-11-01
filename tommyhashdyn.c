@@ -69,7 +69,7 @@ static void tommy_hashdyn_resize(tommy_hashdyn* hashdyn, unsigned new_bucket_bit
 	new_bucket = tommy_cast(tommy_hashdyn_node**, tommy_malloc(new_bucket_max * sizeof(tommy_hashdyn_node*)));
 
 	/* reinsert all the elements */
-	if (new_bucket_bit > hashdyn->bucket_bit) {
+	if (new_bucket_bit > bucket_bit) {
 		unsigned i;
 
 		/* grow */
