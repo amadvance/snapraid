@@ -894,7 +894,7 @@ void state_read(struct snapraid_state* state)
 			hash = oathash64(hash, v_mtime_sec);
 
 			c = sgetc(f);
-			if (c == '.') { /* the nanosecond field is present only from version 1.12 */
+			if (c == '.') { /* the nanosecond field is present only from version 1.14 */
 				ret = sgetu32(f, &v_mtime_nsec);
 				if (ret < 0) {
 					fprintf(stderr, "Invalid 'file' specification in '%s' at line %u\n", path, line);
