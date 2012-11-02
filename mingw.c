@@ -315,7 +315,7 @@ static void windows_errno(DWORD error)
 		errno = ENOMEM;
 		break;
 	default:
-		fprintf(stderr, "Unexpected Windows error %d.\n", error);
+		fprintf(stderr, "Unexpected Windows error %d.\n", (int)error);
 		errno = EIO;
 		break;
 	}
