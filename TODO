@@ -3,7 +3,7 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
-- v1.13
+- v1.15
 
 * In fix an existing symlink with the same name of a file to be recovered may stop
 the process making the create() operation to fail.
