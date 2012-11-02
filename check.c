@@ -215,14 +215,13 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 		return -1;
 }
 
-static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned failed_count, unsigned char** buffer, unsigned char* buffer_parity, unsigned char* buffer_qarity, unsigned char* buffer_zero)
+static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, unsigned char** buffer, unsigned char* buffer_parity, unsigned char* buffer_qarity, unsigned char* buffer_zero)
 {
 	int ret;
 	int error;
 	unsigned j;
 	int n;
 	int has_bad;
-	unsigned map[2];
 
 	error = 0;
 
@@ -244,8 +243,7 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 			/* we never set a DELETED block as bad */
 			assert(failed[j].block != BLOCK_DELETED);
 
-			if (n<2)
-				map[n] = j;
+			failed_map[n] = j;
 			++n;
 		}
 	}
@@ -257,7 +255,7 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 		return 0;
 	}
 
-	ret = repair_step(state, pos, diskmax, failed, map, n, buffer, buffer_parity, buffer_qarity, buffer_zero);
+	ret = repair_step(state, pos, diskmax, failed, failed_map, n, buffer, buffer_parity, buffer_qarity, buffer_zero);
 	if (ret == 0) {
 		/* reprocess the blocks for NEW and CHG ones, for which we don't have a hash to check */
 		/* if they were BAD we have to use some euristics to ensure that we have recovered  */
@@ -314,8 +312,7 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 			|| block_state == BLOCK_STATE_DELETED /* we don't know the original content of deleted blocks */
 			|| block_state == BLOCK_STATE_CHG /* we don't know the original content of changed blocks */
 		) {
-			if (n<2)
-				map[n] = j;
+			failed_map[n] = j;
 			++n;
 		}
 
@@ -339,7 +336,7 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 		return 0;
 	}
 
-	ret = repair_step(state, pos, diskmax, failed, map, n, buffer, buffer_parity, buffer_qarity, buffer_zero);
+	ret = repair_step(state, pos, diskmax, failed, failed_map, n, buffer, buffer_parity, buffer_qarity, buffer_zero);
 	if (ret == 0) {
 		/* reprocess the blocks for NEW and CHG ones, for which we don't have a hash to check */
 
@@ -385,6 +382,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 	unsigned unrecoverable_error;
 	unsigned recovered_error;
 	struct failed_struct* failed;
+	unsigned* failed_map;
 
 	handle = handle_map(state, &diskmax);
 
@@ -399,6 +397,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 	memset(buffer[buffermax-1], 0, state->block_size);
 
 	failed = malloc_nofail(diskmax * sizeof(struct failed_struct));
+	failed_map = malloc_nofail(diskmax * sizeof(unsigned));
 
 	error = 0;
 	unrecoverable_error = 0;
@@ -694,7 +693,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				}
 			}
 
-			ret = repair(state, i, diskmax, failed, failed_count, buffer, buffer_parity, buffer_qarity, buffer_zero);
+			ret = repair(state, i, diskmax, failed, failed_map, failed_count, buffer, buffer_parity, buffer_qarity, buffer_zero);
 			if (ret != 0) {
 				/* increment the number of errors */
 				if (ret > 0)
@@ -1154,6 +1153,7 @@ bail:
 	}
 
 	free(failed);
+	free(failed_map);
 	free(handle);
 	free(buffer_alloc);
 	free(buffer);

@@ -1,7 +1,7 @@
 SnapRAID HISTORY
 ================
 
-1.13 2012/11
+1.14 2012/11
 ============
  * Added a new -a option to make the 'check' command to only check file hashes
    without checking the parity data.
@@ -26,6 +26,11 @@ SnapRAID HISTORY
  * Removed the '-H,--filter-nohidden' option. It doesn't make sense to
    have it as command line option.
    You must use the 'nohidden' option in the configuration file.
+
+1.13 2012/11
+============
+ * Fixed a Segmentation Fault when checking/fixing if there are three
+   or more errors in a specific block.
 
 1.12 2012/9
 ===========
