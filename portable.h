@@ -138,6 +138,14 @@
 #endif
 
 /**
+ * Defines O_NOATIME if absent.
+ * O_NOATIME is used to open files in RDONLY mode avoding to update their access time.
+ */
+#ifndef O_NOATIME
+#define O_NOATIME 0
+#endif
+
+/**
  * Check if the specified file is hidden.
  */
 static inline int stat_hidden(struct dirent* dd, struct stat* st)

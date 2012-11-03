@@ -26,6 +26,8 @@ SnapRAID HISTORY
  * Removed the '-H,--filter-nohidden' option. It doesn't make sense to
    have it as command line option.
    You must use the 'nohidden' option in the configuration file.
+ * When opening files in read-only mode, also specify the noatime flag,
+   to avoid to update the file access time.
 
 1.13 2012/11
 ============

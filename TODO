@@ -32,6 +32,14 @@ is too complex.
 
 - v2.x
 
+* Checked the include/exclude rules for FILE to include also directories.
+This is needed to allow to exclude files, before even calling stat() on them
+to know if they are file or directory.
+There are some cases where this is needed, like for the ".gvfs" mounted fuse directory by
+gnome that cannot have stat() called *EVEN* by root.
+This is totally wrong, because the stat() manpage explicitely tells that no permissions are
+needed to call stat().
+
 * Remove the old MD5 support.
 
 * A new 'init' command to differentiate the first 'sync' operation.
@@ -103,11 +111,6 @@ This is a list of rejected TODO items.
 * Recognizes that a file is moved from one disk to another, and if the parity
 data doesn't overlap, do not recompute it.
 - It's going to work only in RAID5 mode and only in special cases.
-
-* Uses the O_NOATIME flag if run as 'root'.
-- A better solution is to mount the disk with the "noatime" mount option.
-Note also that at mount time you can also use the "nodiratime", and this is
-the only way to specify it.
 
 * Implements a multithread sync command.
 - At now it's questionable if it will result in a performance improvment.

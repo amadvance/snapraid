@@ -454,7 +454,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 		const char* name;
 		struct dirent* dd;
 
-		/* clear errno to detect errneous conditions */
+		/* clear errno to detect erroneous conditions */
 		errno = 0;
 		dd = readdir(d);
 		if (dd == 0 && errno != 0) {

@@ -222,7 +222,7 @@ int parity_open(struct snapraid_parity* parity, const char* path)
 	pathcpy(parity->path, sizeof(parity->path), path);
 
 	/* opening in sequential mode in Windows */
-	parity->f = open(parity->path, O_RDONLY | O_BINARY | O_SEQUENTIAL);
+	parity->f = open(parity->path, O_RDONLY | O_BINARY | O_SEQUENTIAL | O_NOATIME);
 	if (parity->f == -1) {
 		fprintf(stderr, "Error opening parity file '%s'. %s.\n", parity->path, strerror(errno));
 		return -1;

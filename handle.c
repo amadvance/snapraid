@@ -87,7 +87,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 	/* if failed for missing permission */
 	if (handle->f == -1 && errno == EACCES) {
 		/* retry without requesting write permission */
-		handle->f = open(handle->path, O_RDONLY | O_BINARY | O_SEQUENTIAL | O_NOFOLLOW);
+		handle->f = open(handle->path, O_RDONLY | O_BINARY | O_SEQUENTIAL | O_NOFOLLOW | O_NOATIME);
 	}
 
 	if (handle->f == -1) {
@@ -161,7 +161,7 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file)
 	
 	/* opening in sequential mode in Windows */
 	/* do not follow links to ensure to open the real file */
-	handle->f = open(handle->path, O_RDONLY | O_BINARY | O_SEQUENTIAL | O_NOFOLLOW);
+	handle->f = open(handle->path, O_RDONLY | O_BINARY | O_SEQUENTIAL | O_NOFOLLOW | O_NOATIME);
 
 	if (handle->f == -1) {
 		/* invalidate for error */
