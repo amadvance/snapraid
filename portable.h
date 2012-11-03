@@ -137,12 +137,19 @@
 #define STAT_NSEC(st) -1
 #endif
 
+#ifdef O_NOATIME
 /**
- * Defines O_NOATIME if absent.
- * O_NOATIME is used to open files in RDONLY mode avoding to update their access time.
+ * Open a file with the O_NOATIME flag to avoid to update the acces time.
  */
-#ifndef O_NOATIME
-#define O_NOATIME 0
+static int open_noatime(const char* file, int flags)
+{
+	int f = open(file, flags | O_NOATIME);
+	if (f == -1 && errno == EPERM)
+		f = open(file, flags);
+	return f;
+}
+#else
+#define open_noatime open 
 #endif
 
 /**

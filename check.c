@@ -1002,7 +1002,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				}
 
 				/* create it */
-				/* do not follow links to ensure to open the real file */
+				/* O_NOFOLLOW: do not follow links to ensure to open the real file */
 				f = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_NOFOLLOW, 0600);
 				if (f == -1) {
 					fprintf(stderr, "Error creating empty file '%s'. %s.\n", path, strerror(errno));

@@ -80,14 +80,15 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 		return -1;
 	}
 
-	/* opening in sequential mode in Windows */
-	/* do not follow links to ensure to open the real file */
+	/* open for read write */
+	/* O_SEQUENTIAL: opening in sequential mode in Windows */
+	/* O_NOFOLLOW: do not follow links to ensure to open the real file */
 	handle->f = open(handle->path, O_RDWR | O_CREAT | O_BINARY | O_SEQUENTIAL | O_NOFOLLOW, 0600);
 
 	/* if failed for missing permission */
 	if (handle->f == -1 && errno == EACCES) {
 		/* retry without requesting write permission */
-		handle->f = open(handle->path, O_RDONLY | O_BINARY | O_SEQUENTIAL | O_NOFOLLOW | O_NOATIME);
+		handle->f = open(handle->path, O_RDONLY | O_BINARY | O_SEQUENTIAL | O_NOFOLLOW);
 	}
 
 	if (handle->f == -1) {
@@ -158,11 +159,12 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file)
 	}
 
 	pathprint(handle->path, sizeof(handle->path), "%s%s", handle->disk->dir, file->sub);
-	
-	/* opening in sequential mode in Windows */
-	/* do not follow links to ensure to open the real file */
-	handle->f = open(handle->path, O_RDONLY | O_BINARY | O_SEQUENTIAL | O_NOFOLLOW | O_NOATIME);
 
+	/* open for read */
+	/* O_SEQUENTIAL: opening in sequential mode in Windows */
+	/* O_NOFOLLOW: do not follow links to ensure to open the real file */
+	/* O_NOATIME: do not change access time */
+	handle->f = open_noatime(handle->path, O_RDONLY | O_BINARY | O_SEQUENTIAL | O_NOFOLLOW);
 	if (handle->f == -1) {
 		/* invalidate for error */
 		handle->file = 0;
