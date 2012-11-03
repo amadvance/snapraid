@@ -29,8 +29,6 @@ noinst_HEADERS = \
 	state.h \
 	parity.h \
 	handle.h \
-	md5.h \
-	md5.c \
 	murmurhash3.c \
 	tommyarray.h \
 	tommychain.h \

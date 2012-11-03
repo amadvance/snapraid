@@ -32,8 +32,6 @@ is too complex.
 
 - v2.x
 
-* Remove the old MD5 support.
-
 * A new 'init' command to differentiate the first 'sync' operation.
 This 'init' will work also without a content file, and parity files.
 Instead 'sync' will require all of them.

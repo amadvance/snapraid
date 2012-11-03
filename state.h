@@ -26,9 +26,6 @@
  */
 extern volatile int global_interrupt;
 
-#define HASH_MURMUR3 0
-#define HASH_MD5 1
-
 struct snapraid_state {
 	int verbose; /**< Verbose output. */
 	int gui; /**< Gui output. */

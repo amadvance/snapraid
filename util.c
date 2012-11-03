@@ -705,30 +705,12 @@ void* malloc_nofail_align(size_t size, void** freeptr)
 	return ptr;
 }
 
-#if HAVE_LIBCRYPTO
-#include <openssl/md5.h>
-#else
-#include "md5.c"
-#endif
-
 #include "murmurhash3.c"
 
 void memhash(unsigned kind, void* digest, const void* src, unsigned size)
 {
 	if (kind == HASH_MURMUR3) {
 		MurmurHash3_x86_128(src, size, 0, digest);
-		return;
-	}
-
-	if (kind == HASH_MD5) {
-#if HAVE_LIBCRYPTO
-		MD5((void*)src, size, digest);
-#else
-		struct md5_t md5;
-		md5_init(&md5);
-		md5_update(&md5, src, size);
-		md5_final(&md5, digest);
-#endif
 		return;
 	}
 }

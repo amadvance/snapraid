@@ -89,14 +89,6 @@ void speed(void)
 
 	SPEED_START {
 		for(j=0;j<diskmax;++j) {
-			memhash(HASH_MD5, digest, buffer[j], block_size);
-		}
-	} SPEED_STOP
-
-	printf("MD5 %"PRIu64" [MB/s]\n", ds / dt);
-
-	SPEED_START {
-		for(j=0;j<diskmax;++j) {
 			memhash(HASH_MURMUR3, digest, buffer[j], block_size);
 		}
 	} SPEED_STOP

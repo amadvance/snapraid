@@ -1198,6 +1198,11 @@ void state_read(struct snapraid_state* state)
 
 	sclose(f);
 
+	if (state->hash == HASH_MD5) {
+		fprintf(stderr, "MD5 is not supported anymore.\n");
+		exit(EXIT_FAILURE);
+	}
+
 	state->loaded_blockmax = blockmax;
 
 	/* update the mapping */

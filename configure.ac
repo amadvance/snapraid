@@ -64,20 +64,6 @@ AS_CASE([$host],
        []
 )
 
-dnl Checks for options
-AC_ARG_WITH([crypto],
-	[AS_HELP_STRING([--with-crypto],
-	[enable the use of the MD5 fast implementation of the OpenSSL crypto library])],
-	[],
-	[with_crypto=check])
-AS_IF([test "x$with_crypto" != xno], [
-	AC_CHECK_LIB([crypto], [MD5], [],
-	[if test "x$with_crypto" != xcheck; then
-		AC_MSG_FAILURE([--with-crypto was given, but test for OpenSSL crypto library failed])
-	fi
-	])
-])
-
 AC_ARG_ENABLE([profiler],
 	[AS_HELP_STRING([--enable-profiler],[enable the use of gprof for code coverage])],
 	[

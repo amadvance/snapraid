@@ -31,6 +31,7 @@ SnapRAID HISTORY
  * Exclude rules are now also applied to directories.
    This allows to excludes some file/directory without the need to call
    the stat() function on them.
+ * Removed MD5 support.
 
 1.13 2012/11
 ============
