@@ -149,7 +149,7 @@ static int open_noatime(const char* file, int flags)
 	return f;
 }
 #else
-#define open_noatime open 
+#define open_noatime open
 #endif
 
 /**

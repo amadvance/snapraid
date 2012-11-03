@@ -28,6 +28,9 @@ SnapRAID HISTORY
    You must use the 'nohidden' option in the configuration file.
  * When opening files in read-only mode, also specify the noatime flag,
    to avoid to update the file access time.
+ * Exclude rules are now also applied to directories.
+   This allows to excludes some file/directory without the need to call
+   the stat() function on them.
 
 1.13 2012/11
 ============

@@ -32,14 +32,6 @@ is too complex.
 
 - v2.x
 
-* Checked the include/exclude rules for FILE to include also directories.
-This is needed to allow to exclude files, before even calling stat() on them
-to know if they are file or directory.
-There are some cases where this is needed, like for the ".gvfs" mounted fuse directory by
-gnome that cannot have stat() called *EVEN* by root.
-This is totally wrong, because the stat() manpage explicitely tells that no permissions are
-needed to call stat().
-
 * Remove the old MD5 support.
 
 * A new 'init' command to differentiate the first 'sync' operation.

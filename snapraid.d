@@ -465,7 +465,7 @@ Pattern
 	=FILE
 		Selects any file named as FILE. You can use any globbing
 		character like * and ?.
-		This pattern is applied only to files and not to directories.
+		This pattern is applied to both files and directories.
 
 	=DIR/
 		Selects any directory named DIR. You can use any globbing
@@ -476,7 +476,7 @@ Pattern
 		Selects the exact specified file path. You can use any
 		globbing character like * and ? but they never matches a
 		directory slash.
-		This pattern is applied only to files and not to directories.
+		This pattern is applied to both files and directories.
 
 	=/PATH/DIR/
 		Selects the exact specified directory path. You can use any
