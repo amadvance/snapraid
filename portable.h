@@ -141,7 +141,7 @@
 /**
  * Open a file with the O_NOATIME flag to avoid to update the acces time.
  */
-static int open_noatime(const char* file, int flags)
+static inline int open_noatime(const char* file, int flags)
 {
 	int f = open(file, flags | O_NOATIME);
 	if (f == -1 && errno == EPERM)
