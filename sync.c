@@ -405,7 +405,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	/* if the file is too small */
 	if (out_size < loaded_size) {
-		fprintf(stderr, "DANGER! The Parity file %s is smaller than the expected %lld.\n", state->parity, loaded_size);
+		fprintf(stderr, "DANGER! The Parity file %s is smaller than the expected %" PRId64 ".\n", state->parity, loaded_size);
 		exit(EXIT_FAILURE);
 	}
 
@@ -426,7 +426,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 		/* if the file is too small */
 		if (out_size < loaded_size) {
-			fprintf(stderr, "DANGER! The Q-Parity file %s is smaller than the expected %lld.\n", state->qarity, loaded_size);
+			fprintf(stderr, "DANGER! The Q-Parity file %s is smaller than the expected %" PRId64 ".\n", state->qarity, loaded_size);
 			exit(EXIT_FAILURE);
 		}
 
