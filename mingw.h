@@ -31,6 +31,7 @@
 /* Remap functions and types */
 #define fopen windows_fopen
 #define open windows_open
+#define open_noatime windows_open
 #define stat windows_stat
 #define lstat windows_lstat
 #define access windows_access
