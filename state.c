@@ -902,6 +902,10 @@ void state_read(struct snapraid_state* state)
 				}
 				hash = oathash32(hash, v_mtime_nsec);
 
+				/* ignore nanoseconds if asked to find by name */
+				if (state->find_by_name)
+					v_mtime_nsec = FILE_MTIME_NSEC_INVALID;
+
 				c = sgetc(f);
 			} else {
 				/* use a special value, meaning that we don't have this information */

@@ -18,7 +18,7 @@ snapraid [\(hyc, \(hy\(hyconf CONFIG]
 .PD 0
 .PP
 .PD
-	[\(hyZ, \(hy\(hyforce\(hyzero] [\(hyE, \(hy\(hyforce\(hyempty]
+	[\(hyZ, \(hy\(hyforce\(hyzero] [\(hyE, \(hy\(hyforce\(hyempty] [\(hyS, \(hy\(hyforce\(hysecond]
 .PD 0
 .PP
 .PD
@@ -387,7 +387,8 @@ doing any kind of check on the redundancy data.
 This option can be used only with the \(a"check\(a" command.
 .TP
 .B \(hyN, \(hy\(hyfind\(hyby\(hyname
-When syncing finds the files by path instead than by inode.
+When syncing finds the files by path instead than by inode,
+and ignores the nanosecond part of timestamp.
 This option allows a fast sync command after having replaced
 one physical disk with another, copying manually the files.
 Without this option the \(a"sync\(a" command recognizes that
@@ -395,6 +396,8 @@ the files were copied to a different disk, and it will resync
 them all. With this option, a file with the correct path,
 size and time is assumed identical at the previous one,
 and not resynched.
+The nanosecond part of timestamps is ignored because most of
+copy programs are not able to correctly restore them.
 Note that if you use this option, all the hard\(hylinks will be
 stored independently wasting space. So, if you use hard\(hylinks,
 it\(cqs better to don\(cqt use it.

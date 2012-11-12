@@ -32,6 +32,8 @@ SnapRAID HISTORY
    This allows to excludes some file/directory without the need to call
    the stat() function on them.
  * Removed MD5 support.
+ * The -N, --find-by-name option also ignores the nanosecond part of
+   timestamps to work with copy programs not supporting nanoseconds.
 
 1.13 2012/11
 ============

@@ -6,7 +6,7 @@ Synopsis
 	:	[-f, --filter PATTERN] [-d, --filter-disk NAME]
 	:	[-a, --audit-only]
 	:	[-N, --find-by-name]
-	:	[-Z, --force-zero] [-E, --force-empty]
+	:	[-Z, --force-zero] [-E, --force-empty] [-S, --force-second]
 	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	:	[-v, --verbose]
 	:	sync|diff|dup|check|fix
@@ -261,7 +261,8 @@ Options
 		This option can be used only with the "check" command.
 
 	-N, --find-by-name
-		When syncing finds the files by path instead than by inode.
+		When syncing finds the files by path instead than by inode,
+		and ignores the nanosecond part of timestamp.
 		This option allows a fast sync command after having replaced
 		one physical disk with another, copying manually the files.
 		Without this option the "sync" command recognizes that
@@ -269,6 +270,8 @@ Options
 		them all. With this option, a file with the correct path,
 		size and time is assumed identical at the previous one,
 		and not resynched.
+		The nanosecond part of timestamps is ignored because most of
+		copy programs are not able to correctly restore them.
 		Note that if you use this option, all the hard-links will be
 		stored independently wasting space. So, if you use hard-links,
 		it's better to don't use it.
