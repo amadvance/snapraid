@@ -21,7 +21,7 @@ SnapRAID HISTORY
  * Always fill the memory after allocating it to avoid the OOM (Out Of Memory)
    killer in Linux.
  * Fixed compilation in Solaris for lacking both futimes() and futimens().
- * Now 'sync' ensures that the parity file are not too small to contain the
+ * Now 'sync' ensures that the parity files are not too small to contain the
    just loaded data.
  * Removed the '-H,--filter-nohidden' option. It doesn't make sense to
    have it as command line option.
