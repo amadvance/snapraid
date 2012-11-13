@@ -6,7 +6,7 @@ Synopsis
 	:	[-f, --filter PATTERN] [-d, --filter-disk NAME]
 	:	[-a, --audit-only]
 	:	[-N, --find-by-name]
-	:	[-Z, --force-zero] [-E, --force-empty] [-S, --force-second]
+	:	[-Z, --force-zero] [-E, --force-empty]
 	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	:	[-v, --verbose]
 	:	sync|diff|dup|check|fix
@@ -268,10 +268,10 @@ Options
 		Without this option the "sync" command recognizes that
 		the files were copied to a different disk, and it will resync
 		them all. With this option, a file with the correct path,
-		size and time is assumed identical at the previous one,
-		and not resynched.
+		size and time with second precision is assumed identical at
+		the previous one, and not resynched.
 		The nanosecond part of timestamps is ignored because most of
-		copy programs are not able to correctly restore them.
+		copy programs are not able to correctly restore it.
 		Note that if you use this option, all the hard-links will be
 		stored independently wasting space. So, if you use hard-links,
 		it's better to don't use it.

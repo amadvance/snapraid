@@ -18,7 +18,7 @@ snapraid [\(hyc, \(hy\(hyconf CONFIG]
 .PD 0
 .PP
 .PD
-	[\(hyZ, \(hy\(hyforce\(hyzero] [\(hyE, \(hy\(hyforce\(hyempty] [\(hyS, \(hy\(hyforce\(hysecond]
+	[\(hyZ, \(hy\(hyforce\(hyzero] [\(hyE, \(hy\(hyforce\(hyempty]
 .PD 0
 .PP
 .PD
@@ -394,10 +394,10 @@ one physical disk with another, copying manually the files.
 Without this option the \(a"sync\(a" command recognizes that
 the files were copied to a different disk, and it will resync
 them all. With this option, a file with the correct path,
-size and time is assumed identical at the previous one,
-and not resynched.
+size and time with second precision is assumed identical at
+the previous one, and not resynched.
 The nanosecond part of timestamps is ignored because most of
-copy programs are not able to correctly restore them.
+copy programs are not able to correctly restore it.
 Note that if you use this option, all the hard\(hylinks will be
 stored independently wasting space. So, if you use hard\(hylinks,
 it\(cqs better to don\(cqt use it.
