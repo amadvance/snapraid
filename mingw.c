@@ -21,6 +21,23 @@
 
 #include "mingw.h"
 
+/* Adds missing Windows declaration */
+typedef struct _FILE_ATTRIBUTE_TAG_INFO {
+	DWORD FileAttributes;
+	DWORD ReparseTag;
+} FILE_ATTRIBUTE_TAG_INFO;
+#define FileAttributeTagInfo 9
+
+#ifndef IO_REPARSE_TAG_DEDUP
+#define IO_REPARSE_TAG_DEDUP (0x80000013)
+#endif
+#ifndef IO_REPARSE_TAG_NFS
+#define IO_REPARSE_TAG_NFS (0x80000014)
+#endif
+#ifndef IO_REPARSE_TAG_MOUNT_POINT
+#define IO_REPARSE_TAG_MOUNT_POINT (0xA0000003)
+#endif
+
 /**
  * Number of conversion buffers.
  */
@@ -154,9 +171,45 @@ static wchar_t* convert(const char* src)
 }
 
 /**
+ * Portable implementation of GetFileInformationByHandleEx.
+ * This function is not available in Windows XP.
+ */
+static int flag_GetFileInformationByHandleEx = 0;
+static BOOL (WINAPI* ptr_GetFileInformationByHandleEx)(HANDLE, DWORD, LPVOID, DWORD) = 0;
+
+static BOOL GetReparseTagInfoByHandle(HANDLE hFile, FILE_ATTRIBUTE_TAG_INFO* lpFileAttributeTagInfo, DWORD dwFileAttributes)
+{
+	/* if not yet initialized, do it now */
+	if (!flag_GetFileInformationByHandleEx) {
+		HMODULE h = GetModuleHandleA("KERNEL32.DLL");
+		if (h) {
+			ptr_GetFileInformationByHandleEx = (void*)GetProcAddress(h, "GetFileInformationByHandleEx");
+		}
+		flag_GetFileInformationByHandleEx = 1;
+	}
+
+	/* if not reparse point, return no info */
+	if ((dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) == 0) {
+		lpFileAttributeTagInfo->FileAttributes = dwFileAttributes;
+		lpFileAttributeTagInfo->ReparseTag = 0;
+		return TRUE;
+	}
+
+	/* if not available, return no info */
+	if (!ptr_GetFileInformationByHandleEx) {
+		lpFileAttributeTagInfo->FileAttributes = dwFileAttributes;
+		lpFileAttributeTagInfo->ReparseTag = 0;
+		return TRUE;
+	}
+
+	/* do the real call */
+	return ptr_GetFileInformationByHandleEx(hFile, FileAttributeTagInfo, lpFileAttributeTagInfo, sizeof(FILE_ATTRIBUTE_TAG_INFO));
+}
+
+/**
  * Converts Windows info to the Unix stat format.
  */
-static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, struct windows_stat* st)
+static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_ATTRIBUTE_TAG_INFO* tag, struct windows_stat* st)
 {
 	uint64_t mtime;
 
@@ -167,9 +220,31 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, struct win
 	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0) { /* System files */
 		st->st_mode = S_IFCHR;
 		st->st_desc = "system";
-	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) { /* Symbolic links */
-		st->st_mode = S_IFCHR;
-		st->st_desc = "reparse-point";
+	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) { /* Reparse point */
+		switch (tag->ReparseTag) {
+		/* For deduplicated files, assume that they are regular ones */
+		case IO_REPARSE_TAG_DEDUP :
+			st->st_mode = S_IFREG;
+			st->st_desc = "regular-dedup";
+			break;
+		/* All the other are skipped as reparse-point */
+		case IO_REPARSE_TAG_MOUNT_POINT :
+			st->st_mode = S_IFCHR;
+			st->st_desc = "reparse-point-mount";
+			break;
+		case IO_REPARSE_TAG_NFS :
+			st->st_mode = S_IFCHR;
+			st->st_desc = "reparse-point-nfs";
+			break;
+		case IO_REPARSE_TAG_SYMLINK :
+			st->st_mode = S_IFCHR;
+			st->st_desc = "reparse-point-symlink";
+			break;
+		default:
+			st->st_mode = S_IFCHR;
+			st->st_desc = "reparse-point";
+			break;
+		}
 	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_OFFLINE) != 0) {
 		st->st_mode = S_IFCHR;
 		st->st_desc = "offline";
@@ -228,9 +303,31 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0) { /* System files */
 		st->st_mode = S_IFCHR;
 		st->st_desc = "system";
-	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) { /* Symbolic links */
-		st->st_mode = S_IFCHR;
-		st->st_desc = "reparse-point";
+	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) { /* Reparse Point */
+		switch (info->dwReserved0) {
+		/* For deduplicated files, assume that they are regular ones */
+		case IO_REPARSE_TAG_DEDUP :
+			st->st_mode = S_IFREG;
+			st->st_desc = "regular-dedup";
+			break;
+		/* All the other are skipped as reparse-point */
+		case IO_REPARSE_TAG_MOUNT_POINT :
+			st->st_mode = S_IFCHR;
+			st->st_desc = "reparse-point-mount";
+			break;
+		case IO_REPARSE_TAG_NFS :
+			st->st_mode = S_IFCHR;
+			st->st_desc = "reparse-point-nfs";
+			break;
+		case IO_REPARSE_TAG_SYMLINK :
+			st->st_mode = S_IFCHR;
+			st->st_desc = "reparse-point-symlink";
+			break;
+		default:
+			st->st_mode = S_IFCHR;
+			st->st_desc = "reparse-point";
+			break;
+		}
 	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_OFFLINE) != 0) {
 		st->st_mode = S_IFCHR;
 		st->st_desc = "offline";
@@ -324,6 +421,7 @@ static void windows_errno(DWORD error)
 int windows_fstat(int fd, struct windows_stat* st)
 {
 	BY_HANDLE_FILE_INFORMATION info;
+	FILE_ATTRIBUTE_TAG_INFO tag;
 	HANDLE h;
 
 	h = (HANDLE)_get_osfhandle(fd);
@@ -337,7 +435,12 @@ int windows_fstat(int fd, struct windows_stat* st)
 		return -1;
 	}
 
-	windows_info2stat(&info, st);
+	if (!GetReparseTagInfoByHandle(h, &tag, info.dwFileAttributes)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	windows_info2stat(&info, &tag, st);
 
 	return 0;
 }
@@ -376,6 +479,7 @@ int windows_mkdir(const char* file)
 int lstat_ex(const char* file, struct windows_stat* st)
 {
 	BY_HANDLE_FILE_INFORMATION info;
+	FILE_ATTRIBUTE_TAG_INFO tag;
 	HANDLE h;
 
 	/*
@@ -397,12 +501,19 @@ int lstat_ex(const char* file, struct windows_stat* st)
 		return -1;
 	}
 
+	if (!GetReparseTagInfoByHandle(h, &tag, info.dwFileAttributes)) {
+		DWORD error = GetLastError();
+		CloseHandle(h);
+		windows_errno(error);
+		return -1;
+	}
+
 	if (!CloseHandle(h)) {
 		windows_errno(GetLastError());
 		return -1;
 	}
 
-	windows_info2stat(&info, st);
+	windows_info2stat(&info, &tag, st);
 
 	return 0;
 }
@@ -410,6 +521,7 @@ int lstat_ex(const char* file, struct windows_stat* st)
 int windows_stat(const char* file, struct windows_stat* st)
 {
 	BY_HANDLE_FILE_INFORMATION info;
+	FILE_ATTRIBUTE_TAG_INFO tag;
 	HANDLE h;
 
 	/*
@@ -430,12 +542,19 @@ int windows_stat(const char* file, struct windows_stat* st)
 		return -1;
 	}
 
+	if (!GetReparseTagInfoByHandle(h, &tag, info.dwFileAttributes)) {
+		DWORD error = GetLastError();
+		CloseHandle(h);
+		windows_errno(error);
+		return -1;
+	}
+
 	if (!CloseHandle(h)) {
 		windows_errno(GetLastError());
 		return -1;
 	}
 
-	windows_info2stat(&info, st);
+	windows_info2stat(&info, &tag, st);
 
 	return 0;
 }

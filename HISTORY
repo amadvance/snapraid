@@ -34,6 +34,7 @@ SnapRAID HISTORY
  * Removed MD5 support.
  * The -N, --find-by-name option also ignores the nanosecond part of
    timestamps to work with copy programs not supporting nanoseconds.
+ * Fixed deduplicated files handling in Windows Server 2012.
 
 1.13 2012/11
 ============
