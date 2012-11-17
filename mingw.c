@@ -217,15 +217,26 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE
 	if ((info->dwFileAttributes & FILE_ATTRIBUTE_DEVICE) != 0) {
 		st->st_mode = S_IFBLK;
 		st->st_desc = "device";
-	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0) { /* System files */
+	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0) { /* System */
 		st->st_mode = S_IFCHR;
 		st->st_desc = "system";
+	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_OFFLINE) != 0) { /* Offline */
+		st->st_mode = S_IFCHR;
+		st->st_desc = "offline";
+	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_TEMPORARY) != 0) { /* Files going to be deleted on close */
+		st->st_mode = S_IFCHR;
+		st->st_desc = "temporary";
 	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) { /* Reparse point */
 		switch (tag->ReparseTag) {
 		/* For deduplicated files, assume that they are regular ones */
 		case IO_REPARSE_TAG_DEDUP :
-			st->st_mode = S_IFREG;
-			st->st_desc = "regular-dedup";
+			if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+				st->st_mode = S_IFDIR;
+				st->st_desc = "directory-dedup";
+			} else {
+				st->st_mode = S_IFREG;
+				st->st_desc = "regular-dedup";
+			}
 			break;
 		/* All the other are skipped as reparse-point */
 		case IO_REPARSE_TAG_MOUNT_POINT :
@@ -245,12 +256,6 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE
 			st->st_desc = "reparse-point";
 			break;
 		}
-	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_OFFLINE) != 0) {
-		st->st_mode = S_IFCHR;
-		st->st_desc = "offline";
-	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_TEMPORARY) != 0) { /* Files going to be deleted on close */
-		st->st_mode = S_IFCHR;
-		st->st_desc = "temporary";
 	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
 		st->st_mode = S_IFDIR;
 		st->st_desc = "directory";
@@ -300,15 +305,26 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 	if ((info->dwFileAttributes & FILE_ATTRIBUTE_DEVICE) != 0) {
 		st->st_mode = S_IFBLK;
 		st->st_desc = "device";
-	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0) { /* System files */
+	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0) { /* System */
 		st->st_mode = S_IFCHR;
 		st->st_desc = "system";
-	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) { /* Reparse Point */
+	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_OFFLINE) != 0) { /* Offline */
+		st->st_mode = S_IFCHR;
+		st->st_desc = "offline";
+	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_TEMPORARY) != 0) { /* Files going to be deleted on close */
+		st->st_mode = S_IFCHR;
+		st->st_desc = "temporary";
+	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) { /* Reparse point */
 		switch (info->dwReserved0) {
 		/* For deduplicated files, assume that they are regular ones */
 		case IO_REPARSE_TAG_DEDUP :
-			st->st_mode = S_IFREG;
-			st->st_desc = "regular-dedup";
+			if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+				st->st_mode = S_IFDIR;
+				st->st_desc = "directory-dedup";
+			} else {
+				st->st_mode = S_IFREG;
+				st->st_desc = "regular-dedup";
+			}
 			break;
 		/* All the other are skipped as reparse-point */
 		case IO_REPARSE_TAG_MOUNT_POINT :
@@ -328,12 +344,6 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 			st->st_desc = "reparse-point";
 			break;
 		}
-	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_OFFLINE) != 0) {
-		st->st_mode = S_IFCHR;
-		st->st_desc = "offline";
-	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_TEMPORARY) != 0) { /* Files going to be deleted on close */
-		st->st_mode = S_IFCHR;
-		st->st_desc = "temporary";
 	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
 		st->st_mode = S_IFDIR;
 		st->st_desc = "directory";
