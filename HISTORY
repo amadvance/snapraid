@@ -20,7 +20,8 @@ SnapRAID HISTORY
    This a safe measure to be 100% sure to always detect file changes.
  * Always fill the memory after allocating it to avoid the OOM (Out Of Memory)
    killer in Linux.
- * Fixed compilation in Solaris for lacking both futimes() and futimens().
+ * Fixed compilation in Solaris/OpenIndiana for lacking both futimes()
+   and futimens().
  * Now 'sync' ensures that the parity files are not too small to contain the
    just loaded data.
  * Removed the '-H,--filter-nohidden' option. It doesn't make sense to
@@ -28,13 +29,13 @@ SnapRAID HISTORY
    You must use the 'nohidden' option in the configuration file.
  * When opening files in read-only mode, also specify the noatime flag,
    to avoid to update the file access time.
- * Exclude rules are now also applied to directories.
+ * Exclude rules for files are now also applied to directories.
    This allows to excludes some file/directory without the need to call
    the stat() function on them.
- * Removed MD5 support.
  * The -N, --find-by-name option also ignores the nanosecond part of
    timestamps to work with copy programs not supporting nanoseconds.
  * Fixed deduplicated files handling in Windows Server 2012.
+ * Removed MD5 support.
 
 1.13 2012/11
 ============

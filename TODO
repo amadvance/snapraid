@@ -3,7 +3,21 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
-- v1.15
+- v2.0
+
+* A new 'init' command to differentiate the first 'sync' operation.
+This 'init' will work also without a content file, and parity files.
+Instead 'sync' will require all of them.
+This will also help when running with the parity filesystem unmounted.
+
+- v2.1
+
+* Filtered out files should be opened in read-only mode.
+
+* Implement an "undelete" command to recover missing files, without the
+integrity check of the existing ones.
+It should restore only missing files, without recovering modified ones
+or check validity of data of existing ones.
 
 * In fix an existing symlink with the same name of a file to be recovered may stop
 the process making the create() operation to fail.
@@ -24,23 +38,20 @@ See http://www.codeproject.com/Articles/21202/Reparse-Points-in-Vista.
 * Support Symlinks also in Windows.
 See: http://www.codeproject.com/Articles/21202/Reparse-Points-in-Vista
 
-* To list all the hardlink in Windows Vista it's possible to use FindFirstFileNameW/FindNextFileNameW
-See: http://blogs.msdn.com/b/oldnewthing/archive/2011/07/20/10188033.aspx
-
 * In Windows we must be case insensitive, at least for ASCII<128 comparison. For other UTF-8 chars
 is too complex.
 
-- v2.x
+- v3.x
 
-* A new 'init' command to differentiate the first 'sync' operation.
-This 'init' will work also without a content file, and parity files.
-Instead 'sync' will require all of them.
-This will also help when running with the parity filesystem unmounted.
+* In the content file, for each block store the last time the hash was checked
+with both "check" and also "sync".
+It will allow to define a new "check" command, checking only aged blocks
+and skipping recently checked ones.
+A good name could be "scrub".
+This could be problematic for the increased memory occupation.
+The check command could be maintaned independent, and not saving the content file.
 
-* Implement an "undelete" command to recover missing files, without the
-integrity check of the existing ones.
-It should restore only missing files, without recovering modified ones
-or check validity of data of existing ones.
+* Save the content file in compressed .gz format to save space.
 
 * Rename sync->backup and fix->restore. It seems to me a naming expressing
 better the meaning of the commands. But not yet sure.
@@ -54,11 +65,11 @@ starting from an interim content.
 When recovering, the first try assuming updated parity, will ignore all the "deleted"
 entries. The second one, will use them.
 Possible problem is when a new file, overwrite part of the deleted ones.
-We have to keep in memory different block? Duplicate blocks should be allocated
-in a different way ?
-In case we can lose the hash of the deleted ones, because we need only the
+We have to keep in memory different block indexes?
+Should collided blocks be allocated in a different way ?
+In case, we can lose the hash of the deleted ones, because we need only the
 position in the disk. We use them only for recovering, so the block to be
-recovcered will be checked with its own hash.
+recovered will be checked with its own hash.
 
 * When fixing, before overwriting the present file, make a copy of it just in
 case that the original file cannot be completely recovered.
@@ -66,24 +77,12 @@ We can always open files in read-only mode, if a write is required, we close it,
 rename it to with a .bak extension, and rewrite it up to the required size.
 The same for symlink if a file with the same name exist or viceversa.
 
+- v4.x
+
 * Triple parity also called RAID-TP. We can implement it in a compatible way
 with the existing RAID-5 and RAID-6 definining a new r-parity file.
 See http://blogs.oracle.com/ahl/entry/triple_parity_raid_z and
 http://thread.gmane.org/gmane.linux.raid/34195/focus=34236
-
-* Filtered out files should be opened in read-only mode.
-
-- v3.x
-
-* In the content file, for each block store the last time the hash was checked
-with both "check" and also "sync".
-It will allow to define a new "check" command, checking only aged blocks
-and skipping recently checked ones.
-A good name could be "scrub".
-This could be problematic for the increased memory occupation.
-The check command could be maintaned independent, and not saving the content file.
-
-* Save the content file in compressed .gz format to save space.
 
 * In the content file save the timestap of the parity files.
 If they do not match, stop the processing.
