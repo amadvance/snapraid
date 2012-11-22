@@ -312,9 +312,14 @@ void help(void)
 	printf("\tmktest truncate SEED FAIL_SIZE FILE\n");
 }
 
+int qsort_strcmp(const void* a, const void* b)
+{
+	return strcmp(a, b);
+}
+
 int main(int argc, char* argv[])
 {
-	int i, j;
+	int i, j, b;
 
 	if (argc < 2) {
 		help();
@@ -355,8 +360,12 @@ int main(int argc, char* argv[])
 		seed = atoi(argv[2]);
 		fail = atoi(argv[3]);
 		size = atoi(argv[4]);
+		b = 5;
 
-		for(i=5;i<argc;++i) {
+		/* sort the file names */
+		qsort(&argv[b], argc - b,  sizeof(argv[b]), qsort_strcmp);
+
+		for(i=b;i<argc;++i) {
 			for(j=0;j<fail;++j) {
 				damage(argv[i], rnd(size));
 			}
@@ -371,8 +380,12 @@ int main(int argc, char* argv[])
 
 		seed = atoi(argv[2]);
 		size = atoi(argv[3]);
+		b = 4;
 
-		for(i=4;i<argc;++i) {
+		/* sort the file names */
+		qsort(&argv[b], argc - b,  sizeof(argv[b]), qsort_strcmp);
+
+		for(i=b;i<argc;++i) {
 			append(argv[i], rnd(size));
 		}
 	} else if (strcmp(argv[1], "truncate") == 0) {
@@ -385,8 +398,12 @@ int main(int argc, char* argv[])
 
 		seed = atoi(argv[2]);
 		size = atoi(argv[3]);
+		b = 4;
 
-		for(i=4;i<argc;++i) {
+		/* sort the file names */
+		qsort(&argv[b], argc - b,  sizeof(argv[b]), qsort_strcmp);
+
+		for(i=b;i<argc;++i) {
 			truncat(argv[i], rnd(size));
 		}
 	} else {
