@@ -143,7 +143,8 @@ int main(int argc, char* argv[])
 	block_off_t blockstart;
 	block_off_t blockcount;
 	int ret;
-	tommy_list filterlist;
+	tommy_list filterlist_file;
+	tommy_list filterlist_disk;
 	char* e;
 	const char* command;
 
@@ -164,7 +165,8 @@ int main(int argc, char* argv[])
 	test_skip_device = 0;
 	blockstart = 0;
 	blockcount = 0;
-	tommy_list_init(&filterlist);
+	tommy_list_init(&filterlist_file);
+	tommy_list_init(&filterlist_disk);
 
 	opterr = 0;
 	while ((c =
@@ -184,7 +186,7 @@ int main(int argc, char* argv[])
 				fprintf(stderr, "Invalid filter specification '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 			}
-			tommy_list_insert_tail(&filterlist, &filter->node, filter);
+			tommy_list_insert_tail(&filterlist_file, &filter->node, filter);
 			} break;
 		case 'd' : {
 			struct snapraid_filter* filter = filter_alloc_disk(1, optarg);
@@ -192,7 +194,7 @@ int main(int argc, char* argv[])
 				fprintf(stderr, "Invalid filter specification '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 			}
-			tommy_list_insert_tail(&filterlist, &filter->node, filter);
+			tommy_list_insert_tail(&filterlist_disk, &filter->node, filter);
 			} break;
 		case 's' :
 			blockstart = strtoul(optarg, &e, 0);
@@ -307,7 +309,7 @@ int main(int argc, char* argv[])
 	case OPERATION_DRY :
 		break;
 	default:
-		if (!tommy_list_empty(&filterlist)) {
+		if (!tommy_list_empty(&filterlist_file) || !tommy_list_empty(&filterlist_disk)) {
 			fprintf(stderr, "You cannot filter with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 		}
@@ -374,7 +376,8 @@ int main(int argc, char* argv[])
 		state_read(&state);
 
 		/* apply the command line filter */
-		state_filter(&state, &filterlist);
+		state_filter(&state, &filterlist_file);
+		state_filter(&state, &filterlist_disk);
 
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);
@@ -388,7 +391,8 @@ int main(int argc, char* argv[])
 		state_read(&state);
 
 		/* apply the command line filter */
-		state_filter(&state, &filterlist);
+		state_filter(&state, &filterlist_file);
+		state_filter(&state, &filterlist_disk);
 
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);
@@ -401,7 +405,8 @@ int main(int argc, char* argv[])
 	}
 
 	state_done(&state);
-	tommy_list_foreach(&filterlist, (tommy_foreach_func*)filter_free);
+	tommy_list_foreach(&filterlist_file, (tommy_foreach_func*)filter_free);
+	tommy_list_foreach(&filterlist_disk, (tommy_foreach_func*)filter_free);
 
 	os_done();
 

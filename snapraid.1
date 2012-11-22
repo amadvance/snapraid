@@ -378,8 +378,15 @@ process the whole array.
 .B \(hyd, \(hy\(hyfilter\(hydisk NAME
 Filters the files to process in the \(a"check\(a" and \(a"fix\(a"
 commands.
+Only the files present in the specified disk are processed.
 You must specify a disk name as named in the configuration
 file.
+If you combine \(hy\(hyfilter and \(hy\(hyfilter\(hydisk options, only files
+matching both the two groups of rules are selected.
+This option can be used many times.
+This option can be used only with the \(a"check\(a" and \(a"fix\(a" commands.
+Note that it cannot be used with \(a"sync\(a", because \(a"sync\(a" always
+process the whole array.
 .TP
 .B \(hya, \(hy\(hyaudit\(hyonly
 When checking, only verify the hash of the files, without

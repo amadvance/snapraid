@@ -19,6 +19,10 @@ integrity check of the existing ones.
 It should restore only missing files, without recovering modified ones
 or check validity of data of existing ones.
 
+* Adds a log option, to save log files with the date in the name. This could
+help to keep track of what happens during automated operations.
+We must keep the log to stdout/err, and only save a copy to the log file.
+
 * In fix an existing symlink with the same name of a file to be recovered may stop
 the process making the create() operation to fail.
 

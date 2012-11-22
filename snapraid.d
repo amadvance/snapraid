@@ -252,8 +252,15 @@ Options
 	-d, --filter-disk NAME
 		Filters the files to process in the "check" and "fix"
 		commands.
+		Only the files present in the specified disk are processed.
 		You must specify a disk name as named in the configuration
 		file.
+		If you combine --filter and --filter-disk options, only files
+		matching both the two groups of rules are selected.
+		This option can be used many times.
+		This option can be used only with the "check" and "fix" commands.
+		Note that it cannot be used with "sync", because "sync" always
+		process the whole array.
 
 	-a, --audit-only
 		When checking, only verify the hash of the files, without
