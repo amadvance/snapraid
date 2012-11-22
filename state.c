@@ -1517,19 +1517,26 @@ void state_write(struct snapraid_state* state)
 	state->need_write = 0; /* no write needed anymore */
 }
 
-void state_filter(struct snapraid_state* state, tommy_list* filterlist)
+void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tommy_list* filterlist_disk)
 {
 	tommy_node* i;
 
 	/* if no filter, include all */
-	if (tommy_list_empty(filterlist))
+	if (tommy_list_empty(filterlist_file) && tommy_list_empty(filterlist_disk))
 		return;
 
 	printf("Filtering...\n");
 
 	if (state->verbose) {
 		tommy_node* k;
-		for(k=tommy_list_head(filterlist);k!=0;k=k->next) {
+		for(k=tommy_list_head(filterlist_disk);k!=0;k=k->next) {
+			struct snapraid_filter* filter = k->data;
+			printf("\t%s", filter->pattern);
+			if (filter->is_disk)
+				printf("//");
+			printf("\n");
+		}
+		for(k=tommy_list_head(filterlist_file);k!=0;k=k->next) {
 			struct snapraid_filter* filter = k->data;
 			printf("\t%s", filter->pattern);
 			if (filter->is_dir)
@@ -1547,7 +1554,9 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist)
 		for(j=tommy_list_head(&disk->filelist);j!=0;j=j->next) {
 			struct snapraid_file* file = j->data;
 
-			if (filter_path(filterlist, disk->name, file->sub) != 0) {
+			if (filter_path(filterlist_disk, disk->name, file->sub) != 0
+				|| filter_path(filterlist_file, disk->name, file->sub) != 0
+			) {
 				file_flag_set(file, FILE_IS_EXCLUDED);
 			}
 
@@ -1560,7 +1569,9 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist)
 		for(j=tommy_list_head(&disk->linklist);j!=0;j=j->next) {
 			struct snapraid_link* link = j->data;
 
-			if (filter_path(filterlist, disk->name, link->sub) != 0) {
+			if (filter_path(filterlist_disk, disk->name, link->sub) != 0
+				|| filter_path(filterlist_file, disk->name, link->sub) != 0
+			) {
 				link_flag_set(link, FILE_IS_EXCLUDED);
 			}
 

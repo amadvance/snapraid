@@ -111,7 +111,7 @@ void state_dup(struct snapraid_state* state);
  * Filter files.
  * Apply and additional filter to list of file currently loaded.
  */
-void state_filter(struct snapraid_state* state, tommy_list* filterlist);
+void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tommy_list* filterlist_disk);
 
 /**
  * Begins the progress visualization.

@@ -376,8 +376,7 @@ int main(int argc, char* argv[])
 		state_read(&state);
 
 		/* apply the command line filter */
-		state_filter(&state, &filterlist_file);
-		state_filter(&state, &filterlist_disk);
+		state_filter(&state, &filterlist_file, &filterlist_disk);
 
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);
@@ -391,8 +390,7 @@ int main(int argc, char* argv[])
 		state_read(&state);
 
 		/* apply the command line filter */
-		state_filter(&state, &filterlist_file);
-		state_filter(&state, &filterlist_disk);
+		state_filter(&state, &filterlist_file, &filterlist_disk);
 
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);
