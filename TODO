@@ -3,14 +3,12 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
-- v2.0
+- v2.1
 
 * A new 'init' command to differentiate the first 'sync' operation.
 This 'init' will work also without a content file, and parity files.
 Instead 'sync' will require all of them.
 This will also help when running with the parity filesystem unmounted.
-
-- v2.1
 
 * Filtered out files should be opened in read-only mode.
 

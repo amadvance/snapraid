@@ -1,7 +1,7 @@
 SnapRAID HISTORY
 ================
 
-2.0 2012/11
+2.0 2012/12
 ============
  * Added a new -a option to make the 'check' command to only check file hashes
    without checking the parity data.
