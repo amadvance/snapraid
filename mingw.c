@@ -37,6 +37,9 @@ typedef struct _FILE_ATTRIBUTE_TAG_INFO {
 #ifndef IO_REPARSE_TAG_MOUNT_POINT
 #define IO_REPARSE_TAG_MOUNT_POINT (0xA0000003)
 #endif
+#ifndef IO_REPARSE_TAG_SYMLINK
+#define IO_REPARSE_TAG_SYMLINK (0xA000000C)
+#endif
 
 /**
  * Number of conversion buffers.
