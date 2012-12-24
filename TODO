@@ -5,6 +5,8 @@ This is the list of TODO items for SnapRAID.
 
 - v2.1
 
+* If a content file is missing, sync should rewrite it, even if no change was done at the content.
+
 * A new 'init' command to differentiate the first 'sync' operation.
 This 'init' will work also without a content file, and parity files.
 Instead 'sync' will require all of them.
