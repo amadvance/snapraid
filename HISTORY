@@ -3,6 +3,7 @@ SnapRAID HISTORY
 
 2.1 2012/12
 ===========
+ * Checks for wrong empty fields in the configuration file.
 
 2.0 2012/12
 ===========
