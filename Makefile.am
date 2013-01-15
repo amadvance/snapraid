@@ -260,14 +260,15 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --test-expect-recoverable -c $(srcdir)/test-raid5.conf check 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
-	echo --- Delete some dirs, fix and check with raid6
+	echo --- Delete some dirs, fix and check with raid6 using the -d option for each disk
 	rm -r test/disk2/_a
 	rm -r test/disk2/_b
 	rm -r test/disk3/_a
 	rm -r test/disk3/_b
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --test-expect-unrecoverable -c $(srcdir)/test-raid5.conf fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --test-expect-recoverable -c $(srcdir)/test-raid6.conf check 2>> test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf fix 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf -d disk2 fix 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf -d disk3 fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
 	echo --- Delete the parity, fix and check with raid5
 	rm test/parity
