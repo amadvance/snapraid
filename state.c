@@ -276,6 +276,11 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 				exit(EXIT_FAILURE);
 			}
 
+			if (!*buffer) {
+				fprintf(stderr, "Empty 'parity' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
 			pathimport(state->parity, sizeof(state->parity), buffer);
 
 			/* get the device of the directory containing the content file */
@@ -304,6 +309,11 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 			ret = sgetlasttok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				fprintf(stderr, "Invalid 'q-parity' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			if (!*buffer) {
+				fprintf(stderr, "Empty 'q-parity' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
 
@@ -342,6 +352,11 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 				exit(EXIT_FAILURE);
 			}
 
+			if (!*buffer) {
+				fprintf(stderr, "Empty 'content' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
 			/* get the device of the directory containing the content file */
 			pathimport(device, sizeof(device), buffer);
 			slash = strrchr(device, '/');
@@ -365,7 +380,12 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
-				fprintf(stderr, "Invalid 'disk' specification in '%s' at line %u\n", path, line);
+				fprintf(stderr, "Invalid 'disk' name specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			if (!*buffer) {
+				fprintf(stderr, "Empty 'disk' name specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
 
@@ -373,7 +393,12 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 
 			ret = sgetlasttok(f, dir, sizeof(dir));
 			if (ret < 0) {
-				fprintf(stderr, "Invalid 'disk' specification in '%s' at line %u\n", path, line);
+				fprintf(stderr, "Invalid 'disk' dir specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			if (!*dir) {
+				fprintf(stderr, "Empty 'disk' dir specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
 
@@ -398,6 +423,11 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 				exit(EXIT_FAILURE);
 			}
 
+			if (!*buffer) {
+				fprintf(stderr, "Empty 'exclude' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
 			filter = filter_alloc_file(-1, buffer);
 			if (!filter) {
 				fprintf(stderr, "Invalid 'exclude' specification '%s' in '%s' at line %u\n", buffer, path, line);
@@ -413,6 +443,11 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 				exit(EXIT_FAILURE);
 			}
 
+			if (!*buffer) {
+				fprintf(stderr, "Empty 'include' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
 			filter = filter_alloc_file(1, buffer);
 			if (!filter) {
 				fprintf(stderr, "Invalid 'include' specification '%s' in '%s' at line %u\n", buffer, path, line);
@@ -425,6 +460,11 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 			ret = sgetlasttok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				fprintf(stderr, "Invalid 'autosave' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			if (!*buffer) {
+				fprintf(stderr, "Empty 'autosave' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
 
