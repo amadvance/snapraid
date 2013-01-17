@@ -480,24 +480,35 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 			exit(EXIT_FAILURE);
 		}
 
-		/* exclude files before doing any check on them */
-		if (filter_path(&state->filterlist, disk->name, sub_next) != 0) {
+		/* exclude hidden stuff even beforer calling lstat() */
+		if (filter_hidden(state->filter_hidden, dd) != 0) {
 			if (state->verbose) {
-				printf("Excluding file '%s'\n", path_next);
+				printf("Excluding hidden '%s'\n", path_next);
 			}
 			continue;
 		}
 
-		/* get info about the file */
+		/* exclude content files even beforer calling lstat() */
+		if (filter_content(&state->contentlist, path_next) != 0) {
+			if (state->verbose) {
+				printf("Excluding content '%s'\n", path_next);
+			}
+			continue;
+		}
+
+#if HAVE_DIRENT_LSTAT
+		/* convert dirent to lstat result */
+		dirent_lstat(dd, &st);
+#else
+		/* get lstat info about the file */
 		if (lstat(path_next, &st) != 0) {
 			fprintf(stderr, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
 			exit(EXIT_FAILURE);
 		}
+#endif
 
 		if (S_ISREG(st.st_mode)) {
-			if (filter_hidden(state->filter_hidden, dd, &st) == 0
-				&& filter_content(&state->contentlist, path_next) == 0
-			) {
+			if (filter_path(&state->filterlist, disk->name, sub_next) == 0) {
 				/* check for read permission */
 				if (access(path_next, R_OK) != 0) {
 					fprintf(stderr, "warning: Ignoring, for missing read permission, file '%s'\n", path_next);
@@ -520,8 +531,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 				}
 			}
 		} else if (S_ISLNK(st.st_mode)) {
-			if (filter_hidden(state->filter_hidden, dd, &st) == 0
-			) {
+			if (filter_path(&state->filterlist, disk->name, sub_next) == 0) {
 				char subnew[PATH_MAX];
 				int ret;
 
@@ -541,13 +551,11 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 				scan_link(scan, state, output, disk, sub_next, subnew);
 			} else {
 				if (state->verbose) {
-					printf("Excluding file '%s'\n", path_next);
+					printf("Excluding link '%s'\n", path_next);
 				}
 			}
 		} else if (S_ISDIR(st.st_mode)) {
-			if (filter_hidden(state->filter_hidden, dd, &st) == 0
-				&& filter_dir(&state->filterlist, disk->name, sub_next) == 0
-			) {
+			if (filter_dir(&state->filterlist, disk->name, sub_next) == 0) {
 				pathslash(path_next, sizeof(path_next));
 				pathslash(sub_next, sizeof(sub_next));
 				scan_dir(scan, state, output, disk, path_next, sub_next);
@@ -557,9 +565,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 				}
 			}
 		} else {
-			if (filter_hidden(state->filter_hidden, dd, &st) == 0
-				&& filter_content(&state->contentlist, path_next) == 0
-			) {
+			if (filter_path(&state->filterlist, disk->name, sub_next) == 0) {
 				fprintf(stderr, "warning: Ignoring special '%s' file '%s'\n", stat_desc(&st), path_next);
 			} else {
 				if (state->verbose) {

@@ -53,7 +53,9 @@
 #define HAVE_FUTIMENS 1
 #define futimens windows_futimens
 #define O_NOFOLLOW 0
-#define stat_hidden windows_stat_hidden
+#define dirent_hidden windows_dirent_hidden
+#define HAVE_DIRENT_LSTAT 1
+#define dirent_lstat windows_dirent_lstat
 #define stat_desc windows_stat_desc
 #define sleep windows_sleep
 /* In Windows symbolic links are not supported */
@@ -173,13 +175,14 @@ int windows_open(const char* file, int flags, ...);
  */
 struct windows_dirent {
 	char d_name[PATH_MAX];
+	int d_hidden;
+	WIN32_FIND_DATAW d_data;
 };
 
 /**
  * Like the C DIR.
  */
 struct windows_dir_struct {
-	WIN32_FIND_DATAW data;
 	HANDLE h;
 	struct windows_dirent buffer;
 	int flags;
@@ -202,9 +205,15 @@ struct windows_dirent* windows_readdir(windows_dir* dirstream);
 int windows_closedir(windows_dir* dirstream);
 
 /**
- * Like stat_hidden().
+ * Convert a dirent record to a lstat record.
+ * Just like the one obtained calling lstat().
  */
-int windows_stat_hidden(struct dirent* dd, struct windows_stat* st);
+void windows_dirent_lstat(const struct windows_dirent* dd, struct windows_stat* st);
+
+/**
+ * Like dirent_hidden().
+ */
+int windows_dirent_hidden(struct dirent* dd);
 
 /**
  * Like stat_desc().

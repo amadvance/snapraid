@@ -234,9 +234,9 @@ void filter_free(struct snapraid_filter* filter);
  * Filter hidden files.
  * Return !=0 if it matches and it should be excluded.
  */
-static inline int filter_hidden(int enable, struct dirent* dd, struct stat* st)
+static inline int filter_hidden(int enable, struct dirent* dd)
 {
-	if (enable && stat_hidden(dd, st)) {
+	if (enable && dirent_hidden(dd)) {
 		return 1; /* filter out */
 	}
 

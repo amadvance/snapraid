@@ -401,6 +401,9 @@ static void windows_finddata2dirent(const WIN32_FIND_DATAW* info, struct windows
 	}
 
 	memcpy(dirent->d_name, name, len + 1);
+
+	/* Store the HIDDEN attribute in a separate field */
+	dirent->d_hidden = (info->dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0;
 }
 
 /**
@@ -477,6 +480,11 @@ int windows_lstat(const char* file, struct windows_stat* st)
 	windows_finddata2stat(&data, st);
 
 	return 0;
+}
+
+void windows_dirent_lstat(const struct windows_dirent* dd, struct windows_stat* st)
+{
+	windows_finddata2stat(&dd->d_data, st);
 }
 
 int windows_access(const char* file, int mode)
@@ -709,7 +717,7 @@ windows_dir* windows_opendir(const char* dir)
 	wdir[len++] = L'*';
 	wdir[len++] = 0;
 
-	dirstream->h = FindFirstFileW(wdir, &dirstream->data);
+	dirstream->h = FindFirstFileW(wdir, &dirstream->buffer.d_data);
 	if (dirstream->h == INVALID_HANDLE_VALUE) {
 		DWORD error = GetLastError();
 
@@ -725,7 +733,7 @@ windows_dir* windows_opendir(const char* dir)
 
 	dirstream->flags = 1;
 
-	windows_finddata2dirent(&dirstream->data, &dirstream->buffer);
+	windows_finddata2dirent(&dirstream->buffer.d_data, &dirstream->buffer);
 
 	return dirstream;
 }
@@ -742,7 +750,7 @@ struct windows_dirent* windows_readdir(windows_dir* dirstream)
 		return &dirstream->buffer;
 	}
 
-	if (!FindNextFileW(dirstream->h, &dirstream->data)) {
+	if (!FindNextFileW(dirstream->h, &dirstream->buffer.d_data)) {
 		DWORD error = GetLastError();
 
 		if (error == ERROR_NO_MORE_FILES) {
@@ -754,7 +762,7 @@ struct windows_dirent* windows_readdir(windows_dir* dirstream)
 		return 0;
 	}
 
-	windows_finddata2dirent(&dirstream->data, &dirstream->buffer);
+	windows_finddata2dirent(&dirstream->buffer.d_data, &dirstream->buffer);
 
 	return &dirstream->buffer;
 }
@@ -776,10 +784,9 @@ int windows_closedir(windows_dir* dirstream)
 	return 0;
 }
 
-int windows_stat_hidden(struct dirent* dd, struct windows_stat* st)
+int windows_dirent_hidden(struct dirent* dd)
 {
-	(void)dd;
-	return st->st_hidden;
+	return dd->d_hidden;
 }
 
 const char* windows_stat_desc(struct stat* st)

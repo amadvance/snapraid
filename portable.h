@@ -155,9 +155,8 @@ static inline int open_noatime(const char* file, int flags)
 /**
  * Check if the specified file is hidden.
  */
-static inline int stat_hidden(struct dirent* dd, struct stat* st)
+static inline int dirent_hidden(struct dirent* dd)
 {
-	(void)st;
 	return dd->d_name[0] == '.';
 }
 

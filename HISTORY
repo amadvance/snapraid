@@ -1,9 +1,10 @@
 SnapRAID HISTORY
 ================
 
-2.1 2012/12
-===========
+2.1 2013/1
+==========
  * Checks for wrong empty fields in the configuration file.
+ * Filter rules for files are not anymore applied to directories.
 
 2.0 2012/12
 ===========
