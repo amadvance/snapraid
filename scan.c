@@ -443,7 +443,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 	d = opendir(dir);
 	if (!d) {
 		fprintf(stderr, "Error opening directory '%s'. %s.\n", dir, strerror(errno));
-		fprintf(stderr, "You can exclude it in the config file with:\n\texclude /%s/\n", sub);
+		fprintf(stderr, "You can exclude it in the config file with:\n\texclude /%s\n", sub);
 		exit(EXIT_FAILURE);
 	}
    
@@ -459,7 +459,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 		dd = readdir(d);
 		if (dd == 0 && errno != 0) {
 			fprintf(stderr, "Error reading directory '%s'. %s.\n", dir, strerror(errno));
-			fprintf(stderr, "You can exclude it in the config file with:\n\texclude /%s/\n", sub);
+			fprintf(stderr, "You can exclude it in the config file with:\n\texclude /%s\n", sub);
 			exit(EXIT_FAILURE);
 		}
 		if (dd == 0 && errno == 0) {
