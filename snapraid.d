@@ -463,8 +463,8 @@ Configuration
 		:disk d3 I:\array\
 		:exclude *.bak
 		:exclude Thumbs.db
-		:exclude \$RECYCLE.BIN\
-		:exclude \System Volume Information\
+		:exclude \$RECYCLE.BIN
+		:exclude \System Volume Information
 
 Pattern
 	Patterns are used to select a subset of files to exclude or include in
@@ -475,7 +475,7 @@ Pattern
 	=FILE
 		Selects any file named as FILE. You can use any globbing
 		character like * and ?.
-		This pattern is applied to both files and directories.
+		This pattern is applied only to files and not to directories.
 
 	=DIR/
 		Selects any directory named DIR. You can use any globbing
@@ -484,21 +484,26 @@ Pattern
 
 	=/PATH/FILE
 		Selects the exact specified file path. You can use any
-		globbing character like * and ? but they never matches a
+		globbing character like * and ? but they never match a
 		directory slash.
-		This pattern is applied to both files and directories.
+		This pattern is applied only to files and not to directories.
 
 	=/PATH/DIR/
 		Selects the exact specified directory path. You can use any
-		globbing character like * and ? but they never matches a
+		globbing character like * and ? but they never match a
 		directory slash.
 		This pattern is applied only to directories and not to files.
 
 	In Windows you can freely use the backslash \ instead of the forward slash /.
 
+	Note that Windows system directories, junction to directories,
+	mount points, and any other Windows special directory is treated just
+	as a file, meaning that to exclude it you must use a file rule, and
+	not a directory one.
+
 	In the configuration file, you can use different strategies to filter
 	the files to process.
-	The simplest one is to only use "exclude" rules to remove all the
+	The simplest one is to use only "exclude" rules to remove all the
 	files and directories you do not want to process. For example:
 
 		:# Excludes any file named "*.bak"

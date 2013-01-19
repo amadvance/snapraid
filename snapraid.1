@@ -636,11 +636,11 @@ exclude Thumbs.db
 .PD 0
 .PP
 .PD
-exclude \(rs$RECYCLE.BIN\(rs
+exclude \(rs$RECYCLE.BIN
 .PD 0
 .PP
 .PD
-exclude \(rsSystem Volume Information\(rs
+exclude \(rsSystem Volume Information
 .PD 0
 .PP
 .PD
@@ -654,7 +654,7 @@ There are four different types of patterns:
 .B FILE
 Selects any file named as FILE. You can use any globbing
 character like * and ?.
-This pattern is applied to both files and directories.
+This pattern is applied only to files and not to directories.
 .TP
 .B DIR/
 Selects any directory named DIR. You can use any globbing
@@ -663,21 +663,26 @@ This pattern is applied only to directories and not to files.
 .TP
 .B /PATH/FILE
 Selects the exact specified file path. You can use any
-globbing character like * and ? but they never matches a
+globbing character like * and ? but they never match a
 directory slash.
-This pattern is applied to both files and directories.
+This pattern is applied only to files and not to directories.
 .TP
 .B /PATH/DIR/
 Selects the exact specified directory path. You can use any
-globbing character like * and ? but they never matches a
+globbing character like * and ? but they never match a
 directory slash.
 This pattern is applied only to directories and not to files.
 .PP
 In Windows you can freely use the backslash \(rs instead of the forward slash /.
 .PP
+Note that Windows system directories, junction to directories,
+mount points, and any other Windows special directory is treated just
+as a file, meaning that to exclude it you must use a file rule, and
+not a directory one.
+.PP
 In the configuration file, you can use different strategies to filter
 the files to process.
-The simplest one is to only use \(a"exclude\(a" rules to remove all the
+The simplest one is to use only \(a"exclude\(a" rules to remove all the
 files and directories you do not want to process. For example:
 .PP
 .RS 4
