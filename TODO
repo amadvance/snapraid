@@ -3,7 +3,11 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
-- v2.1
+- v2.2
+
+* Allow to specify more than one disk directories to cover the case of multi partitions.
+
+* Keep track of empty directories and restore them.
 
 * If a content file is missing, sync should rewrite it, even if no change was done at the content.
 
