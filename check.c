@@ -937,8 +937,8 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 		}
 	}
 
-	/* check all the files with empty size */
-	/* they have no block, and so skipped by previous checks */
+
+	/* for each disk, recover empty files, symlinks and empty dirs */
 	for(i=0;i<diskmax;++i) {
 		tommy_node* node;
 		struct snapraid_disk* disk;
@@ -1024,15 +1024,6 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				++recovered_error;
 			}
 		}
-	}
-
-	/* check all the links */
-	for(i=0;i<diskmax;++i) {
-		tommy_node* node;
-		struct snapraid_disk* disk;
-
-		if (!handle[i].disk)
-			continue;
 
 		/* for each link in the disk */
 		disk = handle[i].disk;
@@ -1116,15 +1107,6 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				++recovered_error;
 			}
 		}
-	}
-
-	/* check all dirs */
-	for(i=0;i<diskmax;++i) {
-		tommy_node* node;
-		struct snapraid_disk* disk;
-
-		if (!handle[i].disk)
-			continue;
 
 		/* for each dir in the disk */
 		disk = handle[i].disk;
