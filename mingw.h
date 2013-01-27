@@ -62,6 +62,7 @@
 #define S_ISLNK(mode) 0
 #define readlink(a,b,c) -1
 #define symlink(a,b) -1
+#define link windows_link
 
 /**
  * Generic stat information.
@@ -224,6 +225,11 @@ const char* windows_stat_desc(struct stat* st);
  * Like sleep().
  */
 void windows_sleep(unsigned seconds);
+
+/**
+ * Like link().
+ */
+int windows_link(const char* existing, const char* file);
 
 #endif
 #endif

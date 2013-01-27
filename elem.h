@@ -136,6 +136,7 @@ struct snapraid_block {
 #define FILE_IS_LARGER 4 /**< If a larger file was already detected. */
 #define FILE_IS_DAMAGED 8 /**< If a fix was attempted but it failed. */
 #define FILE_IS_FIXED 16 /**< If a fix was done. */
+#define FILE_IS_HARDLINK 32 /**< If it's an hardlink. */
 
 /**
  * Value used to mark files without the nanoseconds value.
@@ -186,7 +187,6 @@ struct snapraid_dir {
 	tommy_node nodelist;
 	tommy_hashdyn_node nodeset;
 }; 
-
 
 /**
  * Disk.
@@ -416,9 +416,17 @@ static inline void link_flag_clear(struct snapraid_link* link, unsigned mask)
 }
 
 /**
+ * Checks if the link is a hardlink. Otherwise it's a symbolic link.
+ */
+static inline int link_is_hardlink(struct snapraid_link* link)
+{
+	return link_flag_has(link, FILE_IS_HARDLINK);
+}
+
+/**
  * Allocates a link.
  */
-struct snapraid_link* link_alloc(const char* name, const char* link);
+struct snapraid_link* link_alloc(const char* name, const char* link, int is_hardlink);
 
 /**
  * Deallocates a link.

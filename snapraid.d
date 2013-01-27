@@ -70,8 +70,8 @@ Limitations
 	* It's able to recover damages only from up to two disks.
 		With a Backup you are able to recover from a complete
 		failure of the whole disk array.
-	* Only file data, time and symlinks are saved. Permissions,
-		ownership, extended attributes and hard-links are not saved.
+	* Only file, timestamps, symlinks and hardlinks are saved.
+		Permissions, ownership, extended attributes are not saved.
 
 Getting Started
 	To use SnapRAID you need to first select one disk of your disk array
@@ -713,8 +713,11 @@ Content
   symlink DISK PATH
 	Defines a symbolic link in the specified DISK.
 
+  hardlink DISK PATH
+	Defines a hard link in the specified DISK.
+
   to PATH
-	Defines where the previous symlink links to.
+	Defines where the previous symlink or hardlink links to.
 
   dir DISK PATH
 	Defines an empty directory in the specified DISK.

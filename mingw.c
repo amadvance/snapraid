@@ -41,6 +41,8 @@ typedef struct _FILE_ATTRIBUTE_TAG_INFO {
 #define IO_REPARSE_TAG_SYMLINK (0xA000000C)
 #endif
 
+BOOL WINAPI CreateHardLinkW(LPCWSTR lpFileName, LPCWSTR lpExistingFileName, LPSECURITY_ATTRIBUTES lpSecurityAttributes);
+
 /**
  * Number of conversion buffers.
  */
@@ -797,6 +799,16 @@ const char* windows_stat_desc(struct stat* st)
 void windows_sleep(unsigned seconds)
 {
 	Sleep(seconds * 1000);
+}
+
+int windows_link(const char* existing, const char* file)
+{
+	if (!CreateHardLinkW(convert(file), convert(existing), 0)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	return 0;
 }
 
 #endif

@@ -80,8 +80,8 @@ Other limitations are:
 * It's able to recover damages only from up to two disks.
   With a Backup you are able to recover from a complete
   failure of the whole disk array.
-* Only file data, time and symlinks are saved. Permissions,
-  ownership, extended attributes and hard-links are not saved.
+* Only file, timestamps, symlinks and hardlinks are saved.
+  Permissions, ownership, extended attributes are not saved.
 
 
 4 GETTING STARTED
@@ -794,12 +794,17 @@ command.
 
 Defines a symbolic link in the specified DISK.
 
-10.13 to PATH
+10.13 hardlink DISK PATH
+------------------------
+
+Defines a hard link in the specified DISK.
+
+10.14 to PATH
 -------------
 
-Defines where the previous symlink links to.
+Defines where the previous symlink or hardlink links to.
 
-10.14 dir DISK PATH
+10.15 dir DISK PATH
 -------------------
 
 Defines an empty directory in the specified DISK.

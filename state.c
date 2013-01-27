@@ -690,14 +690,16 @@ void state_read(struct snapraid_state* state)
 	unsigned line;
 	unsigned count_file;
 	unsigned count_block;
-	unsigned count_link;
+	unsigned count_symlink;
+	unsigned count_hardlink;
 	unsigned count_dir;
 	tommy_node* node;
 	oathash_t hash;
 
 	count_file = 0;
 	count_block = 0;
-	count_link = 0;
+	count_symlink = 0;
+	count_hardlink = 0;
 	count_dir = 0;
 	hash = 0;
 
@@ -1118,17 +1120,102 @@ void state_read(struct snapraid_state* state)
 				exit(EXIT_FAILURE);
 			}
 
-			/* allocate the link */
-			link = link_alloc(sub, linkto);
+			/* allocate the link as symbolic link */
+			link = link_alloc(sub, linkto, 0);
 
 			/* insert the link in the link containers */
 			tommy_hashdyn_insert(&disk->linkset, &link->nodeset, link, link_name_hash(link->sub));
 			tommy_list_insert_tail(&disk->linklist, &link->nodelist, link);
 
 			/* stat */
-			++count_link;
+			++count_symlink;
+		} else if (strcmp(tag, "hardlink") == 0) {
+			/* hardlink */
+			char sub[PATH_MAX];
+			char linkto[PATH_MAX];
+			char tokento[32];
+			tommy_node* i;
+			struct snapraid_link* link;
+
+			hash = oathash8(hash, 'a');
+
+			ret = sgettok(f, buffer, sizeof(buffer));
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+			hash = oathashs(hash, buffer);
+
+			c = sgetc(f);
+			if (c != ' ') {
+				fprintf(stderr, "Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetline(f, sub, sizeof(sub));
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+			hash = oathashs(hash, sub);
+
+			c = sgeteol(f);
+			if (c != '\n') {
+				fprintf(stderr, "Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+			++line;
+
+			ret = sgettok(f, tokento, sizeof(tokento));
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+			if (strcmp(tokento, "to") != 0) {
+				fprintf(stderr, "Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			c = sgetc(f);
+			if (c != ' ') {
+				fprintf(stderr, "Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetline(f, linkto, sizeof(linkto));
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+			hash = oathashs(hash, linkto);
+
+			if (!*sub || !*linkto) {
+				fprintf(stderr, "Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			/* find the disk */
+			for(i=state->disklist;i!=0;i=i->next) {
+				disk = i->data;
+				if (strcmp(disk->name, buffer) == 0)
+					break;
+			}
+			if (!i) {
+				fprintf(stderr, "Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			/* allocate the link as hard link */
+			link = link_alloc(sub, linkto, 1);
+
+			/* insert the link in the link containers */
+			tommy_hashdyn_insert(&disk->linkset, &link->nodeset, link, link_name_hash(link->sub));
+			tommy_list_insert_tail(&disk->linklist, &link->nodelist, link);
+
+			/* stat */
+			++count_hardlink;
 		} else if (strcmp(tag, "dir") == 0) {
-			/* symlink */
+			/* dir */
 			char sub[PATH_MAX];
 			tommy_node* i;
 			struct snapraid_dir* dir;
@@ -1312,7 +1399,8 @@ void state_read(struct snapraid_state* state)
 	if (state->verbose) {
 		printf("\tfile %u\n", count_file);
 		printf("\tblock %u\n", count_block);
-		printf("\tsymlink %u\n", count_link);
+		printf("\tsymlink %u\n", count_symlink);
+		printf("\thardlink %u\n", count_hardlink);
 		printf("\temptydir %u\n", count_dir);
 	}
 }
@@ -1322,7 +1410,8 @@ void state_write(struct snapraid_state* state)
 	STREAM* f;
 	unsigned count_file;
 	unsigned count_block;
-	unsigned count_link;
+	unsigned count_symlink;
+	unsigned count_hardlink;
 	unsigned count_dir;
 	unsigned count_content;
 	tommy_node* i;
@@ -1331,7 +1420,8 @@ void state_write(struct snapraid_state* state)
 
 	count_file = 0;
 	count_block = 0;
-	count_link = 0;
+	count_symlink = 0;
+	count_hardlink = 0;
 	count_dir = 0;
 	hash = 0;
 
@@ -1504,8 +1594,16 @@ void state_write(struct snapraid_state* state)
 		for(j=disk->linklist;j!=0;j=j->next) {
 			struct snapraid_link* link = j->data;
 
-			sputsl("symlink ", f);
-			hash = oathash8(hash, 's');
+			if (link_is_hardlink(link)) {
+				sputsl("hardlink ", f);
+				hash = oathash8(hash, 'a');
+				++count_hardlink;
+			} else {
+				sputsl("symlink ", f);
+				hash = oathash8(hash, 's');
+				++count_symlink;
+			}
+
 			sputs(disk->name, f);
 			hash = oathashs(hash, disk->name);
 			sputc(' ', f);
@@ -1520,8 +1618,6 @@ void state_write(struct snapraid_state* state)
 				fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 				exit(EXIT_FAILURE);
 			}
-
-			++count_link;
 		}
 
 		/* for each dir */
@@ -1629,7 +1725,8 @@ void state_write(struct snapraid_state* state)
 	if (state->verbose) {
 		printf("\tfile %u\n", count_file);
 		printf("\tblock %u\n", count_block);
-		printf("\tsymlink %u\n", count_link);
+		printf("\tsymlink %u\n", count_symlink);
+		printf("\thardlink %u\n", count_hardlink);
 		printf("\temptydir %u\n", count_dir);
 	}
 

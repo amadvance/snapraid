@@ -349,14 +349,14 @@ int file_path_compare(const void* void_arg, const void* void_data)
 	return strcmp(arg, file->sub);
 }
 
-struct snapraid_link* link_alloc(const char* sub, const char* linkto)
+struct snapraid_link* link_alloc(const char* sub, const char* linkto, int is_hardlink)
 {
 	struct snapraid_link* link;
 
 	link = malloc_nofail(sizeof(struct snapraid_link));
 	pathcpy(link->sub, sizeof(link->sub), sub);
 	pathcpy(link->linkto, sizeof(link->linkto), linkto);
-	link->flag = 0;
+	link->flag = is_hardlink != 0 ? FILE_IS_HARDLINK : 0;
 
 	return link;
 }

@@ -1030,7 +1030,10 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 		node = disk->linklist;
 		while (node) {
 			char path[PATH_MAX];
+			char pathto[PATH_MAX];
 			char linkto[PATH_MAX];
+			struct stat st;
+			struct stat stto;
 			struct snapraid_link* link;
 			int failed = 0;
 
@@ -1042,29 +1045,69 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				continue;
 			}
 
-			/* read the symlink */
-			pathprint(path, sizeof(path), "%s%s", disk->dir, link->sub);
-			ret = readlink(path, linkto, sizeof(linkto));
-			if (ret < 0) {
-				failed = 1;
-
-				fprintf(stderr, "Error reading symlink '%s'. %s.\n", path, strerror(errno));
-				fprintf(stderr, "symlink_error:%s:%s: Symlink read error\n", disk->name, link->sub);
-				++error;
-			} else if (ret == sizeof(linkto)) {
-				failed = 1;
-
-				fprintf(stderr, "Error reading symlink '%s'. Symlink too long.\n", path);
-				fprintf(stderr, "symlink_error:%s:%s: Symlink read error\n", disk->name, link->sub);
-				++error;
-			} else {
-				linkto[ret] = 0;
-			
-				if (strcmp(linkto, link->linkto) != 0) {
+			if (link_is_hardlink(link)) {
+				/* stat the link */
+				pathprint(path, sizeof(path), "%s%s", disk->dir, link->sub);
+				ret = stat(path, &st);
+				if (ret == -1) {
 					failed = 1;
 
-					fprintf(stderr, "symlink_error:%s:%s: Symlink data error '%s' instead of '%s'\n", disk->name, link->sub, linkto, link->linkto);
+					fprintf(stderr, "Error stating hardlink '%s'. %s.\n", path, strerror(errno));
+					fprintf(stderr, "hardlinkerror:%s:%s:%s: Hardlink stat error\n", disk->name, link->sub, link->linkto);
 					++error;
+				} else if (!S_ISREG(st.st_mode)) {
+					failed = 1;
+
+					fprintf(stderr, "hardlinkerror:%s:%s:%s: Hardlink error for not regular file\n", disk->name, link->sub, link->linkto);
+					++error;
+				}
+
+				/* stat the "to" file */
+				pathprint(pathto, sizeof(pathto), "%s%s", disk->dir, link->linkto);
+				ret = stat(pathto, &stto);
+				if (ret == -1) {
+					failed = 1;
+
+					fprintf(stderr, "Error stating hardlink-to '%s'. %s.\n", pathto, strerror(errno));
+					fprintf(stderr, "hardlinkerror:%s:%s:%s: Hardlink to stat error\n", disk->name, link->sub, link->linkto);
+					++error;
+				} else if (!S_ISREG(st.st_mode)) {
+					failed = 1;
+
+					fprintf(stderr, "hardlinkerror:%s:%s:%s: Hardlink-to error for not regular file\n", disk->name, link->sub, link->linkto);
+					++error;
+				} else if (st.st_ino != stto.st_ino) {
+					failed = 1;
+
+					fprintf(stderr, "Mismatch hardlink '%s' and '%s'. Different inode.\n", path, pathto);
+					fprintf(stderr, "hardlinkerror:%s:%s:%s: Hardlink mismatch for different inode\n", disk->name, link->sub, link->linkto);
+					++error;
+				}
+			} else {
+				/* read the symlink */
+				pathprint(path, sizeof(path), "%s%s", disk->dir, link->sub);
+				ret = readlink(path, linkto, sizeof(linkto));
+				if (ret < 0) {
+					failed = 1;
+
+					fprintf(stderr, "Error reading symlink '%s'. %s.\n", path, strerror(errno));
+					fprintf(stderr, "symlinkerror:%s:%s: Symlink read error\n", disk->name, link->sub);
+					++error;
+				} else if (ret == sizeof(linkto)) {
+					failed = 1;
+
+					fprintf(stderr, "Error reading symlink '%s'. Symlink too long.\n", path);
+					fprintf(stderr, "symlinkerror:%s:%s: Symlink read error\n", disk->name, link->sub);
+					++error;
+				} else {
+					linkto[ret] = 0;
+
+					if (strcmp(linkto, link->linkto) != 0) {
+						failed = 1;
+
+						fprintf(stderr, "symlinkerror:%s:%s: Symlink data error '%s' instead of '%s'\n", disk->name, link->sub, linkto, link->linkto);
+						++error;
+					}
 				}
 			}
 
@@ -1089,22 +1132,41 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				}
 
 				/* create it */
-				ret = symlink(link->linkto, path);
-				if (ret != 0) {
-					fprintf(stderr, "Error writing symlink '%s'. %s.\n", path, strerror(errno));
-					if (errno == EACCES) {
-						fprintf(stderr, "WARNING! Please give write permission to the symlink.\n");
-					} else {
-						/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
-						fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+				if (link_is_hardlink(link)) {
+					ret = hardlink(pathto, path);
+					if (ret != 0) {
+						fprintf(stderr, "Error writing hardlink '%s'. %s.\n", path, strerror(errno));
+						if (errno == EACCES) {
+							fprintf(stderr, "WARNING! Please give write permission to the hardlink.\n");
+						} else {
+							/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
+							fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+						}
+						printf("Stopping\n");
+						++unrecoverable_error;
+						goto bail;
 					}
-					printf("Stopping\n");
-					++unrecoverable_error;
-					goto bail;
-				}
 
-				fprintf(stderr, "symlink_fixed:%s:%s: Fixed symlink error\n", disk->name, link->sub);
-				++recovered_error;
+					fprintf(stderr, "hardlinkfixed:%s:%s: Fixed hardlink error\n", disk->name, link->sub);
+					++recovered_error;
+				} else {
+					ret = symlink(link->linkto, path);
+					if (ret != 0) {
+						fprintf(stderr, "Error writing symlink '%s'. %s.\n", path, strerror(errno));
+						if (errno == EACCES) {
+							fprintf(stderr, "WARNING! Please give write permission to the symlink.\n");
+						} else {
+							/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
+							fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+						}
+						printf("Stopping\n");
+						++unrecoverable_error;
+						goto bail;
+					}
+
+					fprintf(stderr, "symlinkfixed:%s:%s: Fixed symlink error\n", disk->name, link->sub);
+					++recovered_error;
+				}
 			}
 		}
 

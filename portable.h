@@ -185,5 +185,13 @@ static inline const char* stat_desc(struct stat* st)
 }
 #endif
 
+/**
+ * Another name for link() to avoid confusion with local variables called "link".
+ */
+static inline int hardlink(const char* a, const char* b)
+{
+	return link(a, b);
+}
+
 #endif
 
