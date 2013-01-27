@@ -105,8 +105,13 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf -a check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf -a check
-	echo --- Create some more files, sync raid5 and check
+	echo --- Create some more files and empty directories, sync raid5 and check
 	$(TESTENV) ./mktest$(EXEEXT) generate 2 3 $(CHECKCOUNT) $(CHECKSIZE)
+	mkdir test/disk1/empty1
+	mkdir test/disk2/empty2
+	mkdir test/disk3/empty3a
+	mkdir test/disk3/empty3a/emptyinner
+	mkdir test/disk3/empty3b
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid5.conf diff
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid5.conf dup
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid5.conf sync

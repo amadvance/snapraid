@@ -176,6 +176,19 @@ struct snapraid_link {
 }; 
 
 /**
+ * Dir.
+ */
+struct snapraid_dir {
+	unsigned flag; /**< FILE_IS_* flags. */
+	char sub[PATH_MAX]; /**< Sub path of the file. Without the disk dir. The disk is implicit. */
+
+	/* nodes for data structures */
+	tommy_node nodelist;
+	tommy_hashdyn_node nodeset;
+}; 
+
+
+/**
  * Disk.
  */
 struct snapraid_disk {
@@ -188,6 +201,8 @@ struct snapraid_disk {
 	tommy_hashdyn pathset; /**< Hashtable by path of all the files. */
 	tommy_list linklist; /**< List of all the links. */
 	tommy_hashdyn linkset; /**< Hashtable by name of all the links. */
+	tommy_list dirlist; /**< List of all the dirs. */
+	tommy_hashdyn dirset; /**< Hashtable by name of all the dirs. */
 	tommy_array blockarr; /**< Block array of the disk. */
 
 	/* nodes for data structures */
@@ -419,6 +434,44 @@ int link_name_compare(const void* void_arg, const void* void_data);
  * Computes the hash of a link name.
  */
 static inline tommy_uint32_t link_name_hash(const char* name)
+{
+	return tommy_hash_u32(0, name, strlen(name));
+}
+
+static inline int dir_flag_has(struct snapraid_dir* dir, unsigned mask)
+{
+	return (dir->flag & mask) == mask;
+}
+
+static inline void dir_flag_set(struct snapraid_dir* dir, unsigned mask)
+{
+	dir->flag |= mask;
+}
+
+static inline void dir_flag_clear(struct snapraid_dir* dir, unsigned mask)
+{
+	dir->flag &= ~mask;
+}
+
+/**
+ * Allocates a dir.
+ */
+struct snapraid_dir* dir_alloc(const char* name);
+
+/**
+ * Deallocates a dir.
+ */
+void dir_free(struct snapraid_dir* dir);
+
+/**
+ * Compare a dir with a name.
+ */
+int dir_name_compare(const void* void_arg, const void* void_data);
+
+/**
+ * Computes the hash of a dir name.
+ */
+static inline tommy_uint32_t dir_name_hash(const char* name)
 {
 	return tommy_hash_u32(0, name, strlen(name));
 }

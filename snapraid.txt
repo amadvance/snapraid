@@ -81,7 +81,7 @@ Other limitations are:
   With a Backup you are able to recover from a complete
   failure of the whole disk array.
 * Only file data, time and symlinks are saved. Permissions,
-  extended attributes and hard-links are not saved.
+  ownership, extended attributes and hard-links are not saved.
 
 
 4 GETTING STARTED
@@ -698,7 +698,8 @@ defined in the configuration file.
 10.2 checksum CHECKSUM
 ----------------------
 
-Defines the checksum kind used. It can be "md5" or "murmur3".
+Defines the checksum kind used. It can be only "murmur3".
+From SnapRAID 2.0 the old "md5" checksum is not supported anymore.
 
 10.3 map NAME INDEX
 -------------------
@@ -712,8 +713,8 @@ Signature checksum of the content file to ensure that it doesn't get
 corrupted. If you want to modify the content file manually, you have
 to remove this line to avoid this check.
 
-10.5 file DISK SIZE TIME_SEC.TIME_NSEC INODE PATH
--------------------------------------------------
+10.5 file DISK SIZE TIME_SEC[.TIME_NSEC] INODE PATH
+---------------------------------------------------
 
 Defines a file in the specified DISK.
 
@@ -724,6 +725,10 @@ the need to recompute the parity for it.
 The SIZE and TIME information are used to identify if the file
 changed from the last "sync" command, and if there is the need
 to recompute the parity.
+
+The [.TIME_NSEC] information is optional, and only present if
+it's possible to read a such precise time information.
+It's present only from SnapRAID 2.0.
 
 The PATH information is used in the "check" and "fix" commands
 to identify the file.
@@ -783,6 +788,24 @@ for which the parity is computed using the previous value.
 
 This field is used only when you interrupt manually the "sync"
 command.
+
+10.12 symlink DISK PATH
+-----------------------
+
+Defines a symbolic link in the specified DISK.
+
+10.13 to PATH
+-------------
+
+Defines where the previous symlink links to.
+
+10.14 dir DISK PATH
+-------------------
+
+Defines an empty directory in the specified DISK.
+
+Directory that contains saved files, are not included, as they
+are implicitely defined in the file specifications.
 
 
 11 PARITY

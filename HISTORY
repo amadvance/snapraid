@@ -1,6 +1,10 @@
 SnapRAID HISTORY
 ================
 
+2.2 2013/2
+==========
+ * Syncs and fixes also empty directories.
+
 2.1 2013/1
 ==========
  * Checks for wrong empty fields in the configuration file.

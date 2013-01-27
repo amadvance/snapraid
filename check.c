@@ -1118,6 +1118,78 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 		}
 	}
 
+	/* check all dirs */
+	for(i=0;i<diskmax;++i) {
+		tommy_node* node;
+		struct snapraid_disk* disk;
+
+		if (!handle[i].disk)
+			continue;
+
+		/* for each dir in the disk */
+		disk = handle[i].disk;
+		node = disk->dirlist;
+		while (node) {
+			char path[PATH_MAX];
+			struct stat st;
+			struct snapraid_dir* dir;
+			int failed = 0;
+
+			dir = node->data;
+			node = node->next; /* next node */
+
+			/* if excluded continue to the next one */
+			if (dir_flag_has(dir, FILE_IS_EXCLUDED)) {
+				continue;
+			}
+
+			/* stat the dir */
+			pathprint(path, sizeof(path), "%s%s", disk->dir, dir->sub);
+			ret = stat(path, &st);
+			if (ret == -1) {
+				failed = 1;
+
+				fprintf(stderr, "Error stating dir '%s'. %s.\n", path, strerror(errno));
+				fprintf(stderr, "dir_error:%s:%s: Dir stat error\n", disk->name, dir->sub);
+				++error;
+			} else if (!S_ISDIR(st.st_mode)) {
+				failed = 1;
+
+				fprintf(stderr, "dir_error:%s:%s: Dir error for not directory\n", disk->name, dir->sub);
+				++error;
+			}
+
+			if (fix && failed) {
+				/* create the ancestor directories */
+				ret = handle_ancestor(path);
+				if (ret != 0) {
+					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					printf("Stopping\n");
+					++unrecoverable_error;
+					goto bail;
+				}
+
+				/* create it */
+				ret = mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
+				if (ret != 0) {
+					fprintf(stderr, "Error creating dir '%s'. %s.\n", path, strerror(errno));
+					if (errno == EACCES) {
+						fprintf(stderr, "WARNING! Please give write permission to the dir.\n");
+					} else {
+						/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
+						fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					}
+					printf("Stopping\n");
+					++unrecoverable_error;
+					goto bail;
+				}
+
+				fprintf(stderr, "dir_fixed:%s:%s: Fixed dir error\n", disk->name, dir->sub);
+				++recovered_error;
+			}
+		}
+	}
+
 	state_progress_end(state, countpos, countmax, countsize);
 
 bail:

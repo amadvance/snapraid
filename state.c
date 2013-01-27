@@ -691,12 +691,14 @@ void state_read(struct snapraid_state* state)
 	unsigned count_file;
 	unsigned count_block;
 	unsigned count_link;
+	unsigned count_dir;
 	tommy_node* node;
 	oathash_t hash;
 
 	count_file = 0;
 	count_block = 0;
 	count_link = 0;
+	count_dir = 0;
 	hash = 0;
 
 	/* iterate over all the available content files and load the first one present */
@@ -1125,6 +1127,59 @@ void state_read(struct snapraid_state* state)
 
 			/* stat */
 			++count_link;
+		} else if (strcmp(tag, "dir") == 0) {
+			/* symlink */
+			char sub[PATH_MAX];
+			tommy_node* i;
+			struct snapraid_dir* dir;
+
+			hash = oathash8(hash, 'r');
+
+			ret = sgettok(f, buffer, sizeof(buffer));
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'dir' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+			hash = oathashs(hash, buffer);
+
+			c = sgetc(f);
+			if (c != ' ') {
+				fprintf(stderr, "Invalid 'dir' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetline(f, sub, sizeof(sub));
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'dir' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			if (!*sub) {
+				fprintf(stderr, "Invalid 'dir' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+			hash = oathashs(hash, sub);
+
+			/* find the disk */
+			for(i=state->disklist;i!=0;i=i->next) {
+				disk = i->data;
+				if (strcmp(disk->name, buffer) == 0)
+					break;
+			}
+			if (!i) {
+				fprintf(stderr, "Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			/* allocate the dir */
+			dir = dir_alloc(sub);
+
+			/* insert the dir in the dir containers */
+			tommy_hashdyn_insert(&disk->dirset, &dir->nodeset, dir, dir_name_hash(dir->sub));
+			tommy_list_insert_tail(&disk->dirlist, &dir->nodelist, dir);
+
+			/* stat */
+			++count_dir;
 		} else if (strcmp(tag, "checksum") == 0) {
 			hash = oathash8(hash, 'c');
 
@@ -1258,6 +1313,7 @@ void state_read(struct snapraid_state* state)
 		printf("\tfile %u\n", count_file);
 		printf("\tblock %u\n", count_block);
 		printf("\tsymlink %u\n", count_link);
+		printf("\temptydir %u\n", count_dir);
 	}
 }
 
@@ -1267,6 +1323,7 @@ void state_write(struct snapraid_state* state)
 	unsigned count_file;
 	unsigned count_block;
 	unsigned count_link;
+	unsigned count_dir;
 	unsigned count_content;
 	tommy_node* i;
 	unsigned k;
@@ -1275,6 +1332,7 @@ void state_write(struct snapraid_state* state)
 	count_file = 0;
 	count_block = 0;
 	count_link = 0;
+	count_dir = 0;
 	hash = 0;
 
 	/* count the content files */
@@ -1466,6 +1524,26 @@ void state_write(struct snapraid_state* state)
 			++count_link;
 		}
 
+		/* for each dir */
+		for(j=disk->dirlist;j!=0;j=j->next) {
+			struct snapraid_dir* dir = j->data;
+
+			sputsl("dir ", f);
+			hash = oathash8(hash, 'r');
+			sputs(disk->name, f);
+			hash = oathashs(hash, disk->name);
+			sputc(' ', f);
+			sputs(dir->sub, f);
+			hash = oathashs(hash, dir->sub);
+			sputeol(f);
+			if (serror(f)) {
+				fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+
+			++count_dir;
+		}
+
 		{
 			block_off_t k;
 			block_off_t blockmax;
@@ -1552,6 +1630,7 @@ void state_write(struct snapraid_state* state)
 		printf("\tfile %u\n", count_file);
 		printf("\tblock %u\n", count_block);
 		printf("\tsymlink %u\n", count_link);
+		printf("\temptydir %u\n", count_dir);
 	}
 
 	state->need_write = 0; /* no write needed anymore */
@@ -1617,6 +1696,21 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 
 			if (state->verbose && !link_flag_has(link, FILE_IS_EXCLUDED)) {
 				printf("Processing symlink '%s'\n", link->sub);
+			}
+		}
+
+		/* for each dir */
+		for(j=tommy_list_head(&disk->dirlist);j!=0;j=j->next) {
+			struct snapraid_dir* dir = j->data;
+
+			if (filter_dir(filterlist_disk, disk->name, dir->sub) != 0
+				|| filter_dir(filterlist_file, disk->name, dir->sub) != 0
+			) {
+				dir_flag_set(dir, FILE_IS_EXCLUDED);
+			}
+
+			if (state->verbose && !dir_flag_has(dir, FILE_IS_EXCLUDED)) {
+				printf("Processing dir '%s'\n", dir->sub);
 			}
 		}
 	}

@@ -373,6 +373,29 @@ int link_name_compare(const void* void_arg, const void* void_data)
 	return strcmp(arg, link->sub);
 }
 
+struct snapraid_dir* dir_alloc(const char* sub)
+{
+	struct snapraid_dir* dir;
+
+	dir = malloc_nofail(sizeof(struct snapraid_dir));
+	pathcpy(dir->sub, sizeof(dir->sub), sub);
+	dir->flag = 0;
+
+	return dir;
+}
+
+void dir_free(struct snapraid_dir* dir)
+{
+	free(dir);
+}
+
+int dir_name_compare(const void* void_arg, const void* void_data)
+{
+	const char* arg = void_arg;
+	const struct snapraid_dir* dir = void_data;
+	return strcmp(arg, dir->sub);
+}
+
 struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev)
 {
 	struct snapraid_disk* disk;
@@ -391,6 +414,8 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 	tommy_hashdyn_init(&disk->pathset);
 	tommy_list_init(&disk->linklist);
 	tommy_hashdyn_init(&disk->linkset);
+	tommy_list_init(&disk->dirlist);
+	tommy_hashdyn_init(&disk->dirset);
 	tommy_array_init(&disk->blockarr);
 
 	return disk;
@@ -403,6 +428,8 @@ void disk_free(struct snapraid_disk* disk)
 	tommy_hashdyn_done(&disk->pathset);
 	tommy_list_foreach(&disk->linklist, (tommy_foreach_func*)link_free);
 	tommy_hashdyn_done(&disk->linkset);
+	tommy_list_foreach(&disk->dirlist, (tommy_foreach_func*)dir_free);
+	tommy_hashdyn_done(&disk->dirset);
 	tommy_array_done(&disk->blockarr);
 	free(disk);
 }

@@ -71,7 +71,7 @@ Limitations
 		With a Backup you are able to recover from a complete
 		failure of the whole disk array.
 	* Only file data, time and symlinks are saved. Permissions,
-		extended attributes and hard-links are not saved.
+		ownership, extended attributes and hard-links are not saved.
 
 Getting Started
 	To use SnapRAID you need to first select one disk of your disk array
@@ -637,7 +637,8 @@ Content
 	defined in the configuration file.
 
   checksum CHECKSUM
-	Defines the checksum kind used. It can be "md5" or "murmur3".
+	Defines the checksum kind used. It can be only "murmur3".
+	From SnapRAID 2.0 the old "md5" checksum is not supported anymore.
 
   map NAME INDEX
 	Defines the position INDEX of the disk NAME in the parity computation.
@@ -647,7 +648,7 @@ Content
 	corrupted. If you want to modify the content file manually, you have
 	to remove this line to avoid this check.
 
-  file DISK SIZE TIME_SEC.TIME_NSEC INODE PATH
+  file DISK SIZE TIME_SEC[.TIME_NSEC] INODE PATH
 	Defines a file in the specified DISK.
 
 	The INODE number is used to identify the file in the "sync"
@@ -657,6 +658,10 @@ Content
 	The SIZE and TIME information are used to identify if the file
 	changed from the last "sync" command, and if there is the need
 	to recompute the parity.
+
+	The [.TIME_NSEC] information is optional, and only present if
+	it's possible to read a such precise time information.
+	It's present only from SnapRAID 2.0.
 
 	The PATH information is used in the "check" and "fix" commands
 	to identify the file.
@@ -704,6 +709,18 @@ Content
 
 	This field is used only when you interrupt manually the "sync"
 	command.
+
+  symlink DISK PATH
+	Defines a symbolic link in the specified DISK.
+
+  to PATH
+	Defines where the previous symlink links to.
+
+  dir DISK PATH
+	Defines an empty directory in the specified DISK.
+
+	Directory that contains saved files, are not included, as they
+	are implicitely defined in the file specifications.
 
 Parity
 	SnapRAID stores the redundancy information of your array in the parity

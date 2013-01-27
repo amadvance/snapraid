@@ -114,7 +114,7 @@ With a Backup you are able to recover from a complete
 failure of the whole disk array.
 .IP \(bu
 Only file data, time and symlinks are saved. Permissions,
-extended attributes and hard\(hylinks are not saved.
+ownership, extended attributes and hard\(hylinks are not saved.
 .PD
 .SH GETTING STARTED 
 To use SnapRAID you need to first select one disk of your disk array
@@ -904,14 +904,15 @@ This file is read and written by the \(a"sync\(a" command, and only read by
 Defines the size of the block in bytes. It must match the size
 defined in the configuration file.
 .SS checksum CHECKSUM 
-Defines the checksum kind used. It can be \(a"md5\(a" or \(a"murmur3\(a".
+Defines the checksum kind used. It can be only \(a"murmur3\(a".
+From SnapRAID 2.0 the old \(a"md5\(a" checksum is not supported anymore.
 .SS map NAME INDEX 
 Defines the position INDEX of the disk NAME in the parity computation.
 .SS sign SIGN 
 Signature checksum of the content file to ensure that it doesn\(cqt get
 corrupted. If you want to modify the content file manually, you have
 to remove this line to avoid this check.
-.SS file DISK SIZE TIME_SEC.TIME_NSEC INODE PATH 
+.SS file DISK SIZE TIME_SEC[.TIME_NSEC] INODE PATH 
 Defines a file in the specified DISK.
 .PP
 The INODE number is used to identify the file in the \(a"sync\(a"
@@ -921,6 +922,10 @@ the need to recompute the parity for it.
 The SIZE and TIME information are used to identify if the file
 changed from the last \(a"sync\(a" command, and if there is the need
 to recompute the parity.
+.PP
+The [.TIME_NSEC] information is optional, and only present if
+it\(cqs possible to read a such precise time information.
+It\(cqs present only from SnapRAID 2.0.
 .PP
 The PATH information is used in the \(a"check\(a" and \(a"fix\(a" commands
 to identify the file.
@@ -962,6 +967,15 @@ for which the parity is computed using the previous value.
 .PP
 This field is used only when you interrupt manually the \(a"sync\(a"
 command.
+.SS symlink DISK PATH 
+Defines a symbolic link in the specified DISK.
+.SS to PATH 
+Defines where the previous symlink links to.
+.SS dir DISK PATH 
+Defines an empty directory in the specified DISK.
+.PP
+Directory that contains saved files, are not included, as they
+are implicitely defined in the file specifications.
 .SH PARITY 
 SnapRAID stores the redundancy information of your array in the parity
 and q\(hyparity files.

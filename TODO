@@ -5,9 +5,10 @@ This is the list of TODO items for SnapRAID.
 
 - v2.2
 
-* Allow to specify more than one disk directories to cover the case of multi partitions.
-
-* Keep track of empty directories and restore them.
+* Implement an "undelete" command to recover missing files, without the
+integrity check of the existing ones.
+It should restore only missing files, without recovering modified ones
+or check validity of data of existing ones.
 
 * If a content file is missing, sync should rewrite it, even if no change was done at the content.
 
@@ -18,17 +19,13 @@ This will also help when running with the parity filesystem unmounted.
 
 * Filtered out files should be opened in read-only mode.
 
-* Implement an "undelete" command to recover missing files, without the
-integrity check of the existing ones.
-It should restore only missing files, without recovering modified ones
-or check validity of data of existing ones.
-
 * Adds a log option, to save log files with the date in the name. This could
 help to keep track of what happens during automated operations.
 We must keep the log to stdout/err, and only save a copy to the log file.
 
 * In fix an existing symlink with the same name of a file to be recovered may stop
 the process making the create() operation to fail.
+The same for directories, when recreating the directory tree.
 
 * If a directory exists with the same name of a parity/content file be more explicative
 on the error message. See: https://sourceforge.net/projects/snapraid/forums/forum/1677233/topic/4861034
@@ -104,6 +101,10 @@ Rejected TODO
 =============
 
 This is a list of rejected TODO items.
+
+* Allow to specify more than one disk directories to cover the case of multi partitions.
+- Different partitions have duplicate inode. The only way to support this is to
+add also a kind of device_id, increasing the memory required.
 
 * Recognizes that a file is moved from one disk to another, and if the parity
 data doesn't overlap, do not recompute it.

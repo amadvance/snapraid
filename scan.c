@@ -33,6 +33,7 @@ struct snapraid_scan {
 
 	tommy_list file_insert_list; /**< Files to insert. */
 	tommy_list link_insert_list; /**< Links to insert. */
+	tommy_list dir_insert_list; /**< Dirs to insert. */
 
 	/* nodes for data structures */
 	tommy_node node;
@@ -434,10 +435,95 @@ static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, 
 }
 
 /**
- * Processes a directory.
+ * Removes the specified dir from the data set.
  */
-static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, int output, struct snapraid_disk* disk, const char* dir, const char* sub)
+static void scan_emptydir_remove(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_dir* dir)
 {
+	/* state changed */
+	state->need_write = 1;
+
+	/* remove the file from the dir containers */
+	tommy_hashdyn_remove_existing(&disk->dirset, &dir->nodeset);
+	tommy_list_remove_existing(&disk->dirlist, &dir->nodelist);
+
+	/* deallocate */
+	dir_free(dir);
+}
+
+/**
+ * Inserts the specified dir in the data set.
+ */
+static void scan_emptydir_insert(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_dir* dir)
+{
+	/* state changed */
+	state->need_write = 1;
+
+	/* insert the dir in the dir containers */
+	tommy_hashdyn_insert(&disk->dirset, &dir->nodeset, dir, dir_name_hash(dir->sub));
+	tommy_list_insert_tail(&disk->dirlist, &dir->nodelist, dir);
+}
+
+/**
+ * Processes a dir.
+ */
+static void scan_emptydir(struct snapraid_scan* scan, struct snapraid_state* state, int output, struct snapraid_disk* disk, const char* sub)
+{
+	struct snapraid_dir* dir;
+
+	/* check if the dir already exists */
+	dir = tommy_hashdyn_search(&disk->dirset, dir_name_compare, sub, dir_name_hash(sub));
+	if (dir) {
+		/* check if multiple files have the same name */
+		if (dir_flag_has(dir, FILE_IS_PRESENT)) {
+			fprintf(stderr, "Internal inconsistency for symdir '%s%s'\n", disk->dir, sub);
+			exit(EXIT_FAILURE);
+		}
+
+		/* mark as present */
+		dir_flag_set(dir, FILE_IS_PRESENT);
+
+		/* it's equal */
+		++scan->count_equal;
+
+		if (state->gui) {
+			fprintf(stderr, "scan:equal:%s:%s\n", disk->name, dir->sub);
+			fflush(stderr);
+		}
+
+		/* nothing more to do */
+		return;
+	} else {
+		/* create the new dir */
+		++scan->count_insert;
+
+		if (state->gui) {
+			fprintf(stderr, "scan:add:%s:%s\n", disk->name, sub);
+			fflush(stderr);
+		}
+		if (output) {
+			printf("Add '%s%s'\n", disk->dir, sub);
+		}
+
+		/* and continue to insert it */
+	}
+
+	/* insert it */
+	dir = dir_alloc(sub);
+
+	/* mark it as present */
+	dir_flag_set(dir, FILE_IS_PRESENT);
+
+	/* insert it in the delayed insert list */
+	tommy_list_insert_tail(&scan->dir_insert_list, &dir->nodelist, dir);
+}
+
+/**
+ * Processes a directory.
+ * Return != 0 if at least one file or link is processed.
+ */
+static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, int output, struct snapraid_disk* disk, const char* dir, const char* sub)
+{
+	int processed = 0;
 	DIR* d;
 
 	d = opendir(dir);
@@ -525,6 +611,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 #endif
 
 				scan_file(scan, state, output, disk, sub_next, &st);
+				processed = 1;
 			} else {
 				if (state->verbose) {
 					printf("Excluding file '%s'\n", path_next);
@@ -549,6 +636,7 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 				subnew[ret] = 0;
 
 				scan_link(scan, state, output, disk, sub_next, subnew);
+				processed = 1;
 			} else {
 				if (state->verbose) {
 					printf("Excluding link '%s'\n", path_next);
@@ -556,9 +644,18 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 			}
 		} else if (S_ISDIR(st.st_mode)) {
 			if (filter_dir(&state->filterlist, disk->name, sub_next) == 0) {
+				char sub_dir[PATH_MAX];
+
+				/* recurse */
 				pathslash(path_next, sizeof(path_next));
-				pathslash(sub_next, sizeof(sub_next));
-				scan_dir(scan, state, output, disk, path_next, sub_next);
+				pathcpy(sub_dir, sizeof(sub_dir), sub_next);
+				pathslash(sub_dir, sizeof(sub_dir));
+				if (scan_dir(scan, state, output, disk, path_next, sub_dir) == 0) {
+					/* scan the directory as empty dir */
+					scan_emptydir(scan, state, output, disk, sub_next);
+				}
+				/* or we processed something internally, or we have added the empty dir */
+				processed = 1;
 			} else {
 				if (state->verbose) {
 					printf("Excluding directory '%s'\n", path_next);
@@ -579,6 +676,8 @@ static void scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, i
 		fprintf(stderr, "Error closing directory '%s'. %s.\n", dir, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
+
+	return processed;
 }
 
 void state_scan(struct snapraid_state* state, int output)
@@ -602,6 +701,7 @@ void state_scan(struct snapraid_state* state, int output)
 		scan->count_insert = 0;
 		tommy_list_init(&scan->file_insert_list);
 		tommy_list_init(&scan->link_insert_list);
+		tommy_list_init(&scan->dir_insert_list);
 
 		tommy_list_insert_tail(&scanlist, &scan->node, scan);
 
@@ -657,6 +757,30 @@ void state_scan(struct snapraid_state* state, int output)
 			}
 		}
 
+		/* check for removed dirs */
+		node = disk->dirlist;
+		while (node) {
+			struct snapraid_dir* dir = node->data;
+
+			/* next node */
+			node = node->next;
+
+			/* remove if not present */
+			if (!dir_flag_has(dir, FILE_IS_PRESENT)) {
+				++scan->count_remove;
+
+				if (state->gui) {
+					fprintf(stderr, "scan:remove:%s:%s\n", disk->name, dir->sub);
+					fflush(stderr);
+				}
+				if (output) {
+					printf("Remove '%s%s'\n", disk->dir, dir->sub);
+				}
+
+				scan_emptydir_remove(state, disk, dir);
+			}
+		}
+
 		/* insert all the new files, we insert them only after the deletion */
 		/* to reuse the just freed space */
 		node = scan->file_insert_list;
@@ -680,6 +804,18 @@ void state_scan(struct snapraid_state* state, int output)
 
 			/* insert it */
 			scan_link_insert(state, disk, link);
+		}
+
+		/* insert all the new dirs */
+		node = scan->dir_insert_list;
+		while (node) {
+			struct snapraid_dir* dir = node->data;
+
+			/* next node */
+			node = node->next;
+
+			/* insert it */
+			scan_emptydir_insert(state, disk, dir);
 		}
 	}
 

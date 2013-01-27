@@ -108,8 +108,8 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 void state_dup(struct snapraid_state* state);
 
 /**
- * Filter files.
- * Apply and additional filter to list of file currently loaded.
+ * Filter files, symlinks and dirs.
+ * Apply an additional filter to the list currently loaded.
  */
 void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tommy_list* filterlist_disk);
 
