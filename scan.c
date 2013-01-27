@@ -40,6 +40,116 @@ struct snapraid_scan {
 };
 
 /**
+ * Removes the specified link from the data set.
+ */
+static void scan_link_remove(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_link* link)
+{
+	/* state changed */
+	state->need_write = 1;
+
+	/* remove the file from the link containers */
+	tommy_hashdyn_remove_existing(&disk->linkset, &link->nodeset);
+	tommy_list_remove_existing(&disk->linklist, &link->nodelist);
+
+	/* deallocate */
+	link_free(link);
+}
+
+/**
+ * Inserts the specified link in the data set.
+ */
+static void scan_link_insert(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_link* link)
+{
+	/* state changed */
+	state->need_write = 1;
+
+	/* insert the link in the link containers */
+	tommy_hashdyn_insert(&disk->linkset, &link->nodeset, link, link_name_hash(link->sub));
+	tommy_list_insert_tail(&disk->linklist, &link->nodelist, link);
+}
+
+/**
+ * Processes a symbolic link.
+ */
+static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, int output, struct snapraid_disk* disk, const char* sub, const char* linkto, int is_hardlink)
+{
+	struct snapraid_link* link;
+
+	/* check if the link already exists */
+	link = tommy_hashdyn_search(&disk->linkset, link_name_compare, sub, link_name_hash(sub));
+	if (link) {
+		/* check if multiple files have the same name */
+		if (link_flag_has(link, FILE_IS_PRESENT)) {
+			if (link_is_hardlink(link))
+				fprintf(stderr, "Internal inconsistency for hardlink '%s%s'\n", disk->dir, sub);
+			else
+				fprintf(stderr, "Internal inconsistency for symlink '%s%s'\n", disk->dir, sub);
+			exit(EXIT_FAILURE);
+		}
+
+		/* mark as present */
+		link_flag_set(link, FILE_IS_PRESENT);
+
+		/* check if the link is not changed and it's of the same kind */
+		if (strcmp(link->linkto, linkto) == 0 && is_hardlink == link_is_hardlink(link)) {
+			/* it's equal */
+			++scan->count_equal;
+
+			if (state->gui) {
+				fprintf(stderr, "scan:equal:%s:%s\n", disk->name, link->sub);
+				fflush(stderr);
+			}
+
+			/* nothing more to do */
+			return;
+		} else {
+			/* it's an update */
+			if (state->gui) {
+				fprintf(stderr, "scan:update:%s:%s\n", disk->name, link->sub);
+				fflush(stderr);
+			}
+			if (output) {
+				printf("Update '%s%s'\n", disk->dir, link->sub);
+			}
+
+			++scan->count_change;
+
+			/* update it */
+			pathcpy(link->linkto, sizeof(link->linkto), linkto);
+			if (is_hardlink)
+				link_flag_set(link, FILE_IS_HARDLINK);
+			else
+				link_flag_clear(link, FILE_IS_HARDLINK);
+
+			/* nothing more to do */
+			return;
+		}
+	} else {
+		/* create the new link */
+		++scan->count_insert;
+
+		if (state->gui) {
+			fprintf(stderr, "scan:add:%s:%s\n", disk->name, sub);
+			fflush(stderr);
+		}
+		if (output) {
+			printf("Add '%s%s'\n", disk->dir, sub);
+		}
+
+		/* and continue to insert it */
+	}
+
+	/* insert it */
+	link = link_alloc(sub, linkto, is_hardlink);
+
+	/* mark it as present */
+	link_flag_set(link, FILE_IS_PRESENT);
+
+	/* insert it in the delayed insert list */
+	tommy_list_insert_tail(&scan->link_insert_list, &link->nodelist, link);
+}
+
+/**
  * Removes the specified file from the data set.
  */
 static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
@@ -141,9 +251,6 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 	/* note that the file is already added in the file hashtables */
 	tommy_list_insert_tail(&disk->filelist, &file->nodelist, file);
 }
-
-/* Forward declaration */
-static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, int output, struct snapraid_disk* disk, const char* sub, const char* linkto, int is_hardlink);
 
 /**
  * Processes a file.
@@ -333,116 +440,6 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 
 	/* insert the file in the delayed block allocation */
 	tommy_list_insert_tail(&scan->file_insert_list, &file->nodelist, file);
-}
-
-/**
- * Removes the specified link from the data set.
- */
-static void scan_link_remove(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_link* link)
-{
-	/* state changed */
-	state->need_write = 1;
-
-	/* remove the file from the link containers */
-	tommy_hashdyn_remove_existing(&disk->linkset, &link->nodeset);
-	tommy_list_remove_existing(&disk->linklist, &link->nodelist);
-
-	/* deallocate */
-	link_free(link);
-}
-
-/**
- * Inserts the specified link in the data set.
- */
-static void scan_link_insert(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_link* link)
-{
-	/* state changed */
-	state->need_write = 1;
-
-	/* insert the link in the link containers */
-	tommy_hashdyn_insert(&disk->linkset, &link->nodeset, link, link_name_hash(link->sub));
-	tommy_list_insert_tail(&disk->linklist, &link->nodelist, link);
-}
-
-/**
- * Processes a symbolic link.
- */
-static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, int output, struct snapraid_disk* disk, const char* sub, const char* linkto, int is_hardlink)
-{
-	struct snapraid_link* link;
-
-	/* check if the link already exists */
-	link = tommy_hashdyn_search(&disk->linkset, link_name_compare, sub, link_name_hash(sub));
-	if (link) {
-		/* check if multiple files have the same name */
-		if (link_flag_has(link, FILE_IS_PRESENT)) {
-			if (link_is_hardlink(link))
-				fprintf(stderr, "Internal inconsistency for hardlink '%s%s'\n", disk->dir, sub);
-			else
-				fprintf(stderr, "Internal inconsistency for symlink '%s%s'\n", disk->dir, sub);
-			exit(EXIT_FAILURE);
-		}
-
-		/* mark as present */
-		link_flag_set(link, FILE_IS_PRESENT);
-
-		/* check if the link is not changed and it's of the same kind */
-		if (strcmp(link->linkto, linkto) == 0 && is_hardlink == link_is_hardlink(link)) {
-			/* it's equal */
-			++scan->count_equal;
-
-			if (state->gui) {
-				fprintf(stderr, "scan:equal:%s:%s\n", disk->name, link->sub);
-				fflush(stderr);
-			}
-
-			/* nothing more to do */
-			return;
-		} else {
-			/* it's an update */
-			if (state->gui) {
-				fprintf(stderr, "scan:update:%s:%s\n", disk->name, link->sub);
-				fflush(stderr);
-			}
-			if (output) {
-				printf("Update '%s%s'\n", disk->dir, link->sub);
-			}
-
-			++scan->count_change;
-
-			/* update it */
-			pathcpy(link->linkto, sizeof(link->linkto), linkto);
-			if (is_hardlink)
-				link_flag_set(link, FILE_IS_HARDLINK);
-			else
-				link_flag_clear(link, FILE_IS_HARDLINK);
-
-			/* nothing more to do */
-			return;
-		}
-	} else {
-		/* create the new link */
-		++scan->count_insert;
-
-		if (state->gui) {
-			fprintf(stderr, "scan:add:%s:%s\n", disk->name, sub);
-			fflush(stderr);
-		}
-		if (output) {
-			printf("Add '%s%s'\n", disk->dir, sub);
-		}
-
-		/* and continue to insert it */
-	}
-
-	/* insert it */
-	link = link_alloc(sub, linkto, is_hardlink);
-
-	/* mark it as present */
-	link_flag_set(link, FILE_IS_PRESENT);
-
-	/* insert it in the delayed insert list */
-	tommy_list_insert_tail(&scan->link_insert_list, &link->nodelist, link);
 }
 
 /**
