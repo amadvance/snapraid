@@ -709,9 +709,14 @@ void* malloc_nofail_align(size_t size, void** freeptr)
 
 void memhash(unsigned kind, void* digest, const void* src, unsigned size)
 {
-	if (kind == HASH_MURMUR3) {
+	switch (kind) {
+	case HASH_MURMUR3 :
 		MurmurHash3_x86_128(src, size, 0, digest);
-		return;
+		break;
+	default:
+		fprintf(stderr, "Internal inconsistency in hash function %u\n", kind);
+		exit(EXIT_FAILURE);
+		break;
 	}
 }
 

@@ -745,9 +745,9 @@ void state_read(struct snapraid_state* state)
 		return;
 	}
 
-	/* start with a MD5 default. */
+	/* start with a undefined default. */
 	/* it's for compatibility with version 1.0 where MD5 was implicit. */
-	state->hash = HASH_MD5;
+	state->hash = HASH_UNDEFINED;
 
 	disk = 0;
 	file = 0;
@@ -1384,8 +1384,17 @@ void state_read(struct snapraid_state* state)
 
 	sclose(f);
 
+	if (state->hash == HASH_UNDEFINED) {
+		fprintf(stderr, "The checksum to use is not specified.\n");
+		fprintf(stderr, "This happens because you are likely upgrading from SnapRAID 1.0.\n");
+		fprintf(stderr, "To use the SnapRAID 2.x branch, you must restart from scratch,\n");
+		fprintf(stderr, "deleting all the content and parity files.\n");
+		exit(EXIT_FAILURE);
+	}
 	if (state->hash == HASH_MD5) {
-		fprintf(stderr, "MD5 is not supported anymore.\n");
+		fprintf(stderr, "The MD5 checksum is not supported anymore.\n");
+		fprintf(stderr, "To use the SnapRAID 2.x branch, you must restart from scratch,\n");
+		fprintf(stderr, "deleting all the content and parity files.\n");
 		exit(EXIT_FAILURE);
 	}
 

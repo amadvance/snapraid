@@ -372,8 +372,9 @@ void* malloc_nofail_align(size_t size, void** freeptr);
 /**
  * Hash kinds.
  */
-#define HASH_MURMUR3 0
+#define HASH_UNDEFINED 0
 #define HASH_MD5 1
+#define HASH_MURMUR3 2
 
 /**
  * Computes the HASH of a memory block.
