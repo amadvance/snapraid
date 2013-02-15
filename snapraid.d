@@ -279,9 +279,6 @@ Options
 		the previous one, and not resynched.
 		The nanosecond part of timestamps is ignored because most of
 		copy programs are not able to correctly restore it.
-		Note that if you use this option, all the hard-links will be
-		stored independently wasting space. So, if you use hard-links,
-		it's better to don't use it.
 		This option can be used only with the "sync" and "diff" commands.
 
 	-Z, --force-zero
