@@ -341,6 +341,15 @@ void pathslash(char* dst, size_t size);
 int pathcmp(const char* a, const char* b);
 
 /****************************************************************************/
+/* filesystem */
+
+/**
+ * Creates all the ancestor directories if missing.
+ * The file name, after the last /, is ignored.
+ */
+int mkancestor(const char* file);
+
+/****************************************************************************/
 /* memory */
 
 /**

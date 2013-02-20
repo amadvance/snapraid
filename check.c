@@ -993,7 +993,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				int f;
 
 				/* create the ancestor directories */
-				ret = handle_ancestor(path);
+				ret = mkancestor(path);
 				if (ret != 0) {
 					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					printf("Stopping\n");
@@ -1113,7 +1113,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 			if (fix && failed) {
 				/* create the ancestor directories */
-				ret = handle_ancestor(path);
+				ret = mkancestor(path);
 				if (ret != 0) {
 					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					printf("Stopping\n");
@@ -1205,7 +1205,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 			if (fix && failed) {
 				/* create the ancestor directories */
-				ret = handle_ancestor(path);
+				ret = mkancestor(path);
 				if (ret != 0) {
 					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					printf("Stopping\n");

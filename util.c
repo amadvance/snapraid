@@ -655,6 +655,49 @@ int pathcmp(const char* a, const char* b)
 }
 
 /****************************************************************************/
+/* filesystem */
+
+int mkancestor(const char* file)
+{
+	char dir[PATH_MAX];
+	char* c;
+	
+	pathcpy(dir, sizeof(dir), file);
+	
+	c = strrchr(dir, '/');
+	if (!c) {
+		/* no ancestor */
+		return 0;
+	}
+
+	/* clear the file */
+	*c = 0;
+
+	if (*dir == 0) {
+		/* nothing more to do */
+		return 0;
+	}
+
+	if (access(dir, F_OK) == 0) {
+		/* the directory/file exists */
+		return 0;
+	}
+
+	/* recursively create them all */
+	if (mkancestor(dir) != 0) {
+		return -1;
+	}
+
+	/* create it */
+	if (mkdir(dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) != 0) {
+		fprintf(stderr, "Error creating directory '%s'. %s.\n", dir, strerror(errno));
+		return -1;
+	}
+	
+	return 0;
+}
+
+/****************************************************************************/
 /* mem */
 
 static size_t mcounter;

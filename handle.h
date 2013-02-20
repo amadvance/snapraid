@@ -33,11 +33,6 @@ struct snapraid_handle {
 };
 
 /**
- * Creates all the required directories if missing.
- */
-int handle_ancestor(const char* file);
-
-/**
  * Creates a file.
  * The file is created if missing, and opened with write access.
  * If the file has a different size than expected, it's enlarged or truncated to the correct size.
