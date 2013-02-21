@@ -41,8 +41,6 @@ typedef struct _FILE_ATTRIBUTE_TAG_INFO {
 #define IO_REPARSE_TAG_SYMLINK (0xA000000C)
 #endif
 
-BOOL WINAPI CreateHardLinkW(LPCWSTR lpFileName, LPCWSTR lpExistingFileName, LPSECURITY_ATTRIBUTES lpSecurityAttributes);
-
 /**
  * Number of conversion buffers.
  */
@@ -91,7 +89,7 @@ static char* u16tou8(const wchar_t* src)
 		conv_utf8 = 0;
 
 	ret = WideCharToMultiByte(CP_UTF8, 0, src, -1, conv_utf8_buffer[conv_utf8], sizeof(conv_utf8_buffer[0]), 0, 0);
-	if (ret < 0) {
+	if (ret <= 0) {
 		fwprintf(stderr, L"Error converting name %s from UTF-16 to UTF-8\n", src);
 		exit(EXIT_FAILURE);
 	}
@@ -100,7 +98,30 @@ static char* u16tou8(const wchar_t* src)
 }
 
 /**
+ * Converts a generic string from UTF16 to UTF8.
+ */
+static char* u16tou8n(const wchar_t* src, size_t number_of_wchar, size_t* result_length_without_terminator)
+{
+	int ret;
+
+	if (++conv_utf8 == CONV_ROLL)
+		conv_utf8 = 0;
+
+	ret = WideCharToMultiByte(CP_UTF8, 0, src, number_of_wchar, conv_utf8_buffer[conv_utf8], sizeof(conv_utf8_buffer[0]), 0, 0);
+	if (ret <= 0) {
+		fwprintf(stderr, L"Error converting from UTF-16 to UTF-8\n");
+		exit(EXIT_FAILURE);
+	}
+
+	*result_length_without_terminator = ret;
+
+	return conv_utf8_buffer[conv_utf8];
+}
+
+/**
  * Converts a path to the Windows format.
+ *
+ * If only_is_required is 1, the extended-length format is used only if required.
  *
  * The exact operation done is:
  * - If it's a '\\?\' path, convert any '/' to '\'.
@@ -112,7 +133,7 @@ static char* u16tou8(const wchar_t* src)
  * Naming Files, Paths, and Namespaces
  * http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx#maxpath
  */
-static wchar_t* convert(const char* src)
+static wchar_t* convert_arg(const char* src, int only_if_required)
 {
 	int ret;
 	wchar_t* dst;
@@ -123,7 +144,13 @@ static wchar_t* convert(const char* src)
 
 	dst = conv_utf16_buffer[conv_utf16];
 
-	if (src[0] == '\\' && src[1] == '\\' && src[2] == '?' && src[3] == '\\') {
+	if (only_if_required && strlen(src) < 260 - 12) {
+		/* it's a short path */
+		/* 260 is the MAX_PATH, note that it includes the space for the terminating NUL */
+		/* 12 is an additional space for filename, required when creating directory */
+
+		/* do nothing */
+	} else if (src[0] == '\\' && src[1] == '\\' && src[2] == '?' && src[3] == '\\') {
 		/* if it's already a '\\?\' path */
 
 		/* do nothing */
@@ -174,6 +201,9 @@ static wchar_t* convert(const char* src)
 
 	return conv_utf16_buffer[conv_utf16];
 }
+
+#define convert(a) convert_arg(a, 0)
+#define convert_if_required(a) convert_arg(a, 1)
 
 /**
  * Portable implementation of GetFileInformationByHandleEx.
@@ -253,7 +283,7 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE
 			st->st_desc = "reparse-point-nfs";
 			break;
 		case IO_REPARSE_TAG_SYMLINK :
-			st->st_mode = S_IFCHR;
+			st->st_mode = S_IFLNK;
 			st->st_desc = "reparse-point-symlink";
 			break;
 		default:
@@ -341,7 +371,7 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 			st->st_desc = "reparse-point-nfs";
 			break;
 		case IO_REPARSE_TAG_SYMLINK :
-			st->st_mode = S_IFCHR;
+			st->st_mode = S_IFLNK;
 			st->st_desc = "reparse-point-symlink";
 			break;
 		default:
@@ -429,6 +459,12 @@ static void windows_errno(DWORD error)
 	case ERROR_NOT_ENOUGH_MEMORY :
 		errno = ENOMEM;
 		break;
+	case ERROR_NOT_SUPPORTED : /* when calling CreateSymlinkW if not present in kernel32 */
+		errno = ENOSYS;
+		break;
+	case ERROR_PRIVILEGE_NOT_HELD : /* when calling CreateSymlinkW if no SeCreateSymbolicLinkPrivilige permission */
+		errno = EPERM;
+		break;
 	default:
 		fprintf(stderr, "Unexpected Windows error %d.\n", (int)error);
 		errno = EIO;
@@ -468,6 +504,7 @@ int windows_lstat(const char* file, struct windows_stat* st)
 	HANDLE h;
 	WIN32_FIND_DATAW data;
 
+	/* FindFirstFileW by default gets information of symbolic links and not of their targets */
 	h = FindFirstFileW(convert(file),  &data);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
@@ -497,6 +534,11 @@ int windows_access(const char* file, int mode)
 int windows_mkdir(const char* file)
 {
 	return _wmkdir(convert(file));
+}
+
+int windows_rmdir(const char* file)
+{
+	return _wrmdir(convert(file));
 }
 
 int lstat_ex(const char* file, struct windows_stat* st)
@@ -809,6 +851,125 @@ int windows_link(const char* existing, const char* file)
 	}
 
 	return 0;
+}
+
+/**
+ * Portable implementation of CreateSymbolicLinkW.
+ * This function is not available in Windows XP.
+ */
+static int flag_CreateSymbolicLinkW = 0;
+static BOOLEAN (WINAPI* ptr_CreateSymbolicLinkW)(LPWSTR, LPWSTR, DWORD);
+
+int windows_symlink(const char* existing, const char* file)
+{
+	/* if not yet initialized, do it now */
+	if (!flag_CreateSymbolicLinkW) {
+		HMODULE h = GetModuleHandleA("KERNEL32.DLL");
+		if (h) {
+			ptr_CreateSymbolicLinkW = (void*)GetProcAddress(h, "CreateSymbolicLinkW");
+		}
+		flag_CreateSymbolicLinkW = 1;
+	}
+
+	if (!ptr_CreateSymbolicLinkW) {
+		windows_errno(ERROR_NOT_SUPPORTED);
+		return -1;
+	}
+
+	/* We must convert to the extended-length \\?\ format if the path is too long */
+	/* otherwise the link creation fails. */
+	/* But we don't want to always convert it, to avoid to recreate */
+	/* user symlinks different than they were before */
+	if (!ptr_CreateSymbolicLinkW(convert(file), convert_if_required(existing), 0)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	return 0;
+}
+
+/* Adds missing defition in MingW winnt.h */
+#ifndef FSCTL_GET_REPARSE_POINT
+#define FSCTL_GET_REPARSE_POINT 0x000900a8
+#endif
+#ifndef REPARSE_DATA_BUFFER_HEADER_SIZE
+typedef struct _REPARSE_DATA_BUFFER {
+	DWORD  ReparseTag;
+	WORD   ReparseDataLength;
+	WORD   Reserved;
+	_ANONYMOUS_UNION union {
+		struct {
+			WORD   SubstituteNameOffset;
+			WORD   SubstituteNameLength;
+			WORD   PrintNameOffset;
+			WORD   PrintNameLength;
+			ULONG  Flags;
+			WCHAR PathBuffer[1];
+		} SymbolicLinkReparseBuffer;
+		struct {
+			WORD   SubstituteNameOffset;
+			WORD   SubstituteNameLength;
+			WORD   PrintNameOffset;
+			WORD   PrintNameLength;
+			WCHAR PathBuffer[1];
+		} MountPointReparseBuffer;
+		struct {
+			BYTE   DataBuffer[1];
+		} GenericReparseBuffer;
+	} DUMMYUNIONNAME;
+} REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
+#endif
+
+int windows_readlink(const char* file, char* buffer, size_t size)
+{
+	HANDLE h;
+	const char* name;
+	size_t len;
+	unsigned char rdb_buffer[MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
+	REPARSE_DATA_BUFFER* rdb = (REPARSE_DATA_BUFFER*)rdb_buffer;
+	DWORD ret;
+	DWORD n;
+
+	/*
+	 * Open the handle of the file.
+	 *
+	 * Use FILE_FLAG_BACKUP_SEMANTICS to open directories and to override the file security checks.
+	 * Use FILE_FLAG_OPEN_REPARSE_POINT to open symbolic links and not the their target.
+	 */
+	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, 0);
+	if (h == INVALID_HANDLE_VALUE) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	/* read the reparse point */
+	ret = DeviceIoControl(h, FSCTL_GET_REPARSE_POINT, 0, 0, rdb_buffer, sizeof(rdb_buffer), &n, 0);
+	if (ret == 0) {
+		windows_errno(GetLastError());
+		CloseHandle(h);
+		return -1;
+	}
+
+	CloseHandle(h);
+
+	/* check if it's really a symbolic link */
+	if (rdb->ReparseTag != IO_REPARSE_TAG_SYMLINK) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	/* convert the name to UTF-8 */
+	name = u16tou8n(rdb->SymbolicLinkReparseBuffer.PathBuffer + rdb->SymbolicLinkReparseBuffer.PrintNameOffset,
+		rdb->SymbolicLinkReparseBuffer.PrintNameLength / 2, &len);
+
+	/* check for overflow */
+	if (len > size) {
+		len = size;
+	}
+
+	memcpy(buffer, name, len);
+
+	return len;
 }
 
 #endif

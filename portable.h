@@ -26,7 +26,8 @@
 /* Config */
 
 #ifdef __MINGW32__ /* Specific for MINGW */
-#define __MSVCRT_VERSION__ 0x0601 /* Define the MSVCRT version required */
+#define __MSVCRT_VERSION__ 0x0601 /* Define the MSVCRT version targetting Windows XP */
+#define _WIN32_WINNT 0x501 /* Include Windows XP CreateHardLinkW */
 #include <windows.h>
 #endif
 

@@ -45,6 +45,7 @@
 #define rename windows_rename
 #define remove windows_remove
 #define mkdir(a, b) windows_mkdir(a)
+#define rmdir windows_rmdir
 #define dirent windows_dirent
 #define DIR windows_dir
 #define opendir windows_opendir
@@ -58,10 +59,10 @@
 #define dirent_lstat windows_dirent_lstat
 #define stat_desc windows_stat_desc
 #define sleep windows_sleep
-/* In Windows symbolic links are not supported */
-#define S_ISLNK(mode) 0
-#define readlink(a,b,c) -1
-#define symlink(a,b) -1
+#define S_IFLNK 0x7000 /* 4==DIR, 8==REG */
+#define S_ISLNK(m) (((m) & _S_IFMT) == S_IFLNK)
+#define readlink windows_readlink
+#define symlink windows_symlink
 #define link windows_link
 
 /**
@@ -120,6 +121,11 @@ int windows_access(const char* file, int mode);
  * Like the C mkdir().
  */
 int windows_mkdir(const char* file);
+
+/**
+ * Like rmdir().
+ */
+int windows_rmdir(const char* file);
 
 /**
  * Like the C lstat() including the inode/device information.
@@ -225,6 +231,17 @@ const char* windows_stat_desc(struct stat* st);
  * Like sleep().
  */
 void windows_sleep(unsigned seconds);
+
+/**
+ * Like readlink().
+ */
+int windows_readlink(const char* file, char* buffer, size_t size);
+
+/**
+ * Like symlink().
+ * Return ENOSYS if symlinks are not supported.
+ */
+int windows_symlink(const char* existing, const char* file);
 
 /**
  * Like link().
