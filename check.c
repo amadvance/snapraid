@@ -1093,7 +1093,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					fprintf(stderr, "Error reading symlink '%s'. %s.\n", path, strerror(errno));
 					fprintf(stderr, "symlinkerror:%s:%s: Symlink read error\n", disk->name, link->sub);
 					++error;
-				} else if (ret == sizeof(linkto)) {
+				} else if (ret >= PATH_MAX) {
 					failed = 1;
 
 					fprintf(stderr, "Error reading symlink '%s'. Symlink too long.\n", path);
