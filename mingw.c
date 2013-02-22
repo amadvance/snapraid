@@ -448,10 +448,19 @@ static void windows_errno(DWORD error)
 		errno = EBADF;
 		break;
 	case ERROR_FILE_NOT_FOUND :
+	case ERROR_PATH_NOT_FOUND : /* in GetFileAttributeW() if internal path not found */
 		errno = ENOENT;
 		break;
-	case ERROR_ACCESS_DENIED :
+	case ERROR_ACCESS_DENIED : /* in CreateDirectoryW() if dir is scheduled for deletion */
+	case ERROR_CURRENT_DIRECTORY : /* in RemoveDirectoryW() if removing the current directory */
+	case ERROR_SHARING_VIOLATION : /* in RemoveDirectoryW() if in use */
 		errno = EACCES;
+		break;
+	case ERROR_ALREADY_EXISTS : /* in CreateDirectoryW() if already exists */
+		errno = EEXIST;
+		break;
+	case ERROR_DISK_FULL :
+		errno = ENOSPC;
 		break;
 	case ERROR_BUFFER_OVERFLOW :
 		errno = ENAMETOOLONG;
@@ -459,10 +468,10 @@ static void windows_errno(DWORD error)
 	case ERROR_NOT_ENOUGH_MEMORY :
 		errno = ENOMEM;
 		break;
-	case ERROR_NOT_SUPPORTED : /* when calling CreateSymlinkW if not present in kernel32 */
+	case ERROR_NOT_SUPPORTED : /* in CreateSymlinkW() if not present in kernel32 */
 		errno = ENOSYS;
 		break;
-	case ERROR_PRIVILEGE_NOT_HELD : /* when calling CreateSymlinkW if no SeCreateSymbolicLinkPrivilige permission */
+	case ERROR_PRIVILEGE_NOT_HELD : /* in CreateSymlinkW if no SeCreateSymbolicLinkPrivilige permission */
 		errno = EPERM;
 		break;
 	default:
@@ -528,17 +537,41 @@ void windows_dirent_lstat(const struct windows_dirent* dd, struct windows_stat* 
 
 int windows_access(const char* file, int mode)
 {
-	return _waccess(convert(file), mode);
+	DWORD attr;
+
+	/* Check only for existence */
+	if (mode != F_OK) {
+		errno = ENOSYS;
+		return -1;
+	}
+
+	attr = GetFileAttributesW(convert(file));
+	if (attr == 0xFFFFFFFF) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	return 0;
 }
 
 int windows_mkdir(const char* file)
 {
-	return _wmkdir(convert(file));
+	if (!CreateDirectoryW(convert(file), 0)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	return 0;
 }
 
 int windows_rmdir(const char* file)
 {
-	return _wrmdir(convert(file));
+	if (!RemoveDirectoryW(convert(file))) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	return 0;
 }
 
 int lstat_ex(const char* file, struct windows_stat* st)
@@ -693,7 +726,7 @@ int windows_futimens(int fd, struct windows_timespec tv[2])
 	return 0;
 }
 
-int windows_rename(const char* a, const char* b)
+int windows_rename(const char* from, const char* to)
 {
 	/*
 	 * Implements an atomic rename in Windows.
@@ -702,7 +735,7 @@ int windows_rename(const char* a, const char* b)
 	 * Is an atomic file rename (with overwrite) possible on Windows?
 	 * http://stackoverflow.com/questions/167414/is-an-atomic-file-rename-with-overwrite-possible-on-windows
 	 */
-	if (!MoveFileExW(convert(a), convert(b), MOVEFILE_REPLACE_EXISTING)) {
+	if (!MoveFileExW(convert(from), convert(to), MOVEFILE_REPLACE_EXISTING)) {
 		windows_errno(GetLastError());
 		return -1;
 	}
@@ -710,9 +743,9 @@ int windows_rename(const char* a, const char* b)
 	return 0;
 }
 
-int windows_remove(const char* a)
+int windows_remove(const char* file)
 {
-	if (_wremove(convert(a)) != 0) {
+	if (!DeleteFileW(convert(file))) {
 		windows_errno(GetLastError());
 		return -1;
 	}
