@@ -60,9 +60,10 @@ AC_CHECK_CC_OPT([-Wextra], CFLAGS="$CFLAGS -Wextra", [])
 
 dnl Checks for test environment
 AS_CASE([$host],
-       [*-*-mingw*], [TESTENV="$WINE"],
-       []
+	[*-*-mingw*], [TESTENV="$WINE"],
+	[SYMLINK=1]
 )
+AM_CONDITIONAL(HAVE_SYMLINK, [test x"$SYMLINK" != x])
 
 AC_ARG_ENABLE([profiler],
 	[AS_HELP_STRING([--enable-profiler],[enable the use of gprof for code coverage])],

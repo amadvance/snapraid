@@ -3,7 +3,11 @@ SnapRAID HISTORY
 
 2.2 2013/2
 ==========
+ * Added pooling support with the new 'pool' command. It creates a virtual view
+   of the array using symbolic links pointing at the original files.
  * Added support also for hardlinks and empty directories.
+ * Added symlinks support to Windows. Note that Windows junctions are still
+   not supported.
 
 2.1 2013/1
 ==========

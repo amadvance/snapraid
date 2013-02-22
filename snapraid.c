@@ -122,6 +122,7 @@ void signal_handler(int signal)
 #define OPERATION_FIX 3
 #define OPERATION_DRY 4
 #define OPERATION_DUP 5
+#define OPERATION_POOL 6
 
 int main(int argc, char* argv[])
 {
@@ -276,6 +277,8 @@ int main(int argc, char* argv[])
 		operation = OPERATION_DRY;
 	} else  if (strcmp(argv[optind], "dup") == 0) {
 		operation = OPERATION_DUP;
+	} else  if (strcmp(argv[optind], "pool") == 0) {
+		operation = OPERATION_POOL;
 	} else {
 		fprintf(stderr, "Unknown command '%s'\n", argv[optind]);
 		exit(EXIT_FAILURE);
@@ -386,6 +389,10 @@ int main(int argc, char* argv[])
 		state_read(&state);
 
 		state_dup(&state);
+	} else if (operation == OPERATION_POOL) {
+		state_read(&state);
+
+		state_pool(&state);
 	} else {
 		state_read(&state);
 

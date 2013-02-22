@@ -42,6 +42,8 @@ struct snapraid_state {
 	uint64_t parity_device; /**< Device identifier of the parity. */
 	char qarity[PATH_MAX]; /**< Path of the qarity file. */
 	uint64_t qarity_device; /**< Device identifier of the qarity. */
+	char pool[PATH_MAX]; /**< Path of the pool tree. */
+	uint64_t pool_device; /**< Device identifier of the pool. */
 	unsigned level; /**< Number of parity levels. 1 for RAID5, 2 for RAID6. */
 	unsigned hash; /**< Hash kind used. */
 	tommy_list contentlist; /**< List of content files. */
@@ -103,9 +105,14 @@ void state_check(struct snapraid_state* state, int check, int fix, block_off_t b
 void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t blockcount);
 
 /**
- * Find duplicates.
+ * Finds duplicates.
  */
 void state_dup(struct snapraid_state* state);
+
+/**
+ * Creates pool tree.
+ */
+void state_pool(struct snapraid_state* state);
 
 /**
  * Filter files, symlinks and dirs.

@@ -30,7 +30,7 @@ snapraid [\(hyc, \(hy\(hyconf CONFIG]
 .PD 0
 .PP
 .PD
-	sync|diff|dup|check|fix
+	sync|pool|diff|dup|check|fix
 .PD 0
 .PP
 .PD
@@ -114,7 +114,7 @@ With a Backup you are able to recover from a complete
 failure of the whole disk array.
 .IP \(bu
 Only file, timestamps, symlinks and hardlinks are saved.
-Permissions, ownership, extended attributes are not saved.
+Permissions, ownership and extended attributes are not saved.
 .PD
 .SH GETTING STARTED 
 To use SnapRAID you need to first select one disk of your disk array
@@ -250,7 +250,37 @@ When this command completes, your data is SAFE.
 .PP
 At this point you can start using your array as you like, and periodically
 update the redundancy information running the \(a"sync\(a" command.
+.SS Pooling 
+To have all the files in your array shown in the same directory tree,
+you can enable \(a"pooling\(a", that consists in creating a virtual view of all
+the files in your array using symbolic links.
+You can configure the \(a"pooling\(a" directory in the configuration file with:
 .PP
+.RS 4
+pool /pool
+.PD 0
+.PP
+.PD
+.RE
+.PP
+or, if you are in Windows, with:
+.PP
+.RS 4
+pool C:\(rspool
+.PD 0
+.PP
+.PD
+.RE
+.PP
+and then run the \(a"pool\(a" command.
+.PP
+.RS 4
+snapraid pool
+.PD 0
+.PP
+.PD
+.RE
+.SS Checking & Fixing 
 To check the integrity of your data you can use the \(a"check\(a" command:
 .PP
 .RS 4
@@ -275,7 +305,7 @@ Note that the fix command will revert your data at the state of the
 last \(a"sync\(a" command executed. It works like a snapshot was taken
 in \(a"sync\(a".
 .PP
-In this regard snapraid is more like a backup program than a RAID
+In this regard SnapRAID is more like a backup program than a RAID
 system. For example, you can use it to recover from an accidentally
 deleted directory, simply running the fix command like.
 .PP
@@ -322,21 +352,33 @@ without losing the work already done.
 .PP
 The \(a"content\(a", \(a"parity\(a" and \(a"q\(hyparity\(a" files are modified if necessary.
 The files in the array are NOT modified.
+.SS pool 
+Creates or updates in the \(a"pooling\(a" directory a virtual view of all
+the files of your disk array.
+.PP
+The files are not really copied here, but just linked using
+symbolic links.
+.PP
+When updating, all the present symbolic links and empty
+subdirectories are deleted and replaced with the new
+view of the array. Any othe regular file is left in place.
+.PP
+Nothing is modified outside the pool directory.
 .SS diff 
 Lists all the files modified from the last \(a"sync\(a" command that
 have to recompute their redundancy data.
 .PP
 Nothing is modified.
 .SS dup 
-Lists all the duplicate files. Two files are assumed equal if their hashes
-are matching. The effective data is not read.
+Lists all the duplicate files. Two files are assumed equal if their
+hashes are matching. The effective data is not read.
 .PP
 Nothing is modified.
 .SS check 
 Checks all the files and the redundancy data.
 All the files are hashed and compared with the snapshot saved
 in the previous \(a"sync\(a" command.
-If you use the \(hyA, \(hy\(hyaudit\(hyonly option, only the file
+If you use the \(hya, \(hy\(hyaudit\(hyonly option, only the file
 data is checked, and the redundandy data is ignored.
 .PP
 Files are identified by path, and checked by content.
@@ -381,6 +423,8 @@ commands.
 Only the files present in the specified disk are processed.
 You must specify a disk name as named in the configuration
 file.
+In \(a"check\(a", you can make it faster, specifing also \(hya, \(hy\(hyaudit\(hyonly
+option, to avoid to access other disks to check parity data.
 If you combine \(hy\(hyfilter and \(hy\(hyfilter\(hydisk options, only files
 matching both the two groups of rules are selected.
 This option can be used many times.
@@ -405,9 +449,6 @@ size and time with second precision is assumed identical at
 the previous one, and not resynched.
 The nanosecond part of timestamps is ignored because most of
 copy programs are not able to correctly restore it.
-Note that if you use this option, all the hard\(hylinks will be
-stored independently wasting space. So, if you use hard\(hylinks,
-it\(cqs better to don\(cqt use it.
 This option can be used only with the \(a"sync\(a" and \(a"diff\(a" commands.
 .TP
 .B \(hyZ, \(hy\(hyforce\(hyzero
@@ -503,7 +544,7 @@ keep the NAME fixed.
 You should use one option for each disk of the array.
 .SS nohidden 
 Excludes all the hidden files and directory.
-In Unix hidden files are the ones starting with \(cq.\(cq.
+In Unix hidden files are the ones starting with \(a".\(a".
 In Windows they are the ones with the hidden attribute.
 .SS exclude/include PATTERN 
 Defines the file or directory patterns to exclude and include
@@ -554,11 +595,14 @@ going to waste 1.2 GiB.
 .SS autosave SIZE_IN_GIBIBYTES 
 Automatically save the state when synching after the specied amount
 of GiB processed.
-This option is useful to avoid to restart from scratch long \(cqsync\(cq
+This option is useful to avoid to restart from scratch long \(a"sync\(a"
 commands interrupted by a machine crash, or any other event that
 may interrupt SnapRAID.
 The SIZE argument is specified in gibibytes. Where one gibi bytes
 is 1073741824 bytes.
+.SS pool DIR 
+Defines the pooling directory where the virtual view of the disk
+array is created using the \(a"pool\(a" command.
 .SS Examples 
 An example of a typical configuration for Unix is:
 .PP
@@ -865,13 +909,16 @@ As paranoid check, you can now run a whole \(a"check\(a" command to ensure that
 everything is OK.
 .PP
 .RS 4
-snapraid \(hyd NAME check
+snapraid \(hyd NAME \(hya check
 .PD 0
 .PP
 .PD
 .RE
 .PP
 Where NAME is the name of the disk, like \(a"d1\(a" as in our previous example.
+.PP
+The options \(hyd and \(hya tell SnapRAID to check only the specified disk,
+and ignore all the other data and redundancy disks.
 .PP
 This command will take a long time.
 .SS STEP 4 \(hy> Sync 

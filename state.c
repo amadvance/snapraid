@@ -38,6 +38,8 @@ void state_init(struct snapraid_state* state)
 	state->parity_device = 0;
 	state->qarity[0] = 0;
 	state->qarity_device = 0;
+	state->pool[0] = 0;
+	state->pool_device = 0;
 	state->level = 1; /* default is the lowest protection */
 	state->hash = HASH_MURMUR3; /* default is the fastest */
 	tommy_list_init(&state->disklist);
@@ -123,6 +125,11 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 				exit(EXIT_FAILURE);
 			}
 
+			if (state->pool[0] != 0 && disk->device == state->pool_device) {
+				fprintf(stderr, "Disk '%s' and pool '%s' are on the same device.\n", disk->dir, state->pool);
+				exit(EXIT_FAILURE);
+			}
+
 			++diskcount;
 		}
 
@@ -148,10 +155,28 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 			fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'.\n");
 			exit(EXIT_FAILURE);
 		}
+
+		if (state->pool[0] != 0 && state->pool_device == 0) {
+			fprintf(stderr, "Disk '%s' has a zero serial number.\n", state->pool);
+			fprintf(stderr, "This is not necessarely wrong, but for using SnapRAID\n");
+			fprintf(stderr, "it's better to change the serial number of the disk.\n");
+			fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'.\n");
+			exit(EXIT_FAILURE);
+		}
 #endif
 
 		if (state->qarity[0] != 0 && state->parity_device == state->qarity_device) {
 			fprintf(stderr, "Parity '%s' and '%s' are on the same device.\n", state->parity, state->qarity);
+			exit(EXIT_FAILURE);
+		}
+
+		if (state->pool[0] != 0 && state->pool_device == state->parity_device) {
+			fprintf(stderr, "Pool '%s' and parity '%s' are on the same device.\n", state->pool, state->parity);
+			exit(EXIT_FAILURE);
+		}
+
+		if (state->pool[0] != 0 && state->qarity[0] != 0 && state->pool_device == state->qarity_device) {
+			fprintf(stderr, "Pool '%s' and parity '%s' are on the same device.\n", state->pool, state->qarity);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -283,7 +308,7 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 
 			pathimport(state->parity, sizeof(state->parity), buffer);
 
-			/* get the device of the directory containing the content file */
+			/* get the device of the directory containing the parity file */
 			pathimport(device, sizeof(device), buffer);
 			slash = strrchr(device, '/');
 			if (slash)
@@ -319,7 +344,7 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 
 			pathimport(state->qarity, sizeof(state->qarity), buffer);
 
-			/* get the device of the directory containing the content file */
+			/* get the device of the directory containing the qparity file */
 			pathimport(device, sizeof(device), buffer);
 			slash = strrchr(device, '/');
 			if (slash)
@@ -335,6 +360,42 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 
 			/* we have two level of parity */
 			state->level = 2;
+		} else if (strcmp(tag, "pool") == 0) {
+			char device[PATH_MAX];
+			char* slash;
+			struct stat st;
+
+			if (*state->pool) {
+				fprintf(stderr, "Multiple 'pool' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetlasttok(f, buffer, sizeof(buffer));
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'pool' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			if (!*buffer) {
+				fprintf(stderr, "Empty 'pool' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			pathimport(state->pool, sizeof(state->pool), buffer);
+
+			/* get the device of the directory containing the pool tree */
+			pathimport(device, sizeof(device), buffer);
+			slash = strrchr(device, '/');
+			if (slash)
+				*slash = 0;
+			else
+				pathcpy(device, sizeof(device), ".");
+			if (stat(device, &st) != 0) {
+				fprintf(stderr, "Error accessing 'pool' dir '%s' specification in '%s' at line %u\n", device, path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			state->pool_device = st.st_dev;
 		} else if (strcmp(tag, "content") == 0) {
 			struct snapraid_content* content;
 			char device[PATH_MAX];
@@ -528,6 +589,8 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 		fprintf(stderr, "parity:%s\n", state->parity);
 		if (state->qarity[0] != 0)
 			fprintf(stderr, "qarity:%s\n", state->qarity);
+		if (state->pool[0] != 0)
+			fprintf(stderr, "pool:%s\n", state->pool);
 		fflush(stderr);
 	}
 }

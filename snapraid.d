@@ -9,7 +9,7 @@ Synopsis
 	:	[-Z, --force-zero] [-E, --force-empty]
 	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	:	[-v, --verbose]
-	:	sync|diff|dup|check|fix
+	:	sync|pool|diff|dup|check|fix
 
 	:snapraid [-V, --version] [-h, --help]
 
@@ -71,7 +71,7 @@ Limitations
 		With a Backup you are able to recover from a complete
 		failure of the whole disk array.
 	* Only file, timestamps, symlinks and hardlinks are saved.
-		Permissions, ownership, extended attributes are not saved.
+		Permissions, ownership and extended attributes are not saved.
 
 Getting Started
 	To use SnapRAID you need to first select one disk of your disk array
@@ -143,6 +143,23 @@ Getting Started
 	At this point you can start using your array as you like, and periodically
 	update the redundancy information running the "sync" command.
 
+  Pooling
+	To have all the files in your array shown in the same directory tree,
+	you can enable "pooling", that consists in creating a virtual view of all
+	the files in your array using symbolic links.
+	You can configure the "pooling" directory in the configuration file with:
+
+		:pool /pool
+
+	or, if you are in Windows, with:
+
+		:pool C:\pool
+
+	and then run the "pool" command.
+
+		:snapraid pool
+
+  Checking & Fixing
 	To check the integrity of your data you can use the "check" command:
 
 		:snapraid check
@@ -157,7 +174,7 @@ Getting Started
 	last "sync" command executed. It works like a snapshot was taken
 	in "sync".
 
-	In this regard snapraid is more like a backup program than a RAID
+	In this regard SnapRAID is more like a backup program than a RAID
 	system. For example, you can use it to recover from an accidentally
 	deleted directory, simply running the fix command like.
 
@@ -192,6 +209,19 @@ Commands
 	The "content", "parity" and "q-parity" files are modified if necessary.
 	The files in the array are NOT modified.
 
+  pool
+	Creates or updates in the "pooling" directory a virtual view of all
+	the files of your disk array.
+
+	The files are not really copied here, but just linked using
+	symbolic links.
+
+	When updating, all the present symbolic links and empty
+	subdirectories are deleted and replaced with the new
+	view of the array. Any othe regular file is left in place.
+
+	Nothing is modified outside the pool directory.
+
   diff
 	Lists all the files modified from the last "sync" command that
 	have to recompute their redundancy data.
@@ -199,8 +229,8 @@ Commands
 	Nothing is modified.
 
   dup
-	Lists all the duplicate files. Two files are assumed equal if their hashes
-	are matching. The effective data is not read.
+	Lists all the duplicate files. Two files are assumed equal if their
+	hashes are matching. The effective data is not read.
 
 	Nothing is modified.
 
@@ -208,7 +238,7 @@ Commands
 	Checks all the files and the redundancy data.
 	All the files are hashed and compared with the snapshot saved
 	in the previous "sync" command.
-	If you use the -A, --audit-only option, only the file
+	If you use the -a, --audit-only option, only the file
 	data is checked, and the redundandy data is ignored.
 
 	Files are identified by path, and checked by content.
@@ -255,6 +285,8 @@ Options
 		Only the files present in the specified disk are processed.
 		You must specify a disk name as named in the configuration
 		file.
+		In "check", you can make it faster, specifing also -a, --audit-only
+		option, to avoid to access other disks to check parity data.
 		If you combine --filter and --filter-disk options, only files
 		matching both the two groups of rules are selected.
 		This option can be used many times.
@@ -380,7 +412,7 @@ Configuration
 
   nohidden
 	Excludes all the hidden files and directory.
-	In Unix hidden files are the ones starting with '.'.
+	In Unix hidden files are the ones starting with ".".
 	In Windows they are the ones with the hidden attribute.
 
   exclude/include PATTERN
@@ -431,11 +463,15 @@ Configuration
     autosave SIZE_IN_GIBIBYTES
 	Automatically save the state when synching after the specied amount
 	of GiB processed.
-	This option is useful to avoid to restart from scratch long 'sync'
+	This option is useful to avoid to restart from scratch long "sync"
 	commands interrupted by a machine crash, or any other event that
 	may interrupt SnapRAID.
 	The SIZE argument is specified in gibibytes. Where one gibi bytes
 	is 1073741824 bytes.
+
+    pool DIR
+	Defines the pooling directory where the virtual view of the disk
+	array is created using the "pool" command.
 
   Examples
 	An example of a typical configuration for Unix is:
@@ -554,7 +590,7 @@ Recovering
 
 	Then proceed with the following steps.
 
-    STEP 1 -> Reconfigure
+  STEP 1 -> Reconfigure
 	You need some space to recover, even better if you already have an additional
 	disk, but in case, also an external USB or remote one is enough.
     
@@ -570,7 +606,7 @@ Recovering
 
 		:disk d1 /mnt/new_spare_disk/
 
-    STEP 2 -> Fix
+  STEP 2 -> Fix
 	Run the fix command, storing the log in an external file with:
 
 		:snapraid -d NAME fix 2>fix.log
@@ -596,17 +632,20 @@ Recovering
 	but take care that after synching you will no more able to retry the
 	"fix" command!
 
-    STEP 3 -> Check
+  STEP 3 -> Check
 	As paranoid check, you can now run a whole "check" command to ensure that
 	everything is OK.
 
-		:snapraid -d NAME check
+		:snapraid -d NAME -a check
 
 	Where NAME is the name of the disk, like "d1" as in our previous example.
 
+	The options -d and -a tell SnapRAID to check only the specified disk,
+	and ignore all the other data and redundancy disks.
+
 	This command will take a long time.
 
-    STEP 4 -> Sync
+  STEP 4 -> Sync
 	Run the "sync" command to resyncronize the array with the new disk.
 
 	To avoid a long time sync you can use the "--find-by-name" option to

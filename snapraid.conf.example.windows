@@ -57,3 +57,11 @@ block_size 256
 # Format: "autosave_size SIZE_IN_GiB"
 # autosize 500
 
+# Defines the pooling directory where the virtual view of the disk
+# array is created using the "pool" command.
+# The files are not really copied here, but just linked using
+# symbolic links.
+# This directory must be outside the array.
+# Format: "pool DIR"
+#pool C:\pool
+
