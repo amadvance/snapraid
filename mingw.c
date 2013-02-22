@@ -119,6 +119,14 @@ static char* u16tou8n(const wchar_t* src, size_t number_of_wchar, size_t* result
 }
 
 /**
+ * Check if the char is a forward or back slash.
+ */
+static int is_slash(char c)
+{
+	return c == '/' || c == '\\';
+}
+
+/**
  * Converts a path to the Windows format.
  *
  * If only_is_required is 1, the extended-length format is used only if required.
@@ -144,17 +152,20 @@ static wchar_t* convert_arg(const char* src, int only_if_required)
 
 	dst = conv_utf16_buffer[conv_utf16];
 
+	/* note that we always check for both / and \ because the path is blindly */
+	/* converted to unix format by path_import() */
+
 	if (only_if_required && strlen(src) < 260 - 12) {
 		/* it's a short path */
 		/* 260 is the MAX_PATH, note that it includes the space for the terminating NUL */
 		/* 12 is an additional space for filename, required when creating directory */
 
 		/* do nothing */
-	} else if (src[0] == '\\' && src[1] == '\\' && src[2] == '?' && src[3] == '\\') {
+	} else if (is_slash(src[0]) && is_slash(src[1]) && src[2] == '?' && is_slash(src[3])) {
 		/* if it's already a '\\?\' path */
 
 		/* do nothing */
-	} else if (src[0] == '\\' && src[1] == '\\') {
+	} else if (is_slash(src[0]) && is_slash(src[1])) {
 		/* if it is a UNC path, like '\\server' */
 
 		/* prefix with '\\?\UNC\' */
@@ -169,7 +180,7 @@ static wchar_t* convert_arg(const char* src, int only_if_required)
 
 		/* skip initial '\\' */
 		src += 2;
-	} else if (src[0] != 0 && src[1] == ':' && (src[2] == '\\' || src[2] == '/')) {
+	} else if (src[0] != 0 && src[1] == ':' && is_slash(src[2])) {
 		/* if it is a disk designator path, like 'D:\' or 'D:/' */
 
 		/* prefix with '\\?\' */
