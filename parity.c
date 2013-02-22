@@ -130,10 +130,13 @@ int parity_chsize(struct snapraid_parity* parity, data_off_t size, data_off_t* o
 	if (parity->st.st_size < size) {
 		int f_ret;
 		int f_errno;
+		const char* call;
+
 #if HAVE_FALLOCATE
 		/* allocate real space using the specific Linux fallocate() operation. */
 		/* If the underline filesystem doesn't support it, this operation fails, */
 		/* instead posix_fallocate() fallbacks to write the whole file. */
+		call = "fallocate";
 		ret = fallocate(parity->f, 0, 0, size);
 
 		/* fallocate() returns the error number as positive integer, */
@@ -149,10 +152,12 @@ int parity_chsize(struct snapraid_parity* parity, data_off_t size, data_off_t* o
 		/* or ENOSYS with kernel before 2.6.23 */
 		if (errno == EOPNOTSUPP || errno == ENOSYS) {
 			/* fallback using ftruncate() */
+			call = "ftruncate";
 			ret = ftruncate(parity->f, size);
 		}
 #else
 		/* allocate using a sparse file */
+		call = "ftruncate";
 		ret = ftruncate(parity->f, size);
 #endif
 		/* save the state of the grow operation */
@@ -172,9 +177,9 @@ int parity_chsize(struct snapraid_parity* parity, data_off_t size, data_off_t* o
 		/* now check the error */
 		if (f_ret != 0) {
 			if (f_errno == ENOSPC) {
-				fprintf(stderr, "Failed to grow parity file '%s' to size %"PRIu64" due lack of space.\n", parity->path, size);
+				fprintf(stderr, "Failed to grow parity file '%s' to size %"PRIu64" using %s due lack of space.\n", parity->path, size, call);
 			} else {
-				fprintf(stderr, "Error growing parity file '%s' to size %"PRIu64". Do you have enough space? %s.\n", parity->path, size, strerror(f_errno));
+				fprintf(stderr, "Error growing parity file '%s' to size %"PRIu64" using %s. Do you have enough space? %s.\n", parity->path, size, call, strerror(f_errno));
 			}
 			goto bail;
 		}
@@ -312,7 +317,7 @@ int parity_write(struct snapraid_parity* parity, block_off_t pos, unsigned char*
 #else
 	if (lseek(parity->f, offset, SEEK_SET) != offset) {
 		if (errno == ENOSPC) {
-			fprintf(stderr, "Failed to grow parity file '%s' due lack of space.\n", parity->path);
+			fprintf(stderr, "Failed to grow parity file '%s' using lseek due lack of space.\n", parity->path);
 		} else {
 			fprintf(stderr, "Error seeking file '%s'. %s.\n", parity->path, strerror(errno));
 		}
@@ -323,7 +328,7 @@ int parity_write(struct snapraid_parity* parity, block_off_t pos, unsigned char*
 #endif
 	if (write_ret != (ssize_t)block_size) { /* conversion is safe because block_size is always small */
 		if (errno == ENOSPC) {
-			fprintf(stderr, "Failed to grow parity file '%s' due lack of space.\n", parity->path);
+			fprintf(stderr, "Failed to grow parity file '%s' using write due lack of space.\n", parity->path);
 		} else {
 			fprintf(stderr, "Error writing file '%s'. %s.\n", parity->path, strerror(errno));
 		}
