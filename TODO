@@ -3,13 +3,13 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
-- v2.2
+- v3.0
 
 * We can extend the fix command to read know deleted files from a specific directory,
 even outside the array, compute the hash of all the blocks, and use it as a bag of data,
 indexed by hash, to find missing data for DELETED and CHG blocks.
 
-- v2.3
+- v3.1
 
 * If a content file is missing, sync should rewrite it, even if no change was done at the content.
 
@@ -40,7 +40,7 @@ Altought it doesn't seem necessary when used in CreateFile to just open director
 * In Windows we must be case insensitive, at least for ASCII<128 comparison. For other UTF-8 chars
 is too complex.
 
-- v3.x
+- v4.x
 
 * In the content file, for each block store the last time the hash was checked
 with both "check" and also "sync".
@@ -74,7 +74,7 @@ We can always open files in read-only mode, if a write is required, we close it,
 rename it to with a .bak extension, and rewrite it up to the required size.
 The same for symlink if a file with the same name exist or viceversa.
 
-- v4.x
+- v5.x
 
 * Triple parity also called RAID-TP. We can implement it in a compatible way
 with the existing RAID-5 and RAID-6 definining a new r-parity file.
