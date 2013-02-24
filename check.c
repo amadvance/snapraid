@@ -31,8 +31,25 @@
  * A block that failed the hash check, or that was deleted.
  */
 struct failed_struct {
-	int is_bad; /**< If the block needs to be recovered and rewritten to the disk. */
-	int is_outofdate; /**< If that we have recovered may be not updated data, but an old version. */
+	/**
+	 * If the block needs to be recovered and rewritten to the disk.
+	 */
+	int is_bad;
+
+	/**
+	 * If that we have recovered may be not updated data,
+	 * an old version, or just garbage.
+	 *
+	 * Essentially, it means that we are not sure what we have recovered
+	 * is really correct. It's just our best guess.
+	 *
+	 * These "recovered" block are also written to the disk if the block is marked as ::is_bad.
+	 * But these files are marked also as FILE_IS_DAMAGED, and then renamed to .unrecoverable.
+	 *
+	 * Note that this could happen only for NEW and CHG blocks.
+	 */
+	int is_outofdate;
+
 	unsigned index; /**< Index of the failed block. */
 	struct snapraid_block* block; /**< The failed block, or BLOCK_DELETED for a deleted block */
 	struct snapraid_handle* handle; /**< The file containing the failed block, or 0 for a deleted block */
@@ -85,7 +102,7 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 		return 0;
 	}
 
-	/* check if there is at least a failed block that can be checked for correctness */
+	/* check if there is at least a failed block that can be checked for correctness using the hash */
 	/* if there isn't, we have to sacrifice a parity block to check that the result is correct */
 	has_hash = 0;
 	for(j=0;j<failed_count;++j) {
@@ -99,7 +116,7 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 		/* copy the redundancy to use */
 		memcpy(buffer[diskmax], buffer_parity, state->block_size);
 
-		/* recover */
+		/* recover data */
 		raid5_recov_data(buffer, diskmax, state->block_size, failed[failed_map[0]].index);
 
 		hash_checked = 0; /* keep track if we check at least one block */
@@ -131,6 +148,7 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 		/* copy the redundancy to use */
 		memcpy(buffer[diskmax+1], buffer_qarity, state->block_size);
 
+		/* recover both data and p */
 		raid6_recov_datap(buffer, diskmax, state->block_size, failed[failed_map[0]].index, buffer_zero);
 
 		hash_checked = 0; /* keep track if we check at least one block */
@@ -157,11 +175,12 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 		++error;
 	}
 
-	/* RAID6 recovering from q, using the restored p to check the result */
+	/* RAID6 recovering from q, using p to check the result */
 	if (failed_count == 1 && buffer_parity != 0 && buffer_qarity != 0 && !has_hash) {
 		/* copy the redundancy to use */
 		memcpy(buffer[diskmax+1], buffer_qarity, state->block_size);
 
+		/* recover both data and p */
 		raid6_recov_datap(buffer, diskmax, state->block_size, failed[failed_map[0]].index, buffer_zero);
 
 		/* if the recovered parity block matches */
@@ -181,7 +200,7 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 		memcpy(buffer[diskmax], buffer_parity, state->block_size);
 		memcpy(buffer[diskmax+1], buffer_qarity, state->block_size);
 
-		/* recover */
+		/* recover 2 data */
 		raid6_recov_2data(buffer, diskmax, state->block_size, failed[failed_map[0]].index, failed[failed_map[1]].index, buffer_zero);
 
 		hash_checked = 0; /* keep track if we check at least one block */
@@ -229,7 +248,7 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 	/* process is aborted, we don't know if the parity data is really updated or */
 	/* still represents the state before the 'sync' */
 
-	/* now assume that the parity is already computed for the current state */
+	/* now we assume that the parity is already computed for the current state */
 	/* and that we are going to recover the state after the last 'sync'. */
 	/* we need to put in the recovering process only the bad blocks, because all the */
 	/* others already contains the correct data, and the parity is correctly computed for them. */
@@ -325,6 +344,8 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 			/* we can do this only because it's the last retry of recovering */
 
 			/* mark that we have restored an old state */
+			/* note that if the block is not marked as is_bad, */
+			/* we are not going to write it in the disk */
 			failed[j].is_outofdate = 1;
 		}
 	}
@@ -693,6 +714,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				}
 			}
 
+			/* try all the recovering strategies */
 			ret = repair(state, i, diskmax, failed, failed_map, failed_count, buffer, buffer_parity, buffer_qarity, buffer_zero);
 			if (ret != 0) {
 				/* increment the number of errors */
@@ -714,7 +736,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					}
 				}
 			} else {
-				/* check if the recover was only partial */
+				/* now counts partial recovers */
 				/* note that this could happen only when we have an incomplete 'sync' */
 				/* and that we have recovered is the state before the 'sync' */
 				int partial_recover_error = 0;
@@ -731,8 +753,9 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					++unrecoverable_error;
 				}
 
-				/* check parity and q-parity only if all the blocks have it computed */
+				/* now check parity and q-parity, but only if all the blocks have it computed */
 				/* if you check/fix after a partial sync, it's OK to have parity errors on the blocks with invalid parity */
+				/* and doesn't make sense to try to fix it */
 				if (check_parity) {
 					/* check the parity */
 					if (buffer_parity != 0 && memcmp(buffer_parity, buffer[diskmax], state->block_size) != 0) {
@@ -753,6 +776,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					}
 				}
 
+				/* now writes recovered files */
 				if (fix) {
 					/* update the fixed files */
 					for(j=0;j<failed_count;++j) {
@@ -834,7 +858,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			}
 		}
 
-		/* now fix if requested */
+		/* finish the fix process if it's the last block of the files */
 		if (fix) {
 			/* for all the files of this block check if we need to fix the modification time */
 			for(j=0;j<diskmax;++j) {
@@ -857,7 +881,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 				/* if the file is damaged, meaning that a fix failed */
 				if (file_flag_has(handle[j].file, FILE_IS_DAMAGED)) {
-					/* rename it */
+					/* rename it to .unrecoverable */
 					char path_from[PATH_MAX];
 					char path_to[PATH_MAX];
 
@@ -883,11 +907,11 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 						goto bail;
 					}
 
-					/* and do not set the time */
+					/* and do not set the time if damaged */
 					continue;
 				}
 
-				/* if the file is not fixed */
+				/* if the file is not fixed, meaning that it is untouched */
 				if (!file_flag_has(handle[j].file, FILE_IS_FIXED)) {
 					/* nothing to do */
 					continue;
@@ -898,7 +922,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				/* search for the corresponding inode */
 				collide_file = tommy_hashdyn_search(&handle[j].disk->inodeset, file_inode_compare, &inode, file_inode_hash(inode));
 
-				/* if the inode is in the database and it refers at a different file name, */
+				/* if the inode is already in the database and it refers at a different file name, */
 				/* we can fix the file time ONLY if the time and size allow to differentiates */
 				/* between the two files */
 
@@ -936,7 +960,6 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			break;
 		}
 	}
-
 
 	/* for each disk, recover empty files, symlinks and empty dirs */
 	for(i=0;i<diskmax;++i) {
