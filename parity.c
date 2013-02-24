@@ -37,10 +37,10 @@ block_off_t parity_size(struct snapraid_state* state)
 		/* start from the declared size */
 		block_off_t block = tommy_array_size(&disk->blockarr);
 
-		/* decrease the block until an allocated one */
+		/* decrease the block until an used one */
 		/* we don't stop at deleted blocks, because we want to have them cleared */
 		/* if they are at the end of the parity */
-		while (block > parity_block && !block_is_valid(tommy_array_get(&disk->blockarr, block - 1)))
+		while (block > parity_block && !block_has_file(tommy_array_get(&disk->blockarr, block - 1)))
 			--block;
 
 		/* get the highest value */

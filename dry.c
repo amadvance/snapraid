@@ -57,8 +57,11 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 
 			if (handle[j].disk)
 				block = disk_block_get(handle[j].disk, i);
-			if (!block_is_valid(block))
+
+			if (!block_has_file(block)) {
+				/* if no file, nothing to do */
 				continue;
+			}
 
 			/* if the file is different than the current one, close it */
 			if (handle[j].file != block_file_get(block)) {

@@ -717,11 +717,9 @@ static void state_content_check(struct snapraid_state* state, const char* path)
 
 				if (block == BLOCK_EMPTY) {
 					/* not relevant */
-				} else if (block == BLOCK_DELETED) {
-					parity_is_invalid = 1;
 				} else {
-					unsigned state = block_state_get(block);
-					if (state == BLOCK_STATE_BLK) {
+					unsigned block_state = block_state_get(block);
+					if (block_state == BLOCK_STATE_BLK) {
 						parity_is_valid = 1;
 					} else {
 						parity_is_invalid = 1;
@@ -892,8 +890,8 @@ void state_read(struct snapraid_state* state)
 			block->parity_pos = v_pos;
 			hash = oathash32(hash, v_pos);
 
-			/* read the hash only for some state */
-			if (tag[0] == 'b' || tag[0] == 'i') {
+			/* read the hash only for 'blk/inv/chg', and not for 'new' */
+			if (tag[0] != 'n') {
 				c = sgeteol(f);
 				if (c != ' ') {
 					fprintf(stderr, "Invalid 'blk' specification in '%s' at line %u\n", path, line);
@@ -909,9 +907,15 @@ void state_read(struct snapraid_state* state)
 				hash = oathashm(hash, block->hash, HASH_SIZE);
 			}
 
+			/* we must not overwrite existing blocks */
+			if (disk_block_get(disk, v_pos) != BLOCK_EMPTY) {
+				fprintf(stderr, "Internal inconsistency for 'blk' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
 			/* insert the block in the block array */
-			tommy_array_grow(&disk->blockarr, block->parity_pos + 1);
-			tommy_array_set(&disk->blockarr, block->parity_pos, block);
+			tommy_array_grow(&disk->blockarr, v_pos + 1);
+			tommy_array_set(&disk->blockarr, v_pos, block);
 
 			/* check for termination of the block list */
 			++blockidx;
@@ -925,6 +929,7 @@ void state_read(struct snapraid_state* state)
 		} else if (strcmp(tag, "off") == 0) {
 			/* "off" command */
 			block_off_t v_pos;
+			struct snapraid_deleted* deleted;
 
 			hash = oathash8(hash, 'o');
 
@@ -933,24 +938,45 @@ void state_read(struct snapraid_state* state)
 				exit(EXIT_FAILURE);
 			}
 
+			/* allocate a new deleted block */
+			deleted = deleted_alloc();
+
+			/* insert it in the list of deleted blocks */
+			tommy_list_insert_tail(&disk->deletedlist, &deleted->node, deleted);
+
 			ret = sgetu32(f, &v_pos);
 			if (ret < 0) {
 				fprintf(stderr, "Invalid 'off' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
 
+			deleted->block.parity_pos = v_pos;
 			hash = oathash32(hash, v_pos);
 
-			/* insert the block in the block array */
-			tommy_array_grow(&disk->blockarr, v_pos + 1);
+			/* read the hash */
+			c = sgeteol(f);
+			if (c != ' ') {
+				fprintf(stderr, "Invalid 'off' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
 
-			/* deleted block must be empty blocks */
-			if (tommy_array_get(&disk->blockarr, v_pos) != 0) {
+			/* set the hash only if present */
+			ret = sgethex(f, deleted->block.hash, HASH_SIZE);
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'off' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+			hash = oathashm(hash, deleted->block.hash, HASH_SIZE);
+
+			/* we must not overwrite existing blocks */
+			if (disk_block_get(disk, v_pos) != BLOCK_EMPTY) {
 				fprintf(stderr, "Internal inconsistency for 'off' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
 
-			tommy_array_set(&disk->blockarr, v_pos, BLOCK_DELETED);
+			/* insert the block in the block array */
+			tommy_array_grow(&disk->blockarr, v_pos + 1);
+			tommy_array_set(&disk->blockarr, v_pos, &deleted->block);
 		} else if (strcmp(tag, "file") == 0) {
 			/* file */
 			char sub[PATH_MAX];
@@ -1639,12 +1665,15 @@ void state_write(struct snapraid_state* state)
 					sputsl("chg ", f);
 					hash = oathash8(hash, 'g');
 					break;
+				default:
+					fprintf(stderr, "Internal state inconsistency in saving for block %u state %u\n", block->parity_pos, block_state);
+					exit(EXIT_FAILURE);
 				}
 
 				sputu32(block->parity_pos, f);
 				hash = oathash32(hash, block->parity_pos);
 
-				if (block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_INV) {
+				if (block_state != BLOCK_STATE_NEW) {
 					sputc(' ', f);
 					sputhex(block->hash, HASH_SIZE, f);
 					hash = oathashm(hash, block->hash, HASH_SIZE);
@@ -1712,6 +1741,7 @@ void state_write(struct snapraid_state* state)
 			++count_dir;
 		}
 
+		/* save all the delete blocks */
 		{
 			block_off_t k;
 			block_off_t blockmax;
@@ -1723,7 +1753,7 @@ void state_write(struct snapraid_state* state)
 			/* for each deleted block in the disk */
 			for(k=0;k<blockmax;++k) {
 				struct snapraid_block* block = tommy_array_get(&disk->blockarr, k);
-				if (block == BLOCK_DELETED) {
+				if (block_state_get(block) == BLOCK_STATE_DELETED) {
 					if (first_deleted) {
 						first_deleted = 0;
 
@@ -1743,6 +1773,10 @@ void state_write(struct snapraid_state* state)
 
 					sputu32(k, f);
 					hash = oathash32(hash, k);
+
+					sputc(' ', f);
+					sputhex(block->hash, HASH_SIZE, f);
+					hash = oathashm(hash, block->hash, HASH_SIZE);
 
 					sputeol(f);
 					if (serror(f)) {
@@ -1965,9 +1999,9 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 
 			if (delta > 5 && countpos > 0) {
 				unsigned m, h;
-				data_off_t todo = countmax - countpos;
+				data_off_t to_do = countmax - countpos;
 
-				m = todo * delta / (60 * countpos);
+				m = to_do * delta / (60 * countpos);
 
 				h = m / 60;
 				m = m % 60;

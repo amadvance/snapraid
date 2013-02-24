@@ -161,25 +161,57 @@ static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk*
 
 	/* free all the blocks of the file */
 	for(i=0;i<file->blockmax;++i) {
-		block_off_t block_pos = file->blockvec[i].parity_pos;
+		struct snapraid_block* block = &file->blockvec[i];
+		block_off_t block_pos = block->parity_pos;
+		unsigned block_state;
 		tommy_node* j;
+		struct snapraid_deleted* deleted;
 
 		/* adjust the first free position */
 		if (disk->first_free_block > block_pos)
 			disk->first_free_block = block_pos;
 
-		/* set the block as deleted */
-		tommy_array_set(&disk->blockarr, block_pos, BLOCK_DELETED);
+		/* in case we scan after an aborted sync, */
+		/* we could get also intermediate states like inv/chg/new */
+		block_state = block_state_get(block);
+		switch (block_state) {
+		case BLOCK_STATE_BLK :
+		case BLOCK_STATE_INV :
+			/* we keep the hash making it an "old" hash, because the parity is still containing data for it */
+			break;
+		case BLOCK_STATE_CHG :
+		case BLOCK_STATE_NEW :
+			/* in these cases we don't know if the old state is still the one */
+			/* stored inside the parity, because after an aborted sync, the parity */
+			/* may be or may be not have been updated with the new data */
+			/* Them we reset the hash to a bogus value */
+			/* Note that this condition is possible only if: */
+			/* - new files added/modified */
+			/* - aborted sync, without saving the content file */
+			/* - files deleted after the aborted sync */
+			memset(block->hash, 0, HASH_SIZE);
+			break;
+		default:
+			fprintf(stderr, "Internal state inconsistency in scanning for block %u state %u\n", block->parity_pos, block_state);
+			exit(EXIT_FAILURE);
+		}
+
+		/* allocated a new deleted block from the block we are going to delete */
+		deleted = deleted_dup(block);
+
+		/* insert it in the list of deleted blocks */
+		tommy_list_insert_tail(&disk->deletedlist, &deleted->node, deleted);
+
+		/* set the deleted block in the block array */
+		tommy_array_set(&disk->blockarr, block_pos, &deleted->block);
 
 		/* invalidate the block of all the other disks */
 		for(j=state->disklist;j!=0;j=j->next) {
 			struct snapraid_disk* oth_disk = j->data;
 			struct snapraid_block* oth_block = disk_block_get(oth_disk, block_pos);
 
-			if (block_is_valid(oth_block)) {
-				/* remove the parity info for this block */
-				block_clear_parity(oth_block);
-			}
+			/* remove the parity info for this block */
+			block_clear_parity(oth_block);
 		}
 	}
 
@@ -209,9 +241,10 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 	block_max = tommy_array_size(&disk->blockarr);
 	for(i=0;i<file->blockmax;++i) {
 		tommy_node* j;
+		struct snapraid_block* block;
 
 		/* find a free block */
-		while (block_pos < block_max && block_is_valid(tommy_array_get(&disk->blockarr, block_pos)))
+		while (block_pos < block_max && block_has_file(tommy_array_get(&disk->blockarr, block_pos)))
 			++block_pos;
 
 		/* if not found, allocate a new one */
@@ -223,21 +256,26 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 		/* set the position */
 		file->blockvec[i].parity_pos = block_pos;
 
-		/* set the state depending if the used block was EMPTY or DELETED */
-		if (tommy_array_get(&disk->blockarr, block_pos) == BLOCK_EMPTY)
+		/* block to overwrite */
+		block = tommy_array_get(&disk->blockarr, block_pos);
+
+		/* if the block is an empty one */
+		if (block == BLOCK_EMPTY) {
+			/* we just overwrite it with a NEW one */
 			block_state_set(&file->blockvec[i], BLOCK_STATE_NEW);
-		else
+		} else {
+			/* otherwise it's a DELETED one, that we convert in CHG keeping the hash */
 			block_state_set(&file->blockvec[i], BLOCK_STATE_CHG);
+			memcpy(file->blockvec[i].hash, block->hash, HASH_SIZE);
+		}
 
 		/* invalidate the block of all the other disks */
 		for(j=state->disklist;j!=0;j=j->next) {
 			struct snapraid_disk* oth_disk = j->data;
 			struct snapraid_block* oth_block = disk_block_get(oth_disk, block_pos);
 
-			if (block_is_valid(oth_block)) {
-				/* remove the parity info for this block */
-				block_clear_parity(oth_block);
-			}
+			/* remove the parity info for this block */
+			block_clear_parity(oth_block);
 		}
 
 		/* store in the disk map, after invalidating all the other blocks */

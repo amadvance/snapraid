@@ -57,6 +57,7 @@ struct failed_struct {
 
 /**
  * Checks if a block hash matches the specified buffer.
+ * Return ==0 if equal
  */
 static int blockcmp(struct snapraid_state* state, struct snapraid_block* block, unsigned char* buffer, unsigned char* buffer_zero)
 {
@@ -106,8 +107,7 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 	/* if there isn't, we have to sacrifice a parity block to check that the result is correct */
 	has_hash = 0;
 	for(j=0;j<failed_count;++j) {
-		if (failed[failed_map[j]].block != BLOCK_DELETED /* if the block it not a deleted one */
-			&& block_has_hash(failed[failed_map[j]].block)) /* if the block can be checked */
+		if (block_has_hash(failed[failed_map[j]].block)) /* if the block can be checked */
 			has_hash = 1;
 	}
 
@@ -123,9 +123,7 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 
 		/* check if the recovered blocks are OK */
 		for(j=0;j<1;++j) {
-			if (failed[failed_map[j]].block != BLOCK_DELETED /* if the block it not a deleted one */
-				&& block_has_hash(failed[failed_map[j]].block) /* if the block can be checked */
-			) {
+			if (block_has_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
 				hash_checked = 1;
 				if (blockcmp(state, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
 					break;
@@ -155,9 +153,7 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 
 		/* check if the recovered blocks are OK */
 		for(j=0;j<1;++j) {
-			if (failed[failed_map[j]].block != BLOCK_DELETED /* if the block it not a deleted one */
-				&& block_has_hash(failed[failed_map[j]].block) /* if the block can be checked */
-			) {
+			if (block_has_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
 				hash_checked = 1;
 				if (blockcmp(state, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
 					break;
@@ -207,9 +203,7 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 
 		/* check if the recovered blocks are OK */
 		for(j=0;j<2;++j) {
-			if (failed[failed_map[j]].block != BLOCK_DELETED /* if the block it not a deleted one */
-				&& block_has_hash(failed[failed_map[j]].block) /* if the block can be checked */
-			) {
+			if (block_has_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
 				hash_checked = 1;
 				if (blockcmp(state, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
 					break;
@@ -260,7 +254,7 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 			has_bad = 1;
 
 			/* we never set a DELETED block as bad */
-			assert(failed[j].block != BLOCK_DELETED);
+			assert(block_state_get(failed[j].block) != BLOCK_STATE_DELETED);
 
 			failed_map[n] = j;
 			++n;
@@ -286,9 +280,9 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 				unsigned block_state = block_state_get(failed[j].block);
 
 				if (block_state == BLOCK_STATE_NEW) {
-					/* if the block is not filled with 0, we are sure to have restored it */
-					/* to the state after the 'sync' */
-					/* if the block is filled with 0, it could be either that the */
+					/* if the block is not filled with 0, we are sure to have */
+					/* restored it to the state after the 'sync' */
+					/* instead, if the block is filled with 0, it could be either that the */
 					/* block after the sync is really filled by 0, or that */
 					/* we restored the block before the 'sync'. */
 					if (memcmp(buffer[failed[j].index], buffer_zero, state->block_size) == 0) {
@@ -298,10 +292,22 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 				}
 
 				if (block_state == BLOCK_STATE_CHG) {
-					/* we cannot know if we recoverd the state before or after */
-					/* the partial 'sync' process. */
-					/* just to be safe, we assume it is garbage */
-					failed[j].is_outofdate = 1;
+					/* if the hash is a bogus value we cannot check the result */
+					/* this could happen if we have lost this information */
+					/* after an aborted sync */
+					if (memcmp(failed[j].block->hash, buffer_zero, HASH_SIZE) == 0) {
+						/* it may contain garbage */
+						failed[j].is_outofdate = 1;
+					} else
+					/* if the hash is different the previous one, we are sure to have */
+					/* restored it to the state after the 'sync' */
+					/* instead, if the hash matches, it could be either that the */
+					/* block after the sync has this hash, or that */
+					/* we restored the block before the 'sync'. */
+					if (blockcmp(state, failed[j].block, buffer[failed[j].index], buffer_zero) == 0) {
+						/* it may contain garbage */
+						failed[j].is_outofdate = 1;
+					}
 				}
 			}
 		}
@@ -322,10 +328,7 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 		if (failed[j].is_bad)
 			has_bad = 1;
 
-		if (failed[j].block == BLOCK_DELETED)
-			block_state = BLOCK_STATE_DELETED;
-		else
-			block_state = block_state_get(failed[j].block);
+		block_state = block_state_get(failed[j].block);
 
 		if (failed[j].is_bad /* if the block is bad we don't know its content */
 			|| block_state == BLOCK_STATE_DELETED /* we don't know the original content of deleted blocks */
@@ -435,8 +438,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			struct snapraid_block* block = BLOCK_EMPTY;
 			if (handle[j].disk)
 				block = disk_block_get(handle[j].disk, i);
-			if (block_is_valid(block)
-				&& block_has_hash(block) /* only if the block is hashed */
+			if (block_has_hash(block) /* only if the block is hashed */
 				&& !file_flag_has(block_file_get(block), FILE_IS_EXCLUDED) /* only if the file is not filtered out */
 			) {
 				one_tocheck = 1;
@@ -466,8 +468,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			struct snapraid_block* block = BLOCK_EMPTY;
 			if (handle[j].disk)
 				block = disk_block_get(handle[j].disk, i);
-			if (block_is_valid(block)
-				&& block_has_hash(block) /* only if the block is hashed */
+			if (block_has_hash(block) /* only if the block is hashed */
 				&& !file_flag_has(block_file_get(block), FILE_IS_EXCLUDED) /* only if the file is not filtered out */
 			) {
 				one_tocheck = 1;
@@ -509,11 +510,14 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				continue;
 			}
 
+			/* get the state of the block */
+			block_state = block_state_get(block);
+
 			/* if the block is deleted */
-			if (block == BLOCK_DELETED) {
+			if (block_state == BLOCK_STATE_DELETED) {
 				/* use an empty block */
 				memset(buffer[j], 0, state->block_size);
-				
+
 				/* mark the parity as invalid, and don't try to check/fix it */
 				/* because it will be recomputed at the next sync */
 				/* note that for sure there is also another block invalidating */
@@ -525,7 +529,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				failed[failed_count].is_bad = 0;
 				failed[failed_count].is_outofdate = 0;
 				failed[failed_count].index = j;
-				failed[failed_count].block = BLOCK_DELETED;
+				failed[failed_count].block = block;
 				failed[failed_count].handle = 0;
 				++failed_count;
 				continue;
@@ -539,9 +543,6 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				memset(buffer[j], 0, state->block_size);
 				continue;
 			}
-
-			/* get the state of the block */
-			block_state = block_state_get(block);
 
 			/* if the parity is not valid */
 			if (block_state != BLOCK_STATE_BLK) {
@@ -868,8 +869,9 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 				if (handle[j].disk)
 					block = disk_block_get(handle[j].disk, i);
-				if (!block_is_valid(block)) {
-					/* if no block, no file and nothing to do */
+
+				if (!block_has_file(block)) {
+					/* if no file, nothing to do */
 					continue;
 				}
 
@@ -1094,12 +1096,12 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					fprintf(stderr, "Error stating hardlink-to '%s'. %s.\n", pathto, strerror(errno));
 					fprintf(stderr, "hardlinkerror:%s:%s:%s: Hardlink to stat error\n", disk->name, link->sub, link->linkto);
 					++error;
-				} else if (!S_ISREG(st.st_mode)) {
+				} else if (!S_ISREG(stto.st_mode)) {
 					failed = 1;
 
 					fprintf(stderr, "hardlinkerror:%s:%s:%s: Hardlink-to error for not regular file\n", disk->name, link->sub, link->linkto);
 					++error;
-				} else if (st.st_ino != stto.st_ino) {
+				} else if (!failed && st.st_ino != stto.st_ino) {
 					failed = 1;
 
 					fprintf(stderr, "Mismatch hardlink '%s' and '%s'. Different inode.\n", path, pathto);

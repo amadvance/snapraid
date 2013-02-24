@@ -11,7 +11,7 @@ if ! make lcov_reset check lcov_capture lcov_html; then
 	exit 1
 fi
 
-rm -r cov_release
+rm -rf cov_release
 mv cov cov_release
 
 if ! make distclean; then

@@ -72,45 +72,63 @@ struct snapraid_file;
  * This is the normal state of a saved block.
  * Note that if exists at least one BLOCK_STATE_BLK in a disk, all the other
  * blocks at the same address in other disks can be only BLOCK_EMPTY or BLOCK_STATE_BLK.
+ *
+ * The block hash field IS set.
+ * The parity for this disk is updated.
  */
-#define BLOCK_STATE_BLK 0
+#define BLOCK_STATE_BLK 1
 
 /**
  * The block is new and not yet hashed, and it's using a space previously empty.
+ *
+ * The block hash field IS NOT set.
+ * The parity for this disk is not updated, but it contains 0.
  */
-#define BLOCK_STATE_NEW 1
+#define BLOCK_STATE_NEW 2
 
 /**
  * The block has the hash computed, but the parity is invalid.
- * This happens when the parity is invalidated by a change in another block.
+ * This happens when the parity is invalidated by a change in another disk.
+ *
+ * The block hash field IS set.
+ * The parity for this disk is updated, but there is at least another disk not updated parity.
  */
-#define BLOCK_STATE_INV 2
+#define BLOCK_STATE_INV 3
 
 /**
  * The block is new and not yet hashed, and it's using the space of a block not existing anymore.
  * This happens when a new block overwrite a just removed block.
+ *
+ * The block hash field IS set, and it represents the hash of the previous data.
+ * The parity for this disk is not updated, but it contains the old data referenced by the hash.
+ *
+ * If the hash is completely filled with 0, it means that its lost.
  */
-#define BLOCK_STATE_CHG 3
+#define BLOCK_STATE_CHG 4
+
+/**
+ * This block is a deleted one.
+ * This happens when a file is deleted.
+ *
+ * The block hash field IS set, and it represents the hash of the previous data.
+ * The parity for this disk is not updated, but it contains the old data referenced by the hash.
+ *
+ * If the hash is completely filled with 0, it means that its lost.
+ */
+#define BLOCK_STATE_DELETED 5
 
 /**
  * Mask used to store the previous states of the block.
  * Used to mix them inside the file pointer.
  */
-#define BLOCK_STATE_MASK 3
-
-/**
- * This block is a deleted one.
- * Note that this state cannot be stored inside the block,
- * but it's usually represented by the block ::BLOCK_DELETED.
- */
-#define BLOCK_STATE_DELETED 4
+#define BLOCK_STATE_MASK 7
 
 /**
  * This block is an empty one.
  * Note that this state cannot be stored inside the block,
- * but it's usually represented by the block ::BLOCK_EMPTY.
+ * and it's represented by the block ::BLOCK_EMPTY.
  */
-#define BLOCK_STATE_EMPTY 5
+#define BLOCK_STATE_EMPTY 8
 
 /**
  * Block of a file.
@@ -125,11 +143,6 @@ struct snapraid_block {
  * Block pointer used to mark unused blocks.
  */
 #define BLOCK_EMPTY 0
-
-/**
- * Block pointer used to mark deleted blocks.
- */
-#define BLOCK_DELETED ((struct snapraid_block*)-1)
 
 #define FILE_IS_PRESENT 1 /**< If it's seen as present. */
 #define FILE_IS_EXCLUDED 2 /**< If it's an excluded file from the processing. */
@@ -189,6 +202,21 @@ struct snapraid_dir {
 }; 
 
 /**
+ * Deleted entry.
+ */
+struct snapraid_deleted {
+	/**
+	 * Deleted block.
+	 * This block is always in state BLOCK_STATE_DELETED,
+	 * and it's used to keep the old hash during a sync.
+	 */
+	struct snapraid_block block;
+
+	/* nodes for data structures */
+	tommy_node node;
+};
+
+/**
  * Disk.
  */
 struct snapraid_disk {
@@ -196,14 +224,33 @@ struct snapraid_disk {
 	char dir[PATH_MAX]; /**< Mount point of the disk. It always terminates with /. */
 	uint64_t device; /**< Device identifier. */
 	block_off_t first_free_block; /**< First free searching block. */
-	tommy_list filelist; /**< List of all the files. */
+
+	/**<
+	 * Block array of the disk.
+	 *
+	 * Each element points to a snapraid_block structure, or it's BLOCK_EMPTY.
+	 */
+	tommy_array blockarr;
+
+	/**
+	 * List of all the snapraid_file for the disk.
+	 */
+	tommy_list filelist;
+
+	/**
+	 * List of all the snapraid_deleted blocks for the disk.
+	 *
+	 * These files are kept allocated, because the blocks are still referenced in
+	 * the ::blockarr.
+	 */
+	tommy_list deletedlist;
+
 	tommy_hashdyn inodeset; /**< Hashtable by inode of all the files. */
 	tommy_hashdyn pathset; /**< Hashtable by path of all the files. */
 	tommy_list linklist; /**< List of all the links. */
 	tommy_hashdyn linkset; /**< Hashtable by name of all the links. */
 	tommy_list dirlist; /**< List of all the dirs. */
 	tommy_hashdyn dirset; /**< Hashtable by name of all the dirs. */
-	tommy_array blockarr; /**< Block array of the disk. */
 
 	/* nodes for data structures */
 	tommy_node node;
@@ -297,17 +344,39 @@ static inline struct snapraid_file* block_file_get(struct snapraid_block* block)
  */
 static inline void block_file_set(struct snapraid_block* block, struct snapraid_file* file)
 {
-	block->file_mixed = (block->file_mixed & ~(uintptr_t)BLOCK_STATE_MASK) | (uintptr_t)file;
+	uintptr_t ptr = (uintptr_t)file;
+
+	/* ensure that the pointer doesn't use the flag space */
+	if ((ptr & (uintptr_t)BLOCK_STATE_MASK) != 0) {
+		fprintf(stderr, "Internal error for pointer not aligned\n");
+		exit(EXIT_FAILURE);
+	}
+
+	block->file_mixed = (block->file_mixed & ~(uintptr_t)BLOCK_STATE_MASK) | ptr;
 }
 
+/**
+ * Get the state of the block.
+ *
+ * For this function, it's allowed to pass a NULL block
+ * pointer than results in the BLOCK_STATE_EMPTY state.
+ */
 static inline unsigned block_state_get(const struct snapraid_block* block)
 {
+	if (block == BLOCK_EMPTY)
+		return BLOCK_STATE_EMPTY;
+
 	return block->file_mixed & BLOCK_STATE_MASK;
 }
 
 static inline void block_state_set(struct snapraid_block* block, unsigned state)
 {
-	assert(state != BLOCK_STATE_EMPTY && state != BLOCK_STATE_DELETED);
+	/* ensure that the state can be stored inside the file pointer */
+	if ((state & BLOCK_STATE_MASK) != state) {
+		fprintf(stderr, "Internal error when setting the block state %u\n", state);
+		exit(EXIT_FAILURE);
+	}
+
 	block->file_mixed &= ~(uintptr_t)BLOCK_STATE_MASK;
 	block->file_mixed |= state & BLOCK_STATE_MASK;
 }
@@ -315,15 +384,34 @@ static inline void block_state_set(struct snapraid_block* block, unsigned state)
 static inline void block_clear_parity(struct snapraid_block* block)
 {
 	unsigned state = block_state_get(block);
+
 	if (state == BLOCK_STATE_BLK) {
 		block_state_set(block, BLOCK_STATE_INV);
 	}
 }
 
+/**
+ * Check if the specified block has a valid and updated hash.
+ *
+ * Note that blocks with hash of old data, like CHG and DELETED ones, are not considered.
+ */
 static inline int block_has_hash(const struct snapraid_block* block)
 {
 	unsigned state = block_state_get(block);
+
 	return state == BLOCK_STATE_BLK || state == BLOCK_STATE_INV;
+}
+
+/**
+ * Check if the specified block has a valid file.
+ *
+ * It includes BLK/INV/NEW/CHG and excludes EMPTY/DELETED.
+ */
+static inline int block_has_file(const struct snapraid_block* block)
+{
+	unsigned state = block_state_get(block);
+
+	return state == BLOCK_STATE_BLK || state == BLOCK_STATE_INV || state == BLOCK_STATE_NEW || state == BLOCK_STATE_CHG;
 }
 
 /**
@@ -337,18 +425,25 @@ block_off_t block_file_pos(struct snapraid_block* block);
 int block_is_last(struct snapraid_block* block);
 
 /**
- * Checks if the block is a real allocated block.
- */
-static inline int block_is_valid(struct snapraid_block* block)
-{
-	return block != BLOCK_EMPTY && block != BLOCK_DELETED;
-}
-
-/**
  * Gets the size in bytes of the block.
  * If it's the last block of a file it could be less than block_size.
  */
 unsigned block_file_size(struct snapraid_block* block, unsigned block_size);
+
+/**
+ * Allocates a deleted block.
+ */
+struct snapraid_deleted* deleted_alloc(void);
+
+/**
+ * Allocates a deleted block from a real one.
+ */
+struct snapraid_deleted* deleted_dup(struct snapraid_block* block);
+
+/**
+ * Frees  a deleted block.
+ */
+void deleted_free(struct snapraid_deleted* deleted);
 
 static inline int file_flag_has(const struct snapraid_file* file, unsigned mask)
 {
