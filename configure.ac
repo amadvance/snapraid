@@ -85,9 +85,17 @@ AC_ARG_ENABLE([valgrind],
 	[AS_HELP_STRING([--enable-valgrind],[enable the use of valgrind in testing])],
 	[
 	TESTENV="$VALGRIND"
+	CFLAGS="$CFLAGS -DCHECKER"
 	],
 	[])
 
+AC_ARG_ENABLE([debug],
+	[AS_HELP_STRING([--enable-debug],[enable debugging])],
+	[
+	TESTENV=""
+	CFLAGS="-O0 -g"
+	],
+	[])
 
 AC_ARG_VAR([TESTENV], [Test environment])
 AC_CONFIG_FILES([Makefile])

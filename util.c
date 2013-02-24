@@ -722,6 +722,7 @@ void* malloc_nofail(size_t size)
 		exit(EXIT_FAILURE);
 	}
 
+#ifndef CHECKER /* Don't preinitialize when running for valgrind */
 	/* Here we preinitialize the memory to ensure that the OS is really allocating it */
 	/* and not only reserving the addressable space. */
 	/* Otherwise we are risking that the OOM (Out Of Memory) killer in Linux will kill the process. */
@@ -729,6 +730,7 @@ void* malloc_nofail(size_t size)
 	/* get a real error from malloc() instead than a process killed. */
 	/* Note that calloc() doesn't have the same effect. */
 	memset(ptr, 0xA5, size);
+#endif
 
 	mcounter += size;
 
