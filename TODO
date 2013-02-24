@@ -3,12 +3,7 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
-- v2.2
-
-* Implement an "undelete" command to recover missing files, without the
-integrity check of the existing ones.
-It should restore only missing files, without recovering modified ones
-or check validity of data of existing ones.
+- v2.3
 
 * If a content file is missing, sync should rewrite it, even if no change was done at the content.
 
@@ -32,16 +27,9 @@ on the error message. See: https://sourceforge.net/projects/snapraid/forums/foru
 
 * Support interrupted operations with EINTR. For remote filesystems it could be relevant.
 
-* In the repair() function the euristic to detect if we recovered after the sync, can be extended
-to all the subsequent blocks, because we always proceeed in block order during a sync.
-So, if for a block we can detect that we recovered after a sync, also for all the subsequent blocks
-this is true.
-
 * In Windows to use FILE_FLAG_BACKUP_SEMANTICS we should also get privileges.
 See http://www.codeproject.com/Articles/21202/Reparse-Points-in-Vista.
-
-* Support Symlinks also in Windows.
-See: http://www.codeproject.com/Articles/21202/Reparse-Points-in-Vista
+Altought it doesn't seem necessary when used in CreateFile to just open directory.
 
 * In Windows we must be case insensitive, at least for ASCII<128 comparison. For other UTF-8 chars
 is too complex.
@@ -61,20 +49,37 @@ The check command could be maintaned independent, and not saving the content fil
 * Rename sync->backup and fix->restore. It seems to me a naming expressing
 better the meaning of the commands. But not yet sure.
 
-* In the "interim" content file during sync, keep the full list of deleted
-files, to be able to restore in case they are put back in their original position.
-We use now the "hole/off" fields to represent this information, but we can define
-a new "deleted (just like file)/blk,inv,chg,new" keeping the hash.
-We must have all the "blk,inv,chg,new" options to be able to address delete file
-starting from an interim content.
-When recovering, the first try assuming updated parity, will ignore all the "deleted"
-entries. The second one, will use them.
-Possible problem is when a new file, overwrite part of the deleted ones.
-We have to keep in memory different block indexes?
-Should collided blocks be allocated in a different way ?
-In case, we can lose the hash of the deleted ones, because we need only the
-position in the disk. We use them only for recovering, so the block to be
-recovered will be checked with its own hash.
+* We don't try to do partial block recovering. A block is correct or not.
+But if only some bytes, or a sector, is wrong, it should be possible to recover all the
+rest of the block.
+The problem is that we don't have any hash to ensure that the block is partially recovered,
+or completely garbage. But it makes sense to anyway write the "most likely" correct one.
+
+* In the repair() function the euristic to detect if we recovered after the sync, can be extended
+to all the previous blocks, because we always proceeed in block order during a sync.
+So, if for a block we can detect that we recovered using updated parity data,
+also for all the previous blocks this is true.
+At now this could happen only if we have NEW block resulting different than zero.
+Another possibility is to have a CHG one, with an hash different than the old one,
+(but at now we don't keep this old hash value).
+Anyway, the problem is that it's difficult to use this information, without proceeding
+backward in the recovering process.
+But we could have an initial recovering phase trying to detect this point.
+Or we can just continously saving it during a sync.
+Anyway, if we keep track of old CHG hash, we get nearly the same effect.
+The only difference is that we don't know if NEW files filled with 0
+are really recovered or not, so they'll result with the .unrecoverable
+extension.
+
+* In the "interim" content file during sync, we must keep track of all the hash
+of CHG blocks overwritten. These hash will allow to detect if a block is recovered to its
+old or new state.
+Note that we don't need to keep track of the hash of DEL blocks.
+It will allow also to recover from deleted files. We can extend the fix command
+to read know deleted files from a specific directory, even outside the array,
+compute the hash of all the blocks, and use it as a bag of data, indexed by hash.
+Likely we'll need to extend fix to allow an incremental process, store a .content
+file of the hash already computed to avoid to recompute them.
 
 * When fixing, before overwriting the present file, make a copy of it just in
 case that the original file cannot be completely recovered.
