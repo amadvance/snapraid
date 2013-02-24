@@ -230,6 +230,11 @@ int filter_dir(tommy_list* filterlist, const char* disk, const char* sub)
 	return filter_element(filterlist, disk, sub, 1);
 }
 
+int filter_existence(int filter_missing, unsigned flag)
+{
+	return filter_missing && (flag & FILE_IS_PRESENT) == FILE_IS_PRESENT;
+}
+
 int filter_content(tommy_list* contentlist, const char* path)
 {
 	tommy_node* i;

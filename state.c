@@ -1805,12 +1805,12 @@ void state_write(struct snapraid_state* state)
 	state->need_write = 0; /* no write needed anymore */
 }
 
-void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tommy_list* filterlist_disk)
+void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tommy_list* filterlist_disk, int filter_missing)
 {
 	tommy_node* i;
 
 	/* if no filter, include all */
-	if (tommy_list_empty(filterlist_file) && tommy_list_empty(filterlist_disk))
+	if (!filter_missing && tommy_list_empty(filterlist_file) && tommy_list_empty(filterlist_disk))
 		return;
 
 	printf("Filtering...\n");
@@ -1831,6 +1831,8 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 				printf("/");
 			printf("\n");
 		}
+		if (filter_missing)
+			printf("\t<missing>\n");
 	}
 
 	/* for each disk */
@@ -1842,7 +1844,8 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 		for(j=tommy_list_head(&disk->filelist);j!=0;j=j->next) {
 			struct snapraid_file* file = j->data;
 
-			if (filter_path(filterlist_disk, disk->name, file->sub) != 0
+			if (filter_existence(filter_missing, file->flag) != 0
+				|| filter_path(filterlist_disk, disk->name, file->sub) != 0
 				|| filter_path(filterlist_file, disk->name, file->sub) != 0
 			) {
 				file_flag_set(file, FILE_IS_EXCLUDED);
@@ -1857,7 +1860,8 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 		for(j=tommy_list_head(&disk->linklist);j!=0;j=j->next) {
 			struct snapraid_link* link = j->data;
 
-			if (filter_path(filterlist_disk, disk->name, link->sub) != 0
+			if (filter_existence(filter_missing, link->flag) != 0
+				|| filter_path(filterlist_disk, disk->name, link->sub) != 0
 				|| filter_path(filterlist_file, disk->name, link->sub) != 0
 			) {
 				link_flag_set(link, FILE_IS_EXCLUDED);
@@ -1872,7 +1876,8 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 		for(j=tommy_list_head(&disk->dirlist);j!=0;j=j->next) {
 			struct snapraid_dir* dir = j->data;
 
-			if (filter_dir(filterlist_disk, disk->name, dir->sub) != 0
+			if (filter_existence(filter_missing, dir->flag) != 0
+				|| filter_dir(filterlist_disk, disk->name, dir->sub) != 0
 				|| filter_dir(filterlist_file, disk->name, dir->sub) != 0
 			) {
 				dir_flag_set(dir, FILE_IS_EXCLUDED);

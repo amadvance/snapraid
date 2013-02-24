@@ -273,16 +273,16 @@ endif
 	mv test/_a test/disk1/_a
 	mv test/_b test/disk1/_b
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
-	echo --- Delete some files, fix and check with raid5
+	echo --- Delete some files, fix with -m and check with raid5
 	rm test/disk1/8*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --test-expect-recoverable -c $(srcdir)/test-raid5.conf check 2>> test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf fix 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf -m fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
-	echo --- Delete some dirs in a disk, fix and check with raid5
+	echo --- Delete some dirs in a disk, fix with -m and check with raid5
 	rm -r test/disk2/_a
 	rm -r test/disk2/_b
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --test-expect-recoverable -c $(srcdir)/test-raid5.conf check 2>> test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf fix 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf -m fix 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
 	echo --- Delete some dirs in two disks, fix and check with raid6 using the -d option for each disk
 	rm -r test/disk2/_a

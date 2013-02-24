@@ -3,7 +3,7 @@ Name{number}
 
 Synopsis
 	:snapraid [-c, --conf CONFIG]
-	:	[-f, --filter PATTERN] [-d, --filter-disk NAME]
+	:	[-f, --filter PATTERN] [-d, --filter-disk NAME] [-m, --filter-missing]
 	:	[-a, --audit-only]
 	:	[-N, --find-by-name]
 	:	[-Z, --force-zero] [-E, --force-empty]
@@ -176,13 +176,18 @@ Getting Started
 
 	In this regard SnapRAID is more like a backup program than a RAID
 	system. For example, you can use it to recover from an accidentally
-	deleted directory, simply running the fix command like.
+	deleted directory, simply running the fix command using the
+	-m, --filter-missing filter, like:
 
-		:snapraid fix -f DIR/
+		:snapraid fix -m -f DIR/
 
 	Or to simply recover one file you can use:
 
-		:snapraid fix -f FILE
+		:snapraid fix -m -f FILE
+
+	Or to recover all the delete files with:
+
+		:snapraid fix -m
 
 Commands
 	SnapRAID provides four simple commands that allow to:
@@ -287,9 +292,20 @@ Options
 		file.
 		In "check", you can make it faster, specifing also -a, --audit-only
 		option, to avoid to access other disks to check parity data.
-		If you combine --filter and --filter-disk options, only files
-		matching both the two groups of rules are selected.
+		If you combine more --filter, --filter-disk and --filter-missing options,
+		only files matching all the set of filters are selected.
 		This option can be used many times.
+		This option can be used only with the "check" and "fix" commands.
+		Note that it cannot be used with "sync", because "sync" always
+		process the whole array.
+
+	-n, --fileter-missing
+		Filters the files to process in the "check" and "fix"
+		commands.
+		Only the files missing/deleted from the array are processed.
+		When used with "fix", this is a kind of "undelete" command.
+		If you combine more --filter, --filter-disk and --filter-missing options,
+		only files matching all the set of filters are selected.
 		This option can be used only with the "check" and "fix" commands.
 		Note that it cannot be used with "sync", because "sync" always
 		process the whole array.

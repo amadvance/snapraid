@@ -45,10 +45,11 @@ void usage(void)
 {
 	version();
 
-	printf("Usage: " PACKAGE " sync|diff|check|fix [options]\n");
+	printf("Usage: " PACKAGE " sync|pool|diff|dup|check|fix [options]\n");
 	printf("\n");
 	printf("Commands:\n");
 	printf("  sync   Syncronize the state of the array of disks\n");
+	printf("  pool   Create or update the virtual view of the array of disks\n");
 	printf("  diff   Show the changes that needs to be syncronized\n");
 	printf("  dup    Find duplicate files\n");
 	printf("  check  Check the array of disks\n");
@@ -56,8 +57,9 @@ void usage(void)
 	printf("\n");
 	printf("Options:\n");
 	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE       ", "-c") "  Configuration file (default " CONF ")\n");
-	printf("  " SWITCH_GETOPT_LONG("-f, --filter PATTERN  ", "-f") "  Filter the files to process with a pattern\n");
-	printf("  " SWITCH_GETOPT_LONG("-d, --filter-dist NAME", "-f") "  Filter the files to process with a disk name\n");
+	printf("  " SWITCH_GETOPT_LONG("-f, --filter PATTERN  ", "-f") "  Process only files matching the pattern\n");
+	printf("  " SWITCH_GETOPT_LONG("-d, --filter-dist NAME", "-f") "  Process only files in the disk\n");
+	printf("  " SWITCH_GETOPT_LONG("-m, --filter-missing  ", "-m") "  Process only missing/delete files\n");
 	printf("  " SWITCH_GETOPT_LONG("-a, --audit-only      ", "-A") "  Check only file data and not parity\n");
 	printf("  " SWITCH_GETOPT_LONG("-N, --find-by-name    ", "-N") "  Find the files by name instead than by inode\n");
 	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero      ", "-Z") "  Force synching of files that get zero size\n");
@@ -81,6 +83,7 @@ struct option long_options[] = {
 	{ "conf", 1, 0, 'c' },
 	{ "filter", 1, 0, 'f' },
 	{ "filter-disk", 1, 0, 'd' },
+	{ "filter-missing", 0, 0, 'm' },
 	{ "start", 1, 0, 's' },
 	{ "count", 1, 0, 't' },
 	{ "force-zero", 0, 0, 'Z' },
@@ -103,7 +106,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:f:d:s:t:ZESNaTvhVG"
+#define OPTIONS "c:f:d:ms:t:ZESNaTvhVG"
 
 volatile int global_interrupt = 0;
 
@@ -146,6 +149,7 @@ int main(int argc, char* argv[])
 	int ret;
 	tommy_list filterlist_file;
 	tommy_list filterlist_disk;
+	int filter_missing;
 	char* e;
 	const char* command;
 
@@ -168,6 +172,7 @@ int main(int argc, char* argv[])
 	blockcount = 0;
 	tommy_list_init(&filterlist_file);
 	tommy_list_init(&filterlist_disk);
+	filter_missing = 0;
 
 	opterr = 0;
 	while ((c =
@@ -197,6 +202,9 @@ int main(int argc, char* argv[])
 			}
 			tommy_list_insert_tail(&filterlist_disk, &filter->node, filter);
 			} break;
+		case 'm' :
+			filter_missing = 1;
+			break;
 		case 's' :
 			blockstart = strtoul(optarg, &e, 0);
 			if (!e || *e) {
@@ -312,7 +320,7 @@ int main(int argc, char* argv[])
 	case OPERATION_DRY :
 		break;
 	default:
-		if (!tommy_list_empty(&filterlist_file) || !tommy_list_empty(&filterlist_disk)) {
+		if (!tommy_list_empty(&filterlist_file) || !tommy_list_empty(&filterlist_disk) || filter_missing) {
 			fprintf(stderr, "You cannot filter with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 		}
@@ -379,7 +387,7 @@ int main(int argc, char* argv[])
 		state_read(&state);
 
 		/* apply the command line filter */
-		state_filter(&state, &filterlist_file, &filterlist_disk);
+		state_filter(&state, &filterlist_file, &filterlist_disk, filter_missing);
 
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);
@@ -397,7 +405,7 @@ int main(int argc, char* argv[])
 		state_read(&state);
 
 		/* apply the command line filter */
-		state_filter(&state, &filterlist_file, &filterlist_disk);
+		state_filter(&state, &filterlist_file, &filterlist_disk, filter_missing);
 
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);

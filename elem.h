@@ -133,7 +133,7 @@ struct snapraid_block {
 
 #define FILE_IS_PRESENT 1 /**< If it's seen as present. */
 #define FILE_IS_EXCLUDED 2 /**< If it's an excluded file from the processing. */
-#define FILE_IS_LARGER 4 /**< If a larger file was already detected. */
+#define FILE_IS_LARGER 4 /**< If a larger file was already detected. Just to avoid to report it more times. */
 #define FILE_IS_DAMAGED 8 /**< If a fix was attempted but it failed. */
 #define FILE_IS_FIXED 16 /**< If a fix was done. */
 #define FILE_IS_HARDLINK 32 /**< If it's an hardlink. */
@@ -266,6 +266,12 @@ static inline int filter_hidden(int enable, struct dirent* dd)
 int filter_path(tommy_list* filterlist, const char* disk, const char* sub);
 
 /**
+ * Filter a file/link/dir if missing.
+ * Return !=0 if it matches and it should be excluded.
+ */
+int filter_existence(int filter_missing, unsigned flag);
+
+/**
  * Filters a dir using a list of filters.
  * For each element of the path all the filters are applied, until the first one that matches.
  * Return !=0 if it matches and it should be excluded.
@@ -294,7 +300,7 @@ static inline void block_file_set(struct snapraid_block* block, struct snapraid_
 	block->file_mixed = (block->file_mixed & ~(uintptr_t)BLOCK_STATE_MASK) | (uintptr_t)file;
 }
 
-static inline unsigned block_state_get(struct snapraid_block* block)
+static inline unsigned block_state_get(const struct snapraid_block* block)
 {
 	return block->file_mixed & BLOCK_STATE_MASK;
 }
@@ -314,7 +320,7 @@ static inline void block_clear_parity(struct snapraid_block* block)
 	}
 }
 
-static inline int block_has_hash(struct snapraid_block* block)
+static inline int block_has_hash(const struct snapraid_block* block)
 {
 	unsigned state = block_state_get(block);
 	return state == BLOCK_STATE_BLK || state == BLOCK_STATE_INV;
@@ -344,7 +350,7 @@ static inline int block_is_valid(struct snapraid_block* block)
  */
 unsigned block_file_size(struct snapraid_block* block, unsigned block_size);
 
-static inline int file_flag_has(struct snapraid_file* file, unsigned mask)
+static inline int file_flag_has(const struct snapraid_file* file, unsigned mask)
 {
 	return (file->flag & mask) == mask;
 }
@@ -400,7 +406,7 @@ static inline tommy_uint32_t file_path_hash(const char* sub)
 	return tommy_hash_u32(0, sub, strlen(sub));
 }
 
-static inline int link_flag_has(struct snapraid_link* link, unsigned mask)
+static inline int link_flag_has(const struct snapraid_link* link, unsigned mask)
 {
 	return (link->flag & mask) == mask;
 }
@@ -446,7 +452,7 @@ static inline tommy_uint32_t link_name_hash(const char* name)
 	return tommy_hash_u32(0, name, strlen(name));
 }
 
-static inline int dir_flag_has(struct snapraid_dir* dir, unsigned mask)
+static inline int dir_flag_has(const struct snapraid_dir* dir, unsigned mask)
 {
 	return (dir->flag & mask) == mask;
 }

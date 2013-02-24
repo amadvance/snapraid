@@ -6,7 +6,7 @@ snapraid [\(hyc, \(hy\(hyconf CONFIG]
 .PD 0
 .PP
 .PD
-	[\(hyf, \(hy\(hyfilter PATTERN] [\(hyd, \(hy\(hyfilter\(hydisk NAME]
+	[\(hyf, \(hy\(hyfilter PATTERN] [\(hyd, \(hy\(hyfilter\(hydisk NAME] [\(hym, \(hy\(hyfilter\(hymissing]
 .PD 0
 .PP
 .PD
@@ -307,10 +307,11 @@ in \(a"sync\(a".
 .PP
 In this regard SnapRAID is more like a backup program than a RAID
 system. For example, you can use it to recover from an accidentally
-deleted directory, simply running the fix command like.
+deleted directory, simply running the fix command using the
+\(hym, \(hy\(hyfilter\(hymissing filter, like:
 .PP
 .RS 4
-snapraid fix \(hyf DIR/
+snapraid fix \(hym \(hyf DIR/
 .PD 0
 .PP
 .PD
@@ -319,7 +320,16 @@ snapraid fix \(hyf DIR/
 Or to simply recover one file you can use:
 .PP
 .RS 4
-snapraid fix \(hyf FILE
+snapraid fix \(hym \(hyf FILE
+.PD 0
+.PP
+.PD
+.RE
+.PP
+Or to recover all the delete files with:
+.PP
+.RS 4
+snapraid fix \(hym
 .PD 0
 .PP
 .PD
@@ -425,9 +435,20 @@ You must specify a disk name as named in the configuration
 file.
 In \(a"check\(a", you can make it faster, specifing also \(hya, \(hy\(hyaudit\(hyonly
 option, to avoid to access other disks to check parity data.
-If you combine \(hy\(hyfilter and \(hy\(hyfilter\(hydisk options, only files
-matching both the two groups of rules are selected.
+If you combine more \(hy\(hyfilter, \(hy\(hyfilter\(hydisk and \(hy\(hyfilter\(hymissing options,
+only files matching all the set of filters are selected.
 This option can be used many times.
+This option can be used only with the \(a"check\(a" and \(a"fix\(a" commands.
+Note that it cannot be used with \(a"sync\(a", because \(a"sync\(a" always
+process the whole array.
+.TP
+.B \(hyn, \(hy\(hyfileter\(hymissing
+Filters the files to process in the \(a"check\(a" and \(a"fix\(a"
+commands.
+Only the files missing/deleted from the array are processed.
+When used with \(a"fix\(a", this is a kind of \(a"undelete\(a" command.
+If you combine more \(hy\(hyfilter, \(hy\(hyfilter\(hydisk and \(hy\(hyfilter\(hymissing options,
+only files matching all the set of filters are selected.
 This option can be used only with the \(a"check\(a" and \(a"fix\(a" commands.
 Note that it cannot be used with \(a"sync\(a", because \(a"sync\(a" always
 process the whole array.

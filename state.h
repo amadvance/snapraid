@@ -118,7 +118,7 @@ void state_pool(struct snapraid_state* state);
  * Filter files, symlinks and dirs.
  * Apply an additional filter to the list currently loaded.
  */
-void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tommy_list* filterlist_disk);
+void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tommy_list* filterlist_disk, int filter_missing);
 
 /**
  * Begins the progress visualization.
