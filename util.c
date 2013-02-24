@@ -678,9 +678,14 @@ int mkancestor(const char* file)
 		return 0;
 	}
 
-	if (access(dir, F_OK) == 0) {
-		/* the directory/file exists */
-		return 0;
+	/* try creating it  */
+	if (mkdir(dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) != 0) {
+		/* if it already exists, we are done */
+		if (errno == EEXIST) {
+			return 0;
+		}
+		fprintf(stderr, "Error creating directory '%s'. %s.\n", dir, strerror(errno));
+		return -1;
 	}
 
 	/* recursively create them all */
@@ -693,7 +698,7 @@ int mkancestor(const char* file)
 		fprintf(stderr, "Error creating directory '%s'. %s.\n", dir, strerror(errno));
 		return -1;
 	}
-	
+
 	return 0;
 }
 
