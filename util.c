@@ -679,13 +679,13 @@ int mkancestor(const char* file)
 	}
 
 	/* try creating it  */
-	if (mkdir(dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) != 0) {
-		/* if it already exists, we are done */
-		if (errno == EEXIST) {
-			return 0;
-		}
-		fprintf(stderr, "Error creating directory '%s'. %s.\n", dir, strerror(errno));
-		return -1;
+	if (mkdir(dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == 0) {
+		/* just created */
+		return 0;
+	}
+	if (errno == EEXIST) {
+		/* it already exists */
+		return 0;
 	}
 
 	/* recursively create them all */
