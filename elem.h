@@ -87,15 +87,6 @@ struct snapraid_file;
 #define BLOCK_STATE_NEW 2
 
 /**
- * The block has the hash computed, but the parity is invalid.
- * This happens when the parity is invalidated by a change in another disk.
- *
- * The block hash field IS set.
- * The parity for this disk is updated, but there is at least another disk not updated parity.
- */
-#define BLOCK_STATE_INV 3
-
-/**
  * The block is new and not yet hashed, and it's using the space of a block not existing anymore.
  * This happens when a new block overwrite a just removed block.
  *
@@ -104,7 +95,7 @@ struct snapraid_file;
  *
  * If the hash is completely filled with 0, it means that its lost.
  */
-#define BLOCK_STATE_CHG 4
+#define BLOCK_STATE_CHG 3
 
 /**
  * This block is a deleted one.
@@ -115,7 +106,7 @@ struct snapraid_file;
  *
  * If the hash is completely filled with 0, it means that its lost.
  */
-#define BLOCK_STATE_DELETED 5
+#define BLOCK_STATE_DELETED 4
 
 /**
  * Mask used to store the previous states of the block.
@@ -381,37 +372,40 @@ static inline void block_state_set(struct snapraid_block* block, unsigned state)
 	block->file_mixed |= state & BLOCK_STATE_MASK;
 }
 
-static inline void block_clear_parity(struct snapraid_block* block)
-{
-	unsigned state = block_state_get(block);
-
-	if (state == BLOCK_STATE_BLK) {
-		block_state_set(block, BLOCK_STATE_INV);
-	}
-}
-
 /**
- * Check if the specified block has a valid and updated hash.
+ * Checks if the specified block has a valid and updated hash.
  *
- * Note that blocks with hash of old data, like CHG and DELETED ones, are not considered.
+ * Note that EMPTY return 0.
  */
 static inline int block_has_hash(const struct snapraid_block* block)
 {
 	unsigned state = block_state_get(block);
 
-	return state == BLOCK_STATE_BLK || state == BLOCK_STATE_INV;
+	return state == BLOCK_STATE_BLK;
 }
 
 /**
- * Check if the specified block has a valid file.
+ * Checks if the specified block is part of a file.
  *
- * It includes BLK/INV/NEW/CHG and excludes EMPTY/DELETED.
+ * Note that EMPTY return 0.
  */
 static inline int block_has_file(const struct snapraid_block* block)
 {
 	unsigned state = block_state_get(block);
 
-	return state == BLOCK_STATE_BLK || state == BLOCK_STATE_INV || state == BLOCK_STATE_NEW || state == BLOCK_STATE_CHG;
+	return state == BLOCK_STATE_BLK || state == BLOCK_STATE_NEW || state == BLOCK_STATE_CHG;
+}
+
+/**
+ * Checks if the block has an invalid parity than needs to be updated.
+ *
+ * Note that EMPTY return 0.
+ */
+static inline int block_has_invalid_parity(const struct snapraid_block* block)
+{
+	unsigned state = block_state_get(block);
+
+	return state == BLOCK_STATE_DELETED || state == BLOCK_STATE_NEW || state == BLOCK_STATE_CHG;
 }
 
 /**

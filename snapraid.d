@@ -727,12 +727,6 @@ Content
 	HASH is the hash of the block. In the last block of the file,
 	the HASH is the hash of only the used part of the block.
 
-  inv BLOCK HASH
-	Like "blk", but inform that the parity of this block is invalid.
-
-	This field is used only when you interrupt manually the "sync"
-	command.
-
   new BLOCK
 	Like "blk", but for new allocated blocks for which the hash is not
 	yet computed, and the stored parity doesn't take into account this

@@ -460,7 +460,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 	for(i=blockstart;i<blockmax;++i) {
 		unsigned failed_count;
 		int one_tocheck;
-		int check_parity;
+		int valid_parity;
 
 		/* for each disk */
 		one_tocheck = 0;
@@ -480,10 +480,12 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 		if (!one_tocheck)
 			continue;
 
-		/* If we have to check the parity data read from disk. */
+		/* If we have valid parity, and it makes sense to check its content. */
+		/* If we already know that the parity is invalid, we just read the file */
+		/* but we don't report errors */
 		/* Note that if check==0, we'll anyway skip the full parity check, */
 		/* because we also don't read it at all */
-		check_parity = 1;
+		valid_parity = 1;
 
 		/* keep track of the number of failed blocks */
 		failed_count = 0;
@@ -513,16 +515,17 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			/* get the state of the block */
 			block_state = block_state_get(block);
 
+			/* if the parity is not valid */
+			if (block_has_invalid_parity(block)) {
+				/* mark the parity as invalid, and don't try to check/fix it */
+				/* because it will be recomputed at the next sync */
+				valid_parity = 0;
+			}
+
 			/* if the block is deleted */
 			if (block_state == BLOCK_STATE_DELETED) {
 				/* use an empty block */
 				memset(buffer[j], 0, state->block_size);
-
-				/* mark the parity as invalid, and don't try to check/fix it */
-				/* because it will be recomputed at the next sync */
-				/* note that for sure there is also another block invalidating */
-				/* the parity, but for completeness we invalidate it also here */
-				check_parity = 0;
 
 				/* store it in the failed set, because potentially */
 				/* the parity may be still computed with the previous content */
@@ -542,13 +545,6 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				/* but we keep it for completeness */
 				memset(buffer[j], 0, state->block_size);
 				continue;
-			}
-
-			/* if the parity is not valid */
-			if (block_state != BLOCK_STATE_BLK) {
-				/* mark the parity as invalid, and don't try to check/fix it */
-				/* because it will be recomputed at the next sync */
-				check_parity = 0;
 			}
 
 			/* if the file is different than the current one, close it */
@@ -650,7 +646,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			}
 
 			/* if the block has the hash */
-			if (block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_INV) {
+			if (block_state == BLOCK_STATE_BLK) {
 				/* compute the hash of the block just read */
 				memhash(state->hash, hash, buffer[j], read_size);
 
@@ -757,7 +753,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				/* now check parity and q-parity, but only if all the blocks have it computed */
 				/* if you check/fix after a partial sync, it's OK to have parity errors on the blocks with invalid parity */
 				/* and doesn't make sense to try to fix it */
-				if (check_parity) {
+				if (valid_parity) {
 					/* check the parity */
 					if (buffer_parity != 0 && memcmp(buffer_parity, buffer[diskmax], state->block_size) != 0) {
 						buffer_parity = 0;
@@ -822,7 +818,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					/* update parity and q-parity only if all the blocks have it computed */
 					/* if you check/fix after a partial sync, you do not want to fix parity */
 					/* for blocks that are going to have it computed in the sync completion */
-					if (check_parity) {
+					if (valid_parity) {
 						/* update the parity */
 						if (buffer_parity == 0 && parity) {
 							ret = parity_write(parity, i, buffer[diskmax], state->block_size);

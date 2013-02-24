@@ -3,6 +3,12 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
+- v2.2
+
+* We can extend the fix command to read know deleted files from a specific directory,
+even outside the array, compute the hash of all the blocks, and use it as a bag of data,
+indexed by hash, to find missing data for DELETED and CHG blocks.
+
 - v2.3
 
 * If a content file is missing, sync should rewrite it, even if no change was done at the content.
@@ -59,27 +65,8 @@ or completely garbage. But it makes sense to anyway write the "most likely" corr
 to all the previous blocks, because we always proceeed in block order during a sync.
 So, if for a block we can detect that we recovered using updated parity data,
 also for all the previous blocks this is true.
-At now this could happen only if we have NEW block resulting different than zero.
-Another possibility is to have a CHG one, with an hash different than the old one,
-(but at now we don't keep this old hash value).
-Anyway, the problem is that it's difficult to use this information, without proceeding
-backward in the recovering process.
-But we could have an initial recovering phase trying to detect this point.
-Or we can just continously saving it during a sync.
-Anyway, if we keep track of old CHG hash, we get nearly the same effect.
-The only difference is that we don't know if NEW files filled with 0
-are really recovered or not, so they'll result with the .unrecoverable
-extension.
-
-* In the "interim" content file during sync, we must keep track of all the hash
-of CHG blocks overwritten. These hash will allow to detect if a block is recovered to its
-old or new state.
-Note that we don't need to keep track of the hash of DEL blocks.
-It will allow also to recover from deleted files. We can extend the fix command
-to read know deleted files from a specific directory, even outside the array,
-compute the hash of all the blocks, and use it as a bag of data, indexed by hash.
-Likely we'll need to extend fix to allow an incremental process, store a .content
-file of the hash already computed to avoid to recompute them.
+Anyway, the case where this information could be useful should be present
+only if changes are committed after an aborted sync.
 
 * When fixing, before overwriting the present file, make a copy of it just in
 case that the original file cannot be completely recovered.

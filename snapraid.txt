@@ -810,15 +810,7 @@ BLOCK is the block position in the "parity" file.
 HASH is the hash of the block. In the last block of the file,
 the HASH is the hash of only the used part of the block.
 
-10.7 inv BLOCK HASH
--------------------
-
-Like "blk", but inform that the parity of this block is invalid.
-
-This field is used only when you interrupt manually the "sync"
-command.
-
-10.8 new BLOCK
+10.7 new BLOCK
 --------------
 
 Like "blk", but for new allocated blocks for which the hash is not
@@ -828,7 +820,7 @@ new block.
 This field is used only when you interrupt manually the "sync"
 command.
 
-10.9 chg BLOCK
+10.8 chg BLOCK
 --------------
 
 Like "blk", but for reallocated blocks for which the hash is not
@@ -838,15 +830,15 @@ of the block.
 This field is used only when you interrupt manually the "sync"
 command.
 
-10.10 hole DISK
----------------
+10.9 hole DISK
+--------------
 
 Defines the list of blocks that are deleted from a disk.
 
 This field is used only when you interrupt manually the "sync"
 command.
 
-10.11 off BLOCK
+10.10 off BLOCK
 ---------------
 
 Defines a block deleted from a disk, part of the last defined hole,
@@ -855,22 +847,22 @@ for which the parity is computed using the previous value.
 This field is used only when you interrupt manually the "sync"
 command.
 
-10.12 symlink DISK PATH
+10.11 symlink DISK PATH
 -----------------------
 
 Defines a symbolic link in the specified DISK.
 
-10.13 hardlink DISK PATH
+10.12 hardlink DISK PATH
 ------------------------
 
 Defines a hard link in the specified DISK.
 
-10.14 to PATH
+10.13 to PATH
 -------------
 
 Defines where the previous symlink or hardlink links to.
 
-10.15 dir DISK PATH
+10.14 dir DISK PATH
 -------------------
 
 Defines an empty directory in the specified DISK.

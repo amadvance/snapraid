@@ -64,24 +64,28 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	countmax = 0;
 	for(i=blockstart;i<blockmax;++i) {
 		int one_invalid;
+		int one_valid;
 
 		/* for each disk */
 		one_invalid = 0;
+		one_valid = 0;
 		for(j=0;j<diskmax;++j) {
 			struct snapraid_block* block = BLOCK_EMPTY;
 			if (handle[j].disk)
 				block = disk_block_get(handle[j].disk, i);
-			if (block_has_file(block)
-				&& block_state_get(block) != BLOCK_STATE_BLK
-			) {
+
+			if (block_has_file(block)) {
+				one_valid = 1;
+			}
+			if (block_has_invalid_parity(block)) {
 				one_invalid = 1;
-				break;
 			}
 		}
 
-		/* if no invalid block skip */
-		if (!one_invalid)
+		/* if none valid or none invalid, we don't need to update */
+		if (!one_invalid || !one_valid) {
 			continue;
+		}
 
 		++countmax;
 	}
@@ -98,27 +102,28 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	state_progress_begin(state, blockstart, blockmax, countmax);
 	for(i=blockstart;i<blockmax;++i) {
 		int one_invalid;
+		int one_valid;
 		int skip_this_block;
 		int ret;
 
 		/* for each disk */
 		one_invalid = 0;
+		one_valid = 0;
 		for(j=0;j<diskmax;++j) {
 			struct snapraid_block* block = BLOCK_EMPTY;
 			if (handle[j].disk)
 				block = disk_block_get(handle[j].disk, i);
 
-			/* if the block is used, and it needs some update */
-			if (block_has_file(block)
-				&& block_state_get(block) != BLOCK_STATE_BLK
-			) {
+			if (block_has_file(block)) {
+				one_valid = 1;
+			}
+			if (block_has_invalid_parity(block)) {
 				one_invalid = 1;
-				break;
 			}
 		}
 
-		/* if no invalid block skip */
-		if (!one_invalid) {
+		/* if none valid or none invalid, we don't need to update */
+		if (!one_invalid || !one_valid) {
 			/* cleanup all the deleted blocks at this position */
 			for(j=0;j<diskmax;++j) {
 				struct snapraid_block* block = BLOCK_EMPTY;

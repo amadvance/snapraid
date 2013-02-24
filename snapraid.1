@@ -1005,11 +1005,6 @@ BLOCK is the block position in the \(a"parity\(a" file.
 .PP
 HASH is the hash of the block. In the last block of the file,
 the HASH is the hash of only the used part of the block.
-.SS inv BLOCK HASH 
-Like \(a"blk\(a", but inform that the parity of this block is invalid.
-.PP
-This field is used only when you interrupt manually the \(a"sync\(a"
-command.
 .SS new BLOCK 
 Like \(a"blk\(a", but for new allocated blocks for which the hash is not
 yet computed, and the stored parity doesn\(cqt take into account this

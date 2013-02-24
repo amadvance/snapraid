@@ -678,7 +678,6 @@ static void state_map(struct snapraid_state* state)
 static void state_content_check(struct snapraid_state* state, const char* path)
 {
 	tommy_node* i;
-	block_off_t j;
 
 	/* checks that any map has different name and position */
 	for(i=state->maplist;i!=0;i=i->next) {
@@ -695,48 +694,6 @@ static void state_content_check(struct snapraid_state* state, const char* path)
 				exit(EXIT_FAILURE);
 			}
 		}
-	}
-
-	/* check the parity validity */
-	for(j=0;1;++j) { /* for all the blocks */
-		int at_least_one = 0;
-		int parity_is_valid = 0;
-		int parity_is_invalid = 0;
-
-		/* for all the disks */
-		for(i=state->disklist;i!=0;i=i->next) {
-			struct snapraid_disk* disk = i->data;
-
-			/* if the block is present */
-			block_off_t size = tommy_array_size(&disk->blockarr);
-			if (j < size) {
-				struct snapraid_block* block = tommy_array_get(&disk->blockarr, j);
-
-				/* mark if at least one block is addressed */
-				at_least_one = 1;
-
-				if (block == BLOCK_EMPTY) {
-					/* not relevant */
-				} else {
-					unsigned block_state = block_state_get(block);
-					if (block_state == BLOCK_STATE_BLK) {
-						parity_is_valid = 1;
-					} else {
-						parity_is_invalid = 1;
-					}
-				}
-			}
-		}
-
-		/* we cannot have different blocks reporting both valid and invalid parity */
-		if (parity_is_valid && parity_is_invalid) {
-			fprintf(stderr, "Internal inconsistency in parity validity at block %u\n", j);
-			exit(EXIT_FAILURE);
-		}
-
-		/* stop if reached the end of all the arrays */
-		if (!at_least_one)
-			break;
 	}
 }
 
@@ -872,10 +829,6 @@ void state_read(struct snapraid_state* state)
 			case 'b' :
 				block_state_set(block, BLOCK_STATE_BLK);
 				hash = oathash8(hash, 'b');
-				break;
-			case 'i' :
-				block_state_set(block, BLOCK_STATE_INV);
-				hash = oathash8(hash, 'i');
 				break;
 			case 'n' :
 				block_state_set(block, BLOCK_STATE_NEW);
@@ -1652,10 +1605,6 @@ void state_write(struct snapraid_state* state)
 				case BLOCK_STATE_BLK :
 					sputsl("blk ", f);
 					hash = oathash8(hash, 'b');
-					break;
-				case BLOCK_STATE_INV :
-					sputsl("inv ", f);
-					hash = oathash8(hash, 'i');
 					break;
 				case BLOCK_STATE_NEW :
 					sputsl("new ", f);
