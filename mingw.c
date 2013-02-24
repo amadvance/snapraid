@@ -546,25 +546,6 @@ void windows_dirent_lstat(const struct windows_dirent* dd, struct windows_stat* 
 	windows_finddata2stat(&dd->d_data, st);
 }
 
-int windows_access(const char* file, int mode)
-{
-	DWORD attr;
-
-	/* Check only for existence */
-	if (mode != F_OK) {
-		errno = ENOSYS;
-		return -1;
-	}
-
-	attr = GetFileAttributesW(convert(file));
-	if (attr == 0xFFFFFFFF) {
-		windows_errno(GetLastError());
-		return -1;
-	}
-
-	return 0;
-}
-
 int windows_mkdir(const char* file)
 {
 	if (!CreateDirectoryW(convert(file), 0)) {

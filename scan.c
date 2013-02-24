@@ -603,12 +603,6 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 
 		if (S_ISREG(st.st_mode)) {
 			if (filter_path(&state->filterlist, disk->name, sub_next) == 0) {
-				/* check for read permission */
-				if (access(path_next, R_OK) != 0) {
-					fprintf(stderr, "warning: Ignoring, for missing read permission, file '%s'\n", path_next);
-					continue;
-				}
-
 #if HAVE_LSTAT_EX
 				/* get inode info about the file, Windows needs an additional step */
 				/* also for hardlink, the real size of the file is read only with this function */

@@ -34,7 +34,6 @@
 #define open_noatime windows_open
 #define stat windows_stat
 #define lstat windows_lstat
-#define access windows_access
 #define off_t off64_t
 #define lseek lseek64
 #define fstat windows_fstat
@@ -111,11 +110,6 @@ int windows_lstat(const char* file, struct windows_stat* st);
  * Like the C stat() including the inode/device information.
  */
 int windows_stat(const char* file, struct windows_stat* st);
-
-/**
- * Like the C access().
- */
-int windows_access(const char* file, int mode);
 
 /**
  * Like the C mkdir().
