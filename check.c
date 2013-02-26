@@ -438,7 +438,10 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			struct snapraid_block* block = BLOCK_EMPTY;
 			if (handle[j].disk)
 				block = disk_block_get(handle[j].disk, i);
-			if (block_has_hash(block) /* only if the block is hashed */
+
+			/* try to recover all files, even the ones without hash */
+			/* because in some cases we can recover also them */
+			if (block_has_file(block)
 				&& !file_flag_has(block_file_get(block), FILE_IS_EXCLUDED) /* only if the file is not filtered out */
 			) {
 				one_tocheck = 1;
@@ -468,7 +471,10 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			struct snapraid_block* block = BLOCK_EMPTY;
 			if (handle[j].disk)
 				block = disk_block_get(handle[j].disk, i);
-			if (block_has_hash(block) /* only if the block is hashed */
+
+			/* try to recover all files, even the ones without hash */
+			/* because in some cases we can recover also them */
+			if (block_has_file(block)
 				&& !file_flag_has(block_file_get(block), FILE_IS_EXCLUDED) /* only if the file is not filtered out */
 			) {
 				one_tocheck = 1;
