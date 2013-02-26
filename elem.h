@@ -159,7 +159,7 @@ struct snapraid_file {
 	int mtime_nsec; /**< Modification time nanoseconds. In the range 0 <= x < 1,000,000,000, or FILE_MTIME_NSEC_INVALID. */
 	block_off_t blockmax; /**< Number of blocks. */
 	unsigned flag; /**< FILE_IS_* flags. */
-	char sub[PATH_MAX]; /**< Sub path of the file. Without the disk dir. The disk is implicit. */
+	char* sub; /**< Sub path of the file. Without the disk dir. The disk is implicit. */
 
 	/* nodes for data structures */
 	tommy_node nodelist;
@@ -463,6 +463,11 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t 
  * Deallocates a file.
  */
 void file_free(struct snapraid_file* file);
+
+/**
+ * Rename a file.
+ */
+void file_rename(struct snapraid_file* file, const char* sub);
 
 /**
  * Returns the name of the file, without the dir.

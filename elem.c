@@ -331,7 +331,7 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t 
 	block_off_t i;
 
 	file = malloc_nofail(sizeof(struct snapraid_file));
-	pathcpy(file->sub, sizeof(file->sub), sub);
+	file->sub = strdup_nofail(sub);
 	file->size = size;
 	file->blockmax = (size + block_size - 1) / block_size;
 	file->mtime_sec = mtime_sec;
@@ -352,8 +352,15 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t 
 
 void file_free(struct snapraid_file* file)
 {
+	free(file->sub);
 	free(file->blockvec);
 	free(file);
+}
+
+void file_rename(struct snapraid_file* file, const char* sub)
+{
+	free(file->sub);
+	file->sub = strdup_nofail(sub);
 }
 
 const char* file_name(struct snapraid_file* file)

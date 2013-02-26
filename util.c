@@ -755,6 +755,28 @@ void* malloc_nofail_align(size_t size, void** freeptr)
 	return ptr;
 }
 
+char* strdup_nofail(const char* str)
+{
+	size_t size;
+	char* ptr;
+
+	size = strlen(str) + 1;
+
+	ptr = malloc(size);
+
+	if (!ptr) {
+		/* don't use printf to avoid any possible extra allocation */
+		write(2, "Low Memory\n", 11);
+		exit(EXIT_FAILURE);
+	}
+
+	memcpy(ptr, str, size);
+
+	mcounter += size;
+
+	return ptr;
+}
+
 #include "murmurhash3.c"
 
 void memhash(unsigned kind, void* digest, const void* src, unsigned size)

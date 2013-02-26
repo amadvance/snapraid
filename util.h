@@ -369,6 +369,12 @@ void* malloc_nofail(size_t size);
  */
 void* malloc_nofail_align(size_t size, void** freeptr);
 
+/**
+ * Safe strdup.
+ * If no memory is available, it aborts.
+ */
+char* strdup_nofail(const char* str);
+
 /****************************************************************************/
 /* hash */
 

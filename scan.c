@@ -339,7 +339,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 				tommy_hashdyn_remove_existing(&disk->pathset, &file->pathset);
 
 				/* save the new name */
-				pathcpy(file->sub, sizeof(file->sub), sub);
+				file_rename(file, sub);
 
 				/* reinsert in the set */
 				tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
