@@ -97,6 +97,7 @@ int parity_create(struct snapraid_parity* parity, const char* path, data_off_t* 
 	pathcpy(parity->path, sizeof(parity->path), path);
 
 	/* opening in sequential mode in Windows */
+	/* O_SEQUENTIAL: opening in sequential mode in Windows */
 	parity->f = open(parity->path, O_RDWR | O_CREAT | O_BINARY | O_SEQUENTIAL, 0600);
 	if (parity->f == -1) {
 		fprintf(stderr, "Error opening parity file '%s'. %s.\n", parity->path, strerror(errno));
@@ -109,6 +110,15 @@ int parity_create(struct snapraid_parity* parity, const char* path, data_off_t* 
 		fprintf(stderr, "Error accessing parity file '%s'. %s.\n", parity->path, strerror(errno));
 		goto bail;
 	}
+
+#if HAVE_POSIX_FADVISE
+	/* advise sequential access */
+	ret = posix_fadvise(parity->f, 0, 0, POSIX_FADV_SEQUENTIAL);
+	if (ret != 0) {
+		fprintf(stderr, "Error advising parity file '%s'. %s.\n", parity->path, strerror(ret));
+		goto bail;
+	}
+#endif
 
 	/* get the size of the existing data */
 	parity->valid_size = parity->st.st_size;
