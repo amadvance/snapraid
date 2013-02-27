@@ -435,7 +435,7 @@ struct snapraid_deleted* deleted_alloc(void);
 struct snapraid_deleted* deleted_dup(struct snapraid_block* block);
 
 /**
- * Frees  a deleted block.
+ * Frees a deleted block.
  */
 void deleted_free(struct snapraid_deleted* deleted);
 

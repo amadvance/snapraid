@@ -5,11 +5,14 @@ SnapRAID HISTORY
 ==========
  * Added pooling support with the new 'pool' command. It creates a virtual
    view of the array using symbolic links pointing at the original files.
- * Added a new -m, -.filter-missing options that allow to undelete files,
+ * Added a new -m, --filter-missing option that allow to undelete files,
    without checking/fixing the others.
+ * Added a new -i, --import option to automatically import deleted files
+   when fixing.
  * Added support also for hardlinks and empty directories.
- * Added symlinks support to Windows. Note that Windows junctions are still
-   not supported.
+ * Added support to save symlinks in Windows. Note that only the symlink
+   is saved and not the linked file or directory.
+   Junctions are still not supported.
  * Files without read permission generates now an error instead of a warning.
    You now must explicitely exclude them in the configuration file with
    exclusion rules.

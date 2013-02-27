@@ -3,12 +3,6 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
-- v3.0
-
-* We can extend the fix command to read know deleted files from a specific directory,
-even outside the array, compute the hash of all the blocks, and use it as a bag of data,
-indexed by hash, to find missing data for DELETED and CHG blocks.
-
 - v3.1
 
 * If a content file is missing, sync should rewrite it, even if no change was done at the content.

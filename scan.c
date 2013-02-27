@@ -573,7 +573,7 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 			fprintf(stderr, "You can exclude it in the config file with:\n\texclude /%s\n", sub);
 			exit(EXIT_FAILURE);
 		}
-		if (dd == 0 && errno == 0) {
+		if (dd == 0) {
 			break; /* finished */
 		}
 

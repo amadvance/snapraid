@@ -18,6 +18,7 @@
 #include "portable.h"
 
 #include "elem.h"
+#include "import.h"
 #include "state.h"
 #include "util.h"
 
@@ -46,6 +47,8 @@ void state_init(struct snapraid_state* state)
 	tommy_list_init(&state->maplist);
 	tommy_list_init(&state->contentlist);
 	tommy_list_init(&state->filterlist);
+	tommy_list_init(&state->importlist);
+	tommy_hashdyn_init(&state->importset);
 	state->loaded_blockmax = 0;
 }
 
@@ -55,6 +58,8 @@ void state_done(struct snapraid_state* state)
 	tommy_list_foreach(&state->maplist, (tommy_foreach_func*)map_free);
 	tommy_list_foreach(&state->contentlist, (tommy_foreach_func*)content_free);
 	tommy_list_foreach(&state->filterlist, (tommy_foreach_func*)filter_free);
+	tommy_list_foreach(&state->importlist, (tommy_foreach_func*)import_file_free);
+	tommy_hashdyn_done(&state->importset);
 }
 
 /**

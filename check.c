@@ -19,6 +19,7 @@
 
 #include "util.h"
 #include "elem.h"
+#include "import.h"
 #include "state.h"
 #include "parity.h"
 #include "handle.h"
@@ -234,35 +235,59 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 	int error;
 	unsigned j;
 	int n;
-	int has_bad;
+	int something_to_recover;
 
 	error = 0;
 
-	/* here we have to try two different strategies to recover, because in case the 'sync' */
-	/* process is aborted, we don't know if the parity data is really updated or */
-	/* still represents the state before the 'sync' */
+	/* Here we have to try two different strategies to recover, because in case the 'sync' */
+	/* process is aborted, we don't know if the parity data is really updated just like after 'sync', */
+	/* or if it still represents the state before the 'sync'. */
 
-	/* now we assume that the parity is already computed for the current state */
+	/* As first, we assume that the parity is already computed for the current state */
 	/* and that we are going to recover the state after the last 'sync'. */
-	/* we need to put in the recovering process only the bad blocks, because all the */
-	/* others already contains the correct data, and the parity is correctly computed for them. */
-	/* this is the normal condition. */
+	/* This is the normal condition. */
+	/* In this case, parity contains correct info for BLK, CHG (new version) and NEW blocks, */
+	/* and not for DELETED ones. */
+	/* We need to put in the recovering process only the bad blocks, because all the */
+	/* others already contains the correct data read frin disk, and the parity is correctly computed for them. */
+	/* We are interested to recover BLK, CHG and NEW blocks if they are marked as bad, */
+	/* but we are not interested in DELETED ones. */
+
 	n = 0;
-	has_bad = 0; /* keep track if there is at least one block to fix */
+	something_to_recover = 0; /* keep track if there is at least one block to fix */
 	for(j=0;j<failed_count;++j) {
 		if (failed[j].is_bad) {
-			has_bad = 1;
+			unsigned block_state = block_state_get(failed[j].block);
 
-			/* we never set a DELETED block as bad */
-			assert(block_state_get(failed[j].block) != BLOCK_STATE_DELETED);
+			assert(block_state != BLOCK_STATE_DELETED); /* we cannot have bad DELETED blocks */
 
-			failed_map[n] = j;
-			++n;
+			if (block_state == BLOCK_STATE_BLK) { /* if we have the hash for it */
+				/* try to fetch the block using the hash */
+				if (state_import_fetch(state, failed[j].block->hash, buffer[failed[j].index]) == 0) {
+					/* we have corrected it! */
+				} else {
+					/* otherwise try to recover it */
+					failed_map[n] = j;
+					++n;
+				
+					/* we have something to try to recover */
+					something_to_recover = 1;
+				}
+			} else {
+				assert(block_state == BLOCK_STATE_CHG || block_state == BLOCK_STATE_NEW);
+			
+				/* otherwise it's CHG or NEW and we try to recover it */
+				failed_map[n] = j;
+				++n;
+				
+				/* we have something to try to recover */
+				something_to_recover = 1;
+			}
 		}
 	}
 
 	/* if nothing to fix */
-	if (!has_bad) {
+	if (!something_to_recover) {
 		/* recompute only parity and qarity */
 		raid_gen(state->level, buffer, diskmax, state->block_size);
 		return 0;
@@ -289,9 +314,7 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 						/* it may contain garbage */
 						failed[j].is_outofdate = 1;
 					}
-				}
-
-				if (block_state == BLOCK_STATE_CHG) {
+				} else if (block_state == BLOCK_STATE_CHG) {
 					/* if the hash is a bogus value we cannot check the result */
 					/* this could happen if we have lost this information */
 					/* after an aborted sync */
@@ -299,7 +322,7 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 						/* it may contain garbage */
 						failed[j].is_outofdate = 1;
 					} else
-					/* if the hash is different the previous one, we are sure to have */
+					/* if the hash is different than the previous one, we are sure to have */
 					/* restored it to the state after the 'sync' */
 					/* instead, if the hash matches, it could be either that the */
 					/* block after the sync has this hash, or that */
@@ -317,31 +340,51 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 	if (ret > 0)
 		error += ret;
 
-	/* now assume that the parity computation was not updated at the current state */
+	/* Now assume that the parity computation was not updated at the current state, */
 	/* but still represent the state before the last 'sync' process. */
-	/* this may happen only if a 'sync' is aborted by a crash or manually */
+	/* This may happen only if a 'sync' is aborted by a crash or manually. */
+	/* In this case, parity contains info for BLK, CHG (old version) and DELETED blocks, */
+	/* but not for CHG (new version) and NEW ones. */
+	/* We are interested to recover BLK ones marked as bad, */
+	/* but we are not interested to recover NEW and CHG (new version) blocks, even if marked as bad, */
+	/* because we don't have parity for them and it's just impossible, */
+	/* and we are not interested to recover DELETED ones. */
 	n = 0;
-	has_bad = 0; /* keep track if there is at least one block to fix */
+	something_to_recover = 0; /* keep track if there is at least one block to fix */
 	for(j=0;j<failed_count;++j) {
-		unsigned block_state;
+		unsigned block_state = block_state_get(failed[j].block);
 
-		if (failed[j].is_bad)
-			has_bad = 1;
-
-		block_state = block_state_get(failed[j].block);
-
-		if (failed[j].is_bad /* if the block is bad we don't know its content */
-			|| block_state == BLOCK_STATE_DELETED /* we don't know the original content of deleted blocks */
-			|| block_state == BLOCK_STATE_CHG /* we don't know the original content of changed blocks */
+		if (block_state == BLOCK_STATE_DELETED
+			|| block_state == BLOCK_STATE_CHG
 		) {
-			failed_map[n] = j;
-			++n;
-		}
+			/* If the block is CHG or DELETED, we don't have the original content of block, */
+			/* and we must try to recover it. */
+			/* This apply to CHG blocks even if they are not marked bad, */
+			/* because the parityis computed with old content, and not with the new one. */
+			/* Note that this recovering is done just to make possible to recover any other BLK one, */
+			/* we are not really interseted in DELETED and CHG (old version) ones. */
 
-		/* now adjust the state as before the last 'sync' */
+			/* try to fetch the old block using the old hash */
+			if (state_import_fetch(state, failed[j].block->hash, buffer[failed[j].index]) == 0) {
+				/* note that from now the buffer is definitively lost */
+				/* we can do this only because it's the last retry of recovering */
+			} else {
+				/* otherwise try to recover it */
+				failed_map[n] = j;
+				++n;
 
-		/* if the block is new, restore it to the original 0 as before the 'sync' */
-		if (block_state == BLOCK_STATE_NEW) {
+				/* note that we don't set something_to_recover, because we are */
+				/* not really interested to recover *only* old blocks. */
+			}
+
+			/* mark that we have restored or we will restore an old state */
+			/* note that if the block is not marked as is_bad, */
+			/* we are not going to write it in the disk */
+			failed[j].is_outofdate = 1;
+		} else if (block_state == BLOCK_STATE_NEW) {
+			/* If the block is NEW, restore it to the original 0 as before the 'sync' */
+			/* Also in this case, we do this to just allow recovering of other BLK ones */
+
 			memset(buffer[failed[j].index], 0, state->block_size);
 			/* note that from now the buffer is definitively lost */
 			/* we can do this only because it's the last retry of recovering */
@@ -350,36 +393,31 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 			/* note that if the block is not marked as is_bad, */
 			/* we are not going to write it in the disk */
 			failed[j].is_outofdate = 1;
+		} else if (failed[j].is_bad) {
+			/* If the block is bad we don't know its content, and we try to recover it */
+			/* At this point, we can have only BLK ones */
+
+			assert(block_state == BLOCK_STATE_BLK);
+
+			/* we have something we are interested to recover */
+			something_to_recover = 1;
+		
+			/* we try to recover it */
+			failed_map[n] = j;
+			++n;
 		}
 	}
 
-	/* if nothing to fix */
-	if (!has_bad) {
-		/* recompute only parity and qarity */
-		raid_gen(state->level, buffer, diskmax, state->block_size);
-		return 0;
-	}
-
-	ret = repair_step(state, pos, diskmax, failed, failed_map, n, buffer, buffer_parity, buffer_qarity, buffer_zero);
-	if (ret == 0) {
-		/* reprocess the blocks for NEW and CHG ones, for which we don't have a hash to check */
-
-		/* we know for sure that, even if we have restored them, that we have restored an old state */
-		/* so, we mark all of them as outofdate */
-		for(j=0;j<failed_count;++j) {
-			/* we take care only of BAD blocks we have to write back */
-			if (failed[j].is_bad) {
-				unsigned block_state = block_state_get(failed[j].block);
-				if (block_state == BLOCK_STATE_NEW || block_state == BLOCK_STATE_CHG) {
-					/* for sure we have recovered the state before the sync */
-					failed[j].is_outofdate = 1;
-				}
-			}
+	/* if nothing to fix, we just don't try */
+	if (something_to_recover) {
+		ret = repair_step(state, pos, diskmax, failed, failed_map, n, buffer, buffer_parity, buffer_qarity, buffer_zero);
+		if (ret == 0) {
+			/* we alreay marked as outdated NEW and CHG blocks, we don't need to do it again */
+			return 0;
 		}
-		return 0;
+		if (ret > 0)
+			error += ret;
 	}
-	if (ret > 0)
-		error += ret;
 
 	/* return the number of failed attempts, or -1 if no strategy */
 	if (error)
@@ -641,7 +679,6 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			if (block_state == BLOCK_STATE_NEW || block_state == BLOCK_STATE_CHG) {
 				/* store it in the failed set, because potentially */
 				/* the parity may be still computed with the previous content */
-				/* note that these blocks are never recovered, because we cannot check them */
 				failed[failed_count].is_bad = 0;
 				failed[failed_count].is_outofdate = 0;
 				failed[failed_count].index = j;

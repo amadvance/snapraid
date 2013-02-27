@@ -20,9 +20,9 @@
 #include "snapraid.h"
 #include "util.h"
 #include "elem.h"
+#include "import.h"
 #include "state.h"
 #include "raid.h"
-#include "os.h"
 
 /****************************************************************************/
 /* main */
@@ -60,6 +60,7 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-f, --filter PATTERN  ", "-f") "  Process only files matching the pattern\n");
 	printf("  " SWITCH_GETOPT_LONG("-d, --filter-dist NAME", "-f") "  Process only files in the disk\n");
 	printf("  " SWITCH_GETOPT_LONG("-m, --filter-missing  ", "-m") "  Process only missing/delete files\n");
+	printf("  " SWITCH_GETOPT_LONG("-i, --import DIR      ", "-i") "  Import deleted files\n");
 	printf("  " SWITCH_GETOPT_LONG("-a, --audit-only      ", "-A") "  Check only file data and not parity\n");
 	printf("  " SWITCH_GETOPT_LONG("-N, --find-by-name    ", "-N") "  Find the files by name instead than by inode\n");
 	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero      ", "-Z") "  Force synching of files that get zero size\n");
@@ -86,6 +87,7 @@ struct option long_options[] = {
 	{ "filter-missing", 0, 0, 'm' },
 	{ "start", 1, 0, 's' },
 	{ "count", 1, 0, 't' },
+	{ "import", 1, 0, 'i' },
 	{ "force-zero", 0, 0, 'Z' },
 	{ "force-empty", 0, 0, 'E' },
 	{ "force-second", 0, 0, 'S' },
@@ -106,7 +108,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:f:d:ms:t:ZESNaTvhVG"
+#define OPTIONS "c:f:d:ms:t:i:ZESNaTvhVG"
 
 volatile int global_interrupt = 0;
 
@@ -152,6 +154,7 @@ int main(int argc, char* argv[])
 	int filter_missing;
 	char* e;
 	const char* command;
+	char* import;
 
 	os_init();
 
@@ -173,6 +176,7 @@ int main(int argc, char* argv[])
 	tommy_list_init(&filterlist_file);
 	tommy_list_init(&filterlist_disk);
 	filter_missing = 0;
+	import = 0;
 
 	opterr = 0;
 	while ((c =
@@ -218,6 +222,13 @@ int main(int argc, char* argv[])
 				fprintf(stderr, "Invalid count number '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 			}
+			break;
+		case 'i' :
+			if (import) {
+				fprintf(stderr, "Import directory '%s' already specified as '%s'\n", optarg, import);
+				exit(EXIT_FAILURE);
+			}
+			import = strdup_nofail(optarg);
 			break;
 		case 'Z' :
 			force_zero = 1;
@@ -324,6 +335,10 @@ int main(int argc, char* argv[])
 			fprintf(stderr, "You cannot filter with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 		}
+		if (import != 0) {
+			fprintf(stderr, "You cannot import with the '%s' command\n", command);
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	raid_init();
@@ -334,6 +349,11 @@ int main(int argc, char* argv[])
 	state_init(&state);
 
 	state_config(&state, conf, verbose, gui, force_zero, force_empty, find_by_name, test_expect_unrecoverable, test_expect_recoverable, test_skip_device);
+
+	if (import != 0) {
+		printf("%s\n", import);
+		state_import(&state, import);
+	}
 
 	if (operation == OPERATION_DIFF) {
 		state_read(&state);
@@ -420,6 +440,7 @@ int main(int argc, char* argv[])
 	state_done(&state);
 	tommy_list_foreach(&filterlist_file, (tommy_foreach_func*)filter_free);
 	tommy_list_foreach(&filterlist_disk, (tommy_foreach_func*)filter_free);
+	free(import);
 
 	os_done();
 

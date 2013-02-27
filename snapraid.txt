@@ -8,7 +8,7 @@
 
 snapraid [-c, --conf CONFIG]
 	[-f, --filter PATTERN] [-d, --filter-disk NAME] [-m, --filter-missing]
-	[-a, --audit-only]
+	[-a, --audit-only] [-i, --import DIR]
 	[-N, --find-by-name]
 	[-Z, --force-zero] [-E, --force-empty]
 	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
@@ -273,6 +273,7 @@ Nothing is modified.
 Checks all the files and the redundancy data.
 All the files are hashed and compared with the snapshot saved
 in the previous "sync" command.
+
 If you use the -a, --audit-only option, only the file
 data is checked, and the redundandy data is ignored.
 
@@ -334,7 +335,7 @@ SnapRAID provides the following options:
         Note that it cannot be used with "sync", because "sync" always
         process the whole array.
 
-    -n, --fileter-missing
+    -n, --filter-missing
         Filters the files to process in the "check" and "fix"
         commands.
         Only the files missing/deleted from the array are processed.
@@ -348,7 +349,19 @@ SnapRAID provides the following options:
     -a, --audit-only
         When checking, only verify the hash of the files, without
         doing any kind of check on the redundancy data.
+        If you are interested in checking only the file data this
+        option can speedup a lot the checking process.
         This option can be used only with the "check" command.
+
+    -i, --import DIR
+        When fixing imports from the specified directory any file
+        that you deleted from the array after the last "sync"
+        commmand.
+        If you still have such files, they could be used by the "fix"
+        command to improve the recover process.
+        The files are read also in subdirectories and they are
+        identified regardless of their name.
+        This option can be used only with the "check" and "fix" command.
 
     -N, --find-by-name
         When syncing finds the files by path instead than by inode,

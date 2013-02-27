@@ -10,7 +10,7 @@ snapraid [\(hyc, \(hy\(hyconf CONFIG]
 .PD 0
 .PP
 .PD
-	[\(hya, \(hy\(hyaudit\(hyonly]
+	[\(hya, \(hy\(hyaudit\(hyonly] [\(hyi, \(hy\(hyimport DIR]
 .PD 0
 .PP
 .PD
@@ -388,6 +388,7 @@ Nothing is modified.
 Checks all the files and the redundancy data.
 All the files are hashed and compared with the snapshot saved
 in the previous \(a"sync\(a" command.
+.PP
 If you use the \(hya, \(hy\(hyaudit\(hyonly option, only the file
 data is checked, and the redundandy data is ignored.
 .PP
@@ -442,7 +443,7 @@ This option can be used only with the \(a"check\(a" and \(a"fix\(a" commands.
 Note that it cannot be used with \(a"sync\(a", because \(a"sync\(a" always
 process the whole array.
 .TP
-.B \(hyn, \(hy\(hyfileter\(hymissing
+.B \(hyn, \(hy\(hyfilter\(hymissing
 Filters the files to process in the \(a"check\(a" and \(a"fix\(a"
 commands.
 Only the files missing/deleted from the array are processed.
@@ -456,7 +457,19 @@ process the whole array.
 .B \(hya, \(hy\(hyaudit\(hyonly
 When checking, only verify the hash of the files, without
 doing any kind of check on the redundancy data.
+If you are interested in checking only the file data this
+option can speedup a lot the checking process.
 This option can be used only with the \(a"check\(a" command.
+.TP
+.B \(hyi, \(hy\(hyimport DIR
+When fixing imports from the specified directory any file
+that you deleted from the array after the last \(a"sync\(a"
+commmand.
+If you still have such files, they could be used by the \(a"fix\(a"
+command to improve the recover process.
+The files are read also in subdirectories and they are
+identified regardless of their name.
+This option can be used only with the \(a"check\(a" and \(a"fix\(a" command.
 .TP
 .B \(hyN, \(hy\(hyfind\(hyby\(hyname
 When syncing finds the files by path instead than by inode,
