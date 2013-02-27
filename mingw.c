@@ -19,8 +19,6 @@
 
 #ifdef __MINGW32__ /* Only for MingW */
 
-#include "mingw.h"
-
 /* Adds missing Windows declaration */
 typedef struct _FILE_ATTRIBUTE_TAG_INFO {
 	DWORD FileAttributes;

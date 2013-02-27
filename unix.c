@@ -17,6 +17,8 @@
 
 #include "portable.h"
 
+#ifndef __MINGW32__ /* Only for Unix */
+
 int open_noatime(const char* file, int flags)
 {
 #ifdef O_NOATIME
@@ -64,4 +66,6 @@ void os_init(void)
 void os_done(void)
 {
 }
+
+#endif
 

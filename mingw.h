@@ -64,6 +64,9 @@
 #define symlink windows_symlink
 #define link windows_link
 
+/* We have nano second support */
+#define STAT_NSEC(st) (st)->st_mtimensec
+
 /**
  * Generic stat information.
  */
