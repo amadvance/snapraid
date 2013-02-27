@@ -111,79 +111,13 @@
 #define SWITCH_GETOPT_LONG(a,b) b
 #endif
 
-#ifdef __MINGW32__ /* Specific for MingW */
+/**
+ * Includes specific support for Windows or Linux.
+ */
+#ifdef __MINGW32__
 #include "mingw.h"
-
-/* We have nano second support */
-#define STAT_NSEC(st) (st)->st_mtimensec
-
-#else /* Specific for Unix */
-
-#define O_BINARY 0 /**< Not used in Unix. */
-#define O_SEQUENTIAL 0 /**< In Unix posix_fadvise() shall be used. */
-
-/* Check if we have nanoseconds support */
-#if HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
-#define STAT_NSEC(st) (st)->st_mtim.tv_nsec /* Linux */
-#elif HAVE_STRUCT_STAT_ST_MTIMENSEC
-#define STAT_NSEC(st) (st)->st_mtimensec /* NetBSD */
-#elif HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC
-#define STAT_NSEC(st) (st)->st_mtimespec.tv_nsec /* FreeBSD, Mac OS X */
 #else
-/**
- * If nanoseconds are not supported, we report the special FILE_MTIME_NSEC_INVALID value,
- * to mark that it's undefined.
- * This result in not having it saved into the content file as a dummy 0.
- */
-#define STAT_NSEC(st) -1
-#endif
-
-#ifdef O_NOATIME
-/**
- * Open a file with the O_NOATIME flag to avoid to update the acces time.
- */
-static inline int open_noatime(const char* file, int flags)
-{
-	int f = open(file, flags | O_NOATIME);
-	if (f == -1 && errno == EPERM)
-		f = open(file, flags);
-	return f;
-}
-#else
-#define open_noatime open
-#endif
-
-/**
- * Check if the specified file is hidden.
- */
-static inline int dirent_hidden(struct dirent* dd)
-{
-	return dd->d_name[0] == '.';
-}
-
-/**
- * Return a description of the file type.
- */
-static inline const char* stat_desc(struct stat* st)
-{
-	if (S_ISREG(st->st_mode))
-		return "regular";
-	if (S_ISDIR(st->st_mode))
-		return "directory";
-	if (S_ISCHR(st->st_mode))
-		return "character";
-	if (S_ISBLK(st->st_mode))
-		return "block-device";
-	if (S_ISFIFO(st->st_mode))
-		return "fifo";
-	if (S_ISLNK(st->st_mode))
-		return "link";
-	if (S_ISLNK(st->st_mode))
-		return "symbolic-link";
-	if (S_ISSOCK(st->st_mode))
-		return "socket";
-	return "unknown";
-}
+#include "unix.h"
 #endif
 
 /**
@@ -193,6 +127,16 @@ static inline int hardlink(const char* a, const char* b)
 {
 	return link(a, b);
 }
+
+/**
+ * Initializes the system.
+ */
+void os_init(void);
+
+/**
+ * Deintialize the system.
+ */
+void os_done(void);
 
 #endif
 

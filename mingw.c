@@ -41,6 +41,44 @@ typedef struct _FILE_ATTRIBUTE_TAG_INFO {
 #define IO_REPARSE_TAG_SYMLINK (0xA000000C)
 #endif
 
+/* For SetThreadExecutionState */
+#define WIN32_ES_SYSTEM_REQUIRED      0x00000001L
+#define WIN32_ES_DISPLAY_REQUIRED     0x00000002L
+#define WIN32_ES_USER_PRESENT         0x00000004L
+#define WIN32_ES_AWAYMODE_REQUIRED    0x00000040L
+#define WIN32_ES_CONTINUOUS           0x80000000L
+
+void os_init(void)
+{
+	HMODULE kernel32 = GetModuleHandle("KERNEL32.DLL");
+	WORD (WINAPI* WIN32_SetThreadExecutionState)(DWORD);
+
+	if (kernel32) {
+		WIN32_SetThreadExecutionState = (void*)GetProcAddress(kernel32, "SetThreadExecutionState");
+		if (WIN32_SetThreadExecutionState) {
+			/* set the thread execution level to avoid sleep */
+			if (WIN32_SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED | WIN32_ES_AWAYMODE_REQUIRED) == 0) {
+				/* retry with the XP variant */
+				WIN32_SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED);
+			}
+		}
+	}
+}
+
+void os_done(void)
+{
+	HMODULE kernel32 = GetModuleHandle("KERNEL32.DLL");
+	WORD (WINAPI* WIN32_SetThreadExecutionState)(DWORD);
+
+	if (kernel32) {
+		WIN32_SetThreadExecutionState = (void*)GetProcAddress(kernel32, "SetThreadExecutionState");
+		if (WIN32_SetThreadExecutionState) {
+			/* restore the normal execution level */
+			WIN32_SetThreadExecutionState(WIN32_ES_CONTINUOUS);
+		}
+	}
+}
+
 /**
  * Number of conversion buffers.
  */

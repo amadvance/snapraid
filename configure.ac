@@ -93,7 +93,7 @@ AC_ARG_ENABLE([debug],
 	[AS_HELP_STRING([--enable-debug],[enable debugging])],
 	[
 	TESTENV=""
-	CFLAGS="-O0 -g"
+	CFLAGS="-O0 -g -Wall -Wextra"
 	],
 	[])
 

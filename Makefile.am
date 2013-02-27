@@ -19,8 +19,9 @@ snapraid_SOURCES = \
 	raid.c \
 	selftest.c \
 	speed.c \
+	import.c \
 	mingw.c \
-	os.c
+	unix.c
 
 noinst_HEADERS = \
 	portable.h \
@@ -45,8 +46,9 @@ noinst_HEADERS = \
 	cpu.h \
 	raid.h \
 	tables.h \
+	import.h \
 	mingw.h \
-	os.h
+	unix.h
 
 mktest_SOURCES = \
 	mktest.c \
@@ -209,6 +211,16 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check 2>> test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
+	echo --- Delete files from three disks and fix with import in RAID6
+	rm -r test/disk1/_a
+	rm -r test/disk1/_b
+	rm -r test/disk2/_a
+	rm -r test/disk2/_b
+	mv test/disk3/_a test/_a
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --test-expect-unrecoverable -c $(srcdir)/test-raid6.conf fix 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -i test/_a -c $(srcdir)/test-raid6.conf fix 2>> test.log
+	rm -r test/_a
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
 	echo --- Abort sync late with additions, delete them and recover with RAID6
 	echo --- This triggers the recoving with q using p to check the validity
 	cp -pR test/disk1/_a test/disk1/_c
