@@ -46,34 +46,52 @@ typedef struct _FILE_ATTRIBUTE_TAG_INFO {
 #define WIN32_ES_AWAYMODE_REQUIRED    0x00000040L
 #define WIN32_ES_CONTINUOUS           0x80000000L
 
+/**
+ * Portable implementation of GetFileInformationByHandleEx.
+ * This function is not available in Windows 2000.
+ */
+static WORD (WINAPI* ptr_SetThreadExecutionState)(DWORD);
+
+/**
+ * Portable implementation of GetFileInformationByHandleEx.
+ * This function is not available in Windows XP.
+ */
+static BOOL (WINAPI* ptr_GetFileInformationByHandleEx)(HANDLE, DWORD, LPVOID, DWORD);
+
+/**
+ * Portable implementation of CreateSymbolicLinkW.
+ * This function is not available in Windows XP.
+ */
+static BOOLEAN (WINAPI* ptr_CreateSymbolicLinkW)(LPWSTR, LPWSTR, DWORD);
+
 void os_init(void)
 {
 	HMODULE kernel32 = GetModuleHandle("KERNEL32.DLL");
-	WORD (WINAPI* WIN32_SetThreadExecutionState)(DWORD);
+	if (!kernel32) {
+		fprintf(stderr, "Error loading the KERNEL32 module.\n");
+		exit(EXIT_FAILURE);
+	}
 
-	if (kernel32) {
-		WIN32_SetThreadExecutionState = (void*)GetProcAddress(kernel32, "SetThreadExecutionState");
-		if (WIN32_SetThreadExecutionState) {
-			/* set the thread execution level to avoid sleep */
-			if (WIN32_SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED | WIN32_ES_AWAYMODE_REQUIRED) == 0) {
-				/* retry with the XP variant */
-				WIN32_SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED);
-			}
+	/* load functions not always available */
+	ptr_SetThreadExecutionState = (void*)GetProcAddress(kernel32, "SetThreadExecutionState");
+	ptr_GetFileInformationByHandleEx = (void*)GetProcAddress(kernel32, "GetFileInformationByHandleEx");
+	ptr_CreateSymbolicLinkW = (void*)GetProcAddress(kernel32, "CreateSymbolicLinkW");
+
+	/* set the thread execution level to avoid sleep */
+	if (ptr_SetThreadExecutionState) {
+		/* first try for Windows 7 */
+		if (ptr_SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED | WIN32_ES_AWAYMODE_REQUIRED) == 0) {
+			/* retry with the XP variant */
+			ptr_SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED);
 		}
 	}
 }
 
 void os_done(void)
 {
-	HMODULE kernel32 = GetModuleHandle("KERNEL32.DLL");
-	WORD (WINAPI* WIN32_SetThreadExecutionState)(DWORD);
-
-	if (kernel32) {
-		WIN32_SetThreadExecutionState = (void*)GetProcAddress(kernel32, "SetThreadExecutionState");
-		if (WIN32_SetThreadExecutionState) {
-			/* restore the normal execution level */
-			WIN32_SetThreadExecutionState(WIN32_ES_CONTINUOUS);
-		}
+	/* restore the normal execution level */
+	if (ptr_SetThreadExecutionState) {
+		ptr_SetThreadExecutionState(WIN32_ES_CONTINUOUS);
 	}
 }
 
@@ -252,25 +270,9 @@ static wchar_t* convert_arg(const char* src, int only_if_required)
 #define convert(a) convert_arg(a, 0)
 #define convert_if_required(a) convert_arg(a, 1)
 
-/**
- * Portable implementation of GetFileInformationByHandleEx.
- * This function is not available in Windows XP.
- */
-static int flag_GetFileInformationByHandleEx = 0;
-static BOOL (WINAPI* ptr_GetFileInformationByHandleEx)(HANDLE, DWORD, LPVOID, DWORD) = 0;
-
 static BOOL GetReparseTagInfoByHandle(HANDLE hFile, FILE_ATTRIBUTE_TAG_INFO* lpFileAttributeTagInfo, DWORD dwFileAttributes)
 {
-	/* if not yet initialized, do it now */
-	if (!flag_GetFileInformationByHandleEx) {
-		HMODULE h = GetModuleHandleA("KERNEL32.DLL");
-		if (h) {
-			ptr_GetFileInformationByHandleEx = (void*)GetProcAddress(h, "GetFileInformationByHandleEx");
-		}
-		flag_GetFileInformationByHandleEx = 1;
-	}
-
-	/* if not reparse point, return no info */
+	/* if not a reparse point, return no info */
 	if ((dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) == 0) {
 		lpFileAttributeTagInfo->FileAttributes = dwFileAttributes;
 		lpFileAttributeTagInfo->ReparseTag = 0;
@@ -924,24 +926,8 @@ int windows_link(const char* existing, const char* file)
 	return 0;
 }
 
-/**
- * Portable implementation of CreateSymbolicLinkW.
- * This function is not available in Windows XP.
- */
-static int flag_CreateSymbolicLinkW = 0;
-static BOOLEAN (WINAPI* ptr_CreateSymbolicLinkW)(LPWSTR, LPWSTR, DWORD);
-
 int windows_symlink(const char* existing, const char* file)
 {
-	/* if not yet initialized, do it now */
-	if (!flag_CreateSymbolicLinkW) {
-		HMODULE h = GetModuleHandleA("KERNEL32.DLL");
-		if (h) {
-			ptr_CreateSymbolicLinkW = (void*)GetProcAddress(h, "CreateSymbolicLinkW");
-		}
-		flag_CreateSymbolicLinkW = 1;
-	}
-
 	if (!ptr_CreateSymbolicLinkW) {
 		windows_errno(ERROR_NOT_SUPPORTED);
 		return -1;
