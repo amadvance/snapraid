@@ -602,7 +602,8 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				}
 			}
 
-			if (fix) {
+			/* if fixing, and the file is not excluded, we must open for writing */
+			if (fix && !file_flag_has(block_file_get(block), FILE_IS_EXCLUDED)) {
 				/* if fixing, create the file, open for writing and resize if required */
 				ret = handle_create(&handle[j], block_file_get(block));
 				if (ret == -1) {
@@ -627,7 +628,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					++recovered_error;
 				}
 			} else {
-				/* if checking or hashing, open the file for reading */
+				/* if checking or hashing, open the file only for reading */
 				ret = handle_open(&handle[j], block_file_get(block));
 				if (ret == -1) {
 					/* save the failed block for the check/fix */
@@ -911,6 +912,17 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 				if (!block_has_file(block)) {
 					/* if no file, nothing to do */
+					continue;
+				}
+
+				/* if the file is excluded, we have nothing to fix */
+				/* note that this check is required, because if the file is excluded */
+				/* it's also possible to have it not opened, */
+				/* and have the handle[j].file pointing to NULL. */
+				/* A typical case is if the file is missing, */
+				/* and the read-only open failed before. */
+				if (file_flag_has(block_file_get(block), FILE_IS_EXCLUDED)) {
+					/* nothing to do */
 					continue;
 				}
 
