@@ -171,6 +171,8 @@ int parity_chsize(struct snapraid_parity* parity, data_off_t size, data_off_t* o
 			ret = ftruncate(parity->f, size);
 		}
 #else
+		(void)skip_fallocate; /* avoid the warning */
+
 		/* allocate using a sparse file */
 		call = "ftruncate";
 		ret = ftruncate(parity->f, size);
