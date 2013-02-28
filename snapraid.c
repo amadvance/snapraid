@@ -77,7 +77,10 @@ void usage(void)
 #define OPT_TEST_KILL_AFTER_SYNC 257
 #define OPT_TEST_EXPECT_UNRECOVERABLE 258
 #define OPT_TEST_EXPECT_RECOVERABLE 259
-#define OPT_TEST_SKIP_DEVICE 260
+#define OPT_TEST_SKIP_SIGN 260
+#define OPT_TEST_SKIP_FALLOCATE 261
+#define OPT_TEST_SKIP_DEVICE 262
+
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -98,11 +101,28 @@ struct option long_options[] = {
 	{ "gui", 0, 0, 'G' }, /* undocumented GUI interface command */
 	{ "help", 0, 0, 'h' },
 	{ "version", 0, 0, 'V' },
-	/* test specific options, DO NOT USE! */
+	
+	/* The following are test specific options, DO NOT USE! */
+
+	/* After syncing, do not write the new content file */
 	{ "test-kill-after-sync", 0, 0, OPT_TEST_KILL_AFTER_SYNC },
+
+	/* Exit with failure if after check/fix there ARE NOT unrecoverable errors. */
 	{ "test-expect-unrecoverable", 0, 0, OPT_TEST_EXPECT_UNRECOVERABLE },
+
+	/* Exit with failure if after check/fix there ARE NOT recoverable errors. */
 	{ "test-expect-recoverable", 0, 0, OPT_TEST_EXPECT_RECOVERABLE },
+
+	/* Skip the initial self test */
 	{ "test-skip-self", 0, 0, OPT_TEST_SKIP_SELF },
+
+	/* Skip the initial sign check when reading the content file */
+	{ "test-skip-sign", 0, 0, OPT_TEST_SKIP_SIGN },
+
+	/* Skip the fallocate() when growing the parity files */
+	{ "test-skip-fallocate", 0, 0, OPT_TEST_SKIP_FALLOCATE },
+
+	/* Skip the device check */
 	{ "test-skip-device", 0, 0, OPT_TEST_SKIP_DEVICE },
 	{ 0, 0, 0, 0 }
 };
@@ -138,10 +158,12 @@ int main(int argc, char* argv[])
 	int force_empty;
 	int find_by_name;
 	int audit_only;
+	int test_kill_after_sync;
 	int test_expect_unrecoverable;
 	int test_expect_recoverable;
-	int test_kill_after_sync;
 	int test_skip_self;
+	int test_skip_sign;
+	int test_skip_fallocate;
 	int test_skip_device;
 	const char* conf;
 	struct snapraid_state state;
@@ -166,10 +188,12 @@ int main(int argc, char* argv[])
 	force_empty = 0;
 	find_by_name = 0;
 	audit_only = 0;
+	test_kill_after_sync = 0;
 	test_expect_unrecoverable = 0;
 	test_expect_recoverable = 0;
-	test_kill_after_sync = 0;
 	test_skip_self = 0;
+	test_skip_sign = 0;
+	test_skip_fallocate = 0;
 	test_skip_device = 0;
 	blockstart = 0;
 	blockcount = 0;
@@ -269,6 +293,12 @@ int main(int argc, char* argv[])
 		case OPT_TEST_SKIP_SELF :
 			test_skip_self = 1;
 			break;
+		case OPT_TEST_SKIP_SIGN :
+			test_skip_sign = 1;
+			break;
+		case OPT_TEST_SKIP_FALLOCATE :
+			test_skip_fallocate = 1;
+			break;
 		case OPT_TEST_SKIP_DEVICE :
 			test_skip_device = 1;
 			break;
@@ -348,7 +378,7 @@ int main(int argc, char* argv[])
 
 	state_init(&state);
 
-	state_config(&state, conf, verbose, gui, force_zero, force_empty, find_by_name, test_expect_unrecoverable, test_expect_recoverable, test_skip_device);
+	state_config(&state, conf, verbose, gui, force_zero, force_empty, find_by_name, test_expect_unrecoverable, test_expect_recoverable, test_skip_sign, test_skip_fallocate, test_skip_device);
 
 	if (import != 0) {
 		printf("%s\n", import);

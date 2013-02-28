@@ -1405,7 +1405,7 @@ void state_check(struct snapraid_state* state, int check, int fix, block_off_t b
 			exit(EXIT_FAILURE);
 		}
 
-		ret = parity_chsize(parity_ptr, size, &out_size);
+		ret = parity_chsize(parity_ptr, size, &out_size, state->skip_fallocate);
 		if (ret == -1) {
 			fprintf(stderr, "WARNING! Without an accessible Parity file, it isn't possible to sync.\n");
 			exit(EXIT_FAILURE);
@@ -1419,7 +1419,7 @@ void state_check(struct snapraid_state* state, int check, int fix, block_off_t b
 				exit(EXIT_FAILURE);
 			}
 
-			ret = parity_chsize(qarity_ptr, size, &out_size);
+			ret = parity_chsize(qarity_ptr, size, &out_size, state->skip_fallocate);
 			if (ret == -1) {
 				fprintf(stderr, "WARNING! Without an accessible Q-Parity file, it isn't possible to sync.\n");
 				exit(EXIT_FAILURE);

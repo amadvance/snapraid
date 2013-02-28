@@ -33,6 +33,8 @@ void state_init(struct snapraid_state* state)
 	state->autosave = 0;
 	state->expect_unrecoverable = 0;
 	state->expect_recoverable = 0;
+	state->skip_sign = 0;
+	state->skip_fallocate = 0;
 	state->need_write = 0;
 	state->block_size = 256 * 1024; /* default 256 KiB */
 	state->parity[0] = 0;
@@ -218,7 +220,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 	
 }
 
-void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_device)
+void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_sign, int skip_fallocate, int skip_device)
 {
 	STREAM* f;
 	unsigned line;
@@ -231,6 +233,8 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 	state->find_by_name = find_by_name;
 	state->expect_unrecoverable = expect_unrecoverable;
 	state->expect_recoverable = expect_recoverable;
+	state->skip_sign = skip_sign;
+	state->skip_fallocate = skip_fallocate;
 
 	if (state->gui) {
 		fprintf(stderr, "version:%s\n", PACKAGE_VERSION);
@@ -1390,8 +1394,10 @@ void state_read(struct snapraid_state* state)
 
 			if (sign != hash) {
 				fprintf(stderr, "Mismatching 'sign' in '%s' at line %u\n", path, line);
-				fprintf(stderr, "Likely this content file is damaged. Use an alternate copy\n");
-				exit(EXIT_FAILURE);
+				if (!state->skip_sign) {
+					fprintf(stderr, "Likely this content file is damaged. Use an alternate copy\n");
+					exit(EXIT_FAILURE);
+				}
 			}
 		} else if (tag[0] == 0) {
 			/* allow empty lines */

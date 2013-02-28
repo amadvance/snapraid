@@ -36,6 +36,8 @@ struct snapraid_state {
 	uint64_t autosave; /**< Autosave after the specified amount of data. 0 to disable. */
 	int expect_unrecoverable; /**< Expect presence of unrecoverable error in checking or fixing. */
 	int expect_recoverable; /**< Expect presence of recoverable error in checking. */
+	int skip_sign; /**< Skip the sign check for content files. */
+	int skip_fallocate; /**< Skip the use of fallocate(). */
 	int need_write; /**< If the state is changed. */
 	uint32_t block_size; /**< Block size in bytes. */
 	char parity[PATH_MAX]; /**< Path of the parity file. */
@@ -72,7 +74,7 @@ void state_done(struct snapraid_state* state);
 /**
  * Reads the configuration file.
  */
-void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_device);
+void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_sign, int skip_fallocate, int skip_device);
 
 /**
  * Reads the state.

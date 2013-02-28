@@ -133,7 +133,7 @@ bail:
 	return -1;
 }
 
-int parity_chsize(struct snapraid_parity* parity, data_off_t size, data_off_t* out_size)
+int parity_chsize(struct snapraid_parity* parity, data_off_t size, data_off_t* out_size, int skip_fallocate)
 {
 	int ret;
 
@@ -143,18 +143,23 @@ int parity_chsize(struct snapraid_parity* parity, data_off_t size, data_off_t* o
 		const char* call;
 
 #if HAVE_FALLOCATE
-		/* allocate real space using the specific Linux fallocate() operation. */
-		/* If the underline filesystem doesn't support it, this operation fails, */
-		/* instead posix_fallocate() fallbacks to write the whole file. */
-		call = "fallocate";
-		ret = fallocate(parity->f, 0, 0, size);
+		if (!skip_fallocate) {
+			/* allocate real space using the specific Linux fallocate() operation. */
+			/* If the underline filesystem doesn't support it, this operation fails, */
+			/* instead posix_fallocate() fallbacks to write the whole file. */
+			call = "fallocate";
+			ret = fallocate(parity->f, 0, 0, size);
 
-		/* fallocate() returns the error number as positive integer, */
-		/* and in this case it doesn't set errno, just like posix_fallocate() */
-		/* Checking the glibc code (2.11.1 and 2.14.1) it seems that ENOSYS */
-		/* may be returned in errno, so we support both the return way */
-		if (ret > 0) { /* if a positive error is returned, convert it to errno */
-			errno = ret;
+			/* fallocate() returns the error number as positive integer, */
+			/* and in this case it doesn't set errno, just like posix_fallocate() */
+			/* Checking the glibc code (2.11.1 and 2.14.1) it seems that ENOSYS */
+			/* may be returned in errno, so we support both the return way */
+			if (ret > 0) { /* if a positive error is returned, convert it to errno */
+				errno = ret;
+				ret = -1;
+			}
+		} else {
+			errno = EOPNOTSUPP;
 			ret = -1;
 		}
 

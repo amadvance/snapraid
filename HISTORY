@@ -12,7 +12,7 @@ SnapRAID HISTORY
  * Added support also for hardlinks and empty directories.
  * Added support to save symlinks to files in Windows. Note that only the
    symlink is saved and not the linked file.
-   Symlinks to dirs and junctions are still not supported.
+   Symlinks to dirs and junctions are still not supported in Windows.
  * Files without read permission generates now an error instead of a warning.
    You now must explicitely exclude them in the configuration file with
    exclusion rules.
