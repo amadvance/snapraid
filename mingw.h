@@ -58,8 +58,13 @@
 #define dirent_lstat windows_dirent_lstat
 #define stat_desc windows_stat_desc
 #define sleep windows_sleep
-#define S_IFLNK 0x7000 /* 4==DIR, 8==REG */
+/* 4==DIR, 5,6,7=free, 8==REG */
+#define S_IFLNK 0x5000 /* Symbolic link to file */
 #define S_ISLNK(m) (((m) & _S_IFMT) == S_IFLNK)
+#define S_IFLNKDIR 0x6000 /* Symbolic link to directory */
+#define S_ISLNKDIR(m) (((m) & _S_IFMT) == S_IFLNKDIR)
+#define S_IFJUN 0x6000 /* Junction */
+#define S_ISJUN(m) (((m) & _S_IFMT) == S_IFJUN)
 #define readlink windows_readlink
 #define symlink windows_symlink
 #define link windows_link

@@ -135,12 +135,17 @@ struct snapraid_block {
  */
 #define BLOCK_EMPTY 0
 
-#define FILE_IS_PRESENT 1 /**< If it's seen as present. */
-#define FILE_IS_EXCLUDED 2 /**< If it's an excluded file from the processing. */
-#define FILE_IS_LARGER 4 /**< If a larger file was already detected. Just to avoid to report it more times. */
-#define FILE_IS_DAMAGED 8 /**< If a fix was attempted but it failed. */
-#define FILE_IS_FIXED 16 /**< If a fix was done. */
-#define FILE_IS_HARDLINK 32 /**< If it's an hardlink. */
+#define FILE_IS_PRESENT 0x01 /**< If it's seen as present. */
+#define FILE_IS_EXCLUDED 0x02 /**< If it's an excluded file from the processing. */
+#define FILE_IS_LARGER 0x04 /**< If a larger file was already detected. Just to avoid to report it more times. */
+#define FILE_IS_DAMAGED 0x08 /**< If a fix was attempted but it failed. */
+#define FILE_IS_FIXED 0x10 /**< If a fix was done. */
+
+#define FILE_IS_HARDLINK 0x100 /**< If it's an hardlink. */
+#define FILE_IS_SYMLINK 0x200 /**< If it's a file symlink. */
+#define FILE_IS_SYMDIR 0x400 /**< If it's a dir symlink for Windows. Not yet supported. */
+#define FILE_IS_JUNCTION 0x800 /**< If it's a junction for Windows. Not yet supported. */
+#define FILE_IS_LINK_MASK 0xF00 /**< Mask for link type. */
 
 /**
  * Value used to mark files without the nanoseconds value.
@@ -515,18 +520,21 @@ static inline void link_flag_clear(struct snapraid_link* link, unsigned mask)
 	link->flag &= ~mask;
 }
 
-/**
- * Checks if the link is a hardlink. Otherwise it's a symbolic link.
- */
-static inline int link_is_hardlink(struct snapraid_link* link)
+static inline void link_flag_let(struct snapraid_link* link, unsigned flag, unsigned mask)
 {
-	return link_flag_has(link, FILE_IS_HARDLINK);
+	link->flag &= ~mask;
+	link->flag |= flag & mask;
+}
+
+static inline unsigned link_flag_get(struct snapraid_link* link, unsigned mask)
+{
+	return link->flag & mask;
 }
 
 /**
  * Allocates a link.
  */
-struct snapraid_link* link_alloc(const char* name, const char* link, int is_hardlink);
+struct snapraid_link* link_alloc(const char* name, const char* link, unsigned link_flag);
 
 /**
  * Deallocates a link.

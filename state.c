@@ -713,16 +713,16 @@ void state_read(struct snapraid_state* state)
 	unsigned line;
 	unsigned count_file;
 	unsigned count_block;
-	unsigned count_symlink;
 	unsigned count_hardlink;
+	unsigned count_symlink;
 	unsigned count_dir;
 	tommy_node* node;
 	oathash_t hash;
 
 	count_file = 0;
 	count_block = 0;
-	count_symlink = 0;
 	count_hardlink = 0;
+	count_symlink = 0;
 	count_dir = 0;
 	hash = 0;
 
@@ -1168,7 +1168,7 @@ void state_read(struct snapraid_state* state)
 			}
 
 			/* allocate the link as symbolic link */
-			link = link_alloc(sub, linkto, 0);
+			link = link_alloc(sub, linkto, FILE_IS_SYMLINK);
 
 			/* insert the link in the link containers */
 			tommy_hashdyn_insert(&disk->linkset, &link->nodeset, link, link_name_hash(link->sub));
@@ -1253,7 +1253,7 @@ void state_read(struct snapraid_state* state)
 			}
 
 			/* allocate the link as hard link */
-			link = link_alloc(sub, linkto, 1);
+			link = link_alloc(sub, linkto, FILE_IS_HARDLINK);
 
 			/* insert the link in the link containers */
 			tommy_hashdyn_insert(&disk->linkset, &link->nodeset, link, link_name_hash(link->sub));
@@ -1455,8 +1455,8 @@ void state_read(struct snapraid_state* state)
 	if (state->verbose) {
 		printf("\tfile %u\n", count_file);
 		printf("\tblock %u\n", count_block);
-		printf("\tsymlink %u\n", count_symlink);
 		printf("\thardlink %u\n", count_hardlink);
+		printf("\tsymlink %u\n", count_symlink);
 		printf("\temptydir %u\n", count_dir);
 	}
 }
@@ -1466,8 +1466,8 @@ void state_write(struct snapraid_state* state)
 	STREAM* f;
 	unsigned count_file;
 	unsigned count_block;
-	unsigned count_symlink;
 	unsigned count_hardlink;
+	unsigned count_symlink;
 	unsigned count_dir;
 	unsigned count_content;
 	tommy_node* i;
@@ -1476,8 +1476,8 @@ void state_write(struct snapraid_state* state)
 
 	count_file = 0;
 	count_block = 0;
-	count_symlink = 0;
 	count_hardlink = 0;
+	count_symlink = 0;
 	count_dir = 0;
 	hash = 0;
 
@@ -1649,14 +1649,17 @@ void state_write(struct snapraid_state* state)
 		for(j=disk->linklist;j!=0;j=j->next) {
 			struct snapraid_link* link = j->data;
 
-			if (link_is_hardlink(link)) {
+			switch (link_flag_get(link, FILE_IS_LINK_MASK)) {
+			case FILE_IS_HARDLINK :
 				sputsl("hardlink ", f);
 				hash = oathash8(hash, 'a');
 				++count_hardlink;
-			} else {
+				break;
+			case FILE_IS_SYMLINK :
 				sputsl("symlink ", f);
 				hash = oathash8(hash, 's');
 				++count_symlink;
+				break;
 			}
 
 			sputs(disk->name, f);
@@ -1785,8 +1788,8 @@ void state_write(struct snapraid_state* state)
 	if (state->verbose) {
 		printf("\tfile %u\n", count_file);
 		printf("\tblock %u\n", count_block);
-		printf("\tsymlink %u\n", count_symlink);
 		printf("\thardlink %u\n", count_hardlink);
+		printf("\tsymlink %u\n", count_symlink);
 		printf("\temptydir %u\n", count_dir);
 	}
 

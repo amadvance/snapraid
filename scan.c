@@ -71,7 +71,7 @@ static void scan_link_insert(struct snapraid_state* state, struct snapraid_disk*
 /**
  * Processes a symbolic link.
  */
-static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, int output, struct snapraid_disk* disk, const char* sub, const char* linkto, int is_hardlink)
+static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, int output, struct snapraid_disk* disk, const char* sub, const char* linkto, unsigned link_flag)
 {
 	struct snapraid_link* link;
 
@@ -80,10 +80,7 @@ static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, 
 	if (link) {
 		/* check if multiple files have the same name */
 		if (link_flag_has(link, FILE_IS_PRESENT)) {
-			if (link_is_hardlink(link))
-				fprintf(stderr, "Internal inconsistency for hardlink '%s%s'\n", disk->dir, sub);
-			else
-				fprintf(stderr, "Internal inconsistency for symlink '%s%s'\n", disk->dir, sub);
+			fprintf(stderr, "Internal inconsistency for link '%s%s'\n", disk->dir, sub);
 			exit(EXIT_FAILURE);
 		}
 
@@ -91,7 +88,7 @@ static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, 
 		link_flag_set(link, FILE_IS_PRESENT);
 
 		/* check if the link is not changed and it's of the same kind */
-		if (strcmp(link->linkto, linkto) == 0 && is_hardlink == link_is_hardlink(link)) {
+		if (strcmp(link->linkto, linkto) == 0 && link_flag == link_flag_get(link, FILE_IS_LINK_MASK)) {
 			/* it's equal */
 			++scan->count_equal;
 
@@ -116,10 +113,7 @@ static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, 
 
 			/* update it */
 			pathcpy(link->linkto, sizeof(link->linkto), linkto);
-			if (is_hardlink)
-				link_flag_set(link, FILE_IS_HARDLINK);
-			else
-				link_flag_clear(link, FILE_IS_HARDLINK);
+			link_flag_let(link, link_flag, FILE_IS_LINK_MASK);
 
 			/* nothing more to do */
 			return;
@@ -140,7 +134,7 @@ static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, 
 	}
 
 	/* insert it */
-	link = link_alloc(sub, linkto, is_hardlink);
+	link = link_alloc(sub, linkto, link_flag);
 
 	/* mark it as present */
 	link_flag_set(link, FILE_IS_PRESENT);
@@ -290,7 +284,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 		if (file_flag_has(file, FILE_IS_PRESENT)) {
 			if (st->st_nlink > 1) {
 				/* it's a hardlink */
-				scan_link(scan, state, output, disk, sub, file->sub, 1);
+				scan_link(scan, state, output, disk, sub, file->sub, FILE_IS_HARDLINK);
 				return;
 			} else {
 				fprintf(stderr, "Internal inode '%"PRIu64"' inconsistency for file '%s%s'\n", (uint64_t)st->st_ino, disk->dir, sub);
@@ -500,7 +494,7 @@ static void scan_emptydir(struct snapraid_scan* scan, struct snapraid_state* sta
 	if (dir) {
 		/* check if multiple files have the same name */
 		if (dir_flag_has(dir, FILE_IS_PRESENT)) {
-			fprintf(stderr, "Internal inconsistency for symdir '%s%s'\n", disk->dir, sub);
+			fprintf(stderr, "Internal inconsistency for dir '%s%s'\n", disk->dir, sub);
 			exit(EXIT_FAILURE);
 		}
 
@@ -655,7 +649,7 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 				subnew[ret] = 0;
 
 				/* process as a symbolic link */
-				scan_link(scan, state, output, disk, sub_next, subnew, 0);
+				scan_link(scan, state, output, disk, sub_next, subnew, FILE_IS_SYMLINK);
 				processed = 1;
 			} else {
 				if (state->verbose) {

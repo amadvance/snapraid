@@ -330,8 +330,13 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE
 			st->st_desc = "reparse-point-nfs";
 			break;
 		case IO_REPARSE_TAG_SYMLINK :
-			st->st_mode = S_IFLNK;
-			st->st_desc = "reparse-point-symlink";
+			if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+				st->st_mode = S_IFLNKDIR;
+				st->st_desc = "reparse-point-symlink-dir";
+			} else {
+				st->st_mode = S_IFLNK;
+				st->st_desc = "reparse-point-symlink-file";
+			}
 			break;
 		default:
 			st->st_mode = S_IFCHR;
@@ -418,8 +423,13 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 			st->st_desc = "reparse-point-nfs";
 			break;
 		case IO_REPARSE_TAG_SYMLINK :
-			st->st_mode = S_IFLNK;
-			st->st_desc = "reparse-point-symlink";
+			if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+				st->st_mode = S_IFLNKDIR;
+				st->st_desc = "reparse-point-symlink-dir";
+			} else {
+				st->st_mode = S_IFLNK;
+				st->st_desc = "reparse-point-symlink-file";
+			}
 			break;
 		default:
 			st->st_mode = S_IFCHR;

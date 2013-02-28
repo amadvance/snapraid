@@ -1109,7 +1109,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				continue;
 			}
 
-			if (link_is_hardlink(link)) {
+			if (link_flag_has(link, FILE_IS_HARDLINK)) {
 				/* stat the link */
 				pathprint(path, sizeof(path), "%s%s", disk->dir, link->sub);
 				ret = stat(path, &st);
@@ -1196,7 +1196,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				}
 
 				/* create it */
-				if (link_is_hardlink(link)) {
+				if (link_flag_has(link, FILE_IS_HARDLINK)) {
 					ret = hardlink(pathto, path);
 					if (ret != 0) {
 						fprintf(stderr, "Error writing hardlink '%s'. %s.\n", path, strerror(errno));
