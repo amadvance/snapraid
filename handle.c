@@ -109,7 +109,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 	return 0;
 }
 
-int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, FILE* stdout)
+int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, FILE* out)
 {
 	int ret;
 
@@ -131,7 +131,7 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, FILE
 		handle->f = -1;
 		handle->valid_size = 0;
 
-		fprintf(stdout, "Error opening file '%s'. %s.\n", handle->path, strerror(errno));
+		fprintf(out, "Error opening file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
 	}
 
@@ -141,7 +141,7 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, FILE
 	/* get the stat info */
 	ret = fstat(handle->f, &handle->st);
 	if (ret != 0) {
-		fprintf(stdout, "Error accessing file '%s'. %s.\n", handle->path, strerror(errno));
+		fprintf(out, "Error accessing file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
 	}
 
@@ -152,7 +152,7 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, FILE
 	/* advise sequential access */
 	ret = posix_fadvise(handle->f, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (ret != 0) {
-		fprintf(stdout, "Error advising file '%s'. %s.\n", handle->path, strerror(ret));
+		fprintf(out, "Error advising file '%s'. %s.\n", handle->path, strerror(ret));
 		return -1;
 	}
 #endif
@@ -186,7 +186,7 @@ int handle_close(struct snapraid_handle* handle)
 	return 0;
 }
 
-int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size, FILE* stdout)
+int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size, FILE* out)
 {
 	ssize_t read_ret;
 	data_off_t offset;
@@ -197,7 +197,7 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 
 	/* check if we are going to read only not initialized data */
 	if (offset >= handle->valid_size) {
-		fprintf(stdout, "Reading missing data from file '%s' at offset %"PRIu64".\n", handle->path, offset);
+		fprintf(out, "Reading missing data from file '%s' at offset %"PRIu64".\n", handle->path, offset);
 		return -1;
 	}
 
@@ -205,7 +205,7 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 
 #if !HAVE_PREAD
 	if (lseek(handle->f, offset, SEEK_SET) != offset) {
-		fprintf(stdout, "Error seeking file '%s' at offset %"PRIu64". %s.\n", handle->path, offset, strerror(errno));
+		fprintf(out, "Error seeking file '%s' at offset %"PRIu64". %s.\n", handle->path, offset, strerror(errno));
 		return -1;
 	}
 #endif
@@ -220,11 +220,11 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 #endif
 
 		if (read_ret < 0) {
-			fprintf(stdout, "Error reading file '%s' at offset %"PRIu64". %s.\n", handle->path, offset, strerror(errno));
+			fprintf(out, "Error reading file '%s' at offset %"PRIu64". %s.\n", handle->path, offset, strerror(errno));
 			return -1;
 		}
 		if (read_ret == 0) {
-			fprintf(stdout, "Unexpected end of file '%s' at offset %"PRIu64". %s.\n", handle->path, offset, strerror(errno));
+			fprintf(out, "Unexpected end of file '%s' at offset %"PRIu64". %s.\n", handle->path, offset, strerror(errno));
 			return -1;
 		}
 

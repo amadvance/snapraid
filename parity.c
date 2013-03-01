@@ -363,7 +363,7 @@ int parity_write(struct snapraid_parity* parity, block_off_t pos, unsigned char*
 	return 0;
 }
 
-int parity_read(struct snapraid_parity* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size, FILE* stdout)
+int parity_read(struct snapraid_parity* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size, FILE* out)
 {
 	ssize_t read_ret;
 	data_off_t offset;
@@ -373,13 +373,13 @@ int parity_read(struct snapraid_parity* parity, block_off_t pos, unsigned char* 
 
 	/* check if we are going to read only not initialized data */
 	if (offset >= parity->valid_size) {
-		fprintf(stdout, "Reading missing data from file '%s' at offset %"PRIu64".\n", parity->path, offset);
+		fprintf(out, "Reading missing data from file '%s' at offset %"PRIu64".\n", parity->path, offset);
 		return -1;
 	}
 
 #if !HAVE_PREAD
 	if (lseek(parity->f, offset, SEEK_SET) != offset) {
-		fprintf(stdout, "Error seeking file '%s' at offset %"PRIu64". %s.\n", parity->path, offset, strerror(errno));
+		fprintf(out, "Error seeking file '%s' at offset %"PRIu64". %s.\n", parity->path, offset, strerror(errno));
 		return -1;
 	}
 #endif
@@ -393,11 +393,11 @@ int parity_read(struct snapraid_parity* parity, block_off_t pos, unsigned char* 
 		read_ret = read(parity->f, block_buffer + count, block_size - count);
 #endif
 		if (read_ret < 0) {
-			fprintf(stdout, "Error reading file '%s' at offset %"PRIu64". %s.\n", parity->path, offset, strerror(errno));
+			fprintf(out, "Error reading file '%s' at offset %"PRIu64". %s.\n", parity->path, offset, strerror(errno));
 			return -1;
 		}
 		if (read_ret == 0) {
-			fprintf(stdout, "Unexpected end of file '%s' at offset %"PRIu64". %s.\n", parity->path, offset, strerror(errno));
+			fprintf(out, "Unexpected end of file '%s' at offset %"PRIu64". %s.\n", parity->path, offset, strerror(errno));
 			return -1;
 		}
 
