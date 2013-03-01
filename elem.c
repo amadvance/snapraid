@@ -230,9 +230,27 @@ int filter_dir(tommy_list* filterlist, const char* disk, const char* sub)
 	return filter_element(filterlist, disk, sub, 1);
 }
 
-int filter_existence(int filter_missing, unsigned flag)
+int filter_existence(int filter_missing, const char* dir, const char* sub)
 {
-	return filter_missing && (flag & FILE_IS_PRESENT) == FILE_IS_PRESENT;
+	char path[PATH_MAX];
+	struct stat st;
+
+	if (!filter_missing)
+		return 0;
+
+	/* we directly check if in the disk the file is present or not */
+	pathprint(path, sizeof(path), "%s%s", dir, sub);
+	
+	if (lstat(path, &st) != 0) {
+		/* if the file doesn't exist, we don't filter it out */
+		if (errno == ENOENT)
+			return 0;
+		fprintf(stderr, "Error in stat file '%s'. %s.\n", path, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	/* the file is presen, so we filter it out */
+	return 1;
 }
 
 int filter_content(tommy_list* contentlist, const char* path)

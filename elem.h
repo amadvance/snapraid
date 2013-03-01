@@ -304,26 +304,27 @@ static inline int filter_hidden(int enable, struct dirent* dd)
 /**
  * Filters a path using a list of filters.
  * For each element of the path all the filters are applied, until the first one that matches.
- * Return !=0 if it matches and it should be excluded.
+ * Return !=0 if it should be excluded.
  */
 int filter_path(tommy_list* filterlist, const char* disk, const char* sub);
 
 /**
  * Filter a file/link/dir if missing.
- * Return !=0 if it matches and it should be excluded.
+ * This call imply a disk check for the file presence.
+ * Return !=0 if the file is present and it should be excluded.
  */
-int filter_existence(int filter_missing, unsigned flag);
+int filter_existence(int filter_missing, const char* dir, const char* sub);
 
 /**
  * Filters a dir using a list of filters.
  * For each element of the path all the filters are applied, until the first one that matches.
- * Return !=0 if it matches and it should be excluded.
+ * Return !=0 if should be excluded.
  */
 int filter_dir(tommy_list* filterlist, const char* disk, const char* sub);
 
 /**
  * Filters a path if it's a content file.
- * Return !=0 if it matches and it should be excluded.
+ * Return !=0 if should be excluded.
  */
 int filter_content(tommy_list* contentlist, const char* path);
 

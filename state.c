@@ -1837,13 +1837,17 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 		tommy_node* j;
 		struct snapraid_disk* disk = i->data;
 
+		/* if we filter for presence, we have to access the disk, so better to print something */
+		if (filter_missing)
+			printf("Scanning disk %s...\n", disk->name);
+
 		/* for each file */
 		for(j=tommy_list_head(&disk->filelist);j!=0;j=j->next) {
 			struct snapraid_file* file = j->data;
 
-			if (filter_existence(filter_missing, file->flag) != 0
-				|| filter_path(filterlist_disk, disk->name, file->sub) != 0
+			if (filter_path(filterlist_disk, disk->name, file->sub) != 0
 				|| filter_path(filterlist_file, disk->name, file->sub) != 0
+				|| filter_existence(filter_missing, disk->dir, file->sub) != 0
 			) {
 				file_flag_set(file, FILE_IS_EXCLUDED);
 			}
@@ -1857,9 +1861,9 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 		for(j=tommy_list_head(&disk->linklist);j!=0;j=j->next) {
 			struct snapraid_link* link = j->data;
 
-			if (filter_existence(filter_missing, link->flag) != 0
-				|| filter_path(filterlist_disk, disk->name, link->sub) != 0
+			if (filter_path(filterlist_disk, disk->name, link->sub) != 0
 				|| filter_path(filterlist_file, disk->name, link->sub) != 0
+				|| filter_existence(filter_missing, disk->dir, link->sub) != 0
 			) {
 				link_flag_set(link, FILE_IS_EXCLUDED);
 			}
@@ -1873,9 +1877,9 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 		for(j=tommy_list_head(&disk->dirlist);j!=0;j=j->next) {
 			struct snapraid_dir* dir = j->data;
 
-			if (filter_existence(filter_missing, dir->flag) != 0
-				|| filter_dir(filterlist_disk, disk->name, dir->sub) != 0
+			if (filter_dir(filterlist_disk, disk->name, dir->sub) != 0
 				|| filter_dir(filterlist_file, disk->name, dir->sub) != 0
+				|| filter_existence(filter_missing, disk->dir, dir->sub) != 0
 			) {
 				dir_flag_set(dir, FILE_IS_EXCLUDED);
 			}
