@@ -9,6 +9,8 @@ SnapRAID HISTORY
    without checking/fixing the others.
  * Added a new -i, --import option to automatically import deleted files
    when fixing.
+ * Added a new -l, --log option to save to disk the detailed log.
+   Note that if not specified the log is not printed anymore by default.
  * Added support also for hardlinks and empty directories.
  * Added support to save symlinks to files in Windows. Note that only the
    symlink is saved and not the linked file.

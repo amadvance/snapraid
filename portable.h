@@ -138,5 +138,10 @@ void os_init(void);
  */
 void os_done(void);
 
+/**
+ * Global log file.
+ */
+FILE* stdlog;
+
 #endif
 

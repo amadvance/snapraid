@@ -12,7 +12,7 @@ snapraid [-c, --conf CONFIG]
 	[-N, --find-by-name]
 	[-Z, --force-zero] [-E, --force-empty]
 	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
-	[-v, --verbose]
+	[-v, --verbose] [-l, --log FILE]
 	sync|pool|diff|dup|check|fix
 
 snapraid [-V, --version] [-h, --help]
@@ -406,6 +406,15 @@ SnapRAID provides the following options:
     -t, --count BLKCOUNT
         Process only the specified number of blocks.
         It's present mainly for advanced manual recovering.
+
+    -l, --log FILE
+        Outputs a detailed log to the specified file.
+        It contains the exact specification of which block of
+        any file is not recoverable and why.
+        You can use the special files "1" and "2" to output
+        to stdout and stderr.
+        If this option is not specified, no detailed log is
+        generated.
 
     -v, --verbose
         Prints more information in the processing.

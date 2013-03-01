@@ -61,6 +61,7 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-d, --filter-dist NAME", "-f") "  Process only files in the disk\n");
 	printf("  " SWITCH_GETOPT_LONG("-m, --filter-missing  ", "-m") "  Process only missing/delete files\n");
 	printf("  " SWITCH_GETOPT_LONG("-i, --import DIR      ", "-i") "  Import deleted files\n");
+	printf("  " SWITCH_GETOPT_LONG("-l, --log FILE        ", "-l") "  Log file. Default none\n");
 	printf("  " SWITCH_GETOPT_LONG("-a, --audit-only      ", "-A") "  Check only file data and not parity\n");
 	printf("  " SWITCH_GETOPT_LONG("-N, --find-by-name    ", "-N") "  Find the files by name instead than by inode\n");
 	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero      ", "-Z") "  Force synching of files that get zero size\n");
@@ -91,6 +92,7 @@ struct option long_options[] = {
 	{ "start", 1, 0, 's' },
 	{ "count", 1, 0, 't' },
 	{ "import", 1, 0, 'i' },
+	{ "log", 1, 0, 'l' },
 	{ "force-zero", 0, 0, 'Z' },
 	{ "force-empty", 0, 0, 'E' },
 	{ "force-second", 0, 0, 'S' },
@@ -128,7 +130,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:f:d:ms:t:i:ZESNaTvhVG"
+#define OPTIONS "c:f:d:ms:t:i:l:ZESNaTvhVG"
 
 volatile int global_interrupt = 0;
 
@@ -176,7 +178,8 @@ int main(int argc, char* argv[])
 	int filter_missing;
 	char* e;
 	const char* command;
-	char* import;
+	const char* import;
+	const char* log;
 
 	os_init();
 
@@ -201,6 +204,7 @@ int main(int argc, char* argv[])
 	tommy_list_init(&filterlist_disk);
 	filter_missing = 0;
 	import = 0;
+	log = 0;
 
 	opterr = 0;
 	while ((c =
@@ -252,7 +256,14 @@ int main(int argc, char* argv[])
 				fprintf(stderr, "Import directory '%s' already specified as '%s'\n", optarg, import);
 				exit(EXIT_FAILURE);
 			}
-			import = strdup_nofail(optarg);
+			import = optarg;
+			break;
+		case 'l' :
+			if (log) {
+				fprintf(stderr, "Log file '%s' already specified as '%s'\n", optarg, log);
+				exit(EXIT_FAILURE);
+			}
+			log = optarg;
 			break;
 		case 'Z' :
 			force_zero = 1;
@@ -373,6 +384,26 @@ int main(int argc, char* argv[])
 
 	raid_init();
 
+	/* open the log file */
+	if (log == 0) {
+#ifdef _WIN32
+		log = "nul";
+#else
+		log = "/dev/null";
+#endif
+	}
+	if (strcmp(log, "1") == 0) {
+		stdlog = stdout;
+	} else if (strcmp(log, "2") == 0) {
+		stdlog = stderr;
+	} else {
+		stdlog = fopen(log, "wt");
+		if (!stdlog) {
+			fprintf(stderr, "Error opening the log file '%s'. %s.\n", log, strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+	}
+
 	if (!test_skip_self)
 		selftest(gui);
 
@@ -470,7 +501,14 @@ int main(int argc, char* argv[])
 	state_done(&state);
 	tommy_list_foreach(&filterlist_file, (tommy_foreach_func*)filter_free);
 	tommy_list_foreach(&filterlist_disk, (tommy_foreach_func*)filter_free);
-	free(import);
+
+	/* close log file */
+	if (stdlog != stdout && stdlog != stderr) {
+		if (fclose(stdlog) != 0) {
+			fprintf(stderr, "Error closing the log file '%s'. %s.\n", log, strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+	}
 
 	os_done();
 

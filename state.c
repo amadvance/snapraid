@@ -237,9 +237,9 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 	state->skip_fallocate = skip_fallocate;
 
 	if (state->gui) {
-		fprintf(stderr, "version:%s\n", PACKAGE_VERSION);
-		fprintf(stderr, "conf:%s\n", path);
-		fflush(stderr);
+		fprintf(stdlog, "version:%s\n", PACKAGE_VERSION);
+		fprintf(stdlog, "conf:%s\n", path);
+		fflush(stdlog);
 	}
 
 	f = sopen_read(path);
@@ -586,21 +586,21 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 
 	if (state->gui) {
 		tommy_node* i;
-		fprintf(stderr, "blocksize:%u\n", state->block_size);
+		fprintf(stdlog, "blocksize:%u\n", state->block_size);
 		for(i=state->disklist;i!=0;i=i->next) {
 			struct snapraid_disk* disk = i->data;
-			fprintf(stderr, "disk:%s:%s\n", disk->name, disk->dir);
+			fprintf(stdlog, "disk:%s:%s\n", disk->name, disk->dir);
 		}
 		if (state->qarity[0] != 0)
-			fprintf(stderr, "mode:raid6\n");
+			fprintf(stdlog, "mode:raid6\n");
 		else
-			fprintf(stderr, "mode:raid5\n");
-		fprintf(stderr, "parity:%s\n", state->parity);
+			fprintf(stdlog, "mode:raid5\n");
+		fprintf(stdlog, "parity:%s\n", state->parity);
 		if (state->qarity[0] != 0)
-			fprintf(stderr, "qarity:%s\n", state->qarity);
+			fprintf(stdlog, "qarity:%s\n", state->qarity);
 		if (state->pool[0] != 0)
-			fprintf(stderr, "pool:%s\n", state->pool);
-		fflush(stderr);
+			fprintf(stdlog, "pool:%s\n", state->pool);
+		fflush(stdlog);
 	}
 }
 
@@ -738,8 +738,8 @@ void state_read(struct snapraid_state* state)
 		pathcpy(path, sizeof(path), content->content);
 
 		if (state->gui) {
-			fprintf(stderr, "content:%s\n", path);
-			fflush(stderr);
+			fprintf(stdlog, "content:%s\n", path);
+			fflush(stdlog);
 		}
 		printf("Loading state from %s...\n", path);
 
@@ -756,7 +756,7 @@ void state_read(struct snapraid_state* state)
 
 			/* otherwise continue */
 			if (node->next) {
-				fprintf(stderr, "Not found, trying with another copy...\n");
+				fprintf(stderr, "warning: Content file '%s' not found, trying with another copy...\n", path);
 			}
 		}
 
@@ -768,7 +768,7 @@ void state_read(struct snapraid_state* state)
 		/* create the initial mapping */
 		state_map(state);
 
-		fprintf(stderr, "No content file found. Assuming empty.\n");
+		fprintf(stderr, "warning: No content file found. Assuming empty.\n");
 		return;
 	}
 
@@ -1894,8 +1894,8 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 void state_progress_begin(struct snapraid_state* state, block_off_t blockstart, block_off_t blockmax, block_off_t countmax)
 {
 	if (state->gui) {
-		fprintf(stderr,"run:begin:%u:%u:%u\n", blockstart, blockmax, countmax);
-		fflush(stderr);
+		fprintf(stdlog,"run:begin:%u:%u:%u\n", blockstart, blockmax, countmax);
+		fflush(stdlog);
 	} else {
 		time_t now;
 
@@ -1910,8 +1910,8 @@ void state_progress_begin(struct snapraid_state* state, block_off_t blockstart, 
 void state_progress_end(struct snapraid_state* state, block_off_t countpos, block_off_t countmax, data_off_t countsize)
 {
 	if (state->gui) {
-		fprintf(stderr, "run:end\n");
-		fflush(stderr);
+		fprintf(stdlog, "run:end\n");
+		fflush(stdlog);
 	} else {
 		unsigned countsize_MiB = (countsize + 1024*1024 - 1) / (1024*1024);
 
@@ -1948,8 +1948,8 @@ void state_progress_restart(struct snapraid_state* state)
 int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize)
 {
 	if (state->gui) {
-		fprintf(stderr, "run:pos:%u:%u:%"PRIu64"\n", blockpos, countpos, countsize);
-		fflush(stderr);
+		fprintf(stdlog, "run:pos:%u:%u:%"PRIu64"\n", blockpos, countpos, countsize);
+		fflush(stdlog);
 	} else {
 		time_t now;
 

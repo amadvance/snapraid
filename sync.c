@@ -185,7 +185,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				}
 			}
 
-			ret = handle_open(&handle[j], block_file_get(block));
+			ret = handle_open(&handle[j], block_file_get(block), stderr);
 			if (ret == -1) {
 				if (errno == ENOENT) {
 					fprintf(stderr, "Missing file '%s'.\n", handle[j].path);
@@ -233,7 +233,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				continue;
 			}
 
-			read_size = handle_read(&handle[j], block, buffer[j], state->block_size);
+			read_size = handle_read(&handle[j], block, buffer[j], state->block_size, stderr);
 			if (read_size == -1) {
 				fprintf(stderr, "DANGER! Unexpected read error in a data disk, it isn't possible to sync.\n");
 				printf("Stopping to allow recovery. Try with 'snapraid check'\n");

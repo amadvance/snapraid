@@ -74,16 +74,16 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			}
 
 			/* open the file for reading */
-			ret = handle_open(&handle[j], block_file_get(block));
+			ret = handle_open(&handle[j], block_file_get(block), stdlog);
 			if (ret == -1) {
-				fprintf(stderr, "error:%u:%s:%s: Open error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
+				fprintf(stdlog, "error:%u:%s:%s: Open error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 				++error;
 				continue;
 			}
 
-			read_size = handle_read(&handle[j], block, buffer, state->block_size);
+			read_size = handle_read(&handle[j], block, buffer, state->block_size, stdlog);
 			if (read_size == -1) {
-				fprintf(stderr, "error:%u:%s:%s: Read error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
+				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 				++error;
 				continue;
 			}
@@ -93,9 +93,9 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 
 		/* read the parity */
 		if (parity) {
-			ret = parity_read(parity, i, buffer, state->block_size);
+			ret = parity_read(parity, i, buffer, state->block_size, stdlog);
 			if (ret == -1) {
-				fprintf(stderr, "error:%u:parity: Read error\n", i);
+				fprintf(stdlog, "error:%u:parity: Read error\n", i);
 				++error;
 			}
 		}
@@ -103,9 +103,9 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 		/* read the qarity */
 		if (state->level >= 2) {
 			if (qarity) {
-				ret = parity_read(qarity, i, buffer, state->block_size);
+				ret = parity_read(qarity, i, buffer, state->block_size, stdlog);
 				if (ret == -1) {
-					fprintf(stderr, "error:%u:qarity: Read error\n", i);
+					fprintf(stdlog, "error:%u:qarity: Read error\n", i);
 					++error;
 				}
 			}

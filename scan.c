@@ -93,8 +93,8 @@ static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, 
 			++scan->count_equal;
 
 			if (state->gui) {
-				fprintf(stderr, "scan:equal:%s:%s\n", disk->name, link->sub);
-				fflush(stderr);
+				fprintf(stdlog, "scan:equal:%s:%s\n", disk->name, link->sub);
+				fflush(stdlog);
 			}
 
 			/* nothing more to do */
@@ -102,8 +102,8 @@ static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, 
 		} else {
 			/* it's an update */
 			if (state->gui) {
-				fprintf(stderr, "scan:update:%s:%s\n", disk->name, link->sub);
-				fflush(stderr);
+				fprintf(stdlog, "scan:update:%s:%s\n", disk->name, link->sub);
+				fflush(stdlog);
 			}
 			if (output) {
 				printf("Update '%s%s'\n", disk->dir, link->sub);
@@ -123,8 +123,8 @@ static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, 
 		++scan->count_insert;
 
 		if (state->gui) {
-			fprintf(stderr, "scan:add:%s:%s\n", disk->name, sub);
-			fflush(stderr);
+			fprintf(stdlog, "scan:add:%s:%s\n", disk->name, sub);
+			fflush(stdlog);
 		}
 		if (output) {
 			printf("Add '%s%s'\n", disk->dir, sub);
@@ -322,8 +322,8 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 				}
 
 				if (state->gui) {
-					fprintf(stderr, "scan:move:%s:%s:%s\n", disk->name, file->sub, sub);
-					fflush(stderr);
+					fprintf(stdlog, "scan:move:%s:%s:%s\n", disk->name, file->sub, sub);
+					fflush(stdlog);
 				}
 				if (output) {
 					printf("Move '%s%s' '%s%s'\n", disk->dir, file->sub, disk->dir, sub);
@@ -345,8 +345,8 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 				++scan->count_moved;
 
 				if (state->gui) {
-					fprintf(stderr, "scan:move:%s:%s:%s\n", disk->name, file->sub, sub);
-					fflush(stderr);
+					fprintf(stdlog, "scan:move:%s:%s:%s\n", disk->name, file->sub, sub);
+					fflush(stdlog);
 				}
 				if (output) {
 					printf("Move '%s%s' '%s%s'\n", disk->dir, file->sub, disk->dir, sub);
@@ -368,8 +368,8 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 				++scan->count_equal;
 
 				if (state->gui) {
-					fprintf(stderr, "scan:equal:%s:%s\n", disk->name, file->sub);
-					fflush(stderr);
+					fprintf(stdlog, "scan:equal:%s:%s\n", disk->name, file->sub);
+					fflush(stdlog);
 				}
 			}
 
@@ -395,8 +395,8 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 			if (strcmp(file->sub, sub) == 0) {
 				/* if the name is the same, it's an update */
 				if (state->gui) {
-					fprintf(stderr, "scan:update:%s:%s\n", disk->name, file->sub);
-					fflush(stderr);
+					fprintf(stdlog, "scan:update:%s:%s\n", disk->name, file->sub);
+					fflush(stdlog);
 				}
 				if (output) {
 					printf("Update '%s%s'\n", disk->dir, file->sub);
@@ -406,9 +406,9 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 			} else {
 				/* if the name is different, it's an inode reuse */
 				if (state->gui) {
-					fprintf(stderr, "scan:remove:%s:%s\n", disk->name, file->sub);
-					fprintf(stderr, "scan:add:%s:%s\n", disk->name, sub);
-					fflush(stderr);
+					fprintf(stdlog, "scan:remove:%s:%s\n", disk->name, file->sub);
+					fprintf(stdlog, "scan:add:%s:%s\n", disk->name, sub);
+					fflush(stdlog);
 				}
 				if (output) {
 					printf("Remove '%s%s'\n", disk->dir, file->sub);
@@ -429,8 +429,8 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 		++scan->count_insert;
 
 		if (state->gui) {
-			fprintf(stderr, "scan:add:%s:%s\n", disk->name, sub);
-			fflush(stderr);
+			fprintf(stdlog, "scan:add:%s:%s\n", disk->name, sub);
+			fflush(stdlog);
 		}
 		if (output) {
 			printf("Add '%s%s'\n", disk->dir, sub);
@@ -505,8 +505,8 @@ static void scan_emptydir(struct snapraid_scan* scan, struct snapraid_state* sta
 		++scan->count_equal;
 
 		if (state->gui) {
-			fprintf(stderr, "scan:equal:%s:%s\n", disk->name, dir->sub);
-			fflush(stderr);
+			fprintf(stdlog, "scan:equal:%s:%s\n", disk->name, dir->sub);
+			fflush(stdlog);
 		}
 
 		/* nothing more to do */
@@ -516,8 +516,8 @@ static void scan_emptydir(struct snapraid_scan* scan, struct snapraid_state* sta
 		++scan->count_insert;
 
 		if (state->gui) {
-			fprintf(stderr, "scan:add:%s:%s\n", disk->name, sub);
-			fflush(stderr);
+			fprintf(stdlog, "scan:add:%s:%s\n", disk->name, sub);
+			fflush(stdlog);
 		}
 		if (output) {
 			printf("Add '%s%s'\n", disk->dir, sub);
@@ -736,8 +736,8 @@ void state_scan(struct snapraid_state* state, int output)
 				++scan->count_remove;
 
 				if (state->gui) {
-					fprintf(stderr, "scan:remove:%s:%s\n", disk->name, file->sub);
-					fflush(stderr);
+					fprintf(stdlog, "scan:remove:%s:%s\n", disk->name, file->sub);
+					fflush(stdlog);
 				}
 				if (output) {
 					printf("Remove '%s%s'\n", disk->dir, file->sub);
@@ -760,8 +760,8 @@ void state_scan(struct snapraid_state* state, int output)
 				++scan->count_remove;
 
 				if (state->gui) {
-					fprintf(stderr, "scan:remove:%s:%s\n", disk->name, link->sub);
-					fflush(stderr);
+					fprintf(stdlog, "scan:remove:%s:%s\n", disk->name, link->sub);
+					fflush(stdlog);
 				}
 				if (output) {
 					printf("Remove '%s%s'\n", disk->dir, link->sub);
@@ -784,8 +784,8 @@ void state_scan(struct snapraid_state* state, int output)
 				++scan->count_remove;
 
 				if (state->gui) {
-					fprintf(stderr, "scan:remove:%s:%s\n", disk->name, dir->sub);
-					fflush(stderr);
+					fprintf(stdlog, "scan:remove:%s:%s\n", disk->name, dir->sub);
+					fflush(stdlog);
 				}
 				if (output) {
 					printf("Remove '%s%s'\n", disk->dir, dir->sub);

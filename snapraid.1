@@ -26,7 +26,7 @@ snapraid [\(hyc, \(hy\(hyconf CONFIG]
 .PD 0
 .PP
 .PD
-	[\(hyv, \(hy\(hyverbose]
+	[\(hyv, \(hy\(hyverbose] [\(hyl, \(hy\(hylog FILE]
 .PD 0
 .PP
 .PD
@@ -514,6 +514,15 @@ or fix some specific block, in case of a damaged disk.
 .B \(hyt, \(hy\(hycount BLKCOUNT
 Process only the specified number of blocks.
 It\(cqs present mainly for advanced manual recovering.
+.TP
+.B \(hyl, \(hy\(hylog FILE
+Outputs a detailed log to the specified file.
+It contains the exact specification of which block of
+any file is not recoverable and why.
+You can use the special files \(a"1\(a" and \(a"2\(a" to output
+to stdout and stderr.
+If this option is not specified, no detailed log is
+generated.
 .TP
 .B \(hyv, \(hy\(hyverbose
 Prints more information in the processing.

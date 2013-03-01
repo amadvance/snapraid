@@ -138,7 +138,7 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 			return 0;
 		}
 
-		fprintf(stderr, "error:%u:parity: Data error\n", pos);
+		fprintf(stdlog, "error:%u:parity: Data error\n", pos);
 		++error;
 	}
 
@@ -168,7 +168,7 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 			return 0;
 		}
 
-		fprintf(stderr, "error:%u:qarity: Data error\n", pos);
+		fprintf(stdlog, "error:%u:qarity: Data error\n", pos);
 		++error;
 	}
 
@@ -187,7 +187,7 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 			return 0;
 		}
 
-		fprintf(stderr, "error:%u:parity/qarity: Data error\n", pos);
+		fprintf(stdlog, "error:%u:parity/qarity: Data error\n", pos);
 		++error;
 	}
 
@@ -218,7 +218,7 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 			return 0;
 		}
 
-		fprintf(stderr, "error:%u:parity/qarity: Data error\n", pos);
+		fprintf(stdlog, "error:%u:parity/qarity: Data error\n", pos);
 		++error;
 	}
 
@@ -619,17 +619,17 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 				/* check if the file was larger and now truncated */
 				if (ret == 1) {
-					fprintf(stderr, "File '%s' is larger than expected.\n", handle[j].path);
-					fprintf(stderr, "error:%u:%s:%s: Size error\n", i, handle[j].disk->name, block_file_get(block)->sub);
+					fprintf(stdlog, "File '%s' is larger than expected.\n", handle[j].path);
+					fprintf(stdlog, "error:%u:%s:%s: Size error\n", i, handle[j].disk->name, block_file_get(block)->sub);
 					++error;
 
 					/* this is already a recovered error */
-					fprintf(stderr, "fixed:%u:%s:%s: Fixed size\n", i, handle[j].disk->name, block_file_get(block)->sub);
+					fprintf(stdlog, "fixed:%u:%s:%s: Fixed size\n", i, handle[j].disk->name, block_file_get(block)->sub);
 					++recovered_error;
 				}
 			} else {
 				/* if checking or hashing, open the file only for reading */
-				ret = handle_open(&handle[j], block_file_get(block));
+				ret = handle_open(&handle[j], block_file_get(block), stdlog);
 				if (ret == -1) {
 					/* save the failed block for the check/fix */
 					failed[failed_count].is_bad = 1;
@@ -639,7 +639,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					failed[failed_count].handle = &handle[j];
 					++failed_count;
 
-					fprintf(stderr, "error:%u:%s:%s: Open error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
+					fprintf(stdlog, "error:%u:%s:%s: Open error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 					++error;
 					continue;
 				}
@@ -648,8 +648,8 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				if (!file_flag_has(block_file_get(block), FILE_IS_LARGER)
 					&& handle[j].st.st_size > block_file_get(block)->size
 				) {
-					fprintf(stderr, "File '%s' is larger than expected.\n", handle[j].path);
-					fprintf(stderr, "error:%u:%s:%s: Size error\n", i, handle[j].disk->name, block_file_get(block)->sub);
+					fprintf(stdlog, "File '%s' is larger than expected.\n", handle[j].path);
+					fprintf(stdlog, "error:%u:%s:%s: Size error\n", i, handle[j].disk->name, block_file_get(block)->sub);
 					++error;
 
 					/* if fragmented, it may be reopened, so store the notification */
@@ -659,7 +659,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			}
 
 			/* read from the file */
-			read_size = handle_read(&handle[j], block, buffer[j], state->block_size);
+			read_size = handle_read(&handle[j], block, buffer[j], state->block_size, stdlog);
 			if (read_size == -1) {
 				/* save the failed block for the check/fix */
 				failed[failed_count].is_bad = 1;
@@ -669,7 +669,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				fprintf(stderr, "error:%u:%s:%s: Read error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
+				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 				++error;
 				continue;
 			}
@@ -704,7 +704,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					failed[failed_count].handle = &handle[j];
 					++failed_count;
 
-					fprintf(stderr, "error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
+					fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 					++error;
 					continue;
 				}
@@ -729,11 +729,11 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 			/* read the parity */
 			if (parity) {
-				ret = parity_read(parity, i, buffer_parity, state->block_size);
+				ret = parity_read(parity, i, buffer_parity, state->block_size, stdlog);
 				if (ret == -1) {
 					buffer_parity = 0; /* no parity to use */
 
-					fprintf(stderr, "error:%u:parity: Read error\n", i);
+					fprintf(stdlog, "error:%u:parity: Read error\n", i);
 					++error;
 				}
 			} else {
@@ -743,11 +743,11 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			/* read the qarity */
 			if (state->level >= 2) {
 				if (qarity) {
-					ret = parity_read(qarity, i, buffer_qarity, state->block_size);
+					ret = parity_read(qarity, i, buffer_qarity, state->block_size, stdlog);
 					if (ret == -1) {
 						buffer_qarity = 0; /* no qarity to use */
 
-						fprintf(stderr, "error:%u:qarity: Read error\n", i);
+						fprintf(stdlog, "error:%u:qarity: Read error\n", i);
 						++error;
 					}
 				} else {
@@ -766,7 +766,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				/* print a list of all the errors in files */
 				for(j=0;j<failed_count;++j) {
 					if (failed[j].is_bad)
-						fprintf(stderr, "unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
+						fprintf(stdlog, "unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
 				}
 
 				if (fix) {
@@ -786,7 +786,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				for(j=0;j<failed_count;++j) {
 					if (failed[j].is_bad && failed[j].is_outofdate) {
 						++partial_recover_error;
-						fprintf(stderr, "unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
+						fprintf(stdlog, "unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
 					}
 				}
 				if (partial_recover_error != 0) {
@@ -802,7 +802,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					if (buffer_parity != 0 && memcmp(buffer_parity, buffer[diskmax], state->block_size) != 0) {
 						buffer_parity = 0;
 
-						fprintf(stderr, "error:%u:parity: Data error\n", i);
+						fprintf(stdlog, "error:%u:parity: Data error\n", i);
 						++error;
 					}
 
@@ -811,7 +811,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 						if (buffer_qarity != 0 && memcmp(buffer_qarity, buffer[diskmax + 1], state->block_size) != 0) {
 							buffer_qarity = 0;
 
-							fprintf(stderr, "error:%u:qarity: Data error\n", i);
+							fprintf(stdlog, "error:%u:qarity: Data error\n", i);
 							++error;
 						}
 					}
@@ -855,7 +855,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 						/* mark the file as fixed */
 						file_flag_set(block_file_get(failed[j].block), FILE_IS_FIXED);
 
-						fprintf(stderr, "fixed:%u:%s:%s: Fixed data error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
+						fprintf(stdlog, "fixed:%u:%s:%s: Fixed data error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
 						++recovered_error;
 					}
 
@@ -874,7 +874,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 								goto bail;
 							}
 
-							fprintf(stderr, "fixed:%u:parity: Fixed data error\n", i);
+							fprintf(stdlog, "fixed:%u:parity: Fixed data error\n", i);
 							++recovered_error;
 						}
 
@@ -890,7 +890,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 									goto bail;
 								}
 
-								fprintf(stderr, "fixed:%u:qarity: Fixed data error\n", i);
+								fprintf(stdlog, "fixed:%u:qarity: Fixed data error\n", i);
 								++recovered_error;
 							}
 						}
@@ -953,12 +953,15 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 					ret = rename(path_from, path_to);
 					if (ret != 0) {
-						fprintf(stderr, "Error renaming  '%s' to '%s'. %s.\n", path_from, path_to, strerror(errno));
+						fprintf(stderr, "Error renaming '%s' to '%s'. %s.\n", path_from, path_to, strerror(errno));
 						fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 						printf("Stopping at block %u\n", i);
 						++unrecoverable_error;
 						goto bail;
 					}
+
+					printf("Unrecoverable '%s'\n", path_from);
+					fprintf(stdlog, "status:bad:%s:%s\n", handle[j].disk->name, block_file_get(block)->sub);
 
 					/* and do not set the time if damaged */
 					continue;
@@ -969,7 +972,10 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					/* nothing to do */
 					continue;
 				}
-				
+
+				printf("Recovered '%s%s'\n", handle[j].disk->dir, handle[j].file->sub);
+				fprintf(stdlog, "status:ok:%s:%s\n", handle[j].disk->name, handle[j].file->sub);
+
 				inode = handle[j].st.st_ino;
 
 				/* search for the corresponding inode */
@@ -1000,7 +1006,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 						goto bail;
 					}
 				} else {
-					fprintf(stderr, "collision:%s:%s:%s: Not setting modification time to avoid inode collision\n", handle[j].disk->name, block_file_get(block)->sub, collide_file->sub);
+					fprintf(stdlog, "collision:%s:%s:%s: Not setting modification time to avoid inode collision\n", handle[j].disk->name, block_file_get(block)->sub, collide_file->sub);
 				}
 			}
 		}
@@ -1050,18 +1056,18 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			if (ret == -1) {
 				failed = 1;
 
-				fprintf(stderr, "Error stating empty file '%s'. %s.\n", path, strerror(errno));
-				fprintf(stderr, "error:%s:%s: Empty file stat error\n", disk->name, file->sub);
+				fprintf(stdlog, "Error stating empty file '%s'. %s.\n", path, strerror(errno));
+				fprintf(stdlog, "error:%s:%s: Empty file stat error\n", disk->name, file->sub);
 				++error;
 			} else if (!S_ISREG(st.st_mode)) {
 				failed = 1;
 
-				fprintf(stderr, "error:%s:%s: Empty file error for not regular file\n", disk->name, file->sub);
+				fprintf(stdlog, "error:%s:%s: Empty file error for not regular file\n", disk->name, file->sub);
 				++error;
 			} else if (st.st_size != 0) {
 				failed = 1;
 
-				fprintf(stderr, "error:%s:%s: Empty file error for size '%"PRIu64"'\n", disk->name, file->sub, st.st_size);
+				fprintf(stdlog, "error:%s:%s: Empty file error for size '%"PRIu64"'\n", disk->name, file->sub, st.st_size);
 				++error;
 			}
 
@@ -1096,8 +1102,11 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				/* close it */
 				close(f);
 
-				fprintf(stderr, "fixed:%s:%s: Fixed empty file\n", disk->name, file->sub);
+				fprintf(stdlog, "fixed:%s:%s: Fixed empty file\n", disk->name, file->sub);
 				++recovered_error;
+
+				printf("Recovered '%s%s'\n", disk->dir, file->sub);
+				fprintf(stdlog, "status:ok:%s:%s\n", disk->name, file->sub);
 			}
 		}
 
@@ -1129,13 +1138,13 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				if (ret == -1) {
 					failed = 1;
 
-					fprintf(stderr, "Error stating hardlink '%s'. %s.\n", path, strerror(errno));
-					fprintf(stderr, "hardlinkerror:%s:%s:%s: Hardlink stat error\n", disk->name, link->sub, link->linkto);
+					fprintf(stdlog, "Error stating hardlink '%s'. %s.\n", path, strerror(errno));
+					fprintf(stdlog, "hardlinkerror:%s:%s:%s: Hardlink stat error\n", disk->name, link->sub, link->linkto);
 					++error;
 				} else if (!S_ISREG(st.st_mode)) {
 					failed = 1;
 
-					fprintf(stderr, "hardlinkerror:%s:%s:%s: Hardlink error for not regular file\n", disk->name, link->sub, link->linkto);
+					fprintf(stdlog, "hardlinkerror:%s:%s:%s: Hardlink error for not regular file\n", disk->name, link->sub, link->linkto);
 					++error;
 				}
 
@@ -1145,25 +1154,25 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				if (ret == -1) {
 					failed = 1;
 
-					fprintf(stderr, "Error stating hardlink-to '%s'. %s.\n", pathto, strerror(errno));
-					fprintf(stderr, "hardlinkerror:%s:%s:%s: Hardlink to stat error\n", disk->name, link->sub, link->linkto);
 					if (errno == ENOENT) {
-						/* if the targer doesn't exist, it's unrecoverable */
+						/* if the target doesn't exist, it's unrecoverable */
 						unrecoverable = 1;
 						++unrecoverable_error;
 					}
 
+					fprintf(stdlog, "Error stating hardlink-to '%s'. %s.\n", pathto, strerror(errno));
+					fprintf(stdlog, "hardlinkerror:%s:%s:%s: Hardlink to stat error\n", disk->name, link->sub, link->linkto);
 					++error;
 				} else if (!S_ISREG(stto.st_mode)) {
 					failed = 1;
 
-					fprintf(stderr, "hardlinkerror:%s:%s:%s: Hardlink-to error for not regular file\n", disk->name, link->sub, link->linkto);
+					fprintf(stdlog, "hardlinkerror:%s:%s:%s: Hardlink-to error for not regular file\n", disk->name, link->sub, link->linkto);
 					++error;
 				} else if (!failed && st.st_ino != stto.st_ino) {
 					failed = 1;
 
-					fprintf(stderr, "Mismatch hardlink '%s' and '%s'. Different inode.\n", path, pathto);
-					fprintf(stderr, "hardlinkerror:%s:%s:%s: Hardlink mismatch for different inode\n", disk->name, link->sub, link->linkto);
+					fprintf(stdlog, "Mismatch hardlink '%s' and '%s'. Different inode.\n", path, pathto);
+					fprintf(stdlog, "hardlinkerror:%s:%s:%s: Hardlink mismatch for different inode\n", disk->name, link->sub, link->linkto);
 					++error;
 				}
 			} else {
@@ -1173,14 +1182,14 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				if (ret < 0) {
 					failed = 1;
 
-					fprintf(stderr, "Error reading symlink '%s'. %s.\n", path, strerror(errno));
-					fprintf(stderr, "symlinkerror:%s:%s: Symlink read error\n", disk->name, link->sub);
+					fprintf(stdlog, "Error reading symlink '%s'. %s.\n", path, strerror(errno));
+					fprintf(stdlog, "symlinkerror:%s:%s: Symlink read error\n", disk->name, link->sub);
 					++error;
 				} else if (ret >= PATH_MAX) {
 					failed = 1;
 
-					fprintf(stderr, "Error reading symlink '%s'. Symlink too long.\n", path);
-					fprintf(stderr, "symlinkerror:%s:%s: Symlink read error\n", disk->name, link->sub);
+					fprintf(stdlog, "Error reading symlink '%s'. Symlink too long.\n", path);
+					fprintf(stdlog, "symlinkerror:%s:%s: Symlink read error\n", disk->name, link->sub);
 					++error;
 				} else {
 					linkto[ret] = 0;
@@ -1188,7 +1197,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					if (strcmp(linkto, link->linkto) != 0) {
 						failed = 1;
 
-						fprintf(stderr, "symlinkerror:%s:%s: Symlink data error '%s' instead of '%s'\n", disk->name, link->sub, linkto, link->linkto);
+						fprintf(stdlog, "symlinkerror:%s:%s: Symlink data error '%s' instead of '%s'\n", disk->name, link->sub, linkto, link->linkto);
 						++error;
 					}
 				}
@@ -1218,7 +1227,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				if (link_flag_has(link, FILE_IS_HARDLINK)) {
 					ret = hardlink(pathto, path);
 					if (ret != 0) {
-						fprintf(stderr, "Error writing hardlink '%s'. %s.\n", path, strerror(errno));
+						fprintf(stderr, "Error writing hardlink '%s' to '%s'. %s.\n", path, pathto, strerror(errno));
 						if (errno == EACCES) {
 							fprintf(stderr, "WARNING! Please give write permission to the hardlink.\n");
 						} else {
@@ -1230,12 +1239,12 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 						goto bail;
 					}
 
-					fprintf(stderr, "hardlinkfixed:%s:%s: Fixed hardlink error\n", disk->name, link->sub);
+					fprintf(stdlog, "hardlinkfixed:%s:%s: Fixed hardlink error\n", disk->name, link->sub);
 					++recovered_error;
 				} else {
 					ret = symlink(link->linkto, path);
 					if (ret != 0) {
-						fprintf(stderr, "Error writing symlink '%s'. %s.\n", path, strerror(errno));
+						fprintf(stderr, "Error writing symlink '%s' to '%s'. %s.\n", path, link->linkto, strerror(errno));
 						if (errno == EACCES) {
 							fprintf(stderr, "WARNING! Please give write permission to the symlink.\n");
 						} else {
@@ -1247,9 +1256,12 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 						goto bail;
 					}
 
-					fprintf(stderr, "symlinkfixed:%s:%s: Fixed symlink error\n", disk->name, link->sub);
+					fprintf(stdlog, "symlinkfixed:%s:%s: Fixed symlink error\n", disk->name, link->sub);
 					++recovered_error;
 				}
+
+				printf("Recovered '%s%s'\n", disk->dir, link->sub);
+				fprintf(stdlog, "status:ok:%s:%s\n", disk->name, link->sub);
 			}
 		}
 
@@ -1276,13 +1288,13 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			if (ret == -1) {
 				failed = 1;
 
-				fprintf(stderr, "Error stating dir '%s'. %s.\n", path, strerror(errno));
-				fprintf(stderr, "dir_error:%s:%s: Dir stat error\n", disk->name, dir->sub);
+				fprintf(stdlog, "Error stating dir '%s'. %s.\n", path, strerror(errno));
+				fprintf(stdlog, "dir_error:%s:%s: Dir stat error\n", disk->name, dir->sub);
 				++error;
 			} else if (!S_ISDIR(st.st_mode)) {
 				failed = 1;
 
-				fprintf(stderr, "dir_error:%s:%s: Dir error for not directory\n", disk->name, dir->sub);
+				fprintf(stdlog, "dir_error:%s:%s: Dir error for not directory\n", disk->name, dir->sub);
 				++error;
 			}
 
@@ -1311,8 +1323,11 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					goto bail;
 				}
 
-				fprintf(stderr, "dir_fixed:%s:%s: Fixed dir error\n", disk->name, dir->sub);
+				fprintf(stdlog, "dir_fixed:%s:%s: Fixed dir error\n", disk->name, dir->sub);
 				++recovered_error;
+
+				printf("Recovered '%s%s'\n", disk->dir, dir->sub);
+				fprintf(stdlog, "status:ok:%s:%s\n", disk->name, dir->sub);
 			}
 		}
 	}

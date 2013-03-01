@@ -204,8 +204,8 @@ void selftest(int gui)
 	unsigned i;
 
 	if (gui) {
-		fprintf(stderr, "selftest:\n");
-		fflush(stderr);
+		fprintf(stdlog, "selftest:\n");
+		fflush(stdlog);
 	}
 	
 	printf("Self test...\n");

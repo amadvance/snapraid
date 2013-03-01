@@ -118,7 +118,7 @@ void state_dup(struct snapraid_state* state)
 				++count;
 				size += dup->file->size;
 				if (state->gui) {
-					fprintf(stderr, "dup:%s:%s:%s:%s:%"PRIu64": dup\n", disk->name, file->sub, dup->disk->name, dup->file->sub, dup->file->size);
+					fprintf(stdlog, "dup:%s:%s:%s:%s:%"PRIu64": dup\n", disk->name, file->sub, dup->disk->name, dup->file->sub, dup->file->size);
 				} else {
 					printf("Duplicate '%s%s'\n", disk->dir, file->sub);
 					printf("of '%s%s'\n", dup->disk->dir, dup->file->sub);
