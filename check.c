@@ -1112,6 +1112,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			struct stat stto;
 			struct snapraid_link* link;
 			int failed = 0;
+			int unrecoverable = 0;
 
 			link = node->data;
 			node = node->next; /* next node */
@@ -1146,6 +1147,12 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 					fprintf(stderr, "Error stating hardlink-to '%s'. %s.\n", pathto, strerror(errno));
 					fprintf(stderr, "hardlinkerror:%s:%s:%s: Hardlink to stat error\n", disk->name, link->sub, link->linkto);
+					if (errno == ENOENT) {
+						/* if the targer doesn't exist, it's unrecoverable */
+						unrecoverable = 1;
+						++unrecoverable_error;
+					}
+
 					++error;
 				} else if (!S_ISREG(stto.st_mode)) {
 					failed = 1;
@@ -1187,7 +1194,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				}
 			}
 
-			if (fix && failed) {
+			if (fix && failed && !unrecoverable) {
 				/* create the ancestor directories */
 				ret = mkancestor(path);
 				if (ret != 0) {
