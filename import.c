@@ -107,6 +107,8 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 	}
 
 	tommy_list_insert_tail(&state->importlist, &file->nodelist, file);
+
+	free(buffer);
 }
 
 void import_file_free(struct snapraid_import_file* file)
