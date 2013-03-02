@@ -99,7 +99,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 /**
  * Checks (and fixes) all the files and parity data.
  * \param check If we have to check also the parity.
- * \param check If we have to fix, after checking. It requires also check==1.
+ * \param fix If we have to fix, after checking. It requires also check==1.
  */
 void state_check(struct snapraid_state* state, int check, int fix, block_off_t blockstart, block_off_t blockcount);
 
