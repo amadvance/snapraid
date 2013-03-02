@@ -385,13 +385,8 @@ int main(int argc, char* argv[])
 	raid_init();
 
 	/* open the log file */
-	if (log == 0) {
-#ifdef _WIN32
-		log = "nul";
-#else
-		log = "/dev/null";
-#endif
-	}
+	if (log == 0)
+		log = "2";
 	if (strcmp(log, "1") == 0) {
 		stdlog = stdout;
 	} else if (strcmp(log, "2") == 0) {

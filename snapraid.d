@@ -376,10 +376,8 @@ Options
 		Outputs a detailed log to the specified file.
 		It contains the exact specification of which block of
 		any file is not recoverable and why.
-		You can use the special files "1" and "2" to output
-		to stdout and stderr.
-		If this option is not specified, no detailed log is
-		generated.
+		If this option is not specified, the log is printed in
+		the console using the standard error stream.
 
 	-v, --verbose
 		Prints more information in the processing.
