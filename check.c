@@ -769,12 +769,10 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 						fprintf(stdlog, "unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
 				}
 
-				if (fix) {
-					/* keep track of damaged files */
-					for(j=0;j<failed_count;++j) {
-						if (failed[j].is_bad)
-							file_flag_set(block_file_get(failed[j].block), FILE_IS_DAMAGED);
-					}
+				/* keep track of damaged files */
+				for(j=0;j<failed_count;++j) {
+					if (failed[j].is_bad)
+						file_flag_set(block_file_get(failed[j].block), FILE_IS_DAMAGED);
 				}
 			} else {
 				/* now counts partial recovers */
@@ -895,11 +893,25 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 							}
 						}
 					}
+				} else {
+					/* if we are not fixing, we just set the FIXED flag */
+					for(j=0;j<failed_count;++j) {
+						if (failed[j].is_bad) {
+							file_flag_set(block_file_get(failed[j].block), FILE_IS_FIXED);
+						}
+					}
+				}
+			}
+		} else {
+			/* if we are not checking, we just set the DAMAGED flag */
+			for(j=0;j<failed_count;++j) {
+				if (failed[j].is_bad) {
+					file_flag_set(block_file_get(failed[j].block), FILE_IS_DAMAGED);
 				}
 			}
 		}
 
-		/* for all the files of this block check if we need to fix the modification time */
+		/* for all the files prints the final status, does the final time fix */
 		for(j=0;j<diskmax;++j) {
 			struct snapraid_block* block = BLOCK_EMPTY;
 			struct snapraid_file* collide_file;
@@ -919,17 +931,16 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			pathprint(path, sizeof(path), "%s%s", handle[j].disk->dir, file->sub);
 
 			/* if the file is open, it must be the correct block one */
+			/* note tha if the file is excluded, it's also possible to have it not opened, */
+			/* and have the handle[j].file pointing to NULL. */
+			/* A typical case is if the file is missing, */
+			/* and the read-only open failed before. */
 			if (handle[j].file != 0 && handle[j].file != file) {
 				fprintf(stderr, "Internal inconsistency in opened file for block %u\n", block->parity_pos);
 				exit(EXIT_FAILURE);
 			}
 
 			/* if the file is excluded, we have nothing to fix */
-			/* note that this check is required, because if the file is excluded */
-			/* it's also possible to have it not opened, */
-			/* and have the handle[j].file pointing to NULL. */
-			/* A typical case is if the file is missing, */
-			/* and the read-only open failed before. */
 			if (file_flag_has(file, FILE_IS_EXCLUDED)) {
 				/* nothing to do */
 				continue;
@@ -1027,10 +1038,18 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				/* we are not fixing, but only checking */
 				/* print just the final status */
 				if (file_flag_has(file, FILE_IS_DAMAGED)) {
-					if (state->gui) {
-						fprintf(stdlog, "status:unrecoverable:%s:%s\n", handle[j].disk->name, file->sub);
+					if (!check) {
+						if (state->gui) {
+							fprintf(stdlog, "status:damaged:%s:%s\n", handle[j].disk->name, file->sub);
+						} else {
+							printf("Damaged '%s'\n", path);
+						}
 					} else {
-						printf("Unrecoverable '%s'\n", path);
+						if (state->gui) {
+							fprintf(stdlog, "status:unrecoverable:%s:%s\n", handle[j].disk->name, file->sub);
+						} else {
+							printf("Unrecoverable '%s'\n", path);
+						}
 					}
 				} else if (file_flag_has(file, FILE_IS_FIXED)) {
 					if (state->gui) {
