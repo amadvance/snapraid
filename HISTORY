@@ -17,7 +17,8 @@ SnapRAID HISTORY
  * Files without read permission generates now an error instead of a warning.
    You now must explicitely exclude them in the configuration file with
    exclusion rules.
- * In 'check' and 'fix' prints the result for each processed file.
+ * In 'check' and 'fix', if verbose is enabled, prints the result for each
+   processed file.
 
 2.1 2013/1
 ==========

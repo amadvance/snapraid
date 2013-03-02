@@ -982,7 +982,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 					if (state->gui) {
 						fprintf(stdlog, "status:unrecoverable:%s:%s\n", handle[j].disk->name, file->sub);
-					} else {
+					} else if (state->verbose) {
 						printf("Unrecoverable '%s'\n", path);
 					}
 
@@ -998,7 +998,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 				if (state->gui) {
 					fprintf(stdlog, "status:recovered:%s:%s\n", handle[j].disk->name, file->sub);
-				} else {
+				} else if (state->verbose) {
 					printf("Recovered '%s'\n", path);
 				}
 
@@ -1041,26 +1041,26 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					if (!check) {
 						if (state->gui) {
 							fprintf(stdlog, "status:damaged:%s:%s\n", handle[j].disk->name, file->sub);
-						} else {
+						} else if (state->verbose) {
 							printf("Damaged '%s'\n", path);
 						}
 					} else {
 						if (state->gui) {
 							fprintf(stdlog, "status:unrecoverable:%s:%s\n", handle[j].disk->name, file->sub);
-						} else {
+						} else if (state->verbose) {
 							printf("Unrecoverable '%s'\n", path);
 						}
 					}
 				} else if (file_flag_has(file, FILE_IS_FIXED)) {
 					if (state->gui) {
 						fprintf(stdlog, "status:recoverable:%s:%s\n", handle[j].disk->name, file->sub);
-					} else {
+					} else if (state->verbose) {
 						printf("Recoverable '%s'\n", path);
 					}
 				} else {
 					if (state->gui) {
 						fprintf(stdlog, "status:correct:%s:%s\n", handle[j].disk->name, file->sub);
-					} else {
+					} else if (state->verbose) {
 						printf("Correct '%s'\n", path);
 					}
 				}
@@ -1163,7 +1163,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 				if (state->gui) {
 					fprintf(stdlog, "status:recovered:%s:%s\n", disk->name, file->sub);
-				} else {
+				} else if (state->verbose) {
 					printf("Recovered '%s%s'\n", disk->dir, file->sub);
 				}
 			}
@@ -1321,7 +1321,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 				if (state->gui) {
 					fprintf(stdlog, "status:recovered:%s:%s\n", disk->name, link->sub);
-				} else {
+				} else if (state->verbose) {
 					printf("Recovered '%s%s'\n", disk->dir, link->sub);
 				}
 			}
@@ -1390,7 +1390,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 				if (state->gui) {
 					fprintf(stdlog, "status:ok:%s:%s\n", disk->name, dir->sub);
-				} else {
+				} else if (state->verbose) {
 					printf("Recovered '%s%s'\n", disk->dir, dir->sub);
 				}
 			}
