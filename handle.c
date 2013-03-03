@@ -71,7 +71,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 		return -1;
 	}
 
-	/* get the size of the exising data */
+	/* get the size of the existing data */
 	handle->valid_size = handle->st.st_size;
 
 	/* Here we only truncate the file and we don't grow it */
