@@ -854,7 +854,7 @@ void state_read(struct snapraid_state* state)
 
 			/* read the hash only for 'blk/inv/chg', and not for 'new' */
 			if (tag[0] != 'n') {
-				c = sgeteol(f);
+				c = sgetc(f);
 				if (c != ' ') {
 					fprintf(stderr, "Invalid 'blk' specification in '%s' at line %u\n", path, line);
 					exit(EXIT_FAILURE);
@@ -916,7 +916,7 @@ void state_read(struct snapraid_state* state)
 			hash = oathash32(hash, v_pos);
 
 			/* read the hash */
-			c = sgeteol(f);
+			c = sgetc(f);
 			if (c != ' ') {
 				fprintf(stderr, "Invalid 'off' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
