@@ -129,6 +129,12 @@ static inline int hardlink(const char* a, const char* b)
 }
 
 /**
+ * Get the device UUID.
+ * Returns 0 on success.
+ */
+int devuuid(uint64_t device, char* uuid, size_t size);
+
+/**
  * Initializes the system.
  */
 void os_init(void);

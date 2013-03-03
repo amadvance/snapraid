@@ -29,8 +29,9 @@ extern volatile int global_interrupt;
 struct snapraid_state {
 	int verbose; /**< Verbose output. */
 	int gui; /**< Gui output. */
-	int force_zero; /**< Forced dangerous operations of synching file now with zero size. */
-	int force_empty; /**< Forced dangerous operations of synching disk now empty. */
+	int force_zero; /**< Forced dangerous operations of synching files now with zero size. */
+	int force_empty; /**< Forced dangerous operations of synching disks now empty. */
+	int force_uuid; /**< Forced dangerous operations of synching disks with uuid changed. */
 	int filter_hidden; /**< Filter out hidden files. */
 	int find_by_name; /**< Forced dangerous operations of synching a rewritten disk. */
 	uint64_t autosave; /**< Autosave after the specified amount of data. 0 to disable. */
@@ -48,6 +49,7 @@ struct snapraid_state {
 	uint64_t pool_device; /**< Device identifier of the pool. */
 	unsigned level; /**< Number of parity levels. 1 for RAID5, 2 for RAID6. */
 	unsigned hash; /**< Hash kind used. */
+	const char* command; /**< Command running. */
 	tommy_list contentlist; /**< List of content files. */
 	tommy_list disklist; /**< List of all the disks. */
 	tommy_list maplist; /**< List of all the disk mappings. */
@@ -74,7 +76,7 @@ void state_done(struct snapraid_state* state);
 /**
  * Reads the configuration file.
  */
-void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_sign, int skip_fallocate, int skip_device);
+void state_config(struct snapraid_state* state, const char* path, const char* command, int verbose, int gui, int force_zero, int force_empty, int force_uuid, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_sign, int skip_fallocate, int skip_device);
 
 /**
  * Reads the state.

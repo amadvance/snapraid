@@ -253,11 +253,17 @@ struct snapraid_disk {
 };
 
 /**
+ * Max UUID length.
+ */
+#define UUID_MAX 128
+
+/**
  * Disk mapping.
  */
 struct snapraid_map {
 	char name[PATH_MAX]; /**< Name of the disk. */
 	unsigned position; /**< Position of the disk in the parity. */
+	char uuid[UUID_MAX]; /**< UUID of the disk. Empty if unknown. */
 
 	/* nodes for data structures */
 	tommy_node node;
@@ -617,8 +623,9 @@ static inline struct snapraid_block* disk_block_get(struct snapraid_disk* disk, 
 
 /**
  * Allocates a disk mapping.
+ * Uses uuid="" if not available.
  */
-struct snapraid_map* map_alloc(const char* name, unsigned position);
+struct snapraid_map* map_alloc(const char* name, unsigned position, const char* uuid);
 
 /**
  * Deallocates a disk mapping.

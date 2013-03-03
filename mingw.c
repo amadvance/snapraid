@@ -1029,5 +1029,13 @@ int windows_readlink(const char* file, char* buffer, size_t size)
 	return len;
 }
 
+int devuuid(uint64_t device, char* uuid, size_t uuid_size)
+{
+	/* just use the volume serial number returned in the device parameter */
+
+	snprintf(uuid, uuid_size, "%08x", (unsigned)device);
+	return 0;
+}
+
 #endif
 

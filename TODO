@@ -28,6 +28,13 @@ on the error message. See: https://sourceforge.net/projects/snapraid/forums/foru
 * In Windows to use FILE_FLAG_BACKUP_SEMANTICS we should also get privileges.
 See http://www.codeproject.com/Articles/21202/Reparse-Points-in-Vista.
 Altought it doesn't seem necessary when used in CreateFile to just open directory.
+Anyway, see this snipset found with google:
+DWORD access = 0;
+DWORD share = FILE_SHARE_DELETE | FILE_SHARE_READ | FILE_SHARE_WRITE;
+CreateFile(path1,access,share,NULL,OPEN_EXISTING,
+	(GetFileAttributes(path1)&FILE_ATTRIBUTE_DIRECTORY)?FILE_FLAG_BACKUP_SEMANTICS:0,NULL);
+It seems to use it *exclusively* for directory.
+Is it possible that the need of lstat_ex depends on that ?
 
 * In Windows we must be case insensitive, at least for ASCII<128 comparison. For other UTF-8 chars
 is too complex.

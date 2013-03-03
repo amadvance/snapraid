@@ -49,7 +49,7 @@ AC_SYS_LARGEFILE
 AC_CHECK_FUNCS([memset strchr strerror strrchr mkdir gettimeofday strtoul])
 AC_CHECK_FUNCS([getopt getopt_long snprintf vsnprintf])
 AC_CHECK_FUNCS([ftruncate fallocate fsync access posix_fallocate posix_fadvise pread pwrite getc_unlocked ferror_unlocked fnmatch])
-AC_CHECK_FUNCS([futimes futimens futimesat])
+AC_CHECK_FUNCS([futimes futimens futimesat fstatat])
 
 dnl Checks for architecture
 AC_C_BIGENDIAN

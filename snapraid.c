@@ -66,6 +66,7 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-N, --find-by-name    ", "-N") "  Find the files by name instead than by inode\n");
 	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero      ", "-Z") "  Force synching of files that get zero size\n");
 	printf("  " SWITCH_GETOPT_LONG("-E, --force-empty     ", "-E") "  Force synching of disks that get empty\n");
+	printf("  " SWITCH_GETOPT_LONG("-U, --force-uuid      ", "-U") "  Force commands on disks with uuid changed\n");
 	printf("  " SWITCH_GETOPT_LONG("-s, --start BLKSTART  ", "-s") "  Start from the specified block number\n");
 	printf("  " SWITCH_GETOPT_LONG("-t, --count BLKCOUNT  ", "-t") "  Count of block to process\n");
 	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
@@ -94,6 +95,7 @@ struct option long_options[] = {
 	{ "log", 1, 0, 'l' },
 	{ "force-zero", 0, 0, 'Z' },
 	{ "force-empty", 0, 0, 'E' },
+	{ "force-uuid", 0, 0, 'U' },
 	{ "find-by-name", 0, 0, 'N' },
 	{ "audit-only", 0, 0, 'a' },
 	{ "speed-test", 0, 0, 'T' },
@@ -101,7 +103,7 @@ struct option long_options[] = {
 	{ "gui", 0, 0, 'G' }, /* undocumented GUI interface command */
 	{ "help", 0, 0, 'h' },
 	{ "version", 0, 0, 'V' },
-	
+
 	/* The following are test specific options, DO NOT USE! */
 
 	/* After syncing, do not write the new content file */
@@ -128,7 +130,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:f:d:ms:t:i:l:ZENaTvhVG"
+#define OPTIONS "c:f:d:ms:t:i:l:ZEUNaTvhVG"
 
 volatile int global_interrupt = 0;
 
@@ -156,6 +158,7 @@ int main(int argc, char* argv[])
 	int gui;
 	int force_zero;
 	int force_empty;
+	int force_uuid;
 	int find_by_name;
 	int audit_only;
 	int test_kill_after_sync;
@@ -187,6 +190,7 @@ int main(int argc, char* argv[])
 	gui = 0;
 	force_zero = 0;
 	force_empty = 0;
+	force_uuid = 0;
 	find_by_name = 0;
 	audit_only = 0;
 	test_kill_after_sync = 0;
@@ -268,6 +272,9 @@ int main(int argc, char* argv[])
 			break;
 		case 'E' :
 			force_empty = 1;
+			break;
+		case 'U' :
+			force_uuid = 1;
 			break;
 		case 'N' :
 			find_by_name = 1;
@@ -402,7 +409,7 @@ int main(int argc, char* argv[])
 
 	state_init(&state);
 
-	state_config(&state, conf, verbose, gui, force_zero, force_empty, find_by_name, test_expect_unrecoverable, test_expect_recoverable, test_skip_sign, test_skip_fallocate, test_skip_device);
+	state_config(&state, conf, command, verbose, gui, force_zero, force_empty, force_uuid, find_by_name, test_expect_unrecoverable, test_expect_recoverable, test_skip_sign, test_skip_fallocate, test_skip_device);
 
 	if (import != 0) {
 		printf("%s\n", import);

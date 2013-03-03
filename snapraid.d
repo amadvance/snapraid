@@ -6,7 +6,7 @@ Synopsis
 	:	[-f, --filter PATTERN] [-d, --filter-disk NAME] [-m, --filter-missing]
 	:	[-a, --audit-only] [-i, --import DIR]
 	:	[-N, --find-by-name]
-	:	[-Z, --force-zero] [-E, --force-empty]
+	:	[-Z, --force-zero] [-E, --force-empty] [-U, --force-uuid]
 	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	:	[-v, --verbose] [-l, --log FILE]
 	:	sync|pool|diff|dup|check|fix
@@ -363,6 +363,16 @@ Options
 		mounted.
 		This option can be used only with the "sync" command.
 
+	-U, --force-uuid
+		Forces the insecure operation of syncing, checking and fixing
+		with disks that have changed the UUID.
+		If SnapRAID detects that a disk has changed UUID,
+		it stops proceeding unless you specify this option.
+		This allows to detect when your disks are mounted in the
+		wrong mount points.
+		This option can be used only with the "sync", "check" or
+		"fix" command.
+
 	-s, --start BLKSTART
 		Starts the processing from the specified
 		block number. It could be useful to easy retry to check
@@ -645,11 +655,17 @@ Recovering
   STEP 2 -> Fix
 	Run the fix command, storing the log in an external file with:
 
-		:snapraid -d NAME fix 2>fix.log
+		:snapraid -d NAME -l fix.log fix
 
 	Where NAME is the name of the disk, like "d1" as in our previous example.
 
 	This command will take a long time.
+
+	If the command doesn't start complaining that the failed and replaced
+	disk has changed UUID, just add the '-U' option.
+	But ensure that the failed disk is the only one with the UUID changed.
+
+	You can also add the '-v' option to see on the console the fixed files.
 
 	Take care that you need also few gigabytes free to store the fix.log file.
 	Run it from a disk with some free space.
@@ -669,8 +685,8 @@ Recovering
 	"fix" command!
 
   STEP 3 -> Check
-	As paranoid check, you can now run a whole "check" command to ensure that
-	everything is OK.
+	As paranoid but recommended check, you can now run a "check" command to ensure
+	that everything is OK on the disk.
 
 		:snapraid -d NAME -a check
 
@@ -712,8 +728,9 @@ Content
 	Defines the checksum kind used. It can be only "murmur3".
 	From SnapRAID 2.0 the old "md5" checksum is not supported anymore.
 
-  map NAME INDEX
+  map NAME INDEX [UUID]
 	Defines the position INDEX of the disk NAME in the parity computation.
+	The disk UUID is also present if supported for the platform.
 
   sign SIGN
 	Signature checksum of the content file to ensure that it doesn't get

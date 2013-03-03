@@ -18,7 +18,7 @@ snapraid [\(hyc, \(hy\(hyconf CONFIG]
 .PD 0
 .PP
 .PD
-	[\(hyZ, \(hy\(hyforce\(hyzero] [\(hyE, \(hy\(hyforce\(hyempty]
+	[\(hyZ, \(hy\(hyforce\(hyzero] [\(hyE, \(hy\(hyforce\(hyempty] [\(hyU, \(hy\(hyforce\(hyuuid]
 .PD 0
 .PP
 .PD
@@ -506,6 +506,16 @@ This allows to easily detect when a data file\(hysystem is not
 mounted.
 This option can be used only with the \(a"sync\(a" command.
 .TP
+.B \(hyU, \(hy\(hyforce\(hyuuid
+Forces the insecure operation of syncing, checking and fixing
+with disks that have changed the UUID.
+If SnapRAID detects that a disk has changed UUID,
+it stops proceeding unless you specify this option.
+This allows to detect when your disks are mounted in the
+wrong mount points.
+This option can be used only with the \(a"sync\(a", \(a"check\(a" or
+\(a"fix\(a" command.
+.TP
 .B \(hys, \(hy\(hystart BLKSTART
 Starts the processing from the specified
 block number. It could be useful to easy retry to check
@@ -919,7 +929,7 @@ disk d1 /mnt/new_spare_disk/
 Run the fix command, storing the log in an external file with:
 .PP
 .RS 4
-snapraid \(hyd NAME fix 2>fix.log
+snapraid \(hyd NAME \(hyl fix.log fix
 .PD 0
 .PP
 .PD
@@ -928,6 +938,12 @@ snapraid \(hyd NAME fix 2>fix.log
 Where NAME is the name of the disk, like \(a"d1\(a" as in our previous example.
 .PP
 This command will take a long time.
+.PP
+If the command doesn\(cqt start complaining that the failed and replaced
+disk has changed UUID, just add the \(cq\(hyU\(cq option.
+But ensure that the failed disk is the only one with the UUID changed.
+.PP
+You can also add the \(cq\(hyv\(cq option to see on the console the fixed files.
 .PP
 Take care that you need also few gigabytes free to store the fix.log file.
 Run it from a disk with some free space.
@@ -946,8 +962,8 @@ If you are satisfied of the recovering, you can now proceed further,
 but take care that after synching you will no more able to retry the
 \(a"fix\(a" command!
 .SS STEP 3 \(hy> Check 
-As paranoid check, you can now run a whole \(a"check\(a" command to ensure that
-everything is OK.
+As paranoid but recommended check, you can now run a \(a"check\(a" command to ensure
+that everything is OK on the disk.
 .PP
 .RS 4
 snapraid \(hyd NAME \(hya check
@@ -994,8 +1010,9 @@ defined in the configuration file.
 .SS checksum CHECKSUM 
 Defines the checksum kind used. It can be only \(a"murmur3\(a".
 From SnapRAID 2.0 the old \(a"md5\(a" checksum is not supported anymore.
-.SS map NAME INDEX 
+.SS map NAME INDEX [UUID] 
 Defines the position INDEX of the disk NAME in the parity computation.
+The disk UUID is also present if supported for the platform.
 .SS sign SIGN 
 Signature checksum of the content file to ensure that it doesn\(cqt get
 corrupted. If you want to modify the content file manually, you have

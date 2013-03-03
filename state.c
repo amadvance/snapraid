@@ -217,10 +217,9 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 			exit(EXIT_FAILURE);
 		}
 	}
-	
 }
 
-void state_config(struct snapraid_state* state, const char* path, int verbose, int gui, int force_zero, int force_empty, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_sign, int skip_fallocate, int skip_device)
+void state_config(struct snapraid_state* state, const char* path, const char* command, int verbose, int gui, int force_zero, int force_empty, int force_uuid, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_sign, int skip_fallocate, int skip_device)
 {
 	STREAM* f;
 	unsigned line;
@@ -229,12 +228,14 @@ void state_config(struct snapraid_state* state, const char* path, int verbose, i
 	state->gui = gui;
 	state->force_zero = force_zero;
 	state->force_empty = force_empty;
+	state->force_uuid = force_uuid;
 	state->filter_hidden = 0;
 	state->find_by_name = find_by_name;
 	state->expect_unrecoverable = expect_unrecoverable;
 	state->expect_recoverable = expect_recoverable;
 	state->skip_sign = skip_sign;
 	state->skip_fallocate = skip_fallocate;
+	state->command = command;
 
 	if (state->gui) {
 		fprintf(stdlog, "version:%s\n", PACKAGE_VERSION);
@@ -611,6 +612,7 @@ static void state_map(struct snapraid_state* state)
 {
 	unsigned hole;
 	tommy_node* i;
+	unsigned uuid_mismatch;
 
 	/* removes all the mapping without a disk */
 	/* this happens when a disk is removed from the configuration file */
@@ -675,9 +677,63 @@ static void state_map(struct snapraid_state* state)
 		}
 
 		/* insert the new mapping */
-		map = map_alloc(disk->name, hole);
+		map = map_alloc(disk->name, hole, "");
 
 		tommy_list_insert_tail(&state->maplist, &map->node, map);
+	}
+
+	/* checks if mapping match the disk uuid */
+	uuid_mismatch = 0;
+	for(i=state->maplist;i!=0;i=i->next) {
+		struct snapraid_map* map = i->data;
+		struct snapraid_disk* disk;
+		tommy_node* j;
+		char uuid[UUID_MAX];
+		int ret;
+
+		for(j=state->disklist;j!=0;j=j->next) {
+			disk = j->data;
+			if (strcmp(disk->name, map->name) == 0) {
+				/* disk found */
+				break;
+			}
+		}
+
+		if (j==0) {
+			fprintf(stderr, "Internal incosistency for mapping '%s'\n", map->name);
+			exit(EXIT_FAILURE);
+		}
+
+		ret = devuuid(disk->device, uuid, sizeof(uuid));
+		if (ret != 0) {
+			/* uuid not available, just ignore */
+			continue;
+		}
+
+		if (map->uuid[0] != 0) {
+			if (strcmp(uuid, map->uuid) != 0) {
+				++uuid_mismatch;
+				fprintf(stderr, "UUID change for disk '%s' from '%s' to '%s'\n", disk->name, map->uuid, uuid);
+			}
+		}
+
+		if (strcmp(uuid, map->uuid) != 0) {
+			/* rewrite if the uuid changes */
+			state->need_write = 1;
+		}
+
+		/* update the uuid in the mapping, */
+		/* even if it's already present because it may be changed */
+		pathcpy(map->uuid, sizeof(map->uuid), uuid);
+	}
+
+	if (!state->force_uuid && uuid_mismatch > 0) {
+		fprintf(stderr, "Some disks have UUID changed from the latest 'sync'.\n");
+		fprintf(stderr, "If this happens because you really replaced them,\n");
+		fprintf(stderr, "you can '%s' anyway, using 'snapraid --force-uuid %s'.\n", state->command, state->command);
+		fprintf(stderr, "Instead, it's possible that you messed up the disk mount points,\n");
+		fprintf(stderr, "and you have to restore the mount points at the state of the latest sync.\n");
+		exit(EXIT_FAILURE);
 	}
 }
 
@@ -1356,6 +1412,7 @@ void state_read(struct snapraid_state* state)
 			}
 		} else if (strcmp(tag, "map") == 0) {
 			struct snapraid_map* map;
+			char uuid[UUID_MAX];
 			uint32_t v_pos;
 
 			hash = oathash8(hash, 'm');
@@ -1380,7 +1437,21 @@ void state_read(struct snapraid_state* state)
 			}
 			hash = oathash32(hash, v_pos);
 
-			map = map_alloc(buffer, v_pos);
+			c = sgetc(f);
+			if (c != ' ') {
+				sungetc(c, f);
+				uuid[0] = 0;
+			} else {
+				/* read the uuid */
+				ret = sgettok(f, uuid, sizeof(uuid));
+				if (ret < 0) {
+					fprintf(stderr, "Invalid 'map' specification in '%s' at line %u\n", path, line);
+					exit(EXIT_FAILURE);
+				}
+				hash = oathashs(hash, uuid);
+			}
+
+			map = map_alloc(buffer, v_pos, uuid);
 
 			tommy_list_insert_tail(&state->maplist, &map->node, map);
 		} else if (strcmp(tag, "sign") == 0) {
@@ -1553,6 +1624,13 @@ void state_write(struct snapraid_state* state)
 		sputc(' ', f);
 		sputu32(map->position, f);
 		hash = oathash32(hash, map->position);
+
+		/* if there is an uuid, print it */
+		if (map->uuid[0]) {
+			sputc(' ', f);
+			sputs(map->uuid, f);
+			hash = oathashs(hash, map->uuid);
+		}
 		sputeol(f);
 		if (serror(f)) {
 			fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));

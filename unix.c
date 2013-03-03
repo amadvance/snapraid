@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Andrea Mazzoleni
+ * Copyright (C) 2013 Andrea Mazzoleni
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -58,6 +58,70 @@ const char* stat_desc(struct stat* st)
 		return "socket";
 	return "unknown";
 }
+
+#if HAVE_FSTATAT
+/**
+ * This function get the UUID using the /dev/disk/by-uuid/ links.
+ * Comparing with the libblkid library, it works also from not root processes.
+ */
+int devuuid(uint64_t device, char* uuid, size_t uuid_size)
+{
+	int ret;
+	DIR* d;
+	struct stat st;
+
+	/* scan the UUID directory searching for the device */
+	d = opendir("/dev/disk/by-uuid");
+	if (!d) {
+		/* directory missing?, likely we are not in Linux */
+		return -1;
+	}
+
+	while (1) {
+		struct dirent* dd;
+
+		dd = readdir(d);
+		if (dd == 0) {
+			/* not found or generic error */
+			goto bail;
+		}
+
+		/* skip "." and ".." files, UUIDs never start with '.' */
+		if (dd->d_name[0] == '.') {
+			continue;
+		}
+
+		ret = fstatat(dirfd(d), dd->d_name, &st, 0);
+		if (ret != 0) {
+			/* generic error, ignore and continue the search */
+			continue;
+		}
+
+		/* if it matches, we have the uuid */
+		if (S_ISBLK(st.st_mode) && st.st_rdev == device) {
+			snprintf(uuid, uuid_size, "%s", dd->d_name);
+			break;
+		}
+	}
+
+	closedir(d);
+	return 0;
+
+bail:
+	closedir(d);
+	return -1;
+}
+#else
+int devuuid(uint64_t device, char* uuid, size_t uuid_size)
+{
+	(void)device;
+	(void)uuid;
+	(void)uuid_size;
+
+	/* not supported */
+	return -1;
+}
+#endif
 
 void os_init(void)
 {

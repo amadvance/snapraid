@@ -385,8 +385,10 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 				/* otherwise it could be a deleted and recreated file */
 				if (strcmp(file->sub, sub) == 0) {
 					if (!state->force_zero) {
-						fprintf(stderr, "The file '%s%s' has now zero size!\n", disk->dir, sub);
-						fprintf(stderr, "If you really want to sync, use 'snapraid --force-zero sync'\n");
+						fprintf(stderr, "The file '%s%s' has unexpected zero size! If this an expected state\n", disk->dir, sub);
+						fprintf(stderr, "you can '%s' anyway usinge 'snapraid --force-zero %s'\n", state->command, state->command);
+						fprintf(stderr, "Instead, it's possible that after a kernel crash this file was lost,\n");
+						fprintf(stderr, "and you can use 'snapraid --filter %s fix' to recover it.\n", sub);
 						exit(EXIT_FAILURE);
 					}
 				}
@@ -851,8 +853,11 @@ void state_scan(struct snapraid_state* state, int output)
 		}
 		if (has_empty) {
 			fprintf(stderr, " are now missing or rewritten!\n");
-			fprintf(stderr, "This happens with an empty disk or when all the files are recreated after a 'fix' command.\n");
-			fprintf(stderr, "If you really want to sync, use 'snapraid --force-empty sync'.\n");
+			fprintf(stderr, "This happens when deleting all the files from a disk,\n");
+			fprintf(stderr, "or when all the files are recreated after a 'fix' command,\n");
+			fprintf(stderr, "or manually copied. If this is really what you are doing, \n");
+			fprintf(stderr, "you can '%s' anyway, using 'snapraid --force-empty %s'.\n", state->command, state->command);
+			fprintf(stderr, "Instead, it's possible that you have some disks not mounted.\n");
 			exit(EXIT_FAILURE);
 		}
 	}

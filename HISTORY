@@ -19,6 +19,8 @@ SnapRAID HISTORY
    exclusion rules.
  * In 'check' and 'fix', if verbose is enabled, prints the result for each
    processed file.
+ * Added an UUID check to detect when a disk is replaced, and to prevent
+   unwanted disk swaps.
 
 2.1 2013/1
 ==========
