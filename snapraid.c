@@ -66,7 +66,6 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-N, --find-by-name    ", "-N") "  Find the files by name instead than by inode\n");
 	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero      ", "-Z") "  Force synching of files that get zero size\n");
 	printf("  " SWITCH_GETOPT_LONG("-E, --force-empty     ", "-E") "  Force synching of disks that get empty\n");
-	printf("  " SWITCH_GETOPT_LONG("-S, --force-second    ", "-S") "  Force second precision in timestamps\n");
 	printf("  " SWITCH_GETOPT_LONG("-s, --start BLKSTART  ", "-s") "  Start from the specified block number\n");
 	printf("  " SWITCH_GETOPT_LONG("-t, --count BLKCOUNT  ", "-t") "  Count of block to process\n");
 	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
@@ -95,7 +94,6 @@ struct option long_options[] = {
 	{ "log", 1, 0, 'l' },
 	{ "force-zero", 0, 0, 'Z' },
 	{ "force-empty", 0, 0, 'E' },
-	{ "force-second", 0, 0, 'S' },
 	{ "find-by-name", 0, 0, 'N' },
 	{ "audit-only", 0, 0, 'a' },
 	{ "speed-test", 0, 0, 'T' },
@@ -130,7 +128,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:f:d:ms:t:i:l:ZESNaTvhVG"
+#define OPTIONS "c:f:d:ms:t:i:l:ZENaTvhVG"
 
 volatile int global_interrupt = 0;
 
