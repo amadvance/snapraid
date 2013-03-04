@@ -366,10 +366,13 @@ Options
 	-U, --force-uuid
 		Forces the insecure operation of syncing, checking and fixing
 		with disks that have changed the UUID.
-		If SnapRAID detects that a disk has changed UUID,
+		If SnapRAID detects that some disks have changed UUID,
 		it stops proceeding unless you specify this option.
 		This allows to detect when your disks are mounted in the
 		wrong mount points.
+		It's anyway allowed to have a single UUID change with
+		single parity, and two with double parity, because it's
+		the normal case of replacing disks.
 		This option can be used only with the "sync", "check" or
 		"fix" command.
 
@@ -660,10 +663,6 @@ Recovering
 	Where NAME is the name of the disk, like "d1" as in our previous example.
 
 	This command will take a long time.
-
-	If the command doesn't start complaining that the failed and replaced
-	disk has changed UUID, just add the '-U' option.
-	But ensure that the failed disk is the only one with the UUID changed.
 
 	You can also add the '-v' option to see on the console the fixed files.
 

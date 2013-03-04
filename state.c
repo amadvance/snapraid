@@ -727,7 +727,7 @@ static void state_map(struct snapraid_state* state)
 		pathcpy(map->uuid, sizeof(map->uuid), uuid);
 	}
 
-	if (!state->force_uuid && uuid_mismatch > 0) {
+	if (!state->force_uuid && uuid_mismatch > state->level) {
 		fprintf(stderr, "Some disks have UUID changed from the latest 'sync'.\n");
 		fprintf(stderr, "If this happens because you really replaced them,\n");
 		fprintf(stderr, "you can '%s' anyway, using 'snapraid --force-uuid %s'.\n", state->command, state->command);

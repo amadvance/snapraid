@@ -509,10 +509,13 @@ This option can be used only with the \(a"sync\(a" command.
 .B \(hyU, \(hy\(hyforce\(hyuuid
 Forces the insecure operation of syncing, checking and fixing
 with disks that have changed the UUID.
-If SnapRAID detects that a disk has changed UUID,
+If SnapRAID detects that some disks have changed UUID,
 it stops proceeding unless you specify this option.
 This allows to detect when your disks are mounted in the
 wrong mount points.
+It\(cqs anyway allowed to have a single UUID change with
+single parity, and two with double parity, because it\(cqs
+the normal case of replacing disks.
 This option can be used only with the \(a"sync\(a", \(a"check\(a" or
 \(a"fix\(a" command.
 .TP
@@ -938,10 +941,6 @@ snapraid \(hyd NAME \(hyl fix.log fix
 Where NAME is the name of the disk, like \(a"d1\(a" as in our previous example.
 .PP
 This command will take a long time.
-.PP
-If the command doesn\(cqt start complaining that the failed and replaced
-disk has changed UUID, just add the \(cq\(hyU\(cq option.
-But ensure that the failed disk is the only one with the UUID changed.
 .PP
 You can also add the \(cq\(hyv\(cq option to see on the console the fixed files.
 .PP
