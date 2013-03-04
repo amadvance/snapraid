@@ -710,25 +710,25 @@ static void state_map(struct snapraid_state* state)
 			continue;
 		}
 
-		if (map->uuid[0] != 0) {
-			if (strcmp(uuid, map->uuid) != 0) {
+		/* if the uuid is changed */
+		if (strcmp(uuid, map->uuid) != 0) {
+			/* if the previous uuid is available */
+			if (map->uuid[0] != 0) {
+				/* count the number of uuid change */
 				++uuid_mismatch;
 				fprintf(stderr, "UUID change for disk '%s' from '%s' to '%s'\n", disk->name, map->uuid, uuid);
 			}
-		}
 
-		if (strcmp(uuid, map->uuid) != 0) {
-			/* rewrite if the uuid changes */
+			/* update the uuid in the mapping, */
+			pathcpy(map->uuid, sizeof(map->uuid), uuid);
+
+			/* write the new state with the new uuid */
 			state->need_write = 1;
 		}
-
-		/* update the uuid in the mapping, */
-		/* even if it's already present because it may be changed */
-		pathcpy(map->uuid, sizeof(map->uuid), uuid);
 	}
 
 	if (!state->force_uuid && uuid_mismatch > state->level) {
-		fprintf(stderr, "Some disks have UUID changed from the latest 'sync'.\n");
+		fprintf(stderr, "Too many disks have UUID changed from the latest 'sync'.\n");
 		fprintf(stderr, "If this happens because you really replaced them,\n");
 		fprintf(stderr, "you can '%s' anyway, using 'snapraid --force-uuid %s'.\n", state->command, state->command);
 		fprintf(stderr, "Instead, it's possible that you messed up the disk mount points,\n");
