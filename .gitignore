@@ -2,9 +2,8 @@
 *.zip
 *.tar.gz
 
-# objects
-*.o
-snapraid
+# backups
+*~
 
 # autotools
 Makefile
@@ -22,8 +21,15 @@ install-sh
 missing
 stamp-h1
 
-# projects
-snapraid.dst
-snapraid.epr
+# objects
+*.o
 
+# project
+*.dst
+*.epr
+
+# specific
+snapraid
+cov_release/
+contrib/
 
