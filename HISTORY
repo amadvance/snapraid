@@ -1,7 +1,7 @@
 SnapRAID HISTORY
 ================
 
-3.0 2013/2
+3.0 2013/3
 ==========
  * Added pooling support with the new 'pool' command. It creates a virtual
    view of the array using symbolic links pointing at the original files.
