@@ -1929,10 +1929,6 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 			) {
 				file_flag_set(file, FILE_IS_EXCLUDED);
 			}
-
-			if (state->verbose && !file_flag_has(file, FILE_IS_EXCLUDED)) {
-				printf("Processing file '%s'\n", file->sub);
-			}
 		}
 
 		/* for each link */
@@ -1945,10 +1941,6 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 			) {
 				link_flag_set(link, FILE_IS_EXCLUDED);
 			}
-
-			if (state->verbose && !link_flag_has(link, FILE_IS_EXCLUDED)) {
-				printf("Processing symlink '%s'\n", link->sub);
-			}
 		}
 
 		/* for each dir */
@@ -1960,10 +1952,6 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 				|| filter_existence(filter_missing, disk->dir, dir->sub) != 0
 			) {
 				dir_flag_set(dir, FILE_IS_EXCLUDED);
-			}
-
-			if (state->verbose && !dir_flag_has(dir, FILE_IS_EXCLUDED)) {
-				printf("Processing dir '%s'\n", dir->sub);
 			}
 		}
 	}
