@@ -412,7 +412,6 @@ int main(int argc, char* argv[])
 	state_config(&state, conf, command, verbose, gui, force_zero, force_empty, force_uuid, find_by_name, test_expect_unrecoverable, test_expect_recoverable, test_skip_sign, test_skip_fallocate, test_skip_device);
 
 	if (import != 0) {
-		printf("%s\n", import);
 		state_import(&state, import);
 	}
 
