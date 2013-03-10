@@ -371,8 +371,6 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			/* we have two level of parity */
 			state->level = 2;
 		} else if (strcmp(tag, "pool") == 0) {
-			char device[PATH_MAX];
-			char* slash;
 			struct stat st;
 
 			if (*state->pool) {
@@ -394,14 +392,8 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			pathimport(state->pool, sizeof(state->pool), buffer);
 
 			/* get the device of the directory containing the pool tree */
-			pathimport(device, sizeof(device), buffer);
-			slash = strrchr(device, '/');
-			if (slash)
-				*slash = 0;
-			else
-				pathcpy(device, sizeof(device), ".");
-			if (stat(device, &st) != 0) {
-				fprintf(stderr, "Error accessing 'pool' dir '%s' specification in '%s' at line %u\n", device, path, line);
+			if (stat(buffer, &st) != 0) {
+				fprintf(stderr, "Error accessing 'pool' dir '%s' specification in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 			}
 
