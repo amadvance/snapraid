@@ -91,6 +91,7 @@ check-local:
 	mkdir test/disk1
 	mkdir test/disk2
 	mkdir test/disk3
+	mkdir test/pool
 	echo --- Help
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -h
 	echo --- As empty, sync and check

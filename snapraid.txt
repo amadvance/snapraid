@@ -573,6 +573,7 @@ is 1073741824 bytes.
 ---- 7.7.2 pool DIR ----
 Defines the pooling directory where the virtual view of the disk
 array is created using the "pool" command.
+The directory must already exist.
 
 7.8 Examples
 ------------

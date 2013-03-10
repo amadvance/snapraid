@@ -521,6 +521,7 @@ Configuration
     pool DIR
 	Defines the pooling directory where the virtual view of the disk
 	array is created using the "pool" command.
+	The directory must already exist.
 
   Examples
 	An example of a typical configuration for Unix is:

@@ -163,7 +163,6 @@ void state_pool(struct snapraid_state* state)
 {
 	tommy_node* i;
 	char pool_dir[PATH_MAX];
-	int ret;
 	unsigned count;
 
 	if (state->pool[0] == 0) {
@@ -176,12 +175,6 @@ void state_pool(struct snapraid_state* state)
 	/* pool directory with final slash */
 	pathprint(pool_dir, sizeof(pool_dir), "%s", state->pool);
 	pathslash(pool_dir, sizeof(pool_dir));
-
-	/* create it if missing */
-	ret = mkancestor(pool_dir);
-	if (ret != 0) {
-		exit(EXIT_FAILURE);
-	}
 
 	/* first clear the previous pool tree */
 	clean_dir(state, pool_dir);
