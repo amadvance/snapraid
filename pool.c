@@ -171,6 +171,8 @@ void state_pool(struct snapraid_state* state)
 		exit(EXIT_FAILURE);
 	}
 
+	printf("Cleaning...\n");
+
 	/* pool directory with final slash */
 	pathprint(pool_dir, sizeof(pool_dir), "%s", state->pool);
 	pathslash(pool_dir, sizeof(pool_dir));
@@ -183,6 +185,8 @@ void state_pool(struct snapraid_state* state)
 
 	/* first clear the previous pool tree */
 	clean_dir(state, pool_dir);
+
+	printf("Pooling...\n");
 
 	/* for each disk */
 	count = 0;
