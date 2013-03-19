@@ -9,6 +9,19 @@ This is the list of TODO items for SnapRAID.
 But we must cover the case of bad blocks. Likely we can just check the
 hash after reading, and in case, skip it, and retry with another copy.
 
+* Add a new "commit" command to move changes from the pool to the array.
+It should:
+- Move files copied into the pool (that are no links) to the array.
+The files should be moved to the disk that contains most of the files
+in the directory. If no space, try with the disk with less files
+in the directory, and eventually the disk in the array with more free space.
+- Detect renames, and apply them in the array.
+The file will be renamed and moved to the new directory, if changed,
+but kept in the same disk of the array.
+- Detect deletes, and move file in the array to a "/trash/" directory
+of the same disk. For safety no real deletion is done.
+File with the same name will get an extra extension like ".1", ".2".
+
 * If a content file is missing, sync should rewrite it, even if no change was done at the content.
 
 * A new 'init' command to differentiate the first 'sync' operation.

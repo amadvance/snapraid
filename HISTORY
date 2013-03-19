@@ -4,7 +4,7 @@ SnapRAID HISTORY
 3.0 2013/3
 ==========
  * Added pooling support with the new 'pool' command. It creates a virtual
-   view of the array using symbolic links pointing at the original files.
+   view of the array using symbolic links pointing to the original files.
  * Added a new -m, --filter-missing option that allow to undelete files,
    without checking/fixing the others.
  * Added a new -i, --import option to automatically import deleted files
@@ -14,7 +14,7 @@ SnapRAID HISTORY
  * Added support to save symlinks to files in Windows. Note that only the
    symlink is saved and not the linked file.
    Symlinks to dirs and junctions are still not supported in Windows.
- * Files without read permission generates now an error instead of a warning.
+ * Files without read permission generate an error instead of a warning.
    You now must explicitely exclude them in the configuration file with
    exclusion rules.
  * In 'check' and 'fix', if verbose is enabled, prints the result for each
