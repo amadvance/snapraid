@@ -125,6 +125,7 @@ int state_import_fetch(struct snapraid_state* state, const unsigned char* hash, 
 	int f;
 	unsigned block_size = state->block_size;
 	unsigned read_size;
+	unsigned char buffer_hash[HASH_SIZE];
 	const char* path;
 
 	block = tommy_hashdyn_search(&state->importset, import_block_compare, hash, import_block_hash(hash));
@@ -160,6 +161,15 @@ int state_import_fetch(struct snapraid_state* state, const unsigned char* hash, 
 	if (read_size != block_size) {
 		/* fill the remaining with 0 */
 		memset(buffer + read_size, 0, block_size - read_size);
+	}
+
+	/* recheck the hash */
+	memhash(state->hash, buffer_hash, buffer, read_size);
+
+	if (memcmp(buffer_hash, hash, HASH_SIZE) != 0) {
+		fprintf(stderr, "Error in data reading file '%s'.\n", path);
+		fprintf(stderr, "Please don't change imported files while running.\n");
+		exit(EXIT_FAILURE);
 	}
 
 	return 0;

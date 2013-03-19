@@ -5,6 +5,10 @@ This is the list of TODO items for SnapRAID.
 
 - v3.1
 
+* In the import list, uses also all the blocks in the array.
+But we must cover the case of bad blocks. Likely we can just check the
+hash after reading, and in case, skip it, and retry with another copy.
+
 * If a content file is missing, sync should rewrite it, even if no change was done at the content.
 
 * A new 'init' command to differentiate the first 'sync' operation.

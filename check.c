@@ -275,11 +275,11 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 				}
 			} else {
 				assert(block_state == BLOCK_STATE_CHG || block_state == BLOCK_STATE_NEW);
-			
+
 				/* otherwise it's CHG or NEW and we try to recover it */
 				failed_map[n] = j;
 				++n;
-				
+
 				/* we have something to try to recover */
 				something_to_recover = 1;
 			}
