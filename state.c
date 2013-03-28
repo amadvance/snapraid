@@ -223,6 +223,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 {
 	STREAM* f;
 	unsigned line;
+	tommy_node* i;
 
 	state->verbose = verbose;
 	state->gui = gui;
@@ -469,6 +470,17 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			pathimport(device, sizeof(device), dir);
 			if (stat(device, &st) != 0) {
 				fprintf(stderr, "Error accessing 'disk' '%s' specification in '%s' at line %u\n", dir, device, line);
+				exit(EXIT_FAILURE);
+			}
+
+			/* check if the disk name already exists */
+			for(i=state->disklist;i!=0;i=i->next) {
+				disk = i->data;
+				if (strcmp(disk->name, buffer) == 0)
+					break;
+			}
+			if (i) {
+				fprintf(stderr, "Duplicate disk name '%s' at line %u\n", buffer, line);
 				exit(EXIT_FAILURE);
 			}
 
