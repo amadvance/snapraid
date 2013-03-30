@@ -5,6 +5,13 @@ This is the list of TODO items for SnapRAID.
 
 - v3.1
 
+* If the fix process is interrupted by pressing Ctrl+C, we should rename files partially
+recovered to .unrecoverable, if there were created originally missing from the array.
+This could be detect checking the size just after creation.
+If it's 0, the file should be renamed.
+We cannot rename all files, because existing one may contain valid data
+that we should not lose.
+
 * In the import list, uses also all the blocks in the array.
 But we must cover the case of bad blocks. Likely we can just check the
 hash after reading, and in case, skip it, and retry with another copy.
