@@ -220,7 +220,7 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 #endif
 
 		if (read_ret < 0) {
-			fprintf(out, "Error reading file '%s' at offset %"PRIu64". %s.\n", handle->path, offset, strerror(errno));
+			fprintf(out, "Error reading file '%s' at offset %"PRIu64" for size %u. %s.\n", handle->path, offset + count, read_size - count, strerror(errno));
 			return -1;
 		}
 		if (read_ret == 0) {
@@ -230,7 +230,6 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 
 		count += read_ret;
 	} while (count < read_size);
-		
 
 	/* pad with 0 */
 	if (read_size < block_size) {

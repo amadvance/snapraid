@@ -68,6 +68,7 @@
 #define readlink windows_readlink
 #define symlink windows_symlink
 #define link windows_link
+#define strerror windows_strerror
 
 /* We have nano second support */
 #define STAT_NSEC(st) (st)->st_mtimensec
@@ -249,6 +250,11 @@ int windows_symlink(const char* existing, const char* file);
  * Like link().
  */
 int windows_link(const char* existing, const char* file);
+
+/**
+ * Like strerror().
+ */
+const char* windows_strerror(int err);
 
 #endif
 #endif

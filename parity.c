@@ -393,7 +393,7 @@ int parity_read(struct snapraid_parity* parity, block_off_t pos, unsigned char* 
 		read_ret = read(parity->f, block_buffer + count, block_size - count);
 #endif
 		if (read_ret < 0) {
-			fprintf(out, "Error reading file '%s' at offset %"PRIu64". %s.\n", parity->path, offset, strerror(errno));
+			fprintf(out, "Error reading file '%s' at offset %"PRIu64" for size %u. %s.\n", parity->path, offset + count, block_size - count, strerror(errno));
 			return -1;
 		}
 		if (read_ret == 0) {

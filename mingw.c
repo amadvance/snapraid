@@ -17,6 +17,8 @@
 
 #include "portable.h"
 
+#include "util.h"
+
 #ifdef __MINGW32__ /* Only for MingW */
 
 /* Adds missing Windows declaration */
@@ -64,6 +66,11 @@ static BOOL (WINAPI* ptr_GetFileInformationByHandleEx)(HANDLE, DWORD, LPVOID, DW
  */
 static BOOLEAN (WINAPI* ptr_CreateSymbolicLinkW)(LPWSTR, LPWSTR, DWORD);
 
+/**
+ * Description of the last error.
+ */
+static char* last_error;
+
 void os_init(void)
 {
 	HMODULE kernel32 = GetModuleHandle("KERNEL32.DLL");
@@ -85,10 +92,14 @@ void os_init(void)
 			ptr_SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED);
 		}
 	}
+
+	last_error = 0;
 }
 
 void os_done(void)
 {
+	free(last_error);
+
 	/* restore the normal execution level */
 	if (ptr_SetThreadExecutionState) {
 		ptr_SetThreadExecutionState(WIN32_ES_CONTINUOUS);
@@ -1035,6 +1046,27 @@ int devuuid(uint64_t device, char* uuid, size_t uuid_size)
 
 	snprintf(uuid, uuid_size, "%08x", (unsigned)device);
 	return 0;
+}
+
+#undef strerror
+
+const char* windows_strerror(int err)
+{
+	/* get the normal C error from the specified err */
+	const char* str = strerror(err);
+	size_t len = strlen(str);
+
+	/* adds space for GetLastError() */
+	len += 32;
+
+	/* reallocate */
+	free(last_error);
+	last_error = malloc(len);
+	if (!last_error)
+		return str;
+
+	snprintf(last_error, len, "%s [%u]", str, (unsigned)GetLastError());
+	return last_error;
 }
 
 #endif
