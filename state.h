@@ -39,6 +39,7 @@ struct snapraid_state {
 	int expect_recoverable; /**< Expect presence of recoverable error in checking. */
 	int skip_sign; /**< Skip the sign check for content files. */
 	int skip_fallocate; /**< Skip the use of fallocate(). */
+	int skip_sequential; /**< Skip sequential hint. */
 	int need_write; /**< If the state is changed. */
 	uint32_t block_size; /**< Block size in bytes. */
 	char parity[PATH_MAX]; /**< Path of the parity file. */
@@ -76,7 +77,7 @@ void state_done(struct snapraid_state* state);
 /**
  * Reads the configuration file.
  */
-void state_config(struct snapraid_state* state, const char* path, const char* command, int verbose, int gui, int force_zero, int force_empty, int force_uuid, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_sign, int skip_fallocate, int skip_device);
+void state_config(struct snapraid_state* state, const char* path, const char* command, int verbose, int gui, int force_zero, int force_empty, int force_uuid, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_sign, int skip_fallocate, int skip_sequential, int skip_device);
 
 /**
  * Reads the state.

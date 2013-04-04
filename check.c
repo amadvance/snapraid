@@ -605,7 +605,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			/* if fixing, and the file is not excluded, we must open for writing */
 			if (fix && !file_flag_has(block_file_get(block), FILE_IS_EXCLUDED)) {
 				/* if fixing, create the file, open for writing and resize if required */
-				ret = handle_create(&handle[j], block_file_get(block));
+				ret = handle_create(&handle[j], block_file_get(block), state->skip_sequential);
 				if (ret == -1) {
 					if (errno == EACCES) {
 						fprintf(stderr, "WARNING! Please give write permission to the file.\n");
@@ -629,7 +629,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				}
 			} else {
 				/* if checking or hashing, open the file only for reading */
-				ret = handle_open(&handle[j], block_file_get(block), stdlog);
+				ret = handle_open(&handle[j], block_file_get(block), stdlog, state->skip_sequential);
 				if (ret == -1) {
 					/* save the failed block for the check/fix */
 					failed[failed_count].is_bad = 1;
@@ -1498,7 +1498,7 @@ void state_check(struct snapraid_state* state, int check, int fix, block_off_t b
 		/* if fixing, create the file and open for writing */
 		/* if it fails, we cannot continue */
 		parity_ptr = &parity;
-		ret = parity_create(parity_ptr, state->parity, &out_size);
+		ret = parity_create(parity_ptr, state->parity, &out_size, state->skip_sequential);
 		if (ret == -1) {
 			fprintf(stderr, "WARNING! Without an accessible Parity file, it isn't possible to fix any error.\n");
 			exit(EXIT_FAILURE);
@@ -1512,7 +1512,7 @@ void state_check(struct snapraid_state* state, int check, int fix, block_off_t b
 
 		if (state->level >= 2) {
 			qarity_ptr = &qarity;
-			ret = parity_create(qarity_ptr, state->qarity, &out_size);
+			ret = parity_create(qarity_ptr, state->qarity, &out_size, state->skip_sequential);
 			if (ret == -1) {
 				fprintf(stderr, "WARNING! Without an accessible Q-Parity file, it isn't possible to fix any error.\n");
 				exit(EXIT_FAILURE);
@@ -1530,7 +1530,7 @@ void state_check(struct snapraid_state* state, int check, int fix, block_off_t b
 		/* if checking, open the file for reading */
 		/* it may fail if the file doesn't exist, in this case we continue to check the files */
 		parity_ptr = &parity;
-		ret = parity_open(parity_ptr, state->parity);
+		ret = parity_open(parity_ptr, state->parity, state->skip_sequential);
 		if (ret == -1) {
 			printf("No accessible Parity file, only files will be checked.\n");
 			/* continue anyway */
@@ -1539,7 +1539,7 @@ void state_check(struct snapraid_state* state, int check, int fix, block_off_t b
 
 		if (state->level >= 2) {
 			qarity_ptr = &qarity;
-			ret = parity_open(qarity_ptr, state->qarity);
+			ret = parity_open(qarity_ptr, state->qarity, state->skip_sequential);
 			if (ret == -1) {
 				printf("No accessible Q-Parity file, only files will be checked.\n");
 				/* continue anyway */

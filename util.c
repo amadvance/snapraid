@@ -49,6 +49,7 @@ static unsigned strdecset[256] =
 
 STREAM* sopen_read(const char* file)
 {
+	int ret;
 	STREAM* s = malloc_nofail(sizeof(STREAM));
 
 	s->handle_size = 1;
@@ -61,6 +62,17 @@ STREAM* sopen_read(const char* file)
 		free(s);
 		return 0;
 	}
+
+#if HAVE_POSIX_FADVISE
+	/* advise sequential access */
+	ret = posix_fadvise(s->handle[0].f, 0, 0, POSIX_FADV_SEQUENTIAL);
+	if (ret != 0) {
+		close(s->handle[0].f);
+		free(s->handle);
+		free(s);
+		return 0;
+	}
+#endif
 
 	s->buffer = malloc_nofail(STREAM_SIZE);
 	s->pos = s->buffer;

@@ -48,6 +48,7 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 	void* buffer;
 	int ret;
 	int f;
+	int flags;
 	unsigned block_size = state->block_size;
 	unsigned hash = state->hash;
 
@@ -61,18 +62,23 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 
 	/* open for read */
 	/* O_SEQUENTIAL: opening in sequential mode in Windows */
-	f = open(path, O_RDONLY | O_BINARY | O_SEQUENTIAL);
+	flags = O_RDONLY | O_BINARY;
+	if (!state->skip_sequential)
+		flags |= O_SEQUENTIAL;
+	f = open(path, flags);
 	if (f == -1) {
 		fprintf(stderr, "Error opening file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 #if HAVE_POSIX_FADVISE
-	/* advise sequential access */
-	ret = posix_fadvise(f, 0, 0, POSIX_FADV_SEQUENTIAL);
-	if (ret != 0) {
-		fprintf(stderr, "Error advising file '%s'. %s.\n", path, strerror(ret));
-		exit(EXIT_FAILURE);
+	if (!state->skip_sequential) {
+		/* advise sequential access */
+		ret = posix_fadvise(f, 0, 0, POSIX_FADV_SEQUENTIAL);
+		if (ret != 0) {
+			fprintf(stderr, "Error advising file '%s'. %s.\n", path, strerror(ret));
+			exit(EXIT_FAILURE);
+		}
 	}
 #endif
 

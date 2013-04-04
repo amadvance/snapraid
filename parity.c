@@ -90,15 +90,19 @@ void parity_overflow(struct snapraid_state* state, data_off_t size)
 	}
 }
 
-int parity_create(struct snapraid_parity* parity, const char* path, data_off_t* out_size)
+int parity_create(struct snapraid_parity* parity, const char* path, data_off_t* out_size, int skip_sequential)
 {
 	int ret;
+	int flags;
 
 	pathcpy(parity->path, sizeof(parity->path), path);
 
 	/* opening in sequential mode in Windows */
 	/* O_SEQUENTIAL: opening in sequential mode in Windows */
-	parity->f = open(parity->path, O_RDWR | O_CREAT | O_BINARY | O_SEQUENTIAL, 0600);
+	flags = O_RDWR | O_CREAT | O_BINARY | O_SEQUENTIAL;
+	if (!skip_sequential)
+		flags |= O_SEQUENTIAL;
+	parity->f = open(parity->path, flags, 0600);
 	if (parity->f == -1) {
 		fprintf(stderr, "Error opening parity file '%s'. %s.\n", parity->path, strerror(errno));
 		return -1;
@@ -112,11 +116,13 @@ int parity_create(struct snapraid_parity* parity, const char* path, data_off_t* 
 	}
 
 #if HAVE_POSIX_FADVISE
-	/* advise sequential access */
-	ret = posix_fadvise(parity->f, 0, 0, POSIX_FADV_SEQUENTIAL);
-	if (ret != 0) {
-		fprintf(stderr, "Error advising parity file '%s'. %s.\n", parity->path, strerror(ret));
-		goto bail;
+	if (!skip_sequential) {
+		/* advise sequential access */
+		ret = posix_fadvise(parity->f, 0, 0, POSIX_FADV_SEQUENTIAL);
+		if (ret != 0) {
+			fprintf(stderr, "Error advising parity file '%s'. %s.\n", parity->path, strerror(ret));
+			goto bail;
+		}
 	}
 #endif
 
@@ -221,15 +227,6 @@ int parity_chsize(struct snapraid_parity* parity, data_off_t size, data_off_t* o
 		parity->valid_size = size;
 	}
 
-#if HAVE_POSIX_FADVISE
-	/* advise sequential access */
-	ret = posix_fadvise(parity->f, 0, 0, POSIX_FADV_SEQUENTIAL);
-	if (ret != 0) {
-		fprintf(stderr, "Error advising parity file '%s'. %s.\n", parity->path, strerror(ret));
-		goto bail;
-	}
-#endif
-
 	return 0;
 
 bail:
@@ -237,16 +234,20 @@ bail:
 	return -1;
 }
 
-int parity_open(struct snapraid_parity* parity, const char* path)
+int parity_open(struct snapraid_parity* parity, const char* path, int skip_sequential)
 {
 	int ret;
+	int flags;
 
 	pathcpy(parity->path, sizeof(parity->path), path);
 
 	/* open for read */
 	/* O_SEQUENTIAL: opening in sequential mode in Windows */
 	/* O_NOATIME: do not change access time */
-	parity->f = open_noatime(parity->path, O_RDONLY | O_BINARY | O_SEQUENTIAL);
+	flags = O_RDONLY | O_BINARY;
+	if (!skip_sequential)
+		flags |= O_SEQUENTIAL;
+	parity->f = open_noatime(parity->path, flags);
 	if (parity->f == -1) {
 		fprintf(stderr, "Error opening parity file '%s'. %s.\n", parity->path, strerror(errno));
 		return -1;
@@ -263,11 +264,13 @@ int parity_open(struct snapraid_parity* parity, const char* path)
 	parity->valid_size = parity->st.st_size;
 
 #if HAVE_POSIX_FADVISE
-	/* advise sequential access */
-	ret = posix_fadvise(parity->f, 0, 0, POSIX_FADV_SEQUENTIAL);
-	if (ret != 0) {
-		fprintf(stderr, "Error advising parity file '%s'. %s.\n", parity->path, strerror(ret));
-		goto bail;
+	if (!skip_sequential) {
+		/* advise sequential access */
+		ret = posix_fadvise(parity->f, 0, 0, POSIX_FADV_SEQUENTIAL);
+		if (ret != 0) {
+			fprintf(stderr, "Error advising parity file '%s'. %s.\n", parity->path, strerror(ret));
+			goto bail;
+		}
 	}
 #endif
 

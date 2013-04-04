@@ -41,13 +41,13 @@ struct snapraid_handle {
  * If the file cannot be opened for write access, it's opened with read-only access.
  * The read-only access works only if the file has already the correct size and doesn't need to be modified.
  */
-int handle_create(struct snapraid_handle* handle, struct snapraid_file* file);
+int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, int skip_sequential);
 
 /**
  * Opens a file.
  * The file is opened for reading.
  */
-int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, FILE* out);
+int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, FILE* out, int skip_sequential);
 
 /**
  * Closes a file.

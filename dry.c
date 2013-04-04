@@ -74,7 +74,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			}
 
 			/* open the file for reading */
-			ret = handle_open(&handle[j], block_file_get(block), stdlog);
+			ret = handle_open(&handle[j], block_file_get(block), stdlog, state->skip_sequential);
 			if (ret == -1) {
 				fprintf(stdlog, "error:%u:%s:%s: Open error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 				++error;
@@ -174,7 +174,7 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	/* open the file for reading */
 	/* it may fail if the file doesn't exist, in this case we continue to dry the files */
 	parity_ptr = &parity;
-	ret = parity_open(parity_ptr, state->parity);
+	ret = parity_open(parity_ptr, state->parity, state->skip_sequential);
 	if (ret == -1) {
 		printf("No accessible Parity file.\n");
 		/* continue anyway */
@@ -183,7 +183,7 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	if (state->level >= 2) {
 		qarity_ptr = &qarity;
-		ret = parity_open(qarity_ptr, state->qarity);
+		ret = parity_open(qarity_ptr, state->qarity, state->skip_sequential);
 		if (ret == -1) {
 			printf("No accessible Q-Parity file.\n");
 			/* continue anyway */

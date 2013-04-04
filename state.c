@@ -35,6 +35,7 @@ void state_init(struct snapraid_state* state)
 	state->expect_recoverable = 0;
 	state->skip_sign = 0;
 	state->skip_fallocate = 0;
+	state->skip_sequential = 0;
 	state->need_write = 0;
 	state->block_size = 256 * 1024; /* default 256 KiB */
 	state->parity[0] = 0;
@@ -219,7 +220,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 	}
 }
 
-void state_config(struct snapraid_state* state, const char* path, const char* command, int verbose, int gui, int force_zero, int force_empty, int force_uuid, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_sign, int skip_fallocate, int skip_device)
+void state_config(struct snapraid_state* state, const char* path, const char* command, int verbose, int gui, int force_zero, int force_empty, int force_uuid, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_sign, int skip_fallocate, int skip_sequential, int skip_device)
 {
 	STREAM* f;
 	unsigned line;
@@ -236,6 +237,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	state->expect_recoverable = expect_recoverable;
 	state->skip_sign = skip_sign;
 	state->skip_fallocate = skip_fallocate;
+	state->skip_sequential = skip_sequential;
 	state->command = command;
 
 	if (state->gui) {

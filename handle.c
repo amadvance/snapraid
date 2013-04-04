@@ -24,9 +24,10 @@
 /****************************************************************************/
 /* handle */
 
-int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
+int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, int skip_sequential)
 {
 	int ret;
+	int flags;
 
 	/* if it's the same file, and already opened, nothing to do */
 	if (handle->file == file && handle->f != -1) {
@@ -43,12 +44,18 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 	/* open for read write */
 	/* O_SEQUENTIAL: opening in sequential mode in Windows */
 	/* O_NOFOLLOW: do not follow links to ensure to open the real file */
-	handle->f = open(handle->path, O_RDWR | O_CREAT | O_BINARY | O_SEQUENTIAL | O_NOFOLLOW, 0600);
+	flags = O_RDWR | O_CREAT | O_BINARY | O_NOFOLLOW;
+	if (!skip_sequential)
+		flags |= O_SEQUENTIAL;
+	handle->f = open(handle->path, flags, 0600);
 
 	/* if failed for missing permission */
 	if (handle->f == -1 && errno == EACCES) {
 		/* retry without requesting write permission */
-		handle->f = open(handle->path, O_RDONLY | O_BINARY | O_SEQUENTIAL | O_NOFOLLOW);
+		flags = O_RDONLY | O_BINARY | O_NOFOLLOW;
+		if (!skip_sequential)
+			flags |= O_SEQUENTIAL;
+		handle->f = open(handle->path, flags);
 	}
 
 	if (handle->f == -1) {
@@ -93,11 +100,13 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 	}
 
 #if HAVE_POSIX_FADVISE
-	/* advise sequential access */
-	ret = posix_fadvise(handle->f, 0, 0, POSIX_FADV_SEQUENTIAL);
-	if (ret != 0) {
-		fprintf(stderr, "Error advising file '%s'. %s.\n", handle->path, strerror(ret));
-		return -1;
+	if (!skip_sequential) {
+		/* advise sequential access */
+		ret = posix_fadvise(handle->f, 0, 0, POSIX_FADV_SEQUENTIAL);
+		if (ret != 0) {
+			fprintf(stderr, "Error advising file '%s'. %s.\n", handle->path, strerror(ret));
+			return -1;
+		}
 	}
 #endif
 
@@ -109,9 +118,10 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file)
 	return 0;
 }
 
-int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, FILE* out)
+int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, FILE* out, int skip_sequential)
 {
 	int ret;
+	int flags;
 
 	/* if already opened, nothing to do */
 	if (handle->file == file && handle->f != -1) {
@@ -124,7 +134,10 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, FILE
 	/* O_SEQUENTIAL: opening in sequential mode in Windows */
 	/* O_NOFOLLOW: do not follow links to ensure to open the real file */
 	/* O_NOATIME: do not change access time */
-	handle->f = open_noatime(handle->path, O_RDONLY | O_BINARY | O_SEQUENTIAL | O_NOFOLLOW);
+	flags = O_RDONLY | O_BINARY | O_NOFOLLOW;
+	if (!skip_sequential)
+		flags |= O_SEQUENTIAL;
+	handle->f = open_noatime(handle->path, flags);
 	if (handle->f == -1) {
 		/* invalidate for error */
 		handle->file = 0;
@@ -149,11 +162,13 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, FILE
 	handle->valid_size = handle->st.st_size;
 
 #if HAVE_POSIX_FADVISE
-	/* advise sequential access */
-	ret = posix_fadvise(handle->f, 0, 0, POSIX_FADV_SEQUENTIAL);
-	if (ret != 0) {
-		fprintf(out, "Error advising file '%s'. %s.\n", handle->path, strerror(ret));
-		return -1;
+	if (!skip_sequential) {
+		/* advise sequential access */
+		ret = posix_fadvise(handle->f, 0, 0, POSIX_FADV_SEQUENTIAL);
+		if (ret != 0) {
+			fprintf(out, "Error advising file '%s'. %s.\n", handle->path, strerror(ret));
+			return -1;
+		}
 	}
 #endif
 
