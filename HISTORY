@@ -3,6 +3,7 @@ SnapRAID HISTORY
 
 3.1 2013/4
 ==========
+ * Diret use of Windows API for disk access to improve error reporting.
 
 3.0 2013/3
 ==========

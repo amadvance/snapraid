@@ -333,15 +333,6 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE
 				st->st_desc = "regular-dedup";
 			}
 			break;
-		/* All the other are skipped as reparse-point */
-		case IO_REPARSE_TAG_MOUNT_POINT :
-			st->st_mode = S_IFCHR;
-			st->st_desc = "reparse-point-mount";
-			break;
-		case IO_REPARSE_TAG_NFS :
-			st->st_mode = S_IFCHR;
-			st->st_desc = "reparse-point-nfs";
-			break;
 		case IO_REPARSE_TAG_SYMLINK :
 			if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
 				st->st_mode = S_IFLNKDIR;
@@ -350,6 +341,15 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE
 				st->st_mode = S_IFLNK;
 				st->st_desc = "reparse-point-symlink-file";
 			}
+			break;
+		/* All the other are skipped as reparse-point */
+		case IO_REPARSE_TAG_MOUNT_POINT :
+			st->st_mode = S_IFCHR;
+			st->st_desc = "reparse-point-mount";
+			break;
+		case IO_REPARSE_TAG_NFS :
+			st->st_mode = S_IFCHR;
+			st->st_desc = "reparse-point-nfs";
 			break;
 		default:
 			st->st_mode = S_IFCHR;
@@ -426,15 +426,6 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 				st->st_desc = "regular-dedup";
 			}
 			break;
-		/* All the other are skipped as reparse-point */
-		case IO_REPARSE_TAG_MOUNT_POINT :
-			st->st_mode = S_IFCHR;
-			st->st_desc = "reparse-point-mount";
-			break;
-		case IO_REPARSE_TAG_NFS :
-			st->st_mode = S_IFCHR;
-			st->st_desc = "reparse-point-nfs";
-			break;
 		case IO_REPARSE_TAG_SYMLINK :
 			if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
 				st->st_mode = S_IFLNKDIR;
@@ -443,6 +434,15 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 				st->st_mode = S_IFLNK;
 				st->st_desc = "reparse-point-symlink-file";
 			}
+			break;
+		/* All the other are skipped as reparse-point */
+		case IO_REPARSE_TAG_MOUNT_POINT :
+			st->st_mode = S_IFCHR;
+			st->st_desc = "reparse-point-mount";
+			break;
+		case IO_REPARSE_TAG_NFS :
+			st->st_mode = S_IFCHR;
+			st->st_desc = "reparse-point-nfs";
 			break;
 		default:
 			st->st_mode = S_IFCHR;
@@ -1067,6 +1067,179 @@ const char* windows_strerror(int err)
 
 	snprintf(last_error, len, "%s [%u]", str, (unsigned)GetLastError());
 	return last_error;
+}
+
+ssize_t windows_read(int fd, void* buffer, size_t size)
+{
+	HANDLE h;
+	DWORD count;
+
+	if (fd == -1) {
+		errno = EBADF;
+		return -1;
+	}
+
+	h = (HANDLE)_get_osfhandle(fd);
+	if (h == INVALID_HANDLE_VALUE) {
+		errno = EBADF;
+		return -1;
+	}
+
+	if (!ReadFile(h, buffer, size, &count, 0)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	return count;
+}
+
+ssize_t windows_write(int fd, const void* buffer, size_t size)
+{
+	HANDLE h;
+	DWORD count;
+
+	if (fd == -1) {
+		errno = EBADF;
+		return -1;
+	}
+
+	h = (HANDLE)_get_osfhandle(fd);
+	if (h == INVALID_HANDLE_VALUE) {
+		errno = EBADF;
+		return -1;
+	}
+
+	if (!WriteFile(h, buffer, size, &count, 0)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	return count;
+}
+
+off_t windows_lseek(int fd, off_t offset, int whence)
+{
+	HANDLE h;
+	LARGE_INTEGER pos;
+	LARGE_INTEGER ret;
+
+	if (fd == -1) {
+		errno = EBADF;
+		return -1;
+	}
+
+	/* we support only SEEK_SET */
+	if (whence != SEEK_SET) {
+		errno = EINVAL;
+		return -1;
+	}
+
+	h = (HANDLE)_get_osfhandle(fd);
+	if (h == INVALID_HANDLE_VALUE) {
+		errno = EBADF;
+		return -1;
+	}
+
+	pos.QuadPart = offset;
+	if (!SetFilePointerEx(h, pos, &ret, FILE_BEGIN)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	return ret.QuadPart;
+}
+
+ssize_t windows_pread(int fd, void* buffer, size_t size, off_t offset)
+{
+	HANDLE h;
+	LARGE_INTEGER pos;
+	DWORD count;
+
+	if (fd == -1) {
+		errno = EBADF;
+		return -1;
+	}
+
+	h = (HANDLE)_get_osfhandle(fd);
+	if (h == INVALID_HANDLE_VALUE) {
+		errno = EBADF;
+		return -1;
+	}
+
+retry:
+	pos.QuadPart = offset;
+	if (!SetFilePointerEx(h, pos, 0, FILE_BEGIN)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	if (!ReadFile(h, buffer, size, &count, 0)) {
+		DWORD err = GetLastError();
+		/*
+		 * If Windows is not able to allocate memory pages for the disk cache
+		 * it could return the ERROR_NO_SYSTEM_RESOURCES error.
+		 * In this case, the only possibility is to retry after a wait of few milliseconds.
+		 *
+		 * See:
+		 * SQL Server reports operating system error 1450 or 1452 or 665 (retries)
+		 * http://blogs.msdn.com/b/psssql/archive/2008/07/10/sql-server-reports-operating-system-error-1450-or-1452-or-665-retries.aspx
+		 *
+		 * 03-12-09 - ERROR_NO_SYSTEM_RESOURCES
+		 * http://cbloomrants.blogspot.it/2009/03/03-12-09-errornosystemresources.html
+		 *
+		 * SnapRAID Help Forum: Error reading file
+		 * https://sourceforge.net/projects/snapraid/forums/forum/1677233/topic/7273746
+		 */
+		if (err == ERROR_NO_SYSTEM_RESOURCES) {
+			fprintf(stderr, "Unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pread(), retrying...\n");
+			Sleep(50);
+			goto retry;
+		}
+
+		windows_errno(err);
+		return -1;
+	}
+
+	return count;
+}
+
+ssize_t windows_pwrite(int fd, const void* buffer, size_t size, off_t offset)
+{
+	HANDLE h;
+	LARGE_INTEGER pos;
+	DWORD count;
+
+	if (fd == -1) {
+		errno = EBADF;
+		return -1;
+	}
+
+	h = (HANDLE)_get_osfhandle(fd);
+	if (h == INVALID_HANDLE_VALUE) {
+		errno = EBADF;
+		return -1;
+	}
+
+retry:
+	pos.QuadPart = offset;
+	if (!SetFilePointerEx(h, pos, 0, FILE_BEGIN)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	if (!WriteFile(h, buffer, size, &count, 0)) {
+		DWORD err = GetLastError();
+		if (err == ERROR_NO_SYSTEM_RESOURCES) {
+			fprintf(stderr, "Unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pwrite(), retrying...\n");
+			Sleep(50);
+			goto retry;
+		}
+
+		windows_errno(err);
+		return -1;
+	}
+
+	return count;
 }
 
 #endif

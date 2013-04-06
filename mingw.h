@@ -35,7 +35,6 @@
 #define stat windows_stat
 #define lstat windows_lstat
 #define off_t off64_t
-#define lseek lseek64
 #define fstat windows_fstat
 #define HAVE_FTRUNCATE 1
 #define ftruncate windows_ftruncate
@@ -63,12 +62,19 @@
 #define S_ISLNK(m) (((m) & _S_IFMT) == S_IFLNK)
 #define S_IFLNKDIR 0x6000 /* Symbolic link to directory */
 #define S_ISLNKDIR(m) (((m) & _S_IFMT) == S_IFLNKDIR)
-#define S_IFJUN 0x6000 /* Junction */
+#define S_IFJUN 0x7000 /* Junction */
 #define S_ISJUN(m) (((m) & _S_IFMT) == S_IFJUN)
 #define readlink windows_readlink
 #define symlink windows_symlink
 #define link windows_link
 #define strerror windows_strerror
+#define read windows_read
+#define write windows_write
+#define lseek windows_lseek
+#define HAVE_PREAD 1
+#define HAVE_PWRITE 1
+#define pread windows_pread
+#define pwrite windows_pwrite
 
 /* We have nano second support */
 #define STAT_NSEC(st) (st)->st_mtimensec
@@ -255,6 +261,31 @@ int windows_link(const char* existing, const char* file);
  * Like strerror().
  */
 const char* windows_strerror(int err);
+
+/**
+ * Like read().
+ */
+ssize_t windows_read(int f, void* buffer, size_t size);
+
+/**
+ * Like write().
+ */
+ssize_t windows_write(int f, const void* buffer, size_t size);
+
+/**
+ * Like lseek().
+ */
+off_t windows_lseek(int f, off_t offset, int whence);
+
+/**
+ * Like pread().
+ */
+ssize_t windows_pread(int f, void* buffer, size_t size, off_t offset);
+
+/**
+ * Like pwrite().
+ */
+ssize_t windows_pwrite(int f, const void* buffer, size_t size, off_t offset);
 
 #endif
 #endif
