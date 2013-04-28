@@ -249,7 +249,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			if (block_has_hash(block)) {
 				/* compare the hash */
 				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
-					fprintf(stderr, "%u: Data error for file %s at position %u\n", i, block_file_get(block)->sub, block_file_pos(block));
+					fprintf(stderr, "Data error in file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
 					fprintf(stderr, "DANGER! Unexpected data error in a data disk, it isn't possible to sync.\n");
 					printf("Stopping to allow recovery. Try with 'snapraid -s %u check'\n", i);
 					++unrecoverable_error;

@@ -5,9 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - v3.1
 
-* Add an option to allow to save "system" files if they matches a specific pattern.
-Some programs in Windows uses this attribute to hide files that contains valuable data.
-
 * If the fix process is interrupted by pressing Ctrl+C, we should rename files partially
 recovered to .unrecoverable, if there were created originally missing from the array.
 This could be detect checking the size just after creation.
