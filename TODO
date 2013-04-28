@@ -101,6 +101,15 @@ with the existing RAID-5 and RAID-6 definining a new r-parity file.
 See http://blogs.oracle.com/ahl/entry/triple_parity_raid_z and
 http://thread.gmane.org/gmane.linux.raid/34195/focus=34236
 
+* The data could be compressed before processing, resulting in parity block of fixed size,
+but matching different data block sizes.
+The complexity is that a file blocks will have to be allocated at runtime,
+and you may run out of them in the middle of the processing.
+We need also a way to compress a stream until the compressed data reach the
+block size, but no more, and then start a new block.
+For each block, we'll have also to store. "size_uncompressed", "size_compressed",
+"hash".
+
 * In the content file save the timestap of the parity files.
 If they do not match, stop the processing.
 This can be done to avoid to use not syncronized parity and content files,
