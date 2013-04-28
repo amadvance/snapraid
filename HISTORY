@@ -8,6 +8,7 @@ SnapRAID HISTORY
    files created, to allow to reuse again the '-m, --filter-missing' flag.
  * In Windows don't exclude anymore system files. Only system directories are
    excluded.
+ * The Windows binaries are now built with gcc 4.7.2.
 
 3.0 2013/3
 ==========
