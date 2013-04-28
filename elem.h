@@ -135,11 +135,41 @@ struct snapraid_block {
  */
 #define BLOCK_EMPTY 0
 
-#define FILE_IS_PRESENT 0x01 /**< If it's seen as present. */
-#define FILE_IS_EXCLUDED 0x02 /**< If it's an excluded file from the processing. */
-#define FILE_IS_LARGER 0x04 /**< If a larger file was already detected. Just to avoid to report it more times. */
-#define FILE_IS_DAMAGED 0x08 /**< If a fix was attempted but it failed. */
-#define FILE_IS_FIXED 0x10 /**< If a fix was done. */
+/**
+ * If it's seen as present.
+ * It's used only in sync.
+ */
+#define FILE_IS_PRESENT 0x01
+
+/**
+ * If it's an excluded file from the processing.
+ * It's used in sync/check/fix.
+ */
+#define FILE_IS_EXCLUDED 0x02
+
+/**
+ * If the file was originally larger, and then truncated to the expected suze.
+ * It's used in check/fix to avoid to report this condition more than one time.
+ */
+#define FILE_IS_LARGER 0x04
+
+/**
+ * If a fix was attempted but it failed.
+ * It's used only in fix.
+ */
+#define FILE_IS_DAMAGED 0x08
+
+/**
+ * If a fix was done.
+ * It's used only in fix.
+ */
+#define FILE_IS_FIXED 0x10
+
+/**
+ * If the file was originally missing, and it's created in the fix process.
+ * It's used only in fix.
+ */
+#define FILE_IS_CREATED 0x20
 
 #define FILE_IS_HARDLINK 0x100 /**< If it's an hardlink. */
 #define FILE_IS_SYMLINK 0x200 /**< If it's a file symlink. */

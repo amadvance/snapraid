@@ -26,10 +26,11 @@
 struct snapraid_handle {
 	char path[PATH_MAX]; /**< Path of the file. */
 	struct snapraid_disk* disk; /**< Disk of the file. */
-	struct snapraid_file* file; /**< File opened. */
+	struct snapraid_file* file; /**< File opened. When the file is closed, it's set to 0. */
 	int f; /**< Handle of the file. */
 	struct stat st; /**< Stat info of the opened file. */
 	data_off_t valid_size; /**< Size of the valid data. */
+	int created; /**< If the file was created, or it was already existing. */
 };
 
 /**

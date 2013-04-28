@@ -44,10 +44,19 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 	/* open for read write */
 	/* O_SEQUENTIAL: opening in sequential mode in Windows */
 	/* O_NOFOLLOW: do not follow links to ensure to open the real file */
-	flags = O_RDWR | O_CREAT | O_BINARY | O_NOFOLLOW;
+	flags = O_RDWR | O_BINARY | O_NOFOLLOW;
 	if (!skip_sequential)
 		flags |= O_SEQUENTIAL;
-	handle->f = open(handle->path, flags, 0600);
+	handle->created = 0;
+	handle->f = open(handle->path, flags);
+
+	/* if failed for missing file */
+	if (handle->f == -1 && errno == ENOENT) {
+		/* retry creating it */
+		flags |= O_CREAT;
+		handle->created = 1;
+		handle->f = open(handle->path, flags, 0600);
+	}
 
 	/* if failed for missing permission */
 	if (handle->f == -1 && errno == EACCES) {
@@ -55,6 +64,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 		flags = O_RDONLY | O_BINARY | O_NOFOLLOW;
 		if (!skip_sequential)
 			flags |= O_SEQUENTIAL;
+		handle->created = 0;
 		handle->f = open(handle->path, flags);
 	}
 
@@ -137,6 +147,7 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, FILE
 	flags = O_RDONLY | O_BINARY | O_NOFOLLOW;
 	if (!skip_sequential)
 		flags |= O_SEQUENTIAL;
+	handle->created = 0;
 	handle->f = open_noatime(handle->path, flags);
 	if (handle->f == -1) {
 		/* invalidate for error */

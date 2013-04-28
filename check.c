@@ -591,8 +591,9 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				continue;
 			}
 
-			/* if the file is different than the current one, close it */
-			if (handle[j].file != block_file_get(block)) {
+			/* if the file is closed or different than the current one */
+			if (handle[j].file == 0 || handle[j].file != block_file_get(block)) {
+				/* close the old one, if any */
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
 					fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to sync.\n");
@@ -600,61 +601,68 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					++unrecoverable_error;
 					goto bail;
 				}
-			}
 
-			/* if fixing, and the file is not excluded, we must open for writing */
-			if (fix && !file_flag_has(block_file_get(block), FILE_IS_EXCLUDED)) {
-				/* if fixing, create the file, open for writing and resize if required */
-				ret = handle_create(&handle[j], block_file_get(block), state->skip_sequential);
-				if (ret == -1) {
-					if (errno == EACCES) {
-						fprintf(stderr, "WARNING! Please give write permission to the file.\n");
-					} else {
-						fprintf(stderr, "DANGER! Without a working data disk, it isn't possible to fix errors on it.\n");
+				/* if fixing, and the file is not excluded, we must open for writing */
+				if (fix && !file_flag_has(block_file_get(block), FILE_IS_EXCLUDED)) {
+					/* if fixing, create the file, open for writing and resize if required */
+					ret = handle_create(&handle[j], block_file_get(block), state->skip_sequential);
+					if (ret == -1) {
+						if (errno == EACCES) {
+							fprintf(stderr, "WARNING! Please give write permission to the file.\n");
+						} else {
+							fprintf(stderr, "DANGER! Without a working data disk, it isn't possible to fix errors on it.\n");
+						}
+						printf("Stopping at block %u\n", i);
+						++unrecoverable_error;
+						goto bail;
 					}
-					printf("Stopping at block %u\n", i);
-					++unrecoverable_error;
-					goto bail;
-				}
 
-				/* check if the file was larger and now truncated */
-				if (ret == 1) {
-					fprintf(stdlog, "File '%s' is larger than expected.\n", handle[j].path);
-					fprintf(stdlog, "error:%u:%s:%s: Size error\n", i, handle[j].disk->name, block_file_get(block)->sub);
-					++error;
+					/* check if the file was larger and now truncated */
+					if (ret == 1) {
+						fprintf(stdlog, "File '%s' is larger than expected.\n", handle[j].path);
+						fprintf(stdlog, "error:%u:%s:%s: Size error\n", i, handle[j].disk->name, block_file_get(block)->sub);
+						++error;
 
-					/* this is already a recovered error */
-					fprintf(stdlog, "fixed:%u:%s:%s: Fixed size\n", i, handle[j].disk->name, block_file_get(block)->sub);
-					++recovered_error;
-				}
-			} else {
-				/* if checking or hashing, open the file only for reading */
-				ret = handle_open(&handle[j], block_file_get(block), stdlog, state->skip_sequential);
-				if (ret == -1) {
-					/* save the failed block for the check/fix */
-					failed[failed_count].is_bad = 1;
-					failed[failed_count].is_outofdate = 0;
-					failed[failed_count].index = j;
-					failed[failed_count].block = block;
-					failed[failed_count].handle = &handle[j];
-					++failed_count;
+						/* this is already a recovered error */
+						fprintf(stdlog, "fixed:%u:%s:%s: Fixed size\n", i, handle[j].disk->name, block_file_get(block)->sub);
+						++recovered_error;
+					}
 
-					fprintf(stdlog, "error:%u:%s:%s: Open error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
-					++error;
-					continue;
-				}
+					/* check if the file was just created */
+					if (handle[j].created != 0) {
+						/* if fragmented, it may be reopened, so remember that the file */
+						/* was originally missing */
+						file_flag_set(block_file_get(block), FILE_IS_CREATED);
+					}
+				} else {
+					/* if checking or hashing, open the file only for reading */
+					ret = handle_open(&handle[j], block_file_get(block), stdlog, state->skip_sequential);
+					if (ret == -1) {
+						/* save the failed block for the check/fix */
+						failed[failed_count].is_bad = 1;
+						failed[failed_count].is_outofdate = 0;
+						failed[failed_count].index = j;
+						failed[failed_count].block = block;
+						failed[failed_count].handle = &handle[j];
+						++failed_count;
 
-				/* check if it's a larger file, but not if already notified */
-				if (!file_flag_has(block_file_get(block), FILE_IS_LARGER)
-					&& handle[j].st.st_size > block_file_get(block)->size
-				) {
-					fprintf(stdlog, "File '%s' is larger than expected.\n", handle[j].path);
-					fprintf(stdlog, "error:%u:%s:%s: Size error\n", i, handle[j].disk->name, block_file_get(block)->sub);
-					++error;
+						fprintf(stdlog, "error:%u:%s:%s: Open error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
+						++error;
+						continue;
+					}
 
-					/* if fragmented, it may be reopened, so store the notification */
-					/* to prevent to signal and count the error more than one time */
-					file_flag_set(block_file_get(block), FILE_IS_LARGER);
+					/* check if it's a larger file, but not if already notified */
+					if (!file_flag_has(block_file_get(block), FILE_IS_LARGER)
+						&& handle[j].st.st_size > block_file_get(block)->size
+					) {
+						fprintf(stdlog, "File '%s' is larger than expected.\n", handle[j].path);
+						fprintf(stdlog, "error:%u:%s:%s: Size error\n", i, handle[j].disk->name, block_file_get(block)->sub);
+						++error;
+
+						/* if fragmented, it may be reopened, so store the notification */
+						/* to prevent to signal and count the error more than one time */
+						file_flag_set(block_file_get(block), FILE_IS_LARGER);
+					}
 				}
 			}
 
@@ -911,7 +919,8 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			}
 		}
 
-		/* for all the files prints the final status, does the final time fix */
+		/* for all the files prints the final status, and does the final time fix */
+		/* we also ensure to close files after processing the last block */
 		for(j=0;j<diskmax;++j) {
 			struct snapraid_block* block = BLOCK_EMPTY;
 			struct snapraid_file* collide_file;
@@ -940,16 +949,16 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				exit(EXIT_FAILURE);
 			}
 
-			/* if the file is excluded, we have nothing to fix */
-			if (file_flag_has(file, FILE_IS_EXCLUDED)) {
-				/* nothing to do */
-				continue;
-			}
-
 			/* if it isn't the last block in the file */
 			if (!block_is_last(block)) {
 				/* nothing to do */
 				continue;
+			}
+
+			/* if the file is excluded, we have nothing to fix */
+			if (file_flag_has(file, FILE_IS_EXCLUDED)) {
+				/* nothing to do, but close the file */
+				goto close_and_continue;
 			}
 
 			/* finish the fix process if it's the last block of the files */
@@ -961,7 +970,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 					pathprint(path_to, sizeof(path_to), "%s%s.unrecoverable", handle[j].disk->dir, file->sub);
 
-					/* ensure to operate on a closed file */
+					/* ensure to close the file before renaming */
 					ret = handle_close(&handle[j]);
 					if (ret != 0) {
 						fprintf(stderr, "Error closing '%s'. %s.\n", path, strerror(errno));
@@ -992,8 +1001,8 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 				/* if the file is not fixed, meaning that it is untouched */
 				if (!file_flag_has(file, FILE_IS_FIXED)) {
-					/* nothing to do */
-					continue;
+					/* nothing to do, but close the file */
+					goto close_and_continue;
 				}
 
 				if (state->gui) {
@@ -1064,6 +1073,17 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 						printf("Correct '%s'\n", path);
 					}
 				}
+			}
+
+close_and_continue:
+			/* ensure to close the file just after finishing with it */
+			ret = handle_close(&handle[j]);
+			if (ret != 0) {
+				fprintf(stderr, "Error closing '%s'. %s.\n", path, strerror(errno));
+				fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+				printf("Stopping at block %u\n", i);
+				++unrecoverable_error;
+				goto bail;
 			}
 		}
 
@@ -1401,11 +1421,38 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 bail:
 	for(j=0;j<diskmax;++j) {
-		ret = handle_close(&handle[j]);
-		if (ret == -1) {
-			fprintf(stderr, "DANGER! Unexpected close error in a data disk.\n");
-			++unrecoverable_error;
-			/* continue, as we are already exiting */
+		/* if the file is open */
+		if (handle->file != 0) {
+			struct snapraid_file* file = handle[j].file;
+
+			/* now close it */
+			ret = handle_close(&handle[j]);
+			if (ret == -1) {
+				fprintf(stderr, "DANGER! Unexpected close error in a data disk.\n");
+				++unrecoverable_error;
+				/* continue, as we are already exiting */
+			}
+
+			/* if we closed the file now, it means that we are aborting the execution */
+			/* and if the file was originally missing, we have to throw it away */
+			/* to ensure that at the next run we will retry to fix it */
+			/* in case we select to undelete missing files */
+			if (fix && file_flag_has(file, FILE_IS_CREATED)) {
+				/* rename it to .unrecoverable */
+				char path[PATH_MAX];
+				char path_to[PATH_MAX];
+
+				pathprint(path, sizeof(path), "%s%s", handle[j].disk->dir, file->sub);
+				pathprint(path_to, sizeof(path_to), "%s%s.unrecoverable", handle[j].disk->dir, file->sub);
+
+				ret = rename(path, path_to);
+				if (ret != 0) {
+					fprintf(stderr, "Error renaming '%s' to '%s'. %s.\n", path, path_to, strerror(errno));
+					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					++unrecoverable_error;
+					/* continue, as we are already exiting */
+				}
+			}
 		}
 	}
 
