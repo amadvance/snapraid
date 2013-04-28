@@ -648,7 +648,7 @@ int lstat_ex(const char* file, struct windows_stat* st)
 	/*
 	 * Open the handle of the file.
 	 *
-	 * Use FILE_FLAG_BACKUP_SEMANTICS to open directories and to override the file security checks.
+	 * Use FILE_FLAG_BACKUP_SEMANTICS to open directories (it's just ignored for files).
 	 * Use FILE_FLAG_OPEN_REPARSE_POINT to open symbolic links and not the their target.
 	 */
 	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, 0);
@@ -690,7 +690,7 @@ int windows_stat(const char* file, struct windows_stat* st)
 	/*
 	 * Open the handle of the file.
 	 *
-	 * Use FILE_FLAG_BACKUP_SEMANTICS to open directories and to override the file security checks.
+	 * Use FILE_FLAG_BACKUP_SEMANTICS to open directories (it's just ignored for files).
 	 */
 	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
 	if (h == INVALID_HANDLE_VALUE) {
@@ -1015,7 +1015,7 @@ int windows_readlink(const char* file, char* buffer, size_t size)
 	/*
 	 * Open the handle of the file.
 	 *
-	 * Use FILE_FLAG_BACKUP_SEMANTICS to open directories and to override the file security checks.
+	 * Use FILE_FLAG_BACKUP_SEMANTICS to open directories (it's just ignored for files).
 	 * Use FILE_FLAG_OPEN_REPARSE_POINT to open symbolic links and not the their target.
 	 */
 	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, 0);
