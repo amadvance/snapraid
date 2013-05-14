@@ -130,10 +130,10 @@ static int filter_apply(struct snapraid_filter* filter, const char* path, const 
 
 	if (filter->is_path) {
 		/* skip initial slash, as always missing from the path */
-		if (fnmatch(filter->pattern + 1, path, FNM_PATHNAME) == 0)
+		if (fnmatch(filter->pattern + 1, path, FNM_PATHNAME | FNM_CASEINSENSITIVE_FOR_WIN) == 0)
 			return filter->direction;
 	} else {
-		if (fnmatch(filter->pattern, name, 0) == 0)
+		if (fnmatch(filter->pattern, name, FNM_CASEINSENSITIVE_FOR_WIN) == 0)
 			return filter->direction;
 	}
 
@@ -186,8 +186,7 @@ static int filter_element(tommy_list* filterlist, const char* disk, const char* 
 		struct snapraid_filter* filter = i->data;
 
 		if (filter->is_disk) {
-			/* using fnmatch allows to ignore case in windows */
-			if (fnmatch(filter->pattern, disk, 0) == 0)
+			if (fnmatch(filter->pattern, disk, FNM_CASEINSENSITIVE_FOR_WIN) == 0)
 				ret = filter->direction;
 			else
 				ret = 0;
@@ -263,13 +262,13 @@ int filter_content(tommy_list* contentlist, const char* path)
 
 		/* FNM_PATHNAME because we are comparing full path */
 		/* FNM_NOESCAPE because the pattern is also a path, surely without escape chars */
-		/* using fnmatch allows to ignore case in windows */
-		if (fnmatch(content->content, path, FNM_PATHNAME | FNM_NOESCAPE) == 0)
+		/* FNM_NOCASEINWIN ignore case only in windows */
+		if (fnmatch(content->content, path, FNM_PATHNAME | FNM_NOESCAPE | FNM_CASEINSENSITIVE_FOR_WIN) == 0)
 			return -1;
 
 		/* exclude also the ".tmp" copy used to save it */
 		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
-		if (fnmatch(tmp, path, FNM_PATHNAME | FNM_NOESCAPE) == 0)
+		if (fnmatch(tmp, path, FNM_PATHNAME | FNM_NOESCAPE | FNM_CASEINSENSITIVE_FOR_WIN) == 0)
 			return -1;
 	}
 

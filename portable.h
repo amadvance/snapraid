@@ -101,6 +101,15 @@
 #include "fnmatch.h"
 #endif
 
+/**
+ * Disable case check in Windows.
+ */
+#ifdef _WIN32
+#define FNM_CASEINSENSITIVE_FOR_WIN FNM_CASEFOLD
+#else
+#define FNM_CASEINSENSITIVE_FOR_WIN 0
+#endif
+
 #if HAVE_IO_H
 #include <io.h>
 #endif

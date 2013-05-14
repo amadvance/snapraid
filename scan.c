@@ -587,7 +587,7 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 			exit(EXIT_FAILURE);
 		}
 
-		/* exclude hidden stuff even beforer calling lstat() */
+		/* exclude hidden files even beforer calling lstat() */
 		if (filter_hidden(state->filter_hidden, dd) != 0) {
 			if (state->verbose) {
 				printf("Excluding hidden '%s'\n", path_next);
@@ -595,7 +595,7 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 			continue;
 		}
 
-		/* exclude content files even beforer calling lstat() */
+		/* exclude content files even before calling lstat() */
 		if (filter_content(&state->contentlist, path_next) != 0) {
 			if (state->verbose) {
 				printf("Excluding content '%s'\n", path_next);
