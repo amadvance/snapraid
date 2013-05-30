@@ -207,8 +207,8 @@ struct snapraid_file {
  */
 struct snapraid_link {
 	unsigned flag; /**< FILE_IS_* flags. */
-	char sub[PATH_MAX]; /**< Sub path of the file. Without the disk dir. The disk is implicit. */
-	char linkto[PATH_MAX]; /**< Link to. */
+	char* sub; /**< Sub path of the file. Without the disk dir. The disk is implicit. */
+	char* linkto; /**< Link to. */
 
 	/* nodes for data structures */
 	tommy_node nodelist;
@@ -220,7 +220,7 @@ struct snapraid_link {
  */
 struct snapraid_dir {
 	unsigned flag; /**< FILE_IS_* flags. */
-	char sub[PATH_MAX]; /**< Sub path of the file. Without the disk dir. The disk is implicit. */
+	char* sub; /**< Sub path of the file. Without the disk dir. The disk is implicit. */
 
 	/* nodes for data structures */
 	tommy_node nodelist;

@@ -262,7 +262,7 @@ int filter_content(tommy_list* contentlist, const char* path)
 
 		/* FNM_PATHNAME because we are comparing full path */
 		/* FNM_NOESCAPE because the pattern is also a path, surely without escape chars */
-		/* FNM_NOCASEINWIN ignore case only in windows */
+		/* FNM_CASEINSENSITIVE_FOR_WIN ignore case only in windows */
 		if (fnmatch(content->content, path, FNM_PATHNAME | FNM_NOESCAPE | FNM_CASEINSENSITIVE_FOR_WIN) == 0)
 			return -1;
 
@@ -413,8 +413,8 @@ struct snapraid_link* link_alloc(const char* sub, const char* linkto, unsigned l
 	struct snapraid_link* link;
 
 	link = malloc_nofail(sizeof(struct snapraid_link));
-	pathcpy(link->sub, sizeof(link->sub), sub);
-	pathcpy(link->linkto, sizeof(link->linkto), linkto);
+	link->sub = strdup_nofail(sub);
+	link->linkto = strdup_nofail(linkto);
 	link->flag = link_flag;
 
 	return link;
@@ -422,6 +422,8 @@ struct snapraid_link* link_alloc(const char* sub, const char* linkto, unsigned l
 
 void link_free(struct snapraid_link* link)
 {
+	free(link->sub);
+	free(link->linkto);
 	free(link);
 }
 
@@ -437,7 +439,7 @@ struct snapraid_dir* dir_alloc(const char* sub)
 	struct snapraid_dir* dir;
 
 	dir = malloc_nofail(sizeof(struct snapraid_dir));
-	pathcpy(dir->sub, sizeof(dir->sub), sub);
+	dir->sub = strdup_nofail(sub);
 	dir->flag = 0;
 
 	return dir;
@@ -445,6 +447,7 @@ struct snapraid_dir* dir_alloc(const char* sub)
 
 void dir_free(struct snapraid_dir* dir)
 {
+	free(dir->sub);
 	free(dir);
 }
 
