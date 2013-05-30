@@ -33,9 +33,8 @@ This 'init' will work also without a content file, and parity files.
 Instead 'sync' will require all of them.
 This will also help when running with the parity filesystem unmounted.
 
-* Adds a log option, to save log files with the date in the name. This could
-help to keep track of what happens during automated operations.
-We must keep the log to stdout/err, and only save a copy to the log file.
+* Adds a log configuration option to save log files with the date in the name.
+This could help to keep track of what happens during automated operations.
 
 * In fix an existing symlink with the same name of a file to be recovered may stop
 the process making the create() operation to fail.
