@@ -3,11 +3,9 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
-- v3.1
+- v3.2
 
 * Allow to specify the shared path to use to access remote symlink.
-
-- v3.2
 
 * In the import list, uses also all the blocks in the array.
 But we must cover the case of bad blocks. Likely we can just check the

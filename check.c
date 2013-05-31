@@ -963,6 +963,9 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 			/* finish the fix process if it's the last block of the files */
 			if (fix) {
+				/* mark that we finished with this file */
+				file_flag_set(file, FILE_IS_FINISHED);
+
 				/* if the file is damaged, meaning that a fix failed */
 				if (file_flag_has(file, FILE_IS_DAMAGED)) {
 					/* rename it to .unrecoverable */
@@ -1420,30 +1423,57 @@ close_and_continue:
 	state_progress_end(state, countpos, countmax, countsize);
 
 bail:
+	/* close all the files left open */
 	for(j=0;j<diskmax;++j) {
-		/* if the file is open */
-		if (handle->file != 0) {
-			struct snapraid_file* file = handle[j].file;
+		ret = handle_close(&handle[j]);
+		if (ret == -1) {
+			fprintf(stderr, "DANGER! Unexpected close error in a data disk.\n");
+			++unrecoverable_error;
+			/* continue, as we are already exiting */
+		}
+	}
 
-			/* now close it */
-			ret = handle_close(&handle[j]);
-			if (ret == -1) {
-				fprintf(stderr, "DANGER! Unexpected close error in a data disk.\n");
-				++unrecoverable_error;
-				/* continue, as we are already exiting */
-			}
+	/* rename all the files created from scratch that have not finished the processing */
+	/* it happens only when aborting */
+	if (fix) {
+		/* for each disk */
+		for(i=0;i<diskmax;++i) {
+			tommy_node* node;
+			struct snapraid_disk* disk;
 
-			/* if we closed the file now, it means that we are aborting the execution */
-			/* and if the file was originally missing, we have to throw it away */
-			/* to ensure that at the next run we will retry to fix it */
-			/* in case we select to undelete missing files */
-			if (fix && file_flag_has(file, FILE_IS_CREATED)) {
-				/* rename it to .unrecoverable */
+			if (!handle[i].disk)
+				continue;
+
+			/* for each file in the disk */
+			disk = handle[i].disk;
+			node = disk->filelist;
+			while (node) {
 				char path[PATH_MAX];
 				char path_to[PATH_MAX];
+				struct snapraid_file* file;
 
-				pathprint(path, sizeof(path), "%s%s", handle[j].disk->dir, file->sub);
-				pathprint(path_to, sizeof(path_to), "%s%s.unrecoverable", handle[j].disk->dir, file->sub);
+				file = node->data;
+				node = node->next; /* next node */
+
+				/* if the file was not created, meaning that it was already existing */
+				if (!file_flag_has(file, FILE_IS_CREATED)) {
+					/* nothing to do */
+					continue;
+				}
+
+				/* if processing was finished */
+				if (file_flag_has(file, FILE_IS_FINISHED)) {
+					/* nothing to do */
+					continue;
+				}
+
+				/* if the file was originally missing, and processing not yet finished */
+				/* we have to throw it away  to ensure that at the next run we will retry */
+				/* to fix it, in case we select to undelete missing files */
+
+				/* rename it to .unrecoverable */
+				pathprint(path, sizeof(path), "%s%s", disk->dir, file->sub);
+				pathprint(path_to, sizeof(path_to), "%s%s.unrecoverable", disk->dir, file->sub);
 
 				ret = rename(path, path_to);
 				if (ret != 0) {
