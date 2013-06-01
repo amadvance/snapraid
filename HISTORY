@@ -4,8 +4,8 @@ SnapRAID HISTORY
 3.1 2013/5
 ==========
  * Direct use of Windows API for disk access to improve error reporting.
- * If the 'fix' process is aborted, renames to .unrecoverable all the new
-   files created, to allow to reuse again the '-m, --filter-missing' flag.
+ * If the 'fix' process is aborted, it removes all the new files partially
+   recovered, to allow to reuse again the '-m, --filter-missing' flag.
  * In Windows don't exclude anymore system files. Only system directories are
    excluded.
  * In Windows applies filters in case insensitive way.

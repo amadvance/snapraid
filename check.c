@@ -1433,7 +1433,7 @@ bail:
 		}
 	}
 
-	/* rename all the files created from scratch that have not finished the processing */
+	/* remove all the files created from scratch that have not finished the processing */
 	/* it happens only when aborting */
 	if (fix) {
 		/* for each disk */
@@ -1449,7 +1449,6 @@ bail:
 			node = disk->filelist;
 			while (node) {
 				char path[PATH_MAX];
-				char path_to[PATH_MAX];
 				struct snapraid_file* file;
 
 				file = node->data;
@@ -1470,14 +1469,11 @@ bail:
 				/* if the file was originally missing, and processing not yet finished */
 				/* we have to throw it away  to ensure that at the next run we will retry */
 				/* to fix it, in case we select to undelete missing files */
-
-				/* rename it to .unrecoverable */
 				pathprint(path, sizeof(path), "%s%s", disk->dir, file->sub);
-				pathprint(path_to, sizeof(path_to), "%s%s.unrecoverable", disk->dir, file->sub);
 
-				ret = rename(path, path_to);
+				ret = remove(path);
 				if (ret != 0) {
-					fprintf(stderr, "Error renaming '%s' to '%s'. %s.\n", path, path_to, strerror(errno));
+					fprintf(stderr, "Error removing '%s'. %s.\n", path, strerror(errno));
 					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					++unrecoverable_error;
 					/* continue, as we are already exiting */
