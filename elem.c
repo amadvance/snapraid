@@ -260,15 +260,12 @@ int filter_content(tommy_list* contentlist, const char* path)
 		struct snapraid_content* content = i->data;
 		char tmp[PATH_MAX];
 
-		/* FNM_PATHNAME because we are comparing full path */
-		/* FNM_NOESCAPE because the pattern is also a path, surely without escape chars */
-		/* FNM_CASEINSENSITIVE_FOR_WIN ignore case only in windows */
-		if (fnmatch(content->content, path, FNM_PATHNAME | FNM_NOESCAPE | FNM_CASEINSENSITIVE_FOR_WIN) == 0)
+		if (pathcmp(content->content, path) == 0)
 			return -1;
 
 		/* exclude also the ".tmp" copy used to save it */
 		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
-		if (fnmatch(tmp, path, FNM_PATHNAME | FNM_NOESCAPE | FNM_CASEINSENSITIVE_FOR_WIN) == 0)
+		if (pathcmp(tmp, path) == 0)
 			return -1;
 	}
 

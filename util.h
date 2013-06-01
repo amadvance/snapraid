@@ -336,7 +336,7 @@ void pathslash(char* dst, size_t size);
 
 /**
  * Compare two paths.
- * In Windows it's case insentive.
+ * In Windows it's case insentive and assumes \ equal at /.
  */
 int pathcmp(const char* a, const char* b);
 

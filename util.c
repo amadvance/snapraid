@@ -660,8 +660,12 @@ int pathcmp(const char* a, const char* b)
 #ifdef _WIN32
 	char ai[PATH_MAX];
 	char bi[PATH_MAX];
+
+	/* import to convert \ to / */
 	pathimport(ai, sizeof(ai), a);
 	pathimport(bi, sizeof(bi), b);
+
+	/* case insensitive compare in Windows */
 	return stricmp(ai, bi);
 #else
 	return strcmp(a, b);
