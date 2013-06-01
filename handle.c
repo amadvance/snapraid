@@ -41,22 +41,17 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 		return -1;
 	}
 
+	/* initial values, changed later if required */
+	handle->truncated = 0;
+	handle->created = 0;
+
 	/* open for read write */
 	/* O_SEQUENTIAL: opening in sequential mode in Windows */
 	/* O_NOFOLLOW: do not follow links to ensure to open the real file */
 	flags = O_RDWR | O_BINARY | O_NOFOLLOW;
 	if (!skip_sequential)
 		flags |= O_SEQUENTIAL;
-	handle->created = 0;
 	handle->f = open(handle->path, flags);
-
-	/* if failed for missing file */
-	if (handle->f == -1 && errno == ENOENT) {
-		/* retry creating it */
-		flags |= O_CREAT;
-		handle->created = 1;
-		handle->f = open(handle->path, flags, 0600);
-	}
 
 	/* if failed for missing permission */
 	if (handle->f == -1 && errno == EACCES) {
@@ -64,8 +59,18 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 		flags = O_RDONLY | O_BINARY | O_NOFOLLOW;
 		if (!skip_sequential)
 			flags |= O_SEQUENTIAL;
-		handle->created = 0;
 		handle->f = open(handle->path, flags);
+	}
+
+	/* if failed for missing file */
+	if (handle->f == -1 && errno == ENOENT) {
+		/* retry creating it */
+		flags = O_RDWR | O_CREAT | O_BINARY | O_NOFOLLOW;
+		if (!skip_sequential)
+			flags |= O_SEQUENTIAL;
+		/* mark it as created */
+		handle->created = 1;
+		handle->f = open(handle->path, flags, 0600);
 	}
 
 	if (handle->f == -1) {
@@ -105,6 +110,9 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 			return -1;
 		}
 
+		/* mark it as truncated */
+		handle->truncated = 1;
+
 		/* adjust the size to the truncated size */
 		handle->valid_size = file->size;
 	}
@@ -119,11 +127,6 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 		}
 	}
 #endif
-
-	/* return if the file size was truncated */
-	if (handle->st.st_size > file->size) {
-		return 1;
-	}
 
 	return 0;
 }
@@ -140,6 +143,10 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, FILE
 
 	pathprint(handle->path, sizeof(handle->path), "%s%s", handle->disk->dir, file->sub);
 
+	/* for sure neither created and truncated */
+	handle->truncated = 0;
+	handle->created = 0;
+
 	/* open for read */
 	/* O_SEQUENTIAL: opening in sequential mode in Windows */
 	/* O_NOFOLLOW: do not follow links to ensure to open the real file */
@@ -147,7 +154,6 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, FILE
 	flags = O_RDONLY | O_BINARY | O_NOFOLLOW;
 	if (!skip_sequential)
 		flags |= O_SEQUENTIAL;
-	handle->created = 0;
 	handle->f = open_noatime(handle->path, flags);
 	if (handle->f == -1) {
 		/* invalidate for error */

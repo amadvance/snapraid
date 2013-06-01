@@ -618,7 +618,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					}
 
 					/* check if the file was larger and now truncated */
-					if (ret == 1) {
+					if (handle[j].truncated != 0) {
 						fprintf(stdlog, "File '%s' is larger than expected.\n", handle[j].path);
 						fprintf(stdlog, "error:%u:%s:%s: Size error\n", i, handle[j].disk->name, block_file_get(block)->sub);
 						++error;
