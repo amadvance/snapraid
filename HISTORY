@@ -11,6 +11,7 @@ SnapRAID HISTORY
  * In Windows applies filters in case insensitive way.
  * The Windows binaries are now built with gcc 4.7.2.
  * Reduced memory occupation for hardlinks and directories.
+ * In 'dup' don't list file with 0 size.
 
 3.0 2013/3
 ==========

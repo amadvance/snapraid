@@ -110,7 +110,11 @@ void state_dup(struct snapraid_state* state)
 			/* if no hash, skip it */
 			if (!hash)
 				continue;
-			
+
+			/* if empty, skip it */
+			if (!file->size == 0)
+				continue;
+
 			hash32 = hash_hash(hash);
 
 			struct snapraid_hash* dup = tommy_hashdyn_search(&hashset, hash_compare, hash->hash, hash32);
