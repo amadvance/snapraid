@@ -94,7 +94,7 @@ static int clean_dir(struct snapraid_state* state, const char* dir)
 						/* in Windows just ignore EACCES errors removing directories */
 						/* because it could happen that the directory is in use */
 						/* and it cannot be removed */
-						fprintf(stderr, "Directory '%s' not removed because it's in use. \n", path_next);
+						fprintf(stderr, "Directory '%s' not removed because it's in use.\n", path_next);
 						ignored = 1;
 					} else
 #endif
