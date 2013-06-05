@@ -112,7 +112,7 @@ void state_dup(struct snapraid_state* state)
 				continue;
 
 			/* if empty, skip it */
-			if (!file->size == 0)
+			if (file->size == 0)
 				continue;
 
 			hash32 = hash_hash(hash);
