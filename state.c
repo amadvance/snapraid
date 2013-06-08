@@ -119,22 +119,34 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 				struct snapraid_disk* other = j->data;
 				if (disk->device == other->device) {
 					fprintf(stderr, "Disks '%s' and '%s' are on the same device.\n", disk->dir, other->dir);
+#ifdef _WIN32
+					fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", disk->device);
+#endif
 					exit(EXIT_FAILURE);
 				}
 			}
 
 			if (disk->device == state->parity_device) {
 				fprintf(stderr, "Disk '%s' and parity '%s' are on the same device.\n", disk->dir, state->parity);
+#ifdef _WIN32
+				fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", disk->device);
+#endif
 				exit(EXIT_FAILURE);
 			}
 
 			if (state->qarity[0] != 0 && disk->device == state->qarity_device) {
 				fprintf(stderr, "Disk '%s' and parity '%s' are on the same device.\n", disk->dir, state->qarity);
+#ifdef _WIN32
+				fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", disk->device);
+#endif
 				exit(EXIT_FAILURE);
 			}
 
 			if (state->pool[0] != 0 && disk->device == state->pool_device) {
 				fprintf(stderr, "Disk '%s' and pool '%s' are on the same device.\n", disk->dir, state->pool);
+#ifdef _WIN32
+				fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", disk->device);
+#endif
 				exit(EXIT_FAILURE);
 			}
 
@@ -175,16 +187,25 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 
 		if (state->qarity[0] != 0 && state->parity_device == state->qarity_device) {
 			fprintf(stderr, "Parity '%s' and '%s' are on the same device.\n", state->parity, state->qarity);
+#ifdef _WIN32
+			fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", state->parity_device);
+#endif			
 			exit(EXIT_FAILURE);
 		}
 
 		if (state->pool[0] != 0 && state->pool_device == state->parity_device) {
 			fprintf(stderr, "Pool '%s' and parity '%s' are on the same device.\n", state->pool, state->parity);
+#ifdef _WIN32
+			fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", state->pool_device);
+#endif
 			exit(EXIT_FAILURE);
 		}
 
 		if (state->pool[0] != 0 && state->qarity[0] != 0 && state->pool_device == state->qarity_device) {
 			fprintf(stderr, "Pool '%s' and parity '%s' are on the same device.\n", state->pool, state->qarity);
+#ifdef _WIN32
+			fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", state->pool_device);
+#endif
 			exit(EXIT_FAILURE);
 		}
 	}
