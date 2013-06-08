@@ -104,15 +104,17 @@ void state_dup(struct snapraid_state* state)
 		/* for each file */
 		for(j=disk->filelist;j!=0;j=j->next) {
 			struct snapraid_file* file = j->data;
-			struct snapraid_hash* hash = hash_alloc(disk, file);
+			struct snapraid_hash* hash;
 			tommy_hash_t hash32;
-
-			/* if no hash, skip it */
-			if (!hash)
-				continue;
 
 			/* if empty, skip it */
 			if (file->size == 0)
+				continue;
+
+			hash = hash_alloc(disk, file);
+
+			/* if no hash, skip it */
+			if (!hash)
 				continue;
 
 			hash32 = hash_hash(hash);
