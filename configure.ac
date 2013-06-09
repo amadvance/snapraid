@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.65])
-AC_INIT([snapraid], [3.1], [], [], [http://snapraid.sourceforge.net])
+AC_INIT([snapraid], [3.2], [], [], [http://snapraid.sourceforge.net])
 AM_INIT_AUTOMAKE([foreign no-dependencies -Wall])
 AC_CONFIG_SRCDIR([snapraid.c])
 AC_CONFIG_HEADER([config.h])
@@ -23,7 +23,7 @@ AC_HEADER_STDC
 AC_HEADER_DIRENT
 AC_HEADER_TIME
 AC_CHECK_HEADERS([fcntl.h stddef.h stdint.h stdlib.h string.h limits.h])
-AC_CHECK_HEADERS([sys/time.h unistd.h getopt.h fnmatch.h io.h inttypes.h])
+AC_CHECK_HEADERS([sys/time.h unistd.h getopt.h fnmatch.h io.h inttypes.h byteswap.h])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
