@@ -283,7 +283,7 @@ void raid6_sse2r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 	/* We uniformly assume a single prefetch covers at least 32 bytes */
 	for(d=0;d<size;d+=32) {
 		asm volatile("prefetchnta %0" : : "m" (buffer[z0][d]));
-		asm volatile("movdqa %0,%%xmm2" : : "m" (buffer[z0][d]));    /* P[0] */
+		asm volatile("movdqa %0,%%xmm2" : : "m" (buffer[z0][d])); /* P[0] */
 		asm volatile("movdqa %0,%%xmm3" : : "m" (buffer[z0][d+16])); /* P[1] */
 		asm volatile("movdqa %xmm2,%xmm4"); /* Q[0] */
 		asm volatile("movdqa %xmm3,%xmm6"); /* Q[1] */
@@ -427,7 +427,8 @@ void raid_init(void)
 	}
 	if (cpu_has_sse2()) {
 		raid5_gen = raid5_sse2r2;
-		raid6_gen = raid6_sse2r2;
+		if (!cpu_has_slowsse2())
+			raid6_gen = raid6_sse2r2;
 	}
 #endif
 }

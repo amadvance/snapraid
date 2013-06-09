@@ -32,6 +32,7 @@ noinst_HEADERS = \
 	parity.h \
 	handle.h \
 	murmurhash3.c \
+	spookyhash2.c \
 	tommyarray.h \
 	tommychain.h \
 	tommyhash.h \

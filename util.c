@@ -795,13 +795,55 @@ char* strdup_nofail(const char* str)
 	return ptr;
 }
 
+/****************************************************************************/
+/* hash */
+
+/* Rotate left 32 */
+inline uint32_t rotl32(uint32_t x, int8_t r)
+{
+	return (x << r) | (x >> (32 - r));
+}
+
+inline uint64_t rotl64(uint64_t x, int8_t r)
+{
+	return (x << r) | (x >> (64 - r));
+}
+
+/* Swap endianess */
+#if HAVE_BYTESWAP_H
+
+#include <byteswap.h>
+
+#define swap32(x) bswap_32(x)
+#define swap64(x) bswap_64(x)
+
+#else
+static inline uint32_t swap32(uint32_t v)
+{
+	return (rotl32(v, 8) & 0x00ff00ff)
+		| (rotl32(v, 24) & 0xff00ff00);
+}
+
+static inline uint64_t swap64(uint64_t v)
+{
+	return (rotl64(v, 8) & 0x000000ff000000ffLLU)
+		| (rotl64(v, 24) & 0x0000ff000000ff00LLU)
+		| (rotl64(v, 40) & 0x00ff000000ff0000LLU)
+		| (rotl64(v, 56) & 0xff000000ff000000LLU);
+}
+#endif
+
 #include "murmurhash3.c"
+#include "spookyhash2.c"
 
 void memhash(unsigned kind, void* digest, const void* src, unsigned size)
 {
 	switch (kind) {
 	case HASH_MURMUR3 :
-		MurmurHash3_x86_128(src, size, 0, digest);
+		MurmurHash3_x86_128(src, size, digest);
+		break;
+	case HASH_SPOOKY2 :
+		SpookyHash128(src, size, digest);
 		break;
 	default:
 		fprintf(stderr, "Internal inconsistency in hash function %u\n", kind);

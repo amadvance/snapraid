@@ -21,6 +21,7 @@
 #include "import.h"
 #include "state.h"
 #include "util.h"
+#include "cpu.h"
 
 void state_init(struct snapraid_state* state)
 {
@@ -45,7 +46,22 @@ void state_init(struct snapraid_state* state)
 	state->pool[0] = 0;
 	state->pool_device = 0;
 	state->level = 1; /* default is the lowest protection */
-	state->hash = HASH_MURMUR3; /* default is the fastest */
+
+	/* select the fastest hash */
+
+#if defined(__i386__) || defined(__x86_64__)
+	if (sizeof(void*) == 4 && !cpu_has_slowmult())
+		state->hash = HASH_MURMUR3;
+	else
+		state->hash = HASH_SPOOKY2;
+#else
+	if (sizeof(void*) == 4)
+		state->hash = HASH_MURMUR3;
+	else
+		state->hash = HASH_SPOOKY2;
+#endif
+	state->hash = HASH_MURMUR3;
+
 	tommy_list_init(&state->disklist);
 	tommy_list_init(&state->maplist);
 	tommy_list_init(&state->contentlist);
@@ -1416,6 +1432,9 @@ void state_read(struct snapraid_state* state)
 			} else if (strcmp(buffer, "murmur3") == 0) {
 				state->hash = HASH_MURMUR3;
 				hash = oathash8(hash, 'u');
+			} else if (strcmp(buffer, "spooky2") == 0) {
+				state->hash = HASH_SPOOKY2;
+				hash = oathash8(hash, 'k');
 			} else {
 				fprintf(stderr, "Invalid 'checksum' specification '%s' in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
@@ -1630,10 +1649,17 @@ void state_write(struct snapraid_state* state)
 		sputsl("checksum md5", f);
 		hash = oathash8(hash, 'c');
 		hash = oathash8(hash, 'm');
-	} else {
+	} else if (state->hash == HASH_MURMUR3) {
 		sputsl("checksum murmur3", f);
 		hash = oathash8(hash, 'c');
 		hash = oathash8(hash, 'u');
+	} else if (state->hash == HASH_SPOOKY2) {
+		sputsl("checksum spooky2", f);
+		hash = oathash8(hash, 'c');
+		hash = oathash8(hash, 'k');
+	} else {
+		fprintf(stderr, "Unexpected hash when writing the content file '%s'.\n", serrorfile(f));
+		exit(EXIT_FAILURE);
 	}
 	sputeol(f);
 	if (serror(f)) {

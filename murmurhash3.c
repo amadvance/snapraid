@@ -28,25 +28,6 @@
 // MurmurHash3 was written by Austin Appleby, and is placed in the public
 // domain. The author hereby disclaims copyright to this source code.
 
-/* Rotate left */
-inline uint32_t rotl32(uint32_t x, int8_t r)
-{
-	return (x << r) | (x >> (32 - r));
-}
-
-/* Swap endianess */
-#if WORDS_BIGENDIAN
-static inline uint32_t swap32(uint32_t v)
-{
-	return ((v & 0xff) << 24) | ((v & 0xff00) << 8) | ((v & 0xff0000) >> 8) | ((v >> 24) & 0xff);
-}
-#else
-static inline uint32_t swap32(uint32_t v)
-{
-	return v;
-}
-#endif
-
 /* Finalization mix - force all bits of a hash block to avalanche */
 static inline uint32_t fmix32(uint32_t h)
 {
@@ -94,26 +75,33 @@ uint32_t c2 = 0xab0e9789;
 uint32_t c3 = 0x38b34ae5;
 uint32_t c4 = 0xa1e38b93;
 
-void MurmurHash3_x86_128(const void * key, unsigned len, uint32_t seed, void* out)
+void MurmurHash3_x86_128(const void* key, unsigned len, void* out)
 {
-	const uint8_t * data = (const uint8_t*)key;
+	const uint8_t* data = key;
 	unsigned nblocks = len / 16;
 	unsigned i;
 
-	uint32_t h1 = seed;
-	uint32_t h2 = seed;
-	uint32_t h3 = seed;
-	uint32_t h4 = seed;
+	uint32_t h1 = 0;
+	uint32_t h2 = 0;
+	uint32_t h3 = 0;
+	uint32_t h4 = 0;
 
 	const uint32_t* blocks = (const uint32_t*)data;
 
 	/* body */
 
 	for(i=0;i<nblocks;++i) {
+#if WORDS_BIGENDIAN
 		uint32_t k1 = swap32(blocks[0]);
 		uint32_t k2 = swap32(blocks[1]);
 		uint32_t k3 = swap32(blocks[2]);
 		uint32_t k4 = swap32(blocks[3]);
+#else
+		uint32_t k1 = blocks[0];
+		uint32_t k2 = blocks[1];
+		uint32_t k3 = blocks[2];
+		uint32_t k4 = blocks[3];
+#endif
 
 		k1 *= c1; k1 = rotl32(k1,15); k1 *= c2; h1 ^= k1;
 
@@ -181,9 +169,16 @@ void MurmurHash3_x86_128(const void * key, unsigned len, uint32_t seed, void* ou
 	h1 += h2; h1 += h3; h1 += h4;
 	h2 += h1; h3 += h1; h4 += h1;
 
+#if WORDS_BIGENDIAN
 	((uint32_t*)out)[0] = swap32(h1);
 	((uint32_t*)out)[1] = swap32(h2);
 	((uint32_t*)out)[2] = swap32(h3);
 	((uint32_t*)out)[3] = swap32(h4);
+#else
+	((uint32_t*)out)[0] = h1;
+	((uint32_t*)out)[1] = h2;
+	((uint32_t*)out)[2] = h3;
+	((uint32_t*)out)[3] = h4;
+#endif
 }
 

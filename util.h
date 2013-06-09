@@ -390,6 +390,7 @@ char* strdup_nofail(const char* str);
 #define HASH_UNDEFINED 0
 #define HASH_MD5 1
 #define HASH_MURMUR3 2
+#define HASH_SPOOKY2 3
 
 /**
  * Computes the HASH of a memory block.

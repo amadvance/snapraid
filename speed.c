@@ -70,12 +70,76 @@ void speed(void)
 	buffer = malloc_nofail((diskmax + 2) * sizeof(void*));
 	for(i=0;i<diskmax+2;++i) {
 		buffer[i] = buffer_aligned + i * block_size;
-		memset(buffer[i], i, block_size);
+		memset(buffer[i], 0, block_size);
 	}
 
+	printf(PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
+
 #ifdef __GNUC__
-	printf("Compiled with gcc " __VERSION__ "\n");
+	printf("Compiler gcc " __VERSION__ "\n");
 #endif
+
+#if defined(__i386__) || defined(__x86_64__)
+	{
+		char vendor[CPU_VENDOR_MAX];
+		unsigned family;
+		unsigned model;
+
+		cpu_info(vendor, &family, &model);
+
+		printf("CPU %s, family %u, model %u, flags%s%s%s%s\n", vendor, family, model,
+			cpu_has_mmx() ? " mmx" : "",
+			cpu_has_sse2() ? " sse2" : "",
+			cpu_has_slowsse2() ? " slowsse2" : "",
+			cpu_has_slowmult() ? " slowmult" : ""
+			);
+	}
+#else
+	printf("CPU is not a x86/x64\n");
+#endif
+#if WORDS_BIGENDIAN
+	printf("Memory is big-endian %u-bit\n", (unsigned)sizeof(void*) * 8);
+#else
+	printf("Memory is little-endian %u-bit\n", (unsigned)sizeof(void*) * 8);
+#endif
+
+	printf("\n");
+
+	printf("Expected fastest hash is ");
+#if defined(__i386__) || defined(__x86_64__)
+	if (sizeof(void*) == 4 && !cpu_has_slowmult())
+		printf("Murmur3");
+	else
+		printf("Spooky2");
+#else
+	if (sizeof(void*) == 4)
+		printf("Murmur3");
+	else
+		printf("Spooky2");
+#endif
+	printf("\n");
+
+#if defined(__i386__) || defined(__x86_64__)
+	printf("Expected fastest RAID5 is ");
+	if (cpu_has_sse2())
+		printf("sse2x2");
+	else if (cpu_has_mmx())
+		printf("mmxx2");
+	else
+		printf("int32x2");
+	printf("\n");
+	printf("Expected fastest RAID6 is ");
+	if (cpu_has_sse2() && !cpu_has_slowsse2())
+		printf("sse2x2");
+	else if (cpu_has_mmx())
+		printf("mmxx2");
+	else
+		printf("int32x2");
+	printf("\n");
+#endif
+	printf("If these expectations are false, please report it in the SnapRAID forum\n");
+
+	printf("\n");
 
 	printf("Speed test with %d disk and %d buffer size...\n", diskmax, block_size);
 
@@ -85,7 +149,7 @@ void speed(void)
 		}
 	} SPEED_STOP
 
-	printf("memset %"PRIu64" [MB/s]\n", ds / dt);
+	printf("memset0 %"PRIu64" [MB/s]\n", ds / dt);
 
 	SPEED_START {
 		for(j=0;j<diskmax;++j) {
@@ -94,6 +158,14 @@ void speed(void)
 	} SPEED_STOP
 
 	printf("Murmur3 %"PRIu64" [MB/s]\n", ds / dt);
+
+	SPEED_START {
+		for(j=0;j<diskmax;++j) {
+			memhash(HASH_SPOOKY2, digest, buffer[j], block_size);
+		}
+	} SPEED_STOP
+
+	printf("Spooky2 %"PRIu64" [MB/s]\n", ds / dt);
 
 	SPEED_START {
 		raid5_int32r2(buffer, diskmax, block_size);
