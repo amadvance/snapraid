@@ -921,10 +921,6 @@ void state_read(struct snapraid_state* state)
 				exit(EXIT_FAILURE);
 			}
 
-			/* keep track of the max block number */
-			if (blockidx > blockmax)
-				blockmax = blockidx;
-
 			block = &file->blockvec[blockidx];
 
 			if (block->parity_pos != POS_INVALID) {
@@ -950,6 +946,10 @@ void state_read(struct snapraid_state* state)
 
 			block->parity_pos = v_pos;
 			hash = oathash32(hash, v_pos);
+
+			/* keep track of the max block number used in parity */
+			if (v_pos > blockmax)
+				blockmax = v_pos;
 
 			/* read the hash only for 'blk/inv/chg', and not for 'new' */
 			if (tag[0] != 'n') {
