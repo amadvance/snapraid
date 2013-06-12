@@ -162,6 +162,9 @@ static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk*
 		struct snapraid_deleted* deleted;
 
 		/* adjust the first free position */
+		/* note that doing all the deletions before alllocations, */
+		/* first_free_block is always 0 and the "if" is never triggered */
+		/* but we keep this code anyway for completeness. */
 		if (disk->first_free_block > block_pos)
 			disk->first_free_block = block_pos;
 
