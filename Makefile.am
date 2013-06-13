@@ -254,12 +254,13 @@ endif
 	rm -r test/disk2/_c
 	rm -r test/disk3/_c
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
-	echo --- Abort sync late with additions and then delete some unchanged stuff and fix with RAID5
+	echo --- Abort sync late with additions and then delete some unchanged stuff and fix with RAID5 and then with RAID6
 	cp -pR test/disk1/_b test/disk1/_c
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf --test-kill-after-sync sync
 	rm -r test/disk2
 	mkdir test/disk2
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf fix -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf fix -l test.log
 	rm -r test/disk1/_c
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
 	echo --- Abort sync late with more deletions than additions and then delete some unchanged stuff and fix with RAID5
