@@ -161,7 +161,7 @@ void speed(void)
 		}
 	} SPEED_STOP
 
-	printf("Murmur3 %"PRIu64" [MB/s]\n", ds / dt);
+	printf("HASH Murmur3 %"PRIu64" [MB/s]\n", ds / dt);
 
 	SPEED_START {
 		for(j=0;j<diskmax;++j) {
@@ -169,7 +169,7 @@ void speed(void)
 		}
 	} SPEED_STOP
 
-	printf("Spooky2 %"PRIu64" [MB/s]\n", ds / dt);
+	printf("HASH Spooky2 %"PRIu64" [MB/s]\n", ds / dt);
 
 	SPEED_START {
 		raid5_int32r2(buffer, diskmax, block_size);
