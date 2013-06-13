@@ -79,21 +79,60 @@ void raid5_mmxr2(unsigned char** buffer, unsigned diskmax, unsigned size)
 	p = buffer[z0+1]; /* XOR parity */
 
 	for(d=0;d<size;d+=16) {
-		asm volatile("movq %0,%%mm2" : : "m" (buffer[z0][d]));
-		asm volatile("movq %0,%%mm3" : : "m" (buffer[z0][d+8]));
+		asm volatile("movq %0,%%mm0" : : "m" (buffer[z0][d]));
+		asm volatile("movq %0,%%mm1" : : "m" (buffer[z0][d+8]));
 		for(z=z0-1;z>=0;--z) {
-			asm volatile("movq %0,%%mm5" : : "m" (buffer[z][d]));
-			asm volatile("movq %0,%%mm7" : : "m" (buffer[z][d+8]));
-			asm volatile("pxor %mm5,%mm2");
-			asm volatile("pxor %mm7,%mm3");
+			asm volatile("movq %0,%%mm4" : : "m" (buffer[z][d]));
+			asm volatile("movq %0,%%mm5" : : "m" (buffer[z][d+8]));
+			asm volatile("pxor %mm4,%mm0");
+			asm volatile("pxor %mm5,%mm1");
 		}
-		asm volatile("movq %%mm2,%0" : "=m" (p[d]));
-		asm volatile("movq %%mm3,%0" : "=m" (p[d+8]));
+		asm volatile("movq %%mm0,%0" : "=m" (p[d]));
+		asm volatile("movq %%mm1,%0" : "=m" (p[d+8]));
 	}
 
 	asm volatile("emms" : : : "memory");
 }
 
+/*
+ * Unrolled-by-4 MMX implementation
+ */
+void raid5_mmxr4(unsigned char** buffer, unsigned diskmax, unsigned size)
+{
+	unsigned char* p;
+	int z, z0;
+	unsigned d;
+
+	z0 = diskmax - 1; /* Highest data disk */
+	p = buffer[z0+1]; /* XOR parity */
+
+	for(d=0;d<size;d+=32) {
+		asm volatile("movq %0,%%mm0" : : "m" (buffer[z0][d]));
+		asm volatile("movq %0,%%mm1" : : "m" (buffer[z0][d+8]));
+		asm volatile("movq %0,%%mm2" : : "m" (buffer[z0][d+16]));
+		asm volatile("movq %0,%%mm3" : : "m" (buffer[z0][d+24]));
+		for(z=z0-1;z>=0;--z) {
+			asm volatile("movq %0,%%mm4" : : "m" (buffer[z][d]));
+			asm volatile("movq %0,%%mm5" : : "m" (buffer[z][d+8]));
+			asm volatile("movq %0,%%mm6" : : "m" (buffer[z][d+16]));
+			asm volatile("movq %0,%%mm7" : : "m" (buffer[z][d+24]));
+			asm volatile("pxor %mm4,%mm0");
+			asm volatile("pxor %mm5,%mm1");
+			asm volatile("pxor %mm6,%mm2");
+			asm volatile("pxor %mm7,%mm3");
+		}
+		asm volatile("movq %%mm0,%0" : "=m" (p[d]));
+		asm volatile("movq %%mm1,%0" : "=m" (p[d+8]));
+		asm volatile("movq %%mm2,%0" : "=m" (p[d+16]));
+		asm volatile("movq %%mm3,%0" : "=m" (p[d+24]));
+	}
+
+	asm volatile("emms" : : : "memory");
+}
+
+/*
+ * Unrolled-by-2 SSE2 implementation
+ */
 void raid5_sse2r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 {
 	unsigned char* p;
@@ -104,16 +143,52 @@ void raid5_sse2r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 	p = buffer[z0+1]; /* XOR parity */
 
 	for(d=0;d<size;d+=32) {
-		asm volatile("movdqa %0,%%xmm2" : : "m" (buffer[z0][d]));
-		asm volatile("movdqa %0,%%xmm3" : : "m" (buffer[z0][d+16]));
+		asm volatile("movdqa %0,%%xmm0" : : "m" (buffer[z0][d]));
+		asm volatile("movdqa %0,%%xmm1" : : "m" (buffer[z0][d+16]));
 		for(z=z0-1;z>=0;--z) {
-			asm volatile("movdqa %0,%%xmm5" : : "m" (buffer[z][d]));
-			asm volatile("movdqa %0,%%xmm7" : : "m" (buffer[z][d+16]));
-			asm volatile("pxor %xmm5,%xmm2");
+			asm volatile("movdqa %0,%%xmm4" : : "m" (buffer[z][d]));
+			asm volatile("movdqa %0,%%xmm5" : : "m" (buffer[z][d+16]));
+			asm volatile("pxor %xmm4,%xmm0");
+			asm volatile("pxor %xmm5,%xmm1");
+		}
+		asm volatile("movntdq %%xmm0,%0" : "=m" (p[d]));
+		asm volatile("movntdq %%xmm1,%0" : "=m" (p[d+16]));
+	}
+
+	asm volatile("sfence" : : : "memory");
+}
+
+/*
+ * Unrolled-by-4 SSE2 implementation
+ */
+void raid5_sse2r4(unsigned char** buffer, unsigned diskmax, unsigned size)
+{
+	unsigned char* p;
+	int z, z0;
+	unsigned d;
+
+	z0 = diskmax - 1; /* Highest data disk */
+	p = buffer[z0+1]; /* XOR parity */
+
+	for(d=0;d<size;d+=64) {
+		asm volatile("movdqa %0,%%xmm0" : : "m" (buffer[z0][d]));
+		asm volatile("movdqa %0,%%xmm1" : : "m" (buffer[z0][d+16]));
+		asm volatile("movdqa %0,%%xmm2" : : "m" (buffer[z0][d+32]));
+		asm volatile("movdqa %0,%%xmm3" : : "m" (buffer[z0][d+48]));
+		for(z=z0-1;z>=0;--z) {
+			asm volatile("movdqa %0,%%xmm4" : : "m" (buffer[z][d]));
+			asm volatile("movdqa %0,%%xmm5" : : "m" (buffer[z][d+16]));
+			asm volatile("movdqa %0,%%xmm6" : : "m" (buffer[z][d+32]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (buffer[z][d+48]));
+			asm volatile("pxor %xmm4,%xmm0");
+			asm volatile("pxor %xmm5,%xmm1");
+			asm volatile("pxor %xmm6,%xmm2");
 			asm volatile("pxor %xmm7,%xmm3");
 		}
-		asm volatile("movntdq %%xmm2,%0" : "=m" (p[d]));
-		asm volatile("movntdq %%xmm3,%0" : "=m" (p[d+16]));
+		asm volatile("movntdq %%xmm0,%0" : "=m" (p[d]));
+		asm volatile("movntdq %%xmm1,%0" : "=m" (p[d+16]));
+		asm volatile("movntdq %%xmm2,%0" : "=m" (p[d+32]));
+		asm volatile("movntdq %%xmm3,%0" : "=m" (p[d+48]));
 	}
 
 	asm volatile("sfence" : : : "memory");
@@ -282,13 +357,11 @@ void raid6_sse2r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 
 	/* We uniformly assume a single prefetch covers at least 32 bytes */
 	for(d=0;d<size;d+=32) {
-		asm volatile("prefetchnta %0" : : "m" (buffer[z0][d]));
 		asm volatile("movdqa %0,%%xmm2" : : "m" (buffer[z0][d])); /* P[0] */
 		asm volatile("movdqa %0,%%xmm3" : : "m" (buffer[z0][d+16])); /* P[1] */
 		asm volatile("movdqa %xmm2,%xmm4"); /* Q[0] */
 		asm volatile("movdqa %xmm3,%xmm6"); /* Q[1] */
 		for(z=z0-1;z>=0;--z) {
-			asm volatile("prefetchnta %0" : : "m" (buffer[z][d]));
 			asm volatile("pcmpgtb %xmm4,%xmm5");
 			asm volatile("pcmpgtb %xmm6,%xmm7");
 			asm volatile("paddb %xmm4,%xmm4");
@@ -426,7 +499,7 @@ void raid_init(void)
 		raid6_gen = raid6_mmxr2;
 	}
 	if (cpu_has_sse2()) {
-		raid5_gen = raid5_sse2r2;
+		raid5_gen = raid5_sse2r4;
 		if (!cpu_has_slowsse2())
 			raid6_gen = raid6_sse2r2;
 	}
