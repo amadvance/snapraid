@@ -130,7 +130,11 @@ void speed(void)
 	printf("\n");
 	printf("Expected fastest RAID6 is ");
 	if (cpu_has_sse2() && !cpu_has_slowsse2())
+#if defined(__x86_64__)
+		printf("sse2x4");
+#else
 		printf("sse2x2");
+#endif
 	else if (cpu_has_mmx())
 		printf("mmxx2");
 	else
@@ -224,6 +228,14 @@ void speed(void)
 		} SPEED_STOP
 
 		printf("RAID6 sse2x2 %"PRIu64" [MB/s]\n", ds / dt);
+
+#if defined(__x86_64__)
+		SPEED_START {
+			raid6_sse2r4(buffer, diskmax, block_size);
+		} SPEED_STOP
+
+		printf("RAID6 sse2x4 %"PRIu64" [MB/s]\n", ds / dt);
+#endif
 	}
 #endif
 

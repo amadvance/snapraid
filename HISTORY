@@ -4,7 +4,9 @@ SnapRAID HISTORY
 3.2 2013/6
 ==========
  * Better selection of the RAID6 implementation for different CPUs.
- * Adds support for the new Spooky hash. It's faster in 64 bit architectures.
+ * Adds the new Spooky hash. It's faster in 64 bit architectures.
+ * Adds RAID5/RAID6 mmx and sse2 implementations with unrolling by 4.
+   They are a little faster than the previous unroll by 2.
 
 3.1 2013/5
 ==========

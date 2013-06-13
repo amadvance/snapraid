@@ -57,6 +57,7 @@ void raid5_sse2r4(unsigned char** dptr, unsigned diskmax, unsigned size);
 void raid6_int32r2(unsigned char** dptr, unsigned diskmax, unsigned size);
 void raid6_mmxr2(unsigned char** dptr, unsigned diskmax, unsigned size);
 void raid6_sse2r2(unsigned char** dptr, unsigned diskmax, unsigned size);
+void raid6_sse2r4(unsigned char** buffer, unsigned diskmax, unsigned size);
 
 #endif
 

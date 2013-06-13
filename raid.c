@@ -351,38 +351,115 @@ void raid6_sse2r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 	p = buffer[z0+1]; /* XOR parity */
 	q = buffer[z0+2]; /* RS qarity */
 
-	asm volatile("movdqa %0,%%xmm0" : : "m" (raid6_sse_constants.x1d[0]));
+	asm volatile("movdqa %0,%%xmm7" : : "m" (raid6_sse_constants.x1d[0]));
+	asm volatile("pxor %xmm4,%xmm4"); /* Zero temp */
 	asm volatile("pxor %xmm5,%xmm5"); /* Zero temp */
-	asm volatile("pxor %xmm7,%xmm7"); /* Zero temp */
 
-	/* We uniformly assume a single prefetch covers at least 32 bytes */
 	for(d=0;d<size;d+=32) {
-		asm volatile("movdqa %0,%%xmm2" : : "m" (buffer[z0][d])); /* P[0] */
-		asm volatile("movdqa %0,%%xmm3" : : "m" (buffer[z0][d+16])); /* P[1] */
-		asm volatile("movdqa %xmm2,%xmm4"); /* Q[0] */
-		asm volatile("movdqa %xmm3,%xmm6"); /* Q[1] */
+		asm volatile("movdqa %0,%%xmm0" : : "m" (buffer[z0][d])); /* P[0] */
+		asm volatile("movdqa %0,%%xmm1" : : "m" (buffer[z0][d+16])); /* P[1] */
+		asm volatile("movdqa %xmm0,%xmm2"); /* Q[0] */
+		asm volatile("movdqa %xmm1,%xmm3"); /* Q[1] */
 		for(z=z0-1;z>=0;--z) {
-			asm volatile("pcmpgtb %xmm4,%xmm5");
-			asm volatile("pcmpgtb %xmm6,%xmm7");
-			asm volatile("paddb %xmm4,%xmm4");
-			asm volatile("paddb %xmm6,%xmm6");
-			asm volatile("pand %xmm0,%xmm5");
-			asm volatile("pand %xmm0,%xmm7");
-			asm volatile("pxor %xmm5,%xmm4");
-			asm volatile("pxor %xmm7,%xmm6");
-			asm volatile("movdqa %0,%%xmm5" : : "m" (buffer[z][d]));
-			asm volatile("movdqa %0,%%xmm7" : : "m" (buffer[z][d+16]));
-			asm volatile("pxor %xmm5,%xmm2");
-			asm volatile("pxor %xmm7,%xmm3");
-			asm volatile("pxor %xmm5,%xmm4");
-			asm volatile("pxor %xmm7,%xmm6");
+			asm volatile("pcmpgtb %xmm2,%xmm4");
+			asm volatile("pcmpgtb %xmm3,%xmm5");
+			asm volatile("paddb %xmm2,%xmm2");
+			asm volatile("paddb %xmm3,%xmm3");
+			asm volatile("pand %xmm7,%xmm4");
+			asm volatile("pand %xmm7,%xmm5");
+			asm volatile("pxor %xmm4,%xmm2");
+			asm volatile("pxor %xmm5,%xmm3");
+			asm volatile("movdqa %0,%%xmm4" : : "m" (buffer[z][d]));
+			asm volatile("movdqa %0,%%xmm5" : : "m" (buffer[z][d+16]));
+			asm volatile("pxor %xmm4,%xmm0");
+			asm volatile("pxor %xmm5,%xmm1");
+			asm volatile("pxor %xmm4,%xmm2");
+			asm volatile("pxor %xmm5,%xmm3");
+			asm volatile("pxor %xmm4,%xmm4");
 			asm volatile("pxor %xmm5,%xmm5");
-			asm volatile("pxor %xmm7,%xmm7");
 		}
-		asm volatile("movntdq %%xmm2,%0" : "=m" (p[d]));
-		asm volatile("movntdq %%xmm3,%0" : "=m" (p[d+16]));
+		asm volatile("movntdq %%xmm0,%0" : "=m" (p[d]));
+		asm volatile("movntdq %%xmm1,%0" : "=m" (p[d+16]));
+		asm volatile("movntdq %%xmm2,%0" : "=m" (q[d]));
+		asm volatile("movntdq %%xmm3,%0" : "=m" (q[d+16]));
+	}
+
+	asm volatile("sfence" : : : "memory");
+}
+#endif
+
+#if defined(__x86_64__)
+/*
+ * Unrolled-by-4 SSE2 implementation
+ */
+void raid6_sse2r4(unsigned char** buffer, unsigned diskmax, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	int z, z0;
+	unsigned d;
+
+	z0 = diskmax - 1; /* Highest data disk */
+	p = buffer[z0+1]; /* XOR parity */
+	q = buffer[z0+2]; /* RS qarity */
+
+	asm volatile("movdqa %0,%%xmm15" : : "m" (raid6_sse_constants.x1d[0]));
+	asm volatile("pxor %xmm8,%xmm8"); /* Zero temp */
+	asm volatile("pxor %xmm9,%xmm9"); /* Zero temp */
+	asm volatile("pxor %xmm10,%xmm10"); /* Zero temp */
+	asm volatile("pxor %xmm11,%xmm11"); /* Zero temp */
+
+	for(d=0;d<size;d+=64) {
+		asm volatile("movdqa %0,%%xmm0" : : "m" (buffer[z0][d])); /* P[0] */
+		asm volatile("movdqa %0,%%xmm1" : : "m" (buffer[z0][d+16])); /* P[1] */
+		asm volatile("movdqa %0,%%xmm2" : : "m" (buffer[z0][d+32])); /* P[2] */
+		asm volatile("movdqa %0,%%xmm3" : : "m" (buffer[z0][d+48])); /* P[3] */
+		asm volatile("movdqa %xmm0,%xmm4"); /* Q[0] */
+		asm volatile("movdqa %xmm1,%xmm5"); /* Q[1] */
+		asm volatile("movdqa %xmm2,%xmm6"); /* Q[2] */
+		asm volatile("movdqa %xmm3,%xmm7"); /* Q[3] */
+		for(z=z0-1;z>=0;--z) {
+			asm volatile("pcmpgtb %xmm4,%xmm8");
+			asm volatile("pcmpgtb %xmm5,%xmm9");
+			asm volatile("pcmpgtb %xmm6,%xmm10");
+			asm volatile("pcmpgtb %xmm7,%xmm11");
+			asm volatile("paddb %xmm4,%xmm4");
+			asm volatile("paddb %xmm5,%xmm5");
+			asm volatile("paddb %xmm6,%xmm6");
+			asm volatile("paddb %xmm7,%xmm7");
+			asm volatile("pand %xmm15,%xmm8");
+			asm volatile("pand %xmm15,%xmm9");
+			asm volatile("pand %xmm15,%xmm10");
+			asm volatile("pand %xmm15,%xmm11");
+			asm volatile("pxor %xmm8,%xmm4");
+			asm volatile("pxor %xmm9,%xmm5");
+			asm volatile("pxor %xmm10,%xmm6");
+			asm volatile("pxor %xmm11,%xmm7");
+			asm volatile("movdqa %0,%%xmm8" : : "m" (buffer[z][d]));
+			asm volatile("movdqa %0,%%xmm9" : : "m" (buffer[z][d+16]));
+			asm volatile("movdqa %0,%%xmm10" : : "m" (buffer[z][d+32]));
+			asm volatile("movdqa %0,%%xmm11" : : "m" (buffer[z][d+48]));
+			asm volatile("pxor %xmm8,%xmm0");
+			asm volatile("pxor %xmm9,%xmm1");
+			asm volatile("pxor %xmm10,%xmm2");
+			asm volatile("pxor %xmm11,%xmm3");
+			asm volatile("pxor %xmm8,%xmm4");
+			asm volatile("pxor %xmm9,%xmm5");
+			asm volatile("pxor %xmm10,%xmm6");
+			asm volatile("pxor %xmm11,%xmm7");
+			asm volatile("pxor %xmm8,%xmm8");
+			asm volatile("pxor %xmm9,%xmm9");
+			asm volatile("pxor %xmm10,%xmm10");
+			asm volatile("pxor %xmm11,%xmm11");
+		}
+		asm volatile("movntdq %%xmm0,%0" : "=m" (p[d]));
+		asm volatile("movntdq %%xmm1,%0" : "=m" (p[d+16]));
+		asm volatile("movntdq %%xmm2,%0" : "=m" (p[d+32]));
+		asm volatile("movntdq %%xmm3,%0" : "=m" (p[d+48]));
 		asm volatile("movntdq %%xmm4,%0" : "=m" (q[d]));
-		asm volatile("movntdq %%xmm6,%0" : "=m" (q[d+16]));
+		asm volatile("movntdq %%xmm5,%0" : "=m" (q[d+16]));
+		asm volatile("movntdq %%xmm6,%0" : "=m" (q[d+32]));
+		asm volatile("movntdq %%xmm7,%0" : "=m" (q[d+48]));
 	}
 
 	asm volatile("sfence" : : : "memory");
@@ -495,13 +572,17 @@ void raid_init(void)
 	raid6_gen = raid6_int32r2;
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_mmx()) {
-		raid5_gen = raid5_mmxr2;
+		raid5_gen = raid5_mmxr4;
 		raid6_gen = raid6_mmxr2;
 	}
 	if (cpu_has_sse2()) {
 		raid5_gen = raid5_sse2r4;
 		if (!cpu_has_slowsse2())
+#if defined(__x86_64__)
+			raid6_gen = raid6_sse2r4;
+#else
 			raid6_gen = raid6_sse2r2;
+#endif
 	}
 #endif
 }
