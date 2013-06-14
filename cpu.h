@@ -102,110 +102,6 @@ static inline int cpu_has_sse2(void)
 }
 
 /**
- * Check if the processor has a slow SSE2 support.
- * If yes, it's better to use MMX.
- */
-static inline int cpu_has_slowsse2(void)
-{
-	char vendor[CPU_VENDOR_MAX];
-	unsigned family;
-	unsigned model;
-
-	cpu_info(vendor, &family, &model);
-
-	if (strcmp(vendor, "GenuineIntel") == 0) {
-		/* Atom (x264)
-		 * Intel(R) Atom(TM) CPU D525 @ 1.80GHz (info from user)
-		 * Compiler gcc 4.7.2
-		 * CPU GenuineIntel, family 6, model 28, flags mmx sse2 slowsse2 slowmult
-		 * Memory is little-endian 64-bit
-		 * memset 2259 [MB/s]
-		 * Murmur3 378 [MB/s]
-		 * Spooky2 3423 [MB/s]
-		 * RAID5 int32x2 1601 [MB/s]
-		 * RAID5 mmxx2 2226 [MB/s]
-		 * RAID5 sse2x2 3122 [MB/s]
-		 * RAID6 int32x2 677 [MB/s]
-		 * RAID6 mmxx2 1633 [MB/s]
-		 * RAID6 sse2x2 500 [MB/s]
-		 */
-		if (family == 6 && model == 28)
-			return 1;
-
-		/* Pentium-M "banias" (info from x264) */
-		if (family == 6 && model == 9)
-			return 1;
-
-		/* Pentium-M "dothan" (info from x264) */
-		if (family == 6 && model == 13)
-			return 1;
-
-		/* Core1 "yonah" (info from x264) */
-		if (family == 6 && model == 14)
-			return 1;
-	}
-
-	if (strcmp(vendor, "AuthenticAMD") == 0) {
-		/* Bobcat/Zacade (info from x264 -> full family 20)
-		 * AMD E-350 Processor (info from user)
-		 * Compiler gcc 4.7.3
-		 * CPU AuthenticAMD, family 20, model 1, flags mmx sse2 slowsse2
-		 * Memory is little-endian 64-bit
-		 * memset 2137 [MB/s]
-		 * Murmur3 1140 [MB/s]
-		 * Spooky2 2326 [MB/s]
-		 * RAID5 int32x2 1853 [MB/s]
-		 * RAID5 mmxx2 2019 [MB/s]
-		 * RAID5 sse2x2 2908 [MB/s]
-		 * RAID6 int32x2 884 [MB/s]
-		 * RAID6 mmxx2 1502 [MB/s]
-		 * RAID6 sse2x2 1168 [MB/s]
-		 */
-		if (family == 20)
-			return 1;
-
-		/* AMD Turion(tm) II Neo N40L Dual-Core Processor (info from user)
-		 * Compiler gcc 4.7.1
-		 * CPU AuthenticAMD, family 16, model 6, flags mmx sse2
-		 * Memory is little-endian 64-bit
-		 * memset 4910 [MB/s]
-		 * Murmur3 1160 [MB/s]
-		 * Spooky2 3994 [MB/s]
-		 * RAID5 int32x2 530 [MB/s]
-		 * RAID5 mmxx2 1114 [MB/s]
-		 * RAID5 sse2x1 2127 [MB/s]
-		 * RAID5 sse2x2 2804 [MB/s]
-		 * RAID6 int32x2 316 [MB/s]
-		 * RAID6 mmxx2 655 [MB/s]
-		 * RAID6 sse2x2 639 [MB/s]
-		 */
-		if (family == 16 && model == 6)
-			return 1;
-
-		/* AMD Athlon(tm) II X4 620 (info from user)
-		 * Compiler gcc 4.7.3
-		 * CPU AuthenticAMD, family 16, model 5, flags mmx sse2
-		 * Memory is little-endian 64-bit
-		 * memset 2845 [MB/s]
-		 * Murmur3 2262 [MB/s]
-		 * Murmur3x64 3500 [MB/s]
-		 * Spooky2 4362 [MB/s]
-		 * Spooky2x86 4000 [MB/s]
-		 * RAID5 int32x2 1064 [MB/s]
-		 * RAID5 mmxx2 2064 [MB/s]
-		 * RAID5 sse2x2 3289 [MB/s]
-		 * RAID6 int32x2 639 [MB/s]
-		 * RAID6 mmxx2 1325 [MB/s]
-		 * RAID6 sse2x2 915 [MB/s]
-		 */
-		if (family == 16 && model == 5)
-			return 1;
-	}
-
-	return 0;
-}
-
-/**
  * Check if the processor has a slow MULT implementation.
  * If yes, it's better to use a hash not based on multiplication.
  */
@@ -220,17 +116,21 @@ static inline int cpu_has_slowmult(void)
 	if (strcmp(vendor, "GenuineIntel") == 0) {
 		/* Intel(R) Atom(TM) CPU D525 @ 1.80GHz (info from user)
 		 * Compiler gcc 4.7.2
-		 * CPU GenuineIntel, family 6, model 28, flags mmx sse2 slowsse2 slowmult
+		 * CPU GenuineIntel, family 6, model 28, flags mmx sse2 slowmult
 		 * Memory is little-endian 64-bit
-		 * memset 2259 [MB/s]
-		 * Murmur3 378 [MB/s]
-		 * Spooky2 3423 [MB/s]
-		 * RAID5 int32x2 1601 [MB/s]
-		 * RAID5 mmxx2 2226 [MB/s]
-		 * RAID5 sse2x2 3122 [MB/s]
-		 * RAID6 int32x2 677 [MB/s]
-		 * RAID6 mmxx2 1633 [MB/s]
-		 * RAID6 sse2x2 500 [MB/s]
+		 * Speed test with 8 disk and 262144 buffer size...
+		 * memset0 1849 [MB/s]
+		 * HASH Murmur3 378 [MB/s]
+		 * HASH Spooky2 3413 [MB/s]
+		 * RAID5 int32x2 707 [MB/s]
+		 * RAID5 mmxx2 1264 [MB/s]
+		 * RAID5 mmxx4 1910 [MB/s]
+		 * RAID5 sse2x2 2204 [MB/s]
+		 * RAID5 sse2x4 2980 [MB/s]
+		 * RAID6 int32x2 296 [MB/s]
+		 * RAID6 mmxx2 543 [MB/s]
+		 * RAID6 sse2x2 1068 [MB/s]
+		 * RAID6 sse2x4 1601 [MB/s]
 		 */
 		if (family == 6 && model == 28)
 			return 1;
@@ -327,6 +227,54 @@ static inline int cpu_has_slowmult(void)
  * RAID6 sse2x2 16433 [MB/s]
  */
 
+/* Bobcat/Zacade (info from x264 -> full family 20)
+ * AMD E-350 Processor (info from user)
+ * Compiler gcc 4.7.3
+ * CPU AuthenticAMD, family 20, model 1, flags mmx sse2
+ * Memory is little-endian 64-bit
+ * memset 2137 [MB/s]
+ * Murmur3 1140 [MB/s]
+ * Spooky2 2326 [MB/s]
+ * RAID5 int32x2 1853 [MB/s]
+ * RAID5 mmxx2 2019 [MB/s]
+ * RAID5 sse2x2 2908 [MB/s]
+ * RAID6 int32x2 884 [MB/s]
+ * RAID6 mmxx2 1502 [MB/s]
+ * RAID6 sse2x2 1168 [MB/s] (slow version with prefetchnta)
+ */
+
+/* AMD Turion(tm) II Neo N40L Dual-Core Processor (info from user)
+ * Compiler gcc 4.7.1
+ * CPU AuthenticAMD, family 16, model 6, flags mmx sse2
+ * Memory is little-endian 64-bit
+ * memset 4910 [MB/s]
+ * Murmur3 1160 [MB/s]
+ * Spooky2 3994 [MB/s]
+ * RAID5 int32x2 530 [MB/s]
+ * RAID5 mmxx2 1114 [MB/s]
+ * RAID5 sse2x1 2127 [MB/s]
+ * RAID5 sse2x2 2804 [MB/s]
+ * RAID6 int32x2 316 [MB/s]
+ * RAID6 mmxx2 655 [MB/s]
+ * RAID6 sse2x2 639 [MB/s] (slow version with prefetchnta)
+ */
+
+/* AMD Athlon(tm) II X4 620 (info from user)
+ * Compiler gcc 4.7.3
+ * CPU AuthenticAMD, family 16, model 5, flags mmx sse2
+ * Memory is little-endian 64-bit
+ * memset 2845 [MB/s]
+ * Murmur3 2262 [MB/s]
+ * Murmur3x64 3500 [MB/s]
+ * Spooky2 4362 [MB/s]
+ * Spooky2x86 4000 [MB/s]
+ * RAID5 int32x2 1064 [MB/s]
+ * RAID5 mmxx2 2064 [MB/s]
+ * RAID5 sse2x2 3289 [MB/s]
+ * RAID6 int32x2 639 [MB/s]
+ * RAID6 mmxx2 1325 [MB/s]
+ * RAID6 sse2x2 915 [MB/s] (slow version with prefetchnta)
+ */
 #endif
 
 #endif

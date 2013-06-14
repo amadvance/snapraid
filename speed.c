@@ -87,10 +87,9 @@ void speed(void)
 
 		cpu_info(vendor, &family, &model);
 
-		printf("CPU %s, family %u, model %u, flags%s%s%s%s\n", vendor, family, model,
+		printf("CPU %s, family %u, model %u, flags%s%s%s\n", vendor, family, model,
 			cpu_has_mmx() ? " mmx" : "",
 			cpu_has_sse2() ? " sse2" : "",
-			cpu_has_slowsse2() ? " slowsse2" : "",
 			cpu_has_slowmult() ? " slowmult" : ""
 			);
 	}
@@ -129,7 +128,7 @@ void speed(void)
 		printf("int32x2");
 	printf("\n");
 	printf("Expected fastest RAID6 is ");
-	if (cpu_has_sse2() && !cpu_has_slowsse2())
+	if (cpu_has_sse2())
 #if defined(__x86_64__)
 		printf("sse2x4");
 #else

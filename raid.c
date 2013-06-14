@@ -577,11 +577,10 @@ void raid_init(void)
 	}
 	if (cpu_has_sse2()) {
 		raid5_gen = raid5_sse2r4;
-		if (!cpu_has_slowsse2())
 #if defined(__x86_64__)
-			raid6_gen = raid6_sse2r4;
+		raid6_gen = raid6_sse2r4;
 #else
-			raid6_gen = raid6_sse2r2;
+		raid6_gen = raid6_sse2r2;
 #endif
 	}
 #endif
