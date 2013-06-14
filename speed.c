@@ -61,7 +61,7 @@ void speed(void)
 	unsigned count;
 	unsigned delta = 100;
 	unsigned block_size = 256 * 1024;
-	unsigned diskmax = 4;
+	unsigned diskmax = 8;
 	void* buffer_alloc;
 	unsigned char* buffer_aligned;
 	unsigned char** buffer;
@@ -145,7 +145,7 @@ void speed(void)
 
 	printf("\n");
 
-	printf("Speed test with %d disk and %d buffer size...\n", diskmax, block_size);
+	printf("Speed test with %d disk and %d buffer size, for a total of %u KiB...\n", diskmax, block_size, (diskmax + 2) * block_size / 1024);
 
 	SPEED_START {
 		for(j=0;j<diskmax;++j) {
