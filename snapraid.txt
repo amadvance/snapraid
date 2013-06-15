@@ -335,7 +335,7 @@ SnapRAID provides the following options:
         Note that it cannot be used with "sync", because "sync" always
         process the whole array.
 
-    -n, --filter-missing
+    -m, --filter-missing
         Filters the files to process in the "check" and "fix"
         commands.
         Only the files missing/deleted from the array are processed.
