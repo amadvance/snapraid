@@ -83,7 +83,7 @@
 	h7 += h9;   h10^= h7;   h9 = rotl64(h9,38); \
 	h8 += h10;  h11^= h8;   h10= rotl64(h10,53); \
 	h9 += h11;  h0 ^= h9;   h11= rotl64(h11,42); \
-	h10+= h0;   h1 ^= h10;  h0 = rotl64(h0,54); \
+	h10+= h0;   h1 ^= h10;  h0 = rotl64(h0,54);
 
 #define End(data, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10,h11) \
 	h0 += data[0];  h1 += data[1];  h2 += data[2];    h3 += data[3]; \
