@@ -32,7 +32,8 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 	unsigned diskmax;
 	block_off_t i;
 	unsigned j;
-	unsigned char* buffer;
+	void* buffer_alloc;
+	unsigned char* buffer_aligned;
 	int ret;
 	data_off_t countsize;
 	block_off_t countpos;
@@ -41,10 +42,11 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 
 	handle = handle_map(state, &diskmax);
 
-	buffer = malloc_nofail(state->block_size);
+	buffer_aligned = malloc_nofail_align(state->block_size, &buffer_alloc);
 
 	error = 0;
 
+	/* dry all the blocks in files */
 	countmax = blockmax - blockstart;
 	countsize = 0;
 	countpos = 0;
@@ -63,25 +65,29 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 				continue;
 			}
 
-			/* if the file is different than the current one, close it */
-			if (handle[j].file != block_file_get(block)) {
+			/* if the file is closed or different than the current one */
+			if (handle[j].file == 0 || handle[j].file != block_file_get(block)) {
+				/* close the old one, if any */
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
+					fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to rehash.\n");
+					printf("Stopping at block %u\n", i);
+					++error;
+					goto bail;
+				}
+
+				/* open the file only for reading */
+				ret = handle_open(&handle[j], block_file_get(block), stdlog, state->skip_sequential);
+				if (ret == -1) {
+					fprintf(stderr, "DANGER! Unexpected open error in a data disk, it isn't possible to rehash.\n");
 					printf("Stopping at block %u\n", i);
 					++error;
 					goto bail;
 				}
 			}
 
-			/* open the file for reading */
-			ret = handle_open(&handle[j], block_file_get(block), stdlog, state->skip_sequential);
-			if (ret == -1) {
-				fprintf(stdlog, "error:%u:%s:%s: Open error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
-				++error;
-				continue;
-			}
-
-			read_size = handle_read(&handle[j], block, buffer, state->block_size, stdlog);
+			/* read from the file */
+			read_size = handle_read(&handle[j], block, buffer_aligned, state->block_size, stdlog);
 			if (read_size == -1) {
 				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 				++error;
@@ -93,7 +99,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 
 		/* read the parity */
 		if (parity) {
-			ret = parity_read(parity, i, buffer, state->block_size, stdlog);
+			ret = parity_read(parity, i, buffer_aligned, state->block_size, stdlog);
 			if (ret == -1) {
 				fprintf(stdlog, "error:%u:parity: Read error\n", i);
 				++error;
@@ -103,7 +109,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 		/* read the qarity */
 		if (state->level >= 2) {
 			if (qarity) {
-				ret = parity_read(qarity, i, buffer, state->block_size, stdlog);
+				ret = parity_read(qarity, i, buffer_aligned, state->block_size, stdlog);
 				if (ret == -1) {
 					fprintf(stdlog, "error:%u:qarity: Read error\n", i);
 					++error;
@@ -123,24 +129,24 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 	state_progress_end(state, countpos, countmax, countsize);
 
 bail:
+	/* close all the files left open */
 	for(j=0;j<diskmax;++j) {
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
+			fprintf(stderr, "DANGER! Unexpected close error in a data disk.\n");
 			++error;
+			/* continue, as we are already exiting */
 		}
 	}
 
 	if (error) {
-		if (error)
-			printf("%u read errors\n", error);
-		else
-			printf("No read errors\n");
+		printf("%u read errors\n", error);
 	} else {
 		printf("No error\n");
 	}
 
 	free(handle);
-	free(buffer);
+	free(buffer_alloc);
 
 	if (error != 0)
 		return -1;
