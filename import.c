@@ -50,7 +50,6 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 	int f;
 	int flags;
 	unsigned block_size = state->block_size;
-	unsigned hash = state->hash;
 
 	file = malloc_nofail(sizeof(struct snapraid_import_file));
 	file->path = strdup_nofail(path);
@@ -98,7 +97,7 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 		block->file = file;
 		block->offset = offset;
 		block->size = read_size;
-		memhash(hash, block->hash, buffer, read_size);
+		memhash(state->hash, state->hashseed, block->hash, buffer, read_size);
 
 		tommy_hashdyn_insert(&state->importset, &block->nodeset, block, import_block_hash(block->hash));
 
@@ -170,7 +169,7 @@ int state_import_fetch(struct snapraid_state* state, const unsigned char* hash, 
 	}
 
 	/* recheck the hash */
-	memhash(state->hash, buffer_hash, buffer, read_size);
+	memhash(state->hash, state->hashseed, buffer_hash, buffer, read_size);
 
 	if (memcmp(buffer_hash, hash, HASH_SIZE) != 0) {
 		fprintf(stderr, "Error in data reading file '%s'.\n", path);

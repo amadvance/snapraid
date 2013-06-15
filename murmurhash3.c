@@ -75,16 +75,16 @@ uint32_t c2 = 0xab0e9789;
 uint32_t c3 = 0x38b34ae5;
 uint32_t c4 = 0xa1e38b93;
 
-void MurmurHash3_x86_128(const void* key, unsigned len, void* out)
+void MurmurHash3_x86_128(const void* key, unsigned len, uint32_t seed, void* out)
 {
 	const uint8_t* data = key;
 	unsigned nblocks = len / 16;
 	unsigned i;
 
-	uint32_t h1 = 0;
-	uint32_t h2 = 0;
-	uint32_t h3 = 0;
-	uint32_t h4 = 0;
+	uint32_t h1 = seed;
+	uint32_t h2 = seed;
+	uint32_t h3 = seed;
+	uint32_t h4 = seed;
 
 	const uint32_t* blocks = (const uint32_t*)data;
 

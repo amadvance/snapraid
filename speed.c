@@ -57,6 +57,7 @@ void speed(void)
 	int64_t dt;
 	unsigned i, j;
 	unsigned char digest[HASH_SIZE];
+	unsigned char seed[HASH_SIZE];
 
 	unsigned count;
 	unsigned delta = 100;
@@ -70,8 +71,10 @@ void speed(void)
 	buffer = malloc_nofail((diskmax + 2) * sizeof(void*));
 	for(i=0;i<diskmax+2;++i) {
 		buffer[i] = buffer_aligned + i * block_size;
-		memset(buffer[i], 0, block_size);
+		memset(buffer[i], i, block_size);
 	}
+	for(i=0;i<HASH_SIZE;++i)
+		seed[i] = i;
 
 	printf(PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
 
@@ -156,7 +159,7 @@ void speed(void)
 
 	SPEED_START {
 		for(j=0;j<diskmax;++j) {
-			memhash(HASH_MURMUR3, digest, buffer[j], block_size);
+			memhash(HASH_MURMUR3, seed, digest, buffer[j], block_size);
 		}
 	} SPEED_STOP
 
@@ -164,7 +167,7 @@ void speed(void)
 
 	SPEED_START {
 		for(j=0;j<diskmax;++j) {
-			memhash(HASH_SPOOKY2, digest, buffer[j], block_size);
+			memhash(HASH_SPOOKY2, seed, digest, buffer[j], block_size);
 		}
 	} SPEED_STOP
 

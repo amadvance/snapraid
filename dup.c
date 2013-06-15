@@ -36,7 +36,7 @@ struct snapraid_hash {
 	tommy_hashdyn_node nodeset;
 };
 
-struct snapraid_hash* hash_alloc(struct snapraid_disk* disk, struct snapraid_file* file)
+struct snapraid_hash* hash_alloc(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
 {
 	struct snapraid_hash* hash;
 	block_off_t i;
@@ -58,7 +58,7 @@ struct snapraid_hash* hash_alloc(struct snapraid_disk* disk, struct snapraid_fil
 		}
 	}
 
-	memhash(HASH_MURMUR3, hash->hash, buf, file->blockmax * HASH_SIZE);
+	memhash(state->besthash, state->hashseed, hash->hash, buf, file->blockmax * HASH_SIZE);
 
 	free(buf);
 
@@ -111,7 +111,7 @@ void state_dup(struct snapraid_state* state)
 			if (file->size == 0)
 				continue;
 
-			hash = hash_alloc(disk, file);
+			hash = hash_alloc(state, disk, file);
 
 			/* if no hash, skip it */
 			if (!hash)

@@ -836,19 +836,45 @@ static inline uint64_t swap64(uint64_t v)
 #include "murmurhash3.c"
 #include "spookyhash2.c"
 
-void memhash(unsigned kind, void* digest, const void* src, unsigned size)
+void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, unsigned size)
 {
+	uint32_t seed32;
+	uint64_t seed64[2];
 	switch (kind) {
 	case HASH_MURMUR3 :
-		MurmurHash3_x86_128(src, size, digest);
+		seed32 = ((uint32_t*)seed)[0] ^ ((uint32_t*)seed)[1] ^ ((uint32_t*)seed)[2] ^ ((uint32_t*)seed)[3];
+#if WORDS_BIGENDIAN
+		seed32 = swap32(seed32);
+#endif
+		MurmurHash3_x86_128(src, size, seed32, digest);
 		break;
 	case HASH_SPOOKY2 :
-		SpookyHash128(src, size, digest);
+		seed64[0] = ((uint64_t*)seed)[0];
+		seed64[1] = ((uint64_t*)seed)[1];
+#if WORDS_BIGENDIAN
+		seed64[0] = swap64(seed64[0]);
+		seed64[1] = swap64(seed64[1]);
+#endif
+		SpookyHash128(src, size, seed64[0], seed64[1], digest);
 		break;
 	default:
 		fprintf(stderr, "Internal inconsistency in hash function %u\n", kind);
 		exit(EXIT_FAILURE);
 		break;
 	}
+}
+
+/****************************************************************************/
+/* random */
+
+void randomize(void* void_ptr, unsigned size)
+{
+	unsigned char* ptr = void_ptr;
+	unsigned i;
+
+	srand(time(0));
+
+	for(i=0;i<size;++i)
+		ptr[i] = rand();
 }
 

@@ -394,8 +394,17 @@ char* strdup_nofail(const char* str);
 
 /**
  * Computes the HASH of a memory block.
+ * Seed is a 128 bit vector.
  */
-void memhash(unsigned kind, void* digest, const void* src, unsigned size);
+void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, unsigned size);
+
+/****************************************************************************/
+/* random */
+
+/**
+ * Write random values.
+ */
+void randomize(void* ptr, unsigned size);
 
 /****************************************************************************/
 /* sax */

@@ -68,7 +68,7 @@ static int blockcmp(struct snapraid_state* state, struct snapraid_block* block, 
 	size = block_file_size(block, state->block_size);
 
 	/* now compute the hash of the valid part */
-	memhash(state->hash, hash, buffer, size);
+	memhash(state->hash, state->hashseed, hash, buffer, size);
 
 	/* compare the hash */
 	if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
@@ -700,7 +700,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			/* if the block has the hash */
 			if (block_state == BLOCK_STATE_BLK) {
 				/* compute the hash of the block just read */
-				memhash(state->hash, hash, buffer[j], read_size);
+				memhash(state->hash, state->hashseed, hash, buffer[j], read_size);
 
 				/* compare the hash */
 				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {

@@ -41,12 +41,16 @@ static int state_rehash_process(struct snapraid_state* state, block_off_t blocks
 	block_off_t countpos;
 	block_off_t countmax;
 	unsigned error;
+	unsigned char seed[HASH_SIZE];
 
 	handle = handle_map(state, &diskmax);
 
 	buffer_aligned = malloc_nofail_align(state->block_size, &buffer_alloc);
 
 	error = 0;
+
+	/* set a random seed */
+	randomize(seed, HASH_SIZE);
 
 	/* check that we are in a sync complete state */
 	for(i=blockstart;i<blockmax;++i) {
@@ -141,12 +145,12 @@ static int state_rehash_process(struct snapraid_state* state, block_off_t blocks
 			countsize += read_size;
 
 			/* compute the new hash */
-			memhash(state->besthash, hash_new, buffer_aligned, read_size);
+			memhash(state->besthash, seed, hash_new, buffer_aligned, read_size);
 
 			/* compute the old hash */
 			/* note that we intentionally compute the new one before the old */
 			/* to ensure to detect any random bit flip in the memory */
-			memhash(state->hash, hash, buffer_aligned, read_size);
+			memhash(state->hash, state->hashseed, hash, buffer_aligned, read_size);
 
 			/* compare the hash */
 			if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
@@ -170,8 +174,9 @@ static int state_rehash_process(struct snapraid_state* state, block_off_t blocks
 
 	state_progress_end(state, countpos, countmax, countsize);
 
-	/* set the new hash */
+	/* set the new hash and seed */
 	state->hash = state->besthash;
+	memcpy(state->hashseed, seed, HASH_SIZE);
 
 	/* mark the state as needing write */
 	state->need_write = 1;

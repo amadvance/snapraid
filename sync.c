@@ -244,7 +244,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			countsize += read_size;
 
 			/* now compute the hash */
-			memhash(state->hash, hash, buffer[j], read_size);
+			memhash(state->hash, state->hashseed, hash, buffer[j], read_size);
 
 			if (block_has_hash(block)) {
 				/* compare the hash */

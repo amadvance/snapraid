@@ -699,10 +699,32 @@ static void raid6test(unsigned diskmax, unsigned block_size)
 static void hashtest(void)
 {
 	unsigned i;
+	unsigned char seed[HASH_SIZE];
+
+#if 0
+	seed[0] = 0x5d;
+	seed[1] = 0x79;
+	seed[2] = 0x66;
+	seed[3] = 0xa7;
+	seed[4] = 0x73;
+	seed[5] = 0x27;
+	seed[6] = 0x02;
+	seed[7] = 0x2f;
+	seed[8] = 0x6a;
+	seed[9] = 0xa1;
+	seed[10] = 0x9e;
+	seed[11] = 0xc1;
+	seed[12] = 0x14;
+	seed[13] = 0x8c;
+	seed[14] = 0x9e;
+	seed[15] = 0x43;
+#else
+	memset(seed, 0, HASH_SIZE);
+#endif
 
 	for(i=0;TEST_MURMUR3[i].data;++i) {
 		unsigned char digest[HASH_SIZE];
-		memhash(HASH_MURMUR3, digest, TEST_MURMUR3[i].data, TEST_MURMUR3[i].len);
+		memhash(HASH_MURMUR3, seed, digest, TEST_MURMUR3[i].data, TEST_MURMUR3[i].len);
 		if (memcmp(digest, TEST_MURMUR3[i].digest, HASH_SIZE) != 0) {
 			fprintf(stderr, "Failed Murmur3 test vector\n");
 			exit(EXIT_FAILURE);
@@ -711,7 +733,7 @@ static void hashtest(void)
 
 	for(i=0;TEST_SPOOKY2[i].data;++i) {
 		unsigned char digest[HASH_SIZE];
-		memhash(HASH_SPOOKY2, digest, TEST_SPOOKY2[i].data, TEST_SPOOKY2[i].len);
+		memhash(HASH_SPOOKY2, seed, digest, TEST_SPOOKY2[i].data, TEST_SPOOKY2[i].len);
 		if (memcmp(digest, TEST_SPOOKY2[i].digest, HASH_SIZE) != 0) {
 			fprintf(stderr, "Failed Spooky2 test vector %u\n", i);
 			exit(EXIT_FAILURE);

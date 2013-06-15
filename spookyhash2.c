@@ -108,7 +108,7 @@
 //
 #define sc_const 0xdeadbeefdeadbeefLL
 
-void SpookyHash128(const void* message, size_t length, uint8_t* digest)
+void SpookyHash128(const void* message, size_t length, uint64_t seed0, uint64_t seed1, uint8_t* digest)
 {
 	uint64_t h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11;
 	uint64_t buf[sc_numVars];
@@ -120,8 +120,8 @@ void SpookyHash128(const void* message, size_t length, uint8_t* digest)
 	} u;
 	size_t remainder;
 
-	h0 = h3 = h6 = h9  = 0;
-	h1 = h4 = h7 = h10 = 0;
+	h0 = h3 = h6 = h9  = seed0;
+	h1 = h4 = h7 = h10 = seed1;
 	h2 = h5 = h8 = h11 = sc_const;
 
 	u.p8 = message;
