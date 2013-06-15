@@ -11,6 +11,7 @@ snapraid_SOURCES = \
 	sync.c \
 	check.c \
 	dry.c \
+	rehash.c \
 	dup.c \
 	pool.c \
 	parity.c \
@@ -95,10 +96,10 @@ check-local:
 	mkdir test/pool
 	echo --- Help
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -h
-	echo --- As empty, sync and check
+	echo --- As empty, sync and check forcing murmur3
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(srcdir)/test-raid6.conf diff
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(srcdir)/test-raid6.conf dup
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(srcdir)/test-raid6.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(srcdir)/test-raid6.conf --test-force-murmur3 sync
 if HAVE_SYMLINK
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf pool
 endif
@@ -177,6 +178,9 @@ endif
 	mv test/disk2/7* test/disk2/_a/
 	mv test/disk3/7* test/disk3/_a/
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
+	echo --- Rehash to spooky2
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf --test-force-spooky2 rehash
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
 	echo --- Delete one disk, fix and check with raid5
 	rm -r test/disk3

@@ -47,21 +47,6 @@ void state_init(struct snapraid_state* state)
 	state->pool_device = 0;
 	state->level = 1; /* default is the lowest protection */
 
-	/* select the fastest hash */
-
-#if defined(__i386__) || defined(__x86_64__)
-	if (sizeof(void*) == 4 && !cpu_has_slowmult())
-		state->hash = HASH_MURMUR3;
-	else
-		state->hash = HASH_SPOOKY2;
-#else
-	if (sizeof(void*) == 4)
-		state->hash = HASH_MURMUR3;
-	else
-		state->hash = HASH_SPOOKY2;
-#endif
-	state->hash = HASH_MURMUR3;
-
 	tommy_list_init(&state->disklist);
 	tommy_list_init(&state->maplist);
 	tommy_list_init(&state->contentlist);
@@ -257,7 +242,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 	}
 }
 
-void state_config(struct snapraid_state* state, const char* path, const char* command, int verbose, int gui, int force_zero, int force_empty, int force_uuid, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_sign, int skip_fallocate, int skip_sequential, int skip_device)
+void state_config(struct snapraid_state* state, const char* path, const char* command, int verbose, int gui, int force_zero, int force_empty, int force_uuid, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_sign, int skip_fallocate, int skip_sequential, int skip_device, int force_murmur3, int force_spooky2)
 {
 	STREAM* f;
 	unsigned line;
@@ -276,6 +261,8 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	state->skip_fallocate = skip_fallocate;
 	state->skip_sequential = skip_sequential;
 	state->command = command;
+	state->force_murmur3 = force_murmur3;
+	state->force_spooky2 = force_spooky2;
 
 	if (state->gui) {
 		fprintf(stdlog, "version:%s\n", PACKAGE_VERSION);
@@ -627,6 +614,28 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	sclose(f);
 
 	state_config_check(state, path, skip_device);
+
+	/* select the default hash */
+	if (state->force_murmur3) {
+		state->besthash = HASH_MURMUR3;
+	} else if (state->force_spooky2) {
+		state->besthash = HASH_SPOOKY2;
+	} else {
+#if defined(__i386__) || defined(__x86_64__)
+		if (sizeof(void*) == 4 && !cpu_has_slowmult())
+			state->besthash = HASH_MURMUR3;
+		else
+			state->besthash = HASH_SPOOKY2;
+#else
+		if (sizeof(void*) == 4)
+			state->besthash = HASH_MURMUR3;
+		else
+			state->besthash = HASH_SPOOKY2;
+#endif
+	}
+
+	/* by default use the best hash */
+	state->hash = state->besthash;
 
 	if (state->gui) {
 		tommy_node* i;

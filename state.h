@@ -40,6 +40,8 @@ struct snapraid_state {
 	int skip_sign; /**< Skip the sign check for content files. */
 	int skip_fallocate; /**< Skip the use of fallocate(). */
 	int skip_sequential; /**< Skip sequential hint. */
+	int force_murmur3; /**< Force Murmur3 choice. */
+	int force_spooky2; /**< Force Spooky2 choice. */
 	int need_write; /**< If the state is changed. */
 	uint32_t block_size; /**< Block size in bytes. */
 	char parity[PATH_MAX]; /**< Path of the parity file. */
@@ -50,6 +52,7 @@ struct snapraid_state {
 	uint64_t pool_device; /**< Device identifier of the pool. */
 	unsigned level; /**< Number of parity levels. 1 for RAID5, 2 for RAID6. */
 	unsigned hash; /**< Hash kind used. */
+	unsigned besthash; /**< Best hash suggested. */
 	const char* command; /**< Command running. */
 	tommy_list contentlist; /**< List of content files. */
 	tommy_list disklist; /**< List of all the disks. */
@@ -77,7 +80,7 @@ void state_done(struct snapraid_state* state);
 /**
  * Reads the configuration file.
  */
-void state_config(struct snapraid_state* state, const char* path, const char* command, int verbose, int gui, int force_zero, int force_empty, int force_uuid, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_sign, int skip_fallocate, int skip_sequential, int skip_device);
+void state_config(struct snapraid_state* state, const char* path, const char* command, int verbose, int gui, int force_zero, int force_empty, int force_uuid, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_sign, int skip_fallocate, int skip_sequential, int skip_device, int force_murmur3, int force_spooky2);
 
 /**
  * Reads the state.
@@ -110,6 +113,11 @@ void state_check(struct snapraid_state* state, int check, int fix, block_off_t b
  * Dry the files.
  */
 void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t blockcount);
+
+/**
+ * Rehash the files.
+ */
+void state_rehash(struct snapraid_state* state);
 
 /**
  * Finds duplicates.

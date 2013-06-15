@@ -82,6 +82,8 @@ void usage(void)
 #define OPT_TEST_SKIP_FALLOCATE 261
 #define OPT_TEST_SKIP_DEVICE 262
 #define OPT_TEST_SKIP_SEQUENTIAL 263
+#define OPT_TEST_FORCE_MURMUR3 264
+#define OPT_TEST_FORCE_SPOOKY2 265
 
 
 #if HAVE_GETOPT_LONG
@@ -131,6 +133,12 @@ struct option long_options[] = {
 	/* Skip the device check */
 	{ "test-skip-device", 0, 0, OPT_TEST_SKIP_DEVICE },
 
+	/* Force Murmur3 hash */
+	{ "test-force-murmur3", 0, 0, OPT_TEST_FORCE_MURMUR3 },
+
+	/* Force Spooky2 hash */
+	{ "test-force-spooky2", 0, 0, OPT_TEST_FORCE_SPOOKY2 },
+
 	{ 0, 0, 0, 0 }
 };
 #endif
@@ -155,6 +163,7 @@ void signal_handler(int signal)
 #define OPERATION_DRY 4
 #define OPERATION_DUP 5
 #define OPERATION_POOL 6
+#define OPERATION_REHASH 7
 
 int main(int argc, char* argv[])
 {
@@ -174,6 +183,8 @@ int main(int argc, char* argv[])
 	int test_skip_fallocate;
 	int test_skip_sequential;
 	int test_skip_device;
+	int test_force_murmur3;
+	int test_force_spooky2;
 	const char* conf;
 	struct snapraid_state state;
 	int operation;
@@ -207,6 +218,8 @@ int main(int argc, char* argv[])
 	test_skip_fallocate = 0;
 	test_skip_sequential = 0;
 	test_skip_device = 0;
+	test_force_murmur3 = 0;
+	test_force_spooky2 = 0;
 	blockstart = 0;
 	blockcount = 0;
 	tommy_list_init(&filterlist_file);
@@ -328,6 +341,12 @@ int main(int argc, char* argv[])
 		case OPT_TEST_SKIP_DEVICE :
 			test_skip_device = 1;
 			break;
+		case OPT_TEST_FORCE_MURMUR3 :
+			test_force_murmur3 = 1;
+			break;
+		case OPT_TEST_FORCE_SPOOKY2 :
+			test_force_spooky2 = 1;
+			break;
 		default:
 			fprintf(stderr, "Unknown option '%c'\n", (char)c);
 			exit(EXIT_FAILURE);
@@ -354,6 +373,8 @@ int main(int argc, char* argv[])
 		operation = OPERATION_DUP;
 	} else  if (strcmp(argv[optind], "pool") == 0) {
 		operation = OPERATION_POOL;
+	} else  if (strcmp(argv[optind], "rehash") == 0) {
+		operation = OPERATION_REHASH;
 	} else {
 		fprintf(stderr, "Unknown command '%s'\n", argv[optind]);
 		exit(EXIT_FAILURE);
@@ -391,6 +412,13 @@ int main(int argc, char* argv[])
 			fprintf(stderr, "You cannot filter with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 		}
+	}
+
+	switch (operation) {
+	case OPERATION_CHECK :
+	case OPERATION_FIX :
+		break;
+	default:
 		if (import != 0) {
 			fprintf(stderr, "You cannot import with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
@@ -419,11 +447,7 @@ int main(int argc, char* argv[])
 
 	state_init(&state);
 
-	state_config(&state, conf, command, verbose, gui, force_zero, force_empty, force_uuid, find_by_name, test_expect_unrecoverable, test_expect_recoverable, test_skip_sign, test_skip_fallocate, test_skip_sequential, test_skip_device);
-
-	if (import != 0) {
-		state_import(&state, import);
-	}
+	state_config(&state, conf, command, verbose, gui, force_zero, force_empty, force_uuid, find_by_name, test_expect_unrecoverable, test_expect_recoverable, test_skip_sign, test_skip_fallocate, test_skip_sequential, test_skip_device, test_force_murmur3, test_force_spooky2);
 
 	if (operation == OPERATION_DIFF) {
 		state_read(&state);
@@ -483,6 +507,17 @@ int main(int argc, char* argv[])
 		signal(SIGINT, &signal_handler);
 
 		state_dry(&state, blockstart, blockcount);
+	} else if (operation == OPERATION_REHASH) {
+		state_read(&state);
+
+		/* intercept Ctrl+C */
+		signal(SIGINT, &signal_handler);
+
+		state_rehash(&state);
+
+		/* save the new state if required */
+		if (state.need_write)
+			state_write(&state);
 	} else if (operation == OPERATION_DUP) {
 		state_read(&state);
 
@@ -493,6 +528,9 @@ int main(int argc, char* argv[])
 		state_pool(&state);
 	} else {
 		state_read(&state);
+
+		if (import != 0)
+			state_import(&state, import);
 
 		/* apply the command line filter */
 		state_filter(&state, &filterlist_file, &filterlist_disk, filter_missing);
