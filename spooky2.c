@@ -108,7 +108,7 @@
 //
 #define sc_const 0xdeadbeefdeadbeefLL
 
-void SpookyHash128(const void* message, size_t length, uint64_t seed0, uint64_t seed1, uint8_t* digest)
+void SpookyHash128(const void* message, size_t length, const uint8_t* seed, uint8_t* digest)
 {
 	uint64_t h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11;
 	uint64_t buf[sc_numVars];
@@ -119,9 +119,20 @@ void SpookyHash128(const void* message, size_t length, uint64_t seed0, uint64_t 
 		size_t i;
 	} u;
 	size_t remainder;
+#if WORDS_BIGENDIAN
+	unsigned i;
+#endif
 
-	h0 = h3 = h6 = h9  = seed0;
-	h1 = h4 = h7 = h10 = seed1;
+	h9 = ((uint64_t*)seed)[0];
+	h10 = ((uint64_t*)seed)[1];
+
+#if WORDS_BIGENDIAN
+	h9 = swap64(h9);
+	h10 = swap64(h10);
+#endif
+
+	h0 = h3 = h6 = h9;
+	h1 = h4 = h7 = h10;
 	h2 = h5 = h8 = h11 = sc_const;
 
 	u.p8 = message;
@@ -131,7 +142,6 @@ void SpookyHash128(const void* message, size_t length, uint64_t seed0, uint64_t 
 
 	while (u.p64 < end) {
 #if WORDS_BIGENDIAN
-		unsigned i;
 		for(i=0;i<sc_numVars;++i)
 			buf[i] = swap64(u.p64[i]);
 		Mix(buf,h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11);
@@ -149,15 +159,19 @@ void SpookyHash128(const void* message, size_t length, uint64_t seed0, uint64_t 
 	((uint8_t *)buf)[sc_blockSize-1] = remainder;
 
 	/* finalization */
+#if WORDS_BIGENDIAN
+	for(i=0;i<sc_numVars;++i)
+		buf[i] = swap64(buf[i]);
+#endif
 
 	End(buf,h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11);
 
 #if WORDS_BIGENDIAN
-	((uint64_t*)digest)[0] = swap64(h0);
-	((uint64_t*)digest)[1] = swap64(h1);
-#else
+	h0 = swap64(h0);
+	h1 = swap64(h1);
+#endif
+
 	((uint64_t*)digest)[0] = h0;
 	((uint64_t*)digest)[1] = h1;
-#endif
 }
 
