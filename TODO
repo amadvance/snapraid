@@ -5,6 +5,8 @@ This is the list of TODO items for SnapRAID.
 
 - v3.2
 
+* Adds a pid file using flock in the same dir of the first content file.
+
 * Allow to specify the shared path to use to access remote symlink.
 
 * In the import list, uses also all the blocks in the array.
@@ -50,13 +52,18 @@ But it should be only few bits for each file. So, it should be manageable.
 
 - v4.x
 
-* In the content file, for each block store the last time the hash was checked
-with both "check" and also "sync".
-It will allow to define a new "check" command, checking only aged blocks
-and skipping recently checked ones.
-A good name could be "scrub".
-This could be problematic for the increased memory occupation.
-The check command could be maintaned independent, and not saving the content file.
+* In the content file, for each position in the parity store the last time
+the hash/parity was checked for all the blocks with sync.
+We can share the same time info for all the blocks at a given position.
+It will allow to define a new "scrub" command, checking only aged blocks
+and skipping recently synched ones.
+The "scrub" command won't change data in the disks, but it will update the content
+file.
+The check command should be maintaned independent, and not saving the content file.
+The format could be:
+tim BLOCK TIME
+tir FROM_BLOCK TO_BLOCK TIME
+For missing block, we can use 0 as initialization value. TIME is the UNIX time.
 
 * Save the content file in compressed .gz format to save space.
 
