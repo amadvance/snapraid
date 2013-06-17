@@ -66,6 +66,10 @@
 #endif
 #endif
 
+#if HAVE_SYS_FILE_H
+#include <sys/file.h>
+#endif
+
 #if HAVE_DIRENT_H
 #include <dirent.h>
 #define NAMLEN(dirent) strlen((dirent)->d_name)
@@ -118,6 +122,13 @@
 #define SWITCH_GETOPT_LONG(a,b) a
 #else
 #define SWITCH_GETOPT_LONG(a,b) b
+#endif
+
+/**
+ * Enable PID file support.
+ */
+#if HAVE_FLOCK && HAVE_FTRUNCATE
+#define HAVE_PIDFILE 1
 #endif
 
 /**

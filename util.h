@@ -486,5 +486,20 @@ static inline oathash_t oathashm(oathash_t hash, const unsigned char* value, uns
 	return hash;
 }
 
+/****************************************************************************/
+/* pid */
+
+/**
+ * Creates and locks the pid file.
+ * Returns -1 on error, otherwise it's the file handle to pass to pid_unlock().
+ */
+int pid_lock(const char* file);
+
+/**
+ * Unlocks the pid file.
+ * Returns -1 on error.
+ */
+int pid_unlock(int f, const char* file);
+
 #endif
 

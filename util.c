@@ -866,3 +866,65 @@ void randomize(void* void_ptr, unsigned size)
 		ptr[i] = rand();
 }
 
+/****************************************************************************/
+/* pid */
+
+#if HAVE_PIDFILE
+int pid_lock(const char* file)
+{
+	char buffer[64];
+	ssize_t len;
+	int f;
+
+	f = open(file, O_CREAT | O_WRONLY, 0600);
+	if (f == -1) {
+		return -1;
+	}
+
+	/* exclusive lock, not blocking */
+	if (flock(f, LOCK_EX | LOCK_NB) == -1) {
+		close(f);
+		return -1;
+	}
+
+	/* write the pid into the file */
+	snprintf(buffer, sizeof(buffer), "%ld", (long)getpid());
+
+	len = strlen(buffer);
+	if (write(f, buffer, len) != len) {
+		close(f);
+		return -1;
+	}
+
+	if (ftruncate(f, len) == -1) {
+		close(f);
+		return -1;
+	}
+
+	return 0;
+}
+#endif
+
+#if HAVE_PIDFILE
+int pid_unlock(int f, const char* file)
+{
+	/*
+	 * Remove file before closing it.
+	 * This opens a race course in case another process already opened it.
+	 * but has not yet failed the next flock() call.
+	 * But removing it after the close, opens a similar race course.
+	 * It seems that deleting a pid file is something just impossible to do it right.
+	 */
+	if (remove(file) == -1) {
+		close(f);
+		return -1;
+	}
+
+	if (close(f) == -1) {
+		return -1;
+	}
+
+	return 0;
+}
+#endif
+

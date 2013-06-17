@@ -23,7 +23,7 @@ AC_HEADER_STDC
 AC_HEADER_DIRENT
 AC_HEADER_TIME
 AC_CHECK_HEADERS([fcntl.h stddef.h stdint.h stdlib.h string.h limits.h])
-AC_CHECK_HEADERS([sys/time.h unistd.h getopt.h fnmatch.h io.h inttypes.h byteswap.h])
+AC_CHECK_HEADERS([sys/time.h sys/file.h unistd.h getopt.h fnmatch.h io.h inttypes.h byteswap.h])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -49,7 +49,7 @@ AC_SYS_LARGEFILE
 AC_CHECK_FUNCS([memset strchr strerror strrchr mkdir gettimeofday strtoul])
 AC_CHECK_FUNCS([getopt getopt_long snprintf vsnprintf])
 AC_CHECK_FUNCS([ftruncate fallocate fsync access posix_fallocate posix_fadvise pread pwrite getc_unlocked ferror_unlocked fnmatch])
-AC_CHECK_FUNCS([futimes futimens futimesat fstatat])
+AC_CHECK_FUNCS([futimes futimens futimesat fstatat flock])
 
 dnl Checks for architecture
 AC_C_BIGENDIAN

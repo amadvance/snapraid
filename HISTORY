@@ -9,6 +9,9 @@ SnapRAID HISTORY
  * Added RAID5/RAID6 mmx and sse2 implementations with unrolling by 4.
    They are a little faster than the previous unroll by 2.
  * Added a hash seed to make harder intentional collision attacks.
+ * Added a pid file to avoid multiple running instances on the same array.
+   The file is named as the first content file adding the .pid extension.
+   There is also the undocumented --test-skip-pid to avoid to check it.
 
 3.1 2013/5
 ==========
