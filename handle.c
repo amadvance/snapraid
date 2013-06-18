@@ -200,12 +200,12 @@ int handle_close(struct snapraid_handle* handle)
 	if (handle->f != -1) {
 		ret = close(handle->f);
 		if (ret != 0) {
+			fprintf(stderr, "Error closing file '%s'. %s.\n", handle->file->sub, strerror(errno));
+
 			/* invalidate for error */
 			handle->file = 0;
 			handle->f = -1;
 			handle->valid_size = 0;
-
-			fprintf(stderr, "Error closing file '%s'. %s.\n", handle->file->sub, strerror(errno));
 			return -1;
 		}
 	}

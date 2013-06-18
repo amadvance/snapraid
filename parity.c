@@ -149,11 +149,11 @@ int parity_chsize(struct snapraid_parity* parity, data_off_t size, data_off_t* o
 		const char* call;
 
 #if HAVE_FALLOCATE
+		call = "fallocate";
 		if (!skip_fallocate) {
 			/* allocate real space using the specific Linux fallocate() operation. */
 			/* If the underline filesystem doesn't support it, this operation fails, */
 			/* instead posix_fallocate() fallbacks to write the whole file. */
-			call = "fallocate";
 			ret = fallocate(parity->f, 0, 0, size);
 
 			/* fallocate() returns the error number as positive integer, */
