@@ -125,10 +125,10 @@
 #endif
 
 /**
- * Enable PID file support.
+ * Enable lock file support.
  */
 #if HAVE_FLOCK && HAVE_FTRUNCATE
-#define HAVE_PIDFILE 1
+#define HAVE_LOCKFILE 1
 #endif
 
 /**

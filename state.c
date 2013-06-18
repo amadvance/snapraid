@@ -45,7 +45,7 @@ void state_init(struct snapraid_state* state)
 	state->qarity_device = 0;
 	state->pool[0] = 0;
 	state->pool_device = 0;
-	state->pidfile[0] = 0;
+	state->lockfile[0] = 0;
 	state->level = 1; /* default is the lowest protection */
 
 	tommy_list_init(&state->disklist);
@@ -359,6 +359,10 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			}
 
 			state->parity_device = st.st_dev;
+
+			/* set lock file */
+			pathcpy(state->lockfile, sizeof(state->lockfile), state->parity);
+			pathcat(state->lockfile, sizeof(state->lockfile), ".lock");
 		} else if (strcmp(tag, "q-parity") == 0) {
 			char device[PATH_MAX];
 			char* slash;
@@ -463,12 +467,6 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			content = content_alloc(buffer, st.st_dev);
 
 			tommy_list_insert_tail(&state->contentlist, &content->node, content);
-
-			/* if not set pid file, set it as the first content file */
-			if (!state->pidfile[0]) {
-				pathcpy(state->pidfile, sizeof(state->pidfile), buffer);
-				pathcat(state->pidfile, sizeof(state->pidfile), ".pid");
-			}
 		} else if (strcmp(tag, "disk") == 0) {
 			char dir[PATH_MAX];
 			char device[PATH_MAX];

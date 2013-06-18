@@ -84,7 +84,7 @@ void usage(void)
 #define OPT_TEST_SKIP_SEQUENTIAL 263
 #define OPT_TEST_FORCE_MURMUR3 264
 #define OPT_TEST_FORCE_SPOOKY2 265
-#define OPT_TEST_SKIP_PID 266
+#define OPT_TEST_SKIP_LOCK 266
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -139,8 +139,8 @@ struct option long_options[] = {
 	/* Force Spooky2 hash */
 	{ "test-force-spooky2", 0, 0, OPT_TEST_FORCE_SPOOKY2 },
 
-	/* Skip the use of pid file */
-	{ "test-skip-pid", 0, 0, OPT_TEST_SKIP_PID },
+	/* Skip the use of lock file */
+	{ "test-skip-lock", 0, 0, OPT_TEST_SKIP_LOCK },
 
 	{ 0, 0, 0, 0 }
 };
@@ -188,7 +188,7 @@ int main(int argc, char* argv[])
 	int test_skip_device;
 	int test_force_murmur3;
 	int test_force_spooky2;
-	int test_skip_pid;
+	int test_skip_lock;
 	const char* conf;
 	struct snapraid_state state;
 	int operation;
@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
 	const char* command;
 	const char* import;
 	const char* log;
-	int pid;
+	int lock;
 
 	os_init();
 
@@ -225,7 +225,7 @@ int main(int argc, char* argv[])
 	test_skip_device = 0;
 	test_force_murmur3 = 0;
 	test_force_spooky2 = 0;
-	test_skip_pid = 0;
+	test_skip_lock = 0;
 	blockstart = 0;
 	blockcount = 0;
 	tommy_list_init(&filterlist_file);
@@ -233,7 +233,7 @@ int main(int argc, char* argv[])
 	filter_missing = 0;
 	import = 0;
 	log = 0;
-	pid = 0;
+	lock = 0;
 
 	opterr = 0;
 	while ((c =
@@ -354,8 +354,8 @@ int main(int argc, char* argv[])
 		case OPT_TEST_FORCE_SPOOKY2 :
 			test_force_spooky2 = 1;
 			break;
-		case OPT_TEST_SKIP_PID :
-			test_skip_pid = 1;
+		case OPT_TEST_SKIP_LOCK :
+			test_skip_lock = 1;
 			break;
 		default:
 			fprintf(stderr, "Unknown option '%c'\n", (char)c);
@@ -445,15 +445,15 @@ int main(int argc, char* argv[])
 	/* read the configuration file */
 	state_config(&state, conf, command, verbose, gui, force_zero, force_empty, force_uuid, find_by_name, test_expect_unrecoverable, test_expect_recoverable, test_skip_sign, test_skip_fallocate, test_skip_sequential, test_skip_device, test_force_murmur3, test_force_spooky2);
 
-#if HAVE_PIDFILE
-	/* create the pid file */
-	if (!test_skip_pid) {
-		pid = pid_lock(state.pidfile);
-		if (pid == -1) {
+#if HAVE_LOCKFILE
+	/* create the lock file */
+	if (!test_skip_lock) {
+		lock = lock_lock(state.lockfile);
+		if (lock == -1) {
 			if (errno != EWOULDBLOCK) {
-				fprintf(stderr, "Error creating the pid file '%s'. %s.\n", state.pidfile, strerror(errno));
+				fprintf(stderr, "Error creating the lock file '%s'. %s.\n", state.lockfile, strerror(errno));
 			} else {
-				fprintf(stderr, "The pid file '%s' is already locked!\n", state.pidfile);
+				fprintf(stderr, "The lock file '%s' is already locked!\n", state.lockfile);
 				fprintf(stderr, "SnapRAID is already in use!\n");
 			}
 			exit(EXIT_FAILURE);
@@ -580,10 +580,10 @@ int main(int argc, char* argv[])
 		}
 	}
 
-#if HAVE_PIDFILE
-	if (!test_skip_pid) {
-		if (pid_unlock(pid, state.pidfile) == -1) {
-			fprintf(stderr, "Error closing the pid file '%s'. %s.\n", state.pidfile, strerror(errno));
+#if HAVE_LOCKFILE
+	if (!test_skip_lock) {
+		if (lock_unlock(lock) == -1) {
+			fprintf(stderr, "Error closing the lock file '%s'. %s.\n", state.lockfile, strerror(errno));
 			exit(EXIT_FAILURE);
 		}
 	}
