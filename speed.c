@@ -124,7 +124,11 @@ void speed(void)
 #if defined(__i386__) || defined(__x86_64__)
 	printf("Expected fastest RAID5 is ");
 	if (cpu_has_sse2())
+#if defined(__x86_64__)
+		printf("sse2x8");
+#else
 		printf("sse2x4");
+#endif
 	else if (cpu_has_mmx())
 		printf("mmxx4");
 	else
@@ -206,6 +210,14 @@ void speed(void)
 		} SPEED_STOP
 
 		printf("RAID5 sse2x4 %"PRIu64" [MB/s]\n", ds / dt);
+
+#if defined(__x86_64__)
+		SPEED_START {
+			raid5_sse2r8(buffer, diskmax, block_size);
+		} SPEED_STOP
+
+		printf("RAID5 sse2x8 %"PRIu64" [MB/s]\n", ds / dt);
+#endif
 	}
 #endif
 

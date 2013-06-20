@@ -195,6 +195,61 @@ void raid5_sse2r4(unsigned char** buffer, unsigned diskmax, unsigned size)
 }
 #endif
 
+#if defined(__x86_64__)
+/*
+ * Unrolled-by-8 SSE2 implementation
+ * Note that it uses all the 16 registers, meaning that x64 is required.
+ */
+void raid5_sse2r8(unsigned char** buffer, unsigned diskmax, unsigned size)
+{
+	unsigned char* p;
+	int z, z0;
+	unsigned d;
+
+	z0 = diskmax - 1; /* Highest data disk */
+	p = buffer[z0+1]; /* XOR parity */
+
+	for(d=0;d<size;d+=128) {
+		asm volatile("movdqa %0,%%xmm0" : : "m" (buffer[z0][d]));
+		asm volatile("movdqa %0,%%xmm1" : : "m" (buffer[z0][d+16]));
+		asm volatile("movdqa %0,%%xmm2" : : "m" (buffer[z0][d+32]));
+		asm volatile("movdqa %0,%%xmm3" : : "m" (buffer[z0][d+48]));
+		asm volatile("movdqa %0,%%xmm4" : : "m" (buffer[z0][d+64]));
+		asm volatile("movdqa %0,%%xmm5" : : "m" (buffer[z0][d+80]));
+		asm volatile("movdqa %0,%%xmm6" : : "m" (buffer[z0][d+96]));
+		asm volatile("movdqa %0,%%xmm7" : : "m" (buffer[z0][d+112]));
+		for(z=z0-1;z>=0;--z) {
+			asm volatile("movdqa %0,%%xmm8" : : "m" (buffer[z][d]));
+			asm volatile("movdqa %0,%%xmm9" : : "m" (buffer[z][d+16]));
+			asm volatile("movdqa %0,%%xmm10" : : "m" (buffer[z][d+32]));
+			asm volatile("movdqa %0,%%xmm11" : : "m" (buffer[z][d+48]));
+			asm volatile("movdqa %0,%%xmm12" : : "m" (buffer[z][d+64]));
+			asm volatile("movdqa %0,%%xmm13" : : "m" (buffer[z][d+80]));
+			asm volatile("movdqa %0,%%xmm14" : : "m" (buffer[z][d+96]));
+			asm volatile("movdqa %0,%%xmm15" : : "m" (buffer[z][d+112]));
+			asm volatile("pxor %xmm8,%xmm0");
+			asm volatile("pxor %xmm9,%xmm1");
+			asm volatile("pxor %xmm10,%xmm2");
+			asm volatile("pxor %xmm11,%xmm3");
+			asm volatile("pxor %xmm12,%xmm4");
+			asm volatile("pxor %xmm13,%xmm5");
+			asm volatile("pxor %xmm14,%xmm6");
+			asm volatile("pxor %xmm15,%xmm7");
+		}
+		asm volatile("movntdq %%xmm0,%0" : "=m" (p[d]));
+		asm volatile("movntdq %%xmm1,%0" : "=m" (p[d+16]));
+		asm volatile("movntdq %%xmm2,%0" : "=m" (p[d+32]));
+		asm volatile("movntdq %%xmm3,%0" : "=m" (p[d+48]));
+		asm volatile("movntdq %%xmm4,%0" : "=m" (p[d+64]));
+		asm volatile("movntdq %%xmm5,%0" : "=m" (p[d+80]));
+		asm volatile("movntdq %%xmm6,%0" : "=m" (p[d+96]));
+		asm volatile("movntdq %%xmm7,%0" : "=m" (p[d+112]));
+	}
+
+	asm volatile("sfence" : : : "memory");
+}
+#endif
+
 /* 
  * Repeats an 8 bit nibble to a full 32 bits value.
  */
@@ -391,6 +446,7 @@ void raid6_sse2r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 #if defined(__x86_64__)
 /*
  * Unrolled-by-4 SSE2 implementation
+ * Note that it uses all the 16 registers, meaning that x64 is required.
  */
 void raid6_sse2r4(unsigned char** buffer, unsigned diskmax, unsigned size)
 {
@@ -576,10 +632,11 @@ void raid_init(void)
 		raid6_gen = raid6_mmxr2;
 	}
 	if (cpu_has_sse2()) {
-		raid5_gen = raid5_sse2r4;
 #if defined(__x86_64__)
+		raid5_gen = raid5_sse2r8;
 		raid6_gen = raid6_sse2r4;
 #else
+		raid5_gen = raid5_sse2r4;
 		raid6_gen = raid6_sse2r2;
 #endif
 	}
