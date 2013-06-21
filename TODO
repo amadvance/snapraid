@@ -5,15 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - v3.2
 
- * Check the device of all the files and dirs in scan.c to avoid moint points.
-} else if (S_ISDIR(st.st_mode)) {
-    if (st.st_dev!=disk->device) {
-        printf("Excluding mountpoint directory '%s'\n", path_next);
-    } else
-    if (filter_dir(&state->filterlist, disk->name, sub_next) == 0) {
-        ...
-    }
-
 * Allow to specify the shared path to use to access remote symlink.
 
 * In the import list, uses also all the blocks in the array.

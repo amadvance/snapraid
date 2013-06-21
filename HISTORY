@@ -12,6 +12,8 @@ SnapRAID HISTORY
  * Added a lock file to avoid multiple running instances on the same array.
    The file is named as parity file adding the .lock extension.
    There is also the undocumented --test-skip-lock to avoid to check it.
+ * Automatically ignores, with warning, mount points inside the array
+   directory tree.
 
 3.1 2013/5
 ==========

@@ -664,18 +664,22 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 			}
 		} else if (S_ISDIR(st.st_mode)) {
 			if (filter_dir(&state->filterlist, disk->name, sub_next) == 0) {
-				char sub_dir[PATH_MAX];
+				if (st.st_dev != disk->device) {
+					fprintf(stderr, "warning: Ignoring mount point '%s'\n", path_next);
+				} else {
+					char sub_dir[PATH_MAX];
 
-				/* recurse */
-				pathslash(path_next, sizeof(path_next));
-				pathcpy(sub_dir, sizeof(sub_dir), sub_next);
-				pathslash(sub_dir, sizeof(sub_dir));
-				if (scan_dir(scan, state, output, disk, path_next, sub_dir) == 0) {
-					/* scan the directory as empty dir */
-					scan_emptydir(scan, state, output, disk, sub_next);
+					/* recurse */
+					pathslash(path_next, sizeof(path_next));
+					pathcpy(sub_dir, sizeof(sub_dir), sub_next);
+					pathslash(sub_dir, sizeof(sub_dir));
+					if (scan_dir(scan, state, output, disk, path_next, sub_dir) == 0) {
+						/* scan the directory as empty dir */
+						scan_emptydir(scan, state, output, disk, sub_next);
+					}
+					/* or we processed something internally, or we have added the empty dir */
+					processed = 1;
 				}
-				/* or we processed something internally, or we have added the empty dir */
-				processed = 1;
 			} else {
 				if (state->verbose) {
 					printf("Excluding directory '%s'\n", path_next);
