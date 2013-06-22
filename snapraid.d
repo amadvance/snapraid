@@ -724,8 +724,9 @@ Content
 	Defines the size of the block in bytes. It must match the size
 	defined in the configuration file.
 
-  checksum CHECKSUM
-	Defines the checksum kind used. It can be only "murmur3".
+  checksum CHECKSUM SEED
+	Defines the checksum kind used. It can be "murmur3" or "spooky2".
+	SEED is a 128 bits seed used in all the hash operations.
 	From SnapRAID 2.0 the old "md5" checksum is not supported anymore.
 
   map NAME INDEX [UUID]

@@ -894,7 +894,7 @@ void state_read(struct snapraid_state* state)
 	/* it's for compatibility with version 1.0 where MD5 was implicit. */
 	state->hash = HASH_UNDEFINED;
 
-	/* start with a zero seed */
+	/* start with a zero seed, it was the default in old versions */
 	memset(state->hashseed, 0, HASH_SIZE);
 
 	disk = 0;
@@ -1494,15 +1494,20 @@ void state_read(struct snapraid_state* state)
 				fprintf(stderr, "Invalid 'checksum' specification '%s' in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 			}
-		} else if (strcmp(tag, "seed") == 0) {
-			hash = oathash8(hash, 'e');
 
-			ret = sgethex(f, state->hashseed, HASH_SIZE);
-			if (ret < 0) {
-				fprintf(stderr, "Invalid 'seed' specification in '%s' at line %u\n", path, line);
-				exit(EXIT_FAILURE);
+			c = sgetc(f);
+			if (c == ' ') {
+				/* read the seed if present */
+				ret = sgethex(f, state->hashseed, HASH_SIZE);
+				if (ret < 0) {
+					fprintf(stderr, "Invalid 'seed' specification in '%s' at line %u\n", path, line);
+					exit(EXIT_FAILURE);
+				}
+				hash = oathashm(hash, state->hashseed, HASH_SIZE);
+			} else {
+				sungetc(c, f);
+				memset(state->hashseed, 0, HASH_SIZE);
 			}
-			hash = oathashm(hash, state->hashseed, HASH_SIZE);
 		} else if (strcmp(tag, "blksize") == 0) {
 			block_off_t blksize;
 
@@ -1728,14 +1733,7 @@ void state_write(struct snapraid_state* state)
 		fprintf(stderr, "Unexpected hash when writing the content file '%s'.\n", serrorfile(f));
 		exit(EXIT_FAILURE);
 	}
-	sputeol(f);
-	if (serror(f)) {
-		fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-
-	sputsl("seed ", f);
-	hash = oathash8(hash, 'e');
+	sputc(' ', f);
 	sputhex(state->hashseed, HASH_SIZE, f);
 	hash = oathashm(hash, state->hashseed, HASH_SIZE);
 	sputeol(f);

@@ -797,10 +797,11 @@ This file is read and written by the "sync" command, and only read by
 Defines the size of the block in bytes. It must match the size
 defined in the configuration file.
 
-10.2 checksum CHECKSUM
-----------------------
+10.2 checksum CHECKSUM SEED
+---------------------------
 
-Defines the checksum kind used. It can be only "murmur3".
+Defines the checksum kind used. It can be "murmur3" or "spooky2".
+SEED is a 128 bits seed used in all the hash operations.
 From SnapRAID 2.0 the old "md5" checksum is not supported anymore.
 
 10.3 map NAME INDEX [UUID]
@@ -884,22 +885,29 @@ for which the parity is computed using the previous value.
 This field is used only when you interrupt manually the "sync"
 command.
 
-10.11 symlink DISK PATH
+10.11 inf BLOCK TIME
+--------------------
+
+Information shared by all the block at the specified offset.
+TIME is the last time of the hash/parity verification done at this
+block.
+
+10.12 symlink DISK PATH
 -----------------------
 
 Defines a symbolic link in the specified DISK.
 
-10.12 hardlink DISK PATH
+10.13 hardlink DISK PATH
 ------------------------
 
 Defines a hard link in the specified DISK.
 
-10.13 to PATH
+10.14 to PATH
 -------------
 
 Defines where the previous symlink or hardlink links to.
 
-10.14 dir DISK PATH
+10.15 dir DISK PATH
 -------------------
 
 Defines an empty directory in the specified DISK.

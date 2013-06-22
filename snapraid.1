@@ -1007,8 +1007,9 @@ This file is read and written by the \(a"sync\(a" command, and only read by
 .SS blk_size SIZE 
 Defines the size of the block in bytes. It must match the size
 defined in the configuration file.
-.SS checksum CHECKSUM 
-Defines the checksum kind used. It can be only \(a"murmur3\(a".
+.SS checksum CHECKSUM SEED 
+Defines the checksum kind used. It can be \(a"murmur3\(a" or \(a"spooky2\(a".
+SEED is a 128 bits seed used in all the hash operations.
 From SnapRAID 2.0 the old \(a"md5\(a" checksum is not supported anymore.
 .SS map NAME INDEX [UUID] 
 Defines the position INDEX of the disk NAME in the parity computation.
