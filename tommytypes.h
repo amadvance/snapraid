@@ -84,23 +84,10 @@ typedef int tommy_bool_t; /**< Generic boolean type. */
  * Definition of the inline keyword if available.
  */
 #if !defined(tommy_inline)
-#if __STDC_VERSION__ >= 199901L || defined(__cplusplus)
-#define tommy_inline inline
-#elif defined(_MSC_VER) || defined(__GNUC__)
+#if defined(_MSC_VER) || defined(__GNUC__)
 #define tommy_inline static __inline
 #else
 #define tommy_inline static
-#endif
-#endif
-
-/** \internal
- * Definition of the always_inline keyword if available.
- */
-#if !defined(tommy_always_inline)
-#if defined(__GNUC__)
-#define tommy_always_inline static __attribute__((always_inline)) __inline
-#else
-#define tommy_always_inline tommy_inline
 #endif
 #endif
 
@@ -253,7 +240,15 @@ tommy_inline unsigned tommy_ilog2_u32(tommy_uint32_t value)
 	_BitScanReverse(&count, value);
 	return count;
 #elif defined(__GNUC__)
-	return 31 - __builtin_clz(value);
+	/*
+	 * GCC implements __builtin_clz(x) as "__builtin_clz(x) = bsr(x) ^ 31"
+	 *
+	 * Where "x ^ 31 = 31 - x", but gcc does not optimize "31 - __builtin_clz(x)" to bsr(x),
+	 * but generates 31 - (bsr(x) xor 31).
+	 *
+	 * So we write "__builtin_clz(x) ^ 31" instead of "31 - __builtin_clz(x)".
+	 */
+	return __builtin_clz(value) ^ 31;
 #else
 	/* Find the log base 2 of an N-bit integer in O(lg(N)) operations with multiply and lookup */
 	/* from http://graphics.stanford.edu/~seander/bithacks.html */
