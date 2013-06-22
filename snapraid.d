@@ -793,6 +793,11 @@ Content
 	This field is used only when you interrupt manually the "sync"
 	command.
 
+  inf BLOCK TIME
+	Information shared by all the block at the specified offset.
+	TIME is the last time of the hash/parity verification done at this
+	block.
+
   symlink DISK PATH
 	Defines a symbolic link in the specified DISK.
 

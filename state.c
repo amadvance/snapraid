@@ -54,6 +54,7 @@ void state_init(struct snapraid_state* state)
 	tommy_list_init(&state->filterlist);
 	tommy_list_init(&state->importlist);
 	tommy_hashdyn_init(&state->importset);
+	tommy_array_init(&state->infoarr);
 	state->loaded_blockmax = 0;
 }
 
@@ -65,6 +66,7 @@ void state_done(struct snapraid_state* state)
 	tommy_list_foreach(&state->filterlist, (tommy_foreach_func*)filter_free);
 	tommy_list_foreach(&state->importlist, (tommy_foreach_func*)import_file_free);
 	tommy_hashdyn_done(&state->importset);
+	tommy_array_done(&state->infoarr);
 }
 
 /**
@@ -1007,6 +1009,39 @@ void state_read(struct snapraid_state* state)
 
 			/* stat */
 			++count_block;
+		} else if (strcmp(tag, "inf") == 0) {
+			/* "inf" command */
+			block_off_t v_pos;
+			snapraid_info info;
+			uint32_t t;
+
+			hash = oathash8(hash, 'i');
+
+			ret = sgetu32(f, &v_pos);
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'inf' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+			hash = oathash32(hash, v_pos);
+
+			c = sgetc(f);
+			if (c != ' ') {
+				fprintf(stderr, "Invalid 'inf' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetu32(f, &t);
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'inf' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+			hash = oathash32(hash, t);
+
+			info = info_make(t);
+
+			/* insert the block in the block array */
+			tommy_array_grow(&state->infoarr, v_pos + 1);
+			tommy_array_set(&state->infoarr, v_pos, (void*)info);
 		} else if (strcmp(tag, "off") == 0) {
 			/* "off" command */
 			block_off_t v_pos;
@@ -1623,6 +1658,8 @@ void state_write(struct snapraid_state* state)
 	unsigned count_dir;
 	unsigned count_content;
 	tommy_node* i;
+	block_off_t b;
+	block_off_t infomax;
 	unsigned k;
 	oathash_t hash;
 
@@ -1632,6 +1669,7 @@ void state_write(struct snapraid_state* state)
 	count_symlink = 0;
 	count_dir = 0;
 	hash = 0;
+	infomax = 0; /* index of the maximum info saved from all the disks */
 
 	/* count the content files */
 	count_content = 0;
@@ -1734,11 +1772,12 @@ void state_write(struct snapraid_state* state)
 	for(i=state->disklist;i!=0;i=i->next) {
 		tommy_node* j;
 		struct snapraid_disk* disk = i->data;
+		block_off_t blockmax;
+		int first_deleted;
 
 		/* for each file */
 		for(j=disk->filelist;j!=0;j=j->next) {
 			struct snapraid_file* file = j->data;
-			block_off_t k;
 			uint64_t size;
 			uint64_t mtime_sec;
 			int32_t mtime_nsec;
@@ -1777,8 +1816,8 @@ void state_write(struct snapraid_state* state)
 			}
 
 			/* for each block in the file */
-			for(k=0;k<file->blockmax;++k) {
-				struct snapraid_block* block = &file->blockvec[k];
+			for(b=0;b<file->blockmax;++b) {
+				struct snapraid_block* block = &file->blockvec[b];
 				unsigned block_state;
 
 				block_state = block_state_get(block);
@@ -1799,6 +1838,10 @@ void state_write(struct snapraid_state* state)
 					fprintf(stderr, "Internal state inconsistency in saving for block %u state %u\n", block->parity_pos, block_state);
 					exit(EXIT_FAILURE);
 				}
+
+				/* keep track of the maximum block */
+				if (block->parity_pos > infomax)
+					infomax = block->parity_pos;
 
 				sputu32(block->parity_pos, f);
 				hash = oathash32(hash, block->parity_pos);
@@ -1874,49 +1917,81 @@ void state_write(struct snapraid_state* state)
 			++count_dir;
 		}
 
-		/* save all the delete blocks */
-		{
-			block_off_t k;
-			block_off_t blockmax;
-			int first_deleted;
-			
-			first_deleted = 1;
-			blockmax = tommy_array_size(&disk->blockarr);
+		/* maximum block */
+		blockmax = tommy_array_size(&disk->blockarr);
 
-			/* for each deleted block in the disk */
-			for(k=0;k<blockmax;++k) {
-				struct snapraid_block* block = tommy_array_get(&disk->blockarr, k);
-				if (block_state_get(block) == BLOCK_STATE_DELETED) {
-					if (first_deleted) {
-						first_deleted = 0;
+		/* for each deleted block in the disk */
+		first_deleted = 1;
+		for(b=0;b<blockmax;++b) {
+			struct snapraid_block* block = tommy_array_get(&disk->blockarr, b);
+			if (block_state_get(block) == BLOCK_STATE_DELETED) {
+				if (first_deleted) {
+					first_deleted = 0;
 
-						sputsl("hole ", f);
-						hash = oathash8(hash, 'h');
-						sputs(disk->name, f);
-						hash = oathashs(hash, disk->name);
-						sputeol(f);
-						if (serror(f)) {
-							fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-							exit(EXIT_FAILURE);
-						}
-					}
-
-					sputsl("off ", f);
-					hash = oathash8(hash, 'o');
-
-					sputu32(k, f);
-					hash = oathash32(hash, k);
-
-					sputc(' ', f);
-					sputhex(block->hash, HASH_SIZE, f);
-					hash = oathashm(hash, block->hash, HASH_SIZE);
-
+					sputsl("hole ", f);
+					hash = oathash8(hash, 'h');
+					sputs(disk->name, f);
+					hash = oathashs(hash, disk->name);
 					sputeol(f);
 					if (serror(f)) {
 						fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 						exit(EXIT_FAILURE);
 					}
 				}
+
+				sputsl("off ", f);
+				hash = oathash8(hash, 'o');
+
+				/* keep track of the maximum block */
+				if (b > infomax)
+					infomax = b;
+
+				sputu32(b, f);
+				hash = oathash32(hash, b);
+
+				sputc(' ', f);
+				sputhex(block->hash, HASH_SIZE, f);
+				hash = oathashm(hash, block->hash, HASH_SIZE);
+
+				sputeol(f);
+				if (serror(f)) {
+					fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+					exit(EXIT_FAILURE);
+				}
+			}
+		}
+	}
+
+	/* note that here infomax contains the maximum block for which we wrote something */
+	/* tha could be smaller than of blocks we have in memory, in case of deleted blocks */
+
+	/* don't try to write more info than stored */
+	if (infomax > tommy_array_size(&state->infoarr))
+		infomax = tommy_array_size(&state->infoarr);
+
+	/* for each block */
+	for(b=0;b<infomax;++b) {
+		snapraid_info info;
+
+		info = (snapraid_info)tommy_array_get(&state->infoarr, b);
+
+		/* save only stuff different than 0 */
+		if (info != 0) {
+			sputsl("inf ", f);
+			hash = oathash8(hash, 'i');
+
+			sputu32(b, f);
+			hash = oathash32(hash, b);
+
+			sputc(' ', f);
+
+			sputu32(info, f);
+			hash = oathash32(hash, info);
+
+			sputeol(f);
+			if (serror(f)) {
+				fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				exit(EXIT_FAILURE);
 			}
 		}
 	}

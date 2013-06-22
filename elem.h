@@ -65,8 +65,6 @@ struct snapraid_filter {
 	tommy_node node; /**< Next node in the list. */
 };
 
-struct snapraid_file;
-
 /**
  * The block has both the hash and the parity computed.
  * This is the normal state of a saved block.
@@ -311,6 +309,11 @@ struct snapraid_map {
 	/* nodes for data structures */
 	tommy_node node;
 };
+
+/**
+ * Info.
+ */
+typedef unsigned snapraid_info;
 
 /**
  * Allocates a content.
@@ -674,6 +677,15 @@ struct snapraid_map* map_alloc(const char* name, unsigned position, const char* 
  * Deallocates a disk mapping.
  */
 void map_free(struct snapraid_map* map);
+
+/**
+ * Make an info.
+ */
+static inline snapraid_info info_make(time_t last_access)
+{
+	/* clear the low bit to keep some free bits */
+	return last_access & ~0xFF;
+}
 
 #endif
 
