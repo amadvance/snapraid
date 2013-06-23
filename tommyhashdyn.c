@@ -114,6 +114,28 @@ static void tommy_hashdyn_resize(tommy_hashdyn* hashdyn, unsigned new_bucket_bit
 	hashdyn->bucket = new_bucket;
 }
 
+/**
+ * Grow.
+ */
+tommy_inline void hashdyn_grow_step(tommy_hashdyn* hashdyn)
+{
+	/* grow if more than 50% full */
+	if (hashdyn->count >= hashdyn->bucket_max / 2) {
+		tommy_hashdyn_resize(hashdyn, hashdyn->bucket_bit + 1);
+	}
+}
+
+/**
+ * Shrink.
+ */
+tommy_inline void hashdyn_shrink_step(tommy_hashdyn* hashdyn)
+{
+	/* shrink if less than 12.5% full */
+	if (hashdyn->count <= hashdyn->bucket_max / 8 && hashdyn->bucket_bit > TOMMY_HASHDYN_BIT) {
+		tommy_hashdyn_resize(hashdyn, hashdyn->bucket_bit - 1);
+	}
+}
+
 void tommy_hashdyn_insert(tommy_hashdyn* hashdyn, tommy_hashdyn_node* node, void* data, tommy_hash_t hash)
 {
 	unsigned pos = hash & hashdyn->bucket_mask;
@@ -124,10 +146,7 @@ void tommy_hashdyn_insert(tommy_hashdyn* hashdyn, tommy_hashdyn_node* node, void
 
 	++hashdyn->count;
 
-	/* grow if more than 50% full */
-	if (hashdyn->count >= hashdyn->bucket_max / 2) {
-		tommy_hashdyn_resize(hashdyn, hashdyn->bucket_bit + 1);
-	}
+	hashdyn_grow_step(hashdyn);
 }
 
 void* tommy_hashdyn_remove_existing(tommy_hashdyn* hashdyn, tommy_hashdyn_node* node)
@@ -138,10 +157,7 @@ void* tommy_hashdyn_remove_existing(tommy_hashdyn* hashdyn, tommy_hashdyn_node* 
 
 	--hashdyn->count;
 
-	/* shrink if less than 12.5% full */
-	if (hashdyn->count <= hashdyn->bucket_max / 8 && hashdyn->bucket_bit > TOMMY_HASHDYN_BIT) {
-		tommy_hashdyn_resize(hashdyn, hashdyn->bucket_bit - 1);
-	}
+	hashdyn_shrink_step(hashdyn);
 
 	return node->data;
 }
@@ -157,6 +173,8 @@ void* tommy_hashdyn_remove(tommy_hashdyn* hashdyn, tommy_compare_func* cmp, cons
 			tommy_list_remove_existing(&hashdyn->bucket[pos], i);
 
 			--hashdyn->count;
+
+			hashdyn_shrink_step(hashdyn);
 
 			return i->data;
 		}

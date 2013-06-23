@@ -242,7 +242,7 @@ tommy_inline unsigned tommy_hashdyn_count(tommy_hashdyn* hashdyn)
 
 /**
  * Gets the size of allocated memory.
- * It includes the size of the ::tommy_trie_node of the stored elements. 
+ * It includes the size of the ::tommy_hashdyn_node of the stored elements.
  */
 tommy_size_t tommy_hashdyn_memory_usage(tommy_hashdyn* hashdyn);
 
