@@ -680,12 +680,39 @@ struct snapraid_map* map_alloc(const char* name, unsigned position, const char* 
 void map_free(struct snapraid_map* map);
 
 /**
- * Make an info.
+ * Makes an info.
  */
 static inline snapraid_info info_make(time_t last_access)
 {
-	/* clear the low bit to keep some free bits */
-	return last_access & ~0xFF;
+	/* clear the lowest bit as reserved for the hash type */
+	return last_access & ~0x1;
+}
+
+/**
+ * Sets the info at the specified position.
+ * The position is allocated if not yet done.
+ */
+static inline void info_set(tommy_arrayof* array, unsigned pos, snapraid_info info)
+{
+	tommy_arrayof_grow(array, pos + 1);
+
+	memcpy(tommy_arrayof_ref(array, pos), &info, sizeof(snapraid_info));
+}
+
+/**
+ * Gets the info at the specified position.
+ * For not allocated position, 0 is returned.
+ */
+static inline snapraid_info info_get(tommy_arrayof* array, unsigned pos)
+{
+	snapraid_info info;
+	
+	if (pos >= tommy_arrayof_size(array))
+		return 0;
+
+	memcpy(&info, tommy_arrayof_ref(array, pos), sizeof(snapraid_info));
+
+	return info;
 }
 
 #endif

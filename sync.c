@@ -45,6 +45,10 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	block_off_t autosavemissing;
 	int ret;
 	unsigned unrecoverable_error;
+	time_t now;
+
+	/* get the present time */
+	now = time(0);
 
 	/* maps the disks to handles */
 	handle = handle_map(state, &diskmax);
@@ -309,6 +313,9 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				/* now all the blocks have the hash and the parity computed */
 				block_state_set(block, BLOCK_STATE_BLK);
 			}
+
+			/* update the time info of the block */
+			info_set(&state->infoarr, i, info_make(now));
 		}
 
 		/* mark the state as needing write */

@@ -1040,8 +1040,7 @@ void state_read(struct snapraid_state* state)
 			info = info_make(t);
 
 			/* insert the block in the block array */
-			tommy_arrayof_grow(&state->infoarr, v_pos + 1);
-			memcpy(tommy_arrayof_ref(&state->infoarr, v_pos), &info, sizeof(snapraid_info));
+			info_set(&state->infoarr, v_pos, info);
 		} else if (strcmp(tag, "off") == 0) {
 			/* "off" command */
 			block_off_t v_pos;
@@ -1963,15 +1962,11 @@ void state_write(struct snapraid_state* state)
 	/* note that here infomax contains the maximum block for which we wrote something */
 	/* tha could be smaller than of blocks we have in memory, in case of deleted blocks */
 
-	/* don't try to write more info than stored */
-	if (infomax > tommy_arrayof_size(&state->infoarr))
-		infomax = tommy_arrayof_size(&state->infoarr);
-
 	/* for each block */
 	for(b=0;b<infomax;++b) {
 		snapraid_info info;
 
-		memcpy(&info, tommy_arrayof_ref(&state->infoarr, b), sizeof(snapraid_info));
+		info = info_get(&state->infoarr, b);
 
 		/* save only stuff different than 0 */
 		if (info != 0) {
