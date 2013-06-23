@@ -23,6 +23,7 @@
 #include "tommyhash.h"
 #include "tommyhashdyn.h"
 #include "tommyarray.h"
+#include "tommyarrayof.h"
 
 /****************************************************************************/
 /* snapraid */

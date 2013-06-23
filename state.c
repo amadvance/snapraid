@@ -54,7 +54,7 @@ void state_init(struct snapraid_state* state)
 	tommy_list_init(&state->filterlist);
 	tommy_list_init(&state->importlist);
 	tommy_hashdyn_init(&state->importset);
-	tommy_array_init(&state->infoarr);
+	tommy_arrayof_init(&state->infoarr, sizeof(snapraid_info));
 	state->loaded_blockmax = 0;
 }
 
@@ -66,7 +66,7 @@ void state_done(struct snapraid_state* state)
 	tommy_list_foreach(&state->filterlist, (tommy_foreach_func*)filter_free);
 	tommy_list_foreach(&state->importlist, (tommy_foreach_func*)import_file_free);
 	tommy_hashdyn_done(&state->importset);
-	tommy_array_done(&state->infoarr);
+	tommy_arrayof_done(&state->infoarr);
 }
 
 /**
@@ -1040,8 +1040,8 @@ void state_read(struct snapraid_state* state)
 			info = info_make(t);
 
 			/* insert the block in the block array */
-			tommy_array_grow(&state->infoarr, v_pos + 1);
-			tommy_array_set(&state->infoarr, v_pos, (void*)info);
+			tommy_arrayof_grow(&state->infoarr, v_pos + 1);
+			memcpy(tommy_arrayof_ref(&state->infoarr, v_pos), &info, sizeof(snapraid_info));
 		} else if (strcmp(tag, "off") == 0) {
 			/* "off" command */
 			block_off_t v_pos;
@@ -1964,14 +1964,14 @@ void state_write(struct snapraid_state* state)
 	/* tha could be smaller than of blocks we have in memory, in case of deleted blocks */
 
 	/* don't try to write more info than stored */
-	if (infomax > tommy_array_size(&state->infoarr))
-		infomax = tommy_array_size(&state->infoarr);
+	if (infomax > tommy_arrayof_size(&state->infoarr))
+		infomax = tommy_arrayof_size(&state->infoarr);
 
 	/* for each block */
 	for(b=0;b<infomax;++b) {
 		snapraid_info info;
 
-		info = (snapraid_info)tommy_array_get(&state->infoarr, b);
+		memcpy(&info, tommy_arrayof_ref(&state->infoarr, b), sizeof(snapraid_info));
 
 		/* save only stuff different than 0 */
 		if (info != 0) {
