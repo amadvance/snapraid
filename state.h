@@ -50,8 +50,8 @@ struct snapraid_state {
 	uint64_t qarity_device; /**< Device identifier of the qarity. */
 	char pool[PATH_MAX]; /**< Path of the pool tree. */
 	uint64_t pool_device; /**< Device identifier of the pool. */
+	unsigned char hashseed[HASH_SIZE]; /**< Hash seed. Just after a uint64 to provide a minimal alignment. */
 	char lockfile[PATH_MAX]; /**< Path of the lock file to use. */
-	unsigned char hashseed[HASH_SIZE]; /**< Hash seed. */
 	unsigned level; /**< Number of parity levels. 1 for RAID5, 2 for RAID6. */
 	unsigned hash; /**< Hash kind used. */
 	unsigned besthash; /**< Best hash suggested. */

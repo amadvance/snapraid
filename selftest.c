@@ -172,31 +172,40 @@ static void raid6test(unsigned diskmax, unsigned block_size)
 	free(buffer);
 }
 
+#define HASH_TEST_MAX 512 /* tests are never longer than 512 bytes */
+
 static void hashtest(void)
 {
 	unsigned i;
-	unsigned char seed[HASH_SIZE];
+	unsigned char* seed_aligned;
+	void* seed_alloc;
+	unsigned char* buffer_aligned;
+	void* buffer_alloc;
 
-	seed[0] = 0x5d;
-	seed[1] = 0x79;
-	seed[2] = 0x66;
-	seed[3] = 0xa7;
-	seed[4] = 0x73;
-	seed[5] = 0x27;
-	seed[6] = 0x02;
-	seed[7] = 0x2f;
-	seed[8] = 0x6a;
-	seed[9] = 0xa1;
-	seed[10] = 0x9e;
-	seed[11] = 0xc1;
-	seed[12] = 0x14;
-	seed[13] = 0x8c;
-	seed[14] = 0x9e;
-	seed[15] = 0x43;
+	seed_aligned = malloc_nofail_align(HASH_SIZE, &seed_alloc);
+	buffer_aligned = malloc_nofail_align(HASH_TEST_MAX, &buffer_alloc);
+
+	seed_aligned[0] = 0x5d;
+	seed_aligned[1] = 0x79;
+	seed_aligned[2] = 0x66;
+	seed_aligned[3] = 0xa7;
+	seed_aligned[4] = 0x73;
+	seed_aligned[5] = 0x27;
+	seed_aligned[6] = 0x02;
+	seed_aligned[7] = 0x2f;
+	seed_aligned[8] = 0x6a;
+	seed_aligned[9] = 0xa1;
+	seed_aligned[10] = 0x9e;
+	seed_aligned[11] = 0xc1;
+	seed_aligned[12] = 0x14;
+	seed_aligned[13] = 0x8c;
+	seed_aligned[14] = 0x9e;
+	seed_aligned[15] = 0x43;
 
 	for(i=0;TEST_MURMUR3[i].data;++i) {
 		unsigned char digest[HASH_SIZE];
-		memhash(HASH_MURMUR3, seed, digest, TEST_MURMUR3[i].data, TEST_MURMUR3[i].len);
+		memcpy(buffer_aligned, TEST_MURMUR3[i].data, TEST_MURMUR3[i].len);
+		memhash(HASH_MURMUR3, seed_aligned, digest, buffer_aligned, TEST_MURMUR3[i].len);
 		if (memcmp(digest, TEST_MURMUR3[i].digest, HASH_SIZE) != 0) {
 			fprintf(stderr, "Failed Murmur3 test vector\n");
 			exit(EXIT_FAILURE);
@@ -205,12 +214,16 @@ static void hashtest(void)
 
 	for(i=0;TEST_SPOOKY2[i].data;++i) {
 		unsigned char digest[HASH_SIZE];
-		memhash(HASH_SPOOKY2, seed, digest, TEST_SPOOKY2[i].data, TEST_SPOOKY2[i].len);
+		memcpy(buffer_aligned, TEST_SPOOKY2[i].data, TEST_SPOOKY2[i].len);
+		memhash(HASH_SPOOKY2, seed_aligned, digest, buffer_aligned, TEST_SPOOKY2[i].len);
 		if (memcmp(digest, TEST_SPOOKY2[i].digest, HASH_SIZE) != 0) {
 			fprintf(stderr, "Failed Spooky2 test vector %u\n", i);
 			exit(EXIT_FAILURE);
 		}
 	}
+
+	free(buffer_alloc);
+	free(seed_alloc);
 }
 
 void selftest(int gui)
