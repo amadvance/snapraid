@@ -142,7 +142,7 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 
 	memset(&fm, 0, sizeof(fm));
 	fm.fiemap.fm_start = 0;
-	fm.fiemap.fm_length = -1;
+	fm.fiemap.fm_length = ~0ULL;
 	fm.fiemap.fm_flags = FIEMAP_FLAG_SYNC; /* required to ensure that just created files report a valid address and not 0 */
 	fm.fiemap.fm_extent_count = 1; /* we are interested only at the first block */
 
