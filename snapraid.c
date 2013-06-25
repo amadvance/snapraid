@@ -85,6 +85,10 @@ void usage(void)
 #define OPT_TEST_FORCE_MURMUR3 264
 #define OPT_TEST_FORCE_SPOOKY2 265
 #define OPT_TEST_SKIP_LOCK 266
+#define OPT_TEST_FORCE_ORDER_PHYSICAL 267
+#define OPT_TEST_FORCE_ORDER_INODE 268
+#define OPT_TEST_FORCE_ORDER_ALPHA 269
+#define OPT_TEST_FORCE_ORDER_DIR 270
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -142,6 +146,12 @@ struct option long_options[] = {
 	/* Skip the use of lock file */
 	{ "test-skip-lock", 0, 0, OPT_TEST_SKIP_LOCK },
 
+	/* Force a sort order for files */
+	{ "test-force-order-physical", 0, 0, OPT_TEST_FORCE_ORDER_PHYSICAL },
+	{ "test-force-order-inode", 0, 0, OPT_TEST_FORCE_ORDER_INODE },
+	{ "test-force-order-alpha", 0, 0, OPT_TEST_FORCE_ORDER_ALPHA },
+	{ "test-force-order-dir", 0, 0, OPT_TEST_FORCE_ORDER_DIR },
+
 	{ 0, 0, 0, 0 }
 };
 #endif
@@ -189,6 +199,7 @@ int main(int argc, char* argv[])
 	int test_force_murmur3;
 	int test_force_spooky2;
 	int test_skip_lock;
+	int test_force_order;
 	const char* conf;
 	struct snapraid_state state;
 	int operation;
@@ -226,6 +237,7 @@ int main(int argc, char* argv[])
 	test_force_murmur3 = 0;
 	test_force_spooky2 = 0;
 	test_skip_lock = 0;
+	test_force_order = SORT_PHYSICAL;
 	blockstart = 0;
 	blockcount = 0;
 	tommy_list_init(&filterlist_file);
@@ -357,6 +369,18 @@ int main(int argc, char* argv[])
 		case OPT_TEST_SKIP_LOCK :
 			test_skip_lock = 1;
 			break;
+		case OPT_TEST_FORCE_ORDER_PHYSICAL :
+			test_force_order = SORT_PHYSICAL;
+			break;
+		case OPT_TEST_FORCE_ORDER_INODE :
+			test_force_order = SORT_INODE;
+			break;
+		case OPT_TEST_FORCE_ORDER_ALPHA :
+			test_force_order = SORT_ALPHA;
+			break;
+		case OPT_TEST_FORCE_ORDER_DIR :
+			test_force_order = SORT_DIR;
+			break;
 		default:
 			fprintf(stderr, "Unknown option '%c'\n", (char)c);
 			exit(EXIT_FAILURE);
@@ -443,7 +467,7 @@ int main(int argc, char* argv[])
 	state_init(&state);
 
 	/* read the configuration file */
-	state_config(&state, conf, command, verbose, gui, force_zero, force_empty, force_uuid, find_by_name, test_expect_unrecoverable, test_expect_recoverable, test_skip_sign, test_skip_fallocate, test_skip_sequential, test_skip_device, test_force_murmur3, test_force_spooky2);
+	state_config(&state, conf, command, verbose, gui, force_zero, force_empty, force_uuid, find_by_name, test_expect_unrecoverable, test_expect_recoverable, test_skip_sign, test_skip_fallocate, test_skip_sequential, test_skip_device, test_force_murmur3, test_force_spooky2, test_force_order);
 
 #if HAVE_LOCKFILE
 	/* create the lock file */

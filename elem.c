@@ -339,7 +339,7 @@ void deleted_free(struct snapraid_deleted* deleted)
 	free(deleted);
 }
 
-struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode)
+struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode, uint64_t physical)
 {
 	struct snapraid_file* file;
 	block_off_t i;
@@ -351,6 +351,7 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t 
 	file->mtime_sec = mtime_sec;
 	file->mtime_nsec = mtime_nsec;
 	file->inode = inode;
+	file->physical = physical;
 	file->flag = 0;
 	file->blockvec = malloc_nofail(file->blockmax * sizeof(struct snapraid_block));
 
@@ -387,13 +388,42 @@ const char* file_name(struct snapraid_file* file)
 	return r;
 }
 
-int file_inode_compare(const void* void_arg, const void* void_data)
+int file_inode_compare_to_arg(const void* void_arg, const void* void_data)
 {
 	const uint64_t* arg = void_arg;
 	const struct snapraid_file* file = void_data;
 	if (*arg < file->inode)
 		return -1;
 	if (*arg > file->inode)
+		return 1;
+	return 0;
+}
+
+int file_inode_compare(const void* void_a, const void* void_b)
+{
+	const struct snapraid_file* file_a = void_a;
+	const struct snapraid_file* file_b = void_b;
+	if (file_a->inode < file_b->inode)
+		return -1;
+	if (file_a->inode > file_b->inode)
+		return 1;
+	return 0;
+}
+
+int file_alpha_compare(const void* void_a, const void* void_b)
+{
+	const struct snapraid_file* file_a = void_a;
+	const struct snapraid_file* file_b = void_b;
+	return strcmp(file_a->sub, file_b->sub);
+}
+
+int file_physical_compare(const void* void_a, const void* void_b)
+{
+	const struct snapraid_file* file_a = void_a;
+	const struct snapraid_file* file_b = void_b;
+	if (file_a->physical < file_b->physical)
+		return -1;
+	if (file_a->physical > file_b->physical)
 		return 1;
 	return 0;
 }

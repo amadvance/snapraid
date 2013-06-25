@@ -245,7 +245,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 	}
 }
 
-void state_config(struct snapraid_state* state, const char* path, const char* command, int verbose, int gui, int force_zero, int force_empty, int force_uuid, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_sign, int skip_fallocate, int skip_sequential, int skip_device, int force_murmur3, int force_spooky2)
+void state_config(struct snapraid_state* state, const char* path, const char* command, int verbose, int gui, int force_zero, int force_empty, int force_uuid, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_sign, int skip_fallocate, int skip_sequential, int skip_device, int force_murmur3, int force_spooky2, int force_order)
 {
 	STREAM* f;
 	unsigned line;
@@ -266,6 +266,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	state->command = command;
 	state->force_murmur3 = force_murmur3;
 	state->force_spooky2 = force_spooky2;
+	state->force_order = force_order;
 
 	if (state->gui) {
 		fprintf(stdlog, "version:%s\n", PACKAGE_VERSION);
@@ -1202,7 +1203,7 @@ void state_read(struct snapraid_state* state)
 			}
 
 			/* allocate the file */
-			file = file_alloc(state->block_size, sub, v_size, v_mtime_sec, v_mtime_nsec, v_inode);
+			file = file_alloc(state->block_size, sub, v_size, v_mtime_sec, v_mtime_nsec, v_inode, 0);
 
 			/* insert the file in the file containers */
 			tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));

@@ -15,6 +15,8 @@ SnapRAID HISTORY
  * Automatically ignores, with warning, mount points inside the array
    directory tree.
  * Changes the 'dup' output format to include the size of each duplicate file.
+ * When insering files for the first time, sort them by their physical
+   address to improve read performance.
 
 3.1 2013/5
 ==========

@@ -201,6 +201,7 @@ struct snapraid_block {
 struct snapraid_file {
 	int64_t mtime_sec; /**< Modification time. */
 	uint64_t inode; /**< Inode. */
+	uint64_t physical; /**< Physical offset of the file. */
 	data_off_t size; /**< Size of the file. */
 	struct snapraid_block* blockvec; /**< All the blocks of the file. */
 	int mtime_nsec; /**< Modification time nanoseconds. In the range 0 <= x < 1,000,000,000, or FILE_MTIME_NSEC_INVALID. */
@@ -516,7 +517,7 @@ static inline void file_flag_clear(struct snapraid_file* file, unsigned mask)
 /**
  * Allocates a file.
  */
-struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode);
+struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode, uint64_t physical);
 
 /**
  * Deallocates a file.
@@ -536,7 +537,22 @@ const char* file_name(struct snapraid_file* file);
 /**
  * Compares a file with an inode.
  */
-int file_inode_compare(const void* void_arg, const void* void_data);
+int file_inode_compare_to_arg(const void* void_arg, const void* void_data);
+
+/**
+ * Compares files by inode.
+ */
+int file_inode_compare(const void* void_a, const void* void_b);
+
+/**
+ * Compares files by path.
+ */
+int file_alpha_compare(const void* void_a, const void* void_b);
+
+/**
+ * Compares files by physical address.
+ */
+int file_physical_compare(const void* void_a, const void* void_b);
 
 /**
  * Computes the hash of a file inode.

@@ -26,6 +26,11 @@
  */
 extern volatile int global_interrupt;
 
+#define SORT_PHYSICAL 1 /**< Sort by physical order. */
+#define SORT_INODE 2 /**< Sort by inode. */
+#define SORT_ALPHA 3 /**< Sort by alphabetic order. */
+#define SORT_DIR 4 /**< Sort by directory order. */
+
 struct snapraid_state {
 	int verbose; /**< Verbose output. */
 	int gui; /**< Gui output. */
@@ -42,6 +47,7 @@ struct snapraid_state {
 	int skip_sequential; /**< Skip sequential hint. */
 	int force_murmur3; /**< Force Murmur3 choice. */
 	int force_spooky2; /**< Force Spooky2 choice. */
+	int force_order; /**< Force sorting order. */
 	int need_write; /**< If the state is changed. */
 	uint32_t block_size; /**< Block size in bytes. */
 	char parity[PATH_MAX]; /**< Path of the parity file. */
@@ -83,7 +89,7 @@ void state_done(struct snapraid_state* state);
 /**
  * Reads the configuration file.
  */
-void state_config(struct snapraid_state* state, const char* path, const char* command, int verbose, int gui, int force_zero, int force_empty, int force_uuid, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_sign, int skip_fallocate, int skip_sequential, int skip_device, int force_murmur3, int force_spooky2);
+void state_config(struct snapraid_state* state, const char* path, const char* command, int verbose, int gui, int force_zero, int force_empty, int force_uuid, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_sign, int skip_fallocate, int skip_sequential, int skip_device, int force_murmur3, int force_spooky2, int force_order);
 
 /**
  * Reads the state.

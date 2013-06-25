@@ -48,6 +48,21 @@ typedef struct _FILE_ATTRIBUTE_TAG_INFO {
 #define WIN32_ES_AWAYMODE_REQUIRED    0x00000040L
 #define WIN32_ES_CONTINUOUS           0x80000000L
 
+#define FSCTL_GET_RETRIEVAL_POINTERS 0x00090073
+
+typedef struct RETRIEVAL_POINTERS_BUFFER {
+	DWORD ExtentCount;
+	LARGE_INTEGER StartingVcn;
+	struct {
+		LARGE_INTEGER NextVcn;
+		LARGE_INTEGER Lcn;
+	} Extents[1];
+} RETRIEVAL_POINTERS_BUFFER;
+
+typedef struct {
+	LARGE_INTEGER StartingVcn;
+} STARTING_VCN_INPUT_BUFFER;
+
 /**
  * Portable implementation of GetFileInformationByHandleEx.
  * This function is not available in Windows 2000.
@@ -1059,6 +1074,49 @@ int devuuid(uint64_t device, char* uuid, size_t uuid_size)
 	/* just use the volume serial number returned in the device parameter */
 
 	snprintf(uuid, uuid_size, "%08x", (unsigned)device);
+	return 0;
+}
+
+int filephy(const char* file, struct stat* st, uint64_t* physical)
+{
+	HANDLE h;
+	STARTING_VCN_INPUT_BUFFER svib;
+	unsigned char rpb_buffer[sizeof(RETRIEVAL_POINTERS_BUFFER)];
+	RETRIEVAL_POINTERS_BUFFER* rpb = (RETRIEVAL_POINTERS_BUFFER*)&rpb_buffer;
+	DWORD ret;
+	DWORD n;
+
+	/* open the handle of the file */
+	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+	if (h == INVALID_HANDLE_VALUE) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	/* set the output variable, just to be safe */
+	rpb->ExtentCount = 0;
+
+	/* read the physical address */
+	svib.StartingVcn.QuadPart = 0;
+	ret = DeviceIoControl(h, FSCTL_GET_RETRIEVAL_POINTERS, &svib, sizeof(svib), rpb_buffer, sizeof(rpb_buffer), &n, 0);
+	if (ret == 0) {
+		/* we ignore ERROR_MODE_DATA because we are interested only at the first entry */
+		if (GetLastError() != ERROR_MORE_DATA) {
+			windows_errno(GetLastError());
+			CloseHandle(h);
+			return -1;
+		}
+	}
+
+	CloseHandle(h);
+
+	if (rpb->ExtentCount < 1)
+		*physical = 0;
+	else
+		*physical = rpb->Extents[0].Lcn.QuadPart;
+
+	(void)st; /* not used here */
+
 	return 0;
 }
 

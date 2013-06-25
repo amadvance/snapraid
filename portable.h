@@ -70,6 +70,18 @@
 #include <sys/file.h>
 #endif
 
+#if HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif
+
+#if HAVE_LINUX_FS_H
+#include <linux/fs.h>
+#endif
+
+#if HAVE_LINUX_FIEMAP_H
+#include <linux/fiemap.h>
+#endif
+
 #if HAVE_DIRENT_H
 #include <dirent.h>
 #define NAMLEN(dirent) strlen((dirent)->d_name)
@@ -153,6 +165,13 @@ static inline int hardlink(const char* a, const char* b)
  * Returns 0 on success.
  */
 int devuuid(uint64_t device, char* uuid, size_t size);
+
+/**
+ * Get the physcal address of the specified file.
+ * This is expected to be just a hint and not necessarely correct or unique.
+ * Returns 0 on success.
+ */
+int filephy(const char* path, struct stat* st, uint64_t* physical);
 
 /**
  * Initializes the system.

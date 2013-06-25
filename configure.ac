@@ -23,7 +23,8 @@ AC_HEADER_STDC
 AC_HEADER_DIRENT
 AC_HEADER_TIME
 AC_CHECK_HEADERS([fcntl.h stddef.h stdint.h stdlib.h string.h limits.h])
-AC_CHECK_HEADERS([sys/time.h sys/file.h unistd.h getopt.h fnmatch.h io.h inttypes.h byteswap.h])
+AC_CHECK_HEADERS([unistd.h getopt.h fnmatch.h io.h inttypes.h byteswap.h])
+AC_CHECK_HEADERS([sys/time.h sys/file.h sys/ioctl.h linux/fiemap.h linux/fs.h])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST

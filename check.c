@@ -1017,7 +1017,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				inode = handle[j].st.st_ino;
 
 				/* search for the corresponding inode */
-				collide_file = tommy_hashdyn_search(&handle[j].disk->inodeset, file_inode_compare, &inode, file_inode_hash(inode));
+				collide_file = tommy_hashdyn_search(&handle[j].disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
 
 				/* if the inode is already in the database and it refers at a different file name, */
 				/* we can fix the file time ONLY if the time and size allow to differentiates */

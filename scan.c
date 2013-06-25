@@ -270,7 +270,7 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 /**
  * Processes a file.
  */
-static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, int output, struct snapraid_disk* disk, const char* sub, const struct stat* st)
+static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, int output, struct snapraid_disk* disk, const char* sub, const struct stat* st, uint64_t physical)
 {
 	struct snapraid_file* file;
 
@@ -280,7 +280,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 	} else {
 		/* check if the file inode already exists */
 		uint64_t inode = st->st_ino;
-		file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare, &inode, file_inode_hash(inode));
+		file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
 	}
 
 	if (file) {
@@ -346,14 +346,15 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 				state->need_write = 1;
 			} else if (file->inode != st->st_ino) {
 				/* if the inode is different, it means a rewritten file with the same path */
+				/* like when restoring a backup that restores also the time information */
 				++scan->count_moved;
 
 				if (state->gui) {
-					fprintf(stdlog, "scan:move:%s:%s:%s\n", disk->name, file->sub, sub);
+					fprintf(stdlog, "scan:restore:%s:%s\n", disk->name, sub);
 					fflush(stdlog);
 				}
 				if (output) {
-					printf("Move '%s%s' '%s%s'\n", disk->dir, file->sub, disk->dir, sub);
+					printf("Restore '%s%s'\n", disk->dir, sub);
 				}
 
 				/* remove from the set */
@@ -365,7 +366,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 				/* reinsert in the set */
 				tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
 
-				/* we have to save the new name */
+				/* we have to save the new inode */
 				state->need_write = 1;
 			} else {
 				/* otherwise it's equal */
@@ -446,7 +447,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 	}
 
 	/* insert it */
-	file = file_alloc(state->block_size, sub, st->st_size, st->st_mtime, STAT_NSEC(st), st->st_ino);
+	file = file_alloc(state->block_size, sub, st->st_size, st->st_mtime, STAT_NSEC(st), st->st_ino, physical);
 
 	/* mark it as present */
 	file_flag_set(file, FILE_IS_PRESENT);
@@ -591,7 +592,7 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 			exit(EXIT_FAILURE);
 		}
 
-		/* exclude hidden files even beforer calling lstat() */
+		/* exclude hidden files even before calling lstat() */
 		if (filter_hidden(state->filter_hidden, dd) != 0) {
 			if (state->verbose) {
 				printf("Excluding hidden '%s'\n", path_next);
@@ -620,6 +621,8 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 
 		if (S_ISREG(st.st_mode)) {
 			if (filter_path(&state->filterlist, disk->name, sub_next) == 0) {
+				uint64_t physical;
+
 #if HAVE_LSTAT_EX
 				/* get inode info about the file, Windows needs an additional step */
 				/* also for hardlink, the real size of the file is read here */
@@ -628,8 +631,16 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 					exit(EXIT_FAILURE);
 				}
 #endif
+				if (state->force_order == SORT_PHYSICAL) {
+					if (filephy(path_next, &st, &physical) != 0) {
+						fprintf(stderr, "Error in getting the physical offset of file '%s'. %s.\n", path_next, strerror(errno));
+						exit(EXIT_FAILURE);
+					}
+				} else {
+					physical = 0;
+				}
 
-				scan_file(scan, state, output, disk, sub_next, &st);
+				scan_file(scan, state, output, disk, sub_next, &st, physical);
 				processed = 1;
 			} else {
 				if (state->verbose) {
@@ -803,6 +814,22 @@ void state_scan(struct snapraid_state* state, int output)
 
 				scan_emptydir_remove(state, disk, dir);
 			}
+		}
+
+		/* sort the files before inserting them */
+		switch (state->force_order) {
+		case SORT_PHYSICAL :
+			tommy_list_sort(&scan->file_insert_list, file_physical_compare);
+			break;
+		case SORT_INODE :
+			tommy_list_sort(&scan->file_insert_list, file_inode_compare);
+			break;
+		case SORT_ALPHA :
+			tommy_list_sort(&scan->file_insert_list, file_alpha_compare);
+			break;
+		case SORT_DIR :
+			/* already in order */
+			break;
 		}
 
 		/* insert all the new files, we insert them only after the deletion */
