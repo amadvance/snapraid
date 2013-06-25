@@ -483,6 +483,9 @@ int main(int argc, char* argv[])
 			exit(EXIT_FAILURE);
 		}
 	}
+#else
+	(void)test_skip_lock;
+	(void)lock;
 #endif
 
 	/* open the log file */
