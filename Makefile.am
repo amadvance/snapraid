@@ -37,12 +37,14 @@ noinst_HEADERS = \
 	spooky2.c \
 	spooky2test.c \
 	tommyarray.h \
+	tommyarrayof.h \
 	tommychain.h \
 	tommyhash.h \
 	tommyhashdyn.h \
 	tommylist.h \
 	tommytypes.h \
 	tommyarray.c \
+	tommyarrayof.c \
 	tommyhash.c \
 	tommyhashdyn.c \
 	tommylist.c \

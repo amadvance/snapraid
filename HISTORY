@@ -1,7 +1,7 @@
 SnapRAID HISTORY
 ================
 
-3.2 2013/6
+4.0 2013/6
 ==========
  * Better selection of the RAID6 implementation for different CPUs.
  * Added the new Spooky hash. It's faster in 64 bit architectures.

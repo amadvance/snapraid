@@ -3,26 +3,26 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
-- v3.2
+- v4.0
 
-* Allow to specify the shared path to use to access remote symlink.
+* In the content file, for each position in the parity store the last time
+the hash/parity was checked for all the blocks with sync.
+We can share the same time info for all the blocks at a given position.
+It will allow to define a new "scrub" command, checking only aged blocks
+and skipping recently synched ones.
+The "scrub" command won't change data in the disks, but it will update the content
+file.
+The check command should be maintaned independent, and not saving the content file.
+The format could be:
+tim BLOCK TIME
+tir FROM_BLOCK TO_BLOCK TIME
+For missing block, we can use 0 as initialization value. TIME is the UNIX time.
+
+- v4.x
 
 * In the import list, uses also all the blocks in the array.
 But we must cover the case of bad blocks. Likely we can just check the
 hash after reading, and in case, skip it, and retry with another copy.
-
-* Add a new "commit" command to move changes from the pool to the array.
-It should:
-- Move files copied into the pool (that are no links) to the array.
-The files should be moved to the disk that contains most of the files
-in the directory. If no space, try with the disk with less files
-in the directory, and eventually the disk in the array with more free space.
-- Detect renames, and apply them in the array.
-The file will be renamed and moved to the new directory, if changed,
-but kept in the same disk of the array.
-- Detect deletes, and move file in the array to a "/trash/" directory
-of the same disk. For safety no real deletion is done.
-File with the same name will get an extra extension like ".1", ".2".
 
 * If a content file is missing, sync should rewrite it, even if no change was done at the content.
 
@@ -48,21 +48,6 @@ Different partitions have duplicate inode. The only way to support this is to
 add also a kind of device_id, increasing the memory required.
 But it should be only few bits for each file. So, it should be manageable.
 
-- v4.x
-
-* In the content file, for each position in the parity store the last time
-the hash/parity was checked for all the blocks with sync.
-We can share the same time info for all the blocks at a given position.
-It will allow to define a new "scrub" command, checking only aged blocks
-and skipping recently synched ones.
-The "scrub" command won't change data in the disks, but it will update the content
-file.
-The check command should be maintaned independent, and not saving the content file.
-The format could be:
-tim BLOCK TIME
-tir FROM_BLOCK TO_BLOCK TIME
-For missing block, we can use 0 as initialization value. TIME is the UNIX time.
-
 * Save the content file in compressed .gz format to save space.
 
 * Rename sync->backup and fix->restore. It seems to me a naming expressing
@@ -86,6 +71,23 @@ case that the original file cannot be completely recovered.
 We can always open files in read-only mode, if a write is required, we close it,
 rename it to with a .bak extension, and rewrite it up to the required size.
 The same for symlink if a file with the same name exist or viceversa.
+
+- v4.x pooling
+
+* Allow to specify the shared path to use to access remote symlink.
+
+* Add a new "commit" command to move changes from the pool to the array.
+It should:
+- Move files copied into the pool (that are no links) to the array.
+The files should be moved to the disk that contains most of the files
+in the directory. If no space, try with the disk with less files
+in the directory, and eventually the disk in the array with more free space.
+- Detect renames, and apply them in the array.
+The file will be renamed and moved to the new directory, if changed,
+but kept in the same disk of the array.
+- Detect deletes, and move file in the array to a "/trash/" directory
+of the same disk. For safety no real deletion is done.
+File with the same name will get an extra extension like ".1", ".2".
 
 - v5.x
 
