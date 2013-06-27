@@ -9,7 +9,7 @@ AC_CANONICAL_HOST
 dnl Checks for programs.
 AC_PROG_CC
 AC_USE_SYSTEM_EXTENSIONS
-AC_CHECK_PROG([VALGRIND],[valgrind],[valgrind --leak-check=full --track-fds=yes --error-exitcode=1],[])
+AC_CHECK_PROG([VALGRIND],[valgrind],[valgrind],[])
 AC_CHECK_PROG([WINE],[wine],[wine],[])
 AC_CHECK_PROG([ADVD2],[advd2],[advd2],[])
 AM_CONDITIONAL(HAVE_ADVD2, [test x"$ADVD2" != x])
@@ -85,7 +85,15 @@ AC_ARG_ENABLE([coverage],
 AC_ARG_ENABLE([valgrind],
 	[AS_HELP_STRING([--enable-valgrind],[enable the use of valgrind in testing])],
 	[
-	TESTENV="$VALGRIND"
+	TESTENV="$VALGRIND --leak-check=full --track-fds=yes --error-exitcode=1"
+	CFLAGS="$CFLAGS -DCHECKER"
+	],
+	[])
+
+AC_ARG_ENABLE([sgcheck],
+	[AS_HELP_STRING([--enable-sgcheck],[enable the use of sgcheck in testing])],
+	[
+	TESTENV="$VALGRIND --tool=exp-sgcheck --suppressions=sgcheck.supp --error-exitcode=1"
 	CFLAGS="$CFLAGS -DCHECKER"
 	],
 	[])

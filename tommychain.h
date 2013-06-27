@@ -158,8 +158,10 @@ tommy_inline void tommy_chain_mergesort(tommy_chain* chain, tommy_compare_func* 
 	/*
 	 * Bit buckets of chains.
 	 * Each bucket contains 2^i nodes or it's empty.
+	 * The chain at address TOMMY_CHAIN_BIT_MAX is an independet variable operating as "carry".
+	 * We keep it in the same "bit" vector to avoid reports from the valgrind tool sgcheck.
 	 */
-	tommy_chain bit[TOMMY_CHAIN_BIT_MAX];
+	tommy_chain bit[TOMMY_CHAIN_BIT_MAX + 1];
 
 	/**
 	 * Value stored inside the bit bucket.
@@ -174,13 +176,12 @@ tommy_inline void tommy_chain_mergesort(tommy_chain* chain, tommy_compare_func* 
 	counter = 0;
 	while (1) {
 		tommy_node* next;
-		tommy_chain carry;
 		tommy_chain* last;
 
 		/* carry bit to add */
-		last = &carry;
-		carry.head = node;
-		carry.tail = node;
+		last = &bit[TOMMY_CHAIN_BIT_MAX];
+		bit[TOMMY_CHAIN_BIT_MAX].head = node;
+		bit[TOMMY_CHAIN_BIT_MAX].tail = node;
 		next = node->next;
 
 		/* add the bit, propagating the carry */
