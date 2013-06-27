@@ -101,8 +101,8 @@ check-local:
 	echo --- Help
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -h
 	echo --- As empty, sync and check forcing murmur3
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(srcdir)/test-raid6.conf diff
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(srcdir)/test-raid6.conf dup
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf diff
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf dup
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(srcdir)/test-raid6.conf --test-force-murmur3 sync
 if HAVE_SYMLINK
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf pool
