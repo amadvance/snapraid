@@ -211,10 +211,27 @@ int state_status(struct snapraid_state* state)
 
 	printf("\n");
 
-	if (error)
+	if (error) {
 		printf("DANGER! In the array there are %u failing blocks!\n", error);
-	else
+
+		printf("They are:");
+
+		/* print all the errors */
+		for(i=0;i<blockmax;++i) {
+			snapraid_info info = info_get(&state->infoarr, i);
+
+			/* skip unused blocks */
+			if (info == 0)
+				continue;
+			
+			if (info_get_error(info))
+				printf(" %u", i);
+		}
+
+		printf("\n");
+	} else {
 		printf("No silent error detected!\n");
+	}
 
 	/* free the temp vector */
 	free(infomap);
