@@ -286,7 +286,7 @@ int main(int argc, char* argv[])
 			opt.force_uuid = 1;
 			break;
 		case 'N' :
-			opt.find_by_name = 1;
+			opt.force_by_name = 1;
 			break;
 		case 'a' :
 			audit_only = 1;
@@ -404,7 +404,7 @@ int main(int argc, char* argv[])
 	case OPERATION_DIFF :
 		break;
 	default:
-		if (opt.find_by_name) {
+		if (opt.force_by_name) {
 			fprintf(stderr, "You cannot use -N, --find-by-name with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 		}

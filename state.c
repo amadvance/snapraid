@@ -37,6 +37,7 @@ void state_init(struct snapraid_state* state)
 	state->pool_device = 0;
 	state->lockfile[0] = 0;
 	state->level = 1; /* default is the lowest protection */
+	state->loaded_blockmax = 0;
 
 	tommy_list_init(&state->disklist);
 	tommy_list_init(&state->maplist);
@@ -45,7 +46,6 @@ void state_init(struct snapraid_state* state)
 	tommy_list_init(&state->importlist);
 	tommy_hashdyn_init(&state->importset);
 	tommy_arrayof_init(&state->infoarr, sizeof(snapraid_info));
-	state->loaded_blockmax = 0;
 }
 
 void state_done(struct snapraid_state* state)
@@ -1151,7 +1151,7 @@ void state_read(struct snapraid_state* state)
 				hash = oathash32(hash, v_mtime_nsec);
 
 				/* ignore nanoseconds if asked to find by name */
-				if (state->opt.find_by_name)
+				if (state->opt.force_by_name)
 					v_mtime_nsec = FILE_MTIME_NSEC_INVALID;
 
 				c = sgetc(f);

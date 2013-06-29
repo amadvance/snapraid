@@ -274,7 +274,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 {
 	struct snapraid_file* file;
 
-	if (state->opt.find_by_name) {
+	if (state->opt.force_by_name) {
 		/* check if the file path already exists */
 		file = tommy_hashdyn_search(&disk->pathset, file_path_compare, sub, file_path_hash(sub));
 	} else {
