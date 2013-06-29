@@ -185,25 +185,8 @@ void signal_handler(int signal)
 int main(int argc, char* argv[])
 {
 	int c;
-	int verbose;
-	int gui;
-	int force_zero;
-	int force_empty;
-	int force_uuid;
-	int find_by_name;
+	struct snapraid_option opt;
 	int audit_only;
-	int test_kill_after_sync;
-	int test_expect_unrecoverable;
-	int test_expect_recoverable;
-	int test_skip_self;
-	int test_skip_sign;
-	int test_skip_fallocate;
-	int test_skip_sequential;
-	int test_skip_device;
-	int test_force_murmur3;
-	int test_force_spooky2;
-	int test_skip_lock;
-	int test_force_order;
 	const char* conf;
 	struct snapraid_state state;
 	int operation;
@@ -223,25 +206,8 @@ int main(int argc, char* argv[])
 
 	/* defaults */
 	conf = CONF;
-	verbose = 0;
-	gui = 0;
-	force_zero = 0;
-	force_empty = 0;
-	force_uuid = 0;
-	find_by_name = 0;
+	memset(&opt, 0, sizeof(opt));
 	audit_only = 0;
-	test_kill_after_sync = 0;
-	test_expect_unrecoverable = 0;
-	test_expect_recoverable = 0;
-	test_skip_self = 0;
-	test_skip_sign = 0;
-	test_skip_fallocate = 0;
-	test_skip_sequential = 0;
-	test_skip_device = 0;
-	test_force_murmur3 = 0;
-	test_force_spooky2 = 0;
-	test_skip_lock = 0;
-	test_force_order = SORT_PHYSICAL;
 	blockstart = 0;
 	blockcount = 0;
 	tommy_list_init(&filterlist_file);
@@ -311,25 +277,25 @@ int main(int argc, char* argv[])
 			log = optarg;
 			break;
 		case 'Z' :
-			force_zero = 1;
+			opt.force_zero = 1;
 			break;
 		case 'E' :
-			force_empty = 1;
+			opt.force_empty = 1;
 			break;
 		case 'U' :
-			force_uuid = 1;
+			opt.force_uuid = 1;
 			break;
 		case 'N' :
-			find_by_name = 1;
+			opt.find_by_name = 1;
 			break;
 		case 'a' :
 			audit_only = 1;
 			break;
 		case 'v' :
-			verbose = 1;
+			opt.verbose = 1;
 			break;
 		case 'G' :
-			gui = 1;
+			opt.gui = 1;
 			break;
 		case 'h' :
 			usage();
@@ -341,49 +307,49 @@ int main(int argc, char* argv[])
 			speed();
 			exit(EXIT_SUCCESS);
 		case OPT_TEST_KILL_AFTER_SYNC :
-			test_kill_after_sync = 1;
+			opt.kill_after_sync = 1;
 			break;
 		case OPT_TEST_EXPECT_UNRECOVERABLE :
-			test_expect_unrecoverable = 1;
+			opt.expect_unrecoverable = 1;
 			break;
 		case OPT_TEST_EXPECT_RECOVERABLE :
-			test_expect_recoverable = 1;
+			opt.expect_recoverable = 1;
 			break;
 		case OPT_TEST_SKIP_SELF :
-			test_skip_self = 1;
+			opt.skip_self = 1;
 			break;
 		case OPT_TEST_SKIP_SIGN :
-			test_skip_sign = 1;
+			opt.skip_sign = 1;
 			break;
 		case OPT_TEST_SKIP_FALLOCATE :
-			test_skip_fallocate = 1;
+			opt.skip_fallocate = 1;
 			break;
 		case OPT_TEST_SKIP_SEQUENTIAL :
-			test_skip_sequential = 1;
+			opt.skip_sequential = 1;
 			break;
 		case OPT_TEST_SKIP_DEVICE :
-			test_skip_device = 1;
+			opt.skip_device = 1;
 			break;
 		case OPT_TEST_FORCE_MURMUR3 :
-			test_force_murmur3 = 1;
+			opt.force_murmur3 = 1;
 			break;
 		case OPT_TEST_FORCE_SPOOKY2 :
-			test_force_spooky2 = 1;
+			opt.force_spooky2 = 1;
 			break;
 		case OPT_TEST_SKIP_LOCK :
-			test_skip_lock = 1;
+			opt.skip_lock = 1;
 			break;
 		case OPT_TEST_FORCE_ORDER_PHYSICAL :
-			test_force_order = SORT_PHYSICAL;
+			opt.force_order = SORT_PHYSICAL;
 			break;
 		case OPT_TEST_FORCE_ORDER_INODE :
-			test_force_order = SORT_INODE;
+			opt.force_order = SORT_INODE;
 			break;
 		case OPT_TEST_FORCE_ORDER_ALPHA :
-			test_force_order = SORT_ALPHA;
+			opt.force_order = SORT_ALPHA;
 			break;
 		case OPT_TEST_FORCE_ORDER_DIR :
-			test_force_order = SORT_DIR;
+			opt.force_order = SORT_DIR;
 			break;
 		default:
 			fprintf(stderr, "Unknown option '%c'\n", (char)c);
@@ -438,7 +404,7 @@ int main(int argc, char* argv[])
 	case OPERATION_DIFF :
 		break;
 	default:
-		if (find_by_name) {
+		if (opt.find_by_name) {
 			fprintf(stderr, "You cannot use -N, --find-by-name with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 		}
@@ -469,17 +435,17 @@ int main(int argc, char* argv[])
 
 	raid_init();
 
-	if (!test_skip_self)
-		selftest(gui);
+	if (!opt.skip_self)
+		selftest(opt.gui);
 
 	state_init(&state);
 
 	/* read the configuration file */
-	state_config(&state, conf, command, verbose, gui, force_zero, force_empty, force_uuid, find_by_name, test_expect_unrecoverable, test_expect_recoverable, test_skip_sign, test_skip_fallocate, test_skip_sequential, test_skip_device, test_force_murmur3, test_force_spooky2, test_force_order);
+	state_config(&state, conf, command, &opt);
 
 #if HAVE_LOCKFILE
 	/* create the lock file */
-	if (!test_skip_lock) {
+	if (!opt.skip_lock) {
 		lock = lock_lock(state.lockfile);
 		if (lock == -1) {
 			if (errno != EWOULDBLOCK) {
@@ -492,7 +458,6 @@ int main(int argc, char* argv[])
 		}
 	}
 #else
-	(void)test_skip_lock;
 	(void)lock;
 #endif
 
@@ -547,13 +512,13 @@ int main(int argc, char* argv[])
 		/* The worst case is the FAT filesystem with a two seconds resolution for mtime. */
 		/* If you don't use FAT, the wait is not needed, because most filesystems have now */
 		/* at least microseconds resolution, but better to be safe. */
-		if (!test_skip_self)
+		if (!opt.skip_self)
 			sleep(2);
 
 		ret = state_sync(&state, blockstart, blockcount);
 
 		/* save the new state if required */
-		if (!test_kill_after_sync && state.need_write)
+		if (!opt.kill_after_sync && state.need_write)
 			state_write(&state);
 
 		/* abort if required */
@@ -639,7 +604,7 @@ int main(int argc, char* argv[])
 	}
 
 #if HAVE_LOCKFILE
-	if (!test_skip_lock) {
+	if (!opt.skip_lock) {
 		if (lock_unlock(lock) == -1) {
 			fprintf(stderr, "Error closing the lock file '%s'. %s.\n", state.lockfile, strerror(errno));
 			exit(EXIT_FAILURE);

@@ -124,7 +124,7 @@ static int state_rehash_process(struct snapraid_state* state, block_off_t blocks
 				}
 
 				/* open the file only for reading */
-				ret = handle_open(&handle[j], block_file_get(block), stdlog, state->skip_sequential);
+				ret = handle_open(&handle[j], block_file_get(block), stdlog, state->opt.skip_sequential);
 				if (ret == -1) {
 					fprintf(stderr, "DANGER! Unexpected open error in a data disk, it isn't possible to rehash.\n");
 					printf("Stopping at block %u\n", i);

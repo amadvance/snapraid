@@ -109,7 +109,7 @@ static int clean_dir(struct snapraid_state* state, const char* dir)
 			}
 		} else {
 			ignored = 1;
-			if (state->verbose) {
+			if (state->opt.verbose) {
 				printf("Ignoring pool file '%s'\n", path_next);
 			}
 		}
@@ -204,7 +204,7 @@ void state_pool(struct snapraid_state* state)
 		/* we ignore empty dirs in disk->dir */
 	}
 
-	if (!state->gui) {
+	if (!state->opt.gui) {
 		if (count)
 			printf("%u links created\n", count);
 		else

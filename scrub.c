@@ -162,7 +162,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				}
 			}
 
-			ret = handle_open(&handle[j], block_file_get(block), stderr, state->skip_sequential);
+			ret = handle_open(&handle[j], block_file_get(block), stderr, state->opt.skip_sequential);
 			if (ret == -1) {
 				fprintf(stdlog, "error:%u:%s:%s: Open error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 				++error;
@@ -378,7 +378,7 @@ int state_scrub(struct snapraid_state* state)
 
 	/* open the file for reading */
 	parity_ptr = &parity;
-	ret = parity_open(parity_ptr, state->parity, state->skip_sequential);
+	ret = parity_open(parity_ptr, state->parity, state->opt.skip_sequential);
 	if (ret == -1) {
 		fprintf(stderr, "WARNING! Without an accessible Parity file, it isn't possible to scrub.\n");
 		exit(EXIT_FAILURE);
@@ -386,7 +386,7 @@ int state_scrub(struct snapraid_state* state)
 
 	if (state->level >= 2) {
 		qarity_ptr = &qarity;
-		ret = parity_open(qarity_ptr, state->qarity, state->skip_sequential);
+		ret = parity_open(qarity_ptr, state->qarity, state->opt.skip_sequential);
 		if (ret == -1) {
 			fprintf(stderr, "WARNING! Without an accessible Q-Parity file, it isn't possible to scrub.\n");
 			exit(EXIT_FAILURE);

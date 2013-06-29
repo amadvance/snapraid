@@ -31,23 +31,36 @@ extern volatile int global_interrupt;
 #define SORT_ALPHA 3 /**< Sort by alphabetic order. */
 #define SORT_DIR 4 /**< Sort by directory order. */
 
-struct snapraid_state {
+/**
+ * Options set only at startup.
+ * For all these options a value of 0 means nothing set, and to use the default.
+ */
+struct snapraid_option {
 	int verbose; /**< Verbose output. */
 	int gui; /**< Gui output. */
 	int force_zero; /**< Forced dangerous operations of synching files now with zero size. */
 	int force_empty; /**< Forced dangerous operations of synching disks now empty. */
 	int force_uuid; /**< Forced dangerous operations of synching disks with uuid changed. */
-	int filter_hidden; /**< Filter out hidden files. */
 	int find_by_name; /**< Forced dangerous operations of synching a rewritten disk. */
-	uint64_t autosave; /**< Autosave after the specified amount of data. 0 to disable. */
 	int expect_unrecoverable; /**< Expect presence of unrecoverable error in checking or fixing. */
 	int expect_recoverable; /**< Expect presence of recoverable error in checking. */
+	int skip_device; /**< Skip devices matching checks. */
 	int skip_sign; /**< Skip the sign check for content files. */
 	int skip_fallocate; /**< Skip the use of fallocate(). */
 	int skip_sequential; /**< Skip sequential hint. */
+	int skip_lock; /**< Skip the lock file protection. */
+	int skip_self; /**< Skip the self-test. */
+	int kill_after_sync; /**< Kill the process after sync without saving the final state. */
 	int force_murmur3; /**< Force Murmur3 choice. */
 	int force_spooky2; /**< Force Spooky2 choice. */
-	int force_order; /**< Force sorting order. */
+	int force_order; /**< Force sorting order. One of the SORT_* defines. */
+	unsigned force_scrub; /**< Force scrub for the specified number of blocks. */
+};
+
+struct snapraid_state {
+	struct snapraid_option opt; /**< Setup options. */
+	int filter_hidden; /**< Filter out hidden files. */
+	uint64_t autosave; /**< Autosave after the specified amount of data. 0 to disable. */
 	int need_write; /**< If the state is changed. */
 	uint32_t block_size; /**< Block size in bytes. */
 	char parity[PATH_MAX]; /**< Path of the parity file. */
@@ -89,7 +102,7 @@ void state_done(struct snapraid_state* state);
 /**
  * Reads the configuration file.
  */
-void state_config(struct snapraid_state* state, const char* path, const char* command, int verbose, int gui, int force_zero, int force_empty, int force_uuid, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_sign, int skip_fallocate, int skip_sequential, int skip_device, int force_murmur3, int force_spooky2, int force_order);
+void state_config(struct snapraid_state* state, const char* path, const char* command, struct snapraid_option* opt);
 
 /**
  * Reads the state.

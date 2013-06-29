@@ -189,7 +189,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				}
 			}
 
-			ret = handle_open(&handle[j], block_file_get(block), stderr, state->skip_sequential);
+			ret = handle_open(&handle[j], block_file_get(block), stderr, state->opt.skip_sequential);
 			if (ret == -1) {
 				if (errno == ENOENT) {
 					fprintf(stderr, "Missing file '%s'.\n", handle[j].path);
@@ -417,7 +417,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	/* create the file and open for writing */
 	parity_ptr = &parity;
-	ret = parity_create(parity_ptr, state->parity, &out_size, state->skip_sequential);
+	ret = parity_create(parity_ptr, state->parity, &out_size, state->opt.skip_sequential);
 	if (ret == -1) {
 		fprintf(stderr, "WARNING! Without an accessible Parity file, it isn't possible to sync.\n");
 		exit(EXIT_FAILURE);
@@ -429,7 +429,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		exit(EXIT_FAILURE);
 	}
 
-	ret = parity_chsize(parity_ptr, size, &out_size, state->skip_fallocate);
+	ret = parity_chsize(parity_ptr, size, &out_size, state->opt.skip_fallocate);
 	if (ret == -1) {
 		parity_overflow(state, out_size);
 		fprintf(stderr, "WARNING! Without an accessible Parity file, it isn't possible to sync.\n");
@@ -438,7 +438,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	if (state->level >= 2) {
 		qarity_ptr = &qarity;
-		ret = parity_create(qarity_ptr, state->qarity, &out_size, state->skip_sequential);
+		ret = parity_create(qarity_ptr, state->qarity, &out_size, state->opt.skip_sequential);
 		if (ret == -1) {
 			fprintf(stderr, "WARNING! Without an accessible Q-Parity file, it isn't possible to sync.\n");
 			exit(EXIT_FAILURE);
@@ -450,7 +450,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 			exit(EXIT_FAILURE);
 		}
 
-		ret = parity_chsize(qarity_ptr, size, &out_size, state->skip_fallocate);
+		ret = parity_chsize(qarity_ptr, size, &out_size, state->opt.skip_fallocate);
 		if (ret == -1) {
 			parity_overflow(state, out_size);
 			fprintf(stderr, "WARNING! Without an accessible Q-Parity file, it isn't possible to sync.\n");

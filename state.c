@@ -25,18 +25,8 @@
 
 void state_init(struct snapraid_state* state)
 {
-	state->verbose = 0;
-	state->gui = 0;
-	state->force_zero = 0;
-	state->force_empty = 0;
 	state->filter_hidden = 0;
-	state->find_by_name = 0;
 	state->autosave = 0;
-	state->expect_unrecoverable = 0;
-	state->expect_recoverable = 0;
-	state->skip_sign = 0;
-	state->skip_fallocate = 0;
-	state->skip_sequential = 0;
 	state->need_write = 0;
 	state->block_size = 256 * 1024; /* default 256 KiB */
 	state->parity[0] = 0;
@@ -72,7 +62,7 @@ void state_done(struct snapraid_state* state)
 /**
  * Checks the configuration.
  */
-static void state_config_check(struct snapraid_state* state, const char* path, int skip_device)
+static void state_config_check(struct snapraid_state* state, const char* path)
 {
 	tommy_node* i;
 
@@ -102,7 +92,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 	}
 
 	/* check if all the data and parity disks are different */
-	if (!skip_device) {
+	if (!state->opt.skip_device) {
 		unsigned diskcount = 0;
 
 		for(i=state->disklist;i!=0;i=i->next) {
@@ -215,7 +205,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 	}
 
 	/* count the content files */
-	if (!skip_device) {
+	if (!state->opt.skip_device) {
 		unsigned content_count;
 
 		content_count = 0;
@@ -245,30 +235,22 @@ static void state_config_check(struct snapraid_state* state, const char* path, i
 	}
 }
 
-void state_config(struct snapraid_state* state, const char* path, const char* command, int verbose, int gui, int force_zero, int force_empty, int force_uuid, int find_by_name, int expect_unrecoverable, int expect_recoverable, int skip_sign, int skip_fallocate, int skip_sequential, int skip_device, int force_murmur3, int force_spooky2, int force_order)
+void state_config(struct snapraid_state* state, const char* path, const char* command, struct snapraid_option* opt)
 {
 	STREAM* f;
 	unsigned line;
 	tommy_node* i;
 
-	state->verbose = verbose;
-	state->gui = gui;
-	state->force_zero = force_zero;
-	state->force_empty = force_empty;
-	state->force_uuid = force_uuid;
-	state->filter_hidden = 0;
-	state->find_by_name = find_by_name;
-	state->expect_unrecoverable = expect_unrecoverable;
-	state->expect_recoverable = expect_recoverable;
-	state->skip_sign = skip_sign;
-	state->skip_fallocate = skip_fallocate;
-	state->skip_sequential = skip_sequential;
-	state->command = command;
-	state->force_murmur3 = force_murmur3;
-	state->force_spooky2 = force_spooky2;
-	state->force_order = force_order;
+	/* copy the options */
+	state->opt = *opt;
 
-	if (state->gui) {
+	/* if unsed, sort by physical order */
+	if (!state->opt.force_order)
+		state->opt.force_order = SORT_PHYSICAL;
+	
+	state->command = command;
+
+	if (state->opt.gui) {
 		fprintf(stdlog, "version:%s\n", PACKAGE_VERSION);
 		fprintf(stdlog, "conf:%s\n", path);
 		fflush(stdlog);
@@ -621,12 +603,12 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 	sclose(f);
 
-	state_config_check(state, path, skip_device);
+	state_config_check(state, path);
 
 	/* select the default hash */
-	if (state->force_murmur3) {
+	if (state->opt.force_murmur3) {
 		state->besthash = HASH_MURMUR3;
-	} else if (state->force_spooky2) {
+	} else if (state->opt.force_spooky2) {
 		state->besthash = HASH_SPOOKY2;
 	} else {
 #if defined(__i386__) || defined(__x86_64__)
@@ -648,7 +630,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	/* by default use a random hash seed */
 	randomize(state->hashseed, HASH_SIZE);
 
-	if (state->gui) {
+	if (state->opt.gui) {
 		tommy_node* i;
 		fprintf(stdlog, "blocksize:%u\n", state->block_size);
 		for(i=state->disklist;i!=0;i=i->next) {
@@ -790,7 +772,7 @@ static void state_map(struct snapraid_state* state)
 		}
 	}
 
-	if (!state->force_uuid && uuid_mismatch > state->level) {
+	if (!state->opt.force_uuid && uuid_mismatch > state->level) {
 		fprintf(stderr, "Too many disks have UUID changed from the latest 'sync'.\n");
 		fprintf(stderr, "If this happens because you really replaced them,\n");
 		fprintf(stderr, "you can '%s' anyway, using 'snapraid --force-uuid %s'.\n", state->command, state->command);
@@ -858,7 +840,7 @@ void state_read(struct snapraid_state* state)
 		struct snapraid_content* content = node->data;
 		pathcpy(path, sizeof(path), content->content);
 
-		if (state->gui) {
+		if (state->opt.gui) {
 			fprintf(stdlog, "content:%s\n", path);
 			fflush(stdlog);
 		}
@@ -1169,7 +1151,7 @@ void state_read(struct snapraid_state* state)
 				hash = oathash32(hash, v_mtime_nsec);
 
 				/* ignore nanoseconds if asked to find by name */
-				if (state->find_by_name)
+				if (state->opt.find_by_name)
 					v_mtime_nsec = FILE_MTIME_NSEC_INVALID;
 
 				c = sgetc(f);
@@ -1629,7 +1611,7 @@ void state_read(struct snapraid_state* state)
 
 			if (sign != hash) {
 				fprintf(stderr, "Mismatching 'sign' in '%s' at line %u\n", path, line);
-				if (!state->skip_sign) {
+				if (!state->opt.skip_sign) {
 					fprintf(stderr, "Likely this content file is damaged. Use an alternate copy\n");
 					exit(EXIT_FAILURE);
 				}
@@ -1693,7 +1675,7 @@ void state_read(struct snapraid_state* state)
 
 	state_content_check(state, path);
 
-	if (state->verbose) {
+	if (state->opt.verbose) {
 		printf("\tfile %u\n", count_file);
 		printf("\tblock %u\n", count_block);
 		printf("\thardlink %u\n", count_hardlink);
@@ -2096,7 +2078,7 @@ void state_write(struct snapraid_state* state)
 		i = i->next;
 	}
 
-	if (state->verbose) {
+	if (state->opt.verbose) {
 		printf("\tfile %u\n", count_file);
 		printf("\tblock %u\n", count_block);
 		printf("\thardlink %u\n", count_hardlink);
@@ -2117,7 +2099,7 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 
 	printf("Filtering...\n");
 
-	if (state->verbose) {
+	if (state->opt.verbose) {
 		tommy_node* k;
 		for(k=tommy_list_head(filterlist_disk);k!=0;k=k->next) {
 			struct snapraid_filter* filter = k->data;
@@ -2186,7 +2168,7 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 
 void state_progress_begin(struct snapraid_state* state, block_off_t blockstart, block_off_t blockmax, block_off_t countmax)
 {
-	if (state->gui) {
+	if (state->opt.gui) {
 		fprintf(stdlog,"run:begin:%u:%u:%u\n", blockstart, blockmax, countmax);
 		fflush(stdlog);
 	} else {
@@ -2202,7 +2184,7 @@ void state_progress_begin(struct snapraid_state* state, block_off_t blockstart, 
 
 void state_progress_end(struct snapraid_state* state, block_off_t countpos, block_off_t countmax, data_off_t countsize)
 {
-	if (state->gui) {
+	if (state->opt.gui) {
 		fprintf(stdlog, "run:end\n");
 		fflush(stdlog);
 	} else {
@@ -2240,7 +2222,7 @@ void state_progress_restart(struct snapraid_state* state)
 
 int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize)
 {
-	if (state->gui) {
+	if (state->opt.gui) {
 		fprintf(stdlog, "run:pos:%u:%u:%"PRIu64"\n", blockpos, countpos, countsize);
 		fflush(stdlog);
 	} else {
@@ -2276,7 +2258,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 
 	/* stop if requested */
 	if (global_interrupt) {
-		if (!state->gui) {
+		if (!state->opt.gui) {
 			printf("\n");
 			printf("Stopping for interruption at block %u\n", blockpos);
 		}

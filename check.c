@@ -605,7 +605,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				/* if fixing, and the file is not excluded, we must open for writing */
 				if (fix && !file_flag_has(block_file_get(block), FILE_IS_EXCLUDED)) {
 					/* if fixing, create the file, open for writing and resize if required */
-					ret = handle_create(&handle[j], block_file_get(block), state->skip_sequential);
+					ret = handle_create(&handle[j], block_file_get(block), state->opt.skip_sequential);
 					if (ret == -1) {
 						if (errno == EACCES) {
 							fprintf(stderr, "WARNING! Please give write permission to the file.\n");
@@ -636,7 +636,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					}
 				} else {
 					/* if checking or hashing, open the file only for reading */
-					ret = handle_open(&handle[j], block_file_get(block), stdlog, state->skip_sequential);
+					ret = handle_open(&handle[j], block_file_get(block), stdlog, state->opt.skip_sequential);
 					if (ret == -1) {
 						/* save the failed block for the check/fix */
 						failed[failed_count].is_bad = 1;
@@ -992,9 +992,9 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 						goto bail;
 					}
 
-					if (state->gui) {
+					if (state->opt.gui) {
 						fprintf(stdlog, "status:unrecoverable:%s:%s\n", handle[j].disk->name, file->sub);
-					} else if (state->verbose) {
+					} else if (state->opt.verbose) {
 						printf("Unrecoverable '%s'\n", path);
 					}
 
@@ -1008,9 +1008,9 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					goto close_and_continue;
 				}
 
-				if (state->gui) {
+				if (state->opt.gui) {
 					fprintf(stdlog, "status:recovered:%s:%s\n", handle[j].disk->name, file->sub);
-				} else if (state->verbose) {
+				} else if (state->opt.verbose) {
 					printf("Recovered '%s'\n", path);
 				}
 
@@ -1051,28 +1051,28 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				/* print just the final status */
 				if (file_flag_has(file, FILE_IS_DAMAGED)) {
 					if (!check) {
-						if (state->gui) {
+						if (state->opt.gui) {
 							fprintf(stdlog, "status:damaged:%s:%s\n", handle[j].disk->name, file->sub);
-						} else if (state->verbose) {
+						} else if (state->opt.verbose) {
 							printf("Damaged '%s'\n", path);
 						}
 					} else {
-						if (state->gui) {
+						if (state->opt.gui) {
 							fprintf(stdlog, "status:unrecoverable:%s:%s\n", handle[j].disk->name, file->sub);
-						} else if (state->verbose) {
+						} else if (state->opt.verbose) {
 							printf("Unrecoverable '%s'\n", path);
 						}
 					}
 				} else if (file_flag_has(file, FILE_IS_FIXED)) {
-					if (state->gui) {
+					if (state->opt.gui) {
 						fprintf(stdlog, "status:recoverable:%s:%s\n", handle[j].disk->name, file->sub);
-					} else if (state->verbose) {
+					} else if (state->opt.verbose) {
 						printf("Recoverable '%s'\n", path);
 					}
 				} else {
-					if (state->gui) {
+					if (state->opt.gui) {
 						fprintf(stdlog, "status:correct:%s:%s\n", handle[j].disk->name, file->sub);
-					} else if (state->verbose) {
+					} else if (state->opt.verbose) {
 						printf("Correct '%s'\n", path);
 					}
 				}
@@ -1184,9 +1184,9 @@ close_and_continue:
 				fprintf(stdlog, "fixed:%s:%s: Fixed empty file\n", disk->name, file->sub);
 				++recovered_error;
 
-				if (state->gui) {
+				if (state->opt.gui) {
 					fprintf(stdlog, "status:recovered:%s:%s\n", disk->name, file->sub);
-				} else if (state->verbose) {
+				} else if (state->opt.verbose) {
 					printf("Recovered '%s%s'\n", disk->dir, file->sub);
 				}
 			}
@@ -1342,9 +1342,9 @@ close_and_continue:
 					++recovered_error;
 				}
 
-				if (state->gui) {
+				if (state->opt.gui) {
 					fprintf(stdlog, "status:recovered:%s:%s\n", disk->name, link->sub);
-				} else if (state->verbose) {
+				} else if (state->opt.verbose) {
 					printf("Recovered '%s%s'\n", disk->dir, link->sub);
 				}
 			}
@@ -1411,9 +1411,9 @@ close_and_continue:
 				fprintf(stdlog, "dir_fixed:%s:%s: Fixed dir error\n", disk->name, dir->sub);
 				++recovered_error;
 
-				if (state->gui) {
+				if (state->opt.gui) {
 					fprintf(stdlog, "status:ok:%s:%s\n", disk->name, dir->sub);
-				} else if (state->verbose) {
+				} else if (state->opt.verbose) {
 					printf("Recovered '%s%s'\n", disk->dir, dir->sub);
 				}
 			}
@@ -1512,7 +1512,7 @@ bail:
 
 	/* fails if some error are present after the run */
 	if (fix) {
-		if (state->expect_unrecoverable) {
+		if (state->opt.expect_unrecoverable) {
 			if (unrecoverable_error == 0)
 				return -1;
 		} else {
@@ -1520,10 +1520,10 @@ bail:
 				return -1;
 		}
 	} else {
-		if (state->expect_unrecoverable) {
+		if (state->opt.expect_unrecoverable) {
 			if (unrecoverable_error == 0)
 				return -1;
-		} else if (state->expect_recoverable) {
+		} else if (state->opt.expect_recoverable) {
 			if (error == 0)
 				return -1;
 		} else {
@@ -1571,13 +1571,13 @@ int state_check(struct snapraid_state* state, int check, int fix, block_off_t bl
 		/* if fixing, create the file and open for writing */
 		/* if it fails, we cannot continue */
 		parity_ptr = &parity;
-		ret = parity_create(parity_ptr, state->parity, &out_size, state->skip_sequential);
+		ret = parity_create(parity_ptr, state->parity, &out_size, state->opt.skip_sequential);
 		if (ret == -1) {
 			fprintf(stderr, "WARNING! Without an accessible Parity file, it isn't possible to fix any error.\n");
 			exit(EXIT_FAILURE);
 		}
 
-		ret = parity_chsize(parity_ptr, size, &out_size, state->skip_fallocate);
+		ret = parity_chsize(parity_ptr, size, &out_size, state->opt.skip_fallocate);
 		if (ret == -1) {
 			fprintf(stderr, "WARNING! Without an accessible Parity file, it isn't possible to sync.\n");
 			exit(EXIT_FAILURE);
@@ -1585,13 +1585,13 @@ int state_check(struct snapraid_state* state, int check, int fix, block_off_t bl
 
 		if (state->level >= 2) {
 			qarity_ptr = &qarity;
-			ret = parity_create(qarity_ptr, state->qarity, &out_size, state->skip_sequential);
+			ret = parity_create(qarity_ptr, state->qarity, &out_size, state->opt.skip_sequential);
 			if (ret == -1) {
 				fprintf(stderr, "WARNING! Without an accessible Q-Parity file, it isn't possible to fix any error.\n");
 				exit(EXIT_FAILURE);
 			}
 
-			ret = parity_chsize(qarity_ptr, size, &out_size, state->skip_fallocate);
+			ret = parity_chsize(qarity_ptr, size, &out_size, state->opt.skip_fallocate);
 			if (ret == -1) {
 				fprintf(stderr, "WARNING! Without an accessible Q-Parity file, it isn't possible to sync.\n");
 				exit(EXIT_FAILURE);
@@ -1603,7 +1603,7 @@ int state_check(struct snapraid_state* state, int check, int fix, block_off_t bl
 		/* if checking, open the file for reading */
 		/* it may fail if the file doesn't exist, in this case we continue to check the files */
 		parity_ptr = &parity;
-		ret = parity_open(parity_ptr, state->parity, state->skip_sequential);
+		ret = parity_open(parity_ptr, state->parity, state->opt.skip_sequential);
 		if (ret == -1) {
 			printf("No accessible Parity file, only files will be checked.\n");
 			/* continue anyway */
@@ -1612,7 +1612,7 @@ int state_check(struct snapraid_state* state, int check, int fix, block_off_t bl
 
 		if (state->level >= 2) {
 			qarity_ptr = &qarity;
-			ret = parity_open(qarity_ptr, state->qarity, state->skip_sequential);
+			ret = parity_open(qarity_ptr, state->qarity, state->opt.skip_sequential);
 			if (ret == -1) {
 				printf("No accessible Q-Parity file, only files will be checked.\n");
 				/* continue anyway */
