@@ -1237,9 +1237,17 @@ close_and_continue:
 					failed = 1;
 
 					if (errno == ENOENT) {
-						/* if the target doesn't exist, it's unrecoverable */
 						unrecoverable = 1;
-						++unrecoverable_error;
+						if (fix) {
+							/* if the target doesn't exist, it's unrecoverable */
+							/* because we cannot create an hardlink of a file that */
+							/* doesn't exists */
+							++unrecoverable_error;
+						} else {
+							/* but in check, we can assume that fixing will recover */
+							/* such missing file, so we assume a less drastic error */
+							++error;
+						}
 					}
 
 					fprintf(stdlog, "Error stating hardlink-to '%s'. %s.\n", pathto, strerror(errno));
@@ -1524,7 +1532,7 @@ bail:
 			if (unrecoverable_error == 0)
 				return -1;
 		} else if (state->opt.expect_recoverable) {
-			if (error == 0)
+			if (unrecoverable_error != 0 || error == 0)
 				return -1;
 		} else {
 			if (error != 0 || unrecoverable_error != 0)
