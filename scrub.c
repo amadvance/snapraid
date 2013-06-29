@@ -331,11 +331,17 @@ int state_scrub(struct snapraid_state* state)
 
 	blockmax = parity_size(state);
 
-	/* by default scrub 1/12 of the array */
-	countlimit = blockmax / 12;
+	if (state->opt.force_scrub) {
+		/* scrub the specified amount of blocks */
+		countlimit = state->opt.force_scrub;
+		recentlimit = now;
+	} else {
+		/* by default scrub 1/12 of the array */
+		countlimit = blockmax / 12;
 
-	/* by default use a 10 day time limit */
-	recentlimit = now - 10 * 24 * 3600;
+		/* by default use a 10 day time limit */
+		recentlimit = now - 10 * 24 * 3600;
+	}
 
 	/* identify the time limit */
 	/* we sort all the block times, and we identify the time limit for which we reach the quota */

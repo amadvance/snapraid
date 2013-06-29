@@ -158,6 +158,13 @@ endif
 	echo --- Dry
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf dry
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf dry
+	echo --- Scrub some times
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf --test-force-scrub 100 scrub
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf status
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf --test-force-scrub 1000 scrub
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf status
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf --test-force-scrub 10000 scrub
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf status
 	echo --- Make a hole in the disk array
 	mv test/disk2 test/disk2.old
 	mkdir test/disk2

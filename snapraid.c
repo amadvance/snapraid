@@ -91,6 +91,7 @@ void usage(void)
 #define OPT_TEST_FORCE_ORDER_INODE 268
 #define OPT_TEST_FORCE_ORDER_ALPHA 269
 #define OPT_TEST_FORCE_ORDER_DIR 270
+#define OPT_TEST_FORCE_SCRUB 271
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -153,6 +154,9 @@ struct option long_options[] = {
 	{ "test-force-order-inode", 0, 0, OPT_TEST_FORCE_ORDER_INODE },
 	{ "test-force-order-alpha", 0, 0, OPT_TEST_FORCE_ORDER_ALPHA },
 	{ "test-force-order-dir", 0, 0, OPT_TEST_FORCE_ORDER_DIR },
+
+	/* Force scrub of the specified number of blocks */
+	{ "test-force-scrub", 1, 0, OPT_TEST_FORCE_SCRUB },
 
 	{ 0, 0, 0, 0 }
 };
@@ -350,6 +354,9 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_TEST_FORCE_ORDER_DIR :
 			opt.force_order = SORT_DIR;
+			break;
+		case OPT_TEST_FORCE_SCRUB :
+			opt.force_scrub = atoi(optarg);
 			break;
 		default:
 			fprintf(stderr, "Unknown option '%c'\n", (char)c);
