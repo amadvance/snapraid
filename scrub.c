@@ -40,7 +40,6 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	data_off_t countsize;
 	block_off_t countpos;
 	block_off_t countmax;
-	block_off_t blocklimit;
 	block_off_t autosavedone;
 	block_off_t autosavelimit;
 	block_off_t autosavemissing;
@@ -63,7 +62,6 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 	/* first count the number of blocks to process */
 	countmax = 0;
-	blocklimit = blockmax; /* block address for which we should stop */
 	for(i=blockstart;i<blockmax;++i) {
 		time_t blocktime;
 		snapraid_info info;
@@ -81,12 +79,14 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			/* skip it */
 			continue;
 		}
-		if (countmax >= countlimit) {
-			blocklimit = i;
-			break;
-		}
 
 		++countmax;
+
+		if (countmax >= countlimit) {
+			/* if we reached the count limit, recompute the stop address */
+			blockmax = i + 1;
+			break;
+		}
 	}
 
 	/* compute the autosave size for all disk, even if not read */
@@ -99,7 +99,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	countsize = 0;
 	countpos = 0;
 	state_progress_begin(state, blockstart, blockmax, countmax);
-	for(i=blockstart;i<blocklimit;++i) {
+	for(i=blockstart;i<blockmax;++i) {
 		time_t blocktime;
 		snapraid_info info;
 		int error_on_this_block;
@@ -369,11 +369,11 @@ int state_scrub(struct snapraid_state* state)
 	qsort(infomap, count, sizeof(snapraid_info), info_time_compare);
 
 	/* don't check more block than the available ones */
-	if (countlimit >= count)
-		countlimit = count - 1;
+	if (countlimit > count)
+		countlimit = count;
 
 	/* get the time limit */
-	timelimit = info_get_time(infomap[countlimit]);
+	timelimit = info_get_time(infomap[countlimit - 1]);
 
 	/* don't scrub too recent blocks */
 	if (timelimit > recentlimit)
