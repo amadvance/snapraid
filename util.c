@@ -175,6 +175,14 @@ int sclose(STREAM* s)
 	return 0;
 }
 
+int shandle(STREAM* s)
+{
+	if (!s->handle_size)
+		return -1;
+
+	return s->handle[0].f;
+}
+
 int sfill(STREAM* s)
 {
 	ssize_t ret;

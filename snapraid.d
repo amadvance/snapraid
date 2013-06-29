@@ -9,7 +9,7 @@ Synopsis
 	:	[-Z, --force-zero] [-E, --force-empty] [-U, --force-uuid]
 	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	:	[-v, --verbose] [-l, --log FILE]
-	:	sync|pool|diff|dup|check|fix
+	:	sync|status|scrub|diff|dup|pool|check|fix
 
 	:snapraid [-V, --version] [-h, --help]
 
@@ -214,18 +214,28 @@ Commands
 	The "content", "parity" and "q-parity" files are modified if necessary.
 	The files in the array are NOT modified.
 
-  pool
-	Creates or updates in the "pooling" directory a virtual view of all
-	the files of your disk array.
+  status
+	Prints a summary of the state of the disk array.
 
-	The files are not really copied here, but just linked using
-	symbolic links.
+	It includes information about the parity fragmentation, how old
+	are the blocks without checking, and all the recorded silent
+	errors encoutered when scrubbing.
 
-	When updating, all the present symbolic links and empty
-	subdirectories are deleted and replaced with the new
-	view of the array. Any othe regular file is left in place.
+	Nothing is modified.
 
-	Nothing is modified outside the pool directory.
+  scrub
+	Scrubs the array, checking for silent errors.
+
+	For each command invocation, the 12% of the array is checked,
+	but nothing that it's more recent than 10 days.
+
+	The oldest blocks are scrubbed first ensuring an optimal check.
+
+	Any silent error identified is recorded in the content file,
+	and can be listed with the 'status' command.
+
+	The "content" file is modified to update the time of the last check
+	of each block.
 
   diff
 	Lists all the files modified from the last "sync" command that
@@ -238,6 +248,19 @@ Commands
 	hashes are matching. The effective data is not read.
 
 	Nothing is modified.
+
+  pool
+	Creates or updates in the "pooling" directory a virtual view of all
+	the files of your disk array.
+
+	The files are not really copied here, but just linked using
+	symbolic links.
+
+	When updating, all the present symbolic links and empty
+	subdirectories are deleted and replaced with the new
+	view of the array. Any othe regular file is left in place.
+
+	Nothing is modified outside the pool directory.
 
   check
 	Checks all the files and the redundancy data.

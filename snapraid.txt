@@ -13,7 +13,7 @@ snapraid [-c, --conf CONFIG]
 	[-Z, --force-zero] [-E, --force-empty] [-U, --force-uuid]
 	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	[-v, --verbose] [-l, --log FILE]
-	sync|pool|diff|dup|check|fix
+	sync|status|scrub|diff|dup|pool|check|fix
 
 snapraid [-V, --version] [-h, --help]
 
@@ -236,7 +236,50 @@ without losing the work already done.
 The "content", "parity" and "q-parity" files are modified if necessary.
 The files in the array are NOT modified.
 
-5.2 pool
+5.2 status
+----------
+
+Prints a summary of the state of the disk array.
+
+It includes information about the parity fragmentation, how old
+are the blocks without checking, and all the recorded silent
+errors encoutered when scrubbing.
+
+Nothing is modified.
+
+5.3 scrub
+---------
+
+Scrubs the array, checking for silent errors.
+
+For each command invocation, the 12% of the array is checked,
+but nothing that it's more recent than 10 days.
+
+The oldest blocks are scrubbed first ensuring an optimal check.
+
+Any silent error identified is recorded in the content file,
+and can be listed with the 'status' command.
+
+The "content" file is modified to update the time of the last check
+of each block.
+
+5.4 diff
+--------
+
+Lists all the files modified from the last "sync" command that
+have to recompute their redundancy data.
+
+Nothing is modified.
+
+5.5 dup
+-------
+
+Lists all the duplicate files. Two files are assumed equal if their
+hashes are matching. The effective data is not read.
+
+Nothing is modified.
+
+5.6 pool
 --------
 
 Creates or updates in the "pooling" directory a virtual view of all
@@ -251,23 +294,7 @@ view of the array. Any othe regular file is left in place.
 
 Nothing is modified outside the pool directory.
 
-5.3 diff
---------
-
-Lists all the files modified from the last "sync" command that
-have to recompute their redundancy data.
-
-Nothing is modified.
-
-5.4 dup
--------
-
-Lists all the duplicate files. Two files are assumed equal if their
-hashes are matching. The effective data is not read.
-
-Nothing is modified.
-
-5.5 check
+5.7 check
 ---------
 
 Checks all the files and the redundancy data.
@@ -280,7 +307,7 @@ data is checked, and the redundandy data is ignored.
 Files are identified by path, and checked by content.
 Nothing is modified.
 
-5.6 fix
+5.8 fix
 -------
 
 Checks and fix all the files. It's like "check" but it

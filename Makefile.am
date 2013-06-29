@@ -12,6 +12,8 @@ snapraid_SOURCES = \
 	check.c \
 	dry.c \
 	rehash.c \
+	scrub.c \
+	status.c \
 	dup.c \
 	pool.c \
 	parity.c \
@@ -103,7 +105,9 @@ check-local:
 	echo --- As empty, sync and check forcing murmur3
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf diff
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf dup
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(srcdir)/test-raid6.conf --test-force-murmur3 sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf status
 if HAVE_SYMLINK
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf pool
 endif
@@ -114,6 +118,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf diff
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf dup
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf --test-force-order-physical sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf status
 if HAVE_SYMLINK
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf pool
 endif
@@ -140,6 +145,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid5.conf diff
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid5.conf dup
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --test-skip-fallocate -v -c $(srcdir)/test-raid5.conf --test-force-order-inode sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self --test-skip-sequential -c $(srcdir)/test-raid5.conf check
 if HAVE_SYMLINK
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf pool
@@ -417,6 +423,7 @@ endif
 	echo --- Sync after all the fixes
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -v -c $(srcdir)/test-raid6.conf status
 	echo Success!
 
 # Manual testing

@@ -116,7 +116,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
  * \param check If we have to check also the parity.
  * \param fix If we have to fix, after checking. It requires also check==1.
  */
-void state_check(struct snapraid_state* state, int check, int fix, block_off_t blockstart, block_off_t blockcount);
+int state_check(struct snapraid_state* state, int check, int fix, block_off_t blockstart, block_off_t blockcount);
 
 /**
  * Dry the files.
@@ -127,6 +127,16 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
  * Rehash the files.
  */
 void state_rehash(struct snapraid_state* state);
+
+/**
+ * Scrub the files.
+ */
+int state_scrub(struct snapraid_state* state);
+
+/**
+ * Print the status.
+ */
+int state_status(struct snapraid_state* state);
 
 /**
  * Finds duplicates.

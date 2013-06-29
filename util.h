@@ -74,6 +74,12 @@ int sopen_multi_file(STREAM* s, unsigned i, const char* file);
 int sclose(STREAM* s);
 
 /**
+ * Returns the handle of the file.
+ * In case of multi file, the first one is returned.
+ */
+int shandle(STREAM* s);
+
+/**
  * Fills the read stream buffer and read a char.
  * \note Don't call this directly, but use sgetc().
  * \return The char read, or EOF on error.

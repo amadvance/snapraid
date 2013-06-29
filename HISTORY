@@ -1,22 +1,26 @@
 SnapRAID HISTORY
 ================
 
-4.0 2013/6
+4.0 2013/7
 ==========
- * Better selection of the RAID6 implementation for different CPUs.
+ * New 'scrub' command to periodically check the oldest blocks for silent
+   errors without the need to scan the whole array.
+ * New 'status' command to check the fragmentation, the last check time
+   distribution, and the silent error status of the array.
  * Added the new Spooky hash. It's faster in 64 bit architectures.
    To convert you can use the new 'rehash' command.
+ * Added a hash seed to make harder intentional collision attacks.
+ * When insering files for the first time, sort them by their physical
+   address to improve read performance. 
+ * Better selection of the RAID6 implementation for different CPUs.   
  * Added RAID5/RAID6 mmx and sse2 implementations with unrolling by 4.
    They are a little faster than the previous unroll by 2.
- * Added a hash seed to make harder intentional collision attacks.
  * Added a lock file to avoid multiple running instances on the same array.
    The file is named as parity file adding the .lock extension.
    There is also the undocumented --test-skip-lock to avoid to check it.
  * Automatically ignores, with warning, mount points inside the array
    directory tree.
  * Changes the 'dup' output format to include the size of each duplicate file.
- * When insering files for the first time, sort them by their physical
-   address to improve read performance.
 
 3.1 2013/5
 ==========

@@ -596,7 +596,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				/* close the old one, if any */
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
-					fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to sync.\n");
+					fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to check.\n");
 					printf("Stopping at block %u\n", i);
 					++unrecoverable_error;
 					goto bail;
@@ -1535,7 +1535,7 @@ bail:
 	return 0;
 }
 
-void state_check(struct snapraid_state* state, int check, int fix, block_off_t blockstart, block_off_t blockcount)
+int state_check(struct snapraid_state* state, int check, int fix, block_off_t blockstart, block_off_t blockcount)
 {
 	block_off_t blockmax;
 	data_off_t size;
@@ -1668,6 +1668,7 @@ void state_check(struct snapraid_state* state, int check, int fix, block_off_t b
 
 	/* abort if error are present */
 	if (error != 0)
-		exit(EXIT_FAILURE);
+		return -1;
+	return 0;
 }
 

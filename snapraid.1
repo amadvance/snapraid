@@ -30,7 +30,7 @@ snapraid [\(hyc, \(hy\(hyconf CONFIG]
 .PD 0
 .PP
 .PD
-	sync|pool|diff|dup|check|fix
+	sync|status|scrub|diff|dup|pool|check|fix
 .PD 0
 .PP
 .PD
@@ -362,6 +362,37 @@ without losing the work already done.
 .PP
 The \(a"content\(a", \(a"parity\(a" and \(a"q\(hyparity\(a" files are modified if necessary.
 The files in the array are NOT modified.
+.SS status 
+Prints a summary of the state of the disk array.
+.PP
+It includes information about the parity fragmentation, how old
+are the blocks without checking, and all the recorded silent
+errors encoutered when scrubbing.
+.PP
+Nothing is modified.
+.SS scrub 
+Scrubs the array, checking for silent errors.
+.PP
+For each command invocation, the 12% of the array is checked,
+but nothing that it\(cqs more recent than 10 days.
+.PP
+The oldest blocks are scrubbed first ensuring an optimal check.
+.PP
+Any silent error identified is recorded in the content file,
+and can be listed with the \(cqstatus\(cq command.
+.PP
+The \(a"content\(a" file is modified to update the time of the last check
+of each block.
+.SS diff 
+Lists all the files modified from the last \(a"sync\(a" command that
+have to recompute their redundancy data.
+.PP
+Nothing is modified.
+.SS dup 
+Lists all the duplicate files. Two files are assumed equal if their
+hashes are matching. The effective data is not read.
+.PP
+Nothing is modified.
 .SS pool 
 Creates or updates in the \(a"pooling\(a" directory a virtual view of all
 the files of your disk array.
@@ -374,16 +405,6 @@ subdirectories are deleted and replaced with the new
 view of the array. Any othe regular file is left in place.
 .PP
 Nothing is modified outside the pool directory.
-.SS diff 
-Lists all the files modified from the last \(a"sync\(a" command that
-have to recompute their redundancy data.
-.PP
-Nothing is modified.
-.SS dup 
-Lists all the duplicate files. Two files are assumed equal if their
-hashes are matching. The effective data is not read.
-.PP
-Nothing is modified.
 .SS check 
 Checks all the files and the redundancy data.
 All the files are hashed and compared with the snapshot saved

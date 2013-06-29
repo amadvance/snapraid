@@ -315,7 +315,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			}
 
 			/* update the time info of the block */
-			info_set(&state->infoarr, i, info_make(now));
+			info_set(&state->infoarr, i, info_make(now, 0));
 		}
 
 		/* mark the state as needing write */

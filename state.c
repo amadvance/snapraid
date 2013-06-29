@@ -841,6 +841,8 @@ void state_read(struct snapraid_state* state)
 	unsigned count_dir;
 	tommy_node* node;
 	oathash_t hash;
+	struct stat st;
+	int ret;
 
 	count_file = 0;
 	count_block = 0;
@@ -891,6 +893,13 @@ void state_read(struct snapraid_state* state)
 		return;
 	}
 
+	/* get the date of the content file */
+	ret = fstat(shandle(f), &st);
+	if (ret != 0) {
+		fprintf(stderr, "Error stating the content file '%s'. %s.\n", path, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
 	/* start with a undefined default. */
 	/* it's for compatibility with version 1.0 where MD5 was implicit. */
 	state->hash = HASH_UNDEFINED;
@@ -927,6 +936,7 @@ void state_read(struct snapraid_state* state)
 			/* "blk"/"inv"/"new"/"chg" command */
 			block_off_t v_pos;
 			struct snapraid_block* block;
+			snapraid_info info;
 
 			if (!file) {
 				fprintf(stderr, "Unexpected 'blk' specification in '%s' at line %u\n", path, line);
@@ -1008,6 +1018,13 @@ void state_read(struct snapraid_state* state)
 				disk = 0;
 			}
 
+			/* set a fake info block, in case of upgrading from an old version */
+			/* the real block info will overwrite this */
+			info = info_make(st.st_mtime, 0);
+
+			/* insert the block in the block array */
+			info_set(&state->infoarr, v_pos, info);
+
 			/* stat */
 			++count_block;
 		} else if (strcmp(tag, "inf") == 0) {
@@ -1038,7 +1055,7 @@ void state_read(struct snapraid_state* state)
 			}
 			hash = oathash32(hash, t);
 
-			info = info_make(t);
+			info = info_make(t, 0);
 
 			/* insert the block in the block array */
 			info_set(&state->infoarr, v_pos, info);
@@ -1472,6 +1489,38 @@ void state_read(struct snapraid_state* state)
 
 			/* stat */
 			++count_dir;
+		} else if (strcmp(tag, "bad") == 0) {
+			/* "bad" command */
+			block_off_t v_pos;
+			snapraid_info info;
+			uint32_t t;
+
+			hash = oathash8(hash, 'x');
+
+			ret = sgetu32(f, &v_pos);
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'bad' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+			hash = oathash32(hash, v_pos);
+
+			c = sgetc(f);
+			if (c != ' ') {
+				fprintf(stderr, "Invalid 'bad' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetu32(f, &t);
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'bad' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+			hash = oathash32(hash, t);
+
+			info = info_make(t, 1);
+
+			/* insert the block in the block array */
+			info_set(&state->infoarr, v_pos, info);
 		} else if (strcmp(tag, "checksum") == 0) {
 			hash = oathash8(hash, 'c');
 
@@ -1918,6 +1967,10 @@ void state_write(struct snapraid_state* state)
 		/* maximum block */
 		blockmax = tommy_array_size(&disk->blockarr);
 
+		/* keep track of the maximum block for all disk */
+		if (blockmax > infomax)
+			infomax = blockmax;
+
 		/* for each deleted block in the disk */
 		first_deleted = 1;
 		for(b=0;b<blockmax;++b) {
@@ -1940,10 +1993,6 @@ void state_write(struct snapraid_state* state)
 				sputsl("off ", f);
 				hash = oathash8(hash, 'o');
 
-				/* keep track of the maximum block */
-				if (b > infomax)
-					infomax = b;
-
 				sputu32(b, f);
 				hash = oathash32(hash, b);
 
@@ -1960,19 +2009,36 @@ void state_write(struct snapraid_state* state)
 		}
 	}
 
-	/* note that here infomax contains the maximum block for which we wrote something */
-	/* tha could be smaller than of blocks we have in memory, in case of deleted blocks */
-
 	/* for each block */
 	for(b=0;b<infomax;++b) {
 		snapraid_info info;
 
 		info = info_get(&state->infoarr, b);
 
-		/* save only stuff different than 0 */
+		/* check for each disk if block is really used */
+		for(i=state->disklist;i!=0;i=i->next) {
+			struct snapraid_disk* disk = i->data;
+			struct snapraid_block* block;
+
+			block = disk_block_get(disk, b);
+
+			if (block != BLOCK_EMPTY)
+				break;
+		}
+		
+		/* if processed all, it's empty for all */
+		if (i == 0)
+			info = 0;
+
+		/* save only stuffs different than 0 */
 		if (info != 0) {
-			sputsl("inf ", f);
-			hash = oathash8(hash, 'i');
+			if (info_get_error(info)) {
+				sputsl("bad ", f);
+				hash = oathash8(hash, 'x');
+			} else {
+				sputsl("inf ", f);
+				hash = oathash8(hash, 'i');
+			}
 
 			sputu32(b, f);
 			hash = oathash32(hash, b);

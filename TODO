@@ -130,16 +130,3 @@ Use the "snapraid -T" comment to see the speed.
 Also, all the file operations are already done in background by the OS,
 so no improvement is expect from this side.
 
-* The SSE2 RAID6 computation may be slower than the MMX version.
-See for example this case on a AMD Zacate APU E-350 1.6GHz:
-memset 1812 [MB/s]
-MD5 252 [MB/s]
-Murmur3 1116 [MB/s]
-RAID5 int32x2 1692 [MB/s]
-RAID5 mmxx2 1745 [MB/s]
-RAID5 sse2x2 2481 [MB/s]
-RAID6 int32x2 807 [MB/s]
-RAID6 mmxx2 1304 [MB/s]
-RAID6 sse2x2 787 [MB/s]
-- It happens in some systems. At now not an high priority issue.
-

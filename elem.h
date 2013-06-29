@@ -698,10 +698,39 @@ void map_free(struct snapraid_map* map);
 /**
  * Makes an info.
  */
-static inline snapraid_info info_make(time_t last_access)
+static inline snapraid_info info_make(time_t last_access, int error)
 {
-	/* clear the lowest bit as reserved for the hash type */
-	return last_access & ~0x1;
+	/* clear the lowest bits as reserved for other information */
+	snapraid_info info = last_access & ~0x1;
+	if (error != 0)
+		info |= 1;
+	return info;
+}
+
+/**
+ * Extract the time information.
+ * This is the last time when the block was know to be correct.
+ */
+static inline time_t info_get_time(snapraid_info info)
+{
+	return info & ~0x1;
+}
+
+/**
+ * Extract the error information.
+ * This report if the block address is reporting to have some problem.
+ */
+static inline int info_get_error(snapraid_info info)
+{
+	return (info & 0x1) != 0;
+}
+
+/**
+ * Mark the block address as with error.
+ */
+static inline snapraid_info info_set_error(snapraid_info info)
+{
+	return info | 0x1;
 }
 
 /**
@@ -730,6 +759,11 @@ static inline snapraid_info info_get(tommy_arrayof* array, unsigned pos)
 
 	return info;
 }
+
+/**
+ * Compares info by time.
+ */
+int info_time_compare(const void* void_a, const void* void_b);
 
 #endif
 

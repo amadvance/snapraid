@@ -45,13 +45,15 @@ void usage(void)
 {
 	version();
 
-	printf("Usage: " PACKAGE " sync|pool|diff|dup|check|fix [options]\n");
+	printf("Usage: " PACKAGE " sync|status|scrub|diff|dup|pool|check|fix [options]\n");
 	printf("\n");
 	printf("Commands:\n");
 	printf("  sync   Syncronize the state of the array of disks\n");
 	printf("  pool   Create or update the virtual view of the array of disks\n");
 	printf("  diff   Show the changes that needs to be syncronized\n");
 	printf("  dup    Find duplicate files\n");
+	printf("  scrub  Scrub the array of disks\n");
+	printf("  status Print the status of the array\n");
 	printf("  check  Check the array of disks\n");
 	printf("  fix    Fix the array of disks\n");
 	printf("\n");
@@ -177,6 +179,8 @@ void signal_handler(int signal)
 #define OPERATION_DUP 5
 #define OPERATION_POOL 6
 #define OPERATION_REHASH 7
+#define OPERATION_SCRUB 8
+#define OPERATION_STATUS 9
 
 int main(int argc, char* argv[])
 {
@@ -399,16 +403,20 @@ int main(int argc, char* argv[])
 		operation = OPERATION_SYNC;
 	} else if (strcmp(argv[optind], "check") == 0) {
 		operation = OPERATION_CHECK;
-	} else  if (strcmp(argv[optind], "fix") == 0) {
+	} else if (strcmp(argv[optind], "fix") == 0) {
 		operation = OPERATION_FIX;
-	} else  if (strcmp(argv[optind], "dry") == 0) {
+	} else if (strcmp(argv[optind], "dry") == 0) {
 		operation = OPERATION_DRY;
-	} else  if (strcmp(argv[optind], "dup") == 0) {
+	} else if (strcmp(argv[optind], "dup") == 0) {
 		operation = OPERATION_DUP;
-	} else  if (strcmp(argv[optind], "pool") == 0) {
+	} else if (strcmp(argv[optind], "pool") == 0) {
 		operation = OPERATION_POOL;
-	} else  if (strcmp(argv[optind], "rehash") == 0) {
+	} else if (strcmp(argv[optind], "rehash") == 0) {
 		operation = OPERATION_REHASH;
+	} else if (strcmp(argv[optind], "scrub") == 0) {
+		operation = OPERATION_SCRUB;
+	} else if (strcmp(argv[optind], "status") == 0) {
+		operation = OPERATION_STATUS;
 	} else {
 		fprintf(stderr, "Unknown command '%s'\n", argv[optind]);
 		exit(EXIT_FAILURE);
@@ -548,7 +556,7 @@ int main(int argc, char* argv[])
 		if (!test_kill_after_sync && state.need_write)
 			state_write(&state);
 
-		/* abort if required by the sync command */
+		/* abort if required */
 		if (ret == -1)
 			exit(EXIT_FAILURE);
 	} else if (operation == OPERATION_DRY) {
@@ -572,6 +580,25 @@ int main(int argc, char* argv[])
 		/* save the new state if required */
 		if (state.need_write)
 			state_write(&state);
+	} else if (operation == OPERATION_SCRUB) {
+		state_read(&state);
+
+		/* intercept Ctrl+C */
+		signal(SIGINT, &signal_handler);
+
+		ret = state_scrub(&state);
+
+		/* save the new state if required */
+		if (state.need_write)
+			state_write(&state);
+
+		/* abort if required */
+		if (ret != 0)
+			exit(EXIT_FAILURE);
+	} else if (operation == OPERATION_STATUS) {
+		state_read(&state);
+
+		state_status(&state);
 	} else if (operation == OPERATION_DUP) {
 		state_read(&state);
 
@@ -593,10 +620,14 @@ int main(int argc, char* argv[])
 		signal(SIGINT, &signal_handler);
 
 		if (operation == OPERATION_CHECK) {
-			state_check(&state, !audit_only, 0, blockstart, blockcount);
+			ret = state_check(&state, !audit_only, 0, blockstart, blockcount);
 		} else { /* it's fix */
-			state_check(&state, 1, 1, blockstart, blockcount);
+			ret = state_check(&state, 1, 1, blockstart, blockcount);
 		}
+
+		/* abort if required */
+		if (ret != 0)
+			exit(EXIT_FAILURE);
 	}
 
 	/* close log file */

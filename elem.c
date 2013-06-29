@@ -542,3 +542,16 @@ void map_free(struct snapraid_map* map)
 	free(map);
 }
 
+int info_time_compare(const void* void_a, const void* void_b)
+{
+	const snapraid_info* info_a = void_a;
+	const snapraid_info* info_b = void_b;
+	time_t time_a = info_get_time(*info_a);
+	time_t time_b = info_get_time(*info_b);
+	if (time_a < time_b)
+		return -1;
+	if (time_a > time_b)
+		return 1;
+	return 0;
+}
+
