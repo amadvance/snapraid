@@ -41,8 +41,9 @@ int state_status(struct snapraid_state* state)
 	block_off_t i;
 	snapraid_info* infomap;
 	time_t now;
-	unsigned error;
-	unsigned count;
+	block_off_t bad;
+	block_off_t rehash;
+	block_off_t count;
 	unsigned dayoldest, daymedian, daynewest;
 	unsigned bar[GRAPH_COLUMN];
 	unsigned barpos;
@@ -117,8 +118,9 @@ int state_status(struct snapraid_state* state)
 	infomap = malloc_nofail(blockmax * sizeof(snapraid_info));
 
 	/* copy the info in the temp vector */
-	error = 0;
+	bad = 0;
 	count = 0;
+	rehash = 0;
 	for(i=0;i<blockmax;++i) {
 		snapraid_info info = info_get(&state->infoarr, i);
 
@@ -126,8 +128,11 @@ int state_status(struct snapraid_state* state)
 		if (info == 0)
 			continue;
 			
-		if (info_get_error(info))
-			++error;
+		if (info_get_bad(info))
+			++bad;
+
+		if (info_get_rehash(info))
+			++rehash;
 
 		infomap[count++] = info;
 	}
@@ -136,6 +141,11 @@ int state_status(struct snapraid_state* state)
 		fprintf(stderr, "The array appears to be empty.\n");
 		free(infomap);
 		return 0;
+	}
+
+	if (rehash) {
+		printf("You have a rehash scheduled at %u%%.\n", rehash * 100 / count);
+		printf("\n");
 	}
 
 	/* sort it */
@@ -211,8 +221,8 @@ int state_status(struct snapraid_state* state)
 
 	printf("\n");
 
-	if (error) {
-		printf("DANGER! In the array there are %u failing blocks!\n", error);
+	if (bad) {
+		printf("DANGER! In the array there are %u failing blocks!\n", bad);
 
 		printf("They are:");
 
@@ -224,7 +234,7 @@ int state_status(struct snapraid_state* state)
 			if (info == 0)
 				continue;
 			
-			if (info_get_error(info))
+			if (info_get_bad(info))
 				printf(" %u", i);
 		}
 

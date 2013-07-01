@@ -25,15 +25,23 @@
 /**
  * Compares the hash of two import blocks.
  */
-int import_block_compare(const void* void_arg, const void* void_data)
+int import_block_hash_compare(const void* void_arg, const void* void_data)
 {
 	const unsigned char* arg = void_arg;
 	const struct snapraid_import_block* block = void_data;
 	return memcmp(arg, block->hash, HASH_SIZE);
 }
 
+int import_block_prevhash_compare(const void* void_arg, const void* void_data)
+{
+	const unsigned char* arg = void_arg;
+	const struct snapraid_import_block* block = void_data;
+	return memcmp(arg, block->prevhash, HASH_SIZE);
+}
+
 /**
  * Computes the hash of the hash for an import block.
+ * We just use the first 32 bit of the hash itself.
  */
 static inline tommy_uint32_t import_block_hash(const unsigned char* hash)
 {
@@ -97,9 +105,16 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 		block->file = file;
 		block->offset = offset;
 		block->size = read_size;
-		memhash(state->hash, state->hashseed, block->hash, buffer, read_size);
 
+		memhash(state->hash, state->hashseed, block->hash, buffer, read_size);
 		tommy_hashdyn_insert(&state->importset, &block->nodeset, block, import_block_hash(block->hash));
+
+		/* if we are in a rehash state */
+		if (state->prevhash != HASH_UNDEFINED) {
+			/* compute also the previous hash */
+			memhash(state->prevhash, state->prevhashseed, block->prevhash, buffer, read_size);
+			tommy_hashdyn_insert(&state->previmportset, &block->prevnodeset, block, import_block_hash(block->prevhash));
+		}
 
 		offset += read_size;
 		size -= read_size;
@@ -123,7 +138,7 @@ void import_file_free(struct snapraid_import_file* file)
 	free(file);
 }
 
-int state_import_fetch(struct snapraid_state* state, const unsigned char* hash, unsigned char* buffer)
+int state_import_fetch(struct snapraid_state* state, int rehash, const unsigned char* hash, unsigned char* buffer)
 {
 	struct snapraid_import_block* block;
 	int ret;
@@ -133,7 +148,11 @@ int state_import_fetch(struct snapraid_state* state, const unsigned char* hash, 
 	unsigned char buffer_hash[HASH_SIZE];
 	const char* path;
 
-	block = tommy_hashdyn_search(&state->importset, import_block_compare, hash, import_block_hash(hash));
+	if (rehash) {
+		block = tommy_hashdyn_search(&state->previmportset, import_block_prevhash_compare, hash, import_block_hash(hash));
+	} else {
+		block = tommy_hashdyn_search(&state->importset, import_block_hash_compare, hash, import_block_hash(hash));
+	}
 	if (!block)
 		return -1;
 
@@ -169,7 +188,10 @@ int state_import_fetch(struct snapraid_state* state, const unsigned char* hash, 
 	}
 
 	/* recheck the hash */
-	memhash(state->hash, state->hashseed, buffer_hash, buffer, read_size);
+	if (rehash)
+		memhash(state->prevhash, state->prevhashseed, buffer_hash, buffer, read_size);
+	else
+		memhash(state->hash, state->hashseed, buffer_hash, buffer, read_size);
 
 	if (memcmp(buffer_hash, hash, HASH_SIZE) != 0) {
 		fprintf(stderr, "Error in data reading file '%s'.\n", path);

@@ -698,12 +698,14 @@ void map_free(struct snapraid_map* map);
 /**
  * Makes an info.
  */
-static inline snapraid_info info_make(time_t last_access, int error)
+static inline snapraid_info info_make(time_t last_access, int error, int rehash)
 {
 	/* clear the lowest bits as reserved for other information */
-	snapraid_info info = last_access & ~0x1;
+	snapraid_info info = last_access & ~0x3;
 	if (error != 0)
-		info |= 1;
+		info |= 0x1;
+	if (rehash != 0)
+		info |= 0x2;
 	return info;
 }
 
@@ -713,24 +715,42 @@ static inline snapraid_info info_make(time_t last_access, int error)
  */
 static inline time_t info_get_time(snapraid_info info)
 {
-	return info & ~0x1;
+	return info & ~0x3;
 }
 
 /**
  * Extract the error information.
  * This report if the block address is reporting to have some problem.
  */
-static inline int info_get_error(snapraid_info info)
+static inline int info_get_bad(snapraid_info info)
 {
 	return (info & 0x1) != 0;
 }
 
 /**
+ * Extract the error information.
+ * This report if the block address is reporting to have some problem.
+ */
+static inline int info_get_rehash(snapraid_info info)
+{
+	return (info & 0x2) != 0;
+}
+
+/**
  * Mark the block address as with error.
  */
-static inline snapraid_info info_set_error(snapraid_info info)
+static inline snapraid_info info_set_bad(snapraid_info info)
 {
 	return info | 0x1;
+}
+
+
+/**
+ * Mark the block address as with rehash.
+ */
+static inline snapraid_info info_set_rehash(snapraid_info info)
+{
+	return info | 0x2;
 }
 
 /**

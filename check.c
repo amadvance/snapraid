@@ -60,7 +60,7 @@ struct failed_struct {
  * Checks if a block hash matches the specified buffer.
  * Return ==0 if equal
  */
-static int blockcmp(struct snapraid_state* state, struct snapraid_block* block, unsigned char* buffer, unsigned char* buffer_zero)
+static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_block* block, unsigned char* buffer, unsigned char* buffer_zero)
 {
 	unsigned char hash[HASH_SIZE];
 	unsigned size;
@@ -68,7 +68,11 @@ static int blockcmp(struct snapraid_state* state, struct snapraid_block* block, 
 	size = block_file_size(block, state->block_size);
 
 	/* now compute the hash of the valid part */
-	memhash(state->hash, state->hashseed, hash, buffer, size);
+	if (rehash) {
+		memhash(state->prevhash, state->prevhashseed, hash, buffer, size);
+	} else {
+		memhash(state->hash, state->hashseed, hash, buffer, size);
+	}
 
 	/* compare the hash */
 	if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
@@ -90,7 +94,7 @@ static int blockcmp(struct snapraid_state* state, struct snapraid_block* block, 
  * Returns <0 if failure for missing strategy, >0 if data is wrong and we cannot rebuild correctly, 0 on success.
  * If success, the parity and qarity are computed in the buffer variable.
  */
-static int repair_step(struct snapraid_state* state, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, unsigned char** buffer, unsigned char* buffer_parity, unsigned char* buffer_qarity, unsigned char* buffer_zero)
+static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, unsigned char** buffer, unsigned char* buffer_parity, unsigned char* buffer_qarity, unsigned char* buffer_zero)
 {
 	unsigned j;
 	int error = 0;
@@ -126,7 +130,7 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 		for(j=0;j<1;++j) {
 			if (block_has_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
 				hash_checked = 1;
-				if (blockcmp(state, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
+				if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
 					break;
 			}
 		}
@@ -156,7 +160,7 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 		for(j=0;j<1;++j) {
 			if (block_has_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
 				hash_checked = 1;
-				if (blockcmp(state, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
+				if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
 					break;
 			}
 		}
@@ -206,7 +210,7 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 		for(j=0;j<2;++j) {
 			if (block_has_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
 				hash_checked = 1;
-				if (blockcmp(state, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
+				if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
 					break;
 			}
 		}
@@ -229,7 +233,7 @@ static int repair_step(struct snapraid_state* state, unsigned pos, unsigned disk
 		return -1;
 }
 
-static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, unsigned char** buffer, unsigned char* buffer_parity, unsigned char* buffer_qarity, unsigned char* buffer_zero)
+static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, unsigned char** buffer, unsigned char* buffer_parity, unsigned char* buffer_qarity, unsigned char* buffer_zero)
 {
 	int ret;
 	int error;
@@ -263,7 +267,7 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 
 			if (block_state == BLOCK_STATE_BLK) { /* if we have the hash for it */
 				/* try to fetch the block using the hash */
-				if (state_import_fetch(state, failed[j].block->hash, buffer[failed[j].index]) == 0) {
+				if (state_import_fetch(state, rehash, failed[j].block->hash, buffer[failed[j].index]) == 0) {
 					/* we have corrected it! */
 				} else {
 					/* otherwise try to recover it */
@@ -293,7 +297,7 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 		return 0;
 	}
 
-	ret = repair_step(state, pos, diskmax, failed, failed_map, n, buffer, buffer_parity, buffer_qarity, buffer_zero);
+	ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_parity, buffer_qarity, buffer_zero);
 	if (ret == 0) {
 		/* reprocess the blocks for NEW and CHG ones, for which we don't have a hash to check */
 		/* if they were BAD we have to use some euristics to ensure that we have recovered  */
@@ -327,7 +331,7 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 					/* instead, if the hash matches, it could be either that the */
 					/* block after the sync has this hash, or that */
 					/* we restored the block before the 'sync'. */
-					if (blockcmp(state, failed[j].block, buffer[failed[j].index], buffer_zero) == 0) {
+					if (blockcmp(state, rehash, failed[j].block, buffer[failed[j].index], buffer_zero) == 0) {
 						/* it may contain garbage */
 						failed[j].is_outofdate = 1;
 					}
@@ -365,7 +369,7 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 			/* we are not really interseted in DELETED and CHG (old version) ones. */
 
 			/* try to fetch the old block using the old hash */
-			if (state_import_fetch(state, failed[j].block->hash, buffer[failed[j].index]) == 0) {
+			if (state_import_fetch(state, rehash, failed[j].block->hash, buffer[failed[j].index]) == 0) {
 				/* note that from now the buffer is definitively lost */
 				/* we can do this only because it's the last retry of recovering */
 			} else {
@@ -410,7 +414,7 @@ static int repair(struct snapraid_state* state, unsigned pos, unsigned diskmax, 
 
 	/* if nothing to fix, we just don't try */
 	if (something_to_recover) {
-		ret = repair_step(state, pos, diskmax, failed, failed_map, n, buffer, buffer_parity, buffer_qarity, buffer_zero);
+		ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_parity, buffer_qarity, buffer_zero);
 		if (ret == 0) {
 			/* we alreay marked as outdated NEW and CHG blocks, we don't need to do it again */
 			return 0;
@@ -502,6 +506,8 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 		unsigned failed_count;
 		int one_tocheck;
 		int valid_parity;
+		snapraid_info info;
+		int rehash;
 
 		/* for each disk */
 		one_tocheck = 0;
@@ -533,6 +539,10 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 		/* keep track of the number of failed blocks */
 		failed_count = 0;
+
+		/* if we have to use the old hash */
+		info = info_get(&state->infoarr, i);
+		rehash = info_get_rehash(info);
 
 		/* for each disk, process the block */
 		for(j=0;j<diskmax;++j) {
@@ -700,7 +710,11 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			/* if the block has the hash */
 			if (block_state == BLOCK_STATE_BLK) {
 				/* compute the hash of the block just read */
-				memhash(state->hash, state->hashseed, hash, buffer[j], read_size);
+				if (rehash) {
+					memhash(state->prevhash, state->prevhashseed, hash, buffer[j], read_size);
+				} else {
+					memhash(state->hash, state->hashseed, hash, buffer[j], read_size);
+				}
 
 				/* compare the hash */
 				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
@@ -764,7 +778,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			}
 
 			/* try all the recovering strategies */
-			ret = repair(state, i, diskmax, failed, failed_map, failed_count, buffer, buffer_parity, buffer_qarity, buffer_zero);
+			ret = repair(state, rehash, i, diskmax, failed, failed_map, failed_count, buffer, buffer_parity, buffer_qarity, buffer_zero);
 			if (ret != 0) {
 				/* increment the number of errors */
 				if (ret > 0)

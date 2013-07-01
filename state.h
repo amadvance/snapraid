@@ -55,6 +55,7 @@ struct snapraid_option {
 	int force_spooky2; /**< Force Spooky2 choice. */
 	int force_order; /**< Force sorting order. One of the SORT_* defines. */
 	unsigned force_scrub; /**< Force scrub for the specified number of blocks. */
+	int force_scrub_even; /**< Force scrub of all the even blocks. */
 };
 
 struct snapraid_state {
@@ -70,9 +71,11 @@ struct snapraid_state {
 	char pool[PATH_MAX]; /**< Path of the pool tree. */
 	uint64_t pool_device; /**< Device identifier of the pool. */
 	unsigned char hashseed[HASH_SIZE]; /**< Hash seed. Just after a uint64 to provide a minimal alignment. */
+	unsigned char prevhashseed[HASH_SIZE]; /**< Previous hash seed. In case of rehash. */
 	char lockfile[PATH_MAX]; /**< Path of the lock file to use. */
 	unsigned level; /**< Number of parity levels. 1 for RAID5, 2 for RAID6. */
 	unsigned hash; /**< Hash kind used. */
+	unsigned prevhash; /**< Previous hash kind used.  In case of rehash. */
 	unsigned besthash; /**< Best hash suggested. */
 	const char* command; /**< Command running. */
 	tommy_list contentlist; /**< List of content files. */
@@ -81,6 +84,7 @@ struct snapraid_state {
 	tommy_list filterlist; /**< List of inclusion/exclusion. */
 	tommy_list importlist; /**< List of import file. */
 	tommy_hashdyn importset; /**< Hashtable by hash of all the import blocks. */
+	tommy_hashdyn previmportset; /**< Hashtable by prevhash of all the import blocks. Valid only if we are in a rehash state. */
 	tommy_arrayof infoarr; /**< Block information array. */
 	block_off_t loaded_blockmax; /**< Previous size of the parity file, computed from the loaded state. */
 	time_t progress_start; /**< Start of processing for progress visualization. */

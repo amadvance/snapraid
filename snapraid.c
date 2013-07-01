@@ -92,6 +92,7 @@ void usage(void)
 #define OPT_TEST_FORCE_ORDER_ALPHA 269
 #define OPT_TEST_FORCE_ORDER_DIR 270
 #define OPT_TEST_FORCE_SCRUB 271
+#define OPT_TEST_FORCE_SCRUB_EVEN 272
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -157,6 +158,9 @@ struct option long_options[] = {
 
 	/* Force scrub of the specified number of blocks */
 	{ "test-force-scrub", 1, 0, OPT_TEST_FORCE_SCRUB },
+
+	/* Force scrub of all the even blocks. This is really for testing, don't try it. */
+	{ "test-force-scrub-even", 0, 0, OPT_TEST_FORCE_SCRUB_EVEN },
 
 	{ 0, 0, 0, 0 }
 };
@@ -357,6 +361,9 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_TEST_FORCE_SCRUB :
 			opt.force_scrub = atoi(optarg);
+			break;
+		case OPT_TEST_FORCE_SCRUB_EVEN :
+			opt.force_scrub_even = 1;
 			break;
 		default:
 			fprintf(stderr, "Unknown option '%c'\n", (char)c);

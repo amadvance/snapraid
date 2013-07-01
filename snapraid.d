@@ -9,7 +9,7 @@ Synopsis
 	:	[-Z, --force-zero] [-E, --force-empty] [-U, --force-uuid]
 	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	:	[-v, --verbose] [-l, --log FILE]
-	:	sync|status|scrub|diff|dup|pool|check|fix
+	:	sync|status|scrub|diff|dup|pool|check|fix|rehash
 
 	:snapraid [-V, --version] [-h, --help]
 
@@ -287,6 +287,22 @@ Commands
 	The "content" file is NOT modified.
 	The "parity" and "q-parity" files are modified if necessary.
 	The files in the array are modified if necessary.
+
+  rehash
+	Schedules a rehash of the whole array.
+
+	This option can be used to change the hash kind used,
+	typically when upgrading from a 32 bits system to a 64
+	bits one to switch from the murmur3 to the faster spooky2.
+
+	The rehash isn't done immediately, but it will take place
+	incrementally during the "sync" and "scrub" commands.
+
+	You can get the rehash status using the "status" command.
+
+	During the rehash, SnapRAID maintains full functionality,
+	with the only expection of the 'dup' command not able to detect
+	duplicated files using a different hash.
 
 Options
 	SnapRAID provides the following options:

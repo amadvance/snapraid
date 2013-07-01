@@ -27,9 +27,19 @@
 /****************************************************************************/
 /* scrub */
 
+/**
+ * Buffer for storing the new hashes.
+ */
+struct snapraid_rehash {
+	unsigned char hash[HASH_SIZE];
+	struct snapraid_block* block;
+};
+
 static int state_scrub_process(struct snapraid_state* state, struct snapraid_parity* parity, struct snapraid_parity* qarity, block_off_t blockstart, block_off_t blockmax, time_t timelimit, block_off_t countlimit, time_t now)
 {
 	struct snapraid_handle* handle;
+	void* rehandle_alloc;
+	struct snapraid_rehash* rehandle;
 	unsigned diskmax;
 	block_off_t i;
 	unsigned j;
@@ -48,6 +58,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 	/* maps the disks to handles */
 	handle = handle_map(state, &diskmax);
+
+	/* rehash buffers */
+	rehandle = malloc_nofail_align(diskmax * sizeof(struct snapraid_rehash), &rehandle_alloc);
 
 	/* we need disk + 2 for each parity level buffers */
 	buffermax = diskmax + state->level * 2;
@@ -80,6 +93,12 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			continue;
 		}
 
+		/* skip odd blocks, used only for testing */
+		if (state->opt.force_scrub_even && (i % 2) != 0) {
+			/* skip it */
+			continue;
+		}
+
 		++countmax;
 
 		if (countmax >= countlimit) {
@@ -105,6 +124,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		int error_on_this_block;
 		int silent_error_on_this_block;
 		int ret;
+		int rehash;
 
 		/* if it's unused */
 		info = info_get(&state->infoarr, i);
@@ -120,6 +140,12 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			continue;
 		}
 
+		/* skip odd blocks, used only for testing */
+		if (state->opt.force_scrub_even && (i % 2) != 0) {
+			/* skip it */
+			continue;
+		}
+
 		/* one more block processed for autosave */
 		++autosavedone;
 		--autosavemissing;
@@ -128,11 +154,17 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		error_on_this_block = 0;
 		silent_error_on_this_block = 0;
 
+		/* if we have to use the old hash */
+		rehash = info_get_rehash(info);
+
 		/* for each disk, process the block */
 		for(j=0;j<diskmax;++j) {
 			int read_size;
 			unsigned char hash[HASH_SIZE];
 			struct snapraid_block* block;
+
+			/* by default no rehash in case of "continue" */
+			rehandle[j].block = 0;
 
 			/* if the disk position is not used */
 			if (!handle[j].disk) {
@@ -181,7 +213,15 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			countsize += read_size;
 
 			/* now compute the hash */
-			memhash(state->hash, state->hashseed, hash, buffer[j], read_size);
+			if (rehash) {
+				memhash(state->prevhash, state->prevhashseed, hash, buffer[j], read_size);
+
+				/* compute the new hash, and store it */
+				rehandle[j].block = block;
+				memhash(state->hash, state->hashseed, rehandle[j].hash, buffer[j], read_size);
+			} else {
+				memhash(state->hash, state->hashseed, hash, buffer[j], read_size);
+			}
 
 			if (block_has_hash(block)) {
 				/* compare the hash */
@@ -250,13 +290,21 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			/* do nothing, as this is a generic error */
 			/* maybe just caused by a not synched array */
 		} else if (silent_error_on_this_block) {
-			/* set the error status keeping the existing time */
-			snapraid_info info = info_get(&state->infoarr, i);
-
-			info_set(&state->infoarr, i, info_set_error(info));
+			/* set the error status keeping the existing time and hash */
+			info_set(&state->infoarr, i, info_set_bad(info));
 		} else {
+			/* if rehash is neeed */
+			if (rehash) {
+				/* store all the new hash already computed */
+				for(j=0;j<diskmax;++j) {
+					if (rehandle[j].block)
+						memcpy(rehandle[j].block->hash, rehandle[j].hash, HASH_SIZE);
+				}
+			}
+
 			/* update the time info of the block */
-			info_set(&state->infoarr, i, info_make(now, 0));
+			/* and clear any other flag */
+			info_set(&state->infoarr, i, info_make(now, 0, 0));
 		}
 
 		/* mark the state as needing write */
@@ -301,6 +349,7 @@ bail:
 	free(handle);
 	free(buffer_alloc);
 	free(buffer);
+	free(rehandle_alloc);
 
 	if (error != 0)
 		return -1;
@@ -331,7 +380,11 @@ int state_scrub(struct snapraid_state* state)
 
 	blockmax = parity_size(state);
 
-	if (state->opt.force_scrub) {
+	if (state->opt.force_scrub_even) {
+		/* no limit */
+		countlimit = blockmax;
+		recentlimit = now;
+	} else if (state->opt.force_scrub) {
 		/* scrub the specified amount of blocks */
 		countlimit = state->opt.force_scrub;
 		recentlimit = now;

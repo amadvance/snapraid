@@ -5,21 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - v4.0
 
-* In the content file, for each position in the parity store the last time
-the hash/parity was checked for all the blocks with sync.
-We can share the same time info for all the blocks at a given position.
-It will allow to define a new "scrub" command, checking only aged blocks
-and skipping recently synched ones.
-The "scrub" command won't change data in the disks, but it will update the content
-file.
-The check command should be maintaned independent, and not saving the content file.
-The format could be:
-tim BLOCK TIME
-tir FROM_BLOCK TO_BLOCK TIME
-For missing block, we can use 0 as initialization value. TIME is the UNIX time.
-
-- v4.x
-
 * In the import list, uses also all the blocks in the array.
 But we must cover the case of bad blocks. Likely we can just check the
 hash after reading, and in case, skip it, and retry with another copy.

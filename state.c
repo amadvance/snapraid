@@ -21,6 +21,7 @@
 #include "import.h"
 #include "state.h"
 #include "util.h"
+#include "parity.h"
 #include "cpu.h"
 
 void state_init(struct snapraid_state* state)
@@ -45,6 +46,7 @@ void state_init(struct snapraid_state* state)
 	tommy_list_init(&state->filterlist);
 	tommy_list_init(&state->importlist);
 	tommy_hashdyn_init(&state->importset);
+	tommy_hashdyn_init(&state->previmportset);
 	tommy_arrayof_init(&state->infoarr, sizeof(snapraid_info));
 }
 
@@ -56,6 +58,7 @@ void state_done(struct snapraid_state* state)
 	tommy_list_foreach(&state->filterlist, (tommy_foreach_func*)filter_free);
 	tommy_list_foreach(&state->importlist, (tommy_foreach_func*)import_file_free);
 	tommy_hashdyn_done(&state->importset);
+	tommy_hashdyn_done(&state->previmportset);
 	tommy_arrayof_done(&state->infoarr);
 }
 
@@ -630,6 +633,11 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	/* by default use a random hash seed */
 	randomize(state->hashseed, HASH_SIZE);
 
+	/* no previous hash by default */
+	state->prevhash = HASH_UNDEFINED;
+
+	/* intentionally not set the prevhashseed */
+
 	if (state->opt.gui) {
 		tommy_node* i;
 		fprintf(stdlog, "blocksize:%u\n", state->block_size);
@@ -889,6 +897,10 @@ void state_read(struct snapraid_state* state)
 	/* start with a zero seed, it was the default in old versions */
 	memset(state->hashseed, 0, HASH_SIZE);
 
+	/* previous hash, start with an undefined value */
+	state->prevhash = HASH_UNDEFINED;
+	memset(state->prevhashseed, 0, HASH_SIZE);
+
 	disk = 0;
 	file = 0;
 	line = 1;
@@ -1002,7 +1014,7 @@ void state_read(struct snapraid_state* state)
 
 			/* set a fake info block, in case of upgrading from an old version */
 			/* the real block info will overwrite this */
-			info = info_make(st.st_mtime, 0);
+			info = info_make(st.st_mtime, 0, 0);
 
 			/* insert the block in the block array */
 			info_set(&state->infoarr, v_pos, info);
@@ -1013,6 +1025,8 @@ void state_read(struct snapraid_state* state)
 			/* "inf" command */
 			block_off_t v_pos;
 			snapraid_info info;
+			int rehash;
+			int bad;
 			uint32_t t;
 
 			hash = oathash8(hash, 'i');
@@ -1037,7 +1051,33 @@ void state_read(struct snapraid_state* state)
 			}
 			hash = oathash32(hash, t);
 
-			info = info_make(t, 0);
+			/* read extra tags if present */
+			rehash = 0;
+			bad = 0;
+			c = sgetc(f);
+			while (c == ' ') {
+				ret = sgettok(f, buffer, sizeof(buffer));
+				if (ret < 0) {
+					fprintf(stderr, "Invalid 'inf' specification in '%s' at line %u\n", path, line);
+					exit(EXIT_FAILURE);
+				}
+
+				if (strcmp(buffer, "bad") == 0) {
+					bad = 1;
+					hash = oathash8(hash, 'x');
+				} else if (strcmp(buffer, "rehash") == 0) {
+					rehash = 1;
+					hash = oathash8(hash, 'y');
+				} else {
+					fprintf(stderr, "Invalid 'inf' specification '%s' in '%s' at line %u\n", buffer, path, line);
+					exit(EXIT_FAILURE);
+				}
+
+				c = sgetc(f);
+			}
+			sungetc(c, f);
+
+			info = info_make(t, bad, rehash);
 
 			/* insert the block in the block array */
 			info_set(&state->infoarr, v_pos, info);
@@ -1471,38 +1511,6 @@ void state_read(struct snapraid_state* state)
 
 			/* stat */
 			++count_dir;
-		} else if (strcmp(tag, "bad") == 0) {
-			/* "bad" command */
-			block_off_t v_pos;
-			snapraid_info info;
-			uint32_t t;
-
-			hash = oathash8(hash, 'x');
-
-			ret = sgetu32(f, &v_pos);
-			if (ret < 0) {
-				fprintf(stderr, "Invalid 'bad' specification in '%s' at line %u\n", path, line);
-				exit(EXIT_FAILURE);
-			}
-			hash = oathash32(hash, v_pos);
-
-			c = sgetc(f);
-			if (c != ' ') {
-				fprintf(stderr, "Invalid 'bad' specification in '%s' at line %u\n", path, line);
-				exit(EXIT_FAILURE);
-			}
-
-			ret = sgetu32(f, &t);
-			if (ret < 0) {
-				fprintf(stderr, "Invalid 'bad' specification in '%s' at line %u\n", path, line);
-				exit(EXIT_FAILURE);
-			}
-			hash = oathash32(hash, t);
-
-			info = info_make(t, 1);
-
-			/* insert the block in the block array */
-			info_set(&state->infoarr, v_pos, info);
 		} else if (strcmp(tag, "checksum") == 0) {
 			hash = oathash8(hash, 'c');
 
@@ -1512,10 +1520,7 @@ void state_read(struct snapraid_state* state)
 				exit(EXIT_FAILURE);
 			}
 
-			if (strcmp(buffer, "md5") == 0) {
-				state->hash = HASH_MD5;
-				hash = oathash8(hash, 'm');
-			} else if (strcmp(buffer, "murmur3") == 0) {
+			if (strcmp(buffer, "murmur3") == 0) {
 				state->hash = HASH_MURMUR3;
 				hash = oathash8(hash, 'u');
 			} else if (strcmp(buffer, "spooky2") == 0) {
@@ -1539,6 +1544,39 @@ void state_read(struct snapraid_state* state)
 				sungetc(c, f);
 				memset(state->hashseed, 0, HASH_SIZE);
 			}
+		} else if (strcmp(tag, "prevchecksum") == 0) {
+			hash = oathash8(hash, 'C');
+
+			ret = sgettok(f, buffer, sizeof(buffer));
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'prevchecksum' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			if (strcmp(buffer, "murmur3") == 0) {
+				state->prevhash = HASH_MURMUR3;
+				hash = oathash8(hash, 'u');
+			} else if (strcmp(buffer, "spooky2") == 0) {
+				state->prevhash = HASH_SPOOKY2;
+				hash = oathash8(hash, 'k');
+			} else {
+				fprintf(stderr, "Invalid 'prevchecksum' specification '%s' in '%s' at line %u\n", buffer, path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			c = sgetc(f);
+			if (c != ' ') {
+				fprintf(stderr, "Invalid 'prevchecksum' specification '%s' in '%s' at line %u\n", buffer, path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			/* read the seed */
+			ret = sgethex(f, state->prevhashseed, HASH_SIZE);
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'seed' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+			hash = oathashm(hash, state->prevhashseed, HASH_SIZE);
 		} else if (strcmp(tag, "blksize") == 0) {
 			block_off_t blksize;
 
@@ -1661,12 +1699,6 @@ void state_read(struct snapraid_state* state)
 		fprintf(stderr, "deleting all the content and parity files.\n");
 		exit(EXIT_FAILURE);
 	}
-	if (state->hash == HASH_MD5) {
-		fprintf(stderr, "The MD5 checksum is not supported anymore.\n");
-		fprintf(stderr, "To use the SnapRAID 2.x branch, you must restart from scratch,\n");
-		fprintf(stderr, "deleting all the content and parity files.\n");
-		exit(EXIT_FAILURE);
-	}
 
 	state->loaded_blockmax = blockmax;
 
@@ -1695,7 +1727,7 @@ void state_write(struct snapraid_state* state)
 	unsigned count_content;
 	tommy_node* i;
 	block_off_t b;
-	block_off_t infomax;
+	block_off_t blockmax;
 	unsigned k;
 	oathash_t hash;
 
@@ -1705,7 +1737,9 @@ void state_write(struct snapraid_state* state)
 	count_symlink = 0;
 	count_dir = 0;
 	hash = 0;
-	infomax = 0; /* index of the maximum info saved from all the disks */
+
+	/* blocks of all array */
+	blockmax = parity_size(state);
 
 	/* count the content files */
 	count_content = 0;
@@ -1748,11 +1782,7 @@ void state_write(struct snapraid_state* state)
 		exit(EXIT_FAILURE);
 	}
 
-	if (state->hash == HASH_MD5) {
-		sputsl("checksum md5", f);
-		hash = oathash8(hash, 'c');
-		hash = oathash8(hash, 'm');
-	} else if (state->hash == HASH_MURMUR3) {
+	if (state->hash == HASH_MURMUR3) {
 		sputsl("checksum murmur3", f);
 		hash = oathash8(hash, 'c');
 		hash = oathash8(hash, 'u');
@@ -1771,6 +1801,51 @@ void state_write(struct snapraid_state* state)
 	if (serror(f)) {
 		fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 		exit(EXIT_FAILURE);
+	}
+
+	/* previous hash only if present */
+	if (state->prevhash != HASH_UNDEFINED) {
+
+		/* check if the previous hash is still needed */
+		for(b=0;b<blockmax;++b) {
+			snapraid_info info;
+
+			info = info_get(&state->infoarr, b);
+
+			if (info == 0) {
+				/* skip it */
+				continue;
+			}
+
+			if (info_get_rehash(info)) {
+				/* stop the process */
+				break;
+			}
+		}
+
+		/* if at least one rehash tag found, we have to save the previous hash */
+		if (b < blockmax) {
+			if (state->prevhash == HASH_MURMUR3) {
+				sputsl("prevchecksum murmur3", f);
+				hash = oathash8(hash, 'C');
+				hash = oathash8(hash, 'u');
+			} else if (state->hash == HASH_SPOOKY2) {
+				sputsl("prevchecksum spooky2", f);
+				hash = oathash8(hash, 'C');
+				hash = oathash8(hash, 'k');
+			} else {
+				fprintf(stderr, "Unexpected prevhash when writing the content file '%s'.\n", serrorfile(f));
+				exit(EXIT_FAILURE);
+			}
+			sputc(' ', f);
+			sputhex(state->prevhashseed, HASH_SIZE, f);
+			hash = oathashm(hash, state->prevhashseed, HASH_SIZE);
+			sputeol(f);
+			if (serror(f)) {
+				fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+		}
 	}
 
 	/* for each map */
@@ -1801,8 +1876,8 @@ void state_write(struct snapraid_state* state)
 	for(i=state->disklist;i!=0;i=i->next) {
 		tommy_node* j;
 		struct snapraid_disk* disk = i->data;
-		block_off_t blockmax;
 		int first_deleted;
+		block_off_t blockdiskmax;
 
 		/* for each file */
 		for(j=disk->filelist;j!=0;j=j->next) {
@@ -1867,10 +1942,6 @@ void state_write(struct snapraid_state* state)
 					fprintf(stderr, "Internal state inconsistency in saving for block %u state %u\n", block->parity_pos, block_state);
 					exit(EXIT_FAILURE);
 				}
-
-				/* keep track of the maximum block */
-				if (block->parity_pos > infomax)
-					infomax = block->parity_pos;
 
 				sputu32(block->parity_pos, f);
 				hash = oathash32(hash, block->parity_pos);
@@ -1946,16 +2017,14 @@ void state_write(struct snapraid_state* state)
 			++count_dir;
 		}
 
-		/* maximum block */
-		blockmax = tommy_array_size(&disk->blockarr);
-
-		/* keep track of the maximum block for all disk */
-		if (blockmax > infomax)
-			infomax = blockmax;
+		/* maximum block for this disk */
+		blockdiskmax = tommy_array_size(&disk->blockarr);
+		if (blockdiskmax > blockmax)
+			blockdiskmax = blockmax;
 
 		/* for each deleted block in the disk */
 		first_deleted = 1;
-		for(b=0;b<blockmax;++b) {
+		for(b=0;b<blockdiskmax;++b) {
 			struct snapraid_block* block = tommy_array_get(&disk->blockarr, b);
 			if (block_state_get(block) == BLOCK_STATE_DELETED) {
 				if (first_deleted) {
@@ -1992,7 +2061,7 @@ void state_write(struct snapraid_state* state)
 	}
 
 	/* for each block */
-	for(b=0;b<infomax;++b) {
+	for(b=0;b<blockmax;++b) {
 		snapraid_info info;
 
 		info = info_get(&state->infoarr, b);
@@ -2014,13 +2083,8 @@ void state_write(struct snapraid_state* state)
 
 		/* save only stuffs different than 0 */
 		if (info != 0) {
-			if (info_get_error(info)) {
-				sputsl("bad ", f);
-				hash = oathash8(hash, 'x');
-			} else {
-				sputsl("inf ", f);
-				hash = oathash8(hash, 'i');
-			}
+			sputsl("inf ", f);
+			hash = oathash8(hash, 'i');
 
 			sputu32(b, f);
 			hash = oathash32(hash, b);
@@ -2029,6 +2093,16 @@ void state_write(struct snapraid_state* state)
 
 			sputu32(info, f);
 			hash = oathash32(hash, info);
+
+			if (info_get_bad(info)) {
+				sputsl(" bad", f);
+				hash = oathash8(hash, 'x');
+			}
+
+			if (info_get_rehash(info)) {
+				sputsl(" rehash", f);
+				hash = oathash8(hash, 'y');
+			}
 
 			sputeol(f);
 			if (serror(f)) {

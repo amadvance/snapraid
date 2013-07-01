@@ -30,7 +30,7 @@ snapraid [\(hyc, \(hy\(hyconf CONFIG]
 .PD 0
 .PP
 .PD
-	sync|status|scrub|diff|dup|pool|check|fix
+	sync|status|scrub|diff|dup|pool|check|fix|rehash
 .PD 0
 .PP
 .PD
@@ -429,6 +429,21 @@ the \(a".unrecoverable\(a" extension.
 The \(a"content\(a" file is NOT modified.
 The \(a"parity\(a" and \(a"q\(hyparity\(a" files are modified if necessary.
 The files in the array are modified if necessary.
+.SS rehash 
+Schedules a rehash of the whole array.
+.PP
+This option can be used to change the hash kind used,
+typically when upgrading from a 32 bits system to a 64
+bits one to switch from the murmur3 to the faster spooky2.
+.PP
+The rehash isn\(cqt done immediately, but it will take place
+incrementally during the \(a"sync\(a" and \(a"scrub\(a" commands.
+.PP
+You can get the rehash status using the \(a"status\(a" command.
+.PP
+During the rehash, SnapRAID maintains full functionality,
+with the only expection of the \(cqdup\(cq command not able to detect
+duplicated files using a different hash.
 .SH OPTIONS 
 SnapRAID provides the following options:
 .TP

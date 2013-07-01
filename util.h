@@ -394,9 +394,8 @@ char* strdup_nofail(const char* str);
  * Hash kinds.
  */
 #define HASH_UNDEFINED 0
-#define HASH_MD5 1
-#define HASH_MURMUR3 2
-#define HASH_SPOOKY2 3
+#define HASH_MURMUR3 1
+#define HASH_SPOOKY2 2
 
 /**
  * Computes the HASH of a memory block.
