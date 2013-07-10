@@ -29,33 +29,52 @@
 #define PATH_MAX 1024
 
 /* Remap functions and types */
+#undef fopen
 #define fopen windows_fopen
+#undef open
 #define open windows_open
 #define open_noatime windows_open
+#undef stat
 #define stat windows_stat
+#undef lstat
 #define lstat windows_lstat
+#undef off_t
 #define off_t off64_t
+#undef fstat
 #define fstat windows_fstat
 #define HAVE_FTRUNCATE 1
+#undef ftruncate
 #define ftruncate windows_ftruncate
 #define HAVE_FSYNC 1
+#undef fsync
 #define fsync _commit
+#undef rename
 #define rename windows_rename
+#undef remove
 #define remove windows_remove
+#undef mkdir
 #define mkdir(a, b) windows_mkdir(a)
+#undef rmdir
 #define rmdir windows_rmdir
+#undef dirent
 #define dirent windows_dirent
+#undef DIR
 #define DIR windows_dir
+#undef opendir
 #define opendir windows_opendir
+#undef readdir
 #define readdir windows_readdir
+#undef closedir
 #define closedir windows_closedir
 #define HAVE_FUTIMENS 1
+#undef futimens
 #define futimens windows_futimens
 #define O_NOFOLLOW 0
 #define dirent_hidden windows_dirent_hidden
 #define HAVE_DIRENT_LSTAT 1
 #define dirent_lstat windows_dirent_lstat
 #define stat_desc windows_stat_desc
+#undef sleep
 #define sleep windows_sleep
 /* 4==DIR, 5,6,7=free, 8==REG */
 #define S_IFLNK 0x5000 /* Symbolic link to file */
@@ -64,16 +83,25 @@
 #define S_ISLNKDIR(m) (((m) & _S_IFMT) == S_IFLNKDIR)
 #define S_IFJUN 0x7000 /* Junction */
 #define S_ISJUN(m) (((m) & _S_IFMT) == S_IFJUN)
+#undef readlink
 #define readlink windows_readlink
+#undef symlink
 #define symlink windows_symlink
+#undef link
 #define link windows_link
+#undef strerror
 #define strerror windows_strerror
+#undef read
 #define read windows_read
+#undef write
 #define write windows_write
+#undef lseek
 #define lseek windows_lseek
 #define HAVE_PREAD 1
 #define HAVE_PWRITE 1
+#undef pread
 #define pread windows_pread
+#undef pwrite
 #define pwrite windows_pwrite
 
 /* We have nano second support */

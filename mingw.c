@@ -48,6 +48,7 @@ typedef struct _FILE_ATTRIBUTE_TAG_INFO {
 #define WIN32_ES_AWAYMODE_REQUIRED    0x00000040L
 #define WIN32_ES_CONTINUOUS           0x80000000L
 
+#ifndef FSCTL_GET_RETRIEVAL_POINTERS
 #define FSCTL_GET_RETRIEVAL_POINTERS 0x00090073
 
 typedef struct RETRIEVAL_POINTERS_BUFFER {
@@ -62,6 +63,7 @@ typedef struct RETRIEVAL_POINTERS_BUFFER {
 typedef struct {
 	LARGE_INTEGER StartingVcn;
 } STARTING_VCN_INPUT_BUFFER;
+#endif
 
 /**
  * Portable implementation of GetFileInformationByHandleEx.
@@ -86,13 +88,26 @@ static BOOLEAN (WINAPI* ptr_CreateSymbolicLinkW)(LPWSTR, LPWSTR, DWORD);
  */
 static char* last_error;
 
+/**
+ * If we are running in Wine.
+ */
+static int is_wine;
+
 void os_init(void)
 {
-	HMODULE kernel32 = GetModuleHandle("KERNEL32.DLL");
+	HMODULE kernel32, ntdll;
+
+	kernel32 = GetModuleHandle("KERNEL32.DLL");
 	if (!kernel32) {
 		fprintf(stderr, "Error loading the KERNEL32 module.\n");
 		exit(EXIT_FAILURE);
 	}
+
+	ntdll = GetModuleHandle("NTDLL.DLL");
+	if (!ntdll) {
+		fprintf(stderr, "Error loading the NTDLL module.\n");
+		exit(EXIT_FAILURE);
+	}	
 
 	/* load functions not always available */
 	ptr_SetThreadExecutionState = (void*)GetProcAddress(kernel32, "SetThreadExecutionState");
@@ -107,6 +122,8 @@ void os_init(void)
 			ptr_SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED);
 		}
 	}
+
+	is_wine = GetProcAddress(ntdll, "wine_get_version") != 0;
 
 	last_error = 0;
 }
@@ -1085,6 +1102,12 @@ int filephy(const char* file, struct stat* st, uint64_t* physical)
 	RETRIEVAL_POINTERS_BUFFER* rpb = (RETRIEVAL_POINTERS_BUFFER*)&rpb_buffer;
 	DWORD ret;
 	DWORD n;
+
+	/* in Wine just uses the inode number as FSCTL_GET_RETRIVIAL_POINTERS is not supported */
+	if (is_wine) {
+		*physical = st->st_ino;
+		return 0;
+	}
 
 	/* open the handle of the file */
 	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
