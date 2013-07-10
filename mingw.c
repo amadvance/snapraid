@@ -1138,8 +1138,6 @@ int filephy(const char* file, struct stat* st, uint64_t* physical)
 	else
 		*physical = rpb->Extents[0].Lcn.QuadPart;
 
-	(void)st; /* not used here */
-
 	return 0;
 }
 
