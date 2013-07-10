@@ -22,6 +22,15 @@ SnapRAID HISTORY
    directory tree.
  * Changes the 'dup' output format to include the size of each duplicate file.
 
+3.2 2013/7
+==========
+ * Fix a directory creation problem in Windows when the "disk" option points to
+   the root directory of a drive. Now SnapRAID won't complain about the
+   inability to create such directory.
+   If you encouter this problem when trying to recover your data, just upgrade
+   to this version, and you'll be able to complete the recovering process.
+   No need to upgrade for platforms different from Windows.
+
 3.1 2013/5
 ==========
  * Direct use of Windows API for disk access to improve error reporting.

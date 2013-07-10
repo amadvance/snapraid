@@ -5,6 +5,8 @@ This is the list of TODO items for SnapRAID.
 
 - v4.0
 
+* Don't enforce different disk in fix. It could allow to recover in spare space of a disk already used.
+
 * In the import list, uses also all the blocks in the array.
 But we must cover the case of bad blocks. Likely we can just check the
 hash after reading, and in case, skip it, and retry with another copy.

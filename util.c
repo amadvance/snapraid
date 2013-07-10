@@ -687,9 +687,9 @@ int mkancestor(const char* file)
 {
 	char dir[PATH_MAX];
 	char* c;
-	
+
 	pathcpy(dir, sizeof(dir), file);
-	
+
 	c = strrchr(dir, '/');
 	if (!c) {
 		/* no ancestor */
@@ -699,10 +699,19 @@ int mkancestor(const char* file)
 	/* clear the file */
 	*c = 0;
 
+	/* if it's the root dir */
 	if (*dir == 0) {
 		/* nothing more to do */
 		return 0;
 	}
+
+#ifdef _WIN32
+	/* if it's a drive specificaion like "C:" */
+	if (isalpha(dir[0]) && dir[1] == ':' && dir[2] == 0) {
+		/* nothing more to do */
+		return 0;
+	}
+#endif
 
 	/* try creating it  */
 	if (mkdir(dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == 0) {
