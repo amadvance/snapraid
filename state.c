@@ -2240,7 +2240,7 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 	}
 }
 
-void state_progress_begin(struct snapraid_state* state, block_off_t blockstart, block_off_t blockmax, block_off_t countmax)
+int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, block_off_t blockmax, block_off_t countmax)
 {
 	if (state->opt.gui) {
 		fprintf(stdlog,"run:begin:%u:%u:%u\n", blockstart, blockmax, countmax);
@@ -2254,6 +2254,16 @@ void state_progress_begin(struct snapraid_state* state, block_off_t blockstart, 
 		state->progress_last = now;
 		state->progress_subtract = 0;
 	}
+
+	/* stop if requested */
+	if (global_interrupt) {
+		if (!state->opt.gui) {
+			printf("Not starting for interruption\n");
+		}
+		return 0;
+	}
+
+	return 1;
 }
 
 void state_progress_end(struct snapraid_state* state, block_off_t countpos, block_off_t countmax, data_off_t countsize)

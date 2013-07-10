@@ -116,7 +116,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 	countsize = 0;
 	countpos = 0;
-	state_progress_begin(state, blockstart, blockmax, countmax);
+	if (state_progress_begin(state, blockstart, blockmax, countmax))
 	for(i=blockstart;i<blockmax;++i) {
 		int one_invalid;
 		int one_valid;

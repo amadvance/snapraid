@@ -174,7 +174,7 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 /**
  * Begins the progress visualization.
  */
-void state_progress_begin(struct snapraid_state* state, block_off_t blockstart, block_off_t blockmax, block_off_t countmax);
+int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, block_off_t blockmax, block_off_t countmax);
 
 /**
  * Ends the progress visualization.
