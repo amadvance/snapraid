@@ -53,7 +53,7 @@ block_size 256
 # commands interrupted by a machine crash.
 # The SIZE argument is specified in gibi bytes -> 1073741824 bytes
 # Default value is 0, meaning disabled.
-# Format: "autosave_size SIZE_IN_GiB"
+# Format: "autosave SIZE_IN_GiB"
 # autosize 500
 
 # Defines the pooling directory where the virtual view of the disk
