@@ -675,9 +675,14 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 			}
 		} else if (S_ISDIR(st.st_mode)) {
 			if (filter_dir(&state->filterlist, disk->name, sub_next) == 0) {
+#ifndef _WIN32
+				/* in unix don't follow mount points in different devices */
+				/* in windows, it's not clear how to check that */
 				if (st.st_dev != disk->device) {
-					fprintf(stderr, "warning: Ignoring mount point '%s'\n", path_next);
-				} else {
+					fprintf(stderr, "warning: Ignoring mount point '%s' because it appears to be in a different device\n", path_next);
+				} else
+#endif
+				{
 					char sub_dir[PATH_MAX];
 
 					/* recurse */
