@@ -1041,7 +1041,7 @@ int windows_readlink(const char* file, char* buffer, size_t size)
 	size_t len;
 	unsigned char rdb_buffer[MAXIMUM_REPARSE_DATA_BUFFER_SIZE];
 	REPARSE_DATA_BUFFER* rdb = (REPARSE_DATA_BUFFER*)rdb_buffer;
-	DWORD ret;
+	BOOL ret;
 	DWORD n;
 
 	/*
@@ -1058,7 +1058,7 @@ int windows_readlink(const char* file, char* buffer, size_t size)
 
 	/* read the reparse point */
 	ret = DeviceIoControl(h, FSCTL_GET_REPARSE_POINT, 0, 0, rdb_buffer, sizeof(rdb_buffer), &n, 0);
-	if (ret == 0) {
+	if (!ret) {
 		windows_errno(GetLastError());
 		CloseHandle(h);
 		return -1;
@@ -1100,10 +1100,10 @@ int filephy(const char* file, struct stat* st, uint64_t* physical)
 	STARTING_VCN_INPUT_BUFFER svib;
 	unsigned char rpb_buffer[sizeof(RETRIEVAL_POINTERS_BUFFER)];
 	RETRIEVAL_POINTERS_BUFFER* rpb = (RETRIEVAL_POINTERS_BUFFER*)&rpb_buffer;
-	DWORD ret;
+	BOOL ret;
 	DWORD n;
 
-	/* in Wine just uses the inode number as FSCTL_GET_RETRIVIAL_POINTERS is not supported */
+	/* in Wine just uses the inode number because FSCTL_GET_RETRIVIAL_POINTERS is not supported */
 	if (is_wine) {
 		*physical = st->st_ino;
 		return 0;
@@ -1122,10 +1122,17 @@ int filephy(const char* file, struct stat* st, uint64_t* physical)
 	/* read the physical address */
 	svib.StartingVcn.QuadPart = 0;
 	ret = DeviceIoControl(h, FSCTL_GET_RETRIEVAL_POINTERS, &svib, sizeof(svib), rpb_buffer, sizeof(rpb_buffer), &n, 0);
-	if (ret == 0) {
-		/* we ignore ERROR_MODE_DATA because we are interested only at the first entry */
-		if (GetLastError() != ERROR_MORE_DATA) {
-			windows_errno(GetLastError());
+	if (!ret) {
+		DWORD error = GetLastError();
+		if (error == ERROR_MORE_DATA) {
+			/* we ignore ERROR_MODE_DATA because we are interested only at the first entry */
+			/* and this is the expected error if the files has more entries */
+		} else if (error == ERROR_HANDLE_EOF) {
+			/* if the file is small, it can be stored in the Master File Table (MFT) */
+			/* and then it doesn't have a physical address */
+			rpb->ExtentCount = 0;
+		} else {
+			windows_errno(error);
 			CloseHandle(h);
 			return -1;
 		}
