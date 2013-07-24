@@ -241,11 +241,15 @@ Commands
 	Lists all the files modified from the last "sync" command that
 	have to recompute their redundancy data.
 
+	This command doesn't check the file data, but only the file timestamp
+	size and inode.
+
 	Nothing is modified.
 
   dup
 	Lists all the duplicate files. Two files are assumed equal if their
-	hashes are matching. The effective data is not read.
+	hashes are matching. The file data is not read, but only the
+	precomputed hashes are used.
 
 	Nothing is modified.
 

@@ -387,10 +387,14 @@ of each block.
 Lists all the files modified from the last \(a"sync\(a" command that
 have to recompute their redundancy data.
 .PP
+This command doesn\(cqt check the file data, but only the file timestamp
+size and inode.
+.PP
 Nothing is modified.
 .SS dup 
 Lists all the duplicate files. Two files are assumed equal if their
-hashes are matching. The effective data is not read.
+hashes are matching. The file data is not read, but only the
+precomputed hashes are used.
 .PP
 Nothing is modified.
 .SS pool 
