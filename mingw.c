@@ -630,7 +630,7 @@ int windows_lstat(const char* file, struct windows_stat* st)
 	WIN32_FIND_DATAW data;
 
 	/* FindFirstFileW by default gets information of symbolic links and not of their targets */
-	h = FindFirstFileW(convert(file),  &data);
+	h = FindFirstFileW(convert(file), &data);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
