@@ -3,9 +3,11 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
-- v4.0
+- v4.1
 
-* Don't enforce different disk in fix. It could allow to recover in spare space of a disk already used.
+* Save the content file in compressed .gz format to save space.
+
+- v4.x generic
 
 * In the import list, uses also all the blocks in the array.
 But we must cover the case of bad blocks. Likely we can just check the
@@ -34,8 +36,6 @@ on the error message. See: https://sourceforge.net/projects/snapraid/forums/foru
 Different partitions have duplicate inode. The only way to support this is to
 add also a kind of device_id, increasing the memory required.
 But it should be only few bits for each file. So, it should be manageable.
-
-* Save the content file in compressed .gz format to save space.
 
 * Rename sync->backup and fix->restore. It seems to me a naming expressing
 better the meaning of the commands. But not yet sure.
