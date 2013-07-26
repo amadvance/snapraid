@@ -18,7 +18,7 @@ snapraid [\(hyc, \(hy\(hyconf CONFIG]
 .PD 0
 .PP
 .PD
-	[\(hyZ, \(hy\(hyforce\(hyzero] [\(hyE, \(hy\(hyforce\(hyempty] [\(hyU, \(hy\(hyforce\(hyuuid]
+	[\(hyZ, \(hy\(hyforce\(hyzero] [\(hyE, \(hy\(hyforce\(hyempty] [\(hyU, \(hy\(hyforce\(hyuuid] [\(hyD, \(hy\(hyforce\(hydevice]
 .PD 0
 .PP
 .PD
@@ -558,6 +558,15 @@ single parity, and two with double parity, because it\(cqs
 the normal case of replacing disks.
 This option can be used only with the \(a"sync\(a", \(a"check\(a" or
 \(a"fix\(a" command.
+.TP
+.B \(hyD, \(hy\(hyforce\(hydevice
+Forces the insecure operation of fixing with disks on the same
+physical device.
+If SnapRAID detects that two disks have the same device ID,
+it stops proceeding, because it\(cqs not a supported configuration.
+But it could happen what you want to temporarely restore a lost
+disk in the free space left in an already used disk. and this
+option will allow you to continue anyway.
 .TP
 .B \(hys, \(hy\(hystart BLKSTART
 Starts the processing from the specified

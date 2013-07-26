@@ -6,7 +6,7 @@ Synopsis
 	:	[-f, --filter PATTERN] [-d, --filter-disk NAME] [-m, --filter-missing]
 	:	[-a, --audit-only] [-i, --import DIR]
 	:	[-N, --find-by-name]
-	:	[-Z, --force-zero] [-E, --force-empty] [-U, --force-uuid]
+	:	[-Z, --force-zero] [-E, --force-empty] [-U, --force-uuid] [-D, --force-device]
 	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	:	[-v, --verbose] [-l, --log FILE]
 	:	sync|status|scrub|diff|dup|pool|check|fix|rehash
@@ -418,6 +418,15 @@ Options
 		the normal case of replacing disks.
 		This option can be used only with the "sync", "check" or
 		"fix" command.
+
+	-D, --force-device
+		Forces the insecure operation of fixing with disks on the same
+		physical device.
+		If SnapRAID detects that two disks have the same device ID,
+		it stops proceeding, because it's not a supported configuration.
+		But it could happen what you want to temporarely restore a lost
+		disk in the free space left in an already used disk. and this
+		option will allow you to continue anyway.
 
 	-s, --start BLKSTART
 		Starts the processing from the specified

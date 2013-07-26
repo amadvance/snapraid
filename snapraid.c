@@ -69,6 +69,7 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero      ", "-Z") "  Force synching of files that get zero size\n");
 	printf("  " SWITCH_GETOPT_LONG("-E, --force-empty     ", "-E") "  Force synching of disks that get empty\n");
 	printf("  " SWITCH_GETOPT_LONG("-U, --force-uuid      ", "-U") "  Force commands on disks with uuid changed\n");
+	printf("  " SWITCH_GETOPT_LONG("-D, --force-device    ", "-D") "  Force commands on disks with same device id\n");
 	printf("  " SWITCH_GETOPT_LONG("-s, --start BLKSTART  ", "-s") "  Start from the specified block number\n");
 	printf("  " SWITCH_GETOPT_LONG("-t, --count BLKCOUNT  ", "-t") "  Count of block to process\n");
 	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
@@ -107,6 +108,7 @@ struct option long_options[] = {
 	{ "force-zero", 0, 0, 'Z' },
 	{ "force-empty", 0, 0, 'E' },
 	{ "force-uuid", 0, 0, 'U' },
+	{ "force-device", 0, 0, 'D' },
 	{ "find-by-name", 0, 0, 'N' },
 	{ "audit-only", 0, 0, 'a' },
 	{ "speed-test", 0, 0, 'T' },
@@ -166,7 +168,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:f:d:ms:t:i:l:ZEUNaTvhVG"
+#define OPTIONS "c:f:d:ms:t:i:l:ZEUDNaTvhVG"
 
 volatile int global_interrupt = 0;
 
@@ -292,6 +294,9 @@ int main(int argc, char* argv[])
 			break;
 		case 'U' :
 			opt.force_uuid = 1;
+			break;
+		case 'D' :
+			opt.force_device = 1;
 			break;
 		case 'N' :
 			opt.force_by_name = 1;

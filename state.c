@@ -112,14 +112,20 @@ static void state_config_check(struct snapraid_state* state, const char* path)
 			}
 #endif
 
-			for(j=i->next;j!=0;j=j->next) {
-				struct snapraid_disk* other = j->data;
-				if (disk->device == other->device) {
-					fprintf(stderr, "Disks '%s' and '%s' are on the same device.\n", disk->dir, other->dir);
+			if (!state->opt.force_device) {
+				for(j=i->next;j!=0;j=j->next) {
+					struct snapraid_disk* other = j->data;
+					if (disk->device == other->device) {
+						fprintf(stderr, "Disks '%s' and '%s' are on the same device.\n", disk->dir, other->dir);
 #ifdef _WIN32
-					fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", disk->device);
+						fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", disk->device);
 #endif
-					exit(EXIT_FAILURE);
+						/* in "fix" we allow to continue anyway */
+						if (strcmp(state->command, "fix") == 0) {
+							fprintf(stderr, "You can '%s' anyway, using 'snapraid --force-device %s'.\n", state->command, state->command);
+						}
+						exit(EXIT_FAILURE);
+					}
 				}
 			}
 
