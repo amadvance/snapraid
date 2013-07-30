@@ -150,7 +150,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		++autosavedone;
 		--autosavemissing;
 
-		/* by default process the block, and skip it if something go wrong */
+		/* by default process the block, and skip it if something goes wrong */
 		error_on_this_block = 0;
 		silent_error_on_this_block = 0;
 
@@ -201,6 +201,10 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				error_on_this_block = 1;
 				continue;
 			}
+
+			/* note that we intentionally don't check if the file has different attributes */
+			/* from the last sync, as we are expected to return errors if running */
+			/* in an unsynched array. This is just like the check command. */
 
 			read_size = handle_read(&handle[j], block, buffer[j], state->block_size, stderr);
 			if (read_size == -1) {
@@ -288,7 +292,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 		if (error_on_this_block) {
 			/* do nothing, as this is a generic error */
-			/* maybe just caused by a not synched array */
+			/* likely caused by a not synched array */
 		} else if (silent_error_on_this_block) {
 			/* set the error status keeping the existing time and hash */
 			info_set(&state->infoarr, i, info_set_bad(info));

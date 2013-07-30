@@ -710,7 +710,7 @@ static inline snapraid_info info_make(time_t last_access, int error, int rehash)
 }
 
 /**
- * Extract the time information.
+ * Extracts the time information.
  * This is the last time when the block was know to be correct.
  */
 static inline time_t info_get_time(snapraid_info info)
@@ -719,8 +719,8 @@ static inline time_t info_get_time(snapraid_info info)
 }
 
 /**
- * Extract the error information.
- * This report if the block address is reporting to have some problem.
+ * Extracts the error information.
+ * Reports if the block address had some problem.
  */
 static inline int info_get_bad(snapraid_info info)
 {
@@ -728,8 +728,8 @@ static inline int info_get_bad(snapraid_info info)
 }
 
 /**
- * Extract the error information.
- * This report if the block address is reporting to have some problem.
+ * Extracts the rehash information.
+ * Reports if the block address is using the old hash and needs to be rehashed.
  */
 static inline int info_get_rehash(snapraid_info info)
 {
@@ -737,7 +737,7 @@ static inline int info_get_rehash(snapraid_info info)
 }
 
 /**
- * Mark the block address as with error.
+ * Marks the block address as with error.
  */
 static inline snapraid_info info_set_bad(snapraid_info info)
 {
@@ -746,7 +746,7 @@ static inline snapraid_info info_set_bad(snapraid_info info)
 
 
 /**
- * Mark the block address as with rehash.
+ * Marks the block address as with rehash.
  */
 static inline snapraid_info info_set_rehash(snapraid_info info)
 {
