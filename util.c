@@ -696,6 +696,13 @@ int mkancestor(const char* file)
 		return 0;
 	}
 
+#ifdef _WIN32
+	if (strlen(dir) == 2 && dir[1] == ':') {
+		/* it's a drive specification, nothing more to do */
+		return 0;
+	}
+#endif
+
 	/* try creating it  */
 	if (mkdir(dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == 0) {
 		/* just created */
