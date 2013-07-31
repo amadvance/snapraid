@@ -123,6 +123,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		snapraid_info info;
 		int error_on_this_block;
 		int silent_error_on_this_block;
+		int block_is_unsynched;
 		int ret;
 		int rehash;
 
@@ -154,6 +155,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		error_on_this_block = 0;
 		silent_error_on_this_block = 0;
 
+		/* we assume that the block is synched */
+		block_is_unsynched = 0;
+
 		/* if we have to use the old hash */
 		rehash = info_get_rehash(info);
 
@@ -162,6 +166,10 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			int read_size;
 			unsigned char hash[HASH_SIZE];
 			struct snapraid_block* block;
+			int file_is_unsynched;
+
+			/* we assume that the file is synched */
+			file_is_unsynched = 0;
 
 			/* by default no rehash in case of "continue" */
 			rehandle[j].block = 0;
@@ -202,7 +210,18 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				continue;
 			}
 
-			/* note that we intentionally don't check if the file has different attributes */
+			/* check if the file is changed */
+			if (handle[j].st.st_size != block_file_get(block)->size
+				|| handle[j].st.st_mtime != block_file_get(block)->mtime_sec
+				|| STAT_NSEC(&handle[j].st) != block_file_get(block)->mtime_nsec
+				|| handle[j].st.st_ino != block_file_get(block)->inode
+			) {
+				/* report that the block and the file are not synched */
+				block_is_unsynched = 1;
+				file_is_unsynched = 1;
+			}
+
+			/* note that we intentionally don't abort if the file has different attributes */
 			/* from the last sync, as we are expected to return errors if running */
 			/* in an unsynched array. This is just like the check command. */
 
@@ -232,7 +251,12 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
 					fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 					++error;
-					silent_error_on_this_block = 1;
+
+					/* it's a silent error only if we are dealing with synched files */
+					if (file_is_unsynched)
+						error_on_this_block = 1;
+					else
+						silent_error_on_this_block = 1;
 					continue;
 				}
 			}
@@ -279,13 +303,23 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			if (buffer_parity && memcmp(buffer[diskmax], buffer_parity, state->block_size) != 0) {
 				fprintf(stdlog, "error:%u:parity: Data error\n", i);
 				++error;
-				silent_error_on_this_block = 1;
+				
+				/* it's a silent error only if we are dealing with synched blocks */
+				if (block_is_unsynched)
+					error_on_this_block = 1;
+				else
+					silent_error_on_this_block = 1;
 			}
 			if (state->level >= 2) {
 				if (buffer_qarity && memcmp(buffer[diskmax + 1], buffer_qarity, state->block_size) != 0) {
 					fprintf(stdlog, "error:%u:qarity: Data error\n", i);
 					++error;
-					silent_error_on_this_block = 1;
+
+					/* it's a silent error only if we are dealing with synched blocks */
+					if (block_is_unsynched)
+						error_on_this_block = 1;
+					else
+						silent_error_on_this_block = 1;
 				}
 			}
 		}
