@@ -939,25 +939,25 @@ void state_read(struct snapraid_state* state)
 			snapraid_info info;
 
 			if (!file) {
-				fprintf(stderr, "Unexpected 'blk' specification in '%s' at line %u\n", path, line);
+				fprintf(stderr, "Unexpected '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
 			}
 
 			ret = sgetu32(f, &v_pos);
 			if (ret < 0) {
-				fprintf(stderr, "Invalid 'blk' specification in '%s' at line %u\n", path, line);
+				fprintf(stderr, "Invalid '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
 			}
 
 			if (blockidx >= file->blockmax) {
-				fprintf(stderr, "Internal inconsistency in 'blk' specification in '%s' at line %u\n", path, line);
+				fprintf(stderr, "Internal inconsistency in '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
 			}
 
 			block = &file->blockvec[blockidx];
 
 			if (block->parity_pos != POS_INVALID) {
-				fprintf(stderr, "Internal inconsistency in 'blk' specification in '%s' at line %u\n", path, line);
+				fprintf(stderr, "Internal inconsistency in '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
 			}
 
@@ -988,14 +988,14 @@ void state_read(struct snapraid_state* state)
 			if (tag[0] != 'n') {
 				c = sgetc(f);
 				if (c != ' ') {
-					fprintf(stderr, "Invalid 'blk' specification in '%s' at line %u\n", path, line);
+					fprintf(stderr, "Invalid '%s' specification in '%s' at line %u\n", tag, path, line);
 					exit(EXIT_FAILURE);
 				}
 
 				/* set the hash only if present */
 				ret = sgethex(f, block->hash, HASH_SIZE);
 				if (ret < 0) {
-					fprintf(stderr, "Invalid 'blk' specification in '%s' at line %u\n", path, line);
+					fprintf(stderr, "Invalid '%s' specification in '%s' at line %u\n", tag, path, line);
 					exit(EXIT_FAILURE);
 				}
 				hash = oathashm(hash, block->hash, HASH_SIZE);
@@ -1003,7 +1003,7 @@ void state_read(struct snapraid_state* state)
 
 			/* we must not overwrite existing blocks */
 			if (disk_block_get(disk, v_pos) != BLOCK_EMPTY) {
-				fprintf(stderr, "Internal inconsistency for 'blk' specification in '%s' at line %u\n", path, line);
+				fprintf(stderr, "Internal inconsistency for '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
 			}
 
