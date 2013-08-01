@@ -1074,6 +1074,11 @@ void state_read(struct snapraid_state* state)
 				} else if (strcmp(buffer, "rehash") == 0) {
 					rehash = 1;
 					hash = oathash8(hash, 'y');
+
+					if (state->prevhash == HASH_UNDEFINED) {
+						fprintf(stderr, "Internal incosistency for missing previous checksum in '%s' at line %u\n", path, line);
+						exit(EXIT_FAILURE);
+					}
 				} else {
 					fprintf(stderr, "Invalid 'inf' specification '%s' in '%s' at line %u\n", buffer, path, line);
 					exit(EXIT_FAILURE);
@@ -1701,7 +1706,7 @@ void state_read(struct snapraid_state* state)
 	if (state->hash == HASH_UNDEFINED) {
 		fprintf(stderr, "The checksum to use is not specified.\n");
 		fprintf(stderr, "This happens because you are likely upgrading from SnapRAID 1.0.\n");
-		fprintf(stderr, "To use the SnapRAID 2.x branch, you must restart from scratch,\n");
+		fprintf(stderr, "To use a new SnapRAID you must restart from scratch,\n");
 		fprintf(stderr, "deleting all the content and parity files.\n");
 		exit(EXIT_FAILURE);
 	}
