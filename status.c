@@ -144,7 +144,7 @@ int state_status(struct snapraid_state* state)
 	}
 
 	if (rehash) {
-		printf("You have a rehash scheduled at %u%%.\n", rehash * 100 / count);
+		printf("You have a rehash in progress at %u%%.\n", (count - rehash) * 100 / count);
 		printf("\n");
 	}
 
@@ -179,7 +179,7 @@ int state_status(struct snapraid_state* state)
 	daymedian = day_ago(median, now);
 	daynewest = day_ago(newest, now);
 
-	printf("The oldest block was checked %u days ago, the median %u, and the newest %u days ago.\n", dayoldest, daymedian, daynewest);
+	printf("The oldest block was checked %u days ago, the median %u, the newest %u.\n", dayoldest, daymedian, daynewest);
 
 	printf("\n");
 
