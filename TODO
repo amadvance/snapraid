@@ -7,6 +7,8 @@ This is the list of TODO items for SnapRAID.
 
 * Save the content file in compressed .gz format to save space.
 
+* Support names including \r and \n for Mac. See proposed patch from Matthew
+
 - v4.x generic
 
 * In the import list, uses also all the blocks in the array.
