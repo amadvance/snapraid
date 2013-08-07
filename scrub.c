@@ -386,7 +386,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		printf("%u read/data errors\n", error);
 		printf("%u silent errors\n", silent_error);
 	} else {
-		printf("No error\n");
+		/* print the result only if processed something */
+		if (countpos != 0)
+			printf("No error\n");
 	}
 
 bail:
