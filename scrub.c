@@ -55,6 +55,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	block_off_t autosavemissing;
 	int ret;
 	unsigned error;
+	unsigned silent_error;
 
 	/* maps the disks to handles */
 	handle = handle_map(state, &diskmax);
@@ -72,6 +73,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	}
 
 	error = 0;
+	silent_error = 0;
 
 	/* first count the number of blocks to process */
 	countmax = 0;
@@ -253,16 +255,18 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					++error;
 
 					/* it's a silent error only if we are dealing with synched files */
-					if (file_is_unsynched)
+					if (file_is_unsynched) {
 						error_on_this_block = 1;
-					else
+					} else {
+						++silent_error;
 						silent_error_on_this_block = 1;
+					}
 					continue;
 				}
 			}
 		}
 
-		/* if we have read all the data required, proceed with the parity */
+		/* if we have read all the data required and it's correct, proceed with the parity check */
 		if (!error_on_this_block && !silent_error_on_this_block) {
 			unsigned char* buffer_parity;
 			unsigned char* buffer_qarity;
@@ -305,10 +309,12 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				++error;
 				
 				/* it's a silent error only if we are dealing with synched blocks */
-				if (block_is_unsynched)
+				if (block_is_unsynched) {
 					error_on_this_block = 1;
-				else
+				} else {
+					++silent_error;
 					silent_error_on_this_block = 1;
+				}
 			}
 			if (state->level >= 2) {
 				if (buffer_qarity && memcmp(buffer[diskmax + 1], buffer_qarity, state->block_size) != 0) {
@@ -316,20 +322,22 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					++error;
 
 					/* it's a silent error only if we are dealing with synched blocks */
-					if (block_is_unsynched)
+					if (block_is_unsynched) {
 						error_on_this_block = 1;
-					else
+					} else {
+						++silent_error;
 						silent_error_on_this_block = 1;
+					}
 				}
 			}
 		}
 
-		if (error_on_this_block) {
-			/* do nothing, as this is a generic error */
-			/* likely caused by a not synched array */
-		} else if (silent_error_on_this_block) {
+		if (silent_error_on_this_block) {
 			/* set the error status keeping the existing time and hash */
 			info_set(&state->infoarr, i, info_set_bad(info));
+		} else if (error_on_this_block) {
+			/* do nothing, as this is a generic error */
+			/* likely caused by a not synched array */
 		} else {
 			/* if rehash is neeed */
 			if (rehash) {
@@ -373,6 +381,13 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	}
 
 	state_progress_end(state, countpos, countmax, countsize);
+
+	if (error || silent_error) {
+		printf("%u read/data errors\n", error);
+		printf("%u silent errors\n", silent_error);
+	} else {
+		printf("No error\n");
+	}
 
 bail:
 	for(j=0;j<diskmax;++j) {
