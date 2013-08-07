@@ -155,7 +155,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		error_on_this_block = 0;
 		silent_error_on_this_block = 0;
 
-		/* we assume that the block is synched */
+		/* if all the blocks at this address are synched */
 		block_is_unsynched = 0;
 
 		/* if we have to use the old hash */
@@ -168,7 +168,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			struct snapraid_block* block;
 			int file_is_unsynched;
 
-			/* we assume that the file is synched */
+			/* if the file on this disk is synched */
 			file_is_unsynched = 0;
 
 			/* by default no rehash in case of "continue" */
