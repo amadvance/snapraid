@@ -94,6 +94,7 @@ void usage(void)
 #define OPT_TEST_FORCE_ORDER_DIR 270
 #define OPT_TEST_FORCE_SCRUB 271
 #define OPT_TEST_FORCE_SCRUB_EVEN 272
+#define OPT_TEST_FORCE_CONTENT_WRITE 273
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -164,6 +165,9 @@ struct option long_options[] = {
 	/* Force scrub of all the even blocks. This is really for testing, don't try it. */
 	{ "test-force-scrub-even", 0, 0, OPT_TEST_FORCE_SCRUB_EVEN },
 
+	/* Force write of the content file even if no modification is done. */
+	{ "test-force-content-write", 0, 0, OPT_TEST_FORCE_CONTENT_WRITE },
+
 	{ 0, 0, 0, 0 }
 };
 #endif
@@ -191,6 +195,7 @@ void signal_handler(int signal)
 #define OPERATION_REHASH 7
 #define OPERATION_SCRUB 8
 #define OPERATION_STATUS 9
+#define OPERATION_REWRITE 10
 
 int main(int argc, char* argv[])
 {
@@ -370,6 +375,9 @@ int main(int argc, char* argv[])
 		case OPT_TEST_FORCE_SCRUB_EVEN :
 			opt.force_scrub_even = 1;
 			break;
+		case OPT_TEST_FORCE_CONTENT_WRITE :
+			opt.force_content_write = 1;
+			break;
 		default:
 			fprintf(stderr, "Unknown option '%c'\n", (char)c);
 			exit(EXIT_FAILURE);
@@ -402,6 +410,8 @@ int main(int argc, char* argv[])
 		operation = OPERATION_SCRUB;
 	} else if (strcmp(argv[optind], "status") == 0) {
 		operation = OPERATION_STATUS;
+	} else if (strcmp(argv[optind], "test-rewrite") == 0) {
+		operation = OPERATION_REWRITE;
 	} else {
 		fprintf(stderr, "Unknown command '%s'\n", argv[optind]);
 		exit(EXIT_FAILURE);
@@ -537,7 +547,7 @@ int main(int argc, char* argv[])
 		ret = state_sync(&state, blockstart, blockcount);
 
 		/* save the new state if required */
-		if (!opt.kill_after_sync && state.need_write)
+		if (!opt.kill_after_sync && (state.need_write || state.opt.force_content_write))
 			state_write(&state);
 
 		/* abort if required */
@@ -573,12 +583,16 @@ int main(int argc, char* argv[])
 		ret = state_scrub(&state);
 
 		/* save the new state if required */
-		if (state.need_write)
+		if (state.need_write || state.opt.force_content_write)
 			state_write(&state);
 
 		/* abort if required */
 		if (ret != 0)
 			exit(EXIT_FAILURE);
+	} else if (operation == OPERATION_REWRITE) {
+		state_read(&state);
+
+		state_write(&state);
 	} else if (operation == OPERATION_STATUS) {
 		state_read(&state);
 
