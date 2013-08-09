@@ -41,6 +41,11 @@ struct stream {
 	int state_index; /**< Index of the handle causing a state change. */
 	unsigned handle_size; /**< Number of handles. */
 	struct stream_handle* handle; /**< Set of handles. */
+#if HAVE_LIBZ
+	int compress; /**< If the file is compressed. */
+	unsigned char* zbuffer; /**< Buffer for the compressed data. */
+	z_stream z; /**< State for zlib. */
+#endif
 };
 
 /**
@@ -52,11 +57,6 @@ typedef struct stream STREAM;
  * Opens a stream for reading. Like fopen("r").
  */
 STREAM* sopen_read(const char* file);
-
-/**
- * Opens a stream for writing. Like fopen("w").
- */
-STREAM* sopen_write(const char* file);
 
 /**
  * Opens a set of streams for writing. Like fopen("w").
@@ -91,6 +91,12 @@ int sfill(STREAM* s);
  * \return 0 on success, or EOF on error.
  */
 int sflush(STREAM* s);
+
+/**
+ * Finish the write stream buffer.
+ * It can be called just before sclose() or ssync() to ensure that all the output is written.
+ */
+int sfinish(STREAM* s);
 
 /**
  * Checks if the buffer has enough data loaded.

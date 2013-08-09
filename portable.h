@@ -117,6 +117,10 @@
 #include "fnmatch.h"
 #endif
 
+#if HAVE_LIBZ
+#include <zlib.h>
+#endif
+
 /**
  * Disable case check in Windows.
  */

@@ -2134,7 +2134,7 @@ void state_write(struct snapraid_state* state)
 	/* Use the sequence fflush() -> fsync() -> fclose() -> rename() to ensure */
 	/* than even in a system crash event we have one valid copy of the file. */
 
-	if (sflush(f) != 0) {
+	if (sfinish(f) != 0) {
 		fprintf(stderr, "Error writing the content file '%s', in flush(). %s.\n", serrorfile(f), strerror(errno));
 		exit(EXIT_FAILURE);
 	}

@@ -77,10 +77,36 @@ STREAM* sopen_read(const char* file)
 #endif
 
 	s->buffer = malloc_nofail(STREAM_SIZE);
+	s->zbuffer = malloc_nofail(STREAM_SIZE);
 	s->pos = s->buffer;
 	s->end = s->buffer;
 	s->state = STREAM_STATE_READ;
 	s->state_index = 0;
+	s->compress = 0;
+
+	/* get the compress state from the file name */
+	if (strstr(file, ".gz") != 0) {
+		s->compress = -1;
+
+		s->z.zalloc = Z_NULL;
+		s->z.zfree = Z_NULL;
+
+		s->z.next_in = 0;
+		s->z.avail_in = 0;
+		s->z.total_in = 0;
+
+		s->z.next_out = 0;
+		s->z.avail_out = 0;
+		s->z.total_out = 0;
+
+		/* +16 initialize for gzip format */
+		if (inflateInit2(&s->z, 15 + 16) != Z_OK) {
+			close(s->handle[0].f);
+			free(s->handle);
+			free(s);
+			return 0;
+		}
+	}
 
 	return s;
 }
@@ -98,10 +124,12 @@ STREAM* sopen_multi_write(unsigned count)
 		s->handle[i].f = -1;
 
 	s->buffer = malloc_nofail(STREAM_SIZE);
+	s->zbuffer = malloc_nofail(STREAM_SIZE);
 	s->pos = s->buffer;
 	s->end = s->buffer + STREAM_SIZE;
 	s->state = STREAM_STATE_WRITE;
 	s->state_index = 0;
+	s->compress = 0;
 
 	return s;
 }
@@ -131,23 +159,30 @@ int sopen_multi_file(STREAM* s, unsigned i, const char* file)
 
 	s->handle[i].f = f;
 
-	return 0;
-}
+	/* define the compress state from the first file name */
+	if (i == 0 && strstr(file, ".gz") != 0) {
+		s->compress = 1;
 
-STREAM* sopen_write(const char* file)
-{
-	STREAM* s;
+		s->z.zalloc = Z_NULL;
+		s->z.zfree = Z_NULL;
 
-	s = sopen_multi_write(1);
-	if (!s)
-		return 0;
+		s->z.next_in = 0;
+		s->z.avail_in = 0;
+		s->z.total_in = 0;
 
-	if (sopen_multi_file(s, 0, file) != 0) {
-		sclose(s);
-		return 0;
+		/* setup the initial output buffer */
+		s->z.next_out = s->zbuffer;
+		s->z.avail_out = STREAM_SIZE;
+		s->z.total_out = 0;
+
+		/* initialize for gzip format with a small window to increase speed */
+		if (deflateInit2(&s->z, Z_BEST_SPEED, Z_DEFLATED, 8 + 16, 9, Z_HUFFMAN_ONLY) != Z_OK) {
+			close(f);
+			return -1;
+		}
 	}
 
-	return s;
+	return 0;
 }
 
 int sclose(STREAM* s)
@@ -165,8 +200,17 @@ int sclose(STREAM* s)
 			fail = 1;
 	}
 
+	if (s->compress > 0) {
+		if (deflateEnd(&s->z) != Z_OK)
+			fail = 1;
+	} else if (s->compress < 0) {
+		if (inflateEnd(&s->z) != Z_OK)
+			fail = 1;
+	}
+
 	free(s->handle);
 	free(s->buffer);
+	free(s->zbuffer);
 	free(s);
 
 	if (fail)
@@ -190,19 +234,83 @@ int sfill(STREAM* s)
 	if (s->state != STREAM_STATE_READ)
 		return EOF;
 
-	ret = read(s->handle[0].f, s->buffer, STREAM_SIZE);
+	if (s->compress) {
+		/* setup the output buffer */
+		s->z.next_out = s->buffer;
+		s->z.avail_out = STREAM_SIZE;
 
-	if (ret < 0) {
-		s->state = STREAM_STATE_ERROR;
-		return EOF;
-	}
-	if (ret == 0) {
-		s->state = STREAM_STATE_EOF;
-		return EOF;
-	}
+		/* main decompression loop */
+		/* we retry until some output is produced */
+	loop:
+		/* decompress something */
+		ret = inflate(&s->z, Z_SYNC_FLUSH);
 
-	s->pos = s->buffer;
-	s->end = s->buffer + ret;
+		/* if no outut was produced and no input is available */
+		if (ret == Z_BUF_ERROR && s->z.avail_in == 0 && s->z.avail_out == STREAM_SIZE) {
+			/* read data */
+			ret = read(s->handle[0].f, s->zbuffer, STREAM_SIZE);
+
+			/* if nothing cannot be read, it's surely an error */
+			/* even if we reached the end of file */
+			if (ret <= 0) {
+				s->state = STREAM_STATE_ERROR;
+				return EOF;
+			}
+
+			/* setup the input buffer */
+			s->z.next_in = s->zbuffer;
+			s->z.avail_in = ret;
+
+			/* retry */
+			goto loop;
+		}
+
+		/* if we have nothing to do and no output to process is present */
+		if (ret == Z_STREAM_END) {
+			/* if no output was produced */
+			if (s->z.avail_out == STREAM_SIZE) {
+				/* end of file */
+				s->state = STREAM_STATE_EOF;
+				return EOF;
+			}
+		} else if (ret == Z_BUF_ERROR) {
+			/* if no output was produced */
+			if (s->z.avail_out == STREAM_SIZE) {
+				/* error */
+				s->state = STREAM_STATE_ERROR;
+				return EOF;
+			}
+		} else {
+			if (ret != Z_OK) {
+				s->state = STREAM_STATE_ERROR;
+				return EOF;
+			}
+
+			/* if no output was produced */
+			if (s->z.avail_out == STREAM_SIZE) {
+				/* retry */
+				goto loop;
+			}
+		}
+
+		/* now process the output */
+		s->pos = s->buffer;
+		s->end = s->buffer + STREAM_SIZE - s->z.avail_out;
+	} else {
+		ret = read(s->handle[0].f, s->buffer, STREAM_SIZE);
+
+		if (ret < 0) {
+			s->state = STREAM_STATE_ERROR;
+			return EOF;
+		}
+		if (ret == 0) {
+			s->state = STREAM_STATE_EOF;
+			return EOF;
+		}
+
+		s->pos = s->buffer;
+		s->end = s->buffer + ret;
+	}
 
 	return *s->pos++;
 }
@@ -220,17 +328,123 @@ int sflush(STREAM* s)
 	if (!size)
 		return 0;
 
-	for(i=0;i<s->handle_size;++i) {
-		ret = write(s->handle[i].f, s->buffer, size);
+	if (s->compress) {
+		/* setup the input buffer */
+		s->z.next_in = s->buffer;
+		s->z.avail_in = size;
+	
+		/* main compression loop */
+		/* we retry until consume all the input */
+	loop:
+		/* compress something */
+		ret = deflate(&s->z, Z_NO_FLUSH);
 
-		if (ret != size) {
-			s->state = STREAM_STATE_ERROR;
-			s->state_index = i;
-			return EOF;
+		/* if the output buffer is full */
+		if (ret == Z_BUF_ERROR && s->z.avail_out == 0) {
+
+			/* write the data */
+			for(i=0;i<s->handle_size;++i) {
+				ret = write(s->handle[i].f, s->zbuffer, STREAM_SIZE);
+
+				if (ret != STREAM_SIZE) {
+					s->state = STREAM_STATE_ERROR;
+					s->state_index = i;
+					return EOF;
+				}
+			}
+
+			/* setup an empty output buffer */
+			s->z.next_out = s->zbuffer;
+			s->z.avail_out = STREAM_SIZE;
+
+			/* retry */
+			goto loop;
+		}
+
+		/* if input is still available */
+		if (s->z.avail_in != 0) {
+			goto loop;
+		}
+	} else {
+		for(i=0;i<s->handle_size;++i) {
+			ret = write(s->handle[i].f, s->buffer, size);
+
+			if (ret != size) {
+				s->state = STREAM_STATE_ERROR;
+				s->state_index = i;
+				return EOF;
+			}
 		}
 	}
 
 	s->pos = s->buffer;
+
+	return 0;
+}
+
+int sfinish(STREAM* s)
+{
+	/* first do a normal flush */
+	if (sflush(s) != 0)
+		return -1;
+
+	if (s->compress) {
+		int ret;
+		unsigned i;
+
+		/* main compression loop */
+		/* we retry until we rech the stream end */
+	loop:
+		/* compress something */
+		ret = deflate(&s->z, Z_FINISH);
+
+		/* if the output buffer is full */
+		if (ret == Z_BUF_ERROR && s->z.avail_out == 0) {
+
+			/* write the data */
+			for(i=0;i<s->handle_size;++i) {
+				ret = write(s->handle[i].f, s->zbuffer, STREAM_SIZE);
+
+				if (ret != STREAM_SIZE) {
+					s->state = STREAM_STATE_ERROR;
+					s->state_index = i;
+					return EOF;
+				}
+			}
+
+			/* setup an empty output buffer */
+			s->z.next_out = s->zbuffer;
+			s->z.avail_out = STREAM_SIZE;
+
+			/* retry */
+			goto loop;
+		}
+
+		/* if input is still available */
+		if (ret == Z_OK) {
+			goto loop;
+		}
+		if (ret != Z_STREAM_END) {
+			s->state = STREAM_STATE_ERROR;
+			s->state_index = -1;
+			return -1;
+		}
+
+		/* write the remainig data if any */
+		if (s->z.avail_out != STREAM_SIZE) {
+			int size = STREAM_SIZE - s->z.avail_out;
+		
+			for(i=0;i<s->handle_size;++i) {
+				ret = write(s->handle[i].f, s->zbuffer, size);
+
+				if (ret != size) {
+					s->state = STREAM_STATE_ERROR;
+					s->state_index = i;
+					return EOF;
+				}
+			}
+		}
+	}
 
 	return 0;
 }
@@ -578,7 +792,6 @@ int sputhex(const void* void_data, int size, STREAM* f)
 int ssync(STREAM* s)
 {
 	unsigned i;
-
 	for(i=0;i<s->handle_size;++i) {
 		if (fsync(s->handle[i].f) != 0) {
 			s->state = STREAM_STATE_ERROR;
