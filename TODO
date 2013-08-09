@@ -5,8 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - v4.1
 
-* Save the content file in compressed .gz format to save space.
-
 * Support names including \r and \n for Mac. See proposed patch from Matthew
 
 - v4.x generic
@@ -106,6 +104,30 @@ Rejected TODO
 =============
 
 This is a list of rejected TODO items.
+
+* Save the content file in compressed .gz format to save space.
+- Compression is too slow. Even using the very fast lzo.
+$ time lzop  -1 < content > content.lzo
+real    1m23.014s
+user    0m40.822s
+sys     0m3.389s
+
+$ time ./gzip -1 < content > content.gz
+real    1m47.463s
+user    1m23.732s
+sys     0m3.290s
+
+$ time ./gzip --huffonly < content > contentH.gz
+real    1m51.607s
+user    1m30.032s
+sys     0m3.245s
+
+Similar command done with snapraid, that involves also decoding and encoding takes less time.
+
+$ time ./snapraid --test-skip-device --test-skip-self -v -c ./test.conf test-rewrite
+real    0m59.087s
+user    0m14.164s
+sys     0m4.398s
 
 * Recognizes that a file is moved from one disk to another, and if the parity
 data doesn't overlap, do not recompute it.
