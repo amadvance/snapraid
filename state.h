@@ -57,6 +57,7 @@ struct snapraid_option {
 	int force_order; /**< Force sorting order. One of the SORT_* defines. */
 	unsigned force_scrub; /**< Force scrub for the specified number of blocks. */
 	int force_scrub_even; /**< Force scrub of all the even blocks. */
+	int force_content_write; /**< Force the update of the content file. */
 };
 
 struct snapraid_state {
