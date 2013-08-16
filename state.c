@@ -932,8 +932,8 @@ void state_read(struct snapraid_state* state)
 			sungetc(c, f);
 		}
 
-		if (strcmp(tag, "blk") == 0 || strcmp(tag, "inv") == 0 || strcmp(tag, "new") == 0 || strcmp(tag, "chg") == 0) {
-			/* "blk"/"inv"/"new"/"chg" command */
+		if (strcmp(tag, "blk") == 0 || strcmp(tag, "new") == 0 || strcmp(tag, "chg") == 0) {
+			/* "blk"/""new"/"chg" command */
 			block_off_t v_pos;
 			struct snapraid_block* block;
 			snapraid_info info;
@@ -984,7 +984,7 @@ void state_read(struct snapraid_state* state)
 			if (v_pos > blockmax)
 				blockmax = v_pos + 1;
 
-			/* read the hash only for 'blk/inv/chg', and not for 'new' */
+			/* read the hash only for 'blk/chg', and not for 'new' */
 			if (tag[0] != 'n') {
 				c = sgetc(f);
 				if (c != ' ') {
@@ -1022,7 +1022,7 @@ void state_read(struct snapraid_state* state)
 			/* the real block info will overwrite this */
 			info = info_make(st.st_mtime, 0, 0);
 
-			/* insert the block in the block array */
+			/* insert the info in the array */
 			info_set(&state->infoarr, v_pos, info);
 
 			/* stat */
@@ -1090,7 +1090,7 @@ void state_read(struct snapraid_state* state)
 
 			info = info_make(t, bad, rehash);
 
-			/* insert the block in the block array */
+			/* insert the info in the array */
 			info_set(&state->infoarr, v_pos, info);
 		} else if (strcmp(tag, "off") == 0) {
 			/* "off" command */
