@@ -982,7 +982,7 @@ void state_read(struct snapraid_state* state)
 
 			/* keep track of the max block number used in parity */
 			if (v_pos > blockmax)
-				blockmax = v_pos;
+				blockmax = v_pos + 1;
 
 			/* read the hash only for 'blk/inv/chg', and not for 'new' */
 			if (tag[0] != 'n') {
