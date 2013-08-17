@@ -18,6 +18,7 @@
 #include "portable.h"
 
 #include "util.h"
+#include "cpu.h"
 
 /****************************************************************************/
 /* hex conversion table */
@@ -855,14 +856,48 @@ static uint32_t CRC32C[256] = {
 	0xbe2da0a5, 0x4c4623a6, 0x5f16d052, 0xad7d5351
 };
 
-uint32_t crc32c(uint32_t crc, const unsigned char* ptr, unsigned size)
+static uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size)
 {
-	unsigned i;
-
-	for(i=0;i<size;++i)
-		crc = CRC32C[(crc ^ ptr[i]) & 0xff] ^ (crc >> 8);
+	while (size) {
+		crc = CRC32C[(crc ^ *ptr) & 0xff] ^ (crc >> 8);
+		++ptr;
+		--size;
+	}
 
 	return crc;
+}
+
+#if defined(__i386__) || defined(__x86_64__)
+
+static uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size)
+{
+	while (size >= 4) {
+		asm volatile ("crc32l %1, %0\n" : "+r" (crc) : "rm" (*(uint32_t*)ptr));
+		ptr += 4;
+		size -= 4;
+	}
+
+	while (size) {
+		asm volatile ("crc32b %1, %0\n" : "+r" (crc) : "rm" (*ptr));
+		++ptr;
+		--size;
+	}
+
+	return crc;
+}
+
+#endif
+
+uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, unsigned size);
+
+void crc32c_init(void)
+{
+	crc32c = crc32c_gen;
+#if defined(__i386__) || defined(__x86_64__)
+	if (cpu_has_sse42()) {
+		crc32c = crc32c_x86;
+	}
+#endif
 }
 
 /****************************************************************************/

@@ -470,6 +470,7 @@ int main(int argc, char* argv[])
 	}
 
 	raid_init();
+	crc32c_init();
 
 	if (!opt.skip_self)
 		selftest(opt.gui);

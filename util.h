@@ -499,7 +499,12 @@ void randomize(void* ptr, unsigned size);
 /**
  * Computes the CRC-32 (Castagnoli)
  */
-uint32_t crc32c(uint32_t crc, const unsigned char* ptr, unsigned size);
+uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, unsigned size);
+
+/**
+ * Initializes the CRC-32 (Castagnoli) support.
+ */
+void crc32c_init(void);
 
 /****************************************************************************/
 /* sax */

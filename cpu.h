@@ -20,12 +20,6 @@
 
 #if defined(__i386__) || defined(__x86_64__)
 
-#define X86_FEATURE_MMX (0*32+23) /* Multimedia Extensions */
-#define X86_FEATURE_FXSR (0*32+24) /* FXSAVE and FXRSTOR instructions (fast save and restore) */
-#define X86_FEATURE_XMM (0*32+25) /* Streaming SIMD Extensions */
-#define X86_FEATURE_XMM2 (0*32+26) /* Streaming SIMD Extensions-2 */
-#define X86_FEATURE_MMXEXT (1*32+22) /* AMD MMX extensions */
-
 static inline void cpuid(uint32_t func, uint32_t* reg)
 {
 	asm volatile(
@@ -42,15 +36,6 @@ static inline void cpuid(uint32_t func, uint32_t* reg)
 		: "0" (func)
 #endif
 	);
-}
-
-static inline int cpu_has(uint32_t flag)
-{
-	uint32_t reg[4];
-
-	cpuid((flag >> 5) ? 0x80000001 : 1, reg);
-
-	return (reg[3] >> (flag & 31)) & 1;
 }
 
 #define CPU_VENDOR_MAX 13
@@ -90,15 +75,29 @@ static inline void cpu_info(char* vendor, unsigned* family, unsigned* model)
 
 static inline int cpu_has_mmx(void)
 {
-	return cpu_has(X86_FEATURE_MMX);
+	uint32_t reg[4];
+
+	cpuid(1, reg);
+
+	return (reg[3] >> 23) & 1;
 }
 
 static inline int cpu_has_sse2(void)
 {
-	return cpu_has(X86_FEATURE_MMX) &&
-		cpu_has(X86_FEATURE_FXSR) &&
-		cpu_has(X86_FEATURE_XMM) &&
-		cpu_has(X86_FEATURE_XMM2);
+	uint32_t reg[4];
+
+	cpuid(1, reg);
+
+	return (reg[3] >> 26) & 1;
+}
+
+static inline int cpu_has_sse42(void)
+{
+	uint32_t reg[4];
+
+	cpuid(1, reg);
+
+	return (reg[2] >> 20) & 1;
 }
 
 /**
