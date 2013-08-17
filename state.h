@@ -58,6 +58,7 @@ struct snapraid_option {
 	unsigned force_scrub; /**< Force scrub for the specified number of blocks. */
 	int force_scrub_even; /**< Force scrub of all the even blocks. */
 	int force_content_write; /**< Force the update of the content file. */
+	int force_content_text; /**< Force the use of text version of content file. */
 };
 
 struct snapraid_state {

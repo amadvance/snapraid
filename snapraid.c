@@ -95,6 +95,7 @@ void usage(void)
 #define OPT_TEST_FORCE_SCRUB 271
 #define OPT_TEST_FORCE_SCRUB_EVEN 272
 #define OPT_TEST_FORCE_CONTENT_WRITE 273
+#define OPT_TEST_FORCE_CONTENT_TEXT 274
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -167,6 +168,9 @@ struct option long_options[] = {
 
 	/* Force write of the content file even if no modification is done. */
 	{ "test-force-content-write", 0, 0, OPT_TEST_FORCE_CONTENT_WRITE },
+
+	/* Force the use of text content file . */
+	{ "test-force-content-text", 0, 0, OPT_TEST_FORCE_CONTENT_TEXT },
 
 	{ 0, 0, 0, 0 }
 };
@@ -377,6 +381,9 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_TEST_FORCE_CONTENT_WRITE :
 			opt.force_content_write = 1;
+			break;
+		case OPT_TEST_FORCE_CONTENT_TEXT :
+			opt.force_content_text = 1;
 			break;
 		default:
 			fprintf(stderr, "Unknown option '%c'\n", (char)c);

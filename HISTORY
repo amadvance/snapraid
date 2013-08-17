@@ -1,7 +1,7 @@
 SnapRAID HISTORY
 ================
 
-4.0 2013/7 (BETA)
+4.0 2013/8 (BETA)
 =================
  * New 'scrub' command to periodically check the oldest blocks for silent
    errors without the need to scan the whole array.
@@ -9,6 +9,7 @@ SnapRAID HISTORY
    distribution, and the silent error status of the array.
  * Added the new Spooky hash. It's faster in 64 bit architectures.
    To convert you can use the new 'rehash' command.
+ * Changed to a binary content file to improve speed and reduce size.
  * Added a hash seed to make harder intentional collision attacks.
  * When insering files for the first time, sort them by their physical
    address to improve read performance. 

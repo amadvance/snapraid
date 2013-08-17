@@ -81,6 +81,10 @@ STREAM* sopen_read(const char* file)
 	s->end = s->buffer;
 	s->state = STREAM_STATE_READ;
 	s->state_index = 0;
+	s->offset = 0;
+	s->offset_uncached = 0;
+	s->crc = 0;
+	s->crc_uncached = 0;
 
 	return s;
 }
@@ -102,6 +106,10 @@ STREAM* sopen_multi_write(unsigned count)
 	s->end = s->buffer + STREAM_SIZE;
 	s->state = STREAM_STATE_WRITE;
 	s->state_index = 0;
+	s->offset = 0;
+	s->offset_uncached = 0;
+	s->crc = 0;
+	s->crc_uncached = 0;
 
 	return s;
 }
@@ -132,22 +140,6 @@ int sopen_multi_file(STREAM* s, unsigned i, const char* file)
 	s->handle[i].f = f;
 
 	return 0;
-}
-
-STREAM* sopen_write(const char* file)
-{
-	STREAM* s;
-
-	s = sopen_multi_write(1);
-	if (!s)
-		return 0;
-
-	if (sopen_multi_file(s, 0, file) != 0) {
-		sclose(s);
-		return 0;
-	}
-
-	return s;
 }
 
 int sclose(STREAM* s)
@@ -201,6 +193,14 @@ int sfill(STREAM* s)
 		return EOF;
 	}
 
+	/* update the crc */
+	s->crc_uncached = s->crc;
+	s->crc = crc32c(s->crc, s->buffer, ret);
+
+	/* update the offset */
+	s->offset_uncached = s->offset;
+	s->offset += ret;
+
 	s->pos = s->buffer;
 	s->end = s->buffer + ret;
 
@@ -220,6 +220,10 @@ int sflush(STREAM* s)
 	if (!size)
 		return 0;
 
+	/* update the crc */
+	s->crc = crc32c(s->crc, s->buffer, size);
+	s->crc_uncached = s->crc;
+
 	for(i=0;i<s->handle_size;++i) {
 		ret = write(s->handle[i].f, s->buffer, size);
 
@@ -230,9 +234,23 @@ int sflush(STREAM* s)
 		}
 	}
 
+	/* update the offset */
+	s->offset += size;
+	s->offset_uncached = s->offset;
+
 	s->pos = s->buffer;
 
 	return 0;
+}
+
+int64_t stell(STREAM* s)
+{
+	return s->offset_uncached + (s->pos - s->buffer);
+}
+
+uint32_t scrc(STREAM*s)
+{
+	return crc32c(s->crc_uncached, s->buffer, s->pos - s->buffer);
 }
 
 int sgettok(STREAM* f, char* str, int size)
@@ -267,6 +285,35 @@ int sgettok(STREAM* f, char* str, int size)
 	*i = 0;
 
 	return i - str;
+}
+
+int sread(STREAM* f, void* void_data, unsigned size)
+{
+	unsigned char* data = void_data;
+
+	/* if there is enough space in memory */
+	if (sptrlookup(f, size)) {
+		/* optimized version with all the data in memory */
+		unsigned char* pos = sptrget(f);
+
+		/* copy it */
+		while (size--) {
+			*data++ = *pos++;
+		}
+
+		sptrset(f, pos);
+	} else {
+		/* standard version using sputc() */
+		while (size--) {
+			int c = sgetc(f);
+			if (c == EOF)
+				return -1;
+
+			*data++ = c;
+		}
+	}
+
+	return 0;
 }
 
 int sgetline(STREAM* f, char* str, int size)
@@ -456,6 +503,89 @@ int sgethex(STREAM* f, void* void_data, int size)
 	return 0;
 }
 
+int sgetb32(STREAM* f, uint32_t* value)
+{
+	uint32_t v;
+	unsigned char b;
+	unsigned char s;
+	int c;
+
+	v = 0;
+	s = 0;
+loop:
+	c = sgetc(f);
+	if (c == EOF)
+		return -1;
+
+	b = (unsigned char)c;
+	if ((b & 0x80) == 0) {
+		v |= (uint32_t)b << s;
+		s += 7;
+		goto loop;
+	}
+
+	v |= (uint32_t)(b & 0x7f) << s;
+
+	*value = v;
+
+	return 0;
+}
+
+int sgetb64(STREAM* f, uint64_t* value)
+{
+	uint64_t v;
+	unsigned char b;
+	unsigned char s;
+	int c;
+
+	v = 0;
+	s = 0;
+loop:
+	c = sgetc(f);
+	if (c == EOF)
+		return -1;
+
+	b = (unsigned char)c;
+	if ((b & 0x80) == 0) {
+		v |= (uint64_t)b << s;
+		s += 7;
+		goto loop;
+	}
+
+	v |= (uint64_t)(b & 0x7f) << s;
+
+	*value = v;
+
+	return 0;
+}
+
+int sgetble32(STREAM* f, uint32_t* value)
+{
+	unsigned char buf[4];
+
+	if (sread(f, buf, 4) != 0)
+		return -1;
+
+	*value = buf[0] | (uint32_t)buf[1] << 8 | (uint32_t)buf[2] << 16 | (uint32_t)buf[3] << 24;
+
+	return 0;
+}
+
+int sgetbs(STREAM* f, char* str, int size)
+{
+	uint32_t len;
+
+	if (sgetb32(f, &len) < 0)
+		return -1;
+
+	if (len + 1 > (uint32_t)size)
+		return -1;
+
+	str[len] = 0;
+
+	return sread(f, str, (int)len);
+}
+
 int sputs(const char* str, STREAM* f)
 {
 	while (*str) {
@@ -574,6 +704,70 @@ int sputhex(const void* void_data, int size, STREAM* f)
 	return 0;
 }
 
+int sputb32(uint32_t value, STREAM* s)
+{
+	unsigned char b;
+	unsigned char buf[16];
+	unsigned i;
+
+	i = 0;
+loop:
+	b = value & 0x7f;
+	value >>= 7;
+
+	if (value) {
+		buf[i++] = b;
+		goto loop;
+	}
+
+	buf[i++] = b | 0x80;
+
+	return swrite(buf, i, s);
+}
+
+int sputb64(uint64_t value, STREAM* s)
+{
+	unsigned char b;
+	unsigned char buf[16];
+	unsigned i;
+
+	i = 0;
+loop:
+	b = value & 0x7f;
+	value >>= 7;
+
+	if (value) {
+		buf[i++] = b;
+		goto loop;
+	}
+
+	buf[i++] = b | 0x80;
+
+	return swrite(buf, i, s);
+}
+
+int sputble32(uint32_t value, STREAM* s)
+{
+	unsigned char buf[4];
+
+	buf[0] = value & 0xFF;
+	buf[1] = (value >> 8) & 0xFF;
+	buf[2] = (value >> 16) & 0xFF;
+	buf[3] = (value >> 24) & 0xFF;
+
+	return swrite(buf, 4, s);
+}
+
+int sputbs(const char* str, STREAM* f)
+{
+	size_t len = strlen(str);
+
+	if (sputb32(len, f) != 0)
+		return -1;
+
+	return swrite(str, len, f);
+}
+
 #if HAVE_FSYNC
 int ssync(STREAM* s)
 {
@@ -590,6 +784,86 @@ int ssync(STREAM* s)
 	return 0;
 }
 #endif
+
+/****************************************************************************/
+/* crc */
+
+static uint32_t CRC32C[256] = {
+	0x00000000, 0xf26b8303, 0xe13b70f7, 0x1350f3f4,
+	0xc79a971f, 0x35f1141c, 0x26a1e7e8, 0xd4ca64eb,
+	0x8ad958cf, 0x78b2dbcc, 0x6be22838, 0x9989ab3b,
+	0x4d43cfd0, 0xbf284cd3, 0xac78bf27, 0x5e133c24,
+	0x105ec76f, 0xe235446c, 0xf165b798, 0x030e349b,
+	0xd7c45070, 0x25afd373, 0x36ff2087, 0xc494a384,
+	0x9a879fa0, 0x68ec1ca3, 0x7bbcef57, 0x89d76c54,
+	0x5d1d08bf, 0xaf768bbc, 0xbc267848, 0x4e4dfb4b,
+	0x20bd8ede, 0xd2d60ddd, 0xc186fe29, 0x33ed7d2a,
+	0xe72719c1, 0x154c9ac2, 0x061c6936, 0xf477ea35,
+	0xaa64d611, 0x580f5512, 0x4b5fa6e6, 0xb93425e5,
+	0x6dfe410e, 0x9f95c20d, 0x8cc531f9, 0x7eaeb2fa,
+	0x30e349b1, 0xc288cab2, 0xd1d83946, 0x23b3ba45,
+	0xf779deae, 0x05125dad, 0x1642ae59, 0xe4292d5a,
+	0xba3a117e, 0x4851927d, 0x5b016189, 0xa96ae28a,
+	0x7da08661, 0x8fcb0562, 0x9c9bf696, 0x6ef07595,
+	0x417b1dbc, 0xb3109ebf, 0xa0406d4b, 0x522bee48,
+	0x86e18aa3, 0x748a09a0, 0x67dafa54, 0x95b17957,
+	0xcba24573, 0x39c9c670, 0x2a993584, 0xd8f2b687,
+	0x0c38d26c, 0xfe53516f, 0xed03a29b, 0x1f682198,
+	0x5125dad3, 0xa34e59d0, 0xb01eaa24, 0x42752927,
+	0x96bf4dcc, 0x64d4cecf, 0x77843d3b, 0x85efbe38,
+	0xdbfc821c, 0x2997011f, 0x3ac7f2eb, 0xc8ac71e8,
+	0x1c661503, 0xee0d9600, 0xfd5d65f4, 0x0f36e6f7,
+	0x61c69362, 0x93ad1061, 0x80fde395, 0x72966096,
+	0xa65c047d, 0x5437877e, 0x4767748a, 0xb50cf789,
+	0xeb1fcbad, 0x197448ae, 0x0a24bb5a, 0xf84f3859,
+	0x2c855cb2, 0xdeeedfb1, 0xcdbe2c45, 0x3fd5af46,
+	0x7198540d, 0x83f3d70e, 0x90a324fa, 0x62c8a7f9,
+	0xb602c312, 0x44694011, 0x5739b3e5, 0xa55230e6,
+	0xfb410cc2, 0x092a8fc1, 0x1a7a7c35, 0xe811ff36,
+	0x3cdb9bdd, 0xceb018de, 0xdde0eb2a, 0x2f8b6829,
+	0x82f63b78, 0x709db87b, 0x63cd4b8f, 0x91a6c88c,
+	0x456cac67, 0xb7072f64, 0xa457dc90, 0x563c5f93,
+	0x082f63b7, 0xfa44e0b4, 0xe9141340, 0x1b7f9043,
+	0xcfb5f4a8, 0x3dde77ab, 0x2e8e845f, 0xdce5075c,
+	0x92a8fc17, 0x60c37f14, 0x73938ce0, 0x81f80fe3,
+	0x55326b08, 0xa759e80b, 0xb4091bff, 0x466298fc,
+	0x1871a4d8, 0xea1a27db, 0xf94ad42f, 0x0b21572c,
+	0xdfeb33c7, 0x2d80b0c4, 0x3ed04330, 0xccbbc033,
+	0xa24bb5a6, 0x502036a5, 0x4370c551, 0xb11b4652,
+	0x65d122b9, 0x97baa1ba, 0x84ea524e, 0x7681d14d,
+	0x2892ed69, 0xdaf96e6a, 0xc9a99d9e, 0x3bc21e9d,
+	0xef087a76, 0x1d63f975, 0x0e330a81, 0xfc588982,
+	0xb21572c9, 0x407ef1ca, 0x532e023e, 0xa145813d,
+	0x758fe5d6, 0x87e466d5, 0x94b49521, 0x66df1622,
+	0x38cc2a06, 0xcaa7a905, 0xd9f75af1, 0x2b9cd9f2,
+	0xff56bd19, 0x0d3d3e1a, 0x1e6dcdee, 0xec064eed,
+	0xc38d26c4, 0x31e6a5c7, 0x22b65633, 0xd0ddd530,
+	0x0417b1db, 0xf67c32d8, 0xe52cc12c, 0x1747422f,
+	0x49547e0b, 0xbb3ffd08, 0xa86f0efc, 0x5a048dff,
+	0x8ecee914, 0x7ca56a17, 0x6ff599e3, 0x9d9e1ae0,
+	0xd3d3e1ab, 0x21b862a8, 0x32e8915c, 0xc083125f,
+	0x144976b4, 0xe622f5b7, 0xf5720643, 0x07198540,
+	0x590ab964, 0xab613a67, 0xb831c993, 0x4a5a4a90,
+	0x9e902e7b, 0x6cfbad78, 0x7fab5e8c, 0x8dc0dd8f,
+	0xe330a81a, 0x115b2b19, 0x020bd8ed, 0xf0605bee,
+	0x24aa3f05, 0xd6c1bc06, 0xc5914ff2, 0x37faccf1,
+	0x69e9f0d5, 0x9b8273d6, 0x88d28022, 0x7ab90321,
+	0xae7367ca, 0x5c18e4c9, 0x4f48173d, 0xbd23943e,
+	0xf36e6f75, 0x0105ec76, 0x12551f82, 0xe03e9c81,
+	0x34f4f86a, 0xc69f7b69, 0xd5cf889d, 0x27a40b9e,
+	0x79b737ba, 0x8bdcb4b9, 0x988c474d, 0x6ae7c44e,
+	0xbe2da0a5, 0x4c4623a6, 0x5f16d052, 0xad7d5351
+};
+
+uint32_t crc32c(uint32_t crc, const unsigned char* ptr, unsigned size)
+{
+	unsigned i;
+
+	for(i=0;i<size;++i)
+		crc = CRC32C[(crc ^ ptr[i]) & 0xff] ^ (crc >> 8);
+
+	return crc;
+}
 
 /****************************************************************************/
 /* path */
@@ -910,7 +1184,7 @@ int lock_lock(const char* file)
 int lock_unlock(int f)
 {
 	/*
-	 * Intentionally don't remove file the lock file.
+	 * Intentionally don't remove the lock file.
 	 * Removing it just introduces race course with other process
 	 * that could have already opened it.
 	 */

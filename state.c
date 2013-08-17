@@ -821,10 +821,53 @@ static void state_content_check(struct snapraid_state* state, const char* path)
 	}
 }
 
-void state_read(struct snapraid_state* state)
+/**
+ * Checks if a block position is used by at least one disk.
+ */
+static int is_block_used(struct snapraid_state* state, block_off_t pos)
 {
-	STREAM* f;
-	char path[PATH_MAX];
+	tommy_node* i;
+
+	/* check for each disk if block is really used */
+	for(i=state->disklist;i!=0;i=i->next) {
+		struct snapraid_disk* disk = i->data;
+		struct snapraid_block* block = disk_block_get(disk, pos);
+
+		if (block != BLOCK_EMPTY)
+			return 1;
+	}
+
+	return 0;
+}
+
+/**
+ * Checks if a block position in a disk is deleted.
+ */
+static int is_block_deleted(struct snapraid_disk* disk, block_off_t pos)
+{
+	struct snapraid_block* block = disk_block_get(disk, pos);
+
+	return block_state_get(block) == BLOCK_STATE_DELETED;
+}
+
+/**
+ * Finds a disk by name.
+ */
+static struct snapraid_disk* find_disk(struct snapraid_state* state, const char* name)
+{
+	tommy_node* i;
+
+	for(i=state->disklist;i!=0;i=i->next) {
+		struct snapraid_disk* disk = i->data;
+		if (strcmp(disk->name, name) == 0)
+			return disk;
+	}
+
+	return 0;
+}
+
+static void state_read_text(struct snapraid_state* state, const char* path, STREAM* f, time_t save_time)
+{
 	struct snapraid_disk* disk;
 	struct snapraid_file* file;
 	block_off_t blockidx;
@@ -835,83 +878,19 @@ void state_read(struct snapraid_state* state)
 	unsigned count_hardlink;
 	unsigned count_symlink;
 	unsigned count_dir;
-	tommy_node* node;
 	oathash_t hash;
-	struct stat st;
-	int ret;
-
-	count_file = 0;
-	count_block = 0;
-	count_hardlink = 0;
-	count_symlink = 0;
-	count_dir = 0;
-	hash = 0;
-
-	/* iterate over all the available content files and load the first one present */
-	f = 0;
-	node = tommy_list_head(&state->contentlist);
-	while (node) {
-		struct snapraid_content* content = node->data;
-		pathcpy(path, sizeof(path), content->content);
-
-		if (state->opt.gui) {
-			fprintf(stdlog, "content:%s\n", path);
-			fflush(stdlog);
-		}
-		printf("Loading state from %s...\n", path);
-
-		f = sopen_read(path);
-		if (f != 0) {
-			/* if openend stop the search */
-			break;
-		} else {
-			/* if it's real error of an existing file, abort */
-			if (errno != ENOENT) {
-				fprintf(stderr, "Error opening the content file '%s'. %s.\n", path, strerror(errno));
-				exit(EXIT_FAILURE);
-			}
-
-			/* otherwise continue */
-			if (node->next) {
-				fprintf(stderr, "warning: Content file '%s' not found, trying with another copy...\n", path);
-			}
-		}
-
-		node = node->next;
-	}
-
-	/* if not found, assume empty */
-	if (!f) {
-		/* create the initial mapping */
-		state_map(state);
-
-		fprintf(stderr, "warning: No content file found. Assuming empty.\n");
-		return;
-	}
-
-	/* get the date of the content file */
-	ret = fstat(shandle(f), &st);
-	if (ret != 0) {
-		fprintf(stderr, "Error stating the content file '%s'. %s.\n", path, strerror(errno));
-		exit(EXIT_FAILURE);
-	}
-
-	/* start with a undefined default. */
-	/* it's for compatibility with version 1.0 where MD5 was implicit. */
-	state->hash = HASH_UNDEFINED;
-
-	/* start with a zero seed, it was the default in old versions */
-	memset(state->hashseed, 0, HASH_SIZE);
-
-	/* previous hash, start with an undefined value */
-	state->prevhash = HASH_UNDEFINED;
-	memset(state->prevhashseed, 0, HASH_SIZE);
 
 	disk = 0;
 	file = 0;
 	line = 1;
 	blockidx = 0;
 	blockmax = 0;
+	count_file = 0;
+	count_block = 0;
+	count_hardlink = 0;
+	count_symlink = 0;
+	count_dir = 0;
+	hash = 0;
 
 	while (1) {
 		char buffer[PATH_MAX];
@@ -1020,7 +999,7 @@ void state_read(struct snapraid_state* state)
 
 			/* set a fake info block, in case of upgrading from an old version */
 			/* the real block info will overwrite this */
-			info = info_make(st.st_mtime, 0, 0);
+			info = info_make(save_time, 0, 0);
 
 			/* insert the info in the array */
 			info_set(&state->infoarr, v_pos, info);
@@ -1150,7 +1129,6 @@ void state_read(struct snapraid_state* state)
 			uint64_t v_mtime_sec;
 			uint32_t v_mtime_nsec;
 			uint64_t v_inode;
-			tommy_node* i;
 
 			hash = oathash8(hash, 'f');
 
@@ -1242,12 +1220,8 @@ void state_read(struct snapraid_state* state)
 			hash = oathashs(hash, sub);
 
 			/* find the disk */
-			for(i=state->disklist;i!=0;i=i->next) {
-				disk = i->data;
-				if (strcmp(disk->name, buffer) == 0)
-					break;
-			}
-			if (!i) {
+			disk = find_disk(state, buffer);
+			if (!disk) {
 				fprintf(stderr, "Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -1273,8 +1247,6 @@ void state_read(struct snapraid_state* state)
 			++count_file;
 		} else if (strcmp(tag, "hole") == 0) {
 			/* hole */
-			tommy_node* i;
-
 			hash = oathash8(hash, 'h');
 
 			if (file) {
@@ -1290,12 +1262,8 @@ void state_read(struct snapraid_state* state)
 			hash = oathashs(hash, buffer);
 
 			/* find the disk */
-			for(i=state->disklist;i!=0;i=i->next) {
-				disk = i->data;
-				if (strcmp(disk->name, buffer) == 0)
-					break;
-			}
-			if (!i) {
+			disk = find_disk(state, buffer);
+			if (!disk) {
 				fprintf(stderr, "Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -1304,7 +1272,6 @@ void state_read(struct snapraid_state* state)
 			char sub[PATH_MAX];
 			char linkto[PATH_MAX];
 			char tokento[32];
-			tommy_node* i;
 			struct snapraid_link* link;
 
 			hash = oathash8(hash, 's');
@@ -1365,12 +1332,8 @@ void state_read(struct snapraid_state* state)
 			}
 
 			/* find the disk */
-			for(i=state->disklist;i!=0;i=i->next) {
-				disk = i->data;
-				if (strcmp(disk->name, buffer) == 0)
-					break;
-			}
-			if (!i) {
+			disk = find_disk(state, buffer);
+			if (!disk) {
 				fprintf(stderr, "Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -1389,7 +1352,6 @@ void state_read(struct snapraid_state* state)
 			char sub[PATH_MAX];
 			char linkto[PATH_MAX];
 			char tokento[32];
-			tommy_node* i;
 			struct snapraid_link* link;
 
 			hash = oathash8(hash, 'a');
@@ -1450,12 +1412,8 @@ void state_read(struct snapraid_state* state)
 			}
 
 			/* find the disk */
-			for(i=state->disklist;i!=0;i=i->next) {
-				disk = i->data;
-				if (strcmp(disk->name, buffer) == 0)
-					break;
-			}
-			if (!i) {
+			disk = find_disk(state, buffer);
+			if (!disk) {
 				fprintf(stderr, "Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -1472,7 +1430,6 @@ void state_read(struct snapraid_state* state)
 		} else if (strcmp(tag, "dir") == 0) {
 			/* dir */
 			char sub[PATH_MAX];
-			tommy_node* i;
 			struct snapraid_dir* dir;
 
 			hash = oathash8(hash, 'r');
@@ -1503,12 +1460,8 @@ void state_read(struct snapraid_state* state)
 			hash = oathashs(hash, sub);
 
 			/* find the disk */
-			for(i=state->disklist;i!=0;i=i->next) {
-				disk = i->data;
-				if (strcmp(disk->name, buffer) == 0)
-					break;
-			}
-			if (!i) {
+			disk = find_disk(state, buffer);
+			if (!disk) {
 				fprintf(stderr, "Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 			}
@@ -1661,7 +1614,7 @@ void state_read(struct snapraid_state* state)
 			if (sign != hash) {
 				fprintf(stderr, "Mismatching 'sign' in '%s' at line %u\n", path, line);
 				if (!state->opt.skip_sign) {
-					fprintf(stderr, "Likely this content file is damaged. Use an alternate copy\n");
+					fprintf(stderr, "This content file is damaged! Use an alternate copy.\n");
 					exit(EXIT_FAILURE);
 				}
 			}
@@ -1701,22 +1654,12 @@ void state_read(struct snapraid_state* state)
 		exit(EXIT_FAILURE);
 	}
 
-	sclose(f);
-
-	if (state->hash == HASH_UNDEFINED) {
-		fprintf(stderr, "The checksum to use is not specified.\n");
-		fprintf(stderr, "This happens because you are likely upgrading from SnapRAID 1.0.\n");
-		fprintf(stderr, "To use a new SnapRAID you must restart from scratch,\n");
-		fprintf(stderr, "deleting all the content and parity files.\n");
+	/* check that the stored parity size matches the loaded state */
+	if (blockmax != parity_size(state)) {
+		fprintf(stderr, "Internal incosistency in parity size in '%s' at line %u\n", path, line);
 		exit(EXIT_FAILURE);
 	}
-
 	state->loaded_blockmax = blockmax;
-
-	/* update the mapping */
-	state_map(state);
-
-	state_content_check(state, path);
 
 	if (state->opt.verbose) {
 		printf("\tfile %u\n", count_file);
@@ -1727,19 +1670,16 @@ void state_read(struct snapraid_state* state)
 	}
 }
 
-void state_write(struct snapraid_state* state)
+static void state_write_text(struct snapraid_state* state, STREAM* f)
 {
-	STREAM* f;
 	unsigned count_file;
 	unsigned count_block;
 	unsigned count_hardlink;
 	unsigned count_symlink;
 	unsigned count_dir;
-	unsigned count_content;
 	tommy_node* i;
 	block_off_t b;
 	block_off_t blockmax;
-	unsigned k;
 	oathash_t hash;
 
 	count_file = 0;
@@ -1751,37 +1691,6 @@ void state_write(struct snapraid_state* state)
 
 	/* blocks of all array */
 	blockmax = parity_size(state);
-
-	/* count the content files */
-	count_content = 0;
-	i = tommy_list_head(&state->contentlist);
-	while (i) {
-		struct snapraid_content* content = i->data;
-		printf("Saving state to %s...\n", content->content);
-		++count_content;
-		i = i->next;
-	}
-
-	/* open all the content files */
-	f = sopen_multi_write(count_content);
-	if (!f) {
-		fprintf(stderr, "Error opening the content files.\n");
-		exit(EXIT_FAILURE);
-	}
-
-	k = 0;
-	i = tommy_list_head(&state->contentlist);
-	while (i) {
-		struct snapraid_content* content = i->data;
-		char tmp[PATH_MAX];
-		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
-		if (sopen_multi_file(f, k, tmp) != 0) {
-			fprintf(stderr, "Error opening the content file '%s'. %s.\n", tmp, strerror(errno));
-			exit(EXIT_FAILURE);
-		}
-		++k;
-		i = i->next;
-	}
 
 	sputsl("blksize ", f);
 	hash = oathash8(hash, 'z');
@@ -2131,6 +2040,1249 @@ void state_write(struct snapraid_state* state)
 		exit(EXIT_FAILURE);
 	}
 
+	if (state->opt.verbose) {
+		printf("\tfile %u\n", count_file);
+		printf("\tblock %u\n", count_block);
+		printf("\thardlink %u\n", count_hardlink);
+		printf("\tsymlink %u\n", count_symlink);
+		printf("\temptydir %u\n", count_dir);
+	}
+}
+
+/**
+ * Flush the file checking the final CRC.
+ * We exploit the fact that the CRC is always stored in the last 4 bytes.
+ */
+static void decoding_error(const char* path, STREAM* f)
+{
+	unsigned char buf[4];
+	uint32_t crc_stored;
+	uint32_t crc_computed;
+
+	if (seof(f)) {
+		fprintf(stderr, "Unexpected end of content file '%s' at offset %"PRIi64"\n", path, stell(f));
+		fprintf(stderr, "This content file is truncated. Use an alternate copy.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	if (serror(f)) {
+		fprintf(stderr, "Error reading the content file '%s' at offset %"PRIi64"\n", path, stell(f));
+		exit(EXIT_FAILURE);
+	}
+
+	fprintf(stderr, "Decoding error in '%s' at offset %"PRIi64"\n", path, stell(f));
+
+	buf[0] = 0;
+	buf[1] = 0;
+	buf[2] = 0;
+	buf[3] = 0;
+
+	/* read until the end of the file */
+	while (1) {
+		int c = sgetc(f);
+		if (c == EOF) {
+			break;
+		}
+
+		/* keep the last four bytes */
+		buf[0] = buf[1];
+		buf[1] = buf[2];
+		buf[2] = buf[3];
+		buf[3] = c;
+	}
+
+	if (serror(f)) {
+		fprintf(stderr, "Error flushing the content file '%s' at offset %"PRIi64"\n", path, stell(f));
+		exit(EXIT_FAILURE);
+	}
+
+	/* get the stored crc from the last four bytes */
+	crc_stored = buf[0] | (uint32_t)buf[1] << 8 | (uint32_t)buf[2] << 16 | (uint32_t)buf[3] << 24;
+
+	/* get the computed crc */
+	crc_computed = scrc(f);
+
+	/* adjust the stored crc to include itself */
+	crc_stored = crc32c(crc_stored, buf, 4);
+
+	if (crc_computed != crc_stored) {
+		fprintf(stderr, "Mismatching CRC in '%s'\n", path);
+		fprintf(stderr, "This content file is damaged! Use an alternate copy.\n");
+		exit(EXIT_FAILURE);
+	} else {
+		fprintf(stderr, "The file CRC is correct! This seems a SnapRAID bug!\n");
+	}
+}
+
+static void state_read_binary(struct snapraid_state* state, const char* path, STREAM* f)
+{
+	block_off_t blockmax;
+	unsigned count_file;
+	unsigned count_block;
+	unsigned count_hardlink;
+	unsigned count_symlink;
+	unsigned count_dir;
+	int crc_checked;
+	char buffer[PATH_MAX];
+	int ret;
+
+	blockmax = 0;
+	count_file = 0;
+	count_block = 0;
+	count_hardlink = 0;
+	count_symlink = 0;
+	count_dir = 0;
+	crc_checked = 0;
+
+	ret = sread(f, buffer, 10);
+	if (ret < 0 || memcmp(buffer, "SnapRAID\n\3", 10) != 0) {
+		decoding_error(path, f);
+		fprintf(stderr, "Invalid header!\n");
+		exit(EXIT_FAILURE);
+	}
+
+	while (1) {
+		char buffer[PATH_MAX];
+		int c;
+
+		/* read the command */
+		c = sgetc(f);
+		if (c == EOF) {
+			break;
+		}
+
+		if (c == 'f') {
+			/* file */
+			char sub[PATH_MAX];
+			uint64_t v_size;
+			uint64_t v_mtime_sec;
+			uint32_t v_mtime_nsec;
+			uint64_t v_inode;
+			uint32_t v_idx;
+			struct snapraid_file* file;
+			struct snapraid_disk* disk;
+
+			ret = sgetbs(f, buffer, sizeof(buffer));
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetb64(f, &v_size);
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetb64(f, &v_mtime_sec);
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetb32(f, &v_mtime_nsec);
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			/* ignore nanoseconds if asked to find by name */
+			if (state->opt.force_by_name)
+				v_mtime_nsec = FILE_MTIME_NSEC_INVALID;
+
+			ret = sgetb64(f, &v_inode);
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetbs(f, sub, sizeof(sub));
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+			if (!*sub) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			/* find the disk */
+			disk = find_disk(state, buffer);
+			if (!disk) {
+				decoding_error(path, f);
+				fprintf(stderr, "Disk named '%s' not found!\n", buffer);
+				exit(EXIT_FAILURE);
+			}
+
+			/* allocate the file */
+			file = file_alloc(state->block_size, sub, v_size, v_mtime_sec, v_mtime_nsec, v_inode, 0);
+
+			/* insert the file in the file containers */
+			tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
+			tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
+			tommy_list_insert_tail(&disk->filelist, &file->nodelist, file);
+
+			/* reads all the blocks */
+			v_idx = 0;
+			while (v_idx < file->blockmax) {
+				block_off_t v_pos;
+				uint32_t v_count;
+
+				/* get the "blk"/"new"/"chg" command */
+				c = sgetc(f);
+
+				ret = sgetb32(f, &v_pos);
+				if (ret < 0) {
+					decoding_error(path, f);
+					exit(EXIT_FAILURE);
+				}
+
+				ret = sgetb32(f, &v_count);
+				if (ret < 0) {
+					decoding_error(path, f);
+					exit(EXIT_FAILURE);
+				}
+
+				if (v_idx + v_count > file->blockmax) {
+					decoding_error(path, f);
+					fprintf(stderr, "Internal inconsistency in block number!\n");
+					exit(EXIT_FAILURE);
+				}
+
+				if (v_pos + v_count > blockmax) {
+					decoding_error(path, f);
+					fprintf(stderr, "Internal inconsistency in block size!\n");
+					exit(EXIT_FAILURE);
+				}
+
+				/* grow the array */
+				tommy_array_grow(&disk->blockarr, v_pos + v_count);
+
+				/* fill the blocks in the run */
+				while (v_count) {
+					struct snapraid_block* block = &file->blockvec[v_idx];
+
+					if (block->parity_pos != POS_INVALID) {
+						decoding_error(path, f);
+						fprintf(stderr, "Internal inconsistency in block position!\n");
+						exit(EXIT_FAILURE);
+					}
+
+					switch (c) {
+					case 'b' :
+						block_state_set(block, BLOCK_STATE_BLK);
+						break;
+					case 'n' :
+						block_state_set(block, BLOCK_STATE_NEW);
+						break;
+					case 'g' :
+						block_state_set(block, BLOCK_STATE_CHG);
+						break;
+					default:
+						decoding_error(path, f);
+						fprintf(stderr, "Invalid block type!\n");
+						exit(EXIT_FAILURE);
+					}
+
+					block->parity_pos = v_pos;
+
+					/* read the hash only for 'blk/chg', and not for 'new' */
+					if (c != 'n') {
+						/* set the hash only if present */
+						ret = sread(f, block->hash, HASH_SIZE);
+						if (ret < 0) {
+							decoding_error(path, f);
+							exit(EXIT_FAILURE);
+						}
+					}
+
+					/* we must not overwrite existing blocks */
+					if (disk_block_get(disk, v_pos) != BLOCK_EMPTY) {
+						decoding_error(path, f);
+						fprintf(stderr, "Internal inconsistency in block existence!\n");
+						exit(EXIT_FAILURE);
+					}
+
+					/* insert the block in the block array */
+					tommy_array_set(&disk->blockarr, v_pos, block);
+
+					/* stat */
+					++count_block;
+
+					/* go to the next block */
+					++v_idx;
+					++v_pos;
+					--v_count;
+				}
+			}
+
+			/* stat */
+			++count_file;
+		} else if (c == 'i') {
+			/* "inf" command */
+			snapraid_info info;
+			uint32_t v_pos;
+			uint32_t v_oldest;
+
+			ret = sgetb32(f, &v_oldest);
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetb32(f, &blockmax);
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			v_pos = 0;
+			while (v_pos < blockmax) {
+				int rehash;
+				int bad;
+				uint32_t t;
+				uint32_t flag;
+				uint32_t v_count;
+
+				ret = sgetb32(f, &v_count);
+				if (ret < 0) {
+					decoding_error(path, f);
+					exit(EXIT_FAILURE);
+				}
+
+				if (v_pos + v_count > blockmax) {
+					decoding_error(path, f);
+					fprintf(stderr, "Internal inconsistency in info size!\n");
+					exit(EXIT_FAILURE);
+				}
+
+				ret = sgetb32(f, &flag);
+				if (ret < 0) {
+					decoding_error(path, f);
+					exit(EXIT_FAILURE);
+				}
+
+				/* if there is an info */
+				if ((flag & 1) != 0) {
+					/* read the time */
+					ret = sgetb32(f, &t);
+					if (ret < 0) {
+						decoding_error(path, f);
+						exit(EXIT_FAILURE);
+					}
+
+					/* analyze the flags */
+					bad = (flag & 2) != 0;
+					rehash = (flag & 4) != 0;
+
+					if (rehash && state->prevhash == HASH_UNDEFINED) {
+						decoding_error(path, f);
+						fprintf(stderr, "Internal incosistency for missing previous checksum!\n");
+						exit(EXIT_FAILURE);
+					}
+
+					info = info_make(t + v_oldest, bad, rehash);
+				} else {
+					info = 0;
+				}
+
+				while (v_count) {
+					/* insert the info in the array */
+					info_set(&state->infoarr, v_pos, info);
+
+					/* go to next block */
+					++v_pos;
+					--v_count;
+				}
+			}
+		} else if (c == 'h') {
+			/* hole */
+			uint32_t v_pos;
+			block_off_t blockdiskmax;
+			struct snapraid_disk* disk;
+
+			ret = sgetbs(f, buffer, sizeof(buffer));
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			/* find the disk */
+			disk = find_disk(state, buffer);
+			if (!disk) {
+				decoding_error(path, f);
+				fprintf(stderr, "Disk named '%s' not found!\n", buffer);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetb32(f, &blockdiskmax);
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			if (blockdiskmax > blockmax) {
+				fprintf(stderr, "Internal inconsistency in disk size!\n");
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			/* grow the array */
+			tommy_array_grow(&disk->blockarr, blockdiskmax);
+
+			v_pos = 0;
+			while (v_pos < blockdiskmax) {
+				uint32_t flag;
+				uint32_t v_count;
+
+				ret = sgetb32(f, &v_count);
+				if (ret < 0) {
+					decoding_error(path, f);
+					exit(EXIT_FAILURE);
+				}
+
+				if (v_pos + v_count > blockdiskmax) {
+					decoding_error(path, f);
+					fprintf(stderr, "Internal inconsistency in hole size!\n");
+					exit(EXIT_FAILURE);
+				}
+
+				ret = sgetb32(f, &flag);
+				if (ret < 0) {
+					decoding_error(path, f);
+					exit(EXIT_FAILURE);
+				}
+
+				/* if it's a run of deleted blocks */
+				if ((flag & 1) != 0) {
+					while (v_count) {
+						struct snapraid_deleted* deleted;
+
+						/* allocate a new deleted block */
+						deleted = deleted_alloc();
+
+						/* insert it in the list of deleted blocks */
+						tommy_list_insert_tail(&disk->deletedlist, &deleted->node, deleted);
+
+						/* set the position */
+						deleted->block.parity_pos = v_pos;
+
+						/* read the hash */
+						ret = sread(f, deleted->block.hash, HASH_SIZE);
+						if (ret < 0) {
+							decoding_error(path, f);
+							exit(EXIT_FAILURE);
+						}
+
+						/* we must not overwrite existing blocks */
+						if (disk_block_get(disk, v_pos) != BLOCK_EMPTY) {
+							decoding_error(path, f);
+							fprintf(stderr, "Internal inconsistency for used hole!\n");
+							exit(EXIT_FAILURE);
+						}
+
+						/* insert the block in the block array */
+						tommy_array_set(&disk->blockarr, v_pos, &deleted->block);
+
+						/* go to next block */
+						++v_pos;
+						--v_count;
+					}
+				} else {
+					/* go to the next run */
+					v_pos += v_count;
+				}
+			}
+		} else if (c == 's') {
+			/* symlink */
+			char sub[PATH_MAX];
+			char linkto[PATH_MAX];
+			struct snapraid_link* link;
+			struct snapraid_disk* disk;
+
+			ret = sgetbs(f, buffer, sizeof(buffer));
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetbs(f, sub, sizeof(sub));
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetbs(f, linkto, sizeof(linkto));
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			if (!*sub || !*linkto) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			/* find the disk */
+			disk = find_disk(state, buffer);
+			if (!disk) {
+				decoding_error(path, f);
+				fprintf(stderr, "Disk named '%s' not found!\n", buffer);
+				exit(EXIT_FAILURE);
+			}
+
+			/* allocate the link as symbolic link */
+			link = link_alloc(sub, linkto, FILE_IS_SYMLINK);
+
+			/* insert the link in the link containers */
+			tommy_hashdyn_insert(&disk->linkset, &link->nodeset, link, link_name_hash(link->sub));
+			tommy_list_insert_tail(&disk->linklist, &link->nodelist, link);
+
+			/* stat */
+			++count_symlink;
+		} else if (c == 'a') {
+			/* hardlink */
+			char sub[PATH_MAX];
+			char linkto[PATH_MAX];
+			struct snapraid_link* link;
+			struct snapraid_disk* disk;
+
+			ret = sgetbs(f, buffer, sizeof(buffer));
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetbs(f, sub, sizeof(sub));
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetbs(f, linkto, sizeof(linkto));
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			if (!*sub || !*linkto) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			/* find the disk */
+			disk = find_disk(state, buffer);
+			if (!disk) {
+				decoding_error(path, f);
+				fprintf(stderr, "Disk named '%s' not found!\n", buffer);
+				exit(EXIT_FAILURE);
+			}
+
+			/* allocate the link as hard link */
+			link = link_alloc(sub, linkto, FILE_IS_HARDLINK);
+
+			/* insert the link in the link containers */
+			tommy_hashdyn_insert(&disk->linkset, &link->nodeset, link, link_name_hash(link->sub));
+			tommy_list_insert_tail(&disk->linklist, &link->nodelist, link);
+
+			/* stat */
+			++count_hardlink;
+		} else if (c == 'r') {
+			/* dir */
+			char sub[PATH_MAX];
+			struct snapraid_dir* dir;
+			struct snapraid_disk* disk;
+
+			ret = sgetbs(f, buffer, sizeof(buffer));
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetbs(f, sub, sizeof(sub));
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			if (!*sub) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			/* find the disk */
+			disk = find_disk(state, buffer);
+			if (!disk) {
+				decoding_error(path, f);
+				fprintf(stderr, "Disk named '%s' not found!\n", buffer);
+				exit(EXIT_FAILURE);
+			}
+
+			/* allocate the dir */
+			dir = dir_alloc(sub);
+
+			/* insert the dir in the dir containers */
+			tommy_hashdyn_insert(&disk->dirset, &dir->nodeset, dir, dir_name_hash(dir->sub));
+			tommy_list_insert_tail(&disk->dirlist, &dir->nodelist, dir);
+
+			/* stat */
+			++count_dir;
+		} else if (c == 'c') {
+			c = sgetc(f);
+			switch (c) {
+			case 'u' :
+				state->hash = HASH_MURMUR3;
+				break;
+			case 'k' :
+				state->hash = HASH_SPOOKY2;
+				break;
+			default:
+				decoding_error(path, f);
+				fprintf(stderr, "Invalid checksum!\n");
+				exit(EXIT_FAILURE);
+			}
+
+			/* read the seed */
+			ret = sread(f, state->hashseed, HASH_SIZE);
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+		} else if (c == 'C') {
+			c = sgetc(f);
+			switch (c) {
+			case 'u' :
+				state->prevhash = HASH_MURMUR3;
+				break;
+			case 'k' :
+				state->prevhash = HASH_SPOOKY2;
+				break;
+			default:
+				decoding_error(path, f);
+				fprintf(stderr, "Invalid checksum!\n");
+				exit(EXIT_FAILURE);
+			}
+
+			/* read the seed */
+			ret = sread(f, state->prevhashseed, HASH_SIZE);
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+		} else if (c == 'z') {
+			block_off_t blksize;
+
+			ret = sgetb32(f, &blksize);
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			if (blksize != state->block_size) {
+				decoding_error(path, f);
+				fprintf(stderr, "Mismatching 'blksize' and 'block_size' specification!\n");
+				fprintf(stderr, "Please restore the 'block_size' value in the configuration file to '%u'\n", blksize / 1024);
+				exit(EXIT_FAILURE);
+			}
+		} else if (c == 'm') {
+			struct snapraid_map* map;
+			char uuid[UUID_MAX];
+			uint32_t v_pos;
+
+			ret = sgetbs(f, buffer, sizeof(buffer));
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetb32(f, &v_pos);
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			/* read the uuid */
+			ret = sgetbs(f, uuid, sizeof(uuid));
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			map = map_alloc(buffer, v_pos, uuid);
+
+			tommy_list_insert_tail(&state->maplist, &map->node, map);
+		} else if (c == 'N') {
+			uint32_t crc_stored;
+			uint32_t crc_computed;
+
+			/* get the crc before reading it from the file */
+			crc_computed = scrc(f);
+
+			ret = sgetble32(f, &crc_stored);
+			if (ret < 0) {
+				/* here don't call decoding_error() because it's too late to get the crc */
+				fprintf(stderr, "Error reading the CRC in '%s' at offset %"PRIi64"\n", path, stell(f));
+				fprintf(stderr, "This content file is damaged! Use an alternate copy.\n");
+				exit(EXIT_FAILURE);
+			}
+
+			if (crc_stored != crc_computed) {
+				/* here don't call decoding_error() because it's too late to get the crc */
+				fprintf(stderr, "Mismatching CRC in '%s'\n", path);
+				fprintf(stderr, "This content file is damaged! Use an alternate copy.\n");
+				exit(EXIT_FAILURE);
+			}
+
+			crc_checked = 1;
+		} else {
+			decoding_error(path, f);
+			fprintf(stderr, "Invalid command '%c'!\n", (char)c);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	if (serror(f)) {
+		fprintf(stderr, "Error reading the content file '%s' at offset %"PRIi64"\n", path, stell(f));
+		exit(EXIT_FAILURE);
+	}
+
+	if (!crc_checked) {
+		fprintf(stderr, "Finished reading '%s' without finding the CRC\n", path);
+		fprintf(stderr, "This content file is truncated or damaged! Use an alternate copy.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	/* check that the stored parity size matches the loaded state */
+	if (blockmax != parity_size(state)) {
+		fprintf(stderr, "Internal incosistency in parity size in '%s' at offset %"PRIi64"\n", path, stell(f));
+		exit(EXIT_FAILURE);
+	}
+	state->loaded_blockmax = blockmax;
+
+	if (state->opt.verbose) {
+		printf("\tfile %u\n", count_file);
+		printf("\tblock %u\n", count_block);
+		printf("\thardlink %u\n", count_hardlink);
+		printf("\tsymlink %u\n", count_symlink);
+		printf("\temptydir %u\n", count_dir);
+	}
+}
+
+static void state_write_binary(struct snapraid_state* state, STREAM* f)
+{
+	unsigned count_file;
+	unsigned count_block;
+	unsigned count_hardlink;
+	unsigned count_symlink;
+	unsigned count_dir;
+	tommy_node* i;
+	block_off_t b;
+	block_off_t blockmax;
+	block_off_t begin;
+	time_t info_oldest;
+	int info_has_rehash;
+
+	count_file = 0;
+	count_block = 0;
+	count_hardlink = 0;
+	count_symlink = 0;
+	count_dir = 0;
+
+	/* blocks of all array */
+	blockmax = parity_size(state);
+
+	/* write header */
+	swrite("SnapRAID\n\3", 10, f);
+
+	/* clear the info for unused blocks */
+	/* and get some other info */
+	info_oldest = 0; /* oldest time in info */
+	info_has_rehash = 0; /* if there is a rehash info */
+	for(b=0;b<blockmax;++b) {
+		/* if the position is used */
+		if (is_block_used(state, b)) {
+			snapraid_info info = info_get(&state->infoarr, b);
+
+			/* only if there is some info to store */
+			if (info) {
+				time_t time = info_get_time(info);
+
+				if (!info_oldest || time < info_oldest)
+					info_oldest = time;
+
+				if (info_get_rehash(info))
+					info_has_rehash = 1;
+			}
+		} else {
+			/* clear any previous info */
+			info_set(&state->infoarr, b, 0);
+		}
+	}
+
+	sputc('z', f);
+	sputb32(state->block_size, f);
+	if (serror(f)) {
+		fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	sputc('c', f);
+	if (state->hash == HASH_MURMUR3) {
+		sputc('u', f);
+	} else if (state->hash == HASH_SPOOKY2) {
+		sputc('k', f);
+	} else {
+		fprintf(stderr, "Unexpected hash when writing the content file '%s'.\n", serrorfile(f));
+		exit(EXIT_FAILURE);
+	}
+	swrite(state->hashseed, HASH_SIZE, f);
+	if (serror(f)) {
+		fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	/* previous hash only present */
+	if (state->prevhash != HASH_UNDEFINED) {
+		/* if at least one rehash tag found, we have to save the previous hash */
+		if (info_has_rehash) {
+			sputc('C', f);
+			if (state->prevhash == HASH_MURMUR3) {
+				sputc('u', f);
+			} else if (state->hash == HASH_SPOOKY2) {
+				sputc('k', f);
+			} else {
+				fprintf(stderr, "Unexpected prevhash when writing the content file '%s'.\n", serrorfile(f));
+				exit(EXIT_FAILURE);
+			}
+			swrite(state->prevhashseed, HASH_SIZE, f);
+			if (serror(f)) {
+				fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
+
+	/* for each map */
+	for(i=state->maplist;i!=0;i=i->next) {
+		struct snapraid_map* map = i->data;
+		sputc('m', f);
+		sputbs(map->name, f);
+		sputb32(map->position, f);
+		sputbs(map->uuid, f);
+		if (serror(f)) {
+			fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	/* save the info */
+	sputc('i', f);
+
+	sputb32(info_oldest, f);
+
+	/* read the blockmax, this is also going to be used in a lot of checks */
+	sputb32(blockmax, f);
+
+	/* write the info for each block */
+	begin = 0;
+	while (begin < blockmax) {
+		snapraid_info info;
+		block_off_t end;
+		time_t t;
+		unsigned flag;
+
+		info = info_get(&state->infoarr, begin);
+
+		/* find the end of run of blocks */
+		end = begin + 1;
+		while (end < blockmax
+			&& info == info_get(&state->infoarr, end))
+		{
+			++end;
+		}
+
+		sputb32(end - begin, f);
+
+		/* if there is info */
+		if (info) {
+			/* other flags */
+			flag = 1; /* time is present */
+			if (info_get_bad(info))
+				flag |= 2;
+			if (info_get_rehash(info))
+				flag |= 4;
+			sputb32(flag, f);
+
+			t = info_get_time(info) - info_oldest;
+			sputb32(t, f);
+		} else {
+			/* write a special 0 flag to mark missing info */
+			sputb32(0, f);
+		}
+
+		if (serror(f)) {
+			fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+
+		/* next begin position */
+		begin = end;
+	}
+
+	/* for each disk */
+	for(i=state->disklist;i!=0;i=i->next) {
+		tommy_node* j;
+		struct snapraid_disk* disk = i->data;
+		block_off_t blockdiskmax;
+
+		/* for each file */
+		for(j=disk->filelist;j!=0;j=j->next) {
+			struct snapraid_file* file = j->data;
+			struct snapraid_block* blockvec = file->blockvec;
+			uint64_t size;
+			uint64_t mtime_sec;
+			int32_t mtime_nsec;
+			uint64_t inode;
+
+			size = file->size;
+			mtime_sec = file->mtime_sec;
+			mtime_nsec = file->mtime_nsec;
+			inode = file->inode;
+
+			sputc('f', f);
+			sputbs(disk->name, f);
+			sputb64(size, f);
+			sputb64(mtime_sec, f);
+			sputb32(mtime_nsec, f);
+			sputb64(inode, f);
+			sputbs(file->sub, f);
+			if (serror(f)) {
+				fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+
+			/* for all the blocks of the file */
+			begin = 0;
+			while (begin < file->blockmax) {
+				unsigned block_state = block_state_get(blockvec + begin);
+				uint32_t v_pos = blockvec[begin].parity_pos;
+				uint32_t v_count;
+				
+				block_off_t end;
+
+				/* find the end of run of blocks */
+				end = begin + 1;
+				while (end < file->blockmax
+					&& block_state == block_state_get(blockvec + end)
+					&& blockvec[end-1].parity_pos + 1 == blockvec[end].parity_pos)
+				{
+					++end;
+				}
+
+				switch (block_state) {
+				case BLOCK_STATE_BLK :
+					sputc('b', f);
+					break;
+				case BLOCK_STATE_NEW :
+					sputc('n', f);
+					break;
+				case BLOCK_STATE_CHG :
+					sputc('g', f);
+					break;
+				default:
+					fprintf(stderr, "Internal state inconsistency in saving for block %u state %u\n", v_pos, block_state);
+					exit(EXIT_FAILURE);
+				}
+
+				sputb32(v_pos, f);
+
+				v_count = end - begin;
+				sputb32(v_count, f);
+
+				if (block_state != BLOCK_STATE_NEW) {
+					for(b=begin;b<end;++b) {
+						swrite(blockvec[b].hash, HASH_SIZE, f);
+					}
+				}
+
+				if (serror(f)) {
+					fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+					exit(EXIT_FAILURE);
+				}
+
+				count_block += end - begin;
+
+				/* next begin position */
+				begin = end;
+			}
+
+			++count_file;
+		}
+
+		/* for each link */
+		for(j=disk->linklist;j!=0;j=j->next) {
+			struct snapraid_link* link = j->data;
+
+			switch (link_flag_get(link, FILE_IS_LINK_MASK)) {
+			case FILE_IS_HARDLINK :
+				sputc('a', f);
+				++count_hardlink;
+				break;
+			case FILE_IS_SYMLINK :
+				sputc('s', f);
+				++count_symlink;
+				break;
+			}
+
+			sputbs(disk->name, f);
+			sputbs(link->sub, f);
+			sputbs(link->linkto, f);
+			if (serror(f)) {
+				fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+		}
+
+		/* for each dir */
+		for(j=disk->dirlist;j!=0;j=j->next) {
+			struct snapraid_dir* dir = j->data;
+
+			sputc('r', f);
+			sputbs(disk->name, f);
+			sputbs(dir->sub, f);
+			if (serror(f)) {
+				fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+
+			++count_dir;
+		}
+
+		/* maximum block for this disk */
+		blockdiskmax = tommy_array_size(&disk->blockarr);
+
+		/* skip blocks over the end of the parity */
+		if (blockdiskmax > blockmax)
+			blockdiskmax = blockmax;
+
+		/* skip empty blocks at the end of the disk */
+		while (blockdiskmax > 0 && disk_block_get(disk, blockdiskmax - 1) == BLOCK_EMPTY)
+			--blockdiskmax;
+
+		/* write the hole list only if the disk is not completely empty */
+		/* this is required to write no reference to a removed disk */
+		if (blockdiskmax) {
+			/* write the list of deleted blocks */
+			sputc('h', f);
+			sputbs(disk->name, f);
+			sputb32(blockdiskmax, f);
+
+			if (serror(f)) {
+				fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+
+			/* write the deleted info for each block */
+			begin = 0;
+			while (begin < blockdiskmax) {
+				int is_deleted;
+				block_off_t end;
+
+				is_deleted = is_block_deleted(disk, begin);
+
+				/* find the end of run of blocks */
+				end = begin + 1;
+				while (end < blockdiskmax
+					&& is_deleted == is_block_deleted(disk, end))
+				{
+					++end;
+				}
+
+				sputb32(end - begin, f);
+
+				if (is_deleted) {
+					/* write the run of deleted blocks with hash */
+					sputb32(1, f);
+
+					/* write all the hash */
+					while (begin < end) {
+						struct snapraid_block* block = disk_block_get(disk, begin);
+				
+						swrite(block->hash, HASH_SIZE, f);
+
+						++begin;
+					}
+				} else {
+					/* write the run of blocks without hash */
+					/* they can be either used or empty blocks */
+					sputb32(0, f);
+
+					/* next begin position */
+					begin = end;
+				}
+
+				if (serror(f)) {
+					fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+					exit(EXIT_FAILURE);
+				}
+			}
+		}
+	}
+
+	sputc('N', f);
+	sputble32(scrc(f), f);
+	if (serror(f)) {
+		fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	if (state->opt.verbose) {
+		printf("\tfile %u\n", count_file);
+		printf("\tblock %u\n", count_block);
+		printf("\thardlink %u\n", count_hardlink);
+		printf("\tsymlink %u\n", count_symlink);
+		printf("\temptydir %u\n", count_dir);
+	}
+}
+
+void state_read(struct snapraid_state* state)
+{
+	STREAM* f;
+	char path[PATH_MAX];
+	struct stat st;
+	tommy_node* node;
+	int ret;
+	int c;
+
+	/* iterate over all the available content files and load the first one present */
+	f = 0;
+	node = tommy_list_head(&state->contentlist);
+	while (node) {
+		struct snapraid_content* content = node->data;
+		pathcpy(path, sizeof(path), content->content);
+
+		if (state->opt.gui) {
+			fprintf(stdlog, "content:%s\n", path);
+			fflush(stdlog);
+		}
+		printf("Loading state from %s...\n", path);
+
+		f = sopen_read(path);
+		if (f != 0) {
+			/* if openend stop the search */
+			break;
+		} else {
+			/* if it's real error of an existing file, abort */
+			if (errno != ENOENT) {
+				fprintf(stderr, "Error opening the content file '%s'. %s.\n", path, strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+
+			/* otherwise continue */
+			if (node->next) {
+				fprintf(stderr, "warning: Content file '%s' not found, trying with another copy...\n", path);
+			}
+		}
+
+		node = node->next;
+	}
+
+	/* if not found, assume empty */
+	if (!f) {
+		/* create the initial mapping */
+		state_map(state);
+
+		fprintf(stderr, "warning: No content file found. Assuming empty.\n");
+		return;
+	}
+
+	/* get the date of the content file */
+	ret = fstat(shandle(f), &st);
+	if (ret != 0) {
+		fprintf(stderr, "Error stating the content file '%s'. %s.\n", path, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+	/* start with a undefined default. */
+	/* it's for compatibility with version 1.0 where MD5 was implicit. */
+	state->hash = HASH_UNDEFINED;
+
+	/* start with a zero seed, it was the default in old versions */
+	memset(state->hashseed, 0, HASH_SIZE);
+
+	/* previous hash, start with an undefined value */
+	state->prevhash = HASH_UNDEFINED;
+	memset(state->prevhashseed, 0, HASH_SIZE);
+
+	/* get the first char to detect the file type */
+	c = sgetc(f);
+	sungetc(c, f);
+	
+	if (c == 'S') {
+		state_read_binary(state, path, f);
+	} else {
+		state_read_text(state, path, f, st.st_mtime);
+	}
+
+	sclose(f);
+
+	if (state->hash == HASH_UNDEFINED) {
+		fprintf(stderr, "The checksum to use is not specified.\n");
+		fprintf(stderr, "This happens because you are likely upgrading from SnapRAID 1.0.\n");
+		fprintf(stderr, "To use a new SnapRAID you must restart from scratch,\n");
+		fprintf(stderr, "deleting all the content and parity files.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	/* update the mapping */
+	state_map(state);
+
+	state_content_check(state, path);
+}
+
+void state_write(struct snapraid_state* state)
+{
+	STREAM* f;
+	unsigned count_content;
+	tommy_node* i;
+	unsigned k;
+
+	/* count the content files */
+	count_content = 0;
+	i = tommy_list_head(&state->contentlist);
+	while (i) {
+		struct snapraid_content* content = i->data;
+		printf("Saving state to %s...\n", content->content);
+		++count_content;
+		i = i->next;
+	}
+
+	/* open all the content files */
+	f = sopen_multi_write(count_content);
+	if (!f) {
+		fprintf(stderr, "Error opening the content files.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	k = 0;
+	i = tommy_list_head(&state->contentlist);
+	while (i) {
+		struct snapraid_content* content = i->data;
+		char tmp[PATH_MAX];
+		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
+		if (sopen_multi_file(f, k, tmp) != 0) {
+			fprintf(stderr, "Error opening the content file '%s'. %s.\n", tmp, strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+		++k;
+		i = i->next;
+	}
+
+	if (state->opt.force_content_text)
+		state_write_text(state, f);
+	else
+		state_write_binary(state, f);
+
 	/* Use the sequence fflush() -> fsync() -> fclose() -> rename() to ensure */
 	/* than even in a system crash event we have one valid copy of the file. */
 
@@ -2161,14 +3313,6 @@ void state_write(struct snapraid_state* state)
 			exit(EXIT_FAILURE);
 		}
 		i = i->next;
-	}
-
-	if (state->opt.verbose) {
-		printf("\tfile %u\n", count_file);
-		printf("\tblock %u\n", count_block);
-		printf("\thardlink %u\n", count_hardlink);
-		printf("\tsymlink %u\n", count_symlink);
-		printf("\temptydir %u\n", count_dir);
 	}
 
 	state->need_write = 0; /* no write needed anymore */

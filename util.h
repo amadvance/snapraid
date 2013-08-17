@@ -41,6 +41,10 @@ struct stream {
 	int state_index; /**< Index of the handle causing a state change. */
 	unsigned handle_size; /**< Number of handles. */
 	struct stream_handle* handle; /**< Set of handles. */
+	off_t offset; /**< Offset into the file. */
+	off_t offset_uncached; /**< Offset into the file excluding the cached data. */
+	uint32_t crc; /**< CRC of the file. */
+	uint32_t crc_uncached; /**< CRC of the file excluding the cached data. */
 };
 
 /**
@@ -93,6 +97,16 @@ int sfill(STREAM* s);
 int sflush(STREAM* s);
 
 /**
+ * Gets the file pointer.
+ */
+int64_t stell(STREAM* s);
+
+/**
+ * Gets the CRC of the processed data.
+ */
+uint32_t scrc(STREAM* s);
+
+/**
  * Checks if the buffer has enough data loaded.
  */
 static inline int sptrlookup(STREAM* s, int size)
@@ -122,6 +136,14 @@ static inline void sptrset(STREAM* s, unsigned char* ptr)
 static inline int serror(STREAM* s)
 {
 	return s->state == STREAM_STATE_ERROR;
+}
+
+/**
+ * Checks the eof status. Like feof().
+ */
+static inline int seof(STREAM* s)
+{
+	return s->state == STREAM_STATE_EOF;
 }
 
 /**
@@ -167,6 +189,12 @@ static inline void sungetc(int c, STREAM* s)
 	if (c != EOF)
 		--s->pos;
 }
+
+/**
+ * Reads a fixed amount of chars.
+ * Returns 0 on success, or -1 on error.
+ */
+int sread(STREAM* f, void* void_data, unsigned size);
 
 /**
  * Gets a char from a stream, ignoring one '\r'.
@@ -241,6 +269,33 @@ int sgetu64(STREAM* f, uint64_t* value);
 int sgethex(STREAM* f, void* data, int size);
 
 /****************************************************************************/
+/* binary get */
+
+/**
+ * Reads a binary 32 bit number in packet format.
+ * Returns <0 if there isn't enough to read.
+ */
+int sgetb32(STREAM* f, uint32_t* value);
+
+/**
+ * Reads a binary 64 bit number in packet format.
+ * Returns <0 if there isn't enough to read.
+ */
+int sgetb64(STREAM* f, uint64_t* value);
+
+/**
+ * Reads a binary 32 bit number in little endian format.
+ * Returns <0 if there isn't enough to read.
+ */
+int sgetble32(STREAM* f, uint32_t* value);
+
+/**
+ * Reads a binary string.
+ * Returns -1 on error or if the buffer is too small, or the number of chars read.
+ */
+int sgetbs(STREAM* f, char* str, int size);
+
+/****************************************************************************/
 /* put */
 
 /**
@@ -305,6 +360,33 @@ int sputu64(uint64_t value, STREAM* s);
  * Returns 0 on success or -1 on error.
  */
 int sputhex(const void* void_data, int size, STREAM* s);
+
+/****************************************************************************/
+/* binary put */
+
+/**
+ * Writes a binary 32 bit number in packed format.
+ * Returns 0 on success or -1 on error.
+ */
+int sputb32(uint32_t value, STREAM* s);
+
+/**
+ * Writes a binary 64 bit number in packed format.
+ * Returns 0 on success or -1 on error.
+ */
+int sputb64(uint64_t value, STREAM* s);
+
+/**
+ * Writes a binary 32 bit number in little endian format.
+ * Returns 0 on success or -1 on error.
+ */
+int sputble32(uint32_t value, STREAM* s);
+
+/**
+ * Writes a binary string.
+ * Returns 0 on success or -1 on error.
+ */
+int sputbs(const char* str, STREAM* s);
 
 /****************************************************************************/
 /* path */
@@ -410,6 +492,14 @@ void memhash(unsigned kind, const unsigned char* seed, void* digest, const void*
  * Write random values.
  */
 void randomize(void* ptr, unsigned size);
+
+/****************************************************************************/
+/* crc */
+
+/**
+ * Computes the CRC-32 (Castagnoli)
+ */
+uint32_t crc32c(uint32_t crc, const unsigned char* ptr, unsigned size);
 
 /****************************************************************************/
 /* sax */
