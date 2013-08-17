@@ -29,6 +29,14 @@ unsigned rnd(unsigned max)
 	return (seed >> 32) % max;
 }
 
+unsigned rndnotzero(unsigned max)
+{
+	if (max <= 1)
+		return 1;
+	else
+		return rnd(max - 1) + 1;
+}
+
 char CHARSET[] = "qwertyuiopasdfghjklzxcvbnm1234567890 .-+";
 #define CHARSET_LEN (sizeof(CHARSET)-1)
 
@@ -195,7 +203,7 @@ void damage(const char* path, int size)
 		}
 
 		/* write garbage, in case also over the end */
-		count = rnd(size);
+		count = size;
 		while (count) {
 			fputc(rnd(256), f);
 			--count;
@@ -367,7 +375,7 @@ int main(int argc, char* argv[])
 
 		for(i=b;i<argc;++i) {
 			for(j=0;j<fail;++j) {
-				damage(argv[i], rnd(size));
+				damage(argv[i], rndnotzero(size));
 			}
 		}
 	} else if (strcmp(argv[1], "append") == 0) {
@@ -386,7 +394,7 @@ int main(int argc, char* argv[])
 		qsort(&argv[b], argc - b,  sizeof(argv[b]), qsort_strcmp);
 
 		for(i=b;i<argc;++i) {
-			append(argv[i], rnd(size));
+			append(argv[i], rndnotzero(size));
 		}
 	} else if (strcmp(argv[1], "truncate") == 0) {
 		int size;
