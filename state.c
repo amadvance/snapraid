@@ -981,7 +981,7 @@ void state_read(struct snapraid_state* state)
 			hash = oathash32(hash, v_pos);
 
 			/* keep track of the max block number used in parity */
-			if (v_pos > blockmax)
+			if (v_pos + 1 > blockmax)
 				blockmax = v_pos + 1;
 
 			/* read the hash only for 'blk/chg', and not for 'new' */
