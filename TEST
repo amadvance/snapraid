@@ -20,4 +20,8 @@ To run a coverage test you should use:
 
 and open the file ./cov/index.html in your browser to see the results.
 
+To test with the clang static anlayzer use:
+
+	scan-build ./configure
+	scan-build make
 
