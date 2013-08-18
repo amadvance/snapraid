@@ -1181,12 +1181,12 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 
 				/* ignore nanoseconds if asked to find by name */
 				if (state->opt.force_by_name)
-					v_mtime_nsec = FILE_MTIME_NSEC_INVALID;
+					v_mtime_nsec = STAT_NSEC_INVALID;
 
 				c = sgetc(f);
 			} else {
 				/* use a special value, meaning that we don't have this information */
-				v_mtime_nsec = FILE_MTIME_NSEC_INVALID;
+				v_mtime_nsec = STAT_NSEC_INVALID;
 			}
 
 			if (c != ' ') {
@@ -1822,7 +1822,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 			sputc(' ', f);
 			sputu64(mtime_sec, f);
 			hash = oathash64(hash, mtime_sec);
-			if (mtime_nsec != FILE_MTIME_NSEC_INVALID) {
+			if (mtime_nsec != STAT_NSEC_INVALID) {
 				sputc('.', f);
 				sputu32(mtime_nsec, f);
 				hash = oathash32(hash, mtime_nsec);
@@ -2188,7 +2188,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 			/* ignore nanoseconds if asked to find by name */
 			if (state->opt.force_by_name)
-				v_mtime_nsec = FILE_MTIME_NSEC_INVALID;
+				v_mtime_nsec = STAT_NSEC_INVALID;
 
 			ret = sgetb64(f, &v_inode);
 			if (ret < 0) {

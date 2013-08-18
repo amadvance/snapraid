@@ -21,6 +21,12 @@
 #define O_BINARY 0 /**< Not used in Unix. */
 #define O_SEQUENTIAL 0 /**< In Unix posix_fadvise() shall be used. */
 
+/**
+ * If nanoseconds are not supported, we report the special STAT_NSEC_INVALID value,
+ * to mark that it's undefined.
+ */
+#define STAT_NSEC_INVALID -1
+
 /* Check if we have nanoseconds support */
 #if HAVE_STRUCT_STAT_ST_MTIM_TV_NSEC
 #define STAT_NSEC(st) (st)->st_mtim.tv_nsec /* Linux */
@@ -29,12 +35,7 @@
 #elif HAVE_STRUCT_STAT_ST_MTIMESPEC_TV_NSEC
 #define STAT_NSEC(st) (st)->st_mtimespec.tv_nsec /* FreeBSD, Mac OS X */
 #else
-/**
- * If nanoseconds are not supported, we report the special FILE_MTIME_NSEC_INVALID value,
- * to mark that it's undefined.
- * This result in not having it saved into the content file as a dummy 0.
- */
-#define STAT_NSEC(st) -1
+#define STAT_NSEC(st) STAT_NSEC_INVALID
 #endif
 
 /**

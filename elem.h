@@ -190,12 +190,6 @@ struct snapraid_block {
 #define FILE_IS_LINK_MASK 0xF00 /**< Mask for link type. */
 
 /**
- * Value used to mark files without the nanoseconds value.
- * Note that this value is never reported by stat().
- */
-#define FILE_MTIME_NSEC_INVALID -1
-
-/**
  * File.
  */
 struct snapraid_file {
@@ -204,7 +198,7 @@ struct snapraid_file {
 	uint64_t physical; /**< Physical offset of the file. */
 	data_off_t size; /**< Size of the file. */
 	struct snapraid_block* blockvec; /**< All the blocks of the file. */
-	int mtime_nsec; /**< Modification time nanoseconds. In the range 0 <= x < 1,000,000,000, or FILE_MTIME_NSEC_INVALID. */
+	int mtime_nsec; /**< Modification time nanoseconds. In the range 0 <= x < 1,000,000,000, or STAT_NSEC_INVALID if not present. */
 	block_off_t blockmax; /**< Number of blocks. */
 	unsigned flag; /**< FILE_IS_* flags. */
 	char* sub; /**< Sub path of the file. Without the disk dir. The disk is implicit. */

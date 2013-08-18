@@ -299,16 +299,16 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 		/* check if the file is not changed */
 		if (file->size == st->st_size
 			&& file->mtime_sec == st->st_mtime
-			/* always accept the value if it's FILE_MTIME_NSEC_INVALID */
+			/* always accept the value if it's STAT_NSEC_INVALID */
 			/* it happens when upgrading from an old version of SnapRAID */
-			&& (file->mtime_nsec == STAT_NSEC(st) || file->mtime_nsec == FILE_MTIME_NSEC_INVALID)
+			&& (file->mtime_nsec == STAT_NSEC(st) || file->mtime_nsec == STAT_NSEC_INVALID)
 		) {
 			/* mark as present */
 			file_flag_set(file, FILE_IS_PRESENT);
 
 			/* update the nano seconds mtime if required */
-			if (file->mtime_nsec == FILE_MTIME_NSEC_INVALID
-				&& STAT_NSEC(st) != FILE_MTIME_NSEC_INVALID
+			if (file->mtime_nsec == STAT_NSEC_INVALID
+				&& STAT_NSEC(st) != STAT_NSEC_INVALID
 			) {
 				file->mtime_nsec = STAT_NSEC(st);
 

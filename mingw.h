@@ -104,6 +104,12 @@
 #undef pwrite
 #define pwrite windows_pwrite
 
+/**
+ * If nanoseconds are not supported, we report the special STAT_NSEC_INVALID value,
+ * to mark that it's undefined.
+ */
+#define STAT_NSEC_INVALID -1
+
 /* We have nano second support */
 #define STAT_NSEC(st) (st)->st_mtimensec
 
