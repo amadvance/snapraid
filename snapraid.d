@@ -143,6 +143,12 @@ Getting Started
 	At this point you can start using your array as you like, and periodically
 	update the redundancy information running the "sync" command.
 
+	After a "sync" command, it's recommended to run a "scrub" command
+	to progressively check the old synched data.
+
+	You can verify the status of your array using the "status" command,
+	that lists all the errors found while scrubbing.
+
   Pooling
 	To have all the files in your array shown in the same directory tree,
 	you can enable "pooling", that consists in creating a virtual view of all
@@ -194,7 +200,8 @@ Commands
 
 	* Make a backup/snapshot -> "sync"
 	* See the files changed from the previous sync -> "diff"
-	* Check for integrity -> "check"
+	* Periodically checks old data -> "scrub"
+	* Check for integrity the full array -> "check"
 	* Restore the last backup/snapshot -> "fix".
 
 	Take care that the commands have to be written in lower case.
@@ -219,7 +226,7 @@ Commands
 
 	It includes information about the parity fragmentation, how old
 	are the blocks without checking, and all the recorded silent
-	errors encoutered when scrubbing.
+	errors encoutered while scrubbing.
 
 	Nothing is modified.
 
@@ -228,11 +235,18 @@ Commands
 
 	For each command invocation, the 12% of the array is checked,
 	but nothing that it's more recent than 10 days.
+	This means that scrubbing once a week, every bit of data is checked
+	at least one time every two months.
 
 	The oldest blocks are scrubbed first ensuring an optimal check.
 
+	It's recommended to run "scrub" on a synched array, to avoid to have
+	reported error caused by unsynched data. These errors are recognized
+	as not being silent errors, but are reported anyway.
+
 	Any silent error identified is recorded in the content file,
-	and can be listed with the 'status' command.
+	and it's listed in the "status" command until it's fixed calling
+	"fix" and then "sync".
 
 	The "content" file is modified to update the time of the last check
 	of each block.
@@ -253,19 +267,6 @@ Commands
 
 	Nothing is modified.
 
-  pool
-	Creates or updates in the "pooling" directory a virtual view of all
-	the files of your disk array.
-
-	The files are not really copied here, but just linked using
-	symbolic links.
-
-	When updating, all the present symbolic links and empty
-	subdirectories are deleted and replaced with the new
-	view of the array. Any othe regular file is left in place.
-
-	Nothing is modified outside the pool directory.
-
   check
 	Checks all the files and the redundancy data.
 	All the files are hashed and compared with the snapshot saved
@@ -275,6 +276,7 @@ Commands
 	data is checked, and the redundandy data is ignored.
 
 	Files are identified by path, and checked by content.
+
 	Nothing is modified.
 
   fix
@@ -297,16 +299,29 @@ Commands
 
 	This option can be used to change the hash kind used,
 	typically when upgrading from a 32 bits system to a 64
-	bits one to switch from the murmur3 to the faster spooky2.
+	bits one to switch from murmur3 to the faster spooky2.
 
-	The rehash isn't done immediately, but it will take place
-	incrementally during the "sync" and "scrub" commands.
+	The rehash isn't done immediately, but it takes place
+	progressively during the "sync" and "scrub" commands.
 
-	You can get the rehash status using the "status" command.
+	You can get the rehash state using the "status" command.
 
 	During the rehash, SnapRAID maintains full functionality,
-	with the only expection of the 'dup' command not able to detect
+	with the only expection of the "dup" command not able to detect
 	duplicated files using a different hash.
+
+  pool
+	Creates or updates in the "pooling" directory a virtual view of all
+	the files of your disk array.
+
+	The files are not really copied here, but just linked using
+	symbolic links.
+
+	When updating, all the present symbolic links and empty
+	subdirectories are deleted and replaced with the new
+	view of the array. Any othe regular file is left in place.
+
+	Nothing is modified outside the pool directory.
 
 Options
 	SnapRAID provides the following options:
@@ -717,7 +732,7 @@ Recovering
 
 	This command will take a long time.
 
-	You can also add the '-v' option to see on the console the fixed files.
+	You can also add the "-v" option to see on the console the fixed files.
 
 	Take care that you need also few gigabytes free to store the fix.log file.
 	Run it from a disk with some free space.
@@ -763,108 +778,13 @@ Recovering
 Content
 	SnapRAID stores the list and checksums of your files in the content file.
 
-	It's a text file, listing all the files present in your disk array,
+	It's a binary file, listing all the files present in your disk array,
 	with all the checksums to verify their integrity.
 
-	You do not need to understand its format, but it's described here
-	for documentation.
+	You do not need to understand its format to use SnapRAID.
 
-	This file is read and written by the "sync" command, and only read by
-	"fix" and "check".
-
-  blk_size SIZE
-	Defines the size of the block in bytes. It must match the size
-	defined in the configuration file.
-
-  checksum CHECKSUM SEED
-	Defines the checksum kind used. It can be "murmur3" or "spooky2".
-	SEED is a 128 bits seed used in all the hash operations.
-	From SnapRAID 2.0 the old "md5" checksum is not supported anymore.
-
-  map NAME INDEX [UUID]
-	Defines the position INDEX of the disk NAME in the parity computation.
-	The disk UUID is also present if supported for the platform.
-
-  sign SIGN
-	Signature checksum of the content file to ensure that it doesn't get
-	corrupted. If you want to modify the content file manually, you have
-	to remove this line to avoid this check.
-
-  file DISK SIZE TIME_SEC[.TIME_NSEC] INODE PATH
-	Defines a file in the specified DISK.
-
-	The INODE number is used to identify the file in the "sync"
-	command, allowing to rename or move the file in disk without
-	the need to recompute the parity for it.
-
-	The SIZE and TIME information are used to identify if the file
-	changed from the last "sync" command, and if there is the need
-	to recompute the parity.
-
-	The [.TIME_NSEC] information is optional, and only present if
-	it's possible to read a such precise time information.
-	It's present only from SnapRAID 2.0.
-
-	The PATH information is used in the "check" and "fix" commands
-	to identify the file.
-
-  blk BLOCK HASH
-	Defines an ordered parity block, part of the last defined file.
-
-	BLOCK is the block position in the "parity" file.
-	0 for the first block, 1 for the second one and so on.
-
-	HASH is the hash of the block. In the last block of the file,
-	the HASH is the hash of only the used part of the block.
-
-  new BLOCK
-	Like "blk", but for new allocated blocks for which the hash is not
-	yet computed, and the stored parity doesn't take into account this
-	new block.
-
-	This field is used only when you interrupt manually the "sync"
-	command.
-
-  chg BLOCK
-	Like "blk", but for reallocated blocks for which the hash is not
-	yet computed, and the parity is computed using the previous value
-	of the block.
-
-	This field is used only when you interrupt manually the "sync"
-	command.
-
-  hole DISK
-	Defines the list of blocks that are deleted from a disk.
-
-	This field is used only when you interrupt manually the "sync"
-	command.
-
-  off BLOCK
-	Defines a block deleted from a disk, part of the last defined hole,
-	for which the parity is computed using the previous value.
-
-	This field is used only when you interrupt manually the "sync"
-	command.
-
-  inf BLOCK TIME
-	Information shared by all the block at the specified offset.
-	TIME is the last time of the hash/parity verification done at this
-	block.
-
-  symlink DISK PATH
-	Defines a symbolic link in the specified DISK.
-
-  hardlink DISK PATH
-	Defines a hard link in the specified DISK.
-
-  to PATH
-	Defines where the previous symlink or hardlink links to.
-
-  dir DISK PATH
-	Defines an empty directory in the specified DISK.
-
-	Directory that contains saved files, are not included, as they
-	are implicitely defined in the file specifications.
+	This file is read and written by the "sync" and "scrub" commands, and
+	only read by "fix" and "check".
 
 Parity
 	SnapRAID stores the redundancy information of your array in the parity

@@ -202,7 +202,7 @@ static inline int cpu_has_slowmult(void)
 
 /* ARM Feroceon 88FR131 rev 1 (v5l)
  * Compiler gcc 4.7.2
- * CPU is not and x86/x64
+ * CPU is not a x86/x64
  * Memory is little-endian 32-bit
  * memset 763 [MB/s]
  * Murmur3 237 [MB/s]

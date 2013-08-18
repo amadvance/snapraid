@@ -250,6 +250,12 @@ When this command completes, your data is SAFE.
 .PP
 At this point you can start using your array as you like, and periodically
 update the redundancy information running the \(a"sync\(a" command.
+.PP
+After a \(a"sync\(a" command, it\(cqs recommended to run a \(a"scrub\(a" command
+to progressively check the old synched data.
+.PP
+You can verify the status of your array using the \(a"status\(a" command,
+that lists all the errors found while scrubbing.
 .SS Pooling 
 To have all the files in your array shown in the same directory tree,
 you can enable \(a"pooling\(a", that consists in creating a virtual view of all
@@ -342,7 +348,9 @@ Make a backup/snapshot \(hy> \(a"sync\(a"
 .IP \(bu
 See the files changed from the previous sync \(hy> \(a"diff\(a"
 .IP \(bu
-Check for integrity \(hy> \(a"check\(a"
+Periodically checks old data \(hy> \(a"scrub\(a"
+.IP \(bu
+Check for integrity the full array \(hy> \(a"check\(a"
 .IP \(bu
 Restore the last backup/snapshot \(hy> \(a"fix\(a".
 .PD
@@ -367,7 +375,7 @@ Prints a summary of the state of the disk array.
 .PP
 It includes information about the parity fragmentation, how old
 are the blocks without checking, and all the recorded silent
-errors encoutered when scrubbing.
+errors encoutered while scrubbing.
 .PP
 Nothing is modified.
 .SS scrub 
@@ -375,11 +383,18 @@ Scrubs the array, checking for silent errors.
 .PP
 For each command invocation, the 12% of the array is checked,
 but nothing that it\(cqs more recent than 10 days.
+This means that scrubbing once a week, every bit of data is checked
+at least one time every two months.
 .PP
 The oldest blocks are scrubbed first ensuring an optimal check.
 .PP
+It\(cqs recommended to run \(a"scrub\(a" on a synched array, to avoid to have
+reported error caused by unsynched data. These errors are recognized
+as not being silent errors, but are reported anyway.
+.PP
 Any silent error identified is recorded in the content file,
-and can be listed with the \(cqstatus\(cq command.
+and it\(cqs listed in the \(a"status\(a" command until it\(cqs fixed calling
+\(a"fix\(a" and then \(a"sync\(a".
 .PP
 The \(a"content\(a" file is modified to update the time of the last check
 of each block.
@@ -397,18 +412,6 @@ hashes are matching. The file data is not read, but only the
 precomputed hashes are used.
 .PP
 Nothing is modified.
-.SS pool 
-Creates or updates in the \(a"pooling\(a" directory a virtual view of all
-the files of your disk array.
-.PP
-The files are not really copied here, but just linked using
-symbolic links.
-.PP
-When updating, all the present symbolic links and empty
-subdirectories are deleted and replaced with the new
-view of the array. Any othe regular file is left in place.
-.PP
-Nothing is modified outside the pool directory.
 .SS check 
 Checks all the files and the redundancy data.
 All the files are hashed and compared with the snapshot saved
@@ -418,6 +421,7 @@ If you use the \(hya, \(hy\(hyaudit\(hyonly option, only the file
 data is checked, and the redundandy data is ignored.
 .PP
 Files are identified by path, and checked by content.
+.PP
 Nothing is modified.
 .SS fix 
 Checks and fix all the files. It\(cqs like \(a"check\(a" but it
@@ -438,16 +442,28 @@ Schedules a rehash of the whole array.
 .PP
 This option can be used to change the hash kind used,
 typically when upgrading from a 32 bits system to a 64
-bits one to switch from the murmur3 to the faster spooky2.
+bits one to switch from murmur3 to the faster spooky2.
 .PP
-The rehash isn\(cqt done immediately, but it will take place
-incrementally during the \(a"sync\(a" and \(a"scrub\(a" commands.
+The rehash isn\(cqt done immediately, but it takes place
+progressively during the \(a"sync\(a" and \(a"scrub\(a" commands.
 .PP
-You can get the rehash status using the \(a"status\(a" command.
+You can get the rehash state using the \(a"status\(a" command.
 .PP
 During the rehash, SnapRAID maintains full functionality,
-with the only expection of the \(cqdup\(cq command not able to detect
+with the only expection of the \(a"dup\(a" command not able to detect
 duplicated files using a different hash.
+.SS pool 
+Creates or updates in the \(a"pooling\(a" directory a virtual view of all
+the files of your disk array.
+.PP
+The files are not really copied here, but just linked using
+symbolic links.
+.PP
+When updating, all the present symbolic links and empty
+subdirectories are deleted and replaced with the new
+view of the array. Any othe regular file is left in place.
+.PP
+Nothing is modified outside the pool directory.
 .SH OPTIONS 
 SnapRAID provides the following options:
 .TP
@@ -992,7 +1008,7 @@ Where NAME is the name of the disk, like \(a"d1\(a" as in our previous example.
 .PP
 This command will take a long time.
 .PP
-You can also add the \(cq\(hyv\(cq option to see on the console the fixed files.
+You can also add the \(a"\(hyv\(a" option to see on the console the fixed files.
 .PP
 Take care that you need also few gigabytes free to store the fix.log file.
 Run it from a disk with some free space.
@@ -1045,93 +1061,13 @@ If everything was recovered, this command is immediate.
 .SH CONTENT 
 SnapRAID stores the list and checksums of your files in the content file.
 .PP
-It\(cqs a text file, listing all the files present in your disk array,
+It\(cqs a binary file, listing all the files present in your disk array,
 with all the checksums to verify their integrity.
 .PP
-You do not need to understand its format, but it\(cqs described here
-for documentation.
+You do not need to understand its format to use SnapRAID.
 .PP
-This file is read and written by the \(a"sync\(a" command, and only read by
-\(a"fix\(a" and \(a"check\(a".
-.SS blk_size SIZE 
-Defines the size of the block in bytes. It must match the size
-defined in the configuration file.
-.SS checksum CHECKSUM SEED 
-Defines the checksum kind used. It can be \(a"murmur3\(a" or \(a"spooky2\(a".
-SEED is a 128 bits seed used in all the hash operations.
-From SnapRAID 2.0 the old \(a"md5\(a" checksum is not supported anymore.
-.SS map NAME INDEX [UUID] 
-Defines the position INDEX of the disk NAME in the parity computation.
-The disk UUID is also present if supported for the platform.
-.SS sign SIGN 
-Signature checksum of the content file to ensure that it doesn\(cqt get
-corrupted. If you want to modify the content file manually, you have
-to remove this line to avoid this check.
-.SS file DISK SIZE TIME_SEC[.TIME_NSEC] INODE PATH 
-Defines a file in the specified DISK.
-.PP
-The INODE number is used to identify the file in the \(a"sync\(a"
-command, allowing to rename or move the file in disk without
-the need to recompute the parity for it.
-.PP
-The SIZE and TIME information are used to identify if the file
-changed from the last \(a"sync\(a" command, and if there is the need
-to recompute the parity.
-.PP
-The [.TIME_NSEC] information is optional, and only present if
-it\(cqs possible to read a such precise time information.
-It\(cqs present only from SnapRAID 2.0.
-.PP
-The PATH information is used in the \(a"check\(a" and \(a"fix\(a" commands
-to identify the file.
-.SS blk BLOCK HASH 
-Defines an ordered parity block, part of the last defined file.
-.PP
-BLOCK is the block position in the \(a"parity\(a" file.
-0 for the first block, 1 for the second one and so on.
-.PP
-HASH is the hash of the block. In the last block of the file,
-the HASH is the hash of only the used part of the block.
-.SS new BLOCK 
-Like \(a"blk\(a", but for new allocated blocks for which the hash is not
-yet computed, and the stored parity doesn\(cqt take into account this
-new block.
-.PP
-This field is used only when you interrupt manually the \(a"sync\(a"
-command.
-.SS chg BLOCK 
-Like \(a"blk\(a", but for reallocated blocks for which the hash is not
-yet computed, and the parity is computed using the previous value
-of the block.
-.PP
-This field is used only when you interrupt manually the \(a"sync\(a"
-command.
-.SS hole DISK 
-Defines the list of blocks that are deleted from a disk.
-.PP
-This field is used only when you interrupt manually the \(a"sync\(a"
-command.
-.SS off BLOCK 
-Defines a block deleted from a disk, part of the last defined hole,
-for which the parity is computed using the previous value.
-.PP
-This field is used only when you interrupt manually the \(a"sync\(a"
-command.
-.SS inf BLOCK TIME 
-Information shared by all the block at the specified offset.
-TIME is the last time of the hash/parity verification done at this
-block.
-.SS symlink DISK PATH 
-Defines a symbolic link in the specified DISK.
-.SS hardlink DISK PATH 
-Defines a hard link in the specified DISK.
-.SS to PATH 
-Defines where the previous symlink or hardlink links to.
-.SS dir DISK PATH 
-Defines an empty directory in the specified DISK.
-.PP
-Directory that contains saved files, are not included, as they
-are implicitely defined in the file specifications.
+This file is read and written by the \(a"sync\(a" and \(a"scrub\(a" commands, and
+only read by \(a"fix\(a" and \(a"check\(a".
 .SH PARITY 
 SnapRAID stores the redundancy information of your array in the parity
 and q\(hyparity files.
