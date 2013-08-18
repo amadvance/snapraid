@@ -424,8 +424,13 @@ bail:
 	free(buffer);
 	free(rehandle_alloc);
 
-	if (error != 0)
-		return -1;
+	if (state->opt.expect_recoverable) {
+		if (error == 0)
+			return -1;
+	} else {
+		if (error != 0)
+			return -1;
+	}
 	return 0;
 }
 
