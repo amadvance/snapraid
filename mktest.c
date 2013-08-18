@@ -157,6 +157,54 @@ void generate(int disk, int size)
 	}
 }
 
+void fallback(int f, struct stat* st)
+{
+#if HAVE_FUTIMENS
+	struct timespec tv[2];
+#else
+	struct timeval tv[2];
+#endif
+	int ret;
+
+#if HAVE_FUTIMENS /* futimens() is preferred because it gives nanosecond precision */
+	tv[0].tv_sec = st->st_mtime;
+	if (STAT_NSEC(st) != STAT_NSEC_INVALID)
+		tv[0].tv_nsec = STAT_NSEC(st);
+	else
+		tv[0].tv_nsec = 0;
+	tv[1].tv_sec = tv[0].tv_sec;
+	tv[1].tv_nsec = tv[0].tv_nsec;
+
+	ret = futimens(f, tv);
+#elif HAVE_FUTIMES /* fallback to futimes() if nanosecond precision is not available */
+	tv[0].tv_sec = st->st_mtime;
+	if (STAT_NSEC(st) != STAT_NSEC_INVALID)
+		tv[0].tv_usec = STAT_NSEC(st) / 1000;
+	else
+		tv[0].tv_usec = 0;
+	tv[1].tv_sec = tv[0].tv_sec;
+	tv[1].tv_usec = tv[0].tv_usec;
+
+	ret = futimes(f, tv);
+#elif HAVE_FUTIMESAT /* fallback to futimesat() for Solaris, it only has futimesat() */
+	tv[0].tv_sec = st->st_mtime;
+	if (STAT_NSEC(st) != STAT_NSEC_INVALID)
+		tv[0].tv_usec = STAT_NSEC(st) / 1000;
+	else
+		tv[0].tv_usec = 0;
+	tv[1].tv_sec = tv[0].tv_sec;
+	tv[1].tv_usec = tv[0].tv_usec;
+
+	ret = futimesat(f, 0, tv);
+#else
+#error No function available to set file timestamps
+#endif
+	if (ret != 0) {
+		fprintf(stderr, "Error restoring time\n");
+		exit(EXIT_FAILURE);
+	}
+}
+
 void damage(const char* path, int size)
 {
 	struct stat st;
@@ -208,6 +256,12 @@ void damage(const char* path, int size)
 			fputc(rnd(256), f);
 			--count;
 		}
+
+		/* flush changes before restoring the time */
+		fflush(f);
+		
+		/* restore the previous modification time */
+		fallback(fileno(f), &st);
 
 		fclose(f);
 	}
