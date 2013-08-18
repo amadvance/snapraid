@@ -50,6 +50,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	data_off_t countsize;
 	block_off_t countpos;
 	block_off_t countmax;
+	block_off_t recountmax;
 	block_off_t autosavedone;
 	block_off_t autosavelimit;
 	block_off_t autosavemissing;
@@ -88,26 +89,30 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			continue;
 		}
 
-		/* if it's too new */
-		blocktime = info_get_time(info);
-		if (blocktime > timelimit) {
-			/* skip it */
-			continue;
-		}
+		/* blocks marked as bad are always checked */
+		if (!info_get_bad(info)) {
 
-		/* skip odd blocks, used only for testing */
-		if (state->opt.force_scrub_even && (i % 2) != 0) {
-			/* skip it */
-			continue;
+			/* if it's too new */
+			blocktime = info_get_time(info);
+			if (blocktime > timelimit) {
+				/* skip it */
+				continue;
+			}
+
+			/* skip odd blocks, used only for testing */
+			if (state->opt.force_scrub_even && (i % 2) != 0) {
+				/* skip it */
+				continue;
+			}
+
+			/* if we reached the count limit */
+			if (countmax >= countlimit) {
+				/* skip it */
+				continue;
+			}
 		}
 
 		++countmax;
-
-		if (countmax >= countlimit) {
-			/* if we reached the count limit, recompute the stop address */
-			blockmax = i + 1;
-			break;
-		}
 	}
 
 	/* compute the autosave size for all disk, even if not read */
@@ -120,6 +125,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	countsize = 0;
 	countpos = 0;
 	state_progress_begin(state, blockstart, blockmax, countmax);
+	recountmax = 0;
 	for(i=blockstart;i<blockmax;++i) {
 		time_t blocktime;
 		snapraid_info info;
@@ -136,18 +142,30 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			continue;
 		}
 
-		/* if it's too new */
-		blocktime = info_get_time(info);
-		if (blocktime > timelimit) {
-			/* skip it */
-			continue;
+		/* blocks marked as bad are always checked */
+		if (!info_get_bad(info)) {
+
+			/* if it's too new */
+			blocktime = info_get_time(info);
+			if (blocktime > timelimit) {
+				/* skip it */
+				continue;
+			}
+
+			/* skip odd blocks, used only for testing */
+			if (state->opt.force_scrub_even && (i % 2) != 0) {
+				/* skip it */
+				continue;
+			}
+
+			/* if we reached the count limit */
+			if (recountmax >= countlimit) {
+				/* skip it */
+				continue;
+			}
 		}
 
-		/* skip odd blocks, used only for testing */
-		if (state->opt.force_scrub_even && (i % 2) != 0) {
-			/* skip it */
-			continue;
-		}
+		++recountmax;
 
 		/* one more block processed for autosave */
 		++autosavedone;
