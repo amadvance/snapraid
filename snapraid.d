@@ -3,10 +3,12 @@ Name{number}
 
 Synopsis
 	:snapraid [-c, --conf CONFIG]
-	:	[-f, --filter PATTERN] [-d, --filter-disk NAME] [-m, --filter-missing]
+	:	[-f, --filter PATTERN] [-d, --filter-disk NAME]
+	:	[-m, --filter-missing] [-e, --filter-error]
 	:	[-a, --audit-only] [-i, --import DIR]
 	:	[-N, --find-by-name]
-	:	[-Z, --force-zero] [-E, --force-empty] [-U, --force-uuid] [-D, --force-device]
+	:	[-Z, --force-zero] [-E, --force-empty]
+	:	[-U, --force-uuid] [-D, --force-device]
 	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	:	[-v, --verbose] [-l, --log FILE]
 	:	sync|status|scrub|diff|dup|pool|check|fix|rehash
@@ -143,12 +145,6 @@ Getting Started
 	At this point you can start using your array as you like, and periodically
 	update the redundancy information running the "sync" command.
 
-	After a "sync" command, it's recommended to run a "scrub" command
-	to progressively check the old synched data.
-
-	You can verify the status of your array using the "status" command,
-	that lists all the errors found while scrubbing.
-
   Pooling
 	To have all the files in your array shown in the same directory tree,
 	you can enable "pooling", that consists in creating a virtual view of all
@@ -194,6 +190,27 @@ Getting Started
 	Or to recover all the delete files with:
 
 		:snapraid fix -m
+
+  Scrubbing
+	To progressively check the old synched data, it's recommended to always
+	run a "scrub" command after a "sync".
+
+		:snapraid scrub
+
+	This command checks the oldest data in your array to ensure that no silent
+	error is present. Every run of the command checks about 12% of the data,
+	but nothing newer than 10 days.
+
+	If an error is found, the corresponding blocks are marked as bad, and listed
+	in the "status" command.
+
+		:snapraid status
+
+	To fix them, you can use the "fix" command filtering for bad blocks:
+
+		:snapraid -e fix
+
+	and at the next "scrub" the errors will disappears from the status.
 
 Commands
 	SnapRAID provides four simple commands that allow to:
@@ -246,7 +263,7 @@ Commands
 
 	Any silent error identified is recorded in the content file,
 	and it's listed in the "status" command until it's fixed calling
-	"fix" and then "sync".
+	"fix" and then "scrub".
 
 	The "content" file is modified to update the time of the last check
 	of each block.
@@ -368,6 +385,13 @@ Options
 		This option can be used only with the "check" and "fix" commands.
 		Note that it cannot be used with "sync", because "sync" always
 		process the whole array.
+
+	-e, --filter-error
+		Filters the files to process in the "check" and "fix"
+		commands.
+		It process only the files containing blocks marked with silent
+		errors during the "scrub" command, and listed in the "status" command.
+		This option can be used only with the "check" and "fix" commands.
 
 	-a, --audit-only
 		When checking, only verify the hash of the files, without
