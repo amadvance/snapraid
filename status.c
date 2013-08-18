@@ -222,7 +222,7 @@ int state_status(struct snapraid_state* state)
 	printf("\n");
 
 	if (bad) {
-		printf("DANGER! In the array there are %u failing blocks!\n", bad);
+		printf("DANGER! In the array there are %u failing blocks!\n\n", bad);
 
 		printf("They are:");
 
@@ -238,7 +238,10 @@ int state_status(struct snapraid_state* state)
 				printf(" %u", i);
 		}
 
-		printf("\n");
+		printf("\n\n");
+
+		printf("To fix them use the command 'snapraid --filter-error fix'.\n");
+		printf("The errors will disapper from the 'status' at the next 'scrub' command.\n");
 	} else {
 		printf("No silent error detected!\n");
 	}

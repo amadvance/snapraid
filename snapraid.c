@@ -61,7 +61,8 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE       ", "-c") "  Configuration file (default " CONF ")\n");
 	printf("  " SWITCH_GETOPT_LONG("-f, --filter PATTERN  ", "-f") "  Process only files matching the pattern\n");
 	printf("  " SWITCH_GETOPT_LONG("-d, --filter-dist NAME", "-f") "  Process only files in the disk\n");
-	printf("  " SWITCH_GETOPT_LONG("-m, --filter-missing  ", "-m") "  Process only missing/delete files\n");
+	printf("  " SWITCH_GETOPT_LONG("-m, --filter-missing  ", "-m") "  Process only missing/deleted files\n");
+	printf("  " SWITCH_GETOPT_LONG("-e, --filter-error    ", "-e") "  Process only blocks with silent errors\n");
 	printf("  " SWITCH_GETOPT_LONG("-i, --import DIR      ", "-i") "  Import deleted files\n");
 	printf("  " SWITCH_GETOPT_LONG("-l, --log FILE        ", "-l") "  Log file. Default none\n");
 	printf("  " SWITCH_GETOPT_LONG("-a, --audit-only      ", "-A") "  Check only file data and not parity\n");
@@ -103,6 +104,7 @@ struct option long_options[] = {
 	{ "filter", 1, 0, 'f' },
 	{ "filter-disk", 1, 0, 'd' },
 	{ "filter-missing", 0, 0, 'm' },
+	{ "filter-error", 0, 0, 'e' },
 	{ "start", 1, 0, 's' },
 	{ "count", 1, 0, 't' },
 	{ "import", 1, 0, 'i' },
@@ -176,7 +178,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:f:d:ms:t:i:l:ZEUDNaTvhVG"
+#define OPTIONS "c:f:d:mes:t:i:l:ZEUDNaTvhVG"
 
 volatile int global_interrupt = 0;
 
@@ -215,6 +217,7 @@ int main(int argc, char* argv[])
 	tommy_list filterlist_file;
 	tommy_list filterlist_disk;
 	int filter_missing;
+	int filter_error;
 	char* e;
 	const char* command;
 	const char* import;
@@ -232,6 +235,7 @@ int main(int argc, char* argv[])
 	tommy_list_init(&filterlist_file);
 	tommy_list_init(&filterlist_disk);
 	filter_missing = 0;
+	filter_error = 0;
 	import = 0;
 	log = 0;
 	lock = 0;
@@ -266,6 +270,9 @@ int main(int argc, char* argv[])
 			} break;
 		case 'm' :
 			filter_missing = 1;
+			break;
+		case 'e' :
+			filter_error = 1;
 			break;
 		case 's' :
 			blockstart = strtoul(optarg, &e, 0);
@@ -452,8 +459,27 @@ int main(int argc, char* argv[])
 	case OPERATION_DRY :
 		break;
 	default:
-		if (!tommy_list_empty(&filterlist_file) || !tommy_list_empty(&filterlist_disk) || filter_missing) {
-			fprintf(stderr, "You cannot filter with the '%s' command\n", command);
+		if (!tommy_list_empty(&filterlist_file)) {
+			fprintf(stderr, "You cannot use -f, --filter with the '%s' command\n", command);
+			exit(EXIT_FAILURE);
+		}
+		if (!tommy_list_empty(&filterlist_disk)) {
+			fprintf(stderr, "You cannot use -d, --filter-disk with the '%s' command\n", command);
+			exit(EXIT_FAILURE);
+		}
+		if (filter_missing != 0) {
+			fprintf(stderr, "You cannot use -m, --filter-missing with the '%s' command\n", command);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	switch (operation) {
+	case OPERATION_CHECK :
+	case OPERATION_FIX :
+		break;
+	default:
+		if (filter_error != 0) {
+			fprintf(stderr, "You cannot use -e, --filter-error with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -565,7 +591,7 @@ int main(int argc, char* argv[])
 		state_read(&state);
 
 		/* apply the command line filter */
-		state_filter(&state, &filterlist_file, &filterlist_disk, filter_missing);
+		state_filter(&state, &filterlist_file, &filterlist_disk, filter_missing, filter_error);
 
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);
@@ -620,7 +646,7 @@ int main(int argc, char* argv[])
 			state_import(&state, import);
 
 		/* apply the command line filter */
-		state_filter(&state, &filterlist_file, &filterlist_disk, filter_missing);
+		state_filter(&state, &filterlist_file, &filterlist_disk, filter_missing, filter_error);
 
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);

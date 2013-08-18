@@ -364,6 +364,12 @@ int filter_path(tommy_list* filterlist, const char* disk, const char* sub);
 int filter_existence(int filter_missing, const char* dir, const char* sub);
 
 /**
+ * Filter a file if bad.
+ * Return !=0 if the file is correct and it should be excluded.
+ */
+int filter_correctness(int filter_error, tommy_arrayof* infoarr, struct snapraid_file* file);
+
+/**
  * Filters a dir using a list of filters.
  * For each element of the path all the filters are applied, until the first one that matches.
  * Return !=0 if should be excluded.

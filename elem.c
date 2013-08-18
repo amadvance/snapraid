@@ -248,7 +248,32 @@ int filter_existence(int filter_missing, const char* dir, const char* sub)
 		exit(EXIT_FAILURE);
 	}
 
-	/* the file is presen, so we filter it out */
+	/* the file is present, so we filter it out */
+	return 1;
+}
+
+int filter_correctness(int filter_error, tommy_arrayof* infoarr, struct snapraid_file* file)
+{
+	unsigned i;
+
+	if (!filter_error)
+		return 0;
+
+	/* check each block of the file */
+	for(i=0;i<file->blockmax;++i) {
+		struct snapraid_block* block;
+		snapraid_info info;
+
+		block = &file->blockvec[i];
+		
+		info = info_get(infoarr, block->parity_pos);
+
+		/* if the file has a bad block, don't exclude it */
+		if (info_get_bad(info))
+			return 0;
+	}
+
+	/* the file is correct, so we filter it out */
 	return 1;
 }
 

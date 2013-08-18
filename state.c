@@ -3318,12 +3318,12 @@ void state_write(struct snapraid_state* state)
 	state->need_write = 0; /* no write needed anymore */
 }
 
-void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tommy_list* filterlist_disk, int filter_missing)
+void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tommy_list* filterlist_disk, int filter_missing, int filter_error)
 {
 	tommy_node* i;
 
 	/* if no filter, include all */
-	if (!filter_missing && tommy_list_empty(filterlist_file) && tommy_list_empty(filterlist_disk))
+	if (!filter_missing && !filter_error && tommy_list_empty(filterlist_file) && tommy_list_empty(filterlist_disk))
 		return;
 
 	printf("Filtering...\n");
@@ -3346,6 +3346,8 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 		}
 		if (filter_missing)
 			printf("\t<missing>\n");
+		if (filter_error)
+			printf("\t<error>\n");
 	}
 
 	/* for each disk */
@@ -3364,6 +3366,7 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 			if (filter_path(filterlist_disk, disk->name, file->sub) != 0
 				|| filter_path(filterlist_file, disk->name, file->sub) != 0
 				|| filter_existence(filter_missing, disk->dir, file->sub) != 0
+				|| filter_correctness(filter_error, &state->infoarr, file) != 0
 			) {
 				file_flag_set(file, FILE_IS_EXCLUDED);
 			}
