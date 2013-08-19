@@ -2134,8 +2134,8 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 	count_dir = 0;
 	crc_checked = 0;
 
-	ret = sread(f, buffer, 10);
-	if (ret < 0 || memcmp(buffer, "SnapRAID\n\3", 10) != 0) {
+	ret = sread(f, buffer, 12);
+	if (ret < 0 || memcmp(buffer, "SNAPCNT1\n\3\0\0", 12) != 0) {
 		decoding_error(path, f);
 		fprintf(stderr, "Invalid header!\n");
 		exit(EXIT_FAILURE);
@@ -2171,6 +2171,13 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			ret = sgetb64(f, &v_size);
 			if (ret < 0) {
 				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
+
+			/* check for impossible file size to avoid to crash for a too big allocation */
+			if (v_size / state->block_size > blockmax) {
+				decoding_error(path, f);
+				fprintf(stderr, "Internal inconsistency in file size!\n");
 				exit(EXIT_FAILURE);
 			}
 
@@ -2228,7 +2235,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				block_off_t v_pos;
 				uint32_t v_count;
 
-				/* get the "blk"/"new"/"chg" command */
+				/* get the "subcommand */
 				c = sgetc(f);
 
 				ret = sgetb32(f, &v_pos);
@@ -2432,7 +2439,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 			v_pos = 0;
 			while (v_pos < blockdiskmax) {
-				uint32_t flag;
 				uint32_t v_count;
 
 				ret = sgetb32(f, &v_count);
@@ -2447,14 +2453,12 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 					exit(EXIT_FAILURE);
 				}
 
-				ret = sgetb32(f, &flag);
-				if (ret < 0) {
-					decoding_error(path, f);
-					exit(EXIT_FAILURE);
-				}
+				/* get the subcommand */
+				c = sgetc(f);
 
-				/* if it's a run of deleted blocks */
-				if ((flag & 1) != 0) {
+				switch (c) {
+				case 'o' :
+					/* if it's a run of deleted blocks */
 					while (v_count) {
 						struct snapraid_deleted* deleted;
 
@@ -2488,9 +2492,15 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 						++v_pos;
 						--v_count;
 					}
-				} else {
+					break;
+				case 'O' :
 					/* go to the next run */
 					v_pos += v_count;
+					break;
+				default:
+					decoding_error(path, f);
+					fprintf(stderr, "Invalid hole type!\n");
+					exit(EXIT_FAILURE);
 				}
 			}
 		} else if (c == 's') {
@@ -2628,7 +2638,9 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			/* stat */
 			++count_dir;
 		} else if (c == 'c') {
+			/* get the subcommand */
 			c = sgetc(f);
+
 			switch (c) {
 			case 'u' :
 				state->hash = HASH_MURMUR3;
@@ -2649,7 +2661,9 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				exit(EXIT_FAILURE);
 			}
 		} else if (c == 'C') {
+			/* get the subcommand */
 			c = sgetc(f);
+
 			switch (c) {
 			case 'u' :
 				state->prevhash = HASH_MURMUR3;
@@ -2792,7 +2806,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	blockmax = parity_size(state);
 
 	/* write header */
-	swrite("SnapRAID\n\3", 10, f);
+	swrite("SNAPCNT1\n\3\0\0", 12, f);
 
 	/* clear the info for unused blocks */
 	/* and get some other info */
@@ -2880,7 +2894,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 
 	sputb32(info_oldest, f);
 
-	/* read the blockmax, this is also going to be used in a lot of checks */
+	/* write blockmax, this is also going to be used in a lot of checks */
 	sputb32(blockmax, f);
 
 	/* write the info for each block */
@@ -2906,7 +2920,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 		/* if there is info */
 		if (info) {
 			/* other flags */
-			flag = 1; /* time is present */
+			flag = 1; /* info is present */
 			if (info_get_bad(info))
 				flag |= 2;
 			if (info_get_rehash(info))
@@ -3102,7 +3116,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 
 				if (is_deleted) {
 					/* write the run of deleted blocks with hash */
-					sputb32(1, f);
+					sputc('o', f);
 
 					/* write all the hash */
 					while (begin < end) {
@@ -3115,7 +3129,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 				} else {
 					/* write the run of blocks without hash */
 					/* they can be either used or empty blocks */
-					sputb32(0, f);
+					sputc('O', f);
 
 					/* next begin position */
 					begin = end;
@@ -3217,7 +3231,8 @@ void state_read(struct snapraid_state* state)
 	/* get the first char to detect the file type */
 	c = sgetc(f);
 	sungetc(c, f);
-	
+
+	/* guess the file type from the first char */
 	if (c == 'S') {
 		state_read_binary(state, path, f);
 	} else {
