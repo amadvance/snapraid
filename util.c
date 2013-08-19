@@ -522,6 +522,8 @@ loop:
 	if ((b & 0x80) == 0) {
 		v |= (uint32_t)b << s;
 		s += 7;
+		if (s >= 32)
+			return -1;
 		goto loop;
 	}
 
@@ -550,6 +552,8 @@ loop:
 	if ((b & 0x80) == 0) {
 		v |= (uint64_t)b << s;
 		s += 7;
+		if (s >= 64)
+			return -1;
 		goto loop;
 	}
 
