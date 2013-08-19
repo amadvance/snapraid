@@ -497,12 +497,6 @@ void randomize(void* ptr, unsigned size);
 /* crc */
 
 /**
- * CRC initial value.
- * Using a not zero value allows to detect trailing zeros at the end.
- */
-#define CRC_IV 0xffffffffU
-
-/**
  * Computes the CRC-32 (Castagnoli)
  */
 uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, unsigned size);

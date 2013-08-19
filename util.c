@@ -84,8 +84,8 @@ STREAM* sopen_read(const char* file)
 	s->state_index = 0;
 	s->offset = 0;
 	s->offset_uncached = 0;
-	s->crc = CRC_IV;
-	s->crc_uncached = CRC_IV;
+	s->crc = 0;
+	s->crc_uncached = 0;
 
 	return s;
 }
@@ -109,8 +109,8 @@ STREAM* sopen_multi_write(unsigned count)
 	s->state_index = 0;
 	s->offset = 0;
 	s->offset_uncached = 0;
-	s->crc = CRC_IV;
-	s->crc_uncached = CRC_IV;
+	s->crc = 0;
+	s->crc_uncached = 0;
 
 	return s;
 }
@@ -251,7 +251,7 @@ int64_t stell(STREAM* s)
 
 uint32_t scrc(STREAM*s)
 {
-	return crc32c(s->crc_uncached, s->buffer, s->pos - s->buffer) ^ CRC_IV;
+	return crc32c(s->crc_uncached, s->buffer, s->pos - s->buffer);
 }
 
 int sgettok(STREAM* f, char* str, int size)
@@ -1061,8 +1061,16 @@ static uint32_t CRC32C_3[256] = {
 	0x4a21617b, 0x9764cbc3, 0xf54642fa, 0x2803e842
 };
 
+/**
+ * CRC initial value.
+ * Using a not zero value allows to detect a leading run of zeros.
+ */
+#define CRC_IV 0xffffffffU
+
 static uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size)
 {
+	crc ^= CRC_IV;
+
 	while (size >= 4) {
 		crc ^= ptr[0] | (uint32_t)ptr[1] << 8 | (uint32_t)ptr[2] << 16 | (uint32_t)ptr[3] << 24;
 		crc = CRC32C_3[crc & 0xff] ^ CRC32C_2[(crc >> 8) & 0xff] ^ CRC32C_1[(crc >> 16) & 0xff] ^ CRC32C_0[crc >> 24];
@@ -1076,6 +1084,8 @@ static uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size
 		--size;
 	}
 
+	crc ^= CRC_IV;
+
 	return crc;
 }
 
@@ -1083,6 +1093,8 @@ static uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size
 
 static uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size)
 {
+	crc ^= CRC_IV;
+
 	while (size >= 4) {
 		asm volatile ("crc32l %1, %0\n" : "+r" (crc) : "rm" (*(uint32_t*)ptr));
 		ptr += 4;
@@ -1094,6 +1106,8 @@ static uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size
 		++ptr;
 		--size;
 	}
+
+	crc ^= CRC_IV;
 
 	return crc;
 }

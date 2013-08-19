@@ -262,7 +262,7 @@ static void crc32ctest(void)
 
 	for(i=0;TEST_CRC32C[i].data;++i) {
 		uint32_t digest;
-		digest = CRC_IV ^ crc32c(CRC_IV, (const unsigned char*)TEST_CRC32C[i].data, TEST_CRC32C[i].len);
+		digest = crc32c(0, (const unsigned char*)TEST_CRC32C[i].data, TEST_CRC32C[i].len);
 		if (digest != TEST_CRC32C[i].digest) {
 			fprintf(stderr, "Failed CRC32C test vector %u\n", i);
 			exit(EXIT_FAILURE);
