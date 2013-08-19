@@ -84,8 +84,8 @@ STREAM* sopen_read(const char* file)
 	s->state_index = 0;
 	s->offset = 0;
 	s->offset_uncached = 0;
-	s->crc = 0;
-	s->crc_uncached = 0;
+	s->crc = CRC_IV;
+	s->crc_uncached = CRC_IV;
 
 	return s;
 }
@@ -109,8 +109,8 @@ STREAM* sopen_multi_write(unsigned count)
 	s->state_index = 0;
 	s->offset = 0;
 	s->offset_uncached = 0;
-	s->crc = 0;
-	s->crc_uncached = 0;
+	s->crc = CRC_IV;
+	s->crc_uncached = CRC_IV;
 
 	return s;
 }
@@ -251,7 +251,7 @@ int64_t stell(STREAM* s)
 
 uint32_t scrc(STREAM*s)
 {
-	return crc32c(s->crc_uncached, s->buffer, s->pos - s->buffer);
+	return crc32c(s->crc_uncached, s->buffer, s->pos - s->buffer) ^ CRC_IV;
 }
 
 int sgettok(STREAM* f, char* str, int size)

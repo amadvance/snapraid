@@ -2103,7 +2103,7 @@ static void decoding_error(const char* path, STREAM* f)
 	crc_computed = scrc(f);
 
 	/* adjust the stored crc to include itself */
-	crc_stored = crc32c(crc_stored, buf, 4);
+	crc_stored = crc32c(crc_stored ^ CRC_IV, buf, 4) ^ CRC_IV;
 
 	if (crc_computed != crc_stored) {
 		fprintf(stderr, "Mismatching CRC in '%s'\n", path);

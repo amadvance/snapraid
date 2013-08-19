@@ -236,6 +236,7 @@ struct crc_test_vector {
  * Test vectors for CRC32C (Castagnoli)
  */
 static struct crc_test_vector TEST_CRC32C[] = {
+{ "", 0, 0 },
 { "\x61", 1, 0xc1d04330 },
 { "\x66\x6f\x6f", 3, 0xcfc4ae1d },
 { "\x68\x65\x6c\x6c\x6f\x20\x77\x6f\x72\x6c\x64", 11, 0xc99465aa },
@@ -261,7 +262,7 @@ static void crc32ctest(void)
 
 	for(i=0;TEST_CRC32C[i].data;++i) {
 		uint32_t digest;
-		digest = 0xffffffffU ^ crc32c(0xffffffffU, (const unsigned char*)TEST_CRC32C[i].data, TEST_CRC32C[i].len);
+		digest = CRC_IV ^ crc32c(CRC_IV, (const unsigned char*)TEST_CRC32C[i].data, TEST_CRC32C[i].len);
 		if (digest != TEST_CRC32C[i].digest) {
 			fprintf(stderr, "Failed CRC32C test vector %u\n", i);
 			exit(EXIT_FAILURE);
