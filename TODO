@@ -3,13 +3,12 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
-- v4.x generic
-
-* In the import list, uses also all the blocks in the array.
-But we must cover the case of bad blocks. Likely we can just check the
-hash after reading, and in case, skip it, and retry with another copy.
+- v4.x
 
 * If a content file is missing, sync should rewrite it, even if no change was done at the content.
+
+* Add a way to list the content of the array. A new "list" command ?
+Something similar at "diff" and "dup".
 
 * A new 'init' command to differentiate the first 'sync' operation.
 This 'init' will work also without a content file, and parity files.
@@ -49,13 +48,7 @@ also for all the previous blocks this is true.
 Anyway, the case where this information could be useful should be present
 only if changes are committed after an aborted sync.
 
-* When fixing, before overwriting the present file, make a copy of it just in
-case that the original file cannot be completely recovered.
-We can always open files in read-only mode, if a write is required, we close it,
-rename it to with a .bak extension, and rewrite it up to the required size.
-The same for symlink if a file with the same name exist or viceversa.
-
-- v4.x pooling
+- Pooling
 
 * Allow to specify the shared path to use to access remote symlink.
 
@@ -72,7 +65,17 @@ but kept in the same disk of the array.
 of the same disk. For safety no real deletion is done.
 File with the same name will get an extra extension like ".1", ".2".
 
-- v5.x
+* In the content file save the timestap of the parity files.
+If they do not match, stop the processing.
+This can be done to avoid to use not syncronized parity and content files,
+resulting in wrong data.
+But if the sync process is killed we need a way to resyncronize them.
+Or maybe we should allow parity never than content, but not viceversa.
+
+- Major
+
+* Use Async IO for Linux (libaio).
+See thread: https://sourceforge.net/p/snapraid/discussion/1677233/thread/a300a10b/
 
 * Triple parity also called RAID-TP. We can implement it in a compatible way
 with the existing RAID-5 and RAID-6 definining a new r-parity file.
@@ -88,18 +91,24 @@ block size, but no more, and then start a new block.
 For each block, we'll have also to store. "size_uncompressed", "size_compressed",
 "hash".
 
-* In the content file save the timestap of the parity files.
-If they do not match, stop the processing.
-This can be done to avoid to use not syncronized parity and content files,
-resulting in wrong data.
-But if the sync process is killed we need a way to resyncronize them.
-Or maybe we should allow parity never than content, but not viceversa.
-
-
 Rejected TODO
 =============
 
 This is a list of rejected TODO items.
+
+* When fixing, before overwriting the present file, make a copy of it just in
+case that the original file cannot be completely recovered.
+We can always open files in read-only mode, if a write is required, we close it,
+rename it to with a .bak extension, and rewrite it up to the required size.
+The same for symlink if a file with the same name exist or viceversa.
+- The idea behind this is to avoid to leave untouched a file if we cannot
+restore it completely. But it's debatable what's better in this case.
+Anyway, considering the typical use, it's not really relevant.
+
+* In the import list, uses also all the blocks in the array.
+But we must cover the case of bad blocks. Likely we can just check the
+hash after reading, and in case, skip it, and retry with another copy.
+- It will work only for duplicate files. Not really worth do to it.
 
 * Save the content file in compressed .gz format to save space.
 - Compression is too slow. Even using the very fast lzo.
@@ -118,7 +127,8 @@ real    1m51.607s
 user    1m30.032s
 sys     0m3.245s
 
-Similar command done with snapraid, that involves also decoding and encoding takes less time.
+Similar command done with snapraid without compression, and involving also decoding
+and encoding takes less time.
 
 $ time ./snapraid --test-skip-device --test-skip-self -v -c ./test.conf test-rewrite
 real    0m59.087s
