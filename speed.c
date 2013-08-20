@@ -163,6 +163,25 @@ void speed(void)
 
 	SPEED_START {
 		for(j=0;j<diskmax;++j) {
+			crc32c_gen(0, buffer[j], block_size);
+		}
+	} SPEED_STOP
+
+	printf("CRC table %"PRIu64" [MB/s]\n", ds / dt);
+
+#if defined(__i386__) || defined(__x86_64__)
+	if (cpu_has_sse42()) {
+		SPEED_START {
+			for(j=0;j<diskmax;++j) {
+				crc32c_x86(0, buffer[j], block_size);
+			}
+		} SPEED_STOP
+
+		printf("CRC intel-crc32l %"PRIu64" [MB/s]\n", ds / dt);
+	}
+#endif
+	SPEED_START {
+		for(j=0;j<diskmax;++j) {
 			memhash(HASH_MURMUR3, seed, digest, buffer[j], block_size);
 		}
 	} SPEED_STOP

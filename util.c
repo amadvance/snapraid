@@ -1067,7 +1067,7 @@ static uint32_t CRC32C_3[256] = {
  */
 #define CRC_IV 0xffffffffU
 
-static uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size)
+uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size)
 {
 	crc ^= CRC_IV;
 
@@ -1091,7 +1091,7 @@ static uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size
 
 #if defined(__i386__) || defined(__x86_64__)
 
-static uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size)
+uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size)
 {
 	crc ^= CRC_IV;
 
