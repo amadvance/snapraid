@@ -177,7 +177,7 @@ void speed(void)
 			}
 		} SPEED_STOP
 
-		printf("CRC intel-crc32l %"PRIu64" [MB/s]\n", ds / dt);
+		printf("CRC intel-crc32 %"PRIu64" [MB/s]\n", ds / dt);
 	}
 #endif
 	SPEED_START {
