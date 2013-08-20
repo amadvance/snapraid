@@ -1617,6 +1617,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 	tommy_node* i;
 	block_off_t b;
 	block_off_t blockmax;
+	int info_has_rehash;
 
 	count_file = 0;
 	count_block = 0;
@@ -1626,6 +1627,25 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 
 	/* blocks of all array */
 	blockmax = parity_size(state);
+
+	/* clear the info for unused blocks */
+	/* and get some other info */
+	info_has_rehash = 0; /* if there is a rehash info */
+	for(b=0;b<blockmax;++b) {
+		/* if the position is used */
+		if (is_block_used(state, b)) {
+			snapraid_info info = info_get(&state->infoarr, b);
+
+			/* only if there is some info to store */
+			if (info) {
+				if (info_get_rehash(info))
+					info_has_rehash = 1;
+			}
+		} else {
+			/* clear any previous info */
+			info_set(&state->infoarr, b, 0);
+		}
+	}
 
 	sputsl("blksize ", f);
 	sputu32(state->block_size, f);
@@ -1651,28 +1671,10 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 		exit(EXIT_FAILURE);
 	}
 
-	/* previous hash only if present */
+	/* previous hash only present */
 	if (state->prevhash != HASH_UNDEFINED) {
-
-		/* check if the previous hash is still needed */
-		for(b=0;b<blockmax;++b) {
-			snapraid_info info;
-
-			info = info_get(&state->infoarr, b);
-
-			if (info == 0) {
-				/* skip it */
-				continue;
-			}
-
-			if (info_get_rehash(info)) {
-				/* stop the process */
-				break;
-			}
-		}
-
 		/* if at least one rehash tag found, we have to save the previous hash */
-		if (b < blockmax) {
+		if (info_has_rehash) {
 			if (state->prevhash == HASH_MURMUR3) {
 				sputsl("prevchecksum murmur3", f);
 			} else if (state->hash == HASH_SPOOKY2) {
@@ -1838,6 +1840,8 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 
 		/* maximum block for this disk */
 		blockdiskmax = tommy_array_size(&disk->blockarr);
+
+		/* skip blocks over the end of the parity */
 		if (blockdiskmax > blockmax)
 			blockdiskmax = blockmax;
 
@@ -1859,12 +1863,9 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 				}
 
 				sputsl("off ", f);
-
 				sputu32(b, f);
-
 				sputc(' ', f);
 				sputhex(block->hash, HASH_SIZE, f);
-
 				sputeol(f);
 				if (serror(f)) {
 					fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
@@ -1876,47 +1877,28 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 
 	/* for each block */
 	for(b=0;b<blockmax;++b) {
-		snapraid_info info;
+		/* if the position is used */
+		if (is_block_used(state, b)) {
+			snapraid_info info = info_get(&state->infoarr, b);
 
-		info = info_get(&state->infoarr, b);
+			/* save only stuffs different than 0 */
+			if (info != 0) {
+				sputsl("inf ", f);
 
-		/* check for each disk if block is really used */
-		for(i=state->disklist;i!=0;i=i->next) {
-			struct snapraid_disk* disk = i->data;
-			struct snapraid_block* block;
-
-			block = disk_block_get(disk, b);
-
-			if (block != BLOCK_EMPTY)
-				break;
-		}
-		
-		/* if processed all, it's empty for all */
-		if (i == 0)
-			info = 0;
-
-		/* save only stuffs different than 0 */
-		if (info != 0) {
-			sputsl("inf ", f);
-
-			sputu32(b, f);
-
-			sputc(' ', f);
-
-			sputu32(info, f);
-
-			if (info_get_bad(info)) {
-				sputsl(" bad", f);
-			}
-
-			if (info_get_rehash(info)) {
-				sputsl(" rehash", f);
-			}
-
-			sputeol(f);
-			if (serror(f)) {
-				fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-				exit(EXIT_FAILURE);
+				sputu32(b, f);
+				sputc(' ', f);
+				sputu32(info, f);
+				if (info_get_bad(info)) {
+					sputsl(" bad", f);
+				}
+				if (info_get_rehash(info)) {
+					sputsl(" rehash", f);
+				}
+				sputeol(f);
+				if (serror(f)) {
+					fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+					exit(EXIT_FAILURE);
+				}
 			}
 		}
 	}
@@ -2691,9 +2673,6 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	/* blocks of all array */
 	blockmax = parity_size(state);
 
-	/* write header */
-	swrite("SNAPCNT1\n\3\0\0", 12, f);
-
 	/* clear the info for unused blocks */
 	/* and get some other info */
 	info_oldest = 0; /* oldest time in info */
@@ -2718,6 +2697,9 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 			info_set(&state->infoarr, b, 0);
 		}
 	}
+
+	/* write header */
+	swrite("SNAPCNT1\n\3\0\0", 12, f);
 
 	sputc('z', f);
 	sputb32(state->block_size, f);
