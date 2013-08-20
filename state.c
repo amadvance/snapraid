@@ -1718,7 +1718,6 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 		tommy_node* j;
 		struct snapraid_disk* disk = i->data;
 		int first_deleted;
-		block_off_t blockdiskmax;
 
 		/* for each file */
 		for(j=disk->filelist;j!=0;j=j->next) {
@@ -1838,18 +1837,12 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 			++count_dir;
 		}
 
-		/* maximum block for this disk */
-		blockdiskmax = tommy_array_size(&disk->blockarr);
-
-		/* skip blocks over the end of the parity */
-		if (blockdiskmax > blockmax)
-			blockdiskmax = blockmax;
-
 		/* for each deleted block in the disk */
 		first_deleted = 1;
-		for(b=0;b<blockdiskmax;++b) {
-			struct snapraid_block* block = tommy_array_get(&disk->blockarr, b);
-			if (block_state_get(block) == BLOCK_STATE_DELETED) {
+		for(b=0;b<blockmax;++b) {
+			if (is_block_deleted(disk, b)) {
+				struct snapraid_block* block = disk_block_get(disk, b);
+			
 				if (first_deleted) {
 					first_deleted = 0;
 
@@ -1875,7 +1868,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 		}
 	}
 
-	/* for each block */
+	/* write the info for each block */
 	for(b=0;b<blockmax;++b) {
 		/* if the position is used */
 		if (is_block_used(state, b)) {
@@ -2205,12 +2198,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				exit(EXIT_FAILURE);
 			}
 
-			ret = sgetb32(f, &blockmax);
-			if (ret < 0) {
-				decoding_error(path, f);
-				exit(EXIT_FAILURE);
-			}
-
 			v_pos = 0;
 			while (v_pos < blockmax) {
 				int rehash;
@@ -2273,7 +2260,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 		} else if (c == 'h') {
 			/* hole */
 			uint32_t v_pos;
-			block_off_t blockdiskmax;
 			struct snapraid_disk* disk;
 
 			ret = sgetbs(f, buffer, sizeof(buffer));
@@ -2290,23 +2276,11 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				exit(EXIT_FAILURE);
 			}
 
-			ret = sgetb32(f, &blockdiskmax);
-			if (ret < 0) {
-				decoding_error(path, f);
-				exit(EXIT_FAILURE);
-			}
-
-			if (blockdiskmax > blockmax) {
-				fprintf(stderr, "Internal inconsistency in disk size!\n");
-				decoding_error(path, f);
-				exit(EXIT_FAILURE);
-			}
-
 			/* grow the array */
-			tommy_array_grow(&disk->blockarr, blockdiskmax);
+			tommy_array_grow(&disk->blockarr, blockmax);
 
 			v_pos = 0;
-			while (v_pos < blockdiskmax) {
+			while (v_pos < blockmax) {
 				uint32_t v_count;
 
 				ret = sgetb32(f, &v_count);
@@ -2315,7 +2289,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 					exit(EXIT_FAILURE);
 				}
 
-				if (v_pos + v_count > blockdiskmax) {
+				if (v_pos + v_count > blockmax) {
 					decoding_error(path, f);
 					fprintf(stderr, "Internal inconsistency in hole size!\n");
 					exit(EXIT_FAILURE);
@@ -2566,6 +2540,12 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				fprintf(stderr, "Please restore the 'block_size' value in the configuration file to '%u'\n", blksize / 1024);
 				exit(EXIT_FAILURE);
 			}
+		} else if (c == 'x') {
+			ret = sgetb32(f, &blockmax);
+			if (ret < 0) {
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+			}
 		} else if (c == 'm') {
 			struct snapraid_map* map;
 			char uuid[UUID_MAX];
@@ -2701,8 +2681,11 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	/* write header */
 	swrite("SNAPCNT1\n\3\0\0", 12, f);
 
+	/* write block size and block max */
 	sputc('z', f);
 	sputb32(state->block_size, f);
+	sputc('x', f);
+	sputb32(blockmax, f);
 	if (serror(f)) {
 		fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 		exit(EXIT_FAILURE);
@@ -2757,65 +2740,10 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 		}
 	}
 
-	/* save the info */
-	sputc('i', f);
-
-	sputb32(info_oldest, f);
-
-	/* write blockmax, this is also going to be used in a lot of checks */
-	sputb32(blockmax, f);
-
-	/* write the info for each block */
-	begin = 0;
-	while (begin < blockmax) {
-		snapraid_info info;
-		block_off_t end;
-		time_t t;
-		unsigned flag;
-
-		info = info_get(&state->infoarr, begin);
-
-		/* find the end of run of blocks */
-		end = begin + 1;
-		while (end < blockmax
-			&& info == info_get(&state->infoarr, end))
-		{
-			++end;
-		}
-
-		sputb32(end - begin, f);
-
-		/* if there is info */
-		if (info) {
-			/* other flags */
-			flag = 1; /* info is present */
-			if (info_get_bad(info))
-				flag |= 2;
-			if (info_get_rehash(info))
-				flag |= 4;
-			sputb32(flag, f);
-
-			t = info_get_time(info) - info_oldest;
-			sputb32(t, f);
-		} else {
-			/* write a special 0 flag to mark missing info */
-			sputb32(0, f);
-		}
-
-		if (serror(f)) {
-			fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-			exit(EXIT_FAILURE);
-		}
-
-		/* next begin position */
-		begin = end;
-	}
-
 	/* for each disk */
 	for(i=state->disklist;i!=0;i=i->next) {
 		tommy_node* j;
 		struct snapraid_disk* disk = i->data;
-		block_off_t blockdiskmax;
 
 		/* for each file */
 		for(j=disk->filelist;j!=0;j=j->next) {
@@ -2940,75 +2868,116 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 			++count_dir;
 		}
 
-		/* maximum block for this disk */
-		blockdiskmax = tommy_array_size(&disk->blockarr);
+		/* write the deleted info for each block */
+		begin = 0;
+		while (begin < blockmax) {
+			int is_deleted;
+			block_off_t end;
 
-		/* skip blocks over the end of the parity */
-		if (blockdiskmax > blockmax)
-			blockdiskmax = blockmax;
+			is_deleted = is_block_deleted(disk, begin);
 
-		/* skip empty blocks at the end of the disk */
-		while (blockdiskmax > 0 && disk_block_get(disk, blockdiskmax - 1) == BLOCK_EMPTY)
-			--blockdiskmax;
-
-		/* write the hole list only if the disk is not completely empty */
-		/* this is required to write no reference to a removed disk */
-		if (blockdiskmax) {
-			/* write the list of deleted blocks */
-			sputc('h', f);
-			sputbs(disk->name, f);
-			sputb32(blockdiskmax, f);
-
-			if (serror(f)) {
-				fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-				exit(EXIT_FAILURE);
+			/* find the end of run of blocks */
+			end = begin + 1;
+			while (end < blockmax
+				&& is_deleted == is_block_deleted(disk, end))
+			{
+				++end;
 			}
 
-			/* write the deleted info for each block */
-			begin = 0;
-			while (begin < blockdiskmax) {
-				int is_deleted;
-				block_off_t end;
-
-				is_deleted = is_block_deleted(disk, begin);
-
-				/* find the end of run of blocks */
-				end = begin + 1;
-				while (end < blockdiskmax
-					&& is_deleted == is_block_deleted(disk, end))
-				{
-					++end;
+			/* if it's the first iteration */
+			if (begin == 0) {
+				/* if there is no deleted block in the disk, write nothing */
+				/* this is required to avoid to have references to a completely empty disk */
+				if (end == blockmax && !is_deleted) {
+					/* exit */
+					break;
 				}
 
-				sputb32(end - begin, f);
-
-				if (is_deleted) {
-					/* write the run of deleted blocks with hash */
-					sputc('o', f);
-
-					/* write all the hash */
-					while (begin < end) {
-						struct snapraid_block* block = disk_block_get(disk, begin);
-				
-						swrite(block->hash, HASH_SIZE, f);
-
-						++begin;
-					}
-				} else {
-					/* write the run of blocks without hash */
-					/* they can be either used or empty blocks */
-					sputc('O', f);
-
-					/* next begin position */
-					begin = end;
-				}
-
+				/* write the hole header only if required */
+				sputc('h', f);
+				sputbs(disk->name, f);
 				if (serror(f)) {
 					fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 					exit(EXIT_FAILURE);
 				}
 			}
+
+			sputb32(end - begin, f);
+
+			if (is_deleted) {
+				/* write the run of deleted blocks with hash */
+				sputc('o', f);
+
+				/* write all the hash */
+				while (begin < end) {
+					struct snapraid_block* block = disk_block_get(disk, begin);
+
+					swrite(block->hash, HASH_SIZE, f);
+
+					++begin;
+				}
+			} else {
+				/* write the run of blocks without hash */
+				/* they can be either used or empty blocks */
+				sputc('O', f);
+
+				/* next begin position */
+				begin = end;
+			}
+
+			if (serror(f)) {
+				fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				exit(EXIT_FAILURE);
+			}
 		}
+	}
+
+	/* write the info for each block */
+	sputc('i', f);
+	sputb32(info_oldest, f);
+	begin = 0;
+	while (begin < blockmax) {
+		snapraid_info info;
+		block_off_t end;
+		time_t t;
+		unsigned flag;
+
+		info = info_get(&state->infoarr, begin);
+
+		/* find the end of run of blocks */
+		end = begin + 1;
+		while (end < blockmax
+			&& info == info_get(&state->infoarr, end))
+		{
+			++end;
+		}
+
+		sputb32(end - begin, f);
+
+		/* if there is info */
+		if (info) {
+			/* other flags */
+			flag = 1; /* info is present */
+			if (info_get_bad(info))
+				flag |= 2;
+			if (info_get_rehash(info))
+				flag |= 4;
+			sputb32(flag, f);
+
+			t = info_get_time(info) - info_oldest;
+			sputb32(t, f);
+		} else {
+			/* write a special 0 flag to mark missing info */
+			sputb32(0, f);
+		}
+
+		if (serror(f)) {
+			fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+
+		/* next begin position */
+		begin = end;
 	}
 
 	sputc('N', f);
