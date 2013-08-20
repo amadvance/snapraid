@@ -16,7 +16,7 @@ Synopsis
 	:snapraid [-V, --version] [-h, --help]
 
 Description
-	SnapRAID is a backup program for a disk array.
+	SnapRAID is a backup program for disk arrays.
 
 	SnapRAID stores redundancy information in the disk array,
 	and it allows recovering from up to two disk failures.
@@ -80,8 +80,8 @@ Getting Started
 	to dedicate at the "parity" information. With one disk for parity you
 	will be able to recover from a single disk failure, like RAID5.
 
-	If you want to recover from two disk failures, like RAID6, you must
-	reserve another disk for the "q-parity" information.
+	If you want to be able to recover from two disk failures, like RAID6,
+	you must reserve another disk for the "q-parity" information.
 
 	As parity disks, you have to pick the biggest disks in the array,
 	as the redundancy information may grow in size as the biggest data
@@ -145,22 +145,6 @@ Getting Started
 	At this point you can start using your array as you like, and periodically
 	update the redundancy information running the "sync" command.
 
-  Pooling
-	To have all the files in your array shown in the same directory tree,
-	you can enable "pooling", that consists in creating a virtual view of all
-	the files in your array using symbolic links.
-	You can configure the "pooling" directory in the configuration file with:
-
-		:pool /pool
-
-	or, if you are in Windows, with:
-
-		:pool C:\pool
-
-	and then run the "pool" command.
-
-		:snapraid pool
-
   Checking & Fixing
 	To check the integrity of your data you can use the "check" command:
 
@@ -177,47 +161,69 @@ Getting Started
 	in "sync".
 
 	In this regard SnapRAID is more like a backup program than a RAID
-	system. For example, you can use it to recover from an accidentally
-	deleted directory, simply running the fix command using the
-	-m, --filter-missing filter, like:
+	system. For example, you can use it to restore a file or directory to
+	its previous state using the -f, --filter option :
+
+		:snapraid fix -f FILE
+
+	or for a directory:
+
+		:snapraid fix -f DIR/
+
+	You can also use it to recover only accidentally deleted files inside
+	a directory using the -m, --filter-missing option, like:
 
 		:snapraid fix -m -f DIR/
 
-	Or to simply recover one file you can use:
-
-		:snapraid fix -m -f FILE
-
-	Or to recover all the delete files with:
+	Or to recover all the deleted files with:
 
 		:snapraid fix -m
 
   Scrubbing
-	To progressively check the old synched data, it's recommended to always
-	run a "scrub" command after a "sync".
+	To periodically check the old data for errors, you can run the "scrub"
+	command.
 
 		:snapraid scrub
 
-	This command checks the oldest data in your array to ensure that no silent
-	error is present. Every run of the command checks about 12% of the data,
+	As difference than "check" this command verifies only the oldest data
+	in your array. Every run of the command checks about 12% of the data,
 	but nothing newer than 10 days.
 
-	If an error is found, the corresponding blocks are marked as bad, and listed
-	in the "status" command.
+	If a silent error is found, the corresponding blocks are marked as bad
+	in the "concent" file, and listed in the "status" command.
 
 		:snapraid status
 
-	To fix them, you can use the "fix" command filtering for bad blocks:
+	To fix them, you can use the "fix" command filtering for files
+	containing bad blocks:
 
 		:snapraid -e fix
 
-	and at the next "scrub" the errors will disappears from the status.
+	and at the next "scrub" the errors will disappear from the "status"
+	report.
+
+  Pooling
+	To have all the files in your array shown in the same directory tree,
+	you can enable "pooling", that consists in creating a virtual view of all
+	the files in your array using symbolic links.
+	You can configure the "pooling" directory in the configuration file with:
+
+		:pool /pool
+
+	or, if you are in Windows, with:
+
+		:pool C:\pool
+
+	and then run the "pool" command.
+
+		:snapraid pool
 
 Commands
-	SnapRAID provides four simple commands that allow to:
+	SnapRAID provides some simple commands that allow to:
 
 	* Make a backup/snapshot -> "sync"
-	* See the files changed from the previous sync -> "diff"
 	* Periodically checks old data -> "scrub"
+	* Prints a report of the status of the array -> "status"
 	* Check for integrity the full array -> "check"
 	* Restore the last backup/snapshot -> "fix".
 
@@ -238,20 +244,41 @@ Commands
 	The "content", "parity" and "q-parity" files are modified if necessary.
 	The files in the array are NOT modified.
 
-  status
-	Prints a summary of the state of the disk array.
+  check
+	Checks all the files and the redundancy data.
+	All the files are hashed and compared with the snapshot saved
+	in the previous "sync" command.
 
-	It includes information about the parity fragmentation, how old
-	are the blocks without checking, and all the recorded silent
-	errors encoutered while scrubbing.
+	If an error if found, a recovery attempt is simulated to check
+	if the error is a recoverable one or not.
+
+	If you use the -a, --audit-only option, only the file
+	data is checked, and the redundandy data is ignored.
+
+	Files are identified by path, and checked by content.
 
 	Nothing is modified.
+
+  fix
+	Checks and fix all the files. It's like "check" but it also fixes
+	errors reverting the state of the disk array to the previous "sync"
+	command.
+
+	After a successful "fix", you should also run a "sync" command to
+	update the new state of the files.
+
+	All the files that cannot be fixed are renamed adding
+	the ".unrecoverable" extension.
+
+	The "content" file is NOT modified.
+	The "parity" and "q-parity" files are modified if necessary.
+	The files in the array are modified if necessary.
 
   scrub
 	Scrubs the array, checking for silent errors.
 
-	For each command invocation, the 12% of the array is checked,
-	but nothing that it's more recent than 10 days.
+	For each command invocation, the 12% of the array is checked, but
+	nothing that it's more recent than 10 days.
 	This means that scrubbing once a week, every bit of data is checked
 	at least one time every two months.
 
@@ -267,6 +294,15 @@ Commands
 
 	The "content" file is modified to update the time of the last check
 	of each block.
+
+  status
+	Prints a summary of the state of the disk array.
+
+	It includes information about the parity fragmentation, how old
+	are the blocks without checking, and all the recorded silent
+	errors encoutered while scrubbing.
+
+	Nothing is modified.
 
   diff
 	Lists all the files modified from the last "sync" command that
@@ -284,32 +320,18 @@ Commands
 
 	Nothing is modified.
 
-  check
-	Checks all the files and the redundancy data.
-	All the files are hashed and compared with the snapshot saved
-	in the previous "sync" command.
+  pool
+	Creates or updates in the "pooling" directory a virtual view of all
+	the files of your disk array.
 
-	If you use the -a, --audit-only option, only the file
-	data is checked, and the redundandy data is ignored.
+	The files are not really copied here, but just linked using
+	symbolic links.
 
-	Files are identified by path, and checked by content.
+	When updating, all the present symbolic links and empty
+	subdirectories are deleted and replaced with the new
+	view of the array. Any othe regular file is left in place.
 
-	Nothing is modified.
-
-  fix
-	Checks and fix all the files. It's like "check" but it
-	also tries to fix problems reverting the state of the
-	disk array to the previous "sync" command.
-
-	After a successful "fix", you should also run a "sync"
-	command to update the new state of the files.
-
-	All the files that cannot be fixed are renamed adding
-	the ".unrecoverable" extension.
-
-	The "content" file is NOT modified.
-	The "parity" and "q-parity" files are modified if necessary.
-	The files in the array are modified if necessary.
+	Nothing is modified outside the pool directory.
 
   rehash
 	Schedules a rehash of the whole array.
@@ -326,19 +348,6 @@ Commands
 	During the rehash, SnapRAID maintains full functionality,
 	with the only expection of the "dup" command not able to detect
 	duplicated files using a different hash.
-
-  pool
-	Creates or updates in the "pooling" directory a virtual view of all
-	the files of your disk array.
-
-	The files are not really copied here, but just linked using
-	symbolic links.
-
-	When updating, all the present symbolic links and empty
-	subdirectories are deleted and replaced with the new
-	view of the array. Any othe regular file is left in place.
-
-	Nothing is modified outside the pool directory.
 
 Options
 	SnapRAID provides the following options:
@@ -469,7 +478,7 @@ Options
 
 	-s, --start BLKSTART
 		Starts the processing from the specified
-		block number. It could be useful to easy retry to check
+		block number. It could be useful to retry to check
 		or fix some specific block, in case of a damaged disk.
 
 	-t, --count BLKCOUNT
@@ -623,7 +632,6 @@ Configuration
 		:disk d1 /mnt/disk1/
 		:disk d2 /mnt/disk2/
 		:disk d3 /mnt/disk3/
-		:exclude *.bak
 		:exclude /lost+found/
 		:exclude /tmp/
 
@@ -635,7 +643,6 @@ Configuration
 		:disk d1 G:\array\
 		:disk d2 H:\array\
 		:disk d3 I:\array\
-		:exclude *.bak
 		:exclude Thumbs.db
 		:exclude \$RECYCLE.BIN
 		:exclude \System Volume Information
@@ -680,8 +687,8 @@ Pattern
 	The simplest one is to use only "exclude" rules to remove all the
 	files and directories you do not want to process. For example:
 
-		:# Excludes any file named "*.bak"
-		:exclude *.bak
+		:# Excludes any file named "*.unrecoverable"
+		:exclude *.unrecoverable
 		:# Excludes the root directory "/lost+found"
 		:exclude /lost+found/
 		:# Excludes any sub-directory named "tmp"
@@ -701,8 +708,8 @@ Pattern
 	To get things simpler you can first have all the "exclude" rules and then
 	all the "include" ones. For example:
 
-		:# Excludes any file named "*.bak"
-		:exclude *.bak
+		:# Excludes any file named "*.unrecoverable"
+		:exclude *.unrecoverable
 		:# Excludes any sub-directory named "tmp"
 		:exclude tmp/
 		:# Includes only some directories
@@ -784,7 +791,7 @@ Recovering
 	Where NAME is the name of the disk, like "d1" as in our previous example.
 
 	The options -d and -a tell SnapRAID to check only the specified disk,
-	and ignore all the other data and redundancy disks.
+	and ignore all the redundancy data.
 
 	This command will take a long time.
 
@@ -808,7 +815,7 @@ Content
 	You do not need to understand its format to use SnapRAID.
 
 	This file is read and written by the "sync" and "scrub" commands, and
-	only read by "fix" and "check".
+	only read by "fix", "check" and "status".
 
 Parity
 	SnapRAID stores the redundancy information of your array in the parity

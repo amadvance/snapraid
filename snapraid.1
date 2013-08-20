@@ -48,7 +48,7 @@ snapraid [\(hyV, \(hy\(hyversion] [\(hyh, \(hy\(hyhelp]
 .PP
 .PD
 .SH DESCRIPTION 
-SnapRAID is a backup program for a disk array.
+SnapRAID is a backup program for disk arrays.
 .PP
 SnapRAID stores redundancy information in the disk array,
 and it allows recovering from up to two disk failures.
@@ -129,8 +129,8 @@ To use SnapRAID you need to first select one disk of your disk array
 to dedicate at the \(a"parity\(a" information. With one disk for parity you
 will be able to recover from a single disk failure, like RAID5.
 .PP
-If you want to recover from two disk failures, like RAID6, you must
-reserve another disk for the \(a"q\(hyparity\(a" information.
+If you want to be able to recover from two disk failures, like RAID6,
+you must reserve another disk for the \(a"q\(hyparity\(a" information.
 .PP
 As parity disks, you have to pick the biggest disks in the array,
 as the redundancy information may grow in size as the biggest data
@@ -258,6 +258,106 @@ When this command completes, your data is SAFE.
 .PP
 At this point you can start using your array as you like, and periodically
 update the redundancy information running the \(a"sync\(a" command.
+.SS Checking & Fixing 
+To check the integrity of your data you can use the \(a"check\(a" command:
+.PP
+.RS 4
+snapraid check
+.PD 0
+.PP
+.PD
+.RE
+.PP
+If will read all your data, to check if it\(cqs correct.
+.PP
+If an error is found, you can use the \(a"fix\(a" command to fix it.
+.PP
+.RS 4
+snapraid fix
+.PD 0
+.PP
+.PD
+.RE
+.PP
+Note that the fix command will revert your data at the state of the
+last \(a"sync\(a" command executed. It works like a snapshot was taken
+in \(a"sync\(a".
+.PP
+In this regard SnapRAID is more like a backup program than a RAID
+system. For example, you can use it to restore a file or directory to
+its previous state using the \(hyf, \(hy\(hyfilter option :
+.PP
+.RS 4
+snapraid fix \(hyf FILE
+.PD 0
+.PP
+.PD
+.RE
+.PP
+or for a directory:
+.PP
+.RS 4
+snapraid fix \(hyf DIR/
+.PD 0
+.PP
+.PD
+.RE
+.PP
+You can also use it to recover only accidentally deleted files inside
+a directory using the \(hym, \(hy\(hyfilter\(hymissing option, like:
+.PP
+.RS 4
+snapraid fix \(hym \(hyf DIR/
+.PD 0
+.PP
+.PD
+.RE
+.PP
+Or to recover all the deleted files with:
+.PP
+.RS 4
+snapraid fix \(hym
+.PD 0
+.PP
+.PD
+.RE
+.SS Scrubbing 
+To periodically check the old data for errors, you can run the \(a"scrub\(a"
+command.
+.PP
+.RS 4
+snapraid scrub
+.PD 0
+.PP
+.PD
+.RE
+.PP
+As difference than \(a"check\(a" this command verifies only the oldest data
+in your array. Every run of the command checks about 12% of the data,
+but nothing newer than 10 days.
+.PP
+If a silent error is found, the corresponding blocks are marked as bad
+in the \(a"concent\(a" file, and listed in the \(a"status\(a" command.
+.PP
+.RS 4
+snapraid status
+.PD 0
+.PP
+.PD
+.RE
+.PP
+To fix them, you can use the \(a"fix\(a" command filtering for files
+containing bad blocks:
+.PP
+.RS 4
+snapraid \(hye fix
+.PD 0
+.PP
+.PD
+.RE
+.PP
+and at the next \(a"scrub\(a" the errors will disappear from the \(a"status\(a"
+report.
 .SS Pooling 
 To have all the files in your array shown in the same directory tree,
 you can enable \(a"pooling\(a", that consists in creating a virtual view of all
@@ -288,104 +388,15 @@ snapraid pool
 .PP
 .PD
 .RE
-.SS Checking & Fixing 
-To check the integrity of your data you can use the \(a"check\(a" command:
-.PP
-.RS 4
-snapraid check
-.PD 0
-.PP
-.PD
-.RE
-.PP
-If will read all your data, to check if it\(cqs correct.
-.PP
-If an error is found, you can use the \(a"fix\(a" command to fix it.
-.PP
-.RS 4
-snapraid fix
-.PD 0
-.PP
-.PD
-.RE
-.PP
-Note that the fix command will revert your data at the state of the
-last \(a"sync\(a" command executed. It works like a snapshot was taken
-in \(a"sync\(a".
-.PP
-In this regard SnapRAID is more like a backup program than a RAID
-system. For example, you can use it to recover from an accidentally
-deleted directory, simply running the fix command using the
-\(hym, \(hy\(hyfilter\(hymissing filter, like:
-.PP
-.RS 4
-snapraid fix \(hym \(hyf DIR/
-.PD 0
-.PP
-.PD
-.RE
-.PP
-Or to simply recover one file you can use:
-.PP
-.RS 4
-snapraid fix \(hym \(hyf FILE
-.PD 0
-.PP
-.PD
-.RE
-.PP
-Or to recover all the delete files with:
-.PP
-.RS 4
-snapraid fix \(hym
-.PD 0
-.PP
-.PD
-.RE
-.SS Scrubbing 
-To progressively check the old synched data, it\(cqs recommended to always
-run a \(a"scrub\(a" command after a \(a"sync\(a".
-.PP
-.RS 4
-snapraid scrub
-.PD 0
-.PP
-.PD
-.RE
-.PP
-This command checks the oldest data in your array to ensure that no silent
-error is present. Every run of the command checks about 12% of the data,
-but nothing newer than 10 days.
-.PP
-If an error is found, the corresponding blocks are marked as bad, and listed
-in the \(a"status\(a" command.
-.PP
-.RS 4
-snapraid status
-.PD 0
-.PP
-.PD
-.RE
-.PP
-To fix them, you can use the \(a"fix\(a" command filtering for bad blocks:
-.PP
-.RS 4
-snapraid \(hye fix
-.PD 0
-.PP
-.PD
-.RE
-.PP
-and at the next \(a"scrub\(a" the errors will disappears from the status.
 .SH COMMANDS 
-SnapRAID provides four simple commands that allow to:
+SnapRAID provides some simple commands that allow to:
 .PD 0
 .IP \(bu
 Make a backup/snapshot \(hy> \(a"sync\(a"
 .IP \(bu
-See the files changed from the previous sync \(hy> \(a"diff\(a"
-.IP \(bu
 Periodically checks old data \(hy> \(a"scrub\(a"
+.IP \(bu
+Prints a report of the status of the array \(hy> \(a"status\(a"
 .IP \(bu
 Check for integrity the full array \(hy> \(a"check\(a"
 .IP \(bu
@@ -407,19 +418,39 @@ without losing the work already done.
 .PP
 The \(a"content\(a", \(a"parity\(a" and \(a"q\(hyparity\(a" files are modified if necessary.
 The files in the array are NOT modified.
-.SS status 
-Prints a summary of the state of the disk array.
+.SS check 
+Checks all the files and the redundancy data.
+All the files are hashed and compared with the snapshot saved
+in the previous \(a"sync\(a" command.
 .PP
-It includes information about the parity fragmentation, how old
-are the blocks without checking, and all the recorded silent
-errors encoutered while scrubbing.
+If an error if found, a recovery attempt is simulated to check
+if the error is a recoverable one or not.
+.PP
+If you use the \(hya, \(hy\(hyaudit\(hyonly option, only the file
+data is checked, and the redundandy data is ignored.
+.PP
+Files are identified by path, and checked by content.
 .PP
 Nothing is modified.
+.SS fix 
+Checks and fix all the files. It\(cqs like \(a"check\(a" but it also fixes
+errors reverting the state of the disk array to the previous \(a"sync\(a"
+command.
+.PP
+After a successful \(a"fix\(a", you should also run a \(a"sync\(a" command to
+update the new state of the files.
+.PP
+All the files that cannot be fixed are renamed adding
+the \(a".unrecoverable\(a" extension.
+.PP
+The \(a"content\(a" file is NOT modified.
+The \(a"parity\(a" and \(a"q\(hyparity\(a" files are modified if necessary.
+The files in the array are modified if necessary.
 .SS scrub 
 Scrubs the array, checking for silent errors.
 .PP
-For each command invocation, the 12% of the array is checked,
-but nothing that it\(cqs more recent than 10 days.
+For each command invocation, the 12% of the array is checked, but
+nothing that it\(cqs more recent than 10 days.
 This means that scrubbing once a week, every bit of data is checked
 at least one time every two months.
 .PP
@@ -435,6 +466,14 @@ and it\(cqs listed in the \(a"status\(a" command until it\(cqs fixed calling
 .PP
 The \(a"content\(a" file is modified to update the time of the last check
 of each block.
+.SS status 
+Prints a summary of the state of the disk array.
+.PP
+It includes information about the parity fragmentation, how old
+are the blocks without checking, and all the recorded silent
+errors encoutered while scrubbing.
+.PP
+Nothing is modified.
 .SS diff 
 Lists all the files modified from the last \(a"sync\(a" command that
 have to recompute their redundancy data.
@@ -449,31 +488,18 @@ hashes are matching. The file data is not read, but only the
 precomputed hashes are used.
 .PP
 Nothing is modified.
-.SS check 
-Checks all the files and the redundancy data.
-All the files are hashed and compared with the snapshot saved
-in the previous \(a"sync\(a" command.
+.SS pool 
+Creates or updates in the \(a"pooling\(a" directory a virtual view of all
+the files of your disk array.
 .PP
-If you use the \(hya, \(hy\(hyaudit\(hyonly option, only the file
-data is checked, and the redundandy data is ignored.
+The files are not really copied here, but just linked using
+symbolic links.
 .PP
-Files are identified by path, and checked by content.
+When updating, all the present symbolic links and empty
+subdirectories are deleted and replaced with the new
+view of the array. Any othe regular file is left in place.
 .PP
-Nothing is modified.
-.SS fix 
-Checks and fix all the files. It\(cqs like \(a"check\(a" but it
-also tries to fix problems reverting the state of the
-disk array to the previous \(a"sync\(a" command.
-.PP
-After a successful \(a"fix\(a", you should also run a \(a"sync\(a"
-command to update the new state of the files.
-.PP
-All the files that cannot be fixed are renamed adding
-the \(a".unrecoverable\(a" extension.
-.PP
-The \(a"content\(a" file is NOT modified.
-The \(a"parity\(a" and \(a"q\(hyparity\(a" files are modified if necessary.
-The files in the array are modified if necessary.
+Nothing is modified outside the pool directory.
 .SS rehash 
 Schedules a rehash of the whole array.
 .PP
@@ -489,18 +515,6 @@ You can get the rehash state using the \(a"status\(a" command.
 During the rehash, SnapRAID maintains full functionality,
 with the only expection of the \(a"dup\(a" command not able to detect
 duplicated files using a different hash.
-.SS pool 
-Creates or updates in the \(a"pooling\(a" directory a virtual view of all
-the files of your disk array.
-.PP
-The files are not really copied here, but just linked using
-symbolic links.
-.PP
-When updating, all the present symbolic links and empty
-subdirectories are deleted and replaced with the new
-view of the array. Any othe regular file is left in place.
-.PP
-Nothing is modified outside the pool directory.
 .SH OPTIONS 
 SnapRAID provides the following options:
 .TP
@@ -630,7 +644,7 @@ option will allow you to continue anyway.
 .TP
 .B \(hys, \(hy\(hystart BLKSTART
 Starts the processing from the specified
-block number. It could be useful to easy retry to check
+block number. It could be useful to retry to check
 or fix some specific block, in case of a damaged disk.
 .TP
 .B \(hyt, \(hy\(hycount BLKCOUNT
@@ -795,10 +809,6 @@ disk d3 /mnt/disk3/
 .PD 0
 .PP
 .PD
-exclude *.bak
-.PD 0
-.PP
-.PD
 exclude /lost+found/
 .PD 0
 .PP
@@ -833,10 +843,6 @@ disk d2 H:\(rsarray\(rs
 .PP
 .PD
 disk d3 I:\(rsarray\(rs
-.PD 0
-.PP
-.PD
-exclude *.bak
 .PD 0
 .PP
 .PD
@@ -894,11 +900,11 @@ The simplest one is to use only \(a"exclude\(a" rules to remove all the
 files and directories you do not want to process. For example:
 .PP
 .RS 4
-# Excludes any file named \(a"*.bak\(a"
+# Excludes any file named \(a"*.unrecoverable\(a"
 .PD 0
 .PP
 .PD
-exclude *.bak
+exclude *.unrecoverable
 .PD 0
 .PP
 .PD
@@ -949,11 +955,11 @@ To get things simpler you can first have all the \(a"exclude\(a" rules and then
 all the \(a"include\(a" ones. For example:
 .PP
 .RS 4
-# Excludes any file named \(a"*.bak\(a"
+# Excludes any file named \(a"*.unrecoverable\(a"
 .PD 0
 .PP
 .PD
-exclude *.bak
+exclude *.unrecoverable
 .PD 0
 .PP
 .PD
@@ -1084,7 +1090,7 @@ snapraid \(hyd NAME \(hya check
 Where NAME is the name of the disk, like \(a"d1\(a" as in our previous example.
 .PP
 The options \(hyd and \(hya tell SnapRAID to check only the specified disk,
-and ignore all the other data and redundancy disks.
+and ignore all the redundancy data.
 .PP
 This command will take a long time.
 .SS STEP 4 \(hy> Sync 
@@ -1111,7 +1117,7 @@ with all the checksums to verify their integrity.
 You do not need to understand its format to use SnapRAID.
 .PP
 This file is read and written by the \(a"sync\(a" and \(a"scrub\(a" commands, and
-only read by \(a"fix\(a" and \(a"check\(a".
+only read by \(a"fix\(a", \(a"check\(a" and \(a"status\(a".
 .SH PARITY 
 SnapRAID stores the redundancy information of your array in the parity
 and q\(hyparity files.
