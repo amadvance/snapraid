@@ -913,7 +913,6 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			/* "blk"/""new"/"chg" command */
 			block_off_t v_pos;
 			struct snapraid_block* block;
-			snapraid_info info;
 
 			if (!file) {
 				fprintf(stderr, "Unexpected '%s' specification in '%s' at line %u\n", tag, path, line);
@@ -990,12 +989,17 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				disk = 0;
 			}
 
-			/* set a fake info block, in case of upgrading from an old version */
-			/* the real block info will overwrite this */
-			info = info_make(save_time, 0, 0);
+			/* if the block has a hash */
+			if (tag[0] != 'n') {
+				snapraid_info info;
 
-			/* insert the info in the array */
-			info_set(&state->infoarr, v_pos, info);
+				/* set a fake info block, in case of upgrading from an old version */
+				/* the real info, if present, will overwrite this */
+				info = info_make(save_time, 0, 0);
+
+				/* insert the info in the array */
+				info_set(&state->infoarr, v_pos, info);
+			}
 
 			/* stat */
 			++count_block;
@@ -2820,7 +2824,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 					exit(EXIT_FAILURE);
 				}
 
-				count_block += end - begin;
+				count_block += v_count;
 
 				/* next begin position */
 				begin = end;
