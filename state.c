@@ -992,7 +992,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			}
 
 			/* if the block has a hash */
-			if (tag[0] != 'n') {
+			if (block_has_any_hash(block)) {
 				snapraid_info info;
 
 				/* set a fake info block, in case of upgrading from an old version */
@@ -1016,6 +1016,11 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgetu32(f, &v_pos);
 			if (ret < 0) {
 				fprintf(stderr, "Invalid 'inf' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			if (v_pos >= blockmax) {
+				fprintf(stderr, "Internal position inconsistency in 'inf' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
 
@@ -1068,7 +1073,6 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			/* "off" command */
 			block_off_t v_pos;
 			struct snapraid_deleted* deleted;
-			snapraid_info info;
 
 			if (!disk) {
 				fprintf(stderr, "Unexpected 'off' specification in '%s' at line %u\n", path, line);
@@ -1086,6 +1090,10 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				fprintf(stderr, "Invalid 'off' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 			}
+
+			/* note that here we don't have a valid blockmax because we have not */
+			/* yet processed all the disks with all the files */
+			/* and then we cannot ensure that v_pos < blockmax */
 
 			deleted->block.parity_pos = v_pos;
 
@@ -1113,12 +1121,17 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			tommy_array_grow(&disk->blockarr, v_pos + 1);
 			tommy_array_set(&disk->blockarr, v_pos, &deleted->block);
 
-			/* set a fake info block, in case of upgrading from an old version */
-			/* the real info, if present, will overwrite this */
-			info = info_make(save_time, 0, 0);
+			/* if the block has an hash */
+			if (block_has_any_hash(&deleted->block)) {
+				snapraid_info info;
 
-			/* insert the info in the array */
-			info_set(&state->infoarr, v_pos, info);
+				/* set a fake info block, in case of upgrading from an old version */
+				/* the real info, if present, will overwrite this */
+				info = info_make(save_time, 0, 0);
+
+				/* insert the info in the array */
+				info_set(&state->infoarr, v_pos, info);
+			}
 		} else if (strcmp(tag, "file") == 0) {
 			/* file */
 			char sub[PATH_MAX];
@@ -1884,28 +1897,25 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 
 	/* write the info for each block */
 	for(b=0;b<blockmax;++b) {
-		/* if the position is used */
-		if (position_has_any_hash(state, b)) {
-			snapraid_info info = info_get(&state->infoarr, b);
+		snapraid_info info = info_get(&state->infoarr, b);
 
-			/* save only stuffs different than 0 */
-			if (info != 0) {
-				sputsl("inf ", f);
+		/* save only stuffs different than 0 */
+		if (info != 0) {
+			sputsl("inf ", f);
 
-				sputu32(b, f);
-				sputc(' ', f);
-				sputu32(info, f);
-				if (info_get_bad(info)) {
-					sputsl(" bad", f);
-				}
-				if (info_get_rehash(info)) {
-					sputsl(" rehash", f);
-				}
-				sputeol(f);
-				if (serror(f)) {
-					fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-					exit(EXIT_FAILURE);
-				}
+			sputu32(b, f);
+			sputc(' ', f);
+			sputu32(info, f);
+			if (info_get_bad(info)) {
+				sputsl(" bad", f);
+			}
+			if (info_get_rehash(info)) {
+				sputsl(" rehash", f);
+			}
+			sputeol(f);
+			if (serror(f)) {
+				fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				exit(EXIT_FAILURE);
 			}
 		}
 	}

@@ -481,7 +481,7 @@ static inline int block_has_any_hash(const struct snapraid_block* block)
 /**
  * Checks if the specified block is part of a file.
  *
- * Note that EMPTY return 0.
+ * Note that EMPTY / DELETED return 0.
  */
 static inline int block_has_file(const struct snapraid_block* block)
 {
@@ -493,7 +493,7 @@ static inline int block_has_file(const struct snapraid_block* block)
 /**
  * Checks if the block has an invalid parity than needs to be updated.
  *
- * Note that EMPTY return 0.
+ * Note that EMPTY / BLK return 0.
  */
 static inline int block_has_invalid_parity(const struct snapraid_block* block)
 {
