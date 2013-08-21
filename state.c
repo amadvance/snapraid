@@ -822,19 +822,34 @@ static void state_content_check(struct snapraid_state* state, const char* path)
 }
 
 /**
- * Checks if a block position is used by at least one disk.
+ * Checks if a block position is used by at least one disk
+ * and has a hash value.
+ * Note that we include DELETED blocks, but only if they have a not NULL hash.
  */
-static int is_block_used(struct snapraid_state* state, block_off_t pos)
+static int position_has_hash(struct snapraid_state* state, block_off_t pos)
 {
 	tommy_node* i;
+	unsigned j;
 
 	/* check for each disk if block is really used */
 	for(i=state->disklist;i!=0;i=i->next) {
 		struct snapraid_disk* disk = i->data;
 		struct snapraid_block* block = disk_block_get(disk, pos);
 
-		if (block != BLOCK_EMPTY)
+		unsigned block_state = block_state_get(block);
+
+		switch (block_state) {
+		case BLOCK_STATE_BLK :
+		case BLOCK_STATE_CHG :
 			return 1;
+		case BLOCK_STATE_DELETED :
+			for(j=0;j<HASH_SIZE;++j)
+				if (block->hash[j] != 0)
+					break;
+			if (j != HASH_SIZE)
+				return 1;
+			break;
+		}
 	}
 
 	return 0;
@@ -1066,6 +1081,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			/* "off" command */
 			block_off_t v_pos;
 			struct snapraid_deleted* deleted;
+			snapraid_info info;
 
 			if (!disk) {
 				fprintf(stderr, "Unexpected 'off' specification in '%s' at line %u\n", path, line);
@@ -1109,6 +1125,13 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			/* insert the block in the block array */
 			tommy_array_grow(&disk->blockarr, v_pos + 1);
 			tommy_array_set(&disk->blockarr, v_pos, &deleted->block);
+
+			/* set a fake info block, in case of upgrading from an old version */
+			/* the real info, if present, will overwrite this */
+			info = info_make(save_time, 0, 0);
+
+			/* insert the info in the array */
+			info_set(&state->infoarr, v_pos, info);
 		} else if (strcmp(tag, "file") == 0) {
 			/* file */
 			char sub[PATH_MAX];
@@ -1637,7 +1660,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 	info_has_rehash = 0; /* if there is a rehash info */
 	for(b=0;b<blockmax;++b) {
 		/* if the position is used */
-		if (is_block_used(state, b)) {
+		if (position_has_hash(state, b)) {
 			snapraid_info info = info_get(&state->infoarr, b);
 
 			/* only if there is some info to store */
@@ -1875,7 +1898,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 	/* write the info for each block */
 	for(b=0;b<blockmax;++b) {
 		/* if the position is used */
-		if (is_block_used(state, b)) {
+		if (position_has_hash(state, b)) {
 			snapraid_info info = info_get(&state->infoarr, b);
 
 			/* save only stuffs different than 0 */
@@ -2255,6 +2278,21 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				while (v_count) {
 					/* insert the info in the array */
 					info_set(&state->infoarr, v_pos, info);
+
+					/* ensure that an info is present only for used positions */
+					if (position_has_hash(state, v_pos)) {
+						if (!info) {
+							decoding_error(path, f);
+							fprintf(stderr, "Internal incosistency for missing info!\n");
+							exit(EXIT_FAILURE);
+						}
+					} else {
+						if (info) {
+							decoding_error(path, f);
+							fprintf(stderr, "Internal incosistency for unexpected info!\n");
+							exit(EXIT_FAILURE);
+						}
+					}
 
 					/* go to next block */
 					++v_pos;
@@ -2663,7 +2701,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	info_has_rehash = 0; /* if there is a rehash info */
 	for(b=0;b<blockmax;++b) {
 		/* if the position is used */
-		if (is_block_used(state, b)) {
+		if (position_has_hash(state, b)) {
 			snapraid_info info = info_get(&state->infoarr, b);
 
 			/* only if there is some info to store */
