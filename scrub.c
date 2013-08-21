@@ -266,7 +266,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				memhash(state->hash, state->hashseed, hash, buffer[j], read_size);
 			}
 
-			if (block_has_hash(block)) {
+			if (block_has_updated_hash(block)) {
 				/* compare the hash */
 				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
 					fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));

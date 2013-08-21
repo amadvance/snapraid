@@ -280,7 +280,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				memhash(state->hash, state->hashseed, hash, buffer[j], read_size);
 			}
 
-			if (block_has_hash(block)) {
+			if (block_has_updated_hash(block)) {
 				/* compare the hash */
 				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
 					fprintf(stderr, "Data error in file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));

@@ -89,10 +89,12 @@ struct snapraid_filter {
  * The block is new and not yet hashed, and it's using the space of a block not existing anymore.
  * This happens when a new block overwrite a just removed block.
  *
- * The block hash field IS set, and it represents the hash of the previous data.
+ * The block hash field IS set, and it represents the hash of the previous data,
+ * but only if it's different by all 0.
  * The parity for this disk is not updated, but it contains the old data referenced by the hash.
  *
- * If the hash is completely filled with 0, it means that its lost.
+ * If the hash is completely filled with 0, it means that the hash is lost.
+ * This could happen if a NEW block is converted to a CHG one in an interrupted sync.
  */
 #define BLOCK_STATE_CHG 3
 
@@ -100,12 +102,12 @@ struct snapraid_filter {
  * This block is a deleted one.
  * This happens when a file is deleted.
  *
- * The block hash field IS set, and it represents the hash of the previous data, but only
- * if it's different by all 0.
+ * The block hash field IS set, and it represents the hash of the previous data,
+ * but only if it's different by all 0.
  * The parity for this disk is not updated, but it contains the old data referenced by the hash.
  *
  * If the hash is completely filled with 0, it means that the hash is lost.
- * This could happen if a NEW block is deleted in an interrupted sync.
+ * This could happen if a NEW block is DELETED in an interrupted sync.
  */
 #define BLOCK_STATE_DELETED 4
 
@@ -435,15 +437,42 @@ static inline void block_state_set(struct snapraid_block* block, unsigned state)
 }
 
 /**
- * Checks if the specified block has a valid and updated hash.
+ * Checks if the specified block is valid and has an updated hash.
  *
- * Note that EMPTY return 0.
+ * Note that EMPTY / CHG / NEW / DELETED return 0.
  */
-static inline int block_has_hash(const struct snapraid_block* block)
+static inline int block_has_updated_hash(const struct snapraid_block* block)
 {
 	unsigned state = block_state_get(block);
 
 	return state == BLOCK_STATE_BLK;
+}
+
+/**
+ * Checks if the specified block has any kind of hash.
+ * Even a not updated one.
+ *
+ * Note that for DELETED / CHG with a NULL hash returns 0,
+ * because in these cases the hash is lost.
+ */
+static inline int block_has_any_hash(const struct snapraid_block* block)
+{
+	unsigned block_state = block_state_get(block);
+	unsigned i;
+
+	switch (block_state) {
+	case BLOCK_STATE_BLK :
+		return 1;
+	case BLOCK_STATE_CHG :
+	case BLOCK_STATE_DELETED :
+		/* the hash is valid only if different than 0 */
+		for(i=0;i<HASH_SIZE;++i)
+			if (block->hash[i] != 0)
+				return 1;
+		break;
+	}
+
+	return 0;
 }
 
 /**

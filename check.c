@@ -112,7 +112,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 	/* if there isn't, we have to sacrifice a parity block to check that the result is correct */
 	has_hash = 0;
 	for(j=0;j<failed_count;++j) {
-		if (block_has_hash(failed[failed_map[j]].block)) /* if the block can be checked */
+		if (block_has_updated_hash(failed[failed_map[j]].block)) /* if the block can be checked */
 			has_hash = 1;
 	}
 
@@ -128,7 +128,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 
 		/* check if the recovered blocks are OK */
 		for(j=0;j<1;++j) {
-			if (block_has_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
+			if (block_has_updated_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
 				hash_checked = 1;
 				if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
 					break;
@@ -158,7 +158,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 
 		/* check if the recovered blocks are OK */
 		for(j=0;j<1;++j) {
-			if (block_has_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
+			if (block_has_updated_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
 				hash_checked = 1;
 				if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
 					break;
@@ -208,7 +208,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 
 		/* check if the recovered blocks are OK */
 		for(j=0;j<2;++j) {
-			if (block_has_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
+			if (block_has_updated_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
 				hash_checked = 1;
 				if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
 					break;
