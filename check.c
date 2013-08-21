@@ -364,9 +364,9 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 			/* If the block is CHG or DELETED, we don't have the original content of block, */
 			/* and we must try to recover it. */
 			/* This apply to CHG blocks even if they are not marked bad, */
-			/* because the parityis computed with old content, and not with the new one. */
+			/* because the parity is computed with old content, and not with the new one. */
 			/* Note that this recovering is done just to make possible to recover any other BLK one, */
-			/* we are not really interseted in DELETED and CHG (old version) ones. */
+			/* we are not really interested in DELETED and CHG (old version) ones. */
 
 			/* try to fetch the old block using the old hash */
 			if (state_import_fetch(state, rehash, failed[j].block->hash, buffer[failed[j].index]) == 0) {

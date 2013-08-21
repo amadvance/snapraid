@@ -100,10 +100,12 @@ struct snapraid_filter {
  * This block is a deleted one.
  * This happens when a file is deleted.
  *
- * The block hash field IS set, and it represents the hash of the previous data.
+ * The block hash field IS set, and it represents the hash of the previous data, but only
+ * if it's different by all 0.
  * The parity for this disk is not updated, but it contains the old data referenced by the hash.
  *
- * If the hash is completely filled with 0, it means that its lost.
+ * If the hash is completely filled with 0, it means that the hash is lost.
+ * This could happen if a NEW block is deleted in an interrupted sync.
  */
 #define BLOCK_STATE_DELETED 4
 
