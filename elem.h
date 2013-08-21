@@ -94,7 +94,9 @@ struct snapraid_filter {
  * The parity for this disk is not updated, but it contains the old data referenced by the hash.
  *
  * If the hash is completely filled with 0, it means that the hash is lost.
- * This could happen if a NEW block is converted to a CHG one in an interrupted sync.
+ * This could happen if a NEW/CHG block is first DELETED,
+ * and then reallocated in a CHG one after an interrupted sync.
+  * See scan_file_remove() and scan_file_insert() for the exact location where this could happen.
  */
 #define BLOCK_STATE_CHG 3
 
@@ -107,7 +109,8 @@ struct snapraid_filter {
  * The parity for this disk is not updated, but it contains the old data referenced by the hash.
  *
  * If the hash is completely filled with 0, it means that the hash is lost.
- * This could happen if a NEW block is DELETED in an interrupted sync.
+ * This could happen if a NEW/CHG block is DELETED after an interrupted sync.
+ * See scan_file_remove() for the exact location where this could happen.
  */
 #define BLOCK_STATE_DELETED 4
 

@@ -180,7 +180,7 @@ static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk*
 			/* in these cases we don't know if the old state is still the one */
 			/* stored inside the parity, because after an aborted sync, the parity */
 			/* may be or may be not have been updated with the new data */
-			/* Them we reset the hash to a bogus value */
+			/* Then we reset the hash to a bogus value */
 			/* Note that this condition is possible only if: */
 			/* - new files added/modified */
 			/* - aborted sync, without saving the content file */
