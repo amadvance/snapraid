@@ -80,6 +80,7 @@ void MurmurHash3_x86_128(const void* key, unsigned len, const uint8_t* seed, voi
 	const uint8_t* data = key;
 	unsigned nblocks = len / 16;
 	unsigned i;
+	const uint32_t* blocks;
 
 	uint32_t h1 = ((uint32_t*)seed)[0];
 	uint32_t h2 = ((uint32_t*)seed)[1];
@@ -93,7 +94,7 @@ void MurmurHash3_x86_128(const void* key, unsigned len, const uint8_t* seed, voi
 	h4 = swap32(h4);
 #endif
 
-	const uint32_t* blocks = (const uint32_t*)data;
+	blocks = (const uint32_t*)data;
 
 	/* body */
 
