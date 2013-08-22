@@ -2078,6 +2078,12 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				exit(EXIT_FAILURE);
 			}
 
+			/* STAT_NSEC_INVALID is encoded as 0 */
+			if (v_mtime_nsec == 0)
+				v_mtime_nsec = STAT_NSEC_INVALID;
+			else
+				--v_mtime_nsec;
+
 			/* ignore nanoseconds if asked to find by name */
 			if (state->opt.force_by_name)
 				v_mtime_nsec = STAT_NSEC_INVALID;
@@ -2802,7 +2808,11 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 			sputbs(disk->name, f);
 			sputb64(size, f);
 			sputb64(mtime_sec, f);
-			sputb32(mtime_nsec, f);
+			/* encode STAT_NSEC_INVALID as 0 */
+			if (mtime_nsec == STAT_NSEC_INVALID)
+				sputb32(0, f);
+			else
+				sputb32(mtime_nsec + 1, f);
 			sputb64(inode, f);
 			sputbs(file->sub, f);
 			if (serror(f)) {
