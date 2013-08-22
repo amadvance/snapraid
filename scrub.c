@@ -503,12 +503,17 @@ int state_scrub(struct snapraid_state* state)
 	if (countlimit > count)
 		countlimit = count;
 
-	/* get the time limit */
-	timelimit = info_get_time(infomap[countlimit - 1]);
+	if (countlimit > 0) {
+		/* get the time limit */
+		timelimit = info_get_time(infomap[countlimit - 1]);
 
-	/* don't scrub too recent blocks */
-	if (timelimit > recentlimit)
+		/* don't scrub too recent blocks */
+		if (timelimit > recentlimit)
+			timelimit = recentlimit;
+	} else {
+		/* we don't have a time limit based on quota */
 		timelimit = recentlimit;
+	}
 
 	/* free the temp vector */
 	free(infomap);
