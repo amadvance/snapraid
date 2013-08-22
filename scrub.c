@@ -434,7 +434,7 @@ bail:
 	return 0;
 }
 
-int state_scrub(struct snapraid_state* state)
+int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 {
 	block_off_t blockmax;
 	block_off_t countlimit;
@@ -466,6 +466,15 @@ int state_scrub(struct snapraid_state* state)
 		/* scrub the specified amount of blocks */
 		countlimit = state->opt.force_scrub;
 		recentlimit = now;
+	} else if (percentage != -1 || olderthan != -1) {
+		if (percentage != -1)
+			countlimit = blockmax * percentage / 100;
+		else
+			countlimit = blockmax;
+		if (olderthan != -1)
+			recentlimit = now - olderthan * 24 * 3600;
+		else
+			recentlimit = now;
 	} else {
 		/* by default scrub 1/12 of the array */
 		countlimit = blockmax / 12;

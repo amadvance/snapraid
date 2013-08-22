@@ -173,7 +173,9 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf --test-expect-recoverable --test-force-scrub 100000 scrub
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf fix -e
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf --test-force-scrub 100000 scrub
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf -p 0 scrub
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf -o 0 scrub
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf -p 100 scrub
 	rm test/disk1/content
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
 	echo --- Make a hole in the disk array

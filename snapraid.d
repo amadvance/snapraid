@@ -6,6 +6,7 @@ Synopsis
 	:	[-f, --filter PATTERN] [-d, --filter-disk NAME]
 	:	[-m, --filter-missing] [-e, --filter-error]
 	:	[-a, --audit-only] [-i, --import DIR]
+	:	[-p, --percentage PERC] [-o, --older-than DAYS]
 	:	[-N, --find-by-name]
 	:	[-Z, --force-zero] [-E, --force-empty]
 	:	[-U, --force-uuid] [-D, --force-device]
@@ -188,8 +189,12 @@ Getting Started
 	As difference than "check" this command verifies only the oldest data
 	in your array. Every run of the command checks about 12% of the data,
 	but nothing newer than 10 days.
+	You can use the -p, --percentage option to specify a different amount,
+	and the -o, --older-than option to specify a different age in days:
 
-	If a silent error is found, the corresponding blocks are marked as bad
+		:snapraid -p 5 -o 20 scrub
+
+	If silent errors are found, the corresponding blocks are marked as bad
 	in the "concent" file, and listed in the "status" command.
 
 		:snapraid status
@@ -200,7 +205,9 @@ Getting Started
 		:snapraid -e fix
 
 	and at the next "scrub" the errors will disappear from the "status"
-	report.
+	report. You can use -p 0 to scrub only them.
+
+		:snapraid -p 0 scrub
 
   Pooling
 	To have all the files in your array shown in the same directory tree,
@@ -282,15 +289,23 @@ Commands
 	This means that scrubbing once a week, every bit of data is checked
 	at least one time every two months.
 
-	The oldest blocks are scrubbed first ensuring an optimal check.
-
-	It's recommended to run "scrub" on a synched array, to avoid to have
-	reported error caused by unsynched data. These errors are recognized
-	as not being silent errors, but are reported anyway.
+	You can use the -p, --percentage option to specify a different amount,
+	and the -o, --older-than option to specify a different age.
+	Note that if only one of -p and -o is specified the default value of
+	the other option is not used.
 
 	Any silent error identified is recorded in the content file,
 	and it's listed in the "status" command until it's fixed calling
 	"fix" and then "scrub".
+
+	The oldest blocks are scrubbed first ensuring an optimal check.
+	Blocks already marked as bad are always checked, and if found
+	correct, they are automatically unmarked.
+
+	It's recommended to run "scrub" on a synched array, to avoid to have
+	reported error caused by unsynched data. These errors are recognized
+	as not being silent errors, and the blocks are not marked as bad,
+	but such errros are reported in the output of the command.
 
 	The "content" file is modified to update the time of the last check
 	of each block.
@@ -401,6 +416,20 @@ Options
 		It process only the files containing blocks marked with silent
 		errors during the "scrub" command, and listed in the "status" command.
 		This option can be used only with the "check" and "fix" commands.
+
+	-p, --percentage PERC
+		Selects the part of the array to process in the "scrub" command.
+		PERC is a numeric value from 0 to 100, default is 12.
+		When specifing 0, only the blocks marked as bad are scrubbed.
+		This option can be used only with the "scrub" command.
+
+	-o, --older-than DAYS
+		Selects the older the part of the array to process in the
+		"scrub" command.
+		DAYS is the minimum age in days for a block to be scrubbed,
+		default is 10.
+		Blocks marked as bad are always scrubbed despite this option.
+		This option can be used only with the "scrub" command.
 
 	-a, --audit-only
 		When checking, only verify the hash of the files, without

@@ -151,7 +151,7 @@ void state_rehash(struct snapraid_state* state);
 /**
  * Scrub the files.
  */
-int state_scrub(struct snapraid_state* state);
+int state_scrub(struct snapraid_state* state, int percentage, int olderthan);
 
 /**
  * Print the status.

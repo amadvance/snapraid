@@ -63,6 +63,8 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-d, --filter-dist NAME", "-f") "  Process only files in the specified disk\n");
 	printf("  " SWITCH_GETOPT_LONG("-m, --filter-missing  ", "-m") "  Process only missing/deleted files\n");
 	printf("  " SWITCH_GETOPT_LONG("-e, --filter-error    ", "-e") "  Process only files with errors\n");
+	printf("  " SWITCH_GETOPT_LONG("-p, --percentage PERC ", "-p") "  Process only a part of the array\n");
+	printf("  " SWITCH_GETOPT_LONG("-o, --older-than DAYS ", "-o") "  Process only the older part of the array\n");
 	printf("  " SWITCH_GETOPT_LONG("-i, --import DIR      ", "-i") "  Import deleted files\n");
 	printf("  " SWITCH_GETOPT_LONG("-l, --log FILE        ", "-l") "  Log file. Default none\n");
 	printf("  " SWITCH_GETOPT_LONG("-a, --audit-only      ", "-A") "  Check only file data and not parity\n");
@@ -105,6 +107,8 @@ struct option long_options[] = {
 	{ "filter-disk", 1, 0, 'd' },
 	{ "filter-missing", 0, 0, 'm' },
 	{ "filter-error", 0, 0, 'e' },
+	{ "percentage", 1, 0, 'p' },
+	{ "older-than", 1, 0, 'o' },
 	{ "start", 1, 0, 's' },
 	{ "count", 1, 0, 't' },
 	{ "import", 1, 0, 'i' },
@@ -178,7 +182,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:f:d:mes:t:i:l:ZEUDNaTvhVG"
+#define OPTIONS "c:f:d:mep:o:s:t:i:l:ZEUDNaTvhVG"
 
 volatile int global_interrupt = 0;
 
@@ -218,6 +222,8 @@ int main(int argc, char* argv[])
 	tommy_list filterlist_disk;
 	int filter_missing;
 	int filter_error;
+	int percentage;
+	int olderthan;
 	char* e;
 	const char* command;
 	const char* import;
@@ -236,6 +242,8 @@ int main(int argc, char* argv[])
 	tommy_list_init(&filterlist_disk);
 	filter_missing = 0;
 	filter_error = 0;
+	percentage = -1;
+	olderthan = -1;
 	import = 0;
 	log = 0;
 	lock = 0;
@@ -273,6 +281,20 @@ int main(int argc, char* argv[])
 			break;
 		case 'e' :
 			filter_error = 1;
+			break;
+		case 'p' :
+			percentage = strtoul(optarg, &e, 10);
+			if (!e || *e || percentage > 100) {
+				fprintf(stderr, "Invalid percentage '%s'\n", optarg);
+				exit(EXIT_FAILURE);
+			}
+			break;
+		case 'o' :
+			olderthan = strtoul(optarg, &e, 10);
+			if (!e || *e || olderthan > 1000) {
+				fprintf(stderr, "Invalid number of days '%s'\n", optarg);
+				exit(EXIT_FAILURE);
+			}
 			break;
 		case 's' :
 			blockstart = strtoul(optarg, &e, 0);
@@ -614,7 +636,7 @@ int main(int argc, char* argv[])
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);
 
-		ret = state_scrub(&state);
+		ret = state_scrub(&state, percentage, olderthan);
 
 		/* save the new state if required */
 		if (state.need_write || state.opt.force_content_write)

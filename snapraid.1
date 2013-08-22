@@ -18,6 +18,10 @@ snapraid [\(hyc, \(hy\(hyconf CONFIG]
 .PD 0
 .PP
 .PD
+	[\(hyp, \(hy\(hypercentage PERC] [\(hyo, \(hy\(hyolder\(hythan DAYS]
+.PD 0
+.PP
+.PD
 	[\(hyN, \(hy\(hyfind\(hyby\(hyname]
 .PD 0
 .PP
@@ -335,8 +339,17 @@ snapraid scrub
 As difference than \(a"check\(a" this command verifies only the oldest data
 in your array. Every run of the command checks about 12% of the data,
 but nothing newer than 10 days.
+You can use the \(hyp, \(hy\(hypercentage option to specify a different amount,
+and the \(hyo, \(hy\(hyolder\(hythan option to specify a different age in days:
 .PP
-If a silent error is found, the corresponding blocks are marked as bad
+.RS 4
+snapraid \(hyp 5 \(hyo 20 scrub
+.PD 0
+.PP
+.PD
+.RE
+.PP
+If silent errors are found, the corresponding blocks are marked as bad
 in the \(a"concent\(a" file, and listed in the \(a"status\(a" command.
 .PP
 .RS 4
@@ -357,7 +370,14 @@ snapraid \(hye fix
 .RE
 .PP
 and at the next \(a"scrub\(a" the errors will disappear from the \(a"status\(a"
-report.
+report. You can use \(hyp 0 to scrub only them.
+.PP
+.RS 4
+snapraid \(hyp 0 scrub
+.PD 0
+.PP
+.PD
+.RE
 .SS Pooling 
 To have all the files in your array shown in the same directory tree,
 you can enable \(a"pooling\(a", that consists in creating a virtual view of all
@@ -454,15 +474,23 @@ nothing that it\(cqs more recent than 10 days.
 This means that scrubbing once a week, every bit of data is checked
 at least one time every two months.
 .PP
-The oldest blocks are scrubbed first ensuring an optimal check.
-.PP
-It\(cqs recommended to run \(a"scrub\(a" on a synched array, to avoid to have
-reported error caused by unsynched data. These errors are recognized
-as not being silent errors, but are reported anyway.
+You can use the \(hyp, \(hy\(hypercentage option to specify a different amount,
+and the \(hyo, \(hy\(hyolder\(hythan option to specify a different age.
+Note that if only one of \(hyp and \(hyo is specified the default value of
+the other option is not used.
 .PP
 Any silent error identified is recorded in the content file,
 and it\(cqs listed in the \(a"status\(a" command until it\(cqs fixed calling
 \(a"fix\(a" and then \(a"scrub\(a".
+.PP
+The oldest blocks are scrubbed first ensuring an optimal check.
+Blocks already marked as bad are always checked, and if found
+correct, they are automatically unmarked.
+.PP
+It\(cqs recommended to run \(a"scrub\(a" on a synched array, to avoid to have
+reported error caused by unsynched data. These errors are recognized
+as not being silent errors, and the blocks are not marked as bad,
+but such errros are reported in the output of the command.
 .PP
 The \(a"content\(a" file is modified to update the time of the last check
 of each block.
@@ -567,6 +595,20 @@ commands.
 It process only the files containing blocks marked with silent
 errors during the \(a"scrub\(a" command, and listed in the \(a"status\(a" command.
 This option can be used only with the \(a"check\(a" and \(a"fix\(a" commands.
+.TP
+.B \(hyp, \(hy\(hypercentage PERC
+Selects the part of the array to process in the \(a"scrub\(a" command.
+PERC is a numeric value from 0 to 100, default is 12.
+When specifing 0, only the blocks marked as bad are scrubbed.
+This option can be used only with the \(a"scrub\(a" command.
+.TP
+.B \(hyo, \(hy\(hyolder\(hythan DAYS
+Selects the older the part of the array to process in the
+\(a"scrub\(a" command.
+DAYS is the minimum age in days for a block to be scrubbed,
+default is 10.
+Blocks marked as bad are always scrubbed despite this option.
+This option can be used only with the \(a"scrub\(a" command.
 .TP
 .B \(hya, \(hy\(hyaudit\(hyonly
 When checking, only verify the hash of the files, without
