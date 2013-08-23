@@ -160,7 +160,9 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 	(void)st; /* not used here */
 #else
 	/* In a generic Unix uses the inode as fake physical address */
-	physical = st->st_ino;
+	*physical = st->st_ino;
+
+	(void)path; /* not used here */
 #endif
 
 	return 0;
