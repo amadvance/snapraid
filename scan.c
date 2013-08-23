@@ -678,7 +678,7 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 #ifndef _WIN32
 				/* in Unix don't follow mount points in different devices */
 				/* in Windows we are already skipping them reporting them as special files */
-				if (st.st_dev != disk->device) {
+				if ((uint64_t)st.st_dev != disk->device) {
 					fprintf(stderr, "warning: Ignoring mount point '%s' because it appears to be in a different device\n", path_next);
 				} else
 #endif
