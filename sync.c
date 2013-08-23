@@ -416,7 +416,6 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	data_off_t loaded_size;
 	data_off_t size;
 	data_off_t out_size;
-	tommy_node* i;
 	int ret;
 	struct snapraid_parity parity;
 	struct snapraid_parity qarity;
@@ -429,25 +428,6 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	blockmax = parity_size(state);
 	size = blockmax * (data_off_t)state->block_size;
 	loaded_size = state->loaded_blockmax * (data_off_t)state->block_size;
-
-	/* remove all the deleted blocks over the new parity size */
-	/* we know for sure that after the parity size, there is no used block */
-	/* and then it's safe to lose any deleted block info */
-	for(i=state->disklist;i!=0;i=i->next) {
-		struct snapraid_disk* disk = i->data;
-		block_off_t diskblockmax = tommy_array_size(&disk->blockarr);
-		block_off_t block_pos;
-
-		for(block_pos=blockmax;block_pos<diskblockmax;++block_pos) {
-			struct snapraid_block* block = tommy_array_get(&disk->blockarr, block_pos);
-			if (block_state_get(block) == BLOCK_STATE_DELETED) {
-				tommy_array_set(&disk->blockarr, block_pos, BLOCK_EMPTY);
-
-				/* mark the state as needing write */
-				state->need_write = 1;
-			}
-		}
-	}
 
 	if (blockstart > blockmax) {
 		fprintf(stderr, "Error in the starting block %u. It's bigger than the parity size %u.\n", blockstart, blockmax);
@@ -473,6 +453,9 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		exit(EXIT_FAILURE);
 	}
 
+	/* change the size of the parity file, truncating or extending it */
+	/* from this point all the DELETED blocks after the end of the parity are invalid */
+	/* and they are automatically removed when we save the new content file */
 	ret = parity_chsize(parity_ptr, size, &out_size, state->opt.skip_fallocate);
 	if (ret == -1) {
 		parity_overflow(state, out_size);
