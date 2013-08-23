@@ -1723,20 +1723,38 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 	/* for each map */
 	for(i=state->maplist;i!=0;i=i->next) {
 		struct snapraid_map* map = i->data;
-		sputsl("map ", f);
-		sputs(map->name, f);
-		sputc(' ', f);
-		sputu32(map->position, f);
+		struct snapraid_disk* disk;
 
-		/* if there is an uuid, print it */
-		if (map->uuid[0]) {
-			sputc(' ', f);
-			sputs(map->uuid, f);
-		}
-		sputeol(f);
-		if (serror(f)) {
-			fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+		/* find the disk for this mapping */
+		disk = find_disk(state, map->name);
+		if (!disk) {
+			fprintf(stderr, "Internal incosistency for unmapped disk '%s'\n", map->name);
 			exit(EXIT_FAILURE);
+		}
+
+		/* save the mapping only for not empty disks */
+		if (!disk_is_empty(disk, blockmax)) {
+			sputsl("map ", f);
+			sputs(map->name, f);
+			sputc(' ', f);
+			sputu32(map->position, f);
+
+			/* if there is an uuid, print it */
+			if (map->uuid[0]) {
+				sputc(' ', f);
+				sputs(map->uuid, f);
+			}
+			sputeol(f);
+			if (serror(f)) {
+				fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+
+			/* mark the disk as with mapping */
+			disk->mapping = 0;
+		} else {
+			/* mark the disk as without mapping */
+			disk->mapping = -1;
 		}
 	}
 
@@ -1744,7 +1762,10 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 	for(i=state->disklist;i!=0;i=i->next) {
 		tommy_node* j;
 		struct snapraid_disk* disk = i->data;
-		int first_deleted;
+
+		/* if the disk is not mapped, skip it */
+		if (disk->mapping < 0)
+			continue;
 
 		/* for each file */
 		for(j=disk->filelist;j!=0;j=j->next) {
@@ -1864,24 +1885,18 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 			++count_dir;
 		}
 
-		/* for each deleted block in the disk */
-		first_deleted = 1;
+		/* deleted blocks of the disk */
+		sputsl("hole ", f);
+		sputs(disk->name, f);
+		sputeol(f);
+		if (serror(f)) {
+			fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+			exit(EXIT_FAILURE);
+		}
 		for(b=0;b<blockmax;++b) {
 			if (is_block_deleted(disk, b)) {
 				struct snapraid_block* block = disk_block_get(disk, b);
 			
-				if (first_deleted) {
-					first_deleted = 0;
-
-					sputsl("hole ", f);
-					sputs(disk->name, f);
-					sputeol(f);
-					if (serror(f)) {
-						fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-						exit(EXIT_FAILURE);
-					}
-				}
-
 				sputsl("off ", f);
 				sputu32(b, f);
 				sputc(' ', f);
@@ -2010,6 +2025,8 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 	int crc_checked;
 	char buffer[PATH_MAX];
 	int ret;
+	tommy_array disk_mapping;
+	uint32_t mapping_max;
 
 	blockmax = 0;
 	count_file = 0;
@@ -2018,6 +2035,8 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 	count_symlink = 0;
 	count_dir = 0;
 	crc_checked = 0;
+	mapping_max = 0;
+	tommy_array_init(&disk_mapping);
 
 	ret = sread(f, buffer, 12);
 	if (ret < 0 || memcmp(buffer, "SNAPCNT1\n\3\0\0", 12) != 0) {
@@ -2046,12 +2065,14 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			uint32_t v_idx;
 			struct snapraid_file* file;
 			struct snapraid_disk* disk;
+			uint32_t mapping;
 
-			ret = sgetbs(f, buffer, sizeof(buffer));
-			if (ret < 0) {
+			ret = sgetb32(f, &mapping);
+			if (ret < 0 || mapping >= mapping_max) {
 				decoding_error(path, f);
 				exit(EXIT_FAILURE);
 			}
+			disk = tommy_array_get(&disk_mapping, mapping);
 
 			ret = sgetb64(f, &v_size);
 			if (ret < 0) {
@@ -2101,14 +2122,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			}
 			if (!*sub) {
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
-			}
-
-			/* find the disk */
-			disk = find_disk(state, buffer);
-			if (!disk) {
-				decoding_error(path, f);
-				fprintf(stderr, "Disk named '%s' not found!\n", buffer);
 				exit(EXIT_FAILURE);
 			}
 
@@ -2306,20 +2319,14 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			/* hole */
 			uint32_t v_pos;
 			struct snapraid_disk* disk;
+			uint32_t mapping;
 
-			ret = sgetbs(f, buffer, sizeof(buffer));
-			if (ret < 0) {
+			ret = sgetb32(f, &mapping);
+			if (ret < 0 || mapping >= mapping_max) {
 				decoding_error(path, f);
 				exit(EXIT_FAILURE);
 			}
-
-			/* find the disk */
-			disk = find_disk(state, buffer);
-			if (!disk) {
-				decoding_error(path, f);
-				fprintf(stderr, "Disk named '%s' not found!\n", buffer);
-				exit(EXIT_FAILURE);
-			}
+			disk = tommy_array_get(&disk_mapping, mapping);
 
 			/* grow the array */
 			tommy_array_grow(&disk->blockarr, blockmax);
@@ -2396,12 +2403,14 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			char linkto[PATH_MAX];
 			struct snapraid_link* link;
 			struct snapraid_disk* disk;
+			uint32_t mapping;
 
-			ret = sgetbs(f, buffer, sizeof(buffer));
-			if (ret < 0) {
+			ret = sgetb32(f, &mapping);
+			if (ret < 0 || mapping >= mapping_max) {
 				decoding_error(path, f);
 				exit(EXIT_FAILURE);
 			}
+			disk = tommy_array_get(&disk_mapping, mapping);
 
 			ret = sgetbs(f, sub, sizeof(sub));
 			if (ret < 0) {
@@ -2417,14 +2426,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 			if (!*sub || !*linkto) {
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
-			}
-
-			/* find the disk */
-			disk = find_disk(state, buffer);
-			if (!disk) {
-				decoding_error(path, f);
-				fprintf(stderr, "Disk named '%s' not found!\n", buffer);
 				exit(EXIT_FAILURE);
 			}
 
@@ -2443,12 +2444,14 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			char linkto[PATH_MAX];
 			struct snapraid_link* link;
 			struct snapraid_disk* disk;
+			uint32_t mapping;
 
-			ret = sgetbs(f, buffer, sizeof(buffer));
-			if (ret < 0) {
+			ret = sgetb32(f, &mapping);
+			if (ret < 0 || mapping >= mapping_max) {
 				decoding_error(path, f);
 				exit(EXIT_FAILURE);
 			}
+			disk = tommy_array_get(&disk_mapping, mapping);
 
 			ret = sgetbs(f, sub, sizeof(sub));
 			if (ret < 0) {
@@ -2467,14 +2470,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				exit(EXIT_FAILURE);
 			}
 
-			/* find the disk */
-			disk = find_disk(state, buffer);
-			if (!disk) {
-				decoding_error(path, f);
-				fprintf(stderr, "Disk named '%s' not found!\n", buffer);
-				exit(EXIT_FAILURE);
-			}
-
 			/* allocate the link as hard link */
 			link = link_alloc(sub, linkto, FILE_IS_HARDLINK);
 
@@ -2489,12 +2484,14 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			char sub[PATH_MAX];
 			struct snapraid_dir* dir;
 			struct snapraid_disk* disk;
+			uint32_t mapping;
 
-			ret = sgetbs(f, buffer, sizeof(buffer));
-			if (ret < 0) {
+			ret = sgetb32(f, &mapping);
+			if (ret < 0 || mapping >= mapping_max) {
 				decoding_error(path, f);
 				exit(EXIT_FAILURE);
 			}
+			disk = tommy_array_get(&disk_mapping, mapping);
 
 			ret = sgetbs(f, sub, sizeof(sub));
 			if (ret < 0) {
@@ -2504,14 +2501,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 			if (!*sub) {
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
-			}
-
-			/* find the disk */
-			disk = find_disk(state, buffer);
-			if (!disk) {
-				decoding_error(path, f);
-				fprintf(stderr, "Disk named '%s' not found!\n", buffer);
 				exit(EXIT_FAILURE);
 			}
 
@@ -2595,6 +2584,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			struct snapraid_map* map;
 			char uuid[UUID_MAX];
 			uint32_t v_pos;
+			struct snapraid_disk* disk;
 
 			ret = sgetbs(f, buffer, sizeof(buffer));
 			if (ret < 0) {
@@ -2618,6 +2608,19 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			map = map_alloc(buffer, v_pos, uuid);
 
 			tommy_list_insert_tail(&state->maplist, &map->node, map);
+
+			/* find the disk */
+			disk = find_disk(state, buffer);
+			if (!disk) {
+				decoding_error(path, f);
+				fprintf(stderr, "Disk named '%s' not present in the configuration file!\n", buffer);
+				exit(EXIT_FAILURE);
+			}
+
+			/* insert in the mapping vector */
+			tommy_array_grow(&disk_mapping, mapping_max + 1);
+			tommy_array_set(&disk_mapping, mapping_max, disk);
+			++mapping_max;
 		} else if (c == 'N') {
 			uint32_t crc_stored;
 			uint32_t crc_computed;
@@ -2647,6 +2650,8 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			exit(EXIT_FAILURE);
 		}
 	}
+
+	tommy_array_done(&disk_mapping);
 
 	if (serror(f)) {
 		fprintf(stderr, "Error reading the content file '%s' at offset %"PRIi64"\n", path, stell(f));
@@ -2688,6 +2693,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	block_off_t begin;
 	time_t info_oldest;
 	int info_has_rehash;
+	int mapping_idx;
 
 	count_file = 0;
 	count_block = 0;
@@ -2773,15 +2779,35 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	}
 
 	/* for each map */
+	mapping_idx = 0;
 	for(i=state->maplist;i!=0;i=i->next) {
 		struct snapraid_map* map = i->data;
-		sputc('m', f);
-		sputbs(map->name, f);
-		sputb32(map->position, f);
-		sputbs(map->uuid, f);
-		if (serror(f)) {
-			fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+		struct snapraid_disk* disk;
+
+		/* find the disk for this mapping */
+		disk = find_disk(state, map->name);
+		if (!disk) {
+			fprintf(stderr, "Internal incosistency for unmapped disk '%s'\n", map->name);
 			exit(EXIT_FAILURE);
+		}
+
+		/* save the mapping only for not empty disks */
+		if (!disk_is_empty(disk, blockmax)) {
+			sputc('m', f);
+			sputbs(map->name, f);
+			sputb32(map->position, f);
+			sputbs(map->uuid, f);
+			if (serror(f)) {
+				fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+
+			/* assign the mapping index used to identify disks */
+			disk->mapping = mapping_idx;
+			++mapping_idx;
+		} else {
+			/* mark the disk as without mapping */
+			disk->mapping = -1;
 		}
 	}
 
@@ -2789,6 +2815,10 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	for(i=state->disklist;i!=0;i=i->next) {
 		tommy_node* j;
 		struct snapraid_disk* disk = i->data;
+
+		/* if the disk is not mapped, skip it */
+		if (disk->mapping < 0)
+			continue;
 
 		/* for each file */
 		for(j=disk->filelist;j!=0;j=j->next) {
@@ -2805,7 +2835,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 			inode = file->inode;
 
 			sputc('f', f);
-			sputbs(disk->name, f);
+			sputb32(disk->mapping, f);
 			sputb64(size, f);
 			sputb64(mtime_sec, f);
 			/* encode STAT_NSEC_INVALID as 0 */
@@ -2893,7 +2923,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 				break;
 			}
 
-			sputbs(disk->name, f);
+			sputb32(disk->mapping, f);
 			sputbs(link->sub, f);
 			sputbs(link->linkto, f);
 			if (serror(f)) {
@@ -2907,7 +2937,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 			struct snapraid_dir* dir = j->data;
 
 			sputc('r', f);
-			sputbs(disk->name, f);
+			sputb32(disk->mapping, f);
 			sputbs(dir->sub, f);
 			if (serror(f)) {
 				fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
@@ -2917,7 +2947,13 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 			++count_dir;
 		}
 
-		/* write the deleted info for each block */
+		/* deleted blocks of the disk */
+		sputc('h', f);
+		sputb32(disk->mapping, f);
+		if (serror(f)) {
+			fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+			exit(EXIT_FAILURE);
+		}
 		begin = 0;
 		while (begin < blockmax) {
 			int is_deleted;
@@ -2931,24 +2967,6 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 				&& is_deleted == is_block_deleted(disk, end))
 			{
 				++end;
-			}
-
-			/* if it's the first iteration */
-			if (begin == 0) {
-				/* if there is no deleted block in the disk, write nothing */
-				/* this is required to avoid to have references to a completely empty disk */
-				if (end == blockmax && !is_deleted) {
-					/* exit */
-					break;
-				}
-
-				/* write the hole header only if required */
-				sputc('h', f);
-				sputbs(disk->name, f);
-				if (serror(f)) {
-					fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-					exit(EXIT_FAILURE);
-				}
 			}
 
 			sputb32(end - begin, f);

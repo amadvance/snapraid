@@ -70,7 +70,7 @@ struct snapraid_filter {
  * The block has both the hash and the parity computed.
  * This is the normal state of a saved block.
  * Note that if exists at least one BLOCK_STATE_BLK in a disk, all the other
- * blocks at the same address in other disks can be only BLOCK_EMPTY or BLOCK_STATE_BLK.
+ * blocks at the same address in other disks can be only BLOCK_STATE_EMPTY or BLOCK_STATE_BLK.
  *
  * The block hash field IS set.
  * The parity for this disk is updated.
@@ -264,6 +264,7 @@ struct snapraid_disk {
 	char dir[PATH_MAX]; /**< Mount point of the disk. It always terminates with /. */
 	uint64_t device; /**< Device identifier. */
 	block_off_t first_free_block; /**< First free searching block. */
+	int mapping; /**< Index in the mapping vector. Used only as buffer when writing the content file. */
 
 	/**<
 	 * Block array of the disk.
@@ -717,6 +718,14 @@ static inline struct snapraid_block* disk_block_get(struct snapraid_disk* disk, 
 	else
 		return BLOCK_EMPTY;
 }
+
+/**
+ * Check if a disk is totally empty and can be discarded from the content file.
+ * A disk is empty if it doesn't contain any file, symlink, hardlink or dir
+ * and without any DELETED block.
+ * The blockmax is used to limit the search of DELETED block up to blockmax.
+ */
+int disk_is_empty(struct snapraid_disk* disk, block_off_t blockmax);
 
 /**
  * Allocates a disk mapping.

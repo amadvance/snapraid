@@ -523,6 +523,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 
 	disk->device = dev;
 	disk->first_free_block = 0;
+	disk->mapping = -1;
 	tommy_list_init(&disk->filelist);
 	tommy_list_init(&disk->deletedlist);
 	tommy_hashdyn_init(&disk->inodeset);
@@ -548,6 +549,46 @@ void disk_free(struct snapraid_disk* disk)
 	tommy_hashdyn_done(&disk->dirset);
 	tommy_array_done(&disk->blockarr);
 	free(disk);
+}
+
+int disk_is_empty(struct snapraid_disk* disk, block_off_t blockmax)
+{
+	block_off_t i;
+
+	/* if there is an element, it's not empty */
+	/* even if links and dirs have no block allocation */
+	if (!tommy_list_empty(&disk->filelist))
+		return 0;
+	if (!tommy_list_empty(&disk->linklist))
+		return 0;
+	if (!tommy_list_empty(&disk->dirlist))
+		return 0;
+
+	/* limit the search to the size of the disk */
+	if (blockmax > tommy_array_size(&disk->blockarr))
+		blockmax = tommy_array_size(&disk->blockarr);
+
+	/* checks all the blocks to search for deleted ones */
+	/* this search is slow, but it's done only if no file is present */
+	for(i=0;i<blockmax;++i) {
+		struct snapraid_block* block = tommy_array_get(&disk->blockarr, i);
+		unsigned block_state = block_state_get(block);
+
+		switch (block_state) {
+		case BLOCK_STATE_EMPTY :
+			/* empty block are expected for an empty disk */
+			break;
+		case BLOCK_STATE_DELETED :
+			/* if there is a deleted block, the disk is not empty */
+			return 0;
+		default:
+			fprintf(stderr, "Internal incosistency for used block in disk '%s' without files\n", disk->name);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	/* finally, it's empty */
+	return 1;
 }
 
 struct snapraid_map* map_alloc(const char* name, unsigned position, const char* uuid)

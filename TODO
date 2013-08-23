@@ -3,6 +3,8 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
+* Check blockmax in hole ? RISKY ??
+
 - v4.x
 
 * If a content file is missing, sync should rewrite it, even if no change was done at the content.
