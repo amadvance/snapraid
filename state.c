@@ -3114,9 +3114,13 @@ void state_read(struct snapraid_state* state)
 			/* otherwise continue */
 			if (node->next) {
 				fprintf(stderr, "warning: Content file '%s' not found, trying with another copy...\n", path);
+
+				/* ensure to rewrite all the content files */
+				state->need_write = 1;
 			}
 		}
 
+		/* next content file */
 		node = node->next;
 	}
 
@@ -3129,11 +3133,43 @@ void state_read(struct snapraid_state* state)
 		return;
 	}
 
-	/* get the date of the content file */
+	/* get the stat of the content file */
 	ret = fstat(shandle(f), &st);
 	if (ret != 0) {
 		fprintf(stderr, "Error stating the content file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
+	}
+
+	/* go futher to check other content files */
+	while (node) {
+		char other_path[PATH_MAX];
+		struct stat other_st;
+		struct snapraid_content* content = node->data;
+		pathcpy(other_path, sizeof(other_path), content->content);
+
+		ret = stat(other_path, &other_st);
+		if (ret != 0) {
+			/* allow missing content files, but not any other kind of error */
+			if (errno != ENOENT) {
+				fprintf(stderr, "Error stating the content file '%s'. %s.\n", other_path, strerror(errno));
+				exit(EXIT_FAILURE);
+			}
+
+			/* ensure to rewrite all the content files */
+			state->need_write = 1;
+		} else {
+			/* if the size is different */
+			if (other_st.st_size != st.st_size) {
+				fprintf(stderr, "warning: Content files '%s' and '%s' have a different size!\n", path, other_path);
+				fprintf(stderr, "warning: Likely one of the two is broken!\n");
+		
+				/* ensure to rewrite all the content files */
+				state->need_write = 1;
+			}
+		}
+
+		/* next content file */
+		node = node->next;
 	}
 
 	/* start with a undefined default. */
