@@ -5,7 +5,19 @@ This is the list of TODO items for SnapRAID.
 
 - v4.x
 
-* If a content file is missing, sync should rewrite it, even if no change was done at the content.
+* Enable storing of creation time NTFS, crtime/birth time EXT4.
+But see: http://unix.stackexchange.com/questions/50177/birth-is-empty-on-ext4
+coreutils stat has an example, but it doesn't work in Linux (see lib/stat-time.h)
+
+* Drop inode requirement ?
+To identify renamed file we can use the nanosecond modification time as alternative way.
+Like equality of:
+- size + inode + modification time in second
+OR
+- size + modification time in second + modification time in nanosecond (if different than 0)
+This will allow to run with mismatching inodes like in FUSE.
+The risk is to have a lot of nanosecond fields to 0. For example, CP doesn't copy it.
+But it doesn't seem a problem. In such cases you won't get the rename optimization.
 
 * Add a way to list the content of the array. A new "list" command ?
 Something similar at "diff" and "dup".
