@@ -1150,6 +1150,8 @@ int filephy(const char* file, struct stat* st, uint64_t* physical)
 
 int fstype(const char* path)
 {
+	(void)path;
+
 	return FSTYPE_UNKNOWN;
 }
 
