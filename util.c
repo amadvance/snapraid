@@ -1302,7 +1302,9 @@ void* malloc_nofail(size_t size)
 
 	if (!ptr) {
 		/* don't use printf to avoid any possible extra allocation */
-		write(2, "Low Memory\n", 11);
+		if (write(2, "Low Memory\n", 11) != 11) {
+			/* ignore error */
+		}
 		exit(EXIT_FAILURE);
 	}
 
@@ -1350,7 +1352,9 @@ char* strdup_nofail(const char* str)
 
 	if (!ptr) {
 		/* don't use printf to avoid any possible extra allocation */
-		write(2, "Low Memory\n", 11);
+		if (write(2, "Low Memory\n", 11) != 11) {
+			/* ignore error */
+		}
 		exit(EXIT_FAILURE);
 	}
 
