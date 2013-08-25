@@ -24,7 +24,8 @@ AC_HEADER_DIRENT
 AC_HEADER_TIME
 AC_CHECK_HEADERS([fcntl.h stddef.h stdint.h stdlib.h string.h limits.h])
 AC_CHECK_HEADERS([unistd.h getopt.h fnmatch.h io.h inttypes.h byteswap.h])
-AC_CHECK_HEADERS([sys/time.h sys/file.h sys/ioctl.h linux/fiemap.h linux/fs.h])
+AC_CHECK_HEADERS([sys/time.h sys/file.h sys/ioctl.h sys/vfs.h sys/statfs.h])
+AC_CHECK_HEADERS([linux/fiemap.h linux/fs.h])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -40,17 +41,32 @@ AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
 AC_TYPE_INT8_T
 AC_CHECK_MEMBERS([struct stat.st_mtim.tv_nsec, struct stat.st_mtimensec, struct stat.st_mtimespec.tv_nsec], [], [], [[
+#if HAVE_SYS_TYPES_H
 #include <sys/types.h>
+#endif
+#if HAVE_SYS_STAT_H
 #include <sys/stat.h>
+#endif
+#if HAVE_UNISTD_H
 #include <unistd.h>
+#endif
+]])
+AC_CHECK_MEMBERS([struct statfs.f_type], [], [], [[
+#if HAVE_SYS_VFS_H
+#include <sys/vfs.h>
+#endif
+#if HAVE_SYS_STATFS_H
+#include <sys/statfs.h>
+#endif
 ]])
 
 dnl Checks for library functions.
 AC_SYS_LARGEFILE
 AC_CHECK_FUNCS([memset strchr strerror strrchr mkdir gettimeofday strtoul])
 AC_CHECK_FUNCS([getopt getopt_long snprintf vsnprintf])
-AC_CHECK_FUNCS([ftruncate fallocate fsync access posix_fallocate posix_fadvise pread pwrite getc_unlocked ferror_unlocked fnmatch])
-AC_CHECK_FUNCS([futimes futimens futimesat fstatat flock])
+AC_CHECK_FUNCS([ftruncate fallocate fsync access posix_fallocate posix_fadvise])
+AC_CHECK_FUNCS([pread pwrite getc_unlocked ferror_unlocked fnmatch])
+AC_CHECK_FUNCS([futimes futimens futimesat fstatat flock statfs])
 
 dnl Checks for architecture
 AC_C_BIGENDIAN

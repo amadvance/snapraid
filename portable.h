@@ -107,6 +107,14 @@
 #include <sys/stat.h>
 #endif
 
+#if HAVE_SYS_VFS_H
+#include <sys/vfs.h>
+#endif
+
+#if HAVE_SYS_STATFS_H
+#include <sys/statfs.h>
+#endif
+
 #if HAVE_GETOPT_H
 #include <getopt.h>
 #endif
@@ -172,6 +180,16 @@ int devuuid(uint64_t device, char* uuid, size_t size);
  * Returns 0 on success.
  */
 int filephy(const char* path, struct stat* st, uint64_t* physical);
+
+/* Types of filesystem */
+#define FSTYPE_UNKNOWN 0
+#define FSTYPE_FUSE 1
+
+/**
+ * Get the filesystem type.
+ * Returns -1 on error or one of the FSTYPE define.
+ */
+int fstype(const char* path);
 
 /**
  * Initializes the system.

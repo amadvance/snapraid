@@ -168,6 +168,26 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 	return 0;
 }
 
+int fstype(const char* path)
+{
+/* statfs() is really not portable, and to limit possible incompatibility we limit it to Linux */
+/* for example, Solaris doesn't have the f_type field, BSD has it as "short" */
+#if HAVE_STATFS && HAVE_STRUCT_STATFS_F_TYPE && defined(__linux__)
+	struct statfs st;
+	
+	if (statfs(path, &st) != 0)
+		return -1;
+
+	switch (st.f_type) {
+	case 0x65735546 : return FSTYPE_FUSE;
+	}
+#else
+	(void)path;
+#endif
+
+	return FSTYPE_UNKNOWN;
+}
+
 void os_init(void)
 {
 }

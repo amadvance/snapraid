@@ -1148,6 +1148,11 @@ int filephy(const char* file, struct stat* st, uint64_t* physical)
 	return 0;
 }
 
+int fstype(const char* path)
+{
+	return FSTYPE_UNKNOWN;
+}
+
 #undef strerror
 
 const char* windows_strerror(int err)
