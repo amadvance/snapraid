@@ -5,7 +5,7 @@
 # Format: "parity FILE_PATH"
 parity /mnt/diskpar/parity
 
-# Defines the file to use as Q-Parity storage
+# Defines the file to use as Q-Parity storage (uncomment to enable).
 # If specified, it enables a double failures protection like RAID6
 # It must NOT be in a data disk
 # Format: "q-parity FILE_PATH"
@@ -29,7 +29,7 @@ disk d2 /mnt/disk2/
 disk d3 /mnt/disk3/
 
 # Excludes hidden files and directories (uncomment to enable).
-# nohidden
+#nohidden
 
 # Defines files and directories to exclude
 # Remember that all the paths are relative at the mount points
@@ -41,22 +41,23 @@ exclude *.unrecoverable
 exclude /tmp/
 exclude /lost+found/
 
-# Defines the block size in kibi bytes (1024 bytes).
+# Defines the block size in kibi bytes (1024 bytes) (uncomment to enable).
 # Default value is 256 -> 256 kibi bytes -> 262144 bytes
 # Format: "block_size SIZE_IN_KiB"
-block_size 256
+#block_size 256
 
 # Automatically save the state when synching after the specied amount
-# of GiB processed.
+# of GiB processed (uncomment to enable).
 # This option is useful to avoid to restart from scratch long 'sync'
 # commands interrupted by a machine crash.
+# It also improves the recovering if a disk break during a 'sync'.
 # The SIZE argument is specified in gibi bytes -> 1073741824 bytes
 # Default value is 0, meaning disabled.
 # Format: "autosave SIZE_IN_GiB"
-# autosize 500
+#autosize 500
 
 # Defines the pooling directory where the virtual view of the disk
-# array is created using the "pool" command.
+# array is created using the "pool" command (uncomment to enable).
 # The files are not really copied here, but just linked using
 # symbolic links.
 # This directory must be outside the array.
