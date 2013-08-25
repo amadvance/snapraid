@@ -2039,9 +2039,18 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 	tommy_array_init(&disk_mapping);
 
 	ret = sread(f, buffer, 12);
-	if (ret < 0 || memcmp(buffer, "SNAPCNT1\n\3\0\0", 12) != 0) {
+	if (ret < 0) {
 		decoding_error(path, f);
 		fprintf(stderr, "Invalid header!\n");
+		exit(EXIT_FAILURE);
+	}
+	if (memcmp(buffer, "SNAPCNT1\n\3\0\0", 12) != 0) {
+		if (memcmp(buffer, "SNAPCNT", 7) != 0) {
+			decoding_error(path, f);
+			fprintf(stderr, "Invalid header!\n");
+		} else {
+			fprintf(stderr, "The content file '%s' was generated with a newer version of SnapRAID!\n", path);
+		}
 		exit(EXIT_FAILURE);
 	}
 
