@@ -735,6 +735,12 @@ static void state_map(struct snapraid_state* state)
 			++hole;
 		}
 
+		if (hole > 255) {
+			/* RAID6 P/Q parity works for up to 255 drives, no more */
+			fprintf(stderr, "Too many disks. No more than 255.\n");
+			exit(EXIT_FAILURE);
+		}
+
 		/* insert the new mapping */
 		map = map_alloc(disk->name, hole, "");
 
