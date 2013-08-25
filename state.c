@@ -3141,6 +3141,9 @@ void state_read(struct snapraid_state* state)
 		state_read_binary(state, path, f);
 	} else {
 		state_read_text(state, path, f, st.st_mtime);
+
+		/* force a rewrite to convert to binary */
+		state->need_write = 1;
 	}
 
 	sclose(f);
