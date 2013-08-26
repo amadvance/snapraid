@@ -105,6 +105,16 @@ void speed(void)
 	printf("Memory is little-endian %u-bit\n", (unsigned)sizeof(void*) * 8);
 #endif
 
+#if HAVE_FUTIMENS
+	printf("Support nanosecond timestamps with futimens()\n");
+#elif HAVE_FUTIMES
+	printf("Support nanosecond timestamps with futimes()\n");
+#elif HAVE_FUTIMESAT
+	printf("Support nanosecond timestamps with futimesat()\n");
+#else
+	printf("Does not support nanosecond timestamps\n");
+#endif
+
 	printf("\n");
 
 	printf("Expected fastest hash is ");
