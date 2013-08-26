@@ -1034,7 +1034,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				collide_file = tommy_hashdyn_search(&handle[j].disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
 
 				/* if the inode is already in the database and it refers at a different file name, */
-				/* we can fix the file time ONLY if the time and size allow to differentiates */
+				/* we can fix the file time ONLY if the time and size allow to differentiate */
 				/* between the two files */
 
 				/* for example, suppose we delete a bunch of files with all the same size and time, */
@@ -1045,7 +1045,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					|| strcmp(collide_file->sub, file->sub) == 0 /* if the name is the same, it's the right collision */
 					|| collide_file->size != file->size /* if the size is different, the collision is identified */
 					|| collide_file->mtime_sec != file->mtime_sec /* if the mtime is different, the collision is identified */
-					|| collide_file->mtime_nsec != file->mtime_nsec
+					|| collide_file->mtime_nsec != file->mtime_nsec /* same for mtime_nsec */
 				) {
 					/* set the original modification time */
 					ret = handle_utime(&handle[j]);
@@ -1121,7 +1121,7 @@ close_and_continue:
 		if (!handle[i].disk)
 			continue;
 
-		/* for each file in the disk */
+		/* for each empty file in the disk */
 		disk = handle[i].disk;
 		node = disk->filelist;
 		while (node) {
@@ -1192,8 +1192,25 @@ close_and_continue:
 					goto bail;
 				}
 
+				/* set the original modification time */
+				ret = file_utime(file, f);
+				if (ret != 0) {
+					close(f);
+
+					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					printf("Stopping\n");
+					++unrecoverable_error;
+					goto bail;
+				}
+
 				/* close it */
-				close(f);
+				ret = close(f);
+				if (ret != 0) {
+					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					printf("Stopping\n");
+					++unrecoverable_error;
+					goto bail;
+				}
 
 				fprintf(stdlog, "fixed:%s:%s: Fixed empty file\n", disk->name, file->sub);
 				++recovered_error;

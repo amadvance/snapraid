@@ -318,7 +318,7 @@ int handle_write(struct snapraid_handle* handle, struct snapraid_block* block, u
 	return 0;
 }
 
-int handle_utime(struct snapraid_handle* handle)
+int file_utime(struct snapraid_file* file, int f)
 {
 #if HAVE_FUTIMENS
 	struct timespec tv[2];
@@ -327,50 +327,55 @@ int handle_utime(struct snapraid_handle* handle)
 #endif
 	int ret;
 
-	/* do nothing if not opened */
-	if (handle->f == -1)
-		return 0;
-
 #if HAVE_FUTIMENS /* futimens() is preferred because it gives nanosecond precision */
-	tv[0].tv_sec = handle->file->mtime_sec;
-	if (handle->file->mtime_nsec != STAT_NSEC_INVALID)
-		tv[0].tv_nsec = handle->file->mtime_nsec;
+	tv[0].tv_sec = file->mtime_sec;
+	if (file->mtime_nsec != STAT_NSEC_INVALID)
+		tv[0].tv_nsec = file->mtime_nsec;
 	else
 		tv[0].tv_nsec = 0;
 	tv[1].tv_sec = tv[0].tv_sec;
 	tv[1].tv_nsec = tv[0].tv_nsec;
 
-	ret = futimens(handle->f, tv);
+	ret = futimens(f, tv);
 #elif HAVE_FUTIMES /* fallback to futimes() if nanosecond precision is not available */
-	tv[0].tv_sec = handle->file->mtime_sec;
-	if (handle->file->mtime_nsec != STAT_NSEC_INVALID)
-		tv[0].tv_usec = handle->file->mtime_nsec / 1000;
+	tv[0].tv_sec = file->mtime_sec;
+	if (file->mtime_nsec != STAT_NSEC_INVALID)
+		tv[0].tv_usec = file->mtime_nsec / 1000;
 	else
 		tv[0].tv_usec = 0;
 	tv[1].tv_sec = tv[0].tv_sec;
 	tv[1].tv_usec = tv[0].tv_usec;
 
-	ret = futimes(handle->f, tv);
+	ret = futimes(f, tv);
 #elif HAVE_FUTIMESAT /* fallback to futimesat() for Solaris, it only has futimesat() */
-	tv[0].tv_sec = handle->file->mtime_sec;
-	if (handle->file->mtime_nsec != STAT_NSEC_INVALID)
-		tv[0].tv_usec = handle->file->mtime_nsec / 1000;
+	tv[0].tv_sec = file->mtime_sec;
+	if (file->mtime_nsec != STAT_NSEC_INVALID)
+		tv[0].tv_usec = file->mtime_nsec / 1000;
 	else
 		tv[0].tv_usec = 0;
 	tv[1].tv_sec = tv[0].tv_sec;
 	tv[1].tv_usec = tv[0].tv_usec;
 
-	ret = futimesat(handle->f, 0, tv);
+	ret = futimesat(f, 0, tv);
 #else
 #error No function available to set file timestamps
 #endif
 
 	if (ret != 0) {
-		fprintf(stderr, "Error timing file '%s'. %s.\n", handle->file->sub, strerror(errno));
+		fprintf(stderr, "Error timing file '%s'. %s.\n", file->sub, strerror(errno));
 		return -1;
 	}
 
 	return 0;
+}
+
+int handle_utime(struct snapraid_handle* handle)
+{
+	/* do nothing if not opened */
+	if (handle->f == -1)
+		return 0;
+
+	return file_utime(handle->file, handle->f);
 }
 
 struct snapraid_handle* handle_map(struct snapraid_state* state, unsigned* handlemax)

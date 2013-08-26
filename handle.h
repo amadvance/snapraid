@@ -21,6 +21,14 @@
 #include "state.h"
 
 /****************************************************************************/
+/* file */
+
+/**
+ * Changes the modification time of a open file to the saved value.
+ */
+int file_utime(struct snapraid_file* file, int f);
+
+/****************************************************************************/
 /* handle */
 
 struct snapraid_handle {
