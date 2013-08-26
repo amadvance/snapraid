@@ -362,17 +362,23 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 
 		/* for sure it cannot be already present */
 		if (file_flag_has(file, FILE_IS_PRESENT)) {
-			fprintf(stderr, "Internal inode '%"PRIu64"' inconsistency for files '%s%s' and '%s%s' matching already present but different\n", file->inode, disk->dir, sub, disk->dir, file->sub);
+			fprintf(stderr, "Internal inode '%"PRIu64"' inconsistency for files '%s%s' and '%s%s' matching and already present but different\n", file->inode, disk->dir, sub, disk->dir, file->sub);
 			exit(EXIT_FAILURE);
 		}
 
 		/* assume a previously used inode, it's the worst case */
-		/* and we handle it removing the duplicate inode stored. */
+		/* and we handle it removing the duplicate stored inode. */
 		/* If the file is found by name (not necessarely in this function call), */
-		/* it will have the inode info restored, otherwise, it will get removed */
+		/* it will have the inode restored, otherwise, it will get removed */
 
 		/* remove from the inode set */
 		tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
+
+		/* clear the inode */
+		/* this is not really needed for correct functionality */
+		/* because we are going to set FILE_IS_WITHOUT_INODE */
+		/* but it's easier for debugging to have invalid inodes set to 0 */
+		file->inode = 0;
 
 		/* mark as missing inode */
 		file_flag_set(file, FILE_IS_WITHOUT_INODE);
@@ -419,7 +425,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 			)
 		) {
 			/* here we know that the inode is different and it needs to be updated */
-			/* otherwise we would have processed the file when finding by inode */
+			/* otherwise we would have processed the file when searching by inode */
 			state->need_write = 1;
 
 			/* mark as present */
@@ -430,7 +436,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 			file->mtime_nsec = STAT_NSEC(st);
 
 			/* if the inode is different, it means a rewritten file with the same path */
-			/* like when restoring a backup that restores also the time information */
+			/* like when restoring a backup that restores also the timestamp */
 			++scan->count_restore;
 
 			if (state->opt.gui) {
