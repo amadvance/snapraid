@@ -97,11 +97,14 @@ static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, 
 				fprintf(stdlog, "scan:equal:%s:%s\n", disk->name, link->sub);
 				fflush(stdlog);
 			}
-
-			/* nothing more to do */
-			return;
 		} else {
 			/* it's an update */
+
+			/* we have to save the linkto/type */
+			state->need_write = 1;
+
+			++scan->count_change;
+
 			if (state->opt.gui) {
 				fprintf(stdlog, "scan:update:%s:%s\n", disk->name, link->sub);
 				fflush(stdlog);
@@ -110,16 +113,14 @@ static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, 
 				printf("Update '%s%s'\n", disk->dir, link->sub);
 			}
 
-			++scan->count_change;
-
 			/* update it */
 			free(link->linkto);
 			link->linkto = strdup_nofail(linkto);
 			link_flag_let(link, link_flag, FILE_IS_LINK_MASK);
-
-			/* nothing more to do */
-			return;
 		}
+
+		/* nothing more to do */
+		return;
 	} else {
 		/* create the new link */
 		++scan->count_insert;
@@ -396,7 +397,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 			/* here the inode has to be different, otherwise we would have found it before */
 			if (file->inode == st->st_ino) {
 				fprintf(stderr, "Internal inode  '%"PRIu64"' inconsistency for files '%s%s' as unexpected matching\n", file->inode, disk->dir, sub);
-				
+
 				exit(EXIT_FAILURE);
 			}
 		}
