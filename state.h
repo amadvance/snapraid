@@ -42,7 +42,6 @@ struct snapraid_option {
 	int force_empty; /**< Forced dangerous operations of synching disks now empty. */
 	int force_uuid; /**< Forced dangerous operations of synching disks with uuid changed. */
 	int force_device; /**< Forced dangerous operations of using disks with save device id. */
-	int force_by_name; /**< Forced dangerous operations of synching a rewritten disk. */
 	int expect_unrecoverable; /**< Expect presence of unrecoverable error in checking or fixing. */
 	int expect_recoverable; /**< Expect presence of recoverable error in checking. */
 	int skip_device; /**< Skip devices matching checks. */

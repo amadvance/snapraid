@@ -1211,10 +1211,6 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 					exit(EXIT_FAILURE);
 				}
 
-				/* ignore nanoseconds if asked to find by name */
-				if (state->opt.force_by_name)
-					v_mtime_nsec = STAT_NSEC_INVALID;
-
 				c = sgetc(f);
 			} else {
 				/* use a special value, meaning that we don't have this information */
@@ -2141,10 +2137,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				v_mtime_nsec = STAT_NSEC_INVALID;
 			else
 				--v_mtime_nsec;
-
-			/* ignore nanoseconds if asked to find by name */
-			if (state->opt.force_by_name)
-				v_mtime_nsec = STAT_NSEC_INVALID;
 
 			ret = sgetb64(f, &v_inode);
 			if (ret < 0) {
@@ -3162,7 +3154,7 @@ void state_read(struct snapraid_state* state)
 		exit(EXIT_FAILURE);
 	}
 
-	/* go futher to check other content files */
+	/* go further to check other content files */
 	while (node) {
 		char other_path[PATH_MAX];
 		struct stat other_st;

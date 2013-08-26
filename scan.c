@@ -25,11 +25,12 @@ struct snapraid_scan {
 	/**
 	 * Counters of changes.
 	 */
-	unsigned count_equal;
-	unsigned count_moved;
-	unsigned count_change;
-	unsigned count_remove;
-	unsigned count_insert;
+	unsigned count_equal; /**< Files equal. */
+	unsigned count_move; /**< Files with a different name, but equal inode, size and timestamp. */
+	unsigned count_restore; /**< Files with equal name, size and timestamp, but different inode. */
+	unsigned count_change; /**< Files modified. */
+	unsigned count_remove; /**< Files removed. */
+	unsigned count_insert; /**< Files new. */
 
 	tommy_list file_insert_list; /**< Files to insert. */
 	tommy_list link_insert_list; /**< Links to insert. */
@@ -203,7 +204,9 @@ static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk*
 	}
 
 	/* remove the file from the file containers */
-	tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
+	if (!file_flag_has(file, FILE_IS_WITHOUT_INODE)) {
+		tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
+	}
 	tommy_hashdyn_remove_existing(&disk->pathset, &file->pathset);
 	tommy_list_remove_existing(&disk->filelist, &file->nodelist);
 
@@ -273,40 +276,38 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, int output, struct snapraid_disk* disk, const char* sub, const struct stat* st, uint64_t physical)
 {
 	struct snapraid_file* file;
+	uint64_t inode = st->st_ino;
 
-	if (state->opt.force_by_name) {
-		/* check if the file path already exists */
-		file = tommy_hashdyn_search(&disk->pathset, file_path_compare, sub, file_path_hash(sub));
-	} else {
-		/* check if the file inode already exists */
-		uint64_t inode = st->st_ino;
-		file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
-	}
-
+	/* first try finding by inode */
+	file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
 	if (file) {
-		/* check if multiple files have the same inode */
-		if (file_flag_has(file, FILE_IS_PRESENT)) {
-			if (st->st_nlink > 1) {
-				/* it's a hardlink */
-				scan_link(scan, state, output, disk, sub, file->sub, FILE_IS_HARDLINK);
-				return;
-			} else {
-				fprintf(stderr, "Internal inode '%"PRIu64"' inconsistency for file '%s%s'\n", (uint64_t)st->st_ino, disk->dir, sub);
-				exit(EXIT_FAILURE);
-			}
-		}
-
 		/* check if the file is not changed */
 		if (file->size == st->st_size
 			&& file->mtime_sec == st->st_mtime
-			/* always accept the value if it's STAT_NSEC_INVALID */
-			/* it happens when upgrading from an old version of SnapRAID */
-			&& (file->mtime_nsec == STAT_NSEC(st) || file->mtime_nsec == STAT_NSEC_INVALID)
+			&& (file->mtime_nsec == STAT_NSEC(st)
+				/* always accept the stored value if it's STAT_NSEC_INVALID */
+				/* it happens when upgrading from an old version of SnapRAID */
+				/* not yet supporting the nanosecond field */
+				|| file->mtime_nsec == STAT_NSEC_INVALID
+			)
 		) {
+			/* check if multiple files have the same inode */
+			if (file_flag_has(file, FILE_IS_PRESENT)) {
+				if (st->st_nlink > 1) {
+					/* it's a hardlink */
+					scan_link(scan, state, output, disk, sub, file->sub, FILE_IS_HARDLINK);
+					return;
+				} else {
+					fprintf(stderr, "Internal inode '%"PRIu64"' inconsistency for file '%s%s' already present\n", (uint64_t)st->st_ino, disk->dir, sub);
+					exit(EXIT_FAILURE);
+				}
+			}
+
 			/* mark as present */
 			file_flag_set(file, FILE_IS_PRESENT);
 
-			/* update the nano seconds mtime if required */
+			/* update the nano seconds mtime only if different */
+			/* to avoid unneeded updates */
 			if (file->mtime_nsec == STAT_NSEC_INVALID
 				&& STAT_NSEC(st) != STAT_NSEC_INVALID
 			) {
@@ -318,12 +319,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 
 			if (strcmp(file->sub, sub) != 0) {
 				/* if the path is different, it means a moved file with the same inode */
-				++scan->count_moved;
-
-				if (file->inode != st->st_ino) {
-					fprintf(stderr, "Internal inode inconsistency for file '%s%s'\n", disk->dir, sub);
-					exit(EXIT_FAILURE);
-				}
+				++scan->count_move;
 
 				if (state->opt.gui) {
 					fprintf(stdlog, "scan:move:%s:%s:%s\n", disk->name, file->sub, sub);
@@ -333,40 +329,16 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 					printf("Move '%s%s' '%s%s'\n", disk->dir, file->sub, disk->dir, sub);
 				}
 
-				/* remove from the set */
+				/* remove from the name set */
 				tommy_hashdyn_remove_existing(&disk->pathset, &file->pathset);
 
 				/* save the new name */
 				file_rename(file, sub);
 
-				/* reinsert in the set */
+				/* reinsert in the name set */
 				tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
 
 				/* we have to save the new name */
-				state->need_write = 1;
-			} else if (file->inode != st->st_ino) {
-				/* if the inode is different, it means a rewritten file with the same path */
-				/* like when restoring a backup that restores also the time information */
-				++scan->count_moved;
-
-				if (state->opt.gui) {
-					fprintf(stdlog, "scan:restore:%s:%s\n", disk->name, sub);
-					fflush(stdlog);
-				}
-				if (output) {
-					printf("Restore '%s%s'\n", disk->dir, sub);
-				}
-
-				/* remove from the set */
-				tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
-
-				/* save the new inode */
-				file->inode = st->st_ino;
-
-				/* reinsert in the set */
-				tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
-
-				/* we have to save the new inode */
 				state->need_write = 1;
 			} else {
 				/* otherwise it's equal */
@@ -380,59 +352,141 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 
 			/* nothing more to do */
 			return;
-		} else {
-			/* here if the file is changed */
-		
-			/* do a safety check to ensure that the common ext4 case of zeroing */
-			/* the size of a file after a crash doesn't propagate to the backup */
-			if (file->size != 0 && st->st_size == 0) {
-				/* do the check ONLY if the name is the same */
-				/* otherwise it could be a deleted and recreated file */
-				if (strcmp(file->sub, sub) == 0) {
-					if (!state->opt.force_zero) {
-						fprintf(stderr, "The file '%s%s' has unexpected zero size! If this an expected state\n", disk->dir, sub);
-						fprintf(stderr, "you can '%s' anyway usinge 'snapraid --force-zero %s'\n", state->command, state->command);
-						fprintf(stderr, "Instead, it's possible that after a kernel crash this file was lost,\n");
-						fprintf(stderr, "and you can use 'snapraid --filter %s fix' to recover it.\n", sub);
-						exit(EXIT_FAILURE);
-					}
-				}
-			}
-
-			if (strcmp(file->sub, sub) == 0) {
-				/* if the name is the same, it's an update */
-				if (state->opt.gui) {
-					fprintf(stdlog, "scan:update:%s:%s\n", disk->name, file->sub);
-					fflush(stdlog);
-				}
-				if (output) {
-					printf("Update '%s%s'\n", disk->dir, file->sub);
-				}
-
-				++scan->count_change;
-			} else {
-				/* if the name is different, it's an inode reuse */
-				if (state->opt.gui) {
-					fprintf(stdlog, "scan:remove:%s:%s\n", disk->name, file->sub);
-					fprintf(stdlog, "scan:add:%s:%s\n", disk->name, sub);
-					fflush(stdlog);
-				}
-				if (output) {
-					printf("Remove '%s%s'\n", disk->dir, file->sub);
-					printf("Add '%s%s'\n", disk->dir, sub);
-				}
-
-				++scan->count_remove;
-				++scan->count_insert;
-			}
-
-			/* remove it */
-			scan_file_remove(state, disk, file);
-
-			/* and continue to reinsert it */
 		}
+
+		/* here the file matches the inode, but not the other info */
+		/* if could be a modified file with the same name, */
+		/* or a restored/copied file that get assigned a previously used inode, */
+		/* or a filesystem with not persistent inodes */
+
+		/* for sure it cannot be already present */
+		if (file_flag_has(file, FILE_IS_PRESENT)) {
+			fprintf(stderr, "Internal inode '%"PRIu64"' inconsistency for files '%s%s' and '%s%s' matching already present but different\n", file->inode, disk->dir, sub, disk->dir, file->sub);
+			exit(EXIT_FAILURE);
+		}
+
+		/* assume a previously used inode, it's the worst case */
+		/* and we handle it removing the duplicate inode stored. */
+		/* If the file is found by name (not necessarely in this function call), */
+		/* it will have the inode info restored, otherwise, it will get removed */
+
+		/* remove from the inode set */
+		tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
+
+		/* mark as missing inode */
+		file_flag_set(file, FILE_IS_WITHOUT_INODE);
+
+		/* go further to find it by name */
+	}
+
+	/* then try findind it by name */
+	file = tommy_hashdyn_search(&disk->pathset, file_path_compare, sub, file_path_hash(sub));
+	if (file) {
+		/* if the file is without an inode */
+		if (file_flag_has(file, FILE_IS_WITHOUT_INODE)) {
+			/* set it now */
+			file->inode = st->st_ino;
+
+			/* insert in the set */
+			tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
+
+			/* unmark as missing inode */
+			file_flag_clear(file, FILE_IS_WITHOUT_INODE);
+		} else {
+			/* here the inode has to be different, otherwise we would have found it before */
+			if (file->inode == st->st_ino) {
+				fprintf(stderr, "Internal inode  '%"PRIu64"' inconsistency for files '%s%s' as unexpected matching\n", file->inode, disk->dir, sub);
+				
+				exit(EXIT_FAILURE);
+			}
+		}
+
+		/* for sure it cannot be already present */
+		if (file_flag_has(file, FILE_IS_PRESENT)) {
+			fprintf(stderr, "Internal path inconsistency for file '%s%s' matching and already present\n", disk->dir, sub);
+			exit(EXIT_FAILURE);
+		}
+
+		/* check if the file is not changed */
+		if (file->size == st->st_size
+			&& file->mtime_sec == st->st_mtime
+			&& (file->mtime_nsec == STAT_NSEC(st)
+				/* always accept the stored value if it's STAT_NSEC_INVALID */
+				/* it happens when upgrading from an old version of SnapRAID */
+				/* not yet supporting the nanosecond field */
+				|| file->mtime_nsec == STAT_NSEC_INVALID
+			)
+		) {
+			/* here we know that the inode is different and it needs to be updated */
+			/* otherwise we would have processed the file when finding by inode */
+			state->need_write = 1;
+
+			/* mark as present */
+			file_flag_set(file, FILE_IS_PRESENT);
+
+			/* always update the nano seconds mtime */
+			/* to manage the above STAT_NSEC_INVALID case */
+			file->mtime_nsec = STAT_NSEC(st);
+
+			/* if the inode is different, it means a rewritten file with the same path */
+			/* like when restoring a backup that restores also the time information */
+			++scan->count_restore;
+
+			if (state->opt.gui) {
+				fprintf(stdlog, "scan:restore:%s:%s\n", disk->name, sub);
+				fflush(stdlog);
+			}
+			if (output) {
+				printf("Restore '%s%s'\n", disk->dir, sub);
+			}
+
+			/* remove from the inode set */
+			tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
+
+			/* save the new inode */
+			file->inode = st->st_ino;
+
+			/* reinsert in the inode set */
+			tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
+
+			/* nothing more to do */
+			return;
+		}
+
+		/* here if the file is changed but with the correct name */
+		
+		/* do a safety check to ensure that the common ext4 case of zeroing */
+		/* the size of a file after a crash doesn't propagate to the backup */
+		if (file->size != 0 && st->st_size == 0) {
+			if (!state->opt.force_zero) {
+				fprintf(stderr, "The file '%s%s' has unexpected zero size! If this an expected state\n", disk->dir, sub);
+				fprintf(stderr, "you can '%s' anyway usinge 'snapraid --force-zero %s'\n", state->command, state->command);
+				fprintf(stderr, "Instead, it's possible that after a kernel crash this file was lost,\n");
+				fprintf(stderr, "and you can use 'snapraid --filter %s fix' to recover it.\n", sub);
+				exit(EXIT_FAILURE);
+			}
+		}
+
+		/* it has the same name, so it's an update */
+		++scan->count_change;
+
+		if (state->opt.gui) {
+			fprintf(stdlog, "scan:update:%s:%s\n", disk->name, file->sub);
+			fflush(stdlog);
+		}
+		if (output) {
+			if (file->size != st->st_size)
+				printf("Update '%s%s' new size\n", disk->dir, file->sub);
+			else
+				printf("Update '%s%s' new modification time\n", disk->dir, file->sub);
+		}
+
+		/* remove it */
+		scan_file_remove(state, disk, file);
+
+		/* and continue to reinsert it */
 	} else {
-		/* create the new file */
+		/* if the name doesn't exist, it's a new file */
 		++scan->count_insert;
 
 		if (state->opt.gui) {
@@ -735,7 +789,8 @@ void state_scan(struct snapraid_state* state, int output)
 
 		scan = malloc_nofail(sizeof(struct snapraid_scan));
 		scan->count_equal = 0;
-		scan->count_moved = 0;
+		scan->count_move = 0;
+		scan->count_restore = 0;
 		scan->count_change = 0;
 		scan->count_remove = 0;
 		scan->count_insert = 0;
@@ -882,7 +937,7 @@ void state_scan(struct snapraid_state* state, int output)
 			struct snapraid_disk* disk = i->data;
 			struct snapraid_scan* scan = j->data;
 
-			if (scan->count_equal == 0 && scan->count_moved == 0 && scan->count_remove != 0) {
+			if (scan->count_equal == 0 && scan->count_move == 0 && scan->count_restore == 0 && (scan->count_remove != 0 || scan->count_change != 0)) {
 				if (!has_empty) {
 					has_empty = 1;
 					fprintf(stderr, "All the files previously present in disk '%s' at dir '%s'", disk->name, disk->dir);
@@ -893,10 +948,10 @@ void state_scan(struct snapraid_state* state, int output)
 		}
 		if (has_empty) {
 			fprintf(stderr, " are now missing or rewritten!\n");
-			fprintf(stderr, "This happens when deleting all the files from a disk,\n");
-			fprintf(stderr, "or when all the files are recreated after a 'fix' command,\n");
-			fprintf(stderr, "or manually copied. If this is really what you are doing, \n");
-			fprintf(stderr, "you can '%s' anyway, using 'snapraid --force-empty %s'.\n", state->command, state->command);
+			fprintf(stderr, "This could happen when deleting all the files from a disk,\n");
+			fprintf(stderr, "and restoring them with a program not setting correctly the timestamps.\n");
+			fprintf(stderr, "If this is really what you are doing, you can '%s' anyway, \n", state->command);
+			fprintf(stderr, "using 'snapraid --force-empty %s'.\n", state->command);
 			fprintf(stderr, "Instead, it's possible that you have some disks not mounted.\n");
 			exit(EXIT_FAILURE);
 		}
@@ -906,7 +961,8 @@ void state_scan(struct snapraid_state* state, int output)
 		struct snapraid_scan total;
 
 		total.count_equal = 0;
-		total.count_moved = 0;
+		total.count_move = 0;
+		total.count_restore = 0;
 		total.count_change = 0;
 		total.count_remove = 0;
 		total.count_insert = 0;
@@ -914,7 +970,8 @@ void state_scan(struct snapraid_state* state, int output)
 		for(i=scanlist;i!=0;i=i->next) {
 			struct snapraid_scan* scan = i->data;
 			total.count_equal += scan->count_equal;
-			total.count_moved += scan->count_moved;
+			total.count_move += scan->count_move;
+			total.count_restore += scan->count_restore;
 			total.count_change += scan->count_change;
 			total.count_remove += scan->count_remove;
 			total.count_insert += scan->count_insert;
@@ -922,14 +979,15 @@ void state_scan(struct snapraid_state* state, int output)
 
 		if (state->opt.verbose) {
 			printf("\tequal %d\n", total.count_equal);
-			printf("\tmoved %d\n", total.count_moved);
+			printf("\tmoved %d\n", total.count_move);
+			printf("\trestored %d\n", total.count_restore);
 			printf("\tchanged %d\n", total.count_change);
 			printf("\tremoved %d\n", total.count_remove);
 			printf("\tadded %d\n", total.count_insert);
 		}
 
 		if (output) {
-			if (!total.count_moved && !total.count_change && !total.count_remove && !total.count_insert) {
+			if (!total.count_move && !total.count_restore && !total.count_change && !total.count_remove && !total.count_insert) {
 				printf("No difference.\n");
 			}
 		}

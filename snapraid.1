@@ -22,10 +22,6 @@ snapraid [\(hyc, \(hy\(hyconf CONFIG]
 .PD 0
 .PP
 .PD
-	[\(hyN, \(hy\(hyfind\(hyby\(hyname]
-.PD 0
-.PP
-.PD
 	[\(hyZ, \(hy\(hyforce\(hyzero] [\(hyE, \(hy\(hyforce\(hyempty]
 .PD 0
 .PP
@@ -627,20 +623,6 @@ The files are read also in subdirectories and they are
 identified regardless of their name.
 This option can be used only with the \(a"check\(a" and \(a"fix\(a" command.
 .TP
-.B \(hyN, \(hy\(hyfind\(hyby\(hyname
-When syncing finds the files by path instead than by inode,
-and ignores the nanosecond part of timestamp.
-This option allows a fast sync command after having replaced
-one physical disk with another, copying manually the files.
-Without this option the \(a"sync\(a" command recognizes that
-the files were copied to a different disk, and it will resync
-them all. With this option, a file with the correct path,
-size and time with second precision is assumed identical at
-the previous one, and not resynched.
-The nanosecond part of timestamps is ignored because most of
-copy programs are not able to correctly restore it.
-This option can be used only with the \(a"sync\(a" and \(a"diff\(a" commands.
-.TP
 .B \(hyZ, \(hy\(hyforce\(hyzero
 Forces the insecure operation of syncing a file with zero
 size that before was not.
@@ -1138,12 +1120,8 @@ This command will take a long time.
 .SS STEP 4 \(hy> Sync 
 Run the \(a"sync\(a" command to resyncronize the array with the new disk.
 .PP
-To avoid a long time sync you can use the \(a"\(hy\(hyfind\(hyby\(hyname\(a" option to
-force SnapRAID to ignore the fact that all the recovered files are now in
-a different physical disk, but they are not changed.
-.PP
 .RS 4
-snapraid \(hy\(hyfind\(hyby\(hyname sync
+snapraid sync
 .PD 0
 .PP
 .PD

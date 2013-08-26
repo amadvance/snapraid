@@ -197,6 +197,15 @@ struct snapraid_block {
 #define FILE_IS_LINK_MASK 0xF00 /**< Mask for link type. */
 
 /**
+ * If the file is without inode.
+ * It could happen in filesystem where inodes are not persistent,
+ * or when restoring a full disk with "fix".
+ * In such cases we have to clear any stored duplicate inode.
+ * After the scan process completes, no file should have this flag set.
+ */
+#define FILE_IS_WITHOUT_INODE 0x1000
+
+/**
  * File.
  */
 struct snapraid_file {

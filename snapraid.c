@@ -68,7 +68,6 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-i, --import DIR      ", "-i") "  Import deleted files\n");
 	printf("  " SWITCH_GETOPT_LONG("-l, --log FILE        ", "-l") "  Log file. Default none\n");
 	printf("  " SWITCH_GETOPT_LONG("-a, --audit-only      ", "-A") "  Check only file data and not parity\n");
-	printf("  " SWITCH_GETOPT_LONG("-N, --find-by-name    ", "-N") "  Find the files by name instead than by inode\n");
 	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero      ", "-Z") "  Force synching of files that get zero size\n");
 	printf("  " SWITCH_GETOPT_LONG("-E, --force-empty     ", "-E") "  Force synching of disks that get empty\n");
 	printf("  " SWITCH_GETOPT_LONG("-U, --force-uuid      ", "-U") "  Force commands on disks with uuid changed\n");
@@ -117,7 +116,7 @@ struct option long_options[] = {
 	{ "force-empty", 0, 0, 'E' },
 	{ "force-uuid", 0, 0, 'U' },
 	{ "force-device", 0, 0, 'D' },
-	{ "find-by-name", 0, 0, 'N' },
+	{ "find-by-name", 0, 0, 'N' }, /* deprecated in SnapRAID 4.0 */
 	{ "audit-only", 0, 0, 'a' },
 	{ "speed-test", 0, 0, 'T' },
 	{ "verbose", 0, 0, 'v' },
@@ -337,7 +336,7 @@ int main(int argc, char* argv[])
 			opt.force_device = 1;
 			break;
 		case 'N' :
-			opt.force_by_name = 1;
+			fprintf(stderr, "warning: Option --find-by-name, -N is deprecated and does nothing!\n");
 			break;
 		case 'a' :
 			audit_only = 1;
@@ -460,17 +459,6 @@ int main(int argc, char* argv[])
 	default:
 		if (audit_only) {
 			fprintf(stderr, "You cannot use -A, --audit-only with the '%s' command\n", command);
-			exit(EXIT_FAILURE);
-		}
-	}
-
-	switch (operation) {
-	case OPERATION_SYNC :
-	case OPERATION_DIFF :
-		break;
-	default:
-		if (opt.force_by_name) {
-			fprintf(stderr, "You cannot use -N, --find-by-name with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 		}
 	}

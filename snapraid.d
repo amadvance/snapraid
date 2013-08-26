@@ -7,7 +7,6 @@ Synopsis
 	:	[-m, --filter-missing] [-e, --filter-error]
 	:	[-a, --audit-only] [-i, --import DIR]
 	:	[-p, --percentage PERC] [-o, --older-than DAYS]
-	:	[-N, --find-by-name]
 	:	[-Z, --force-zero] [-E, --force-empty]
 	:	[-U, --force-uuid] [-D, --force-device]
 	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
@@ -448,20 +447,6 @@ Options
 		identified regardless of their name.
 		This option can be used only with the "check" and "fix" command.
 
-	-N, --find-by-name
-		When syncing finds the files by path instead than by inode,
-		and ignores the nanosecond part of timestamp.
-		This option allows a fast sync command after having replaced
-		one physical disk with another, copying manually the files.
-		Without this option the "sync" command recognizes that
-		the files were copied to a different disk, and it will resync
-		them all. With this option, a file with the correct path,
-		size and time with second precision is assumed identical at
-		the previous one, and not resynched.
-		The nanosecond part of timestamps is ignored because most of
-		copy programs are not able to correctly restore it.
-		This option can be used only with the "sync" and "diff" commands.
-
 	-Z, --force-zero
 		Forces the insecure operation of syncing a file with zero
 		size that before was not.
@@ -827,11 +812,7 @@ Recovering
   STEP 4 -> Sync
 	Run the "sync" command to resyncronize the array with the new disk.
 
-	To avoid a long time sync you can use the "--find-by-name" option to
-	force SnapRAID to ignore the fact that all the recovered files are now in
-	a different physical disk, but they are not changed.
-
-		:snapraid --find-by-name sync
+		:snapraid sync
 
 	If everything was recovered, this command is immediate.
 

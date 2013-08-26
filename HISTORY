@@ -12,7 +12,10 @@ SnapRAID HISTORY
  * Changed to a binary content file to improve speed and reduce size.
  * Added a hash seed to make harder intentional collision attacks.
  * When insering files for the first time, sort them by their physical
-   address to improve read performance. 
+   address to improve read performance.
+ * Removed the --find-by-name, -N option. Now it automatically searches
+   by name if a file is not found searching by inode, automatically
+   reassigning inodes in restored files.
  * Better selection of the RAID6 implementation for different CPUs.   
  * Added RAID5/RAID6 mmx and sse2 implementations with unrolling by 4.
    They are a little faster than the previous unroll by 2.
