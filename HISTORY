@@ -13,7 +13,7 @@ SnapRAID HISTORY
  * Added a hash seed to make harder intentional collision attacks.
  * When insering files for the first time, sort them by their physical
    address to improve read performance.
- * Removed the --find-by-name, -N option. Now it automatically searches
+ * Removed the --find-by-name, -N option. Now it always searches
    by name if a file is not found searching by inode, automatically
    reassigning inodes in restored files.
  * Better selection of the RAID6 implementation for different CPUs.   
@@ -45,7 +45,7 @@ SnapRAID HISTORY
  * In Windows applies filters in case insensitive way.
  * The Windows binaries are now built with gcc 4.7.2.
  * Reduced memory occupation for hardlinks and directories.
- * In 'dup' don't list file with 0 size.
+ * In 'dup' don't list files with 0 size.
 
 3.0 2013/3
 ==========
@@ -56,10 +56,10 @@ SnapRAID HISTORY
  * Added a new -i, --import option to automatically import deleted files
    when fixing.
  * Added a new -l, --log option to save to disk the detailed log.
- * Added support also for hardlinks and empty directories.
+ * Added support for hardlinks and empty directories.
  * Added support to save symlinks to files in Windows. Note that only the
    symlink is saved and not the linked file.
-   Symlinks to dirs and junctions are still not supported in Windows.
+   Note that Windows Symlinks to dirs and junctions are still not supported.
  * Files without read permission generate an error instead of a warning.
    You now must explicitely exclude them in the configuration file with
    exclusion rules.
@@ -81,7 +81,7 @@ SnapRAID HISTORY
  * The file modification time is now saved using nanosecond precision.
    This allows to restore the exact modification time in 'fix'.
    The new 'content' files written with this version are not backward
-   compatible, but it's still possible to read the old 'content' format.
+   compatible, but it's still possible to read the old format.
  * Fixed hard-links automatic exclusion. All the hardlinks after the first one
    are now correctly ignored.
  * If it isn't possible to grow a parity file, prints the list of files
@@ -133,14 +133,14 @@ SnapRAID HISTORY
    exclusion.   
  * Automatically excludes also the temporary copy of content file,
    the one with the ".tmp" extension.
- * Avoid the Windows system to go in automatic sleep mode when running.
+ * Avoid Windows to go in automatic sleep mode when running.
 
 1.9 2012/3
 ==========
  * Implemented a more sophisticated recovering in case a harddisk failure
    happens during a 'sync' command.
-   When using RAID6 it improves the chances of recovering data after an
-   aborted 'sync'.
+   When using RAID6 it improves the chances of recovering data with partially
+   computed parity, after an aborted 'sync'.
  * Fixed the count of new files.
  * Added a new 'autosave' configuration option to save the intermediate 'sync' state.
  * Supported filesystems with read requests returning less data than requested.
