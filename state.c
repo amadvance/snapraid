@@ -113,26 +113,6 @@ static void state_config_check(struct snapraid_state* state, const char* path)
 #endif
 
 			if (!state->opt.force_device) {
-				int ret;
-
-				ret = fstype(disk->dir);
-				if (ret < 0) {
-					fprintf(stderr, "Error accessing disk '%s' to get the filesystem type. %s.\n", disk->dir, strerror(errno));
-					exit(EXIT_FAILURE);
-				}
-				if (ret == FSTYPE_FUSE) {
-					fprintf(stderr, "Disk '%s' has a filesystem managed by FUSE.\n", disk->dir);
-					fprintf(stderr, "FUSE doesn't support persistent inodes, and it cannot be\n");
-					fprintf(stderr, "used safely with SnapRAID.\n");
-
-					/* in "fix" we allow to continue anyway */
-					if (strcmp(state->command, "fix") == 0) {
-						fprintf(stderr, "You can '%s' anyway, using 'snapraid --force-device %s'.\n", state->command, state->command);
-					}
-
-					exit(EXIT_FAILURE);
-				}
-
 				for(j=i->next;j!=0;j=j->next) {
 					struct snapraid_disk* other = j->data;
 					if (disk->device == other->device) {

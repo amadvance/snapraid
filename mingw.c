@@ -1148,11 +1148,14 @@ int filephy(const char* file, struct stat* st, uint64_t* physical)
 	return 0;
 }
 
-int fstype(const char* path)
+int fsinfo(const char* path, int* has_persistent_inode)
 {
 	(void)path;
 
-	return FSTYPE_UNKNOWN;
+	/* all FAT/exFAT/NTFS when managed from Windows have persistent inodes */
+	*has_persistent_inode = 1;
+
+	return 0;
 }
 
 #undef strerror

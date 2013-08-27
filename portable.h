@@ -181,15 +181,11 @@ int devuuid(uint64_t device, char* uuid, size_t size);
  */
 int filephy(const char* path, struct stat* st, uint64_t* physical);
 
-/* Types of filesystem */
-#define FSTYPE_UNKNOWN 0
-#define FSTYPE_FUSE 1
-
 /**
- * Get the filesystem type.
- * Returns -1 on error or one of the FSTYPE define.
+ * Checks if the underline filesystem support persistent inodes.
+ * Returns -1 on error, 0 on success.
  */
-int fstype(const char* path);
+int fsinfo(const char* path, int* has_persistent_inode);
 
 /**
  * Initializes the system.

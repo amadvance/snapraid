@@ -3,6 +3,8 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
++test with restore disk cp -a before and after rm
+
 - v4.x
 
 * Enable storing of creation time NTFS, crtime/birth time EXT4.

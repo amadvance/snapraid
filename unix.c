@@ -168,7 +168,7 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 	return 0;
 }
 
-int fstype(const char* path)
+int fsinfo(const char* path, int* has_persistent_inode)
 {
 /* statfs() is really not portable, and to limit possible incompatibility we limit it to Linux */
 /* for example, Solaris doesn't have the f_type field, BSD has it as "short" */
@@ -178,14 +178,26 @@ int fstype(const char* path)
 	if (statfs(path, &st) != 0)
 		return -1;
 
+	/* to get the fs type check "man stat" or "stat -f -t FILE" */
+
 	switch (st.f_type) {
-	case 0x65735546 : return FSTYPE_FUSE;
+	case 0x65735546 : /* FUSE, "fuseblk" in the stat command */
+	case 0x4d44 : /* VFAT, "msdos" in the stat command */
+		*has_persistent_inode = 0;
+		break;
+	default:
+		/* by default assume yes */
+		*has_persistent_inode = 1;
+		break;
 	}
 #else
 	(void)path;
+
+	/* by default assume yes */
+	*has_persistent_inode = 1;
 #endif
 
-	return FSTYPE_UNKNOWN;
+	return 0;
 }
 
 void os_init(void)

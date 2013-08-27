@@ -277,10 +277,31 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, int output, struct snapraid_disk* disk, const char* sub, const struct stat* st, uint64_t physical)
 {
 	struct snapraid_file* file;
-	uint64_t inode = st->st_ino;
 
-	/* first try finding by inode */
-	file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
+	file = 0;
+
+	/*
+	 * If the disk has persistent inodes, try a search by inode.
+	 *
+	 * For persistent inodes we mean inodes that keep their values when the filesystem
+	 * is unmounted and remounted. This don't always happen. 
+	 *
+	 * Cases found are:
+	 * - Linux FUSE with exFAT driver from https://code.google.com/p/exfat/.
+	 *   Inodes are reassigned at every mount restarting from 1 and incrementing.
+	 *   As worse, the exFAT support in FUSE doesn't use subsecond precision in timestamps
+	 *   making inode collision more easy (exFAT by design supports 10ms precision).
+	 * - Linux VFAT kernel (3.2) driver. Inodes are fully reassigned at every mount.
+	 *
+	 * In such cases, to avoid possible random collisions, it's better to just avoid
+	 * to use inodes at all.
+	 */
+	if (!disk->has_not_persistent_inodes) {
+		/* first try finding by inode */
+		uint64_t inode = st->st_ino;
+		file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
+	}
+
 	if (file) {
 		/* check if the file is not changed */
 		if (file->size == st->st_size
@@ -793,6 +814,8 @@ void state_scan(struct snapraid_state* state, int output)
 		struct snapraid_disk* disk = i->data;
 		struct snapraid_scan* scan;
 		tommy_node* node;
+		int ret;
+		int has_persistent_inode;
 
 		scan = malloc_nofail(sizeof(struct snapraid_scan));
 		scan->count_equal = 0;
@@ -808,6 +831,18 @@ void state_scan(struct snapraid_state* state, int output)
 		tommy_list_insert_tail(&scanlist, &scan->node, scan);
 
 		printf("Scanning disk %s...\n", disk->name);
+
+		/* check if the disk supports persistent inodes */
+		ret = fsinfo(disk->dir, &has_persistent_inode);
+		if (ret < 0) {
+			fprintf(stderr, "Error accessing disk '%s' to get filesystem info. %s.\n", disk->dir, strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+		/* mark the disk if required */
+		if (!has_persistent_inode) {
+			fprintf(stderr, "WARNING! Inodes use disabled for disk '%s' because they are not persistent.\n", disk->dir);
+			disk->has_not_persistent_inodes = 1;
+		}
 
 		scan_dir(scan, state, output, disk, disk->dir, "");
 
