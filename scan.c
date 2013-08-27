@@ -740,7 +740,7 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 				/* in Unix don't follow mount points in different devices */
 				/* in Windows we are already skipping them reporting them as special files */
 				if ((uint64_t)st.st_dev != disk->device) {
-					fprintf(stderr, "warning: Ignoring mount point '%s' because it appears to be in a different device\n", path_next);
+					fprintf(stderr, "WARNING! Ignoring mount point '%s' because it appears to be in a different device\n", path_next);
 				} else
 #endif
 				{
@@ -764,7 +764,7 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 			}
 		} else {
 			if (filter_path(&state->filterlist, disk->name, sub_next) == 0) {
-				fprintf(stderr, "warning: Ignoring special '%s' file '%s'\n", stat_desc(&st), path_next);
+				fprintf(stderr, "WARNING! Ignoring special '%s' file '%s'\n", stat_desc(&st), path_next);
 			} else {
 				if (state->opt.verbose) {
 					printf("Excluding special '%s' file '%s'\n", stat_desc(&st), path_next);

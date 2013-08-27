@@ -3127,7 +3127,7 @@ void state_read(struct snapraid_state* state)
 
 			/* otherwise continue */
 			if (node->next) {
-				fprintf(stderr, "warning: Content file '%s' not found, trying with another copy...\n", path);
+				fprintf(stderr, "WARNING! Content file '%s' not found, trying with another copy...\n", path);
 
 				/* ensure to rewrite all the content files */
 				state->need_write = 1;
@@ -3143,7 +3143,7 @@ void state_read(struct snapraid_state* state)
 		/* create the initial mapping */
 		state_map(state);
 
-		fprintf(stderr, "warning: No content file found. Assuming empty.\n");
+		fprintf(stderr, "No content file found. Assuming empty.\n");
 		return;
 	}
 
@@ -3174,8 +3174,8 @@ void state_read(struct snapraid_state* state)
 		} else {
 			/* if the size is different */
 			if (other_st.st_size != st.st_size) {
-				fprintf(stderr, "warning: Content files '%s' and '%s' have a different size!\n", path, other_path);
-				fprintf(stderr, "warning: Likely one of the two is broken!\n");
+				fprintf(stderr, "WARNING! Content files '%s' and '%s' have a different size!\n", path, other_path);
+				fprintf(stderr, "Likely one of the two is broken!\n");
 		
 				/* ensure to rewrite all the content files */
 				state->need_write = 1;

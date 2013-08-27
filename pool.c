@@ -146,7 +146,7 @@ static void make_link(const char* pool_dir, struct snapraid_disk* disk, const ch
 	ret = symlink(linkto, path);
 	if (ret != 0) {
 		if (errno == EEXIST) {
-			fprintf(stderr, "warning: Duplicate pooling for '%s'\n", path);
+			fprintf(stderr, "WARNING! Duplicate pooling for '%s'\n", path);
 #ifdef _WIN32
 		} else if (errno == EPERM) {
 			fprintf(stderr, "You must run as Adminstrator to be able to create symlinks.\n");

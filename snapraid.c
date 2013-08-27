@@ -336,7 +336,7 @@ int main(int argc, char* argv[])
 			opt.force_device = 1;
 			break;
 		case 'N' :
-			fprintf(stderr, "warning: Option --find-by-name, -N is deprecated and does nothing!\n");
+			fprintf(stderr, "WARNING! Option --find-by-name, -N is deprecated and does nothing!\n");
 			break;
 		case 'a' :
 			audit_only = 1;
