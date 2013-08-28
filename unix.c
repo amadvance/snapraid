@@ -170,9 +170,7 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 
 int fsinfo(const char* path, int* has_persistent_inode)
 {
-/* statfs() is really not portable, and to limit possible incompatibility we limit it to Linux */
-/* for example, Solaris doesn't have the f_type field, BSD has it as "short" */
-#if HAVE_STATFS && HAVE_STRUCT_STATFS_F_TYPE && defined(__linux__)
+#if HAVE_STATFS && HAVE_STRUCT_STATFS_F_TYPE
 	struct statfs st;
 	
 	if (statfs(path, &st) != 0)

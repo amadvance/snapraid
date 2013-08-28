@@ -24,7 +24,7 @@ AC_HEADER_DIRENT
 AC_HEADER_TIME
 AC_CHECK_HEADERS([fcntl.h stddef.h stdint.h stdlib.h string.h limits.h])
 AC_CHECK_HEADERS([unistd.h getopt.h fnmatch.h io.h inttypes.h byteswap.h])
-AC_CHECK_HEADERS([sys/time.h sys/file.h sys/ioctl.h sys/vfs.h sys/statfs.h])
+AC_CHECK_HEADERS([sys/time.h sys/file.h sys/ioctl.h sys/vfs.h sys/statfs.h sys/param.h sys/mount.h])
 AC_CHECK_HEADERS([linux/fiemap.h linux/fs.h])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
@@ -52,6 +52,12 @@ AC_CHECK_MEMBERS([struct stat.st_mtim.tv_nsec, struct stat.st_mtimensec, struct 
 #endif
 ]])
 AC_CHECK_MEMBERS([struct statfs.f_type], [], [], [[
+#if HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+#if HAVE_SYS_MOUNT_H
+#include <sys/mount.h>
+#endif
 #if HAVE_SYS_VFS_H
 #include <sys/vfs.h>
 #endif

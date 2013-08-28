@@ -31,7 +31,44 @@
 #include <windows.h>
 #endif
 
-/* Include some standard headers */
+/**
+ * Includes some platform specific headers.
+ */
+#if HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+
+#if HAVE_SYS_MOUNT_H
+#include <sys/mount.h>
+#endif
+
+#if HAVE_SYS_VFS_H
+#include <sys/vfs.h>
+#endif
+
+#if HAVE_SYS_STATFS_H
+#include <sys/statfs.h>
+#endif
+
+#if HAVE_SYS_FILE_H
+#include <sys/file.h>
+#endif
+
+#if HAVE_SYS_IOCTL_H
+#include <sys/ioctl.h>
+#endif
+
+#if HAVE_LINUX_FS_H
+#include <linux/fs.h>
+#endif
+
+#if HAVE_LINUX_FIEMAP_H
+#include <linux/fiemap.h>
+#endif
+
+/**
+ * Includes some standard headers.
+ */
 #include <stdio.h>
 #include <stdlib.h> /* On many systems (e.g., Darwin), `stdio.h' is a prerequisite. */
 #include <stdarg.h>
@@ -66,22 +103,6 @@
 #endif
 #endif
 
-#if HAVE_SYS_FILE_H
-#include <sys/file.h>
-#endif
-
-#if HAVE_SYS_IOCTL_H
-#include <sys/ioctl.h>
-#endif
-
-#if HAVE_LINUX_FS_H
-#include <linux/fs.h>
-#endif
-
-#if HAVE_LINUX_FIEMAP_H
-#include <linux/fiemap.h>
-#endif
-
 #if HAVE_DIRENT_H
 #include <dirent.h>
 #define NAMLEN(dirent) strlen((dirent)->d_name)
@@ -105,14 +126,6 @@
 
 #if HAVE_SYS_STAT_H
 #include <sys/stat.h>
-#endif
-
-#if HAVE_SYS_VFS_H
-#include <sys/vfs.h>
-#endif
-
-#if HAVE_SYS_STATFS_H
-#include <sys/statfs.h>
 #endif
 
 #if HAVE_GETOPT_H
@@ -145,7 +158,7 @@
 #endif
 
 /**
- * Enable lock file support.
+ * Enables lock file support.
  */
 #if HAVE_FLOCK && HAVE_FTRUNCATE
 #define HAVE_LOCKFILE 1
