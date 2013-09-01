@@ -1323,19 +1323,23 @@ void* malloc_nofail(size_t size)
 	return ptr;
 }
 
-#define ALIGN 256
+/**
+ * Memory alignment provided by malloc_nofail_align().
+ * It should guarantee good cache performance everywhere.
+ */
+#define MALLOC_NOFAIL_ALIGN 256
 
 void* malloc_nofail_align(size_t size, void** freeptr)
 {
-	unsigned char* ptr = malloc_nofail(size + ALIGN);
+	unsigned char* ptr = malloc_nofail(size + MALLOC_NOFAIL_ALIGN);
 	uintptr_t offset;
 
 	*freeptr = ptr;
 
-	offset = ((uintptr_t)ptr) % ALIGN;
+	offset = ((uintptr_t)ptr) % MALLOC_NOFAIL_ALIGN;
 
 	if (offset != 0) {
-		ptr += ALIGN - offset;
+		ptr += MALLOC_NOFAIL_ALIGN - offset;
 	}
 
 	return ptr;
