@@ -1,8 +1,8 @@
 SnapRAID HISTORY
 ================
 
-4.0 2013/8 (BETA)
-=================
+4.0 2013/9 (RELEASE CANDIDATE)
+==============================
  * New 'scrub' command to periodically check the oldest blocks for silent
    errors without the need to scan the whole array.
  * New 'status' command to check the fragmentation, the last check time
@@ -10,13 +10,16 @@ SnapRAID HISTORY
  * Added the new Spooky hash. It's faster in 64 bit architectures.
    To convert you can use the new 'rehash' command.
  * Changed to a binary content file to improve speed and reduce size.
+ * Removed the --find-by-name, -N option. Now it always searches
+   by name if a file is not found searching by inode, automatically
+   reassigning inodes in restored files without needing to sync
+   again the file.
+   This happens only if the file has the same name, size and timestamp
+   at nanosecond precision.
  * Added a hash seed to make harder intentional collision attacks.
  * When insering files for the first time, sort them by their physical
    address to improve read performance.
- * Removed the --find-by-name, -N option. Now it always searches
-   by name if a file is not found searching by inode, automatically
-   reassigning inodes in restored files.
- * Better selection of the RAID6 implementation for different CPUs.   
+ * Better selection of the RAID6 implementation for different CPUs.
  * Added RAID5/RAID6 mmx and sse2 implementations with unrolling by 4.
    They are a little faster than the previous unroll by 2.
  * Added a lock file to avoid multiple running instances on the same array.
