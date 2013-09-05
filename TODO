@@ -3,6 +3,15 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
+- 4.1
+
+* In sync if a data error is found, we can mark the block as bad, like in scrub
+and allow sync to continue.
+
+* Detect files moved from one disk to another. We won't be able to reuse
+parity, but we can reuse the hash to check that the file was moved
+correctly.
+
 - Minor
 
 * Enable storing of creation time NTFS, crtime/birth time EXT4.
