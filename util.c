@@ -1325,24 +1325,67 @@ void* malloc_nofail(size_t size)
 
 /**
  * Memory alignment provided by malloc_nofail_align().
+ *
  * It should guarantee good cache performance everywhere.
  */
-#define MALLOC_NOFAIL_ALIGN 256
+#define MALLOC_ALIGN 256
 
 void* malloc_nofail_align(size_t size, void** freeptr)
 {
-	unsigned char* ptr = malloc_nofail(size + MALLOC_NOFAIL_ALIGN);
+	unsigned char* ptr = malloc_nofail(size + MALLOC_ALIGN);
 	uintptr_t offset;
 
 	*freeptr = ptr;
 
-	offset = ((uintptr_t)ptr) % MALLOC_NOFAIL_ALIGN;
+	offset = ((uintptr_t)ptr) % MALLOC_ALIGN;
 
 	if (offset != 0) {
-		ptr += MALLOC_NOFAIL_ALIGN - offset;
+		ptr += MALLOC_ALIGN - offset;
 	}
 
 	return ptr;
+}
+
+/**
+ * Memory displacement to avoid cache collisions on contiguous blocks.
+ *
+ * When allocating a sequence of blocks with a size of power of 2,
+ * there is the risk that the start of each block is mapped into the same cache line,
+ * resulting in cache collisions if you access all the blocks in parallel,
+ * from the start to the end.
+ *
+ * The selected value was choosen empirically with some speed tests
+ * with 8/12/16/20/24 data buffers and 3 parity buffers
+ * for RAID-5/6/TP computation.
+ *
+ * With displacement (8 buffers, icore5, 32 bit):
+ *
+ * RAID5 sse2x4 21936 [MB/s]
+ * RAID6 sse2x2 11902 [MB/s]
+ * RAIDTP sse2x1 5838 [MB/s]
+ *
+ * Without displacement:
+ *
+ * RAID5 sse2x4 15368 [MB/s]
+ * RAID6 sse2x2 6814 [MB/s]
+ * RAIDTP sse2x1 3033 [MB/s]
+ */
+#define MALLOC_DISPLACEMENT (7*256)
+
+unsigned char** malloc_nofail_vector_align(size_t count, size_t size, void** freeptr)
+{
+	unsigned char** buffer;
+	unsigned char* buffer_aligned;
+	size_t i;
+
+	buffer = malloc_nofail(count * sizeof(void*));
+
+	buffer_aligned = malloc_nofail_align(count * (size + MALLOC_DISPLACEMENT), freeptr);
+
+	for(i=0;i<count;++i)
+		buffer[i] = buffer_aligned + i * (size + MALLOC_DISPLACEMENT);
+
+	return buffer;
 }
 
 char* strdup_nofail(const char* str)

@@ -458,6 +458,13 @@ void* malloc_nofail(size_t size);
 void* malloc_nofail_align(size_t size, void** freeptr);
 
 /**
+ * Safe aligned vector allocation.
+ * Returns a vector of "count" pointers, each one pointing to a block of the specified "size".
+ * If no memory is available, it aborts.
+ */
+unsigned char** malloc_nofail_vector_align(size_t count, size_t size, void** freeptr);
+
+/**
  * Safe strdup.
  * If no memory is available, it aborts.
  */

@@ -46,18 +46,15 @@ static struct hash_test_vector TEST_SPOOKY2[] = {
 static void raid5test(unsigned diskmax, unsigned block_size)
 {
 	void* buffer_alloc;
-	unsigned char* buffer_aligned;
 	unsigned char** buffer;
 	unsigned char* buffer_save;
 	unsigned buffermax;
 	unsigned i, j;
 
 	buffermax = diskmax + 1 + 1;
-	buffer_aligned = malloc_nofail_align(buffermax * block_size, &buffer_alloc);
-	buffer = malloc_nofail(buffermax * sizeof(void*));
-	for(i=0;i<buffermax;++i) {
-		buffer[i] = buffer_aligned + i * block_size;
-	}
+
+	buffer = malloc_nofail_vector_align(buffermax, block_size, &buffer_alloc);
+
 	buffer_save = buffer[buffermax-1];
 
 	/* fill with random */
@@ -92,7 +89,6 @@ static void raid5test(unsigned diskmax, unsigned block_size)
 static void raid6test(unsigned diskmax, unsigned block_size)
 {
 	void* buffer_alloc;
-	unsigned char* buffer_aligned;
 	unsigned char** buffer;
 	unsigned char* buffer_save0;
 	unsigned char* buffer_save1;
@@ -101,11 +97,9 @@ static void raid6test(unsigned diskmax, unsigned block_size)
 	unsigned i, j;
 
 	buffermax = diskmax + 2 + 2 + 1;
-	buffer_aligned = malloc_nofail_align(buffermax * block_size, &buffer_alloc);
-	buffer = malloc_nofail(buffermax * sizeof(void*));
-	for(i=0;i<buffermax;++i) {
-		buffer[i] = buffer_aligned + i * block_size;
-	}
+
+	buffer = malloc_nofail_vector_align(buffermax, block_size, &buffer_alloc);
+
 	buffer_save0 = buffer[buffermax-3];
 	buffer_save1 = buffer[buffermax-2];
 	buffer_zero = buffer[buffermax-1];

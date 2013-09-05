@@ -437,7 +437,6 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 	block_off_t i;
 	unsigned j;
 	void* buffer_alloc;
-	unsigned char* buffer_aligned;
 	unsigned char** buffer;
 	unsigned buffermax;
 	int ret;
@@ -455,11 +454,9 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 	/* we need disk + 2 for each parity level buffers + 1 zero buffer */
 	buffermax = diskmax + state->level * 2 + 1;
 
-	buffer_aligned = malloc_nofail_align(buffermax * state->block_size, &buffer_alloc);
-	buffer = malloc_nofail(buffermax * sizeof(void*));
-	for(i=0;i<buffermax;++i) {
-		buffer[i] = buffer_aligned + i * state->block_size;
-	}
+	buffer = malloc_nofail_vector_align(buffermax, state->block_size, &buffer_alloc);
+
+	/* fill up the zero buffer */
 	memset(buffer[buffermax-1], 0, state->block_size);
 
 	failed = malloc_nofail(diskmax * sizeof(struct failed_struct));

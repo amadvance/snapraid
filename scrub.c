@@ -44,7 +44,6 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	block_off_t i;
 	unsigned j;
 	void* buffer_alloc;
-	unsigned char* buffer_aligned;
 	unsigned char** buffer;
 	unsigned buffermax;
 	data_off_t countsize;
@@ -67,11 +66,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	/* we need disk + 2 for each parity level buffers */
 	buffermax = diskmax + state->level * 2;
 
-	buffer_aligned = malloc_nofail_align(buffermax * state->block_size, &buffer_alloc);
-	buffer = malloc_nofail(buffermax * sizeof(void*));
-	for(i=0;i<buffermax;++i) {
-		buffer[i] = buffer_aligned + i * state->block_size;
-	}
+	buffer = malloc_nofail_vector_align(buffermax, state->block_size, &buffer_alloc);
 
 	error = 0;
 	silent_error = 0;

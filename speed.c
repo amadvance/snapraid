@@ -64,13 +64,12 @@ void speed(void)
 	unsigned block_size = 256 * 1024;
 	unsigned diskmax = 8;
 	void* buffer_alloc;
-	unsigned char* buffer_aligned;
 	unsigned char** buffer;
 
-	buffer_aligned = malloc_nofail_align((diskmax + 2) * block_size, &buffer_alloc);
-	buffer = malloc_nofail((diskmax + 2) * sizeof(void*));
-	for(i=0;i<diskmax+2;++i) {
-		buffer[i] = buffer_aligned + i * block_size;
+	buffer = malloc_nofail_vector_align(diskmax + 3, block_size, &buffer_alloc);
+
+	/* initialize with fixed data */
+	for(i=0;i<diskmax+3;++i) {
 		memset(buffer[i], i, block_size);
 	}
 	for(i=0;i<HASH_SIZE;++i)
