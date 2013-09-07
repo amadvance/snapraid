@@ -899,8 +899,8 @@ void raid6_recov_2data(unsigned char** dptrs, unsigned diskmax, unsigned size, i
 	unsigned char* dp;
 	unsigned char* q;
 	unsigned char* dq;
-	const unsigned char* pamul; /* P multipler to compute A */
-	const unsigned char* qamul; /* Q multipler to compute A */
+	const unsigned char* pbmul; /* P multiplier to compute B */
+	const unsigned char* qbmul; /* Q multiplier to compute B */
 
 	p = dptrs[diskmax];
 	q = dptrs[diskmax+1];
@@ -923,20 +923,20 @@ void raid6_recov_2data(unsigned char** dptrs, unsigned diskmax, unsigned size, i
 	dptrs[diskmax+1] = q;
 
 	/* select tables */
-	pamul = table( inv(pow2(failb-faila) ^ 1) );
-	qamul = table( inv(pow2(faila) ^ pow2(failb)) );
+	pbmul = table( inv(pow2(failb-faila) ^ 1) );
+	qbmul = table( inv(pow2(faila) ^ pow2(failb)) );
 
 	while (size--) {
 		/* delta */
 		unsigned char pd = *p ^ *dp;
 		unsigned char qd = *q ^ *dq;
 
-		/* addends to reconstruct A */
-		unsigned char pm = pamul[pd];
-		unsigned char qm = qamul[qd];
+		/* addends to reconstruct B */
+		unsigned char pbm = pbmul[pd];
+		unsigned char qbm = qbmul[qd];
 
 		/* reconstruct B */
-		unsigned char b = pm ^ qm;
+		unsigned char b = pbm ^ qbm;
 
 		/* reconstruct A */
 		unsigned char a = pd ^ b;
@@ -956,7 +956,7 @@ void raid6_recov_datap(unsigned char** dptrs, unsigned diskmax, unsigned size, i
 {
 	unsigned char* q;
 	unsigned char* dq;
-	const unsigned char* qamul; /* Q multipler to compute A */
+	const unsigned char* qamul; /* Q multiplier to compute A */
 
 	q = dptrs[diskmax+1];
 
@@ -980,10 +980,10 @@ void raid6_recov_datap(unsigned char** dptrs, unsigned diskmax, unsigned size, i
 		unsigned char qd = *q ^ *dq;
 
 		/* addends to reconstruct A */
-		unsigned char qm = qamul[qd];
+		unsigned char qam = qamul[qd];
 
 		/* reconstruct A */
-		unsigned char a = qm;
+		unsigned char a = qam;
 
 		/* set */
 		*dq = a;
@@ -1021,10 +1021,10 @@ void raidTP_recov_datapq(unsigned char** dptrs, unsigned diskmax, unsigned size,
 		unsigned char rd = *r ^ *dr;
 
 		/* addends to reconstruct A */
-		unsigned char rm = ramul[rd];
+		unsigned char ram = ramul[rd];
 
 		/* reconstruct A */
-		unsigned char a = rm;
+		unsigned char a = ram;
 
 		/* set */
 		*dr = a;
@@ -1040,8 +1040,8 @@ void raidTP_recov_2dataq(unsigned char** dptrs, unsigned diskmax, unsigned size,
 	unsigned char* dp;
 	unsigned char* r;
 	unsigned char* dr;
-	const unsigned char* pbmul; /* Q multipler to compute B */
-	const unsigned char* rbmul; /* R multipler to compute B */
+	const unsigned char* pbmul; /* Q multiplier to compute B */
+	const unsigned char* rbmul; /* R multiplier to compute B */
 	unsigned char denominator;
 
 	p = dptrs[diskmax];
@@ -1101,10 +1101,10 @@ void raidTP_recov_2datap(unsigned char** dptrs, unsigned diskmax, unsigned size,
 	unsigned char* dq;
 	unsigned char* r;
 	unsigned char* dr;
-	const unsigned char* qbmul; /* Q multipler to compute B */
-	const unsigned char* rbmul; /* R multipler to compute B */
-	const unsigned char* qamul; /* Q multipler to compute A */
-	const unsigned char* bamul; /* B multipler to compute A */
+	const unsigned char* qbmul; /* Q multiplier to compute B */
+	const unsigned char* rbmul; /* R multiplier to compute B */
+	const unsigned char* qamul; /* Q multiplier to compute A */
+	const unsigned char* bamul; /* B multiplier to compute A */
 	unsigned char denominator;
 
 	q = dptrs[diskmax+1];
@@ -1172,12 +1172,12 @@ void raidTP_recov_3data(unsigned char** dptrs, unsigned diskmax, unsigned size, 
 	unsigned char* dq;
 	unsigned char* r;
 	unsigned char* dr;
-	const unsigned char* pcmul; /* P multipler to compute C */
-	const unsigned char* qcmul; /* Q multipler to compute C */
-	const unsigned char* rcmul; /* R multipler to compute C */
-	const unsigned char* pbmul; /* P multipler to compute B */
-	const unsigned char* qbmul; /* Q multipler to compute B */
-	const unsigned char* cbmul; /* C multipler to compute B */
+	const unsigned char* pcmul; /* P multiplier to compute C */
+	const unsigned char* qcmul; /* Q multiplier to compute C */
+	const unsigned char* rcmul; /* R multiplier to compute C */
+	const unsigned char* pbmul; /* P multiplier to compute B */
+	const unsigned char* qbmul; /* Q multiplier to compute B */
+	const unsigned char* cbmul; /* C multiplier to compute B */
 	unsigned char denominator;
 
 	p = dptrs[diskmax];
