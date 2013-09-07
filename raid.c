@@ -1209,10 +1209,10 @@ void raidTP_recov_3data(unsigned char** dptrs, unsigned diskmax, unsigned size, 
 	/* select tables */
 	denominator = mul(pow2(failc-faila) ^ 1, inv(pow2(failb-faila) ^ 1)) ^ mul(pow4(failc-faila) ^ 1, inv(pow4(failb-faila) ^ 1));
 	pcmul = table( inv(mul(denominator, pow2(failb-faila) ^ 1)) ^ inv(mul(denominator, pow4(failb-faila) ^ 1)) );
-	qcmul = table( inv(mul(mul(denominator, pow2(failb-faila) ^ 1), pow2(faila))) );
-	rcmul = table( inv(mul(mul(denominator, pow4(failb-faila) ^ 1), pow4(faila))) );
+	qcmul = table( inv(mul(denominator, pow2(failb) ^ pow2(faila))) );
+	rcmul = table( inv(mul(denominator, pow4(failb) ^ pow4(faila))) );
 	pbmul = table( inv(pow2(failb-faila) ^ 1) );
-	qbmul = table( inv(mul(pow2(faila), pow2(failb-faila) ^ 1)) );
+	qbmul = table( inv(pow2(failb) ^ pow2(faila)) );
 	cbmul = table( mul(pow2(failc-faila) ^ 1, inv(pow2(failb-faila) ^ 1)) );
 
 	while (size--) {
