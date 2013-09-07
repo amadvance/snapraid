@@ -1,5 +1,6 @@
 bin_PROGRAMS = snapraid
 check_PROGRAMS = mktest
+EXTRA_PROGRAMS = mktables
 
 snapraid_SOURCES = \
 	snapraid.c \
@@ -25,6 +26,9 @@ snapraid_SOURCES = \
 	import.c \
 	mingw.c \
 	unix.c
+
+mktables_SOURCES = \
+	mktables.c
 
 noinst_HEADERS = \
 	portable.h \
