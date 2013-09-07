@@ -33,12 +33,11 @@
 #include "cpu.h"
 #include "tables.h"
 
-/* internal forwarder */
-static void (*raid5_gen)(unsigned char** buffer, unsigned diskmax, unsigned size);
-static void (*raid6_gen)(unsigned char** buffer, unsigned diskmax, unsigned size);
+/****************************************************************************/
+/* internal computation */
 
 /*
- * 2-way unrolled portable integer math RAID-5 instruction set
+ * RAID5 unrolled-by-2 C implementation
  */
 void raid5_int32r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 {
@@ -49,8 +48,8 @@ void raid5_int32r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 	uint32_t wp0;
 	uint32_t wp1;
 
-	z0 = diskmax - 1; /* Highest data disk */
-	p = buffer[z0+1]; /* XOR parity */
+	z0 = diskmax - 1;
+	p = buffer[diskmax];
 
 	for(d=0;d<size;d+=8) {
 		wp0 = *(uint32_t *)&buffer[z0][d+0*4];
@@ -65,9 +64,8 @@ void raid5_int32r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 }
 
 #if defined(__i386__) || defined(__x86_64__)
-
 /*
- * Unrolled-by-2 MMX implementation
+ * RAID5 unrolled-by-2 MMX implementation
  */
 void raid5_mmxr2(unsigned char** buffer, unsigned diskmax, unsigned size)
 {
@@ -75,8 +73,8 @@ void raid5_mmxr2(unsigned char** buffer, unsigned diskmax, unsigned size)
 	int z, z0;
 	unsigned d;
 
-	z0 = diskmax - 1; /* Highest data disk */
-	p = buffer[z0+1]; /* XOR parity */
+	z0 = diskmax - 1;
+	p = buffer[diskmax];
 
 	for(d=0;d<size;d+=16) {
 		asm volatile("movq %0,%%mm0" : : "m" (buffer[z0][d]));
@@ -95,7 +93,7 @@ void raid5_mmxr2(unsigned char** buffer, unsigned diskmax, unsigned size)
 }
 
 /*
- * Unrolled-by-4 MMX implementation
+ * RAID5 unrolled-by-4 MMX implementation
  */
 void raid5_mmxr4(unsigned char** buffer, unsigned diskmax, unsigned size)
 {
@@ -103,8 +101,8 @@ void raid5_mmxr4(unsigned char** buffer, unsigned diskmax, unsigned size)
 	int z, z0;
 	unsigned d;
 
-	z0 = diskmax - 1; /* Highest data disk */
-	p = buffer[z0+1]; /* XOR parity */
+	z0 = diskmax - 1;
+	p = buffer[diskmax];
 
 	for(d=0;d<size;d+=32) {
 		asm volatile("movq %0,%%mm0" : : "m" (buffer[z0][d]));
@@ -131,7 +129,7 @@ void raid5_mmxr4(unsigned char** buffer, unsigned diskmax, unsigned size)
 }
 
 /*
- * Unrolled-by-2 SSE2 implementation
+ * RAID5 unrolled-by-2 SSE2 implementation
  */
 void raid5_sse2r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 {
@@ -139,8 +137,8 @@ void raid5_sse2r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 	int z, z0;
 	unsigned d;
 
-	z0 = diskmax - 1; /* Highest data disk */
-	p = buffer[z0+1]; /* XOR parity */
+	z0 = diskmax - 1;
+	p = buffer[diskmax];
 
 	for(d=0;d<size;d+=32) {
 		asm volatile("movdqa %0,%%xmm0" : : "m" (buffer[z0][d]));
@@ -159,7 +157,7 @@ void raid5_sse2r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 }
 
 /*
- * Unrolled-by-4 SSE2 implementation
+ * RAID5 unrolled-by-4 SSE2 implementation
  */
 void raid5_sse2r4(unsigned char** buffer, unsigned diskmax, unsigned size)
 {
@@ -167,8 +165,8 @@ void raid5_sse2r4(unsigned char** buffer, unsigned diskmax, unsigned size)
 	int z, z0;
 	unsigned d;
 
-	z0 = diskmax - 1; /* Highest data disk */
-	p = buffer[z0+1]; /* XOR parity */
+	z0 = diskmax - 1;
+	p = buffer[diskmax];
 
 	for(d=0;d<size;d+=64) {
 		asm volatile("movdqa %0,%%xmm0" : : "m" (buffer[z0][d]));
@@ -197,7 +195,7 @@ void raid5_sse2r4(unsigned char** buffer, unsigned diskmax, unsigned size)
 
 #if defined(__x86_64__)
 /*
- * Unrolled-by-8 SSE2 implementation
+ * RAID5 unrolled-by-8 SSE2 implementation
  * Note that it uses all the 16 registers, meaning that x64 is required.
  */
 void raid5_sse2r8(unsigned char** buffer, unsigned diskmax, unsigned size)
@@ -206,8 +204,8 @@ void raid5_sse2r8(unsigned char** buffer, unsigned diskmax, unsigned size)
 	int z, z0;
 	unsigned d;
 
-	z0 = diskmax - 1; /* Highest data disk */
-	p = buffer[z0+1]; /* XOR parity */
+	z0 = diskmax - 1;
+	p = buffer[diskmax];
 
 	for(d=0;d<size;d+=128) {
 		asm volatile("movdqa %0,%%xmm0" : : "m" (buffer[z0][d]));
@@ -286,7 +284,7 @@ static inline uint32_t MASK(uint32_t v)
 }
 
 /*
- * 2-way unrolled portable integer math RAID-6 instruction set
+ * RAID6 unrolled-by-2 C implementation
  */
 void raid6_int32r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 {
@@ -298,9 +296,9 @@ void raid6_int32r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 	uint32_t wd0, wq0, wp0, w10, w20;
 	uint32_t wd1, wq1, wp1, w11, w21;
 
-	z0 = diskmax - 1; /* Highest data disk */
-	p = buffer[z0+1]; /* XOR parity */
-	q = buffer[z0+2]; /* RS qarity */
+	z0 = diskmax - 1;
+	p = buffer[diskmax];
+	q = buffer[diskmax+1];
 
 	for(d=0;d<size;d+=8) {
 		wq0 = wp0 = *(uint32_t *)&buffer[z0][d+0*4];
@@ -329,7 +327,6 @@ void raid6_int32r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 }
 
 #if defined(__i386__) || defined(__x86_64__)
-
 static const struct raid6_mmx_constants {
 	uint64_t x1d;
 } raid6_mmx_constants = {
@@ -337,7 +334,7 @@ static const struct raid6_mmx_constants {
 };
 
 /*
- * Unrolled-by-2 MMX implementation
+ * RAID6 unrolled-by-2 MMX implementation
  */
 void raid6_mmxr2(unsigned char** buffer, unsigned diskmax, unsigned size)
 {
@@ -346,13 +343,13 @@ void raid6_mmxr2(unsigned char** buffer, unsigned diskmax, unsigned size)
 	int z, z0;
 	unsigned d;
 
-	z0 = diskmax - 1; /* Highest data disk */
-	p = buffer[z0+1]; /* XOR parity */
-	q = buffer[z0+2]; /* RS qarity */
+	z0 = diskmax - 1;
+	p = buffer[diskmax];
+	q = buffer[diskmax+1];
 
 	asm volatile("movq %0,%%mm0" : : "m" (raid6_mmx_constants.x1d));
-	asm volatile("pxor %mm5,%mm5"); /* Zero temp */
-	asm volatile("pxor %mm7,%mm7"); /* Zero temp */
+	asm volatile("pxor %mm5,%mm5");
+	asm volatile("pxor %mm7,%mm7");
 
 	for(d=0;d<size;d+=16) {
 		asm volatile("movq %0,%%mm2" : : "m" (buffer[z0][d]));
@@ -393,7 +390,7 @@ static const struct raid6_sse_constants {
 };
 
 /*
- * Unrolled-by-2 SSE2 implementation
+ * RAID6 unrolled-by-2 SSE2 implementation
  */
 void raid6_sse2r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 {
@@ -402,13 +399,13 @@ void raid6_sse2r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 	int z, z0;
 	unsigned d;
 
-	z0 = diskmax - 1; /* Highest data disk */
-	p = buffer[z0+1]; /* XOR parity */
-	q = buffer[z0+2]; /* RS qarity */
+	z0 = diskmax - 1;
+	p = buffer[diskmax];
+	q = buffer[diskmax+1];
 
 	asm volatile("movdqa %0,%%xmm7" : : "m" (raid6_sse_constants.x1d[0]));
-	asm volatile("pxor %xmm4,%xmm4"); /* Zero temp */
-	asm volatile("pxor %xmm5,%xmm5"); /* Zero temp */
+	asm volatile("pxor %xmm4,%xmm4");
+	asm volatile("pxor %xmm5,%xmm5");
 
 	for(d=0;d<size;d+=32) {
 		asm volatile("movdqa %0,%%xmm0" : : "m" (buffer[z0][d])); /* P[0] */
@@ -445,7 +442,7 @@ void raid6_sse2r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 
 #if defined(__x86_64__)
 /*
- * Unrolled-by-4 SSE2 implementation
+ * RAID6 unrolled-by-4 SSE2 implementation
  * Note that it uses all the 16 registers, meaning that x64 is required.
  */
 void raid6_sse2r4(unsigned char** buffer, unsigned diskmax, unsigned size)
@@ -455,15 +452,15 @@ void raid6_sse2r4(unsigned char** buffer, unsigned diskmax, unsigned size)
 	int z, z0;
 	unsigned d;
 
-	z0 = diskmax - 1; /* Highest data disk */
-	p = buffer[z0+1]; /* XOR parity */
-	q = buffer[z0+2]; /* RS qarity */
+	z0 = diskmax - 1;
+	p = buffer[diskmax];
+	q = buffer[diskmax+1];
 
 	asm volatile("movdqa %0,%%xmm15" : : "m" (raid6_sse_constants.x1d[0]));
-	asm volatile("pxor %xmm8,%xmm8"); /* Zero temp */
-	asm volatile("pxor %xmm9,%xmm9"); /* Zero temp */
-	asm volatile("pxor %xmm10,%xmm10"); /* Zero temp */
-	asm volatile("pxor %xmm11,%xmm11"); /* Zero temp */
+	asm volatile("pxor %xmm8,%xmm8");
+	asm volatile("pxor %xmm9,%xmm9");
+	asm volatile("pxor %xmm10,%xmm10");
+	asm volatile("pxor %xmm11,%xmm11");
 
 	for(d=0;d<size;d+=64) {
 		asm volatile("movdqa %0,%%xmm0" : : "m" (buffer[z0][d])); /* P[0] */
@@ -522,36 +519,394 @@ void raid6_sse2r4(unsigned char** buffer, unsigned diskmax, unsigned size)
 }
 #endif
 
+/*
+ * RAIDTP unrolled-by-2 C implementation
+ */
+void raidTP_int32r2(unsigned char** buffer, unsigned diskmax, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	int z, z0;
+	unsigned d;
+
+	uint32_t wd0, wr0, wq0, wp0, w10, w20;
+	uint32_t wd1, wr1, wq1, wp1, w11, w21;
+
+	z0 = diskmax - 1;
+	p = buffer[diskmax];
+	q = buffer[diskmax+1];
+	r = buffer[diskmax+2];
+
+	for(d=0;d<size;d+=8) {
+		wr0 = wq0 = wp0 = *(uint32_t *)&buffer[z0][d+0*4];
+		wr1 = wq1 = wp1 = *(uint32_t *)&buffer[z0][d+1*4];
+		for (z=z0-1;z>= 0;--z) {
+			wd0 = *(uint32_t *)&buffer[z][d+0*4];
+			wd1 = *(uint32_t *)&buffer[z][d+1*4];
+
+			/* wp += wd */
+			wp0 ^= wd0;
+			wp1 ^= wd1;
+
+			/* w1 = wq * {02} */
+			w20 = MASK(wq0);
+			w21 = MASK(wq1);
+			w10 = SHLBYTE(wq0);
+			w11 = SHLBYTE(wq1);
+			w20 &= NBYTES(0x1d);
+			w21 &= NBYTES(0x1d);
+			w10 ^= w20;
+			w11 ^= w21;
+
+			/* wq = w1 + wd */
+			wq0 = w10 ^ wd0;
+			wq1 = w11 ^ wd1;
+
+			/* w1 = wr * {02} */
+			w20 = MASK(wr0);
+			w21 = MASK(wr1);
+			w10 = SHLBYTE(wr0);
+			w11 = SHLBYTE(wr1);
+			w20 &= NBYTES(0x1d);
+			w21 &= NBYTES(0x1d);
+			w10 ^= w20;
+			w11 ^= w21;
+
+			/* w1 = w1 * {02} */
+			w20 = MASK(w10);
+			w21 = MASK(w11);
+			w10 = SHLBYTE(w10);
+			w11 = SHLBYTE(w11);
+			w20 &= NBYTES(0x1d);
+			w21 &= NBYTES(0x1d);
+			w10 ^= w20;
+			w11 ^= w21;
+
+			/* wr = w1 + wd */
+			wr0 = w10 ^ wd0;
+			wr1 = w11 ^ wd1;
+		}
+		*(uint32_t *)&p[d+4*0] = wp0;
+		*(uint32_t *)&p[d+4*1] = wp1;
+		*(uint32_t *)&q[d+4*0] = wq0;
+		*(uint32_t *)&q[d+4*1] = wq1;
+		*(uint32_t *)&r[d+4*0] = wr0;
+		*(uint32_t *)&r[d+4*1] = wr1;
+	}
+}
+
+#if defined(__i386__) || defined(__x86_64__)
+/*
+ * RAIDTP unrolled-by-1 MMX implementation
+ */
+void raidTP_mmxr1(unsigned char** buffer, unsigned diskmax, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	int z, z0;
+	unsigned d;
+
+	z0 = diskmax - 1;
+	p = buffer[diskmax];
+	q = buffer[diskmax+1];
+	r = buffer[diskmax+2];
+
+	asm volatile("movq %0,%%mm7" : : "m" (raid6_mmx_constants.x1d));
+	asm volatile("pxor %mm4,%mm4");
+	asm volatile("pxor %mm5,%mm5");
+
+	for(d=0;d<size;d+=8) {
+		asm volatile("movq %0,%%mm0" : : "m" (buffer[z0][d])); /* P[0] */
+		asm volatile("movq %mm0,%mm1"); /* Q[0] */
+		asm volatile("movq %mm0,%mm2"); /* Q[0] */
+		for(z=z0-1;z>=0;--z) {
+			asm volatile("pcmpgtb %mm1,%mm4");
+			asm volatile("pcmpgtb %mm2,%mm5");
+			asm volatile("paddb %mm1,%mm1");
+			asm volatile("paddb %mm2,%mm2");
+			asm volatile("pand %mm7,%mm4");
+			asm volatile("pand %mm7,%mm5");
+			asm volatile("pxor %mm4,%mm1");
+			asm volatile("pxor %mm5,%mm2");
+			asm volatile("pcmpgtb %mm2,%mm6");
+			asm volatile("paddb %mm2,%mm2");
+			asm volatile("pand %mm7,%mm6");
+			asm volatile("pxor %mm6,%mm2");
+			asm volatile("movq %0,%%mm3" : : "m" (buffer[z][d]));
+			asm volatile("pxor %mm3,%mm0");
+			asm volatile("pxor %mm3,%mm1");
+			asm volatile("pxor %mm3,%mm2");
+			asm volatile("pxor %mm4,%mm4");
+			asm volatile("pxor %mm5,%mm5");
+			asm volatile("pxor %mm6,%mm6");
+		}
+		asm volatile("movq %%mm0,%0" : "=m" (p[d]));
+		asm volatile("movq %%mm1,%0" : "=m" (q[d]));
+		asm volatile("movq %%mm2,%0" : "=m" (r[d]));
+	}
+
+	asm volatile("emms" : : : "memory");
+}
+#endif
+
+#if defined(__i386__) || defined(__x86_64__)
+/*
+ * RAIDTP unrolled-by-1 SSE2 implementation
+ */
+void raidTP_sse2r1(unsigned char** buffer, unsigned diskmax, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	int z, z0;
+	unsigned d;
+
+	z0 = diskmax - 1;
+	p = buffer[diskmax];
+	q = buffer[diskmax+1];
+	r = buffer[diskmax+2];
+
+	asm volatile("movdqa %0,%%xmm7" : : "m" (raid6_sse_constants.x1d[0]));
+	asm volatile("pxor %xmm4,%xmm4");
+	asm volatile("pxor %xmm5,%xmm5");
+	asm volatile("pxor %xmm6,%xmm6");
+
+	for(d=0;d<size;d+=16) {
+		asm volatile("movdqa %0,%%xmm0" : : "m" (buffer[z0][d])); /* P[0] */
+		asm volatile("movdqa %xmm0,%xmm1"); /* Q[0] */
+		asm volatile("movdqa %xmm0,%xmm2"); /* R[0] */
+		for(z=z0-1;z>=0;--z) {
+			asm volatile("pcmpgtb %xmm1,%xmm4");
+			asm volatile("pcmpgtb %xmm2,%xmm5");
+			asm volatile("paddb %xmm1,%xmm1");
+			asm volatile("paddb %xmm2,%xmm2");
+			asm volatile("pand %xmm7,%xmm4");
+			asm volatile("pand %xmm7,%xmm5");
+			asm volatile("pxor %xmm4,%xmm1");
+			asm volatile("pxor %xmm5,%xmm2");
+			asm volatile("pcmpgtb %xmm2,%xmm6");
+			asm volatile("paddb %xmm2,%xmm2");
+			asm volatile("pand %xmm7,%xmm6");
+			asm volatile("pxor %xmm6,%xmm2");
+			asm volatile("movdqa %0,%%xmm3" : : "m" (buffer[z][d]));
+			asm volatile("pxor %xmm3,%xmm0");
+			asm volatile("pxor %xmm3,%xmm1");
+			asm volatile("pxor %xmm3,%xmm2");
+			asm volatile("pxor %xmm4,%xmm4");
+			asm volatile("pxor %xmm5,%xmm5");
+			asm volatile("pxor %xmm6,%xmm6");
+		}
+		asm volatile("movntdq %%xmm0,%0" : "=m" (p[d]));
+		asm volatile("movntdq %%xmm1,%0" : "=m" (q[d]));
+		asm volatile("movntdq %%xmm2,%0" : "=m" (r[d]));
+	}
+
+	asm volatile("sfence" : : : "memory");
+}
+#endif
+
+
+#if defined(__x86_64__)
+/*
+ * RAIDTP unrolled-by-2 SSE2 implementation
+ * Note that it uses all the 16 registers, meaning that x64 is required.
+ */
+void raidTP_sse2r2(unsigned char** buffer, unsigned diskmax, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	int z, z0;
+	unsigned d;
+
+	z0 = diskmax - 1;
+	p = buffer[diskmax];
+	q = buffer[diskmax+1];
+	r = buffer[diskmax+2];
+
+	asm volatile("movdqa %0,%%xmm7" : : "m" (raid6_sse_constants.x1d[0]));
+	asm volatile("pxor %xmm4,%xmm4");
+	asm volatile("pxor %xmm5,%xmm5");
+	asm volatile("pxor %xmm6,%xmm6");
+	asm volatile("pxor %xmm12,%xmm12");
+	asm volatile("pxor %xmm13,%xmm13");
+	asm volatile("pxor %xmm14,%xmm14");
+
+	for(d=0;d<size;d+=32) {
+		asm volatile("movdqa %0,%%xmm0" : : "m" (buffer[z0][d])); /* P[0] */
+		asm volatile("movdqa %0,%%xmm8" : : "m" (buffer[z0][d+16])); /* P[1] */
+		asm volatile("movdqa %xmm0,%xmm1"); /* Q[0] */
+		asm volatile("movdqa %xmm8,%xmm9"); /* Q[1] */
+		asm volatile("movdqa %xmm0,%xmm2"); /* R[0] */
+		asm volatile("movdqa %xmm8,%xmm10"); /* R[1] */
+		for(z=z0-1;z>=0;--z) {
+			asm volatile("pcmpgtb %xmm1,%xmm4");
+			asm volatile("pcmpgtb %xmm2,%xmm5");
+			asm volatile("pcmpgtb %xmm9,%xmm12");
+			asm volatile("pcmpgtb %xmm10,%xmm13");
+			asm volatile("paddb %xmm1,%xmm1");
+			asm volatile("paddb %xmm2,%xmm2");
+			asm volatile("paddb %xmm9,%xmm9");
+			asm volatile("paddb %xmm10,%xmm10");
+			asm volatile("pand %xmm7,%xmm4");
+			asm volatile("pand %xmm7,%xmm5");
+			asm volatile("pand %xmm7,%xmm12");
+			asm volatile("pand %xmm7,%xmm13");
+			asm volatile("pxor %xmm4,%xmm1");
+			asm volatile("pxor %xmm5,%xmm2");
+			asm volatile("pxor %xmm12,%xmm9");
+			asm volatile("pxor %xmm13,%xmm10");
+			asm volatile("pcmpgtb %xmm2,%xmm6");
+			asm volatile("pcmpgtb %xmm10,%xmm14");
+			asm volatile("paddb %xmm2,%xmm2");
+			asm volatile("paddb %xmm10,%xmm10");
+			asm volatile("pand %xmm7,%xmm6");
+			asm volatile("pand %xmm7,%xmm14");
+			asm volatile("pxor %xmm6,%xmm2");
+			asm volatile("pxor %xmm14,%xmm10");
+			asm volatile("movdqa %0,%%xmm3" : : "m" (buffer[z][d]));
+			asm volatile("movdqa %0,%%xmm11" : : "m" (buffer[z][d+16]));
+			asm volatile("pxor %xmm3,%xmm0");
+			asm volatile("pxor %xmm3,%xmm1");
+			asm volatile("pxor %xmm3,%xmm2");
+			asm volatile("pxor %xmm11,%xmm8");
+			asm volatile("pxor %xmm11,%xmm9");
+			asm volatile("pxor %xmm11,%xmm10");
+			asm volatile("pxor %xmm4,%xmm4");
+			asm volatile("pxor %xmm5,%xmm5");
+			asm volatile("pxor %xmm6,%xmm6");
+			asm volatile("pxor %xmm12,%xmm12");
+			asm volatile("pxor %xmm13,%xmm13");
+			asm volatile("pxor %xmm14,%xmm14");
+		}
+		asm volatile("movntdq %%xmm0,%0" : "=m" (p[d]));
+		asm volatile("movntdq %%xmm8,%0" : "=m" (p[d+16]));
+		asm volatile("movntdq %%xmm1,%0" : "=m" (q[d]));
+		asm volatile("movntdq %%xmm9,%0" : "=m" (q[d+16]));
+		asm volatile("movntdq %%xmm2,%0" : "=m" (r[d]));
+		asm volatile("movntdq %%xmm10,%0" : "=m" (r[d+16]));
+	}
+
+	asm volatile("sfence" : : : "memory");
+}
+#endif
+
+/****************************************************************************/
+/* generic computation */
+
+/* internal forwarder */
+static void (*raid5_gen)(unsigned char** buffer, unsigned diskmax, unsigned size);
+static void (*raid6_gen)(unsigned char** buffer, unsigned diskmax, unsigned size);
+static void (*raidTP_gen)(unsigned char** buffer, unsigned diskmax, unsigned size);
+
+void raid_gen(unsigned level, unsigned char** buffer, unsigned diskmax, unsigned size)
+{
+	switch (level) {
+	case 1 : raid5_gen(buffer, diskmax, size); break;
+	case 2 : raid6_gen(buffer, diskmax, size); break;
+	case 3 : raidTP_gen(buffer, diskmax, size); break;
+	}
+}
+
+/****************************************************************************/
+/* recovering */
+
+/**
+ * GF a*b.
+ */
+static inline unsigned char mul(unsigned char a, unsigned char b)
+{
+	return gfmul[a][b];
+}
+
+/**
+ * GF 1/a.
+ * Not defined for a == 0.
+ */
+static inline unsigned char inv(unsigned char a)
+{
+#ifdef CHECKER
+	if (a == 0) {
+		fprintf(stderr, "GF division by zero\n");
+		exit(EXIT_FAILURE);
+	}
+#endif
+	return gfinv[a];
+}
+
+/**
+ * GF 2^a.
+ * Not defined for a == 255.
+ */
+static inline unsigned char pow2(int v)
+{
+#ifdef CHECKER
+	if (v < 0 || v > 254) {
+		fprintf(stderr, "GF invalid exponent\n");
+		exit(EXIT_FAILURE);
+	}
+#endif
+	return gfexp2[v];
+}
+
+/**
+ * GF 4^a.
+ * Not defined for a == 255.
+ */
+static inline unsigned char pow4(int v)
+{
+#ifdef CHECKER
+	if (v < 0 || v > 254) {
+		fprintf(stderr, "GF invalid exponent\n");
+		exit(EXIT_FAILURE);
+	}
+#endif
+	return gfexp4[v];
+}
+
+/**
+ * GF multiplication table.
+ */
+static inline const unsigned char* table(unsigned char a)
+{
+	return gfmul[a];
+}
+
 void raid5_recov_data(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila)
 {
-	unsigned char *p, *d;
+	unsigned char* p;
+	unsigned char* dp;
 
-	d = dptrs[faila];
+	dp = dptrs[faila];
 	p = dptrs[diskmax];
 
-	/* Compute syndrome using parity for the missing data page. */
+	/* compute syndrome using parity for the missing data page */
 	dptrs[faila] = p;
-	dptrs[diskmax] = d;
+	dptrs[diskmax] = dp;
 
 	raid5_gen(dptrs, diskmax, size);
 
-	/* Restore pointer table */
-	dptrs[faila] = d;
+	/* restore pointers */
+	dptrs[faila] = dp;
 	dptrs[diskmax] = p;
 }
 
 void raid6_recov_2data(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, int failb, unsigned char* zero)
 {
-	unsigned char *p, *q, *dp, *dq;
-	unsigned char px, qx, db;
-	const unsigned char *pbmul; /* P multiplier table for B data */
-	const unsigned char *qmul; /* Q multiplier table (for both) */
+	unsigned char* p;
+	unsigned char* dp;
+	unsigned char* q;
+	unsigned char* dq;
+	const unsigned char* pamul; /* P multipler to compute A */
+	const unsigned char* qamul; /* Q multipler to compute A */
 
 	p = dptrs[diskmax];
 	q = dptrs[diskmax+1];
 
-	/* Compute syndrome with zero for the missing data pages. */
-	/* Use the dead data pages as temporary storage for delta p and delta q. */
+	/* compute syndrome with zero for the missing data pages */
+	/* use the dead data pages as temporary storage for delta p and delta q. */
 	dp = dptrs[faila];
 	dptrs[faila] = zero;
 	dptrs[diskmax] = dp;
@@ -561,83 +916,367 @@ void raid6_recov_2data(unsigned char** dptrs, unsigned diskmax, unsigned size, i
 
 	raid6_gen(dptrs, diskmax, size);
 
-	/* Restore pointer table */
+	/* restore pointers */
 	dptrs[faila] = dp;
 	dptrs[failb] = dq;
 	dptrs[diskmax] = p;
 	dptrs[diskmax+1] = q;
 
-	/* Now, pick the proper data tables */
-	pbmul = raid6_gfmul[raid6_gfexi[failb-faila]];
-	qmul = raid6_gfmul[raid6_gfinv[raid6_gfexp[faila]^raid6_gfexp[failb]]];
+	/* select tables */
+	pamul = table( inv(pow2(failb-faila) ^ 1) );
+	qamul = table( inv(pow2(faila) ^ pow2(failb)) );
 
-	/* Now do it... */
 	while (size--) {
-		px = *p ^ *dp;
-		qx = qmul[*q ^ *dq];
-		*dq++ = db = pbmul[px] ^ qx; /* Reconstructed B */
-		*dp++ = db ^ px; /* Reconstructed A */
-		p++;
-		q++;
+		/* delta */
+		unsigned char pd = *p ^ *dp;
+		unsigned char qd = *q ^ *dq;
+
+		/* addends to reconstruct A */
+		unsigned char pm = pamul[pd];
+		unsigned char qm = qamul[qd];
+
+		/* reconstruct B */
+		unsigned char b = pm ^ qm;
+
+		/* reconstruct A */
+		unsigned char a = pd ^ b;
+
+		/* set */
+		*dp = a;
+		*dq = b;
+
+		++p;
+		++dp;
+		++q;
+		++dq;
 	}
 }
 
 void raid6_recov_datap(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, unsigned char* zero)
 {
-	unsigned char *p, *q, *dq;
-	const unsigned char* qmul; /* Q multiplier table */
+	unsigned char* q;
+	unsigned char* dq;
+	const unsigned char* qamul; /* Q multipler to compute A */
 
-	p = dptrs[diskmax];
 	q = dptrs[diskmax+1];
 
-	/* Compute syndrome with zero for the missing data page. */
-	/* Use the dead data page as temporary storage for delta q. */
+	/* compute syndrome with zero for the missing data page */
+	/* use the dead data page as temporary storage for delta q */
 	dq = dptrs[faila];
 	dptrs[faila] = zero;
 	dptrs[diskmax+1] = dq;
 
 	raid6_gen(dptrs, diskmax, size);
 
-	/* Restore pointer table */
+	/* restore pointers */
 	dptrs[faila] = dq;
 	dptrs[diskmax+1] = q;
 
-	/* Now, pick the proper data tables */
-	qmul = raid6_gfmul[raid6_gfinv[raid6_gfexp[faila]]];
+	/* select tables */
+	qamul = table( inv(pow2(faila)) );
 
-	/* Now do it... */
 	while (size--) {
-		*p++ ^= *dq = qmul[*q ^ *dq];
-		q++;
-		dq++;
+		/* delta */
+		unsigned char qd = *q ^ *dq;
+
+		/* addends to reconstruct A */
+		unsigned char qm = qamul[qd];
+
+		/* reconstruct A */
+		unsigned char a = qm;
+
+		/* set */
+		*dq = a;
+
+		++q;
+		++dq;
 	}
 }
 
-void raid_gen(unsigned level, unsigned char** buffer, unsigned diskmax, unsigned size)
+void raidTP_recov_datapq(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, unsigned char* zero)
 {
-	if (level == 1) {
-		raid5_gen(buffer, diskmax, size);
-	} else {
-		raid6_gen(buffer, diskmax, size);
+	unsigned char* r;
+	unsigned char* dr;
+	const unsigned char* ramul; /* R multiplier to compute A */
+
+	r = dptrs[diskmax+2];
+
+	/* compute syndrome with zero for the missing data page */
+	/* use the dead data page as temporary storage for delta r */
+	dr = dptrs[faila];
+	dptrs[faila] = zero;
+	dptrs[diskmax+2] = dr;
+
+	raidTP_gen(dptrs, diskmax, size);
+
+	/* restore pointers */
+	dptrs[faila] = dr;
+	dptrs[diskmax+2] = r;
+
+	/* select tables */
+	ramul = table( inv(pow4(faila)) );
+
+	while (size--) {
+		/* delta */
+		unsigned char rd = *r ^ *dr;
+
+		/* addends to reconstruct A */
+		unsigned char rm = ramul[rd];
+
+		/* reconstruct A */
+		unsigned char a = rm;
+
+		/* set */
+		*dr = a;
+
+		++r;
+		++dr;
 	}
 }
+
+void raidTP_recov_2dataq(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, int failb, unsigned char* zero)
+{
+	unsigned char* p;
+	unsigned char* dp;
+	unsigned char* r;
+	unsigned char* dr;
+	const unsigned char* pbmul; /* Q multipler to compute B */
+	const unsigned char* rbmul; /* R multipler to compute B */
+	unsigned char denominator;
+
+	p = dptrs[diskmax];
+	r = dptrs[diskmax+2];
+
+	/* compute syndrome with zero for the missing data page */
+	/* use the dead data page as temporary storage for delta p and r */
+	dp = dptrs[faila];
+	dr = dptrs[failb];
+	dptrs[faila] = zero;
+	dptrs[failb] = zero;
+	dptrs[diskmax] = dp;
+	dptrs[diskmax+2] = dr;
+
+	raidTP_gen(dptrs, diskmax, size);
+
+	/* restore pointers */
+	dptrs[faila] = dp;
+	dptrs[failb] = dr;
+	dptrs[diskmax] = p;
+	dptrs[diskmax+2] = r;
+
+	/* select tables */
+	denominator = pow4(failb-faila) ^ 1;
+	pbmul = table( inv(denominator) );
+	rbmul = table( inv(mul(denominator, pow4(faila))) );
+
+	while (size--) {
+		/* delta */
+		unsigned char pd = *p ^ *dp;
+		unsigned char rd = *r ^ *dr;
+
+		/* addends to reconstruct B */
+		unsigned char pbm = pbmul[pd];
+		unsigned char rbm = rbmul[rd];
+
+		/* reconstruct B */
+		unsigned char b = pbm ^ rbm;
+
+		/* reconstruct A */
+		unsigned char a = pd ^ b;
+
+		/* set */
+		*dp = a;
+		*dr = b;
+
+		++p;
+		++dp;
+		++r;
+		++dr;
+	}
+}
+
+void raidTP_recov_2datap(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, int failb, unsigned char* zero)
+{
+	unsigned char* q;
+	unsigned char* dq;
+	unsigned char* r;
+	unsigned char* dr;
+	const unsigned char* qbmul; /* Q multipler to compute B */
+	const unsigned char* rbmul; /* R multipler to compute B */
+	const unsigned char* qamul; /* Q multipler to compute A */
+	const unsigned char* bamul; /* B multipler to compute A */
+	unsigned char denominator;
+
+	q = dptrs[diskmax+1];
+	r = dptrs[diskmax+2];
+
+	/* compute syndrome with zero for the missing data page */
+	/* use the dead data page as temporary storage for delta q and r */
+	dq = dptrs[faila];
+	dr = dptrs[failb];
+	dptrs[faila] = zero;
+	dptrs[failb] = zero;
+	dptrs[diskmax+1] = dq;
+	dptrs[diskmax+2] = dr;
+
+	raidTP_gen(dptrs, diskmax, size);
+
+	/* restore pointers */
+	dptrs[faila] = dq;
+	dptrs[failb] = dr;
+	dptrs[diskmax+1] = q;
+	dptrs[diskmax+2] = r;
+
+	/* select tables */
+	denominator = pow2(failb-faila) ^ pow4(failb-faila);
+	qbmul = table( inv(mul(denominator, pow2(faila))) );
+	rbmul = table( inv(mul(denominator, pow4(faila))) );
+	qamul = table( inv(pow2(faila)) );
+	bamul = table( pow2(failb-faila) );
+
+	while (size--) {
+		/* delta */
+		unsigned char qd = *q ^ *dq;
+		unsigned char rd = *r ^ *dr;
+
+		/* addends to reconstruct B */
+		unsigned char qbm = qbmul[qd];
+		unsigned char rbm = rbmul[rd];
+
+		/* reconstruct B */
+		unsigned char b = qbm ^ rbm;
+
+		/* addends to reconstruct A */
+		unsigned char qam = qamul[qd];
+		unsigned char bam = bamul[b];
+
+		/* reconstruct A */
+		unsigned char a = qam ^ bam;
+
+		/* set */
+		*dq = a;
+		*dr = b;
+
+		++q;
+		++dq;
+		++r;
+		++dr;
+	}
+}
+
+void raidTP_recov_3data(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, int failb, int failc, unsigned char* zero)
+{
+	unsigned char* p;
+	unsigned char* dp;
+	unsigned char* q;
+	unsigned char* dq;
+	unsigned char* r;
+	unsigned char* dr;
+	const unsigned char* pcmul; /* P multipler to compute C */
+	const unsigned char* qcmul; /* Q multipler to compute C */
+	const unsigned char* rcmul; /* R multipler to compute C */
+	const unsigned char* pbmul; /* P multipler to compute B */
+	const unsigned char* qbmul; /* Q multipler to compute B */
+	const unsigned char* cbmul; /* C multipler to compute B */
+	unsigned char denominator;
+
+	p = dptrs[diskmax];
+	q = dptrs[diskmax+1];
+	r = dptrs[diskmax+2];
+
+	/* compute syndrome with zero for the missing data page */
+	/* use the dead data page as temporary storage for delta p, q and r */
+	dp = dptrs[faila];
+	dq = dptrs[failb];
+	dr = dptrs[failc];
+	dptrs[faila] = zero;
+	dptrs[failb] = zero;
+	dptrs[failc] = zero;
+	dptrs[diskmax] = dp;
+	dptrs[diskmax+1] = dq;
+	dptrs[diskmax+2] = dr;
+
+	raidTP_gen(dptrs, diskmax, size);
+
+	/* restore pointers */
+	dptrs[faila] = dp;
+	dptrs[failb] = dq;
+	dptrs[failc] = dr;
+	dptrs[diskmax] = p;
+	dptrs[diskmax+1] = q;
+	dptrs[diskmax+2] = r;
+
+	/* select tables */
+	denominator = mul(pow2(failc-faila) ^ 1, inv(pow2(failb-faila) ^ 1)) ^ mul(pow4(failc-faila) ^ 1, inv(pow4(failb-faila) ^ 1));
+	pcmul = table( inv(mul(denominator, pow2(failb-faila) ^ 1)) ^ inv(mul(denominator, pow4(failb-faila) ^ 1)) );
+	qcmul = table( inv(mul(mul(denominator, pow2(failb-faila) ^ 1), pow2(faila))) );
+	rcmul = table( inv(mul(mul(denominator, pow4(failb-faila) ^ 1), pow4(faila))) );
+	pbmul = table( inv(pow2(failb-faila) ^ 1) );
+	qbmul = table( inv(mul(pow2(faila), pow2(failb-faila) ^ 1)) );
+	cbmul = table( mul(pow2(failc-faila) ^ 1, inv(pow2(failb-faila) ^ 1)) );
+
+	while (size--) {
+		/* delta */
+		unsigned char pd = *p ^ *dp;
+		unsigned char qd = *q ^ *dq;
+		unsigned char rd = *r ^ *dr;
+
+		/* addends to reconstruct C */
+		unsigned char pcm = pcmul[pd];
+		unsigned char qcm = qcmul[qd];
+		unsigned char rcm = rcmul[rd];
+
+		/* reconstruct C */
+		unsigned char c = pcm ^ qcm ^ rcm;
+
+		/* addends to reconstruct B */
+		unsigned char pbm = pbmul[pd];
+		unsigned char qbm = qbmul[qd];
+		unsigned char cbm = cbmul[c];
+
+		/* reconstruct B */
+		unsigned char b = pbm ^ qbm ^ cbm;
+
+		/* reconstruct A */
+		unsigned char a = pd ^ b ^ c;
+
+		/* set */
+		*dp = a;
+		*dq = b;
+		*dr = c;
+
+		++p;
+		++dp;
+		++q;
+		++dq;
+		++r;
+		++dr;
+	}
+}
+
+/****************************************************************************/
+/* init/done */
 
 void raid_init(void)
 {
 	raid5_gen = raid5_int32r2;
 	raid6_gen = raid6_int32r2;
+	raidTP_gen = raidTP_int32r2;
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_mmx()) {
 		raid5_gen = raid5_mmxr4;
 		raid6_gen = raid6_mmxr2;
+		raidTP_gen = raidTP_mmxr1;
 	}
 	if (cpu_has_sse2()) {
 #if defined(__x86_64__)
 		raid5_gen = raid5_sse2r8;
 		raid6_gen = raid6_sse2r4;
+		raidTP_gen = raidTP_sse2r2;
 #else
 		raid5_gen = raid5_sse2r4;
 		raid6_gen = raid6_sse2r2;
+		raidTP_gen = raidTP_sse2r1;
 #endif
 	}
 #endif

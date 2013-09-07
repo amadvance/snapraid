@@ -151,7 +151,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 		/* copy the redundancy to use */
 		memcpy(buffer[diskmax+1], buffer_qarity, state->block_size);
 
-		/* recover both data and p */
+		/* recover data */
 		raid6_recov_datap(buffer, diskmax, state->block_size, failed[failed_map[0]].index, buffer_zero);
 
 		hash_checked = 0; /* keep track if we check at least one block */
@@ -181,8 +181,11 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 		/* copy the redundancy to use */
 		memcpy(buffer[diskmax+1], buffer_qarity, state->block_size);
 
-		/* recover both data and p */
+		/* recover data */
 		raid6_recov_datap(buffer, diskmax, state->block_size, failed[failed_map[0]].index, buffer_zero);
+
+		/* recompute parity with RAID5 to get p from it */
+		raid_gen(1, buffer, diskmax, state->block_size);
 
 		/* if the recovered parity block matches */
 		if (memcmp(buffer[diskmax], buffer_parity, state->block_size) == 0) {

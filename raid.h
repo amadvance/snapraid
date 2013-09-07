@@ -37,9 +37,33 @@ void raid5_recov_data(unsigned char** dptrs, unsigned diskmax, unsigned size, in
 void raid6_recov_2data(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, int failb, unsigned char* zero);
 
 /*
- * Recover failure of one data block plus the P block.
+ * Recover failure of one data block ignoring P.
+ * Note that P content is not recovered.
  */
 void raid6_recov_datap(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, unsigned char* zero);
+
+/*
+ * Recover failure of one data block ignoring P and Q.
+ * Note that P and Q content is not recovered.
+ */
+void raidTP_recov_datapq(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, unsigned char* zero);
+
+/*
+ * Recover failure of two data blocks ignoring P.
+ * Note that P content is not recovered.
+ */
+void raidTP_recov_2datap(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, int failb, unsigned char* zero);
+
+/*
+ * Recover failure of two data blocks ignoring Q.
+ * Note that Q content is not recovered.
+ */
+void raidTP_recov_2dataq(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, int failb, unsigned char* zero);
+
+/*
+ * Recover failure of three data blocks.
+ */
+void raidTP_recov_3data(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, int failb, int failc, unsigned char* zero);
 
 /**
  * Initializes the RAID system.
@@ -59,6 +83,10 @@ void raid6_int32r2(unsigned char** dptr, unsigned diskmax, unsigned size);
 void raid6_mmxr2(unsigned char** dptr, unsigned diskmax, unsigned size);
 void raid6_sse2r2(unsigned char** dptr, unsigned diskmax, unsigned size);
 void raid6_sse2r4(unsigned char** buffer, unsigned diskmax, unsigned size);
+void raidTP_int32r2(unsigned char** dptr, unsigned diskmax, unsigned size);
+void raidTP_mmxr1(unsigned char** buffer, unsigned diskmax, unsigned size);
+void raidTP_sse2r1(unsigned char** dptr, unsigned diskmax, unsigned size);
+void raidTP_sse2r2(unsigned char** dptr, unsigned diskmax, unsigned size);
 
 #endif
 

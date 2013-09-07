@@ -47,7 +47,7 @@ static void raid5test(unsigned diskmax, unsigned block_size)
 {
 	void* buffer_alloc;
 	unsigned char** buffer;
-	unsigned char* buffer_save;
+	unsigned char* buffer_test;
 	unsigned buffermax;
 	unsigned i, j;
 
@@ -55,7 +55,7 @@ static void raid5test(unsigned diskmax, unsigned block_size)
 
 	buffer = malloc_nofail_vector_align(buffermax, block_size, &buffer_alloc);
 
-	buffer_save = buffer[buffermax-1];
+	buffer_test = buffer[buffermax-1];
 
 	/* fill with random */
 	for(i=0;i<diskmax;++i) {
@@ -63,20 +63,26 @@ static void raid5test(unsigned diskmax, unsigned block_size)
 			buffer[i][j] = rand();
 	}
 
+	/* compute the parity */
 	raid_gen(1, buffer, diskmax, block_size);
 
 	for(i=0;i<diskmax;++i) {
-		/* save the correct one */
-		memcpy(buffer_save, buffer[i], block_size);
+		unsigned char* a;
 
-		/* destroy it */
-		memset(buffer[i], 0x55, block_size);
+		/* save */
+		a = buffer[i];
+
+		/* damage */
+		buffer[i] = buffer_test;
 
 		/* recover */
 		raid5_recov_data(buffer, diskmax, block_size, i);
 
+		/* restore */
+		buffer[i] = a;
+
 		/* check */
-		if (memcmp(buffer_save, buffer[i], block_size) != 0) {
+		if (memcmp(buffer_test, buffer[i], block_size) != 0) {
 			fprintf(stderr, "Failed RAID5 test\n");
 			exit(EXIT_FAILURE);
 		}
@@ -90,20 +96,23 @@ static void raid6test(unsigned diskmax, unsigned block_size)
 {
 	void* buffer_alloc;
 	unsigned char** buffer;
-	unsigned char* buffer_save0;
-	unsigned char* buffer_save1;
+	unsigned char* buffer_test0;
+	unsigned char* buffer_test1;
 	unsigned char* buffer_zero;
+	unsigned char* buffer_bad;
 	unsigned buffermax;
 	unsigned i, j;
 
-	buffermax = diskmax + 2 + 2 + 1;
+	buffermax = diskmax + 2 + 2 + 1 + 1;
 
 	buffer = malloc_nofail_vector_align(buffermax, block_size, &buffer_alloc);
 
-	buffer_save0 = buffer[buffermax-3];
-	buffer_save1 = buffer[buffermax-2];
-	buffer_zero = buffer[buffermax-1];
+	buffer_test0 = buffer[buffermax-4];
+	buffer_test1 = buffer[buffermax-3];
+	buffer_zero = buffer[buffermax-2];
+	buffer_bad = buffer[buffermax-1];
 	memset(buffer_zero, 0, block_size);
+	memset(buffer_bad, 0xA5, block_size);
 
 	/* fill with random */
 	for(i=0;i<diskmax;++i) {
@@ -111,25 +120,33 @@ static void raid6test(unsigned diskmax, unsigned block_size)
 			buffer[i][j] = rand();
 	}
 
+	/* compute the parity */
 	raid_gen(2, buffer, diskmax, block_size);
 
 	/* check 2data */
 	for(i=0;i<diskmax;++i) {
 		for(j=i+1;j<diskmax;++j) {
-			/* save the correct ones */
-			memcpy(buffer_save0, buffer[i], block_size);
-			memcpy(buffer_save1, buffer[j], block_size);
+			unsigned char* a;
+			unsigned char* b;
 
-			/* destroy it */
-			memset(buffer[i], 0x55, block_size);
-			memset(buffer[j], 0x55, block_size);
+			/* save */
+			a = buffer[i];
+			b = buffer[j];
+
+			/* damage */
+			buffer[i] = buffer_test0;
+			buffer[j] = buffer_test1;
 
 			/* recover */
 			raid6_recov_2data(buffer, diskmax, block_size, i, j, buffer_zero);
 
+			/* restore */
+			buffer[i] = a;
+			buffer[j] = b;
+
 			/* check */
-			if (memcmp(buffer_save0, buffer[i], block_size) != 0
-				|| memcmp(buffer_save1, buffer[j], block_size) != 0
+			if (memcmp(buffer_test0, buffer[i], block_size) != 0
+				|| memcmp(buffer_test1, buffer[j], block_size) != 0
 			) {
 				fprintf(stderr, "Failed RAID6 test\n");
 				exit(EXIT_FAILURE);
@@ -139,25 +156,216 @@ static void raid6test(unsigned diskmax, unsigned block_size)
 
 	/* check datap */
 	for(i=0;i<diskmax;++i) {
-		/* the other is the parity */
+		unsigned char* a;
+		unsigned char* p;
+
+		/* other is p */
 		j = diskmax;
 
-		/* save the correct ones */
-		memcpy(buffer_save0, buffer[i], block_size);
-		memcpy(buffer_save1, buffer[j], block_size);
+		/* save */
+		a = buffer[i];
+		p = buffer[j];
 
-		/* destroy it */
-		memset(buffer[i], 0x55, block_size);
-		memset(buffer[j], 0x55, block_size);
+		/* damage */
+		buffer[i] = buffer_test0;
+		buffer[j] = buffer_bad;
 
 		/* recover */
 		raid6_recov_datap(buffer, diskmax, block_size, i, buffer_zero);
 
+		/* restore */
+		buffer[i] = a;
+		buffer[j] = p;
+
 		/* check */
-		if (memcmp(buffer_save0, buffer[i], block_size) != 0
-			|| memcmp(buffer_save1, buffer[j], block_size) != 0
-		) {
+		if (memcmp(buffer_test0, buffer[i], block_size) != 0) {
 			fprintf(stderr, "Failed RAID6 test\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	free(buffer_alloc);
+	free(buffer);
+}
+
+static void raidTPtest(unsigned diskmax, unsigned block_size)
+{
+	void* buffer_alloc;
+	unsigned char** buffer;
+	unsigned char* buffer_test0;
+	unsigned char* buffer_test1;
+	unsigned char* buffer_test2;
+	unsigned char* buffer_zero;
+	unsigned char* buffer_bad;
+	unsigned buffermax;
+	unsigned i, j, k;
+
+	buffermax = diskmax + 3 + 3 + 1 + 1;
+
+	buffer = malloc_nofail_vector_align(buffermax, block_size, &buffer_alloc);
+
+	buffer_test0 = buffer[buffermax-5];
+	buffer_test1 = buffer[buffermax-4];
+	buffer_test2 = buffer[buffermax-3];
+	buffer_zero = buffer[buffermax-2];
+	buffer_bad = buffer[buffermax-1];
+	memset(buffer_zero, 0, block_size);
+	memset(buffer_bad, 0xA5, block_size);
+
+	/* fill with random */
+	for(i=0;i<diskmax;++i) {
+		for(j=0;j<block_size;++j)
+			buffer[i][j] = rand();
+	}
+
+	/* compute the parity */
+	raid_gen(3, buffer, diskmax, block_size);
+
+	/* check 3data */
+	for(i=0;i<diskmax;++i) {
+		for(j=i+1;j<diskmax;++j) {
+			for(k=j+1;k<diskmax;++k) {
+				unsigned char* a;
+				unsigned char* b;
+				unsigned char* c;
+
+				/* save */
+				a = buffer[i];
+				b = buffer[j];
+				c = buffer[k];
+
+				/* damage */
+				buffer[i] = buffer_test0;
+				buffer[j] = buffer_test1;
+				buffer[k] = buffer_test2;
+
+				/* recover */
+				raidTP_recov_3data(buffer, diskmax, block_size, i, j, k, buffer_zero);
+
+				/* restore */
+				buffer[i] = a;
+				buffer[j] = b;
+				buffer[k] = c;
+
+				/* check */
+				if (memcmp(buffer_test0, buffer[i], block_size) != 0
+					|| memcmp(buffer_test1, buffer[j], block_size) != 0
+					|| memcmp(buffer_test2, buffer[k], block_size) != 0
+				) {
+					fprintf(stderr, "Failed RAIDTP test\n");
+					exit(EXIT_FAILURE);
+				}
+			}
+		}
+	}
+
+	/* check 2dataq */
+	for(i=0;i<diskmax;++i) {
+		for(j=i+1;j<diskmax;++j) {
+			unsigned char* a;
+			unsigned char* b;
+			unsigned char* q;
+
+			/* other is q */
+			k = diskmax + 1;
+
+			/* save */
+			a = buffer[i];
+			b = buffer[j];
+			q = buffer[k];
+
+			/* damage */
+			buffer[i] = buffer_test0;
+			buffer[j] = buffer_test1;
+			buffer[k] = buffer_bad;
+
+			/* recover */
+			raidTP_recov_2dataq(buffer, diskmax, block_size, i, j, buffer_zero);
+
+			/* restore */
+			buffer[i] = a;
+			buffer[j] = b;
+			buffer[k] = q;
+
+			/* check */
+			if (memcmp(buffer_test0, buffer[i], block_size) != 0
+				|| memcmp(buffer_test1, buffer[j], block_size) != 0
+			) {
+				fprintf(stderr, "Failed RAIDTP test\n");
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
+
+	/* check 2datap */
+	for(i=0;i<diskmax;++i) {
+		for(j=i+1;j<diskmax;++j) {
+			unsigned char* a;
+			unsigned char* b;
+			unsigned char* p;
+
+			/* other is p */
+			k = diskmax;
+
+			/* save */
+			a = buffer[i];
+			b = buffer[j];
+			p = buffer[k];
+
+			/* damage */
+			buffer[i] = buffer_test0;
+			buffer[j] = buffer_test1;
+			buffer[k] = buffer_bad;
+
+			/* recover */
+			raidTP_recov_2datap(buffer, diskmax, block_size, i, j, buffer_zero);
+
+			/* restore */
+			buffer[i] = a;
+			buffer[j] = b;
+			buffer[k] = p;
+
+			/* check */
+			if (memcmp(buffer_test0, buffer[i], block_size) != 0
+				|| memcmp(buffer_test1, buffer[j], block_size) != 0
+			) {
+				fprintf(stderr, "Failed RAIDTP test\n");
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
+
+	/* check datapq */
+	for(i=0;i<diskmax;++i) {
+		unsigned char* a;
+		unsigned char* p;
+		unsigned char* q;
+
+		/* others are p,q */
+		j = diskmax;
+		k = diskmax + 1;
+
+		/* save */
+		a = buffer[i];
+		p = buffer[j];
+		q = buffer[k];
+
+		/* damage */
+		buffer[i] = buffer_test0;
+		buffer[j] = buffer_bad;
+		buffer[k] = buffer_bad;
+
+		/* recover */
+		raidTP_recov_datapq(buffer, diskmax, block_size, i, buffer_zero);
+
+		/* restore */
+		buffer[i] = a;
+		buffer[j] = p;
+		buffer[k] = q;
+
+		/* check */
+		if (memcmp(buffer_test0, buffer[i], block_size) != 0) {
+			fprintf(stderr, "Failed RAIDTP test\n");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -201,7 +409,7 @@ static void hashtest(void)
 		memcpy(buffer_aligned, TEST_MURMUR3[i].data, TEST_MURMUR3[i].len);
 		memhash(HASH_MURMUR3, seed_aligned, digest, buffer_aligned, TEST_MURMUR3[i].len);
 		if (memcmp(digest, TEST_MURMUR3[i].digest, HASH_SIZE) != 0) {
-			fprintf(stderr, "Failed Murmur3 test vector\n");
+			fprintf(stderr, "Failed Murmur3 test\n");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -211,7 +419,7 @@ static void hashtest(void)
 		memcpy(buffer_aligned, TEST_SPOOKY2[i].data, TEST_SPOOKY2[i].len);
 		memhash(HASH_SPOOKY2, seed_aligned, digest, buffer_aligned, TEST_SPOOKY2[i].len);
 		if (memcmp(digest, TEST_SPOOKY2[i].digest, HASH_SIZE) != 0) {
-			fprintf(stderr, "Failed Spooky2 test vector %u\n", i);
+			fprintf(stderr, "Failed Spooky2 test\n");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -258,7 +466,7 @@ static void crc32ctest(void)
 		uint32_t digest;
 		digest = crc32c(0, (const unsigned char*)TEST_CRC32C[i].data, TEST_CRC32C[i].len);
 		if (digest != TEST_CRC32C[i].digest) {
-			fprintf(stderr, "Failed CRC32C test vector %u\n", i);
+			fprintf(stderr, "Failed CRC32C test\n");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -266,8 +474,6 @@ static void crc32ctest(void)
 
 void selftest(int gui)
 {
-	unsigned i;
-
 	if (gui) {
 		fprintf(stdlog, "selftest:\n");
 		fflush(stdlog);
@@ -283,10 +489,8 @@ void selftest(int gui)
 
 	hashtest();
 	crc32ctest();
-
-	for(i=1;i<=33;++i) {
-		raid5test(i, 2048);
-		raid6test(i, 2048);
-	}
+	raid5test(33, 2048);
+	raid6test(33, 2048);
+	raidTPtest(33, 2048);
 }
 
