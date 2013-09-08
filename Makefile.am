@@ -229,7 +229,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid5.conf check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-self -c $(srcdir)/test-raid6.conf sync
-	echo --- Delete some files and create some new, sync and check in multiple steps
+	echo --- Delete some files and create some new, sync and check in multiple steps using text content
 	rm test/disk1/4*
 	rm test/disk2/5*
 	rm test/disk3/6*
