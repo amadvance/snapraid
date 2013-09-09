@@ -41,8 +41,7 @@ unsigned char gfmul(unsigned char a, unsigned char b)
 
 int main(void)
 {
-	unsigned char pow2[256];
-	unsigned char log2[256];
+	unsigned char gfinv[256];
 	unsigned char v;
 	int i, j;
 
@@ -54,7 +53,10 @@ int main(void)
 		for(j=0;j<256;++j) {
 			if (j % 8 == 0)
 				printf("\t\t");
-			printf("0x%02x,", gfmul(i, j));
+			v = gfmul(i, j);
+			if (v == 1)
+				gfinv[i] = j;
+			printf("0x%02x,", (unsigned)v);
 			if (j % 8 == 7)
 				printf("\n");
 			else
@@ -71,8 +73,6 @@ int main(void)
 	for(i=0;i<256;++i) {
 		if (i % 8 == 0)
 			printf("\t");
-		pow2[i] = v;
-		log2[pow2[i]] = i;
 		printf("0x%02x,", v);
 		v = gfmul(v, 2);
 		if (i % 8 == 7)
@@ -108,7 +108,7 @@ int main(void)
 		if (i == 0)
 			v = 0;
 		else
-			v = pow2[255 - log2[i]];
+			v = gfinv[i];
 		printf("0x%02x,", v);
 		if (i % 8 == 7)
 			printf("\n");
