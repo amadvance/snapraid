@@ -1042,7 +1042,7 @@ void raidTP_recov_2dataq(unsigned char** dptrs, unsigned diskmax, unsigned size,
 	unsigned char* dr;
 	const unsigned char* pbmul; /* Q multiplier to compute B */
 	const unsigned char* rbmul; /* R multiplier to compute B */
-	unsigned char denominator;
+	unsigned char c1;
 
 	p = dptrs[diskmax];
 	r = dptrs[diskmax+2];
@@ -1065,9 +1065,9 @@ void raidTP_recov_2dataq(unsigned char** dptrs, unsigned diskmax, unsigned size,
 	dptrs[diskmax+2] = r;
 
 	/* select tables */
-	denominator = pow4(failb-faila) ^ 1;
-	pbmul = table( inv(denominator) );
-	rbmul = table( inv(mul(denominator, pow4(faila))) );
+	c1 = inv(pow4(failb-faila) ^ 1);
+	pbmul = table( c1 );
+	rbmul = table( mul(c1, inv(pow4(faila))) );
 
 	while (size--) {
 		/* delta */
@@ -1105,7 +1105,7 @@ void raidTP_recov_2datap(unsigned char** dptrs, unsigned diskmax, unsigned size,
 	const unsigned char* rbmul; /* R multiplier to compute B */
 	const unsigned char* qamul; /* Q multiplier to compute A */
 	const unsigned char* bamul; /* B multiplier to compute A */
-	unsigned char denominator;
+	unsigned char c1;
 
 	q = dptrs[diskmax+1];
 	r = dptrs[diskmax+2];
@@ -1128,9 +1128,9 @@ void raidTP_recov_2datap(unsigned char** dptrs, unsigned diskmax, unsigned size,
 	dptrs[diskmax+2] = r;
 
 	/* select tables */
-	denominator = pow2(failb-faila) ^ pow4(failb-faila);
-	qbmul = table( inv(mul(denominator, pow2(faila))) );
-	rbmul = table( inv(mul(denominator, pow4(faila))) );
+	c1 = inv(pow2(failb-faila) ^ pow4(failb-faila));
+	qbmul = table( mul(c1, inv(pow2(faila))) );
+	rbmul = table( mul(c1, inv(pow4(faila))) );
 	qamul = table( inv(pow2(faila)) );
 	bamul = table( pow2(failb-faila) );
 
@@ -1178,7 +1178,7 @@ void raidTP_recov_3data(unsigned char** dptrs, unsigned diskmax, unsigned size, 
 	const unsigned char* pbmul; /* P multiplier to compute B */
 	const unsigned char* qbmul; /* Q multiplier to compute B */
 	const unsigned char* cbmul; /* C multiplier to compute B */
-	unsigned char denominator;
+	unsigned char c1, c2, c3;
 
 	p = dptrs[diskmax];
 	q = dptrs[diskmax+1];
@@ -1207,13 +1207,15 @@ void raidTP_recov_3data(unsigned char** dptrs, unsigned diskmax, unsigned size, 
 	dptrs[diskmax+2] = r;
 
 	/* select tables */
-	denominator = mul(pow2(failc-faila) ^ 1, inv(pow2(failb-faila) ^ 1)) ^ mul(pow4(failc-faila) ^ 1, inv(pow4(failb-faila) ^ 1));
-	pcmul = table( inv(mul(denominator, pow2(failb-faila) ^ 1)) ^ inv(mul(denominator, pow4(failb-faila) ^ 1)) );
-	qcmul = table( inv(mul(denominator, pow2(failb) ^ pow2(faila))) );
-	rcmul = table( inv(mul(denominator, pow4(failb) ^ pow4(faila))) );
-	pbmul = table( inv(pow2(failb-faila) ^ 1) );
-	qbmul = table( inv(pow2(failb) ^ pow2(faila)) );
-	cbmul = table( mul(pow2(failc-faila) ^ 1, inv(pow2(failb-faila) ^ 1)) );
+	c1 = inv(pow2(failb-faila) ^ 1);
+	c2 = inv(pow4(failb-faila) ^ 1);
+	c3 = inv(mul(pow2(failc-faila) ^ 1, c1) ^ mul(pow4(failc-faila) ^ 1, c2));
+	pcmul = table( mul(c3, c1) ^ mul(c3, c2) );
+	qcmul = table( mul(c3, inv(pow2(failb) ^ pow2(faila))) );
+	rcmul = table( mul(c3, inv(pow4(failb) ^ pow4(faila))) );
+	pbmul = table( c1 );
+	qbmul = table( mul(c1, inv(pow2(faila))) );
+	cbmul = table( mul(c1, pow2(failc-faila) ^ 1) );
 
 	while (size--) {
 		/* delta */
