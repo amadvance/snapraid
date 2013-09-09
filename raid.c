@@ -814,6 +814,81 @@ void raid_gen(unsigned level, unsigned char** buffer, unsigned diskmax, unsigned
 /* recovering */
 
 /**
+ * The data recovering is based on paper "The mathematics of RAID-6" [1],
+ * that covers the RAID5 and RAID6 computation in the Galois Field GF(2^8)
+ * with the primitive polinomial x^8 + x^4 + x^3 + x^2 + 1 (285 decimal),
+ * using generators "1" and "2".
+ *
+ * To support RAIDTP (Triple Parity), we use an extension of the same approach,
+ * described in the paper "Multiple-parity RAID" [2], with the additional
+ * generator "4".
+ *
+ * This method is also the same used by ZFS to implement its RAIDTP
+ * support.
+ *
+ * Note that the same extension is not possible for Quad Parity because
+ * in the approach used in the paper we don't have the guarantee to have a
+ * system of independent linear equations, and for Quad Parity in some cases
+ * the system is not solvable.
+ * A general method working for Quad Parity and more, can be found in [3]
+ * and corrected in [4], but with a slower computational performance.
+ *
+ * In details, Triple Parity is implemented for n disks Di, computing
+ * the syndromes P,Q,R with:
+ *
+ * P = sum(Di) 0<=i<n
+ * Q = sum(2^i * Di) 0<=i<n
+ * R = sum(4^i * Di) 0<=i<n
+ *
+ * To recover from a failure of three disks at indes x,y,z,
+ * with 0<=x<y<z<n, we compute the syndromes of the available disks:
+ *
+ * Pxyz = sum(Di) 0<=i<n,i!=x,i!=y,i!=z
+ * Qxyz = sum(2^i * Di) 0<=i<n,i!=x,i!=y,i!=z
+ * Rxyz = sum(4^i * Di) 0<=i<n,i!=x,i!=y,i!=z
+ *
+ * and if we define:
+ *
+ * Pd = Pxyz + P
+ * Qd = Qxyz + Q
+ * Rd = Rxyz + R
+ *
+ * we can sum these two set equations, obtaining:
+ *
+ * Pd =       Dx +       Dy +       Dz
+ * Qd = 2^x * Dx + 2^y * Dy + 2^y * Dz
+ * Rd = 4^x * Dx + 4^y * Dy + 4^y * Dz
+ *
+ * A linear system of three equations solvable by substitution on Dx, Dy and Dz,
+ * because all the others variables are known and the equations are independent
+ * for any 0<=x<y<z<255.
+ * We can prove that the equations are independent by brute-force, trying all the
+ * possible combinations of x,y,z.
+ *
+ * The other recovering cases are a simplification of the general one,
+ * with some equations or addends removed.
+ *
+ * We have in total 7 different recovering strategies:
+ *
+ * RAID5 - Dx recovered with P
+ * RAID6 - Dx recovered with Q
+ * RAID6 - Dx and Dy recovered with P,Q
+ * RAIDTP - Dx recovered with R
+ * RAIDTP - Dx,Dy recovered with P,R
+ * RAIDTP - Dx,Dy recovered with Q,R
+ * RAIDTP - Dx,Dy,Dz recovered with P,Q,R
+ *
+ * each one implemented in a different function using linear system
+ * of equations with a different solution.
+ *
+ * References:
+ * [1] H. Peter Anvin, "The mathematics of RAID-6", 2004
+ * [2] David Brown, "Multiple-parity RAID", 2011
+ * [3] James S. Plank, "A Tutorial on Reed-Solomon Coding for Fault-Tolerance in RAID-like Systems"
+ * [4] James S. Plank, Ying Ding, "Note: Correction to the 1997 Tutorial on Reed-Solomon Coding", 2003
+ */
+
+/**
  * GF a*b.
  */
 static inline unsigned char mul(unsigned char a, unsigned char b)
@@ -874,76 +949,106 @@ static inline const unsigned char* table(unsigned char a)
 	return gfmul[a];
 }
 
-void raid5_recov_data(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila)
+/*
+ * Starting from the equation:
+ *
+ * Dx = Pd
+ *
+ * and solving we get:
+ *
+ * Dx = Pd (this one is easy :D)
+ */
+void raid5_recov_data(unsigned char** dptrs, unsigned diskmax, unsigned size, int x)
 {
 	unsigned char* p;
 	unsigned char* dp;
 
-	dp = dptrs[faila];
+	dp = dptrs[x];
 	p = dptrs[diskmax];
 
 	/* compute syndrome using parity for the missing data page */
-	dptrs[faila] = p;
+	dptrs[x] = p;
 	dptrs[diskmax] = dp;
 
 	raid5_gen(dptrs, diskmax, size);
 
 	/* restore pointers */
-	dptrs[faila] = dp;
+	dptrs[x] = dp;
 	dptrs[diskmax] = p;
 }
 
-void raid6_recov_2data(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, int failb, unsigned char* zero)
+/*
+ * Starting from the equations:
+ *
+ * Dx + Dy = Pd
+ * 2^x * Dx + 2^y * Dy = Qd
+ *
+ * and solving we get:
+ *
+ *            1               2^(-x)
+ * Dy = ----------- * Pd + ----------- * Qd
+ *      2^(y-x) + 1        2^(y-x) + 1
+ *
+ * Dx = Dy + Pd
+ *
+ * with conditions:
+ *
+ * 2^x != 0
+ * 2^(y-x) + 1 != 0
+ *
+ * That are always satisfied for any 0<=x<y<255.
+ */
+void raid6_recov_2data(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, int y, unsigned char* zero)
 {
 	unsigned char* p;
 	unsigned char* dp;
 	unsigned char* q;
 	unsigned char* dq;
-	const unsigned char* pbmul; /* P multiplier to compute B */
-	const unsigned char* qbmul; /* Q multiplier to compute B */
+	const unsigned char* pymul; /* P multiplier to compute Dy */
+	const unsigned char* qymul; /* Q multiplier to compute Dy */
 
 	p = dptrs[diskmax];
 	q = dptrs[diskmax+1];
 
 	/* compute syndrome with zero for the missing data pages */
 	/* use the dead data pages as temporary storage for delta p and delta q. */
-	dp = dptrs[faila];
-	dptrs[faila] = zero;
+	dp = dptrs[x];
+	dptrs[x] = zero;
 	dptrs[diskmax] = dp;
-	dq = dptrs[failb];
-	dptrs[failb] = zero;
+	dq = dptrs[y];
+	dptrs[y] = zero;
 	dptrs[diskmax+1] = dq;
 
 	raid6_gen(dptrs, diskmax, size);
 
 	/* restore pointers */
-	dptrs[faila] = dp;
-	dptrs[failb] = dq;
+	dptrs[x] = dp;
+	dptrs[y] = dq;
 	dptrs[diskmax] = p;
 	dptrs[diskmax+1] = q;
 
 	/* select tables */
-	pbmul = table( inv(pow2(failb-faila) ^ 1) );
-	qbmul = table( inv(pow2(faila) ^ pow2(failb)) );
+	pymul = table( inv(pow2(y-x) ^ 1) );
+	qymul = table( inv(pow2(x) ^ pow2(y)) );
 
 	while (size--) {
 		/* delta */
 		unsigned char pd = *p ^ *dp;
 		unsigned char qd = *q ^ *dq;
 
-		/* addends to reconstruct B */
-		unsigned char pbm = pbmul[pd];
-		unsigned char qbm = qbmul[qd];
+		/* addends to reconstruct Dy */
+		unsigned char pbm = pymul[pd];
+		unsigned char qbm = qymul[qd];
 
-		/* reconstruct B */
-		unsigned char b = pbm ^ qbm;
+		/* reconstruct Dy */
+		unsigned char Dy = pbm ^ qbm;
 
-		/* reconstruct A */
-		unsigned char a = pd ^ b;
+		/* reconstruct Dx */
+		unsigned char Dx = pd ^ Dy;
 
 		/* set */
-		*dp = a;
-		*dq = b;
+		*dp = Dx;
+		*dq = Dy;
 
 		++p;
 		++dp;
@@ -952,96 +1057,148 @@ void raid6_recov_2data(unsigned char** dptrs, unsigned diskmax, unsigned size, i
 	}
 }
 
-void raid6_recov_datap(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, unsigned char* zero)
+/*
+ * Starting from the equations:
+ *
+ * 2^x * Dx = Qd
+ *
+ * and solving we get:
+ *
+ * Dx = 2^(-x) * Qd
+ *
+ * with conditions:
+ *
+ * 2^x != 0
+ *
+ * That are always satisfied for any 0<=x<y<255.
+ */
+void raid6_recov_datap(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, unsigned char* zero)
 {
 	unsigned char* q;
 	unsigned char* dq;
-	const unsigned char* qamul; /* Q multiplier to compute A */
+	const unsigned char* qxmul; /* Q multiplier to compute Dx */
 
 	q = dptrs[diskmax+1];
 
 	/* compute syndrome with zero for the missing data page */
 	/* use the dead data page as temporary storage for delta q */
-	dq = dptrs[faila];
-	dptrs[faila] = zero;
+	dq = dptrs[x];
+	dptrs[x] = zero;
 	dptrs[diskmax+1] = dq;
 
 	raid6_gen(dptrs, diskmax, size);
 
 	/* restore pointers */
-	dptrs[faila] = dq;
+	dptrs[x] = dq;
 	dptrs[diskmax+1] = q;
 
 	/* select tables */
-	qamul = table( inv(pow2(faila)) );
+	qxmul = table( inv(pow2(x)) );
 
 	while (size--) {
 		/* delta */
-		unsigned char qd = *q ^ *dq;
+		unsigned char Qd = *q ^ *dq;
 
-		/* addends to reconstruct A */
-		unsigned char qam = qamul[qd];
+		/* addends to reconstruct Dx */
+		unsigned char qam = qxmul[Qd];
 
-		/* reconstruct A */
-		unsigned char a = qam;
+		/* reconstruct Dx */
+		unsigned char Dx = qam;
 
 		/* set */
-		*dq = a;
+		*dq = Dx;
 
 		++q;
 		++dq;
 	}
 }
 
-void raidTP_recov_datapq(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, unsigned char* zero)
+/*
+ * Starting from the equation:
+ *
+ * 4^x * Dx = Rd
+ *
+ * and solving we get:
+ *
+ * Dx = 4^(-x) * Rd
+ *
+ * with conditions:
+ *
+ * 4^x != 0
+ *
+ * That are always satisfied for any 0<=x<y<255.
+ *
+ */
+void raidTP_recov_datapq(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, unsigned char* zero)
 {
 	unsigned char* r;
 	unsigned char* dr;
-	const unsigned char* ramul; /* R multiplier to compute A */
+	const unsigned char* rxmul; /* R multiplier to compute Dx */
 
 	r = dptrs[diskmax+2];
 
 	/* compute syndrome with zero for the missing data page */
 	/* use the dead data page as temporary storage for delta r */
-	dr = dptrs[faila];
-	dptrs[faila] = zero;
+	dr = dptrs[x];
+	dptrs[x] = zero;
 	dptrs[diskmax+2] = dr;
 
 	raidTP_gen(dptrs, diskmax, size);
 
 	/* restore pointers */
-	dptrs[faila] = dr;
+	dptrs[x] = dr;
 	dptrs[diskmax+2] = r;
 
 	/* select tables */
-	ramul = table( inv(pow4(faila)) );
+	rxmul = table( inv(pow4(x)) );
 
 	while (size--) {
 		/* delta */
-		unsigned char rd = *r ^ *dr;
+		unsigned char Rd = *r ^ *dr;
 
-		/* addends to reconstruct A */
-		unsigned char ram = ramul[rd];
+		/* addends to reconstruct Dx */
+		unsigned char rxm = rxmul[Rd];
 
-		/* reconstruct A */
-		unsigned char a = ram;
+		/* reconstruct Dx */
+		unsigned char Dx = rxm;
 
 		/* set */
-		*dr = a;
+		*dr = Dx;
 
 		++r;
 		++dr;
 	}
 }
 
-void raidTP_recov_2dataq(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, int failb, unsigned char* zero)
+/*
+ * Starting from the equations:
+ *
+ * Dx + Dy = Pd
+ * 4^x * Dx + 4^y * Dy = Rd
+ *
+ * and solving we get:
+ *
+ *            1               4^(-x)
+ * Dy = ----------- * Pd + ----------- * Rd
+ *      4^(y-x) + 1        4^(y-x) + 1
+ *
+ * Dx = Dy + Pd
+ *
+ * with conditions:
+ *
+ * 4^x != 0
+ * 4^(y-x) + 1 != 0
+ *
+ * That are always satisfied for any 0<=x<y<255.
+ */
+void raidTP_recov_2dataq(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, int y, unsigned char* zero)
 {
 	unsigned char* p;
 	unsigned char* dp;
 	unsigned char* r;
 	unsigned char* dr;
-	const unsigned char* pbmul; /* Q multiplier to compute B */
-	const unsigned char* rbmul; /* R multiplier to compute B */
+	const unsigned char* pymul; /* Q multiplier to compute Dy */
+	const unsigned char* rymul; /* R multiplier to compute Dy */
 	unsigned char c1;
 
 	p = dptrs[diskmax];
@@ -1049,44 +1206,44 @@ void raidTP_recov_2dataq(unsigned char** dptrs, unsigned diskmax, unsigned size,
 
 	/* compute syndrome with zero for the missing data page */
 	/* use the dead data page as temporary storage for delta p and r */
-	dp = dptrs[faila];
-	dr = dptrs[failb];
-	dptrs[faila] = zero;
-	dptrs[failb] = zero;
+	dp = dptrs[x];
+	dr = dptrs[y];
+	dptrs[x] = zero;
+	dptrs[y] = zero;
 	dptrs[diskmax] = dp;
 	dptrs[diskmax+2] = dr;
 
 	raidTP_gen(dptrs, diskmax, size);
 
 	/* restore pointers */
-	dptrs[faila] = dp;
-	dptrs[failb] = dr;
+	dptrs[x] = dp;
+	dptrs[y] = dr;
 	dptrs[diskmax] = p;
 	dptrs[diskmax+2] = r;
 
 	/* select tables */
-	c1 = inv(pow4(failb-faila) ^ 1);
-	pbmul = table( c1 );
-	rbmul = table( mul(c1, inv(pow4(faila))) );
+	c1 = inv(pow4(y-x) ^ 1);
+	pymul = table( c1 );
+	rymul = table( mul(c1, inv(pow4(x))) );
 
 	while (size--) {
 		/* delta */
-		unsigned char pd = *p ^ *dp;
-		unsigned char rd = *r ^ *dr;
+		unsigned char Pd = *p ^ *dp;
+		unsigned char Rd = *r ^ *dr;
 
-		/* addends to reconstruct B */
-		unsigned char pbm = pbmul[pd];
-		unsigned char rbm = rbmul[rd];
+		/* addends to reconstruct Dy */
+		unsigned char pym = pymul[Pd];
+		unsigned char rym = rymul[Rd];
 
-		/* reconstruct B */
-		unsigned char b = pbm ^ rbm;
+		/* reconstruct Dy */
+		unsigned char Dy = pym ^ rym;
 
-		/* reconstruct A */
-		unsigned char a = pd ^ b;
+		/* reconstruct Dx */
+		unsigned char Dx = Pd ^ Dy;
 
 		/* set */
-		*dp = a;
-		*dr = b;
+		*dp = Dx;
+		*dr = Dy;
 
 		++p;
 		++dp;
@@ -1095,16 +1252,38 @@ void raidTP_recov_2dataq(unsigned char** dptrs, unsigned diskmax, unsigned size,
 	}
 }
 
-void raidTP_recov_2datap(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, int failb, unsigned char* zero)
+/*
+ * Starting from the equations:
+ *
+ * 2^x * Dx + 2^y * Dy = Qd
+ * 4^x * Dx + 4^y * Dy = Rd
+ *
+ * and solving we get:
+ *
+ *            2^(-x)                  4^(-x)
+ * Dy = ----------------- * Qd + ----------------- * Rd
+ *      2^(y-x) + 4^(y-x)        2^(y-z) + 4^(y-x)
+ *
+ * Dx = 2^(y-x) * Dy + 2^(-x) * Qd
+ *
+ * with conditions:
+ *
+ * 2^x != 0
+ * 4^x != 0
+ * 2^(y-x) + 4^(y-x) != 0
+ *
+ * That are always satisfied for any 0<=x<y<255.
+ */
+void raidTP_recov_2datap(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, int y, unsigned char* zero)
 {
 	unsigned char* q;
 	unsigned char* dq;
 	unsigned char* r;
 	unsigned char* dr;
-	const unsigned char* qbmul; /* Q multiplier to compute B */
-	const unsigned char* rbmul; /* R multiplier to compute B */
-	const unsigned char* qamul; /* Q multiplier to compute A */
-	const unsigned char* bamul; /* B multiplier to compute A */
+	const unsigned char* qymul; /* Q multiplier to compute Dy */
+	const unsigned char* rymul; /* R multiplier to compute Dy */
+	const unsigned char* qxmul; /* Q multiplier to compute Dx */
+	const unsigned char* yxmul; /* Dy multiplier to compute Dx */
 	unsigned char c1;
 
 	q = dptrs[diskmax+1];
@@ -1112,50 +1291,50 @@ void raidTP_recov_2datap(unsigned char** dptrs, unsigned diskmax, unsigned size,
 
 	/* compute syndrome with zero for the missing data page */
 	/* use the dead data page as temporary storage for delta q and r */
-	dq = dptrs[faila];
-	dr = dptrs[failb];
-	dptrs[faila] = zero;
-	dptrs[failb] = zero;
+	dq = dptrs[x];
+	dr = dptrs[y];
+	dptrs[x] = zero;
+	dptrs[y] = zero;
 	dptrs[diskmax+1] = dq;
 	dptrs[diskmax+2] = dr;
 
 	raidTP_gen(dptrs, diskmax, size);
 
 	/* restore pointers */
-	dptrs[faila] = dq;
-	dptrs[failb] = dr;
+	dptrs[x] = dq;
+	dptrs[y] = dr;
 	dptrs[diskmax+1] = q;
 	dptrs[diskmax+2] = r;
 
 	/* select tables */
-	c1 = inv(pow2(failb-faila) ^ pow4(failb-faila));
-	qbmul = table( mul(c1, inv(pow2(faila))) );
-	rbmul = table( mul(c1, inv(pow4(faila))) );
-	qamul = table( inv(pow2(faila)) );
-	bamul = table( pow2(failb-faila) );
+	c1 = inv(pow2(y-x) ^ pow4(y-x));
+	qymul = table( mul(c1, inv(pow2(x))) );
+	rymul = table( mul(c1, inv(pow4(x))) );
+	qxmul = table( inv(pow2(x)) );
+	yxmul = table( pow2(y-x) );
 
 	while (size--) {
 		/* delta */
-		unsigned char qd = *q ^ *dq;
-		unsigned char rd = *r ^ *dr;
+		unsigned char Qd = *q ^ *dq;
+		unsigned char Rd = *r ^ *dr;
 
-		/* addends to reconstruct B */
-		unsigned char qbm = qbmul[qd];
-		unsigned char rbm = rbmul[rd];
+		/* addends to reconstruct Dy */
+		unsigned char qym = qymul[Qd];
+		unsigned char rym = rymul[Rd];
 
-		/* reconstruct B */
-		unsigned char b = qbm ^ rbm;
+		/* reconstruct Dy */
+		unsigned char Dy = qym ^ rym;
 
-		/* addends to reconstruct A */
-		unsigned char qam = qamul[qd];
-		unsigned char bam = bamul[b];
+		/* addends to reconstruct Dx */
+		unsigned char qxm = qxmul[Qd];
+		unsigned char bxm = yxmul[Dy];
 
-		/* reconstruct A */
-		unsigned char a = qam ^ bam;
+		/* reconstruct Dx */
+		unsigned char Dx = qxm ^ bxm;
 
 		/* set */
-		*dq = a;
-		*dr = b;
+		*dq = Dx;
+		*dr = Dy;
 
 		++q;
 		++dq;
@@ -1164,7 +1343,40 @@ void raidTP_recov_2datap(unsigned char** dptrs, unsigned diskmax, unsigned size,
 	}
 }
 
-void raidTP_recov_3data(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, int failb, int failc, unsigned char* zero)
+/*
+ * Starting from the equations:
+ *
+ * Dx + Dy + Dz = Pd
+ * 2^x * Dx + 2^y * Dy + 2^z * Dz = Qd
+ * 4^x * Dx + 4^y * Dy + 4^z * Dz = Rd
+ *
+ * and solving we get:
+ *
+ *                  1                      1                                  1
+ * Dz = ------------------------- * ( ----------- * (Pd + 2^(-x) * Qd) + ----------- * (Pd + 4^(-x) * Rd) )
+ *      2^(z-x) + 1   4^(z-x) + 1     2^(y-x) + 1                        4^(y-x) + 1
+ *      ----------- + -----------
+ *      2^(y-x) + 1   4^(y-x) + 1
+ *
+ *      2^(z-x) + 1             1                2^(-x)
+ * Dy = ----------- * Dz + ----------- * Pd + ----------- * Qd
+ *      2^(y-x) + 1        2^(y-x) + 1        2^(y-z) + 1
+ *
+ * Dx = Dy + Dz + Pd
+ *
+ * with conditions:
+ *
+ * 2^x != 0
+ * 4^x != 0
+ * 2^(y-x) + 1 != 0
+ * 4^(y-x) + 1 != 0
+ * 2^(z-x) + 1   4^(z-x) + 1
+ * ----------- + ----------- != 0
+ * 2^(y-x) + 1   4^(y-x) + 1
+ *
+ * That are always satisfied for any 0<=x<y<z<255.
+ */
+void raidTP_recov_3data(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, int y, int z, unsigned char* zero)
 {
 	unsigned char* p;
 	unsigned char* dp;
@@ -1172,12 +1384,12 @@ void raidTP_recov_3data(unsigned char** dptrs, unsigned diskmax, unsigned size, 
 	unsigned char* dq;
 	unsigned char* r;
 	unsigned char* dr;
-	const unsigned char* pcmul; /* P multiplier to compute C */
-	const unsigned char* qcmul; /* Q multiplier to compute C */
-	const unsigned char* rcmul; /* R multiplier to compute C */
-	const unsigned char* pbmul; /* P multiplier to compute B */
-	const unsigned char* qbmul; /* Q multiplier to compute B */
-	const unsigned char* cbmul; /* C multiplier to compute B */
+	const unsigned char* pzmul; /* P multiplier to compute Dz */
+	const unsigned char* qzmul; /* Q multiplier to compute Dz */
+	const unsigned char* rzmul; /* R multiplier to compute Dz */
+	const unsigned char* pymul; /* P multiplier to compute Dy */
+	const unsigned char* qymul; /* Q multiplier to compute Dy */
+	const unsigned char* zymul; /* Dz multiplier to compute Dy */
 	unsigned char c1, c2, c3;
 
 	p = dptrs[diskmax];
@@ -1186,12 +1398,12 @@ void raidTP_recov_3data(unsigned char** dptrs, unsigned diskmax, unsigned size, 
 
 	/* compute syndrome with zero for the missing data page */
 	/* use the dead data page as temporary storage for delta p, q and r */
-	dp = dptrs[faila];
-	dq = dptrs[failb];
-	dr = dptrs[failc];
-	dptrs[faila] = zero;
-	dptrs[failb] = zero;
-	dptrs[failc] = zero;
+	dp = dptrs[x];
+	dq = dptrs[y];
+	dr = dptrs[z];
+	dptrs[x] = zero;
+	dptrs[y] = zero;
+	dptrs[z] = zero;
 	dptrs[diskmax] = dp;
 	dptrs[diskmax+1] = dq;
 	dptrs[diskmax+2] = dr;
@@ -1199,53 +1411,53 @@ void raidTP_recov_3data(unsigned char** dptrs, unsigned diskmax, unsigned size, 
 	raidTP_gen(dptrs, diskmax, size);
 
 	/* restore pointers */
-	dptrs[faila] = dp;
-	dptrs[failb] = dq;
-	dptrs[failc] = dr;
+	dptrs[x] = dp;
+	dptrs[y] = dq;
+	dptrs[z] = dr;
 	dptrs[diskmax] = p;
 	dptrs[diskmax+1] = q;
 	dptrs[diskmax+2] = r;
 
 	/* select tables */
-	c1 = inv(pow2(failb-faila) ^ 1);
-	c2 = inv(pow4(failb-faila) ^ 1);
-	c3 = inv(mul(pow2(failc-faila) ^ 1, c1) ^ mul(pow4(failc-faila) ^ 1, c2));
-	pcmul = table( mul(c3, c1) ^ mul(c3, c2) );
-	qcmul = table( mul(c3, inv(pow2(failb) ^ pow2(faila))) );
-	rcmul = table( mul(c3, inv(pow4(failb) ^ pow4(faila))) );
-	pbmul = table( c1 );
-	qbmul = table( mul(c1, inv(pow2(faila))) );
-	cbmul = table( mul(c1, pow2(failc-faila) ^ 1) );
+	c1 = inv(pow2(y-x) ^ 1);
+	c2 = inv(pow4(y-x) ^ 1);
+	c3 = inv(mul(pow2(z-x) ^ 1, c1) ^ mul(pow4(z-x) ^ 1, c2));
+	pzmul = table( mul(c3, c1) ^ mul(c3, c2) );
+	qzmul = table( mul(c3, inv(pow2(y) ^ pow2(x))) );
+	rzmul = table( mul(c3, inv(pow4(y) ^ pow4(x))) );
+	pymul = table( c1 );
+	qymul = table( mul(c1, inv(pow2(x))) );
+	zymul = table( mul(c1, pow2(z-x) ^ 1) );
 
 	while (size--) {
 		/* delta */
-		unsigned char pd = *p ^ *dp;
-		unsigned char qd = *q ^ *dq;
-		unsigned char rd = *r ^ *dr;
+		unsigned char Pd = *p ^ *dp;
+		unsigned char Qd = *q ^ *dq;
+		unsigned char Rd = *r ^ *dr;
 
-		/* addends to reconstruct C */
-		unsigned char pcm = pcmul[pd];
-		unsigned char qcm = qcmul[qd];
-		unsigned char rcm = rcmul[rd];
+		/* addends to reconstruct Dz */
+		unsigned char pzm = pzmul[Pd];
+		unsigned char qzm = qzmul[Qd];
+		unsigned char rzm = rzmul[Rd];
 
-		/* reconstruct C */
-		unsigned char c = pcm ^ qcm ^ rcm;
+		/* reconstruct Dz */
+		unsigned char Dz = pzm ^ qzm ^ rzm;
 
-		/* addends to reconstruct B */
-		unsigned char pbm = pbmul[pd];
-		unsigned char qbm = qbmul[qd];
-		unsigned char cbm = cbmul[c];
+		/* addends to reconstruct Dy */
+		unsigned char pym = pymul[Pd];
+		unsigned char qym = qymul[Qd];
+		unsigned char zym = zymul[Dz];
 
-		/* reconstruct B */
-		unsigned char b = pbm ^ qbm ^ cbm;
+		/* reconstruct Dy */
+		unsigned char Dy = pym ^ qym ^ zym;
 
-		/* reconstruct A */
-		unsigned char a = pd ^ b ^ c;
+		/* reconstruct Dx */
+		unsigned char Dx = Pd ^ Dy ^ Dz;
 
 		/* set */
-		*dp = a;
-		*dq = b;
-		*dr = c;
+		*dp = Dx;
+		*dq = Dy;
+		*dr = Dz;
 
 		++p;
 		++dp;
