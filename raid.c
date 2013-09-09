@@ -856,8 +856,8 @@ void raid_gen(unsigned level, unsigned char** buffer, unsigned diskmax, unsigned
  * we can sum these two set equations, obtaining:
  *
  * Pd =       Dx +       Dy +       Dz
- * Qd = 2^x * Dx + 2^y * Dy + 2^y * Dz
- * Rd = 4^x * Dx + 4^y * Dy + 4^y * Dz
+ * Qd = 2^x * Dx + 2^y * Dy + 2^z * Dz
+ * Rd = 4^x * Dx + 4^y * Dy + 4^z * Dz
  *
  * A linear system of three equations solvable by substitution on Dx, Dy and Dz,
  * because all the others variables are known and the equations are independent
@@ -884,7 +884,7 @@ void raid_gen(unsigned level, unsigned char** buffer, unsigned diskmax, unsigned
  * References:
  * [1] H. Peter Anvin, "The mathematics of RAID-6", 2004
  * [2] David Brown, "Multiple-parity RAID", 2011
- * [3] James S. Plank, "A Tutorial on Reed-Solomon Coding for Fault-Tolerance in RAID-like Systems"
+ * [3] James S. Plank, "A Tutorial on Reed-Solomon Coding for Fault-Tolerance in RAID-like Systems", 1999
  * [4] James S. Plank, Ying Ding, "Note: Correction to the 1997 Tutorial on Reed-Solomon Coding", 2003
  */
 
@@ -952,7 +952,7 @@ static inline const unsigned char* table(unsigned char a)
 /*
  * Starting from the equation:
  *
- * Dx = Pd
+ * Pd = Dx
  *
  * and solving we get:
  *
@@ -980,8 +980,8 @@ void raid5_recov_data(unsigned char** dptrs, unsigned diskmax, unsigned size, in
 /*
  * Starting from the equations:
  *
- * Dx + Dy = Pd
- * 2^x * Dx + 2^y * Dy = Qd
+ * Pd = Dx + Dy
+ * Qd = 2^x * Dx + 2^y * Dy
  *
  * and solving we get:
  *
@@ -1060,7 +1060,7 @@ void raid6_recov_2data(unsigned char** dptrs, unsigned diskmax, unsigned size, i
 /*
  * Starting from the equations:
  *
- * 2^x * Dx = Qd
+ * Qd = 2^x * Dx
  *
  * and solving we get:
  *
@@ -1116,7 +1116,7 @@ void raid6_recov_datap(unsigned char** dptrs, unsigned diskmax, unsigned size, i
 /*
  * Starting from the equation:
  *
- * 4^x * Dx = Rd
+ * Rd = 4^x * Dx
  *
  * and solving we get:
  *
@@ -1173,8 +1173,8 @@ void raidTP_recov_datapq(unsigned char** dptrs, unsigned diskmax, unsigned size,
 /*
  * Starting from the equations:
  *
- * Dx + Dy = Pd
- * 4^x * Dx + 4^y * Dy = Rd
+ * Pd = Dx + Dy
+ * Rd = 4^x * Dx + 4^y * Dy
  *
  * and solving we get:
  *
@@ -1255,8 +1255,8 @@ void raidTP_recov_2dataq(unsigned char** dptrs, unsigned diskmax, unsigned size,
 /*
  * Starting from the equations:
  *
- * 2^x * Dx + 2^y * Dy = Qd
- * 4^x * Dx + 4^y * Dy = Rd
+ * Qd = 2^x * Dx + 2^y * Dy
+ * Rd = 4^x * Dx + 4^y * Dy
  *
  * and solving we get:
  *
@@ -1346,9 +1346,9 @@ void raidTP_recov_2datap(unsigned char** dptrs, unsigned diskmax, unsigned size,
 /*
  * Starting from the equations:
  *
- * Dx + Dy + Dz = Pd
- * 2^x * Dx + 2^y * Dy + 2^z * Dz = Qd
- * 4^x * Dx + 4^y * Dy + 4^z * Dz = Rd
+ * Pd = Dx + Dy + Dz
+ * Qd = 2^x * Dx + 2^y * Dy + 2^z * Dz
+ * Rd = 4^x * Dx + 4^y * Dy + 4^z * Dz
  *
  * and solving we get:
  *
