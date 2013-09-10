@@ -331,11 +331,12 @@ snapraid scrub
 .PD
 .RE
 .PP
-As difference than \(a"check\(a" this command verifies only the oldest data
+This command is similar at \(a"check\(a" but verifies only the oldest data
 in your array. Every run of the command checks about 12% of the data,
 but nothing newer than 10 days.
 You can use the \(hyp, \(hy\(hypercentage option to specify a different amount,
-and the \(hyo, \(hy\(hyolder\(hythan option to specify a different age in days:
+and the \(hyo, \(hy\(hyolder\(hythan option to specify a different age in days.
+For example, to check 5% of the array older than 20 days use:
 .PP
 .RS 4
 snapraid \(hyp 5 \(hyo 20 scrub
@@ -345,7 +346,7 @@ snapraid \(hyp 5 \(hyo 20 scrub
 .RE
 .PP
 If silent errors are found, the corresponding blocks are marked as bad
-in the \(a"concent\(a" file, and listed in the \(a"status\(a" command.
+in the \(a"content\(a" file, and listed in the \(a"status\(a" command.
 .PP
 .RS 4
 snapraid status
@@ -364,8 +365,8 @@ snapraid \(hye fix
 .PD
 .RE
 .PP
-and at the next \(a"scrub\(a" the errors will disappear from the \(a"status\(a"
-report. You can use \(hyp 0 to scrub only them.
+At the next \(a"scrub\(a" the errors will disappear from the \(a"status\(a" report
+if really fixed. You can use \(hyp 0 to scrub only blocks marked as bad.
 .PP
 .RS 4
 snapraid \(hyp 0 scrub

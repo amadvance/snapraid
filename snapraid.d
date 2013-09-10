@@ -184,16 +184,17 @@ Getting Started
 
 		:snapraid scrub
 
-	As difference than "check" this command verifies only the oldest data
+	This command is similar at "check" but verifies only the oldest data
 	in your array. Every run of the command checks about 12% of the data,
 	but nothing newer than 10 days.
 	You can use the -p, --percentage option to specify a different amount,
-	and the -o, --older-than option to specify a different age in days:
+	and the -o, --older-than option to specify a different age in days.
+	For example, to check 5% of the array older than 20 days use:
 
 		:snapraid -p 5 -o 20 scrub
 
 	If silent errors are found, the corresponding blocks are marked as bad
-	in the "concent" file, and listed in the "status" command.
+	in the "content" file, and listed in the "status" command.
 
 		:snapraid status
 
@@ -202,8 +203,8 @@ Getting Started
 
 		:snapraid -e fix
 
-	and at the next "scrub" the errors will disappear from the "status"
-	report. You can use -p 0 to scrub only them.
+	At the next "scrub" the errors will disappear from the "status" report
+	if really fixed. You can use -p 0 to scrub only blocks marked as bad.
 
 		:snapraid -p 0 scrub
 
