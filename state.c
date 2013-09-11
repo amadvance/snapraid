@@ -89,7 +89,7 @@ static void state_config_check(struct snapraid_state* state, const char* path)
 		}
 
 		if (state->qarity[0] != 0 && pathcmp(state->qarity, content->content) == 0) {
-			fprintf(stderr, "Same path used for 'qarity' and 'content' as '%s'\n", content->content);
+			fprintf(stderr, "Same path used for 'q-parity' and 'content' as '%s'\n", content->content);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -138,7 +138,7 @@ static void state_config_check(struct snapraid_state* state, const char* path)
 			}
 
 			if (state->qarity[0] != 0 && disk->device == state->qarity_device) {
-				fprintf(stderr, "Disk '%s' and parity '%s' are on the same device.\n", disk->dir, state->qarity);
+				fprintf(stderr, "Disk '%s' and q-parity '%s' are on the same device.\n", disk->dir, state->qarity);
 #ifdef _WIN32
 				fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", disk->device);
 #endif
