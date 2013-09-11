@@ -94,7 +94,7 @@ static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_bl
  * Returns <0 if failure for missing strategy, >0 if data is wrong and we cannot rebuild correctly, 0 on success.
  * If success, the parity and qarity are computed in the buffer variable.
  */
-static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, unsigned char** buffer, unsigned char* buffer_parity, unsigned char* buffer_qarity, unsigned char* buffer_zero)
+static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, unsigned char** buffer, unsigned char* buffer_parity, unsigned char* buffer_qarity, unsigned char* buffer_rarity, unsigned char* buffer_zero)
 {
 	unsigned j;
 	int error = 0;
@@ -127,7 +127,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 		hash_checked = 0; /* keep track if we check at least one block */
 
 		/* check if the recovered blocks are OK */
-		for(j=0;j<1;++j) {
+		for(j=0;j<failed_count;++j) {
 			if (block_has_updated_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
 				hash_checked = 1;
 				if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
@@ -136,7 +136,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 		}
 
 		/* if we checked something, and no block failed the check */
-		if (hash_checked && j==1) {
+		if (hash_checked && j==failed_count) {
 			/* recompute all the redundancy information */
 			raid_gen(state->level, buffer, diskmax, state->block_size);
 			return 0;
@@ -157,7 +157,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 		hash_checked = 0; /* keep track if we check at least one block */
 
 		/* check if the recovered blocks are OK */
-		for(j=0;j<1;++j) {
+		for(j=0;j<failed_count;++j) {
 			if (block_has_updated_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
 				hash_checked = 1;
 				if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
@@ -166,7 +166,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 		}
 
 		/* if we checked something, and no block failed the check */
-		if (hash_checked && j==1) {
+		if (hash_checked && j==failed_count) {
 			/* recompute all the redundancy information */
 			raid_gen(state->level, buffer, diskmax, state->block_size);
 			return 0;
@@ -210,7 +210,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 		hash_checked = 0; /* keep track if we check at least one block */
 
 		/* check if the recovered blocks are OK */
-		for(j=0;j<2;++j) {
+		for(j=0;j<failed_count;++j) {
 			if (block_has_updated_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
 				hash_checked = 1;
 				if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
@@ -219,13 +219,184 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 		}
 
 		/* if we checked something, and no block failed the check */
-		if (hash_checked && j==2) {
+		if (hash_checked && j==failed_count) {
 			/* recompute all the redundancy information */
 			raid_gen(state->level, buffer, diskmax, state->block_size);
 			return 0;
 		}
 
 		fprintf(stdlog, "error:%u:parity/qarity: Data error\n", pos);
+		++error;
+	}
+
+	/* RAIDTP recovering from r, ignoring p,q */
+	if (failed_count == 1 && buffer_rarity != 0 && has_hash) {
+		/* copy the redundancy to use */
+		memcpy(buffer[diskmax+2], buffer_rarity, state->block_size);
+
+		/* recover data */
+		raidTP_recov_datapq(buffer, diskmax, state->block_size, failed[failed_map[0]].index, buffer_zero);
+
+		hash_checked = 0; /* keep track if we check at least one block */
+
+		/* check if the recovered blocks are OK */
+		for(j=0;j<failed_count;++j) {
+			if (block_has_updated_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
+				hash_checked = 1;
+				if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
+					break;
+			}
+		}
+
+		/* if we checked something, and no block failed the check */
+		if (hash_checked && j==failed_count) {
+			/* recompute all the redundancy information */
+			raid_gen(state->level, buffer, diskmax, state->block_size);
+			return 0;
+		}
+
+		fprintf(stdlog, "error:%u:rarity: Data error\n", pos);
+		++error;
+	}
+
+	/* RAIDTP recovering from r, using p or q to check the result */
+	if (failed_count == 1 && (buffer_parity != 0 || buffer_qarity != 0) && buffer_rarity != 0 && !has_hash) {
+		/* copy the redundancy to use */
+		memcpy(buffer[diskmax+2], buffer_rarity, state->block_size);
+
+		/* recover data */
+		raidTP_recov_datapq(buffer, diskmax, state->block_size, failed[failed_map[0]].index, buffer_zero);
+
+		/* recompute parity with RAID6 to get p and q from it */
+		raid_gen(2, buffer, diskmax, state->block_size);
+
+		/* if the recovered parity block matches */
+		if ((buffer_parity != 0 && memcmp(buffer[diskmax], buffer_parity, state->block_size) == 0)
+			|| (buffer_qarity != 0 && memcmp(buffer[diskmax+1], buffer_qarity, state->block_size) == 0)
+		) {
+			/* recompute all the redundancy information */
+			raid_gen(state->level, buffer, diskmax, state->block_size);
+			return 0;
+		}
+
+		fprintf(stdlog, "error:%u:parity/qarity/rarity: Data error\n", pos);
+		++error;
+	}
+
+	/* RAIDTP recovering from p+r */
+	if (failed_count == 2 && buffer_parity != 0 && buffer_rarity != 0 && has_hash) {
+		/* copy the redundancy to use */
+		memcpy(buffer[diskmax], buffer_parity, state->block_size);
+		memcpy(buffer[diskmax+2], buffer_rarity, state->block_size);
+
+		/* recover 2 data */
+		raidTP_recov_2dataq(buffer, diskmax, state->block_size, failed[failed_map[0]].index, failed[failed_map[1]].index, buffer_zero);
+
+		hash_checked = 0; /* keep track if we check at least one block */
+
+		/* check if the recovered blocks are OK */
+		for(j=0;j<failed_count;++j) {
+			if (block_has_updated_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
+				hash_checked = 1;
+				if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
+					break;
+			}
+		}
+
+		/* if we checked something, and no block failed the check */
+		if (hash_checked && j==failed_count) {
+			/* recompute all the redundancy information */
+			raid_gen(state->level, buffer, diskmax, state->block_size);
+			return 0;
+		}
+
+		fprintf(stdlog, "error:%u:parity/rarity: Data error\n", pos);
+		++error;
+	}
+
+	/* RAIDTP recovering from q+r */
+	if (failed_count == 2 && buffer_qarity != 0 && buffer_rarity != 0 && has_hash) {
+		/* copy the redundancy to use */
+		memcpy(buffer[diskmax+1], buffer_qarity, state->block_size);
+		memcpy(buffer[diskmax+2], buffer_rarity, state->block_size);
+
+		/* recover 2 data */
+		raidTP_recov_2datap(buffer, diskmax, state->block_size, failed[failed_map[0]].index, failed[failed_map[1]].index, buffer_zero);
+
+		hash_checked = 0; /* keep track if we check at least one block */
+
+		/* check if the recovered blocks are OK */
+		for(j=0;j<failed_count;++j) {
+			if (block_has_updated_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
+				hash_checked = 1;
+				if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
+					break;
+			}
+		}
+
+		/* if we checked something, and no block failed the check */
+		if (hash_checked && j==failed_count) {
+			/* recompute all the redundancy information */
+			raid_gen(state->level, buffer, diskmax, state->block_size);
+			return 0;
+		}
+
+		fprintf(stdlog, "error:%u:qarity/rarity: Data error\n", pos);
+		++error;
+	}
+
+	/* RAIDTP recovering from q+r, using p to check the result */
+	if (failed_count == 2 && buffer_parity != 0 && buffer_qarity != 0 && buffer_rarity != 0 && !has_hash) {
+		/* copy the redundancy to use */
+		memcpy(buffer[diskmax+1], buffer_qarity, state->block_size);
+		memcpy(buffer[diskmax+2], buffer_rarity, state->block_size);
+
+		/* recover data */
+		raidTP_recov_2datap(buffer, diskmax, state->block_size, failed[failed_map[0]].index, failed[failed_map[1]].index, buffer_zero);
+
+		/* recompute parity with RAID5 to get p from it */
+		raid_gen(1, buffer, diskmax, state->block_size);
+
+		/* if the recovered parity block matches */
+		if (buffer_parity != 0 && memcmp(buffer[diskmax], buffer_parity, state->block_size) == 0) {
+			/* recompute all the redundancy information */
+			raid_gen(state->level, buffer, diskmax, state->block_size);
+			return 0;
+		}
+
+		fprintf(stdlog, "error:%u:parity/qarity/rarity: Data error\n", pos);
+		++error;
+	}
+
+	/* RAIDTP recovering from p+q+r */
+	if (failed_count == 3 && buffer_parity != 0 && buffer_qarity != 0 && buffer_rarity != 0 && has_hash) {
+		/* copy the redundancy to use */
+		memcpy(buffer[diskmax], buffer_parity, state->block_size);
+		memcpy(buffer[diskmax+1], buffer_qarity, state->block_size);
+		memcpy(buffer[diskmax+2], buffer_rarity, state->block_size);
+
+		/* recover 3 data */
+		raidTP_recov_3data(buffer, diskmax, state->block_size, failed[failed_map[0]].index, failed[failed_map[1]].index, failed[failed_map[2]].index, buffer_zero);
+
+		hash_checked = 0; /* keep track if we check at least one block */
+
+		/* check if the recovered blocks are OK */
+		for(j=0;j<failed_count;++j) {
+			if (block_has_updated_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
+				hash_checked = 1;
+				if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
+					break;
+			}
+		}
+
+		/* if we checked something, and no block failed the check */
+		if (hash_checked && j==failed_count) {
+			/* recompute all the redundancy information */
+			raid_gen(state->level, buffer, diskmax, state->block_size);
+			return 0;
+		}
+
+		fprintf(stdlog, "error:%u:parity/qarity/rarity: Data error\n", pos);
 		++error;
 	}
 
@@ -236,7 +407,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 		return -1;
 }
 
-static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, unsigned char** buffer, unsigned char* buffer_parity, unsigned char* buffer_qarity, unsigned char* buffer_zero)
+static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, unsigned char** buffer, unsigned char* buffer_parity, unsigned char* buffer_qarity, unsigned char* buffer_rarity, unsigned char* buffer_zero)
 {
 	int ret;
 	int error;
@@ -300,7 +471,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 		return 0;
 	}
 
-	ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_parity, buffer_qarity, buffer_zero);
+	ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_parity, buffer_qarity, buffer_rarity, buffer_zero);
 	if (ret == 0) {
 		/* reprocess the blocks for NEW and CHG ones, for which we don't have a hash to check */
 		/* if they were BAD we have to use some euristics to ensure that we have recovered  */
@@ -417,7 +588,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 
 	/* if nothing to fix, we just don't try */
 	if (something_to_recover) {
-		ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_parity, buffer_qarity, buffer_zero);
+		ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_parity, buffer_qarity, buffer_rarity, buffer_zero);
 		if (ret == 0) {
 			/* we alreay marked as outdated NEW and CHG blocks, we don't need to do it again */
 			return 0;
@@ -433,7 +604,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 		return -1;
 }
 
-static int state_check_process(struct snapraid_state* state, int check, int fix, struct snapraid_parity* parity, struct snapraid_parity* qarity, block_off_t blockstart, block_off_t blockmax)
+static int state_check_process(struct snapraid_state* state, int check, int fix, struct snapraid_parity* parity, struct snapraid_parity* qarity, struct snapraid_parity* rarity, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
 	unsigned diskmax;
@@ -737,15 +908,22 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 		if (check) {
 			unsigned char* buffer_parity;
 			unsigned char* buffer_qarity;
+			unsigned char* buffer_rarity;
 			unsigned char* buffer_zero;
 
 			/* buffers for parity read and not computed */
 			if (state->level == 1) {
 				buffer_parity = buffer[diskmax + 1];
 				buffer_qarity = 0;
-			} else {
+				buffer_rarity = 0;
+			} else if (state->level == 2) {
 				buffer_parity = buffer[diskmax + 2];
 				buffer_qarity = buffer[diskmax + 3];
+				buffer_rarity = 0;
+			} else {
+				buffer_parity = buffer[diskmax + 3];
+				buffer_qarity = buffer[diskmax + 4];
+				buffer_rarity = buffer[diskmax + 5];
 			}
 			buffer_zero = buffer[buffermax-1];
 
@@ -777,8 +955,23 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				}
 			}
 
+			/* read the rarity */
+			if (state->level >= 3) {
+				if (rarity) {
+					ret = parity_read(rarity, i, buffer_rarity, state->block_size, stdlog);
+					if (ret == -1) {
+						buffer_rarity = 0; /* no rarity to use */
+
+						fprintf(stdlog, "error:%u:rarity: Read error\n", i);
+						++error;
+					}
+				} else {
+					buffer_rarity = 0;
+				}
+			}
+
 			/* try all the recovering strategies */
-			ret = repair(state, rehash, i, diskmax, failed, failed_map, failed_count, buffer, buffer_parity, buffer_qarity, buffer_zero);
+			ret = repair(state, rehash, i, diskmax, failed, failed_map, failed_count, buffer, buffer_parity, buffer_qarity, buffer_rarity, buffer_zero);
 			if (ret != 0) {
 				/* increment the number of errors */
 				if (ret > 0)
@@ -832,6 +1025,16 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 							buffer_qarity = 0;
 
 							fprintf(stdlog, "error:%u:qarity: Data error\n", i);
+							++error;
+						}
+					}
+
+					/* check the rarity */
+					if (state->level >= 3) {
+						if (buffer_rarity != 0 && memcmp(buffer_rarity, buffer[diskmax + 2], state->block_size) != 0) {
+							buffer_rarity = 0;
+
+							fprintf(stdlog, "error:%u:rarity: Data error\n", i);
 							++error;
 						}
 					}
@@ -911,6 +1114,23 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 								}
 
 								fprintf(stdlog, "fixed:%u:qarity: Fixed data error\n", i);
+								++recovered_error;
+							}
+						}
+
+						/* update the rarity */
+						if (state->level >= 3) {
+							if (buffer_rarity == 0 && rarity) {
+								ret = parity_write(rarity, i, buffer[diskmax + 2], state->block_size);
+								if (ret == -1) {
+									/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
+									fprintf(stderr, "WARNING! Without a working R-Parity disk, it isn't possible to fix errors on it.\n");
+									printf("Stopping at block %u\n", i);
+									++unrecoverable_error;
+									goto bail;
+								}
+
+								fprintf(stdlog, "fixed:%u:rarity: Fixed data error\n", i);
 								++recovered_error;
 							}
 						}
@@ -1582,8 +1802,10 @@ int state_check(struct snapraid_state* state, int check, int fix, block_off_t bl
 	int ret;
 	struct snapraid_parity parity;
 	struct snapraid_parity qarity;
+	struct snapraid_parity rarity;
 	struct snapraid_parity* parity_ptr;
 	struct snapraid_parity* qarity_ptr;
+	struct snapraid_parity* rarity_ptr;
 	unsigned error;
 
 	printf("Initializing...\n");
@@ -1638,6 +1860,23 @@ int state_check(struct snapraid_state* state, int check, int fix, block_off_t bl
 		} else {
 			qarity_ptr = 0;
 		}
+
+		if (state->level >= 3) {
+			rarity_ptr = &rarity;
+			ret = parity_create(rarity_ptr, state->rarity, &out_size, state->opt.skip_sequential);
+			if (ret == -1) {
+				fprintf(stderr, "WARNING! Without an accessible R-Parity file, it isn't possible to fix any error.\n");
+				exit(EXIT_FAILURE);
+			}
+
+			ret = parity_chsize(rarity_ptr, size, &out_size, state->opt.skip_fallocate);
+			if (ret == -1) {
+				fprintf(stderr, "WARNING! Without an accessible R-Parity file, it isn't possible to sync.\n");
+				exit(EXIT_FAILURE);
+			}
+		} else {
+			rarity_ptr = 0;
+		}
 	} else if (check) {
 		/* if checking, open the file for reading */
 		/* it may fail if the file doesn't exist, in this case we continue to check the files */
@@ -1660,10 +1899,23 @@ int state_check(struct snapraid_state* state, int check, int fix, block_off_t bl
 		} else {
 			qarity_ptr = 0;
 		}
+
+		if (state->level >= 3) {
+			rarity_ptr = &rarity;
+			ret = parity_open(rarity_ptr, state->rarity, state->opt.skip_sequential);
+			if (ret == -1) {
+				printf("No accessible R-Parity file, only files will be checked.\n");
+				/* continue anyway */
+				rarity_ptr = 0;
+			}
+		} else {
+			rarity_ptr = 0;
+		}
 	} else {
 		/* otherwise don't use any parity */
 		parity_ptr = 0;
 		qarity_ptr = 0;
+		rarity_ptr = 0;
 	}
 
 	if (fix)
@@ -1677,7 +1929,7 @@ int state_check(struct snapraid_state* state, int check, int fix, block_off_t bl
 
 	/* skip degenerated cases of empty parity, or skipping all */
 	if (blockstart < blockmax) {
-		ret = state_check_process(state, check, fix, parity_ptr, qarity_ptr, blockstart, blockmax);
+		ret = state_check_process(state, check, fix, parity_ptr, qarity_ptr, rarity_ptr, blockstart, blockmax);
 		if (ret == -1) {
 			++error;
 			/* continue, as we are already exiting */
@@ -1699,6 +1951,17 @@ int state_check(struct snapraid_state* state, int check, int fix, block_off_t bl
 			ret = parity_close(qarity_ptr);
 			if (ret == -1) {
 				fprintf(stderr, "DANGER! Unexpected close error in Q-Parity disk.\n");
+				++error;
+				/* continue, as we are already exiting */
+			}
+		}
+	}
+
+	if (state->level >= 3) {
+		if (rarity_ptr) {
+			ret = parity_close(rarity_ptr);
+			if (ret == -1) {
+				fprintf(stderr, "DANGER! Unexpected close error in R-Parity disk.\n");
 				++error;
 				/* continue, as we are already exiting */
 			}

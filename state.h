@@ -70,6 +70,8 @@ struct snapraid_state {
 	uint64_t parity_device; /**< Device identifier of the parity. */
 	char qarity[PATH_MAX]; /**< Path of the qarity file. */
 	uint64_t qarity_device; /**< Device identifier of the qarity. */
+	char rarity[PATH_MAX]; /**< Path of the qarity file. */
+	uint64_t rarity_device; /**< Device identifier of the rarity. */
 	char pool[PATH_MAX]; /**< Path of the pool tree. */
 	uint64_t pool_device; /**< Device identifier of the pool. */
 	unsigned char hashseed[HASH_SIZE]; /**< Hash seed. Just after a uint64 to provide a minimal alignment. */

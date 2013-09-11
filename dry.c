@@ -26,7 +26,7 @@
 /****************************************************************************/
 /* dry */
 
-static int state_dry_process(struct snapraid_state* state, struct snapraid_parity* parity, struct snapraid_parity* qarity, block_off_t blockstart, block_off_t blockmax)
+static int state_dry_process(struct snapraid_state* state, struct snapraid_parity* parity, struct snapraid_parity* qarity, struct snapraid_parity* rarity, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
 	unsigned diskmax;
@@ -117,6 +117,17 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			}
 		}
 
+		/* read the rarity */
+		if (state->level >= 3) {
+			if (rarity) {
+				ret = parity_read(rarity, i, buffer_aligned, state->block_size, stdlog);
+				if (ret == -1) {
+					fprintf(stdlog, "error:%u:rarity: Read error\n", i);
+					++error;
+				}
+			}
+		}
+
 		/* count the number of processed block */
 		++countpos;
 
@@ -159,8 +170,10 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	int ret;
 	struct snapraid_parity parity;
 	struct snapraid_parity qarity;
+	struct snapraid_parity rarity;
 	struct snapraid_parity* parity_ptr;
 	struct snapraid_parity* qarity_ptr;
+	struct snapraid_parity* rarity_ptr;
 	unsigned error;
 
 	printf("Drying...\n");
@@ -199,11 +212,23 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		qarity_ptr = 0;
 	}
 
+	if (state->level >= 3) {
+		rarity_ptr = &rarity;
+		ret = parity_open(rarity_ptr, state->rarity, state->opt.skip_sequential);
+		if (ret == -1) {
+			printf("No accessible R-Parity file.\n");
+			/* continue anyway */
+			rarity_ptr = 0;
+		}
+	} else {
+		rarity_ptr = 0;
+	}
+
 	error = 0;
 
 	/* skip degenerated cases of empty parity, or skipping all */
 	if (blockstart < blockmax) {
-		ret = state_dry_process(state, parity_ptr, qarity_ptr, blockstart, blockmax);
+		ret = state_dry_process(state, parity_ptr, qarity_ptr, rarity_ptr, blockstart, blockmax);
 		if (ret == -1) {
 			++error;
 			/* continue, as we are already exiting */
@@ -222,6 +247,16 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	if (state->level >= 2) {
 		if (qarity_ptr) {
 			ret = parity_close(qarity_ptr);
+			if (ret == -1) {
+				++error;
+				/* continue, as we are already exiting */
+			}
+		}
+	}
+
+	if (state->level >= 3) {
+		if (rarity_ptr) {
+			ret = parity_close(rarity_ptr);
 			if (ret == -1) {
 				++error;
 				/* continue, as we are already exiting */

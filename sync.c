@@ -35,7 +35,7 @@ struct snapraid_rehash {
 	struct snapraid_block* block;
 };
 
-static int state_sync_process(struct snapraid_state* state, struct snapraid_parity* parity, struct snapraid_parity* qarity, block_off_t blockstart, block_off_t blockmax)
+static int state_sync_process(struct snapraid_state* state, struct snapraid_parity* parity, struct snapraid_parity* qarity, struct snapraid_parity* rarity, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
 	void* rehandle_alloc;
@@ -320,6 +320,17 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				}
 			}
 
+			/* write the rarity */
+			if (state->level >= 3) {
+				ret = parity_write(rarity, i, buffer[diskmax+2], state->block_size);
+				if (ret == -1) {
+					fprintf(stderr, "DANGER! Write error in the R-Parity disk, it isn't possible to sync.\n");
+					printf("Stopping at block %u\n", i);
+					++unrecoverable_error;
+					goto bail;
+				}
+			}
+
 			/* for each disk, mark the blocks as processed */
 			for(j=0;j<diskmax;++j) {
 				struct snapraid_block* block = BLOCK_EMPTY;
@@ -414,8 +425,10 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	int ret;
 	struct snapraid_parity parity;
 	struct snapraid_parity qarity;
+	struct snapraid_parity rarity;
 	struct snapraid_parity* parity_ptr;
 	struct snapraid_parity* qarity_ptr;
+	struct snapraid_parity* rarity_ptr;
 	unsigned unrecoverable_error;
 
 	printf("Initializing...\n");
@@ -482,13 +495,37 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		qarity_ptr = 0;
 	}
 
+	if (state->level >= 3) {
+		rarity_ptr = &rarity;
+		ret = parity_create(rarity_ptr, state->rarity, &out_size, state->opt.skip_sequential);
+		if (ret == -1) {
+			fprintf(stderr, "WARNING! Without an accessible R-Parity file, it isn't possible to sync.\n");
+			exit(EXIT_FAILURE);
+		}
+
+		/* if the file is too small */
+		if (out_size < loaded_size) {
+			fprintf(stderr, "DANGER! The R-Parity file %s is smaller than the expected %" PRId64 ".\n", state->rarity, loaded_size);
+			exit(EXIT_FAILURE);
+		}
+
+		ret = parity_chsize(rarity_ptr, size, &out_size, state->opt.skip_fallocate);
+		if (ret == -1) {
+			parity_overflow(state, out_size);
+			fprintf(stderr, "WARNING! Without an accessible R-Parity file, it isn't possible to sync.\n");
+			exit(EXIT_FAILURE);
+		}
+	} else {
+		rarity_ptr = 0;
+	}
+
 	printf("Syncing...\n");
 
 	unrecoverable_error = 0;
 
 	/* skip degenerated cases of empty parity, or skipping all */
 	if (blockstart < blockmax) {
-		ret = state_sync_process(state, parity_ptr, qarity_ptr, blockstart, blockmax);
+		ret = state_sync_process(state, parity_ptr, qarity_ptr, rarity_ptr, blockstart, blockmax);
 		if (ret == -1) {
 			++unrecoverable_error;
 			/* continue, as we are already exiting */
@@ -522,6 +559,22 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		ret = parity_close(qarity_ptr);
 		if (ret == -1) {
 			fprintf(stderr, "DANGER! Unexpected close error in Q-Parity disk.\n");
+			++unrecoverable_error;
+			/* continue, as we are already exiting */
+		}
+	}
+
+	if (state->level >= 3) {
+		ret = parity_sync(rarity_ptr);
+		if (ret == -1) {
+			fprintf(stderr, "DANGER! Unexpected sync error in R-Parity disk.\n");
+			++unrecoverable_error;
+			/* continue, as we are already exiting */
+		}
+
+		ret = parity_close(rarity_ptr);
+		if (ret == -1) {
+			fprintf(stderr, "DANGER! Unexpected close error in R-Parity disk.\n");
 			++unrecoverable_error;
 			/* continue, as we are already exiting */
 		}
