@@ -816,22 +816,34 @@ void raid_gen(unsigned level, unsigned char** buffer, unsigned diskmax, unsigned
 /**
  * The data recovering is based on paper "The mathematics of RAID-6" [1],
  * that covers the RAID5 and RAID6 computation in the Galois Field GF(2^8)
- * with the primitive polinomial x^8 + x^4 + x^3 + x^2 + 1 (285 decimal),
- * using generators "1" and "2".
+ * with the primitive polynomial x^8 + x^4 + x^3 + x^2 + 1 (285 decimal),
+ * using parity generators "1" and "2".
  *
  * To support RAIDTP (Triple Parity), we use an extension of the same approach,
- * described in the paper "Multiple-parity RAID" [2], with the additional
- * generator "4".
- *
+ * also described in the paper "Multiple-parity RAID" [2], with the additional
+ * parity generator "4".
  * This method is also the same used by ZFS to implement its RAIDTP
  * support.
  *
  * Note that the same extension is not possible for Quad Parity because
- * in the approach used in the paper we don't have the guarantee to have a
- * system of independent linear equations, and for Quad Parity in some cases
+ * in the approach used in the paper we don't have the guarantee to always have
+ * a system of independent linear equations, and for Quad Parity in some cases
  * the system is not solvable.
+ *
+ * Using the primitive polynomial 285, Quad Parity works for up to 21 disks
+ * with parity generators "1,2,4,8". Changing polynomial to 391, it works for
+ * up to 27 disks with the same parity generators.
+ * Using different parity generators like "1,7,53,139" it's possible to
+ * make it working for up to 33 disks. But no more.
+ *
  * A general method working for Quad Parity and more, can be found in [3]
- * and corrected in [4], but with a slower computational performance.
+ * and corrected in [4], but with a slower computational performance,
+ * because the coefficients of the equations are arbitrarely chosen,
+ * and not derived from parity generators.
+ * This means that you need to use multiplication tables to implement the
+ * syndrome computation, instead of the fast approach described in [1].
+ * Note anyway, that there is also a way to implement multiplication tables
+ * in a very fast way with SSE instructions [5].
  *
  * In details, Triple Parity is implemented for n disks Di, computing
  * the syndromes P,Q,R with:
@@ -886,6 +898,7 @@ void raid_gen(unsigned level, unsigned char** buffer, unsigned diskmax, unsigned
  * [2] David Brown, "Multiple-parity RAID", 2011
  * [3] James S. Plank, "A Tutorial on Reed-Solomon Coding for Fault-Tolerance in RAID-like Systems", 1999
  * [4] James S. Plank, Ying Ding, "Note: Correction to the 1997 Tutorial on Reed-Solomon Coding", 2003
+ * [5] James S. Plank, "Screaming Fast Galois Field Arithmetic Using Intel SIMD Instructions", 2013
  */
 
 /**
