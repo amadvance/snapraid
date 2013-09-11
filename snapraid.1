@@ -30,11 +30,11 @@ snapraid [\(hyc, \(hy\(hyconf CONFIG]
 .PD 0
 .PP
 .PD
-	[\(hys, \(hy\(hystart BLKSTART] [\(hyt, \(hy\(hycount BLKCOUNT]
+	[\(hyv, \(hy\(hyverbose] [\(hyl, \(hy\(hylog FILE]
 .PD 0
 .PP
 .PD
-	[\(hyv, \(hy\(hyverbose] [\(hyl, \(hy\(hylog FILE]
+	[\(hys, \(hy\(hystart BLKSTART] [\(hyt, \(hy\(hycount BLKCOUNT]
 .PD 0
 .PP
 .PD
@@ -425,9 +425,12 @@ Updates the redundancy information. All the modified files
 in the disk array are read, and the redundancy data is
 recomputed.
 .PP
-Files are identified by inode and checked by time and size,
-meaning that you can move them on the disk without triggering
-any redundancy recomputation.
+Files are identified by path and/or inode and checked by
+size and timestamp.
+If the size or timestamp are different, the redundancy data is
+recomputed for the whole file.
+Using inode allow you can move them on the disk
+without triggering any redundancy recomputation.
 .PP
 You can stop this process at any time pressing Ctrl+C,
 without losing the work already done.
@@ -471,7 +474,7 @@ This means that scrubbing once a week, every bit of data is checked
 at least one time every two months.
 .PP
 You can use the \(hyp, \(hy\(hypercentage option to specify a different amount,
-and the \(hyo, \(hy\(hyolder\(hythan option to specify a different age.
+and the \(hyo, \(hy\(hyolder\(hythan option to specify a different age in days.
 Note that if only one of \(hyp and \(hyo is specified the default value of
 the other option is not used.
 .PP
@@ -529,7 +532,10 @@ Schedules a rehash of the whole array.
 .PP
 This option can be used to change the hash kind used,
 typically when upgrading from a 32 bits system to a 64
-bits one to switch from murmur3 to the faster spooky2.
+bits one to switch from MurmurHash3 to the faster SpookyHash.
+.PP
+If you are already using the optimal hash, this command
+do nothing and just inform you that nothing has to be done.
 .PP
 The rehash isn\(cqt done immediately, but it takes place
 progressively during the \(a"sync\(a" and \(a"scrub\(a" commands.
@@ -646,7 +652,7 @@ This option can be used only with the \(a"sync\(a" command.
 .TP
 .B \(hyU, \(hy\(hyforce\(hyuuid
 Forces the insecure operation of syncing, checking and fixing
-with disks that have changed the UUID.
+with disks that have changed their UUID.
 If SnapRAID detects that some disks have changed UUID,
 it stops proceeding unless you specify this option.
 This allows to detect when your disks are mounted in the
@@ -662,18 +668,9 @@ Forces the insecure operation of fixing with disks on the same
 physical device.
 If SnapRAID detects that two disks have the same device ID,
 it stops proceeding, because it\(cqs not a supported configuration.
-But it could happen what you want to temporarely restore a lost
+But it could happen that you want to temporarely restore a lost
 disk in the free space left in an already used disk. and this
-option will allow you to continue anyway.
-.TP
-.B \(hys, \(hy\(hystart BLKSTART
-Starts the processing from the specified
-block number. It could be useful to retry to check
-or fix some specific block, in case of a damaged disk.
-.TP
-.B \(hyt, \(hy\(hycount BLKCOUNT
-Process only the specified number of blocks.
-It\(cqs present mainly for advanced manual recovering.
+option allows you to continue anyway.
 .TP
 .B \(hyl, \(hy\(hylog FILE
 Outputs a detailed log to the specified file.
@@ -681,6 +678,16 @@ It contains the exact specification of which block of
 any file is not recoverable and why.
 If this option is not specified, the log is printed in
 the console using the standard error stream.
+.TP
+.B \(hys, \(hy\(hystart BLKSTART
+Starts the processing from the specified
+block number. It could be useful to retry to check
+or fix some specific block, in case of a damaged disk.
+It\(cqs present mainly for advanced manual recovering.
+.TP
+.B \(hyt, \(hy\(hycount BLKCOUNT
+Processes only the specified number of blocks.
+It\(cqs present mainly for advanced manual recovering.
 .TP
 .B \(hyv, \(hy\(hyverbose
 Prints more information in the processing.
@@ -1145,25 +1152,8 @@ and q\(hyparity files.
 They are binary files, containing the computed redundancy of all the
 blocks defined in the \(a"content\(a" file.
 .PP
-You do not need to understand its format, but it\(cqs described here
-for documentation.
-.PP
 These files are read and written by the \(a"sync\(a" and \(a"fix\(a" commands, and
 only read by \(a"check\(a".
-.PP
-For all the blocks at a given position, the parity and the q\(hyparity
-are computed as specified in:
-.PP
-.RS 4
-http://kernel.org/pub/linux/kernel/people/hpa/raid6.pdf
-.PD 0
-.PP
-.PD
-.RE
-.PP
-When a file block is shorter than the default block size, for example
-because it\(cqs the last block of a file, it\(cqs assumed as filled with 0
-at the end.
 .SH ENCODING 
 SnapRAID in Unix ignores any encoding. It simply reads and stores the
 file names with the same encoding used by the filesystem.
