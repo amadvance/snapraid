@@ -833,7 +833,7 @@ void raid_gen(unsigned level, unsigned char** buffer, unsigned diskmax, unsigned
  * Using the primitive polynomial 285, Quad Parity works for up to 21 disks
  * with parity generators "1,2,4,8". Changing polynomial to 391/451/463/487,
  * it works for up to 27 disks with the same parity generators.
- * Using different parity generators like "1,7,53,139" it's possible to
+ * Using different parity generators like "5,13,27,35" it's possible to
  * make it working for up to 33 disks. But no more.
  *
  * A general method working for Quad Parity and more, is to use a a Cauchy matrix [3],
