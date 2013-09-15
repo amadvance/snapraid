@@ -153,22 +153,9 @@ static void state_config_check(struct snapraid_state* state, const char* path)
 				}
 			}
 
-<<<<<<< HEAD
 			for(l=0;l<state->level;++l) {
 				if (disk->device == state->parity_device[l]) {
 					fprintf(stderr, "Disk '%s' and %s '%s' are on the same device.\n", disk->dir, lev_name(l), state->parity_path[l]);
-=======
-			if (disk->device == state->parity_device) {
-				fprintf(stderr, "Disk '%s' and parity '%s' are on the same device.\n", disk->dir, state->parity);
-#ifdef _WIN32
-				fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", disk->device);
-#endif
-				exit(EXIT_FAILURE);
-			}
-
-			if (state->qarity[0] != 0 && disk->device == state->qarity_device) {
-				fprintf(stderr, "Disk '%s' and q-parity '%s' are on the same device.\n", disk->dir, state->qarity);
->>>>>>> master
 #ifdef _WIN32
 					fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", disk->device);
 #endif
