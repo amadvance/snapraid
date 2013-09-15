@@ -831,19 +831,18 @@ void raid_gen(unsigned level, unsigned char** buffer, unsigned diskmax, unsigned
  * the system is not solvable.
  *
  * Using the primitive polynomial 285, Quad Parity works for up to 21 disks
- * with parity generators "1,2,4,8". Changing polynomial to 391, it works for
- * up to 27 disks with the same parity generators.
+ * with parity generators "1,2,4,8". Changing polynomial to 391/451/463/487,
+ * it works for up to 27 disks with the same parity generators.
  * Using different parity generators like "1,7,53,139" it's possible to
  * make it working for up to 33 disks. But no more.
  *
- * A general method working for Quad Parity and more, is to use a
- * Vondermonde matrix [3] and [4] or a Cauchy matrix [5], but resulting
- * with a slower computational performance,  because the coefficients of
+ * A general method working for Quad Parity and more, is to use a a Cauchy matrix [3],
+ * but with a slower computational performance, because the coefficients of
  * the equations are arbitrarely chosen, and not derived from parity generators.
  * This means that you need to use multiplication tables to implement the
  * syndrome computation, instead of the fast approach described in [1].
  * Note anyway, that there is also a way to implement multiplication tables
- * in a very fast way with SSE instructions [6].
+ * in a very fast way with SSE instructions [4].
  *
  * In details, Triple Parity is implemented for n disks Di, computing
  * the syndromes P,Q,R with:
@@ -896,10 +895,8 @@ void raid_gen(unsigned level, unsigned char** buffer, unsigned diskmax, unsigned
  * References:
  * [1] Anvin, "The mathematics of RAID-6", 2004
  * [2] Brown, "Multiple-parity RAID", 2011
- * [3] Plank, "A Tutorial on Reed-Solomon Coding for Fault-Tolerance in RAID-like Systems", 1999
- * [4] Plank, Ying Ding, "Note: Correction to the 1997 Tutorial on Reed-Solomon Coding", 2003
- * [5] Blömer, "An XOR-Based Erasure-Resilient Coding Scheme", 1995
- * [6] Plank, "Screaming Fast Galois Field Arithmetic Using Intel SIMD Instructions", 2013
+ * [3] Blömer, "An XOR-Based Erasure-Resilient Coding Scheme", 1995
+ * [4] Plank, "Screaming Fast Galois Field Arithmetic Using Intel SIMD Instructions", 2013
  */
 
 /**
