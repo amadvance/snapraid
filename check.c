@@ -94,12 +94,15 @@ static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_bl
  * Returns <0 if failure for missing strategy, >0 if data is wrong and we cannot rebuild correctly, 0 on success.
  * If success, the parity and qarity are computed in the buffer variable.
  */
-static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, unsigned char** buffer, unsigned char* buffer_parity, unsigned char* buffer_qarity, unsigned char* buffer_rarity, unsigned char* buffer_zero)
+static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, unsigned char** buffer, unsigned char** buffer_recov, unsigned char* buffer_zero)
 {
 	unsigned j;
 	int error = 0;
 	int has_hash;
 	int hash_checked;
+	unsigned char* buffer_parity = buffer_recov[0];
+	unsigned char* buffer_qarity = buffer_recov[1];
+	unsigned char* buffer_rarity = buffer_recov[2];
 
 	/* no fix required */
 	if (failed_count == 0) {
@@ -407,7 +410,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 		return -1;
 }
 
-static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, unsigned char** buffer, unsigned char* buffer_parity, unsigned char* buffer_qarity, unsigned char* buffer_rarity, unsigned char* buffer_zero)
+static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, unsigned char** buffer, unsigned char** buffer_recov, unsigned char* buffer_zero)
 {
 	int ret;
 	int error;
@@ -471,7 +474,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 		return 0;
 	}
 
-	ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_parity, buffer_qarity, buffer_rarity, buffer_zero);
+	ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_recov, buffer_zero);
 	if (ret == 0) {
 		/* reprocess the blocks for NEW and CHG ones, for which we don't have a hash to check */
 		/* if they were BAD we have to use some euristics to ensure that we have recovered  */
@@ -588,7 +591,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 
 	/* if nothing to fix, we just don't try */
 	if (something_to_recover) {
-		ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_parity, buffer_qarity, buffer_rarity, buffer_zero);
+		ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_recov, buffer_zero);
 		if (ret == 0) {
 			/* we alreay marked as outdated NEW and CHG blocks, we don't need to do it again */
 			return 0;
@@ -604,7 +607,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 		return -1;
 }
 
-static int state_check_process(struct snapraid_state* state, int check, int fix, struct snapraid_parity* parity, struct snapraid_parity* qarity, struct snapraid_parity* rarity, block_off_t blockstart, block_off_t blockmax)
+static int state_check_process(struct snapraid_state* state, int check, int fix, struct snapraid_parity** parity, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
 	unsigned diskmax;
@@ -622,6 +625,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 	unsigned recovered_error;
 	struct failed_struct* failed;
 	unsigned* failed_map;
+	unsigned l;
 
 	handle = handle_map(state, &diskmax);
 
@@ -906,72 +910,42 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 		/* now read and check the parity if requested */
 		if (check) {
-			unsigned char* buffer_parity;
-			unsigned char* buffer_qarity;
-			unsigned char* buffer_rarity;
+			unsigned char* buffer_recov[LEV_MAX];
 			unsigned char* buffer_zero;
 
 			/* buffers for parity read and not computed */
 			if (state->level == 1) {
-				buffer_parity = buffer[diskmax + 1];
-				buffer_qarity = 0;
-				buffer_rarity = 0;
+				buffer_recov[0] = buffer[diskmax + 1];
+				buffer_recov[1] = 0;
+				buffer_recov[2] = 0;
 			} else if (state->level == 2) {
-				buffer_parity = buffer[diskmax + 2];
-				buffer_qarity = buffer[diskmax + 3];
-				buffer_rarity = 0;
+				buffer_recov[0] = buffer[diskmax + 2];
+				buffer_recov[1] = buffer[diskmax + 3];
+				buffer_recov[2] = 0;
 			} else {
-				buffer_parity = buffer[diskmax + 3];
-				buffer_qarity = buffer[diskmax + 4];
-				buffer_rarity = buffer[diskmax + 5];
+				buffer_recov[0] = buffer[diskmax + 3];
+				buffer_recov[1] = buffer[diskmax + 4];
+				buffer_recov[2] = buffer[diskmax + 5];
 			}
 			buffer_zero = buffer[buffermax-1];
 
 			/* read the parity */
-			if (parity) {
-				ret = parity_read(parity, i, buffer_parity, state->block_size, stdlog);
-				if (ret == -1) {
-					buffer_parity = 0; /* no parity to use */
-
-					fprintf(stdlog, "error:%u:parity: Read error\n", i);
-					++error;
-				}
-			} else {
-				buffer_parity = 0;
-			}
-
-			/* read the qarity */
-			if (state->level >= 2) {
-				if (qarity) {
-					ret = parity_read(qarity, i, buffer_qarity, state->block_size, stdlog);
+			for(l=0;l<state->level;++l) {
+				if (parity[l]) {
+					ret = parity_read(parity[l], i, buffer_recov[l], state->block_size, stdlog);
 					if (ret == -1) {
-						buffer_qarity = 0; /* no qarity to use */
+						buffer_recov[l] = 0; /* no parity to use */
 
-						fprintf(stdlog, "error:%u:qarity: Read error\n", i);
+						fprintf(stdlog, "error:%u:%s: Read error\n", i, lev_config_name(l));
 						++error;
 					}
 				} else {
-					buffer_qarity = 0;
-				}
-			}
-
-			/* read the rarity */
-			if (state->level >= 3) {
-				if (rarity) {
-					ret = parity_read(rarity, i, buffer_rarity, state->block_size, stdlog);
-					if (ret == -1) {
-						buffer_rarity = 0; /* no rarity to use */
-
-						fprintf(stdlog, "error:%u:rarity: Read error\n", i);
-						++error;
-					}
-				} else {
-					buffer_rarity = 0;
+					buffer_recov[l] = 0;
 				}
 			}
 
 			/* try all the recovering strategies */
-			ret = repair(state, rehash, i, diskmax, failed, failed_map, failed_count, buffer, buffer_parity, buffer_qarity, buffer_rarity, buffer_zero);
+			ret = repair(state, rehash, i, diskmax, failed, failed_map, failed_count, buffer, buffer_recov, buffer_zero);
 			if (ret != 0) {
 				/* increment the number of errors */
 				if (ret > 0)
@@ -1012,29 +986,11 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				/* and doesn't make sense to try to fix it */
 				if (valid_parity) {
 					/* check the parity */
-					if (buffer_parity != 0 && memcmp(buffer_parity, buffer[diskmax], state->block_size) != 0) {
-						buffer_parity = 0;
+					for(l=0;l<state->level;++l) {
+						if (buffer_recov[l] != 0 && memcmp(buffer_recov[l], buffer[diskmax + l], state->block_size) != 0) {
+							buffer_recov[l] = 0;
 
-						fprintf(stdlog, "error:%u:parity: Data error\n", i);
-						++error;
-					}
-
-					/* check the qarity */
-					if (state->level >= 2) {
-						if (buffer_qarity != 0 && memcmp(buffer_qarity, buffer[diskmax + 1], state->block_size) != 0) {
-							buffer_qarity = 0;
-
-							fprintf(stdlog, "error:%u:qarity: Data error\n", i);
-							++error;
-						}
-					}
-
-					/* check the rarity */
-					if (state->level >= 3) {
-						if (buffer_rarity != 0 && memcmp(buffer_rarity, buffer[diskmax + 2], state->block_size) != 0) {
-							buffer_rarity = 0;
-
-							fprintf(stdlog, "error:%u:rarity: Data error\n", i);
+							fprintf(stdlog, "error:%u:%s: Data error\n", i, lev_config_name(l));
 							++error;
 						}
 					}
@@ -1082,55 +1038,23 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 						++recovered_error;
 					}
 
-					/* update parity and q-parity only if all the blocks have it computed */
+					/* update parity only if all the blocks have it computed */
 					/* if you check/fix after a partial sync, you do not want to fix parity */
 					/* for blocks that are going to have it computed in the sync completion */
 					if (valid_parity) {
 						/* update the parity */
-						if (buffer_parity == 0 && parity) {
-							ret = parity_write(parity, i, buffer[diskmax], state->block_size);
-							if (ret == -1) {
-								/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
-								fprintf(stderr, "WARNING! Without a working Parity disk, it isn't possible to fix errors on it.\n");
-								printf("Stopping at block %u\n", i);
-								++unrecoverable_error;
-								goto bail;
-							}
-
-							fprintf(stdlog, "fixed:%u:parity: Fixed data error\n", i);
-							++recovered_error;
-						}
-
-						/* update the qarity */
-						if (state->level >= 2) {
-							if (buffer_qarity == 0 && qarity) {
-								ret = parity_write(qarity, i, buffer[diskmax + 1], state->block_size);
+						for(l=0;l<state->level;++l) {
+							if (buffer_recov[l] == 0 && parity[l] != 0) {
+								ret = parity_write(parity[l], i, buffer[diskmax + l], state->block_size);
 								if (ret == -1) {
 									/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
-									fprintf(stderr, "WARNING! Without a working Q-Parity disk, it isn't possible to fix errors on it.\n");
+									fprintf(stderr, "WARNING! Without a working %s disk, it isn't possible to fix errors on it.\n", lev_name(l));
 									printf("Stopping at block %u\n", i);
 									++unrecoverable_error;
 									goto bail;
 								}
 
-								fprintf(stdlog, "fixed:%u:qarity: Fixed data error\n", i);
-								++recovered_error;
-							}
-						}
-
-						/* update the rarity */
-						if (state->level >= 3) {
-							if (buffer_rarity == 0 && rarity) {
-								ret = parity_write(rarity, i, buffer[diskmax + 2], state->block_size);
-								if (ret == -1) {
-									/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
-									fprintf(stderr, "WARNING! Without a working R-Parity disk, it isn't possible to fix errors on it.\n");
-									printf("Stopping at block %u\n", i);
-									++unrecoverable_error;
-									goto bail;
-								}
-
-								fprintf(stdlog, "fixed:%u:rarity: Fixed data error\n", i);
+								fprintf(stdlog, "fixed:%u:%s: Fixed data error\n", i, lev_config_name(l));
 								++recovered_error;
 							}
 						}
@@ -1800,13 +1724,10 @@ int state_check(struct snapraid_state* state, int check, int fix, block_off_t bl
 	data_off_t size;
 	data_off_t out_size;
 	int ret;
-	struct snapraid_parity parity;
-	struct snapraid_parity qarity;
-	struct snapraid_parity rarity;
-	struct snapraid_parity* parity_ptr;
-	struct snapraid_parity* qarity_ptr;
-	struct snapraid_parity* rarity_ptr;
+	struct snapraid_parity parity[LEV_MAX];
+	struct snapraid_parity* parity_ptr[LEV_MAX];
 	unsigned error;
+	unsigned l;
 
 	printf("Initializing...\n");
 
@@ -1831,91 +1752,36 @@ int state_check(struct snapraid_state* state, int check, int fix, block_off_t bl
 	if (fix) {
 		/* if fixing, create the file and open for writing */
 		/* if it fails, we cannot continue */
-		parity_ptr = &parity;
-		ret = parity_create(parity_ptr, state->parity, &out_size, state->opt.skip_sequential);
-		if (ret == -1) {
-			fprintf(stderr, "WARNING! Without an accessible Parity file, it isn't possible to fix any error.\n");
-			exit(EXIT_FAILURE);
-		}
-
-		ret = parity_chsize(parity_ptr, size, &out_size, state->opt.skip_fallocate);
-		if (ret == -1) {
-			fprintf(stderr, "WARNING! Without an accessible Parity file, it isn't possible to sync.\n");
-			exit(EXIT_FAILURE);
-		}
-
-		if (state->level >= 2) {
-			qarity_ptr = &qarity;
-			ret = parity_create(qarity_ptr, state->qarity, &out_size, state->opt.skip_sequential);
+		for(l=0;l<state->level;++l) {
+			parity_ptr[l] = &parity[l];
+			ret = parity_create(parity_ptr[l], state->parity_path[l], &out_size, state->opt.skip_sequential);
 			if (ret == -1) {
-				fprintf(stderr, "WARNING! Without an accessible Q-Parity file, it isn't possible to fix any error.\n");
+				fprintf(stderr, "WARNING! Without an accessible %s file, it isn't possible to fix any error.\n", lev_name(l));
 				exit(EXIT_FAILURE);
 			}
 
-			ret = parity_chsize(qarity_ptr, size, &out_size, state->opt.skip_fallocate);
+			ret = parity_chsize(parity_ptr[l], size, &out_size, state->opt.skip_fallocate);
 			if (ret == -1) {
-				fprintf(stderr, "WARNING! Without an accessible Q-Parity file, it isn't possible to sync.\n");
+				fprintf(stderr, "WARNING! Without an accessible %s file, it isn't possible to sync.\n", lev_name(l));
 				exit(EXIT_FAILURE);
 			}
-		} else {
-			qarity_ptr = 0;
-		}
-
-		if (state->level >= 3) {
-			rarity_ptr = &rarity;
-			ret = parity_create(rarity_ptr, state->rarity, &out_size, state->opt.skip_sequential);
-			if (ret == -1) {
-				fprintf(stderr, "WARNING! Without an accessible R-Parity file, it isn't possible to fix any error.\n");
-				exit(EXIT_FAILURE);
-			}
-
-			ret = parity_chsize(rarity_ptr, size, &out_size, state->opt.skip_fallocate);
-			if (ret == -1) {
-				fprintf(stderr, "WARNING! Without an accessible R-Parity file, it isn't possible to sync.\n");
-				exit(EXIT_FAILURE);
-			}
-		} else {
-			rarity_ptr = 0;
 		}
 	} else if (check) {
 		/* if checking, open the file for reading */
 		/* it may fail if the file doesn't exist, in this case we continue to check the files */
-		parity_ptr = &parity;
-		ret = parity_open(parity_ptr, state->parity, state->opt.skip_sequential);
-		if (ret == -1) {
-			printf("No accessible Parity file, only files will be checked.\n");
-			/* continue anyway */
-			parity_ptr = 0;
-		}
-
-		if (state->level >= 2) {
-			qarity_ptr = &qarity;
-			ret = parity_open(qarity_ptr, state->qarity, state->opt.skip_sequential);
+		for(l=0;l<state->level;++l) {
+			parity_ptr[l] = &parity[l];
+			ret = parity_open(parity_ptr[l], state->parity_path[l], state->opt.skip_sequential);
 			if (ret == -1) {
-				printf("No accessible Q-Parity file, only files will be checked.\n");
+				printf("No accessible %s file, only files will be checked.\n", lev_name(l));
 				/* continue anyway */
-				qarity_ptr = 0;
+				parity_ptr[l] = 0;
 			}
-		} else {
-			qarity_ptr = 0;
-		}
-
-		if (state->level >= 3) {
-			rarity_ptr = &rarity;
-			ret = parity_open(rarity_ptr, state->rarity, state->opt.skip_sequential);
-			if (ret == -1) {
-				printf("No accessible R-Parity file, only files will be checked.\n");
-				/* continue anyway */
-				rarity_ptr = 0;
-			}
-		} else {
-			rarity_ptr = 0;
 		}
 	} else {
 		/* otherwise don't use any parity */
-		parity_ptr = 0;
-		qarity_ptr = 0;
-		rarity_ptr = 0;
+		for(l=0;l<state->level;++l)
+			parity_ptr[l] = 0;
 	}
 
 	if (fix)
@@ -1929,7 +1795,7 @@ int state_check(struct snapraid_state* state, int check, int fix, block_off_t bl
 
 	/* skip degenerated cases of empty parity, or skipping all */
 	if (blockstart < blockmax) {
-		ret = state_check_process(state, check, fix, parity_ptr, qarity_ptr, rarity_ptr, blockstart, blockmax);
+		ret = state_check_process(state, check, fix, parity_ptr, blockstart, blockmax);
 		if (ret == -1) {
 			++error;
 			/* continue, as we are already exiting */
@@ -1937,31 +1803,11 @@ int state_check(struct snapraid_state* state, int check, int fix, block_off_t bl
 	}
 
 	/* try to close only if opened */
-	if (parity_ptr) {
-		ret = parity_close(parity_ptr);
-		if (ret == -1) {
-			fprintf(stderr, "DANGER! Unexpected close error in Parity disk.\n");
-			++error;
-			/* continue, as we are already exiting */
-		}
-	}
-
-	if (state->level >= 2) {
-		if (qarity_ptr) {
-			ret = parity_close(qarity_ptr);
+	for(l=0;l<state->level;++l) {
+		if (parity_ptr[l]) {
+			ret = parity_close(parity_ptr[l]);
 			if (ret == -1) {
-				fprintf(stderr, "DANGER! Unexpected close error in Q-Parity disk.\n");
-				++error;
-				/* continue, as we are already exiting */
-			}
-		}
-	}
-
-	if (state->level >= 3) {
-		if (rarity_ptr) {
-			ret = parity_close(rarity_ptr);
-			if (ret == -1) {
-				fprintf(stderr, "DANGER! Unexpected close error in R-Parity disk.\n");
+				fprintf(stderr, "DANGER! Unexpected close error in %s disk.\n", lev_name(l));
 				++error;
 				/* continue, as we are already exiting */
 			}

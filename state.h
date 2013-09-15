@@ -19,6 +19,24 @@
 #define __STATE_H
 
 /****************************************************************************/
+/* parity level */
+
+/**
+ * Max level of parity supported.
+ */
+#define LEV_MAX 3
+
+/**
+ * Returns the parity name: Parity, Q-Parity, R-Parity.
+ */
+const char* lev_name(unsigned level);
+
+/**
+ * Returns the parity name used in the config file: parity, q-parity, r-parity.
+ */
+const char* lev_config_name(unsigned level);
+
+/****************************************************************************/
 /* state */
 
 /**
@@ -66,12 +84,8 @@ struct snapraid_state {
 	uint64_t autosave; /**< Autosave after the specified amount of data. 0 to disable. */
 	int need_write; /**< If the state is changed. */
 	uint32_t block_size; /**< Block size in bytes. */
-	char parity[PATH_MAX]; /**< Path of the parity file. */
-	uint64_t parity_device; /**< Device identifier of the parity. */
-	char qarity[PATH_MAX]; /**< Path of the qarity file. */
-	uint64_t qarity_device; /**< Device identifier of the qarity. */
-	char rarity[PATH_MAX]; /**< Path of the qarity file. */
-	uint64_t rarity_device; /**< Device identifier of the rarity. */
+	char parity_path[LEV_MAX][PATH_MAX]; /**< Path of the parity file. One for each parity. */
+	uint64_t parity_device[LEV_MAX]; /**< Device identifier of the parity. One for each parity. */
 	char pool[PATH_MAX]; /**< Path of the pool tree. */
 	uint64_t pool_device; /**< Device identifier of the pool. */
 	unsigned char hashseed[HASH_SIZE]; /**< Hash seed. Just after a uint64 to provide a minimal alignment. */

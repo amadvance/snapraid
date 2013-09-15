@@ -24,18 +24,40 @@
 #include "parity.h"
 #include "cpu.h"
 
+const char* lev_name(unsigned l)
+{
+	switch (l) {
+	case 0 : return "Parity";
+	case 1 : return "Q-Parity";
+	case 2 : return "R-Parity";
+	}
+
+	return 0;
+}
+
+const char* lev_config_name(unsigned l)
+{
+	switch (l) {
+	case 0 : return "parity";
+	case 1 : return "q-parity";
+	case 2 : return "r-parity";
+	}
+
+	return 0;
+}
+
 void state_init(struct snapraid_state* state)
 {
+	unsigned l;
+
 	state->filter_hidden = 0;
 	state->autosave = 0;
 	state->need_write = 0;
 	state->block_size = 256 * 1024; /* default 256 KiB */
-	state->parity[0] = 0;
-	state->parity_device = 0;
-	state->qarity[0] = 0;
-	state->qarity_device = 0;
-	state->rarity[0] = 0;
-	state->rarity_device = 0;
+	for(l=0;l<LEV_MAX;++l) {
+		state->parity_path[l][0] = 0;
+		state->parity_device[l] = 0;
+	}
 	state->pool[0] = 0;
 	state->pool_device = 0;
 	state->lockfile[0] = 0;
@@ -70,20 +92,13 @@ void state_done(struct snapraid_state* state)
 static void state_config_check(struct snapraid_state* state, const char* path)
 {
 	tommy_node* i;
+	unsigned l;
 
-	if (state->level >= 1 && state->parity[0] == 0) {
-		fprintf(stderr, "No 'parity' specification in '%s'\n", path);
-		exit(EXIT_FAILURE);
-	}
-
-	if (state->level >= 2 && state->qarity[0] == 0) {
-		fprintf(stderr, "No 'q-parity' specification in '%s'\n", path);
-		exit(EXIT_FAILURE);
-	}
-
-	if (state->level >= 3 && state->rarity[0] == 0) {
-		fprintf(stderr, "No 'r-parity' specification in '%s'\n", path);
-		exit(EXIT_FAILURE);
+	for(l=0;l<state->level;++l) {
+		if (state->parity_path[l][0] == 0) {
+			fprintf(stderr, "No '%s' specification in '%s'\n", lev_config_name(l), path);
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	if (tommy_list_empty(&state->contentlist)) {
@@ -95,19 +110,11 @@ static void state_config_check(struct snapraid_state* state, const char* path)
 	for(i=state->contentlist;i!=0;i=i->next) {
 		struct snapraid_content* content = i->data;
 
-		if (pathcmp(state->parity, content->content) == 0) {
-			fprintf(stderr, "Same path used for 'parity' and 'content' as '%s'\n", content->content);
-			exit(EXIT_FAILURE);
-		}
-
-		if (state->qarity[0] != 0 && pathcmp(state->qarity, content->content) == 0) {
-			fprintf(stderr, "Same path used for 'q-parity' and 'content' as '%s'\n", content->content);
-			exit(EXIT_FAILURE);
-		}
-
-		if (state->rarity[0] != 0 && pathcmp(state->rarity, content->content) == 0) {
-			fprintf(stderr, "Same path used for 'r-parity' and 'content' as '%s'\n", content->content);
-			exit(EXIT_FAILURE);
+		for(l=0;l<state->level;++l) {
+			if (pathcmp(state->parity_path[l], content->content) == 0) {
+				fprintf(stderr, "Same path used for '%s' and 'content' as '%s'\n", lev_config_name(l), content->content);
+				exit(EXIT_FAILURE);
+			}
 		}
 	}
 
@@ -146,28 +153,14 @@ static void state_config_check(struct snapraid_state* state, const char* path)
 				}
 			}
 
-			if (disk->device == state->parity_device) {
-				fprintf(stderr, "Disk '%s' and parity '%s' are on the same device.\n", disk->dir, state->parity);
+			for(l=0;l<state->level;++l) {
+				if (disk->device == state->parity_device[l]) {
+					fprintf(stderr, "Disk '%s' and %s '%s' are on the same device.\n", disk->dir, lev_name(l), state->parity_path[l]);
 #ifdef _WIN32
-				fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", disk->device);
+					fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", disk->device);
 #endif
-				exit(EXIT_FAILURE);
-			}
-
-			if (state->qarity[0] != 0 && disk->device == state->qarity_device) {
-				fprintf(stderr, "Disk '%s' and q-parity '%s' are on the same device.\n", disk->dir, state->qarity);
-#ifdef _WIN32
-				fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", disk->device);
-#endif
-				exit(EXIT_FAILURE);
-			}
-
-			if (state->rarity[0] != 0 && disk->device == state->rarity_device) {
-				fprintf(stderr, "Disk '%s' and r-parity '%s' are on the same device.\n", disk->dir, state->rarity);
-#ifdef _WIN32
-				fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", disk->device);
-#endif
-				exit(EXIT_FAILURE);
+					exit(EXIT_FAILURE);
+				}
 			}
 
 			if (state->pool[0] != 0 && disk->device == state->pool_device) {
@@ -188,28 +181,14 @@ static void state_config_check(struct snapraid_state* state, const char* path)
 		}
 
 #ifdef _WIN32
-		if (state->parity_device == 0) {
-			fprintf(stderr, "Disk '%s' has a zero serial number.\n", state->parity);
-			fprintf(stderr, "This is not necessarely wrong, but for using SnapRAID\n");
-			fprintf(stderr, "it's better to change the serial number of the disk.\n");
-			fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'.\n");
-			exit(EXIT_FAILURE);
-		}
-
-		if (state->qarity[0] != 0 && state->qarity_device == 0) {
-			fprintf(stderr, "Disk '%s' has a zero serial number.\n", state->qarity);
-			fprintf(stderr, "This is not necessarely wrong, but for using SnapRAID\n");
-			fprintf(stderr, "it's better to change the serial number of the disk.\n");
-			fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'.\n");
-			exit(EXIT_FAILURE);
-		}
-
-		if (state->rarity[0] != 0 && state->rarity_device == 0) {
-			fprintf(stderr, "Disk '%s' has a zero serial number.\n", state->rarity);
-			fprintf(stderr, "This is not necessarely wrong, but for using SnapRAID\n");
-			fprintf(stderr, "it's better to change the serial number of the disk.\n");
-			fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'.\n");
-			exit(EXIT_FAILURE);
+		for(l=0;l<state->level;++l) {
+			if (state->parity_device[l] == 0) {
+				fprintf(stderr, "Disk '%s' has a zero serial number.\n", state->parity_path[l]);
+				fprintf(stderr, "This is not necessarely wrong, but for using SnapRAID\n");
+				fprintf(stderr, "it's better to change the serial number of the disk.\n");
+				fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'.\n");
+				exit(EXIT_FAILURE);
+			}
 		}
 
 		if (state->pool[0] != 0 && state->pool_device == 0) {
@@ -221,52 +200,27 @@ static void state_config_check(struct snapraid_state* state, const char* path)
 		}
 #endif
 
-		if (state->qarity[0] != 0 && state->parity_device == state->qarity_device) {
-			fprintf(stderr, "Parity '%s' and '%s' are on the same device.\n", state->parity, state->qarity);
+		for(l=0;l<state->level;++l) {
+			unsigned j;
+			for(j=l+1;j<state->level;++j) {
+				if (state->parity_device[l] == state->parity_device[j]) {
+					fprintf(stderr, "Parity '%s' and '%s' are on the same device.\n", state->parity_path[l], state->parity_path[j]);
 #ifdef _WIN32
-			fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", state->parity_device);
+					fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", state->parity_device[l]);
 #endif			
-			exit(EXIT_FAILURE);
+					exit(EXIT_FAILURE);
+				}
+			}
 		}
 
-		if (state->rarity[0] != 0 && state->parity_device == state->rarity_device) {
-			fprintf(stderr, "Parity '%s' and '%s' are on the same device.\n", state->parity, state->rarity);
+		for(l=0;l<state->level;++l) {
+			if (state->pool[0] != 0 && state->pool_device == state->parity_device[l]) {
+				fprintf(stderr, "Pool '%s' and parity '%s' are on the same device.\n", state->pool, state->parity_path[l]);
 #ifdef _WIN32
-			fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", state->parity_device);
-#endif			
-			exit(EXIT_FAILURE);
-		}
-
-		if (state->qarity[0] != 0 && state->rarity[0] != 0 && state->qarity_device == state->rarity_device) {
-			fprintf(stderr, "Parity '%s' and '%s' are on the same device.\n", state->qarity, state->rarity);
-#ifdef _WIN32
-			fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", state->qarity_device);
-#endif			
-			exit(EXIT_FAILURE);
-		}
-
-		if (state->pool[0] != 0 && state->pool_device == state->parity_device) {
-			fprintf(stderr, "Pool '%s' and parity '%s' are on the same device.\n", state->pool, state->parity);
-#ifdef _WIN32
-			fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", state->pool_device);
+				fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", state->pool_device);
 #endif
-			exit(EXIT_FAILURE);
-		}
-
-		if (state->pool[0] != 0 && state->qarity[0] != 0 && state->pool_device == state->qarity_device) {
-			fprintf(stderr, "Pool '%s' and parity '%s' are on the same device.\n", state->pool, state->qarity);
-#ifdef _WIN32
-			fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", state->pool_device);
-#endif
-			exit(EXIT_FAILURE);
-		}
-
-		if (state->pool[0] != 0 && state->rarity[0] != 0 && state->pool_device == state->rarity_device) {
-			fprintf(stderr, "Pool '%s' and parity '%s' are on the same device.\n", state->pool, state->rarity);
-#ifdef _WIN32
-			fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", state->pool_device);
-#endif
-			exit(EXIT_FAILURE);
+				exit(EXIT_FAILURE);
+			}
 		}
 	}
 
@@ -374,28 +328,38 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				exit(EXIT_FAILURE);
 			}
 			state->block_size *= 1024;
-		} else if (strcmp(tag, "parity") == 0) {
+		} else if (strcmp(tag, "parity") == 0 || strcmp(tag, "q-parity") == 0 || strcmp(tag, "r-parity") == 0) {
 			char device[PATH_MAX];
 			char* slash;
 			struct stat st;
+			unsigned l;
 
-			if (*state->parity) {
-				fprintf(stderr, "Multiple 'parity' specification in '%s' at line %u\n", path, line);
+			switch (tag[0]) {
+			case 'p' : l = 0; break;
+			case 'q' : l = 1; break;
+			case 'r' : l = 2; break;
+			default:
+				fprintf(stderr, "Invalid '%s' specification in '%s' at line %u\n", tag, path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			if (*state->parity_path[l]) {
+				fprintf(stderr, "Multiple '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
 			}
 
 			ret = sgetlasttok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
-				fprintf(stderr, "Invalid 'parity' specification in '%s' at line %u\n", path, line);
+				fprintf(stderr, "Invalid '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
 			}
 
 			if (!*buffer) {
-				fprintf(stderr, "Empty 'parity' specification in '%s' at line %u\n", path, line);
+				fprintf(stderr, "Empty '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
 			}
 
-			pathimport(state->parity, sizeof(state->parity), buffer);
+			pathimport(state->parity_path[l], sizeof(state->parity_path[l]), buffer);
 
 			/* get the device of the directory containing the parity file */
 			pathimport(device, sizeof(device), buffer);
@@ -409,94 +373,17 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				exit(EXIT_FAILURE);
 			}
 
-			state->parity_device = st.st_dev;
+			state->parity_device[l] = st.st_dev;
 
-			/* set lock file */
-			pathcpy(state->lockfile, sizeof(state->lockfile), state->parity);
-			pathcat(state->lockfile, sizeof(state->lockfile), ".lock");
-
-			if (state->level < 1)
-				state->level = 1;
-		} else if (strcmp(tag, "q-parity") == 0) {
-			char device[PATH_MAX];
-			char* slash;
-			struct stat st;
-
-			if (*state->qarity) {
-				fprintf(stderr, "Multiple 'q-parity' specification in '%s' at line %u\n", path, line);
-				exit(EXIT_FAILURE);
+			/* set lock file if first parity */
+			if (l == 0) {
+				pathcpy(state->lockfile, sizeof(state->lockfile), state->parity_path[l]);
+				pathcat(state->lockfile, sizeof(state->lockfile), ".lock");
 			}
 
-			ret = sgetlasttok(f, buffer, sizeof(buffer));
-			if (ret < 0) {
-				fprintf(stderr, "Invalid 'q-parity' specification in '%s' at line %u\n", path, line);
-				exit(EXIT_FAILURE);
-			}
-
-			if (!*buffer) {
-				fprintf(stderr, "Empty 'q-parity' specification in '%s' at line %u\n", path, line);
-				exit(EXIT_FAILURE);
-			}
-
-			pathimport(state->qarity, sizeof(state->qarity), buffer);
-
-			/* get the device of the directory containing the qparity file */
-			pathimport(device, sizeof(device), buffer);
-			slash = strrchr(device, '/');
-			if (slash)
-				*slash = 0;
-			else
-				pathcpy(device, sizeof(device), ".");
-			if (stat(device, &st) != 0) {
-				fprintf(stderr, "Error accessing 'qarity' dir '%s' specification in '%s' at line %u\n", device, path, line);
-				exit(EXIT_FAILURE);
-			}
-
-			state->qarity_device = st.st_dev;
-
-			/* we have two level of parity */
-			if (state->level < 2)
-				state->level = 2;
-		} else if (strcmp(tag, "r-parity") == 0) {
-			char device[PATH_MAX];
-			char* slash;
-			struct stat st;
-
-			if (*state->rarity) {
-				fprintf(stderr, "Multiple 'r-parity' specification in '%s' at line %u\n", path, line);
-				exit(EXIT_FAILURE);
-			}
-
-			ret = sgetlasttok(f, buffer, sizeof(buffer));
-			if (ret < 0) {
-				fprintf(stderr, "Invalid 'r-parity' specification in '%s' at line %u\n", path, line);
-				exit(EXIT_FAILURE);
-			}
-
-			if (!*buffer) {
-				fprintf(stderr, "Empty 'r-parity' specification in '%s' at line %u\n", path, line);
-				exit(EXIT_FAILURE);
-			}
-
-			pathimport(state->rarity, sizeof(state->rarity), buffer);
-
-			/* get the device of the directory containing the qparity file */
-			pathimport(device, sizeof(device), buffer);
-			slash = strrchr(device, '/');
-			if (slash)
-				*slash = 0;
-			else
-				pathcpy(device, sizeof(device), ".");
-			if (stat(device, &st) != 0) {
-				fprintf(stderr, "Error accessing 'rarity' dir '%s' specification in '%s' at line %u\n", device, path, line);
-				exit(EXIT_FAILURE);
-			}
-
-			state->rarity_device = st.st_dev;
-
-			/* we have three level of parity */
-			if (state->level < 3)
-				state->level = 3;
+			/* adjust the level */
+			if (state->level < l + 1)
+				state->level = l + 1;
 		} else if (strcmp(tag, "pool") == 0) {
 			struct stat st;
 
@@ -747,22 +634,23 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 	if (state->opt.gui) {
 		tommy_node* i;
+		unsigned l;
+
 		fprintf(stdlog, "blocksize:%u\n", state->block_size);
 		for(i=state->disklist;i!=0;i=i->next) {
 			struct snapraid_disk* disk = i->data;
 			fprintf(stdlog, "disk:%s:%s\n", disk->name, disk->dir);
 		}
-		if (state->rarity[0] != 0)
-			fprintf(stdlog, "mode:raidTP\n");
-		else if (state->qarity[0] != 0)
-			fprintf(stdlog, "mode:raid6\n");
-		else
-			fprintf(stdlog, "mode:raid5\n");
-		fprintf(stdlog, "parity:%s\n", state->parity);
-		if (state->qarity[0] != 0)
-			fprintf(stdlog, "qarity:%s\n", state->qarity);
-		if (state->rarity[0] != 0)
-			fprintf(stdlog, "rarity:%s\n", state->rarity);
+
+		switch (state->level) {
+		case 1 : fprintf(stdlog, "mode:raid5\n"); break;
+		case 2 : fprintf(stdlog, "mode:raid6\n"); break;
+		case 3 : fprintf(stdlog, "mode:raidTP\n"); break;
+		}
+
+		for(l=0;l<state->level;++l) {
+			fprintf(stdlog, "%s:%s\n", lev_config_name(l), state->parity_path[l]);
+		}
 		if (state->pool[0] != 0)
 			fprintf(stdlog, "pool:%s\n", state->pool);
 		fflush(stdlog);

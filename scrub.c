@@ -35,7 +35,7 @@ struct snapraid_rehash {
 	struct snapraid_block* block;
 };
 
-static int state_scrub_process(struct snapraid_state* state, struct snapraid_parity* parity, struct snapraid_parity* qarity, struct snapraid_parity* rarity, block_off_t blockstart, block_off_t blockmax, time_t timelimit, block_off_t countlimit, time_t now)
+static int state_scrub_process(struct snapraid_state* state, struct snapraid_parity** parity, block_off_t blockstart, block_off_t blockmax, time_t timelimit, block_off_t countlimit, time_t now)
 {
 	struct snapraid_handle* handle;
 	void* rehandle_alloc;
@@ -56,6 +56,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	int ret;
 	unsigned error;
 	unsigned silent_error;
+	unsigned l;
 
 	/* maps the disks to handles */
 	handle = handle_map(state, &diskmax);
@@ -281,51 +282,29 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 		/* if we have read all the data required and it's correct, proceed with the parity check */
 		if (!error_on_this_block && !silent_error_on_this_block) {
-			unsigned char* buffer_parity;
-			unsigned char* buffer_qarity;
-			unsigned char* buffer_rarity;
+			unsigned char* buffer_recov[LEV_MAX];
 
 			/* buffers for parity read and not computed */
 			if (state->level == 1) {
-				buffer_parity = buffer[diskmax + 1];
-				buffer_qarity = 0;
-				buffer_rarity = 0;
+				buffer_recov[0] = buffer[diskmax + 1];
+				buffer_recov[1] = 0;
+				buffer_recov[2] = 0;
 			} else if (state->level == 2) {
-				buffer_parity = buffer[diskmax + 2];
-				buffer_qarity = buffer[diskmax + 3];
-				buffer_rarity = 0;
+				buffer_recov[0] = buffer[diskmax + 2];
+				buffer_recov[1] = buffer[diskmax + 3];
+				buffer_recov[2] = 0;
 			} else {
-				buffer_parity = buffer[diskmax + 3];
-				buffer_qarity = buffer[diskmax + 4];
-				buffer_rarity = buffer[diskmax + 5];
+				buffer_recov[0] = buffer[diskmax + 3];
+				buffer_recov[1] = buffer[diskmax + 4];
+				buffer_recov[2] = buffer[diskmax + 5];
 			}
 
 			/* read the parity */
-			ret = parity_read(parity, i, buffer_parity, state->block_size, stdlog);
-			if (ret == -1) {
-				buffer_parity = 0;
-				fprintf(stdlog, "error:%u:parity: Read error\n", i);
-				++error;
-				error_on_this_block = 1;
-			}
-
-			/* read the qarity */
-			if (state->level >= 2) {
-				ret = parity_read(qarity, i, buffer_qarity, state->block_size, stdlog);
+			for(l=0;l<state->level;++l) {
+				ret = parity_read(parity[l], i, buffer_recov[l], state->block_size, stdlog);
 				if (ret == -1) {
-					buffer_qarity = 0;
-					fprintf(stdlog, "error:%u:qarity: Read error\n", i);
-					++error;
-					error_on_this_block = 1;
-				}
-			}
-
-			/* read the rarity */
-			if (state->level >= 3) {
-				ret = parity_read(rarity, i, buffer_rarity, state->block_size, stdlog);
-				if (ret == -1) {
-					buffer_rarity = 0;
-					fprintf(stdlog, "error:%u:rarity: Read error\n", i);
+					buffer_recov[l] = 0;
+					fprintf(stdlog, "error:%u:%s: Read error\n", i, lev_config_name(l));
 					++error;
 					error_on_this_block = 1;
 				}
@@ -335,39 +314,12 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			raid_gen(state->level, buffer, diskmax, state->block_size);
 
 			/* compare the parity */
-			if (buffer_parity && memcmp(buffer[diskmax], buffer_parity, state->block_size) != 0) {
-				fprintf(stdlog, "error:%u:parity: Data error\n", i);
-				++error;
+			for(l=0;l<state->level;++l) {
+			
+				if (buffer_recov[l] && memcmp(buffer[diskmax + l], buffer_recov[l], state->block_size) != 0) {
+					fprintf(stdlog, "error:%u:%s: Data error\n", i, lev_config_name(l));
+					++error;
 				
-				/* it's a silent error only if we are dealing with synched blocks */
-				if (block_is_unsynched) {
-					error_on_this_block = 1;
-				} else {
-					++silent_error;
-					silent_error_on_this_block = 1;
-				}
-			}
-
-			if (state->level >= 2) {
-				if (buffer_qarity && memcmp(buffer[diskmax + 1], buffer_qarity, state->block_size) != 0) {
-					fprintf(stdlog, "error:%u:qarity: Data error\n", i);
-					++error;
-
-					/* it's a silent error only if we are dealing with synched blocks */
-					if (block_is_unsynched) {
-						error_on_this_block = 1;
-					} else {
-						++silent_error;
-						silent_error_on_this_block = 1;
-					}
-				}
-			}
-
-			if (state->level >= 3) {
-				if (buffer_rarity && memcmp(buffer[diskmax + 2], buffer_rarity, state->block_size) != 0) {
-					fprintf(stdlog, "error:%u:rarity: Data error\n", i);
-					++error;
-
 					/* it's a silent error only if we are dealing with synched blocks */
 					if (block_is_unsynched) {
 						error_on_this_block = 1;
@@ -472,15 +424,12 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 	time_t recentlimit;
 	unsigned count;
 	int ret;
-	struct snapraid_parity parity;
-	struct snapraid_parity qarity;
-	struct snapraid_parity rarity;
-	struct snapraid_parity* parity_ptr;
-	struct snapraid_parity* qarity_ptr;
-	struct snapraid_parity* rarity_ptr;
+	struct snapraid_parity parity[LEV_MAX];
+	struct snapraid_parity* parity_ptr[LEV_MAX];
 	snapraid_info* infomap;
 	unsigned error;
 	time_t now;
+	unsigned l;
 
 	/* get the present time */
 	now = time(0);
@@ -559,65 +508,29 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 	free(infomap);
 
 	/* open the file for reading */
-	parity_ptr = &parity;
-	ret = parity_open(parity_ptr, state->parity, state->opt.skip_sequential);
-	if (ret == -1) {
-		fprintf(stderr, "WARNING! Without an accessible Parity file, it isn't possible to scrub.\n");
-		exit(EXIT_FAILURE);
-	}
-
-	if (state->level >= 2) {
-		qarity_ptr = &qarity;
-		ret = parity_open(qarity_ptr, state->qarity, state->opt.skip_sequential);
+	for(l=0;l<state->level;++l) {
+		parity_ptr[l] = &parity[l];
+		ret = parity_open(parity_ptr[l], state->parity_path[l], state->opt.skip_sequential);
 		if (ret == -1) {
-			fprintf(stderr, "WARNING! Without an accessible Q-Parity file, it isn't possible to scrub.\n");
+			fprintf(stderr, "WARNING! Without an accessible %s file, it isn't possible to scrub.\n", lev_name(l));
 			exit(EXIT_FAILURE);
 		}
-	} else {
-		qarity_ptr = 0;
-	}
-
-	if (state->level >= 3) {
-		rarity_ptr = &rarity;
-		ret = parity_open(rarity_ptr, state->rarity, state->opt.skip_sequential);
-		if (ret == -1) {
-			fprintf(stderr, "WARNING! Without an accessible R-Parity file, it isn't possible to scrub.\n");
-			exit(EXIT_FAILURE);
-		}
-	} else {
-		rarity_ptr = 0;
 	}
 
 	printf("Scrubbing...\n");
 
 	error = 0;
 
-	ret = state_scrub_process(state, parity_ptr, qarity_ptr, rarity_ptr, 0, blockmax, timelimit, countlimit, now);
+	ret = state_scrub_process(state, parity_ptr, 0, blockmax, timelimit, countlimit, now);
 	if (ret == -1) {
 		++error;
 		/* continue, as we are already exiting */
 	}
 
-	ret = parity_close(parity_ptr);
-	if (ret == -1) {
-		fprintf(stderr, "DANGER! Unexpected close error in Parity disk.\n");
-		++error;
-		/* continue, as we are already exiting */
-	}
-
-	if (state->level >= 2) {
-		ret = parity_close(qarity_ptr);
+	for(l=0;l<state->level;++l) {
+		ret = parity_close(parity_ptr[l]);
 		if (ret == -1) {
-			fprintf(stderr, "DANGER! Unexpected close error in Q-Parity disk.\n");
-			++error;
-			/* continue, as we are already exiting */
-		}
-	}
-
-	if (state->level >= 3) {
-		ret = parity_close(rarity_ptr);
-		if (ret == -1) {
-			fprintf(stderr, "DANGER! Unexpected close error in R-Parity disk.\n");
+			fprintf(stderr, "DANGER! Unexpected close error in %s disk.\n", lev_name(l));
 			++error;
 			/* continue, as we are already exiting */
 		}
