@@ -55,7 +55,7 @@ exclude \System Volume Information
 # The SIZE argument is specified in gibi bytes -> 1073741824 bytes
 # Default value is 0, meaning disabled.
 # Format: "autosave SIZE_IN_GiB"
-#autosize 500
+#autosave 500
 
 # Defines the pooling directory where the virtual view of the disk
 # array is created using the "pool" command (uncomment to enable).

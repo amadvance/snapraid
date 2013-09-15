@@ -1,8 +1,8 @@
 SnapRAID HISTORY
 ================
 
-4.0 2013/9 (RELEASE CANDIDATE)
-==============================
+4.0 2013/9
+==========
  * New 'scrub' command to periodically check the oldest blocks for silent
    errors without the need to scan the whole array.
  * New 'status' command to check the fragmentation, the last check time
@@ -14,12 +14,13 @@ SnapRAID HISTORY
    by name if a file is not found searching by inode, automatically
    reassigning inodes in restored files without needing to sync
    again the file.
-   This happens only if the file has the same name, size and timestamp
+   This happens only if the file has the same path, size and timestamp
    at nanosecond precision.
  * Added a hash seed to make harder intentional collision attacks.
  * When insering files for the first time, sort them by their physical
    address to improve read performance.
  * Optimized the cache use for the all the RAID computations.
+   This improves a lot the RAID performance.
  * Better selection of the RAID6 implementation for different CPUs.
  * Added RAID5/RAID6 mmx and sse2 implementations with unrolling by 4.
    They are a little faster than the previous unroll by 2.

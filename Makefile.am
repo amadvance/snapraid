@@ -253,7 +253,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAIDTP) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
-	echo --- Delete some files and create some new, sync and check in multiple steps
+	echo --- Delete some files and create some new, sync and check in multiple steps using text content
 	rm test/disk1/4*
 	rm test/disk2/5*
 	rm test/disk3/6*

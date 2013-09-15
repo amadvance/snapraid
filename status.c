@@ -55,13 +55,14 @@ int state_status(struct snapraid_state* state)
 	unsigned file_fragmented;
 	unsigned extra_fragment;
 	uint64_t file_size;
+	unsigned unsynched_blocks;
 
 	/* get the present time */
 	now = time(0);
 
 	blockmax = parity_size(state);
 
-	/* for each disk, recover empty files, symlinks and empty dirs */
+	/* count fragments */
 	file_count = 0;
 	file_size = 0;
 	file_fragmented = 0;
@@ -114,10 +115,33 @@ int state_status(struct snapraid_state* state)
 
 	printf("\n");
 
-	/* allocate a temp vector for all the blocks */
-	infomap = malloc_nofail(blockmax * sizeof(snapraid_info));
+	/* count unsynched blocks */
+	unsynched_blocks = 0;
+	for(i=0;i<blockmax;++i) {
+		int one_invalid;
+		int one_valid;
 
-	/* copy the info in the temp vector */
+		/* for each disk */
+		one_invalid = 0;
+		one_valid = 0;
+		for(node_disk=state->disklist;node_disk!=0;node_disk=node_disk->next) {
+			struct snapraid_disk* disk = node_disk->data;
+			struct snapraid_block* block = disk_block_get(disk, i);
+
+			if (block_has_file(block))
+				one_valid = 1;
+			if (block_has_invalid_parity(block))
+				one_invalid = 1;
+		}
+
+		/* if both valid and invalid, we need to update */
+		if (one_invalid && one_valid) {
+			++unsynched_blocks;
+		}
+	}
+
+	/* copy the info a temp vector, and count bad/rehash blocks */
+	infomap = malloc_nofail(blockmax * sizeof(snapraid_info));
 	bad = 0;
 	count = 0;
 	rehash = 0;
@@ -138,23 +162,21 @@ int state_status(struct snapraid_state* state)
 	}
 
 	if (!count) {
-		fprintf(stderr, "The array appears to be empty.\n");
+		fprintf(stderr, "The array is empty.\n");
 		free(infomap);
 		return 0;
 	}
 
-	if (rehash) {
-		printf("You have a rehash in progress at %u%%.\n", (count - rehash) * 100 / count);
-		printf("\n");
-	}
-
-	/* sort it */
+	/* sort the info to get the time info */
 	qsort(infomap, count, sizeof(snapraid_info), info_time_compare);
-
 	oldest = info_get_time(infomap[0]);
 	median = info_get_time(infomap[count / 2]);
 	newest = info_get_time(infomap[count - 1]);
+	dayoldest = day_ago(oldest, now);
+	daymedian = day_ago(median, now);
+	daynewest = day_ago(newest, now);
 
+	/* compute graph limits */
 	barpos = 0;
 	barmax = 0;
 	for(i=0;i<GRAPH_COLUMN;++i) {
@@ -174,14 +196,6 @@ int state_status(struct snapraid_state* state)
 
 		bar[i] = step;
 	}
-
-	dayoldest = day_ago(oldest, now);
-	daymedian = day_ago(median, now);
-	daynewest = day_ago(newest, now);
-
-	printf("The oldest block was checked %u days ago, the median %u, the newest %u.\n", dayoldest, daymedian, daynewest);
-
-	printf("\n");
 
 	/* print the graph */
 	for(y=0;y<GRAPH_ROW;++y) {
@@ -221,8 +235,25 @@ int state_status(struct snapraid_state* state)
 
 	printf("\n");
 
+	printf("The oldest block was checked %u days ago, the median %u, the newest %u.\n", dayoldest, daymedian, daynewest);
+
+	printf("\n");
+
+	if (unsynched_blocks) {
+		printf("WARNING! The array is NOT fully synched.\n");
+		printf("You have a sync in progress at %u%%.\n", (blockmax - unsynched_blocks) * 100 / blockmax);
+	} else {
+		printf("No sync is in progress.\n");
+	}
+
+	if (rehash) {
+		printf("You have a rehash in progress at %u%%.\n", (count - rehash) * 100 / count);
+	} else {
+		printf("No rehash is in progress.\n");
+	}
+
 	if (bad) {
-		printf("DANGER! In the array there are %u failing blocks!\n\n", bad);
+		printf("DANGER! In the array there are %u silent errors!\n\n", bad);
 
 		printf("They are:");
 
@@ -243,7 +274,7 @@ int state_status(struct snapraid_state* state)
 		printf("To fix them use the command 'snapraid --filter-error fix'.\n");
 		printf("The errors will disapper from the 'status' at the next 'scrub' command.\n");
 	} else {
-		printf("No silent error detected!\n");
+		printf("No silent error detected.\n");
 	}
 
 	/* free the temp vector */

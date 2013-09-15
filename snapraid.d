@@ -9,8 +9,8 @@ Synopsis
 	:	[-p, --percentage PERC] [-o, --older-than DAYS]
 	:	[-Z, --force-zero] [-E, --force-empty]
 	:	[-U, --force-uuid] [-D, --force-device]
-	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	:	[-v, --verbose] [-l, --log FILE]
+	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	:	sync|status|scrub|diff|dup|pool|check|fix|rehash
 
 	:snapraid [-V, --version] [-h, --help]
@@ -184,16 +184,17 @@ Getting Started
 
 		:snapraid scrub
 
-	As difference than "check" this command verifies only the oldest data
+	This command is similar at "check" but verifies only the oldest data
 	in your array. Every run of the command checks about 12% of the data,
 	but nothing newer than 10 days.
 	You can use the -p, --percentage option to specify a different amount,
-	and the -o, --older-than option to specify a different age in days:
+	and the -o, --older-than option to specify a different age in days.
+	For example, to check 5% of the array older than 20 days use:
 
 		:snapraid -p 5 -o 20 scrub
 
 	If silent errors are found, the corresponding blocks are marked as bad
-	in the "concent" file, and listed in the "status" command.
+	in the "content" file, and listed in the "status" command.
 
 		:snapraid status
 
@@ -202,8 +203,8 @@ Getting Started
 
 		:snapraid -e fix
 
-	and at the next "scrub" the errors will disappear from the "status"
-	report. You can use -p 0 to scrub only them.
+	At the next "scrub" the errors will disappear from the "status" report
+	if really fixed. You can use -p 0 to scrub only blocks marked as bad.
 
 		:snapraid -p 0 scrub
 
@@ -239,9 +240,12 @@ Commands
 	in the disk array are read, and the redundancy data is
 	recomputed.
 
-	Files are identified by inode and checked by time and size,
-	meaning that you can move them on the disk without triggering
-	any redundancy recomputation.
+	Files are identified by path and/or inode and checked by
+	size and timestamp.
+	If the size or timestamp are different, the redundancy data is
+	recomputed for the whole file.
+	Using inode allow you can move them on the disk
+	without triggering any redundancy recomputation.
 
 	You can stop this process at any time pressing Ctrl+C,
 	without losing the work already done.
@@ -288,7 +292,7 @@ Commands
 	at least one time every two months.
 
 	You can use the -p, --percentage option to specify a different amount,
-	and the -o, --older-than option to specify a different age.
+	and the -o, --older-than option to specify a different age in days.
 	Note that if only one of -p and -o is specified the default value of
 	the other option is not used.
 
@@ -351,7 +355,10 @@ Commands
 
 	This option can be used to change the hash kind used,
 	typically when upgrading from a 32 bits system to a 64
-	bits one to switch from murmur3 to the faster spooky2.
+	bits one to switch from MurmurHash3 to the faster SpookyHash.
+
+	If you are already using the optimal hash, this command
+	do nothing and just inform you that nothing has to be done.
 
 	The rehash isn't done immediately, but it takes place
 	progressively during the "sync" and "scrub" commands.
@@ -469,7 +476,7 @@ Options
 
 	-U, --force-uuid
 		Forces the insecure operation of syncing, checking and fixing
-		with disks that have changed the UUID.
+		with disks that have changed their UUID.
 		If SnapRAID detects that some disks have changed UUID,
 		it stops proceeding unless you specify this option.
 		This allows to detect when your disks are mounted in the
@@ -485,18 +492,9 @@ Options
 		physical device.
 		If SnapRAID detects that two disks have the same device ID,
 		it stops proceeding, because it's not a supported configuration.
-		But it could happen what you want to temporarely restore a lost
+		But it could happen that you want to temporarely restore a lost
 		disk in the free space left in an already used disk. and this
-		option will allow you to continue anyway.
-
-	-s, --start BLKSTART
-		Starts the processing from the specified
-		block number. It could be useful to retry to check
-		or fix some specific block, in case of a damaged disk.
-
-	-t, --count BLKCOUNT
-		Process only the specified number of blocks.
-		It's present mainly for advanced manual recovering.
+		option allows you to continue anyway.
 
 	-l, --log FILE
 		Outputs a detailed log to the specified file.
@@ -504,6 +502,16 @@ Options
 		any file is not recoverable and why.
 		If this option is not specified, the log is printed in
 		the console using the standard error stream.
+
+	-s, --start BLKSTART
+		Starts the processing from the specified
+		block number. It could be useful to retry to check
+		or fix some specific block, in case of a damaged disk.
+		It's present mainly for advanced manual recovering.
+
+	-t, --count BLKCOUNT
+		Processes only the specified number of blocks.
+		It's present mainly for advanced manual recovering.
 
 	-v, --verbose
 		Prints more information in the processing.
@@ -833,20 +841,8 @@ Parity
 	They are binary files, containing the computed redundancy of all the
 	blocks defined in the "content" file.
 
-	You do not need to understand its format, but it's described here
-	for documentation.
-
 	These files are read and written by the "sync" and "fix" commands, and
 	only read by "check".
-
-	For all the blocks at a given position, the parity and the q-parity
-	are computed as specified in:
-
-		:http://kernel.org/pub/linux/kernel/people/hpa/raid6.pdf
-
-	When a file block is shorter than the default block size, for example
-	because it's the last block of a file, it's assumed as filled with 0
-	at the end.
 
 Encoding
 	SnapRAID in Unix ignores any encoding. It simply reads and stores the
