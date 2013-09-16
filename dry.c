@@ -111,7 +111,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			if (qarity) {
 				ret = parity_read(qarity, i, buffer_aligned, state->block_size, stdlog);
 				if (ret == -1) {
-					fprintf(stdlog, "error:%u:qarity: Read error\n", i);
+					fprintf(stdlog, "error:%u:q-parity: Read error\n", i);
 					++error;
 				}
 			}

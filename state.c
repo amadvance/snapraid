@@ -388,7 +388,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			else
 				pathcpy(device, sizeof(device), ".");
 			if (stat(device, &st) != 0) {
-				fprintf(stderr, "Error accessing 'qarity' dir '%s' specification in '%s' at line %u\n", device, path, line);
+				fprintf(stderr, "Error accessing 'q-parity' dir '%s' specification in '%s' at line %u\n", device, path, line);
 				exit(EXIT_FAILURE);
 			}
 
@@ -657,7 +657,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			fprintf(stdlog, "mode:raid5\n");
 		fprintf(stdlog, "parity:%s\n", state->parity);
 		if (state->qarity[0] != 0)
-			fprintf(stdlog, "qarity:%s\n", state->qarity);
+			fprintf(stdlog, "q-parity:%s\n", state->qarity);
 		if (state->pool[0] != 0)
 			fprintf(stdlog, "pool:%s\n", state->pool);
 		fflush(stdlog);

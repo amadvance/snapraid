@@ -307,7 +307,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				ret = parity_read(qarity, i, buffer_qarity, state->block_size, stdlog);
 				if (ret == -1) {
 					buffer_qarity = 0;
-					fprintf(stdlog, "error:%u:qarity: Read error\n", i);
+					fprintf(stdlog, "error:%u:q-parity: Read error\n", i);
 					++error;
 					error_on_this_block = 1;
 				}
@@ -331,7 +331,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			}
 			if (state->level >= 2) {
 				if (buffer_qarity && memcmp(buffer[diskmax + 1], buffer_qarity, state->block_size) != 0) {
-					fprintf(stdlog, "error:%u:qarity: Data error\n", i);
+					fprintf(stdlog, "error:%u:q-parity: Data error\n", i);
 					++error;
 
 					/* it's a silent error only if we are dealing with synched blocks */

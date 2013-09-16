@@ -172,7 +172,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			return 0;
 		}
 
-		fprintf(stdlog, "error:%u:qarity: Data error\n", pos);
+		fprintf(stdlog, "error:%u:q-parity: Data error\n", pos);
 		++error;
 	}
 
@@ -191,7 +191,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			return 0;
 		}
 
-		fprintf(stdlog, "error:%u:parity/qarity: Data error\n", pos);
+		fprintf(stdlog, "error:%u:parity/q-parity: Data error\n", pos);
 		++error;
 	}
 
@@ -222,7 +222,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			return 0;
 		}
 
-		fprintf(stdlog, "error:%u:parity/qarity: Data error\n", pos);
+		fprintf(stdlog, "error:%u:parity/q-parity: Data error\n", pos);
 		++error;
 	}
 
@@ -766,7 +766,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					if (ret == -1) {
 						buffer_qarity = 0; /* no qarity to use */
 
-						fprintf(stdlog, "error:%u:qarity: Read error\n", i);
+						fprintf(stdlog, "error:%u:q-parity: Read error\n", i);
 						++error;
 					}
 				} else {
@@ -828,7 +828,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 						if (buffer_qarity != 0 && memcmp(buffer_qarity, buffer[diskmax + 1], state->block_size) != 0) {
 							buffer_qarity = 0;
 
-							fprintf(stdlog, "error:%u:qarity: Data error\n", i);
+							fprintf(stdlog, "error:%u:q-parity: Data error\n", i);
 							++error;
 						}
 					}
@@ -907,7 +907,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 									goto bail;
 								}
 
-								fprintf(stdlog, "fixed:%u:qarity: Fixed data error\n", i);
+								fprintf(stdlog, "fixed:%u:q-parity: Fixed data error\n", i);
 								++recovered_error;
 							}
 						}
