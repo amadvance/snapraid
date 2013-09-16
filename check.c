@@ -175,7 +175,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			return 0;
 		}
 
-		fprintf(stdlog, "error:%u:qarity: Data error\n", pos);
+		fprintf(stdlog, "error:%u:q-parity: Data error\n", pos);
 		++error;
 	}
 
@@ -197,7 +197,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			return 0;
 		}
 
-		fprintf(stdlog, "error:%u:parity/qarity: Data error\n", pos);
+		fprintf(stdlog, "error:%u:parity/q-parity: Data error\n", pos);
 		++error;
 	}
 
@@ -228,7 +228,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			return 0;
 		}
 
-		fprintf(stdlog, "error:%u:parity/qarity: Data error\n", pos);
+		fprintf(stdlog, "error:%u:parity/q-parity: Data error\n", pos);
 		++error;
 	}
 
