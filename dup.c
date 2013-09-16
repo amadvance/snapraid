@@ -95,7 +95,7 @@ void state_dup(struct snapraid_state* state)
 
 	count = 0;
 	size = 0;
-	
+
 	/* for each disk */
 	for(i=state->disklist;i!=0;i=i->next) {
 		tommy_node* j;

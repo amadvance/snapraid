@@ -508,6 +508,21 @@ int main(int argc, char* argv[])
 	raid_init();
 	crc32c_init();
 
+	/* open the log file */
+	if (log == 0)
+		log = "2";
+	if (strcmp(log, "1") == 0) {
+		stdlog = stdout;
+	} else if (strcmp(log, "2") == 0) {
+		stdlog = stderr;
+	} else {
+		stdlog = fopen(log, "wt");
+		if (!stdlog) {
+			fprintf(stderr, "Error opening the log file '%s'. %s.\n", log, strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+	}
+
 	if (!opt.skip_self)
 		selftest(opt.gui);
 
@@ -533,21 +548,6 @@ int main(int argc, char* argv[])
 #else
 	(void)lock;
 #endif
-
-	/* open the log file */
-	if (log == 0)
-		log = "2";
-	if (strcmp(log, "1") == 0) {
-		stdlog = stdout;
-	} else if (strcmp(log, "2") == 0) {
-		stdlog = stderr;
-	} else {
-		stdlog = fopen(log, "wt");
-		if (!stdlog) {
-			fprintf(stderr, "Error opening the log file '%s'. %s.\n", log, strerror(errno));
-			exit(EXIT_FAILURE);
-		}
-	}
 
 	if (operation == OPERATION_DIFF) {
 		state_read(&state);
