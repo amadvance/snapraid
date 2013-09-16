@@ -620,7 +620,7 @@ void raidTP_mmxr1(unsigned char** buffer, unsigned diskmax, unsigned size)
 	for(d=0;d<size;d+=8) {
 		asm volatile("movq %0,%%mm0" : : "m" (buffer[z0][d])); /* P[0] */
 		asm volatile("movq %mm0,%mm1"); /* Q[0] */
-		asm volatile("movq %mm0,%mm2"); /* Q[0] */
+		asm volatile("movq %mm0,%mm2"); /* R[0] */
 		for(z=z0-1;z>=0;--z) {
 			asm volatile("pcmpgtb %mm1,%mm4");
 			asm volatile("pcmpgtb %mm2,%mm5");
