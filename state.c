@@ -30,6 +30,7 @@ const char* lev_name(unsigned l)
 	case 0 : return "Parity";
 	case 1 : return "Q-Parity";
 	case 2 : return "R-Parity";
+	case 3 : return "S-Parity";
 	}
 
 	return 0;
@@ -41,6 +42,7 @@ const char* lev_config_name(unsigned l)
 	case 0 : return "parity";
 	case 1 : return "q-parity";
 	case 2 : return "r-parity";
+	case 3 : return "s-parity";
 	}
 
 	return 0;
@@ -328,7 +330,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				exit(EXIT_FAILURE);
 			}
 			state->block_size *= 1024;
-		} else if (strcmp(tag, "parity") == 0 || strcmp(tag, "q-parity") == 0 || strcmp(tag, "r-parity") == 0) {
+		} else if (strcmp(tag, "parity") == 0 || strcmp(tag, "q-parity") == 0 || strcmp(tag, "r-parity") == 0 || strcmp(tag, "s-parity") == 0) {
 			char device[PATH_MAX];
 			char* slash;
 			struct stat st;
@@ -338,6 +340,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			case 'p' : l = 0; break;
 			case 'q' : l = 1; break;
 			case 'r' : l = 2; break;
+			case 's' : l = 3; break;
 			default:
 				fprintf(stderr, "Invalid '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);

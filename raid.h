@@ -65,6 +65,26 @@ void raidTP_recov_2dataq(unsigned char** dptrs, unsigned diskmax, unsigned size,
  */
 void raidTP_recov_3data(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, int failb, int failc, unsigned char* zero);
 
+/*
+ * Recover failure of one data block x using parity i.
+ */
+void raid_recov_1data(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, int i, unsigned char* zero);
+
+/*
+ * Recover failure of two data blocks x,y using parity i,j.
+ */
+void raid_recov_2data(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, int y, int i, int j, unsigned char* zero);
+
+/*
+ * Recover failure of three data blocks x,y,z using parity i,j,k.
+ */
+void raid_recov_3data(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, int y, int z, int i, int j, int k, unsigned char* zero);
+
+/*
+ * Recover failure of four data blocks x,y,z,v using parity i,j,k,l.
+ */
+void raid_recov_4data(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, int y, int z, int v, int i, int j, int k, int l, unsigned char* zero);
+
 /**
  * Initializes the RAID system.
  */
@@ -87,6 +107,10 @@ void raidTP_int32r2(unsigned char** dptr, unsigned diskmax, unsigned size);
 void raidTP_mmxr1(unsigned char** buffer, unsigned diskmax, unsigned size);
 void raidTP_sse2r1(unsigned char** dptr, unsigned diskmax, unsigned size);
 void raidTP_sse2r2(unsigned char** dptr, unsigned diskmax, unsigned size);
+void raidQP_int32r2(unsigned char** dptr, unsigned diskmax, unsigned size);
+void raidQP_mmxr1(unsigned char** buffer, unsigned diskmax, unsigned size);
+void raidQP_sse2r1(unsigned char** dptr, unsigned diskmax, unsigned size);
+void raidQP_sse2r2(unsigned char** buffer, unsigned diskmax, unsigned size);
 
 #endif
 

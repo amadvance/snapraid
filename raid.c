@@ -708,7 +708,6 @@ void raidTP_sse2r1(unsigned char** buffer, unsigned diskmax, unsigned size)
 }
 #endif
 
-
 #if defined(__x86_64__)
 /*
  * RAIDTP unrolled-by-2 SSE2 implementation
@@ -794,6 +793,411 @@ void raidTP_sse2r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 }
 #endif
 
+/*
+ * RAIDQP unrolled-by-2 C implementation
+ */
+void raidQP_int32r2(unsigned char** buffer, unsigned diskmax, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	unsigned char* s;
+	int z, z0;
+	unsigned d;
+
+	uint32_t wd0, ws0, wr0, wq0, wp0, w10, w20;
+	uint32_t wd1, ws1, wr1, wq1, wp1, w11, w21;
+
+	z0 = diskmax - 1;
+	p = buffer[diskmax];
+	q = buffer[diskmax+1];
+	r = buffer[diskmax+2];
+	s = buffer[diskmax+3];
+
+	for(d=0;d<size;d+=8) {
+		ws0 = wr0 = wq0 = wp0 = *(uint32_t *)&buffer[z0][d+0*4];
+		ws1 = wr1 = wq1 = wp1 = *(uint32_t *)&buffer[z0][d+1*4];
+		for (z=z0-1;z>= 0;--z) {
+			wd0 = *(uint32_t *)&buffer[z][d+0*4];
+			wd1 = *(uint32_t *)&buffer[z][d+1*4];
+
+			/* wp += wd */
+			wp0 ^= wd0;
+			wp1 ^= wd1;
+
+			/* w1 = wq * {02} */
+			w20 = MASK(wq0);
+			w21 = MASK(wq1);
+			w10 = SHLBYTE(wq0);
+			w11 = SHLBYTE(wq1);
+			w20 &= NBYTES(0x1d);
+			w21 &= NBYTES(0x1d);
+			w10 ^= w20;
+			w11 ^= w21;
+
+			/* wq = w1 + wd */
+			wq0 = w10 ^ wd0;
+			wq1 = w11 ^ wd1;
+
+			/* w1 = wr * {02} */
+			w20 = MASK(wr0);
+			w21 = MASK(wr1);
+			w10 = SHLBYTE(wr0);
+			w11 = SHLBYTE(wr1);
+			w20 &= NBYTES(0x1d);
+			w21 &= NBYTES(0x1d);
+			w10 ^= w20;
+			w11 ^= w21;
+
+			/* w1 = w1 * {02} */
+			w20 = MASK(w10);
+			w21 = MASK(w11);
+			w10 = SHLBYTE(w10);
+			w11 = SHLBYTE(w11);
+			w20 &= NBYTES(0x1d);
+			w21 &= NBYTES(0x1d);
+			w10 ^= w20;
+			w11 ^= w21;
+
+			/* wr = w1 + wd */
+			wr0 = w10 ^ wd0;
+			wr1 = w11 ^ wd1;
+
+			/* w1 = ws * {02} */
+			w20 = MASK(ws0);
+			w21 = MASK(ws1);
+			w10 = SHLBYTE(ws0);
+			w11 = SHLBYTE(ws1);
+			w20 &= NBYTES(0x1d);
+			w21 &= NBYTES(0x1d);
+			w10 ^= w20;
+			w11 ^= w21;
+
+			/* w1 = w1 * {02} */
+			w20 = MASK(w10);
+			w21 = MASK(w11);
+			w10 = SHLBYTE(w10);
+			w11 = SHLBYTE(w11);
+			w20 &= NBYTES(0x1d);
+			w21 &= NBYTES(0x1d);
+			w10 ^= w20;
+			w11 ^= w21;
+
+			/* w1 = w1 * {02} */
+			w20 = MASK(w10);
+			w21 = MASK(w11);
+			w10 = SHLBYTE(w10);
+			w11 = SHLBYTE(w11);
+			w20 &= NBYTES(0x1d);
+			w21 &= NBYTES(0x1d);
+			w10 ^= w20;
+			w11 ^= w21;
+
+			/* ws = w1 + wd */
+			ws0 = w10 ^ wd0;
+			ws1 = w11 ^ wd1;
+
+		}
+		*(uint32_t *)&p[d+4*0] = wp0;
+		*(uint32_t *)&p[d+4*1] = wp1;
+		*(uint32_t *)&q[d+4*0] = wq0;
+		*(uint32_t *)&q[d+4*1] = wq1;
+		*(uint32_t *)&r[d+4*0] = wr0;
+		*(uint32_t *)&r[d+4*1] = wr1;
+		*(uint32_t *)&s[d+4*0] = ws0;
+		*(uint32_t *)&s[d+4*1] = ws1;
+	}
+}
+
+#if defined(__i386__) || defined(__x86_64__)
+/*
+ * RAIDQP unrolled-by-1 MMX implementation
+ */
+void raidQP_mmxr1(unsigned char** buffer, unsigned diskmax, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	unsigned char* s;
+	int z, z0;
+	unsigned d;
+
+	z0 = diskmax - 1;
+	p = buffer[diskmax];
+	q = buffer[diskmax+1];
+	r = buffer[diskmax+2];
+	s = buffer[diskmax+3];
+
+	asm volatile("movq %0,%%mm7" : : "m" (raid6_mmx_constants.x1d));
+	asm volatile("pxor %mm4,%mm4");
+	asm volatile("pxor %mm5,%mm5");
+
+	for(d=0;d<size;d+=8) {
+		asm volatile("movq %0,%%mm0" : : "m" (buffer[z0][d])); /* P[0] */
+		asm volatile("movq %mm0,%mm1"); /* Q[0] */
+		asm volatile("movq %mm0,%mm2"); /* R[0] */
+		asm volatile("movq %mm0,%mm3"); /* S[0] */
+		for(z=z0-1;z>=0;--z) {
+			asm volatile("pcmpgtb %mm1,%mm4");
+			asm volatile("pcmpgtb %mm3,%mm5");
+			asm volatile("paddb %mm1,%mm1");
+			asm volatile("paddb %mm3,%mm3");
+			asm volatile("pand %mm7,%mm4");
+			asm volatile("pand %mm7,%mm5");
+			asm volatile("pxor %mm4,%mm1");
+			asm volatile("pxor %mm5,%mm3");
+
+			asm volatile("pxor %mm4,%mm4");
+			asm volatile("pxor %mm5,%mm5");
+
+			asm volatile("pcmpgtb %mm2,%mm4");
+			asm volatile("pcmpgtb %mm3,%mm5");
+			asm volatile("paddb %mm2,%mm2");
+			asm volatile("paddb %mm3,%mm3");
+			asm volatile("pand %mm7,%mm4");
+			asm volatile("pand %mm7,%mm5");
+			asm volatile("pxor %mm4,%mm2");
+			asm volatile("pxor %mm5,%mm3");
+
+			asm volatile("pxor %mm4,%mm4");
+			asm volatile("pxor %mm5,%mm5");
+
+			asm volatile("pcmpgtb %mm2,%mm4");
+			asm volatile("pcmpgtb %mm3,%mm5");
+			asm volatile("paddb %mm2,%mm2");
+			asm volatile("paddb %mm3,%mm3");
+			asm volatile("pand %mm7,%mm4");
+			asm volatile("pand %mm7,%mm5");
+			asm volatile("pxor %mm4,%mm2");
+			asm volatile("pxor %mm5,%mm3");
+
+			asm volatile("movq %0,%%mm6" : : "m" (buffer[z][d]));
+			asm volatile("pxor %mm6,%mm0");
+			asm volatile("pxor %mm6,%mm1");
+			asm volatile("pxor %mm6,%mm2");
+			asm volatile("pxor %mm6,%mm3");
+
+			asm volatile("pxor %mm4,%mm4");
+			asm volatile("pxor %mm5,%mm5");
+		}
+		asm volatile("movq %%mm0,%0" : "=m" (p[d]));
+		asm volatile("movq %%mm1,%0" : "=m" (q[d]));
+		asm volatile("movq %%mm2,%0" : "=m" (r[d]));
+		asm volatile("movq %%mm3,%0" : "=m" (s[d]));
+	}
+
+	asm volatile("emms" : : : "memory");
+}
+#endif
+
+#if defined(__i386__) || defined(__x86_64__)
+/*
+ * RAIDQP unrolled-by-1 SSE2 implementation
+ */
+void raidQP_sse2r1(unsigned char** buffer, unsigned diskmax, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	unsigned char* s;
+	int z, z0;
+	unsigned d;
+
+	z0 = diskmax - 1;
+	p = buffer[diskmax];
+	q = buffer[diskmax+1];
+	r = buffer[diskmax+2];
+	s = buffer[diskmax+3];
+
+	asm volatile("movdqa %0,%%xmm7" : : "m" (raid6_sse_constants.x1d[0]));
+	asm volatile("pxor %xmm4,%xmm4");
+	asm volatile("pxor %xmm5,%xmm5");
+
+	for(d=0;d<size;d+=16) {
+		asm volatile("movdqa %0,%%xmm0" : : "m" (buffer[z0][d])); /* P[0] */
+		asm volatile("movdqa %xmm0,%xmm1"); /* Q[0] */
+		asm volatile("movdqa %xmm0,%xmm2"); /* R[0] */
+		asm volatile("movdqa %xmm0,%xmm3"); /* S[0] */
+		for(z=z0-1;z>=0;--z) {
+			asm volatile("pcmpgtb %xmm1,%xmm4");
+			asm volatile("pcmpgtb %xmm3,%xmm5");
+			asm volatile("paddb %xmm1,%xmm1");
+			asm volatile("paddb %xmm3,%xmm3");
+			asm volatile("pand %xmm7,%xmm4");
+			asm volatile("pand %xmm7,%xmm5");
+			asm volatile("pxor %xmm4,%xmm1");
+			asm volatile("pxor %xmm5,%xmm3");
+
+			asm volatile("pxor %xmm4,%xmm4");
+			asm volatile("pxor %xmm5,%xmm5");
+
+			asm volatile("pcmpgtb %xmm2,%xmm4");
+			asm volatile("pcmpgtb %xmm3,%xmm5");
+			asm volatile("paddb %xmm2,%xmm2");
+			asm volatile("paddb %xmm3,%xmm3");
+			asm volatile("pand %xmm7,%xmm4");
+			asm volatile("pand %xmm7,%xmm5");
+			asm volatile("pxor %xmm4,%xmm2");
+			asm volatile("pxor %xmm5,%xmm3");
+
+			asm volatile("pxor %xmm4,%xmm4");
+			asm volatile("pxor %xmm5,%xmm5");
+
+			asm volatile("pcmpgtb %xmm2,%xmm4");
+			asm volatile("pcmpgtb %xmm3,%xmm5");
+			asm volatile("paddb %xmm2,%xmm2");
+			asm volatile("paddb %xmm3,%xmm3");
+			asm volatile("pand %xmm7,%xmm4");
+			asm volatile("pand %xmm7,%xmm5");
+			asm volatile("pxor %xmm4,%xmm2");
+			asm volatile("pxor %xmm5,%xmm3");
+
+			asm volatile("movdqa %0,%%xmm6" : : "m" (buffer[z][d]));
+			asm volatile("pxor %xmm6,%xmm0");
+			asm volatile("pxor %xmm6,%xmm1");
+			asm volatile("pxor %xmm6,%xmm2");
+			asm volatile("pxor %xmm6,%xmm3");
+
+			asm volatile("pxor %xmm4,%xmm4");
+			asm volatile("pxor %xmm5,%xmm5");
+		}
+		asm volatile("movntdq %%xmm0,%0" : "=m" (p[d]));
+		asm volatile("movntdq %%xmm1,%0" : "=m" (q[d]));
+		asm volatile("movntdq %%xmm2,%0" : "=m" (r[d]));
+		asm volatile("movntdq %%xmm3,%0" : "=m" (s[d]));
+	}
+
+	asm volatile("sfence" : : : "memory");
+}
+#endif
+
+#if defined(__x86_64__)
+/*
+ * RAIDQP unrolled-by-2 SSE2 implementation
+ * Note that it uses all the 16 registers, meaning that x64 is required.
+ */
+void raidQP_sse2r2(unsigned char** buffer, unsigned diskmax, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	unsigned char* s;
+	int z, z0;
+	unsigned d;
+
+	z0 = diskmax - 1;
+	p = buffer[diskmax];
+	q = buffer[diskmax+1];
+	r = buffer[diskmax+2];
+	s = buffer[diskmax+3];
+
+	asm volatile("movdqa %0,%%xmm7" : : "m" (raid6_sse_constants.x1d[0]));
+	asm volatile("pxor %xmm4,%xmm4");
+	asm volatile("pxor %xmm5,%xmm5");
+	asm volatile("pxor %xmm12,%xmm12");
+	asm volatile("pxor %xmm13,%xmm13");
+
+	for(d=0;d<size;d+=32) {
+		asm volatile("movdqa %0,%%xmm0" : : "m" (buffer[z0][d])); /* P[0] */
+		asm volatile("movdqa %0,%%xmm8" : : "m" (buffer[z0][d+16])); /* P[1] */
+		asm volatile("movdqa %xmm0,%xmm1"); /* Q[0] */
+		asm volatile("movdqa %xmm8,%xmm9"); /* Q[1] */
+		asm volatile("movdqa %xmm0,%xmm2"); /* R[0] */
+		asm volatile("movdqa %xmm8,%xmm10"); /* R[1] */
+		asm volatile("movdqa %xmm0,%xmm3"); /* S[0] */
+		asm volatile("movdqa %xmm8,%xmm11"); /* S[1] */
+		for(z=z0-1;z>=0;--z) {
+			asm volatile("pcmpgtb %xmm1,%xmm4");
+			asm volatile("pcmpgtb %xmm3,%xmm5");
+			asm volatile("pcmpgtb %xmm9,%xmm12");
+			asm volatile("pcmpgtb %xmm11,%xmm13");
+			asm volatile("paddb %xmm1,%xmm1");
+			asm volatile("paddb %xmm3,%xmm3");
+			asm volatile("paddb %xmm9,%xmm9");
+			asm volatile("paddb %xmm11,%xmm11");
+			asm volatile("pand %xmm7,%xmm4");
+			asm volatile("pand %xmm7,%xmm5");
+			asm volatile("pand %xmm7,%xmm12");
+			asm volatile("pand %xmm7,%xmm13");
+			asm volatile("pxor %xmm4,%xmm1");
+			asm volatile("pxor %xmm5,%xmm3");
+			asm volatile("pxor %xmm12,%xmm9");
+			asm volatile("pxor %xmm13,%xmm11");
+
+			asm volatile("pxor %xmm4,%xmm4");
+			asm volatile("pxor %xmm5,%xmm5");
+			asm volatile("pxor %xmm12,%xmm12");
+			asm volatile("pxor %xmm13,%xmm13");
+
+			asm volatile("pcmpgtb %xmm2,%xmm4");
+			asm volatile("pcmpgtb %xmm3,%xmm5");
+			asm volatile("pcmpgtb %xmm10,%xmm12");
+			asm volatile("pcmpgtb %xmm11,%xmm13");
+			asm volatile("paddb %xmm2,%xmm2");
+			asm volatile("paddb %xmm3,%xmm3");
+			asm volatile("paddb %xmm10,%xmm10");
+			asm volatile("paddb %xmm11,%xmm11");
+			asm volatile("pand %xmm7,%xmm4");
+			asm volatile("pand %xmm7,%xmm5");
+			asm volatile("pand %xmm7,%xmm12");
+			asm volatile("pand %xmm7,%xmm13");
+			asm volatile("pxor %xmm4,%xmm2");
+			asm volatile("pxor %xmm5,%xmm3");
+			asm volatile("pxor %xmm12,%xmm10");
+			asm volatile("pxor %xmm13,%xmm11");
+
+			asm volatile("pxor %xmm4,%xmm4");
+			asm volatile("pxor %xmm5,%xmm5");
+			asm volatile("pxor %xmm12,%xmm12");
+			asm volatile("pxor %xmm13,%xmm13");
+
+			asm volatile("pcmpgtb %xmm2,%xmm4");
+			asm volatile("pcmpgtb %xmm3,%xmm5");
+			asm volatile("pcmpgtb %xmm10,%xmm12");
+			asm volatile("pcmpgtb %xmm11,%xmm13");
+			asm volatile("paddb %xmm2,%xmm2");
+			asm volatile("paddb %xmm3,%xmm3");
+			asm volatile("paddb %xmm10,%xmm10");
+			asm volatile("paddb %xmm11,%xmm11");
+			asm volatile("pand %xmm7,%xmm4");
+			asm volatile("pand %xmm7,%xmm5");
+			asm volatile("pand %xmm7,%xmm12");
+			asm volatile("pand %xmm7,%xmm13");
+			asm volatile("pxor %xmm4,%xmm2");
+			asm volatile("pxor %xmm5,%xmm3");
+			asm volatile("pxor %xmm12,%xmm10");
+			asm volatile("pxor %xmm13,%xmm11");
+
+			asm volatile("movdqa %0,%%xmm6" : : "m" (buffer[z][d]));
+			asm volatile("movdqa %0,%%xmm14" : : "m" (buffer[z][d+16]));
+			asm volatile("pxor %xmm6,%xmm0");
+			asm volatile("pxor %xmm6,%xmm1");
+			asm volatile("pxor %xmm6,%xmm2");
+			asm volatile("pxor %xmm6,%xmm3");
+			asm volatile("pxor %xmm14,%xmm8");
+			asm volatile("pxor %xmm14,%xmm9");
+			asm volatile("pxor %xmm14,%xmm10");
+			asm volatile("pxor %xmm14,%xmm11");
+
+			asm volatile("pxor %xmm4,%xmm4");
+			asm volatile("pxor %xmm5,%xmm5");
+			asm volatile("pxor %xmm12,%xmm12");
+			asm volatile("pxor %xmm13,%xmm13");
+		}
+		asm volatile("movntdq %%xmm0,%0" : "=m" (p[d]));
+		asm volatile("movntdq %%xmm8,%0" : "=m" (p[d+16]));
+		asm volatile("movntdq %%xmm1,%0" : "=m" (q[d]));
+		asm volatile("movntdq %%xmm9,%0" : "=m" (q[d+16]));
+		asm volatile("movntdq %%xmm2,%0" : "=m" (r[d]));
+		asm volatile("movntdq %%xmm10,%0" : "=m" (r[d+16]));
+		asm volatile("movntdq %%xmm3,%0" : "=m" (s[d]));
+		asm volatile("movntdq %%xmm11,%0" : "=m" (s[d+16]));
+	}
+
+	asm volatile("sfence" : : : "memory");
+}
+#endif
+
 /****************************************************************************/
 /* generic computation */
 
@@ -801,6 +1205,7 @@ void raidTP_sse2r2(unsigned char** buffer, unsigned diskmax, unsigned size)
 static void (*raid5_gen)(unsigned char** buffer, unsigned diskmax, unsigned size);
 static void (*raid6_gen)(unsigned char** buffer, unsigned diskmax, unsigned size);
 static void (*raidTP_gen)(unsigned char** buffer, unsigned diskmax, unsigned size);
+static void (*raidQP_gen)(unsigned char** buffer, unsigned diskmax, unsigned size);
 
 void raid_gen(unsigned level, unsigned char** buffer, unsigned diskmax, unsigned size)
 {
@@ -808,6 +1213,7 @@ void raid_gen(unsigned level, unsigned char** buffer, unsigned diskmax, unsigned
 	case 1 : raid5_gen(buffer, diskmax, size); break;
 	case 2 : raid6_gen(buffer, diskmax, size); break;
 	case 3 : raidTP_gen(buffer, diskmax, size); break;
+	case 4 : raidQP_gen(buffer, diskmax, size); break;
 	}
 }
 
@@ -914,43 +1320,66 @@ static inline unsigned char mul(unsigned char a, unsigned char b)
  */
 static inline unsigned char inv(unsigned char a)
 {
-#ifdef CHECKER
 	if (a == 0) {
 		fprintf(stderr, "GF division by zero\n");
 		exit(EXIT_FAILURE);
 	}
-#endif
+
 	return gfinv[a];
 }
 
 /**
  * GF 2^a.
- * Not defined for a == 255.
  */
 static inline unsigned char pow2(int v)
 {
-#ifdef CHECKER
 	if (v < 0 || v > 254) {
 		fprintf(stderr, "GF invalid exponent\n");
 		exit(EXIT_FAILURE);
 	}
-#endif
+
 	return gfexp2[v];
 }
-
 /**
  * GF 4^a.
- * Not defined for a == 255.
  */
 static inline unsigned char pow4(int v)
 {
-#ifdef CHECKER
 	if (v < 0 || v > 254) {
 		fprintf(stderr, "GF invalid exponent\n");
 		exit(EXIT_FAILURE);
 	}
-#endif
+
 	return gfexp4[v];
+}
+
+/**
+ * GF 8^a.
+ */
+static inline unsigned char pow8(int v)
+{
+	if (v < 0 || v > 254) {
+		fprintf(stderr, "GF invalid exponent\n");
+		exit(EXIT_FAILURE);
+	}
+
+	return gfexp8[v];
+}
+
+/**
+ * GF 2^b^a.
+ */
+static inline unsigned char pown(int b, int a)
+{
+	switch (b) {
+	case 0 : return 1;
+	case 1 : return pow2(a);
+	case 2 : return pow4(a);
+	case 3 : return pow8(a);
+	}
+
+	fprintf(stderr, "GF invalid base\n");
+	exit(EXIT_FAILURE);
 }
 
 /**
@@ -1481,6 +1910,536 @@ void raidTP_recov_3data(unsigned char** dptrs, unsigned diskmax, unsigned size, 
 }
 
 /****************************************************************************/
+/* matrix recovering  */
+
+/**
+ * Inverts the square matrix M of size nxn into V.
+ * We use Gauss elimination to invert.
+ */
+static void invert(unsigned char* M, unsigned char* V, unsigned n)
+{
+	unsigned i,j,k;
+
+	/* set the identity matrix in V */
+	for(i=0;i<n;++i) {
+		for(j=0;j<n;++j) {
+			V[i*n+j] = i == j;
+		}
+	}
+
+	/* for each element in the diagonal */
+	for(k=0;k<n;++k) {
+		unsigned char f;
+
+		/* if the diagonal element is 0 */
+		if (M[k*n+k] == 0) {
+			/* find the next row with element at the same position not 0 */
+			for(i=k+1;i<n;++i)
+				if (M[i*n+k] != 0)
+					break;
+
+			/* if not found, the matrix is singular */
+			if (i == n) {
+				fprintf(stderr, "GF inversion of a singular matrix\n");
+				exit(EXIT_FAILURE);
+			}
+
+			/* sum the row at the present one to make the diagonal element different than 0 */
+			/* here usually the two rows are swapped, but summing is also ok */
+			for(j=0;j<n;++j) {
+				M[k*n+j] ^= M[i*n+j];
+				V[k*n+j] ^= V[i*n+j];
+			}
+		}
+
+		/* make the diagonal element to be 1 */
+		f = inv(M[k*n+k]);
+		for(j=0;j<n;++j) {
+			M[k*n+j] = mul(f, M[k*n+j]);
+			V[k*n+j] = mul(f, V[k*n+j]);
+		}
+
+		/* make all the elements over and under the diagonal to be 0 */
+		for(i=0;i<n;++i) {
+			if (i == k)
+				continue;
+			f = M[i*n+k];
+			for(j=0;j<n;++j) {
+				M[i*n+j] ^= mul(f, M[k*n+j]);
+				V[i*n+j] ^= mul(f, V[k*n+j]);
+			}
+		}
+	}
+}
+
+/*
+ * Starting from the equation:
+ *
+ * Sd = 2^i^x * Dx
+ *
+ * and solving we get:
+ *
+ * Dx = 2^i^(-x) * Sd
+ *
+ * with conditions:
+ *
+ * 2^i^x != 0
+ *
+ * That are always satisfied for any 0<=x<y<255.
+ */
+void raid_recov_1data(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, int i, unsigned char* zero)
+{
+	unsigned char* p;
+	unsigned char* dp;
+	const unsigned char* pxmul; /* P multiplier to compute Dx */
+
+	/* if i is P use the fast one */
+	if (i == 0)
+		raid5_recov_data(dptrs, diskmax, size, x);
+
+	p = dptrs[diskmax+i];
+
+	/* compute syndrome with zero for the missing data page */
+	/* use the dead data page as temporary storage for delta p */
+	dp = dptrs[x];
+	dptrs[x] = zero;
+	dptrs[diskmax+i] = dp;
+
+	raid_gen(i + 1, dptrs, diskmax, size);
+
+	/* restore pointers */
+	dptrs[x] = dp;
+	dptrs[diskmax+i] = p;
+
+	/* select tables */
+	pxmul = table( inv(pown(i,x)) );
+
+	while (size--) {
+		/* delta */
+		unsigned char Pd = *p ^ *dp;
+
+		/* addends to reconstruct Dx */
+		unsigned char pxm = pxmul[Pd];
+
+		/* reconstruct Dx */
+		unsigned char Dx = pxm;
+
+		/* set */
+		*dp = Dx;
+
+		++p;
+		++dp;
+	}
+}
+
+/*
+ * Starting from the equations:
+ *
+ * Pd = 2^i^x * Dx + 2^i^y * Dy
+ * Qd = 2^j^x * Dx + 2^j^y * Dy
+ *
+ * we solve inverting the coefficients matrix.
+ */
+void raid_recov_2data(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, int y, int i, int j, unsigned char* zero)
+{
+	unsigned char* p;
+	unsigned char* dp;
+	unsigned char* q;
+	unsigned char* dq;
+	const unsigned char* pxmul; /* P multiplier to compute Dx */
+	const unsigned char* qxmul; /* Q multiplier to compute Dx */
+	const unsigned char* pymul; /* P multiplier to compute Dy */
+	const unsigned char* qymul; /* Q multiplier to compute Dy */
+	unsigned char G[2*2];
+	unsigned char V[2*2];
+	unsigned n = 2;
+
+	p = dptrs[diskmax+i];
+	q = dptrs[diskmax+j];
+
+	/* compute syndrome with zero for the missing data page */
+	/* use the dead data page as temporary storage for delta p and q */
+	dp = dptrs[x];
+	dq = dptrs[y];
+	dptrs[x] = zero;
+	dptrs[y] = zero;
+	dptrs[diskmax+i] = dp;
+	dptrs[diskmax+j] = dq;
+
+	raid_gen(j + 1, dptrs, diskmax, size);
+
+	/* restore pointers */
+	dptrs[x] = dp;
+	dptrs[y] = dq;
+	dptrs[diskmax+i] = p;
+	dptrs[diskmax+j] = q;
+
+	/* setup the generator matrix */
+	G[0*n+0] = pown(i,x); /* row 1 for P */
+	G[0*n+1] = pown(i,y);
+	G[1*n+0] = pown(j,x); /* row 2 for Q */
+	G[1*n+1] = pown(j,y);
+
+	/* invert it to solve the system of linear equations */
+	invert(G, V, n);
+
+	/* select tables */
+	pxmul = table( V[0*n+0] );
+	qxmul = table( V[0*n+1] );
+	pymul = table( V[1*n+0] );
+	qymul = table( V[1*n+1] );
+
+	while (size--) {
+		/* delta */
+		unsigned char Pd = *p ^ *dp;
+		unsigned char Qd = *q ^ *dq;
+
+		/* addends to reconstruct Dy */
+		unsigned char pym = pymul[Pd];
+		unsigned char qym = qymul[Qd];
+
+		/* reconstruct Dy */
+		unsigned char Dy = pym ^ qym;
+
+		/* reconstruct Dx */
+		unsigned char Dx;
+
+		/* if i is P, take the fast way */
+		if (i == 0) {
+			Dx = Pd ^ Dy;
+		} else {
+			/* addends to reconstruct Dx */
+			unsigned char pxm = pxmul[Pd];
+			unsigned char qxm = qxmul[Qd];
+
+			/* reconstruct Dx */
+			Dx = pxm ^ qxm;
+		}
+
+		/* set */
+		*dp = Dx;
+		*dq = Dy;
+
+		++p;
+		++dp;
+		++q;
+		++dq;
+	}
+}
+
+/*
+ * Starting from the equations:
+ *
+ * Pd = 2^i^x * Dx + 2^i^y * Dy + 2^i^z * Dz
+ * Qd = 2^j^x * Dx + 2^j^y * Dy + 2^j^z * Dz
+ * Rd = 2^k^x * Dx + 2^k^y * Dy + 2^k^z * Dz
+ *
+ * we solve inverting the coefficients matrix.
+ */
+void raid_recov_3data(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, int y, int z, int i, int j, int k, unsigned char* zero)
+{
+	unsigned char* p;
+	unsigned char* dp;
+	unsigned char* q;
+	unsigned char* dq;
+	unsigned char* r;
+	unsigned char* dr;
+	const unsigned char* pxmul; /* P multiplier to compute Dx */
+	const unsigned char* qxmul; /* Q multiplier to compute Dx */
+	const unsigned char* rxmul; /* R multiplier to compute Dx */
+	const unsigned char* pymul; /* P multiplier to compute Dy */
+	const unsigned char* qymul; /* Q multiplier to compute Dy */
+	const unsigned char* rymul; /* R multiplier to compute Dy */
+	const unsigned char* pzmul; /* P multiplier to compute Dz */
+	const unsigned char* qzmul; /* Q multiplier to compute Dz */
+	const unsigned char* rzmul; /* R multiplier to compute Dz */
+	unsigned char G[3*3];
+	unsigned char V[3*3];
+	unsigned n = 3;
+
+	p = dptrs[diskmax+i];
+	q = dptrs[diskmax+j];
+	r = dptrs[diskmax+k];
+
+	/* compute syndrome with zero for the missing data page */
+	/* use the dead data page as temporary storage for delta p, q and r */
+	dp = dptrs[x];
+	dq = dptrs[y];
+	dr = dptrs[z];
+	dptrs[x] = zero;
+	dptrs[y] = zero;
+	dptrs[z] = zero;
+	dptrs[diskmax+i] = dp;
+	dptrs[diskmax+j] = dq;
+	dptrs[diskmax+k] = dr;
+
+	raid_gen(k + 1, dptrs, diskmax, size);
+
+	/* restore pointers */
+	dptrs[x] = dp;
+	dptrs[y] = dq;
+	dptrs[z] = dr;
+	dptrs[diskmax+i] = p;
+	dptrs[diskmax+j] = q;
+	dptrs[diskmax+k] = r;
+
+	/* setup the generator matrix */
+	G[0*n+0] = pown(i,x); /* row 1 for P */
+	G[0*n+1] = pown(i,y);
+	G[0*n+2] = pown(i,z);
+	G[1*n+0] = pown(j,x); /* row 2 for Q */
+	G[1*n+1] = pown(j,y);
+	G[1*n+2] = pown(j,z);
+	G[2*n+0] = pown(k,x); /* row 3 for R */
+	G[2*n+1] = pown(k,y);
+	G[2*n+2] = pown(k,z);
+
+	/* invert it to solve the system of linear equations */
+	invert(G, V, n);
+
+	/* select tables */
+	pxmul = table( V[0*n+0] );
+	qxmul = table( V[0*n+1] );
+	rxmul = table( V[0*n+2] );
+	pymul = table( V[1*n+0] );
+	qymul = table( V[1*n+1] );
+	rymul = table( V[1*n+2] );
+	pzmul = table( V[2*n+0] );
+	qzmul = table( V[2*n+1] );
+	rzmul = table( V[2*n+2] );
+
+	while (size--) {
+		/* delta */
+		unsigned char Pd = *p ^ *dp;
+		unsigned char Qd = *q ^ *dq;
+		unsigned char Rd = *r ^ *dr;
+
+		/* addends to reconstruct Dz */
+		unsigned char pzm = pzmul[Pd];
+		unsigned char qzm = qzmul[Qd];
+		unsigned char rzm = rzmul[Rd];
+
+		/* reconstruct Dz */
+		unsigned char Dz = pzm ^ qzm ^ rzm;
+
+		/* addends to reconstruct Dy */
+		unsigned char pym = pymul[Pd];
+		unsigned char qym = qymul[Qd];
+		unsigned char rym = rymul[Rd];
+
+		/* reconstruct Dy */
+		unsigned char Dy = pym ^ qym ^ rym;
+
+		/* reconstruct Dx */
+		unsigned char Dx;
+
+		/* if i is P, take the fast way */
+		if (i == 0) {
+			Dx = Pd ^ Dy ^ Dz;
+		} else {
+			/* addends to reconstruct Dx */
+			unsigned char pxm = pxmul[Pd];
+			unsigned char qxm = qxmul[Qd];
+			unsigned char rxm = rxmul[Rd];
+
+			/* reconstruct Dx */
+			Dx = pxm ^ qxm ^ rxm;
+		}
+
+		/* set */
+		*dp = Dx;
+		*dq = Dy;
+		*dr = Dz;
+
+		++p;
+		++dp;
+		++q;
+		++dq;
+		++r;
+		++dr;
+	}
+}
+
+/*
+ * Starting from the equations:
+ *
+ * Pd = 2^i^x * Dx + 2^i^y * Dy + 2^i^z * Dz + 2^i^v * Dv
+ * Qd = 2^j^x * Dx + 2^j^y * Dy + 2^j^z * Dz + 2^j^v * Dv
+ * Rd = 2^k^x * Dx + 2^k^y * Dy + 2^k^z * Dz + 2^k^v * Dv
+ * Sd = 2^l^x * Dx + 2^l^y * Dy + 2^l^z * Dz + 2^l^v * Dv
+ *
+ * we solve inverting the coefficients matrix.
+ */
+void raid_recov_4data(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, int y, int z, int v, int i, int j, int k, int l, unsigned char* zero)
+{
+	unsigned char* p;
+	unsigned char* dp;
+	unsigned char* q;
+	unsigned char* dq;
+	unsigned char* r;
+	unsigned char* dr;
+	unsigned char* s;
+	unsigned char* ds;
+	const unsigned char* pxmul; /* P multiplier to compute Dx */
+	const unsigned char* qxmul; /* Q multiplier to compute Dx */
+	const unsigned char* rxmul; /* R multiplier to compute Dx */
+	const unsigned char* sxmul; /* S multiplier to compute Dx */
+	const unsigned char* pymul; /* P multiplier to compute Dy */
+	const unsigned char* qymul; /* Q multiplier to compute Dy */
+	const unsigned char* rymul; /* R multiplier to compute Dy */
+	const unsigned char* symul; /* S multiplier to compute Dy */
+	const unsigned char* pzmul; /* P multiplier to compute Dz */
+	const unsigned char* qzmul; /* Q multiplier to compute Dz */
+	const unsigned char* rzmul; /* R multiplier to compute Dz */
+	const unsigned char* szmul; /* S multiplier to compute Dz */
+	const unsigned char* pvmul; /* P multiplier to compute Dv */
+	const unsigned char* qvmul; /* Q multiplier to compute Dv */
+	const unsigned char* rvmul; /* R multiplier to compute Dv */
+	const unsigned char* svmul; /* S multiplier to compute Dv */
+	unsigned char G[4*4];
+	unsigned char V[4*4];
+	unsigned n = 4;
+
+	p = dptrs[diskmax+i];
+	q = dptrs[diskmax+j];
+	r = dptrs[diskmax+k];
+	s = dptrs[diskmax+l];
+
+	/* compute syndrome with zero for the missing data page */
+	/* use the dead data page as temporary storage for delta p, q, r and s */
+	dp = dptrs[x];
+	dq = dptrs[y];
+	dr = dptrs[z];
+	ds = dptrs[v];
+	dptrs[x] = zero;
+	dptrs[y] = zero;
+	dptrs[z] = zero;
+	dptrs[v] = zero;
+	dptrs[diskmax+i] = dp;
+	dptrs[diskmax+j] = dq;
+	dptrs[diskmax+k] = dr;
+	dptrs[diskmax+l] = ds;
+
+	raid_gen(l + 1, dptrs, diskmax, size);
+
+	/* restore pointers */
+	dptrs[x] = dp;
+	dptrs[y] = dq;
+	dptrs[z] = dr;
+	dptrs[v] = ds;
+	dptrs[diskmax+i] = p;
+	dptrs[diskmax+j] = q;
+	dptrs[diskmax+k] = r;
+	dptrs[diskmax+l] = s;
+
+	/* setup the generator matrix */
+	G[0*n+0] = pown(i,x); /* row 1 for P */
+	G[0*n+1] = pown(i,y);
+	G[0*n+2] = pown(i,z);
+	G[0*n+3] = pown(i,v);
+	G[1*n+0] = pown(j,x); /* row 2 for Q */
+	G[1*n+1] = pown(j,y);
+	G[1*n+2] = pown(j,z);
+	G[1*n+3] = pown(j,v);
+	G[2*n+0] = pown(k,x); /* row 3 for R */
+	G[2*n+1] = pown(k,y);
+	G[2*n+2] = pown(k,z);
+	G[2*n+3] = pown(k,v);
+	G[3*n+0] = pown(l,x); /* row 4 for S */
+	G[3*n+1] = pown(l,y);
+	G[3*n+2] = pown(l,z);
+	G[3*n+3] = pown(l,v);
+
+	/* invert it to solve the system of linear equations */
+	invert(G, V, n);
+
+	/* select tables */
+	pxmul = table( V[0*n+0] );
+	qxmul = table( V[0*n+1] );
+	rxmul = table( V[0*n+2] );
+	sxmul = table( V[0*n+3] );
+	pymul = table( V[1*n+0] );
+	qymul = table( V[1*n+1] );
+	rymul = table( V[1*n+2] );
+	symul = table( V[1*n+3] );
+	pzmul = table( V[2*n+0] );
+	qzmul = table( V[2*n+1] );
+	rzmul = table( V[2*n+2] );
+	szmul = table( V[2*n+3] );
+	pvmul = table( V[3*n+0] );
+	qvmul = table( V[3*n+1] );
+	rvmul = table( V[3*n+2] );
+	svmul = table( V[3*n+3] );
+
+	while (size--) {
+		/* delta */
+		unsigned char Pd = *p ^ *dp;
+		unsigned char Qd = *q ^ *dq;
+		unsigned char Rd = *r ^ *dr;
+		unsigned char Sd = *s ^ *ds;
+
+		/* addends to reconstruct Dv */
+		unsigned char pvm = pvmul[Pd];
+		unsigned char qvm = qvmul[Qd];
+		unsigned char rvm = rvmul[Rd];
+		unsigned char svm = svmul[Sd];
+
+		/* reconstruct Dv */
+		unsigned char Dv = pvm ^ qvm ^ rvm ^ svm;
+
+		/* addends to reconstruct Dz */
+		unsigned char pzm = pzmul[Pd];
+		unsigned char qzm = qzmul[Qd];
+		unsigned char rzm = rzmul[Rd];
+		unsigned char szm = szmul[Sd];
+
+		/* reconstruct Dz */
+		unsigned char Dz = pzm ^ qzm ^ rzm ^ szm;
+
+		/* addends to reconstruct Dy */
+		unsigned char pym = pymul[Pd];
+		unsigned char qym = qymul[Qd];
+		unsigned char rym = rymul[Rd];
+		unsigned char sym = symul[Sd];
+
+		/* reconstruct Dy */
+		unsigned char Dy = pym ^ qym ^ rym ^ sym;
+
+		/* reconstruct Dx */
+		unsigned char Dx;
+
+		/* if i is P, take the fast way */
+		if (i == 0) {
+			Dx = Pd ^ Dy ^ Dz ^ Dv;
+		} else {
+			/* addends to reconstruct Dx */
+			unsigned char pxm = pxmul[Pd];
+			unsigned char qxm = qxmul[Qd];
+			unsigned char rxm = rxmul[Rd];
+			unsigned char sxm = sxmul[Sd];
+
+			/* reconstruct Dx */
+			Dx = pxm ^ qxm ^ rxm ^ sxm;
+		}
+
+		/* set */
+		*dp = Dx;
+		*dq = Dy;
+		*dr = Dz;
+		*ds = Dv;
+
+		++p;
+		++dp;
+		++q;
+		++dq;
+		++r;
+		++dr;
+		++s;
+		++ds;
+	}
+}
+
+/****************************************************************************/
 /* init/done */
 
 void raid_init(void)
@@ -1488,21 +2447,25 @@ void raid_init(void)
 	raid5_gen = raid5_int32r2;
 	raid6_gen = raid6_int32r2;
 	raidTP_gen = raidTP_int32r2;
+	raidQP_gen = raidQP_int32r2;
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_mmx()) {
 		raid5_gen = raid5_mmxr4;
 		raid6_gen = raid6_mmxr2;
 		raidTP_gen = raidTP_mmxr1;
+		raidQP_gen = raidQP_mmxr1;
 	}
 	if (cpu_has_sse2()) {
 #if defined(__x86_64__)
 		raid5_gen = raid5_sse2r8;
 		raid6_gen = raid6_sse2r4;
 		raidTP_gen = raidTP_sse2r2;
+		raidQP_gen = raidQP_sse2r2;
 #else
 		raid5_gen = raid5_sse2r4;
 		raid6_gen = raid6_sse2r2;
 		raidTP_gen = raidTP_sse2r1;
+		raidQP_gen = raidQP_sse2r1;
 #endif
 	}
 #endif

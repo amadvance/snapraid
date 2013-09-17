@@ -66,10 +66,10 @@ void speed(void)
 	void* buffer_alloc;
 	unsigned char** buffer;
 
-	buffer = malloc_nofail_vector_align(diskmax + 3, block_size, &buffer_alloc);
+	buffer = malloc_nofail_vector_align(diskmax + 4, block_size, &buffer_alloc);
 
 	/* initialize with fixed data */
-	for(i=0;i<diskmax+3;++i) {
+	for(i=0;i<diskmax+4;++i) {
 		memset(buffer[i], i, block_size);
 	}
 	for(i=0;i<HASH_SIZE;++i)
@@ -156,6 +156,18 @@ void speed(void)
 		printf("int32x2");
 	printf("\n");
 	printf("Expected fastest RAIDTP is ");
+	if (cpu_has_sse2())
+#if defined(__x86_64__)
+		printf("sse2x2");
+#else
+		printf("sse2x1");
+#endif
+	else if (cpu_has_mmx())
+		printf("mmxx1");
+	else
+		printf("int32x2");
+	printf("\n");
+	printf("Expected fastest RAIDQP is ");
 	if (cpu_has_sse2())
 #if defined(__x86_64__)
 		printf("sse2x2");
@@ -321,6 +333,38 @@ void speed(void)
 		} SPEED_STOP
 
 		printf("RAIDTP sse2x2 %"PRIu64" [MB/s]\n", ds / dt);
+#endif
+	}
+#endif
+
+	SPEED_START {
+		raidQP_int32r2(buffer, diskmax, block_size);
+	} SPEED_STOP
+
+	printf("RAIDQP int32x2 %"PRIu64" [MB/s]\n", ds / dt);
+
+#if defined(__i386__) || defined(__x86_64__)
+	if (cpu_has_mmx()) {
+		SPEED_START {
+			raidQP_mmxr1(buffer, diskmax, block_size);
+		} SPEED_STOP
+
+		printf("RAIDQP mmxr1 %"PRIu64" [MB/s]\n", ds / dt);
+	}
+
+	if (cpu_has_sse2()) {
+		SPEED_START {
+			raidQP_sse2r1(buffer, diskmax, block_size);
+		} SPEED_STOP
+
+		printf("RAIDQP sse2x1 %"PRIu64" [MB/s]\n", ds / dt);
+
+#if defined(__x86_64__)
+		SPEED_START {
+			raidQP_sse2r2(buffer, diskmax, block_size);
+		} SPEED_STOP
+
+		printf("RAIDQP sse2x2 %"PRIu64" [MB/s]\n", ds / dt);
 #endif
 	}
 #endif

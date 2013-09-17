@@ -98,6 +98,22 @@ int main(void)
 	}
 	printf("};\n\n");
 
+	/* 8^a */
+	printf("const unsigned char __attribute__((aligned(256))) gfexp8[256] =\n");
+	printf("{\n");
+	v = 1;
+	for(i=0;i<256;++i) {
+		if (i % 8 == 0)
+			printf("\t");
+		printf("0x%02x,", v);
+		v = gfmul(v, 8);
+		if (i % 8 == 7)
+			printf("\n");
+		else
+			printf(" ");
+	}
+	printf("};\n\n");
+
 	/* 1/a */
 	printf("const unsigned char __attribute__((aligned(256))) gfinv[256] =\n");
 	printf("{\n");
