@@ -147,6 +147,14 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 	fm.fiemap.fm_extent_count = 1; /* we are interested only at the first block */
 
 	if (ioctl(f, FS_IOC_FIEMAP, &fm) == -1) {
+		/* if the underline filesystem doesn't support FS_IOC_FIEMAP */
+		/* fallback to use the inode */
+		if (errno == ENOTSUP) {
+			close(f);
+			*physical = st->st_ino;
+			return 0;
+		}
+
 		close(f);
 		return -1;
 	}
