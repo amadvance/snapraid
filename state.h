@@ -24,15 +24,15 @@
 /**
  * Max level of parity supported.
  */
-#define LEV_MAX 3
+#define LEV_MAX 4
 
 /**
- * Returns the parity name: Parity, Q-Parity, R-Parity.
+ * Returns the parity name: Parity, Q-Parity, R-Parity, S-Parity.
  */
 const char* lev_name(unsigned level);
 
 /**
- * Returns the parity name used in the config file: parity, q-parity, r-parity.
+ * Returns the parity name used in the config file: parity, q-parity, r-parity, s-parity.
  */
 const char* lev_config_name(unsigned level);
 

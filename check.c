@@ -90,19 +90,115 @@ static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_bl
 }
 
 /**
+ * Combinations of 1 of 4 elements.
+ */
+static const struct combo1 {
+	int a;
+} COMBO1[] = {
+	{ 0 },
+	{ 1 },
+	{ 2 },
+	{ 3 },
+};
+
+/**
+ * Combinations of 2 of 4 elements.
+ */
+static const struct combo2 {
+	int a;
+	int b;
+} COMBO2[] = {
+	{ 0, 1 },
+	{ 0, 2 },
+	{ 0, 3 },
+	{ 1, 2 },
+	{ 1, 3 },
+	{ 2, 3 }
+};
+
+/**
+ * Combinations of 3 of 4 elements.
+ */
+static const struct combo3 {
+	int a;
+	int b;
+	int c;
+} COMBO3[] = {
+	{ 0, 1, 2 },
+	{ 0, 1, 3 },
+	{ 0, 2, 3 },
+	{ 1, 2, 3 }
+};
+
+/**
+ * Combinations of 4 of 4 elements.
+ */
+static const struct combo4 {
+	int a;
+	int b;
+	int c;
+	int d;
+} COMBO4[] = {
+	{ 0, 1, 2, 4 },
+};
+
+/**
+ * Checks if the hash of at least one failed block is now matching.
+ */
+static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, unsigned char** buffer, unsigned char* buffer_zero)
+{
+	unsigned j;
+	int hash_checked;
+
+	hash_checked = 0; /* keep track if we check at least one block */
+
+	/* check if the recovered blocks are OK */
+	for(j=0;j<failed_count;++j) {
+		if (block_has_updated_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
+			hash_checked = 1;
+			if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
+				break;
+		}
+	}
+
+	/* if we checked something, and no block failed the check */
+	if (hash_checked && j==failed_count) {
+		/* recompute all the redundancy information */
+		raid_gen(state->level, buffer, diskmax, state->block_size);
+		return 1;
+	}
+
+	return 0;
+}
+
+/**
+ * Checks if specified parity is now matching with a recomputed one.
+ */
+static int is_parity_matching(struct snapraid_state* state, unsigned diskmax, unsigned i, unsigned char** buffer, unsigned char** buffer_recov)
+{
+	/* recompute parity, note that we don't need parity over i */
+	raid_gen(i + 1, buffer, diskmax, state->block_size);
+
+	/* if the recovered parity block matches */
+	if (memcmp(buffer[diskmax+i], buffer_recov[i], state->block_size) == 0) {
+		/* recompute all the redundancy information */
+		raid_gen(state->level, buffer, diskmax, state->block_size);
+		return 1;
+	}
+
+	return 0;
+}
+
+/**
  * Repair errors.
  * Returns <0 if failure for missing strategy, >0 if data is wrong and we cannot rebuild correctly, 0 on success.
  * If success, the parity and qarity are computed in the buffer variable.
  */
 static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, unsigned char** buffer, unsigned char** buffer_recov, unsigned char* buffer_zero)
 {
-	unsigned j;
-	int error = 0;
+	unsigned i, j;
+	int error;
 	int has_hash;
-	int hash_checked;
-	unsigned char* buffer_parity = buffer_recov[0];
-	unsigned char* buffer_qarity = buffer_recov[1];
-	unsigned char* buffer_rarity = buffer_recov[2];
 
 	/* no fix required */
 	if (failed_count == 0) {
@@ -110,6 +206,8 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 		raid_gen(state->level, buffer, diskmax, state->block_size);
 		return 0;
 	}
+
+	error = 0;
 
 	/* check if there is at least a failed block that can be checked for correctness using the hash */
 	/* if there isn't, we have to sacrifice a parity block to check that the result is correct */
@@ -119,288 +217,160 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			has_hash = 1;
 	}
 
-	/* RAID5 recovering from p */
-	if (failed_count == 1 && buffer_parity != 0 && has_hash) {
-		/* copy the redundancy to use */
-		memcpy(buffer[diskmax], buffer_parity, state->block_size);
+	/* recover one block with hash */
+	if (failed_count == 1 && has_hash) {
+		for(i=0;i<sizeof(COMBO1)/sizeof(COMBO1[0]);++i) {
+			/* if parity is missing, do nothing */
+			if (buffer_recov[COMBO1[i].a] == 0)
+				continue;
 
-		/* recover data */
-		raid5_recov_data(buffer, diskmax, state->block_size, failed[failed_map[0]].index);
+			/* copy the redundancy to use */
+			memcpy(buffer[diskmax+COMBO1[i].a], buffer_recov[COMBO1[i].a], state->block_size);
 
-		hash_checked = 0; /* keep track if we check at least one block */
+			/* recover data */
+			raid_recov_1data(buffer, diskmax, state->block_size, failed[failed_map[0]].index, COMBO1[i].a, buffer_zero);
 
-		/* check if the recovered blocks are OK */
-		for(j=0;j<failed_count;++j) {
-			if (block_has_updated_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
-				hash_checked = 1;
-				if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
-					break;
-			}
+			if (is_hash_matching(state, rehash, diskmax, failed, failed_map, failed_count, buffer, buffer_zero))
+				return 0;
+
+			fprintf(stdlog, "error:%u:%s: Data error\n", pos, lev_config_name(COMBO1[i].a));
+			++error;
 		}
-
-		/* if we checked something, and no block failed the check */
-		if (hash_checked && j==failed_count) {
-			/* recompute all the redundancy information */
-			raid_gen(state->level, buffer, diskmax, state->block_size);
-			return 0;
-		}
-
-		fprintf(stdlog, "error:%u:parity: Data error\n", pos);
-		++error;
 	}
 
-	/* RAID6 recovering from q, ignoring p */
-	if (failed_count == 1 && buffer_qarity != 0 && has_hash) {
-		/* copy the redundancy to use */
-		memcpy(buffer[diskmax+1], buffer_qarity, state->block_size);
+	/* recover one block without hash  */
+	if (failed_count == 1 && !has_hash) {
+		for(i=0;i<sizeof(COMBO2)/sizeof(COMBO2[0]);++i) {
+			/* if parity is missing, do nothing */
+			if (buffer_recov[COMBO2[i].a] == 0 || buffer_recov[COMBO2[i].b] == 0)
+				continue;
 
-		/* recover data */
-		raid6_recov_datap(buffer, diskmax, state->block_size, failed[failed_map[0]].index, buffer_zero);
+			/* copy the redundancy to use */
+			memcpy(buffer[diskmax+COMBO2[i].a], buffer_recov[COMBO2[i].a], state->block_size);
 
-		hash_checked = 0; /* keep track if we check at least one block */
+			/* recover data */
+			raid_recov_1data(buffer, diskmax, state->block_size, failed[failed_map[0]].index, COMBO2[i].a, buffer_zero);
 
-		/* check if the recovered blocks are OK */
-		for(j=0;j<failed_count;++j) {
-			if (block_has_updated_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
-				hash_checked = 1;
-				if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
-					break;
-			}
+			if (is_parity_matching(state, diskmax, COMBO2[i].b, buffer, buffer_recov))
+				return 0;
+
+			fprintf(stdlog, "error:%u:%s/%s: Data error\n", pos, lev_config_name(COMBO2[i].a), lev_config_name(COMBO2[i].b));
+			++error;
 		}
-
-		/* if we checked something, and no block failed the check */
-		if (hash_checked && j==failed_count) {
-			/* recompute all the redundancy information */
-			raid_gen(state->level, buffer, diskmax, state->block_size);
-			return 0;
-		}
-
-		fprintf(stdlog, "error:%u:q-parity: Data error\n", pos);
-		++error;
 	}
 
-	/* RAID6 recovering from q, using p to check the result */
-	if (failed_count == 1 && buffer_parity != 0 && buffer_qarity != 0 && !has_hash) {
-		/* copy the redundancy to use */
-		memcpy(buffer[diskmax+1], buffer_qarity, state->block_size);
+	/* recover two blocks with hash */
+	if (failed_count == 2 && has_hash) {
+		for(i=0;i<sizeof(COMBO2)/sizeof(COMBO2[0]);++i) {
+			/* if parity is missing, do nothing */
+			if (buffer_recov[COMBO2[i].a] == 0 || buffer_recov[COMBO2[i].b] == 0)
+				continue;
 
-		/* recover data */
-		raid6_recov_datap(buffer, diskmax, state->block_size, failed[failed_map[0]].index, buffer_zero);
+			/* copy the redundancy to use */
+			memcpy(buffer[diskmax+COMBO2[i].a], buffer_recov[COMBO2[i].a], state->block_size);
+			memcpy(buffer[diskmax+COMBO2[i].b], buffer_recov[COMBO2[i].b], state->block_size);
 
-		/* recompute parity with RAID5 to get p from it */
-		raid_gen(1, buffer, diskmax, state->block_size);
+			/* recover data */
+			raid_recov_2data(buffer, diskmax, state->block_size, failed[failed_map[0]].index, failed[failed_map[1]].index, COMBO2[i].a, COMBO2[i].b, buffer_zero);
 
-		/* if the recovered parity block matches */
-		if (memcmp(buffer[diskmax], buffer_parity, state->block_size) == 0) {
-			/* recompute all the redundancy information */
-			raid_gen(state->level, buffer, diskmax, state->block_size);
-			return 0;
+			if (is_hash_matching(state, rehash, diskmax, failed, failed_map, failed_count, buffer, buffer_zero))
+				return 0;
+
+			fprintf(stdlog, "error:%u:%s/%s: Data error\n", pos, lev_config_name(COMBO2[i].a), lev_config_name(COMBO2[i].b));
+			++error;
 		}
-
-		fprintf(stdlog, "error:%u:parity/q-parity: Data error\n", pos);
-		++error;
 	}
 
-	/* RAID6 recovering from p+q */
-	if (failed_count == 2 && buffer_parity != 0 && buffer_qarity != 0 && has_hash) {
-		/* copy the redundancy to use */
-		memcpy(buffer[diskmax], buffer_parity, state->block_size);
-		memcpy(buffer[diskmax+1], buffer_qarity, state->block_size);
+	/* recover two blocks without hash */
+	if (failed_count == 2 && !has_hash) {
+		for(i=0;i<sizeof(COMBO3)/sizeof(COMBO3[0]);++i) {
+			/* if parity is missing, do nothing */
+			if (buffer_recov[COMBO3[i].a] == 0 || buffer_recov[COMBO3[i].b] == 0 || buffer_recov[COMBO3[i].c] == 0)
+				continue;
 
-		/* recover 2 data */
-		raid6_recov_2data(buffer, diskmax, state->block_size, failed[failed_map[0]].index, failed[failed_map[1]].index, buffer_zero);
+			/* copy the redundancy to use */
+			memcpy(buffer[diskmax+COMBO3[i].a], buffer_recov[COMBO3[i].a], state->block_size);
+			memcpy(buffer[diskmax+COMBO3[i].b], buffer_recov[COMBO3[i].b], state->block_size);
 
-		hash_checked = 0; /* keep track if we check at least one block */
+			/* recover data */
+			raid_recov_2data(buffer, diskmax, state->block_size, failed[failed_map[0]].index, failed[failed_map[1]].index, COMBO3[i].a, COMBO3[i].b, buffer_zero);
 
-		/* check if the recovered blocks are OK */
-		for(j=0;j<failed_count;++j) {
-			if (block_has_updated_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
-				hash_checked = 1;
-				if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
-					break;
-			}
+			if (is_parity_matching(state, diskmax, COMBO3[i].c, buffer, buffer_recov))
+				return 0;
+
+			fprintf(stdlog, "error:%u:%s/%s/%s: Data error\n", pos, lev_config_name(COMBO3[i].a), lev_config_name(COMBO3[i].b), lev_config_name(COMBO3[i].c));
+			++error;
 		}
-
-		/* if we checked something, and no block failed the check */
-		if (hash_checked && j==failed_count) {
-			/* recompute all the redundancy information */
-			raid_gen(state->level, buffer, diskmax, state->block_size);
-			return 0;
-		}
-
-		fprintf(stdlog, "error:%u:parity/q-parity: Data error\n", pos);
-		++error;
 	}
 
-	/* RAIDTP recovering from r, ignoring p,q */
-	if (failed_count == 1 && buffer_rarity != 0 && has_hash) {
-		/* copy the redundancy to use */
-		memcpy(buffer[diskmax+2], buffer_rarity, state->block_size);
+	/* recover three blocks with hash */
+	if (failed_count == 3 && has_hash) {
+		for(i=0;i<sizeof(COMBO3)/sizeof(COMBO3[0]);++i) {
+			/* if parity is missing, do nothing */
+			if (buffer_recov[COMBO3[i].a] == 0 || buffer_recov[COMBO3[i].b] == 0 || buffer_recov[COMBO3[i].c] == 0)
+				continue;
 
-		/* recover data */
-		raidTP_recov_datapq(buffer, diskmax, state->block_size, failed[failed_map[0]].index, buffer_zero);
+			/* copy the redundancy to use */
+			memcpy(buffer[diskmax+COMBO3[i].a], buffer_recov[COMBO3[i].a], state->block_size);
+			memcpy(buffer[diskmax+COMBO3[i].b], buffer_recov[COMBO3[i].b], state->block_size);
+			memcpy(buffer[diskmax+COMBO3[i].c], buffer_recov[COMBO3[i].c], state->block_size);
 
-		hash_checked = 0; /* keep track if we check at least one block */
+			/* recover data */
+			raid_recov_3data(buffer, diskmax, state->block_size, failed[failed_map[0]].index, failed[failed_map[1]].index, failed[failed_map[2]].index, COMBO3[i].a, COMBO3[i].b, COMBO3[i].c, buffer_zero);
 
-		/* check if the recovered blocks are OK */
-		for(j=0;j<failed_count;++j) {
-			if (block_has_updated_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
-				hash_checked = 1;
-				if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
-					break;
-			}
+			if (is_hash_matching(state, rehash, diskmax, failed, failed_map, failed_count, buffer, buffer_zero))
+				return 0;
+
+			fprintf(stdlog, "error:%u:%s/%s/%s: Data error\n", pos, lev_config_name(COMBO3[i].a), lev_config_name(COMBO3[i].b), lev_config_name(COMBO3[i].c));
+			++error;
 		}
-
-		/* if we checked something, and no block failed the check */
-		if (hash_checked && j==failed_count) {
-			/* recompute all the redundancy information */
-			raid_gen(state->level, buffer, diskmax, state->block_size);
-			return 0;
-		}
-
-		fprintf(stdlog, "error:%u:rarity: Data error\n", pos);
-		++error;
 	}
 
-	/* RAIDTP recovering from r, using p or q to check the result */
-	if (failed_count == 1 && (buffer_parity != 0 || buffer_qarity != 0) && buffer_rarity != 0 && !has_hash) {
-		/* copy the redundancy to use */
-		memcpy(buffer[diskmax+2], buffer_rarity, state->block_size);
+	/* recover three blocks without hash */
+	if (failed_count == 3 && !has_hash) {
+		for(i=0;i<sizeof(COMBO4)/sizeof(COMBO4[0]);++i) {
+			/* if parity is missing, do nothing */
+			if (buffer_recov[COMBO4[i].a] == 0 || buffer_recov[COMBO4[i].b] == 0 || buffer_recov[COMBO4[i].c] == 0 || buffer_recov[COMBO4[i].d] == 0)
+				continue;
 
-		/* recover data */
-		raidTP_recov_datapq(buffer, diskmax, state->block_size, failed[failed_map[0]].index, buffer_zero);
+			/* copy the redundancy to use */
+			memcpy(buffer[diskmax+COMBO4[i].a], buffer_recov[COMBO4[i].a], state->block_size);
+			memcpy(buffer[diskmax+COMBO4[i].b], buffer_recov[COMBO4[i].b], state->block_size);
+			memcpy(buffer[diskmax+COMBO4[i].c], buffer_recov[COMBO4[i].c], state->block_size);
 
-		/* recompute parity with RAID6 to get p and q from it */
-		raid_gen(2, buffer, diskmax, state->block_size);
+			/* recover data */
+			raid_recov_3data(buffer, diskmax, state->block_size, failed[failed_map[0]].index, failed[failed_map[1]].index, failed[failed_map[2]].index, COMBO4[i].a, COMBO4[i].b, COMBO4[i].c, buffer_zero);
 
-		/* if the recovered parity block matches */
-		if ((buffer_parity != 0 && memcmp(buffer[diskmax], buffer_parity, state->block_size) == 0)
-			|| (buffer_qarity != 0 && memcmp(buffer[diskmax+1], buffer_qarity, state->block_size) == 0)
-		) {
-			/* recompute all the redundancy information */
-			raid_gen(state->level, buffer, diskmax, state->block_size);
-			return 0;
+			if (is_parity_matching(state, diskmax, COMBO4[i].d, buffer, buffer_recov))
+				return 0;
+
+			fprintf(stdlog, "error:%u:%s/%s/%s/%s: Data error\n", pos, lev_config_name(COMBO4[i].a), lev_config_name(COMBO4[i].b), lev_config_name(COMBO4[i].c), lev_config_name(COMBO4[i].d));
+			++error;
 		}
-
-		fprintf(stdlog, "error:%u:parity/qarity/rarity: Data error\n", pos);
-		++error;
 	}
 
-	/* RAIDTP recovering from p+r */
-	if (failed_count == 2 && buffer_parity != 0 && buffer_rarity != 0 && has_hash) {
-		/* copy the redundancy to use */
-		memcpy(buffer[diskmax], buffer_parity, state->block_size);
-		memcpy(buffer[diskmax+2], buffer_rarity, state->block_size);
+	/* recover four blocks with hash */
+	if (failed_count == 4 && has_hash) {
+		for(i=0;i<sizeof(COMBO4)/sizeof(COMBO4[0]);++i) {
+			/* if parity is missing, do nothing */
+			if (buffer_recov[COMBO4[i].a] == 0 || buffer_recov[COMBO4[i].b] == 0 || buffer_recov[COMBO4[i].c] == 0 || buffer_recov[COMBO4[i].d] == 0)
+				continue;
 
-		/* recover 2 data */
-		raidTP_recov_2dataq(buffer, diskmax, state->block_size, failed[failed_map[0]].index, failed[failed_map[1]].index, buffer_zero);
+			/* copy the redundancy to use */
+			memcpy(buffer[diskmax+COMBO4[i].a], buffer_recov[COMBO4[i].a], state->block_size);
+			memcpy(buffer[diskmax+COMBO4[i].b], buffer_recov[COMBO4[i].b], state->block_size);
+			memcpy(buffer[diskmax+COMBO4[i].c], buffer_recov[COMBO4[i].c], state->block_size);
+			memcpy(buffer[diskmax+COMBO4[i].d], buffer_recov[COMBO4[i].d], state->block_size);
 
-		hash_checked = 0; /* keep track if we check at least one block */
+			/* recover data */
+			raid_recov_4data(buffer, diskmax, state->block_size, failed[failed_map[0]].index, failed[failed_map[1]].index, failed[failed_map[2]].index, failed[failed_map[3]].index, COMBO4[i].a, COMBO4[i].b, COMBO4[i].c, COMBO4[i].d, buffer_zero);
 
-		/* check if the recovered blocks are OK */
-		for(j=0;j<failed_count;++j) {
-			if (block_has_updated_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
-				hash_checked = 1;
-				if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
-					break;
-			}
+			if (is_hash_matching(state, rehash, diskmax, failed, failed_map, failed_count, buffer, buffer_zero))
+				return 0;
+
+			fprintf(stdlog, "error:%u:%s/%s/%s/%s: Data error\n", pos, lev_config_name(COMBO4[i].a), lev_config_name(COMBO4[i].b), lev_config_name(COMBO4[i].c), lev_config_name(COMBO4[i].d));
+			++error;
 		}
-
-		/* if we checked something, and no block failed the check */
-		if (hash_checked && j==failed_count) {
-			/* recompute all the redundancy information */
-			raid_gen(state->level, buffer, diskmax, state->block_size);
-			return 0;
-		}
-
-		fprintf(stdlog, "error:%u:parity/rarity: Data error\n", pos);
-		++error;
-	}
-
-	/* RAIDTP recovering from q+r */
-	if (failed_count == 2 && buffer_qarity != 0 && buffer_rarity != 0 && has_hash) {
-		/* copy the redundancy to use */
-		memcpy(buffer[diskmax+1], buffer_qarity, state->block_size);
-		memcpy(buffer[diskmax+2], buffer_rarity, state->block_size);
-
-		/* recover 2 data */
-		raidTP_recov_2datap(buffer, diskmax, state->block_size, failed[failed_map[0]].index, failed[failed_map[1]].index, buffer_zero);
-
-		hash_checked = 0; /* keep track if we check at least one block */
-
-		/* check if the recovered blocks are OK */
-		for(j=0;j<failed_count;++j) {
-			if (block_has_updated_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
-				hash_checked = 1;
-				if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
-					break;
-			}
-		}
-
-		/* if we checked something, and no block failed the check */
-		if (hash_checked && j==failed_count) {
-			/* recompute all the redundancy information */
-			raid_gen(state->level, buffer, diskmax, state->block_size);
-			return 0;
-		}
-
-		fprintf(stdlog, "error:%u:qarity/rarity: Data error\n", pos);
-		++error;
-	}
-
-	/* RAIDTP recovering from q+r, using p to check the result */
-	if (failed_count == 2 && buffer_parity != 0 && buffer_qarity != 0 && buffer_rarity != 0 && !has_hash) {
-		/* copy the redundancy to use */
-		memcpy(buffer[diskmax+1], buffer_qarity, state->block_size);
-		memcpy(buffer[diskmax+2], buffer_rarity, state->block_size);
-
-		/* recover data */
-		raidTP_recov_2datap(buffer, diskmax, state->block_size, failed[failed_map[0]].index, failed[failed_map[1]].index, buffer_zero);
-
-		/* recompute parity with RAID5 to get p from it */
-		raid_gen(1, buffer, diskmax, state->block_size);
-
-		/* if the recovered parity block matches */
-		if (buffer_parity != 0 && memcmp(buffer[diskmax], buffer_parity, state->block_size) == 0) {
-			/* recompute all the redundancy information */
-			raid_gen(state->level, buffer, diskmax, state->block_size);
-			return 0;
-		}
-
-		fprintf(stdlog, "error:%u:parity/qarity/rarity: Data error\n", pos);
-		++error;
-	}
-
-	/* RAIDTP recovering from p+q+r */
-	if (failed_count == 3 && buffer_parity != 0 && buffer_qarity != 0 && buffer_rarity != 0 && has_hash) {
-		/* copy the redundancy to use */
-		memcpy(buffer[diskmax], buffer_parity, state->block_size);
-		memcpy(buffer[diskmax+1], buffer_qarity, state->block_size);
-		memcpy(buffer[diskmax+2], buffer_rarity, state->block_size);
-
-		/* recover 3 data */
-		raidTP_recov_3data(buffer, diskmax, state->block_size, failed[failed_map[0]].index, failed[failed_map[1]].index, failed[failed_map[2]].index, buffer_zero);
-
-		hash_checked = 0; /* keep track if we check at least one block */
-
-		/* check if the recovered blocks are OK */
-		for(j=0;j<failed_count;++j) {
-			if (block_has_updated_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
-				hash_checked = 1;
-				if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
-					break;
-			}
-		}
-
-		/* if we checked something, and no block failed the check */
-		if (hash_checked && j==failed_count) {
-			/* recompute all the redundancy information */
-			raid_gen(state->level, buffer, diskmax, state->block_size);
-			return 0;
-		}
-
-		fprintf(stdlog, "error:%u:parity/qarity/rarity: Data error\n", pos);
-		++error;
 	}
 
 	/* return the number of failed attempts, or -1 if no strategy */
@@ -914,19 +884,12 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			unsigned char* buffer_zero;
 
 			/* buffers for parity read and not computed */
-			if (state->level == 1) {
-				buffer_recov[0] = buffer[diskmax + 1];
-				buffer_recov[1] = 0;
-				buffer_recov[2] = 0;
-			} else if (state->level == 2) {
-				buffer_recov[0] = buffer[diskmax + 2];
-				buffer_recov[1] = buffer[diskmax + 3];
-				buffer_recov[2] = 0;
-			} else {
-				buffer_recov[0] = buffer[diskmax + 3];
-				buffer_recov[1] = buffer[diskmax + 4];
-				buffer_recov[2] = buffer[diskmax + 5];
-			}
+			for(l=0;l<state->level;++l)
+				buffer_recov[l] = buffer[diskmax + state->level + l];
+			for(;l<LEV_MAX;++l)
+				buffer_recov[l] = 0;
+
+			/* the zero buffer is the last one */
 			buffer_zero = buffer[buffermax-1];
 
 			/* read the parity */
