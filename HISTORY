@@ -1,8 +1,18 @@
 SnapRAID HISTORY
 ================
 
-4.1 2013/9
-==========
+5.0 2013/9 (BETA)
+=================
+ * Adds support for RAIDTP (Triple Parity) and RAIDQP (Quad Parity).
+   For quad parity there is a limitation of using no more than 21 data
+   disks. This is a conseguence of the high performant parity generator
+   matrix used. An extension to 27 data disk is possible, but not yet
+   implemented.
+   Note that a more general approach without any limitation is possible,
+   but it would affect badly the performance.
+
+4.1 2013/9 (BETA)
+=================
  * If the underline filesystem doesn't support the FIEMAP command,
    fallback to use the inode number for sorting files.
 
