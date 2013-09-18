@@ -1232,8 +1232,8 @@ void raid_gen(unsigned level, unsigned char** buffer, unsigned diskmax, unsigned
  * This method is also the same used by ZFS to implement its RAIDTP
  * support.
  *
- * Note that the same extension is not possible for Quad Parity because
- * in the approach used in the paper we don't have the guarantee to always have
+ * To support RAIDQP (Quad Parity) we go futher using also the parity generator "8".
+ * Note that in this case we don't have the guarantee to always have
  * a system of independent linear equations, and for Quad Parity in some cases
  * the system is not solvable.
  *
@@ -1258,18 +1258,18 @@ void raid_gen(unsigned level, unsigned char** buffer, unsigned diskmax, unsigned
  * Q = sum(2^i * Di) 0<=i<n
  * R = sum(4^i * Di) 0<=i<n
  *
- * To recover from a failure of three disks at indes x,y,z,
+ * To recover from a failure of three disks at indexes x,y,z,
  * with 0<=x<y<z<n, we compute the syndromes of the available disks:
  *
- * Pxyz = sum(Di) 0<=i<n,i!=x,i!=y,i!=z
- * Qxyz = sum(2^i * Di) 0<=i<n,i!=x,i!=y,i!=z
- * Rxyz = sum(4^i * Di) 0<=i<n,i!=x,i!=y,i!=z
+ * Pa = sum(Di) 0<=i<n,i!=x,i!=y,i!=z
+ * Qa = sum(2^i * Di) 0<=i<n,i!=x,i!=y,i!=z
+ * Ra = sum(4^i * Di) 0<=i<n,i!=x,i!=y,i!=z
  *
  * and if we define:
  *
- * Pd = Pxyz + P
- * Qd = Qxyz + Q
- * Rd = Rxyz + R
+ * Pd = Pa + P
+ * Qd = Qa + Q
+ * Rd = Ra + R
  *
  * we can sum these two set equations, obtaining:
  *
@@ -1277,27 +1277,31 @@ void raid_gen(unsigned level, unsigned char** buffer, unsigned diskmax, unsigned
  * Qd = 2^x * Dx + 2^y * Dy + 2^z * Dz
  * Rd = 4^x * Dx + 4^y * Dy + 4^z * Dz
  *
- * A linear system of three equations solvable by substitution on Dx, Dy and Dz,
- * because all the others variables are known and the equations are independent
- * for any 0<=x<y<z<255.
- * We can prove that the equations are independent by brute-force, trying all the
- * possible combinations of x,y,z.
+ * A linear system always solvable because the coefficients matrix is always
+ * not singular, including all its submatrix.
+ * We can prove that by brute-force, trying all the possible combinations
+ * of x,y,z with 0<=x<y<z<255.
  *
  * The other recovering cases are a simplification of the general one,
  * with some equations or addends removed.
  *
- * We have in total 7 different recovering strategies:
+ * For Quad Parity we follow the same method starting with:
  *
- * RAID5 - Dx recovered with P
- * RAID6 - Dx recovered with Q
- * RAID6 - Dx and Dy recovered with P,Q
- * RAIDTP - Dx recovered with R
- * RAIDTP - Dx,Dy recovered with P,R
- * RAIDTP - Dx,Dy recovered with Q,R
- * RAIDTP - Dx,Dy,Dz recovered with P,Q,R
+ * P = sum(Di) 0<=i<n
+ * Q = sum(2^i * Di) 0<=i<n
+ * R = sum(4^i * Di) 0<=i<n
+ * S = sum(8^i * Di) 0<=i<n
  *
- * each one implemented in a different function using linear system
- * of equations with a different solution.
+ * obtaining:
+ *
+ * Pd =       Dx +       Dy +       Dz +       Dv
+ * Qd = 2^x * Dx + 2^y * Dy + 2^z * Dz + 2^v * Dv
+ * Rd = 4^x * Dx + 4^y * Dy + 4^z * Dz + 4^v * Dv
+ * Sd = 8^x * Dx + 8^y * Dy + 8^z * Dz + 8^v * Dv
+ *
+ * In this case the coefficients matrix and all its submatrix are not singular
+ * only with up to 21 data disk (0<=x<y<z<v<21 with GF primitive poly 285).
+ * Note that the cases failing with 22 data disk are some matrix 3x3.
  *
  * References:
  * [1] Anvin, "The mathematics of RAID-6", 2004
@@ -1390,7 +1394,9 @@ static inline const unsigned char* table(unsigned char a)
 	return gfmul[a];
 }
 
-/*
+/**
+ * Recover failure of one data block for RAID5.
+ *
  * Starting from the equation:
  *
  * Pd = Dx
@@ -1399,7 +1405,7 @@ static inline const unsigned char* table(unsigned char a)
  *
  * Dx = Pd (this one is easy :D)
  */
-void raid5_recov_data(unsigned char** dptrs, unsigned diskmax, unsigned size, int x)
+static void raid5_recov_data(unsigned char** dptrs, unsigned diskmax, unsigned size, int x)
 {
 	unsigned char* p;
 	unsigned char* dp;
@@ -1418,7 +1424,9 @@ void raid5_recov_data(unsigned char** dptrs, unsigned diskmax, unsigned size, in
 	dptrs[diskmax] = p;
 }
 
-/*
+/**
+ * Recover failure of two data blocks for RAID6.
+ *
  * Starting from the equations:
  *
  * Pd = Dx + Dy
@@ -1439,7 +1447,7 @@ void raid5_recov_data(unsigned char** dptrs, unsigned diskmax, unsigned size, in
  *
  * That are always satisfied for any 0<=x<y<255.
  */
-void raid6_recov_2data(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, int y, unsigned char* zero)
+static void raid6_recov_2data(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, int y, unsigned char* zero)
 {
 	unsigned char* p;
 	unsigned char* dp;
@@ -1498,120 +1506,9 @@ void raid6_recov_2data(unsigned char** dptrs, unsigned diskmax, unsigned size, i
 	}
 }
 
-/*
- * Starting from the equations:
+/**
+ * Recover failure of two data blocks without Q for RAIDTP.
  *
- * Qd = 2^x * Dx
- *
- * and solving we get:
- *
- * Dx = 2^(-x) * Qd
- *
- * with conditions:
- *
- * 2^x != 0
- *
- * That are always satisfied for any 0<=x<y<255.
- */
-void raid6_recov_datap(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, unsigned char* zero)
-{
-	unsigned char* q;
-	unsigned char* dq;
-	const unsigned char* qxmul; /* Q multiplier to compute Dx */
-
-	q = dptrs[diskmax+1];
-
-	/* compute syndrome with zero for the missing data page */
-	/* use the dead data page as temporary storage for delta q */
-	dq = dptrs[x];
-	dptrs[x] = zero;
-	dptrs[diskmax+1] = dq;
-
-	raid6_gen(dptrs, diskmax, size);
-
-	/* restore pointers */
-	dptrs[x] = dq;
-	dptrs[diskmax+1] = q;
-
-	/* select tables */
-	qxmul = table( inv(pow2(x)) );
-
-	while (size--) {
-		/* delta */
-		unsigned char Qd = *q ^ *dq;
-
-		/* addends to reconstruct Dx */
-		unsigned char qam = qxmul[Qd];
-
-		/* reconstruct Dx */
-		unsigned char Dx = qam;
-
-		/* set */
-		*dq = Dx;
-
-		++q;
-		++dq;
-	}
-}
-
-/*
- * Starting from the equation:
- *
- * Rd = 4^x * Dx
- *
- * and solving we get:
- *
- * Dx = 4^(-x) * Rd
- *
- * with conditions:
- *
- * 4^x != 0
- *
- * That are always satisfied for any 0<=x<y<255.
- *
- */
-void raidTP_recov_datapq(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, unsigned char* zero)
-{
-	unsigned char* r;
-	unsigned char* dr;
-	const unsigned char* rxmul; /* R multiplier to compute Dx */
-
-	r = dptrs[diskmax+2];
-
-	/* compute syndrome with zero for the missing data page */
-	/* use the dead data page as temporary storage for delta r */
-	dr = dptrs[x];
-	dptrs[x] = zero;
-	dptrs[diskmax+2] = dr;
-
-	raidTP_gen(dptrs, diskmax, size);
-
-	/* restore pointers */
-	dptrs[x] = dr;
-	dptrs[diskmax+2] = r;
-
-	/* select tables */
-	rxmul = table( inv(pow4(x)) );
-
-	while (size--) {
-		/* delta */
-		unsigned char Rd = *r ^ *dr;
-
-		/* addends to reconstruct Dx */
-		unsigned char rxm = rxmul[Rd];
-
-		/* reconstruct Dx */
-		unsigned char Dx = rxm;
-
-		/* set */
-		*dr = Dx;
-
-		++r;
-		++dr;
-	}
-}
-
-/*
  * Starting from the equations:
  *
  * Pd = Dx + Dy
@@ -1632,7 +1529,7 @@ void raidTP_recov_datapq(unsigned char** dptrs, unsigned diskmax, unsigned size,
  *
  * That are always satisfied for any 0<=x<y<255.
  */
-void raidTP_recov_2dataq(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, int y, unsigned char* zero)
+static void raidTP_recov_2dataq(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, int y, unsigned char* zero)
 {
 	unsigned char* p;
 	unsigned char* dp;
@@ -1693,7 +1590,9 @@ void raidTP_recov_2dataq(unsigned char** dptrs, unsigned diskmax, unsigned size,
 	}
 }
 
-/*
+/**
+ * Recover failure of two data blocks without P for RAIDTP.
+ *
  * Starting from the equations:
  *
  * Qd = 2^x * Dx + 2^y * Dy
@@ -1715,7 +1614,7 @@ void raidTP_recov_2dataq(unsigned char** dptrs, unsigned diskmax, unsigned size,
  *
  * That are always satisfied for any 0<=x<y<255.
  */
-void raidTP_recov_2datap(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, int y, unsigned char* zero)
+static void raidTP_recov_2datap(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, int y, unsigned char* zero)
 {
 	unsigned char* q;
 	unsigned char* dq;
@@ -1784,7 +1683,9 @@ void raidTP_recov_2datap(unsigned char** dptrs, unsigned diskmax, unsigned size,
 	}
 }
 
-/*
+/**
+ * Recover failure of three data blocks for RAIDTP.
+ *
  * Starting from the equations:
  *
  * Pd = Dx + Dy + Dz
@@ -1817,7 +1718,7 @@ void raidTP_recov_2datap(unsigned char** dptrs, unsigned diskmax, unsigned size,
  *
  * That are always satisfied for any 0<=x<y<z<255.
  */
-void raidTP_recov_3data(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, int y, int z, unsigned char* zero)
+static void raidTP_recov_3data(unsigned char** dptrs, unsigned diskmax, unsigned size, int x, int y, int z, unsigned char* zero)
 {
 	unsigned char* p;
 	unsigned char* dp;
@@ -1972,18 +1873,20 @@ static void invert(unsigned char* M, unsigned char* V, unsigned n)
 	}
 }
 
-/*
+/**
+ * Recover failure of one data block x using parity i for any RAID level.
+ *
  * Starting from the equation:
  *
- * Sd = 2^i^x * Dx
+ * Sd = (2^i)^x * Dx
  *
  * and solving we get:
  *
- * Dx = 2^i^(-x) * Sd
+ * Dx = (2^i)^(-x) * Sd
  *
  * with conditions:
  *
- * 2^i^x != 0
+ * (2^i)^x != 0
  *
  * That are always satisfied for any 0<=x<y<255.
  */
@@ -1993,9 +1896,11 @@ void raid_recov_1data(unsigned char** dptrs, unsigned diskmax, unsigned size, in
 	unsigned char* dp;
 	const unsigned char* pxmul; /* P multiplier to compute Dx */
 
-	/* if i is P use the fast one */
-	if (i == 0)
+	/* if it's RAID5 uses the dedicated and faster function */
+	if (i == 0) {
 		raid5_recov_data(dptrs, diskmax, size, x);
+		return;
+	}
 
 	p = dptrs[diskmax+i];
 
@@ -2032,11 +1937,13 @@ void raid_recov_1data(unsigned char** dptrs, unsigned diskmax, unsigned size, in
 	}
 }
 
-/*
+/**
+ * Recover failure of two data blocks x,y using parity i,j for any RAID level.
+ *
  * Starting from the equations:
  *
- * Pd = 2^i^x * Dx + 2^i^y * Dy
- * Qd = 2^j^x * Dx + 2^j^y * Dy
+ * Pd = (2^i)^x * Dx + (2^i)^y * Dy
+ * Qd = (2^j)^x * Dx + (2^j)^y * Dy
  *
  * we solve inverting the coefficients matrix.
  */
@@ -2053,6 +1960,22 @@ void raid_recov_2data(unsigned char** dptrs, unsigned diskmax, unsigned size, in
 	unsigned char G[2*2];
 	unsigned char V[2*2];
 	unsigned n = 2;
+
+	/* if it's RAID6 uses the dedicated and faster function */
+	if (i == 0 && j == 1) {
+		raid6_recov_2data(dptrs, diskmax, size, x, y, zero);
+		return;
+	}
+	/* if it's RAIDTP uses the dedicated and faster function */
+	if (i == 0 && j == 2) {
+		raidTP_recov_2dataq(dptrs, diskmax, size, x, y, zero);
+		return;
+	}
+	/* if it's RAIDTP uses the dedicated and faster function */
+	if (i == 1 && j == 2) {
+		raidTP_recov_2datap(dptrs, diskmax, size, x, y, zero);
+		return;
+	}
 
 	p = dptrs[diskmax+i];
 	q = dptrs[diskmax+j];
@@ -2127,12 +2050,14 @@ void raid_recov_2data(unsigned char** dptrs, unsigned diskmax, unsigned size, in
 	}
 }
 
-/*
+/**
+ * Recover failure of three data blocks x,y,z using parity i,j,k for any RAID level.
+ *
  * Starting from the equations:
  *
- * Pd = 2^i^x * Dx + 2^i^y * Dy + 2^i^z * Dz
- * Qd = 2^j^x * Dx + 2^j^y * Dy + 2^j^z * Dz
- * Rd = 2^k^x * Dx + 2^k^y * Dy + 2^k^z * Dz
+ * Pd = (2^i)^x * Dx + (2^i)^y * Dy + (2^i)^z * Dz
+ * Qd = (2^j)^x * Dx + (2^j)^y * Dy + (2^j)^z * Dz
+ * Rd = (2^k)^x * Dx + (2^k)^y * Dy + (2^k)^z * Dz
  *
  * we solve inverting the coefficients matrix.
  */
@@ -2156,6 +2081,12 @@ void raid_recov_3data(unsigned char** dptrs, unsigned diskmax, unsigned size, in
 	unsigned char G[3*3];
 	unsigned char V[3*3];
 	unsigned n = 3;
+
+	/* if it's RAIDTP uses the dedicated and faster function */
+	if (i == 0 && j == 1 && k == 2) {
+		raidTP_recov_3data(dptrs, diskmax, size, x, y, z, zero);
+		return;
+	}
 
 	p = dptrs[diskmax+i];
 	q = dptrs[diskmax+j];
@@ -2260,13 +2191,15 @@ void raid_recov_3data(unsigned char** dptrs, unsigned diskmax, unsigned size, in
 	}
 }
 
-/*
+/**
+ * Recover failure of four data blocks x,y,z,v using parity i,j,k,l for any RAID level.
+ *
  * Starting from the equations:
  *
- * Pd = 2^i^x * Dx + 2^i^y * Dy + 2^i^z * Dz + 2^i^v * Dv
- * Qd = 2^j^x * Dx + 2^j^y * Dy + 2^j^z * Dz + 2^j^v * Dv
- * Rd = 2^k^x * Dx + 2^k^y * Dy + 2^k^z * Dz + 2^k^v * Dv
- * Sd = 2^l^x * Dx + 2^l^y * Dy + 2^l^z * Dz + 2^l^v * Dv
+ * Pd = (2^i)^x * Dx + (2^i)^y * Dy + (2^i)^z * Dz + (2^i)^v * Dv
+ * Qd = (2^j)^x * Dx + (2^j)^y * Dy + (2^j)^z * Dz + (2^j)^v * Dv
+ * Rd = (2^k)^x * Dx + (2^k)^y * Dy + (2^k)^z * Dz + (2^k)^v * Dv
+ * Sd = (2^l)^x * Dx + (2^l)^y * Dy + (2^l)^z * Dz + (2^l)^v * Dv
  *
  * we solve inverting the coefficients matrix.
  */

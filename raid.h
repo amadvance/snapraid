@@ -22,48 +22,14 @@
 /* raid */
 
 /**
+ * Max number of data disks for quad parity.
+ */
+#define RAID_QUAD_DATA_LIMIT 21
+
+/**
  * Syndrome computation.
  */
 void raid_gen(unsigned level, unsigned char** buffer, unsigned diskmax, unsigned size);
-
-/*
- * Recover failure of one data block.
- */
-void raid5_recov_data(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila);
-
-/*
- * Recover two failed data blocks.
- */
-void raid6_recov_2data(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, int failb, unsigned char* zero);
-
-/*
- * Recover failure of one data block ignoring P.
- * Note that P content is not recovered.
- */
-void raid6_recov_datap(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, unsigned char* zero);
-
-/*
- * Recover failure of one data block ignoring P and Q.
- * Note that P and Q content is not recovered.
- */
-void raidTP_recov_datapq(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, unsigned char* zero);
-
-/*
- * Recover failure of two data blocks ignoring P.
- * Note that P content is not recovered.
- */
-void raidTP_recov_2datap(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, int failb, unsigned char* zero);
-
-/*
- * Recover failure of two data blocks ignoring Q.
- * Note that Q content is not recovered.
- */
-void raidTP_recov_2dataq(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, int failb, unsigned char* zero);
-
-/*
- * Recover failure of three data blocks.
- */
-void raidTP_recov_3data(unsigned char** dptrs, unsigned diskmax, unsigned size, int faila, int failb, int failc, unsigned char* zero);
 
 /*
  * Recover failure of one data block x using parity i.
