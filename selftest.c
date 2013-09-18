@@ -168,8 +168,8 @@ static void raidtest(unsigned diskmax, unsigned block_size)
 					unsigned char* c;
 					unsigned char* p;
 
-					/* this is the point where quad parity fails over RAID_QUAD_DATA_LIMIT data disks */
-					if (diskmax > RAID_QUAD_DATA_LIMIT && COMBO3[n].use[2] >= 3)
+					/* this is the point where quad parity fails over RAIDQP_DATA_LIMIT data disks */
+					if (diskmax > RAIDQP_DATA_LIMIT && COMBO3[n].use[2] >= 3)
 						continue;
 
 					/* save */

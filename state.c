@@ -23,6 +23,7 @@
 #include "util.h"
 #include "parity.h"
 #include "cpu.h"
+#include "raid.h"
 
 const char* lev_name(unsigned l)
 {
@@ -176,9 +177,14 @@ static void state_config_check(struct snapraid_state* state, const char* path)
 			++diskcount;
 		}
 
-		if (diskcount > 255) {
-			/* RAID6 P/Q parity works for up to 255 drives, no more */
-			fprintf(stderr, "Too many disks. No more than 255.\n");
+		if (state->level >= 2 && diskcount > RAID6_DATA_LIMIT) {
+			/* RAID6 parity works for up to 255 drives, no more */
+			fprintf(stderr, "Too many disks for RAID6. No more than %u.\n", RAID6_DATA_LIMIT);
+			exit(EXIT_FAILURE);
+		}
+		if (state->level >= 4 && diskcount > RAIDQP_DATA_LIMIT) {
+			/* RAIDQP parity works for up to 21 drives, no more */
+			fprintf(stderr, "Too many disks for RAIDQP. No more than %u.\n", RAIDQP_DATA_LIMIT);
 			exit(EXIT_FAILURE);
 		}
 

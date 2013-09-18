@@ -22,9 +22,14 @@
 /* raid */
 
 /**
- * Max number of data disks for quad parity.
+ * Max number of data disks for RAID6.
  */
-#define RAID_QUAD_DATA_LIMIT 21
+#define RAID6_DATA_LIMIT 21
+
+/**
+ * Max number of data disks for RAIDQP.
+ */
+#define RAIDQP_DATA_LIMIT 21
 
 /**
  * Syndrome computation.
