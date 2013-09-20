@@ -285,19 +285,10 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			unsigned char* buffer_recov[LEV_MAX];
 
 			/* buffers for parity read and not computed */
-			if (state->level == 1) {
-				buffer_recov[0] = buffer[diskmax + 1];
-				buffer_recov[1] = 0;
-				buffer_recov[2] = 0;
-			} else if (state->level == 2) {
-				buffer_recov[0] = buffer[diskmax + 2];
-				buffer_recov[1] = buffer[diskmax + 3];
-				buffer_recov[2] = 0;
-			} else {
-				buffer_recov[0] = buffer[diskmax + 3];
-				buffer_recov[1] = buffer[diskmax + 4];
-				buffer_recov[2] = buffer[diskmax + 5];
-			}
+			for(l=0;l<state->level;++l)
+				buffer_recov[l] = buffer[diskmax + state->level + l];
+			for(;l<LEV_MAX;++l)
+				buffer_recov[l] = 0;
 
 			/* read the parity */
 			for(l=0;l<state->level;++l) {
