@@ -1221,35 +1221,70 @@ void raid_gen(unsigned level, unsigned char** buffer, unsigned diskmax, unsigned
 /* recovering */
 
 /**
- * The data recovering is based on paper "The mathematics of RAID-6" [1],
- * that covers the RAID5 and RAID6 computation in the Galois Field GF(2^8)
+ * The data recovering is based on the paper "The mathematics of RAID-6" [1],
+ * that covers the RAID5 and RAID6 computations in the Galois Field GF(2^8)
  * with the primitive polynomial x^8 + x^4 + x^3 + x^2 + 1 (285 decimal),
- * using parity generators "1" and "2".
+ * using the following equations to compute syndrome P and Q from a set
+ * of n disk Di with 0<=i<n:
+ *
+ * P = sum(Di) 0<=i<n
+ * Q = sum(2^i * Di) 0<=i<n
  *
  * To support RAIDTP (Triple Parity), we use an extension of the same approach,
  * also described in the paper "Multiple-parity RAID" [2], with the additional
- * parity generator "4".
- * This method is also the same used by ZFS to implement its RAIDTP
- * support.
+ * parity coefficient "4".
+ * This method is also the same used by ZFS to implement its RAIDTP support.
  *
- * To support RAIDQP (Quad Parity) we go futher using also the parity generator "8".
+ * P = sum(Di) 0<=i<n
+ * Q = sum(2^i * Di) 0<=i<n
+ * R = sum(4^i * Di) 0<=i<n
+ *
+ * To support RAIDQP (Quad Parity) we go further using also the parity coefficient "8".
+ *
+ * P = sum(Di) 0<=i<n
+ * Q = sum(2^i * Di) 0<=i<n
+ * R = sum(4^i * Di) 0<=i<n
+ * S = sum(8^i * Di) 0<=i<n
+ *
  * Note that in this case we don't have the guarantee to always have
- * a system of independent linear equations, and for Quad Parity in some cases
- * the system is not solvable.
+ * a system of independent linear equations, and in some cases
+ * the equations are no not solvable.
+ * This is expected because the Vandermonde matrix we use to generate the parity
+ * has no guarantee to have all its submatrixes not singular [3, Chap 11, Problem 7]
+ * and this is a requirement to have a MDS code [3, Chap 11, Theorem 8].
  *
- * Using the primitive polynomial 285, Quad Parity works for up to 21 disks
- * with parity generators "1,2,4,8". Changing polynomial to 391/451/463/487,
- * it works for up to 27 disks with the same parity generators.
- * Using different parity generators like "5,13,27,35" it's possible to
+ * For example, with 22 data disks we get the matrix equation:
+ *
+ * [ 1 1 1   ... 1    ]     [ D0  ]    [ P ]
+ * [ 1 2 2^2 ... 2^21 ]  *  [ D1  ]  = [ Q ]
+ * [ 1 4 4^2 ... 4^21 ]     [ D2  ]    [ R ]
+ * [ 1 8 8^2 ... 8^21 ]     [ ..  ]    [ S ]
+ *                          [ D21 ]
+ *
+ * and in case of recoving disk 0, 10 and 21, using parity P, Q, S
+ * removing the proper rows and column you get the singular matrix:
+ *
+ * [ 1   1   1 ]   [ D0  ]   [ Pd ]
+ * [ 1 116 117 ] * [ D10 ] = [ Qd ]
+ * [ 1  96 161 ]   [ D21 ]   [ Sd ]
+ *
+ * Using the primitive polynomial 285, Quad Parity works for up to 21 data disks
+ * with parity coefficients "1,2,4,8". Changing polynomial to one of 391/451/463/487,
+ * it works for up to 27 disks with the same parity coefficients.
+ * Using different parity coefficients "5,13,27,35" it's possible to
  * make it working for up to 33 disks. But no more.
  *
- * A general method working for Quad Parity and more, is to use a a Cauchy matrix [3],
+ * To support more disks it's possible to use the Galois Field GF(2^16) with
+ * primitive polynomial 100087 that supports Hexa (6) parity with parity coeffiecients
+ * 1,2,4,8,16,32 for up to 89 disks.
+ *
+ * A general method working for any number of disks, is to use a a Cauchy matrix [4],
  * but with a slower computational performance, because the coefficients of
- * the equations are arbitrarely chosen, and not derived from parity generators.
+ * the equations are arbitrarely chosen, and not powers of the same coeffiecient.
  * This means that you need to use multiplication tables to implement the
  * syndrome computation, instead of the fast approach described in [1].
  * Note anyway, that there is also a way to implement multiplication tables
- * in a very fast way with SSE instructions [4].
+ * in a very fast way with SSE instructions [5].
  *
  * In details, Triple Parity is implemented for n disks Di, computing
  * the syndromes P,Q,R with:
@@ -1300,14 +1335,14 @@ void raid_gen(unsigned level, unsigned char** buffer, unsigned diskmax, unsigned
  * Sd = 8^x * Dx + 8^y * Dy + 8^z * Dz + 8^v * Dv
  *
  * In this case the coefficients matrix and all its submatrix are not singular
- * only with up to 21 data disk (0<=x<y<z<v<21 with GF primitive poly 285).
- * Note that the cases failing with 22 data disk are some matrix 3x3.
+ * only for up to 21 data disk (0<=x<y<z<v<21 with GF primitive poly 285).
  *
  * References:
  * [1] Anvin, "The mathematics of RAID-6", 2004
  * [2] Brown, "Multiple-parity RAID", 2011
- * [3] Blömer, "An XOR-Based Erasure-Resilient Coding Scheme", 1995
- * [4] Plank, "Screaming Fast Galois Field Arithmetic Using Intel SIMD Instructions", 2013
+ * [3] MacWilliams, Sloane, "The Theory of Error-Correcting Codes", 1977
+ * [4] Blömer, "An XOR-Based Erasure-Resilient Coding Scheme", 1995
+ * [5] Plank, "Screaming Fast Galois Field Arithmetic Using Intel SIMD Instructions", 2013
  */
 
 /**

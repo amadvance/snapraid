@@ -5,6 +5,11 @@ This is the list of TODO items for SnapRAID.
 
 - 4.1
 
+* Allow to extract UUID info from the content file.
+
+* In the log file and gui mode, output kind of final report. Like:
+status:ok / status:fail
+
 * In sync if a data error is found, we can mark the block as bad, like in scrub
 and allow sync to continue.
 
@@ -88,10 +93,10 @@ Or maybe we should allow parity never than content, but not viceversa.
 * Use Async IO for Linux (libaio).
 See thread: https://sourceforge.net/p/snapraid/discussion/1677233/thread/a300a10b/
 
-* Triple parity also called RAID-TP. We can implement it in a compatible way
-with the existing RAID-5 and RAID-6 definining a new r-parity file.
-See http://blogs.oracle.com/ahl/entry/triple_parity_raid_z and
-http://thread.gmane.org/gmane.linux.raid/34195/focus=34236
+* Split the parity in multiple files and allow it to coexist with data
+in the same disk.
+This is possible if the data in the same disk uses parity addresses not
+contained in the parity file present in the same disk.
 
 * The data could be compressed before processing, resulting in parity block of fixed size,
 but matching different data block sizes.
