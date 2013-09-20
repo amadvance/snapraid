@@ -139,7 +139,7 @@ static const struct combo4 {
 	int c;
 	int d;
 } COMBO4[] = {
-	{ 0, 1, 2, 4 },
+	{ 0, 1, 2, 3 },
 };
 
 /**
