@@ -1249,24 +1249,9 @@ void raid_gen(unsigned level, unsigned char** buffer, unsigned diskmax, unsigned
  * Note that in this case we don't have the guarantee to always have
  * a system of independent linear equations, and in some cases
  * the equations are no not solvable.
- * This is expected because the Vandermonde matrix we use to generate the parity
+ * This is expected because the Vandermonde matrix we use to compute the parity
  * has no guarantee to have all its submatrixes not singular [3, Chap 11, Problem 7]
  * and this is a requirement to have a MDS code [3, Chap 11, Theorem 8].
- *
- * For example, with 22 data disks we get the matrix equation:
- *
- * [ 1 1 1   ... 1    ]     [ D0  ]    [ P ]
- * [ 1 2 2^2 ... 2^21 ]  *  [ D1  ]  = [ Q ]
- * [ 1 4 4^2 ... 4^21 ]     [ D2  ]    [ R ]
- * [ 1 8 8^2 ... 8^21 ]     [ ..  ]    [ S ]
- *                          [ D21 ]
- *
- * and in case of recoving disk 0, 10 and 21, using parity P, Q, S
- * removing the proper rows and column you get the singular matrix:
- *
- * [ 1   1   1 ]   [ D0  ]   [ Pd ]
- * [ 1 116 117 ] * [ D10 ] = [ Qd ]
- * [ 1  96 161 ]   [ D21 ]   [ Sd ]
  *
  * Using the primitive polynomial 285, Quad Parity works for up to 21 data disks
  * with parity coefficients "1,2,4,8". Changing polynomial to one of 391/451/463/487,
@@ -1275,8 +1260,8 @@ void raid_gen(unsigned level, unsigned char** buffer, unsigned diskmax, unsigned
  * make it working for up to 33 disks. But no more.
  *
  * To support more disks it's possible to use the Galois Field GF(2^16) with
- * primitive polynomial 100087 that supports Hexa (6) parity with parity coeffiecients
- * 1,2,4,8,16,32 for up to 89 disks.
+ * primitive polynomial 100087 or 122563 that supports Hexa (6) parity with
+ * parity coeffiecients 1,2,4,8,16,32 for up to 89 disks.
  *
  * A general method working for any number of disks, is to use a a Cauchy matrix [4],
  * but with a slower computational performance, because the coefficients of
