@@ -791,7 +791,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					}
 				} else {
 					/* if checking or hashing, open the file only for reading */
-					ret = handle_open(&handle[j], block_file_get(block), stdlog, state->opt.skip_sequential);
+					ret = handle_open(&handle[j], block_file_get(block), state->opt.skip_sequential, stdlog);
 					if (ret == -1) {
 						/* save the failed block for the check/fix */
 						failed[failed_count].is_bad = 1;
@@ -1647,7 +1647,7 @@ bail:
 				printf("No unrecoverable errors\n");
 		}
 	} else {
-		printf("No error\n");
+		printf("Everything OK\n");
 	}
 
 	free(failed);

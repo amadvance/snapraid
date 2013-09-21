@@ -673,11 +673,14 @@ disk in the free space left in an already used disk. and this
 option allows you to continue anyway.
 .TP
 .B \(hyl, \(hy\(hylog FILE
-Outputs a detailed log to the specified file.
-It contains the exact specification of which block of
+Redirect the detailed log of errors to the specified file.
+This log contains the exact specification of which block of
 any file is not recoverable and why.
 If this option is not specified, the log is printed in
 the console using the standard error stream.
+When checking and fixing this allows to keep separated
+the possible huge list of errors from the human readable
+output.
 .TP
 .B \(hys, \(hy\(hystart BLKSTART
 Starts the processing from the specified

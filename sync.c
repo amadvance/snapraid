@@ -53,7 +53,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	block_off_t autosavelimit;
 	block_off_t autosavemissing;
 	int ret;
-	unsigned unrecoverable_error;
+	unsigned error;
+	unsigned silent_error;
 	time_t now;
 	unsigned l;
 
@@ -71,7 +72,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 	buffer = malloc_nofail_vector_align(buffermax, state->block_size, &buffer_alloc);
 
-	unrecoverable_error = 0;
+	error = 0;
+	silent_error = 0;
 
 	/* first count the number of blocks to process */
 	countmax = 0;
@@ -202,18 +204,18 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					/* and closing a descriptor should never fail */
 					fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to sync.\n");
 					printf("Stopping at block %u\n", i);
-					++unrecoverable_error;
+					++error;
 					goto bail;
 				}
 			}
 
-			ret = handle_open(&handle[j], block_file_get(block), stderr, state->opt.skip_sequential);
+			ret = handle_open(&handle[j], block_file_get(block), state->opt.skip_sequential, stderr);
 			if (ret == -1) {
 				if (errno == ENOENT) {
 					fprintf(stderr, "Missing file '%s'.\n", handle[j].path);
 					fprintf(stderr, "WARNING! You cannot modify data disk during a sync. Rerun the sync command when finished.\n");
 
-					++unrecoverable_error;
+					++error;
 
 					/* if the file is missing, it means that it was removed during sync */
 					/* this isn't a serious error, so we skip this block, and continue with others */
@@ -228,7 +230,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					printf("Stopping to allow recovery. Try with 'snapraid check'\n");
 				}
 
-				++unrecoverable_error;
+				++error;
 				goto bail;
 			}
 
@@ -247,7 +249,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					fprintf(stderr, "Unexpected inode change from %"PRIu64" to %"PRIu64" at file '%s'.\n", block_file_get(block)->inode, (uint64_t)handle[j].st.st_ino, handle[j].path);
 				fprintf(stderr, "WARNING! You cannot modify files during a sync. Rerun the sync command when finished.\n");
 
-				++unrecoverable_error;
+				++error;
 
 				/* if the file is changed, it means that it was modified during sync */
 				/* this isn't a serious error, so we skip this block, and continue with others */
@@ -259,7 +261,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			if (read_size == -1) {
 				fprintf(stderr, "DANGER! Unexpected read error in a data disk, it isn't possible to sync.\n");
 				printf("Stopping to allow recovery. Try with 'snapraid check'\n");
-				++unrecoverable_error;
+				++error;
 				goto bail;
 			}
 
@@ -282,7 +284,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					fprintf(stderr, "Data error in file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
 					fprintf(stderr, "DANGER! Unexpected data error in a data disk, it isn't possible to sync.\n");
 					printf("Stopping to allow recovery. Try with 'snapraid -s %u check'\n", i);
-					++unrecoverable_error;
+					++silent_error;
 					goto bail;
 				}
 			} else {
@@ -307,7 +309,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				if (ret == -1) {
 					fprintf(stderr, "DANGER! Write error in the %s disk, it isn't possible to sync.\n", lev_name(l));
 					printf("Stopping at block %u\n", i);
-					++unrecoverable_error;
+					++error;
 					goto bail;
 				}
 			}
@@ -377,12 +379,21 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 	state_progress_end(state, countpos, countmax, countsize);
 
+	if (error || silent_error) {
+		printf("%u read/write errors\n", error);
+		printf("%u data errors\n", silent_error);
+	} else {
+		/* print the result only if processed something */
+		if (countpos != 0)
+			printf("Everything OK\n");
+	}
+
 bail:
 	for(j=0;j<diskmax;++j) {
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			fprintf(stderr, "DANGER! Unexpected close error in a data disk.\n");
-			++unrecoverable_error;
+			++error;
 			/* continue, as we are already exiting */
 		}
 	}
@@ -392,8 +403,13 @@ bail:
 	free(buffer);
 	free(rehandle_alloc);
 
-	if (unrecoverable_error != 0)
-		return -1;
+	if (state->opt.expect_recoverable) {
+		if (error + silent_error == 0)
+			return -1;
+	} else {
+		if (error + silent_error != 0)
+			return -1;
+	}
 	return 0;
 }
 

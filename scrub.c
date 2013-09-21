@@ -218,7 +218,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				}
 			}
 
-			ret = handle_open(&handle[j], block_file_get(block), stderr, state->opt.skip_sequential);
+			ret = handle_open(&handle[j], block_file_get(block), state->opt.skip_sequential, stderr);
 			if (ret == -1) {
 				fprintf(stdlog, "error:%u:%s:%s: Open error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 				++error;
@@ -373,12 +373,12 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	state_progress_end(state, countpos, countmax, countsize);
 
 	if (error || silent_error) {
-		printf("%u read/data errors\n", error);
-		printf("%u silent errors\n", silent_error);
+		printf("%u read errors\n", error);
+		printf("%u data errors\n", silent_error);
 	} else {
 		/* print the result only if processed something */
 		if (countpos != 0)
-			printf("No error\n");
+			printf("Everything OK\n");
 	}
 
 bail:
@@ -397,10 +397,10 @@ bail:
 	free(rehandle_alloc);
 
 	if (state->opt.expect_recoverable) {
-		if (error == 0)
+		if (error + silent_error == 0)
 			return -1;
 	} else {
-		if (error != 0)
+		if (error + silent_error != 0)
 			return -1;
 	}
 	return 0;

@@ -58,7 +58,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
  * Opens a file.
  * The file is opened for reading.
  */
-int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, FILE* out, int skip_sequential);
+int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int skip_sequential, FILE* out);
 
 /**
  * Closes a file.

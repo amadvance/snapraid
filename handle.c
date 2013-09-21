@@ -131,7 +131,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 	return 0;
 }
 
-int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, FILE* out, int skip_sequential)
+int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int skip_sequential, FILE* out)
 {
 	int ret;
 	int flags;

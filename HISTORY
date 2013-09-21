@@ -19,6 +19,8 @@ SnapRAID HISTORY
  * Added a new -C, --gen-conf option to generate a dummy configuration
    file from the info in the content file.
    Just in case that you lose everything, except the content file.
+ * At the end of sync/scrub/check/fix prints "Everything OK" if no error
+   was found. This should make clear that everything is really OK.
 
 4.0 2013/9
 ==========
