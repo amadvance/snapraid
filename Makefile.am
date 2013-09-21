@@ -71,7 +71,7 @@ EXTRA_DIST = \
 	noautomake.sh \
 	README AUTHORS HISTORY INSTALL COPYING TODO TEST INSTALL.windows \
 	snapraid.d snapraid.1 snapraid.txt \
-	test-raid5.conf test-raid6.conf test-raidTP.conf test-raidTP-hole.conf \
+	test-raid5.conf test-raid6.conf test-raidTP.conf test-raidQP.conf test-raidQP-hole.conf \
 	snapraid.conf.example \
 	configure.windows-x86 configure.windows-x64 snapraid.conf.example.windows \
 	acinclude.m4
