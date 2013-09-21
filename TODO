@@ -5,8 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
-* Allow to extract UUID info from the content file.
-
 * In the log file and gui mode, output kind of final report. Like:
 status:ok / status:fail
 
