@@ -77,7 +77,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 				}
 
 				/* open the file only for reading */
-				ret = handle_open(&handle[j], block_file_get(block), stdlog, state->opt.skip_sequential);
+				ret = handle_open(&handle[j], block_file_get(block), state->opt.skip_sequential, stdlog);
 				if (ret == -1) {
 					fprintf(stderr, "DANGER! Unexpected open error in a data disk, it isn't possible to rehash.\n");
 					printf("Stopping at block %u\n", i);
@@ -142,7 +142,7 @@ bail:
 	if (error) {
 		printf("%u read errors\n", error);
 	} else {
-		printf("No error\n");
+		printf("Everything OK\n");
 	}
 
 	free(handle);
