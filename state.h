@@ -109,6 +109,7 @@ struct snapraid_state {
 	time_t progress_last; /**< Last update of progress visualization. */
 	time_t progress_interruption; /**< Start of the measure interruption. */
 	time_t progress_subtract; /**< Time to subtract for the interruptions. */
+	int no_conf; /**< Automatically add missing info. Used to load content without a configuration file. */
 };
 
 /**
@@ -213,6 +214,14 @@ void state_progress_stop(struct snapraid_state* state);
  * Restart the progress.
  */
 void state_progress_restart(struct snapraid_state* state);
+
+/****************************************************************************/
+/* misc */
+
+/**
+ * Generate a dummy configuration file from a content file.
+ */
+void generate_configuration(const char* content);
 
 #endif
 

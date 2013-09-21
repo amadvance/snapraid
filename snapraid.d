@@ -13,7 +13,7 @@ Synopsis
 	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	:	sync|status|scrub|diff|dup|pool|check|fix|rehash
 
-	:snapraid [-V, --version] [-h, --help]
+	:snapraid [-V, --version] [-h, --help] [-C, --gen-conf CONTENT]
 
 Description
 	SnapRAID is a backup program for disk arrays. It stores redundancy
@@ -512,6 +512,15 @@ Options
 	-t, --count BLKCOUNT
 		Processes only the specified number of blocks.
 		It's present mainly for advanced manual recovering.
+
+	-C, --gen-conf CONTENT_FILE
+		Generates a dummy configuration file from an existing
+		content file.
+		The configuration file is written in the standard output,
+		and it doesn't overwrite an existing one.
+		This configuration file also contains the information
+		needed to reconstruct the disk mount points, in case you
+		lose the entire system.
 
 	-v, --verbose
 		Prints more information in the processing.

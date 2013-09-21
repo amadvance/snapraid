@@ -43,7 +43,7 @@ snapraid [\(hyc, \(hy\(hyconf CONFIG]
 .PP
 .PD
 .PP
-snapraid [\(hyV, \(hy\(hyversion] [\(hyh, \(hy\(hyhelp]
+snapraid [\(hyV, \(hy\(hyversion] [\(hyh, \(hy\(hyhelp] [\(hyC, \(hy\(hygen\(hyconf CONTENT]
 .PD 0
 .PP
 .PD
@@ -688,6 +688,15 @@ It\(cqs present mainly for advanced manual recovering.
 .B \(hyt, \(hy\(hycount BLKCOUNT
 Processes only the specified number of blocks.
 It\(cqs present mainly for advanced manual recovering.
+.TP
+.B \(hyC, \(hy\(hygen\(hyconf CONTENT_FILE
+Generates a dummy configuration file from an existing
+content file.
+The configuration file is written in the standard output,
+and it doesn\(cqt overwrite an existing one.
+This configuration file also contains the information
+needed to reconstruct the disk mount points, in case you
+lose the entire system.
 .TP
 .B \(hyv, \(hy\(hyverbose
 Prints more information in the processing.
