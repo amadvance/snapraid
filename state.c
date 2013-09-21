@@ -39,6 +39,7 @@ void state_init(struct snapraid_state* state)
 	state->lockfile[0] = 0;
 	state->level = 1; /* default is the lowest protection */
 	state->loaded_blockmax = 0;
+	state->no_conf = 0;
 
 	tommy_list_init(&state->disklist);
 	tommy_list_init(&state->maplist);
@@ -871,6 +872,17 @@ static struct snapraid_disk* find_disk(struct snapraid_state* state, const char*
 		struct snapraid_disk* disk = i->data;
 		if (strcmp(disk->name, name) == 0)
 			return disk;
+	}
+
+	if (state->no_conf) {
+		/* without a configuration file, add disks automatically */
+		struct snapraid_disk* disk;
+
+		disk = disk_alloc(name, "DUMMY/", -1);
+
+		tommy_list_insert_tail(&state->disklist, &disk->node, disk);
+
+		return disk;
 	}
 
 	return 0;
@@ -3475,5 +3487,59 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 	}
 
 	return 0;
+}
+
+void generate_configuration(const char* path)
+{
+	struct snapraid_state state;
+	struct snapraid_content* content;
+	tommy_node* j;
+
+	state_init(&state);
+
+	/* mark that we are without a configuration file */
+	state.no_conf = 1;
+
+	/* create the dummy content entry */
+	content = content_alloc(path, -1);
+
+	/* adds the content entry */
+	tommy_list_insert_tail(&state.contentlist, &content->node, content);
+
+	/* read the content file */
+	state_read(&state);
+
+	/* output a dummy configuration file */
+	printf("# Configuration file generated from %s\n", path);
+	printf("\n");
+	printf("# Use this blocksize\n");
+	printf("block_size %u\n", state.block_size / 1024);
+	printf("\n");
+	printf("# Set the correct path for the Parity file\n");
+	printf("parity ENTER_HERE_THE_PARITY_FILE\n");
+	printf("\n");
+	printf("# Set the correct path for the Q-Parity file (if used)\n");
+	printf("q-parity ENTER_HERE_THE_PARITY_FILE\n");
+	printf("\n");
+	printf("# Add any other content file\n");
+	printf("content %s\n", path);
+	printf("\n");
+	for(j=state.maplist;j;j=j->next) {
+		struct snapraid_map* map = j->data;
+		struct snapraid_disk* disk;
+		printf("# Set the correct dir for disk '%s'\n", map->name);
+		printf("# Disk '%s' is the one with system id '%s'\n", map->name, map->uuid);
+		disk = find_disk(&state, map->name);
+		if (disk && disk->filelist) {
+			struct snapraid_file* file = disk->filelist->data;
+			if (file) {
+				printf("# and containing: %s\n", file->sub);
+			}
+		}
+		printf("disk %s ENTER_HERE_THE_DIR\n", map->name);
+		printf("\n");
+	}
+
+	state_done(&state);
 }
 

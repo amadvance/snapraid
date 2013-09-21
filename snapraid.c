@@ -119,6 +119,7 @@ struct option long_options[] = {
 	{ "find-by-name", 0, 0, 'N' }, /* deprecated in SnapRAID 4.0 */
 	{ "audit-only", 0, 0, 'a' },
 	{ "speed-test", 0, 0, 'T' },
+	{ "gen-conf", 1, 0, 'C' },
 	{ "verbose", 0, 0, 'v' },
 	{ "gui", 0, 0, 'G' }, /* undocumented GUI interface command */
 	{ "help", 0, 0, 'h' },
@@ -181,7 +182,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:f:d:mep:o:s:t:i:l:ZEUDNaTvhVG"
+#define OPTIONS "c:f:d:mep:o:s:t:i:l:ZEUDNaTC:vhVG"
 
 volatile int global_interrupt = 0;
 
@@ -228,8 +229,11 @@ int main(int argc, char* argv[])
 	const char* import;
 	const char* log;
 	int lock;
+	const char* gen_conf;
 
 	os_init();
+	raid_init();
+	crc32c_init();
 
 	/* defaults */
 	conf = CONF;
@@ -246,6 +250,7 @@ int main(int argc, char* argv[])
 	import = 0;
 	log = 0;
 	lock = 0;
+	gen_conf = 0;
 
 	opterr = 0;
 	while ((c =
@@ -356,6 +361,9 @@ int main(int argc, char* argv[])
 		case 'T' :
 			speed();
 			exit(EXIT_SUCCESS);
+		case 'C' :
+			gen_conf = optarg;
+			break;
 		case OPT_TEST_KILL_AFTER_SYNC :
 			opt.kill_after_sync = 1;
 			break;
@@ -417,6 +425,12 @@ int main(int argc, char* argv[])
 			fprintf(stderr, "Unknown option '%c'\n", (char)c);
 			exit(EXIT_FAILURE);
 		}
+	}
+
+	if (gen_conf != 0) {
+		generate_configuration(gen_conf);
+		os_done();
+		exit(EXIT_SUCCESS);
 	}
 
 	if (optind + 1 != argc) {
@@ -504,9 +518,6 @@ int main(int argc, char* argv[])
 			exit(EXIT_FAILURE);
 		}
 	}
-
-	raid_init();
-	crc32c_init();
 
 	/* open the log file */
 	if (log == 0)

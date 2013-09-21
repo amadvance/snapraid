@@ -5,6 +5,10 @@ SnapRAID HISTORY
 ==========
  * If the underline filesystem doesn't support the FIEMAP command,
    fallback to use the inode number for sorting files.
+   This happens with reiserfs in Linux.
+ * Added a new -C, --gen-conf option to generate a dummy configuration
+   file from the info in the content file.
+   Just in case that you lose everything, except the content file.
 
 4.0 2013/9
 ==========
