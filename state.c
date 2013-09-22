@@ -1113,10 +1113,6 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 
 			deleted->block.parity_pos = v_pos;
 
-			/* keep track of the max block number used in parity */
-			if (v_pos + 1 > blockmax)
-				blockmax = v_pos + 1;
-
 			/* read the hash */
 			c = sgetc(f);
 			if (c != ' ') {
