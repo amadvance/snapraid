@@ -66,7 +66,7 @@ void state_rehash(struct snapraid_state* state)
 		}
 
 		if (info_get_rehash(info)) {
-			fprintf(stderr, "Internal incosistency for a rehash already in progress\n");
+			fprintf(stderr, "Internal inconsistency for a rehash already in progress\n");
 			exit(EXIT_FAILURE);
 		}
 
