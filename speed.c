@@ -130,8 +130,8 @@ void speed(void)
 #endif
 	printf("\n");
 
-#if defined(__i386__) || defined(__x86_64__)
 	printf("Expected fastest RAID5 is ");
+#if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_sse2())
 #if defined(__x86_64__)
 		printf("sse2x8");
@@ -142,8 +142,16 @@ void speed(void)
 		printf("mmxx4");
 	else
 		printf("int32x2");
+#else
+	if (sizeof(void*) == 4)
+		printf("int32x2");
+	else
+		printf("int64x2");
+#endif
 	printf("\n");
+
 	printf("Expected fastest RAID6 is ");
+#if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_sse2())
 #if defined(__x86_64__)
 		printf("sse2x4");
@@ -154,8 +162,16 @@ void speed(void)
 		printf("mmxx2");
 	else
 		printf("int32x2");
+#else
+	if (sizeof(void*) == 4)
+		printf("int32x2");
+	else
+		printf("int64x2");
+#endif
 	printf("\n");
+
 	printf("Expected fastest RAIDTP is ");
+#if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_sse2())
 #if defined(__x86_64__)
 		printf("sse2x2");
@@ -166,8 +182,17 @@ void speed(void)
 		printf("mmxx1");
 	else
 		printf("int32x2");
+#else
+	if (sizeof(void*) == 4)
+		printf("int32x2");
+	else
+		printf("int64x2");
+#endif
 	printf("\n");
+
+
 	printf("Expected fastest RAIDQP is ");
+#if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_sse2())
 #if defined(__x86_64__)
 		printf("sse2x2");
@@ -178,8 +203,15 @@ void speed(void)
 		printf("mmxx1");
 	else
 		printf("int32x2");
-	printf("\n");
+#else
+	if (sizeof(void*) == 4)
+		printf("int32x2");
+	else
+		printf("int64x2");
 #endif
+	printf("\n");
+
+
 	printf("If these expectations are false, please report it in the SnapRAID forum\n");
 
 	printf("\n");
@@ -235,14 +267,14 @@ void speed(void)
 
 	printf("RAID5 int32x2 %"PRIu64" [MB/s]\n", ds / dt);
 
+	SPEED_START {
+		raid5_int64r2(buffer, diskmax, block_size);
+	} SPEED_STOP
+
+	printf("RAID5 int64x2 %"PRIu64" [MB/s]\n", ds / dt);
+
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_mmx()) {
-		SPEED_START {
-			raid5_mmxr2(buffer, diskmax, block_size);
-		} SPEED_STOP
-
-		printf("RAID5 mmxx2 %"PRIu64" [MB/s]\n", ds / dt);
-
 		SPEED_START {
 			raid5_mmxr4(buffer, diskmax, block_size);
 		} SPEED_STOP
@@ -251,12 +283,6 @@ void speed(void)
 	}
 
 	if (cpu_has_sse2()) {
-		SPEED_START {
-			raid5_sse2r2(buffer, diskmax, block_size);
-		} SPEED_STOP
-
-		printf("RAID5 sse2x2 %"PRIu64" [MB/s]\n", ds / dt);
-
 		SPEED_START {
 			raid5_sse2r4(buffer, diskmax, block_size);
 		} SPEED_STOP
@@ -278,6 +304,12 @@ void speed(void)
 	} SPEED_STOP
 
 	printf("RAID6 int32x2 %"PRIu64" [MB/s]\n", ds / dt);
+
+	SPEED_START {
+		raid6_int64r2(buffer, diskmax, block_size);
+	} SPEED_STOP
+
+	printf("RAID6 int64x2 %"PRIu64" [MB/s]\n", ds / dt);
 
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_mmx()) {
@@ -311,6 +343,12 @@ void speed(void)
 
 	printf("RAIDTP int32x2 %"PRIu64" [MB/s]\n", ds / dt);
 
+	SPEED_START {
+		raidTP_int64r2(buffer, diskmax, block_size);
+	} SPEED_STOP
+
+	printf("RAIDTP int64x2 %"PRIu64" [MB/s]\n", ds / dt);
+
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_mmx()) {
 		SPEED_START {
@@ -342,6 +380,12 @@ void speed(void)
 	} SPEED_STOP
 
 	printf("RAIDQP int32x2 %"PRIu64" [MB/s]\n", ds / dt);
+
+	SPEED_START {
+		raidQP_int64r2(buffer, diskmax, block_size);
+	} SPEED_STOP
+
+	printf("RAIDQP int64x2 %"PRIu64" [MB/s]\n", ds / dt);
 
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_mmx()) {

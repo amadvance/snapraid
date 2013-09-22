@@ -20,6 +20,7 @@
 #include "snapraid.h"
 #include "util.h"
 #include "raid.h"
+#include "cpu.h"
 #include "elem.h"
 #include "state.h"
 
@@ -45,7 +46,7 @@ static struct hash_test_vector TEST_SPOOKY2[] = {
 { 0, 0, { 0 } }
 };
 
-static void raidtest(unsigned diskmax, unsigned block_size)
+static void recovtest(unsigned diskmax, unsigned block_size)
 {
 	void* buffer_alloc;
 	unsigned char** buffer;
@@ -136,7 +137,7 @@ static void raidtest(unsigned diskmax, unsigned block_size)
 					buffer[l] = buffer_test3;
 
 					/* recover */
-					raid_recov_4data(buffer, diskmax, block_size, i, j, k, l, 0, 1, 2, 3, buffer_zero);
+					raid_recov_4data(i, j, k, l, 0, 1, 2, 3, buffer, diskmax, buffer_zero, block_size);
 
 					/* check */
 					if (memcmp(buffer_test0, a, block_size) != 0
@@ -188,7 +189,7 @@ static void raidtest(unsigned diskmax, unsigned block_size)
 					buffer[l] = buffer_bad;
 
 					/* recover ignoring p */
-					raid_recov_3data(buffer, diskmax, block_size, i, j, k, COMBO3[n].use[0], COMBO3[n].use[1], COMBO3[n].use[2], buffer_zero);
+					raid_recov_3data(i, j, k, COMBO3[n].use[0], COMBO3[n].use[1], COMBO3[n].use[2], buffer, diskmax, buffer_zero, block_size);
 
 					/* check */
 					if (memcmp(buffer_test0, a, block_size) != 0
@@ -237,7 +238,7 @@ static void raidtest(unsigned diskmax, unsigned block_size)
 				buffer[l] = buffer_bad;
 
 				/* recover */
-				raid_recov_2data(buffer, diskmax, block_size, i, j, COMBO2[n].use[0], COMBO2[n].use[1], buffer_zero);
+				raid_recov_2data(i, j, COMBO2[n].use[0], COMBO2[n].use[1], buffer, diskmax, buffer_zero, block_size);
 
 				/* check */
 				if (memcmp(buffer_test0, a, block_size) != 0
@@ -284,7 +285,7 @@ static void raidtest(unsigned diskmax, unsigned block_size)
 			buffer[l] = buffer_bad;
 
 			/* recover */
-			raid_recov_1data(buffer, diskmax, block_size, i, COMBO1[n].use, buffer_zero);
+			raid_recov_1data(i, COMBO1[n].use, buffer, diskmax, buffer_zero, block_size);
 
 			/* check */
 			if (memcmp(buffer_test0, a, block_size) != 0) {
@@ -299,6 +300,83 @@ static void raidtest(unsigned diskmax, unsigned block_size)
 
 			/* restore */
 			buffer[i] = a;
+		}
+	}
+
+	free(buffer_alloc);
+	free(buffer);
+}
+
+static void gentest(unsigned diskmax, unsigned block_size)
+{
+	void* buffer_alloc;
+	unsigned char** buffer;
+	unsigned buffermax;
+	unsigned i, j;
+	void (*map[64])(unsigned char** buffer, unsigned diskmax, unsigned size);
+	unsigned mac;
+
+	buffermax = diskmax + LEV_MAX * 2;
+
+	buffer = malloc_nofail_vector_align(buffermax, block_size, &buffer_alloc);
+
+	/* fill with random */
+	for(i=0;i<diskmax;++i) {
+		for(j=0;j<block_size;++j)
+			buffer[i][j] = rand();
+	}
+
+	/* compute the parity */
+	raid_gen(LEV_MAX, buffer, diskmax, block_size);
+
+	/* copy in back buffers */
+	for(i=0;i<LEV_MAX;++i)
+		memcpy(buffer[diskmax + LEV_MAX + i], buffer[diskmax + i], block_size);
+
+	/* load all the available functions */
+	mac = 0;
+	map[mac++] = raid5_int32r2;
+	map[mac++] = raid5_int64r2;
+	map[mac++] = raid6_int32r2;
+	map[mac++] = raid6_int64r2;
+	map[mac++] = raidTP_int32r2;
+	map[mac++] = raidTP_int64r2;
+	map[mac++] = raidQP_int32r2;
+	map[mac++] = raidQP_int64r2;
+
+#if defined(__i386__) || defined(__x86_64__)
+	if (cpu_has_mmx()) {
+		map[mac++] = raid5_mmxr4;
+		map[mac++] = raid6_mmxr2;
+		map[mac++] = raidQP_mmxr1;
+		map[mac++] = raidTP_mmxr1;
+	}
+
+	if (cpu_has_sse2()) {
+		map[mac++] = raid5_sse2r4;
+		map[mac++] = raid6_sse2r2;
+		map[mac++] = raidTP_sse2r1;
+		map[mac++] = raidQP_sse2r1;
+#if defined(__x86_64__)
+		map[mac++] = raid5_sse2r8;
+		map[mac++] = raid6_sse2r4;
+		map[mac++] = raidTP_sse2r2;
+		map[mac++] = raidQP_sse2r2;
+#endif
+	}
+#endif
+
+	/* check all the functions */
+	for(j=0;j<mac;++j) {
+		/* compute parity */
+		map[j](buffer, diskmax, block_size);
+
+		/* check it */
+		for(i=0;i<LEV_MAX;++i) {
+			if (memcmp(buffer[diskmax + LEV_MAX + i], buffer[diskmax + i], block_size) != 0) {
+				fprintf(stderr, "Failed RAID test\n");
+				exit(EXIT_FAILURE);
+			}
 		}
 	}
 
@@ -421,6 +499,7 @@ void selftest(int gui)
 
 	hashtest();
 	crc32ctest();
-	raidtest(24, 2048);
+	gentest(24, 256 * 1024);
+	recovtest(24, 2048);
 }
 
