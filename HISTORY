@@ -11,6 +11,7 @@ SnapRAID HISTORY
    Just in case that you lose everything, except the content file.
  * At the end of sync/scrub/check/fix prints "Everything OK" if no error
    was found. This should make clear that everything is really OK.
+ * Fixes importing of old text content files from an incomplete sync.
 
 4.0 2013/9
 ==========
