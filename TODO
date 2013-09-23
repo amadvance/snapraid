@@ -96,6 +96,13 @@ in the same disk.
 This is possible if the data in the same disk uses parity addresses not
 contained in the parity file present in the same disk.
 
+* Use smaller hashes to reduce the memory occupation. We can truncate the 128 bits hash
+to 32 or 64 bits and reduce the memory usage by a factor of 4 or 2.
+ZFS, and Btrfs supports the 32 bit CRCs. To identify bad blocks it should be enough.
+But this likely means to drop the dup and --import feature. We cannot trust a 32 bits hash
+as a 128 bits one to search for blocks.
+It should be optional, only for architectures with very low memory.
+
 * The data could be compressed before processing, resulting in parity block of fixed size,
 but matching different data block sizes.
 The complexity is that a file blocks will have to be allocated at runtime,
