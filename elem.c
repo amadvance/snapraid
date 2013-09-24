@@ -583,7 +583,7 @@ int disk_is_empty(struct snapraid_disk* disk, block_off_t blockmax)
 			/* if there is a deleted block, the disk is not empty */
 			return 0;
 		default:
-			fprintf(stderr, "Internal incosistency for used block in disk '%s' without files\n", disk->name);
+			fprintf(stderr, "Internal inconsistency for used block in disk '%s' without files\n", disk->name);
 			exit(EXIT_FAILURE);
 		}
 	}

@@ -129,43 +129,57 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 	/* In Linux gets the real physical address of the file */
 	/* Note that FIEMAP doesn't require root permission */
 	int f;
-
 	struct {
 		struct fiemap fiemap;
 		struct fiemap_extent extent;
 	} fm;
+	unsigned int blknum;
 
 	f = open(path, O_RDONLY);
 	if (f == -1) {
 		return -1;
 	}
 
+	/* first try with FIEMAP */
+	/* if works for ext2, ext3, ext4, xfs */
 	memset(&fm, 0, sizeof(fm));
 	fm.fiemap.fm_start = 0;
 	fm.fiemap.fm_length = ~0ULL;
 	fm.fiemap.fm_flags = FIEMAP_FLAG_SYNC; /* required to ensure that just created files report a valid address and not 0 */
 	fm.fiemap.fm_extent_count = 1; /* we are interested only at the first block */
 
-	if (ioctl(f, FS_IOC_FIEMAP, &fm) == -1) {
-		/* if the underline filesystem doesn't support FS_IOC_FIEMAP */
-		/* fallback to use the inode */
-		if (errno == ENOTSUP) {
-			close(f);
-			*physical = st->st_ino;
-			return 0;
-		}
-
-		close(f);
-		return -1;
+	if (ioctl(f, FS_IOC_FIEMAP, &fm) == 0) {
+		*physical = fm.fiemap.fm_extents[0].fe_physical;
+		if (close(f) == -1)
+			return -1;
+		return 0;
 	}
 
-	*physical = fm.fiemap.fm_extents[0].fe_physical;
-
-	if (close(f) == -1) {
-		return -1;
+	/* if empty, FIBMAP doesn't work */
+	if (st->st_size == 0) {
+		*physical = 0;
+		if (close(f) == -1)
+			return -1;
+		return 0;
 	}
 
-	(void)st; /* not used here */
+	/* then try with FIBMAP */
+	/* it works for jfs, reiserfs, ntfs-3g */
+	/* in exfat it always returns 0, that it's anyway better than the fake inodes */
+	blknum = 0; /* first block */
+	if (ioctl(f, FIBMAP, &blknum) == 0) {
+		*physical = blknum;
+		if (close(f) == -1)
+			return -1;
+		return 0;
+	}
+
+	/* otherwise don't use anything, and keep the existing order */
+	/* at now this should happen only for vfat */
+	/* and it's surely better than using fake inodes */
+	*physical = 0;
+	if (close(f) == -1)
+		return -1;
 #else
 	/* In a generic Unix uses the inode as fake physical address */
 	*physical = st->st_ino;

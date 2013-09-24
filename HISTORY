@@ -14,8 +14,10 @@ SnapRAID HISTORY
 4.1 2013/9 (BETA)
 =================
  * If the underline filesystem doesn't support the FIEMAP command,
-   fallback to use the inode number for sorting files.
-   This happens with reiserfs in Linux.
+   automatically fallback to use FIBMAP and then the inode number for sorting
+   files.
+ * Fixes the import of content files from previous version of SnapRAID that
+   are the result of an incomplete sync.
  * Added a new -C, --gen-conf option to generate a dummy configuration
    file from the info in the content file.
    Just in case that you lose everything, except the content file.
@@ -38,7 +40,7 @@ SnapRAID HISTORY
    This happens only if the file has the same path, size and timestamp
    at nanosecond precision.
  * Added a hash seed to make harder intentional collision attacks.
- * When insering files for the first time, sort them by their physical
+ * When inserting files for the first time, sort them by their physical
    address to improve read performance.
  * Optimized the cache use for the all the RAID computations.
    This improves a lot the RAID performance.

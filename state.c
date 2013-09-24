@@ -770,7 +770,7 @@ static void state_map(struct snapraid_state* state)
 		}
 
 		if (j==0) {
-			fprintf(stderr, "Internal incosistency for mapping '%s'\n", map->name);
+			fprintf(stderr, "Internal inconsistency for mapping '%s'\n", map->name);
 			exit(EXIT_FAILURE);
 		}
 
@@ -1075,7 +1075,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 					rehash = 1;
 
 					if (state->prevhash == HASH_UNDEFINED) {
-						fprintf(stderr, "Internal incosistency for missing previous checksum in '%s' at line %u\n", path, line);
+						fprintf(stderr, "Internal inconsistency for missing previous checksum in '%s' at line %u\n", path, line);
 						exit(EXIT_FAILURE);
 					}
 				} else {
@@ -1114,10 +1114,6 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			}
 
 			deleted->block.parity_pos = v_pos;
-
-			/* keep track of the max block number used in parity */
-			if (v_pos + 1 > blockmax)
-				blockmax = v_pos + 1;
 
 			/* read the hash */
 			c = sgetc(f);
@@ -1638,7 +1634,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 
 	/* check that the stored parity size matches the loaded state */
 	if (blockmax != parity_size(state)) {
-		fprintf(stderr, "Internal incosistency in parity size in '%s' at line %u\n", path, line);
+		fprintf(stderr, "Internal inconsistency in parity size in '%s' at line %u\n", path, line);
 		exit(EXIT_FAILURE);
 	}
 	state->loaded_blockmax = blockmax;
@@ -1746,7 +1742,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 		/* find the disk for this mapping */
 		disk = find_disk(state, map->name);
 		if (!disk) {
-			fprintf(stderr, "Internal incosistency for unmapped disk '%s'\n", map->name);
+			fprintf(stderr, "Internal inconsistency for unmapped disk '%s'\n", map->name);
 			exit(EXIT_FAILURE);
 		}
 
@@ -2305,7 +2301,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 					if (rehash && state->prevhash == HASH_UNDEFINED) {
 						decoding_error(path, f);
-						fprintf(stderr, "Internal incosistency for missing previous checksum!\n");
+						fprintf(stderr, "Internal inconsistency for missing previous checksum!\n");
 						exit(EXIT_FAILURE);
 					}
 
@@ -2322,13 +2318,13 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 					if (position_has_any_hash(state, v_pos)) {
 						if (!info) {
 							decoding_error(path, f);
-							fprintf(stderr, "Internal incosistency for missing info!\n");
+							fprintf(stderr, "Internal inconsistency for missing info!\n");
 							exit(EXIT_FAILURE);
 						}
 					} else {
 						if (info) {
 							decoding_error(path, f);
-							fprintf(stderr, "Internal incosistency for unexpected info!\n");
+							fprintf(stderr, "Internal inconsistency for unexpected info!\n");
 							exit(EXIT_FAILURE);
 						}
 					}
@@ -2689,7 +2685,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 	/* check that the stored parity size matches the loaded state */
 	if (blockmax != parity_size(state)) {
-		fprintf(stderr, "Internal incosistency in parity size in '%s' at offset %"PRIi64"\n", path, stell(f));
+		fprintf(stderr, "Internal inconsistency in parity size in '%s' at offset %"PRIi64"\n", path, stell(f));
 		exit(EXIT_FAILURE);
 	}
 	state->loaded_blockmax = blockmax;
@@ -2810,7 +2806,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 		/* find the disk for this mapping */
 		disk = find_disk(state, map->name);
 		if (!disk) {
-			fprintf(stderr, "Internal incosistency for unmapped disk '%s'\n", map->name);
+			fprintf(stderr, "Internal inconsistency for unmapped disk '%s'\n", map->name);
 			exit(EXIT_FAILURE);
 		}
 
