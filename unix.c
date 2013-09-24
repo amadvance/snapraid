@@ -181,8 +181,9 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 	if (close(f) == -1)
 		return -1;
 #else
-	/* In a generic Unix uses the inode as fake physical address */
-	*physical = st->st_ino;
+	/* In a generic Unix use a dummy value for all the files */
+	/* We don't want to risk to use the inode without knowing if it really improves performance */
+	*physical = 0;
 
 	(void)path; /* not used here */
 #endif
