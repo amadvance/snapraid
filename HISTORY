@@ -4,8 +4,7 @@ SnapRAID HISTORY
 4.1 2013/9
 ==========
  * If the underline filesystem doesn't support the FIEMAP command,
-   automatically fallback to use FIBMAP and then the inode number for sorting
-   files.
+   automatically fallback to use FIBMAP for sorting files.
  * Fixes the import of content files from previous version of SnapRAID that
    are the result of an incomplete sync.
  * Added a new -C, --gen-conf option to generate a dummy configuration
