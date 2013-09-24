@@ -141,6 +141,7 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 	}
 
 	/* first try with FIEMAP */
+	/* if works for ext2, ext3, ext4, xfs */
 	memset(&fm, 0, sizeof(fm));
 	fm.fiemap.fm_start = 0;
 	fm.fiemap.fm_length = ~0ULL;
@@ -154,12 +155,6 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 		return 0;
 	}
 
-	/* if it's an unexpected error fails */
-	if (errno != ENOTSUP) {
-		close(f);
-		return -1;
-	}
-
 	/* if empty, FIBMAP doesn't work */
 	if (st->st_size == 0) {
 		*physical = 0;
@@ -169,6 +164,8 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 	}
 
 	/* then try with FIBMAP */
+	/* it works for jfs, reiserfs, ntfs-3g */
+	/* in exfat it always returns 0, that it's anyway better than the fake inodes */
 	blknum = 0; /* first block */
 	if (ioctl(f, FIBMAP, &blknum) == 0) {
 		*physical = blknum;
@@ -177,14 +174,10 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 		return 0;
 	}
 
-	/* if it's an unexpected error fails */
-	if (errno != ENOTSUP && errno != EPERM) {
-		close(f);
-		return -1;
-	}
-
-	/* otherwise uses the inode */
-	*physical = st->st_ino;
+	/* otherwise don't use anything, and keep the existing order */
+	/* at now this should happen only for vfat */
+	/* and it's surely better than using fake inodes */
+	*physical = 0;
 	if (close(f) == -1)
 		return -1;
 #else

@@ -919,6 +919,8 @@ void state_scan(struct snapraid_state* state, int output)
 		}
 
 		/* sort the files before inserting them */
+		/* we use a stable sort to ensure that if the reported physical offset/inode */
+		/* are always 0, we keep at least the directory order */
 		switch (state->opt.force_order) {
 		case SORT_PHYSICAL :
 			tommy_list_sort(&scan->file_insert_list, file_physical_compare);
