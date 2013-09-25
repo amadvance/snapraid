@@ -186,6 +186,7 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 	*physical = 0;
 
 	(void)path; /* not used here */
+	(void)st;
 #endif
 
 	return 0;

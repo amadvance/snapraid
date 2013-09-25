@@ -274,6 +274,7 @@ struct snapraid_disk {
 	uint64_t device; /**< Device identifier. */
 	block_off_t first_free_block; /**< First free searching block. */
 	int has_not_persistent_inodes; /**< If the underline filesystem has dynamic inodes. */
+	int has_not_reliable_physical; /**< If the physical offset of files has duplicates. */
 	int mapping; /**< Index in the mapping vector. Used only as buffer when writing the content file. */
 
 	/**<
