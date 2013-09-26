@@ -791,14 +791,14 @@ memory to run SnapRAID.
 As a rule of thumb, with 4 GiB or more memory use the default 256,
 with 2 GiB use 512, and with 1 GiB use 1024.
 .PP
-In more details SnapRAID requires about TS*24/BS bytes
+In more details SnapRAID requires about TS*28/BS bytes
 of RAM memory to run. Where TS is the total size in bytes of
 your disk array, and BS is the block size in bytes.
 .PP
-For example with 6 disk of 2 TiB and a block size of 256 KiB
+For example with 4 disk of 3 TiB and a block size of 256 KiB
 (1 KiB = 1024 Bytes) you have:
 .PP
-RAM = (6 * 2 * 2^40) * 24 / (256 * 2^10) = 1.1 GiB
+RAM = (4 * 3 * 2^40) * 28 / (256 * 2^10) = 1.4 GiB
 .PD 0
 .PP
 .PD
