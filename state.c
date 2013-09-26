@@ -643,7 +643,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	/* no previous hash by default */
 	state->prevhash = HASH_UNDEFINED;
 
-	/* intentionally not set the prevhashseed */
+	/* intentionally not set the prevhashseed, if used valgrind will warn about it */
 
 	if (state->opt.gui) {
 		tommy_node* i;
@@ -1716,7 +1716,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 		if (info_has_rehash) {
 			if (state->prevhash == HASH_MURMUR3) {
 				sputsl("prevchecksum murmur3", f);
-			} else if (state->hash == HASH_SPOOKY2) {
+			} else if (state->prevhash == HASH_SPOOKY2) {
 				sputsl("prevchecksum spooky2", f);
 			} else {
 				fprintf(stderr, "Unexpected prevhash when writing the content file '%s'.\n", serrorfile(f));
@@ -2781,7 +2781,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 			sputc('C', f);
 			if (state->prevhash == HASH_MURMUR3) {
 				sputc('u', f);
-			} else if (state->hash == HASH_SPOOKY2) {
+			} else if (state->prevhash == HASH_SPOOKY2) {
 				sputc('k', f);
 			} else {
 				fprintf(stderr, "Unexpected prevhash when writing the content file '%s'.\n", serrorfile(f));
@@ -3183,7 +3183,8 @@ void state_read(struct snapraid_state* state)
 
 	/* previous hash, start with an undefined value */
 	state->prevhash = HASH_UNDEFINED;
-	memset(state->prevhashseed, 0, HASH_SIZE);
+
+	/* intentionally not set the prevhashseed, if used valgrind will warn about it */
 
 	/* get the first char to detect the file type */
 	c = sgetc(f);
