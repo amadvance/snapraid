@@ -2345,9 +2345,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			}
 			disk = tommy_array_get(&disk_mapping, mapping);
 
-			/* grow the array */
-			tommy_array_grow(&disk->blockarr, blockmax);
-
 			v_pos = 0;
 			while (v_pos < blockmax) {
 				uint32_t v_count;
@@ -2369,6 +2366,9 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 				switch (c) {
 				case 'o' :
+					/* grow the array */
+					tommy_array_grow(&disk->blockarr, v_pos + v_count);
+
 					/* if it's a run of deleted blocks */
 					while (v_count) {
 						struct snapraid_deleted* deleted;
