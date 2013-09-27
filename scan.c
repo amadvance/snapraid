@@ -277,14 +277,16 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, int output, struct snapraid_disk* disk, const char* sub, const struct stat* st, uint64_t physical)
 {
 	struct snapraid_file* file;
+	uint64_t inode;
 
 	file = 0;
 
 	/*
-	 * If the disk has persistent inodes, try a search by inode.
+	 * If the disk has persistent inodes, try a search by inode,
+	 * to detect moved files.
 	 *
 	 * For persistent inodes we mean inodes that keep their values when the filesystem
-	 * is unmounted and remounted. This don't always happen. 
+	 * is unmounted and remounted. This don't always happen.
 	 *
 	 * Cases found are:
 	 * - Linux FUSE with exFAT driver from https://code.google.com/p/exfat/.
@@ -293,15 +295,18 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 	 *   making inode collision more easy (exFAT by design supports 10ms precision).
 	 * - Linux VFAT kernel (3.2) driver. Inodes are fully reassigned at every mount.
 	 *
-	 * In such cases, to avoid possible random collisions, it's better to just avoid
-	 * to use inodes at all.
+	 * In such cases, to avoid possible random collisions, it's better to disable the moved
+	 * file recognizition.
+	 *
+	 * We do this implicitely removing all the inode before searching for files.
+	 * This ensure that no file is found with an old inode, but at the same time,
+	 * it allows to find new files with the same inode, and to identify them as hardlinks.
 	 */
-	if (!disk->has_not_persistent_inodes) {
-		/* first try finding by inode */
-		uint64_t inode = st->st_ino;
-		file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
-	}
 
+	inode = st->st_ino;
+	file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
+
+	/* identify moved files searching by inode */
 	if (file) {
 		/* check if the file is not changed */
 		if (file->size == st->st_size
@@ -816,6 +821,9 @@ void state_scan(struct snapraid_state* state, int output)
 		tommy_node* node;
 		int ret;
 		int has_persistent_inode;
+		unsigned phy_count;
+		unsigned phy_dup;
+		uint64_t phy_last;
 
 		scan = malloc_nofail(sizeof(struct snapraid_scan));
 		scan->count_equal = 0;
@@ -838,10 +846,29 @@ void state_scan(struct snapraid_state* state, int output)
 			fprintf(stderr, "Error accessing disk '%s' to get filesystem info. %s.\n", disk->dir, strerror(errno));
 			exit(EXIT_FAILURE);
 		}
-		/* mark the disk if required */
 		if (!has_persistent_inode) {
-			fprintf(stderr, "WARNING! Inodes use disabled for disk '%s' because they are not persistent.\n", disk->dir);
+			/* mask the disk */
 			disk->has_not_persistent_inodes = 1;
+
+			/* removes all the inodes from the inode collection */
+			/* if they are not persistent, all of them could be changed now */
+			/* and we don't want to find false matching ones */
+			/* see scan_file() for more details */
+			node = disk->filelist;
+			while (node) {
+				struct snapraid_file* file = node->data;
+
+				node = node->next;
+
+				/* remove from the inode set */
+				tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
+
+				/* clear the inode */
+				file->inode = 0;
+
+				/* mark as missing inode */
+				file_flag_set(file, FILE_IS_WITHOUT_INODE);
+			}
 		}
 
 		scan_dir(scan, state, output, disk, disk->dir, "");
@@ -939,14 +966,31 @@ void state_scan(struct snapraid_state* state, int output)
 		/* insert all the new files, we insert them only after the deletion */
 		/* to reuse the just freed space */
 		node = scan->file_insert_list;
+		phy_count = 0;
+		phy_dup = 0;
+		phy_last = -1;
 		while (node) {
 			struct snapraid_file* file = node->data;
+
+			/* if the file is not empty, count duplicate physical offsets */
+			if (state->opt.force_order == SORT_PHYSICAL && file->size != 0) {
+				if (phy_count > 0 && file->physical == phy_last)
+					++phy_dup;
+				phy_last = file->physical;
+				++phy_count;
+			}
 
 			/* next node */
 			node = node->next;
 
 			/* insert it */
 			scan_file_insert(state, disk, file);
+		}
+
+		/* mark the disk without reliable physical offset if it has duplicates */
+		/* here it should never happen because we already sorted out hardlinks */
+		if (state->opt.force_order == SORT_PHYSICAL && phy_dup > 0) {
+			disk->has_not_reliable_physical = 1;
 		}
 
 		/* insert all the new links */
@@ -976,21 +1020,21 @@ void state_scan(struct snapraid_state* state, int output)
 
 	/* checks for disks where all the previously existing files where removed */
 	if (!state->opt.force_empty) {
-		int has_empty = 0;
+		int done = 0;
 		for(i=state->disklist,j=scanlist;i!=0;i=i->next,j=j->next) {
 			struct snapraid_disk* disk = i->data;
 			struct snapraid_scan* scan = j->data;
 
 			if (scan->count_equal == 0 && scan->count_move == 0 && scan->count_restore == 0 && (scan->count_remove != 0 || scan->count_change != 0)) {
-				if (!has_empty) {
-					has_empty = 1;
+				if (!done) {
+					done = 1;
 					fprintf(stderr, "All the files previously present in disk '%s' at dir '%s'", disk->name, disk->dir);
 				} else {
 					fprintf(stderr, ", disk '%s' at dir '%s'", disk->name, disk->dir);
 				}
 			}
 		}
-		if (has_empty) {
+		if (done) {
 			fprintf(stderr, " are now missing or rewritten!\n");
 			fprintf(stderr, "This could happen when deleting all the files from a disk,\n");
 			fprintf(stderr, "and restoring them with a program not setting correctly the timestamps.\n");
@@ -998,6 +1042,46 @@ void state_scan(struct snapraid_state* state, int output)
 			fprintf(stderr, "using 'snapraid --force-empty %s'.\n", state->command);
 			fprintf(stderr, "Instead, it's possible that you have some disks not mounted.\n");
 			exit(EXIT_FAILURE);
+		}
+	}
+
+	/* checks for disks without the physical offset support */
+	if (state->opt.force_order == SORT_PHYSICAL) {
+		int done = 0;
+		for(i=state->disklist;i!=0;i=i->next) {
+			struct snapraid_disk* disk = i->data;
+
+			if (disk->has_not_reliable_physical) {
+				if (!done) {
+					done = 1;
+					fprintf(stderr, "WARNING! Physical offsets not supported for disk '%s'", disk->name);
+				} else {
+					fprintf(stderr, ", '%s", disk->name);
+				}
+			}
+		}
+		if (done) {
+			fprintf(stderr, ". Performance won't be optimal.\n");
+		}
+	}
+
+	/* Check for disks without persisten inodes */
+	{
+		int done = 0;
+		for(i=state->disklist;i!=0;i=i->next) {
+			struct snapraid_disk* disk = i->data;
+
+			if (disk->has_not_persistent_inodes) {
+				if (!done) {
+					done = 1;
+					fprintf(stderr, "WARNING! Inodes are not persistent for disk '%s'", disk->name);
+				} else {
+					fprintf(stderr, ", '%s", disk->name);
+				}
+			}
+		}
+		if (done) {
+			fprintf(stderr, ". Move operations won't be optimized.\n");
 		}
 	}
 

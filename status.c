@@ -249,7 +249,11 @@ int state_status(struct snapraid_state* state)
 	if (rehash) {
 		printf("You have a rehash in progress at %u%%.\n", (count - rehash) * 100 / count);
 	} else {
-		printf("No rehash is in progress.\n");
+		if (state->besthash != state->hash) {
+			printf("No rehash is in progress, but for optimal performance one is recommended.\n");
+		} else {
+			printf("No rehash is in progress or needed.\n");
+		}
 	}
 
 	if (bad) {

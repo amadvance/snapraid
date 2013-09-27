@@ -101,10 +101,14 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				continue;
 			}
 
-			/* if we reached the count limit */
-			if (countmax >= countlimit) {
-				/* skip it */
-				continue;
+			/* if the time is less than the limit, always include */
+			/* otherwise, check if we reaced the count max */
+			if (blocktime == timelimit) {
+				/* if we reached the count limit */
+				if (countmax >= countlimit) {
+					/* skip it */
+					continue;
+				}
 			}
 		}
 
@@ -154,10 +158,14 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				continue;
 			}
 
-			/* if we reached the count limit */
-			if (recountmax >= countlimit) {
-				/* skip it */
-				continue;
+			/* if the time is less than the limit, always include */
+			/* otherwise, check if we reaced the count max */
+			if (blocktime == timelimit) {
+				/* if we reached the count limit */
+				if (recountmax >= countlimit) {
+					/* skip it */
+					continue;
+				}
 			}
 		}
 
@@ -439,7 +447,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 		recentlimit = now;
 	} else if (percentage != -1 || olderthan != -1) {
 		if (percentage != -1)
-			countlimit = blockmax * percentage / 100;
+			countlimit = (blockmax * percentage + 99) / 100;
 		else
 			countlimit = blockmax;
 		if (olderthan != -1)
@@ -488,8 +496,9 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 		timelimit = info_get_time(infomap[countlimit - 1]);
 
 		/* don't scrub too recent blocks */
-		if (timelimit > recentlimit)
+		if (timelimit > recentlimit) {
 			timelimit = recentlimit;
+		}
 	} else {
 		/* we don't have a time limit based on quota */
 		timelimit = recentlimit;
