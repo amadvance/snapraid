@@ -274,6 +274,30 @@ static inline int cpu_has_slowmult(void)
  * RAID6 mmxx2 1325 [MB/s]
  * RAID6 sse2x2 915 [MB/s] (slow version with prefetchnta)
  */
+
+/* ARM @ 1.2GHz (info from user)
+ * /proc/cpuinfo
+ * model name      : Feroceon 88FR131 rev 1 (v5l)
+ * BogoMIPS        : 1196.85
+ * Features        : swp half thumb fastmult edsp
+ * CPU implementer : 0x56
+ * CPU architecture: 5TE
+ * CPU variant     : 0x2
+ * CPU part        : 0x131
+ * CPU revision    : 1
+ * Hardware        : QNAP TS-41x
+ *
+ * Compiler gcc 4.7.2
+ * CPU is not a x86/x64
+ * Memory is little-endian 32-bit
+ * Speed test with 4 disk and 262144 buffer size...
+ * memset 763 [MB/s]
+ * Murmur3 237 [MB/s]
+ * Spooky2 216 [MB/s]
+ * Spooky2x86 418 [MB/s] (dropped experiment of a new hash)
+ * RAID5 int32x2 233 [MB/s]
+ * RAID6 int32x2 103 [MB/s]
+ */
 #endif
 
 #endif
