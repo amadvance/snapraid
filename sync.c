@@ -150,7 +150,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				/* if the block is deleted */
 				if (block_state_get(block) == BLOCK_STATE_DELETED) {
 					/* set it to empty */
-					tommy_array_set(&handle[j].disk->blockarr, i, BLOCK_EMPTY);
+					tommy_arrayblk_set(&handle[j].disk->blockarr, i, BLOCK_EMPTY);
 
 					/* mark the state as needing write */
 					state->need_write = 1;
@@ -328,7 +328,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				/* if it's a deleted block */
 				if (block_state_get(block) == BLOCK_STATE_DELETED) {
 					/* the parity is now updated without this block, so it's now empty */
-					tommy_array_set(&handle[j].disk->blockarr, i, BLOCK_EMPTY);
+					tommy_arrayblk_set(&handle[j].disk->blockarr, i, BLOCK_EMPTY);
 					continue;
 				}
 

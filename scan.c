@@ -201,7 +201,7 @@ static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk*
 		tommy_list_insert_tail(&disk->deletedlist, &deleted->node, deleted);
 
 		/* set the deleted block in the block array */
-		tommy_array_set(&disk->blockarr, block_pos, &deleted->block);
+		tommy_arrayblk_set(&disk->blockarr, block_pos, &deleted->block);
 	}
 
 	/* remove the file from the file containers */
@@ -229,25 +229,25 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 
 	/* allocate the blocks of the file */
 	block_pos = disk->first_free_block;
-	block_max = tommy_array_size(&disk->blockarr);
+	block_max = tommy_arrayblk_size(&disk->blockarr);
 	for(i=0;i<file->blockmax;++i) {
 		struct snapraid_block* block;
 
 		/* find a free block */
-		while (block_pos < block_max && block_has_file(tommy_array_get(&disk->blockarr, block_pos)))
+		while (block_pos < block_max && block_has_file(tommy_arrayblk_get(&disk->blockarr, block_pos)))
 			++block_pos;
 
 		/* if not found, allocate a new one */
 		if (block_pos == block_max) {
 			++block_max;
-			tommy_array_grow(&disk->blockarr, block_max);
+			tommy_arrayblk_grow(&disk->blockarr, block_max);
 		}
 
 		/* set the position */
 		file->blockvec[i].parity_pos = block_pos;
 
 		/* block to overwrite */
-		block = tommy_array_get(&disk->blockarr, block_pos);
+		block = tommy_arrayblk_get(&disk->blockarr, block_pos);
 
 		/* if the block is an empty one */
 		if (block == BLOCK_EMPTY) {
@@ -260,7 +260,7 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 		}
 
 		/* store in the disk map, after invalidating all the other blocks */
-		tommy_array_set(&disk->blockarr, block_pos, &file->blockvec[i]);
+		tommy_arrayblk_set(&disk->blockarr, block_pos, &file->blockvec[i]);
 	}
 	if (file->blockmax) {
 		/* set the new free position, but only if allocated something */
@@ -1122,7 +1122,5 @@ void state_scan(struct snapraid_state* state, int output)
 	}
 
 	tommy_list_foreach(&scanlist, (tommy_foreach_func*)free);
-
-	printf("Using %u MiB of memory.\n", (unsigned)(malloc_counter() / 1024 / 1024));
 }
 

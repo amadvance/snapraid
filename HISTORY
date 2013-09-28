@@ -1,21 +1,22 @@
 SnapRAID HISTORY
 ================
 
-5.0 2013/9 (BETA)
-=================
- * Adds support for RAIDTP (Triple Parity) and RAIDQP (Quad Parity).
+5.0 2013/10
+===========
+ * Added support for RAIDTP (Triple Parity) and RAIDQP (Quad Parity).
    For Quad Parity, and only for Quad Parity, there is a limitation of
    using no more than 21 data disks. This is a conseguence of the
    high performant parity generator matrix used. An extension supporting
    up to 89 disks with Hexa (6) parity is possible, but not yet implemented.
    Note that more general approaches without these limitations are also
    possible, but they would affect badly the performance.
+ * Reduced memory usage avoiding to allocate unnecessary memory.
 
-4.1 2013/9 (BETA)
-=================
+4.1 2013/9
+==========
  * If the underline filesystem doesn't support the FIEMAP command,
    automatically fallback to use FIBMAP for sorting files.
- * Fixes the import of content files from previous version of SnapRAID that
+ * Fixed the import of content files from previous version of SnapRAID that
    are the result of an incomplete sync.
  * Added a new -C, --gen-conf option to generate a dummy configuration
    file from the info in the content file.

@@ -25,55 +25,59 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "tommyarrayof.h"
+#include "tommyarrayblkof.h"
 
 #include <string.h> /* for memset */
 
 /******************************************************************************/
 /* array */
 
-void tommy_arrayof_init(tommy_arrayof* array, unsigned element_size)
+void tommy_arrayblkof_init(tommy_arrayblkof* array, unsigned element_size)
 {
-	/* fixed initial size */
+	tommy_array_init(&array->block);
 	array->element_size = element_size;
-	array->bucket_bit = TOMMY_ARRAYOF_BIT;
-	array->bucket_max = 1 << array->bucket_bit;
-	array->bucket[0] = tommy_malloc(array->bucket_max * array->element_size);
-
-	/* initializes it with zeros */
-	memset(array->bucket[0], 0, array->bucket_max * array->element_size);
-
-	array->bucket_mac = 1;
 	array->size = 0;
 }
 
-void tommy_arrayof_done(tommy_arrayof* array)
+void tommy_arrayblkof_done(tommy_arrayblkof* array)
 {
 	unsigned i;
-	for(i=0;i<array->bucket_mac;++i)
-		tommy_free(array->bucket[i]);
+
+	for(i=0;i<tommy_array_size(&array->block);++i)
+		tommy_free(tommy_array_get(&array->block, i));
+
+	tommy_array_done(&array->block);
 }
 
-void tommy_arrayof_grow(tommy_arrayof* array, unsigned size)
+void tommy_arrayblkof_grow(tommy_arrayblkof* array, unsigned size)
 {
-	while (size > array->bucket_max) {
-		/* allocate one more bucket */
-		array->bucket[array->bucket_mac] = tommy_malloc(array->bucket_max * array->element_size);
+	unsigned block_max = (size + TOMMY_ARRAYBLK_SIZE - 1) / TOMMY_ARRAYBLK_SIZE;
+	unsigned block_mac = tommy_array_size(&array->block);
 
-		/* initializes it with zeros */
-		memset(array->bucket[array->bucket_mac], 0, array->bucket_max * array->element_size);
+	if (block_mac < block_max) {
+		/* grow the block array */
+		tommy_array_grow(&array->block, block_max);
 
-		++array->bucket_mac;
-		++array->bucket_bit;
-		array->bucket_max = 1 << array->bucket_bit;
+		/* allocate new blocks */
+		while (block_mac < block_max) {
+			void* ptr = tommy_malloc(TOMMY_ARRAYBLK_SIZE * array->element_size);
+
+			/* initializes it with zeros */
+			memset(ptr, 0, TOMMY_ARRAYBLK_SIZE * array->element_size);
+
+			/* set the new block */
+			tommy_array_set(&array->block, block_mac, ptr);
+
+			++block_mac;
+		}
 	}
 
 	if (array->size < size)
 		array->size = size;
 }
 
-tommy_size_t tommy_arrayof_memory_usage(tommy_arrayof* array)
+tommy_size_t tommy_arrayblkof_memory_usage(tommy_arrayblkof* array)
 {
-	return array->bucket_max * (tommy_size_t)array->element_size;
+	return tommy_array_memory_usage(&array->block) + tommy_array_size(&array->block) * TOMMY_ARRAYBLKOF_SIZE * array->element_size;
 }
 

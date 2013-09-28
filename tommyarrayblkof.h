@@ -26,18 +26,19 @@
  */
 
 /** \file
- * Dynamic array based on segments of exponential growing size.
+ * Dynamic array based on blocks of fixed sizes.
  *
  * This array is able to grow dynamically upon request.
  *
- * This is very similar at ::tommy_array, but it allows to store elements of any
+ * This is very similar at ::tommy_arrayblk, but it allows to store elements of any
  * size and not just pointers.
  */
 
-#ifndef __TOMMYARRAYOF_H
-#define __TOMMYARRAYOF_H
+#ifndef __TOMMYARRAYBLKOF_H
+#define __TOMMYARRAYBLKOF_H
 
 #include "tommytypes.h"
+#include "tommyarray.h"
 
 #include <assert.h> /* for assert */
 
@@ -45,75 +46,55 @@
 /* array */
 
 /**
- * Initial and minimal size of the array expressed as a power of 2.
- * The initial size is 2^TOMMY_ARRAYOF_BIT.
+ * Elements for each block.
  */
-#define TOMMY_ARRAYOF_BIT 6
-
-/** \internal
- * Max number of elements as a power of 2.
- */
-#define TOMMY_ARRAYOF_BIT_MAX 32
+#define TOMMY_ARRAYBLKOF_SIZE (64 * 1024)
 
 /**
  * Array.
  */
-typedef struct tommy_arrayof_struct {
-	void* bucket[TOMMY_ARRAYOF_BIT_MAX]; /**< Dynamic array of buckets. */
+typedef struct tommy_arrayblkof_struct {
+	tommy_array block; /**< Array of blocks. */
 	unsigned element_size; /**< Size of the stored element in bytes. */
-	unsigned bucket_bit; /**< Bits used in the bit mask. */
-	unsigned bucket_max; /**< Number of buckets. */
-	unsigned bucket_mac; /**< Number of vectors allocated. */
 	unsigned size; /**< Currently allocated and initialized size. */
-} tommy_arrayof;
+} tommy_arrayblkof;
 
 /**
  * Initializes the array.
  */
-void tommy_arrayof_init(tommy_arrayof* array, unsigned element_size);
+void tommy_arrayblkof_init(tommy_arrayblkof* array, unsigned element_size);
 
 /**
  * Deinitializes the array.
  */
-void tommy_arrayof_done(tommy_arrayof* array);
+void tommy_arrayblkof_done(tommy_arrayblkof* array);
 
 /**
  * Grow the size up to the specified value.
  * All the new elements in the array are initialized with the 0 value.
  */
-void tommy_arrayof_grow(tommy_arrayof* array, unsigned size);
+void tommy_arrayblkof_grow(tommy_arrayblkof* array, unsigned size);
 
 /**
  * Gets a reference of the element at the specified position.
  * You must be sure that space for this position is already
- * allocated calling tommy_arrayof_grow().
+ * allocated calling tommy_arrayblkof_grow().
  */
-tommy_inline void* tommy_arrayof_ref(tommy_arrayof* array, unsigned pos)
+tommy_inline void* tommy_arrayblkof_ref(tommy_arrayblkof* array, unsigned pos)
 {
 	unsigned char* base;
 
 	assert(pos < array->size);
 
-	/* special case for the first bucket */
-	if (pos < (1 << TOMMY_ARRAYOF_BIT)) {
-		base = array->bucket[0];
-	} else {
-		/* get the highest bit set */
-		unsigned bsr = tommy_ilog2_u32(pos);
+	base = tommy_array_get(&array->block, pos / TOMMY_ARRAYBLKOF_SIZE);
 
-		/* clear the highest bit */
-		pos -= 1 << bsr;
-
-		base = array->bucket[bsr - TOMMY_ARRAYOF_BIT + 1];
-	}
-
-	return base + pos * array->element_size;
+	return base + (pos % TOMMY_ARRAYBLKOF_SIZE) * array->element_size;
 }
 
 /**
  * Gets the initialized size of the array.
  */
-tommy_inline unsigned tommy_arrayof_size(tommy_arrayof* array)
+tommy_inline unsigned tommy_arrayblkof_size(tommy_arrayblkof* array)
 {
 	return array->size;
 }
@@ -121,7 +102,7 @@ tommy_inline unsigned tommy_arrayof_size(tommy_arrayof* array)
 /**
  * Gets the size of allocated memory.
  */
-tommy_size_t tommy_arrayof_memory_usage(tommy_arrayof* array);
+tommy_size_t tommy_arrayblkof_memory_usage(tommy_arrayblkof* array);
 
 #endif
 

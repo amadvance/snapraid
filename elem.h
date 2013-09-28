@@ -24,6 +24,8 @@
 #include "tommyhashdyn.h"
 #include "tommyarray.h"
 #include "tommyarrayof.h"
+#include "tommyarrayblk.h"
+#include "tommyarrayblkof.h"
 
 /****************************************************************************/
 /* snapraid */
@@ -282,7 +284,7 @@ struct snapraid_disk {
 	 *
 	 * Each element points to a snapraid_block structure, or it's BLOCK_EMPTY.
 	 */
-	tommy_array blockarr;
+	tommy_arrayblk blockarr;
 
 	/**
 	 * List of all the snapraid_file for the disk.
@@ -386,7 +388,7 @@ int filter_existence(int filter_missing, const char* dir, const char* sub);
  * Filter a file if bad.
  * Return !=0 if the file is correct and it should be excluded.
  */
-int filter_correctness(int filter_error, tommy_arrayof* infoarr, struct snapraid_file* file);
+int filter_correctness(int filter_error, tommy_arrayblkof* infoarr, struct snapraid_file* file);
 
 /**
  * Filters a dir using a list of filters.
@@ -724,8 +726,8 @@ void disk_free(struct snapraid_disk* disk);
  */
 static inline struct snapraid_block* disk_block_get(struct snapraid_disk* disk, block_off_t pos)
 {
-	if (pos < tommy_array_size(&disk->blockarr))
-		return tommy_array_get(&disk->blockarr, pos);
+	if (pos < tommy_arrayblk_size(&disk->blockarr))
+		return tommy_arrayblk_get(&disk->blockarr, pos);
 	else
 		return BLOCK_EMPTY;
 }
@@ -811,25 +813,25 @@ static inline snapraid_info info_set_rehash(snapraid_info info)
  * Sets the info at the specified position.
  * The position is allocated if not yet done.
  */
-static inline void info_set(tommy_arrayof* array, unsigned pos, snapraid_info info)
+static inline void info_set(tommy_arrayblkof* array, unsigned pos, snapraid_info info)
 {
-	tommy_arrayof_grow(array, pos + 1);
+	tommy_arrayblkof_grow(array, pos + 1);
 
-	memcpy(tommy_arrayof_ref(array, pos), &info, sizeof(snapraid_info));
+	memcpy(tommy_arrayblkof_ref(array, pos), &info, sizeof(snapraid_info));
 }
 
 /**
  * Gets the info at the specified position.
  * For not allocated position, 0 is returned.
  */
-static inline snapraid_info info_get(tommy_arrayof* array, unsigned pos)
+static inline snapraid_info info_get(tommy_arrayblkof* array, unsigned pos)
 {
 	snapraid_info info;
 	
-	if (pos >= tommy_arrayof_size(array))
+	if (pos >= tommy_arrayblkof_size(array))
 		return 0;
 
-	memcpy(&info, tommy_arrayof_ref(array, pos), sizeof(snapraid_info));
+	memcpy(&info, tommy_arrayblkof_ref(array, pos), sizeof(snapraid_info));
 
 	return info;
 }

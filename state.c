@@ -75,7 +75,7 @@ void state_init(struct snapraid_state* state)
 	tommy_list_init(&state->importlist);
 	tommy_hashdyn_init(&state->importset);
 	tommy_hashdyn_init(&state->previmportset);
-	tommy_arrayof_init(&state->infoarr, sizeof(snapraid_info));
+	tommy_arrayblkof_init(&state->infoarr, sizeof(snapraid_info));
 }
 
 void state_done(struct snapraid_state* state)
@@ -87,7 +87,7 @@ void state_done(struct snapraid_state* state)
 	tommy_list_foreach(&state->importlist, (tommy_foreach_func*)import_file_free);
 	tommy_hashdyn_done(&state->importset);
 	tommy_hashdyn_done(&state->previmportset);
-	tommy_arrayof_done(&state->infoarr);
+	tommy_arrayblkof_done(&state->infoarr);
 }
 
 /**
@@ -1003,8 +1003,8 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			}
 
 			/* insert the block in the block array */
-			tommy_array_grow(&disk->blockarr, v_pos + 1);
-			tommy_array_set(&disk->blockarr, v_pos, block);
+			tommy_arrayblk_grow(&disk->blockarr, v_pos + 1);
+			tommy_arrayblk_set(&disk->blockarr, v_pos, block);
 
 			/* check for termination of the block list */
 			++blockidx;
@@ -1136,8 +1136,8 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			}
 
 			/* insert the block in the block array */
-			tommy_array_grow(&disk->blockarr, v_pos + 1);
-			tommy_array_set(&disk->blockarr, v_pos, &deleted->block);
+			tommy_arrayblk_grow(&disk->blockarr, v_pos + 1);
+			tommy_arrayblk_set(&disk->blockarr, v_pos, &deleted->block);
 
 			/* if the block has an hash */
 			if (block_has_any_hash(&deleted->block)) {
@@ -2186,7 +2186,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				}
 
 				/* grow the array */
-				tommy_array_grow(&disk->blockarr, v_pos + v_count);
+				tommy_arrayblk_grow(&disk->blockarr, v_pos + v_count);
 
 				/* fill the blocks in the run */
 				while (v_count) {
@@ -2234,7 +2234,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 					}
 
 					/* insert the block in the block array */
-					tommy_array_set(&disk->blockarr, v_pos, block);
+					tommy_arrayblk_set(&disk->blockarr, v_pos, block);
 
 					/* stat */
 					++count_block;
@@ -2369,7 +2369,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				switch (c) {
 				case 'o' :
 					/* grow the array */
-					tommy_array_grow(&disk->blockarr, v_pos + v_count);
+					tommy_arrayblk_grow(&disk->blockarr, v_pos + v_count);
 
 					/* if it's a run of deleted blocks */
 					while (v_count) {
@@ -2399,7 +2399,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 						}
 
 						/* insert the block in the block array */
-						tommy_array_set(&disk->blockarr, v_pos, &deleted->block);
+						tommy_arrayblk_set(&disk->blockarr, v_pos, &deleted->block);
 
 						/* go to next block */
 						++v_pos;

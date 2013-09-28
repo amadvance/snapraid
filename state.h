@@ -103,7 +103,7 @@ struct snapraid_state {
 	tommy_list importlist; /**< List of import file. */
 	tommy_hashdyn importset; /**< Hashtable by hash of all the import blocks. */
 	tommy_hashdyn previmportset; /**< Hashtable by prevhash of all the import blocks. Valid only if we are in a rehash state. */
-	tommy_arrayof infoarr; /**< Block information array. */
+	tommy_arrayblkof infoarr; /**< Block information array. */
 	block_off_t loaded_blockmax; /**< Previous size of the parity file, computed from the loaded state. */
 	time_t progress_start; /**< Start of processing for progress visualization. */
 	time_t progress_last; /**< Last update of progress visualization. */

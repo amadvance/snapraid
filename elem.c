@@ -252,7 +252,7 @@ int filter_existence(int filter_missing, const char* dir, const char* sub)
 	return 1;
 }
 
-int filter_correctness(int filter_error, tommy_arrayof* infoarr, struct snapraid_file* file)
+int filter_correctness(int filter_error, tommy_arrayblkof* infoarr, struct snapraid_file* file)
 {
 	unsigned i;
 
@@ -534,7 +534,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 	tommy_hashdyn_init(&disk->linkset);
 	tommy_list_init(&disk->dirlist);
 	tommy_hashdyn_init(&disk->dirset);
-	tommy_array_init(&disk->blockarr);
+	tommy_arrayblk_init(&disk->blockarr);
 
 	return disk;
 }
@@ -549,7 +549,7 @@ void disk_free(struct snapraid_disk* disk)
 	tommy_hashdyn_done(&disk->linkset);
 	tommy_list_foreach(&disk->dirlist, (tommy_foreach_func*)dir_free);
 	tommy_hashdyn_done(&disk->dirset);
-	tommy_array_done(&disk->blockarr);
+	tommy_arrayblk_done(&disk->blockarr);
 	free(disk);
 }
 
@@ -567,13 +567,13 @@ int disk_is_empty(struct snapraid_disk* disk, block_off_t blockmax)
 		return 0;
 
 	/* limit the search to the size of the disk */
-	if (blockmax > tommy_array_size(&disk->blockarr))
-		blockmax = tommy_array_size(&disk->blockarr);
+	if (blockmax > tommy_arrayblk_size(&disk->blockarr))
+		blockmax = tommy_arrayblk_size(&disk->blockarr);
 
 	/* checks all the blocks to search for deleted ones */
 	/* this search is slow, but it's done only if no file is present */
 	for(i=0;i<blockmax;++i) {
-		struct snapraid_block* block = tommy_array_get(&disk->blockarr, i);
+		struct snapraid_block* block = tommy_arrayblk_get(&disk->blockarr, i);
 		unsigned block_state = block_state_get(block);
 
 		switch (block_state) {
