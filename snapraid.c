@@ -79,9 +79,9 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-V, --version         ", "-V") "  Version\n");
 }
 
-void memory(struct snapraid_state* state)
+void memory(int gui)
 {
-	if (state->opt.gui) {
+	if (gui) {
 		fprintf(stdlog, "memory:used:%"PRIu64"\n", (uint64_t)malloc_counter());
 	} else  {
 		printf("Using %u MiB of memory.\n", (unsigned)(malloc_counter() / 1024 / 1024));
@@ -528,9 +528,14 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	/* open the log file */
-	if (log == 0)
-		log = "2";
+	/* if no log file is specified, don't output */
+	if (log == 0) {
+#ifdef _WIN32
+		log = "NUL";
+#else
+		log = "/dev/null";
+#endif
+	}
 	if (strcmp(log, "1") == 0) {
 		stdlog = stdout;
 	} else if (strcmp(log, "2") == 0) {
@@ -574,13 +579,13 @@ int main(int argc, char* argv[])
 
 		state_scan(&state, 1);
 
-		memory(&state);
+		memory(state.opt.gui);
 	} else if (operation == OPERATION_SYNC) {
 		state_read(&state);
 
 		state_scan(&state, 0);
 
-		memory(&state);
+		memory(state.opt.gui);
 
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);
@@ -627,7 +632,7 @@ int main(int argc, char* argv[])
 		/* apply the command line filter */
 		state_filter(&state, &filterlist_file, &filterlist_disk, filter_missing, filter_error);
 
-		memory(&state);
+		memory(state.opt.gui);
 
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);
@@ -647,7 +652,7 @@ int main(int argc, char* argv[])
 	} else if (operation == OPERATION_SCRUB) {
 		state_read(&state);
 
-		memory(&state);
+		memory(state.opt.gui);
 
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);
@@ -666,11 +671,11 @@ int main(int argc, char* argv[])
 
 		state_write(&state);
 
-		memory(&state);
+		memory(state.opt.gui);
 	} else if (operation == OPERATION_STATUS) {
 		state_read(&state);
 
-		memory(&state);
+		memory(state.opt.gui);
 
 		state_status(&state);
 	} else if (operation == OPERATION_DUP) {
@@ -690,7 +695,7 @@ int main(int argc, char* argv[])
 		/* apply the command line filter */
 		state_filter(&state, &filterlist_file, &filterlist_disk, filter_missing, filter_error);
 
-		memory(&state);
+		memory(state.opt.gui);
 
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);

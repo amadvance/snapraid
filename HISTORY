@@ -10,6 +10,8 @@ SnapRAID HISTORY
    up to 89 disks with Hexa (6) parity is possible, but not yet implemented.
    Note that more general approaches without these limitations are also
    possible, but they would affect badly the performance.
+ * Removed the detailed list of errors from the screen output.
+   To get it you must explicitely uses the -l, --log option.
  * Reduced memory usage avoiding to allocate unnecessary memory.
 
 4.1 2013/9

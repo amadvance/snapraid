@@ -159,9 +159,15 @@ Getting Started
 	last "sync" command executed. It works like a snapshot was taken
 	in "sync".
 
-	In this regard SnapRAID is more like a backup program than a RAID
-	system. For example, you can use it to restore a file or directory to
-	its previous state using the -f, --filter option :
+	To see the list of files meanwhile they are checked and fixed, you can
+	used the -v, --verbose option. Like:
+
+		:snapraid fix -v
+
+  Recovering and Undeleting
+	In recovering SnapRAID is more like a backup program than a RAID system,
+	and it can be used to restore or undelete only a single file or directory
+	to its previous state using the -f, --filter option :
 
 		:snapraid fix -f FILE
 
@@ -170,11 +176,12 @@ Getting Started
 		:snapraid fix -f DIR/
 
 	You can also use it to recover only accidentally deleted files inside
-	a directory using the -m, --filter-missing option, like:
+	a directory using the -m, --filter-missing option, that restores
+	only missing files, leaving untouched all the others.
 
 		:snapraid fix -m -f DIR/
 
-	Or to recover all the deleted files with:
+	Or to recover all the deleted files in all the drives with:
 
 		:snapraid fix -m
 
@@ -497,11 +504,11 @@ Options
 		option allows you to continue anyway.
 
 	-l, --log FILE
-		Redirect the detailed log of errors to the specified file.
+		Write a detailed log of errors found in check and fix.
 		This log contains the exact specification of which block of
 		any file is not recoverable and why.
-		If this option is not specified, the log is printed in
-		the console using the standard error stream.
+		If this option is not specified, no detailed log is printed,
+		and you'll get only a summary at the end of the operations.
 		When checking and fixing this allows to keep separated
 		the possible huge list of errors from the human readable
 		output.
