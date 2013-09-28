@@ -149,7 +149,7 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 	fm.fiemap.fm_extent_count = 1; /* we are interested only at the first block */
 
 	if (ioctl(f, FS_IOC_FIEMAP, &fm) != -1) {
-		*physical = fm.fiemap.fm_extents[0].fe_physical;
+		*physical = fm.fiemap.fm_extents[0].fe_physical + FILEPHY_REAL_OFFSET;
 		if (close(f) == -1)
 			return -1;
 		return 0;
@@ -157,7 +157,7 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 
 	/* if empty, FIBMAP doesn't work */
 	if (st->st_size == 0) {
-		*physical = 0;
+		*physical = FILEPHY_WITHOUT_OFFSET;
 		if (close(f) == -1)
 			return -1;
 		return 0;
@@ -168,7 +168,7 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 	/* in exfat it always returns 0, that it's anyway better than the fake inodes */
 	blknum = 0; /* first block */
 	if (ioctl(f, FIBMAP, &blknum) != -1) {
-		*physical = blknum;
+		*physical = blknum + FILEPHY_REAL_OFFSET;
 		if (close(f) == -1)
 			return -1;
 		return 0;
@@ -177,13 +177,13 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 	/* otherwise don't use anything, and keep the existing order */
 	/* at now this should happen only for vfat */
 	/* and it's surely better than using fake inodes */
-	*physical = 0;
+	*physical = FILEPHY_UNREPORTED_OFFSET;
 	if (close(f) == -1)
 		return -1;
 #else
 	/* In a generic Unix use a dummy value for all the files */
 	/* We don't want to risk to use the inode without knowing if it really improves performance */
-	*physical = 0;
+	*physical = FILEPHY_UNREPORTED_OFFSET;
 
 	(void)path; /* not used here */
 	(void)st;

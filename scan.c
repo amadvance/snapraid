@@ -974,7 +974,7 @@ void state_scan(struct snapraid_state* state, int output)
 
 			/* if the file is not empty, count duplicate physical offsets */
 			if (state->opt.force_order == SORT_PHYSICAL && file->size != 0) {
-				if (phy_count > 0 && file->physical == phy_last)
+				if (phy_count > 0 && file->physical == phy_last && phy_last != FILEPHY_WITHOUT_OFFSET)
 					++phy_dup;
 				phy_last = file->physical;
 				++phy_count;

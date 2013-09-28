@@ -1130,7 +1130,10 @@ int filephy(const char* file, struct stat* st, uint64_t* physical)
 		} else if (error == ERROR_HANDLE_EOF) {
 			/* if the file is small, it can be stored in the Master File Table (MFT) */
 			/* and then it doesn't have a physical address */
-			rpb->ExtentCount = 0;
+			/* In such case we report a specific fake address, to report this special condition */
+			/* that it's different from the 0 offset reported by the underline file system */
+			rpb->ExtentCount = 1;
+			rpb->Extents[0].Lcn.QuadPart = FILEPHY_WITHOUT_OFFSET;
 		} else {
 			windows_errno(error);
 			CloseHandle(h);
@@ -1141,9 +1144,9 @@ int filephy(const char* file, struct stat* st, uint64_t* physical)
 	CloseHandle(h);
 
 	if (rpb->ExtentCount < 1)
-		*physical = 0;
+		*physical = FILEPHY_UNREPORTED_OFFSET;
 	else
-		*physical = rpb->Extents[0].Lcn.QuadPart;
+		*physical = rpb->Extents[0].Lcn.QuadPart + FILEPHY_REAL_OFFSET;
 
 	return 0;
 }
