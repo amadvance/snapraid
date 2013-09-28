@@ -1132,8 +1132,10 @@ int filephy(const char* file, struct stat* st, uint64_t* physical)
 			/* and then it doesn't have a physical address */
 			/* In such case we report a specific fake address, to report this special condition */
 			/* that it's different from the 0 offset reported by the underline file system */
-			rpb->ExtentCount = 1;
-			rpb->Extents[0].Lcn.QuadPart = FILEPHY_WITHOUT_OFFSET;
+			*physical = FILEPHY_WITHOUT_OFFSET;
+
+			CloseHandle(h);
+			return 0;
 		} else {
 			windows_errno(error);
 			CloseHandle(h);
