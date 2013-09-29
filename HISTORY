@@ -1,8 +1,8 @@
 SnapRAID HISTORY
 ================
 
-5.0 2013/10
-===========
+5.0 2013/10 (BETA)
+==================
  * Added support for RAIDTP (Triple Parity) and RAIDQP (Quad Parity).
    For Quad Parity, and only for Quad Parity, there is a limitation of
    using no more than 21 data disks. This is a conseguence of the
@@ -16,8 +16,8 @@ SnapRAID HISTORY
    only for blocks that really are changed.
  * Reduced memory usage avoiding to allocate unnecessary memory.
 
-4.2 2013/9 (BETA)
-=================
+4.2 2013/10 (BETA)
+==================
  * Fixed the wrong warning about physical offsets not supported caused
    by files not having a real offset because too small.
    For example, in NTFS it's possible to store such files in the MFT.
