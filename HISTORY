@@ -12,6 +12,8 @@ SnapRAID HISTORY
    possible, but they would affect badly the performance.
  * Removed the detailed list of errors from the screen output.
    To get it you must explicitely uses the -l, --log option.
+ * For files with changes only in some blocks, updates the parity
+   only for blocks that really are changed.
  * Reduced memory usage avoiding to allocate unnecessary memory.
 
 4.1 2013/9

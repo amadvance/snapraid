@@ -58,6 +58,10 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	time_t now;
 	unsigned l;
 
+	/* the sync process assumes that all the hashes are correct */
+	/* including the ones from CHG and DELETED blocks */
+	assert(state->clear_undeterminate_hash != 0);
+
 	/* get the present time */
 	now = time(0);
 
@@ -119,6 +123,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		int one_invalid;
 		int one_valid;
 		int skip_this_block;
+		int parity_needs_to_be_updated;
 		int ret;
 		snapraid_info info;
 		int rehash;
@@ -172,6 +177,16 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		info = info_get(&state->infoarr, i);
 		rehash = info_get_rehash(info);
 
+		/* it could happens that all the blocks are EMPTY/BLK and CHG but with the hash */
+		/* still matching because the specific CHG block was not modified. */
+		/* In such case, we can avoid to update parity, because it would be the same as before */
+		parity_needs_to_be_updated = 0;
+
+		/* if the block is marked as bad, we force the parity update */
+		/* because the bad block may be the result of a wrong parity */
+		if (info_get_bad(info))
+			parity_needs_to_be_updated = 1;
+
 		/* for each disk, process the block */
 		for(j=0;j<diskmax;++j) {
 			int read_size;
@@ -188,8 +203,19 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				continue;
 			}
 
-			/* if the block is not used */
+			/* get the block */
 			block = disk_block_get(handle[j].disk, i);
+
+			/* if the block is new or removed, we have to update the parity */
+			/* to include this block change */
+			if (!block_has_same_presence(block)) {
+				parity_needs_to_be_updated = 1;
+
+				/* it's important to check this before any other check */
+				/* because for DELETED block, we skip at the next check */
+			}
+
+			/* if the block has no file, it doesn't partecipate in the new parity computation */
 			if (!block_has_file(block)) {
 				/* use an empty block */
 				memset(buffer[j], 0, state->block_size);
@@ -288,6 +314,26 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					goto bail;
 				}
 			} else {
+				/* if until now the parity doesn't need to be update */
+				if (!parity_needs_to_be_updated) {
+					/* for sure it's a CHG block, because EMPTY are processed before with "continue" */
+					/* and BLK have "block_has_updated_hash()" as 1, and all the others */
+					/* have "parity_needs_to_be_updated" already at 1 */
+					assert(block_state_get(block) == BLOCK_STATE_CHG);
+
+					/* if there is an hash */
+					if (block_has_any_hash(block)) {
+						/* check if the hash is changed */
+						if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
+							/* the block is different, and we must update parity */
+							parity_needs_to_be_updated = 1;
+						}
+					} else {
+						/* if the hash is already invalid, we update parity */
+						parity_needs_to_be_updated = 1;
+					}
+				}
+			
 				/* copy the hash in the block, but doesn't mark the block as hashed */
 				/* this allow in case of skipped block to do not save the failed computation */
 				memcpy(block->hash, hash, HASH_SIZE);
@@ -300,17 +346,20 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		/* if we have read all the data required, proceed with the parity */
 		if (!skip_this_block) {
 
-			/* compute the parity */
-			raid_gen(state->level, buffer, diskmax, state->block_size);
+			/* updates the parity only if really needed */
+			if (parity_needs_to_be_updated) {
+				/* compute the parity */
+				raid_gen(state->level, buffer, diskmax, state->block_size);
 
-			/* write the parity */
-			for(l=0;l<state->level;++l) {
-				ret = parity_write(parity[l], i, buffer[diskmax+l], state->block_size);
-				if (ret == -1) {
-					fprintf(stderr, "DANGER! Write error in the %s disk, it isn't possible to sync.\n", lev_name(l));
-					printf("Stopping at block %u\n", i);
-					++error;
-					goto bail;
+				/* write the parity */
+				for(l=0;l<state->level;++l) {
+					ret = parity_write(parity[l], i, buffer[diskmax+l], state->block_size);
+					if (ret == -1) {
+						fprintf(stderr, "DANGER! Write error in the %s disk, it isn't possible to sync.\n", lev_name(l));
+						printf("Stopping at block %u\n", i);
+						++error;
+						goto bail;
+					}
 				}
 			}
 
@@ -336,18 +385,23 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				block_state_set(block, BLOCK_STATE_BLK);
 			}
 
-			/* if rehash is neeed */
-			if (rehash) {
-				/* store all the new hash already computed */
-				for(j=0;j<diskmax;++j) {
-					if (rehandle[j].block)
-						memcpy(rehandle[j].block->hash, rehandle[j].hash, HASH_SIZE);
+			/* we update the info block only if we really have updated the parity */
+			/* because otherwise the time info would be misleading as we didn't */
+			/* wrote the parity at this time */
+			if (parity_needs_to_be_updated) {
+				/* if rehash is neeed */
+				if (rehash) {
+					/* store all the new hash already computed */
+					for(j=0;j<diskmax;++j) {
+						if (rehandle[j].block)
+							memcpy(rehandle[j].block->hash, rehandle[j].hash, HASH_SIZE);
+					}
 				}
-			}
 
-			/* update the time info of the block */
-			/* we are also clearing any previous bad and rehash flag */
-			info_set(&state->infoarr, i, info_make(now, 0, 0));
+				/* update the time info of the block */
+				/* we are also clearing any previous bad and rehash flag */
+				info_set(&state->infoarr, i, info_make(now, 0, 0));
+			}
 		}
 
 		/* mark the state as needing write */

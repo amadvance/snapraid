@@ -350,7 +350,7 @@ endif
 	rm -r test/disk2
 	mkdir test/disk2
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAID5) fix -l test.log
-	echo --- Fixes again with RAIDTP to restore all the parity
+	echo --- Fixes again to restore all the parity
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) fix -l test.log
 	rm -r test/disk1/_c
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
@@ -362,7 +362,7 @@ endif
 	rm -r test/disk2
 	mkdir test/disk2
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAID5) fix -l test.log
-	echo --- Fixes again with RAIDTP to restore all the parity
+	echo --- Fixes again to restore all the parity
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) fix -l test.log
 	-rm -r test/disk1/_a
 	-rm -r test/disk1/_b
@@ -370,6 +370,7 @@ endif
 	mv test/_a test/disk1/_a
 	mv test/_b test/disk1/_b
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Abort sync early with more deletions than additions and then delete some unchanged stuff and fix with RAID6
 	cp -pR test/disk1/_a test/disk1/_c
 	mv test/disk1/_a test/_a
@@ -385,6 +386,7 @@ endif
 	mv test/_a test/disk1/_a
 	mv test/_b test/disk1/_b
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Delete some files, fix with -m and check with RAID5
 	rm test/disk1/8*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(RAID5) check -l test.log

@@ -66,6 +66,7 @@ void state_init(struct snapraid_state* state)
 	state->lockfile[0] = 0;
 	state->level = 1; /* default is the lowest protection */
 	state->loaded_blockmax = 0;
+	state->clear_undeterminate_hash = 0;
 	state->no_conf = 0;
 
 	tommy_list_init(&state->disklist);
@@ -994,6 +995,11 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 					fprintf(stderr, "Invalid '%s' specification in '%s' at line %u\n", tag, path, line);
 					exit(EXIT_FAILURE);
 				}
+
+				/* clear undeterminated hashes before a sync */
+				if (tag[0] != 'b' && state->clear_undeterminate_hash) {
+					memset(block->hash, 0, HASH_SIZE);
+				}
 			}
 
 			/* we must not overwrite existing blocks */
@@ -1127,6 +1133,11 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			if (ret < 0) {
 				fprintf(stderr, "Invalid 'off' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
+			}
+
+			/* clear undeterminated hashes before a sync */
+			if (state->clear_undeterminate_hash) {
+				memset(deleted->block.hash, 0, HASH_SIZE);
 			}
 
 			/* we must not overwrite existing blocks */
@@ -2224,6 +2235,10 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 							decoding_error(path, f);
 							exit(EXIT_FAILURE);
 						}
+
+						/* clear undeterminated hashes before a sync */
+						if (c != 'b' && state->clear_undeterminate_hash)
+							memset(block->hash, 0, HASH_SIZE);
 					}
 
 					/* we must not overwrite existing blocks */
@@ -2389,6 +2404,11 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 						if (ret < 0) {
 							decoding_error(path, f);
 							exit(EXIT_FAILURE);
+						}
+
+						/* clear undeterminated hashes before a sync */
+						if (state->clear_undeterminate_hash) {
+							memset(deleted->block.hash, 0, HASH_SIZE);
 						}
 
 						/* we must not overwrite existing blocks */

@@ -179,15 +179,18 @@ static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk*
 			break;
 		case BLOCK_STATE_CHG :
 		case BLOCK_STATE_NEW :
-			/* in these cases we don't know if the old state is still the one */
-			/* stored inside the parity, because after an aborted sync, the parity */
-			/* may be or may be not have been updated with the new data */
-			/* Then we reset the hash to a bogus value */
-			/* Note that this condition is possible only if: */
-			/* - new files added/modified */
-			/* - aborted sync, without saving the content file */
-			/* - files deleted after the aborted sync */
-			memset(block->hash, 0, HASH_SIZE);
+			/* if we have not already cleared the undeterminated hash */
+			if (!state->clear_undeterminate_hash) {
+				/* in these cases we don't know if the old state is still the one */
+				/* stored inside the parity, because after an aborted sync, the parity */
+				/* may be or may be not have been updated with the new data */
+				/* Then we reset the hash to a bogus value */
+				/* Note that this condition is possible only if: */
+				/* - new files added/modified */
+				/* - aborted sync, without saving the content file */
+				/* - files deleted after the aborted sync */
+				memset(block->hash, 0, HASH_SIZE);
+			}
 			break;
 		default:
 			fprintf(stderr, "Internal state inconsistency in scanning for block %u state %u\n", block->parity_pos, block_state);
@@ -254,7 +257,21 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 			/* we just overwrite it with a NEW one */
 			block_state_set(&file->blockvec[i], BLOCK_STATE_NEW);
 		} else {
-			/* otherwise it's a DELETED one, that we convert in CHG keeping the hash */
+			/* otherwise it's a DELETED one */
+
+			/* if we have not already cleared the undeterminated hash */
+			if (!state->clear_undeterminate_hash) {
+				/* in this case we don't know if the old state is still the one */
+				/* stored inside the parity, because after an aborted sync, the parity */
+				/* may be or may be not have been updated with the new data */
+				/* Then we reset the hash to a bogus value */
+				/* Note that this condition is possible only if: */
+				/* - files are deleted */
+				/* - aborted sync, without saving the content file */
+				/* - files are readded after the aborted sync */
+				memset(block->hash, 0, HASH_SIZE);
+			}
+
 			block_state_set(&file->blockvec[i], BLOCK_STATE_CHG);
 			memcpy(file->blockvec[i].hash, block->hash, HASH_SIZE);
 		}
@@ -296,7 +313,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 	 * - Linux VFAT kernel (3.2) driver. Inodes are fully reassigned at every mount.
 	 *
 	 * In such cases, to avoid possible random collisions, it's better to disable the moved
-	 * file recognizition.
+	 * file recognition.
 	 *
 	 * We do this implicitely removing all the inode before searching for files.
 	 * This ensure that no file is found with an old inode, but at the same time,

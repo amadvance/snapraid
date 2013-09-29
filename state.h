@@ -105,6 +105,7 @@ struct snapraid_state {
 	tommy_hashdyn previmportset; /**< Hashtable by prevhash of all the import blocks. Valid only if we are in a rehash state. */
 	tommy_arrayblkof infoarr; /**< Block information array. */
 	block_off_t loaded_blockmax; /**< Previous size of the parity file, computed from the loaded state. */
+	int clear_undeterminate_hash; /**< Clear all the hash from CHG and DELETED blocks when reading the state from an incomplete sync. */
 	time_t progress_start; /**< Start of processing for progress visualization. */
 	time_t progress_last; /**< Last update of progress visualization. */
 	time_t progress_interruption; /**< Start of the measure interruption. */

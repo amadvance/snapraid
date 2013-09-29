@@ -95,10 +95,14 @@ struct snapraid_filter {
  * but only if it's different by all 0.
  * The parity for this disk is not updated, but it contains the old data referenced by the hash.
  *
- * If the hash is completely filled with 0, it means that the hash is lost.
- * This could happen if a NEW/CHG block is first DELETED,
- * and then reallocated in a CHG one after an interrupted sync.
-  * See scan_file_remove() and scan_file_insert() for the exact location where this could happen.
+ * If the state is read from an incomplete sync, we don't really know if the hash is referring at the
+ * data used to compute the parity, because the sync process was interrupted at an unknown point,
+ * and the parity may or may not be updated.
+ *
+ * For this reson we clear all such hashes when reading the state from an incomplete sync when
+ * starting a new sync, because sync is affected by sych hashes.
+ * Check and fix are instead able to work with unsynched hashes.
+ * Scrub is not affected because it ignores CHG/DELETED blocks.
  */
 #define BLOCK_STATE_CHG 3
 
@@ -110,9 +114,14 @@ struct snapraid_filter {
  * but only if it's different by all 0.
  * The parity for this disk is not updated, but it contains the old data referenced by the hash.
  *
- * If the hash is completely filled with 0, it means that the hash is lost.
- * This could happen if a NEW/CHG block is DELETED after an interrupted sync.
- * See scan_file_remove() for the exact location where this could happen.
+ * If the state is read from an incomplete sync, we don't really know if the hash is referring at the
+ * data used to compute the parity, because the sync process was interrupted at an unknown point,
+ * and the parity may or may not be updated.
+ *
+ * For this reson we clear all such hashes when reading the state from an incomplete sync when
+ * starting a new sync, because sync is affected by sych hashes.
+ * Check and fix are instead able to work with unsynched hashes.
+ * Scrub is not affected because it ignores CHG/DELETED blocks.
  */
 #define BLOCK_STATE_DELETED 4
 
@@ -502,6 +511,20 @@ static inline int block_has_file(const struct snapraid_block* block)
 	unsigned state = block_state_get(block);
 
 	return state == BLOCK_STATE_BLK || state == BLOCK_STATE_NEW || state == BLOCK_STATE_CHG;
+}
+
+/**
+ * Checks if the specified block has the same presence state,
+ * meaning that it's now present when before it was also present,
+ * or it's now absent and before it was also absent.
+ *
+ * Note that NEW / DELETED return 0.
+ */
+static inline int block_has_same_presence(const struct snapraid_block* block)
+{
+	unsigned state = block_state_get(block);
+
+	return state == BLOCK_STATE_EMPTY || state == BLOCK_STATE_BLK || state == BLOCK_STATE_CHG;
 }
 
 /**
