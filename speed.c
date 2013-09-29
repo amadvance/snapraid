@@ -132,13 +132,16 @@ void speed(void)
 
 	printf("Expected fastest RAID5 is ");
 #if defined(__i386__) || defined(__x86_64__)
-	if (cpu_has_sse2())
+	if (cpu_has_sse2()) {
 #if defined(__x86_64__)
-		printf("sse2x8");
+		if (cpu_has_slowextendedreg())
+			printf("sse2x4");
+		else
+			printf("sse2x8");
 #else
 		printf("sse2x4");
 #endif
-	else if (cpu_has_mmx())
+	} else if (cpu_has_mmx())
 		printf("mmxx4");
 	else
 		printf("int32x2");
@@ -152,13 +155,16 @@ void speed(void)
 
 	printf("Expected fastest RAID6 is ");
 #if defined(__i386__) || defined(__x86_64__)
-	if (cpu_has_sse2())
+	if (cpu_has_sse2()) {
 #if defined(__x86_64__)
-		printf("sse2x4");
+		if (cpu_has_slowextendedreg())
+			printf("sse2x2");
+		else
+			printf("sse2x4");
 #else
 		printf("sse2x2");
 #endif
-	else if (cpu_has_mmx())
+	} else if (cpu_has_mmx())
 		printf("mmxx2");
 	else
 		printf("int32x2");

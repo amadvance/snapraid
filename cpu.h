@@ -119,7 +119,7 @@ static inline int cpu_has_slowmult(void)
 		 * Memory is little-endian 64-bit
 		 * Speed test with 8 disk and 262144 buffer size...
 		 * memset0 1849 [MB/s]
-		 * HASH Murmur3 378 [MB/s]
+		 * HASH Murmur3 378 [MB/s] (extremely slower than Spooky2)
 		 * HASH Spooky2 3413 [MB/s]
 		 * RAID5 int32x2 707 [MB/s]
 		 * RAID5 mmxx2 1264 [MB/s]
@@ -137,6 +137,47 @@ static inline int cpu_has_slowmult(void)
 
 	return 0;
 }
+
+/**
+ * Check if the processor has a slow extended set of SSE registers.
+ * If yes, it's better to unroll without using the second part of registers.
+ */
+static inline int cpu_has_slowextendedreg(void)
+{
+	char vendor[CPU_VENDOR_MAX];
+	unsigned family;
+	unsigned model;
+
+	cpu_info(vendor, &family, &model);
+
+	if (strcmp(vendor, "AuthenticAMD") == 0) {
+		/* AMD Bulldozer (from user)
+		 * CPU AuthenticAMD, family 21, model 19, flags mmx sse2
+		 * Memory is little-endian 64-bit
+		 * Speed test with 8 disk and 262144 buffer size, for a total of 2560 KiB...
+		 * memset0 5721 [MB/s]
+		 * CRC table 1080 [MB/s]
+		 * CRC intel-crc32 2845 [MB/s]
+		 * HASH Murmur3 2970 [MB/s]
+		 * HASH Spooky2 7503 [MB/s]
+		 * RAID5 int32x2 4595 [MB/s]
+		 * RAID5 mmxx2 5856 [MB/s]
+		 * RAID5 mmxx4 6157 [MB/s]
+		 * RAID5 sse2x2 7151 [MB/s]
+		 * RAID5 sse2x4 8447 [MB/s]
+		 * RAID5 sse2x8 8155 [MB/s] (slower than sse2x4)
+		 * RAID6 int32x2 1892 [MB/s]
+		 * RAID6 mmxx2 3744 [MB/s]
+		 * RAID6 sse2x2 4922 [MB/s]
+		 * RAID6 sse2x4 4464 [MB/s] (slower than sse2x2)
+		 */
+		if (family == 21)
+			return 1;
+	}
+
+	return 0;
+}
+
 
 /* other cases */
 

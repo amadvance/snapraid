@@ -2505,8 +2505,13 @@ void raid_init(void)
 	}
 	if (cpu_has_sse2()) {
 #if defined(__x86_64__)
-		raid5_gen = raid5_sse2r8;
-		raid6_gen = raid6_sse2r4;
+		if (cpu_has_slowextendedreg()) {
+			raid5_gen = raid5_sse2r4;
+			raid6_gen = raid6_sse2r2;
+		} else {
+			raid5_gen = raid5_sse2r8;
+			raid6_gen = raid6_sse2r4;
+		}
 		raidTP_gen = raidTP_sse2r2;
 		raidQP_gen = raidQP_sse2r2;
 #else
