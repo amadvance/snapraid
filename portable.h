@@ -188,6 +188,22 @@ static inline int hardlink(const char* a, const char* b)
 int devuuid(uint64_t device, char* uuid, size_t size);
 
 /**
+ * Special value returned when the file doesn't have a real offset.
+ * For example, because it's stored in the NTFS MFT.
+ */
+#define FILEPHY_WITHOUT_OFFSET 0
+
+/**
+ * Special value returned when the filesystem doesn't report any offset for unknown reason.
+ */
+#define FILEPHY_UNREPORTED_OFFSET 1
+
+/**
+ * Value indicating real offsets. All offsets greater or equal at this one are real.
+ */
+#define FILEPHY_REAL_OFFSET 2
+
+/**
  * Get the physcal address of the specified file.
  * This is expected to be just a hint and not necessarely correct or unique.
  * Returns 0 on success.
