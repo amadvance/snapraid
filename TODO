@@ -20,6 +20,8 @@ Something similar at "diff" and "dup".
 
 - Minor
 
+* When scanning dir, sort by inodes before calling stat.
+
 * Enable storing of creation time NTFS, crtime/birth time EXT4.
 But see: http://unix.stackexchange.com/questions/50177/birth-is-empty-on-ext4
 coreutils stat has an example, but it doesn't work in Linux (see lib/stat-time.h)
@@ -88,8 +90,18 @@ Or maybe we should allow parity never than content, but not viceversa.
 
 - Major
 
+* Use threads to scan all the disks at the same time.
+
 * Use Async IO for Linux (libaio).
 See thread: https://sourceforge.net/p/snapraid/discussion/1677233/thread/a300a10b/
+
+* Create a filesystem snapshot at every sync, and use it in all the other commands
+automatically.
+At the next sync, drop the old snapshot and create a new one.
+This should help recovering, because we'll have the exact copy used by sync.
+This feature can be enabled with a specific option, and available
+in Windows using Shadow Copy, and in Linux using Btrfs, and in a generic
+Unix using ZFS.
 
 * Split the parity in multiple files and allow it to coexist with data
 in the same disk.
