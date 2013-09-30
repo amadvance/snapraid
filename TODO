@@ -5,9 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
-* In the log file and gui mode, output kind of final report. Like:
-status:ok / status:fail
-
 * In sync if a data error is found, we can mark the block as bad, like in scrub
 and allow sync to continue.
 
@@ -18,9 +15,14 @@ correctly.
 * Add a way to list the content of the array. A new "list" command ?
 Something similar at "diff" and "dup".
 
+* When scanning dir, sort by inodes before calling stat.
+
 - Minor
 
-* When scanning dir, sort by inodes before calling stat.
+* Add an option for dup to list only duplicates with different name.
+This supposing that if a file has the same name, it's intentionally duplicate.
+
+* Restore directory timestamps.
 
 * Enable storing of creation time NTFS, crtime/birth time EXT4.
 But see: http://unix.stackexchange.com/questions/50177/birth-is-empty-on-ext4
