@@ -389,6 +389,16 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			printf("Everything OK\n");
 	}
 
+	if (state->opt.gui) {
+		fprintf(stdlog, "summary:error_read:%u\n", error);
+		fprintf(stdlog, "summary:error_data:%u\n", silent_error);
+		if (error + silent_error == 0)
+			fprintf(stdlog, "summary:exit:ok\n");
+		else
+			fprintf(stdlog, "summary:exit:error\n");
+		fflush(stdlog);
+	}
+
 bail:
 	for(j=0;j<diskmax;++j) {
 		ret = handle_close(&handle[j]);

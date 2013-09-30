@@ -110,16 +110,36 @@ int state_status(struct snapraid_state* state)
 	printf("Files: %u\n", file_count);
 	printf("Fragmented files: %u\n", file_fragmented);
 	printf("Excess fragments: %u\n", extra_fragment);
-	printf("Files size: %" PRIu64 " GiB\n", file_size / (1024*1024*1024) );
-	printf("Parity size: %" PRIu64 " GiB\n", blockmax * (uint64_t)state->block_size / (1024*1024*1024) );
+	printf("Files size: %"PRIu64" GiB\n", file_size / (1024*1024*1024) );
+	printf("Parity size: %"PRIu64" GiB\n", blockmax * (uint64_t)state->block_size / (1024*1024*1024) );
 
 	printf("\n");
 
-	/* count unsynched blocks */
+	if (state->opt.gui) {
+		fprintf(stdlog, "summary:file_count:%u\n", file_count);
+		fprintf(stdlog, "summary:fragmented_file_count:%u\n", file_fragmented);
+		fprintf(stdlog, "summary:excess_fragment_count:%u\n", extra_fragment);
+		fprintf(stdlog, "summary:file_size:%"PRIu64"\n", file_size);
+		fprintf(stdlog, "summary:parity_size:%"PRIu64"\n", blockmax * (uint64_t)state->block_size);
+		fprintf(stdlog, "summary:hash:%s\n", hash_config_name(state->hash));
+		fprintf(stdlog, "summary:prev_hash:%s\n", hash_config_name(state->prevhash));
+		fprintf(stdlog, "summary:best_hash:%s\n", hash_config_name(state->besthash));
+		fprintf(stdlog, "block_count:%u\n", blockmax);
+		fflush(stdlog);
+	}
+
+	/* copy the info a temp vector, and count bad/rehash/unsynched blocks */
+	infomap = malloc_nofail(blockmax * sizeof(snapraid_info));
+	bad = 0;
+	count = 0;
+	rehash = 0;
 	unsynched_blocks = 0;
+
 	for(i=0;i<blockmax;++i) {
 		int one_invalid;
 		int one_valid;
+
+		snapraid_info info = info_get(&state->infoarr, i);
 
 		/* for each disk */
 		one_invalid = 0;
@@ -138,27 +158,32 @@ int state_status(struct snapraid_state* state)
 		if (one_invalid && one_valid) {
 			++unsynched_blocks;
 		}
-	}
-
-	/* copy the info a temp vector, and count bad/rehash blocks */
-	infomap = malloc_nofail(blockmax * sizeof(snapraid_info));
-	bad = 0;
-	count = 0;
-	rehash = 0;
-	for(i=0;i<blockmax;++i) {
-		snapraid_info info = info_get(&state->infoarr, i);
 
 		/* skip unused blocks */
-		if (info == 0)
-			continue;
-			
-		if (info_get_bad(info))
-			++bad;
+		if (info != 0) {
+			if (info_get_bad(info))
+				++bad;
 
-		if (info_get_rehash(info))
-			++rehash;
+			if (info_get_rehash(info))
+				++rehash;
 
-		infomap[count++] = info;
+			infomap[count++] = info;
+		}
+
+		if (state->opt.gui) {
+			if (info != 0)
+				fprintf(stdlog, "block:%u:%"PRIu64":%s:%s:%s:%s\n", i, (uint64_t)info_get_time(info), one_valid ? "used": "", one_invalid ? "unsynched" : "", info_get_bad(info) ? "bad" : "", info_get_rehash(info) ? "rehash" : "");
+			else
+				fprintf(stdlog, "block_noinfo:%u:%s:%s\n", i, one_valid ? "used": "", one_invalid ? "unsynched" : "");
+		}
+	}
+
+	if (state->opt.gui) {
+		fprintf(stdlog, "summary:has_unsynched:%u\n", unsynched_blocks);
+		fprintf(stdlog, "summary:has_rehash:%u\n", rehash);
+		fprintf(stdlog, "summary:has_bad:%u\n", bad);
+		fprintf(stdlog, "time_count:%u\n", count);
+		fflush(stdlog);
 	}
 
 	if (!count) {
@@ -169,6 +194,20 @@ int state_status(struct snapraid_state* state)
 
 	/* sort the info to get the time info */
 	qsort(infomap, count, sizeof(snapraid_info), info_time_compare);
+
+	if (state->opt.gui) {
+		/* info for making the graph */
+		i = 0;
+		while (i < count) {
+			unsigned j = i + 1;
+			while (j < count && info_get_time(infomap[i]) == info_get_time(infomap[j]))
+				++j;
+			fprintf(stdlog, "time:%"PRIu64":%u\n", (uint64_t)info_get_time(infomap[i]), j - i);
+			i = j;
+		}
+		fflush(stdlog);
+	}
+
 	oldest = info_get_time(infomap[0]);
 	median = info_get_time(infomap[count / 2]);
 	newest = info_get_time(infomap[count - 1]);

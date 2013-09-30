@@ -657,6 +657,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 		case 1 : fprintf(stdlog, "mode:raid5\n"); break;
 		case 2 : fprintf(stdlog, "mode:raid6\n"); break;
 		case 3 : fprintf(stdlog, "mode:raidTP\n"); break;
+		case 4 : fprintf(stdlog, "mode:raidQP\n"); break;
 		}
 
 		for(l=0;l<state->level;++l) {

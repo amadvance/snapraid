@@ -1469,6 +1469,16 @@ void memhash(unsigned kind, const unsigned char* seed, void* digest, const void*
 	}
 }
 
+const char* hash_config_name(unsigned kind)
+{
+	switch (kind) {
+	case HASH_UNDEFINED : return "undefined";
+	case HASH_MURMUR3 : return "murmur3";
+	case HASH_SPOOKY2 : return "spooky2";
+	default: return "unknown";
+	}
+}
+
 /****************************************************************************/
 /* random */
 

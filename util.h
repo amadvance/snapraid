@@ -492,6 +492,11 @@ char* strdup_nofail(const char* str);
  */
 void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, unsigned size);
 
+/**
+ * Return the hash name.
+ */
+const char* hash_config_name(unsigned kind);
+
 /****************************************************************************/
 /* random */
 

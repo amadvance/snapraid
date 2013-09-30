@@ -140,11 +140,20 @@ void state_dup(struct snapraid_state* state)
 	tommy_list_foreach(&hashlist, (tommy_foreach_func*)hash_free);
 	tommy_hashdyn_done(&hashset);
 
-	if (!state->opt.gui) {
-		if (count)
-			printf("%u duplicates, for %"PRIu64" MiB.\n", count, size / (1024*1024));
-		else
-			printf("No duplicate\n");
+	if (count)
+		printf("%u duplicates, for %"PRIu64" MiB.\n", count, size / (1024*1024));
+	else
+		printf("No duplicate\n");
+
+	if (state->opt.gui) {
+		fprintf(stdlog, "summary:dup_count:%u\n", count);
+		fprintf(stdlog, "summary:dup_size:%"PRIu64"\n", size);
+		if (count == 0) {
+			fprintf(stdlog, "summary:exit:unique\n");
+		} else {
+			fprintf(stdlog, "summary:exit:dup\n");
+		}
+		fflush(stdlog);
 	}
 }
 

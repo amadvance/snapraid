@@ -1650,6 +1650,35 @@ bail:
 		printf("Everything OK\n");
 	}
 
+	if (state->opt.gui) {
+		fprintf(stdlog, "summary:error:%u\n", error);
+		if (fix)
+			fprintf(stdlog, "summary:error_recovered:%u\n", recovered_error);
+		if (check)
+			fprintf(stdlog, "summary:error_unrecoverable:%u\n", unrecoverable_error);
+		if (fix) {
+			if (error + recovered_error + unrecoverable_error == 0)
+				fprintf(stdlog, "summary:exit:ok\n");
+			else if (unrecoverable_error == 0)
+				fprintf(stdlog, "summary:exit:recovered\n");
+			else
+				fprintf(stdlog, "summary:exit:unrecoverable\n");
+		} else if (check) {
+			if (error + unrecoverable_error == 0)
+				fprintf(stdlog, "summary:exit:ok\n");
+			else if (unrecoverable_error == 0)
+				fprintf(stdlog, "summary:exit:recoverable\n");
+			else
+				fprintf(stdlog, "summary:exit:unrecoverable\n");
+		} else { /* audit only */
+			if (error == 0)
+				fprintf(stdlog, "summary:exit:ok\n");
+			else
+				fprintf(stdlog, "summary:exit:error\n");
+		}
+		fflush(stdlog);
+	}
+
 	free(failed);
 	free(failed_map);
 	free(handle);

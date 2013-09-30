@@ -578,8 +578,6 @@ int main(int argc, char* argv[])
 		state_read(&state);
 
 		state_scan(&state, 1);
-
-		memory(state.opt.gui);
 	} else if (operation == OPERATION_SYNC) {
 
 		/* in the next state read ensures to clear all the undeterminated hashes in case */

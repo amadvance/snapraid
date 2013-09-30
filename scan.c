@@ -1104,6 +1104,7 @@ void state_scan(struct snapraid_state* state, int output)
 
 	if (state->opt.verbose || output) {
 		struct snapraid_scan total;
+		int no_difference;
 
 		total.count_equal = 0;
 		total.count_move = 0;
@@ -1131,9 +1132,33 @@ void state_scan(struct snapraid_state* state, int output)
 			printf("\tadded %d\n", total.count_insert);
 		}
 
+		if (state->opt.gui) {
+			fprintf(stdlog, "summary:equal:%u\n", total.count_equal);
+			fprintf(stdlog, "summary:moved:%u\n", total.count_move);
+			fprintf(stdlog, "summary:restored:%u\n", total.count_restore);
+			fprintf(stdlog, "summary:changed:%u\n", total.count_change);
+			fprintf(stdlog, "summary:removed:%u\n", total.count_remove);
+			fprintf(stdlog, "summary:added:%u\n", total.count_insert);
+			fflush(stdlog);
+		}
+
+		no_difference = !total.count_move && !total.count_restore && !total.count_change && !total.count_remove && !total.count_insert;
+
 		if (output) {
-			if (!total.count_move && !total.count_restore && !total.count_change && !total.count_remove && !total.count_insert) {
-				printf("No difference.\n");
+			if (no_difference) {
+				printf("No difference\n");
+			} else {
+				printf("There are differences\n");
+			}
+		}
+
+		if (state->opt.gui) {
+			if (no_difference) {
+				fprintf(stdlog, "summary:exit:equal\n");
+				fflush(stdlog);
+			} else {
+				fprintf(stdlog, "summary:exit:diff\n");
+				fflush(stdlog);
 			}
 		}
 	}
