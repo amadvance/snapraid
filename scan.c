@@ -450,37 +450,56 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 				|| file->mtime_nsec == STAT_NSEC_INVALID
 			)
 		) {
-			/* here we know that the inode is different and it needs to be updated */
-			/* otherwise we would have processed the file when searching by inode */
-			state->need_write = 1;
-
 			/* mark as present */
 			file_flag_set(file, FILE_IS_PRESENT);
 
-			/* always update the nano seconds mtime */
-			/* to manage the above STAT_NSEC_INVALID case */
-			file->mtime_nsec = STAT_NSEC(st);
+			/* update the nano seconds mtime only if different */
+			/* to avoid unneeded updates */
+			if (file->mtime_nsec == STAT_NSEC_INVALID
+				&& STAT_NSEC(st) != STAT_NSEC_INVALID
+			) {
+				file->mtime_nsec = STAT_NSEC(st);
 
-			/* if the inode is different, it means a rewritten file with the same path */
-			/* like when restoring a backup that restores also the timestamp */
-			++scan->count_restore;
-
-			if (state->opt.gui) {
-				fprintf(stdlog, "scan:restore:%s:%s\n", disk->name, sub);
-				fflush(stdlog);
-			}
-			if (output) {
-				printf("Restore '%s%s'\n", disk->dir, sub);
+				/* we have to save the new mtime */
+				state->need_write = 1;
 			}
 
-			/* remove from the inode set */
-			tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
+			/* if the inode is different same */
+			if (file->inode != st->st_ino) {
+				/* if the inode is different, it means a rewritten file with the same path */
+				/* like when restoring a backup that restores also the timestamp */
+				++scan->count_restore;
 
-			/* save the new inode */
-			file->inode = st->st_ino;
+				if (state->opt.gui) {
+					fprintf(stdlog, "scan:restore:%s:%s\n", disk->name, sub);
+					fflush(stdlog);
+				}
+				if (output) {
+					printf("Restore '%s%s'\n", disk->dir, sub);
+				}
 
-			/* reinsert in the inode set */
-			tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
+				/* remove from the inode set */
+				tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
+
+				/* save the new inode */
+				file->inode = st->st_ino;
+
+				/* reinsert in the inode set */
+				tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
+
+				/* we have to save the new inode */
+				state->need_write = 1;
+			} else {
+				/* this is the equal case when persistent inodes are not supported */
+				assert(disk->has_not_persistent_inodes);
+
+				++scan->count_equal;
+
+				if (state->opt.gui) {
+					fprintf(stdlog, "scan:equal:%s:%s\n", disk->name, file->sub);
+					fflush(stdlog);
+				}
+			}
 
 			/* nothing more to do */
 			return;
