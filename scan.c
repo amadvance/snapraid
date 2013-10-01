@@ -464,8 +464,11 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 				state->need_write = 1;
 			}
 
-			/* if the inode is different same */
-			if (file->inode != st->st_ino) {
+			/* if the disk support persistent inodes */
+			if (!disk->has_not_persistent_inodes) {
+				/* if persistent inodes are supported, we are sure that the inode number */
+				/* is now different, because otherwise the file would have been found */
+				/* when searching by inode. */
 				/* if the inode is different, it means a rewritten file with the same path */
 				/* like when restoring a backup that restores also the timestamp */
 				++scan->count_restore;
@@ -490,9 +493,9 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 				/* we have to save the new inode */
 				state->need_write = 1;
 			} else {
-				/* this is the equal case when persistent inodes are not supported */
-				assert(disk->has_not_persistent_inodes);
-
+				/* otherwise it's the case of not persistent inode, where doesn't */
+				/* matter if the inode is different or equal, because they have no */
+				/* meaning, and then we don't even save them */
 				++scan->count_equal;
 
 				if (state->opt.gui) {
