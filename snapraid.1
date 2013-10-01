@@ -404,6 +404,52 @@ snapraid pool
 .PP
 .PD
 .RE
+.PP
+If you are using a Unix platform and you want to configure SAMBA to
+share such directory, you should add to your /etc/samba/smb.conf the
+following options:
+.PP
+.RS 4
+# In the global section of smb.conf
+.PD 0
+.PP
+.PD
+unix extensions = no
+.PD 0
+.PP
+.PD
+.RE
+.PP
+.RS 4
+# In the share section of smb.conf
+.PD 0
+.PP
+.PD
+[pool]
+.PD 0
+.PP
+.PD
+comment = Pool
+.PD 0
+.PP
+.PD
+path = /pool
+.PD 0
+.PP
+.PD
+read only = yes
+.PD 0
+.PP
+.PD
+guest ok = yes
+.PD 0
+.PP
+.PD
+wide links = yes
+.PD 0
+.PP
+.PD
+.RE
 .SH COMMANDS 
 SnapRAID provides some simple commands that allow to:
 .PD 0
