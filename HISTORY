@@ -9,6 +9,7 @@ SnapRAID HISTORY
    It's just a cosmetic change, and not a functional one.
  * Remove unexpected 'Restore' entries in the diff output when dealing
    with filesystem without persistent inodes like NTFS in Linux.
+ * Added support for filenames containing newlines. This happens in Mac OS X.
 
 4.1 2013/9
 ==========

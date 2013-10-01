@@ -695,8 +695,8 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 		pathprint(path_next, sizeof(path_next), "%s%s", dir, name);
 		pathprint(sub_next, sizeof(sub_next), "%s%s", sub, name);
 
-		/* check for not supported file names, limitation derived from the content file format */
-		if (name[0] == 0 || strchr(name, '\n') != 0 || name[strlen(name)-1] == '\r') {
+		/* check for not supported file names */
+		if (name[0] == 0) {
 			fprintf(stderr, "Unsupported name '%s' in file '%s'.\n", name, path_next);
 			exit(EXIT_FAILURE);
 		}
