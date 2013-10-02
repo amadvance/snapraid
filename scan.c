@@ -669,6 +669,58 @@ static void scan_emptydir(struct snapraid_scan* scan, struct snapraid_state* sta
 	tommy_list_insert_tail(&scan->dir_insert_list, &dir->nodelist, dir);
 }
 
+struct dirent_sorted {
+	/* node for data structures */
+	tommy_node node;
+
+#if HAVE_STRUCT_DIRENT_D_INO
+	uint64_t d_ino; /**< Inode number. */
+#endif
+#if HAVE_STRUCT_DIRENT_D_TYPE
+	uint32_t d_type; /**< File type. */
+#endif
+#if HAVE_STRUCT_DIRENT_D_STAT
+	struct stat d_stat; /**< Stat result. */
+#endif
+	char d_name[1]; /**< Variable length name. It must be the last field. */
+};
+
+#ifndef _WIN32 /* In Windows doesn't sort */
+static int dd_ino_compare(const void* void_a, const void* void_b)
+{
+	const struct dirent_sorted* a = void_a;
+	const struct dirent_sorted* b = void_b;
+
+	if (a->d_ino < b->d_ino)
+		return -1;
+	if (a->d_ino > b->d_ino)
+		return 1;
+
+	return 0;
+}
+#endif
+
+/**
+ * Returns the stat info of a dir entry.
+ */
+#if HAVE_STRUCT_DIRENT_D_STAT
+#define DSTAT(file, dd, buf) dstat(dd)
+struct stat* dstat(struct dirent_sorted* dd)
+{
+	return &dd->d_stat;
+}
+#else
+#define DSTAT(file, dd, buf) dstat(file, buf)
+struct stat* dstat(const char* file, struct stat* st)
+{
+	if (lstat(file, st) != 0) {
+		fprintf(stderr, "Error in stat file/directory '%s'. %s.\n", file, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+	return st;
+}
+#endif
+
 /**
  * Processes a directory.
  * Return != 0 if at least one file or link is processed.
@@ -677,6 +729,10 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 {
 	int processed = 0;
 	DIR* d;
+	tommy_list list;
+	tommy_node* node;
+
+	tommy_list_init(&list);
 
 	d = opendir(dir);
 	if (!d) {
@@ -684,13 +740,15 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 		fprintf(stderr, "You can exclude it in the config file with:\n\texclude /%s\n", sub);
 		exit(EXIT_FAILURE);
 	}
-   
-	while (1) { 
+
+	/* read the full directory */
+	while (1) {
 		char path_next[PATH_MAX];
 		char sub_next[PATH_MAX];
-		struct stat st;
+		struct dirent_sorted* entry;
 		const char* name;
 		struct dirent* dd;
+		size_t name_len;
 
 		/* clear errno to detect erroneous conditions */
 		errno = 0;
@@ -734,31 +792,102 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 			continue;
 		}
 
-#if HAVE_DIRENT_LSTAT
+		name_len = strlen(dd->d_name);
+		entry = malloc_nofail(sizeof(struct dirent_sorted) + name_len);
+
+		/* copy the dir entry */
+#if HAVE_STRUCT_DIRENT_D_INO
+		entry->d_ino = dd->d_ino;
+#endif
+#if HAVE_STRUCT_DIRENT_D_TYPE
+		entry->d_type = dd->d_type;
+#endif
+#if HAVE_STRUCT_DIRENT_D_STAT
 		/* convert dirent to lstat result */
-		dirent_lstat(dd, &st);
-#else
-		/* get lstat info about the file */
-		if (lstat(path_next, &st) != 0) {
-			fprintf(stderr, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
-			exit(EXIT_FAILURE);
+		dirent_lstat(dd, &entry->d_stat);
+#endif
+		memcpy(entry->d_name, dd->d_name, name_len + 1);
+
+		/* insert in the list */
+		tommy_list_insert_tail(&list, &entry->node, entry);
+	}
+
+	if (closedir(d) != 0) {
+		fprintf(stderr, "Error closing directory '%s'. %s.\n", dir, strerror(errno));
+		exit(EXIT_FAILURE);
+	}
+
+#ifndef _WIN32 /* In Windows doesn't sort. The inode is not significative */
+	/* if inodes are persistent */
+	if (!disk->has_not_persistent_inodes) {
+		/* sort the list of dir entries by inodes */
+		tommy_list_sort(&list, dd_ino_compare);
+	}
+#endif
+
+	/* process the sorted dir entries */
+	node = list;
+	while (node!=0) {
+		char path_next[PATH_MAX];
+		char sub_next[PATH_MAX];
+		struct dirent_sorted* dd = node->data;
+		const char* name = dd->d_name;
+		struct stat* st;
+		int type;
+#if !HAVE_STRUCT_DIRENT_D_STAT
+		struct stat st_buf;
+#endif
+
+		pathprint(path_next, sizeof(path_next), "%s%s", dir, name);
+		pathprint(sub_next, sizeof(sub_next), "%s%s", sub, name);
+
+		/* start with an unknown type */
+		type = -1;
+		st = 0;
+
+		/* if dirent has the type, use it */
+#if HAVE_STRUCT_DIRENT_D_TYPE
+		switch (dd->d_type) {
+		case DT_UNKNOWN : break;
+		case DT_REG : type = 0; break;
+		case DT_LNK : type = 1; break;
+		case DT_DIR : type = 2; break;
+		default : type = 3; break;
 		}
 #endif
 
-		if (S_ISREG(st.st_mode)) {
+		/* if type is still unknown */
+		if (type < 0) {
+			/* get the type from stat */
+			st = DSTAT(path_next, dd, &st_buf);
+
+			if (S_ISREG(st->st_mode))
+				type = 0;
+			else if (S_ISLNK(st->st_mode))
+				type = 1;
+			else if (S_ISDIR(st->st_mode))
+				type = 2;
+			else
+				type = 3;
+		}
+
+		if (type == 0) { /* REG */
 			if (filter_path(&state->filterlist, disk->name, sub_next) == 0) {
 				uint64_t physical;
+
+				/* late stat */
+				if (!st) st = DSTAT(path_next, dd, &st_buf);
 
 #if HAVE_LSTAT_EX
 				/* get inode info about the file, Windows needs an additional step */
 				/* also for hardlink, the real size of the file is read here */
-				if (lstat_ex(path_next, &st) != 0) {
+				if (lstat_ex(path_next, st) != 0) {
 					fprintf(stderr, "Error in stat_inode file '%s'. %s.\n", path_next, strerror(errno));
 					exit(EXIT_FAILURE);
 				}
 #endif
 				if (state->opt.force_order == SORT_PHYSICAL) {
-					if (filephy(path_next, &st, &physical) != 0) {
+					if (filephy(path_next, st, &physical) != 0) {
 						fprintf(stderr, "Error in getting the physical offset of file '%s'. %s.\n", path_next, strerror(errno));
 						exit(EXIT_FAILURE);
 					}
@@ -766,14 +895,14 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 					physical = 0;
 				}
 
-				scan_file(scan, state, output, disk, sub_next, &st, physical);
+				scan_file(scan, state, output, disk, sub_next, st, physical);
 				processed = 1;
 			} else {
 				if (state->opt.verbose) {
 					printf("Excluding file '%s'\n", path_next);
 				}
 			}
-		} else if (S_ISLNK(st.st_mode)) {
+		} else if (type == 1) { /* LNK */
 			if (filter_path(&state->filterlist, disk->name, sub_next) == 0) {
 				char subnew[PATH_MAX];
 				int ret;
@@ -799,12 +928,15 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 					printf("Excluding link '%s'\n", path_next);
 				}
 			}
-		} else if (S_ISDIR(st.st_mode)) {
+		} else if (type == 2) { /* DIR */
 			if (filter_dir(&state->filterlist, disk->name, sub_next) == 0) {
 #ifndef _WIN32
+				/* late stat */
+				if (!st) st = DSTAT(path_next, dd, &st_buf);
+
 				/* in Unix don't follow mount points in different devices */
 				/* in Windows we are already skipping them reporting them as special files */
-				if ((uint64_t)st.st_dev != disk->device) {
+				if ((uint64_t)st->st_dev != disk->device) {
 					fprintf(stderr, "WARNING! Ignoring mount point '%s' because it appears to be in a different device\n", path_next);
 				} else
 #endif
@@ -829,18 +961,22 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 			}
 		} else {
 			if (filter_path(&state->filterlist, disk->name, sub_next) == 0) {
-				fprintf(stderr, "WARNING! Ignoring special '%s' file '%s'\n", stat_desc(&st), path_next);
+				/* late stat */
+				if (!st) st = DSTAT(path_next, dd, &st_buf);
+			
+				fprintf(stderr, "WARNING! Ignoring special '%s' file '%s'\n", stat_desc(st), path_next);
 			} else {
 				if (state->opt.verbose) {
-					printf("Excluding special '%s' file '%s'\n", stat_desc(&st), path_next);
+					printf("Excluding special file '%s'\n", path_next);
 				}
 			}
 		}
-	}
 
-	if (closedir(d) != 0) {
-		fprintf(stderr, "Error closing directory '%s'. %s.\n", dir, strerror(errno));
-		exit(EXIT_FAILURE);
+		/* next entry */
+		node = node->next;
+
+		/* free the present one */
+		free(dd);
 	}
 
 	return processed;

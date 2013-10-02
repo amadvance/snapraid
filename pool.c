@@ -60,7 +60,7 @@ static int clean_dir(struct snapraid_state* state, const char* dir)
 
 		pathprint(path_next, sizeof(path_next), "%s%s", dir, name);
 
-#if HAVE_DIRENT_LSTAT
+#if HAVE_STRUCT_DIRENT_D_STAT
 		/* convert dirent to lstat result */
 		dirent_lstat(dd, &st);
 #else

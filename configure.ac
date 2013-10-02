@@ -40,6 +40,8 @@ AC_TYPE_UINT32_T
 AC_TYPE_UINT64_T
 AC_TYPE_UINT8_T
 AC_TYPE_INT8_T
+AC_STRUCT_DIRENT_D_INO
+AC_STRUCT_DIRENT_D_TYPE
 AC_CHECK_MEMBERS([struct stat.st_mtim.tv_nsec, struct stat.st_mtimensec, struct stat.st_mtimespec.tv_nsec], [], [], [[
 #if HAVE_SYS_TYPES_H
 #include <sys/types.h>

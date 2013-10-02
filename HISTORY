@@ -10,6 +10,8 @@ SnapRAID HISTORY
    up to 89 disks with Hexa (6) parity is possible, but not yet implemented.
    Note that more general approaches without these limitations are also
    possible, but they would affect badly the performance.
+ * Sort files by inode when listing the directory. This improves
+   performance in scanning.
  * Removed the detailed list of errors from the screen output.
    To get it you must explicitely uses the -l, --log option.
  * For files with changes only in some blocks, updates the parity

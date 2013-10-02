@@ -548,6 +548,7 @@ static void windows_finddata2dirent(const WIN32_FIND_DATAW* info, struct windows
 		exit(EXIT_FAILURE);
 	}
 
+	dirent->d_ino = 0;
 	memcpy(dirent->d_name, name, len + 1);
 
 	/* Store the HIDDEN attribute in a separate field */

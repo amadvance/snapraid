@@ -15,8 +15,6 @@ correctly.
 * Add a way to list the content of the array. A new "list" command ?
 Something similar at "diff" and "dup".
 
-* When scanning dir, sort by inodes before calling stat.
-
 - Minor
 
 * Add an option for dup to list only duplicates with different name.
@@ -104,6 +102,9 @@ This should help recovering, because we'll have the exact copy used by sync.
 This feature can be enabled with a specific option, and available
 in Windows using Shadow Copy, and in Linux using Btrfs, and in a generic
 Unix using ZFS.
+See Jens's Windows script at: http://sourceforge.net/p/snapraid/discussion/1677233/thread/a1707211/
+Note that a different between Windows and Unix is that in Windows old shapshots
+are automatically deleted.
 
 * Split the parity in multiple files and allow it to coexist with data
 in the same disk.

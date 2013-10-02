@@ -238,7 +238,7 @@ static void import_dir(struct snapraid_state* state, const char* dir)
 		pathslash(path, sizeof(path));
 		pathcat(path, sizeof(path), name);
 
-#if HAVE_DIRENT_LSTAT
+#if HAVE_STRUCT_DIRENT_D_STAT
 		/* convert dirent to lstat result */
 		dirent_lstat(dd, &st);
 #else

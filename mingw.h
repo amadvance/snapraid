@@ -71,7 +71,7 @@
 #define futimens windows_futimens
 #define O_NOFOLLOW 0
 #define dirent_hidden windows_dirent_hidden
-#define HAVE_DIRENT_LSTAT 1
+#define HAVE_STRUCT_DIRENT_D_STAT 1
 #define dirent_lstat windows_dirent_lstat
 #define stat_desc windows_stat_desc
 #undef sleep
@@ -226,6 +226,7 @@ int windows_open(const char* file, int flags, ...);
 struct windows_dirent {
 	char d_name[PATH_MAX];
 	int d_hidden;
+	uint64_t d_ino; /**< Not significative. Always 0. */
 	WIN32_FIND_DATAW d_data;
 };
 
