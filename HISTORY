@@ -22,6 +22,9 @@ SnapRAID HISTORY
    by files not having a real offset because too small.
    For example, in NTFS it's possible to store such files in the MFT.
    It's just a cosmetic change, and not a functional one.
+ * Remove unexpected 'Restore' entries in the diff output when dealing
+   with filesystem without persistent inodes like NTFS in Linux.
+ * Added support for filenames containing newlines. This happens in Mac OS X.
 
 4.1 2013/9
 ==========

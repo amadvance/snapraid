@@ -231,6 +231,21 @@ Getting Started
 
 		:snapraid pool
 
+	If you are using a Unix platform and you want to configure SAMBA to
+	share such directory, you should add to your /etc/samba/smb.conf the
+	following options:
+
+		:# In the global section of smb.conf
+		:unix extensions = no
+
+		:# In the share section of smb.conf
+		:[pool]
+		:comment = Pool
+		:path = /pool
+		:read only = yes
+		:guest ok = yes
+		:wide links = yes
+
 Commands
 	SnapRAID provides some simple commands that allow to:
 
