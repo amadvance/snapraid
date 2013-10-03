@@ -274,12 +274,16 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				/* compare the hash */
 				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
 					fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
-					++error;
 
 					/* it's a silent error only if we are dealing with synched files */
 					if (file_is_unsynched) {
+						++error;
 						error_on_this_block = 1;
 					} else {
+						fprintf(stderr, "Data error in file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
+						fprintf(stderr, "DANGER! Unexpected data error in a data disk! The block is now marked as bad!\n");
+						fprintf(stderr, "Try with 'snapraid -e fix' to recover!\n");
+
 						++silent_error;
 						silent_error_on_this_block = 1;
 					}
@@ -303,7 +307,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				ret = parity_read(parity[l], i, buffer_recov[l], state->block_size, stdlog);
 				if (ret == -1) {
 					buffer_recov[l] = 0;
-					fprintf(stdlog, "error:%u:%s: Read error\n", i, lev_config_name(l));
+					fprintf(stdlog, "parity_error:%u:%s: Read error\n", i, lev_config_name(l));
 					++error;
 					error_on_this_block = 1;
 				}
@@ -316,11 +320,11 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			for(l=0;l<state->level;++l) {
 			
 				if (buffer_recov[l] && memcmp(buffer[diskmax + l], buffer_recov[l], state->block_size) != 0) {
-					fprintf(stdlog, "error:%u:%s: Data error\n", i, lev_config_name(l));
-					++error;
-				
+					fprintf(stdlog, "parity_error:%u:%s: Data error\n", i, lev_config_name(l));
+
 					/* it's a silent error only if we are dealing with synched blocks */
 					if (block_is_unsynched) {
+						++error;
 						error_on_this_block = 1;
 					} else {
 						++silent_error;
