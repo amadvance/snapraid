@@ -685,7 +685,7 @@ struct dirent_sorted {
 	char d_name[1]; /**< Variable length name. It must be the last field. */
 };
 
-#ifndef _WIN32 /* In Windows doesn't sort */
+#if HAVE_STRUCT_DIRENT_D_INO
 static int dd_ino_compare(const void* void_a, const void* void_b)
 {
 	const struct dirent_sorted* a = void_a;
@@ -817,7 +817,7 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 		exit(EXIT_FAILURE);
 	}
 
-#ifndef _WIN32 /* In Windows doesn't sort. The inode is not significative */
+#if HAVE_STRUCT_DIRENT_D_INO
 	/* if inodes are persistent */
 	if (!disk->has_not_persistent_inodes) {
 		/* sort the list of dir entries by inodes */
