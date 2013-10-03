@@ -5,12 +5,14 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
-* In sync if a data error is found, we can mark the block as bad, like in scrub
-and allow sync to continue.
+* Remove/Reduce the opt.gui uses. We can now always output to stdlog becase
+it never go to screen.
 
 * Detect files moved from one disk to another. We won't be able to reuse
 parity, but we can reuse the hash to check that the file was moved
 correctly.
+We can assume a file moved to another disk if it has the same name, size,
+and timestamp. Directory and inode can be different.
 
 * Add a way to list the content of the array. A new "list" command ?
 Something similar at "diff" and "dup".

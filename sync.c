@@ -122,7 +122,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	for(i=blockstart;i<blockmax;++i) {
 		int one_invalid;
 		int one_valid;
-		int skip_this_block;
+		int error_on_this_block;
+		int silent_error_on_this_block;
 		int parity_needs_to_be_updated;
 		int ret;
 		snapraid_info info;
@@ -171,7 +172,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		--autosavemissing;
 
 		/* by default process the block, and skip it if something go wrong */
-		skip_this_block = 0;
+		error_on_this_block = 0;
+		silent_error_on_this_block = 0;
 
 		/* if we have to use the old hash */
 		info = info_get(&state->infoarr, i);
@@ -245,7 +247,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 					/* if the file is missing, it means that it was removed during sync */
 					/* this isn't a serious error, so we skip this block, and continue with others */
-					skip_this_block = 1;
+					error_on_this_block = 1;
 					continue;
 				} else if (errno == EACCES) {
 					fprintf(stderr, "No access at file '%s'.\n", handle[j].path);
@@ -279,7 +281,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 				/* if the file is changed, it means that it was modified during sync */
 				/* this isn't a serious error, so we skip this block, and continue with others */
-				skip_this_block = 1;
+				error_on_this_block = 1;
 				continue;
 			}
 
@@ -307,11 +309,17 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			if (block_has_updated_hash(block)) {
 				/* compare the hash */
 				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
+					fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 					fprintf(stderr, "Data error in file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
-					fprintf(stderr, "DANGER! Unexpected data error in a data disk, it isn't possible to sync.\n");
-					printf("Stopping to allow recovery. Try with 'snapraid -s %u check'\n", i);
+					fprintf(stderr, "DANGER! Unexpected data error in a data disk! The block is now marked as bad!\n");
+					fprintf(stderr, "Try with 'snapraid -e fix' to recover!\n");
+
+					/* silent errors are very rare, and are not a signal that a disk */
+					/* is going to fail. So, we just continue marking the block as bad */
+					/* just like in scrub */
 					++silent_error;
-					goto bail;
+					silent_error_on_this_block = 1;
+					continue;
 				}
 			} else {
 				/* if until now the parity doesn't need to be update */
@@ -343,8 +351,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			}
 		}
 
-		/* if we have read all the data required, proceed with the parity */
-		if (!skip_this_block) {
+		/* if we have read all the data required and it's correct, proceed with the parity */
+		if (!error_on_this_block && !silent_error_on_this_block) {
 
 			/* updates the parity only if really needed */
 			if (parity_needs_to_be_updated) {
@@ -402,6 +410,9 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				/* we are also clearing any previous bad and rehash flag */
 				info_set(&state->infoarr, i, info_make(now, 0, 0));
 			}
+		} else if (silent_error_on_this_block) {
+			/* set the error status keeping the existing time and hash */
+			info_set(&state->infoarr, i, info_set_bad(info));
 		}
 
 		/* mark the state as needing write */
