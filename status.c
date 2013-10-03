@@ -178,13 +178,11 @@ int state_status(struct snapraid_state* state)
 		}
 	}
 
-	if (state->opt.gui) {
-		fprintf(stdlog, "summary:has_unsynched:%u\n", unsynched_blocks);
-		fprintf(stdlog, "summary:has_rehash:%u\n", rehash);
-		fprintf(stdlog, "summary:has_bad:%u\n", bad);
-		fprintf(stdlog, "time_count:%u\n", count);
-		fflush(stdlog);
-	}
+	fprintf(stdlog, "summary:has_unsynched:%u\n", unsynched_blocks);
+	fprintf(stdlog, "summary:has_rehash:%u\n", rehash);
+	fprintf(stdlog, "summary:has_bad:%u\n", bad);
+	fprintf(stdlog, "time_count:%u\n", count);
+	fflush(stdlog);
 
 	if (!count) {
 		fprintf(stderr, "The array is empty.\n");
@@ -195,18 +193,16 @@ int state_status(struct snapraid_state* state)
 	/* sort the info to get the time info */
 	qsort(infomap, count, sizeof(snapraid_info), info_time_compare);
 
-	if (state->opt.gui) {
-		/* info for making the graph */
-		i = 0;
-		while (i < count) {
-			unsigned j = i + 1;
-			while (j < count && info_get_time(infomap[i]) == info_get_time(infomap[j]))
-				++j;
-			fprintf(stdlog, "time:%"PRIu64":%u\n", (uint64_t)info_get_time(infomap[i]), j - i);
-			i = j;
-		}
-		fflush(stdlog);
+	/* info for making the graph */
+	i = 0;
+	while (i < count) {
+		unsigned j = i + 1;
+		while (j < count && info_get_time(infomap[i]) == info_get_time(infomap[j]))
+			++j;
+		fprintf(stdlog, "time:%"PRIu64":%u\n", (uint64_t)info_get_time(infomap[i]), j - i);
+		i = j;
 	}
+	fflush(stdlog);
 
 	oldest = info_get_time(infomap[0]);
 	median = info_get_time(infomap[count / 2]);

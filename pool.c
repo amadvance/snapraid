@@ -204,11 +204,13 @@ void state_pool(struct snapraid_state* state)
 		/* we ignore empty dirs in disk->dir */
 	}
 
-	if (!state->opt.gui) {
-		if (count)
-			printf("%u links created\n", count);
-		else
-			printf("No link created\n");
-	}
+	if (count)
+		printf("%u links created\n", count);
+	else
+		printf("No link created\n");
+
+	fprintf(stdlog, "summary:link::%u\n", count);
+	fprintf(stdlog, "summary:exit:ok\n");
+	fflush(stdlog);
 }
 

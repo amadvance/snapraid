@@ -453,15 +453,13 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			printf("Everything OK\n");
 	}
 
-	if (state->opt.gui) {
-		fprintf(stdlog, "summary:error_readwrite:%u\n", error);
-		fprintf(stdlog, "summary:error_data:%u\n", silent_error);
-		if (error + silent_error == 0)
-			fprintf(stdlog, "summary:exit:ok\n");
-		else
-			fprintf(stdlog, "summary:exit:error\n");
-		fflush(stdlog);
-	}
+	fprintf(stdlog, "summary:error_readwrite:%u\n", error);
+	fprintf(stdlog, "summary:error_data:%u\n", silent_error);
+	if (error + silent_error == 0)
+		fprintf(stdlog, "summary:exit:ok\n");
+	else
+		fprintf(stdlog, "summary:exit:error\n");
+	fflush(stdlog);
 
 bail:
 	for(j=0;j<diskmax;++j) {

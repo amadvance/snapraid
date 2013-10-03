@@ -482,13 +482,11 @@ static void crc32ctest(void)
 	}
 }
 
-void selftest(int gui)
+void selftest()
 {
-	if (gui) {
-		fprintf(stdlog, "selftest:\n");
-		fflush(stdlog);
-	}
-	
+	fprintf(stdlog, "selftest:\n");
+	fflush(stdlog);
+
 	printf("Self test...\n");
 
 	/* large file check */

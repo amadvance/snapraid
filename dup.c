@@ -123,12 +123,9 @@ void state_dup(struct snapraid_state* state)
 			if (dup) {
 				++count;
 				size += dup->file->size;
-				if (state->opt.gui) {
-					fprintf(stdlog, "dup:%s:%s:%s:%s:%"PRIu64": dup\n", disk->name, file->sub, dup->disk->name, dup->file->sub, dup->file->size);
-				} else {
-					printf("%"PRIu64" '%s%s'\n", file->size / (1024*1024), disk->dir, file->sub);
-					printf("dup '%s%s'\n", dup->disk->dir, dup->file->sub);
-				}
+				fprintf(stdlog, "dup:%s:%s:%s:%s:%"PRIu64": dup\n", disk->name, file->sub, dup->disk->name, dup->file->sub, dup->file->size);
+				printf("%"PRIu64" '%s%s'\n", file->size / (1024*1024), disk->dir, file->sub);
+				printf("dup '%s%s'\n", dup->disk->dir, dup->file->sub);
 				hash_free(hash);
 			} else {
 				tommy_hashdyn_insert(&hashset, &hash->nodeset, hash, hash32);
@@ -145,15 +142,13 @@ void state_dup(struct snapraid_state* state)
 	else
 		printf("No duplicate\n");
 
-	if (state->opt.gui) {
-		fprintf(stdlog, "summary:dup_count:%u\n", count);
-		fprintf(stdlog, "summary:dup_size:%"PRIu64"\n", size);
-		if (count == 0) {
-			fprintf(stdlog, "summary:exit:unique\n");
-		} else {
-			fprintf(stdlog, "summary:exit:dup\n");
-		}
-		fflush(stdlog);
+	fprintf(stdlog, "summary:dup_count:%u\n", count);
+	fprintf(stdlog, "summary:dup_size:%"PRIu64"\n", size);
+	if (count == 0) {
+		fprintf(stdlog, "summary:exit:unique\n");
+	} else {
+		fprintf(stdlog, "summary:exit:dup\n");
 	}
+	fflush(stdlog);
 }
 

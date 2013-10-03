@@ -1113,9 +1113,8 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 						goto bail;
 					}
 
-					if (state->opt.gui) {
-						fprintf(stdlog, "status:unrecoverable:%s:%s\n", handle[j].disk->name, file->sub);
-					} else if (state->opt.verbose) {
+					fprintf(stdlog, "status:unrecoverable:%s:%s\n", handle[j].disk->name, file->sub);
+					if (state->opt.verbose) {
 						printf("Unrecoverable '%s'\n", path);
 					}
 
@@ -1129,9 +1128,8 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					goto close_and_continue;
 				}
 
-				if (state->opt.gui) {
-					fprintf(stdlog, "status:recovered:%s:%s\n", handle[j].disk->name, file->sub);
-				} else if (state->opt.verbose) {
+				fprintf(stdlog, "status:recovered:%s:%s\n", handle[j].disk->name, file->sub);
+				if (state->opt.verbose) {
 					printf("Recovered '%s'\n", path);
 				}
 
@@ -1172,28 +1170,24 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				/* print just the final status */
 				if (file_flag_has(file, FILE_IS_DAMAGED)) {
 					if (!check) {
-						if (state->opt.gui) {
-							fprintf(stdlog, "status:damaged:%s:%s\n", handle[j].disk->name, file->sub);
-						} else if (state->opt.verbose) {
+						fprintf(stdlog, "status:damaged:%s:%s\n", handle[j].disk->name, file->sub);
+						if (state->opt.verbose) {
 							printf("Damaged '%s'\n", path);
 						}
 					} else {
-						if (state->opt.gui) {
-							fprintf(stdlog, "status:unrecoverable:%s:%s\n", handle[j].disk->name, file->sub);
-						} else if (state->opt.verbose) {
+						fprintf(stdlog, "status:unrecoverable:%s:%s\n", handle[j].disk->name, file->sub);
+						if (state->opt.verbose) {
 							printf("Unrecoverable '%s'\n", path);
 						}
 					}
 				} else if (file_flag_has(file, FILE_IS_FIXED)) {
-					if (state->opt.gui) {
-						fprintf(stdlog, "status:recoverable:%s:%s\n", handle[j].disk->name, file->sub);
-					} else if (state->opt.verbose) {
+					fprintf(stdlog, "status:recoverable:%s:%s\n", handle[j].disk->name, file->sub);
+					if (state->opt.verbose) {
 						printf("Recoverable '%s'\n", path);
 					}
 				} else {
-					if (state->opt.gui) {
-						fprintf(stdlog, "status:correct:%s:%s\n", handle[j].disk->name, file->sub);
-					} else if (state->opt.verbose) {
+					fprintf(stdlog, "status:correct:%s:%s\n", handle[j].disk->name, file->sub);
+					if (state->opt.verbose) {
 						printf("Correct '%s'\n", path);
 					}
 				}
@@ -1322,9 +1316,8 @@ close_and_continue:
 				fprintf(stdlog, "fixed:%s:%s: Fixed empty file\n", disk->name, file->sub);
 				++recovered_error;
 
-				if (state->opt.gui) {
-					fprintf(stdlog, "status:recovered:%s:%s\n", disk->name, file->sub);
-				} else if (state->opt.verbose) {
+				fprintf(stdlog, "status:recovered:%s:%s\n", disk->name, file->sub);
+				if (state->opt.verbose) {
 					printf("Recovered '%s%s'\n", disk->dir, file->sub);
 				}
 			}
@@ -1488,9 +1481,8 @@ close_and_continue:
 					++recovered_error;
 				}
 
-				if (state->opt.gui) {
-					fprintf(stdlog, "status:recovered:%s:%s\n", disk->name, link->sub);
-				} else if (state->opt.verbose) {
+				fprintf(stdlog, "status:recovered:%s:%s\n", disk->name, link->sub);
+				if (state->opt.verbose) {
 					printf("Recovered '%s%s'\n", disk->dir, link->sub);
 				}
 			}
@@ -1557,9 +1549,8 @@ close_and_continue:
 				fprintf(stdlog, "dir_fixed:%s:%s: Fixed dir error\n", disk->name, dir->sub);
 				++recovered_error;
 
-				if (state->opt.gui) {
-					fprintf(stdlog, "status:ok:%s:%s\n", disk->name, dir->sub);
-				} else if (state->opt.verbose) {
+				fprintf(stdlog, "status:ok:%s:%s\n", disk->name, dir->sub);
+				if (state->opt.verbose) {
 					printf("Recovered '%s%s'\n", disk->dir, dir->sub);
 				}
 			}
@@ -1650,34 +1641,32 @@ bail:
 		printf("Everything OK\n");
 	}
 
-	if (state->opt.gui) {
-		fprintf(stdlog, "summary:error:%u\n", error);
-		if (fix)
-			fprintf(stdlog, "summary:error_recovered:%u\n", recovered_error);
-		if (check)
-			fprintf(stdlog, "summary:error_unrecoverable:%u\n", unrecoverable_error);
-		if (fix) {
-			if (error + recovered_error + unrecoverable_error == 0)
-				fprintf(stdlog, "summary:exit:ok\n");
-			else if (unrecoverable_error == 0)
-				fprintf(stdlog, "summary:exit:recovered\n");
-			else
-				fprintf(stdlog, "summary:exit:unrecoverable\n");
-		} else if (check) {
-			if (error + unrecoverable_error == 0)
-				fprintf(stdlog, "summary:exit:ok\n");
-			else if (unrecoverable_error == 0)
-				fprintf(stdlog, "summary:exit:recoverable\n");
-			else
-				fprintf(stdlog, "summary:exit:unrecoverable\n");
-		} else { /* audit only */
-			if (error == 0)
-				fprintf(stdlog, "summary:exit:ok\n");
-			else
-				fprintf(stdlog, "summary:exit:error\n");
-		}
-		fflush(stdlog);
+	fprintf(stdlog, "summary:error:%u\n", error);
+	if (fix)
+		fprintf(stdlog, "summary:error_recovered:%u\n", recovered_error);
+	if (check)
+		fprintf(stdlog, "summary:error_unrecoverable:%u\n", unrecoverable_error);
+	if (fix) {
+		if (error + recovered_error + unrecoverable_error == 0)
+			fprintf(stdlog, "summary:exit:ok\n");
+		else if (unrecoverable_error == 0)
+			fprintf(stdlog, "summary:exit:recovered\n");
+		else
+			fprintf(stdlog, "summary:exit:unrecoverable\n");
+	} else if (check) {
+		if (error + unrecoverable_error == 0)
+			fprintf(stdlog, "summary:exit:ok\n");
+		else if (unrecoverable_error == 0)
+			fprintf(stdlog, "summary:exit:recoverable\n");
+		else
+			fprintf(stdlog, "summary:exit:unrecoverable\n");
+	} else { /* audit only */
+		if (error == 0)
+			fprintf(stdlog, "summary:exit:ok\n");
+		else
+			fprintf(stdlog, "summary:exit:error\n");
 	}
+	fflush(stdlog);
 
 	free(failed);
 	free(failed_map);

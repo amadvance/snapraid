@@ -270,6 +270,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	STREAM* f;
 	unsigned line;
 	tommy_node* i;
+	unsigned l;
 
 	/* copy the options */
 	state->opt = *opt;
@@ -280,11 +281,9 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	
 	state->command = command;
 
-	if (state->opt.gui) {
-		fprintf(stdlog, "version:%s\n", PACKAGE_VERSION);
-		fprintf(stdlog, "conf:%s\n", path);
-		fflush(stdlog);
-	}
+	fprintf(stdlog, "version:%s\n", PACKAGE_VERSION);
+	fprintf(stdlog, "conf:%s\n", path);
+	fflush(stdlog);
 
 	f = sopen_read(path);
 	if (!f) {
@@ -643,30 +642,25 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 	/* intentionally not set the prevhashseed, if used valgrind will warn about it */
 
-	if (state->opt.gui) {
-		tommy_node* i;
-		unsigned l;
-
-		fprintf(stdlog, "blocksize:%u\n", state->block_size);
-		for(i=state->disklist;i!=0;i=i->next) {
-			struct snapraid_disk* disk = i->data;
-			fprintf(stdlog, "disk:%s:%s\n", disk->name, disk->dir);
-		}
-
-		switch (state->level) {
-		case 1 : fprintf(stdlog, "mode:raid5\n"); break;
-		case 2 : fprintf(stdlog, "mode:raid6\n"); break;
-		case 3 : fprintf(stdlog, "mode:raidTP\n"); break;
-		case 4 : fprintf(stdlog, "mode:raidQP\n"); break;
-		}
-
-		for(l=0;l<state->level;++l) {
-			fprintf(stdlog, "%s:%s\n", lev_config_name(l), state->parity_path[l]);
-		}
-		if (state->pool[0] != 0)
-			fprintf(stdlog, "pool:%s\n", state->pool);
-		fflush(stdlog);
+	fprintf(stdlog, "blocksize:%u\n", state->block_size);
+	for(i=state->disklist;i!=0;i=i->next) {
+		struct snapraid_disk* disk = i->data;
+		fprintf(stdlog, "disk:%s:%s\n", disk->name, disk->dir);
 	}
+
+	switch (state->level) {
+	case 1 : fprintf(stdlog, "mode:raid5\n"); break;
+	case 2 : fprintf(stdlog, "mode:raid6\n"); break;
+	case 3 : fprintf(stdlog, "mode:raidTP\n"); break;
+	case 4 : fprintf(stdlog, "mode:raidQP\n"); break;
+	}
+
+	for(l=0;l<state->level;++l) {
+		fprintf(stdlog, "%s:%s\n", lev_config_name(l), state->parity_path[l]);
+	}
+	if (state->pool[0] != 0)
+		fprintf(stdlog, "pool:%s\n", state->pool);
+	fflush(stdlog);
 }
 
 /**
@@ -3119,10 +3113,8 @@ void state_read(struct snapraid_state* state)
 		struct snapraid_content* content = node->data;
 		pathcpy(path, sizeof(path), content->content);
 
-		if (state->opt.gui) {
-			fprintf(stdlog, "content:%s\n", path);
-			fflush(stdlog);
-		}
+		fprintf(stdlog, "content:%s\n", path);
+		fflush(stdlog);
 		printf("Loading state from %s...\n", path);
 
 		f = sopen_read(path);

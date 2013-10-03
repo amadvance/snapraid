@@ -79,13 +79,10 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-V, --version         ", "-V") "  Version\n");
 }
 
-void memory(int gui)
+void memory(void)
 {
-	if (gui) {
-		fprintf(stdlog, "memory:used:%"PRIu64"\n", (uint64_t)malloc_counter());
-	} else  {
-		printf("Using %u MiB of memory.\n", (unsigned)(malloc_counter() / 1024 / 1024));
-	}
+	fprintf(stdlog, "memory:used:%"PRIu64"\n", (uint64_t)malloc_counter());
+	printf("Using %u MiB of memory.\n", (unsigned)(malloc_counter() / 1024 / 1024));
 }
 
 #define OPT_TEST_SKIP_SELF 256
@@ -549,7 +546,7 @@ int main(int argc, char* argv[])
 	}
 
 	if (!opt.skip_self)
-		selftest(opt.gui);
+		selftest();
 
 	state_init(&state);
 
@@ -592,7 +589,7 @@ int main(int argc, char* argv[])
 
 		state_scan(&state, 0);
 
-		memory(state.opt.gui);
+		memory();
 
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);
@@ -639,7 +636,7 @@ int main(int argc, char* argv[])
 		/* apply the command line filter */
 		state_filter(&state, &filterlist_file, &filterlist_disk, filter_missing, filter_error);
 
-		memory(state.opt.gui);
+		memory();
 
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);
@@ -659,7 +656,7 @@ int main(int argc, char* argv[])
 	} else if (operation == OPERATION_SCRUB) {
 		state_read(&state);
 
-		memory(state.opt.gui);
+		memory();
 
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);
@@ -678,11 +675,11 @@ int main(int argc, char* argv[])
 
 		state_write(&state);
 
-		memory(state.opt.gui);
+		memory();
 	} else if (operation == OPERATION_STATUS) {
 		state_read(&state);
 
-		memory(state.opt.gui);
+		memory();
 
 		state_status(&state);
 	} else if (operation == OPERATION_DUP) {
@@ -702,7 +699,7 @@ int main(int argc, char* argv[])
 		/* apply the command line filter */
 		state_filter(&state, &filterlist_file, &filterlist_disk, filter_missing, filter_error);
 
-		memory(state.opt.gui);
+		memory();
 
 		/* intercept Ctrl+C */
 		signal(SIGINT, &signal_handler);
