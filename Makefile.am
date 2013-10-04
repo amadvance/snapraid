@@ -16,6 +16,7 @@ snapraid_SOURCES = \
 	scrub.c \
 	status.c \
 	dup.c \
+	list.c \
 	pool.c \
 	parity.c \
 	handle.c \
@@ -123,6 +124,7 @@ check-local:
 	echo --- As empty, sync and check forcing murmur3
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) diff
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) dup
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) list
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-murmur3 sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 if HAVE_SYMLINK
@@ -134,10 +136,11 @@ endif
 	$(TESTENV) ./mktest$(EXEEXT) generate 1 5 $(CHECKCOUNT) $(CHECKSIZE)
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) diff > test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) diff -G > test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) dup
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) dup -G
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-order-physical sync
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
+	echo --- Some commands with a not empty array
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) dup -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) list -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status -l test.log
 if HAVE_SYMLINK
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAID5) pool
 endif
@@ -162,10 +165,12 @@ endif
 	ln test/disk3/file_hardlink1 test/disk3/file_hardlink2
 	ln test/disk3/file_hardlink1 test/disk3/file_hardlink3
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(RAID5) diff > test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(RAID5) dup
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-fallocate -c $(RAID5) --test-force-order-inode sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-sequential -c $(RAID5) check
+	echo --- Some commands with a not empty array
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(RAID5) dup
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(RAID5) list
 if HAVE_SYMLINK
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAID5) pool
 endif

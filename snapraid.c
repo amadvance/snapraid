@@ -207,11 +207,12 @@ void signal_handler(int signal)
 #define OPERATION_FIX 3
 #define OPERATION_DRY 4
 #define OPERATION_DUP 5
-#define OPERATION_POOL 6
-#define OPERATION_REHASH 7
-#define OPERATION_SCRUB 8
-#define OPERATION_STATUS 9
-#define OPERATION_REWRITE 10
+#define OPERATION_LIST 6
+#define OPERATION_POOL 7
+#define OPERATION_REHASH 8
+#define OPERATION_SCRUB 9
+#define OPERATION_STATUS 10
+#define OPERATION_REWRITE 11
 
 int main(int argc, char* argv[])
 {
@@ -457,6 +458,8 @@ int main(int argc, char* argv[])
 		operation = OPERATION_DRY;
 	} else if (strcmp(argv[optind], "dup") == 0) {
 		operation = OPERATION_DUP;
+	} else if (strcmp(argv[optind], "list") == 0) {
+		operation = OPERATION_LIST;
 	} else if (strcmp(argv[optind], "pool") == 0) {
 		operation = OPERATION_POOL;
 	} else if (strcmp(argv[optind], "rehash") == 0) {
@@ -686,6 +689,10 @@ int main(int argc, char* argv[])
 		state_read(&state);
 
 		state_dup(&state);
+	} else if (operation == OPERATION_LIST) {
+		state_read(&state);
+
+		state_list(&state);
 	} else if (operation == OPERATION_POOL) {
 		state_read(&state);
 

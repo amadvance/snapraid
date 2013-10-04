@@ -209,7 +209,7 @@ void state_pool(struct snapraid_state* state)
 	else
 		printf("No link created\n");
 
-	fprintf(stdlog, "summary:link::%u\n", count);
+	fprintf(stdlog, "summary:link_count::%u\n", count);
 	fprintf(stdlog, "summary:exit:ok\n");
 	fflush(stdlog);
 }

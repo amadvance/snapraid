@@ -181,6 +181,11 @@ int state_status(struct snapraid_state* state);
 void state_dup(struct snapraid_state* state);
 
 /**
+ * List content.
+ */
+void state_list(struct snapraid_state* state);
+
+/**
  * Creates pool tree.
  */
 void state_pool(struct snapraid_state* state);

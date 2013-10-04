@@ -5,9 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
-* Remove/Reduce the opt.gui uses. We can now always output to stdlog becase
-it never go to screen.
-
 * Detect files moved from one disk to another. We won't be able to reuse
 parity, but we can reuse the hash to check that the file was moved
 correctly.
