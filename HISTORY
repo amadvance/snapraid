@@ -26,8 +26,8 @@ SnapRAID HISTORY
  * Faster parity computation for ARM 64 bit CPU.
  * Reduced memory usage avoiding to allocate unnecessary memory.
 
-4.2 2013/10 (BETA)
-==================
+4.2 2013/10
+===========
  * Fixed the wrong warning about physical offsets not supported caused
    by files not having a real offset because too small.
    For example, in NTFS it's possible to store such files in the MFT.
