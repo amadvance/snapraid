@@ -133,6 +133,53 @@ int main(void)
 	}
 	printf("};\n\n");
 
+	/* x4l */
+	printf("#define GFX4L { ");
+	for(i=0;i<16;++i) {
+		v = gfmul(0x4, i);
+		printf("0x%02x", (unsigned)v);
+		if (i != 15)
+			printf(", ");
+	}
+	printf(" }\n");
+
+	/* x4h */
+	printf("#define GFX4H { ");
+	for(i=0;i<16;++i) {
+		v = gfmul(0x40, i);
+		printf("0x%02x", (unsigned)v);
+		if (i != 15)
+			printf(", ");
+	}
+	printf(" }\n");
+
+	/* x8l */
+	printf("#define GFX8L { ");
+	for(i=0;i<16;++i) {
+		v = gfmul(0x8, i);
+		printf("0x%02x", (unsigned)v);
+		if (i != 15)
+			printf(", ");
+	}
+	printf(" }\n");
+
+	/* x8h */
+	printf("#define GFX8H { ");
+	for(i=0;i<16;++i) {
+		v = gfmul(0x80, i);
+		printf("0x%02x", (unsigned)v);
+		if (i != 15)
+			printf(", ");
+	}
+	printf(" }\n");
+
+	/* poly */
+	printf("#define GFPOLY8 { 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d } \n");
+	printf("#define GFPOLY16 { 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d } \n");
+	printf("#define GFMASK16 { 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f } \n");
+
+	printf("\n");
+
 	return 0;
 }
 

@@ -79,29 +79,42 @@ void raid_recov_3data(int x, int y, int z, int i, int j, int k, unsigned char** 
 void raid_recov_4data(int x, int y, int z, int v, int i, int j, int k, int l, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
 
 /**
+ * Gets the name of the selected function to compute parity.
+ */
+const char* raid5_tag(void);
+const char* raid6_tag(void);
+const char* raidTP_tag(void);
+const char* raidQP_tag(void);
+
+/**
  * Internal specialized parity computation.
  * Only for testing.
  */
-void raid5_int32r2(unsigned char** vbuf, unsigned data, unsigned size);
-void raid5_int64r2(unsigned char** vbuf, unsigned data, unsigned size);
-void raid5_mmxr4(unsigned char** vbuf, unsigned data, unsigned size);
-void raid5_sse2r4(unsigned char** vbuf, unsigned data, unsigned size);
-void raid5_sse2r8(unsigned char** vbuf, unsigned data, unsigned size);
-void raid6_int32r2(unsigned char** vbuf, unsigned data, unsigned size);
-void raid6_int64r2(unsigned char** vbuf, unsigned data, unsigned size);
-void raid6_mmxr2(unsigned char** vbuf, unsigned data, unsigned size);
-void raid6_sse2r2(unsigned char** vbuf, unsigned data, unsigned size);
-void raid6_sse2r4(unsigned char** vbuf, unsigned data, unsigned size);
-void raidTP_int32r2(unsigned char** vbuf, unsigned data, unsigned size);
-void raidTP_int64r2(unsigned char** vbuf, unsigned data, unsigned size);
-void raidTP_mmxr1(unsigned char** vbuf, unsigned data, unsigned size);
-void raidTP_sse2r1(unsigned char** vbuf, unsigned data, unsigned size);
-void raidTP_sse2r2(unsigned char** vbuf, unsigned data, unsigned size);
-void raidQP_int32r2(unsigned char** vbuf, unsigned data, unsigned size);
-void raidQP_int64r2(unsigned char** vbuf, unsigned data, unsigned size);
-void raidQP_mmxr1(unsigned char** vbuf, unsigned data, unsigned size);
-void raidQP_sse2r1(unsigned char** vbuf, unsigned data, unsigned size);
-void raidQP_sse2r2(unsigned char** vbuf, unsigned data, unsigned size);
+void raid5_int32(unsigned char** vbuf, unsigned data, unsigned size);
+void raid5_int64(unsigned char** vbuf, unsigned data, unsigned size);
+void raid5_mmx(unsigned char** vbuf, unsigned data, unsigned size);
+void raid5_sse2(unsigned char** vbuf, unsigned data, unsigned size);
+void raid5_sse2ext(unsigned char** vbuf, unsigned data, unsigned size);
+void raid6_int32(unsigned char** vbuf, unsigned data, unsigned size);
+void raid6_int64(unsigned char** vbuf, unsigned data, unsigned size);
+void raid6_mmx(unsigned char** vbuf, unsigned data, unsigned size);
+void raid6_sse2(unsigned char** vbuf, unsigned data, unsigned size);
+void raid6_sse2ext(unsigned char** vbuf, unsigned data, unsigned size);
+void raidTP_int32(unsigned char** vbuf, unsigned data, unsigned size);
+void raidTP_int64(unsigned char** vbuf, unsigned data, unsigned size);
+void raidTP_mmx(unsigned char** vbuf, unsigned data, unsigned size);
+void raidTP_sse2(unsigned char** vbuf, unsigned data, unsigned size);
+void raidTP_sse2ext(unsigned char** vbuf, unsigned data, unsigned size);
+void raidTP_ssse3(unsigned char** vbuf, unsigned data, unsigned size);
+void raidTP_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size);
+void raidQP_int32(unsigned char** vbuf, unsigned data, unsigned size);
+void raidQP_int64(unsigned char** vbuf, unsigned data, unsigned size);
+void raidQP_mmx(unsigned char** vbuf, unsigned data, unsigned size);
+void raidQP_sse2(unsigned char** vbuf, unsigned data, unsigned size);
+void raidQP_sse2ext(unsigned char** vbuf, unsigned data, unsigned size);
+void raidQP_ssse3(unsigned char** vbuf, unsigned data, unsigned size);
+void raidQP_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size);
+void raidQP_avxext(unsigned char** vbuf, unsigned data, unsigned size);
 
 #endif
 

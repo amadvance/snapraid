@@ -48,9 +48,9 @@
 #define v_64(p) (*(uint64_t*)&(p))
 
 /*
- * RAID5 unrolled-by-2 C implementation
+ * RAID5 32bit C implementation
  */
-void raid5_int32r2(unsigned char** vbuf, unsigned data, unsigned size)
+void raid5_int32(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	int d, l;
@@ -75,9 +75,9 @@ void raid5_int32r2(unsigned char** vbuf, unsigned data, unsigned size)
 }
 
 /*
- * RAID5 unrolled-by-2 C implementation
+ * RAID5 64bit C implementation
  */
-void raid5_int64r2(unsigned char** vbuf, unsigned data, unsigned size)
+void raid5_int64(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	int d, l;
@@ -103,9 +103,9 @@ void raid5_int64r2(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__i386__) || defined(__x86_64__)
 /*
- * RAID5 unrolled-by-4 MMX implementation
+ * RAID5 MMX implementation
  */
-void raid5_mmxr4(unsigned char** vbuf, unsigned data, unsigned size)
+void raid5_mmx(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	int d, l;
@@ -139,9 +139,9 @@ void raid5_mmxr4(unsigned char** vbuf, unsigned data, unsigned size)
 }
 
 /*
- * RAID5 unrolled-by-4 SSE2 implementation
+ * RAID5 SSE2 implementation
  */
-void raid5_sse2r4(unsigned char** vbuf, unsigned data, unsigned size)
+void raid5_sse2(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	int d, l;
@@ -177,10 +177,10 @@ void raid5_sse2r4(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__x86_64__)
 /*
- * RAID5 unrolled-by-8 SSE2 implementation
+ * RAID5 SSE2 implementation
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid5_sse2r8(unsigned char** vbuf, unsigned data, unsigned size)
+void raid5_sse2ext(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	int d, l;
@@ -255,9 +255,9 @@ __attribute__((always_inline)) static inline uint64_t x2_64(uint64_t v)
 }
 
 /*
- * RAID6 unrolled-by-2 C implementation
+ * RAID6 32bit C implementation
  */
-void raid6_int32r2(unsigned char** vbuf, unsigned data, unsigned size)
+void raid6_int32(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -295,9 +295,9 @@ void raid6_int32r2(unsigned char** vbuf, unsigned data, unsigned size)
 }
 
 /*
- * RAID6 unrolled-by-2 C implementation
+ * RAID6 64bit C implementation
  */
-void raid6_int64r2(unsigned char** vbuf, unsigned data, unsigned size)
+void raid6_int64(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -335,16 +335,16 @@ void raid6_int64r2(unsigned char** vbuf, unsigned data, unsigned size)
 }
 
 #if defined(__i386__) || defined(__x86_64__)
-static const struct raid_mmx_poly {
-	uint64_t poly;
-} raid_mmx_poly = {
-	0x1d1d1d1d1d1d1d1dULL,
+static const struct raid_8_const {
+	unsigned char poly[8];
+} raid_8_const __attribute__((aligned(8))) = {
+	GFPOLY8
 };
 
 /*
- * RAID6 unrolled-by-2 MMX implementation
+ * RAID6 MMX implementation
  */
-void raid6_mmxr2(unsigned char** vbuf, unsigned data, unsigned size)
+void raid6_mmx(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -355,9 +355,7 @@ void raid6_mmxr2(unsigned char** vbuf, unsigned data, unsigned size)
 	p = vbuf[data];
 	q = vbuf[data+1];
 
-	asm volatile("movq %0,%%mm7" : : "m" (raid_mmx_poly.poly));
-	asm volatile("pxor %mm4,%mm4");
-	asm volatile("pxor %mm5,%mm5");
+	asm volatile("movq %0,%%mm7" : : "m" (raid_8_const.poly[0]));
 
 	for(o=0;o<size;o+=16) {
 		asm volatile("movq %0,%%mm0" : : "m" (vbuf[l][o]));
@@ -365,6 +363,8 @@ void raid6_mmxr2(unsigned char** vbuf, unsigned data, unsigned size)
 		asm volatile("movq %mm0,%mm2");
 		asm volatile("movq %mm1,%mm3");
 		for(d=l-1;d>=0;--d) {
+			asm volatile("pxor %mm4,%mm4");
+			asm volatile("pxor %mm5,%mm5");
 			asm volatile("pcmpgtb %mm2,%mm4");
 			asm volatile("pcmpgtb %mm3,%mm5");
 			asm volatile("paddb %mm2,%mm2");
@@ -380,9 +380,6 @@ void raid6_mmxr2(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("pxor %mm5,%mm1");
 			asm volatile("pxor %mm4,%mm2");
 			asm volatile("pxor %mm5,%mm3");
-
-			asm volatile("pxor %mm4,%mm4");
-			asm volatile("pxor %mm5,%mm5");
 		}
 		asm volatile("movq %%mm0,%0" : "=m" (p[o]));
 		asm volatile("movq %%mm1,%0" : "=m" (p[o+8]));
@@ -393,16 +390,26 @@ void raid6_mmxr2(unsigned char** vbuf, unsigned data, unsigned size)
 	asm volatile("emms" : : : "memory");
 }
 
-static const struct raid_sse_poly {
-	uint64_t poly[2];
-} raid_sse_poly  __attribute__((aligned(16))) = {
-	{ 0x1d1d1d1d1d1d1d1dULL, 0x1d1d1d1d1d1d1d1dULL },
+static const struct raid_16_const {
+	unsigned char poly[16];
+	unsigned char low_nibble[16];
+	unsigned char x8l[16];
+	unsigned char x8h[16];
+	unsigned char x4l[16];
+	unsigned char x4h[16];
+} raid_16_const  __attribute__((aligned(16))) = {
+	GFPOLY16,
+	GFMASK16,
+	GFX8L,
+	GFX8H,
+	GFX4L,
+	GFX4H,
 };
 
 /*
- * RAID6 unrolled-by-2 SSE2 implementation
+ * RAID6 SSE2 implementation
  */
-void raid6_sse2r2(unsigned char** vbuf, unsigned data, unsigned size)
+void raid6_sse2(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -413,9 +420,7 @@ void raid6_sse2r2(unsigned char** vbuf, unsigned data, unsigned size)
 	p = vbuf[data];
 	q = vbuf[data+1];
 
-	asm volatile("movdqa %0,%%xmm7" : : "m" (raid_sse_poly.poly[0]));
-	asm volatile("pxor %xmm4,%xmm4");
-	asm volatile("pxor %xmm5,%xmm5");
+	asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.poly[0]));
 
 	for(o=0;o<size;o+=32) {
 		asm volatile("movdqa %0,%%xmm0" : : "m" (vbuf[l][o]));
@@ -423,6 +428,8 @@ void raid6_sse2r2(unsigned char** vbuf, unsigned data, unsigned size)
 		asm volatile("movdqa %xmm0,%xmm2");
 		asm volatile("movdqa %xmm1,%xmm3");
 		for(d=l-1;d>=0;--d) {
+			asm volatile("pxor %xmm4,%xmm4");
+			asm volatile("pxor %xmm5,%xmm5");
 			asm volatile("pcmpgtb %xmm2,%xmm4");
 			asm volatile("pcmpgtb %xmm3,%xmm5");
 			asm volatile("paddb %xmm2,%xmm2");
@@ -438,9 +445,6 @@ void raid6_sse2r2(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("pxor %xmm5,%xmm1");
 			asm volatile("pxor %xmm4,%xmm2");
 			asm volatile("pxor %xmm5,%xmm3");
-
-			asm volatile("pxor %xmm4,%xmm4");
-			asm volatile("pxor %xmm5,%xmm5");
 		}
 		asm volatile("movntdq %%xmm0,%0" : "=m" (p[o]));
 		asm volatile("movntdq %%xmm1,%0" : "=m" (p[o+16]));
@@ -454,10 +458,10 @@ void raid6_sse2r2(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__x86_64__)
 /*
- * RAID6 unrolled-by-4 SSE2 implementation
+ * RAID6 SSE2 implementation
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid6_sse2r4(unsigned char** vbuf, unsigned data, unsigned size)
+void raid6_sse2ext(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -468,11 +472,7 @@ void raid6_sse2r4(unsigned char** vbuf, unsigned data, unsigned size)
 	p = vbuf[data];
 	q = vbuf[data+1];
 
-	asm volatile("movdqa %0,%%xmm15" : : "m" (raid_sse_poly.poly[0]));
-	asm volatile("pxor %xmm8,%xmm8");
-	asm volatile("pxor %xmm9,%xmm9");
-	asm volatile("pxor %xmm10,%xmm10");
-	asm volatile("pxor %xmm11,%xmm11");
+	asm volatile("movdqa %0,%%xmm15" : : "m" (raid_16_const.poly[0]));
 
 	for(o=0;o<size;o+=64) {
 		asm volatile("movdqa %0,%%xmm0" : : "m" (vbuf[l][o]));
@@ -484,6 +484,10 @@ void raid6_sse2r4(unsigned char** vbuf, unsigned data, unsigned size)
 		asm volatile("movdqa %xmm2,%xmm6");
 		asm volatile("movdqa %xmm3,%xmm7");
 		for(d=l-1;d>=0;--d) {
+			asm volatile("pxor %xmm8,%xmm8");
+			asm volatile("pxor %xmm9,%xmm9");
+			asm volatile("pxor %xmm10,%xmm10");
+			asm volatile("pxor %xmm11,%xmm11");
 			asm volatile("pcmpgtb %xmm4,%xmm8");
 			asm volatile("pcmpgtb %xmm5,%xmm9");
 			asm volatile("pcmpgtb %xmm6,%xmm10");
@@ -513,11 +517,6 @@ void raid6_sse2r4(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("pxor %xmm9,%xmm5");
 			asm volatile("pxor %xmm10,%xmm6");
 			asm volatile("pxor %xmm11,%xmm7");
-
-			asm volatile("pxor %xmm8,%xmm8");
-			asm volatile("pxor %xmm9,%xmm9");
-			asm volatile("pxor %xmm10,%xmm10");
-			asm volatile("pxor %xmm11,%xmm11");
 		}
 		asm volatile("movntdq %%xmm0,%0" : "=m" (p[o]));
 		asm volatile("movntdq %%xmm1,%0" : "=m" (p[o+16]));
@@ -534,9 +533,9 @@ void raid6_sse2r4(unsigned char** vbuf, unsigned data, unsigned size)
 #endif
 
 /*
- * RAIDTP unrolled-by-2 C implementation
+ * RAIDTP 32bit C implementation
  */
-void raidTP_int32r2(unsigned char** vbuf, unsigned data, unsigned size)
+void raidTP_int32(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -586,9 +585,9 @@ void raidTP_int32r2(unsigned char** vbuf, unsigned data, unsigned size)
 }
 
 /*
- * RAIDTP unrolled-by-2 C implementation
+ * RAIDTP 64bit C implementation
  */
-void raidTP_int64r2(unsigned char** vbuf, unsigned data, unsigned size)
+void raidTP_int64(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -639,9 +638,9 @@ void raidTP_int64r2(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__i386__) || defined(__x86_64__)
 /*
- * RAIDTP unrolled-by-1 MMX implementation
+ * RAIDTP MMX implementation
  */
-void raidTP_mmxr1(unsigned char** vbuf, unsigned data, unsigned size)
+void raidTP_mmx(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -654,16 +653,16 @@ void raidTP_mmxr1(unsigned char** vbuf, unsigned data, unsigned size)
 	q = vbuf[data+1];
 	r = vbuf[data+2];
 
-	asm volatile("movq %0,%%mm7" : : "m" (raid_mmx_poly.poly));
-	asm volatile("pxor %mm4,%mm4");
-	asm volatile("pxor %mm5,%mm5");
-	asm volatile("pxor %mm6,%mm6");
+	asm volatile("movq %0,%%mm7" : : "m" (raid_8_const.poly[0]));
 
 	for(o=0;o<size;o+=8) {
 		asm volatile("movq %0,%%mm0" : : "m" (vbuf[l][o]));
 		asm volatile("movq %mm0,%mm1");
 		asm volatile("movq %mm0,%mm2");
 		for(d=l-1;d>=0;--d) {
+			asm volatile("pxor %mm4,%mm4");
+			asm volatile("pxor %mm5,%mm5");
+			asm volatile("pxor %mm6,%mm6");
 			asm volatile("pcmpgtb %mm1,%mm4");
 			asm volatile("pcmpgtb %mm2,%mm5");
 			asm volatile("paddb %mm1,%mm1");
@@ -681,10 +680,6 @@ void raidTP_mmxr1(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("pxor %mm3,%mm0");
 			asm volatile("pxor %mm3,%mm1");
 			asm volatile("pxor %mm3,%mm2");
-
-			asm volatile("pxor %mm4,%mm4");
-			asm volatile("pxor %mm5,%mm5");
-			asm volatile("pxor %mm6,%mm6");
 		}
 		asm volatile("movq %%mm0,%0" : "=m" (p[o]));
 		asm volatile("movq %%mm1,%0" : "=m" (q[o]));
@@ -697,9 +692,9 @@ void raidTP_mmxr1(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__i386__) || defined(__x86_64__)
 /*
- * RAIDTP unrolled-by-1 SSE2 implementation
+ * RAIDTP SSE2 implementation
  */
-void raidTP_sse2r1(unsigned char** vbuf, unsigned data, unsigned size)
+void raidTP_sse2(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -712,16 +707,16 @@ void raidTP_sse2r1(unsigned char** vbuf, unsigned data, unsigned size)
 	q = vbuf[data+1];
 	r = vbuf[data+2];
 
-	asm volatile("movdqa %0,%%xmm7" : : "m" (raid_sse_poly.poly[0]));
-	asm volatile("pxor %xmm4,%xmm4");
-	asm volatile("pxor %xmm5,%xmm5");
-	asm volatile("pxor %xmm6,%xmm6");
+	asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.poly[0]));
 
 	for(o=0;o<size;o+=16) {
 		asm volatile("movdqa %0,%%xmm0" : : "m" (vbuf[l][o]));
 		asm volatile("movdqa %xmm0,%xmm1");
 		asm volatile("movdqa %xmm0,%xmm2");
 		for(d=l-1;d>=0;--d) {
+			asm volatile("pxor %xmm4,%xmm4");
+			asm volatile("pxor %xmm5,%xmm5");
+			asm volatile("pxor %xmm6,%xmm6");
 			asm volatile("pcmpgtb %xmm1,%xmm4");
 			asm volatile("pcmpgtb %xmm2,%xmm5");
 			asm volatile("paddb %xmm1,%xmm1");
@@ -739,10 +734,6 @@ void raidTP_sse2r1(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("pxor %xmm3,%xmm0");
 			asm volatile("pxor %xmm3,%xmm1");
 			asm volatile("pxor %xmm3,%xmm2");
-
-			asm volatile("pxor %xmm4,%xmm4");
-			asm volatile("pxor %xmm5,%xmm5");
-			asm volatile("pxor %xmm6,%xmm6");
 		}
 		asm volatile("movntdq %%xmm0,%0" : "=m" (p[o]));
 		asm volatile("movntdq %%xmm1,%0" : "=m" (q[o]));
@@ -753,12 +744,11 @@ void raidTP_sse2r1(unsigned char** vbuf, unsigned data, unsigned size)
 }
 #endif
 
-#if defined(__x86_64__)
+#if defined(__i386__) || defined(__x86_64__)
 /*
- * RAIDTP unrolled-by-2 SSE2 implementation
- * Note that it uses 16 registers, meaning that x64 is required.
+ * RAIDTP SSSE3 implementation
  */
-void raidTP_sse2r2(unsigned char** vbuf, unsigned data, unsigned size)
+void raidTP_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -771,13 +761,64 @@ void raidTP_sse2r2(unsigned char** vbuf, unsigned data, unsigned size)
 	q = vbuf[data+1];
 	r = vbuf[data+2];
 
-	asm volatile("movdqa %0,%%xmm7" : : "m" (raid_sse_poly.poly[0]));
-	asm volatile("pxor %xmm4,%xmm4");
-	asm volatile("pxor %xmm5,%xmm5");
-	asm volatile("pxor %xmm6,%xmm6");
-	asm volatile("pxor %xmm12,%xmm12");
-	asm volatile("pxor %xmm13,%xmm13");
-	asm volatile("pxor %xmm14,%xmm14");
+	asm volatile("movdqa %0,%%xmm3" : : "m" (raid_16_const.low_nibble[0]));
+	asm volatile("movdqa %0,%%xmm5" : : "m" (raid_16_const.x4l[0]));
+	asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.poly[0]));
+
+	for(o=0;o<size;o+=16) {
+		asm volatile("movdqa %0,%%xmm0" : : "m" (vbuf[l][o]));
+		asm volatile("movdqa %xmm0,%xmm1");
+		asm volatile("movdqa %xmm0,%xmm2");
+		for(d=l-1;d>=0;--d) {
+			asm volatile("pxor %xmm4,%xmm4");
+			asm volatile("pcmpgtb %xmm1,%xmm4");
+			asm volatile("paddb %xmm1,%xmm1");
+			asm volatile("pand %xmm7,%xmm4");
+			asm volatile("pxor %xmm4,%xmm1");
+
+			asm volatile("movdqa %0,%%xmm6" : : "m" (raid_16_const.x4h[0]));
+			asm volatile("movdqa %xmm2,%xmm4");
+			asm volatile("psraw  $4,%xmm2");
+			asm volatile("pand   %xmm3,%xmm4");
+			asm volatile("pand   %xmm3,%xmm2");
+			asm volatile("pshufb %xmm2,%xmm6");
+			asm volatile("movdqa %xmm5,%xmm2");
+			asm volatile("pshufb %xmm4,%xmm2");
+			asm volatile("pxor   %xmm6,%xmm2");
+
+			asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[d][o]));
+			asm volatile("pxor %xmm4,%xmm0");
+			asm volatile("pxor %xmm4,%xmm1");
+			asm volatile("pxor %xmm4,%xmm2");
+		}
+		asm volatile("movntdq %%xmm0,%0" : "=m" (p[o]));
+		asm volatile("movntdq %%xmm1,%0" : "=m" (q[o]));
+		asm volatile("movntdq %%xmm2,%0" : "=m" (r[o]));
+	}
+
+	asm volatile("sfence" : : : "memory");
+}
+#endif
+
+#if defined(__x86_64__)
+/*
+ * RAIDTP SSE2 implementation
+ * Note that it uses 16 registers, meaning that x64 is required.
+ */
+void raidTP_sse2ext(unsigned char** vbuf, unsigned data, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	int d, l;
+	unsigned o;
+
+	l = data - 1;
+	p = vbuf[data];
+	q = vbuf[data+1];
+	r = vbuf[data+2];
+
+	asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.poly[0]));
 
 	for(o=0;o<size;o+=32) {
 		asm volatile("movdqa %0,%%xmm0" : : "m" (vbuf[l][o]));
@@ -787,6 +828,12 @@ void raidTP_sse2r2(unsigned char** vbuf, unsigned data, unsigned size)
 		asm volatile("movdqa %xmm0,%xmm2");
 		asm volatile("movdqa %xmm8,%xmm10");
 		for(d=l-1;d>=0;--d) {
+			asm volatile("pxor %xmm4,%xmm4");
+			asm volatile("pxor %xmm5,%xmm5");
+			asm volatile("pxor %xmm6,%xmm6");
+			asm volatile("pxor %xmm12,%xmm12");
+			asm volatile("pxor %xmm13,%xmm13");
+			asm volatile("pxor %xmm14,%xmm14");
 			asm volatile("pcmpgtb %xmm1,%xmm4");
 			asm volatile("pcmpgtb %xmm2,%xmm5");
 			asm volatile("pcmpgtb %xmm9,%xmm12");
@@ -820,13 +867,88 @@ void raidTP_sse2r2(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("pxor %xmm11,%xmm8");
 			asm volatile("pxor %xmm11,%xmm9");
 			asm volatile("pxor %xmm11,%xmm10");
+		}
+		asm volatile("movntdq %%xmm0,%0" : "=m" (p[o]));
+		asm volatile("movntdq %%xmm8,%0" : "=m" (p[o+16]));
+		asm volatile("movntdq %%xmm1,%0" : "=m" (q[o]));
+		asm volatile("movntdq %%xmm9,%0" : "=m" (q[o+16]));
+		asm volatile("movntdq %%xmm2,%0" : "=m" (r[o]));
+		asm volatile("movntdq %%xmm10,%0" : "=m" (r[o+16]));
+	}
 
+	asm volatile("sfence" : : : "memory");
+}
+#endif
+
+#if defined(__x86_64__)
+/*
+ * RAIDTP SSSE3 implementation
+ * Note that it uses 16 registers, meaning that x64 is required.
+ */
+void raidTP_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	int d, l;
+	unsigned o;
+
+	l = data - 1;
+	p = vbuf[data];
+	q = vbuf[data+1];
+	r = vbuf[data+2];
+
+	asm volatile("movdqa %0,%%xmm3" : : "m" (raid_16_const.low_nibble[0]));
+	asm volatile("movdqa %0,%%xmm5" : : "m" (raid_16_const.x4l[0]));
+	asm volatile("movdqa %0,%%xmm6" : : "m" (raid_16_const.x4h[0]));
+	asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.poly[0]));
+
+	for(o=0;o<size;o+=32) {
+		asm volatile("movdqa %0,%%xmm0" : : "m" (vbuf[l][o]));
+		asm volatile("movdqa %0,%%xmm8" : : "m" (vbuf[l][o+16]));
+		asm volatile("movdqa %xmm0,%xmm1");
+		asm volatile("movdqa %xmm8,%xmm9");
+		asm volatile("movdqa %xmm0,%xmm2");
+		asm volatile("movdqa %xmm8,%xmm10");
+		for(d=l-1;d>=0;--d) {
 			asm volatile("pxor %xmm4,%xmm4");
-			asm volatile("pxor %xmm5,%xmm5");
-			asm volatile("pxor %xmm6,%xmm6");
 			asm volatile("pxor %xmm12,%xmm12");
-			asm volatile("pxor %xmm13,%xmm13");
-			asm volatile("pxor %xmm14,%xmm14");
+			asm volatile("pcmpgtb %xmm1,%xmm4");
+			asm volatile("pcmpgtb %xmm9,%xmm12");
+			asm volatile("paddb %xmm1,%xmm1");
+			asm volatile("paddb %xmm9,%xmm9");
+			asm volatile("pand %xmm7,%xmm4");
+			asm volatile("pand %xmm7,%xmm12");
+			asm volatile("pxor %xmm4,%xmm1");
+			asm volatile("pxor %xmm12,%xmm9");
+
+			asm volatile("movdqa %xmm6,%xmm13");
+			asm volatile("movdqa %xmm6,%xmm14");
+			asm volatile("movdqa %xmm2,%xmm4");
+			asm volatile("movdqa %xmm10,%xmm12");
+			asm volatile("psraw  $4,%xmm2");
+			asm volatile("psraw  $4,%xmm10");
+			asm volatile("pand   %xmm3,%xmm4");
+			asm volatile("pand   %xmm3,%xmm12");
+			asm volatile("pand   %xmm3,%xmm2");
+			asm volatile("pand   %xmm3,%xmm10");
+			asm volatile("pshufb %xmm2,%xmm13");
+			asm volatile("pshufb %xmm10,%xmm14");
+			asm volatile("movdqa %xmm5,%xmm2");
+			asm volatile("movdqa %xmm5,%xmm10");
+			asm volatile("pshufb %xmm4,%xmm2");
+			asm volatile("pshufb %xmm12,%xmm10");
+			asm volatile("pxor   %xmm13,%xmm2");
+			asm volatile("pxor   %xmm14,%xmm10");
+
+			asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[d][o]));
+			asm volatile("movdqa %0,%%xmm12" : : "m" (vbuf[d][o+16]));
+			asm volatile("pxor %xmm4,%xmm0");
+			asm volatile("pxor %xmm4,%xmm1");
+			asm volatile("pxor %xmm4,%xmm2");
+			asm volatile("pxor %xmm12,%xmm8");
+			asm volatile("pxor %xmm12,%xmm9");
+			asm volatile("pxor %xmm12,%xmm10");
 		}
 		asm volatile("movntdq %%xmm0,%0" : "=m" (p[o]));
 		asm volatile("movntdq %%xmm8,%0" : "=m" (p[o+16]));
@@ -841,9 +963,9 @@ void raidTP_sse2r2(unsigned char** vbuf, unsigned data, unsigned size)
 #endif
 
 /*
- * RAIDQP unrolled-by-2 C implementation
+ * RAIDQP 32bit C implementation
  */
-void raidQP_int32r2(unsigned char** vbuf, unsigned data, unsigned size)
+void raidQP_int32(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -907,9 +1029,9 @@ void raidQP_int32r2(unsigned char** vbuf, unsigned data, unsigned size)
 }
 
 /*
- * RAIDQP unrolled-by-2 C implementation
+ * RAIDQP 64bit C implementation
  */
-void raidQP_int64r2(unsigned char** vbuf, unsigned data, unsigned size)
+void raidQP_int64(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -974,9 +1096,9 @@ void raidQP_int64r2(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__i386__) || defined(__x86_64__)
 /*
- * RAIDQP unrolled-by-1 MMX implementation
+ * RAIDQP MMX implementation
  */
-void raidQP_mmxr1(unsigned char** vbuf, unsigned data, unsigned size)
+void raidQP_mmx(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -991,9 +1113,7 @@ void raidQP_mmxr1(unsigned char** vbuf, unsigned data, unsigned size)
 	r = vbuf[data+2];
 	s = vbuf[data+3];
 
-	asm volatile("movq %0,%%mm7" : : "m" (raid_mmx_poly.poly));
-	asm volatile("pxor %mm4,%mm4");
-	asm volatile("pxor %mm5,%mm5");
+	asm volatile("movq %0,%%mm7" : : "m" (raid_8_const.poly[0]));
 
 	for(o=0;o<size;o+=8) {
 		asm volatile("movq %0,%%mm0" : : "m" (vbuf[l][o]));
@@ -1001,6 +1121,8 @@ void raidQP_mmxr1(unsigned char** vbuf, unsigned data, unsigned size)
 		asm volatile("movq %mm0,%mm2");
 		asm volatile("movq %mm0,%mm3");
 		for(d=l-1;d>=0;--d) {
+			asm volatile("pxor %mm4,%mm4");
+			asm volatile("pxor %mm5,%mm5");
 			asm volatile("pcmpgtb %mm1,%mm4");
 			asm volatile("pcmpgtb %mm3,%mm5");
 			asm volatile("paddb %mm1,%mm1");
@@ -1012,7 +1134,6 @@ void raidQP_mmxr1(unsigned char** vbuf, unsigned data, unsigned size)
 
 			asm volatile("pxor %mm4,%mm4");
 			asm volatile("pxor %mm5,%mm5");
-
 			asm volatile("pcmpgtb %mm2,%mm4");
 			asm volatile("pcmpgtb %mm3,%mm5");
 			asm volatile("paddb %mm2,%mm2");
@@ -1024,7 +1145,6 @@ void raidQP_mmxr1(unsigned char** vbuf, unsigned data, unsigned size)
 
 			asm volatile("pxor %mm4,%mm4");
 			asm volatile("pxor %mm5,%mm5");
-
 			asm volatile("pcmpgtb %mm2,%mm4");
 			asm volatile("pcmpgtb %mm3,%mm5");
 			asm volatile("paddb %mm2,%mm2");
@@ -1039,9 +1159,6 @@ void raidQP_mmxr1(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("pxor %mm6,%mm1");
 			asm volatile("pxor %mm6,%mm2");
 			asm volatile("pxor %mm6,%mm3");
-
-			asm volatile("pxor %mm4,%mm4");
-			asm volatile("pxor %mm5,%mm5");
 		}
 		asm volatile("movq %%mm0,%0" : "=m" (p[o]));
 		asm volatile("movq %%mm1,%0" : "=m" (q[o]));
@@ -1055,9 +1172,9 @@ void raidQP_mmxr1(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__i386__) || defined(__x86_64__)
 /*
- * RAIDQP unrolled-by-1 SSE2 implementation
+ * RAIDQP SSE2 implementation
  */
-void raidQP_sse2r1(unsigned char** vbuf, unsigned data, unsigned size)
+void raidQP_sse2(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -1072,9 +1189,7 @@ void raidQP_sse2r1(unsigned char** vbuf, unsigned data, unsigned size)
 	r = vbuf[data+2];
 	s = vbuf[data+3];
 
-	asm volatile("movdqa %0,%%xmm7" : : "m" (raid_sse_poly.poly[0]));
-	asm volatile("pxor %xmm4,%xmm4");
-	asm volatile("pxor %xmm5,%xmm5");
+	asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.poly[0]));
 
 	for(o=0;o<size;o+=16) {
 		asm volatile("movdqa %0,%%xmm0" : : "m" (vbuf[l][o]));
@@ -1082,6 +1197,8 @@ void raidQP_sse2r1(unsigned char** vbuf, unsigned data, unsigned size)
 		asm volatile("movdqa %xmm0,%xmm2");
 		asm volatile("movdqa %xmm0,%xmm3");
 		for(d=l-1;d>=0;--d) {
+			asm volatile("pxor %xmm4,%xmm4");
+			asm volatile("pxor %xmm5,%xmm5");
 			asm volatile("pcmpgtb %xmm1,%xmm4");
 			asm volatile("pcmpgtb %xmm3,%xmm5");
 			asm volatile("paddb %xmm1,%xmm1");
@@ -1093,7 +1210,6 @@ void raidQP_sse2r1(unsigned char** vbuf, unsigned data, unsigned size)
 
 			asm volatile("pxor %xmm4,%xmm4");
 			asm volatile("pxor %xmm5,%xmm5");
-
 			asm volatile("pcmpgtb %xmm2,%xmm4");
 			asm volatile("pcmpgtb %xmm3,%xmm5");
 			asm volatile("paddb %xmm2,%xmm2");
@@ -1105,7 +1221,6 @@ void raidQP_sse2r1(unsigned char** vbuf, unsigned data, unsigned size)
 
 			asm volatile("pxor %xmm4,%xmm4");
 			asm volatile("pxor %xmm5,%xmm5");
-
 			asm volatile("pcmpgtb %xmm2,%xmm4");
 			asm volatile("pcmpgtb %xmm3,%xmm5");
 			asm volatile("paddb %xmm2,%xmm2");
@@ -1115,14 +1230,82 @@ void raidQP_sse2r1(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("pxor %xmm4,%xmm2");
 			asm volatile("pxor %xmm5,%xmm3");
 
-			asm volatile("movdqa %0,%%xmm6" : : "m" (vbuf[d][o]));
-			asm volatile("pxor %xmm6,%xmm0");
-			asm volatile("pxor %xmm6,%xmm1");
-			asm volatile("pxor %xmm6,%xmm2");
-			asm volatile("pxor %xmm6,%xmm3");
+			asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[d][o]));
+			asm volatile("pxor %xmm4,%xmm0");
+			asm volatile("pxor %xmm4,%xmm1");
+			asm volatile("pxor %xmm4,%xmm2");
+			asm volatile("pxor %xmm4,%xmm3");
+		}
+		asm volatile("movntdq %%xmm0,%0" : "=m" (p[o]));
+		asm volatile("movntdq %%xmm1,%0" : "=m" (q[o]));
+		asm volatile("movntdq %%xmm2,%0" : "=m" (r[o]));
+		asm volatile("movntdq %%xmm3,%0" : "=m" (s[o]));
+	}
 
+	asm volatile("sfence" : : : "memory");
+}
+#endif
+
+#if defined(__i386__) || defined(__x86_64__)
+/*
+ * RAIDQP SSSE3 implementation
+ */
+void raidQP_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	unsigned char* s;
+	int d, l;
+	unsigned o;
+
+	l = data - 1;
+	p = vbuf[data];
+	q = vbuf[data+1];
+	r = vbuf[data+2];
+	s = vbuf[data+3];
+
+	asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.poly[0]));
+
+	for(o=0;o<size;o+=16) {
+		asm volatile("movdqa %0,%%xmm0" : : "m" (vbuf[l][o]));
+		asm volatile("movdqa %xmm0,%xmm1");
+		asm volatile("movdqa %xmm0,%xmm2");
+		asm volatile("movdqa %xmm0,%xmm3");
+		for(d=l-1;d>=0;--d) {
 			asm volatile("pxor %xmm4,%xmm4");
 			asm volatile("pxor %xmm5,%xmm5");
+			asm volatile("pcmpgtb %xmm1,%xmm4");
+			asm volatile("pcmpgtb %xmm2,%xmm5");
+			asm volatile("paddb %xmm1,%xmm1");
+			asm volatile("paddb %xmm2,%xmm2");
+			asm volatile("pand %xmm7,%xmm4");
+			asm volatile("pand %xmm7,%xmm5");
+			asm volatile("pxor %xmm4,%xmm1");
+			asm volatile("pxor %xmm5,%xmm2");
+
+			asm volatile("pxor %xmm4,%xmm4");
+			asm volatile("pcmpgtb %xmm2,%xmm4");
+			asm volatile("paddb %xmm2,%xmm2");
+			asm volatile("pand %xmm7,%xmm4");
+			asm volatile("pxor %xmm4,%xmm2");
+
+			asm volatile("movdqa %0,%%xmm5" : : "m" (raid_16_const.x8l[0]));
+			asm volatile("movdqa %0,%%xmm6" : : "m" (raid_16_const.x8h[0]));
+			asm volatile("movdqa %xmm3,%xmm4");
+			asm volatile("psraw  $4,%xmm3");
+			asm volatile("pand   %0,%%xmm4" : : "m" (raid_16_const.low_nibble[0]));
+			asm volatile("pand   %0,%%xmm3" : : "m" (raid_16_const.low_nibble[0]));
+			asm volatile("pshufb %xmm3,%xmm6");
+			asm volatile("movdqa %xmm5,%xmm3");
+			asm volatile("pshufb %xmm4,%xmm3");
+			asm volatile("pxor   %xmm6,%xmm3");
+
+			asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[d][o]));
+			asm volatile("pxor %xmm4,%xmm0");
+			asm volatile("pxor %xmm4,%xmm1");
+			asm volatile("pxor %xmm4,%xmm2");
+			asm volatile("pxor %xmm4,%xmm3");
 		}
 		asm volatile("movntdq %%xmm0,%0" : "=m" (p[o]));
 		asm volatile("movntdq %%xmm1,%0" : "=m" (q[o]));
@@ -1136,10 +1319,10 @@ void raidQP_sse2r1(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__x86_64__)
 /*
- * RAIDQP unrolled-by-2 SSE2 implementation
+ * RAIDQP SSE2 implementation
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raidQP_sse2r2(unsigned char** vbuf, unsigned data, unsigned size)
+void raidQP_sse2ext(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -1154,11 +1337,7 @@ void raidQP_sse2r2(unsigned char** vbuf, unsigned data, unsigned size)
 	r = vbuf[data+2];
 	s = vbuf[data+3];
 
-	asm volatile("movdqa %0,%%xmm7" : : "m" (raid_sse_poly.poly[0]));
-	asm volatile("pxor %xmm4,%xmm4");
-	asm volatile("pxor %xmm5,%xmm5");
-	asm volatile("pxor %xmm12,%xmm12");
-	asm volatile("pxor %xmm13,%xmm13");
+	asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.poly[0]));
 
 	for(o=0;o<size;o+=32) {
 		asm volatile("movdqa %0,%%xmm0" : : "m" (vbuf[l][o]));
@@ -1170,6 +1349,10 @@ void raidQP_sse2r2(unsigned char** vbuf, unsigned data, unsigned size)
 		asm volatile("movdqa %xmm0,%xmm3");
 		asm volatile("movdqa %xmm8,%xmm11");
 		for(d=l-1;d>=0;--d) {
+			asm volatile("pxor %xmm4,%xmm4");
+			asm volatile("pxor %xmm5,%xmm5");
+			asm volatile("pxor %xmm12,%xmm12");
+			asm volatile("pxor %xmm13,%xmm13");
 			asm volatile("pcmpgtb %xmm1,%xmm4");
 			asm volatile("pcmpgtb %xmm3,%xmm5");
 			asm volatile("pcmpgtb %xmm9,%xmm12");
@@ -1191,7 +1374,6 @@ void raidQP_sse2r2(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("pxor %xmm5,%xmm5");
 			asm volatile("pxor %xmm12,%xmm12");
 			asm volatile("pxor %xmm13,%xmm13");
-
 			asm volatile("pcmpgtb %xmm2,%xmm4");
 			asm volatile("pcmpgtb %xmm3,%xmm5");
 			asm volatile("pcmpgtb %xmm10,%xmm12");
@@ -1213,7 +1395,6 @@ void raidQP_sse2r2(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("pxor %xmm5,%xmm5");
 			asm volatile("pxor %xmm12,%xmm12");
 			asm volatile("pxor %xmm13,%xmm13");
-
 			asm volatile("pcmpgtb %xmm2,%xmm4");
 			asm volatile("pcmpgtb %xmm3,%xmm5");
 			asm volatile("pcmpgtb %xmm10,%xmm12");
@@ -1231,21 +1412,228 @@ void raidQP_sse2r2(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("pxor %xmm12,%xmm10");
 			asm volatile("pxor %xmm13,%xmm11");
 
-			asm volatile("movdqa %0,%%xmm6" : : "m" (vbuf[d][o]));
-			asm volatile("movdqa %0,%%xmm14" : : "m" (vbuf[d][o+16]));
-			asm volatile("pxor %xmm6,%xmm0");
-			asm volatile("pxor %xmm6,%xmm1");
-			asm volatile("pxor %xmm6,%xmm2");
-			asm volatile("pxor %xmm6,%xmm3");
-			asm volatile("pxor %xmm14,%xmm8");
-			asm volatile("pxor %xmm14,%xmm9");
-			asm volatile("pxor %xmm14,%xmm10");
-			asm volatile("pxor %xmm14,%xmm11");
+			asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[d][o]));
+			asm volatile("movdqa %0,%%xmm12" : : "m" (vbuf[d][o+16]));
+			asm volatile("pxor %xmm4,%xmm0");
+			asm volatile("pxor %xmm4,%xmm1");
+			asm volatile("pxor %xmm4,%xmm2");
+			asm volatile("pxor %xmm4,%xmm3");
+			asm volatile("pxor %xmm12,%xmm8");
+			asm volatile("pxor %xmm12,%xmm9");
+			asm volatile("pxor %xmm12,%xmm10");
+			asm volatile("pxor %xmm12,%xmm11");
+		}
+		asm volatile("movntdq %%xmm0,%0" : "=m" (p[o]));
+		asm volatile("movntdq %%xmm8,%0" : "=m" (p[o+16]));
+		asm volatile("movntdq %%xmm1,%0" : "=m" (q[o]));
+		asm volatile("movntdq %%xmm9,%0" : "=m" (q[o+16]));
+		asm volatile("movntdq %%xmm2,%0" : "=m" (r[o]));
+		asm volatile("movntdq %%xmm10,%0" : "=m" (r[o+16]));
+		asm volatile("movntdq %%xmm3,%0" : "=m" (s[o]));
+		asm volatile("movntdq %%xmm11,%0" : "=m" (s[o+16]));
+	}
 
+	asm volatile("sfence" : : : "memory");
+}
+#endif
+
+#if defined(__x86_64__)
+/*
+ * RAIDQP SSSE3 implementation
+ * Note that it uses 16 registers, meaning that x64 is required.
+ */
+void raidQP_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	unsigned char* s;
+	int d, l;
+	unsigned o;
+
+	l = data - 1;
+	p = vbuf[data];
+	q = vbuf[data+1];
+	r = vbuf[data+2];
+	s = vbuf[data+3];
+
+	asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.poly[0]));
+	asm volatile("movdqa %0,%%xmm15" : : "m" (raid_16_const.low_nibble[0]));
+
+	for(o=0;o<size;o+=32) {
+		asm volatile("movdqa %0,%%xmm0" : : "m" (vbuf[l][o]));
+		asm volatile("movdqa %0,%%xmm8" : : "m" (vbuf[l][o+16]));
+		asm volatile("movdqa %xmm0,%xmm1");
+		asm volatile("movdqa %xmm8,%xmm9");
+		asm volatile("movdqa %xmm0,%xmm2");
+		asm volatile("movdqa %xmm8,%xmm10");
+		asm volatile("movdqa %xmm0,%xmm3");
+		asm volatile("movdqa %xmm8,%xmm11");
+		for(d=l-1;d>=0;--d) {
 			asm volatile("pxor %xmm4,%xmm4");
-			asm volatile("pxor %xmm5,%xmm5");
 			asm volatile("pxor %xmm12,%xmm12");
-			asm volatile("pxor %xmm13,%xmm13");
+			asm volatile("pcmpgtb %xmm1,%xmm4");
+			asm volatile("pcmpgtb %xmm9,%xmm12");
+			asm volatile("paddb %xmm1,%xmm1");
+			asm volatile("paddb %xmm9,%xmm9");
+			asm volatile("pand %xmm7,%xmm4");
+			asm volatile("pand %xmm7,%xmm12");
+			asm volatile("pxor %xmm4,%xmm1");
+			asm volatile("pxor %xmm12,%xmm9");
+
+			asm volatile("movdqa %0,%%xmm5" : : "m" (raid_16_const.x4l[0]));
+			asm volatile("movdqa %0,%%xmm6" : : "m" (raid_16_const.x4h[0]));
+			asm volatile("movdqa %xmm5,%xmm13");
+			asm volatile("movdqa %xmm6,%xmm14");
+			asm volatile("movdqa %xmm2,%xmm4");
+			asm volatile("movdqa %xmm10,%xmm12");
+			asm volatile("psraw  $4,%xmm2");
+			asm volatile("psraw  $4,%xmm10");
+			asm volatile("pand   %xmm15,%xmm4");
+			asm volatile("pand   %xmm15,%xmm12");
+			asm volatile("pand   %xmm15,%xmm2");
+			asm volatile("pand   %xmm15,%xmm10");
+			asm volatile("pshufb %xmm2,%xmm6");
+			asm volatile("pshufb %xmm10,%xmm14");
+			asm volatile("movdqa %xmm5,%xmm2");
+			asm volatile("movdqa %xmm13,%xmm10");
+			asm volatile("pshufb %xmm4,%xmm2");
+			asm volatile("pshufb %xmm12,%xmm10");
+			asm volatile("pxor   %xmm6,%xmm2");
+			asm volatile("pxor   %xmm14,%xmm10");
+
+			asm volatile("movdqa %0,%%xmm5" : : "m" (raid_16_const.x8l[0]));
+			asm volatile("movdqa %0,%%xmm6" : : "m" (raid_16_const.x8h[0]));
+			asm volatile("movdqa %xmm5,%xmm13");
+			asm volatile("movdqa %xmm6,%xmm14");
+			asm volatile("movdqa %xmm3,%xmm4");
+			asm volatile("movdqa %xmm11,%xmm12");
+			asm volatile("psraw  $4,%xmm3");
+			asm volatile("psraw  $4,%xmm11");
+			asm volatile("pand   %xmm15,%xmm4");
+			asm volatile("pand   %xmm15,%xmm12");
+			asm volatile("pand   %xmm15,%xmm3");
+			asm volatile("pand   %xmm15,%xmm11");
+			asm volatile("pshufb %xmm3,%xmm6");
+			asm volatile("pshufb %xmm11,%xmm14");
+			asm volatile("movdqa %xmm5,%xmm3");
+			asm volatile("movdqa %xmm13,%xmm11");
+			asm volatile("pshufb %xmm4,%xmm3");
+			asm volatile("pshufb %xmm12,%xmm11");
+			asm volatile("pxor   %xmm6,%xmm3");
+			asm volatile("pxor   %xmm14,%xmm11");
+
+			asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[d][o]));
+			asm volatile("movdqa %0,%%xmm12" : : "m" (vbuf[d][o+16]));
+			asm volatile("pxor %xmm4,%xmm0");
+			asm volatile("pxor %xmm4,%xmm1");
+			asm volatile("pxor %xmm4,%xmm2");
+			asm volatile("pxor %xmm4,%xmm3");
+			asm volatile("pxor %xmm12,%xmm8");
+			asm volatile("pxor %xmm12,%xmm9");
+			asm volatile("pxor %xmm12,%xmm10");
+			asm volatile("pxor %xmm12,%xmm11");
+		}
+		asm volatile("movntdq %%xmm0,%0" : "=m" (p[o]));
+		asm volatile("movntdq %%xmm8,%0" : "=m" (p[o+16]));
+		asm volatile("movntdq %%xmm1,%0" : "=m" (q[o]));
+		asm volatile("movntdq %%xmm9,%0" : "=m" (q[o+16]));
+		asm volatile("movntdq %%xmm2,%0" : "=m" (r[o]));
+		asm volatile("movntdq %%xmm10,%0" : "=m" (r[o+16]));
+		asm volatile("movntdq %%xmm3,%0" : "=m" (s[o]));
+		asm volatile("movntdq %%xmm11,%0" : "=m" (s[o+16]));
+	}
+
+	asm volatile("sfence" : : : "memory");
+}
+
+/*
+ * RAIDQP AVX implementation
+ * Note that it uses 16 registers, meaning that x64 is required.
+ */
+void raidQP_avxext(unsigned char** vbuf, unsigned data, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	unsigned char* s;
+	int d, l;
+	unsigned o;
+
+	l = data - 1;
+	p = vbuf[data];
+	q = vbuf[data+1];
+	r = vbuf[data+2];
+	s = vbuf[data+3];
+
+	asm volatile("movdqa %0,%%xmm5" : : "m" (raid_16_const.x8l[0]));
+	asm volatile("movdqa %0,%%xmm6" : : "m" (raid_16_const.x8h[0]));
+	asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.poly[0]));
+	asm volatile("movdqa %0,%%xmm13" : : "m" (raid_16_const.x4l[0]));
+	asm volatile("movdqa %0,%%xmm14" : : "m" (raid_16_const.x4h[0]));
+	asm volatile("movdqa %0,%%xmm15" : : "m" (raid_16_const.low_nibble[0]));
+
+	for(o=0;o<size;o+=32) {
+		asm volatile("movdqa %0,%%xmm0" : : "m" (vbuf[l][o]));
+		asm volatile("movdqa %0,%%xmm8" : : "m" (vbuf[l][o+16]));
+		asm volatile("movdqa %xmm0,%xmm1");
+		asm volatile("movdqa %xmm8,%xmm9");
+		asm volatile("movdqa %xmm0,%xmm2");
+		asm volatile("movdqa %xmm8,%xmm10");
+		asm volatile("movdqa %xmm0,%xmm3");
+		asm volatile("movdqa %xmm8,%xmm11");
+		for(d=l-1;d>=0;--d) {
+			asm volatile("pxor %xmm4,%xmm4");
+			asm volatile("pxor %xmm12,%xmm12");
+			asm volatile("pcmpgtb %xmm1,%xmm4");
+			asm volatile("pcmpgtb %xmm9,%xmm12");
+			asm volatile("paddb %xmm1,%xmm1");
+			asm volatile("paddb %xmm9,%xmm9");
+			asm volatile("pand %xmm7,%xmm4");
+			asm volatile("pand %xmm7,%xmm12");
+			asm volatile("pxor %xmm4,%xmm1");
+			asm volatile("pxor %xmm12,%xmm9");
+
+			asm volatile("movdqa %xmm2,%xmm4");
+			asm volatile("movdqa %xmm10,%xmm12");
+			asm volatile("psraw  $4,%xmm2");
+			asm volatile("psraw  $4,%xmm10");
+			asm volatile("pand   %xmm15,%xmm4");
+			asm volatile("pand   %xmm15,%xmm12");
+			asm volatile("pand   %xmm15,%xmm2");
+			asm volatile("pand   %xmm15,%xmm10");
+			asm volatile("vpshufb %xmm2,%xmm14,%xmm2");
+			asm volatile("vpshufb %xmm10,%xmm14,%xmm10");
+			asm volatile("vpshufb %xmm4,%xmm13,%xmm4");
+			asm volatile("vpshufb %xmm12,%xmm13,%xmm12");
+			asm volatile("pxor   %xmm4,%xmm2");
+			asm volatile("pxor   %xmm12,%xmm10");
+
+			asm volatile("movdqa %xmm3,%xmm4");
+			asm volatile("movdqa %xmm11,%xmm12");
+			asm volatile("psraw  $4,%xmm3");
+			asm volatile("psraw  $4,%xmm11");
+			asm volatile("pand   %xmm15,%xmm4");
+			asm volatile("pand   %xmm15,%xmm12");
+			asm volatile("pand   %xmm15,%xmm3");
+			asm volatile("pand   %xmm15,%xmm11");
+			asm volatile("vpshufb %xmm3,%xmm6,%xmm3");
+			asm volatile("vpshufb %xmm11,%xmm6,%xmm11");
+			asm volatile("vpshufb %xmm4,%xmm5,%xmm4");
+			asm volatile("vpshufb %xmm12,%xmm5,%xmm12");
+			asm volatile("pxor   %xmm4,%xmm3");
+			asm volatile("pxor   %xmm12,%xmm11");
+
+			asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[d][o]));
+			asm volatile("movdqa %0,%%xmm12" : : "m" (vbuf[d][o+16]));
+			asm volatile("pxor %xmm4,%xmm0");
+			asm volatile("pxor %xmm4,%xmm1");
+			asm volatile("pxor %xmm4,%xmm2");
+			asm volatile("pxor %xmm4,%xmm3");
+			asm volatile("pxor %xmm12,%xmm8");
+			asm volatile("pxor %xmm12,%xmm9");
+			asm volatile("pxor %xmm12,%xmm10");
+			asm volatile("pxor %xmm12,%xmm11");
 		}
 		asm volatile("movntdq %%xmm0,%0" : "=m" (p[o]));
 		asm volatile("movntdq %%xmm8,%0" : "=m" (p[o+16]));
@@ -2488,39 +2876,130 @@ void raid_recov_4data(int x, int y, int z, int v, int i, int j, int k, int l, un
 void raid_init(void)
 {
 	if (sizeof(void*) == 4) {
-		raid5_gen = raid5_int32r2;
-		raid6_gen = raid6_int32r2;
+		raid5_gen = raid5_int32;
+		raid6_gen = raid6_int32;
+		raidTP_gen = raidTP_int32;
+		raidQP_gen = raidQP_int32;
 	} else {
-		raid5_gen = raid5_int64r2;
-		raid6_gen = raid6_int64r2;
+		raid5_gen = raid5_int64;
+		raid6_gen = raid6_int64;
+		raidTP_gen = raidTP_int64;
+		raidQP_gen = raidQP_int64;
 	}
-	raidTP_gen = raidTP_int32r2;
-	raidQP_gen = raidQP_int32r2;
+
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_mmx()) {
-		raid5_gen = raid5_mmxr4;
-		raid6_gen = raid6_mmxr2;
-		raidTP_gen = raidTP_mmxr1;
-		raidQP_gen = raidQP_mmxr1;
+		raid5_gen = raid5_mmx;
+		raid6_gen = raid6_mmx;
+		raidTP_gen = raidTP_mmx;
+		raidQP_gen = raidQP_mmx;
 	}
+
 	if (cpu_has_sse2()) {
 #if defined(__x86_64__)
 		if (cpu_has_slowextendedreg()) {
-			raid5_gen = raid5_sse2r4;
-			raid6_gen = raid6_sse2r2;
+			raid5_gen = raid5_sse2;
+			raid6_gen = raid6_sse2;
 		} else {
-			raid5_gen = raid5_sse2r8;
-			raid6_gen = raid6_sse2r4;
+			raid5_gen = raid5_sse2ext;
+			raid6_gen = raid6_sse2ext;
 		}
-		raidTP_gen = raidTP_sse2r2;
-		raidQP_gen = raidQP_sse2r2;
+		raidTP_gen = raidTP_sse2ext;
+		raidQP_gen = raidQP_sse2ext;
 #else
-		raid5_gen = raid5_sse2r4;
-		raid6_gen = raid6_sse2r2;
-		raidTP_gen = raidTP_sse2r1;
-		raidQP_gen = raidQP_sse2r1;
+		raid5_gen = raid5_sse2;
+		raid6_gen = raid6_sse2;
+		raidTP_gen = raidTP_sse2;
+		raidQP_gen = raidQP_sse2;
 #endif
 	}
+
+	if (cpu_has_ssse3()) {
+#if defined(__x86_64__)
+		raidTP_gen = raidTP_ssse3ext;
+		raidQP_gen = raidQP_ssse3ext;
+#else
+		raidTP_gen = raidTP_ssse3;
+		raidQP_gen = raidQP_ssse3;
+#endif
+	}
+
+	if (cpu_has_avx()) {
+#if defined(__x86_64__)
+		raidQP_gen = raidQP_avxext;
+#endif
+	}
+
 #endif
 }
+
+static struct raid_func {
+	const char* name;
+	void* p;
+} RAID_FUNC[] = {
+	{ "int32", raid5_int32 },
+	{ "int64", raid5_int64 },
+	{ "int32", raid6_int32 },
+	{ "int64", raid6_int64 },
+	{ "int32", raidTP_int32 },
+	{ "int64", raidTP_int64 },
+	{ "int32", raidQP_int32 },
+	{ "int64", raidQP_int64 },
+
+#if defined(__i386__) || defined(__x86_64__)
+	{ "mmx", raid5_mmx },
+	{ "mmx", raid6_mmx },
+	{ "mmx", raidTP_mmx },
+	{ "mmx", raidQP_mmx },
+	{ "sse2", raid5_sse2 },
+	{ "sse2", raid6_sse2 },
+	{ "sse2", raidTP_sse2 },
+	{ "sse2", raidQP_sse2 },
+	{ "ssse3", raidTP_ssse3 },
+	{ "ssse3", raidQP_ssse3 },
+#endif
+
+#if defined(__x86_64__)
+	{ "sse2ext", raid5_sse2ext },
+	{ "sse2ext", raid6_sse2ext },
+	{ "sse2ext", raidTP_sse2ext },
+	{ "sse2ext", raidQP_sse2ext },
+	{ "ssse3ext", raidTP_ssse3ext },
+	{ "ssse3ext", raidQP_ssse3ext },
+	{ "avxext", raidQP_avxext },
+#endif
+	{ 0, 0 }
+};
+
+static const char* raid_tag(void* func)
+{
+	struct raid_func* i = RAID_FUNC;
+	while (i->name != 0) {
+		if (i->p == func)
+			return i->name;
+		++i;
+	}
+	return "unknown";
+}
+
+const char* raid5_tag(void)
+{
+	return raid_tag(raid5_gen);
+}
+
+const char* raid6_tag(void)
+{
+	return raid_tag(raid6_gen);
+}
+
+const char* raidTP_tag(void)
+{
+	return raid_tag(raidTP_gen);
+}
+
+const char* raidQP_tag(void)
+{
+	return raid_tag(raidQP_gen);
+}
+
 

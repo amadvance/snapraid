@@ -10,6 +10,8 @@ SnapRAID HISTORY
    up to 89 disks with Hexa (6) parity is possible, but not yet implemented.
    Note that more general approaches without these limitations are also
    possible, but they would affect badly the performance.
+   Parity computation uses SSSE3 and AVX instructions if available for the
+   best performance.
  * In sync, if a silent error is found, directly mark the block as bad
    just like in scrub, and continue with the sync process.
  * Sort files by inode when listing the directory. This improves
@@ -20,6 +22,8 @@ SnapRAID HISTORY
    of more info.
  * For files with changes only in some blocks, updates the parity
    only for blocks that really are changed.
+   This improves the performance in sync for edited files.
+ * Faster parity computation for ARM 64 bit CPU.
  * Reduced memory usage avoiding to allocate unnecessary memory.
 
 4.2 2013/10 (BETA)

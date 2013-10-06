@@ -91,6 +91,15 @@ static inline int cpu_has_sse2(void)
 	return (reg[3] >> 26) & 1;
 }
 
+static inline int cpu_has_ssse3(void)
+{
+	uint32_t reg[4];
+
+	cpuid(1, reg);
+
+	return (reg[2] >> 9) & 1;
+}
+
 static inline int cpu_has_sse42(void)
 {
 	uint32_t reg[4];
@@ -98,6 +107,15 @@ static inline int cpu_has_sse42(void)
 	cpuid(1, reg);
 
 	return (reg[2] >> 20) & 1;
+}
+
+static inline int cpu_has_avx(void)
+{
+	uint32_t reg[4];
+
+	cpuid(1, reg);
+
+	return (reg[2] >> 28) & 1;
 }
 
 /**

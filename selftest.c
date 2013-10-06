@@ -335,33 +335,48 @@ static void gentest(unsigned diskmax, unsigned block_size)
 
 	/* load all the available functions */
 	mac = 0;
-	map[mac++] = raid5_int32r2;
-	map[mac++] = raid5_int64r2;
-	map[mac++] = raid6_int32r2;
-	map[mac++] = raid6_int64r2;
-	map[mac++] = raidTP_int32r2;
-	map[mac++] = raidTP_int64r2;
-	map[mac++] = raidQP_int32r2;
-	map[mac++] = raidQP_int64r2;
+	map[mac++] = raid5_int32;
+	map[mac++] = raid5_int64;
+	map[mac++] = raid6_int32;
+	map[mac++] = raid6_int64;
+	map[mac++] = raidTP_int32;
+	map[mac++] = raidTP_int64;
+	map[mac++] = raidQP_int32;
+	map[mac++] = raidQP_int64;
 
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_mmx()) {
-		map[mac++] = raid5_mmxr4;
-		map[mac++] = raid6_mmxr2;
-		map[mac++] = raidQP_mmxr1;
-		map[mac++] = raidTP_mmxr1;
+		map[mac++] = raid5_mmx;
+		map[mac++] = raid6_mmx;
+		map[mac++] = raidQP_mmx;
+		map[mac++] = raidTP_mmx;
 	}
 
 	if (cpu_has_sse2()) {
-		map[mac++] = raid5_sse2r4;
-		map[mac++] = raid6_sse2r2;
-		map[mac++] = raidTP_sse2r1;
-		map[mac++] = raidQP_sse2r1;
+		map[mac++] = raid5_sse2;
+		map[mac++] = raid6_sse2;
+		map[mac++] = raidTP_sse2;
+		map[mac++] = raidQP_sse2;
 #if defined(__x86_64__)
-		map[mac++] = raid5_sse2r8;
-		map[mac++] = raid6_sse2r4;
-		map[mac++] = raidTP_sse2r2;
-		map[mac++] = raidQP_sse2r2;
+		map[mac++] = raid5_sse2ext;
+		map[mac++] = raid6_sse2ext;
+		map[mac++] = raidTP_sse2ext;
+		map[mac++] = raidQP_sse2ext;
+#endif
+	}
+
+	if (cpu_has_ssse3()) {
+		map[mac++] = raidTP_ssse3;
+		map[mac++] = raidQP_ssse3;
+#if defined(__x86_64__)
+		map[mac++] = raidTP_ssse3ext;
+		map[mac++] = raidQP_ssse3ext;
+#endif
+	}
+
+	if (cpu_has_avx()) {
+#if defined(__x86_64__)
+		map[mac++] = raidQP_avxext;
 #endif
 	}
 #endif
