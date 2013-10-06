@@ -86,7 +86,7 @@ man_MANS = snapraid.1
 clean-local:
 	rm -f valgrind.log callgrind.log cachegrind.log
 	rm -rf test
-	rm -f test.log
+	rm -f test.log output.log
 	rm -f *.gcda *.gcno *.gcov
 	rm -rf cov
 	rm -f lcov.info
@@ -124,7 +124,7 @@ check-local:
 	echo --- As empty, sync and check forcing murmur3
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) diff
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) dup
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) list
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) list > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-murmur3 sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 if HAVE_SYMLINK
@@ -134,12 +134,12 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
 	echo --- Create some files, sync and check in RAID5/6/TP
 	$(TESTENV) ./mktest$(EXEEXT) generate 1 5 $(CHECKCOUNT) $(CHECKSIZE)
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) diff > test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) diff -G > test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) diff > output.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) diff -G > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-order-physical sync
 	echo --- Some commands with a not empty array
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) dup -l test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) list -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) list -l test.log > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status -l test.log
 if HAVE_SYMLINK
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAID5) pool
@@ -164,19 +164,19 @@ endif
 	echo 3 > test/disk3/file_hardlink1
 	ln test/disk3/file_hardlink1 test/disk3/file_hardlink2
 	ln test/disk3/file_hardlink1 test/disk3/file_hardlink3
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(RAID5) diff > test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(RAID5) diff > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-fallocate -c $(RAID5) --test-force-order-inode sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-sequential -c $(RAID5) check
 	echo --- Some commands with a not empty array
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(RAID5) dup
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(RAID5) list
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(RAID5) list > output.log
 if HAVE_SYMLINK
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAID5) pool
 endif
 	echo --- Extend RAID5 to RAIDQP with fix and check
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(CONF) check 2>> test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) fix 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(CONF) check -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAID5) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Dry
@@ -211,7 +211,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(HOLE) check
 	rm -r test/disk1/_a
 	rm -r test/disk3/_a
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(HOLE) fix 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(HOLE) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(HOLE) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(HOLE) dry
 	echo --- Fill the hole with a new disk
@@ -237,8 +237,8 @@ endif
 	echo --- Delete one disk, fix and check with RAID5
 	rm -r test/disk3
 	mkdir test/disk3
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(RAID5) check 2>> test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAID5) fix 2>> test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(RAID5) check -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAID5) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Sync after all the fixes with an empty drive to test --force-empty
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --force-empty -c $(CONF) sync
