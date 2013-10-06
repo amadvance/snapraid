@@ -74,7 +74,8 @@ AC_CHECK_FUNCS([memset strchr strerror strrchr mkdir gettimeofday strtoul])
 AC_CHECK_FUNCS([getopt getopt_long snprintf vsnprintf])
 AC_CHECK_FUNCS([ftruncate fallocate fsync access posix_fallocate posix_fadvise])
 AC_CHECK_FUNCS([pread pwrite getc_unlocked ferror_unlocked fnmatch])
-AC_CHECK_FUNCS([futimes futimens futimesat fstatat flock statfs])
+AC_CHECK_FUNCS([futimes futimens futimesat localtime_r])
+AC_CHECK_FUNCS([fstatat flock statfs])
 
 dnl Checks for architecture
 AC_C_BIGENDIAN

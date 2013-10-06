@@ -48,7 +48,9 @@ void state_list(struct snapraid_state* state)
 		/* for each file */
 		for(j=disk->filelist;j!=0;j=j->next) {
 			struct snapraid_file* file = j->data;
+#if HAVE_LOCALTIME_R
 			struct tm tm_res;
+#endif
 			struct tm* tm;
 			time_t t;
 
@@ -58,7 +60,11 @@ void state_list(struct snapraid_state* state)
 			fprintf(stdlog, "file:%s:%s:%"PRIu64":%"PRIi64":%u:%"PRIi64"\n", disk->name, file->sub, file->size, file->mtime_sec, file->mtime_nsec, file->inode);
 
 			t = file->mtime_sec;
+#if HAVE_LOCALTIME_R
 			tm = localtime_r(&t, &tm_res);
+#else
+			tm = localtime(&t);
+#endif
 
 			printf("%12"PRIu64" ", file->size);
 			if (tm) {
