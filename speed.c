@@ -89,13 +89,14 @@ void speed(void)
 
 		cpu_info(vendor, &family, &model);
 
-		printf("CPU %s, family %u, model %u, flags%s%s%s%s%s%s\n", vendor, family, model,
+		printf("CPU %s, family %u, model %u, flags%s%s%s%s%s%s%s\n", vendor, family, model,
 			cpu_has_mmx() ? " mmx" : "",
 			cpu_has_sse2() ? " sse2" : "",
 			cpu_has_ssse3() ? " ssse3" : "",
 			cpu_has_sse42() ? " sse42" : "",
 			cpu_has_avx() ? " avx" : "",
-			cpu_has_slowmult() ? " slowmult" : ""
+			cpu_has_slowmult() ? " slowmult" : "",
+			cpu_has_slowpshufb()  ? " slowpshufb" : ""
 			);
 	}
 #else
@@ -335,7 +336,7 @@ void speed(void)
 			raidQP_mmx(buffer, diskmax, block_size);
 		} SPEED_STOP
 
-		printf("RAIDQP mmxr1 %"PRIu64" [MB/s]\n", ds / dt);
+		printf("RAIDQP mmx %"PRIu64" [MB/s]\n", ds / dt);
 	}
 
 	if (cpu_has_sse2()) {

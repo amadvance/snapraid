@@ -2914,7 +2914,7 @@ void raid_init(void)
 #endif
 	}
 
-	if (cpu_has_ssse3()) {
+	if (cpu_has_ssse3() && !cpu_has_slowpshufb()) {
 #if defined(__x86_64__)
 		raidTP_gen = raidTP_ssse3ext;
 		raidQP_gen = raidQP_ssse3ext;

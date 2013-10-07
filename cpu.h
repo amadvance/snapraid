@@ -157,6 +157,70 @@ static inline int cpu_has_slowmult(void)
 }
 
 /**
+ * Check if the processor has a slow PSHUFB implementation.
+ * If yes, it's better to not use it.
+ */
+static inline int cpu_has_slowpshufb(void)
+{
+	char vendor[CPU_VENDOR_MAX];
+	unsigned family;
+	unsigned model;
+
+	cpu_info(vendor, &family, &model);
+
+	if (strcmp(vendor, "GenuineIntel") == 0) {
+		/* Intel ATOM (info from x264 -> full family/model 6/28) */
+
+		/* Intel(R) Atom(TM) CPU D525 @ 1.80GHz (info from user)
+		 * Compiler gcc 4.7.2
+		 * CPU GenuineIntel, family 6, model 28, flags mmx sse2 ssse3 slowmult
+		 * Memory is little-endian 64-bit
+		 * Support nanosecond timestamps with futimens()
+		 * 
+		 * Speed test with 8 disk and 262144 buffer size, for a total of 2816 KiB...
+		 * memset0 1850 [MB/s]
+		 * CRC table 316 [MB/s]
+		 * HASH Murmur3 378 [MB/s]
+		 * HASH Spooky2 3389 [MB/s]
+		 * RAID5 int32 1800 [MB/s]
+		 * RAID5 int64 2938 [MB/s]
+		 * RAID5 mmx 2946 [MB/s]
+		 * RAID5 sse2 3429 [MB/s]
+		 * RAID5 sse2ext 3447 [MB/s]
+		 * RAID6 int32 519 [MB/s]
+		 * RAID6 int64 944 [MB/s]
+		 * RAID6 mmx 1160 [MB/s]
+		 * RAID6 sse2 2082 [MB/s]
+		 * RAID6 sse2ext 2481 [MB/s]
+		 * RAIDTP int32 236 [MB/s]
+		 * RAIDTP int64 456 [MB/s]
+		 * RAIDTP mmx 576 [MB/s]
+		 * RAIDTP sse2 1109 [MB/s]
+		 * RAIDTP sse2ext 1527 [MB/s]
+		 * RAIDTP ssse3 931 [MB/s] (slower than sse2ext)
+		 * RAIDTP ssse3ext 932 [MB/s] (slower than sse2ext)
+		 * RAIDQP int32 144 [MB/s]
+		 * RAIDQP int64 271 [MB/s]
+		 * RAIDQP mmx 431 [MB/s]
+		 * RAIDQP sse2 843 [MB/s]
+		 * RAIDQP sse2ext 1086 [MB/s]
+		 * RAIDQP ssse3 732 [MB/s] (slower than sse2ext)
+		 * RAIDQP ssse3ext 571 [MB/s] (slower than sse2ext)
+		 */
+		if (family == 6 && model == 28)
+			return 1;
+	}
+
+	if (strcmp(vendor, "AuthenticAMD") == 0) {
+		/* AMD Jaguar (info from x264 -> full family 0x16==21) */
+		if (family == 21)
+			return 1;
+	}
+
+	return 0;
+}
+
+/**
  * Check if the processor has a slow extended set of SSE registers.
  * If yes, it's better to unroll without using the second part of registers.
  */
@@ -195,7 +259,6 @@ static inline int cpu_has_slowextendedreg(void)
 
 	return 0;
 }
-
 
 /* other cases */
 
