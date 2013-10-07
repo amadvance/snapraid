@@ -41,6 +41,9 @@ exclude *.unrecoverable
 exclude Thumbs.db
 exclude \$RECYCLE.BIN
 exclude \System Volume Information
+exclude \Program Files\
+exclude \Program Files (x86)\
+exclude \Windows\
 
 # Defines the block size in kibi bytes (1024 bytes) (uncomment to enable).
 # Default value is 256 -> 256 kibi bytes -> 262144 bytes
