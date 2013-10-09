@@ -512,8 +512,8 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 			timelimit = recentlimit;
 		}
 	} else {
-		/* we don't have a time limit based on quota */
-		timelimit = recentlimit;
+		/* if we select a 0 percentage, disable also the time limit */
+		timelimit = 0;
 	}
 
 	/* free the temp vector */
