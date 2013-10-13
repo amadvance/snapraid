@@ -333,6 +333,8 @@ Commands
 
 	The "content" file is modified to update the time of the last check
 	of each block.
+	The "parity" and "q-parity" files are NOT modified.
+	The files in the array are NOT modified.
 
   status
 	Prints a summary of the state of the disk array.

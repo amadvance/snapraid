@@ -365,6 +365,8 @@ but such errros are reported in the output of the command.
 
 The "content" file is modified to update the time of the last check
 of each block.
+The "parity" and "q-parity" files are NOT modified.
+The files in the array are NOT modified.
 
 5.5 status
 ----------
