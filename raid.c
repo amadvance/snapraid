@@ -140,6 +140,11 @@ void raid5_mmx(unsigned char** vbuf, unsigned data, unsigned size)
 
 /*
  * RAID5 SSE2 implementation
+ *
+ * Note that we don't have the corresponding x64 sse2ext function using more
+ * registers because processing a block of 64 bytes already fills
+ * the typical cache block, and processing 128 bytes doesn't increase
+ * performance.
  */
 void raid5_sse2(unsigned char** vbuf, unsigned data, unsigned size)
 {
@@ -169,61 +174,6 @@ void raid5_sse2(unsigned char** vbuf, unsigned data, unsigned size)
 		asm volatile("movntdq %%xmm1,%0" : "=m" (p[o+16]));
 		asm volatile("movntdq %%xmm2,%0" : "=m" (p[o+32]));
 		asm volatile("movntdq %%xmm3,%0" : "=m" (p[o+48]));
-	}
-
-	asm volatile("sfence" : : : "memory");
-}
-#endif
-
-#if defined(__x86_64__)
-/*
- * RAID5 SSE2 implementation
- * Note that it uses 16 registers, meaning that x64 is required.
- */
-void raid5_sse2ext(unsigned char** vbuf, unsigned data, unsigned size)
-{
-	unsigned char* p;
-	int d, l;
-	unsigned o;
-
-	l = data - 1;
-	p = vbuf[data];
-
-	for(o=0;o<size;o+=128) {
-		asm volatile("movdqa %0,%%xmm0" : : "m" (vbuf[l][o]));
-		asm volatile("movdqa %0,%%xmm1" : : "m" (vbuf[l][o+16]));
-		asm volatile("movdqa %0,%%xmm2" : : "m" (vbuf[l][o+32]));
-		asm volatile("movdqa %0,%%xmm3" : : "m" (vbuf[l][o+48]));
-		asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[l][o+64]));
-		asm volatile("movdqa %0,%%xmm5" : : "m" (vbuf[l][o+80]));
-		asm volatile("movdqa %0,%%xmm6" : : "m" (vbuf[l][o+96]));
-		asm volatile("movdqa %0,%%xmm7" : : "m" (vbuf[l][o+112]));
-		for(d=l-1;d>=0;--d) {
-			asm volatile("movdqa %0,%%xmm8" : : "m" (vbuf[d][o]));
-			asm volatile("movdqa %0,%%xmm9" : : "m" (vbuf[d][o+16]));
-			asm volatile("movdqa %0,%%xmm10" : : "m" (vbuf[d][o+32]));
-			asm volatile("movdqa %0,%%xmm11" : : "m" (vbuf[d][o+48]));
-			asm volatile("movdqa %0,%%xmm12" : : "m" (vbuf[d][o+64]));
-			asm volatile("movdqa %0,%%xmm13" : : "m" (vbuf[d][o+80]));
-			asm volatile("movdqa %0,%%xmm14" : : "m" (vbuf[d][o+96]));
-			asm volatile("movdqa %0,%%xmm15" : : "m" (vbuf[d][o+112]));
-			asm volatile("pxor %xmm8,%xmm0");
-			asm volatile("pxor %xmm9,%xmm1");
-			asm volatile("pxor %xmm10,%xmm2");
-			asm volatile("pxor %xmm11,%xmm3");
-			asm volatile("pxor %xmm12,%xmm4");
-			asm volatile("pxor %xmm13,%xmm5");
-			asm volatile("pxor %xmm14,%xmm6");
-			asm volatile("pxor %xmm15,%xmm7");
-		}
-		asm volatile("movntdq %%xmm0,%0" : "=m" (p[o]));
-		asm volatile("movntdq %%xmm1,%0" : "=m" (p[o+16]));
-		asm volatile("movntdq %%xmm2,%0" : "=m" (p[o+32]));
-		asm volatile("movntdq %%xmm3,%0" : "=m" (p[o+48]));
-		asm volatile("movntdq %%xmm4,%0" : "=m" (p[o+64]));
-		asm volatile("movntdq %%xmm5,%0" : "=m" (p[o+80]));
-		asm volatile("movntdq %%xmm6,%0" : "=m" (p[o+96]));
-		asm volatile("movntdq %%xmm7,%0" : "=m" (p[o+112]));
 	}
 
 	asm volatile("sfence" : : : "memory");
@@ -2909,18 +2859,16 @@ void raid_init(void)
 	}
 
 	if (cpu_has_sse2()) {
+		raid5_gen = raid5_sse2;
 #if defined(__x86_64__)
 		if (cpu_has_slowextendedreg()) {
-			raid5_gen = raid5_sse2;
 			raid6_gen = raid6_sse2;
 		} else {
-			raid5_gen = raid5_sse2ext;
 			raid6_gen = raid6_sse2ext;
 		}
 		raidTP_gen = raidTP_sse2ext;
 		raidQP_gen = raidQP_sse2ext;
 #else
-		raid5_gen = raid5_sse2;
 		raid6_gen = raid6_sse2;
 		raidTP_gen = raidTP_sse2;
 		raidQP_gen = raidQP_sse2;
@@ -2973,7 +2921,6 @@ static struct raid_func {
 #endif
 
 #if defined(__x86_64__)
-	{ "sse2ext", raid5_sse2ext },
 	{ "sse2ext", raid6_sse2ext },
 	{ "sse2ext", raidTP_sse2ext },
 	{ "sse2ext", raidQP_sse2ext },

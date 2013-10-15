@@ -358,7 +358,6 @@ static void gentest(unsigned diskmax, unsigned block_size)
 		map[mac++] = raidTP_sse2;
 		map[mac++] = raidQP_sse2;
 #if defined(__x86_64__)
-		map[mac++] = raid5_sse2ext;
 		map[mac++] = raid6_sse2ext;
 		map[mac++] = raidTP_sse2ext;
 		map[mac++] = raidQP_sse2ext;

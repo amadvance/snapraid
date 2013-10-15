@@ -94,7 +94,6 @@ void raid5_int32(unsigned char** vbuf, unsigned data, unsigned size);
 void raid5_int64(unsigned char** vbuf, unsigned data, unsigned size);
 void raid5_mmx(unsigned char** vbuf, unsigned data, unsigned size);
 void raid5_sse2(unsigned char** vbuf, unsigned data, unsigned size);
-void raid5_sse2ext(unsigned char** vbuf, unsigned data, unsigned size);
 void raid6_int32(unsigned char** vbuf, unsigned data, unsigned size);
 void raid6_int64(unsigned char** vbuf, unsigned data, unsigned size);
 void raid6_mmx(unsigned char** vbuf, unsigned data, unsigned size);

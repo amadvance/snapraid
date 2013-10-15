@@ -215,14 +215,6 @@ void speed(void)
 		} SPEED_STOP
 
 		printf("RAID5 sse2 %"PRIu64" [MB/s]\n", ds / dt);
-
-#if defined(__x86_64__)
-		SPEED_START {
-			raid5_sse2ext(buffer, diskmax, block_size);
-		} SPEED_STOP
-
-		printf("RAID5 sse2ext %"PRIu64" [MB/s]\n", ds / dt);
-#endif
 	}
 #endif
 
