@@ -1684,7 +1684,7 @@ void raid_gen(unsigned level, unsigned char** vbuf, unsigned data, unsigned size
  * Q = sum(2^i * Di) 0<=i<n
  *
  * To support RAIDTP (Triple Parity), we use an extension of the same approach,
- * also described in the paper "Multiple-parity RAID" [2], with the additional
+ * described in the paper "Multiple-parity RAID" [2], with the additional
  * parity coefficient "4".
  * This method is also the same used by ZFS to implement its RAIDTP support.
  *
@@ -1699,12 +1699,19 @@ void raid_gen(unsigned level, unsigned char** vbuf, unsigned data, unsigned size
  * R = sum(4^i * Di) 0<=i<n
  * S = sum(8^i * Di) 0<=i<n
  *
- * Note that for RAIDQP we don't have the guarantee to always have a system of
- * independent linear equations, and in some cases the equations are no not solvable.
+ * For RAIDQP we don't have the guarantee to always have a system of independent linear
+ * equations, and in some cases the equations are not solvable.
  *
- * This is expected because the Vandermonde matrix we use to compute the parity
+ * This is expected because the Vandermonde matrix used to compute the parity
  * has no guarantee to have all its submatrixes not singular [3, Chap 11, Problem 7]
- * and this is a requirement to have a working MDS code [3, Chap 11, Theorem 8].
+ * and this is a requirement to have a MDS code [3, Chap 11, Theorem 8].
+ *
+ * If it surprises that even using a Vandermonde matrix we don't have a MDS code,
+ * consider that the matrix A we use to compute the parity, is not the MDS generator
+ * matrix G, but only a submatrix of it. The generator matrix G is the concatenation
+ * of I and A, as G = [I | A], where I is the identity matrix.
+ * Setting the matrix G as Vandermonde matrix would have guaranteed to have a MDS code,
+ * but setting only A as a Vandermonde matrix doesn't give this guarantee.
  *
  * Using the primitive polynomial 285, RAIDQP works for up to 21 data disks
  * with parity coefficients "1,2,4,8". Changing polynomial to one of 391/451/463/487,
@@ -1716,15 +1723,20 @@ void raid_gen(unsigned level, unsigned char** vbuf, unsigned data, unsigned size
  * primitive polynomial 100087 or 122563 that supports Hexa (6) Parity with
  * parity coefficients 1,2,4,8,16,32 for up to 89 disks.
  *
- * A general method working for any number of disks, is to use a a Cauchy matrix [4],
- * instead of a Vandermonde matrix to setup the matrix used to compute the parity.
+ * A general method working for any number of disks is to setup the matrix
+ * used to compute the parity as a Cauchy matrix [4], or set the MDS generator
+ * matrix as Vandermonde matrix, and do some transformations to it until it
+ * can be expressed as the concatenation of the identify matrix and the
+ * submatrix used to generate the parity [5].
+ *
  * But with a such matrix, we would obtain a slower performance, because the
- * coefficients of  the equations are arbitrarily chosen, and not powers of
- * the same coefficient.
- * This means that you need to use multiplication tables to implement the
+ * coefficients of the equations are arbitrarily chosen, and not powers of
+ * the same value.
+ * This means that we would need to use multiplication tables to implement the
  * parity computation, instead of the fast approach described in [1].
- * Note anyway, that there is also a way to implement multiplication tables
- * in a very fast way with SSE instructions [5].
+ * Note anyway, that there is also a method to implement very fast multiplication
+ * tables with SSE instructions [6] that it's already competitive with the RAIDQP
+ * parity computation.
  *
  * In details, RAIDTP is implemented for n disks Di, computing the parities
  * P,Q,R with:
@@ -1782,7 +1794,8 @@ void raid_gen(unsigned level, unsigned char** vbuf, unsigned data, unsigned size
  * [2] Brown, "Multiple-parity RAID", 2011
  * [3] MacWilliams, Sloane, "The Theory of Error-Correcting Codes", 1977
  * [4] Blömer, "An XOR-Based Erasure-Resilient Coding Scheme", 1995
- * [5] Plank, "Screaming Fast Galois Field Arithmetic Using Intel SIMD Instructions", 2013
+ * [5] Plank, "Note: Correction to the 1997 Tutorial on Reed-Solomon Coding", 2003
+ * [6] Plank, "Screaming Fast Galois Field Arithmetic Using Intel SIMD Instructions", 2013
  */
 
 /**
