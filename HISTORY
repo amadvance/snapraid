@@ -26,8 +26,8 @@ SnapRAID HISTORY
  * Faster parity computation for ARM 64 bit CPU.
  * Reduced memory usage avoiding to allocate unnecessary memory.
 
-4.3 2013/10 (BETA)
-==================
+4.3 2013/10
+===========
  * Fixed the scrub command with the -p0 option. Now it really scrubs
    only the blocks marked as bad and not the full array.
 
