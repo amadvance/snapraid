@@ -6,11 +6,10 @@ SnapRAID HISTORY
  * Added support for RAIDTP (Triple Parity) and RAIDQP (Quad Parity).
    For Quad Parity, and only for Quad Parity, there is a limitation of
    using no more than 21 data disks. This is a conseguence of the
-   high performant parity generator matrix used. An extension supporting
-   up to 89 disks with Hexa (6) parity is possible, but not yet implemented.
-   Note that more general approaches without these limitations are also
-   possible, but they would affect badly the performance.
-   Parity computation uses SSSE3 and AVX instructions if available for the
+   high performant parity generator matrix used.
+   Extensions supporting more disks and more parities are possible,
+   but not yet implemented.
+ * New parity computation using SSSE3 and AVX instructions for the
    best performance.
  * In sync, if a silent error is found, directly mark the block as bad
    like in scrub, and continue with the sync process.

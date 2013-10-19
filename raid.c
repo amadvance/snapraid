@@ -1674,19 +1674,16 @@ void raid_gen(unsigned level, unsigned char** vbuf, unsigned data, unsigned size
  * parity coefficients 1,2,4,8,16,32 for up to 89 disks.
  *
  * A general method working for any number of disks is to setup the matrix
- * used to compute the parity as a Cauchy matrix [4], or set the MDS generator
- * matrix as Vandermonde matrix, and do some transformations to it until it
- * can be expressed as the concatenation of the identify matrix and the
- * submatrix used to generate the parity [5].
+ * used to compute the parity as a Cauchy matrix [4] or Extended Cauchy matrix [5].
  *
  * But with a such matrix, we would obtain a slower performance, because the
- * coefficients of the equations are arbitrarily chosen, and not powers of
- * the same value.
+ * coefficients of the equations are not powers of the same value.
  * This means that we would need to use multiplication tables to implement the
- * parity computation, instead of the fast approach described in [1].
- * Note anyway, that there is also a method to implement very fast multiplication
- * tables with SSE instructions [6] that it's already competitive with the RAIDQP
- * parity computation.
+ * parity computation, instead of the parallel approach described in [1].
+ *
+ * Note anyway, that there is also a method to implement parallel multiplication
+ * with tables using SSSE3 instructions [6] that it's already competitive with
+ * the RAIDTP parity computation.
  *
  * In details, RAIDTP is implemented for n disks Di, computing the parities
  * P,Q,R with:
@@ -1744,7 +1741,7 @@ void raid_gen(unsigned level, unsigned char** vbuf, unsigned data, unsigned size
  * [2] Brown, "Multiple-parity RAID", 2011
  * [3] MacWilliams, Sloane, "The Theory of Error-Correcting Codes", 1977
  * [4] Blömer, "An XOR-Based Erasure-Resilient Coding Scheme", 1995
- * [5] Plank, "Note: Correction to the 1997 Tutorial on Reed-Solomon Coding", 2003
+ * [5] Vinocha, Bhullar, Brar, "On Generator Cauchy Matrices of GDRS/GTRS Codes", 2012
  * [6] Plank, "Screaming Fast Galois Field Arithmetic Using Intel SIMD Instructions", 2013
  */
 
@@ -1820,7 +1817,7 @@ static inline unsigned char pown(int b, int e)
 	case 3 : return pow8(e);
 	}
 
-	fprintf(stderr, "GF invalid base\n");
+	fprintf(stderr, "GF invalid exponent\n");
 	exit(EXIT_FAILURE);
 }
 
