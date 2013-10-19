@@ -11,10 +11,14 @@ correctly.
 We can assume a file moved to another disk if it has the same name, size,
 and timestamp. Directory and inode can be different.
 
-* Add a way to list the content of the array. A new "list" command ?
-Something similar at "diff" and "dup".
-
 - Minor
+
+* In the content file save the timestap of the parity files.
+If they do not match, stop the processing.
+This can be done to avoid to use not syncronized parity and content files,
+resulting in wrong data.
+But if the sync process is killed we need a way to resyncronize them.
+Or maybe we should allow parity never than content, but not viceversa.
 
 * Add an option for dup to list only duplicates with different name.
 This supposing that if a file has the same name, it's intentionally duplicate.
@@ -79,13 +83,6 @@ but kept in the same disk of the array.
 - Detect deletes, and move file in the array to a "/trash/" directory
 of the same disk. For safety no real deletion is done.
 File with the same name will get an extra extension like ".1", ".2".
-
-* In the content file save the timestap of the parity files.
-If they do not match, stop the processing.
-This can be done to avoid to use not syncronized parity and content files,
-resulting in wrong data.
-But if the sync process is killed we need a way to resyncronize them.
-Or maybe we should allow parity never than content, but not viceversa.
 
 - Major
 
