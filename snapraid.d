@@ -11,7 +11,7 @@ Synopsis
 	:	[-U, --force-uuid] [-D, --force-device]
 	:	[-v, --verbose] [-l, --log FILE]
 	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
-	:	sync|status|scrub|diff|dup|pool|check|fix|rehash
+	:	sync|status|scrub|list|diff|dup|pool|check|fix|rehash
 
 	:snapraid [-V, --version] [-h, --help] [-C, --gen-conf CONTENT]
 
@@ -342,6 +342,12 @@ Commands
 	It includes information about the parity fragmentation, how old
 	are the blocks without checking, and all the recorded silent
 	errors encoutered while scrubbing.
+
+	Nothing is modified.
+
+  list
+	Lists all the files contained in the array at the time of the
+	last "sync" command.
 
 	Nothing is modified.
 

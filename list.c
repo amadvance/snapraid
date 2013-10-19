@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Andrea Mazzoleni
+ * Copyright (C) 2013 Andrea Mazzoleni
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -37,6 +37,8 @@ void state_list(struct snapraid_state* state)
 	file_size = 0;
 	link_count = 0;
 
+	printf("Listing...\n");
+
 	/* for each disk */
 	for(i=state->disklist;i!=0;i=i->next) {
 		tommy_node* j;
@@ -68,18 +70,25 @@ void state_list(struct snapraid_state* state)
 
 			printf("%12"PRIu64" ", file->size);
 			if (tm) {
-				printf("%04u/%02u/%02u %02u:%02u ", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min);
+				printf("%04u/%02u/%02u %02u:%02u", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min);
+				if (state->opt.verbose) {
+					printf(":%02u.%03u", tm->tm_sec, file->mtime_nsec / 1000000);
+				}
+				printf(" ");
 			}
 			printf("%s%s\n", disk->dir, file->sub);
 		}
+
+		/* sort by name */
+		tommy_list_sort(&disk->linklist, link_alpha_compare);
 
 		/* for each link */
 		for(j=disk->linklist;j!=0;j=j->next) {
 			struct snapraid_link* link = j->data;
 			const char* type;
 
-			switch (link->flag &FILE_IS_LINK_MASK) {
-			case FILE_IS_HARDLINK : type = "link"; break;
+			switch (link->flag & FILE_IS_LINK_MASK) {
+			case FILE_IS_HARDLINK : type = "hardlink"; break;
 			case FILE_IS_SYMLINK : type = "symlink"; break;
 			case FILE_IS_SYMDIR : type = "symdir"; break;
 			case FILE_IS_JUNCTION : type = "junction"; break;
@@ -90,12 +99,17 @@ void state_list(struct snapraid_state* state)
 
 			fprintf(stdlog, "link_%s:%s:%s:%s\n", type, disk->name, link->sub, link->linkto);
 
-			printf("%12s                  %s%s -> %s%s\n", type, disk->dir, link->sub, disk->dir, link->linkto);
+			printf("%12s ", type);
+			printf("                 ");
+			if (state->opt.verbose) {
+				printf("       ");
+			}
+			printf("%s%s -> %s%s\n", disk->dir, link->sub, disk->dir, link->linkto);
 		}
 	}
 	printf("\n");
-	printf("%u files, for %"PRIu64" MiB.\n", file_count, file_size / (1024*1024));
-	printf("%u links.\n", link_count);
+	printf("%8u files, for %"PRIu64" GiB\n", file_count, file_size / (1024*1024*1024));
+	printf("%8u links\n", link_count);
 
 	fprintf(stdlog, "summary:file_count:%u\n", file_count);
 	fprintf(stdlog, "summary:file_size:%"PRIu64"\n", file_size);

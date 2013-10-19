@@ -479,11 +479,18 @@ void link_free(struct snapraid_link* link)
 	free(link);
 }
 
-int link_name_compare(const void* void_arg, const void* void_data)
+int link_name_compare_to_arg(const void* void_arg, const void* void_data)
 {
 	const char* arg = void_arg;
 	const struct snapraid_link* link = void_data;
 	return strcmp(arg, link->sub);
+}
+
+int link_alpha_compare(const void* void_a, const void* void_b)
+{
+	const struct snapraid_link* link_a = void_a;
+	const struct snapraid_link* link_b = void_b;
+	return strcmp(link_a->sub, link_b->sub);
 }
 
 struct snapraid_dir* dir_alloc(const char* sub)

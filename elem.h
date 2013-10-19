@@ -685,7 +685,12 @@ void link_free(struct snapraid_link* link);
 /**
  * Compare a link with a name.
  */
-int link_name_compare(const void* void_arg, const void* void_data);
+int link_name_compare_to_arg(const void* void_arg, const void* void_data);
+
+/**
+ * Compares links by path.
+ */
+int link_alpha_compare(const void* void_a, const void* void_b);
 
 /**
  * Computes the hash of a link name.

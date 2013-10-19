@@ -15,7 +15,7 @@ snapraid [-c, --conf CONFIG]
 	[-U, --force-uuid] [-D, --force-device]
 	[-v, --verbose] [-l, --log FILE]
 	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
-	sync|status|scrub|diff|dup|pool|check|fix|rehash
+	sync|status|scrub|list|diff|dup|pool|check|fix|rehash
 
 snapraid [-V, --version] [-h, --help] [-C, --gen-conf CONTENT]
 
@@ -379,7 +379,15 @@ errors encoutered while scrubbing.
 
 Nothing is modified.
 
-5.6 diff
+5.6 list
+--------
+
+Lists all the files contained in the array at the time of the
+last "sync" command.
+
+Nothing is modified.
+
+5.7 diff
 --------
 
 Lists all the files modified from the last "sync" command that
@@ -390,7 +398,7 @@ size and inode.
 
 Nothing is modified.
 
-5.7 dup
+5.8 dup
 -------
 
 Lists all the duplicate files. Two files are assumed equal if their
@@ -399,7 +407,7 @@ precomputed hashes are used.
 
 Nothing is modified.
 
-5.8 pool
+5.9 pool
 --------
 
 Creates or updates in the "pooling" directory a virtual view of all
@@ -414,8 +422,8 @@ view of the array. Any othe regular file is left in place.
 
 Nothing is modified outside the pool directory.
 
-5.9 rehash
-----------
+5.10 rehash
+-----------
 
 Schedules a rehash of the whole array.
 

@@ -1130,7 +1130,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 				fprintf(stdlog, "status:recovered:%s:%s\n", handle[j].disk->name, file->sub);
 				if (state->opt.verbose) {
-					printf("Recovered '%s'\n", path);
+					printf("recovered %s\n", path);
 				}
 
 				inode = handle[j].st.st_ino;
@@ -1172,23 +1172,23 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					if (!check) {
 						fprintf(stdlog, "status:damaged:%s:%s\n", handle[j].disk->name, file->sub);
 						if (state->opt.verbose) {
-							printf("Damaged '%s'\n", path);
+							printf("damaged %s\n", path);
 						}
 					} else {
 						fprintf(stdlog, "status:unrecoverable:%s:%s\n", handle[j].disk->name, file->sub);
 						if (state->opt.verbose) {
-							printf("Unrecoverable '%s'\n", path);
+							printf("unrecoverable %s\n", path);
 						}
 					}
 				} else if (file_flag_has(file, FILE_IS_FIXED)) {
 					fprintf(stdlog, "status:recoverable:%s:%s\n", handle[j].disk->name, file->sub);
 					if (state->opt.verbose) {
-						printf("Recoverable '%s'\n", path);
+						printf("recoverable %s\n", path);
 					}
 				} else {
 					fprintf(stdlog, "status:correct:%s:%s\n", handle[j].disk->name, file->sub);
 					if (state->opt.verbose) {
-						printf("Correct '%s'\n", path);
+						printf("correct %s\n", path);
 					}
 				}
 			}
@@ -1318,7 +1318,7 @@ close_and_continue:
 
 				fprintf(stdlog, "status:recovered:%s:%s\n", disk->name, file->sub);
 				if (state->opt.verbose) {
-					printf("Recovered '%s%s'\n", disk->dir, file->sub);
+					printf("recovered %s%s\n", disk->dir, file->sub);
 				}
 			}
 		}
@@ -1483,7 +1483,7 @@ close_and_continue:
 
 				fprintf(stdlog, "status:recovered:%s:%s\n", disk->name, link->sub);
 				if (state->opt.verbose) {
-					printf("Recovered '%s%s'\n", disk->dir, link->sub);
+					printf("recovered %s%s\n", disk->dir, link->sub);
 				}
 			}
 		}
@@ -1551,7 +1551,7 @@ close_and_continue:
 
 				fprintf(stdlog, "status:ok:%s:%s\n", disk->name, dir->sub);
 				if (state->opt.verbose) {
-					printf("Recovered '%s%s'\n", disk->dir, dir->sub);
+					printf("recovered %s%s\n", disk->dir, dir->sub);
 				}
 			}
 		}
@@ -1620,22 +1620,22 @@ bail:
 	}
 
 	if (error || recovered_error || unrecoverable_error) {
-		if (error)
-			printf("%u read/data errors\n", error);
-		else
-			printf("No read/data errors\n");
+		printf("\n");
+		printf("%8u read/data errors\n", error);
 		if (fix) {
-			if (recovered_error)
-				printf("%u recovered errors\n", recovered_error);
-			else
-				printf("No recovered errors\n");
+			printf("%8u recovered errors\n", recovered_error);
 		}
-		if (unrecoverable_error)
-			printf("%u UNRECOVERABLE errors\n", unrecoverable_error);
-		else {
+		if (unrecoverable_error) {
+			printf("%8u UNRECOVERABLE errors\n", unrecoverable_error);
+			printf("DANGER! There are unrecoverable errors!\n");
+		} else {
 			/* without checking, we don't know if they are really recoverable or not */
 			if (check)
-				printf("No unrecoverable errors\n");
+				printf("%8u unrecoverable errors\n", unrecoverable_error);
+			if (fix)
+				printf("Everything RECOVERED\n");
+			else
+				printf("WARNING! There are errors!\n");
 		}
 	} else {
 		printf("Everything OK\n");

@@ -38,7 +38,7 @@ snapraid [\(hyc, \(hy\(hyconf CONFIG]
 .PD 0
 .PP
 .PD
-	sync|status|scrub|diff|dup|pool|check|fix|rehash
+	sync|status|scrub|list|diff|dup|pool|check|fix|rehash
 .PD 0
 .PP
 .PD
@@ -558,6 +558,11 @@ Prints a summary of the state of the disk array.
 It includes information about the parity fragmentation, how old
 are the blocks without checking, and all the recorded silent
 errors encoutered while scrubbing.
+.PP
+Nothing is modified.
+.SS list 
+Lists all the files contained in the array at the time of the
+last \(a"sync\(a" command.
 .PP
 Nothing is modified.
 .SS diff 

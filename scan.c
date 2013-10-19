@@ -77,7 +77,7 @@ static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, 
 	struct snapraid_link* link;
 
 	/* check if the link already exists */
-	link = tommy_hashdyn_search(&disk->linkset, link_name_compare, sub, link_name_hash(sub));
+	link = tommy_hashdyn_search(&disk->linkset, link_name_compare_to_arg, sub, link_name_hash(sub));
 	if (link) {
 		/* check if multiple files have the same name */
 		if (link_flag_has(link, FILE_IS_PRESENT)) {
@@ -106,7 +106,7 @@ static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, 
 
 			fprintf(stdlog, "scan:update:%s:%s\n", disk->name, link->sub);
 			if (output) {
-				printf("Update '%s%s'\n", disk->dir, link->sub);
+				printf("update %s%s\n", disk->dir, link->sub);
 			}
 
 			/* update it */
@@ -123,7 +123,7 @@ static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, 
 
 		fprintf(stdlog, "scan:add:%s:%s\n", disk->name, sub);
 		if (output) {
-			printf("Add '%s%s'\n", disk->dir, sub);
+			printf("add %s%s\n", disk->dir, sub);
 		}
 
 		/* and continue to insert it */
@@ -360,7 +360,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 
 				fprintf(stdlog, "scan:move:%s:%s:%s\n", disk->name, file->sub, sub);
 				if (output) {
-					printf("Move '%s%s' '%s%s'\n", disk->dir, file->sub, disk->dir, sub);
+					printf("move %s%s -> %s%s\n", disk->dir, file->sub, disk->dir, sub);
 				}
 
 				/* remove from the name set */
@@ -481,7 +481,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 
 				fprintf(stdlog, "scan:restore:%s:%s\n", disk->name, sub);
 				if (output) {
-					printf("Restore '%s%s'\n", disk->dir, sub);
+					printf("restore %s%s\n", disk->dir, sub);
 				}
 
 				/* remove from the inode set */
@@ -530,9 +530,9 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 		fprintf(stdlog, "scan:update:%s:%s\n", disk->name, file->sub);
 		if (output) {
 			if (file->size != st->st_size)
-				printf("Update '%s%s' new size\n", disk->dir, file->sub);
+				printf("resize %s%s\n", disk->dir, file->sub);
 			else
-				printf("Update '%s%s' new modification time\n", disk->dir, file->sub);
+				printf("update %s%s\n", disk->dir, file->sub);
 		}
 
 		/* remove it */
@@ -545,7 +545,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 
 		fprintf(stdlog, "scan:add:%s:%s\n", disk->name, sub);
 		if (output) {
-			printf("Add '%s%s'\n", disk->dir, sub);
+			printf("add %s%s\n", disk->dir, sub);
 		}
 
 		/* and continue to insert it */
@@ -628,7 +628,7 @@ static void scan_emptydir(struct snapraid_scan* scan, struct snapraid_state* sta
 
 		fprintf(stdlog, "scan:add:%s:%s\n", disk->name, sub);
 		if (output) {
-			printf("Add '%s%s'\n", disk->dir, sub);
+			printf("add %s%s\n", disk->dir, sub);
 		}
 
 		/* and continue to insert it */
@@ -965,6 +965,9 @@ void state_scan(struct snapraid_state* state, int output)
 
 	tommy_list_init(&scanlist);
 
+	if (output)
+		printf("Comparing...\n");
+
 	for(i=state->disklist;i!=0;i=i->next) {
 		struct snapraid_disk* disk = i->data;
 		struct snapraid_scan* scan;
@@ -988,7 +991,8 @@ void state_scan(struct snapraid_state* state, int output)
 
 		tommy_list_insert_tail(&scanlist, &scan->node, scan);
 
-		printf("Scanning disk %s...\n", disk->name);
+		if (!output)
+			printf("Scanning disk %s...\n", disk->name);
 
 		/* check if the disk supports persistent inodes */
 		ret = fsinfo(disk->dir, &has_persistent_inode);
@@ -1037,7 +1041,7 @@ void state_scan(struct snapraid_state* state, int output)
 
 				fprintf(stdlog, "scan:remove:%s:%s\n", disk->name, file->sub);
 				if (output) {
-					printf("Remove '%s%s'\n", disk->dir, file->sub);
+					printf("remove %s%s\n", disk->dir, file->sub);
 				}
 
 				scan_file_remove(state, disk, file);
@@ -1058,7 +1062,7 @@ void state_scan(struct snapraid_state* state, int output)
 
 				fprintf(stdlog, "scan:remove:%s:%s\n", disk->name, link->sub);
 				if (output) {
-					printf("Remove '%s%s'\n", disk->dir, link->sub);
+					printf("remove %s%s\n", disk->dir, link->sub);
 				}
 
 				scan_link_remove(state, disk, link);
@@ -1079,7 +1083,7 @@ void state_scan(struct snapraid_state* state, int output)
 
 				fprintf(stdlog, "scan:remove:%s:%s\n", disk->name, dir->sub);
 				if (output) {
-					printf("Remove '%s%s'\n", disk->dir, dir->sub);
+					printf("remove %s%s\n", disk->dir, dir->sub);
 				}
 
 				scan_emptydir_remove(state, disk, dir);
@@ -1247,13 +1251,15 @@ void state_scan(struct snapraid_state* state, int output)
 			total.count_insert += scan->count_insert;
 		}
 
-		if (state->opt.verbose) {
-			printf("\tequal %d\n", total.count_equal);
-			printf("\tmoved %d\n", total.count_move);
-			printf("\trestored %d\n", total.count_restore);
-			printf("\tchanged %d\n", total.count_change);
-			printf("\tremoved %d\n", total.count_remove);
-			printf("\tadded %d\n", total.count_insert);
+		if (state->opt.verbose || output) {
+			if (output)
+				printf("\n");
+			printf("%8u equal\n", total.count_equal);
+			printf("%8u moved\n", total.count_move);
+			printf("%8u restored\n", total.count_restore);
+			printf("%8u changed\n", total.count_change);
+			printf("%8u removed\n", total.count_remove);
+			printf("%8u added\n", total.count_insert);
 		}
 
 		fprintf(stdlog, "summary:equal:%u\n", total.count_equal);
@@ -1267,9 +1273,9 @@ void state_scan(struct snapraid_state* state, int output)
 
 		if (output) {
 			if (no_difference) {
-				printf("No difference\n");
+				printf("No differences\n");
 			} else {
-				printf("There are differences\n");
+				printf("There are differences!\n");
 			}
 		}
 

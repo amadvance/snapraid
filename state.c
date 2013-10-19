@@ -1646,11 +1646,11 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 	state->loaded_blockmax = blockmax;
 
 	if (state->opt.verbose) {
-		printf("\tfile %u\n", count_file);
-		printf("\tblock %u\n", count_block);
-		printf("\thardlink %u\n", count_hardlink);
-		printf("\tsymlink %u\n", count_symlink);
-		printf("\temptydir %u\n", count_dir);
+		printf("%8u files\n", count_file);
+		printf("%8u blocks\n", count_block);
+		printf("%8u hardlinks\n", count_hardlink);
+		printf("%8u symlinks\n", count_symlink);
+		printf("%8u empty dirs\n", count_dir);
 	}
 }
 
@@ -1961,11 +1961,11 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 	}
 
 	if (state->opt.verbose) {
-		printf("\tfile %u\n", count_file);
-		printf("\tblock %u\n", count_block);
-		printf("\thardlink %u\n", count_hardlink);
-		printf("\tsymlink %u\n", count_symlink);
-		printf("\temptydir %u\n", count_dir);
+		printf("%8u files\n", count_file);
+		printf("%8u blocks\n", count_block);
+		printf("%8u hardlinks\n", count_hardlink);
+		printf("%8u symlinks\n", count_symlink);
+		printf("%8u empty dirs\n", count_dir);
 	}
 }
 
@@ -2706,11 +2706,11 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 	state->loaded_blockmax = blockmax;
 
 	if (state->opt.verbose) {
-		printf("\tfile %u\n", count_file);
-		printf("\tblock %u\n", count_block);
-		printf("\thardlink %u\n", count_hardlink);
-		printf("\tsymlink %u\n", count_symlink);
-		printf("\temptydir %u\n", count_dir);
+		printf("%8u files\n", count_file);
+		printf("%8u blocks\n", count_block);
+		printf("%8u hardlinks\n", count_hardlink);
+		printf("%8u symlinks\n", count_symlink);
+		printf("%8u empty dirs\n", count_dir);
 	}
 }
 
@@ -3089,11 +3089,11 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	}
 
 	if (state->opt.verbose) {
-		printf("\tfile %u\n", count_file);
-		printf("\tblock %u\n", count_block);
-		printf("\thardlink %u\n", count_hardlink);
-		printf("\tsymlink %u\n", count_symlink);
-		printf("\temptydir %u\n", count_dir);
+		printf("%8u files\n", count_file);
+		printf("%8u blocks\n", count_block);
+		printf("%8u hardlinks\n", count_hardlink);
+		printf("%8u symlinks\n", count_symlink);
+		printf("%8u empty dirs\n", count_dir);
 	}
 }
 

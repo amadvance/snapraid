@@ -9,20 +9,22 @@ SnapRAID HISTORY
    high performant parity generator matrix used.
    Extensions supporting more disks and more parities are possible,
    but not yet implemented.
- * New parity computation using SSSE3 and AVX instructions for the
-   best performance.
+ * Faster parity computation for SSSE3 and AVX CPUs.
+ * Faster parity computation for ARM 64 bit CPUs.
  * In sync, if a silent error is found, directly mark the block as bad
    like in scrub, and continue with the sync process.
  * Sort files by inode when listing the directory. This improves
-   performance when listing directories.
+   the scanning performance.
+ * For files with changes only in some blocks, updates the parity
+   only for blocks that really are changed.
+   This improves the performance in sync for edited files.
+ * Added a new "list" command to see the stored list of files.   
  * Removed the detailed list of errors from the screen output.
    To get it you must explicitely use the -l, --log option.
    It's now too detailed for the screen, because it contains a lot
    of info.
- * For files with changes only in some blocks, updates the parity
-   only for blocks that really are changed.
-   This improves the performance in sync for edited files.
- * Faster parity computation for ARM 64 bit CPU.
+ * Changed the output format of some commands to make it similar
+   at the new "list" one.
  * Reduced memory usage avoiding to allocate unnecessary memory.
 
 4.3 2013/10
