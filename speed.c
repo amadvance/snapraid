@@ -134,10 +134,10 @@ void speed(void)
 #endif
 	printf("\n");
 
-	printf("Expected fastest RAID5 is %s\n", raid5_tag());
-	printf("Expected fastest RAID6 is %s\n", raid6_tag());
-	printf("Expected fastest RAIDTP is %s\n", raidTP_tag());
-	printf("Expected fastest RAIDQP is %s\n", raidQP_tag());
+	printf("Expected fastest raid5 is %s\n", raid5_tag());
+	printf("Expected fastest raid6 is %s\n", raid6_tag());
+	printf("Expected fastest raidTP is %s\n", raidTP_tag());
+	printf("Expected fastest raidQP is %s\n", raidQP_tag());
 
 	printf("If these expectations are false, please report it in the SnapRAID forum\n");
 
@@ -240,7 +240,7 @@ void speed(void)
 	printf("\n");
 
 	/* RAID5 */
-	printf("%10s", "RAID5");
+	printf("%10s", "raid5");
 	fflush(stdout);
 
 	SPEED_START {
@@ -248,12 +248,14 @@ void speed(void)
 	} SPEED_STOP
 
 	printf(" %6"PRIu64, ds / dt);
+	fflush(stdout);
 
 	SPEED_START {
 		raid5_int64(buffer, diskmax, block_size);
 	} SPEED_STOP
 
 	printf(" %6"PRIu64, ds / dt);
+	fflush(stdout);
 
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_mmx()) {
@@ -262,6 +264,7 @@ void speed(void)
 		} SPEED_STOP
 
 		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
 	}
 
 	if (cpu_has_sse2()) {
@@ -270,12 +273,13 @@ void speed(void)
 		} SPEED_STOP
 
 		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
 	}
 #endif
 	printf("\n");
 
 	/* RAID6 */
-	printf("%10s", "RAID6");
+	printf("%10s", "raid6");
 	fflush(stdout);
 
 	SPEED_START {
@@ -283,12 +287,14 @@ void speed(void)
 	} SPEED_STOP
 
 	printf(" %6"PRIu64, ds / dt);
+	fflush(stdout);
 
 	SPEED_START {
 		raid6_int64(buffer, diskmax, block_size);
 	} SPEED_STOP
 
 	printf(" %6"PRIu64, ds / dt);
+	fflush(stdout);
 
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_mmx()) {
@@ -297,6 +303,7 @@ void speed(void)
 		} SPEED_STOP
 
 		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
 	}
 
 	if (cpu_has_sse2()) {
@@ -305,6 +312,7 @@ void speed(void)
 		} SPEED_STOP
 
 		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
 
 #if defined(__x86_64__)
 		SPEED_START {
@@ -312,13 +320,14 @@ void speed(void)
 		} SPEED_STOP
 
 		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
 #endif
 	}
 #endif
 	printf("\n");
 
 	/* RAIDTP */
-	printf("%10s", "RAIDTP");
+	printf("%10s", "raidTP");
 	fflush(stdout);
 
 	SPEED_START {
@@ -326,12 +335,14 @@ void speed(void)
 	} SPEED_STOP
 
 	printf(" %6"PRIu64, ds / dt);
+	fflush(stdout);
 
 	SPEED_START {
 		raidTP_int64(buffer, diskmax, block_size);
 	} SPEED_STOP
 
 	printf(" %6"PRIu64, ds / dt);
+	fflush(stdout);
 
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_mmx()) {
@@ -340,6 +351,7 @@ void speed(void)
 		} SPEED_STOP
 
 		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
 	}
 
 	if (cpu_has_sse2()) {
@@ -348,6 +360,7 @@ void speed(void)
 		} SPEED_STOP
 
 		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
 
 #if defined(__x86_64__)
 		SPEED_START {
@@ -355,6 +368,7 @@ void speed(void)
 		} SPEED_STOP
 
 		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
 #endif
 	}
 
@@ -364,6 +378,7 @@ void speed(void)
 		} SPEED_STOP
 
 		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
 
 #if defined(__x86_64__)
 		SPEED_START {
@@ -371,13 +386,14 @@ void speed(void)
 		} SPEED_STOP
 
 		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
 #endif
 	}
 #endif
 	printf("\n");
 
 	/* RAIDQP */
-	printf("%10s", "RAIDQP");
+	printf("%10s", "raidQP");
 	fflush(stdout);
 
 	SPEED_START {
@@ -385,12 +401,14 @@ void speed(void)
 	} SPEED_STOP
 
 	printf(" %6"PRIu64, ds / dt);
+	fflush(stdout);
 
 	SPEED_START {
 		raidQP_int64(buffer, diskmax, block_size);
 	} SPEED_STOP
 
 	printf(" %6"PRIu64, ds / dt);
+	fflush(stdout);
 
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_mmx()) {
@@ -399,6 +417,7 @@ void speed(void)
 		} SPEED_STOP
 
 		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
 	}
 
 	if (cpu_has_sse2()) {
@@ -407,6 +426,7 @@ void speed(void)
 		} SPEED_STOP
 
 		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
 
 #if defined(__x86_64__)
 		SPEED_START {
@@ -414,6 +434,7 @@ void speed(void)
 		} SPEED_STOP
 
 		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
 #endif
 	}
 
@@ -423,6 +444,7 @@ void speed(void)
 		} SPEED_STOP
 
 		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
 
 #if defined(__x86_64__)
 		SPEED_START {
@@ -430,6 +452,7 @@ void speed(void)
 		} SPEED_STOP
 
 		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
 #endif
 	}
 
@@ -440,6 +463,7 @@ void speed(void)
 		} SPEED_STOP
 
 		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
 #endif
 	}
 #endif
