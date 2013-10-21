@@ -219,6 +219,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				if (ret == -1) {
 					/* This one is really an unexpected error, because we are only reading */
 					/* and closing a descriptor should never fail */
+					fprintf(stdlog, "error:%u:%s:%s: Close error. %s\n", i, handle[j].disk->name, handle[j].file->sub, strerror(errno));
 					fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to scrub.\n");
 					printf("Stopping at block %u\n", i);
 					++error;
@@ -228,7 +229,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 			ret = handle_open(&handle[j], block_file_get(block), state->opt.skip_sequential, stderr);
 			if (ret == -1) {
-				fprintf(stdlog, "error:%u:%s:%s: Open error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
+				fprintf(stdlog, "error:%u:%s:%s: Open error. %s\n", i, handle[j].disk->name, handle[j].file->sub, strerror(errno));
 				++error;
 				error_on_this_block = 1;
 				continue;
@@ -251,7 +252,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 			read_size = handle_read(&handle[j], block, buffer[j], state->block_size, stderr);
 			if (read_size == -1) {
-				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
+				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u\n", i, handle[j].disk->name, handle[j].file->sub, block_file_pos(block));
 				++error;
 				error_on_this_block = 1;
 				continue;
@@ -273,7 +274,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			if (block_has_updated_hash(block)) {
 				/* compare the hash */
 				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
-					fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
+					fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, handle[j].file->sub, block_file_pos(block));
 
 					/* it's a silent error only if we are dealing with synched files */
 					if (file_is_unsynched) {
@@ -281,7 +282,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 						error_on_this_block = 1;
 					} else {
 						fprintf(stderr, "Data error in file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
-						fprintf(stderr, "DANGER! Unexpected data error in a data disk! The block is now marked as bad!\n");
+						fprintf(stderr, "WARNING! Unexpected data error in a data disk! The block is now marked as bad!\n");
 						fprintf(stderr, "Try with 'snapraid -e fix' to recover!\n");
 
 						++silent_error;
@@ -318,7 +319,6 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 			/* compare the parity */
 			for(l=0;l<state->level;++l) {
-			
 				if (buffer_recov[l] && memcmp(buffer[diskmax + l], buffer_recov[l], state->block_size) != 0) {
 					fprintf(stdlog, "parity_error:%u:%s: Data error\n", i, lev_config_name(l));
 

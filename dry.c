@@ -103,7 +103,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			if (parity[l]) {
 				ret = parity_read(parity[l], i, buffer_aligned, state->block_size, stdlog);
 				if (ret == -1) {
-					fprintf(stdlog, "error:%u:%s: Read error\n", i, lev_config_name(l));
+					fprintf(stdlog, "parity_error:%u:%s: Read error\n", i, lev_config_name(l));
 					++error;
 				}
 			}

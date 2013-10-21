@@ -233,7 +233,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			if (is_hash_matching(state, rehash, diskmax, failed, failed_map, failed_count, buffer, buffer_zero))
 				return 0;
 
-			fprintf(stdlog, "error:%u:%s: Data error\n", pos, lev_config_name(COMBO1[i].a));
+			fprintf(stdlog, "parity_error:%u:%s: Data error\n", pos, lev_config_name(COMBO1[i].a));
 			++error;
 		}
 	}
@@ -254,7 +254,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			if (is_parity_matching(state, diskmax, COMBO2[i].b, buffer, buffer_recov))
 				return 0;
 
-			fprintf(stdlog, "error:%u:%s/%s: Data error\n", pos, lev_config_name(COMBO2[i].a), lev_config_name(COMBO2[i].b));
+			fprintf(stdlog, "parity_error:%u:%s/%s: Data error\n", pos, lev_config_name(COMBO2[i].a), lev_config_name(COMBO2[i].b));
 			++error;
 		}
 	}
@@ -276,7 +276,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			if (is_hash_matching(state, rehash, diskmax, failed, failed_map, failed_count, buffer, buffer_zero))
 				return 0;
 
-			fprintf(stdlog, "error:%u:%s/%s: Data error\n", pos, lev_config_name(COMBO2[i].a), lev_config_name(COMBO2[i].b));
+			fprintf(stdlog, "parity_error:%u:%s/%s: Data error\n", pos, lev_config_name(COMBO2[i].a), lev_config_name(COMBO2[i].b));
 			++error;
 		}
 	}
@@ -298,7 +298,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			if (is_parity_matching(state, diskmax, COMBO3[i].c, buffer, buffer_recov))
 				return 0;
 
-			fprintf(stdlog, "error:%u:%s/%s/%s: Data error\n", pos, lev_config_name(COMBO3[i].a), lev_config_name(COMBO3[i].b), lev_config_name(COMBO3[i].c));
+			fprintf(stdlog, "parity_error:%u:%s/%s/%s: Data error\n", pos, lev_config_name(COMBO3[i].a), lev_config_name(COMBO3[i].b), lev_config_name(COMBO3[i].c));
 			++error;
 		}
 	}
@@ -321,7 +321,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			if (is_hash_matching(state, rehash, diskmax, failed, failed_map, failed_count, buffer, buffer_zero))
 				return 0;
 
-			fprintf(stdlog, "error:%u:%s/%s/%s: Data error\n", pos, lev_config_name(COMBO3[i].a), lev_config_name(COMBO3[i].b), lev_config_name(COMBO3[i].c));
+			fprintf(stdlog, "parity_error:%u:%s/%s/%s: Data error\n", pos, lev_config_name(COMBO3[i].a), lev_config_name(COMBO3[i].b), lev_config_name(COMBO3[i].c));
 			++error;
 		}
 	}
@@ -344,7 +344,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			if (is_parity_matching(state, diskmax, COMBO4[i].d, buffer, buffer_recov))
 				return 0;
 
-			fprintf(stdlog, "error:%u:%s/%s/%s/%s: Data error\n", pos, lev_config_name(COMBO4[i].a), lev_config_name(COMBO4[i].b), lev_config_name(COMBO4[i].c), lev_config_name(COMBO4[i].d));
+			fprintf(stdlog, "parity_error:%u:%s/%s/%s/%s: Data error\n", pos, lev_config_name(COMBO4[i].a), lev_config_name(COMBO4[i].b), lev_config_name(COMBO4[i].c), lev_config_name(COMBO4[i].d));
 			++error;
 		}
 	}
@@ -368,7 +368,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			if (is_hash_matching(state, rehash, diskmax, failed, failed_map, failed_count, buffer, buffer_zero))
 				return 0;
 
-			fprintf(stdlog, "error:%u:%s/%s/%s/%s: Data error\n", pos, lev_config_name(COMBO4[i].a), lev_config_name(COMBO4[i].b), lev_config_name(COMBO4[i].c), lev_config_name(COMBO4[i].d));
+			fprintf(stdlog, "parity_error:%u:%s/%s/%s/%s: Data error\n", pos, lev_config_name(COMBO4[i].a), lev_config_name(COMBO4[i].b), lev_config_name(COMBO4[i].c), lev_config_name(COMBO4[i].d));
 			++error;
 		}
 	}
@@ -899,7 +899,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					if (ret == -1) {
 						buffer_recov[l] = 0; /* no parity to use */
 
-						fprintf(stdlog, "error:%u:%s: Read error\n", i, lev_config_name(l));
+						fprintf(stdlog, "parity_error:%u:%s: Read error\n", i, lev_config_name(l));
 						++error;
 					}
 				} else {
@@ -953,7 +953,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 						if (buffer_recov[l] != 0 && memcmp(buffer_recov[l], buffer[diskmax + l], state->block_size) != 0) {
 							buffer_recov[l] = 0;
 
-							fprintf(stdlog, "error:%u:%s: Data error\n", i, lev_config_name(l));
+							fprintf(stdlog, "parity_error:%u:%s: Data error\n", i, lev_config_name(l));
 							++error;
 						}
 					}
@@ -1017,7 +1017,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 									goto bail;
 								}
 
-								fprintf(stdlog, "fixed:%u:%s: Fixed data error\n", i, lev_config_name(l));
+								fprintf(stdlog, "parity_fixed:%u:%s: Fixed data error\n", i, lev_config_name(l));
 								++recovered_error;
 							}
 						}
