@@ -438,7 +438,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	blockmax = parity_size(state);
 	size = blockmax * (data_off_t)state->block_size;
-	loaded_size = state->loaded_blockmax * (data_off_t)state->block_size;
+	loaded_size = state->loaded_paritymax * (data_off_t)state->block_size;
 
 	if (blockstart > blockmax) {
 		fprintf(stderr, "Error in the starting block %u. It's bigger than the parity size %u.\n", blockstart, blockmax);

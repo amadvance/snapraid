@@ -1,6 +1,11 @@
 SnapRAID HISTORY
 ================
 
+4.4 2013/10
+===========
+ * Relaxed the check about small parity files, to allow to recover
+   after a failed sync before resizing the parity files.
+
 4.3 2013/10
 ===========
  * Fixed the scrub command with the -p0 option. Now it really scrubs
