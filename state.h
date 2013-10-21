@@ -104,7 +104,17 @@ struct snapraid_state {
 	tommy_hashdyn importset; /**< Hashtable by hash of all the import blocks. */
 	tommy_hashdyn previmportset; /**< Hashtable by prevhash of all the import blocks. Valid only if we are in a rehash state. */
 	tommy_arrayblkof infoarr; /**< Block information array. */
-	block_off_t loaded_blockmax; /**< Previous size of the parity file, computed from the loaded state. */
+
+	/**
+	 * Required size of the parity file, computed from the loaded state.
+	 * This size only counts BLK blocks, ignoring NEW, CHG and DELETED ones.
+	 *
+	 * In normal case it's also the blockmax size returned by parity_size().
+	 * In case of interrupted sync, this is the position + 1 of the last BLK block.
+	 * Potentionally smaller than parity_size().
+	 */
+	block_off_t loaded_paritymax;
+
 	int clear_undeterminate_hash; /**< Clear all the hash from CHG and DELETED blocks when reading the state from an incomplete sync. */
 	time_t progress_start; /**< Start of processing for progress visualization. */
 	time_t progress_last; /**< Last update of progress visualization. */

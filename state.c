@@ -65,7 +65,7 @@ void state_init(struct snapraid_state* state)
 	state->pool_device = 0;
 	state->lockfile[0] = 0;
 	state->level = 1; /* default is the lowest protection */
-	state->loaded_blockmax = 0;
+	state->loaded_paritymax = 0;
 	state->clear_undeterminate_hash = 0;
 	state->no_conf = 0;
 
@@ -892,6 +892,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 	struct snapraid_file* file;
 	block_off_t blockidx;
 	block_off_t blockmax;
+	block_off_t paritymax;
 	unsigned line;
 	unsigned count_file;
 	unsigned count_block;
@@ -904,6 +905,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 	line = 1;
 	blockidx = 0;
 	blockmax = 0;
+	paritymax = 0;
 	count_file = 0;
 	count_block = 0;
 	count_hardlink = 0;
@@ -961,6 +963,10 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			switch (tag[0]) {
 			case 'b' :
 				block_state_set(block, BLOCK_STATE_BLK);
+
+				/* keep track of the required parity size */
+				if (v_pos + 1 > paritymax)
+					paritymax = v_pos + 1;
 				break;
 			case 'n' :
 				block_state_set(block, BLOCK_STATE_NEW);
@@ -1643,7 +1649,9 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 		fprintf(stderr, "Internal inconsistency in parity size in '%s' at line %u\n", path, line);
 		exit(EXIT_FAILURE);
 	}
-	state->loaded_blockmax = blockmax;
+
+	/* set the required parity size */
+	state->loaded_paritymax = paritymax;
 
 	if (state->opt.verbose) {
 		printf("%8u files\n", count_file);
@@ -2037,6 +2045,7 @@ static void decoding_error(const char* path, STREAM* f)
 static void state_read_binary(struct snapraid_state* state, const char* path, STREAM* f)
 {
 	block_off_t blockmax;
+	block_off_t paritymax;
 	unsigned count_file;
 	unsigned count_block;
 	unsigned count_hardlink;
@@ -2049,6 +2058,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 	uint32_t mapping_max;
 
 	blockmax = 0;
+	paritymax = 0;
 	count_file = 0;
 	count_block = 0;
 	count_hardlink = 0;
@@ -2207,6 +2217,10 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 					switch (c) {
 					case 'b' :
 						block_state_set(block, BLOCK_STATE_BLK);
+
+						/* keep track of the required parity size */
+						if (v_pos + 1 > paritymax)
+							paritymax = v_pos + 1;
 						break;
 					case 'n' :
 						block_state_set(block, BLOCK_STATE_NEW);
@@ -2703,7 +2717,9 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 		fprintf(stderr, "Internal inconsistency in parity size in '%s' at offset %"PRIi64"\n", path, stell(f));
 		exit(EXIT_FAILURE);
 	}
-	state->loaded_blockmax = blockmax;
+
+	/* set the required parity size */
+	state->loaded_paritymax = paritymax;
 
 	if (state->opt.verbose) {
 		printf("%8u files\n", count_file);
