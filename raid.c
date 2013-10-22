@@ -38,6 +38,11 @@
 /* specialized parity generation */
 
 /**
+ * Dereference as uint8_t
+ */
+#define v_8(p) (*(uint8_t*)&(p))
+
+/**
  * Dereference as uint32_t
  */
 #define v_32(p) (*(uint32_t*)&(p))
@@ -1600,6 +1605,653 @@ void raidQP_avxext(unsigned char** vbuf, unsigned data, unsigned size)
 #endif
 
 /****************************************************************************/
+/* cauchy */
+
+/*
+ * RAID-Cauchy-QP 8bit C implementation
+ */
+void cauchyQP_int8(unsigned char** vbuf, unsigned data, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	unsigned char* s;
+	int d, l;
+	unsigned o;
+
+	uint8_t d0, s0, r0, q0, p0;
+
+	l = data - 1;
+	p = vbuf[data];
+	q = vbuf[data+1];
+	r = vbuf[data+2];
+	s = vbuf[data+3];
+
+	for(o=0;o<size;o+=1) {
+		s0 = r0 = q0 = p0 = 0;
+		for(d=l;d>=0;--d) {
+			d0 = v_8(vbuf[d][o]);
+
+			p0 ^= d0;
+			q0 ^= gfcauchy_mul[d][d0][0];
+			r0 ^= gfcauchy_mul[d][d0][1];
+			s0 ^= gfcauchy_mul[d][d0][2];
+		}
+		v_8(p[o]) = p0;
+		v_8(q[o]) = q0;
+		v_8(r[o]) = r0;
+		v_8(s[o]) = s0;
+	}
+}
+
+#if defined(__i386__) || defined(__x86_64__)
+/*
+ * RAID-Cauchy-QP SSSE3 implementation
+ */
+void cauchyQP_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	unsigned char* s;
+	int d, l;
+	unsigned o;
+
+	l = data - 1;
+	p = vbuf[data];
+	q = vbuf[data+1];
+	r = vbuf[data+2];
+	s = vbuf[data+3];
+
+	for(o=0;o<size;o+=16) {
+		asm volatile("pxor %xmm0,%xmm0");
+		asm volatile("pxor %xmm1,%xmm1");
+		asm volatile("pxor %xmm2,%xmm2");
+		asm volatile("pxor %xmm3,%xmm3");
+		for(d=l;d>=0;--d) {
+			asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.poly[0]));
+
+			asm volatile("pxor %xmm4,%xmm4");
+			asm volatile("pcmpgtb %xmm1,%xmm4");
+			asm volatile("paddb %xmm1,%xmm1");
+			asm volatile("pand %xmm7,%xmm4");
+			asm volatile("pxor %xmm4,%xmm1");
+
+			asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[d][o]));
+
+			asm volatile("pxor %xmm4,%xmm0");
+			asm volatile("pxor %xmm4,%xmm1");
+
+			asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.low_nibble[0]));
+			asm volatile("movdqa %xmm4,%xmm5");
+			asm volatile("psraw  $4,%xmm5");
+			asm volatile("pand   %xmm7,%xmm4");
+			asm volatile("pand   %xmm7,%xmm5");
+
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchy_pshufb[d][0][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchy_pshufb[d][0][1][0]));
+			asm volatile("pshufb %xmm4,%xmm6");
+			asm volatile("pshufb %xmm5,%xmm7");
+			asm volatile("pxor   %xmm6,%xmm2");
+			asm volatile("pxor   %xmm7,%xmm2");
+
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchy_pshufb[d][1][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchy_pshufb[d][1][1][0]));
+			asm volatile("pshufb %xmm4,%xmm6");
+			asm volatile("pshufb %xmm5,%xmm7");
+			asm volatile("pxor   %xmm6,%xmm3");
+			asm volatile("pxor   %xmm7,%xmm3");
+		}
+		asm volatile("movntdq %%xmm0,%0" : "=m" (p[o]));
+		asm volatile("movntdq %%xmm1,%0" : "=m" (q[o]));
+		asm volatile("movntdq %%xmm2,%0" : "=m" (r[o]));
+		asm volatile("movntdq %%xmm3,%0" : "=m" (s[o]));
+	}
+
+	asm volatile("sfence" : : : "memory");
+}
+#endif
+
+#if defined(__x86_64__)
+/*
+ * RAID-Cauchy-QP SSSE3 implementation
+ * Note that it uses 16 registers, meaning that x64 is required.
+ */
+void cauchyQP_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	unsigned char* s;
+	int d, l;
+	unsigned o;
+
+	l = data - 1;
+	p = vbuf[data];
+	q = vbuf[data+1];
+	r = vbuf[data+2];
+	s = vbuf[data+3];
+
+	for(o=0;o<size;o+=32) {
+		asm volatile("pxor %xmm0,%xmm0");
+		asm volatile("pxor %xmm1,%xmm1");
+		asm volatile("pxor %xmm2,%xmm2");
+		asm volatile("pxor %xmm3,%xmm3");
+		asm volatile("pxor %xmm8,%xmm8");
+		asm volatile("pxor %xmm9,%xmm9");
+		asm volatile("pxor %xmm10,%xmm10");
+		asm volatile("pxor %xmm11,%xmm11");
+		for(d=l;d>=0;--d) {
+			asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.poly[0]));
+			asm volatile("movdqa %0,%%xmm15" : : "m" (raid_16_const.low_nibble[0]));
+			
+			asm volatile("pxor %xmm4,%xmm4");
+			asm volatile("pxor %xmm12,%xmm12");
+			asm volatile("pcmpgtb %xmm1,%xmm4");
+			asm volatile("pcmpgtb %xmm9,%xmm12");
+			asm volatile("paddb %xmm1,%xmm1");
+			asm volatile("paddb %xmm9,%xmm9");
+			asm volatile("pand %xmm7,%xmm4");
+			asm volatile("pand %xmm7,%xmm12");
+			asm volatile("pxor %xmm4,%xmm1");
+			asm volatile("pxor %xmm12,%xmm9");
+
+			asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[d][o]));
+			asm volatile("movdqa %0,%%xmm12" : : "m" (vbuf[d][o+16]));
+
+			asm volatile("pxor %xmm4,%xmm0");
+			asm volatile("pxor %xmm4,%xmm1");
+			asm volatile("pxor %xmm12,%xmm8");
+			asm volatile("pxor %xmm12,%xmm9");
+
+			asm volatile("movdqa %xmm4,%xmm5");
+			asm volatile("movdqa %xmm12,%xmm13");
+			asm volatile("psraw  $4,%xmm5");
+			asm volatile("psraw  $4,%xmm13");
+			asm volatile("pand   %xmm15,%xmm4");
+			asm volatile("pand   %xmm15,%xmm12");
+			asm volatile("pand   %xmm15,%xmm5");
+			asm volatile("pand   %xmm15,%xmm13");
+
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchy_pshufb[d][0][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchy_pshufb[d][0][1][0]));
+			asm volatile("movdqa %xmm6,%xmm14");
+			asm volatile("movdqa %xmm7,%xmm15");
+			asm volatile("pshufb %xmm4,%xmm6");
+			asm volatile("pshufb %xmm12,%xmm14");
+			asm volatile("pshufb %xmm5,%xmm7");
+			asm volatile("pshufb %xmm13,%xmm15");
+			asm volatile("pxor   %xmm6,%xmm2");
+			asm volatile("pxor   %xmm14,%xmm10");
+			asm volatile("pxor   %xmm7,%xmm2");
+			asm volatile("pxor   %xmm15,%xmm10");
+
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchy_pshufb[d][1][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchy_pshufb[d][1][1][0]));
+			asm volatile("movdqa %xmm6,%xmm14");
+			asm volatile("movdqa %xmm7,%xmm15");
+			asm volatile("pshufb %xmm4,%xmm6");
+			asm volatile("pshufb %xmm12,%xmm14");
+			asm volatile("pshufb %xmm5,%xmm7");
+			asm volatile("pshufb %xmm13,%xmm15");
+			asm volatile("pxor   %xmm6,%xmm3");
+			asm volatile("pxor   %xmm14,%xmm11");
+			asm volatile("pxor   %xmm7,%xmm3");
+			asm volatile("pxor   %xmm15,%xmm11");
+		}
+		asm volatile("movntdq %%xmm0,%0" : "=m" (p[o]));
+		asm volatile("movntdq %%xmm8,%0" : "=m" (p[o+16]));
+		asm volatile("movntdq %%xmm1,%0" : "=m" (q[o]));
+		asm volatile("movntdq %%xmm9,%0" : "=m" (q[o+16]));
+		asm volatile("movntdq %%xmm2,%0" : "=m" (r[o]));
+		asm volatile("movntdq %%xmm10,%0" : "=m" (r[o+16]));
+		asm volatile("movntdq %%xmm3,%0" : "=m" (s[o]));
+		asm volatile("movntdq %%xmm11,%0" : "=m" (s[o+16]));
+	}
+
+	asm volatile("sfence" : : : "memory");
+}
+#endif
+
+/*
+ * RAID-Cauchy-PP 8bit C implementation
+ */
+void cauchyPP_int8(unsigned char** vbuf, unsigned data, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	unsigned char* s;
+	unsigned char* t;
+	int d, l;
+	unsigned o;
+
+	uint8_t d0, t0, s0, r0, q0, p0;
+
+	l = data - 1;
+	p = vbuf[data];
+	q = vbuf[data+1];
+	r = vbuf[data+2];
+	s = vbuf[data+3];
+	t = vbuf[data+4];
+
+	for(o=0;o<size;o+=1) {
+		t0 = s0 = r0 = q0 = p0 = 0;
+		for(d=l;d>=0;--d) {
+			d0 = v_8(vbuf[d][o]);
+
+			p0 ^= d0;
+			q0 ^= gfcauchy_mul[d][d0][0];
+			r0 ^= gfcauchy_mul[d][d0][1];
+			s0 ^= gfcauchy_mul[d][d0][2];
+			t0 ^= gfcauchy_mul[d][d0][3];
+		}
+		v_8(p[o]) = p0;
+		v_8(q[o]) = q0;
+		v_8(r[o]) = r0;
+		v_8(s[o]) = s0;
+		v_8(t[o]) = t0;
+	}
+}
+
+#if defined(__i386__) || defined(__x86_64__)
+/*
+ * RAID-Cauchy-PP SSSE3 implementation
+ */
+void cauchyPP_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	unsigned char* s;
+	unsigned char* t;
+	int d, l;
+	unsigned o;
+	unsigned char p0[16] __attribute__((aligned(16)));
+
+	l = data - 1;
+	p = vbuf[data];
+	q = vbuf[data+1];
+	r = vbuf[data+2];
+	s = vbuf[data+3];
+	t = vbuf[data+4];
+
+	for(o=0;o<size;o+=16) {
+		asm volatile("pxor %xmm0,%xmm0");
+		asm volatile("pxor %xmm1,%xmm1");
+		asm volatile("pxor %xmm2,%xmm2");
+		asm volatile("pxor %xmm3,%xmm3");
+		asm volatile("movdqa %%xmm0,%0" : "=m" (p0[0]));
+		for(d=l;d>=0;--d) {
+			asm volatile("movdqa %0,%%xmm6" : : "m" (p0[0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.poly[0]));
+
+			asm volatile("pxor %xmm4,%xmm4");
+			asm volatile("pcmpgtb %xmm0,%xmm4");
+			asm volatile("paddb %xmm0,%xmm0");
+			asm volatile("pand %xmm7,%xmm4");
+			asm volatile("pxor %xmm4,%xmm0");
+
+			asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[d][o]));
+
+			asm volatile("pxor %xmm4,%xmm0");
+			asm volatile("pxor %xmm4,%xmm6");
+			asm volatile("movdqa %%xmm6,%0" : "=m" (p0));
+
+			asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.low_nibble[0]));
+			asm volatile("movdqa %xmm4,%xmm5");
+			asm volatile("psraw  $4,%xmm5");
+			asm volatile("pand   %xmm7,%xmm4");
+			asm volatile("pand   %xmm7,%xmm5");
+
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchy_pshufb[d][0][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchy_pshufb[d][0][1][0]));
+			asm volatile("pshufb %xmm4,%xmm6");
+			asm volatile("pshufb %xmm5,%xmm7");
+			asm volatile("pxor   %xmm6,%xmm1");
+			asm volatile("pxor   %xmm7,%xmm1");
+
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchy_pshufb[d][1][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchy_pshufb[d][1][1][0]));
+			asm volatile("pshufb %xmm4,%xmm6");
+			asm volatile("pshufb %xmm5,%xmm7");
+			asm volatile("pxor   %xmm6,%xmm2");
+			asm volatile("pxor   %xmm7,%xmm2");
+
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchy_pshufb[d][2][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchy_pshufb[d][2][1][0]));
+			asm volatile("pshufb %xmm4,%xmm6");
+			asm volatile("pshufb %xmm5,%xmm7");
+			asm volatile("pxor   %xmm6,%xmm3");
+			asm volatile("pxor   %xmm7,%xmm3");
+		}
+		asm volatile("movdqa %0,%%xmm6" : : "m" (p0[0]));
+		asm volatile("movntdq %%xmm6,%0" : "=m" (p[o]));
+		asm volatile("movntdq %%xmm0,%0" : "=m" (q[o]));
+		asm volatile("movntdq %%xmm1,%0" : "=m" (r[o]));
+		asm volatile("movntdq %%xmm2,%0" : "=m" (s[o]));
+		asm volatile("movntdq %%xmm3,%0" : "=m" (t[o]));
+	}
+
+	asm volatile("sfence" : : : "memory");
+}
+#endif
+
+#if defined(__x86_64__)
+/*
+ * RAID-Cauchy-PP SSSE3 implementation
+ * Note that it uses 16 registers, meaning that x64 is required.
+ */
+void cauchyPP_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	unsigned char* s;
+	unsigned char* t;
+	int d, l;
+	unsigned o;
+
+	l = data - 1;
+	p = vbuf[data];
+	q = vbuf[data+1];
+	r = vbuf[data+2];
+	s = vbuf[data+3];
+	t = vbuf[data+4];
+
+	asm volatile("movdqa %0,%%xmm14" : : "m" (raid_16_const.poly[0]));
+	asm volatile("movdqa %0,%%xmm15" : : "m" (raid_16_const.low_nibble[0]));
+
+	for(o=0;o<size;o+=16) {
+		asm volatile("pxor %xmm0,%xmm0");
+		asm volatile("pxor %xmm1,%xmm1");
+		asm volatile("pxor %xmm2,%xmm2");
+		asm volatile("pxor %xmm3,%xmm3");
+		asm volatile("pxor %xmm4,%xmm4");
+		for(d=l;d>=0;--d) {
+			asm volatile("pxor %xmm10,%xmm10");
+			asm volatile("pcmpgtb %xmm1,%xmm10");
+			asm volatile("paddb %xmm1,%xmm1");
+			asm volatile("pand %xmm14,%xmm10");
+			asm volatile("pxor %xmm10,%xmm1");
+
+			asm volatile("movdqa %0,%%xmm10" : : "m" (vbuf[d][o]));
+
+			asm volatile("pxor %xmm10,%xmm0");
+			asm volatile("pxor %xmm10,%xmm1");
+
+			asm volatile("movdqa %xmm10,%xmm11");
+			asm volatile("psraw  $4,%xmm11");
+			asm volatile("pand   %xmm15,%xmm10");
+			asm volatile("pand   %xmm15,%xmm11");
+
+			asm volatile("movdqa %0,%%xmm12" : : "m" (gfcauchy_pshufb[d][0][0][0]));
+			asm volatile("movdqa %0,%%xmm13" : : "m" (gfcauchy_pshufb[d][0][1][0]));
+			asm volatile("pshufb %xmm10,%xmm12");
+			asm volatile("pshufb %xmm11,%xmm13");
+			asm volatile("pxor   %xmm12,%xmm2");
+			asm volatile("pxor   %xmm13,%xmm2");
+
+			asm volatile("movdqa %0,%%xmm12" : : "m" (gfcauchy_pshufb[d][1][0][0]));
+			asm volatile("movdqa %0,%%xmm13" : : "m" (gfcauchy_pshufb[d][1][1][0]));
+			asm volatile("pshufb %xmm10,%xmm12");
+			asm volatile("pshufb %xmm11,%xmm13");
+			asm volatile("pxor   %xmm12,%xmm3");
+			asm volatile("pxor   %xmm13,%xmm3");
+
+			asm volatile("movdqa %0,%%xmm12" : : "m" (gfcauchy_pshufb[d][2][0][0]));
+			asm volatile("movdqa %0,%%xmm13" : : "m" (gfcauchy_pshufb[d][2][1][0]));
+			asm volatile("pshufb %xmm10,%xmm12");
+			asm volatile("pshufb %xmm11,%xmm13");
+			asm volatile("pxor   %xmm12,%xmm4");
+			asm volatile("pxor   %xmm13,%xmm4");
+		}
+		asm volatile("movntdq %%xmm0,%0" : "=m" (p[o]));
+		asm volatile("movntdq %%xmm1,%0" : "=m" (q[o]));
+		asm volatile("movntdq %%xmm2,%0" : "=m" (r[o]));
+		asm volatile("movntdq %%xmm3,%0" : "=m" (s[o]));
+		asm volatile("movntdq %%xmm4,%0" : "=m" (t[o]));
+	}
+
+	asm volatile("sfence" : : : "memory");
+}
+#endif
+
+/*
+ * RAID-Cauchy-HP 8bit C implementation
+ */
+void cauchyHP_int8(unsigned char** vbuf, unsigned data, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	unsigned char* s;
+	unsigned char* t;
+	unsigned char* u;
+	int d, l;
+	unsigned o;
+
+	uint8_t d0, u0, t0, s0, r0, q0, p0;
+
+	l = data - 1;
+	p = vbuf[data];
+	q = vbuf[data+1];
+	r = vbuf[data+2];
+	s = vbuf[data+3];
+	t = vbuf[data+4];
+	u = vbuf[data+5];
+
+	for(o=0;o<size;o+=1) {
+		u0 = t0 = s0 = r0 = q0 = p0 = 0;
+		for(d=l;d>=0;--d) {
+			d0 = v_8(vbuf[d][o]);
+
+			p0 ^= d0;
+			q0 ^= gfcauchy_mul[d][d0][0];
+			r0 ^= gfcauchy_mul[d][d0][1];
+			s0 ^= gfcauchy_mul[d][d0][2];
+			t0 ^= gfcauchy_mul[d][d0][3];
+			u0 ^= gfcauchy_mul[d][d0][4];
+		}
+		v_8(p[o]) = p0;
+		v_8(q[o]) = q0;
+		v_8(r[o]) = r0;
+		v_8(s[o]) = s0;
+		v_8(t[o]) = t0;
+		v_8(u[o]) = u0;
+	}
+}
+
+#if defined(__i386__) || defined(__x86_64__)
+/*
+ * RAID-Cauchy-HP SSSE3 implementation
+ */
+void cauchyHP_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	unsigned char* s;
+	unsigned char* t;
+	unsigned char* u;
+	int d, l;
+	unsigned o;
+	unsigned char p0[16] __attribute__((aligned(16)));
+	unsigned char q0[16] __attribute__((aligned(16))); 
+
+	l = data - 1;
+	p = vbuf[data];
+	q = vbuf[data+1];
+	r = vbuf[data+2];
+	s = vbuf[data+3];
+	t = vbuf[data+4];
+	u = vbuf[data+5];
+
+	for(o=0;o<size;o+=16) {
+		asm volatile("pxor %xmm0,%xmm0");
+		asm volatile("pxor %xmm1,%xmm1");
+		asm volatile("pxor %xmm2,%xmm2");
+		asm volatile("pxor %xmm3,%xmm3");
+		asm volatile("movdqa %%xmm0,%0" : "=m" (p0[0]));
+		asm volatile("movdqa %%xmm0,%0" : "=m" (q0[0]));
+		for(d=l;d>=0;--d) {
+			asm volatile("movdqa %0,%%xmm5" : : "m" (p0[0]));
+			asm volatile("movdqa %0,%%xmm6" : : "m" (q0[0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.poly[0]));
+
+			asm volatile("pxor %xmm4,%xmm4");
+			asm volatile("pcmpgtb %xmm6,%xmm4");
+			asm volatile("paddb %xmm6,%xmm6");
+			asm volatile("pand %xmm7,%xmm4");
+			asm volatile("pxor %xmm4,%xmm6");
+
+			asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[d][o]));
+
+			asm volatile("pxor %xmm4,%xmm5");
+			asm volatile("pxor %xmm4,%xmm6");
+			asm volatile("movdqa %%xmm5,%0" : "=m" (p0));
+			asm volatile("movdqa %%xmm6,%0" : "=m" (q0));
+
+			asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.low_nibble[0]));
+			asm volatile("movdqa %xmm4,%xmm5");
+			asm volatile("psraw  $4,%xmm5");
+			asm volatile("pand   %xmm7,%xmm4");
+			asm volatile("pand   %xmm7,%xmm5");
+
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchy_pshufb[d][0][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchy_pshufb[d][0][1][0]));
+			asm volatile("pshufb %xmm4,%xmm6");
+			asm volatile("pshufb %xmm5,%xmm7");
+			asm volatile("pxor   %xmm6,%xmm0");
+			asm volatile("pxor   %xmm7,%xmm0");
+
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchy_pshufb[d][1][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchy_pshufb[d][1][1][0]));
+			asm volatile("pshufb %xmm4,%xmm6");
+			asm volatile("pshufb %xmm5,%xmm7");
+			asm volatile("pxor   %xmm6,%xmm1");
+			asm volatile("pxor   %xmm7,%xmm1");
+
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchy_pshufb[d][2][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchy_pshufb[d][2][1][0]));
+			asm volatile("pshufb %xmm4,%xmm6");
+			asm volatile("pshufb %xmm5,%xmm7");
+			asm volatile("pxor   %xmm6,%xmm2");
+			asm volatile("pxor   %xmm7,%xmm2");
+
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchy_pshufb[d][3][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchy_pshufb[d][3][1][0]));
+			asm volatile("pshufb %xmm4,%xmm6");
+			asm volatile("pshufb %xmm5,%xmm7");
+			asm volatile("pxor   %xmm6,%xmm3");
+			asm volatile("pxor   %xmm7,%xmm3");
+		}
+		asm volatile("movdqa %0,%%xmm5" : : "m" (p0[0]));
+		asm volatile("movdqa %0,%%xmm6" : : "m" (q0[0]));
+		asm volatile("movntdq %%xmm5,%0" : "=m" (p[o]));
+		asm volatile("movntdq %%xmm6,%0" : "=m" (q[o]));
+		asm volatile("movntdq %%xmm0,%0" : "=m" (r[o]));
+		asm volatile("movntdq %%xmm1,%0" : "=m" (s[o]));
+		asm volatile("movntdq %%xmm2,%0" : "=m" (t[o]));
+		asm volatile("movntdq %%xmm3,%0" : "=m" (u[o]));
+	}
+
+	asm volatile("sfence" : : : "memory");
+}
+#endif
+
+#if defined(__x86_64__)
+/*
+ * RAID-Cauchy-HP SSSE3 implementation
+ * Note that it uses 16 registers, meaning that x64 is required.
+ */
+void cauchyHP_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* q;
+	unsigned char* r;
+	unsigned char* s;
+	unsigned char* t;
+	unsigned char* u;
+	int d, l;
+	unsigned o;
+
+	l = data - 1;
+	p = vbuf[data];
+	q = vbuf[data+1];
+	r = vbuf[data+2];
+	s = vbuf[data+3];
+	t = vbuf[data+4];
+	u = vbuf[data+5];
+
+	asm volatile("movdqa %0,%%xmm14" : : "m" (raid_16_const.poly[0]));
+	asm volatile("movdqa %0,%%xmm15" : : "m" (raid_16_const.low_nibble[0]));
+
+	for(o=0;o<size;o+=16) {
+		asm volatile("pxor %xmm0,%xmm0");
+		asm volatile("pxor %xmm1,%xmm1");
+		asm volatile("pxor %xmm2,%xmm2");
+		asm volatile("pxor %xmm3,%xmm3");
+		asm volatile("pxor %xmm4,%xmm4");
+		asm volatile("pxor %xmm5,%xmm5");
+		for(d=l;d>=0;--d) {
+			asm volatile("pxor %xmm10,%xmm10");
+			asm volatile("pcmpgtb %xmm1,%xmm10");
+			asm volatile("paddb %xmm1,%xmm1");
+			asm volatile("pand %xmm14,%xmm10");
+			asm volatile("pxor %xmm10,%xmm1");
+
+			asm volatile("movdqa %0,%%xmm10" : : "m" (vbuf[d][o]));
+
+			asm volatile("pxor %xmm10,%xmm0");
+			asm volatile("pxor %xmm10,%xmm1");
+
+			asm volatile("movdqa %xmm10,%xmm11");
+			asm volatile("psraw  $4,%xmm11");
+			asm volatile("pand   %xmm15,%xmm10");
+			asm volatile("pand   %xmm15,%xmm11");
+
+			asm volatile("movdqa %0,%%xmm12" : : "m" (gfcauchy_pshufb[d][0][0][0]));
+			asm volatile("movdqa %0,%%xmm13" : : "m" (gfcauchy_pshufb[d][0][1][0]));
+			asm volatile("pshufb %xmm10,%xmm12");
+			asm volatile("pshufb %xmm11,%xmm13");
+			asm volatile("pxor   %xmm12,%xmm2");
+			asm volatile("pxor   %xmm13,%xmm2");
+
+			asm volatile("movdqa %0,%%xmm12" : : "m" (gfcauchy_pshufb[d][1][0][0]));
+			asm volatile("movdqa %0,%%xmm13" : : "m" (gfcauchy_pshufb[d][1][1][0]));
+			asm volatile("pshufb %xmm10,%xmm12");
+			asm volatile("pshufb %xmm11,%xmm13");
+			asm volatile("pxor   %xmm12,%xmm3");
+			asm volatile("pxor   %xmm13,%xmm3");
+
+			asm volatile("movdqa %0,%%xmm12" : : "m" (gfcauchy_pshufb[d][2][0][0]));
+			asm volatile("movdqa %0,%%xmm13" : : "m" (gfcauchy_pshufb[d][2][1][0]));
+			asm volatile("pshufb %xmm10,%xmm12");
+			asm volatile("pshufb %xmm11,%xmm13");
+			asm volatile("pxor   %xmm12,%xmm4");
+			asm volatile("pxor   %xmm13,%xmm4");
+
+			asm volatile("movdqa %0,%%xmm12" : : "m" (gfcauchy_pshufb[d][3][0][0]));
+			asm volatile("movdqa %0,%%xmm13" : : "m" (gfcauchy_pshufb[d][3][1][0]));
+			asm volatile("pshufb %xmm10,%xmm12");
+			asm volatile("pshufb %xmm11,%xmm13");
+			asm volatile("pxor   %xmm12,%xmm5");
+			asm volatile("pxor   %xmm13,%xmm5");
+		}
+		asm volatile("movntdq %%xmm0,%0" : "=m" (p[o]));
+		asm volatile("movntdq %%xmm1,%0" : "=m" (q[o]));
+		asm volatile("movntdq %%xmm2,%0" : "=m" (r[o]));
+		asm volatile("movntdq %%xmm3,%0" : "=m" (s[o]));
+		asm volatile("movntdq %%xmm4,%0" : "=m" (t[o]));
+		asm volatile("movntdq %%xmm5,%0" : "=m" (u[o]));
+	}
+
+	asm volatile("sfence" : : : "memory");
+}
+#endif
+
+/****************************************************************************/
 /* parity generation */
 
 /* internal forwarder */
@@ -1607,14 +2259,37 @@ static void (*raid5_gen)(unsigned char** vbuf, unsigned data, unsigned size);
 static void (*raid6_gen)(unsigned char** vbuf, unsigned data, unsigned size);
 static void (*raidTP_gen)(unsigned char** vbuf, unsigned data, unsigned size);
 static void (*raidQP_gen)(unsigned char** vbuf, unsigned data, unsigned size);
+static void (*cauchyQP_gen)(unsigned char** vbuf, unsigned data, unsigned size);
+static void (*cauchyPP_gen)(unsigned char** vbuf, unsigned data, unsigned size);
+static void (*cauchyHP_gen)(unsigned char** vbuf, unsigned data, unsigned size);
 
-void raid_gen(unsigned level, unsigned char** vbuf, unsigned data, unsigned size)
+void raid_gen(unsigned kind, unsigned level, unsigned char** vbuf, unsigned data, unsigned size)
 {
-	switch (level) {
-	case 1 : raid5_gen(vbuf, data, size); break;
-	case 2 : raid6_gen(vbuf, data, size); break;
-	case 3 : raidTP_gen(vbuf, data, size); break;
-	case 4 : raidQP_gen(vbuf, data, size); break;
+	if (kind == RAID_POWER) {
+		switch (level) {
+		case 1 : raid5_gen(vbuf, data, size); break;
+		case 2 : raid6_gen(vbuf, data, size); break;
+		case 3 : raidTP_gen(vbuf, data, size); break;
+		case 4 : raidQP_gen(vbuf, data, size); break;
+		default:
+			fprintf(stderr, "Invalid power func\n");
+			exit(EXIT_FAILURE);
+		}
+	} else if (kind == RAID_CAUCHY) {
+		switch (level) {
+		case 1 : raid5_gen(vbuf, data, size); break;
+		case 2 : raid6_gen(vbuf, data, size); break;
+		case 3 : /* we don't have triple parity, and then we call the quad parity one */
+		case 4 : cauchyQP_gen(vbuf, data, size); break;
+		case 5 : cauchyPP_gen(vbuf, data, size); break;
+		case 6 : cauchyHP_gen(vbuf, data, size); break;
+		default:
+			fprintf(stderr, "Invalid cauchy func\n");
+			exit(EXIT_FAILURE);
+		}
+	} else {
+		fprintf(stderr, "Invalid raid kind\n");
+		exit(EXIT_FAILURE);
 	}
 }
 
@@ -1793,35 +2468,6 @@ static inline unsigned char pow4(int v)
 }
 
 /**
- * GF 8^a.
- */
-static inline unsigned char pow8(int v)
-{
-	if (v < 0 || v > 254) {
-		fprintf(stderr, "GF invalid exponent\n");
-		exit(EXIT_FAILURE);
-	}
-
-	return gfexp8[v];
-}
-
-/**
- * GF 2^b^a.
- */
-static inline unsigned char pown(int b, int e)
-{
-	switch (b) {
-	case 0 : return 1;
-	case 1 : return pow2(e);
-	case 2 : return pow4(e);
-	case 3 : return pow8(e);
-	}
-
-	fprintf(stderr, "GF invalid exponent\n");
-	exit(EXIT_FAILURE);
-}
-
-/**
  * Gets the multiplication table for a specified value.
  */
 static inline const unsigned char* table(unsigned char v)
@@ -1833,7 +2479,7 @@ static inline const unsigned char* table(unsigned char v)
  * Computes the parity without the missing data blocks
  * and store it in the buffers of such data blocks.
  */
-static void raid_delta_1data(int x, int i, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+static void raid_delta_1data(unsigned kind, int x, int i, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* pa;
@@ -1851,7 +2497,7 @@ static void raid_delta_1data(int x, int i, unsigned char** vbuf, unsigned data, 
 	vbuf[data+i] = pa;
 
 	/* compute the parity */
-	raid_gen(i + 1, vbuf, data, size);
+	raid_gen(kind, i + 1, vbuf, data, size);
 
 	/* restore as before */
 	vbuf[x] = pa;
@@ -1862,7 +2508,7 @@ static void raid_delta_1data(int x, int i, unsigned char** vbuf, unsigned data, 
  * Computes the parity without the missing data blocks
  * and store it in the buffers of such data blocks.
  */
-static void raid_delta_2data(int x, int y, int i, int j, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+static void raid_delta_2data(unsigned kind, int x, int y, int i, int j, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -1886,7 +2532,7 @@ static void raid_delta_2data(int x, int y, int i, int j, unsigned char** vbuf, u
 	vbuf[data+j] = qa;
 
 	/* compute only for the level we really need */
-	raid_gen(j + 1, vbuf, data, size);
+	raid_gen(kind, j + 1, vbuf, data, size);
 
 	/* restore as before */
 	vbuf[x] = pa;
@@ -1899,7 +2545,7 @@ static void raid_delta_2data(int x, int y, int i, int j, unsigned char** vbuf, u
  * Computes the parity without the missing data blocks
  * and store it in the buffers of such data blocks.
  */
-static void raid_delta_3data(int x, int y, int z, int i, int j, int k, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+static void raid_delta_3data(unsigned kind, int x, int y, int z, int i, int j, int k, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -1929,7 +2575,7 @@ static void raid_delta_3data(int x, int y, int z, int i, int j, int k, unsigned 
 	vbuf[data+k] = ra;
 
 	/* compute only for the level we really need */
-	raid_gen(k + 1, vbuf, data, size);
+	raid_gen(kind, k + 1, vbuf, data, size);
 
 	/* restore as before */
 	vbuf[x] = pa;
@@ -1944,7 +2590,7 @@ static void raid_delta_3data(int x, int y, int z, int i, int j, int k, unsigned 
  * Computes the parity without the missing data blocks
  * and store it in the buffers of such data blocks.
  */
-static void raid_delta_4data(int x, int y, int z, int v, int i, int j, int k, int l, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+static void raid_delta_4data(unsigned kind, int x, int y, int z, int v, int i, int j, int k, int l, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -1980,7 +2626,7 @@ static void raid_delta_4data(int x, int y, int z, int v, int i, int j, int k, in
 	vbuf[data+l] = sa;
 
 	/* compute only for the level we really need */
-	raid_gen(l + 1, vbuf, data, size);
+	raid_gen(kind, l + 1, vbuf, data, size);
 
 	/* restore as before */
 	vbuf[x] = pa;
@@ -2066,7 +2712,7 @@ static void raid6_recov_2data(int x, int y, unsigned char** vbuf, unsigned data,
 	qyf = table( inv(pow2(x) ^ pow2(y)) );
 
 	/* compute delta parity */
-	raid_delta_2data(x, y, 0, 1, vbuf, data, zero, size);
+	raid_delta_2data(RAID_POWER, x, y, 0, 1, vbuf, data, zero, size);
 
 	p = vbuf[data];
 	q = vbuf[data+1];
@@ -2134,7 +2780,7 @@ static void raidTP_recov_2dataq(int x, int y, unsigned char** vbuf, unsigned dat
 	ryf = table( mul(c1, inv(pow4(x))) );
 
 	/* compute delta parity */
-	raid_delta_2data(x, y, 0, 2, vbuf, data, zero, size);
+	raid_delta_2data(RAID_POWER, x, y, 0, 2, vbuf, data, zero, size);
 
 	p = vbuf[data];
 	r = vbuf[data+2];
@@ -2207,7 +2853,7 @@ static void raidTP_recov_2datap(int x, int y, unsigned char** vbuf, unsigned dat
 	yxf = table( pow2(y-x) );
 
 	/* compute delta parity */
-	raid_delta_2data(x, y, 1, 2, vbuf, data, zero, size);
+	raid_delta_2data(RAID_POWER, x, y, 1, 2, vbuf, data, zero, size);
 
 	q = vbuf[data+1];
 	r = vbuf[data+2];
@@ -2303,7 +2949,7 @@ static void raidTP_recov_3data(int x, int y, int z, unsigned char** vbuf, unsign
 	zyf = table( mul(c1, pow2(z-x) ^ 1) );
 
 	/* compute delta parity */
-	raid_delta_3data(x, y, z, 0, 1, 2, vbuf, data, zero, size);
+	raid_delta_3data(RAID_POWER, x, y, z, 0, 1, 2, vbuf, data, zero, size);
 
 	p = vbuf[data];
 	q = vbuf[data+1];
@@ -2346,6 +2992,18 @@ static void raidTP_recov_3data(int x, int y, int z, unsigned char** vbuf, unsign
 
 /****************************************************************************/
 /* matrix recovering  */
+
+/**
+ * Gets the generator matrix coefficient for parity 'p' and disk 'd'.
+ */
+static unsigned char gm(unsigned kind, unsigned p, unsigned d)
+{
+	switch (kind) {
+	case RAID_POWER : return gfmatrix_power[p][d];
+	case RAID_CAUCHY : return gfmatrix_cauchy[p][d];
+	}
+	return 0;
+}
 
 /**
  * Inverts the square matrix M of size nxn into V.
@@ -2424,7 +3082,7 @@ static void invert(unsigned char* M, unsigned char* V, unsigned n)
  *
  * That are always satisfied for any 0<=x<y<255.
  */
-void raid_recov_1data(int x, int i, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+void raid_recov_1data(unsigned kind, int x, int i, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
 	unsigned o;
 	unsigned char* p;
@@ -2438,10 +3096,10 @@ void raid_recov_1data(int x, int i, unsigned char** vbuf, unsigned data, unsigne
 	}
 
 	/* select tables */
-	pxf = table( inv(pown(i,x)) );
+	pxf = table( inv(gm(kind,i,x)) );
 
 	/* compute delta parity */
-	raid_delta_1data(x, i, vbuf, data, zero, size);
+	raid_delta_1data(kind, x, i, vbuf, data, zero, size);
 
 	p = vbuf[data+i];
 	pa = vbuf[x];
@@ -2471,7 +3129,7 @@ void raid_recov_1data(int x, int i, unsigned char** vbuf, unsigned data, unsigne
  *
  * we solve inverting the coefficients matrix.
  */
-void raid_recov_2data(int x, int y, int i, int j, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+void raid_recov_2data(unsigned kind, int x, int y, int i, int j, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
 	unsigned o;
 	unsigned char* p;
@@ -2486,27 +3144,29 @@ void raid_recov_2data(int x, int y, int i, int j, unsigned char** vbuf, unsigned
 	unsigned char V[2*2];
 	unsigned n = 2;
 
-	/* if it's RAID6 uses the dedicated and faster function */
-	if (i == 0 && j == 1) {
-		raid6_recov_2data(x, y, vbuf, data, zero, size);
-		return;
-	}
-	/* if it's RAIDTP uses the dedicated and faster function */
-	if (i == 0 && j == 2) {
-		raidTP_recov_2dataq(x, y, vbuf, data, zero, size);
-		return;
-	}
-	/* if it's RAIDTP uses the dedicated and faster function */
-	if (i == 1 && j == 2) {
-		raidTP_recov_2datap(x, y, vbuf, data, zero, size);
-		return;
+	if (kind == RAID_POWER) {
+		/* if it's RAID6 uses the dedicated and faster function */
+		if (i == 0 && j == 1) {
+			raid6_recov_2data(x, y, vbuf, data, zero, size);
+			return;
+		}
+		/* if it's RAIDTP uses the dedicated and faster function */
+		if (i == 0 && j == 2) {
+			raidTP_recov_2dataq(x, y, vbuf, data, zero, size);
+			return;
+		}
+		/* if it's RAIDTP uses the dedicated and faster function */
+		if (i == 1 && j == 2) {
+			raidTP_recov_2datap(x, y, vbuf, data, zero, size);
+			return;
+		}
 	}
 
 	/* setup the generator matrix */
-	G[0*n+0] = pown(i,x); /* row 1 for P */
-	G[0*n+1] = pown(i,y);
-	G[1*n+0] = pown(j,x); /* row 2 for Q */
-	G[1*n+1] = pown(j,y);
+	G[0*n+0] = gm(kind,i,x); /* row 1 for P */
+	G[0*n+1] = gm(kind,i,y);
+	G[1*n+0] = gm(kind,j,x); /* row 2 for Q */
+	G[1*n+1] = gm(kind,j,y);
 
 	/* invert it to solve the system of linear equations */
 	invert(G, V, n);
@@ -2518,7 +3178,7 @@ void raid_recov_2data(int x, int y, int i, int j, unsigned char** vbuf, unsigned
 	qyf = table( V[1*n+1] );
 
 	/* compute delta parity */
-	raid_delta_2data(x, y, i, j, vbuf, data, zero, size);
+	raid_delta_2data(kind, x, y, i, j, vbuf, data, zero, size);
 
 	p = vbuf[data+i];
 	q = vbuf[data+j];
@@ -2569,7 +3229,7 @@ void raid_recov_2data(int x, int y, int i, int j, unsigned char** vbuf, unsigned
  *
  * we solve inverting the coefficients matrix.
  */
-void raid_recov_3data(int x, int y, int z, int i, int j, int k, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+void raid_recov_3data(unsigned kind, int x, int y, int z, int i, int j, int k, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
 	unsigned o;
 	unsigned char* p;
@@ -2591,22 +3251,24 @@ void raid_recov_3data(int x, int y, int z, int i, int j, int k, unsigned char** 
 	unsigned char V[3*3];
 	unsigned n = 3;
 
-	/* if it's RAIDTP uses the dedicated and faster function */
-	if (i == 0 && j == 1 && k == 2) {
-		raidTP_recov_3data(x, y, z, vbuf, data, zero, size);
-		return;
+	if (kind == RAID_POWER) {
+		/* if it's RAIDTP uses the dedicated and faster function */
+		if (i == 0 && j == 1 && k == 2) {
+			raidTP_recov_3data(x, y, z, vbuf, data, zero, size);
+			return;
+		}
 	}
 
 	/* setup the generator matrix */
-	G[0*n+0] = pown(i,x); /* row 1 for P */
-	G[0*n+1] = pown(i,y);
-	G[0*n+2] = pown(i,z);
-	G[1*n+0] = pown(j,x); /* row 2 for Q */
-	G[1*n+1] = pown(j,y);
-	G[1*n+2] = pown(j,z);
-	G[2*n+0] = pown(k,x); /* row 3 for R */
-	G[2*n+1] = pown(k,y);
-	G[2*n+2] = pown(k,z);
+	G[0*n+0] = gm(kind,i,x); /* row 1 for P */
+	G[0*n+1] = gm(kind,i,y);
+	G[0*n+2] = gm(kind,i,z);
+	G[1*n+0] = gm(kind,j,x); /* row 2 for Q */
+	G[1*n+1] = gm(kind,j,y);
+	G[1*n+2] = gm(kind,j,z);
+	G[2*n+0] = gm(kind,k,x); /* row 3 for R */
+	G[2*n+1] = gm(kind,k,y);
+	G[2*n+2] = gm(kind,k,z);
 
 	/* invert it to solve the system of linear equations */
 	invert(G, V, n);
@@ -2623,7 +3285,7 @@ void raid_recov_3data(int x, int y, int z, int i, int j, int k, unsigned char** 
 	rzf = table( V[2*n+2] );
 
 	/* compute delta parity */
-	raid_delta_3data(x, y, z, i, j, k, vbuf, data, zero, size);
+	raid_delta_3data(kind, x, y, z, i, j, k, vbuf, data, zero, size);
 
 	p = vbuf[data+i];
 	q = vbuf[data+j];
@@ -2689,7 +3351,7 @@ void raid_recov_3data(int x, int y, int z, int i, int j, int k, unsigned char** 
  *
  * we solve inverting the coefficients matrix.
  */
-void raid_recov_4data(int x, int y, int z, int v, int i, int j, int k, int l, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+void raid_recov_4data(unsigned kind, int x, int y, int z, int v, int i, int j, int k, int l, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
 	unsigned o;
 	unsigned char* p;
@@ -2721,22 +3383,22 @@ void raid_recov_4data(int x, int y, int z, int v, int i, int j, int k, int l, un
 	unsigned n = 4;
 
 	/* setup the generator matrix */
-	G[0*n+0] = pown(i,x); /* row 1 for P */
-	G[0*n+1] = pown(i,y);
-	G[0*n+2] = pown(i,z);
-	G[0*n+3] = pown(i,v);
-	G[1*n+0] = pown(j,x); /* row 2 for Q */
-	G[1*n+1] = pown(j,y);
-	G[1*n+2] = pown(j,z);
-	G[1*n+3] = pown(j,v);
-	G[2*n+0] = pown(k,x); /* row 3 for R */
-	G[2*n+1] = pown(k,y);
-	G[2*n+2] = pown(k,z);
-	G[2*n+3] = pown(k,v);
-	G[3*n+0] = pown(l,x); /* row 4 for S */
-	G[3*n+1] = pown(l,y);
-	G[3*n+2] = pown(l,z);
-	G[3*n+3] = pown(l,v);
+	G[0*n+0] = gm(kind,i,x); /* row 1 for P */
+	G[0*n+1] = gm(kind,i,y);
+	G[0*n+2] = gm(kind,i,z);
+	G[0*n+3] = gm(kind,i,v);
+	G[1*n+0] = gm(kind,j,x); /* row 2 for Q */
+	G[1*n+1] = gm(kind,j,y);
+	G[1*n+2] = gm(kind,j,z);
+	G[1*n+3] = gm(kind,j,v);
+	G[2*n+0] = gm(kind,k,x); /* row 3 for R */
+	G[2*n+1] = gm(kind,k,y);
+	G[2*n+2] = gm(kind,k,z);
+	G[2*n+3] = gm(kind,k,v);
+	G[3*n+0] = gm(kind,l,x); /* row 4 for S */
+	G[3*n+1] = gm(kind,l,y);
+	G[3*n+2] = gm(kind,l,z);
+	G[3*n+3] = gm(kind,l,v);
 
 	/* invert it to solve the system of linear equations */
 	invert(G, V, n);
@@ -2760,7 +3422,7 @@ void raid_recov_4data(int x, int y, int z, int v, int i, int j, int k, int l, un
 	svf = table( V[3*n+3] );
 
 	/* compute delta parity */
-	raid_delta_4data(x, y, z, v, i, j, k, l, vbuf, data, zero, size);
+	raid_delta_4data(kind, x, y, z, v, i, j, k, l, vbuf, data, zero, size);
 
 	p = vbuf[data+i];
 	q = vbuf[data+j];
@@ -2835,6 +3497,10 @@ void raid_recov_4data(int x, int y, int z, int v, int i, int j, int k, int l, un
 
 void raid_init(void)
 {
+	cauchyQP_gen = cauchyQP_int8;
+	cauchyPP_gen = cauchyPP_int8;
+	cauchyHP_gen = cauchyHP_int8;
+
 	if (sizeof(void*) == 4) {
 		raid5_gen = raid5_int32;
 		raid6_gen = raid6_int32;
@@ -2876,9 +3542,15 @@ void raid_init(void)
 #if defined(__x86_64__)
 		raidTP_gen = raidTP_ssse3ext;
 		raidQP_gen = raidQP_ssse3ext;
+		cauchyQP_gen = cauchyQP_ssse3ext;
+		cauchyPP_gen = cauchyPP_ssse3ext;
+		cauchyHP_gen = cauchyHP_ssse3ext;
 #else
 		raidTP_gen = raidTP_ssse3;
 		raidQP_gen = raidQP_ssse3;
+		cauchyQP_gen = cauchyQP_ssse3;
+		cauchyPP_gen = cauchyPP_ssse3;
+		cauchyHP_gen = cauchyHP_ssse3;
 #endif
 	}
 
@@ -2895,6 +3567,9 @@ static struct raid_func {
 	const char* name;
 	void* p;
 } RAID_FUNC[] = {
+	{ "int8", cauchyQP_int8 },
+	{ "int8", cauchyPP_int8 },
+	{ "int8", cauchyHP_int8 },
 	{ "int32", raid5_int32 },
 	{ "int64", raid5_int64 },
 	{ "int32", raid6_int32 },
@@ -2915,6 +3590,9 @@ static struct raid_func {
 	{ "sse2", raidQP_sse2 },
 	{ "ssse3", raidTP_ssse3 },
 	{ "ssse3", raidQP_ssse3 },
+	{ "ssse3", cauchyQP_ssse3 },
+	{ "ssse3", cauchyPP_ssse3 },
+	{ "ssse3", cauchyHP_ssse3 },
 #endif
 
 #if defined(__x86_64__)
@@ -2923,6 +3601,9 @@ static struct raid_func {
 	{ "sse2ext", raidQP_sse2ext },
 	{ "ssse3ext", raidTP_ssse3ext },
 	{ "ssse3ext", raidQP_ssse3ext },
+	{ "ssse3ext", cauchyQP_ssse3 },
+	{ "ssse3ext", cauchyPP_ssse3 },
+	{ "ssse3ext", cauchyHP_ssse3 },
 	{ "avxext", raidQP_avxext },
 #endif
 	{ 0, 0 }
@@ -2959,4 +3640,18 @@ const char* raidQP_tag(void)
 	return raid_tag(raidQP_gen);
 }
 
+const char* cauchyQP_tag(void)
+{
+	return raid_tag(cauchyQP_gen);
+}
+
+const char* cauchyPP_tag(void)
+{
+	return raid_tag(cauchyPP_gen);
+}
+
+const char* cauchyHP_tag(void)
+{
+	return raid_tag(cauchyHP_gen);
+}
 

@@ -22,14 +22,25 @@
 /* raid */
 
 /**
- * Max number of data disks for RAID6.
+ * Kind of generator matrix used.
  */
-#define RAID6_DATA_LIMIT 255
+#define RAID_POWER 0 /**< Power matrix. Fast but no more than 4 parity with 21 data disks */
+#define RAID_CAUCHY 1 /**< Cauchy matrix. Slower, but no limit. */
 
 /**
- * Max number of data disks for RAIDQP.
+ * Max number of data disks for RAID_POWER for up to TripleParity.
  */
-#define RAIDQP_DATA_LIMIT 21
+#define RAID_POWER_DATA_LIMIT 255
+
+/**
+ * Max number of data disks for RAID_POWER with QuadParity.
+ */
+#define RAID_POWER_QP_DATA_LIMIT 21
+
+/**
+ * Max number of data disks with RAID_CAUCHY.
+ */
+#define RAID_CAUCHY_DATA_LIMIT 251
 
 /**
  * Initializes the RAID system.
@@ -38,13 +49,14 @@ void raid_init(void);
 
 /**
  * Computes the specified number of parities.
+ * \param kind Kind of parity. RAID_POWER or RAID_CAUCHY.
  * \param level Number of parities to compute.
  * \param vbuf Vector of pointers to the blocks for disks and parities.
  * It has (::data + ::level) elements. Each element points to a buffer of ::size bytes.
  * \param data Number of data disks.
  * \param size Size of the blocks pointed by vbuf.
  */
-void raid_gen(unsigned level, unsigned char** vbuf, unsigned data, unsigned size);
+void raid_gen(unsigned kind, unsigned level, unsigned char** vbuf, unsigned data, unsigned size);
 
 /*
  * Recovers failure of one data block x using parity i.
@@ -58,25 +70,25 @@ void raid_gen(unsigned level, unsigned char** vbuf, unsigned data, unsigned size
  * This buffer is not modified.
  * \param size Size of the blocks pointed by vbuf.
  */
-void raid_recov_1data(int x, int i, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
+void raid_recov_1data(unsigned kind, int x, int i, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
 
 /*
  * Recovers failure of two data blocks x,y using parity i,j.
  * Note that only the data blocks are recovered. The full parity is instead destroyed.
  */
-void raid_recov_2data(int x, int y, int i, int j, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
+void raid_recov_2data(unsigned kind, int x, int y, int i, int j, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
 
 /*
  * Recovers failure of three data blocks x,y,z using parity i,j,k.
  * Note that only the data blocks are recovered. The full parity is instead destroyed.
  */
-void raid_recov_3data(int x, int y, int z, int i, int j, int k, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
+void raid_recov_3data(unsigned kind, int x, int y, int z, int i, int j, int k, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
 
 /*
  * Recovers failure of four data blocks x,y,z,v using parity i,j,k,l.
  * Note that only the data blocks are recovered. The full parity is instead destroyed.
  */
-void raid_recov_4data(int x, int y, int z, int v, int i, int j, int k, int l, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
+void raid_recov_4data(unsigned kind, int x, int y, int z, int v, int i, int j, int k, int l, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
 
 /**
  * Gets the name of the selected function to compute parity.
@@ -85,6 +97,9 @@ const char* raid5_tag(void);
 const char* raid6_tag(void);
 const char* raidTP_tag(void);
 const char* raidQP_tag(void);
+const char* cauchyQP_tag(void);
+const char* cauchyPP_tag(void);
+const char* cauchyHP_tag(void);
 
 /**
  * Internal specialized parity computation.
@@ -114,6 +129,15 @@ void raidQP_sse2ext(unsigned char** vbuf, unsigned data, unsigned size);
 void raidQP_ssse3(unsigned char** vbuf, unsigned data, unsigned size);
 void raidQP_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size);
 void raidQP_avxext(unsigned char** vbuf, unsigned data, unsigned size);
+void cauchyQP_int8(unsigned char** vbuf, unsigned data, unsigned size);
+void cauchyQP_ssse3(unsigned char** vbuf, unsigned data, unsigned size);
+void cauchyQP_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size);
+void cauchyPP_int8(unsigned char** vbuf, unsigned data, unsigned size);
+void cauchyPP_ssse3(unsigned char** vbuf, unsigned data, unsigned size);
+void cauchyPP_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size);
+void cauchyHP_int8(unsigned char** vbuf, unsigned data, unsigned size);
+void cauchyHP_ssse3(unsigned char** vbuf, unsigned data, unsigned size);
+void cauchyHP_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size);
 
 #endif
 

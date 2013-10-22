@@ -1,6 +1,13 @@
 SnapRAID HISTORY
 ================
 
+6.0 2013/10 (BETA)
+==================
+ * Added support for unlimted RAIDQP (QuadParity), RAIDPP (Penta Parity)
+   and RAIDHP (Hexa parity).
+   We use a Cauchy parity generator that gets good performance only if
+   SSSE3 is available.
+
 5.0 2013/10 (BETA)
 ==================
  * Added support for RAIDTP (Triple Parity) and RAIDQP (Quad Parity).

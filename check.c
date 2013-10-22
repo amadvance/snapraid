@@ -164,7 +164,7 @@ static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned d
 	/* if we checked something, and no block failed the check */
 	if (hash_checked && j==failed_count) {
 		/* recompute all the redundancy information */
-		raid_gen(state->level, buffer, diskmax, state->block_size);
+		raid_gen(RAID_POWER, state->level, buffer, diskmax, state->block_size);
 		return 1;
 	}
 
@@ -177,12 +177,12 @@ static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned d
 static int is_parity_matching(struct snapraid_state* state, unsigned diskmax, unsigned i, unsigned char** buffer, unsigned char** buffer_recov)
 {
 	/* recompute parity, note that we don't need parity over i */
-	raid_gen(i + 1, buffer, diskmax, state->block_size);
+	raid_gen(RAID_POWER, i + 1, buffer, diskmax, state->block_size);
 
 	/* if the recovered parity block matches */
 	if (memcmp(buffer[diskmax+i], buffer_recov[i], state->block_size) == 0) {
 		/* recompute all the redundancy information */
-		raid_gen(state->level, buffer, diskmax, state->block_size);
+		raid_gen(RAID_POWER, state->level, buffer, diskmax, state->block_size);
 		return 1;
 	}
 
@@ -199,11 +199,12 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 	unsigned i, j;
 	int error;
 	int has_hash;
+	int kind = RAID_POWER;
 
 	/* no fix required */
 	if (failed_count == 0) {
 		/* recompute only parity and qarity */
-		raid_gen(state->level, buffer, diskmax, state->block_size);
+		raid_gen(kind, state->level, buffer, diskmax, state->block_size);
 		return 0;
 	}
 
@@ -228,7 +229,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			memcpy(buffer[diskmax+COMBO1[i].a], buffer_recov[COMBO1[i].a], state->block_size);
 
 			/* recover data */
-			raid_recov_1data(failed[failed_map[0]].index, COMBO1[i].a, buffer, diskmax, buffer_zero, state->block_size);
+			raid_recov_1data(kind, failed[failed_map[0]].index, COMBO1[i].a, buffer, diskmax, buffer_zero, state->block_size);
 
 			if (is_hash_matching(state, rehash, diskmax, failed, failed_map, failed_count, buffer, buffer_zero))
 				return 0;
@@ -249,7 +250,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			memcpy(buffer[diskmax+COMBO2[i].a], buffer_recov[COMBO2[i].a], state->block_size);
 
 			/* recover data */
-			raid_recov_1data(failed[failed_map[0]].index, COMBO2[i].a, buffer, diskmax, buffer_zero, state->block_size);
+			raid_recov_1data(kind, failed[failed_map[0]].index, COMBO2[i].a, buffer, diskmax, buffer_zero, state->block_size);
 
 			if (is_parity_matching(state, diskmax, COMBO2[i].b, buffer, buffer_recov))
 				return 0;
@@ -271,7 +272,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			memcpy(buffer[diskmax+COMBO2[i].b], buffer_recov[COMBO2[i].b], state->block_size);
 
 			/* recover data */
-			raid_recov_2data(failed[failed_map[0]].index, failed[failed_map[1]].index, COMBO2[i].a, COMBO2[i].b, buffer, diskmax, buffer_zero, state->block_size);
+			raid_recov_2data(kind, failed[failed_map[0]].index, failed[failed_map[1]].index, COMBO2[i].a, COMBO2[i].b, buffer, diskmax, buffer_zero, state->block_size);
 
 			if (is_hash_matching(state, rehash, diskmax, failed, failed_map, failed_count, buffer, buffer_zero))
 				return 0;
@@ -293,7 +294,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			memcpy(buffer[diskmax+COMBO3[i].b], buffer_recov[COMBO3[i].b], state->block_size);
 
 			/* recover data */
-			raid_recov_2data(failed[failed_map[0]].index, failed[failed_map[1]].index, COMBO3[i].a, COMBO3[i].b, buffer, diskmax, buffer_zero, state->block_size);
+			raid_recov_2data(kind, failed[failed_map[0]].index, failed[failed_map[1]].index, COMBO3[i].a, COMBO3[i].b, buffer, diskmax, buffer_zero, state->block_size);
 
 			if (is_parity_matching(state, diskmax, COMBO3[i].c, buffer, buffer_recov))
 				return 0;
@@ -316,7 +317,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			memcpy(buffer[diskmax+COMBO3[i].c], buffer_recov[COMBO3[i].c], state->block_size);
 
 			/* recover data */
-			raid_recov_3data(failed[failed_map[0]].index, failed[failed_map[1]].index, failed[failed_map[2]].index, COMBO3[i].a, COMBO3[i].b, COMBO3[i].c, buffer, diskmax, buffer_zero, state->block_size);
+			raid_recov_3data(kind, failed[failed_map[0]].index, failed[failed_map[1]].index, failed[failed_map[2]].index, COMBO3[i].a, COMBO3[i].b, COMBO3[i].c, buffer, diskmax, buffer_zero, state->block_size);
 
 			if (is_hash_matching(state, rehash, diskmax, failed, failed_map, failed_count, buffer, buffer_zero))
 				return 0;
@@ -339,7 +340,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			memcpy(buffer[diskmax+COMBO4[i].c], buffer_recov[COMBO4[i].c], state->block_size);
 
 			/* recover data */
-			raid_recov_3data(failed[failed_map[0]].index, failed[failed_map[1]].index, failed[failed_map[2]].index, COMBO4[i].a, COMBO4[i].b, COMBO4[i].c, buffer, diskmax, buffer_zero, state->block_size);
+			raid_recov_3data(kind, failed[failed_map[0]].index, failed[failed_map[1]].index, failed[failed_map[2]].index, COMBO4[i].a, COMBO4[i].b, COMBO4[i].c, buffer, diskmax, buffer_zero, state->block_size);
 
 			if (is_parity_matching(state, diskmax, COMBO4[i].d, buffer, buffer_recov))
 				return 0;
@@ -363,7 +364,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			memcpy(buffer[diskmax+COMBO4[i].d], buffer_recov[COMBO4[i].d], state->block_size);
 
 			/* recover data */
-			raid_recov_4data(failed[failed_map[0]].index, failed[failed_map[1]].index, failed[failed_map[2]].index, failed[failed_map[3]].index, COMBO4[i].a, COMBO4[i].b, COMBO4[i].c, COMBO4[i].d, buffer, diskmax, buffer_zero, state->block_size);
+			raid_recov_4data(kind, failed[failed_map[0]].index, failed[failed_map[1]].index, failed[failed_map[2]].index, failed[failed_map[3]].index, COMBO4[i].a, COMBO4[i].b, COMBO4[i].c, COMBO4[i].d, buffer, diskmax, buffer_zero, state->block_size);
 
 			if (is_hash_matching(state, rehash, diskmax, failed, failed_map, failed_count, buffer, buffer_zero))
 				return 0;
@@ -440,7 +441,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 	/* if nothing to fix */
 	if (!something_to_recover) {
 		/* recompute only parity and qarity */
-		raid_gen(state->level, buffer, diskmax, state->block_size);
+		raid_gen(RAID_POWER, state->level, buffer, diskmax, state->block_size);
 		return 0;
 	}
 

@@ -21,6 +21,7 @@
 #include "util.h"
 #include "raid.h"
 #include "cpu.h"
+#include "state.h"
 
 /**
  * Differential us of two timeval.
@@ -66,7 +67,7 @@ void speed(void)
 	void* buffer_alloc;
 	unsigned char** buffer;
 
-	buffer = malloc_nofail_vector_align(diskmax + 4, block_size, &buffer_alloc);
+	buffer = malloc_nofail_vector_align(diskmax + LEV_MAX, block_size, &buffer_alloc);
 
 	/* initialize with fixed data */
 	for(i=0;i<diskmax+4;++i) {
@@ -134,10 +135,10 @@ void speed(void)
 #endif
 	printf("\n");
 
-	printf("Expected fastest raid5 is %s\n", raid5_tag());
-	printf("Expected fastest raid6 is %s\n", raid6_tag());
-	printf("Expected fastest raidTP is %s\n", raidTP_tag());
-	printf("Expected fastest raidQP is %s\n", raidQP_tag());
+	printf("Expected fastest power5 is %s\n", raid5_tag());
+	printf("Expected fastest power6 is %s\n", raid6_tag());
+	printf("Expected fastest powerTP is %s\n", raidTP_tag());
+	printf("Expected fastest powerQP is %s\n", raidQP_tag());
 
 	printf("If these expectations are false, please report it in the SnapRAID forum\n");
 
@@ -223,6 +224,7 @@ void speed(void)
 	/* RAID table */
 	printf("RAID functions used to compute the parity:\n");
 	printf("%10s", "");
+	printf(" %6s", "int8");
 	printf(" %6s", "int32");
 	printf(" %6s", "int64");
 #if defined(__i386__) || defined(__x86_64__)
@@ -240,8 +242,10 @@ void speed(void)
 	printf("\n");
 
 	/* RAID5 */
-	printf("%10s", "raid5");
+	printf("%10s", "power5");
 	fflush(stdout);
+
+	printf(" %6s", "");
 
 	SPEED_START {
 		raid5_int32(buffer, diskmax, block_size);
@@ -279,8 +283,10 @@ void speed(void)
 	printf("\n");
 
 	/* RAID6 */
-	printf("%10s", "raid6");
+	printf("%10s", "power6");
 	fflush(stdout);
+
+	printf(" %6s", "");
 
 	SPEED_START {
 		raid6_int32(buffer, diskmax, block_size);
@@ -327,8 +333,10 @@ void speed(void)
 	printf("\n");
 
 	/* RAIDTP */
-	printf("%10s", "raidTP");
+	printf("%10s", "powerTP");
 	fflush(stdout);
+
+	printf(" %6s", "");
 
 	SPEED_START {
 		raidTP_int32(buffer, diskmax, block_size);
@@ -393,8 +401,10 @@ void speed(void)
 	printf("\n");
 
 	/* RAIDQP */
-	printf("%10s", "raidQP");
+	printf("%10s", "powerQP");
 	fflush(stdout);
+
+	printf(" %6s", "");
 
 	SPEED_START {
 		raidQP_int32(buffer, diskmax, block_size);
@@ -460,6 +470,147 @@ void speed(void)
 #if defined(__x86_64__)
 		SPEED_START {
 			raidQP_avxext(buffer, diskmax, block_size);
+		} SPEED_STOP
+
+		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
+#endif
+	}
+#endif
+	printf("\n");
+
+	/* CAUCHYQP */
+	printf("%10s", "cauchyQP");
+	fflush(stdout);
+
+	SPEED_START {
+		cauchyQP_int8(buffer, diskmax, block_size);
+	} SPEED_STOP
+
+	printf(" %6"PRIu64, ds / dt);
+	fflush(stdout);
+
+	printf(" %6s", "");
+	printf(" %6s", "");
+
+	if (cpu_has_mmx()) {
+		printf(" %6s", "");
+	}
+
+	if (cpu_has_sse2()) {
+		printf(" %6s", "");
+
+#if defined(__x86_64__)
+		printf(" %6s", "");
+#endif
+	}
+
+#if defined(__i386__) || defined(__x86_64__)
+	if (cpu_has_ssse3()) {
+		SPEED_START {
+			cauchyQP_ssse3(buffer, diskmax, block_size);
+		} SPEED_STOP
+
+		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
+
+#if defined(__x86_64__)
+		SPEED_START {
+			cauchyQP_ssse3ext(buffer, diskmax, block_size);
+		} SPEED_STOP
+
+		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
+#endif
+	}
+#endif
+	printf("\n");
+	
+	/* CAUCHYPP */
+	printf("%10s", "cauchyPP");
+	fflush(stdout);
+
+	SPEED_START {
+		cauchyPP_int8(buffer, diskmax, block_size);
+	} SPEED_STOP
+
+	printf(" %6"PRIu64, ds / dt);
+	fflush(stdout);
+
+	printf(" %6s", "");
+	printf(" %6s", "");
+
+	if (cpu_has_mmx()) {
+		printf(" %6s", "");
+	}
+
+	if (cpu_has_sse2()) {
+		printf(" %6s", "");
+
+#if defined(__x86_64__)
+		printf(" %6s", "");
+#endif
+	}
+
+#if defined(__i386__) || defined(__x86_64__)
+	if (cpu_has_ssse3()) {
+		SPEED_START {
+			cauchyPP_ssse3(buffer, diskmax, block_size);
+		} SPEED_STOP
+
+		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
+
+#if defined(__x86_64__)
+		SPEED_START {
+			cauchyPP_ssse3ext(buffer, diskmax, block_size);
+		} SPEED_STOP
+
+		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
+#endif
+	}
+#endif
+	printf("\n");
+	
+	/* CAUCHYHP */
+	printf("%10s", "cauchyHP");
+	fflush(stdout);
+
+	SPEED_START {
+		cauchyHP_int8(buffer, diskmax, block_size);
+	} SPEED_STOP
+
+	printf(" %6"PRIu64, ds / dt);
+	fflush(stdout);
+
+	printf(" %6s", "");
+	printf(" %6s", "");
+
+	if (cpu_has_mmx()) {
+		printf(" %6s", "");
+	}
+
+	if (cpu_has_sse2()) {
+		printf(" %6s", "");
+
+#if defined(__x86_64__)
+		printf(" %6s", "");
+#endif
+	}
+
+#if defined(__i386__) || defined(__x86_64__)
+	if (cpu_has_ssse3()) {
+		SPEED_START {
+			cauchyHP_ssse3(buffer, diskmax, block_size);
+		} SPEED_STOP
+
+		printf(" %6"PRIu64, ds / dt);
+		fflush(stdout);
+
+#if defined(__x86_64__)
+		SPEED_START {
+			cauchyHP_ssse3ext(buffer, diskmax, block_size);
 		} SPEED_STOP
 
 		printf(" %6"PRIu64, ds / dt);

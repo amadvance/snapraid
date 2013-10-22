@@ -46,7 +46,7 @@ static struct hash_test_vector TEST_SPOOKY2[] = {
 { 0, 0, { 0 } }
 };
 
-static void recovtest(unsigned diskmax, unsigned block_size)
+static void recovtest(unsigned kind, unsigned diskmax, unsigned block_size)
 {
 	void* buffer_alloc;
 	unsigned char** buffer;
@@ -57,6 +57,7 @@ static void recovtest(unsigned diskmax, unsigned block_size)
 	unsigned char* buffer_zero;
 	unsigned char* buffer_bad;
 	unsigned buffermax;
+	unsigned level;
 	unsigned i, j, k, l;
 	unsigned n;
 
@@ -92,7 +93,13 @@ static void recovtest(unsigned diskmax, unsigned block_size)
 		{ 3, { 0, 1, 2 } }
 	};
 
-	buffermax = diskmax + LEV_MAX * 2 + 1 + 1;
+	if (kind == RAID_POWER) {
+		level = 4;
+	} else {
+		level = 4; /* TODO preliminary support limited to 4 parity */
+	}
+
+	buffermax = diskmax + level * 2 + 1 + 1;
 
 	buffer = malloc_nofail_vector_align(buffermax, block_size, &buffer_alloc);
 
@@ -112,7 +119,7 @@ static void recovtest(unsigned diskmax, unsigned block_size)
 	}
 
 	/* compute the parity */
-	raid_gen(LEV_MAX, buffer, diskmax, block_size);
+	raid_gen(kind, level, buffer, diskmax, block_size);
 
 	/* check 4data */
 	for(i=0;i<diskmax;++i) {
@@ -123,6 +130,10 @@ static void recovtest(unsigned diskmax, unsigned block_size)
 					unsigned char* b;
 					unsigned char* c;
 					unsigned char* d;
+
+					/* enforce the limit */
+					if (kind == RAID_POWER && diskmax > RAID_POWER_QP_DATA_LIMIT && l >= 3)
+						continue;
 
 					/* save */
 					a = buffer[i];
@@ -137,7 +148,7 @@ static void recovtest(unsigned diskmax, unsigned block_size)
 					buffer[l] = buffer_test3;
 
 					/* recover */
-					raid_recov_4data(i, j, k, l, 0, 1, 2, 3, buffer, diskmax, buffer_zero, block_size);
+					raid_recov_4data(kind, i, j, k, l, 0, 1, 2, 3, buffer, diskmax, buffer_zero, block_size);
 
 					/* check */
 					if (memcmp(buffer_test0, a, block_size) != 0
@@ -169,8 +180,9 @@ static void recovtest(unsigned diskmax, unsigned block_size)
 					unsigned char* c;
 					unsigned char* p;
 
-					/* this is the point where quad parity fails over RAIDQP_DATA_LIMIT data disks */
-					if (diskmax > RAIDQP_DATA_LIMIT && COMBO3[n].use[2] >= 3)
+					/* enforce the limit */
+					/* this is the point where quad parity fails over RAID_POWER_QP_DATA_LIMIT data disks */
+					if (kind == RAID_POWER && diskmax > RAID_POWER_QP_DATA_LIMIT && COMBO3[n].use[2] >= 3)
 						continue;
 
 					/* save */
@@ -189,7 +201,7 @@ static void recovtest(unsigned diskmax, unsigned block_size)
 					buffer[l] = buffer_bad;
 
 					/* recover ignoring p */
-					raid_recov_3data(i, j, k, COMBO3[n].use[0], COMBO3[n].use[1], COMBO3[n].use[2], buffer, diskmax, buffer_zero, block_size);
+					raid_recov_3data(kind, i, j, k, COMBO3[n].use[0], COMBO3[n].use[1], COMBO3[n].use[2], buffer, diskmax, buffer_zero, block_size);
 
 					/* check */
 					if (memcmp(buffer_test0, a, block_size) != 0
@@ -221,6 +233,10 @@ static void recovtest(unsigned diskmax, unsigned block_size)
 				unsigned char* p;
 				unsigned char* q;
 
+				/* enforce the limit */
+				if (kind == RAID_POWER && diskmax > RAID_POWER_QP_DATA_LIMIT && COMBO2[n].use[1] >= 3)
+					continue;
+
 				/* save */
 				a = buffer[i];
 				b = buffer[j];
@@ -238,7 +254,7 @@ static void recovtest(unsigned diskmax, unsigned block_size)
 				buffer[l] = buffer_bad;
 
 				/* recover */
-				raid_recov_2data(i, j, COMBO2[n].use[0], COMBO2[n].use[1], buffer, diskmax, buffer_zero, block_size);
+				raid_recov_2data(kind, i, j, COMBO2[n].use[0], COMBO2[n].use[1], buffer, diskmax, buffer_zero, block_size);
 
 				/* check */
 				if (memcmp(buffer_test0, a, block_size) != 0
@@ -267,6 +283,10 @@ static void recovtest(unsigned diskmax, unsigned block_size)
 			unsigned char* q;
 			unsigned char* r;
 
+			/* enforce the limit */
+			if (kind == RAID_POWER && diskmax > RAID_POWER_QP_DATA_LIMIT && COMBO1[n].use >= 3)
+				continue;
+
 			/* save */
 			a = buffer[i];
 
@@ -285,7 +305,7 @@ static void recovtest(unsigned diskmax, unsigned block_size)
 			buffer[l] = buffer_bad;
 
 			/* recover */
-			raid_recov_1data(i, COMBO1[n].use, buffer, diskmax, buffer_zero, block_size);
+			raid_recov_1data(kind, i, COMBO1[n].use, buffer, diskmax, buffer_zero, block_size);
 
 			/* check */
 			if (memcmp(buffer_test0, a, block_size) != 0) {
@@ -307,7 +327,7 @@ static void recovtest(unsigned diskmax, unsigned block_size)
 	free(buffer);
 }
 
-static void gentest(unsigned diskmax, unsigned block_size)
+static void gentest(unsigned kind, unsigned diskmax, unsigned block_size)
 {
 	void* buffer_alloc;
 	unsigned char** buffer;
@@ -315,8 +335,15 @@ static void gentest(unsigned diskmax, unsigned block_size)
 	unsigned i, j;
 	void (*map[64])(unsigned char** buffer, unsigned diskmax, unsigned size);
 	unsigned mac;
+	unsigned level;
 
-	buffermax = diskmax + LEV_MAX * 2;
+	if (kind == RAID_POWER) {
+		level = 4;
+	} else {
+		level = LEV_MAX;
+	}
+
+	buffermax = diskmax + level * 2;
 
 	buffer = malloc_nofail_vector_align(buffermax, block_size, &buffer_alloc);
 
@@ -327,55 +354,82 @@ static void gentest(unsigned diskmax, unsigned block_size)
 	}
 
 	/* compute the parity */
-	raid_gen(LEV_MAX, buffer, diskmax, block_size);
+	raid_gen(kind, level, buffer, diskmax, block_size);
 
 	/* copy in back buffers */
-	for(i=0;i<LEV_MAX;++i)
-		memcpy(buffer[diskmax + LEV_MAX + i], buffer[diskmax + i], block_size);
+	for(i=0;i<level;++i)
+		memcpy(buffer[diskmax + level + i], buffer[diskmax + i], block_size);
 
 	/* load all the available functions */
 	mac = 0;
-	map[mac++] = raid5_int32;
-	map[mac++] = raid5_int64;
-	map[mac++] = raid6_int32;
-	map[mac++] = raid6_int64;
-	map[mac++] = raidTP_int32;
-	map[mac++] = raidTP_int64;
-	map[mac++] = raidQP_int32;
-	map[mac++] = raidQP_int64;
+	if (kind == RAID_CAUCHY) {
+		map[mac++] = cauchyQP_int8;
+		map[mac++] = cauchyPP_int8;
+		map[mac++] = cauchyHP_int8;
+	}
+	if (kind == RAID_POWER) {
+		map[mac++] = raid5_int32;
+		map[mac++] = raid5_int64;
+		map[mac++] = raid6_int32;
+		map[mac++] = raid6_int64;
+		map[mac++] = raidTP_int32;
+		map[mac++] = raidTP_int64;
+		map[mac++] = raidQP_int32;
+		map[mac++] = raidQP_int64;
+	}
 
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_mmx()) {
-		map[mac++] = raid5_mmx;
-		map[mac++] = raid6_mmx;
-		map[mac++] = raidQP_mmx;
-		map[mac++] = raidTP_mmx;
+		if (kind == RAID_POWER) {
+			map[mac++] = raid5_mmx;
+			map[mac++] = raid6_mmx;
+			map[mac++] = raidQP_mmx;
+			map[mac++] = raidTP_mmx;
+		}
 	}
 
 	if (cpu_has_sse2()) {
-		map[mac++] = raid5_sse2;
-		map[mac++] = raid6_sse2;
-		map[mac++] = raidTP_sse2;
-		map[mac++] = raidQP_sse2;
+		if (kind == RAID_POWER) {
+			map[mac++] = raid5_sse2;
+			map[mac++] = raid6_sse2;
+			map[mac++] = raidTP_sse2;
+			map[mac++] = raidQP_sse2;
 #if defined(__x86_64__)
-		map[mac++] = raid6_sse2ext;
-		map[mac++] = raidTP_sse2ext;
-		map[mac++] = raidQP_sse2ext;
+			map[mac++] = raid6_sse2ext;
+			map[mac++] = raidTP_sse2ext;
+			map[mac++] = raidQP_sse2ext;
 #endif
+		}
 	}
 
 	if (cpu_has_ssse3()) {
-		map[mac++] = raidTP_ssse3;
-		map[mac++] = raidQP_ssse3;
+		if (kind == RAID_POWER) {
+			map[mac++] = raidTP_ssse3;
+			map[mac++] = raidQP_ssse3;
+		}
+		if (kind == RAID_CAUCHY) {
+			map[mac++] = cauchyQP_ssse3;
+			map[mac++] = cauchyPP_ssse3;
+			map[mac++] = cauchyHP_ssse3;
+		}
 #if defined(__x86_64__)
-		map[mac++] = raidTP_ssse3ext;
-		map[mac++] = raidQP_ssse3ext;
+		if (kind == RAID_POWER) {
+			map[mac++] = raidTP_ssse3ext;
+			map[mac++] = raidQP_ssse3ext;
+		}
+		if (kind == RAID_CAUCHY) {
+			map[mac++] = cauchyQP_ssse3ext;
+			map[mac++] = cauchyPP_ssse3ext;
+			map[mac++] = cauchyHP_ssse3ext;
+		}
 #endif
 	}
 
 	if (cpu_has_avx()) {
 #if defined(__x86_64__)
-		map[mac++] = raidQP_avxext;
+		if (kind == RAID_POWER) {
+			map[mac++] = raidQP_avxext;
+		}
 #endif
 	}
 #endif
@@ -386,8 +440,8 @@ static void gentest(unsigned diskmax, unsigned block_size)
 		map[j](buffer, diskmax, block_size);
 
 		/* check it */
-		for(i=0;i<LEV_MAX;++i) {
-			if (memcmp(buffer[diskmax + LEV_MAX + i], buffer[diskmax + i], block_size) != 0) {
+		for(i=0;i<level;++i) {
+			if (memcmp(buffer[diskmax + level + i], buffer[diskmax + i], block_size) != 0) {
 				fprintf(stderr, "Failed RAID test\n");
 				exit(EXIT_FAILURE);
 			}
@@ -511,7 +565,9 @@ void selftest()
 
 	hashtest();
 	crc32ctest();
-	gentest(24, 256 * 1024);
-	recovtest(24, 2048);
+	gentest(RAID_POWER, 24, 256 * 1024);
+	gentest(RAID_CAUCHY, 32, 256 * 1024);
+	recovtest(RAID_POWER, 24, 2048);
+	recovtest(RAID_CAUCHY, 32, 2048);
 }
 

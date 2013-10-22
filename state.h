@@ -18,13 +18,15 @@
 #ifndef __STATE_H
 #define __STATE_H
 
+#include "elem.h"
+
 /****************************************************************************/
 /* parity level */
 
 /**
  * Max level of parity supported.
  */
-#define LEV_MAX 4
+#define LEV_MAX 6
 
 /**
  * Returns the parity name: Parity, Q-Parity, R-Parity, S-Parity.

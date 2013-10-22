@@ -32,6 +32,8 @@ const char* lev_name(unsigned l)
 	case 1 : return "Q-Parity";
 	case 2 : return "R-Parity";
 	case 3 : return "S-Parity";
+	case 4 : return "T-Parity";
+	case 5 : return "U-Parity";
 	}
 
 	return 0;
@@ -44,6 +46,8 @@ const char* lev_config_name(unsigned l)
 	case 1 : return "q-parity";
 	case 2 : return "r-parity";
 	case 3 : return "s-parity";
+	case 4 : return "t-parity";
+	case 5 : return "u-parity";
 	}
 
 	return 0;
@@ -179,14 +183,14 @@ static void state_config_check(struct snapraid_state* state, const char* path)
 			++diskcount;
 		}
 
-		if (state->level >= 2 && diskcount > RAID6_DATA_LIMIT) {
+		if (state->level >= 2 && diskcount > RAID_POWER_DATA_LIMIT) {
 			/* RAID6 parity works for up to 255 drives, no more */
-			fprintf(stderr, "Too many disks for RAID6. No more than %u.\n", RAID6_DATA_LIMIT);
+			fprintf(stderr, "Too many disks for RAID6. No more than %u.\n", RAID_POWER_DATA_LIMIT);
 			exit(EXIT_FAILURE);
 		}
-		if (state->level >= 4 && diskcount > RAIDQP_DATA_LIMIT) {
+		if (state->level >= 4 && diskcount > RAID_POWER_QP_DATA_LIMIT) {
 			/* RAIDQP parity works for up to 21 drives, no more */
-			fprintf(stderr, "Too many disks for RAIDQP. No more than %u.\n", RAIDQP_DATA_LIMIT);
+			fprintf(stderr, "Too many disks for RAIDQP. No more than %u.\n", RAID_POWER_QP_DATA_LIMIT);
 			exit(EXIT_FAILURE);
 		}
 
