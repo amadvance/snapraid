@@ -17,7 +17,7 @@ Synopsis
 
 Description
 	SnapRAID is a backup program for disk arrays. It stores redundancy
-	information of your data and it's able to recover from up to two
+	information of your data and it's able to recover from up to six
 	disk failures.
 
 	SnapRAID is mainly targeted for a home media center, with a lot of
@@ -79,15 +79,16 @@ Getting Started
 	to dedicate at the "parity" information. With one disk for parity you
 	will be able to recover from a single disk failure, like RAID5.
 
-	If you want to be able to recover from two disk failures, like RAID6,
-	you must reserve another disk for the "q-parity" information.
+	If you want to be able to recover from more disk failures, like RAID6,
+	you must reserve additional disks for parity. Any additional parity
+	disk allow to recover from one more disk failure.
 
 	As parity disks, you have to pick the biggest disks in the array,
 	as the redundancy information may grow in size as the biggest data
 	disk in the array.
 
-	These disks will be dedicated to store the "parity" and "q-parity"
-	files. You should not store your data in them.
+	These disks will be dedicated to store the "parity" files.
+	You should not store your data in them.
 
 	The list of files is saved in the "content" files, usually
 	stored in the data, parity or boot disks.
@@ -272,7 +273,7 @@ Commands
 	You can stop this process at any time pressing Ctrl+C,
 	without losing the work already done.
 
-	The "content", "parity" and "q-parity" files are modified if necessary.
+	The "content", "parity" files are modified if necessary.
 	The files in the array are NOT modified.
 
   check
@@ -302,7 +303,7 @@ Commands
 	the ".unrecoverable" extension.
 
 	The "content" file is NOT modified.
-	The "parity" and "q-parity" files are modified if necessary.
+	The "parity" files are modified if necessary.
 	The files in the array are modified if necessary.
 
   scrub
@@ -333,7 +334,7 @@ Commands
 
 	The "content" file is modified to update the time of the last check
 	of each block.
-	The "parity" and "q-parity" files are NOT modified.
+	The "parity" files are NOT modified.
 	The files in the array are NOT modified.
 
   status
@@ -585,17 +586,25 @@ Configuration
 
 	This option is mandatory and it can be used only one time.
 
-  q-parity FILE
-	Defines the file to use to store the q-parity information.
-	If present, the q-parity enables the protection from two disk
-	failures, like RAID6.
+  [q,r,s,t,u]-parity FILE
+	Defines the files to use to store extra parity information.
+	For each parity file specified, one additional level of protection
+	is enabled:
 
-	It must be placed in a disk dedicated for this purpose with
+	* q-parity enables RAID6 Double Parity
+	* r-parity enables RAIDTP Triple Parity
+	* s-parity enables RAIDQP Quad Parity
+	* t-parity enables RAIDPP Penta Parity
+	* u-parity enables RAIDHP Hexa Parity
+
+	Each parity level requires also all the files of the previous levels.
+
+	Each file must be placed in a disk dedicated for this purpose with
 	as much free space as the biggest disk in the array.
-	Leaving the q-parity disk reserved for only this file ensures that
-	it doesn't get fragmented, improving the performance.
+	Leaving the parity disks reserved for only these files ensures that
+	they doesn't get fragmented, improving the performance.
 
-	This option is optional and it can be used only one time.
+	These options are optional and they can be used only one time.
 
   content FILE
 	Defines the file to use to store the list and checksums of all the
@@ -878,13 +887,13 @@ Content
 
 Parity
 	SnapRAID stores the redundancy information of your array in the parity
-	and q-parity files.
+	files.
 
 	They are binary files, containing the computed redundancy of all the
 	blocks defined in the "content" file.
 
 	These files are read and written by the "sync" and "fix" commands, and
-	only read by "check".
+	only read by "scrub" and "check".
 
 Encoding
 	SnapRAID in Unix ignores any encoding. It simply reads and stores the

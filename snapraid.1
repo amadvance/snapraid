@@ -49,7 +49,7 @@ snapraid [\(hyV, \(hy\(hyversion] [\(hyh, \(hy\(hyhelp] [\(hyC, \(hy\(hygen\(hyc
 .PD
 .SH DESCRIPTION 
 SnapRAID is a backup program for disk arrays. It stores redundancy
-information of your data and it\(cqs able to recover from up to two
+information of your data and it\(cqs able to recover from up to six
 disk failures.
 .PP
 SnapRAID is mainly targeted for a home media center, with a lot of
@@ -128,15 +128,16 @@ To use SnapRAID you need to first select one disk of your disk array
 to dedicate at the \(a"parity\(a" information. With one disk for parity you
 will be able to recover from a single disk failure, like RAID5.
 .PP
-If you want to be able to recover from two disk failures, like RAID6,
-you must reserve another disk for the \(a"q\(hyparity\(a" information.
+If you want to be able to recover from more disk failures, like RAID6,
+you must reserve additional disks for parity. Any additional parity
+disk allow to recover from one more disk failure.
 .PP
 As parity disks, you have to pick the biggest disks in the array,
 as the redundancy information may grow in size as the biggest data
 disk in the array.
 .PP
-These disks will be dedicated to store the \(a"parity\(a" and \(a"q\(hyparity\(a"
-files. You should not store your data in them.
+These disks will be dedicated to store the \(a"parity\(a" files.
+You should not store your data in them.
 .PP
 The list of files is saved in the \(a"content\(a" files, usually
 stored in the data, parity or boot disks.
@@ -492,7 +493,7 @@ without triggering any redundancy recomputation.
 You can stop this process at any time pressing Ctrl+C,
 without losing the work already done.
 .PP
-The \(a"content\(a", \(a"parity\(a" and \(a"q\(hyparity\(a" files are modified if necessary.
+The \(a"content\(a", \(a"parity\(a" files are modified if necessary.
 The files in the array are NOT modified.
 .SS check 
 Checks all the files and the redundancy data.
@@ -520,7 +521,7 @@ All the files that cannot be fixed are renamed adding
 the \(a".unrecoverable\(a" extension.
 .PP
 The \(a"content\(a" file is NOT modified.
-The \(a"parity\(a" and \(a"q\(hyparity\(a" files are modified if necessary.
+The \(a"parity\(a" files are modified if necessary.
 The files in the array are modified if necessary.
 .SS scrub 
 Scrubs the array, checking for silent errors.
@@ -550,7 +551,7 @@ but such errros are reported in the output of the command.
 .PP
 The \(a"content\(a" file is modified to update the time of the last check
 of each block.
-The \(a"parity\(a" and \(a"q\(hyparity\(a" files are NOT modified.
+The \(a"parity\(a" files are NOT modified.
 The files in the array are NOT modified.
 .SS status 
 Prints a summary of the state of the disk array.
@@ -792,17 +793,31 @@ Leaving the parity disk reserved for only this file ensures that
 it doesn\(cqt get fragmented, improving the performance.
 .PP
 This option is mandatory and it can be used only one time.
-.SS q\(hyparity FILE 
-Defines the file to use to store the q\(hyparity information.
-If present, the q\(hyparity enables the protection from two disk
-failures, like RAID6.
+.SS [q,r,s,t,u]\(hyparity FILE 
+Defines the files to use to store extra parity information.
+For each parity file specified, one additional level of protection
+is enabled:
+.PD 0
+.IP \(bu
+q\(hyparity enables RAID6 Double Parity
+.IP \(bu
+r\(hyparity enables RAIDTP Triple Parity
+.IP \(bu
+s\(hyparity enables RAIDQP Quad Parity
+.IP \(bu
+t\(hyparity enables RAIDPP Penta Parity
+.IP \(bu
+u\(hyparity enables RAIDHP Hexa Parity
+.PD
 .PP
-It must be placed in a disk dedicated for this purpose with
+Each parity level requires also all the files of the previous levels.
+.PP
+Each file must be placed in a disk dedicated for this purpose with
 as much free space as the biggest disk in the array.
-Leaving the q\(hyparity disk reserved for only this file ensures that
-it doesn\(cqt get fragmented, improving the performance.
+Leaving the parity disks reserved for only these files ensures that
+they doesn\(cqt get fragmented, improving the performance.
 .PP
-This option is optional and it can be used only one time.
+These options are optional and they can be used only one time.
 .SS content FILE 
 Defines the file to use to store the list and checksums of all the
 files present in your disk array.
@@ -1223,13 +1238,13 @@ This file is read and written by the \(a"sync\(a" and \(a"scrub\(a" commands, an
 only read by \(a"fix\(a", \(a"check\(a" and \(a"status\(a".
 .SH PARITY 
 SnapRAID stores the redundancy information of your array in the parity
-and q\(hyparity files.
+files.
 .PP
 They are binary files, containing the computed redundancy of all the
 blocks defined in the \(a"content\(a" file.
 .PP
 These files are read and written by the \(a"sync\(a" and \(a"fix\(a" commands, and
-only read by \(a"check\(a".
+only read by \(a"scrub\(a" and \(a"check\(a".
 .SH ENCODING 
 SnapRAID in Unix ignores any encoding. It simply reads and stores the
 file names with the same encoding used by the filesystem.

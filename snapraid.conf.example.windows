@@ -3,13 +3,20 @@
 # Defines the file to use as Parity storage
 # It must NOT be in a data disk
 # Format: "parity FILE_PATH"
-parity E:\par\parity.par
+parity E:\parity.par
 
-# Defines the file to use as Q-Parity storage (uncomment to enable).
-# If specified, it enables a double failures protection like RAID6
+# Defines the files to use as additional Parity storage.
+# If specified, they enable the multiple failures protection with RAID6
+# (Double), RAIDTP (Triple), RAIDQP (Quad), RAIDPP (Penta) and RAIDHP (Hexa).
+# To enable, uncomment one parity file for each extra level of extra
+# protection required. Start from q-parity, and follow in order.
 # It must NOT be in a data disk
-# Format: "q-parity FILE_PATH"
-#q-parity F:\qar\q-parity.par
+# Format: "X-parity FILE_PATH"
+#q-parity F:\q-parity.par
+#r-parity G:\r-parity.par
+#s-parity H:\s-parity.par
+#t-parity I:\t-parity.par
+#u-parity J:\u-parity.par
 
 # Defines the files to use as content list
 # You can use multiple specification to store more copies
@@ -18,15 +25,15 @@ parity E:\par\parity.par
 # but each file must be in a different disk
 # Format: "content FILE_PATH"
 content C:\snapraid\content.lst
-content G:\array\content.lst
-content H:\array\content.lst
+content K:\array\content.lst
+content L:\array\content.lst
 
 # Defines the data disks to use
 # The order is relevant for parity, do not change it
 # Format: "disk DISK_NAME DISK_MOUNT_POINT"
-disk d1 G:\array\
-disk d2 H:\array\
-disk d3 I:\array\
+disk d1 K:\array\
+disk d2 L:\array\
+disk d3 M:\array\
 
 # Excludes hidden files and directories (uncomment to enable).
 #nohidden
