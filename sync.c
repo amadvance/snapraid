@@ -175,8 +175,10 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		error_on_this_block = 0;
 		silent_error_on_this_block = 0;
 
-		/* if we have to use the old hash */
+		/* get block specific info */
 		info = info_get(&state->infoarr, i);
+
+		/* if we have to use the old hash */
 		rehash = info_get_rehash(info);
 
 		/* it could happens that all the blocks are EMPTY/BLK and CHG but with the hash */
@@ -374,7 +376,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			/* updates the parity only if really needed */
 			if (parity_needs_to_be_updated) {
 				/* compute the parity */
-				raid_gen(RAID_POWER, state->level, buffer, diskmax, state->block_size);
+				raid_gen(state->level, buffer, diskmax, state->block_size);
 
 				/* write the parity */
 				for(l=0;l<state->level;++l) {
@@ -430,7 +432,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				info_set(&state->infoarr, i, info_make(now, 0, 0));
 			}
 		} else if (silent_error_on_this_block) {
-			/* set the error status keeping the existing time and hash */
+			/* set the error status keeping the other info */
 			info_set(&state->infoarr, i, info_set_bad(info));
 		}
 

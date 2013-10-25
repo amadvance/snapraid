@@ -23,6 +23,7 @@
 #include "cpu.h"
 #include "elem.h"
 #include "state.h"
+#include "combos.h"
 
 struct hash_test_vector {
 	const char* data;
@@ -46,280 +47,276 @@ static struct hash_test_vector TEST_SPOOKY2[] = {
 { 0, 0, { 0 } }
 };
 
-static void recovtest(unsigned kind, unsigned diskmax, unsigned block_size)
+static void recovtest(int diskmax, unsigned block_size)
 {
 	void* buffer_alloc;
 	unsigned char** buffer;
-	unsigned char* buffer_test0;
-	unsigned char* buffer_test1;
-	unsigned char* buffer_test2;
-	unsigned char* buffer_test3;
-	unsigned char* buffer_zero;
-	unsigned char* buffer_bad;
+	unsigned char** data;
+	unsigned char** parity;
+	unsigned char** test;
+	unsigned char* data_save[LEV_MAX];
+	unsigned char* parity_save[LEV_MAX];
+	unsigned char* zero;
+	unsigned char* waste;
 	unsigned buffermax;
-	unsigned level;
-	unsigned i, j, k, l;
-	unsigned n;
+	int d[LEV_MAX];
+	int i;
+	unsigned j;
 
-	struct combo1 {
-		int ignore[3];
-		int use;
-	} COMBO1[] = {
-		{ { 1, 2, 3 }, 0 },
-		{ { 0, 2, 3 }, 1 },
-		{ { 0, 1, 3 }, 2 },
-		{ { 0, 1, 2 }, 3 }
-	};
-
-	struct combo2 {
-		int ignore[2];
-		int use[2];
-	} COMBO2[] = {
-		{ { 0, 1 }, { 2, 3 } },
-		{ { 0, 2 }, { 1, 3 } },
-		{ { 0, 3 }, { 1, 2 } },
-		{ { 1, 2 }, { 0, 3 } },
-		{ { 1, 3 }, { 0, 2 } },
-		{ { 2, 3 }, { 0, 1 } }
-	};
-
-	struct combo3 {
-		int ignore;
-		int use[3];
-	} COMBO3[] = {
-		{ 0, { 1, 2, 3 } },
-		{ 1, { 0, 2, 3 } },
-		{ 2, { 0, 1, 3 } },
-		{ 3, { 0, 1, 2 } }
-	};
-
-	if (kind == RAID_POWER) {
-		level = 4;
-	} else {
-		level = 4; /* TODO preliminary support limited to 4 parity */
-	}
-
-	buffermax = diskmax + level * 2 + 1 + 1;
+	buffermax = diskmax + LEV_MAX * 2 + 2;
 
 	buffer = malloc_nofail_vector_align(buffermax, block_size, &buffer_alloc);
 
-	buffer_test0 = buffer[buffermax-6];
-	buffer_test1 = buffer[buffermax-5];
-	buffer_test2 = buffer[buffermax-4];
-	buffer_test3 = buffer[buffermax-3];
-	buffer_zero = buffer[buffermax-2];
-	buffer_bad = buffer[buffermax-1];
-	memset(buffer_zero, 0, block_size);
-	memset(buffer_bad, 0xA5, block_size);
+	data = buffer;
+	parity = buffer + diskmax;
+	test = buffer + diskmax + LEV_MAX;
 
-	/* fill with random */
+	for(i=0;i<LEV_MAX;++i)
+		parity_save[i] = parity[i];
+
+	zero = buffer[buffermax-2];
+	memset(zero, 0, block_size);
+
+	waste = buffer[buffermax-1];
+
+	/* fill data disk with random */
 	for(i=0;i<diskmax;++i) {
 		for(j=0;j<block_size;++j)
-			buffer[i][j] = rand();
+			data[i][j] = rand();
 	}
 
 	/* compute the parity */
-	raid_gen(kind, level, buffer, diskmax, block_size);
+	raid_gen(LEV_MAX, buffer, diskmax, block_size);
 
-	/* check 4data */
-	for(i=0;i<diskmax;++i) {
-		for(j=i+1;j<diskmax;++j) {
-			for(k=j+1;k<diskmax;++k) {
-				for(l=k+1;l<diskmax;++l) {
-					unsigned char* a;
-					unsigned char* b;
-					unsigned char* c;
-					unsigned char* d;
+	/* set all the parity to the waste buffer */
+	for(i=0;i<LEV_MAX;++i)
+		parity[i] = waste;
 
-					/* enforce the limit */
-					if (kind == RAID_POWER && diskmax > RAID_POWER_QP_DATA_LIMIT && l >= 3)
-						continue;
-
-					/* save */
-					a = buffer[i];
-					b = buffer[j];
-					c = buffer[k];
-					d = buffer[l];
-
-					/* damage */
-					buffer[i] = buffer_test0;
-					buffer[j] = buffer_test1;
-					buffer[k] = buffer_test2;
-					buffer[l] = buffer_test3;
-
-					/* recover */
-					raid_recov_4data(kind, i, j, k, l, 0, 1, 2, 3, buffer, diskmax, buffer_zero, block_size);
-
-					/* check */
-					if (memcmp(buffer_test0, a, block_size) != 0
-						|| memcmp(buffer_test1, b, block_size) != 0
-						|| memcmp(buffer_test2, c, block_size) != 0
-						|| memcmp(buffer_test3, d, block_size) != 0
-					) {
-						fprintf(stderr, "Failed RAID test\n");
-						exit(EXIT_FAILURE);
-					}
-
-					/* restore */
-					buffer[i] = a;
-					buffer[j] = b;
-					buffer[k] = c;
-					buffer[l] = d;
-				}
+	/* check 6data */
+	for(d[0]=0;d[0]<diskmax;++d[0]) {
+	for(d[1]=d[0]+1;d[1]<diskmax;++d[1]) {
+	for(d[2]=d[1]+1;d[2]<diskmax;++d[2]) {
+	for(d[3]=d[2]+1;d[3]<diskmax;++d[3]) {
+	for(d[4]=d[3]+1;d[4]<diskmax;++d[4]) {
+	for(d[5]=d[4]+1;d[5]<diskmax;++d[5]) {
+		for(i=0;combo[5][i][0]>=0;++i) {
+			/* set */
+			for(j=0;j<6;++j) {
+				/* remove the missing data */
+				data_save[j] = data[d[j]];
+				data[d[j]] = test[j];
+				/* set the parity to use */
+				parity[combo[5][i][j]] = parity_save[combo[5][i][j]];
 			}
-		}
-	}
 
-	/* check 3data */
-	for(i=0;i<diskmax;++i) {
-		for(j=i+1;j<diskmax;++j) {
-			for(k=j+1;k<diskmax;++k) {
-				for(n=0;n<sizeof(COMBO3)/sizeof(COMBO3[0]);++n) {
-					unsigned char* a;
-					unsigned char* b;
-					unsigned char* c;
-					unsigned char* p;
+			/* recover */
+			raid_recov(6, d, combo[5][i], buffer, diskmax, zero, block_size);
 
-					/* enforce the limit */
-					/* this is the point where quad parity fails over RAID_POWER_QP_DATA_LIMIT data disks */
-					if (kind == RAID_POWER && diskmax > RAID_POWER_QP_DATA_LIMIT && COMBO3[n].use[2] >= 3)
-						continue;
-
-					/* save */
-					a = buffer[i];
-					b = buffer[j];
-					c = buffer[k];
-
-					/* damage */
-					buffer[i] = buffer_test0;
-					buffer[j] = buffer_test1;
-					buffer[k] = buffer_test2;
-
-					/* ignore parity */
-					l = diskmax + COMBO3[n].ignore;
-					p = buffer[l];
-					buffer[l] = buffer_bad;
-
-					/* recover ignoring p */
-					raid_recov_3data(kind, i, j, k, COMBO3[n].use[0], COMBO3[n].use[1], COMBO3[n].use[2], buffer, diskmax, buffer_zero, block_size);
-
-					/* check */
-					if (memcmp(buffer_test0, a, block_size) != 0
-						|| memcmp(buffer_test1, b, block_size) != 0
-						|| memcmp(buffer_test2, c, block_size) != 0
-					) {
-						fprintf(stderr, "Failed RAID test\n");
-						exit(EXIT_FAILURE);
-					}
-
-					/* restore parity */
-					buffer[l] = p;
-
-					/* restore */
-					buffer[i] = a;
-					buffer[j] = b;
-					buffer[k] = c;
-				}
-			}
-		}
-	}
-
-	/* check 2data */
-	for(i=0;i<diskmax;++i) {
-		for(j=i+1;j<diskmax;++j) {
-			for(n=0;n<sizeof(COMBO2)/sizeof(COMBO2[0]);++n) {
-				unsigned char* a;
-				unsigned char* b;
-				unsigned char* p;
-				unsigned char* q;
-
-				/* enforce the limit */
-				if (kind == RAID_POWER && diskmax > RAID_POWER_QP_DATA_LIMIT && COMBO2[n].use[1] >= 3)
-					continue;
-
-				/* save */
-				a = buffer[i];
-				b = buffer[j];
-
-				/* damage */
-				buffer[i] = buffer_test0;
-				buffer[j] = buffer_test1;
-
-				/* ignore parity */
-				k = diskmax + COMBO2[n].ignore[0];
-				l = diskmax + COMBO2[n].ignore[1];
-				p = buffer[k];
-				q = buffer[l];
-				buffer[k] = buffer_bad;
-				buffer[l] = buffer_bad;
-
-				/* recover */
-				raid_recov_2data(kind, i, j, COMBO2[n].use[0], COMBO2[n].use[1], buffer, diskmax, buffer_zero, block_size);
-
-				/* check */
-				if (memcmp(buffer_test0, a, block_size) != 0
-					|| memcmp(buffer_test1, b, block_size) != 0
-				) {
+			/* check */
+			for(j=0;j<6;++j) {
+				if (memcmp(test[j], data_save[j], block_size) != 0) {
 					fprintf(stderr, "Failed RAID test\n");
 					exit(EXIT_FAILURE);
 				}
+			}
 
-				/* restore parity */
-				buffer[k] = p;
-				buffer[l] = q;
-
-				/* restore */
-				buffer[i] = a;
-				buffer[j] = b;
+			/* restore */
+			for(j=0;j<6;++j) {
+				/* restore the data */
+				data[d[j]] = data_save[j];
+				/* restore the parity */
+				parity[combo[5][i][j]] = waste;
 			}
 		}
 	}
+	}
+	}
+	}
+	}
+	}
 
-	/* check 1data */
-	for(n=0;n<sizeof(COMBO1)/sizeof(COMBO1[0]);++n) {
-		for(i=0;i<diskmax;++i) {
-			unsigned char* a;
-			unsigned char* p;
-			unsigned char* q;
-			unsigned char* r;
-
-			/* enforce the limit */
-			if (kind == RAID_POWER && diskmax > RAID_POWER_QP_DATA_LIMIT && COMBO1[n].use >= 3)
-				continue;
-
-			/* save */
-			a = buffer[i];
-
-			/* damage */
-			buffer[i] = buffer_test0;
-
-			/* ignore parity */
-			j = diskmax + COMBO1[n].ignore[0];
-			k = diskmax + COMBO1[n].ignore[1];
-			l = diskmax + COMBO1[n].ignore[2];
-			p = buffer[j];
-			q = buffer[k];
-			r = buffer[l];
-			buffer[j] = buffer_bad;
-			buffer[k] = buffer_bad;
-			buffer[l] = buffer_bad;
-
-			/* recover */
-			raid_recov_1data(kind, i, COMBO1[n].use, buffer, diskmax, buffer_zero, block_size);
-
-			/* check */
-			if (memcmp(buffer_test0, a, block_size) != 0) {
-				fprintf(stderr, "Failed RAID test\n");
-				exit(EXIT_FAILURE);
+	/* check 5data */
+	for(d[0]=0;d[0]<diskmax;++d[0]) {
+	for(d[1]=d[0]+1;d[1]<diskmax;++d[1]) {
+	for(d[2]=d[1]+1;d[2]<diskmax;++d[2]) {
+	for(d[3]=d[2]+1;d[3]<diskmax;++d[3]) {
+	for(d[4]=d[3]+1;d[4]<diskmax;++d[4]) {
+		for(i=0;combo[4][i][0]>=0;++i) {
+			/* set */
+			for(j=0;j<5;++j) {
+				/* remove the missing data */
+				data_save[j] = data[d[j]];
+				data[d[j]] = test[j];
+				/* set the parity to use */
+				parity[combo[4][i][j]] = parity_save[combo[4][i][j]];
 			}
 
-			/* restore parity */
-			buffer[j] = p;
-			buffer[k] = q;
-			buffer[l] = r;
+			/* recover */
+			raid_recov(5, d, combo[4][i], buffer, diskmax, zero, block_size);
+
+			/* check */
+			for(j=0;j<5;++j) {
+				if (memcmp(test[j], data_save[j], block_size) != 0) {
+					fprintf(stderr, "Failed RAID test\n");
+					exit(EXIT_FAILURE);
+				}
+			}
 
 			/* restore */
-			buffer[i] = a;
+			for(j=0;j<5;++j) {
+				/* restore the data */
+				data[d[j]] = data_save[j];
+				/* restore the parity */
+				parity[combo[4][i][j]] = waste;
+			}
+		}
+	}
+	}
+	}
+	}
+	}
+
+	/* check 4data */
+	for(d[0]=0;d[0]<diskmax;++d[0]) {
+	for(d[1]=d[0]+1;d[1]<diskmax;++d[1]) {
+	for(d[2]=d[1]+1;d[2]<diskmax;++d[2]) {
+	for(d[3]=d[2]+1;d[3]<diskmax;++d[3]) {
+		for(i=0;combo[3][i][0]>=0;++i) {
+			/* set */
+			for(j=0;j<4;++j) {
+				/* remove the missing data */
+				data_save[j] = data[d[j]];
+				data[d[j]] = test[j];
+				/* set the parity to use */
+				parity[combo[3][i][j]] = parity_save[combo[3][i][j]];
+			}
+
+			/* recover */
+			raid_recov(4, d, combo[3][i], buffer, diskmax, zero, block_size);
+
+			/* check */
+			for(j=0;j<4;++j) {
+				if (memcmp(test[j], data_save[j], block_size) != 0) {
+					fprintf(stderr, "Failed RAID test\n");
+					exit(EXIT_FAILURE);
+				}
+			}
+
+			/* restore */
+			for(j=0;j<4;++j) {
+				/* restore the data */
+				data[d[j]] = data_save[j];
+				/* restore the parity */
+				parity[combo[3][i][j]] = waste;
+			}
+		}
+	}
+	}
+	}
+	}
+
+	/* check 3data */
+	for(d[0]=0;d[0]<diskmax;++d[0]) {
+	for(d[1]=d[0]+1;d[1]<diskmax;++d[1]) {
+	for(d[2]=d[1]+1;d[2]<diskmax;++d[2]) {
+		for(i=0;combo[2][i][0]>=0;++i) {
+			/* set */
+			for(j=0;j<3;++j) {
+				/* remove the missing data */
+				data_save[j] = data[d[j]];
+				data[d[j]] = test[j];
+				/* set the parity to use */
+				parity[combo[2][i][j]] = parity_save[combo[2][i][j]];
+			}
+
+			/* recover */
+			raid_recov(3, d, combo[2][i], buffer, diskmax, zero, block_size);
+
+			/* check */
+			for(j=0;j<3;++j) {
+				if (memcmp(test[j], data_save[j], block_size) != 0) {
+					fprintf(stderr, "Failed RAID test\n");
+					exit(EXIT_FAILURE);
+				}
+			}
+
+			/* restore */
+			for(j=0;j<3;++j) {
+				/* restore the data */
+				data[d[j]] = data_save[j];
+				/* restore the parity */
+				parity[combo[2][i][j]] = waste;
+			}
+		}
+	}
+	}
+	}
+
+	/* check 2data */
+	for(d[0]=0;d[0]<diskmax;++d[0]) {
+	for(d[1]=d[0]+1;d[1]<diskmax;++d[1]) {
+		for(i=0;combo[1][i][0]>=0;++i) {
+			/* set */
+			for(j=0;j<2;++j) {
+				/* remove the missing data */
+				data_save[j] = data[d[j]];
+				data[d[j]] = test[j];
+				/* set the parity to use */
+				parity[combo[1][i][j]] = parity_save[combo[1][i][j]];
+			}
+
+			/* recover */
+			raid_recov(2, d, combo[1][i], buffer, diskmax, zero, block_size);
+
+			/* check */
+			for(j=0;j<2;++j) {
+				if (memcmp(test[j], data_save[j], block_size) != 0) {
+					fprintf(stderr, "Failed RAID test\n");
+					exit(EXIT_FAILURE);
+				}
+			}
+
+			/* restore */
+			for(j=0;j<2;++j) {
+				/* restore the data */
+				data[d[j]] = data_save[j];
+				/* restore the parity */
+				parity[combo[1][i][j]] = waste;
+			}
+		}
+	}
+	}
+
+	/* check 1data */
+	for(d[0]=0;d[0]<diskmax;++d[0]) {
+		for(i=0;combo[0][i][0]>=0;++i) {
+			/* set */
+			for(j=0;j<1;++j) {
+				/* remove the missing data */
+				data_save[j] = data[d[j]];
+				data[d[j]] = test[j];
+				/* set the parity to use */
+				parity[combo[0][i][j]] = parity_save[combo[0][i][j]];
+			}
+
+			/* recover */
+			raid_recov(1, d, combo[0][i], buffer, diskmax, zero, block_size);
+
+			/* check */
+			for(j=0;j<1;++j) {
+				if (memcmp(test[j], data_save[j], block_size) != 0) {
+					fprintf(stderr, "Failed RAID test\n");
+					exit(EXIT_FAILURE);
+				}
+			}
+
+			/* restore */
+			for(j=0;j<1;++j) {
+				/* restore the data */
+				data[d[j]] = data_save[j];
+				/* restore the parity */
+				parity[combo[0][i][j]] = waste;
+			}
 		}
 	}
 
@@ -327,7 +324,7 @@ static void recovtest(unsigned kind, unsigned diskmax, unsigned block_size)
 	free(buffer);
 }
 
-static void gentest(unsigned kind, unsigned diskmax, unsigned block_size)
+static void gentest(unsigned diskmax, unsigned block_size)
 {
 	void* buffer_alloc;
 	unsigned char** buffer;
@@ -335,15 +332,8 @@ static void gentest(unsigned kind, unsigned diskmax, unsigned block_size)
 	unsigned i, j;
 	void (*map[64])(unsigned char** buffer, unsigned diskmax, unsigned size);
 	unsigned mac;
-	unsigned level;
 
-	if (kind == RAID_POWER) {
-		level = 4;
-	} else {
-		level = LEV_MAX;
-	}
-
-	buffermax = diskmax + level * 2;
+	buffermax = diskmax + LEV_MAX * 2;
 
 	buffer = malloc_nofail_vector_align(buffermax, block_size, &buffer_alloc);
 
@@ -354,82 +344,49 @@ static void gentest(unsigned kind, unsigned diskmax, unsigned block_size)
 	}
 
 	/* compute the parity */
-	raid_gen(kind, level, buffer, diskmax, block_size);
+	raid_gen(LEV_MAX, buffer, diskmax, block_size);
 
 	/* copy in back buffers */
-	for(i=0;i<level;++i)
-		memcpy(buffer[diskmax + level + i], buffer[diskmax + i], block_size);
+	for(i=0;i<LEV_MAX;++i)
+		memcpy(buffer[diskmax + LEV_MAX + i], buffer[diskmax + i], block_size);
 
 	/* load all the available functions */
 	mac = 0;
-	if (kind == RAID_CAUCHY) {
-		map[mac++] = cauchyQP_int8;
-		map[mac++] = cauchyPP_int8;
-		map[mac++] = cauchyHP_int8;
-	}
-	if (kind == RAID_POWER) {
-		map[mac++] = raid5_int32;
-		map[mac++] = raid5_int64;
-		map[mac++] = raid6_int32;
-		map[mac++] = raid6_int64;
-		map[mac++] = raidTP_int32;
-		map[mac++] = raidTP_int64;
-		map[mac++] = raidQP_int32;
-		map[mac++] = raidQP_int64;
-	}
+
+	map[mac++] = raidTP_int8;
+	map[mac++] = raidQP_int8;
+	map[mac++] = raidPP_int8;
+	map[mac++] = raidHP_int8;
+
+	map[mac++] = raid5_int32;
+	map[mac++] = raid5_int64;
+	map[mac++] = raid6_int32;
+	map[mac++] = raid6_int64;
 
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_mmx()) {
-		if (kind == RAID_POWER) {
-			map[mac++] = raid5_mmx;
-			map[mac++] = raid6_mmx;
-			map[mac++] = raidQP_mmx;
-			map[mac++] = raidTP_mmx;
-		}
+		map[mac++] = raid5_mmx;
+		map[mac++] = raid6_mmx;
 	}
 
 	if (cpu_has_sse2()) {
-		if (kind == RAID_POWER) {
-			map[mac++] = raid5_sse2;
-			map[mac++] = raid6_sse2;
-			map[mac++] = raidTP_sse2;
-			map[mac++] = raidQP_sse2;
+		map[mac++] = raid5_sse2;
+		map[mac++] = raid6_sse2;
 #if defined(__x86_64__)
-			map[mac++] = raid6_sse2ext;
-			map[mac++] = raidTP_sse2ext;
-			map[mac++] = raidQP_sse2ext;
+		map[mac++] = raid6_sse2ext;
 #endif
-		}
 	}
 
 	if (cpu_has_ssse3()) {
-		if (kind == RAID_POWER) {
-			map[mac++] = raidTP_ssse3;
-			map[mac++] = raidQP_ssse3;
-		}
-		if (kind == RAID_CAUCHY) {
-			map[mac++] = cauchyQP_ssse3;
-			map[mac++] = cauchyPP_ssse3;
-			map[mac++] = cauchyHP_ssse3;
-		}
+		map[mac++] = raidTP_ssse3;
+		map[mac++] = raidQP_ssse3;
+		map[mac++] = raidPP_ssse3;
+		map[mac++] = raidHP_ssse3;
 #if defined(__x86_64__)
-		if (kind == RAID_POWER) {
-			map[mac++] = raidTP_ssse3ext;
-			map[mac++] = raidQP_ssse3ext;
-		}
-		if (kind == RAID_CAUCHY) {
-			map[mac++] = cauchyQP_ssse3ext;
-			map[mac++] = cauchyPP_ssse3ext;
-			map[mac++] = cauchyHP_ssse3ext;
-		}
-#endif
-	}
-
-	if (cpu_has_avx()) {
-#if defined(__x86_64__)
-		if (kind == RAID_POWER) {
-			map[mac++] = raidQP_avxext;
-		}
+		map[mac++] = raidTP_ssse3ext;
+		map[mac++] = raidQP_ssse3ext;
+		map[mac++] = raidPP_ssse3ext;
+		map[mac++] = raidHP_ssse3ext;
 #endif
 	}
 #endif
@@ -440,8 +397,8 @@ static void gentest(unsigned kind, unsigned diskmax, unsigned block_size)
 		map[j](buffer, diskmax, block_size);
 
 		/* check it */
-		for(i=0;i<level;++i) {
-			if (memcmp(buffer[diskmax + level + i], buffer[diskmax + i], block_size) != 0) {
+		for(i=0;i<LEV_MAX;++i) {
+			if (memcmp(buffer[diskmax + LEV_MAX + i], buffer[diskmax + i], block_size) != 0) {
 				fprintf(stderr, "Failed RAID test\n");
 				exit(EXIT_FAILURE);
 			}
@@ -565,9 +522,7 @@ void selftest()
 
 	hashtest();
 	crc32ctest();
-	gentest(RAID_POWER, 24, 256 * 1024);
-	gentest(RAID_CAUCHY, 32, 256 * 1024);
-	recovtest(RAID_POWER, 24, 2048);
-	recovtest(RAID_CAUCHY, 32, 2048);
+	gentest(64, 256);
+	recovtest(16, 64);
 }
 

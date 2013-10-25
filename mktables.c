@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Andrea Mazzoleni
+ * Copyright (C) 2013 Andrea Mazzoleni
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,6 +17,9 @@
 
 #include <stdio.h>
 
+/**
+ * Multiplication in GF(2^8).
+ */
 unsigned char gfmul(unsigned char a, unsigned char b)
 {
 	unsigned char v;
@@ -39,72 +42,96 @@ unsigned char gfmul(unsigned char a, unsigned char b)
 	return v;
 }
 
+/**
+ * Inversion table in GF(2^8).
+ */
 unsigned char gfinv[256];
 
-#define POWER_PARITY 4
-#define POWER_DISK 255
-
 /**
- * Setup the power matrix used to generate parity.
- * The first row is formed by all 1.
- * The second row contains power of 2, the third power of 4, and so on...
- * Note that this matrix is valid only for up to Quad Parity and for up to 21 data disks.
+ * Number of parity.
+ * This is the number of rows of the generation matrix.
  */
-void set_power(unsigned char* matrix)
-{
-	int i, j;
-	unsigned char g;
-
-	g = 1;
-	for(i=0;i<POWER_PARITY;++i) {
-		unsigned char v = 1;
-		for(j=0;j<POWER_DISK;++j) {
-			matrix[i*POWER_DISK+j] = v;
-			v = gfmul(g, v);
-		}
-		g = gfmul(2, g);
-	}
-}
-
-#define CAUCHY_PARITY 6
-#define CAUCHY_DISK (256-(CAUCHY_PARITY-1))
+#define PARITY 6
 
 /**
- * Setup the Extended Cauchy matrix used to generate parity.
- * The first row is formed by all 1.
- * The second row are power of 2, 2^0, 2^1, 2^2, ...
- * The others row are computed.
+ * Number of disks.
+ * This is the number of columns of the generation matrix.
+ */
+#define DISK (257-PARITY)
+
+/**
+ * Setup the Normalized Extended Cauchy matrix used to generate the parity.
  */
 void set_cauchy(unsigned char* matrix)
 {
 	int i, j;
-	unsigned char cv, rv;
+	unsigned char inv_x, y;
 
-	/* first row all 1, this is an Extended Cauchy matrix */
-	for(i=0;i<CAUCHY_DISK;++i) {
-		matrix[0*CAUCHY_DISK+i] = 1;
+	/*
+	 * First row is formed by all 1.
+	 *
+	 * This is an Extended Cauchy matrix built from a Cauchy matrix
+	 * adding the first row of all 1.
+	 */
+	for(i=0;i<DISK;++i) {
+		matrix[0*DISK+i] = 1;
 	}
 
-	/* second row power of 2, this is the first row of the Cauchy matrix */
-	cv = 1;
-	for(i=0;i<CAUCHY_DISK;++i) {
-		matrix[1*CAUCHY_DISK+i] = cv;
-		cv = gfmul(2, cv);
+	/*
+	 * Second row is formed by power of 2^i.
+	 *
+	 * This is the first row of the Cauchy matrix.
+	 *
+	 * Each element of the Cauchy matrix is in the form 1/(xi+yj)
+	 * where all xi, and yj must be different.
+	 *
+	 * Choosing xi = 2^-i and y0 = 0, we obtain for the first row:
+	 *
+	 * 1/(xi+y0) = 1/(2^-i + 0) = 2^i
+	 *
+	 * with 2^-i != 0 for any i
+	 */
+	inv_x = 1;
+	for(i=0;i<DISK;++i) {
+		matrix[1*DISK+i] = inv_x;
+		inv_x = gfmul(2, inv_x);
 	}
 
-	/* other rows using a Cauchy matrix */
-	rv = 2;
-	for(j=0;j<CAUCHY_PARITY-2;++j) {
-		unsigned char ce;
+	/*
+	 * Next rows of the Cauchy matrix.
+	 *
+	 * We continue forming the Cauchy matrix with yj = 2^j obtaining :
+	 *
+	 * 1/(xi+yj) = 1/(2^-i + 2^j)
+	 *
+	 * with xi != yj for any i,j with i>=0,j>=1,i+j<256
+	 */
+	y = 2;
+	for(j=0;j<PARITY-2;++j) {
 
-		ce = 1;
-		for(i=0;i<CAUCHY_DISK;++i) {
-			cv = gfinv[ce];
-			matrix[(j+2)*CAUCHY_DISK+i] = gfinv[rv ^ cv];
-			ce = gfmul(2, ce);
+		inv_x = 1;
+		for(i=0;i<DISK;++i) {
+			unsigned char x = gfinv[inv_x];
+			matrix[(j+2)*DISK+i] = gfinv[y ^ x];
+			inv_x = gfmul(2, inv_x);
 		}
 
-		rv = gfmul(2, rv);
+		y = gfmul(2, y);
+	}
+
+	/*
+	 * Normalizes the matrix multipling each row for
+	 * the inverse of the first element in the row.
+	 *
+	 * This operation doesn't invalidate the property that all the square
+	 * submatrices are not singular.
+	 */
+	for(j=0;j<PARITY-2;++j) {
+		unsigned char f = gfinv[matrix[(j+2)*DISK]];
+
+		for(i=0;i<DISK;++i) {
+			matrix[(j+2)*DISK+i] = gfmul(matrix[(j+2)*DISK+i], f);
+		}
 	}
 }
 
@@ -128,10 +155,10 @@ int main(void)
 {
 	unsigned char v;
 	int i, j, k, p;
-	unsigned char matrix[8 * 256];
+	unsigned char matrix[PARITY * 256];
 
 	printf("/*\n");
-	printf(" * Copyright (C) 2011 Andrea Mazzoleni\n");
+	printf(" * Copyright (C) 2013 Andrea Mazzoleni\n");
 	printf(" *\n");
 	printf(" * This program is free software: you can redistribute it and/or modify\n");
 	printf(" * it under the terms of the GNU General Public License as published by\n");
@@ -185,22 +212,6 @@ int main(void)
 	}
 	printf("};\n\n");
 
-	/* 4^a */
-	printf("const unsigned char __attribute__((aligned(256))) gfexp4[256] =\n");
-	printf("{\n");
-	v = 1;
-	for(i=0;i<256;++i) {
-		if (i % 8 == 0)
-			printf("\t");
-		printf("0x%02x,", v);
-		v = gfmul(v, 4);
-		if (i % 8 == 7)
-			printf("\n");
-		else
-			printf(" ");
-	}
-	printf("};\n\n");
-
 	/* 1/a */
 	printf("const unsigned char __attribute__((aligned(256))) gfinv[256] =\n");
 	printf("{\n");
@@ -220,145 +231,35 @@ int main(void)
 	}
 	printf("};\n\n");
 
-	/* x4l */
-	printf("#define GFX4L { ");
-	for(i=0;i<16;++i) {
-		v = gfmul(0x4, i);
-		printf("0x%02x", (unsigned)v);
-		if (i != 15)
-			printf(", ");
-	}
-	printf(" }\n");
-
-	/* x4h */
-	printf("#define GFX4H { ");
-	for(i=0;i<16;++i) {
-		v = gfmul(0x40, i);
-		printf("0x%02x", (unsigned)v);
-		if (i != 15)
-			printf(", ");
-	}
-	printf(" }\n");
-
-	/* x8l */
-	printf("#define GFX8L { ");
-	for(i=0;i<16;++i) {
-		v = gfmul(0x8, i);
-		printf("0x%02x", (unsigned)v);
-		if (i != 15)
-			printf(", ");
-	}
-	printf(" }\n");
-
-	/* x8h */
-	printf("#define GFX8H { ");
-	for(i=0;i<16;++i) {
-		v = gfmul(0x80, i);
-		printf("0x%02x", (unsigned)v);
-		if (i != 15)
-			printf(", ");
-	}
-	printf(" }\n");
-
-	/* poly */
-	printf("#define GFPOLY8 { 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d } \n");
-	printf("#define GFPOLY16 { 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d } \n");
-	printf("#define GFMASK16 { 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f } \n");
-	printf("\n");
-
-	/* power matrix */
-	set_power(matrix);
-
-	printf("/**\n");
-	printf(" * Power matrix used to generate parity.\n");
-	printf(" * This matrix is valid for up to 4 parity with 21 data disks.\n");
-	printf(" *\n");
-	for(p=0;p<POWER_PARITY;++p) {
-		printf(" * ");
-		for(i=0;i<POWER_DISK;++i) {
-			printf("%02x ", matrix[p*POWER_DISK+i]);
-			if (p+1 == 4 && i+1 == 21) {
-				/* stop at 4 parity and 21 data disks */
-				break;
-			}
-		}
-		printf("\n");
-	}
-	printf(" */\n");
-	printf("const unsigned char  __attribute__((aligned(256))) gfmatrix_power[%u][256] =\n", POWER_PARITY);
-	printf("{\n");
-	for(p=0;p<POWER_PARITY;++p) {
-		printf("\t{\n");
-		for(i=0;i<POWER_DISK;++i) {
-			if (i % 8 == 0)
-				printf("\t\t");
-			printf("0x%02x,", matrix[p*POWER_DISK+i]);
-			if (p+1 == 4 && i+1 == 21) {
-				/* stop at 4 parity and 21 data disks */
-				break;
-			}
-			if (i % 8 == 7)
-				printf("\n");
-			else
-				printf(" ");
-		}
-		printf("\n\t},\n");
-	}
-	printf("};\n\n");
-
-	/* matrix matrix */
+	/* cauchy matrix */
 	set_cauchy(matrix);
 
 	printf("/**\n");
 	printf(" * Extended Cauchy matrix used to generate parity.\n");
-	printf(" * This matrix is valid for up to %u parity with %u data disks.\n", CAUCHY_PARITY, CAUCHY_DISK);
+	printf(" * This matrix is valid for up to %u parity with %u data disks.\n", PARITY, DISK);
 	printf(" *\n");
-	for(p=0;p<CAUCHY_PARITY;++p) {
+	for(p=0;p<PARITY;++p) {
 		printf(" * ");
-		for(i=0;i<CAUCHY_DISK;++i) {
-			printf("%02x ", matrix[p*CAUCHY_DISK+i]);
+		for(i=0;i<DISK;++i) {
+			printf("%02x ", matrix[p*DISK+i]);
 		}
 		printf("\n");
 	}
 	printf(" */\n");
-	printf("const unsigned char  __attribute__((aligned(256))) gfmatrix_cauchy[%u][256] =\n", CAUCHY_PARITY);
+	printf("const unsigned char  __attribute__((aligned(256))) gfmatrix[%u][256] =\n", PARITY);
 	printf("{\n");
-	for(p=0;p<CAUCHY_PARITY;++p) {
+	for(p=0;p<PARITY;++p) {
 		printf("\t{\n");
-		for(i=0;i<CAUCHY_DISK;++i) {
+		for(i=0;i<DISK;++i) {
 			if (i % 8 == 0)
 				printf("\t\t");
-			printf("0x%02x,", matrix[p*CAUCHY_DISK+i]);
+			printf("0x%02x,", matrix[p*DISK+i]);
 			if (i % 8 == 7)
 				printf("\n");
 			else
 				printf(" ");
 		}
 		printf("\n\t},\n");
-	}
-	printf("};\n\n");
-
-	printf("/**\n");
-	printf(" * Multiplication tables for the Extended Cauchy matrix.\n");
-	printf(" *\n");
-	printf(" * Indexes are [DISK][DATA][PARITY - 1].\n");
-	printf(" * Where DISK is from 0 to %u, DATA from 0 to 255, PARITY from 1 to %u.\n", CAUCHY_DISK - 1, CAUCHY_PARITY - 1);
-	printf(" */\n");
-	printf("const unsigned char  __attribute__((aligned(256))) gfcauchy_mul[%u][256][%u] =\n", CAUCHY_DISK, np(CAUCHY_PARITY - 1));
-	printf("{\n");
-	for(i=0;i<CAUCHY_DISK;++i) {
-		printf("\t{\n");
-		for(j=0;j<256;++j) {
-			printf("\t\t{ ");
-			for(p=1;p<CAUCHY_PARITY;++p) {
-				v = gfmul(matrix[p*CAUCHY_DISK+i], j);
-				printf("0x%02x", (unsigned)v);
-				if (p != CAUCHY_PARITY - 1)
-					printf(", ");
-			}
-			printf(" },\n");
-		}
-		printf("\t},\n");
 	}
 	printf("};\n\n");
 
@@ -366,19 +267,19 @@ int main(void)
 	printf("/**\n");
 	printf(" * PSHUFB tables for the Extended Cauchy matrix.\n");
 	printf(" *\n");
-	printf(" * Indexes are [DISK][DATA][PARITY - 2].\n");
-	printf(" * Where DISK is from 0 to %u, DATA from 0 to 255, PARITY from 2 to %u.\n", CAUCHY_DISK - 1, CAUCHY_PARITY - 1);
+	printf(" * Indexes are [DISK][PARITY - 2][LH].\n");
+	printf(" * Where DISK is from 0 to %u, PARITY from 2 to %u, LH from 0 to 1.\n", DISK - 1, PARITY - 1);
 	printf(" */\n");
-	printf("const unsigned char  __attribute__((aligned(256))) gfcauchy_pshufb[%u][%u][2][16] =\n", CAUCHY_DISK, np(CAUCHY_PARITY - 2));
+	printf("const unsigned char  __attribute__((aligned(256))) gfpshufb[%u][%u][2][16] =\n", DISK, np(PARITY - 2));
 	printf("{\n");
-	for(i=0;i<CAUCHY_DISK;++i) {
+	for(i=0;i<DISK;++i) {
 		printf("\t{\n");
-		for(p=2;p<CAUCHY_PARITY;++p) {
+		for(p=2;p<PARITY;++p) {
 			printf("\t\t{\n");
 			for(j=0;j<2;++j) {
 				printf("\t\t\t{ ");
 				for(k=0;k<16;++k) {
-					v = gfmul(matrix[p*CAUCHY_DISK+i], k);
+					v = gfmul(matrix[p*DISK+i], k);
 					if (j == 1)
 						v = gfmul(v, 16);
 					printf("0x%02x", (unsigned)v);

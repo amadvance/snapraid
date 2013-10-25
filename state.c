@@ -53,6 +53,20 @@ const char* lev_config_name(unsigned l)
 	return 0;
 }
 
+const char* lev_raid_name(unsigned n)
+{
+	switch (n) {
+	case 1 : return "raid5";
+	case 2 : return "raid6";
+	case 3 : return "raidTP";
+	case 4 : return "raidQP";
+	case 5 : return "raidPP";
+	case 6 : return "raidHP";
+	}
+
+	return 0;
+}
+
 void state_init(struct snapraid_state* state)
 {
 	unsigned l;
@@ -183,17 +197,6 @@ static void state_config_check(struct snapraid_state* state, const char* path)
 			++diskcount;
 		}
 
-		if (state->level >= 2 && diskcount > RAID_POWER_DATA_LIMIT) {
-			/* RAID6 parity works for up to 255 drives, no more */
-			fprintf(stderr, "Too many disks for RAID6. No more than %u.\n", RAID_POWER_DATA_LIMIT);
-			exit(EXIT_FAILURE);
-		}
-		if (state->level >= 4 && diskcount > RAID_POWER_QP_DATA_LIMIT) {
-			/* RAIDQP parity works for up to 21 drives, no more */
-			fprintf(stderr, "Too many disks for RAIDQP. No more than %u.\n", RAID_POWER_QP_DATA_LIMIT);
-			exit(EXIT_FAILURE);
-		}
-
 #ifdef _WIN32
 		for(l=0;l<state->level;++l) {
 			if (state->parity_device[l] == 0) {
@@ -266,6 +269,13 @@ static void state_config_check(struct snapraid_state* state, const char* path)
 			fprintf(stderr, "You must have at least %d 'content' files in different disks.\n", state->level+1);
 			exit(EXIT_FAILURE);
 		}
+	}
+
+#if defined(__i386__) || defined(__x86_64__)
+	if (!cpu_has_ssse3())
+#endif
+	if (state->level > 2) {
+		fprintf(stderr, "WARNING! Your CPU doesn't have a fast implementation beyond RAID6.\n");
 	}
 }
 
@@ -341,7 +351,13 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				exit(EXIT_FAILURE);
 			}
 			state->block_size *= 1024;
-		} else if (strcmp(tag, "parity") == 0 || strcmp(tag, "q-parity") == 0 || strcmp(tag, "r-parity") == 0 || strcmp(tag, "s-parity") == 0) {
+		} else if (strcmp(tag, "parity") == 0
+			|| strcmp(tag, "q-parity") == 0
+			|| strcmp(tag, "r-parity") == 0
+			|| strcmp(tag, "s-parity") == 0
+			|| strcmp(tag, "t-parity") == 0
+			|| strcmp(tag, "u-parity") == 0
+		) {
 			char device[PATH_MAX];
 			char* slash;
 			struct stat st;
@@ -352,6 +368,8 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			case 'q' : l = 1; break;
 			case 'r' : l = 2; break;
 			case 's' : l = 3; break;
+			case 't' : l = 4; break;
+			case 'u' : l = 5; break;
 			default:
 				fprintf(stderr, "Invalid '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
@@ -652,16 +670,9 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 		fprintf(stdlog, "disk:%s:%s\n", disk->name, disk->dir);
 	}
 
-	switch (state->level) {
-	case 1 : fprintf(stdlog, "mode:raid5\n"); break;
-	case 2 : fprintf(stdlog, "mode:raid6\n"); break;
-	case 3 : fprintf(stdlog, "mode:raidTP\n"); break;
-	case 4 : fprintf(stdlog, "mode:raidQP\n"); break;
-	}
-
-	for(l=0;l<state->level;++l) {
+	fprintf(stdlog, "mode:%s\n", lev_raid_name(state->level)); 
+	for(l=0;l<state->level;++l)
 		fprintf(stdlog, "%s:%s\n", lev_config_name(l), state->parity_path[l]);
-	}
 	if (state->pool[0] != 0)
 		fprintf(stdlog, "pool:%s\n", state->pool);
 	fflush(stdlog);
@@ -675,6 +686,7 @@ static void state_map(struct snapraid_state* state)
 	unsigned hole;
 	tommy_node* i;
 	unsigned uuid_mismatch;
+	unsigned diskcount;
 
 	/* removes all the mapping without a disk */
 	/* this happens when a disk is removed from the configuration file */
@@ -803,6 +815,19 @@ static void state_map(struct snapraid_state* state)
 		fprintf(stderr, "you can '%s' anyway, using 'snapraid --force-uuid %s'.\n", state->command, state->command);
 		fprintf(stderr, "Instead, it's possible that you messed up the disk mount points,\n");
 		fprintf(stderr, "and you have to restore the mount points at the state of the latest sync.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	/* count the number of data disks, including holes left after removing some */
+	diskcount = 0;
+	for(i=state->maplist;i!=0;i=i->next) {
+		struct snapraid_map* map = i->data;
+
+		if (map->position + 1 > diskcount)
+			diskcount = map->position + 1;
+	}
+	if (diskcount > RAID_DATA_LIMIT) {
+		fprintf(stderr, "Too many datadisks. No more than %u.\n", RAID_DATA_LIMIT);
 		exit(EXIT_FAILURE);
 	}
 }

@@ -1,6 +1,6 @@
 bin_PROGRAMS = snapraid
 check_PROGRAMS = mktest
-EXTRA_PROGRAMS = mktables
+EXTRA_PROGRAMS = mktables mkcombos
 
 snapraid_SOURCES = \
 	snapraid.c \
@@ -30,6 +30,9 @@ snapraid_SOURCES = \
 
 mktables_SOURCES = \
 	mktables.c
+
+mkcombos_SOURCES = \
+	mkcombos.c
 
 noinst_HEADERS = \
 	portable.h \
@@ -63,6 +66,7 @@ noinst_HEADERS = \
 	cpu.h \
 	raid.h \
 	tables.h \
+	combos.h \
 	import.h \
 	mingw.h \
 	unix.h
@@ -76,7 +80,7 @@ EXTRA_DIST = \
 	noautomake.sh \
 	README AUTHORS HISTORY INSTALL COPYING TODO TEST INSTALL.windows \
 	snapraid.d snapraid.1 snapraid.txt \
-	test-raid5.conf test-raid6.conf test-raidTP.conf test-raidQP.conf test-raidQP-hole.conf \
+	test-raid5.conf test-raid6.conf test-raidTP.conf test-raidQP.conf test-raidPP.conf test-raidHP.conf test-raidHP-hole.conf \
 	snapraid.conf.example \
 	configure.windows-x86 configure.windows-x64 snapraid.conf.example.windows \
 	acinclude.m4
@@ -100,12 +104,14 @@ maintainer-clean-local:
 CHECKFLAGS = --test-skip-device --test-skip-self
 CHECKCOUNT = 2000
 CHECKSIZE = 4000
-CONF = $(srcdir)/test-raidQP.conf
-HOLE = $(srcdir)/test-raidQP-hole.conf
+CONF = $(srcdir)/test-raidHP.conf
+HOLE = $(srcdir)/test-raidHP-hole.conf
 RAID5 = $(srcdir)/test-raid5.conf
 RAID6 = $(srcdir)/test-raid6.conf
 RAIDTP = $(srcdir)/test-raidTP.conf
 RAIDQP = $(srcdir)/test-raidQP.conf
+RAIDPP = $(srcdir)/test-raidPP.conf
+RAIDHP = $(srcdir)/test-raidHP.conf
 
 check-local:
 	rm -rf test
@@ -116,6 +122,7 @@ check-local:
 	mkdir test/disk3
 	mkdir test/disk4
 	mkdir test/disk5
+	mkdir test/disk6
 	mkdir test/pool
 	echo --- Help
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -h
@@ -133,7 +140,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
 	echo --- Create some files, sync and check in RAID5/6/TP
-	$(TESTENV) ./mktest$(EXEEXT) generate 1 5 $(CHECKCOUNT) $(CHECKSIZE)
+	$(TESTENV) ./mktest$(EXEEXT) generate 1 6 $(CHECKCOUNT) $(CHECKSIZE)
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) diff > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) diff -G > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-order-physical sync
@@ -149,7 +156,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
 	echo --- Create some more files, hardlinks and empty directories, sync RAID5 and check
-	$(TESTENV) ./mktest$(EXEEXT) generate 2 5 $(CHECKCOUNT) $(CHECKSIZE)
+	$(TESTENV) ./mktest$(EXEEXT) generate 2 6 $(CHECKCOUNT) $(CHECKSIZE)
 	mkdir test/disk1/empty1
 	mkdir test/disk2/empty2
 	mkdir test/disk3/empty3a
@@ -174,7 +181,7 @@ endif
 if HAVE_SYMLINK
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAID5) pool
 endif
-	echo --- Extend RAID5 to RAIDQP with fix and check
+	echo --- Extend RAID5 to max parity with fix and check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(CONF) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAID5) check
@@ -224,7 +231,7 @@ endif
 	rm test/disk2/2*
 	rm test/disk3/3*
 	rm test/disk4/4*
-	$(TESTENV) ./mktest$(EXEEXT) generate 3 5 $(CHECKCOUNT) $(CHECKSIZE)
+	$(TESTENV) ./mktest$(EXEEXT) generate 3 6 $(CHECKCOUNT) $(CHECKSIZE)
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Move some files, sync and check
@@ -240,9 +247,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(RAID5) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAID5) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
-	echo --- Sync after all the fixes with an empty drive to test --force-empty
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --force-empty -c $(CONF) sync
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Delete two disks, fix and check with RAID6
 	rm -r test/disk1
 	mkdir test/disk1
@@ -260,13 +265,42 @@ endif
 	mkdir test/disk2
 	rm -r test/disk3
 	mkdir test/disk3
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(RAID5) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(RAID6) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(RAIDTP) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAIDTP) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Delete four disks, fix and check with RAIDQP
+	rm -r test/disk3
+	mkdir test/disk3
+	rm -r test/disk4
+	mkdir test/disk4
+	rm -r test/disk5
+	mkdir test/disk5
+	rm -r test/disk6
+	mkdir test/disk6
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(RAIDTP) fix -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(RAIDQP) check -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAIDQP) fix -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	echo --- Delete five disks, fix and check with RAIDPP
+	rm -r test/disk1
+	mkdir test/disk1
+	rm -r test/disk2
+	mkdir test/disk2
+	rm -r test/disk3
+	mkdir test/disk3
+	rm -r test/disk5
+	mkdir test/disk5
+	rm -r test/disk6
+	mkdir test/disk6
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(RAIDQP) fix -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(RAIDPP) check -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAIDPP) fix -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	echo --- Delete six disks, fix and check with RAIDHP
 	rm -r test/disk1
 	mkdir test/disk1
 	rm -r test/disk2
@@ -275,11 +309,13 @@ endif
 	mkdir test/disk3
 	rm -r test/disk4
 	mkdir test/disk4
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(RAID5) fix -l test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(RAID6) fix -l test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(RAIDTP) fix -l test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(RAIDQP) check -l test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAIDQP) fix -l test.log
+	rm -r test/disk5
+	mkdir test/disk5
+	rm -r test/disk6
+	mkdir test/disk6
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(RAIDPP) fix -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(RAIDHP) check -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAIDHP) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Delete some files and create some new, sync and check in multiple steps using text content
@@ -293,7 +329,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-content-text test-rewrite
 	cmp test/content test/content.txt
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check -l test.log
-	$(TESTENV) ./mktest$(EXEEXT) generate 4 5 $(CHECKCOUNT) $(CHECKSIZE)
+	$(TESTENV) ./mktest$(EXEEXT) generate 4 6 $(CHECKCOUNT) $(CHECKSIZE)
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -t 100 sync --test-force-content-text
 	cp test/content test/content.txt
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) test-rewrite

@@ -828,7 +828,6 @@ static inline snapraid_info info_set_bad(snapraid_info info)
 	return info | 0x1;
 }
 
-
 /**
  * Marks the block address as with rehash.
  */

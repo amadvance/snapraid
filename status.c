@@ -134,7 +134,6 @@ int state_status(struct snapraid_state* state)
 	count = 0;
 	rehash = 0;
 	unsynched_blocks = 0;
-
 	for(i=0;i<blockmax;++i) {
 		int one_invalid;
 		int one_valid;
