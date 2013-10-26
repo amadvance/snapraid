@@ -16,57 +16,57 @@
  */
 
 /*
- * The RAID5/RAID6 support was originally derived from the libraid6 library
+ * The RAID5 and RAID6 support were originally derived from the libraid6 library
  * by H. Peter Anvin released with license "GPL2 or any later version"
  * used in the Linux Kernel 2.6.38.
  * This support was later completely rewritten (many times), but the
  * H. Peter Anvin's Copyright may still apply.
  *
- * The RAIDTP/RAIDQP/RAIDPP/RAIDHP support is original work implemented 
- * from scratch.
+ * The RAIDTP (Triple Parity), RAIDQP (Quad parity), RAIDPP (Penta Parity) and
+ * RAIDHP (Hexa parity) support is original work implemented from scratch.
  *
- * The RAID5 and RAID6 support works like the one implemented in the Linux
- * Kernel RAID and it's based on the Anvin's paper "The mathematics of RAID-6" [1].
+ * For RAID5 and RAID6 it works like the Linux Kernel RAID and it's based on
+ * the Anvin's paper "The mathematics of RAID-6" [1].
  *
  * We compute the parity in the Galois Field GF(2^8) with the primitive
  * polynomial x^8 + x^4 + x^3 + x^2 + 1 (285 decimal), starting from a set 
- * of n disk Di with 0<=i<n, using the equations:
+ * of N disk Di with 0<=i<N, using the equations:
  *
  * P = sum(Di)
- * Q = sum(2^i * Di) with 0<=i<n
+ * Q = sum(2^i * Di) with 0<=i<N
  *
- * To support RAIDTP (Triple Parity), it was first evaluated (and then dropped),
- * to use an extension of the same approach, with additional parity
- * coefficients set as powers of 4 with equations:
+ * To support RAIDTP (Triple Parity), it was first evaluated, and then dropped,
+ * the use of an extension of the same approach, with additional parity
+ * coefficients set as powers of 4, with equations:
  *
  * P = sum(Di)
  * Q = sum(2^i * Di)
- * R = sum(4^i * Di) with 0<=i<n
+ * R = sum(4^i * Di) with 0<=i<N
  *
- * This method is the same used by ZFS to implement its RAIDTP support,
+ * This method is also the same used by ZFS to implement its RAIDZ3 support,
  * it works well, and it's very efficient.
  * 
  * Unfortunately, the same approach doesn't work for RAIDQP (Quad Parity).
- * Using the parity coefficients set as power of 8 with equations:
+ * Using additional parity coefficients set as power of 8 with equations:
  *
  * P = sum(Di)
  * Q = sum(2^i * Di)
  * R = sum(4^i * Di)
- * S = sum(8^i * Di) with 0<=i<n
+ * S = sum(8^i * Di) with 0<=i<N
  *
  * we don't have a system of independent linear equations, and in some cases
  * the equations are not solvable.
  *
  * This approach is expected to fail at some point, because the Vandermonde 
- * matrix used to compute the parity has no guarantee to have all its 
+ * matrix used to compute the parity has no guarantee to have all
  * submatrices not singular [2, Chap 11, Problem 7] and this is a requirement
- * to have a MDS code [2, Chap 11, Theorem 8].
+ * to have a MDS (Maximum Distance Separable) code [2, Chap 11, Theorem 8].
  * 
  * If it surprises that even using a Vandermonde matrix we don't have a 
  * MDS code, consider that the matrix A we use to compute the parity, is 
- * not the MDS generator matrix G, but only a submatrix of it. The generator 
- * matrix G is the concatenation of I and A, as G = [I | A], where I is 
- * the identity matrix.
+ * not the MDS generator matrix G, but only a submatrix of it.
+ * The generator  matrix G is the concatenation of I and A, as G = [I | A],
+ * where I is the identity matrix.
  * Setting the matrix G as Vandermonde matrix would have guaranteed to have 
  * a MDS code, but setting only A as a Vandermonde matrix doesn't give 
  * this guarantee.
@@ -74,11 +74,11 @@
  * Using the primitive polynomial 285, RAIDQP works for up to 21 data disks
  * with parity coefficients "1,2,4,8". Changing polynomial to one of 391/451/463/487,
  * it works for up to 27 disks with the same parity coefficients.
- * Using different parity coefficients "5,13,27,35" it's possible to
+ * Using different parity coefficients, like "5,13,27,35", it's possible to
  * make it working for up to 33 disks. But no more.
  *
- * To support more disks it's possible to use the Galois Field GF(2^16) with
- * primitive polynomial 100087 or 122563 that supports up to Hexa (6) Parity 
+ * To support more disks it's possible to use GF(2^16) with primitive
+ * polynomial 100087 or 122563 that supports up to Hexa (6) Parity
  * with parity coefficients 1,2,4,8,16,32 for up to 89 disks.
  *
  * To overcome these limitations we instead use an Extended Cauchy Matrix [3][4] 
@@ -88,17 +88,17 @@
  * any number of parities and for any number of disks.
  *
  * The problem of this approach is that the coefficients of the equations 
- * are not powers of the same value easy to compute.
- * We need to use multiplication tables to implement the parity computation, 
- * instead of the parallel approach described in [1].
+ * are not powers of the same value, not allowing to use the fast implementation
+ * described in the Anvin's paper [1].
  *
- * Hopefully there is a method to implement parallel multiplication
- * with tables using SSSE3 instructions [1][5]. Method competitive with
- * the RAIDTP parity computation using power coefficients.
+ * Hopefully there is a method to implement parallel multiplications
+ * using SSSE3 instructions [1][5]. Method already competitive with the computation
+ * of RAIDTP parity using power coefficients.
  *
  * Another important property of the Extended Cauchy matrix is that we can 
- * setup the first two rows with coeffients equal at the RAID5 and RAID6 
- * approach described in [1], resulting in a compatible extension.
+ * setup the first two rows with power coeffients equal at the RAID5 and RAID6
+ * approach described in Anvin's paper [1], resulting in a compatible extension,
+ * and requiring SSSE3 instructions only if RAIDTP is used.
  * 
  * We also "normalize" the matrix, multipling each row for a constant
  * factor to make the first column with all 1.
@@ -120,50 +120,27 @@
  * 
  * This matrix can be extended to support any number of parities, just adding
  * additional rows, (but removing one column for each row added), without
- * the changing the already existing rows, and always maintaining the
- * guarantee to always have all square submatrices not singular.
+ * the changing the already existing rows.
  * (see mktables.c for more details in how the matrix is generated)
  * 
- * Resulting speed in x64, with 24 data disks, using a stripe of 256 KiB,
- * for a Core i7-3740QM CPU @ 2.7GHz is:
- * 
- *          int8  int32  int64   sse2  sse2e  ssse3 ssse3e
- *    raid5        9042  16698  26734
- *    raid6        3205   5478  13987  16287
- *   raidTP  828                               6802   7186
- *   raidQP  637                               5483   5843
- *   raidPP  513                               4325   4629
- *   raidHP  428                               3479   3866
- *
- * Values are in MiB/s of data processed, not counting written parity.
- *
- * For comparison, a similar implementation using the power coeffients approach
- * in the same condition, is only a little faster (16%) for RAIDTP with power
- * coefficient "4", and equal for RAIDQP, that gets faster (10%) only using
- * AVX instructions.
- *
- *                int32  int64   sse2  sse2e  ssse3 ssse3e   avxe
- *   raidTP        1406   2522   7240   7886   8071   8358
- *   raidQP         773   1375   4573   4678   5457   5778   6468
- * 
- * In details parity is computed as:
+ * In details, parity is computed as:
  *
  * P = sum(Di)
  * Q = sum(2^i *  Di)
  * R = sum(A[2,i] * Di)
  * S = sum(A[3,i] * Di)
  * T = sum(A[4,i] * Di)
- * U = sum(A[5,i] * Di) with 0<=i<n
+ * U = sum(A[5,i] * Di) with 0<=i<N
  *
  * To recover from a failure of six disks at indexes x,y,z,h,v,w,
- * with 0<=x<y<z<h<v<w<n, we compute the parity of the available n-6 disks as:
+ * with 0<=x<y<z<h<v<w<N, we compute the parity of the available N-6 disks as:
  *
  * Pa = sum(Di)
  * Qa = sum(2^i * Di)
  * Ra = sum(A[2,i] * Di)
  * Sa = sum(A[3,i] * Di)
  * Ta = sum(A[4,i] * Di)
- * Ua = sum(A[5,i] * Di) with 0<=i<n,i!=x,i!=y,i!=z,i!=h,i!=v,i!=w.
+ * Ua = sum(A[5,i] * Di) with 0<=i<N,i!=x,i!=y,i!=z,i!=h,i!=v,i!=w.
  *
  * And if we define:
  *
@@ -185,6 +162,29 @@
  *
  * A linear system always solvable because the coefficients matrix is always
  * not singular due the properties of the matrix A[].
+ *
+ * Resulting speed in x64, with 24 data disks, using a stripe of 256 KiB,
+ * for a Core i7-3740QM CPU @ 2.7GHz is:
+ * 
+ *          int8  int32  int64   sse2  sse2e  ssse3 ssse3e
+ *    raid5        9042  16698  26734
+ *    raid6        3205   5478  13987  16287
+ *   raidTP  828                               6802   7186
+ *   raidQP  637                               5483   5843
+ *   raidPP  513                               4325   4629
+ *   raidHP  428                               3479   3866
+ *
+ * Values are in MiB/s of data processed, not counting generated parity.
+ *
+ * For comparison, a similar implementation using the power coeffients approach
+ * in the same condition, is only a little faster (16%) for RAIDTP with power
+ * coefficient "4", and equal for RAIDQP with power coefficient "8".
+ * RAIDQP became faster (10%) only using AVX instructions, thanks of the better
+ * registers allocation that AVX three operands PSHUFB makes possible.
+ *
+ *                int32  int64   sse2  sse2e  ssse3 ssse3e   avxe
+ *   raidTP        1406   2522   7240   7886   8071   8358
+ *   raidQP         773   1375   4573   4678   5457   5778   6468
  *
  * References:
  * [1] Anvin, "The mathematics of RAID-6", 2004
@@ -420,10 +420,10 @@ void raid6_int64(unsigned char** vbuf, unsigned data, unsigned size)
 }
 
 #if defined(__i386__) || defined(__x86_64__)
-static const struct raid_16_const {
+static const struct gfconst16 {
 	unsigned char poly[16];
 	unsigned char mask[16];
-} raid_16_const  __attribute__((aligned(32))) = {
+} gfconst16  __attribute__((aligned(32))) = {
 	{ 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d },
 	{ 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f }
 };
@@ -442,7 +442,7 @@ void raid6_sse2(unsigned char** vbuf, unsigned data, unsigned size)
 	p = vbuf[data];
 	q = vbuf[data+1];
 
-	asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.poly[0]));
+	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
 
 	for(i=0;i<size;i+=32) {
 		asm volatile("movdqa %0,%%xmm0" : : "m" (vbuf[l][i]));
@@ -495,7 +495,7 @@ void raid6_sse2ext(unsigned char** vbuf, unsigned data, unsigned size)
 	p = vbuf[data];
 	q = vbuf[data+1];
 
-	asm volatile("movdqa %0,%%xmm15" : : "m" (raid_16_const.poly[0]));
+	asm volatile("movdqa %0,%%xmm15" : : "m" (gfconst16.poly[0]));
 
 	for(i=0;i<size;i+=64) {
 		asm volatile("movdqa %0,%%xmm0" : : "m" (vbuf[l][i]));
@@ -609,8 +609,8 @@ void raidTP_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 	q = vbuf[data+1];
 	r = vbuf[data+2];
 
-	asm volatile("movdqa %0,%%xmm3" : : "m" (raid_16_const.poly[0]));
-	asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.mask[0]));
+	asm volatile("movdqa %0,%%xmm3" : : "m" (gfconst16.poly[0]));
+	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
 
 	for(i=0;i<size;i+=16) {
 		asm volatile("pxor %xmm0,%xmm0");
@@ -668,8 +668,8 @@ void raidTP_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 	q = vbuf[data+1];
 	r = vbuf[data+2];
 
-	asm volatile("movdqa %0,%%xmm3" : : "m" (raid_16_const.poly[0]));
-	asm volatile("movdqa %0,%%xmm11" : : "m" (raid_16_const.mask[0]));
+	asm volatile("movdqa %0,%%xmm3" : : "m" (gfconst16.poly[0]));
+	asm volatile("movdqa %0,%%xmm11" : : "m" (gfconst16.mask[0]));
 
 	for(i=0;i<size;i+=32) {
 		asm volatile("pxor %xmm0,%xmm0");
@@ -798,7 +798,7 @@ void raidQP_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 		asm volatile("pxor %xmm2,%xmm2");
 		asm volatile("pxor %xmm3,%xmm3");
 		for(d=l;d>=0;--d) {
-			asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.poly[0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
 			asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[d][i]));
 
 			asm volatile("pxor %xmm5,%xmm5");
@@ -807,7 +807,7 @@ void raidQP_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("pand %xmm7,%xmm5");
 			asm volatile("pxor %xmm5,%xmm1");
 
-			asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.mask[0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
 
 			asm volatile("pxor %xmm4,%xmm0");
 			asm volatile("pxor %xmm4,%xmm1");
@@ -872,8 +872,8 @@ void raidQP_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 		asm volatile("pxor %xmm10,%xmm10");
 		asm volatile("pxor %xmm11,%xmm11");
 		for(d=l;d>=0;--d) {
-			asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.poly[0]));
-			asm volatile("movdqa %0,%%xmm15" : : "m" (raid_16_const.mask[0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
+			asm volatile("movdqa %0,%%xmm15" : : "m" (gfconst16.mask[0]));
 			asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[d][i]));
 			asm volatile("movdqa %0,%%xmm12" : : "m" (vbuf[d][i+16]));
 
@@ -1023,7 +1023,7 @@ void raidPP_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 		for(d=l;d>=0;--d) {
 			asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[d][i]));
 			asm volatile("movdqa %0,%%xmm6" : : "m" (p0[0]));
-			asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.poly[0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
 
 			asm volatile("pxor %xmm5,%xmm5");
 			asm volatile("pcmpgtb %xmm0,%xmm5");
@@ -1035,7 +1035,7 @@ void raidPP_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("pxor %xmm4,%xmm6");
 			asm volatile("movdqa %%xmm6,%0" : "=m" (p0));
 
-			asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.mask[0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
 			asm volatile("movdqa %xmm4,%xmm5");
 			asm volatile("psraw  $4,%xmm5");
 			asm volatile("pand   %xmm7,%xmm4");
@@ -1097,8 +1097,8 @@ void raidPP_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 	s = vbuf[data+3];
 	t = vbuf[data+4];
 
-	asm volatile("movdqa %0,%%xmm14" : : "m" (raid_16_const.poly[0]));
-	asm volatile("movdqa %0,%%xmm15" : : "m" (raid_16_const.mask[0]));
+	asm volatile("movdqa %0,%%xmm14" : : "m" (gfconst16.poly[0]));
+	asm volatile("movdqa %0,%%xmm15" : : "m" (gfconst16.mask[0]));
 
 	for(i=0;i<size;i+=16) {
 		asm volatile("pxor %xmm0,%xmm0");
@@ -1243,7 +1243,7 @@ void raidHP_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 		for(d=l;d>=0;--d) {
 			asm volatile("movdqa %0,%%xmm5" : : "m" (p0[0]));
 			asm volatile("movdqa %0,%%xmm6" : : "m" (q0[0]));
-			asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.poly[0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
 
 			asm volatile("pxor %xmm4,%xmm4");
 			asm volatile("pcmpgtb %xmm6,%xmm4");
@@ -1258,7 +1258,7 @@ void raidHP_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("movdqa %%xmm5,%0" : "=m" (p0));
 			asm volatile("movdqa %%xmm6,%0" : "=m" (q0));
 
-			asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.mask[0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
 			asm volatile("movdqa %xmm4,%xmm5");
 			asm volatile("psraw  $4,%xmm5");
 			asm volatile("pand   %xmm7,%xmm4");
@@ -1331,8 +1331,8 @@ void raidHP_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 	t = vbuf[data+4];
 	u = vbuf[data+5];
 
-	asm volatile("movdqa %0,%%xmm14" : : "m" (raid_16_const.poly[0]));
-	asm volatile("movdqa %0,%%xmm15" : : "m" (raid_16_const.mask[0]));
+	asm volatile("movdqa %0,%%xmm14" : : "m" (gfconst16.poly[0]));
+	asm volatile("movdqa %0,%%xmm15" : : "m" (gfconst16.mask[0]));
 
 	for(i=0;i<size;i+=16) {
 		asm volatile("pxor %xmm0,%xmm0");
@@ -1834,7 +1834,7 @@ static void raid6_recov_2data(const int* d, const int* e, unsigned char** vbuf, 
 	unsigned char* qa;
 	const unsigned char* T[2];
 
-	/* select tables */
+	/* get multiplication tables */
 	T[0] = table( inv(pow2(d[1]-d[0]) ^ 1) );
 	T[1] = table( inv(pow2(d[0]) ^ pow2(d[1])) );
 
@@ -1956,7 +1956,7 @@ static void raid_recov_1data(const int* d, const int* e, unsigned char** vbuf, u
 		return;
 	}
 
-	/* select tables */
+	/* get multiplication tables */
 	T[0] = table( inv(A(e[0],d[0])) );
 
 	/* compute delta parity */
@@ -2005,7 +2005,7 @@ static void raid_recov_2data(const int* d, const int* e, unsigned char** vbuf, u
 		return;
 	}
 
-	/* setup the generator matrix */
+	/* setup the coefficients matrix */
 	for(i=0;i<N;++i) {
 		for(j=0;j<N;++j) {
 			G[i*N+j] = A(e[i],d[j]);
@@ -2015,7 +2015,7 @@ static void raid_recov_2data(const int* d, const int* e, unsigned char** vbuf, u
 	/* invert it to solve the system of linear equations */
 	invert(G, V, N);
 
-	/* select tables */
+	/* get multiplication tables */
 	for(i=0;i<N;++i) {
 		for(j=0;j<N;++j) {
 			T[i][j] = table( V[i*N+j] );
@@ -2070,7 +2070,7 @@ static void raid_recov_3data(const int* d, const int* e, unsigned char** vbuf, u
 	unsigned char V[N*N];
 	unsigned i, j;
 
-	/* setup the generator matrix */
+	/* setup the coefficients matrix */
 	for(i=0;i<N;++i) {
 		for(j=0;j<N;++j) {
 			G[i*N+j] = A(e[i],d[j]);
@@ -2080,7 +2080,7 @@ static void raid_recov_3data(const int* d, const int* e, unsigned char** vbuf, u
 	/* invert it to solve the system of linear equations */
 	invert(G, V, N);
 
-	/* select tables */
+	/* get multiplication tables */
 	for(i=0;i<N;++i) {
 		for(j=0;j<N;++j) {
 			T[i][j] = table( V[i*N+j] );
@@ -2143,7 +2143,7 @@ static void raid_recov_4data(const int* d, const int* e, unsigned char** vbuf, u
 	unsigned char V[N*N];
 	unsigned i, j;
 
-	/* setup the generator matrix */
+	/* setup the coefficients matrix */
 	for(i=0;i<N;++i) {
 		for(j=0;j<N;++j) {
 			G[i*N+j] = A(e[i],d[j]);
@@ -2153,7 +2153,7 @@ static void raid_recov_4data(const int* d, const int* e, unsigned char** vbuf, u
 	/* invert it to solve the system of linear equations */
 	invert(G, V, N);
 
-	/* select tables */
+	/* get multiplication tables */
 	for(i=0;i<N;++i) {
 		for(j=0;j<N;++j) {
 			T[i][j] = table( V[i*N+j] );
@@ -2224,7 +2224,7 @@ static void raid_recov_5data(const int* d, const int* e, unsigned char** vbuf, u
 	unsigned char V[N*N];
 	unsigned i, j;
 
-	/* setup the generator matrix */
+	/* setup the coefficients matrix */
 	for(i=0;i<N;++i) {
 		for(j=0;j<N;++j) {
 			G[i*N+j] = A(e[i],d[j]);
@@ -2234,7 +2234,7 @@ static void raid_recov_5data(const int* d, const int* e, unsigned char** vbuf, u
 	/* invert it to solve the system of linear equations */
 	invert(G, V, N);
 
-	/* select tables */
+	/* get multiplication tables */
 	for(i=0;i<N;++i) {
 		for(j=0;j<N;++j) {
 			T[i][j] = table( V[i*N+j] );
@@ -2313,7 +2313,7 @@ static void raid_recov_6data(const int* d, const int* e, unsigned char** vbuf, u
 	unsigned char V[N*N];
 	unsigned i, j;
 
-	/* setup the generator matrix */
+	/* setup the coefficients matrix */
 	for(i=0;i<N;++i) {
 		for(j=0;j<N;++j) {
 			G[i*N+j] = A(e[i],d[j]);
@@ -2323,7 +2323,7 @@ static void raid_recov_6data(const int* d, const int* e, unsigned char** vbuf, u
 	/* invert it to solve the system of linear equations */
 	invert(G, V, N);
 
-	/* select tables */
+	/* get multiplication tables */
 	for(i=0;i<N;++i) {
 		for(j=0;j<N;++j) {
 			T[i][j] = table( V[i*N+j] );
