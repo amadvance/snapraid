@@ -151,7 +151,7 @@ void speed(void)
 	/* crc table */
 	printf("CRC used to check the content file integrity:\n");
 
-	printf("%8s", "");
+	printf("%8s", "table");
 	fflush(stdout);
 
 	SPEED_START {
