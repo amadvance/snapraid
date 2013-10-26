@@ -59,22 +59,31 @@ void speed(void)
 	unsigned i, j;
 	unsigned char digest[HASH_SIZE];
 	unsigned char seed[HASH_SIZE];
-
+	int d[LEV_MAX];
+	int e[LEV_MAX];
 	unsigned count;
-	unsigned delta = 100;
+	unsigned delta = 10;
 	unsigned block_size = 256 * 1024;
 	unsigned diskmax = 8;
 	void* buffer_alloc;
 	unsigned char** buffer;
+	unsigned char* zero;
 
-	buffer = malloc_nofail_vector_align(diskmax + LEV_MAX, block_size, &buffer_alloc);
+	buffer = malloc_nofail_vector_align(diskmax + LEV_MAX + 1, block_size, &buffer_alloc);
 
 	/* initialize with fixed data */
-	for(i=0;i<diskmax+4;++i) {
+	for(i=0;i<diskmax+LEV_MAX;++i) {
 		memset(buffer[i], i, block_size);
 	}
-	for(i=0;i<HASH_SIZE;++i)
+	zero = buffer[diskmax+LEV_MAX];
+	memset(zero, 0, block_size);
+	for(i=0;i<HASH_SIZE;++i) {
 		seed[i] = i;
+	}
+	for(i=0;i<LEV_MAX;++i) {
+		d[i] = i;
+		e[i] = i;
+	}
 
 	printf(PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
 
@@ -135,14 +144,14 @@ void speed(void)
 		}
 	} SPEED_STOP
 
-	printf("%7"PRIu64, ds / dt);
+	printf("%8"PRIu64, ds / dt);
 	printf("\n");
 	printf("\n");
 
 	/* crc table */
 	printf("CRC used to check the content file integrity:\n");
 
-	printf("%8s", "table");
+	printf("%8s", "");
 	fflush(stdout);
 
 	SPEED_START {
@@ -151,7 +160,7 @@ void speed(void)
 		}
 	} SPEED_STOP
 
-	printf("%7"PRIu64, ds / dt);
+	printf("%8"PRIu64, ds / dt);
 	printf("\n");
 
 	printf("%8s", "intel");
@@ -165,7 +174,7 @@ void speed(void)
 			}
 		} SPEED_STOP
 
-		printf("%7"PRIu64, ds / dt);
+		printf("%8"PRIu64, ds / dt);
 	}
 #endif
 	printf("\n");
@@ -214,43 +223,43 @@ void speed(void)
 	printf("\n");
 
 	/* RAID table */
-	printf("RAID functions used to compute the parity:\n");
+	printf("RAID functions used to compute the parity with 'sync':\n");
 	printf("%8s", "");
-	printf("%7s", "best");
-	printf("%7s", "int8");
-	printf("%7s", "int32");
-	printf("%7s", "int64");
+	printf("%8s", "best");
+	printf("%8s", "int8");
+	printf("%8s", "int32");
+	printf("%8s", "int64");
 #if defined(__i386__) || defined(__x86_64__)
-	printf("%7s", "sse2");
+	printf("%8s", "sse2");
 #if defined(__x86_64__)
-	printf("%7s", "sse2e");
+	printf("%8s", "sse2e");
 #endif
-	printf("%7s", "ssse3");
+	printf("%8s", "ssse3");
 #if defined(__x86_64__)
-	printf("%7s", "ssse3e");
+	printf("%8s", "ssse3e");
 #endif
 #endif
 	printf("\n");
 
 	/* RAID5 */
 	printf("%8s", "raid5");
-	printf("%7s", raid5_tag());
+	printf("%8s", raid5_tag());
 	fflush(stdout);
 
-	printf("%7s", "");
+	printf("%8s", "");
 
 	SPEED_START {
 		raid5_int32(buffer, diskmax, block_size);
 	} SPEED_STOP
 
-	printf("%7"PRIu64, ds / dt);
+	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
 	SPEED_START {
 		raid5_int64(buffer, diskmax, block_size);
 	} SPEED_STOP
 
-	printf("%7"PRIu64, ds / dt);
+	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
 #if defined(__i386__) || defined(__x86_64__)
@@ -259,7 +268,7 @@ void speed(void)
 			raid5_sse2(buffer, diskmax, block_size);
 		} SPEED_STOP
 
-		printf("%7"PRIu64, ds / dt);
+		printf("%8"PRIu64, ds / dt);
 		fflush(stdout);
 	}
 #endif
@@ -267,23 +276,23 @@ void speed(void)
 
 	/* RAID6 */
 	printf("%8s", "raid6");
-	printf("%7s", raid6_tag());
+	printf("%8s", raid6_tag());
 	fflush(stdout);
 
-	printf("%7s", "");
+	printf("%8s", "");
 
 	SPEED_START {
 		raid6_int32(buffer, diskmax, block_size);
 	} SPEED_STOP
 
-	printf("%7"PRIu64, ds / dt);
+	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
 	SPEED_START {
 		raid6_int64(buffer, diskmax, block_size);
 	} SPEED_STOP
 
-	printf("%7"PRIu64, ds / dt);
+	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
 #if defined(__i386__) || defined(__x86_64__)
@@ -292,7 +301,7 @@ void speed(void)
 			raid6_sse2(buffer, diskmax, block_size);
 		} SPEED_STOP
 
-		printf("%7"PRIu64, ds / dt);
+		printf("%8"PRIu64, ds / dt);
 		fflush(stdout);
 
 #if defined(__x86_64__)
@@ -300,7 +309,7 @@ void speed(void)
 			raid6_sse2ext(buffer, diskmax, block_size);
 		} SPEED_STOP
 
-		printf("%7"PRIu64, ds / dt);
+		printf("%8"PRIu64, ds / dt);
 		fflush(stdout);
 #endif
 	}
@@ -309,24 +318,24 @@ void speed(void)
 
 	/* RAIDTP */
 	printf("%8s", "raidTP");
-	printf("%7s", raidTP_tag());
+	printf("%8s", raidTP_tag());
 	fflush(stdout);
 
 	SPEED_START {
 		raidTP_int8(buffer, diskmax, block_size);
 	} SPEED_STOP
 
-	printf("%7"PRIu64, ds / dt);
+	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
-	printf("%7s", "");
-	printf("%7s", "");
+	printf("%8s", "");
+	printf("%8s", "");
 
 	if (cpu_has_sse2()) {
-		printf("%7s", "");
+		printf("%8s", "");
 
 #if defined(__x86_64__)
-		printf("%7s", "");
+		printf("%8s", "");
 #endif
 	}
 
@@ -336,7 +345,7 @@ void speed(void)
 			raidTP_ssse3(buffer, diskmax, block_size);
 		} SPEED_STOP
 
-		printf("%7"PRIu64, ds / dt);
+		printf("%8"PRIu64, ds / dt);
 		fflush(stdout);
 
 #if defined(__x86_64__)
@@ -344,7 +353,7 @@ void speed(void)
 			raidTP_ssse3ext(buffer, diskmax, block_size);
 		} SPEED_STOP
 
-		printf("%7"PRIu64, ds / dt);
+		printf("%8"PRIu64, ds / dt);
 		fflush(stdout);
 #endif
 	}
@@ -353,24 +362,24 @@ void speed(void)
 
 	/* RAIDQP */
 	printf("%8s", "raidQP");
-	printf("%7s", raidQP_tag());
+	printf("%8s", raidQP_tag());
 	fflush(stdout);
 
 	SPEED_START {
 		raidQP_int8(buffer, diskmax, block_size);
 	} SPEED_STOP
 
-	printf("%7"PRIu64, ds / dt);
+	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
-	printf("%7s", "");
-	printf("%7s", "");
+	printf("%8s", "");
+	printf("%8s", "");
 
 	if (cpu_has_sse2()) {
-		printf("%7s", "");
+		printf("%8s", "");
 
 #if defined(__x86_64__)
-		printf("%7s", "");
+		printf("%8s", "");
 #endif
 	}
 
@@ -380,7 +389,7 @@ void speed(void)
 			raidQP_ssse3(buffer, diskmax, block_size);
 		} SPEED_STOP
 
-		printf("%7"PRIu64, ds / dt);
+		printf("%8"PRIu64, ds / dt);
 		fflush(stdout);
 
 #if defined(__x86_64__)
@@ -388,7 +397,7 @@ void speed(void)
 			raidQP_ssse3ext(buffer, diskmax, block_size);
 		} SPEED_STOP
 
-		printf("%7"PRIu64, ds / dt);
+		printf("%8"PRIu64, ds / dt);
 		fflush(stdout);
 #endif
 	}
@@ -397,24 +406,24 @@ void speed(void)
 	
 	/* RAIDPP */
 	printf("%8s", "raidPP");
-	printf("%7s", raidPP_tag());
+	printf("%8s", raidPP_tag());
 	fflush(stdout);
 
 	SPEED_START {
 		raidPP_int8(buffer, diskmax, block_size);
 	} SPEED_STOP
 
-	printf("%7"PRIu64, ds / dt);
+	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
-	printf("%7s", "");
-	printf("%7s", "");
+	printf("%8s", "");
+	printf("%8s", "");
 
 	if (cpu_has_sse2()) {
-		printf("%7s", "");
+		printf("%8s", "");
 
 #if defined(__x86_64__)
-		printf("%7s", "");
+		printf("%8s", "");
 #endif
 	}
 
@@ -424,7 +433,7 @@ void speed(void)
 			raidPP_ssse3(buffer, diskmax, block_size);
 		} SPEED_STOP
 
-		printf("%7"PRIu64, ds / dt);
+		printf("%8"PRIu64, ds / dt);
 		fflush(stdout);
 
 #if defined(__x86_64__)
@@ -432,7 +441,7 @@ void speed(void)
 			raidPP_ssse3ext(buffer, diskmax, block_size);
 		} SPEED_STOP
 
-		printf("%7"PRIu64, ds / dt);
+		printf("%8"PRIu64, ds / dt);
 		fflush(stdout);
 #endif
 	}
@@ -441,24 +450,24 @@ void speed(void)
 
 	/* RAIDHP */
 	printf("%8s", "raidHP");
-	printf("%7s", raidHP_tag());
+	printf("%8s", raidHP_tag());
 	fflush(stdout);
 
 	SPEED_START {
 		raidHP_int8(buffer, diskmax, block_size);
 	} SPEED_STOP
 
-	printf("%7"PRIu64, ds / dt);
+	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
-	printf("%7s", "");
-	printf("%7s", "");
+	printf("%8s", "");
+	printf("%8s", "");
 
 	if (cpu_has_sse2()) {
-		printf("%7s", "");
+		printf("%8s", "");
 
 #if defined(__x86_64__)
-		printf("%7s", "");
+		printf("%8s", "");
 #endif
 	}
 
@@ -468,7 +477,7 @@ void speed(void)
 			raidHP_ssse3(buffer, diskmax, block_size);
 		} SPEED_STOP
 
-		printf("%7"PRIu64, ds / dt);
+		printf("%8"PRIu64, ds / dt);
 		fflush(stdout);
 
 #if defined(__x86_64__)
@@ -476,11 +485,97 @@ void speed(void)
 			raidHP_ssse3ext(buffer, diskmax, block_size);
 		} SPEED_STOP
 
-		printf("%7"PRIu64, ds / dt);
+		printf("%8"PRIu64, ds / dt);
 		fflush(stdout);
 #endif
 	}
 #endif
+	printf("\n");
+	printf("\n");
+
+	/* recover table */
+	printf("RAID functions used for recovering with 'fix':\n");
+	printf("%8s", "");
+	printf("%8s", "");
+	printf("%8s", "int8");
+	printf("\n");
+
+	printf("%8s", "raid5");
+	printf("%8s", "");
+	fflush(stdout);
+
+	SPEED_START {
+		for(j=0;j<diskmax;++j) {
+			raid_recov(1, d, e, buffer, diskmax, zero, block_size);
+		}
+	} SPEED_STOP
+
+	printf("%8"PRIu64, ds / dt);
+	printf("\n");
+
+	printf("%8s", "raid6");
+	printf("%8s", "");
+	fflush(stdout);
+
+	SPEED_START {
+		for(j=0;j<diskmax;++j) {
+			raid_recov(2, d, e, buffer, diskmax, zero, block_size);
+		}
+	} SPEED_STOP
+
+	printf("%8"PRIu64, ds / dt);
+	printf("\n");
+
+	printf("%8s", "raidTP");
+	printf("%8s", "");
+	fflush(stdout);
+
+	SPEED_START {
+		for(j=0;j<diskmax;++j) {
+			raid_recov(3, d, e, buffer, diskmax, zero, block_size);
+		}
+	} SPEED_STOP
+
+	printf("%8"PRIu64, ds / dt);
+	printf("\n");
+
+	printf("%8s", "raidQP");
+	printf("%8s", "");
+	fflush(stdout);
+
+	SPEED_START {
+		for(j=0;j<diskmax;++j) {
+			raid_recov(4, d, e, buffer, diskmax, zero, block_size);
+		}
+	} SPEED_STOP
+
+	printf("%8"PRIu64, ds / dt);
+	printf("\n");
+
+	printf("%8s", "raidPP");
+	printf("%8s", "");
+	fflush(stdout);
+
+	SPEED_START {
+		for(j=0;j<diskmax;++j) {
+			raid_recov(5, d, e, buffer, diskmax, zero, block_size);
+		}
+	} SPEED_STOP
+
+	printf("%8"PRIu64, ds / dt);
+	printf("\n");
+
+	printf("%8s", "raidHP");
+	printf("%8s", "");
+	fflush(stdout);
+
+	SPEED_START {
+		for(j=0;j<diskmax;++j) {
+			raid_recov(6, d, e, buffer, diskmax, zero, block_size);
+		}
+	} SPEED_STOP
+
+	printf("%8"PRIu64, ds / dt);
 	printf("\n");
 	printf("\n");
 
