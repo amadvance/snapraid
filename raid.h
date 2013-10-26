@@ -53,7 +53,7 @@ void raid_gen(unsigned level, unsigned char** vbuf, unsigned data, unsigned size
  * \param zero Buffer filled with 0 of ::size bytes. This buffer is not modified.
  * \param size Size of the blocks pointed by vbuf.
  */
-void raid_recov(unsigned level, int* d, int* p, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
+void raid_recov(unsigned level, const int* d, const int* p, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
 
 /**
  * Gets the name of the selected function to compute parity.
