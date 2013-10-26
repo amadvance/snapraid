@@ -364,11 +364,6 @@ static void gentest(unsigned diskmax, unsigned block_size)
 	map[mac++] = raid6_int64;
 
 #if defined(__i386__) || defined(__x86_64__)
-	if (cpu_has_mmx()) {
-		map[mac++] = raid5_mmx;
-		map[mac++] = raid6_mmx;
-	}
-
 	if (cpu_has_sse2()) {
 		map[mac++] = raid5_sse2;
 		map[mac++] = raid6_sse2;

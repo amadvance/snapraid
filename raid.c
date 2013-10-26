@@ -127,13 +127,13 @@
  * Resulting speed in x64, with 24 data disks, using a stripe of 256 KiB,
  * for a Core i7-3740QM CPU @ 2.7GHz is:
  * 
- *          int8  int32  int64    mmx   sse2  sse2e  ssse3 ssse3e
- *    raid5        9042  16698  19978  26734
- *    raid6        3205   5478   7911  13987  16287
- *   raidTP  828                                      6802   7186
- *   raidQP  637                                      5483   5843
- *   raidPP  513                                      4325   4629
- *   raidHP  428                                      3479   3866
+ *          int8  int32  int64   sse2  sse2e  ssse3 ssse3e
+ *    raid5        9042  16698  26734
+ *    raid6        3205   5478  13987  16287
+ *   raidTP  828                               6802   7186
+ *   raidQP  637                               5483   5843
+ *   raidPP  513                               4325   4629
+ *   raidHP  428                               3479   3866
  *
  * Values are in MiB/s of data read and processed, not counting written parity.
  *
@@ -142,9 +142,9 @@
  * coefficient "4", and equal for RAIDQP that gets faster (10%) only using
  * AVX instructions.
  *
- *                int32  int64    mmx   sse2  sse2e  ssse3 ssse3e   avxe
- *   raidTP        1406   2522   3788   7240   7886   8071   8358
- *   raidQP         773   1375   2277   4573   4678   5457   5778   6468
+ *                int32  int64   sse2  sse2e  ssse3 ssse3e   avxe
+ *   raidTP        1406   2522   7240   7886   8071   8358
+ *   raidQP         773   1375   4573   4678   5457   5778   6468
  * 
  * In details parity is computed as:
  *
@@ -273,42 +273,6 @@ void raid5_int64(unsigned char** vbuf, unsigned data, unsigned size)
 }
 
 #if defined(__i386__) || defined(__x86_64__)
-/*
- * RAID5 MMX implementation
- */
-void raid5_mmx(unsigned char** vbuf, unsigned data, unsigned size)
-{
-	unsigned char* p;
-	int d, l;
-	unsigned off;
-
-	l = data - 1;
-	p = vbuf[data];
-
-	for(off=0;off<size;off+=32) {
-		asm volatile("movq %0,%%mm0" : : "m" (vbuf[l][off]));
-		asm volatile("movq %0,%%mm1" : : "m" (vbuf[l][off+8]));
-		asm volatile("movq %0,%%mm2" : : "m" (vbuf[l][off+16]));
-		asm volatile("movq %0,%%mm3" : : "m" (vbuf[l][off+24]));
-		for(d=l-1;d>=0;--d) {
-			asm volatile("movq %0,%%mm4" : : "m" (vbuf[d][off]));
-			asm volatile("movq %0,%%mm5" : : "m" (vbuf[d][off+8]));
-			asm volatile("movq %0,%%mm6" : : "m" (vbuf[d][off+16]));
-			asm volatile("movq %0,%%mm7" : : "m" (vbuf[d][off+24]));
-			asm volatile("pxor %mm4,%mm0");
-			asm volatile("pxor %mm5,%mm1");
-			asm volatile("pxor %mm6,%mm2");
-			asm volatile("pxor %mm7,%mm3");
-		}
-		asm volatile("movq %%mm0,%0" : "=m" (p[off]));
-		asm volatile("movq %%mm1,%0" : "=m" (p[off+8]));
-		asm volatile("movq %%mm2,%0" : "=m" (p[off+16]));
-		asm volatile("movq %%mm3,%0" : "=m" (p[off+24]));
-	}
-
-	asm volatile("emms" : : : "memory");
-}
-
 /*
  * RAID5 SSE2 implementation
  *
@@ -456,61 +420,6 @@ void raid6_int64(unsigned char** vbuf, unsigned data, unsigned size)
 }
 
 #if defined(__i386__) || defined(__x86_64__)
-static const struct raid_8_const {
-	unsigned char poly[8];
-} raid_8_const __attribute__((aligned(8))) = {
-	{ 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d } 
-};
-
-/*
- * RAID6 MMX implementation
- */
-void raid6_mmx(unsigned char** vbuf, unsigned data, unsigned size)
-{
-	unsigned char* p;
-	unsigned char* q;
-	int d, l;
-	unsigned off;
-
-	l = data - 1;
-	p = vbuf[data];
-	q = vbuf[data+1];
-
-	asm volatile("movq %0,%%mm7" : : "m" (raid_8_const.poly[0]));
-
-	for(off=0;off<size;off+=16) {
-		asm volatile("movq %0,%%mm0" : : "m" (vbuf[l][off]));
-		asm volatile("movq %0,%%mm1" : : "m" (vbuf[l][off+8]));
-		asm volatile("movq %mm0,%mm2");
-		asm volatile("movq %mm1,%mm3");
-		for(d=l-1;d>=0;--d) {
-			asm volatile("pxor %mm4,%mm4");
-			asm volatile("pxor %mm5,%mm5");
-			asm volatile("pcmpgtb %mm2,%mm4");
-			asm volatile("pcmpgtb %mm3,%mm5");
-			asm volatile("paddb %mm2,%mm2");
-			asm volatile("paddb %mm3,%mm3");
-			asm volatile("pand %mm7,%mm4");
-			asm volatile("pand %mm7,%mm5");
-			asm volatile("pxor %mm4,%mm2");
-			asm volatile("pxor %mm5,%mm3");
-
-			asm volatile("movq %0,%%mm4" : : "m" (vbuf[d][off]));
-			asm volatile("movq %0,%%mm5" : : "m" (vbuf[d][off+8]));
-			asm volatile("pxor %mm4,%mm0");
-			asm volatile("pxor %mm5,%mm1");
-			asm volatile("pxor %mm4,%mm2");
-			asm volatile("pxor %mm5,%mm3");
-		}
-		asm volatile("movq %%mm0,%0" : "=m" (p[off]));
-		asm volatile("movq %%mm1,%0" : "=m" (p[off+8]));
-		asm volatile("movq %%mm2,%0" : "=m" (q[off]));
-		asm volatile("movq %%mm3,%0" : "=m" (q[off+8]));
-	}
-
-	asm volatile("emms" : : : "memory");
-}
-
 static const struct raid_16_const {
 	unsigned char poly[16];
 	unsigned char mask[16];
@@ -2935,11 +2844,6 @@ void raid_init(void)
 	}
 
 #if defined(__i386__) || defined(__x86_64__)
-	if (cpu_has_mmx()) {
-		raid5_gen = raid5_mmx;
-		raid6_gen = raid6_mmx;
-	}
-
 	if (cpu_has_sse2()) {
 		raid5_gen = raid5_sse2;
 #if defined(__x86_64__)
@@ -2983,8 +2887,6 @@ static struct raid_func {
 	{ "int64", raid6_int64 },
 
 #if defined(__i386__) || defined(__x86_64__)
-	{ "mmx", raid5_mmx },
-	{ "mmx", raid6_mmx },
 	{ "sse2", raid5_sse2 },
 	{ "sse2", raid6_sse2 },
 	{ "ssse3", raidTP_ssse3 },

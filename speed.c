@@ -221,7 +221,6 @@ void speed(void)
 	printf("%7s", "int32");
 	printf("%7s", "int64");
 #if defined(__i386__) || defined(__x86_64__)
-	printf("%7s", "mmx");
 	printf("%7s", "sse2");
 #if defined(__x86_64__)
 	printf("%7s", "sse2e");
@@ -255,15 +254,6 @@ void speed(void)
 	fflush(stdout);
 
 #if defined(__i386__) || defined(__x86_64__)
-	if (cpu_has_mmx()) {
-		SPEED_START {
-			raid5_mmx(buffer, diskmax, block_size);
-		} SPEED_STOP
-
-		printf("%7"PRIu64, ds / dt);
-		fflush(stdout);
-	}
-
 	if (cpu_has_sse2()) {
 		SPEED_START {
 			raid5_sse2(buffer, diskmax, block_size);
@@ -297,15 +287,6 @@ void speed(void)
 	fflush(stdout);
 
 #if defined(__i386__) || defined(__x86_64__)
-	if (cpu_has_mmx()) {
-		SPEED_START {
-			raid6_mmx(buffer, diskmax, block_size);
-		} SPEED_STOP
-
-		printf("%7"PRIu64, ds / dt);
-		fflush(stdout);
-	}
-
 	if (cpu_has_sse2()) {
 		SPEED_START {
 			raid6_sse2(buffer, diskmax, block_size);
@@ -340,10 +321,6 @@ void speed(void)
 
 	printf("%7s", "");
 	printf("%7s", "");
-
-	if (cpu_has_mmx()) {
-		printf("%7s", "");
-	}
 
 	if (cpu_has_sse2()) {
 		printf("%7s", "");
@@ -389,10 +366,6 @@ void speed(void)
 	printf("%7s", "");
 	printf("%7s", "");
 
-	if (cpu_has_mmx()) {
-		printf("%7s", "");
-	}
-
 	if (cpu_has_sse2()) {
 		printf("%7s", "");
 
@@ -437,10 +410,6 @@ void speed(void)
 	printf("%7s", "");
 	printf("%7s", "");
 
-	if (cpu_has_mmx()) {
-		printf("%7s", "");
-	}
-
 	if (cpu_has_sse2()) {
 		printf("%7s", "");
 
@@ -484,10 +453,6 @@ void speed(void)
 
 	printf("%7s", "");
 	printf("%7s", "");
-
-	if (cpu_has_mmx()) {
-		printf("%7s", "");
-	}
 
 	if (cpu_has_sse2()) {
 		printf("%7s", "");
