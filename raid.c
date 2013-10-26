@@ -120,7 +120,7 @@
  * 
  * This matrix can be extended to support any number of parities, just adding
  * additional rows, (but removing one column for each row added), without
- * the need to changes the already existing rows, and always maintaining the
+ * the changing the already existing rows, and always maintaining the
  * guarantee to always have all square submatrices not singular.
  * (see mktables.c for more details in how the matrix is generated)
  * 
@@ -135,11 +135,11 @@
  *   raidPP  513                               4325   4629
  *   raidHP  428                               3479   3866
  *
- * Values are in MiB/s of data read and processed, not counting written parity.
+ * Values are in MiB/s of data processed, not counting written parity.
  *
  * For comparison, a similar implementation using the power coeffients approach
  * in the same condition, is only a little faster (16%) for RAIDTP with power
- * coefficient "4", and equal for RAIDQP that gets faster (10%) only using
+ * coefficient "4", and equal for RAIDQP, that gets faster (10%) only using
  * AVX instructions.
  *
  *                int32  int64   sse2  sse2e  ssse3 ssse3e   avxe
@@ -1832,12 +1832,11 @@ static void raid6_recov_2data(const int* d, const int* e, unsigned char** vbuf, 
 	unsigned char* pa;
 	unsigned char* q;
 	unsigned char* qa;
-	const unsigned char* pyf; /* P factor to compute Dy */
-	const unsigned char* qyf; /* Q factor to compute Dy */
+	const unsigned char* T[2];
 
 	/* select tables */
-	pyf = table( inv(pow2(d[1]-d[0]) ^ 1) );
-	qyf = table( inv(pow2(d[0]) ^ pow2(d[1])) );
+	T[0] = table( inv(pow2(d[1]-d[0]) ^ 1) );
+	T[1] = table( inv(pow2(d[0]) ^ pow2(d[1])) );
 
 	/* compute delta parity */
 	raid_delta_2data(d, e, vbuf, data, zero, size);
@@ -1852,14 +1851,8 @@ static void raid6_recov_2data(const int* d, const int* e, unsigned char** vbuf, 
 		unsigned char Pd = p[i] ^ pa[i];
 		unsigned char Qd = q[i] ^ qa[i];
 
-		/* addends to reconstruct Dy */
-		unsigned char pbm = pyf[Pd];
-		unsigned char qbm = qyf[Qd];
-
-		/* reconstruct Dy */
-		unsigned char Dy = pbm ^ qbm;
-
-		/* reconstruct Dx */
+		/* reconstruct */
+		unsigned char Dy = T[0][Pd] ^ T[1][Qd];
 		unsigned char Dx = Pd ^ Dy;
 
 		/* set */
@@ -1955,7 +1948,7 @@ static void raid_recov_1data(const int* d, const int* e, unsigned char** vbuf, u
 	unsigned i;
 	unsigned char* p;
 	unsigned char* pa;
-	const unsigned char* T; /* P factor to compute Dx */
+	const unsigned char* T[1]; /* P factor to compute Dx */
 
 	/* if it's RAID5 uses the dedicated and fasteT[ ][2]unction */
 	if (e[0] == 0) {
@@ -1964,7 +1957,7 @@ static void raid_recov_1data(const int* d, const int* e, unsigned char** vbuf, u
 	}
 
 	/* select tables */
-	T = table( inv(A(e[0],d[0])) );
+	T[0] = table( inv(A(e[0],d[0])) );
 
 	/* compute delta parity */
 	raid_delta_1data(d, e, vbuf, data, zero, size);
@@ -1976,11 +1969,8 @@ static void raid_recov_1data(const int* d, const int* e, unsigned char** vbuf, u
 		/* delta */
 		unsigned char Pd = p[i] ^ pa[i];
 
-		/* addends to reconstruct Dx */
-		unsigned char pxm = T[Pd];
-
-		/* reconstruct Dx */
-		unsigned char Dx = pxm;
+		/* reconstruct */
+		unsigned char Dx = T[0][Pd];
 
 		/* set */
 		pa[i] = Dx;
@@ -2044,16 +2034,10 @@ static void raid_recov_2data(const int* d, const int* e, unsigned char** vbuf, u
 		/* delta */
 		unsigned char Pd = p[i] ^ pa[i];
 		unsigned char Qd = q[i] ^ qa[i];
-		unsigned char Dx, Dy;
 
-		Dy = T[1][0][Pd] ^ T[1][1][Qd];
-
-		/* if e[0] is P, take the fast way */
-		if (e[0] == 0) {
-			Dx = Pd ^ Dy;
-		} else {
-			Dx = T[0][0][Pd] ^ T[0][1][Qd];
-		}
+		/* reconstruct */
+		unsigned char Dx = T[0][0][Pd] ^ T[0][1][Qd];
+		unsigned char Dy = T[1][0][Pd] ^ T[1][1][Qd];
 
 		/* set */
 		pa[i] = Dx;
@@ -2118,17 +2102,11 @@ static void raid_recov_3data(const int* d, const int* e, unsigned char** vbuf, u
 		unsigned char Pd = p[i] ^ pa[i];
 		unsigned char Qd = q[i] ^ qa[i];
 		unsigned char Rd = r[i] ^ ra[i];
-		unsigned char Dx, Dy, Dz;
 
-		Dy = T[1][0][Pd] ^ T[1][1][Qd] ^ T[1][2][Rd];
-		Dz = T[2][0][Pd] ^ T[2][1][Qd] ^ T[2][2][Rd];
-
-		/* if e[0] is P, take the fast way */
-		if (e[0] == 0) {
-			Dx = Pd ^ Dy ^ Dz;
-		} else {
-			Dx = T[0][0][Pd] ^ T[0][1][Qd] ^ T[0][2][Rd];
-		}
+		/* reconstruct */
+		unsigned char Dx = T[0][0][Pd] ^ T[0][1][Qd] ^ T[0][2][Rd];
+		unsigned char Dy = T[1][0][Pd] ^ T[1][1][Qd] ^ T[1][2][Rd];
+		unsigned char Dz = T[2][0][Pd] ^ T[2][1][Qd] ^ T[2][2][Rd];
 
 		/* set */
 		pa[i] = Dx;
@@ -2200,18 +2178,12 @@ static void raid_recov_4data(const int* d, const int* e, unsigned char** vbuf, u
 		unsigned char Qd = q[i] ^ qa[i];
 		unsigned char Rd = r[i] ^ ra[i];
 		unsigned char Sd = s[i] ^ sa[i];
-		unsigned char Dx, Dy, Dz, Dh;
 
-		Dy = T[1][0][Pd] ^ T[1][1][Qd] ^ T[1][2][Rd] ^ T[1][3][Sd];
-		Dz = T[2][0][Pd] ^ T[2][1][Qd] ^ T[2][2][Rd] ^ T[2][3][Sd];
-		Dh = T[3][0][Pd] ^ T[3][1][Qd] ^ T[3][2][Rd] ^ T[3][3][Sd];
-
-		/* if e[0] is P, take the fast way */
-		if (e[0] == 0) {
-			Dx = Pd ^ Dy ^ Dz ^ Dh;
-		} else {
-			Dx = T[0][0][Pd] ^ T[0][1][Qd] ^ T[0][2][Rd] ^ T[0][3][Sd];
-		}
+		/* reconstruct */
+		unsigned char Dx = T[0][0][Pd] ^ T[0][1][Qd] ^ T[0][2][Rd] ^ T[0][3][Sd];
+		unsigned char Dy = T[1][0][Pd] ^ T[1][1][Qd] ^ T[1][2][Rd] ^ T[1][3][Sd];
+		unsigned char Dz = T[2][0][Pd] ^ T[2][1][Qd] ^ T[2][2][Rd] ^ T[2][3][Sd];
+		unsigned char Dh = T[3][0][Pd] ^ T[3][1][Qd] ^ T[3][2][Rd] ^ T[3][3][Sd];
 
 		/* set */
 		pa[i] = Dx;
@@ -2290,19 +2262,13 @@ static void raid_recov_5data(const int* d, const int* e, unsigned char** vbuf, u
 		unsigned char Rd = r[i] ^ ra[i];
 		unsigned char Sd = s[i] ^ sa[i];
 		unsigned char Td = t[i] ^ ta[i];
-		unsigned char Dx, Dy, Dz, Dh, Dv;
 
-		Dy = T[1][0][Pd] ^ T[1][1][Qd] ^ T[1][2][Rd] ^ T[1][3][Sd] ^ T[1][4][Td];
-		Dz = T[2][0][Pd] ^ T[2][1][Qd] ^ T[2][2][Rd] ^ T[2][3][Sd] ^ T[2][4][Td];
-		Dh = T[3][0][Pd] ^ T[3][1][Qd] ^ T[3][2][Rd] ^ T[3][3][Sd] ^ T[3][4][Td];
-		Dv = T[4][0][Pd] ^ T[4][1][Qd] ^ T[4][2][Rd] ^ T[4][3][Sd] ^ T[4][4][Td];
-
-		/* if e[0] is P, take the fast way */
-		if (e[0] == 0) {
-			Dx = Pd ^ Dy ^ Dz ^ Dh ^ Dv;
-		} else {
-			Dx = T[0][0][Pd] ^ T[0][1][Qd] ^ T[0][2][Rd] ^ T[0][3][Sd] ^ T[0][4][Td];
-		}
+		/* reconstruct */
+		unsigned char Dx = T[0][0][Pd] ^ T[0][1][Qd] ^ T[0][2][Rd] ^ T[0][3][Sd] ^ T[0][4][Td];
+		unsigned char Dy = T[1][0][Pd] ^ T[1][1][Qd] ^ T[1][2][Rd] ^ T[1][3][Sd] ^ T[1][4][Td];
+		unsigned char Dz = T[2][0][Pd] ^ T[2][1][Qd] ^ T[2][2][Rd] ^ T[2][3][Sd] ^ T[2][4][Td];
+		unsigned char Dh = T[3][0][Pd] ^ T[3][1][Qd] ^ T[3][2][Rd] ^ T[3][3][Sd] ^ T[3][4][Td];
+		unsigned char Dv = T[4][0][Pd] ^ T[4][1][Qd] ^ T[4][2][Rd] ^ T[4][3][Sd] ^ T[4][4][Td];
 
 		/* set */
 		pa[i] = Dx;
@@ -2387,21 +2353,15 @@ static void raid_recov_6data(const int* d, const int* e, unsigned char** vbuf, u
 		unsigned char Rd = r[i] ^ ra[i];
 		unsigned char Sd = s[i] ^ sa[i];
 		unsigned char Td = t[i] ^ ta[i];
-		unsigned char Od = u[i] ^ ua[i];
-		unsigned char Dx, Dy, Dz, Dh, Dv, Dw;
+		unsigned char Ud = u[i] ^ ua[i];
 
-		Dy = T[1][0][Pd] ^ T[1][1][Qd] ^ T[1][2][Rd] ^ T[1][3][Sd] ^ T[1][4][Td] ^ T[1][5][Od];
-		Dz = T[2][0][Pd] ^ T[2][1][Qd] ^ T[2][2][Rd] ^ T[2][3][Sd] ^ T[2][4][Td] ^ T[2][5][Od];
-		Dh = T[3][0][Pd] ^ T[3][1][Qd] ^ T[3][2][Rd] ^ T[3][3][Sd] ^ T[3][4][Td] ^ T[3][5][Od];
-		Dv = T[4][0][Pd] ^ T[4][1][Qd] ^ T[4][2][Rd] ^ T[4][3][Sd] ^ T[4][4][Td] ^ T[4][5][Od];
-		Dw = T[5][0][Pd] ^ T[5][1][Qd] ^ T[5][2][Rd] ^ T[5][3][Sd] ^ T[5][4][Td] ^ T[5][5][Od];
-
-		/* if e[0] is P, take the fast way */
-		if (e[0] == 0) {
-			Dx = Pd ^ Dy ^ Dz ^ Dh ^ Dv ^ Dw;
-		} else {
-			Dx = T[0][0][Pd] ^ T[0][1][Qd] ^ T[0][2][Rd] ^ T[0][3][Sd] ^ T[0][4][Td] ^ T[0][5][Od];
-		}
+		/* reconstruct */
+		unsigned char Dx = T[0][0][Pd] ^ T[0][1][Qd] ^ T[0][2][Rd] ^ T[0][3][Sd] ^ T[0][4][Td] ^ T[0][5][Ud];
+		unsigned char Dy = T[1][0][Pd] ^ T[1][1][Qd] ^ T[1][2][Rd] ^ T[1][3][Sd] ^ T[1][4][Td] ^ T[1][5][Ud];
+		unsigned char Dz = T[2][0][Pd] ^ T[2][1][Qd] ^ T[2][2][Rd] ^ T[2][3][Sd] ^ T[2][4][Td] ^ T[2][5][Ud];
+		unsigned char Dh = T[3][0][Pd] ^ T[3][1][Qd] ^ T[3][2][Rd] ^ T[3][3][Sd] ^ T[3][4][Td] ^ T[3][5][Ud];
+		unsigned char Dv = T[4][0][Pd] ^ T[4][1][Qd] ^ T[4][2][Rd] ^ T[4][3][Sd] ^ T[4][4][Td] ^ T[4][5][Ud];
+		unsigned char Dw = T[5][0][Pd] ^ T[5][1][Qd] ^ T[5][2][Rd] ^ T[5][3][Sd] ^ T[5][4][Td] ^ T[5][5][Ud];
 
 		/* set */
 		pa[i] = Dx;
