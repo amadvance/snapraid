@@ -16,17 +16,18 @@
  */
 
 /*
- * The RAID5 and RAID6 support were originally derived from the libraid6 library
- * by H. Peter Anvin released with license "GPL2 or any later version"
- * used in the Linux Kernel 2.6.38.
+ * The RAID5 and RAID6 support were originally derived from the libraid6
+ * library  by H. Peter Anvin released with license "GPL2 or any later
+ * version", used in the Linux Kernel 2.6.38.
  * This support was later completely rewritten (many times), but the
  * H. Peter Anvin's Copyright may still apply.
  *
- * The RAIDTP (Triple Parity), RAIDQP (Quad parity), RAIDPP (Penta Parity) and
- * RAIDHP (Hexa parity) support is original work implemented from scratch.
+ * The RAIDTP (Triple Parity), RAIDQP (Quad parity), RAIDPP (Penta Parity)
+ * and RAIDHP (Hexa parity) support is original work implemented from
+ * scratch.
  *
- * For RAID5 and RAID6 it works like the Linux Kernel RAID and it's based on
- * the Anvin's paper "The mathematics of RAID-6" [1].
+ * For RAID5 and RAID6 it works like the Linux Kernel RAID and it's based
+ * on the Anvin's paper "The mathematics of RAID-6" [1].
  *
  * We compute the parity in the Galois Field GF(2^8) with the primitive
  * polynomial x^8 + x^4 + x^3 + x^2 + 1 (285 decimal), starting from a set 
@@ -35,16 +36,16 @@
  * P = sum(Di)
  * Q = sum(2^i * Di) with 0<=i<N
  *
- * To support RAIDTP (Triple Parity), it was first evaluated, and then dropped,
- * the use of an extension of the same approach, with additional parity
- * coefficients set as powers of 4, with equations:
+ * To support RAIDTP (Triple Parity), it was first evaluated, and then
+ * dropped, the use of an extension of the same approach, with additional
+ * parity coefficients set as powers of 4, with equations:
  *
  * P = sum(Di)
  * Q = sum(2^i * Di)
  * R = sum(4^i * Di) with 0<=i<N
  *
- * This method is also the same used by ZFS to implement its RAIDZ3 support,
- * it works well, and it's very efficient.
+ * This method is also the same used by ZFS to implement its RAIDZ3
+ * support, it works well, and it's very efficient.
  * 
  * Unfortunately, the same approach doesn't work for RAIDQP (Quad Parity).
  * Using additional parity coefficients set as power of 8 with equations:
@@ -72,7 +73,8 @@
  * this guarantee.
  *
  * Using the primitive polynomial 285, RAIDQP works for up to 21 data disks
- * with parity coefficients "1,2,4,8". Changing polynomial to one of 391/451/463/487,
+ * with parity coefficients "1,2,4,8". Changing polynomial to one of
+ * 391/451/463/487,
  * it works for up to 27 disks with the same parity coefficients.
  * Using different parity coefficients, like "5,13,27,35", it's possible to
  * make it working for up to 33 disks. But no more.
@@ -81,29 +83,30 @@
  * polynomial 100087 or 122563 that supports up to Hexa (6) Parity
  * with parity coefficients 1,2,4,8,16,32 for up to 89 disks.
  *
- * To overcome these limitations we instead use an Extended Cauchy Matrix [3][4] 
- * to compute the parity. 
+ * To overcome these limitations we instead use an Extended Cauchy Matrix
+ * [3][4] to compute the parity.
  * Such matrix has the mathematical property to have all the square 
  * submatrices not singular, resulting in always solvable equations, for
  * any number of parities and for any number of disks.
  *
  * The problem of this approach is that the coefficients of the equations 
- * are not powers of the same value, not allowing to use the fast implementation
- * described in the Anvin's paper [1].
+ * are not powers of the same value, not allowing to use the fast
+ * implementation described in the Anvin's paper [1].
  *
  * Hopefully there is a method to implement parallel multiplications
- * using SSSE3 instructions [1][5]. Method already competitive with the computation
- * of RAIDTP parity using power coefficients.
+ * using SSSE3 instructions [1][5]. Method already competitive with the
+ * computation of RAIDTP parity using power coefficients.
  *
  * Another important property of the Extended Cauchy matrix is that we can 
- * setup the first two rows with power coeffients equal at the RAID5 and RAID6
- * approach described in Anvin's paper [1], resulting in a compatible extension,
- * and requiring SSSE3 instructions only if RAIDTP is used.
+ * setup the first two rows with power coeffients equal at the RAID5 and
+ * RAID6 approach described in Anvin's paper [1], resulting in a compatible
+ * extension, and requiring SSSE3 instructions only if RAIDTP is used.
  * 
  * We also "normalize" the matrix, multipling each row for a constant
  * factor to make the first column with all 1.
  *
- * This results in the "normalized" Extended Cauchy matrix A[row,col] defined as:
+ * This results in the "normalized" Extended Cauchy matrix A[row,col]
+ * defined as:
  * 
  * 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 ...
  * 01 02 04 08 10 20 40 80 1d 3a 74 e8 cd 87 13 26 4c 98 2d 5a b4 75 ea c9 8f 03 06 ...
@@ -113,14 +116,12 @@
  * 01 2b 3f cf 73 2c d6 ed cb 74 15 78 8a c1 17 c9 89 68 21 ab 76 3b 4b 5a 6e 0e b9 ...
  * (see tables.h for the full matrix)
  *
- * with one row for each parity level, and one column for each data disk.
- *
  * This matrix supports 6 level of parity, one for each row, for up to 251
- * data disks, one for each column. 
+ * data disks, one for each column, with all the 377,342,351,231 square
+ * submatrices not singular.
  * 
  * This matrix can be extended to support any number of parities, just adding
- * additional rows, (but removing one column for each row added), without
- * the changing the already existing rows.
+ * additional rows, and removing one column for each row added.
  * (see mktables.c for more details in how the matrix is generated)
  * 
  * In details, parity is computed as:
@@ -151,7 +152,7 @@
  * Td = Ta + T
  * Ud = Ua + U
  *
- * we can sum these two set equations, obtaining:
+ * we can sum these two sets of equations, obtaining:
  *
  * Pd =          Dx +          Dy +          Dz +          Dh +          Dv +          Dw
  * Qd =    2^x * Dx +    2^y * Dy +    2^z * Dz +    2^h * Dh +    2^v * Dv +    2^w * Dw
@@ -160,8 +161,8 @@
  * Td = A[4,x] * Dx + A[4,y] * Dy + A[4,z] * Dz + A[4,h] * Dh + A[4,v] * Dv + A[4,w] * Dw
  * Ud = A[5,x] * Dx + A[5,y] * Dy + A[5,z] * Dz + A[5,h] * Dh + A[5,v] * Dv + A[5,w] * Dw
  *
- * A linear system always solvable because the coefficients matrix is always
- * not singular due the properties of the matrix A[].
+ * A linear system always solvable because the coefficients matrix is
+ * always not singular due the properties of the matrix A[].
  *
  * Resulting speed in x64, with 24 data disks, using a stripe of 256 KiB,
  * for a Core i7-3740QM CPU @ 2.7GHz is:
