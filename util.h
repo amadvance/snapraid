@@ -465,6 +465,12 @@ void* malloc_nofail_align(size_t size, void** freeptr);
 unsigned char** malloc_nofail_vector_align(size_t count, size_t size, void** freeptr);
 
 /**
+ * Test the memory vector for RAM problems.
+ * If a problem is found, it crashes.
+ */
+void mtest_vector(unsigned char** buf, size_t count, size_t size);
+
+/**
  * Safe strdup.
  * If no memory is available, it aborts.
  */

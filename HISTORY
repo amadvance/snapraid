@@ -23,6 +23,8 @@ SnapRAID HISTORY
  * Changed the output format of some commands to make it similar
    at the new "list" one.
  * Reduced memory usage removing some unnecessary allocations.
+ * Added a memory test on the memory buffers used in sync/scrub/check/fix
+   before using them.
 
 4.4 2013/10
 ===========

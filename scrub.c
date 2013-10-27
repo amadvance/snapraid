@@ -68,6 +68,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	buffermax = diskmax + state->level * 2;
 
 	buffer = malloc_nofail_vector_align(buffermax, state->block_size, &buffer_alloc);
+	if (!state->opt.skip_self)
+		mtest_vector(buffer, buffermax, state->block_size);
 
 	error = 0;
 	silent_error = 0;

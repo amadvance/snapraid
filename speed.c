@@ -70,6 +70,7 @@ void speed(void)
 	unsigned char* zero;
 
 	buffer = malloc_nofail_vector_align(diskmax + LEV_MAX + 1, block_size, &buffer_alloc);
+	mtest_vector(buffer, diskmax + LEV_MAX + 1, block_size);
 
 	/* initialize with fixed data */
 	for(i=0;i<diskmax+LEV_MAX;++i) {

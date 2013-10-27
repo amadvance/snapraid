@@ -482,6 +482,8 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 	buffermax = diskmax + state->level * 2 + 1;
 
 	buffer = malloc_nofail_vector_align(buffermax, state->block_size, &buffer_alloc);
+	if (!state->opt.skip_self)
+		mtest_vector(buffer, buffermax, state->block_size);
 
 	/* fill up the zero buffer */
 	memset(buffer[buffermax-1], 0, state->block_size);

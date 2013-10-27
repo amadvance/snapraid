@@ -1388,6 +1388,56 @@ unsigned char** malloc_nofail_vector_align(size_t count, size_t size, void** fre
 	return buffer;
 }
 
+void mtest_vector(unsigned char** buf, size_t count, size_t size)
+{
+	size_t i;
+	size_t j;
+	unsigned k;
+	unsigned char d;
+	unsigned char p;
+
+	/* fill with 0 */
+	d = 0;
+	for(i=0;i<count;++i) {
+		for(j=0;j<size;++j) {
+			buf[i][j] = d;
+		}
+	}
+
+	/* test with all the byte patterns */
+	for(k=1;k<256;++k) {
+		p = d;
+		d = k;
+
+		/* forward fill */
+		for(i=0;i<count;++i) {
+			for(j=0;j<size;++j) {
+				if (buf[i][j] != p)
+					goto fail;
+				buf[i][j] = d;
+			}
+		}
+
+		p = d;
+		d = ~p;
+		/* backward fill with complement */
+		for(i=0;i<count;++i) {
+			for(j=size;j>0;--j) {
+				if (buf[i][j-1] != p)
+					goto fail;
+				buf[i][j-1] = d;
+			}
+		}
+	}
+
+	return;
+
+fail:
+	fprintf(stderr, "DANGER! Your RAM memory is broken! DO NOT PROCEED UNTIL FIXED!\n");
+	fprintf(stderr, "Try running some memory test like http://www.memtest86.com/\n");
+	exit(EXIT_FAILURE);
+}
+
 char* strdup_nofail(const char* str)
 {
 	size_t size;

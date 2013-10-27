@@ -75,6 +75,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	buffermax = diskmax + state->level;
 
 	buffer = malloc_nofail_vector_align(buffermax, state->block_size, &buffer_alloc);
+	if (!state->opt.skip_self)
+		mtest_vector(buffer, buffermax, state->block_size);
 
 	error = 0;
 	silent_error = 0;
