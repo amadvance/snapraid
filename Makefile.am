@@ -355,7 +355,7 @@ endif
 	rm -r test/_a
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Abort sync late with additions, delete them and recover with RAID6
-	echo --- This triggers the recoving with q using p to check the validity
+	echo --- This triggers the recovering with q using p to check the validity
 	cp -pR test/disk1/_a test/disk1/_c
 	cp -pR test/disk1/_a test/disk1/_d
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-kill-after-sync -c $(CONF) sync
@@ -366,7 +366,7 @@ endif
 	rm -r test/disk1/_d
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Abort sync early with additions, delete them and recover with RAID6
-	echo --- This triggers the recoving with q using p to check the validity, but failing for new block being filled with zero
+	echo --- This triggers the recovering with q using p to check the validity, but failing for new block being filled with zero
 	cp -pR test/disk1/_a test/disk1/_c
 	cp -pR test/disk1/_a test/disk1/_d
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -t 1 --test-kill-after-sync -c $(CONF) sync

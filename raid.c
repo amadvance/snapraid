@@ -118,7 +118,7 @@
  *
  * This matrix supports 6 level of parity, one for each row, for up to 251
  * data disks, one for each column, with all the 377,342,351,231 square
- * submatrices not singular.
+ * submatrices not singular, verified also with brute-force.
  * 
  * This matrix can be extended to support any number of parities, just adding
  * additional rows, and removing one column for each row added.

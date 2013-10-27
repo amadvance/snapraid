@@ -1516,7 +1516,7 @@ bail:
 			if (check)
 				printf("%8u unrecoverable errors\n", unrecoverable_error);
 			if (fix)
-				printf("Everything RECOVERED\n");
+				printf("Everything OK\n");
 			else
 				printf("WARNING! There are errors!\n");
 		}
