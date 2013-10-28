@@ -28,7 +28,6 @@
 #include "tommyhash.c"
 #include "tommyhashdyn.c"
 #include "tommyarray.c"
-#include "tommyarrayof.c"
 #include "tommyarrayblk.c"
 #include "tommyarrayblkof.c"
 

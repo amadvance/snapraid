@@ -23,7 +23,6 @@
 #include "tommyhash.h"
 #include "tommyhashdyn.h"
 #include "tommyarray.h"
-#include "tommyarrayof.h"
 #include "tommyarrayblk.h"
 #include "tommyarrayblkof.h"
 
