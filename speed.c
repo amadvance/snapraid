@@ -65,22 +65,32 @@ void speed(void)
 	unsigned delta = 10;
 	unsigned block_size = 256 * 1024;
 	unsigned diskmax = 8;
+	unsigned buffermax;
 	void* buffer_alloc;
 	unsigned char** buffer;
 	unsigned char* zero;
 
-	buffer = malloc_nofail_vector_align(diskmax + LEV_MAX + 1, block_size, &buffer_alloc);
-	mtest_vector(buffer, diskmax + LEV_MAX + 1, block_size);
+	/* we need disk + 1 for each parity level buffers + 1 zero buffer */
+	buffermax = diskmax + LEV_MAX + 1;
 
-	/* initialize with fixed data */
-	for(i=0;i<diskmax+LEV_MAX;++i) {
+	buffer = malloc_nofail_vector_align(buffermax, block_size, &buffer_alloc);
+	mtest_vector(buffer, buffermax, block_size);
+
+	/* initialize disks with fixed data */
+	for(i=0;i<diskmax;++i) {
 		memset(buffer[i], i, block_size);
 	}
+
+	/* zero buffer */
 	zero = buffer[diskmax+LEV_MAX];
 	memset(zero, 0, block_size);
+
+	/* hash seed */
 	for(i=0;i<HASH_SIZE;++i) {
 		seed[i] = i;
 	}
+
+	/* basic disks and parity mapping */
 	for(i=0;i<LEV_MAX;++i) {
 		d[i] = i;
 		e[i] = i;
@@ -224,7 +234,7 @@ void speed(void)
 	printf("\n");
 
 	/* RAID table */
-	printf("RAID functions used to compute the parity with 'sync':\n");
+	printf("RAID functions used for computing the parity with 'sync':\n");
 	printf("%8s", "");
 	printf("%8s", "best");
 	printf("%8s", "int8");
