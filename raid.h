@@ -22,9 +22,16 @@
 /* raid */
 
 /**
- * Max number of data disks.
+ * Maximum number of data disks.
+ * Limit of the parity generator matrix used.
  */
-#define RAID_DATA_LIMIT 251
+#define RAID_DATA_MAX 251
+
+/**
+ * Minimum number of data disks.
+ * Limit of some optimized parity generator functions.
+ */
+#define RAID_DATA_MIN 2
 
 /**
  * Initializes the RAID system.
@@ -33,7 +40,7 @@ void raid_init(void);
 
 /**
  * Computes the parity.
- * \param level Number of parities level to compute. Starting from 1.
+ * \param level Number of parities level to compute.
  * \param vbuf Vector of pointers to the blocks for disks and parities.
  * It has (::data + ::level) elements. Each element points to a buffer of ::size bytes.
  * \param data Number of data disks.
@@ -44,8 +51,8 @@ void raid_gen(unsigned level, unsigned char** vbuf, unsigned data, unsigned size
 /**
  * Recovers failures of data disks using the specified parities.
  * Note that only the data blocks are recovered. The parity is destroyed.
- * \param level Number of failed disks. Starting from 1.
- * \param d[] Vector of indexes of the data disk to recover. Starting from 0.
+ * \param level Number of failed disks.
+ * \param d[] Vector of indexes of the data disks to recover. Starting from 0.
  * \param p[] Vector of indexes of the parity to use for the recovering. Starting from 0.
  * \param vbuf Vector of pointers to the blocks for disks and parities.
  * It has (::data + ::level) elements. Each element points to a buffer of ::size bytes.

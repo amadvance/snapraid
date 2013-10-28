@@ -143,8 +143,6 @@ static void state_config_check(struct snapraid_state* state, const char* path)
 
 	/* check if all the data and parity disks are different */
 	if (!state->opt.skip_device) {
-		unsigned diskcount = 0;
-
 		for(i=state->disklist;i!=0;i=i->next) {
 			tommy_node* j;
 			struct snapraid_disk* disk = i->data;
@@ -193,8 +191,6 @@ static void state_config_check(struct snapraid_state* state, const char* path)
 #endif
 				exit(EXIT_FAILURE);
 			}
-
-			++diskcount;
 		}
 
 #ifdef _WIN32
@@ -826,8 +822,13 @@ static void state_map(struct snapraid_state* state)
 		if (map->position + 1 > diskcount)
 			diskcount = map->position + 1;
 	}
-	if (diskcount > RAID_DATA_LIMIT) {
-		fprintf(stderr, "Too many datadisks. No more than %u.\n", RAID_DATA_LIMIT);
+	if (diskcount > RAID_DATA_MAX) {
+		fprintf(stderr, "Too many data disks. No more than %u.\n", RAID_DATA_MAX);
+		exit(EXIT_FAILURE);
+	}
+	/* some raid functions assume at least two data disk */
+	if (diskcount < RAID_DATA_MIN) {
+		fprintf(stderr, "Too few data disks. You must define at least %u.\n", RAID_DATA_MIN);
 		exit(EXIT_FAILURE);
 	}
 }
