@@ -100,7 +100,7 @@ void set_cauchy(unsigned char* matrix)
 	/*
 	 * Next rows of the Cauchy matrix.
 	 *
-	 * We continue forming the Cauchy matrix with yj = 2^j obtaining :
+	 * Continue forming the Cauchy matrix with yj = 2^j obtaining :
 	 *
 	 * 1/(xi+yj) = 1/(2^-i + 2^j)
 	 *
@@ -235,7 +235,7 @@ int main(void)
 	set_cauchy(matrix);
 
 	printf("/**\n");
-	printf(" * Extended Cauchy matrix used to generate parity.\n");
+	printf(" * Normalized Extended Cauchy matrix used to generate parity.\n");
 	printf(" * This matrix is valid for up to %u parity with %u data disks.\n", PARITY, DISK);
 	printf(" *\n");
 	for(p=0;p<PARITY;++p) {

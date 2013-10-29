@@ -671,7 +671,7 @@ void raidTP_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("pshufb %xmm5,%xmm6");
 			asm volatile("pxor   %xmm6,%xmm2");
 		}
-		
+
 		/* first disk with all coefficients at 1 */
 		asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[0][i]));
 
