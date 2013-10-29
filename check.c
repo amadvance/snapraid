@@ -24,7 +24,7 @@
 #include "parity.h"
 #include "handle.h"
 #include "raid.h"
-#include "combos.h"
+#include "combo.h"
 
 /****************************************************************************/
 /* check */
@@ -144,10 +144,11 @@ static int is_parity_matching(struct snapraid_state* state, unsigned diskmax, un
  */
 static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, unsigned char** buffer, unsigned char** buffer_recov, unsigned char* buffer_zero)
 {
-	unsigned i, j;
+	unsigned i, n;
 	int error;
 	int has_hash;
 	int d[LEV_MAX];
+	int p[LEV_MAX];
 
 	/* no fix required */
 	if (failed_count == 0) {
@@ -155,9 +156,10 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 		raid_gen(state->level, buffer, diskmax, state->block_size);
 		return 0;
 	}
-
+	
 	/* if too many error, we don't have any strategy */
-	if (failed_count > state->level) {
+	n = state->level;
+	if (failed_count > n) {
 		return -1;
 	}
 
@@ -170,71 +172,74 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 	/* check if there is at least a failed block that can be checked for correctness using the hash */
 	/* if there isn't, we have to sacrifice a parity block to check that the result is correct */
 	has_hash = 0;
-	for(j=0;j<failed_count;++j) {
-		if (block_has_updated_hash(failed[failed_map[j]].block)) /* if the block can be checked */
+	for(i=0;i<failed_count;++i) {
+		if (block_has_updated_hash(failed[failed_map[i]].block)) /* if the block can be checked */
 			has_hash = 1;
 	}
 
-	/* if we don't have an hash, but we have an extra parity */
-	if (!has_hash && failed_count < LEV_MAX) {
-		/* number of parity to use, the last one is used for checking and not for recovering */
-		unsigned l = failed_count + 1;
-		for(i=0;combo[l-1][i][0]>=0;++i) {
-			int* c = combo[l-1][i];
+	/* if we don't have a hash, but we have an extra parity */
+	/* (strictly-less failures than number of parities) */
+	if (!has_hash && failed_count < n) {
+		/* number of parity to use, one more to check the recovering */
+		unsigned r = failed_count + 1;
 
-			/* if parity is missing, do nothing */
-			for(j=0;j<l;++j) {
-				if (buffer_recov[c[j]] == 0)
+		/* all combinations (r of n) parities */
+		combination_first(r, n, p);
+		do {
+			/* if a parity is missing, do nothing */
+			for(i=0;i<r;++i) {
+				if (buffer_recov[p[i]] == 0)
 					break;
 			}
-			if (j != l)
+			if (i != r)
 				continue;
 
-			/* copy the parity to use, one less because the last is used for checking */
-			for(j=0;j<l-1;++j) {
-				memcpy(buffer[diskmax+c[j]], buffer_recov[c[j]], state->block_size);
-			}
+			/* copy the parities to use, one less because the last is used for checking */
+			for(i=0;i<r-1;++i)
+				memcpy(buffer[diskmax+p[i]], buffer_recov[p[i]], state->block_size);
 
-			/* recover using one less parity */
-			raid_recov(l-1, d, c, buffer, diskmax, buffer_zero, state->block_size);
+			/* recover using one less parity, the p[r-1] one */
+			raid_recov(r-1, d, p, buffer, diskmax, buffer_zero, state->block_size);
 
-			/* use the remaining parity to check the result */
-			if (is_parity_matching(state, diskmax, c[l-1], buffer, buffer_recov))
+			/* use the remaining p[r-1] parity to check the result */
+			if (is_parity_matching(state, diskmax, p[r-1], buffer, buffer_recov))
 				return 0;
 
 			/* log */
 			fprintf(stdlog, "parity_error:%u:", pos);
-			for(j=0;j<l;++j) {
-				if (j != 0)
+			for(i=0;i<r;++i) {
+				if (i != 0)
 					fprintf(stdlog, "/");
-				fprintf(stdlog, "%s", lev_config_name(c[j]));
+				fprintf(stdlog, "%s", lev_config_name(p[i]));
 			}
 			fprintf(stdlog, ": Data error\n");
 			++error;
-		}
+		} while (combination_next(r, n, p));
 	}
 
-	if (has_hash && failed_count <= LEV_MAX) {
-		/* number of parities to use */
-		unsigned l = failed_count;
-		for(i=0;combo[l-1][i][0]>=0;++i) {
-			int* c = combo[l-1][i];
-		
-			/* if parity is missing, do nothing */
-			for(j=0;j<l;++j) {
-				if (buffer_recov[c[j]] == 0)
+	/* if we have a hash, and enough parities */
+	/* (less-or-equal failures than number of parities) */
+	if (has_hash && failed_count <= n) {
+		/* number of parities to use equal at the number of failures */
+		unsigned r = failed_count;
+
+		/* all combinations (r of n) parities */
+		combination_first(r, n, p);
+		do {
+			/* if a parity is missing, do nothing */
+			for(i=0;i<r;++i) {
+				if (buffer_recov[p[i]] == 0)
 					break;
 			}
-			if (j != l)
+			if (i != r)
 				continue;
 
-			/* copy the parity to use */
-			for(j=0;j<l;++j) {
-				memcpy(buffer[diskmax+c[j]], buffer_recov[c[j]], state->block_size);
-			}
+			/* copy the parities to use */
+			for(i=0;i<r;++i)
+				memcpy(buffer[diskmax+p[i]], buffer_recov[p[i]], state->block_size);
 
 			/* recover */
-			raid_recov(l, d, c, buffer, diskmax, buffer_zero, state->block_size);
+			raid_recov(r, d, p, buffer, diskmax, buffer_zero, state->block_size);
 
 			/* use the hash to check the result */
 			if (is_hash_matching(state, rehash, diskmax, failed, failed_map, failed_count, buffer, buffer_zero))
@@ -242,14 +247,14 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 
 			/* log */
 			fprintf(stdlog, "parity_error:%u:", pos);
-			for(j=0;j<l;++j) {
-				if (j != 0)
+			for(i=0;i<r;++i) {
+				if (i != 0)
 					fprintf(stdlog, "/");
-				fprintf(stdlog, "%s", lev_config_name(c[j]));
+				fprintf(stdlog, "%s", lev_config_name(p[i]));
 			}
 			fprintf(stdlog, ": Data error\n");
 			++error;
-		}
+		} while (combination_next(r, n, p));
 	}
 
 	/* return the number of failed attempts, or -1 if no strategy */

@@ -1,6 +1,6 @@
 bin_PROGRAMS = snapraid
 check_PROGRAMS = mktest
-EXTRA_PROGRAMS = mktables mkcombos
+EXTRA_PROGRAMS = mktables
 
 snapraid_SOURCES = \
 	snapraid.c \
@@ -31,9 +31,6 @@ snapraid_SOURCES = \
 mktables_SOURCES = \
 	mktables.c
 
-mkcombos_SOURCES = \
-	mkcombos.c
-
 noinst_HEADERS = \
 	portable.h \
 	snapraid.h \
@@ -63,8 +60,8 @@ noinst_HEADERS = \
 	fnmatch.h \
 	cpu.h \
 	raid.h \
+	combo.h \
 	tables.h \
-	combos.h \
 	import.h \
 	mingw.h \
 	unix.h

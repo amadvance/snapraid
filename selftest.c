@@ -23,7 +23,7 @@
 #include "cpu.h"
 #include "elem.h"
 #include "state.h"
-#include "combos.h"
+#include "combo.h"
 
 struct hash_test_vector {
 	const char* data;
@@ -47,7 +47,40 @@ static struct hash_test_vector TEST_SPOOKY2[] = {
 { 0, 0, { 0 } }
 };
 
-static void recovtest(int diskmax, unsigned block_size)
+/**
+ * Binomial coefficient of n over r.
+ */
+static unsigned bc(unsigned n, unsigned r)
+{
+	if (r == 0 || n == r)
+		return 1;
+	else
+		return bc(n - 1, r - 1) + bc(n - 1, r);
+}
+
+static void combotest(void)
+{
+	unsigned r;
+	unsigned count;
+	int p[LEV_MAX];
+
+	/* all parities */
+	for(r=1;r<=LEV_MAX;++r) {
+		/* count combination (r of LEV_MAX) parities */
+		count = 0;		
+		combination_first(r, LEV_MAX, p);
+		do {
+			++count;
+		} while (combination_next(r, LEV_MAX, p));
+
+		if (count != bc(LEV_MAX, r)) {
+			fprintf(stderr, "Failed COMBO test\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+}
+
+static void recovtest(unsigned diskmax, unsigned block_size)
 {
 	void* buffer_alloc;
 	unsigned char** buffer;
@@ -60,8 +93,10 @@ static void recovtest(int diskmax, unsigned block_size)
 	unsigned char* waste;
 	unsigned buffermax;
 	int d[LEV_MAX];
-	int i;
+	int p[LEV_MAX];
+	unsigned i;
 	unsigned j;
+	unsigned r;
 
 	buffermax = diskmax + LEV_MAX * 2 + 2;
 
@@ -93,232 +128,45 @@ static void recovtest(int diskmax, unsigned block_size)
 	for(i=0;i<LEV_MAX;++i)
 		parity[i] = waste;
 
-	/* check 6data */
-	for(d[0]=0;d[0]<diskmax;++d[0]) {
-	for(d[1]=d[0]+1;d[1]<diskmax;++d[1]) {
-	for(d[2]=d[1]+1;d[2]<diskmax;++d[2]) {
-	for(d[3]=d[2]+1;d[3]<diskmax;++d[3]) {
-	for(d[4]=d[3]+1;d[4]<diskmax;++d[4]) {
-	for(d[5]=d[4]+1;d[5]<diskmax;++d[5]) {
-		for(i=0;combo[5][i][0]>=0;++i) {
-			/* set */
-			for(j=0;j<6;++j) {
-				/* remove the missing data */
-				data_save[j] = data[d[j]];
-				data[d[j]] = test[j];
-				/* set the parity to use */
-				parity[combo[5][i][j]] = parity_save[combo[5][i][j]];
-			}
+	/* all parity levels */
+	for(r=1;r<=LEV_MAX;++r) {
 
-			/* recover */
-			raid_recov(6, d, combo[5][i], buffer, diskmax, zero, block_size);
+		/* all combinations (r of diskmax) disks */
+		combination_first(r, diskmax, d);
+		do {
 
-			/* check */
-			for(j=0;j<6;++j) {
-				if (memcmp(test[j], data_save[j], block_size) != 0) {
-					fprintf(stderr, "Failed RAID test\n");
-					exit(EXIT_FAILURE);
+			/* all combinations (r of LEV_MAX) parities */
+			combination_first(r, LEV_MAX, p);
+			do {
+				/* set */
+				for(i=0;i<r;++i) {
+					/* remove the missing data */
+					data_save[i] = data[d[i]];
+					data[d[i]] = test[i];
+					/* set the parity to use */
+					parity[p[i]] = parity_save[p[i]];
 				}
-			}
 
-			/* restore */
-			for(j=0;j<6;++j) {
-				/* restore the data */
-				data[d[j]] = data_save[j];
-				/* restore the parity */
-				parity[combo[5][i][j]] = waste;
-			}
-		}
-	}
-	}
-	}
-	}
-	}
-	}
+				/* recover */
+				raid_recov(r, d, p, buffer, diskmax, zero, block_size);
 
-	/* check 5data */
-	for(d[0]=0;d[0]<diskmax;++d[0]) {
-	for(d[1]=d[0]+1;d[1]<diskmax;++d[1]) {
-	for(d[2]=d[1]+1;d[2]<diskmax;++d[2]) {
-	for(d[3]=d[2]+1;d[3]<diskmax;++d[3]) {
-	for(d[4]=d[3]+1;d[4]<diskmax;++d[4]) {
-		for(i=0;combo[4][i][0]>=0;++i) {
-			/* set */
-			for(j=0;j<5;++j) {
-				/* remove the missing data */
-				data_save[j] = data[d[j]];
-				data[d[j]] = test[j];
-				/* set the parity to use */
-				parity[combo[4][i][j]] = parity_save[combo[4][i][j]];
-			}
-
-			/* recover */
-			raid_recov(5, d, combo[4][i], buffer, diskmax, zero, block_size);
-
-			/* check */
-			for(j=0;j<5;++j) {
-				if (memcmp(test[j], data_save[j], block_size) != 0) {
-					fprintf(stderr, "Failed RAID test\n");
-					exit(EXIT_FAILURE);
+				/* check */
+				for(i=0;i<r;++i) {
+					if (memcmp(test[i], data_save[i], block_size) != 0) {
+						fprintf(stderr, "Failed RECOV test\n");
+						exit(EXIT_FAILURE);
+					}
 				}
-			}
 
-			/* restore */
-			for(j=0;j<5;++j) {
-				/* restore the data */
-				data[d[j]] = data_save[j];
-				/* restore the parity */
-				parity[combo[4][i][j]] = waste;
-			}
-		}
-	}
-	}
-	}
-	}
-	}
-
-	/* check 4data */
-	for(d[0]=0;d[0]<diskmax;++d[0]) {
-	for(d[1]=d[0]+1;d[1]<diskmax;++d[1]) {
-	for(d[2]=d[1]+1;d[2]<diskmax;++d[2]) {
-	for(d[3]=d[2]+1;d[3]<diskmax;++d[3]) {
-		for(i=0;combo[3][i][0]>=0;++i) {
-			/* set */
-			for(j=0;j<4;++j) {
-				/* remove the missing data */
-				data_save[j] = data[d[j]];
-				data[d[j]] = test[j];
-				/* set the parity to use */
-				parity[combo[3][i][j]] = parity_save[combo[3][i][j]];
-			}
-
-			/* recover */
-			raid_recov(4, d, combo[3][i], buffer, diskmax, zero, block_size);
-
-			/* check */
-			for(j=0;j<4;++j) {
-				if (memcmp(test[j], data_save[j], block_size) != 0) {
-					fprintf(stderr, "Failed RAID test\n");
-					exit(EXIT_FAILURE);
+				/* restore */
+				for(i=0;i<r;++i) {
+					/* restore the data */
+					data[d[i]] = data_save[i];
+					/* restore the parity */
+					parity[p[i]] = waste;
 				}
-			}
-
-			/* restore */
-			for(j=0;j<4;++j) {
-				/* restore the data */
-				data[d[j]] = data_save[j];
-				/* restore the parity */
-				parity[combo[3][i][j]] = waste;
-			}
-		}
-	}
-	}
-	}
-	}
-
-	/* check 3data */
-	for(d[0]=0;d[0]<diskmax;++d[0]) {
-	for(d[1]=d[0]+1;d[1]<diskmax;++d[1]) {
-	for(d[2]=d[1]+1;d[2]<diskmax;++d[2]) {
-		for(i=0;combo[2][i][0]>=0;++i) {
-			/* set */
-			for(j=0;j<3;++j) {
-				/* remove the missing data */
-				data_save[j] = data[d[j]];
-				data[d[j]] = test[j];
-				/* set the parity to use */
-				parity[combo[2][i][j]] = parity_save[combo[2][i][j]];
-			}
-
-			/* recover */
-			raid_recov(3, d, combo[2][i], buffer, diskmax, zero, block_size);
-
-			/* check */
-			for(j=0;j<3;++j) {
-				if (memcmp(test[j], data_save[j], block_size) != 0) {
-					fprintf(stderr, "Failed RAID test\n");
-					exit(EXIT_FAILURE);
-				}
-			}
-
-			/* restore */
-			for(j=0;j<3;++j) {
-				/* restore the data */
-				data[d[j]] = data_save[j];
-				/* restore the parity */
-				parity[combo[2][i][j]] = waste;
-			}
-		}
-	}
-	}
-	}
-
-	/* check 2data */
-	for(d[0]=0;d[0]<diskmax;++d[0]) {
-	for(d[1]=d[0]+1;d[1]<diskmax;++d[1]) {
-		for(i=0;combo[1][i][0]>=0;++i) {
-			/* set */
-			for(j=0;j<2;++j) {
-				/* remove the missing data */
-				data_save[j] = data[d[j]];
-				data[d[j]] = test[j];
-				/* set the parity to use */
-				parity[combo[1][i][j]] = parity_save[combo[1][i][j]];
-			}
-
-			/* recover */
-			raid_recov(2, d, combo[1][i], buffer, diskmax, zero, block_size);
-
-			/* check */
-			for(j=0;j<2;++j) {
-				if (memcmp(test[j], data_save[j], block_size) != 0) {
-					fprintf(stderr, "Failed RAID test\n");
-					exit(EXIT_FAILURE);
-				}
-			}
-
-			/* restore */
-			for(j=0;j<2;++j) {
-				/* restore the data */
-				data[d[j]] = data_save[j];
-				/* restore the parity */
-				parity[combo[1][i][j]] = waste;
-			}
-		}
-	}
-	}
-
-	/* check 1data */
-	for(d[0]=0;d[0]<diskmax;++d[0]) {
-		for(i=0;combo[0][i][0]>=0;++i) {
-			/* set */
-			for(j=0;j<1;++j) {
-				/* remove the missing data */
-				data_save[j] = data[d[j]];
-				data[d[j]] = test[j];
-				/* set the parity to use */
-				parity[combo[0][i][j]] = parity_save[combo[0][i][j]];
-			}
-
-			/* recover */
-			raid_recov(1, d, combo[0][i], buffer, diskmax, zero, block_size);
-
-			/* check */
-			for(j=0;j<1;++j) {
-				if (memcmp(test[j], data_save[j], block_size) != 0) {
-					fprintf(stderr, "Failed RAID test\n");
-					exit(EXIT_FAILURE);
-				}
-			}
-
-			/* restore */
-			for(j=0;j<1;++j) {
-				/* restore the data */
-				data[d[j]] = data_save[j];
-				/* restore the parity */
-				parity[combo[0][i][j]] = waste;
-			}
-		}
+			} while (combination_next(r, LEV_MAX, p));
+		} while (combination_next(r, diskmax, d));
 	}
 
 	free(buffer_alloc);
@@ -396,7 +244,7 @@ static void gentest(unsigned diskmax, unsigned block_size)
 		/* check it */
 		for(i=0;i<LEV_MAX;++i) {
 			if (memcmp(buffer[diskmax + LEV_MAX + i], buffer[diskmax + i], block_size) != 0) {
-				fprintf(stderr, "Failed RAID test\n");
+				fprintf(stderr, "Failed GEN test\n");
 				exit(EXIT_FAILURE);
 			}
 		}
@@ -519,7 +367,7 @@ void selftest()
 
 	hashtest();
 	crc32ctest();
-	gentest(64, 256);
-	recovtest(16, 64);
+	combotest();
+	gentest(32, 256);
+	recovtest(16, 256);
 }
-
