@@ -1002,9 +1002,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					}
 
 					fprintf(stdlog, "status:unrecoverable:%s:%s\n", handle[j].disk->name, file->sub);
-					if (state->opt.verbose) {
-						printf("Unrecoverable '%s'\n", path);
-					}
+					printf("unrecoverable %s\n", path);
 
 					/* and do not set the time if damaged */
 					continue;
@@ -1017,9 +1015,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				}
 
 				fprintf(stdlog, "status:recovered:%s:%s\n", handle[j].disk->name, file->sub);
-				if (state->opt.verbose) {
-					printf("recovered %s\n", path);
-				}
+				printf("recovered %s\n", path);
 
 				inode = handle[j].st.st_ino;
 
@@ -1059,20 +1055,14 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				if (file_flag_has(file, FILE_IS_DAMAGED)) {
 					if (!check) {
 						fprintf(stdlog, "status:damaged:%s:%s\n", handle[j].disk->name, file->sub);
-						if (state->opt.verbose) {
-							printf("damaged %s\n", path);
-						}
+						printf("damaged %s\n", path);
 					} else {
 						fprintf(stdlog, "status:unrecoverable:%s:%s\n", handle[j].disk->name, file->sub);
-						if (state->opt.verbose) {
-							printf("unrecoverable %s\n", path);
-						}
+						printf("unrecoverable %s\n", path);
 					}
 				} else if (file_flag_has(file, FILE_IS_FIXED)) {
 					fprintf(stdlog, "status:recoverable:%s:%s\n", handle[j].disk->name, file->sub);
-					if (state->opt.verbose) {
-						printf("recoverable %s\n", path);
-					}
+					printf("recoverable %s\n", path);
 				} else {
 					fprintf(stdlog, "status:correct:%s:%s\n", handle[j].disk->name, file->sub);
 					if (state->opt.verbose) {
@@ -1205,9 +1195,7 @@ close_and_continue:
 				++recovered_error;
 
 				fprintf(stdlog, "status:recovered:%s:%s\n", disk->name, file->sub);
-				if (state->opt.verbose) {
-					printf("recovered %s%s\n", disk->dir, file->sub);
-				}
+				printf("recovered %s%s\n", disk->dir, file->sub);
 			}
 		}
 
@@ -1370,9 +1358,7 @@ close_and_continue:
 				}
 
 				fprintf(stdlog, "status:recovered:%s:%s\n", disk->name, link->sub);
-				if (state->opt.verbose) {
-					printf("recovered %s%s\n", disk->dir, link->sub);
-				}
+				printf("recovered %s%s\n", disk->dir, link->sub);
 			}
 		}
 
@@ -1437,10 +1423,8 @@ close_and_continue:
 				fprintf(stdlog, "dir_fixed:%s:%s: Fixed dir error\n", disk->name, dir->sub);
 				++recovered_error;
 
-				fprintf(stdlog, "status:ok:%s:%s\n", disk->name, dir->sub);
-				if (state->opt.verbose) {
-					printf("recovered %s%s\n", disk->dir, dir->sub);
-				}
+				fprintf(stdlog, "status:recovered:%s:%s\n", disk->name, dir->sub);
+				printf("recovered %s%s\n", disk->dir, dir->sub);
 			}
 		}
 	}

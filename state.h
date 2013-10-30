@@ -138,7 +138,7 @@ void state_done(struct snapraid_state* state);
 /**
  * Reads the configuration file.
  */
-void state_config(struct snapraid_state* state, const char* path, const char* command, struct snapraid_option* opt);
+void state_config(struct snapraid_state* state, const char* path, const char* command, struct snapraid_option* opt, tommy_list* filterlist_disk);
 
 /**
  * Reads the state.

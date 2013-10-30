@@ -554,7 +554,7 @@ int main(int argc, char* argv[])
 	state_init(&state);
 
 	/* read the configuration file */
-	state_config(&state, conf, command, &opt);
+	state_config(&state, conf, command, &opt, &filterlist_disk);
 
 #if HAVE_LOCKFILE
 	/* create the lock file */

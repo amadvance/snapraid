@@ -5,9 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
-* When using the -d option, ensure that the specified disk name really
-exists.
-
 * Detect files moved from one disk to another. We won't be able to reuse
 parity, but we can reuse the hash to check that the file was moved
 correctly.

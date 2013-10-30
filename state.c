@@ -112,7 +112,7 @@ void state_done(struct snapraid_state* state)
 /**
  * Checks the configuration.
  */
-static void state_config_check(struct snapraid_state* state, const char* path)
+static void state_config_check(struct snapraid_state* state, const char* path, tommy_list* filterlist_disk)
 {
 	tommy_node* i;
 	unsigned l;
@@ -273,9 +273,26 @@ static void state_config_check(struct snapraid_state* state, const char* path)
 	if (state->level > 2) {
 		fprintf(stderr, "WARNING! Your CPU doesn't have a fast implementation beyond RAID6.\n");
 	}
+
+	/* ensure that specified filter disks are valid ones */
+	for(i=tommy_list_head(filterlist_disk);i!=0;i=i->next) {
+		tommy_node* j;
+		struct snapraid_filter* filter = i->data;
+		for(j=state->disklist;j!=0;j=j->next) {
+			struct snapraid_disk* disk = j->data;
+			if (fnmatch(filter->pattern, disk->name, FNM_CASEINSENSITIVE_FOR_WIN) == 0)
+				break;
+		}
+		if (j == 0) {
+			fprintf(stderr, "Option -d, --filter-disk %s doesn't match any disk.\n", filter->pattern);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	
 }
 
-void state_config(struct snapraid_state* state, const char* path, const char* command, struct snapraid_option* opt)
+void state_config(struct snapraid_state* state, const char* path, const char* command, struct snapraid_option* opt, tommy_list* filterlist_disk)
 {
 	STREAM* f;
 	unsigned line;
@@ -628,7 +645,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 	sclose(f);
 
-	state_config_check(state, path);
+	state_config_check(state, path, filterlist_disk);
 
 	/* select the default hash */
 	if (state->opt.force_murmur3) {
