@@ -506,6 +506,9 @@ if the error is a recoverable one or not.
 If you use the \(hya, \(hy\(hyaudit\(hyonly option, only the file
 data is checked, and the redundandy data is ignored.
 .PP
+If you specify \(hyv, \(hy\(hyverbose it prints the list of recoverable
+files.
+.PP
 Files are identified by path, and checked by content.
 .PP
 Nothing is modified.
@@ -519,6 +522,9 @@ update the new state of the files.
 .PP
 All the files that cannot be fixed are renamed adding
 the \(a".unrecoverable\(a" extension.
+.PP
+If you specify \(hyv, \(hy\(hyverbose it prints the list of recovered
+files.
 .PP
 The \(a"content\(a" file is NOT modified.
 The \(a"parity\(a" files are modified if necessary.

@@ -496,7 +496,6 @@ endif
 	$(TESTENV) ./mktest$(EXEEXT) append 4 500 test/disk3/_b/_a/*
 	$(TESTENV) ./mktest$(EXEEXT) truncate 4 500 test/disk2/_b/_b/*
 	$(TESTENV) ./mktest$(EXEEXT) truncate 4 500 test/disk3/_b/_b/*
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(RAID5) -a check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(RAID6) -a check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(RAID5) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(RAID6) check -l test.log

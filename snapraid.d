@@ -287,6 +287,9 @@ Commands
 	If you use the -a, --audit-only option, only the file
 	data is checked, and the redundandy data is ignored.
 
+	If you specify -v, --verbose it prints the list of recoverable
+	files.
+
 	Files are identified by path, and checked by content.
 
 	Nothing is modified.
@@ -301,6 +304,9 @@ Commands
 
 	All the files that cannot be fixed are renamed adding
 	the ".unrecoverable" extension.
+
+	If you specify -v, --verbose it prints the list of recovered
+	files.
 
 	The "content" file is NOT modified.
 	The "parity" files are modified if necessary.
