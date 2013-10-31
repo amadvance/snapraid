@@ -127,6 +127,7 @@ struct option long_options[] = {
 	{ "speed-test", 0, 0, 'T' },
 	{ "gen-conf", 1, 0, 'C' },
 	{ "verbose", 0, 0, 'v' },
+	{ "quiet", 0, 0, 'q' },
 	{ "gui", 0, 0, 'G' }, /* undocumented GUI interface command */
 	{ "help", 0, 0, 'h' },
 	{ "version", 0, 0, 'V' },
@@ -188,7 +189,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:f:d:mep:o:s:t:i:l:ZEUDNaTC:vhVG"
+#define OPTIONS "c:f:d:mep:o:s:t:i:l:ZEUDNaTC:vqhVG"
 
 volatile int global_interrupt = 0;
 
@@ -355,6 +356,9 @@ int main(int argc, char* argv[])
 			break;
 		case 'v' :
 			opt.verbose = 1;
+			break;
+		case 'q' :
+			opt.quiet = 1;
 			break;
 		case 'G' :
 			opt.gui = 1;

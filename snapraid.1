@@ -282,16 +282,6 @@ snapraid fix
 Note that the fix command will revert your data at the state of the
 last \(a"sync\(a" command executed. It works like a snapshot was taken
 in \(a"sync\(a".
-.PP
-To see the list of files meanwhile they are checked and fixed, you can
-used the \(hyv, \(hy\(hyverbose option. Like:
-.PP
-.RS 4
-snapraid fix \(hyv
-.PD 0
-.PP
-.PD
-.RE
 .SS Recovering and Undeleting 
 In recovering SnapRAID is more like a backup program than a RAID system,
 and it can be used to restore or undelete only a single file or directory
@@ -506,9 +496,6 @@ if the error is a recoverable one or not.
 If you use the \(hya, \(hy\(hyaudit\(hyonly option, only the file
 data is checked, and the redundandy data is ignored.
 .PP
-If you specify \(hyv, \(hy\(hyverbose it prints the list of recoverable
-files.
-.PP
 Files are identified by path, and checked by content.
 .PP
 Nothing is modified.
@@ -522,9 +509,6 @@ update the new state of the files.
 .PP
 All the files that cannot be fixed are renamed adding
 the \(a".unrecoverable\(a" extension.
-.PP
-If you specify \(hyv, \(hy\(hyverbose it prints the list of recovered
-files.
 .PP
 The \(a"content\(a" file is NOT modified.
 The \(a"parity\(a" files are modified if necessary.
@@ -1185,8 +1169,6 @@ snapraid \(hyd NAME \(hyl fix.log fix
 Where NAME is the name of the disk, like \(a"d1\(a" as in our previous example.
 .PP
 This command will take a long time.
-.PP
-You can also add the \(a"\(hyv\(a" option to see on the console the fixed files.
 .PP
 Take care that you need also few gigabytes free to store the fix.log file.
 Run it from a disk with some free space.

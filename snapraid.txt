@@ -175,11 +175,6 @@ Note that the fix command will revert your data at the state of the
 last "sync" command executed. It works like a snapshot was taken
 in "sync".
 
-To see the list of files meanwhile they are checked and fixed, you can
-used the -v, --verbose option. Like:
-
-    snapraid fix -v
-
 4.2 Recovering and Undeleting
 -----------------------------
 
@@ -910,8 +905,6 @@ Run the fix command, storing the log in an external file with:
 Where NAME is the name of the disk, like "d1" as in our previous example.
 
 This command will take a long time.
-
-You can also add the "-v" option to see on the console the fixed files.
 
 Take care that you need also few gigabytes free to store the fix.log file.
 Run it from a disk with some free space.

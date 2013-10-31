@@ -160,11 +160,6 @@ Getting Started
 	last "sync" command executed. It works like a snapshot was taken
 	in "sync".
 
-	To see the list of files meanwhile they are checked and fixed, you can
-	used the -v, --verbose option. Like:
-
-		:snapraid fix -v
-
   Recovering and Undeleting
 	In recovering SnapRAID is more like a backup program than a RAID system,
 	and it can be used to restore or undelete only a single file or directory
@@ -287,9 +282,6 @@ Commands
 	If you use the -a, --audit-only option, only the file
 	data is checked, and the redundandy data is ignored.
 
-	If you specify -v, --verbose it prints the list of recoverable
-	files.
-
 	Files are identified by path, and checked by content.
 
 	Nothing is modified.
@@ -304,9 +296,6 @@ Commands
 
 	All the files that cannot be fixed are renamed adding
 	the ".unrecoverable" extension.
-
-	If you specify -v, --verbose it prints the list of recovered
-	files.
 
 	The "content" file is NOT modified.
 	The "parity" files are modified if necessary.
@@ -840,8 +829,6 @@ Recovering
 	Where NAME is the name of the disk, like "d1" as in our previous example.
 
 	This command will take a long time.
-
-	You can also add the "-v" option to see on the console the fixed files.
 
 	Take care that you need also few gigabytes free to store the fix.log file.
 	Run it from a disk with some free space.

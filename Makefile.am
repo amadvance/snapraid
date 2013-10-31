@@ -96,7 +96,7 @@ maintainer-clean-local:
 
 # Automatic testing
 
-CHECKFLAGS = --test-skip-device --test-skip-self
+CHECKFLAGS = --test-skip-device --test-skip-self -q
 CHECKCOUNT = 2000
 CHECKSIZE = 4000
 CONF = $(srcdir)/test-raidHP.conf

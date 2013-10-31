@@ -57,6 +57,7 @@ extern volatile int global_interrupt;
  */
 struct snapraid_option {
 	int verbose; /**< Verbose output. */
+	int quiet; /**< Quiet output. */
 	int gui; /**< Gui output. */
 	int force_zero; /**< Forced dangerous operations of synching files now with zero size. */
 	int force_empty; /**< Forced dangerous operations of synching disks now empty. */
