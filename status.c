@@ -115,18 +115,16 @@ int state_status(struct snapraid_state* state)
 
 	printf("\n");
 
-	if (state->opt.gui) {
-		fprintf(stdlog, "summary:file_count:%u\n", file_count);
-		fprintf(stdlog, "summary:fragmented_file_count:%u\n", file_fragmented);
-		fprintf(stdlog, "summary:excess_fragment_count:%u\n", extra_fragment);
-		fprintf(stdlog, "summary:file_size:%"PRIu64"\n", file_size);
-		fprintf(stdlog, "summary:parity_size:%"PRIu64"\n", blockmax * (uint64_t)state->block_size);
-		fprintf(stdlog, "summary:hash:%s\n", hash_config_name(state->hash));
-		fprintf(stdlog, "summary:prev_hash:%s\n", hash_config_name(state->prevhash));
-		fprintf(stdlog, "summary:best_hash:%s\n", hash_config_name(state->besthash));
-		fprintf(stdlog, "block_count:%u\n", blockmax);
-		fflush(stdlog);
-	}
+	fprintf(stdlog, "summary:file_count:%u\n", file_count);
+	fprintf(stdlog, "summary:fragmented_file_count:%u\n", file_fragmented);
+	fprintf(stdlog, "summary:excess_fragment_count:%u\n", extra_fragment);
+	fprintf(stdlog, "summary:file_size:%"PRIu64"\n", file_size);
+	fprintf(stdlog, "summary:parity_size:%"PRIu64"\n", blockmax * (uint64_t)state->block_size);
+	fprintf(stdlog, "summary:hash:%s\n", hash_config_name(state->hash));
+	fprintf(stdlog, "summary:prev_hash:%s\n", hash_config_name(state->prevhash));
+	fprintf(stdlog, "summary:best_hash:%s\n", hash_config_name(state->besthash));
+	fprintf(stdlog, "summary:block_count:%u\n", blockmax);
+	fflush(stdlog);
 
 	/* copy the info a temp vector, and count bad/rehash/unsynched blocks */
 	infomap = malloc_nofail(blockmax * sizeof(snapraid_info));
@@ -180,7 +178,7 @@ int state_status(struct snapraid_state* state)
 	fprintf(stdlog, "summary:has_unsynched:%u\n", unsynched_blocks);
 	fprintf(stdlog, "summary:has_rehash:%u\n", rehash);
 	fprintf(stdlog, "summary:has_bad:%u\n", bad);
-	fprintf(stdlog, "time_count:%u\n", count);
+	fprintf(stdlog, "summary:time_count:%u\n", count);
 	fflush(stdlog);
 
 	if (!count) {
