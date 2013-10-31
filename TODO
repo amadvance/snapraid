@@ -11,6 +11,18 @@ correctly.
 We can assume a file moved to another disk if it has the same name, size,
 and timestamp. Directory and inode can be different.
 
+* Handle new files with a two steps approach to reduce possible
+silent errors.
+We can first hash them, proceding one disk at time, and then
+start computing the parity checking the precomputed hash.
+This imply a double read, likely doubling the sync time,
+but ensure that the hash are computed with the system not busy,
+avoiding to trigger silent errors depending on the usage level.
+This will also improve the cases of a crash during sync, because
+we already have all the hashes when sync starts.
+We need to extend the NEW blocks with an hash, likely using
+the dummy 0 hash as marker for no hash.
+
 - Minor
 
 * In the content file save the timestap of the parity files.
