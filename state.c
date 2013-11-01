@@ -879,6 +879,11 @@ static void state_content_check(struct snapraid_state* state, const char* path)
  * Checks if a block position is used by at least one disk
  * and has a hash value.
  * Note that we include DELETED blocks, but only if they have a not NULL hash.
+ *
+ * This is needed to know if for such block we have to keep the "rehash" info
+ * or if we can drop it.
+ * Note that even if the block is not used by any file, the presence of a
+ * DELETE block with hash, will maintain the info.
  */
 static int position_has_any_hash(struct snapraid_state* state, block_off_t pos)
 {
@@ -2393,10 +2398,14 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 							exit(EXIT_FAILURE);
 						}
 					} else {
-						if (info) {
-							decoding_error(path, f);
-							fprintf(stderr, "Internal inconsistency for unexpected info!\n");
-							exit(EXIT_FAILURE);
+						/* if we are clearing hashes, it's possible that */
+						/* we have info even if no hash is present */
+						if (!state->clear_undeterminate_hash) {
+							if (info) {
+								decoding_error(path, f);
+								fprintf(stderr, "Internal inconsistency for unexpected info!\n");
+								exit(EXIT_FAILURE);
+							}
 						}
 					}
 
