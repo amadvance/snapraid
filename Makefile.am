@@ -134,8 +134,10 @@ if HAVE_SYMLINK
 endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
-	echo --- Create some files, sync and check in RAID5/6/TP
+	echo --- Create some files, sync and check
 	$(TESTENV) ./mktest$(EXEEXT) generate 1 6 $(CHECKCOUNT) $(CHECKSIZE)
+	echo DUP > test/disk1/DUP1
+	echo DUP > test/disk1/DUP2
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) diff > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) diff -G > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-order-physical sync
@@ -147,10 +149,18 @@ if HAVE_SYMLINK
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAID5) pool
 endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAID5) check
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAID6) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
-	echo --- Create some more files, hardlinks and empty directories, sync RAID5 and check
+	echo --- Delete some files and sync
+	rm test/disk4/9*
+	rm test/disk5/9*
+	rm test/disk6/9*
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
+	echo --- Create some more files, hardlinks and empty directories, delete others, sync RAID5 and check
+	rm test/disk4/8*
+	rm test/disk5/8*
+	rm test/disk6/8*
 	$(TESTENV) ./mktest$(EXEEXT) generate 2 6 $(CHECKCOUNT) $(CHECKSIZE)
 	mkdir test/disk1/empty1
 	mkdir test/disk2/empty2
@@ -428,21 +438,31 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(RAID5) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAID5) -m fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
-	echo --- Delete some dirs in a disk, fix with -m and check with RAID5
-	rm -r test/disk2/_a
-	rm -r test/disk2/_b
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(RAID5) check -l test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAID5) -m fix -l test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
-	echo --- Delete some dirs in two disks, fix and check with RAID6 using the -d option for each disk
+	echo --- Delete some dirs in six disk, fix with -m and check
+	rm -r test/disk1/_a
+	rm -r test/disk1/_b
 	rm -r test/disk2/_a
 	rm -r test/disk2/_b
 	rm -r test/disk3/_a
 	rm -r test/disk3/_b
+	rm -r test/disk4/_a
+	rm -r test/disk4/_b
+	rm -r test/disk5/_a
+	rm -r test/disk5/_b
+	rm -r test/disk6/_a
+	rm -r test/disk6/_b
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(RAIDPP) fix -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(CONF) check -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -m fix -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
+	echo --- Delete some dirs in two disks, fix and check with RAID6 using the -d option for each disk
+	rm -r test/disk2/_a
+	rm -r test/disk2/_b
+	rm -r test/disk5/_a
+	rm -r test/disk5/_b
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(RAID5) fix -l test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(RAID6) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAID6) -d disk2 fix -l test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAID6) -d disk3 fix -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAID6) -d disk5 fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Delete the parity, fix and check with RAID5
 	rm test/parity
@@ -501,7 +521,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(RAID6) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RAID6) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
-	echo --- Another time with different values
+	echo --- Corrupt some files, fix and check with RAID6
 	$(TESTENV) ./mktest$(EXEEXT) damage 5 2 50 test/disk2/_a/_a/*
 	$(TESTENV) ./mktest$(EXEEXT) damage 5 2 50 test/disk3/_a/_a/*
 	$(TESTENV) ./mktest$(EXEEXT) append 5 500 test/disk2/_a/_a/*
