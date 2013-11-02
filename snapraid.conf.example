@@ -1,22 +1,22 @@
 # Example configuration for snapraid
 
-# Defines the file to use as Parity storage
+# Defines the file to use as parity storage
 # It must NOT be in a data disk
 # Format: "parity FILE_PATH"
-parity /mnt/diskpar/parity
+parity /mnt/diskp/parity
 
-# Defines the files to use as additional Parity storage.
-# If specified, they enable the multiple failures protection with RAID6
-# (Double), RAIDTP (Triple), RAIDQP (Quad), RAIDPP (Penta) and RAIDHP (Hexa).
-# To enable, uncomment one parity file for each extra level of extra
+# Defines the files to use as additional parity storage.
+# If specified, they enable the multiple failures protection
+# from two to six level of parity.
+# To enable, uncomment one parity file for each level of extra
 # protection required. Start from q-parity, and follow in order.
 # It must NOT be in a data disk
 # Format: "X-parity FILE_PATH"
-#q-parity /mnt/diskqar/q-parity
-#r-parity /mnt/diskqar/r-parity
-#s-parity /mnt/diskqar/s-parity
-#t-parity /mnt/diskqar/t-parity
-#u-parity /mnt/diskqar/u-parity
+#q-parity /mnt/diskq/q-parity
+#r-parity /mnt/diskr/r-parity
+#s-parity /mnt/disks/s-parity
+#t-parity /mnt/diskt/t-parity
+#u-parity /mnt/disku/u-parity
 
 # Defines the files to use as content list
 # You can use multiple specification to store more copies

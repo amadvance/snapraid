@@ -1,14 +1,14 @@
 # Example configuration for snapraid for Windows
 
-# Defines the file to use as Parity storage
+# Defines the file to use as parity storage
 # It must NOT be in a data disk
 # Format: "parity FILE_PATH"
 parity E:\parity.par
 
-# Defines the files to use as additional Parity storage.
-# If specified, they enable the multiple failures protection with RAID6
-# (Double), RAIDTP (Triple), RAIDQP (Quad), RAIDPP (Penta) and RAIDHP (Hexa).
-# To enable, uncomment one parity file for each extra level of extra
+# Defines the files to use as additional parity storage.
+# If specified, they enable the multiple failures protection
+# from two to six level of parity.
+# To enable, uncomment one parity file for each level of extra
 # protection required. Start from q-parity, and follow in order.
 # It must NOT be in a data disk
 # Format: "X-parity FILE_PATH"

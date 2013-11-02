@@ -149,7 +149,13 @@ void generate(int disk, int size)
 
 		count = size;
 		while (count) {
-			fputc(rnd(256), f);
+			/* We don't write zero bytes because we want to test */
+			/* the recovering of new files, after an aborted sync */
+			/* If the files contains full blocks at zero */
+			/* this is an impossible condition to recover */
+			/* because we cannot differentiate between an unused block */
+			/* and a file filled with 0 */
+			fputc(rndnotzero(256), f);
 			--count;
 		}
 

@@ -1574,7 +1574,6 @@ int lock_unlock(int f)
 	 * Removing it just introduces race course with other process
 	 * that could have already opened it.
 	 */
-
 	if (close(f) == -1) {
 		return -1;
 	}

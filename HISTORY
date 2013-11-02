@@ -3,10 +3,9 @@ SnapRAID HISTORY
 
 5.0 2013/11 (BETA)
 ==================
- * Added support for RAIDTP (Triple Parity), RAIDQP (Quad Parity),
-   RAIDPP (Penta Parity) and RAIDHP (Hexa Parity).
-   Take care that to get good performance for RAIDTP and beyond you
-   need a CPU with SSSE3 support.
+ * Added support for up to six level of parity. Take care that to get
+   good performance for triple parity and beyond you need a CPU with
+   SSSE3 support.
  * Faster RAID5 and RAID6 computation for ARM 64 bit CPUs.
  * In sync, if a silent error is found, directly mark the block as bad
    like in scrub, and continue with the sync process.

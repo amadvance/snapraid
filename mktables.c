@@ -60,7 +60,7 @@ unsigned char gfinv[256];
 #define DISK (257-PARITY)
 
 /**
- * Setup the Normalized Extended Cauchy matrix used to generate the parity.
+ * Setup the Cauchy matrix used to generate the parity.
  */
 void set_cauchy(unsigned char* matrix)
 {
@@ -108,7 +108,6 @@ void set_cauchy(unsigned char* matrix)
 	 */
 	y = 2;
 	for(j=0;j<PARITY-2;++j) {
-
 		inv_x = 1;
 		for(i=0;i<DISK;++i) {
 			unsigned char x = gfinv[inv_x];
@@ -120,7 +119,7 @@ void set_cauchy(unsigned char* matrix)
 	}
 
 	/*
-	 * Normalizes the matrix multipling each row for
+	 * Adjusts the matrix multipling each row for
 	 * the inverse of the first element in the row.
 	 *
 	 * This operation doesn't invalidate the property that all the square

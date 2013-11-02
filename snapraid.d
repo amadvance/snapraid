@@ -101,15 +101,15 @@ Getting Started
 	For example, suppose that you are interested only at one parity level
 	of protection, and that your disks are present in:
 
-		:/mnt/diskpar <- selected disk for parity
+		:/mnt/diskp <- selected disk for parity
 		:/mnt/disk1 <- first disk to backup
-		:/mnt/disk2  <- second disk to backup
+		:/mnt/disk2 <- second disk to backup
 		:/mnt/disk3 <- third disk to backup
 
 	you have to create the configuration file /etc/snapraid.conf with
 	the following options:
 
-		:parity /mnt/diskpar/parity
+		:parity /mnt/diskp/parity
 		:content /var/snapraid/content
 		:content /mnt/disk1/content
 		:content /mnt/disk2/content
@@ -120,7 +120,7 @@ Getting Started
 	If you are in Windows, you should use drive letters and backslashes
 	instead of slashes, and if you like, also file extensions.
 
-		:parity E:\par\parity.par
+		:parity E:\parity.par
 		:content C:\snapraid\content.lst
 		:content F:\array\content.lst
 		:content G:\array\content.lst
@@ -586,11 +586,11 @@ Configuration
 	For each parity file specified, one additional level of protection
 	is enabled:
 
-	* q-parity enables RAID6 Double Parity
-	* r-parity enables RAIDTP Triple Parity
-	* s-parity enables RAIDQP Quad Parity
-	* t-parity enables RAIDPP Penta Parity
-	* u-parity enables RAIDHP Hexa Parity
+	* q-parity enables RAID6 double parity
+	* r-parity enables triple parity
+	* s-parity enables quad parity
+	* t-parity enables penta (five) parity
+	* u-parity enables hexa (six) parity
 
 	Each parity level requires also all the files of the previous levels.
 
@@ -693,8 +693,8 @@ Configuration
   Examples
 	An example of a typical configuration for Unix is:
 
-		:parity /mnt/diskpar/parity
-		:content /mnt/diskpar/content
+		:parity /mnt/diskp/parity
+		:content /mnt/diskp/content
 		:content /var/snapraid/content
 		:disk d1 /mnt/disk1/
 		:disk d2 /mnt/disk2/
@@ -704,9 +704,9 @@ Configuration
 
 	An example of a typical configuration for Windows is:
 
-		:parity E:\par\parity
-		:content E:\par\content
-		:content C:\snapraid\content
+		:parity E:\parity.par
+		:content E:\content.lst
+		:content C:\snapraid\content.lst
 		:disk d1 G:\array\
 		:disk d2 H:\array\
 		:disk d3 I:\array\

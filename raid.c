@@ -16,18 +16,24 @@
  */
 
 /*
- * The RAID5 and RAID6 support were originally derived from the libraid6
- * library  by H. Peter Anvin released with license "GPL2 or any later
- * version", used in the Linux Kernel 2.6.38.
- * This support was later completely rewritten (many times), but the
- * H. Peter Anvin's Copyright may still apply.
+ * Copyright notes:
+ *
+ * The RAID5 and RAID6 support was originally derived from the
+ * H. Peter Anvin paper "The mathematics of RAID-6" [1] and the
+ * libraid6 library, also by H. Peter Anvin, released with license
+ * "GPLv2 or any later version" inside the Linux Kernel 2.6.38.
+ *
+ * This support was later completely rewritten (many times), but
+ * the H. Peter Anvin's Copyright may still apply.
  *
  * The RAIDTP (Triple Parity), RAIDQP (Quad parity), RAIDPP (Penta Parity)
- * and RAIDHP (Hexa parity) support is original work implemented from
- * scratch.
- *
- * For RAID5 and RAID6 it works like the Linux Kernel RAID and it's based
- * on the Anvin's paper "The mathematics of RAID-6" [1].
+ * and RAIDHP (Hexa parity) support, and the recovering based on matrix
+ * inversion is original work implemented from scratch.
+ */
+
+/*
+ * The RAID5 and RAID6 support works like the Linux Kernel RAID
+ * following the Anvin's paper "The mathematics of RAID-6" [1].
  *
  * We compute the parity in the Galois Field GF(2^8) with the primitive
  * polynomial x^8 + x^4 + x^3 + x^2 + 1 (285 decimal), starting from a set 
@@ -55,36 +61,26 @@
  * R = sum(4^i * Di)
  * S = sum(8^i * Di) with 0<=i<N
  *
- * we don't have a system of independent linear equations, and in some 
- * cases the equations are not solvable.
+ * we don't have a system of always solvable equations.
  *
- * This approach is expected to fail at some point, because the Vandermonde 
- * matrix used to compute the parity has no guarantee to have all
- * submatrices not singular [2, Chap 11, Problem 7] and this is a requirement
- * to have a MDS (Maximum Distance Separable) code [2, Chap 11, Theorem 8].
- * 
- * If it surprises that even using a Vandermonde matrix we don't have a 
- * MDS code, consider that the matrix A we use to compute the parity, is 
- * not the MDS generator matrix G, but only a submatrix of it.
- * The generator  matrix G is the concatenation of I and A, as G = [I | A],
- * where I is the identity matrix.
- * Setting the matrix G as Vandermonde matrix would have guaranteed to 
- * have a MDS code, but setting only A as a Vandermonde matrix doesn't 
- * give this guarantee.
+ * This approach was expected to fail at some point, because the Vandermonde
+ * matrix of coefficents used to compute the parity has no guarantee to have
+ * all submatrices not singular [2, Chap 11, Problem 7] and this is a
+ * requirement to have a MDS (Maximum Distance Separable) code [2, Chap 11,
+ * Theorem 8].
  *
  * Using the primitive polynomial 285, RAIDQP works for up to 21 data disks
  * with parity coefficients "1,2,4,8". Changing polynomial to one of
- * 391/451/463/487,
- * it works for up to 27 disks with the same parity coefficients.
+ * 391/451/463/487, it works for up to 27 disks with the same parity
+ * coefficients.
  * Using different parity coefficients, like "5,13,27,35", it's possible
  * to make it working for up to 33 disks. But no more.
- *
  * To support more disks it's possible to use GF(2^16) with primitive
  * polynomial 100087 or 122563 that supports up to Hexa (6) Parity
- * with parity coefficients 1,2,4,8,16,32 for up to 89 disks.
+ * with parity coefficients 1,2,4,8,16,32, but only for up to 89 disks.
  *
- * To overcome these limitations we instead use an Extended Cauchy Matrix
- * [3][4] to compute the parity.
+ * To overcome these limitations we instead use a Cauchy Matrix [3][4]
+ * to compute the parity.
  * Such matrix has the mathematical property to have all the square 
  * submatrices not singular, resulting in always solvable equations, for
  * any number of parities and for any number of disks.
@@ -97,16 +93,16 @@
  * using SSSE3 instructions [1][5]. Method already competitive with the
  * computation of RAIDTP parity using power coefficients.
  *
- * Another important property of the Extended Cauchy matrix is that we can 
- * setup the first two rows with power coeffients equal at the RAID5 and
- * RAID6 approach described in Anvin's paper [1], resulting in a compatible
- * extension, and requiring SSSE3 instructions only if RAIDTP is used.
+ * Another important property of the Cauchy matrix is that we can setup
+ * the first two rows with coeffients equal at the RAID5 and RAID6 approach
+ * described in Anvin's paper [1], resulting in a compatible extension,
+ * and requiring SSSE3 instructions only if RAIDTP is used.
  * 
- * We also "normalize" the matrix, multipling each row for a constant
- * factor to make the first column with all 1.
+ * We also adjust the matrix, multipling each row for a constant factor
+ * to make the first column with all 1, to optimize the computation
+ * for the first disk.
  *
- * This results in the "normalized" Extended Cauchy matrix A[row,col]
- * defined as:
+ * This results in the matrix A[row,col] defined as:
  * 
  * 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01...
  * 01 02 04 08 10 20 40 80 1d 3a 74 e8 cd 87 13 26 4c 98 2d 5a b4 75...
@@ -194,7 +190,7 @@
  * [1] Anvin, "The mathematics of RAID-6", 2004
  * [2] MacWilliams, Sloane, "The Theory of Error-Correcting Codes", 1977
  * [3] Blömer, "An XOR-Based Erasure-Resilient Coding Scheme", 1995
- * [4] Vinocha, Bhullar, Brar, "On Generator Cauchy Matrices of GDRS/GTRS Codes", 2012
+ * [4] Roth, "Introduction to Coding Theory", 2006
  * [5] Plank, "Screaming Fast Galois Field Arithmetic Using Intel SIMD Instructions", 2013
  */
 

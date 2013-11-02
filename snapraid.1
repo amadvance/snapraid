@@ -151,7 +151,7 @@ For example, suppose that you are interested only at one parity level
 of protection, and that your disks are present in:
 .PP
 .RS 4
-/mnt/diskpar <\(hy selected disk for parity
+/mnt/diskp <\(hy selected disk for parity
 .PD 0
 .PP
 .PD
@@ -159,7 +159,7 @@ of protection, and that your disks are present in:
 .PD 0
 .PP
 .PD
-/mnt/disk2  <\(hy second disk to backup
+/mnt/disk2 <\(hy second disk to backup
 .PD 0
 .PP
 .PD
@@ -173,7 +173,7 @@ you have to create the configuration file /etc/snapraid.conf with
 the following options:
 .PP
 .RS 4
-parity /mnt/diskpar/parity
+parity /mnt/diskp/parity
 .PD 0
 .PP
 .PD
@@ -207,7 +207,7 @@ If you are in Windows, you should use drive letters and backslashes
 instead of slashes, and if you like, also file extensions.
 .PP
 .RS 4
-parity E:\(rspar\(rsparity.par
+parity E:\(rsparity.par
 .PD 0
 .PP
 .PD
@@ -789,15 +789,15 @@ For each parity file specified, one additional level of protection
 is enabled:
 .PD 0
 .IP \(bu
-q\(hyparity enables RAID6 Double Parity
+q\(hyparity enables RAID6 double parity
 .IP \(bu
-r\(hyparity enables RAIDTP Triple Parity
+r\(hyparity enables triple parity
 .IP \(bu
-s\(hyparity enables RAIDQP Quad Parity
+s\(hyparity enables quad parity
 .IP \(bu
-t\(hyparity enables RAIDPP Penta Parity
+t\(hyparity enables penta (five) parity
 .IP \(bu
-u\(hyparity enables RAIDHP Hexa Parity
+u\(hyparity enables hexa (six) parity
 .PD
 .PP
 Each parity level requires also all the files of the previous levels.
@@ -897,11 +897,11 @@ The directory must already exist.
 An example of a typical configuration for Unix is:
 .PP
 .RS 4
-parity /mnt/diskpar/parity
+parity /mnt/diskp/parity
 .PD 0
 .PP
 .PD
-content /mnt/diskpar/content
+content /mnt/diskp/content
 .PD 0
 .PP
 .PD
@@ -934,15 +934,15 @@ exclude /tmp/
 An example of a typical configuration for Windows is:
 .PP
 .RS 4
-parity E:\(rspar\(rsparity
+parity E:\(rsparity.par
 .PD 0
 .PP
 .PD
-content E:\(rspar\(rscontent
+content E:\(rscontent.lst
 .PD 0
 .PP
 .PD
-content C:\(rssnapraid\(rscontent
+content C:\(rssnapraid\(rscontent.lst
 .PD 0
 .PP
 .PD
