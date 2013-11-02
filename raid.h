@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Andrea Mazzoleni
+ * Copyright (C) 2013 Andrea Mazzoleni
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -40,7 +40,7 @@ void raid_init(void);
 
 /**
  * Computes the parity.
- * \param level Number of parities level to compute.
+ * \param level Number of parities to compute.
  * \param vbuf Vector of pointers to the blocks for disks and parities.
  * It has (::data + ::level) elements. Each element points to a buffer of ::size bytes.
  * \param data Number of data disks.
@@ -53,14 +53,14 @@ void raid_gen(unsigned level, unsigned char** vbuf, unsigned data, unsigned size
  * Note that only the data blocks are recovered. The parity is destroyed.
  * \param level Number of failed disks.
  * \param d[] Vector of indexes of the data disks to recover. Starting from 0.
- * \param p[] Vector of indexes of the parity to use for the recovering. Starting from 0.
+ * \param c[] Vector of indexes of the checksum/parity to use for the recovering. Starting from 0.
  * \param vbuf Vector of pointers to the blocks for disks and parities.
- * It has (::data + ::level) elements. Each element points to a buffer of ::size bytes.
+ * It has (::data + max(::c[] + 1)) elements. Each element points to a buffer of ::size bytes.
  * \param data Number of data disks.
  * \param zero Buffer filled with 0 of ::size bytes. This buffer is not modified.
  * \param size Size of the blocks pointed by vbuf.
  */
-void raid_recov(unsigned level, const int* d, const int* p, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
+void raid_recov(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
 
 /**
  * Gets the name of the selected function to compute parity.
