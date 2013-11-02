@@ -28,11 +28,12 @@ Description
 
 	* All your data is hashed to ensure data integrity and to avoid
 		silent corruption.
-	* If more than two disks fail, you lose the data only on the
-		failed disks. All the data in the other disks is safe.
+	* If the failed disks are too many to allow a recovery,
+		you lose the data only on the failed disks.
+		All the data in the other disks is safe.
 	* If you accidentally delete some files in a disk, you can
 		recover them.
-	* You can start using SnapRAID with already filled disks.
+	* You can start with already filled disks.
 	* The disks can have different sizes.
 	* You can add disks at any time.
 	* It doesn't lock-in your data. You can stop using SnapRAID at any
@@ -68,7 +69,7 @@ Limitations
 		With RAID you get a speed boost with striping.
 	* It doesn't support real-time recovery.
 		With RAID you do not have to stop working when a disk fails.
-	* It's able to recover damages only from up to two disks.
+	* It's able to recover damages only from a limited number of disks.
 		With a Backup you are able to recover from a complete
 		failure of the whole disk array.
 	* Only file, timestamps, symlinks and hardlinks are saved.
@@ -508,15 +509,15 @@ Options
 		This allows to detect when your disks are mounted in the
 		wrong mount points.
 		It's anyway allowed to have a single UUID change with
-		single parity, and two with double parity, because it's
-		the normal case of replacing disks.
+		single parity, and more with multiple parity, because it's
+		the normal case of replacing disks after a recover.
 		This option can be used only with the "sync", "check" or
 		"fix" command.
 
 	-D, --force-device
 		Forces the insecure operation of fixing with disks on the same
 		physical device.
-		If SnapRAID detects that two disks have the same device ID,
+		If SnapRAID detects that some disks have the same device ID,
 		it stops proceeding, because it's not a supported configuration.
 		But it could happen that you want to temporarely restore a lost
 		disk in the free space left in an already used disk. and this
