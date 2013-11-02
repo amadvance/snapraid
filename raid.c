@@ -1874,295 +1874,45 @@ static inline const unsigned char* table(unsigned char v)
 /**
  * Computes the parity without the missing data blocks
  * and store it in the buffers of such data blocks.
+ *
+ * This is the parity expressed as Pa,Qa,Ra,Sa,Ta,Ua
+ * in the equations.
+ *
+ * Note that all the other parities not in the e[] vector
+ * are destroyed.
  */
-static void raid_delta_1data(const int* d, const int* e, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+static void raid_delta_gen(unsigned level, const int* d, const int* e, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
-	unsigned char* p;
-	unsigned char* pa;
+	unsigned char* p[6];
+	unsigned char* pa[6];
+	unsigned i;
 
-	/* parity buffer */
-	p = vbuf[data+e[0]];
+	assert(level > 0 && level <= 6);
 
-	/* missing data blcks */
-	pa = vbuf[d[0]];
+	for(i=0;i<level;++i) {
+		/* keep a copy of the parity buffer */
+		p[i] = vbuf[data+e[i]];
 
-	/* set at zero the missing data blocks */
-	vbuf[d[0]] = zero;
+		/* buffer for missing data blocks */
+		pa[i] = vbuf[d[i]];
+
+		/* set at zero the missing data blocks */
+		vbuf[d[i]] = zero;
+
+		/* compute the parity over the missing data blocks */
+		vbuf[data+e[i]] = pa[i];
+	}
 
 	/* compute only for the level we really need */
-	vbuf[data+e[0]] = pa;
+	raid_gen(e[level - 1] + 1, vbuf, data, size);
 
-	/* compute the parity */
-	raid_gen(e[0] + 1, vbuf, data, size);
+	for(i=0;i<level;++i) {
+		/* restore disk buffers as before */
+		vbuf[d[i]] = pa[i];
 
-	/* restore as before */
-	vbuf[d[0]] = pa;
-	vbuf[data+e[0]] = p;
-}
-
-/**
- * Computes the parity without the missing data blocks
- * and store it in the buffers of such data blocks.
- */
-static void raid_delta_2data(const int* d, const int* e, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
-{
-	unsigned char* p;
-	unsigned char* q;
-	unsigned char* pa;
-	unsigned char* qa;
-
-	/* parity buffer */
-	p = vbuf[data+e[0]];
-	q = vbuf[data+e[1]];
-
-	/* missing data blocks */
-	pa = vbuf[d[0]];
-	qa = vbuf[d[1]];
-
-	/* set at zero the missing data blocks */
-	vbuf[d[0]] = zero;
-	vbuf[d[1]] = zero;
-
-	/* compute the parity over the missing data blocks */
-	vbuf[data+e[0]] = pa;
-	vbuf[data+e[1]] = qa;
-
-	/* compute only for the level we really need */
-	raid_gen(e[1] + 1, vbuf, data, size);
-
-	/* restore as before */
-	vbuf[d[0]] = pa;
-	vbuf[d[1]] = qa;
-	vbuf[data+e[0]] = p;
-	vbuf[data+e[1]] = q;
-}
-
-/**
- * Computes the parity without the missing data blocks
- * and store it in the buffers of such data blocks.
- */
-static void raid_delta_3data(const int* d, const int* e, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
-{
-	unsigned char* p;
-	unsigned char* q;
-	unsigned char* r;
-	unsigned char* pa;
-	unsigned char* qa;
-	unsigned char* ra;
-
-	/* parity buffer */
-	p = vbuf[data+e[0]];
-	q = vbuf[data+e[1]];
-	r = vbuf[data+e[2]];
-
-	/* missing data blocks */
-	pa = vbuf[d[0]];
-	qa = vbuf[d[1]];
-	ra = vbuf[d[2]];
-
-	/* set at zero the missing data blocks */
-	vbuf[d[0]] = zero;
-	vbuf[d[1]] = zero;
-	vbuf[d[2]] = zero;
-
-	/* compute the parity over the missing data blocks */
-	vbuf[data+e[0]] = pa;
-	vbuf[data+e[1]] = qa;
-	vbuf[data+e[2]] = ra;
-
-	/* compute only for the level we really need */
-	raid_gen(e[2] + 1, vbuf, data, size);
-
-	/* restore as before */
-	vbuf[d[0]] = pa;
-	vbuf[d[1]] = qa;
-	vbuf[d[2]] = ra;
-	vbuf[data+e[0]] = p;
-	vbuf[data+e[1]] = q;
-	vbuf[data+e[2]] = r;
-}
-
-/**
- * Computes the parity without the missing data blocks
- * and store it in the buffers of such data blocks.
- */
-static void raid_delta_4data(const int* d, const int* e, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
-{
-	unsigned char* p;
-	unsigned char* q;
-	unsigned char* r;
-	unsigned char* s;
-	unsigned char* pa;
-	unsigned char* qa;
-	unsigned char* ra;
-	unsigned char* sa;
-
-	/* parity buffer */
-	p = vbuf[data+e[0]];
-	q = vbuf[data+e[1]];
-	r = vbuf[data+e[2]];
-	s = vbuf[data+e[3]];
-
-	/* missing data blocks */
-	pa = vbuf[d[0]];
-	qa = vbuf[d[1]];
-	ra = vbuf[d[2]];
-	sa = vbuf[d[3]];
-
-	/* set at zero the missing data blocks */
-	vbuf[d[0]] = zero;
-	vbuf[d[1]] = zero;
-	vbuf[d[2]] = zero;
-	vbuf[d[3]] = zero;
-
-	/* compute the parity over the missing data blocks */
-	vbuf[data+e[0]] = pa;
-	vbuf[data+e[1]] = qa;
-	vbuf[data+e[2]] = ra;
-	vbuf[data+e[3]] = sa;
-
-	/* compute only for the level we really need */
-	raid_gen(e[3] + 1, vbuf, data, size);
-
-	/* restore as before */
-	vbuf[d[0]] = pa;
-	vbuf[d[1]] = qa;
-	vbuf[d[2]] = ra;
-	vbuf[d[3]] = sa;
-	vbuf[data+e[0]] = p;
-	vbuf[data+e[1]] = q;
-	vbuf[data+e[2]] = r;
-	vbuf[data+e[3]] = s;
-}
-
-/**
- * Computes the parity without the missing data blocks
- * and store it in the buffers of such data blocks.
- */
-static void raid_delta_5data(const int* d, const int* e, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
-{
-	unsigned char* p;
-	unsigned char* q;
-	unsigned char* r;
-	unsigned char* s;
-	unsigned char* t;
-	unsigned char* pa;
-	unsigned char* qa;
-	unsigned char* ra;
-	unsigned char* sa;
-	unsigned char* ta;
-
-	/* parity buffer */
-	p = vbuf[data+e[0]];
-	q = vbuf[data+e[1]];
-	r = vbuf[data+e[2]];
-	s = vbuf[data+e[3]];
-	t = vbuf[data+e[4]];
-
-	/* missing data blocks */
-	pa = vbuf[d[0]];
-	qa = vbuf[d[1]];
-	ra = vbuf[d[2]];
-	sa = vbuf[d[3]];
-	ta = vbuf[d[4]];
-
-	/* set at zero the missing data blocks */
-	vbuf[d[0]] = zero;
-	vbuf[d[1]] = zero;
-	vbuf[d[2]] = zero;
-	vbuf[d[3]] = zero;
-	vbuf[d[4]] = zero;
-
-	/* compute the parity over the missing data blocks */
-	vbuf[data+e[0]] = pa;
-	vbuf[data+e[1]] = qa;
-	vbuf[data+e[2]] = ra;
-	vbuf[data+e[3]] = sa;
-	vbuf[data+e[4]] = ta;
-
-	/* compute only for the level we really need */
-	raid_gen(e[4] + 1, vbuf, data, size);
-
-	/* restore as before */
-	vbuf[d[0]] = pa;
-	vbuf[d[1]] = qa;
-	vbuf[d[2]] = ra;
-	vbuf[d[3]] = sa;
-	vbuf[d[4]] = ta;
-	vbuf[data+e[0]] = p;
-	vbuf[data+e[1]] = q;
-	vbuf[data+e[2]] = r;
-	vbuf[data+e[3]] = s;
-	vbuf[data+e[4]] = t;
-}
-
-/**
- * Computes the parity without the missing data blocks
- * and store it in the buffers of such data blocks.
- */
-static void raid_delta_6data(const int* d, const int* e, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
-{
-	unsigned char* p;
-	unsigned char* q;
-	unsigned char* r;
-	unsigned char* s;
-	unsigned char* t;
-	unsigned char* u;
-	unsigned char* pa;
-	unsigned char* qa;
-	unsigned char* ra;
-	unsigned char* sa;
-	unsigned char* ta;
-	unsigned char* ua;
-
-	/* parity buffer */
-	p = vbuf[data+e[0]];
-	q = vbuf[data+e[1]];
-	r = vbuf[data+e[2]];
-	s = vbuf[data+e[3]];
-	t = vbuf[data+e[4]];
-	u = vbuf[data+e[5]];
-
-	/* missing data blocks */
-	pa = vbuf[d[0]];
-	qa = vbuf[d[1]];
-	ra = vbuf[d[2]];
-	sa = vbuf[d[3]];
-	ta = vbuf[d[4]];
-	ua = vbuf[d[5]];
-
-	/* set at zero the missing data blocks */
-	vbuf[d[0]] = zero;
-	vbuf[d[1]] = zero;
-	vbuf[d[2]] = zero;
-	vbuf[d[3]] = zero;
-	vbuf[d[4]] = zero;
-	vbuf[d[5]] = zero;
-
-	/* compute the parity over the missing data blocks */
-	vbuf[data+e[0]] = pa;
-	vbuf[data+e[1]] = qa;
-	vbuf[data+e[2]] = ra;
-	vbuf[data+e[3]] = sa;
-	vbuf[data+e[4]] = ta;
-	vbuf[data+e[5]] = ua;
-
-	/* compute only for the level we really need */
-	raid_gen(e[5] + 1, vbuf, data, size);
-
-	/* restore as before */
-	vbuf[d[0]] = pa;
-	vbuf[d[1]] = qa;
-	vbuf[d[2]] = ra;
-	vbuf[d[3]] = sa;
-	vbuf[d[4]] = ta;
-	vbuf[d[5]] = ua;
-	vbuf[data+e[0]] = p;
-	vbuf[data+e[1]] = q;
-	vbuf[data+e[2]] = r;
-	vbuf[data+e[3]] = s;
-	vbuf[data+e[4]] = t;
-	vbuf[data+e[5]] = u;
+		/* restore parity buffers as before */
+		vbuf[data+e[i]] = p[i];
+	}
 }
 
 /****************************************************************************/
@@ -2240,7 +1990,7 @@ static void raid6_recov_2data(const int* d, const int* e, unsigned char** vbuf, 
 	T[1] = table( inv(pow2(d[0]) ^ pow2(d[1])) );
 
 	/* compute delta parity */
-	raid_delta_2data(d, e, vbuf, data, zero, size);
+	raid_delta_gen(2, d, e, vbuf, data, zero, size);
 
 	p = vbuf[data];
 	q = vbuf[data+1];
@@ -2361,7 +2111,7 @@ static void raid_recov_1data(const int* d, const int* e, unsigned char** vbuf, u
 	T[0] = table( inv(A(e[0],d[0])) );
 
 	/* compute delta parity */
-	raid_delta_1data(d, e, vbuf, data, zero, size);
+	raid_delta_gen(1, d, e, vbuf, data, zero, size);
 
 	p = vbuf[data+e[0]];
 	pa = vbuf[d[0]];
@@ -2424,7 +2174,7 @@ static void raid_recov_2data(const int* d, const int* e, unsigned char** vbuf, u
 	}
 
 	/* compute delta parity */
-	raid_delta_2data(d, e, vbuf, data, zero, size);
+	raid_delta_gen(2, d, e, vbuf, data, zero, size);
 
 	p = vbuf[data+e[0]];
 	q = vbuf[data+e[1]];
@@ -2489,7 +2239,7 @@ static void raid_recov_3data(const int* d, const int* e, unsigned char** vbuf, u
 	}
 
 	/* compute delta parity */
-	raid_delta_3data(d, e, vbuf, data, zero, size);
+	raid_delta_gen(3, d, e, vbuf, data, zero, size);
 
 	p = vbuf[data+e[0]];
 	q = vbuf[data+e[1]];
@@ -2562,7 +2312,7 @@ static void raid_recov_4data(const int* d, const int* e, unsigned char** vbuf, u
 	}
 
 	/* compute delta parity */
-	raid_delta_4data(d, e, vbuf, data, zero, size);
+	raid_delta_gen(4, d, e, vbuf, data, zero, size);
 
 	p = vbuf[data+e[0]];
 	q = vbuf[data+e[1]];
@@ -2643,7 +2393,7 @@ static void raid_recov_5data(const int* d, const int* e, unsigned char** vbuf, u
 	}
 
 	/* compute delta parity */
-	raid_delta_5data(d, e, vbuf, data, zero, size);
+	raid_delta_gen(5, d, e, vbuf, data, zero, size);
 
 	p = vbuf[data+e[0]];
 	q = vbuf[data+e[1]];
@@ -2732,7 +2482,7 @@ static void raid_recov_6data(const int* d, const int* e, unsigned char** vbuf, u
 	}
 
 	/* compute delta parity */
-	raid_delta_6data(d, e, vbuf, data, zero, size);
+	raid_delta_gen(6, d, e, vbuf, data, zero, size);
 
 	p = vbuf[data+e[0]];
 	q = vbuf[data+e[1]];
