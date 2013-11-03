@@ -8797,7 +8797,7 @@ const unsigned char __attribute__((aligned(256))) gfinv[256] =
 };
 
 /**
- * Normalized Extended Cauchy matrix used to generate parity.
+ * Cauchy matrix used to generate parity.
  * This matrix is valid for up to 6 parity with 251 data disks.
  *
  * 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 
@@ -8807,7 +8807,7 @@ const unsigned char __attribute__((aligned(256))) gfinv[256] =
  * 01 97 7f 9c 7c 18 bd a2 58 1a da 74 70 a3 e5 47 29 07 f5 80 23 e9 fa 46 54 a0 99 95 53 9b 0b c7 09 c0 78 89 92 e3 0d b0 2a 8c fb 17 3f 26 65 87 27 5c 66 61 79 4d 32 b3 8d 52 e2 82 3d f9 c5 02 bc 4c 73 48 62 af ba 41 d9 c4 2f b1 33 b8 15 7d cf 3a a9 5f 84 6d 34 1b 44 94 72 81 42 be cc 4b 0a 6f 5a 22 36 b5 3c 9d 13 7e 08 dd d6 5e 04 fc 5b ec ef f1 6e 1e 77 24 e6 c6 aa cb fd 51 67 06 6a 4a 88 db b2 c2 5d 43 40 f7 50 a8 f2 7a 71 a4 d2 bf 31 90 19 9a 8e f6 c3 a6 e7 60 12 ee 2d de 38 e8 b7 98 c1 28 f3 05 96 63 d1 b9 14 9f 1d 83 68 75 ed 16 03 ce e4 df e0 10 ae 69 55 91 2e 4e fe 21 1f 9e e1 d5 cd ca f0 8b 2b c9 8a 93 bb 57 20 86 1c a1 4f 3e 25 d4 6c a5 6b a7 37 ff 39 35 0c f8 ea 56 45 8f 2c 59 ab 85 eb 49 0f dc d8 76 b6 f4 0e 11 b4 d0 30 d3 3b ad d7 
  * 01 2b 3f cf 73 2c d6 ed cb 74 15 78 8a c1 17 c9 89 68 21 ab 76 3b 4b 5a 6e 0e b9 d3 b6 3e 36 86 bf a2 a7 30 14 eb c7 2d 96 67 20 b5 9a e0 a8 c6 80 04 8d fe 75 5e 23 ca 8f 48 99 0d df 8e b8 70 29 9c 44 69 3d a5 c2 90 d2 1c 9b 02 1d 98 93 ec 84 e8 64 4c 3a 8b 97 f3 e5 c0 7d 26 c8 08 a0 62 82 55 f7 33 f6 51 63 4d 77 da fd c3 38 6d ee 09 47 a3 05 de a6 f1 22 25 6a 0c 81 b2 6b 58 d5 b3 fc fb 28 7f 07 dc 7a 9e d0 37 b4 e1 1a 24 03 ae 94 ba 88 2f ea 2e 8c 5b bb 79 d1 11 ff a4 19 3c 2a 4e 52 e3 95 bd 31 5d 35 4a 41 c4 db 42 c5 0b 49 1b 7c e4 b0 9d 45 f0 a9 61 57 06 d4 40 91 56 13 fa 87 ac 27 54 dd 59 1f 71 39 43 6c f9 be 4f f4 1e 32 cd e9 7e 7b 66 5f ef e7 6f 0a 60 d7 b7 83 92 e2 af 72 f8 b1 50 10 ce 18 53 a1 cc ad 12 34 0f f5 aa 16 e6 f2 d8 85 9f bc 
  */
-const unsigned char  __attribute__((aligned(256))) gfmatrix[6][256] =
+const unsigned char  __attribute__((aligned(256))) gfgen[6][256] =
 {
 	{
 		0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
@@ -9017,12 +9017,12 @@ const unsigned char  __attribute__((aligned(256))) gfmatrix[6][256] =
 
 #if defined(__i386__) || defined(__x86_64__)
 /**
- * PSHUFB tables for the Extended Cauchy matrix.
+ * PSHUFB tables for the Cauchy matrix.
  *
  * Indexes are [DISK][PARITY - 2][LH].
  * Where DISK is from 0 to 250, PARITY from 2 to 5, LH from 0 to 1.
  */
-const unsigned char  __attribute__((aligned(256))) gfpshufb[251][4][2][16] =
+const unsigned char  __attribute__((aligned(256))) gfgenpshufb[251][4][2][16] =
 {
 	{
 		{

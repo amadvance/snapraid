@@ -234,7 +234,7 @@ int main(void)
 	set_cauchy(matrix);
 
 	printf("/**\n");
-	printf(" * Normalized Extended Cauchy matrix used to generate parity.\n");
+	printf(" * Cauchy matrix used to generate parity.\n");
 	printf(" * This matrix is valid for up to %u parity with %u data disks.\n", PARITY, DISK);
 	printf(" *\n");
 	for(p=0;p<PARITY;++p) {
@@ -245,7 +245,7 @@ int main(void)
 		printf("\n");
 	}
 	printf(" */\n");
-	printf("const unsigned char  __attribute__((aligned(256))) gfmatrix[%u][256] =\n", PARITY);
+	printf("const unsigned char  __attribute__((aligned(256))) gfgen[%u][256] =\n", PARITY);
 	printf("{\n");
 	for(p=0;p<PARITY;++p) {
 		printf("\t{\n");
@@ -264,12 +264,12 @@ int main(void)
 
 	printf("#if defined(__i386__) || defined(__x86_64__)\n");
 	printf("/**\n");
-	printf(" * PSHUFB tables for the Extended Cauchy matrix.\n");
+	printf(" * PSHUFB tables for the Cauchy matrix.\n");
 	printf(" *\n");
 	printf(" * Indexes are [DISK][PARITY - 2][LH].\n");
 	printf(" * Where DISK is from 0 to %u, PARITY from 2 to %u, LH from 0 to 1.\n", DISK - 1, PARITY - 1);
 	printf(" */\n");
-	printf("const unsigned char  __attribute__((aligned(256))) gfpshufb[%u][%u][2][16] =\n", DISK, np(PARITY - 2));
+	printf("const unsigned char  __attribute__((aligned(256))) gfgenpshufb[%u][%u][2][16] =\n", DISK, np(PARITY - 2));
 	printf("{\n");
 	for(i=0;i<DISK;++i) {
 		printf("\t{\n");

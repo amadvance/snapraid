@@ -22,6 +22,11 @@
 /* raid */
 
 /**
+ * Max level of parity supported.
+ */
+#define RAID_PARITY_MAX 6
+
+/**
  * Maximum number of data disks.
  * Limit of the parity generator matrix used.
  */
