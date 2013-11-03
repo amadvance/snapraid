@@ -77,6 +77,9 @@ const char* raidTP_tag(void);
 const char* raidQP_tag(void);
 const char* raidPP_tag(void);
 const char* raidHP_tag(void);
+const char* raid_recov1_tag(void);
+const char* raid_recov2_tag(void);
+const char* raid_recovX_tag(void);
 
 /**
  * Specialized parity computation.
@@ -101,6 +104,12 @@ void raidPP_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size);
 void raidHP_int8(unsigned char** vbuf, unsigned data, unsigned size);
 void raidHP_ssse3(unsigned char** vbuf, unsigned data, unsigned size);
 void raidHP_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size);
+void raid_recov1_int8(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
+void raid_recov2_int8(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
+void raid_recovX_int8(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
+void raid_recov1_ssse3(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
+void raid_recov2_ssse3(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
+void raid_recovX_ssse3(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
 
 #endif
 

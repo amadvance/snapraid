@@ -507,82 +507,141 @@ void speed(void)
 	/* recover table */
 	printf("RAID functions used for recovering with 'fix':\n");
 	printf("%8s", "");
-	printf("%8s", "");
+	printf("%8s", "best");
 	printf("%8s", "int8");
+	printf("%8s", "ssse3");
 	printf("\n");
 
-	printf("%8s", "raid5");
-	printf("%8s", "");
+	printf("%8s", "recov1");
+	printf("%8s", raid_recov1_tag());
 	fflush(stdout);
 
 	SPEED_START {
 		for(j=0;j<diskmax;++j) {
-			raid_recov(1, d, e, buffer, diskmax, zero, block_size);
+			/* +1 to avoid RAID5 optimized case */
+			raid_recov1_int8(1, d, e + 1, buffer, diskmax, zero, block_size);
+		}
+	} SPEED_STOP
+
+	printf("%8"PRIu64, ds / dt);
+	fflush(stdout);
+
+	SPEED_START {
+		for(j=0;j<diskmax;++j) {
+			/* +1 to avoid RAID5 optimized case */
+			raid_recov1_ssse3(1, d, e + 1, buffer, diskmax, zero, block_size);
 		}
 	} SPEED_STOP
 
 	printf("%8"PRIu64, ds / dt);
 	printf("\n");
 
-	printf("%8s", "raid6");
-	printf("%8s", "");
+	printf("%8s", "recov2");
+	printf("%8s", raid_recov2_tag());
 	fflush(stdout);
 
 	SPEED_START {
 		for(j=0;j<diskmax;++j) {
-			raid_recov(2, d, e, buffer, diskmax, zero, block_size);
+			/* +1 to avoid RAID6 optimized case */
+			raid_recov2_int8(2, d, e + 1, buffer, diskmax, zero, block_size);
+		}
+	} SPEED_STOP
+
+	printf("%8"PRIu64, ds / dt);
+	fflush(stdout);
+
+	SPEED_START {
+		for(j=0;j<diskmax;++j) {
+			/* +1 to avoid RAID6 optimized case */
+			raid_recov2_ssse3(2, d, e + 1, buffer, diskmax, zero, block_size);
 		}
 	} SPEED_STOP
 
 	printf("%8"PRIu64, ds / dt);
 	printf("\n");
 
-	printf("%8s", "raidTP");
-	printf("%8s", "");
+	printf("%8s", "recov3");
+	printf("%8s", raid_recovX_tag());
 	fflush(stdout);
 
 	SPEED_START {
 		for(j=0;j<diskmax;++j) {
-			raid_recov(3, d, e, buffer, diskmax, zero, block_size);
+			raid_recovX_int8(3, d, e, buffer, diskmax, zero, block_size);
+		}
+	} SPEED_STOP
+
+	printf("%8"PRIu64, ds / dt);
+	fflush(stdout);
+
+	SPEED_START {
+		for(j=0;j<diskmax;++j) {
+			raid_recovX_ssse3(3, d, e, buffer, diskmax, zero, block_size);
 		}
 	} SPEED_STOP
 
 	printf("%8"PRIu64, ds / dt);
 	printf("\n");
 
-	printf("%8s", "raidQP");
-	printf("%8s", "");
+	printf("%8s", "recov4");
+	printf("%8s", raid_recovX_tag());
 	fflush(stdout);
 
 	SPEED_START {
 		for(j=0;j<diskmax;++j) {
-			raid_recov(4, d, e, buffer, diskmax, zero, block_size);
+			raid_recovX_int8(4, d, e, buffer, diskmax, zero, block_size);
+		}
+	} SPEED_STOP
+
+	printf("%8"PRIu64, ds / dt);
+	fflush(stdout);
+
+	SPEED_START {
+		for(j=0;j<diskmax;++j) {
+			raid_recovX_ssse3(4, d, e, buffer, diskmax, zero, block_size);
 		}
 	} SPEED_STOP
 
 	printf("%8"PRIu64, ds / dt);
 	printf("\n");
 
-	printf("%8s", "raidPP");
-	printf("%8s", "");
+	printf("%8s", "recov5");
+	printf("%8s", raid_recovX_tag());
 	fflush(stdout);
 
 	SPEED_START {
 		for(j=0;j<diskmax;++j) {
-			raid_recov(5, d, e, buffer, diskmax, zero, block_size);
+			raid_recovX_int8(5, d, e, buffer, diskmax, zero, block_size);
+		}
+	} SPEED_STOP
+
+	printf("%8"PRIu64, ds / dt);
+	fflush(stdout);
+
+	SPEED_START {
+		for(j=0;j<diskmax;++j) {
+			raid_recovX_ssse3(5, d, e, buffer, diskmax, zero, block_size);
 		}
 	} SPEED_STOP
 
 	printf("%8"PRIu64, ds / dt);
 	printf("\n");
 
-	printf("%8s", "raidHP");
-	printf("%8s", "");
+	printf("%8s", "recov6");
+	printf("%8s", raid_recovX_tag());
 	fflush(stdout);
 
 	SPEED_START {
 		for(j=0;j<diskmax;++j) {
-			raid_recov(6, d, e, buffer, diskmax, zero, block_size);
+			raid_recovX_int8(6, d, e, buffer, diskmax, zero, block_size);
+		}
+	} SPEED_STOP
+
+	printf("%8"PRIu64, ds / dt);
+	fflush(stdout);
+
+	SPEED_START {
+		for(j=0;j<diskmax;++j) {
+			raid_recovX_ssse3(6, d, e, buffer, diskmax, zero, block_size);
 		}
 	} SPEED_STOP
 
@@ -590,9 +649,7 @@ void speed(void)
 	printf("\n");
 	printf("\n");
 
-	printf("If the 'best' expectations are wrong, please report it in the SnapRAID forum\n");
-
-	printf("\n");
+	printf("If the 'best' expectations are wrong, please report it in the SnapRAID forum\n\n");
 
 	free(buffer_alloc);
 	free(buffer);

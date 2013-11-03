@@ -67,7 +67,7 @@ static void combotest(void)
 	/* all parities */
 	for(r=1;r<=LEV_MAX;++r) {
 		/* count combination (r of LEV_MAX) parities */
-		count = 0;		
+		count = 0;
 		combination_first(r, LEV_MAX, p);
 		do {
 			++count;
@@ -97,6 +97,8 @@ static void recovtest(unsigned diskmax, unsigned block_size)
 	unsigned i;
 	unsigned j;
 	unsigned r;
+	void (*map[LEV_MAX][4])(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
+	unsigned mac[LEV_MAX];
 
 	buffermax = diskmax + LEV_MAX * 2 + 2;
 
@@ -121,6 +123,33 @@ static void recovtest(unsigned diskmax, unsigned block_size)
 			data[i][j] = rand();
 	}
 
+	/* setup recov functions */
+	for(i=0;i<LEV_MAX;++i) {
+		mac[i] = 0;
+		if (i == 0) {
+			map[i][mac[i]++] = raid_recov1_int8;
+#if defined(__i386__) || defined(__x86_64__)
+			if (cpu_has_ssse3()) {
+				map[i][mac[i]++] = raid_recov1_ssse3;
+			}
+#endif
+		} else if (i == 1) {
+			map[i][mac[i]++] = raid_recov2_int8;
+#if defined(__i386__) || defined(__x86_64__)
+			if (cpu_has_ssse3()) {
+				map[i][mac[i]++] = raid_recov2_ssse3;
+			}
+#endif
+		} else {
+			map[i][mac[i]++] = raid_recovX_int8;
+#if defined(__i386__) || defined(__x86_64__)
+			if (cpu_has_ssse3()) {
+				map[i][mac[i]++] = raid_recovX_ssse3;
+			}
+#endif
+		}
+	}
+
 	/* compute the parity */
 	raid_gen(LEV_MAX, buffer, diskmax, block_size);
 
@@ -130,40 +159,41 @@ static void recovtest(unsigned diskmax, unsigned block_size)
 
 	/* all parity levels */
 	for(r=1;r<=LEV_MAX;++r) {
-
 		/* all combinations (r of diskmax) disks */
 		combination_first(r, diskmax, d);
 		do {
-
 			/* all combinations (r of LEV_MAX) parities */
 			combination_first(r, LEV_MAX, p);
 			do {
-				/* set */
-				for(i=0;i<r;++i) {
-					/* remove the missing data */
-					data_save[i] = data[d[i]];
-					data[d[i]] = test[i];
-					/* set the parity to use */
-					parity[p[i]] = parity_save[p[i]];
-				}
-
-				/* recover */
-				raid_recov(r, d, p, buffer, diskmax, zero, block_size);
-
-				/* check */
-				for(i=0;i<r;++i) {
-					if (memcmp(test[i], data_save[i], block_size) != 0) {
-						fprintf(stderr, "Failed RECOV test\n");
-						exit(EXIT_FAILURE);
+				/* for each recover function */
+				for(j=0;j<mac[r-1];++j) {
+					/* set */
+					for(i=0;i<r;++i) {
+						/* remove the missing data */
+						data_save[i] = data[d[i]];
+						data[d[i]] = test[i];
+						/* set the parity to use */
+						parity[p[i]] = parity_save[p[i]];
 					}
-				}
 
-				/* restore */
-				for(i=0;i<r;++i) {
-					/* restore the data */
-					data[d[i]] = data_save[i];
-					/* restore the parity */
-					parity[p[i]] = waste;
+					/* recover */
+					map[r-1][0](r, d, p, buffer, diskmax, zero, block_size);
+
+					/* check */
+					for(i=0;i<r;++i) {
+						if (memcmp(test[i], data_save[i], block_size) != 0) {
+							fprintf(stderr, "Failed RECOV test\n");
+							exit(EXIT_FAILURE);
+						}
+					}
+
+					/* restore */
+					for(i=0;i<r;++i) {
+						/* restore the data */
+						data[d[i]] = data_save[i];
+						/* restore the parity */
+						parity[p[i]] = waste;
+					}
 				}
 			} while (combination_next(r, LEV_MAX, p));
 		} while (combination_next(r, diskmax, d));
@@ -369,5 +399,5 @@ void selftest()
 	crc32ctest();
 	combotest();
 	gentest(32, 256);
-	recovtest(16, 256);
+	recovtest(12, 256);
 }

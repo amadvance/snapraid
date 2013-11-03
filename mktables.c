@@ -294,6 +294,34 @@ int main(void)
 	printf("};\n");
 	printf("#endif\n\n");
 
+	printf("#if defined(__i386__) || defined(__x86_64__)\n");
+	printf("/**\n");
+	printf(" * PSHUFB tables for generic multiplication.\n");
+	printf(" *\n");
+	printf(" * Indexes are [MULTIPLER][LH].\n");
+	printf(" * Where MULTIPLER is from 0 to 255, LH from 0 to 1.\n");
+	printf(" */\n");
+	printf("const unsigned char  __attribute__((aligned(256))) gfmulpshufb[256][2][16] =\n");
+	printf("{\n");
+	for(i=0;i<256;++i) {
+		printf("\t{\n");
+		for(j=0;j<2;++j) {
+			printf("\t\t{ ");
+			for(k=0;k<16;++k) {
+				v = gfmul(i, k);
+				if (j == 1)
+					v = gfmul(v, 16);
+				printf("0x%02x", (unsigned)v);
+				if (k != 15)
+					printf(", ");
+			}
+			printf(" },\n");
+		}
+		printf("\t},\n");
+	}
+	printf("};\n");
+	printf("#endif\n\n");
+
 	return 0;
 }
 

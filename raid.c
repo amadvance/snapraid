@@ -1228,7 +1228,7 @@ void raidPP_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 		asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[l][i]));
 
 		asm volatile("movdqa %xmm4,%xmm0");
-		asm volatile("movdqa %%xmm4,%0" : "=m" (p0));
+		asm volatile("movdqa %%xmm4,%0" : "=m" (p0[0]));
 
 		asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
 		asm volatile("movdqa %xmm4,%xmm5");
@@ -1268,7 +1268,7 @@ void raidPP_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 
 			asm volatile("pxor %xmm4,%xmm0");
 			asm volatile("pxor %xmm4,%xmm6");
-			asm volatile("movdqa %%xmm6,%0" : "=m" (p0));
+			asm volatile("movdqa %%xmm6,%0" : "=m" (p0[0]));
 
 			asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
 			asm volatile("movdqa %xmm4,%xmm5");
@@ -1542,8 +1542,8 @@ void raidHP_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 		/* last disk without the by two multiplication */
 		asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[l][i]));
 
-		asm volatile("movdqa %%xmm4,%0" : "=m" (p0));
-		asm volatile("movdqa %%xmm4,%0" : "=m" (q0));
+		asm volatile("movdqa %%xmm4,%0" : "=m" (p0[0]));
+		asm volatile("movdqa %%xmm4,%0" : "=m" (q0[0]));
 
 		asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
 		asm volatile("movdqa %xmm4,%xmm5");
@@ -1591,8 +1591,8 @@ void raidHP_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 
 			asm volatile("pxor %xmm4,%xmm5");
 			asm volatile("pxor %xmm4,%xmm6");
-			asm volatile("movdqa %%xmm5,%0" : "=m" (p0));
-			asm volatile("movdqa %%xmm6,%0" : "=m" (q0));
+			asm volatile("movdqa %%xmm5,%0" : "=m" (p0[0]));
+			asm volatile("movdqa %%xmm6,%0" : "=m" (q0[0]));
 
 			asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
 			asm volatile("movdqa %xmm4,%xmm5");
@@ -1933,9 +1933,9 @@ static inline void raid_delta_gen(unsigned level, const int* d, const int* c, un
  *
  * and solving we get:
  *
- * Dx = Pd (this one is easy :D)
+ * Dx = Pd
  */
-static void raid5_recov_data(const int* d, unsigned char** vbuf, unsigned data, unsigned size)
+static void raid5_recov1(const int* d, unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* pa;
@@ -1982,7 +1982,7 @@ static void raid5_recov_data(const int* d, unsigned char** vbuf, unsigned data, 
  *
  * That are always satisfied for any 0<=d[0]<d[1]<255.
  */
-static void raid6_recov_2data(const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+static void raid6_recov2(const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
 	unsigned i;
 	unsigned char* p;
@@ -2100,21 +2100,31 @@ static inline void invert(unsigned char* M, unsigned char* V, unsigned n)
  *
  * Dx = A[c[0],d[0]]^-1 * Pd
  */
-static void raid_recov_1data(const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+void raid_recov1_int8(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
 	unsigned i;
 	unsigned char* p;
 	unsigned char* pa;
-	const unsigned char* T[1]; /* P factor to compute Dx */
+	const unsigned char* T;
+	unsigned char G;
+	unsigned char V;
 
-	/* if it's RAID5 uses the dedicated and fasteT[ ][2]unction */
+	(void)level; /* unused */
+
+	/* if it's RAID5 uses the dedicated and fastest function */
 	if (c[0] == 0) {
-		raid5_recov_data(d, vbuf, data, size);
+		raid5_recov1(d, vbuf, data, size);
 		return;
 	}
 
+	/* setup the coefficients matrix */
+	G = A(c[0],d[0]);
+
+	/* invert it to solve the system of linear equations */
+	V = inv(G);
+
 	/* get multiplication tables */
-	T[0] = table( inv(A(c[0],d[0])) );
+	T = table(V);
 
 	/* compute delta parity */
 	raid_delta_gen(1, d, c, vbuf, data, zero, size);
@@ -2127,7 +2137,7 @@ static void raid_recov_1data(const int* d, const int* c, unsigned char** vbuf, u
 		unsigned char Pd = p[i] ^ pa[i];
 
 		/* reconstruct */
-		pa[i] = T[0][Pd];
+		pa[i] = T[Pd];
 	}
 }
 
@@ -2141,7 +2151,7 @@ static void raid_recov_1data(const int* d, const int* c, unsigned char** vbuf, u
  *
  * we solve inverting the coefficients matrix.
  */
-static void raid_recov_2data(const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+void raid_recov2_int8(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* pa;
@@ -2153,9 +2163,11 @@ static void raid_recov_2data(const int* d, const int* c, unsigned char** vbuf, u
 	unsigned char V[N*N];
 	unsigned i, j;
 
+	(void)level; /* unused */
+
 	/* if it's RAID6 uses the dedicated and fasteT[ ][2]unction */
 	if (c[0] == 0 && c[1] == 1) {
-		raid6_recov_2data(d, c, vbuf, data, zero, size);
+		raid6_recov2(d, c, vbuf, data, zero, size);
 		return;
 	}
 
@@ -2208,8 +2220,7 @@ static void raid_recov_2data(const int* d, const int* c, unsigned char** vbuf, u
  * PD[0] = Pd, PD[1] = Qd, PD[2] = Rd, ...
  * D[0] = Dx, D[1] = Dy, D[2] = Dz, ...
  */
-__attribute__((always_inline)) 
-static inline void raid_recov_data(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+void raid_recovX_int8(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
 	unsigned char* p[RAID_PARITY_MAX];
 	unsigned char* pa[RAID_PARITY_MAX];
@@ -2260,22 +2271,260 @@ static inline void raid_recov_data(unsigned level, const int* d, const int* c, u
 	}
 }
 
+#if defined(__i386__) || defined(__x86_64__)
+/*
+ * RAID recovering for one disk SSSE3 implementation
+ */
+void raid_recov1_ssse3(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* pa;
+	unsigned char G;
+	unsigned char V;
+	unsigned i;
+
+	(void)level; /* unused */
+
+	/* if it's RAID5 uses the dedicated and fastest function */
+	if (c[0] == 0) {
+		raid5_recov1(d, vbuf, data, size);
+		return;
+	}
+
+	/* setup the coefficients matrix */
+	G = A(c[0],d[0]);
+
+	/* invert it to solve the system of linear equations */
+	V = inv(G);
+
+	/* compute delta parity */
+	raid_delta_gen(1, d, c, vbuf, data, zero, size);
+
+	p = vbuf[data+c[0]];
+	pa = vbuf[d[0]];
+
+	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
+	asm volatile("movdqa %0,%%xmm4" : : "m" (gfmulpshufb[V][0][0]));
+	asm volatile("movdqa %0,%%xmm5" : : "m" (gfmulpshufb[V][1][0]));
+
+	for(i=0;i<size;i+=16) {
+		asm volatile("movdqa %0,%%xmm0" : : "m" (p[i]));
+		asm volatile("movdqa %0,%%xmm1" : : "m" (pa[i]));
+		asm volatile("movdqa %xmm4,%xmm2");
+		asm volatile("movdqa %xmm5,%xmm3");
+		asm volatile("pxor   %xmm0,%xmm1");
+		asm volatile("movdqa %xmm1,%xmm0");
+		asm volatile("psraw  $4,%xmm1");
+		asm volatile("pand   %xmm7,%xmm0");
+		asm volatile("pand   %xmm7,%xmm1");
+		asm volatile("pshufb %xmm0,%xmm2");
+		asm volatile("pshufb %xmm1,%xmm3");
+		asm volatile("pxor   %xmm3,%xmm2");
+		asm volatile("movdqa %%xmm2,%0" : "=m" (pa[i]));
+	}
+
+	asm volatile("sfence" : : : "memory");
+}
+#endif
+
+#if defined(__i386__) || defined(__x86_64__)
+/*
+ * RAID recovering for two disks SSSE3 implementation
+ */
+void raid_recov2_ssse3(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+{
+	const unsigned N = 2;
+	unsigned char* p[N];
+	unsigned char* pa[N];
+	unsigned char G[N*N];
+	unsigned char V[N*N];
+	unsigned i, j;
+
+	(void)level; /* unused */
+
+	/* setup the coefficients matrix */
+	for(i=0;i<N;++i) {
+		for(j=0;j<N;++j) {
+			G[i*N+j] = A(c[i],d[j]);
+		}
+	}
+
+	/* invert it to solve the system of linear equations */
+	invert(G, V, N);
+
+	/* compute delta parity */
+	raid_delta_gen(N, d, c, vbuf, data, zero, size);
+
+	for(i=0;i<N;++i) {
+		p[i] = vbuf[data+c[i]];
+		pa[i] = vbuf[d[i]];
+	}
+
+	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
+
+	for(i=0;i<size;i+=16) {
+		asm volatile("movdqa %0,%%xmm0" : : "m" (p[0][i]));
+		asm volatile("movdqa %0,%%xmm2" : : "m" (pa[0][i]));
+		asm volatile("movdqa %0,%%xmm1" : : "m" (p[1][i]));
+		asm volatile("movdqa %0,%%xmm3" : : "m" (pa[1][i]));
+		asm volatile("pxor   %xmm2,%xmm0");
+		asm volatile("pxor   %xmm3,%xmm1");
+
+		asm volatile("pxor %xmm6,%xmm6");
+
+		asm volatile("movdqa %0,%%xmm2" : : "m" (gfmulpshufb[V[0]][0][0]));
+		asm volatile("movdqa %0,%%xmm3" : : "m" (gfmulpshufb[V[0]][1][0]));
+		asm volatile("movdqa %xmm0,%xmm4");
+		asm volatile("movdqa %xmm0,%xmm5");
+		asm volatile("psraw  $4,%xmm5");
+		asm volatile("pand   %xmm7,%xmm4");
+		asm volatile("pand   %xmm7,%xmm5");
+		asm volatile("pshufb %xmm4,%xmm2");
+		asm volatile("pshufb %xmm5,%xmm3");
+		asm volatile("pxor   %xmm2,%xmm6");
+		asm volatile("pxor   %xmm3,%xmm6");
+
+		asm volatile("movdqa %0,%%xmm2" : : "m" (gfmulpshufb[V[1]][0][0]));
+		asm volatile("movdqa %0,%%xmm3" : : "m" (gfmulpshufb[V[1]][1][0]));
+		asm volatile("movdqa %xmm1,%xmm4");
+		asm volatile("movdqa %xmm1,%xmm5");
+		asm volatile("psraw  $4,%xmm5");
+		asm volatile("pand   %xmm7,%xmm4");
+		asm volatile("pand   %xmm7,%xmm5");
+		asm volatile("pshufb %xmm4,%xmm2");
+		asm volatile("pshufb %xmm5,%xmm3");
+		asm volatile("pxor   %xmm2,%xmm6");
+		asm volatile("pxor   %xmm3,%xmm6");
+
+		asm volatile("movdqa %%xmm6,%0" : "=m" (pa[0][i]));
+
+		asm volatile("pxor %xmm6,%xmm6");
+
+		asm volatile("movdqa %0,%%xmm2" : : "m" (gfmulpshufb[V[2]][0][0]));
+		asm volatile("movdqa %0,%%xmm3" : : "m" (gfmulpshufb[V[2]][1][0]));
+		asm volatile("movdqa %xmm0,%xmm4");
+		asm volatile("movdqa %xmm0,%xmm5");
+		asm volatile("psraw  $4,%xmm5");
+		asm volatile("pand   %xmm7,%xmm4");
+		asm volatile("pand   %xmm7,%xmm5");
+		asm volatile("pshufb %xmm4,%xmm2");
+		asm volatile("pshufb %xmm5,%xmm3");
+		asm volatile("pxor   %xmm2,%xmm6");
+		asm volatile("pxor   %xmm3,%xmm6");
+
+		asm volatile("movdqa %0,%%xmm2" : : "m" (gfmulpshufb[V[3]][0][0]));
+		asm volatile("movdqa %0,%%xmm3" : : "m" (gfmulpshufb[V[3]][1][0]));
+		asm volatile("movdqa %xmm1,%xmm4");
+		asm volatile("movdqa %xmm1,%xmm5");
+		asm volatile("psraw  $4,%xmm5");
+		asm volatile("pand   %xmm7,%xmm4");
+		asm volatile("pand   %xmm7,%xmm5");
+		asm volatile("pshufb %xmm4,%xmm2");
+		asm volatile("pshufb %xmm5,%xmm3");
+		asm volatile("pxor   %xmm2,%xmm6");
+		asm volatile("pxor   %xmm3,%xmm6");
+
+		asm volatile("movdqa %%xmm6,%0" : "=m" (pa[1][i]));
+	}
+
+	asm volatile("sfence" : : : "memory");
+}
+#endif
+
+#if defined(__i386__) || defined(__x86_64__)
+/*
+ * RAID recovering SSSE3 implementation
+ */
+void raid_recovX_ssse3(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+{
+	unsigned N = level;
+	unsigned char* p[RAID_PARITY_MAX];
+	unsigned char* pa[RAID_PARITY_MAX];
+	unsigned char G[RAID_PARITY_MAX*RAID_PARITY_MAX];
+	unsigned char V[RAID_PARITY_MAX*RAID_PARITY_MAX];
+	unsigned i, j, k;
+
+	/* setup the coefficients matrix */
+	for(i=0;i<N;++i) {
+		for(j=0;j<N;++j) {
+			G[i*N+j] = A(c[i],d[j]);
+		}
+	}
+
+	/* invert it to solve the system of linear equations */
+	invert(G, V, N);
+
+	/* compute delta parity */
+	raid_delta_gen(N, d, c, vbuf, data, zero, size);
+
+	for(i=0;i<N;++i) {
+		p[i] = vbuf[data+c[i]];
+		pa[i] = vbuf[d[i]];
+	}
+
+	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
+
+	for(i=0;i<size;i+=16) {
+		unsigned char PD[RAID_PARITY_MAX][16] __attribute__((aligned(16)));
+
+		/* delta */
+		for(j=0;j<N;++j) {
+			asm volatile("movdqa %0,%%xmm0" : : "m" (p[j][i]));
+			asm volatile("movdqa %0,%%xmm1" : : "m" (pa[j][i]));
+			asm volatile("pxor   %xmm1,%xmm0");
+			asm volatile("movdqa %%xmm0,%0" : "=m" (PD[j][0]));
+		}
+
+		/* reconstruct */
+		for(j=0;j<N;++j) {
+			asm volatile("pxor %xmm0,%xmm0");
+			asm volatile("pxor %xmm1,%xmm1");
+
+			for(k=0;k<N;++k) {
+				unsigned char m = V[j*N+k];
+
+				asm volatile("movdqa %0,%%xmm2" : : "m" (gfmulpshufb[m][0][0]));
+				asm volatile("movdqa %0,%%xmm3" : : "m" (gfmulpshufb[m][1][0]));
+				asm volatile("movdqa %0,%%xmm4" : : "m" (PD[k][0]));
+				asm volatile("movdqa %xmm4,%xmm5");
+				asm volatile("psraw  $4,%xmm5");
+				asm volatile("pand   %xmm7,%xmm4");
+				asm volatile("pand   %xmm7,%xmm5");
+				asm volatile("pshufb %xmm4,%xmm2");
+				asm volatile("pshufb %xmm5,%xmm3");
+				asm volatile("pxor   %xmm2,%xmm0");
+				asm volatile("pxor   %xmm3,%xmm1");
+				
+			}
+
+			asm volatile("pxor %xmm1,%xmm0");
+			asm volatile("movdqa %%xmm0,%0" : "=m" (pa[j][i]));
+		}
+	}
+
+	asm volatile("sfence" : : : "memory");
+}
+#endif
+
+/* internal forwarder */
+static void (*raid_recov1)(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
+static void (*raid_recov2)(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
+static void (*raid_recovX)(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
+
 void raid_recov(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
 	switch (level) {
 	case 1 :
-		raid_recov_1data(d, c, vbuf, data, zero, size);
+		raid_recov1(level, d, c, vbuf, data, zero, size);
 		break;
 	case 2 :
-		raid_recov_2data(d, c, vbuf, data, zero, size);
+		raid_recov2(level, d, c, vbuf, data, zero, size);
 		break;
 	case 3 :
 	case 4 :
 	case 5 :
 	case 6 :
-		/* note that this switch case ends with inlined */
-		/* functions called with constant "level" */
-		raid_recov_data(level, d, c, vbuf, data, zero, size);
+		raid_recovX(level, d, c, vbuf, data, zero, size);
 		break;
 	default:
 		fprintf(stderr, "Invalid raid recov level\n");
@@ -2301,6 +2550,10 @@ void raid_init(void)
 		raid6_gen = raid6_int64;
 	}
 
+	raid_recov1 = raid_recov1_int8;
+	raid_recov2 = raid_recov2_int8;
+	raid_recovX = raid_recovX_int8;
+
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_sse2()) {
 		raid5_gen = raid5_sse2;
@@ -2315,7 +2568,7 @@ void raid_init(void)
 #endif
 	}
 
-	if (cpu_has_ssse3() && !cpu_has_slowpshufb()) {
+	if (cpu_has_ssse3()) {
 #if defined(__x86_64__)
 		raidTP_gen = raidTP_ssse3ext;
 		raidQP_gen = raidQP_ssse3ext;
@@ -2327,6 +2580,9 @@ void raid_init(void)
 		raidPP_gen = raidPP_ssse3;
 		raidHP_gen = raidHP_ssse3;
 #endif
+		raid_recov1 = raid_recov1_ssse3;
+		raid_recov2 = raid_recov2_ssse3;
+		raid_recovX = raid_recovX_ssse3;
 	}
 #endif
 }
@@ -2343,6 +2599,9 @@ static struct raid_func {
 	{ "int64", raid5_int64 },
 	{ "int32", raid6_int32 },
 	{ "int64", raid6_int64 },
+	{ "int8", raid_recov1_int8 },
+	{ "int8", raid_recov2_int8 },
+	{ "int8", raid_recovX_int8 },
 
 #if defined(__i386__) || defined(__x86_64__)
 	{ "sse2", raid5_sse2 },
@@ -2351,6 +2610,9 @@ static struct raid_func {
 	{ "ssse3", raidQP_ssse3 },
 	{ "ssse3", raidPP_ssse3 },
 	{ "ssse3", raidHP_ssse3 },
+	{ "ssse3", raid_recov1_ssse3 },
+	{ "ssse3", raid_recov2_ssse3 },
+	{ "ssse3", raid_recovX_ssse3 },
 #endif
 
 #if defined(__x86_64__)
@@ -2402,5 +2664,20 @@ const char* raidPP_tag(void)
 const char* raidHP_tag(void)
 {
 	return raid_tag(raidHP_gen);
+}
+
+const char* raid_recov1_tag(void)
+{
+	return raid_tag(raid_recov1);
+}
+
+const char* raid_recov2_tag(void)
+{
+	return raid_tag(raid_recov2);
+}
+
+const char* raid_recovX_tag(void)
+{
+	return raid_tag(raid_recovX);
 }
 
