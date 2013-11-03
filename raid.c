@@ -321,7 +321,8 @@ void raid5_sse2(unsigned char** vbuf, unsigned data, unsigned size)
 /**
  * Multiply each byte of a uint32 by 2 in the GF(2^8).
  */
-__attribute__((always_inline)) static inline uint32_t x2_32(uint32_t v)
+__attribute__((always_inline))
+static inline uint32_t x2_32(uint32_t v)
 {
 	uint32_t mask = v & 0x80808080U;
 	mask = (mask << 1) - (mask >> 7);
@@ -333,7 +334,8 @@ __attribute__((always_inline)) static inline uint32_t x2_32(uint32_t v)
 /**
  * Multiply each byte of a uint64 by 2 in the GF(2^8).
  */
-__attribute__((always_inline)) static inline uint64_t x2_64(uint64_t v)
+__attribute__((always_inline))
+static inline uint64_t x2_64(uint64_t v)
 {
 	uint64_t mask = v & 0x8080808080808080ULL;
 	mask = (mask << 1) - (mask >> 7);
@@ -1831,6 +1833,7 @@ void raid_gen(unsigned level, unsigned char** vbuf, unsigned data, unsigned size
 /**
  * GF a*b.
  */
+__attribute__((always_inline))
 static inline unsigned char mul(unsigned char a, unsigned char b)
 {
 	return gfmul[a][b];
@@ -1840,6 +1843,7 @@ static inline unsigned char mul(unsigned char a, unsigned char b)
  * GF 1/a.
  * Not defined for a == 0.
  */
+__attribute__((always_inline)) 
 static inline unsigned char inv(unsigned char v)
 {
 	if (v == 0) {
@@ -1853,6 +1857,7 @@ static inline unsigned char inv(unsigned char v)
 /**
  * GF 2^a.
  */
+__attribute__((always_inline))
 static inline unsigned char pow2(int v)
 {
 	if (v < 0 || v > 254) {
@@ -1866,6 +1871,7 @@ static inline unsigned char pow2(int v)
 /**
  * Gets the multiplication table for a specified value.
  */
+__attribute__((always_inline)) 
 static inline const unsigned char* table(unsigned char v)
 {
 	return gfmul[v];
@@ -1881,7 +1887,7 @@ static inline const unsigned char* table(unsigned char v)
  * Note that all the other parities not in the c[] vector
  * are destroyed.
  */
-static void raid_delta_gen(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+static inline void raid_delta_gen(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
 	unsigned char* p[RAID_PARITY_MAX];
 	unsigned char* pa[RAID_PARITY_MAX];
@@ -2027,7 +2033,7 @@ static unsigned char A(unsigned p, unsigned d)
  * Inverts the square matrix M of size nxn into V.
  * We use Gauss elimination to invert.
  */
-static void invert(unsigned char* M, unsigned char* V, unsigned n)
+static inline void invert(unsigned char* M, unsigned char* V, unsigned n)
 {
 	unsigned i,j,k;
 
@@ -2084,7 +2090,7 @@ static void invert(unsigned char* M, unsigned char* V, unsigned n)
 }
 
 /**
- * Recover failure of one data block d[0] using parity c[0] for any RAID level.
+ * Recover failure of one data block at index d[0] using parity at index c[0] for any RAID level.
  *
  * Starting from the equation:
  *
@@ -2121,15 +2127,12 @@ static void raid_recov_1data(const int* d, const int* c, unsigned char** vbuf, u
 		unsigned char Pd = p[i] ^ pa[i];
 
 		/* reconstruct */
-		unsigned char Dx = T[0][Pd];
-
-		/* set */
-		pa[i] = Dx;
+		pa[i] = T[0][Pd];
 	}
 }
 
 /**
- * Recover failure of two data blocks d[0],d[1] using parity c[0],c[1] for any RAID level.
+ * Recover failure of two data blocks at indexes d[0],d[1] using parity at indexes c[0],c[1] for any RAID level.
  *
  * Starting from the equations:
  *
@@ -2187,340 +2190,73 @@ static void raid_recov_2data(const int* d, const int* c, unsigned char** vbuf, u
 		unsigned char Qd = q[i] ^ qa[i];
 
 		/* reconstruct */
-		unsigned char Dx = T[0][0][Pd] ^ T[0][1][Qd];
-		unsigned char Dy = T[1][0][Pd] ^ T[1][1][Qd];
-
-		/* set */
-		pa[i] = Dx;
-		qa[i] = Dy;
+		pa[i] = T[0][0][Pd] ^ T[0][1][Qd];
+		qa[i] = T[1][0][Pd] ^ T[1][1][Qd];
 	}
 }
 
 /**
- * Recover failure of three data blocks d[0],d[1],d[2] using parity c[0],c[1],c[2] for any RAID level.
+ * Recover failure of N data blocks at indexes d[N] using parity at indexes c[N] for any RAID level.
  *
- * Starting from the equations:
+ * Starting from the N equations, with 0<=i<N :
  *
- * Pd = A[c[0],d[0]] * Dx + A[c[0],d[1]] * Dy + A[c[0],d[2]] * Dz
- * Qd = A[c[1],d[0]] * Dx + A[c[1],d[1]] * Dy + A[c[1],d[2]] * Dz
- * Rd = A[c[2],d[0]] * Dx + A[c[2],d[1]] * Dy + A[c[2],d[2]] * Dz
+ * PD[i] = sum(A[c[i],d[j]] * D[i]) 0<=j<N
  *
  * we solve inverting the coefficients matrix.
+ *
+ * Note that referring at previous equations you have:
+ * PD[0] = Pd, PD[1] = Qd, PD[2] = Rd, ...
+ * D[0] = Dx, D[1] = Dy, D[2] = Dz, ...
  */
-static void raid_recov_3data(const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+__attribute__((always_inline)) 
+static inline void raid_recov_data(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
-	unsigned char* p;
-	unsigned char* pa;
-	unsigned char* q;
-	unsigned char* qa;
-	unsigned char* r;
-	unsigned char* ra;
-	const unsigned N = 3;
-	const unsigned char* T[N][N];
-	unsigned char G[N*N];
-	unsigned char V[N*N];
-	unsigned i, j;
+	unsigned char* p[RAID_PARITY_MAX];
+	unsigned char* pa[RAID_PARITY_MAX];
+	const unsigned char* T[RAID_PARITY_MAX][RAID_PARITY_MAX];
+	unsigned char G[RAID_PARITY_MAX*RAID_PARITY_MAX];
+	unsigned char V[RAID_PARITY_MAX*RAID_PARITY_MAX];
+	unsigned i, j, k;
 
 	/* setup the coefficients matrix */
-	for(i=0;i<N;++i) {
-		for(j=0;j<N;++j) {
-			G[i*N+j] = A(c[i],d[j]);
+	for(i=0;i<level;++i) {
+		for(j=0;j<level;++j) {
+			G[i*level+j] = A(c[i],d[j]);
 		}
 	}
 
 	/* invert it to solve the system of linear equations */
-	invert(G, V, N);
+	invert(G, V, level);
 
 	/* get multiplication tables */
-	for(i=0;i<N;++i) {
-		for(j=0;j<N;++j) {
-			T[i][j] = table( V[i*N+j] );
+	for(i=0;i<level;++i) {
+		for(j=0;j<level;++j) {
+			T[i][j] = table( V[i*level+j] );
 		}
 	}
 
 	/* compute delta parity */
-	raid_delta_gen(3, d, c, vbuf, data, zero, size);
+	raid_delta_gen(level, d, c, vbuf, data, zero, size);
 
-	p = vbuf[data+c[0]];
-	q = vbuf[data+c[1]];
-	r = vbuf[data+c[2]];
-	pa = vbuf[d[0]];
-	qa = vbuf[d[1]];
-	ra = vbuf[d[2]];
+	for(i=0;i<level;++i) {
+		p[i] = vbuf[data+c[i]];
+		pa[i] = vbuf[d[i]];
+	}
 
 	for(i=0;i<size;++i) {
+		unsigned char PD[RAID_PARITY_MAX];
+
 		/* delta */
-		unsigned char Pd = p[i] ^ pa[i];
-		unsigned char Qd = q[i] ^ qa[i];
-		unsigned char Rd = r[i] ^ ra[i];
+		for(j=0;j<level;++j)
+			PD[j] = p[j][i] ^ pa[j][i];
 
 		/* reconstruct */
-		unsigned char Dx = T[0][0][Pd] ^ T[0][1][Qd] ^ T[0][2][Rd];
-		unsigned char Dy = T[1][0][Pd] ^ T[1][1][Qd] ^ T[1][2][Rd];
-		unsigned char Dz = T[2][0][Pd] ^ T[2][1][Qd] ^ T[2][2][Rd];
-
-		/* set */
-		pa[i] = Dx;
-		qa[i] = Dy;
-		ra[i] = Dz;
-	}
-}
-
-/**
- * Recover failure of four data blocks d[0],d[1],d[2],d[3] using parity c[0],c[1],c[2],c[3] for any RAID level.
- *
- * Starting from the equations:
- *
- * Pd = A[c[0],d[0]] * Dx + A[c[0],d[1]] * Dy + A[c[0],d[2]] * Dz + A[c[0],d[3]] * Dh
- * Qd = A[c[1],d[0]] * Dx + A[c[1],d[1]] * Dy + A[c[1],d[2]] * Dz + A[c[1],d[3]] * Dh
- * Rd = A[c[2],d[0]] * Dx + A[c[2],d[1]] * Dy + A[c[2],d[2]] * Dz + A[c[2],d[3]] * Dh
- * Sd = A[c[3],d[0]] * Dx + A[c[3],d[1]] * Dy + A[c[3],d[2]] * Dz + A[c[3],d[3]] * Dh
- *
- * we solve inverting the coefficients matrix.
- */
-static void raid_recov_4data(const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
-{
-	unsigned char* p;
-	unsigned char* pa;
-	unsigned char* q;
-	unsigned char* qa;
-	unsigned char* r;
-	unsigned char* ra;
-	unsigned char* s;
-	unsigned char* sa;
-	const unsigned N = 4;
-	const unsigned char* T[N][N];
-	unsigned char G[N*N];
-	unsigned char V[N*N];
-	unsigned i, j;
-
-	/* setup the coefficients matrix */
-	for(i=0;i<N;++i) {
-		for(j=0;j<N;++j) {
-			G[i*N+j] = A(c[i],d[j]);
+		for(j=0;j<level;++j) {
+			unsigned char b = 0;
+			for(k=0;k<level;++k)
+				b ^= T[j][k][PD[k]];
+			pa[j][i] = b;
 		}
-	}
-
-	/* invert it to solve the system of linear equations */
-	invert(G, V, N);
-
-	/* get multiplication tables */
-	for(i=0;i<N;++i) {
-		for(j=0;j<N;++j) {
-			T[i][j] = table( V[i*N+j] );
-		}
-	}
-
-	/* compute delta parity */
-	raid_delta_gen(4, d, c, vbuf, data, zero, size);
-
-	p = vbuf[data+c[0]];
-	q = vbuf[data+c[1]];
-	r = vbuf[data+c[2]];
-	s = vbuf[data+c[3]];
-	pa = vbuf[d[0]];
-	qa = vbuf[d[1]];
-	ra = vbuf[d[2]];
-	sa = vbuf[d[3]];
-
-	for(i=0;i<size;++i) {
-		/* delta */
-		unsigned char Pd = p[i] ^ pa[i];
-		unsigned char Qd = q[i] ^ qa[i];
-		unsigned char Rd = r[i] ^ ra[i];
-		unsigned char Sd = s[i] ^ sa[i];
-
-		/* reconstruct */
-		unsigned char Dx = T[0][0][Pd] ^ T[0][1][Qd] ^ T[0][2][Rd] ^ T[0][3][Sd];
-		unsigned char Dy = T[1][0][Pd] ^ T[1][1][Qd] ^ T[1][2][Rd] ^ T[1][3][Sd];
-		unsigned char Dz = T[2][0][Pd] ^ T[2][1][Qd] ^ T[2][2][Rd] ^ T[2][3][Sd];
-		unsigned char Dh = T[3][0][Pd] ^ T[3][1][Qd] ^ T[3][2][Rd] ^ T[3][3][Sd];
-
-		/* set */
-		pa[i] = Dx;
-		qa[i] = Dy;
-		ra[i] = Dz;
-		sa[i] = Dh;
-	}
-}
-
-/**
- * Recover failure of five data blocks d[0],d[1],d[2],d[3],d[4] using parity c[0],c[1],c[2],c[3],c[4] for any RAID level.
- *
- * Starting from the equations:
- *
- * Pd = A[c[0],d[0]] * Dx + A[c[0],d[1]] * Dy + A[c[0],d[2]] * Dz + A[c[0],d[3]] * Dh + A[c[0],d[4]] * Dv
- * Qd = A[c[1],d[0]] * Dx + A[c[1],d[1]] * Dy + A[c[1],d[2]] * Dz + A[c[1],d[3]] * Dh + A[c[1],d[4]] * Dv
- * Rd = A[c[2],d[0]] * Dx + A[c[2],d[1]] * Dy + A[c[2],d[2]] * Dz + A[c[2],d[3]] * Dh + A[c[2],d[4]] * Dv
- * Sd = A[c[3],d[0]] * Dx + A[c[3],d[1]] * Dy + A[c[3],d[2]] * Dz + A[c[3],d[3]] * Dh + A[c[3],d[4]] * Dv
- * Td = A[c[4],d[0]] * Dx + A[c[4],d[1]] * Dy + A[c[4],d[2]] * Dz + A[c[4],d[3]] * Dh + A[c[4],d[4]] * Dv
- *
- * we solve inverting the coefficients matrix.
- */
-static void raid_recov_5data(const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
-{
-	unsigned char* p;
-	unsigned char* pa;
-	unsigned char* q;
-	unsigned char* qa;
-	unsigned char* r;
-	unsigned char* ra;
-	unsigned char* s;
-	unsigned char* sa;
-	unsigned char* t;
-	unsigned char* ta;
-	const unsigned N = 5;
-	const unsigned char* T[N][N];
-	unsigned char G[N*N];
-	unsigned char V[N*N];
-	unsigned i, j;
-
-	/* setup the coefficients matrix */
-	for(i=0;i<N;++i) {
-		for(j=0;j<N;++j) {
-			G[i*N+j] = A(c[i],d[j]);
-		}
-	}
-
-	/* invert it to solve the system of linear equations */
-	invert(G, V, N);
-
-	/* get multiplication tables */
-	for(i=0;i<N;++i) {
-		for(j=0;j<N;++j) {
-			T[i][j] = table( V[i*N+j] );
-		}
-	}
-
-	/* compute delta parity */
-	raid_delta_gen(5, d, c, vbuf, data, zero, size);
-
-	p = vbuf[data+c[0]];
-	q = vbuf[data+c[1]];
-	r = vbuf[data+c[2]];
-	s = vbuf[data+c[3]];
-	t = vbuf[data+c[4]];
-	pa = vbuf[d[0]];
-	qa = vbuf[d[1]];
-	ra = vbuf[d[2]];
-	sa = vbuf[d[3]];
-	ta = vbuf[d[4]];
-
-	for(i=0;i<size;++i) {
-		/* delta */
-		unsigned char Pd = p[i] ^ pa[i];
-		unsigned char Qd = q[i] ^ qa[i];
-		unsigned char Rd = r[i] ^ ra[i];
-		unsigned char Sd = s[i] ^ sa[i];
-		unsigned char Td = t[i] ^ ta[i];
-
-		/* reconstruct */
-		unsigned char Dx = T[0][0][Pd] ^ T[0][1][Qd] ^ T[0][2][Rd] ^ T[0][3][Sd] ^ T[0][4][Td];
-		unsigned char Dy = T[1][0][Pd] ^ T[1][1][Qd] ^ T[1][2][Rd] ^ T[1][3][Sd] ^ T[1][4][Td];
-		unsigned char Dz = T[2][0][Pd] ^ T[2][1][Qd] ^ T[2][2][Rd] ^ T[2][3][Sd] ^ T[2][4][Td];
-		unsigned char Dh = T[3][0][Pd] ^ T[3][1][Qd] ^ T[3][2][Rd] ^ T[3][3][Sd] ^ T[3][4][Td];
-		unsigned char Dv = T[4][0][Pd] ^ T[4][1][Qd] ^ T[4][2][Rd] ^ T[4][3][Sd] ^ T[4][4][Td];
-
-		/* set */
-		pa[i] = Dx;
-		qa[i] = Dy;
-		ra[i] = Dz;
-		sa[i] = Dh;
-		ta[i] = Dv;
-	}
-}
-
-/**
- * Recover failure of six data blocks d[0],d[1],d[2],d[3],d[4],d[5] using parity c[0],c[1],c[2],c[3],c[4],c[5] for any RAID level.
- *
- * Starting from the equations:
- *
- * Pd = A[c[0],d[0]] * Dx + A[c[0],d[1]] * Dy + A[c[0],d[2]] * Dz + A[c[0],d[3]] * Dh + A[c[0],d[4]] * Dv + A[c[0],d[5]] * Dw
- * Qd = A[c[1],d[0]] * Dx + A[c[1],d[1]] * Dy + A[c[1],d[2]] * Dz + A[c[1],d[3]] * Dh + A[c[1],d[4]] * Dv + A[c[1],d[5]] * Dw
- * Rd = A[c[2],d[0]] * Dx + A[c[2],d[1]] * Dy + A[c[2],d[2]] * Dz + A[c[2],d[3]] * Dh + A[c[2],d[4]] * Dv + A[c[2],d[5]] * Dw
- * Sd = A[c[3],d[0]] * Dx + A[c[3],d[1]] * Dy + A[c[3],d[2]] * Dz + A[c[3],d[3]] * Dh + A[c[3],d[4]] * Dv + A[c[3],d[5]] * Dw
- * Td = A[c[4],d[0]] * Dx + A[c[4],d[1]] * Dy + A[c[4],d[2]] * Dz + A[c[4],d[3]] * Dh + A[c[4],d[4]] * Dv + A[c[4],d[5]] * Dw
- * Ud = A[c[5],d[0]] * Dx + A[c[5],d[1]] * Dy + A[c[5],d[2]] * Dz + A[c[5],d[3]] * Dh + A[c[5],d[4]] * Dv + A[c[5],d[5]] * Dw
- *
- * we solve inverting the coefficients matrix.
- */
-static void raid_recov_6data(const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
-{
-	unsigned char* p;
-	unsigned char* pa;
-	unsigned char* q;
-	unsigned char* qa;
-	unsigned char* r;
-	unsigned char* ra;
-	unsigned char* s;
-	unsigned char* sa;
-	unsigned char* t;
-	unsigned char* ta;
-	unsigned char* u;
-	unsigned char* ua;
-	const unsigned N = 6;
-	const unsigned char* T[N][N];
-	unsigned char G[N*N];
-	unsigned char V[N*N];
-	unsigned i, j;
-
-	/* setup the coefficients matrix */
-	for(i=0;i<N;++i) {
-		for(j=0;j<N;++j) {
-			G[i*N+j] = A(c[i],d[j]);
-		}
-	}
-
-	/* invert it to solve the system of linear equations */
-	invert(G, V, N);
-
-	/* get multiplication tables */
-	for(i=0;i<N;++i) {
-		for(j=0;j<N;++j) {
-			T[i][j] = table( V[i*N+j] );
-		}
-	}
-
-	/* compute delta parity */
-	raid_delta_gen(6, d, c, vbuf, data, zero, size);
-
-	p = vbuf[data+c[0]];
-	q = vbuf[data+c[1]];
-	r = vbuf[data+c[2]];
-	s = vbuf[data+c[3]];
-	t = vbuf[data+c[4]];
-	u = vbuf[data+c[5]];
-	pa = vbuf[d[0]];
-	qa = vbuf[d[1]];
-	ra = vbuf[d[2]];
-	sa = vbuf[d[3]];
-	ta = vbuf[d[4]];
-	ua = vbuf[d[5]];
-
-	for(i=0;i<size;++i) {
-		/* delta */
-		unsigned char Pd = p[i] ^ pa[i];
-		unsigned char Qd = q[i] ^ qa[i];
-		unsigned char Rd = r[i] ^ ra[i];
-		unsigned char Sd = s[i] ^ sa[i];
-		unsigned char Td = t[i] ^ ta[i];
-		unsigned char Ud = u[i] ^ ua[i];
-
-		/* reconstruct */
-		unsigned char Dx = T[0][0][Pd] ^ T[0][1][Qd] ^ T[0][2][Rd] ^ T[0][3][Sd] ^ T[0][4][Td] ^ T[0][5][Ud];
-		unsigned char Dy = T[1][0][Pd] ^ T[1][1][Qd] ^ T[1][2][Rd] ^ T[1][3][Sd] ^ T[1][4][Td] ^ T[1][5][Ud];
-		unsigned char Dz = T[2][0][Pd] ^ T[2][1][Qd] ^ T[2][2][Rd] ^ T[2][3][Sd] ^ T[2][4][Td] ^ T[2][5][Ud];
-		unsigned char Dh = T[3][0][Pd] ^ T[3][1][Qd] ^ T[3][2][Rd] ^ T[3][3][Sd] ^ T[3][4][Td] ^ T[3][5][Ud];
-		unsigned char Dv = T[4][0][Pd] ^ T[4][1][Qd] ^ T[4][2][Rd] ^ T[4][3][Sd] ^ T[4][4][Td] ^ T[4][5][Ud];
-		unsigned char Dw = T[5][0][Pd] ^ T[5][1][Qd] ^ T[5][2][Rd] ^ T[5][3][Sd] ^ T[5][4][Td] ^ T[5][5][Ud];
-
-		/* set */
-		pa[i] = Dx;
-		qa[i] = Dy;
-		ra[i] = Dz;
-		sa[i] = Dh;
-		ta[i] = Dv;
-		ua[i] = Dw;
 	}
 }
 
@@ -2534,16 +2270,12 @@ void raid_recov(unsigned level, const int* d, const int* c, unsigned char** vbuf
 		raid_recov_2data(d, c, vbuf, data, zero, size);
 		break;
 	case 3 :
-		raid_recov_3data(d, c, vbuf, data, zero, size);
-		break;
 	case 4 :
-		raid_recov_4data(d, c, vbuf, data, zero, size);
-		break;
 	case 5 :
-		raid_recov_5data(d, c, vbuf, data, zero, size);
-		break;
 	case 6 :
-		raid_recov_6data(d, c, vbuf, data, zero, size);
+		/* note that this switch case ends with inlined */
+		/* functions called with constant "level" */
+		raid_recov_data(level, d, c, vbuf, data, zero, size);
 		break;
 	default:
 		fprintf(stderr, "Invalid raid recov level\n");
