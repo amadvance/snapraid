@@ -87,6 +87,7 @@ struct snapraid_state {
 	uint64_t autosave; /**< Autosave after the specified amount of data. 0 to disable. */
 	int need_write; /**< If the state is changed. */
 	uint32_t block_size; /**< Block size in bytes. */
+	unsigned raid_mode; /**< Raid mode to use. RAID_MODE_DEFAULT or RAID_MODE_ALTERNATE. */
 	char parity_path[LEV_MAX][PATH_MAX]; /**< Path of the parity file. One for each parity. */
 	uint64_t parity_device[LEV_MAX]; /**< Device identifier of the parity. One for each parity. */
 	char pool[PATH_MAX]; /**< Path of the pool tree. */

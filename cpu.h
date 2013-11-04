@@ -3,7 +3,7 @@
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
@@ -192,20 +192,20 @@ static inline int cpu_has_slowpshufb(void)
 		 * RAID6 mmx 1160 [MB/s]
 		 * RAID6 sse2 2082 [MB/s]
 		 * RAID6 sse2ext 2481 [MB/s]
-		 * RAIDTP int32 236 [MB/s]
-		 * RAIDTP int64 456 [MB/s]
-		 * RAIDTP mmx 576 [MB/s]
-		 * RAIDTP sse2 1109 [MB/s]
-		 * RAIDTP sse2ext 1527 [MB/s]
-		 * RAIDTP ssse3 931 [MB/s] (slower than sse2ext)
-		 * RAIDTP ssse3ext 932 [MB/s] (slower than sse2ext)
-		 * RAIDQP int32 144 [MB/s]
-		 * RAIDQP int64 271 [MB/s]
-		 * RAIDQP mmx 431 [MB/s]
-		 * RAIDQP sse2 843 [MB/s]
-		 * RAIDQP sse2ext 1086 [MB/s]
-		 * RAIDQP ssse3 732 [MB/s] (slower than sse2ext)
-		 * RAIDQP ssse3ext 571 [MB/s] (slower than sse2ext)
+		 * RAIDZ3 int32 236 [MB/s]
+		 * RAIDZ3 int64 456 [MB/s]
+		 * RAIDZ3 mmx 576 [MB/s]
+		 * RAIDZ3 sse2 1109 [MB/s]
+		 * RAIDZ3 sse2ext 1527 [MB/s]
+		 * RAIDZ3 ssse3 931 [MB/s] (slower than sse2ext)
+		 * RAIDZ3 ssse3ext 932 [MB/s] (slower than sse2ext)
+		 * RAIDZ4 int32 144 [MB/s]
+		 * RAIDZ4 int64 271 [MB/s]
+		 * RAIDZ4 mmx 431 [MB/s]
+		 * RAIDZ4 sse2 843 [MB/s]
+		 * RAIDZ4 sse2ext 1086 [MB/s]
+		 * RAIDZ4 ssse3 732 [MB/s] (slower than sse2ext)
+		 * RAIDZ4 ssse3ext 571 [MB/s] (slower than sse2ext)
 		 */
 		if (family == 6 && model == 28)
 			return 1;

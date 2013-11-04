@@ -58,10 +58,10 @@ const char* lev_raid_name(unsigned n)
 	switch (n) {
 	case 1 : return "raid5";
 	case 2 : return "raid6";
-	case 3 : return "raidTP";
-	case 4 : return "raidQP";
-	case 5 : return "raidPP";
-	case 6 : return "raidHP";
+	case 3 : return "raidS3";
+	case 4 : return "raidS4";
+	case 5 : return "raidS5";
+	case 6 : return "raidS6";
 	}
 
 	return 0;
@@ -75,6 +75,7 @@ void state_init(struct snapraid_state* state)
 	state->autosave = 0;
 	state->need_write = 0;
 	state->block_size = 256 * 1024; /* default 256 KiB */
+	state->raid_mode = RAID_MODE_S;
 	for(l=0;l<LEV_MAX;++l) {
 		state->parity_path[l][0] = 0;
 		state->parity_device[l] = 0;
@@ -116,6 +117,13 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 {
 	tommy_node* i;
 	unsigned l;
+
+	if (state->raid_mode == RAID_MODE_Z) {
+		if (state->level > RAID_PARITY_Z_MAX) {
+			fprintf(stderr, "If you use the z-parity you cannot have more than %u parities.\n", RAID_PARITY_Z_MAX);
+			exit(EXIT_FAILURE);
+		}
+	}
 
 	for(l=0;l<state->level;++l) {
 		if (state->parity_path[l][0] == 0) {
@@ -370,6 +378,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			|| strcmp(tag, "s-parity") == 0
 			|| strcmp(tag, "t-parity") == 0
 			|| strcmp(tag, "u-parity") == 0
+			|| strcmp(tag, "z-parity") == 0
 		) {
 			char device[PATH_MAX];
 			char* slash;
@@ -383,6 +392,10 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			case 's' : l = 3; break;
 			case 't' : l = 4; break;
 			case 'u' : l = 5; break;
+			case 'z' :
+				l = 2;
+				state->raid_mode = RAID_MODE_Z;
+				break;
 			default:
 				fprintf(stderr, "Invalid '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);

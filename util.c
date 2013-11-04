@@ -1362,13 +1362,13 @@ void* malloc_nofail_align(size_t size, void** freeptr)
  *
  * RAID5 sse2x4 21936 [MB/s]
  * RAID6 sse2x2 11902 [MB/s]
- * RAIDTP sse2x1 5838 [MB/s]
+ * RAIDZ3 sse2x1 5838 [MB/s]
  *
  * Without displacement:
  *
  * RAID5 sse2x4 15368 [MB/s]
  * RAID6 sse2x2 6814 [MB/s]
- * RAIDTP sse2x1 3033 [MB/s]
+ * RAIDZ3 sse2x1 3033 [MB/s]
  */
 #define MALLOC_DISPLACEMENT (7*256)
 

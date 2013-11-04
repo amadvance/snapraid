@@ -75,7 +75,7 @@ EXTRA_DIST = \
 	noautomake.sh \
 	README AUTHORS HISTORY INSTALL COPYING TODO TEST INSTALL.windows \
 	snapraid.d snapraid.1 snapraid.txt \
-	test-raid5.conf test-raid6.conf test-raidTP.conf test-raidQP.conf test-raidPP.conf test-raidHP.conf test-raidHP-hole.conf \
+	test-raid5.conf test-raid6.conf test-raidS3.conf test-raidS4.conf test-raidS5.conf test-raidS6.conf test-raidS6-hole.conf \
 	snapraid.conf.example \
 	configure.windows-x86 configure.windows-x64 snapraid.conf.example.windows \
 	acinclude.m4
@@ -99,14 +99,14 @@ maintainer-clean-local:
 CHECKFLAGS = --test-skip-device --test-skip-self -q
 CHECKCOUNT = 2000
 CHECKSIZE = 4000
-CONF = $(srcdir)/test-raidHP.conf
-HOLE = $(srcdir)/test-raidHP-hole.conf
+CONF = $(srcdir)/test-raidS6.conf
+HOLE = $(srcdir)/test-raidS6-hole.conf
 RAID5 = $(srcdir)/test-raid5.conf
 RAID6 = $(srcdir)/test-raid6.conf
-RAIDTP = $(srcdir)/test-raidTP.conf
-RAIDQP = $(srcdir)/test-raidQP.conf
-RAIDPP = $(srcdir)/test-raidPP.conf
-RAIDHP = $(srcdir)/test-raidHP.conf
+RAIDTP = $(srcdir)/test-raidS3.conf
+RAIDQP = $(srcdir)/test-raidS4.conf
+RAIDPP = $(srcdir)/test-raidS5.conf
+RAIDHP = $(srcdir)/test-raidS6.conf
 
 check-local:
 	rm -rf test

@@ -560,6 +560,9 @@ int main(int argc, char* argv[])
 	/* read the configuration file */
 	state_config(&state, conf, command, &opt, &filterlist_disk);
 
+	/* set the raid mode */
+	raid_set(state.raid_mode);
+
 #if HAVE_LOCKFILE
 	/* create the lock file */
 	if (!opt.skip_lock) {

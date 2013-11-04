@@ -80,7 +80,7 @@ static void combotest(void)
 	}
 }
 
-static void recovtest(unsigned diskmax, unsigned block_size)
+static void recovtest(unsigned mode, unsigned diskmax, unsigned block_size)
 {
 	void* buffer_alloc;
 	unsigned char** buffer;
@@ -99,17 +99,24 @@ static void recovtest(unsigned diskmax, unsigned block_size)
 	unsigned r;
 	void (*map[LEV_MAX][4])(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
 	unsigned mac[LEV_MAX];
+	unsigned level;
 
-	buffermax = diskmax + LEV_MAX * 2 + 2;
+	raid_set(mode);
+	if (mode == RAID_MODE_S)
+		level = LEV_MAX;
+	else
+		level = 3;
+
+	buffermax = diskmax + level * 2 + 2;
 
 	buffer = malloc_nofail_vector_align(diskmax, buffermax, block_size, &buffer_alloc);
 	mtest_vector(buffer, buffermax, block_size);
 
 	data = buffer;
 	parity = buffer + diskmax;
-	test = buffer + diskmax + LEV_MAX;
+	test = buffer + diskmax + level;
 
-	for(i=0;i<LEV_MAX;++i)
+	for(i=0;i<level;++i)
 		parity_save[i] = parity[i];
 
 	zero = buffer[buffermax-2];
@@ -124,7 +131,7 @@ static void recovtest(unsigned diskmax, unsigned block_size)
 	}
 
 	/* setup recov functions */
-	for(i=0;i<LEV_MAX;++i) {
+	for(i=0;i<level;++i) {
 		mac[i] = 0;
 		if (i == 0) {
 			map[i][mac[i]++] = raid_recov1_int8;
@@ -151,19 +158,19 @@ static void recovtest(unsigned diskmax, unsigned block_size)
 	}
 
 	/* compute the parity */
-	raid_gen(LEV_MAX, buffer, diskmax, block_size);
+	raid_gen(level, buffer, diskmax, block_size);
 
 	/* set all the parity to the waste buffer */
-	for(i=0;i<LEV_MAX;++i)
+	for(i=0;i<level;++i)
 		parity[i] = waste;
 
 	/* all parity levels */
-	for(r=1;r<=LEV_MAX;++r) {
+	for(r=1;r<=level;++r) {
 		/* all combinations (r of diskmax) disks */
 		combination_first(r, diskmax, d);
 		do {
-			/* all combinations (r of LEV_MAX) parities */
-			combination_first(r, LEV_MAX, p);
+			/* all combinations (r of level) parities */
+			combination_first(r, level, p);
 			do {
 				/* for each recover function */
 				for(j=0;j<mac[r-1];++j) {
@@ -195,7 +202,7 @@ static void recovtest(unsigned diskmax, unsigned block_size)
 						parity[p[i]] = waste;
 					}
 				}
-			} while (combination_next(r, LEV_MAX, p));
+			} while (combination_next(r, level, p));
 		} while (combination_next(r, diskmax, d));
 	}
 
@@ -203,7 +210,7 @@ static void recovtest(unsigned diskmax, unsigned block_size)
 	free(buffer);
 }
 
-static void gentest(unsigned diskmax, unsigned block_size)
+static void gentest(unsigned mode, unsigned diskmax, unsigned block_size)
 {
 	void* buffer_alloc;
 	unsigned char** buffer;
@@ -211,8 +218,15 @@ static void gentest(unsigned diskmax, unsigned block_size)
 	unsigned i, j;
 	void (*map[64])(unsigned char** buffer, unsigned diskmax, unsigned size);
 	unsigned mac;
+	unsigned level;
 
-	buffermax = diskmax + LEV_MAX * 2;
+	raid_set(mode);
+	if (mode == RAID_MODE_S)
+		level = LEV_MAX;
+	else
+		level = 3;
+
+	buffermax = diskmax + level * 2;
 
 	buffer = malloc_nofail_vector_align(diskmax, buffermax, block_size, &buffer_alloc);
 	mtest_vector(buffer, buffermax, block_size);
@@ -224,19 +238,14 @@ static void gentest(unsigned diskmax, unsigned block_size)
 	}
 
 	/* compute the parity */
-	raid_gen(LEV_MAX, buffer, diskmax, block_size);
+	raid_gen(level, buffer, diskmax, block_size);
 
 	/* copy in back buffers */
-	for(i=0;i<LEV_MAX;++i)
-		memcpy(buffer[diskmax + LEV_MAX + i], buffer[diskmax + i], block_size);
+	for(i=0;i<level;++i)
+		memcpy(buffer[diskmax + level + i], buffer[diskmax + i], block_size);
 
 	/* load all the available functions */
 	mac = 0;
-
-	map[mac++] = raidTP_int8;
-	map[mac++] = raidQP_int8;
-	map[mac++] = raidPP_int8;
-	map[mac++] = raidHP_int8;
 
 	map[mac++] = raid5_int32;
 	map[mac++] = raid5_int64;
@@ -252,19 +261,37 @@ static void gentest(unsigned diskmax, unsigned block_size)
 #endif
 	}
 
-	if (cpu_has_ssse3()) {
-		map[mac++] = raidTP_ssse3;
-		map[mac++] = raidQP_ssse3;
-		map[mac++] = raidPP_ssse3;
-		map[mac++] = raidHP_ssse3;
+	if (mode == RAID_MODE_S) {
+		map[mac++] = raidS3_int8;
+		map[mac++] = raidS4_int8;
+		map[mac++] = raidS5_int8;
+		map[mac++] = raidS6_int8;
+
+		if (cpu_has_ssse3()) {
+			map[mac++] = raidS3_ssse3;
+			map[mac++] = raidS4_ssse3;
+			map[mac++] = raidS5_ssse3;
+			map[mac++] = raidS6_ssse3;
 #if defined(__x86_64__)
-		map[mac++] = raidTP_ssse3ext;
-		map[mac++] = raidQP_ssse3ext;
-		map[mac++] = raidPP_ssse3ext;
-		map[mac++] = raidHP_ssse3ext;
+			map[mac++] = raidS3_ssse3ext;
+			map[mac++] = raidS4_ssse3ext;
+			map[mac++] = raidS5_ssse3ext;
+			map[mac++] = raidS6_ssse3ext;
+#endif
+		}
+#endif
+	} else {
+#if defined(__i386__) || defined(__x86_64__)
+		map[mac++] = raidZ3_int32;
+		map[mac++] = raidZ3_int64;
+		if (cpu_has_sse2()) {
+			map[mac++] = raidZ3_sse2;
+#if defined(__x86_64__)
+			map[mac++] = raidZ3_sse2ext;
+#endif
+		}
 #endif
 	}
-#endif
 
 	/* check all the functions */
 	for(j=0;j<mac;++j) {
@@ -272,8 +299,8 @@ static void gentest(unsigned diskmax, unsigned block_size)
 		map[j](buffer, diskmax, block_size);
 
 		/* check it */
-		for(i=0;i<LEV_MAX;++i) {
-			if (memcmp(buffer[diskmax + LEV_MAX + i], buffer[diskmax + i], block_size) != 0) {
+		for(i=0;i<level;++i) {
+			if (memcmp(buffer[diskmax + level + i], buffer[diskmax + i], block_size) != 0) {
 				fprintf(stderr, "Failed GEN test\n");
 				exit(EXIT_FAILURE);
 			}
@@ -398,6 +425,9 @@ void selftest()
 	hashtest();
 	crc32ctest();
 	combotest();
-	gentest(32, 256);
-	recovtest(12, 256);
+	gentest(RAID_MODE_Z, 32, 256);
+	recovtest(RAID_MODE_Z, 12, 256);
+	gentest(RAID_MODE_S, 32, 256);
+	recovtest(RAID_MODE_S, 12, 256);
 }
+

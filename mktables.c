@@ -135,6 +135,32 @@ void set_cauchy(unsigned char* matrix)
 }
 
 /**
+ * Setup the Power matrix used to generate the parity.
+ */
+void set_power(unsigned char* matrix)
+{
+	unsigned i;
+	unsigned char v;
+
+	v = 1;
+	for(i=0;i<DISK;++i) {
+		matrix[0*DISK+i] = v;
+	}
+
+	v = 1;
+	for(i=0;i<DISK;++i) {
+		matrix[1*DISK+i] = v;
+		v = gfmul(2, v);
+	}
+
+	v = 1;
+	for(i=0;i<DISK;++i) {
+		matrix[2*DISK+i] = v;
+		v = gfmul(4, v);
+	}
+}
+
+/**
  * Next power of 2.
  */
 unsigned np(unsigned v)
@@ -227,6 +253,38 @@ int main(void)
 			printf("\n");
 		else
 			printf(" ");
+	}
+	printf("};\n\n");
+
+	/* power matrix */
+	set_power(matrix);
+
+	printf("/**\n");
+	printf(" * Power matrix used to generate parity.\n");
+	printf(" * This matrix is valid for up to %u parity with %u data disks.\n", 3, DISK);
+	printf(" *\n");
+	for(p=0;p<3;++p) {
+		printf(" * ");
+		for(i=0;i<DISK;++i) {
+			printf("%02x ", matrix[p*DISK+i]);
+		}
+		printf("\n");
+	}
+	printf(" */\n");
+	printf("const unsigned char  __attribute__((aligned(256))) gfpower[%u][256] =\n", 3);
+	printf("{\n");
+	for(p=0;p<3;++p) {
+		printf("\t{\n");
+		for(i=0;i<DISK;++i) {
+			if (i % 8 == 0)
+				printf("\t\t");
+			printf("0x%02x,", matrix[p*DISK+i]);
+			if (i % 8 == 7)
+				printf("\n");
+			else
+				printf(" ");
+		}
+		printf("\n\t},\n");
 	}
 	printf("};\n\n");
 
