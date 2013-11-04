@@ -236,7 +236,8 @@ void raid5_int32(unsigned char** vbuf, unsigned data, unsigned size)
 	for(i=0;i<size;i+=8) {
 		p0 = v_32(vbuf[l][i]);
 		p1 = v_32(vbuf[l][i+4]);
-		/* accessing disks in backward order doesn't affect speed */
+		/* accessing disks in backward order because the buffers */
+		/* are also in backward order */
 		for(d=l-1;d>=0;--d) {
 			p0 ^= v_32(vbuf[d][i]);
 			p1 ^= v_32(vbuf[d][i+4]);
@@ -264,7 +265,8 @@ void raid5_int64(unsigned char** vbuf, unsigned data, unsigned size)
 	for(i=0;i<size;i+=16) {
 		p0 = v_64(vbuf[l][i]);
 		p1 = v_64(vbuf[l][i+8]);
-		/* accessing disks in backward order doesn't affect speed */
+		/* accessing disks in backward order because the buffers */
+		/* are also in backward order */
 		for(d=l-1;d>=0;--d) {
 			p0 ^= v_64(vbuf[d][i]);
 			p1 ^= v_64(vbuf[d][i+8]);
@@ -297,7 +299,8 @@ void raid5_sse2(unsigned char** vbuf, unsigned data, unsigned size)
 		asm volatile("movdqa %0,%%xmm1" : : "m" (vbuf[l][i+16]));
 		asm volatile("movdqa %0,%%xmm2" : : "m" (vbuf[l][i+32]));
 		asm volatile("movdqa %0,%%xmm3" : : "m" (vbuf[l][i+48]));
-		/* accessing disks in backward order doesn't affect speed */
+		/* accessing disks in backward order because the buffers */
+		/* are also in backward order */
 		for(d=l-1;d>=0;--d) {
 			asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[d][i]));
 			asm volatile("movdqa %0,%%xmm5" : : "m" (vbuf[d][i+16]));

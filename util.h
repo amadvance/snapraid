@@ -460,9 +460,10 @@ void* malloc_nofail_align(size_t size, void** freeptr);
 /**
  * Safe aligned vector allocation.
  * Returns a vector of "count" pointers, each one pointing to a block of the specified "size".
+ * The first "reverse" pointers are put in reverse memory offset order.
  * If no memory is available, it aborts.
  */
-unsigned char** malloc_nofail_vector_align(size_t count, size_t size, void** freeptr);
+unsigned char** malloc_nofail_vector_align(size_t reverse, size_t count, size_t size, void** freeptr);
 
 /**
  * Test the memory vector for RAM problems.

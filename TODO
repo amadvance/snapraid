@@ -23,6 +23,13 @@ we already have all the hashes when sync starts.
 We need to extend the NEW blocks with an hash, likely using
 the dummy 0 hash as marker for no hash.
 
+* When renaming to .unrecoverable at now we always overwrite
+losing partial, but potentially better, previous copy of the files.
+Is is possible a better strategy ?
+Maybe we can rename the unrecoverable as the real file, if the real file
+is missing at the first open. This should ensure to always
+get better results if the file is hashed.
+
 - Minor
 
 * In the content file save the timestap of the parity files.

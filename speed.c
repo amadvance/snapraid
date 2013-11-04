@@ -73,7 +73,7 @@ void speed(void)
 	/* we need disk + 1 for each parity level buffers + 1 zero buffer */
 	buffermax = diskmax + LEV_MAX + 1;
 
-	buffer = malloc_nofail_vector_align(buffermax, block_size, &buffer_alloc);
+	buffer = malloc_nofail_vector_align(diskmax, buffermax, block_size, &buffer_alloc);
 	mtest_vector(buffer, buffermax, block_size);
 
 	/* initialize disks with fixed data */

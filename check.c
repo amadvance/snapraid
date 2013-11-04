@@ -486,7 +486,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 	/* we need disk + 2 for each parity level buffers + 1 zero buffer */
 	buffermax = diskmax + state->level * 2 + 1;
 
-	buffer = malloc_nofail_vector_align(buffermax, state->block_size, &buffer_alloc);
+	buffer = malloc_nofail_vector_align(diskmax, buffermax, state->block_size, &buffer_alloc);
 	if (!state->opt.skip_self)
 		mtest_vector(buffer, buffermax, state->block_size);
 

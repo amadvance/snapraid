@@ -1372,11 +1372,13 @@ void* malloc_nofail_align(size_t size, void** freeptr)
  */
 #define MALLOC_DISPLACEMENT (7*256)
 
-unsigned char** malloc_nofail_vector_align(size_t count, size_t size, void** freeptr)
+unsigned char** malloc_nofail_vector_align(size_t reverse, size_t count, size_t size, void** freeptr)
 {
 	unsigned char** buffer;
 	unsigned char* buffer_aligned;
 	size_t i;
+
+	assert(reverse <= count);
 
 	buffer = malloc_nofail(count * sizeof(void*));
 
@@ -1384,6 +1386,13 @@ unsigned char** malloc_nofail_vector_align(size_t count, size_t size, void** fre
 
 	for(i=0;i<count;++i)
 		buffer[i] = buffer_aligned + i * (size + MALLOC_DISPLACEMENT);
+
+	/* reverse order for the initial ones */
+	for(i=0;i<reverse/2;++i) {
+		void* ptr = buffer[i];
+		buffer[i] = buffer[reverse - 1 - i];
+		buffer[reverse - 1 - i] = ptr;
+	}
 
 	return buffer;
 }

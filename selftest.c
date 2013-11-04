@@ -102,7 +102,7 @@ static void recovtest(unsigned diskmax, unsigned block_size)
 
 	buffermax = diskmax + LEV_MAX * 2 + 2;
 
-	buffer = malloc_nofail_vector_align(buffermax, block_size, &buffer_alloc);
+	buffer = malloc_nofail_vector_align(diskmax, buffermax, block_size, &buffer_alloc);
 	mtest_vector(buffer, buffermax, block_size);
 
 	data = buffer;
@@ -214,7 +214,7 @@ static void gentest(unsigned diskmax, unsigned block_size)
 
 	buffermax = diskmax + LEV_MAX * 2;
 
-	buffer = malloc_nofail_vector_align(buffermax, block_size, &buffer_alloc);
+	buffer = malloc_nofail_vector_align(diskmax, buffermax, block_size, &buffer_alloc);
 	mtest_vector(buffer, buffermax, block_size);
 
 	/* fill with random */
