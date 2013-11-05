@@ -651,7 +651,11 @@ process the whole array.
 Filters the files to process in the \(a"check\(a" and \(a"fix\(a"
 commands.
 It process only the files containing blocks marked with silent
-errors during the \(a"scrub\(a" command, and listed in the \(a"status\(a" command.
+errors during the \(a"sync\(a" or \(a"scrub\(a" command, and listed in the
+\(a"status\(a" command.
+Errors found in \(a"check\(a" are not processed by this
+option, because they are not marked as bad as \(a"check\(a" is a
+read\(hyonly command.
 This option can be used only with the \(a"check\(a" and \(a"fix\(a" commands.
 .TP
 .B \(hyp, \(hy\(hypercentage PERC

@@ -493,7 +493,11 @@ SnapRAID provides the following options:
         Filters the files to process in the "check" and "fix"
         commands.
         It process only the files containing blocks marked with silent
-        errors during the "scrub" command, and listed in the "status" command.
+        errors during the "sync" or "scrub" command, and listed in the
+        "status" command.
+        Errors found in "check" are not processed by this
+        option, because they are not marked as bad as "check" is a
+        read-only command.
         This option can be used only with the "check" and "fix" commands.
 
     -p, --percentage PERC
