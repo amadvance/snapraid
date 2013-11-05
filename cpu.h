@@ -20,7 +20,7 @@
 
 #if defined(__i386__) || defined(__x86_64__)
 
-static inline void cpuid(uint32_t func, uint32_t* reg)
+static inline void cpuid(uint32_t func_eax, uint32_t sub_ecx, uint32_t* reg)
 {
 	asm volatile(
 #if defined(__i386__) && defined(__PIC__)
@@ -29,11 +29,11 @@ static inline void cpuid(uint32_t func, uint32_t* reg)
 		"cpuid\n"
 		"xchgl %%ebx, %1\n"
 		: "=a" (reg[0]), "=r" (reg[1]), "=c" (reg[2]), "=d" (reg[3])
-		: "0" (func)
+		: "0" (func_eax), "2" (sub_ecx)
 #else
 		"cpuid\n"
 		: "=a" (reg[0]), "=b" (reg[1]), "=c" (reg[2]), "=d" (reg[3])
-		: "0" (func)
+		: "0" (func_eax), "2" (sub_ecx)
 #endif
 	);
 }
@@ -45,14 +45,14 @@ static inline void cpu_info(char* vendor, unsigned* family, unsigned* model)
 	uint32_t reg[4];
 	unsigned f, ef, m, em;
 
-	cpuid(0, reg);
+	cpuid(0, 0, reg);
 
 	((uint32_t*)vendor)[0] = reg[1];
 	((uint32_t*)vendor)[1] = reg[3];
 	((uint32_t*)vendor)[2] = reg[2];
 	vendor[12] = 0;
 
-	cpuid(1, reg);
+	cpuid(1, 0, reg);
 
 	f = (reg[0] >> 8) & 0xF;
 	ef = (reg[0] >> 20) & 0xFF;
@@ -77,7 +77,7 @@ static inline int cpu_has_mmx(void)
 {
 	uint32_t reg[4];
 
-	cpuid(1, reg);
+	cpuid(1, 0, reg);
 
 	return (reg[3] >> 23) & 1;
 }
@@ -86,7 +86,7 @@ static inline int cpu_has_sse2(void)
 {
 	uint32_t reg[4];
 
-	cpuid(1, reg);
+	cpuid(1, 0, reg);
 
 	return (reg[3] >> 26) & 1;
 }
@@ -95,7 +95,7 @@ static inline int cpu_has_ssse3(void)
 {
 	uint32_t reg[4];
 
-	cpuid(1, reg);
+	cpuid(1, 0, reg);
 
 	return (reg[2] >> 9) & 1;
 }
@@ -104,7 +104,7 @@ static inline int cpu_has_sse42(void)
 {
 	uint32_t reg[4];
 
-	cpuid(1, reg);
+	cpuid(1, 0, reg);
 
 	return (reg[2] >> 20) & 1;
 }
@@ -113,9 +113,18 @@ static inline int cpu_has_avx(void)
 {
 	uint32_t reg[4];
 
-	cpuid(1, reg);
+	cpuid(1, 0, reg);
 
 	return (reg[2] >> 28) & 1;
+}
+
+static inline int cpu_has_avx2(void)
+{
+	uint32_t reg[4];
+
+	cpuid(7, 0, reg);
+
+	return (reg[1] >> 5) & 1;
 }
 
 /**
