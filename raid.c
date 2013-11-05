@@ -739,7 +739,7 @@ void raidZ3_sse2ext(unsigned char** vbuf, unsigned data, unsigned size)
 	q = vbuf[data+1];
 	r = vbuf[data+2];
 
-	asm volatile("movdqa %0,%%xmm7" : : "m" (raid_16_const.poly[0]));
+	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
 
 	for(i=0;i<size;i+=32) {
 		asm volatile("movdqa %0,%%xmm0" : : "m" (vbuf[l][i]));

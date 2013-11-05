@@ -602,6 +602,27 @@ Configuration
 
 	These options are optional and they can be used only one time.
 
+  z-parity FILE
+	Defines an alternate file and format to store the triple parity,
+	instead of the other 'r-parity' one.
+
+	It's mainly intended for low end CPUs like ARM or AMD Phenom, Athlon
+	and Opteron that don't support the SSSE3 instructions set, and in
+	such case it may provide better performance.
+
+	This is also the parity format used by ZFS, but it doesn't work
+	for beyond triple parity.
+
+	If you are using the 'r-parity' you will be warned if it's
+	recommended to use the 'z-parity' format for a performance
+	increase.
+
+	It's possible to convert from one format to another, adjusting
+	the configuraton file with the wanted z-parity or r-parity file,
+	and using 'fix' to recreate it.
+
+	This option is alternative to 'r-parity'.
+
   content FILE
 	Defines the file to use to store the list and checksums of all the
 	files present in your disk array.

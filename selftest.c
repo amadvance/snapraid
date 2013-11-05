@@ -103,9 +103,9 @@ static void recovtest(unsigned mode, unsigned diskmax, unsigned block_size)
 
 	raid_set(mode);
 	if (mode == RAID_MODE_S)
-		level = LEV_MAX;
+		level = RAID_PARITY_S_MAX;
 	else
-		level = 3;
+		level = RAID_PARITY_Z_MAX;
 
 	buffermax = diskmax + level * 2 + 2;
 
@@ -222,9 +222,9 @@ static void gentest(unsigned mode, unsigned diskmax, unsigned block_size)
 
 	raid_set(mode);
 	if (mode == RAID_MODE_S)
-		level = LEV_MAX;
+		level = RAID_PARITY_S_MAX;
 	else
-		level = 3;
+		level = RAID_PARITY_Z_MAX;
 
 	buffermax = diskmax + level * 2;
 

@@ -656,7 +656,30 @@ they doesn't get fragmented, improving the performance.
 
 These options are optional and they can be used only one time.
 
-7.3 content FILE
+7.3 z-parity FILE
+-----------------
+
+Defines an alternate file and format to store the triple parity,
+instead of the other 'r-parity' one.
+
+It's mainly intended for low end CPUs like ARM or AMD Phenom, Athlon
+and Opteron that don't support the SSSE3 instructions set, and in
+such case it may provide better performance.
+
+This is also the parity format used by ZFS, but it doesn't work
+for beyond triple parity.
+
+If you are using the 'r-parity' you will be warned if it's
+recommended to use the 'z-parity' format for a performance
+increase.
+
+It's possible to convert from one format to another, adjusting
+the configuraton file with the wanted z-parity or r-parity file,
+and using 'fix' to recreate it.
+
+This option is alternative to 'r-parity'.
+
+7.4 content FILE
 ----------------
 
 Defines the file to use to store the list and checksums of all the
@@ -673,7 +696,7 @@ more copies of the same files.
 You have to store at least one copy for each parity disk used
 plus one. Using some more don't hurt.
 
-7.4 disk NAME DIR
+7.5 disk NAME DIR
 -----------------
 
 Defines the name and the mount point of the disks of the array.
@@ -685,14 +708,14 @@ keep the NAME fixed.
 
 You should use one option for each disk of the array.
 
-7.5 nohidden
+7.6 nohidden
 ------------
 
 Excludes all the hidden files and directory.
 In Unix hidden files are the ones starting with ".".
 In Windows they are the ones with the hidden attribute.
 
-7.6 exclude/include PATTERN
+7.7 exclude/include PATTERN
 ---------------------------
 
 Defines the file or directory patterns to exclude and include
@@ -710,7 +733,7 @@ specifications.
 
 This option can be used many times.
 
-7.7 block_size SIZE_IN_KIBIBYTES
+7.8 block_size SIZE_IN_KIBIBYTES
 --------------------------------
 
 Defines the basic block size in kibi bytes of the redundancy
@@ -741,7 +764,7 @@ wasted for each file.
 For example, with 10000 files and a 256 KiB block size, you are
 going to waste 1.2 GiB.
 
----- 7.7.1 autosave SIZE_IN_GIBIBYTES ----
+---- 7.8.1 autosave SIZE_IN_GIBIBYTES ----
 Automatically save the state when synching after the specied amount
 of GiB processed.
 This option is useful to avoid to restart from scratch long "sync"
@@ -750,12 +773,12 @@ may interrupt SnapRAID.
 The SIZE argument is specified in gibibytes. Where one gibi bytes
 is 1073741824 bytes.
 
----- 7.7.2 pool DIR ----
+---- 7.8.2 pool DIR ----
 Defines the pooling directory where the virtual view of the disk
 array is created using the "pool" command.
 The directory must already exist.
 
-7.8 Examples
+7.9 Examples
 ------------
 
 An example of a typical configuration for Unix is:

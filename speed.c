@@ -110,15 +110,16 @@ void speed(void)
 
 		cpu_info(vendor, &family, &model);
 
-		printf("CPU %s, family %u, model %u, flags%s%s%s%s%s%s%s\n", vendor, family, model,
+		printf("CPU %s, family %u, model %u, flags%s%s%s%s%s%s%s%s\n", vendor, family, model,
 			cpu_has_mmx() ? " mmx" : "",
 			cpu_has_sse2() ? " sse2" : "",
 			cpu_has_ssse3() ? " ssse3" : "",
 			cpu_has_sse42() ? " sse42" : "",
 			cpu_has_avx() ? " avx" : "",
+			cpu_has_avx2() ? "avx2" : "",
 			cpu_has_slowmult() ? " slowmult" : "",
 			cpu_has_slowpshufb()  ? " slowpshufb" : ""
-			);
+		);
 	}
 #else
 	printf("CPU is not a x86/x64\n");
@@ -568,14 +569,18 @@ void speed(void)
 	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
-	SPEED_START {
-		for(j=0;j<diskmax;++j) {
-			/* +1 to avoid RAID5 optimized case */
-			raid_recov1_ssse3(1, d, e + 1, buffer, diskmax, zero, block_size);
-		}
-	} SPEED_STOP
+#if defined(__i386__) || defined(__x86_64__)
+	if (cpu_has_ssse3()) {
+		SPEED_START {
+			for(j=0;j<diskmax;++j) {
+				/* +1 to avoid RAID5 optimized case */
+				raid_recov1_ssse3(1, d, e + 1, buffer, diskmax, zero, block_size);
+			}
+		} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+		printf("%8"PRIu64, ds / dt);
+	}
+#endif
 	printf("\n");
 
 	printf("%8s", "recov2");
@@ -592,14 +597,18 @@ void speed(void)
 	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
-	SPEED_START {
-		for(j=0;j<diskmax;++j) {
-			/* +1 to avoid RAID6 optimized case */
-			raid_recov2_ssse3(2, d, e + 1, buffer, diskmax, zero, block_size);
-		}
-	} SPEED_STOP
+#if defined(__i386__) || defined(__x86_64__)
+	if (cpu_has_ssse3()) {
+		SPEED_START {
+			for(j=0;j<diskmax;++j) {
+				/* +1 to avoid RAID6 optimized case */
+				raid_recov2_ssse3(2, d, e + 1, buffer, diskmax, zero, block_size);
+			}
+		} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+		printf("%8"PRIu64, ds / dt);
+	}
+#endif
 	printf("\n");
 
 	printf("%8s", "recov3");
@@ -615,13 +624,17 @@ void speed(void)
 	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
-	SPEED_START {
-		for(j=0;j<diskmax;++j) {
-			raid_recovX_ssse3(3, d, e, buffer, diskmax, zero, block_size);
-		}
-	} SPEED_STOP
+#if defined(__i386__) || defined(__x86_64__)
+	if (cpu_has_ssse3()) {
+		SPEED_START {
+			for(j=0;j<diskmax;++j) {
+				raid_recovX_ssse3(3, d, e, buffer, diskmax, zero, block_size);
+			}
+		} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+		printf("%8"PRIu64, ds / dt);
+	}
+#endif
 	printf("\n");
 
 	printf("%8s", "recov4");
@@ -637,13 +650,17 @@ void speed(void)
 	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
-	SPEED_START {
-		for(j=0;j<diskmax;++j) {
-			raid_recovX_ssse3(4, d, e, buffer, diskmax, zero, block_size);
-		}
-	} SPEED_STOP
+#if defined(__i386__) || defined(__x86_64__)
+	if (cpu_has_ssse3()) {
+		SPEED_START {
+			for(j=0;j<diskmax;++j) {
+				raid_recovX_ssse3(4, d, e, buffer, diskmax, zero, block_size);
+			}
+		} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+		printf("%8"PRIu64, ds / dt);
+	}
+#endif
 	printf("\n");
 
 	printf("%8s", "recov5");
@@ -658,14 +675,18 @@ void speed(void)
 
 	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
+	
+#if defined(__i386__) || defined(__x86_64__)
+	if (cpu_has_ssse3()) {
+		SPEED_START {
+			for(j=0;j<diskmax;++j) {
+				raid_recovX_ssse3(5, d, e, buffer, diskmax, zero, block_size);
+			}
+		} SPEED_STOP
 
-	SPEED_START {
-		for(j=0;j<diskmax;++j) {
-			raid_recovX_ssse3(5, d, e, buffer, diskmax, zero, block_size);
-		}
-	} SPEED_STOP
-
-	printf("%8"PRIu64, ds / dt);
+		printf("%8"PRIu64, ds / dt);
+	}
+#endif
 	printf("\n");
 
 	printf("%8s", "recov6");
@@ -681,13 +702,17 @@ void speed(void)
 	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
-	SPEED_START {
-		for(j=0;j<diskmax;++j) {
-			raid_recovX_ssse3(6, d, e, buffer, diskmax, zero, block_size);
-		}
-	} SPEED_STOP
+#if defined(__i386__) || defined(__x86_64__)
+	if (cpu_has_ssse3()) {
+		SPEED_START {
+			for(j=0;j<diskmax;++j) {
+				raid_recovX_ssse3(6, d, e, buffer, diskmax, zero, block_size);
+			}
+		} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+		printf("%8"PRIu64, ds / dt);
+	}
+#endif
 	printf("\n");
 	printf("\n");
 

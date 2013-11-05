@@ -53,12 +53,15 @@ const char* lev_config_name(unsigned l)
 	return 0;
 }
 
-const char* lev_raid_name(unsigned n)
+const char* lev_raid_name(unsigned mode, unsigned n)
 {
 	switch (n) {
 	case 1 : return "raid5";
 	case 2 : return "raid6";
-	case 3 : return "raidS3";
+	case 3 : if (mode == RAID_MODE_S)
+			return "raidS3";
+		else
+			return "raidZ3";
 	case 4 : return "raidS4";
 	case 5 : return "raidS5";
 	case 6 : return "raidS6";
@@ -118,6 +121,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 	tommy_node* i;
 	unsigned l;
 
+	/* check for parity level */
 	if (state->raid_mode == RAID_MODE_Z) {
 		if (state->level > RAID_PARITY_Z_MAX) {
 			fprintf(stderr, "If you use the z-parity you cannot have more than %u parities.\n", RAID_PARITY_Z_MAX);
@@ -275,11 +279,18 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 		}
 	}
 
+	/* check for speed */
 #if defined(__i386__) || defined(__x86_64__)
 	if (!cpu_has_ssse3())
 #endif
-	if (state->level > 2) {
-		fprintf(stderr, "WARNING! Your CPU doesn't have a fast implementation beyond RAID6.\n");
+	if (state->raid_mode == RAID_MODE_S) {
+		if (state->level == 3) {
+			fprintf(stderr, "WARNING! Your CPU doesn't have a fast implementation for triple parity.\n");
+			fprintf(stderr, "WARNING! It's recommended to switch to 'z-parity' instead than 'r-parity'.\n");
+		} else if (state->level > 3) {
+			fprintf(stderr, "WARNING! Your CPU doesn't have a fast implementation beyond triple parity.\n");
+			fprintf(stderr, "WARNING! It's recommended to reduce the parity levels to triple parity.\n");
+		}
 	}
 
 	/* ensure that specified filter disks are valid ones */
@@ -696,7 +707,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 		fprintf(stdlog, "disk:%s:%s\n", disk->name, disk->dir);
 	}
 
-	fprintf(stdlog, "mode:%s\n", lev_raid_name(state->level)); 
+	fprintf(stdlog, "mode:%s\n", lev_raid_name(state->raid_mode, state->level));
 	for(l=0;l<state->level;++l)
 		fprintf(stdlog, "%s:%s\n", lev_config_name(l), state->parity_path[l]);
 	if (state->pool[0] != 0)
@@ -860,6 +871,19 @@ static void state_map(struct snapraid_state* state)
 	if (diskcount < RAID_DATA_MIN) {
 		fprintf(stderr, "Too few data disks. You must define at least %u.\n", RAID_DATA_MIN);
 		exit(EXIT_FAILURE);
+	}
+
+	/* recommend number of parities */
+	if (diskcount >= 34 && state->level < 6) {
+		fprintf(stderr, "WARNING! With %u disks it's recommended to use six parity levels.\n", diskcount);
+	} else if (diskcount >= 27 && state->level < 5) {
+		fprintf(stderr, "WARNING! With %u disks it's recommended to use five parity levels.\n", diskcount);
+	} else if (diskcount >= 20 && state->level < 4) {
+		fprintf(stderr, "WARNING! With %u disks it's recommended to use four parity leveles.\n", diskcount);
+	} else if (diskcount >= 13 && state->level < 3) {
+		fprintf(stderr, "WARNING! With %u disks it's recommended to use three parity levels.\n", diskcount);
+	} else if (diskcount >= 6 && state->level < 2) {
+		fprintf(stderr, "WARNING! With %u disks it's recommended to use two parity levels.\n", diskcount);
 	}
 }
 
