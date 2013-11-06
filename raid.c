@@ -875,7 +875,7 @@ void raidS3_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 		asm volatile("movdqa %xmm4,%xmm1");
 
 		asm volatile("movdqa %xmm4,%xmm5");
-		asm volatile("psraw  $4,%xmm5");
+		asm volatile("psrlw  $4,%xmm5");
 		asm volatile("pand   %xmm7,%xmm4");
 		asm volatile("pand   %xmm7,%xmm5");
 
@@ -899,7 +899,7 @@ void raidS3_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("pxor %xmm4,%xmm1");
 
 			asm volatile("movdqa %xmm4,%xmm5");
-			asm volatile("psraw  $4,%xmm5");
+			asm volatile("psrlw  $4,%xmm5");
 			asm volatile("pand   %xmm7,%xmm4");
 			asm volatile("pand   %xmm7,%xmm5");
 
@@ -967,8 +967,8 @@ void raidS3_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 
 		asm volatile("movdqa %xmm4,%xmm5");
 		asm volatile("movdqa %xmm12,%xmm13");
-		asm volatile("psraw  $4,%xmm5");
-		asm volatile("psraw  $4,%xmm13");
+		asm volatile("psrlw  $4,%xmm5");
+		asm volatile("psrlw  $4,%xmm13");
 		asm volatile("pand   %xmm11,%xmm4");
 		asm volatile("pand   %xmm11,%xmm12");
 		asm volatile("pand   %xmm11,%xmm5");
@@ -1008,8 +1008,8 @@ void raidS3_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 
 			asm volatile("movdqa %xmm4,%xmm5");
 			asm volatile("movdqa %xmm12,%xmm13");
-			asm volatile("psraw  $4,%xmm5");
-			asm volatile("psraw  $4,%xmm13");
+			asm volatile("psrlw  $4,%xmm5");
+			asm volatile("psrlw  $4,%xmm13");
 			asm volatile("pand   %xmm11,%xmm4");
 			asm volatile("pand   %xmm11,%xmm12");
 			asm volatile("pand   %xmm11,%xmm5");
@@ -1142,7 +1142,7 @@ void raidS4_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 		asm volatile("movdqa %xmm4,%xmm1");
 
 		asm volatile("movdqa %xmm4,%xmm5");
-		asm volatile("psraw  $4,%xmm5");
+		asm volatile("psrlw  $4,%xmm5");
 		asm volatile("pand   %xmm7,%xmm4");
 		asm volatile("pand   %xmm7,%xmm5");
 
@@ -1175,7 +1175,7 @@ void raidS4_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("pxor %xmm4,%xmm1");
 
 			asm volatile("movdqa %xmm4,%xmm5");
-			asm volatile("psraw  $4,%xmm5");
+			asm volatile("psrlw  $4,%xmm5");
 			asm volatile("pand   %xmm7,%xmm4");
 			asm volatile("pand   %xmm7,%xmm5");
 
@@ -1253,8 +1253,8 @@ void raidS4_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 
 		asm volatile("movdqa %xmm4,%xmm5");
 		asm volatile("movdqa %xmm12,%xmm13");
-		asm volatile("psraw  $4,%xmm5");
-		asm volatile("psraw  $4,%xmm13");
+		asm volatile("psrlw  $4,%xmm5");
+		asm volatile("psrlw  $4,%xmm13");
 		asm volatile("pand   %xmm15,%xmm4");
 		asm volatile("pand   %xmm15,%xmm12");
 		asm volatile("pand   %xmm15,%xmm5");
@@ -1307,8 +1307,8 @@ void raidS4_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 
 			asm volatile("movdqa %xmm4,%xmm5");
 			asm volatile("movdqa %xmm12,%xmm13");
-			asm volatile("psraw  $4,%xmm5");
-			asm volatile("psraw  $4,%xmm13");
+			asm volatile("psrlw  $4,%xmm5");
+			asm volatile("psrlw  $4,%xmm13");
 			asm volatile("pand   %xmm15,%xmm4");
 			asm volatile("pand   %xmm15,%xmm12");
 			asm volatile("pand   %xmm15,%xmm5");
@@ -1473,7 +1473,7 @@ void raidS5_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 
 		asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
 		asm volatile("movdqa %xmm4,%xmm5");
-		asm volatile("psraw  $4,%xmm5");
+		asm volatile("psrlw  $4,%xmm5");
 		asm volatile("pand   %xmm7,%xmm4");
 		asm volatile("pand   %xmm7,%xmm5");
 
@@ -1513,7 +1513,7 @@ void raidS5_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 
 			asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
 			asm volatile("movdqa %xmm4,%xmm5");
-			asm volatile("psraw  $4,%xmm5");
+			asm volatile("psrlw  $4,%xmm5");
 			asm volatile("pand   %xmm7,%xmm4");
 			asm volatile("pand   %xmm7,%xmm5");
 
@@ -1601,7 +1601,7 @@ void raidS5_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 		asm volatile("movdqa %xmm10,%xmm1");
 
 		asm volatile("movdqa %xmm10,%xmm11");
-		asm volatile("psraw  $4,%xmm11");
+		asm volatile("psrlw  $4,%xmm11");
 		asm volatile("pand   %xmm15,%xmm10");
 		asm volatile("pand   %xmm15,%xmm11");
 
@@ -1637,7 +1637,7 @@ void raidS5_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("pxor %xmm10,%xmm1");
 
 			asm volatile("movdqa %xmm10,%xmm11");
-			asm volatile("psraw  $4,%xmm11");
+			asm volatile("psrlw  $4,%xmm11");
 			asm volatile("pand   %xmm15,%xmm10");
 			asm volatile("pand   %xmm15,%xmm11");
 
@@ -1788,7 +1788,7 @@ void raidS6_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 
 		asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
 		asm volatile("movdqa %xmm4,%xmm5");
-		asm volatile("psraw  $4,%xmm5");
+		asm volatile("psrlw  $4,%xmm5");
 		asm volatile("pand   %xmm7,%xmm4");
 		asm volatile("pand   %xmm7,%xmm5");
 
@@ -1837,7 +1837,7 @@ void raidS6_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 
 			asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
 			asm volatile("movdqa %xmm4,%xmm5");
-			asm volatile("psraw  $4,%xmm5");
+			asm volatile("psrlw  $4,%xmm5");
 			asm volatile("pand   %xmm7,%xmm4");
 			asm volatile("pand   %xmm7,%xmm5");
 
@@ -1937,7 +1937,7 @@ void raidS6_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 		asm volatile("movdqa %xmm10,%xmm1");
 
 		asm volatile("movdqa %xmm10,%xmm11");
-		asm volatile("psraw  $4,%xmm11");
+		asm volatile("psrlw  $4,%xmm11");
 		asm volatile("pand   %xmm15,%xmm10");
 		asm volatile("pand   %xmm15,%xmm11");
 
@@ -1979,7 +1979,7 @@ void raidS6_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("pxor %xmm10,%xmm1");
 
 			asm volatile("movdqa %xmm10,%xmm11");
-			asm volatile("psraw  $4,%xmm11");
+			asm volatile("psrlw  $4,%xmm11");
 			asm volatile("pand   %xmm15,%xmm10");
 			asm volatile("pand   %xmm15,%xmm11");
 
@@ -2572,7 +2572,7 @@ void raid_recov1_ssse3(unsigned level, const int* d, const int* c, unsigned char
 		asm volatile("movdqa %xmm5,%xmm3");
 		asm volatile("pxor   %xmm0,%xmm1");
 		asm volatile("movdqa %xmm1,%xmm0");
-		asm volatile("psraw  $4,%xmm1");
+		asm volatile("psrlw  $4,%xmm1");
 		asm volatile("pand   %xmm7,%xmm0");
 		asm volatile("pand   %xmm7,%xmm1");
 		asm volatile("pshufb %xmm0,%xmm2");
@@ -2634,7 +2634,7 @@ void raid_recov2_ssse3(unsigned level, const int* d, const int* c, unsigned char
 		asm volatile("movdqa %0,%%xmm3" : : "m" (gfmulpshufb[V[0]][1][0]));
 		asm volatile("movdqa %xmm0,%xmm4");
 		asm volatile("movdqa %xmm0,%xmm5");
-		asm volatile("psraw  $4,%xmm5");
+		asm volatile("psrlw  $4,%xmm5");
 		asm volatile("pand   %xmm7,%xmm4");
 		asm volatile("pand   %xmm7,%xmm5");
 		asm volatile("pshufb %xmm4,%xmm2");
@@ -2646,7 +2646,7 @@ void raid_recov2_ssse3(unsigned level, const int* d, const int* c, unsigned char
 		asm volatile("movdqa %0,%%xmm3" : : "m" (gfmulpshufb[V[1]][1][0]));
 		asm volatile("movdqa %xmm1,%xmm4");
 		asm volatile("movdqa %xmm1,%xmm5");
-		asm volatile("psraw  $4,%xmm5");
+		asm volatile("psrlw  $4,%xmm5");
 		asm volatile("pand   %xmm7,%xmm4");
 		asm volatile("pand   %xmm7,%xmm5");
 		asm volatile("pshufb %xmm4,%xmm2");
@@ -2662,7 +2662,7 @@ void raid_recov2_ssse3(unsigned level, const int* d, const int* c, unsigned char
 		asm volatile("movdqa %0,%%xmm3" : : "m" (gfmulpshufb[V[2]][1][0]));
 		asm volatile("movdqa %xmm0,%xmm4");
 		asm volatile("movdqa %xmm0,%xmm5");
-		asm volatile("psraw  $4,%xmm5");
+		asm volatile("psrlw  $4,%xmm5");
 		asm volatile("pand   %xmm7,%xmm4");
 		asm volatile("pand   %xmm7,%xmm5");
 		asm volatile("pshufb %xmm4,%xmm2");
@@ -2674,7 +2674,7 @@ void raid_recov2_ssse3(unsigned level, const int* d, const int* c, unsigned char
 		asm volatile("movdqa %0,%%xmm3" : : "m" (gfmulpshufb[V[3]][1][0]));
 		asm volatile("movdqa %xmm1,%xmm4");
 		asm volatile("movdqa %xmm1,%xmm5");
-		asm volatile("psraw  $4,%xmm5");
+		asm volatile("psrlw  $4,%xmm5");
 		asm volatile("pand   %xmm7,%xmm4");
 		asm volatile("pand   %xmm7,%xmm5");
 		asm volatile("pshufb %xmm4,%xmm2");
@@ -2745,7 +2745,7 @@ void raid_recovX_ssse3(unsigned level, const int* d, const int* c, unsigned char
 				asm volatile("movdqa %0,%%xmm3" : : "m" (gfmulpshufb[m][1][0]));
 				asm volatile("movdqa %0,%%xmm4" : : "m" (PD[k][0]));
 				asm volatile("movdqa %xmm4,%xmm5");
-				asm volatile("psraw  $4,%xmm5");
+				asm volatile("psrlw  $4,%xmm5");
 				asm volatile("pand   %xmm7,%xmm4");
 				asm volatile("pand   %xmm7,%xmm5");
 				asm volatile("pshufb %xmm4,%xmm2");
