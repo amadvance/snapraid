@@ -814,25 +814,23 @@ they doesn\(cqt get fragmented, improving the performance.
 .PP
 These options are optional and they can be used only one time.
 .SS z\(hyparity FILE 
-Defines an alternate file and format to store the triple parity,
-instead of the other \(cqr\(hyparity\(cq one.
+Defines an alternate file and format to store the triple parity.
 .PP
-It\(cqs mainly intended for low end CPUs like ARM or AMD Phenom, Athlon
-and Opteron that don\(cqt support the SSSE3 instructions set, and in
-such case it may provide better performance.
+This option is an alternative at \(cqr\(hyparity\(cq mainly intended for
+low end CPUs like ARM or AMD Phenom, Athlon and Opteron that don\(cqt
+support the SSSE3 instructions set, and in such case it may provide
+a better performance.
 .PP
-This is also the parity format used by ZFS, but it doesn\(cqt work
-for beyond triple parity.
+This format is similar at the one used by the Linux kernel RAID6 and
+ZFS RAIDZ3, but it doesn\(cqt work for beyond triple parity.
 .PP
-If you are using the \(cqr\(hyparity\(cq you will be warned if it\(cqs
-recommended to use the \(cqz\(hyparity\(cq format for a performance
+If you are using the \(cqr\(hyparity\(cq you will be warned at very run
+if it\(cqs recommended to use the \(cqz\(hyparity\(cq format for a performance
 increase.
 .PP
 It\(cqs possible to convert from one format to another, adjusting
 the configuraton file with the wanted z\(hyparity or r\(hyparity file,
 and using \(cqfix\(cq to recreate it.
-.PP
-This option is alternative to \(cqr\(hyparity\(cq.
 .SS content FILE 
 Defines the file to use to store the list and checksums of all the
 files present in your disk array.

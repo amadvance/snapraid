@@ -31,7 +31,7 @@
  */
 
 /*
- * The RAID5 and RAID6 support works like the Linux Kernel RAID
+ * The RAID5 and RAID6 support is implemented like the Linux Kernel RAID
  * following the Anvin's paper "The mathematics of RAID-6" [1].
  *
  * We compute the parity in the Galois Field GF(2^8) with the primitive
@@ -41,55 +41,39 @@
  * P = sum(Di)
  * Q = sum(2^i * Di) with 0<=i<N
  *
- * To support triple parity it was first evaluated, and then
- * dropped, the use of an extension of the same approach, with additional
- * parity coefficients set as powers of 4, with equations:
+ * To support triple parity, it was first evaluated, and then dropped, an
+ * extension of the same approach, with additional parity coefficients set
+ * as powers of 2^-1, with equations:
  *
  * P = sum(Di)
  * Q = sum(2^i * Di)
- * R = sum(4^i * Di) with 0<=i<N
+ * R = sum(2^-i * Di) with 0<=i<N
  *
- * This method is also the same used by ZFS to implement its RAIDZ3
- * support, it works well, and it's very efficient.
- * 
- * Unfortunately, the same approach doesn't work for quad parity.
- * Using additional parity coefficients set as power of 8 with equations:
+ * This approach works well for triple parity and it's very efficient,
+ * because we can implement very fast parallele multiplication and
+ * division by 2 in GF(2^8).
  *
- * P = sum(Di)
- * Q = sum(2^i * Di)
- * R = sum(4^i * Di)
- * S = sum(8^i * Di) with 0<=i<N
+ * Unfortunately it doesn't work beyond triple parity, because whatever
+ * value we choose to generate the power coefficients to compute other
+ * parities, the resulting equations are not solvable for some
+ * combinations of missing disks.
  *
- * we don't have a system of always solvable equations.
+ * This is expected, because the Vandermonde matrix used to compute the
+ * parity has no guarantee to have all submatrices not singular
+ * [2, Chap 11, Problem 7] and this is a requirement to have
+ * a MDS (Maximum Distance Separable) code [2, Chap 11, Theorem 8].
  *
- * This approach was expected to fail at some point, because the Vandermonde
- * matrix of coefficents used to compute the parity has no guarantee to have
- * all submatrices not singular [2, Chap 11, Problem 7] and this is a
- * requirement to have a MDS (Maximum Distance Separable) code [2, Chap 11,
- * Theorem 8].
+ * To overcome this limitation, we instead use a Cauchy matrix [3][4] to
+ * compute the parity. A Cauchy matrix has the property to have all the
+ * square submatrices not singular, resulting in always solvable equations,
+ * for any combination of missing disks.
  *
- * Using the primitive polynomial 285, quad parity works for up to 21 data
- * disks with parity coefficients "1,2,4,8". Changing polynomial to one of
- * 391/451/463/487, it works for up to 27 disks with the same parity
- * coefficients.
- * Using different parity coefficients, like "5,13,27,35", it's possible
- * to make it working for up to 33 disks. But no more.
- * To support more disks it's possible to use GF(2^16) with primitive
- * polynomial 100087 or 122563 that supports up to Hexa (6) Parity
- * with parity coefficients 1,2,4,8,16,32, but only for up to 89 disks.
- *
- * To overcome these limitations we instead use a Cauchy matrix [3][4]
- * to compute the parity.
- * Such matrix has the mathematical property to have all the square 
- * submatrices not singular, resulting in always solvable equations, for
- * any number of parities and for any number of disks.
- *
- * The problem of this approach is that the coefficients of the equations 
- * are not powers of the same value, not allowing to use the fast
- * implementation described in the Anvin's paper [1].
+ * The problem of this approach is that it requires the use of
+ * multiplications by a generic value, and not only by 2 or 2^-1,
+ * potentially affecting badly the performance.
  *
  * Hopefully there is a method to implement parallel multiplications
- * using SSSE3 instructions [1][5]. Method already competitive with the
+ * using SSSE3 instructions [1][5]. Method competitive with the
  * computation of triple parity using power coefficients.
  *
  * Another important property of the Cauchy matrix is that we can setup
@@ -97,9 +81,9 @@
  * described in Anvin's paper [1], resulting in a compatible extension,
  * and requiring SSSE3 instructions only if triple parity is used.
  * 
- * We also adjust the matrix, multipling each row for a constant factor
- * to make the first column with all 1, to optimize the computation
- * for the first disk.
+ * The matrix is also adjusted, multipling each row by a constant factor
+ * to make the first column of all 1, to optimize the computation for
+ * the first disk.
  *
  * This results in the matrix A[row,col] defined as:
  * 
@@ -172,19 +156,25 @@
  *   raidS6     449                                    4307    4789
  *
  * Values are in MiB/s of data processed, not counting generated parity.
+ *
  * You can replicate these results in your machine using the "snapraid -T"
  * command.
  *
- * For comparison, a similar implementation using the power coeffients
- * approach, is only a little faster (5%) for RAIDS3 with power
- * coefficient "4", and with equal speed for RAIDS4 with power coefficient
- * "8", even using AVX instructions to get a better registers allocation
- * with the three operands PSHUFB.
+ * For comparison, the triple parity computation using the power
+ * coeffients "1,2,2^-1" is only a little faster than the one based on
+ * the Cauchy matrix if SSSE3 is present. Instead, it's a lot faster if
+ * SSSE3 is not present.
  *
- *                    int32   int64    sse2   sse2e   ssse3  ssse3e    avxe
- *    raidZ3           1511    2775    8625    9336    9645    9966
- *    raidZ4            842    1518    5195    5507    6278    6737    7410
- * 
+ *             int8   int32   int64    sse2   sse2e   ssse3  ssse3e
+ *   raidZ3            2112    3118    9589   10304
+ *
+ *
+ * This makes the use of power coefficients still a good option to
+ * implement triple parity in CPUs without SSSE3.
+ * But if a modern CPU with SSSE3 (or similar) is available, the Cauchy
+ * matrix is the best option because it provides a general approach
+ * working for any number of parities.
+ *
  * References:
  * [1] Anvin, "The mathematics of RAID-6", 2004
  * [2] MacWilliams, Sloane, "The Theory of Error-Correcting Codes", 1977
@@ -346,6 +336,32 @@ static inline uint64_t x2_64(uint64_t v)
 	return v;
 }
 
+/**
+ * Divide each byte of a uint32 by 2 in the GF(2^8).
+ */
+__attribute__((always_inline))
+static inline uint32_t d2_32(uint32_t v)
+{
+	uint32_t mask = v & 0x01010101U;
+	mask = (mask << 8) - mask;
+	v = (v >> 1) & 0x7f7f7f7fU;
+	v ^= mask & 0x8e8e8e8eU;
+	return v;
+}
+
+/**
+ * Divide each byte of a uint64 by 2 in the GF(2^8).
+ */
+__attribute__((always_inline))
+static inline uint64_t d2_64(uint64_t v)
+{
+	uint64_t mask = v & 0x0101010101010101U;
+	mask = (mask << 8) - mask;
+	v = (v >> 1) & 0x7f7f7f7f7f7f7f7fU;
+	v ^= mask & 0x8e8e8e8e8e8e8e8eU;
+	return v;
+}
+
 /*
  * RAID6 32bit C implementation
  */
@@ -429,10 +445,14 @@ void raid6_int64(unsigned char** vbuf, unsigned data, unsigned size)
 #if defined(__i386__) || defined(__x86_64__)
 static const struct gfconst16 {
 	unsigned char poly[16];
-	unsigned char mask[16];
-} gfconst16  __attribute__((aligned(32))) = {
+	unsigned char low4[16];
+	unsigned char half[16];
+	unsigned char low7[16];
+} gfconst16  __attribute__((aligned(64))) = {
 	{ 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d },
-	{ 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f }
+	{ 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f },
+	{ 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e },
+	{ 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f }
 };
 
 /*
@@ -597,10 +617,8 @@ void raidZ3_int32(unsigned char** vbuf, unsigned data, unsigned size)
 			q0 ^= d0;
 			q1 ^= d1;
 
-			r0 = x2_32(r0);
-			r1 = x2_32(r1);
-			r0 = x2_32(r0);
-			r1 = x2_32(r1);
+			r0 = d2_32(r0);
+			r1 = d2_32(r1);
 
 			r0 ^= d0;
 			r1 ^= d1;
@@ -649,10 +667,8 @@ void raidZ3_int64(unsigned char** vbuf, unsigned data, unsigned size)
 			q0 ^= d0;
 			q1 ^= d1;
 
-			r0 = x2_64(r0);
-			r1 = x2_64(r1);
-			r0 = x2_64(r0);
-			r1 = x2_64(r1);
+			r0 = d2_64(r0);
+			r1 = d2_64(r1);
 
 			r0 ^= d0;
 			r1 ^= d1;
@@ -684,6 +700,8 @@ void raidZ3_sse2(unsigned char** vbuf, unsigned data, unsigned size)
 	r = vbuf[data+2];
 
 	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
+	asm volatile("movdqa %0,%%xmm3" : : "m" (gfconst16.half[0]));
+	asm volatile("movdqa %0,%%xmm6" : : "m" (gfconst16.low7[0]));
 
 	for(i=0;i<size;i+=16) {
 		asm volatile("movdqa %0,%%xmm0" : : "m" (vbuf[l][i]));
@@ -691,25 +709,24 @@ void raidZ3_sse2(unsigned char** vbuf, unsigned data, unsigned size)
 		asm volatile("movdqa %xmm0,%xmm2");
 		for(d=l-1;d>=0;--d) {
 			asm volatile("pxor %xmm4,%xmm4");
-			asm volatile("pxor %xmm5,%xmm5");
-			asm volatile("pxor %xmm6,%xmm6");
 			asm volatile("pcmpgtb %xmm1,%xmm4");
-			asm volatile("pcmpgtb %xmm2,%xmm5");
 			asm volatile("paddb %xmm1,%xmm1");
-			asm volatile("paddb %xmm2,%xmm2");
 			asm volatile("pand %xmm7,%xmm4");
-			asm volatile("pand %xmm7,%xmm5");
 			asm volatile("pxor %xmm4,%xmm1");
-			asm volatile("pxor %xmm5,%xmm2");
-			asm volatile("pcmpgtb %xmm2,%xmm6");
-			asm volatile("paddb %xmm2,%xmm2");
-			asm volatile("pand %xmm7,%xmm6");
-			asm volatile("pxor %xmm6,%xmm2");
 
-			asm volatile("movdqa %0,%%xmm3" : : "m" (vbuf[d][i]));
-			asm volatile("pxor %xmm3,%xmm0");
-			asm volatile("pxor %xmm3,%xmm1");
-			asm volatile("pxor %xmm3,%xmm2");
+			asm volatile("movdqa %xmm2,%xmm4");
+			asm volatile("pxor %xmm5,%xmm5");
+			asm volatile("psllw $7,%xmm4");
+			asm volatile("psrlw $1,%xmm2");
+			asm volatile("pcmpgtb %xmm4,%xmm5");
+			asm volatile("pand %xmm6,%xmm2");
+			asm volatile("pand %xmm3,%xmm5");
+			asm volatile("pxor %xmm5,%xmm2");
+
+			asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[d][i]));
+			asm volatile("pxor %xmm4,%xmm0");
+			asm volatile("pxor %xmm4,%xmm1");
+			asm volatile("pxor %xmm4,%xmm2");
 		}
 		asm volatile("movntdq %%xmm0,%0" : "=m" (p[i]));
 		asm volatile("movntdq %%xmm1,%0" : "=m" (q[i]));
@@ -740,6 +757,8 @@ void raidZ3_sse2ext(unsigned char** vbuf, unsigned data, unsigned size)
 	r = vbuf[data+2];
 
 	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
+	asm volatile("movdqa %0,%%xmm3" : : "m" (gfconst16.half[0]));
+	asm volatile("movdqa %0,%%xmm11" : : "m" (gfconst16.low7[0]));
 
 	for(i=0;i<size;i+=32) {
 		asm volatile("movdqa %0,%%xmm0" : : "m" (vbuf[l][i]));
@@ -749,45 +768,41 @@ void raidZ3_sse2ext(unsigned char** vbuf, unsigned data, unsigned size)
 		asm volatile("movdqa %xmm0,%xmm2");
 		asm volatile("movdqa %xmm8,%xmm10");
 		for(d=l-1;d>=0;--d) {
+			asm volatile("movdqa %xmm2,%xmm6");
+			asm volatile("movdqa %xmm10,%xmm14");
 			asm volatile("pxor %xmm4,%xmm4");
-			asm volatile("pxor %xmm5,%xmm5");
-			asm volatile("pxor %xmm6,%xmm6");
 			asm volatile("pxor %xmm12,%xmm12");
+			asm volatile("pxor %xmm5,%xmm5");
 			asm volatile("pxor %xmm13,%xmm13");
-			asm volatile("pxor %xmm14,%xmm14");
+			asm volatile("psllw $7,%xmm6");
+			asm volatile("psllw $7,%xmm14");
+			asm volatile("psrlw $1,%xmm2");
+			asm volatile("psrlw $1,%xmm10");
 			asm volatile("pcmpgtb %xmm1,%xmm4");
-			asm volatile("pcmpgtb %xmm2,%xmm5");
 			asm volatile("pcmpgtb %xmm9,%xmm12");
-			asm volatile("pcmpgtb %xmm10,%xmm13");
+			asm volatile("pcmpgtb %xmm6,%xmm5");
+			asm volatile("pcmpgtb %xmm14,%xmm13");
 			asm volatile("paddb %xmm1,%xmm1");
-			asm volatile("paddb %xmm2,%xmm2");
 			asm volatile("paddb %xmm9,%xmm9");
-			asm volatile("paddb %xmm10,%xmm10");
+			asm volatile("pand %xmm11,%xmm2");
+			asm volatile("pand %xmm11,%xmm10");
 			asm volatile("pand %xmm7,%xmm4");
-			asm volatile("pand %xmm7,%xmm5");
 			asm volatile("pand %xmm7,%xmm12");
-			asm volatile("pand %xmm7,%xmm13");
+			asm volatile("pand %xmm3,%xmm5");
+			asm volatile("pand %xmm3,%xmm13");
 			asm volatile("pxor %xmm4,%xmm1");
-			asm volatile("pxor %xmm5,%xmm2");
 			asm volatile("pxor %xmm12,%xmm9");
+			asm volatile("pxor %xmm5,%xmm2");
 			asm volatile("pxor %xmm13,%xmm10");
-			asm volatile("pcmpgtb %xmm2,%xmm6");
-			asm volatile("pcmpgtb %xmm10,%xmm14");
-			asm volatile("paddb %xmm2,%xmm2");
-			asm volatile("paddb %xmm10,%xmm10");
-			asm volatile("pand %xmm7,%xmm6");
-			asm volatile("pand %xmm7,%xmm14");
-			asm volatile("pxor %xmm6,%xmm2");
-			asm volatile("pxor %xmm14,%xmm10");
 
-			asm volatile("movdqa %0,%%xmm3" : : "m" (vbuf[d][i]));
-			asm volatile("movdqa %0,%%xmm11" : : "m" (vbuf[d][i+16]));
-			asm volatile("pxor %xmm3,%xmm0");
-			asm volatile("pxor %xmm3,%xmm1");
-			asm volatile("pxor %xmm3,%xmm2");
-			asm volatile("pxor %xmm11,%xmm8");
-			asm volatile("pxor %xmm11,%xmm9");
-			asm volatile("pxor %xmm11,%xmm10");
+			asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[d][i]));
+			asm volatile("movdqa %0,%%xmm12" : : "m" (vbuf[d][i+16]));
+			asm volatile("pxor %xmm4,%xmm0");
+			asm volatile("pxor %xmm4,%xmm1");
+			asm volatile("pxor %xmm4,%xmm2");
+			asm volatile("pxor %xmm12,%xmm8");
+			asm volatile("pxor %xmm12,%xmm9");
+			asm volatile("pxor %xmm12,%xmm10");
 		}
 		asm volatile("movntdq %%xmm0,%0" : "=m" (p[i]));
 		asm volatile("movntdq %%xmm8,%0" : "=m" (p[i+16]));
@@ -865,7 +880,7 @@ void raidS3_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 	r = vbuf[data+2];
 
 	asm volatile("movdqa %0,%%xmm3" : : "m" (gfconst16.poly[0]));
-	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
+	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 
 	for(i=0;i<size;i+=16) {
 		/* last disk without the by two multiplication */
@@ -953,7 +968,7 @@ void raidS3_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 	r = vbuf[data+2];
 
 	asm volatile("movdqa %0,%%xmm3" : : "m" (gfconst16.poly[0]));
-	asm volatile("movdqa %0,%%xmm11" : : "m" (gfconst16.mask[0]));
+	asm volatile("movdqa %0,%%xmm11" : : "m" (gfconst16.low4[0]));
 
 	for(i=0;i<size;i+=32) {
 		/* last disk without the by two multiplication */
@@ -1135,7 +1150,7 @@ void raidS4_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 
 	for(i=0;i<size;i+=16) {
 		/* last disk without the by two multiplication */
-		asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
+		asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 		asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[l][i]));
 
 		asm volatile("movdqa %xmm4,%xmm0");
@@ -1169,7 +1184,7 @@ void raidS4_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("pand %xmm7,%xmm5");
 			asm volatile("pxor %xmm5,%xmm1");
 
-			asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 
 			asm volatile("pxor %xmm4,%xmm0");
 			asm volatile("pxor %xmm4,%xmm1");
@@ -1242,7 +1257,7 @@ void raidS4_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 
 	for(i=0;i<size;i+=32) {
 		/* last disk without the by two multiplication */
-		asm volatile("movdqa %0,%%xmm15" : : "m" (gfconst16.mask[0]));
+		asm volatile("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
 		asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[l][i]));
 		asm volatile("movdqa %0,%%xmm12" : : "m" (vbuf[l][i+16]));
 
@@ -1285,7 +1300,7 @@ void raidS4_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 		/* intermediate disks */
 		for(d=l-1;d>0;--d) {
 			asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
-			asm volatile("movdqa %0,%%xmm15" : : "m" (gfconst16.mask[0]));
+			asm volatile("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
 			asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[d][i]));
 			asm volatile("movdqa %0,%%xmm12" : : "m" (vbuf[d][i+16]));
 
@@ -1343,7 +1358,7 @@ void raidS4_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 
 		/* first disk with all coefficients at 1 */
 		asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
-		asm volatile("movdqa %0,%%xmm15" : : "m" (gfconst16.mask[0]));
+		asm volatile("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
 		asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[0][i]));
 		asm volatile("movdqa %0,%%xmm12" : : "m" (vbuf[0][i+16]));
 
@@ -1471,7 +1486,7 @@ void raidS5_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 		asm volatile("movdqa %xmm4,%xmm0");
 		asm volatile("movdqa %%xmm4,%0" : "=m" (p0[0]));
 
-		asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
+		asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 		asm volatile("movdqa %xmm4,%xmm5");
 		asm volatile("psrlw  $4,%xmm5");
 		asm volatile("pand   %xmm7,%xmm4");
@@ -1511,7 +1526,7 @@ void raidS5_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("pxor %xmm4,%xmm6");
 			asm volatile("movdqa %%xmm6,%0" : "=m" (p0[0]));
 
-			asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 			asm volatile("movdqa %xmm4,%xmm5");
 			asm volatile("psrlw  $4,%xmm5");
 			asm volatile("pand   %xmm7,%xmm4");
@@ -1591,7 +1606,7 @@ void raidS5_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 	t = vbuf[data+4];
 
 	asm volatile("movdqa %0,%%xmm14" : : "m" (gfconst16.poly[0]));
-	asm volatile("movdqa %0,%%xmm15" : : "m" (gfconst16.mask[0]));
+	asm volatile("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
 
 	for(i=0;i<size;i+=16) {
 		/* last disk without the by two multiplication */
@@ -1786,7 +1801,7 @@ void raidS6_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 		asm volatile("movdqa %%xmm4,%0" : "=m" (p0[0]));
 		asm volatile("movdqa %%xmm4,%0" : "=m" (q0[0]));
 
-		asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
+		asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 		asm volatile("movdqa %xmm4,%xmm5");
 		asm volatile("psrlw  $4,%xmm5");
 		asm volatile("pand   %xmm7,%xmm4");
@@ -1835,7 +1850,7 @@ void raidS6_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 			asm volatile("movdqa %%xmm5,%0" : "=m" (p0[0]));
 			asm volatile("movdqa %%xmm6,%0" : "=m" (q0[0]));
 
-			asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 			asm volatile("movdqa %xmm4,%xmm5");
 			asm volatile("psrlw  $4,%xmm5");
 			asm volatile("pand   %xmm7,%xmm4");
@@ -1927,7 +1942,7 @@ void raidS6_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 	u = vbuf[data+5];
 
 	asm volatile("movdqa %0,%%xmm14" : : "m" (gfconst16.poly[0]));
-	asm volatile("movdqa %0,%%xmm15" : : "m" (gfconst16.mask[0]));
+	asm volatile("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
 
 	for(i=0;i<size;i+=16) {
 		/* last disk without the by two multiplication */
@@ -2561,7 +2576,7 @@ void raid_recov1_ssse3(unsigned level, const int* d, const int* c, unsigned char
 	p = vbuf[data+c[0]];
 	pa = vbuf[d[0]];
 
-	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
+	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 	asm volatile("movdqa %0,%%xmm4" : : "m" (gfmulpshufb[V][0][0]));
 	asm volatile("movdqa %0,%%xmm5" : : "m" (gfmulpshufb[V][1][0]));
 
@@ -2618,7 +2633,7 @@ void raid_recov2_ssse3(unsigned level, const int* d, const int* c, unsigned char
 		pa[i] = vbuf[d[i]];
 	}
 
-	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
+	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 
 	for(i=0;i<size;i+=16) {
 		asm volatile("movdqa %0,%%xmm0" : : "m" (p[0][i]));
@@ -2720,7 +2735,7 @@ void raid_recovX_ssse3(unsigned level, const int* d, const int* c, unsigned char
 		pa[i] = vbuf[d[i]];
 	}
 
-	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.mask[0]));
+	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 
 	for(i=0;i<size;i+=16) {
 		unsigned char PD[RAID_PARITY_S_MAX][16] __attribute__((aligned(16)));

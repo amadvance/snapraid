@@ -36,7 +36,7 @@
  * It has a fast implementation not requiring SSSE3 for triple parity.
  * This is mostly intended for low end CPUs like ARM and AMD Athlon II.
  *
- * This is the mode used by ZFS.
+ * This is similar at the mode used by Linux Kernel RAID6 and ZFS RAIDZ.
  */
 #define RAID_MODE_Z 1
 

@@ -156,7 +156,7 @@ void set_power(unsigned char* matrix)
 	v = 1;
 	for(i=0;i<DISK;++i) {
 		matrix[2*DISK+i] = v;
-		v = gfmul(4, v);
+		v = gfmul(0x8e, v);
 	}
 }
 
