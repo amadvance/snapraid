@@ -31,17 +31,21 @@
  */
 
 /*
- * The RAID5 and RAID6 support is implemented like the Linux Kernel RAID
- * following the Anvin's paper "The mathematics of RAID-6" [1].
+ * The RAID5 and RAID6 support is implemented using the Galois Field
+ * GF(2^8) with the primitive polynomial x^8 + x^4 + x^3 + x^2 + 1 
+ * (285 decimal).
  *
- * We compute the parity in the Galois Field GF(2^8) with the primitive
- * polynomial x^8 + x^4 + x^3 + x^2 + 1 (285 decimal), starting from a set 
- * of N disk Di with 0<=i<N, using the equations:
+ * The parity P and Q of a set of N disk Di with 0<=i<N, is computed
+ * using the equations:
  *
  * P = sum(Di)
  * Q = sum(2^i * Di) with 0<=i<N
  *
- * To support triple parity, it was first evaluated, and then dropped, an
+ * This approach is the same used by the Linux Kernel RAID, and by ZFS
+ * RAIDZ2, better described in the H. Peter Anvin paper "The mathematics 
+ * of RAID-6" [1]. 
+ *
+ * To support triple parity, it was first evaluated and then dropped, an
  * extension of the same approach, with additional parity coefficients set
  * as powers of 2^-1, with equations:
  *
@@ -50,8 +54,11 @@
  * R = sum(2^-i * Di) with 0<=i<N
  *
  * This approach works well for triple parity and it's very efficient,
- * because we can implement very fast parallele multiplication and
- * division by 2 in GF(2^8).
+ * because we can implement very fast parallel multiplications and
+ * divisions by 2 in GF(2^8).
+ *
+ * It's also similar at the approach used by ZFS RAIDZ3, with the 
+ * difference that ZFS uses powers of 4 instead of 2^-1.
  *
  * Unfortunately it doesn't work beyond triple parity, because whatever
  * value we choose to generate the power coefficients to compute other
@@ -63,14 +70,14 @@
  * [2, Chap 11, Problem 7] and this is a requirement to have
  * a MDS (Maximum Distance Separable) code [2, Chap 11, Theorem 8].
  *
- * To overcome this limitation, we instead use a Cauchy matrix [3][4] to
- * compute the parity. A Cauchy matrix has the property to have all the
- * square submatrices not singular, resulting in always solvable equations,
+ * To overcome this limitation, we use a Cauchy matrix [3][4] to compute 
+ * the parity. A Cauchy matrix has the property to have all the square
+ * submatrices not singular, resulting in always solvable equations,
  * for any combination of missing disks.
  *
  * The problem of this approach is that it requires the use of
- * multiplications by a generic value, and not only by 2 or 2^-1,
- * potentially affecting badly the performance.
+ * generic multiplications, and not only by 2 or 2^-1, potentially 
+ * affecting badly the performance.
  *
  * Hopefully there is a method to implement parallel multiplications
  * using SSSE3 instructions [1][5]. Method competitive with the
@@ -78,8 +85,8 @@
  *
  * Another important property of the Cauchy matrix is that we can setup
  * the first two rows with coeffients equal at the RAID5 and RAID6 approach
- * described in Anvin's paper [1], resulting in a compatible extension,
- * and requiring SSSE3 instructions only if triple parity is used.
+ * decribed, resulting in a compatible extension, and requiring SSSE3
+ * instructions only if triple parity or beyond is used.
  * 
  * The matrix is also adjusted, multipling each row by a constant factor
  * to make the first column of all 1, to optimize the computation for
@@ -148,12 +155,12 @@
  * for a Core i7-3740QM CPU @ 2.7GHz is:
  * 
  *             int8   int32   int64    sse2   sse2e   ssse3  ssse3e
- *    raid5           11927   22075   36004
- *    raid6            3378    5874   18235   19164
- *   raidS3     844                                    8814    9419
- *   raidS4     665                                    6836    7415
- *   raidS5     537                                    5388    5686
- *   raidS6     449                                    4307    4789
+ *   par1             11927   22075   36004
+ *   par2              3378    5874   18235   19164
+ *   par3       844                                    8814    9419
+ *   par4       665                                    6836    7415
+ *   par5       537                                    5388    5686
+ *   par6       449                                    4307    4789
  *
  * Values are in MiB/s of data processed, not counting generated parity.
  *
@@ -162,23 +169,23 @@
  *
  * For comparison, the triple parity computation using the power
  * coeffients "1,2,2^-1" is only a little faster than the one based on
- * the Cauchy matrix if SSSE3 is present. Instead, it's a lot faster if
- * SSSE3 is not present.
+ * the Cauchy matrix if SSSE3 is present.
  *
  *             int8   int32   int64    sse2   sse2e   ssse3  ssse3e
- *   raidZ3            2112    3118    9589   10304
+ *   par3z             2112    3118    9589   10304
  *
  *
- * This makes the use of power coefficients still a good option to
- * implement triple parity in CPUs without SSSE3.
+ * In conclusion, the use of power coefficients, and specifically powers
+ * of 1,2,2^-1, is the best option to implement triple parity in CPUs 
+ * without SSSE3.
  * But if a modern CPU with SSSE3 (or similar) is available, the Cauchy
- * matrix is the best option because it provides a general approach
- * working for any number of parities.
+ * matrix is the best option because it provides a fast and general 
+ * approach working for any number of parities.
  *
  * References:
  * [1] Anvin, "The mathematics of RAID-6", 2004
  * [2] MacWilliams, Sloane, "The Theory of Error-Correcting Codes", 1977
- * [3] Blömer, "An XOR-Based Erasure-Resilient Coding Scheme", 1995
+ * [3] Blomer, "An XOR-Based Erasure-Resilient Coding Scheme", 1995
  * [4] Roth, "Introduction to Coding Theory", 2006
  * [5] Plank, "Screaming Fast Galois Field Arithmetic Using Intel SIMD Instructions", 2013
  */
@@ -208,9 +215,9 @@
 /* specialized parity generation */
 
 /*
- * RAID5 32bit C implementation
+ * PAR1 (RAID5 with xor) 32bit C implementation
  */
-void raid5_int32(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par1_int32(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	int d, l;
@@ -237,9 +244,9 @@ void raid5_int32(unsigned char** vbuf, unsigned data, unsigned size)
 }
 
 /*
- * RAID5 64bit C implementation
+ * PAR1 (RAID5 with xor) 64bit C implementation
  */
-void raid5_int64(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par1_int64(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	int d, l;
@@ -267,14 +274,14 @@ void raid5_int64(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__i386__) || defined(__x86_64__)
 /*
- * RAID5 SSE2 implementation
+ * PAR1 (RAID5 with xor) SSE2 implementation
  *
  * Note that we don't have the corresponding x64 sse2ext function using more
  * registers because processing a block of 64 bytes already fills
  * the typical cache block, and processing 128 bytes doesn't increase
  * performance.
  */
-void raid5_sse2(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par1_sse2(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	int d, l;
@@ -363,9 +370,9 @@ static inline uint64_t d2_64(uint64_t v)
 }
 
 /*
- * RAID6 32bit C implementation
+ * PAR2 (RAID6 with powers of 2) 32bit C implementation
  */
-void raid6_int32(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par2_int32(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -403,9 +410,9 @@ void raid6_int32(unsigned char** vbuf, unsigned data, unsigned size)
 }
 
 /*
- * RAID6 64bit C implementation
+ * PAR2 (RAID6 with powers of 2) 64bit C implementation
  */
-void raid6_int64(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par2_int64(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -456,9 +463,9 @@ static const struct gfconst16 {
 };
 
 /*
- * RAID6 SSE2 implementation
+ * PAR2 (RAID6 with powers of 2) SSE2 implementation
  */
-void raid6_sse2(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par2_sse2(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -507,11 +514,11 @@ void raid6_sse2(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__x86_64__)
 /*
- * RAID6 SSE2 implementation
+ * PAR2 (RAID6 with powers of 2) SSE2 implementation
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid6_sse2ext(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par2_sse2ext(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -583,9 +590,9 @@ void raid6_sse2ext(unsigned char** vbuf, unsigned data, unsigned size)
 #endif
 
 /*
- * RAIDZ3 with power coefficients 32bit C implementation
+ * PAR3z (triple parity with powers of 2^-1) 32bit C implementation
  */
-void raidZ3_int32(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par3z_int32(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -633,9 +640,9 @@ void raidZ3_int32(unsigned char** vbuf, unsigned data, unsigned size)
 }
 
 /*
- * RAIDZ3 with power coefficients 64bit C implementation
+ * PAR3z (triple parity with powers of 2^-1) 64bit C implementation
  */
-void raidZ3_int64(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par3z_int64(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -684,9 +691,9 @@ void raidZ3_int64(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__i386__) || defined(__x86_64__)
 /*
- * RAIDZ3 with power coefficients SSE2 implementation
+ * PAR3z (triple parity with powers of 2^-1) SSE2 implementation
  */
-void raidZ3_sse2(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par3z_sse2(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -739,11 +746,11 @@ void raidZ3_sse2(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__x86_64__)
 /*
- * RAIDZ3 with power coefficients SSE2 implementation
+ * PAR3z (triple parity with powers of 2^-1) SSE2 implementation
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raidZ3_sse2ext(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par3z_sse2ext(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -817,14 +824,14 @@ void raidZ3_sse2ext(unsigned char** vbuf, unsigned data, unsigned size)
 #endif
 
 /*
- * RAIDS3 8bit C implementation
+ * PAR3 (triple parity with Cauchy matrix) 8bit C implementation
  * 
  * Note that instead of a generic multiplicationt table, likely resulting
  * in multiple cache misses, a precomputed table could be used. 
  * But this is only a kind of reference function, and we are not really
  * interested in speed.
  */
-void raidS3_int8(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par3_int8(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -845,8 +852,8 @@ void raidS3_int8(unsigned char** vbuf, unsigned data, unsigned size)
 			d0 = v_8(vbuf[d][i]);
 
 			p0 ^= d0;
-			q0 ^= gfmul[d0][gfgen[1][d]];
-			r0 ^= gfmul[d0][gfgen[2][d]];
+			q0 ^= gfmul[d0][gfcauchy[1][d]];
+			r0 ^= gfmul[d0][gfcauchy[2][d]];
 		}
 
 		/* first disk with all coefficients at 1 */
@@ -864,9 +871,9 @@ void raidS3_int8(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__i386__) || defined(__x86_64__)
 /*
- * RAIDS3 SSSE3 implementation
+ * PAR3 (triple parity with Cauchy matrix) SSSE3 implementation
  */
-void raidS3_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par3_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -950,11 +957,11 @@ void raidS3_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__x86_64__)
 /*
- * RAIDS3 SSSE3 implementation
+ * PAR3 (triple parity with Cauchy matrix) SSSE3 implementation
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raidS3_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par3_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -1079,14 +1086,14 @@ void raidS3_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 #endif
 
 /*
- * RAIDS4 8bit C implementation
+ * PAR4 (quad parity with Cauchy matrix) 8bit C implementation
  * 
  * Note that instead of a generic multiplicationt table, likely resulting
  * in multiple cache misses, a precomputed table could be used. 
  * But this is only a kind of reference function, and we are not really
  * interested in speed.
  */
-void raidS4_int8(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par4_int8(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -1109,9 +1116,9 @@ void raidS4_int8(unsigned char** vbuf, unsigned data, unsigned size)
 			d0 = v_8(vbuf[d][i]);
 
 			p0 ^= d0;
-			q0 ^= gfmul[d0][gfgen[1][d]];
-			r0 ^= gfmul[d0][gfgen[2][d]];
-			s0 ^= gfmul[d0][gfgen[3][d]];
+			q0 ^= gfmul[d0][gfcauchy[1][d]];
+			r0 ^= gfmul[d0][gfcauchy[2][d]];
+			s0 ^= gfmul[d0][gfcauchy[3][d]];
 		}
 
 		/* first disk with all coefficients at 1 */
@@ -1131,9 +1138,9 @@ void raidS4_int8(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__i386__) || defined(__x86_64__)
 /*
- * RAIDS4 SSSE3 implementation
+ * PAR4 (quad parity with Cauchy matrix) SSSE3 implementation
  */
-void raidS4_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par4_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -1236,11 +1243,11 @@ void raidS4_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__x86_64__)
 /*
- * RAIDS4 SSSE3 implementation
+ * PAR4 (quad parity with Cauchy matrix) SSSE3 implementation
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raidS4_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par4_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -1397,14 +1404,14 @@ void raidS4_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 #endif
 
 /*
- * RAIDS5 8bit C implementation
+ * PAR5 (penta parity with Cauchy matrix) 8bit C implementation
  * 
  * Note that instead of a generic multiplicationt table, likely resulting
  * in multiple cache misses, a precomputed table could be used. 
  * But this is only a kind of reference function, and we are not really
  * interested in speed.
  */
-void raidS5_int8(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par5_int8(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -1429,10 +1436,10 @@ void raidS5_int8(unsigned char** vbuf, unsigned data, unsigned size)
 			d0 = v_8(vbuf[d][i]);
 
 			p0 ^= d0;
-			q0 ^= gfmul[d0][gfgen[1][d]];
-			r0 ^= gfmul[d0][gfgen[2][d]];
-			s0 ^= gfmul[d0][gfgen[3][d]];
-			t0 ^= gfmul[d0][gfgen[4][d]];
+			q0 ^= gfmul[d0][gfcauchy[1][d]];
+			r0 ^= gfmul[d0][gfcauchy[2][d]];
+			s0 ^= gfmul[d0][gfcauchy[3][d]];
+			t0 ^= gfmul[d0][gfcauchy[4][d]];
 		}
 		
 		/* first disk with all coefficients at 1 */
@@ -1454,13 +1461,13 @@ void raidS5_int8(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__i386__) || defined(__x86_64__)
 /*
- * RAIDS5 SSSE3 implementation
+ * PAR5 (penta parity with Cauchy matrix) SSSE3 implementation
  */
 #ifdef _WIN32
 /* ensures that stack is aligned at 16 bytes because we allocate SSE registers in it */
 __attribute__((force_align_arg_pointer))
 #endif
-void raidS5_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par5_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 /* ensures that stack is aligned at 16 bytes because we allocate SSE registers in it */
 {
 	unsigned char* p;
@@ -1584,11 +1591,11 @@ void raidS5_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__x86_64__)
 /*
- * RAIDS5 SSSE3 implementation
+ * PAR5 (penta parity with Cauchy matrix) SSSE3 implementation
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raidS5_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par5_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -1705,14 +1712,14 @@ void raidS5_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 #endif
 
 /*
- * RAIDS6 8bit C implementation
+ * PAR6 (hexa parity with Cauchy matrix) 8bit C implementation
  * 
  * Note that instead of a generic multiplicationt table, likely resulting
  * in multiple cache misses, a precomputed table could be used. 
  * But this is only a kind of reference function, and we are not really
  * interested in speed.
  */
-void raidS6_int8(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par6_int8(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -1739,11 +1746,11 @@ void raidS6_int8(unsigned char** vbuf, unsigned data, unsigned size)
 			d0 = v_8(vbuf[d][i]);
 
 			p0 ^= d0;
-			q0 ^= gfmul[d0][gfgen[1][d]];
-			r0 ^= gfmul[d0][gfgen[2][d]];
-			s0 ^= gfmul[d0][gfgen[3][d]];
-			t0 ^= gfmul[d0][gfgen[4][d]];
-			u0 ^= gfmul[d0][gfgen[5][d]];
+			q0 ^= gfmul[d0][gfcauchy[1][d]];
+			r0 ^= gfmul[d0][gfcauchy[2][d]];
+			s0 ^= gfmul[d0][gfcauchy[3][d]];
+			t0 ^= gfmul[d0][gfcauchy[4][d]];
+			u0 ^= gfmul[d0][gfcauchy[5][d]];
 		}
 		
 		/* first disk with all coefficients at 1 */
@@ -1767,13 +1774,13 @@ void raidS6_int8(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__i386__) || defined(__x86_64__)
 /*
- * RAIDS6 SSSE3 implementation
+ * PAR6 (hexa parity with Cauchy matrix) SSSE3 implementation
  */
 #ifdef _WIN32
 /* ensures that stack is aligned at 16 bytes because we allocate SSE registers in it */
 __attribute__((force_align_arg_pointer))
 #endif
-void raidS6_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par6_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -1918,11 +1925,11 @@ void raidS6_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__x86_64__)
 /*
- * RAIDS6 SSSE3 implementation
+ * PAR6 (hexa parity with Cauchy matrix) SSSE3 implementation
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raidS6_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par6_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -2058,7 +2065,7 @@ void raidS6_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 /****************************************************************************/
 /* mode */
 
-static unsigned raid_mode = RAID_MODE_S; /**< RAID mode. */
+static unsigned raid_mode = RAID_MODE_CAUCHY; /**< RAID mode. */
 
 void raid_set(unsigned mode)
 {
@@ -2069,28 +2076,28 @@ void raid_set(unsigned mode)
 /* parity generation */
 
 /* internal forwarder */
-static void (*raid5_gen)(unsigned char** vbuf, unsigned data, unsigned size);
-static void (*raid6_gen)(unsigned char** vbuf, unsigned data, unsigned size);
-static void (*raidZ3_gen)(unsigned char** vbuf, unsigned data, unsigned size);
-static void (*raidS3_gen)(unsigned char** vbuf, unsigned data, unsigned size);
-static void (*raidS4_gen)(unsigned char** vbuf, unsigned data, unsigned size);
-static void (*raidS5_gen)(unsigned char** vbuf, unsigned data, unsigned size);
-static void (*raidS6_gen)(unsigned char** vbuf, unsigned data, unsigned size);
+static void (*raid_par1_ptr)(unsigned char** vbuf, unsigned data, unsigned size);
+static void (*raid_par2_ptr)(unsigned char** vbuf, unsigned data, unsigned size);
+static void (*raid_par3z_ptr)(unsigned char** vbuf, unsigned data, unsigned size);
+static void (*raid_par3_ptr)(unsigned char** vbuf, unsigned data, unsigned size);
+static void (*raid_par4_ptr)(unsigned char** vbuf, unsigned data, unsigned size);
+static void (*raid_par5_ptr)(unsigned char** vbuf, unsigned data, unsigned size);
+static void (*raid_par6_ptr)(unsigned char** vbuf, unsigned data, unsigned size);
 
-void raid_gen(unsigned level, unsigned char** vbuf, unsigned data, unsigned size)
+void raid_par(unsigned level, unsigned char** vbuf, unsigned data, unsigned size)
 {
 	switch (level) {
-	case 1 : raid5_gen(vbuf, data, size); break;
-	case 2 : raid6_gen(vbuf, data, size); break;
+	case 1 : raid_par1_ptr(vbuf, data, size); break;
+	case 2 : raid_par2_ptr(vbuf, data, size); break;
 	case 3 :
-		if (raid_mode == RAID_MODE_S)
-			raidS3_gen(vbuf, data, size);
+		if (raid_mode == RAID_MODE_CAUCHY)
+			raid_par3_ptr(vbuf, data, size);
 		else
-			raidZ3_gen(vbuf, data, size);
+			raid_par3z_ptr(vbuf, data, size);
 		break;
-	case 4 : raidS4_gen(vbuf, data, size); break;
-	case 5 : raidS5_gen(vbuf, data, size); break;
-	case 6 : raidS6_gen(vbuf, data, size); break;
+	case 4 : raid_par4_ptr(vbuf, data, size); break;
+	case 5 : raid_par5_ptr(vbuf, data, size); break;
+	case 6 : raid_par6_ptr(vbuf, data, size); break;
 	default:
 		fprintf(stderr, "Invalid raid gen level\n");
 		exit(EXIT_FAILURE);
@@ -2159,11 +2166,11 @@ static inline const unsigned char* table(unsigned char v)
  */
 static inline void raid_delta_gen(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
-	unsigned char* p[RAID_PARITY_S_MAX];
-	unsigned char* pa[RAID_PARITY_S_MAX];
+	unsigned char* p[RAID_PARITY_CAUCHY_MAX];
+	unsigned char* pa[RAID_PARITY_CAUCHY_MAX];
 	unsigned i;
 
-	assert(level > 0 && level <= RAID_PARITY_S_MAX);
+	assert(level > 0 && level <= RAID_PARITY_CAUCHY_MAX);
 
 	for(i=0;i<level;++i) {
 		/* keep a copy of the parity buffer */
@@ -2180,7 +2187,7 @@ static inline void raid_delta_gen(unsigned level, const int* d, const int* c, un
 	}
 
 	/* compute only for the level we really need */
-	raid_gen(c[level - 1] + 1, vbuf, data, size);
+	raid_par(c[level - 1] + 1, vbuf, data, size);
 
 	for(i=0;i<level;++i) {
 		/* restore disk buffers as before */
@@ -2195,7 +2202,7 @@ static inline void raid_delta_gen(unsigned level, const int* d, const int* c, un
 /* specialized raid recovering */
 
 /**
- * Recover failure of one data block for RAID5.
+ * Recover failure of one data block for PAR1.
  *
  * Starting from the equation:
  *
@@ -2205,12 +2212,12 @@ static inline void raid_delta_gen(unsigned level, const int* d, const int* c, un
  *
  * Dx = Pd
  */
-static void raid5_recov1(const int* d, unsigned char** vbuf, unsigned data, unsigned size)
+static void raid_rec1_par1(const int* d, unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* pa;
 
-	/* for RAID5 we can directly compute the mssing block */
+	/* for PAR1 we can directly compute the missing block */
 	/* and we don't need to use the zero buffer */
 	p = vbuf[data];
 	pa = vbuf[d[0]];
@@ -2222,7 +2229,7 @@ static void raid5_recov1(const int* d, unsigned char** vbuf, unsigned data, unsi
 	vbuf[data] = pa;
 
 	/* compute */
-	raid5_gen(vbuf, data, size);
+	raid_par1_ptr(vbuf, data, size);
 
 	/* restore as before */
 	vbuf[d[0]] = pa;
@@ -2230,7 +2237,7 @@ static void raid5_recov1(const int* d, unsigned char** vbuf, unsigned data, unsi
 }
 
 /**
- * Recover failure of two data blocks for RAID6.
+ * Recover failure of two data blocks for PAR2.
  *
  * Starting from the equations:
  *
@@ -2252,7 +2259,7 @@ static void raid5_recov1(const int* d, unsigned char** vbuf, unsigned data, unsi
  *
  * That are always satisfied for any 0<=d[0]<d[1]<255.
  */
-static void raid6_recov2(const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+static void raid_rec2_par2(const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
 	unsigned i;
 	unsigned char* p;
@@ -2296,10 +2303,10 @@ static void raid6_recov2(const int* d, const int* c, unsigned char** vbuf, unsig
  */
 static unsigned char A(unsigned p, unsigned d)
 {
-	if (raid_mode == RAID_MODE_S)
-		return gfgen[p][d];
+	if (raid_mode == RAID_MODE_CAUCHY)
+		return gfcauchy[p][d];
 	else
-		return gfpower[p][d];
+		return gfvandermonde[p][d];
 }
 
 /**
@@ -2373,7 +2380,7 @@ static inline void invert(unsigned char* M, unsigned char* V, unsigned n)
  *
  * Dx = A[c[0],d[0]]^-1 * Pd
  */
-void raid_recov1_int8(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+void raid_rec1_int8(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
 	unsigned i;
 	unsigned char* p;
@@ -2384,9 +2391,9 @@ void raid_recov1_int8(unsigned level, const int* d, const int* c, unsigned char*
 
 	(void)level; /* unused */
 
-	/* if it's RAID5 uses the dedicated and fastest function */
+	/* if it's PAR1 uses the dedicated and fastest function */
 	if (c[0] == 0) {
-		raid5_recov1(d, vbuf, data, size);
+		raid_rec1_par1(d, vbuf, data, size);
 		return;
 	}
 
@@ -2424,7 +2431,7 @@ void raid_recov1_int8(unsigned level, const int* d, const int* c, unsigned char*
  *
  * we solve inverting the coefficients matrix.
  */
-void raid_recov2_int8(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+void raid_rec2_int8(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* pa;
@@ -2438,9 +2445,9 @@ void raid_recov2_int8(unsigned level, const int* d, const int* c, unsigned char*
 
 	(void)level; /* unused */
 
-	/* if it's RAID6 uses the dedicated and fasteT[ ][2]unction */
+	/* if it's PAR2 uses the dedicated and fastest function */
 	if (c[0] == 0 && c[1] == 1) {
-		raid6_recov2(d, c, vbuf, data, zero, size);
+		raid_rec2_par2(d, c, vbuf, data, zero, size);
 		return;
 	}
 
@@ -2493,13 +2500,13 @@ void raid_recov2_int8(unsigned level, const int* d, const int* c, unsigned char*
  * PD[0] = Pd, PD[1] = Qd, PD[2] = Rd, ...
  * D[0] = Dx, D[1] = Dy, D[2] = Dz, ...
  */
-void raid_recovX_int8(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+void raid_recX_int8(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
-	unsigned char* p[RAID_PARITY_S_MAX];
-	unsigned char* pa[RAID_PARITY_S_MAX];
-	const unsigned char* T[RAID_PARITY_S_MAX][RAID_PARITY_S_MAX];
-	unsigned char G[RAID_PARITY_S_MAX*RAID_PARITY_S_MAX];
-	unsigned char V[RAID_PARITY_S_MAX*RAID_PARITY_S_MAX];
+	unsigned char* p[RAID_PARITY_CAUCHY_MAX];
+	unsigned char* pa[RAID_PARITY_CAUCHY_MAX];
+	const unsigned char* T[RAID_PARITY_CAUCHY_MAX][RAID_PARITY_CAUCHY_MAX];
+	unsigned char G[RAID_PARITY_CAUCHY_MAX*RAID_PARITY_CAUCHY_MAX];
+	unsigned char V[RAID_PARITY_CAUCHY_MAX*RAID_PARITY_CAUCHY_MAX];
 	unsigned i, j, k;
 
 	/* setup the coefficients matrix */
@@ -2528,7 +2535,7 @@ void raid_recovX_int8(unsigned level, const int* d, const int* c, unsigned char*
 	}
 
 	for(i=0;i<size;++i) {
-		unsigned char PD[RAID_PARITY_S_MAX];
+		unsigned char PD[RAID_PARITY_CAUCHY_MAX];
 
 		/* delta */
 		for(j=0;j<level;++j)
@@ -2548,7 +2555,7 @@ void raid_recovX_int8(unsigned level, const int* d, const int* c, unsigned char*
 /*
  * RAID recovering for one disk SSSE3 implementation
  */
-void raid_recov1_ssse3(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+void raid_rec1_ssse3(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* pa;
@@ -2558,9 +2565,9 @@ void raid_recov1_ssse3(unsigned level, const int* d, const int* c, unsigned char
 
 	(void)level; /* unused */
 
-	/* if it's RAID5 uses the dedicated and fastest function */
+	/* if it's PAR1 uses the dedicated and fastest function */
 	if (c[0] == 0) {
-		raid5_recov1(d, vbuf, data, size);
+		raid_rec1_par1(d, vbuf, data, size);
 		return;
 	}
 
@@ -2604,7 +2611,7 @@ void raid_recov1_ssse3(unsigned level, const int* d, const int* c, unsigned char
 /*
  * RAID recovering for two disks SSSE3 implementation
  */
-void raid_recov2_ssse3(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+void raid_rec2_ssse3(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
 	const unsigned N = 2;
 	unsigned char* p[N];
@@ -2708,13 +2715,13 @@ void raid_recov2_ssse3(unsigned level, const int* d, const int* c, unsigned char
 /*
  * RAID recovering SSSE3 implementation
  */
-void raid_recovX_ssse3(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+void raid_recX_ssse3(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
 	unsigned N = level;
-	unsigned char* p[RAID_PARITY_S_MAX];
-	unsigned char* pa[RAID_PARITY_S_MAX];
-	unsigned char G[RAID_PARITY_S_MAX*RAID_PARITY_S_MAX];
-	unsigned char V[RAID_PARITY_S_MAX*RAID_PARITY_S_MAX];
+	unsigned char* p[RAID_PARITY_CAUCHY_MAX];
+	unsigned char* pa[RAID_PARITY_CAUCHY_MAX];
+	unsigned char G[RAID_PARITY_CAUCHY_MAX*RAID_PARITY_CAUCHY_MAX];
+	unsigned char V[RAID_PARITY_CAUCHY_MAX*RAID_PARITY_CAUCHY_MAX];
 	unsigned i, j, k;
 
 	/* setup the coefficients matrix */
@@ -2738,7 +2745,7 @@ void raid_recovX_ssse3(unsigned level, const int* d, const int* c, unsigned char
 	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 
 	for(i=0;i<size;i+=16) {
-		unsigned char PD[RAID_PARITY_S_MAX][16] __attribute__((aligned(16)));
+		unsigned char PD[RAID_PARITY_CAUCHY_MAX][16] __attribute__((aligned(16)));
 
 		/* delta */
 		for(j=0;j<N;++j) {
@@ -2780,24 +2787,24 @@ void raid_recovX_ssse3(unsigned level, const int* d, const int* c, unsigned char
 #endif
 
 /* internal forwarder */
-static void (*raid_recov1)(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
-static void (*raid_recov2)(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
-static void (*raid_recovX)(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
+static void (*raid_rec1_ptr)(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
+static void (*raid_rec2_ptr)(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
+static void (*raid_recX_ptr)(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
 
-void raid_recov(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
+void raid_rec(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size)
 {
 	switch (level) {
 	case 1 :
-		raid_recov1(level, d, c, vbuf, data, zero, size);
+		raid_rec1_ptr(level, d, c, vbuf, data, zero, size);
 		break;
 	case 2 :
-		raid_recov2(level, d, c, vbuf, data, zero, size);
+		raid_rec2_ptr(level, d, c, vbuf, data, zero, size);
 		break;
 	case 3 :
 	case 4 :
 	case 5 :
 	case 6 :
-		raid_recovX(level, d, c, vbuf, data, zero, size);
+		raid_recX_ptr(level, d, c, vbuf, data, zero, size);
 		break;
 	default:
 		fprintf(stderr, "Invalid raid recov level\n");
@@ -2810,57 +2817,57 @@ void raid_recov(unsigned level, const int* d, const int* c, unsigned char** vbuf
 
 void raid_init(void)
 {
-	raidS3_gen = raidS3_int8;
-	raidS4_gen = raidS4_int8;
-	raidS5_gen = raidS5_int8;
-	raidS6_gen = raidS6_int8;
+	raid_par3_ptr = raid_par3_int8;
+	raid_par4_ptr = raid_par4_int8;
+	raid_par5_ptr = raid_par5_int8;
+	raid_par6_ptr = raid_par6_int8;
 
 	if (sizeof(void*) == 4) {
-		raid5_gen = raid5_int32;
-		raid6_gen = raid6_int32;
-		raidZ3_gen = raidZ3_int32;
+		raid_par1_ptr = raid_par1_int32;
+		raid_par2_ptr = raid_par2_int32;
+		raid_par3z_ptr = raid_par3z_int32;
 	} else {
-		raid5_gen = raid5_int64;
-		raid6_gen = raid6_int64;
-		raidZ3_gen = raidZ3_int64;
+		raid_par1_ptr = raid_par1_int64;
+		raid_par2_ptr = raid_par2_int64;
+		raid_par3z_ptr = raid_par3z_int64;
 	}
 
-	raid_recov1 = raid_recov1_int8;
-	raid_recov2 = raid_recov2_int8;
-	raid_recovX = raid_recovX_int8;
+	raid_rec1_ptr = raid_rec1_int8;
+	raid_rec2_ptr = raid_rec2_int8;
+	raid_recX_ptr = raid_recX_int8;
 
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_sse2()) {
-		raid5_gen = raid5_sse2;
+		raid_par1_ptr = raid_par1_sse2;
 #if defined(__x86_64__)
 		if (cpu_has_slowextendedreg()) {
-			raid6_gen = raid6_sse2;
-			raidZ3_gen = raidZ3_sse2;
+			raid_par2_ptr = raid_par2_sse2;
+			raid_par3z_ptr = raid_par3z_sse2;
 		} else {
-			raid6_gen = raid6_sse2ext;
-			raidZ3_gen = raidZ3_sse2ext;
+			raid_par2_ptr = raid_par2_sse2ext;
+			raid_par3z_ptr = raid_par3z_sse2ext;
 		}
 #else
-		raid6_gen = raid6_sse2;
-		raidZ3_gen = raidZ3_sse2;
+		raid_par2_ptr = raid_par2_sse2;
+		raid_par3z_ptr = raid_par3z_sse2;
 #endif
 	}
 
 	if (cpu_has_ssse3()) {
 #if defined(__x86_64__)
-		raidS3_gen = raidS3_ssse3ext;
-		raidS4_gen = raidS4_ssse3ext;
-		raidS5_gen = raidS5_ssse3ext;
-		raidS6_gen = raidS6_ssse3ext;
+		raid_par3_ptr = raid_par3_ssse3ext;
+		raid_par4_ptr = raid_par4_ssse3ext;
+		raid_par5_ptr = raid_par5_ssse3ext;
+		raid_par6_ptr = raid_par6_ssse3ext;
 #else
-		raidS3_gen = raidS3_ssse3;
-		raidS4_gen = raidS4_ssse3;
-		raidS5_gen = raidS5_ssse3;
-		raidS6_gen = raidS6_ssse3;
+		raid_par3_ptr = raid_par3_ssse3;
+		raid_par4_ptr = raid_par4_ssse3;
+		raid_par5_ptr = raid_par5_ssse3;
+		raid_par6_ptr = raid_par6_ssse3;
 #endif
-		raid_recov1 = raid_recov1_ssse3;
-		raid_recov2 = raid_recov2_ssse3;
-		raid_recovX = raid_recovX_ssse3;
+		raid_rec1_ptr = raid_rec1_ssse3;
+		raid_rec2_ptr = raid_rec2_ssse3;
+		raid_recX_ptr = raid_recX_ssse3;
 	}
 #endif
 }
@@ -2869,40 +2876,40 @@ static struct raid_func {
 	const char* name;
 	void* p;
 } RAID_FUNC[] = {
-	{ "int8", raidS3_int8 },
-	{ "int8", raidS4_int8 },
-	{ "int8", raidS5_int8 },
-	{ "int8", raidS6_int8 },
-	{ "int32", raid5_int32 },
-	{ "int64", raid5_int64 },
-	{ "int32", raid6_int32 },
-	{ "int64", raid6_int64 },
-	{ "int32", raidZ3_int32 },
-	{ "int64", raidZ3_int64 },
-	{ "int8", raid_recov1_int8 },
-	{ "int8", raid_recov2_int8 },
-	{ "int8", raid_recovX_int8 },
+	{ "int8", raid_par3_int8 },
+	{ "int8", raid_par4_int8 },
+	{ "int8", raid_par5_int8 },
+	{ "int8", raid_par6_int8 },
+	{ "int32", raid_par1_int32 },
+	{ "int64", raid_par1_int64 },
+	{ "int32", raid_par2_int32 },
+	{ "int64", raid_par2_int64 },
+	{ "int32", raid_par3z_int32 },
+	{ "int64", raid_par3z_int64 },
+	{ "int8", raid_rec1_int8 },
+	{ "int8", raid_rec2_int8 },
+	{ "int8", raid_recX_int8 },
 
 #if defined(__i386__) || defined(__x86_64__)
-	{ "sse2", raid5_sse2 },
-	{ "sse2", raid6_sse2 },
-	{ "sse2", raidZ3_sse2 },
-	{ "ssse3", raidS3_ssse3 },
-	{ "ssse3", raidS4_ssse3 },
-	{ "ssse3", raidS5_ssse3 },
-	{ "ssse3", raidS6_ssse3 },
-	{ "ssse3", raid_recov1_ssse3 },
-	{ "ssse3", raid_recov2_ssse3 },
-	{ "ssse3", raid_recovX_ssse3 },
+	{ "sse2", raid_par1_sse2 },
+	{ "sse2", raid_par2_sse2 },
+	{ "sse2", raid_par3z_sse2 },
+	{ "ssse3", raid_par3_ssse3 },
+	{ "ssse3", raid_par4_ssse3 },
+	{ "ssse3", raid_par5_ssse3 },
+	{ "ssse3", raid_par6_ssse3 },
+	{ "ssse3", raid_rec1_ssse3 },
+	{ "ssse3", raid_rec2_ssse3 },
+	{ "ssse3", raid_recX_ssse3 },
 #endif
 
 #if defined(__x86_64__)
-	{ "sse2e", raid6_sse2ext },
-	{ "sse2e", raidZ3_sse2ext },
-	{ "ssse3e", raidS3_ssse3ext },
-	{ "ssse3e", raidS4_ssse3ext },
-	{ "ssse3e", raidS5_ssse3ext },
-	{ "ssse3e", raidS6_ssse3ext },
+	{ "sse2e", raid_par2_sse2ext },
+	{ "sse2e", raid_par3z_sse2ext },
+	{ "ssse3e", raid_par3_ssse3ext },
+	{ "ssse3e", raid_par4_ssse3ext },
+	{ "ssse3e", raid_par5_ssse3ext },
+	{ "ssse3e", raid_par6_ssse3ext },
 #endif
 	{ 0, 0 }
 };
@@ -2918,53 +2925,53 @@ static const char* raid_tag(void* func)
 	return "unknown";
 }
 
-const char* raid5_tag(void)
+const char* raid_par1_tag(void)
 {
-	return raid_tag(raid5_gen);
+	return raid_tag(raid_par1_ptr);
 }
 
-const char* raid6_tag(void)
+const char* raid_par2_tag(void)
 {
-	return raid_tag(raid6_gen);
+	return raid_tag(raid_par2_ptr);
 }
 
-const char* raidZ3_tag(void)
+const char* raid_par3z_tag(void)
 {
-	return raid_tag(raidZ3_gen);
+	return raid_tag(raid_par3z_ptr);
 }
 
-const char* raidS3_tag(void)
+const char* raid_par3_tag(void)
 {
-	return raid_tag(raidS3_gen);
+	return raid_tag(raid_par3_ptr);
 }
 
-const char* raidS4_tag(void)
+const char* raid_par4_tag(void)
 {
-	return raid_tag(raidS4_gen);
+	return raid_tag(raid_par4_ptr);
 }
 
-const char* raidS5_tag(void)
+const char* raid_par5_tag(void)
 {
-	return raid_tag(raidS5_gen);
+	return raid_tag(raid_par5_ptr);
 }
 
-const char* raidS6_tag(void)
+const char* raid_par6_tag(void)
 {
-	return raid_tag(raidS6_gen);
+	return raid_tag(raid_par6_ptr);
 }
 
-const char* raid_recov1_tag(void)
+const char* raid_rec1_tag(void)
 {
-	return raid_tag(raid_recov1);
+	return raid_tag(raid_rec1_ptr);
 }
 
-const char* raid_recov2_tag(void)
+const char* raid_rec2_tag(void)
 {
-	return raid_tag(raid_recov2);
+	return raid_tag(raid_rec2_ptr);
 }
 
-const char* raid_recovX_tag(void)
+const char* raid_recX_tag(void)
 {
-	return raid_tag(raid_recovX);
+	return raid_tag(raid_recX_ptr);
 }
 

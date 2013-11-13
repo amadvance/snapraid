@@ -614,12 +614,11 @@ Configuration
 	support the SSSE3 instructions set, and in such case it may provide
 	a better performance.
 
-	This format is similar at the one used by the Linux kernel RAID6 and
-	ZFS RAIDZ3, but it doesn't work for beyond triple parity.
+	This format is similar at the one used by the Linux Kernel RAID6 and
+	ZFS RAIDZ3, but it doesn't work beyond triple parity.
 
-	If you are using the 'r-parity' you will be warned at very run
-	if it's recommended to use the 'z-parity' format for a performance
-	increase.
+	When using 'r-parity' you will be warned if it's recommended to use
+	the 'z-parity' format for a performance improvment.
 
 	It's possible to convert from one format to another, adjusting
 	the configuraton file with the wanted z-parity or r-parity file,

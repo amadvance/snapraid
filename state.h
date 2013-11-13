@@ -95,7 +95,7 @@ struct snapraid_state {
 	unsigned char hashseed[HASH_SIZE]; /**< Hash seed. Just after a uint64 to provide a minimal alignment. */
 	unsigned char prevhashseed[HASH_SIZE]; /**< Previous hash seed. In case of rehash. */
 	char lockfile[PATH_MAX]; /**< Path of the lock file to use. */
-	unsigned level; /**< Number of parity levels. 1 for RAID5, 2 for RAID6. */
+	unsigned level; /**< Number of parity levels. 1 for PAR1, 2 for PAR2. */
 	unsigned hash; /**< Hash kind used. */
 	unsigned prevhash; /**< Previous hash kind used.  In case of rehash. */
 	unsigned besthash; /**< Best hash suggested. */

@@ -56,15 +56,15 @@ const char* lev_config_name(unsigned l)
 const char* lev_raid_name(unsigned mode, unsigned n)
 {
 	switch (n) {
-	case 1 : return "raid5";
-	case 2 : return "raid6";
-	case 3 : if (mode == RAID_MODE_S)
-			return "raidS3";
+	case 1 : return "par1";
+	case 2 : return "par2";
+	case 3 : if (mode == RAID_MODE_CAUCHY)
+			return "par3";
 		else
-			return "raidZ3";
-	case 4 : return "raidS4";
-	case 5 : return "raidS5";
-	case 6 : return "raidS6";
+			return "par3z";
+	case 4 : return "par4";
+	case 5 : return "par5";
+	case 6 : return "par6";
 	}
 
 	return 0;
@@ -78,7 +78,7 @@ void state_init(struct snapraid_state* state)
 	state->autosave = 0;
 	state->need_write = 0;
 	state->block_size = 256 * 1024; /* default 256 KiB */
-	state->raid_mode = RAID_MODE_S;
+	state->raid_mode = RAID_MODE_CAUCHY;
 	for(l=0;l<LEV_MAX;++l) {
 		state->parity_path[l][0] = 0;
 		state->parity_device[l] = 0;
@@ -122,9 +122,9 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 	unsigned l;
 
 	/* check for parity level */
-	if (state->raid_mode == RAID_MODE_Z) {
-		if (state->level > RAID_PARITY_Z_MAX) {
-			fprintf(stderr, "If you use the z-parity you cannot have more than %u parities.\n", RAID_PARITY_Z_MAX);
+	if (state->raid_mode == RAID_MODE_VANDERMONDE) {
+		if (state->level > RAID_PARITY_VANDERMONDE_MAX) {
+			fprintf(stderr, "If you use the z-parity you cannot have more than %u parities.\n", RAID_PARITY_VANDERMONDE_MAX);
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -283,7 +283,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 #if defined(__i386__) || defined(__x86_64__)
 	if (!cpu_has_ssse3())
 #endif
-	if (state->raid_mode == RAID_MODE_S) {
+	if (state->raid_mode == RAID_MODE_CAUCHY) {
 		if (state->level == 3) {
 			fprintf(stderr, "WARNING! Your CPU doesn't have a fast implementation for triple parity.\n");
 			fprintf(stderr, "WARNING! It's recommended to switch to 'z-parity' instead than 'r-parity'.\n");
@@ -405,7 +405,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			case 'u' : l = 5; break;
 			case 'z' :
 				l = 2;
-				state->raid_mode = RAID_MODE_Z;
+				state->raid_mode = RAID_MODE_VANDERMONDE;
 				break;
 			default:
 				fprintf(stderr, "Invalid '%s' specification in '%s' at line %u\n", tag, path, line);
@@ -789,12 +789,6 @@ static void state_map(struct snapraid_state* state)
 			++hole;
 		}
 
-		if (hole > 255) {
-			/* RAID6 P/Q parity works for up to 255 drives, no more */
-			fprintf(stderr, "Too many disks. No more than 255.\n");
-			exit(EXIT_FAILURE);
-		}
-
 		/* insert the new mapping */
 		map = map_alloc(disk->name, hole, "");
 
@@ -879,10 +873,10 @@ static void state_map(struct snapraid_state* state)
 	} else if (diskcount >= 27 && state->level < 5) {
 		fprintf(stderr, "WARNING! With %u disks it's recommended to use five parity levels.\n", diskcount);
 	} else if (diskcount >= 20 && state->level < 4) {
-		fprintf(stderr, "WARNING! With %u disks it's recommended to use four parity leveles.\n", diskcount);
+		fprintf(stderr, "WARNING! With %u disks it's recommended to use four parity levels.\n", diskcount);
 	} else if (diskcount >= 13 && state->level < 3) {
 		fprintf(stderr, "WARNING! With %u disks it's recommended to use three parity levels.\n", diskcount);
-	} else if (diskcount >= 6 && state->level < 2) {
+	} else if (diskcount >= 5 && state->level < 2) {
 		fprintf(stderr, "WARNING! With %u disks it's recommended to use two parity levels.\n", diskcount);
 	}
 }

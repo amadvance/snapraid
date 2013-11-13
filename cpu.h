@@ -148,15 +148,15 @@ static inline int cpu_has_slowmult(void)
 		 * memset0 1849 [MB/s]
 		 * HASH Murmur3 378 [MB/s] (extremely slower than Spooky2)
 		 * HASH Spooky2 3413 [MB/s]
-		 * RAID5 int32x2 707 [MB/s]
-		 * RAID5 mmxx2 1264 [MB/s]
-		 * RAID5 mmxx4 1910 [MB/s]
-		 * RAID5 sse2x2 2204 [MB/s]
-		 * RAID5 sse2x4 2980 [MB/s]
-		 * RAID6 int32x2 296 [MB/s]
-		 * RAID6 mmxx2 543 [MB/s]
-		 * RAID6 sse2x2 1068 [MB/s]
-		 * RAID6 sse2x4 1601 [MB/s]
+		 * PAR1 int32x2 707 [MB/s]
+		 * PAR1 mmxx2 1264 [MB/s]
+		 * PAR1 mmxx4 1910 [MB/s]
+		 * PAR1 sse2x2 2204 [MB/s]
+		 * PAR1 sse2x4 2980 [MB/s]
+		 * PAR2 int32x2 296 [MB/s]
+		 * PAR2 mmxx2 543 [MB/s]
+		 * PAR2 sse2x2 1068 [MB/s]
+		 * PAR2 sse2x4 1601 [MB/s]
 		 */
 		if (family == 6 && model == 28)
 			return 1;
@@ -191,30 +191,30 @@ static inline int cpu_has_slowpshufb(void)
 		 * CRC table 316 [MB/s]
 		 * HASH Murmur3 378 [MB/s]
 		 * HASH Spooky2 3389 [MB/s]
-		 * RAID5 int32 1800 [MB/s]
-		 * RAID5 int64 2938 [MB/s]
-		 * RAID5 mmx 2946 [MB/s]
-		 * RAID5 sse2 3429 [MB/s]
-		 * RAID5 sse2ext 3447 [MB/s]
-		 * RAID6 int32 519 [MB/s]
-		 * RAID6 int64 944 [MB/s]
-		 * RAID6 mmx 1160 [MB/s]
-		 * RAID6 sse2 2082 [MB/s]
-		 * RAID6 sse2ext 2481 [MB/s]
-		 * RAIDZ3 int32 236 [MB/s]
-		 * RAIDZ3 int64 456 [MB/s]
-		 * RAIDZ3 mmx 576 [MB/s]
-		 * RAIDZ3 sse2 1109 [MB/s]
-		 * RAIDZ3 sse2ext 1527 [MB/s]
-		 * RAIDZ3 ssse3 931 [MB/s] (slower than sse2ext)
-		 * RAIDZ3 ssse3ext 932 [MB/s] (slower than sse2ext)
-		 * RAIDZ4 int32 144 [MB/s]
-		 * RAIDZ4 int64 271 [MB/s]
-		 * RAIDZ4 mmx 431 [MB/s]
-		 * RAIDZ4 sse2 843 [MB/s]
-		 * RAIDZ4 sse2ext 1086 [MB/s]
-		 * RAIDZ4 ssse3 732 [MB/s] (slower than sse2ext)
-		 * RAIDZ4 ssse3ext 571 [MB/s] (slower than sse2ext)
+		 * PAR1 int32 1800 [MB/s]
+		 * PAR1 int64 2938 [MB/s]
+		 * PAR1 mmx 2946 [MB/s]
+		 * PAR1 sse2 3429 [MB/s]
+		 * PAR1 sse2ext 3447 [MB/s]
+		 * PAR2 int32 519 [MB/s]
+		 * PAR2 int64 944 [MB/s]
+		 * PAR2 mmx 1160 [MB/s]
+		 * PAR2 sse2 2082 [MB/s]
+		 * PAR2 sse2ext 2481 [MB/s]
+		 * PAR3z int32 236 [MB/s]
+		 * PAR3z int64 456 [MB/s]
+		 * PAR3z mmx 576 [MB/s]
+		 * PAR3z sse2 1109 [MB/s]
+		 * PAR3z sse2ext 1527 [MB/s]
+		 * PAR3z ssse3 931 [MB/s] (slower than sse2ext)
+		 * PAR3z ssse3ext 932 [MB/s] (slower than sse2ext)
+		 * PAR4z int32 144 [MB/s]
+		 * PAR4z int64 271 [MB/s]
+		 * PAR4z mmx 431 [MB/s]
+		 * PAR4z sse2 843 [MB/s]
+		 * PAR4z sse2ext 1086 [MB/s]
+		 * PAR4z ssse3 732 [MB/s] (slower than sse2ext)
+		 * PAR4z ssse3ext 571 [MB/s] (slower than sse2ext)
 		 */
 		if (family == 6 && model == 28)
 			return 1;
@@ -251,16 +251,16 @@ static inline int cpu_has_slowextendedreg(void)
 		 * CRC intel-crc32 2845 [MB/s]
 		 * HASH Murmur3 2970 [MB/s]
 		 * HASH Spooky2 7503 [MB/s]
-		 * RAID5 int32x2 4595 [MB/s]
-		 * RAID5 mmxx2 5856 [MB/s]
-		 * RAID5 mmxx4 6157 [MB/s]
-		 * RAID5 sse2x2 7151 [MB/s]
-		 * RAID5 sse2x4 8447 [MB/s]
-		 * RAID5 sse2x8 8155 [MB/s] (slower than sse2x4)
-		 * RAID6 int32x2 1892 [MB/s]
-		 * RAID6 mmxx2 3744 [MB/s]
-		 * RAID6 sse2x2 4922 [MB/s]
-		 * RAID6 sse2x4 4464 [MB/s] (slower than sse2x2)
+		 * PAR1 int32x2 4595 [MB/s]
+		 * PAR1 mmxx2 5856 [MB/s]
+		 * PAR1 mmxx4 6157 [MB/s]
+		 * PAR1 sse2x2 7151 [MB/s]
+		 * PAR1 sse2x4 8447 [MB/s]
+		 * PAR1 sse2x8 8155 [MB/s] (slower than sse2x4)
+		 * PAR2 int32x2 1892 [MB/s]
+		 * PAR2 mmxx2 3744 [MB/s]
+		 * PAR2 sse2x2 4922 [MB/s]
+		 * PAR2 sse2x4 4464 [MB/s] (slower than sse2x2)
 		 */
 		if (family == 21)
 			return 1;
@@ -278,12 +278,12 @@ static inline int cpu_has_slowextendedreg(void)
  * memset0 34685 [MB/s]
  * Murmur3 4170 [MB/s]
  * Spooky2 2599 [MB/s]
- * RAID5 int32x2 8919 [MB/s]
- * RAID5 mmxx2 17170 [MB/s]
- * RAID5 sse2x2 27478 [MB/s]
- * RAID6 int32x2 1953 [MB/s]
- * RAID6 mmxx2 7560 [MB/s]
- * RAID6 sse2x2 13930 [MB/s]
+ * PAR1 int32x2 8919 [MB/s]
+ * PAR1 mmxx2 17170 [MB/s]
+ * PAR1 sse2x2 27478 [MB/s]
+ * PAR2 int32x2 1953 [MB/s]
+ * PAR2 mmxx2 7560 [MB/s]
+ * PAR2 sse2x2 13930 [MB/s]
  */
 
 /* Intel(R) Core(TM) i7-3740QM CPU @ 2.70GHz
@@ -293,12 +293,12 @@ static inline int cpu_has_slowextendedreg(void)
  * memset0 26164 [MB/s]
  * Murmur3 4469 [MB/s]
  * Spooky2 12834 [MB/s]
- * RAID5 int32x2 10775 [MB/s]
- * RAID5 mmxx2 19644 [MB/s]
- * RAID5 sse2x2 29168 [MB/s]
- * RAID6 int32x2 3288 [MB/s]
- * RAID6 mmxx2 8374 [MB/s]
- * RAID6 sse2x2 15547 [MB/s]
+ * PAR1 int32x2 10775 [MB/s]
+ * PAR1 mmxx2 19644 [MB/s]
+ * PAR1 sse2x2 29168 [MB/s]
+ * PAR2 int32x2 3288 [MB/s]
+ * PAR2 mmxx2 8374 [MB/s]
+ * PAR2 sse2x2 15547 [MB/s]
  */
 
 /* Intel(R) Core(TM) i5 CPU 650 @ 3.20GHz
@@ -308,12 +308,12 @@ static inline int cpu_has_slowextendedreg(void)
  * memset0 25468 [MB/s]
  * Murmur3 3357 [MB/s]
  * Spooky2 1861 [MB/s]
- * RAID5 int32x2 5043 [MB/s]
- * RAID5 mmxx2 9864 [MB/s]
- * RAID5 sse2x2 16896 [MB/s]
- * RAID6 int32x2 1100 [MB/s]
- * RAID6 mmxx2 5056 [MB/s]
- * RAID6 sse2x2 8726 [MB/s]
+ * PAR1 int32x2 5043 [MB/s]
+ * PAR1 mmxx2 9864 [MB/s]
+ * PAR1 sse2x2 16896 [MB/s]
+ * PAR2 int32x2 1100 [MB/s]
+ * PAR2 mmxx2 5056 [MB/s]
+ * PAR2 sse2x2 8726 [MB/s]
  */
 
 /* AMD Athlon(tm) 64 X2 Dual Core Processor 3600+ 1913.377 MHz
@@ -323,12 +323,12 @@ static inline int cpu_has_slowextendedreg(void)
  * memset 2414 [MB/s]
  * Murmur3 1213 [MB/s]
  * Spooky2 947 [MB/s]
- * RAID5 int32x2 532 [MB/s]
- * RAID5 mmxx2 1121 [MB/s]
- * RAID5 sse2x2 2061 [MB/s]
- * RAID6 int32x2 280 [MB/s]
- * RAID6 mmxx2 632 [MB/s]
- * RAID6 sse2x2 909 [MB/s]
+ * PAR1 int32x2 532 [MB/s]
+ * PAR1 mmxx2 1121 [MB/s]
+ * PAR1 sse2x2 2061 [MB/s]
+ * PAR2 int32x2 280 [MB/s]
+ * PAR2 mmxx2 632 [MB/s]
+ * PAR2 sse2x2 909 [MB/s]
  */
 
 /* ARM Feroceon 88FR131 rev 1 (v5l)
@@ -338,8 +338,8 @@ static inline int cpu_has_slowextendedreg(void)
  * memset 763 [MB/s]
  * Murmur3 237 [MB/s]
  * Spooky2 216 [MB/s]
- * RAID5 int32x2 233 [MB/s]
- * RAID6 int32x2 103 [MB/s]
+ * PAR1 int32x2 233 [MB/s]
+ * PAR2 int32x2 103 [MB/s]
  */
 
 /* Intel(R) Xeon(R) CPU E3-1270 V2 @ 3.50GHz $
@@ -349,12 +349,12 @@ static inline int cpu_has_slowextendedreg(void)
  * memset 27842 [MB/s]
  * Murmur3 4884 [MB/s]
  * Spooky2 14039 [MB/s]
- * RAID5 int32x2 11038 [MB/s]
- * RAID5 mmxx2 20055 [MB/s]
- * RAID5 sse2x2 30703 [MB/s]
- * RAID6 int32x2 3267 [MB/s]
- * RAID6 mmxx2 8883 [MB/s]
- * RAID6 sse2x2 16433 [MB/s]
+ * PAR1 int32x2 11038 [MB/s]
+ * PAR1 mmxx2 20055 [MB/s]
+ * PAR1 sse2x2 30703 [MB/s]
+ * PAR2 int32x2 3267 [MB/s]
+ * PAR2 mmxx2 8883 [MB/s]
+ * PAR2 sse2x2 16433 [MB/s]
  */
 
 /* Bobcat/Zacade (info from x264 -> full family 20)
@@ -365,12 +365,12 @@ static inline int cpu_has_slowextendedreg(void)
  * memset 2137 [MB/s]
  * Murmur3 1140 [MB/s]
  * Spooky2 2326 [MB/s]
- * RAID5 int32x2 1853 [MB/s]
- * RAID5 mmxx2 2019 [MB/s]
- * RAID5 sse2x2 2908 [MB/s]
- * RAID6 int32x2 884 [MB/s]
- * RAID6 mmxx2 1502 [MB/s]
- * RAID6 sse2x2 1168 [MB/s] (slow version with prefetchnta)
+ * PAR1 int32x2 1853 [MB/s]
+ * PAR1 mmxx2 2019 [MB/s]
+ * PAR1 sse2x2 2908 [MB/s]
+ * PAR2 int32x2 884 [MB/s]
+ * PAR2 mmxx2 1502 [MB/s]
+ * PAR2 sse2x2 1168 [MB/s] (slow version with prefetchnta)
  */
 
 /* AMD Turion(tm) II Neo N40L Dual-Core Processor (info from user)
@@ -380,13 +380,13 @@ static inline int cpu_has_slowextendedreg(void)
  * memset 4910 [MB/s]
  * Murmur3 1160 [MB/s]
  * Spooky2 3994 [MB/s]
- * RAID5 int32x2 530 [MB/s]
- * RAID5 mmxx2 1114 [MB/s]
- * RAID5 sse2x1 2127 [MB/s]
- * RAID5 sse2x2 2804 [MB/s]
- * RAID6 int32x2 316 [MB/s]
- * RAID6 mmxx2 655 [MB/s]
- * RAID6 sse2x2 639 [MB/s] (slow version with prefetchnta)
+ * PAR1 int32x2 530 [MB/s]
+ * PAR1 mmxx2 1114 [MB/s]
+ * PAR1 sse2x1 2127 [MB/s]
+ * PAR1 sse2x2 2804 [MB/s]
+ * PAR2 int32x2 316 [MB/s]
+ * PAR2 mmxx2 655 [MB/s]
+ * PAR2 sse2x2 639 [MB/s] (slow version with prefetchnta)
  */
 
 /* AMD Athlon(tm) II X4 620 (info from user)
@@ -398,12 +398,12 @@ static inline int cpu_has_slowextendedreg(void)
  * Murmur3x64 3500 [MB/s]
  * Spooky2 4362 [MB/s]
  * Spooky2x86 4000 [MB/s]
- * RAID5 int32x2 1064 [MB/s]
- * RAID5 mmxx2 2064 [MB/s]
- * RAID5 sse2x2 3289 [MB/s]
- * RAID6 int32x2 639 [MB/s]
- * RAID6 mmxx2 1325 [MB/s]
- * RAID6 sse2x2 915 [MB/s] (slow version with prefetchnta)
+ * PAR1 int32x2 1064 [MB/s]
+ * PAR1 mmxx2 2064 [MB/s]
+ * PAR1 sse2x2 3289 [MB/s]
+ * PAR2 int32x2 639 [MB/s]
+ * PAR2 mmxx2 1325 [MB/s]
+ * PAR2 sse2x2 915 [MB/s] (slow version with prefetchnta)
  */
 
 /* ARM @ 1.2GHz (info from user)
@@ -426,8 +426,8 @@ static inline int cpu_has_slowextendedreg(void)
  * Murmur3 237 [MB/s]
  * Spooky2 216 [MB/s]
  * Spooky2x86 418 [MB/s] (dropped experiment of a new hash)
- * RAID5 int32x2 233 [MB/s]
- * RAID6 int32x2 103 [MB/s]
+ * PAR1 int32x2 233 [MB/s]
+ * PAR2 int32x2 103 [MB/s]
  */
 #endif
 

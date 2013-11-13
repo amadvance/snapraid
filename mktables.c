@@ -271,7 +271,7 @@ int main(void)
 		printf("\n");
 	}
 	printf(" */\n");
-	printf("const unsigned char  __attribute__((aligned(256))) gfpower[%u][256] =\n", 3);
+	printf("const unsigned char  __attribute__((aligned(256))) gfvandermonde[%u][256] =\n", 3);
 	printf("{\n");
 	for(p=0;p<3;++p) {
 		printf("\t{\n");
@@ -303,7 +303,7 @@ int main(void)
 		printf("\n");
 	}
 	printf(" */\n");
-	printf("const unsigned char  __attribute__((aligned(256))) gfgen[%u][256] =\n", PARITY);
+	printf("const unsigned char  __attribute__((aligned(256))) gfcauchy[%u][256] =\n", PARITY);
 	printf("{\n");
 	for(p=0;p<PARITY;++p) {
 		printf("\t{\n");
