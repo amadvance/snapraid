@@ -70,6 +70,10 @@ int state_status(struct snapraid_state* state)
 	for(node_disk=state->disklist;node_disk!=0;node_disk=node_disk->next) {
 		struct snapraid_disk* disk = node_disk->data;
 		tommy_node* node;
+		unsigned disk_file_count = 0;
+		unsigned disk_file_fragmented = 0;
+		unsigned disk_extra_fragment = 0;
+		uint64_t disk_file_size = 0;
 
 		/* for each file in the disk */
 		node = disk->filelist;
@@ -91,18 +95,28 @@ int state_status(struct snapraid_state* state)
 					if (prev_pos + 1 != parity_pos) {
 						fragmented = 1;
 						++extra_fragment;
+						++disk_extra_fragment;
 					}
 					prev_pos = parity_pos;
 				}
 
-				if (fragmented)
+				if (fragmented) {
 					++file_fragmented;
+					++disk_file_fragmented;
+				}
 			}
 
 			/* count files */
 			++file_count;
+			++disk_file_count;
 			file_size += file->size;
+			disk_file_size += file->size;
 		}
+
+		fprintf(stdlog, "summary:disk_file_count:%s:%u\n", disk->name, disk_file_count);
+		fprintf(stdlog, "summary:disk_fragmented_file_count:%s:%u\n", disk->name, disk_file_fragmented);
+		fprintf(stdlog, "summary:disk_excess_fragment_count:%s:%u\n", disk->name, disk_extra_fragment);
+		fprintf(stdlog, "summary:disk_file_size:%s:%"PRIu64"\n", disk->name, disk_file_size);
 	}
 
 	printf("\n");
