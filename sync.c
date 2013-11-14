@@ -290,12 +290,13 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			) {
 				fprintf(stdlog, "error:%u:%s:%s: Unexpected change\n", i, handle[j].disk->name, handle[j].file->sub);
 				if (handle[j].st.st_size != block_file_get(block)->size)
-					fprintf(stderr, "Unexpected size change at file '%s'.\n", handle[j].path);
+					fprintf(stderr, "Unexpected size change at file '%s' from %"PRIu64" to %"PRIu64".\n", handle[j].path, block_file_get(block)->size, handle[j].st.st_size);
 				else if (handle[j].st.st_mtime != block_file_get(block)->mtime_sec
-					|| STAT_NSEC(&handle[j].st) != block_file_get(block)->mtime_nsec)
-					fprintf(stderr, "Unexpected time change at file '%s'.\n", handle[j].path);
-				else
+					|| STAT_NSEC(&handle[j].st) != block_file_get(block)->mtime_nsec) {
+					fprintf(stderr, "Unexpected time change at file '%s' from %"PRIu64".%d to %"PRIu64".%d.\n", handle[j].path, block_file_get(block)->mtime_sec, block_file_get(block)->mtime_nsec, (uint64_t)handle[j].st.st_mtime, (uint32_t)STAT_NSEC(&handle[j].st));
+				} else {
 					fprintf(stderr, "Unexpected inode change from %"PRIu64" to %"PRIu64" at file '%s'.\n", block_file_get(block)->inode, (uint64_t)handle[j].st.st_ino, handle[j].path);
+				}
 				fprintf(stderr, "WARNING! You cannot modify files during a sync.\n");
 				fprintf(stderr, "Rerun the sync command when finished.\n");
 
