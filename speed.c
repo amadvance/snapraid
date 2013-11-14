@@ -143,7 +143,7 @@ void speed(void)
 	printf("\n");
 
 	printf("Speed test using %u buffers of %u bytes, for a total of %u KiB.\n", diskmax, block_size, diskmax * block_size / 1024);
-	printf("All values are in MiB/s of data processed, not counting written parity.\n");
+	printf("The reported value is the sustainable aggregate bandwidth of all data disks in MiB/s (not counting parity disks).\n");
 	printf("\n");
 
 	printf("Memory write speed using the C memset() function:\n");
