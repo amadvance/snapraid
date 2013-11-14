@@ -187,19 +187,83 @@ typedef struct tommy_node_struct {
 
 /**
  * Compare function for elements.
+ * \param obj_a Pointer at the first object to compare.
+ * \param obj_b Pointer at the second object to compare.
+ * \return <0 if the first element is less than the second, ==0 equal, >0 if greather.
+ *
+ * This function is like the C strcmp().
+ *
+ * \code
+ * struct object {
+ *     tommy_node node;
+ *     int value;
+ * };
+ *
+ * int compare(const void* obj_a, const void* obj_b)
+ * {
+ *     if (((const struct object*)obj_a)->value < ((const struct object*)obj_b)->value)
+ *         return -1;
+ *     if (((const struct object*)obj_a)->value > ((const struct object*)obj_b)->value)
+ *         return 1;
+ *     return 0;
+ * }
+ *
+ * tommy_list_sort(&list, compare);
+ * \endcode
+ *
  */
-typedef int tommy_compare_func(const void* void_a, const void* void_b);
+typedef int tommy_compare_func(const void* obj_a, const void* obj_b);
+
+/**
+ * Search function for elements.
+ * \param arg Pointer at the value to search.
+ * \param obj Pointer at the object to compare to.
+ * \return ==0 if the value matches the element. != 0 if different.
+ *
+ * Note that the first argument is a pointer to the value to search and
+ * the second one is a pointer to the object to compare.
+ * They are pointers of two different types.
+ *
+ * \code
+ * struct object {
+ *     tommy_node node;
+ *     int value;
+ * };
+ *
+ * int compare(const void* arg, const void* obj)
+ * {
+ *     return *(const int*)arg != ((const struct object*)obj)->value;
+ * }
+ *
+ * int value_to_find = 1; 
+ * struct object* obj = tommy_hashtable_search(&hashtable, compare, &value_to_find, tommy_inthash_u32(value_to_find));
+ * if (!obj) {
+ *     // not found
+ * } else {
+ *     // found
+ * }
+ * \endcode 
+ *
+ */
+typedef int tommy_search_func(const void* arg, const void* obj);
 
 /**
  * Foreach function.
+ * \param obj Pointer at the object to iterate.
+ *
+ * A typical example is to use free() to deallocate all the objects in a list.
+ * \code
+ * tommy_list_foreach(&list, (tommy_foreach_func*)free);
+ * \endcode
  */
-typedef void tommy_foreach_func(void* void_a);
+typedef void tommy_foreach_func(void* obj);
 
 /**
  * Foreach function with an argument.
- * The argument is always passed as first parameter.
+ * \param arg Pointer at a generic argument.
+ * \param obj Pointer at the object to iterate.
  */
-typedef void tommy_foreach_arg_func(void* void_arg, void* void_a);
+typedef void tommy_foreach_arg_func(void* arg, void* obj);
 
 /******************************************************************************/
 /* bit hacks */

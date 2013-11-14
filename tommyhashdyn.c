@@ -162,7 +162,7 @@ void* tommy_hashdyn_remove_existing(tommy_hashdyn* hashdyn, tommy_hashdyn_node* 
 	return node->data;
 }
 
-void* tommy_hashdyn_remove(tommy_hashdyn* hashdyn, tommy_compare_func* cmp, const void* cmp_arg, tommy_hash_t hash)
+void* tommy_hashdyn_remove(tommy_hashdyn* hashdyn, tommy_search_func* cmp, const void* cmp_arg, tommy_hash_t hash)
 {
 	unsigned pos = hash % hashdyn->bucket_max;
 	tommy_hashdyn_node* i = hashdyn->bucket[pos];

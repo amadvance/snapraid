@@ -293,6 +293,8 @@ void tommy_list_concat(tommy_list* first, tommy_list* second);
  * Sorts a list.
  * It's a stable merge sort with O(N*log(N)) worst complexity.
  * It's faster on degenerated cases like partially ordered lists.
+ * \param cmp Compare function called with two elements.
+ * The function should return <0 if the first element is less than the second, == 0 if equal, and > 0 if greather.
  */
 void tommy_list_sort(tommy_list* list, tommy_compare_func* cmp);
 

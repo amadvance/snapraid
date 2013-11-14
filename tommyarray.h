@@ -32,10 +32,9 @@
  *
  * The resize involve an allocation of a new array segment, without reallocating
  * the already allocated memory, and then not increasing the heap fragmentation.
+ * This means that the address of the allocated segments never change.
  *
  * Allocated segments grow in size exponentially.
- *
- * This means that the address of the allocated segments never change.
  */
 
 #ifndef __TOMMYARRAY_H

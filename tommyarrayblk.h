@@ -32,10 +32,9 @@
  *
  * The resize involve an allocation of a new array block, without reallocating
  * the already allocated memory, and then not increasing the heap fragmentation.
- *
- * Allocated blocks are always of the same size.
- *
  * This means that the address of the allocated blocks never change.
+ *
+ * Allocated blocks are always of the same fixed size of 64 KiB.
  */
 
 #ifndef __TOMMYARRAYBLK_H
