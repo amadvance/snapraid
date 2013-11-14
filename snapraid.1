@@ -1,40 +1,40 @@
 .TH "SnapRAID Backup For Disk Arrays" 1
 .SH NAME
-snapraid \(hy SnapRAID Backup For Disk Arrays
+snapraid \- SnapRAID Backup For Disk Arrays
 .SH SYNOPSIS 
-snapraid [\(hyc, \(hy\(hyconf CONFIG]
+snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
 .PD
-	[\(hyf, \(hy\(hyfilter PATTERN] [\(hyd, \(hy\(hyfilter\(hydisk NAME]
+	[\-f, \-\-filter PATTERN] [\-d, \-\-filter\-disk NAME]
 .PD 0
 .PP
 .PD
-	[\(hym, \(hy\(hyfilter\(hymissing] [\(hye, \(hy\(hyfilter\(hyerror]
+	[\-m, \-\-filter\-missing] [\-e, \-\-filter\-error]
 .PD 0
 .PP
 .PD
-	[\(hya, \(hy\(hyaudit\(hyonly] [\(hyi, \(hy\(hyimport DIR]
+	[\-a, \-\-audit\-only] [\-i, \-\-import DIR]
 .PD 0
 .PP
 .PD
-	[\(hyp, \(hy\(hypercentage PERC] [\(hyo, \(hy\(hyolder\(hythan DAYS]
+	[\-p, \-\-percentage PERC] [\-o, \-\-older\-than DAYS]
 .PD 0
 .PP
 .PD
-	[\(hyZ, \(hy\(hyforce\(hyzero] [\(hyE, \(hy\(hyforce\(hyempty]
+	[\-Z, \-\-force\-zero] [\-E, \-\-force\-empty]
 .PD 0
 .PP
 .PD
-	[\(hyU, \(hy\(hyforce\(hyuuid] [\(hyD, \(hy\(hyforce\(hydevice]
+	[\-U, \-\-force\-uuid] [\-D, \-\-force\-device]
 .PD 0
 .PP
 .PD
-	[\(hyv, \(hy\(hyverbose] [\(hyl, \(hy\(hylog FILE]
+	[\-v, \-\-verbose] [\-l, \-\-log FILE]
 .PD 0
 .PP
 .PD
-	[\(hys, \(hy\(hystart BLKSTART] [\(hyt, \(hy\(hycount BLKCOUNT]
+	[\-s, \-\-start BLKSTART] [\-t, \-\-count BLKCOUNT]
 .PD 0
 .PP
 .PD
@@ -43,7 +43,7 @@ snapraid [\(hyc, \(hy\(hyconf CONFIG]
 .PP
 .PD
 .PP
-snapraid [\(hyV, \(hy\(hyversion] [\(hyh, \(hy\(hyhelp] [\(hyC, \(hy\(hygen\(hyconf CONTENT]
+snapraid [\-V, \-\-version] [\-h, \-\-help] [\-C, \-\-gen\-conf CONTENT]
 .PD 0
 .PP
 .PD
@@ -75,7 +75,7 @@ The disks can have different sizes.
 .IP \(bu
 You can add disks at any time.
 .IP \(bu
-It doesn\(cqt lock\(hyin your data. You can stop using SnapRAID at any
+It doesn\(cqt lock\-in your data. You can stop using SnapRAID at any
 time without the need to reformat or move data.
 .PD
 .PP
@@ -108,13 +108,13 @@ rarely change.
 Other limitations are:
 .PD 0
 .IP \(bu
-You have different file\(hysystems for each disk.
-Using a RAID you have only a big file\(hysystem.
+You have different file\-systems for each disk.
+Using a RAID you have only a big file\-system.
 .IP \(bu
 It doesn\(cqt stripe data.
 With RAID you get a speed boost with striping.
 .IP \(bu
-It doesn\(cqt support real\(hytime recovery.
+It doesn\(cqt support real\-time recovery.
 With RAID you do not have to stop working when a disk fails.
 .IP \(bu
 It\(cqs able to recover damages only from a limited number of disks.
@@ -152,19 +152,19 @@ For example, suppose that you are interested only at one parity level
 of protection, and that your disks are present in:
 .PP
 .RS 4
-/mnt/diskp <\(hy selected disk for parity
+/mnt/diskp <\- selected disk for parity
 .PD 0
 .PP
 .PD
-/mnt/disk1 <\(hy first disk to backup
+/mnt/disk1 <\- first disk to backup
 .PD 0
 .PP
 .PD
-/mnt/disk2 <\(hy second disk to backup
+/mnt/disk2 <\- second disk to backup
 .PD 0
 .PP
 .PD
-/mnt/disk3 <\(hy third disk to backup
+/mnt/disk3 <\- third disk to backup
 .PD 0
 .PP
 .PD
@@ -286,10 +286,10 @@ in \(a"sync\(a".
 .SS Recovering and Undeleting 
 In recovering SnapRAID is more like a backup program than a RAID system,
 and it can be used to restore or undelete only a single file or directory
-to its previous state using the \(hyf, \(hy\(hyfilter option :
+to its previous state using the \-f, \-\-filter option :
 .PP
 .RS 4
-snapraid fix \(hyf FILE
+snapraid fix \-f FILE
 .PD 0
 .PP
 .PD
@@ -298,18 +298,18 @@ snapraid fix \(hyf FILE
 or for a directory:
 .PP
 .RS 4
-snapraid fix \(hyf DIR/
+snapraid fix \-f DIR/
 .PD 0
 .PP
 .PD
 .RE
 .PP
 You can also use it to recover only accidentally deleted files inside
-a directory using the \(hym, \(hy\(hyfilter\(hymissing option, that restores
+a directory using the \-m, \-\-filter\-missing option, that restores
 only missing files, leaving untouched all the others.
 .PP
 .RS 4
-snapraid fix \(hym \(hyf DIR/
+snapraid fix \-m \-f DIR/
 .PD 0
 .PP
 .PD
@@ -318,7 +318,7 @@ snapraid fix \(hym \(hyf DIR/
 Or to recover all the deleted files in all the drives with:
 .PP
 .RS 4
-snapraid fix \(hym
+snapraid fix \-m
 .PD 0
 .PP
 .PD
@@ -337,12 +337,12 @@ snapraid scrub
 This command is similar at \(a"check\(a" but verifies only the oldest data
 in your array. Every run of the command checks about 12% of the data,
 but nothing newer than 10 days.
-You can use the \(hyp, \(hy\(hypercentage option to specify a different amount,
-and the \(hyo, \(hy\(hyolder\(hythan option to specify a different age in days.
+You can use the \-p, \-\-percentage option to specify a different amount,
+and the \-o, \-\-older\-than option to specify a different age in days.
 For example, to check 5% of the array older than 20 days use:
 .PP
 .RS 4
-snapraid \(hyp 5 \(hyo 20 scrub
+snapraid \-p 5 \-o 20 scrub
 .PD 0
 .PP
 .PD
@@ -362,17 +362,17 @@ To fix them, you can use the \(a"fix\(a" command filtering for files
 containing bad blocks:
 .PP
 .RS 4
-snapraid \(hye fix
+snapraid \-e fix
 .PD 0
 .PP
 .PD
 .RE
 .PP
 At the next \(a"scrub\(a" the errors will disappear from the \(a"status\(a" report
-if really fixed. You can use \(hyp 0 to scrub only blocks marked as bad.
+if really fixed. You can use \-p 0 to scrub only blocks marked as bad.
 .PP
 .RS 4
-snapraid \(hyp 0 scrub
+snapraid \-p 0 scrub
 .PD 0
 .PP
 .PD
@@ -457,15 +457,15 @@ wide links = yes
 SnapRAID provides some simple commands that allow to:
 .PD 0
 .IP \(bu
-Make a backup/snapshot \(hy> \(a"sync\(a"
+Make a backup/snapshot \-> \(a"sync\(a"
 .IP \(bu
-Periodically checks old data \(hy> \(a"scrub\(a"
+Periodically checks old data \-> \(a"scrub\(a"
 .IP \(bu
-Prints a report of the status of the array \(hy> \(a"status\(a"
+Prints a report of the status of the array \-> \(a"status\(a"
 .IP \(bu
-Check for integrity the full array \(hy> \(a"check\(a"
+Check for integrity the full array \-> \(a"check\(a"
 .IP \(bu
-Restore the last backup/snapshot \(hy> \(a"fix\(a".
+Restore the last backup/snapshot \-> \(a"fix\(a".
 .PD
 .PP
 Take care that the commands have to be written in lower case.
@@ -494,7 +494,7 @@ in the previous \(a"sync\(a" command.
 If an error if found, a recovery attempt is simulated to check
 if the error is a recoverable one or not.
 .PP
-If you use the \(hya, \(hy\(hyaudit\(hyonly option, only the file
+If you use the \-a, \-\-audit\-only option, only the file
 data is checked, and the redundandy data is ignored.
 .PP
 Files are identified by path, and checked by content.
@@ -522,9 +522,9 @@ nothing that it\(cqs more recent than 10 days.
 This means that scrubbing once a week, every bit of data is checked
 at least one time every two months.
 .PP
-You can use the \(hyp, \(hy\(hypercentage option to specify a different amount,
-and the \(hyo, \(hy\(hyolder\(hythan option to specify a different age in days.
-Note that if only one of \(hyp and \(hyo is specified the default value of
+You can use the \-p, \-\-percentage option to specify a different amount,
+and the \-o, \-\-older\-than option to specify a different age in days.
+Note that if only one of \-p and \-o is specified the default value of
 the other option is not used.
 .PP
 Any silent error identified is recorded in the content file,
@@ -604,12 +604,12 @@ duplicated files using a different hash.
 .SH OPTIONS 
 SnapRAID provides the following options:
 .TP
-.B \(hyc, \(hy\(hyconf CONFIG
+.B \-c, \-\-conf CONFIG
 Selects the configuration file. If not specified it\(cqs assumed
 the file \(a"/etc/snapraid.conf\(a" in Unix, and \(a"snapraid.conf\(a" in
 the current directory in Windows.
 .TP
-.B \(hyf, \(hy\(hyfilter PATTERN
+.B \-f, \-\-filter PATTERN
 Filters the files to process in the \(a"check\(a" and \(a"fix\(a"
 commands.
 Only the files matching the entered pattern are processed.
@@ -621,33 +621,33 @@ This option can be used only with the \(a"check\(a" and \(a"fix\(a" commands.
 Note that it cannot be used with \(a"sync\(a", because \(a"sync\(a" always
 process the whole array.
 .TP
-.B \(hyd, \(hy\(hyfilter\(hydisk NAME
+.B \-d, \-\-filter\-disk NAME
 Filters the files to process in the \(a"check\(a" and \(a"fix\(a"
 commands.
 Only the files present in the specified disk are processed.
 You must specify a disk name as named in the configuration
 file.
-In \(a"check\(a", you can make it faster, specifing also \(hya, \(hy\(hyaudit\(hyonly
+In \(a"check\(a", you can make it faster, specifing also \-a, \-\-audit\-only
 option, to avoid to access other disks to check parity data.
-If you combine more \(hy\(hyfilter, \(hy\(hyfilter\(hydisk and \(hy\(hyfilter\(hymissing options,
+If you combine more \-\-filter, \-\-filter\-disk and \-\-filter\-missing options,
 only files matching all the set of filters are selected.
 This option can be used many times.
 This option can be used only with the \(a"check\(a" and \(a"fix\(a" commands.
 Note that it cannot be used with \(a"sync\(a", because \(a"sync\(a" always
 process the whole array.
 .TP
-.B \(hym, \(hy\(hyfilter\(hymissing
+.B \-m, \-\-filter\-missing
 Filters the files to process in the \(a"check\(a" and \(a"fix\(a"
 commands.
 Only the files missing/deleted from the array are processed.
 When used with \(a"fix\(a", this is a kind of \(a"undelete\(a" command.
-If you combine more \(hy\(hyfilter, \(hy\(hyfilter\(hydisk and \(hy\(hyfilter\(hymissing options,
+If you combine more \-\-filter, \-\-filter\-disk and \-\-filter\-missing options,
 only files matching all the set of filters are selected.
 This option can be used only with the \(a"check\(a" and \(a"fix\(a" commands.
 Note that it cannot be used with \(a"sync\(a", because \(a"sync\(a" always
 process the whole array.
 .TP
-.B \(hye, \(hy\(hyfilter\(hyerror
+.B \-e, \-\-filter\-error
 Filters the files to process in the \(a"check\(a" and \(a"fix\(a"
 commands.
 It process only the files containing blocks marked with silent
@@ -655,16 +655,16 @@ errors during the \(a"sync\(a" or \(a"scrub\(a" command, and listed in the
 \(a"status\(a" command.
 Errors found in \(a"check\(a" are not processed by this
 option, because they are not marked as bad as \(a"check\(a" is a
-read\(hyonly command.
+read\-only command.
 This option can be used only with the \(a"check\(a" and \(a"fix\(a" commands.
 .TP
-.B \(hyp, \(hy\(hypercentage PERC
+.B \-p, \-\-percentage PERC
 Selects the part of the array to process in the \(a"scrub\(a" command.
 PERC is a numeric value from 0 to 100, default is 12.
 When specifing 0, only the blocks marked as bad are scrubbed.
 This option can be used only with the \(a"scrub\(a" command.
 .TP
-.B \(hyo, \(hy\(hyolder\(hythan DAYS
+.B \-o, \-\-older\-than DAYS
 Selects the older the part of the array to process in the
 \(a"scrub\(a" command.
 DAYS is the minimum age in days for a block to be scrubbed,
@@ -672,14 +672,14 @@ default is 10.
 Blocks marked as bad are always scrubbed despite this option.
 This option can be used only with the \(a"scrub\(a" command.
 .TP
-.B \(hya, \(hy\(hyaudit\(hyonly
+.B \-a, \-\-audit\-only
 When checking, only verify the hash of the files, without
 doing any kind of check on the redundancy data.
 If you are interested in checking only the file data this
 option can speedup a lot the checking process.
 This option can be used only with the \(a"check\(a" command.
 .TP
-.B \(hyi, \(hy\(hyimport DIR
+.B \-i, \-\-import DIR
 When fixing imports from the specified directory any file
 that you deleted from the array after the last \(a"sync\(a"
 commmand.
@@ -689,7 +689,7 @@ The files are read also in subdirectories and they are
 identified regardless of their name.
 This option can be used only with the \(a"check\(a" and \(a"fix\(a" command.
 .TP
-.B \(hyZ, \(hy\(hyforce\(hyzero
+.B \-Z, \-\-force\-zero
 Forces the insecure operation of syncing a file with zero
 size that before was not.
 If SnapRAID detects a such condition, it stops proceeding
@@ -700,17 +700,17 @@ This is a possible condition in Linux with the ext3/ext4
 filesystems.
 This option can be used only with the \(a"sync\(a" command.
 .TP
-.B \(hyE, \(hy\(hyforce\(hyempty
+.B \-E, \-\-force\-empty
 Forces the insecure operation of syncing a disk with all
 the original files missing.
 If SnapRAID detects that all the files originally present
 in the disk are missing or rewritten, it stops proceeding
 unless you specify this option.
-This allows to easily detect when a data file\(hysystem is not
+This allows to easily detect when a data file\-system is not
 mounted.
 This option can be used only with the \(a"sync\(a" command.
 .TP
-.B \(hyU, \(hy\(hyforce\(hyuuid
+.B \-U, \-\-force\-uuid
 Forces the insecure operation of syncing, checking and fixing
 with disks that have changed their UUID.
 If SnapRAID detects that some disks have changed UUID,
@@ -723,7 +723,7 @@ the normal case of replacing disks after a recover.
 This option can be used only with the \(a"sync\(a", \(a"check\(a" or
 \(a"fix\(a" command.
 .TP
-.B \(hyD, \(hy\(hyforce\(hydevice
+.B \-D, \-\-force\-device
 Forces the insecure operation of fixing with disks on the same
 physical device.
 If SnapRAID detects that some disks have the same device ID,
@@ -732,7 +732,7 @@ But it could happen that you want to temporarely restore a lost
 disk in the free space left in an already used disk. and this
 option allows you to continue anyway.
 .TP
-.B \(hyl, \(hy\(hylog FILE
+.B \-l, \-\-log FILE
 Write a detailed log of errors found in check and fix.
 This log contains the exact specification of which block of
 any file is not recoverable and why.
@@ -742,17 +742,17 @@ When checking and fixing this allows to keep separated
 the possible huge list of errors from the human readable
 output.
 .TP
-.B \(hys, \(hy\(hystart BLKSTART
+.B \-s, \-\-start BLKSTART
 Starts the processing from the specified
 block number. It could be useful to retry to check
 or fix some specific block, in case of a damaged disk.
 It\(cqs present mainly for advanced manual recovering.
 .TP
-.B \(hyt, \(hy\(hycount BLKCOUNT
+.B \-t, \-\-count BLKCOUNT
 Processes only the specified number of blocks.
 It\(cqs present mainly for advanced manual recovering.
 .TP
-.B \(hyC, \(hy\(hygen\(hyconf CONTENT_FILE
+.B \-C, \-\-gen\-conf CONTENT_FILE
 Generates a dummy configuration file from an existing
 content file.
 The configuration file is written in the standard output,
@@ -761,13 +761,13 @@ This configuration file also contains the information
 needed to reconstruct the disk mount points, in case you
 lose the entire system.
 .TP
-.B \(hyv, \(hy\(hyverbose
+.B \-v, \-\-verbose
 Prints more information in the processing.
 .TP
-.B \(hyh, \(hy\(hyhelp
+.B \-h, \-\-help
 Prints a short help screen.
 .TP
-.B \(hyV, \(hy\(hyversion
+.B \-V, \-\-version
 Prints the program version.
 .SH CONFIGURATION 
 SnapRAID requires a configuration file to know where your disk array
@@ -788,21 +788,21 @@ Leaving the parity disk reserved for only this file ensures that
 it doesn\(cqt get fragmented, improving the performance.
 .PP
 This option is mandatory and it can be used only one time.
-.SS [q,r,s,t,u]\(hyparity FILE 
+.SS [q,r,s,t,u]\-parity FILE 
 Defines the files to use to store extra parity information.
 For each parity file specified, one additional level of protection
 is enabled:
 .PD 0
 .IP \(bu
-q\(hyparity enables RAID6 double parity
+q\-parity enables RAID6 double parity
 .IP \(bu
-r\(hyparity enables triple parity
+r\-parity enables triple parity
 .IP \(bu
-s\(hyparity enables quad parity
+s\-parity enables quad parity
 .IP \(bu
-t\(hyparity enables penta (five) parity
+t\-parity enables penta (five) parity
 .IP \(bu
-u\(hyparity enables hexa (six) parity
+u\-parity enables hexa (six) parity
 .PD
 .PP
 Each parity level requires also all the files of the previous levels.
@@ -813,10 +813,10 @@ Leaving the parity disks reserved for only these files ensures that
 they doesn\(cqt get fragmented, improving the performance.
 .PP
 These options are optional and they can be used only one time.
-.SS z\(hyparity FILE 
+.SS z\-parity FILE 
 Defines an alternate file and format to store the triple parity.
 .PP
-This option is an alternative at \(cqr\(hyparity\(cq mainly intended for
+This option is an alternative at \(cqr\-parity\(cq mainly intended for
 low end CPUs like ARM or AMD Phenom, Athlon and Opteron that don\(cqt
 support the SSSE3 instructions set, and in such case it may provide
 a better performance.
@@ -824,11 +824,11 @@ a better performance.
 This format is similar at the one used by the Linux Kernel RAID6 and
 ZFS RAIDZ3, but it doesn\(cqt work beyond triple parity.
 .PP
-When using \(cqr\(hyparity\(cq you will be warned if it\(cqs recommended to use
-the \(cqz\(hyparity\(cq format for a performance improvment.
+When using \(cqr\-parity\(cq you will be warned if it\(cqs recommended to use
+the \(cqz\-parity\(cq format for a performance improvment.
 .PP
 It\(cqs possible to convert from one format to another, adjusting
-the configuraton file with the wanted z\(hyparity or r\(hyparity file,
+the configuraton file with the wanted z\-parity or r\-parity file,
 and using \(cqfix\(cq to recreate it.
 .SS content FILE 
 Defines the file to use to store the list and checksums of all the
@@ -1050,7 +1050,7 @@ exclude /lost+found/
 .PD 0
 .PP
 .PD
-# Excludes any sub\(hydirectory named \(a"tmp\(a"
+# Excludes any sub\-directory named \(a"tmp\(a"
 .PD 0
 .PP
 .PD
@@ -1097,7 +1097,7 @@ exclude *.unrecoverable
 .PD 0
 .PP
 .PD
-# Excludes any sub\(hydirectory named \(a"tmp\(a"
+# Excludes any sub\-directory named \(a"tmp\(a"
 .PD 0
 .PP
 .PD
@@ -1123,7 +1123,7 @@ include /pictures/
 .PD
 .RE
 .PP
-On the command line, using the \(hyf option, you can only use \(a"include\(a"
+On the command line, using the \-f option, you can only use \(a"include\(a"
 patterns. For example:
 .PP
 .RS 4
@@ -1135,7 +1135,7 @@ patterns. For example:
 .PD 0
 .PP
 .PD
-snapraid \(hyf \(a"*.mp3\(a" check
+snapraid \-f \(a"*.mp3\(a" check
 .PD 0
 .PP
 .PD
@@ -1153,7 +1153,7 @@ Disable any remote connection to it, any scheduled process, including any
 scheduled SnapRAID nightly sync.
 .PP
 Then proceed with the following steps.
-.SS STEP 1 \(hy> Reconfigure 
+.SS STEP 1 \-> Reconfigure 
 You need some space to recover, even better if you already have an additional
 disk, but in case, also an external USB or remote one is enough.
 .PP
@@ -1178,11 +1178,11 @@ disk d1 /mnt/new_spare_disk/
 .PP
 .PD
 .RE
-.SS STEP 2 \(hy> Fix 
+.SS STEP 2 \-> Fix 
 Run the fix command, storing the log in an external file with:
 .PP
 .RS 4
-snapraid \(hyd NAME \(hyl fix.log fix
+snapraid \-d NAME \-l fix.log fix
 .PD 0
 .PP
 .PD
@@ -1208,12 +1208,12 @@ you can retry to put them inplace, and retry the \(a"fix\(a".
 If you are satisfied of the recovering, you can now proceed further,
 but take care that after synching you will no more able to retry the
 \(a"fix\(a" command!
-.SS STEP 3 \(hy> Check 
+.SS STEP 3 \-> Check 
 As paranoid but recommended check, you can now run a \(a"check\(a" command to ensure
 that everything is OK on the disk.
 .PP
 .RS 4
-snapraid \(hyd NAME \(hya check
+snapraid \-d NAME \-a check
 .PD 0
 .PP
 .PD
@@ -1221,11 +1221,11 @@ snapraid \(hyd NAME \(hya check
 .PP
 Where NAME is the name of the disk, like \(a"d1\(a" as in our previous example.
 .PP
-The options \(hyd and \(hya tell SnapRAID to check only the specified disk,
+The options \-d and \-a tell SnapRAID to check only the specified disk,
 and ignore all the redundancy data.
 .PP
 This command will take a long time.
-.SS STEP 4 \(hy> Sync 
+.SS STEP 4 \-> Sync 
 Run the \(a"sync\(a" command to resyncronize the array with the new disk.
 .PP
 .RS 4
@@ -1260,14 +1260,14 @@ SnapRAID in Unix ignores any encoding. It simply reads and stores the
 file names with the same encoding used by the filesystem.
 .PP
 In Windows all the names read from the filesystem are converted and
-processed in the UTF\(hy8 format.
+processed in the UTF\-8 format.
 .PP
 To have the file names printed correctly you have to set the Windows
-console in the UTF\(hy8 mode, with the command \(a"chcp 65001\(a", and use
+console in the UTF\-8 mode, with the command \(a"chcp 65001\(a", and use
 a TrueType font like \(a"Lucida Console\(a" as console font.
 Note that it has effect only on the printed file names, if you
 redirect the console output to a file, the resulting file is always
-in the UTF\(hy8 format.
+in the UTF\-8 format.
 .SH COPYRIGHT 
 This file is Copyright (C) 2011 Andrea Mazzoleni
 .SH SEE ALSO 
