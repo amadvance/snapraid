@@ -3536,7 +3536,7 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 		if (countmax) {
 			printf("%u%% completed, %u MiB processed", countpos * 100 / countmax, countsize_MiB);
 			if (elapsed >= 60)
-				printf(" in %u:%02u\n", (unsigned)(elapsed / 3600), (unsigned)((elapsed % 3600) / 60));
+				printf(" in %u:%02u", (unsigned)(elapsed / 3600), (unsigned)((elapsed % 3600) / 60));
 			printf("\n");
 		} else {
 			printf("Nothing to do\n");
