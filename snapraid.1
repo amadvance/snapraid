@@ -788,21 +788,21 @@ Leaving the parity disk reserved for only this file ensures that
 it doesn\(cqt get fragmented, improving the performance.
 .PP
 This option is mandatory and it can be used only one time.
-.SS [q,r,s,t,u]\-parity FILE 
+.SS [q,2,3,4,5,6]\-parity FILE 
 Defines the files to use to store extra parity information.
 For each parity file specified, one additional level of protection
 is enabled:
 .PD 0
 .IP \(bu
-q\-parity enables RAID6 double parity
+q\-parity/2\-parity enables RAID6 double parity
 .IP \(bu
-r\-parity enables triple parity
+3\-parity enables triple parity
 .IP \(bu
-s\-parity enables quad parity
+4\-parity enables quad parity
 .IP \(bu
-t\-parity enables penta (five) parity
+5\-parity enables penta (five) parity
 .IP \(bu
-u\-parity enables hexa (six) parity
+6\-parity enables hexa (six) parity
 .PD
 .PP
 Each parity level requires also all the files of the previous levels.
@@ -816,7 +816,7 @@ These options are optional and they can be used only one time.
 .SS z\-parity FILE 
 Defines an alternate file and format to store the triple parity.
 .PP
-This option is an alternative at \(cqr\-parity\(cq mainly intended for
+This option is an alternative at \(cq3\-parity\(cq mainly intended for
 low end CPUs like ARM or AMD Phenom, Athlon and Opteron that don\(cqt
 support the SSSE3 instructions set, and in such case it may provide
 a better performance.
@@ -824,11 +824,11 @@ a better performance.
 This format is similar at the one used by the Linux Kernel RAID6 and
 ZFS RAIDZ3, but it doesn\(cqt work beyond triple parity.
 .PP
-When using \(cqr\-parity\(cq you will be warned if it\(cqs recommended to use
+When using \(cq3\-parity\(cq you will be warned if it\(cqs recommended to use
 the \(cqz\-parity\(cq format for a performance improvment.
 .PP
 It\(cqs possible to convert from one format to another, adjusting
-the configuraton file with the wanted z\-parity or r\-parity file,
+the configuraton file with the wanted z\-parity or 3\-parity file,
 and using \(cqfix\(cq to recreate it.
 .SS content FILE 
 Defines the file to use to store the list and checksums of all the

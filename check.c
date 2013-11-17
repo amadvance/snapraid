@@ -832,7 +832,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					++unrecoverable_error;
 				}
 
-				/* now check parity and q-parity, but only if all the blocks have it computed */
+				/* now check parities, but only if all the blocks have it computed */
 				/* if you check/fix after a partial sync, it's OK to have parity errors on the blocks with invalid parity */
 				/* and doesn't make sense to try to fix it */
 				if (valid_parity) {

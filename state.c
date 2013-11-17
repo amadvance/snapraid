@@ -29,11 +29,11 @@ const char* lev_name(unsigned l)
 {
 	switch (l) {
 	case 0 : return "Parity";
-	case 1 : return "Q-Parity";
-	case 2 : return "R-Parity";
-	case 3 : return "S-Parity";
-	case 4 : return "T-Parity";
-	case 5 : return "U-Parity";
+	case 1 : return "2-Parity";
+	case 2 : return "3-Parity";
+	case 3 : return "4-Parity";
+	case 4 : return "5-Parity";
+	case 5 : return "6-Parity";
 	}
 
 	return 0;
@@ -43,11 +43,11 @@ const char* lev_config_name(unsigned l)
 {
 	switch (l) {
 	case 0 : return "parity";
-	case 1 : return "q-parity";
-	case 2 : return "r-parity";
-	case 3 : return "s-parity";
-	case 4 : return "t-parity";
-	case 5 : return "u-parity";
+	case 1 : return "2-parity";
+	case 2 : return "3-parity";
+	case 3 : return "4-parity";
+	case 4 : return "5-parity";
+	case 5 : return "6-parity";
 	}
 
 	return 0;
@@ -286,7 +286,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 	if (state->raid_mode == RAID_MODE_CAUCHY) {
 		if (state->level == 3) {
 			fprintf(stderr, "WARNING! Your CPU doesn't have a fast implementation for triple parity.\n");
-			fprintf(stderr, "WARNING! It's recommended to switch to 'z-parity' instead than 'r-parity'.\n");
+			fprintf(stderr, "WARNING! It's recommended to switch to 'z-parity' instead than '3-parity'.\n");
 		} else if (state->level > 3) {
 			fprintf(stderr, "WARNING! Your CPU doesn't have a fast implementation beyond triple parity.\n");
 			fprintf(stderr, "WARNING! It's recommended to reduce the parity levels to triple parity.\n");
@@ -386,9 +386,12 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 		} else if (strcmp(tag, "parity") == 0
 			|| strcmp(tag, "q-parity") == 0
 			|| strcmp(tag, "r-parity") == 0
-			|| strcmp(tag, "s-parity") == 0
-			|| strcmp(tag, "t-parity") == 0
-			|| strcmp(tag, "u-parity") == 0
+			|| strcmp(tag, "1-parity") == 0
+			|| strcmp(tag, "2-parity") == 0
+			|| strcmp(tag, "3-parity") == 0
+			|| strcmp(tag, "4-parity") == 0
+			|| strcmp(tag, "5-parity") == 0
+			|| strcmp(tag, "6-parity") == 0
 			|| strcmp(tag, "z-parity") == 0
 		) {
 			char device[PATH_MAX];
@@ -400,9 +403,12 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			case 'p' : l = 0; break;
 			case 'q' : l = 1; break;
 			case 'r' : l = 2; break;
-			case 's' : l = 3; break;
-			case 't' : l = 4; break;
-			case 'u' : l = 5; break;
+			case '1' : l = 0; break;
+			case '2' : l = 1; break;
+			case '3' : l = 2; break;
+			case '4' : l = 3; break;
+			case '5' : l = 4; break;
+			case '6' : l = 5; break;
 			case 'z' :
 				l = 2;
 				state->raid_mode = RAID_MODE_VANDERMONDE;
@@ -868,13 +874,13 @@ static void state_map(struct snapraid_state* state)
 	}
 
 	/* recommend number of parities */
-	if (diskcount >= 34 && state->level < 6) {
+	if (diskcount >= 36 && state->level < 6) {
 		fprintf(stderr, "WARNING! With %u disks it's recommended to use six parity levels.\n", diskcount);
-	} else if (diskcount >= 27 && state->level < 5) {
+	} else if (diskcount >= 29 && state->level < 5) {
 		fprintf(stderr, "WARNING! With %u disks it's recommended to use five parity levels.\n", diskcount);
-	} else if (diskcount >= 20 && state->level < 4) {
+	} else if (diskcount >= 22 && state->level < 4) {
 		fprintf(stderr, "WARNING! With %u disks it's recommended to use four parity levels.\n", diskcount);
-	} else if (diskcount >= 13 && state->level < 3) {
+	} else if (diskcount >= 15 && state->level < 3) {
 		fprintf(stderr, "WARNING! With %u disks it's recommended to use three parity levels.\n", diskcount);
 	} else if (diskcount >= 5 && state->level < 2) {
 		fprintf(stderr, "WARNING! With %u disks it's recommended to use two parity levels.\n", diskcount);

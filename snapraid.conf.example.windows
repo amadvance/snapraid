@@ -9,14 +9,14 @@ parity E:\parity.par
 # If specified, they enable the multiple failures protection
 # from two to six level of parity.
 # To enable, uncomment one parity file for each level of extra
-# protection required. Start from q-parity, and follow in order.
+# protection required. Start from 2-parity, and follow in order.
 # It must NOT be in a data disk
 # Format: "X-parity FILE_PATH"
-#q-parity F:\q-parity.par
-#r-parity G:\r-parity.par
-#s-parity H:\s-parity.par
-#t-parity I:\t-parity.par
-#u-parity J:\u-parity.par
+#2-parity F:\2-parity.par
+#3-parity G:\3-parity.par
+#4-parity H:\4-parity.par
+#5-parity I:\5-parity.par
+#6-parity J:\6-parity.par
 
 # Defines the files to use as content list
 # You can use multiple specification to store more copies

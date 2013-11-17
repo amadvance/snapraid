@@ -469,9 +469,9 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
-	echo --- Delete the parity and the q-parity, fix and check with PAR2
+	echo --- Delete the parity and the 2-parity, fix and check with PAR2
 	rm test/parity
-	rm test/q-parity
+	rm test/2-parity
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Delete the parity and a disk, fix and check with PAR2
@@ -480,8 +480,8 @@ endif
 	rm -r test/disk2/_b
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
-	echo --- Delete the q-parity and a disk, fix and check with PAR2
-	rm test/q-parity
+	echo --- Delete the 2-parity and a disk, fix and check with PAR2
+	rm test/2-parity
 	rm -r test/disk3/_a
 	rm -r test/disk3/_b
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
@@ -492,9 +492,9 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) -a check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
-	echo --- Corrupt the parity and the q-parity, fix and check with PAR2
+	echo --- Corrupt the parity and the 2-parity, fix and check with PAR2
 	$(TESTENV) ./mktest$(EXEEXT) damage 2 100 10000 test/parity
-	$(TESTENV) ./mktest$(EXEEXT) damage 2 100 10000 test/q-parity
+	$(TESTENV) ./mktest$(EXEEXT) damage 2 100 10000 test/2-parity
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR2) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
@@ -546,8 +546,8 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR2) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
-	echo --- Corrupt the q-parity and some files, fix and check with PAR2
-	$(TESTENV) ./mktest$(EXEEXT) damage 7 100 10000 test/q-parity
+	echo --- Corrupt the 2-parity and some files, fix and check with PAR2
+	$(TESTENV) ./mktest$(EXEEXT) damage 7 100 10000 test/2-parity
 	$(TESTENV) ./mktest$(EXEEXT) damage 7 1 500 test/disk1/_a/_a/*
 	$(TESTENV) ./mktest$(EXEEXT) damage 7 1 500 test/disk1/_a/_b/*
 	$(TESTENV) ./mktest$(EXEEXT) append 7 500 test/disk1/_b/_a/*

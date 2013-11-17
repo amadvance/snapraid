@@ -586,16 +586,16 @@ Configuration
 
 	This option is mandatory and it can be used only one time.
 
-  [q,r,s,t,u]-parity FILE
+  [2,3,4,5,6]-parity FILE
 	Defines the files to use to store extra parity information.
 	For each parity file specified, one additional level of protection
 	is enabled:
 
-	* q-parity enables RAID6 double parity
-	* r-parity enables triple parity
-	* s-parity enables quad parity
-	* t-parity enables penta (five) parity
-	* u-parity enables hexa (six) parity
+	* 2-parity enables RAID6 double parity.
+	* 3-parity enables triple parity
+	* 4-parity enables quad parity
+	* 5-parity enables penta (five) parity
+	* 6-parity enables hexa (six) parity
 
 	Each parity level requires also all the files of the previous levels.
 
@@ -609,7 +609,7 @@ Configuration
   z-parity FILE
 	Defines an alternate file and format to store the triple parity.
 
-	This option is an alternative at 'r-parity' mainly intended for
+	This option is an alternative at '3-parity' mainly intended for
 	low end CPUs like ARM or AMD Phenom, Athlon and Opteron that don't
 	support the SSSE3 instructions set, and in such case it may provide
 	a better performance.
@@ -617,11 +617,11 @@ Configuration
 	This format is similar at the one used by the Linux Kernel RAID6 and
 	ZFS RAIDZ3, but it doesn't work beyond triple parity.
 
-	When using 'r-parity' you will be warned if it's recommended to use
+	When using '3-parity' you will be warned if it's recommended to use
 	the 'z-parity' format for a performance improvment.
 
 	It's possible to convert from one format to another, adjusting
-	the configuraton file with the wanted z-parity or r-parity file,
+	the configuraton file with the wanted z-parity or 3-parity file,
 	and using 'fix' to recreate it.
 
   content FILE
