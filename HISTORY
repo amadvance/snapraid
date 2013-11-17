@@ -3,18 +3,19 @@ SnapRAID HISTORY
 
 5.0 2013/11
 ===========
- * Added support for up to six level of parity.
+ * Added support for up to six levels of parity.
  * Added a specific and faster triple parity format for CPUs that
    don't support SSSE3 instructions like ARM and AMD Phenom, Athlon
    and Opteron.
  * Faster RAID5 and RAID6 implementation for ARM 64 bit CPUs.
- * In sync, if a silent error is found, directly mark the block as bad
-   like in scrub, and continue with the sync process.
+ * If a silent error is found during a "sync" command, directly marks
+   the block as bad like in "scrub", without stopping the the "sync"
+   process.
  * Sort files by inode when listing the directory. This improves
    the scanning performance.
  * For files with changes only in some blocks, updates the parity
    only for blocks that really are changed.
-   This improves the performance in sync for edited files.
+   This improves the performance in sync for modified files.
  * Added a new "list" command to see the stored list of files.   
  * Removed the detailed list of errors from the screen output.
    To get it you must explicitely use the -l, --log option.
