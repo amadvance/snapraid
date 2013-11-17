@@ -1362,13 +1362,13 @@ void* malloc_nofail_align(size_t size, void** freeptr)
  *
  * PAR1 sse2x4 21936 [MB/s]
  * PAR2 sse2x2 11902 [MB/s]
- * PAR3z sse2x1 5838 [MB/s]
+ * PARz sse2x1 5838 [MB/s]
  *
  * Without displacement:
  *
  * PAR1 sse2x4 15368 [MB/s]
  * PAR2 sse2x2 6814 [MB/s]
- * PAR3z sse2x1 3033 [MB/s]
+ * PARz sse2x1 3033 [MB/s]
  */
 #define MALLOC_DISPLACEMENT (7*256)
 

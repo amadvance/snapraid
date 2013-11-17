@@ -328,22 +328,22 @@ void speed(void)
 #endif
 	printf("\n");
 
-	/* PAR3z */
-	printf("%8s", "par3z");
-	printf("%8s", raid_par3z_tag());
+	/* PARz */
+	printf("%8s", "parz");
+	printf("%8s", raid_parz_tag());
 	fflush(stdout);
 
 	printf("%8s", "");
 
 	SPEED_START {
-		raid_par3z_int32(buffer, diskmax, block_size);
+		raid_parz_int32(buffer, diskmax, block_size);
 	} SPEED_STOP
 
 	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
 	SPEED_START {
-		raid_par3z_int64(buffer, diskmax, block_size);
+		raid_parz_int64(buffer, diskmax, block_size);
 	} SPEED_STOP
 
 	printf("%8"PRIu64, ds / dt);
@@ -352,7 +352,7 @@ void speed(void)
 #if defined(__i386__) || defined(__x86_64__)
 	if (cpu_has_sse2()) {
 		SPEED_START {
-			raid_par3z_sse2(buffer, diskmax, block_size);
+			raid_parz_sse2(buffer, diskmax, block_size);
 		} SPEED_STOP
 
 		printf("%8"PRIu64, ds / dt);
@@ -360,7 +360,7 @@ void speed(void)
 
 #if defined(__x86_64__)
 		SPEED_START {
-			raid_par3z_sse2ext(buffer, diskmax, block_size);
+			raid_parz_sse2ext(buffer, diskmax, block_size);
 		} SPEED_STOP
 
 		printf("%8"PRIu64, ds / dt);

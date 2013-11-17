@@ -61,7 +61,7 @@ const char* lev_raid_name(unsigned mode, unsigned n)
 	case 3 : if (mode == RAID_MODE_CAUCHY)
 			return "par3";
 		else
-			return "par3z";
+			return "parz";
 	case 4 : return "par4";
 	case 5 : return "par5";
 	case 6 : return "par6";

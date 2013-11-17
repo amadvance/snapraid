@@ -108,7 +108,7 @@ void raid_rec(unsigned level, const int* d, const int* c, unsigned char** vbuf, 
  */
 const char* raid_par1_tag(void);
 const char* raid_par2_tag(void);
-const char* raid_par3z_tag(void);
+const char* raid_parz_tag(void);
 const char* raid_par3_tag(void);
 const char* raid_par4_tag(void);
 const char* raid_par5_tag(void);
@@ -128,10 +128,10 @@ void raid_par2_int32(unsigned char** vbuf, unsigned data, unsigned size);
 void raid_par2_int64(unsigned char** vbuf, unsigned data, unsigned size);
 void raid_par2_sse2(unsigned char** vbuf, unsigned data, unsigned size);
 void raid_par2_sse2ext(unsigned char** vbuf, unsigned data, unsigned size);
-void raid_par3z_int32(unsigned char** vbuf, unsigned data, unsigned size);
-void raid_par3z_int64(unsigned char** vbuf, unsigned data, unsigned size);
-void raid_par3z_sse2(unsigned char** vbuf, unsigned data, unsigned size);
-void raid_par3z_sse2ext(unsigned char** vbuf, unsigned data, unsigned size);
+void raid_parz_int32(unsigned char** vbuf, unsigned data, unsigned size);
+void raid_parz_int64(unsigned char** vbuf, unsigned data, unsigned size);
+void raid_parz_sse2(unsigned char** vbuf, unsigned data, unsigned size);
+void raid_parz_sse2ext(unsigned char** vbuf, unsigned data, unsigned size);
 void raid_par3_int8(unsigned char** vbuf, unsigned data, unsigned size);
 void raid_par3_ssse3(unsigned char** vbuf, unsigned data, unsigned size);
 void raid_par3_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size);

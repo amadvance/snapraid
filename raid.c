@@ -172,7 +172,7 @@
  * the Cauchy matrix if SSSE3 is present.
  *
  *             int8   int32   int64    sse2   sse2e   ssse3  ssse3e
- *   par3z             2112    3118    9589   10304
+ *   parz              2112    3118    9589   10304
  *
  *
  * In conclusion, the use of power coefficients, and specifically powers
@@ -590,9 +590,9 @@ void raid_par2_sse2ext(unsigned char** vbuf, unsigned data, unsigned size)
 #endif
 
 /*
- * PAR3z (triple parity with powers of 2^-1) 32bit C implementation
+ * PARz (triple parity with powers of 2^-1) 32bit C implementation
  */
-void raid_par3z_int32(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_parz_int32(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -640,9 +640,9 @@ void raid_par3z_int32(unsigned char** vbuf, unsigned data, unsigned size)
 }
 
 /*
- * PAR3z (triple parity with powers of 2^-1) 64bit C implementation
+ * PARz (triple parity with powers of 2^-1) 64bit C implementation
  */
-void raid_par3z_int64(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_parz_int64(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -691,9 +691,9 @@ void raid_par3z_int64(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__i386__) || defined(__x86_64__)
 /*
- * PAR3z (triple parity with powers of 2^-1) SSE2 implementation
+ * PARz (triple parity with powers of 2^-1) SSE2 implementation
  */
-void raid_par3z_sse2(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_parz_sse2(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -746,11 +746,11 @@ void raid_par3z_sse2(unsigned char** vbuf, unsigned data, unsigned size)
 
 #if defined(__x86_64__)
 /*
- * PAR3z (triple parity with powers of 2^-1) SSE2 implementation
+ * PARz (triple parity with powers of 2^-1) SSE2 implementation
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid_par3z_sse2ext(unsigned char** vbuf, unsigned data, unsigned size)
+void raid_parz_sse2ext(unsigned char** vbuf, unsigned data, unsigned size)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -2078,7 +2078,7 @@ void raid_set(unsigned mode)
 /* internal forwarder */
 static void (*raid_par1_ptr)(unsigned char** vbuf, unsigned data, unsigned size);
 static void (*raid_par2_ptr)(unsigned char** vbuf, unsigned data, unsigned size);
-static void (*raid_par3z_ptr)(unsigned char** vbuf, unsigned data, unsigned size);
+static void (*raid_parz_ptr)(unsigned char** vbuf, unsigned data, unsigned size);
 static void (*raid_par3_ptr)(unsigned char** vbuf, unsigned data, unsigned size);
 static void (*raid_par4_ptr)(unsigned char** vbuf, unsigned data, unsigned size);
 static void (*raid_par5_ptr)(unsigned char** vbuf, unsigned data, unsigned size);
@@ -2093,7 +2093,7 @@ void raid_par(unsigned level, unsigned char** vbuf, unsigned data, unsigned size
 		if (raid_mode == RAID_MODE_CAUCHY)
 			raid_par3_ptr(vbuf, data, size);
 		else
-			raid_par3z_ptr(vbuf, data, size);
+			raid_parz_ptr(vbuf, data, size);
 		break;
 	case 4 : raid_par4_ptr(vbuf, data, size); break;
 	case 5 : raid_par5_ptr(vbuf, data, size); break;
@@ -2825,11 +2825,11 @@ void raid_init(void)
 	if (sizeof(void*) == 4) {
 		raid_par1_ptr = raid_par1_int32;
 		raid_par2_ptr = raid_par2_int32;
-		raid_par3z_ptr = raid_par3z_int32;
+		raid_parz_ptr = raid_parz_int32;
 	} else {
 		raid_par1_ptr = raid_par1_int64;
 		raid_par2_ptr = raid_par2_int64;
-		raid_par3z_ptr = raid_par3z_int64;
+		raid_parz_ptr = raid_parz_int64;
 	}
 
 	raid_rec1_ptr = raid_rec1_int8;
@@ -2842,14 +2842,14 @@ void raid_init(void)
 #if defined(__x86_64__)
 		if (cpu_has_slowextendedreg()) {
 			raid_par2_ptr = raid_par2_sse2;
-			raid_par3z_ptr = raid_par3z_sse2;
+			raid_parz_ptr = raid_parz_sse2;
 		} else {
 			raid_par2_ptr = raid_par2_sse2ext;
-			raid_par3z_ptr = raid_par3z_sse2ext;
+			raid_parz_ptr = raid_parz_sse2ext;
 		}
 #else
 		raid_par2_ptr = raid_par2_sse2;
-		raid_par3z_ptr = raid_par3z_sse2;
+		raid_parz_ptr = raid_parz_sse2;
 #endif
 	}
 
@@ -2884,8 +2884,8 @@ static struct raid_func {
 	{ "int64", raid_par1_int64 },
 	{ "int32", raid_par2_int32 },
 	{ "int64", raid_par2_int64 },
-	{ "int32", raid_par3z_int32 },
-	{ "int64", raid_par3z_int64 },
+	{ "int32", raid_parz_int32 },
+	{ "int64", raid_parz_int64 },
 	{ "int8", raid_rec1_int8 },
 	{ "int8", raid_rec2_int8 },
 	{ "int8", raid_recX_int8 },
@@ -2893,7 +2893,7 @@ static struct raid_func {
 #if defined(__i386__) || defined(__x86_64__)
 	{ "sse2", raid_par1_sse2 },
 	{ "sse2", raid_par2_sse2 },
-	{ "sse2", raid_par3z_sse2 },
+	{ "sse2", raid_parz_sse2 },
 	{ "ssse3", raid_par3_ssse3 },
 	{ "ssse3", raid_par4_ssse3 },
 	{ "ssse3", raid_par5_ssse3 },
@@ -2905,7 +2905,7 @@ static struct raid_func {
 
 #if defined(__x86_64__)
 	{ "sse2e", raid_par2_sse2ext },
-	{ "sse2e", raid_par3z_sse2ext },
+	{ "sse2e", raid_parz_sse2ext },
 	{ "ssse3e", raid_par3_ssse3ext },
 	{ "ssse3e", raid_par4_ssse3ext },
 	{ "ssse3e", raid_par5_ssse3ext },
@@ -2935,9 +2935,9 @@ const char* raid_par2_tag(void)
 	return raid_tag(raid_par2_ptr);
 }
 
-const char* raid_par3z_tag(void)
+const char* raid_parz_tag(void)
 {
-	return raid_tag(raid_par3z_ptr);
+	return raid_tag(raid_parz_ptr);
 }
 
 const char* raid_par3_tag(void)

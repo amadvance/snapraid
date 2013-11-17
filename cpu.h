@@ -201,13 +201,13 @@ static inline int cpu_has_slowpshufb(void)
 		 * PAR2 mmx 1160 [MB/s]
 		 * PAR2 sse2 2082 [MB/s]
 		 * PAR2 sse2ext 2481 [MB/s]
-		 * PAR3z int32 236 [MB/s]
-		 * PAR3z int64 456 [MB/s]
-		 * PAR3z mmx 576 [MB/s]
-		 * PAR3z sse2 1109 [MB/s]
-		 * PAR3z sse2ext 1527 [MB/s]
-		 * PAR3z ssse3 931 [MB/s] (slower than sse2ext)
-		 * PAR3z ssse3ext 932 [MB/s] (slower than sse2ext)
+		 * PARz int32 236 [MB/s]
+		 * PARz int64 456 [MB/s]
+		 * PARz mmx 576 [MB/s]
+		 * PARz sse2 1109 [MB/s]
+		 * PARz sse2ext 1527 [MB/s]
+		 * PARz ssse3 931 [MB/s] (slower than sse2ext)
+		 * PARz ssse3ext 932 [MB/s] (slower than sse2ext)
 		 * PAR4z int32 144 [MB/s]
 		 * PAR4z int64 271 [MB/s]
 		 * PAR4z mmx 431 [MB/s]

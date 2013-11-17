@@ -282,12 +282,12 @@ static void gentest(unsigned mode, unsigned diskmax, unsigned block_size)
 #endif
 	} else {
 #if defined(__i386__) || defined(__x86_64__)
-		map[mac++] = raid_par3z_int32;
-		map[mac++] = raid_par3z_int64;
+		map[mac++] = raid_parz_int32;
+		map[mac++] = raid_parz_int64;
 		if (cpu_has_sse2()) {
-			map[mac++] = raid_par3z_sse2;
+			map[mac++] = raid_parz_sse2;
 #if defined(__x86_64__)
-			map[mac++] = raid_par3z_sse2ext;
+			map[mac++] = raid_parz_sse2ext;
 #endif
 		}
 #endif
