@@ -104,7 +104,7 @@ void set_cauchy(unsigned char* matrix)
 	 *
 	 * 1/(xi+yj) = 1/(2^-i + 2^j)
 	 *
-	 * with xi != yj for any i,j with i>=0,j>=1,i+j<256
+	 * with xi != yj for any i,j with i>=0,j>=1,i+j<255
 	 */
 	y = 2;
 	for(j=0;j<PARITY-2;++j) {
