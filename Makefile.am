@@ -151,6 +151,8 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
+	echo --- Check the --gen-conf command
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --gen-conf test/content
 	echo --- Delete some files and sync
 	rm test/disk4/9*
 	rm test/disk5/9*

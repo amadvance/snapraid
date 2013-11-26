@@ -1,6 +1,10 @@
 SnapRAID HISTORY
 ================
 
+5.1 2013/12 (BETA)
+==================
+ * Fixed the -C, --gen-conf command.
+
 5.0 2013/11
 ===========
  * Added support for up to six levels of parity.

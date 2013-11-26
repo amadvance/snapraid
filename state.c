@@ -855,6 +855,10 @@ static void state_map(struct snapraid_state* state)
 		exit(EXIT_FAILURE);
 	}
 
+	/* without configuration don't check for number of data disks */
+	if (state->no_conf)
+		return;
+
 	/* count the number of data disks, including holes left after removing some */
 	diskcount = 0;
 	for(i=state->maplist;i!=0;i=i->next) {
@@ -1641,6 +1645,11 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			if (ret < 0) {
 				fprintf(stderr, "Invalid 'blksize' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
+			}
+
+			/* without configuration, auto assign the block size */
+			if (state->no_conf) {
+				state->block_size = blksize;
 			}
 
 			if (blksize != state->block_size) {
@@ -2709,6 +2718,11 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				exit(EXIT_FAILURE);
 			}
 
+			/* without configuration, auto assign the block size */
+			if (state->no_conf) {
+				state->block_size = blksize;
+			}
+
 			if (blksize != state->block_size) {
 				decoding_error(path, f);
 				fprintf(stderr, "Mismatching 'blksize' and 'block_size' specification!\n");
@@ -3222,8 +3236,10 @@ void state_read(struct snapraid_state* state)
 		struct snapraid_content* content = node->data;
 		pathcpy(path, sizeof(path), content->content);
 
-		fprintf(stdlog, "content:%s\n", path);
-		fflush(stdlog);
+		if (!state->no_conf) {
+			fprintf(stdlog, "content:%s\n", path);
+			fflush(stdlog);
+		}
 		printf("Loading state from %s...\n", path);
 
 		f = sopen_read(path);
@@ -3252,10 +3268,10 @@ void state_read(struct snapraid_state* state)
 
 	/* if not found, assume empty */
 	if (!f) {
+		fprintf(stderr, "No content file found. Assuming empty.\n");
+
 		/* create the initial mapping */
 		state_map(state);
-
-		fprintf(stderr, "No content file found. Assuming empty.\n");
 		return;
 	}
 
