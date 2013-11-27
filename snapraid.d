@@ -183,13 +183,13 @@ Getting Started
 		:snapraid fix -m
 
   Scrubbing
-	To periodically check the old data for errors, you can run the "scrub"
-	command.
+	To periodically check the arrat data and parity for errors, you can
+	run the "scrub" command.
 
 		:snapraid scrub
 
 	This command is similar at "check" but verifies only the oldest data
-	in your array. Every run of the command checks about 12% of the data,
+	in your array. Every run of the command checks about 12% of the array,
 	but nothing newer than 10 days.
 	You can use the -p, --percentage option to specify a different amount,
 	and the -o, --older-than option to specify a different age in days.
@@ -303,7 +303,7 @@ Commands
 	The files in the array are modified if necessary.
 
   scrub
-	Scrubs the array, checking for silent errors.
+	Scrubs the array, checking for silent errors in data or parity disks.
 
 	For each command invocation, the 12% of the array is checked, but
 	nothing that it's more recent than 10 days.

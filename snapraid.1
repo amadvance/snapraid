@@ -324,8 +324,8 @@ snapraid fix \-m
 .PD
 .RE
 .SS Scrubbing 
-To periodically check the old data for errors, you can run the \(a"scrub\(a"
-command.
+To periodically check the arrat data and parity for errors, you can
+run the \(a"scrub\(a" command.
 .PP
 .RS 4
 snapraid scrub
@@ -335,7 +335,7 @@ snapraid scrub
 .RE
 .PP
 This command is similar at \(a"check\(a" but verifies only the oldest data
-in your array. Every run of the command checks about 12% of the data,
+in your array. Every run of the command checks about 12% of the array,
 but nothing newer than 10 days.
 You can use the \-p, \-\-percentage option to specify a different amount,
 and the \-o, \-\-older\-than option to specify a different age in days.
@@ -515,7 +515,7 @@ The \(a"content\(a" file is NOT modified.
 The \(a"parity\(a" files are modified if necessary.
 The files in the array are modified if necessary.
 .SS scrub 
-Scrubs the array, checking for silent errors.
+Scrubs the array, checking for silent errors in data or parity disks.
 .PP
 For each command invocation, the 12% of the array is checked, but
 nothing that it\(cqs more recent than 10 days.
