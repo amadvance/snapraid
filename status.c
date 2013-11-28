@@ -305,7 +305,7 @@ int state_status(struct snapraid_state* state)
 	if (bad) {
 		printf("DANGER! In the array there are %u silent errors!\n\n", bad);
 
-		printf("They are:");
+		printf("They are at blocks:");
 
 		/* print all the errors */
 		for(i=0;i<blockmax;++i) {
