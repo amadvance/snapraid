@@ -16,7 +16,7 @@ Synopsis
 	:snapraid [-V, --version] [-h, --help] [-C, --gen-conf CONTENT]
 
 Description
-	SnapRAID is a backup program for disk arrays. It stores redundancy
+	SnapRAID is a backup program for disk arrays. It stores parity
 	information of your data and it's able to recover from up to six
 	disk failures.
 
@@ -85,7 +85,7 @@ Getting Started
 	disk allow to recover from one more disk failure.
 
 	As parity disks, you have to pick the biggest disks in the array,
-	as the redundancy information may grow in size as the biggest data
+	as the parity information may grow in size as the biggest data
 	disk in the array.
 
 	These disks will be dedicated to store the "parity" files.
@@ -130,7 +130,7 @@ Getting Started
 		:disk d3 H:\array\
 
 	At this point you are ready to start the "sync" command to build the
-	redundancy information.
+	parity information.
 
 		:snapraid sync
 
@@ -144,7 +144,7 @@ Getting Started
 	When this command completes, your data is SAFE.
 
 	At this point you can start using your array as you like, and periodically
-	update the redundancy information running the "sync" command.
+	update the parity information running the "sync" command.
 
   Checking & Fixing
 	To check the integrity of your data you can use the "check" command:
@@ -183,7 +183,7 @@ Getting Started
 		:snapraid fix -m
 
   Scrubbing
-	To periodically check the arrat data and parity for errors, you can
+	To periodically check the data and parity for errors, you can
 	run the "scrub" command.
 
 		:snapraid scrub
@@ -244,7 +244,7 @@ Getting Started
 		:wide links = yes
 
 Commands
-	SnapRAID provides some simple commands that allow to:
+	SnapRAID provides a few simple commands that allow to:
 
 	* Make a backup/snapshot -> "sync"
 	* Periodically checks old data -> "scrub"
@@ -255,25 +255,27 @@ Commands
 	Take care that the commands have to be written in lower case.
 
   sync
-	Updates the redundancy information. All the modified files
-	in the disk array are read, and the redundancy data is
+	Updates the parity information. All the modified files
+	in the disk array are read, and the parity data is
 	recomputed.
 
 	Files are identified by path and/or inode and checked by
 	size and timestamp.
-	If the size or timestamp are different, the redundancy data is
+	If the size or timestamp are different, the parity data is
 	recomputed for the whole file.
-	Using inode allow you can move them on the disk
-	without triggering any redundancy recomputation.
+	With inode you can move them on the disk without triggering
+	any parity recomputation.
 
 	You can stop this process at any time pressing Ctrl+C,
 	without losing the work already done.
+	At the next run the "sync" process will start where
+	interrupted.
 
-	The "content", "parity" files are modified if necessary.
+	The "content" and "parity" files are modified if necessary.
 	The files in the array are NOT modified.
 
   check
-	Checks all the files and the redundancy data.
+	Checks all the files and the parity data.
 	All the files are hashed and compared with the snapshot saved
 	in the previous "sync" command.
 
@@ -281,7 +283,7 @@ Commands
 	if the error is a recoverable one or not.
 
 	If you use the -a, --audit-only option, only the file
-	data is checked, and the redundandy data is ignored.
+	data is checked, and the parity data is ignored.
 
 	Files are identified by path, and checked by content.
 
@@ -324,12 +326,12 @@ Commands
 	correct, they are automatically unmarked.
 
 	It's recommended to run "scrub" on a synched array, to avoid to have
-	reported error caused by unsynched data. These errors are recognized
+	reported error caused by unsynced data. These errors are recognized
 	as not being silent errors, and the blocks are not marked as bad,
-	but such errros are reported in the output of the command.
+	but such errors are reported in the output of the command.
 
 	The "content" file is modified to update the time of the last check
-	of each block.
+	of each block, and to mark bad blocks.
 	The "parity" files are NOT modified.
 	The files in the array are NOT modified.
 
@@ -338,7 +340,7 @@ Commands
 
 	It includes information about the parity fragmentation, how old
 	are the blocks without checking, and all the recorded silent
-	errors encoutered while scrubbing.
+	errors encountered while scrubbing.
 
 	Nothing is modified.
 
@@ -350,7 +352,7 @@ Commands
 
   diff
 	Lists all the files modified from the last "sync" command that
-	have to recompute their redundancy data.
+	need to have their parity data recomputed.
 
 	This command doesn't check the file data, but only the file timestamp
 	size and inode.
@@ -373,7 +375,7 @@ Commands
 
 	When updating, all the present symbolic links and empty
 	subdirectories are deleted and replaced with the new
-	view of the array. Any othe regular file is left in place.
+	view of the array. Any other regular file is left in place.
 
 	Nothing is modified outside the pool directory.
 
@@ -385,7 +387,7 @@ Commands
 	bits one to switch from MurmurHash3 to the faster SpookyHash.
 
 	If you are already using the optimal hash, this command
-	do nothing and just inform you that nothing has to be done.
+	do nothing and tells you that nothing has to be done.
 
 	The rehash isn't done immediately, but it takes place
 	progressively during the "sync" and "scrub" commands.
@@ -393,7 +395,7 @@ Commands
 	You can get the rehash state using the "status" command.
 
 	During the rehash, SnapRAID maintains full functionality,
-	with the only expection of the "dup" command not able to detect
+	with the only exception of the "dup" command not able to detect
 	duplicated files using a different hash.
 
 Options
@@ -422,7 +424,7 @@ Options
 		Only the files present in the specified disk are processed.
 		You must specify a disk name as named in the configuration
 		file.
-		In "check", you can make it faster, specifing also -a, --audit-only
+		In "check", you can make it faster, specifying also -a, --audit-only
 		option, to avoid to access other disks to check parity data.
 		If you combine more --filter, --filter-disk and --filter-missing options,
 		only files matching all the set of filters are selected.
@@ -445,18 +447,15 @@ Options
 	-e, --filter-error
 		Filters the files to process in the "check" and "fix"
 		commands.
-		It process only the files containing blocks marked with silent
+		It processes only the files containing blocks marked with silent
 		errors during the "sync" or "scrub" command, and listed in the
 		"status" command.
-		Errors found in "check" are not processed by this
-		option, because they are not marked as bad as "check" is a
-		read-only command.
 		This option can be used only with the "check" and "fix" commands.
 
 	-p, --percentage PERC
 		Selects the part of the array to process in the "scrub" command.
 		PERC is a numeric value from 0 to 100, default is 12.
-		When specifing 0, only the blocks marked as bad are scrubbed.
+		When specifying 0, only the blocks marked as bad are scrubbed.
 		This option can be used only with the "scrub" command.
 
 	-o, --older-than DAYS
@@ -469,7 +468,7 @@ Options
 
 	-a, --audit-only
 		When checking, only verify the hash of the files, without
-		doing any kind of check on the redundancy data.
+		doing any kind of check on the parity data.
 		If you are interested in checking only the file data this
 		option can speedup a lot the checking process.
 		This option can be used only with the "check" command.
@@ -477,7 +476,7 @@ Options
 	-i, --import DIR
 		When fixing imports from the specified directory any file
 		that you deleted from the array after the last "sync"
-		commmand.
+		command.
 		If you still have such files, they could be used by the "fix"
 		command to improve the recover process.
 		The files are read also in subdirectories and they are
@@ -523,7 +522,7 @@ Options
 		physical device.
 		If SnapRAID detects that some disks have the same device ID,
 		it stops proceeding, because it's not a supported configuration.
-		But it could happen that you want to temporarely restore a lost
+		But it could happen that you want to temporarily restore a lost
 		disk in the free space left in an already used disk. and this
 		option allows you to continue anyway.
 
@@ -567,7 +566,7 @@ Options
 
 Configuration
 	SnapRAID requires a configuration file to know where your disk array
-	is located, and where storing the redundancy information.
+	is located, and where storing the parity information.
 
 	This configuration file is located in /etc/snapraid.conf in Unix or
 	in the execution directory in Windows.
@@ -610,7 +609,7 @@ Configuration
 	Defines an alternate file and format to store the triple parity.
 
 	This option is an alternative at '3-parity' mainly intended for
-	low end CPUs like ARM or AMD Phenom, Athlon and Opteron that don't
+	low-end CPUs like ARM or AMD Phenom, Athlon and Opteron that don't
 	support the SSSE3 instructions set, and in such case it may provide
 	a better performance.
 
@@ -618,10 +617,10 @@ Configuration
 	ZFS RAIDZ3, but it doesn't work beyond triple parity.
 
 	When using '3-parity' you will be warned if it's recommended to use
-	the 'z-parity' format for a performance improvment.
+	the 'z-parity' format for a performance improvement.
 
 	It's possible to convert from one format to another, adjusting
-	the configuraton file with the wanted z-parity or 3-parity file,
+	the configuration file with the wanted z-parity or 3-parity file,
 	and using 'fix' to recreate it.
 
   content FILE
@@ -633,11 +632,11 @@ Configuration
 	If you use a data disk, this file is automatically excluded
 	from the "sync" process.
 
-	This option is mandatory and it can be used more time to save
+	This option is mandatory and it can be used more times to save
 	more copies of the same files.
 
 	You have to store at least one copy for each parity disk used
-	plus one. Using some more don't hurt.
+	plus one. Using some more doesn't hurt.
 
   disk NAME DIR
 	Defines the name and the mount point of the disks of the array.
@@ -671,7 +670,7 @@ Configuration
 	This option can be used many times.
 
   block_size SIZE_IN_KIBIBYTES
-	Defines the basic block size in kibi bytes of the redundancy
+	Defines the basic block size in kibi bytes of the parity
 	blocks. Where one kibi bytes is 1024 bytes.
 	The default is 256 and it should work for most conditions.
 	You could increase this value if you do not have enough RAM
@@ -700,7 +699,7 @@ Configuration
 	going to waste 1.2 GiB.
 
     autosave SIZE_IN_GIBIBYTES
-	Automatically save the state when synching after the specied amount
+	Automatically save the state when synching after the specified amount
 	of GiB processed.
 	This option is useful to avoid to restart from scratch long "sync"
 	commands interrupted by a machine crash, or any other event that
@@ -822,7 +821,7 @@ Recovering
 
 	DO NOT PANIC! You will be able to recover it!
 
-	The first thing you have to do is to avoid futher changes at you disk array.
+	The first thing you have to do is to avoid further changes at you disk array.
 	Disable any remote connection to it, any scheduled process, including any
 	scheduled SnapRAID nightly sync.
 
@@ -862,7 +861,7 @@ Recovering
 	You can get a detailed list of all the unrecoverable blocks in the fix.log file
 	checking all the lines starting with "unrecoverable:"
 
-	If you are not satified of the recovering, you can retry it as many time you wish.
+	If you are not satisfied of the recovering, you can retry it as many time you wish.
 	For example, if you have moved away some files from other disks after the last "sync",
 	you can retry to put them inplace, and retry the "fix".
 
@@ -871,20 +870,20 @@ Recovering
 	"fix" command!
 
   STEP 3 -> Check
-	As paranoid but recommended check, you can now run a "check" command to ensure
-	that everything is OK on the disk.
+	As paranoid check, you can now run a "check" command to ensure that everything
+	is OK on the disk.
 
 		:snapraid -d NAME -a check
 
 	Where NAME is the name of the disk, like "d1" as in our previous example.
 
 	The options -d and -a tell SnapRAID to check only the specified disk,
-	and ignore all the redundancy data.
+	and ignore all the parity data.
 
 	This command will take a long time.
 
   STEP 4 -> Sync
-	Run the "sync" command to resyncronize the array with the new disk.
+	Run the "sync" command to resynchronize the array with the new disk.
 
 		:snapraid sync
 
@@ -902,17 +901,17 @@ Content
 	only read by "fix", "check" and "status".
 
 Parity
-	SnapRAID stores the redundancy information of your array in the parity
+	SnapRAID stores the parity information of your array in the parity
 	files.
 
-	They are binary files, containing the computed redundancy of all the
+	They are binary files, containing the computed parity of all the
 	blocks defined in the "content" file.
 
 	These files are read and written by the "sync" and "fix" commands, and
 	only read by "scrub" and "check".
 
 Encoding
-	SnapRAID in Unix ignores any encoding. It simply reads and stores the
+	SnapRAID in Unix ignores any encoding. It reads and stores the
 	file names with the same encoding used by the filesystem.
 
 	In Windows all the names read from the filesystem are converted and

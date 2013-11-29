@@ -321,7 +321,7 @@ int state_status(struct snapraid_state* state)
 
 		printf("\n\n");
 
-		printf("To fix them use the command 'snapraid --filter-error fix'.\n");
+		printf("To fix them use the command 'snapraid -e fix'.\n");
 		printf("The errors will disapper from the 'status' at the next 'scrub' command.\n");
 	} else {
 		printf("No silent error detected.\n");

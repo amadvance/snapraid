@@ -48,7 +48,7 @@ snapraid [\-V, \-\-version] [\-h, \-\-help] [\-C, \-\-gen\-conf CONTENT]
 .PP
 .PD
 .SH DESCRIPTION 
-SnapRAID is a backup program for disk arrays. It stores redundancy
+SnapRAID is a backup program for disk arrays. It stores parity
 information of your data and it\(cqs able to recover from up to six
 disk failures.
 .PP
@@ -134,7 +134,7 @@ you must reserve additional disks for parity. Any additional parity
 disk allow to recover from one more disk failure.
 .PP
 As parity disks, you have to pick the biggest disks in the array,
-as the redundancy information may grow in size as the biggest data
+as the parity information may grow in size as the biggest data
 disk in the array.
 .PP
 These disks will be dedicated to store the \(a"parity\(a" files.
@@ -239,7 +239,7 @@ disk d3 H:\(rsarray\(rs
 .RE
 .PP
 At this point you are ready to start the \(a"sync\(a" command to build the
-redundancy information.
+parity information.
 .PP
 .RS 4
 snapraid sync
@@ -258,7 +258,7 @@ will start where interrupted.
 When this command completes, your data is SAFE.
 .PP
 At this point you can start using your array as you like, and periodically
-update the redundancy information running the \(a"sync\(a" command.
+update the parity information running the \(a"sync\(a" command.
 .SS Checking & Fixing 
 To check the integrity of your data you can use the \(a"check\(a" command:
 .PP
@@ -324,7 +324,7 @@ snapraid fix \-m
 .PD
 .RE
 .SS Scrubbing 
-To periodically check the arrat data and parity for errors, you can
+To periodically check the data and parity for errors, you can
 run the \(a"scrub\(a" command.
 .PP
 .RS 4
@@ -454,7 +454,7 @@ wide links = yes
 .PD
 .RE
 .SH COMMANDS 
-SnapRAID provides some simple commands that allow to:
+SnapRAID provides a few simple commands that allow to:
 .PD 0
 .IP \(bu
 Make a backup/snapshot \-> \(a"sync\(a"
@@ -470,24 +470,26 @@ Restore the last backup/snapshot \-> \(a"fix\(a".
 .PP
 Take care that the commands have to be written in lower case.
 .SS sync 
-Updates the redundancy information. All the modified files
-in the disk array are read, and the redundancy data is
+Updates the parity information. All the modified files
+in the disk array are read, and the parity data is
 recomputed.
 .PP
 Files are identified by path and/or inode and checked by
 size and timestamp.
-If the size or timestamp are different, the redundancy data is
+If the size or timestamp are different, the parity data is
 recomputed for the whole file.
-Using inode allow you can move them on the disk
-without triggering any redundancy recomputation.
+With inode you can move them on the disk without triggering
+any parity recomputation.
 .PP
 You can stop this process at any time pressing Ctrl+C,
 without losing the work already done.
+At the next run the \(a"sync\(a" process will start where
+interrupted.
 .PP
-The \(a"content\(a", \(a"parity\(a" files are modified if necessary.
+The \(a"content\(a" and \(a"parity\(a" files are modified if necessary.
 The files in the array are NOT modified.
 .SS check 
-Checks all the files and the redundancy data.
+Checks all the files and the parity data.
 All the files are hashed and compared with the snapshot saved
 in the previous \(a"sync\(a" command.
 .PP
@@ -495,7 +497,7 @@ If an error if found, a recovery attempt is simulated to check
 if the error is a recoverable one or not.
 .PP
 If you use the \-a, \-\-audit\-only option, only the file
-data is checked, and the redundandy data is ignored.
+data is checked, and the parity data is ignored.
 .PP
 Files are identified by path, and checked by content.
 .PP
@@ -536,12 +538,12 @@ Blocks already marked as bad are always checked, and if found
 correct, they are automatically unmarked.
 .PP
 It\(cqs recommended to run \(a"scrub\(a" on a synched array, to avoid to have
-reported error caused by unsynched data. These errors are recognized
+reported error caused by unsynced data. These errors are recognized
 as not being silent errors, and the blocks are not marked as bad,
-but such errros are reported in the output of the command.
+but such errors are reported in the output of the command.
 .PP
 The \(a"content\(a" file is modified to update the time of the last check
-of each block.
+of each block, and to mark bad blocks.
 The \(a"parity\(a" files are NOT modified.
 The files in the array are NOT modified.
 .SS status 
@@ -549,7 +551,7 @@ Prints a summary of the state of the disk array.
 .PP
 It includes information about the parity fragmentation, how old
 are the blocks without checking, and all the recorded silent
-errors encoutered while scrubbing.
+errors encountered while scrubbing.
 .PP
 Nothing is modified.
 .SS list 
@@ -559,7 +561,7 @@ last \(a"sync\(a" command.
 Nothing is modified.
 .SS diff 
 Lists all the files modified from the last \(a"sync\(a" command that
-have to recompute their redundancy data.
+need to have their parity data recomputed.
 .PP
 This command doesn\(cqt check the file data, but only the file timestamp
 size and inode.
@@ -580,7 +582,7 @@ symbolic links.
 .PP
 When updating, all the present symbolic links and empty
 subdirectories are deleted and replaced with the new
-view of the array. Any othe regular file is left in place.
+view of the array. Any other regular file is left in place.
 .PP
 Nothing is modified outside the pool directory.
 .SS rehash 
@@ -591,7 +593,7 @@ typically when upgrading from a 32 bits system to a 64
 bits one to switch from MurmurHash3 to the faster SpookyHash.
 .PP
 If you are already using the optimal hash, this command
-do nothing and just inform you that nothing has to be done.
+do nothing and tells you that nothing has to be done.
 .PP
 The rehash isn\(cqt done immediately, but it takes place
 progressively during the \(a"sync\(a" and \(a"scrub\(a" commands.
@@ -599,7 +601,7 @@ progressively during the \(a"sync\(a" and \(a"scrub\(a" commands.
 You can get the rehash state using the \(a"status\(a" command.
 .PP
 During the rehash, SnapRAID maintains full functionality,
-with the only expection of the \(a"dup\(a" command not able to detect
+with the only exception of the \(a"dup\(a" command not able to detect
 duplicated files using a different hash.
 .SH OPTIONS 
 SnapRAID provides the following options:
@@ -627,7 +629,7 @@ commands.
 Only the files present in the specified disk are processed.
 You must specify a disk name as named in the configuration
 file.
-In \(a"check\(a", you can make it faster, specifing also \-a, \-\-audit\-only
+In \(a"check\(a", you can make it faster, specifying also \-a, \-\-audit\-only
 option, to avoid to access other disks to check parity data.
 If you combine more \-\-filter, \-\-filter\-disk and \-\-filter\-missing options,
 only files matching all the set of filters are selected.
@@ -650,18 +652,15 @@ process the whole array.
 .B \-e, \-\-filter\-error
 Filters the files to process in the \(a"check\(a" and \(a"fix\(a"
 commands.
-It process only the files containing blocks marked with silent
+It processes only the files containing blocks marked with silent
 errors during the \(a"sync\(a" or \(a"scrub\(a" command, and listed in the
 \(a"status\(a" command.
-Errors found in \(a"check\(a" are not processed by this
-option, because they are not marked as bad as \(a"check\(a" is a
-read\-only command.
 This option can be used only with the \(a"check\(a" and \(a"fix\(a" commands.
 .TP
 .B \-p, \-\-percentage PERC
 Selects the part of the array to process in the \(a"scrub\(a" command.
 PERC is a numeric value from 0 to 100, default is 12.
-When specifing 0, only the blocks marked as bad are scrubbed.
+When specifying 0, only the blocks marked as bad are scrubbed.
 This option can be used only with the \(a"scrub\(a" command.
 .TP
 .B \-o, \-\-older\-than DAYS
@@ -674,7 +673,7 @@ This option can be used only with the \(a"scrub\(a" command.
 .TP
 .B \-a, \-\-audit\-only
 When checking, only verify the hash of the files, without
-doing any kind of check on the redundancy data.
+doing any kind of check on the parity data.
 If you are interested in checking only the file data this
 option can speedup a lot the checking process.
 This option can be used only with the \(a"check\(a" command.
@@ -682,7 +681,7 @@ This option can be used only with the \(a"check\(a" command.
 .B \-i, \-\-import DIR
 When fixing imports from the specified directory any file
 that you deleted from the array after the last \(a"sync\(a"
-commmand.
+command.
 If you still have such files, they could be used by the \(a"fix\(a"
 command to improve the recover process.
 The files are read also in subdirectories and they are
@@ -728,7 +727,7 @@ Forces the insecure operation of fixing with disks on the same
 physical device.
 If SnapRAID detects that some disks have the same device ID,
 it stops proceeding, because it\(cqs not a supported configuration.
-But it could happen that you want to temporarely restore a lost
+But it could happen that you want to temporarily restore a lost
 disk in the free space left in an already used disk. and this
 option allows you to continue anyway.
 .TP
@@ -771,7 +770,7 @@ Prints a short help screen.
 Prints the program version.
 .SH CONFIGURATION 
 SnapRAID requires a configuration file to know where your disk array
-is located, and where storing the redundancy information.
+is located, and where storing the parity information.
 .PP
 This configuration file is located in /etc/snapraid.conf in Unix or
 in the execution directory in Windows.
@@ -817,7 +816,7 @@ These options are optional and they can be used only one time.
 Defines an alternate file and format to store the triple parity.
 .PP
 This option is an alternative at \(cq3\-parity\(cq mainly intended for
-low end CPUs like ARM or AMD Phenom, Athlon and Opteron that don\(cqt
+low\-end CPUs like ARM or AMD Phenom, Athlon and Opteron that don\(cqt
 support the SSSE3 instructions set, and in such case it may provide
 a better performance.
 .PP
@@ -825,10 +824,10 @@ This format is similar at the one used by the Linux Kernel RAID6 and
 ZFS RAIDZ3, but it doesn\(cqt work beyond triple parity.
 .PP
 When using \(cq3\-parity\(cq you will be warned if it\(cqs recommended to use
-the \(cqz\-parity\(cq format for a performance improvment.
+the \(cqz\-parity\(cq format for a performance improvement.
 .PP
 It\(cqs possible to convert from one format to another, adjusting
-the configuraton file with the wanted z\-parity or 3\-parity file,
+the configuration file with the wanted z\-parity or 3\-parity file,
 and using \(cqfix\(cq to recreate it.
 .SS content FILE 
 Defines the file to use to store the list and checksums of all the
@@ -839,11 +838,11 @@ any other disk available.
 If you use a data disk, this file is automatically excluded
 from the \(a"sync\(a" process.
 .PP
-This option is mandatory and it can be used more time to save
+This option is mandatory and it can be used more times to save
 more copies of the same files.
 .PP
 You have to store at least one copy for each parity disk used
-plus one. Using some more don\(cqt hurt.
+plus one. Using some more doesn\(cqt hurt.
 .SS disk NAME DIR 
 Defines the name and the mount point of the disks of the array.
 NAME is used to identify the disk, and it must be unique.
@@ -873,7 +872,7 @@ specifications.
 .PP
 This option can be used many times.
 .SS block_size SIZE_IN_KIBIBYTES 
-Defines the basic block size in kibi bytes of the redundancy
+Defines the basic block size in kibi bytes of the parity
 blocks. Where one kibi bytes is 1024 bytes.
 The default is 256 and it should work for most conditions.
 You could increase this value if you do not have enough RAM
@@ -904,7 +903,7 @@ wasted for each file.
 For example, with 10000 files and a 256 KiB block size, you are
 going to waste 1.2 GiB.
 .SS autosave SIZE_IN_GIBIBYTES 
-Automatically save the state when synching after the specied amount
+Automatically save the state when synching after the specified amount
 of GiB processed.
 This option is useful to avoid to restart from scratch long \(a"sync\(a"
 commands interrupted by a machine crash, or any other event that
@@ -1148,7 +1147,7 @@ The worst happened, and you lost a disk!
 .PP
 DO NOT PANIC! You will be able to recover it!
 .PP
-The first thing you have to do is to avoid futher changes at you disk array.
+The first thing you have to do is to avoid further changes at you disk array.
 Disable any remote connection to it, any scheduled process, including any
 scheduled SnapRAID nightly sync.
 .PP
@@ -1201,7 +1200,7 @@ unrecoverable, it will be renamed adding the \(a".unrecoverable\(a" extension.
 You can get a detailed list of all the unrecoverable blocks in the fix.log file
 checking all the lines starting with \(a"unrecoverable:\(a"
 .PP
-If you are not satified of the recovering, you can retry it as many time you wish.
+If you are not satisfied of the recovering, you can retry it as many time you wish.
 For example, if you have moved away some files from other disks after the last \(a"sync\(a",
 you can retry to put them inplace, and retry the \(a"fix\(a".
 .PP
@@ -1209,8 +1208,8 @@ If you are satisfied of the recovering, you can now proceed further,
 but take care that after synching you will no more able to retry the
 \(a"fix\(a" command!
 .SS STEP 3 \-> Check 
-As paranoid but recommended check, you can now run a \(a"check\(a" command to ensure
-that everything is OK on the disk.
+As paranoid check, you can now run a \(a"check\(a" command to ensure that everything
+is OK on the disk.
 .PP
 .RS 4
 snapraid \-d NAME \-a check
@@ -1222,11 +1221,11 @@ snapraid \-d NAME \-a check
 Where NAME is the name of the disk, like \(a"d1\(a" as in our previous example.
 .PP
 The options \-d and \-a tell SnapRAID to check only the specified disk,
-and ignore all the redundancy data.
+and ignore all the parity data.
 .PP
 This command will take a long time.
 .SS STEP 4 \-> Sync 
-Run the \(a"sync\(a" command to resyncronize the array with the new disk.
+Run the \(a"sync\(a" command to resynchronize the array with the new disk.
 .PP
 .RS 4
 snapraid sync
@@ -1247,16 +1246,16 @@ You do not need to understand its format to use SnapRAID.
 This file is read and written by the \(a"sync\(a" and \(a"scrub\(a" commands, and
 only read by \(a"fix\(a", \(a"check\(a" and \(a"status\(a".
 .SH PARITY 
-SnapRAID stores the redundancy information of your array in the parity
+SnapRAID stores the parity information of your array in the parity
 files.
 .PP
-They are binary files, containing the computed redundancy of all the
+They are binary files, containing the computed parity of all the
 blocks defined in the \(a"content\(a" file.
 .PP
 These files are read and written by the \(a"sync\(a" and \(a"fix\(a" commands, and
 only read by \(a"scrub\(a" and \(a"check\(a".
 .SH ENCODING 
-SnapRAID in Unix ignores any encoding. It simply reads and stores the
+SnapRAID in Unix ignores any encoding. It reads and stores the
 file names with the same encoding used by the filesystem.
 .PP
 In Windows all the names read from the filesystem are converted and
