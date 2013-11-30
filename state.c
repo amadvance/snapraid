@@ -801,6 +801,10 @@ static void state_map(struct snapraid_state* state)
 		tommy_list_insert_tail(&state->maplist, &map->node, map);
 	}
 
+	/* without configuration don't check for number of data disks */
+	if (state->no_conf)
+		return;
+
 	/* checks if mapping match the disk uuid */
 	uuid_mismatch = 0;
 	for(i=state->maplist;i!=0;i=i->next) {
@@ -854,10 +858,6 @@ static void state_map(struct snapraid_state* state)
 		fprintf(stderr, "and you have to restore the mount points at the state of the latest sync.\n");
 		exit(EXIT_FAILURE);
 	}
-
-	/* without configuration don't check for number of data disks */
-	if (state->no_conf)
-		return;
 
 	/* count the number of data disks, including holes left after removing some */
 	diskcount = 0;
