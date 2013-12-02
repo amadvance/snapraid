@@ -980,6 +980,7 @@ void state_scan(struct snapraid_state* state, int output)
 		unsigned phy_count;
 		unsigned phy_dup;
 		uint64_t phy_last;
+		struct snapraid_file* phy_file_last;
 
 		scan = malloc_nofail(sizeof(struct snapraid_scan));
 		scan->count_equal = 0;
@@ -1117,13 +1118,20 @@ void state_scan(struct snapraid_state* state, int output)
 		phy_count = 0;
 		phy_dup = 0;
 		phy_last = -1;
+		phy_file_last = 0;
 		while (node) {
 			struct snapraid_file* file = node->data;
 
 			/* if the file is not empty, count duplicate physical offsets */
 			if (state->opt.force_order == SORT_PHYSICAL && file->size != 0) {
-				if (phy_count > 0 && file->physical == phy_last && phy_last != FILEPHY_WITHOUT_OFFSET)
+				if (phy_file_last != 0 && file->physical == phy_last && phy_last != FILEPHY_WITHOUT_OFFSET) {
+					/* if verbose, prints the list of duplicates */
+					if (state->opt.verbose) {
+						fprintf(stderr, "WARNING! Files '%s%s' and '%s%s' have the same physical offset %"PRId64".\n", disk->dir, phy_file_last->sub, disk->dir, file->sub, phy_last);
+					}
 					++phy_dup;
+				}
+				phy_file_last = file;
 				phy_last = file->physical;
 				++phy_count;
 			}
