@@ -216,12 +216,14 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			}
 
 			/* if the file is different than the current one, close it */
-			if (handle[j].file != block_file_get(block)) {
+			if (handle[j].file != 0 && handle[j].file != block_file_get(block)) {
+				/* keep a pointer at the file we are going to close for error reporting */
+				struct snapraid_file* file = handle[j].file;
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
 					/* This one is really an unexpected error, because we are only reading */
 					/* and closing a descriptor should never fail */
-					fprintf(stdlog, "error:%u:%s:%s: Close error. %s\n", i, handle[j].disk->name, handle[j].file->sub, strerror(errno));
+					fprintf(stdlog, "error:%u:%s:%s: Close error. %s\n", i, handle[j].disk->name, file->sub, strerror(errno));
 					fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to scrub.\n");
 					printf("Stopping at block %u\n", i);
 					++error;
@@ -231,7 +233,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 			ret = handle_open(&handle[j], block_file_get(block), state->opt.skip_sequential, stderr);
 			if (ret == -1) {
-				fprintf(stdlog, "error:%u:%s:%s: Open error. %s\n", i, handle[j].disk->name, handle[j].file->sub, strerror(errno));
+				/* file we have tried to open for error reporting */
+				struct snapraid_file* file = block_file_get(block);
+				fprintf(stdlog, "error:%u:%s:%s: Open error. %s\n", i, handle[j].disk->name, file->sub, strerror(errno));
 				++error;
 				error_on_this_block = 1;
 				continue;

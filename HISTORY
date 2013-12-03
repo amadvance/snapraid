@@ -3,7 +3,8 @@ SnapRAID HISTORY
 
 5.1 2013/12 (BETA)
 ==================
- * Fixed the -C, --gen-conf command.
+ * Fixed a crash if a file is deleted during a sync/scrub.
+ * Fixed a crash in the -C, --gen-conf command.
  * Prints the files with duplicate physical offset if the
    -v, --verbose option is specified.
 

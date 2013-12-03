@@ -71,7 +71,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 				/* close the old one, if any */
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
-					fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to rehash.\n");
+					fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to dry.\n");
 					printf("Stopping at block %u\n", i);
 					++error;
 					goto bail;
@@ -80,7 +80,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 				/* open the file only for reading */
 				ret = handle_open(&handle[j], block_file_get(block), state->opt.skip_sequential, stdlog);
 				if (ret == -1) {
-					fprintf(stderr, "DANGER! Unexpected open error in a data disk, it isn't possible to rehash.\n");
+					fprintf(stderr, "DANGER! Unexpected open error in a data disk, it isn't possible to dry.\n");
 					printf("Stopping at block %u\n", i);
 					++error;
 					goto bail;

@@ -232,12 +232,14 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			}
 
 			/* if the file is different than the current one, close it */
-			if (handle[j].file != block_file_get(block)) {
+			if (handle[j].file != 0 && handle[j].file != block_file_get(block)) {
+				/* keep a pointer at the file we are going to close for error reporting */
+				struct snapraid_file* file = handle[j].file;
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
 					/* This one is really an unexpected error, because we are only reading */
 					/* and closing a descriptor should never fail */
-					fprintf(stdlog, "error:%u:%s:%s: Close error. %s\n", i, handle[j].disk->name, handle[j].file->sub, strerror(errno));
+					fprintf(stdlog, "error:%u:%s:%s: Close error. %s\n", i, handle[j].disk->name, file->sub, strerror(errno));
 					fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to sync.\n");
 					fprintf(stderr, "Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", handle[j].disk->dir, handle[j].path);
 					printf("Stopping at block %u\n", i);
@@ -248,8 +250,10 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 			ret = handle_open(&handle[j], block_file_get(block), state->opt.skip_sequential, stderr);
 			if (ret == -1) {
+				/* file we have tried to open for error reporting */
+				struct snapraid_file* file = block_file_get(block);
 				if (errno == ENOENT) {
-					fprintf(stdlog, "error:%u:%s:%s: Open missing error\n", i, handle[j].disk->name, handle[j].file->sub);
+					fprintf(stdlog, "error:%u:%s:%s: Open missing error\n", i, handle[j].disk->name, file->sub);
 					fprintf(stderr, "Missing file '%s'.\n", handle[j].path);
 					fprintf(stderr, "WARNING! You cannot modify data disk during a sync.\n");
 					fprintf(stderr, "Rerun the sync command when finished.\n");
@@ -261,7 +265,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					error_on_this_block = 1;
 					continue;
 				} else if (errno == EACCES) {
-					fprintf(stdlog, "error:%u:%s:%s: Open access error\n", i, handle[j].disk->name, handle[j].file->sub);
+					fprintf(stdlog, "error:%u:%s:%s: Open access error\n", i, handle[j].disk->name, file->sub);
 					fprintf(stderr, "No access at file '%s'.\n", handle[j].path);
 					fprintf(stderr, "WARNING! Please fix the access permission in the data disk.\n");
 					fprintf(stderr, "Rerun the sync command when finished.\n");
@@ -272,10 +276,10 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					error_on_this_block = 1;
 					continue;
 				} else {
-					fprintf(stdlog, "error:%u:%s:%s: Open error. %s\n", i, handle[j].disk->name, handle[j].file->sub, strerror(errno));
+					fprintf(stdlog, "error:%u:%s:%s: Open error. %s\n", i, handle[j].disk->name, file->sub, strerror(errno));
 					fprintf(stderr, "DANGER! Unexpected open error in a data disk, it isn't possible to sync.\n");
 					fprintf(stderr, "Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", handle[j].disk->dir, handle[j].path);
-					printf("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", handle[j].file->sub);
+					printf("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", file->sub);
 				}
 
 				++error;
