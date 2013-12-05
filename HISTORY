@@ -5,7 +5,7 @@ SnapRAID HISTORY
 ===========
  * Fixed a potential crash if a file is deleted during a "sync/scrub".
    This is a problem introduced in version 5.0 due new logging.
-   If happended to you to have a crash in sync, you don't need to
+   If happened to you to have a crash in sync, you don't need to
    take any special action, just run "sync" again.
  * Restored the functionality of -C, --gen-conf command.
  * Prints the files with duplicate physical offset if the
