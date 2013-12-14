@@ -1,6 +1,10 @@
 SnapRAID HISTORY
 ================
 
+5.2 2013/12
+===========
+ * Does not count empty dirs as files in the diff counters.
+
 5.1 2013/12
 ===========
  * Fixed a potential crash if a file is deleted during a "sync/scrub".
