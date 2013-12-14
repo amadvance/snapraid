@@ -530,8 +530,9 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 
 	disk->device = dev;
 	disk->first_free_block = 0;
-	disk->has_not_persistent_inodes = 0;
-	disk->has_not_reliable_physical = 0;
+	disk->has_volatile_inodes = 0;
+	disk->has_unreliable_physical = 0;
+	disk->has_different_uuid = 0;
 	disk->mapping = -1;
 	tommy_list_init(&disk->filelist);
 	tommy_list_init(&disk->deletedlist);

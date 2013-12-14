@@ -801,7 +801,7 @@ static void state_map(struct snapraid_state* state)
 		tommy_list_insert_tail(&state->maplist, &map->node, map);
 	}
 
-	/* without configuration don't check for number of data disks */
+	/* without configuration don't check for number of data disks or uuid changes */
 	if (state->no_conf)
 		return;
 
@@ -829,12 +829,16 @@ static void state_map(struct snapraid_state* state)
 
 		ret = devuuid(disk->device, uuid, sizeof(uuid));
 		if (ret != 0) {
-			/* uuid not available, just ignore */
+			/* uuid not available, just ignore but marks the disk with not persistent UUID */
+			disk->has_different_uuid = 1;
 			continue;
 		}
 
 		/* if the uuid is changed */
 		if (strcmp(uuid, map->uuid) != 0) {
+			/* mark the disk as with an UUID change */
+			disk->has_different_uuid = 1;
+
 			/* if the previous uuid is available */
 			if (map->uuid[0] != 0) {
 				/* count the number of uuid change */

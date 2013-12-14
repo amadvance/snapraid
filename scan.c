@@ -290,12 +290,9 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, int output, struct snapraid_disk* disk, const char* sub, const struct stat* st, uint64_t physical)
 {
 	struct snapraid_file* file;
-	uint64_t inode;
-
-	file = 0;
 
 	/*
-	 * If the disk has persistent inodes, try a search by inode,
+	 * If the disk has persistent inodes and UUID, try a search on the past inodes,
 	 * to detect moved files.
 	 *
 	 * For persistent inodes we mean inodes that keep their values when the filesystem
@@ -311,15 +308,23 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 	 * In such cases, to avoid possible random collisions, it's better to disable the moved
 	 * file recognition.
 	 *
-	 * We do this implicitely removing all the inode before searching for files.
-	 * This ensures that no file is found with an old inode, but at the same time,
-	 * it allows to find new files with the same inode, and to identify them as hardlinks.
+	 * For persistent UUID we mean that it has the same UUID as before.
+	 * Otherwise, if the UUID is changed, likely it's a new recreated filesystem,
+	 * and then the inode have no meaning.
+	 *
+	 * Note that to disable the search by past inode, we do this implicitely
+	 * removing all the past inode before searching for files.
+	 * This ensures that no file is found with a past inode, but at the same time,
+	 * it allows to find new files with the same inode, to identify them as hardlinks.
 	 */
+	int has_past_inodes = !disk->has_volatile_inodes && !disk->has_different_uuid;
 
-	inode = st->st_ino;
+	/* always search with the new inode, in the all new inodes found until now, */
+	/* with the eventual presence of also the past inodes */
+	uint64_t inode = st->st_ino;
 	file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
 
-	/* identify moved files searching by inode */
+	/* identify moved files with past inodes and hardlinks with the new inodes */
 	if (file) {
 		/* check if the file is not changed */
 		if (file->size == st->st_size
@@ -473,8 +478,8 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 				state->need_write = 1;
 			}
 
-			/* if the disk support persistent inodes */
-			if (!disk->has_not_persistent_inodes) {
+			/* if when processing the disk we used the past inodes values */
+			if (has_past_inodes) {
 				/* if persistent inodes are supported, we are sure that the inode number */
 				/* is now different, because otherwise the file would have been found */
 				/* when searching by inode. */
@@ -791,7 +796,7 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 
 #if HAVE_STRUCT_DIRENT_D_INO
 	/* if inodes are persistent */
-	if (!disk->has_not_persistent_inodes) {
+	if (!disk->has_volatile_inodes) {
 		/* sort the list of dir entries by inodes */
 		tommy_list_sort(&list, dd_ino_compare);
 	}
@@ -999,9 +1004,11 @@ void state_scan(struct snapraid_state* state, int output)
 			exit(EXIT_FAILURE);
 		}
 		if (!has_persistent_inode) {
-			/* mask the disk */
-			disk->has_not_persistent_inodes = 1;
+			disk->has_volatile_inodes = 1;
+		}
 
+		/* if inodes or UUID are not persistent */
+		if (disk->has_volatile_inodes || disk->has_different_uuid) {
 			/* removes all the inodes from the inode collection */
 			/* if they are not persistent, all of them could be changed now */
 			/* and we don't want to find false matching ones */
@@ -1138,7 +1145,7 @@ void state_scan(struct snapraid_state* state, int output)
 		/* mark the disk without reliable physical offset if it has duplicates */
 		/* here it should never happen because we already sorted out hardlinks */
 		if (state->opt.force_order == SORT_PHYSICAL && phy_dup > 0) {
-			disk->has_not_reliable_physical = 1;
+			disk->has_unreliable_physical = 1;
 		}
 
 		/* insert all the new links */
@@ -1199,7 +1206,7 @@ void state_scan(struct snapraid_state* state, int output)
 		for(i=state->disklist;i!=0;i=i->next) {
 			struct snapraid_disk* disk = i->data;
 
-			if (disk->has_not_reliable_physical) {
+			if (disk->has_unreliable_physical) {
 				if (!done) {
 					done = 1;
 					fprintf(stderr, "WARNING! Physical offsets not supported for disk '%s'", disk->name);
@@ -1213,16 +1220,36 @@ void state_scan(struct snapraid_state* state, int output)
 		}
 	}
 
-	/* Check for disks without persisten inodes */
+	/* Check for disks without persistent inodes */
 	{
 		int done = 0;
 		for(i=state->disklist;i!=0;i=i->next) {
 			struct snapraid_disk* disk = i->data;
 
-			if (disk->has_not_persistent_inodes) {
+			if (disk->has_volatile_inodes) {
 				if (!done) {
 					done = 1;
-					fprintf(stderr, "WARNING! Inodes are not persistent for disk '%s'", disk->name);
+					fprintf(stderr, "WARNING! Inodes are not persistent for disks: '%s'", disk->name);
+				} else {
+					fprintf(stderr, ", '%s", disk->name);
+				}
+			}
+		}
+		if (done) {
+			fprintf(stderr, ". Move operations won't be optimized.\n");
+		}
+	}
+
+	/* Check for disks with changed UUID */
+	{
+		int done = 0;
+		for(i=state->disklist;i!=0;i=i->next) {
+			struct snapraid_disk* disk = i->data;
+
+			if (disk->has_different_uuid) {
+				if (!done) {
+					done = 1;
+					fprintf(stderr, "WARNING! UUID is changed for disks: '%s'", disk->name);
 				} else {
 					fprintf(stderr, ", '%s", disk->name);
 				}
