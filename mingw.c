@@ -570,6 +570,7 @@ static void windows_errno(DWORD error)
 	case ERROR_ACCESS_DENIED : /* in CreateDirectoryW() if dir is scheduled for deletion */
 	case ERROR_CURRENT_DIRECTORY : /* in RemoveDirectoryW() if removing the current directory */
 	case ERROR_SHARING_VIOLATION : /* in RemoveDirectoryW() if in use */
+	case ERROR_WRITE_PROTECT : /* when dealing with read-only media/snapshot and trying to write to them */
 		errno = EACCES;
 		break;
 	case ERROR_ALREADY_EXISTS : /* in CreateDirectoryW() if already exists */
