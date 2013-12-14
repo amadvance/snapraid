@@ -312,7 +312,7 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 	 * file recognition.
 	 *
 	 * We do this implicitely removing all the inode before searching for files.
-	 * This ensure that no file is found with an old inode, but at the same time,
+	 * This ensures that no file is found with an old inode, but at the same time,
 	 * it allows to find new files with the same inode, and to identify them as hardlinks.
 	 */
 
@@ -616,9 +616,6 @@ static void scan_emptydir(struct snapraid_scan* scan, struct snapraid_state* sta
 		/* mark as present */
 		dir_flag_set(dir, FILE_IS_PRESENT);
 
-		/* it's equal */
-		++scan->count_equal;
-
 		if (state->opt.gui) {
 			fprintf(stdlog, "scan:equal:%s:%s\n", disk->name, dir->sub);
 		}
@@ -626,9 +623,6 @@ static void scan_emptydir(struct snapraid_scan* scan, struct snapraid_state* sta
 		/* nothing more to do */
 		return;
 	} else {
-		/* create the new dir */
-		++scan->count_insert;
-
 		fprintf(stdlog, "scan:add:%s:%s\n", disk->name, sub);
 		if (output) {
 			printf("add %s%s\n", disk->dir, sub);
@@ -1083,8 +1077,6 @@ void state_scan(struct snapraid_state* state, int output)
 
 			/* remove if not present */
 			if (!dir_flag_has(dir, FILE_IS_PRESENT)) {
-				++scan->count_remove;
-
 				fprintf(stdlog, "scan:remove:%s:%s\n", disk->name, dir->sub);
 				if (output) {
 					printf("remove %s%s\n", disk->dir, dir->sub);
