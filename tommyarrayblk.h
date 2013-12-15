@@ -34,7 +34,7 @@
  * the already allocated memory, and then not increasing the heap fragmentation.
  * This means that the address of the allocated blocks never change.
  *
- * Allocated blocks are always of the same fixed size of 64 KiB.
+ * Allocated blocks are always of the same fixed size of 64 Ki pointers.
  */
 
 #ifndef __TOMMYARRAYBLK_H

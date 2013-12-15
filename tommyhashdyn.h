@@ -170,6 +170,9 @@ void tommy_hashdyn_init(tommy_hashdyn* hashdyn);
 
 /**
  * Deinitializes the hashtable.
+ *
+ * You can call this function with elements still contained,
+ * but such elements are not going to be freed by this call.
  */
 void tommy_hashdyn_done(tommy_hashdyn* hashdyn);
 

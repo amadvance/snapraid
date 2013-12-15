@@ -32,6 +32,9 @@
  *
  * This is very similar at ::tommy_arrayblk, but it allows to store elements of any
  * size and not just pointers.
+ *
+ * Note that in this case tommy_arrayblkof_ref() returns a pointer at the element,
+ * and it should be used for both get() and set() operation.
  */
 
 #ifndef __TOMMYARRAYBLKOF_H
@@ -61,6 +64,7 @@ typedef struct tommy_arrayblkof_struct {
 
 /**
  * Initializes the array.
+ * \param element_size Size in byte of the element to store in the array.
  */
 void tommy_arrayblkof_init(tommy_arrayblkof* array, unsigned element_size);
 
