@@ -259,31 +259,7 @@ When this command completes, your data is SAFE.
 .PP
 At this point you can start using your array as you like, and periodically
 update the parity information running the \(a"sync\(a" command.
-.SS Checking & Fixing 
-To check the integrity of your data you can use the \(a"check\(a" command:
-.PP
-.RS 4
-snapraid check
-.PD 0
-.PP
-.PD
-.RE
-.PP
-If will read all your data, to check if it\(cqs correct.
-.PP
-If an error is found, you can use the \(a"fix\(a" command to fix it.
-.PP
-.RS 4
-snapraid fix
-.PD 0
-.PP
-.PD
-.RE
-.PP
-Note that the fix command will revert your data at the state of the
-last \(a"sync\(a" command executed. It works like a snapshot was taken
-in \(a"sync\(a".
-.SS Recovering and Undeleting 
+.SS Restoring and Undeleting 
 In recovering SnapRAID is more like a backup program than a RAID system,
 and it can be used to restore or undelete only a single file or directory
 to its previous state using the \-f, \-\-filter option :
@@ -323,6 +299,9 @@ snapraid fix \-m
 .PP
 .PD
 .RE
+.PP
+If instead you have lost an entire disk and you want to recover it,
+please see the \(cqRecovering\(cq chapter.
 .SS Scrubbing 
 To periodically check the data and parity for errors, you can
 run the \(a"scrub\(a" command.
@@ -334,8 +313,8 @@ snapraid scrub
 .PD
 .RE
 .PP
-This command is similar at \(a"check\(a" but verifies only the oldest data
-in your array. Every run of the command checks about 12% of the array,
+This command verifies only the oldest data in your array.
+Every run of the command checks about 12% of the array,
 but nothing newer than 10 days.
 You can use the \-p, \-\-percentage option to specify a different amount,
 and the \-o, \-\-older\-than option to specify a different age in days.
@@ -1234,7 +1213,7 @@ snapraid sync
 .PD
 .RE
 .PP
-If everything was recovered, this command is immediate.
+If everything is recovered, this command is immediate.
 .SH CONTENT 
 SnapRAID stores the list and checksums of your files in the content file.
 .PP

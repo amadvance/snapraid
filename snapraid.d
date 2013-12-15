@@ -146,22 +146,7 @@ Getting Started
 	At this point you can start using your array as you like, and periodically
 	update the parity information running the "sync" command.
 
-  Checking & Fixing
-	To check the integrity of your data you can use the "check" command:
-
-		:snapraid check
-
-	If will read all your data, to check if it's correct.
-
-	If an error is found, you can use the "fix" command to fix it.
-
-		:snapraid fix
-
-	Note that the fix command will revert your data at the state of the
-	last "sync" command executed. It works like a snapshot was taken
-	in "sync".
-
-  Recovering and Undeleting
+  Restoring and Undeleting
 	In recovering SnapRAID is more like a backup program than a RAID system,
 	and it can be used to restore or undelete only a single file or directory
 	to its previous state using the -f, --filter option :
@@ -182,14 +167,17 @@ Getting Started
 
 		:snapraid fix -m
 
+	If instead you have lost an entire disk and you want to recover it,
+	please see the 'Recovering' chapter.
+
   Scrubbing
 	To periodically check the data and parity for errors, you can
 	run the "scrub" command.
 
 		:snapraid scrub
 
-	This command is similar at "check" but verifies only the oldest data
-	in your array. Every run of the command checks about 12% of the array,
+	This command verifies only the oldest data in your array.
+	Every run of the command checks about 12% of the array,
 	but nothing newer than 10 days.
 	You can use the -p, --percentage option to specify a different amount,
 	and the -o, --older-than option to specify a different age in days.
@@ -887,7 +875,7 @@ Recovering
 
 		:snapraid sync
 
-	If everything was recovered, this command is immediate.
+	If everything is recovered, this command is immediate.
 
 Content
 	SnapRAID stores the list and checksums of your files in the content file.

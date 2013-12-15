@@ -159,25 +159,8 @@ When this command completes, your data is SAFE.
 At this point you can start using your array as you like, and periodically
 update the parity information running the "sync" command.
 
-4.1 Checking & Fixing
----------------------
-
-To check the integrity of your data you can use the "check" command:
-
-    snapraid check
-
-If will read all your data, to check if it's correct.
-
-If an error is found, you can use the "fix" command to fix it.
-
-    snapraid fix
-
-Note that the fix command will revert your data at the state of the
-last "sync" command executed. It works like a snapshot was taken
-in "sync".
-
-4.2 Recovering and Undeleting
------------------------------
+4.1 Restoring and Undeleting
+----------------------------
 
 In recovering SnapRAID is more like a backup program than a RAID system,
 and it can be used to restore or undelete only a single file or directory
@@ -199,7 +182,10 @@ Or to recover all the deleted files in all the drives with:
 
     snapraid fix -m
 
-4.3 Scrubbing
+If instead you have lost an entire disk and you want to recover it,
+please see the 'Recovering' chapter.
+
+4.2 Scrubbing
 -------------
 
 To periodically check the data and parity for errors, you can
@@ -207,8 +193,8 @@ run the "scrub" command.
 
     snapraid scrub
 
-This command is similar at "check" but verifies only the oldest data
-in your array. Every run of the command checks about 12% of the array,
+This command verifies only the oldest data in your array.
+Every run of the command checks about 12% of the array,
 but nothing newer than 10 days.
 You can use the -p, --percentage option to specify a different amount,
 and the -o, --older-than option to specify a different age in days.
@@ -231,7 +217,7 @@ if really fixed. You can use -p 0 to scrub only blocks marked as bad.
 
     snapraid -p 0 scrub
 
-4.4 Pooling
+4.3 Pooling
 -----------
 
 To have all the files in your array shown in the same directory tree,
@@ -969,7 +955,7 @@ Run the "sync" command to resynchronize the array with the new disk.
 
     snapraid sync
 
-If everything was recovered, this command is immediate.
+If everything is recovered, this command is immediate.
 
 
 10 CONTENT
