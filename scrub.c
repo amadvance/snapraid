@@ -333,6 +333,10 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 						++error;
 						error_on_this_block = 1;
 					} else {
+						fprintf(stderr, "Data error in parity '%s' at position '%u'\n", lev_config_name(l), i);
+						fprintf(stderr, "WARNING! Unexpected data error in a parity disk! The block is now marked as bad!\n");
+						fprintf(stderr, "Try with 'snapraid -e fix' to recover!\n");
+
 						++silent_error;
 						silent_error_on_this_block = 1;
 					}
