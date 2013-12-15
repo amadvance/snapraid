@@ -6,8 +6,10 @@ SnapRAID HISTORY
  * If a disk changes UUID, automatically disable the inode
    recognition, because this is likely a new filesystem with
    all the inodes reassigned, and we don't want to risk a false
-   positive when searching for inode.
- * Does not count empty dirs as files in the diff counters.
+   positive when searching for inode/timestamp/size.
+ * Allow to run a fix command with disks that doesn't needs to be
+   fixed mounted as read-only.
+ * Doesn't count empty dirs as files in the diff counters.
 
 5.1 2013/12
 ===========

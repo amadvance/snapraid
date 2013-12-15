@@ -1235,6 +1235,7 @@ int pathcmp(const char* a, const char* b)
 int mkancestor(const char* file)
 {
 	char dir[PATH_MAX];
+	struct stat st;
 	char* c;
 
 	pathcpy(dir, sizeof(dir), file);
@@ -1262,12 +1263,17 @@ int mkancestor(const char* file)
 	}
 #endif
 
-	/* try creating it  */
-	if (mkdir(dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) == 0) {
-		/* just created */
-		return 0;
-	}
-	if (errno == EEXIST) {
+	/*
+	 * Check if the dir already exists using lstat().
+	 *
+	 * Note that in Windows when dealing with read-only media
+	 * you cannot try to create the directory, and expecting
+	 * the EEXIST error because the call will fail with ERROR_WRITE_PROTECTED.
+	 *
+	 * Also in Windows it's better to use lstat() than stat() because it
+	 * doen't need to open the dir with CreateFile().
+	 */
+	if (lstat(dir, &st) == 0) {
 		/* it already exists */
 		return 0;
 	}
