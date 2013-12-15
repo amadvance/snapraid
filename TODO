@@ -3,12 +3,6 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
-- 5.2
-
-* Disable inode search if --force-uuid is specified.
-Also disable it if other files with same timestamp/size are present
-in the same disk.
-
 - Next
 
 * Detect files moved from one disk to another. We won't be able to reuse
@@ -16,6 +10,9 @@ parity, but we can reuse the hash to check that the file was moved
 correctly.
 We can assume a file moved to another disk if it has the same name, size,
 and timestamp. Directory and inode can be different.
+
+* Avoid to do optimized move operation if more files with
+same timestamp/size are present.
 
 * Handle new files with a two steps approach to reduce possible
 silent errors.
