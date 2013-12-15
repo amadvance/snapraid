@@ -605,7 +605,7 @@ static void scan_emptydir_insert(struct snapraid_state* state, struct snapraid_d
 /**
  * Processes a dir.
  */
-static void scan_emptydir(struct snapraid_scan* scan, struct snapraid_state* state, int output, struct snapraid_disk* disk, const char* sub)
+static void scan_emptydir(struct snapraid_scan* scan, struct snapraid_disk* disk, const char* sub)
 {
 	struct snapraid_dir* dir;
 
@@ -621,18 +621,9 @@ static void scan_emptydir(struct snapraid_scan* scan, struct snapraid_state* sta
 		/* mark as present */
 		dir_flag_set(dir, FILE_IS_PRESENT);
 
-		if (state->opt.gui) {
-			fprintf(stdlog, "scan:equal:%s:%s\n", disk->name, dir->sub);
-		}
-
 		/* nothing more to do */
 		return;
 	} else {
-		fprintf(stdlog, "scan:add:%s:%s\n", disk->name, sub);
-		if (output) {
-			printf("add %s%s\n", disk->dir, sub);
-		}
-
 		/* and continue to insert it */
 	}
 
@@ -926,7 +917,7 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 					pathslash(sub_dir, sizeof(sub_dir));
 					if (scan_dir(scan, state, output, disk, path_next, sub_dir) == 0) {
 						/* scan the directory as empty dir */
-						scan_emptydir(scan, state, output, disk, sub_next);
+						scan_emptydir(scan, disk, sub_next);
 					}
 					/* or we processed something internally, or we have added the empty dir */
 					processed = 1;
@@ -1084,11 +1075,6 @@ void state_scan(struct snapraid_state* state, int output)
 
 			/* remove if not present */
 			if (!dir_flag_has(dir, FILE_IS_PRESENT)) {
-				fprintf(stdlog, "scan:remove:%s:%s\n", disk->name, dir->sub);
-				if (output) {
-					printf("remove %s%s\n", disk->dir, dir->sub);
-				}
-
 				scan_emptydir_remove(state, disk, dir);
 			}
 		}
