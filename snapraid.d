@@ -11,7 +11,7 @@ Synopsis
 	:	[-U, --force-uuid] [-D, --force-device]
 	:	[-v, --verbose] [-l, --log FILE]
 	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
-	:	sync|status|scrub|list|diff|dup|pool|check|fix|rehash
+	:	status|sync|scrub|fix|check|list|diff|dup|pool|rehash
 
 	:snapraid [-V, --version] [-h, --help] [-C, --gen-conf CONTENT]
 
@@ -234,13 +234,21 @@ Getting Started
 Commands
 	SnapRAID provides a few simple commands that allow to:
 
-	* Make a backup/snapshot -> "sync"
-	* Periodically checks old data -> "scrub"
 	* Prints a report of the status of the array -> "status"
-	* Check for integrity the full array -> "check"
+	* Makes a backup/snapshot -> "sync"
+	* Periodically checks data -> "scrub"
 	* Restore the last backup/snapshot -> "fix".
 
 	Take care that the commands have to be written in lower case.
+
+  status
+	Prints a summary of the state of the disk array.
+
+	It includes information about the parity fragmentation, how old
+	are the blocks without checking, and all the recorded silent
+	errors encountered while scrubbing.
+
+	Nothing is modified.
 
   sync
 	Updates the parity information. All the modified files
@@ -261,36 +269,6 @@ Commands
 
 	The "content" and "parity" files are modified if necessary.
 	The files in the array are NOT modified.
-
-  check
-	Checks all the files and the parity data.
-	All the files are hashed and compared with the snapshot saved
-	in the previous "sync" command.
-
-	If an error if found, a recovery attempt is simulated to check
-	if the error is a recoverable one or not.
-
-	If you use the -a, --audit-only option, only the file
-	data is checked, and the parity data is ignored.
-
-	Files are identified by path, and checked by content.
-
-	Nothing is modified.
-
-  fix
-	Checks and fix all the files. It's like "check" but it also fixes
-	errors reverting the state of the disk array to the previous "sync"
-	command.
-
-	After a successful "fix", you should also run a "sync" command to
-	update the new state of the files.
-
-	All the files that cannot be fixed are renamed adding
-	the ".unrecoverable" extension.
-
-	The "content" file is NOT modified.
-	The "parity" files are modified if necessary.
-	The files in the array are modified if necessary.
 
   scrub
 	Scrubs the array, checking for silent errors in data or parity disks.
@@ -318,17 +296,52 @@ Commands
 	as not being silent errors, and the blocks are not marked as bad,
 	but such errors are reported in the output of the command.
 
+	Files are identified only by path, and not by inode.
+
 	The "content" file is modified to update the time of the last check
 	of each block, and to mark bad blocks.
 	The "parity" files are NOT modified.
 	The files in the array are NOT modified.
 
-  status
-	Prints a summary of the state of the disk array.
+  fix
+	Fix all the files and the parity data.
 
-	It includes information about the parity fragmentation, how old
-	are the blocks without checking, and all the recorded silent
-	errors encountered while scrubbing.
+	All the files and the parity data are compared with the snapshot
+	state saved in the last "sync" command.
+	If a difference is found, it's reverted at the stored snapshot.
+
+	Note that "fix" doesn't differentiate from errors or intentional
+	changes at files. It just reverts the state at the last "sync" command.
+
+	By default the full array is processed. Use the filter options
+	to select a subset of files or disks to operate on.
+	To only fix errors found with "scrub" and reported in "status",
+	you can use the -e, --filter-error option.
+
+	All the files that cannot be fixed are renamed adding
+	the ".unrecoverable" extension.
+
+	Files are identified only by path, and not by inode.
+
+	The "content" file is NOT modified.
+	The "parity" files are modified if necessary.
+	The files in the array are modified if necessary.
+
+  check
+	Verify all the files and the parity data.
+
+	It works just like "fix", but it only simulates a recovery
+	and no change is written in the array.
+
+	This command is mostly intended for manual verifications,
+	like after a recovery process or in other special conditions.
+	For periodic and scheduled checks uses the "scrub" command.
+
+	If you use the -a, --audit-only option, only the file
+	data is checked, and the parity data is ignored for a
+	faster run.
+
+	Files are identified only by path, and not by inode.
 
 	Nothing is modified.
 
@@ -403,7 +416,7 @@ Options
 		pattern specifications.
 		In Unix, ensure to quote globbing chars if used.
 		This option can be used only with the "check" and "fix" commands.
-		Note that it cannot be used with "sync", because "sync" always
+		Note that it cannot be used with "sync" and "scrub", because they always
 		process the whole array.
 
 	-d, --filter-disk NAME
@@ -418,7 +431,7 @@ Options
 		only files matching all the set of filters are selected.
 		This option can be used many times.
 		This option can be used only with the "check" and "fix" commands.
-		Note that it cannot be used with "sync", because "sync" always
+		Note that it cannot be used with "sync" and "scrub", because they always
 		process the whole array.
 
 	-m, --filter-missing
@@ -429,14 +442,14 @@ Options
 		If you combine more --filter, --filter-disk and --filter-missing options,
 		only files matching all the set of filters are selected.
 		This option can be used only with the "check" and "fix" commands.
-		Note that it cannot be used with "sync", because "sync" always
+		Note that it cannot be used with "sync" and "scrub", because they always
 		process the whole array.
 
 	-e, --filter-error
 		Filters the files to process in the "check" and "fix"
 		commands.
 		It processes only the files containing blocks marked with silent
-		errors during the "sync" or "scrub" command, and listed in the
+		errors during the "sync" and "scrub" command, and listed in the
 		"status" command.
 		This option can be used only with the "check" and "fix" commands.
 
@@ -455,21 +468,20 @@ Options
 		This option can be used only with the "scrub" command.
 
 	-a, --audit-only
-		When checking, only verify the hash of the files, without
-		doing any kind of check on the parity data.
+		Verifies the hash of the files, with the "check" command,
+		without doing any kind of check on the parity data.
 		If you are interested in checking only the file data this
 		option can speedup a lot the checking process.
 		This option can be used only with the "check" command.
 
 	-i, --import DIR
-		When fixing imports from the specified directory any file
-		that you deleted from the array after the last "sync"
-		command.
-		If you still have such files, they could be used by the "fix"
-		command to improve the recover process.
+		Imports from the specified directory any file that you deleted
+		from the array after the last "sync" command.
+		If you still have such files, they could be used by the "check"
+		and "fix" commands to improve the recover process.
 		The files are read also in subdirectories and they are
 		identified regardless of their name.
-		This option can be used only with the "check" and "fix" command.
+		This option can be used only with the "check" and "fix" commands.
 
 	-Z, --force-zero
 		Forces the insecure operation of syncing a file with zero
@@ -501,7 +513,7 @@ Options
 		wrong mount points.
 		It's anyway allowed to have a single UUID change with
 		single parity, and more with multiple parity, because it's
-		the normal case of replacing disks after a recover.
+		the normal case of replacing disks after a recovery.
 		This option can be used only with the "sync", "check" or
 		"fix" command.
 

@@ -38,7 +38,7 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
 .PD
-	sync|status|scrub|list|diff|dup|pool|check|fix|rehash
+	status|sync|scrub|fix|check|list|diff|dup|pool|rehash
 .PD 0
 .PP
 .PD
@@ -436,18 +436,24 @@ wide links = yes
 SnapRAID provides a few simple commands that allow to:
 .PD 0
 .IP \(bu
-Make a backup/snapshot \-> \(a"sync\(a"
-.IP \(bu
-Periodically checks old data \-> \(a"scrub\(a"
-.IP \(bu
 Prints a report of the status of the array \-> \(a"status\(a"
 .IP \(bu
-Check for integrity the full array \-> \(a"check\(a"
+Makes a backup/snapshot \-> \(a"sync\(a"
+.IP \(bu
+Periodically checks data \-> \(a"scrub\(a"
 .IP \(bu
 Restore the last backup/snapshot \-> \(a"fix\(a".
 .PD
 .PP
 Take care that the commands have to be written in lower case.
+.SS status 
+Prints a summary of the state of the disk array.
+.PP
+It includes information about the parity fragmentation, how old
+are the blocks without checking, and all the recorded silent
+errors encountered while scrubbing.
+.PP
+Nothing is modified.
 .SS sync 
 Updates the parity information. All the modified files
 in the disk array are read, and the parity data is
@@ -467,34 +473,6 @@ interrupted.
 .PP
 The \(a"content\(a" and \(a"parity\(a" files are modified if necessary.
 The files in the array are NOT modified.
-.SS check 
-Checks all the files and the parity data.
-All the files are hashed and compared with the snapshot saved
-in the previous \(a"sync\(a" command.
-.PP
-If an error if found, a recovery attempt is simulated to check
-if the error is a recoverable one or not.
-.PP
-If you use the \-a, \-\-audit\-only option, only the file
-data is checked, and the parity data is ignored.
-.PP
-Files are identified by path, and checked by content.
-.PP
-Nothing is modified.
-.SS fix 
-Checks and fix all the files. It\(cqs like \(a"check\(a" but it also fixes
-errors reverting the state of the disk array to the previous \(a"sync\(a"
-command.
-.PP
-After a successful \(a"fix\(a", you should also run a \(a"sync\(a" command to
-update the new state of the files.
-.PP
-All the files that cannot be fixed are renamed adding
-the \(a".unrecoverable\(a" extension.
-.PP
-The \(a"content\(a" file is NOT modified.
-The \(a"parity\(a" files are modified if necessary.
-The files in the array are modified if necessary.
 .SS scrub 
 Scrubs the array, checking for silent errors in data or parity disks.
 .PP
@@ -521,16 +499,50 @@ reported error caused by unsynced data. These errors are recognized
 as not being silent errors, and the blocks are not marked as bad,
 but such errors are reported in the output of the command.
 .PP
+Files are identified only by path, and not by inode.
+.PP
 The \(a"content\(a" file is modified to update the time of the last check
 of each block, and to mark bad blocks.
 The \(a"parity\(a" files are NOT modified.
 The files in the array are NOT modified.
-.SS status 
-Prints a summary of the state of the disk array.
+.SS fix 
+Fix all the files and the parity data.
 .PP
-It includes information about the parity fragmentation, how old
-are the blocks without checking, and all the recorded silent
-errors encountered while scrubbing.
+All the files and the parity data are compared with the snapshot
+state saved in the last \(a"sync\(a" command.
+If a difference is found, it\(cqs reverted at the stored snapshot.
+.PP
+Note that \(a"fix\(a" doesn\(cqt differentiate from errors or intentional
+changes at files. It just reverts the state at the last \(a"sync\(a" command.
+.PP
+By default the full array is processed. Use the filter options
+to select a subset of files or disks to operate on.
+To only fix errors found with \(a"scrub\(a" and reported in \(a"status\(a",
+you can use the \-e, \-\-filter\-error option.
+.PP
+All the files that cannot be fixed are renamed adding
+the \(a".unrecoverable\(a" extension.
+.PP
+Files are identified only by path, and not by inode.
+.PP
+The \(a"content\(a" file is NOT modified.
+The \(a"parity\(a" files are modified if necessary.
+The files in the array are modified if necessary.
+.SS check 
+Verify all the files and the parity data.
+.PP
+It works just like \(a"fix\(a", but it only simulates a recovery
+and no change is written in the array.
+.PP
+This command is mostly intended for manual verifications,
+like after a recovery process or in other special conditions.
+For periodic and scheduled checks uses the \(a"scrub\(a" command.
+.PP
+If you use the \-a, \-\-audit\-only option, only the file
+data is checked, and the parity data is ignored for a
+faster run.
+.PP
+Files are identified only by path, and not by inode.
 .PP
 Nothing is modified.
 .SS list 
@@ -599,7 +611,7 @@ See the PATTERN section for more details in the
 pattern specifications.
 In Unix, ensure to quote globbing chars if used.
 This option can be used only with the \(a"check\(a" and \(a"fix\(a" commands.
-Note that it cannot be used with \(a"sync\(a", because \(a"sync\(a" always
+Note that it cannot be used with \(a"sync\(a" and \(a"scrub\(a", because they always
 process the whole array.
 .TP
 .B \-d, \-\-filter\-disk NAME
@@ -614,7 +626,7 @@ If you combine more \-\-filter, \-\-filter\-disk and \-\-filter\-missing options
 only files matching all the set of filters are selected.
 This option can be used many times.
 This option can be used only with the \(a"check\(a" and \(a"fix\(a" commands.
-Note that it cannot be used with \(a"sync\(a", because \(a"sync\(a" always
+Note that it cannot be used with \(a"sync\(a" and \(a"scrub\(a", because they always
 process the whole array.
 .TP
 .B \-m, \-\-filter\-missing
@@ -625,14 +637,14 @@ When used with \(a"fix\(a", this is a kind of \(a"undelete\(a" command.
 If you combine more \-\-filter, \-\-filter\-disk and \-\-filter\-missing options,
 only files matching all the set of filters are selected.
 This option can be used only with the \(a"check\(a" and \(a"fix\(a" commands.
-Note that it cannot be used with \(a"sync\(a", because \(a"sync\(a" always
+Note that it cannot be used with \(a"sync\(a" and \(a"scrub\(a", because they always
 process the whole array.
 .TP
 .B \-e, \-\-filter\-error
 Filters the files to process in the \(a"check\(a" and \(a"fix\(a"
 commands.
 It processes only the files containing blocks marked with silent
-errors during the \(a"sync\(a" or \(a"scrub\(a" command, and listed in the
+errors during the \(a"sync\(a" and \(a"scrub\(a" command, and listed in the
 \(a"status\(a" command.
 This option can be used only with the \(a"check\(a" and \(a"fix\(a" commands.
 .TP
@@ -651,21 +663,20 @@ Blocks marked as bad are always scrubbed despite this option.
 This option can be used only with the \(a"scrub\(a" command.
 .TP
 .B \-a, \-\-audit\-only
-When checking, only verify the hash of the files, without
-doing any kind of check on the parity data.
+Verifies the hash of the files, with the \(a"check\(a" command,
+without doing any kind of check on the parity data.
 If you are interested in checking only the file data this
 option can speedup a lot the checking process.
 This option can be used only with the \(a"check\(a" command.
 .TP
 .B \-i, \-\-import DIR
-When fixing imports from the specified directory any file
-that you deleted from the array after the last \(a"sync\(a"
-command.
-If you still have such files, they could be used by the \(a"fix\(a"
-command to improve the recover process.
+Imports from the specified directory any file that you deleted
+from the array after the last \(a"sync\(a" command.
+If you still have such files, they could be used by the \(a"check\(a"
+and \(a"fix\(a" commands to improve the recover process.
 The files are read also in subdirectories and they are
 identified regardless of their name.
-This option can be used only with the \(a"check\(a" and \(a"fix\(a" command.
+This option can be used only with the \(a"check\(a" and \(a"fix\(a" commands.
 .TP
 .B \-Z, \-\-force\-zero
 Forces the insecure operation of syncing a file with zero
@@ -697,7 +708,7 @@ This allows to detect when your disks are mounted in the
 wrong mount points.
 It\(cqs anyway allowed to have a single UUID change with
 single parity, and more with multiple parity, because it\(cqs
-the normal case of replacing disks after a recover.
+the normal case of replacing disks after a recovery.
 This option can be used only with the \(a"sync\(a", \(a"check\(a" or
 \(a"fix\(a" command.
 .TP
