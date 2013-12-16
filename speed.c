@@ -178,7 +178,7 @@ void speed(void)
 	printf("%8s", "intel");
 	fflush(stdout);
 
-#if defined(__i386__) || defined(__x86_64__)
+#if HAVE_CRC32B
 	if (cpu_has_sse42()) {
 		SPEED_START {
 			for(j=0;j<diskmax;++j) {

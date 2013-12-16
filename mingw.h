@@ -23,6 +23,13 @@
 #include <wchar.h>
 
 /**
+ * Assume to always have CRC32B if running in x86
+ */
+#if defined(__i386__) || defined(__x86_64__) 
+#define HAVE_CRC32B 1
+#endif
+
+/**
  * Redefines PATH_MAX to allow very long paths.
  */
 #undef PATH_MAX

@@ -1089,7 +1089,7 @@ uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size)
 	return crc;
 }
 
-#if defined(__i386__) || defined(__x86_64__)
+#if HAVE_CRC32B
 
 uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size)
 {
@@ -1125,7 +1125,6 @@ uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size)
 
 	return crc;
 }
-
 #endif
 
 uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, unsigned size);
@@ -1133,7 +1132,7 @@ uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, unsigned size);
 void crc32c_init(void)
 {
 	crc32c = crc32c_gen;
-#if defined(__i386__) || defined(__x86_64__)
+#if HAVE_CRC32B
 	if (cpu_has_sse42()) {
 		crc32c = crc32c_x86;
 	}
@@ -1496,17 +1495,17 @@ inline uint64_t rotl64(uint64_t x, int8_t r)
 
 #include <byteswap.h>
 
-#define swap32(x) bswap_32(x)
-#define swap64(x) bswap_64(x)
+#define util_swap32(x) bswap_32(x)
+#define util_swap64(x) bswap_64(x)
 
 #else
-static inline uint32_t swap32(uint32_t v)
+static inline uint32_t util_swap32(uint32_t v)
 {
 	return (rotl32(v, 8) & 0x00ff00ff)
 		| (rotl32(v, 24) & 0xff00ff00);
 }
 
-static inline uint64_t swap64(uint64_t v)
+static inline uint64_t util_swap64(uint64_t v)
 {
 	return (rotl64(v, 8) & 0x000000ff000000ffLLU)
 		| (rotl64(v, 24) & 0x0000ff000000ff00LLU)

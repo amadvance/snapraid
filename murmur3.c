@@ -88,10 +88,10 @@ void MurmurHash3_x86_128(const void* key, unsigned len, const uint8_t* seed, voi
 	uint32_t h4 = ((uint32_t*)seed)[3];
 
 #if WORDS_BIGENDIAN
-	h1 = swap32(h1);
-	h2 = swap32(h2);
-	h3 = swap32(h3);
-	h4 = swap32(h4);
+	h1 = util_swap32(h1);
+	h2 = util_swap32(h2);
+	h3 = util_swap32(h3);
+	h4 = util_swap32(h4);
 #endif
 
 	blocks = (const uint32_t*)data;
@@ -105,10 +105,10 @@ void MurmurHash3_x86_128(const void* key, unsigned len, const uint8_t* seed, voi
 		uint32_t k4 = blocks[3];
 
 #if WORDS_BIGENDIAN
-		k1 = swap32(k1);
-		k2 = swap32(k2);
-		k3 = swap32(k3);
-		k4 = swap32(k4);
+		k1 = util_swap32(k1);
+		k2 = util_swap32(k2);
+		k3 = util_swap32(k3);
+		k4 = util_swap32(k4);
 #endif
 
 		k1 *= c1; k1 = rotl32(k1,15); k1 *= c2; h1 ^= k1;
@@ -178,10 +178,10 @@ void MurmurHash3_x86_128(const void* key, unsigned len, const uint8_t* seed, voi
 	h2 += h1; h3 += h1; h4 += h1;
 
 #if WORDS_BIGENDIAN
-	h1 = swap32(h1);
-	h2 = swap32(h2);
-	h3 = swap32(h3);
-	h4 = swap32(h4);
+	h1 = util_swap32(h1);
+	h2 = util_swap32(h2);
+	h3 = util_swap32(h3);
+	h4 = util_swap32(h4);
 #endif
 
 	((uint32_t*)out)[0] = h1;

@@ -127,8 +127,8 @@ void SpookyHash128(const void* message, size_t length, const uint8_t* seed, uint
 	h10 = ((uint64_t*)seed)[1];
 
 #if WORDS_BIGENDIAN
-	h9 = swap64(h9);
-	h10 = swap64(h10);
+	h9 = util_swap64(h9);
+	h10 = util_swap64(h10);
 #endif
 
 	h0 = h3 = h6 = h9;
@@ -143,7 +143,7 @@ void SpookyHash128(const void* message, size_t length, const uint8_t* seed, uint
 	while (u.p64 < end) {
 #if WORDS_BIGENDIAN
 		for(i=0;i<sc_numVars;++i)
-			buf[i] = swap64(u.p64[i]);
+			buf[i] = util_swap64(u.p64[i]);
 		Mix(buf,h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11);
 #else
 		Mix(u.p64,h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11);
@@ -161,14 +161,14 @@ void SpookyHash128(const void* message, size_t length, const uint8_t* seed, uint
 	/* finalization */
 #if WORDS_BIGENDIAN
 	for(i=0;i<sc_numVars;++i)
-		buf[i] = swap64(buf[i]);
+		buf[i] = util_swap64(buf[i]);
 #endif
 
 	End(buf,h0,h1,h2,h3,h4,h5,h6,h7,h8,h9,h10,h11);
 
 #if WORDS_BIGENDIAN
-	h0 = swap64(h0);
-	h1 = swap64(h1);
+	h0 = util_swap64(h0);
+	h1 = util_swap64(h1);
 #endif
 
 	((uint64_t*)digest)[0] = h0;

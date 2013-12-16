@@ -84,6 +84,23 @@ dnl Checks for compiler
 AC_CHECK_CC_OPT([-Wall], CFLAGS="$CFLAGS -Wall", [])
 AC_CHECK_CC_OPT([-Wextra], CFLAGS="$CFLAGS -Wextra", [])
 
+dnl Checks for AS supporting the CRC instruction. In OpenBSD 5.4 it's not.
+AC_MSG_CHECKING([for crc32b])
+asmcrc=no
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#if defined(__i386__) || defined(__x86_64__) 
+	unsigned f(unsigned crc, unsigned char b)
+	{
+		asm volatile ("crc32b %1, %0\n" : "+r" (crc) : "rm" (b));
+		return crc;
+	}
+#else
+#error not x86
+#endif
+]])],
+[AC_DEFINE([HAVE_CRC32B], [1], [Define if statvfs exists.]) asmcrc=yes])
+AC_MSG_RESULT([$asmcrc])
+
 dnl Checks for test environment
 AS_CASE([$host],
 	[*-*-mingw*], [TESTENV="$WINE"],
