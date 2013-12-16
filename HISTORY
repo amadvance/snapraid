@@ -7,9 +7,10 @@ SnapRAID HISTORY
    recognition, because this is likely a new filesystem with
    all the inodes reassigned, and we don't want to risk a false
    positive when searching for inode/timestamp/size.
- * Allow to run a fix command with disks that doesn't needs to be
+ * Allow to run a fix command with disks that doesn't need to be
    fixed mounted as read-only.
  * Doesn't count empty dirs as files in the diff counters.
+ * Fixed build problem in OpenBSD due the old assembler.
 
 5.1 2013/12
 ===========
