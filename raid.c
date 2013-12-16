@@ -362,10 +362,10 @@ static inline uint32_t d2_32(uint32_t v)
 __attribute__((always_inline))
 static inline uint64_t d2_64(uint64_t v)
 {
-	uint64_t mask = v & 0x0101010101010101U;
+	uint64_t mask = v & 0x0101010101010101ULL;
 	mask = (mask << 8) - mask;
-	v = (v >> 1) & 0x7f7f7f7f7f7f7f7fU;
-	v ^= mask & 0x8e8e8e8e8e8e8e8eU;
+	v = (v >> 1) & 0x7f7f7f7f7f7f7f7fULL;
+	v ^= mask & 0x8e8e8e8e8e8e8e8eULL;
 	return v;
 }
 
