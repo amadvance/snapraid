@@ -98,7 +98,7 @@ int devuuid(uint64_t device, char* uuid, size_t uuid_size)
 		}
 
 		/* if it matches, we have the uuid */
-		if (S_ISBLK(st.st_mode) && st.st_rdev == device) {
+		if (S_ISBLK(st.st_mode) && st.st_rdev == (dev_t)device) {
 			snprintf(uuid, uuid_size, "%s", dd->d_name);
 			break;
 		}
