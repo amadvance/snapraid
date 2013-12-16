@@ -98,7 +98,12 @@ only if changes are committed after an aborted sync.
 
 - Pooling
 
-* Allow to specify the shared path to use to access remote symlink.
+* Allow to specify the shared path in Windows to access remote symlinks.
+Something like:
+share \\SERVER\JBOD\
+And then converting all the symbolic links to prepend this path in the link
+definition.
+Links will appears as \\SERVER\JBOD\DISK_NAME\sub_path_inside_the_disk.
 
 * Add a new "commit" command to move changes from the pool to the array.
 It should:
@@ -156,6 +161,14 @@ Rejected TODO
 =============
 
 This is a list of rejected TODO items.
+
+* In "pool" for Windows, and for unique directories a junction to the
+directory could be used, avoiding to use symlinks to files.
+This allows to overcome the problem of sharing symlinks.
+- It would work, in fact it would work to well. The problem is that
+Windows will treat the junction as the real directory, like *really*
+deleting its content from Explorer pressing "del" and also from the
+command line with "rd". Too dangerous.
 
 * When fixing, before overwriting the present file, make a copy of it just in
 case that the original file cannot be completely recovered.

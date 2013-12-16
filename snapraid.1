@@ -360,6 +360,7 @@ snapraid \-p 0 scrub
 To have all the files in your array shown in the same directory tree,
 you can enable \(a"pooling\(a", that consists in creating a virtual view of all
 the files in your array using symbolic links.
+.PP
 You can configure the \(a"pooling\(a" directory in the configuration file with:
 .PP
 .RS 4
@@ -378,7 +379,7 @@ pool C:\(rspool
 .PD
 .RE
 .PP
-and then run the \(a"pool\(a" command.
+and then run the \(a"pool\(a" command to create or update the virtual view.
 .PP
 .RS 4
 snapraid pool
@@ -387,9 +388,9 @@ snapraid pool
 .PD
 .RE
 .PP
-If you are using a Unix platform and you want to configure SAMBA to
-share such directory, you should add to your /etc/samba/smb.conf the
-following options:
+If you are using a Unix platform and you want to share such directory
+in the network to either Windows or Unix machines, you should add
+to your /etc/samba/smb.conf the following options:
 .PP
 .RS 4
 # In the global section of smb.conf
@@ -431,7 +432,16 @@ wide links = yes
 .PD 0
 .PP
 .PD
+follow symlinks = yes
+.PD 0
+.PP
+.PD
 .RE
+.PP
+In Windows the same sharing operation is not so straightforward,
+because Windows shares in the network the symbolic links as they are,
+and that requires to have modern network clients able to understand
+them, that usually doesn\(cqt happen for embedded clients like TVs.
 .SH COMMANDS 
 SnapRAID provides a few simple commands that allow to:
 .PD 0
