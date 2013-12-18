@@ -1493,7 +1493,10 @@ char* strdup_nofail(const char* str)
 /****************************************************************************/
 /* byte operations */
 
-/* Rotate left */
+/*
+ * Rotate left.
+ * In x86/x64 they are optimized with a single assembler instruction.
+ */
 static inline uint32_t util_rotl32(uint32_t x, int8_t r)
 {
 	return (x << r) | (x >> (32 - r));
@@ -1504,8 +1507,16 @@ static inline uint64_t util_rotl64(uint64_t x, int8_t r)
 	return (x << r) | (x >> (64 - r));
 }
 
-/* Swap endianess */
-#if HAVE_BYTESWAP_H
+/**
+ * Swap endianess.
+ * They are needed only if BigEndian.
+ */
+#if defined(__GNUC__)
+
+#define util_swap32(x) __builtin_bswap32(x)
+#define util_swap64(x) __builtin_bswap64(x)
+
+#elif HAVE_BYTESWAP_H
 
 #include <byteswap.h>
 
@@ -1521,10 +1532,10 @@ static inline uint32_t util_swap32(uint32_t v)
 
 static inline uint64_t util_swap64(uint64_t v)
 {
-	return (util_rotl64(v, 8) & 0x000000ff000000ffLLU)
-		| (util_rotl64(v, 24) & 0x0000ff000000ff00LLU)
-		| (util_rotl64(v, 40) & 0x00ff000000ff0000LLU)
-		| (util_rotl64(v, 56) & 0xff000000ff000000LLU);
+	return (util_rotl64(v, 8) & 0x000000ff000000ffULL)
+		| (util_rotl64(v, 24) & 0x0000ff000000ff00ULL)
+		| (util_rotl64(v, 40) & 0x00ff000000ff0000ULL)
+		| (util_rotl64(v, 56) & 0xff000000ff000000ULL);
 }
 #endif
 
