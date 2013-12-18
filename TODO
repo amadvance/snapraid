@@ -98,13 +98,6 @@ only if changes are committed after an aborted sync.
 
 - Pooling
 
-* Allow to specify the shared path in Windows to access remote symlinks.
-Something like:
-share \\SERVER\JBOD\
-And then converting all the symbolic links to prepend this path in the link
-definition.
-Links will appears as \\SERVER\JBOD\DISK_NAME\sub_path_inside_the_disk.
-
 * Add a new "commit" command to move changes from the pool to the array.
 It should:
 - Move files copied into the pool (that are no links) to the array.

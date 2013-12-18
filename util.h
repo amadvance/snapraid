@@ -411,6 +411,13 @@ void pathcat(char* dst, size_t size, const char* src);
 void pathimport(char* dst, size_t size, const char* src);
 
 /**
+ * Exports a path limiting the size.
+ * In Windows all the C slashes are converted to the Windows backslash.
+ * Aborts if too long.
+ */
+void pathexport(char* dst, size_t size, const char* src);
+
+/**
  * Prints a path.
  * Aborts if too long.
  */

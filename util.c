@@ -1172,10 +1172,24 @@ void pathimport(char* dst, size_t size, const char* src)
 	pathcpy(dst, size, src);
 
 #ifdef _WIN32
-	/* convert all Windows '\' to '/' */
+	/* convert all Windows '\' to C '/' */
 	while (*dst) {
 		if (*dst == '\\')
 			*dst = '/';
+		++dst;
+	}
+#endif
+}
+
+void pathexport(char* dst, size_t size, const char* src)
+{
+	pathcpy(dst, size, src);
+
+#ifdef _WIN32
+	/* convert all C '/' to Windows '\' */
+	while (*dst) {
+		if (*dst == '/')
+			*dst = '\\';
 		++dst;
 	}
 #endif

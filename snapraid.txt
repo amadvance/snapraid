@@ -253,9 +253,37 @@ to your /etc/samba/smb.conf the following options:
     follow symlinks = yes
 
 In Windows the same sharing operation is not so straightforward,
-because Windows shares in the network the symbolic links as they are,
-and that requires to have modern network clients able to understand
-them, that usually doesn't happen for embedded clients like TVs.
+because Windows shares the symbolic links as they are, and that
+requires the network clients to resolve them remotely.
+
+To make it working, besides sharing in the network the pool directory,
+you must also share all the disks independently, using as share points
+the disk names as defined in the config file. You must also specify in
+the "share" option of the configure file, the Windows UNC path that remote
+clients needs to use to access such shared disks.
+
+For example, operating from a server named "darkstar", you can use
+the options:
+
+    disk d1 F:\array\
+    disk d2 G:\array\
+    disk d3 H:\array\
+    pool C:\pool
+    share \\darkstar
+
+and share the following dirs in the network:
+
+    \\darkstar\pool -> C:\pool
+    \\darkstar\d1 -> F:\array
+    \\darkstar\d2 -> G:\array
+    \\darkstar\d3 -> H:\array
+
+to allow remote clients to access all the files at \\darkstar\\pool.
+
+You may also need to configure remote clients, to enable the access at
+remote symlinks with the command:
+
+    fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 
 
 5 COMMANDS
@@ -781,7 +809,22 @@ is 1073741824 bytes.
 ---- 7.8.2 pool DIR ----
 Defines the pooling directory where the virtual view of the disk
 array is created using the "pool" command.
+
 The directory must already exist.
+
+---- 7.8.3 share UNC_DIR ----
+Defines the Windows UNC path required to access the disks remotely.
+
+If this option is specified, the symbolic links created in the pool
+directory use this UNC path to access the disks.
+Otherwise, the symbolic links will use only local paths, not allowing
+to share the pool directory in the network.
+
+The symbolic links are formed using the specified UNC path, adding the
+disk name as specified in the "disk" option, and finally adding the
+file dir and name.
+
+This options is only required for Windows.
 
 7.9 Examples
 ------------

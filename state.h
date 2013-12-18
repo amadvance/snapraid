@@ -90,6 +90,7 @@ struct snapraid_state {
 	unsigned raid_mode; /**< Raid mode to use. RAID_MODE_DEFAULT or RAID_MODE_ALTERNATE. */
 	char parity_path[LEV_MAX][PATH_MAX]; /**< Path of the parity file. One for each parity. */
 	uint64_t parity_device[LEV_MAX]; /**< Device identifier of the parity. One for each parity. */
+	char share[PATH_MAX]; /**< Path of the share tree. If !=0 pool links are created in a different way. */
 	char pool[PATH_MAX]; /**< Path of the pool tree. */
 	uint64_t pool_device; /**< Device identifier of the pool. */
 	unsigned char hashseed[HASH_SIZE]; /**< Hash seed. Just after a uint64 to provide a minimal alignment. */

@@ -126,15 +126,24 @@ static int clean_dir(struct snapraid_state* state, const char* dir)
 /**
  * Creates a link to the specified disk entry.
  */
-static void make_link(const char* pool_dir, struct snapraid_disk* disk, const char* sub)
+static void make_link(const char* pool_dir, const char* share_dir, struct snapraid_disk* disk, const char* sub)
 {
 	char path[PATH_MAX];
 	char linkto[PATH_MAX];
+	char linkto_exported[PATH_MAX];
 	int ret;
 
-	/* make the paths */
+	/* make the source path */
 	pathprint(path, sizeof(path), "%s%s", pool_dir, sub);
-	pathprint(linkto, sizeof(linkto), "%s%s", disk->dir, sub);
+
+	/* make the linkto path */
+	if (share_dir[0] != 0) {
+		/* with a shared directory, use it */
+		pathprint(linkto, sizeof(linkto), "%s%s/%s", share_dir, disk->name, sub);
+	} else {
+		/* without a share directory, use the local disk paths */
+		pathprint(linkto, sizeof(linkto), "%s%s", disk->dir, sub);
+	}
 
 	/* create the ancestor directories */
 	ret = mkancestor(path);
@@ -142,8 +151,11 @@ static void make_link(const char* pool_dir, struct snapraid_disk* disk, const ch
 		exit(EXIT_FAILURE);
 	}
 
+	/* convert back slashes */
+	pathexport(linkto_exported, sizeof(linkto_exported), linkto);
+
 	/* create the symlink */
-	ret = symlink(linkto, path);
+	ret = symlink(linkto_exported, path);
 	if (ret != 0) {
 		if (errno == EEXIST) {
 			fprintf(stderr, "WARNING! Duplicate pooling for '%s'\n", path);
@@ -163,6 +175,7 @@ void state_pool(struct snapraid_state* state)
 {
 	tommy_node* i;
 	char pool_dir[PATH_MAX];
+	char share_dir[PATH_MAX];
 	unsigned count;
 
 	if (state->pool[0] == 0) {
@@ -175,6 +188,10 @@ void state_pool(struct snapraid_state* state)
 	/* pool directory with final slash */
 	pathprint(pool_dir, sizeof(pool_dir), "%s", state->pool);
 	pathslash(pool_dir, sizeof(pool_dir));
+
+	/* share directory with final slash */
+	pathprint(share_dir, sizeof(share_dir), "%s", state->share);
+	pathslash(share_dir, sizeof(share_dir));
 
 	/* first clear the previous pool tree */
 	clean_dir(state, pool_dir);
@@ -190,14 +207,14 @@ void state_pool(struct snapraid_state* state)
 		/* for each file */
 		for(j=disk->filelist;j!=0;j=j->next) {
 			struct snapraid_file* file = j->data;
-			make_link(pool_dir, disk, file->sub);
+			make_link(pool_dir, share_dir, disk, file->sub);
 			++count;
 		}
 
 		/* for each link */
 		for(j=disk->linklist;j!=0;j=j->next) {
 			struct snapraid_link* link = j->data;
-			make_link(pool_dir, disk, link->sub);
+			make_link(pool_dir, share_dir, disk, link->sub);
 			++count;
 		}
 

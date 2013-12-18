@@ -439,9 +439,61 @@ follow symlinks = yes
 .RE
 .PP
 In Windows the same sharing operation is not so straightforward,
-because Windows shares in the network the symbolic links as they are,
-and that requires to have modern network clients able to understand
-them, that usually doesn\(cqt happen for embedded clients like TVs.
+because Windows shares the symbolic links as they are, and that
+requires the network clients to resolve them remotely.
+.PP
+To make it working, besides sharing in the network the pool directory,
+you must also share all the disks independently, using as share points
+the disk names as defined in the config file. You must also specify in
+the \(a"share\(a" option of the configure file, the Windows UNC path that remote
+clients needs to use to access such shared disks.
+.PP
+For example, operating from a server named \(a"darkstar\(a", you can use
+the options:
+.PP
+.RS 4
+disk d1 F:\(rsarray\(rs
+.PD 0
+.PP
+.PD
+disk d2 G:\(rsarray\(rs
+.PD 0
+.PP
+.PD
+disk d3 H:\(rsarray\(rs
+.PD 0
+.PP
+.PD
+pool C:\(rspool
+.PD 0
+.PP
+.PD
+share \(rs\(rsdarkstar
+.PD 0
+.PP
+.PD
+.RE
+.PP
+and share the following dirs in the network:
+.PP
+.RS 4
+\(rs\(rsdarkstar\(rspool \-> C:\(rspool
+\(rs\(rsdarkstar\(rsd1 \-> F:\(rsarray
+\(rs\(rsdarkstar\(rsd2 \-> G:\(rsarray
+\(rs\(rsdarkstar\(rsd3 \-> H:\(rsarray
+.RE
+.PP
+to allow remote clients to access all the files at \(rs\(rsdarkstar\(rs\(rspool.
+.PP
+You may also need to configure remote clients, to enable the access at
+remote symlinks with the command:
+.PP
+.RS 4
+fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
+.PD 0
+.PP
+.PD
+.RE
 .SH COMMANDS 
 SnapRAID provides a few simple commands that allow to:
 .PD 0
@@ -913,7 +965,21 @@ is 1073741824 bytes.
 .SS pool DIR 
 Defines the pooling directory where the virtual view of the disk
 array is created using the \(a"pool\(a" command.
+.PP
 The directory must already exist.
+.SS share UNC_DIR 
+Defines the Windows UNC path required to access the disks remotely.
+.PP
+If this option is specified, the symbolic links created in the pool
+directory use this UNC path to access the disks.
+Otherwise, the symbolic links will use only local paths, not allowing
+to share the pool directory in the network.
+.PP
+The symbolic links are formed using the specified UNC path, adding the
+disk name as specified in the \(a"disk\(a" option, and finally adding the
+file dir and name.
+.PP
+This options is only required for Windows.
 .SS Examples 
 An example of a typical configuration for Unix is:
 .PP

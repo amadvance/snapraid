@@ -83,6 +83,7 @@ void state_init(struct snapraid_state* state)
 		state->parity_path[l][0] = 0;
 		state->parity_device[l] = 0;
 	}
+	state->share[0] = 0;
 	state->pool[0] = 0;
 	state->pool_device = 0;
 	state->lockfile[0] = 0;
@@ -459,6 +460,24 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			/* adjust the level */
 			if (state->level < l + 1)
 				state->level = l + 1;
+		} else if (strcmp(tag, "share") == 0) {
+			if (*state->share) {
+				fprintf(stderr, "Multiple 'share' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			ret = sgetlasttok(f, buffer, sizeof(buffer));
+			if (ret < 0) {
+				fprintf(stderr, "Invalid 'share' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			if (!*buffer) {
+				fprintf(stderr, "Empty 'share' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+			}
+
+			pathimport(state->share, sizeof(state->share), buffer);
 		} else if (strcmp(tag, "pool") == 0) {
 			struct stat st;
 

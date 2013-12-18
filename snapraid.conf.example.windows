@@ -75,3 +75,14 @@ exclude \Windows\
 # Format: "pool DIR"
 #pool C:\pool
 
+# Defines the Windows UNC path required to access disks from the pooling
+# directory when shared in the network.
+# If present (uncomment to enable), the symbolic links created in the
+# pool virtual view, instead of using local paths, are created using the
+# specified UNC path, adding the disk names and file path.
+# This allows to share the pool directory in the network.
+# See the manual page for more details.
+#
+# Format: "share UNC_DIR"
+#share \\server
+

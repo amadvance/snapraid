@@ -10,6 +10,8 @@ SnapRAID HISTORY
  * Allow to run a fix command with disks that doesn't need to be
    fixed mounted as read-only.
  * Doesn't count empty dirs as files in the diff counters.
+ * Added a new "share" configuration option to allow to share
+   in the network the pool directory also in Windows.
  * Fixed build problem in OpenBSD due the old assembler.
 
 5.1 2013/12
