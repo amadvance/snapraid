@@ -58,32 +58,32 @@
 //
 
 #define Mix(data, s0, s1, s2, s3, s4, s5, s6, s7, s8, s9, s10, s11) \
-	s0 += data[0];   s2 ^= s10;  s11^= s0;   s0 = rotl64(s0,11);   s11 += s1; \
-	s1 += data[1];   s3 ^= s11;  s0 ^= s1;   s1 = rotl64(s1,32);   s0 += s2; \
-	s2 += data[2];   s4 ^= s0;   s1 ^= s2;   s2 = rotl64(s2,43);   s1 += s3; \
-	s3 += data[3];   s5 ^= s1;   s2 ^= s3;   s3 = rotl64(s3,31);   s2 += s4; \
-	s4 += data[4];   s6 ^= s2;   s3 ^= s4;   s4 = rotl64(s4,17);   s3 += s5; \
-	s5 += data[5];   s7 ^= s3;   s4 ^= s5;   s5 = rotl64(s5,28);   s4 += s6; \
-	s6 += data[6];   s8 ^= s4;   s5 ^= s6;   s6 = rotl64(s6,39);   s5 += s7; \
-	s7 += data[7];   s9 ^= s5;   s6 ^= s7;   s7 = rotl64(s7,57);   s6 += s8; \
-	s8 += data[8];   s10^= s6;   s7 ^= s8;   s8 = rotl64(s8,55);   s7 += s9; \
-	s9 += data[9];   s11^= s7;   s8 ^= s9;   s9 = rotl64(s9,54);   s8 += s10; \
-	s10+= data[10];  s0 ^= s8;   s9 ^= s10;  s10= rotl64(s10,22);  s9 += s11; \
-	s11+= data[11];  s1 ^= s9;   s10^= s11;  s11= rotl64(s11,46);  s10 += s0;
+	s0 += data[0];   s2 ^= s10;  s11^= s0;   s0 = util_rotl64(s0,11);   s11 += s1; \
+	s1 += data[1];   s3 ^= s11;  s0 ^= s1;   s1 = util_rotl64(s1,32);   s0 += s2; \
+	s2 += data[2];   s4 ^= s0;   s1 ^= s2;   s2 = util_rotl64(s2,43);   s1 += s3; \
+	s3 += data[3];   s5 ^= s1;   s2 ^= s3;   s3 = util_rotl64(s3,31);   s2 += s4; \
+	s4 += data[4];   s6 ^= s2;   s3 ^= s4;   s4 = util_rotl64(s4,17);   s3 += s5; \
+	s5 += data[5];   s7 ^= s3;   s4 ^= s5;   s5 = util_rotl64(s5,28);   s4 += s6; \
+	s6 += data[6];   s8 ^= s4;   s5 ^= s6;   s6 = util_rotl64(s6,39);   s5 += s7; \
+	s7 += data[7];   s9 ^= s5;   s6 ^= s7;   s7 = util_rotl64(s7,57);   s6 += s8; \
+	s8 += data[8];   s10^= s6;   s7 ^= s8;   s8 = util_rotl64(s8,55);   s7 += s9; \
+	s9 += data[9];   s11^= s7;   s8 ^= s9;   s9 = util_rotl64(s9,54);   s8 += s10; \
+	s10+= data[10];  s0 ^= s8;   s9 ^= s10;  s10= util_rotl64(s10,22);  s9 += s11; \
+	s11+= data[11];  s1 ^= s9;   s10^= s11;  s11= util_rotl64(s11,46);  s10 += s0;
 
 #define EndPartial(h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11) \
-	h11+= h1;   h2 ^= h11;  h1 = rotl64(h1,44); \
-	h0 += h2;   h3 ^= h0;   h2 = rotl64(h2,15); \
-	h1 += h3;   h4 ^= h1;   h3 = rotl64(h3,34); \
-	h2 += h4;   h5 ^= h2;   h4 = rotl64(h4,21); \
-	h3 += h5;   h6 ^= h3;   h5 = rotl64(h5,38); \
-	h4 += h6;   h7 ^= h4;   h6 = rotl64(h6,33); \
-	h5 += h7;   h8 ^= h5;   h7 = rotl64(h7,10); \
-	h6 += h8;   h9 ^= h6;   h8 = rotl64(h8,13); \
-	h7 += h9;   h10^= h7;   h9 = rotl64(h9,38); \
-	h8 += h10;  h11^= h8;   h10= rotl64(h10,53); \
-	h9 += h11;  h0 ^= h9;   h11= rotl64(h11,42); \
-	h10+= h0;   h1 ^= h10;  h0 = rotl64(h0,54);
+	h11+= h1;   h2 ^= h11;  h1 = util_rotl64(h1,44); \
+	h0 += h2;   h3 ^= h0;   h2 = util_rotl64(h2,15); \
+	h1 += h3;   h4 ^= h1;   h3 = util_rotl64(h3,34); \
+	h2 += h4;   h5 ^= h2;   h4 = util_rotl64(h4,21); \
+	h3 += h5;   h6 ^= h3;   h5 = util_rotl64(h5,38); \
+	h4 += h6;   h7 ^= h4;   h6 = util_rotl64(h6,33); \
+	h5 += h7;   h8 ^= h5;   h7 = util_rotl64(h7,10); \
+	h6 += h8;   h9 ^= h6;   h8 = util_rotl64(h8,13); \
+	h7 += h9;   h10^= h7;   h9 = util_rotl64(h9,38); \
+	h8 += h10;  h11^= h8;   h10= util_rotl64(h10,53); \
+	h9 += h11;  h0 ^= h9;   h11= util_rotl64(h11,42); \
+	h10+= h0;   h1 ^= h10;  h0 = util_rotl64(h0,54);
 
 #define End(data, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10,h11) \
 	h0 += data[0];  h1 += data[1];  h2 += data[2];    h3 += data[3]; \

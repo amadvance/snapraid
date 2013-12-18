@@ -1491,15 +1491,15 @@ char* strdup_nofail(const char* str)
 }
 
 /****************************************************************************/
-/* hash */
+/* byte operations */
 
-/* Rotate left 32 */
-inline uint32_t rotl32(uint32_t x, int8_t r)
+/* Rotate left */
+static inline uint32_t util_rotl32(uint32_t x, int8_t r)
 {
 	return (x << r) | (x >> (32 - r));
 }
 
-inline uint64_t rotl64(uint64_t x, int8_t r)
+static inline uint64_t util_rotl64(uint64_t x, int8_t r)
 {
 	return (x << r) | (x >> (64 - r));
 }
@@ -1515,18 +1515,21 @@ inline uint64_t rotl64(uint64_t x, int8_t r)
 #else
 static inline uint32_t util_swap32(uint32_t v)
 {
-	return (rotl32(v, 8) & 0x00ff00ff)
-		| (rotl32(v, 24) & 0xff00ff00);
+	return (util_rotl32(v, 8) & 0x00ff00ff)
+		| (util_rotl32(v, 24) & 0xff00ff00);
 }
 
 static inline uint64_t util_swap64(uint64_t v)
 {
-	return (rotl64(v, 8) & 0x000000ff000000ffLLU)
-		| (rotl64(v, 24) & 0x0000ff000000ff00LLU)
-		| (rotl64(v, 40) & 0x00ff000000ff0000LLU)
-		| (rotl64(v, 56) & 0xff000000ff000000LLU);
+	return (util_rotl64(v, 8) & 0x000000ff000000ffLLU)
+		| (util_rotl64(v, 24) & 0x0000ff000000ff00LLU)
+		| (util_rotl64(v, 40) & 0x00ff000000ff0000LLU)
+		| (util_rotl64(v, 56) & 0xff000000ff000000LLU);
 }
 #endif
+
+/****************************************************************************/
+/* hash */
 
 #include "murmur3.c"
 #include "spooky2.c"
