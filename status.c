@@ -277,11 +277,11 @@ int state_status(struct snapraid_state* state)
 		}
 		printf("\n");
 	}
-	printf("   %3u                    days ago of the last check                    %3u\n", dayoldest, daynewest);
+	printf("   %3u                    days ago of the last scrub                    %3u\n", dayoldest, daynewest);
 
 	printf("\n");
 
-	printf("The oldest block was checked %u days ago, the median %u, the newest %u.\n", dayoldest, daymedian, daynewest);
+	printf("The oldest block was scrubbed %u days ago, the median %u, the newest %u.\n", dayoldest, daymedian, daynewest);
 
 	printf("\n");
 
