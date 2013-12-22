@@ -59,6 +59,7 @@
 /**
  * Minimum number of data disks.
  * Some optimizations require at least two disks.
+ * It's anyway allowed to have a single data disk with a sigle parity.
  */
 #define RAID_DATA_MIN 2
 
