@@ -185,7 +185,7 @@ int parity_chsize(struct snapraid_parity* parity, data_off_t size, data_off_t* o
 		f_ret = ret;
 		f_errno = errno;
 
-		/* reget the stat info */
+		/* get the stat info */
 		ret = fstat(parity->f, &parity->st);
 		if (ret != 0) {
 			fprintf(stderr, "Error accessing parity file '%s'. %s.\n", parity->path, strerror(errno));
@@ -205,21 +205,31 @@ int parity_chsize(struct snapraid_parity* parity, data_off_t size, data_off_t* o
 			goto bail;
 		}
 	} else if (parity->st.st_size > size) {
-		ret = ftruncate(parity->f, size);
-		if (ret != 0) {
-			fprintf(stderr, "Error truncating parity file '%s' to size %"PRIu64". %s.\n", parity->path, size, strerror(errno));
-			goto bail;
-		}
+		int f_ret;
+		int f_errno;
 
-		/* reget the stat info */
+		/* truncate the parity file */
+		ret = ftruncate(parity->f, size);
+
+		/* save the state of the shrink operation */
+		f_ret = ret;
+		f_errno = errno;
+
+		/* get the stat info */
 		ret = fstat(parity->f, &parity->st);
 		if (ret != 0) {
 			fprintf(stderr, "Error accessing parity file '%s'. %s.\n", parity->path, strerror(errno));
 			goto bail;
 		}
 
-		/* return the new real size */
+		/* return the new size */
 		*out_size = parity->st.st_size;
+
+		/* now check the error */
+		if (f_ret != 0) {
+			fprintf(stderr, "Error truncating parity file '%s' to size %"PRIu64". %s.\n", parity->path, size, strerror(f_errno));
+			goto bail;
+		}
 
 		/* adjust the valid to the new size */
 		parity->valid_size = size;
