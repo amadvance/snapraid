@@ -140,9 +140,9 @@ static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, 
 }
 
 /**
- * Removes the specified file from the data set.
+ * Removes the specified file from the parity.
  */
-static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
+static void scan_file_deallocate(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
 {
 	block_off_t i;
 
@@ -202,6 +202,65 @@ static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk*
 		/* set the deleted block in the block array */
 		tommy_arrayblk_set(&disk->blockarr, block_pos, &deleted->block);
 	}
+}
+
+/**
+ * Checks if a file is completely formed of NEW or CHG blocks,
+ * and if it has at least one block.
+ */
+static int file_is_full_invalid(struct snapraid_file* file)
+{
+	block_off_t i;
+
+	/* if no block, the file is valid */
+	if (file->blockmax == 0)
+		return 0;
+
+	/* check all blocks */
+	/* it should be enough to check only the first one */
+	/* because updates are always in forward direction, */
+	/* but we check all just to be sure */
+	for(i=0;i<file->blockmax;++i) {
+		struct snapraid_block* block = &file->blockvec[i];
+		unsigned block_state;
+
+		block_state = block_state_get(block);
+
+		if (block_state != BLOCK_STATE_NEW && block_state != BLOCK_STATE_CHG)
+			return 0;
+	}
+
+	return 1;
+}
+
+/**
+ * Keeps the file as it's (or with only a name/inode modification).
+ * If a file contains only NEW blocks, it's reallocated to ensure
+ * to always minimize the space used in the parity.
+ * This could happen after a failed sync, when some other file is deleted,
+ * and then new ones can be moved to fill the hole created.
+ */
+static void scan_file_keep(struct snapraid_scan* scan, struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
+{
+	if (file_is_full_invalid(file)) {
+		/* deallocate the file from the parity */
+		scan_file_deallocate(state, disk, file);
+
+		/* remove the file from the list */
+		tommy_list_remove_existing(&disk->filelist, &file->nodelist);
+
+		/* insert the file in the delayed block allocation */
+		tommy_list_insert_tail(&scan->file_insert_list, &file->nodelist, file);
+	}
+}
+
+/**
+ * Removes the specified file from the data set.
+ */
+static void scan_file_remove(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
+{
+	/* deallocate the file from the parity */
+	scan_file_deallocate(state, disk, file);
 
 	/* remove the file from the file containers */
 	if (!file_flag_has(file, FILE_IS_WITHOUT_INODE)) {
@@ -391,6 +450,9 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 				}
 			}
 
+			/* mark the file as kept */
+			scan_file_keep(scan, state, disk, file);
+
 			/* nothing more to do */
 			return;
 		}
@@ -513,6 +575,9 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 					fprintf(stdlog, "scan:equal:%s:%s\n", disk->name, file->sub);
 				}
 			}
+
+			/* mark the file as kept */
+			scan_file_keep(scan, state, disk, file);
 
 			/* nothing more to do */
 			return;

@@ -9,6 +9,9 @@ SnapRAID HISTORY
    positive when searching for inode/timestamp/size.
  * Allow to run a fix command with disks that doesn't need to be
    fixed mounted as read-only.
+ * After a failed sync, always reallocates new files with a not
+   yet computed parity to ensure to minimize the parity usage,
+   if some other file is deleted in the meantime.
  * Doesn't count empty dirs as files in the diff counters.
  * Added a new "share" configuration option to allow to share
    in the network the pool directory also in Windows.

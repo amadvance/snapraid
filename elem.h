@@ -70,8 +70,6 @@ struct snapraid_filter {
 /**
  * The block has both the hash and the parity computed.
  * This is the normal state of a saved block.
- * Note that if exists at least one BLOCK_STATE_BLK in a disk, all the other
- * blocks at the same address in other disks can be only BLOCK_STATE_EMPTY or BLOCK_STATE_BLK.
  *
  * The block hash field IS set.
  * The parity for this disk is updated.
