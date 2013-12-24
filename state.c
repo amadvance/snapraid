@@ -74,6 +74,7 @@ void state_init(struct snapraid_state* state)
 {
 	unsigned l;
 
+	memset(&state->opt, 0, sizeof(state->opt));
 	state->filter_hidden = 0;
 	state->autosave = 0;
 	state->need_write = 0;
