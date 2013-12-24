@@ -74,7 +74,7 @@ void parity_overflow(struct snapraid_state* state, data_off_t size)
 			struct snapraid_file* file = j->data;
 
 			if (file->blockmax > 0) {
-				if (file->blockvec[0].parity_pos >= blockalloc) {
+				if (file->blockvec[file->blockmax - 1].parity_pos >= blockalloc) {
 					fprintf(stdlog, "outofparity:%s:%s\n", disk->name, file->sub);
 					fflush(stdlog);
 					if (first) {
