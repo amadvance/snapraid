@@ -81,7 +81,7 @@ void parity_overflow(struct snapraid_state* state, data_off_t size)
 						first = 0;
 						printf("Files outside the parity:\n");
 					}
-					printf("OutOfParity '%s%s'\n", disk->dir, file->sub);
+					printf("outofparity %s%s\n", disk->dir, file->sub);
 				}
 			}
 		}
