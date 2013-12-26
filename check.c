@@ -112,7 +112,7 @@ static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned d
 	/* if we checked something, and no block failed the check */
 	if (hash_checked && j==failed_count) {
 		/* recompute all the redundancy information */
-		raid_par(state->level, buffer, diskmax, state->block_size);
+		raid_par(state->level, diskmax, state->block_size, buffer);
 		return 1;
 	}
 
@@ -125,12 +125,12 @@ static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned d
 static int is_parity_matching(struct snapraid_state* state, unsigned diskmax, unsigned i, unsigned char** buffer, unsigned char** buffer_recov)
 {
 	/* recompute parity, note that we don't need parity over i */
-	raid_par(i + 1, buffer, diskmax, state->block_size);
+	raid_par(i + 1, diskmax, state->block_size, buffer);
 
 	/* if the recovered parity block matches */
 	if (memcmp(buffer[diskmax+i], buffer_recov[i], state->block_size) == 0) {
 		/* recompute all the redundancy information */
-		raid_par(state->level, buffer, diskmax, state->block_size);
+		raid_par(state->level, diskmax, state->block_size, buffer);
 		return 1;
 	}
 
@@ -153,7 +153,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 	/* no fix required */
 	if (failed_count == 0) {
 		/* recompute only the parity */
-		raid_par(state->level, buffer, diskmax, state->block_size);
+		raid_par(state->level, diskmax, state->block_size, buffer);
 		return 0;
 	}
 	
@@ -199,7 +199,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 				memcpy(buffer[diskmax+p[i]], buffer_recov[p[i]], state->block_size);
 
 			/* recover using one less parity, the p[r-1] one */
-			raid_rec(r-1, d, p, buffer, diskmax, buffer_zero, state->block_size);
+			raid_rec(r-1, d, p, diskmax, state->block_size, buffer, buffer_zero);
 
 			/* use the remaining p[r-1] parity to check the result */
 			if (is_parity_matching(state, diskmax, p[r-1], buffer, buffer_recov))
@@ -239,7 +239,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 				memcpy(buffer[diskmax+p[i]], buffer_recov[p[i]], state->block_size);
 
 			/* recover */
-			raid_rec(r, d, p, buffer, diskmax, buffer_zero, state->block_size);
+			raid_rec(r, d, p, diskmax, state->block_size, buffer, buffer_zero);
 
 			/* use the hash to check the result */
 			if (is_hash_matching(state, rehash, diskmax, failed, failed_map, failed_count, buffer, buffer_zero))
@@ -324,7 +324,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 	/* if nothing to fix */
 	if (!something_to_recover) {
 		/* recompute only the parity */
-		raid_par(state->level, buffer, diskmax, state->block_size);
+		raid_par(state->level, diskmax, state->block_size, buffer);
 		return 0;
 	}
 

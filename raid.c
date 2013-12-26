@@ -217,7 +217,7 @@
 /*
  * PAR1 (RAID5 with xor) 32bit C implementation
  */
-void raid_par1_int32(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_par1_int32(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	int d, l;
@@ -246,7 +246,7 @@ void raid_par1_int32(unsigned char** vbuf, unsigned ndata, unsigned size)
 /*
  * PAR1 (RAID5 with xor) 64bit C implementation
  */
-void raid_par1_int64(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_par1_int64(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	int d, l;
@@ -281,7 +281,7 @@ void raid_par1_int64(unsigned char** vbuf, unsigned ndata, unsigned size)
  * the typical cache block, and processing 128 bytes doesn't increase
  * performance.
  */
-void raid_par1_sse2(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_par1_sse2(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	int d, l;
@@ -372,7 +372,7 @@ static inline uint64_t d2_64(uint64_t v)
 /*
  * PAR2 (RAID6 with powers of 2) 32bit C implementation
  */
-void raid_par2_int32(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_par2_int32(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -412,7 +412,7 @@ void raid_par2_int32(unsigned char** vbuf, unsigned ndata, unsigned size)
 /*
  * PAR2 (RAID6 with powers of 2) 64bit C implementation
  */
-void raid_par2_int64(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_par2_int64(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -465,7 +465,7 @@ static const struct gfconst16 {
 /*
  * PAR2 (RAID6 with powers of 2) SSE2 implementation
  */
-void raid_par2_sse2(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_par2_sse2(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -518,7 +518,7 @@ void raid_par2_sse2(unsigned char** vbuf, unsigned ndata, unsigned size)
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid_par2_sse2ext(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_par2_sse2ext(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -592,7 +592,7 @@ void raid_par2_sse2ext(unsigned char** vbuf, unsigned ndata, unsigned size)
 /*
  * PARz (triple parity with powers of 2^-1) 32bit C implementation
  */
-void raid_parz_int32(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_parz_int32(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -642,7 +642,7 @@ void raid_parz_int32(unsigned char** vbuf, unsigned ndata, unsigned size)
 /*
  * PARz (triple parity with powers of 2^-1) 64bit C implementation
  */
-void raid_parz_int64(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_parz_int64(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -693,7 +693,7 @@ void raid_parz_int64(unsigned char** vbuf, unsigned ndata, unsigned size)
 /*
  * PARz (triple parity with powers of 2^-1) SSE2 implementation
  */
-void raid_parz_sse2(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_parz_sse2(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -750,7 +750,7 @@ void raid_parz_sse2(unsigned char** vbuf, unsigned ndata, unsigned size)
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid_parz_sse2ext(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_parz_sse2ext(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -831,7 +831,7 @@ void raid_parz_sse2ext(unsigned char** vbuf, unsigned ndata, unsigned size)
  * But this is only a kind of reference function, and we are not really
  * interested in speed.
  */
-void raid_par3_int8(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_par3_int8(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -873,7 +873,7 @@ void raid_par3_int8(unsigned char** vbuf, unsigned ndata, unsigned size)
 /*
  * PAR3 (triple parity with Cauchy matrix) SSSE3 implementation
  */
-void raid_par3_ssse3(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_par3_ssse3(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -969,7 +969,7 @@ void raid_par3_ssse3(unsigned char** vbuf, unsigned ndata, unsigned size)
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid_par3_ssse3ext(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_par3_ssse3ext(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -1109,7 +1109,7 @@ void raid_par3_ssse3ext(unsigned char** vbuf, unsigned ndata, unsigned size)
  * But this is only a kind of reference function, and we are not really
  * interested in speed.
  */
-void raid_par4_int8(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_par4_int8(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -1156,7 +1156,7 @@ void raid_par4_int8(unsigned char** vbuf, unsigned ndata, unsigned size)
 /*
  * PAR4 (quad parity with Cauchy matrix) SSSE3 implementation
  */
-void raid_par4_ssse3(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_par4_ssse3(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -1271,7 +1271,7 @@ void raid_par4_ssse3(unsigned char** vbuf, unsigned ndata, unsigned size)
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid_par4_ssse3ext(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_par4_ssse3ext(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -1443,7 +1443,7 @@ void raid_par4_ssse3ext(unsigned char** vbuf, unsigned ndata, unsigned size)
  * But this is only a kind of reference function, and we are not really
  * interested in speed.
  */
-void raid_par5_int8(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_par5_int8(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -1499,7 +1499,7 @@ void raid_par5_int8(unsigned char** vbuf, unsigned ndata, unsigned size)
 /* ensures that stack is aligned at 16 bytes because we allocate SSE registers in it */
 __attribute__((force_align_arg_pointer))
 #endif
-void raid_par5_ssse3(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_par5_ssse3(unsigned ndata, unsigned size, unsigned char** vbuf)
 /* ensures that stack is aligned at 16 bytes because we allocate SSE registers in it */
 {
 	unsigned char* p;
@@ -1635,7 +1635,7 @@ void raid_par5_ssse3(unsigned char** vbuf, unsigned ndata, unsigned size)
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid_par5_ssse3ext(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_par5_ssse3ext(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -1767,7 +1767,7 @@ void raid_par5_ssse3ext(unsigned char** vbuf, unsigned ndata, unsigned size)
  * But this is only a kind of reference function, and we are not really
  * interested in speed.
  */
-void raid_par6_int8(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_par6_int8(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -1828,7 +1828,7 @@ void raid_par6_int8(unsigned char** vbuf, unsigned ndata, unsigned size)
 /* ensures that stack is aligned at 16 bytes because we allocate SSE registers in it */
 __attribute__((force_align_arg_pointer))
 #endif
-void raid_par6_ssse3(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_par6_ssse3(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -1985,7 +1985,7 @@ void raid_par6_ssse3(unsigned char** vbuf, unsigned ndata, unsigned size)
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid_par6_ssse3ext(unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_par6_ssse3ext(unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	unsigned char* q;
@@ -2140,28 +2140,28 @@ void raid_set(unsigned mode)
 /* parity generation */
 
 /* internal forwarder */
-static void (*raid_par1_ptr)(unsigned char** vbuf, unsigned ndata, unsigned size);
-static void (*raid_par2_ptr)(unsigned char** vbuf, unsigned ndata, unsigned size);
-static void (*raid_parz_ptr)(unsigned char** vbuf, unsigned ndata, unsigned size);
-static void (*raid_par3_ptr)(unsigned char** vbuf, unsigned ndata, unsigned size);
-static void (*raid_par4_ptr)(unsigned char** vbuf, unsigned ndata, unsigned size);
-static void (*raid_par5_ptr)(unsigned char** vbuf, unsigned ndata, unsigned size);
-static void (*raid_par6_ptr)(unsigned char** vbuf, unsigned ndata, unsigned size);
+static void (*raid_par1_ptr)(unsigned ndata, unsigned size, unsigned char** vbuf);
+static void (*raid_par2_ptr)(unsigned ndata, unsigned size, unsigned char** vbuf);
+static void (*raid_parz_ptr)(unsigned ndata, unsigned size, unsigned char** vbuf);
+static void (*raid_par3_ptr)(unsigned ndata, unsigned size, unsigned char** vbuf);
+static void (*raid_par4_ptr)(unsigned ndata, unsigned size, unsigned char** vbuf);
+static void (*raid_par5_ptr)(unsigned ndata, unsigned size, unsigned char** vbuf);
+static void (*raid_par6_ptr)(unsigned ndata, unsigned size, unsigned char** vbuf);
 
-void raid_par(unsigned npar, unsigned char** vbuf, unsigned ndata, unsigned size)
+void raid_par(unsigned npar, unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	switch (npar) {
-	case 1 : raid_par1_ptr(vbuf, ndata, size); break;
-	case 2 : raid_par2_ptr(vbuf, ndata, size); break;
+	case 1 : raid_par1_ptr(ndata, size, vbuf); break;
+	case 2 : raid_par2_ptr(ndata, size, vbuf); break;
 	case 3 :
 		if (raid_mode == RAID_MODE_CAUCHY)
-			raid_par3_ptr(vbuf, ndata, size);
+			raid_par3_ptr(ndata, size, vbuf);
 		else
-			raid_parz_ptr(vbuf, ndata, size);
+			raid_parz_ptr(ndata, size, vbuf);
 		break;
-	case 4 : raid_par4_ptr(vbuf, ndata, size); break;
-	case 5 : raid_par5_ptr(vbuf, ndata, size); break;
-	case 6 : raid_par6_ptr(vbuf, ndata, size); break;
+	case 4 : raid_par4_ptr(ndata, size, vbuf); break;
+	case 5 : raid_par5_ptr(ndata, size, vbuf); break;
+	case 6 : raid_par6_ptr(ndata, size, vbuf); break;
 	default:
 		fprintf(stderr, "Invalid raid gen level\n");
 		exit(EXIT_FAILURE);
@@ -2228,7 +2228,7 @@ static inline const unsigned char* table(unsigned char v)
  * Note that all the other parities not in the c[] vector
  * are destroyed.
  */
-static inline void raid_delta_gen(unsigned nrec, const int* d, const int* c, unsigned char** vbuf, unsigned ndata, unsigned char* zero, unsigned size)
+static inline void raid_delta_gen(unsigned nrec, const int* d, const int* c, unsigned ndata, unsigned size, unsigned char** vbuf, unsigned char* zero)
 {
 	unsigned char* p[RAID_PARITY_CAUCHY_MAX];
 	unsigned char* pa[RAID_PARITY_CAUCHY_MAX];
@@ -2251,7 +2251,7 @@ static inline void raid_delta_gen(unsigned nrec, const int* d, const int* c, uns
 	}
 
 	/* compute only for the nrec we really need */
-	raid_par(c[nrec - 1] + 1, vbuf, ndata, size);
+	raid_par(c[nrec - 1] + 1, ndata, size, vbuf);
 
 	for(i=0;i<nrec;++i) {
 		/* restore disk buffers as before */
@@ -2276,7 +2276,7 @@ static inline void raid_delta_gen(unsigned nrec, const int* d, const int* c, uns
  *
  * Dx = Pd
  */
-static void raid_rec1_par1(const int* d, unsigned char** vbuf, unsigned ndata, unsigned size)
+static void raid_rec1_par1(const int* d, unsigned ndata, unsigned size, unsigned char** vbuf)
 {
 	unsigned char* p;
 	unsigned char* pa;
@@ -2293,7 +2293,7 @@ static void raid_rec1_par1(const int* d, unsigned char** vbuf, unsigned ndata, u
 	vbuf[ndata] = pa;
 
 	/* compute */
-	raid_par1_ptr(vbuf, ndata, size);
+	raid_par1_ptr(ndata, size, vbuf);
 
 	/* restore as before */
 	vbuf[d[0]] = pa;
@@ -2323,7 +2323,7 @@ static void raid_rec1_par1(const int* d, unsigned char** vbuf, unsigned ndata, u
  *
  * That are always satisfied for any 0<=d[0]<d[1]<255.
  */
-static void raid_rec2_par2(const int* d, const int* c, unsigned char** vbuf, unsigned ndata, unsigned char* zero, unsigned size)
+static void raid_rec2_par2(const int* d, const int* c, unsigned ndata, unsigned size, unsigned char** vbuf, unsigned char* zero)
 {
 	unsigned i;
 	unsigned char* p;
@@ -2337,7 +2337,7 @@ static void raid_rec2_par2(const int* d, const int* c, unsigned char** vbuf, uns
 	T[1] = table( inv(pow2(d[0]) ^ pow2(d[1])) );
 
 	/* compute delta parity */
-	raid_delta_gen(2, d, c, vbuf, ndata, zero, size);
+	raid_delta_gen(2, d, c, ndata, size, vbuf, zero);
 
 	p = vbuf[ndata];
 	q = vbuf[ndata+1];
@@ -2444,7 +2444,7 @@ static inline void invert(unsigned char* M, unsigned char* V, unsigned n)
  *
  * Dx = A[c[0],d[0]]^-1 * Pd
  */
-void raid_rec1_int8(unsigned nrec, const int* d, const int* c, unsigned char** vbuf, unsigned ndata, unsigned char* zero, unsigned size)
+void raid_rec1_int8(unsigned nrec, const int* d, const int* c, unsigned ndata, unsigned size, unsigned char** vbuf, unsigned char* zero)
 {
 	unsigned i;
 	unsigned char* p;
@@ -2457,7 +2457,7 @@ void raid_rec1_int8(unsigned nrec, const int* d, const int* c, unsigned char** v
 
 	/* if it's PAR1 uses the dedicated and fastest function */
 	if (c[0] == 0) {
-		raid_rec1_par1(d, vbuf, ndata, size);
+		raid_rec1_par1(d, ndata, size, vbuf);
 		return;
 	}
 
@@ -2471,7 +2471,7 @@ void raid_rec1_int8(unsigned nrec, const int* d, const int* c, unsigned char** v
 	T = table(V);
 
 	/* compute delta parity */
-	raid_delta_gen(1, d, c, vbuf, ndata, zero, size);
+	raid_delta_gen(1, d, c, ndata, size, vbuf, zero);
 
 	p = vbuf[ndata+c[0]];
 	pa = vbuf[d[0]];
@@ -2495,7 +2495,7 @@ void raid_rec1_int8(unsigned nrec, const int* d, const int* c, unsigned char** v
  *
  * we solve inverting the coefficients matrix.
  */
-void raid_rec2_int8(unsigned nrec, const int* d, const int* c, unsigned char** vbuf, unsigned ndata, unsigned char* zero, unsigned size)
+void raid_rec2_int8(unsigned nrec, const int* d, const int* c, unsigned ndata, unsigned size, unsigned char** vbuf, unsigned char* zero)
 {
 	unsigned char* p;
 	unsigned char* pa;
@@ -2511,7 +2511,7 @@ void raid_rec2_int8(unsigned nrec, const int* d, const int* c, unsigned char** v
 
 	/* if it's PAR2 uses the dedicated and fastest function */
 	if (c[0] == 0 && c[1] == 1) {
-		raid_rec2_par2(d, c, vbuf, ndata, zero, size);
+		raid_rec2_par2(d, c, ndata, size, vbuf, zero);
 		return;
 	}
 
@@ -2533,7 +2533,7 @@ void raid_rec2_int8(unsigned nrec, const int* d, const int* c, unsigned char** v
 	}
 
 	/* compute delta parity */
-	raid_delta_gen(2, d, c, vbuf, ndata, zero, size);
+	raid_delta_gen(2, d, c, ndata, size, vbuf, zero);
 
 	p = vbuf[ndata+c[0]];
 	q = vbuf[ndata+c[1]];
@@ -2564,7 +2564,7 @@ void raid_rec2_int8(unsigned nrec, const int* d, const int* c, unsigned char** v
  * PD[0] = Pd, PD[1] = Qd, PD[2] = Rd, ...
  * D[0] = Dx, D[1] = Dy, D[2] = Dz, ...
  */
-void raid_recX_int8(unsigned nrec, const int* d, const int* c, unsigned char** vbuf, unsigned ndata, unsigned char* zero, unsigned size)
+void raid_recX_int8(unsigned nrec, const int* d, const int* c, unsigned ndata, unsigned size, unsigned char** vbuf, unsigned char* zero)
 {
 	unsigned char* p[RAID_PARITY_CAUCHY_MAX];
 	unsigned char* pa[RAID_PARITY_CAUCHY_MAX];
@@ -2591,7 +2591,7 @@ void raid_recX_int8(unsigned nrec, const int* d, const int* c, unsigned char** v
 	}
 
 	/* compute delta parity */
-	raid_delta_gen(nrec, d, c, vbuf, ndata, zero, size);
+	raid_delta_gen(nrec, d, c, ndata, size, vbuf, zero);
 
 	for(i=0;i<nrec;++i) {
 		p[i] = vbuf[ndata+c[i]];
@@ -2619,7 +2619,7 @@ void raid_recX_int8(unsigned nrec, const int* d, const int* c, unsigned char** v
 /*
  * RAID recovering for one disk SSSE3 implementation
  */
-void raid_rec1_ssse3(unsigned nrec, const int* d, const int* c, unsigned char** vbuf, unsigned ndata, unsigned char* zero, unsigned size)
+void raid_rec1_ssse3(unsigned nrec, const int* d, const int* c, unsigned ndata, unsigned size, unsigned char** vbuf, unsigned char* zero)
 {
 	unsigned char* p;
 	unsigned char* pa;
@@ -2631,7 +2631,7 @@ void raid_rec1_ssse3(unsigned nrec, const int* d, const int* c, unsigned char** 
 
 	/* if it's PAR1 uses the dedicated and fastest function */
 	if (c[0] == 0) {
-		raid_rec1_par1(d, vbuf, ndata, size);
+		raid_rec1_par1(d, ndata, size, vbuf);
 		return;
 	}
 
@@ -2642,7 +2642,7 @@ void raid_rec1_ssse3(unsigned nrec, const int* d, const int* c, unsigned char** 
 	V = inv(G);
 
 	/* compute delta parity */
-	raid_delta_gen(1, d, c, vbuf, ndata, zero, size);
+	raid_delta_gen(1, d, c, ndata, size, vbuf, zero);
 
 	p = vbuf[ndata+c[0]];
 	pa = vbuf[d[0]];
@@ -2675,7 +2675,7 @@ void raid_rec1_ssse3(unsigned nrec, const int* d, const int* c, unsigned char** 
 /*
  * RAID recovering for two disks SSSE3 implementation
  */
-void raid_rec2_ssse3(unsigned nrec, const int* d, const int* c, unsigned char** vbuf, unsigned ndata, unsigned char* zero, unsigned size)
+void raid_rec2_ssse3(unsigned nrec, const int* d, const int* c, unsigned ndata, unsigned size, unsigned char** vbuf, unsigned char* zero)
 {
 	const unsigned N = 2;
 	unsigned char* p[N];
@@ -2697,7 +2697,7 @@ void raid_rec2_ssse3(unsigned nrec, const int* d, const int* c, unsigned char** 
 	invert(G, V, N);
 
 	/* compute delta parity */
-	raid_delta_gen(N, d, c, vbuf, ndata, zero, size);
+	raid_delta_gen(N, d, c, ndata, size, vbuf, zero);
 
 	for(i=0;i<N;++i) {
 		p[i] = vbuf[ndata+c[i]];
@@ -2779,7 +2779,7 @@ void raid_rec2_ssse3(unsigned nrec, const int* d, const int* c, unsigned char** 
 /*
  * RAID recovering SSSE3 implementation
  */
-void raid_recX_ssse3(unsigned nrec, const int* d, const int* c, unsigned char** vbuf, unsigned ndata, unsigned char* zero, unsigned size)
+void raid_recX_ssse3(unsigned nrec, const int* d, const int* c, unsigned ndata, unsigned size, unsigned char** vbuf, unsigned char* zero)
 {
 	unsigned N = nrec;
 	unsigned char* p[RAID_PARITY_CAUCHY_MAX];
@@ -2799,7 +2799,7 @@ void raid_recX_ssse3(unsigned nrec, const int* d, const int* c, unsigned char** 
 	invert(G, V, N);
 
 	/* compute delta parity */
-	raid_delta_gen(N, d, c, vbuf, ndata, zero, size);
+	raid_delta_gen(N, d, c, ndata, size, vbuf, zero);
 
 	for(i=0;i<N;++i) {
 		p[i] = vbuf[ndata+c[i]];
@@ -2851,24 +2851,24 @@ void raid_recX_ssse3(unsigned nrec, const int* d, const int* c, unsigned char** 
 #endif
 
 /* internal forwarder */
-static void (*raid_rec1_ptr)(unsigned nrec, const int* d, const int* c, unsigned char** vbuf, unsigned ndata, unsigned char* zero, unsigned size);
-static void (*raid_rec2_ptr)(unsigned nrec, const int* d, const int* c, unsigned char** vbuf, unsigned ndata, unsigned char* zero, unsigned size);
-static void (*raid_recX_ptr)(unsigned nrec, const int* d, const int* c, unsigned char** vbuf, unsigned ndata, unsigned char* zero, unsigned size);
+static void (*raid_rec1_ptr)(unsigned nrec, const int* d, const int* c, unsigned ndata, unsigned size, unsigned char** vbuf, unsigned char* zero);
+static void (*raid_rec2_ptr)(unsigned nrec, const int* d, const int* c, unsigned ndata, unsigned size, unsigned char** vbuf, unsigned char* zero);
+static void (*raid_recX_ptr)(unsigned nrec, const int* d, const int* c, unsigned ndata, unsigned size, unsigned char** vbuf, unsigned char* zero);
 
-void raid_rec(unsigned nrec, const int* d, const int* c, unsigned char** vbuf, unsigned ndata, unsigned char* zero, unsigned size)
+void raid_rec(unsigned nrec, const int* d, const int* c, unsigned ndata, unsigned size, unsigned char** vbuf, unsigned char* zero)
 {
 	switch (nrec) {
 	case 1 :
-		raid_rec1_ptr(nrec, d, c, vbuf, ndata, zero, size);
+		raid_rec1_ptr(nrec, d, c, ndata, size, vbuf, zero);
 		break;
 	case 2 :
-		raid_rec2_ptr(nrec, d, c, vbuf, ndata, zero, size);
+		raid_rec2_ptr(nrec, d, c, ndata, size, vbuf, zero);
 		break;
 	case 3 :
 	case 4 :
 	case 5 :
 	case 6 :
-		raid_recX_ptr(nrec, d, c, vbuf, ndata, zero, size);
+		raid_recX_ptr(nrec, d, c, ndata, size, vbuf, zero);
 		break;
 	default:
 		fprintf(stderr, "Invalid raid recov level\n");

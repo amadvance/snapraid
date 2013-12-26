@@ -93,30 +93,30 @@ static void recovtest(unsigned mode, unsigned ndata, unsigned block_size)
 	unsigned char* waste;
 	unsigned buffermax;
 	int d[LEV_MAX];
-	int p[LEV_MAX];
+	int c[LEV_MAX];
 	unsigned i;
 	unsigned j;
-	unsigned r;
-	void (*map[LEV_MAX][4])(unsigned level, const int* d, const int* c, unsigned char** vbuf, unsigned data, unsigned char* zero, unsigned size);
-	unsigned mac[LEV_MAX];
 	unsigned nrec;
+	void (*map[LEV_MAX][4])(unsigned nrec, const int* d, const int* c, unsigned ndata, unsigned size, unsigned char** vbuf, unsigned char* zero);
+	unsigned mac[LEV_MAX];
+	unsigned npar;
 
 	raid_set(mode);
 	if (mode == RAID_MODE_CAUCHY)
-		nrec = RAID_PARITY_CAUCHY_MAX;
+		npar = RAID_PARITY_CAUCHY_MAX;
 	else
-		nrec = RAID_PARITY_VANDERMONDE_MAX;
+		npar = RAID_PARITY_VANDERMONDE_MAX;
 
-	buffermax = ndata + nrec * 2 + 2;
+	buffermax = ndata + npar * 2 + 2;
 
 	buffer = malloc_nofail_vector_align(ndata, buffermax, block_size, &buffer_alloc);
 	mtest_vector(buffer, buffermax, block_size);
 
 	data = buffer;
 	parity = buffer + ndata;
-	test = buffer + ndata + nrec;
+	test = buffer + ndata + npar;
 
-	for(i=0;i<nrec;++i)
+	for(i=0;i<npar;++i)
 		parity_save[i] = parity[i];
 
 	zero = buffer[buffermax-2];
@@ -131,7 +131,7 @@ static void recovtest(unsigned mode, unsigned ndata, unsigned block_size)
 	}
 
 	/* setup recov functions */
-	for(i=0;i<nrec;++i) {
+	for(i=0;i<npar;++i) {
 		mac[i] = 0;
 		if (i == 0) {
 			map[i][mac[i]++] = raid_rec1_int8;
@@ -158,36 +158,36 @@ static void recovtest(unsigned mode, unsigned ndata, unsigned block_size)
 	}
 
 	/* compute the parity */
-	raid_par(nrec, buffer, ndata, block_size);
+	raid_par(npar, ndata, block_size, buffer);
 
 	/* set all the parity to the waste buffer */
-	for(i=0;i<nrec;++i)
+	for(i=0;i<npar;++i)
 		parity[i] = waste;
 
 	/* all parity levels */
-	for(r=1;r<=nrec;++r) {
-		/* all combinations (r of ndata) disks */
-		combination_first(r, ndata, d);
+	for(nrec=1;nrec<=npar;++nrec) {
+		/* all combinations (nrec of ndata) disks */
+		combination_first(nrec, ndata, d);
 		do {
-			/* all combinations (r of nrec) parities */
-			combination_first(r, nrec, p);
+			/* all combinations (nrec of npar) parities */
+			combination_first(nrec, npar, c);
 			do {
 				/* for each recover function */
-				for(j=0;j<mac[r-1];++j) {
+				for(j=0;j<mac[nrec-1];++j) {
 					/* set */
-					for(i=0;i<r;++i) {
+					for(i=0;i<nrec;++i) {
 						/* remove the missing data */
 						data_save[i] = data[d[i]];
 						data[d[i]] = test[i];
 						/* set the parity to use */
-						parity[p[i]] = parity_save[p[i]];
+						parity[c[i]] = parity_save[c[i]];
 					}
 
 					/* recover */
-					map[r-1][0](r, d, p, buffer, ndata, zero, block_size);
+					map[nrec-1][0](nrec, d, c, ndata, block_size, buffer, zero);
 
 					/* check */
-					for(i=0;i<r;++i) {
+					for(i=0;i<nrec;++i) {
 						if (memcmp(test[i], data_save[i], block_size) != 0) {
 							fprintf(stderr, "Failed RECOV test\n");
 							exit(EXIT_FAILURE);
@@ -195,15 +195,15 @@ static void recovtest(unsigned mode, unsigned ndata, unsigned block_size)
 					}
 
 					/* restore */
-					for(i=0;i<r;++i) {
+					for(i=0;i<nrec;++i) {
 						/* restore the data */
 						data[d[i]] = data_save[i];
 						/* restore the parity */
-						parity[p[i]] = waste;
+						parity[c[i]] = waste;
 					}
 				}
-			} while (combination_next(r, nrec, p));
-		} while (combination_next(r, ndata, d));
+			} while (combination_next(nrec, npar, c));
+		} while (combination_next(nrec, ndata, d));
 	}
 
 	free(buffer_alloc);
@@ -216,7 +216,7 @@ static void gentest(unsigned mode, unsigned ndata, unsigned block_size)
 	unsigned char** buffer;
 	unsigned buffermax;
 	unsigned i, j;
-	void (*map[64])(unsigned char** buffer, unsigned ndata, unsigned size);
+	void (*map[64])(unsigned ndata, unsigned size, unsigned char** vbuf);
 	unsigned mac;
 	unsigned npar;
 
@@ -238,7 +238,7 @@ static void gentest(unsigned mode, unsigned ndata, unsigned block_size)
 	}
 
 	/* compute the parity */
-	raid_par(npar, buffer, ndata, block_size);
+	raid_par(npar, ndata, block_size, buffer);
 
 	/* copy in back buffers */
 	for(i=0;i<npar;++i)
@@ -296,7 +296,7 @@ static void gentest(unsigned mode, unsigned ndata, unsigned block_size)
 	/* check all the functions */
 	for(j=0;j<mac;++j) {
 		/* compute parity */
-		map[j](buffer, ndata, block_size);
+		map[j](ndata, block_size, buffer);
 
 		/* check it */
 		for(i=0;i<npar;++i) {

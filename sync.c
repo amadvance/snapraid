@@ -386,7 +386,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			/* updates the parity only if really needed */
 			if (parity_needs_to_be_updated) {
 				/* compute the parity */
-				raid_par(state->level, buffer, diskmax, state->block_size);
+				raid_par(state->level, diskmax, state->block_size, buffer);
 
 				/* write the parity */
 				for(l=0;l<state->level;++l) {
