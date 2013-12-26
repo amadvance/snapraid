@@ -80,7 +80,7 @@ static void combotest(void)
 	}
 }
 
-static void recovtest(unsigned mode, unsigned ndata, unsigned block_size)
+static void recovtest(unsigned mode, unsigned nd, unsigned block_size)
 {
 	void* buffer_alloc;
 	unsigned char** buffer;
@@ -92,31 +92,31 @@ static void recovtest(unsigned mode, unsigned ndata, unsigned block_size)
 	unsigned char* zero;
 	unsigned char* waste;
 	unsigned buffermax;
-	int d[LEV_MAX];
-	int c[LEV_MAX];
+	int id[LEV_MAX];
+	int ip[LEV_MAX];
 	unsigned i;
 	unsigned j;
-	unsigned nrec;
-	void (*map[LEV_MAX][4])(unsigned nrec, const int* d, const int* c, unsigned ndata, unsigned size, unsigned char** vbuf, unsigned char* zero);
+	unsigned nr;
+	void (*map[LEV_MAX][4])(unsigned nr, const int* id, const int* ip, unsigned nd, unsigned size, unsigned char** vbuf, unsigned char* zero);
 	unsigned mac[LEV_MAX];
-	unsigned npar;
+	unsigned np;
 
 	raid_set(mode);
 	if (mode == RAID_MODE_CAUCHY)
-		npar = RAID_PARITY_CAUCHY_MAX;
+		np = RAID_PARITY_CAUCHY_MAX;
 	else
-		npar = RAID_PARITY_VANDERMONDE_MAX;
+		np = RAID_PARITY_VANDERMONDE_MAX;
 
-	buffermax = ndata + npar * 2 + 2;
+	buffermax = nd + np * 2 + 2;
 
-	buffer = malloc_nofail_vector_align(ndata, buffermax, block_size, &buffer_alloc);
+	buffer = malloc_nofail_vector_align(nd, buffermax, block_size, &buffer_alloc);
 	mtest_vector(buffer, buffermax, block_size);
 
 	data = buffer;
-	parity = buffer + ndata;
-	test = buffer + ndata + npar;
+	parity = buffer + nd;
+	test = buffer + nd + np;
 
-	for(i=0;i<npar;++i)
+	for(i=0;i<np;++i)
 		parity_save[i] = parity[i];
 
 	zero = buffer[buffermax-2];
@@ -125,13 +125,13 @@ static void recovtest(unsigned mode, unsigned ndata, unsigned block_size)
 	waste = buffer[buffermax-1];
 
 	/* fill data disk with random */
-	for(i=0;i<ndata;++i) {
+	for(i=0;i<nd;++i) {
 		for(j=0;j<block_size;++j)
 			data[i][j] = rand();
 	}
 
 	/* setup recov functions */
-	for(i=0;i<npar;++i) {
+	for(i=0;i<np;++i) {
 		mac[i] = 0;
 		if (i == 0) {
 			map[i][mac[i]++] = raid_rec1_int8;
@@ -158,36 +158,36 @@ static void recovtest(unsigned mode, unsigned ndata, unsigned block_size)
 	}
 
 	/* compute the parity */
-	raid_par(npar, ndata, block_size, buffer);
+	raid_par(np, nd, block_size, buffer);
 
 	/* set all the parity to the waste buffer */
-	for(i=0;i<npar;++i)
+	for(i=0;i<np;++i)
 		parity[i] = waste;
 
 	/* all parity levels */
-	for(nrec=1;nrec<=npar;++nrec) {
-		/* all combinations (nrec of ndata) disks */
-		combination_first(nrec, ndata, d);
+	for(nr=1;nr<=np;++nr) {
+		/* all combinations (nr of nd) disks */
+		combination_first(nr, nd, id);
 		do {
-			/* all combinations (nrec of npar) parities */
-			combination_first(nrec, npar, c);
+			/* all combinations (nr of np) parities */
+			combination_first(nr, np, ip);
 			do {
 				/* for each recover function */
-				for(j=0;j<mac[nrec-1];++j) {
+				for(j=0;j<mac[nr-1];++j) {
 					/* set */
-					for(i=0;i<nrec;++i) {
+					for(i=0;i<nr;++i) {
 						/* remove the missing data */
-						data_save[i] = data[d[i]];
-						data[d[i]] = test[i];
+						data_save[i] = data[id[i]];
+						data[id[i]] = test[i];
 						/* set the parity to use */
-						parity[c[i]] = parity_save[c[i]];
+						parity[ip[i]] = parity_save[ip[i]];
 					}
 
 					/* recover */
-					map[nrec-1][0](nrec, d, c, ndata, block_size, buffer, zero);
+					map[nr-1][0](nr, id, ip, nd, block_size, buffer, zero);
 
 					/* check */
-					for(i=0;i<nrec;++i) {
+					for(i=0;i<nr;++i) {
 						if (memcmp(test[i], data_save[i], block_size) != 0) {
 							fprintf(stderr, "Failed RECOV test\n");
 							exit(EXIT_FAILURE);
@@ -195,54 +195,54 @@ static void recovtest(unsigned mode, unsigned ndata, unsigned block_size)
 					}
 
 					/* restore */
-					for(i=0;i<nrec;++i) {
+					for(i=0;i<nr;++i) {
 						/* restore the data */
-						data[d[i]] = data_save[i];
+						data[id[i]] = data_save[i];
 						/* restore the parity */
-						parity[c[i]] = waste;
+						parity[ip[i]] = waste;
 					}
 				}
-			} while (combination_next(nrec, npar, c));
-		} while (combination_next(nrec, ndata, d));
+			} while (combination_next(nr, np, ip));
+		} while (combination_next(nr, nd, id));
 	}
 
 	free(buffer_alloc);
 	free(buffer);
 }
 
-static void gentest(unsigned mode, unsigned ndata, unsigned block_size)
+static void gentest(unsigned mode, unsigned nd, unsigned block_size)
 {
 	void* buffer_alloc;
 	unsigned char** buffer;
 	unsigned buffermax;
 	unsigned i, j;
-	void (*map[64])(unsigned ndata, unsigned size, unsigned char** vbuf);
+	void (*map[64])(unsigned nd, unsigned size, unsigned char** vbuf);
 	unsigned mac;
-	unsigned npar;
+	unsigned np;
 
 	raid_set(mode);
 	if (mode == RAID_MODE_CAUCHY)
-		npar = RAID_PARITY_CAUCHY_MAX;
+		np = RAID_PARITY_CAUCHY_MAX;
 	else
-		npar = RAID_PARITY_VANDERMONDE_MAX;
+		np = RAID_PARITY_VANDERMONDE_MAX;
 
-	buffermax = ndata + npar * 2;
+	buffermax = nd + np * 2;
 
-	buffer = malloc_nofail_vector_align(ndata, buffermax, block_size, &buffer_alloc);
+	buffer = malloc_nofail_vector_align(nd, buffermax, block_size, &buffer_alloc);
 	mtest_vector(buffer, buffermax, block_size);
 
 	/* fill with random */
-	for(i=0;i<ndata;++i) {
+	for(i=0;i<nd;++i) {
 		for(j=0;j<block_size;++j)
 			buffer[i][j] = rand();
 	}
 
 	/* compute the parity */
-	raid_par(npar, ndata, block_size, buffer);
+	raid_par(np, nd, block_size, buffer);
 
 	/* copy in back buffers */
-	for(i=0;i<npar;++i)
-		memcpy(buffer[ndata + npar + i], buffer[ndata + i], block_size);
+	for(i=0;i<np;++i)
+		memcpy(buffer[nd + np + i], buffer[nd + i], block_size);
 
 	/* load all the available functions */
 	mac = 0;
@@ -296,11 +296,11 @@ static void gentest(unsigned mode, unsigned ndata, unsigned block_size)
 	/* check all the functions */
 	for(j=0;j<mac;++j) {
 		/* compute parity */
-		map[j](ndata, block_size, buffer);
+		map[j](nd, block_size, buffer);
 
 		/* check it */
-		for(i=0;i<npar;++i) {
-			if (memcmp(buffer[ndata + npar + i], buffer[ndata + i], block_size) != 0) {
+		for(i=0;i<np;++i) {
+			if (memcmp(buffer[nd + np + i], buffer[nd + i], block_size) != 0) {
 				fprintf(stderr, "Failed GEN test\n");
 				exit(EXIT_FAILURE);
 			}

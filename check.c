@@ -147,8 +147,8 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 	unsigned i, n;
 	int error;
 	int has_hash;
-	int d[LEV_MAX];
-	int p[LEV_MAX];
+	int id[LEV_MAX];
+	int ip[LEV_MAX];
 
 	/* no fix required */
 	if (failed_count == 0) {
@@ -167,7 +167,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 
 	/* setup vector of failed disk indexes */
 	for(i=0;i<failed_count;++i)
-		d[i] = failed[failed_map[i]].index;
+		id[i] = failed[failed_map[i]].index;
 
 	/* check if there is at least a failed block that can be checked for correctness using the hash */
 	/* if there isn't, we have to sacrifice a parity block to check that the result is correct */
@@ -184,11 +184,11 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 		unsigned r = failed_count + 1;
 
 		/* all combinations (r of n) parities */
-		combination_first(r, n, p);
+		combination_first(r, n, ip);
 		do {
 			/* if a parity is missing, do nothing */
 			for(i=0;i<r;++i) {
-				if (buffer_recov[p[i]] == 0)
+				if (buffer_recov[ip[i]] == 0)
 					break;
 			}
 			if (i != r)
@@ -196,13 +196,13 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 
 			/* copy the parities to use, one less because the last is used for checking */
 			for(i=0;i<r-1;++i)
-				memcpy(buffer[diskmax+p[i]], buffer_recov[p[i]], state->block_size);
+				memcpy(buffer[diskmax+ip[i]], buffer_recov[ip[i]], state->block_size);
 
-			/* recover using one less parity, the p[r-1] one */
-			raid_rec(r-1, d, p, diskmax, state->block_size, buffer, buffer_zero);
+			/* recover using one less parity, the ip[r-1] one */
+			raid_rec(r-1, id, ip, diskmax, state->block_size, buffer, buffer_zero);
 
-			/* use the remaining p[r-1] parity to check the result */
-			if (is_parity_matching(state, diskmax, p[r-1], buffer, buffer_recov))
+			/* use the remaining ip[r-1] parity to check the result */
+			if (is_parity_matching(state, diskmax, ip[r-1], buffer, buffer_recov))
 				return 0;
 
 			/* log */
@@ -210,11 +210,11 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			for(i=0;i<r;++i) {
 				if (i != 0)
 					fprintf(stdlog, "/");
-				fprintf(stdlog, "%s", lev_config_name(p[i]));
+				fprintf(stdlog, "%s", lev_config_name(ip[i]));
 			}
 			fprintf(stdlog, ": Data error\n");
 			++error;
-		} while (combination_next(r, n, p));
+		} while (combination_next(r, n, ip));
 	}
 
 	/* if we have a hash, and enough parities */
@@ -224,11 +224,11 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 		unsigned r = failed_count;
 
 		/* all combinations (r of n) parities */
-		combination_first(r, n, p);
+		combination_first(r, n, ip);
 		do {
 			/* if a parity is missing, do nothing */
 			for(i=0;i<r;++i) {
-				if (buffer_recov[p[i]] == 0)
+				if (buffer_recov[ip[i]] == 0)
 					break;
 			}
 			if (i != r)
@@ -236,10 +236,10 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 
 			/* copy the parities to use */
 			for(i=0;i<r;++i)
-				memcpy(buffer[diskmax+p[i]], buffer_recov[p[i]], state->block_size);
+				memcpy(buffer[diskmax+ip[i]], buffer_recov[ip[i]], state->block_size);
 
 			/* recover */
-			raid_rec(r, d, p, diskmax, state->block_size, buffer, buffer_zero);
+			raid_rec(r, id, ip, diskmax, state->block_size, buffer, buffer_zero);
 
 			/* use the hash to check the result */
 			if (is_hash_matching(state, rehash, diskmax, failed, failed_map, failed_count, buffer, buffer_zero))
@@ -250,11 +250,11 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 			for(i=0;i<r;++i) {
 				if (i != 0)
 					fprintf(stdlog, "/");
-				fprintf(stdlog, "%s", lev_config_name(p[i]));
+				fprintf(stdlog, "%s", lev_config_name(ip[i]));
 			}
 			fprintf(stdlog, ": Data error\n");
 			++error;
-		} while (combination_next(r, n, p));
+		} while (combination_next(r, n, ip));
 	}
 
 	/* return the number of failed attempts, or -1 if no strategy */

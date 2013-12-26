@@ -73,28 +73,28 @@ void raid_set(unsigned mode);
 /**
  * Computes the parity.
  *
- * \param npar Number of parities to compute.
- * \param ndata Number of data disks.
+ * \param np Number of parities to compute.
+ * \param nd Number of data disks.
  * \param size Size of the blocks pointed by vbuf. It must be a power of 2, and at least 64.
  * \param vbuf Vector of pointers to the blocks for disks and parities.
- * It has (::ndata + ::npar) elements. Each element points to a buffer of ::size bytes. 
+ * It has (::nd + ::np) elements. Each element points to a buffer of ::size bytes. 
  */
-void raid_par(unsigned npar, unsigned ndata, unsigned size, unsigned char** vbuf);
+void raid_par(unsigned np, unsigned nd, unsigned size, unsigned char** vbuf);
 
 /**
  * Recovers failures of data disks using the specified parities.
  *
  * Note that only the data blocks are recovered. The parity is destroyed.
- * \param nrec Number of failed disks to recover.
- * \param d[] Vector of indexes of the data disks to recover. Starting from 0.
- * \param c[] Vector of indexes of the checksum/parity to use for the recovering. Starting from 0.
- * \param ndata Number of data disks.
+ * \param nr Number of failed disks to recover.
+ * \param id[] Vector of ::nr indexes of the data disks to recover. Starting from 0.
+ * \param ip[] Vector of ::nr indexes of the parity to use for the recovering. Starting from 0.
+ * \param nd Number of data disks.
  * \param size Size of the blocks pointed by vbuf. It must be a power of 2, and at least 64.
  * \param vbuf Vector of pointers to the blocks for disks and parities.
- * It has (::ndata + max(::c[] + 1)) elements. Each element points to a buffer of ::size bytes.
+ * It has (::nd + max(::ip[] + 1)) elements. Each element points to a buffer of ::size bytes.
  * \param zero Buffer filled with 0 of ::size bytes. This buffer is not modified. 
  */
-void raid_rec(unsigned nrec, const int* d, const int* c, unsigned ndata, unsigned size, unsigned char** vbuf, unsigned char* zero);
+void raid_rec(unsigned nr, const int* id, const int* ip, unsigned nd, unsigned size, unsigned char** vbuf, unsigned char* zero);
 
 /**
  * Gets the name of the selected function to compute the parity.
@@ -115,34 +115,34 @@ const char* raid_recX_tag(void);
  * Specialized parity computation.
  * Only for testing.
  */
-void raid_par1_int32(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_par1_int64(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_par1_sse2(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_par2_int32(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_par2_int64(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_par2_sse2(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_par2_sse2ext(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_parz_int32(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_parz_int64(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_parz_sse2(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_parz_sse2ext(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_par3_int8(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_par3_ssse3(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_par3_ssse3ext(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_par4_int8(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_par4_ssse3(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_par4_ssse3ext(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_par5_int8(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_par5_ssse3(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_par5_ssse3ext(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_par6_int8(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_par6_ssse3(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_par6_ssse3ext(unsigned ndata, unsigned size, unsigned char** vbuf);
-void raid_rec1_int8(unsigned nrec, const int* d, const int* c, unsigned ndata, unsigned size, unsigned char** vbuf, unsigned char* zero);
-void raid_rec2_int8(unsigned nrec, const int* d, const int* c, unsigned ndata, unsigned size, unsigned char** vbuf, unsigned char* zero);
-void raid_recX_int8(unsigned nrec, const int* d, const int* c, unsigned ndata, unsigned size, unsigned char** vbuf, unsigned char* zero);
-void raid_rec1_ssse3(unsigned nrec, const int* d, const int* c, unsigned ndata, unsigned size, unsigned char** vbuf, unsigned char* zero);
-void raid_rec2_ssse3(unsigned nrec, const int* d, const int* c, unsigned ndata, unsigned size, unsigned char** vbuf, unsigned char* zero);
-void raid_recX_ssse3(unsigned nrec, const int* d, const int* c, unsigned ndata, unsigned size, unsigned char** vbuf, unsigned char* zero);
+void raid_par1_int32(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_par1_int64(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_par1_sse2(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_par2_int32(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_par2_int64(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_par2_sse2(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_par2_sse2ext(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_parz_int32(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_parz_int64(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_parz_sse2(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_parz_sse2ext(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_par3_int8(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_par3_ssse3(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_par3_ssse3ext(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_par4_int8(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_par4_ssse3(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_par4_ssse3ext(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_par5_int8(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_par5_ssse3(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_par5_ssse3ext(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_par6_int8(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_par6_ssse3(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_par6_ssse3ext(unsigned nd, unsigned size, unsigned char** vbuf);
+void raid_rec1_int8(unsigned nr, const int* id, const int* ip, unsigned nd, unsigned size, unsigned char** vbuf, unsigned char* zero);
+void raid_rec2_int8(unsigned nr, const int* id, const int* ip, unsigned nd, unsigned size, unsigned char** vbuf, unsigned char* zero);
+void raid_recX_int8(unsigned nr, const int* id, const int* ip, unsigned nd, unsigned size, unsigned char** vbuf, unsigned char* zero);
+void raid_rec1_ssse3(unsigned nr, const int* id, const int* ip, unsigned nd, unsigned size, unsigned char** vbuf, unsigned char* zero);
+void raid_rec2_ssse3(unsigned nr, const int* id, const int* ip, unsigned nd, unsigned size, unsigned char** vbuf, unsigned char* zero);
+void raid_recX_ssse3(unsigned nr, const int* id, const int* ip, unsigned nd, unsigned size, unsigned char** vbuf, unsigned char* zero);
 
 #endif
