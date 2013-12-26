@@ -895,11 +895,6 @@ static void state_map(struct snapraid_state* state)
 		fprintf(stderr, "Too many data disks. No more than %u.\n", RAID_DATA_MAX);
 		exit(EXIT_FAILURE);
 	}
-	/* some raid functions assume at least two data disk */
-	if (state->level > 1 && diskcount < RAID_DATA_MIN) {
-		fprintf(stderr, "Too few data disks. You must define at least %u.\n", RAID_DATA_MIN);
-		exit(EXIT_FAILURE);
-	}
 
 	/* recommend number of parities */
 	if (diskcount >= 36 && state->level < 6) {

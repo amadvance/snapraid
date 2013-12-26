@@ -57,13 +57,6 @@
 #define RAID_DATA_MAX 251
 
 /**
- * Minimum number of data disks.
- * Some optimizations require at least two disks.
- * It's anyway allowed to have a single data disk with a sigle parity.
- */
-#define RAID_DATA_MIN 2
-
-/**
  * Initializes the RAID system.
  */
 void raid_init(void);

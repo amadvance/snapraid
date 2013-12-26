@@ -886,6 +886,14 @@ void raid_par3_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 	q = vbuf[data+1];
 	r = vbuf[data+2];
 
+	/* special case with only one data disk */
+	if (l == 0) {
+		for(i=0;i<3;++i)
+			memcpy(vbuf[1+i], vbuf[0], size);
+		return;
+	}
+
+	/* generic case with at least two data disks */
 	asm volatile("movdqa %0,%%xmm3" : : "m" (gfconst16.poly[0]));
 	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 
@@ -974,6 +982,14 @@ void raid_par3_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 	q = vbuf[data+1];
 	r = vbuf[data+2];
 
+	/* special case with only one data disk */
+	if (l == 0) {
+		for(i=0;i<3;++i)
+			memcpy(vbuf[1+i], vbuf[0], size);
+		return;
+	}
+
+	/* generic case with at least two data disks */
 	asm volatile("movdqa %0,%%xmm3" : : "m" (gfconst16.poly[0]));
 	asm volatile("movdqa %0,%%xmm11" : : "m" (gfconst16.low4[0]));
 
@@ -1155,6 +1171,14 @@ void raid_par4_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 	r = vbuf[data+2];
 	s = vbuf[data+3];
 
+	/* special case with only one data disk */
+	if (l == 0) {
+		for(i=0;i<4;++i)
+			memcpy(vbuf[1+i], vbuf[0], size);
+		return;
+	}
+
+	/* generic case with at least two data disks */
 	for(i=0;i<size;i+=16) {
 		/* last disk without the by two multiplication */
 		asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
@@ -1262,6 +1286,14 @@ void raid_par4_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 	r = vbuf[data+2];
 	s = vbuf[data+3];
 
+	/* special case with only one data disk */
+	if (l == 0) {
+		for(i=0;i<4;++i)
+			memcpy(vbuf[1+i], vbuf[0], size);
+		return;
+	}
+
+	/* generic case with at least two data disks */
 	for(i=0;i<size;i+=32) {
 		/* last disk without the by two multiplication */
 		asm volatile("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
@@ -1486,6 +1518,14 @@ void raid_par5_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 	s = vbuf[data+3];
 	t = vbuf[data+4];
 
+	/* special case with only one data disk */
+	if (l == 0) {
+		for(i=0;i<5;++i)
+			memcpy(vbuf[1+i], vbuf[0], size);
+		return;
+	}
+
+	/* generic case with at least two data disks */
 	for(i=0;i<size;i+=16) {
 		/* last disk without the by two multiplication */
 		asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[l][i]));
@@ -1612,6 +1652,14 @@ void raid_par5_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 	s = vbuf[data+3];
 	t = vbuf[data+4];
 
+	/* special case with only one data disk */
+	if (l == 0) {
+		for(i=0;i<5;++i)
+			memcpy(vbuf[1+i], vbuf[0], size);
+		return;
+	}
+
+	/* generic case with at least two data disks */
 	asm volatile("movdqa %0,%%xmm14" : : "m" (gfconst16.poly[0]));
 	asm volatile("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
 
@@ -1801,6 +1849,14 @@ void raid_par6_ssse3(unsigned char** vbuf, unsigned data, unsigned size)
 	t = vbuf[data+4];
 	u = vbuf[data+5];
 
+	/* special case with only one data disk */
+	if (l == 0) {
+		for(i=0;i<6;++i)
+			memcpy(vbuf[1+i], vbuf[0], size);
+		return;
+	}
+
+	/* generic case with at least two data disks */
 	for(i=0;i<size;i+=16) {
 		/* last disk without the by two multiplication */
 		asm volatile("movdqa %0,%%xmm4" : : "m" (vbuf[l][i]));
@@ -1948,6 +2004,14 @@ void raid_par6_ssse3ext(unsigned char** vbuf, unsigned data, unsigned size)
 	t = vbuf[data+4];
 	u = vbuf[data+5];
 
+	/* special case with only one data disk */
+	if (l == 0) {
+		for(i=0;i<6;++i)
+			memcpy(vbuf[1+i], vbuf[0], size);
+		return;
+	}
+
+	/* generic case with at least two data disks */
 	asm volatile("movdqa %0,%%xmm14" : : "m" (gfconst16.poly[0]));
 	asm volatile("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
 

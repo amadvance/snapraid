@@ -429,5 +429,6 @@ void selftest()
 	recovtest(RAID_MODE_VANDERMONDE, 12, 256);
 	gentest(RAID_MODE_CAUCHY, 32, 256);
 	recovtest(RAID_MODE_CAUCHY, 12, 256);
+	gentest(RAID_MODE_CAUCHY, 1, 256);
 }
 
