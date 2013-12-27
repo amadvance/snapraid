@@ -184,7 +184,7 @@ static void recovtest(unsigned mode, unsigned diskmax, unsigned block_size)
 					}
 
 					/* recover */
-					map[r-1][0](r, d, p, buffer, diskmax, zero, block_size);
+					map[r-1][j](r, d, p, buffer, diskmax, zero, block_size);
 
 					/* check */
 					for(i=0;i<r;++i) {
