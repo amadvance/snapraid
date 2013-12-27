@@ -470,13 +470,18 @@ void* malloc_nofail_align(size_t size, void** freeptr);
  * The first "reverse" pointers are put in reverse memory offset order.
  * If no memory is available, it aborts.
  */
-unsigned char** malloc_nofail_vector_align(size_t reverse, size_t count, size_t size, void** freeptr);
+void** malloc_nofail_vector_align(size_t reverse, size_t count, size_t size, void** freeptr);
 
 /**
- * Test the memory vector for RAM problems.
+ * Tests the memory vector for RAM problems.
  * If a problem is found, it crashes.
  */
-void mtest_vector(unsigned char** buf, size_t count, size_t size);
+void mtest_vector(void** vv, size_t count, size_t size);
+
+/**
+ * Fills the memory vector with random data.
+ */
+void mrand_vector(void** vv, size_t count, size_t size);
 
 /**
  * Safe strdup.

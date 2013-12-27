@@ -93,7 +93,7 @@ static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_bl
 /**
  * Checks if the hash of at least one failed block is now matching.
  */
-static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, unsigned char** buffer, unsigned char* buffer_zero)
+static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, void* buffer_zero)
 {
 	unsigned j;
 	int hash_checked;
@@ -122,7 +122,7 @@ static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned d
 /**
  * Checks if specified parity is now matching with a recomputed one.
  */
-static int is_parity_matching(struct snapraid_state* state, unsigned diskmax, unsigned i, unsigned char** buffer, unsigned char** buffer_recov)
+static int is_parity_matching(struct snapraid_state* state, unsigned diskmax, unsigned i, void** buffer, void** buffer_recov)
 {
 	/* recompute parity, note that we don't need parity over i */
 	raid_par(i + 1, diskmax, state->block_size, buffer);
@@ -142,7 +142,7 @@ static int is_parity_matching(struct snapraid_state* state, unsigned diskmax, un
  * Returns <0 if failure for missing strategy, >0 if data is wrong and we cannot rebuild correctly, 0 on success.
  * If success, the parity are computed in the buffer variable.
  */
-static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, unsigned char** buffer, unsigned char** buffer_recov, unsigned char* buffer_zero)
+static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, void** buffer_recov, void* buffer_zero)
 {
 	unsigned i, n;
 	int error;
@@ -199,7 +199,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 				memcpy(buffer[diskmax+ip[i]], buffer_recov[ip[i]], state->block_size);
 
 			/* recover using one less parity, the ip[r-1] one */
-			raid_rec(r-1, id, ip, diskmax, state->block_size, buffer, buffer_zero);
+			raid_rec(r-1, id, ip, diskmax, state->block_size, buffer);
 
 			/* use the remaining ip[r-1] parity to check the result */
 			if (is_parity_matching(state, diskmax, ip[r-1], buffer, buffer_recov))
@@ -239,7 +239,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 				memcpy(buffer[diskmax+ip[i]], buffer_recov[ip[i]], state->block_size);
 
 			/* recover */
-			raid_rec(r, id, ip, diskmax, state->block_size, buffer, buffer_zero);
+			raid_rec(r, id, ip, diskmax, state->block_size, buffer);
 
 			/* use the hash to check the result */
 			if (is_hash_matching(state, rehash, diskmax, failed, failed_map, failed_count, buffer, buffer_zero))
@@ -264,7 +264,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 		return -1;
 }
 
-static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, unsigned char** buffer, unsigned char** buffer_recov, unsigned char* buffer_zero)
+static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, void** buffer_recov, void* buffer_zero)
 {
 	int ret;
 	int error;
@@ -468,7 +468,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 	block_off_t i;
 	unsigned j;
 	void* buffer_alloc;
-	unsigned char** buffer;
+	void** buffer;
 	unsigned buffermax;
 	int ret;
 	data_off_t countsize;
@@ -492,6 +492,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 	/* fill up the zero buffer */
 	memset(buffer[buffermax-1], 0, state->block_size);
+	raid_zero(buffer[buffermax-1]);
 
 	failed = malloc_nofail(diskmax * sizeof(struct failed_struct));
 	failed_map = malloc_nofail(diskmax * sizeof(unsigned));
@@ -768,8 +769,8 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 		/* now read and check the parity if requested */
 		if (check) {
-			unsigned char* buffer_recov[LEV_MAX];
-			unsigned char* buffer_zero;
+			void* buffer_recov[LEV_MAX];
+			void* buffer_zero;
 
 			/* buffers for parity read and not computed */
 			for(l=0;l<state->level;++l)

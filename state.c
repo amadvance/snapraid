@@ -125,8 +125,8 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 
 	/* check for parity level */
 	if (state->raid_mode == RAID_MODE_VANDERMONDE) {
-		if (state->level > RAID_PARITY_VANDERMONDE_MAX) {
-			fprintf(stderr, "If you use the z-parity you cannot have more than %u parities.\n", RAID_PARITY_VANDERMONDE_MAX);
+		if (state->level > 3) {
+			fprintf(stderr, "If you use the z-parity you cannot have more than 3 parities.\n");
 			exit(EXIT_FAILURE);
 		}
 	}
@@ -283,7 +283,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 
 	/* check for speed */
 #if defined(__i386__) || defined(__x86_64__)
-	if (!cpu_has_ssse3())
+	if (!raid_cpu_has_ssse3())
 #endif
 	if (state->raid_mode == RAID_MODE_CAUCHY) {
 		if (state->level == 3) {
@@ -704,7 +704,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 		state->besthash = HASH_SPOOKY2;
 	} else {
 #if defined(__i386__) || defined(__x86_64__)
-		if (sizeof(void*) == 4 && !cpu_has_slowmult())
+		if (sizeof(void*) == 4 && !raid_cpu_has_slowmult())
 			state->besthash = HASH_MURMUR3;
 		else
 			state->besthash = HASH_SPOOKY2;

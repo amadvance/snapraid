@@ -44,7 +44,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	block_off_t i;
 	unsigned j;
 	void* buffer_alloc;
-	unsigned char** buffer;
+	void** buffer;
 	unsigned buffermax;
 	data_off_t countsize;
 	block_off_t countpos;

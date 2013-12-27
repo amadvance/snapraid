@@ -83,29 +83,29 @@ static void combotest(void)
 static void recovtest(unsigned mode, unsigned nd, unsigned block_size)
 {
 	void* buffer_alloc;
-	unsigned char** buffer;
-	unsigned char** data;
-	unsigned char** parity;
-	unsigned char** test;
-	unsigned char* data_save[LEV_MAX];
-	unsigned char* parity_save[LEV_MAX];
-	unsigned char* zero;
-	unsigned char* waste;
+	void** buffer;
+	void** data;
+	void** parity;
+	void** test;
+	void* data_save[LEV_MAX];
+	void* parity_save[LEV_MAX];
+	void* zero;
+	void* waste;
 	unsigned buffermax;
 	int id[LEV_MAX];
 	int ip[LEV_MAX];
 	unsigned i;
 	unsigned j;
 	unsigned nr;
-	void (*map[LEV_MAX][4])(unsigned nr, const int* id, const int* ip, unsigned nd, unsigned size, unsigned char** vbuf, unsigned char* zero);
+	void (*map[LEV_MAX][4])(int nr, const int* id, const int* ip, int nd, size_t size, void** vbuf);
 	unsigned mac[LEV_MAX];
 	unsigned np;
 
-	raid_set(mode);
+	raid_mode(mode);
 	if (mode == RAID_MODE_CAUCHY)
-		np = RAID_PARITY_CAUCHY_MAX;
+		np = RAID_PARITY_MAX;
 	else
-		np = RAID_PARITY_VANDERMONDE_MAX;
+		np = 3;
 
 	buffermax = nd + np * 2 + 2;
 
@@ -121,14 +121,12 @@ static void recovtest(unsigned mode, unsigned nd, unsigned block_size)
 
 	zero = buffer[buffermax-2];
 	memset(zero, 0, block_size);
+	raid_zero(zero);
 
 	waste = buffer[buffermax-1];
 
 	/* fill data disk with random */
-	for(i=0;i<nd;++i) {
-		for(j=0;j<block_size;++j)
-			data[i][j] = rand();
-	}
+	mrand_vector(buffer, nd, block_size);
 
 	/* setup recov functions */
 	for(i=0;i<np;++i) {
@@ -136,21 +134,21 @@ static void recovtest(unsigned mode, unsigned nd, unsigned block_size)
 		if (i == 0) {
 			map[i][mac[i]++] = raid_rec1_int8;
 #if defined(__i386__) || defined(__x86_64__)
-			if (cpu_has_ssse3()) {
+			if (raid_cpu_has_ssse3()) {
 				map[i][mac[i]++] = raid_rec1_ssse3;
 			}
 #endif
 		} else if (i == 1) {
 			map[i][mac[i]++] = raid_rec2_int8;
 #if defined(__i386__) || defined(__x86_64__)
-			if (cpu_has_ssse3()) {
+			if (raid_cpu_has_ssse3()) {
 				map[i][mac[i]++] = raid_rec2_ssse3;
 			}
 #endif
 		} else {
 			map[i][mac[i]++] = raid_recX_int8;
 #if defined(__i386__) || defined(__x86_64__)
-			if (cpu_has_ssse3()) {
+			if (raid_cpu_has_ssse3()) {
 				map[i][mac[i]++] = raid_recX_ssse3;
 			}
 #endif
@@ -184,7 +182,7 @@ static void recovtest(unsigned mode, unsigned nd, unsigned block_size)
 					}
 
 					/* recover */
-					map[nr-1][0](nr, id, ip, nd, block_size, buffer, zero);
+					map[nr-1][0](nr, id, ip, nd, block_size, buffer);
 
 					/* check */
 					for(i=0;i<nr;++i) {
@@ -213,18 +211,18 @@ static void recovtest(unsigned mode, unsigned nd, unsigned block_size)
 static void gentest(unsigned mode, unsigned nd, unsigned block_size)
 {
 	void* buffer_alloc;
-	unsigned char** buffer;
+	void** buffer;
 	unsigned buffermax;
 	unsigned i, j;
-	void (*map[64])(unsigned nd, unsigned size, unsigned char** vbuf);
+	void (*map[64])(int nd, size_t size, void** vbuf);
 	unsigned mac;
 	unsigned np;
 
-	raid_set(mode);
+	raid_mode(mode);
 	if (mode == RAID_MODE_CAUCHY)
-		np = RAID_PARITY_CAUCHY_MAX;
+		np = RAID_PARITY_MAX;
 	else
-		np = RAID_PARITY_VANDERMONDE_MAX;
+		np = 3;
 
 	buffermax = nd + np * 2;
 
@@ -232,10 +230,7 @@ static void gentest(unsigned mode, unsigned nd, unsigned block_size)
 	mtest_vector(buffer, buffermax, block_size);
 
 	/* fill with random */
-	for(i=0;i<nd;++i) {
-		for(j=0;j<block_size;++j)
-			buffer[i][j] = rand();
-	}
+	mrand_vector(buffer, buffermax, block_size);
 
 	/* compute the parity */
 	raid_par(np, nd, block_size, buffer);
@@ -253,7 +248,7 @@ static void gentest(unsigned mode, unsigned nd, unsigned block_size)
 	map[mac++] = raid_par2_int64;
 
 #if defined(__i386__) || defined(__x86_64__)
-	if (cpu_has_sse2()) {
+	if (raid_cpu_has_sse2()) {
 		map[mac++] = raid_par1_sse2;
 		map[mac++] = raid_par2_sse2;
 #if defined(__x86_64__)
@@ -267,7 +262,7 @@ static void gentest(unsigned mode, unsigned nd, unsigned block_size)
 		map[mac++] = raid_par5_int8;
 		map[mac++] = raid_par6_int8;
 
-		if (cpu_has_ssse3()) {
+		if (raid_cpu_has_ssse3()) {
 			map[mac++] = raid_par3_ssse3;
 			map[mac++] = raid_par4_ssse3;
 			map[mac++] = raid_par5_ssse3;
@@ -284,7 +279,7 @@ static void gentest(unsigned mode, unsigned nd, unsigned block_size)
 #if defined(__i386__) || defined(__x86_64__)
 		map[mac++] = raid_parz_int32;
 		map[mac++] = raid_parz_int64;
-		if (cpu_has_sse2()) {
+		if (raid_cpu_has_sse2()) {
 			map[mac++] = raid_parz_sse2;
 #if defined(__x86_64__)
 			map[mac++] = raid_parz_sse2ext;

@@ -174,6 +174,13 @@
 #endif
 
 /**
+ * Missing __always_inline, like in MINGW.
+ */
+#ifndef __always_inline
+#define __always_inline inline __attribute__((always_inline))
+#endif
+
+/**
  * Another name for link() to avoid confusion with local variables called "link".
  */
 static inline int hardlink(const char* a, const char* b)

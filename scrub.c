@@ -44,7 +44,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	block_off_t i;
 	unsigned j;
 	void* buffer_alloc;
-	unsigned char** buffer;
+	void** buffer;
 	unsigned buffermax;
 	data_off_t countsize;
 	block_off_t countpos;

@@ -561,7 +561,7 @@ int main(int argc, char* argv[])
 	state_config(&state, conf, command, &opt, &filterlist_disk);
 
 	/* set the raid mode */
-	raid_set(state.raid_mode);
+	raid_mode(state.raid_mode);
 
 #if HAVE_LOCKFILE
 	/* create the lock file */

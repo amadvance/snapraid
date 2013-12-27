@@ -16,13 +16,14 @@
  */
 
 #include <stdio.h>
+#include <stdint.h>
 
 /**
  * Multiplication in GF(2^8).
  */
-unsigned char gfmul(unsigned char a, unsigned char b)
+static uint8_t gfmul(uint8_t a, uint8_t b)
 {
-	unsigned char v;
+	uint8_t v;
 
 	v = 0;
 	while (b)  {
@@ -45,7 +46,7 @@ unsigned char gfmul(unsigned char a, unsigned char b)
 /**
  * Inversion table in GF(2^8).
  */
-unsigned char gfinv[256];
+uint8_t gfinv[256];
 
 /**
  * Number of parity.
@@ -62,10 +63,10 @@ unsigned char gfinv[256];
 /**
  * Setup the Cauchy matrix used to generate the parity.
  */
-void set_cauchy(unsigned char* matrix)
+static void set_cauchy(uint8_t* matrix)
 {
 	int i, j;
-	unsigned char inv_x, y;
+	uint8_t inv_x, y;
 
 	/*
 	 * First row is formed by all 1.
@@ -110,7 +111,7 @@ void set_cauchy(unsigned char* matrix)
 	for(j=0;j<PARITY-2;++j) {
 		inv_x = 1;
 		for(i=0;i<DISK;++i) {
-			unsigned char x = gfinv[inv_x];
+			uint8_t x = gfinv[inv_x];
 			matrix[(j+2)*DISK+i] = gfinv[y ^ x];
 			inv_x = gfmul(2, inv_x);
 		}
@@ -126,7 +127,7 @@ void set_cauchy(unsigned char* matrix)
 	 * submatrices are not singular.
 	 */
 	for(j=0;j<PARITY-2;++j) {
-		unsigned char f = gfinv[matrix[(j+2)*DISK]];
+		uint8_t f = gfinv[matrix[(j+2)*DISK]];
 
 		for(i=0;i<DISK;++i) {
 			matrix[(j+2)*DISK+i] = gfmul(matrix[(j+2)*DISK+i], f);
@@ -137,10 +138,10 @@ void set_cauchy(unsigned char* matrix)
 /**
  * Setup the Power matrix used to generate the parity.
  */
-void set_power(unsigned char* matrix)
+static void set_power(uint8_t* matrix)
 {
 	unsigned i;
-	unsigned char v;
+	uint8_t v;
 
 	v = 1;
 	for(i=0;i<DISK;++i) {
@@ -163,7 +164,7 @@ void set_power(unsigned char* matrix)
 /**
  * Next power of 2.
  */
-unsigned np(unsigned v)
+static unsigned np(unsigned v)
 {
 	--v;
 	v |= v >> 1;
@@ -178,9 +179,9 @@ unsigned np(unsigned v)
 
 int main(void)
 {
-	unsigned char v;
+	uint8_t v;
 	int i, j, k, p;
-	unsigned char matrix[PARITY * 256];
+	uint8_t matrix[PARITY * 256];
 
 	printf("/*\n");
 	printf(" * Copyright (C) 2013 Andrea Mazzoleni\n");
@@ -201,7 +202,7 @@ int main(void)
 	printf("\n");
 
 	/* a*b */
-	printf("const unsigned char  __attribute__((aligned(256))) gfmul[256][256] =\n");
+	printf("const uint8_t  __attribute__((aligned(256))) gfmul[256][256] =\n");
 	printf("{\n");
 	for(i=0;i<256;++i) {
 		printf("\t{\n");
@@ -222,7 +223,7 @@ int main(void)
 	printf("};\n\n");
 
 	/* 2^a */
-	printf("const unsigned char __attribute__((aligned(256))) gfexp2[256] =\n");
+	printf("const uint8_t __attribute__((aligned(256))) gfexp[256] =\n");
 	printf("{\n");
 	v = 1;
 	for(i=0;i<256;++i) {
@@ -238,7 +239,7 @@ int main(void)
 	printf("};\n\n");
 
 	/* 1/a */
-	printf("const unsigned char __attribute__((aligned(256))) gfinv[256] =\n");
+	printf("const uint8_t __attribute__((aligned(256))) gfinv[256] =\n");
 	printf("{\n");
 	printf("\t/* note that the first element is not significative */\n");
 	for(i=0;i<256;++i) {
@@ -271,7 +272,7 @@ int main(void)
 		printf("\n");
 	}
 	printf(" */\n");
-	printf("const unsigned char  __attribute__((aligned(256))) gfvandermonde[%u][256] =\n", 3);
+	printf("const uint8_t  __attribute__((aligned(256))) gfvandermonde[%u][256] =\n", 3);
 	printf("{\n");
 	for(p=0;p<3;++p) {
 		printf("\t{\n");
@@ -303,7 +304,7 @@ int main(void)
 		printf("\n");
 	}
 	printf(" */\n");
-	printf("const unsigned char  __attribute__((aligned(256))) gfcauchy[%u][256] =\n", PARITY);
+	printf("const uint8_t  __attribute__((aligned(256))) gfcauchy[%u][256] =\n", PARITY);
 	printf("{\n");
 	for(p=0;p<PARITY;++p) {
 		printf("\t{\n");
@@ -327,7 +328,7 @@ int main(void)
 	printf(" * Indexes are [DISK][PARITY - 2][LH].\n");
 	printf(" * Where DISK is from 0 to %u, PARITY from 2 to %u, LH from 0 to 1.\n", DISK - 1, PARITY - 1);
 	printf(" */\n");
-	printf("const unsigned char  __attribute__((aligned(256))) gfgenpshufb[%u][%u][2][16] =\n", DISK, np(PARITY - 2));
+	printf("const uint8_t  __attribute__((aligned(256))) gfcauchypshufb[%u][%u][2][16] =\n", DISK, np(PARITY - 2));
 	printf("{\n");
 	for(i=0;i<DISK;++i) {
 		printf("\t{\n");
@@ -359,7 +360,7 @@ int main(void)
 	printf(" * Indexes are [MULTIPLER][LH].\n");
 	printf(" * Where MULTIPLER is from 0 to 255, LH from 0 to 1.\n");
 	printf(" */\n");
-	printf("const unsigned char  __attribute__((aligned(256))) gfmulpshufb[256][2][16] =\n");
+	printf("const uint8_t  __attribute__((aligned(256))) gfmulpshufb[256][2][16] =\n");
 	printf("{\n");
 	for(i=0;i<256;++i) {
 		printf("\t{\n");

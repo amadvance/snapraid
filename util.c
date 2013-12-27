@@ -1133,7 +1133,7 @@ void crc32c_init(void)
 {
 	crc32c = crc32c_gen;
 #if HAVE_CRC32B
-	if (cpu_has_sse42()) {
+	if (raid_cpu_has_sse42()) {
 		crc32c = crc32c_x86;
 	}
 #endif
@@ -1391,9 +1391,9 @@ void* malloc_nofail_align(size_t size, void** freeptr)
  */
 #define MALLOC_DISPLACEMENT (7*256)
 
-unsigned char** malloc_nofail_vector_align(size_t reverse, size_t count, size_t size, void** freeptr)
+void** malloc_nofail_vector_align(size_t reverse, size_t count, size_t size, void** freeptr)
 {
-	unsigned char** buffer;
+	void** buffer;
 	unsigned char* buffer_aligned;
 	size_t i;
 
@@ -1416,8 +1416,9 @@ unsigned char** malloc_nofail_vector_align(size_t reverse, size_t count, size_t 
 	return buffer;
 }
 
-void mtest_vector(unsigned char** buf, size_t count, size_t size)
+void mtest_vector(void** vv, size_t count, size_t size)
 {
+	unsigned char** v = (unsigned char**)vv;
 	size_t i;
 	size_t j;
 	unsigned k;
@@ -1428,7 +1429,7 @@ void mtest_vector(unsigned char** buf, size_t count, size_t size)
 	d = 0;
 	for(i=0;i<count;++i) {
 		for(j=0;j<size;++j) {
-			buf[i][j] = d;
+			v[i][j] = d;
 		}
 	}
 
@@ -1440,9 +1441,9 @@ void mtest_vector(unsigned char** buf, size_t count, size_t size)
 		/* forward fill */
 		for(i=0;i<count;++i) {
 			for(j=0;j<size;++j) {
-				if (buf[i][j] != p)
+				if (v[i][j] != p)
 					goto fail;
-				buf[i][j] = d;
+				v[i][j] = d;
 			}
 		}
 
@@ -1451,9 +1452,9 @@ void mtest_vector(unsigned char** buf, size_t count, size_t size)
 		/* backward fill with complement */
 		for(i=0;i<count;++i) {
 			for(j=size;j>0;--j) {
-				if (buf[i][j-1] != p)
+				if (v[i][j-1] != p)
 					goto fail;
-				buf[i][j-1] = d;
+				v[i][j-1] = d;
 			}
 		}
 	}
@@ -1464,6 +1465,18 @@ fail:
 	fprintf(stderr, "DANGER! Your RAM memory is broken! DO NOT PROCEED UNTIL FIXED!\n");
 	fprintf(stderr, "Try running some memory test like http://www.memtest86.com/\n");
 	exit(EXIT_FAILURE);
+}
+
+void mrand_vector(void** vv, size_t count, size_t size)
+{
+	unsigned char** v = (unsigned char**)vv;
+	size_t i;
+	size_t j;
+
+	for(i=0;i<count;++i) {
+		for(j=0;j<size;++j)
+			v[i][j] = rand();
+	}
 }
 
 char* strdup_nofail(const char* str)

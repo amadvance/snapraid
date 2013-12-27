@@ -67,8 +67,8 @@ void speed(void)
 	unsigned nd = 8;
 	unsigned buffermax;
 	void* buffer_alloc;
-	unsigned char** buffer;
-	unsigned char* zero;
+	void** buffer;
+	void* zero;
 
 	/* we need disk + 1 for each parity buffers + 1 zero buffer */
 	buffermax = nd + LEV_MAX + 1;
@@ -84,6 +84,7 @@ void speed(void)
 	/* zero buffer */
 	zero = buffer[nd+LEV_MAX];
 	memset(zero, 0, block_size);
+	raid_zero(zero);
 
 	/* hash seed */
 	for(i=0;i<HASH_SIZE;++i) {
@@ -108,17 +109,17 @@ void speed(void)
 		unsigned family;
 		unsigned model;
 
-		cpu_info(vendor, &family, &model);
+		raid_cpu_info(vendor, &family, &model);
 
 		printf("CPU %s, family %u, model %u, flags%s%s%s%s%s%s%s%s\n", vendor, family, model,
-			cpu_has_mmx() ? " mmx" : "",
-			cpu_has_sse2() ? " sse2" : "",
-			cpu_has_ssse3() ? " ssse3" : "",
-			cpu_has_sse42() ? " sse42" : "",
-			cpu_has_avx() ? " avx" : "",
-			cpu_has_avx2() ? "avx2" : "",
-			cpu_has_slowmult() ? " slowmult" : "",
-			cpu_has_slowpshufb()  ? " slowpshufb" : ""
+			raid_cpu_has_mmx() ? " mmx" : "",
+			raid_cpu_has_sse2() ? " sse2" : "",
+			raid_cpu_has_ssse3() ? " ssse3" : "",
+			raid_cpu_has_sse42() ? " sse42" : "",
+			raid_cpu_has_avx() ? " avx" : "",
+			raid_cpu_has_avx2() ? "avx2" : "",
+			raid_cpu_has_slowmult() ? " slowmult" : "",
+			raid_cpu_has_slowpshufb()  ? " slowpshufb" : ""
 		);
 	}
 #else
@@ -179,7 +180,7 @@ void speed(void)
 	fflush(stdout);
 
 #if HAVE_CRC32B
-	if (cpu_has_sse42()) {
+	if (raid_cpu_has_sse42()) {
 		SPEED_START {
 			for(j=0;j<nd;++j) {
 				crc32c_x86(0, buffer[j], block_size);
@@ -203,7 +204,7 @@ void speed(void)
 
 	printf("%8s", "hash");
 #if defined(__i386__) || defined(__x86_64__)
-	if (sizeof(void*) == 4 && !cpu_has_slowmult())
+	if (sizeof(void*) == 4 && !raid_cpu_has_slowmult())
 		printf("%8s", "murmur3");
 	else
 		printf("%8s", "spooky2");
@@ -275,7 +276,7 @@ void speed(void)
 	fflush(stdout);
 
 #if defined(__i386__) || defined(__x86_64__)
-	if (cpu_has_sse2()) {
+	if (raid_cpu_has_sse2()) {
 		SPEED_START {
 			raid_par1_sse2(nd, block_size, buffer);
 		} SPEED_STOP
@@ -308,7 +309,7 @@ void speed(void)
 	fflush(stdout);
 
 #if defined(__i386__) || defined(__x86_64__)
-	if (cpu_has_sse2()) {
+	if (raid_cpu_has_sse2()) {
 		SPEED_START {
 			raid_par2_sse2(nd, block_size, buffer);
 		} SPEED_STOP
@@ -350,7 +351,7 @@ void speed(void)
 	fflush(stdout);
 
 #if defined(__i386__) || defined(__x86_64__)
-	if (cpu_has_sse2()) {
+	if (raid_cpu_has_sse2()) {
 		SPEED_START {
 			raid_parz_sse2(nd, block_size, buffer);
 		} SPEED_STOP
@@ -385,7 +386,7 @@ void speed(void)
 	printf("%8s", "");
 	printf("%8s", "");
 
-	if (cpu_has_sse2()) {
+	if (raid_cpu_has_sse2()) {
 		printf("%8s", "");
 
 #if defined(__x86_64__)
@@ -394,7 +395,7 @@ void speed(void)
 	}
 
 #if defined(__i386__) || defined(__x86_64__)
-	if (cpu_has_ssse3()) {
+	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 			raid_par3_ssse3(nd, block_size, buffer);
 		} SPEED_STOP
@@ -429,7 +430,7 @@ void speed(void)
 	printf("%8s", "");
 	printf("%8s", "");
 
-	if (cpu_has_sse2()) {
+	if (raid_cpu_has_sse2()) {
 		printf("%8s", "");
 
 #if defined(__x86_64__)
@@ -438,7 +439,7 @@ void speed(void)
 	}
 
 #if defined(__i386__) || defined(__x86_64__)
-	if (cpu_has_ssse3()) {
+	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 			raid_par4_ssse3(nd, block_size, buffer);
 		} SPEED_STOP
@@ -473,7 +474,7 @@ void speed(void)
 	printf("%8s", "");
 	printf("%8s", "");
 
-	if (cpu_has_sse2()) {
+	if (raid_cpu_has_sse2()) {
 		printf("%8s", "");
 
 #if defined(__x86_64__)
@@ -482,7 +483,7 @@ void speed(void)
 	}
 
 #if defined(__i386__) || defined(__x86_64__)
-	if (cpu_has_ssse3()) {
+	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 			raid_par5_ssse3(nd, block_size, buffer);
 		} SPEED_STOP
@@ -517,7 +518,7 @@ void speed(void)
 	printf("%8s", "");
 	printf("%8s", "");
 
-	if (cpu_has_sse2()) {
+	if (raid_cpu_has_sse2()) {
 		printf("%8s", "");
 
 #if defined(__x86_64__)
@@ -526,7 +527,7 @@ void speed(void)
 	}
 
 #if defined(__i386__) || defined(__x86_64__)
-	if (cpu_has_ssse3()) {
+	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 			raid_par6_ssse3(nd, block_size, buffer);
 		} SPEED_STOP
@@ -562,7 +563,7 @@ void speed(void)
 	SPEED_START {
 		for(j=0;j<nd;++j) {
 			/* +1 to avoid PAR1 optimized case */
-			raid_rec1_int8(1, id, ip + 1, nd, block_size, buffer, zero);
+			raid_rec1_int8(1, id, ip + 1, nd, block_size, buffer);
 		}
 	} SPEED_STOP
 
@@ -570,11 +571,11 @@ void speed(void)
 	fflush(stdout);
 
 #if defined(__i386__) || defined(__x86_64__)
-	if (cpu_has_ssse3()) {
+	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 			for(j=0;j<nd;++j) {
 				/* +1 to avoid PAR1 optimized case */
-				raid_rec1_ssse3(1, id, ip + 1, nd, block_size, buffer, zero);
+				raid_rec1_ssse3(1, id, ip + 1, nd, block_size, buffer);
 			}
 		} SPEED_STOP
 
@@ -589,8 +590,8 @@ void speed(void)
 
 	SPEED_START {
 		for(j=0;j<nd;++j) {
-			/* +1 to avoid PAR2 optimized case */
-			raid_rec2_int8(2, id, ip + 1, nd, block_size, buffer, zero);
+			/* +1 to avoid PAR1 optimized case */
+			raid_rec2_int8(2, id, ip + 1, nd, block_size, buffer);
 		}
 	} SPEED_STOP
 
@@ -598,11 +599,11 @@ void speed(void)
 	fflush(stdout);
 
 #if defined(__i386__) || defined(__x86_64__)
-	if (cpu_has_ssse3()) {
+	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 			for(j=0;j<nd;++j) {
-				/* +1 to avoid PAR2 optimized case */
-				raid_rec2_ssse3(2, id, ip + 1, nd, block_size, buffer, zero);
+				/* +1 to avoid PAR1 optimized case */
+				raid_rec2_ssse3(2, id, ip + 1, nd, block_size, buffer);
 			}
 		} SPEED_STOP
 
@@ -617,7 +618,7 @@ void speed(void)
 
 	SPEED_START {
 		for(j=0;j<nd;++j) {
-			raid_recX_int8(3, id, ip, nd, block_size, buffer, zero);
+			raid_recX_int8(3, id, ip, nd, block_size, buffer);
 		}
 	} SPEED_STOP
 
@@ -625,10 +626,10 @@ void speed(void)
 	fflush(stdout);
 
 #if defined(__i386__) || defined(__x86_64__)
-	if (cpu_has_ssse3()) {
+	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 			for(j=0;j<nd;++j) {
-				raid_recX_ssse3(3, id, ip, nd, block_size, buffer, zero);
+				raid_recX_ssse3(3, id, ip, nd, block_size, buffer);
 			}
 		} SPEED_STOP
 
@@ -643,7 +644,7 @@ void speed(void)
 
 	SPEED_START {
 		for(j=0;j<nd;++j) {
-			raid_recX_int8(4, id, ip, nd, block_size, buffer, zero);
+			raid_recX_int8(4, id, ip, nd, block_size, buffer);
 		}
 	} SPEED_STOP
 
@@ -651,10 +652,10 @@ void speed(void)
 	fflush(stdout);
 
 #if defined(__i386__) || defined(__x86_64__)
-	if (cpu_has_ssse3()) {
+	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 			for(j=0;j<nd;++j) {
-				raid_recX_ssse3(4, id, ip, nd, block_size, buffer, zero);
+				raid_recX_ssse3(4, id, ip, nd, block_size, buffer);
 			}
 		} SPEED_STOP
 
@@ -669,7 +670,7 @@ void speed(void)
 
 	SPEED_START {
 		for(j=0;j<nd;++j) {
-			raid_recX_int8(5, id, ip, nd, block_size, buffer, zero);
+			raid_recX_int8(5, id, ip, nd, block_size, buffer);
 		}
 	} SPEED_STOP
 
@@ -677,10 +678,10 @@ void speed(void)
 	fflush(stdout);
 	
 #if defined(__i386__) || defined(__x86_64__)
-	if (cpu_has_ssse3()) {
+	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 			for(j=0;j<nd;++j) {
-				raid_recX_ssse3(5, id, ip, nd, block_size, buffer, zero);
+				raid_recX_ssse3(5, id, ip, nd, block_size, buffer);
 			}
 		} SPEED_STOP
 
@@ -695,7 +696,7 @@ void speed(void)
 
 	SPEED_START {
 		for(j=0;j<nd;++j) {
-			raid_recX_int8(6, id, ip, nd, block_size, buffer, zero);
+			raid_recX_int8(6, id, ip, nd, block_size, buffer);
 		}
 	} SPEED_STOP
 
@@ -703,10 +704,10 @@ void speed(void)
 	fflush(stdout);
 
 #if defined(__i386__) || defined(__x86_64__)
-	if (cpu_has_ssse3()) {
+	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 			for(j=0;j<nd;++j) {
-				raid_recX_ssse3(6, id, ip, nd, block_size, buffer, zero);
+				raid_recX_ssse3(6, id, ip, nd, block_size, buffer);
 			}
 		} SPEED_STOP
 
