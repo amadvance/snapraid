@@ -182,7 +182,7 @@ static void recovtest(unsigned mode, unsigned nd, unsigned block_size)
 					}
 
 					/* recover */
-					map[nr-1][0](nr, id, ip, nd, block_size, buffer);
+					map[nr-1][j](nr, id, ip, nd, block_size, buffer);
 
 					/* check */
 					for(i=0;i<nr;++i) {
