@@ -26,26 +26,26 @@
 		} \
 	} while (0)
 
-void raid_sort(int n, int* v)
+void raid_sort(int n, int *v)
 {
-	/* sorting networks generated with the Batcher's Merge-Exchange algorithm */
+	/* sorting networks generated with Batcher's Merge-Exchange */
 	switch (n) {
-	case 2 :
+	case 2:
 		RAID_SWAP(0, 1);
 		break;
-	case 3 :
+	case 3:
 		RAID_SWAP(0, 2);
 		RAID_SWAP(0, 1);
 		RAID_SWAP(1, 2);
 		break;
-	case 4 :
+	case 4:
 		RAID_SWAP(0, 2);
 		RAID_SWAP(1, 3);
 		RAID_SWAP(0, 1);
 		RAID_SWAP(2, 3);
 		RAID_SWAP(1, 2);
 		break;
-	case 5 :
+	case 5:
 		RAID_SWAP(0, 4);
 		RAID_SWAP(0, 2);
 		RAID_SWAP(1, 3);
@@ -56,7 +56,7 @@ void raid_sort(int n, int* v)
 		RAID_SWAP(1, 2);
 		RAID_SWAP(3, 4);
 		break;
-	case 6 :
+	case 6:
 		RAID_SWAP(0, 4);
 		RAID_SWAP(1, 5);
 		RAID_SWAP(0, 2);

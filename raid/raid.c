@@ -465,13 +465,13 @@ void raid_rec_dataonly(int nr, const int *id, const int *ip, int nd, size_t size
 	if (nr != 0) {
 		/* if there is a waste buffer, use it to save unused parities */
 		if (raid_waste_block != 0) {
-			void * p[RAID_PARITY_MAX];
+			void *p[RAID_PARITY_MAX];
 			int i, j;
 			int np;
-		
+
 			/* number of parities used */
 			np = ip[nr - 1] + 1;
-		
+
 			/* set unused parities to the waste buffer */
 			for (i = 0, j = 0; i < np; ++i) {
 				p[i] = v[nd+i];

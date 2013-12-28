@@ -82,7 +82,7 @@ void raid_waste(void *zero);
  * Computes the parity.
  *
  * \param nd Number of data disks.
- * \param np Number of parities to compute. 
+ * \param np Number of parities to compute.
  * \param size Size of the blocks pointed by ::v. It must be a multipler of 64.
  * \param v Vector of pointers to the blocks for disks and parities.
  *   It has (::nd + ::np) elements. The first elements are the blocks for
@@ -152,7 +152,7 @@ void raid_rec_dataonly(int nr, const int *id, const int *ip, int nd, size_t size
  * \param n Number of integers. No more than RAID_PARITY_MAX.
  * \paran v Vector of integers.
  */
-void raid_sort(int n, int* v);
+void raid_sort(int n, int *v);
 
 #endif
 
