@@ -67,10 +67,16 @@ void raid_mode(int mode);
 /**
  * Sets the zero buffer to use in recovering.
  *
- * Before calling raid_rec() and raid_recpar() you must provide a memory
+ * Before calling raid_rec_dataonly() and raid_recpar() you must provide a memory
  * buffer filled with zero with the same size of the blocks to recover.
  */
 void raid_zero(void *zero);
+
+/**
+ * Sets an additional buffer used by raid_rec_dataonly() to avoid to overwrite
+ * unused parities.
+ */
+void raid_waste(void *zero);
 
 /**
  * Computes the parity.
@@ -86,10 +92,42 @@ void raid_zero(void *zero);
 void raid_par(int np, int nd, size_t size, void **vv);
 
 /**
- * Recovers failures of data disks using the specified parities.
+ * Recovers failures of data and parity blocks.
  *
- * Only the data blocks are recovered. The parity buffers are destroyed.
- * If you want also to recompute parities, you can use raid_recpar().
+ * All the data and parity blocks marked as bad in the ::id and ::ip vector
+ * are recovered and recomputed.
+ *
+ * The parities blocks to use for recoverign are automatically selected from
+ * the ones NOT present in the ::ip vector.
+ *
+ * Ensure to have ::nrd + ::nrp <= ::np, otherwise recovering is not possible.
+ *
+ * \param nrd Number of failed data disks to recover.
+ * \param id[] Vector of ::nrd indexes of the data disks to recover.
+ *   The indexes start from 0. They must be in order.
+ * \param nrp Number of failed parity disks to recover.
+ * \param ip[] Vector of ::nrp indexes of the parity disks to recover.
+ *   The indexes start from 0. They must be in order.
+ *   All the parities not specified here are assumed correct, and they are
+ *   not recomputed.
+ * \param np Number of parity disks.
+ * \param nd Number of data disks.
+ * \param size Size of the blocks pointed by vv. It must be a multipler of 64.
+ * \param vv Vector of pointers to the blocks for disks and parities.
+ *   It has (::nd + ::np) elements. The first elements are the blocks
+ *   for data, following with the parity blocks.
+ *   Each blocks has ::size bytes.
+ */
+void raid_rec(int nrd, const int *id, int nrp, int *ip, int np, int nd, size_t size, void **vv);
+
+/**
+ * Recovers failures of data blocks using the specified parities.
+ *
+ * The data blocks marked as bad in the ::id vector are recovered.
+ *
+ * If you have provided an additional buffer with raid_waste(), the
+ * parity blocks are not modified. Without this buffer, the content of
+ * parities blocks not specified in the ::ip vector will be destroyed.
  *
  * \param nr Number of failed data disks to recover.
  * \param id[] Vector of ::nr indexes of the data disks to recover.
@@ -103,35 +141,7 @@ void raid_par(int np, int nd, size_t size, void **vv);
  *   blocks for data, following with the parity blocks.
  *   Each blocks has ::size bytes.
  */
-void raid_rec(int nr, const int *id, const int *ip, int nd, size_t size, void **vv);
-
-/**
- * Recovers failures of data and parity disks.
- *
- * It's similar at raid_rec() but it also recovers parities.
- *
- * In case there are more parities available than needed, ones to use are
- * automatically selected, excluding the ones specified in the ::ip vector.
- *
- * Ensure to have ::nrd + ::nrp <= ::np, otherwise recovering is not possible.
- *
- * \param nrd Number of failed data disks to recover.
- * \param id[] Vector of ::nrd indexes of the data disks to recover.
- *   The indexes start from 0. They must be in order.
- * \param nrp Number of failed parity disks to recover.
- * \param ip[] Vector of ::nrp indexes of the parity disks to recover.
- *   The indexes start from 0. They must be in order.
- *   Note that as difference than raid_rec() these are the failed parities.
- *   All the parities not specified here are assumed correct, and they are
- *   not recomputed.
- * \param np Number of parity disks.
- * \param nd Number of data disks.
- * \param size Size of the blocks pointed by vv. It must be a multipler of 64.
- * \param vv Vector of pointers to the blocks for disks and parities.
- *   It has (::nd + ::np) elements. The first elements are the blocks
- *   for data, following with the parity blocks.
- *   Each blocks has ::size bytes.
- */
-void raid_recpar(int nrd, const int *id, int nrp, int *ip, int np, int nd, size_t size, void **vv);
+void raid_rec_dataonly(int nr, const int *id, const int *ip, int nd, size_t size, void **vv);
 
 #endif
+

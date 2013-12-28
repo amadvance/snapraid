@@ -212,11 +212,21 @@ void raid_mode(int mode)
 /**
  * Buffer filled with 0 used in recovering.
  */
-static void *raid_empty_zero_block;
+static void *raid_zero_block;
 
 void raid_zero(void *zero)
 {
-	raid_empty_zero_block = zero;
+	raid_zero_block = zero;
+}
+
+/**
+ * Buffer for raid_rec_dataonly().
+ */
+static void *raid_waste_block;
+
+void raid_waste(void *waste)
+{
+	raid_waste_block = waste;
 }
 
 /* internal forwarder */
@@ -298,7 +308,7 @@ void raid_delta_gen(int nr, const int *id, const int *ip, int nd, size_t size, v
 		pa[i] = v[id[i]];
 
 		/* set at zero the missing data blocks */
-		v[id[i]] = raid_empty_zero_block;
+		v[id[i]] = raid_zero_block;
 
 		/* compute the parity over the missing data blocks */
 		v[nd+ip[i]] = pa[i];
@@ -414,17 +424,7 @@ void raid_rec2_par2(const int *id, const int *ip, int nd, size_t size, void **vv
 /* internal forwarder */
 void (*raid_rec_ptr[RAID_PARITY_MAX])(int nr, const int *id, const int *ip, int nd, size_t size, void **vv);
 
-void raid_rec(int nr, const int *id, const int *ip, int nd, size_t size, void **v)
-{
-	BUG_ON(nr > nd);
-	BUG_ON(size % 64 != 0);
-
-	/* if failed data is present */
-	if (nr != 0)
-		raid_rec_ptr[nr - 1](nr, id, ip, nd, size, v);
-}
-
-void raid_recpar(int nrd, const int *id, int nrp, int *ip, int np, int nd, size_t size, void **v)
+void raid_rec(int nrd, const int *id, int nrp, int *ip, int np, int nd, size_t size, void **v)
 {
 	BUG_ON(nrd > nd);
 	BUG_ON(nrd + nrp > np);
@@ -438,8 +438,10 @@ void raid_recpar(int nrd, const int *id, int nrp, int *ip, int np, int nd, size_
 		/* setup the vector of parities to use */
 		for (i = 0, j = 0, k = 0; i < np; ++i) {
 			if (ip[j] == i) {
+				/* this parity has to be recovered */
 				++j;
 			} else {
+				/* this parity is used for recovering */
 				iu[k] = i;
 				++k;
 			}
@@ -452,5 +454,45 @@ void raid_recpar(int nrd, const int *id, int nrp, int *ip, int np, int nd, size_
 	/* recompute all the parities up to the last bad one */
 	if (nrp != 0)
 		raid_par(ip[nrp - 1] + 1, nd, size, v);
+}
+
+void raid_rec_dataonly(int nr, const int *id, const int *ip, int nd, size_t size, void **v)
+{
+	BUG_ON(nr > nd);
+	BUG_ON(size % 64 != 0);
+
+	/* if failed data is present */
+	if (nr != 0) {
+		/* if there is a waste buffer, use it to save unused parities */
+		if (raid_waste_block != 0) {
+			void * p[RAID_PARITY_MAX];
+			int i, j;
+			int np;
+		
+			/* number of parities used */
+			np = ip[nr - 1] + 1;
+		
+			/* set unused parities to the waste buffer */
+			for (i = 0, j = 0; i < np; ++i) {
+				p[i] = v[nd+i];
+
+				if (ip[j] == i) {
+					/* this parity is used for recovering */
+					++j;
+				} else {
+					/* this parity is not used */
+					v[nd+i] = raid_waste_block;
+				}
+			}
+
+			raid_rec_ptr[nr - 1](nr, id, ip, nd, size, v);
+
+			/* restore pointers */
+			for (i = 0; i < np; ++i)
+				v[nd+i] = p[i];
+		} else {
+			raid_rec_ptr[nr - 1](nr, id, ip, nd, size, v);
+		}
+	}
 }
 

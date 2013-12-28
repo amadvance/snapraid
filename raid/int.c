@@ -163,7 +163,7 @@ void raid_par2_int64(int nd, size_t size, void **vv)
 /*
  * PAR3 (triple parity with Cauchy matrix) 8bit C implementation
  *
- * Note that instead of a generic multiplicationt table, likely resulting
+ * Note that instead of a generic multiplication table, likely resulting
  * in multiple cache misses, a precomputed table could be used.
  * But this is only a kind of reference function, and we are not really
  * interested in speed.
@@ -210,7 +210,7 @@ void raid_par3_int8(int nd, size_t size, void **vv)
 /*
  * PAR4 (quad parity with Cauchy matrix) 8bit C implementation
  *
- * Note that instead of a generic multiplicationt table, likely resulting
+ * Note that instead of a generic multiplication table, likely resulting
  * in multiple cache misses, a precomputed table could be used.
  * But this is only a kind of reference function, and we are not really
  * interested in speed.
@@ -262,7 +262,7 @@ void raid_par4_int8(int nd, size_t size, void **vv)
 /*
  * PAR5 (penta parity with Cauchy matrix) 8bit C implementation
  *
- * Note that instead of a generic multiplicationt table, likely resulting
+ * Note that instead of a generic multiplication table, likely resulting
  * in multiple cache misses, a precomputed table could be used.
  * But this is only a kind of reference function, and we are not really
  * interested in speed.
@@ -319,7 +319,7 @@ void raid_par5_int8(int nd, size_t size, void **vv)
 /*
  * PAR6 (hexa parity with Cauchy matrix) 8bit C implementation
  *
- * Note that instead of a generic multiplicationt table, likely resulting
+ * Note that instead of a generic multiplication table, likely resulting
  * in multiple cache misses, a precomputed table could be used.
  * But this is only a kind of reference function, and we are not really
  * interested in speed.

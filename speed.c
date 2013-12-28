@@ -591,7 +591,7 @@ void speed(void)
 
 	SPEED_START {
 		for(j=0;j<nd;++j) {
-			/* +1 to avoid PAR1 optimized case */
+			/* +1 to avoid PAR2 optimized case */
 			raid_rec2_int8(2, id, ip + 1, nd, block_size, buffer);
 		}
 	} SPEED_STOP
@@ -603,7 +603,7 @@ void speed(void)
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 			for(j=0;j<nd;++j) {
-				/* +1 to avoid PAR1 optimized case */
+				/* +1 to avoid PAR2 optimized case */
 				raid_rec2_ssse3(2, id, ip + 1, nd, block_size, buffer);
 			}
 		} SPEED_STOP
