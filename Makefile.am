@@ -10,6 +10,7 @@ snapraid_SOURCES = \
 	raid/x86.c \
 	raid/intz.c \
 	raid/x86z.c \
+	raid/sort.c \
 	snapraid.c \
 	tommy.c \
 	util.c \

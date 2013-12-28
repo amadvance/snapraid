@@ -83,13 +83,13 @@ void raid_waste(void *zero);
  *
  * \param nd Number of data disks.
  * \param np Number of parities to compute. 
- * \param size Size of the blocks pointed by vv. It must be a multipler of 64.
- * \param vv Vector of pointers to the blocks for disks and parities.
+ * \param size Size of the blocks pointed by ::v. It must be a multipler of 64.
+ * \param v Vector of pointers to the blocks for disks and parities.
  *   It has (::nd + ::np) elements. The first elements are the blocks for
  *   data, following with the parity blocks.
  *   Each blocks has ::size bytes.
  */
-void raid_par(int nd, int np, size_t size, void **vv);
+void raid_par(int nd, int np, size_t size, void **v);
 
 /**
  * Recovers failures of data and parity blocks.
@@ -112,13 +112,13 @@ void raid_par(int nd, int np, size_t size, void **vv);
  *   not recomputed.
  * \param nd Number of data disks.
  * \param np Number of parity disks.
- * \param size Size of the blocks pointed by vv. It must be a multipler of 64.
- * \param vv Vector of pointers to the blocks for disks and parities.
+ * \param size Size of the blocks pointed by ::v. It must be a multipler of 64.
+ * \param v Vector of pointers to the blocks for disks and parities.
  *   It has (::nd + ::np) elements. The first elements are the blocks
  *   for data, following with the parity blocks.
  *   Each blocks has ::size bytes.
  */
-void raid_rec(int nrd, const int *id, int nrp, int *ip, int nd, int np, size_t size, void **vv);
+void raid_rec(int nrd, const int *id, int nrp, int *ip, int nd, int np, size_t size, void **v);
 
 /**
  * Recovers failures of data blocks using the specified parities.
@@ -135,13 +135,24 @@ void raid_rec(int nrd, const int *id, int nrp, int *ip, int nd, int np, size_t s
  * \param ip[] Vector of ::nr indexes of the parity disks to use for recovering.
  *   The indexes start from 0. They must be in order.
  * \param nd Number of data disks.
- * \param size Size of the blocks pointed by vv. It must be a multipler of 64.
- * \param vv Vector of pointers to the blocks for disks and parities.
+ * \param size Size of the blocks pointed by ::v. It must be a multipler of 64.
+ * \param v Vector of pointers to the blocks for disks and parities.
  *   It has (::nd + ::ip[::nr - 1] + 1) elements. The first elements are the
  *   blocks for data, following with the parity blocks.
  *   Each blocks has ::size bytes.
  */
-void raid_rec_dataonly(int nr, const int *id, const int *ip, int nd, size_t size, void **vv);
+void raid_rec_dataonly(int nr, const int *id, const int *ip, int nd, size_t size, void **v);
+
+/**
+ * Sorts a small vector of integers.
+ *
+ * If you have block indexes not in order, you can use this function to sort
+ * them before callign raid_rec().
+ *
+ * \param n Number of integers. No more than RAID_PARITY_MAX.
+ * \paran v Vector of integers.
+ */
+void raid_sort(int n, int* v);
 
 #endif
 
