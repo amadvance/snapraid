@@ -234,7 +234,7 @@ void (*raid_par_ptr[RAID_PARITY_MAX])(int nd, size_t size, void **vv);
 void (*raid_par3_ptr)(int nd, size_t size, void **vv);
 void (*raid_parz_ptr)(int nd, size_t size, void **vv);
 
-void raid_par(int np, int nd, size_t size, void **v)
+void raid_par(int nd, int np, size_t size, void **v)
 {
 	BUG_ON(np < 1 || np > RAID_PARITY_MAX);
 	BUG_ON(size % 64 != 0);
@@ -315,7 +315,7 @@ void raid_delta_gen(int nr, const int *id, const int *ip, int nd, size_t size, v
 	}
 
 	/* recompute the minimal parity required */
-	raid_par(ip[nr - 1] + 1, nd, size, v);
+	raid_par(nd, ip[nr - 1] + 1, size, v);
 
 	for (i = 0; i < nr; ++i) {
 		/* restore disk buffers as before */
@@ -354,7 +354,7 @@ void raid_rec1_par1(const int *id, int nd, size_t size, void **v)
 	v[nd] = pa;
 
 	/* compute */
-	raid_par(1, nd, size, v);
+	raid_par(nd, 1, size, v);
 
 	/* restore as before */
 	v[id[0]] = pa;
@@ -424,7 +424,7 @@ void raid_rec2_par2(const int *id, const int *ip, int nd, size_t size, void **vv
 /* internal forwarder */
 void (*raid_rec_ptr[RAID_PARITY_MAX])(int nr, const int *id, const int *ip, int nd, size_t size, void **vv);
 
-void raid_rec(int nrd, const int *id, int nrp, int *ip, int np, int nd, size_t size, void **v)
+void raid_rec(int nrd, const int *id, int nrp, int *ip, int nd, int np, size_t size, void **v)
 {
 	BUG_ON(nrd > nd);
 	BUG_ON(nrd + nrp > np);
@@ -453,7 +453,7 @@ void raid_rec(int nrd, const int *id, int nrp, int *ip, int np, int nd, size_t s
 
 	/* recompute all the parities up to the last bad one */
 	if (nrp != 0)
-		raid_par(ip[nrp - 1] + 1, nd, size, v);
+		raid_par(nd, ip[nrp - 1] + 1, size, v);
 }
 
 void raid_rec_dataonly(int nr, const int *id, const int *ip, int nd, size_t size, void **v)

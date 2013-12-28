@@ -81,15 +81,15 @@ void raid_waste(void *zero);
 /**
  * Computes the parity.
  *
- * \param np Number of parities to compute.
  * \param nd Number of data disks.
+ * \param np Number of parities to compute. 
  * \param size Size of the blocks pointed by vv. It must be a multipler of 64.
  * \param vv Vector of pointers to the blocks for disks and parities.
  *   It has (::nd + ::np) elements. The first elements are the blocks for
  *   data, following with the parity blocks.
  *   Each blocks has ::size bytes.
  */
-void raid_par(int np, int nd, size_t size, void **vv);
+void raid_par(int nd, int np, size_t size, void **vv);
 
 /**
  * Recovers failures of data and parity blocks.
@@ -97,7 +97,7 @@ void raid_par(int np, int nd, size_t size, void **vv);
  * All the data and parity blocks marked as bad in the ::id and ::ip vector
  * are recovered and recomputed.
  *
- * The parities blocks to use for recoverign are automatically selected from
+ * The parities blocks to use for recovering are automatically selected from
  * the ones NOT present in the ::ip vector.
  *
  * Ensure to have ::nrd + ::nrp <= ::np, otherwise recovering is not possible.
@@ -110,15 +110,15 @@ void raid_par(int np, int nd, size_t size, void **vv);
  *   The indexes start from 0. They must be in order.
  *   All the parities not specified here are assumed correct, and they are
  *   not recomputed.
- * \param np Number of parity disks.
  * \param nd Number of data disks.
+ * \param np Number of parity disks.
  * \param size Size of the blocks pointed by vv. It must be a multipler of 64.
  * \param vv Vector of pointers to the blocks for disks and parities.
  *   It has (::nd + ::np) elements. The first elements are the blocks
  *   for data, following with the parity blocks.
  *   Each blocks has ::size bytes.
  */
-void raid_rec(int nrd, const int *id, int nrp, int *ip, int np, int nd, size_t size, void **vv);
+void raid_rec(int nrd, const int *id, int nrp, int *ip, int nd, int np, size_t size, void **vv);
 
 /**
  * Recovers failures of data blocks using the specified parities.

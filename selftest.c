@@ -157,7 +157,7 @@ static void recovtest(unsigned mode, unsigned nd, unsigned block_size)
 	}
 
 	/* compute the parity */
-	raid_par(np, nd, block_size, buffer);
+	raid_par(nd, np, block_size, buffer);
 
 	/* set all the parity to the waste buffer */
 	for(i=0;i<np;++i)
@@ -234,7 +234,7 @@ static void gentest(unsigned mode, unsigned nd, unsigned block_size)
 	mrand_vector(buffer, buffermax, block_size);
 
 	/* compute the parity */
-	raid_par(np, nd, block_size, buffer);
+	raid_par(nd, np, block_size, buffer);
 
 	/* copy in back buffers */
 	for(i=0;i<np;++i)
