@@ -3,6 +3,13 @@ check_PROGRAMS = mktest
 EXTRA_PROGRAMS = mktables
 
 snapraid_SOURCES = \
+	raid/raid.c \
+	raid/module.c \
+	raid/tables.c \
+	raid/int.c \
+	raid/x86.c \
+	raid/intz.c \
+	raid/x86z.c \
 	snapraid.c \
 	tommy.c \
 	util.c \
@@ -21,7 +28,6 @@ snapraid_SOURCES = \
 	parity.c \
 	handle.c \
 	fnmatch.c \
-	raid.c \
 	selftest.c \
 	speed.c \
 	import.c \
@@ -29,9 +35,13 @@ snapraid_SOURCES = \
 	unix.c
 
 mktables_SOURCES = \
-	mktables.c
+	raid/mktables.c
 
 noinst_HEADERS = \
+	raid/raid.h \
+	raid/internal.h \
+	raid/cpu.h \
+	raid/gf.h \
 	portable.h \
 	snapraid.h \
 	util.h \
@@ -58,10 +68,7 @@ noinst_HEADERS = \
 	tommyhashdyn.c \
 	tommylist.c \
 	fnmatch.h \
-	cpu.h \
-	raid.h \
 	combo.h \
-	tables.h \
 	import.h \
 	mingw.h \
 	unix.h

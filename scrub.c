@@ -22,7 +22,7 @@
 #include "state.h"
 #include "parity.h"
 #include "handle.h"
-#include "raid.h"
+#include "raid/raid.h"
 
 /****************************************************************************/
 /* scrub */

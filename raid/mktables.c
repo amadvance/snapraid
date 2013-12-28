@@ -201,8 +201,11 @@ int main(void)
 	printf(" */\n");
 	printf("\n");
 
+	printf("#include \"internal.h\"\n");
+	printf("\n");
+
 	/* a*b */
-	printf("const uint8_t  __attribute__((aligned(256))) gfmul[256][256] =\n");
+	printf("const uint8_t __attribute__((aligned(256))) raid_gfmul[256][256] =\n");
 	printf("{\n");
 	for(i=0;i<256;++i) {
 		printf("\t{\n");
@@ -223,7 +226,7 @@ int main(void)
 	printf("};\n\n");
 
 	/* 2^a */
-	printf("const uint8_t __attribute__((aligned(256))) gfexp[256] =\n");
+	printf("const uint8_t __attribute__((aligned(256))) raid_gfexp[256] =\n");
 	printf("{\n");
 	v = 1;
 	for(i=0;i<256;++i) {
@@ -239,7 +242,7 @@ int main(void)
 	printf("};\n\n");
 
 	/* 1/a */
-	printf("const uint8_t __attribute__((aligned(256))) gfinv[256] =\n");
+	printf("const uint8_t __attribute__((aligned(256))) raid_gfinv[256] =\n");
 	printf("{\n");
 	printf("\t/* note that the first element is not significative */\n");
 	for(i=0;i<256;++i) {
@@ -272,7 +275,7 @@ int main(void)
 		printf("\n");
 	}
 	printf(" */\n");
-	printf("const uint8_t  __attribute__((aligned(256))) gfvandermonde[%u][256] =\n", 3);
+	printf("const uint8_t __attribute__((aligned(256))) raid_gfvandermonde[%u][256] =\n", 3);
 	printf("{\n");
 	for(p=0;p<3;++p) {
 		printf("\t{\n");
@@ -304,7 +307,7 @@ int main(void)
 		printf("\n");
 	}
 	printf(" */\n");
-	printf("const uint8_t  __attribute__((aligned(256))) gfcauchy[%u][256] =\n", PARITY);
+	printf("const uint8_t __attribute__((aligned(256))) raid_gfcauchy[%u][256] =\n", PARITY);
 	printf("{\n");
 	for(p=0;p<PARITY;++p) {
 		printf("\t{\n");
@@ -328,7 +331,7 @@ int main(void)
 	printf(" * Indexes are [DISK][PARITY - 2][LH].\n");
 	printf(" * Where DISK is from 0 to %u, PARITY from 2 to %u, LH from 0 to 1.\n", DISK - 1, PARITY - 1);
 	printf(" */\n");
-	printf("const uint8_t  __attribute__((aligned(256))) gfcauchypshufb[%u][%u][2][16] =\n", DISK, np(PARITY - 2));
+	printf("const uint8_t __attribute__((aligned(256))) raid_gfcauchypshufb[%u][%u][2][16] =\n", DISK, np(PARITY - 2));
 	printf("{\n");
 	for(i=0;i<DISK;++i) {
 		printf("\t{\n");
@@ -360,7 +363,7 @@ int main(void)
 	printf(" * Indexes are [MULTIPLER][LH].\n");
 	printf(" * Where MULTIPLER is from 0 to 255, LH from 0 to 1.\n");
 	printf(" */\n");
-	printf("const uint8_t  __attribute__((aligned(256))) gfmulpshufb[256][2][16] =\n");
+	printf("const uint8_t __attribute__((aligned(256))) raid_gfmulpshufb[256][2][16] =\n");
 	printf("{\n");
 	for(i=0;i<256;++i) {
 		printf("\t{\n");

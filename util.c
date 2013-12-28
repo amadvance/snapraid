@@ -18,7 +18,7 @@
 #include "portable.h"
 
 #include "util.h"
-#include "cpu.h"
+#include "raid/cpu.h"
 
 /****************************************************************************/
 /* hex conversion table */

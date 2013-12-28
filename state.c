@@ -22,8 +22,8 @@
 #include "state.h"
 #include "util.h"
 #include "parity.h"
-#include "cpu.h"
-#include "raid.h"
+#include "raid/raid.h"
+#include "raid/cpu.h"
 
 const char* lev_name(unsigned l)
 {

@@ -19,8 +19,9 @@
 
 #include "snapraid.h"
 #include "util.h"
-#include "raid.h"
-#include "cpu.h"
+#include "raid/raid.h"
+#include "raid/cpu.h"
+#include "raid/internal.h"
 #include "elem.h"
 #include "state.h"
 #include "combo.h"

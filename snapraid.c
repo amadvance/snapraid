@@ -22,7 +22,7 @@
 #include "elem.h"
 #include "import.h"
 #include "state.h"
-#include "raid.h"
+#include "raid/raid.h"
 
 /****************************************************************************/
 /* main */
