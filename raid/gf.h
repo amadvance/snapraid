@@ -62,7 +62,7 @@ static __always_inline uint8_t pow2(int v)
 /*
  * Gets the multiplication table for a specified value.
  */
-static __always_inline const uint8_t* table(uint8_t v)
+static __always_inline const uint8_t *table(uint8_t v)
 {
 	return gfmul[v];
 }
@@ -80,17 +80,17 @@ static __always_inline uint8_t A(int p, int d)
 /*
  * Dereference as uint8_t
  */
-#define v_8(p) (*(uint8_t*)&(p))
+#define v_8(p) (*(uint8_t *)&(p))
 
 /*
  * Dereference as uint32_t
  */
-#define v_32(p) (*(uint32_t*)&(p))
+#define v_32(p) (*(uint32_t *)&(p))
 
 /*
  * Dereference as uint64_t
  */
-#define v_64(p) (*(uint64_t*)&(p))
+#define v_64(p) (*(uint64_t *)&(p))
 
 /*
  * Multiply each byte of a uint32 by 2 in the GF(2^8).

@@ -21,12 +21,12 @@
 /*
  * PARz (triple parity with powers of 2^-1) 32bit C implementation
  */
-void raid_parz_int32(int nd, size_t size, void** vv)
+void raid_parz_int32(int nd, size_t size, void **vv)
 {
-	uint8_t** v = (uint8_t**)vv;
-	uint8_t* p;
-	uint8_t* q;
-	uint8_t* r;
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	uint8_t *q;
+	uint8_t *r;
 	int d, l;
 	size_t i;
 
@@ -38,10 +38,10 @@ void raid_parz_int32(int nd, size_t size, void** vv)
 	q = v[nd+1];
 	r = v[nd+2];
 
-	for(i=0;i<size;i+=8) {
+	for (i = 0; i < size; i += 8) {
 		r0 = q0 = p0 = v_32(v[l][i]);
 		r1 = q1 = p1 = v_32(v[l][i+4]);
-		for(d=l-1;d>=0;--d) {
+		for (d = l-1; d >= 0; --d) {
 			d0 = v_32(v[d][i]);
 			d1 = v_32(v[d][i+4]);
 
@@ -72,12 +72,12 @@ void raid_parz_int32(int nd, size_t size, void** vv)
 /*
  * PARz (triple parity with powers of 2^-1) 64bit C implementation
  */
-void raid_parz_int64(int nd, size_t size, void** vv)
+void raid_parz_int64(int nd, size_t size, void **vv)
 {
-	uint8_t** v = (uint8_t**)vv;
-	uint8_t* p;
-	uint8_t* q;
-	uint8_t* r;
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	uint8_t *q;
+	uint8_t *r;
 	int d, l;
 	size_t i;
 
@@ -89,10 +89,10 @@ void raid_parz_int64(int nd, size_t size, void** vv)
 	q = v[nd+1];
 	r = v[nd+2];
 
-	for(i=0;i<size;i+=16) {
+	for (i = 0; i < size; i += 16) {
 		r0 = q0 = p0 = v_64(v[l][i]);
 		r1 = q1 = p1 = v_64(v[l][i+8]);
-		for(d=l-1;d>=0;--d) {
+		for (d = l-1; d >= 0; --d) {
 			d0 = v_64(v[d][i]);
 			d1 = v_64(v[d][i+8]);
 

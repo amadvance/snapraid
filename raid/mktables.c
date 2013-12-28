@@ -63,7 +63,7 @@ uint8_t gfinv[256];
 /**
  * Setup the Cauchy matrix used to generate the parity.
  */
-static void set_cauchy(uint8_t* matrix)
+static void set_cauchy(uint8_t *matrix)
 {
 	int i, j;
 	uint8_t inv_x, y;
@@ -74,9 +74,8 @@ static void set_cauchy(uint8_t* matrix)
 	 * This is an Extended Cauchy matrix built from a Cauchy matrix
 	 * adding the first row of all 1.
 	 */
-	for(i=0;i<DISK;++i) {
+	for (i = 0; i < DISK; ++i)
 		matrix[0*DISK+i] = 1;
-	}
 
 	/*
 	 * Second row is formed by power of 2^i.
@@ -93,7 +92,7 @@ static void set_cauchy(uint8_t* matrix)
 	 * with 2^-i != 0 for any i
 	 */
 	inv_x = 1;
-	for(i=0;i<DISK;++i) {
+	for (i = 0; i < DISK; ++i) {
 		matrix[1*DISK+i] = inv_x;
 		inv_x = gfmul(2, inv_x);
 	}
@@ -108,9 +107,9 @@ static void set_cauchy(uint8_t* matrix)
 	 * with xi != yj for any i,j with i>=0,j>=1,i+j<255
 	 */
 	y = 2;
-	for(j=0;j<PARITY-2;++j) {
+	for (j = 0; j < PARITY-2; ++j) {
 		inv_x = 1;
-		for(i=0;i<DISK;++i) {
+		for (i = 0; i < DISK; ++i) {
 			uint8_t x = gfinv[inv_x];
 			matrix[(j+2)*DISK+i] = gfinv[y ^ x];
 			inv_x = gfmul(2, inv_x);
@@ -126,36 +125,34 @@ static void set_cauchy(uint8_t* matrix)
 	 * This operation doesn't invalidate the property that all the square
 	 * submatrices are not singular.
 	 */
-	for(j=0;j<PARITY-2;++j) {
+	for (j = 0; j < PARITY-2; ++j) {
 		uint8_t f = gfinv[matrix[(j+2)*DISK]];
 
-		for(i=0;i<DISK;++i) {
+		for (i = 0; i < DISK; ++i)
 			matrix[(j+2)*DISK+i] = gfmul(matrix[(j+2)*DISK+i], f);
-		}
 	}
 }
 
 /**
  * Setup the Power matrix used to generate the parity.
  */
-static void set_power(uint8_t* matrix)
+static void set_power(uint8_t *matrix)
 {
 	unsigned i;
 	uint8_t v;
 
 	v = 1;
-	for(i=0;i<DISK;++i) {
+	for (i = 0; i < DISK; ++i)
 		matrix[0*DISK+i] = v;
-	}
 
 	v = 1;
-	for(i=0;i<DISK;++i) {
+	for (i = 0; i < DISK; ++i) {
 		matrix[1*DISK+i] = v;
 		v = gfmul(2, v);
 	}
 
 	v = 1;
-	for(i=0;i<DISK;++i) {
+	for (i = 0; i < DISK; ++i) {
 		matrix[2*DISK+i] = v;
 		v = gfmul(0x8e, v);
 	}
@@ -205,11 +202,11 @@ int main(void)
 	printf("\n");
 
 	/* a*b */
-	printf("const uint8_t __attribute__((aligned(256))) raid_gfmul[256][256] =\n");
+	printf("const uint8_t __aligned(256) raid_gfmul[256][256] =\n");
 	printf("{\n");
-	for(i=0;i<256;++i) {
+	for (i = 0; i < 256; ++i) {
 		printf("\t{\n");
-		for(j=0;j<256;++j) {
+		for (j = 0; j < 256; ++j) {
 			if (j % 8 == 0)
 				printf("\t\t");
 			v = gfmul(i, j);
@@ -226,10 +223,10 @@ int main(void)
 	printf("};\n\n");
 
 	/* 2^a */
-	printf("const uint8_t __attribute__((aligned(256))) raid_gfexp[256] =\n");
+	printf("const uint8_t __aligned(256) raid_gfexp[256] =\n");
 	printf("{\n");
 	v = 1;
-	for(i=0;i<256;++i) {
+	for (i = 0; i < 256; ++i) {
 		if (i % 8 == 0)
 			printf("\t");
 		printf("0x%02x,", v);
@@ -242,10 +239,10 @@ int main(void)
 	printf("};\n\n");
 
 	/* 1/a */
-	printf("const uint8_t __attribute__((aligned(256))) raid_gfinv[256] =\n");
+	printf("const uint8_t __aligned(256) raid_gfinv[256] =\n");
 	printf("{\n");
 	printf("\t/* note that the first element is not significative */\n");
-	for(i=0;i<256;++i) {
+	for (i = 0; i < 256; ++i) {
 		if (i % 8 == 0)
 			printf("\t");
 		if (i == 0)
@@ -267,19 +264,18 @@ int main(void)
 	printf(" * Power matrix used to generate parity.\n");
 	printf(" * This matrix is valid for up to %u parity with %u data disks.\n", 3, DISK);
 	printf(" *\n");
-	for(p=0;p<3;++p) {
+	for (p = 0; p < 3; ++p) {
 		printf(" * ");
-		for(i=0;i<DISK;++i) {
+		for (i = 0; i < DISK; ++i)
 			printf("%02x ", matrix[p*DISK+i]);
-		}
 		printf("\n");
 	}
 	printf(" */\n");
-	printf("const uint8_t __attribute__((aligned(256))) raid_gfvandermonde[%u][256] =\n", 3);
+	printf("const uint8_t __aligned(256) raid_gfvandermonde[%u][256] =\n", 3);
 	printf("{\n");
-	for(p=0;p<3;++p) {
+	for (p = 0; p < 3; ++p) {
 		printf("\t{\n");
-		for(i=0;i<DISK;++i) {
+		for (i = 0; i < DISK; ++i) {
 			if (i % 8 == 0)
 				printf("\t\t");
 			printf("0x%02x,", matrix[p*DISK+i]);
@@ -299,19 +295,18 @@ int main(void)
 	printf(" * Cauchy matrix used to generate parity.\n");
 	printf(" * This matrix is valid for up to %u parity with %u data disks.\n", PARITY, DISK);
 	printf(" *\n");
-	for(p=0;p<PARITY;++p) {
+	for (p = 0; p < PARITY; ++p) {
 		printf(" * ");
-		for(i=0;i<DISK;++i) {
+		for (i = 0; i < DISK; ++i)
 			printf("%02x ", matrix[p*DISK+i]);
-		}
 		printf("\n");
 	}
 	printf(" */\n");
-	printf("const uint8_t __attribute__((aligned(256))) raid_gfcauchy[%u][256] =\n", PARITY);
+	printf("const uint8_t __aligned(256) raid_gfcauchy[%u][256] =\n", PARITY);
 	printf("{\n");
-	for(p=0;p<PARITY;++p) {
+	for (p = 0; p < PARITY; ++p) {
 		printf("\t{\n");
-		for(i=0;i<DISK;++i) {
+		for (i = 0; i < DISK; ++i) {
 			if (i % 8 == 0)
 				printf("\t\t");
 			printf("0x%02x,", matrix[p*DISK+i]);
@@ -331,15 +326,15 @@ int main(void)
 	printf(" * Indexes are [DISK][PARITY - 2][LH].\n");
 	printf(" * Where DISK is from 0 to %u, PARITY from 2 to %u, LH from 0 to 1.\n", DISK - 1, PARITY - 1);
 	printf(" */\n");
-	printf("const uint8_t __attribute__((aligned(256))) raid_gfcauchypshufb[%u][%u][2][16] =\n", DISK, np(PARITY - 2));
+	printf("const uint8_t __aligned(256) raid_gfcauchypshufb[%u][%u][2][16] =\n", DISK, np(PARITY - 2));
 	printf("{\n");
-	for(i=0;i<DISK;++i) {
+	for (i = 0; i < DISK; ++i) {
 		printf("\t{\n");
-		for(p=2;p<PARITY;++p) {
+		for (p = 2; p < PARITY; ++p) {
 			printf("\t\t{\n");
-			for(j=0;j<2;++j) {
+			for (j = 0; j < 2; ++j) {
 				printf("\t\t\t{ ");
-				for(k=0;k<16;++k) {
+				for (k = 0; k < 16; ++k) {
 					v = gfmul(matrix[p*DISK+i], k);
 					if (j == 1)
 						v = gfmul(v, 16);
@@ -363,13 +358,13 @@ int main(void)
 	printf(" * Indexes are [MULTIPLER][LH].\n");
 	printf(" * Where MULTIPLER is from 0 to 255, LH from 0 to 1.\n");
 	printf(" */\n");
-	printf("const uint8_t __attribute__((aligned(256))) raid_gfmulpshufb[256][2][16] =\n");
+	printf("const uint8_t __aligned(256) raid_gfmulpshufb[256][2][16] =\n");
 	printf("{\n");
-	for(i=0;i<256;++i) {
+	for (i = 0; i < 256; ++i) {
 		printf("\t{\n");
-		for(j=0;j<2;++j) {
+		for (j = 0; j < 2; ++j) {
 			printf("\t\t{ ");
-			for(k=0;k<16;++k) {
+			for (k = 0; k < 16; ++k) {
 				v = gfmul(i, k);
 				if (j == 1)
 					v = gfmul(v, 16);

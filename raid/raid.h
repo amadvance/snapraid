@@ -21,7 +21,7 @@
 /**
  * RAID mode supporting up to 6 parities.
  *
- * It requires SSSE3 to get good performance with triple or more 
+ * It requires SSSE3 to get good performance with triple or more
  * parities.
  *
  * This is the default mode used by SnapRAID.
@@ -70,7 +70,7 @@ void raid_mode(int mode);
  * Before calling raid_rec() and raid_recpar() you must provide a memory
  * buffer filled with zero with the same size of the blocks to recover.
  */
-void raid_zero(void* zero);
+void raid_zero(void *zero);
 
 /**
  * Computes the parity.
@@ -79,10 +79,11 @@ void raid_zero(void* zero);
  * \param nd Number of data disks.
  * \param size Size of the blocks pointed by vv. It must be a multipler of 64.
  * \param vv Vector of pointers to the blocks for disks and parities.
- *   It has (::nd + ::np) elements.
- *   Each element points to a buffer of ::size bytes.
+ *   It has (::nd + ::np) elements. The first elements are the blocks for
+ *   data, following with the parity blocks.
+ *   Each blocks has ::size bytes.
  */
-void raid_par(int np, int nd, size_t size, void** vv);
+void raid_par(int np, int nd, size_t size, void **vv);
 
 /**
  * Recovers failures of data disks using the specified parities.
@@ -98,10 +99,11 @@ void raid_par(int np, int nd, size_t size, void** vv);
  * \param nd Number of data disks.
  * \param size Size of the blocks pointed by vv. It must be a multipler of 64.
  * \param vv Vector of pointers to the blocks for disks and parities.
- *   It has (::nd + ::ip[::nr - 1] + 1) elements. The first elements are the blocks
- *   for data, following with the parity blocks. Each blocks has ::size bytes.
+ *   It has (::nd + ::ip[::nr - 1] + 1) elements. The first elements are the
+ *   blocks for data, following with the parity blocks.
+ *   Each blocks has ::size bytes.
  */
-void raid_rec(int nr, const int* id, const int* ip, int nd, size_t size, void** vv);
+void raid_rec(int nr, const int *id, const int *ip, int nd, size_t size, void **vv);
 
 /**
  * Recovers failures of data and parity disks.
@@ -127,8 +129,9 @@ void raid_rec(int nr, const int* id, const int* ip, int nd, size_t size, void** 
  * \param size Size of the blocks pointed by vv. It must be a multipler of 64.
  * \param vv Vector of pointers to the blocks for disks and parities.
  *   It has (::nd + ::np) elements. The first elements are the blocks
- *   for data, following with the parity blocks. Each blocks has ::size bytes. 
+ *   for data, following with the parity blocks.
+ *   Each blocks has ::size bytes.
  */
-void raid_recpar(int nrd, const int* id, int nrp, int* ip, int np, int nd, size_t size, void** vv);
+void raid_recpar(int nrd, const int *id, int nrp, int *ip, int np, int nd, size_t size, void **vv);
 
 #endif

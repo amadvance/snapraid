@@ -20,7 +20,7 @@
 
 #if defined(__i386__) || defined(__x86_64__)
 
-static __always_inline void raid_cpuid(uint32_t func_eax, uint32_t sub_ecx, uint32_t* reg)
+static __always_inline void raid_cpuid(uint32_t func_eax, uint32_t sub_ecx, uint32_t *reg)
 {
 	asm volatile(
 #if defined(__i386__) && defined(__PIC__)
@@ -40,16 +40,16 @@ static __always_inline void raid_cpuid(uint32_t func_eax, uint32_t sub_ecx, uint
 
 #define CPU_VENDOR_MAX 13
 
-static __always_inline void raid_cpu_info(char* vendor, unsigned* family, unsigned* model)
+static __always_inline void raid_cpu_info(char *vendor, unsigned *family, unsigned *model)
 {
 	uint32_t reg[4];
 	unsigned f, ef, m, em;
 
 	raid_cpuid(0, 0, reg);
 
-	((uint32_t*)vendor)[0] = reg[1];
-	((uint32_t*)vendor)[1] = reg[3];
-	((uint32_t*)vendor)[2] = reg[2];
+	((uint32_t *)vendor)[0] = reg[1];
+	((uint32_t *)vendor)[1] = reg[3];
+	((uint32_t *)vendor)[2] = reg[2];
 	vendor[12] = 0;
 
 	raid_cpuid(1, 0, reg);
@@ -185,7 +185,7 @@ static __always_inline int raid_cpu_has_slowpshufb(void)
 		 * CPU GenuineIntel, family 6, model 28, flags mmx sse2 ssse3 slowmult
 		 * Memory is little-endian 64-bit
 		 * Support nanosecond timestamps with futimens()
-		 * 
+		 *
 		 * Speed test with 8 disk and 262144 buffer size, for a total of 2816 KiB...
 		 * memset0 1850 [MB/s]
 		 * CRC table 316 [MB/s]

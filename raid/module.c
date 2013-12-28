@@ -25,7 +25,7 @@ void raid_init(void)
 	raid_par_ptr[4] = raid_par5_int8;
 	raid_par_ptr[5] = raid_par6_int8;
 
-	if (sizeof(void*) == 4) {
+	if (sizeof(void *) == 4) {
 		raid_par_ptr[0] = raid_par1_int32;
 		raid_par_ptr[1] = raid_par2_int32;
 		raid_parz_ptr = raid_parz_int32;
@@ -85,8 +85,8 @@ void raid_init(void)
 }
 
 static struct raid_func {
-	const char* name;
-	void* p;
+	const char *name;
+	void *p;
 } RAID_FUNC[] = {
 	{ "int8", raid_par3_int8 },
 	{ "int8", raid_par4_int8 },
@@ -126,9 +126,9 @@ static struct raid_func {
 	{ 0, 0 }
 };
 
-static const char* raid_tag(void* func)
+static const char *raid_tag(void *func)
 {
-	struct raid_func* i = RAID_FUNC;
+	struct raid_func *i = RAID_FUNC;
 	while (i->name != 0) {
 		if (i->p == func)
 			return i->name;
@@ -137,52 +137,52 @@ static const char* raid_tag(void* func)
 	return "unknown";
 }
 
-const char* raid_par1_tag(void)
+const char *raid_par1_tag(void)
 {
 	return raid_tag(raid_par_ptr[0]);
 }
 
-const char* raid_par2_tag(void)
+const char *raid_par2_tag(void)
 {
 	return raid_tag(raid_par_ptr[1]);
 }
 
-const char* raid_parz_tag(void)
+const char *raid_parz_tag(void)
 {
 	return raid_tag(raid_parz_ptr);
 }
 
-const char* raid_par3_tag(void)
+const char *raid_par3_tag(void)
 {
 	return raid_tag(raid_par_ptr[2]);
 }
 
-const char* raid_par4_tag(void)
+const char *raid_par4_tag(void)
 {
 	return raid_tag(raid_par_ptr[3]);
 }
 
-const char* raid_par5_tag(void)
+const char *raid_par5_tag(void)
 {
 	return raid_tag(raid_par_ptr[4]);
 }
 
-const char* raid_par6_tag(void)
+const char *raid_par6_tag(void)
 {
 	return raid_tag(raid_par_ptr[5]);
 }
 
-const char* raid_rec1_tag(void)
+const char *raid_rec1_tag(void)
 {
 	return raid_tag(raid_rec_ptr[0]);
 }
 
-const char* raid_rec2_tag(void)
+const char *raid_rec2_tag(void)
 {
 	return raid_tag(raid_rec_ptr[1]);
 }
 
-const char* raid_recX_tag(void)
+const char *raid_recX_tag(void)
 {
 	return raid_tag(raid_rec_ptr[2]);
 }

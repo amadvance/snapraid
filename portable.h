@@ -181,6 +181,13 @@
 #endif
 
 /**
+ * Missing __aligned, like in user mode.
+ */
+#ifndef __aligned
+#define __aligned(a) __attribute__((aligned(a)))
+#endif
+
+/**
  * Another name for link() to avoid confusion with local variables called "link".
  */
 static inline int hardlink(const char* a, const char* b)

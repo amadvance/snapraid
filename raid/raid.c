@@ -32,7 +32,7 @@
 
 /*
  * The RAID5 and RAID6 support is implemented using the Galois Field
- * GF(2^8) with the primitive polynomial x^8 + x^4 + x^3 + x^2 + 1 
+ * GF(2^8) with the primitive polynomial x^8 + x^4 + x^3 + x^2 + 1
  * (285 decimal).
  *
  * The parity P and Q of a set of N disk Di with 0<=i<N, is computed
@@ -42,8 +42,8 @@
  * Q = sum(2^i * Di) with 0<=i<N
  *
  * This approach is the same used by the Linux Kernel RAID, and by ZFS
- * RAIDZ2, better described in the H. Peter Anvin paper "The mathematics 
- * of RAID-6" [1]. 
+ * RAIDZ2, better described in the H. Peter Anvin paper "The mathematics
+ * of RAID-6" [1].
  *
  * To support triple parity, it was first evaluated and then dropped, an
  * extension of the same approach, with additional parity coefficients set
@@ -57,7 +57,7 @@
  * because we can implement very fast parallel multiplications and
  * divisions by 2 in GF(2^8).
  *
- * It's also similar at the approach used by ZFS RAIDZ3, with the 
+ * It's also similar at the approach used by ZFS RAIDZ3, with the
  * difference that ZFS uses powers of 4 instead of 2^-1.
  *
  * Unfortunately it doesn't work beyond triple parity, because whatever
@@ -70,13 +70,13 @@
  * [2, Chap 11, Problem 7] and this is a requirement to have
  * a MDS (Maximum Distance Separable) code [2, Chap 11, Theorem 8].
  *
- * To overcome this limitation, we use a Cauchy matrix [3][4] to compute 
+ * To overcome this limitation, we use a Cauchy matrix [3][4] to compute
  * the parity. A Cauchy matrix has the property to have all the square
  * submatrices not singular, resulting in always solvable equations,
  * for any combination of missing disks.
  *
  * The problem of this approach is that it requires the use of
- * generic multiplications, and not only by 2 or 2^-1, potentially 
+ * generic multiplications, and not only by 2 or 2^-1, potentially
  * affecting badly the performance.
  *
  * Hopefully there is a method to implement parallel multiplications
@@ -87,13 +87,13 @@
  * the first two rows with coeffients equal at the RAID5 and RAID6 approach
  * decribed, resulting in a compatible extension, and requiring SSSE3
  * instructions only if triple parity or beyond is used.
- * 
+ *
  * The matrix is also adjusted, multipling each row by a constant factor
  * to make the first column of all 1, to optimize the computation for
  * the first disk.
  *
  * This results in the matrix A[row,col] defined as:
- * 
+ *
  * 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01...
  * 01 02 04 08 10 20 40 80 1d 3a 74 e8 cd 87 13 26 4c 98 2d 5a b4 75...
  * 01 f5 d2 c4 9a 71 f1 7f fc 87 c1 c6 19 2f 40 55 3d ba 53 04 9c 61...
@@ -105,11 +105,11 @@
  * This matrix supports 6 level of parity, one for each row, for up to 251
  * data disks, one for each column, with all the 377,342,351,231 square
  * submatrices not singular, verified also with brute-force.
- * 
- * This matrix can be extended to support any number of parities, just 
+ *
+ * This matrix can be extended to support any number of parities, just
  * adding additional rows, and removing one column for each new row.
  * (see mktables.c for more details in how the matrix is generated)
- * 
+ *
  * In details, parity is computed as:
  *
  * P = sum(Di)
@@ -120,7 +120,7 @@
  * U = sum(A[5,i] * Di) with 0<=i<N
  *
  * To recover from a failure of six disks at indexes x,y,z,h,v,w,
- * with 0<=x<y<z<h<v<w<N, we compute the parity of the available N-6 
+ * with 0<=x<y<z<h<v<w<N, we compute the parity of the available N-6
  * disks as:
  *
  * Pa = sum(Di)
@@ -153,7 +153,7 @@
  *
  * Resulting speed in x64, with 8 data disks, using a stripe of 256 KiB,
  * for a Core i7-3740QM CPU @ 2.7GHz is:
- * 
+ *
  *             int8   int32   int64    sse2   sse2e   ssse3  ssse3e
  *   par1             11927   22075   36004
  *   par2              3378    5874   18235   19164
@@ -176,10 +176,10 @@
  *
  *
  * In conclusion, the use of power coefficients, and specifically powers
- * of 1,2,2^-1, is the best option to implement triple parity in CPUs 
+ * of 1,2,2^-1, is the best option to implement triple parity in CPUs
  * without SSSE3.
  * But if a modern CPU with SSSE3 (or similar) is available, the Cauchy
- * matrix is the best option because it provides a fast and general 
+ * matrix is the best option because it provides a fast and general
  * approach working for any number of parities.
  *
  * References:
@@ -212,21 +212,22 @@ void raid_mode(int mode)
 /**
  * Buffer filled with 0 used in recovering.
  */
-static void* raid_empty_zero_block;
+static void *raid_empty_zero_block;
 
-void raid_zero(void* zero)
+void raid_zero(void *zero)
 {
 	raid_empty_zero_block = zero;
 }
 
 /* internal forwarder */
-void (*raid_par_ptr[RAID_PARITY_MAX])(int nd, size_t size, void** vv);
-void (*raid_par3_ptr)(int nd, size_t size, void** vv);
-void (*raid_parz_ptr)(int nd, size_t size, void** vv);
+void (*raid_par_ptr[RAID_PARITY_MAX])(int nd, size_t size, void **vv);
+void (*raid_par3_ptr)(int nd, size_t size, void **vv);
+void (*raid_parz_ptr)(int nd, size_t size, void **vv);
 
-void raid_par(int np, int nd, size_t size, void** v)
+void raid_par(int np, int nd, size_t size, void **v)
 {
 	BUG_ON(np < 1 || np > RAID_PARITY_MAX);
+	BUG_ON(size % 64 != 0);
 
 	raid_par_ptr[np - 1](nd, size, v);
 }
@@ -235,19 +236,17 @@ void raid_par(int np, int nd, size_t size, void** v)
  * Inverts the square matrix M of size nxn into V.
  * We use Gauss elimination to invert.
  */
-void raid_invert(uint8_t* M, uint8_t* V, int n)
+void raid_invert(uint8_t *M, uint8_t *V, int n)
 {
-	int i,j,k;
+	int i, j, k;
 
 	/* set the identity matrix in V */
-	for(i=0;i<n;++i) {
-		for(j=0;j<n;++j) {
+	for (i = 0; i < n; ++i)
+		for (j = 0; j < n; ++j)
 			V[i*n+j] = i == j;
-		}
-	}
 
 	/* for each element in the diagonal */
-	for(k=0;k<n;++k) {
+	for (k = 0; k < n; ++k) {
 		uint8_t f;
 
 		/* the diagonal element cannot be 0 because */
@@ -257,17 +256,17 @@ void raid_invert(uint8_t* M, uint8_t* V, int n)
 
 		/* make the diagonal element to be 1 */
 		f = inv(M[k*n+k]);
-		for(j=0;j<n;++j) {
+		for (j = 0; j < n; ++j) {
 			M[k*n+j] = mul(f, M[k*n+j]);
 			V[k*n+j] = mul(f, V[k*n+j]);
 		}
 
 		/* make all the elements over and under the diagonal to be 0 */
-		for(i=0;i<n;++i) {
+		for (i = 0; i < n; ++i) {
 			if (i == k)
 				continue;
 			f = M[i*n+k];
-			for(j=0;j<n;++j) {
+			for (j = 0; j < n; ++j) {
 				M[i*n+j] ^= mul(f, M[k*n+j]);
 				V[i*n+j] ^= mul(f, V[k*n+j]);
 			}
@@ -285,13 +284,13 @@ void raid_invert(uint8_t* M, uint8_t* V, int n)
  * Note that all the other parities not in the ip[] vector
  * are destroyed.
  */
-void raid_delta_gen(int nr, const int* id, const int* ip, int nd, size_t size, void** v)
+void raid_delta_gen(int nr, const int *id, const int *ip, int nd, size_t size, void **v)
 {
-	void* p[RAID_PARITY_MAX];
-	void* pa[RAID_PARITY_MAX];
+	void *p[RAID_PARITY_MAX];
+	void *pa[RAID_PARITY_MAX];
 	int i;
 
-	for(i=0;i<nr;++i) {
+	for (i = 0; i < nr; ++i) {
 		/* keep a copy of the parity buffer */
 		p[i] = v[nd+ip[i]];
 
@@ -308,7 +307,7 @@ void raid_delta_gen(int nr, const int* id, const int* ip, int nd, size_t size, v
 	/* recompute the minimal parity required */
 	raid_par(ip[nr - 1] + 1, nd, size, v);
 
-	for(i=0;i<nr;++i) {
+	for (i = 0; i < nr; ++i) {
 		/* restore disk buffers as before */
 		v[id[i]] = pa[i];
 
@@ -328,10 +327,10 @@ void raid_delta_gen(int nr, const int* id, const int* ip, int nd, size_t size, v
  *
  * Dx = Pd
  */
-void raid_rec1_par1(const int* id, int nd, size_t size, void** v)
+void raid_rec1_par1(const int *id, int nd, size_t size, void **v)
 {
-	void* p;
-	void* pa;
+	void *p;
+	void *pa;
 
 	/* for PAR1 we can directly compute the missing block */
 	/* and we don't need to use the zero buffer */
@@ -375,19 +374,19 @@ void raid_rec1_par1(const int* id, int nd, size_t size, void** v)
  *
  * That are always satisfied for any 0<=id[0]<id[1]<255.
  */
-void raid_rec2_par2(const int* id, const int* ip, int nd, size_t size, void** vv)
+void raid_rec2_par2(const int *id, const int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t** v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	size_t i;
-	uint8_t* p;
-	uint8_t* pa;
-	uint8_t* q;
-	uint8_t* qa;
-	const uint8_t* T[2];
+	uint8_t *p;
+	uint8_t *pa;
+	uint8_t *q;
+	uint8_t *qa;
+	const uint8_t *T[2];
 
 	/* get multiplication tables */
-	T[0] = table( inv(pow2(id[1]-id[0]) ^ 1) );
-	T[1] = table( inv(pow2(id[0]) ^ pow2(id[1])) );
+	T[0] = table(inv(pow2(id[1]-id[0]) ^ 1));
+	T[1] = table(inv(pow2(id[0]) ^ pow2(id[1])));
 
 	/* compute delta parity */
 	raid_delta_gen(2, id, ip, nd, size, vv);
@@ -397,7 +396,7 @@ void raid_rec2_par2(const int* id, const int* ip, int nd, size_t size, void** vv
 	pa = v[id[0]];
 	qa = v[id[1]];
 
-	for(i=0;i<size;++i) {
+	for (i = 0; i < size; ++i) {
 		/* delta */
 		uint8_t Pd = p[i] ^ pa[i];
 		uint8_t Qd = q[i] ^ qa[i];
@@ -413,22 +412,23 @@ void raid_rec2_par2(const int* id, const int* ip, int nd, size_t size, void** vv
 }
 
 /* internal forwarder */
-void (*raid_rec_ptr[RAID_PARITY_MAX])(int nr, const int* id, const int* ip, int nd, size_t size, void** vv);
+void (*raid_rec_ptr[RAID_PARITY_MAX])(int nr, const int *id, const int *ip, int nd, size_t size, void **vv);
 
-void raid_rec(int nr, const int* id, const int* ip, int nd, size_t size, void** v)
+void raid_rec(int nr, const int *id, const int *ip, int nd, size_t size, void **v)
 {
 	BUG_ON(nr > nd);
+	BUG_ON(size % 64 != 0);
 
 	/* if failed data is present */
-	if (nr != 0) {
+	if (nr != 0)
 		raid_rec_ptr[nr - 1](nr, id, ip, nd, size, v);
-	}
 }
 
-void raid_recpar(int nrd, const int* id, int nrp, int* ip, int np, int nd, size_t size, void** v)
+void raid_recpar(int nrd, const int *id, int nrp, int *ip, int np, int nd, size_t size, void **v)
 {
 	BUG_ON(nrd > nd);
 	BUG_ON(nrd + nrp > np);
+	BUG_ON(size % 64 != 0);
 
 	/* if failed data is present */
 	if (nrd != 0) {
@@ -436,7 +436,7 @@ void raid_recpar(int nrd, const int* id, int nrp, int* ip, int np, int nd, size_
 		int i, j, k;
 
 		/* setup the vector of parities to use */
-		for(i=0,j=0,k=0;i<np;++i) {
+		for (i = 0, j = 0, k = 0; i < np; ++i) {
 			if (ip[j] == i) {
 				++j;
 			} else {
@@ -450,9 +450,7 @@ void raid_recpar(int nrd, const int* id, int nrp, int* ip, int np, int nd, size_
 	}
 
 	/* recompute all the parities up to the last bad one */
-	if (nrp != 0) {
+	if (nrp != 0)
 		raid_par(ip[nrp - 1] + 1, nd, size, v);
-	}
 }
-
 

@@ -22,7 +22,7 @@ static const struct gfzconst16 {
 	uint8_t poly[16];
 	uint8_t half[16];
 	uint8_t low7[16];
-} gfzconst16  __attribute__((aligned(64))) = {
+} gfzconst16  __aligned(64) = {
 	{ 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d },
 	{ 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e },
 	{ 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f }
@@ -31,12 +31,12 @@ static const struct gfzconst16 {
 /*
  * PARz (triple parity with powers of 2^-1) SSE2 implementation
  */
-void raid_parz_sse2(int nd, size_t size, void** vv)
+void raid_parz_sse2(int nd, size_t size, void **vv)
 {
-	uint8_t** v = (uint8_t**)vv;
-	uint8_t* p;
-	uint8_t* q;
-	uint8_t* r;
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	uint8_t *q;
+	uint8_t *r;
 	int d, l;
 	size_t i;
 
@@ -45,15 +45,17 @@ void raid_parz_sse2(int nd, size_t size, void** vv)
 	q = v[nd+1];
 	r = v[nd+2];
 
+	asm_begin();
+
 	asm volatile("movdqa %0,%%xmm7" : : "m" (gfzconst16.poly[0]));
 	asm volatile("movdqa %0,%%xmm3" : : "m" (gfzconst16.half[0]));
 	asm volatile("movdqa %0,%%xmm6" : : "m" (gfzconst16.low7[0]));
 
-	for(i=0;i<size;i+=16) {
+	for (i = 0; i < size; i += 16) {
 		asm volatile("movdqa %0,%%xmm0" : : "m" (v[l][i]));
 		asm volatile("movdqa %xmm0,%xmm1");
 		asm volatile("movdqa %xmm0,%xmm2");
-		for(d=l-1;d>=0;--d) {
+		for (d = l-1; d >= 0; --d) {
 			asm volatile("pxor %xmm4,%xmm4");
 			asm volatile("pcmpgtb %xmm1,%xmm4");
 			asm volatile("paddb %xmm1,%xmm1");
@@ -79,7 +81,7 @@ void raid_parz_sse2(int nd, size_t size, void** vv)
 		asm volatile("movntdq %%xmm2,%0" : "=m" (r[i]));
 	}
 
-	asm volatile("sfence" : : : "memory");
+	asm_end();
 }
 #endif
 
@@ -89,12 +91,12 @@ void raid_parz_sse2(int nd, size_t size, void** vv)
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid_parz_sse2ext(int nd, size_t size, void** vv)
+void raid_parz_sse2ext(int nd, size_t size, void **vv)
 {
-	uint8_t** v = (uint8_t**)vv;
-	uint8_t* p;
-	uint8_t* q;
-	uint8_t* r;
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	uint8_t *q;
+	uint8_t *r;
 	int d, l;
 	size_t i;
 
@@ -103,18 +105,20 @@ void raid_parz_sse2ext(int nd, size_t size, void** vv)
 	q = v[nd+1];
 	r = v[nd+2];
 
+	asm_begin();
+
 	asm volatile("movdqa %0,%%xmm7" : : "m" (gfzconst16.poly[0]));
 	asm volatile("movdqa %0,%%xmm3" : : "m" (gfzconst16.half[0]));
 	asm volatile("movdqa %0,%%xmm11" : : "m" (gfzconst16.low7[0]));
 
-	for(i=0;i<size;i+=32) {
+	for (i = 0; i < size; i += 32) {
 		asm volatile("movdqa %0,%%xmm0" : : "m" (v[l][i]));
 		asm volatile("movdqa %0,%%xmm8" : : "m" (v[l][i+16]));
 		asm volatile("movdqa %xmm0,%xmm1");
 		asm volatile("movdqa %xmm8,%xmm9");
 		asm volatile("movdqa %xmm0,%xmm2");
 		asm volatile("movdqa %xmm8,%xmm10");
-		for(d=l-1;d>=0;--d) {
+		for (d = l-1; d >= 0; --d) {
 			asm volatile("movdqa %xmm2,%xmm6");
 			asm volatile("movdqa %xmm10,%xmm14");
 			asm volatile("pxor %xmm4,%xmm4");
@@ -159,7 +163,7 @@ void raid_parz_sse2ext(int nd, size_t size, void** vv)
 		asm volatile("movntdq %%xmm10,%0" : "=m" (r[i+16]));
 	}
 
-	asm volatile("sfence" : : : "memory");
+	asm_end();
 }
 #endif
 
