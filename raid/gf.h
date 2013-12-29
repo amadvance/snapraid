@@ -25,12 +25,6 @@
  */
 
 /*
- * Generic assert() with inverted meaning.
- */
-#define BUG_ON(a) assert(!(a))
-
-
-/*
  * GF a*b.
  */
 static __always_inline uint8_t mul(uint8_t a, uint8_t b)

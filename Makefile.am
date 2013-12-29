@@ -11,6 +11,8 @@ snapraid_SOURCES = \
 	raid/intz.c \
 	raid/x86z.c \
 	raid/sort.c \
+	raid/memory.c \
+	raid/test.c \
 	snapraid.c \
 	tommy.c \
 	util.c \
@@ -43,6 +45,9 @@ noinst_HEADERS = \
 	raid/internal.h \
 	raid/cpu.h \
 	raid/gf.h \
+	raid/combo.h \
+	raid/memory.h \
+	raid/test.h \
 	portable.h \
 	snapraid.h \
 	util.h \
@@ -69,7 +74,6 @@ noinst_HEADERS = \
 	tommyhashdyn.c \
 	tommylist.c \
 	fnmatch.h \
-	combo.h \
 	import.h \
 	mingw.h \
 	unix.h

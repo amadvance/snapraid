@@ -24,7 +24,7 @@
 #include "parity.h"
 #include "handle.h"
 #include "raid/raid.h"
-#include "combo.h"
+#include "raid/combo.h"
 
 /****************************************************************************/
 /* check */

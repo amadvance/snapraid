@@ -21,10 +21,11 @@
 #include "util.h"
 #include "raid/raid.h"
 #include "raid/cpu.h"
+#include "raid/combo.h"
 #include "raid/internal.h"
+#include "raid/test.h"
 #include "elem.h"
 #include "state.h"
-#include "combo.h"
 
 struct hash_test_vector {
 	const char* data;
@@ -48,268 +49,9 @@ static struct hash_test_vector TEST_SPOOKY2[] = {
 { 0, 0, { 0 } }
 };
 
-/**
- * Binomial coefficient of n over r.
- */
-static unsigned bc(unsigned n, unsigned r)
-{
-	if (r == 0 || n == r)
-		return 1;
-	else
-		return bc(n - 1, r - 1) + bc(n - 1, r);
-}
-
-static void combotest(void)
-{
-	unsigned r;
-	unsigned count;
-	int p[LEV_MAX];
-
-	/* all parities */
-	for(r=1;r<=LEV_MAX;++r) {
-		/* count combination (r of LEV_MAX) parities */
-		count = 0;
-		combination_first(r, LEV_MAX, p);
-		do {
-			++count;
-		} while (combination_next(r, LEV_MAX, p));
-
-		if (count != bc(LEV_MAX, r)) {
-			fprintf(stderr, "Failed COMBO test\n");
-			exit(EXIT_FAILURE);
-		}
-	}
-}
-
-static void recovtest(unsigned mode, unsigned nd, unsigned block_size)
-{
-	void* buffer_alloc;
-	void** buffer;
-	void** data;
-	void** parity;
-	void** test;
-	void* data_save[LEV_MAX];
-	void* parity_save[LEV_MAX];
-	void* zero;
-	void* waste;
-	unsigned buffermax;
-	int id[LEV_MAX];
-	int ip[LEV_MAX];
-	unsigned i;
-	unsigned j;
-	unsigned nr;
-	void (*map[LEV_MAX][4])(int nr, const int* id, const int* ip, int nd, size_t size, void** vbuf);
-	unsigned mac[LEV_MAX];
-	unsigned np;
-
-	raid_mode(mode);
-	if (mode == RAID_MODE_CAUCHY)
-		np = RAID_PARITY_MAX;
-	else
-		np = 3;
-
-	buffermax = nd + np * 2 + 2;
-
-	buffer = malloc_nofail_vector_align(nd, buffermax, block_size, &buffer_alloc);
-	mtest_vector(buffer, buffermax, block_size);
-
-	data = buffer;
-	parity = buffer + nd;
-	test = buffer + nd + np;
-
-	for(i=0;i<np;++i)
-		parity_save[i] = parity[i];
-
-	zero = buffer[buffermax-2];
-	memset(zero, 0, block_size);
-	raid_zero(zero);
-
-	waste = buffer[buffermax-1];
-
-	/* fill data disk with random */
-	mrand_vector(buffer, nd, block_size);
-
-	/* setup recov functions */
-	for(i=0;i<np;++i) {
-		mac[i] = 0;
-		if (i == 0) {
-			map[i][mac[i]++] = raid_rec1_int8;
-#if defined(__i386__) || defined(__x86_64__)
-			if (raid_cpu_has_ssse3()) {
-				map[i][mac[i]++] = raid_rec1_ssse3;
-			}
-#endif
-		} else if (i == 1) {
-			map[i][mac[i]++] = raid_rec2_int8;
-#if defined(__i386__) || defined(__x86_64__)
-			if (raid_cpu_has_ssse3()) {
-				map[i][mac[i]++] = raid_rec2_ssse3;
-			}
-#endif
-		} else {
-			map[i][mac[i]++] = raid_recX_int8;
-#if defined(__i386__) || defined(__x86_64__)
-			if (raid_cpu_has_ssse3()) {
-				map[i][mac[i]++] = raid_recX_ssse3;
-			}
-#endif
-		}
-	}
-
-	/* compute the parity */
-	raid_par(nd, np, block_size, buffer);
-
-	/* set all the parity to the waste buffer */
-	for(i=0;i<np;++i)
-		parity[i] = waste;
-
-	/* all parity levels */
-	for(nr=1;nr<=np;++nr) {
-		/* all combinations (nr of nd) disks */
-		combination_first(nr, nd, id);
-		do {
-			/* all combinations (nr of np) parities */
-			combination_first(nr, np, ip);
-			do {
-				/* for each recover function */
-				for(j=0;j<mac[nr-1];++j) {
-					/* set */
-					for(i=0;i<nr;++i) {
-						/* remove the missing data */
-						data_save[i] = data[id[i]];
-						data[id[i]] = test[i];
-						/* set the parity to use */
-						parity[ip[i]] = parity_save[ip[i]];
-					}
-
-					/* recover */
-					map[nr-1][j](nr, id, ip, nd, block_size, buffer);
-
-					/* check */
-					for(i=0;i<nr;++i) {
-						if (memcmp(test[i], data_save[i], block_size) != 0) {
-							fprintf(stderr, "Failed RECOV test\n");
-							exit(EXIT_FAILURE);
-						}
-					}
-
-					/* restore */
-					for(i=0;i<nr;++i) {
-						/* restore the data */
-						data[id[i]] = data_save[i];
-						/* restore the parity */
-						parity[ip[i]] = waste;
-					}
-				}
-			} while (combination_next(nr, np, ip));
-		} while (combination_next(nr, nd, id));
-	}
-
-	free(buffer_alloc);
-	free(buffer);
-}
-
-static void gentest(unsigned mode, unsigned nd, unsigned block_size)
-{
-	void* buffer_alloc;
-	void** buffer;
-	unsigned buffermax;
-	unsigned i, j;
-	void (*map[64])(int nd, size_t size, void** vbuf);
-	unsigned mac;
-	unsigned np;
-
-	raid_mode(mode);
-	if (mode == RAID_MODE_CAUCHY)
-		np = RAID_PARITY_MAX;
-	else
-		np = 3;
-
-	buffermax = nd + np * 2;
-
-	buffer = malloc_nofail_vector_align(nd, buffermax, block_size, &buffer_alloc);
-	mtest_vector(buffer, buffermax, block_size);
-
-	/* fill with random */
-	mrand_vector(buffer, buffermax, block_size);
-
-	/* compute the parity */
-	raid_par(nd, np, block_size, buffer);
-
-	/* copy in back buffers */
-	for(i=0;i<np;++i)
-		memcpy(buffer[nd + np + i], buffer[nd + i], block_size);
-
-	/* load all the available functions */
-	mac = 0;
-
-	map[mac++] = raid_par1_int32;
-	map[mac++] = raid_par1_int64;
-	map[mac++] = raid_par2_int32;
-	map[mac++] = raid_par2_int64;
-
-#if defined(__i386__) || defined(__x86_64__)
-	if (raid_cpu_has_sse2()) {
-		map[mac++] = raid_par1_sse2;
-		map[mac++] = raid_par2_sse2;
-#if defined(__x86_64__)
-		map[mac++] = raid_par2_sse2ext;
-#endif
-	}
-
-	if (mode == RAID_MODE_CAUCHY) {
-		map[mac++] = raid_par3_int8;
-		map[mac++] = raid_par4_int8;
-		map[mac++] = raid_par5_int8;
-		map[mac++] = raid_par6_int8;
-
-		if (raid_cpu_has_ssse3()) {
-			map[mac++] = raid_par3_ssse3;
-			map[mac++] = raid_par4_ssse3;
-			map[mac++] = raid_par5_ssse3;
-			map[mac++] = raid_par6_ssse3;
-#if defined(__x86_64__)
-			map[mac++] = raid_par3_ssse3ext;
-			map[mac++] = raid_par4_ssse3ext;
-			map[mac++] = raid_par5_ssse3ext;
-			map[mac++] = raid_par6_ssse3ext;
-#endif
-		}
-#endif
-	} else {
-#if defined(__i386__) || defined(__x86_64__)
-		map[mac++] = raid_parz_int32;
-		map[mac++] = raid_parz_int64;
-		if (raid_cpu_has_sse2()) {
-			map[mac++] = raid_parz_sse2;
-#if defined(__x86_64__)
-			map[mac++] = raid_parz_sse2ext;
-#endif
-		}
-#endif
-	}
-
-	/* check all the functions */
-	for(j=0;j<mac;++j) {
-		/* compute parity */
-		map[j](nd, block_size, buffer);
-
-		/* check it */
-		for(i=0;i<np;++i) {
-			if (memcmp(buffer[nd + np + i], buffer[nd + i], block_size) != 0) {
-				fprintf(stderr, "Failed GEN test\n");
-				exit(EXIT_FAILURE);
-			}
-		}
-	}
-
-	free(buffer_alloc);
-	free(buffer);
-}
-
 #define HASH_TEST_MAX 512 /* tests are never longer than 512 bytes */
 
-static void hashtest(void)
+static void test_hash(void)
 {
 	unsigned i;
 	unsigned char* seed_aligned;
@@ -391,7 +133,7 @@ static struct crc_test_vector TEST_CRC32C[] = {
 { 0, 0, 0 }
 };
 
-static void crc32ctest(void)
+static void test_crc32c(void)
 {
 	unsigned i;
 
@@ -405,7 +147,7 @@ static void crc32ctest(void)
 	}
 }
 
-void selftest()
+void selftest(void)
 {
 	fprintf(stdlog, "selftest:\n");
 	fflush(stdlog);
@@ -418,13 +160,35 @@ void selftest()
 		exit(EXIT_FAILURE);
 	}
 
-	hashtest();
-	crc32ctest();
-	combotest();
-	gentest(RAID_MODE_VANDERMONDE, 32, 256);
-	recovtest(RAID_MODE_VANDERMONDE, 12, 256);
-	gentest(RAID_MODE_CAUCHY, 32, 256);
-	recovtest(RAID_MODE_CAUCHY, 12, 256);
-	gentest(RAID_MODE_CAUCHY, 1, 256);
+	test_hash();
+	test_crc32c();
+	if (raid_test_sort() != 0) {
+		fprintf(stderr, "Failed SORT test\n");
+		exit(EXIT_FAILURE);
+	}
+	if (raid_test_combo() != 0) {
+		fprintf(stderr, "Failed COMBO test\n");
+		exit(EXIT_FAILURE);
+	}
+	if (raid_test_par(RAID_MODE_VANDERMONDE, 32, 256) != 0) {
+		fprintf(stderr, "Failed PAR Vandermonde test\n");
+		exit(EXIT_FAILURE);
+	}
+	if (raid_test_rec(RAID_MODE_VANDERMONDE, 12, 256) != 0) {
+		fprintf(stderr, "Failed REC Vandermonde test\n");
+		exit(EXIT_FAILURE);
+	}
+	if (raid_test_par(RAID_MODE_CAUCHY, 32, 256) != 0) {
+		fprintf(stderr, "Failed PAR Cauchy test\n");
+		exit(EXIT_FAILURE);
+	}
+	if (raid_test_rec(RAID_MODE_CAUCHY, 12, 256) != 0) {
+		fprintf(stderr, "Failed REC Cauchy test\n");
+		exit(EXIT_FAILURE);
+	}
+	if (raid_test_par(RAID_MODE_CAUCHY, 1, 256) != 0) {
+		fprintf(stderr, "Failed PAR Cauchy test sigle data disk\n");
+		exit(EXIT_FAILURE);
+	}
 }
 

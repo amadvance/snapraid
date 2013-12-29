@@ -44,7 +44,6 @@
 
 /**
  * Maximum number of data disks.
- * Limit of the parity generator matrix used.
  */
 #define RAID_DATA_MAX 251
 

@@ -19,6 +19,7 @@
 
 #include "util.h"
 #include "raid/cpu.h"
+#include "raid/memory.h"
 
 /****************************************************************************/
 /* hex conversion table */
@@ -1342,143 +1343,6 @@ void* malloc_nofail(size_t size)
 	return ptr;
 }
 
-/**
- * Memory alignment provided by malloc_nofail_align().
- *
- * It should guarantee good cache performance everywhere.
- */
-#define MALLOC_ALIGN 256
-
-void* malloc_nofail_align(size_t size, void** freeptr)
-{
-	unsigned char* ptr = malloc_nofail(size + MALLOC_ALIGN);
-	uintptr_t offset;
-
-	*freeptr = ptr;
-
-	offset = ((uintptr_t)ptr) % MALLOC_ALIGN;
-
-	if (offset != 0) {
-		ptr += MALLOC_ALIGN - offset;
-	}
-
-	return ptr;
-}
-
-/**
- * Memory displacement to avoid cache collisions on contiguous blocks.
- *
- * When allocating a sequence of blocks with a size of power of 2,
- * there is the risk that the start of each block is mapped into the same cache line,
- * resulting in cache collisions if you access all the blocks in parallel,
- * from the start to the end.
- *
- * The selected value was choosen empirically with some speed tests
- * with 8/12/16/20/24 data buffers and 3 parity buffers
- * for RAID-5/6/TP computation.
- *
- * With displacement (8 buffers, icore5, 32 bit):
- *
- * PAR1 sse2x4 21936 [MB/s]
- * PAR2 sse2x2 11902 [MB/s]
- * PARz sse2x1 5838 [MB/s]
- *
- * Without displacement:
- *
- * PAR1 sse2x4 15368 [MB/s]
- * PAR2 sse2x2 6814 [MB/s]
- * PARz sse2x1 3033 [MB/s]
- */
-#define MALLOC_DISPLACEMENT (7*256)
-
-void** malloc_nofail_vector_align(size_t reverse, size_t count, size_t size, void** freeptr)
-{
-	void** buffer;
-	unsigned char* buffer_aligned;
-	size_t i;
-
-	assert(reverse <= count);
-
-	buffer = malloc_nofail(count * sizeof(void*));
-
-	buffer_aligned = malloc_nofail_align(count * (size + MALLOC_DISPLACEMENT), freeptr);
-
-	for(i=0;i<count;++i)
-		buffer[i] = buffer_aligned + i * (size + MALLOC_DISPLACEMENT);
-
-	/* reverse order for the initial ones */
-	for(i=0;i<reverse/2;++i) {
-		void* ptr = buffer[i];
-		buffer[i] = buffer[reverse - 1 - i];
-		buffer[reverse - 1 - i] = ptr;
-	}
-
-	return buffer;
-}
-
-void mtest_vector(void** vv, size_t count, size_t size)
-{
-	unsigned char** v = (unsigned char**)vv;
-	size_t i;
-	size_t j;
-	unsigned k;
-	unsigned char d;
-	unsigned char p;
-
-	/* fill with 0 */
-	d = 0;
-	for(i=0;i<count;++i) {
-		for(j=0;j<size;++j) {
-			v[i][j] = d;
-		}
-	}
-
-	/* test with all the byte patterns */
-	for(k=1;k<256;++k) {
-		p = d;
-		d = k;
-
-		/* forward fill */
-		for(i=0;i<count;++i) {
-			for(j=0;j<size;++j) {
-				if (v[i][j] != p)
-					goto fail;
-				v[i][j] = d;
-			}
-		}
-
-		p = d;
-		d = ~p;
-		/* backward fill with complement */
-		for(i=0;i<count;++i) {
-			for(j=size;j>0;--j) {
-				if (v[i][j-1] != p)
-					goto fail;
-				v[i][j-1] = d;
-			}
-		}
-	}
-
-	return;
-
-fail:
-	fprintf(stderr, "DANGER! Your RAM memory is broken! DO NOT PROCEED UNTIL FIXED!\n");
-	fprintf(stderr, "Try running some memory test like http://www.memtest86.com/\n");
-	exit(EXIT_FAILURE);
-}
-
-void mrand_vector(void** vv, size_t count, size_t size)
-{
-	unsigned char** v = (unsigned char**)vv;
-	size_t i;
-	size_t j;
-
-	for(i=0;i<count;++i) {
-		for(j=0;j<size;++j)
-			v[i][j] = rand();
-	}
-}
-
 char* strdup_nofail(const char* str)
 {
 	size_t size;
@@ -1501,6 +1365,54 @@ char* strdup_nofail(const char* str)
 	mcounter += size;
 
 	return ptr;
+}
+
+void* malloc_nofail_align(size_t size, void** freeptr)
+{
+	void* ptr;
+
+	ptr = raid_malloc_align(size, freeptr);
+
+	if (!ptr) {
+		/* don't use printf to avoid any possible extra allocation */
+		if (write(2, "Low Memory\n", 11) != 11) {
+			/* ignore error */
+		}
+		exit(EXIT_FAILURE);
+	}
+
+	return ptr;
+}
+
+void** malloc_nofail_vector_align(size_t reverse, size_t count, size_t size, void** freeptr)
+{
+	void* ptr;
+
+	ptr = raid_malloc_vector(reverse, count, size, freeptr);
+
+	if (!ptr) {
+		/* don't use printf to avoid any possible extra allocation */
+		if (write(2, "Low Memory\n", 11) != 11) {
+			/* ignore error */
+		}
+		exit(EXIT_FAILURE);
+	}
+
+	return ptr;
+}
+
+void mtest_vector(void** vv, size_t count, size_t size)
+{
+	if (raid_mtest_vector(vv, count, size) != 0) {
+		fprintf(stderr, "DANGER! Your RAM memory is broken! DO NOT PROCEED UNTIL FIXED!\n");
+		fprintf(stderr, "Try running some memory test like http://www.memtest86.com/\n");
+		exit(EXIT_FAILURE);
+	}
+}
+
+void mrand_vector(void** vv, size_t count, size_t size)
+{
+	raid_mrand_vector(vv, count, size);
 }
 
 /****************************************************************************/

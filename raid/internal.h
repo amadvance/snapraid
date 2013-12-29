@@ -18,8 +18,15 @@
 #ifndef __RAID_INTERNAL_H
 #define __RAID_INTERNAL_H
 
+/*
+ * Includes anything required for compatibility.
+ */
 #include "../portable.h"
+#define BUG_ON(a) assert(!(a))
 
+/*
+ * Include the main header.
+ */
 #include "raid.h"
 
 /*

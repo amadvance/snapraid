@@ -402,7 +402,7 @@ void raid_rec1_int8(int nr, const int *id, const int *ip, int nd, size_t size, v
 
 	(void)nr; /* unused, it's always 1 */
 
-	/* if it's RAID5 uses the dedicated and faster function */
+	/* if it's RAID5 uses the faster function */
 	if (ip[0] == 0) {
 		raid_rec1_par1(id, nd, size, vv);
 		return;
@@ -459,7 +459,7 @@ void raid_rec2_int8(int nr, const int *id, const int *ip, int nd, size_t size, v
 
 	(void)nr; /* unused, it's always 2 */
 
-	/* if it's RAID6 recovering with P and Q uses the dedicated and faster function */
+	/* if it's RAID6 recovering with P and Q uses the faster function */
 	if (ip[0] == 0 && ip[1] == 1) {
 		raid_rec2_par2(id, ip, nd, size, vv);
 		return;

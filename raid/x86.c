@@ -1338,7 +1338,7 @@ void raid_rec1_ssse3(int nr, const int *id, const int *ip, int nd, size_t size, 
 
 	(void)nr; /* unused, it's always 1 */
 
-	/* if it's RAID5 uses the dedicated and faster function */
+	/* if it's RAID5 uses the faster function */
 	if (ip[0] == 0) {
 		raid_rec1_par1(id, nd, size, vv);
 		return;
