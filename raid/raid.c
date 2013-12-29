@@ -15,35 +15,17 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-/*
- * Copyright notes:
- *
- * The RAID5 and RAID6 support was originally derived from the
- * H. Peter Anvin paper "The mathematics of RAID-6" [1] and the
- * libraid6 library, also by H. Peter Anvin, released with license
- * "GPLv2 or any later version" inside the Linux Kernel 2.6.38.
- *
- * This support was later completely rewritten (many times), but
- * the H. Peter Anvin's Copyright may still apply.
- *
- * The others RAID levels and the recovering based on matrix
- * inversion is original work implemented from scratch.
- */
+#include "internal.h"
+#include "gf.h"
 
 /*
- * The RAID5 and RAID6 support is implemented using the Galois Field
- * GF(2^8) with the primitive polynomial x^8 + x^4 + x^3 + x^2 + 1
- * (285 decimal).
+ * This is a RAID implementation working in the Galois Field GF(2^8) with
+ * the primitive polynomial x^8 + x^4 + x^3 + x^2 + 1 (285 decimal), and
+ * supporting up to six parity levels.
  *
- * The parity P and Q of a set of N disk Di with 0<=i<N, is computed
- * using the equations:
- *
- * P = sum(Di)
- * Q = sum(2^i * Di) with 0<=i<N
- *
- * This approach is the same used by the Linux Kernel RAID, and by ZFS
- * RAIDZ2, better described in the H. Peter Anvin paper "The mathematics
- * of RAID-6" [1].
+ * For RAID5 and RAID6 it works as as described in the H. Peter Anvin's
+ * paper "The mathematics of RAID-6" [1]. Please refer to this paper for a
+ * complete explanation.
  *
  * To support triple parity, it was first evaluated and then dropped, an
  * extension of the same approach, with additional parity coefficients set
@@ -100,7 +82,6 @@
  * 01 bb a6 d7 c7 07 ce 82 4a 2f a5 9b b6 60 f1 ad e7 f4 06 d2 df 2e...
  * 01 97 7f 9c 7c 18 bd a2 58 1a da 74 70 a3 e5 47 29 07 f5 80 23 e9...
  * 01 2b 3f cf 73 2c d6 ed cb 74 15 78 8a c1 17 c9 89 68 21 ab 76 3b...
- * (see tables.h for the matrix with all the columns)
  *
  * This matrix supports 6 level of parity, one for each row, for up to 251
  * data disks, one for each column, with all the 377,342,351,231 square
@@ -189,9 +170,6 @@
  * [4] Roth, "Introduction to Coding Theory", 2006
  * [5] Plank, "Screaming Fast Galois Field Arithmetic Using Intel SIMD Instructions", 2013
  */
-
-#include "internal.h"
-#include "gf.h"
 
 /**
  * Generator matrix currently used.
