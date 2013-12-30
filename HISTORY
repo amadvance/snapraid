@@ -1,8 +1,8 @@
 SnapRAID HISTORY
 ================
 
-5.2 2013/12 (BETA)
-==================
+5.2 2013/12
+===========
  * If a disk changes UUID, automatically disable the inode
    recognition, because this is likely a new filesystem with
    all the inodes reassigned, and we don't want to risk a false
@@ -15,7 +15,8 @@ SnapRAID HISTORY
  * Doesn't count empty dirs as files in the diff counters.
  * Added a new "share" configuration option to allow to share
    in the network the pool directory also in Windows.
- * Fixed build problem in OpenBSD due the old assembler.
+ * Fixed build problems in OpenBSD due the old assembler.
+ * Fixed build problems in platform differents than x86.
 
 5.1 2013/12
 ===========
