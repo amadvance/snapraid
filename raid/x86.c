@@ -10,15 +10,12 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "internal.h"
 #include "gf.h"
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 /*
  * PAR1 (RAID5 with xor) SSE2 implementation
  *
@@ -66,7 +63,7 @@ void raid_par1_sse2(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 static const struct gfconst16 {
 	uint8_t poly[16];
 	uint8_t low4[16];
@@ -76,7 +73,7 @@ static const struct gfconst16 {
 };
 #endif
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 /*
  * PAR2 (RAID6 with powers of 2) SSE2 implementation
  */
@@ -130,7 +127,7 @@ void raid_par2_sse2(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 /*
  * PAR2 (RAID6 with powers of 2) SSE2 implementation
  *
@@ -210,7 +207,7 @@ void raid_par2_sse2ext(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 /*
  * PAR3 (triple parity with Cauchy matrix) SSSE3 implementation
  */
@@ -307,7 +304,7 @@ void raid_par3_ssse3(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 /*
  * PAR3 (triple parity with Cauchy matrix) SSSE3 implementation
  *
@@ -448,7 +445,7 @@ void raid_par3_ssse3ext(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 /*
  * PAR4 (quad parity with Cauchy matrix) SSSE3 implementation
  */
@@ -564,7 +561,7 @@ void raid_par4_ssse3(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 /*
  * PAR4 (quad parity with Cauchy matrix) SSSE3 implementation
  *
@@ -737,7 +734,7 @@ void raid_par4_ssse3ext(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 /*
  * PAR5 (penta parity with Cauchy matrix) SSSE3 implementation
  */
@@ -878,7 +875,7 @@ void raid_par5_ssse3(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 /*
  * PAR5 (penta parity with Cauchy matrix) SSSE3 implementation
  *
@@ -1011,7 +1008,7 @@ void raid_par5_ssse3ext(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 /*
  * PAR6 (hexa parity with Cauchy matrix) SSSE3 implementation
  */
@@ -1173,7 +1170,7 @@ void raid_par6_ssse3(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 /*
  * PAR6 (hexa parity with Cauchy matrix) SSSE3 implementation
  *
@@ -1323,7 +1320,7 @@ void raid_par6_ssse3ext(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 /*
  * RAID recovering for one disk SSSE3 implementation
  */
@@ -1382,7 +1379,7 @@ void raid_rec1_ssse3(int nr, const int *id, const int *ip, int nd, size_t size, 
 }
 #endif
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 /*
  * RAID recovering for two disks SSSE3 implementation
  */
@@ -1488,7 +1485,7 @@ void raid_rec2_ssse3(int nr, const int *id, const int *ip, int nd, size_t size, 
 }
 #endif
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 /*
  * RAID recovering SSSE3 implementation
  */

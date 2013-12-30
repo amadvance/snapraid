@@ -10,9 +10,6 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "internal.h"
@@ -160,19 +157,19 @@ int raid_test_rec(int mode, int nd, size_t size)
 		mac[i] = 0;
 		if (i == 0) {
 			map[i][mac[i]++] = raid_rec1_int8;
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 			if (raid_cpu_has_ssse3())
 				map[i][mac[i]++] = raid_rec1_ssse3;
 #endif
 		} else if (i == 1) {
 			map[i][mac[i]++] = raid_rec2_int8;
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 			if (raid_cpu_has_ssse3())
 				map[i][mac[i]++] = raid_rec2_ssse3;
 #endif
 		} else {
 			map[i][mac[i]++] = raid_recX_int8;
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 			if (raid_cpu_has_ssse3())
 				map[i][mac[i]++] = raid_recX_ssse3;
 #endif
@@ -271,11 +268,11 @@ int raid_test_par(int mode, int nd, size_t size)
 	map[mac++] = raid_par2_int32;
 	map[mac++] = raid_par2_int64;
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
 		map[mac++] = raid_par1_sse2;
 		map[mac++] = raid_par2_sse2;
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 		map[mac++] = raid_par2_sse2ext;
 #endif
 	}
@@ -287,13 +284,13 @@ int raid_test_par(int mode, int nd, size_t size)
 		map[mac++] = raid_par5_int8;
 		map[mac++] = raid_par6_int8;
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 		if (raid_cpu_has_ssse3()) {
 			map[mac++] = raid_par3_ssse3;
 			map[mac++] = raid_par4_ssse3;
 			map[mac++] = raid_par5_ssse3;
 			map[mac++] = raid_par6_ssse3;
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 			map[mac++] = raid_par3_ssse3ext;
 			map[mac++] = raid_par4_ssse3ext;
 			map[mac++] = raid_par5_ssse3ext;
@@ -305,10 +302,10 @@ int raid_test_par(int mode, int nd, size_t size)
 		map[mac++] = raid_parz_int32;
 		map[mac++] = raid_parz_int64;
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 		if (raid_cpu_has_sse2()) {
 			map[mac++] = raid_parz_sse2;
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 			map[mac++] = raid_parz_sse2ext;
 #endif
 		}

@@ -10,9 +10,6 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "internal.h"
@@ -42,10 +39,10 @@ void raid_init(void)
 	raid_rec_ptr[4] = raid_recX_int8;
 	raid_rec_ptr[5] = raid_recX_int8;
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
 		raid_par_ptr[0] = raid_par1_sse2;
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 		if (raid_cpu_has_slowextendedreg()) {
 			raid_par_ptr[1] = raid_par2_sse2;
 			raid_parz_ptr = raid_parz_sse2;
@@ -60,7 +57,7 @@ void raid_init(void)
 	}
 
 	if (raid_cpu_has_ssse3()) {
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 		raid_par3_ptr = raid_par3_ssse3ext;
 		raid_par_ptr[3] = raid_par4_ssse3ext;
 		raid_par_ptr[4] = raid_par5_ssse3ext;
@@ -102,7 +99,7 @@ static struct raid_func {
 	{ "int8", raid_rec2_int8 },
 	{ "int8", raid_recX_int8 },
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	{ "sse2", raid_par1_sse2 },
 	{ "sse2", raid_par2_sse2 },
 	{ "sse2", raid_parz_sse2 },
@@ -115,7 +112,7 @@ static struct raid_func {
 	{ "ssse3", raid_recX_ssse3 },
 #endif
 
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 	{ "sse2e", raid_par2_sse2ext },
 	{ "sse2e", raid_parz_sse2ext },
 	{ "ssse3e", raid_par3_ssse3ext },

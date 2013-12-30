@@ -32,6 +32,19 @@
 #endif
 
 /**
+ * Architecture.
+ */
+#if defined(__i386__)
+#define CONFIG_X86 1
+#define CONFIG_X86_32 1
+#endif
+
+#if defined(__x86_64__)
+#define CONFIG_X86 1
+#define CONFIG_X86_64 1
+#endif
+
+/**
  * Includes some platform specific headers.
  */
 #if HAVE_SYS_PARAM_H

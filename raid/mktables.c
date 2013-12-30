@@ -10,9 +10,6 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <stdio.h>
@@ -192,9 +189,6 @@ int main(void)
 	printf(" * but WITHOUT ANY WARRANTY; without even the implied warranty of\n");
 	printf(" * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n");
 	printf(" * GNU General Public License for more details.\n");
-	printf(" *\n");
-	printf(" * You should have received a copy of the GNU General Public License\n");
-	printf(" * along with this program.  If not, see <http://www.gnu.org/licenses/>.\n");
 	printf(" */\n");
 	printf("\n");
 
@@ -319,7 +313,7 @@ int main(void)
 	}
 	printf("};\n\n");
 
-	printf("#if defined(__i386__) || defined(__x86_64__)\n");
+	printf("#ifdef CONFIG_X86\n");
 	printf("/**\n");
 	printf(" * PSHUFB tables for the Cauchy matrix.\n");
 	printf(" *\n");
@@ -351,7 +345,7 @@ int main(void)
 	printf("};\n");
 	printf("#endif\n\n");
 
-	printf("#if defined(__i386__) || defined(__x86_64__)\n");
+	printf("#ifdef CONFIG_X86\n");
 	printf("/**\n");
 	printf(" * PSHUFB tables for generic multiplication.\n");
 	printf(" *\n");

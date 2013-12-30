@@ -10,9 +10,6 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef __RAID_TEST_H
@@ -28,7 +25,7 @@
 int raid_test_sort(void);
 
 /**
- * Tests combinations functions.
+ * Tests combination functions.
  *
  * Tests combination_first() and combination_next() for all the parity levels.
  *

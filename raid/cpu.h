@@ -10,17 +10,14 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #ifndef __RAID_CPU_H
 #define __RAID_CPU_H
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 
-static __always_inline void raid_cpuid(uint32_t func_eax, uint32_t sub_ecx, uint32_t *reg)
+static inline void raid_cpuid(uint32_t func_eax, uint32_t sub_ecx, uint32_t *reg)
 {
 	asm volatile(
 #if defined(__i386__) && defined(__PIC__)
@@ -40,7 +37,7 @@ static __always_inline void raid_cpuid(uint32_t func_eax, uint32_t sub_ecx, uint
 
 #define CPU_VENDOR_MAX 13
 
-static __always_inline void raid_cpu_info(char *vendor, unsigned *family, unsigned *model)
+static inline void raid_cpu_info(char *vendor, unsigned *family, unsigned *model)
 {
 	uint32_t reg[4];
 	unsigned f, ef, m, em;
@@ -73,7 +70,7 @@ static __always_inline void raid_cpu_info(char *vendor, unsigned *family, unsign
 	}
 }
 
-static __always_inline int raid_cpu_has_mmx(void)
+static inline int raid_cpu_has_mmx(void)
 {
 	uint32_t reg[4];
 
@@ -82,7 +79,7 @@ static __always_inline int raid_cpu_has_mmx(void)
 	return (reg[3] >> 23) & 1;
 }
 
-static __always_inline int raid_cpu_has_sse2(void)
+static inline int raid_cpu_has_sse2(void)
 {
 	uint32_t reg[4];
 
@@ -91,7 +88,7 @@ static __always_inline int raid_cpu_has_sse2(void)
 	return (reg[3] >> 26) & 1;
 }
 
-static __always_inline int raid_cpu_has_ssse3(void)
+static inline int raid_cpu_has_ssse3(void)
 {
 	uint32_t reg[4];
 
@@ -100,7 +97,7 @@ static __always_inline int raid_cpu_has_ssse3(void)
 	return (reg[2] >> 9) & 1;
 }
 
-static __always_inline int raid_cpu_has_sse42(void)
+static inline int raid_cpu_has_sse42(void)
 {
 	uint32_t reg[4];
 
@@ -109,7 +106,7 @@ static __always_inline int raid_cpu_has_sse42(void)
 	return (reg[2] >> 20) & 1;
 }
 
-static __always_inline int raid_cpu_has_avx(void)
+static inline int raid_cpu_has_avx(void)
 {
 	uint32_t reg[4];
 
@@ -118,7 +115,7 @@ static __always_inline int raid_cpu_has_avx(void)
 	return (reg[2] >> 28) & 1;
 }
 
-static __always_inline int raid_cpu_has_avx2(void)
+static inline int raid_cpu_has_avx2(void)
 {
 	uint32_t reg[4];
 
@@ -131,7 +128,7 @@ static __always_inline int raid_cpu_has_avx2(void)
  * Check if the processor has a slow MULT implementation.
  * If yes, it's better to use a hash not based on multiplication.
  */
-static __always_inline int raid_cpu_has_slowmult(void)
+static inline int raid_cpu_has_slowmult(void)
 {
 	char vendor[CPU_VENDOR_MAX];
 	unsigned family;
@@ -169,7 +166,7 @@ static __always_inline int raid_cpu_has_slowmult(void)
  * Check if the processor has a slow PSHUFB implementation.
  * If yes, it's better to not use it.
  */
-static __always_inline int raid_cpu_has_slowpshufb(void)
+static inline int raid_cpu_has_slowpshufb(void)
 {
 	char vendor[CPU_VENDOR_MAX];
 	unsigned family;
@@ -233,7 +230,7 @@ static __always_inline int raid_cpu_has_slowpshufb(void)
  * Check if the processor has a slow extended set of SSE registers.
  * If yes, it's better to unroll without using the second part of registers.
  */
-static __always_inline int raid_cpu_has_slowextendedreg(void)
+static inline int raid_cpu_has_slowextendedreg(void)
 {
 	char vendor[CPU_VENDOR_MAX];
 	unsigned family;

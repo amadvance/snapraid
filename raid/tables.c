@@ -10,9 +10,6 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "internal.h"
@@ -9131,7 +9128,7 @@ const uint8_t __aligned(256) raid_gfcauchy[6][256] =
 	},
 };
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 /**
  * PSHUFB tables for the Cauchy matrix.
  *
@@ -13661,7 +13658,7 @@ const uint8_t __aligned(256) raid_gfcauchypshufb[251][4][2][16] =
 };
 #endif
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 /**
  * PSHUFB tables for generic multiplication.
  *

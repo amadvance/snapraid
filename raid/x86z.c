@@ -10,14 +10,11 @@
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include "internal.h"
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 static const struct gfzconst16 {
 	uint8_t poly[16];
 	uint8_t half[16];
@@ -27,7 +24,9 @@ static const struct gfzconst16 {
 	{ 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e },
 	{ 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f }
 };
+#endif
 
+#ifdef CONFIG_X86
 /*
  * PARz (triple parity with powers of 2^-1) SSE2 implementation
  */
@@ -85,7 +84,7 @@ void raid_parz_sse2(int nd, size_t size, void **vv)
 }
 #endif
 
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 /*
  * PARz (triple parity with powers of 2^-1) SSE2 implementation
  *
