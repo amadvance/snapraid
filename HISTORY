@@ -16,7 +16,7 @@ SnapRAID HISTORY
  * Added a new "share" configuration option to allow to share
    in the network the pool directory also in Windows.
  * Fixed build problems in OpenBSD due the old assembler.
- * Fixed build problems in platform differents than x86.
+ * Fixed build problems in platforms different than x86.
 
 5.1 2013/12
 ===========
