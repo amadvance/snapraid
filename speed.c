@@ -147,8 +147,8 @@ void speed(void)
 	printf("\n");
 
 	printf("Speed test using %u data buffers of %u bytes, for a total of %u KiB.\n", nd, size, nd * size / 1024);
-	printf("The reported value is the aggregate bandwidth of all data disks in MiB/s,\n");
-	printf("not counting parity disks.\n");
+	printf("The reported value is the aggregate bandwidth of all data blocks in MiB/s,\n");
+	printf("not counting parity blocks.\n");
 	printf("\n");
 
 	printf("Memory write speed using the C memset() function:\n");
@@ -385,6 +385,7 @@ void speed(void)
 	printf("%8s", "");
 	printf("%8s", "");
 
+#if defined(__i386__) || defined(__x86_64__)
 	if (raid_cpu_has_sse2()) {
 		printf("%8s", "");
 
@@ -392,6 +393,7 @@ void speed(void)
 		printf("%8s", "");
 #endif
 	}
+#endif
 
 #if defined(__i386__) || defined(__x86_64__)
 	if (raid_cpu_has_ssse3()) {
@@ -429,6 +431,7 @@ void speed(void)
 	printf("%8s", "");
 	printf("%8s", "");
 
+#if defined(__i386__) || defined(__x86_64__)
 	if (raid_cpu_has_sse2()) {
 		printf("%8s", "");
 
@@ -436,6 +439,7 @@ void speed(void)
 		printf("%8s", "");
 #endif
 	}
+#endif
 
 #if defined(__i386__) || defined(__x86_64__)
 	if (raid_cpu_has_ssse3()) {
@@ -473,6 +477,7 @@ void speed(void)
 	printf("%8s", "");
 	printf("%8s", "");
 
+#if defined(__i386__) || defined(__x86_64__)
 	if (raid_cpu_has_sse2()) {
 		printf("%8s", "");
 
@@ -480,6 +485,7 @@ void speed(void)
 		printf("%8s", "");
 #endif
 	}
+#endif
 
 #if defined(__i386__) || defined(__x86_64__)
 	if (raid_cpu_has_ssse3()) {
@@ -517,6 +523,7 @@ void speed(void)
 	printf("%8s", "");
 	printf("%8s", "");
 
+#if defined(__i386__) || defined(__x86_64__)
 	if (raid_cpu_has_sse2()) {
 		printf("%8s", "");
 
@@ -524,6 +531,7 @@ void speed(void)
 		printf("%8s", "");
 #endif
 	}
+#endif
 
 #if defined(__i386__) || defined(__x86_64__)
 	if (raid_cpu_has_ssse3()) {

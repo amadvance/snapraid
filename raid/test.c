@@ -279,6 +279,7 @@ int raid_test_par(int mode, int nd, size_t size)
 		map[mac++] = raid_par2_sse2ext;
 #endif
 	}
+#endif
 
 	if (mode == RAID_MODE_CAUCHY) {
 		map[mac++] = raid_par3_int8;
@@ -286,6 +287,7 @@ int raid_test_par(int mode, int nd, size_t size)
 		map[mac++] = raid_par5_int8;
 		map[mac++] = raid_par6_int8;
 
+#if defined(__i386__) || defined(__x86_64__)
 		if (raid_cpu_has_ssse3()) {
 			map[mac++] = raid_par3_ssse3;
 			map[mac++] = raid_par4_ssse3;
@@ -300,9 +302,10 @@ int raid_test_par(int mode, int nd, size_t size)
 		}
 #endif
 	} else {
-#if defined(__i386__) || defined(__x86_64__)
 		map[mac++] = raid_parz_int32;
 		map[mac++] = raid_parz_int64;
+
+#if defined(__i386__) || defined(__x86_64__)
 		if (raid_cpu_has_sse2()) {
 			map[mac++] = raid_parz_sse2;
 #if defined(__x86_64__)
