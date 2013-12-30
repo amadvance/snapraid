@@ -560,7 +560,9 @@ void speed(void)
 	printf("%8s", "");
 	printf("%8s", "best");
 	printf("%8s", "int8");
+#if defined(__i386__) || defined(__x86_64__)
 	printf("%8s", "ssse3");
+#endif
 	printf("\n");
 
 	printf("%8s", "rec1");
