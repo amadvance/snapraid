@@ -105,23 +105,22 @@ int raid_test_sort(void)
 
 int raid_test_rec(int mode, int nd, size_t size)
 {
-	void *buffer_alloc;
-	void **buffer;
+	void *v_alloc;
+	void **v;
 	void **data;
 	void **parity;
 	void **test;
 	void *data_save[RAID_PARITY_MAX];
 	void *parity_save[RAID_PARITY_MAX];
-	void *zero;
 	void *waste;
-	int buffermax;
+	int nv;
 	int id[RAID_PARITY_MAX];
 	int ip[RAID_PARITY_MAX];
 	int i;
 	int j;
 	int nr;
-	void (*map[RAID_PARITY_MAX][4])(int nr, const int *id, const int *ip, int nd, size_t size, void **vbuf);
-	int mac[RAID_PARITY_MAX];
+	void (*f[RAID_PARITY_MAX][4])(int nr, const int *id, const int *ip, int nd, size_t size, void **vbuf);
+	int nf[RAID_PARITY_MAX];
 	int np;
 
 	raid_mode(mode);
@@ -130,56 +129,55 @@ int raid_test_rec(int mode, int nd, size_t size)
 	else
 		np = 3;
 
-	buffermax = nd + np * 2 + 2;
+	nv = nd + np * 2 + 2;
 
-	buffer = raid_malloc_vector(nd, buffermax, size, &buffer_alloc);
-	if (!buffer)
+	v = raid_malloc_vector(nd, nv, size, &v_alloc);
+	if (!v)
 		return -1;
 
-	data = buffer;
-	parity = buffer + nd;
-	test = buffer + nd + np;
+	data = v;
+	parity = v + nd;
+	test = v + nd + np;
 
 	for (i = 0; i < np; ++i)
 		parity_save[i] = parity[i];
 
-	zero = buffer[buffermax-2];
-	memset(zero, 0, size);
-	raid_zero(zero);
+	memset(v[nv-2], 0, size);
+	raid_zero(v[nv-2]);
 
-	waste = buffer[buffermax-1];
+	waste = v[nv-1];
 
 	/* fill data disk with random */
-	raid_mrand_vector(buffer, nd, size);
+	raid_mrand_vector(v, nd, size);
 
 	/* setup recov functions */
 	for (i = 0; i < np; ++i) {
-		mac[i] = 0;
+		nf[i] = 0;
 		if (i == 0) {
-			map[i][mac[i]++] = raid_rec1_int8;
+			f[i][nf[i]++] = raid_rec1_int8;
 #ifdef CONFIG_X86
 			if (raid_cpu_has_ssse3())
-				map[i][mac[i]++] = raid_rec1_ssse3;
+				f[i][nf[i]++] = raid_rec1_ssse3;
 #endif
 		} else if (i == 1) {
-			map[i][mac[i]++] = raid_rec2_int8;
+			f[i][nf[i]++] = raid_rec2_int8;
 #ifdef CONFIG_X86
 			if (raid_cpu_has_ssse3())
-				map[i][mac[i]++] = raid_rec2_ssse3;
+				f[i][nf[i]++] = raid_rec2_ssse3;
 #endif
 		} else {
-			map[i][mac[i]++] = raid_recX_int8;
+			f[i][nf[i]++] = raid_recX_int8;
 #ifdef CONFIG_X86
 			if (raid_cpu_has_ssse3())
-				map[i][mac[i]++] = raid_recX_ssse3;
+				f[i][nf[i]++] = raid_recX_ssse3;
 #endif
 		}
 	}
 
 	/* compute the parity */
-	raid_par(nd, np, size, buffer);
+	raid_par_ref(nd, np, size, v);
 
-	/* set all the parity to the waste buffer */
+	/* set all the parity to the waste v */
 	for (i = 0; i < np; ++i)
 		parity[i] = waste;
 
@@ -192,7 +190,7 @@ int raid_test_rec(int mode, int nd, size_t size)
 			combination_first(nr, np, ip);
 			do {
 				/* for each recover function */
-				for (j = 0; j < mac[nr-1]; ++j) {
+				for (j = 0; j < nf[nr-1]; ++j) {
 					/* set */
 					for (i = 0; i < nr; ++i) {
 						/* remove the missing data */
@@ -203,7 +201,7 @@ int raid_test_rec(int mode, int nd, size_t size)
 					}
 
 					/* recover */
-					map[nr-1][j](nr, id, ip, nd, size, buffer);
+					f[nr-1][j](nr, id, ip, nd, size, v);
 
 					/* check */
 					for (i = 0; i < nr; ++i)
@@ -222,20 +220,20 @@ int raid_test_rec(int mode, int nd, size_t size)
 		} while (combination_next(nr, nd, id));
 	}
 
-	free(buffer_alloc);
-	free(buffer);
+	free(v_alloc);
+	free(v);
 
 	return 0;
 }
 
 int raid_test_par(int mode, int nd, size_t size)
 {
-	void *buffer_alloc;
-	void **buffer;
-	int buffermax;
+	void *v_alloc;
+	void **v;
+	int nv;
 	int i, j;
-	void (*map[64])(int nd, size_t size, void **vbuf);
-	int mac;
+	void (*f[64])(int nd, size_t size, void **vbuf);
+	int nf;
 	int np;
 
 	raid_mode(mode);
@@ -244,87 +242,87 @@ int raid_test_par(int mode, int nd, size_t size)
 	else
 		np = 3;
 
-	buffermax = nd + np * 2;
+	nv = nd + np * 2;
 
-	buffer = raid_malloc_vector(nd, buffermax, size, &buffer_alloc);
-	if (!buffer)
+	v = raid_malloc_vector(nd, nv, size, &v_alloc);
+	if (!v)
 		return -1;
 
 	/* fill with random */
-	raid_mrand_vector(buffer, buffermax, size);
+	raid_mrand_vector(v, nv, size);
 
 	/* compute the parity */
-	raid_par(nd, np, size, buffer);
+	raid_par_ref(nd, np, size, v);
 
 	/* copy in back buffers */
 	for (i = 0; i < np; ++i)
-		memcpy(buffer[nd + np + i], buffer[nd + i], size);
+		memcpy(v[nd + np + i], v[nd + i], size);
 
 	/* load all the available functions */
-	mac = 0;
+	nf = 0;
 
-	map[mac++] = raid_par1_int32;
-	map[mac++] = raid_par1_int64;
-	map[mac++] = raid_par2_int32;
-	map[mac++] = raid_par2_int64;
+	f[nf++] = raid_par1_int32;
+	f[nf++] = raid_par1_int64;
+	f[nf++] = raid_par2_int32;
+	f[nf++] = raid_par2_int64;
 
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
-		map[mac++] = raid_par1_sse2;
-		map[mac++] = raid_par2_sse2;
+		f[nf++] = raid_par1_sse2;
+		f[nf++] = raid_par2_sse2;
 #ifdef CONFIG_X86_64
-		map[mac++] = raid_par2_sse2ext;
+		f[nf++] = raid_par2_sse2ext;
 #endif
 	}
 #endif
 
 	if (mode == RAID_MODE_CAUCHY) {
-		map[mac++] = raid_par3_int8;
-		map[mac++] = raid_par4_int8;
-		map[mac++] = raid_par5_int8;
-		map[mac++] = raid_par6_int8;
+		f[nf++] = raid_par3_int8;
+		f[nf++] = raid_par4_int8;
+		f[nf++] = raid_par5_int8;
+		f[nf++] = raid_par6_int8;
 
 #ifdef CONFIG_X86
 		if (raid_cpu_has_ssse3()) {
-			map[mac++] = raid_par3_ssse3;
-			map[mac++] = raid_par4_ssse3;
-			map[mac++] = raid_par5_ssse3;
-			map[mac++] = raid_par6_ssse3;
+			f[nf++] = raid_par3_ssse3;
+			f[nf++] = raid_par4_ssse3;
+			f[nf++] = raid_par5_ssse3;
+			f[nf++] = raid_par6_ssse3;
 #ifdef CONFIG_X86_64
-			map[mac++] = raid_par3_ssse3ext;
-			map[mac++] = raid_par4_ssse3ext;
-			map[mac++] = raid_par5_ssse3ext;
-			map[mac++] = raid_par6_ssse3ext;
+			f[nf++] = raid_par3_ssse3ext;
+			f[nf++] = raid_par4_ssse3ext;
+			f[nf++] = raid_par5_ssse3ext;
+			f[nf++] = raid_par6_ssse3ext;
 #endif
 		}
 #endif
 	} else {
-		map[mac++] = raid_parz_int32;
-		map[mac++] = raid_parz_int64;
+		f[nf++] = raid_parz_int32;
+		f[nf++] = raid_parz_int64;
 
 #ifdef CONFIG_X86
 		if (raid_cpu_has_sse2()) {
-			map[mac++] = raid_parz_sse2;
+			f[nf++] = raid_parz_sse2;
 #ifdef CONFIG_X86_64
-			map[mac++] = raid_parz_sse2ext;
+			f[nf++] = raid_parz_sse2ext;
 #endif
 		}
 #endif
 	}
 
 	/* check all the functions */
-	for (j = 0; j < mac; ++j) {
+	for (j = 0; j < nf; ++j) {
 		/* compute parity */
-		map[j](nd, size, buffer);
+		f[j](nd, size, v);
 
 		/* check it */
 		for (i = 0; i < np; ++i)
-			if (memcmp(buffer[nd + np + i], buffer[nd + i], size) != 0)
+			if (memcmp(v[nd + np + i], v[nd + i], size) != 0)
 				return -1;
 	}
 
-	free(buffer_alloc);
-	free(buffer);
+	free(v_alloc);
+	free(v);
 
 	return 0;
 }

@@ -58,14 +58,12 @@ static __always_inline const uint8_t *table(uint8_t v)
 	return gfmul[v];
 }
 
-extern const uint8_t (*raid_gen)[256];
-
 /*
  * Gets the generator matrix coefficient for parity 'p' and disk 'd'.
  */
 static __always_inline uint8_t A(int p, int d)
 {
-	return raid_gen[p][d];
+	return gfgen[p][d];
 }
 
 /*

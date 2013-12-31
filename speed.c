@@ -24,6 +24,11 @@
 #include "raid/internal.h"
 #include "state.h"
 
+/*
+ * Size of the blocks to test.
+ */
+#define TEST_SIZE (256*1024)
+
 /**
  * Differential us of two timeval.
  */
@@ -44,7 +49,7 @@ static int64_t diffgettimeofday(struct timeval *start, struct timeval *stop)
 	count = 0; \
 	gettimeofday(&start, 0); \
 	do { \
-		for(i=0;i<delta;++i)
+		for (i = 0; i < delta; ++i)
 
 /**
  * Stop time measurement.
@@ -65,37 +70,35 @@ void speed(void)
 	int i, j;
 	unsigned char digest[HASH_SIZE];
 	unsigned char seed[HASH_SIZE];
-	int id[LEV_MAX];
-	int ip[LEV_MAX];
+	int id[RAID_PARITY_MAX];
+	int ip[RAID_PARITY_MAX];
 	int count;
 	int delta = 10;
-	int size = 256 * 1024;
+	int size = TEST_SIZE;
 	int nd = 8;
-	int buffermax;
-	void* v_alloc;
-	void** v;
-	void* zero;
+	int nv;
+	void *v_alloc;
+	void **v;
 
 	/* we need disk + 1 for each parity buffers + 1 zero v */
-	buffermax = nd + LEV_MAX + 1;
+	nv = nd + RAID_PARITY_MAX + 1;
 
-	v = malloc_nofail_vector_align(nd, buffermax, size, &v_alloc);
+	v = malloc_nofail_vector_align(nd, nv, size, &v_alloc);
 
 	/* initialize disks with fixed data */
-	for(i=0;i<nd;++i)
+	for (i = 0; i < nd; ++i)
 		memset(v[i], i, size);
 
 	/* zero v */
-	zero = v[nd+LEV_MAX];
-	memset(zero, 0, size);
-	raid_zero(zero);
+	memset(v[nd+RAID_PARITY_MAX], 0, size);
+	raid_zero(v[nd+RAID_PARITY_MAX]);
 
 	/* hash seed */
-	for(i=0;i<HASH_SIZE;++i)
+	for (i = 0; i < HASH_SIZE; ++i)
 		seed[i] = i;
 
 	/* basic disks and parity mapping */
-	for(i=0;i<LEV_MAX;++i) {
+	for (i = 0; i < RAID_PARITY_MAX; ++i) {
 		id[i] = i;
 		ip[i] = i;
 	}
@@ -106,7 +109,7 @@ void speed(void)
 	printf("Compiler gcc " __VERSION__ "\n");
 #endif
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	{
 		char vendor[CPU_VENDOR_MAX];
 		unsigned family;
@@ -129,9 +132,9 @@ void speed(void)
 	printf("CPU is not a x86/x64\n");
 #endif
 #if WORDS_BIGENDIAN
-	printf("Memory is big-endian %d-bit\n", (int)sizeof(void*) * 8);
+	printf("Memory is big-endian %d-bit\n", (int)sizeof(void *) * 8);
 #else
-	printf("Memory is little-endian %d-bit\n", (int)sizeof(void*) * 8);
+	printf("Memory is little-endian %d-bit\n", (int)sizeof(void *) * 8);
 #endif
 
 #if HAVE_FUTIMENS
@@ -156,7 +159,7 @@ void speed(void)
 	fflush(stdout);
 
 	SPEED_START {
-		for(j=0;j<nd;++j)
+		for (j = 0; j < nd; ++j)
 			memset(v[j], j, size);
 	} SPEED_STOP
 
@@ -171,7 +174,7 @@ void speed(void)
 	fflush(stdout);
 
 	SPEED_START {
-		for(j=0;j<nd;++j)
+		for (j = 0; j < nd; ++j)
 			crc32c_gen(0, v[j], size);
 	} SPEED_STOP
 
@@ -184,7 +187,7 @@ void speed(void)
 #if HAVE_CRC32B
 	if (raid_cpu_has_sse42()) {
 		SPEED_START {
-			for(j=0;j<nd;++j)
+			for (j = 0; j < nd; ++j)
 				crc32c_x86(0, v[j], size);
 		} SPEED_STOP
 
@@ -204,13 +207,13 @@ void speed(void)
 	printf("\n");
 
 	printf("%8s", "hash");
-#if defined(__i386__) || defined(__x86_64__)
-	if (sizeof(void*) == 4 && !raid_cpu_has_slowmult())
+#ifdef CONFIG_X86
+	if (sizeof(void *) == 4 && !raid_cpu_has_slowmult())
 		printf("%8s", "murmur3");
 	else
 		printf("%8s", "spooky2");
 #else
-	if (sizeof(void*) == 4)
+	if (sizeof(void *) == 4)
 		printf("%8s", "murmur3");
 	else
 		printf("%8s", "spooky2");
@@ -218,7 +221,7 @@ void speed(void)
 	fflush(stdout);
 
 	SPEED_START {
-		for(j=0;j<nd;++j)
+		for (j = 0; j < nd; ++j)
 			memhash(HASH_MURMUR3, seed, digest, v[j], size);
 	} SPEED_STOP
 
@@ -226,7 +229,7 @@ void speed(void)
 	fflush(stdout);
 
 	SPEED_START {
-		for(j=0;j<nd;++j)
+		for (j = 0; j < nd; ++j)
 			memhash(HASH_SPOOKY2, seed, digest, v[j], size);
 	} SPEED_STOP
 
@@ -241,13 +244,13 @@ void speed(void)
 	printf("%8s", "int8");
 	printf("%8s", "int32");
 	printf("%8s", "int64");
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	printf("%8s", "sse2");
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 	printf("%8s", "sse2e");
 #endif
 	printf("%8s", "ssse3");
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 	printf("%8s", "ssse3e");
 #endif
 #endif
@@ -274,7 +277,7 @@ void speed(void)
 	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
 		SPEED_START {
 			raid_par1_sse2(nd, size, v);
@@ -307,7 +310,7 @@ void speed(void)
 	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
 		SPEED_START {
 			raid_par2_sse2(nd, size, v);
@@ -316,7 +319,7 @@ void speed(void)
 		printf("%8"PRIu64, ds / dt);
 		fflush(stdout);
 
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 		SPEED_START {
 			raid_par2_sse2ext(nd, size, v);
 		} SPEED_STOP
@@ -349,7 +352,7 @@ void speed(void)
 	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
 		SPEED_START {
 			raid_parz_sse2(nd, size, v);
@@ -358,7 +361,7 @@ void speed(void)
 		printf("%8"PRIu64, ds / dt);
 		fflush(stdout);
 
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 		SPEED_START {
 			raid_parz_sse2ext(nd, size, v);
 		} SPEED_STOP
@@ -385,17 +388,17 @@ void speed(void)
 	printf("%8s", "");
 	printf("%8s", "");
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
 		printf("%8s", "");
 
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 		printf("%8s", "");
 #endif
 	}
 #endif
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 			raid_par3_ssse3(nd, size, v);
@@ -404,7 +407,7 @@ void speed(void)
 		printf("%8"PRIu64, ds / dt);
 		fflush(stdout);
 
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 		SPEED_START {
 			raid_par3_ssse3ext(nd, size, v);
 		} SPEED_STOP
@@ -431,17 +434,17 @@ void speed(void)
 	printf("%8s", "");
 	printf("%8s", "");
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
 		printf("%8s", "");
 
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 		printf("%8s", "");
 #endif
 	}
 #endif
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 			raid_par4_ssse3(nd, size, v);
@@ -450,7 +453,7 @@ void speed(void)
 		printf("%8"PRIu64, ds / dt);
 		fflush(stdout);
 
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 		SPEED_START {
 			raid_par4_ssse3ext(nd, size, v);
 		} SPEED_STOP
@@ -461,7 +464,7 @@ void speed(void)
 	}
 #endif
 	printf("\n");
-	
+
 	/* PAR5 */
 	printf("%8s", "par5");
 	printf("%8s", raid_par5_tag());
@@ -477,17 +480,17 @@ void speed(void)
 	printf("%8s", "");
 	printf("%8s", "");
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
 		printf("%8s", "");
 
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 		printf("%8s", "");
 #endif
 	}
 #endif
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 			raid_par5_ssse3(nd, size, v);
@@ -496,7 +499,7 @@ void speed(void)
 		printf("%8"PRIu64, ds / dt);
 		fflush(stdout);
 
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 		SPEED_START {
 			raid_par5_ssse3ext(nd, size, v);
 		} SPEED_STOP
@@ -523,17 +526,17 @@ void speed(void)
 	printf("%8s", "");
 	printf("%8s", "");
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
 		printf("%8s", "");
 
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 		printf("%8s", "");
 #endif
 	}
 #endif
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 			raid_par6_ssse3(nd, size, v);
@@ -542,7 +545,7 @@ void speed(void)
 		printf("%8"PRIu64, ds / dt);
 		fflush(stdout);
 
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 		SPEED_START {
 			raid_par6_ssse3ext(nd, size, v);
 		} SPEED_STOP
@@ -560,7 +563,7 @@ void speed(void)
 	printf("%8s", "");
 	printf("%8s", "best");
 	printf("%8s", "int8");
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	printf("%8s", "ssse3");
 #endif
 	printf("\n");
@@ -570,7 +573,7 @@ void speed(void)
 	fflush(stdout);
 
 	SPEED_START {
-		for(j=0;j<nd;++j)
+		for (j = 0; j < nd; ++j)
 			/* +1 to avoid PAR1 optimized case */
 			raid_rec1_int8(1, id, ip + 1, nd, size, v);
 	} SPEED_STOP
@@ -578,10 +581,10 @@ void speed(void)
 	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			for(j=0;j<nd;++j)
+			for (j = 0; j < nd; ++j)
 				/* +1 to avoid PAR1 optimized case */
 				raid_rec1_ssse3(1, id, ip + 1, nd, size, v);
 		} SPEED_STOP
@@ -596,7 +599,7 @@ void speed(void)
 	fflush(stdout);
 
 	SPEED_START {
-		for(j=0;j<nd;++j)
+		for (j = 0; j < nd; ++j)
 			/* +1 to avoid PAR2 optimized case */
 			raid_rec2_int8(2, id, ip + 1, nd, size, v);
 	} SPEED_STOP
@@ -604,10 +607,10 @@ void speed(void)
 	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			for(j=0;j<nd;++j)
+			for (j = 0; j < nd; ++j)
 				/* +1 to avoid PAR2 optimized case */
 				raid_rec2_ssse3(2, id, ip + 1, nd, size, v);
 		} SPEED_STOP
@@ -622,17 +625,17 @@ void speed(void)
 	fflush(stdout);
 
 	SPEED_START {
-		for(j=0;j<nd;++j)
+		for (j = 0; j < nd; ++j)
 			raid_recX_int8(3, id, ip, nd, size, v);
 	} SPEED_STOP
 
 	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			for(j=0;j<nd;++j)
+			for (j = 0; j < nd; ++j)
 				raid_recX_ssse3(3, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -646,17 +649,17 @@ void speed(void)
 	fflush(stdout);
 
 	SPEED_START {
-		for(j=0;j<nd;++j)
+		for (j = 0; j < nd; ++j)
 			raid_recX_int8(4, id, ip, nd, size, v);
 	} SPEED_STOP
 
 	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			for(j=0;j<nd;++j)
+			for (j = 0; j < nd; ++j)
 				raid_recX_ssse3(4, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -670,17 +673,17 @@ void speed(void)
 	fflush(stdout);
 
 	SPEED_START {
-		for(j=0;j<nd;++j)
+		for (j = 0; j < nd; ++j)
 			raid_recX_int8(5, id, ip, nd, size, v);
 	} SPEED_STOP
 
 	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
-	
-#if defined(__i386__) || defined(__x86_64__)
+
+#ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			for(j=0;j<nd;++j)
+			for (j = 0; j < nd; ++j)
 				raid_recX_ssse3(5, id, ip, nd, size, v);
 		} SPEED_STOP
 
@@ -694,17 +697,17 @@ void speed(void)
 	fflush(stdout);
 
 	SPEED_START {
-		for(j=0;j<nd;++j)
+		for (j = 0; j < nd; ++j)
 			raid_recX_int8(6, id, ip, nd, size, v);
 	} SPEED_STOP
 
 	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			for(j=0;j<nd;++j)
+			for (j = 0; j < nd; ++j)
 				raid_recX_ssse3(6, id, ip, nd, size, v);
 		} SPEED_STOP
 

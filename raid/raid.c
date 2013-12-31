@@ -171,16 +171,16 @@
 /**
  * Generator matrix currently used.
  */
-const uint8_t (*raid_gen)[256];
+const uint8_t (*raid_gfgen)[256];
 
 void raid_mode(int mode)
 {
 	if (mode == RAID_MODE_VANDERMONDE) {
 		raid_par_ptr[2] = raid_parz_ptr;
-		raid_gen = gfvandermonde;
+		raid_gfgen = gfvandermonde;
 	} else {
 		raid_par_ptr[2] = raid_par3_ptr;
-		raid_gen = gfcauchy;
+		raid_gfgen = gfcauchy;
 	}
 }
 
@@ -412,7 +412,7 @@ void raid_rec(int nrd, const int *id, int nrp, int *ip, int nd, int np, size_t s
 
 		/* setup the vector of parities to use */
 		for (i = 0, j = 0, k = 0; i < np; ++i) {
-			if (ip[j] == i) {
+			if (j < nrp && ip[j] == i) {
 				/* this parity has to be recovered */
 				++j;
 			} else {
@@ -451,7 +451,7 @@ void raid_rec_dataonly(int nr, const int *id, const int *ip, int nd, size_t size
 			for (i = 0, j = 0; i < np; ++i) {
 				p[i] = v[nd+i];
 
-				if (ip[j] == i) {
+				if (j < nr && ip[j] == i) {
 					/* this parity is used for recovering */
 					++j;
 				} else {

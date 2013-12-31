@@ -1094,13 +1094,13 @@ uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size)
 
 uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size)
 {
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 	uint64_t crc64;
 #endif
 
 	crc ^= CRC_IV;
 
-#if defined(__x86_64__)
+#ifdef CONFIG_X86_64
 	crc64 = crc;
 	while (size >= 8) {
 		asm volatile ("crc32q %1, %0\n" : "+r" (crc64) : "rm" (*(uint64_t*)ptr));

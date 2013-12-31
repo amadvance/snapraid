@@ -31,6 +31,8 @@
  *
  * These are intented to provide access for testing.
  */
+int raid_selftest(void);
+void raid_par_ref(int nd, int np, size_t size, void **vv);
 void raid_invert(uint8_t *M, uint8_t *V, int n);
 void raid_delta_gen(int nr, const int *id, const int *ip, int nd, size_t size, void **v);
 void raid_rec1_par1(const int *id, int nd, size_t size, void **v);
@@ -99,14 +101,15 @@ extern const uint8_t raid_gfvandermonde[3][256] __aligned(256);
 extern const uint8_t raid_gfcauchy[6][256] __aligned(256);
 extern const uint8_t raid_gfcauchypshufb[251][4][2][16] __aligned(256);
 extern const uint8_t raid_gfmulpshufb[256][2][16] __aligned(256);
+extern const uint8_t (*raid_gfgen)[256];
 #define gfmul raid_gfmul
 #define gfexp raid_gfexp
 #define gfinv raid_gfinv
 #define gfvandermonde raid_gfvandermonde
 #define gfcauchy raid_gfcauchy
-#define gfcauchypshufb raid_gfcauchypshufb
+#define gfgenpshufb raid_gfcauchypshufb
 #define gfmulpshufb raid_gfmulpshufb
-
+#define gfgen raid_gfgen
 /*
  * Assembler blocks.
  */

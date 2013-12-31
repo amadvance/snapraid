@@ -162,6 +162,10 @@ void selftest(void)
 
 	test_hash();
 	test_crc32c();
+	if (raid_selftest() != 0) {
+		fprintf(stderr, "Failed SELF test\n");
+		exit(EXIT_FAILURE);
+	}
 	if (raid_test_sort() != 0) {
 		fprintf(stderr, "Failed SORT test\n");
 		exit(EXIT_FAILURE);

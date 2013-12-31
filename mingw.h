@@ -25,7 +25,7 @@
 /**
  * Assume to always have CRC32B if running in x86
  */
-#if defined(__i386__) || defined(__x86_64__) 
+#ifdef CONFIG_X86
 #define HAVE_CRC32B 1
 #endif
 

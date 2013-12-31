@@ -21,7 +21,7 @@
  * It requires SSSE3 to get good performance with triple or more
  * parities.
  *
- * This is the default mode used by SnapRAID.
+ * This is the default mode set after calling raid_init().
  */
 #define RAID_MODE_CAUCHY 0
 
@@ -48,6 +48,13 @@
  * Initializes the RAID system.
  */
 void raid_init(void);
+
+/**
+ * Runs a basic functionality self test.
+ *
+ * It returns 0 on success.
+ */
+int raid_selftest(void);
 
 /**
  * Sets the mode to use. One of RAID_MODE_*.

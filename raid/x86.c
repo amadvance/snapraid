@@ -41,8 +41,6 @@ void raid_par1_sse2(int nd, size_t size, void **vv)
 		asm volatile("movdqa %0,%%xmm1" : : "m" (v[l][i+16]));
 		asm volatile("movdqa %0,%%xmm2" : : "m" (v[l][i+32]));
 		asm volatile("movdqa %0,%%xmm3" : : "m" (v[l][i+48]));
-		/* accessing disks in backward order because the buffers */
-		/* are also in backward order */
 		for (d = l-1; d >= 0; --d) {
 			asm volatile("movdqa %0,%%xmm4" : : "m" (v[d][i]));
 			asm volatile("movdqa %0,%%xmm5" : : "m" (v[d][i+16]));
@@ -250,8 +248,8 @@ void raid_par3_ssse3(int nd, size_t size, void **vv)
 		asm volatile("pand   %xmm7,%xmm4");
 		asm volatile("pand   %xmm7,%xmm5");
 
-		asm volatile("movdqa %0,%%xmm2" : : "m" (gfcauchypshufb[l][0][0][0]));
-		asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchypshufb[l][0][1][0]));
+		asm volatile("movdqa %0,%%xmm2" : : "m" (gfgenpshufb[l][0][0][0]));
+		asm volatile("movdqa %0,%%xmm6" : : "m" (gfgenpshufb[l][0][1][0]));
 		asm volatile("pshufb %xmm4,%xmm2");
 		asm volatile("pshufb %xmm5,%xmm6");
 		asm volatile("pxor   %xmm6,%xmm2");
@@ -274,10 +272,10 @@ void raid_par3_ssse3(int nd, size_t size, void **vv)
 			asm volatile("pand   %xmm7,%xmm4");
 			asm volatile("pand   %xmm7,%xmm5");
 
-			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchypshufb[d][0][0][0]));
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfgenpshufb[d][0][0][0]));
 			asm volatile("pshufb %xmm4,%xmm6");
 			asm volatile("pxor   %xmm6,%xmm2");
-			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchypshufb[d][0][1][0]));
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfgenpshufb[d][0][1][0]));
 			asm volatile("pshufb %xmm5,%xmm6");
 			asm volatile("pxor   %xmm6,%xmm2");
 		}
@@ -356,8 +354,8 @@ void raid_par3_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile("pand   %xmm11,%xmm5");
 		asm volatile("pand   %xmm11,%xmm13");
 
-		asm volatile("movdqa %0,%%xmm2" : : "m" (gfcauchypshufb[l][0][0][0]));
-		asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[l][0][1][0]));
+		asm volatile("movdqa %0,%%xmm2" : : "m" (gfgenpshufb[l][0][0][0]));
+		asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[l][0][1][0]));
 		asm volatile("movdqa %xmm2,%xmm10");
 		asm volatile("movdqa %xmm7,%xmm15");
 		asm volatile("pshufb %xmm4,%xmm2");
@@ -397,8 +395,8 @@ void raid_par3_ssse3ext(int nd, size_t size, void **vv)
 			asm volatile("pand   %xmm11,%xmm5");
 			asm volatile("pand   %xmm11,%xmm13");
 
-			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchypshufb[d][0][0][0]));
-			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[d][0][1][0]));
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfgenpshufb[d][0][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[d][0][1][0]));
 			asm volatile("movdqa %xmm6,%xmm14");
 			asm volatile("movdqa %xmm7,%xmm15");
 			asm volatile("pshufb %xmm4,%xmm6");
@@ -488,14 +486,14 @@ void raid_par4_ssse3(int nd, size_t size, void **vv)
 		asm volatile("pand   %xmm7,%xmm4");
 		asm volatile("pand   %xmm7,%xmm5");
 
-		asm volatile("movdqa %0,%%xmm2" : : "m" (gfcauchypshufb[l][0][0][0]));
-		asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[l][0][1][0]));
+		asm volatile("movdqa %0,%%xmm2" : : "m" (gfgenpshufb[l][0][0][0]));
+		asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[l][0][1][0]));
 		asm volatile("pshufb %xmm4,%xmm2");
 		asm volatile("pshufb %xmm5,%xmm7");
 		asm volatile("pxor   %xmm7,%xmm2");
 
-		asm volatile("movdqa %0,%%xmm3" : : "m" (gfcauchypshufb[l][1][0][0]));
-		asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[l][1][1][0]));
+		asm volatile("movdqa %0,%%xmm3" : : "m" (gfgenpshufb[l][1][0][0]));
+		asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[l][1][1][0]));
 		asm volatile("pshufb %xmm4,%xmm3");
 		asm volatile("pshufb %xmm5,%xmm7");
 		asm volatile("pxor   %xmm7,%xmm3");
@@ -521,15 +519,15 @@ void raid_par4_ssse3(int nd, size_t size, void **vv)
 			asm volatile("pand   %xmm7,%xmm4");
 			asm volatile("pand   %xmm7,%xmm5");
 
-			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchypshufb[d][0][0][0]));
-			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[d][0][1][0]));
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfgenpshufb[d][0][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[d][0][1][0]));
 			asm volatile("pshufb %xmm4,%xmm6");
 			asm volatile("pshufb %xmm5,%xmm7");
 			asm volatile("pxor   %xmm6,%xmm2");
 			asm volatile("pxor   %xmm7,%xmm2");
 
-			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchypshufb[d][1][0][0]));
-			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[d][1][1][0]));
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfgenpshufb[d][1][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[d][1][1][0]));
 			asm volatile("pshufb %xmm4,%xmm6");
 			asm volatile("pshufb %xmm5,%xmm7");
 			asm volatile("pxor   %xmm6,%xmm3");
@@ -613,8 +611,8 @@ void raid_par4_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile("pand   %xmm15,%xmm5");
 		asm volatile("pand   %xmm15,%xmm13");
 
-		asm volatile("movdqa %0,%%xmm2" : : "m" (gfcauchypshufb[l][0][0][0]));
-		asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[l][0][1][0]));
+		asm volatile("movdqa %0,%%xmm2" : : "m" (gfgenpshufb[l][0][0][0]));
+		asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[l][0][1][0]));
 		asm volatile("movdqa %xmm2,%xmm10");
 		asm volatile("movdqa %xmm7,%xmm15");
 		asm volatile("pshufb %xmm4,%xmm2");
@@ -624,8 +622,8 @@ void raid_par4_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile("pxor   %xmm7,%xmm2");
 		asm volatile("pxor   %xmm15,%xmm10");
 
-		asm volatile("movdqa %0,%%xmm3" : : "m" (gfcauchypshufb[l][1][0][0]));
-		asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[l][1][1][0]));
+		asm volatile("movdqa %0,%%xmm3" : : "m" (gfgenpshufb[l][1][0][0]));
+		asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[l][1][1][0]));
 		asm volatile("movdqa %xmm3,%xmm11");
 		asm volatile("movdqa %xmm7,%xmm15");
 		asm volatile("pshufb %xmm4,%xmm3");
@@ -667,8 +665,8 @@ void raid_par4_ssse3ext(int nd, size_t size, void **vv)
 			asm volatile("pand   %xmm15,%xmm5");
 			asm volatile("pand   %xmm15,%xmm13");
 
-			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchypshufb[d][0][0][0]));
-			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[d][0][1][0]));
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfgenpshufb[d][0][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[d][0][1][0]));
 			asm volatile("movdqa %xmm6,%xmm14");
 			asm volatile("movdqa %xmm7,%xmm15");
 			asm volatile("pshufb %xmm4,%xmm6");
@@ -680,8 +678,8 @@ void raid_par4_ssse3ext(int nd, size_t size, void **vv)
 			asm volatile("pxor   %xmm7,%xmm2");
 			asm volatile("pxor   %xmm15,%xmm10");
 
-			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchypshufb[d][1][0][0]));
-			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[d][1][1][0]));
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfgenpshufb[d][1][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[d][1][1][0]));
 			asm volatile("movdqa %xmm6,%xmm14");
 			asm volatile("movdqa %xmm7,%xmm15");
 			asm volatile("pshufb %xmm4,%xmm6");
@@ -785,20 +783,20 @@ void raid_par5_ssse3(int nd, size_t size, void **vv)
 		asm volatile("pand   %xmm7,%xmm4");
 		asm volatile("pand   %xmm7,%xmm5");
 
-		asm volatile("movdqa %0,%%xmm1" : : "m" (gfcauchypshufb[l][0][0][0]));
-		asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[l][0][1][0]));
+		asm volatile("movdqa %0,%%xmm1" : : "m" (gfgenpshufb[l][0][0][0]));
+		asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[l][0][1][0]));
 		asm volatile("pshufb %xmm4,%xmm1");
 		asm volatile("pshufb %xmm5,%xmm7");
 		asm volatile("pxor   %xmm7,%xmm1");
 
-		asm volatile("movdqa %0,%%xmm2" : : "m" (gfcauchypshufb[l][1][0][0]));
-		asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[l][1][1][0]));
+		asm volatile("movdqa %0,%%xmm2" : : "m" (gfgenpshufb[l][1][0][0]));
+		asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[l][1][1][0]));
 		asm volatile("pshufb %xmm4,%xmm2");
 		asm volatile("pshufb %xmm5,%xmm7");
 		asm volatile("pxor   %xmm7,%xmm2");
 
-		asm volatile("movdqa %0,%%xmm3" : : "m" (gfcauchypshufb[l][2][0][0]));
-		asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[l][2][1][0]));
+		asm volatile("movdqa %0,%%xmm3" : : "m" (gfgenpshufb[l][2][0][0]));
+		asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[l][2][1][0]));
 		asm volatile("pshufb %xmm4,%xmm3");
 		asm volatile("pshufb %xmm5,%xmm7");
 		asm volatile("pxor   %xmm7,%xmm3");
@@ -825,22 +823,22 @@ void raid_par5_ssse3(int nd, size_t size, void **vv)
 			asm volatile("pand   %xmm7,%xmm4");
 			asm volatile("pand   %xmm7,%xmm5");
 
-			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchypshufb[d][0][0][0]));
-			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[d][0][1][0]));
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfgenpshufb[d][0][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[d][0][1][0]));
 			asm volatile("pshufb %xmm4,%xmm6");
 			asm volatile("pshufb %xmm5,%xmm7");
 			asm volatile("pxor   %xmm6,%xmm1");
 			asm volatile("pxor   %xmm7,%xmm1");
 
-			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchypshufb[d][1][0][0]));
-			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[d][1][1][0]));
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfgenpshufb[d][1][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[d][1][1][0]));
 			asm volatile("pshufb %xmm4,%xmm6");
 			asm volatile("pshufb %xmm5,%xmm7");
 			asm volatile("pxor   %xmm6,%xmm2");
 			asm volatile("pxor   %xmm7,%xmm2");
 
-			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchypshufb[d][2][0][0]));
-			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[d][2][1][0]));
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfgenpshufb[d][2][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[d][2][1][0]));
 			asm volatile("pshufb %xmm4,%xmm6");
 			asm volatile("pshufb %xmm5,%xmm7");
 			asm volatile("pxor   %xmm6,%xmm3");
@@ -924,20 +922,20 @@ void raid_par5_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile("pand   %xmm15,%xmm10");
 		asm volatile("pand   %xmm15,%xmm11");
 
-		asm volatile("movdqa %0,%%xmm2" : : "m" (gfcauchypshufb[l][0][0][0]));
-		asm volatile("movdqa %0,%%xmm13" : : "m" (gfcauchypshufb[l][0][1][0]));
+		asm volatile("movdqa %0,%%xmm2" : : "m" (gfgenpshufb[l][0][0][0]));
+		asm volatile("movdqa %0,%%xmm13" : : "m" (gfgenpshufb[l][0][1][0]));
 		asm volatile("pshufb %xmm10,%xmm2");
 		asm volatile("pshufb %xmm11,%xmm13");
 		asm volatile("pxor   %xmm13,%xmm2");
 
-		asm volatile("movdqa %0,%%xmm3" : : "m" (gfcauchypshufb[l][1][0][0]));
-		asm volatile("movdqa %0,%%xmm13" : : "m" (gfcauchypshufb[l][1][1][0]));
+		asm volatile("movdqa %0,%%xmm3" : : "m" (gfgenpshufb[l][1][0][0]));
+		asm volatile("movdqa %0,%%xmm13" : : "m" (gfgenpshufb[l][1][1][0]));
 		asm volatile("pshufb %xmm10,%xmm3");
 		asm volatile("pshufb %xmm11,%xmm13");
 		asm volatile("pxor   %xmm13,%xmm3");
 
-		asm volatile("movdqa %0,%%xmm4" : : "m" (gfcauchypshufb[l][2][0][0]));
-		asm volatile("movdqa %0,%%xmm13" : : "m" (gfcauchypshufb[l][2][1][0]));
+		asm volatile("movdqa %0,%%xmm4" : : "m" (gfgenpshufb[l][2][0][0]));
+		asm volatile("movdqa %0,%%xmm13" : : "m" (gfgenpshufb[l][2][1][0]));
 		asm volatile("pshufb %xmm10,%xmm4");
 		asm volatile("pshufb %xmm11,%xmm13");
 		asm volatile("pxor   %xmm13,%xmm4");
@@ -960,22 +958,22 @@ void raid_par5_ssse3ext(int nd, size_t size, void **vv)
 			asm volatile("pand   %xmm15,%xmm10");
 			asm volatile("pand   %xmm15,%xmm11");
 
-			asm volatile("movdqa %0,%%xmm12" : : "m" (gfcauchypshufb[d][0][0][0]));
-			asm volatile("movdqa %0,%%xmm13" : : "m" (gfcauchypshufb[d][0][1][0]));
+			asm volatile("movdqa %0,%%xmm12" : : "m" (gfgenpshufb[d][0][0][0]));
+			asm volatile("movdqa %0,%%xmm13" : : "m" (gfgenpshufb[d][0][1][0]));
 			asm volatile("pshufb %xmm10,%xmm12");
 			asm volatile("pshufb %xmm11,%xmm13");
 			asm volatile("pxor   %xmm12,%xmm2");
 			asm volatile("pxor   %xmm13,%xmm2");
 
-			asm volatile("movdqa %0,%%xmm12" : : "m" (gfcauchypshufb[d][1][0][0]));
-			asm volatile("movdqa %0,%%xmm13" : : "m" (gfcauchypshufb[d][1][1][0]));
+			asm volatile("movdqa %0,%%xmm12" : : "m" (gfgenpshufb[d][1][0][0]));
+			asm volatile("movdqa %0,%%xmm13" : : "m" (gfgenpshufb[d][1][1][0]));
 			asm volatile("pshufb %xmm10,%xmm12");
 			asm volatile("pshufb %xmm11,%xmm13");
 			asm volatile("pxor   %xmm12,%xmm3");
 			asm volatile("pxor   %xmm13,%xmm3");
 
-			asm volatile("movdqa %0,%%xmm12" : : "m" (gfcauchypshufb[d][2][0][0]));
-			asm volatile("movdqa %0,%%xmm13" : : "m" (gfcauchypshufb[d][2][1][0]));
+			asm volatile("movdqa %0,%%xmm12" : : "m" (gfgenpshufb[d][2][0][0]));
+			asm volatile("movdqa %0,%%xmm13" : : "m" (gfgenpshufb[d][2][1][0]));
 			asm volatile("pshufb %xmm10,%xmm12");
 			asm volatile("pshufb %xmm11,%xmm13");
 			asm volatile("pxor   %xmm12,%xmm4");
@@ -1061,26 +1059,26 @@ void raid_par6_ssse3(int nd, size_t size, void **vv)
 		asm volatile("pand   %xmm7,%xmm4");
 		asm volatile("pand   %xmm7,%xmm5");
 
-		asm volatile("movdqa %0,%%xmm0" : : "m" (gfcauchypshufb[l][0][0][0]));
-		asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[l][0][1][0]));
+		asm volatile("movdqa %0,%%xmm0" : : "m" (gfgenpshufb[l][0][0][0]));
+		asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[l][0][1][0]));
 		asm volatile("pshufb %xmm4,%xmm0");
 		asm volatile("pshufb %xmm5,%xmm7");
 		asm volatile("pxor   %xmm7,%xmm0");
 
-		asm volatile("movdqa %0,%%xmm1" : : "m" (gfcauchypshufb[l][1][0][0]));
-		asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[l][1][1][0]));
+		asm volatile("movdqa %0,%%xmm1" : : "m" (gfgenpshufb[l][1][0][0]));
+		asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[l][1][1][0]));
 		asm volatile("pshufb %xmm4,%xmm1");
 		asm volatile("pshufb %xmm5,%xmm7");
 		asm volatile("pxor   %xmm7,%xmm1");
 
-		asm volatile("movdqa %0,%%xmm2" : : "m" (gfcauchypshufb[l][2][0][0]));
-		asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[l][2][1][0]));
+		asm volatile("movdqa %0,%%xmm2" : : "m" (gfgenpshufb[l][2][0][0]));
+		asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[l][2][1][0]));
 		asm volatile("pshufb %xmm4,%xmm2");
 		asm volatile("pshufb %xmm5,%xmm7");
 		asm volatile("pxor   %xmm7,%xmm2");
 
-		asm volatile("movdqa %0,%%xmm3" : : "m" (gfcauchypshufb[l][3][0][0]));
-		asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[l][3][1][0]));
+		asm volatile("movdqa %0,%%xmm3" : : "m" (gfgenpshufb[l][3][0][0]));
+		asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[l][3][1][0]));
 		asm volatile("pshufb %xmm4,%xmm3");
 		asm volatile("pshufb %xmm5,%xmm7");
 		asm volatile("pxor   %xmm7,%xmm3");
@@ -1110,29 +1108,29 @@ void raid_par6_ssse3(int nd, size_t size, void **vv)
 			asm volatile("pand   %xmm7,%xmm4");
 			asm volatile("pand   %xmm7,%xmm5");
 
-			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchypshufb[d][0][0][0]));
-			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[d][0][1][0]));
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfgenpshufb[d][0][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[d][0][1][0]));
 			asm volatile("pshufb %xmm4,%xmm6");
 			asm volatile("pshufb %xmm5,%xmm7");
 			asm volatile("pxor   %xmm6,%xmm0");
 			asm volatile("pxor   %xmm7,%xmm0");
 
-			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchypshufb[d][1][0][0]));
-			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[d][1][1][0]));
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfgenpshufb[d][1][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[d][1][1][0]));
 			asm volatile("pshufb %xmm4,%xmm6");
 			asm volatile("pshufb %xmm5,%xmm7");
 			asm volatile("pxor   %xmm6,%xmm1");
 			asm volatile("pxor   %xmm7,%xmm1");
 
-			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchypshufb[d][2][0][0]));
-			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[d][2][1][0]));
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfgenpshufb[d][2][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[d][2][1][0]));
 			asm volatile("pshufb %xmm4,%xmm6");
 			asm volatile("pshufb %xmm5,%xmm7");
 			asm volatile("pxor   %xmm6,%xmm2");
 			asm volatile("pxor   %xmm7,%xmm2");
 
-			asm volatile("movdqa %0,%%xmm6" : : "m" (gfcauchypshufb[d][3][0][0]));
-			asm volatile("movdqa %0,%%xmm7" : : "m" (gfcauchypshufb[d][3][1][0]));
+			asm volatile("movdqa %0,%%xmm6" : : "m" (gfgenpshufb[d][3][0][0]));
+			asm volatile("movdqa %0,%%xmm7" : : "m" (gfgenpshufb[d][3][1][0]));
 			asm volatile("pshufb %xmm4,%xmm6");
 			asm volatile("pshufb %xmm5,%xmm7");
 			asm volatile("pxor   %xmm6,%xmm3");
@@ -1221,26 +1219,26 @@ void raid_par6_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile("pand   %xmm15,%xmm10");
 		asm volatile("pand   %xmm15,%xmm11");
 
-		asm volatile("movdqa %0,%%xmm2" : : "m" (gfcauchypshufb[l][0][0][0]));
-		asm volatile("movdqa %0,%%xmm13" : : "m" (gfcauchypshufb[l][0][1][0]));
+		asm volatile("movdqa %0,%%xmm2" : : "m" (gfgenpshufb[l][0][0][0]));
+		asm volatile("movdqa %0,%%xmm13" : : "m" (gfgenpshufb[l][0][1][0]));
 		asm volatile("pshufb %xmm10,%xmm2");
 		asm volatile("pshufb %xmm11,%xmm13");
 		asm volatile("pxor   %xmm13,%xmm2");
 
-		asm volatile("movdqa %0,%%xmm3" : : "m" (gfcauchypshufb[l][1][0][0]));
-		asm volatile("movdqa %0,%%xmm13" : : "m" (gfcauchypshufb[l][1][1][0]));
+		asm volatile("movdqa %0,%%xmm3" : : "m" (gfgenpshufb[l][1][0][0]));
+		asm volatile("movdqa %0,%%xmm13" : : "m" (gfgenpshufb[l][1][1][0]));
 		asm volatile("pshufb %xmm10,%xmm3");
 		asm volatile("pshufb %xmm11,%xmm13");
 		asm volatile("pxor   %xmm13,%xmm3");
 
-		asm volatile("movdqa %0,%%xmm4" : : "m" (gfcauchypshufb[l][2][0][0]));
-		asm volatile("movdqa %0,%%xmm13" : : "m" (gfcauchypshufb[l][2][1][0]));
+		asm volatile("movdqa %0,%%xmm4" : : "m" (gfgenpshufb[l][2][0][0]));
+		asm volatile("movdqa %0,%%xmm13" : : "m" (gfgenpshufb[l][2][1][0]));
 		asm volatile("pshufb %xmm10,%xmm4");
 		asm volatile("pshufb %xmm11,%xmm13");
 		asm volatile("pxor   %xmm13,%xmm4");
 
-		asm volatile("movdqa %0,%%xmm5" : : "m" (gfcauchypshufb[l][3][0][0]));
-		asm volatile("movdqa %0,%%xmm13" : : "m" (gfcauchypshufb[l][3][1][0]));
+		asm volatile("movdqa %0,%%xmm5" : : "m" (gfgenpshufb[l][3][0][0]));
+		asm volatile("movdqa %0,%%xmm13" : : "m" (gfgenpshufb[l][3][1][0]));
 		asm volatile("pshufb %xmm10,%xmm5");
 		asm volatile("pshufb %xmm11,%xmm13");
 		asm volatile("pxor   %xmm13,%xmm5");
@@ -1263,29 +1261,29 @@ void raid_par6_ssse3ext(int nd, size_t size, void **vv)
 			asm volatile("pand   %xmm15,%xmm10");
 			asm volatile("pand   %xmm15,%xmm11");
 
-			asm volatile("movdqa %0,%%xmm12" : : "m" (gfcauchypshufb[d][0][0][0]));
-			asm volatile("movdqa %0,%%xmm13" : : "m" (gfcauchypshufb[d][0][1][0]));
+			asm volatile("movdqa %0,%%xmm12" : : "m" (gfgenpshufb[d][0][0][0]));
+			asm volatile("movdqa %0,%%xmm13" : : "m" (gfgenpshufb[d][0][1][0]));
 			asm volatile("pshufb %xmm10,%xmm12");
 			asm volatile("pshufb %xmm11,%xmm13");
 			asm volatile("pxor   %xmm12,%xmm2");
 			asm volatile("pxor   %xmm13,%xmm2");
 
-			asm volatile("movdqa %0,%%xmm12" : : "m" (gfcauchypshufb[d][1][0][0]));
-			asm volatile("movdqa %0,%%xmm13" : : "m" (gfcauchypshufb[d][1][1][0]));
+			asm volatile("movdqa %0,%%xmm12" : : "m" (gfgenpshufb[d][1][0][0]));
+			asm volatile("movdqa %0,%%xmm13" : : "m" (gfgenpshufb[d][1][1][0]));
 			asm volatile("pshufb %xmm10,%xmm12");
 			asm volatile("pshufb %xmm11,%xmm13");
 			asm volatile("pxor   %xmm12,%xmm3");
 			asm volatile("pxor   %xmm13,%xmm3");
 
-			asm volatile("movdqa %0,%%xmm12" : : "m" (gfcauchypshufb[d][2][0][0]));
-			asm volatile("movdqa %0,%%xmm13" : : "m" (gfcauchypshufb[d][2][1][0]));
+			asm volatile("movdqa %0,%%xmm12" : : "m" (gfgenpshufb[d][2][0][0]));
+			asm volatile("movdqa %0,%%xmm13" : : "m" (gfgenpshufb[d][2][1][0]));
 			asm volatile("pshufb %xmm10,%xmm12");
 			asm volatile("pshufb %xmm11,%xmm13");
 			asm volatile("pxor   %xmm12,%xmm4");
 			asm volatile("pxor   %xmm13,%xmm4");
 
-			asm volatile("movdqa %0,%%xmm12" : : "m" (gfcauchypshufb[d][3][0][0]));
-			asm volatile("movdqa %0,%%xmm13" : : "m" (gfcauchypshufb[d][3][1][0]));
+			asm volatile("movdqa %0,%%xmm12" : : "m" (gfgenpshufb[d][3][0][0]));
+			asm volatile("movdqa %0,%%xmm13" : : "m" (gfgenpshufb[d][3][1][0]));
 			asm volatile("pshufb %xmm10,%xmm12");
 			asm volatile("pshufb %xmm11,%xmm13");
 			asm volatile("pxor   %xmm12,%xmm5");

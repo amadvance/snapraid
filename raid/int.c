@@ -34,8 +34,6 @@ void raid_par1_int32(int nd, size_t size, void **vv)
 	for (i = 0; i < size; i += 8) {
 		p0 = v_32(v[l][i]);
 		p1 = v_32(v[l][i+4]);
-		/* accessing disks in backward order because the buffers */
-		/* are also in backward order */
 		for (d = l-1; d >= 0; --d) {
 			p0 ^= v_32(v[d][i]);
 			p1 ^= v_32(v[d][i+4]);
@@ -64,8 +62,6 @@ void raid_par1_int64(int nd, size_t size, void **vv)
 	for (i = 0; i < size; i += 16) {
 		p0 = v_64(v[l][i]);
 		p1 = v_64(v[l][i+8]);
-		/* accessing disks in backward order because the buffers */
-		/* are also in backward order */
 		for (d = l-1; d >= 0; --d) {
 			p0 ^= v_64(v[d][i]);
 			p1 ^= v_64(v[d][i+8]);
@@ -187,8 +183,8 @@ void raid_par3_int8(int nd, size_t size, void **vv)
 			d0 = v_8(v[d][i]);
 
 			p0 ^= d0;
-			q0 ^= gfmul[d0][gfcauchy[1][d]];
-			r0 ^= gfmul[d0][gfcauchy[2][d]];
+			q0 ^= gfmul[d0][gfgen[1][d]];
+			r0 ^= gfmul[d0][gfgen[2][d]];
 		}
 
 		/* first disk with all coefficients at 1 */
@@ -236,9 +232,9 @@ void raid_par4_int8(int nd, size_t size, void **vv)
 			d0 = v_8(v[d][i]);
 
 			p0 ^= d0;
-			q0 ^= gfmul[d0][gfcauchy[1][d]];
-			r0 ^= gfmul[d0][gfcauchy[2][d]];
-			s0 ^= gfmul[d0][gfcauchy[3][d]];
+			q0 ^= gfmul[d0][gfgen[1][d]];
+			r0 ^= gfmul[d0][gfgen[2][d]];
+			s0 ^= gfmul[d0][gfgen[3][d]];
 		}
 
 		/* first disk with all coefficients at 1 */
@@ -290,10 +286,10 @@ void raid_par5_int8(int nd, size_t size, void **vv)
 			d0 = v_8(v[d][i]);
 
 			p0 ^= d0;
-			q0 ^= gfmul[d0][gfcauchy[1][d]];
-			r0 ^= gfmul[d0][gfcauchy[2][d]];
-			s0 ^= gfmul[d0][gfcauchy[3][d]];
-			t0 ^= gfmul[d0][gfcauchy[4][d]];
+			q0 ^= gfmul[d0][gfgen[1][d]];
+			r0 ^= gfmul[d0][gfgen[2][d]];
+			s0 ^= gfmul[d0][gfgen[3][d]];
+			t0 ^= gfmul[d0][gfgen[4][d]];
 		}
 
 		/* first disk with all coefficients at 1 */
@@ -349,11 +345,11 @@ void raid_par6_int8(int nd, size_t size, void **vv)
 			d0 = v_8(v[d][i]);
 
 			p0 ^= d0;
-			q0 ^= gfmul[d0][gfcauchy[1][d]];
-			r0 ^= gfmul[d0][gfcauchy[2][d]];
-			s0 ^= gfmul[d0][gfcauchy[3][d]];
-			t0 ^= gfmul[d0][gfcauchy[4][d]];
-			u0 ^= gfmul[d0][gfcauchy[5][d]];
+			q0 ^= gfmul[d0][gfgen[1][d]];
+			r0 ^= gfmul[d0][gfgen[2][d]];
+			s0 ^= gfmul[d0][gfgen[3][d]];
+			t0 ^= gfmul[d0][gfgen[4][d]];
+			u0 ^= gfmul[d0][gfgen[5][d]];
 		}
 
 		/* first disk with all coefficients at 1 */

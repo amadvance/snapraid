@@ -13,6 +13,7 @@
  */
 
 #include "internal.h"
+#include "memory.h"
 #include "cpu.h"
 
 void raid_init(void)
@@ -79,6 +80,183 @@ void raid_init(void)
 
 	/* set the default mode */
 	raid_mode(RAID_MODE_CAUCHY);
+}
+
+/*
+ * Refence parity computation.
+ */
+void raid_par_ref(int nd, int np, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	size_t i;
+
+	for (i = 0; i < size; ++i) {
+		uint8_t p[RAID_PARITY_MAX];
+		int j, d;
+
+		for (j = 0; j < np; ++j)
+			p[j] = 0;
+
+		for (d = 0; d < nd; ++d) {
+			uint8_t b = v[d][i];
+
+			for (j = 0; j < np; ++j)
+				p[j] ^= gfmul[b][gfgen[j][d]];
+		}
+
+		for (j = 0; j < np; ++j)
+			v[nd + j][i] = p[j];
+	}
+}
+
+/**
+ * Number of data disks to test.
+ */
+#define TEST_DATA_MAX 8
+
+/*
+ * Parity generation test.
+ */
+static int raid_test_par(int nd, int np, size_t size, void **v, void **ref)
+{
+	int i;
+	void *t[TEST_DATA_MAX + RAID_PARITY_MAX];
+
+	/* setup data */
+	for (i = 0; i < nd; ++i)
+		t[i] = ref[i];
+
+	/* setup parity */
+	for (i = 0; i < np; ++i)
+		t[nd+i] = v[nd+i];
+
+	raid_par(nd, np, size, t);
+
+	/* compare parity */
+	for (i = 0; i < np; ++i)
+		if (memcmp(t[nd+i], ref[nd+i], size) != 0)
+			return -1;
+
+	return 0;
+}
+
+/*
+ * Recovering test.
+ */
+static int raid_test_rec(int nrd, int *id, int nrp, int *ip, int nd, int np, size_t size, void **v, void **ref)
+{
+	int i, j;
+	void *t[TEST_DATA_MAX + RAID_PARITY_MAX];
+
+	/* setup data */
+	for (i = 0, j = 0; i < nd; ++i) {
+		if (j < nrd && id[j] == i) {
+			t[i] = v[i];
+			++j;
+		} else {
+			t[i] = ref[i];
+		}
+	}
+
+	/* setup parity */
+	for (i = 0, j = 0; i < np; ++i) {
+		if (j < nrp && ip[j] == i) {
+			t[nd+i] = v[nd+i];
+			++j;
+		} else {
+			t[nd+i] = ref[nd+i];
+		}
+	}
+
+	raid_rec(nrd, id, nrp, ip, nd, np, size, t);
+
+	/* compare all data and parity */
+	for (i = 0; i < nd+np; ++i)
+		if (t[i] != ref[i] && memcmp(t[i], ref[i], size) != 0)
+			return -1;
+
+	return 0;
+}
+
+/*
+ * Basic functionality self test.
+ */
+int raid_selftest(void)
+{
+	const int nd = TEST_DATA_MAX;
+	const int nv = nd + RAID_PARITY_MAX * 2 + 1;
+	const size_t size = 4096;
+	void *v_alloc;
+	void **v;
+	void *ref[nd + RAID_PARITY_MAX];
+	int id[RAID_PARITY_MAX];
+	int ip[RAID_PARITY_MAX];
+	int i, np;
+
+	/* ensure to have enough space for data */
+	BUG_ON(TEST_DATA_MAX * size > 65536);
+
+	v = raid_malloc_vector(nd, nv, size, &v_alloc);
+	if (!v)
+		return -1;
+
+	memset(v[nv-1], 0, size);
+	raid_zero(v[nv-1]);
+
+	/* use the multiplication table as data */
+	for (i = 0; i < nd; ++i)
+		ref[i] = ((uint8_t *)gfmul) + size * i;
+
+	/* setup reference parity */
+	for (i = 0; i < RAID_PARITY_MAX; ++i)
+		ref[nd+i] = v[nd+RAID_PARITY_MAX+i];
+
+	/* compute reference parity */
+	raid_par_ref(nd, RAID_PARITY_MAX, size, ref);
+
+	/* test for each parity level */
+	for (np = 1; np <= RAID_PARITY_MAX; ++np) {
+		int r;
+
+		/* test parity generation */
+		r = raid_test_par(nd, np, size, v, ref);
+		if (r != 0)
+			return r;
+
+		/* test recovering with full broken data disks */
+		for (i = 0; i < np; ++i)
+			id[i] = nd - np + i;
+
+		r = raid_test_rec(np, id, 0, ip, nd, np, size, v, ref);
+		if (r != 0)
+			return r;
+
+		/* test recovering with half broken data and ending parity */
+		for (i = 0; i < np / 2; ++i)
+			id[i] = i;
+
+		for (i = 0; i < (np + 1) / 2; ++i)
+			ip[i] = np - np / 2 + i;
+
+		r = raid_test_rec(np / 2, id, np / 2, ip, nd, np, size, v, ref);
+		if (r != 0)
+			return r;
+
+		/* test recovering with half broken data and leading parity */
+		for (i = 0; i < np / 2; ++i)
+			id[i] = i;
+
+		for (i = 0; i < (np + 1) / 2; ++i)
+			ip[i] = i;
+
+		r = raid_test_rec(np / 2, id, np / 2, ip, nd, np, size, v, ref);
+		if (r != 0)
+			return r;
+	}
+
+	free(v_alloc);
+
+	return 0;
 }
 
 static struct raid_func {

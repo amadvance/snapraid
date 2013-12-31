@@ -282,7 +282,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 	}
 
 	/* check for speed */
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 	if (!raid_cpu_has_ssse3())
 #endif
 	if (state->raid_mode == RAID_MODE_CAUCHY) {
@@ -703,7 +703,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	} else if (state->opt.force_spooky2) {
 		state->besthash = HASH_SPOOKY2;
 	} else {
-#if defined(__i386__) || defined(__x86_64__)
+#ifdef CONFIG_X86
 		if (sizeof(void*) == 4 && !raid_cpu_has_slowmult())
 			state->besthash = HASH_MURMUR3;
 		else
