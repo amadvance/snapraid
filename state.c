@@ -2155,7 +2155,7 @@ static void decoding_error(const char* path, STREAM* f)
 		fprintf(stderr, "This content file is damaged! Use an alternate copy.\n");
 		exit(EXIT_FAILURE);
 	} else {
-		fprintf(stderr, "The file CRC is correct! This seems a SnapRAID bug!\n");
+		fprintf(stderr, "The file CRC is correct!\n");
 	}
 }
 
@@ -2226,6 +2226,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			ret = sgetb32(f, &mapping);
 			if (ret < 0 || mapping >= mapping_max) {
 				decoding_error(path, f);
+				fprintf(stderr, "Internal inconsistency in mapping index!\n");
 				exit(EXIT_FAILURE);
 			}
 			disk = tommy_array_get(&disk_mapping, mapping);
@@ -2488,6 +2489,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			ret = sgetb32(f, &mapping);
 			if (ret < 0 || mapping >= mapping_max) {
 				decoding_error(path, f);
+				fprintf(stderr, "Internal inconsistency in mapping index!\n");
 				exit(EXIT_FAILURE);
 			}
 			disk = tommy_array_get(&disk_mapping, mapping);
@@ -2577,6 +2579,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			ret = sgetb32(f, &mapping);
 			if (ret < 0 || mapping >= mapping_max) {
 				decoding_error(path, f);
+				fprintf(stderr, "Internal inconsistency in mapping index!\n");
 				exit(EXIT_FAILURE);
 			}
 			disk = tommy_array_get(&disk_mapping, mapping);
@@ -2618,6 +2621,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			ret = sgetb32(f, &mapping);
 			if (ret < 0 || mapping >= mapping_max) {
 				decoding_error(path, f);
+				fprintf(stderr, "Internal inconsistency in mapping index!\n");
 				exit(EXIT_FAILURE);
 			}
 			disk = tommy_array_get(&disk_mapping, mapping);
@@ -2658,6 +2662,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			ret = sgetb32(f, &mapping);
 			if (ret < 0 || mapping >= mapping_max) {
 				decoding_error(path, f);
+				fprintf(stderr, "Internal inconsistency in mapping index!\n");
 				exit(EXIT_FAILURE);
 			}
 			disk = tommy_array_get(&disk_mapping, mapping);
@@ -2788,6 +2793,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			if (!disk) {
 				decoding_error(path, f);
 				fprintf(stderr, "Disk named '%s' not present in the configuration file!\n", buffer);
+				fprintf(stderr, "If you have removed it from the configuration file, please restore it\n");
 				exit(EXIT_FAILURE);
 			}
 
