@@ -115,7 +115,7 @@ void raid_par_ref(int nd, int np, size_t size, void **vv)
 /*
  * Size of the blocks to test.
  */
-#define TEST_SIZE PAGE_SIZE
+#define TEST_SIZE 4096
 
 /*
  * Number of data blocks to test.

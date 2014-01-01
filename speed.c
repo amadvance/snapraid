@@ -22,6 +22,7 @@
 #include "raid/raid.h"
 #include "raid/cpu.h"
 #include "raid/internal.h"
+#include "raid/memory.h"
 #include "state.h"
 
 /*
@@ -150,6 +151,7 @@ void speed(void)
 	printf("\n");
 
 	printf("Speed test using %u data buffers of %u bytes, for a total of %u KiB.\n", nd, size, nd * size / 1024);
+	printf("Memory blocks have a displacement of %u bytes to improve cache performance.\n", RAID_MALLOC_DISPLACEMENT);
 	printf("The reported value is the aggregate bandwidth of all data blocks in MiB/s,\n");
 	printf("not counting parity blocks.\n");
 	printf("\n");
