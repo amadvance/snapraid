@@ -16,6 +16,9 @@
 #include "memory.h"
 #include "cpu.h"
 
+/*
+ * Initializes and selects the best algorithm.
+ */
 void raid_init(void)
 {
 	raid_par3_ptr = raid_par3_int8;
@@ -109,10 +112,15 @@ void raid_par_ref(int nd, int np, size_t size, void **vv)
 	}
 }
 
-/**
- * Number of data disks to test.
+/*
+ * Size of the blocks to test.
  */
-#define TEST_DATA_MAX 8
+#define TEST_SIZE PAGE_SIZE
+
+/*
+ * Number of data blocks to test.
+ */
+#define TEST_COUNT (65536 / TEST_SIZE)
 
 /*
  * Parity generation test.
@@ -120,7 +128,7 @@ void raid_par_ref(int nd, int np, size_t size, void **vv)
 static int raid_test_par(int nd, int np, size_t size, void **v, void **ref)
 {
 	int i;
-	void *t[TEST_DATA_MAX + RAID_PARITY_MAX];
+	void *t[TEST_COUNT + RAID_PARITY_MAX];
 
 	/* setup data */
 	for (i = 0; i < nd; ++i)
@@ -146,7 +154,7 @@ static int raid_test_par(int nd, int np, size_t size, void **v, void **ref)
 static int raid_test_rec(int nrd, int *id, int nrp, int *ip, int nd, int np, size_t size, void **v, void **ref)
 {
 	int i, j;
-	void *t[TEST_DATA_MAX + RAID_PARITY_MAX];
+	void *t[TEST_COUNT + RAID_PARITY_MAX];
 
 	/* setup data */
 	for (i = 0, j = 0; i < nd; ++i) {
@@ -183,18 +191,19 @@ static int raid_test_rec(int nrd, int *id, int nrp, int *ip, int nd, int np, siz
  */
 int raid_selftest(void)
 {
-	const int nd = TEST_DATA_MAX;
+	const int nd = TEST_COUNT;
+	const size_t size = TEST_SIZE;
 	const int nv = nd + RAID_PARITY_MAX * 2 + 1;
-	const size_t size = 4096;
 	void *v_alloc;
 	void **v;
 	void *ref[nd + RAID_PARITY_MAX];
 	int id[RAID_PARITY_MAX];
 	int ip[RAID_PARITY_MAX];
 	int i, np;
+	int ret = 0;
 
 	/* ensure to have enough space for data */
-	BUG_ON(TEST_DATA_MAX * size > 65536);
+	BUG_ON(nd * size > 65536);
 
 	v = raid_malloc_vector(nd, nv, size, &v_alloc);
 	if (!v)
@@ -216,20 +225,18 @@ int raid_selftest(void)
 
 	/* test for each parity level */
 	for (np = 1; np <= RAID_PARITY_MAX; ++np) {
-		int r;
-
 		/* test parity generation */
-		r = raid_test_par(nd, np, size, v, ref);
-		if (r != 0)
-			return r;
+		ret = raid_test_par(nd, np, size, v, ref);
+		if (ret != 0)
+			return ret;
 
 		/* test recovering with full broken data disks */
 		for (i = 0; i < np; ++i)
 			id[i] = nd - np + i;
 
-		r = raid_test_rec(np, id, 0, ip, nd, np, size, v, ref);
-		if (r != 0)
-			return r;
+		ret = raid_test_rec(np, id, 0, ip, nd, np, size, v, ref);
+		if (ret != 0)
+			goto bail;
 
 		/* test recovering with half broken data and ending parity */
 		for (i = 0; i < np / 2; ++i)
@@ -238,9 +245,9 @@ int raid_selftest(void)
 		for (i = 0; i < (np + 1) / 2; ++i)
 			ip[i] = np - np / 2 + i;
 
-		r = raid_test_rec(np / 2, id, np / 2, ip, nd, np, size, v, ref);
-		if (r != 0)
-			return r;
+		ret = raid_test_rec(np / 2, id, np / 2, ip, nd, np, size, v, ref);
+		if (ret != 0)
+			goto bail;
 
 		/* test recovering with half broken data and leading parity */
 		for (i = 0; i < np / 2; ++i)
@@ -249,14 +256,15 @@ int raid_selftest(void)
 		for (i = 0; i < (np + 1) / 2; ++i)
 			ip[i] = i;
 
-		r = raid_test_rec(np / 2, id, np / 2, ip, nd, np, size, v, ref);
-		if (r != 0)
-			return r;
+		ret = raid_test_rec(np / 2, id, np / 2, ip, nd, np, size, v, ref);
+		if (ret != 0)
+			goto bail;
 	}
 
+bail:
 	free(v_alloc);
 
-	return 0;
+	return ret;
 }
 
 static struct raid_func {

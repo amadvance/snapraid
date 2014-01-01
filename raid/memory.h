@@ -24,7 +24,7 @@
 
 /**
  * Memory displacement to avoid cache collisions on contiguous blocks,
- * ued by raid_malloc_vector().
+ * used by raid_malloc_vector().
  *
  * When allocating a sequence of blocks with a size of power of 2,
  * there is the risk that the start of each block is mapped into the same
@@ -32,20 +32,22 @@
  * in parallel, from the start to the end.
  *
  * The selected value was choosen empirically with some speed tests
- * with 8/12/16/20/24 data buffers and 3 parity buffers
- * for RAID-5/6/TP computation.
+ * with 8/12/16/20/24 data buffers of 256 KB.
  *
- * With displacement (8 buffers, icore5, 32 bit):
+ * With displacement:
+ * (8 buffers of 256 KB, icore5, 32 bits):
  *
- * PAR1 sse2x4 21936 [MB/s]
- * PAR2 sse2x2 11902 [MB/s]
- * PARz sse2x1 5838 [MB/s]
+ *        sse2
+ * par1  21936 [MB/s]
+ * par2  11902 [MB/s]
+ * parz   5838 [MB/s]
  *
  * Without displacement:
  *
- * PAR1 sse2x4 15368 [MB/s]
- * PAR2 sse2x2 6814 [MB/s]
- * PARz sse2x1 3033 [MB/s]
+ *        sse2
+ * par1  15368 [MB/s]
+ * par2   6814 [MB/s]
+ * parz   3033 [MB/s]
  */
 #define RAID_MALLOC_DISPLACEMENT (7*256)
 

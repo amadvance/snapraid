@@ -206,7 +206,7 @@ int raid_test_rec(int mode, int nd, size_t size)
 					/* check */
 					for (i = 0; i < nr; ++i)
 						if (memcmp(test[i], data_save[i], size) != 0)
-							return -1;
+							goto bail;
 
 					/* restore */
 					for (i = 0; i < nr; ++i) {
@@ -222,8 +222,12 @@ int raid_test_rec(int mode, int nd, size_t size)
 
 	free(v_alloc);
 	free(v);
-
 	return 0;
+
+bail:
+	free(v_alloc);
+	free(v);
+	return -1;
 }
 
 int raid_test_par(int mode, int nd, size_t size)
@@ -318,12 +322,16 @@ int raid_test_par(int mode, int nd, size_t size)
 		/* check it */
 		for (i = 0; i < np; ++i)
 			if (memcmp(v[nd + np + i], v[nd + i], size) != 0)
-				return -1;
+				goto bail;
 	}
 
 	free(v_alloc);
 	free(v);
-
 	return 0;
+
+bail:
+	free(v_alloc);
+	free(v);
+	return -1;
 }
 
