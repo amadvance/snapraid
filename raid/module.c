@@ -228,7 +228,7 @@ int raid_selftest(void)
 		/* test parity generation */
 		ret = raid_test_par(nd, np, size, v, ref);
 		if (ret != 0)
-			return ret;
+			goto bail;
 
 		/* test recovering with full broken data disks */
 		for (i = 0; i < np; ++i)

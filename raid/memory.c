@@ -34,41 +34,53 @@ void *raid_malloc_align(size_t size, void **freeptr)
 	return ptr;
 }
 
-void **raid_malloc_vector(size_t reverse, size_t count, size_t size, void **freeptr)
+void **raid_malloc_vector(int nd, int n, size_t size, void **freeptr)
 {
 	void **v;
 	unsigned char *va;
-	size_t i;
+	int i;
 
-	assert(reverse <= count);
-
-	v = malloc(count * sizeof(void *));
+	v = malloc(n * sizeof(void *));
 	if (!v)
 		return 0;
 
-	va = raid_malloc_align(count * (size + RAID_MALLOC_DISPLACEMENT), freeptr);
+	va = raid_malloc_align(n * (size + RAID_MALLOC_DISPLACEMENT), freeptr);
 	if (!va) {
 		free(v);
 		return 0;
 	}
 
-	for (i = 0; i < count; ++i)
-		v[i] = va + i * (size + RAID_MALLOC_DISPLACEMENT);
+	for (i = 0; i < n; ++i) {
+		v[i] = va;
+		va += size + RAID_MALLOC_DISPLACEMENT;
+	}
 
-	/* reverse order for the initial ones */
-	for (i = 0; i < reverse/2; ++i) {
+	/* reverse order of the data blocks */
+	/* because they are usually accessed from the last one */
+	for (i = 0; i < nd/2; ++i) {
 		void *ptr = v[i];
-		v[i] = v[reverse - 1 - i];
-		v[reverse - 1 - i] = ptr;
+		v[i] = v[nd - 1 - i];
+		v[nd - 1 - i] = ptr;
 	}
 
 	return v;
 }
 
-int raid_mtest_vector(void **vv, size_t count, size_t size)
+void raid_mrand_vector(int n, size_t size, void **vv)
 {
 	unsigned char **v = (unsigned char **)vv;
-	size_t i;
+	int i;
+	size_t j;
+
+	for (i = 0; i < n; ++i)
+		for (j = 0; j < size; ++j)
+			v[i][j] = rand();
+}
+
+int raid_mtest_vector(int n, size_t size, void **vv)
+{
+	unsigned char **v = (unsigned char **)vv;
+	int i;
 	size_t j;
 	unsigned k;
 	unsigned char d;
@@ -76,7 +88,7 @@ int raid_mtest_vector(void **vv, size_t count, size_t size)
 
 	/* fill with 0 */
 	d = 0;
-	for (i = 0; i < count; ++i)
+	for (i = 0; i < n; ++i)
 		for (j = 0; j < size; ++j)
 			v[i][j] = d;
 
@@ -86,7 +98,7 @@ int raid_mtest_vector(void **vv, size_t count, size_t size)
 		d = k;
 
 		/* forward fill */
-		for (i = 0; i < count; ++i) {
+		for (i = 0; i < n; ++i) {
 			for (j = 0; j < size; ++j) {
 				if (v[i][j] != p)
 					return -1;
@@ -97,7 +109,7 @@ int raid_mtest_vector(void **vv, size_t count, size_t size)
 		p = d;
 		d = ~p;
 		/* backward fill with complement */
-		for (i = 0; i < count; ++i) {
+		for (i = 0; i < n; ++i) {
 			for (j = size; j > 0; --j) {
 				if (v[i][j-1] != p)
 					return -1;
@@ -107,16 +119,5 @@ int raid_mtest_vector(void **vv, size_t count, size_t size)
 	}
 
 	return 0;
-}
-
-void raid_mrand_vector(void **vv, size_t count, size_t size)
-{
-	unsigned char **v = (unsigned char **)vv;
-	size_t i;
-	size_t j;
-
-	for (i = 0; i < count; ++i)
-		for (j = 0; j < size; ++j)
-			v[i][j] = rand();
 }
 

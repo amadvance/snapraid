@@ -466,22 +466,20 @@ void* malloc_nofail_align(size_t size, void** freeptr);
 
 /**
  * Safe aligned vector allocation.
- * Returns a vector of "count" pointers, each one pointing to a block of the specified "size".
- * The first "reverse" pointers are put in reverse memory offset order.
  * If no memory is available, it aborts.
  */
-void** malloc_nofail_vector_align(size_t reverse, size_t count, size_t size, void** freeptr);
+void** malloc_nofail_vector_align(int nd, int n, size_t size, void** freeptr);
+
+/**
+ * Fills the memory vector with random data.
+ */
+void mrand_vector(int n, size_t size, void** vv);
 
 /**
  * Tests the memory vector for RAM problems.
  * If a problem is found, it crashes.
  */
-void mtest_vector(void** vv, size_t count, size_t size);
-
-/**
- * Fills the memory vector with random data.
- */
-void mrand_vector(void** vv, size_t count, size_t size);
+void mtest_vector(int n, size_t size, void** vv);
 
 /**
  * Safe strdup.

@@ -148,7 +148,7 @@ int raid_test_rec(int mode, int nd, size_t size)
 	waste = v[nv-1];
 
 	/* fill data disk with random */
-	raid_mrand_vector(v, nd, size);
+	raid_mrand_vector(nd, size, v);
 
 	/* setup recov functions */
 	for (i = 0; i < np; ++i) {
@@ -253,7 +253,7 @@ int raid_test_par(int mode, int nd, size_t size)
 		return -1;
 
 	/* fill with random */
-	raid_mrand_vector(v, nv, size);
+	raid_mrand_vector(nv, size, v);
 
 	/* compute the parity */
 	raid_par_ref(nd, np, size, v);

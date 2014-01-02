@@ -81,7 +81,6 @@ void speed(void)
 	void *v_alloc;
 	void **v;
 
-	/* we need disk + 1 for each parity buffers + 1 zero v */
 	nv = nd + RAID_PARITY_MAX + 1;
 
 	v = malloc_nofail_vector_align(nd, nv, size, &v_alloc);

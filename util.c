@@ -1384,11 +1384,11 @@ void* malloc_nofail_align(size_t size, void** freeptr)
 	return ptr;
 }
 
-void** malloc_nofail_vector_align(size_t reverse, size_t count, size_t size, void** freeptr)
+void** malloc_nofail_vector_align(int nd, int n, size_t size, void** freeptr)
 {
 	void* ptr;
 
-	ptr = raid_malloc_vector(reverse, count, size, freeptr);
+	ptr = raid_malloc_vector(nd, n, size, freeptr);
 
 	if (!ptr) {
 		/* don't use printf to avoid any possible extra allocation */
@@ -1401,18 +1401,18 @@ void** malloc_nofail_vector_align(size_t reverse, size_t count, size_t size, voi
 	return ptr;
 }
 
-void mtest_vector(void** vv, size_t count, size_t size)
+void mrand_vector(int n , size_t size, void** vv)
 {
-	if (raid_mtest_vector(vv, count, size) != 0) {
+	raid_mrand_vector(n, size, vv);
+}
+
+void mtest_vector(int n , size_t size, void** vv)
+{
+	if (raid_mtest_vector(n, size, vv) != 0) {
 		fprintf(stderr, "DANGER! Your RAM memory is broken! DO NOT PROCEED UNTIL FIXED!\n");
 		fprintf(stderr, "Try running some memory test like http://www.memtest86.com/\n");
 		exit(EXIT_FAILURE);
 	}
-}
-
-void mrand_vector(void** vv, size_t count, size_t size)
-{
-	raid_mrand_vector(vv, count, size);
 }
 
 /****************************************************************************/
