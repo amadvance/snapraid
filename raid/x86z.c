@@ -44,7 +44,7 @@ void raid_parz_sse2(int nd, size_t size, void **vv)
 	q = v[nd+1];
 	r = v[nd+2];
 
-	asm_begin();
+	raid_asm_begin();
 
 	asm volatile("movdqa %0,%%xmm7" : : "m" (gfzconst16.poly[0]));
 	asm volatile("movdqa %0,%%xmm3" : : "m" (gfzconst16.half[0]));
@@ -80,7 +80,7 @@ void raid_parz_sse2(int nd, size_t size, void **vv)
 		asm volatile("movntdq %%xmm2,%0" : "=m" (r[i]));
 	}
 
-	asm_end();
+	raid_asm_end();
 }
 #endif
 
@@ -104,7 +104,7 @@ void raid_parz_sse2ext(int nd, size_t size, void **vv)
 	q = v[nd+1];
 	r = v[nd+2];
 
-	asm_begin();
+	raid_asm_begin();
 
 	asm volatile("movdqa %0,%%xmm7" : : "m" (gfzconst16.poly[0]));
 	asm volatile("movdqa %0,%%xmm3" : : "m" (gfzconst16.half[0]));
@@ -162,7 +162,7 @@ void raid_parz_sse2ext(int nd, size_t size, void **vv)
 		asm volatile("movntdq %%xmm10,%0" : "=m" (r[i+16]));
 	}
 
-	asm_end();
+	raid_asm_end();
 }
 #endif
 

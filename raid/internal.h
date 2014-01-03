@@ -22,7 +22,7 @@
 #define BUG_ON(a) assert(!(a))
 
 /*
- * Include the main header.
+ * Includes the main header.
  */
 #include "raid.h"
 
@@ -112,14 +112,20 @@ extern const uint8_t (*raid_gfgen)[256];
 #define gfgenpshufb raid_gfcauchypshufb
 #define gfmulpshufb raid_gfmulpshufb
 #define gfgen raid_gfgen
+
 /*
  * Assembler blocks.
  */
-#define asm_begin() \
-	do { } while (0)
+#ifdef CONFIG_X86
+static __always_inline void raid_asm_begin(void)
+{
+}
 
-#define asm_end() \
-	asm volatile("sfence" : : : "memory")
+static __always_inline void raid_asm_end(void)
+{
+	asm volatile("sfence" : : : "memory");
+}
+#endif
 
 #endif
 

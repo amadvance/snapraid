@@ -34,7 +34,7 @@ void raid_par1_sse2(int nd, size_t size, void **vv)
 	l = nd - 1;
 	p = v[nd];
 
-	asm_begin();
+	raid_asm_begin();
 
 	for (i = 0; i < size; i += 64) {
 		asm volatile("movdqa %0,%%xmm0" : : "m" (v[l][i]));
@@ -57,7 +57,7 @@ void raid_par1_sse2(int nd, size_t size, void **vv)
 		asm volatile("movntdq %%xmm3,%0" : "=m" (p[i+48]));
 	}
 
-	asm_end();
+	raid_asm_end();
 }
 #endif
 
@@ -87,7 +87,7 @@ void raid_par2_sse2(int nd, size_t size, void **vv)
 	p = v[nd];
 	q = v[nd+1];
 
-	asm_begin();
+	raid_asm_begin();
 
 	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
 
@@ -121,7 +121,7 @@ void raid_par2_sse2(int nd, size_t size, void **vv)
 		asm volatile("movntdq %%xmm3,%0" : "=m" (q[i+16]));
 	}
 
-	asm_end();
+	raid_asm_end();
 }
 #endif
 
@@ -143,7 +143,7 @@ void raid_par2_sse2ext(int nd, size_t size, void **vv)
 	p = v[nd];
 	q = v[nd+1];
 
-	asm_begin();
+	raid_asm_begin();
 
 	asm volatile("movdqa %0,%%xmm15" : : "m" (gfconst16.poly[0]));
 
@@ -201,7 +201,7 @@ void raid_par2_sse2ext(int nd, size_t size, void **vv)
 		asm volatile("movntdq %%xmm7,%0" : "=m" (q[i+48]));
 	}
 
-	asm_end();
+	raid_asm_end();
 }
 #endif
 
@@ -230,7 +230,7 @@ void raid_par3_ssse3(int nd, size_t size, void **vv)
 		return;
 	}
 
-	asm_begin();
+	raid_asm_begin();
 
 	/* generic case with at least two data disks */
 	asm volatile("movdqa %0,%%xmm3" : : "m" (gfconst16.poly[0]));
@@ -298,7 +298,7 @@ void raid_par3_ssse3(int nd, size_t size, void **vv)
 		asm volatile("movntdq %%xmm2,%0" : "=m" (r[i]));
 	}
 
-	asm_end();
+	raid_asm_end();
 }
 #endif
 
@@ -329,7 +329,7 @@ void raid_par3_ssse3ext(int nd, size_t size, void **vv)
 		return;
 	}
 
-	asm_begin();
+	raid_asm_begin();
 
 	/* generic case with at least two data disks */
 	asm volatile("movdqa %0,%%xmm3" : : "m" (gfconst16.poly[0]));
@@ -439,7 +439,7 @@ void raid_par3_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile("movntdq %%xmm10,%0" : "=m" (r[i+16]));
 	}
 
-	asm_end();
+	raid_asm_end();
 }
 #endif
 
@@ -470,7 +470,7 @@ void raid_par4_ssse3(int nd, size_t size, void **vv)
 		return;
 	}
 
-	asm_begin();
+	raid_asm_begin();
 
 	/* generic case with at least two data disks */
 	for (i = 0; i < size; i += 16) {
@@ -555,7 +555,7 @@ void raid_par4_ssse3(int nd, size_t size, void **vv)
 		asm volatile("movntdq %%xmm3,%0" : "=m" (s[i]));
 	}
 
-	asm_end();
+	raid_asm_end();
 }
 #endif
 
@@ -588,7 +588,7 @@ void raid_par4_ssse3ext(int nd, size_t size, void **vv)
 		return;
 	}
 
-	asm_begin();
+	raid_asm_begin();
 
 	/* generic case with at least two data disks */
 	for (i = 0; i < size; i += 32) {
@@ -728,7 +728,7 @@ void raid_par4_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile("movntdq %%xmm11,%0" : "=m" (s[i+16]));
 	}
 
-	asm_end();
+	raid_asm_end();
 }
 #endif
 
@@ -767,7 +767,7 @@ void raid_par5_ssse3(int nd, size_t size, void **vv)
 		return;
 	}
 
-	asm_begin();
+	raid_asm_begin();
 
 	/* generic case with at least two data disks */
 	for (i = 0; i < size; i += 16) {
@@ -869,7 +869,7 @@ void raid_par5_ssse3(int nd, size_t size, void **vv)
 		asm volatile("movntdq %%xmm3,%0" : "=m" (t[i]));
 	}
 
-	asm_end();
+	raid_asm_end();
 }
 #endif
 
@@ -904,7 +904,7 @@ void raid_par5_ssse3ext(int nd, size_t size, void **vv)
 		return;
 	}
 
-	asm_begin();
+	raid_asm_begin();
 
 	/* generic case with at least two data disks */
 	asm volatile("movdqa %0,%%xmm14" : : "m" (gfconst16.poly[0]));
@@ -1002,7 +1002,7 @@ void raid_par5_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile("movntdq %%xmm4,%0" : "=m" (t[i]));
 	}
 
-	asm_end();
+	raid_asm_end();
 }
 #endif
 
@@ -1043,7 +1043,7 @@ void raid_par6_ssse3(int nd, size_t size, void **vv)
 		return;
 	}
 
-	asm_begin();
+	raid_asm_begin();
 
 	/* generic case with at least two data disks */
 	for (i = 0; i < size; i += 16) {
@@ -1164,7 +1164,7 @@ void raid_par6_ssse3(int nd, size_t size, void **vv)
 		asm volatile("movntdq %%xmm3,%0" : "=m" (u[i]));
 	}
 
-	asm_end();
+	raid_asm_end();
 }
 #endif
 
@@ -1201,7 +1201,7 @@ void raid_par6_ssse3ext(int nd, size_t size, void **vv)
 		return;
 	}
 
-	asm_begin();
+	raid_asm_begin();
 
 	/* generic case with at least two data disks */
 	asm volatile("movdqa %0,%%xmm14" : : "m" (gfconst16.poly[0]));
@@ -1314,7 +1314,7 @@ void raid_par6_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile("movntdq %%xmm5,%0" : "=m" (u[i]));
 	}
 
-	asm_end();
+	raid_asm_end();
 }
 #endif
 
@@ -1351,7 +1351,7 @@ void raid_rec1_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	p = v[nd+ip[0]];
 	pa = v[id[0]];
 
-	asm_begin();
+	raid_asm_begin();
 
 	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 	asm volatile("movdqa %0,%%xmm4" : : "m" (gfmulpshufb[V][0][0]));
@@ -1373,7 +1373,7 @@ void raid_rec1_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		asm volatile("movdqa %%xmm2,%0" : "=m" (pa[i]));
 	}
 
-	asm_end();
+	raid_asm_end();
 }
 #endif
 
@@ -1410,7 +1410,7 @@ void raid_rec2_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		pa[j] = v[id[j]];
 	}
 
-	asm_begin();
+	raid_asm_begin();
 
 	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 
@@ -1479,7 +1479,7 @@ void raid_rec2_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		asm volatile("movdqa %%xmm6,%0" : "=m" (pa[1][i]));
 	}
 
-	asm_end();
+	raid_asm_end();
 }
 #endif
 
@@ -1514,7 +1514,7 @@ void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		pa[j] = v[id[j]];
 	}
 
-	asm_begin();
+	raid_asm_begin();
 
 	asm volatile("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 
@@ -1555,7 +1555,7 @@ void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		}
 	}
 
-	asm_end();
+	raid_asm_end();
 }
 #endif
 
