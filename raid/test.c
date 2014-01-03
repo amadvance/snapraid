@@ -119,7 +119,8 @@ int raid_test_rec(int mode, int nd, size_t size)
 	int i;
 	int j;
 	int nr;
-	void (*f[RAID_PARITY_MAX][4])(int nr, const int *id, const int *ip, int nd, size_t size, void **vbuf);
+	void (*f[RAID_PARITY_MAX][4])(
+		int nr, int *id, int *ip, int nd, size_t size, void **vbuf);
 	int nf[RAID_PARITY_MAX];
 	int np;
 

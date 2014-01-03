@@ -383,7 +383,7 @@ void raid_par6_int8(int nd, size_t size, void **vv)
  *
  * Dx = A[ip[0],id[0]]^-1 * Pd
  */
-void raid_rec1_int8(int nr, const int *id, const int *ip, int nd, size_t size, void **vv)
+void raid_rec1_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -436,7 +436,7 @@ void raid_rec1_int8(int nr, const int *id, const int *ip, int nd, size_t size, v
  *
  * we solve inverting the coefficients matrix.
  */
-void raid_rec2_int8(int nr, const int *id, const int *ip, int nd, size_t size, void **vv)
+void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -504,7 +504,7 @@ void raid_rec2_int8(int nr, const int *id, const int *ip, int nd, size_t size, v
  * PD[0] = Pd, PD[1] = Qd, PD[2] = Rd, ...
  * D[0] = Dx, D[1] = Dy, D[2] = Dz, ...
  */
-void raid_recX_int8(int nr, const int *id, const int *ip, int nd, size_t size, void **vv)
+void raid_recX_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];

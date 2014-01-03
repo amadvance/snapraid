@@ -59,9 +59,9 @@ void *raid_malloc_align(size_t size, void **freeptr);
 
 /**
  * Aligned vector allocation.
- * Returns a vector of ::n pointers, each one pointing to a block of
- * the specified ::size.
- * The first ::nd elements are reversed in order.
+ * Returns a vector of @n pointers, each one pointing to a block of
+ * the specified @size.
+ * The first @nd elements are reversed in order.
  */
 void **raid_malloc_vector(int nd, int n, size_t size, void **freeptr);
 

@@ -1322,7 +1322,7 @@ void raid_par6_ssse3ext(int nd, size_t size, void **vv)
 /*
  * RAID recovering for one disk SSSE3 implementation
  */
-void raid_rec1_ssse3(int nr, const int *id, const int *ip, int nd, size_t size, void **vv)
+void raid_rec1_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -1381,7 +1381,7 @@ void raid_rec1_ssse3(int nr, const int *id, const int *ip, int nd, size_t size, 
 /*
  * RAID recovering for two disks SSSE3 implementation
  */
-void raid_rec2_ssse3(int nr, const int *id, const int *ip, int nd, size_t size, void **vv)
+void raid_rec2_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	const int N = 2;
@@ -1487,7 +1487,7 @@ void raid_rec2_ssse3(int nr, const int *id, const int *ip, int nd, size_t size, 
 /*
  * RAID recovering SSSE3 implementation
  */
-void raid_recX_ssse3(int nr, const int *id, const int *ip, int nd, size_t size, void **vv)
+void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	int N = nr;

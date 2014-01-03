@@ -269,7 +269,7 @@ void raid_invert(uint8_t *M, uint8_t *V, int n)
  * Note that all the other parities not in the ip[] vector
  * are destroyed.
  */
-void raid_delta_gen(int nr, const int *id, const int *ip, int nd, size_t size, void **v)
+void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v)
 {
 	void *p[RAID_PARITY_MAX];
 	void *pa[RAID_PARITY_MAX];
@@ -312,7 +312,7 @@ void raid_delta_gen(int nr, const int *id, const int *ip, int nd, size_t size, v
  *
  * Dx = Pd
  */
-void raid_rec1_par1(const int *id, int nd, size_t size, void **v)
+void raid_rec1_par1(int *id, int nd, size_t size, void **v)
 {
 	void *p;
 	void *pa;
@@ -359,7 +359,7 @@ void raid_rec1_par1(const int *id, int nd, size_t size, void **v)
  *
  * That are always satisfied for any 0<=id[0]<id[1]<255.
  */
-void raid_rec2_par2(const int *id, const int *ip, int nd, size_t size, void **vv)
+void raid_rec2_par2(int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -397,9 +397,10 @@ void raid_rec2_par2(const int *id, const int *ip, int nd, size_t size, void **vv
 }
 
 /* internal forwarder */
-void (*raid_rec_ptr[RAID_PARITY_MAX])(int nr, const int *id, const int *ip, int nd, size_t size, void **vv);
+void (*raid_rec_ptr[RAID_PARITY_MAX])(
+	int nr, int *id, int *ip, int nd, size_t size, void **vv);
 
-void raid_rec(int nrd, const int *id, int nrp, int *ip, int nd, int np, size_t size, void **v)
+void raid_rec(int nrd, int *id, int nrp, int *ip, int nd, int np, size_t size, void **v)
 {
 	BUG_ON(nrd > nd);
 	BUG_ON(nrd + nrp > np);
@@ -431,7 +432,7 @@ void raid_rec(int nrd, const int *id, int nrp, int *ip, int nd, int np, size_t s
 		raid_par(nd, ip[nrp - 1] + 1, size, v);
 }
 
-void raid_rec_dataonly(int nr, const int *id, const int *ip, int nd, size_t size, void **v)
+void raid_rec_dataonly(int nr, int *id, int *ip, int nd, size_t size, void **v)
 {
 	BUG_ON(nr > nd);
 	BUG_ON(size % 64 != 0);

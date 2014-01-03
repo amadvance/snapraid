@@ -34,9 +34,9 @@
 int raid_selftest(void);
 void raid_par_ref(int nd, int np, size_t size, void **vv);
 void raid_invert(uint8_t *M, uint8_t *V, int n);
-void raid_delta_gen(int nr, const int *id, const int *ip, int nd, size_t size, void **v);
-void raid_rec1_par1(const int *id, int nd, size_t size, void **v);
-void raid_rec2_par2(const int *id, const int *ip, int nd, size_t size, void **vv);
+void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v);
+void raid_rec1_par1(int *id, int nd, size_t size, void **v);
+void raid_rec2_par2(int *id, int *ip, int nd, size_t size, void **vv);
 void raid_par1_int32(int nd, size_t size, void **vv);
 void raid_par1_int64(int nd, size_t size, void **vv);
 void raid_par1_sse2(int nd, size_t size, void **vv);
@@ -60,12 +60,12 @@ void raid_par5_ssse3ext(int nd, size_t size, void **vv);
 void raid_par6_int8(int nd, size_t size, void **vv);
 void raid_par6_ssse3(int nd, size_t size, void **vv);
 void raid_par6_ssse3ext(int nd, size_t size, void **vv);
-void raid_rec1_int8(int nr, const int *id, const int *ip, int nd, size_t size, void **vv);
-void raid_rec2_int8(int nr, const int *id, const int *ip, int nd, size_t size, void **vv);
-void raid_recX_int8(int nr, const int *id, const int *ip, int nd, size_t size, void **vv);
-void raid_rec1_ssse3(int nr, const int *id, const int *ip, int nd, size_t size, void **vv);
-void raid_rec2_ssse3(int nr, const int *id, const int *ip, int nd, size_t size, void **vv);
-void raid_recX_ssse3(int nr, const int *id, const int *ip, int nd, size_t size, void **vv);
+void raid_rec1_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_recX_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_rec1_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_rec2_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 
 /*
  * Internal naming.
@@ -86,10 +86,12 @@ const char *raid_recX_tag(void);
 /*
  * Internal forwarders.
  */
-extern void (*raid_par_ptr[RAID_PARITY_MAX])(int nd, size_t size, void **vv);
 extern void (*raid_par3_ptr)(int nd, size_t size, void **vv);
 extern void (*raid_parz_ptr)(int nd, size_t size, void **vv);
-extern void (*raid_rec_ptr[RAID_PARITY_MAX])(int nr, const int *id, const int *ip, int nd, size_t size, void **vv);
+extern void (*raid_par_ptr[RAID_PARITY_MAX])(
+	int nd, size_t size, void **vv);
+extern void (*raid_rec_ptr[RAID_PARITY_MAX])(
+	int nr, int *id, int *ip, int nd, size_t size, void **vv);
 
 /*
  * Tables.
