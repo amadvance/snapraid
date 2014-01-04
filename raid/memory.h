@@ -23,13 +23,17 @@
 #define RAID_MALLOC_ALIGN 256
 
 /**
- * Memory displacement to avoid cache collisions on contiguous blocks,
+ * Memory displacement to avoid cache address sharing on contiguous blocks,
  * used by raid_malloc_vector().
  *
  * When allocating a sequence of blocks with a size of power of 2,
- * there is the risk that the start of each block is mapped into the same
- * cache line or prefetching prediction, resulting in collisions if you
- * access all the blocks in parallel, from the start to the end.
+ * there is the risk that the addresses of each block are mapped into the
+ * same cache line and prefetching predictor, resulting in a lot of cache
+ * sharing if you access all the blocks in parallel, from the start to the
+ * end.
+ *
+ * To avoid this effect, it's better if all the blocks are allocated
+ * with a fixed displacement trying to reduce the cache addresses sharing.
  *
  * The selected value was choosen empirically with some speed tests
  * with 8/12/16/20/24 data buffers of 256 KB.
