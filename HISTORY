@@ -1,6 +1,10 @@
 SnapRAID HISTORY
 ================
 
+5.3 2014/1 (BETA)
+=================
+ * Don't warn about UUID changed if it's for an empty disk.
+
 5.2 2013/12
 ===========
  * If a disk changes UUID, automatically disable the inode
