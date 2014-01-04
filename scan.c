@@ -1297,7 +1297,11 @@ void state_scan(struct snapraid_state* state, int output)
 		for(i=state->disklist;i!=0;i=i->next) {
 			struct snapraid_disk* disk = i->data;
 
-			if (disk->has_different_uuid) {
+			/* don't print the message if the UUID changed because before */
+			/* if was no set. */
+			/* this is the normal condition for an empty disk because it */
+			/* isn't stored */
+			if (disk->has_different_uuid && !disk->had_empty_uuid) {
 				if (!done) {
 					done = 1;
 					fprintf(stderr, "WARNING! UUID is changed for disks: '%s'", disk->name);

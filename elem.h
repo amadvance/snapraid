@@ -284,6 +284,7 @@ struct snapraid_disk {
 	int has_volatile_inodes; /**< If the underline filesystem has not persistent inodes. */
 	int has_unreliable_physical; /**< If the physical offset of files has duplicates. */
 	int has_different_uuid; /**< If the disk has a different UUID, meaning that it is not the same filesystem. */
+	int had_empty_uuid; /**< If the disk had an empty UUID, meaning that it's a new disk. */
 	int mapping; /**< Index in the mapping vector. Used only as buffer when writing the content file. */
 
 	/**<
