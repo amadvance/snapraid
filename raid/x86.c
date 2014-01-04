@@ -19,10 +19,9 @@
 /*
  * PAR1 (RAID5 with xor) SSE2 implementation
  *
- * Note that we don't have the corresponding x64 sse2ext function using more
- * registers because processing a block of 64 bytes already fills
- * the typical cache block, and processing 128 bytes doesn't increase
- * performance.
+ * Intentionally don't process more than 64 bytes because 64 is the typical
+ * cache block, and processing 128 bytes doesn't increase performance, and in
+ * some cases it even decreases it.
  */
 void raid_par1_sse2(int nd, size_t size, void **vv)
 {
@@ -42,14 +41,10 @@ void raid_par1_sse2(int nd, size_t size, void **vv)
 		asm volatile("movdqa %0,%%xmm2" : : "m" (v[l][i+32]));
 		asm volatile("movdqa %0,%%xmm3" : : "m" (v[l][i+48]));
 		for (d = l-1; d >= 0; --d) {
-			asm volatile("movdqa %0,%%xmm4" : : "m" (v[d][i]));
-			asm volatile("movdqa %0,%%xmm5" : : "m" (v[d][i+16]));
-			asm volatile("movdqa %0,%%xmm6" : : "m" (v[d][i+32]));
-			asm volatile("movdqa %0,%%xmm7" : : "m" (v[d][i+48]));
-			asm volatile("pxor %xmm4,%xmm0");
-			asm volatile("pxor %xmm5,%xmm1");
-			asm volatile("pxor %xmm6,%xmm2");
-			asm volatile("pxor %xmm7,%xmm3");
+			asm volatile("pxor %0,%%xmm0" : : "m" (v[d][i]));
+			asm volatile("pxor %0,%%xmm1" : : "m" (v[d][i+16]));
+			asm volatile("pxor %0,%%xmm2" : : "m" (v[d][i+32]));
+			asm volatile("pxor %0,%%xmm3" : : "m" (v[d][i+48]));
 		}
 		asm volatile("movntdq %%xmm0,%0" : "=m" (p[i]));
 		asm volatile("movntdq %%xmm1,%0" : "=m" (p[i+16]));
@@ -66,8 +61,10 @@ static const struct gfconst16 {
 	uint8_t poly[16];
 	uint8_t low4[16];
 } gfconst16  __aligned(32) = {
-	{ 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d },
-	{ 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f },
+	{ 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d,
+	  0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d },
+	{ 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
+	  0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f },
 };
 #endif
 
