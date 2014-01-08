@@ -817,14 +817,14 @@ Defines the Windows UNC path required to access the disks remotely.
 
 If this option is specified, the symbolic links created in the pool
 directory use this UNC path to access the disks.
-Otherwise, the symbolic links will use only local paths, not allowing
-to share the pool directory in the network.
+Without this option the symbolic links generated use only local paths,
+not allowing to share the pool directory in the network.
 
 The symbolic links are formed using the specified UNC path, adding the
 disk name as specified in the "disk" option, and finally adding the
 file dir and name.
 
-This options is only required for Windows.
+This option is only required for Windows.
 
 7.9 Examples
 ------------

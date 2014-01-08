@@ -254,10 +254,10 @@ Getting Started
 
 	and share the following dirs in the network:
 
-		\\darkstar\pool -> C:\pool
-		\\darkstar\d1 -> F:\array
-		\\darkstar\d2 -> G:\array
-		\\darkstar\d3 -> H:\array
+		:\\darkstar\pool -> C:\pool
+		:\\darkstar\d1 -> F:\array
+		:\\darkstar\d2 -> G:\array
+		:\\darkstar\d3 -> H:\array
 
 	to allow remote clients to access all the files at \\darkstar\\pool.
 
@@ -753,14 +753,14 @@ Configuration
 
 	If this option is specified, the symbolic links created in the pool
 	directory use this UNC path to access the disks.
-	Otherwise, the symbolic links will use only local paths, not allowing
-	to share the pool directory in the network.
+	Without this option the symbolic links generated use only local paths,
+	not allowing to share the pool directory in the network.
 
 	The symbolic links are formed using the specified UNC path, adding the
 	disk name as specified in the "disk" option, and finally adding the
 	file dir and name.
 
-	This options is only required for Windows.
+	This option is only required for Windows.
 
   Examples
 	An example of a typical configuration for Unix is:
