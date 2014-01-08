@@ -21,19 +21,19 @@
  */
 void raid_init(void)
 {
-	raid_par3_ptr = raid_par3_int8;
-	raid_par_ptr[3] = raid_par4_int8;
-	raid_par_ptr[4] = raid_par5_int8;
-	raid_par_ptr[5] = raid_par6_int8;
+	raid_gen3_ptr = raid_gen3_int8;
+	raid_gen_ptr[3] = raid_gen4_int8;
+	raid_gen_ptr[4] = raid_gen5_int8;
+	raid_gen_ptr[5] = raid_gen6_int8;
 
 	if (sizeof(void *) == 4) {
-		raid_par_ptr[0] = raid_par1_int32;
-		raid_par_ptr[1] = raid_par2_int32;
-		raid_parz_ptr = raid_parz_int32;
+		raid_gen_ptr[0] = raid_gen1_int32;
+		raid_gen_ptr[1] = raid_gen2_int32;
+		raid_genz_ptr = raid_genz_int32;
 	} else {
-		raid_par_ptr[0] = raid_par1_int64;
-		raid_par_ptr[1] = raid_par2_int64;
-		raid_parz_ptr = raid_parz_int64;
+		raid_gen_ptr[0] = raid_gen1_int64;
+		raid_gen_ptr[1] = raid_gen2_int64;
+		raid_genz_ptr = raid_genz_int64;
 	}
 
 	raid_rec_ptr[0] = raid_rec1_int8;
@@ -45,32 +45,32 @@ void raid_init(void)
 
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
-		raid_par_ptr[0] = raid_par1_sse2;
+		raid_gen_ptr[0] = raid_gen1_sse2;
 #ifdef CONFIG_X86_64
 		if (raid_cpu_has_slowextendedreg()) {
-			raid_par_ptr[1] = raid_par2_sse2;
-			raid_parz_ptr = raid_parz_sse2;
+			raid_gen_ptr[1] = raid_gen2_sse2;
+			raid_genz_ptr = raid_genz_sse2;
 		} else {
-			raid_par_ptr[1] = raid_par2_sse2ext;
-			raid_parz_ptr = raid_parz_sse2ext;
+			raid_gen_ptr[1] = raid_gen2_sse2ext;
+			raid_genz_ptr = raid_genz_sse2ext;
 		}
 #else
-		raid_par_ptr[1] = raid_par2_sse2;
-		raid_parz_ptr = raid_parz_sse2;
+		raid_gen_ptr[1] = raid_gen2_sse2;
+		raid_genz_ptr = raid_genz_sse2;
 #endif
 	}
 
 	if (raid_cpu_has_ssse3()) {
 #ifdef CONFIG_X86_64
-		raid_par3_ptr = raid_par3_ssse3ext;
-		raid_par_ptr[3] = raid_par4_ssse3ext;
-		raid_par_ptr[4] = raid_par5_ssse3ext;
-		raid_par_ptr[5] = raid_par6_ssse3ext;
+		raid_gen3_ptr = raid_gen3_ssse3ext;
+		raid_gen_ptr[3] = raid_gen4_ssse3ext;
+		raid_gen_ptr[4] = raid_gen5_ssse3ext;
+		raid_gen_ptr[5] = raid_gen6_ssse3ext;
 #else
-		raid_par3_ptr = raid_par3_ssse3;
-		raid_par_ptr[3] = raid_par4_ssse3;
-		raid_par_ptr[4] = raid_par5_ssse3;
-		raid_par_ptr[5] = raid_par6_ssse3;
+		raid_gen3_ptr = raid_gen3_ssse3;
+		raid_gen_ptr[3] = raid_gen4_ssse3;
+		raid_gen_ptr[4] = raid_gen5_ssse3;
+		raid_gen_ptr[5] = raid_gen6_ssse3;
 #endif
 		raid_rec_ptr[0] = raid_rec1_ssse3;
 		raid_rec_ptr[1] = raid_rec2_ssse3;
@@ -88,7 +88,7 @@ void raid_init(void)
 /*
  * Refence parity computation.
  */
-void raid_par_ref(int nd, int np, size_t size, void **vv)
+void raid_gen_ref(int nd, int np, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -138,7 +138,7 @@ static int raid_test_par(int nd, int np, size_t size, void **v, void **ref)
 	for (i = 0; i < np; ++i)
 		t[nd+i] = v[nd+i];
 
-	raid_par(nd, np, size, t);
+	raid_gen(nd, np, size, t);
 
 	/* compare parity */
 	for (i = 0; i < np; ++i)
@@ -151,37 +151,31 @@ static int raid_test_par(int nd, int np, size_t size, void **v, void **ref)
 /*
  * Recovering test.
  */
-static int raid_test_rec(int nrd, int *id, int nrp, int *ip, int nd, int np, size_t size, void **v, void **ref)
+static int raid_test_rec(int nr, int *ir, int nd, int np, size_t size, void **v, void **ref)
 {
 	int i, j;
 	void *t[TEST_COUNT + RAID_PARITY_MAX];
 
-	/* setup data */
-	for (i = 0, j = 0; i < nd; ++i) {
-		if (j < nrd && id[j] == i) {
+	/* setup vector */
+	for (i = 0, j = 0; i < nd+np; ++i) {
+		if (j < nr && ir[j] == i) {
+			/* this block has to be recovered */
 			t[i] = v[i];
 			++j;
 		} else {
+			/* this block is left unchanged */
 			t[i] = ref[i];
 		}
 	}
 
-	/* setup parity */
-	for (i = 0, j = 0; i < np; ++i) {
-		if (j < nrp && ip[j] == i) {
-			t[nd+i] = v[nd+i];
-			++j;
-		} else {
-			t[nd+i] = ref[nd+i];
-		}
-	}
-
-	raid_rec(nrd, id, nrp, ip, nd, np, size, t);
+	raid_rec(nr, ir, nd, np, size, t);
 
 	/* compare all data and parity */
-	for (i = 0; i < nd+np; ++i)
-		if (t[i] != ref[i] && memcmp(t[i], ref[i], size) != 0)
+	for (i = 0; i < nd+np; ++i) {
+		if (t[i] != ref[i] && memcmp(t[i], ref[i], size) != 0) {
 			return -1;
+		}
+	}
 
 	return 0;
 }
@@ -197,8 +191,7 @@ int raid_selftest(void)
 	void *v_alloc;
 	void **v;
 	void *ref[nd + RAID_PARITY_MAX];
-	int id[RAID_PARITY_MAX];
-	int ip[RAID_PARITY_MAX];
+	int ir[RAID_PARITY_MAX];
 	int i, np;
 	int ret = 0;
 
@@ -221,7 +214,7 @@ int raid_selftest(void)
 		ref[nd+i] = v[nd+RAID_PARITY_MAX+i];
 
 	/* compute reference parity */
-	raid_par_ref(nd, RAID_PARITY_MAX, size, ref);
+	raid_gen_ref(nd, RAID_PARITY_MAX, size, ref);
 
 	/* test for each parity level */
 	for (np = 1; np <= RAID_PARITY_MAX; ++np) {
@@ -232,31 +225,31 @@ int raid_selftest(void)
 
 		/* test recovering with full broken data disks */
 		for (i = 0; i < np; ++i)
-			id[i] = nd - np + i;
+			ir[i] = nd - np + i;
 
-		ret = raid_test_rec(np, id, 0, ip, nd, np, size, v, ref);
-		if (ret != 0)
-			goto bail;
-
-		/* test recovering with half broken data and ending parity */
-		for (i = 0; i < np / 2; ++i)
-			id[i] = i;
-
-		for (i = 0; i < (np + 1) / 2; ++i)
-			ip[i] = np - np / 2 + i;
-
-		ret = raid_test_rec(np / 2, id, np / 2, ip, nd, np, size, v, ref);
+		ret = raid_test_rec(np, ir, nd, np, size, v, ref);
 		if (ret != 0)
 			goto bail;
 
 		/* test recovering with half broken data and leading parity */
 		for (i = 0; i < np / 2; ++i)
-			id[i] = i;
+			ir[i] = i;
 
 		for (i = 0; i < (np + 1) / 2; ++i)
-			ip[i] = i;
+			ir[np / 2 + i] = nd + i;
 
-		ret = raid_test_rec(np / 2, id, np / 2, ip, nd, np, size, v, ref);
+		ret = raid_test_rec(np, ir, nd, np, size, v, ref);
+		if (ret != 0)
+			goto bail;
+
+		/* test recovering with half broken data and ending parity */
+		for (i = 0; i < np / 2; ++i)
+			ir[i] = i;
+
+		for (i = 0; i < (np + 1) / 2; ++i)
+			ir[np / 2 + i] = nd + np - (np + 1) / 2 + i;
+
+		ret = raid_test_rec(np, ir, nd, np, size, v, ref);
 		if (ret != 0)
 			goto bail;
 	}
@@ -267,106 +260,4 @@ bail:
 	return ret;
 }
 
-static struct raid_func {
-	const char *name;
-	void *p;
-} RAID_FUNC[] = {
-	{ "int8", raid_par3_int8 },
-	{ "int8", raid_par4_int8 },
-	{ "int8", raid_par5_int8 },
-	{ "int8", raid_par6_int8 },
-	{ "int32", raid_par1_int32 },
-	{ "int64", raid_par1_int64 },
-	{ "int32", raid_par2_int32 },
-	{ "int64", raid_par2_int64 },
-	{ "int32", raid_parz_int32 },
-	{ "int64", raid_parz_int64 },
-	{ "int8", raid_rec1_int8 },
-	{ "int8", raid_rec2_int8 },
-	{ "int8", raid_recX_int8 },
-
-#ifdef CONFIG_X86
-	{ "sse2", raid_par1_sse2 },
-	{ "sse2", raid_par2_sse2 },
-	{ "sse2", raid_parz_sse2 },
-	{ "ssse3", raid_par3_ssse3 },
-	{ "ssse3", raid_par4_ssse3 },
-	{ "ssse3", raid_par5_ssse3 },
-	{ "ssse3", raid_par6_ssse3 },
-	{ "ssse3", raid_rec1_ssse3 },
-	{ "ssse3", raid_rec2_ssse3 },
-	{ "ssse3", raid_recX_ssse3 },
-#endif
-
-#ifdef CONFIG_X86_64
-	{ "sse2e", raid_par2_sse2ext },
-	{ "sse2e", raid_parz_sse2ext },
-	{ "ssse3e", raid_par3_ssse3ext },
-	{ "ssse3e", raid_par4_ssse3ext },
-	{ "ssse3e", raid_par5_ssse3ext },
-	{ "ssse3e", raid_par6_ssse3ext },
-#endif
-	{ 0, 0 }
-};
-
-static const char *raid_tag(void *func)
-{
-	struct raid_func *i = RAID_FUNC;
-	while (i->name != 0) {
-		if (i->p == func)
-			return i->name;
-		++i;
-	}
-	return "unknown";
-}
-
-const char *raid_par1_tag(void)
-{
-	return raid_tag(raid_par_ptr[0]);
-}
-
-const char *raid_par2_tag(void)
-{
-	return raid_tag(raid_par_ptr[1]);
-}
-
-const char *raid_parz_tag(void)
-{
-	return raid_tag(raid_parz_ptr);
-}
-
-const char *raid_par3_tag(void)
-{
-	return raid_tag(raid_par_ptr[2]);
-}
-
-const char *raid_par4_tag(void)
-{
-	return raid_tag(raid_par_ptr[3]);
-}
-
-const char *raid_par5_tag(void)
-{
-	return raid_tag(raid_par_ptr[4]);
-}
-
-const char *raid_par6_tag(void)
-{
-	return raid_tag(raid_par_ptr[5]);
-}
-
-const char *raid_rec1_tag(void)
-{
-	return raid_tag(raid_rec_ptr[0]);
-}
-
-const char *raid_rec2_tag(void)
-{
-	return raid_tag(raid_rec_ptr[1]);
-}
-
-const char *raid_recX_tag(void)
-{
-	return raid_tag(raid_rec_ptr[2]);
-}
 

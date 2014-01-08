@@ -38,20 +38,20 @@
  * The selected value was choosen empirically with some speed tests
  * with 8/12/16/20/24 data buffers of 256 KB.
  *
- * These are the results with no displacement:
+ * These are the results in MB/s with no displacement:
  *
  *            sse2
- *    par1   15368 [MB/s]
- *    par2    6814 [MB/s]
- *    parz    3033 [MB/s]
+ *    gen1   15368 [MB/s]
+ *    gen2    6814 [MB/s]
+ *    genz    3033 [MB/s]
  *
  * These are the results with displacement resulting in improvments
  * in the order of 20% or more:
  *
  *            sse2
- *    par1   21936 [MB/s]
- *    par2   11902 [MB/s]
- *    parz    5838 [MB/s]
+ *    gen1   21936 [MB/s]
+ *    gen2   11902 [MB/s]
+ *    genz    5838 [MB/s]
  *
  */
 #define RAID_MALLOC_DISPLACEMENT (7*256)

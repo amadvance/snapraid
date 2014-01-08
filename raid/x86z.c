@@ -31,9 +31,9 @@ static const struct gfzconst16 {
 
 #ifdef CONFIG_X86
 /*
- * PARz (triple parity with powers of 2^-1) SSE2 implementation
+ * GENz (triple parity with powers of 2^-1) SSE2 implementation
  */
-void raid_parz_sse2(int nd, size_t size, void **vv)
+void raid_genz_sse2(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -89,11 +89,11 @@ void raid_parz_sse2(int nd, size_t size, void **vv)
 
 #ifdef CONFIG_X86_64
 /*
- * PARz (triple parity with powers of 2^-1) SSE2 implementation
+ * GENz (triple parity with powers of 2^-1) SSE2 implementation
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid_parz_sse2ext(int nd, size_t size, void **vv)
+void raid_genz_sse2ext(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;

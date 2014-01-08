@@ -133,12 +133,12 @@
  * for a Core i7-3740QM CPU @ 2.7GHz is:
  *
  *             int8   int32   int64    sse2   sse2e   ssse3  ssse3e
- *   par1             11927   22075   36004
- *   par2              3378    5874   18235   19164
- *   par3       844                                    8814    9419
- *   par4       665                                    6836    7415
- *   par5       537                                    5388    5686
- *   par6       449                                    4307    4789
+ *   gen1             11927   22075   36004
+ *   gen2              3378    5874   18235   19164
+ *   gen3       844                                    8814    9419
+ *   gen4       665                                    6836    7415
+ *   gen5       537                                    5388    5686
+ *   gen6       449                                    4307    4789
  *
  * Values are in MiB/s of data processed, not counting generated parity.
  *
@@ -150,7 +150,7 @@
  * the Cauchy matrix if SSSE3 is present.
  *
  *             int8   int32   int64    sse2   sse2e   ssse3  ssse3e
- *   parz              2112    3118    9589   10304
+ *   genz              2112    3118    9589   10304
  *
  *
  * In conclusion, the use of power coefficients, and specifically powers
@@ -176,10 +176,10 @@ const uint8_t (*raid_gfgen)[256];
 void raid_mode(int mode)
 {
 	if (mode == RAID_MODE_VANDERMONDE) {
-		raid_par_ptr[2] = raid_parz_ptr;
+		raid_gen_ptr[2] = raid_genz_ptr;
 		raid_gfgen = gfvandermonde;
 	} else {
-		raid_par_ptr[2] = raid_par3_ptr;
+		raid_gen_ptr[2] = raid_gen3_ptr;
 		raid_gfgen = gfcauchy;
 	}
 }
@@ -204,22 +204,43 @@ void raid_waste(void *waste)
 	raid_waste_block = waste;
 }
 
-/* internal forwarder */
-void (*raid_par_ptr[RAID_PARITY_MAX])(int nd, size_t size, void **vv);
-void (*raid_par3_ptr)(int nd, size_t size, void **vv);
-void (*raid_parz_ptr)(int nd, size_t size, void **vv);
+/*
+ * Forwarders for parity computation.
+ *
+ * These functions compute the parity blocks from the provided data.
+ *
+ * The number of parities to compute is implicit in the position in the
+ * forwarder vector. Position at index #i, computes (#i+1) parities.
+ *
+ * @nd Number of data blocks
+ * @size Size of the blocks pointed by @v. It must be a multipler of 64.
+ * @v Vector of pointers to the blocks of data and parity.
+ *   It has (@nd + #parities) elements. The starting elements are the blocks for
+ *   data, following with the parity blocks.
+ *   Each block has @size bytes.
+ */
+void (*raid_gen_ptr[RAID_PARITY_MAX])(int nd, size_t size, void **vv);
+void (*raid_gen3_ptr)(int nd, size_t size, void **vv);
+void (*raid_genz_ptr)(int nd, size_t size, void **vv);
 
-void raid_par(int nd, int np, size_t size, void **v)
+void raid_gen(int nd, int np, size_t size, void **v)
 {
 	BUG_ON(np < 1 || np > RAID_PARITY_MAX);
 	BUG_ON(size % 64 != 0);
 
-	raid_par_ptr[np - 1](nd, size, v);
+	raid_gen_ptr[np - 1](nd, size, v);
 }
 
 /**
  * Inverts the square matrix M of size nxn into V.
+ *
+ * This is not a general matrix inversion because we assume the matrix M
+ * to have all the square submatrix not singular.
  * We use Gauss elimination to invert.
+ *
+ * @M Matrix to invert with @n rows and @n columns.
+ * @V Destination matrix where the result is put.
+ * @n Number of rows and columns of the matrix.
  */
 void raid_invert(uint8_t *M, uint8_t *V, int n)
 {
@@ -235,8 +256,8 @@ void raid_invert(uint8_t *M, uint8_t *V, int n)
 		uint8_t f;
 
 		/* the diagonal element cannot be 0 because */
-		/* we are inverting matrices with all the square submatrices */
-		/* not singular */
+		/* we are inverting matrices with all the square */
+		/* submatrices not singular */
 		BUG_ON(M[k*n+k] == 0);
 
 		/* make the diagonal element to be 1 */
@@ -246,7 +267,8 @@ void raid_invert(uint8_t *M, uint8_t *V, int n)
 			V[k*n+j] = mul(f, V[k*n+j]);
 		}
 
-		/* make all the elements over and under the diagonal to be 0 */
+		/* make all the elements over and under the diagonal */
+		/* to be zero */
 		for (i = 0; i < n; ++i) {
 			if (i == k)
 				continue;
@@ -290,7 +312,7 @@ void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v)
 	}
 
 	/* recompute the minimal parity required */
-	raid_par(nd, ip[nr - 1] + 1, size, v);
+	raid_gen(nd, ip[nr - 1] + 1, size, v);
 
 	for (i = 0; i < nr; ++i) {
 		/* restore disk buffers as before */
@@ -312,7 +334,7 @@ void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v)
  *
  * Dx = Pd
  */
-void raid_rec1_par1(int *id, int nd, size_t size, void **v)
+void raid_rec1of1(int *id, int nd, size_t size, void **v)
 {
 	void *p;
 	void *pa;
@@ -329,7 +351,7 @@ void raid_rec1_par1(int *id, int nd, size_t size, void **v)
 	v[nd] = pa;
 
 	/* compute */
-	raid_par(nd, 1, size, v);
+	raid_gen(nd, 1, size, v);
 
 	/* restore as before */
 	v[id[0]] = pa;
@@ -359,7 +381,7 @@ void raid_rec1_par1(int *id, int nd, size_t size, void **v)
  *
  * That are always satisfied for any 0<=id[0]<id[1]<255.
  */
-void raid_rec2_par2(int *id, int *ip, int nd, size_t size, void **vv)
+void raid_rec2of2_int8(int *id, int *ip, int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	size_t i;
@@ -396,40 +418,87 @@ void raid_rec2_par2(int *id, int *ip, int nd, size_t size, void **vv)
 	}
 }
 
-/* internal forwarder */
+/*
+ * Forwarders for data recovery.
+ *
+ * These functions recover data blocks using the specified parity
+ * to recompute the missing data.
+ *
+ * Note that the format of vectors @id/@ip is different than raid_rec().
+ * For example, in the vector @ip the first parity is represented with the
+ * value 0 and not @nd.
+ *
+ * @nr Number of failed data blocks to recover.
+ * @id[] Vector of @nr indexes of the data blocks to recover.
+ *   The indexes start from 0. They must be in order.
+ * @ip[] Vector of @nr indexes of the parity blocks to use in the recovering.
+ *   The indexes start from 0. They must be in order.
+ * @nd Number of data blocks.
+ * @np Number of parity blocks.
+ * @size Size of the blocks pointed by @v. It must be a multipler of 64.
+ * @v Vector of pointers to the blocks of data and parity.
+ *   It has (@nd + @np) elements. The starting elements are the blocks
+ *   for data, following with the parity blocks.
+ *   Each block has @size bytes.
+ */
 void (*raid_rec_ptr[RAID_PARITY_MAX])(
 	int nr, int *id, int *ip, int nd, size_t size, void **vv);
 
-void raid_rec(int nrd, int *id, int nrp, int *ip, int nd, int np, size_t size, void **v)
+void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v)
 {
-	BUG_ON(nrd > nd);
-	BUG_ON(nrd + nrp > np);
+	int nrd; /* number of data blocks to recover */
+	int nrp; /* number of parity blocks to recover */
+
+	/* enforce limits on size */
 	BUG_ON(size % 64 != 0);
+
+	/* enforce the order in the index vector */
+	BUG_ON(nr >= 2 && ir[0] > ir[1]);
+	BUG_ON(nr >= 3 && ir[1] > ir[2]);
+	BUG_ON(nr >= 4 && ir[2] > ir[3]);
+	BUG_ON(nr >= 5 && ir[3] > ir[4]);
+	BUG_ON(nr >= 6 && ir[4] > ir[5]);
+
+	/* counts the number of data blocks to recover */
+	nrd = 0;
+	while (nrd < nr && ir[nrd] < nd)
+		++nrd;
+
+	/* all the remaining are parity */
+	nrp = nr - nrd;
+
+	/* enforce basic sanity in arguments */
+	BUG_ON(nrd > nd);
+	BUG_ON(nrp > np);
+
+	/* ensure that we have enough parity to recover */
+	BUG_ON(nrd + nrp > np);
 
 	/* if failed data is present */
 	if (nrd != 0) {
-		int iu[RAID_PARITY_MAX];
+		int ip[RAID_PARITY_MAX];
 		int i, j, k;
 
 		/* setup the vector of parities to use */
 		for (i = 0, j = 0, k = 0; i < np; ++i) {
-			if (j < nrp && ip[j] == i) {
+			if (j < nrp && ir[nrd + j] == nd + i) {
 				/* this parity has to be recovered */
 				++j;
 			} else {
 				/* this parity is used for recovering */
-				iu[k] = i;
+				ip[k] = i;
 				++k;
 			}
 		}
 
-		/* recover the data, and limit the parity use to needed ones */
-		raid_rec_ptr[nrd - 1](nrd, id, iu, nd, size, v);
+		/* recover the nrd data blocks specified in ir[], */
+		/* using the first nrd parity in ip[] for recovering */
+		raid_rec_ptr[nrd - 1](nrd, ir, ip, nd, size, v);
 	}
 
 	/* recompute all the parities up to the last bad one */
 	if (nrp != 0)
-		raid_par(nd, ip[nrp - 1] + 1, size, v);
+		raid_gen(nd, ir[nr - 1] - nd + 1, size, v);
 }
 
 void raid_rec_dataonly(int nr, int *id, int *ip, int nd, size_t size, void **v)

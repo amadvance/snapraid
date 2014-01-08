@@ -16,9 +16,9 @@
 #include "gf.h"
 
 /*
- * PAR1 (RAID5 with xor) 32bit C implementation
+ * GEN1 (RAID5 with xor) 32bit C implementation
  */
-void raid_par1_int32(int nd, size_t size, void **vv)
+void raid_gen1_int32(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -44,9 +44,9 @@ void raid_par1_int32(int nd, size_t size, void **vv)
 }
 
 /*
- * PAR1 (RAID5 with xor) 64bit C implementation
+ * GEN1 (RAID5 with xor) 64bit C implementation
  */
-void raid_par1_int64(int nd, size_t size, void **vv)
+void raid_gen1_int64(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -72,9 +72,9 @@ void raid_par1_int64(int nd, size_t size, void **vv)
 }
 
 /*
- * PAR2 (RAID6 with powers of 2) 32bit C implementation
+ * GEN2 (RAID6 with powers of 2) 32bit C implementation
  */
-void raid_par2_int32(int nd, size_t size, void **vv)
+void raid_gen2_int32(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -113,9 +113,9 @@ void raid_par2_int32(int nd, size_t size, void **vv)
 }
 
 /*
- * PAR2 (RAID6 with powers of 2) 64bit C implementation
+ * GEN2 (RAID6 with powers of 2) 64bit C implementation
  */
-void raid_par2_int64(int nd, size_t size, void **vv)
+void raid_gen2_int64(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -154,14 +154,14 @@ void raid_par2_int64(int nd, size_t size, void **vv)
 }
 
 /*
- * PAR3 (triple parity with Cauchy matrix) 8bit C implementation
+ * GEN3 (triple parity with Cauchy matrix) 8bit C implementation
  *
  * Note that instead of a generic multiplication table, likely resulting
  * in multiple cache misses, a precomputed table could be used.
  * But this is only a kind of reference function, and we are not really
  * interested in speed.
  */
-void raid_par3_int8(int nd, size_t size, void **vv)
+void raid_gen3_int8(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -201,14 +201,14 @@ void raid_par3_int8(int nd, size_t size, void **vv)
 }
 
 /*
- * PAR4 (quad parity with Cauchy matrix) 8bit C implementation
+ * GEN4 (quad parity with Cauchy matrix) 8bit C implementation
  *
  * Note that instead of a generic multiplication table, likely resulting
  * in multiple cache misses, a precomputed table could be used.
  * But this is only a kind of reference function, and we are not really
  * interested in speed.
  */
-void raid_par4_int8(int nd, size_t size, void **vv)
+void raid_gen4_int8(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -253,14 +253,14 @@ void raid_par4_int8(int nd, size_t size, void **vv)
 }
 
 /*
- * PAR5 (penta parity with Cauchy matrix) 8bit C implementation
+ * GEN5 (penta parity with Cauchy matrix) 8bit C implementation
  *
  * Note that instead of a generic multiplication table, likely resulting
  * in multiple cache misses, a precomputed table could be used.
  * But this is only a kind of reference function, and we are not really
  * interested in speed.
  */
-void raid_par5_int8(int nd, size_t size, void **vv)
+void raid_gen5_int8(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -310,14 +310,14 @@ void raid_par5_int8(int nd, size_t size, void **vv)
 }
 
 /*
- * PAR6 (hexa parity with Cauchy matrix) 8bit C implementation
+ * GEN6 (hexa parity with Cauchy matrix) 8bit C implementation
  *
  * Note that instead of a generic multiplication table, likely resulting
  * in multiple cache misses, a precomputed table could be used.
  * But this is only a kind of reference function, and we are not really
  * interested in speed.
  */
-void raid_par6_int8(int nd, size_t size, void **vv)
+void raid_gen6_int8(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -397,7 +397,7 @@ void raid_rec1_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	/* if it's RAID5 uses the faster function */
 	if (ip[0] == 0) {
-		raid_rec1_par1(id, nd, size, vv);
+		raid_rec1of1(id, nd, size, vv);
 		return;
 	}
 
@@ -454,7 +454,7 @@ void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	/* if it's RAID6 recovering with P and Q uses the faster function */
 	if (ip[0] == 0 && ip[1] == 1) {
-		raid_rec2_par2(id, ip, nd, size, vv);
+		raid_rec2of2_int8(id, ip, nd, size, vv);
 		return;
 	}
 

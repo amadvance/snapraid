@@ -257,22 +257,22 @@ void speed(void)
 #endif
 	printf("\n");
 
-	/* PAR1 */
-	printf("%8s", "par1");
-	printf("%8s", raid_par1_tag());
+	/* GEN1 */
+	printf("%8s", "gen1");
+	printf("%8s", raid_gen1_tag());
 	fflush(stdout);
 
 	printf("%8s", "");
 
 	SPEED_START {
-		raid_par1_int32(nd, size, v);
+		raid_gen1_int32(nd, size, v);
 	} SPEED_STOP
 
 	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
 	SPEED_START {
-		raid_par1_int64(nd, size, v);
+		raid_gen1_int64(nd, size, v);
 	} SPEED_STOP
 
 	printf("%8"PRIu64, ds / dt);
@@ -281,7 +281,7 @@ void speed(void)
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
 		SPEED_START {
-			raid_par1_sse2(nd, size, v);
+			raid_gen1_sse2(nd, size, v);
 		} SPEED_STOP
 
 		printf("%8"PRIu64, ds / dt);
@@ -290,22 +290,22 @@ void speed(void)
 #endif
 	printf("\n");
 
-	/* PAR2 */
-	printf("%8s", "par2");
-	printf("%8s", raid_par2_tag());
+	/* GEN2 */
+	printf("%8s", "gen2");
+	printf("%8s", raid_gen2_tag());
 	fflush(stdout);
 
 	printf("%8s", "");
 
 	SPEED_START {
-		raid_par2_int32(nd, size, v);
+		raid_gen2_int32(nd, size, v);
 	} SPEED_STOP
 
 	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
 	SPEED_START {
-		raid_par2_int64(nd, size, v);
+		raid_gen2_int64(nd, size, v);
 	} SPEED_STOP
 
 	printf("%8"PRIu64, ds / dt);
@@ -314,7 +314,7 @@ void speed(void)
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
 		SPEED_START {
-			raid_par2_sse2(nd, size, v);
+			raid_gen2_sse2(nd, size, v);
 		} SPEED_STOP
 
 		printf("%8"PRIu64, ds / dt);
@@ -322,7 +322,7 @@ void speed(void)
 
 #ifdef CONFIG_X86_64
 		SPEED_START {
-			raid_par2_sse2ext(nd, size, v);
+			raid_gen2_sse2ext(nd, size, v);
 		} SPEED_STOP
 
 		printf("%8"PRIu64, ds / dt);
@@ -332,22 +332,22 @@ void speed(void)
 #endif
 	printf("\n");
 
-	/* PARz */
-	printf("%8s", "parz");
-	printf("%8s", raid_parz_tag());
+	/* GENz */
+	printf("%8s", "genz");
+	printf("%8s", raid_genz_tag());
 	fflush(stdout);
 
 	printf("%8s", "");
 
 	SPEED_START {
-		raid_parz_int32(nd, size, v);
+		raid_genz_int32(nd, size, v);
 	} SPEED_STOP
 
 	printf("%8"PRIu64, ds / dt);
 	fflush(stdout);
 
 	SPEED_START {
-		raid_parz_int64(nd, size, v);
+		raid_genz_int64(nd, size, v);
 	} SPEED_STOP
 
 	printf("%8"PRIu64, ds / dt);
@@ -356,7 +356,7 @@ void speed(void)
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
 		SPEED_START {
-			raid_parz_sse2(nd, size, v);
+			raid_genz_sse2(nd, size, v);
 		} SPEED_STOP
 
 		printf("%8"PRIu64, ds / dt);
@@ -364,7 +364,7 @@ void speed(void)
 
 #ifdef CONFIG_X86_64
 		SPEED_START {
-			raid_parz_sse2ext(nd, size, v);
+			raid_genz_sse2ext(nd, size, v);
 		} SPEED_STOP
 
 		printf("%8"PRIu64, ds / dt);
@@ -374,13 +374,13 @@ void speed(void)
 #endif
 	printf("\n");
 
-	/* PAR3 */
-	printf("%8s", "par3");
-	printf("%8s", raid_par3_tag());
+	/* GEN3 */
+	printf("%8s", "gen3");
+	printf("%8s", raid_gen3_tag());
 	fflush(stdout);
 
 	SPEED_START {
-		raid_par3_int8(nd, size, v);
+		raid_gen3_int8(nd, size, v);
 	} SPEED_STOP
 
 	printf("%8"PRIu64, ds / dt);
@@ -402,7 +402,7 @@ void speed(void)
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			raid_par3_ssse3(nd, size, v);
+			raid_gen3_ssse3(nd, size, v);
 		} SPEED_STOP
 
 		printf("%8"PRIu64, ds / dt);
@@ -410,7 +410,7 @@ void speed(void)
 
 #ifdef CONFIG_X86_64
 		SPEED_START {
-			raid_par3_ssse3ext(nd, size, v);
+			raid_gen3_ssse3ext(nd, size, v);
 		} SPEED_STOP
 
 		printf("%8"PRIu64, ds / dt);
@@ -420,13 +420,13 @@ void speed(void)
 #endif
 	printf("\n");
 
-	/* PAR4 */
-	printf("%8s", "par4");
-	printf("%8s", raid_par4_tag());
+	/* GEN4 */
+	printf("%8s", "gen4");
+	printf("%8s", raid_gen4_tag());
 	fflush(stdout);
 
 	SPEED_START {
-		raid_par4_int8(nd, size, v);
+		raid_gen4_int8(nd, size, v);
 	} SPEED_STOP
 
 	printf("%8"PRIu64, ds / dt);
@@ -448,7 +448,7 @@ void speed(void)
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			raid_par4_ssse3(nd, size, v);
+			raid_gen4_ssse3(nd, size, v);
 		} SPEED_STOP
 
 		printf("%8"PRIu64, ds / dt);
@@ -456,7 +456,7 @@ void speed(void)
 
 #ifdef CONFIG_X86_64
 		SPEED_START {
-			raid_par4_ssse3ext(nd, size, v);
+			raid_gen4_ssse3ext(nd, size, v);
 		} SPEED_STOP
 
 		printf("%8"PRIu64, ds / dt);
@@ -466,13 +466,13 @@ void speed(void)
 #endif
 	printf("\n");
 
-	/* PAR5 */
-	printf("%8s", "par5");
-	printf("%8s", raid_par5_tag());
+	/* GEN5 */
+	printf("%8s", "gen5");
+	printf("%8s", raid_gen5_tag());
 	fflush(stdout);
 
 	SPEED_START {
-		raid_par5_int8(nd, size, v);
+		raid_gen5_int8(nd, size, v);
 	} SPEED_STOP
 
 	printf("%8"PRIu64, ds / dt);
@@ -494,7 +494,7 @@ void speed(void)
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			raid_par5_ssse3(nd, size, v);
+			raid_gen5_ssse3(nd, size, v);
 		} SPEED_STOP
 
 		printf("%8"PRIu64, ds / dt);
@@ -502,7 +502,7 @@ void speed(void)
 
 #ifdef CONFIG_X86_64
 		SPEED_START {
-			raid_par5_ssse3ext(nd, size, v);
+			raid_gen5_ssse3ext(nd, size, v);
 		} SPEED_STOP
 
 		printf("%8"PRIu64, ds / dt);
@@ -512,13 +512,13 @@ void speed(void)
 #endif
 	printf("\n");
 
-	/* PAR6 */
-	printf("%8s", "par6");
-	printf("%8s", raid_par6_tag());
+	/* GEN6 */
+	printf("%8s", "gen6");
+	printf("%8s", raid_gen6_tag());
 	fflush(stdout);
 
 	SPEED_START {
-		raid_par6_int8(nd, size, v);
+		raid_gen6_int8(nd, size, v);
 	} SPEED_STOP
 
 	printf("%8"PRIu64, ds / dt);
@@ -540,7 +540,7 @@ void speed(void)
 #ifdef CONFIG_X86
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
-			raid_par6_ssse3(nd, size, v);
+			raid_gen6_ssse3(nd, size, v);
 		} SPEED_STOP
 
 		printf("%8"PRIu64, ds / dt);
@@ -548,7 +548,7 @@ void speed(void)
 
 #ifdef CONFIG_X86_64
 		SPEED_START {
-			raid_par6_ssse3ext(nd, size, v);
+			raid_gen6_ssse3ext(nd, size, v);
 		} SPEED_STOP
 
 		printf("%8"PRIu64, ds / dt);
@@ -575,7 +575,7 @@ void speed(void)
 
 	SPEED_START {
 		for (j = 0; j < nd; ++j)
-			/* +1 to avoid PAR1 optimized case */
+			/* +1 to avoid GEN1 optimized case */
 			raid_rec1_int8(1, id, ip + 1, nd, size, v);
 	} SPEED_STOP
 
@@ -586,7 +586,7 @@ void speed(void)
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 			for (j = 0; j < nd; ++j)
-				/* +1 to avoid PAR1 optimized case */
+				/* +1 to avoid GEN1 optimized case */
 				raid_rec1_ssse3(1, id, ip + 1, nd, size, v);
 		} SPEED_STOP
 
@@ -601,7 +601,7 @@ void speed(void)
 
 	SPEED_START {
 		for (j = 0; j < nd; ++j)
-			/* +1 to avoid PAR2 optimized case */
+			/* +1 to avoid GEN2 optimized case */
 			raid_rec2_int8(2, id, ip + 1, nd, size, v);
 	} SPEED_STOP
 
@@ -612,7 +612,7 @@ void speed(void)
 	if (raid_cpu_has_ssse3()) {
 		SPEED_START {
 			for (j = 0; j < nd; ++j)
-				/* +1 to avoid PAR2 optimized case */
+				/* +1 to avoid GEN2 optimized case */
 				raid_rec2_ssse3(2, id, ip + 1, nd, size, v);
 		} SPEED_STOP
 

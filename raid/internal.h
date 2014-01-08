@@ -32,34 +32,34 @@
  * These are intented to provide access for testing.
  */
 int raid_selftest(void);
-void raid_par_ref(int nd, int np, size_t size, void **vv);
+void raid_gen_ref(int nd, int np, size_t size, void **vv);
 void raid_invert(uint8_t *M, uint8_t *V, int n);
 void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v);
-void raid_rec1_par1(int *id, int nd, size_t size, void **v);
-void raid_rec2_par2(int *id, int *ip, int nd, size_t size, void **vv);
-void raid_par1_int32(int nd, size_t size, void **vv);
-void raid_par1_int64(int nd, size_t size, void **vv);
-void raid_par1_sse2(int nd, size_t size, void **vv);
-void raid_par2_int32(int nd, size_t size, void **vv);
-void raid_par2_int64(int nd, size_t size, void **vv);
-void raid_par2_sse2(int nd, size_t size, void **vv);
-void raid_par2_sse2ext(int nd, size_t size, void **vv);
-void raid_parz_int32(int nd, size_t size, void **vv);
-void raid_parz_int64(int nd, size_t size, void **vv);
-void raid_parz_sse2(int nd, size_t size, void **vv);
-void raid_parz_sse2ext(int nd, size_t size, void **vv);
-void raid_par3_int8(int nd, size_t size, void **vv);
-void raid_par3_ssse3(int nd, size_t size, void **vv);
-void raid_par3_ssse3ext(int nd, size_t size, void **vv);
-void raid_par4_int8(int nd, size_t size, void **vv);
-void raid_par4_ssse3(int nd, size_t size, void **vv);
-void raid_par4_ssse3ext(int nd, size_t size, void **vv);
-void raid_par5_int8(int nd, size_t size, void **vv);
-void raid_par5_ssse3(int nd, size_t size, void **vv);
-void raid_par5_ssse3ext(int nd, size_t size, void **vv);
-void raid_par6_int8(int nd, size_t size, void **vv);
-void raid_par6_ssse3(int nd, size_t size, void **vv);
-void raid_par6_ssse3ext(int nd, size_t size, void **vv);
+void raid_rec1of1(int *id, int nd, size_t size, void **v);
+void raid_rec2of2_int8(int *id, int *ip, int nd, size_t size, void **vv);
+void raid_gen1_int32(int nd, size_t size, void **vv);
+void raid_gen1_int64(int nd, size_t size, void **vv);
+void raid_gen1_sse2(int nd, size_t size, void **vv);
+void raid_gen2_int32(int nd, size_t size, void **vv);
+void raid_gen2_int64(int nd, size_t size, void **vv);
+void raid_gen2_sse2(int nd, size_t size, void **vv);
+void raid_gen2_sse2ext(int nd, size_t size, void **vv);
+void raid_genz_int32(int nd, size_t size, void **vv);
+void raid_genz_int64(int nd, size_t size, void **vv);
+void raid_genz_sse2(int nd, size_t size, void **vv);
+void raid_genz_sse2ext(int nd, size_t size, void **vv);
+void raid_gen3_int8(int nd, size_t size, void **vv);
+void raid_gen3_ssse3(int nd, size_t size, void **vv);
+void raid_gen3_ssse3ext(int nd, size_t size, void **vv);
+void raid_gen4_int8(int nd, size_t size, void **vv);
+void raid_gen4_ssse3(int nd, size_t size, void **vv);
+void raid_gen4_ssse3ext(int nd, size_t size, void **vv);
+void raid_gen5_int8(int nd, size_t size, void **vv);
+void raid_gen5_ssse3(int nd, size_t size, void **vv);
+void raid_gen5_ssse3ext(int nd, size_t size, void **vv);
+void raid_gen6_int8(int nd, size_t size, void **vv);
+void raid_gen6_ssse3(int nd, size_t size, void **vv);
+void raid_gen6_ssse3ext(int nd, size_t size, void **vv);
 void raid_rec1_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_recX_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv);
@@ -72,13 +72,13 @@ void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv);
  *
  * These are intented to provide access for testing.
  */
-const char *raid_par1_tag(void);
-const char *raid_par2_tag(void);
-const char *raid_parz_tag(void);
-const char *raid_par3_tag(void);
-const char *raid_par4_tag(void);
-const char *raid_par5_tag(void);
-const char *raid_par6_tag(void);
+const char *raid_gen1_tag(void);
+const char *raid_gen2_tag(void);
+const char *raid_genz_tag(void);
+const char *raid_gen3_tag(void);
+const char *raid_gen4_tag(void);
+const char *raid_gen5_tag(void);
+const char *raid_gen6_tag(void);
 const char *raid_rec1_tag(void);
 const char *raid_rec2_tag(void);
 const char *raid_recX_tag(void);
@@ -86,9 +86,9 @@ const char *raid_recX_tag(void);
 /*
  * Internal forwarders.
  */
-extern void (*raid_par3_ptr)(int nd, size_t size, void **vv);
-extern void (*raid_parz_ptr)(int nd, size_t size, void **vv);
-extern void (*raid_par_ptr[RAID_PARITY_MAX])(
+extern void (*raid_gen3_ptr)(int nd, size_t size, void **vv);
+extern void (*raid_genz_ptr)(int nd, size_t size, void **vv);
+extern void (*raid_gen_ptr[RAID_PARITY_MAX])(
 	int nd, size_t size, void **vv);
 extern void (*raid_rec_ptr[RAID_PARITY_MAX])(
 	int nr, int *id, int *ip, int nd, size_t size, void **vv);

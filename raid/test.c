@@ -176,7 +176,7 @@ int raid_test_rec(int mode, int nd, size_t size)
 	}
 
 	/* compute the parity */
-	raid_par_ref(nd, np, size, v);
+	raid_gen_ref(nd, np, size, v);
 
 	/* set all the parity to the waste v */
 	for (i = 0; i < np; ++i)
@@ -257,7 +257,7 @@ int raid_test_par(int mode, int nd, size_t size)
 	raid_mrand_vector(nv, size, v);
 
 	/* compute the parity */
-	raid_par_ref(nd, np, size, v);
+	raid_gen_ref(nd, np, size, v);
 
 	/* copy in back buffers */
 	for (i = 0; i < np; ++i)
@@ -266,50 +266,50 @@ int raid_test_par(int mode, int nd, size_t size)
 	/* load all the available functions */
 	nf = 0;
 
-	f[nf++] = raid_par1_int32;
-	f[nf++] = raid_par1_int64;
-	f[nf++] = raid_par2_int32;
-	f[nf++] = raid_par2_int64;
+	f[nf++] = raid_gen1_int32;
+	f[nf++] = raid_gen1_int64;
+	f[nf++] = raid_gen2_int32;
+	f[nf++] = raid_gen2_int64;
 
 #ifdef CONFIG_X86
 	if (raid_cpu_has_sse2()) {
-		f[nf++] = raid_par1_sse2;
-		f[nf++] = raid_par2_sse2;
+		f[nf++] = raid_gen1_sse2;
+		f[nf++] = raid_gen2_sse2;
 #ifdef CONFIG_X86_64
-		f[nf++] = raid_par2_sse2ext;
+		f[nf++] = raid_gen2_sse2ext;
 #endif
 	}
 #endif
 
 	if (mode == RAID_MODE_CAUCHY) {
-		f[nf++] = raid_par3_int8;
-		f[nf++] = raid_par4_int8;
-		f[nf++] = raid_par5_int8;
-		f[nf++] = raid_par6_int8;
+		f[nf++] = raid_gen3_int8;
+		f[nf++] = raid_gen4_int8;
+		f[nf++] = raid_gen5_int8;
+		f[nf++] = raid_gen6_int8;
 
 #ifdef CONFIG_X86
 		if (raid_cpu_has_ssse3()) {
-			f[nf++] = raid_par3_ssse3;
-			f[nf++] = raid_par4_ssse3;
-			f[nf++] = raid_par5_ssse3;
-			f[nf++] = raid_par6_ssse3;
+			f[nf++] = raid_gen3_ssse3;
+			f[nf++] = raid_gen4_ssse3;
+			f[nf++] = raid_gen5_ssse3;
+			f[nf++] = raid_gen6_ssse3;
 #ifdef CONFIG_X86_64
-			f[nf++] = raid_par3_ssse3ext;
-			f[nf++] = raid_par4_ssse3ext;
-			f[nf++] = raid_par5_ssse3ext;
-			f[nf++] = raid_par6_ssse3ext;
+			f[nf++] = raid_gen3_ssse3ext;
+			f[nf++] = raid_gen4_ssse3ext;
+			f[nf++] = raid_gen5_ssse3ext;
+			f[nf++] = raid_gen6_ssse3ext;
 #endif
 		}
 #endif
 	} else {
-		f[nf++] = raid_parz_int32;
-		f[nf++] = raid_parz_int64;
+		f[nf++] = raid_genz_int32;
+		f[nf++] = raid_genz_int64;
 
 #ifdef CONFIG_X86
 		if (raid_cpu_has_sse2()) {
-			f[nf++] = raid_parz_sse2;
+			f[nf++] = raid_genz_sse2;
 #ifdef CONFIG_X86_64
-			f[nf++] = raid_parz_sse2ext;
+			f[nf++] = raid_genz_sse2ext;
 #endif
 		}
 #endif

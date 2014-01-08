@@ -16,9 +16,9 @@
 #include "gf.h"
 
 /*
- * PARz (triple parity with powers of 2^-1) 32bit C implementation
+ * GENz (triple parity with powers of 2^-1) 32bit C implementation
  */
-void raid_parz_int32(int nd, size_t size, void **vv)
+void raid_genz_int32(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -67,9 +67,9 @@ void raid_parz_int32(int nd, size_t size, void **vv)
 }
 
 /*
- * PARz (triple parity with powers of 2^-1) 64bit C implementation
+ * GENz (triple parity with powers of 2^-1) 64bit C implementation
  */
-void raid_parz_int64(int nd, size_t size, void **vv)
+void raid_genz_int64(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;

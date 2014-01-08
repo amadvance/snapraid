@@ -35,7 +35,7 @@
 #define RAID_MODE_VANDERMONDE 1
 
 /**
- * Max level of parity disks supported.
+ * Maximum number of parity disks supported.
  */
 #define RAID_PARITY_MAX 6
 
@@ -59,7 +59,7 @@ int raid_selftest(void);
 /**
  * Sets the mode to use. One of RAID_MODE_*.
  *
- * You can change mode at any time, and it will affect next calls to raid_par(),
+ * You can change mode at any time, and it will affect next calls to raid_gen(),
  * raid_rec() and raid_recpar().
  *
  * The two modes are compatible for the first two levels of parity.
@@ -82,7 +82,12 @@ void raid_zero(void *zero);
 void raid_waste(void *zero);
 
 /**
- * Computes the parity.
+ * Computes the parity blocks.
+ *
+ * This function computes the specified number of parity blocks of the
+ * provided set of data blocks.
+ *
+ * Each parity block, will allow to recover on data block.
  *
  * @nd Number of data blocks.
  * @np Number of parities blocks to compute.
@@ -90,38 +95,45 @@ void raid_waste(void *zero);
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @np) elements. The starting elements are the blocks for
  *   data, following with the parity blocks.
- *   Each blocks has @size bytes.
+ *   Data blocks are only read and not modified. Parity blocks are written.
+ *   Each block has @size bytes.
  */
-void raid_par(int nd, int np, size_t size, void **v);
+void raid_gen(int nd, int np, size_t size, void **v);
 
 /**
  * Recovers failures in data and parity blocks.
  *
- * All the data and parity blocks marked as bad in the @id and @ip vector
- * are recovered and recomputed.
+ * This function recovers all the data and parity blocks marked as bad
+ * in the @ir vector.
  *
- * The parities blocks to use for recovering are automatically selected from
- * the ones NOT present in the @ip vector.
+ * Ensure to have @nr <= @np, otherwise recovering is not possible.
  *
- * Ensure to have @nrd + @nrp <= @np, otherwise recovering is not possible.
+ * The parities blocks used for recovering are automatically selected from
+ * the ones NOT present in the @ir vector.
  *
- * @nrd Number of failed data blocks to recover.
- * @id[] Vector of @nrd indexes of the data blocks to recover.
+ * In case there are more parity blocks than needed to recover, the parities
+ * at lower indexes are used in the recovering, and the others are ignored.
+ *
+ * Note that no internal integrity check is done when recovering. If the
+ * provided parities are correct the resulting data will be also correct.
+ * If parities are wrong, also the resulting recovered data will be wrong.
+ * This happens even in the case you have more parities blocks than needed,
+ * and some form of integrity verification is possible.
+ *
+ * @nr Number of failed data and parity blocks to recover.
+ * @ir[] Vector of @nr indexes of the data and parity blocks to recover.
  *   The indexes start from 0. They must be in order.
- * @nrp Number of failed parity blocks to recover.
- * @ip[] Vector of @nrp indexes of the parity blocks to recover.
- *   The indexes start from 0. They must be in order.
- *   All the parities not specified here are assumed correct, and they are
- *   not recomputed.
+ *   The first parity is represented with value @nd, the second with value
+ *   @nd + 1, just like positions in the @v vector.
  * @nd Number of data blocks.
  * @np Number of parity blocks.
  * @size Size of the blocks pointed by @v. It must be a multipler of 64.
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @np) elements. The starting elements are the blocks
  *   for data, following with the parity blocks.
- *   Each blocks has @size bytes.
+ *   Each block has @size bytes.
  */
-void raid_rec(int nrd, int *id, int nrp, int *ip, int nd, int np, size_t size, void **v);
+void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v);
 
 /**
  * Recovers failures of data blocks using the specified parities.
@@ -150,10 +162,10 @@ void raid_rec_dataonly(int nr, int *id, int *ip, int nd, size_t size, void **v);
  * Sorts a small vector of integers.
  *
  * If you have block indexes not in order, you can use this function to sort
- * them before callign raid_rec().
+ * them before calling raid_rec().
  *
  * @n Number of integers. No more than RAID_PARITY_MAX.
- * \paran v Vector of integers.
+ * @v Vector of integers.
  */
 void raid_sort(int n, int *v);
 

@@ -17,13 +17,13 @@
 
 #ifdef CONFIG_X86
 /*
- * PAR1 (RAID5 with xor) SSE2 implementation
+ * GEN1 (RAID5 with xor) SSE2 implementation
  *
  * Intentionally don't process more than 64 bytes because 64 is the typical
  * cache block, and processing 128 bytes doesn't increase performance, and in
  * some cases it even decreases it.
  */
-void raid_par1_sse2(int nd, size_t size, void **vv)
+void raid_gen1_sse2(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -70,9 +70,9 @@ static const struct gfconst16 {
 
 #ifdef CONFIG_X86
 /*
- * PAR2 (RAID6 with powers of 2) SSE2 implementation
+ * GEN2 (RAID6 with powers of 2) SSE2 implementation
  */
-void raid_par2_sse2(int nd, size_t size, void **vv)
+void raid_gen2_sse2(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -124,11 +124,11 @@ void raid_par2_sse2(int nd, size_t size, void **vv)
 
 #ifdef CONFIG_X86_64
 /*
- * PAR2 (RAID6 with powers of 2) SSE2 implementation
+ * GEN2 (RAID6 with powers of 2) SSE2 implementation
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid_par2_sse2ext(int nd, size_t size, void **vv)
+void raid_gen2_sse2ext(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -204,9 +204,9 @@ void raid_par2_sse2ext(int nd, size_t size, void **vv)
 
 #ifdef CONFIG_X86
 /*
- * PAR3 (triple parity with Cauchy matrix) SSSE3 implementation
+ * GEN3 (triple parity with Cauchy matrix) SSSE3 implementation
  */
-void raid_par3_ssse3(int nd, size_t size, void **vv)
+void raid_gen3_ssse3(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -301,11 +301,11 @@ void raid_par3_ssse3(int nd, size_t size, void **vv)
 
 #ifdef CONFIG_X86_64
 /*
- * PAR3 (triple parity with Cauchy matrix) SSSE3 implementation
+ * GEN3 (triple parity with Cauchy matrix) SSSE3 implementation
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid_par3_ssse3ext(int nd, size_t size, void **vv)
+void raid_gen3_ssse3ext(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -442,9 +442,9 @@ void raid_par3_ssse3ext(int nd, size_t size, void **vv)
 
 #ifdef CONFIG_X86
 /*
- * PAR4 (quad parity with Cauchy matrix) SSSE3 implementation
+ * GEN4 (quad parity with Cauchy matrix) SSSE3 implementation
  */
-void raid_par4_ssse3(int nd, size_t size, void **vv)
+void raid_gen4_ssse3(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -558,11 +558,11 @@ void raid_par4_ssse3(int nd, size_t size, void **vv)
 
 #ifdef CONFIG_X86_64
 /*
- * PAR4 (quad parity with Cauchy matrix) SSSE3 implementation
+ * GEN4 (quad parity with Cauchy matrix) SSSE3 implementation
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid_par4_ssse3ext(int nd, size_t size, void **vv)
+void raid_gen4_ssse3ext(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -731,13 +731,13 @@ void raid_par4_ssse3ext(int nd, size_t size, void **vv)
 
 #ifdef CONFIG_X86
 /*
- * PAR5 (penta parity with Cauchy matrix) SSSE3 implementation
+ * GEN5 (penta parity with Cauchy matrix) SSSE3 implementation
  */
 #ifdef _WIN32
 /* ensures that stack is aligned at 16 bytes because we allocate SSE registers in it */
 __attribute__((force_align_arg_pointer))
 #endif
-void raid_par5_ssse3(int nd, size_t size, void **vv)
+void raid_gen5_ssse3(int nd, size_t size, void **vv)
 /* ensures that stack is aligned at 16 bytes because we allocate SSE registers in it */
 {
 	uint8_t **v = (uint8_t **)vv;
@@ -872,11 +872,11 @@ void raid_par5_ssse3(int nd, size_t size, void **vv)
 
 #ifdef CONFIG_X86_64
 /*
- * PAR5 (penta parity with Cauchy matrix) SSSE3 implementation
+ * GEN5 (penta parity with Cauchy matrix) SSSE3 implementation
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid_par5_ssse3ext(int nd, size_t size, void **vv)
+void raid_gen5_ssse3ext(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -1005,13 +1005,13 @@ void raid_par5_ssse3ext(int nd, size_t size, void **vv)
 
 #ifdef CONFIG_X86
 /*
- * PAR6 (hexa parity with Cauchy matrix) SSSE3 implementation
+ * GEN6 (hexa parity with Cauchy matrix) SSSE3 implementation
  */
 #ifdef _WIN32
 /* ensures that stack is aligned at 16 bytes because we allocate SSE registers in it */
 __attribute__((force_align_arg_pointer))
 #endif
-void raid_par6_ssse3(int nd, size_t size, void **vv)
+void raid_gen6_ssse3(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -1167,11 +1167,11 @@ void raid_par6_ssse3(int nd, size_t size, void **vv)
 
 #ifdef CONFIG_X86_64
 /*
- * PAR6 (hexa parity with Cauchy matrix) SSSE3 implementation
+ * GEN6 (hexa parity with Cauchy matrix) SSSE3 implementation
  *
  * Note that it uses 16 registers, meaning that x64 is required.
  */
-void raid_par6_ssse3ext(int nd, size_t size, void **vv)
+void raid_gen6_ssse3ext(int nd, size_t size, void **vv)
 {
 	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
@@ -1332,7 +1332,7 @@ void raid_rec1_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 	/* if it's RAID5 uses the faster function */
 	if (ip[0] == 0) {
-		raid_rec1_par1(id, nd, size, vv);
+		raid_rec1of1(id, nd, size, vv);
 		return;
 	}
 

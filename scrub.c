@@ -321,7 +321,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			}
 
 			/* compute the parity */
-			raid_par(diskmax, state->level, state->block_size, buffer);
+			raid_gen(diskmax, state->level, state->block_size, buffer);
 
 			/* compare the parity */
 			for(l=0;l<state->level;++l) {

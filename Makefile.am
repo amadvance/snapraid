@@ -13,6 +13,7 @@ snapraid_SOURCES = \
 	raid/sort.c \
 	raid/memory.c \
 	raid/test.c \
+	raid/tag.c \
 	snapraid.c \
 	tommy.c \
 	util.c \
