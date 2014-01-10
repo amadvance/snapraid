@@ -10,7 +10,7 @@ snapraid_SOURCES = \
 	raid/x86.c \
 	raid/intz.c \
 	raid/x86z.c \
-	raid/sort.c \
+	raid/helper.c \
 	raid/memory.c \
 	raid/test.c \
 	raid/tag.c \
@@ -43,6 +43,7 @@ mktables_SOURCES = \
 
 noinst_HEADERS = \
 	raid/raid.h \
+	raid/helper.h \
 	raid/internal.h \
 	raid/cpu.h \
 	raid/gf.h \

@@ -22,7 +22,7 @@
 #define BUG_ON(a) assert(!(a))
 
 /*
- * Includes the main header.
+ * Includes the headers.
  */
 #include "raid.h"
 

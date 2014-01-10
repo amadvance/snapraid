@@ -158,16 +158,5 @@ void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v);
  */
 void raid_rec_dataonly(int nr, int *id, int *ip, int nd, size_t size, void **v);
 
-/**
- * Sorts a small vector of integers.
- *
- * If you have block indexes not in order, you can use this function to sort
- * them before calling raid_rec().
- *
- * @n Number of integers. No more than RAID_PARITY_MAX.
- * @v Vector of integers.
- */
-void raid_sort(int n, int *v);
-
 #endif
 

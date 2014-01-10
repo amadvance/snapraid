@@ -13,6 +13,7 @@
  */
 
 #include "internal.h"
+#include "helper.h"
 #include "cpu.h"
 #include "combo.h"
 #include "memory.h"
@@ -71,6 +72,31 @@ int raid_test_combo(void)
 
 		if (count != ipow(RAID_PARITY_MAX, r))
 			return -1;
+	}
+
+	return 0;
+}
+
+int raid_test_insert(void)
+{
+	int p[RAID_PARITY_MAX];
+	int r;
+
+	for (r = 1; r <= RAID_PARITY_MAX; ++r) {
+		permutation_first(r, RAID_PARITY_MAX, p);
+		do {
+			int i[RAID_PARITY_MAX];
+			int j;
+
+			/* insert in order */
+			for (j = 0; j < r; ++j)
+				raid_insert(j, i, p[j]);
+
+			/* check order */
+			for (j = 1; j < r; ++j)
+				if (i[j-1] > i[j])
+					return -1;
+		} while (permutation_next(r, RAID_PARITY_MAX, p));
 	}
 
 	return 0;
