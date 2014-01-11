@@ -5,8 +5,26 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
+* When a silent error is found in sync, try to recover the data,
+and if succesfull compute the new parity as if data was read correctly.
+But avoid to write the corrected data, and still mark the block as bad.
+Keep the present behaviour of not proceeding with sync only if recovering
+is not possible.
+
+* When renaming to .unrecoverable at now we always overwrite
+a previous copy losing partial, but potentially better, file recovery.
+Is it possible a better strategy ?
+Maybe we can rename the unrecoverable as the real file, if the real file
+is missing at the first open. This should ensure to always
+get better results if the file is hashed.
+Something like an incremental recovery, in case multiple fix commands
+are attempted.
+
 * Don't disable default 10d/12% if -p or -o is specified.
 But check that -p0 still work.
+
+* Checks if splitting hash/parity computation in 4K pages
+can improve speed in sync.
 
 * Detect files moved from one disk to another. We won't be able to reuse
 parity, but we can reuse the hash to check that the file was moved
@@ -31,15 +49,6 @@ the dummy 0 hash as marker for no hash.
 And create a new block type REP (replaced) where the
 hash is intented to match the new block and not the
 previous one like for CHG blocks.
-
-* When renaming to .unrecoverable at now we always overwrite
-a previous copy losing partial, but potentially better, file recovery.
-Is it possible a better strategy ?
-Maybe we can rename the unrecoverable as the real file, if the real file
-is missing at the first open. This should ensure to always
-get better results if the file is hashed.
-Something like an incremental recovery, in case multiple fix commands
-are attempted.
 
 - Minor
 
