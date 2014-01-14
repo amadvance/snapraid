@@ -170,12 +170,16 @@ void selftest(void)
 		fprintf(stderr, "Failed SORT test\n");
 		exit(EXIT_FAILURE);
 	}
+	if (raid_test_insert() != 0) {
+		fprintf(stderr, "Failed INSERT test\n");
+		exit(EXIT_FAILURE);
+	}
 	if (raid_test_combo() != 0) {
 		fprintf(stderr, "Failed COMBO test\n");
 		exit(EXIT_FAILURE);
 	}
 	if (raid_test_par(RAID_MODE_VANDERMONDE, 32, 256) != 0) {
-		fprintf(stderr, "Failed PAR Vandermonde test\n");
+		fprintf(stderr, "Failed GEN Vandermonde test\n");
 		exit(EXIT_FAILURE);
 	}
 	if (raid_test_rec(RAID_MODE_VANDERMONDE, 12, 256) != 0) {
@@ -183,7 +187,7 @@ void selftest(void)
 		exit(EXIT_FAILURE);
 	}
 	if (raid_test_par(RAID_MODE_CAUCHY, 32, 256) != 0) {
-		fprintf(stderr, "Failed PAR Cauchy test\n");
+		fprintf(stderr, "Failed GEN Cauchy test\n");
 		exit(EXIT_FAILURE);
 	}
 	if (raid_test_rec(RAID_MODE_CAUCHY, 12, 256) != 0) {
@@ -191,7 +195,7 @@ void selftest(void)
 		exit(EXIT_FAILURE);
 	}
 	if (raid_test_par(RAID_MODE_CAUCHY, 1, 256) != 0) {
-		fprintf(stderr, "Failed PAR Cauchy test sigle data disk\n");
+		fprintf(stderr, "Failed GEN Cauchy test sigle data disk\n");
 		exit(EXIT_FAILURE);
 	}
 }
