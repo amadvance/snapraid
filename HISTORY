@@ -1,6 +1,18 @@
 SnapRAID HISTORY
 ================
 
+6.0 2014/1 (BETA)
+=================
+ * In "sync", even if a silent error is found, still updates the
+   parity if it's possible to correct the error.
+   Note that the block will still be marked bad, and the data
+   will be fixed only at the next "fix -e" call.
+   But any new data added will be protected if you are using
+   enough parity to fix both the silent error and at least
+   another potential error.
+ * New source code organization. The RAID engine is now
+   an external component usable also in other projects.
+
 5.3 2014/1 (BETA)
 =================
  * Don't warn about UUID changed if it's for an empty disk.

@@ -28,6 +28,16 @@
 /* sync */
 
 /**
+ * A block that failed the hash check, or that was deleted.
+ */
+struct failed_struct {
+	unsigned index; /**< Index of the failed block. */
+	unsigned size; /**< Size of the block. */
+
+	struct snapraid_block* block; /**< The failed block, or BLOCK_DELETED for a deleted block */
+};
+
+/**
  * Buffer for storing the new hashes.
  */
 struct snapraid_rehash {
@@ -56,6 +66,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	unsigned error;
 	unsigned silent_error;
 	time_t now;
+	struct failed_struct* failed;
+	int* failed_map;
 	unsigned l;
 
 	/* the sync process assumes that all the hashes are correct */
@@ -71,12 +83,19 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	/* rehash buffers */
 	rehandle = malloc_nofail_align(diskmax * sizeof(struct snapraid_rehash), &rehandle_alloc);
 
-	/* we need disk + 1 for each parity level buffers */
-	buffermax = diskmax + state->level;
+	/* we need 2 * data + 1 * parity + 1 * zero */
+	buffermax = 2 * diskmax + state->level + 1;
 
 	buffer = malloc_nofail_vector_align(diskmax, buffermax, state->block_size, &buffer_alloc);
 	if (!state->opt.skip_self)
 		mtest_vector(buffermax, state->block_size, buffer);
+
+	/* fill up the zero buffer */
+	memset(buffer[buffermax-1], 0, state->block_size);
+	raid_zero(buffer[buffermax-1]);
+
+	failed = malloc_nofail(diskmax * sizeof(struct failed_struct));
+	failed_map = malloc_nofail(diskmax * sizeof(unsigned));
 
 	error = 0;
 	silent_error = 0;
@@ -122,10 +141,12 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	countpos = 0;
 	if (state_progress_begin(state, blockstart, blockmax, countmax))
 	for(i=blockstart;i<blockmax;++i) {
+		unsigned failed_count;
 		int one_invalid;
 		int one_valid;
 		int error_on_this_block;
 		int silent_error_on_this_block;
+		int fixed_error_on_this_block;
 		int parity_needs_to_be_updated;
 		int ret;
 		snapraid_info info;
@@ -176,6 +197,10 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		/* by default process the block, and skip it if something go wrong */
 		error_on_this_block = 0;
 		silent_error_on_this_block = 0;
+		fixed_error_on_this_block = 0;
+
+		/* keep track of the number of failed blocks */
+		failed_count = 0;
 
 		/* get block specific info */
 		info = info_get(&state->infoarr, i);
@@ -222,9 +247,24 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 				/* it's important to check this before any other check */
 				/* because for DELETED block, we skip at the next check */
+				/* now continue with processing */
 			}
 
-			/* if the block has no file, it doesn't partecipate in the new parity computation */
+			/* if the block is NEW, DELETED or CHG, */
+			/* we have to take care of it in case of recover */
+			if (block_has_invalid_parity(block)) {
+				/* store it in the failed set, because */
+				/* the parity is still computed with the previous content */
+				failed[failed_count].index = j;
+				failed[failed_count].size = state->block_size;
+				failed[failed_count].block = block;
+				++failed_count;
+
+				/* now continue with processing */
+			}
+
+			/* if the block has no file, meanining that it's EMPTY or DELETED, */
+			/* it doesn't partecipate in the new parity computation */
 			if (!block_has_file(block)) {
 				/* use an empty block */
 				memset(buffer[j], 0, state->block_size);
@@ -343,6 +383,12 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					fprintf(stderr, "WARNING! Unexpected data error in a data disk! The block is now marked as bad!\n");
 					fprintf(stderr, "Try with 'snapraid -e fix' to recover!\n");
 
+					/* save the failed block for the fix */
+					failed[failed_count].index = j;
+					failed[failed_count].size = read_size;
+					failed[failed_count].block = block;
+					++failed_count;
+
 					/* silent errors are very rare, and are not a signal that a disk */
 					/* is going to fail. So, we just continue marking the block as bad */
 					/* just like in scrub */
@@ -380,9 +426,100 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			}
 		}
 
-		/* if we have read all the data required and it's correct, proceed with the parity */
-		if (!error_on_this_block && !silent_error_on_this_block) {
+		/* if we have only silent errors we can try to fix them on-the-fly */
+		if (!error_on_this_block && silent_error_on_this_block) {
+			unsigned failed_mac;
 
+			/* setup the blocks to recover */
+			failed_mac = 0;
+			for(j=0;j<failed_count;++j) {
+				unsigned char* block_buffer = buffer[failed[j].index];
+				unsigned char* block_copy = buffer[diskmax + state->level + failed[j].index];
+				unsigned block_state = block_state_get(failed[j].block);
+
+				/* make a copy of new content just read */
+				memcpy(block_copy, block_buffer, state->block_size);
+
+				if (block_state == BLOCK_STATE_NEW) {
+					/* restore the data to parity state */
+					memset(block_buffer, 0, state->block_size);
+				} else {
+					/* if we have too many failure */
+					if (failed_mac >= state->level) {
+						/* we cannot recover */
+						break;
+					}
+				
+					/* otherwise it has to be recovered */
+					failed_map[failed_mac++] = failed[j].index;
+				}
+			}
+
+			/* if we have enough parity to fix */
+			if (j == failed_count) {
+				/* read the parity */
+				/* we are sure that parity exists because a silent error */
+				/* implies a BLK block with compute parity */
+				for(l=0;l<state->level;++l) {
+					ret = parity_read(parity[l], i, buffer[diskmax+l], state->block_size, stdlog);
+					if (ret == -1) {
+						fprintf(stdlog, "parity_error:%u:%s: Read error\n", i, lev_config_name(l));
+						fprintf(stderr, "DANGER! Read error in the %s disk, it isn't possible to sync.\n", lev_name(l));
+						fprintf(stderr, "Ensure that disk '%s' is sane.\n", lev_config_name(l));
+						printf("Stopping at block %u\n", i);
+						++error;
+						goto bail;
+					}
+				}
+
+				/* try to fix the data */
+				raid_rec(failed_mac, failed_map, diskmax, state->level, state->block_size, buffer);
+
+				/* check the result and prepare the data */
+				for(j=0;j<failed_count;++j) {
+					unsigned char hash[HASH_SIZE];
+					unsigned char* block_buffer = buffer[failed[j].index];
+					unsigned char* block_copy = buffer[diskmax + state->level + failed[j].index];
+					unsigned block_state = block_state_get(failed[j].block);
+
+					if (block_state == BLOCK_STATE_BLK) {
+						unsigned size = failed[j].size;
+
+						/* compute the hash of the recovered block */
+						if (rehash) {
+							memhash(state->prevhash, state->prevhashseed, hash, block_buffer, size);
+						} else {
+							memhash(state->hash, state->hashseed, hash, block_buffer, size);
+						}
+
+						/* if the hash doesn't match */
+						if (memcmp(hash, failed[j].block->hash, HASH_SIZE) != 0) {
+							/* we have not recovered */
+							break;
+						}
+
+						/* pad with 0 if needed */
+						if (size < state->block_size)
+							memset(block_buffer + size, 0, state->block_size - size);
+					} else {
+						/* otherwise restore the new content */
+						/* because we are not interested in recovered */
+						/* state for CHG and DELETED blocks */
+						/* and we have to restore also NEW zeroed blocks */
+						memcpy(block_buffer, block_copy, state->block_size);
+					}
+				}
+
+				/* if all is processed, we have fixed it */
+				if (j == failed_count)
+					fixed_error_on_this_block = 1;
+			}
+		}
+
+		/* if we have read all the data required and it's correct, proceed with the parity */
+		if (!error_on_this_block
+			&& (!silent_error_on_this_block || fixed_error_on_this_block)
+		) {
 			/* updates the parity only if really needed */
 			if (parity_needs_to_be_updated) {
 				/* compute the parity */
@@ -427,7 +564,11 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			/* we update the info block only if we really have updated the parity */
 			/* because otherwise the time info would be misleading as we didn't */
 			/* wrote the parity at this time */
-			if (parity_needs_to_be_updated) {
+			/* we also update the info block only if no silent error was found */
+			/* because has no sense to refresh the time for data that we know bad */
+			if (parity_needs_to_be_updated
+				&& !silent_error_on_this_block
+			) {
 				/* if rehash is neeed */
 				if (rehash) {
 					/* store all the new hash already computed */
@@ -441,7 +582,12 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				/* we are also clearing any previous bad and rehash flag */
 				info_set(&state->infoarr, i, info_make(now, 0, 0));
 			}
-		} else if (silent_error_on_this_block) {
+		}
+
+		/* if a silent error was found, even if corrected */
+		/* mark the block as bad to have check/fix to handle it */
+		/* because our correction is in memory only and not yet written */
+		if (silent_error_on_this_block) {
 			/* set the error status keeping the other info */
 			info_set(&state->infoarr, i, info_set_bad(info));
 		}
@@ -508,6 +654,8 @@ bail:
 	free(buffer_alloc);
 	free(buffer);
 	free(rehandle_alloc);
+	free(failed);
+	free(failed_map);
 
 	if (state->opt.expect_recoverable) {
 		if (error + silent_error == 0)

@@ -226,6 +226,14 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -o 0 scrub
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -p 100 scrub
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	echo --- Corrupt some files, and sync with error presents
+	$(TESTENV) ./mktest$(EXEEXT) change 2 10 1 test/disk1/_a/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) change 2 10 1 test/disk1/_a/_b/*
+	$(TESTENV) ./mktest$(EXEEXT) damage 2 10 1 test/disk2/_a/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) damage 2 10 1 test/disk2/_a/_b/*
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-expect-recoverable  sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) fix -e
 	echo --- Make a hole in the disk array and sync with --force-empty
 	mv test/disk2 test/disk2.old
 	mkdir test/disk2

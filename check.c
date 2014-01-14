@@ -483,8 +483,8 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 	handle = handle_map(state, &diskmax);
 
-	/* we need disk + 2 for each parity level buffers + 1 zero buffer */
-	buffermax = diskmax + state->level * 2 + 1;
+	/* we need 1 * data + 2 * parity + + 1 * zero */
+	buffermax = diskmax + 2 * state->level + 1;
 
 	buffer = malloc_nofail_vector_align(diskmax, buffermax, state->block_size, &buffer_alloc);
 	if (!state->opt.skip_self)
@@ -610,7 +610,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				valid_parity = 0;
 			}
 
-			/* if the block is deleted */
+			/* if the block is DELETED */
 			if (block_state == BLOCK_STATE_DELETED) {
 				/* use an empty block */
 				memset(buffer[j], 0, state->block_size);

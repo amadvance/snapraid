@@ -211,7 +211,7 @@ void fallback(int f, struct stat* st)
 	}
 }
 
-void change(const char* path, int size, int restore_time)
+void change(const char* path, int size, int silent_error)
 {
 	struct stat st;
 
@@ -226,13 +226,15 @@ void change(const char* path, int size, int restore_time)
 	}
 
 	if (S_ISLNK(st.st_mode)) {
-		/* symlink */
-		int ret;
-		
-		ret = remove(path);
-		if (ret != 0) {
-			fprintf(stderr, "Error removing %s\n", path);
-			exit(EXIT_FAILURE);
+		if (!silent_error) {
+			/* symlink */
+			int ret;
+
+			ret = remove(path);
+			if (ret != 0) {
+				fprintf(stderr, "Error removing %s\n", path);
+				exit(EXIT_FAILURE);
+			}
 		}
 	} else {
 		/* file */
@@ -267,7 +269,7 @@ void change(const char* path, int size, int restore_time)
 		fflush(f);
 		
 		/* restore the previous modification time */
-		if (restore_time)
+		if (silent_error)
 			fallback(fileno(f), &st);
 
 		fclose(f);
@@ -421,7 +423,7 @@ int main(int argc, char* argv[])
 		}
 	} else if (strcmp(argv[1], "damage") == 0 || strcmp(argv[1], "change") == 0) {
 		int fail, size;
-		int restore_time = strcmp(argv[1], "damage") == 0;
+		int silent_error = strcmp(argv[1], "damage") == 0;
 
 		if (argc < 6) {
 			help();
@@ -438,7 +440,7 @@ int main(int argc, char* argv[])
 
 		for(i=b;i<argc;++i) {
 			for(j=0;j<fail;++j) {
-				change(argv[i], rndnotzero(size), restore_time);
+				change(argv[i], rndnotzero(size), silent_error);
 			}
 		}
 	} else if (strcmp(argv[1], "append") == 0) {

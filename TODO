@@ -5,12 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
-* When a silent error is found in sync, try to recover the data,
-and if succesfull compute the new parity as if data was read correctly.
-But avoid to write the corrected data, and still mark the block as bad.
-Keep the present behaviour of not proceeding with sync only if recovering
-is not possible.
-
 * When renaming to .unrecoverable at now we always overwrite
 a previous copy losing partial, but potentially better, file recovery.
 Is it possible a better strategy ?
