@@ -255,6 +255,7 @@ int raid_selftest(void)
 	}
 
 bail:
+	free(v);
 	free(v_alloc);
 
 	return ret;
