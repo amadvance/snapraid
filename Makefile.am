@@ -216,18 +216,15 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-scrub 100000 scrub
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
-	echo --- Corrupt one file, scrub and fix filtering for error
-	rm -f test/disk1/content
-	cp test/content test/disk1/content
+	echo --- Corrupt some files, scrub and fix filtering for error
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
-	$(TESTENV) ./mktest$(EXEEXT) damage 1 10 1 test/disk1/content
+	$(TESTENV) ./mktest$(EXEEXT) damage 1 10 1 test/disk1/a*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-expect-recoverable --test-force-scrub 100000 scrub
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) fix -e
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -p 0 scrub
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -o 0 scrub
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -p 100 scrub
-	rm test/disk1/content
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Make a hole in the disk array and sync with --force-empty
 	mv test/disk2 test/disk2.old
@@ -503,20 +500,20 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Corrupt the parity, fix and check with PAR1
-	$(TESTENV) ./mktest$(EXEEXT) damage 1 100 10000 test/parity
+	$(TESTENV) ./mktest$(EXEEXT) change 1 100 10000 test/parity
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR1) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) -a check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Corrupt the parity and the 2-parity, fix and check with PAR2
-	$(TESTENV) ./mktest$(EXEEXT) damage 2 100 10000 test/parity
-	$(TESTENV) ./mktest$(EXEEXT) damage 2 100 10000 test/2-parity
+	$(TESTENV) ./mktest$(EXEEXT) change 2 100 10000 test/parity
+	$(TESTENV) ./mktest$(EXEEXT) change 2 100 10000 test/2-parity
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR2) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Corrupt some files, fix and check with PAR1
-	$(TESTENV) ./mktest$(EXEEXT) damage 3 1 500 test/disk2/b*
+	$(TESTENV) ./mktest$(EXEEXT) change 3 1 500 test/disk2/b*
 	$(TESTENV) ./mktest$(EXEEXT) append 3 500 test/disk2/c*
 	$(TESTENV) ./mktest$(EXEEXT) truncate 3 500 test/disk2/d*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR1) -a check -l test.log
@@ -524,10 +521,10 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Corrupt some files, fix and check with PAR2
-	$(TESTENV) ./mktest$(EXEEXT) damage 4 1 500 test/disk2/_a/_a/*
-	$(TESTENV) ./mktest$(EXEEXT) damage 4 1 500 test/disk3/_a/_a/*
-	$(TESTENV) ./mktest$(EXEEXT) damage 4 1 500 test/disk2/_a/_b/*
-	$(TESTENV) ./mktest$(EXEEXT) damage 4 1 500 test/disk3/_a/_b/*
+	$(TESTENV) ./mktest$(EXEEXT) change 4 1 500 test/disk2/_a/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) change 4 1 500 test/disk3/_a/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) change 4 1 500 test/disk2/_a/_b/*
+	$(TESTENV) ./mktest$(EXEEXT) change 4 1 500 test/disk3/_a/_b/*
 	$(TESTENV) ./mktest$(EXEEXT) append 4 500 test/disk2/_b/_a/*
 	$(TESTENV) ./mktest$(EXEEXT) append 4 500 test/disk3/_b/_a/*
 	$(TESTENV) ./mktest$(EXEEXT) truncate 4 500 test/disk2/_b/_b/*
@@ -538,12 +535,12 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Corrupt some files, fix and check with PAR2
-	$(TESTENV) ./mktest$(EXEEXT) damage 5 2 50 test/disk2/_a/_a/*
-	$(TESTENV) ./mktest$(EXEEXT) damage 5 2 50 test/disk3/_a/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) change 5 2 50 test/disk2/_a/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) change 5 2 50 test/disk3/_a/_a/*
 	$(TESTENV) ./mktest$(EXEEXT) append 5 500 test/disk2/_a/_a/*
 	$(TESTENV) ./mktest$(EXEEXT) truncate 5 500 test/disk3/_a/_a/*
-	$(TESTENV) ./mktest$(EXEEXT) damage 5 2 50 test/disk2/_a/_b/*
-	$(TESTENV) ./mktest$(EXEEXT) damage 5 2 50 test/disk3/_a/_b/*
+	$(TESTENV) ./mktest$(EXEEXT) change 5 2 50 test/disk2/_a/_b/*
+	$(TESTENV) ./mktest$(EXEEXT) change 5 2 50 test/disk3/_a/_b/*
 	$(TESTENV) ./mktest$(EXEEXT) append 5 1500 test/disk2/_b/_a/*
 	$(TESTENV) ./mktest$(EXEEXT) append 5 1500 test/disk3/_b/_a/*
 	$(TESTENV) ./mktest$(EXEEXT) truncate 5 1500 test/disk2/_b/_b/*
@@ -553,9 +550,9 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Corrupt the parity and some files, fix and check with PAR2
-	$(TESTENV) ./mktest$(EXEEXT) damage 6 100 10000 test/parity
-	$(TESTENV) ./mktest$(EXEEXT) damage 6 1 500 test/disk1/_a/_a/*
-	$(TESTENV) ./mktest$(EXEEXT) damage 6 1 500 test/disk1/_a/_b/*
+	$(TESTENV) ./mktest$(EXEEXT) change 6 100 10000 test/parity
+	$(TESTENV) ./mktest$(EXEEXT) change 6 1 500 test/disk1/_a/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) change 6 1 500 test/disk1/_a/_b/*
 	$(TESTENV) ./mktest$(EXEEXT) append 6 500 test/disk1/_b/_a/*
 	$(TESTENV) ./mktest$(EXEEXT) truncate 6 500 test/disk1/_b/_b/*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR1) check -l test.log
@@ -563,9 +560,9 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Corrupt the 2-parity and some files, fix and check with PAR2
-	$(TESTENV) ./mktest$(EXEEXT) damage 7 100 10000 test/2-parity
-	$(TESTENV) ./mktest$(EXEEXT) damage 7 1 500 test/disk1/_a/_a/*
-	$(TESTENV) ./mktest$(EXEEXT) damage 7 1 500 test/disk1/_a/_b/*
+	$(TESTENV) ./mktest$(EXEEXT) change 7 100 10000 test/2-parity
+	$(TESTENV) ./mktest$(EXEEXT) change 7 1 500 test/disk1/_a/_a/*
+	$(TESTENV) ./mktest$(EXEEXT) change 7 1 500 test/disk1/_a/_b/*
 	$(TESTENV) ./mktest$(EXEEXT) append 7 500 test/disk1/_b/_a/*
 	$(TESTENV) ./mktest$(EXEEXT) truncate 7 500 test/disk1/_b/_b/*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR1) check -l test.log

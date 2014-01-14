@@ -211,7 +211,7 @@ void fallback(int f, struct stat* st)
 	}
 }
 
-void damage(const char* path, int size)
+void change(const char* path, int size, int restore_time)
 {
 	struct stat st;
 
@@ -267,7 +267,8 @@ void damage(const char* path, int size)
 		fflush(f);
 		
 		/* restore the previous modification time */
-		fallback(fileno(f), &st);
+		if (restore_time)
+			fallback(fileno(f), &st);
 
 		fclose(f);
 	}
@@ -376,6 +377,7 @@ void help(void)
 	printf("Usage:\n");
 	printf("\tmktest generate SEED DISK_NUM FILE_NUM FILE_SIZE\n");
 	printf("\tmktest damage SEED FAIL_NUM FAIL_SIZE FILE\n");
+	printf("\tmktest change SEED FAIL_NUM FAIL_SIZE FILE\n");
 	printf("\tmktest append SEED FAIL_SIZE FILE\n");
 	printf("\tmktest truncate SEED FAIL_SIZE FILE\n");
 }
@@ -417,8 +419,9 @@ int main(int argc, char* argv[])
 					generate(i+1, rnd(size));
 			}
 		}
-	} else if (strcmp(argv[1], "damage") == 0) {
+	} else if (strcmp(argv[1], "damage") == 0 || strcmp(argv[1], "change") == 0) {
 		int fail, size;
+		int restore_time = strcmp(argv[1], "damage") == 0;
 
 		if (argc < 6) {
 			help();
@@ -435,7 +438,7 @@ int main(int argc, char* argv[])
 
 		for(i=b;i<argc;++i) {
 			for(j=0;j<fail;++j) {
-				damage(argv[i], rndnotzero(size));
+				change(argv[i], rndnotzero(size), restore_time);
 			}
 		}
 	} else if (strcmp(argv[1], "append") == 0) {
