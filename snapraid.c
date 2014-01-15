@@ -238,6 +238,7 @@ int main(int argc, char* argv[])
 	const char* log;
 	int lock;
 	const char* gen_conf;
+	int period;
 
 	os_init();
 	raid_init();
@@ -251,6 +252,7 @@ int main(int argc, char* argv[])
 	blockcount = 0;
 	tommy_list_init(&filterlist_file);
 	tommy_list_init(&filterlist_disk);
+	period = 1000;
 	filter_missing = 0;
 	filter_error = 0;
 	percentage = -1;
@@ -370,7 +372,7 @@ int main(int argc, char* argv[])
 			version();
 			exit(EXIT_SUCCESS);
 		case 'T' :
-			speed();
+			speed(period);
 			exit(EXIT_SUCCESS);
 		case 'C' :
 			gen_conf = optarg;
@@ -398,6 +400,7 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_TEST_SKIP_DEVICE :
 			opt.skip_device = 1;
+			period = 100; /* reduce period of the speed test */
 			break;
 		case OPT_TEST_FORCE_MURMUR3 :
 			opt.force_murmur3 = 1;

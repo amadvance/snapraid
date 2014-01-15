@@ -58,11 +58,11 @@ static int64_t diffgettimeofday(struct timeval *start, struct timeval *stop)
 #define SPEED_STOP \
 		count += delta; \
 		gettimeofday(&stop, 0); \
-	} while (diffgettimeofday(&start, &stop) < 1000000LL); \
+	} while (diffgettimeofday(&start, &stop) < period * 1000LL); \
 	ds = size * (int64_t)count * nd; \
 	dt = diffgettimeofday(&start, &stop);
 
-void speed(void)
+void speed(int period)
 {
 	struct timeval start;
 	struct timeval stop;
@@ -74,7 +74,7 @@ void speed(void)
 	int id[RAID_PARITY_MAX];
 	int ip[RAID_PARITY_MAX];
 	int count;
-	int delta = 10;
+	int delta = period >= 1000 ? 10 : 1;
 	int size = TEST_SIZE;
 	int nd = 8;
 	int nv;

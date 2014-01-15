@@ -50,6 +50,59 @@ void rnd_name(char* file)
 	*file = 0;
 }
 
+void create_file(const char* path, int size)
+{
+	FILE* f;
+	int count;
+
+	/* remove the existing file if any */
+	if (remove(path) != 0) {
+		if (errno != ENOENT) {
+			fprintf(stderr, "Error removing file %s\n", path);
+			exit(EXIT_FAILURE);
+		}
+	} else {
+		/* don't recreate a 0 file to avoid ZERO protection */
+		++size;
+	}
+
+	f = fopen(path, "wb");
+	if (!f) {
+		fprintf(stderr, "Error writing file %s\n", path);
+		exit(EXIT_FAILURE);
+	}
+
+	count = size;
+	while (count) {
+		/* We don't write zero bytes because we want to test */
+		/* the recovering of new files, after an aborted sync */
+		/* If the files contains full blocks at zero */
+		/* this is an impossible condition to recover */
+		/* because we cannot differentiate between an unused block */
+		/* and a file filled with 0 */
+		fputc(rndnotzero(256), f);
+		--count;
+	}
+
+	fclose(f);
+}
+
+void create_symlink(const char* path, const char* linkto)
+{
+	/* remove the existing file if any */
+	if (remove(path) != 0) {
+		if (errno != ENOENT) {
+			fprintf(stderr, "Error removing file %s\n", path);
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	if (symlink(linkto, path) != 0) {
+		fprintf(stderr, "Error writing symlink %s\n", path);
+		exit(EXIT_FAILURE);
+	}
+}
+
 void generate(int disk, int size)
 {
 	char path[PATH_MAX];
@@ -59,38 +112,18 @@ void generate(int disk, int size)
 	file = path + strlen(path);
 
 	/* add a directory */
-	if (rnd(2) == 0) {
-		*file++ = '_';
-		*file++ = 'a' + rnd(2);
-		*file = 0;
+	*file++ = 'a' + rnd(2);
+	*file = 0;
 
-		/* create it */
-		if (mkdir(path, 0777) != 0) {
-			if (errno != EEXIST) {
-				fprintf(stderr, "Error creating directory %s\n", path);
-				exit(EXIT_FAILURE);
-			}
+	/* create it */
+	if (mkdir(path, 0777) != 0) {
+		if (errno != EEXIST) {
+			fprintf(stderr, "Error creating directory %s\n", path);
+			exit(EXIT_FAILURE);
 		}
-
-		*file++ = '/';
 	}
 
-	/* add another directory */
-	if (rnd(2) == 0) {
-		*file++ = '_';
-		*file++ = 'a' + rnd(2);
-		*file = 0;
-
-		/* create it */
-		if (mkdir(path, 0777) != 0) {
-			if (errno != EEXIST) {
-				fprintf(stderr, "Error creating directory %s\n", path);
-				exit(EXIT_FAILURE);
-			}
-		}
-
-		*file++ = '/';
-	}
+	*file++ = '/';
 
 	while (1) {
 		/* add a random file */
@@ -113,53 +146,19 @@ void generate(int disk, int size)
 		break;
 	}
 
-	/* remove the existing file if any */
-	if (remove(path) != 0) {
-		if (errno != ENOENT) {
-			fprintf(stderr, "Error removing file %s\n", path);
-			exit(EXIT_FAILURE);
-		}
-	}
-
 #ifndef WIN32 /* Windows XP doesn't support symlinks */
 	if (rnd(32) == 0) {
 		/* symlink */
 		char linkto[PATH_MAX];
-		int ret;
 
 		rnd_name(linkto);
 
-		ret = symlink(linkto, path);
-		if (ret != 0) {
-			fprintf(stderr, "Error writing symlink %s\n", path);
-			exit(EXIT_FAILURE);
-		}
+		create_symlink(path, linkto);
 	} else
 #endif
 	{
 		/* file */
-		FILE* f;
-		int count;
-	
-		f = fopen(path, "wb");
-		if (!f) {
-			fprintf(stderr, "Error writing file %s\n", path);
-			exit(EXIT_FAILURE);
-		}
-
-		count = size;
-		while (count) {
-			/* We don't write zero bytes because we want to test */
-			/* the recovering of new files, after an aborted sync */
-			/* If the files contains full blocks at zero */
-			/* this is an impossible condition to recover */
-			/* because we cannot differentiate between an unused block */
-			/* and a file filled with 0 */
-			fputc(rndnotzero(256), f);
-			--count;
-		}
-
-		fclose(f);
+		create_file(path, size);
 	}
 }
 
@@ -211,7 +210,19 @@ void fallback(int f, struct stat* st)
 	}
 }
 
-void change(const char* path, int size, int silent_error)
+void duplicate_name(const char* path, char* newpath)
+{
+	size_t len;
+
+	strcpy(newpath, path);
+
+	len = strlen(newpath);
+
+	newpath[len] = 'a' + rnd('z' - 'a');
+	newpath[len+1] = 0;
+}
+
+void writ(const char* path, int size, int silent_error)
 {
 	struct stat st;
 
@@ -225,18 +236,7 @@ void change(const char* path, int size, int silent_error)
 		exit(EXIT_FAILURE);
 	}
 
-	if (S_ISLNK(st.st_mode)) {
-		if (!silent_error) {
-			/* symlink */
-			int ret;
-
-			ret = remove(path);
-			if (ret != 0) {
-				fprintf(stderr, "Error removing %s\n", path);
-				exit(EXIT_FAILURE);
-			}
-		}
-	} else {
+	if (S_ISREG(st.st_mode)) {
 		/* file */
 		FILE* f;
 		off_t start;
@@ -290,18 +290,7 @@ void append(const char* path, int size)
 		exit(EXIT_FAILURE);
 	}
 
-	if (S_ISLNK(st.st_mode)) {
-		/* symlink */
-		int ret;
-		
-		ret = remove(path);
-		if (ret != 0) {
-			fprintf(stderr, "Error removing %s\n", path);
-			exit(EXIT_FAILURE);
-		}
-	} else {
-		/* file */
-
+	if (S_ISREG(st.st_mode)) {
 		FILE* f;
 		int count;
 
@@ -336,17 +325,7 @@ void truncat(const char* path, int size)
 		exit(EXIT_FAILURE);
 	}
 
-	if (S_ISLNK(st.st_mode)) {
-		/* symlink */
-		int ret;
-		
-		ret = remove(path);
-		if (ret != 0) {
-			fprintf(stderr, "Error removing %s\n", path);
-			exit(EXIT_FAILURE);
-		}
-	} else {
-		/* file */
+	if (S_ISREG(st.st_mode)) {
 		FILE* f;
 		off_t start;
 		int count;
@@ -362,6 +341,10 @@ void truncat(const char* path, int size)
 		if (count > st.st_size)
 			count = st.st_size;
 		start = st.st_size - count;
+
+		/* don't truncate to 0 to avoid ZERO protection */
+		if (start == 0)
+			start = 1;
     
 		if (ftruncate(fileno(f), start) != 0) {
 			fprintf(stderr, "Error truncating %s\n", path);
@@ -372,6 +355,64 @@ void truncat(const char* path, int size)
 	}
 }
 
+void change(const char* path, int size)
+{
+	struct stat st;
+
+	if (!size)
+		return;
+
+	if (lstat(path, &st) != 0) {
+		if (errno == ENOENT)
+			return; /* it may be already deleted */
+		fprintf(stderr, "Error accessing %s\n", path);
+		exit(EXIT_FAILURE);
+	}
+
+	if (S_ISLNK(st.st_mode)) {
+		/* symlink */
+		if (rnd(2) == 0) {
+			/* delete */
+			if (remove(path) != 0) {
+				fprintf(stderr, "Error removing %s\n", path);
+				exit(EXIT_FAILURE);
+			}
+		} else {
+			/* recreate */
+			char linkto[PATH_MAX];
+
+			if (remove(path) != 0) {
+				fprintf(stderr, "Error removing %s\n", path);
+				exit(EXIT_FAILURE);
+			}
+
+			rnd_name(linkto);
+
+			create_symlink(path, linkto);
+		}
+	} else if (S_ISREG(st.st_mode)) {
+		int r;
+
+		r = rnd(4);
+
+		if (r == 0) {
+			/* write */
+			writ(path, size, 0);
+		} else if (r == 1) {
+			/* append */
+			append(path, size);
+		} else if (r == 2) {
+			/* truncate */
+			truncat(path, size);
+		} else {
+			/* delete */
+			if (remove(path) != 0) {
+				fprintf(stderr, "Error removing %s\n", path);
+				exit(EXIT_FAILURE);
+			}
+		}
+	}
+}
 
 void help(void)
 {
@@ -379,7 +420,8 @@ void help(void)
 	printf("Usage:\n");
 	printf("\tmktest generate SEED DISK_NUM FILE_NUM FILE_SIZE\n");
 	printf("\tmktest damage SEED FAIL_NUM FAIL_SIZE FILE\n");
-	printf("\tmktest change SEED FAIL_NUM FAIL_SIZE FILE\n");
+	printf("\tmktest write SEED FAIL_NUM FAIL_SIZE FILE\n");
+	printf("\tmktest change SEED FAIL_SIZE FILE\n");
 	printf("\tmktest append SEED FAIL_SIZE FILE\n");
 	printf("\tmktest truncate SEED FAIL_SIZE FILE\n");
 }
@@ -421,7 +463,7 @@ int main(int argc, char* argv[])
 					generate(i+1, rnd(size));
 			}
 		}
-	} else if (strcmp(argv[1], "damage") == 0 || strcmp(argv[1], "change") == 0) {
+	} else if (strcmp(argv[1], "damage") == 0 || strcmp(argv[1], "write") == 0) {
 		int fail, size;
 		int silent_error = strcmp(argv[1], "damage") == 0;
 
@@ -440,7 +482,7 @@ int main(int argc, char* argv[])
 
 		for(i=b;i<argc;++i) {
 			for(j=0;j<fail;++j) {
-				change(argv[i], rndnotzero(size), silent_error);
+				writ(argv[i], rndnotzero(size), silent_error);
 			}
 		}
 	} else if (strcmp(argv[1], "append") == 0) {
@@ -478,6 +520,24 @@ int main(int argc, char* argv[])
 
 		for(i=b;i<argc;++i) {
 			truncat(argv[i], rnd(size));
+		}
+	} else if (strcmp(argv[1], "change") == 0) {
+		int size;
+
+		if (argc < 5) {
+			help();
+			exit(EXIT_FAILURE);
+		}
+
+		seed = atoi(argv[2]);
+		size = atoi(argv[3]);
+		b = 4;
+
+		/* sort the file names */
+		qsort(&argv[b], argc - b,  sizeof(argv[b]), qsort_strcmp);
+
+		for(i=b;i<argc;++i) {
+			change(argv[i], rnd(size));
 		}
 	} else {
 		help();
