@@ -1082,8 +1082,8 @@ character like * and ?.
 This pattern is applied only to files and not to directories.
 .TP
 .B DIR/
-Selects any directory named DIR. You can use any globbing
-character like * and ?.
+Selects any directory named DIR and everything inside.
+You can use any globbing character like * and ?.
 This pattern is applied only to directories and not to files.
 .TP
 .B /PATH/FILE
@@ -1093,17 +1093,18 @@ directory slash.
 This pattern is applied only to files and not to directories.
 .TP
 .B /PATH/DIR/
-Selects the exact specified directory path. You can use any
-globbing character like * and ? but they never match a
-directory slash.
+Selects the exact specified directory path and everything
+inside. You can use any globbing character like * and ? but
+they never match a directory slash.
 This pattern is applied only to directories and not to files.
 .PP
-In Windows you can freely use the backslash \(rs instead of the forward slash /.
+Note that when you specify an absolute path starting with /, it\(cqs
+applied at the array root dir and not at the local filesystem root dir.
 .PP
-Note that Windows system directories, junction to directories,
-mount points, and any other Windows special directory is treated just
-as a file, meaning that to exclude it you must use a file rule, and
-not a directory one.
+In Windows you can use the backslash \(rs instead of the forward slash /.
+Note that Windows system directories, junctions, mount points, and any
+other Windows special directory are treated just as files, meaning that
+to exclude them you must use a file rule, and not a directory one.
 .PP
 In the configuration file, you can use different strategies to filter
 the files to process.
@@ -1218,8 +1219,8 @@ snapraid \-f \(a"*.mp3\(a" check
 .PD
 .RE
 .PP
-In Unix, when using globbing chars in the command line, you have to quote them.
-Otherwise the shell will try to expand them.
+In Unix, when using globbing chars in the command line, you have to
+quote them. Otherwise the shell will try to expand them.
 .SH RECOVERING 
 The worst happened, and you lost a disk!
 .PP
