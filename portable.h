@@ -187,20 +187,6 @@
 #endif
 
 /**
- * Missing __always_inline, like in MINGW.
- */
-#ifndef __always_inline
-#define __always_inline inline __attribute__((always_inline))
-#endif
-
-/**
- * Missing __aligned, like in user mode.
- */
-#ifndef __aligned
-#define __aligned(a) __attribute__((aligned(a)))
-#endif
-
-/**
  * Another name for link() to avoid confusion with local variables called "link".
  */
 static inline int hardlink(const char* a, const char* b)

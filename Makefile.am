@@ -1,6 +1,5 @@
 bin_PROGRAMS = snapraid
 check_PROGRAMS = mktest
-EXTRA_PROGRAMS = mktables
 
 snapraid_SOURCES = \
 	raid/raid.c \
@@ -37,9 +36,6 @@ snapraid_SOURCES = \
 	import.c \
 	mingw.c \
 	unix.c
-
-mktables_SOURCES = \
-	raid/mktables.c
 
 noinst_HEADERS = \
 	raid/raid.h \
@@ -92,7 +88,13 @@ EXTRA_DIST = \
 	test-par1.conf test-par2.conf test-par3.conf test-par4.conf test-par5.conf test-par6.conf test-par6-hole.conf \
 	snapraid.conf.example \
 	configure.windows-x86 configure.windows-x64 snapraid.conf.example.windows \
-	acinclude.m4
+	acinclude.m4 \
+	raid/COPYING \
+	raid/test/Makefile \
+	raid/test/fulltest.c \
+	raid/test/selftest.c \
+	raid/test/speedtest.c \
+	raid/test/invtest.c
 
 man_MANS = snapraid.1
 

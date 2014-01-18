@@ -16,10 +16,38 @@
 #define __RAID_INTERNAL_H
 
 /*
+ * Supported architecture.
+ */
+#if defined(__i386__)
+#define CONFIG_X86 1
+#define CONFIG_X86_32 1
+#endif
+
+#if defined(__x86_64__)
+#define CONFIG_X86 1
+#define CONFIG_X86_64 1
+#endif
+
+/*
  * Includes anything required for compatibility.
  */
-#include "../portable.h"
+#include <assert.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <string.h>
+#include <malloc.h>
+
+#ifndef BUG_ON
 #define BUG_ON(a) assert(!(a))
+#endif
+
+#ifndef __always_inline
+#define __always_inline inline __attribute__((always_inline))
+#endif
+
+#ifndef __aligned
+#define __aligned(a) __attribute__((aligned(a)))
+#endif
 
 /*
  * Includes the headers.

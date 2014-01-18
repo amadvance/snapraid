@@ -37,7 +37,7 @@
  *                for(i[R-1]=0;i[R-1]<N;++i[R-1])
  *                    code using i[0], i[1], ..., i[R-1]
  */
-static inline void permutation_first(int r, int n, int *c)
+static __always_inline void permutation_first(int r, int n, int *c)
 {
 	int i;
 
@@ -52,7 +52,7 @@ static inline void permutation_first(int r, int n, int *c)
  * Get the next permutation with repetition of r of n elements.
  * Return ==0 when finished.
  */
-static inline int permutation_next(int r, int n, int *c)
+static __always_inline int permutation_next(int r, int n, int *c)
 {
 	int i = r - 1; /* present position */
 
@@ -103,7 +103,7 @@ recurse:
  *                for(i[R-1]=i[R-2]+1;i[R-1]<N;++i[R-1])
  *                    code using i[0], i[1], ..., i[R-1]
  */
-static inline void combination_first(int r, int n, int *c)
+static __always_inline void combination_first(int r, int n, int *c)
 {
 	int i;
 
@@ -118,7 +118,7 @@ static inline void combination_first(int r, int n, int *c)
  * Get the next combination without repetition of r of n elements.
  * Return ==0 when finished.
  */
-static inline int combination_next(int r, int n, int *c)
+static __always_inline int combination_next(int r, int n, int *c)
 {
 	int i = r - 1; /* present position */
 	int h = n; /* high limit for this position */

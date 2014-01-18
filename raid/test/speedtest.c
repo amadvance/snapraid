@@ -1,29 +1,26 @@
 /*
- * Copyright (C) 2011 Andrea Mazzoleni
+ * Copyright (C) 2013 Andrea Mazzoleni
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
+ * the Free Software Foundation, either version 2 of the License, or
  * (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "portable.h"
+/* Speed test for the RAID library */
 
-#include "snapraid.h"
-#include "util.h"
-#include "raid/raid.h"
-#include "raid/cpu.h"
-#include "raid/internal.h"
-#include "raid/memory.h"
-#include "state.h"
+#include "internal.h"
+#include "memory.h"
+#include "cpu.h"
+
+#include <sys/time.h>
+#include <stdio.h>
+#include <inttypes.h>
 
 /*
  * Size of the blocks to test.
@@ -49,6 +46,17 @@ static int64_t diffgettimeofday(struct timeval *start, struct timeval *stop)
 }
 
 /**
+ * Test period.
+ */
+#ifdef COVERAGE
+#define TEST_PERIOD 100000LL
+#define TEST_DELTA 1
+#else
+#define TEST_PERIOD 1000000LL
+#define TEST_DELTA 10
+#endif
+
+/**
  * Start time measurement.
  */
 #define SPEED_START \
@@ -63,23 +71,21 @@ static int64_t diffgettimeofday(struct timeval *start, struct timeval *stop)
 #define SPEED_STOP \
 		count += delta; \
 		gettimeofday(&stop, 0); \
-	} while (diffgettimeofday(&start, &stop) < period * 1000LL); \
+	} while (diffgettimeofday(&start, &stop) < TEST_PERIOD); \
 	ds = size * (int64_t)count * nd; \
 	dt = diffgettimeofday(&start, &stop);
 
-void speed(int period)
+void speed(void)
 {
 	struct timeval start;
 	struct timeval stop;
 	int64_t ds;
 	int64_t dt;
 	int i, j;
-	unsigned char digest[HASH_SIZE];
-	unsigned char seed[HASH_SIZE];
 	int id[RAID_PARITY_MAX];
 	int ip[RAID_PARITY_MAX];
 	int count;
-	int delta = period >= 1000 ? 10 : 1;
+	int delta = TEST_DELTA;
 	int size = TEST_SIZE;
 	int nd = TEST_COUNT;
 	int nv;
@@ -88,7 +94,7 @@ void speed(int period)
 
 	nv = nd + RAID_PARITY_MAX + 1;
 
-	v = malloc_nofail_vector_align(nd, nv, size, &v_alloc);
+	v = raid_malloc_vector(nd, nv, size, &v_alloc);
 
 	/* initialize disks with fixed data */
 	for (i = 0; i < nd; ++i)
@@ -98,61 +104,11 @@ void speed(int period)
 	memset(v[nd+RAID_PARITY_MAX], 0, size);
 	raid_zero(v[nd+RAID_PARITY_MAX]);
 
-	/* hash seed */
-	for (i = 0; i < HASH_SIZE; ++i)
-		seed[i] = i;
-
 	/* basic disks and parity mapping */
 	for (i = 0; i < RAID_PARITY_MAX; ++i) {
 		id[i] = i;
 		ip[i] = i;
 	}
-
-	printf(PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
-
-#ifdef __GNUC__
-	printf("Compiler gcc " __VERSION__ "\n");
-#endif
-
-#ifdef CONFIG_X86
-	{
-		char vendor[CPU_VENDOR_MAX];
-		unsigned family;
-		unsigned model;
-
-		raid_cpu_info(vendor, &family, &model);
-
-		printf("CPU %s, family %u, model %u, flags%s%s%s%s%s%s%s%s\n", vendor, family, model,
-			raid_cpu_has_mmx() ? " mmx" : "",
-			raid_cpu_has_sse2() ? " sse2" : "",
-			raid_cpu_has_ssse3() ? " ssse3" : "",
-			raid_cpu_has_sse42() ? " sse42" : "",
-			raid_cpu_has_avx() ? " avx" : "",
-			raid_cpu_has_avx2() ? "avx2" : "",
-			raid_cpu_has_slowmult() ? " slowmult" : "",
-			raid_cpu_has_slowpshufb()  ? " slowpshufb" : ""
-		);
-	}
-#else
-	printf("CPU is not a x86/x64\n");
-#endif
-#if WORDS_BIGENDIAN
-	printf("Memory is big-endian %d-bit\n", (int)sizeof(void *) * 8);
-#else
-	printf("Memory is little-endian %d-bit\n", (int)sizeof(void *) * 8);
-#endif
-
-#if HAVE_FUTIMENS
-	printf("Support nanosecond timestamps with futimens()\n");
-#elif HAVE_FUTIMES
-	printf("Support nanosecond timestamps with futimes()\n");
-#elif HAVE_FUTIMESAT
-	printf("Support nanosecond timestamps with futimesat()\n");
-#else
-	printf("Does not support nanosecond timestamps\n");
-#endif
-
-	printf("\n");
 
 	printf("Speed test using %u data buffers of %u bytes, for a total of %u KiB.\n", nd, size, nd * size / 1024);
 	printf("Memory blocks have a displacement of %u bytes to improve cache performance.\n", RAID_MALLOC_DISPLACEMENT);
@@ -173,78 +129,8 @@ void speed(int period)
 	printf("\n");
 	printf("\n");
 
-	/* crc table */
-	printf("CRC used to check the content file integrity:\n");
-
-	printf("%8s", "table");
-	fflush(stdout);
-
-	SPEED_START {
-		for (j = 0; j < nd; ++j)
-			crc32c_gen(0, v[j], size);
-	} SPEED_STOP
-
-	printf("%8"PRIu64, ds / dt);
-	printf("\n");
-
-	printf("%8s", "intel");
-	fflush(stdout);
-
-#if HAVE_CRC32B
-	if (raid_cpu_has_sse42()) {
-		SPEED_START {
-			for (j = 0; j < nd; ++j)
-				crc32c_x86(0, v[j], size);
-		} SPEED_STOP
-
-		printf("%8"PRIu64, ds / dt);
-	}
-#endif
-	printf("\n");
-	printf("\n");
-
-	/* hash table */
-	printf("Hash used to check the data blocks integrity:\n");
-
-	printf("%8s", "");
-	printf("%8s", "best");
-	printf("%8s", "murmur3");
-	printf("%8s", "spooky2");
-	printf("\n");
-
-	printf("%8s", "hash");
-#ifdef CONFIG_X86
-	if (sizeof(void *) == 4 && !raid_cpu_has_slowmult())
-		printf("%8s", "murmur3");
-	else
-		printf("%8s", "spooky2");
-#else
-	if (sizeof(void *) == 4)
-		printf("%8s", "murmur3");
-	else
-		printf("%8s", "spooky2");
-#endif
-	fflush(stdout);
-
-	SPEED_START {
-		for (j = 0; j < nd; ++j)
-			memhash(HASH_MURMUR3, seed, digest, v[j], size);
-	} SPEED_STOP
-
-	printf("%8"PRIu64, ds / dt);
-	fflush(stdout);
-
-	SPEED_START {
-		for (j = 0; j < nd; ++j)
-			memhash(HASH_SPOOKY2, seed, digest, v[j], size);
-	} SPEED_STOP
-
-	printf("%8"PRIu64, ds / dt);
-	printf("\n");
-	printf("\n");
-
 	/* RAID table */
-	printf("RAID functions used for computing the parity with 'sync':\n");
+	printf("RAID functions used for computing the parity:\n");
 	printf("%8s", "");
 	printf("%8s", "best");
 	printf("%8s", "int8");
@@ -565,7 +451,7 @@ void speed(int period)
 	printf("\n");
 
 	/* recover table */
-	printf("RAID functions used for recovering with 'fix':\n");
+	printf("RAID functions used for recovering:\n");
 	printf("%8s", "");
 	printf("%8s", "best");
 	printf("%8s", "int8");
@@ -723,9 +609,30 @@ void speed(int period)
 	printf("\n");
 	printf("\n");
 
-	printf("If the 'best' expectations are wrong, please report it in the SnapRAID forum\n\n");
-
 	free(v_alloc);
 	free(v);
+}
+
+int main(void)
+{
+	printf("Speed test for the RAID Cauchy library\n\n");
+
+	raid_init();
+
+#ifdef CONFIG_X86
+	if (raid_cpu_has_sse2())
+		printf("Including x86 SSE2 functions\n");
+	if (raid_cpu_has_ssse3())
+		printf("Including x86 SSSE3 functions\n");
+#endif
+#ifdef CONFIG_X86_64
+	printf("Including x64 extended SSE register set\n");
+#endif
+
+	printf("\nPlease wait about 30 seconds...\n\n");
+
+	speed();
+
+	return 0;
 }
 
