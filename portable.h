@@ -32,6 +32,13 @@
 #endif
 
 /**
+ * Compiler extension
+ */
+#ifndef __always_inline
+#define __always_inline inline __attribute__((always_inline))
+#endif
+
+/**
  * Architecture.
  */
 #if defined(__i386__)
