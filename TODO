@@ -5,15 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
-* When renaming to .unrecoverable at now we always overwrite
-a previous copy losing partial, but potentially better, file recovery.
-Is it possible a better strategy ?
-Maybe we can rename the unrecoverable as the real file, if the real file
-is missing at the first open. This should ensure to always
-get better results if the file is hashed.
-Something like an incremental recovery, in case multiple fix commands
-are attempted.
-
 * Don't disable default 10d/12% if -p or -o is specified.
 But check that -p0 still work.
 
@@ -25,6 +16,14 @@ parity, but we can reuse the hash to check that the file was moved
 correctly.
 We can assume a file moved to another disk if it has the same name, size,
 and timestamp. Directory and inode can be different.
+This can be implemented with NEW blocks with HASH.
+In synch, we can do the hash check of such blocks before any other operation,
+before invalidating the parity of the moved files now converted in DELETED
+blocks.
+If an error is found, or we stop the sync, or we can use the parity of
+DELETED blocks to recover the missing ones.
+Missing blocks can be find by hash, using all the DELETED blocks with hash
+as search base.
 
 * Avoid to do optimized move operation if more files with
 same timestamp/size are present.
