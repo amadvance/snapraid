@@ -5,6 +5,8 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
+* Open log files in APPEND mode and put a timestamp inside.
+
 * Don't disable default 10d/12% if -p or -o is specified.
 But check that -p0 still work.
 
