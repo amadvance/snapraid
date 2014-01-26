@@ -1287,7 +1287,7 @@ void state_scan(struct snapraid_state* state, int output)
 			}
 		}
 		if (done) {
-			fprintf(stderr, ". Move operations won't be optimized.\n");
+			fprintf(stderr, ". Move operations won't be optimal (but you can live with that).\n");
 		}
 	}
 
@@ -1311,7 +1311,7 @@ void state_scan(struct snapraid_state* state, int output)
 			}
 		}
 		if (done) {
-			fprintf(stderr, ". Move operations won't be optimized.\n");
+			fprintf(stderr, ". Move operations won't be optimal (but you can live with that).\n");
 		}
 	}
 
