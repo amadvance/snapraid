@@ -163,8 +163,11 @@ static void scan_file_deallocate(struct snapraid_state* state, struct snapraid_d
 		if (disk->first_free_block > block_pos)
 			disk->first_free_block = block_pos;
 
+		/* allocated a new deleted block from the block we are going to delete */
+		deleted = deleted_dup(block);
+
 		/* in case we scan after an aborted sync, */
-		/* we could get also intermediate states like inv/chg/new */
+		/* we could get also intermediate states */
 		block_state = block_state_get(block);
 		switch (block_state) {
 		case BLOCK_STATE_BLK :
@@ -184,20 +187,17 @@ static void scan_file_deallocate(struct snapraid_state* state, struct snapraid_d
 				/* - File is now deleted after the aborted sync */
 				/* - Sync again, deleting the blocks (exactly here) */
 				/*   with the hash of CHG block not represeting the real parity state */
-				hash_invalid_set(block->hash);
+				hash_invalid_set(deleted->block.hash);
 			}
 			break;
 		case BLOCK_STATE_REP :
 			/* we just don't know the old hash, and then we set it to invalid */
-			hash_invalid_set(block->hash);
+			hash_invalid_set(deleted->block.hash);
 			break;
 		default:
 			fprintf(stderr, "Internal state inconsistency in scanning for block %u state %u\n", block->parity_pos, block_state);
 			exit(EXIT_FAILURE);
 		}
-
-		/* allocated a new deleted block from the block we are going to delete */
-		deleted = deleted_dup(block);
 
 		/* insert it in the list of deleted blocks */
 		tommy_list_insert_tail(&disk->deletedlist, &deleted->node, deleted);
@@ -208,7 +208,7 @@ static void scan_file_deallocate(struct snapraid_state* state, struct snapraid_d
 }
 
 /**
- * Checks if a file is completely formed of NEW/CHG/REP blocks,
+ * Checks if a file is completely formed of blocks with invalid parity,
  * and if it has at least one block.
  */
 static int file_is_full_invalid(struct snapraid_file* file)
@@ -225,11 +225,8 @@ static int file_is_full_invalid(struct snapraid_file* file)
 	/* but we check all just to be sure */
 	for(i=0;i<file->blockmax;++i) {
 		struct snapraid_block* block = &file->blockvec[i];
-		unsigned block_state;
 
-		block_state = block_state_get(block);
-
-		if (block_state != BLOCK_STATE_CHG && block_state != BLOCK_STATE_REP)
+		if (!block_has_invalid_parity(block))
 			return 0;
 	}
 
@@ -238,23 +235,27 @@ static int file_is_full_invalid(struct snapraid_file* file)
 
 /**
  * Keeps the file as it's (or with only a name/inode modification).
- * If a file contains only NEW blocks, it's reallocated to ensure
+ *
+ * If a file contains only blocks with invalid parity, it's reallocated to ensure
  * to always minimize the space used in the parity.
- * This could happen after a failed sync, when some other file is deleted,
+ *
+ * This could happen after a failed sync, when some other files are deleted,
  * and then new ones can be moved to fill the hole created.
  */
 static void scan_file_keep(struct snapraid_scan* scan, struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
 {
-	if (file_is_full_invalid(file)) {
-		/* deallocate the file from the parity */
-		scan_file_deallocate(state, disk, file);
+	/* if the file has some valid block, keep it where it is */
+	if (!file_is_full_invalid(file))
+		return;
 
-		/* remove the file from the list */
-		tommy_list_remove_existing(&disk->filelist, &file->nodelist);
+	/* deallocate the file from the parity */
+	scan_file_deallocate(state, disk, file);
 
-		/* insert the file in the delayed block allocation */
-		tommy_list_insert_tail(&scan->file_insert_list, &file->nodelist, file);
-	}
+	/* remove the file from the list */
+	tommy_list_remove_existing(&disk->filelist, &file->nodelist);
+
+	/* insert the file in the delayed block allocation */
+	tommy_list_insert_tail(&scan->file_insert_list, &file->nodelist, file);
 }
 
 /**
@@ -292,10 +293,7 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 	block_pos = disk->first_free_block;
 	block_max = tommy_arrayblk_size(&disk->blockarr);
 	for(i=0;i<file->blockmax;++i) {
-		struct snapraid_block* block;
-		unsigned block_state;
-
-		/* find a free block */
+		/* increment the position until the first really free block */
 		while (block_pos < block_max && block_has_file(tommy_arrayblk_get(&disk->blockarr, block_pos)))
 			++block_pos;
 
@@ -308,47 +306,64 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 		/* set the position */
 		file->blockvec[i].parity_pos = block_pos;
 
-		/* block to overwrite */
-		block = tommy_arrayblk_get(&disk->blockarr, block_pos);
+		/* if the file block already has an updated hash */
+		if (block_has_updated_hash(&file->blockvec[i])) {
+			/* the only possible case is for REP blocks */
+			assert(block_state_get(&file->blockvec[i]) == BLOCK_STATE_REP);
+		
+			/* convert to a REP block */
+			block_state_set(&file->blockvec[i], BLOCK_STATE_REP);
 
-		/* state of the block */
-		block_state = block_state_get(block);
-
-		/* if the block is an empty one */
-		if (block_state == BLOCK_STATE_EMPTY) {
-			block_state_set(&file->blockvec[i], BLOCK_STATE_CHG);
-
-			/* the block was empty and filled with zeros */
-			/* set the hash to the special ZERO value */
-			hash_zero_set(file->blockvec[i].hash);
+			/* and keep the hash as it's */
 		} else {
-			/* otherwise it's a DELETED one */
-			assert(block_state == BLOCK_STATE_DELETED);
+			struct snapraid_block* block;
+			unsigned block_state;
 
-			/* if we have not already cleared the undeterminated hash */
-			if (!state->clear_undeterminate_hash) {
-				/* in this case we don't know if the old state is still the one */
-				/* stored inside the parity, because after an aborted sync, the parity */
-				/* may be or may be not have been updated with the new data */
-				/* Then we reset the hash to a bogus value */
-				/* For example: */
-				/* - One file is deleted */
-				/* - Sync aborted after, updating the parity to the new state, */
-				/*   but without saving the content file representing this new state. */
-				/* - Another file is added again (exactly here) */
-				/*   with the hash of DELETED block not represeting the real parity state */
-				hash_invalid_set(block->hash);
-			}
+			/* the only possible case is for CHG blocks */
+			assert(block_state_get(&file->blockvec[i]) == BLOCK_STATE_CHG);
 
+			/* convert to a CHG block */
 			block_state_set(&file->blockvec[i], BLOCK_STATE_CHG);
-			memcpy(file->blockvec[i].hash, block->hash, HASH_SIZE);
+
+			/* block to overwrite */
+			block = tommy_arrayblk_get(&disk->blockarr, block_pos);
+
+			/* state of the block we are going to overwrite */
+			block_state = block_state_get(block);
+
+			/* if the block is an empty one */
+			if (block_state == BLOCK_STATE_EMPTY) {
+				/* the block was empty and filled with zeros */
+				/* set the hash to the special ZERO value */
+				hash_zero_set(file->blockvec[i].hash);
+			} else {
+				/* otherwise it's a DELETED one */
+				assert(block_state == BLOCK_STATE_DELETED);
+
+				/* copy the past hash of the block */
+				memcpy(file->blockvec[i].hash, block->hash, HASH_SIZE);
+
+				/* if we have not already cleared the undeterminated hash */
+				if (!state->clear_undeterminate_hash) {
+					/* in this case we don't know if the old state is still the one */
+					/* stored inside the parity, because after an aborted sync, the parity */
+					/* may be or may be not have been updated with the new data */
+					/* Then we reset the hash to a bogus value */
+					/* For example: */
+					/* - One file is deleted */
+					/* - Sync aborted after, updating the parity to the new state, */
+					/*   but without saving the content file representing this new state. */
+					/* - Another file is added again (exactly here) */
+					/*   with the hash of DELETED block not represeting the real parity state */
+					hash_invalid_set(file->blockvec[i].hash);
+				}
+			}
 		}
 
 		/* store in the disk map, after invalidating all the other blocks */
 		tommy_arrayblk_set(&disk->blockarr, block_pos, &file->blockvec[i]);
-	}
-	if (file->blockmax) {
-		/* set the new free position, but only if allocated something */
+
+		/* set the new free position */
 		disk->first_free_block = block_pos + 1;
 	}
 

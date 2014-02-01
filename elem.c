@@ -384,7 +384,13 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t 
 	for(i=0;i<file->blockmax;++i) {
 		file->blockvec[i].parity_pos = POS_INVALID;
 		file->blockvec[i].file_mixed = 0;
+
+		/* set the file */
 		block_file_set(&file->blockvec[i], file);
+
+		/* set an invalid hash */
+		block_state_set(&file->blockvec[i], BLOCK_STATE_CHG);
+		hash_zero_set(file->blockvec[i].hash);
 	}
 
 	return file;

@@ -103,7 +103,7 @@ struct snapraid_filter {
  * The block is new and hashed.
  * This happens when a new block overwrite a just removed block, or an empty space.
  *
- * The block hash field IS set, and it represents the hash of the NEW data.
+ * The block hash field IS set, and it represents the hash of the new data.
  * The parity for this disk is not updated, but it contains the old data referenced by the hash.
  */
 #define BLOCK_STATE_REP 3
@@ -285,7 +285,14 @@ struct snapraid_disk {
 	char name[PATH_MAX]; /**< Name of the disk. */
 	char dir[PATH_MAX]; /**< Mount point of the disk. It always terminates with /. */
 	uint64_t device; /**< Device identifier. */
-	block_off_t first_free_block; /**< First free searching block. */
+
+	/**
+	 * First free searching block.
+	 * Note that it doesn't necessarely point at the first free block,
+	 * but it just tell you that no free block is present before this position.
+	 */
+	block_off_t first_free_block;
+
 	int has_volatile_inodes; /**< If the underline filesystem has not persistent inodes. */
 	int has_unreliable_physical; /**< If the physical offset of files has duplicates. */
 	int has_different_uuid; /**< If the disk has a different UUID, meaning that it is not the same filesystem. */

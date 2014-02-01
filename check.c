@@ -49,7 +49,7 @@ struct failed_struct {
 	 * These "recovered" block are also written to the disk if the block is marked as ::is_bad.
 	 * But these files are marked also as FILE_IS_DAMAGED, and then renamed to .unrecoverable.
 	 *
-	 * Note that this could happen only for NEW and CHG blocks.
+	 * Note that this could happen only for CHG blocks.
 	 */
 	int is_outofdate;
 
