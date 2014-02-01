@@ -1088,8 +1088,10 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			sungetc(c, f);
 		}
 
-		if (strcmp(tag, "blk") == 0 || strcmp(tag, "new") == 0 || strcmp(tag, "chg") == 0) {
-			/* "blk"/""new"/"chg" command */
+		if (strcmp(tag, "blk") == 0 || strcmp(tag, "new") == 0
+			|| strcmp(tag, "chg") == 0 || strcmp(tag, "rep") == 0
+		) {
+			/* "blk"/""new"/"chg"/"rep" command */
 			block_off_t v_pos;
 			struct snapraid_block* block;
 
@@ -1126,10 +1128,14 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 					paritymax = v_pos + 1;
 				break;
 			case 'n' :
-				block_state_set(block, BLOCK_STATE_NEW);
+				/* deprecated NEW blocks are converted to CHG ones */
+				block_state_set(block, BLOCK_STATE_CHG);
 				break;
 			case 'c' :
 				block_state_set(block, BLOCK_STATE_CHG);
+				break;
+			case 'p' :
+				block_state_set(block, BLOCK_STATE_REP);
 				break;
 			}
 
@@ -1139,7 +1145,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			if (v_pos + 1 > blockmax)
 				blockmax = v_pos + 1;
 
-			/* read the hash only for 'blk/chg', and not for 'new' */
+			/* read the hash only for 'blk/chg/rep', and not for 'new' */
 			if (tag[0] != 'n') {
 				c = sgetc(f);
 				if (c != ' ') {
@@ -1147,17 +1153,23 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 					exit(EXIT_FAILURE);
 				}
 
-				/* set the hash only if present */
 				ret = sgethex(f, block->hash, HASH_SIZE);
 				if (ret < 0) {
 					fprintf(stderr, "Invalid '%s' specification in '%s' at line %u\n", tag, path, line);
 					exit(EXIT_FAILURE);
 				}
+			} else {
+				/* set the ZERO hash for deprecated NEW blocks */
+				hash_zero_set(block->hash);
+			}
 
-				/* clear undeterminated hashes before a sync */
-				if (tag[0] != 'b' && state->clear_undeterminate_hash) {
-					memset(block->hash, 0, HASH_SIZE);
-				}
+			/* if the block contains a hash of past data */
+			/* and we are clearing such undeterminated hashes */
+			if (state->clear_undeterminate_hash
+				&& block_has_past_hash(block)
+			) {
+				/* set the hash value to INVALID */
+				hash_invalid_set(block->hash);
 			}
 
 			/* we must not overwrite existing blocks */
@@ -1281,9 +1293,10 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				exit(EXIT_FAILURE);
 			}
 
-			/* clear undeterminated hashes before a sync */
+			/* if we are clearing undeterminated hashes */
 			if (state->clear_undeterminate_hash) {
-				memset(deleted->block.hash, 0, HASH_SIZE);
+				/* set the hash value to INVALID */
+				hash_invalid_set(deleted->block.hash);
 			}
 
 			/* we must not overwrite existing blocks */
@@ -1997,11 +2010,11 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 				case BLOCK_STATE_BLK :
 					sputsl("blk ", f);
 					break;
-				case BLOCK_STATE_NEW :
-					sputsl("new ", f);
-					break;
 				case BLOCK_STATE_CHG :
 					sputsl("chg ", f);
+					break;
+				case BLOCK_STATE_REP :
+					sputsl("rep ", f);
 					break;
 				default:
 					fprintf(stderr, "Internal state inconsistency in saving for block %u state %u\n", block->parity_pos, block_state);
@@ -2010,10 +2023,8 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 
 				sputu32(block->parity_pos, f);
 
-				if (block_state != BLOCK_STATE_NEW) {
-					sputc(' ', f);
-					sputhex(block->hash, HASH_SIZE, f);
-				}
+				sputc(' ', f);
+				sputhex(block->hash, HASH_SIZE, f);
 
 				sputeol(f);
 				if (serror(f)) {
@@ -2383,10 +2394,14 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 							paritymax = v_pos + 1;
 						break;
 					case 'n' :
-						block_state_set(block, BLOCK_STATE_NEW);
+						/* deprecated NEW blocks are converted to CHG ones */
+						block_state_set(block, BLOCK_STATE_CHG);
 						break;
 					case 'g' :
 						block_state_set(block, BLOCK_STATE_CHG);
+						break;
+					case 'p' :
+						block_state_set(block, BLOCK_STATE_REP);
 						break;
 					default:
 						decoding_error(path, f);
@@ -2396,18 +2411,25 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 					block->parity_pos = v_pos;
 
-					/* read the hash only for 'blk/chg', and not for 'new' */
+					/* read the hash only for 'blk/chg/rep', and not for 'new' */
 					if (c != 'n') {
-						/* set the hash only if present */
 						ret = sread(f, block->hash, HASH_SIZE);
 						if (ret < 0) {
 							decoding_error(path, f);
 							exit(EXIT_FAILURE);
 						}
+					} else {
+						/* set the ZERO hash for deprecated NEW blocks */
+						hash_zero_set(block->hash);
+					}
 
-						/* clear undeterminated hashes before a sync */
-						if (c != 'b' && state->clear_undeterminate_hash)
-							memset(block->hash, 0, HASH_SIZE);
+					/* if the block contains a hash of past data */
+					/* and we are clearing such undeterminated hashes */
+					if (state->clear_undeterminate_hash
+						&& block_has_past_hash(block)
+					) {
+						/* set the hash value to INVALID */
+						hash_invalid_set(block->hash);
 					}
 
 					/* we must not overwrite existing blocks */
@@ -2573,9 +2595,10 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 							exit(EXIT_FAILURE);
 						}
 
-						/* clear undeterminated hashes before a sync */
+						/* if we are clearing undeterminated hashes */
 						if (state->clear_undeterminate_hash) {
-							memset(deleted->block.hash, 0, HASH_SIZE);
+							/* set the hash value to INVALID */
+							hash_invalid_set(deleted->block.hash);
 						}
 
 						/* we must not overwrite existing blocks */
@@ -3092,11 +3115,11 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 				case BLOCK_STATE_BLK :
 					sputc('b', f);
 					break;
-				case BLOCK_STATE_NEW :
-					sputc('n', f);
-					break;
 				case BLOCK_STATE_CHG :
 					sputc('g', f);
+					break;
+				case BLOCK_STATE_REP :
+					sputc('p', f);
 					break;
 				default:
 					fprintf(stderr, "Internal state inconsistency in saving for block %u state %u\n", v_pos, block_state);
@@ -3108,10 +3131,8 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 				v_count = end - begin;
 				sputb32(v_count, f);
 
-				if (block_state != BLOCK_STATE_NEW) {
-					for(b=begin;b<end;++b) {
-						swrite(blockvec[b].hash, HASH_SIZE, f);
-					}
+				for(b=begin;b<end;++b) {
+					swrite(blockvec[b].hash, HASH_SIZE, f);
 				}
 
 				if (serror(f)) {

@@ -170,23 +170,26 @@ static void scan_file_deallocate(struct snapraid_state* state, struct snapraid_d
 		case BLOCK_STATE_BLK :
 			/* we keep the hash making it an "old" hash, because the parity is still containing data for it */
 			break;
-		case BLOCK_STATE_NEW :
-			/* NEW blocks don't have a hash, then we set it to the 'unspecified' 0 value */
-			memset(block->hash, 0, HASH_SIZE);
-			break;
 		case BLOCK_STATE_CHG :
 			/* if we have not already cleared the undeterminated hash */
 			if (!state->clear_undeterminate_hash) {
 				/* in these cases we don't know if the old state is still the one */
 				/* stored inside the parity, because after an aborted sync, the parity */
-				/* may be or may be not have been updated with the new data */
-				/* Then we reset the hash to a bogus value */
-				/* Note that this condition is possible only if: */
-				/* - new files added/modified */
-				/* - aborted sync, without saving the content file */
-				/* - files deleted after the aborted sync */
-				memset(block->hash, 0, HASH_SIZE);
+				/* may be or may be not have been updated with the data that it's now */
+				/* deleted. Then we reset the hash to a bogus value. */
+				/* For example: */
+				/* - One file is added */
+				/* - Sync aborted after updating the parity to the new state, */
+				/*   but without saving the content file representing this new state. */
+				/* - File is now deleted after the aborted sync */
+				/* - Sync again, deleting the blocks (exactly here) */
+				/*   with the hash of CHG block not represeting the real parity state */
+				hash_invalid_set(block->hash);
 			}
+			break;
+		case BLOCK_STATE_REP :
+			/* we just don't know the old hash, and then we set it to invalid */
+			hash_invalid_set(block->hash);
 			break;
 		default:
 			fprintf(stderr, "Internal state inconsistency in scanning for block %u state %u\n", block->parity_pos, block_state);
@@ -205,7 +208,7 @@ static void scan_file_deallocate(struct snapraid_state* state, struct snapraid_d
 }
 
 /**
- * Checks if a file is completely formed of NEW or CHG blocks,
+ * Checks if a file is completely formed of NEW/CHG/REP blocks,
  * and if it has at least one block.
  */
 static int file_is_full_invalid(struct snapraid_file* file)
@@ -226,7 +229,7 @@ static int file_is_full_invalid(struct snapraid_file* file)
 
 		block_state = block_state_get(block);
 
-		if (block_state != BLOCK_STATE_NEW && block_state != BLOCK_STATE_CHG)
+		if (block_state != BLOCK_STATE_CHG && block_state != BLOCK_STATE_REP)
 			return 0;
 	}
 
@@ -290,6 +293,7 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 	block_max = tommy_arrayblk_size(&disk->blockarr);
 	for(i=0;i<file->blockmax;++i) {
 		struct snapraid_block* block;
+		unsigned block_state;
 
 		/* find a free block */
 		while (block_pos < block_max && block_has_file(tommy_arrayblk_get(&disk->blockarr, block_pos)))
@@ -307,12 +311,19 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 		/* block to overwrite */
 		block = tommy_arrayblk_get(&disk->blockarr, block_pos);
 
+		/* state of the block */
+		block_state = block_state_get(block);
+
 		/* if the block is an empty one */
-		if (block == BLOCK_EMPTY) {
-			/* we just overwrite it with a NEW one */
-			block_state_set(&file->blockvec[i], BLOCK_STATE_NEW);
+		if (block_state == BLOCK_STATE_EMPTY) {
+			block_state_set(&file->blockvec[i], BLOCK_STATE_CHG);
+
+			/* the block was empty and filled with zeros */
+			/* set the hash to the special ZERO value */
+			hash_zero_set(file->blockvec[i].hash);
 		} else {
 			/* otherwise it's a DELETED one */
+			assert(block_state == BLOCK_STATE_DELETED);
 
 			/* if we have not already cleared the undeterminated hash */
 			if (!state->clear_undeterminate_hash) {
@@ -320,11 +331,13 @@ static void scan_file_insert(struct snapraid_state* state, struct snapraid_disk*
 				/* stored inside the parity, because after an aborted sync, the parity */
 				/* may be or may be not have been updated with the new data */
 				/* Then we reset the hash to a bogus value */
-				/* Note that this condition is possible only if: */
-				/* - files are deleted */
-				/* - aborted sync, without saving the content file */
-				/* - files are readded after the aborted sync */
-				memset(block->hash, 0, HASH_SIZE);
+				/* For example: */
+				/* - One file is deleted */
+				/* - Sync aborted after, updating the parity to the new state, */
+				/*   but without saving the content file representing this new state. */
+				/* - Another file is added again (exactly here) */
+				/*   with the hash of DELETED block not represeting the real parity state */
+				hash_invalid_set(block->hash);
 			}
 
 			block_state_set(&file->blockvec[i], BLOCK_STATE_CHG);

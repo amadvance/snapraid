@@ -77,19 +77,15 @@ struct snapraid_filter {
 #define BLOCK_STATE_BLK 1
 
 /**
- * The block is new and not yet hashed, and it's using a space previously empty.
+ * The block is new and not yet hashed.
+ * This happens when a new block overwrite a just removed block, or an empty space.
  *
- * The block hash field IS NOT set.
- * The parity for this disk is not updated, but it contains 0.
- */
-#define BLOCK_STATE_NEW 2
-
-/**
- * The block is new and not yet hashed, and it's using the space of a block not existing anymore.
- * This happens when a new block overwrite a just removed block.
+ * The block hash field IS set but it may be also INVALID or ZERO,
+ * and it represents the hash of the OLD data.
  *
- * The block hash field IS set, and it represents the hash of the previous data,
- * but only if it's different by all 0.
+ * If the block was empty, the hash is set to the special ZERO value.
+ * If the block was lost, the hash is set to the special INVALID value.
+ *
  * The parity for this disk is not updated, but it contains the old data referenced by the hash.
  *
  * If the state is read from an incomplete sync, we don't really know if the hash is referring at the
@@ -101,7 +97,16 @@ struct snapraid_filter {
  * Check and fix are instead able to work with unsynched hashes.
  * Scrub is not affected because it ignores CHG/DELETED blocks.
  */
-#define BLOCK_STATE_CHG 3
+#define BLOCK_STATE_CHG 2
+
+/**
+ * The block is new and hashed.
+ * This happens when a new block overwrite a just removed block, or an empty space.
+ *
+ * The block hash field IS set, and it represents the hash of the NEW data.
+ * The parity for this disk is not updated, but it contains the old data referenced by the hash.
+ */
+#define BLOCK_STATE_REP 3
 
 /**
  * This block is a deleted one.
@@ -462,42 +467,83 @@ static inline void block_state_set(struct snapraid_block* block, unsigned state)
 }
 
 /**
- * Checks if the specified block is valid and has an updated hash.
+ * Checks if the specified block has an updated hash.
  *
- * Note that EMPTY / CHG / NEW / DELETED return 0.
+ * Note that EMPTY / CHG / DELETED return 0.
  */
 static inline int block_has_updated_hash(const struct snapraid_block* block)
 {
 	unsigned state = block_state_get(block);
 
-	return state == BLOCK_STATE_BLK;
+	return state == BLOCK_STATE_BLK || state == BLOCK_STATE_REP;
 }
 
 /**
- * Checks if the specified block has any kind of hash.
- * Even a not updated one.
+ * Checks if the specified block has an a past hash.
  *
- * Note that for DELETED / CHG with a NULL hash returns 0,
- * because in these cases the hash is lost.
+ * Note that EMPTY / BLK / REP return 0.
  */
-static inline int block_has_any_hash(const struct snapraid_block* block)
+static inline int block_has_past_hash(const struct snapraid_block* block)
 {
-	unsigned block_state = block_state_get(block);
+	unsigned state = block_state_get(block);
+
+	return state == BLOCK_STATE_CHG || state == BLOCK_STATE_DELETED;
+}
+
+/**
+ * Checks if the specified hash is invalid.
+ *
+ * An invalid hash is represented with all bytes at 0x00.
+ */
+static inline int hash_is_invalid(const unsigned char* hash)
+{
 	unsigned i;
 
-	switch (block_state) {
-	case BLOCK_STATE_BLK :
-		return 1;
-	case BLOCK_STATE_CHG :
-	case BLOCK_STATE_DELETED :
-		/* the hash is valid only if different than 0 */
-		for(i=0;i<HASH_SIZE;++i)
-			if (block->hash[i] != 0)
-				return 1;
-		break;
-	}
+	for(i=0;i<HASH_SIZE;++i)
+		if (hash[i] != 0x00)
+			return 0;
 
-	return 0;
+	return 1;
+}
+
+/**
+ * Checks if the specified hash represent the zero block.
+ *
+ * A zero hash is represented with all bytes at 0xFF.
+ */
+static inline int hash_is_zero(const unsigned char* hash)
+{
+	unsigned i;
+
+	for(i=0;i<HASH_SIZE;++i)
+		if (hash[i] != 0xFF)
+			return 0;
+
+	return 1;
+}
+
+/**
+ * Checks if the specified hash is a real hash.
+ */
+static inline int hash_is_real(const unsigned char* hash)
+{
+	return !hash_is_zero(hash) && !hash_is_invalid(hash);
+}
+
+/**
+ * Set the hash to the special INVALID value.
+ */
+static inline void hash_invalid_set(unsigned char* hash)
+{
+	memset(hash, 0x00, HASH_SIZE);
+}
+
+/**
+ * Set the hash to the special ZERO value.
+ */
+static inline void hash_zero_set(unsigned char* hash)
+{
+	memset(hash, 0xFF, HASH_SIZE);
 }
 
 /**
@@ -509,21 +555,8 @@ static inline int block_has_file(const struct snapraid_block* block)
 {
 	unsigned state = block_state_get(block);
 
-	return state == BLOCK_STATE_BLK || state == BLOCK_STATE_NEW || state == BLOCK_STATE_CHG;
-}
-
-/**
- * Checks if the specified block has the same presence state,
- * meaning that it's now present when before it was also present,
- * or it's now absent and before it was also absent.
- *
- * Note that NEW / DELETED return 0.
- */
-static inline int block_has_same_presence(const struct snapraid_block* block)
-{
-	unsigned state = block_state_get(block);
-
-	return state == BLOCK_STATE_EMPTY || state == BLOCK_STATE_BLK || state == BLOCK_STATE_CHG;
+	return state == BLOCK_STATE_BLK
+		|| state == BLOCK_STATE_CHG || state == BLOCK_STATE_REP;
 }
 
 /**
@@ -535,7 +568,8 @@ static inline int block_has_invalid_parity(const struct snapraid_block* block)
 {
 	unsigned state = block_state_get(block);
 
-	return state == BLOCK_STATE_DELETED || state == BLOCK_STATE_NEW || state == BLOCK_STATE_CHG;
+	return state == BLOCK_STATE_DELETED
+		|| state == BLOCK_STATE_CHG || state == BLOCK_STATE_REP;
 }
 
 /**

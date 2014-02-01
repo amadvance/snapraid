@@ -34,7 +34,8 @@
  */
 struct failed_struct {
 	/**
-	 * If the block needs to be recovered and rewritten to the disk.
+	 * If we know for sure that the block is garbage or missing
+	 * and it needs to be recovered and rewritten to the disk.
 	 */
 	int is_bad;
 
@@ -102,7 +103,11 @@ static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned d
 
 	/* check if the recovered blocks are OK */
 	for(j=0;j<failed_count;++j) {
-		if (block_has_updated_hash(failed[failed_map[j]].block)) { /* if the block can be checked */
+		/* if we are expected to recover this block */
+		if (!failed[failed_map[j]].is_outofdate
+			/* if the block has a hash to check */
+			&& block_has_updated_hash(failed[failed_map[j]].block)
+		) {
 			hash_checked = 1;
 			if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
 				break;
@@ -173,7 +178,11 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 	/* if there isn't, we have to sacrifice a parity block to check that the result is correct */
 	has_hash = 0;
 	for(i=0;i<failed_count;++i) {
-		if (block_has_updated_hash(failed[failed_map[i]].block)) /* if the block can be checked */
+		/* if we are expected to recover this block */
+		if (!failed[failed_map[i]].is_outofdate
+			/* if the block has a hash to check */
+			&& block_has_updated_hash(failed[failed_map[i]].block)
+		)
 			has_hash = 1;
 	}
 
@@ -274,18 +283,26 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 
 	error = 0;
 
+	/* if nothing failed, just recompute the parity */
+	if (failed_count == 0) {
+		raid_gen(diskmax, state->level, state->block_size, buffer);
+		return 0;
+	}
+
 	/* Here we have to try two different strategies to recover, because in case the 'sync' */
 	/* process is aborted, we don't know if the parity data is really updated just like after 'sync', */
 	/* or if it still represents the state before the 'sync'. */
 
-	/* As first, we assume that the parity is already computed for the current state */
+	/* Note that if the 'sync' ends normally, we don't have any DELETED, REP and CHG blocks */
+	/* and the two strategies are identical */
+
+	/* As first, we assume that the parity IS updated for the current state */
 	/* and that we are going to recover the state after the last 'sync'. */
-	/* This is the normal condition. */
-	/* In this case, parity contains correct info for BLK, CHG (new version) and NEW blocks, */
-	/* and not for DELETED ones. */
+	/* In this case, parity contains info from BLK, REP and CHG blocks, */
+	/* but not for DELETED. */
 	/* We need to put in the recovering process only the bad blocks, because all the */
-	/* others already contains the correct data read frin disk, and the parity is correctly computed for them. */
-	/* We are interested to recover BLK, CHG and NEW blocks if they are marked as bad, */
+	/* others already contains the correct data read from disk, and the parity is correctly computed for them. */
+	/* We are interested to recover BLK, REP and CHG blocks if they are marked as bad, */
 	/* but we are not interested in DELETED ones. */
 
 	n = 0;
@@ -296,22 +313,14 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 
 			assert(block_state != BLOCK_STATE_DELETED); /* we cannot have bad DELETED blocks */
 
-			if (block_state == BLOCK_STATE_BLK) { /* if we have the hash for it */
-				/* try to fetch the block using the hash */
-				if (state_import_fetch(state, rehash, failed[j].block->hash, buffer[failed[j].index]) == 0) {
-					/* we have corrected it! */
-				} else {
-					/* otherwise try to recover it */
-					failed_map[n] = j;
-					++n;
-				
-					/* we have something to try to recover */
-					something_to_recover = 1;
-				}
+			/* if we have the hash for it */
+			if ((block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP)
+				/* try to fetch the block using the known hash */
+				&& state_import_fetch(state, rehash, failed[j].block->hash, buffer[failed[j].index]) == 0
+			) {
+				/* we already have corrected it! */
 			} else {
-				assert(block_state == BLOCK_STATE_CHG || block_state == BLOCK_STATE_NEW);
-
-				/* otherwise it's CHG or NEW and we try to recover it */
+				/* otherwise try to recover it */
 				failed_map[n] = j;
 				++n;
 
@@ -330,7 +339,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 
 	ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_recov, buffer_zero);
 	if (ret == 0) {
-		/* reprocess the blocks for NEW and CHG ones, for which we don't have a hash to check */
+		/* reprocess the CHG blocks, for which we don't have a hash to check */
 		/* if they were BAD we have to use some euristics to ensure that we have recovered  */
 		/* the state after the sync. If unsure, we assume the worst case */
 
@@ -339,7 +348,22 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 			if (failed[j].is_bad) {
 				unsigned block_state = block_state_get(failed[j].block);
 
-				if (block_state == BLOCK_STATE_NEW) {
+				/* BLK and REP blocks are always OK, because at this point */
+				/* we have already checked their hash */
+				if (block_state != BLOCK_STATE_CHG) {
+					assert(block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP);
+					continue;
+				}
+
+				/* for CHG blocks we have to 'guess' if they are correct or not */
+
+				/* if the hash is invalid we cannot check the result */
+				/* this could happen if we have lost this information */
+				/* after an aborted sync */
+				if (hash_is_invalid(failed[j].block->hash)) {
+					/* it may contain garbage */
+					failed[j].is_outofdate = 1;
+				} else if (hash_is_zero(failed[j].block->hash)) {
 					/* if the block is not filled with 0, we are sure to have */
 					/* restored it to the state after the 'sync' */
 					/* instead, if the block is filled with 0, it could be either that the */
@@ -349,14 +373,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 						/* it may contain garbage */
 						failed[j].is_outofdate = 1;
 					}
-				} else if (block_state == BLOCK_STATE_CHG) {
-					/* if the hash is a bogus value we cannot check the result */
-					/* this could happen if we have lost this information */
-					/* after an aborted sync */
-					if (memcmp(failed[j].block->hash, buffer_zero, HASH_SIZE) == 0) {
-						/* it may contain garbage */
-						failed[j].is_outofdate = 1;
-					} else
+				} else {
 					/* if the hash is different than the previous one, we are sure to have */
 					/* restored it to the state after the 'sync' */
 					/* instead, if the hash matches, it could be either that the */
@@ -375,14 +392,13 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 	if (ret > 0)
 		error += ret;
 
-	/* Now assume that the parity computation was not updated at the current state, */
+	/* Now assume that the parity IS NOT updated at the current state, */
 	/* but still represent the state before the last 'sync' process. */
-	/* This may happen only if a 'sync' is aborted by a crash or manually. */
-	/* In this case, parity contains info for BLK, CHG (old version) and DELETED blocks, */
-	/* but not for CHG (new version) and NEW ones. */
+	/* In this case, parity contains info from BLK, REP (old version), CHG (old version) and DELETED blocks, */
+	/* but not for REP (new version) and CHG (new version). */
 	/* We are interested to recover BLK ones marked as bad, */
-	/* but we are not interested to recover NEW and CHG (new version) blocks, even if marked as bad, */
-	/* because we don't have parity for them and it's just impossible, */
+	/* but we are not interested to recover CHG (new version) and REP (new version) blocks, */
+	/* even if marked as bad, because we don't have parity for them and it's just impossible, */
 	/* and we are not interested to recover DELETED ones. */
 	n = 0;
 	something_to_recover = 0; /* keep track if there is at least one block to fix */
@@ -391,16 +407,30 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 
 		if (block_state == BLOCK_STATE_DELETED
 			|| block_state == BLOCK_STATE_CHG
+			|| block_state == BLOCK_STATE_REP
 		) {
-			/* If the block is CHG or DELETED, we don't have the original content of block, */
+			/* If the block is CHG, REP or DELETED, we don't have the original content of block, */
 			/* and we must try to recover it. */
-			/* This apply to CHG blocks even if they are not marked bad, */
+			/* This apply to CHG and REP blocks even if they are not marked bad, */
 			/* because the parity is computed with old content, and not with the new one. */
 			/* Note that this recovering is done just to make possible to recover any other BLK one, */
-			/* we are not really interested in DELETED and CHG (old version) ones. */
+			/* we are not really interested in DELETED, CHG (old version) and REP (old version). */
 
-			/* try to fetch the old block using the old hash */
-			if (state_import_fetch(state, rehash, failed[j].block->hash, buffer[failed[j].index]) == 0) {
+			if (block_state == BLOCK_STATE_CHG
+				&& hash_is_zero(failed[j].block->hash)
+			) {
+				/* If the block was a ZERO block, restore it to the original 0 as before the 'sync' */
+				/* We do this to just allow recovering of other BLK ones */
+
+				memset(buffer[failed[j].index], 0, state->block_size);
+				/* note that from now the buffer is definitively lost */
+				/* we can do this only because it's the last retry of recovering */
+
+				/* try to fetch the old block using the old hash for CHG and DELETED blocks */
+			} else if ((block_state == BLOCK_STATE_CHG || block_state == BLOCK_STATE_DELETED)
+				&& hash_is_real(failed[j].block->hash)
+				&& state_import_fetch(state, rehash, failed[j].block->hash, buffer[failed[j].index]) == 0) {
+
 				/* note that from now the buffer is definitively lost */
 				/* we can do this only because it's the last retry of recovering */
 			} else {
@@ -416,18 +446,6 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 			/* note that if the block is not marked as is_bad, */
 			/* we are not going to write it in the disk */
 			failed[j].is_outofdate = 1;
-		} else if (block_state == BLOCK_STATE_NEW) {
-			/* If the block is NEW, restore it to the original 0 as before the 'sync' */
-			/* Also in this case, we do this to just allow recovering of other BLK ones */
-
-			memset(buffer[failed[j].index], 0, state->block_size);
-			/* note that from now the buffer is definitively lost */
-			/* we can do this only because it's the last retry of recovering */
-
-			/* mark that we have restored an old state */
-			/* note that if the block is not marked as is_bad, */
-			/* we are not going to write it in the disk */
-			failed[j].is_outofdate = 1;
 		} else if (failed[j].is_bad) {
 			/* If the block is bad we don't know its content, and we try to recover it */
 			/* At this point, we can have only BLK ones */
@@ -436,7 +454,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 
 			/* we have something we are interested to recover */
 			something_to_recover = 1;
-		
+
 			/* we try to recover it */
 			failed_map[n] = j;
 			++n;
@@ -447,7 +465,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 	if (something_to_recover) {
 		ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_recov, buffer_zero);
 		if (ret == 0) {
-			/* we alreay marked as outdated NEW and CHG blocks, we don't need to do it again */
+			/* we alreay marked as outdated CHG and REP blocks, we don't need to do it again */
 			return 0;
 		}
 		if (ret > 0)
@@ -608,6 +626,8 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				/* mark the parity as invalid, and don't try to check/fix it */
 				/* because it will be recomputed at the next sync */
 				valid_parity = 0;
+
+				/* follow */
 			}
 
 			/* if the block is DELETED */
@@ -714,7 +734,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			read_size = handle_read(&handle[j], block, buffer[j], state->block_size, stdlog);
 			if (read_size == -1) {
 				/* save the failed block for the check/fix */
-				failed[failed_count].is_bad = 1;
+				failed[failed_count].is_bad = 1; /* it's bad because we cannot read it */
 				failed[failed_count].is_outofdate = 0;
 				failed[failed_count].index = j;
 				failed[failed_count].block = block;
@@ -728,11 +748,13 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 			countsize += read_size;
 
-			/* if the block is potentially not updated */
-			if (block_state == BLOCK_STATE_NEW || block_state == BLOCK_STATE_CHG) {
-				/* store it in the failed set, because potentially */
-				/* the parity may be still computed with the previous content */
-				failed[failed_count].is_bad = 0;
+			/* always insert CHG blocks, the repair functions needs all of them */
+			/* because the parity may be still referring at the old state */
+			/* and the repair must be aware of it */
+			if (block_state == BLOCK_STATE_CHG) {
+				/* we DO NOT mark them as bad to avoid to overwrite them with wrong data. */
+				/* if we don't have a hash, we always assume the first read of the block correct. */
+				failed[failed_count].is_bad = 0; /* we assume the CHG block correct */
 				failed[failed_count].is_outofdate = 0;
 				failed[failed_count].index = j;
 				failed[failed_count].block = block;
@@ -741,29 +763,44 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				continue;
 			}
 
-			/* if the block has the hash */
-			if (block_state == BLOCK_STATE_BLK) {
-				/* compute the hash of the block just read */
-				if (rehash) {
-					memhash(state->prevhash, state->prevhashseed, hash, buffer[j], read_size);
-				} else {
-					memhash(state->hash, state->hashseed, hash, buffer[j], read_size);
-				}
+			assert(block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP);
 
-				/* compare the hash */
-				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
-					/* save the failed block for the check/fix */
-					failed[failed_count].is_bad = 1;
-					failed[failed_count].is_outofdate = 0;
-					failed[failed_count].index = j;
-					failed[failed_count].block = block;
-					failed[failed_count].handle = &handle[j];
-					++failed_count;
+			/* compute the hash of the block just read */
+			if (rehash) {
+				memhash(state->prevhash, state->prevhashseed, hash, buffer[j], read_size);
+			} else {
+				memhash(state->hash, state->hashseed, hash, buffer[j], read_size);
+			}
 
-					fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
-					++error;
-					continue;
-				}
+			/* compare the hash */
+			if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
+				/* save the failed block for the check/fix */
+				failed[failed_count].is_bad = 1; /* it's bad because the hash doesn't match */
+				failed[failed_count].is_outofdate = 0;
+				failed[failed_count].index = j;
+				failed[failed_count].block = block;
+				failed[failed_count].handle = &handle[j];
+				++failed_count;
+
+				fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
+				++error;
+				continue;
+			}
+
+			/* always insert REP blocks, the repair functions needs all of them */
+			/* because the parity may be still referring at the old state */
+			/* and the repair must be aware of it */
+			if (block_state == BLOCK_STATE_REP) {
+				failed[failed_count].is_bad = 0; /* it's not bad */
+				failed[failed_count].is_outofdate = 0;
+				failed[failed_count].index = j;
+				failed[failed_count].block = block;
+				failed[failed_count].handle = &handle[j];
+				++failed_count;
+
+				fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
+				++error;
+				continue;
 			}
 		}
 

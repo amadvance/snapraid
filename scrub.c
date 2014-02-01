@@ -182,6 +182,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		silent_error_on_this_block = 0;
 
 		/* if all the blocks at this address are synched */
+		/* if not, parity is not even checked */
 		block_is_unsynched = 0;
 
 		/* if we have to use the old hash */
@@ -195,6 +196,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			int file_is_unsynched;
 
 			/* if the file on this disk is synched */
+			/* if not, silent errors are assumed as expected error */
 			file_is_unsynched = 0;
 
 			/* by default no rehash in case of "continue" */
@@ -213,6 +215,15 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				/* use an empty block */
 				memset(buffer[j], 0, state->block_size);
 				continue;
+			}
+
+			/* if the block is unsynched, errors are expected */
+			if (block_has_invalid_parity(block)) {
+				/* report that the block and the file are not synched */
+				block_is_unsynched = 1;
+				file_is_unsynched = 1;
+
+				/* follow */
 			}
 
 			/* if the file is different than the current one, close it */

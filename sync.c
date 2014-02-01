@@ -209,6 +209,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			int read_size;
 			unsigned char hash[HASH_SIZE];
 			struct snapraid_block* block;
+			unsigned block_state;
 
 			/* by default no rehash in case of "continue" */
 			rehandle[j].block = 0;
@@ -223,27 +224,31 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			/* get the block */
 			block = disk_block_get(handle[j].disk, i);
 
-			/* if the block is NEW or DELETED, we have to update the parity */
-			/* to include this block change */
-			if (!block_has_same_presence(block)) {
-				parity_needs_to_be_updated = 1;
+			/* get the state of the block */
+			block_state = block_state_get(block);
 
-				/* it's important to check this before any other check */
-				/* because for DELETED block, we skip at the next check */
-				/* now continue with processing */
-			}
-
-			/* if the block is NEW, DELETED or CHG, */
+			/* if the block has invalid parity, */
 			/* we have to take care of it in case of recover */
 			if (block_has_invalid_parity(block)) {
 				/* store it in the failed set, because */
-				/* the parity is still computed with the previous content */
+				/* the parity may be still computed with the previous content */
 				failed[failed_count].index = j;
 				failed[failed_count].size = state->block_size;
 				failed[failed_count].block = block;
 				++failed_count;
 
-				/* now continue with processing */
+				/* if the block has invalid parity, we have to update the parity */
+				/* to include this block change */
+				/* This also apply to CHG blocks, but we are going to handle */
+				/* later this case to do the updates only if really needed */
+				if (block_state != BLOCK_STATE_CHG)
+					parity_needs_to_be_updated = 1;
+
+				/* note that DELETE blocks are skipped in the next check */
+				/* and we have to store them in the failed blocks */
+				/* before skipping */
+
+				/* follow */
 			}
 
 			/* if the block has no file, meanining that it's EMPTY or DELETED, */
@@ -361,34 +366,48 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			if (block_has_updated_hash(block)) {
 				/* compare the hash */
 				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
-					fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, handle[j].file->sub, block_file_pos(block));
-					fprintf(stderr, "Data error at file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
-					fprintf(stderr, "WARNING! Unexpected data error in a data disk! The block is now marked as bad!\n");
-					fprintf(stderr, "Try with 'snapraid -e fix' to recover!\n");
+					/* if the file has invalid parity, it's a REP changed during the sync */
+					if (block_has_invalid_parity(block)) {
+						fprintf(stdlog, "error:%u:%s:%s: Unexpected change\n", i, handle[j].disk->name, handle[j].file->sub);
+						fprintf(stderr, "WARNING! You cannot modify files during a sync.\n");
+						fprintf(stderr, "Rerun the sync command when finished.\n");
 
-					/* save the failed block for the fix */
-					failed[failed_count].index = j;
-					failed[failed_count].size = read_size;
-					failed[failed_count].block = block;
-					++failed_count;
+						++error;
 
-					/* silent errors are very rare, and are not a signal that a disk */
-					/* is going to fail. So, we just continue marking the block as bad */
-					/* just like in scrub */
-					++silent_error;
-					silent_error_on_this_block = 1;
-					continue;
+						/* if the file is changed, it means that it was modified during sync */
+						/* this isn't a serious error, so we skip this block, and continue with others */
+						error_on_this_block = 1;
+						continue;
+					} else { /* otherwise it's a BLK with silent error */
+						fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, handle[j].file->sub, block_file_pos(block));
+						fprintf(stderr, "Data error at file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
+						fprintf(stderr, "WARNING! Unexpected data error in a data disk! The block is now marked as bad!\n");
+						fprintf(stderr, "Try with 'snapraid -e fix' to recover!\n");
+
+						/* save the failed block for the fix */
+						failed[failed_count].index = j;
+						failed[failed_count].size = read_size;
+						failed[failed_count].block = block;
+						++failed_count;
+
+						/* silent errors are very rare, and are not a signal that a disk */
+						/* is going to fail. So, we just continue marking the block as bad */
+						/* just like in scrub */
+						++silent_error;
+						silent_error_on_this_block = 1;
+						continue;
+					}
 				}
 			} else {
-				/* if until now the parity doesn't need to be update */
+				/* if until now the parity doesn't need to be updated */
 				if (!parity_needs_to_be_updated) {
 					/* for sure it's a CHG block, because EMPTY are processed before with "continue" */
-					/* and BLK have "block_has_updated_hash()" as 1, and all the others */
+					/* and BLK and REP have "block_has_updated_hash()" as 1, and all the others */
 					/* have "parity_needs_to_be_updated" already at 1 */
 					assert(block_state_get(block) == BLOCK_STATE_CHG);
 
 					/* if there is an hash */
-					if (block_has_any_hash(block)) {
+					if (hash_is_real(block->hash)) {
 						/* check if the hash is changed */
 						if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
 							/* the block is different, and we must update parity */
@@ -412,6 +431,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		/* if we have only silent errors we can try to fix them on-the-fly */
 		if (!error_on_this_block && silent_error_on_this_block) {
 			unsigned failed_mac;
+			int something_to_recover = 0;
 
 			/* setup the blocks to recover */
 			failed_mac = 0;
@@ -420,29 +440,35 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				unsigned char* block_copy = buffer[diskmax + state->level + failed[j].index];
 				unsigned block_state = block_state_get(failed[j].block);
 
-				/* make a copy of new content just read */
+				/* we try to recover only if at least one BLK is present */
+				if (block_state == BLOCK_STATE_BLK)
+					something_to_recover = 1;
+
+				/* save a copy of the content just read */
+				/* that it's going to be overwritten by the recovering function */
 				memcpy(block_copy, block_buffer, state->block_size);
 
-				if (block_state == BLOCK_STATE_NEW) {
-					/* restore the data to parity state */
+				if (block_state == BLOCK_STATE_CHG
+					&& hash_is_zero(failed[j].block->hash)
+				) {
+					/* if the block was filled with 0, restore this state */
+					/* and avoid to recover it */
 					memset(block_buffer, 0, state->block_size);
 				} else {
-					/* if we have too many failure */
-					if (failed_mac >= state->level) {
-						/* we cannot recover */
+					/* if we have too many failures, we cannot recover */
+					if (failed_mac >= state->level)
 						break;
-					}
-				
+
 					/* otherwise it has to be recovered */
 					failed_map[failed_mac++] = failed[j].index;
 				}
 			}
 
-			/* if we have enough parity to fix */
-			if (j == failed_count) {
+			/* if we have something to recover and enough parity */
+			if (something_to_recover && j == failed_count) {
 				/* read the parity */
-				/* we are sure that parity exists because a silent error */
-				/* implies a BLK block with compute parity */
+				/* we are sure that parity exists because */
+				/* we have at least one BLK block */
 				for(l=0;l<state->level;++l) {
 					ret = parity_read(parity[l], i, buffer[diskmax+l], state->block_size, stdlog);
 					if (ret == -1) {
@@ -485,10 +511,9 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 						if (size < state->block_size)
 							memset(block_buffer + size, 0, state->block_size - size);
 					} else {
-						/* otherwise restore the new content */
-						/* because we are not interested in recovered */
-						/* state for CHG and DELETED blocks */
-						/* and we have to restore also NEW zeroed blocks */
+						/* otherwise restore the content */
+						/* because we are not interested in the old state */
+						/* that it's recovered for CHG, REP and DELETED blocks */
 						memcpy(block_buffer, block_copy, state->block_size);
 					}
 				}
