@@ -170,23 +170,6 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 		/* if none valid or none invalid, we don't need to update */
 		if (!one_invalid || !one_valid) {
-			/* cleanup all the deleted blocks at this position */
-			for(j=0;j<diskmax;++j) {
-				struct snapraid_block* block = BLOCK_EMPTY;
-				if (handle[j].disk)
-					block = disk_block_get(handle[j].disk, i);
-
-				/* if the block is deleted */
-				if (block_state_get(block) == BLOCK_STATE_DELETED) {
-					/* set it to empty */
-					tommy_arrayblk_set(&handle[j].disk->blockarr, i, BLOCK_EMPTY);
-
-					/* mark the state as needing write */
-					state->need_write = 1;
-				}
-			}
-
-			/* skip */
 			continue;
 		}
 
