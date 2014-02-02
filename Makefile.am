@@ -396,11 +396,22 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR2) fix -l test.log
 	rm -r test/disk1/a_copy
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	echo --- Abort sync late with additions with rawsync and then delete the new additions and sync again
+	cp -pR test/disk1/a test/disk1/a_copy
+	cp -pR test/disk2/a test/disk2/a_copy
+	cp -pR test/disk3/a test/disk3/a_copy
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-kill-after-sync --test-rawsync -c $(CONF) sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
+	rm -r test/disk1/a_copy
+	rm -r test/disk2/a_copy
+	rm -r test/disk3/a_copy
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Abort sync late with additions and then delete the new additions and sync again
 	cp -pR test/disk1/a test/disk1/a_copy
 	cp -pR test/disk2/a test/disk2/a_copy
 	cp -pR test/disk3/a test/disk3/a_copy
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-kill-after-sync -c $(CONF) sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	rm -r test/disk1/a_copy
 	rm -r test/disk2/a_copy
 	rm -r test/disk3/a_copy

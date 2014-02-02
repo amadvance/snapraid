@@ -806,13 +806,25 @@ may interrupt SnapRAID.
 The SIZE argument is specified in gibibytes. Where one gibi bytes
 is 1073741824 bytes.
 
----- 7.8.2 pool DIR ----
+---- 7.8.2 rawsync ----
+Enables a single pass "sync" process avoding the initial hashing phase
+and saving time.
+In this mode no preliminary hashing is done, and the new data is hashed
+directly during the parity computation when it's read for the first time,
+This happens when the system is under heavy pressure due all disks spinning
+and CPU busy, and in such extreme conditions, if your machine has a latent
+hardware problem, it's possible to encouter silent errors what cannot be
+detected because the data is not yet hashed.
+To avoid this problem, this "rawsync" mode is by default disabled,
+but if you really trust your hardware, you can enable it, and save time.
+
+---- 7.8.3 pool DIR ----
 Defines the pooling directory where the virtual view of the disk
 array is created using the "pool" command.
 
 The directory must already exist.
 
----- 7.8.3 share UNC_DIR ----
+---- 7.8.4 share UNC_DIR ----
 Defines the Windows UNC path required to access the disks remotely.
 
 If this option is specified, the symbolic links created in the pool

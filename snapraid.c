@@ -104,6 +104,7 @@ void memory(void)
 #define OPT_TEST_FORCE_SCRUB_EVEN 272
 #define OPT_TEST_FORCE_CONTENT_WRITE 273
 #define OPT_TEST_FORCE_CONTENT_TEXT 274
+#define OPT_TEST_RAWSYNC 275
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -184,6 +185,9 @@ struct option long_options[] = {
 
 	/* Force the use of text content file . */
 	{ "test-force-content-text", 0, 0, OPT_TEST_FORCE_CONTENT_TEXT },
+
+	/* Like the rawsync configuration option. */
+	{ "test-rawsync", 0, 0, OPT_TEST_RAWSYNC },
 
 	{ 0, 0, 0, 0 }
 };
@@ -434,6 +438,9 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_TEST_FORCE_CONTENT_TEXT :
 			opt.force_content_text = 1;
+			break;
+		case OPT_TEST_RAWSYNC :
+			opt.rawsync = 1;
 			break;
 		default:
 			fprintf(stderr, "Unknown option '%c'\n", (char)c);

@@ -797,9 +797,6 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				failed[failed_count].block = block;
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
-
-				fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
-				++error;
 				continue;
 			}
 		}

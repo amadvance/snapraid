@@ -25,6 +25,255 @@
 #include "raid/raid.h"
 
 /****************************************************************************/
+/* hash */
+
+static void state_hash_process(struct snapraid_state* state, block_off_t blockstart, block_off_t blockmax)
+{
+	struct snapraid_handle* handle;
+	unsigned diskmax;
+	block_off_t i;
+	unsigned j;
+	void* buffer;
+	data_off_t countsize;
+	block_off_t countpos;
+	block_off_t countmax;
+	int ret;
+	unsigned error;
+
+	/* maps the disks to handles */
+	handle = handle_map(state, &diskmax);
+
+	/* buffer for reading */
+	buffer = malloc_nofail(state->block_size);
+
+	error = 0;
+
+	/* first count the number of blocks to process */
+	countmax = 0;
+	for(j=0;j<diskmax;++j) {
+		struct snapraid_disk* disk = handle[j].disk;
+
+		/* if unused disk skip it */
+		if (!disk)
+			continue;
+	
+		for(i=blockstart;i<blockmax;++i) {
+			struct snapraid_block* block;
+
+			block = disk_block_get(disk, i);
+
+			/* if no file in this block, skip it */
+			if (!block_has_file(block))
+				continue;
+
+			/* if the block already has a hash, skip it */
+			if (block_has_updated_hash(block))
+				continue;
+
+			++countmax;
+		}
+	}
+
+	countsize = 0;
+	countpos = 0;
+	if (state_progress_begin(state, blockstart, blockmax, countmax))
+	for(j=0;j<diskmax;++j) {
+		struct snapraid_disk* disk = handle[j].disk;
+
+		/* if unused disk skip it */
+		if (!disk)
+			continue;
+
+		for(i=blockstart;i<blockmax;++i) {
+			int ret;
+			snapraid_info info;
+			int rehash;
+			struct snapraid_block* block;
+			int read_size;
+			unsigned char hash[HASH_SIZE];
+
+			block = disk_block_get(disk, i);
+
+			/* if no file in this block, skip it */
+			if (!block_has_file(block))
+				continue;
+
+			/* if the block already has a hash, skip it */
+			if (block_has_updated_hash(block))
+				continue;
+
+			/* here only CHG blocks are allowed */
+			assert(block_state_get(block) == BLOCK_STATE_CHG);
+
+			/* get block specific info */
+			info = info_get(&state->infoarr, i);
+
+			/* if we have to use the old hash */
+			rehash = info_get_rehash(info);
+
+			/* if the file is different than the current one, close it */
+			if (handle[j].file != 0 && handle[j].file != block_file_get(block)) {
+				/* keep a pointer at the file we are going to close for error reporting */
+				struct snapraid_file* file = handle[j].file;
+				ret = handle_close(&handle[j]);
+				if (ret == -1) {
+					/* This one is really an unexpected error, because we are only reading */
+					/* and closing a descriptor should never fail */
+					fprintf(stdlog, "error:%u:%s:%s: Close error. %s\n", i, handle[j].disk->name, file->sub, strerror(errno));
+					fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to sync.\n");
+					fprintf(stderr, "Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", handle[j].disk->dir, handle[j].path);
+					printf("Stopping at block %u\n", i);
+					++error;
+					goto bail;
+				}
+			}
+
+			ret = handle_open(&handle[j], block_file_get(block), state->opt.skip_sequential, stderr);
+			if (ret == -1) {
+				/* file we have tried to open for error reporting */
+				struct snapraid_file* file = block_file_get(block);
+				if (errno == ENOENT) {
+					fprintf(stdlog, "error:%u:%s:%s: Open missing error\n", i, handle[j].disk->name, file->sub);
+					fprintf(stderr, "Missing file '%s'.\n", handle[j].path);
+					fprintf(stderr, "WARNING! You cannot modify data disk during a sync.\n");
+					fprintf(stderr, "Rerun the sync command when finished.\n");
+
+					++error;
+
+					/* if the file is missing, it means that it was removed during sync */
+					/* this isn't a serious error, so we skip this block, and continue with others */
+					continue;
+				} else if (errno == EACCES) {
+					fprintf(stdlog, "error:%u:%s:%s: Open access error\n", i, handle[j].disk->name, file->sub);
+					fprintf(stderr, "No access at file '%s'.\n", handle[j].path);
+					fprintf(stderr, "WARNING! Please fix the access permission in the data disk.\n");
+					fprintf(stderr, "Rerun the sync command when finished.\n");
+
+					++error;
+
+					/* this isn't a serious error, so we skip this block, and continue with others */
+					continue;
+				} else {
+					fprintf(stdlog, "error:%u:%s:%s: Open error. %s\n", i, handle[j].disk->name, file->sub, strerror(errno));
+					fprintf(stderr, "DANGER! Unexpected open error in a data disk, it isn't possible to sync.\n");
+					fprintf(stderr, "Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", handle[j].disk->dir, handle[j].path);
+					printf("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", file->sub);
+				}
+
+				++error;
+				goto bail;
+			}
+
+			/* check if the file is changed */
+			if (handle[j].st.st_size != block_file_get(block)->size
+				|| handle[j].st.st_mtime != block_file_get(block)->mtime_sec
+				|| STAT_NSEC(&handle[j].st) != block_file_get(block)->mtime_nsec
+				|| handle[j].st.st_ino != block_file_get(block)->inode
+			) {
+				fprintf(stdlog, "error:%u:%s:%s: Unexpected change\n", i, handle[j].disk->name, handle[j].file->sub);
+				if (handle[j].st.st_size != block_file_get(block)->size)
+					fprintf(stderr, "Unexpected size change at file '%s' from %"PRIu64" to %"PRIu64".\n", handle[j].path, block_file_get(block)->size, handle[j].st.st_size);
+				else if (handle[j].st.st_mtime != block_file_get(block)->mtime_sec
+					|| STAT_NSEC(&handle[j].st) != block_file_get(block)->mtime_nsec) {
+					fprintf(stderr, "Unexpected time change at file '%s' from %"PRIu64".%d to %"PRIu64".%d.\n", handle[j].path, block_file_get(block)->mtime_sec, block_file_get(block)->mtime_nsec, (uint64_t)handle[j].st.st_mtime, (uint32_t)STAT_NSEC(&handle[j].st));
+				} else {
+					fprintf(stderr, "Unexpected inode change from %"PRIu64" to %"PRIu64" at file '%s'.\n", block_file_get(block)->inode, (uint64_t)handle[j].st.st_ino, handle[j].path);
+				}
+				fprintf(stderr, "WARNING! You cannot modify files during a sync.\n");
+				fprintf(stderr, "Rerun the sync command when finished.\n");
+
+				++error;
+
+				/* if the file is changed, it means that it was modified during sync */
+				/* this isn't a serious error, so we skip this block, and continue with others */
+				continue;
+			}
+
+			read_size = handle_read(&handle[j], block, buffer, state->block_size, stderr);
+			if (read_size == -1) {
+				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u\n", i, handle[j].disk->name, handle[j].file->sub, block_file_pos(block));
+				fprintf(stderr, "DANGER! Unexpected read error in a data disk, it isn't possible to sync.\n");
+				fprintf(stderr, "Ensure that disk '%s' is sane and that file '%s' can be read.\n", handle[j].disk->dir, handle[j].path);
+				printf("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", handle[j].file->sub);
+				++error;
+				goto bail;
+			}
+
+			countsize += read_size;
+
+			/* now compute the hash */
+			if (rehash) {
+				memhash(state->prevhash, state->prevhashseed, hash, buffer, read_size);
+			} else {
+				memhash(state->hash, state->hashseed, hash, buffer, read_size);
+			}
+
+			/* copy the hash in the block */
+			memcpy(block->hash, hash, HASH_SIZE);
+
+			/* and mark the block as hashed */
+			block_state_set(block, BLOCK_STATE_REP);
+
+			/* mark the state as needing write */
+			state->need_write = 1;
+
+			/* count the number of processed block */
+			++countpos;
+
+			/* progress */
+			if (state_progress(state, i, countpos, countmax, countsize)) {
+				break;
+			}
+		}
+
+		/* close the last file in the disk */
+		if (handle[j].file != 0) {
+			/* keep a pointer at the file we are going to close for error reporting */
+			struct snapraid_file* file = handle[j].file;
+			ret = handle_close(&handle[j]);
+
+			if (ret == -1) {
+				/* This one is really an unexpected error, because we are only reading */
+				/* and closing a descriptor should never fail */
+				fprintf(stdlog, "error:%u:%s:%s: Close error. %s\n", blockmax, handle[j].disk->name, file->sub, strerror(errno));
+				fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to sync.\n");
+				fprintf(stderr, "Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", handle[j].disk->dir, handle[j].path);
+				printf("Stopping at block %u\n", blockmax);
+				++error;
+				goto bail;
+			}
+		}
+	}
+
+	state_progress_end(state, countpos, countmax, countsize);
+
+	if (error) {
+		printf("\n");
+		printf("%8u read/write errors\n", error);
+		printf("WARNING! There are errors!\n");
+	} else {
+		/* print the result only if processed something */
+		if (countpos != 0)
+			printf("Everything OK\n");
+	}
+
+	fprintf(stdlog, "hash_summary:error_readwrite:%u\n", error);
+
+bail:
+	for(j=0;j<diskmax;++j) {
+		ret = handle_close(&handle[j]);
+		if (ret == -1) {
+			fprintf(stderr, "DANGER! Unexpected close error in a data disk.\n");
+			++error;
+			/* continue, as we are already exiting */
+		}
+	}
+
+	free(handle);
+	free(buffer);
+}
+
+/****************************************************************************/
 /* sync */
 
 /**
@@ -727,6 +976,15 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 			fprintf(stderr, "WARNING! Without an accessible %s file, it isn't possible to sync.\n", lev_name(l));
 			exit(EXIT_FAILURE);
 		}
+	}
+
+	if (!state->opt.rawsync) {
+		printf("Hashing...\n");
+
+		state_hash_process(state, blockstart, blockmax);
+
+		if (state->need_write)
+			state_write(state);
 	}
 
 	printf("Syncing...\n");

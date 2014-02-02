@@ -59,6 +59,7 @@ struct snapraid_option {
 	int verbose; /**< Verbose output. */
 	int quiet; /**< Quiet output. */
 	int gui; /**< Gui output. */
+	int rawsync; /**< Enables the raw sync mode. */
 	int force_zero; /**< Forced dangerous operations of synching files now with zero size. */
 	int force_empty; /**< Forced dangerous operations of synching disks now empty. */
 	int force_uuid; /**< Forced dangerous operations of synching disks with uuid changed. */

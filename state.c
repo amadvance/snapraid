@@ -597,6 +597,8 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			tommy_list_insert_tail(&state->disklist, &disk->node, disk);
 		} else if (strcmp(tag, "nohidden") == 0) {
 			state->filter_hidden = 1;
+		} else if (strcmp(tag, "rawsync") == 0) {
+			state->opt.rawsync = 1;
 		} else if (strcmp(tag, "exclude") == 0) {
 			struct snapraid_filter* filter;
 

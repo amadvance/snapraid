@@ -30,21 +30,6 @@ as search base.
 * Avoid to do optimized move operation if more files with
 same timestamp/size are present.
 
-* Handle new files with a two steps approach to reduce possible
-silent errors.
-We can first hash them, proceding one disk at time, and then
-start computing the parity checking the precomputed hash.
-This imply a double read, likely doubling the sync time,
-but ensure that the hash are computed with the system not busy,
-avoiding to trigger silent errors depending on the usage level.
-This will also improve the cases of a crash during sync, because
-we already have all the hashes when sync starts.
-We need to extend the NEW blocks with an hash, likely using
-the dummy 0 hash as marker for no hash.
-And create a new block type REP (replaced) where the
-hash is intented to match the new block and not the
-previous one like for CHG blocks.
-
 - Minor
 
 * In the content file save the timestap of the parity files.

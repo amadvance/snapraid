@@ -31,7 +31,3 @@ if ! ./configure ; then
 	exit 1
 fi
 
-if ! make check; then
-	exit 1
-fi
-
