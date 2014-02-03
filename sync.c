@@ -45,6 +45,8 @@ static void state_hash_process(struct snapraid_state* state, block_off_t blockst
 
 	/* buffer for reading */
 	buffer = malloc_nofail(state->block_size);
+	if (!state->opt.skip_self)
+		mtest_vector(1, state->block_size, &buffer);
 
 	error = 0;
 
