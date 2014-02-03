@@ -232,6 +232,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				struct snapraid_file* file = handle[j].file;
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
+					/* LCOV_EXCL_START */
 					/* This one is really an unexpected error, because we are only reading */
 					/* and closing a descriptor should never fail */
 					fprintf(stdlog, "error:%u:%s:%s: Close error. %s\n", i, handle[j].disk->name, file->sub, strerror(errno));
@@ -239,6 +240,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					printf("Stopping at block %u\n", i);
 					++error;
 					goto bail;
+					/* LCOV_EXCL_STOP */
 				}
 			}
 
@@ -384,7 +386,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 		/* progress */
 		if (state_progress(state, i, countpos, countmax, countsize)) {
+			/* LCOV_EXCL_START */
 			break;
+			/* LCOV_EXCL_STOP */
 		}
 
 		/* autosave */
@@ -428,9 +432,11 @@ bail:
 	for(j=0;j<diskmax;++j) {
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "DANGER! Unexpected close error in a data disk.\n");
 			++error;
 			/* continue, as we are already exiting */
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -515,8 +521,10 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 	}
 
 	if (!count) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "The array appears to be empty.\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	/* sort it */
@@ -547,8 +555,10 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 		parity_ptr[l] = &parity[l];
 		ret = parity_open(parity_ptr[l], state->parity_path[l], state->opt.skip_sequential);
 		if (ret == -1) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "WARNING! Without an accessible %s file, it isn't possible to scrub.\n", lev_name(l));
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -565,9 +575,11 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 	for(l=0;l<state->level;++l) {
 		ret = parity_close(parity_ptr[l]);
 		if (ret == -1) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "DANGER! Unexpected close error in %s disk.\n", lev_name(l));
 			++error;
 			/* continue, as we are already exiting */
+			/* LCOV_EXCL_STOP */
 		}
 	}
 

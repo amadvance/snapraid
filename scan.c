@@ -81,8 +81,10 @@ static void scan_link(struct snapraid_scan* scan, struct snapraid_state* state, 
 	if (link) {
 		/* check if multiple files have the same name */
 		if (link_flag_has(link, FILE_IS_PRESENT)) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Internal inconsistency for link '%s%s'\n", disk->dir, sub);
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		/* mark as present */
@@ -195,8 +197,10 @@ static void scan_file_deallocate(struct snapraid_state* state, struct snapraid_d
 			hash_invalid_set(deleted->block.hash);
 			break;
 		default:
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Internal state inconsistency in scanning for block %u state %u\n", block->parity_pos, block_state);
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		/* insert it in the list of deleted blocks */
@@ -430,8 +434,10 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 					scan_link(scan, state, output, disk, sub, file->sub, FILE_IS_HARDLINK);
 					return;
 				} else {
+					/* LCOV_EXCL_START */
 					fprintf(stderr, "Internal inode '%"PRIu64"' inconsistency for file '%s%s' already present\n", (uint64_t)st->st_ino, disk->dir, sub);
 					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
 				}
 			}
 
@@ -492,8 +498,10 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 
 		/* for sure it cannot be already present */
 		if (file_flag_has(file, FILE_IS_PRESENT)) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Internal inode '%"PRIu64"' inconsistency for files '%s%s' and '%s%s' matching and already present but different\n", file->inode, disk->dir, sub, disk->dir, file->sub);
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		/* assume a previously used inode, it's the worst case */
@@ -532,16 +540,19 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 		} else {
 			/* here the inode has to be different, otherwise we would have found it before */
 			if (file->inode == st->st_ino) {
+				/* LCOV_EXCL_START */
 				fprintf(stderr, "Internal inode  '%"PRIu64"' inconsistency for files '%s%s' as unexpected matching\n", file->inode, disk->dir, sub);
-
 				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
 			}
 		}
 
 		/* for sure it cannot be already present */
 		if (file_flag_has(file, FILE_IS_PRESENT)) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Internal path inconsistency for file '%s%s' matching and already present\n", disk->dir, sub);
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		/* check if the file is not changed */
@@ -617,11 +628,13 @@ static void scan_file(struct snapraid_scan* scan, struct snapraid_state* state, 
 		/* the size of a file after a crash doesn't propagate to the backup */
 		if (file->size != 0 && st->st_size == 0) {
 			if (!state->opt.force_zero) {
+				/* LCOV_EXCL_START */
 				fprintf(stderr, "The file '%s%s' has unexpected zero size! If this an expected state\n", disk->dir, sub);
 				fprintf(stderr, "you can '%s' anyway usinge 'snapraid --force-zero %s'\n", state->command, state->command);
 				fprintf(stderr, "Instead, it's possible that after a kernel crash this file was lost,\n");
 				fprintf(stderr, "and you can use 'snapraid --filter %s fix' to recover it.\n", sub);
 				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
 			}
 		}
 
@@ -707,8 +720,10 @@ static void scan_emptydir(struct snapraid_scan* scan, struct snapraid_disk* disk
 	if (dir) {
 		/* check if multiple files have the same name */
 		if (dir_flag_has(dir, FILE_IS_PRESENT)) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Internal inconsistency for dir '%s%s'\n", disk->dir, sub);
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		/* mark as present */
@@ -775,8 +790,10 @@ struct stat* dstat(struct dirent_sorted* dd)
 struct stat* dstat(const char* file, struct stat* st)
 {
 	if (lstat(file, st) != 0) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error in stat file/directory '%s'. %s.\n", file, strerror(errno));
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 	return st;
 }
@@ -797,9 +814,11 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 
 	d = opendir(dir);
 	if (!d) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error opening directory '%s'. %s.\n", dir, strerror(errno));
 		fprintf(stderr, "You can exclude it in the config file with:\n\texclude /%s\n", sub);
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	/* read the full directory */
@@ -815,9 +834,11 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 		errno = 0;
 		dd = readdir(d);
 		if (dd == 0 && errno != 0) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Error reading directory '%s'. %s.\n", dir, strerror(errno));
 			fprintf(stderr, "You can exclude it in the config file with:\n\texclude /%s\n", sub);
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 		if (dd == 0) {
 			break; /* finished */
@@ -833,8 +854,10 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 
 		/* check for not supported file names */
 		if (name[0] == 0) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Unsupported name '%s' in file '%s'.\n", name, path_next);
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		/* exclude hidden files even before calling lstat() */
@@ -874,8 +897,10 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 	}
 
 	if (closedir(d) != 0) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error closing directory '%s'. %s.\n", dir, strerror(errno));
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 #if HAVE_STRUCT_DIRENT_D_INO
@@ -943,14 +968,18 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 				/* get inode info about the file, Windows needs an additional step */
 				/* also for hardlink, the real size of the file is read here */
 				if (lstat_ex(path_next, st) != 0) {
+					/* LCOV_EXCL_START */
 					fprintf(stderr, "Error in stat_inode file '%s'. %s.\n", path_next, strerror(errno));
 					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
 				}
 #endif
 				if (state->opt.force_order == SORT_PHYSICAL) {
 					if (filephy(path_next, st, &physical) != 0) {
+						/* LCOV_EXCL_START */
 						fprintf(stderr, "Error in getting the physical offset of file '%s'. %s.\n", path_next, strerror(errno));
 						exit(EXIT_FAILURE);
+						/* LCOV_EXCL_STOP */
 					}
 				} else {
 					physical = 0;
@@ -970,12 +999,16 @@ static int scan_dir(struct snapraid_scan* scan, struct snapraid_state* state, in
 
 				ret = readlink(path_next, subnew, sizeof(subnew));
 				if (ret >= PATH_MAX) {
+					/* LCOV_EXCL_START */
 					fprintf(stderr, "Error in readlink file '%s'. Symlink too long.\n", path_next);
 					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
 				}
 				if (ret < 0) {
+					/* LCOV_EXCL_START */
 					fprintf(stderr, "Error in readlink file '%s'. %s.\n", path_next, strerror(errno));
 					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
 				}
 
 				/* readlink doesn't put the final 0 */
@@ -1084,8 +1117,10 @@ void state_scan(struct snapraid_state* state, int output)
 		/* check if the disk supports persistent inodes */
 		ret = fsinfo(disk->dir, &has_persistent_inode);
 		if (ret < 0) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Error accessing disk '%s' to get filesystem info. %s.\n", disk->dir, strerror(errno));
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 		if (!has_persistent_inode) {
 			disk->has_volatile_inodes = 1;

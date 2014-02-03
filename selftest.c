@@ -84,8 +84,10 @@ static void test_hash(void)
 		memcpy(buffer_aligned, TEST_MURMUR3[i].data, TEST_MURMUR3[i].len);
 		memhash(HASH_MURMUR3, seed_aligned, digest, buffer_aligned, TEST_MURMUR3[i].len);
 		if (memcmp(digest, TEST_MURMUR3[i].digest, HASH_SIZE) != 0) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Failed Murmur3 test\n");
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -94,8 +96,10 @@ static void test_hash(void)
 		memcpy(buffer_aligned, TEST_SPOOKY2[i].data, TEST_SPOOKY2[i].len);
 		memhash(HASH_SPOOKY2, seed_aligned, digest, buffer_aligned, TEST_SPOOKY2[i].len);
 		if (memcmp(digest, TEST_SPOOKY2[i].digest, HASH_SIZE) != 0) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Failed Spooky2 test\n");
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -141,8 +145,10 @@ static void test_crc32c(void)
 		uint32_t digest;
 		digest = crc32c(0, (const unsigned char*)TEST_CRC32C[i].data, TEST_CRC32C[i].len);
 		if (digest != TEST_CRC32C[i].digest) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Failed CRC32C test\n");
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 	}
 }
@@ -156,47 +162,67 @@ void selftest(void)
 
 	/* large file check */
 	if (sizeof(off_t) < sizeof(uint64_t)) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Missing support for large files\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	test_hash();
 	test_crc32c();
 	if (raid_selftest() != 0) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Failed SELF test\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_sort() != 0) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Failed SORT test\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_insert() != 0) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Failed INSERT test\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_combo() != 0) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Failed COMBO test\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_par(RAID_MODE_VANDERMONDE, 32, 256) != 0) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Failed GEN Vandermonde test\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_rec(RAID_MODE_VANDERMONDE, 12, 256) != 0) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Failed REC Vandermonde test\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_par(RAID_MODE_CAUCHY, 32, 256) != 0) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Failed GEN Cauchy test\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_rec(RAID_MODE_CAUCHY, 12, 256) != 0) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Failed REC Cauchy test\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_par(RAID_MODE_CAUCHY, 1, 256) != 0) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Failed GEN Cauchy test sigle data disk\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 }
 

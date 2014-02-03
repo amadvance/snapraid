@@ -428,9 +428,10 @@ struct snapraid_handle* handle_map(struct snapraid_state* state, unsigned* handl
 				break;
 		}
 		if (k==0) {
-			fprintf(stderr, "Inconsistent disk mapping.\n");
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Internal error for inconsistent disk mapping.\n");
 			exit(EXIT_FAILURE);
-			continue;
+			/* LCOV_EXCL_STOP */
 		}
 
 		handle[map->position].disk = disk;

@@ -37,13 +37,17 @@ void state_rehash(struct snapraid_state* state)
 
 	/* check if a rehash is already in progress */
 	if (state->prevhash != HASH_UNDEFINED) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "You already have a rehash in progress.\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	if (state->hash == state->besthash) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "You are already using the best hash for your platform.\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	/* copy the present hash as previous one */
@@ -66,8 +70,10 @@ void state_rehash(struct snapraid_state* state)
 		}
 
 		if (info_get_rehash(info)) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Internal inconsistency for a rehash already in progress\n");
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		/* enable the rehash */

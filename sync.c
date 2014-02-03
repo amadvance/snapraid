@@ -119,6 +119,7 @@ static void state_hash_process(struct snapraid_state* state, block_off_t blockst
 				struct snapraid_file* file = handle[j].file;
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
+					/* LCOV_EXCL_START */
 					/* This one is really an unexpected error, because we are only reading */
 					/* and closing a descriptor should never fail */
 					fprintf(stdlog, "error:%u:%s:%s: Close error. %s\n", i, handle[j].disk->name, file->sub, strerror(errno));
@@ -127,6 +128,7 @@ static void state_hash_process(struct snapraid_state* state, block_off_t blockst
 					printf("Stopping at block %u\n", i);
 					++error;
 					goto bail;
+					/* LCOV_EXCL_STOP */
 				}
 			}
 
@@ -162,8 +164,10 @@ static void state_hash_process(struct snapraid_state* state, block_off_t blockst
 					printf("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", file->sub);
 				}
 
+				/* LCOV_EXCL_START */
 				++error;
 				goto bail;
+				/* LCOV_EXCL_STOP */
 			}
 
 			/* check if the file is changed */
@@ -193,12 +197,14 @@ static void state_hash_process(struct snapraid_state* state, block_off_t blockst
 
 			read_size = handle_read(&handle[j], block, buffer, state->block_size, stderr);
 			if (read_size == -1) {
+				/* LCOV_EXCL_START */
 				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u\n", i, handle[j].disk->name, handle[j].file->sub, block_file_pos(block));
 				fprintf(stderr, "DANGER! Unexpected read error in a data disk, it isn't possible to sync.\n");
 				fprintf(stderr, "Ensure that disk '%s' is sane and that file '%s' can be read.\n", handle[j].disk->dir, handle[j].path);
 				printf("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", handle[j].file->sub);
 				++error;
 				goto bail;
+				/* LCOV_EXCL_STOP */
 			}
 
 			countsize += read_size;
@@ -224,7 +230,9 @@ static void state_hash_process(struct snapraid_state* state, block_off_t blockst
 
 			/* progress */
 			if (state_progress(state, i, countpos, countmax, countsize)) {
+				/* LCOV_EXCL_START */
 				break;
+				/* LCOV_EXCL_STOP */
 			}
 		}
 
@@ -235,6 +243,7 @@ static void state_hash_process(struct snapraid_state* state, block_off_t blockst
 			ret = handle_close(&handle[j]);
 
 			if (ret == -1) {
+				/* LCOV_EXCL_START */
 				/* This one is really an unexpected error, because we are only reading */
 				/* and closing a descriptor should never fail */
 				fprintf(stdlog, "error:%u:%s:%s: Close error. %s\n", blockmax, handle[j].disk->name, file->sub, strerror(errno));
@@ -243,6 +252,7 @@ static void state_hash_process(struct snapraid_state* state, block_off_t blockst
 				printf("Stopping at block %u\n", blockmax);
 				++error;
 				goto bail;
+				/* LCOV_EXCL_STOP */
 			}
 		}
 	}
@@ -516,6 +526,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				struct snapraid_file* file = handle[j].file;
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
+					/* LCOV_EXCL_START */
 					/* This one is really an unexpected error, because we are only reading */
 					/* and closing a descriptor should never fail */
 					fprintf(stdlog, "error:%u:%s:%s: Close error. %s\n", i, handle[j].disk->name, file->sub, strerror(errno));
@@ -524,6 +535,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					printf("Stopping at block %u\n", i);
 					++error;
 					goto bail;
+					/* LCOV_EXCL_STOP */
 				}
 			}
 
@@ -561,8 +573,10 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					printf("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", file->sub);
 				}
 
+				/* LCOV_EXCL_START */
 				++error;
 				goto bail;
+				/* LCOV_EXCL_STOP */
 			}
 
 			/* check if the file is changed */
@@ -593,12 +607,14 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 			read_size = handle_read(&handle[j], block, buffer[j], state->block_size, stderr);
 			if (read_size == -1) {
+				/* LCOV_EXCL_START */
 				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u\n", i, handle[j].disk->name, handle[j].file->sub, block_file_pos(block));
 				fprintf(stderr, "DANGER! Unexpected read error in a data disk, it isn't possible to sync.\n");
 				fprintf(stderr, "Ensure that disk '%s' is sane and that file '%s' can be read.\n", handle[j].disk->dir, handle[j].path);
 				printf("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", handle[j].file->sub);
 				++error;
 				goto bail;
+				/* LCOV_EXCL_STOP */
 			}
 
 			countsize += read_size;
@@ -723,12 +739,14 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				for(l=0;l<state->level;++l) {
 					ret = parity_read(parity[l], i, buffer[diskmax+l], state->block_size, stdlog);
 					if (ret == -1) {
+						/* LCOV_EXCL_START */
 						fprintf(stdlog, "parity_error:%u:%s: Read error\n", i, lev_config_name(l));
 						fprintf(stderr, "DANGER! Read error in the %s disk, it isn't possible to sync.\n", lev_name(l));
 						fprintf(stderr, "Ensure that disk '%s' is sane.\n", lev_config_name(l));
 						printf("Stopping at block %u\n", i);
 						++error;
 						goto bail;
+						/* LCOV_EXCL_STOP */
 					}
 				}
 
@@ -788,12 +806,14 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				for(l=0;l<state->level;++l) {
 					ret = parity_write(parity[l], i, buffer[diskmax+l], state->block_size);
 					if (ret == -1) {
+						/* LCOV_EXCL_START */
 						fprintf(stdlog, "parity_error:%u:%s: Write error\n", i, lev_config_name(l));
 						fprintf(stderr, "DANGER! Write error in the %s disk, it isn't possible to sync.\n", lev_name(l));
 						fprintf(stderr, "Ensure that disk '%s' is sane.\n", lev_config_name(l));
 						printf("Stopping at block %u\n", i);
 						++error;
 						goto bail;
+						/* LCOV_EXCL_STOP */
 					}
 				}
 			}
@@ -859,7 +879,9 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 		/* progress */
 		if (state_progress(state, i, countpos, countmax, countsize)) {
+			/* LCOV_EXCL_START */
 			break;
+			/* LCOV_EXCL_STOP */
 		}
 
 		/* autosave */
@@ -945,8 +967,10 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	loaded_size = state->loaded_paritymax * (data_off_t)state->block_size;
 
 	if (blockstart > blockmax) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error in the starting block %u. It's bigger than the parity size %u.\n", blockstart, blockmax);
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	/* adjust the number of block to process */
@@ -959,14 +983,18 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		parity_ptr[l] = &parity[l];
 		ret = parity_create(parity_ptr[l], state->parity_path[l], &out_size, state->opt.skip_sequential);
 		if (ret == -1) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "WARNING! Without an accessible %s file, it isn't possible to sync.\n", lev_name(l));
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		/* if the file is too small */
 		if (out_size < loaded_size) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "DANGER! The %s file %s is smaller than the expected %" PRId64 ".\n", lev_name(l), state->parity_path[l], loaded_size);
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		/* change the size of the parity file, truncating or extending it */
@@ -974,9 +1002,11 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		/* and they are automatically removed when we save the new content file */
 		ret = parity_chsize(parity_ptr[l], size, &out_size, state->opt.skip_fallocate);
 		if (ret == -1) {
+			/* LCOV_EXCL_START */
 			parity_overflow(state, out_size);
 			fprintf(stderr, "WARNING! Without an accessible %s file, it isn't possible to sync.\n", lev_name(l));
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -997,8 +1027,10 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	if (blockstart < blockmax) {
 		ret = state_sync_process(state, parity_ptr, blockstart, blockmax);
 		if (ret == -1) {
+			/* LCOV_EXCL_START */
 			++unrecoverable_error;
 			/* continue, as we are already exiting */
+			/* LCOV_EXCL_STOP */
 		}
 	} else {
 		printf("Nothing to do\n");
@@ -1007,16 +1039,20 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	for(l=0;l<state->level;++l) {
 		ret = parity_sync(parity_ptr[l]);
 		if (ret == -1) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "DANGER! Unexpected sync error in %s disk.\n", lev_name(l));
 			++unrecoverable_error;
 			/* continue, as we are already exiting */
+			/* LCOV_EXCL_STOP */
 		}
 
 		ret = parity_close(parity_ptr[l]);
 		if (ret == -1) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "DANGER! Unexpected close error in %s disk.\n", lev_name(l));
 			++unrecoverable_error;
 			/* continue, as we are already exiting */
+			/* LCOV_EXCL_STOP */
 		}
 	}
 

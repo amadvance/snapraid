@@ -71,19 +71,23 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 				/* close the old one, if any */
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
+					/* LCOV_EXCL_START */
 					fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to dry.\n");
 					printf("Stopping at block %u\n", i);
 					++error;
 					goto bail;
+					/* LCOV_EXCL_STOP */
 				}
 
 				/* open the file only for reading */
 				ret = handle_open(&handle[j], block_file_get(block), state->opt.skip_sequential, stdlog);
 				if (ret == -1) {
+					/* LCOV_EXCL_START */
 					fprintf(stderr, "DANGER! Unexpected open error in a data disk, it isn't possible to dry.\n");
 					printf("Stopping at block %u\n", i);
 					++error;
 					goto bail;
+					/* LCOV_EXCL_STOP */
 				}
 			}
 
@@ -114,7 +118,9 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 
 		/* progress */
 		if (state_progress(state, i, countpos, countmax, countsize)) {
+			/* LCOV_EXCL_START */
 			break;
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -125,9 +131,11 @@ bail:
 	for(j=0;j<diskmax;++j) {
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "DANGER! Unexpected close error in a data disk.\n");
 			++error;
 			/* continue, as we are already exiting */
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -159,8 +167,10 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	blockmax = parity_size(state);
 
 	if (blockstart > blockmax) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error in the specified starting block %u. It's bigger than the parity size %u.\n", blockstart, blockmax);
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	/* adjust the number of block to process */
@@ -186,8 +196,10 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	if (blockstart < blockmax) {
 		ret = state_dry_process(state, parity_ptr, blockstart, blockmax);
 		if (ret == -1) {
+			/* LCOV_EXCL_START */
 			++error;
 			/* continue, as we are already exiting */
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -196,14 +208,19 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		if (parity_ptr[l]) {
 			ret = parity_close(parity_ptr[l]);
 			if (ret == -1) {
+				/* LCOV_EXCL_START */
 				++error;
 				/* continue, as we are already exiting */
+				/* LCOV_EXCL_STOP */
 			}
 		}
 	}
 
 	/* abort if required */
-	if (error != 0)
+	if (error != 0) {
+		/* LCOV_EXCL_START */
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
 }
 

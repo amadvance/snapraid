@@ -74,8 +74,10 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 		flags |= O_SEQUENTIAL;
 	f = open(path, flags);
 	if (f == -1) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error opening file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 #if HAVE_POSIX_FADVISE
@@ -83,8 +85,10 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 		/* advise sequential access */
 		ret = posix_fadvise(f, 0, 0, POSIX_FADV_SEQUENTIAL);
 		if (ret != 0) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Error advising file '%s'. %s.\n", path, strerror(ret));
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 	}
 #endif
@@ -98,8 +102,10 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 
 		ret = read(f, buffer, read_size);
 		if (ret < 0 || (unsigned)ret != read_size) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Error reading file '%s'. %s.\n", path, strerror(errno));
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		block->file = file;
@@ -122,8 +128,10 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 
 	ret = close(f);
 	if (ret != 0) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error closing file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	tommy_list_insert_tail(&state->importlist, &file->nodelist, file);
@@ -161,25 +169,33 @@ int state_import_fetch(struct snapraid_state* state, int rehash, const unsigned 
 
 	f = open(path, O_RDONLY | O_BINARY);
 	if (f == -1) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error opening file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	if (lseek(f, block->offset, SEEK_SET) != block->offset) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error seeking file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	ret = read(f, buffer, read_size);
 	if (ret < 0 || (unsigned)ret != read_size) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error reading file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	ret = close(f);
 	if (ret != 0) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error closing file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	if (read_size != block_size) {
@@ -194,9 +210,11 @@ int state_import_fetch(struct snapraid_state* state, int rehash, const unsigned 
 		memhash(state->hash, state->hashseed, buffer_hash, buffer, read_size);
 
 	if (memcmp(buffer_hash, hash, HASH_SIZE) != 0) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error in data reading file '%s'.\n", path);
 		fprintf(stderr, "Please don't change imported files while running.\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	return 0;
@@ -208,8 +226,10 @@ static void import_dir(struct snapraid_state* state, const char* dir)
 
 	d = opendir(dir);
 	if (!d) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error opening directory '%s'. %s.\n", dir, strerror(errno));
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
    
 	while (1) { 
@@ -222,8 +242,10 @@ static void import_dir(struct snapraid_state* state, const char* dir)
 		errno = 0;
 		dd = readdir(d);
 		if (dd == 0 && errno != 0) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Error reading directory '%s'. %s.\n", dir, strerror(errno));
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 		if (dd == 0) {
 			break; /* finished */
@@ -244,8 +266,10 @@ static void import_dir(struct snapraid_state* state, const char* dir)
 #else
 		/* get lstat info about the file */
 		if (lstat(path, &st) != 0) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Error in stat file/directory '%s'. %s.\n", path, strerror(errno));
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 #endif
 
@@ -257,8 +281,10 @@ static void import_dir(struct snapraid_state* state, const char* dir)
 	}
 
 	if (closedir(d) != 0) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error closing directory '%s'. %s.\n", dir, strerror(errno));
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 }
 

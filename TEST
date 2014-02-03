@@ -20,6 +20,11 @@ To run a coverage test you should use:
 
 and open the file ./cov/index.html in your browser to see the results.
 
+Please note that in the coverage analysis we exclude the handling of all
+the error conditions that result in an immediate termination of the program.
+You can recognize this excluded code because it's enclosed between
+the LCOV_EXCL_START and LCOV_EXCL_STOP keywords.
+
 To test with the clang static anlayzer use:
 
 	scan-build ./configure

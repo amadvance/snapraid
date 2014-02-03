@@ -660,10 +660,12 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				/* close the old one, if any */
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
+					/* LCOV_EXCL_START */
 					fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to check.\n");
 					printf("Stopping at block %u\n", i);
 					++unrecoverable_error;
 					goto bail;
+					/* LCOV_EXCL_STOP */
 				}
 
 				/* if fixing, and the file is not excluded, we must open for writing */
@@ -671,6 +673,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					/* if fixing, create the file, open for writing and resize if required */
 					ret = handle_create(&handle[j], block_file_get(block), state->opt.skip_sequential);
 					if (ret == -1) {
+						/* LCOV_EXCL_START */
 						if (errno == EACCES) {
 							fprintf(stderr, "WARNING! Please give write permission to the file.\n");
 						} else {
@@ -679,6 +682,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 						printf("Stopping at block %u\n", i);
 						++unrecoverable_error;
 						goto bail;
+						/* LCOV_EXCL_STOP */
 					}
 
 					/* check if the file was larger and now truncated */
@@ -896,6 +900,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 
 						ret = handle_write(failed[j].handle, failed[j].block, buffer[failed[j].index], state->block_size);
 						if (ret == -1) {
+							/* LCOV_EXCL_START */
 							/* mark the file as damaged */
 							file_flag_set(block_file_get(failed[j].block), FILE_IS_DAMAGED);
 
@@ -908,6 +913,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 							printf("Stopping at block %u\n", i);
 							++unrecoverable_error;
 							goto bail;
+							/* LCOV_EXCL_STOP */
 						}
 
 						/* if we are not sure that the recovered content is uptodate */
@@ -933,11 +939,13 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 							if (buffer_recov[l] == 0 && parity[l] != 0) {
 								ret = parity_write(parity[l], i, buffer[diskmax + l], state->block_size);
 								if (ret == -1) {
+									/* LCOV_EXCL_START */
 									/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
 									fprintf(stderr, "WARNING! Without a working %s disk, it isn't possible to fix errors on it.\n", lev_name(l));
 									printf("Stopping at block %u\n", i);
 									++unrecoverable_error;
 									goto bail;
+									/* LCOV_EXCL_STOP */
 								}
 
 								fprintf(stdlog, "parity_fixed:%u:%s: Fixed data error\n", i, lev_config_name(l));
@@ -989,8 +997,10 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			/* A typical case is if the file is missing, */
 			/* and the read-only open failed before. */
 			if (handle[j].file != 0 && handle[j].file != file) {
+				/* LCOV_EXCL_START */
 				fprintf(stderr, "Internal inconsistency in opened file for block %u\n", block->parity_pos);
 				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
 			}
 
 			/* if it isn't the last block in the file */
@@ -1020,20 +1030,24 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					/* ensure to close the file before renaming */
 					ret = handle_close(&handle[j]);
 					if (ret != 0) {
+						/* LCOV_EXCL_START */
 						fprintf(stderr, "Error closing '%s'. %s.\n", path, strerror(errno));
 						fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 						printf("Stopping at block %u\n", i);
 						++unrecoverable_error;
 						goto bail;
+						/* LCOV_EXCL_STOP */
 					}
 
 					ret = rename(path, path_to);
 					if (ret != 0) {
+						/* LCOV_EXCL_START */
 						fprintf(stderr, "Error renaming '%s' to '%s'. %s.\n", path, path_to, strerror(errno));
 						fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 						printf("Stopping at block %u\n", i);
 						++unrecoverable_error;
 						goto bail;
+						/* LCOV_EXCL_STOP */
 					}
 
 					fprintf(stdlog, "status:unrecoverable:%s:%s\n", handle[j].disk->name, file->sub);
@@ -1078,12 +1092,14 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 					/* set the original modification time */
 					ret = handle_utime(&handle[j]);
 					if (ret == -1) {
+						/* LCOV_EXCL_START */
 						/* mark the file as damaged */
 						file_flag_set(file, FILE_IS_DAMAGED);
 						fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 						printf("Stopping at block %u\n", i);
 						++unrecoverable_error;
 						goto bail;
+						/* LCOV_EXCL_STOP */
 					}
 				} else {
 					fprintf(stdlog, "collision:%s:%s:%s: Not setting modification time to avoid inode collision\n", handle[j].disk->name, block_file_get(block)->sub, collide_file->sub);
@@ -1120,11 +1136,13 @@ close_and_continue:
 			/* ensure to close the file just after finishing with it */
 			ret = handle_close(&handle[j]);
 			if (ret != 0) {
+				/* LCOV_EXCL_START */
 				fprintf(stderr, "Error closing '%s'. %s.\n", path, strerror(errno));
 				fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 				printf("Stopping at block %u\n", i);
 				++unrecoverable_error;
 				goto bail;
+				/* LCOV_EXCL_STOP */
 			}
 		}
 
@@ -1133,7 +1151,9 @@ close_and_continue:
 
 		/* progress */
 		if (state_progress(state, i, countpos, countmax, countsize)) {
+			/* LCOV_EXCL_START */
 			break;
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -1194,16 +1214,19 @@ close_and_continue:
 				/* create the ancestor directories */
 				ret = mkancestor(path);
 				if (ret != 0) {
+					/* LCOV_EXCL_START */
 					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					printf("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
+					/* LCOV_EXCL_STOP */
 				}
 
 				/* create it */
 				/* O_NOFOLLOW: do not follow links to ensure to open the real file */
 				f = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_NOFOLLOW, 0600);
 				if (f == -1) {
+					/* LCOV_EXCL_START */
 					fprintf(stderr, "Error creating empty file '%s'. %s.\n", path, strerror(errno));
 					if (errno == EACCES) {
 						fprintf(stderr, "WARNING! Please give write permission to the file.\n");
@@ -1214,26 +1237,31 @@ close_and_continue:
 					printf("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
+					/* LCOV_EXCL_STOP */
 				}
 
 				/* set the original modification time */
 				ret = file_utime(file, f);
 				if (ret != 0) {
+					/* LCOV_EXCL_START */
 					close(f);
 
 					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					printf("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
+					/* LCOV_EXCL_STOP */
 				}
 
 				/* close it */
 				ret = close(f);
 				if (ret != 0) {
+					/* LCOV_EXCL_START */
 					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					printf("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
+					/* LCOV_EXCL_STOP */
 				}
 
 				fprintf(stdlog, "fixed:%s:%s: Fixed empty file\n", disk->name, file->sub);
@@ -1351,26 +1379,31 @@ close_and_continue:
 				/* create the ancestor directories */
 				ret = mkancestor(path);
 				if (ret != 0) {
+					/* LCOV_EXCL_START */
 					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					printf("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
+					/* LCOV_EXCL_STOP */
 				}
 
 				/* if it exists, it must be deleted before recreating */
 				ret = remove(path);
 				if (ret != 0 && errno != ENOENT) {
+					/* LCOV_EXCL_START */
 					fprintf(stderr, "Error removing '%s'. %s.\n", path, strerror(errno));
 					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					printf("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
+					/* LCOV_EXCL_STOP */
 				}
 
 				/* create it */
 				if (link_flag_has(link, FILE_IS_HARDLINK)) {
 					ret = hardlink(pathto, path);
 					if (ret != 0) {
+						/* LCOV_EXCL_START */
 						fprintf(stderr, "Error writing hardlink '%s' to '%s'. %s.\n", path, pathto, strerror(errno));
 						if (errno == EACCES) {
 							fprintf(stderr, "WARNING! Please give write permission to the hardlink.\n");
@@ -1381,6 +1414,7 @@ close_and_continue:
 						printf("Stopping\n");
 						++unrecoverable_error;
 						goto bail;
+						/* LCOV_EXCL_STOP */
 					}
 
 					fprintf(stdlog, "hardlinkfixed:%s:%s: Fixed hardlink error\n", disk->name, link->sub);
@@ -1388,6 +1422,7 @@ close_and_continue:
 				} else {
 					ret = symlink(link->linkto, path);
 					if (ret != 0) {
+						/* LCOV_EXCL_START */
 						fprintf(stderr, "Error writing symlink '%s' to '%s'. %s.\n", path, link->linkto, strerror(errno));
 						if (errno == EACCES) {
 							fprintf(stderr, "WARNING! Please give write permission to the symlink.\n");
@@ -1398,6 +1433,7 @@ close_and_continue:
 						printf("Stopping\n");
 						++unrecoverable_error;
 						goto bail;
+						/* LCOV_EXCL_STOP */
 					}
 
 					fprintf(stdlog, "symlinkfixed:%s:%s: Fixed symlink error\n", disk->name, link->sub);
@@ -1448,15 +1484,18 @@ close_and_continue:
 				/* create the ancestor directories */
 				ret = mkancestor(path);
 				if (ret != 0) {
+					/* LCOV_EXCL_START */
 					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					printf("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
+					/* LCOV_EXCL_STOP */
 				}
 
 				/* create it */
 				ret = mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 				if (ret != 0) {
+					/* LCOV_EXCL_START */
 					fprintf(stderr, "Error creating dir '%s'. %s.\n", path, strerror(errno));
 					if (errno == EACCES) {
 						fprintf(stderr, "WARNING! Please give write permission to the dir.\n");
@@ -1467,6 +1506,7 @@ close_and_continue:
 					printf("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
+					/* LCOV_EXCL_STOP */
 				}
 
 				fprintf(stdlog, "dir_fixed:%s:%s: Fixed dir error\n", disk->name, dir->sub);
@@ -1487,9 +1527,11 @@ bail:
 	for(j=0;j<diskmax;++j) {
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "DANGER! Unexpected close error in a data disk.\n");
 			++unrecoverable_error;
 			/* continue, as we are already exiting */
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -1533,10 +1575,12 @@ bail:
 
 				ret = remove(path);
 				if (ret != 0) {
+					/* LCOV_EXCL_START */
 					fprintf(stderr, "Error removing '%s'. %s.\n", path, strerror(errno));
 					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					++unrecoverable_error;
 					/* continue, as we are already exiting */
+					/* LCOV_EXCL_STOP */
 				}
 			}
 		}
@@ -1636,16 +1680,20 @@ int state_check(struct snapraid_state* state, int check, int fix, block_off_t bl
 	printf("Initializing...\n");
 
 	if (!check && fix) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error in calling, you cannot fix without checking parity.\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	blockmax = parity_size(state);
 	size = blockmax * (data_off_t)state->block_size;
 
 	if (blockstart > blockmax) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error in the specified starting block %u. It's bigger than the parity size %u.\n", blockstart, blockmax);
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	/* adjust the number of block to process */
@@ -1660,14 +1708,18 @@ int state_check(struct snapraid_state* state, int check, int fix, block_off_t bl
 			parity_ptr[l] = &parity[l];
 			ret = parity_create(parity_ptr[l], state->parity_path[l], &out_size, state->opt.skip_sequential);
 			if (ret == -1) {
+				/* LCOV_EXCL_START */
 				fprintf(stderr, "WARNING! Without an accessible %s file, it isn't possible to fix any error.\n", lev_name(l));
 				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
 			}
 
 			ret = parity_chsize(parity_ptr[l], size, &out_size, state->opt.skip_fallocate);
 			if (ret == -1) {
+				/* LCOV_EXCL_START */
 				fprintf(stderr, "WARNING! Without an accessible %s file, it isn't possible to sync.\n", lev_name(l));
 				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
 			}
 		}
 	} else if (check) {
@@ -1701,8 +1753,10 @@ int state_check(struct snapraid_state* state, int check, int fix, block_off_t bl
 	if (blockstart < blockmax) {
 		ret = state_check_process(state, check, fix, parity_ptr, blockstart, blockmax);
 		if (ret == -1) {
+			/* LCOV_EXCL_START */
 			++error;
 			/* continue, as we are already exiting */
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -1710,11 +1764,13 @@ int state_check(struct snapraid_state* state, int check, int fix, block_off_t bl
 	for(l=0;l<state->level;++l) {
 		if (parity_ptr[l]) {
 			ret = parity_close(parity_ptr[l]);
+			/* LCOV_EXCL_START */
 			if (ret == -1) {
 				fprintf(stderr, "DANGER! Unexpected close error in %s disk.\n", lev_name(l));
 				++error;
 				/* continue, as we are already exiting */
 			}
+			/* LCOV_EXCL_STOP */
 		}
 	}
 

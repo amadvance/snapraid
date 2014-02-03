@@ -58,8 +58,10 @@ void create_file(const char* path, int size)
 	/* remove the existing file if any */
 	if (remove(path) != 0) {
 		if (errno != ENOENT) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Error removing file %s\n", path);
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 	} else {
 		/* don't recreate a 0 file to avoid ZERO protection */
@@ -68,8 +70,10 @@ void create_file(const char* path, int size)
 
 	f = fopen(path, "wb");
 	if (!f) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error writing file %s\n", path);
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	count = size;
@@ -92,14 +96,18 @@ void create_symlink(const char* path, const char* linkto)
 	/* remove the existing file if any */
 	if (remove(path) != 0) {
 		if (errno != ENOENT) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Error removing file %s\n", path);
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
 	if (symlink(linkto, path) != 0) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error writing symlink %s\n", path);
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 }
 
@@ -118,8 +126,10 @@ void generate(int disk, int size)
 	/* create it */
 	if (mkdir(path, 0777) != 0) {
 		if (errno != EEXIST) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Error creating directory %s\n", path);
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -205,8 +215,10 @@ void fallback(int f, struct stat* st)
 #error No function available to set file timestamps
 #endif
 	if (ret != 0) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error restoring time\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 }
 
@@ -232,8 +244,10 @@ void writ(const char* path, int size, int silent_error)
 	if (lstat(path, &st) != 0) {
 		if (errno == ENOENT)
 			return; /* it may be already deleted */
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error accessing %s\n", path);
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	if (S_ISREG(st.st_mode)) {
@@ -244,8 +258,10 @@ void writ(const char* path, int size, int silent_error)
 
 		f = fopen(path, "r+b");
 		if (!f) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Error writing %s\n", path);
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		/* start at random position inside the file */
@@ -254,8 +270,10 @@ void writ(const char* path, int size, int silent_error)
 		else
 			start = 0;
 		if (fseek(f, start, SEEK_SET) != 0) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Error seeking %s\n", path);
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		/* write garbage, in case also over the end */
@@ -286,8 +304,10 @@ void append(const char* path, int size)
 	if (lstat(path, &st) != 0) {
 		if (errno == ENOENT)
 			return; /* it may be already deleted */
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error accessing %s\n", path);
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	if (S_ISREG(st.st_mode)) {
@@ -296,8 +316,10 @@ void append(const char* path, int size)
 
 		f = fopen(path, "ab");
 		if (!f) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Error appending %s\n", path);
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		/* write garbage, in case also over the end */
@@ -321,8 +343,10 @@ void truncat(const char* path, int size)
 	if (lstat(path, &st) != 0) {
 		if (errno == ENOENT)
 			return; /* it may be already deleted */
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error accessing %s\n", path);
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	if (S_ISREG(st.st_mode)) {
@@ -332,8 +356,10 @@ void truncat(const char* path, int size)
 
 		f = fopen(path, "r+b");
 		if (!f) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Error writing %s\n", path);
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		/* truncate at random position inside the file */
@@ -347,8 +373,10 @@ void truncat(const char* path, int size)
 			start = 1;
     
 		if (ftruncate(fileno(f), start) != 0) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Error truncating %s\n", path);
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		fclose(f);
@@ -365,8 +393,10 @@ void change(const char* path, int size)
 	if (lstat(path, &st) != 0) {
 		if (errno == ENOENT)
 			return; /* it may be already deleted */
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error accessing %s\n", path);
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	if (S_ISLNK(st.st_mode)) {
@@ -374,16 +404,20 @@ void change(const char* path, int size)
 		if (rnd(2) == 0) {
 			/* delete */
 			if (remove(path) != 0) {
+				/* LCOV_EXCL_START */
 				fprintf(stderr, "Error removing %s\n", path);
 				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
 			}
 		} else {
 			/* recreate */
 			char linkto[PATH_MAX];
 
 			if (remove(path) != 0) {
+				/* LCOV_EXCL_START */
 				fprintf(stderr, "Error removing %s\n", path);
 				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
 			}
 
 			rnd_name(linkto);
@@ -407,8 +441,10 @@ void change(const char* path, int size)
 		} else {
 			/* delete */
 			if (remove(path) != 0) {
+				/* LCOV_EXCL_START */
 				fprintf(stderr, "Error removing %s\n", path);
 				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
 			}
 		}
 	}
@@ -436,16 +472,20 @@ int main(int argc, char* argv[])
 	int i, j, b;
 
 	if (argc < 2) {
+		/* LCOV_EXCL_START */
 		help();
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	if (strcmp(argv[1], "generate") == 0) {
 		int disk, file, size;
 
 		if (argc != 6) {
+			/* LCOV_EXCL_START */
 			help();
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		seed = atoi(argv[2]);
@@ -468,8 +508,10 @@ int main(int argc, char* argv[])
 		int silent_error = strcmp(argv[1], "damage") == 0;
 
 		if (argc < 6) {
+			/* LCOV_EXCL_START */
 			help();
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		seed = atoi(argv[2]);
@@ -489,8 +531,10 @@ int main(int argc, char* argv[])
 		int size;
 
 		if (argc < 5) {
+			/* LCOV_EXCL_START */
 			help();
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		seed = atoi(argv[2]);
@@ -507,8 +551,10 @@ int main(int argc, char* argv[])
 		int size;
 
 		if (argc < 5) {
+			/* LCOV_EXCL_START */
 			help();
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		seed = atoi(argv[2]);
@@ -525,8 +571,10 @@ int main(int argc, char* argv[])
 		int size;
 
 		if (argc < 5) {
+			/* LCOV_EXCL_START */
 			help();
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		seed = atoi(argv[2]);
@@ -540,8 +588,10 @@ int main(int argc, char* argv[])
 			change(argv[i], rnd(size));
 		}
 	} else {
+		/* LCOV_EXCL_START */
 		help();
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	return 0;

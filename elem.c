@@ -244,8 +244,10 @@ int filter_existence(int filter_missing, const char* dir, const char* sub)
 		/* if the file doesn't exist, we don't filter it out */
 		if (errno == ENOENT)
 			return 0;
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error in stat file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	/* the file is present, so we filter it out */
@@ -302,8 +304,10 @@ block_off_t block_file_pos(struct snapraid_block* block)
 	struct snapraid_file* file = block_file_get(block);
 
 	if (block < file->blockvec || block >= file->blockvec + file->blockmax) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Internal inconsistency in block %u ownership\n", block->parity_pos);
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	return block - file->blockvec;
@@ -599,8 +603,10 @@ int disk_is_empty(struct snapraid_disk* disk, block_off_t blockmax)
 			/* if there is a deleted block, the disk is not empty */
 			return 0;
 		default:
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Internal inconsistency for used block in disk '%s' without files\n", disk->name);
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 	}
 

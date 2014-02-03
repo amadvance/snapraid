@@ -92,7 +92,9 @@ void state_list(struct snapraid_state* state)
 			case FILE_IS_SYMLINK : type = "symlink"; break;
 			case FILE_IS_SYMDIR : type = "symdir"; break;
 			case FILE_IS_JUNCTION : type = "junction"; break;
+			/* LCOV_EXCL_START */
 			default: type = "unknown"; break;
+			/* LCOV_EXCL_STOP */
 			}
 
 			++link_count;
