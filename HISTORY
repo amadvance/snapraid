@@ -5,7 +5,7 @@ SnapRAID HISTORY
 =================
  * In "sync", even if a silent error is found, continue to update
    the parity if it's possible to correct the error.
-   Note that the block will still be marked bad, and the data
+   Note that the block will be marked bad, and the data
    will be fixed only at the next "fix -e" call.
    But any new data added will be protected if you are using
    enough parity to fix both the silent error and at least
