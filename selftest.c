@@ -26,11 +26,74 @@
 #include "raid/test.h"
 #include "elem.h"
 #include "state.h"
+#include "tommyhash.h"
+
+struct hash32_test_vector {
+	const char* data;
+	int len;
+	uint32_t digest;
+};
+
+struct hash64_test_vector {
+	const char* data;
+	int len;
+	uint64_t digest;
+};
 
 struct hash_test_vector {
 	const char* data;
 	int len;
 	unsigned char digest[HASH_SIZE];
+};
+
+/**
+ * Test vectors for tommy_hash32
+ */
+static struct hash32_test_vector TEST_HASH32[] = {
+{ "", 0, 0x8614384c },
+{ "a", 1, 0x12c16c36 },
+{ "abc", 3, 0xc58e8af5 },
+{ "message digest", 14, 0x006b32f1 },
+{ "abcdefghijklmnopqrstuvwxyz", 26, 0x7e6fcfe0 },
+{ "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 62, 0x8604adf8 },
+{ "The quick brown fox jumps over the lazy dog", 43, 0xdeba3d3a },
+{ "\x00", 1, 0x4a7d1c33 },
+{ "\x16\x27", 2, 0x8b50899b },
+{ "\xe2\x56\xb4", 3, 0x60406493 },
+{ "\xc9\x4d\x9c\xda", 4, 0xa049144a },
+{ "\x79\xf1\x29\x69\x5d", 5, 0x4da2c2f1 },
+{ "\x00\x7e\xdf\x1e\x31\x1c", 6, 0x59de30cf },
+{ "\x2a\x4c\xe1\xff\x9e\x6f\x53", 7, 0x219e149c },
+{ "\xba\x02\xab\x18\x30\xc5\x0e\x8a", 8, 0x25067520 },
+{ "\xec\x4e\x7a\x72\x1e\x71\x2a\xc9\x33", 9, 0xa1f368d8 },
+{ "\xfd\xe2\x9c\x0f\x72\xb7\x08\xea\xd0\x78", 10, 0x805fc63d },
+{ "\x65\xc4\x8a\xb8\x80\x86\x9a\x79\x00\xb7\xae", 11, 0x7f75dd0f },
+{ 0, 0, 0 }
+};
+
+/**
+ * Test vectors for tommy_hash64
+ */
+static struct hash64_test_vector TEST_HASH64[] = {
+{ "", 0, 0x8614384cb5165fbfULL },
+{ "a", 1, 0x1a2e0298a8e94a3dULL },
+{ "abc", 3, 0x7555796b7a7d21ebULL },
+{ "message digest", 14, 0x9411a57d04b92fb4ULL },
+{ "abcdefghijklmnopqrstuvwxyz", 26, 0x3ca3f8d2b4e69832ULL },
+{ "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 62, 0x6dae542ba0015a4dULL },
+{ "The quick brown fox jumps over the lazy dog", 43, 0xe06d8cbb3d2ea1a6ULL },
+{ "\x00", 1, 0x201e664fb5f2c021ULL },
+{ "\x16\x27", 2, 0xef42fa8032c4b775ULL },
+{ "\xe2\x56\xb4", 3, 0x6e6c498a6688466cULL },
+{ "\xc9\x4d\x9c\xda", 4, 0x5195005419905423ULL },
+{ "\x79\xf1\x29\x69\x5d", 5, 0x221235b48afee7c1ULL },
+{ "\x00\x7e\xdf\x1e\x31\x1c", 6, 0x1b1f18b9266f095bULL },
+{ "\x2a\x4c\xe1\xff\x9e\x6f\x53", 7, 0x2cbafa8e741d49caULL },
+{ "\xba\x02\xab\x18\x30\xc5\x0e\x8a", 8, 0x4677f04c06e0758dULL },
+{ "\xec\x4e\x7a\x72\x1e\x71\x2a\xc9\x33", 9, 0x5afe09e8214e2163ULL },
+{ "\xfd\xe2\x9c\x0f\x72\xb7\x08\xea\xd0\x78", 10, 0x115b6276d209fab6ULL },
+{ "\x65\xc4\x8a\xb8\x80\x86\x9a\x79\x00\xb7\xae", 11, 0xd0636d2f01cf3a3eULL },
+{ 0, 0, 0 }
 };
 
 /**
@@ -58,9 +121,14 @@ static void test_hash(void)
 	void* seed_alloc;
 	unsigned char* buffer_aligned;
 	void* buffer_alloc;
+	uint32_t seed32;
+	uint64_t seed64;
 
 	seed_aligned = malloc_nofail_align(HASH_SIZE, &seed_alloc);
 	buffer_aligned = malloc_nofail_align(HASH_TEST_MAX, &buffer_alloc);
+
+	seed32 = 0xa766795d;
+	seed64 = 0x2f022773a766795dULL;
 
 	seed_aligned[0] = 0x5d;
 	seed_aligned[1] = 0x79;
@@ -78,6 +146,31 @@ static void test_hash(void)
 	seed_aligned[13] = 0x8c;
 	seed_aligned[14] = 0x9e;
 	seed_aligned[15] = 0x43;
+
+	for(i=0;TEST_HASH32[i].data;++i) {
+		uint32_t digest;
+		memcpy(buffer_aligned, TEST_HASH32[i].data, TEST_HASH32[i].len);
+		digest = tommy_hash_u32(seed32, buffer_aligned, TEST_MURMUR3[i].len);
+		if (digest != TEST_HASH32[i].digest) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Failed hash32 test\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	for(i=0;TEST_HASH64[i].data;++i) {
+		uint64_t digest;
+		memcpy(buffer_aligned, TEST_HASH64[i].data, TEST_HASH64[i].len);
+		digest = tommy_hash_u64(seed64, buffer_aligned, TEST_MURMUR3[i].len);
+		if (digest != TEST_HASH64[i].digest) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Failed hash64 test\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
 
 	for(i=0;TEST_MURMUR3[i].data;++i) {
 		unsigned char digest[HASH_SIZE];
