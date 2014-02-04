@@ -112,7 +112,9 @@ maintainer-clean-local:
 
 # Automatic testing
 
-CHECKFLAGS = --test-skip-device --test-skip-self --test-force-order-alpha -q
+CHECKFLAGS_BASE = --test-skip-device --test-skip-self --test-force-order-alpha
+CHECKFLAGS_VERBOSE = $(CHECKFLAGS_BASE) -v
+CHECKFLAGS = $(CHECKFLAGS_BASE) -q
 CHECKCOUNT = 1000
 CHECKSIZE = 4000
 CONF = $(srcdir)/test-par6.conf
@@ -137,6 +139,7 @@ check-local:
 	mkdir test/pool
 	echo --- Help
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -h
+	$(TESTENV) ./mktest$(EXEEXT)
 	echo --- Run the self test only this time
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -c $(CONF) status
 	echo --- Run the speed test
@@ -372,11 +375,10 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-scrub-even scrub
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
-	echo --- Delete files from three disks and fix with import in PAR2
+	echo --- Delete files from three disks and check/fix with import in PAR2
 	rm -r test/disk1/a
 	rm -r test/disk2/a
 	mv test/disk3/a test/a
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -i test/a -c $(PAR2) fix -l test.log
 	rm -r test/a
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
@@ -521,11 +523,12 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR1) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
-	echo --- Corrupt some files, fix and check with PAR2
+	echo --- Corrupt some files, fix and check with PAR2 in verbose mode
 	$(TESTENV) ./mktest$(EXEEXT) change 4 500 test/disk2/b/*
 	$(TESTENV) ./mktest$(EXEEXT) change 4 500 test/disk3/b/*
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) --test-expect-unrecoverable -c $(PAR1) check -l test.log > /dev/null
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) --test-expect-unrecoverable -c $(PAR1) fix -l test.log > /dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR2) -a check -l test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR1) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR2) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check

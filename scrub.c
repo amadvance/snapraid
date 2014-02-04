@@ -263,6 +263,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				/* report that the block and the file are not synched */
 				block_is_unsynched = 1;
 				file_is_unsynched = 1;
+
+				/* follow */
 			}
 
 			/* note that we intentionally don't abort if the file has different attributes */
@@ -330,6 +332,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					fprintf(stdlog, "parity_error:%u:%s: Read error\n", i, lev_config_name(l));
 					++error;
 					error_on_this_block = 1;
+
+					/* follow */
 				}
 			}
 

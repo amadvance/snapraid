@@ -555,7 +555,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					/* this isn't a serious error, so we skip this block, and continue with others */
 					error_on_this_block = 1;
 					continue;
-				} else if (errno == EACCES) {
+				}
+				if (errno == EACCES) {
 					fprintf(stdlog, "error:%u:%s:%s: Open access error\n", i, handle[j].disk->name, file->sub);
 					fprintf(stderr, "No access at file '%s'.\n", handle[j].path);
 					fprintf(stderr, "WARNING! Please fix the access permission in the data disk.\n");
@@ -566,14 +567,14 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					/* this isn't a serious error, so we skip this block, and continue with others */
 					error_on_this_block = 1;
 					continue;
-				} else {
-					fprintf(stdlog, "error:%u:%s:%s: Open error. %s\n", i, handle[j].disk->name, file->sub, strerror(errno));
-					fprintf(stderr, "DANGER! Unexpected open error in a data disk, it isn't possible to sync.\n");
-					fprintf(stderr, "Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", handle[j].disk->dir, handle[j].path);
-					printf("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", file->sub);
 				}
-
+				
 				/* LCOV_EXCL_START */
+				fprintf(stdlog, "error:%u:%s:%s: Open error. %s\n", i, handle[j].disk->name, file->sub, strerror(errno));
+				fprintf(stderr, "DANGER! Unexpected open error in a data disk, it isn't possible to sync.\n");
+				fprintf(stderr, "Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", handle[j].disk->dir, handle[j].path);
+				printf("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", file->sub);
+
 				++error;
 				goto bail;
 				/* LCOV_EXCL_STOP */

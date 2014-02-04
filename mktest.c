@@ -222,18 +222,6 @@ void fallback(int f, struct stat* st)
 	}
 }
 
-void duplicate_name(const char* path, char* newpath)
-{
-	size_t len;
-
-	strcpy(newpath, path);
-
-	len = strlen(newpath);
-
-	newpath[len] = 'a' + rnd('z' - 'a');
-	newpath[len+1] = 0;
-}
-
 void writ(const char* path, int size, int silent_error)
 {
 	struct stat st;
@@ -472,10 +460,8 @@ int main(int argc, char* argv[])
 	int i, j, b;
 
 	if (argc < 2) {
-		/* LCOV_EXCL_START */
 		help();
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
+		exit(EXIT_SUCCESS);
 	}
 
 	if (strcmp(argv[1], "generate") == 0) {

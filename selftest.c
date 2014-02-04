@@ -27,6 +27,10 @@
 #include "elem.h"
 #include "state.h"
 #include "tommyhash.h"
+#include "tommyarray.h"
+#include "tommyarrayblk.h"
+#include "tommyarrayblkof.h"
+#include "tommyhashdyn.h"
 
 struct hash32_test_vector {
 	const char* data;
@@ -68,6 +72,7 @@ static struct hash32_test_vector TEST_HASH32[] = {
 { "\xec\x4e\x7a\x72\x1e\x71\x2a\xc9\x33", 9, 0xa1f368d8 },
 { "\xfd\xe2\x9c\x0f\x72\xb7\x08\xea\xd0\x78", 10, 0x805fc63d },
 { "\x65\xc4\x8a\xb8\x80\x86\x9a\x79\x00\xb7\xae", 11, 0x7f75dd0f },
+{ "\x77\xe9\xd7\x80\x0e\x3f\x5c\x43\xc8\xc2\x46\x39", 12, 0xb9154382 },
 { 0, 0, 0 }
 };
 
@@ -93,6 +98,7 @@ static struct hash64_test_vector TEST_HASH64[] = {
 { "\xec\x4e\x7a\x72\x1e\x71\x2a\xc9\x33", 9, 0x5afe09e8214e2163ULL },
 { "\xfd\xe2\x9c\x0f\x72\xb7\x08\xea\xd0\x78", 10, 0x115b6276d209fab6ULL },
 { "\x65\xc4\x8a\xb8\x80\x86\x9a\x79\x00\xb7\xae", 11, 0xd0636d2f01cf3a3eULL },
+{ "\x77\xe9\xd7\x80\x0e\x3f\x5c\x43\xc8\xc2\x46\x39", 12, 0x6d259f5fef74f93eULL },
 { 0, 0, 0 }
 };
 
@@ -246,6 +252,91 @@ static void test_crc32c(void)
 	}
 }
 
+/**
+ * Size of tommy data structures.
+ */
+#define TOMMY_SIZE 256
+
+static int tommy_test_search(const void* arg, const void* obj)
+{
+	return arg != obj;
+}
+
+static void test_tommy(void)
+{
+	tommy_array array;
+	tommy_arrayblk arrayblk;
+	tommy_arrayblkof arrayblkof;
+	tommy_hashdyn hashdyn;
+	tommy_hashdyn_node node[TOMMY_SIZE];
+	unsigned i;
+
+	tommy_array_init(&array);
+	tommy_arrayblk_init(&arrayblk);
+	tommy_arrayblkof_init(&arrayblkof, sizeof(unsigned));
+
+	for(i=0;i<TOMMY_SIZE;++i) {
+		tommy_array_insert(&array, &node[i]);
+		tommy_arrayblk_insert(&arrayblk, &node[i]);
+		tommy_arrayblkof_grow(&arrayblkof, i + 1);
+		*(unsigned*)tommy_arrayblkof_ref(&arrayblkof, i) = i;
+	}
+
+	if (tommy_array_memory_usage(&array) < TOMMY_SIZE * sizeof(void*))
+		goto bail;
+	if (tommy_arrayblk_memory_usage(&arrayblk) < TOMMY_SIZE * sizeof(void*))
+		goto bail;
+	if (tommy_arrayblkof_memory_usage(&arrayblkof) < TOMMY_SIZE * sizeof(unsigned))
+		goto bail;
+
+	for(i=0;i<TOMMY_SIZE;++i) {
+		if (tommy_array_get(&array, i) != &node[i])
+			goto bail;
+		if (tommy_arrayblk_get(&arrayblk, i) != &node[i])
+			goto bail;
+		if (*(unsigned*)tommy_arrayblkof_ref(&arrayblkof, i) != i)
+			goto bail;
+	}
+
+	tommy_arrayblkof_done(&arrayblkof);
+	tommy_arrayblk_done(&arrayblk);
+	tommy_array_done(&array);
+
+	tommy_hashdyn_init(&hashdyn);
+
+	for(i=0;i<TOMMY_SIZE;++i)
+		tommy_hashdyn_insert(&hashdyn, &node[i], &node[i], i % 64);
+
+	if (tommy_hashdyn_count(&hashdyn) != TOMMY_SIZE)
+		goto bail;
+
+	if (tommy_hashdyn_memory_usage(&hashdyn) < TOMMY_SIZE * sizeof(void*))
+		goto bail;
+
+	for(i=0;i<TOMMY_SIZE/2;++i)
+		tommy_hashdyn_remove_existing(&hashdyn, &node[i]);
+
+	for(i=0;i<TOMMY_SIZE/2;++i)
+		if (tommy_hashdyn_remove(&hashdyn, tommy_test_search, &node[i], i % 64) != 0)
+			goto bail;
+
+	for(i=TOMMY_SIZE/2;i<TOMMY_SIZE;++i)
+		if (tommy_hashdyn_remove(&hashdyn, tommy_test_search, &node[i], i % 64) == 0)
+			goto bail;
+
+	if (tommy_hashdyn_count(&hashdyn) != 0)
+		goto bail;
+
+	tommy_hashdyn_done(&hashdyn);
+
+	return;
+bail:
+	/* LCOV_EXCL_START */
+	fprintf(stderr, "Failed tommy test\n");
+	exit(EXIT_FAILURE);
+	/* LCOV_EXCL_STOP */
+}
+
 void selftest(void)
 {
 	fprintf(stdlog, "selftest:\n");
@@ -263,6 +354,7 @@ void selftest(void)
 
 	test_hash();
 	test_crc32c();
+	test_tommy();
 	if (raid_selftest() != 0) {
 		/* LCOV_EXCL_START */
 		fprintf(stderr, "Failed SELF test\n");
