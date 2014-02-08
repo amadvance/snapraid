@@ -27,7 +27,7 @@
 /****************************************************************************/
 /* hash */
 
-static void state_hash_process(struct snapraid_state* state, block_off_t blockstart, block_off_t blockmax)
+static int state_hash_process(struct snapraid_state* state, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
 	unsigned diskmax;
@@ -39,6 +39,7 @@ static void state_hash_process(struct snapraid_state* state, block_off_t blockst
 	block_off_t countmax;
 	int ret;
 	unsigned error;
+	int skip_sync;
 
 	/* maps the disks to handles */
 	handle = handle_map(state, &diskmax);
@@ -87,7 +88,6 @@ static void state_hash_process(struct snapraid_state* state, block_off_t blockst
 			continue;
 
 		for(i=blockstart;i<blockmax;++i) {
-			int ret;
 			snapraid_info info;
 			int rehash;
 			struct snapraid_block* block;
@@ -231,6 +231,7 @@ static void state_hash_process(struct snapraid_state* state, block_off_t blockst
 			/* progress */
 			if (state_progress(state, i, countpos, countmax, countsize)) {
 				/* LCOV_EXCL_START */
+				skip_sync = 1;
 				break;
 				/* LCOV_EXCL_STOP */
 			}
@@ -283,6 +284,8 @@ bail:
 
 	free(handle);
 	free(buffer);
+
+	return skip_sync;
 }
 
 /****************************************************************************/
@@ -960,6 +963,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	struct snapraid_parity* parity_ptr[LEV_MAX];
 	unsigned unrecoverable_error;
 	unsigned l;
+	int skip_sync = 0;
 
 	printf("Initializing...\n");
 
@@ -1011,30 +1015,32 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		}
 	}
 
+	unrecoverable_error = 0;
+
 	if (!state->opt.rawsync) {
 		printf("Hashing...\n");
 
-		state_hash_process(state, blockstart, blockmax);
+		skip_sync = state_hash_process(state, blockstart, blockmax);
 
 		if (state->need_write)
 			state_write(state);
 	}
 
-	printf("Syncing...\n");
+	if (!skip_sync) {
+		printf("Syncing...\n");
 
-	unrecoverable_error = 0;
-
-	/* skip degenerated cases of empty parity, or skipping all */
-	if (blockstart < blockmax) {
-		ret = state_sync_process(state, parity_ptr, blockstart, blockmax);
-		if (ret == -1) {
-			/* LCOV_EXCL_START */
-			++unrecoverable_error;
-			/* continue, as we are already exiting */
-			/* LCOV_EXCL_STOP */
+		/* skip degenerated cases of empty parity, or skipping all */
+		if (blockstart < blockmax) {
+			ret = state_sync_process(state, parity_ptr, blockstart, blockmax);
+			if (ret == -1) {
+				/* LCOV_EXCL_START */
+				++unrecoverable_error;
+				/* continue, as we are already exiting */
+				/* LCOV_EXCL_STOP */
+			}
+		} else {
+			printf("Nothing to do\n");
 		}
-	} else {
-		printf("Nothing to do\n");
 	}
 
 	for(l=0;l<state->level;++l) {
