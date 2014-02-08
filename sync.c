@@ -39,7 +39,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 	block_off_t countmax;
 	int ret;
 	unsigned error;
-	int skip_sync;
+	int skip_sync = 0;
 
 	/* maps the disks to handles */
 	handle = handle_map(state, &diskmax);
