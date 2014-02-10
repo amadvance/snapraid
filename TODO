@@ -11,14 +11,16 @@ This is the list of TODO items for SnapRAID.
 But check that -p0 still work.
 
 * Checks if splitting hash/parity computation in 4K pages
-can improve speed in sync.
+can improve speed in sync. That should increase cache locality,
+becase we read the data two times for hash and and parity,
+and if we manage to keep it in the cache, we should save time.
 
 * Detect files moved from one disk to another. We won't be able to reuse
 parity, but we can reuse the hash to check that the file was moved
 correctly.
 We can assume a file moved to another disk if it has the same name, size,
 and timestamp. Directory and inode can be different.
-This can be implemented with NEW blocks with HASH.
+This can be implemented with the REP blocks.
 In synch, we can do the hash check of such blocks before any other operation,
 before invalidating the parity of the moved files now converted in DELETED
 blocks.
@@ -71,6 +73,8 @@ on the error message. See: https://sourceforge.net/projects/snapraid/forums/foru
 Different partitions have duplicate inode. The only way to support this is to
 add also a kind of device_id, increasing the memory required.
 But it should be only few bits for each file. So, it should be manageable.
+A lot of discussions about this feature :)
+https://sourceforge.net/p/snapraid/discussion/1677233/thread/b2cd9385/
 
 * Rename sync->backup and fix->restore. It seems to me a naming expressing
 better the meaning of the commands. But not yet sure.
