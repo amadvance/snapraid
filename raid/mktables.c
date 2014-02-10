@@ -16,7 +16,7 @@
 #include <stdint.h>
 
 /**
- * Multiplication in GF(2^8).
+ * Multiplication a*b in GF(2^8).
  */
 static uint8_t gfmul(uint8_t a, uint8_t b)
 {
@@ -41,19 +41,19 @@ static uint8_t gfmul(uint8_t a, uint8_t b)
 }
 
 /**
- * Inversion table in GF(2^8).
+ * Inversion (1/a) in GF(2^8).
  */
 uint8_t gfinv[256];
 
 /**
- * Number of parity.
- * This is the number of rows of the generation matrix.
+ * Number of parities.
+ * This is the number of rows of the generator matrix.
  */
 #define PARITY 6
 
 /**
  * Number of disks.
- * This is the number of columns of the generation matrix.
+ * This is the number of columns of the generator matrix.
  */
 #define DISK (257-PARITY)
 
@@ -66,27 +66,54 @@ static void set_cauchy(uint8_t *matrix)
 	uint8_t inv_x, y;
 
 	/*
-	 * First row is formed by all 1.
+	 * The first row of the generator matrix is formed by all 1.
 	 *
-	 * This is an Extended Cauchy matrix built from a Cauchy matrix
-	 * adding the first row of all 1.
+	 * The generator matrix is an Extended Cauchy matrix built from
+	 * a Cauchy matrix adding at the top a row of all 1.
+	 *
+	 * Extending a Cauchy matrix in this way maintains the MDS property
+	 * of the matrix.
+	 *
+	 * For example, considering a generator matrix of 4x6 we have now:
+	 *
+	 *   1   1   1   1   1   1
+	 *   -   -   -   -   -   -
+	 *   -   -   -   -   -   -
+	 *   -   -   -   -   -   -
 	 */
 	for (i = 0; i < DISK; ++i)
 		matrix[0*DISK+i] = 1;
 
 	/*
-	 * Second row is formed by power of 2^i.
+	 * Second row is formed with powers 2^i, and it's the first
+	 * row of the Cauchy matrix.
 	 *
-	 * This is the first row of the Cauchy matrix.
+	 * Each element of the Cauchy matrix is in the form 1/(x_i + y_j)
+	 * where all x_i and y_j must be different for any i and j.
 	 *
-	 * Each element of the Cauchy matrix is in the form 1/(xi+yj)
-	 * where all xi, and yj must be different.
+	 * For the first row with j=0, we choose x_i = 2^-i and y_0 = 0
+	 * and we obtain a first row formed as:
 	 *
-	 * Choosing xi = 2^-i and y0 = 0, we obtain for the first row:
-	 *
-	 * 1/(xi+y0) = 1/(2^-i + 0) = 2^i
+	 * 1/(x_i + y_0) = 1/(2^-i + 0) = 2^i
 	 *
 	 * with 2^-i != 0 for any i
+	 *
+	 * In the example we get:
+	 *
+	 * x_0 = 1
+	 * x_1 = 142
+	 * x_2 = 71
+	 * x_3 = 173
+	 * x_4 = 216
+	 * x_5 = 108
+	 * y_0 = 0
+	 *
+	 * with the matrix:
+	 *
+	 *   1   1   1   1   1   1
+	 *   1   2   4   8  16  32
+	 *   -   -   -   -   -   -
+	 *   -   -   -   -   -   -
 	 */
 	inv_x = 1;
 	for (i = 0; i < DISK; ++i) {
@@ -95,13 +122,25 @@ static void set_cauchy(uint8_t *matrix)
 	}
 
 	/*
-	 * Next rows of the Cauchy matrix.
+	 * The rest of the Cauchy matrix is formed choosing for each row j
+	 * a new y_j = 2^j and reusing the x_i already assigned in the first
+	 * row obtaining :
 	 *
-	 * Continue forming the Cauchy matrix with yj = 2^j obtaining :
+	 * 1/(x_i + y_j) = 1/(2^-i + 2^j)
 	 *
-	 * 1/(xi+yj) = 1/(2^-i + 2^j)
+	 * with 2^-i + 2^j != 0 for any i,j with i>=0,j>=1,i+j<255
 	 *
-	 * with xi != yj for any i,j with i>=0,j>=1,i+j<255
+	 * In the example we get:
+	 *
+	 * y_1 = 2
+	 * y_2 = 4
+	 *
+	 * with the matrix:
+	 *
+	 *   1   1   1   1   1   1
+	 *   1   2   4   8  16  32
+	 * 244  83  78 183 118  47
+	 * 167  39 213  59 153  82
 	 */
 	y = 2;
 	for (j = 0; j < PARITY-2; ++j) {
@@ -116,11 +155,17 @@ static void set_cauchy(uint8_t *matrix)
 	}
 
 	/*
-	 * Adjusts the matrix multipling each row for
+	 * Finally we adjust the matrix multipling each row for
 	 * the inverse of the first element in the row.
 	 *
-	 * This operation doesn't invalidate the property that all the square
-	 * submatrices are not singular.
+	 * Also this operation maintains the MDS property of the matrix.
+	 *
+	 * Resulting in:
+	 *
+	 *   1   1   1   1   1   1
+	 *   1   2   4   8  16  32
+	 *   1 245 210 196 154 113
+	 *   1 187 166 215   7 106
 	 */
 	for (j = 0; j < PARITY-2; ++j) {
 		uint8_t f = gfinv[matrix[(j+2)*DISK]];
