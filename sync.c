@@ -1017,7 +1017,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	unrecoverable_error = 0;
 
-	if (!state->opt.rawsync) {
+	if (state->opt.prehash) {
 		printf("Hashing...\n");
 
 		skip_sync = state_hash_process(state, blockstart, blockmax);
