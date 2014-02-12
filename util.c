@@ -71,10 +71,12 @@ STREAM* sopen_read(const char* file)
 	/* advise sequential access */
 	ret = posix_fadvise(s->handle[0].f, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (ret != 0) {
+		/* LCOV_EXCL_START */
 		close(s->handle[0].f);
 		free(s->handle);
 		free(s);
 		return 0;
+		/* LCOV_EXCL_STOP */
 	}
 #endif
 
@@ -127,15 +129,19 @@ int sopen_multi_file(STREAM* s, unsigned i, const char* file)
 
 	f = open(file, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_SEQUENTIAL, 0600);
 	if (f == -1) {
+		/* LCOV_EXCL_START */
 		return -1;
+		/* LCOV_EXCL_STOP */
 	}
 
 #if HAVE_POSIX_FADVISE
 	/* advise sequential access */
 	ret = posix_fadvise(f, 0, 0, POSIX_FADV_SEQUENTIAL);
 	if (ret != 0) {
+		/* LCOV_EXCL_START */
 		close(f);
 		return -1;
+		/* LCOV_EXCL_STOP */
 	}
 #endif
 
@@ -150,29 +156,41 @@ int sclose(STREAM* s)
 	unsigned i;
 
 	if (s->state == STREAM_STATE_WRITE) {
-		if (sflush(s) != 0)
+		if (sflush(s) != 0) {
+			/* LCOV_EXCL_START */
 			fail = 1;
+			/* LCOV_EXCL_STOP */
+		}
 	}
 
 	for(i=0;i<s->handle_size;++i) {
-		if (close(s->handle[i].f) != 0)
+		if (close(s->handle[i].f) != 0) {
+			/* LCOV_EXCL_START */
 			fail = 1;
+			/* LCOV_EXCL_STOP */
+		}
 	}
 
 	free(s->handle);
 	free(s->buffer);
 	free(s);
 
-	if (fail)
+	if (fail) {
+		/* LCOV_EXCL_START */
 		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	return 0;
 }
 
 int shandle(STREAM* s)
 {
-	if (!s->handle_size)
+	if (!s->handle_size) {
+		/* LCOV_EXCL_START */
 		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	return s->handle[0].f;
 }
@@ -181,14 +199,19 @@ int sfill(STREAM* s)
 {
 	ssize_t ret;
 
-	if (s->state != STREAM_STATE_READ)
+	if (s->state != STREAM_STATE_READ) {
+		/* LCOV_EXCL_START */
 		return EOF;
+		/* LCOV_EXCL_STOP */
+	}
 
 	ret = read(s->handle[0].f, s->buffer, STREAM_SIZE);
 
 	if (ret < 0) {
+		/* LCOV_EXCL_START */
 		s->state = STREAM_STATE_ERROR;
 		return EOF;
+		/* LCOV_EXCL_STOP */
 	}
 	if (ret == 0) {
 		s->state = STREAM_STATE_EOF;
@@ -215,8 +238,11 @@ int sflush(STREAM* s)
 	ssize_t size;
 	unsigned i;
 
-	if (s->state != STREAM_STATE_WRITE)
+	if (s->state != STREAM_STATE_WRITE) {
+		/* LCOV_EXCL_START */
 		return EOF;
+		/* LCOV_EXCL_STOP */
+	}
 
 	size = s->pos - s->buffer;
 	if (!size)
@@ -230,9 +256,11 @@ int sflush(STREAM* s)
 		ret = write(s->handle[i].f, s->buffer, size);
 
 		if (ret != size) {
+			/* LCOV_EXCL_START */
 			s->state = STREAM_STATE_ERROR;
 			s->state_index = i;
 			return EOF;
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -280,8 +308,11 @@ int sgettok(STREAM* f, char* str, int size)
 
 		*i++ = c;
 
-		if (i == send)
+		if (i == send) {
+			/* LCOV_EXCL_START */
 			return -1;
+			/* LCOV_EXCL_STOP */
+		}
 	}
 
 	*i = 0;
@@ -299,17 +330,19 @@ int sread(STREAM* f, void* void_data, unsigned size)
 		unsigned char* pos = sptrget(f);
 
 		/* copy it */
-		while (size--) {
+		while (size--)
 			*data++ = *pos++;
-		}
 
 		sptrset(f, pos);
 	} else {
 		/* standard version using sputc() */
 		while (size--) {
 			int c = sgetc(f);
-			if (c == EOF)
+			if (c == EOF) {
+				/* LCOV_EXCL_START */
 				return -1;
+				/* LCOV_EXCL_STOP */
+			}
 
 			*data++ = c;
 		}
@@ -341,8 +374,11 @@ int sgetline(STREAM* f, char* str, int size)
 
 			*i++ = c;
 
-			if (i == send)
+			if (i == send) {
+				/* LCOV_EXCL_START */
 				return -1;
+				/* LCOV_EXCL_STOP */
+			}
 		}
 
 		sptrset(f, pos);
@@ -350,7 +386,9 @@ int sgetline(STREAM* f, char* str, int size)
 		while (1) {
 			c = sgetc(f);
 			if (c == EOF) {
+				/* LCOV_EXCL_START */
 				break;
+				/* LCOV_EXCL_STOP */
 			}
 			if (c == '\n') {
 				/* remove ending carrige return to support the Windows CR+LF format */
@@ -362,8 +400,11 @@ int sgetline(STREAM* f, char* str, int size)
 
 			*i++ = c;
 
-			if (i == send)
+			if (i == send) {
+				/* LCOV_EXCL_START */
 				return -1;
+				/* LCOV_EXCL_STOP */
+			}
 		}
 	}
 
@@ -377,12 +418,14 @@ int sgetlasttok(STREAM* f, char* str, int size)
 	int ret;
 
 	ret = sgetline(f, str, size);
-	if (ret < 0)
+	if (ret < 0) {
+		/* LCOV_EXCL_START */
 		return ret;
-
-	while (ret > 0 && (str[ret-1] == ' ' || str[ret-1] == '\t')) {
-		--ret;
+		/* LCOV_EXCL_STOP */
 	}
+
+	while (ret > 0 && (str[ret-1] == ' ' || str[ret-1] == '\t'))
+		--ret;
 
 	str[ret] = 0;
 
@@ -411,8 +454,10 @@ int sgetu32(STREAM* f, uint32_t* value)
 		sungetc(c, f);
 		return 0;
 	} else {
+		/* LCOV_EXCL_START */
 		/* nothing read */
 		return -1;
+		/* LCOV_EXCL_STOP */
 	}
 }
 
@@ -438,8 +483,10 @@ int sgetu64(STREAM* f, uint64_t* value)
 		sungetc(c, f);
 		return 0;
 	} else {
+		/* LCOV_EXCL_START */
 		/* nothing read */
 		return -1;
+		/* LCOV_EXCL_STOP */
 	}
 }
 
@@ -471,7 +518,9 @@ int sgethex(STREAM* f, void* void_data, int size)
 
 		/* at the end check if a digit was wrong */
 		if (x > 0xFF) {
+			/* LCOV_EXCL_START */
 			return -1;
+			/* LCOV_EXCL_STOP */
 		}
 
 		sptrset(f, pos);
@@ -484,19 +533,28 @@ int sgethex(STREAM* f, void* void_data, int size)
 			int c;
 
 			c = sgetc(f);
-			if (c == EOF)
+			if (c == EOF) {
+				/* LCOV_EXCL_START */
 				return -1;
+				/* LCOV_EXCL_STOP */
+			}
 			b0 = strdecset[c];
 
 			c = sgetc(f);
-			if (c == EOF)
+			if (c == EOF) {
+				/* LCOV_EXCL_START */
 				return -1;
+				/* LCOV_EXCL_STOP */
+			}
 			b1 = strdecset[c];
 
 			b = (b0 << 4) | b1;
 
-			if (b > 0xFF)
+			if (b > 0xFF) {
+				/* LCOV_EXCL_START */
 				return -1;
+				/* LCOV_EXCL_STOP */
+			}
 
 			*data++ = b;
 		}
@@ -516,15 +574,21 @@ int sgetb32(STREAM* f, uint32_t* value)
 	s = 0;
 loop:
 	c = sgetc(f);
-	if (c == EOF)
+	if (c == EOF) {
+		/* LCOV_EXCL_START */
 		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	b = (unsigned char)c;
 	if ((b & 0x80) == 0) {
 		v |= (uint32_t)b << s;
 		s += 7;
-		if (s >= 32)
+		if (s >= 32) {
+			/* LCOV_EXCL_START */
 			return -1;
+			/* LCOV_EXCL_STOP */
+		}
 		goto loop;
 	}
 
@@ -546,15 +610,21 @@ int sgetb64(STREAM* f, uint64_t* value)
 	s = 0;
 loop:
 	c = sgetc(f);
-	if (c == EOF)
+	if (c == EOF) {
+		/* LCOV_EXCL_START */
 		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	b = (unsigned char)c;
 	if ((b & 0x80) == 0) {
 		v |= (uint64_t)b << s;
 		s += 7;
-		if (s >= 64)
+		if (s >= 64) {
+			/* LCOV_EXCL_START */
 			return -1;
+			/* LCOV_EXCL_STOP */
+		}
 		goto loop;
 	}
 
@@ -569,8 +639,11 @@ int sgetble32(STREAM* f, uint32_t* value)
 {
 	unsigned char buf[4];
 
-	if (sread(f, buf, 4) != 0)
+	if (sread(f, buf, 4) != 0) {
+		/* LCOV_EXCL_START */
 		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	*value = buf[0] | (uint32_t)buf[1] << 8 | (uint32_t)buf[2] << 16 | (uint32_t)buf[3] << 24;
 
@@ -581,11 +654,17 @@ int sgetbs(STREAM* f, char* str, int size)
 {
 	uint32_t len;
 
-	if (sgetb32(f, &len) < 0)
+	if (sgetb32(f, &len) < 0) {
+		/* LCOV_EXCL_START */
 		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
-	if (len + 1 > (uint32_t)size)
+	if (len + 1 > (uint32_t)size) {
+		/* LCOV_EXCL_START */
 		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	str[len] = 0;
 
@@ -595,8 +674,11 @@ int sgetbs(STREAM* f, char* str, int size)
 int sputs(const char* str, STREAM* f)
 {
 	while (*str) {
-		if (sputc(*str++, f) != 0)
+		if (sputc(*str++, f) != 0) {
+			/* LCOV_EXCL_START */
 			return -1;
+			/* LCOV_EXCL_STOP */
+		}
 	}
 
 	return 0;
@@ -612,16 +694,18 @@ int swrite(const void* void_data, unsigned size, STREAM* f)
 		unsigned char* pos = sptrget(f);
 
 		/* copy it */
-		while (size--) {
+		while (size--)
 			*pos++ = *data++;
-		}
 
 		sptrset(f, pos);
 	} else {
 		/* standard version using sputc() */
 		while (size--) {
-			if (sputc(*data++, f) != 0)
+			if (sputc(*data++, f) != 0) {
+				/* LCOV_EXCL_START */
 				return -1;
+				/* LCOV_EXCL_STOP */
+			}
 		}
 	}
 
@@ -697,10 +781,16 @@ int sputhex(const void* void_data, int size, STREAM* f)
 		while (size) {
 			unsigned b = *data;
 
-			if (sputc(strhexset[b >> 4], f) != 0)
+			if (sputc(strhexset[b >> 4], f) != 0) {
+				/* LCOV_EXCL_START */
 				return -1;
-			if (sputc(strhexset[b & 0xF], f) != 0)
+				/* LCOV_EXCL_STOP */
+			}
+			if (sputc(strhexset[b & 0xF], f) != 0) {
+				/* LCOV_EXCL_START */
 				return -1;
+				/* LCOV_EXCL_STOP */
+			}
 
 			++data;
 			--size;
@@ -768,8 +858,11 @@ int sputbs(const char* str, STREAM* f)
 {
 	size_t len = strlen(str);
 
-	if (sputb32(len, f) != 0)
+	if (sputb32(len, f) != 0) {
+		/* LCOV_EXCL_START */
 		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	return swrite(str, len, f);
 }
@@ -781,9 +874,11 @@ int ssync(STREAM* s)
 
 	for(i=0;i<s->handle_size;++i) {
 		if (fsync(s->handle[i].f) != 0) {
+			/* LCOV_EXCL_START */
 			s->state = STREAM_STATE_ERROR;
 			s->state_index = i;
 			return -1;
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -1148,8 +1243,10 @@ void pathcpy(char* dst, size_t size, const char* src)
 	size_t len = strlen(src);
 
 	if (len + 1 > size) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Path too long\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	memcpy(dst, src, len + 1);
@@ -1161,8 +1258,10 @@ void pathcat(char* dst, size_t size, const char* src)
 	size_t src_len = strlen(src);
 
 	if (dst_len + src_len + 1 > size) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Path too long\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	memcpy(dst + dst_len, src, src_len + 1);
@@ -1206,8 +1305,10 @@ void pathprint(char* dst, size_t size, const char* format, ...)
 	va_end(ap);
 
 	if (len >= size) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Path too long\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 }
 
@@ -1217,8 +1318,10 @@ void pathslash(char* dst, size_t size)
 
 	if (len > 0 && dst[len - 1] != '/') {
 		if (len + 2 >= size) {
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "Path too long\n");
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
 		dst[len] = '/';
@@ -1294,13 +1397,17 @@ int mkancestor(const char* file)
 
 	/* recursively create them all */
 	if (mkancestor(dir) != 0) {
+		/* LCOV_EXCL_START */
 		return -1;
+		/* LCOV_EXCL_STOP */
 	}
 
 	/* create it */
 	if (mkdir(dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) != 0) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error creating directory '%s'. %s.\n", dir, strerror(errno));
 		return -1;
+		/* LCOV_EXCL_STOP */
 	}
 
 	return 0;
@@ -1321,11 +1428,13 @@ void* malloc_nofail(size_t size)
 	void* ptr = malloc(size);
 
 	if (!ptr) {
+		/* LCOV_EXCL_START */
 		/* don't use printf to avoid any possible extra allocation */
 		if (write(2, "Low Memory\n", 11) != 11) {
 			/* ignore error */
 		}
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 #ifndef CHECKER /* Don't preinitialize when running for valgrind */
@@ -1353,11 +1462,13 @@ char* strdup_nofail(const char* str)
 	ptr = malloc(size);
 
 	if (!ptr) {
+		/* LCOV_EXCL_START */
 		/* don't use printf to avoid any possible extra allocation */
 		if (write(2, "Low Memory\n", 11) != 11) {
 			/* ignore error */
 		}
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	memcpy(ptr, str, size);
@@ -1374,11 +1485,13 @@ void* malloc_nofail_align(size_t size, void** freeptr)
 	ptr = raid_malloc_align(size, freeptr);
 
 	if (!ptr) {
+		/* LCOV_EXCL_START */
 		/* don't use printf to avoid any possible extra allocation */
 		if (write(2, "Low Memory\n", 11) != 11) {
 			/* ignore error */
 		}
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	return ptr;
@@ -1391,11 +1504,13 @@ void** malloc_nofail_vector_align(int nd, int n, size_t size, void** freeptr)
 	ptr = raid_malloc_vector(nd, n, size, freeptr);
 
 	if (!ptr) {
+		/* LCOV_EXCL_START */
 		/* don't use printf to avoid any possible extra allocation */
 		if (write(2, "Low Memory\n", 11) != 11) {
 			/* ignore error */
 		}
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	return ptr;
@@ -1409,9 +1524,11 @@ void mrand_vector(int n , size_t size, void** vv)
 void mtest_vector(int n , size_t size, void** vv)
 {
 	if (raid_mtest_vector(n, size, vv) != 0) {
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "DANGER! Your RAM memory is broken! DO NOT PROCEED UNTIL FIXED!\n");
 		fprintf(stderr, "Try running some memory test like http://www.memtest86.com/\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 }
 
@@ -1480,9 +1597,11 @@ void memhash(unsigned kind, const unsigned char* seed, void* digest, const void*
 		SpookyHash128(src, size, seed, digest);
 		break;
 	default:
+		/* LCOV_EXCL_START */
 		fprintf(stderr, "Internal inconsistency in hash function %u\n", kind);
 		exit(EXIT_FAILURE);
 		break;
+		/* LCOV_EXCL_STOP */
 	}
 }
 
@@ -1492,7 +1611,10 @@ const char* hash_config_name(unsigned kind)
 	case HASH_UNDEFINED : return "undefined";
 	case HASH_MURMUR3 : return "murmur3";
 	case HASH_SPOOKY2 : return "spooky2";
-	default: return "unknown";
+	default:
+		/* LCOV_EXCL_START */
+		return "unknown";
+		/* LCOV_EXCL_STOP */
 	}
 }
 
@@ -1520,13 +1642,17 @@ int lock_lock(const char* file)
 
 	f = open(file, O_CREAT | O_TRUNC | O_WRONLY, 0600);
 	if (f == -1) {
+		/* LCOV_EXCL_START */
 		return -1;
+		/* LCOV_EXCL_STOP */
 	}
 
 	/* exclusive lock, not blocking */
 	if (flock(f, LOCK_EX | LOCK_NB) == -1) {
+		/* LCOV_EXCL_START */
 		close(f);
 		return -1;
+		/* LCOV_EXCL_STOP */
 	}
 
 	return 0;
@@ -1542,7 +1668,9 @@ int lock_unlock(int f)
 	 * that could have already opened it.
 	 */
 	if (close(f) == -1) {
+		/* LCOV_EXCL_START */
 		return -1;
+		/* LCOV_EXCL_STOP */
 	}
 
 	return 0;
