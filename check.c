@@ -479,7 +479,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 		return -1;
 }
 
-static int state_check_process(struct snapraid_state* state, int check, int fix, struct snapraid_parity** parity, block_off_t blockstart, block_off_t blockmax)
+static int state_check_process(struct snapraid_state* state, int fix, struct snapraid_parity** parity, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
 	unsigned diskmax;
@@ -647,7 +647,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 			}
 
 			/* if we are only hashing, we can skip excluded files and don't event read them */
-			if (!check && file_flag_has(block_file_get(block), FILE_IS_EXCLUDED)) {
+			if (state->opt.auditonly && file_flag_has(block_file_get(block), FILE_IS_EXCLUDED)) {
 				/* use an empty block */
 				/* in true, this is unnecessary, becase we are not checking any parity */
 				/* but we keep it for completeness */
@@ -806,7 +806,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 		}
 
 		/* now read and check the parity if requested */
-		if (check) {
+		if (!state->opt.auditonly) {
 			void* buffer_recov[LEV_MAX];
 			void* buffer_zero;
 
@@ -1108,7 +1108,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				/* we are not fixing, but only checking */
 				/* print just the final status */
 				if (file_flag_has(file, FILE_IS_DAMAGED)) {
-					if (!check) {
+					if (state->opt.auditonly) {
 						fprintf(stdlog, "status:damaged:%s:%s\n", handle[j].disk->name, file->sub);
 						if (!state->opt.quiet) {
 							printf("damaged %s\n", path);
@@ -1597,7 +1597,7 @@ bail:
 			printf("DANGER! There are unrecoverable errors!\n");
 		} else {
 			/* without checking, we don't know if they are really recoverable or not */
-			if (check)
+			if (!state->opt.auditonly)
 				printf("%8u unrecoverable errors\n", unrecoverable_error);
 			if (fix)
 				printf("Everything OK\n");
@@ -1611,7 +1611,7 @@ bail:
 	fprintf(stdlog, "summary:error:%u\n", error);
 	if (fix)
 		fprintf(stdlog, "summary:error_recovered:%u\n", recovered_error);
-	if (check)
+	if (!state->opt.auditonly)
 		fprintf(stdlog, "summary:error_unrecoverable:%u\n", unrecoverable_error);
 	if (fix) {
 		if (error + recovered_error + unrecoverable_error == 0)
@@ -1620,7 +1620,7 @@ bail:
 			fprintf(stdlog, "summary:exit:recovered\n");
 		else
 			fprintf(stdlog, "summary:exit:unrecoverable\n");
-	} else if (check) {
+	} else if (!state->opt.auditonly) {
 		if (error + unrecoverable_error == 0)
 			fprintf(stdlog, "summary:exit:ok\n");
 		else if (unrecoverable_error == 0)
@@ -1666,7 +1666,7 @@ bail:
 	return 0;
 }
 
-int state_check(struct snapraid_state* state, int check, int fix, block_off_t blockstart, block_off_t blockcount)
+int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, block_off_t blockcount)
 {
 	block_off_t blockmax;
 	data_off_t size;
@@ -1678,13 +1678,6 @@ int state_check(struct snapraid_state* state, int check, int fix, block_off_t bl
 	unsigned l;
 
 	printf("Initializing...\n");
-
-	if (!check && fix) {
-		/* LCOV_EXCL_START */
-		fprintf(stderr, "Error in calling, you cannot fix without checking parity.\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
 
 	blockmax = parity_size(state);
 	size = blockmax * (data_off_t)state->block_size;
@@ -1722,7 +1715,7 @@ int state_check(struct snapraid_state* state, int check, int fix, block_off_t bl
 				/* LCOV_EXCL_STOP */
 			}
 		}
-	} else if (check) {
+	} else if (!state->opt.auditonly) {
 		/* if checking, open the file for reading */
 		/* it may fail if the file doesn't exist, in this case we continue to check the files */
 		for(l=0;l<state->level;++l) {
@@ -1742,7 +1735,7 @@ int state_check(struct snapraid_state* state, int check, int fix, block_off_t bl
 
 	if (fix)
 		printf("Fixing...\n");
-	else if (check)
+	else if (!state->opt.auditonly)
 		printf("Checking...\n");
 	else
 		printf("Hashing...\n");
@@ -1751,7 +1744,7 @@ int state_check(struct snapraid_state* state, int check, int fix, block_off_t bl
 
 	/* skip degenerated cases of empty parity, or skipping all */
 	if (blockstart < blockmax) {
-		ret = state_check_process(state, check, fix, parity_ptr, blockstart, blockmax);
+		ret = state_check_process(state, fix, parity_ptr, blockstart, blockmax);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
 			++error;

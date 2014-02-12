@@ -67,7 +67,8 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-o, --older-than DAYS ", "-o") "  Process only the older part of the array\n");
 	printf("  " SWITCH_GETOPT_LONG("-i, --import DIR      ", "-i") "  Import deleted files\n");
 	printf("  " SWITCH_GETOPT_LONG("-l, --log FILE        ", "-l") "  Log file. Default none\n");
-	printf("  " SWITCH_GETOPT_LONG("-a, --audit-only      ", "-A") "  Check only file data and not parity\n");
+	printf("  " SWITCH_GETOPT_LONG("-a, --audit-only      ", "-a") "  Check only file data and not parity\n");
+	printf("  " SWITCH_GETOPT_LONG("-h, --pre-hash        ", "-h") "  Pre hash all the new data\n");
 	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero      ", "-Z") "  Force synching of files that get zero size\n");
 	printf("  " SWITCH_GETOPT_LONG("-E, --force-empty     ", "-E") "  Force synching of disks that get empty\n");
 	printf("  " SWITCH_GETOPT_LONG("-U, --force-uuid      ", "-U") "  Force commands on disks with uuid changed\n");
@@ -75,7 +76,7 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-s, --start BLKSTART  ", "-s") "  Start from the specified block number\n");
 	printf("  " SWITCH_GETOPT_LONG("-t, --count BLKCOUNT  ", "-t") "  Count of block to process\n");
 	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
-	printf("  " SWITCH_GETOPT_LONG("-h, --help            ", "-h") "  Help\n");
+	printf("  " SWITCH_GETOPT_LONG("-H, --help            ", "-H") "  Help\n");
 	printf("  " SWITCH_GETOPT_LONG("-V, --version         ", "-V") "  Version\n");
 }
 
@@ -104,7 +105,6 @@ void memory(void)
 #define OPT_TEST_FORCE_SCRUB_EVEN 272
 #define OPT_TEST_FORCE_CONTENT_WRITE 273
 #define OPT_TEST_FORCE_CONTENT_TEXT 274
-#define OPT_TEST_PREHASH 275
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -125,12 +125,13 @@ struct option long_options[] = {
 	{ "force-device", 0, 0, 'D' },
 	{ "find-by-name", 0, 0, 'N' }, /* deprecated in SnapRAID 4.0 */
 	{ "audit-only", 0, 0, 'a' },
+	{ "pre-hash", 0, 0, 'h' },
 	{ "speed-test", 0, 0, 'T' },
 	{ "gen-conf", 1, 0, 'C' },
 	{ "verbose", 0, 0, 'v' },
 	{ "quiet", 0, 0, 'q' },
 	{ "gui", 0, 0, 'G' }, /* undocumented GUI interface command */
-	{ "help", 0, 0, 'h' },
+	{ "help", 0, 0, 'H' },
 	{ "version", 0, 0, 'V' },
 
 	/* The following are test specific options, DO NOT USE! */
@@ -186,14 +187,11 @@ struct option long_options[] = {
 	/* Force the use of text content file . */
 	{ "test-force-content-text", 0, 0, OPT_TEST_FORCE_CONTENT_TEXT },
 
-	/* Like the prehash configuration option. */
-	{ "test-prehash", 0, 0, OPT_TEST_PREHASH },
-
 	{ 0, 0, 0, 0 }
 };
 #endif
 
-#define OPTIONS "c:f:d:mep:o:s:t:i:l:ZEUDNaTC:vqhVG"
+#define OPTIONS "c:f:d:mep:o:s:t:i:l:ZEUDNahTC:vqHVG"
 
 volatile int global_interrupt = 0;
 
@@ -225,7 +223,6 @@ int main(int argc, char* argv[])
 {
 	int c;
 	struct snapraid_option opt;
-	int audit_only;
 	const char* conf;
 	struct snapraid_state state;
 	int operation;
@@ -253,7 +250,6 @@ int main(int argc, char* argv[])
 	/* defaults */
 	conf = CONF;
 	memset(&opt, 0, sizeof(opt));
-	audit_only = 0;
 	blockstart = 0;
 	blockcount = 0;
 	tommy_list_init(&filterlist_file);
@@ -376,7 +372,10 @@ int main(int argc, char* argv[])
 			fprintf(stderr, "WARNING! Option --find-by-name, -N is deprecated and does nothing!\n");
 			break;
 		case 'a' :
-			audit_only = 1;
+			opt.auditonly = 1;
+			break;
+		case 'h' :
+			opt.prehash = 1;
 			break;
 		case 'v' :
 			opt.verbose = 1;
@@ -387,7 +386,7 @@ int main(int argc, char* argv[])
 		case 'G' :
 			opt.gui = 1;
 			break;
-		case 'h' :
+		case 'H' :
 			usage();
 			exit(EXIT_SUCCESS);
 		case 'V' :
@@ -457,9 +456,6 @@ int main(int argc, char* argv[])
 		case OPT_TEST_FORCE_CONTENT_TEXT :
 			opt.force_content_text = 1;
 			break;
-		case OPT_TEST_PREHASH :
-			opt.prehash = 1;
-			break;
 		default:
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "Unknown option '%c'\n", (char)c);
@@ -516,9 +512,21 @@ int main(int argc, char* argv[])
 	case OPERATION_CHECK :
 		break;
 	default:
-		if (audit_only) {
+		if (opt.auditonly) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "You cannot use -A, --audit-only with the '%s' command\n", command);
+			fprintf(stderr, "You cannot use -a, --audit-only with the '%s' command\n", command);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	switch (operation) {
+	case OPERATION_SYNC :
+		break;
+	default:
+		if (opt.prehash) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "You cannot use -h, --pre-hash with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -767,9 +775,9 @@ int main(int argc, char* argv[])
 		signal(SIGINT, &signal_handler);
 
 		if (operation == OPERATION_CHECK) {
-			ret = state_check(&state, !audit_only, 0, blockstart, blockcount);
+			ret = state_check(&state, 0, blockstart, blockcount);
 		} else { /* it's fix */
-			ret = state_check(&state, 1, 1, blockstart, blockcount);
+			ret = state_check(&state, 1, blockstart, blockcount);
 		}
 
 		/* abort if required */

@@ -14,7 +14,7 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
 .PD
-	[\-a, \-\-audit\-only] [\-i, \-\-import DIR]
+	[\-a, \-\-audit\-only] [\-h, \-\-pre\-hash] [\-i, \-\-import DIR]
 .PD 0
 .PP
 .PD
@@ -43,7 +43,7 @@ snapraid [\-c, \-\-conf CONFIG]
 .PP
 .PD
 .PP
-snapraid [\-V, \-\-version] [\-h, \-\-help] [\-C, \-\-gen\-conf CONTENT]
+snapraid [\-V, \-\-version] [\-H, \-\-help] [\-C, \-\-gen\-conf CONTENT]
 .PD 0
 .PP
 .PD
@@ -737,11 +737,27 @@ Blocks marked as bad are always scrubbed despite this option.
 This option can be used only with the \(a"scrub\(a" command.
 .TP
 .B \-a, \-\-audit\-only
-Verifies the hash of the files, with the \(a"check\(a" command,
-without doing any kind of check on the parity data.
+In the \(a"check\(a" command verifies the hash of the files without
+doing any kind of check on the parity data.
 If you are interested in checking only the file data this
 option can speedup a lot the checking process.
 This option can be used only with the \(a"check\(a" command.
+.TP
+.B \-h, \-\-pre\-hash
+In the \(a"sync\(a" command run a preliminary hashing phase of all
+the new data to ensure that during the parity computation
+the data read is correct.
+Normally in \(a"sync\(a" no preliminary hashing is done, and the new
+data is hashed directly during the parity computation when it\(cqs
+read for the first time,
+This happens when the system is under heavy pressure due all
+disks spinning and CPU busy, and in such extreme conditions,
+if your machine has a latent hardware problem, it\(cqs possible to
+encouter silent errors what cannot be detected because the data
+is not yet hashed.
+To avoid this risk, you can enable the \(a"pre\-hash\(a" mode and have
+all the data hashed two times to ensure its integrity.
+This option can be used only with the \(a"sync\(a" command.
 .TP
 .B \-i, \-\-import DIR
 Imports from the specified directory any file that you deleted
@@ -974,17 +990,6 @@ commands interrupted by a machine crash, or any other event that
 may interrupt SnapRAID.
 The SIZE argument is specified in gibibytes. Where one gibi bytes
 is 1073741824 bytes.
-.SS prehash 
-Enables a double pass \(a"sync\(a" process with an initial hashing phase.
-In the default \(a"sync\(a" mode no preliminary hashing is done, and the new
-data is hashed directly during the parity computation when it\(cqs read
-for the first time,
-This happens when the system is under heavy pressure due all disks spinning
-and CPU busy, and in such extreme conditions, if your machine has a latent
-hardware problem, it\(cqs possible to encouter silent errors what cannot be
-detected because the data is not yet hashed.
-To avoid this risk, you can enable the \(a"prehash\(a" mode and have all the
-data hashed two times to ensure its integrity.
 .SS pool DIR 
 Defines the pooling directory where the virtual view of the disk
 array is created using the \(a"pool\(a" command.

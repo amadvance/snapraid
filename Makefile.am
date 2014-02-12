@@ -138,7 +138,7 @@ check-local:
 	mkdir test/disk6
 	mkdir test/pool
 	echo --- Help
-	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -h
+	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -H
 	$(TESTENV) ./mktest$(EXEEXT)
 	echo --- Run the self test only this time
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -c $(CONF) status
@@ -402,7 +402,7 @@ endif
 	cp -pR test/disk1/a test/disk1/a_copy
 	cp -pR test/disk2/a test/disk2/a_copy
 	cp -pR test/disk3/a test/disk3/a_copy
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-kill-after-sync --test-prehash -c $(CONF) sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-kill-after-sync -c $(CONF) -h sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	rm -r test/disk1/a_copy
 	rm -r test/disk2/a_copy

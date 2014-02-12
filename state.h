@@ -59,7 +59,8 @@ struct snapraid_option {
 	int verbose; /**< Verbose output. */
 	int quiet; /**< Quiet output. */
 	int gui; /**< Gui output. */
-	int prehash; /**< Enables the prehash mode. */
+	int auditonly; /**< Enable the auditonly mode for check. */
+	int prehash; /**< Enables the prehash mode for sync. */
 	int force_zero; /**< Forced dangerous operations of synching files now with zero size. */
 	int force_empty; /**< Forced dangerous operations of synching disks now empty. */
 	int force_uuid; /**< Forced dangerous operations of synching disks with uuid changed. */
@@ -170,10 +171,9 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 /**
  * Checks (and fixes) all the files and parity data.
- * \param check If we have to check also the parity.
- * \param fix If we have to fix, after checking. It requires also check==1.
+ * \param fix If we have to fix, after checking.
  */
-int state_check(struct snapraid_state* state, int check, int fix, block_off_t blockstart, block_off_t blockcount);
+int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, block_off_t blockcount);
 
 /**
  * Dry the files.

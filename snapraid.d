@@ -5,7 +5,7 @@ Synopsis
 	:snapraid [-c, --conf CONFIG]
 	:	[-f, --filter PATTERN] [-d, --filter-disk NAME]
 	:	[-m, --filter-missing] [-e, --filter-error]
-	:	[-a, --audit-only] [-i, --import DIR]
+	:	[-a, --audit-only] [-h, --pre-hash] [-i, --import DIR]
 	:	[-p, --percentage PERC] [-o, --older-than DAYS]
 	:	[-Z, --force-zero] [-E, --force-empty]
 	:	[-U, --force-uuid] [-D, --force-device]
@@ -13,7 +13,7 @@ Synopsis
 	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	:	status|sync|scrub|fix|check|list|diff|dup|pool|rehash
 
-	:snapraid [-V, --version] [-h, --help] [-C, --gen-conf CONTENT]
+	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
 Description
 	SnapRAID is a backup program for disk arrays. It stores parity
@@ -503,11 +503,27 @@ Options
 		This option can be used only with the "scrub" command.
 
 	-a, --audit-only
-		Verifies the hash of the files, with the "check" command,
-		without doing any kind of check on the parity data.
+		In the "check" command verifies the hash of the files without
+		doing any kind of check on the parity data.
 		If you are interested in checking only the file data this
 		option can speedup a lot the checking process.
 		This option can be used only with the "check" command.
+
+	-h, --pre-hash
+		In the "sync" command run a preliminary hashing phase of all
+		the new data to ensure that during the parity computation
+		the data read is correct.
+		Normally in "sync" no preliminary hashing is done, and the new
+		data is hashed directly during the parity computation when it's
+		read for the first time,
+		This happens when the system is under heavy pressure due all
+		disks spinning and CPU busy, and in such extreme conditions,
+		if your machine has a latent hardware problem, it's possible to
+		encouter silent errors what cannot be detected because the data
+		is not yet hashed.
+		To avoid this risk, you can enable the "pre-hash" mode and have
+		all the data hashed two times to ensure its integrity.
+		This option can be used only with the "sync" command.
 
 	-i, --import DIR
 		Imports from the specified directory any file that you deleted
@@ -741,18 +757,6 @@ Configuration
 	may interrupt SnapRAID.
 	The SIZE argument is specified in gibibytes. Where one gibi bytes
 	is 1073741824 bytes.
-
-    prehash
-	Enables a double pass "sync" process with an initial hashing phase.
-	In the default "sync" mode no preliminary hashing is done, and the new
-	data is hashed directly during the parity computation when it's read
-	for the first time,
-	This happens when the system is under heavy pressure due all disks spinning
-	and CPU busy, and in such extreme conditions, if your machine has a latent
-	hardware problem, it's possible to encouter silent errors what cannot be
-	detected because the data is not yet hashed.
-	To avoid this risk, you can enable the "prehash" mode and have all the
-	data hashed two times to ensure its integrity.
 
     pool DIR
 	Defines the pooling directory where the virtual view of the disk

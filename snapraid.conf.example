@@ -63,20 +63,6 @@ exclude /lost+found/
 # Format: "autosave SIZE_IN_GiB"
 #autosave 500
 
-# Enables a double pass "sync" process with an initial hashing phase.
-# In the default "sync" mode no preliminary hashing is done, and the new
-# data is hashed directly during the parity computation when it's read
-# for the first time,
-# This happens when the system is under heavy pressure due all disks spinning
-# and CPU busy, and in such extreme conditions, if your machine has a latent
-# hardware problem, it's possible to encouter silent errors what cannot be
-# detected because the data is not yet hashed.
-# To avoid this risk, you can enable the "prehash" mode and have all the
-# data hashed two times to ensure its integrity.
-#
-# Format: prehash
-#prehash
-
 # Defines the pooling directory where the virtual view of the disk
 # array is created using the "pool" command (uncomment to enable).
 # The files are not really copied here, but just linked using
