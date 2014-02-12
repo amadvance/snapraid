@@ -394,7 +394,7 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t 
 
 		/* set an invalid hash */
 		block_state_set(&file->blockvec[i], BLOCK_STATE_CHG);
-		hash_zero_set(file->blockvec[i].hash);
+		hash_invalid_set(file->blockvec[i].hash);
 	}
 
 	return file;
@@ -413,7 +413,27 @@ void file_rename(struct snapraid_file* file, const char* sub)
 	file->sub = strdup_nofail(sub);
 }
 
-const char* file_name(struct snapraid_file* file)
+void file_copy(struct snapraid_file* src_file, struct snapraid_file* dst_file)
+{
+	block_off_t i;
+
+	if (src_file->size != dst_file->size) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Internal inconsistency in copy file with different size\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	for(i=0;i<dst_file->blockmax;++i) {
+		/* set a block with hash computed but without parity */
+		block_state_set(&dst_file->blockvec[i], BLOCK_STATE_REP);
+
+		/* copy the hash */
+		memcpy(dst_file->blockvec[i].hash, src_file->blockvec[i].hash, HASH_SIZE);
+	}
+}
+
+const char* file_name(const struct snapraid_file* file)
 {
 	const char* r = strrchr(file->sub, '/');
 	if (!r)
@@ -445,7 +465,7 @@ int file_inode_compare(const void* void_a, const void* void_b)
 	return 0;
 }
 
-int file_alpha_compare(const void* void_a, const void* void_b)
+int file_path_compare(const void* void_a, const void* void_b)
 {
 	const struct snapraid_file* file_a = void_a;
 	const struct snapraid_file* file_b = void_b;
@@ -463,11 +483,55 @@ int file_physical_compare(const void* void_a, const void* void_b)
 	return 0;
 }
 
-int file_path_compare(const void* void_arg, const void* void_data)
+int file_path_compare_to_arg(const void* void_arg, const void* void_data)
 {
 	const char* arg = void_arg;
 	const struct snapraid_file* file = void_data;
 	return strcmp(arg, file->sub);
+}
+
+int file_name_compare(const void* void_a, const void* void_b)
+{
+	const struct snapraid_file* file_a = void_a;
+	const struct snapraid_file* file_b = void_b;
+	const char* name_a = file_name(file_a);
+	const char* name_b = file_name(file_b);
+
+	return strcmp(name_a, name_b);
+}
+
+int file_stamp_compare(const void* void_a, const void* void_b)
+{
+	const struct snapraid_file* file_a = void_a;
+	const struct snapraid_file* file_b = void_b;
+
+	if (file_a->size < file_b->size)
+		return -1;
+	if (file_a->size > file_b->size)
+		return 1;
+
+	if (file_a->mtime_sec < file_b->mtime_sec)
+		return -1;
+	if (file_a->mtime_sec > file_b->mtime_sec)
+		return 1;
+
+	if (file_a->mtime_nsec < file_b->mtime_nsec)
+		return -1;
+	if (file_a->mtime_nsec > file_b->mtime_nsec)
+		return 1;
+
+	return 0;
+}
+
+int file_namestamp_compare(const void* void_a, const void* void_b)
+{
+	int ret;
+
+	ret = file_name_compare(void_a, void_b);
+	if (ret != 0)
+		return ret;
+
+	return file_stamp_compare(void_a, void_b);
 }
 
 struct snapraid_link* link_alloc(const char* sub, const char* linkto, unsigned link_flag)
@@ -549,6 +613,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 	tommy_list_init(&disk->deletedlist);
 	tommy_hashdyn_init(&disk->inodeset);
 	tommy_hashdyn_init(&disk->pathset);
+	tommy_hashdyn_init(&disk->stampset);
 	tommy_list_init(&disk->linklist);
 	tommy_hashdyn_init(&disk->linkset);
 	tommy_list_init(&disk->dirlist);
@@ -564,6 +629,7 @@ void disk_free(struct snapraid_disk* disk)
 	tommy_list_foreach(&disk->deletedlist, (tommy_foreach_func*)deleted_free);
 	tommy_hashdyn_done(&disk->inodeset);
 	tommy_hashdyn_done(&disk->pathset);
+	tommy_hashdyn_done(&disk->stampset);
 	tommy_list_foreach(&disk->linklist, (tommy_foreach_func*)link_free);
 	tommy_hashdyn_done(&disk->linkset);
 	tommy_list_foreach(&disk->dirlist, (tommy_foreach_func*)dir_free);

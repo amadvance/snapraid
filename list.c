@@ -45,7 +45,7 @@ void state_list(struct snapraid_state* state)
 		struct snapraid_disk* disk = i->data;
 
 		/* sort by name */
-		tommy_list_sort(&disk->filelist, file_alpha_compare);
+		tommy_list_sort(&disk->filelist, file_path_compare);
 
 		/* for each file */
 		for(j=disk->filelist;j!=0;j=j->next) {

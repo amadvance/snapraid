@@ -236,6 +236,7 @@ struct snapraid_file {
 	tommy_node nodelist;
 	tommy_hashdyn_node nodeset;
 	tommy_hashdyn_node pathset;
+	tommy_hashdyn_node stampset;
 };
 
 /**
@@ -321,6 +322,7 @@ struct snapraid_disk {
 
 	tommy_hashdyn inodeset; /**< Hashtable by inode of all the files. */
 	tommy_hashdyn pathset; /**< Hashtable by path of all the files. */
+	tommy_hashdyn stampset; /**< Hashtable by stamp (size and time) of all the files. */
 	tommy_list linklist; /**< List of all the links. */
 	tommy_hashdyn linkset; /**< Hashtable by name of all the links. */
 	tommy_list dirlist; /**< List of all the dirs. */
@@ -645,9 +647,14 @@ void file_free(struct snapraid_file* file);
 void file_rename(struct snapraid_file* file, const char* sub);
 
 /**
+ * Copy a file.
+ */
+void file_copy(struct snapraid_file* src_file, struct snapraid_file* dest_file);
+
+/**
  * Returns the name of the file, without the dir.
  */
-const char* file_name(struct snapraid_file* file);
+const char* file_name(const struct snapraid_file* file);
 
 /**
  * Compares a file with an inode.
@@ -662,7 +669,7 @@ int file_inode_compare(const void* void_a, const void* void_b);
 /**
  * Compares files by path.
  */
-int file_alpha_compare(const void* void_a, const void* void_b);
+int file_path_compare(const void* void_a, const void* void_b);
 
 /**
  * Compares files by physical address.
@@ -680,7 +687,14 @@ static inline tommy_uint32_t file_inode_hash(uint64_t inode)
 /**
  * Compares a file with a path.
  */
-int file_path_compare(const void* void_arg, const void* void_data);
+int file_path_compare_to_arg(const void* void_arg, const void* void_data);
+
+/**
+ * Compare a file with another file for name, stamp, and both.
+ */
+int file_name_compare(const void* void_a, const void* void_b);
+int file_stamp_compare(const void* void_a, const void* void_b);
+int file_namestamp_compare(const void* void_a, const void* void_b);
 
 /**
  * Computes the hash of a file path.
@@ -688,6 +702,14 @@ int file_path_compare(const void* void_arg, const void* void_data);
 static inline tommy_uint32_t file_path_hash(const char* sub)
 {
 	return tommy_hash_u32(0, sub, strlen(sub));
+}
+
+/**
+ * Computes the hash of a file stamp.
+ */
+static inline tommy_uint32_t file_stamp_hash(data_off_t size, int64_t mtime_sec, int mtime_nsec)
+{
+	return tommy_inthash_u32((tommy_uint32_t)size ^ tommy_inthash_u32(mtime_sec ^ tommy_inthash_u32(mtime_nsec)));
 }
 
 static inline int link_flag_has(const struct snapraid_link* link, unsigned mask)

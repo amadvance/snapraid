@@ -422,7 +422,7 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_TEST_SKIP_DEVICE :
 			opt.skip_device = 1;
-			period = 100; /* reduce period of the speed test */
+			period = 50; /* reduce period of the speed test */
 			break;
 		case OPT_TEST_FORCE_MURMUR3 :
 			opt.force_murmur3 = 1;

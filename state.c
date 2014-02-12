@@ -1594,6 +1594,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			/* insert the file in the file containers */
 			tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
 			tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
+			tommy_hashdyn_insert(&disk->stampset, &file->stampset, file, file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec));
 			tommy_list_insert_tail(&disk->filelist, &file->nodelist, file);
 
 			/* start the block allocation of the file */
@@ -2681,6 +2682,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			/* insert the file in the file containers */
 			tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
 			tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
+			tommy_hashdyn_insert(&disk->stampset, &file->stampset, file, file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec));
 			tommy_list_insert_tail(&disk->filelist, &file->nodelist, file);
 
 			/* reads all the blocks */

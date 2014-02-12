@@ -10,11 +10,12 @@ SnapRAID HISTORY
    But any new data added will be protected if you are using
    enough parity to fix both the silent error and at least
    another potential error.
- * In "sync" run a preliminary hashing step for all the new files,
-   to ensure to detect silent errors caused by the heavy machine usage
-   of the parity computation.
-   You can disable this additional hashing with the new "rawsync"
-   configuration option.
+ * Detect copied files from one disk to another and reuse the already
+   computed hash information to validate them in "sync".
+   Files are assumed copied if they matches the name, size and timestamp.
+ * Added a new "prehash" configuration option to run a preliminary hashing
+   step for all the new files to ensure to detect silent errors caused
+   by the heavy machine usage of the parity computation.
  * In "fix", if a previous attempt was made, resulting in a
    .unrecoverable file, uses this file as starting point for the
    new attempt.

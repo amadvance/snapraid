@@ -15,20 +15,6 @@ can improve speed in sync. That should increase cache locality,
 becase we read the data two times for hash and and parity,
 and if we manage to keep it in the cache, we should save time.
 
-* Detect files moved from one disk to another. We won't be able to reuse
-parity, but we can reuse the hash to check that the file was moved
-correctly.
-We can assume a file moved to another disk if it has the same name, size,
-and timestamp. Directory and inode can be different.
-This can be implemented with the REP blocks.
-In synch, we can do the hash check of such blocks before any other operation,
-before invalidating the parity of the moved files now converted in DELETED
-blocks.
-If an error is found, or we stop the sync, or we can use the parity of
-DELETED blocks to recover the missing ones.
-Missing blocks can be find by hash, using all the DELETED blocks with hash
-as search base.
-
 * Avoid to do optimized move operation if more files with
 same timestamp/size are present.
 
