@@ -720,7 +720,7 @@ Configuration
 
 	This option can be used many times.
 
-  block_size SIZE_IN_KIBIBYTES
+  blocksize SIZE_IN_KIBIBYTES
 	Defines the basic block size in kibi bytes of the parity
 	blocks. Where one kibi bytes is 1024 bytes.
 	The default is 256 and it should work for most conditions.

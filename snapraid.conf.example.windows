@@ -54,8 +54,8 @@ exclude \Windows\
 
 # Defines the block size in kibi bytes (1024 bytes) (uncomment to enable).
 # Default value is 256 -> 256 kibi bytes -> 262144 bytes
-# Format: "block_size SIZE_IN_KiB"
-#block_size 256
+# Format: "blocksize SIZE_IN_KiB"
+#blocksize 256
 
 # Automatically save the state when synching after the specied amount
 # of GiB processed (uncomment to enable).

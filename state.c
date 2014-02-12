@@ -397,30 +397,33 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 		/* skip spaces after the command */
 		sgetspace(f);
 
-		if (strcmp(tag, "block_size") == 0) {
+		if (strcmp(tag, "blocksize") == 0
+			/* block_size is the old format of the option */
+			|| strcmp(tag, "block_size") == 0) {
+
 			ret = sgetu32(f, &state->block_size);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				fprintf(stderr, "Invalid 'block_size' specification in '%s' at line %u\n", path, line);
+				fprintf(stderr, "Invalid 'blocksize' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 			if (state->block_size < 1) {
 				/* LCOV_EXCL_START */
-				fprintf(stderr, "Too small 'block_size' specification in '%s' at line %u\n", path, line);
+				fprintf(stderr, "Too small 'blocksize' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 			if (state->block_size > 16*1024) {
 				/* LCOV_EXCL_START */
-				fprintf(stderr, "Too big 'block_size' specification in '%s' at line %u\n", path, line);
+				fprintf(stderr, "Too big 'blocksize' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 			/* check if it's a power of 2 */
 			if ((state->block_size & (state->block_size - 1)) != 0) {
 				/* LCOV_EXCL_START */
-				fprintf(stderr, "Not power of 2 'block_size' specification in '%s' at line %u\n", path, line);
+				fprintf(stderr, "Not power of 2 'blocksize' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1966,8 +1969,8 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 
 			if (blksize != state->block_size) {
 				/* LCOV_EXCL_START */
-				fprintf(stderr, "Mismatching 'blksize' and 'block_size' specification in '%s' at line %u\n", path, line);
-				fprintf(stderr, "Please restore the 'block_size' value in the configuration file to '%u'\n", blksize / 1024);
+				fprintf(stderr, "Mismatching 'blksize' and 'blocksize' specification in '%s' at line %u\n", path, line);
+				fprintf(stderr, "Please restore the 'blocksize' value in the configuration file to '%u'\n", blksize / 1024);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -3226,8 +3229,8 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			if (blksize != state->block_size) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				fprintf(stderr, "Mismatching 'blksize' and 'block_size' specification!\n");
-				fprintf(stderr, "Please restore the 'block_size' value in the configuration file to '%u'\n", blksize / 1024);
+				fprintf(stderr, "Mismatching 'blksize' and 'blocksize' specification!\n");
+				fprintf(stderr, "Please restore the 'blocksize' value in the configuration file to '%u'\n", blksize / 1024);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -4240,7 +4243,7 @@ void generate_configuration(const char* path)
 	printf("# Configuration file generated from %s\n", path);
 	printf("\n");
 	printf("# Use this blocksize\n");
-	printf("block_size %u\n", state.block_size / 1024);
+	printf("blocksize %u\n", state.block_size / 1024);
 	printf("\n");
 	for(i=0;i<LEV_MAX;++i) {
 		printf("# Set the correct path for the %s file%s\n", lev_name(i), i != 0 ? " (if used)" : "");

@@ -782,8 +782,8 @@ specifications.
 
 This option can be used many times.
 
-7.8 block_size SIZE_IN_KIBIBYTES
---------------------------------
+7.8 blocksize SIZE_IN_KIBIBYTES
+-------------------------------
 
 Defines the basic block size in kibi bytes of the parity
 blocks. Where one kibi bytes is 1024 bytes.
