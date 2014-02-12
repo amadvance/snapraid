@@ -4,7 +4,7 @@ SnapRAID
 SnapRAID is a backup program for a disk array.
 
 SnapRAID stores redundancy information in the disk array,
-and it allows recovering from up to two disk failures.
+and it allows recovering from up to six disk failures.
 
 SnapRAID is mainly targeted for a home media center, where you have
 a lot of big files that rarely change.
@@ -12,17 +12,18 @@ a lot of big files that rarely change.
 Beside the ability to recover from disk failures, the other
 features of SnapRAID are:
 
-* You can start using SnapRAID with already filled disks.
-* The disks can have different sizes.
-* You can add disks at any time.
-* If you accidentally delete some files in a disk, you can
-  recover them.
-* If more than two disks fail, you lose the data only on the
-  failed disks. All the data in the other disks is safe.
-* It doesn't lock-in your data. You can stop using SnapRAID at any
-  time without the need to reformat or move data.
 * All your data is hashed to ensure data integrity and to avoid
   silent corruption.
+* If the failed disks are too many to allow a recovery,
+  you lose the data only on the failed disks.
+  All the data in the other disks is safe.
+* If you accidentally delete some files in a disk, you can
+  recover them.
+* You can start with already filled disks.
+* The disks can have different sizes.
+* You can add disks at any time.
+* It doesn't lock-in your data. You can stop using SnapRAID at any
+  time without the need to reformat or move data.
 
 The official site of SnapRAID is:
 

@@ -16,7 +16,7 @@ SnapRAID HISTORY
  * For "sync", added a new -h, --pre-hash option to run a preliminary
    hashing step for all the new files to ensure to detect silent errors
    caused by the heavy machine usage of the parity computation.
- * In "fix", if a previous attempt was made, resulting in a
+ * In "fix", if a previous fixing attempt was made resulting in a
    .unrecoverable file, uses this file as starting point for the
    new attempt.
  * New source code organization. The RAID engine is now
