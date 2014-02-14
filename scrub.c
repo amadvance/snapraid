@@ -104,7 +104,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			}
 
 			/* if the time is less than the limit, always include */
-			/* otherwise, check if we reaced the count max */
+			/* otherwise, check if we reached the max count */
 			if (blocktime == timelimit) {
 				/* if we reached the count limit */
 				if (countmax >= countlimit) {
