@@ -471,7 +471,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 		recentlimit = now;
 	} else if (percentage != -1 || olderthan != -1) {
 		if (percentage != -1)
-			countlimit = (blockmax * percentage + 99) / 100;
+			countlimit = (blockmax * (uint64_t)percentage + 99) / 100;
 		else
 			countlimit = blockmax;
 		if (olderthan != -1)
