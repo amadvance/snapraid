@@ -5,9 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
-* Don't disable default 10d/12% if -p or -o is specified.
-But check that -p0 still work.
-
 * Checks if splitting hash/parity computation in 4K pages
 can improve speed in sync. That should increase cache locality,
 becase we read the data two times for hash and and parity,

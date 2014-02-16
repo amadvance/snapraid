@@ -459,6 +459,20 @@ bail:
 	return 0;
 }
 
+/**
+ * Returns a * b / c approximated to the upper value.
+ */
+static uint32_t md(uint32_t a, uint32_t b, uint32_t c)
+{
+	uint64_t v = a;
+
+	v *= b;
+	v += c - 1;
+	v /= c;
+
+	return v;
+}
+
 int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 {
 	block_off_t blockmax;
@@ -490,21 +504,21 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 		/* scrub the specified amount of blocks */
 		countlimit = state->opt.force_scrub;
 		recentlimit = now;
-	} else if (percentage != -1 || olderthan != -1) {
+	} else {
+		/* by default scrub 1/12 of the array */
+		countlimit = md(blockmax, 1, 12);
+
+		/* by default use a 10 day time limit */
+		recentlimit = now - 10 * 24 * 3600;
+
 		if (percentage != -1)
-			countlimit = (blockmax * (uint64_t)percentage + 99) / 100;
+			countlimit = md(blockmax, percentage, 100);
 		else
 			countlimit = blockmax;
 		if (olderthan != -1)
 			recentlimit = now - olderthan * 24 * 3600;
 		else
 			recentlimit = now;
-	} else {
-		/* by default scrub 1/12 of the array */
-		countlimit = blockmax / 12;
-
-		/* by default use a 10 day time limit */
-		recentlimit = now - 10 * 24 * 3600;
 	}
 
 	/* identify the time limit */

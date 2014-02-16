@@ -343,8 +343,7 @@ at least one time every two months.
 
 You can use the -p, --percentage option to specify a different amount,
 and the -o, --older-than option to specify a different age in days.
-Note that if only one of -p and -o is specified the default value of
-the other option is not used.
+You can have a full scrub with "-p100 -o0".
 
 Any silent error identified is recorded in the content file,
 and it's listed in the "status" command until it's fixed calling
