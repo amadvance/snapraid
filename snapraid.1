@@ -820,6 +820,10 @@ and you\(cqll get only a summary at the end of the operations.
 When checking and fixing this allows to keep separated
 the possible huge list of errors from the human readable
 output.
+If the specified FILE path start with \(cq>>\(cq the file is opened
+in append mode. Inside the path, occurrences of %D and %T are
+replaced with the date and time in the format YYYYMMDD and
+HHMMSS.
 .TP
 .B \-s, \-\-start BLKSTART
 Starts the processing from the specified

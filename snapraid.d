@@ -586,6 +586,10 @@ Options
 		When checking and fixing this allows to keep separated
 		the possible huge list of errors from the human readable
 		output.
+		If the specified path starts with '>>' the file is opened
+		in append mode. Occurrences of %D and %T in the name are
+		replaced with the date and time in the format YYYYMMDD and
+		HHMMSS.
 
 	-s, --start BLKSTART
 		Starts the processing from the specified

@@ -404,6 +404,12 @@ void pathcpy(char* dst, size_t size, const char* src);
 void pathcat(char* dst, size_t size, const char* src);
 
 /**
+ * Concatenates a path limiting the size.
+ * Aborts if too long.
+ */
+void pathcatc(char* dst, size_t size, char c);
+
+/**
  * Imports a path limiting the size.
  * In Windows all the backslash are converted to the C standard of forward slash.
  * Aborts if too long.

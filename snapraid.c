@@ -86,6 +86,105 @@ void memory(void)
 	printf("Using %u MiB of memory.\n", (unsigned)(malloc_counter() / 1024 / 1024));
 }
 
+void log_open(const char* log)
+{
+	char path[PATH_MAX];
+	const char* mode;
+	char text_T[32];
+	char text_D[32];
+	time_t t;
+	struct tm* tm;
+
+	/* if no log file is specified, don't output */
+	if (log == 0) {
+#ifdef _WIN32
+		log = "NUL";
+#else
+		log = "/dev/null";
+#endif
+	}
+
+	t = time(0);
+	tm = localtime(&t);
+	if (tm) {
+		strftime(text_T, sizeof(text_T), "%H%M%S", tm);
+		strftime(text_D, sizeof(text_T), "%Y%m%d", tm);
+	} else {
+		strcpy(text_T, "invalid");
+		strcpy(text_D, "invalid");
+	}
+
+	/* file mode */
+	mode = "wt";
+	if (*log == '>') {
+		++log;
+
+		if (*log == '>') {
+			mode = "at";
+			++log;
+		}
+
+		if (log[0] == '&' && log[1] == '1') {
+			stdlog = stdout;
+			return;
+		}
+
+		if (log[0] == '&' && log[1] == '2') {
+			stdlog = stderr;
+			return;
+		}
+	}
+
+	/* process the path */
+	for(*path=0;*log!=0;) {
+		switch (*log) {
+		case '%' :
+			++log;
+			switch (*log) {
+			case '%' :
+				pathcatc(path, sizeof(path), '%');
+				break;
+			case 'T' :
+				pathcat(path, sizeof(path), text_T);
+				break;
+			case 'D' :
+				pathcat(path, sizeof(path), text_D);
+				break;
+			default:
+				/* LCOV_EXCL_START */
+				fprintf(stderr, "Invalid type specifier '%c' in the log file.\n", *log);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+			break;
+		default:
+			pathcatc(path, sizeof(path), *log);
+			break;
+		}
+		++log;
+	}
+
+	stdlog = fopen(path, mode);
+	if (!stdlog) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Error opening the log file '%s'. %s.\n", path, strerror(errno));
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+}
+
+void log_close(const char* log)
+{
+	if (stdlog != stdout && stdlog != stderr) {
+		if (fclose(stdlog) != 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error closing the log file '%s'. %s.\n", log, strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+}
+
 #define OPT_TEST_SKIP_SELF 256
 #define OPT_TEST_KILL_AFTER_SYNC 257
 #define OPT_TEST_EXPECT_UNRECOVERABLE 258
@@ -584,27 +683,8 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	/* if no log file is specified, don't output */
-	if (log == 0) {
-#ifdef _WIN32
-		log = "NUL";
-#else
-		log = "/dev/null";
-#endif
-	}
-	if (strcmp(log, "1") == 0) {
-		stdlog = stdout;
-	} else if (strcmp(log, "2") == 0) {
-		stdlog = stderr;
-	} else {
-		stdlog = fopen(log, "wt");
-		if (!stdlog) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Error opening the log file '%s'. %s.\n", log, strerror(errno));
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
-	}
+	/* open the log file */
+	log_open(log);
 
 	if (!opt.skip_self)
 		selftest();
@@ -786,14 +866,7 @@ int main(int argc, char* argv[])
 	}
 
 	/* close log file */
-	if (stdlog != stdout && stdlog != stderr) {
-		if (fclose(stdlog) != 0) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Error closing the log file '%s'. %s.\n", log, strerror(errno));
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
-	}
+	log_close(log);
 
 #if HAVE_LOCKFILE
 	if (!opt.skip_lock) {

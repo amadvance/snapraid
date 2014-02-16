@@ -101,7 +101,7 @@ man_MANS = snapraid.1
 clean-local:
 	rm -f valgrind.log callgrind.log cachegrind.log
 	rm -rf test
-	rm -f test.log output.log
+	rm -f test*.log output.log
 	rm -f *.gcda *.gcno *.gcov
 	rm -rf cov
 	rm -f lcov.info
@@ -144,12 +144,16 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -c $(CONF) status
 	echo --- Run the speed test
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -T
-	echo --- As empty, sync and check forcing murmur3
+	echo --- Some commands with empty array
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) diff
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) dup
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) list > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-murmur3 sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status -l ">&1"
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status -l ">&2"
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status -l ">>test.log"
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status -l test-%D-%T.log
 if HAVE_SYMLINK
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) pool
 endif
