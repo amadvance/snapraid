@@ -366,7 +366,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	fprintf(stdlog, "unixtime:%"PRIi64"\n", (int64_t)t);
 	if (tm) {
 		char datetime[64];
-		strftime(datetime, sizeof(datetime), "%F %T", tm);
+		strftime(datetime, sizeof(datetime), "%Y-%m-%d %H:%M:%S", tm);
 		fprintf(stdlog, "time:%s\n", datetime);
 	}
 	fprintf(stdlog, "conf:%s\n", path);
