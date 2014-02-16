@@ -227,13 +227,13 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 
 /**
  * Checks if a file is completely formed of blocks with invalid parity,
- * and if it has at least one block.
+ * and no rehash is tagged, and if it has at least one block.
  */
-static int file_is_full_invalid(struct snapraid_file* file)
+static int file_is_full_invalid_parity_and_stable(struct snapraid_state* state, struct snapraid_file* file)
 {
 	block_off_t i;
 
-	/* if no block, the file is valid */
+	/* with no block, it never has an invalid parity */
 	if (file->blockmax == 0)
 		return 0;
 
@@ -244,8 +244,21 @@ static int file_is_full_invalid(struct snapraid_file* file)
 	for(i=0;i<file->blockmax;++i) {
 		struct snapraid_block* block = &file->blockvec[i];
 
+		/* exclude blocks with parity */
 		if (!block_has_invalid_parity(block))
 			return 0;
+
+		/* exclude blocks with hash needing a rehash */
+		if (block_has_updated_hash(block)) {
+			snapraid_info info;
+		
+			/* get block specific info */
+			info = info_get(&state->infoarr, block->parity_pos);
+
+			/* if rehash fails */
+			if (info_get_rehash(info))
+				return 0;
+		}
 	}
 
 	return 1;
@@ -253,13 +266,13 @@ static int file_is_full_invalid(struct snapraid_file* file)
 
 /**
  * Checks if a file is completely formed of blocks with an updated hash,
- * and no rehash or bad blocks is tagged, and if it has at least one block.
+ * and no rehash is tagged, and if it has at least one block.
  */
-static int file_is_full_hashed_and_healthy(struct snapraid_state* state, struct snapraid_file* file)
+static int file_is_full_hashed_and_stable(struct snapraid_state* state, struct snapraid_file* file)
 {
 	block_off_t i;
 
-	/* if no block, the file is valid */
+	/* with no block, it never has a hash */
 	if (file->blockmax == 0)
 		return 0;
 
@@ -268,15 +281,15 @@ static int file_is_full_hashed_and_healthy(struct snapraid_state* state, struct 
 		struct snapraid_block* block = &file->blockvec[i];
 		snapraid_info info;
 
-		/* if not hashed, fail */
+		/* exclude blocks without hash */
 		if (!block_has_updated_hash(block))
 			return 0;
 
 		/* get block specific info */
 		info = info_get(&state->infoarr, block->parity_pos);
 
-		/* if rehash or bad, fail */
-		if (info_get_rehash(info) || info_get_bad(info))
+		/* exclude blocks needing a rehash */
+		if (info_get_rehash(info))
 			return 0;
 	}
 
@@ -296,8 +309,8 @@ static void scan_file_keep(struct snapraid_scan* scan, struct snapraid_file* fil
 {
 	struct snapraid_disk* disk = scan->disk;
 
-	/* if the file has some valid block, keep it where it is */
-	if (!file_is_full_invalid(file))
+	/* if the file has some valid block or rehash, keep it where it is */
+	if (!file_is_full_invalid_parity_and_stable(scan->state, file))
 		return;
 
 	/* deallocate the file from the parity */
@@ -740,7 +753,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 		other_file = tommy_hashdyn_search(&other_disk->stampset, file_namestamp_compare, file, hash);
 
 		/* if found, and it's a fully hashed file */
-		if (other_file && file_is_full_hashed_and_healthy(scan->state, other_file)) {
+		if (other_file && file_is_full_hashed_and_stable(scan->state, other_file)) {
 			/* assume that the file is a copy, and reuse the hash */
 			file_copy(other_file, file);
 
