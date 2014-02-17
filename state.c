@@ -613,6 +613,19 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				/* LCOV_EXCL_STOP */
 			}
 
+			/* check if the content file is already specified */
+			for(i=state->contentlist;i!=0;i=i->next) {
+				content = i->data;
+				if (pathcmp(content->content, buffer) == 0)
+					break;
+			}
+			if (i) {
+				/* LCOV_EXCL_START */
+				fprintf(stderr, "Duplicate 'content' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
 			/* get the device of the directory containing the content file */
 			pathimport(device, sizeof(device), buffer);
 			slash = strrchr(device, '/');
