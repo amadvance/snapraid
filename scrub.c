@@ -508,17 +508,14 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 		/* by default scrub 1/12 of the array */
 		countlimit = md(blockmax, 1, 12);
 
+		if (percentage != -1)
+			countlimit = md(blockmax, percentage, 100);
+
 		/* by default use a 10 day time limit */
 		recentlimit = now - 10 * 24 * 3600;
 
-		if (percentage != -1)
-			countlimit = md(blockmax, percentage, 100);
-		else
-			countlimit = blockmax;
 		if (olderthan != -1)
 			recentlimit = now - olderthan * 24 * 3600;
-		else
-			recentlimit = now;
 	}
 
 	/* identify the time limit */
