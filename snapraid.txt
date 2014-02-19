@@ -718,11 +718,11 @@ Defines an alternate file and format to store the triple parity.
 
 This option is an alternative at '3-parity' mainly intended for
 low-end CPUs like ARM or AMD Phenom, Athlon and Opteron that don't
-support the SSSE3 instructions set, and in such case it may provide
+support the SSSE3 instructions set, and in such case it provides
 a better performance.
 
-This format is similar at the one used by the Linux Kernel RAID6 and
-ZFS RAIDZ3, but it doesn't work beyond triple parity.
+This format is similar, but faster, at the one used by the ZFS RAIDZ3,
+but it doesn't work beyond triple parity.
 
 When using '3-parity' you will be warned if it's recommended to use
 the 'z-parity' format for a performance improvement.
@@ -791,6 +791,7 @@ This option can be used many times.
 Defines the basic block size in kibi bytes of the parity
 blocks. Where one kibi bytes is 1024 bytes.
 The default is 256 and it should work for most conditions.
+
 You could increase this value if you do not have enough RAM
 memory to run SnapRAID.
 
@@ -802,19 +803,41 @@ of RAM memory to run. Where TS is the total size in bytes of
 your disk array, and BS is the block size in bytes.
 
 For example with 4 disk of 3 TiB and a block size of 256 KiB
-(1 KiB = 1024 Bytes) you have:
+(1 KiB = 1024 bytes) you have:
 
 RAM = (4 * 3 * 2^40) * 28 / (256 * 2^10) = 1.4 GiB
 
 You could instead decrease this value if you have a lot of
 small files in the disk array. For each file, even if of few
-bytes, a whole block is always allocated, so you may have a lot
-of unused space.
-As approximation, you can assume that half of the block size is
-wasted for each file.
+bytes, a whole block of parity is always allocated, so you may
+have a lot of unused parity space.
 
-For example, with 10000 files and a 256 KiB block size, you are
-going to waste 1.2 GiB.
+The problem of wasted parity, is that when the parity disk is full,
+you are not allowed to add more data in the data disks.
+Note that wasted parity doesn't sum between data disk. Wasted space
+resulting from a high number of files in a data disk, may limit only
+the amount of data in such data disk and not in others.
+
+As approximation, you can assume that half of the block size is
+wasted for each file. For example, with 100000 files and a 256 KiB
+block size, you are going to waste 12 GiB of parity.
+
+To avoid to problem, you can use a bigger partition for parity.
+For example, if you have the parity partition bigger than 12 GiB
+than data disks, you have enough extra space to handle up to 100000
+files in each data disk.
+
+A trick to get a bigger parity partition in Linux, is to format it
+with the command:
+
+    mkfs.ext4 -m 0 -T largefile4 DEVICE
+
+This results in about 1.5% of extra space. Meaning about 48 GiB for
+a 3 TiB disk, that allows about 400000 files in each data disk without
+any wasted space.
+
+Note also, that any file in data disks that is excluded from the parity
+computation, counts for its size as extra parity space for such data disk.
 
 ---- 7.8.1 autosave SIZE_IN_GIBIBYTES ----
 Automatically save the state when synching after the specified amount
