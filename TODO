@@ -5,15 +5,19 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
-* Checks if splitting hash/parity computation in 4K pages
-can improve speed in sync. That should increase cache locality,
-becase we read the data two times for hash and and parity,
-and if we manage to keep it in the cache, we should save time.
+* In status prints the allocated parity in each data disk.
+In case, also takes into account the extra available space
+in the parity disks.
+
+- Minor
 
 * Avoid to do optimized move operation if more files with
 same timestamp/size are present.
 
-- Minor
+* Checks if splitting hash/parity computation in 4K pages
+can improve speed in sync. That should increase cache locality,
+becase we read the data two times for hash and and parity,
+and if we manage to keep it in the cache, we should save time.
 
 * In the content file save the timestap of the parity files.
 If they do not match, stop the processing.
@@ -106,11 +110,6 @@ See Jens's Windows script at: http://sourceforge.net/p/snapraid/discussion/16772
 Note that a different between Windows and Unix is that in Windows old shapshots
 are automatically deleted.
 
-* Split the parity in multiple files and allow it to coexist with data
-in the same disk.
-This is possible if the data in the same disk uses parity addresses not
-contained in the parity file present in the same disk.
-
 * Use smaller hashes to reduce the memory occupation. We can truncate the 128 bits hash
 to 32 or 64 bits and reduce the memory usage by a factor of 4 or 2.
 ZFS, and Btrfs supports the 32 bit CRCs. To identify bad blocks it should be enough.
@@ -118,19 +117,65 @@ But this likely means to drop the dup and --import feature. We cannot trust a 32
 as a 128 bits one to search for blocks.
 It should be optional, only for architectures with very low memory.
 
-* The data could be compressed before processing, resulting in parity block of fixed size,
-but matching different data block sizes.
+Rejected TODO
+=============
+
+This is a list of rejected TODO items.
+
+* Allow to put parity directly into the underline block device without the need
+of any filesystem.
+That would allow to increase a lot the free space for parity. For example, NTFS
+reserves 12.5% of the space for the MFT.
+We can implement some kind of filesystem detection to avoid to overwrite an already
+existing filesystem.
+- Still risky if stuffs go wrong.
+- In Linux with largefile4 there is only a very small amount of space wasted.
+In the order of 0.01%. Not really worth to do it.
+- Is this really a problem. If NTFS wastes 12.5% of space by default, can we also
+waste something in the order of 2% ?
+
+* Split the parity in multiple files and allow it to coexist with data
+in the same disk.
+This is possible if the data in the same disk uses parity addresses not
+contained in the parity file present in the same disk.
+- It could be more complex to setup for the user.
++ It's a nice trick. The disk containing parity, will have less space available,
+and then it will need less parity, resolving the problem of the parity disk being too small.
++ We can also think at an automated parity files naming and creation, removing
+the need of the user to specify that. We can also completely remove the
+concept of parity drive, automatically allocating parity in the most free data drives.
+- The problem is that it would be not nice to have the program to automatically
+choose where to create the parity, because the choice cannot be optimal.
+With a dedicated disk manually chosen, it's instead optimal.
+
+* The data could be compressed before processing, resulting in parity block of
+fixed size, but matching different data block sizes.
 The complexity is that a file blocks will have to be allocated at runtime,
 and you may run out of them in the middle of the processing.
 We need also a way to compress a stream until the compressed data reach the
 block size, but no more, and then start a new block.
 For each block, we'll have also to store. "size_uncompressed", "size_compressed",
 "hash".
+- It will be too slow.
+- Not addressing the problem of a lot of small files, as still one block will be
+allocated for each file.
 
-Rejected TODO
-=============
+* Uses different block size for parity and file allocation.
+We can use a big size, like 1MB for parity allocation and hash computation,
+and at the same time using a 4K blocks for files allocation.
+This means that a parity blocks may contain more than one file.
+- We'll have to drop the dup and import feature,
+because it won't be possible anymore to compare the hash of files,
+as it would depend also on the start address inside the parity block.
+- When a hash fail, it won't be possible to tell which file is really
+broken, because more file may share the same parity block.
 
-This is a list of rejected TODO items.
+* Have special parity blocks containing the last blocks of more files
+until it's filled up.
+For such parity blocks, we'll have more than one hash. One for each
+file contained.
+- Parity will be too fragmented, because we'll have parity blocks
+containing the last blocks of many files.
 
 * In "pool" for Windows, and for unique directories a junction to the
 directory could be used, avoiding to use symlinks to files.
