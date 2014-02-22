@@ -516,12 +516,6 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 			state->parity_device[l] = st.st_dev;
 
-			/* set lock file if first parity */
-			if (l == 0) {
-				pathcpy(state->lockfile, sizeof(state->lockfile), state->parity_path[l]);
-				pathcat(state->lockfile, sizeof(state->lockfile), ".lock");
-			}
-
 			/* adjust the level */
 			if (state->level < l + 1)
 				state->level = l + 1;
@@ -638,6 +632,12 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				fprintf(stderr, "Error accessing 'content' dir '%s' specification in '%s' at line %u\n", device, path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
+			}
+
+			/* set the lock file at the first content file */
+			if (tommy_list_empty(&state->contentlist)) {
+				pathcpy(state->lockfile, sizeof(state->lockfile), buffer);
+				pathcat(state->lockfile, sizeof(state->lockfile), ".lock");
 			}
 
 			content = content_alloc(buffer, st.st_dev);

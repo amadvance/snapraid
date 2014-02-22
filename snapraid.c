@@ -86,6 +86,9 @@ void memory(void)
 	printf("Using %u MiB of memory.\n", (unsigned)(malloc_counter() / 1024 / 1024));
 }
 
+/****************************************************************************/
+/* log */
+
 void log_open(const char* log)
 {
 	char path[PATH_MAX];
@@ -184,6 +187,9 @@ void log_close(const char* log)
 		}
 	}
 }
+
+/****************************************************************************/
+/* main */
 
 #define OPT_TEST_SKIP_SELF 256
 #define OPT_TEST_KILL_AFTER_SYNC 257
