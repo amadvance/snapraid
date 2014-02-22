@@ -73,6 +73,7 @@ struct snapraid_option {
 	int skip_sequential; /**< Skip sequential hint. */
 	int skip_lock; /**< Skip the lock file protection. */
 	int skip_self; /**< Skip the self-test. */
+	int skip_content_check; /**< Relax some content file checks. */
 	int kill_after_sync; /**< Kill the process after sync without saving the final state. */
 	int force_murmur3; /**< Force Murmur3 choice. */
 	int force_spooky2; /**< Force Spooky2 choice. */
