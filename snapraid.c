@@ -284,13 +284,13 @@ struct option long_options[] = {
 	/* Force scrub of the specified number of blocks */
 	{ "test-force-scrub", 1, 0, OPT_TEST_FORCE_SCRUB },
 
-	/* Force scrub of all the even blocks. This is really for testing, don't try it. */
+	/* Force scrub of all the even blocks. This is really for testing, don't try it */
 	{ "test-force-scrub-even", 0, 0, OPT_TEST_FORCE_SCRUB_EVEN },
 
-	/* Force write of the content file even if no modification is done. */
+	/* Force write of the content file even if no modification is done */
 	{ "test-force-content-write", 0, 0, OPT_TEST_FORCE_CONTENT_WRITE },
 
-	/* Force the use of text content file . */
+	/* Force the use of text content file */
 	{ "test-force-content-text", 0, 0, OPT_TEST_FORCE_CONTENT_TEXT },
 
 	/* Relax the checks done at the content file */
