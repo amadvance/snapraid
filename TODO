@@ -124,15 +124,15 @@ This is a list of rejected TODO items.
 
 * Allow to put parity directly into the underline block device without the need
 of any filesystem.
-That would allow to increase a lot the free space for parity. For example, NTFS
-reserves 12.5% of the space for the MFT.
+That would allow to increase a lot the free space for parity.
 We can implement some kind of filesystem detection to avoid to overwrite an already
 existing filesystem.
 - Still risky if stuffs go wrong.
 - In Linux with largefile4 there is only a very small amount of space wasted.
 In the order of 0.01%. Not really worth to do it.
-- Is this really a problem. If NTFS wastes 12.5% of space by default, can we also
-waste something in the order of 2% ?
+- With NTFS the saving is also limited, because the "reserved" MFT of 12.5% is
+not really exclusively reserved, but can be used also for normal files,
+when all the remainig space is filled.
 
 * Split the parity in multiple files and allow it to coexist with data
 in the same disk.
