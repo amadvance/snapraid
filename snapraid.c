@@ -104,6 +104,7 @@ void memory(void)
 #define OPT_TEST_FORCE_SCRUB_EVEN 272
 #define OPT_TEST_FORCE_CONTENT_WRITE 273
 #define OPT_TEST_FORCE_CONTENT_TEXT 274
+#define OPT_TEST_SKIP_CONTENT_CHECK 275
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -184,6 +185,9 @@ struct option long_options[] = {
 
 	/* Force the use of text content file . */
 	{ "test-force-content-text", 0, 0, OPT_TEST_FORCE_CONTENT_TEXT },
+
+	/* Relax the checks done at the content file */
+	{ "test-skip-content-check", 0, 0, OPT_TEST_SKIP_CONTENT_CHECK },
 
 	{ 0, 0, 0, 0 }
 };
@@ -398,6 +402,9 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_TEST_SKIP_DEVICE :
 			opt.skip_device = 1;
+			break;
+		case OPT_TEST_SKIP_CONTENT_CHECK :
+			opt.skip_content_check = 1;
 			break;
 		case OPT_TEST_FORCE_MURMUR3 :
 			opt.force_murmur3 = 1;

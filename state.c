@@ -2242,7 +2242,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			/* check for impossible file size to avoid to crash for a too big allocation */
 			if (v_size / state->block_size > blockmax) {
 				decoding_error(path, f);
-				fprintf(stderr, "Internal inconsistency in file size!\n");
+				fprintf(stderr, "Internal inconsistency in file size too big!\n");
 				exit(EXIT_FAILURE);
 			}
 
@@ -2316,9 +2316,15 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				}
 
 				if (v_pos + v_count > blockmax) {
-					decoding_error(path, f);
-					fprintf(stderr, "Internal inconsistency in block size!\n");
-					exit(EXIT_FAILURE);
+					if (state->opt.skip_content_check) {
+						fprintf(stderr, "Internal inconsistency in block size!\n");
+						fprintf(stderr, "Overriding from %u to %u...\n", blockmax, v_pos + v_count);
+						blockmax = v_pos + v_count;
+					} else {
+						fprintf(stderr, "Internal inconsistency in block size!\n");
+						decoding_error(path, f);
+						exit(EXIT_FAILURE);
+					}
 				}
 
 				/* grow the array */
@@ -2419,9 +2425,15 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				}
 
 				if (v_pos + v_count > blockmax) {
-					decoding_error(path, f);
-					fprintf(stderr, "Internal inconsistency in info size!\n");
-					exit(EXIT_FAILURE);
+					if (state->opt.skip_content_check) {
+						fprintf(stderr, "Internal inconsistency in info size!\n");
+						fprintf(stderr, "Overriding from %u to %u...\n", blockmax, v_pos + v_count);
+						blockmax = v_pos + v_count;
+					} else {
+						decoding_error(path, f);
+						fprintf(stderr, "Internal inconsistency in info size!\n");
+						exit(EXIT_FAILURE);
+					}
 				}
 
 				ret = sgetb32(f, &flag);
@@ -2507,9 +2519,15 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				}
 
 				if (v_pos + v_count > blockmax) {
-					decoding_error(path, f);
-					fprintf(stderr, "Internal inconsistency in hole size!\n");
-					exit(EXIT_FAILURE);
+					if (state->opt.skip_content_check) {
+						fprintf(stderr, "Internal inconsistency in hole size!\n");
+						fprintf(stderr, "Overriding from %u to %u...\n", blockmax, v_pos + v_count);
+						blockmax = v_pos + v_count;
+					} else {
+						decoding_error(path, f);
+						fprintf(stderr, "Internal inconsistency in hole size!\n");
+						exit(EXIT_FAILURE);
+					}
 				}
 
 				/* get the subcommand */
@@ -2849,7 +2867,12 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 	/* check that the stored parity size matches the loaded state */
 	if (blockmax != parity_size(state)) {
 		fprintf(stderr, "Internal inconsistency in parity size in '%s' at offset %"PRIi64"\n", path, stell(f));
-		exit(EXIT_FAILURE);
+		if (state->opt.skip_content_check) {
+			fprintf(stderr, "Overriding from %u to %u...\n", blockmax, parity_size(state));
+			blockmax = parity_size(state);
+		} else {
+			exit(EXIT_FAILURE);
+		}
 	}
 
 	/* set the required parity size */
