@@ -274,6 +274,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 	unsigned j;
 	int n;
 	int something_to_recover;
+	int something_unsynched;
 
 	error = 0;
 
@@ -389,6 +390,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 	/* and we are not interested to recover DELETED ones. */
 	n = 0;
 	something_to_recover = 0; /* keep track if there is at least one block to fix */
+	something_unsynched = 0; /* keep track if we have some unsynched info to process */
 	for(j=0;j<failed_count;++j) {
 		unsigned block_state = block_state_get(failed[j].block);
 
@@ -401,6 +403,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 			/* because the parity is computed with old content, and not with the new one. */
 			/* Note that this recovering is done just to make possible to recover any other BLK one, */
 			/* we are not really interested in DELETED and CHG (old version) ones. */
+			something_unsynched = 1;
 
 			/* try to fetch the old block using the old hash */
 			if (state_import_fetch(state, rehash, failed[j].block->hash, buffer[failed[j].index]) == 0) {
@@ -447,7 +450,8 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 	}
 
 	/* if nothing to fix, we just don't try */
-	if (something_to_recover) {
+	/* if nothing unsynched we also don't retry, because it's the same try as before */
+	if (something_to_recover && something_unsynched) {
 		ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_recov, buffer_zero);
 		if (ret == 0) {
 			/* we alreay marked as outdated NEW and CHG blocks, we don't need to do it again */
