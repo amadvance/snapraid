@@ -29,7 +29,8 @@ struct snapraid_scan {
 	 * Counters of changes.
 	 */
 	unsigned count_equal; /**< Files equal. */
-	unsigned count_move; /**< Files with a different name, but equal inode, size and timestamp. */
+	unsigned count_move; /**< Files with a different name, but equal inode, size and timestamp in the same disk. */
+	unsigned count_copy; /**< Files with same name, size and timestamp, in a different disk. */
 	unsigned count_restore; /**< Files with equal name, size and timestamp, but different inode. */
 	unsigned count_change; /**< Files modified. */
 	unsigned count_remove; /**< Files removed. */
@@ -452,6 +453,8 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
 	struct snapraid_file* file;
+	int add_insert;
+	int add_change;
 	tommy_node* i;
 
 	/*
@@ -596,6 +599,9 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 		/* go further to find it by name */
 	}
 
+	add_insert = 0;
+	add_change = 0;
+
 	/* then try findind it by name */
 	file = tommy_hashdyn_search(&disk->pathset, file_path_compare_to_arg, sub, file_path_hash(sub));
 	if (file) {
@@ -711,14 +717,11 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 		}
 
 		/* it has the same name, so it's an update */
-		++scan->count_change;
+		add_change = 1;
 
 		fprintf(stdlog, "scan:update:%s:%s\n", disk->name, file->sub);
 		if (output) {
-			if (file->size != st->st_size)
-				printf("resize %s%s\n", disk->dir, file->sub);
-			else
-				printf("update %s%s\n", disk->dir, file->sub);
+			printf("update %s%s\n", disk->dir, file->sub);
 		}
 
 		/* remove it */
@@ -727,7 +730,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 		/* and continue to reinsert it */
 	} else {
 		/* if the name doesn't exist, it's a new file */
-		++scan->count_insert;
+		add_insert = 1;
 
 		fprintf(stdlog, "scan:add:%s:%s\n", disk->name, sub);
 		if (output) {
@@ -757,6 +760,11 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 			/* assume that the file is a copy, and reuse the hash */
 			file_copy(other_file, file);
 
+			/* revert old counter and use the copy one */
+			add_insert = 0;
+			add_change = 0;
+			++scan->count_copy;
+
 			fprintf(stdlog, "scan:copy:%s:%s:%s:%s\n", other_disk->name, other_file->sub, disk->name, file->sub);
 			if (output) {
 				printf("copy %s%s -> %s%s\n", other_disk->dir, other_file->sub, disk->dir, file->sub);
@@ -766,6 +774,10 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 			break;
 		}
 	}
+
+	/* modify counter */
+	scan->count_insert += add_insert;
+	scan->count_change += add_change;
 
 	/* insert the file in the file hashtables, to allow to find duplicate hardlinks */
 	tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
@@ -1206,6 +1218,7 @@ void state_scan(struct snapraid_state* state, int output)
 		scan->disk = disk;
 		scan->count_equal = 0;
 		scan->count_move = 0;
+		scan->count_copy = 0;
 		scan->count_restore = 0;
 		scan->count_change = 0;
 		scan->count_remove = 0;
@@ -1504,6 +1517,7 @@ void state_scan(struct snapraid_state* state, int output)
 
 		total.count_equal = 0;
 		total.count_move = 0;
+		total.count_copy = 0;
 		total.count_restore = 0;
 		total.count_change = 0;
 		total.count_remove = 0;
@@ -1513,6 +1527,7 @@ void state_scan(struct snapraid_state* state, int output)
 			struct snapraid_scan* scan = i->data;
 			total.count_equal += scan->count_equal;
 			total.count_move += scan->count_move;
+			total.count_copy += scan->count_copy;
 			total.count_restore += scan->count_restore;
 			total.count_change += scan->count_change;
 			total.count_remove += scan->count_remove;
@@ -1524,20 +1539,23 @@ void state_scan(struct snapraid_state* state, int output)
 				printf("\n");
 			printf("%8u equal\n", total.count_equal);
 			printf("%8u moved\n", total.count_move);
+			printf("%8u copied\n", total.count_copy);
 			printf("%8u restored\n", total.count_restore);
-			printf("%8u changed\n", total.count_change);
+			printf("%8u updated\n", total.count_change);
 			printf("%8u removed\n", total.count_remove);
 			printf("%8u added\n", total.count_insert);
 		}
 
 		fprintf(stdlog, "summary:equal:%u\n", total.count_equal);
 		fprintf(stdlog, "summary:moved:%u\n", total.count_move);
+		fprintf(stdlog, "summary:copied:%u\n", total.count_copy);
 		fprintf(stdlog, "summary:restored:%u\n", total.count_restore);
-		fprintf(stdlog, "summary:changed:%u\n", total.count_change);
+		fprintf(stdlog, "summary:updated:%u\n", total.count_change);
 		fprintf(stdlog, "summary:removed:%u\n", total.count_remove);
 		fprintf(stdlog, "summary:added:%u\n", total.count_insert);
 
-		no_difference = !total.count_move && !total.count_restore && !total.count_change && !total.count_remove && !total.count_insert;
+		no_difference = !total.count_move && !total.count_copy && !total.count_restore
+			&& !total.count_change && !total.count_remove && !total.count_insert;
 
 		if (output) {
 			if (no_difference) {
