@@ -1,11 +1,12 @@
 SnapRAID HISTORY
 ================
 
-5.3 2014/2
+5.3 2014/3
 =================
  * Don't warn about UUID changed if it's for an empty disk.
  * Fixed the number of blocks that scrub has to process when
    selecting a high percentage of the array.
+ * Removed duplicate recovery attempts in synched state.
 
 5.2 2013/12
 ===========
