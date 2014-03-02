@@ -160,6 +160,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 	/* if too many error, we don't have any strategy */
 	n = state->level;
 	if (failed_count > n) {
+		fprintf(stdlog, "strategy_error:%u: No strategy to recover from %u failures with %u parity\n", pos, failed_count, n);
 		return -1;
 	}
 
@@ -260,8 +261,10 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 	/* return the number of failed attempts, or -1 if no strategy */
 	if (error)
 		return error;
-	else
-		return -1;
+
+	fprintf(stdlog, "strategy_error:%u: No strategy to recover from %u failures with %u parity %s hash\n",
+		pos, failed_count, n, has_hash ? "with" : "without");
+	return -1;
 }
 
 static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, unsigned char** buffer, unsigned char** buffer_recov, unsigned char* buffer_zero)
@@ -622,6 +625,8 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				failed[failed_count].block = block;
 				failed[failed_count].handle = 0;
 				++failed_count;
+
+				fprintf(stdlog, "block_delete:%u:%s: Delete block\n", i, handle[j].disk->name);
 				continue;
 			}
 
@@ -737,6 +742,8 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				failed[failed_count].block = block;
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
+
+				fprintf(stdlog, "block_change:%u:%s:%s: Change block at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 				continue;
 			}
 
@@ -806,7 +813,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				/* print a list of all the errors in files */
 				for(j=0;j<failed_count;++j) {
 					if (failed[j].is_bad)
-						fprintf(stdlog, "unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
+						fprintf(stdlog, "unrecoverable:%u:%s:%s: Unrecoverable synched error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
 				}
 
 				/* keep track of damaged files */
@@ -824,7 +831,7 @@ static int state_check_process(struct snapraid_state* state, int check, int fix,
 				for(j=0;j<failed_count;++j) {
 					if (failed[j].is_bad && failed[j].is_outofdate) {
 						++partial_recover_error;
-						fprintf(stdlog, "unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
+						fprintf(stdlog, "unrecoverable:%u:%s:%s: Unrecoverable unsynched error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
 					}
 				}
 				if (partial_recover_error != 0) {
