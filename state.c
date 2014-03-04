@@ -1113,7 +1113,7 @@ static int position_is_required(struct snapraid_state* state, block_off_t pos)
  * and the we add it when importing old context files.
  *
  * Note that you can have position without info blocks, for example
- * if all the blocks are not synched.
+ * if all the blocks are not synced.
  *
  * Note also that not requiring an info block, doesn't mean that if present it
  * can be discarded.
@@ -1127,7 +1127,7 @@ static int info_is_required(struct snapraid_state* state, block_off_t pos)
 		struct snapraid_disk* disk = i->data;
 		struct snapraid_block* block = disk_block_get(disk, pos);
 
-		/* if we have at least one synched file, the info is required */
+		/* if we have at least one synced file, the info is required */
 		if (block_state_get(block) == BLOCK_STATE_BLK)
 			return 1;
 	}

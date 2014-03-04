@@ -760,7 +760,7 @@ int main(int argc, char* argv[])
 		/* - add some files at the array */
 		/* - run a sync command, it will recompute the parity adding the new files */
 		/* - abort the sync command before it stores the new content file */
-		/* - delete the not yet synched files from the array */
+		/* - delete the not yet synced files from the array */
 		/* - run a new sync command */
 		
 		/* the new sync command has now way to know that the parity file was modified */

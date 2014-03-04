@@ -325,7 +325,7 @@ Commands
 	Blocks already marked as bad are always checked, and if found
 	correct, they are automatically unmarked.
 
-	It's recommended to run "scrub" on a synched array, to avoid to have
+	It's recommended to run "scrub" on a synced array, to avoid to have
 	reported error caused by unsynced data. These errors are recognized
 	as not being silent errors, and the blocks are not marked as bad,
 	but such errors are reported in the output of the command.

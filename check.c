@@ -283,7 +283,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 	unsigned j;
 	int n;
 	int something_to_recover;
-	int something_unsynched;
+	int something_unsynced;
 
 	error = 0;
 
@@ -406,7 +406,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 	/* and we are not interested to recover DELETED ones. */
 	n = 0;
 	something_to_recover = 0; /* keep track if there is at least one block to fix */
-	something_unsynched = 0; /* keep track if we have some unsynched info to process */
+	something_unsynced = 0; /* keep track if we have some unsynced info to process */
 	for(j=0;j<failed_count;++j) {
 		unsigned block_state = block_state_get(failed[j].block);
 
@@ -420,7 +420,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 			/* because the parity is computed with old content, and not with the new one. */
 			/* Note that this recovering is done just to make possible to recover any other BLK one, */
 			/* we are not really interested in DELETED, CHG (old version) and REP (old version). */
-			something_unsynched = 1;
+			something_unsynced = 1;
 
 			if (block_state == BLOCK_STATE_CHG
 				&& hash_is_zero(failed[j].block->hash)
@@ -468,8 +468,8 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 	}
 
 	/* if nothing to fix, we just don't try */
-	/* if nothing unsynched we also don't retry, because it's the same try as before */
-	if (something_to_recover && something_unsynched) {
+	/* if nothing unsynced we also don't retry, because it's the same try as before */
+	if (something_to_recover && something_unsynced) {
 		ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_recov, buffer_zero);
 		if (ret == 0) {
 			/* we alreay marked as outdated CHG and REP blocks, we don't need to do it again */
@@ -858,7 +858,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				/* print a list of all the errors in files */
 				for(j=0;j<failed_count;++j) {
 					if (failed[j].is_bad)
-						fprintf(stdlog, "unrecoverable:%u:%s:%s: Unrecoverable synched error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
+						fprintf(stdlog, "unrecoverable:%u:%s:%s: Unrecoverable synced error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
 				}
 
 				/* keep track of damaged files */
@@ -876,7 +876,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				for(j=0;j<failed_count;++j) {
 					if (failed[j].is_bad && failed[j].is_outofdate) {
 						++partial_recover_error;
-						fprintf(stdlog, "unrecoverable:%u:%s:%s: Unrecoverable unsynched error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
+						fprintf(stdlog, "unrecoverable:%u:%s:%s: Unrecoverable unsynced error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
 					}
 				}
 				if (partial_recover_error != 0) {

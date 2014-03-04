@@ -133,7 +133,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		snapraid_info info;
 		int error_on_this_block;
 		int silent_error_on_this_block;
-		int block_is_unsynched;
+		int block_is_unsynced;
 		int ret;
 		int rehash;
 
@@ -181,9 +181,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		error_on_this_block = 0;
 		silent_error_on_this_block = 0;
 
-		/* if all the blocks at this address are synched */
+		/* if all the blocks at this address are synced */
 		/* if not, parity is not even checked */
-		block_is_unsynched = 0;
+		block_is_unsynced = 0;
 
 		/* if we have to use the old hash */
 		rehash = info_get_rehash(info);
@@ -193,11 +193,11 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			int read_size;
 			unsigned char hash[HASH_SIZE];
 			struct snapraid_block* block;
-			int file_is_unsynched;
+			int file_is_unsynced;
 
-			/* if the file on this disk is synched */
+			/* if the file on this disk is synced */
 			/* if not, silent errors are assumed as expected error */
-			file_is_unsynched = 0;
+			file_is_unsynced = 0;
 
 			/* by default no rehash in case of "continue" */
 			rehandle[j].block = 0;
@@ -217,11 +217,11 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				continue;
 			}
 
-			/* if the block is unsynched, errors are expected */
+			/* if the block is unsynced, errors are expected */
 			if (block_has_invalid_parity(block)) {
-				/* report that the block and the file are not synched */
-				block_is_unsynched = 1;
-				file_is_unsynched = 1;
+				/* report that the block and the file are not synced */
+				block_is_unsynced = 1;
+				file_is_unsynced = 1;
 
 				/* follow */
 			}
@@ -260,16 +260,16 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				|| STAT_NSEC(&handle[j].st) != block_file_get(block)->mtime_nsec
 				|| handle[j].st.st_ino != block_file_get(block)->inode
 			) {
-				/* report that the block and the file are not synched */
-				block_is_unsynched = 1;
-				file_is_unsynched = 1;
+				/* report that the block and the file are not synced */
+				block_is_unsynced = 1;
+				file_is_unsynced = 1;
 
 				/* follow */
 			}
 
 			/* note that we intentionally don't abort if the file has different attributes */
 			/* from the last sync, as we are expected to return errors if running */
-			/* in an unsynched array. This is just like the check command. */
+			/* in an unsynced array. This is just like the check command. */
 
 			read_size = handle_read(&handle[j], block, buffer[j], state->block_size, stderr);
 			if (read_size == -1) {
@@ -297,8 +297,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
 					fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, handle[j].file->sub, block_file_pos(block));
 
-					/* it's a silent error only if we are dealing with synched files */
-					if (file_is_unsynched) {
+					/* it's a silent error only if we are dealing with synced files */
+					if (file_is_unsynced) {
 						++error;
 						error_on_this_block = 1;
 					} else {
@@ -345,8 +345,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				if (buffer_recov[l] && memcmp(buffer[diskmax + l], buffer_recov[l], state->block_size) != 0) {
 					fprintf(stdlog, "parity_error:%u:%s: Data error\n", i, lev_config_name(l));
 
-					/* it's a silent error only if we are dealing with synched blocks */
-					if (block_is_unsynched) {
+					/* it's a silent error only if we are dealing with synced blocks */
+					if (block_is_unsynced) {
 						++error;
 						error_on_this_block = 1;
 					} else {
@@ -366,7 +366,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			info_set(&state->infoarr, i, info_set_bad(info));
 		} else if (error_on_this_block) {
 			/* do nothing, as this is a generic error */
-			/* likely caused by a not synched array */
+			/* likely caused by a not synced array */
 		} else {
 			/* if rehash is needed */
 			if (rehash) {

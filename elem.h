@@ -94,7 +94,7 @@ struct snapraid_filter {
  *
  * For this reson we clear all such hashes when reading the state from an incomplete sync when
  * starting a new sync, because sync is affected by sych hashes.
- * Check and fix are instead able to work with unsynched hashes.
+ * Check and fix are instead able to work with unsynced hashes.
  * Scrub is not affected because it ignores CHG/DELETED blocks.
  */
 #define BLOCK_STATE_CHG 2
@@ -122,7 +122,7 @@ struct snapraid_filter {
  *
  * For this reson we clear all such hashes when reading the state from an incomplete sync when
  * starting a new sync, because sync is affected by sych hashes.
- * Check and fix are instead able to work with unsynched hashes.
+ * Check and fix are instead able to work with unsynced hashes.
  * Scrub is not affected because it ignores CHG/DELETED blocks.
  */
 #define BLOCK_STATE_DELETED 4

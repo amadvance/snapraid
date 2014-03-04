@@ -28,11 +28,12 @@ SnapRAID HISTORY
  * New source code organization. The RAID engine is now
    an external component usable also in other projects.
 
-5.3 2014/2 (BETA)
-=================
+5.3 2014/3
+==========
  * Don't warn about UUID changed if it's for an empty disk.
  * Fixed the number of blocks that scrub has to process when
    selecting a high percentage of the array.
+ * Removed duplicate recovery attempts in synced state.
 
 5.2 2013/12
 ===========

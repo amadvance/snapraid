@@ -55,7 +55,7 @@ int state_status(struct snapraid_state* state)
 	unsigned file_fragmented;
 	unsigned extra_fragment;
 	uint64_t file_size;
-	unsigned unsynched_blocks;
+	unsigned unsynced_blocks;
 
 	/* get the present time */
 	now = time(0);
@@ -140,12 +140,12 @@ int state_status(struct snapraid_state* state)
 	fprintf(stdlog, "summary:block_count:%u\n", blockmax);
 	fflush(stdlog);
 
-	/* copy the info a temp vector, and count bad/rehash/unsynched blocks */
+	/* copy the info a temp vector, and count bad/rehash/unsynced blocks */
 	infomap = malloc_nofail(blockmax * sizeof(snapraid_info));
 	bad = 0;
 	count = 0;
 	rehash = 0;
-	unsynched_blocks = 0;
+	unsynced_blocks = 0;
 	for(i=0;i<blockmax;++i) {
 		int one_invalid;
 		int one_valid;
@@ -167,7 +167,7 @@ int state_status(struct snapraid_state* state)
 
 		/* if both valid and invalid, we need to update */
 		if (one_invalid && one_valid) {
-			++unsynched_blocks;
+			++unsynced_blocks;
 		}
 
 		/* skip unused blocks */
@@ -183,13 +183,13 @@ int state_status(struct snapraid_state* state)
 
 		if (state->opt.gui) {
 			if (info != 0)
-				fprintf(stdlog, "block:%u:%"PRIu64":%s:%s:%s:%s\n", i, (uint64_t)info_get_time(info), one_valid ? "used": "", one_invalid ? "unsynched" : "", info_get_bad(info) ? "bad" : "", info_get_rehash(info) ? "rehash" : "");
+				fprintf(stdlog, "block:%u:%"PRIu64":%s:%s:%s:%s\n", i, (uint64_t)info_get_time(info), one_valid ? "used": "", one_invalid ? "unsynced" : "", info_get_bad(info) ? "bad" : "", info_get_rehash(info) ? "rehash" : "");
 			else
-				fprintf(stdlog, "block_noinfo:%u:%s:%s\n", i, one_valid ? "used": "", one_invalid ? "unsynched" : "");
+				fprintf(stdlog, "block_noinfo:%u:%s:%s\n", i, one_valid ? "used": "", one_invalid ? "unsynced" : "");
 		}
 	}
 
-	fprintf(stdlog, "summary:has_unsynched:%u\n", unsynched_blocks);
+	fprintf(stdlog, "summary:has_unsynced:%u\n", unsynced_blocks);
 	fprintf(stdlog, "summary:has_rehash:%u\n", rehash);
 	fprintf(stdlog, "summary:has_bad:%u\n", bad);
 	fprintf(stdlog, "summary:time_count:%u\n", count);
@@ -285,9 +285,9 @@ int state_status(struct snapraid_state* state)
 
 	printf("\n");
 
-	if (unsynched_blocks) {
-		printf("WARNING! The array is NOT fully synched.\n");
-		printf("You have a sync in progress at %u%%.\n", (blockmax - unsynched_blocks) * 100 / blockmax);
+	if (unsynced_blocks) {
+		printf("WARNING! The array is NOT fully synced.\n");
+		printf("You have a sync in progress at %u%%.\n", (blockmax - unsynced_blocks) * 100 / blockmax);
 	} else {
 		printf("No sync is in progress.\n");
 	}
