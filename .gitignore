@@ -8,6 +8,7 @@
 # autotools
 Makefile
 Makefile.in
+compile
 aclocal.m4
 autom4te.cache/
 config.guess
@@ -20,6 +21,7 @@ configure
 install-sh
 missing
 stamp-h1
+.dirstamp
 
 # objects
 *.o
@@ -27,9 +29,12 @@ stamp-h1
 # project
 *.dst
 *.epr
+*.geany
 
 # specific
 snapraid
 cov_release/
 contrib/
-
+paper/
+kernel/
+obj/

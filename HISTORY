@@ -1,7 +1,7 @@
 SnapRAID HISTORY
 ================
 
-6.0 2014/2 (BETA)
+6.0 2014/3 (BETA)
 =================
  * In "sync", even if a silent error is found, continue to update
    the parity if it's possible to correct the error.
