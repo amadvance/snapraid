@@ -211,6 +211,7 @@ void log_close(const char* log)
 #define OPT_TEST_FORCE_CONTENT_WRITE 273
 #define OPT_TEST_FORCE_CONTENT_TEXT 274
 #define OPT_TEST_SKIP_CONTENT_CHECK 275
+#define OPT_TEST_SKIP_PARITY_ACCESS 276
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -295,6 +296,9 @@ struct option long_options[] = {
 
 	/* Relax the checks done at the content file */
 	{ "test-skip-content-check", 0, 0, OPT_TEST_SKIP_CONTENT_CHECK },
+
+	/* Skip the parity access */
+	{ "test-skip-parity-access", 0, 0, OPT_TEST_SKIP_PARITY_ACCESS },
 
 	{ 0, 0, 0, 0 }
 };
@@ -535,6 +539,9 @@ int main(int argc, char* argv[])
 		case OPT_TEST_SKIP_CONTENT_CHECK :
 			opt.skip_content_check = 1;
 			break;
+		case OPT_TEST_SKIP_PARITY_ACCESS :
+			opt.skip_parity_access = 1;
+			break;
 		case OPT_TEST_FORCE_MURMUR3 :
 			opt.force_murmur3 = 1;
 			break;
@@ -694,6 +701,18 @@ int main(int argc, char* argv[])
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
+	}
+
+	switch (operation) {
+	case OPERATION_DIFF :
+	case OPERATION_LIST :
+	case OPERATION_DUP :
+	case OPERATION_POOL :
+	case OPERATION_STATUS :
+	case OPERATION_REWRITE :
+		/* avoid to check and access parity disks if not needed */
+		opt.skip_parity_access = 1;
+		break;
 	}
 
 	/* open the log file */

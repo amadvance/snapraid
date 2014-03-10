@@ -452,7 +452,6 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 		) {
 			char device[PATH_MAX];
 			char* slash;
-			struct stat st;
 			unsigned l;
 
 			switch (tag[0]) {
@@ -500,21 +499,28 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 			pathimport(state->parity_path[l], sizeof(state->parity_path[l]), buffer);
 
-			/* get the device of the directory containing the parity file */
-			pathimport(device, sizeof(device), buffer);
-			slash = strrchr(device, '/');
-			if (slash)
-				*slash = 0;
-			else
-				pathcpy(device, sizeof(device), ".");
-			if (stat(device, &st) != 0) {
-				/* LCOV_EXCL_START */
-				fprintf(stderr, "Error accessing 'parity' dir '%s' specification in '%s' at line %u\n", device, path, line);
-				exit(EXIT_FAILURE);
-				/* LCOV_EXCL_STOP */
-			}
+			if (state->opt.skip_parity_access) {
+				struct stat st;
 
-			state->parity_device[l] = st.st_dev;
+				/* get the device of the directory containing the parity file */
+				pathimport(device, sizeof(device), buffer);
+				slash = strrchr(device, '/');
+				if (slash)
+					*slash = 0;
+				else
+					pathcpy(device, sizeof(device), ".");
+				if (stat(device, &st) != 0) {
+					/* LCOV_EXCL_START */
+					fprintf(stderr, "Error accessing 'parity' dir '%s' specification in '%s' at line %u\n", device, path, line);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
+				state->parity_device[l] = st.st_dev;
+			} else {
+				/* if parity is skipped, uses a fake device */
+				state->parity_device[l] = -1LL - l;
+			}
 
 			/* adjust the level */
 			if (state->level < l + 1)
