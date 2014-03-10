@@ -134,7 +134,6 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		int error_on_this_block;
 		int silent_error_on_this_block;
 		int block_is_unsynced;
-		int ret;
 		int rehash;
 
 		/* if it's unused */

@@ -412,7 +412,6 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		int silent_error_on_this_block;
 		int fixed_error_on_this_block;
 		int parity_needs_to_be_updated;
-		int ret;
 		snapraid_info info;
 		int rehash;
 

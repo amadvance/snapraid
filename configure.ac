@@ -148,6 +148,19 @@ AC_ARG_ENABLE([debug],
 	],
 	[])
 
+AC_ARG_ENABLE([warning],
+	[AS_HELP_STRING([--enable-warning],[enable extra warning])],
+	[
+	AC_CHECK_CC_OPT([-Wpointer-arith], CFLAGS="$CFLAGS -Wpointer-arith", [])
+	AC_CHECK_CC_OPT([-Wcast-qual], CFLAGS="$CFLAGS -Wcast-qual", [])
+	AC_CHECK_CC_OPT([-Wunused], CFLAGS="$CFLAGS -Wunused", [])
+	AC_CHECK_CC_OPT([-Wunreachable-code], CFLAGS="$CFLAGS -Wunreachable-code", [])
+	AC_CHECK_CC_OPT([-Wpadded], CFLAGS="$CFLAGS -Wpadded", [])
+	AC_CHECK_CC_OPT([-Wshadow], CFLAGS="$CFLAGS -Wshadow", [])
+	AC_CHECK_CC_OPT([-Weverything], CFLAGS="$CFLAGS -Weverything", [])
+	],
+	[])
+
 AC_ARG_VAR([TESTENV], [Test environment])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT

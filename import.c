@@ -45,7 +45,7 @@ int import_block_prevhash_compare(const void* void_arg, const void* void_data)
  */
 static inline tommy_uint32_t import_block_hash(const unsigned char* hash)
 {
-	return *(tommy_uint32_t*)hash;
+	return *(const tommy_uint32_t*)hash;
 }
 
 static void import_file(struct snapraid_state* state, const char* path, uint64_t size)

@@ -452,20 +452,20 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 		) {
 			char device[PATH_MAX];
 			char* slash;
-			unsigned l;
+			unsigned level;
 
 			switch (tag[0]) {
-			case 'p' : l = 0; break;
-			case 'q' : l = 1; break;
-			case 'r' : l = 2; break;
-			case '1' : l = 0; break;
-			case '2' : l = 1; break;
-			case '3' : l = 2; break;
-			case '4' : l = 3; break;
-			case '5' : l = 4; break;
-			case '6' : l = 5; break;
+			case 'p' : level = 0; break;
+			case 'q' : level = 1; break;
+			case 'r' : level = 2; break;
+			case '1' : level = 0; break;
+			case '2' : level = 1; break;
+			case '3' : level = 2; break;
+			case '4' : level = 3; break;
+			case '5' : level = 4; break;
+			case '6' : level = 5; break;
 			case 'z' :
-				l = 2;
+				level = 2;
 				state->raid_mode = RAID_MODE_VANDERMONDE;
 				break;
 			default:
@@ -475,7 +475,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				/* LCOV_EXCL_STOP */
 			}
 
-			if (*state->parity_path[l]) {
+			if (*state->parity_path[level]) {
 				/* LCOV_EXCL_START */
 				fprintf(stderr, "Multiple '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
@@ -497,7 +497,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				/* LCOV_EXCL_STOP */
 			}
 
-			pathimport(state->parity_path[l], sizeof(state->parity_path[l]), buffer);
+			pathimport(state->parity_path[level], sizeof(state->parity_path[level]), buffer);
 
 			if (state->opt.skip_parity_access) {
 				struct stat st;
@@ -516,15 +516,15 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 					/* LCOV_EXCL_STOP */
 				}
 
-				state->parity_device[l] = st.st_dev;
+				state->parity_device[level] = st.st_dev;
 			} else {
 				/* if parity is skipped, uses a fake device */
-				state->parity_device[l] = -1LL - l;
+				state->parity_device[level] = -1LL - level;
 			}
 
 			/* adjust the level */
-			if (state->level < l + 1)
-				state->level = l + 1;
+			if (state->level < level + 1)
+				state->level = level + 1;
 		} else if (strcmp(tag, "share") == 0) {
 			if (*state->share) {
 				/* LCOV_EXCL_START */
@@ -2615,7 +2615,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 	}
 
 	while (1) {
-		char buffer[PATH_MAX];
 		int c;
 
 		/* read the command */

@@ -1185,7 +1185,7 @@ close_and_continue:
 			char path[PATH_MAX];
 			struct stat st;
 			struct snapraid_file* file;
-			int failed = 0;
+			int unsuccesful = 0;
 
 			file = node->data;
 			node = node->next; /* next node */
@@ -1204,24 +1204,24 @@ close_and_continue:
 			pathprint(path, sizeof(path), "%s%s", disk->dir, file->sub);
 			ret = stat(path, &st);
 			if (ret == -1) {
-				failed = 1;
+				unsuccesful = 1;
 
 				fprintf(stdlog, "Error stating empty file '%s'. %s.\n", path, strerror(errno));
 				fprintf(stdlog, "error:%s:%s: Empty file stat error\n", disk->name, file->sub);
 				++error;
 			} else if (!S_ISREG(st.st_mode)) {
-				failed = 1;
+				unsuccesful = 1;
 
 				fprintf(stdlog, "error:%s:%s: Empty file error for not regular file\n", disk->name, file->sub);
 				++error;
 			} else if (st.st_size != 0) {
-				failed = 1;
+				unsuccesful = 1;
 
 				fprintf(stdlog, "error:%s:%s: Empty file error for size '%"PRIu64"'\n", disk->name, file->sub, st.st_size);
 				++error;
 			}
 
-			if (fix && failed) {
+			if (fix && unsuccesful) {
 				int f;
 
 				/* create the ancestor directories */
@@ -1297,7 +1297,7 @@ close_and_continue:
 			struct stat st;
 			struct stat stto;
 			struct snapraid_link* link;
-			int failed = 0;
+			int unsuccesful = 0;
 			int unrecoverable = 0;
 
 			link = node->data;
@@ -1313,13 +1313,13 @@ close_and_continue:
 				pathprint(path, sizeof(path), "%s%s", disk->dir, link->sub);
 				ret = stat(path, &st);
 				if (ret == -1) {
-					failed = 1;
+					unsuccesful = 1;
 
 					fprintf(stdlog, "Error stating hardlink '%s'. %s.\n", path, strerror(errno));
 					fprintf(stdlog, "hardlinkerror:%s:%s:%s: Hardlink stat error\n", disk->name, link->sub, link->linkto);
 					++error;
 				} else if (!S_ISREG(st.st_mode)) {
-					failed = 1;
+					unsuccesful = 1;
 
 					fprintf(stdlog, "hardlinkerror:%s:%s:%s: Hardlink error for not regular file\n", disk->name, link->sub, link->linkto);
 					++error;
@@ -1329,7 +1329,7 @@ close_and_continue:
 				pathprint(pathto, sizeof(pathto), "%s%s", disk->dir, link->linkto);
 				ret = stat(pathto, &stto);
 				if (ret == -1) {
-					failed = 1;
+					unsuccesful = 1;
 
 					if (errno == ENOENT) {
 						unrecoverable = 1;
@@ -1349,12 +1349,12 @@ close_and_continue:
 					fprintf(stdlog, "hardlinkerror:%s:%s:%s: Hardlink to stat error\n", disk->name, link->sub, link->linkto);
 					++error;
 				} else if (!S_ISREG(stto.st_mode)) {
-					failed = 1;
+					unsuccesful = 1;
 
 					fprintf(stdlog, "hardlinkerror:%s:%s:%s: Hardlink-to error for not regular file\n", disk->name, link->sub, link->linkto);
 					++error;
-				} else if (!failed && st.st_ino != stto.st_ino) {
-					failed = 1;
+				} else if (!unsuccesful && st.st_ino != stto.st_ino) {
+					unsuccesful = 1;
 
 					fprintf(stdlog, "Mismatch hardlink '%s' and '%s'. Different inode.\n", path, pathto);
 					fprintf(stdlog, "hardlinkerror:%s:%s:%s: Hardlink mismatch for different inode\n", disk->name, link->sub, link->linkto);
@@ -1365,13 +1365,13 @@ close_and_continue:
 				pathprint(path, sizeof(path), "%s%s", disk->dir, link->sub);
 				ret = readlink(path, linkto, sizeof(linkto));
 				if (ret < 0) {
-					failed = 1;
+					unsuccesful = 1;
 
 					fprintf(stdlog, "Error reading symlink '%s'. %s.\n", path, strerror(errno));
 					fprintf(stdlog, "symlinkerror:%s:%s: Symlink read error\n", disk->name, link->sub);
 					++error;
 				} else if (ret >= PATH_MAX) {
-					failed = 1;
+					unsuccesful = 1;
 
 					fprintf(stdlog, "Error reading symlink '%s'. Symlink too long.\n", path);
 					fprintf(stdlog, "symlinkerror:%s:%s: Symlink read error\n", disk->name, link->sub);
@@ -1380,7 +1380,7 @@ close_and_continue:
 					linkto[ret] = 0;
 
 					if (strcmp(linkto, link->linkto) != 0) {
-						failed = 1;
+						unsuccesful = 1;
 
 						fprintf(stdlog, "symlinkerror:%s:%s: Symlink data error '%s' instead of '%s'\n", disk->name, link->sub, linkto, link->linkto);
 						++error;
@@ -1388,7 +1388,7 @@ close_and_continue:
 				}
 			}
 
-			if (fix && failed && !unrecoverable) {
+			if (fix && unsuccesful && !unrecoverable) {
 				/* create the ancestor directories */
 				ret = mkancestor(path);
 				if (ret != 0) {
@@ -1467,7 +1467,7 @@ close_and_continue:
 			char path[PATH_MAX];
 			struct stat st;
 			struct snapraid_dir* dir;
-			int failed = 0;
+			int unsuccesful = 0;
 
 			dir = node->data;
 			node = node->next; /* next node */
@@ -1481,19 +1481,19 @@ close_and_continue:
 			pathprint(path, sizeof(path), "%s%s", disk->dir, dir->sub);
 			ret = stat(path, &st);
 			if (ret == -1) {
-				failed = 1;
+				unsuccesful = 1;
 
 				fprintf(stdlog, "Error stating dir '%s'. %s.\n", path, strerror(errno));
 				fprintf(stdlog, "dir_error:%s:%s: Dir stat error\n", disk->name, dir->sub);
 				++error;
 			} else if (!S_ISDIR(st.st_mode)) {
-				failed = 1;
+				unsuccesful = 1;
 
 				fprintf(stdlog, "dir_error:%s:%s: Dir error for not directory\n", disk->name, dir->sub);
 				++error;
 			}
 
-			if (fix && failed) {
+			if (fix && unsuccesful) {
 				/* create the ancestor directories */
 				ret = mkancestor(path);
 				if (ret != 0) {

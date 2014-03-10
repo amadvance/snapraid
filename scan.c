@@ -874,7 +874,7 @@ struct dirent_sorted {
 #if HAVE_STRUCT_DIRENT_D_STAT
 	struct stat d_stat; /**< Stat result. */
 #endif
-	char d_name[1]; /**< Variable length name. It must be the last field. */
+	char d_name[]; /**< Variable length name. It must be the last field. */
 };
 
 #if HAVE_STRUCT_DIRENT_D_INO
@@ -995,7 +995,7 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 		}
 
 		name_len = strlen(dd->d_name);
-		entry = malloc_nofail(sizeof(struct dirent_sorted) + name_len);
+		entry = malloc_nofail(sizeof(struct dirent_sorted) + name_len + 1);
 
 		/* copy the dir entry */
 #if HAVE_STRUCT_DIRENT_D_INO

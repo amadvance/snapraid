@@ -123,8 +123,8 @@ void SpookyHash128(const void* message, size_t length, const uint8_t* seed, uint
 	unsigned i;
 #endif
 
-	h9 = ((uint64_t*)seed)[0];
-	h10 = ((uint64_t*)seed)[1];
+	h9 = ((const uint64_t*)seed)[0];
+	h10 = ((const uint64_t*)seed)[1];
 
 #if WORDS_BIGENDIAN
 	h9 = util_swap64(h9);

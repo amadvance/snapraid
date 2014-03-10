@@ -82,10 +82,10 @@ void MurmurHash3_x86_128(const void* key, unsigned len, const uint8_t* seed, voi
 	unsigned i;
 	const uint32_t* blocks;
 
-	uint32_t h1 = ((uint32_t*)seed)[0];
-	uint32_t h2 = ((uint32_t*)seed)[1];
-	uint32_t h3 = ((uint32_t*)seed)[2];
-	uint32_t h4 = ((uint32_t*)seed)[3];
+	uint32_t h1 = ((const uint32_t*)seed)[0];
+	uint32_t h2 = ((const uint32_t*)seed)[1];
+	uint32_t h3 = ((const uint32_t*)seed)[2];
+	uint32_t h4 = ((const uint32_t*)seed)[3];
 
 #if WORDS_BIGENDIAN
 	h1 = util_swap32(h1);
