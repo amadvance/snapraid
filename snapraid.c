@@ -596,7 +596,7 @@ int main(int argc, char* argv[])
 		operation = OPERATION_CHECK;
 	} else if (strcmp(argv[optind], "fix") == 0) {
 		operation = OPERATION_FIX;
-	} else if (strcmp(argv[optind], "dry") == 0) {
+	} else if (strcmp(argv[optind], "test-dry") == 0) {
 		operation = OPERATION_DRY;
 	} else if (strcmp(argv[optind], "dup") == 0) {
 		operation = OPERATION_DUP;
