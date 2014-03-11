@@ -499,7 +499,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 			pathimport(state->parity_path[level], sizeof(state->parity_path[level]), buffer);
 
-			if (state->opt.skip_parity_access) {
+			if (!state->opt.skip_parity_access) {
 				struct stat st;
 
 				/* get the device of the directory containing the parity file */
