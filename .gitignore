@@ -5,6 +5,9 @@
 # backups
 *~
 
+# logs
+*.log
+
 # autotools
 Makefile
 Makefile.in
@@ -25,6 +28,9 @@ stamp-h1
 
 # objects
 *.o
+*.gcda
+*.gcno
+*.gcov
 
 # project
 *.dst
@@ -38,3 +44,4 @@ contrib/
 paper/
 kernel/
 obj/
+

@@ -102,6 +102,7 @@ clean-local:
 	rm -rf test
 	rm -f test*.log output.log
 	rm -f *.gcda *.gcno *.gcov
+	rm -f raid/*.gcda raid/*.gcno raid/*.gcov
 	rm -rf cov
 	rm -f lcov.info
 	rm -f gmon.out
