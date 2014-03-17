@@ -724,15 +724,13 @@ Configuration
 	This option can be used many times.
 
   blocksize SIZE_IN_KIBIBYTES
-	Defines the basic block size in kibi bytes of the parity
-	blocks. Where one kibi bytes is 1024 bytes.
-	The default is 256 and it should work for most conditions.
+	Defines the basic block size in kibi bytes of the parity.
+	One kibi bytes is 1024 bytes. The default is blocksize is 256
+	and it should work for most cases.
 
-	You could increase this value if you do not have enough RAM
-	memory to run SnapRAID.
-
-	As a rule of thumb, with 4 GiB or more memory use the default 256,
-	with 2 GiB use 512, and with 1 GiB use 1024.
+	A reason to use a different blocksize is if your system has less
+	than 4 GiB of memory. As a rule of thumb, with 4 GiB or more memory
+	use the default 256, with 2 GiB use 512, and with 1 GiB use 1024.
 
 	In more details SnapRAID requires about TS*28/BS bytes
 	of RAM memory to run. Where TS is the total size in bytes of
@@ -743,20 +741,21 @@ Configuration
 
 	:RAM = (4 * 3 * 2^40) * 28 / (256 * 2^10) = 1.4 GiB
 
-	You could instead decrease this value if you have a lot of
-	small files in the disk array. For each file, even if of few
-	bytes, a whole block of parity is always allocated, so you may
-	have a lot of unused parity space.
+	Another reason to use a different blocksize is if you have a lot of small
+	files. In the order of many millions.
 
-	The problem of wasted parity, is that when the parity disk is full,
-	you are not allowed to add more data in the data disks.
-	Note that wasted parity doesn't sum between data disk. Wasted space
-	resulting from a high number of files in a data disk, may limit only
+	In details, for each file, even of few bytes, a whole block of parity is
+	always allocated, and with many files this may result in a lot of unused
+	parity space. And when you completely fill the parity disk, you are not
+	allowed to add more files in the data disks.
+	But note that wasted parity doesn't sum between data disk. Wasted space
+	resulting from a high number of files in a data disk, limits only
 	the amount of data in such data disk and not in others.
 
 	As approximation, you can assume that half of the block size is
 	wasted for each file. For example, with 100000 files and a 256 KiB
-	block size, you are going to waste 12 GiB of parity.
+	block size, you are going to waste 12 GiB of parity, that may result
+	in 12 GiB less space available in the data disk.
 
 	To avoid to problem, you can use a bigger partition for parity.
 	For example, if you have the parity partition bigger than 12 GiB
