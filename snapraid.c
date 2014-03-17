@@ -27,15 +27,6 @@
 /****************************************************************************/
 /* main */
 
-/**
- * Default configuration file.
- */
-#ifdef _WIN32
-#define CONF PACKAGE ".conf"
-#else
-#define CONF "/etc/" PACKAGE ".conf"
-#endif
-
 void version(void)
 {
 	printf(PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
@@ -58,7 +49,7 @@ void usage(void)
 	printf("  fix    Fix the array of disks\n");
 	printf("\n");
 	printf("Options:\n");
-	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE       ", "-c") "  Configuration file (default " CONF ")\n");
+	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE       ", "-c") "  Configuration file\n");
 	printf("  " SWITCH_GETOPT_LONG("-f, --filter PATTERN  ", "-f") "  Process only files matching the pattern\n");
 	printf("  " SWITCH_GETOPT_LONG("-d, --filter-dist NAME", "-f") "  Process only files in the specified disk\n");
 	printf("  " SWITCH_GETOPT_LONG("-m, --filter-missing  ", "-m") "  Process only missing/deleted files\n");
@@ -186,6 +177,30 @@ void log_close(const char* log)
 			/* LCOV_EXCL_STOP */
 		}
 	}
+}
+
+/****************************************************************************/
+/* config */
+
+void config(char* conf, size_t conf_size, const char* argv0)
+{
+#ifdef _WIN32
+	char* slash;
+
+	pathimport(conf, conf_size, argv0);
+
+	slash = strrchr(conf, '/');
+	if (slash) {
+		slash[1] = 0;
+		pathcat(conf, conf_size, PACKAGE ".conf");
+	} else {
+		pathcpy(conf, conf_size, PACKAGE ".conf");
+	}
+#else
+	(void)argv0;
+
+	pathcpy(conf, conf_size, "/etc/" PACKAGE ".conf");
+#endif
 }
 
 /****************************************************************************/
@@ -336,7 +351,7 @@ int main(int argc, char* argv[])
 {
 	int c;
 	struct snapraid_option opt;
-	const char* conf;
+	char conf[PATH_MAX];
 	struct snapraid_state state;
 	int operation;
 	block_off_t blockstart;
@@ -361,7 +376,7 @@ int main(int argc, char* argv[])
 	crc32c_init();
 
 	/* defaults */
-	conf = CONF;
+	config(conf, sizeof(conf), argv[0]);
 	memset(&opt, 0, sizeof(opt));
 	blockstart = 0;
 	blockcount = 0;
@@ -387,7 +402,7 @@ int main(int argc, char* argv[])
 	!= EOF) {
 		switch (c) {
 		case 'c' :
-			conf = optarg;
+			pathimport(conf, sizeof(conf), optarg);
 			break;
 		case 'f' : {
 			struct snapraid_filter* filter = filter_alloc_file(1, optarg);

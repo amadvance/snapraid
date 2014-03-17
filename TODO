@@ -5,6 +5,10 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
+* Measures the time waited in blocking syscall for each disk,
+and prints stats of the disk speeds when the command finish,
+or when it's running.
+
 * In status prints the allocated parity in each data disk.
 In case, also takes into account the extra available space
 in the parity disks.
