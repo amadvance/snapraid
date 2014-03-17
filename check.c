@@ -222,7 +222,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 					fprintf(stdlog, "/");
 				fprintf(stdlog, "%s", lev_config_name(ip[i]));
 			}
-			fprintf(stdlog, ": Data error\n");
+			fprintf(stdlog, ": Comparison error\n");
 			++error;
 		} while (combination_next(r, n, ip));
 	}
@@ -262,7 +262,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 					fprintf(stdlog, "/");
 				fprintf(stdlog, "%s", lev_config_name(ip[i]));
 			}
-			fprintf(stdlog, ": Data error\n");
+			fprintf(stdlog, ": Hash error\n");
 			++error;
 		} while (combination_next(r, n, ip));
 	}
@@ -723,7 +723,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						failed[failed_count].handle = &handle[j];
 						++failed_count;
 
-						fprintf(stdlog, "error:%u:%s:%s: Open error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
+						fprintf(stdlog, "block_error:%u:%s:%s: Open error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 						++error;
 						continue;
 					}
@@ -754,7 +754,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
+				fprintf(stdlog, "block_error:%u:%s:%s: Read error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 				++error;
 				continue;
 			}
@@ -797,7 +797,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
+				fprintf(stdlog, "block_error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 				++error;
 				continue;
 			}
