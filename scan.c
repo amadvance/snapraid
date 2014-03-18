@@ -1494,7 +1494,7 @@ void state_scan(struct snapraid_state* state, int output)
 			struct snapraid_disk* disk = i->data;
 
 			/* don't print the message if the UUID changed because before */
-			/* if was no set. */
+			/* it was no set. */
 			/* this is the normal condition for an empty disk because it */
 			/* isn't stored */
 			if (disk->has_different_uuid && !disk->had_empty_uuid) {

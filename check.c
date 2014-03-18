@@ -108,20 +108,24 @@ static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned d
 			/* if the block has a hash to check */
 			&& block_has_updated_hash(failed[failed_map[j]].block)
 		) {
+			/* if a hash doesn't match, fail the check */
+			if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0) {
+				fprintf(stdlog, "hash_error: Hash mismatch on entry %u\n", failed_map[j]);
+				return 0;
+			}
+
 			hash_checked = 1;
-			if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0)
-				break;
 		}
 	}
 
-	/* if we checked something, and no block failed the check */
-	if (hash_checked && j==failed_count) {
-		/* recompute all the redundancy information */
-		raid_gen(diskmax, state->level, state->block_size, buffer);
-		return 1;
-	}
+	/* if nothing checked, we reject it */
+	if (!hash_checked)
+		return 0;
 
-	return 0;
+	/* if we checked something, and no block failed the check */
+	/* recompute all the redundancy information */
+	raid_gen(diskmax, state->level, state->block_size, buffer);
+	return 1;
 }
 
 /**
@@ -161,7 +165,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 		raid_gen(diskmax, state->level, state->block_size, buffer);
 		return 0;
 	}
-	
+
 	/* if too many error, we don't have any strategy */
 	n = state->level;
 	if (failed_count > n) {
@@ -222,7 +226,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 					fprintf(stdlog, "/");
 				fprintf(stdlog, "%s", lev_config_name(ip[i]));
 			}
-			fprintf(stdlog, ": Comparison error\n");
+			fprintf(stdlog, ":parity: Parity mismatch\n");
 			++error;
 		} while (combination_next(r, n, ip));
 	}
@@ -262,7 +266,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 					fprintf(stdlog, "/");
 				fprintf(stdlog, "%s", lev_config_name(ip[i]));
 			}
-			fprintf(stdlog, ": Hash error\n");
+			fprintf(stdlog, ":hash: Hash mismatch\n");
 			++error;
 		} while (combination_next(r, n, ip));
 	}
@@ -291,6 +295,48 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 	if (failed_count == 0) {
 		raid_gen(diskmax, state->level, state->block_size, buffer);
 		return 0;
+	}
+
+	/* logs the status */
+	for(j=0;j<failed_count;++j) {
+		const char* state;
+		const char* hash;
+		const char* data;
+		struct snapraid_block* block = failed[j].block;
+		unsigned block_state = block_state_get(block);
+
+		switch (block_state) {
+		case BLOCK_STATE_DELETED : state = "delete"; break;
+		case BLOCK_STATE_CHG : state = "change"; break;
+		case BLOCK_STATE_REP : state = "replace"; break;
+		case BLOCK_STATE_BLK : state = "block"; break;
+		default: state = "unknown"; break;
+		}
+
+		if (hash_is_invalid(block->hash)) {
+			hash = "lost";
+		} else if (hash_is_zero(block->hash)) {
+			hash = "zero";
+		} else {
+			hash = "known";
+		}
+
+		if (failed[j].is_bad)
+			data = "bad";
+		else
+			data = "good";
+
+		if (failed[j].handle) {
+			const char* disk;
+			const char* sub;
+			struct snapraid_handle* handle = failed[j].handle;
+			disk = handle->disk->name;
+			sub = block_file_get(block)->sub;
+
+			fprintf(stdlog, "entry:%u:%s:%s:%s:%s:%s:%u:\n", j, state, hash, data, disk, sub, block_file_pos(block));
+		} else {
+			fprintf(stdlog, "entry:%u:%s:%s:%s:\n", j, state, hash, data);
+		}
 	}
 
 	/* Here we have to try two different strategies to recover, because in case the 'sync' */
@@ -336,6 +382,8 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 
 	/* if nothing to fix */
 	if (!something_to_recover) {
+		fprintf(stdlog, "recover_sync:%u:%u: Skipped for already recovered\n", pos, n);
+
 		/* recompute only the parity */
 		raid_gen(diskmax, state->level, state->block_size, buffer);
 		return 0;
@@ -367,6 +415,8 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 				if (hash_is_invalid(failed[j].block->hash)) {
 					/* it may contain garbage */
 					failed[j].is_outofdate = 1;
+
+					fprintf(stdlog, "hash_unknown: Unknown hash on entry %u\n", j);
 				} else if (hash_is_zero(failed[j].block->hash)) {
 					/* if the block is not filled with 0, we are sure to have */
 					/* restored it to the state after the 'sync' */
@@ -376,6 +426,8 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 					if (memcmp(buffer[failed[j].index], buffer_zero, state->block_size) == 0) {
 						/* it may contain garbage */
 						failed[j].is_outofdate = 1;
+
+						fprintf(stdlog, "hash_unknown: Maybe old zero on entry %u\n", j);
 					}
 				} else {
 					/* if the hash is different than the previous one, we are sure to have */
@@ -386,6 +438,8 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 					if (blockcmp(state, rehash, failed[j].block, buffer[failed[j].index], buffer_zero) == 0) {
 						/* it may contain garbage */
 						failed[j].is_outofdate = 1;
+
+						fprintf(stdlog, "hash_unknown: Maybe old data on entry %u\n", j);
 					}
 				}
 			}
@@ -395,6 +449,11 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 	}
 	if (ret > 0)
 		error += ret;
+
+	if (ret < 0)
+		fprintf(stdlog, "recover_sync:%u:%u: Failed with no attempts\n", pos, n);
+	else
+		fprintf(stdlog, "recover_sync:%u:%u: Failed with %d attempts\n", pos, n, ret);
 
 	/* Now assume that the parity IS NOT updated at the current state, */
 	/* but still represent the state before the last 'sync' process. */
@@ -448,9 +507,11 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 				/* not really interested to recover *only* old blocks. */
 			}
 
-			/* mark that we have restored or we will restore an old state */
-			/* note that if the block is not marked as is_bad, */
-			/* we are not going to write it in the disk */
+			/* avoid to use the hash of this block to verify the recovering */
+			/* this applies to REP blocks because we are going to recover the old state */
+			/* and the REP hash represent the new one */
+			/* it also applies to CHG and DELETE blocks because we want to have */
+			/* a succesful recovering only if a BLK one is matching */
 			failed[j].is_outofdate = 1;
 		} else if (failed[j].is_bad) {
 			/* If the block is bad we don't know its content, and we try to recover it */
@@ -472,11 +533,41 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 	if (something_to_recover && something_unsynced) {
 		ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_recov, buffer_zero);
 		if (ret == 0) {
-			/* we alreay marked as outdated CHG and REP blocks, we don't need to do it again */
+			/* reprocess the REP and CHG blocks, for which we have recovered and old state */
+			/* that we don't want to save into disk */
+			/* we have already marked them, but we redo it for logging */
+
+			for(j=0;j<failed_count;++j) {
+				/* we take care only of BAD blocks we have to write back */
+				if (failed[j].is_bad) {
+					unsigned block_state = block_state_get(failed[j].block);
+
+					if (block_state == BLOCK_STATE_CHG
+						|| block_state == BLOCK_STATE_REP
+					) {
+						/* mark that we have restored an old state */
+						/* and we don't want to write it to the disk */
+						failed[j].is_outofdate = 1;
+
+						fprintf(stdlog, "hash_unknown: Surely old data on entry %u\n", j);
+					}
+				}
+			}
+
 			return 0;
 		}
 		if (ret > 0)
 			error += ret;
+
+		if (ret < 0)
+			fprintf(stdlog, "recover_unsync:%u:%u: Failed with no attempts\n", pos, n);
+		else
+			fprintf(stdlog, "recover_unsync:%u:%u: Failed with %d attempts\n", pos, n, ret);
+	} else {
+		fprintf(stdlog, "recover_unsync:%u:%u: Skipped for%s%s\n", pos, n,
+			!something_to_recover ? " nothing to recover" : "",
+			!something_unsynced ? " nothing unsynched" : ""
+		);
 	}
 
 	/* return the number of failed attempts, or -1 if no strategy */
@@ -650,8 +741,6 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].block = block;
 				failed[failed_count].handle = 0;
 				++failed_count;
-
-				fprintf(stdlog, "block_delete:%u:%s: Delete block\n", i, handle[j].disk->name);
 				continue;
 			}
 
@@ -723,7 +812,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						failed[failed_count].handle = &handle[j];
 						++failed_count;
 
-						fprintf(stdlog, "block_error:%u:%s:%s: Open error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
+						fprintf(stdlog, "error:%u:%s:%s: Open error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 						++error;
 						continue;
 					}
@@ -754,7 +843,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				fprintf(stdlog, "block_error:%u:%s:%s: Read error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
+				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 				++error;
 				continue;
 			}
@@ -773,8 +862,6 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].block = block;
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
-
-				fprintf(stdlog, "block_change:%u:%s:%s: Change block at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 				continue;
 			}
 
@@ -797,7 +884,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				fprintf(stdlog, "block_error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
+				fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 				++error;
 				continue;
 			}
@@ -812,8 +899,6 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].block = block;
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
-
-				fprintf(stdlog, "block_replace:%u:%s:%s: Replace block at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
 				continue;
 			}
 		}
@@ -858,7 +943,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				/* print a list of all the errors in files */
 				for(j=0;j<failed_count;++j) {
 					if (failed[j].is_bad)
-						fprintf(stdlog, "unrecoverable:%u:%s:%s: Unrecoverable synced error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
+						fprintf(stdlog, "unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
 				}
 
 				/* keep track of damaged files */
