@@ -13,10 +13,10 @@ or when it's running.
 In case, also takes into account the extra available space
 in the parity disks.
 
-- Minor
-
 * Avoid to do optimized move operation if more files with
 same timestamp/size are present.
+
+- Minor
 
 * Checks if splitting hash/parity computation in 4K pages
 can improve speed in sync. That should increase cache locality,
@@ -31,7 +31,7 @@ But if the sync process is killed we need a way to resyncronize them.
 Or maybe we should allow parity never than content, but not viceversa.
 
 * Add an option for dup to list only duplicates with different name.
-This supposing that if a file has the same name, it's intentionally duplicate.
+This supposing that if a file has the same name, it's intentionally duplicated.
 
 * Restore ownership and permission, at least in Unix.
 
