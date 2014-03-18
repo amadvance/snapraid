@@ -3,7 +3,7 @@
 # Defines the file to use as parity storage
 # It must NOT be in a data disk
 # Format: "parity FILE_PATH"
-parity E:\parity.par
+parity E:\snapraid.parity
 
 # Defines the files to use as additional parity storage.
 # If specified, they enable the multiple failures protection
@@ -12,11 +12,11 @@ parity E:\parity.par
 # protection required. Start from 2-parity, and follow in order.
 # It must NOT be in a data disk
 # Format: "X-parity FILE_PATH"
-#2-parity F:\2-parity.par
-#3-parity G:\3-parity.par
-#4-parity H:\4-parity.par
-#5-parity I:\5-parity.par
-#6-parity J:\6-parity.par
+#2-parity F:\snapraid.2-parity
+#3-parity G:\snapraid.3-parity
+#4-parity H:\snapraid.4-parity
+#5-parity I:\snapraid.5-parity
+#6-parity J:\snapraid.6-parity
 
 # Defines the files to use as content list
 # You can use multiple specification to store more copies
@@ -24,9 +24,9 @@ parity E:\parity.par
 # They can be in the disks used for data, parity or boot,
 # but each file must be in a different disk
 # Format: "content FILE_PATH"
-content C:\snapraid\content.lst
-content K:\array\content.lst
-content L:\array\content.lst
+content C:\snapraid\snapraid.content
+content K:\array\snapraid.content
+content L:\array\snapraid.content
 
 # Defines the data disks to use
 # The order is relevant for parity, do not change it

@@ -110,10 +110,10 @@ Getting Started
 	you have to create the configuration file /etc/snapraid.conf with
 	the following options:
 
-		:parity /mnt/diskp/parity
-		:content /var/snapraid/content
-		:content /mnt/disk1/content
-		:content /mnt/disk2/content
+		:parity /mnt/diskp/snapraid.parity
+		:content /var/snapraid/snapraid.content
+		:content /mnt/disk1/snapraid.content
+		:content /mnt/disk2/snapraid.content
 		:disk d1 /mnt/disk1/
 		:disk d2 /mnt/disk2/
 		:disk d3 /mnt/disk3/
@@ -121,10 +121,10 @@ Getting Started
 	If you are in Windows, you should use drive letters and backslashes
 	instead of slashes, and if you like, also file extensions.
 
-		:parity E:\parity.par
-		:content C:\snapraid\content.lst
-		:content F:\array\content.lst
-		:content G:\array\content.lst
+		:parity E:\snapraid.parity
+		:content C:\snapraid\snapraid.content
+		:content F:\array\snapraid.content
+		:content G:\array\snapraid.content
 		:disk d1 F:\array\
 		:disk d2 G:\array\
 		:disk d3 H:\array\
@@ -806,9 +806,9 @@ Configuration
   Examples
 	An example of a typical configuration for Unix is:
 
-		:parity /mnt/diskp/parity
-		:content /mnt/diskp/content
-		:content /var/snapraid/content
+		:parity /mnt/diskp/snapraid.parity
+		:content /mnt/diskp/snapraid.content
+		:content /var/snapraid/snapraid.content
 		:disk d1 /mnt/disk1/
 		:disk d2 /mnt/disk2/
 		:disk d3 /mnt/disk3/
@@ -817,9 +817,9 @@ Configuration
 
 	An example of a typical configuration for Windows is:
 
-		:parity E:\parity.par
-		:content E:\content.lst
-		:content C:\snapraid\content.lst
+		:parity E:\snapraid.parity
+		:content E:\snapraid.content
+		:content C:\snapraid\snapraid.content
 		:disk d1 G:\array\
 		:disk d2 H:\array\
 		:disk d3 I:\array\

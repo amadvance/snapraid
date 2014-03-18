@@ -174,19 +174,19 @@ you have to create the configuration file /etc/snapraid.conf with
 the following options:
 .PP
 .RS 4
-parity /mnt/diskp/parity
+parity /mnt/diskp/snapraid.parity
 .PD 0
 .PP
 .PD
-content /var/snapraid/content
+content /var/snapraid/snapraid.content
 .PD 0
 .PP
 .PD
-content /mnt/disk1/content
+content /mnt/disk1/snapraid.content
 .PD 0
 .PP
 .PD
-content /mnt/disk2/content
+content /mnt/disk2/snapraid.content
 .PD 0
 .PP
 .PD
@@ -208,19 +208,19 @@ If you are in Windows, you should use drive letters and backslashes
 instead of slashes, and if you like, also file extensions.
 .PP
 .RS 4
-parity E:\\parity.par
+parity E:\\snapraid.parity
 .PD 0
 .PP
 .PD
-content C:\\snapraid\\content.lst
+content C:\\snapraid\\snapraid.content
 .PD 0
 .PP
 .PD
-content F:\\array\\content.lst
+content F:\\array\\snapraid.content
 .PD 0
 .PP
 .PD
-content G:\\array\\content.lst
+content G:\\array\\snapraid.content
 .PD 0
 .PP
 .PD
@@ -1042,15 +1042,15 @@ This option is only required for Windows.
 An example of a typical configuration for Unix is:
 .PP
 .RS 4
-parity /mnt/diskp/parity
+parity /mnt/diskp/snapraid.parity
 .PD 0
 .PP
 .PD
-content /mnt/diskp/content
+content /mnt/diskp/snapraid.content
 .PD 0
 .PP
 .PD
-content /var/snapraid/content
+content /var/snapraid/snapraid.content
 .PD 0
 .PP
 .PD
@@ -1079,15 +1079,15 @@ exclude /tmp/
 An example of a typical configuration for Windows is:
 .PP
 .RS 4
-parity E:\\parity.par
+parity E:\\snapraid.parity
 .PD 0
 .PP
 .PD
-content E:\\content.lst
+content E:\\snapraid.content
 .PD 0
 .PP
 .PD
-content C:\\snapraid\\content.lst
+content C:\\snapraid\\snapraid.content
 .PD 0
 .PP
 .PD
