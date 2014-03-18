@@ -119,8 +119,13 @@ static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned d
 	}
 
 	/* if nothing checked, we reject it */
-	if (!hash_checked)
+	/* note that we are excluding this case at upper level */
+	/* but checking again doesn't hurt */
+	if (!hash_checked) {
+		/* LCOV_EXCL_START */
 		return 0;
+		/* LCOV_EXCL_STOP */
+	}
 
 	/* if we checked something, and no block failed the check */
 	/* recompute all the redundancy information */
@@ -166,13 +171,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 		return 0;
 	}
 
-	/* if too many error, we don't have any strategy */
 	n = state->level;
-	if (failed_count > n) {
-		fprintf(stdlog, "strategy_error:%u: No strategy to recover from %u failures with %u parity\n", pos, failed_count, n);
-		return -1;
-	}
-
 	error = 0;
 
 	/* setup vector of failed disk indexes */
@@ -310,7 +309,9 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 		case BLOCK_STATE_CHG : state = "change"; break;
 		case BLOCK_STATE_REP : state = "replace"; break;
 		case BLOCK_STATE_BLK : state = "block"; break;
+		/* LCOV_EXCL_START */
 		default: state = "unknown"; break;
+		/* LCOV_EXCL_STOP */
 		}
 
 		if (hash_is_invalid(block->hash)) {
