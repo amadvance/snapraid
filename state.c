@@ -2558,11 +2558,9 @@ static void decoding_error(const char* path, STREAM* f)
 	crc_stored = crc32c(crc_stored, buf, 4);
 
 	if (crc_computed != crc_stored) {
-		/* LCOV_EXCL_START */
 		fprintf(stderr, "Mismatching CRC in '%s'\n", path);
 		fprintf(stderr, "This content file is damaged! Use an alternate copy.\n");
 		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
 	} else {
 		fprintf(stderr, "The file CRC is correct!\n");
 	}
@@ -4164,10 +4162,12 @@ int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, b
 
 	/* stop if requested */
 	if (global_interrupt) {
+		/* LCOV_EXCL_START */
 		if (!state->opt.gui) {
 			printf("Not starting for interruption\n");
 		}
 		return 0;
+		/* LCOV_EXCL_STOP */
 	}
 
 	return 1;
@@ -4260,11 +4260,13 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 
 	/* stop if requested */
 	if (global_interrupt) {
+		/* LCOV_EXCL_START */
 		if (!state->opt.gui) {
 			printf("\n");
 			printf("Stopping for interruption at block %u\n", blockpos);
 		}
 		return 1;
+		/* LCOV_EXCL_STOP */
 	}
 
 	return 0;

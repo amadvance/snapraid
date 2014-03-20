@@ -113,7 +113,7 @@ maintainer-clean-local:
 # Automatic testing
 
 CHECKFLAGS_BASE = --test-skip-device --test-skip-self --test-force-order-alpha
-CHECKFLAGS_VERBOSE = $(CHECKFLAGS_BASE) -v
+CHECKFLAGS_VERBOSE = $(CHECKFLAGS_BASE) -v -G
 CHECKFLAGS = $(CHECKFLAGS_BASE) -q
 CHECKCOUNT = 1000
 CHECKSIZE = 4000
@@ -139,15 +139,16 @@ check-local:
 	mkdir test/pool
 	echo --- Help
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -H
+	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -V
 	$(TESTENV) ./mktest$(EXEEXT)
 	echo --- Run the self test only this time
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -c $(CONF) status
 	echo --- Run the speed test
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -T
 	echo --- Some commands with empty array
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) diff
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) dup
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) list > output.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) diff
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) dup
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) list > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-murmur3 sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status -l ">&1"
@@ -163,12 +164,11 @@ endif
 	$(TESTENV) ./mktest$(EXEEXT) generate 1 6 $(CHECKCOUNT) $(CHECKSIZE)
 	echo DUP > test/disk1/DUP1
 	echo DUP > test/disk1/DUP2
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) diff > output.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) diff -G > output.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) diff > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-order-physical sync
 	echo --- Some commands with a not empty array
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) dup -l test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(CONF) list -l test.log > output.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) dup -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) list -l test.log > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status -l test.log
 if HAVE_SYMLINK
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) pool
@@ -178,10 +178,21 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
 	echo --- Check the --gen-conf command
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --gen-conf test/content
+	echo --- Filter
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -d disk1 check
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) -f "*a" -f "a/" -f "/b/a*" check
 	echo --- Delete some files and sync
 	rm test/disk4/a/9*
 	rm test/disk5/a/9*
 	rm test/disk6/a/9*
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) diff > output.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
+	echo --- Move some files, sync and check
+	mv test/disk1/a/9* test/disk4/a
+	mv test/disk2/a/9* test/disk5/a
+	mv test/disk3/a/9* test/disk6/a
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) diff > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Create some more files, hardlinks and empty directories, delete others, sync PAR1 and check
@@ -203,13 +214,13 @@ endif
 	echo 3 > test/disk3/file_hardlink1
 	ln test/disk3/file_hardlink1 test/disk3/file_hardlink2
 	ln test/disk3/file_hardlink1 test/disk3/file_hardlink3
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(PAR1) diff > output.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) diff > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-fallocate -c $(PAR1) --test-force-order-inode sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-sequential -c $(PAR1) check
 	echo --- Some commands with a not empty array
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(PAR1) dup
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -v -c $(PAR1) list > output.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) dup
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) list > output.log
 if HAVE_SYMLINK
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) pool
 endif
@@ -261,6 +272,10 @@ endif
 	mv test/disk2.old test/disk2
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
+	echo --- Corrupt the content file
+	$(TESTENV) ./mktest$(EXEEXT) write 1 100 100 test/content
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-failure -c $(CONF) sync
+	rm test/content
 	echo --- Delete some files, create some new, sync and check
 	rm test/disk1/a/1*
 	rm test/disk2/a/2*

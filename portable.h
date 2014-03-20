@@ -251,5 +251,15 @@ void os_done(void);
  */
 FILE* stdlog;
 
+/**
+ * Exit codes for testing.
+ */
+int exit_success;
+int exit_failure;
+#undef EXIT_SUCCESS
+#undef EXIT_FAILURE
+#define EXIT_SUCCESS exit_success
+#define EXIT_FAILURE exit_failure
+
 #endif
 

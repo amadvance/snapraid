@@ -19,6 +19,12 @@
 
 #ifndef __MINGW32__ /* Only for Unix */
 
+/**
+ * Standard exit codes.
+ */
+int exit_success = 0;
+int exit_failure = 1;
+
 int open_noatime(const char* file, int flags)
 {
 #ifdef O_NOATIME

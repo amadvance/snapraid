@@ -104,8 +104,10 @@ void log_open(const char* log)
 		strftime(text_T, sizeof(text_T), "%H%M%S", tm);
 		strftime(text_D, sizeof(text_T), "%Y%m%d", tm);
 	} else {
+		/* LCOV_EXCL_START */
 		strcpy(text_T, "invalid");
 		strcpy(text_D, "invalid");
+		/* LCOV_EXCL_STOP */
 	}
 
 	/* file mode */
@@ -227,6 +229,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_FORCE_CONTENT_TEXT 274
 #define OPT_TEST_SKIP_CONTENT_CHECK 275
 #define OPT_TEST_SKIP_PARITY_ACCESS 276
+#define OPT_TEST_EXPECT_FAILURE 277
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -314,6 +317,9 @@ struct option long_options[] = {
 
 	/* Skip the parity access */
 	{ "test-skip-parity-access", 0, 0, OPT_TEST_SKIP_PARITY_ACCESS },
+
+	/* Exit generic failure */
+	{ "test-expect-failure", 0, 0, OPT_TEST_EXPECT_FAILURE },
 
 	{ 0, 0, 0, 0 }
 };
@@ -497,8 +503,10 @@ int main(int argc, char* argv[])
 			opt.force_device = 1;
 			break;
 		case 'N' :
+			/* LCOV_EXCL_START */
 			fprintf(stderr, "WARNING! Option --find-by-name, -N is deprecated and does nothing!\n");
 			break;
+			/* LCOV_EXCL_STOP */
 		case 'a' :
 			opt.auditonly = 1;
 			break;
@@ -590,6 +598,11 @@ int main(int argc, char* argv[])
 		case OPT_TEST_FORCE_CONTENT_TEXT :
 			opt.force_content_text = 1;
 			break;
+		case OPT_TEST_EXPECT_FAILURE :
+			/* invert the exit code */
+			exit_success = 1;
+			exit_failure = 0;
+			break;
 		default:
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "Unknown option '%c'\n", (char)c);
@@ -605,8 +618,10 @@ int main(int argc, char* argv[])
 	}
 
 	if (optind + 1 != argc) {
+		/* LCOV_EXCL_START */
 		usage();
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	command = argv[optind];
@@ -821,8 +836,11 @@ int main(int argc, char* argv[])
 			state_write(&state);
 
 		/* abort if required */
-		if (ret != 0)
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
 	} else if (operation == OPERATION_DRY) {
 		state_read(&state);
 
@@ -861,8 +879,11 @@ int main(int argc, char* argv[])
 			state_write(&state);
 
 		/* abort if required */
-		if (ret != 0)
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
 	} else if (operation == OPERATION_REWRITE) {
 		state_read(&state);
 
@@ -908,8 +929,11 @@ int main(int argc, char* argv[])
 		}
 
 		/* abort if required */
-		if (ret != 0)
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
 			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
 	}
 
 	/* close log file */

@@ -21,6 +21,12 @@
 
 #ifdef __MINGW32__ /* Only for MingW */
 
+/**
+ * Standard exit codes.
+ */
+int exit_success = 0;
+int exit_failure = 1;
+
 /* Adds missing Windows declaration */
 typedef struct _FILE_ATTRIBUTE_TAG_INFO {
 	DWORD FileAttributes;

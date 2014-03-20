@@ -85,8 +85,10 @@ struct snapraid_filter* filter_alloc_file(int direction, const char* pattern)
 
 		/* a slash must be the first char, as we reject PATH/DIR/FILE */
 		if (filter->pattern[0] != '/') {
+			/* LCOV_EXCL_START */
 			free(filter);
 			return 0;
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -108,8 +110,10 @@ struct snapraid_filter* filter_alloc_disk(int direction, const char* pattern)
 
 	/* no slash allowed in disk names */
 	if (strchr(filter->pattern, '/') != 0) {
+		/* LCOV_EXCL_START */
 		free(filter);
 		return 0;
+		/* LCOV_EXCL_STOP */
 	}
 
 	return filter;

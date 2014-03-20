@@ -164,11 +164,13 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 	int id[LEV_MAX];
 	int ip[LEV_MAX];
 
-	/* no fix required */
+	/* no fix required, already checked at higher level, but just to be sure */
 	if (failed_count == 0) {
+		/* LCOV_EXCL_START */
 		/* recompute only the parity */
 		raid_gen(diskmax, state->level, state->block_size, buffer);
 		return 0;
+		/* LCOV_EXCL_STOP */
 	}
 
 	n = state->level;
