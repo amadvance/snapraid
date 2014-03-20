@@ -612,7 +612,7 @@ Options
 	-v, --verbose
 		Prints more information in the processing.
 
-	-h, --help
+	-H, --help
 		Prints a short help screen.
 
 	-V, --version
