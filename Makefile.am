@@ -2,107 +2,115 @@ bin_PROGRAMS = snapraid
 check_PROGRAMS = mktest
 
 snapraid_SOURCES = \
-	raid/raid.c \
-	raid/module.c \
-	raid/tables.c \
-	raid/int.c \
-	raid/x86.c \
-	raid/intz.c \
-	raid/x86z.c \
-	raid/helper.c \
-	raid/memory.c \
-	raid/test.c \
-	raid/tag.c \
-	snapraid.c \
-	tommy.c \
-	util.c \
-	elem.c \
-	state.c \
-	scan.c \
-	sync.c \
-	check.c \
-	dry.c \
-	rehash.c \
-	scrub.c \
-	status.c \
-	dup.c \
-	list.c \
-	pool.c \
-	parity.c \
-	handle.c \
-	fnmatch.c \
-	selftest.c \
-	speed.c \
-	import.c \
-	mingw.c \
-	unix.c
+	src/raid/raid.c \
+	src/raid/module.c \
+	src/raid/tables.c \
+	src/raid/int.c \
+	src/raid/x86.c \
+	src/raid/intz.c \
+	src/raid/x86z.c \
+	src/raid/helper.c \
+	src/raid/memory.c \
+	src/raid/test.c \
+	src/raid/tag.c \
+	src/tommyds/tommy.c \
+	src/snapraid.c \
+	src/util.c \
+	src/elem.c \
+	src/state.c \
+	src/scan.c \
+	src/sync.c \
+	src/check.c \
+	src/dry.c \
+	src/rehash.c \
+	src/scrub.c \
+	src/status.c \
+	src/dup.c \
+	src/list.c \
+	src/pool.c \
+	src/parity.c \
+	src/handle.c \
+	src/fnmatch.c \
+	src/selftest.c \
+	src/speed.c \
+	src/import.c \
+	src/mingw.c \
+	src/unix.c
 
 noinst_HEADERS = \
-	raid/raid.h \
-	raid/helper.h \
-	raid/internal.h \
-	raid/cpu.h \
-	raid/gf.h \
-	raid/combo.h \
-	raid/memory.h \
-	raid/test.h \
-	portable.h \
-	snapraid.h \
-	util.h \
-	elem.h \
-	state.h \
-	parity.h \
-	handle.h \
-	murmur3.c \
-	murmur3test.c \
-	spooky2.c \
-	spooky2test.c \
-	tommyarray.h \
-	tommyarrayblk.h \
-	tommyarrayblkof.h \
-	tommychain.h \
-	tommyhash.h \
-	tommyhashdyn.h \
-	tommylist.h \
-	tommytypes.h \
-	tommyarray.c \
-	tommyarrayblk.c \
-	tommyarrayblkof.c \
-	tommyhash.c \
-	tommyhashdyn.c \
-	tommylist.c \
-	fnmatch.h \
-	import.h \
-	mingw.h \
-	unix.h
+	src/raid/raid.h \
+	src/raid/helper.h \
+	src/raid/internal.h \
+	src/raid/cpu.h \
+	src/raid/gf.h \
+	src/raid/combo.h \
+	src/raid/memory.h \
+	src/raid/test.h \
+	src/tommyds/tommyarray.h \
+	src/tommyds/tommyarrayblk.h \
+	src/tommyds/tommyarrayblkof.h \
+	src/tommyds/tommychain.h \
+	src/tommyds/tommyhash.h \
+	src/tommyds/tommyhashdyn.h \
+	src/tommyds/tommylist.h \
+	src/tommyds/tommytypes.h \
+	src/tommyds/tommyarray.c \
+	src/tommyds/tommyarrayblk.c \
+	src/tommyds/tommyarrayblkof.c \
+	src/tommyds/tommyhash.c \
+	src/tommyds/tommyhashdyn.c \
+	src/tommyds/tommylist.c \
+	src/portable.h \
+	src/snapraid.h \
+	src/util.h \
+	src/elem.h \
+	src/state.h \
+	src/parity.h \
+	src/handle.h \
+	src/murmur3.c \
+	src/murmur3test.c \
+	src/spooky2.c \
+	src/spooky2test.c \
+	src/fnmatch.h \
+	src/import.h \
+	src/mingw.h \
+	src/unix.h
 
 mktest_SOURCES = \
-	mktest.c \
-	mingw.c
+	src/mktest.c \
+	src/mingw.c
 
 EXTRA_DIST = \
 	autogen.sh \
 	README AUTHORS HISTORY INSTALL COPYING TODO TEST INSTALL.windows \
 	snapraid.d snapraid.1 snapraid.txt \
-	test-par1.conf test-par2.conf test-par3.conf test-par4.conf test-par5.conf test-par6.conf test-par6-hole.conf \
+	test/test-par1.conf \
+	test/test-par2.conf \
+	test/test-par3.conf \
+	test/test-par4.conf \
+	test/test-par5.conf \
+	test/test-par6.conf \
+	test/test-par6-hole.conf \
 	snapraid.conf.example \
 	configure.windows-x86 configure.windows-x64 snapraid.conf.example.windows \
 	acinclude.m4 \
-	raid/COPYING \
-	raid/test/Makefile \
-	raid/test/fulltest.c \
-	raid/test/selftest.c \
-	raid/test/speedtest.c \
-	raid/test/invtest.c
+	src/tommyds/LICENSE \
+	src/raid/COPYING \
+	src/raid/test/Makefile \
+	src/raid/test/fulltest.c \
+	src/raid/test/selftest.c \
+	src/raid/test/speedtest.c \
+	src/raid/test/invtest.c
 
 man_MANS = snapraid.1
 
 clean-local:
 	rm -f valgrind.log callgrind.log cachegrind.log
-	rm -rf test
+	rm -rf bench
 	rm -f test*.log output.log
-	rm -f *.gcda *.gcno *.gcov
-	rm -f raid/*.gcda raid/*.gcno raid/*.gcov
+	rm -f src/*.gcda src/*.gcno src/*.gcov
+	rm -f src/raid/*.gcda src/raid/*.gcno src/raid/*.gcov
+	rm -f src/tommyds/*.gcda src/tommyds/*.gcno src/tommyds/*.gcov
 	rm -rf cov
 	rm -f lcov.info
 	rm -f gmon.out
@@ -117,26 +125,26 @@ CHECKFLAGS_VERBOSE = $(CHECKFLAGS_BASE) -v -G
 CHECKFLAGS = $(CHECKFLAGS_BASE) -q
 CHECKCOUNT = 1000
 CHECKSIZE = 4000
-CONF = $(srcdir)/test-par6.conf
-HOLE = $(srcdir)/test-par6-hole.conf
-PAR1 = $(srcdir)/test-par1.conf
-PAR2 = $(srcdir)/test-par2.conf
-PAR3 = $(srcdir)/test-par3.conf
-PAR4 = $(srcdir)/test-par4.conf
-PAR5 = $(srcdir)/test-par5.conf
-PAR6 = $(srcdir)/test-par6.conf
+CONF = $(srcdir)/test/test-par6.conf
+HOLE = $(srcdir)/test/test-par6-hole.conf
+PAR1 = $(srcdir)/test/test-par1.conf
+PAR2 = $(srcdir)/test/test-par2.conf
+PAR3 = $(srcdir)/test/test-par3.conf
+PAR4 = $(srcdir)/test/test-par4.conf
+PAR5 = $(srcdir)/test/test-par5.conf
+PAR6 = $(srcdir)/test/test-par6.conf
 
 check-local:
-	rm -rf test
+	rm -rf bench
 	rm -f test.log
-	mkdir test
-	mkdir test/disk1
-	mkdir test/disk2
-	mkdir test/disk3
-	mkdir test/disk4
-	mkdir test/disk5
-	mkdir test/disk6
-	mkdir test/pool
+	mkdir bench
+	mkdir bench/disk1
+	mkdir bench/disk2
+	mkdir bench/disk3
+	mkdir bench/disk4
+	mkdir bench/disk5
+	mkdir bench/disk6
+	mkdir bench/pool
 	echo --- Help
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -H
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -V
@@ -162,8 +170,8 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
 	echo --- Create some files, sync and check
 	$(TESTENV) ./mktest$(EXEEXT) generate 1 6 $(CHECKCOUNT) $(CHECKSIZE)
-	echo DUP > test/disk1/DUP1
-	echo DUP > test/disk1/DUP2
+	echo DUP > bench/disk1/DUP1
+	echo DUP > bench/disk1/DUP2
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) diff > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-order-physical sync
 	echo --- Some commands with a not empty array
@@ -177,43 +185,43 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
 	echo --- Check the --gen-conf command
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --gen-conf test/content
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --gen-conf bench/content
 	echo --- Filter
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -d disk1 check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) -f "*a" -f "a/" -f "/b/a*" check
 	echo --- Delete some files and sync
-	rm test/disk4/a/9*
-	rm test/disk5/a/9*
-	rm test/disk6/a/9*
+	rm bench/disk4/a/9*
+	rm bench/disk5/a/9*
+	rm bench/disk6/a/9*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) diff > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Move some files, sync and check
-	mv test/disk1/a/9* test/disk4/a
-	mv test/disk2/a/9* test/disk5/a
-	mv test/disk3/a/9* test/disk6/a
+	mv bench/disk1/a/9* bench/disk4/a
+	mv bench/disk2/a/9* bench/disk5/a
+	mv bench/disk3/a/9* bench/disk6/a
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) diff > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Create some more files, hardlinks and empty directories, delete others, sync PAR1 and check
-	rm test/disk4/a/8*
-	rm test/disk5/a/8*
-	rm test/disk6/a/8*
+	rm bench/disk4/a/8*
+	rm bench/disk5/a/8*
+	rm bench/disk6/a/8*
 	$(TESTENV) ./mktest$(EXEEXT) generate 2 6 $(CHECKCOUNT) $(CHECKSIZE)
-	mkdir test/disk1/empty1
-	mkdir test/disk2/empty2
-	mkdir test/disk3/empty3a
-	mkdir test/disk3/empty3a/emptyinner
-	mkdir test/disk3/empty3b
-	echo 1 > test/disk1/file_hardlink1
-	ln test/disk1/file_hardlink1 test/disk1/file_hardlink2
-	ln test/disk1/file_hardlink1 test/disk1/file_hardlink3
-	echo 2 > test/disk2/file_hardlink1
-	ln test/disk2/file_hardlink1 test/disk2/file_hardlink2
-	ln test/disk2/file_hardlink1 test/disk2/file_hardlink3
-	echo 3 > test/disk3/file_hardlink1
-	ln test/disk3/file_hardlink1 test/disk3/file_hardlink2
-	ln test/disk3/file_hardlink1 test/disk3/file_hardlink3
+	mkdir bench/disk1/empty1
+	mkdir bench/disk2/empty2
+	mkdir bench/disk3/empty3a
+	mkdir bench/disk3/empty3a/emptyinner
+	mkdir bench/disk3/empty3b
+	echo 1 > bench/disk1/file_hardlink1
+	ln bench/disk1/file_hardlink1 bench/disk1/file_hardlink2
+	ln bench/disk1/file_hardlink1 bench/disk1/file_hardlink3
+	echo 2 > bench/disk2/file_hardlink1
+	ln bench/disk2/file_hardlink1 bench/disk2/file_hardlink2
+	ln bench/disk2/file_hardlink1 bench/disk2/file_hardlink3
+	echo 3 > bench/disk3/file_hardlink1
+	ln bench/disk3/file_hardlink1 bench/disk3/file_hardlink2
+	ln bench/disk3/file_hardlink1 bench/disk3/file_hardlink3
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) diff > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-fallocate -c $(PAR1) --test-force-order-inode sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
@@ -240,7 +248,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	echo --- Silently corrupt some files, scrub and fix filtering for error
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
-	$(TESTENV) ./mktest$(EXEEXT) damage 1 10 1 test/disk1/a/*
+	$(TESTENV) ./mktest$(EXEEXT) damage 1 10 1 bench/disk1/a/*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-expect-recoverable --test-force-scrub 100000 scrub
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) fix -e
@@ -249,142 +257,142 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -p 100 scrub
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Silently corrupt some files, and sync with error presents
-	$(TESTENV) ./mktest$(EXEEXT) change 1 500 test/disk1/a/*
-	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 500 test/disk2/a/*
+	$(TESTENV) ./mktest$(EXEEXT) change 1 500 bench/disk1/a/*
+	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 500 bench/disk2/a/*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-expect-recoverable  sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) fix -e
 	echo --- Make a hole in the disk array and sync with --force-empty
-	mv test/disk2 test/disk2.old
-	mkdir test/disk2
+	mv bench/disk2 bench/disk2.old
+	mkdir bench/disk2
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --force-empty sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Use with the hole
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(HOLE) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(HOLE) check
-	rm -r test/disk1/a
-	rm -r test/disk3/a
+	rm -r bench/disk1/a
+	rm -r bench/disk3/a
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(HOLE) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(HOLE) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(HOLE) test-dry
 	echo --- Fill the hole with a new disk
-	rm -r test/disk2
-	mv test/disk2.old test/disk2
+	rm -r bench/disk2
+	mv bench/disk2.old bench/disk2
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Corrupt the content file
-	$(TESTENV) ./mktest$(EXEEXT) write 1 100 100 test/content
+	$(TESTENV) ./mktest$(EXEEXT) write 1 100 100 bench/content
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-failure -c $(CONF) sync
-	rm test/content
+	rm bench/content
 	echo --- Delete some files, create some new, sync and check
-	rm test/disk1/a/1*
-	rm test/disk2/a/2*
-	rm test/disk3/a/3*
-	rm test/disk4/a/4*
+	rm bench/disk1/a/1*
+	rm bench/disk2/a/2*
+	rm bench/disk3/a/3*
+	rm bench/disk4/a/4*
 	$(TESTENV) ./mktest$(EXEEXT) generate 3 6 $(CHECKCOUNT) $(CHECKSIZE)
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Move some files, sync and check
-	mv test/disk1/a/7* test/disk1/b/
-	mv test/disk2/a/7* test/disk2/b/
-	mv test/disk3/a/7* test/disk3/b/
-	mv test/disk4/a/7* test/disk4/b/
+	mv bench/disk1/a/7* bench/disk1/b/
+	mv bench/disk2/a/7* bench/disk2/b/
+	mv bench/disk3/a/7* bench/disk3/b/
+	mv bench/disk4/a/7* bench/disk4/b/
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Delete one disk, fix and check with PAR1
-	rm -r test/disk3
-	mkdir test/disk3
+	rm -r bench/disk3
+	mkdir bench/disk3
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR1) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Delete two disks, fix and check with PAR2
-	rm -r test/disk1
-	mkdir test/disk1
-	rm -r test/disk2
-	mkdir test/disk2
+	rm -r bench/disk1
+	mkdir bench/disk1
+	rm -r bench/disk2
+	mkdir bench/disk2
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR1) fix -l test-fail-strategy1.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR2) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Delete three disks, fix and check with PAR3
-	rm -r test/disk1
-	mkdir test/disk1
-	rm -r test/disk2
-	mkdir test/disk2
-	rm -r test/disk3
-	mkdir test/disk3
+	rm -r bench/disk1
+	mkdir bench/disk1
+	rm -r bench/disk2
+	mkdir bench/disk2
+	rm -r bench/disk3
+	mkdir bench/disk3
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR2) fix -l test-fail-strategy2.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR3) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR3) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Delete four disks, fix and check with PAR4
-	rm -r test/disk3
-	mkdir test/disk3
-	rm -r test/disk4
-	mkdir test/disk4
-	rm -r test/disk5
-	mkdir test/disk5
-	rm -r test/disk6
-	mkdir test/disk6
+	rm -r bench/disk3
+	mkdir bench/disk3
+	rm -r bench/disk4
+	mkdir bench/disk4
+	rm -r bench/disk5
+	mkdir bench/disk5
+	rm -r bench/disk6
+	mkdir bench/disk6
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR3) fix -l test-fail-strategy3.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR4) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR4) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Delete five disks, fix and check with PAR5
-	rm -r test/disk1
-	mkdir test/disk1
-	rm -r test/disk2
-	mkdir test/disk2
-	rm -r test/disk3
-	mkdir test/disk3
-	rm -r test/disk5
-	mkdir test/disk5
-	rm -r test/disk6
-	mkdir test/disk6
+	rm -r bench/disk1
+	mkdir bench/disk1
+	rm -r bench/disk2
+	mkdir bench/disk2
+	rm -r bench/disk3
+	mkdir bench/disk3
+	rm -r bench/disk5
+	mkdir bench/disk5
+	rm -r bench/disk6
+	mkdir bench/disk6
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR4) fix -l test-fail-strategy4.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR5) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR5) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Delete six disks, fix and check with PAR6
-	rm -r test/disk1
-	mkdir test/disk1
-	rm -r test/disk2
-	mkdir test/disk2
-	rm -r test/disk3
-	mkdir test/disk3
-	rm -r test/disk4
-	mkdir test/disk4
-	rm -r test/disk5
-	mkdir test/disk5
-	rm -r test/disk6
-	mkdir test/disk6
+	rm -r bench/disk1
+	mkdir bench/disk1
+	rm -r bench/disk2
+	mkdir bench/disk2
+	rm -r bench/disk3
+	mkdir bench/disk3
+	rm -r bench/disk4
+	mkdir bench/disk4
+	rm -r bench/disk5
+	mkdir bench/disk5
+	rm -r bench/disk6
+	mkdir bench/disk6
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR5) fix -l test-fail-strategy5.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR6) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR6) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Delete some files and create some new, sync and check in multiple steps using text content
-	rm test/disk1/a/4*
-	rm test/disk2/a/5*
-	rm test/disk3/a/6*
-	rm test/disk4/a/6*
+	rm bench/disk1/a/4*
+	rm bench/disk2/a/5*
+	rm bench/disk3/a/6*
+	rm bench/disk4/a/6*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -t 10 sync --test-force-content-text
-	cp test/content test/content.txt
+	cp bench/content bench/content.txt
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) test-rewrite
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-content-text test-rewrite
-	cmp test/content test/content.txt
+	cmp bench/content bench/content.txt
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check -l test.log
 	$(TESTENV) ./mktest$(EXEEXT) generate 4 6 $(CHECKCOUNT) $(CHECKSIZE)
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -t 100 sync --test-force-content-text
-	cp test/content test/content.txt
+	cp bench/content bench/content.txt
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) test-rewrite
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-content-text test-rewrite
-	cmp test/content test/content.txt
+	cmp bench/content bench/content.txt
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -t 1000 sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
@@ -395,156 +403,156 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Delete files from three disks and check/fix with import in PAR2
-	rm -r test/disk1/a
-	rm -r test/disk2/a
-	mv test/disk3/a test/a
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -i test/a -c $(PAR2) fix -l test.log
-	rm -r test/a
+	rm -r bench/disk1/a
+	rm -r bench/disk2/a
+	mv bench/disk3/a bench/a
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -i bench/a -c $(PAR2) fix -l test.log
+	rm -r bench/a
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Abort sync late with additions, delete them and recover with PAR2
 	echo --- This triggers the recovering with q using p to check the validity
-	cp -pR test/disk1/a test/disk1/a_copy
+	cp -pR bench/disk1/a bench/disk1/a_copy
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-kill-after-sync -c $(CONF) sync
-	rm -r test/disk1/a_copy
+	rm -r bench/disk1/a_copy
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
-	rm -r test/disk1/a_copy
+	rm -r bench/disk1/a_copy
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Abort sync early with additions, delete them and recover with PAR2
 	echo --- This triggers the recovering with q using p to check the validity, but failing for new block being filled with zero
-	cp -pR test/disk1/a test/disk1/a_copy
+	cp -pR bench/disk1/a bench/disk1/a_copy
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -t 1 --test-kill-after-sync -c $(CONF) sync
-	rm -r test/disk1/a_copy
+	rm -r bench/disk1/a_copy
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR2) fix -l test-fail-earlysyncadd.log
-	rm -r test/disk1/a_copy
+	rm -r bench/disk1/a_copy
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Abort sync late with additions with prehash and then delete the new additions and sync again
-	cp -pR test/disk1/a test/disk1/a_copy
-	cp -pR test/disk2/a test/disk2/a_copy
-	cp -pR test/disk3/a test/disk3/a_copy
+	cp -pR bench/disk1/a bench/disk1/a_copy
+	cp -pR bench/disk2/a bench/disk2/a_copy
+	cp -pR bench/disk3/a bench/disk3/a_copy
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-kill-after-sync -c $(CONF) -h sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
-	rm -r test/disk1/a_copy
-	rm -r test/disk2/a_copy
-	rm -r test/disk3/a_copy
+	rm -r bench/disk1/a_copy
+	rm -r bench/disk2/a_copy
+	rm -r bench/disk3/a_copy
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Abort sync late with additions and then delete the new additions and sync again
-	cp -pR test/disk1/a test/disk1/a_copy
-	cp -pR test/disk2/a test/disk2/a_copy
-	cp -pR test/disk3/a test/disk3/a_copy
+	cp -pR bench/disk1/a bench/disk1/a_copy
+	cp -pR bench/disk2/a bench/disk2/a_copy
+	cp -pR bench/disk3/a bench/disk3/a_copy
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-kill-after-sync -c $(CONF) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
-	rm -r test/disk1/a_copy
-	rm -r test/disk2/a_copy
-	rm -r test/disk3/a_copy
+	rm -r bench/disk1/a_copy
+	rm -r bench/disk2/a_copy
+	rm -r bench/disk3/a_copy
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Abort sync late with additions and then delete some unchanged stuff and fix with PAR1
-	cp -pR test/disk1/b test/disk1/b_copy
+	cp -pR bench/disk1/b bench/disk1/b_copy
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) --test-kill-after-sync sync
-	rm -r test/disk2
-	mkdir test/disk2
+	rm -r bench/disk2
+	mkdir bench/disk2
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) fix -l test.log
 	echo --- Fixes again to restore all the parity
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) fix -l test.log
-	rm -r test/disk1/b_copy
+	rm -r bench/disk1/b_copy
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Abort sync late with more deletions than additions and then delete some unchanged stuff and fix with PAR1
-	cp -pR test/disk1/a test/disk1/a_copy
-	mv test/disk1/a test/a
-	mv test/disk1/b test/b
+	cp -pR bench/disk1/a bench/disk1/a_copy
+	mv bench/disk1/a bench/a
+	mv bench/disk1/b bench/b
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-kill-after-sync sync
-	rm -r test/disk2
-	mkdir test/disk2
+	rm -r bench/disk2
+	mkdir bench/disk2
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) fix -l test.log
 	echo --- Fixes again to restore all the parity
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) fix -l test.log
-	-rm -r test/disk1/a
-	-rm -r test/disk1/b
-	rm -r test/disk1/a_copy
-	mv test/a test/disk1/a
-	mv test/b test/disk1/b
+	-rm -r bench/disk1/a
+	-rm -r bench/disk1/b
+	rm -r bench/disk1/a_copy
+	mv bench/a bench/disk1/a
+	mv bench/b bench/disk1/b
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Abort sync early with more deletions than additions and then delete some unchanged stuff and fix with PAR2
-	cp -pR test/disk1/a test/disk1/a_copy
-	mv test/disk1/a test/a
-	mv test/disk1/b test/b
+	cp -pR bench/disk1/a bench/disk1/a_copy
+	mv bench/disk1/a bench/a
+	mv bench/disk1/b bench/b
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -t 1 --test-kill-after-sync sync
-	rm -r test/disk2
-	mkdir test/disk2
+	rm -r bench/disk2
+	mkdir bench/disk2
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR1) fix -l test-fail-earlysyncdel.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
-	-rm -r test/disk1/a
-	-rm -r test/disk1/b
-	rm -r test/disk1/a_copy
-	mv test/a test/disk1/a
-	mv test/b test/disk1/b
+	-rm -r bench/disk1/a
+	-rm -r bench/disk1/b
+	rm -r bench/disk1/a_copy
+	mv bench/a bench/disk1/a
+	mv bench/b bench/disk1/b
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Delete some files, fix with -m and check with PAR1
-	rm test/disk1/a/8*
+	rm bench/disk1/a/8*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR1) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) -m fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Delete some dirs in six disk, fix with -m and check
-	rm -r test/disk1/b
-	rm -r test/disk2/b
-	rm -r test/disk3/b
-	rm -r test/disk4/b
-	rm -r test/disk5/b
-	rm -r test/disk6/b
+	rm -r bench/disk1/b
+	rm -r bench/disk2/b
+	rm -r bench/disk3/b
+	rm -r bench/disk4/b
+	rm -r bench/disk5/b
+	rm -r bench/disk6/b
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR5) fix -l test-full5.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(CONF) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -m fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Delete some dirs in two disks, fix and check with PAR2 using the -d option for each disk
-	rm -r test/disk2/b
-	rm -r test/disk5/b
+	rm -r bench/disk2/b
+	rm -r bench/disk5/b
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR1) fix -l test-full1.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) -d disk2 fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) -d disk5 fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Delete the parity, fix and check with PAR1
-	rm test/parity
+	rm bench/parity
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Delete the parity and the 2-parity, fix and check with PAR2
-	rm test/parity
-	rm test/2-parity
+	rm bench/parity
+	rm bench/2-parity
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Delete the parity and a disk, fix and check with PAR2
-	rm test/parity
-	rm -r test/disk2/b
+	rm bench/parity
+	rm -r bench/disk2/b
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Delete the 2-parity and a disk, fix and check with PAR2
-	rm test/2-parity
-	rm -r test/disk3/a
+	rm bench/2-parity
+	rm -r bench/disk3/a
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Corrupt the parity, fix and check with PAR1
-	$(TESTENV) ./mktest$(EXEEXT) write 1 100 10000 test/parity
+	$(TESTENV) ./mktest$(EXEEXT) write 1 100 10000 bench/parity
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR1) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) -a check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Corrupt the parity and the 2-parity, fix and check with PAR2
-	$(TESTENV) ./mktest$(EXEEXT) write 2 100 10000 test/parity
-	$(TESTENV) ./mktest$(EXEEXT) write 2 100 10000 test/2-parity
+	$(TESTENV) ./mktest$(EXEEXT) write 2 100 10000 bench/parity
+	$(TESTENV) ./mktest$(EXEEXT) write 2 100 10000 bench/2-parity
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR2) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Corrupt some files, fix and check with PAR1
-	$(TESTENV) ./mktest$(EXEEXT) change 3 500 test/disk2/b/*
+	$(TESTENV) ./mktest$(EXEEXT) change 3 500 bench/disk2/b/*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR1) -a check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR1) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Corrupt some files, fix and check with PAR2 in verbose mode
-	$(TESTENV) ./mktest$(EXEEXT) change 4 500 test/disk2/b/*
-	$(TESTENV) ./mktest$(EXEEXT) change 4 500 test/disk3/b/*
+	$(TESTENV) ./mktest$(EXEEXT) change 4 500 bench/disk2/b/*
+	$(TESTENV) ./mktest$(EXEEXT) change 4 500 bench/disk3/b/*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) --test-expect-unrecoverable -c $(PAR1) check -l test.log > /dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) --test-expect-unrecoverable -c $(PAR1) fix -l test-fail-corrupt-verbose.log > /dev/null
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR2) -a check -l test.log
@@ -552,22 +560,22 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Corrupt some files, fix and check with PAR2
-	$(TESTENV) ./mktest$(EXEEXT) change 5 500 test/disk2/b/*
-	$(TESTENV) ./mktest$(EXEEXT) change 5 500 test/disk3/b/*
+	$(TESTENV) ./mktest$(EXEEXT) change 5 500 bench/disk2/b/*
+	$(TESTENV) ./mktest$(EXEEXT) change 5 500 bench/disk3/b/*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR1) check -l test-fail-corrupt-data.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR2) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Corrupt the parity and some files, fix and check with PAR2
-	$(TESTENV) ./mktest$(EXEEXT) write 6 100 10000 test/parity
-	$(TESTENV) ./mktest$(EXEEXT) change 6 500 test/disk1/a/*
+	$(TESTENV) ./mktest$(EXEEXT) write 6 100 10000 bench/parity
+	$(TESTENV) ./mktest$(EXEEXT) change 6 500 bench/disk1/a/*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR1) check -l test-fail-corrupt-parity.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR2) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Corrupt the 2-parity and some files, fix and check with PAR2
-	$(TESTENV) ./mktest$(EXEEXT) write 7 100 10000 test/2-parity
-	$(TESTENV) ./mktest$(EXEEXT) change 7 500 test/disk1/a/*
+	$(TESTENV) ./mktest$(EXEEXT) write 7 100 10000 bench/2-parity
+	$(TESTENV) ./mktest$(EXEEXT) change 7 500 bench/disk1/a/*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR1) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR2) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
@@ -579,7 +587,7 @@ endif
 
 # Manual testing
 
-MANUAL = ./snapraid --test-skip-device -c test-par1.conf sync
+MANUAL = ./snapraid --test-skip-device -c test/test-par1.conf sync
 
 valgrind:
 	valgrind \

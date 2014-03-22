@@ -15,9 +15,8 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include "portable.h"
-
-#include "util.h" /* for safe_malloc */
+#include "../portable.h"
+#include "../util.h" /* for safe_malloc */
 
 /* redefine the malloc for tommy use */
 #define tommy_malloc malloc_nofail

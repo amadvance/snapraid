@@ -26,11 +26,11 @@
 #include "raid/test.h"
 #include "elem.h"
 #include "state.h"
-#include "tommyhash.h"
-#include "tommyarray.h"
-#include "tommyarrayblk.h"
-#include "tommyarrayblkof.h"
-#include "tommyhashdyn.h"
+#include "tommyds/tommyhash.h"
+#include "tommyds/tommyarray.h"
+#include "tommyds/tommyarrayblk.h"
+#include "tommyds/tommyarrayblkof.h"
+#include "tommyds/tommyhashdyn.h"
 
 struct hash32_test_vector {
 	const char* data;

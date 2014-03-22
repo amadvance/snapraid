@@ -44,4 +44,5 @@ contrib/
 paper/
 kernel/
 obj/
+bench/
 

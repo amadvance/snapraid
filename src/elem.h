@@ -19,12 +19,12 @@
 #define __ELEM_H
 
 #include "util.h"
-#include "tommylist.h"
-#include "tommyhash.h"
-#include "tommyhashdyn.h"
-#include "tommyarray.h"
-#include "tommyarrayblk.h"
-#include "tommyarrayblkof.h"
+#include "tommyds/tommylist.h"
+#include "tommyds/tommyhash.h"
+#include "tommyds/tommyhashdyn.h"
+#include "tommyds/tommyarray.h"
+#include "tommyds/tommyarrayblk.h"
+#include "tommyds/tommyarrayblkof.h"
 
 /****************************************************************************/
 /* snapraid */

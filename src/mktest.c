@@ -116,7 +116,7 @@ void generate(int disk, int size)
 	char path[PATH_MAX];
 	char* file;
 
-	snprintf(path, sizeof(path), "test/disk%d/", disk);
+	snprintf(path, sizeof(path), "bench/disk%d/", disk);
 	file = path + strlen(path);
 
 	/* add a directory */
