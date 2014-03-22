@@ -103,7 +103,11 @@ AC_MSG_RESULT([$asmcrc])
 
 dnl Checks for test environment
 AS_CASE([$host],
-	[*-*-mingw*], [TESTENV="$WINE"],
+	[*-*-mingw*],
+	[
+	TESTENV="$WINE"
+	FAILENV="$TESTENV"
+	],
 	[SYMLINK=1]
 )
 AM_CONDITIONAL(HAVE_SYMLINK, [test x"$SYMLINK" != x])
@@ -112,6 +116,7 @@ AC_ARG_ENABLE([profiler],
 	[AS_HELP_STRING([--enable-profiler],[enable the use of gprof for code coverage])],
 	[
 	TESTENV=""
+	FAILENV="$TESTENV"
 	CFLAGS="-O2 -pg -g"
 	],
 	[])
@@ -120,6 +125,7 @@ AC_ARG_ENABLE([coverage],
 	[AS_HELP_STRING([--enable-coverage],[enable the use of gcov for code coverage])],
 	[
 	TESTENV=""
+	FAILENV="$TESTENV"
 	CFLAGS="-O0 -g -fprofile-arcs -ftest-coverage"
 	],
 	[])
@@ -127,7 +133,8 @@ AC_ARG_ENABLE([coverage],
 AC_ARG_ENABLE([valgrind],
 	[AS_HELP_STRING([--enable-valgrind],[enable the use of valgrind in testing])],
 	[
-	TESTENV="$VALGRIND --leak-check=full --track-fds=yes --error-exitcode=1"
+	TESTENV="$VALGRIND --leak-check=full --error-exitcode=1"
+	FAILENV="$VALGRIND --error-exitcode=1"
 	CFLAGS="$CFLAGS -DCHECKER"
 	],
 	[])
@@ -136,6 +143,7 @@ AC_ARG_ENABLE([sgcheck],
 	[AS_HELP_STRING([--enable-sgcheck],[enable the use of sgcheck in testing])],
 	[
 	TESTENV="$VALGRIND --tool=exp-sgcheck --suppressions=sgcheck.supp --error-exitcode=1"
+	FAILENV="$TESTENV"
 	CFLAGS="$CFLAGS -DCHECKER"
 	],
 	[])
@@ -144,6 +152,7 @@ AC_ARG_ENABLE([debug],
 	[AS_HELP_STRING([--enable-debug],[enable debugging])],
 	[
 	TESTENV=""
+	FAILENV="$TESTENV"
 	CFLAGS="-O0 -g -Wall -Wextra"
 	],
 	[])
@@ -162,6 +171,7 @@ AC_ARG_ENABLE([warning],
 	[])
 
 AC_ARG_VAR([TESTENV], [Test environment])
+AC_ARG_VAR([FAILENV], [Test environment for failing tests])
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 

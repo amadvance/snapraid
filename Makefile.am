@@ -274,7 +274,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Corrupt the content file
 	$(TESTENV) ./mktest$(EXEEXT) write 1 100 100 test/content
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-failure -c $(CONF) sync
+	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-failure -c $(CONF) sync
 	rm test/content
 	echo --- Delete some files, create some new, sync and check
 	rm test/disk1/a/1*
