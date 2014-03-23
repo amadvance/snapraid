@@ -2,83 +2,83 @@ bin_PROGRAMS = snapraid
 check_PROGRAMS = mktest
 
 snapraid_SOURCES = \
-	src/raid/raid.c \
-	src/raid/module.c \
-	src/raid/tables.c \
-	src/raid/int.c \
-	src/raid/x86.c \
-	src/raid/intz.c \
-	src/raid/x86z.c \
-	src/raid/helper.c \
-	src/raid/memory.c \
-	src/raid/test.c \
-	src/raid/tag.c \
-	src/tommyds/tommy.c \
-	src/snapraid.c \
-	src/util.c \
-	src/elem.c \
-	src/state.c \
-	src/scan.c \
-	src/sync.c \
-	src/check.c \
-	src/dry.c \
-	src/rehash.c \
-	src/scrub.c \
-	src/status.c \
-	src/dup.c \
-	src/list.c \
-	src/pool.c \
-	src/parity.c \
-	src/handle.c \
-	src/fnmatch.c \
-	src/selftest.c \
-	src/speed.c \
-	src/import.c \
-	src/mingw.c \
-	src/unix.c
+	raid/raid.c \
+	raid/module.c \
+	raid/tables.c \
+	raid/int.c \
+	raid/x86.c \
+	raid/intz.c \
+	raid/x86z.c \
+	raid/helper.c \
+	raid/memory.c \
+	raid/test.c \
+	raid/tag.c \
+	tommyds/tommy.c \
+	cmdline/snapraid.c \
+	cmdline/util.c \
+	cmdline/elem.c \
+	cmdline/state.c \
+	cmdline/scan.c \
+	cmdline/sync.c \
+	cmdline/check.c \
+	cmdline/dry.c \
+	cmdline/rehash.c \
+	cmdline/scrub.c \
+	cmdline/status.c \
+	cmdline/dup.c \
+	cmdline/list.c \
+	cmdline/pool.c \
+	cmdline/parity.c \
+	cmdline/handle.c \
+	cmdline/fnmatch.c \
+	cmdline/selftest.c \
+	cmdline/speed.c \
+	cmdline/import.c \
+	cmdline/mingw.c \
+	cmdline/unix.c
 
 noinst_HEADERS = \
-	src/raid/raid.h \
-	src/raid/helper.h \
-	src/raid/internal.h \
-	src/raid/cpu.h \
-	src/raid/gf.h \
-	src/raid/combo.h \
-	src/raid/memory.h \
-	src/raid/test.h \
-	src/tommyds/tommyarray.h \
-	src/tommyds/tommyarrayblk.h \
-	src/tommyds/tommyarrayblkof.h \
-	src/tommyds/tommychain.h \
-	src/tommyds/tommyhash.h \
-	src/tommyds/tommyhashdyn.h \
-	src/tommyds/tommylist.h \
-	src/tommyds/tommytypes.h \
-	src/tommyds/tommyarray.c \
-	src/tommyds/tommyarrayblk.c \
-	src/tommyds/tommyarrayblkof.c \
-	src/tommyds/tommyhash.c \
-	src/tommyds/tommyhashdyn.c \
-	src/tommyds/tommylist.c \
-	src/portable.h \
-	src/snapraid.h \
-	src/util.h \
-	src/elem.h \
-	src/state.h \
-	src/parity.h \
-	src/handle.h \
-	src/murmur3.c \
-	src/murmur3test.c \
-	src/spooky2.c \
-	src/spooky2test.c \
-	src/fnmatch.h \
-	src/import.h \
-	src/mingw.h \
-	src/unix.h
+	raid/raid.h \
+	raid/helper.h \
+	raid/internal.h \
+	raid/cpu.h \
+	raid/gf.h \
+	raid/combo.h \
+	raid/memory.h \
+	raid/test.h \
+	tommyds/tommyarray.h \
+	tommyds/tommyarrayblk.h \
+	tommyds/tommyarrayblkof.h \
+	tommyds/tommychain.h \
+	tommyds/tommyhash.h \
+	tommyds/tommyhashdyn.h \
+	tommyds/tommylist.h \
+	tommyds/tommytypes.h \
+	tommyds/tommyarray.c \
+	tommyds/tommyarrayblk.c \
+	tommyds/tommyarrayblkof.c \
+	tommyds/tommyhash.c \
+	tommyds/tommyhashdyn.c \
+	tommyds/tommylist.c \
+	cmdline/portable.h \
+	cmdline/snapraid.h \
+	cmdline/util.h \
+	cmdline/elem.h \
+	cmdline/state.h \
+	cmdline/parity.h \
+	cmdline/handle.h \
+	cmdline/murmur3.c \
+	cmdline/murmur3test.c \
+	cmdline/spooky2.c \
+	cmdline/spooky2test.c \
+	cmdline/fnmatch.h \
+	cmdline/import.h \
+	cmdline/mingw.h \
+	cmdline/unix.h
 
 mktest_SOURCES = \
-	src/mktest.c \
-	src/mingw.c
+	cmdline/mktest.c \
+	cmdline/mingw.c
 
 EXTRA_DIST = \
 	autogen.sh \
@@ -94,13 +94,13 @@ EXTRA_DIST = \
 	snapraid.conf.example \
 	configure.windows-x86 configure.windows-x64 snapraid.conf.example.windows \
 	acinclude.m4 \
-	src/tommyds/LICENSE \
-	src/raid/COPYING \
-	src/raid/test/Makefile \
-	src/raid/test/fulltest.c \
-	src/raid/test/selftest.c \
-	src/raid/test/speedtest.c \
-	src/raid/test/invtest.c
+	tommyds/LICENSE \
+	raid/COPYING \
+	raid/test/Makefile \
+	raid/test/fulltest.c \
+	raid/test/selftest.c \
+	raid/test/speedtest.c \
+	raid/test/invtest.c
 
 man_MANS = snapraid.1
 
@@ -108,9 +108,9 @@ clean-local:
 	rm -f valgrind.log callgrind.log cachegrind.log
 	rm -rf bench
 	rm -f test*.log output.log
-	rm -f src/*.gcda src/*.gcno src/*.gcov
-	rm -f src/raid/*.gcda src/raid/*.gcno src/raid/*.gcov
-	rm -f src/tommyds/*.gcda src/tommyds/*.gcno src/tommyds/*.gcov
+	rm -f cmdline/*.gcda cmdline/*.gcno cmdline/*.gcov
+	rm -f raid/*.gcda raid/*.gcno raid/*.gcov
+	rm -f tommyds/*.gcda tommyds/*.gcno tommyds/*.gcov
 	rm -rf cov
 	rm -f lcov.info
 	rm -f gmon.out
@@ -617,11 +617,11 @@ cachegrind:
 		tail cachegrind.log
 
 lcov_reset:
-	lcov --directory src -z
+	lcov --directory . -z
 	rm -f ./lcov.info
 
 lcov_capture:
-	lcov --directory src --capture -o lcov.info
+	lcov --directory . --capture -o lcov.info
 
 lcov_html:
 	rm -rf ./cov

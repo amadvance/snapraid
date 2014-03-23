@@ -2,7 +2,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.65])
 AC_INIT([snapraid], [6.0], [], [], [http://snapraid.sourceforge.net])
 AM_INIT_AUTOMAKE([foreign no-dependencies subdir-objects])
-AC_CONFIG_SRCDIR([src/snapraid.c])
+AC_CONFIG_SRCDIR([cmdline/snapraid.c])
 AC_CONFIG_HEADER([config.h])
 AC_CANONICAL_HOST
 
@@ -169,6 +169,9 @@ AC_ARG_ENABLE([warning],
 	AC_CHECK_CC_OPT([-Weverything], CFLAGS="$CFLAGS -Weverything", [])
 	],
 	[])
+
+dnl Default include dir for libraries
+CFLAGS="$CFLAGS $(srcdir)"
 
 AC_ARG_VAR([TESTENV], [Test environment])
 AC_ARG_VAR([FAILENV], [Test environment for failing tests])
