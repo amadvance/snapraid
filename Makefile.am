@@ -617,11 +617,11 @@ cachegrind:
 		tail cachegrind.log
 
 lcov_reset:
-	lcov --directory . -z
+	lcov --directory src -z
 	rm -f ./lcov.info
 
 lcov_capture:
-	lcov --directory . --capture -o lcov.info
+	lcov --directory src --capture -o lcov.info
 
 lcov_html:
 	rm -rf ./cov

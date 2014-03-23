@@ -27,18 +27,19 @@ stamp-h1
 .dirstamp
 
 # objects
+snapraid
+mktest
 *.o
 *.gcda
 *.gcno
 *.gcov
 
-# project
+# projects
 *.dst
 *.epr
 *.geany
 
 # specific
-snapraid
 cov_release/
 contrib/
 paper/
