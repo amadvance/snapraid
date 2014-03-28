@@ -31,7 +31,8 @@
  * This array is able to grow dynamically upon request.
  *
  * The resize involve an allocation of a new array block, without reallocating
- * the already allocated memory, and then not increasing the heap fragmentation.
+ * the already allocated memory, and then not increasing the heap fragmentation,
+ * and minimize the space occupation.
  * This means that the address of the allocated blocks never change.
  *
  * Allocated blocks are always of the same fixed size of 64 Ki pointers.
@@ -88,7 +89,7 @@ tommy_inline void** tommy_arrayblk_ref(tommy_arrayblk* array, unsigned pos)
 
 	assert(pos < array->size);
 
-	ptr = tommy_array_get(&array->block, pos / TOMMY_ARRAYBLK_SIZE);
+	ptr = tommy_cast(void**, tommy_array_get(&array->block, pos / TOMMY_ARRAYBLK_SIZE));
 
 	return &ptr[pos % TOMMY_ARRAYBLK_SIZE];
 }

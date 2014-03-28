@@ -271,6 +271,7 @@ typedef void tommy_foreach_arg_func(void* arg, void* obj);
 #if defined(_MSC_VER) && !defined(__cplusplus)
 #include <intrin.h>
 #pragma intrinsic(_BitScanReverse)
+#pragma intrinsic(_BitScanForward)
 #endif
 
 /** \internal
@@ -337,7 +338,7 @@ tommy_inline unsigned tommy_ilog2_u32(tommy_uint32_t value)
  *
  * If no bit is set, the result is undefined.
  * \param value Value to scan. 0 is not allowed.
- * \return The index of the least significan bit set.
+ * \return The index of the least significant bit set.
  */
 tommy_inline unsigned tommy_ctz_u32(tommy_uint32_t value)
 {
