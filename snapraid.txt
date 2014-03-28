@@ -379,6 +379,8 @@ changes at files. It just reverts the state at the last "sync" command.
 
 By default the full array is processed. Use the filter options
 to select a subset of files or disks to operate on.
+To know that file is checked, you can use the -v, --verbose option.
+
 To only fix errors found with "scrub" and reported in "status",
 you can use the -e, --filter-error option.
 
@@ -406,6 +408,10 @@ For periodic and scheduled checks uses the "scrub" command.
 If you use the -a, --audit-only option, only the file
 data is checked, and the parity data is ignored for a
 faster run.
+
+By default the full array is processed. Use the filter options
+to select a subset of files or disks to operate on.
+To know that file is checked, you can use the -v, --verbose option.
 
 Files are identified only by path, and not by inode.
 

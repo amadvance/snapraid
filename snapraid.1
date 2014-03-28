@@ -590,6 +590,8 @@ changes at files. It just reverts the state at the last \[dq]sync\[dq] command.
 .PP
 By default the full array is processed. Use the filter options
 to select a subset of files or disks to operate on.
+To know that file is checked, you can use the \-v, \-\-verbose option.
+.PP
 To only fix errors found with \[dq]scrub\[dq] and reported in \[dq]status\[dq],
 you can use the \-e, \-\-filter\-error option.
 .PP
@@ -614,6 +616,10 @@ For periodic and scheduled checks uses the \[dq]scrub\[dq] command.
 If you use the \-a, \-\-audit\-only option, only the file
 data is checked, and the parity data is ignored for a
 faster run.
+.PP
+By default the full array is processed. Use the filter options
+to select a subset of files or disks to operate on.
+To know that file is checked, you can use the \-v, \-\-verbose option.
 .PP
 Files are identified only by path, and not by inode.
 .PP
