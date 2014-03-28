@@ -170,9 +170,6 @@ AC_ARG_ENABLE([warning],
 	],
 	[])
 
-dnl Default include dir for libraries
-CFLAGS="$CFLAGS $(srcdir)"
-
 AC_ARG_VAR([TESTENV], [Test environment])
 AC_ARG_VAR([FAILENV], [Test environment for failing tests])
 AC_CONFIG_FILES([Makefile])
