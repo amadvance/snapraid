@@ -35,7 +35,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <malloc.h>
 
 #ifndef BUG_ON
 #define BUG_ON(a) assert(!(a))

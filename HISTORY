@@ -1,6 +1,10 @@
 SnapRAID HISTORY
 ================
 
+6.1 2014/4
+==========
+ * Fix build in Mac OS X.
+
 6.0 2014/3
 ==========
  * In "sync", even if a silent error is found, continue to update
