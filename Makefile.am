@@ -216,10 +216,10 @@ endif
 	echo 1 > bench/disk1/file_hardlink1
 	ln bench/disk1/file_hardlink1 bench/disk1/file_hardlink2
 	ln bench/disk1/file_hardlink1 bench/disk1/file_hardlink3
-	echo 2 > bench/disk2/file_hardlink1
+	echo 22 > bench/disk2/file_hardlink1
 	ln bench/disk2/file_hardlink1 bench/disk2/file_hardlink2
 	ln bench/disk2/file_hardlink1 bench/disk2/file_hardlink3
-	echo 3 > bench/disk3/file_hardlink1
+	echo 333 > bench/disk3/file_hardlink1
 	ln bench/disk3/file_hardlink1 bench/disk3/file_hardlink2
 	ln bench/disk3/file_hardlink1 bench/disk3/file_hardlink3
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) diff > output.log

@@ -3,7 +3,7 @@ SnapRAID HISTORY
 
 6.1 2014/4
 ==========
- * Fix build in Mac OS X.
+ * Fix build and regression test in Mac OS X.
 
 6.0 2014/3
 ==========
