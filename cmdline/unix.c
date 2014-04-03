@@ -180,7 +180,7 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 		return 0;
 	}
 
-	/* otherwise don't use anything, and keep the existing order */
+	/* otherwise don't use anything, and keep the directory traversal order */
 	/* at now this should happen only for vfat */
 	/* and it's surely better than using fake inodes */
 	*physical = FILEPHY_UNREPORTED_OFFSET;
@@ -188,7 +188,14 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 		return -1;
 #else
 	/* In a generic Unix use a dummy value for all the files */
-	/* We don't want to risk to use the inode without knowing if it really improves performance */
+	/* We don't want to risk to use the inode without knowing */
+	/* if it really improves performance. */
+	/* In this way we keep them in the directory traversal order */
+	/* that at least keeps files in the same directory together. */
+	/* Note also that in newer filesystem with snapshot, like ZFS, */
+	/* the inode doesn't represent even less the disk position, becasue files */
+	/* are not overwritten in place, but rewritten in another location */
+	/* of the disk. */
 	*physical = FILEPHY_UNREPORTED_OFFSET;
 
 	(void)path; /* not used here */
