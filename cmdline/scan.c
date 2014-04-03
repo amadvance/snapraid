@@ -483,7 +483,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 	 * This ensures that no file is found with a past inode, but at the same time,
 	 * it allows to find new files with the same inode, to identify them as hardlinks.
 	 */
-	int has_past_inodes = !disk->has_volatile_inodes && !disk->has_different_uuid;
+	int has_past_inodes = !disk->has_volatile_inodes && !disk->has_different_uuid && !disk->has_unsupported_uuid;
 
 	/* always search with the new inode, in the all new inodes found until now, */
 	/* with the eventual presence of also the past inodes */
@@ -1199,6 +1199,7 @@ void state_scan(struct snapraid_state* state, int output)
 	tommy_node* i;
 	tommy_node* j;
 	tommy_list scanlist;
+	int done;
 
 	tommy_list_init(&scanlist);
 
@@ -1244,8 +1245,8 @@ void state_scan(struct snapraid_state* state, int output)
 			disk->has_volatile_inodes = 1;
 		}
 
-		/* if inodes or UUID are not persistent */
-		if (disk->has_volatile_inodes || disk->has_different_uuid) {
+		/* if inodes or UUID are not persistent/changed/unsupported */
+		if (disk->has_volatile_inodes || disk->has_different_uuid || disk->has_unsupported_uuid) {
 			/* removes all the inodes from the inode collection */
 			/* if they are not persistent, all of them could be changed now */
 			/* and we don't want to find false matching ones */
@@ -1422,7 +1423,7 @@ void state_scan(struct snapraid_state* state, int output)
 
 	/* checks for disks where all the previously existing files where removed */
 	if (!state->opt.force_empty) {
-		int done = 0;
+		done = 0;
 		for(i=state->disklist,j=scanlist;i!=0;i=i->next,j=j->next) {
 			struct snapraid_disk* disk = i->data;
 			struct snapraid_scan* scan = j->data;
@@ -1449,7 +1450,7 @@ void state_scan(struct snapraid_state* state, int output)
 
 	/* checks for disks without the physical offset support */
 	if (state->opt.force_order == SORT_PHYSICAL) {
-		int done = 0;
+		done = 0;
 		for(i=state->disklist;i!=0;i=i->next) {
 			struct snapraid_disk* disk = i->data;
 
@@ -1467,49 +1468,64 @@ void state_scan(struct snapraid_state* state, int output)
 		}
 	}
 
-	/* Check for disks without persistent inodes */
-	{
-		int done = 0;
-		for(i=state->disklist;i!=0;i=i->next) {
-			struct snapraid_disk* disk = i->data;
+	/* checks for disks without persistent inodes */
+	done = 0;
+	for(i=state->disklist;i!=0;i=i->next) {
+		struct snapraid_disk* disk = i->data;
 
-			if (disk->has_volatile_inodes) {
-				if (!done) {
-					done = 1;
-					fprintf(stderr, "WARNING! Inodes are not persistent for disks: '%s'", disk->name);
-				} else {
-					fprintf(stderr, ", '%s", disk->name);
-				}
+		if (disk->has_volatile_inodes) {
+			if (!done) {
+				done = 1;
+				fprintf(stderr, "WARNING! Inodes are not persistent for disks: '%s'", disk->name);
+			} else {
+				fprintf(stderr, ", '%s", disk->name);
 			}
 		}
-		if (done) {
-			fprintf(stderr, ". Move operations won't be optimal (but you can live with that).\n");
-		}
+	}
+	if (done) {
+		fprintf(stderr, ". Move operations won't be optimal (but you can live with that).\n");
 	}
 
-	/* Check for disks with changed UUID */
-	{
-		int done = 0;
-		for(i=state->disklist;i!=0;i=i->next) {
-			struct snapraid_disk* disk = i->data;
+	/* checks for disks with changed UUID */
+	done = 0;
+	for(i=state->disklist;i!=0;i=i->next) {
+		struct snapraid_disk* disk = i->data;
 
-			/* don't print the message if the UUID changed because before */
-			/* it was no set. */
-			/* this is the normal condition for an empty disk because it */
-			/* isn't stored */
-			if (disk->has_different_uuid && !disk->had_empty_uuid) {
-				if (!done) {
-					done = 1;
-					fprintf(stderr, "WARNING! UUID is changed for disks: '%s'", disk->name);
-				} else {
-					fprintf(stderr, ", '%s", disk->name);
-				}
+		/* don't print the message if the UUID changed because before */
+		/* it was no set. */
+		/* this is the normal condition for an empty disk because it */
+		/* isn't stored */
+		if (disk->has_different_uuid && !disk->had_empty_uuid) {
+			if (!done) {
+				done = 1;
+				fprintf(stderr, "WARNING! UUID is changed for disks: '%s'", disk->name);
+			} else {
+				fprintf(stderr, ", '%s", disk->name);
 			}
 		}
-		if (done) {
-			fprintf(stderr, ". Move operations won't be optimal (but you can live with that).\n");
+	}
+	if (done) {
+		fprintf(stderr, ". Move operations won't be optimal (but you can live with that).\n");
+	}
+
+	/* checks for disks with unsupported UUID */
+	done = 0;
+	for(i=state->disklist;i!=0;i=i->next) {
+		struct snapraid_disk* disk = i->data;
+
+		if (disk->has_unsupported_uuid) {
+			if (!done) {
+				done = 1;
+				fprintf(stderr, "WARNING! UUID is unsupported for disks: '%s'", disk->name);
+			} else {
+				fprintf(stderr, ", '%s", disk->name);
+			}
 		}
 	}
+	if (done) {
+		fprintf(stderr, ". Move operations won't be optimal (but you can live with that).\n");
+	}
+
 
 	if (state->opt.verbose || output) {
 		struct snapraid_scan total;

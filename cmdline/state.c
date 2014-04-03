@@ -994,8 +994,8 @@ static void state_map(struct snapraid_state* state)
 
 		ret = devuuid(disk->device, uuid, sizeof(uuid));
 		if (ret != 0) {
-			/* uuid not available, just ignore but marks the disk with not persistent UUID */
-			disk->has_different_uuid = 1;
+			/* uuid not available, just ignore but marks the disk with unsupported UUID */
+			disk->has_unsupported_uuid = 1;
 			continue;
 		}
 
