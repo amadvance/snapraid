@@ -639,9 +639,9 @@ SnapRAID provides the following options:
         If the specified path starts with '>>' the file is opened
         in append mode. Occurrences of '%D' and '%T' in the name are
         replaced with the date and time in the format YYYYMMDD and
-        HHMMSS. Note that likely you have to use " around the name
-        containing these special chars to avoid to have them
-        interpreted by the command shell, like ">>test-%D.log".
+        HHMMSS. Note that in Windows batch files, you'll have to double
+        the '%' char, like result-%%D.log. And to use '>>' you'll have
+        to enclose the name in ", like ">>result.log".
 
     -s, --start BLKSTART
         Starts the processing from the specified
