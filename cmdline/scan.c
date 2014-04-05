@@ -1505,7 +1505,7 @@ void state_scan(struct snapraid_state* state, int output)
 		}
 	}
 	if (done) {
-		fprintf(stderr, ". Move operations won't be optimal (but you can live with that).\n");
+		fprintf(stderr, ". Move operations won't be optimal.\n");
 	}
 
 	/* checks for disks with unsupported UUID */
@@ -1523,7 +1523,7 @@ void state_scan(struct snapraid_state* state, int output)
 		}
 	}
 	if (done) {
-		fprintf(stderr, ". Move operations won't be optimal (but you can live with that).\n");
+		fprintf(stderr, ". Move operations won't be optimal.\n");
 	}
 
 
