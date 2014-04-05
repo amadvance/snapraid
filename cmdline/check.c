@@ -92,7 +92,7 @@ static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_bl
 }
 
 /**
- * Checks if the hash of at least one failed block is now matching.
+ * Checks if the hash of all the failed block we are expecting to recover are now matching.
  */
 static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, void* buffer_zero)
 {
@@ -372,6 +372,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 				&& state_import_fetch(state, rehash, failed[j].block->hash, buffer[failed[j].index]) == 0
 			) {
 				/* we already have corrected it! */
+				fprintf(stdlog, "hash_import: Fixed entry %u\n", j);
 			} else {
 				/* otherwise try to recover it */
 				failed_map[n] = j;
