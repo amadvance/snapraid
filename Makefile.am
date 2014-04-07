@@ -246,6 +246,38 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-scrub 100000 scrub
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
+	echo --- Modify files during a sync
+	echo RUN > bench/disk1/RUN-RM
+	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "rm bench/disk1/RUN-RM" --test-expect-failure sync
+	echo RUN > bench/disk1/RUN-CHMOD
+	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "chmod a-r bench/disk1/RUN-CHMOD" --test-expect-failure sync
+	echo RUN > bench/disk1/RUN-SIZE
+	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "echo RUNRUN > bench/disk1/RUN-SIZE" --test-expect-failure sync
+	echo RUN > bench/disk1/RUN-TOUCH
+	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "touch -t 200001011200 bench/disk1/RUN-TOUCH" --test-expect-failure sync
+	echo RUN > bench/disk1/RUN-INODE
+	cp -p bench/disk1/RUN-INODE bench/disk1/RUN-INODE-COPY
+	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "mv bench/disk1/RUN-INODE-COPY bench/disk1/RUN-INODE" --test-expect-failure sync
+	rm bench/disk1/RUN-CHMOD
+	rm bench/disk1/RUN-SIZE
+	rm bench/disk1/RUN-TOUCH
+	rm bench/disk1/RUN-INODE
+	echo HASH > bench/disk1/HASH-RM
+	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "rm bench/disk1/HASH-RM" --test-expect-failure -h sync
+	echo HASH > bench/disk1/HASH-CHMOD
+	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "chmod a-r bench/disk1/HASH-CHMOD" --test-expect-failure -h sync
+	echo HASH > bench/disk1/HASH-SIZE
+	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "echo HASHHASH > bench/disk1/HASH-SIZE" --test-expect-failure -h sync
+	echo HASH > bench/disk1/HASH-TOUCH
+	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "touch -t 200001011200 bench/disk1/HASH-TOUCH" --test-expect-failure -h sync
+	echo HASH > bench/disk1/HASH-INODE
+	cp -p bench/disk1/HASH-INODE bench/disk1/HASH-INODE-COPY
+	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "mv bench/disk1/HASH-INODE-COPY bench/disk1/HASH-INODE" --test-expect-failure -h sync
+	rm bench/disk1/HASH-CHMOD
+	rm bench/disk1/HASH-SIZE
+	rm bench/disk1/HASH-TOUCH
+	rm bench/disk1/HASH-INODE
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Silently corrupt some files, scrub and fix filtering for error
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) ./mktest$(EXEEXT) damage 1 10 1 bench/disk1/a/*

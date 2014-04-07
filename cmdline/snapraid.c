@@ -230,6 +230,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_SKIP_CONTENT_CHECK 275
 #define OPT_TEST_SKIP_PARITY_ACCESS 276
 #define OPT_TEST_EXPECT_FAILURE 277
+#define OPT_TEST_RUN 278
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -321,6 +322,9 @@ struct option long_options[] = {
 	/* Exit generic failure */
 	{ "test-expect-failure", 0, 0, OPT_TEST_EXPECT_FAILURE },
 
+	/* Run some command after loading the state and before the command */
+	{ "test-run", 1, 0, OPT_TEST_RUN },
+
 	{ 0, 0, 0, 0 }
 };
 #endif
@@ -375,6 +379,7 @@ int main(int argc, char* argv[])
 	const char* log;
 	int lock;
 	const char* gen_conf;
+	const char* run;
 	int period;
 
 	os_init();
@@ -397,6 +402,7 @@ int main(int argc, char* argv[])
 	log = 0;
 	lock = 0;
 	gen_conf = 0;
+	run = 0;
 
 	opterr = 0;
 	while ((c =
@@ -602,6 +608,9 @@ int main(int argc, char* argv[])
 			/* invert the exit code */
 			exit_success = 1;
 			exit_failure = 0;
+			break;
+		case OPT_TEST_RUN :
+			run = optarg;
 			break;
 		default:
 			/* LCOV_EXCL_START */
@@ -818,6 +827,17 @@ int main(int argc, char* argv[])
 
 		if (state.need_write)
 			state_write(&state);
+
+		/* run a test command if required */
+		if (run != 0) {
+			ret = system(run); /* ignore error */
+			if (ret != 0) {
+				/* LCOV_EXCL_START */
+				fprintf(stderr, "Error in running command '%s'.\n", run);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+		}
 
 		/* waits some time to ensure that any concurrent modification done at the files, */
 		/* using the same mtime read by the scan process, will be read by sync. */
