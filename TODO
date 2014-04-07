@@ -18,6 +18,8 @@ same timestamp/size are present.
 
 - Minor
 
+* Provides a way to rename disks in content file.
+
 * Checks if splitting hash/parity computation in 4K pages
 can improve speed in sync. That should increase cache locality,
 becase we read the data two times for hash and and parity,
