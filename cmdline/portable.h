@@ -22,8 +22,6 @@
 #include "config.h" /* Use " to include first in the same directory of this file */
 #endif
 
-#define _GNU_SOURCE /* for fallocate and futimens */
-
 /***************************************************************************/
 /* Config */
 
