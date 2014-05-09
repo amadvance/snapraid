@@ -54,6 +54,7 @@ struct snapraid_hash* hash_alloc(struct snapraid_state* state, struct snapraid_d
 
 		if (!block_has_updated_hash(&file->blockvec[i])) {
 			free(buf);
+			free(hash);
 			return 0;
 		}
 	}

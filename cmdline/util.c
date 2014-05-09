@@ -538,7 +538,7 @@ int sgethex(STREAM* f, void* void_data, int size)
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
-			b0 = strdecset[c];
+			b0 = strdecset[(unsigned char)c];
 
 			c = sgetc(f);
 			if (c == EOF) {
@@ -546,7 +546,7 @@ int sgethex(STREAM* f, void* void_data, int size)
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
-			b1 = strdecset[c];
+			b1 = strdecset[(unsigned char)c];
 
 			b = (b0 << 4) | b1;
 
@@ -1670,7 +1670,7 @@ int lock_lock(const char* file)
 		/* LCOV_EXCL_STOP */
 	}
 
-	return 0;
+	return f;
 }
 #endif
 

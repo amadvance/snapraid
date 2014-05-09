@@ -4043,7 +4043,7 @@ void state_write(struct snapraid_state* state)
 
 	if (sclose(f) != 0) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Error writing the content file '%s' in close(). %s.\n", serrorfile(f), strerror(errno));
+		fprintf(stderr, "Error closing the content files in close(). %s.\n", strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}

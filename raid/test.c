@@ -281,7 +281,7 @@ int raid_test_par(int mode, int nd, size_t size)
 
 	/* check memory */
 	if (raid_mtest_vector(nv, size, v) != 0)
-		return -1;
+		goto bail;
 
 	/* fill with random */
 	raid_mrand_vector(nv, size, v);
