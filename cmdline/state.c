@@ -1011,6 +1011,7 @@ static void state_map(struct snapraid_state* state)
 				fprintf(stderr, "UUID change for disk '%s' from '%s' to '%s'\n", disk->name, map->uuid, uuid);
 			} else {
 				disk->had_empty_uuid = 1;
+				fprintf(stderr, "UUID set for disk '%s' to '%s'\n", disk->name, uuid);
 			}
 
 			/* update the uuid in the mapping, */
