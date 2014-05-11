@@ -250,7 +250,10 @@ endif
 	echo RUN > bench/disk1/RUN-RM
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "rm bench/disk1/RUN-RM" --test-expect-failure sync
 	echo RUN > bench/disk1/RUN-CHMOD
-	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "chmod a-r bench/disk1/RUN-CHMOD" --test-expect-failure sync
+# Doesn't run this test as root because the root user overrride permissions
+	if [[ $$EUID -ne 0 ]]; then \
+		$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "chmod a-r bench/disk1/RUN-CHMOD" --test-expect-failure sync; \
+	fi
 	echo RUN > bench/disk1/RUN-SIZE
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "echo RUNRUN > bench/disk1/RUN-SIZE" --test-expect-failure sync
 	echo RUN > bench/disk1/RUN-TOUCH
@@ -265,7 +268,10 @@ endif
 	echo HASH > bench/disk1/HASH-RM
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "rm bench/disk1/HASH-RM" --test-expect-failure -h sync
 	echo HASH > bench/disk1/HASH-CHMOD
-	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "chmod a-r bench/disk1/HASH-CHMOD" --test-expect-failure -h sync
+# Doesn't run this test as root because the root user overrride permissions
+	if [[ $$EUID -ne 0 ]]; then \
+		$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "chmod a-r bench/disk1/HASH-CHMOD" --test-expect-failure -h sync; \
+	fi
 	echo HASH > bench/disk1/HASH-SIZE
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "echo HASHHASH > bench/disk1/HASH-SIZE" --test-expect-failure -h sync
 	echo HASH > bench/disk1/HASH-TOUCH

@@ -1,9 +1,13 @@
 SnapRAID HISTORY
 ================
 
+6.2 2014/5
+==========
+ * Fixed the regression test when run as root.
+
 6.1 2014/4
 ==========
- * Fix build and regression test in Mac OS X.
+ * Fixed build and regression test in Mac OS X.
 
 6.0 2014/3
 ==========
