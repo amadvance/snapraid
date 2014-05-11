@@ -1,6 +1,6 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.65])
-AC_INIT([snapraid], [6.1], [], [], [http://snapraid.sourceforge.net])
+AC_INIT([snapraid], [6.2], [], [], [http://snapraid.sourceforge.net])
 AM_INIT_AUTOMAKE([foreign no-dependencies subdir-objects])
 AC_CONFIG_SRCDIR([cmdline/snapraid.c])
 AC_CONFIG_HEADER([config.h])
