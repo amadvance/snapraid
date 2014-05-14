@@ -16,6 +16,10 @@ in the parity disks.
 * Avoid to do optimized move operation if more files with
 same timestamp/size are present.
 
+* Estimate the ETA using the latest minute speed. This likely
+requires to keep 60 measures, one for each seconds, to be able
+to estimate the speed of the last minute, for each second.
+
 - Minor
 
 * Provides a way to rename disks in content file.
