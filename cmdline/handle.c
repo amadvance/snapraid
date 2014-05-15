@@ -393,7 +393,7 @@ int file_utime(struct snapraid_file* file, int f)
 
 	ret = futimesat(f, 0, tv);
 #else
-#error No function available to set file timestamps
+#error No function available to set file timestamps with sub-second precision
 #endif
 
 	if (ret != 0) {

@@ -13,6 +13,7 @@ snapraid [-c, --conf CONFIG]
 	[-p, --percentage PERC] [-o, --older-than DAYS]
 	[-Z, --force-zero] [-E, --force-empty]
 	[-U, --force-uuid] [-D, --force-device]
+	[-N, --force-nocopy]
 	[-v, --verbose] [-l, --log FILE]
 	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	status|sync|scrub|fix|check|list|diff|dup|pool|rehash
@@ -626,6 +627,17 @@ SnapRAID provides the following options:
         But it could happen that you want to temporarily restore a lost
         disk in the free space left in an already used disk. and this
         option allows you to continue anyway.
+
+    -N, --force-nocopy
+        In the "sync" command, disables the copy detection optimization.
+        Withouth this option SnapRAID assumes that files with the
+        same name, size, and nanosecond timestamp are copies with the
+        same data.
+        This allows to identify copied files from one dir to another,
+        and to reuse the already computed hash information to detect
+        silent errors in the copy.
+        This behaviour, in some rare cases, may result in false positives,
+        and this option allow to resolve them.
 
     -l, --log FILE
         Write a detailed log of errors found in check and fix.

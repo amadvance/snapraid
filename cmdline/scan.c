@@ -519,10 +519,10 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 			/* mark as present */
 			file_flag_set(file, FILE_IS_PRESENT);
 
-			/* update the nano seconds mtime only if different */
+			/* update the nanoseconds mtime only if different */
 			/* to avoid unneeded updates */
 			if (file->mtime_nsec == STAT_NSEC_INVALID
-				&& STAT_NSEC(st) != STAT_NSEC_INVALID
+				&& STAT_NSEC(st) != file->mtime_nsec
 			) {
 				file->mtime_nsec = STAT_NSEC(st);
 
@@ -746,32 +746,40 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 	/* mark it as present */
 	file_flag_set(file, FILE_IS_PRESENT);
 
-	/* now search for a file with the same name and timestamp in all the disks */
-	for(i=state->disklist;i!=0;i=i->next) {
-		struct snapraid_disk* other_disk = i->data;
-		struct snapraid_file* other_file;
+	/* if copy detection is enabled */
+	if (!state->opt.force_nocopy) {
 		tommy_uint32_t hash = file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec);
 
-		/* search for a file with the same name and stamp */
-		other_file = tommy_hashdyn_search(&other_disk->stampset, file_namestamp_compare, file, hash);
+		/* search for a file with the same name and stamp in all the disks */
+		for(i=state->disklist;i!=0;i=i->next) {
+			struct snapraid_disk* other_disk = i->data;
+			struct snapraid_file* other_file;
 
-		/* if found, and it's a fully hashed file */
-		if (other_file && file_is_full_hashed_and_stable(scan->state, other_file)) {
-			/* assume that the file is a copy, and reuse the hash */
-			file_copy(other_file, file);
+			/* if the nanosecond part of the time stamp is valid, search */
+			/* for name and stamp, otherwise for path and stamp */
+			if (file->mtime_nsec != 0 && file->mtime_nsec != STAT_NSEC_INVALID)
+				other_file = tommy_hashdyn_search(&other_disk->stampset, file_namestamp_compare, file, hash);
+			else
+				other_file = tommy_hashdyn_search(&other_disk->stampset, file_pathstamp_compare, file, hash);
 
-			/* revert old counter and use the copy one */
-			add_insert = 0;
-			add_change = 0;
-			++scan->count_copy;
+			/* if found, and it's a fully hashed file */
+			if (other_file && file_is_full_hashed_and_stable(scan->state, other_file)) {
+				/* assume that the file is a copy, and reuse the hash */
+				file_copy(other_file, file);
 
-			fprintf(stdlog, "scan:copy:%s:%s:%s:%s\n", other_disk->name, other_file->sub, disk->name, file->sub);
-			if (output) {
-				printf("copy %s%s -> %s%s\n", other_disk->dir, other_file->sub, disk->dir, file->sub);
+				/* revert old counter and use the copy one */
+				add_insert = 0;
+				add_change = 0;
+				++scan->count_copy;
+
+				fprintf(stdlog, "scan:copy:%s:%s:%s:%s\n", other_disk->name, other_file->sub, disk->name, file->sub);
+				if (output) {
+					printf("copy %s%s -> %s%s\n", other_disk->dir, other_file->sub, disk->dir, file->sub);
+				}
+
+				/* no need to continue the search */
+				break;
 			}
-
-			/* no need to continue the search */
-			break;
 		}
 	}
 

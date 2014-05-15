@@ -1641,8 +1641,6 @@ void randomize(void* void_ptr, unsigned size)
 	unsigned char* ptr = void_ptr;
 	unsigned i;
 
-	srand(time(0));
-
 	for(i=0;i<size;++i)
 		ptr[i] = rand();
 }

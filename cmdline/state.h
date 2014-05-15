@@ -65,6 +65,7 @@ struct snapraid_option {
 	int force_empty; /**< Forced dangerous operations of synching disks now empty. */
 	int force_uuid; /**< Forced dangerous operations of synching disks with uuid changed. */
 	int force_device; /**< Forced dangerous operations of using disks with save device id. */
+	int force_nocopy; /**< Force dangerous operations of synching files without using copy detection. */
 	int expect_unrecoverable; /**< Expect presence of unrecoverable error in checking or fixing. */
 	int expect_recoverable; /**< Expect presence of recoverable error in checking. */
 	int skip_device; /**< Skip devices matching checks. */
@@ -165,6 +166,11 @@ void state_write(struct snapraid_state* state);
  * Scans all the disks to update the state.
  */
 void state_scan(struct snapraid_state* state, int output);
+
+/**
+ * Sets the nanosecond timestamp of all files that have a zero value.
+ */
+void state_nano(struct snapraid_state* state);
 
 /**
  * Syncs the parity data.

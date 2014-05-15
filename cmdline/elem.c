@@ -428,6 +428,20 @@ void file_copy(struct snapraid_file* src_file, struct snapraid_file* dst_file)
 		/* LCOV_EXCL_STOP */
 	}
 
+	if (src_file->mtime_sec != dst_file->mtime_sec) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Internal inconsistency in copy file with different mtime_sec\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (src_file->mtime_nsec != dst_file->mtime_nsec) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Internal inconsistency in copy file with different mtime_nsec\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
 	for(i=0;i<dst_file->blockmax;++i) {
 		/* set a block with hash computed but without parity */
 		block_state_set(&dst_file->blockvec[i], BLOCK_STATE_REP);
@@ -435,6 +449,8 @@ void file_copy(struct snapraid_file* src_file, struct snapraid_file* dst_file)
 		/* copy the hash */
 		memcpy(dst_file->blockvec[i].hash, src_file->blockvec[i].hash, HASH_SIZE);
 	}
+
+	file_flag_set(dst_file, FILE_IS_COPY);
 }
 
 const char* file_name(const struct snapraid_file* file)
@@ -532,6 +548,17 @@ int file_namestamp_compare(const void* void_a, const void* void_b)
 	int ret;
 
 	ret = file_name_compare(void_a, void_b);
+	if (ret != 0)
+		return ret;
+
+	return file_stamp_compare(void_a, void_b);
+}
+
+int file_pathstamp_compare(const void* void_a, const void* void_b)
+{
+	int ret;
+
+	ret = file_path_compare(void_a, void_b);
 	if (ret != 0)
 		return ret;
 

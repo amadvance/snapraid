@@ -654,7 +654,15 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 						fprintf(stdlog, "error:%u:%s:%s: Unexpected data change\n", i, disk->name, file->sub);
 						fprintf(stderr, "Data change at file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
 						fprintf(stderr, "WARNING! Unexpected data modification of a file without parity!\n");
-						fprintf(stderr, "Try removing the file from the array and rerun the 'sync' command!\n");
+
+						if (file_flag_has(file, FILE_IS_COPY)) {
+							fprintf(stderr, "This file was detected as a copy of another file with the same name, size,\n");
+							fprintf(stderr, "and timestamp, but the file data isn't matching the assumed copy.\n");
+							fprintf(stderr, "If this is a false positive, and the files are expected to be different,\n");
+							fprintf(stderr, "you can 'sync' anyway using 'snapraid --force-nocopy sync'\n");
+						} else {
+							fprintf(stderr, "Try removing the file from the array and rerun the 'sync' command!\n");
+						}
 
 						++error;
 

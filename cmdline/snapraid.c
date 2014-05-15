@@ -64,6 +64,7 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-E, --force-empty     ", "-E") "  Force synching of disks that get empty\n");
 	printf("  " SWITCH_GETOPT_LONG("-U, --force-uuid      ", "-U") "  Force commands on disks with uuid changed\n");
 	printf("  " SWITCH_GETOPT_LONG("-D, --force-device    ", "-D") "  Force commands on disks with same device id\n");
+	printf("  " SWITCH_GETOPT_LONG("-N, --force-nocopy    ", "-N") "  Force commands disabling the copy detection\n");
 	printf("  " SWITCH_GETOPT_LONG("-s, --start BLKSTART  ", "-s") "  Start from the specified block number\n");
 	printf("  " SWITCH_GETOPT_LONG("-t, --count BLKCOUNT  ", "-t") "  Count of block to process\n");
 	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
@@ -249,7 +250,7 @@ struct option long_options[] = {
 	{ "force-empty", 0, 0, 'E' },
 	{ "force-uuid", 0, 0, 'U' },
 	{ "force-device", 0, 0, 'D' },
-	{ "find-by-name", 0, 0, 'N' }, /* deprecated in SnapRAID 4.0 */
+	{ "force-nocopy", 0, 0, 'N' },
 	{ "audit-only", 0, 0, 'a' },
 	{ "pre-hash", 0, 0, 'h' },
 	{ "speed-test", 0, 0, 'T' },
@@ -356,6 +357,7 @@ void signal_handler(int signal)
 #define OPERATION_SCRUB 9
 #define OPERATION_STATUS 10
 #define OPERATION_REWRITE 11
+#define OPERATION_NANO 12
 
 int main(int argc, char* argv[])
 {
@@ -385,6 +387,9 @@ int main(int argc, char* argv[])
 	os_init();
 	raid_init();
 	crc32c_init();
+
+	/* always different random numbers */
+	srand(time(0));
 
 	/* defaults */
 	config(conf, sizeof(conf), argv[0]);
@@ -509,10 +514,8 @@ int main(int argc, char* argv[])
 			opt.force_device = 1;
 			break;
 		case 'N' :
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "WARNING! Option --find-by-name, -N is deprecated and does nothing!\n");
+			opt.force_nocopy = 1;
 			break;
-			/* LCOV_EXCL_STOP */
 		case 'a' :
 			opt.auditonly = 1;
 			break;
@@ -658,6 +661,8 @@ int main(int argc, char* argv[])
 		operation = OPERATION_STATUS;
 	} else if (strcmp(argv[optind], "test-rewrite") == 0) {
 		operation = OPERATION_REWRITE;
+	} else if (strcmp(argv[optind], "test-nano") == 0) {
+		operation = OPERATION_NANO;
 	} else {
 		/* LCOV_EXCL_START */
 		fprintf(stderr, "Unknown command '%s'\n", argv[optind]);
@@ -749,6 +754,7 @@ int main(int argc, char* argv[])
 	case OPERATION_POOL :
 	case OPERATION_STATUS :
 	case OPERATION_REWRITE :
+	case OPERATION_NANO :
 		/* avoid to check and access parity disks if not needed */
 		opt.skip_parity_access = 1;
 		break;
@@ -906,6 +912,14 @@ int main(int argc, char* argv[])
 		}
 	} else if (operation == OPERATION_REWRITE) {
 		state_read(&state);
+
+		state_write(&state);
+
+		memory();
+	} else if (operation == OPERATION_NANO) {
+		state_read(&state);
+
+		state_nano(&state);
 
 		state_write(&state);
 

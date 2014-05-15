@@ -4,6 +4,14 @@ SnapRAID HISTORY
 6.2 2014/5
 ==========
  * Fixed the regression test when run as root.
+ * Added a new euristic to detect file copies. Now a file is assumed
+   to be a copy if name, size and nanosecond timestamp are matching,
+   but if the nanosecond part of the timestamp is 0, we require
+   the full path matching and not only the name.
+ * Added the -N, --force-nocopy option to disable completely
+   the copy detection. SnapRAID also suggest to use this option
+   in the error message of a data mismatch if caused by the
+   copy detection.
 
 6.1 2014/4
 ==========

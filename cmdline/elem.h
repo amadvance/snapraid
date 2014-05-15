@@ -203,6 +203,12 @@ struct snapraid_block {
  */
 #define FILE_IS_FINISHED 0x40
 
+/**
+ * If the file hash was obtained from a file copy
+ * identified by the same name, size and stamp.
+ */
+#define FILE_IS_COPY 0x80
+
 #define FILE_IS_HARDLINK 0x100 /**< If it's an hardlink. */
 #define FILE_IS_SYMLINK 0x200 /**< If it's a file symlink. */
 #define FILE_IS_SYMDIR 0x400 /**< If it's a dir symlink for Windows. Not yet supported. */
@@ -696,6 +702,7 @@ int file_path_compare_to_arg(const void* void_arg, const void* void_data);
 int file_name_compare(const void* void_a, const void* void_b);
 int file_stamp_compare(const void* void_a, const void* void_b);
 int file_namestamp_compare(const void* void_a, const void* void_b);
+int file_pathstamp_compare(const void* void_a, const void* void_b);
 
 /**
  * Computes the hash of a file path.
