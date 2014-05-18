@@ -63,7 +63,7 @@ void state_nano(struct snapraid_state* state)
 
 				/* open it */
 				/* O_NOFOLLOW: do not follow links to ensure to open the real file */
-				f = open(path, O_WRONLY | O_BINARY | O_NOFOLLOW);
+				f = open(path, O_RDONLY | O_BINARY | O_NOFOLLOW);
 				if (f == -1) {
 					/* LCOV_EXCL_START */
 					fprintf(stderr, "Error opening file '%s'. %s.\n", path, strerror(errno));
