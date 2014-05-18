@@ -1343,11 +1343,12 @@ close_and_continue:
 				}
 
 				/* set the original modification time */
-				ret = file_utime(file, f);
+				ret = fmtime(f, file->mtime_sec, file->mtime_nsec);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					close(f);
 
+					fprintf(stderr, "Error timing file '%s'. %s.\n", file->sub, strerror(errno));
 					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					printf("Stopping\n");
 					++unrecoverable_error;

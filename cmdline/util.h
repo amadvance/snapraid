@@ -558,5 +558,13 @@ int lock_lock(const char* file);
  */
 int lock_unlock(int f);
 
+/****************************************************************************/
+/* file */
+
+/**
+ * Changes the modification time of an open file.
+ */
+int fmtime(int f, int64_t mtime_sec, int mtime_nsec);
+
 #endif
 

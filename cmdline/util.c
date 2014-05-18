@@ -1690,3 +1690,52 @@ int lock_unlock(int f)
 }
 #endif
 
+/****************************************************************************/
+/* file */
+
+int fmtime(int f, int64_t mtime_sec, int mtime_nsec)
+{
+#if HAVE_FUTIMENS
+	struct timespec tv[2];
+#else
+	struct timeval tv[2];
+#endif
+	int ret;
+
+#if HAVE_FUTIMENS /* futimens() is preferred because it gives nanosecond precision */
+	tv[0].tv_sec = mtime_sec;
+	if (mtime_nsec != STAT_NSEC_INVALID)
+		tv[0].tv_nsec = mtime_nsec;
+	else
+		tv[0].tv_nsec = 0;
+	tv[1].tv_sec = tv[0].tv_sec;
+	tv[1].tv_nsec = tv[0].tv_nsec;
+
+	ret = futimens(f, tv);
+#elif HAVE_FUTIMES /* fallback to futimes() if nanosecond precision is not available */
+	tv[0].tv_sec = mtime_sec;
+	if (mtime_nsec != STAT_NSEC_INVALID)
+		tv[0].tv_usec = mtime_nsec / 1000;
+	else
+		tv[0].tv_usec = 0;
+	tv[1].tv_sec = tv[0].tv_sec;
+	tv[1].tv_usec = tv[0].tv_usec;
+
+	ret = futimes(f, tv);
+#elif HAVE_FUTIMESAT /* fallback to futimesat() for Solaris, it only has futimesat() */
+	tv[0].tv_sec = mtime_sec;
+	if (mtime_nsec != STAT_NSEC_INVALID)
+		tv[0].tv_usec = mtime_nsec / 1000;
+	else
+		tv[0].tv_usec = 0;
+	tv[1].tv_sec = tv[0].tv_sec;
+	tv[1].tv_usec = tv[0].tv_usec;
+
+	ret = futimesat(f, 0, tv);
+#else
+#error No function available to set file timestamps with sub-second precision
+#endif
+
+	return ret;
+}
+
