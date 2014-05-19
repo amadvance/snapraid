@@ -25,7 +25,7 @@ the error conditions that result in an immediate termination of the program.
 You can recognize this excluded code because it's enclosed between
 the LCOV_EXCL_START and LCOV_EXCL_STOP keywords.
 
-To test with the clang static anlayzer use:
+To test with the clang static analyzer use:
 
 	scan-build ./configure
 	scan-build make

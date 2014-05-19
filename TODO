@@ -26,12 +26,12 @@ to estimate the speed of the last minute, for each second.
 
 * Checks if splitting hash/parity computation in 4K pages
 can improve speed in sync. That should increase cache locality,
-becase we read the data two times for hash and and parity,
+because we read the data two times for hash and and parity,
 and if we manage to keep it in the cache, we should save time.
 
-* In the content file save the timestap of the parity files.
+* In the content file save the timestamp of the parity files.
 If they do not match, stop the processing.
-This can be done to avoid to use not syncronized parity and content files,
+This can be done to avoid to use not synchronized parity and content files,
 resulting in wrong data.
 But if the sync process is killed we need a way to resyncronize them.
 Or maybe we should allow parity never than content, but not viceversa.
@@ -80,8 +80,8 @@ rest of the block.
 The problem is that we don't have any hash to ensure that the block is partially recovered,
 or completely garbage. But it makes sense to anyway write the "most likely" correct one.
 
-* In the repair() function the euristic to detect if we recovered after the sync, can be extended
-to all the previous blocks, because we always proceeed in block order during a sync.
+* In the repair() function the heuristic to detect if we recovered after the sync, can be extended
+to all the previous blocks, because we always proceed in block order during a sync.
 So, if for a block we can detect that we recovered using updated parity data,
 also for all the previous blocks this is true.
 Anyway, the case where this information could be useful should be present
@@ -117,7 +117,7 @@ This feature can be enabled with a specific option, and available
 in Windows using Shadow Copy, and in Linux using Btrfs, and in a generic
 Unix using ZFS.
 See Jens's Windows script at: http://sourceforge.net/p/snapraid/discussion/1677233/thread/a1707211/
-Note that a different between Windows and Unix is that in Windows old shapshots
+Note that a different between Windows and Unix is that in Windows old snapshots
 are automatically deleted.
 
 * Use smaller hashes to reduce the memory occupation. We can truncate the 128 bits hash
@@ -142,7 +142,7 @@ existing filesystem.
 In the order of 0.01%. Not really worth to do it.
 - With NTFS the saving is also limited, because the "reserved" MFT of 12.5% is
 not really exclusively reserved, but can be used also for normal files,
-when all the remainig space is filled.
+when all the remaining space is filled.
 
 * Split the parity in multiple files and allow it to coexist with data
 in the same disk.
@@ -239,7 +239,7 @@ data doesn't overlap, do not recompute it.
 - It's going to work only in RAID5 mode and only in special cases.
 
 * Implements a multithread sync command.
-- At now it's questionable if it will result in a performance improvment.
+- At now it's questionable if it will result in a performance improvement.
 The murmur3 hash, and the RAID5/6 computations are so fast that even a single
 thread should be able to do them.
 Use the "snapraid -T" comment to see the speed.

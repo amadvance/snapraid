@@ -4,13 +4,13 @@ SnapRAID HISTORY
 6.2 2014/5
 ==========
  * Fixed the regression test when run as root.
- * Added a new euristic to detect file copies. Now a file is assumed
+ * Added a new heuristic to detect file copies. Now a file is assumed
    to be a copy if name, size and nanosecond timestamp are matching,
-   but if the nanosecond part of the timestamp is 0, we require
+   but if the nanosecond part of the timestamp is 0, it requires
    the full path matching and not only the name.
  * Added the -N, --force-nocopy option to disable completely
-   the copy detection. SnapRAID also suggest to use this option
-   in the error message of a data mismatch if caused by the
+   the copy detection. SnapRAID also suggests to use this option
+   in the error message of a data mismatch if likely caused by the
    copy detection.
 
 6.1 2014/4
@@ -99,7 +99,7 @@ SnapRAID HISTORY
    This improves the performance in sync for modified files.
  * Added a new "list" command to see the stored list of files.   
  * Removed the detailed list of errors from the screen output.
-   To get it you must explicitely use the -l, --log option.
+   To get it you must explicitly use the -l, --log option.
    It's now too detailed for the screen, because it contains a lot
    of info.
  * Changed the output format of some commands to make it similar
@@ -175,7 +175,7 @@ SnapRAID HISTORY
  * Fixed a directory creation problem in Windows when the "disk" option points to
    the root directory of a drive. Now SnapRAID won't complain about the
    inability to create such directory.
-   If you encouter this problem when trying to recover your data, just upgrade
+   If you encounter this problem when trying to recover your data, just upgrade
    to this version, and you'll be able to complete the recovering process.
    No need to upgrade for platforms different than Windows.
 
@@ -205,7 +205,7 @@ SnapRAID HISTORY
    symlink is saved and not the linked file.
    Note that Windows Symlinks to dirs and junctions are still not supported.
  * Files without read permission generate an error instead of a warning.
-   You now must explicitely exclude them in the configuration file with
+   You now must explicitly exclude them in the configuration file with
    exclusion rules.
  * In 'check' and 'fix', if verbose is enabled, prints the result for each
    processed file.
@@ -273,7 +273,7 @@ SnapRAID HISTORY
  * Fixed directory inclusion, in case the last rule is an "include" one.
  * Fixed very long paths in Windows. We now always use the special '\\?' prefix
    to remove the 260 chars limitation.
- * If a file is excluded, it prints explicitely which attribute caused the
+ * If a file is excluded, it prints explicitly which attribute caused the
    exclusion.   
  * Automatically excludes also the temporary copy of content file,
    the one with the ".tmp" extension.
@@ -397,7 +397,7 @@ SnapRAID HISTORY
 * Added support for multiple 'content' files. You can save extra copies to be
   able to verify the checksums also if you lose all the 'content' files in the
   parity disks.
-* Added a filtering include logic, where anything not explicitely included
+* Added a filtering include logic, where anything not explicitly included
   is excluded. For example, it allow to include only the files in a predefined
   set of directories.
 * The check command returns with an error code if any kind of error is present.

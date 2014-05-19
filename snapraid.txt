@@ -570,7 +570,7 @@ SnapRAID provides the following options:
         This happens when the system is under heavy pressure due all
         disks spinning and CPU busy, and in such extreme conditions,
         if your machine has a latent hardware problem, it's possible to
-        encouter silent errors what cannot be detected because the data
+        encounter silent errors what cannot be detected because the data
         is not yet hashed.
         To avoid this risk, you can enable the "pre-hash" mode and have
         all the data hashed two times to ensure its integrity.
@@ -629,14 +629,14 @@ SnapRAID provides the following options:
         option allows you to continue anyway.
 
     -N, --force-nocopy
-        In the "sync" command, disables the copy detection optimization.
-        Withouth this option SnapRAID assumes that files with the
+        In the "sync" command, disables the copy detection heuristic.
+        Without this option SnapRAID assumes that files with the
         same name, size, and nanosecond timestamp are copies with the
         same data.
         This allows to identify copied files from one dir to another,
         and to reuse the already computed hash information to detect
         silent errors in the copy.
-        This behaviour, in some rare cases, may result in false positives,
+        This behavior, in some rare cases, may result in false positives,
         and this option allow to resolve them.
 
     -l, --log FILE
@@ -859,7 +859,7 @@ Note also, that any file in data disks that is excluded from the parity
 computation, counts for its size as extra parity space for such data disk.
 
 ---- 7.8.1 autosave SIZE_IN_GIBIBYTES ----
-Automatically save the state when synching after the specified amount
+Automatically save the state when syncing after the specified amount
 of GiB processed.
 This option is useful to avoid to restart from scratch long "sync"
 commands interrupted by a machine crash, or any other event that
@@ -1054,7 +1054,7 @@ For example, if you have moved away some files from other disks after the last "
 you can retry to put them inplace, and retry the "fix".
 
 If you are satisfied of the recovering, you can now proceed further,
-but take care that after synching you will no more able to retry the
+but take care that after syncing you will no more able to retry the
 "fix" command!
 
 9.3 STEP 3 -> Check

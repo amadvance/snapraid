@@ -762,7 +762,7 @@ read for the first time,
 This happens when the system is under heavy pressure due all
 disks spinning and CPU busy, and in such extreme conditions,
 if your machine has a latent hardware problem, it\'s possible to
-encouter silent errors what cannot be detected because the data
+encounter silent errors what cannot be detected because the data
 is not yet hashed.
 To avoid this risk, you can enable the \[dq]pre\-hash\[dq] mode and have
 all the data hashed two times to ensure its integrity.
@@ -821,14 +821,14 @@ disk in the free space left in an already used disk. and this
 option allows you to continue anyway.
 .TP
 .B \-N, \-\-force\-nocopy
-In the \[dq]sync\[dq] command, disables the copy detection optimization.
-Withouth this option SnapRAID assumes that files with the
+In the \[dq]sync\[dq] command, disables the copy detection heuristic.
+Without this option SnapRAID assumes that files with the
 same name, size, and nanosecond timestamp are copies with the
 same data.
 This allows to identify copied files from one dir to another,
 and to reuse the already computed hash information to detect
 silent errors in the copy.
-This behaviour, in some rare cases, may result in false positives,
+This behavior, in some rare cases, may result in false positives,
 and this option allow to resolve them.
 .TP
 .B \-l, \-\-log FILE
@@ -1036,7 +1036,7 @@ any wasted space.
 Note also, that any file in data disks that is excluded from the parity
 computation, counts for its size as extra parity space for such data disk.
 .SS autosave SIZE_IN_GIBIBYTES 
-Automatically save the state when synching after the specified amount
+Automatically save the state when syncing after the specified amount
 of GiB processed.
 This option is useful to avoid to restart from scratch long \[dq]sync\[dq]
 commands interrupted by a machine crash, or any other event that
@@ -1353,7 +1353,7 @@ For example, if you have moved away some files from other disks after the last \
 you can retry to put them inplace, and retry the \[dq]fix\[dq].
 .PP
 If you are satisfied of the recovering, you can now proceed further,
-but take care that after synching you will no more able to retry the
+but take care that after syncing you will no more able to retry the
 \[dq]fix\[dq] command!
 .SS STEP 3 \-> Check 
 As paranoid check, you can now run a \[dq]check\[dq] command to ensure that everything
