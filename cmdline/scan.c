@@ -1472,7 +1472,7 @@ void state_scan(struct snapraid_state* state, int output)
 			}
 		}
 		if (done) {
-			fprintf(stderr, ". Performance won't be optimal.\n");
+			fprintf(stderr, ". Files order won't be optimal.\n");
 		}
 	}
 
@@ -1491,7 +1491,7 @@ void state_scan(struct snapraid_state* state, int output)
 		}
 	}
 	if (done) {
-		fprintf(stderr, ". Move operations won't be optimal (but you can live with that).\n");
+		fprintf(stderr, ". Move operations won't be optimal.\n");
 	}
 
 	/* checks for disks with changed UUID */
