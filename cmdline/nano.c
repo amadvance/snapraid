@@ -38,6 +38,8 @@ void state_nano(struct snapraid_state* state)
 			struct snapraid_file* file = j->data;
 
 			/* if the file has a zero nanosecond timestamp */
+			/* note that symbolic links are not in the file list */
+			/* and then are not processed */
 			if (file->mtime_nsec == 0) {
 				char path[PATH_MAX];
 				struct stat st;
@@ -52,15 +54,6 @@ void state_nano(struct snapraid_state* state)
 					nsec = rand() % 1000000000;
 				} while (nsec == 0);
 
-				/* uses stat to get the present timestamp */
-				ret = stat(path, &st);
-				if (ret == -1) {
-					/* LCOV_EXCL_START */
-					fprintf(stderr, "Error accessing file '%s'. %s.\n", path, strerror(errno));
-					continue;
-					/* LCOV_EXCL_STOP */
-				}
-
 				/* open it */
 				/* O_NOFOLLOW: do not follow links to ensure to open the real file */
 				f = open(path, O_RDONLY | O_BINARY | O_NOFOLLOW);
@@ -71,13 +64,35 @@ void state_nano(struct snapraid_state* state)
 					/* LCOV_EXCL_STOP */
 				}
 
-				/* set the tweaked modification time */
+				/* get the present timestamp, that may be different than the one */
+				/* in the content file */
+				ret = fstat(f, &st);
+				if (ret == -1) {
+					/* LCOV_EXCL_START */
+					close(f);
+					fprintf(stderr, "Error accessing file '%s'. %s.\n", path, strerror(errno));
+					continue;
+					/* LCOV_EXCL_STOP */
+				}
+
+				/* set the tweaked modification time, with new nano seconds */
 				ret = fmtime(f, st.st_mtime, nsec);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					close(f);
-
 					fprintf(stderr, "Error timing file '%s'. %s.\n", path, strerror(errno));
+					continue;
+					/* LCOV_EXCL_STOP */
+				}
+
+				/* uses fstat again to get the present timestamp */
+				/* this is needed because the value read */
+				/* may be different than the written one */
+				ret = fstat(f, &st);
+				if (ret == -1) {
+					/* LCOV_EXCL_START */
+					close(f);
+					fprintf(stderr, "Error accessing file '%s'. %s.\n", path, strerror(errno));
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -91,19 +106,8 @@ void state_nano(struct snapraid_state* state)
 					/* LCOV_EXCL_STOP */
 				}
 
-				/* uses stat again to get the present timestamp */
-				/* this is needed because the value read */
-				/* may be different than the written one */
-				ret = stat(path, &st);
-				if (ret == -1) {
-					/* LCOV_EXCL_START */
-					fprintf(stderr, "Error accessing file '%s'. %s.\n", path, strerror(errno));
-					continue;
-					/* LCOV_EXCL_STOP */
-				}
-
 				/* set the same nanosecond value in the content file */
-				/* note that if the second value is already matching */
+				/* note that if the seconds value is already matching */
 				/* the file won't be synched because the content file will */
 				/* contain the new updated timestamp */
 				file->mtime_nsec = STAT_NSEC(&st);
