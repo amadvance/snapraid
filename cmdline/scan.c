@@ -1467,7 +1467,7 @@ void state_scan(struct snapraid_state* state, int output)
 					done = 1;
 					fprintf(stderr, "WARNING! Physical offsets not supported for disk '%s'", disk->name);
 				} else {
-					fprintf(stderr, ", '%s", disk->name);
+					fprintf(stderr, ", '%s'", disk->name);
 				}
 			}
 		}
@@ -1486,7 +1486,7 @@ void state_scan(struct snapraid_state* state, int output)
 				done = 1;
 				fprintf(stderr, "WARNING! Inodes are not persistent for disks: '%s'", disk->name);
 			} else {
-				fprintf(stderr, ", '%s", disk->name);
+				fprintf(stderr, ", '%s'", disk->name);
 			}
 		}
 	}
@@ -1508,7 +1508,7 @@ void state_scan(struct snapraid_state* state, int output)
 				done = 1;
 				fprintf(stderr, "WARNING! UUID is changed for disks: '%s'", disk->name);
 			} else {
-				fprintf(stderr, ", '%s", disk->name);
+				fprintf(stderr, ", '%s'", disk->name);
 			}
 		}
 	}
@@ -1526,7 +1526,7 @@ void state_scan(struct snapraid_state* state, int output)
 				done = 1;
 				fprintf(stderr, "WARNING! UUID is unsupported for disks: '%s'", disk->name);
 			} else {
-				fprintf(stderr, ", '%s", disk->name);
+				fprintf(stderr, ", '%s'", disk->name);
 			}
 		}
 	}
