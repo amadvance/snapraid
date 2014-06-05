@@ -104,7 +104,7 @@ struct snapraid_filter {
  * This happens when a new block overwrite a just removed block, or an empty space.
  *
  * The block hash field IS set, and it represents the hash of the new data.
- * The parity for this disk is not updated, but it contains the old data referenced by the hash.
+ * The parity for this disk is not updated.
  */
 #define BLOCK_STATE_REP 3
 
