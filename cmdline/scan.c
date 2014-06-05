@@ -602,7 +602,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 	add_insert = 0;
 	add_change = 0;
 
-	/* then try findind it by name */
+	/* then try finding it by name */
 	file = tommy_hashdyn_search(&disk->pathset, file_path_compare_to_arg, sub, file_path_hash(sub));
 	if (file) {
 		/* if the file is without an inode */
