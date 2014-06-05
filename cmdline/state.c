@@ -189,6 +189,8 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 						fprintf(stderr, "Disks '%s' and '%s' are on the same device.\n", disk->dir, other->dir);
 #ifdef _WIN32
 						fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", disk->device);
+						fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
+						fprintf(stderr, "to change one of the disk serial.\n");
 #endif
 						/* in "fix" we allow to continue anyway */
 						if (strcmp(state->command, "fix") == 0) {
@@ -206,6 +208,8 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 					fprintf(stderr, "Disk '%s' and %s '%s' are on the same device.\n", disk->dir, lev_name(l), state->parity_path[l]);
 #ifdef _WIN32
 					fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", disk->device);
+					fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
+					fprintf(stderr, "to change one of the disk serial.\n");
 #endif
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
@@ -217,6 +221,8 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 				fprintf(stderr, "Disk '%s' and pool '%s' are on the same device.\n", disk->dir, state->pool);
 #ifdef _WIN32
 				fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", disk->device);
+				fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
+				fprintf(stderr, "to change one of the disk serial.\n");
 #endif
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
@@ -255,6 +261,8 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 					fprintf(stderr, "Parity '%s' and '%s' are on the same device.\n", state->parity_path[l], state->parity_path[j]);
 #ifdef _WIN32
 					fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", state->parity_device[l]);
+					fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
+					fprintf(stderr, "to change one of the disk serial.\n");
 #endif			
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
@@ -268,6 +276,8 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 				fprintf(stderr, "Pool '%s' and parity '%s' are on the same device.\n", state->pool, state->parity_path[l]);
 #ifdef _WIN32
 				fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", state->pool_device);
+				fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
+				fprintf(stderr, "to change one of the disk serial.\n");
 #endif
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
