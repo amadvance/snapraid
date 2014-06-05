@@ -1,6 +1,11 @@
 SnapRAID HISTORY
 ================
 
+6.3 2014/6 (BETA)
+=================
+ * The -N, --force-nocopy option now also works if you used previously
+   "sync" commands without it.
+
 6.2 2014/5
 ==========
  * Fixed the regression test when run as root.
