@@ -1298,7 +1298,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			case 'c' :
 				block_state_set(block, BLOCK_STATE_CHG);
 				break;
-			case 'p' :
+			case 'r' :
 				block_state_set(block, BLOCK_STATE_REP);
 				break;
 			}
