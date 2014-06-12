@@ -5,6 +5,13 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
+* Keep backup copies of the content file.
+Like snapraid.content.1, snapraid.content.2, snapraid.content.3 and so on.
+Note that the rotation should happen only one time for each sync,
+and not for intermediate sync write.
+
+* Auto exclude lock files.
+
 * Measures the time waited in blocking syscall for each disk,
 and prints stats of the disk speeds when the command finish,
 or when it's running.
