@@ -4008,6 +4008,9 @@ void state_read(struct snapraid_state* state)
 	state_map(state);
 
 	state_content_check(state, path);
+
+	/* mark that we read the content file, and it passed all the checks */
+	state->checked_read = 1;
 }
 
 void state_write(struct snapraid_state* state)
@@ -4087,6 +4090,24 @@ void state_write(struct snapraid_state* state)
 	while (i) {
 		struct snapraid_content* content = i->data;
 		char tmp[PATH_MAX];
+		char backup[PATH_MAX];
+
+		/* if the content file was checked reading it, it's a good candidate */
+		/* to be renamed as backup copy */
+		if (state->checked_read) {
+			pathprint(backup, sizeof(backup), "%s.backup", content->content);
+			if (rename(content->content, backup) != 0) {
+				/* ignore the error for not existing */
+				if (errno != ENOENT) {
+					/* LCOV_EXCL_START */
+					fprintf(stderr, "Error renaming the content file '%s' to '%s' in rename(). %s.\n", content->content, backup, strerror(errno));
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+			}
+		}
+
+		/* now renames the just written copy with the correct name */
 		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
 		if (rename(tmp, content->content) != 0) {
 			/* LCOV_EXCL_START */
@@ -4094,10 +4115,12 @@ void state_write(struct snapraid_state* state)
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
+
 		i = i->next;
 	}
 
 	state->need_write = 0; /* no write needed anymore */
+	state->checked_read = 0; /* what we wrote is not checked in read */
 }
 
 void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tommy_list* filterlist_disk, int filter_missing, int filter_error)

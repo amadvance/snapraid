@@ -1389,10 +1389,11 @@ SnapRAID stores the list and checksums of your files in the content file.
 It\'s a binary file, listing all the files present in your disk array,
 with all the checksums to verify their integrity.
 .PP
-You do not need to understand its format to use SnapRAID.
-.PP
 This file is read and written by the \[dq]sync\[dq] and \[dq]scrub\[dq] commands, and
-only read by \[dq]fix\[dq], \[dq]check\[dq] and \[dq]status\[dq].
+read by \[dq]fix\[dq], \[dq]check\[dq] and \[dq]status\[dq].
+.PP
+When saving a new copy, the previous one is renamed adding the \[dq].backup\[dq]
+extension.
 .SH PARITY 
 SnapRAID stores the parity information of your array in the parity
 files.

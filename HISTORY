@@ -5,6 +5,9 @@ SnapRAID HISTORY
 =================
  * The -N, --force-nocopy option now also works if you used previously
    "sync" commands without it.
+ * When saving the content file keep a copy of the previos one adding
+   the ".backup" extension.
+ * Auto exclude the lock file.
 
 6.2 2014/5
 ==========

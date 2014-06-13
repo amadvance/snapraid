@@ -1007,10 +1007,11 @@ Content
 	It's a binary file, listing all the files present in your disk array,
 	with all the checksums to verify their integrity.
 
-	You do not need to understand its format to use SnapRAID.
-
 	This file is read and written by the "sync" and "scrub" commands, and
-	only read by "fix", "check" and "status".
+	read by "fix", "check" and "status".
+
+	When saving a new copy, the previous one is renamed adding the ".backup"
+	extension.
 
 Parity
 	SnapRAID stores the parity information of your array in the parity
