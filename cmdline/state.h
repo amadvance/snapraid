@@ -130,7 +130,7 @@ struct snapraid_state {
 	 */
 	block_off_t loaded_paritymax;
 
-	int clear_undeterminate_hash; /**< Clear all the hash from CHG and DELETED blocks when reading the state from an incomplete sync. */
+	int clear_past_hash; /**< Clear all the hash from CHG and DELETED blocks when reading the state from an incomplete sync. */
 	time_t progress_start; /**< Start of processing for progress visualization. */
 	time_t progress_last; /**< Last update of progress visualization. */
 	time_t progress_interruption; /**< Start of the measure interruption. */

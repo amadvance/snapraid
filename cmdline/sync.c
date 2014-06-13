@@ -341,7 +341,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 	/* the sync process assumes that all the hashes are correct */
 	/* including the ones from CHG and DELETED blocks */
-	assert(state->clear_undeterminate_hash != 0);
+	assert(state->clear_past_hash != 0);
 
 	/* get the present time */
 	now = time(0);

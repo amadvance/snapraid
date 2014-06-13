@@ -191,8 +191,8 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 			/* we keep the hash making it an "old" hash, because the parity is still containing data for it */
 			break;
 		case BLOCK_STATE_CHG :
-			/* if we have not already cleared the undeterminated hash */
-			if (!state->clear_undeterminate_hash) {
+			/* if we have not already cleared the past hash */
+			if (!state->clear_past_hash) {
 				/* in these cases we don't know if the old state is still the one */
 				/* stored inside the parity, because after an aborted sync, the parity */
 				/* may be or may be not have been updated with the data that it's now */
@@ -417,8 +417,8 @@ static void scan_file_insert(struct snapraid_scan* scan, struct snapraid_file* f
 				/* copy the past hash of the block */
 				memcpy(block->hash, over_block->hash, HASH_SIZE);
 
-				/* if we have not already cleared the undeterminated hash */
-				if (!state->clear_undeterminate_hash) {
+				/* if we have not already cleared the past hash */
+				if (!state->clear_past_hash) {
 					/* in this case we don't know if the old state is still the one */
 					/* stored inside the parity, because after an aborted sync, the parity */
 					/* may be or may be not have been updated with the new data */

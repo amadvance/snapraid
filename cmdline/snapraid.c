@@ -800,13 +800,13 @@ int main(int argc, char* argv[])
 		state_scan(&state, 1);
 	} else if (operation == OPERATION_SYNC) {
 
-		/* in the next state read ensures to clear all the undeterminated hashes in case */
+		/* in the next state read ensures to clear all the past hashes in case */
 		/* we are reading from an incomplete sync */
 		/* The undeterminated hash are only for CHG/DELETED blocks for which we don't */
 		/* know if the previous interrupted sync was able to update or not the parity */
 		/* The sync process instead needs to trust this information because it's used */
 		/* to avoid to recompute the parity if all the input are equals as before. */
-		state.clear_undeterminate_hash = 1;
+		state.clear_past_hash = 1;
 
 		state_read(&state);
 

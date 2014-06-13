@@ -5,6 +5,10 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
+* Recognize if the content file is older than parity,
+and in case make a full sync after asking for configuration
+with a --force option.
+
 * Measures the time waited in blocking syscall for each disk,
 and prints stats of the disk speeds when the command finish,
 or when it's running.

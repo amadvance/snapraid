@@ -90,7 +90,7 @@ void state_init(struct snapraid_state* state)
 	state->lockfile[0] = 0;
 	state->level = 1; /* default is the lowest protection */
 	state->loaded_paritymax = 0;
-	state->clear_undeterminate_hash = 0;
+	state->clear_past_hash = 0;
 	state->no_conf = 0;
 
 	tommy_list_init(&state->disklist);
@@ -1343,7 +1343,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 
 			/* if the block contains a hash of past data */
 			/* and we are clearing such undeterminated hashes */
-			if (state->clear_undeterminate_hash
+			if (state->clear_past_hash
 				&& block_has_past_hash(block)
 			) {
 				/* set the hash value to INVALID */
@@ -1508,7 +1508,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			}
 
 			/* if we are clearing undeterminated hashes */
-			if (state->clear_undeterminate_hash) {
+			if (state->clear_past_hash) {
 				/* set the hash value to INVALID */
 				hash_invalid_set(deleted->block.hash);
 			}
@@ -2842,7 +2842,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 					/* if the block contains a hash of past data */
 					/* and we are clearing such undeterminated hashes */
-					if (state->clear_undeterminate_hash
+					if (state->clear_past_hash
 						&& block_has_past_hash(block)
 					) {
 						/* set the hash value to INVALID */
@@ -3061,7 +3061,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 						}
 
 						/* if we are clearing undeterminated hashes */
-						if (state->clear_undeterminate_hash) {
+						if (state->clear_past_hash) {
 							/* set the hash value to INVALID */
 							hash_invalid_set(deleted->block.hash);
 						}
