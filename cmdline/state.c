@@ -1476,9 +1476,6 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			/* allocate a new deleted block */
 			deleted = deleted_alloc();
 
-			/* insert it in the list of deleted blocks */
-			tommy_list_insert_tail(&disk->deletedlist, &deleted->node, deleted);
-
 			ret = sgetu32(f, &v_pos);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
@@ -1520,6 +1517,9 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
+
+			/* insert it in the list of deleted blocks */
+			tommy_list_insert_tail(&disk->deletedlist, &deleted->node, deleted);
 
 			/* insert the block in the block array */
 			tommy_arrayblk_grow(&disk->blockarr, v_pos + 1);
@@ -2771,12 +2771,11 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 				if (v_pos + v_count > blockmax) {
 					/* LCOV_EXCL_START */
+					fprintf(stderr, "Internal inconsistency in block size!\n");
 					if (state->opt.skip_content_check) {
-						fprintf(stderr, "Internal inconsistency in block size!\n");
-						fprintf(stderr, "Overriding from %u to %u...\n", blockmax, v_pos + v_count);
+						fprintf(stderr, "Overriding from %u to %u.\n", blockmax, v_pos + v_count);
 						blockmax = v_pos + v_count;
 					} else {
-						fprintf(stderr, "Internal inconsistency in block size!\n");
 						decoding_error(path, f);
 						exit(EXIT_FAILURE);
 					}
@@ -2917,13 +2916,12 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 				if (v_pos + v_count > blockmax) {
 					/* LCOV_EXCL_START */
+					fprintf(stderr, "Internal inconsistency in info size!\n");
 					if (state->opt.skip_content_check) {
-						fprintf(stderr, "Internal inconsistency in info size!\n");
-						fprintf(stderr, "Overriding from %u to %u...\n", blockmax, v_pos + v_count);
+						fprintf(stderr, "Overriding from %u to %u.\n", blockmax, v_pos + v_count);
 						blockmax = v_pos + v_count;
 					} else {
 						decoding_error(path, f);
-						fprintf(stderr, "Internal inconsistency in info size!\n");
 						exit(EXIT_FAILURE);
 					}
 					/* LCOV_EXCL_STOP */
@@ -3018,13 +3016,12 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 				if (v_pos + v_count > blockmax) {
 					/* LCOV_EXCL_START */
+					fprintf(stderr, "Internal inconsistency in hole size!\n");
 					if (state->opt.skip_content_check) {
-						fprintf(stderr, "Internal inconsistency in hole size!\n");
-						fprintf(stderr, "Overriding from %u to %u...\n", blockmax, v_pos + v_count);
+						fprintf(stderr, "Overriding from %u to %u.\n", blockmax, v_pos + v_count);
 						blockmax = v_pos + v_count;
 					} else {
 						decoding_error(path, f);
-						fprintf(stderr, "Internal inconsistency in hole size!\n");
 						exit(EXIT_FAILURE);
 					}
 					/* LCOV_EXCL_STOP */
@@ -3044,9 +3041,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 						/* allocate a new deleted block */
 						deleted = deleted_alloc();
-
-						/* insert it in the list of deleted blocks */
-						tommy_list_insert_tail(&disk->deletedlist, &deleted->node, deleted);
 
 						/* set the position */
 						deleted->block.parity_pos = v_pos;
@@ -3069,14 +3063,22 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 						/* we must not overwrite existing blocks */
 						if (disk_block_get(disk, v_pos) != BLOCK_EMPTY) {
 							/* LCOV_EXCL_START */
-							decoding_error(path, f);
 							fprintf(stderr, "Internal inconsistency for used hole!\n");
-							exit(EXIT_FAILURE);
+							if (state->opt.skip_content_check) {
+								fprintf(stderr, "Overriding as used.\n");
+								deleted_free(deleted);
+							} else {
+								decoding_error(path, f);
+								exit(EXIT_FAILURE);
+							}
 							/* LCOV_EXCL_STOP */
-						}
+						} else {
+							/* insert it in the list of deleted blocks */
+							tommy_list_insert_tail(&disk->deletedlist, &deleted->node, deleted);
 
-						/* insert the block in the block array */
-						tommy_arrayblk_set(&disk->blockarr, v_pos, &deleted->block);
+							/* insert the block in the block array */
+							tommy_arrayblk_set(&disk->blockarr, v_pos, &deleted->block);
+						}
 
 						/* go to next block */
 						++v_pos;
@@ -3430,7 +3432,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 		/* LCOV_EXCL_START */
 		fprintf(stderr, "Internal inconsistency in parity size in '%s' at offset %"PRIi64"\n", path, stell(f));
 		if (state->opt.skip_content_check) {
-			fprintf(stderr, "Overriding from %u to %u...\n", blockmax, parity_size(state));
+			fprintf(stderr, "Overriding from %u to %u.\n", blockmax, parity_size(state));
 			blockmax = parity_size(state);
 		} else {
 			exit(EXIT_FAILURE);
