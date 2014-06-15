@@ -239,27 +239,20 @@ static int file_is_full_invalid_parity_and_stable(struct snapraid_state* state, 
 		return 0;
 
 	/* check all blocks */
-	/* it should be enough to check only the first one */
-	/* because updates are always in forward direction, */
-	/* but we check all just to be sure */
 	for(i=0;i<file->blockmax;++i) {
 		struct snapraid_block* block = &file->blockvec[i];
+		snapraid_info info;
 
 		/* exclude blocks with parity */
 		if (!block_has_invalid_parity(block))
 			return 0;
 
-		/* exclude blocks with hash needing a rehash */
-		if (block_has_updated_hash(block)) {
-			snapraid_info info;
-		
-			/* get block specific info */
-			info = info_get(&state->infoarr, block->parity_pos);
+		/* get block specific info */
+		info = info_get(&state->infoarr, block->parity_pos);
 
-			/* if rehash fails */
-			if (info_get_rehash(info))
-				return 0;
-		}
+		/* if rehash fails */
+		if (info_get_rehash(info))
+			return 0;
 	}
 
 	return 1;
