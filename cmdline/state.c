@@ -78,6 +78,7 @@ void state_init(struct snapraid_state* state)
 	state->filter_hidden = 0;
 	state->autosave = 0;
 	state->need_write = 0;
+	state->checked_read = 0;
 	state->block_size = 256 * 1024; /* default 256 KiB */
 	state->raid_mode = RAID_MODE_CAUCHY;
 	for(l=0;l<LEV_MAX;++l) {
