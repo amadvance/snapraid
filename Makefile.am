@@ -302,9 +302,40 @@ endif
 	echo --- Silently corrupt some files, and sync with error presents
 	$(TESTENV) ./mktest$(EXEEXT) change 1 500 bench/disk1/a/*
 	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 500 bench/disk2/a/*
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-expect-recoverable  sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-expect-recoverable sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
+# Note that this fix -e command doesn't fix all the errors because
+# only the blocks touched by the sync are marked bad
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) fix -e
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check --test-expect-recoverable
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) fix
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) scrub
+	echo --- Abort sync with additions. Delete some of them, and add others and sync again.
+	echo --- This triggers files reallocation inside parity
+	mkdir bench/disk1/c
+	mkdir bench/disk1/d
+	mkdir bench/disk1/e
+	cp -pR bench/disk2/a/c* bench/disk1/c
+	cp -pR bench/disk2/a/d* bench/disk1/d
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-kill-after-sync sync
+	rm -r bench/disk1/c
+	cp -pR bench/disk2/a/e* bench/disk1/e
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	echo --- Abort sync with both deletions and additions. And delete and add some more and sync again.
+# Note that here we are depending of the previous state leaving dirs "d" and "e"
+	mkdir bench/disk1/f
+	cp -pR bench/disk3/a/f* bench/disk1/f
+	rm -r bench/disk1/d
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-kill-after-sync sync
+	mkdir bench/disk1/g
+	cp -pR bench/disk4/a/g* bench/disk1/g
+	rm -r bench/disk1/e
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
+	rm -r bench/disk1/f
+	rm -r bench/disk1/g
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Make a hole in the disk array and sync with --force-empty
 	mv bench/disk2 bench/disk2.old
 	mkdir bench/disk2
