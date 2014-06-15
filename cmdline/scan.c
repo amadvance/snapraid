@@ -293,28 +293,29 @@ static int file_is_full_hashed_and_stable(struct snapraid_state* state, struct s
 /**
  * Keeps the file as it's (or with only a name/inode modification).
  *
- * If a file contains only blocks with invalid parity, it's reallocated to ensure
+ * If the file is kept, nothing has to be done.
+ *
+ * But if a file contains only blocks with invalid parity, it's reallocated to ensure
  * to always minimize the space used in the parity.
  *
  * This could happen after a failed sync, when some other files are deleted,
- * and then new ones can be moved to fill the hole created.
+ * and then new ones can be moved backward to fill the hole created.
  */
 static void scan_file_keep(struct snapraid_scan* scan, struct snapraid_file* file)
 {
 	struct snapraid_disk* disk = scan->disk;
 
-	/* if the file has some valid block or rehash, keep it where it is */
-	if (!file_is_full_invalid_parity_and_stable(scan->state, file))
-		return;
+	/* if the file is full invalid, schedule a reinsert at later stage */
+	if (file_is_full_invalid_parity_and_stable(scan->state, file)) {
+		/* deallocate the file from the parity */
+		scan_file_deallocate(scan, file);
 
-	/* deallocate the file from the parity */
-	scan_file_deallocate(scan, file);
+		/* remove the file from the list */
+		tommy_list_remove_existing(&disk->filelist, &file->nodelist);
 
-	/* remove the file from the list */
-	tommy_list_remove_existing(&disk->filelist, &file->nodelist);
-
-	/* insert the file in the delayed block allocation */
-	tommy_list_insert_tail(&scan->file_insert_list, &file->nodelist, file);
+		/* insert the file in the delayed block allocation */
+		tommy_list_insert_tail(&scan->file_insert_list, &file->nodelist, file);
+	}
 }
 
 /**
