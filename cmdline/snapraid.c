@@ -65,6 +65,7 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-U, --force-uuid      ", "-U") "  Force commands on disks with uuid changed\n");
 	printf("  " SWITCH_GETOPT_LONG("-D, --force-device    ", "-D") "  Force commands on disks with same device id\n");
 	printf("  " SWITCH_GETOPT_LONG("-N, --force-nocopy    ", "-N") "  Force commands disabling the copy detection\n");
+	printf("  " SWITCH_GETOPT_LONG("-F, --force-full      ", "-F") "  Force commands requiring a full sync\n");
 	printf("  " SWITCH_GETOPT_LONG("-s, --start BLKSTART  ", "-s") "  Start from the specified block number\n");
 	printf("  " SWITCH_GETOPT_LONG("-t, --count BLKCOUNT  ", "-t") "  Count of block to process\n");
 	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
@@ -251,6 +252,7 @@ struct option long_options[] = {
 	{ "force-uuid", 0, 0, 'U' },
 	{ "force-device", 0, 0, 'D' },
 	{ "force-nocopy", 0, 0, 'N' },
+	{ "force-full", 0, 0, 'F' },
 	{ "audit-only", 0, 0, 'a' },
 	{ "pre-hash", 0, 0, 'h' },
 	{ "speed-test", 0, 0, 'T' },
@@ -330,7 +332,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:f:d:mep:o:s:t:i:l:ZEUDNahTC:vqHVG"
+#define OPTIONS "c:f:d:mep:o:s:t:i:l:ZEUDNFahTC:vqHVG"
 
 volatile int global_interrupt = 0;
 
@@ -516,6 +518,9 @@ int main(int argc, char* argv[])
 		case 'N' :
 			opt.force_nocopy = 1;
 			break;
+		case 'F' :
+			opt.force_full = 1;
+			break;
 		case 'a' :
 			opt.auditonly = 1;
 			break;
@@ -693,6 +698,34 @@ int main(int argc, char* argv[])
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
+
+		if (opt.force_nocopy) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "You cannot use -N, --force-nocopy with the '%s' command\n", command);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (opt.force_full) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "You cannot use -G, --force-full with the '%s' command\n", command);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	if (opt.force_full && opt.force_nocopy) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "You cannot use the -F, --force-full and -N, --force-nocopy options at the same time\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (opt.prehash && opt.force_nocopy) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "You cannot use the -h, --pre-hash and -N, --force-nocopy options at the same time\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 
 	switch (operation) {

@@ -30,7 +30,7 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
 .PD
-	[\-N, \-\-force\-nocopy]
+	[\-N, \-\-force\-nocopy] [\-F, \-\-force\-full]
 .PD 0
 .PP
 .PD
@@ -819,6 +819,7 @@ it stops proceeding, because it\'s not a supported configuration.
 But it could happen that you want to temporarily restore a lost
 disk in the free space left in an already used disk. and this
 option allows you to continue anyway.
+This option can be used only with the \[dq]fix\[dq] command.
 .TP
 .B \-N, \-\-force\-nocopy
 In the \[dq]sync\[dq] command, disables the copy detection heuristic.
@@ -830,6 +831,18 @@ and to reuse the already computed hash information to detect
 silent errors in the copy.
 This behavior, in some rare cases, may result in false positives,
 and this option allow to resolve them.
+This option can be used only with the \[dq]sync\[dq] command.
+.TP
+.B \-F, \-\-force\-full
+In the \[dq]sync\[dq] command, forces a full rebuild of the parity.
+This option can be used when you reverted back to an old content
+file, because you have lost the most recent one, and you still have
+the parity data.
+Instead of recomputing the parity from scratch, this allows
+to reuse the hashes present in the content file to validate data,
+and to maintain data protection using the old content file and the
+parity data you have.
+This option can be used only with the \[dq]sync\[dq] command.
 .TP
 .B \-l, \-\-log FILE
 Write a detailed log of errors found in check and fix.

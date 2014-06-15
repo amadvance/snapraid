@@ -1363,6 +1363,15 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				block_state_set(block, BLOCK_STATE_CHG);
 			}
 
+			/* if we want a full sync, marks block as invalid parity */
+			/* note that we do this after the force_nocopy option */
+			/* to avoid to mixup the two things */
+			if (state->opt.force_full
+				&& block_state_get(block) == BLOCK_STATE_BLK) {
+				/* convert from BLK to REP */
+				block_state_set(block, BLOCK_STATE_REP);
+			}
+
 			/* we must not overwrite existing blocks */
 			if (disk_block_get(disk, v_pos) != BLOCK_EMPTY) {
 				/* LCOV_EXCL_START */
@@ -2859,6 +2868,15 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 						hash_invalid_set(block->hash);
 						/* convert from REP to CHG block */
 						block_state_set(block, BLOCK_STATE_CHG);
+					}
+
+					/* if we want a full sync, marks block as invalid parity */
+					/* note that we do this after the force_nocopy option */
+					/* to avoid to mixup the two things */
+					if (state->opt.force_full
+						&& block_state_get(block) == BLOCK_STATE_BLK) {
+						/* convert from BLK to REP */
+						block_state_set(block, BLOCK_STATE_REP);
 					}
 
 					/* we must not overwrite existing blocks */

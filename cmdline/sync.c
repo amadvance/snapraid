@@ -1017,12 +1017,18 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 			/* LCOV_EXCL_STOP */
 		}
 
-		/* if the file is too small */
-		if (out_size < loaded_size) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "DANGER! The %s file %s is smaller than the expected %" PRId64 ".\n", lev_name(l), state->parity_path[l], loaded_size);
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
+		/* if we do a full sync, having a wrong parity size is expected */
+		if (!state->opt.force_full) {
+			/* if the file is too small */
+			if (out_size < loaded_size) {
+				/* LCOV_EXCL_START */
+				fprintf(stderr, "DANGER! The %s file %s is smaller than the expected %" PRId64 ".\n", lev_name(l), state->parity_path[l], loaded_size);
+				fprintf(stderr, "If this happens because you are using an old content file,\n");
+				fprintf(stderr, "you can 'sync' anyway using 'snapraid --force-full sync'\n");
+				fprintf(stderr, "to force a full rebuild of the parity.\n");
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
 		}
 
 		/* change the size of the parity file, truncating or extending it */

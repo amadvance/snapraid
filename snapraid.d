@@ -9,7 +9,7 @@ Synopsis
 	:	[-p, --percentage PERC] [-o, --older-than DAYS]
 	:	[-Z, --force-zero] [-E, --force-empty]
 	:	[-U, --force-uuid] [-D, --force-device]
-	:	[-N, --force-nocopy]
+	:	[-N, --force-nocopy] [-F, --force-full]
 	:	[-v, --verbose] [-l, --log FILE]
 	:	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
 	:	status|sync|scrub|fix|check|list|diff|dup|pool|rehash
@@ -582,6 +582,7 @@ Options
 		But it could happen that you want to temporarily restore a lost
 		disk in the free space left in an already used disk. and this
 		option allows you to continue anyway.
+		This option can be used only with the "fix" command.
 
 	-N, --force-nocopy
 		In the "sync" command, disables the copy detection heuristic.
@@ -593,6 +594,18 @@ Options
 		silent errors in the copy.
 		This behavior, in some rare cases, may result in false positives,
 		and this option allow to resolve them.
+		This option can be used only with the "sync" command.
+
+	-F, --force-full
+		In the "sync" command, forces a full rebuild of the parity.
+		This option can be used when you reverted back to an old content
+		file, because you have lost the most recent one, and you still have
+		the parity data.
+		Instead of recomputing the parity from scratch, this allows
+		to reuse the hashes present in the content file to validate data,
+		and to maintain data protection using the old content file and the
+		parity data you have.
+		This option can be used only with the "sync" command.
 
 	-l, --log FILE
 		Write a detailed log of errors found in check and fix.
