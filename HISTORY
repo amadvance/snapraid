@@ -8,6 +8,8 @@ SnapRAID HISTORY
  * When saving the content file keep a copy of the previos one adding
    the ".backup" extension.
  * Auto exclude the lock file.
+ * Don't prints the 'UUID set' message anymore because it's the normal
+   condition for empty disks.
 
 6.2 2014/5
 ==========
