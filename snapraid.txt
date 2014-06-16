@@ -644,12 +644,11 @@ SnapRAID provides the following options:
     -F, --force-full
         In the "sync" command, forces a full rebuild of the parity.
         This option can be used when you reverted back to an old content
-        file, because you have lost the most recent one, and you still have
-        the parity data.
+        file, like the backup one, and you still have the parity data.
         Instead of recomputing the parity from scratch, this allows
         to reuse the hashes present in the content file to validate data,
-        and to maintain data protection using the old content file and the
-        parity data you have.
+        and to maintain data protection during the "sync" process using
+        the old content file and the parity data you have.
         This option can be used only with the "sync" command.
 
     -l, --log FILE

@@ -7,6 +7,10 @@ SnapRAID HISTORY
    "sync" commands without it.
  * When saving the content file keep a copy of the previos one adding
    the ".backup" extension.
+ * Added a new -F, --force-full option that forces a full sync reusing
+   the hash data present in the content file.
+   This may be useful when using an old content file like the backup
+   one.
  * Auto exclude the lock file.
  * Don't prints the 'UUID set' message anymore because it's the normal
    condition for empty disks.
