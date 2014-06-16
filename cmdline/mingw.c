@@ -1143,6 +1143,12 @@ int filephy(const char* file, struct stat* st, uint64_t* physical)
 
 			CloseHandle(h);
 			return 0;
+		} else if (error == ERROR_NOT_SUPPORTED) {
+			/* for disks shared on network this operation is not supported */
+			*physical = FILEPHY_UNREPORTED_OFFSET;
+
+			CloseHandle(h);
+			return 0;
 		} else {
 			windows_errno(error);
 			CloseHandle(h);

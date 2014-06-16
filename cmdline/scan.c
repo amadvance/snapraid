@@ -1375,7 +1375,8 @@ void state_scan(struct snapraid_state* state, int output)
 			if (state->opt.force_order == SORT_PHYSICAL && file->size != 0) {
 				if (phy_file_last != 0 && file->physical == phy_last && phy_last != FILEPHY_WITHOUT_OFFSET) {
 					/* if verbose, prints the list of duplicates */
-					if (state->opt.verbose) {
+					/* if they are supposed real offsets */
+					if (state->opt.verbose && phy_last != FILEPHY_UNREPORTED_OFFSET) {
 						fprintf(stderr, "WARNING! Files '%s%s' and '%s%s' have the same physical offset %"PRId64".\n", disk->dir, phy_file_last->sub, disk->dir, file->sub, phy_last);
 					}
 					++phy_dup;
