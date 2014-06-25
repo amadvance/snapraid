@@ -4115,6 +4115,8 @@ void state_write(struct snapraid_state* state)
 	while (i) {
 		struct snapraid_content* content = i->data;
 		char tmp[PATH_MAX];
+
+#ifdef USE_BACKUP
 		char backup[PATH_MAX];
 
 		/* if the content file was checked reading it, it's a good candidate */
@@ -4131,6 +4133,7 @@ void state_write(struct snapraid_state* state)
 				}
 			}
 		}
+#endif
 
 		/* now renames the just written copy with the correct name */
 		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);

@@ -599,7 +599,7 @@ Options
 	-F, --force-full
 		In the "sync" command, forces a full rebuild of the parity.
 		This option can be used when you reverted back to an old content
-		file, like the backup one, and you still have the parity data.
+		file, and you still have the parity data.
 		Instead of recomputing the parity from scratch, this allows
 		to reuse the hashes present in the content file to validate data,
 		and to maintain data protection during the "sync" process using
@@ -1021,9 +1021,6 @@ Content
 
 	This file is read and written by the "sync" and "scrub" commands, and
 	read by "fix", "check" and "status".
-
-	When saving a new copy, the previous one is renamed adding the ".backup"
-	extension.
 
 Parity
 	SnapRAID stores the parity information of your array in the parity

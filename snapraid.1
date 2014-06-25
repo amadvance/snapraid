@@ -836,7 +836,7 @@ This option can be used only with the \[dq]sync\[dq] command.
 .B \-F, \-\-force\-full
 In the \[dq]sync\[dq] command, forces a full rebuild of the parity.
 This option can be used when you reverted back to an old content
-file, like the backup one, and you still have the parity data.
+file, and you still have the parity data.
 Instead of recomputing the parity from scratch, this allows
 to reuse the hashes present in the content file to validate data,
 and to maintain data protection during the \[dq]sync\[dq] process using
@@ -1403,9 +1403,6 @@ with all the checksums to verify their integrity.
 .PP
 This file is read and written by the \[dq]sync\[dq] and \[dq]scrub\[dq] commands, and
 read by \[dq]fix\[dq], \[dq]check\[dq] and \[dq]status\[dq].
-.PP
-When saving a new copy, the previous one is renamed adding the \[dq].backup\[dq]
-extension.
 .SH PARITY 
 SnapRAID stores the parity information of your array in the parity
 files.
