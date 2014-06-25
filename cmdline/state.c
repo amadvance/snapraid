@@ -1415,7 +1415,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 
 			if (v_pos >= blockmax) {
 				/* LCOV_EXCL_START */
-				fprintf(stderr, "Internal position inconsistency in 'inf' specification in '%s' at line %u\n", path, line);
+				fprintf(stderr, "Internal inconsistency in position for 'inf' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -3726,7 +3726,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 					/* consistency check */
 					if (block != disk_block_get(disk, block->parity_pos)) {
 						/* LCOV_EXCL_START */
-						fprintf(stderr, "Internal inconsistency mismatch for block %u state %u in file '%s'\n", block->parity_pos, block_state, file->sub);
+						fprintf(stderr, "Internal inconsistency in mismatch for block %u state %u in file '%s'\n", block->parity_pos, block_state, file->sub);
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}

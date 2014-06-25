@@ -213,7 +213,7 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 			break;
 		default:
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "Internal state inconsistency in scanning for block %u state %u\n", block->parity_pos, block_state);
+			fprintf(stderr, "Internal inconsistency in deallocating for block %u state %u\n", block->parity_pos, block_state);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -613,7 +613,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 			/* here the inode has to be different, otherwise we would have found it before */
 			if (file->inode == st->st_ino) {
 				/* LCOV_EXCL_START */
-				fprintf(stderr, "Internal inode  '%"PRIu64"' inconsistency for files '%s%s' as unexpected matching\n", file->inode, disk->dir, sub);
+				fprintf(stderr, "Internal inconsistency in inode '%"PRIu64"' for files '%s%s' as unexpected matching\n", file->inode, disk->dir, sub);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -622,7 +622,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 		/* for sure it cannot be already present */
 		if (file_flag_has(file, FILE_IS_PRESENT)) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "Internal path inconsistency for file '%s%s' matching and already present\n", disk->dir, sub);
+			fprintf(stderr, "Internal inconsistency in path for file '%s%s' matching and already present\n", disk->dir, sub);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
