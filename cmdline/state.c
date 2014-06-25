@@ -2372,9 +2372,16 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 			/* for each block in the file */
 			for(b=0;b<file->blockmax;++b) {
 				struct snapraid_block* block = &file->blockvec[b];
-				unsigned block_state;
+				unsigned block_state = block_state_get(block);
 
-				block_state = block_state_get(block);
+				/* consistency check */
+				if (block != disk_block_get(disk, block->parity_pos)) {
+					/* LCOV_EXCL_START */
+					fprintf(stderr, "Internal inconsistency mismatch for block %u state %u in file '%s'\n", block->parity_pos, block_state, file->sub);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
 				switch (block_state) {
 				case BLOCK_STATE_BLK :
 					sputsl("blk ", f);
@@ -2387,7 +2394,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 					break;
 				default:
 					/* LCOV_EXCL_START */
-					fprintf(stderr, "Internal state inconsistency in saving for block %u state %u\n", block->parity_pos, block_state);
+					fprintf(stderr, "Internal inconsistency in state for block %u state %u\n", block->parity_pos, block_state);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -2473,6 +2480,14 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 		for(b=0;b<blockmax;++b) {
 			if (is_block_deleted(disk, b)) {
 				struct snapraid_block* block = disk_block_get(disk, b);
+
+				/* consistency check */
+				if (block->parity_pos != b) {
+					/* LCOV_EXCL_START */
+					fprintf(stderr, "Internal inconsistency in delete position %u instead of %u\n", block->parity_pos, b);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
 			
 				sputsl("off ", f);
 				sputu32(b, f);
@@ -3694,7 +3709,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 					break;
 				default:
 					/* LCOV_EXCL_START */
-					fprintf(stderr, "Internal state inconsistency in saving for block %u state %u\n", v_pos, block_state);
+					fprintf(stderr, "Internal inconsistency in state for block %u state %u\n", v_pos, block_state);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -3704,8 +3719,19 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 				v_count = end - begin;
 				sputb32(v_count, f);
 
+				/* write hashes */
 				for(b=begin;b<end;++b) {
-					swrite(blockvec[b].hash, HASH_SIZE, f);
+					struct snapraid_block* block = blockvec + b;
+
+					/* consistency check */
+					if (block != disk_block_get(disk, block->parity_pos)) {
+						/* LCOV_EXCL_START */
+						fprintf(stderr, "Internal inconsistency mismatch for block %u state %u in file '%s'\n", block->parity_pos, block_state, file->sub);
+						exit(EXIT_FAILURE);
+						/* LCOV_EXCL_STOP */
+					}
+
+					swrite(block->hash, HASH_SIZE, f);
 				}
 
 				if (serror(f)) {
@@ -3800,6 +3826,14 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 				/* write all the hash */
 				while (begin < end) {
 					struct snapraid_block* block = disk_block_get(disk, begin);
+
+					/* consistency check */
+					if (block->parity_pos != begin) {
+						/* LCOV_EXCL_START */
+						fprintf(stderr, "Internal inconsistency in delete position %u instead of %u\n", block->parity_pos, begin);
+						exit(EXIT_FAILURE);
+						/* LCOV_EXCL_STOP */
+					}
 
 					swrite(block->hash, HASH_SIZE, f);
 
