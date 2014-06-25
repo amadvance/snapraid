@@ -235,6 +235,38 @@ int fsinfo(const char* path, int* has_persistent_inode)
 	return 0;
 }
 
+uint64_t tick(void)
+{
+#if HAVE_MACH_ABSOLUTE_TIME
+	/* for Mac OS X */
+	return match_absolute_time();
+#elif HAVE_CLOCK_GETTIME && (defined(CLOCK_MONOTONIC) || defined(CLOCK_MONOTONIC_RAW))
+	/* for Linux */
+	struct timespec tv;
+
+	/* nanosecond precision with clock_gettime() */
+#if defined(CLOCK_MONOTONIC_RAW)
+	if (clock_gettime(CLOCK_MONOTONIC_RAW, &tv) != 0) {
+#else
+	if (clock_gettime(CLOCK_MONOTONIC, &tv) != 0) {
+#endif
+		return 0;
+	}
+
+	return tv.tv_sec * 1000000000ULL + tv.tv_nsec;
+#else
+	/* other platforms */
+	struct timeval tv;
+
+	/* microsecond precision with gettimeofday() */
+	if (gettimeofday(&tv, 0) != 0) {
+		return 0;
+	}
+
+	return tv.tv_sec * 1000000ULL + tv.tv_usec;
+#endif
+}
+
 void os_init(void)
 {
 }

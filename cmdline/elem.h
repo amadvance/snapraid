@@ -293,6 +293,8 @@ struct snapraid_disk {
 	char dir[PATH_MAX]; /**< Mount point of the disk. It always terminates with /. */
 	uint64_t device; /**< Device identifier. */
 
+	uint64_t tick; /**< Usage time of the disk. */
+
 	/**
 	 * First free searching block.
 	 * Note that it doesn't necessarely point at the first free block,

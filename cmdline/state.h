@@ -118,6 +118,21 @@ struct snapraid_state {
 	tommy_arrayblkof infoarr; /**< Block information array. */
 
 	/**
+	 * Cumulative time used for parity disks.
+	 */
+	uint64_t tick[LEV_MAX];
+
+	/**
+	 * Cumulative time used for computations.
+	 */
+	uint64_t tick_cpu;
+
+	/**
+	 * Last time used for time measure.
+	 */
+	uint64_t tick_last;
+
+	/**
 	 * Required size of the parity file, computed from the loaded state.
 	 *
 	 * This size only counts BLK blocks, ignoring CHG, REL and DELETED ones,
@@ -250,6 +265,62 @@ void state_progress_stop(struct snapraid_state* state);
  * Restart the progress.
  */
 void state_progress_restart(struct snapraid_state* state);
+
+/**
+ * Set the usage time as wasted one not counted.
+ */
+static inline void state_usage_waste(struct snapraid_state* state)
+{
+	uint64_t now = tick();
+
+	state->tick_last = now;
+}
+
+/**
+ * Set the usage time for CPU.
+ */
+static inline void state_usage_cpu(struct snapraid_state* state)
+{
+	uint64_t now = tick();
+
+	/* increment the time spent in computations */
+	state->tick_cpu += now - state->tick_last;
+
+	state->tick_last = now;
+}
+
+/**
+ * Set the usage time for data disk.
+ */
+static inline void state_usage_disk(struct snapraid_state* state, struct snapraid_disk* disk)
+{
+	uint64_t now = tick();
+
+	/* increment the time spent in the data disk */
+	disk->tick += now - state->tick_last;
+
+	state->tick_last = now;
+}
+
+/**
+ * Set the usage time for parity disk.
+ */
+static inline void state_usage_parity(struct snapraid_state* state, unsigned level)
+{
+	uint64_t now = tick();
+
+	assert(level < LEV_MAX);
+
+	/* increment the time spent in the parity disk */
+	state->tick[level] += now - state->tick_last;
+
+	state->tick_last = now;
+}
+
+/**
+ * Prints the stats of the usage time.
+ */
+void state_usage_print(struct snapraid_state* state);
 
 /****************************************************************************/
 /* misc */

@@ -237,6 +237,14 @@ int filephy(const char* path, struct stat* st, uint64_t* physical);
 int fsinfo(const char* path, int* has_persistent_inode);
 
 /**
+ * Get the tick counter value.
+ *
+ * Note that the frequency is unspecified, becasue the time measure
+ * is meant to be used to compare the ratio between usage times.
+ */
+uint64_t tick(void);
+
+/**
  * Initializes the system.
  */
 void os_init(void);

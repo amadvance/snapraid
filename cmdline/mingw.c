@@ -1370,5 +1370,15 @@ retry:
 	return count;
 }
 
+uint64_t tick(void)
+{
+	LARGE_INTEGER t;
+
+	if (!QueryPerformanceCounter(&t))
+		return 0;
+
+	return t.QuadPart;
+}
+
 #endif
 

@@ -77,6 +77,9 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 		}
 	}
 
+	/* drop until now */
+	state_usage_waste(state);
+
 	countsize = 0;
 	countpos = 0;
 	if (state_progress_begin(state, blockstart, blockmax, countmax))
@@ -112,6 +115,9 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 
 			/* if we have to use the old hash */
 			rehash = info_get_rehash(info);
+
+			/* until now is CPU */
+			state_usage_cpu(state);
 
 			/* if the file is different than the current one, close it */
 			if (handle[j].file != 0 && handle[j].file != block_file_get(block)) {
@@ -211,6 +217,9 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
+
+			/* until now is disk */
+			state_usage_disk(state, disk);
 
 			countsize += read_size;
 
@@ -406,6 +415,9 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	autosavemissing = countmax; /* blocks to do */
 	autosavedone = 0; /* blocks done */
 
+	/* drop until now */
+	state_usage_waste(state);
+
 	countsize = 0;
 	countpos = 0;
 	if (state_progress_begin(state, blockstart, blockmax, countmax))
@@ -528,6 +540,9 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				continue;
 			}
 
+			/* until now is CPU */
+			state_usage_cpu(state);
+
 			/* if the file is different than the current one, close it */
 			if (handle[j].file != 0 && handle[j].file != block_file_get(block)) {
 				/* file we are processing for error reporting */
@@ -629,6 +644,9 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
+
+			/* until now is disk */
+			state_usage_disk(state, disk);
 
 			countsize += read_size;
 
@@ -758,10 +776,14 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 			/* if we have something to recover and enough parity */
 			if (something_to_recover && j == failed_count) {
+				/* until now is CPU */
+				state_usage_cpu(state);
+
 				/* read the parity */
 				/* we are sure that parity exists because */
 				/* we have at least one BLK block */
 				for(l=0;l<state->level;++l) {
+
 					ret = parity_read(parity[l], i, buffer[diskmax+l], state->block_size, stdlog);
 					if (ret == -1) {
 						/* LCOV_EXCL_START */
@@ -773,6 +795,9 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 						goto bail;
 						/* LCOV_EXCL_STOP */
 					}
+
+					/* until now is parity */
+					state_usage_parity(state, l);
 				}
 
 				/* try to fix the data */
@@ -827,6 +852,9 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				/* compute the parity */
 				raid_gen(diskmax, state->level, state->block_size, buffer);
 
+				/* until now is CPU */
+				state_usage_cpu(state);
+
 				/* write the parity */
 				for(l=0;l<state->level;++l) {
 					ret = parity_write(parity[l], i, buffer[diskmax+l], state->block_size);
@@ -840,6 +868,9 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 						goto bail;
 						/* LCOV_EXCL_STOP */
 					}
+
+					/* until now is parity */
+					state_usage_parity(state, l);
 				}
 			}
 
@@ -922,10 +953,15 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			state_write(state);
 
 			state_progress_restart(state);
+
+			/* drop until now */
+			state_usage_waste(state);
 		}
 	}
 
 	state_progress_end(state, countpos, countmax, countsize);
+
+	state_usage_print(state);
 
 	if (error || silent_error) {
 		printf("\n");

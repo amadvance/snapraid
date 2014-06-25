@@ -84,7 +84,10 @@ void state_init(struct snapraid_state* state)
 	for(l=0;l<LEV_MAX;++l) {
 		state->parity_path[l][0] = 0;
 		state->parity_device[l] = 0;
+		state->tick[l] = 0;
 	}
+	state->tick_cpu = 0;
+	state->tick_last = tick();
 	state->share[0] = 0;
 	state->pool[0] = 0;
 	state->pool_device = 0;
@@ -4309,10 +4312,13 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 		fflush(stdlog);
 	} else {
 		time_t now;
+		tommy_node* i;
+		unsigned l;
 
 		now = time(0);
 
 		if (state->progress_last != now) {
+			uint64_t tick_total;
 			time_t delta = now - state->progress_start - state->progress_subtract;
 
 			printf("%u%%, %u MiB", countpos * 100 / countmax, (unsigned)(countsize / (1024*1024)));
@@ -4320,6 +4326,16 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 			if (delta != 0) {
 				printf(", %u MiB/s", (unsigned)(countsize / (1024*1024) / delta));
 			}
+
+			tick_total = state->tick_cpu;
+			for(i=state->disklist;i!=0;i=i->next) {
+				struct snapraid_disk* disk = i->data;
+				tick_total += disk->tick;
+			}
+			for(l=0;l<state->level;++l)
+				tick_total += state->tick[l];
+			if (tick_total)
+				printf(", CPU %"PRIu64"%%", state->tick_cpu * 100ULL / tick_total);
 
 			if (delta > 5 && countpos > 0) {
 				unsigned m, h;
@@ -4350,6 +4366,52 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 	}
 
 	return 0;
+}
+
+void state_usage_print(struct snapraid_state* state)
+{
+	uint64_t tick_total;
+	uint64_t tick_max;
+	tommy_node* i;
+	unsigned l;
+
+	tick_max = 0;
+	tick_total = 0;
+	for(i=state->disklist;i!=0;i=i->next) {
+		struct snapraid_disk* disk = i->data;
+		tick_total += disk->tick;
+		if (disk->tick > tick_max)
+			tick_max = disk->tick;
+	}
+	for(l=0;l<state->level;++l) {
+		tick_total += state->tick[l];
+		if (state->tick[l] > tick_max)
+			tick_max = state->tick[l];
+	}
+
+	if (!tick_total)
+		return;
+
+	printf("Time for disk:");
+	for(i=state->disklist;i!=0;i=i->next) {
+		struct snapraid_disk* disk = i->data;
+		if (disk->tick == tick_max)
+			printf(" %s:", disk->name);
+		else
+			printf(" ");
+		printf("%"PRIu64"%%", disk->tick * 100ULL / tick_total);
+	}
+	printf("\n");
+
+	printf("Time for parity:");
+	for(l=0;l<state->level;++l) {
+		if (state->tick[l] == tick_max)
+			printf(" %s:", lev_config_name(l));
+		else
+			printf(" ");
+		printf("%"PRIu64"%%", state->tick[l] * 100ULL / tick_total);
+	}
+	printf("\n");
 }
 
 void generate_configuration(const char* path)

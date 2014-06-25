@@ -644,6 +644,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 	pathslash(disk->dir, sizeof(disk->dir));
 
 	disk->device = dev;
+	disk->tick = 0;
 	disk->first_free_block = 0;
 	disk->has_volatile_inodes = 0;
 	disk->has_unreliable_physical = 0;
