@@ -299,13 +299,6 @@ int filter_content(tommy_list* contentlist, const char* path)
 		if (pathcmp(tmp, path) == 0)
 			return -1;
 
-#if USE_BACKUP
-		/* exclude also the ".backup" copy */
-		pathprint(tmp, sizeof(tmp), "%s.backup", content->content);
-		if (pathcmp(tmp, path) == 0)
-			return -1;
-#endif
-
 		/* exclude also the ".lock" file */
 		pathprint(tmp, sizeof(tmp), "%s.lock", content->content);
 		if (pathcmp(tmp, path) == 0)

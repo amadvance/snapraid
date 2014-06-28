@@ -4150,25 +4150,6 @@ void state_write(struct snapraid_state* state)
 		struct snapraid_content* content = i->data;
 		char tmp[PATH_MAX];
 
-#ifdef USE_BACKUP
-		char backup[PATH_MAX];
-
-		/* if the content file was checked reading it, it's a good candidate */
-		/* to be renamed as backup copy */
-		if (state->checked_read) {
-			pathprint(backup, sizeof(backup), "%s.backup", content->content);
-			if (rename(content->content, backup) != 0) {
-				/* ignore the error for not existing */
-				if (errno != ENOENT) {
-					/* LCOV_EXCL_START */
-					fprintf(stderr, "Error renaming the content file '%s' to '%s' in rename(). %s.\n", content->content, backup, strerror(errno));
-					exit(EXIT_FAILURE);
-					/* LCOV_EXCL_STOP */
-				}
-			}
-		}
-#endif
-
 		/* now renames the just written copy with the correct name */
 		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
 		if (rename(tmp, content->content) != 0) {
