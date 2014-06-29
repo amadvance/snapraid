@@ -361,8 +361,6 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	unsigned line;
 	tommy_node* i;
 	unsigned l;
-	time_t t;
-	struct tm* tm;
 
 	/* copy the options */
 	state->opt = *opt;
@@ -373,18 +371,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	
 	state->command = command;
 
-	t = time(0);
-	tm = localtime(&t);
-
-	fprintf(stdlog, "version:%s\n", PACKAGE_VERSION);
-	fprintf(stdlog, "unixtime:%"PRIi64"\n", (int64_t)t);
-	if (tm) {
-		char datetime[64];
-		strftime(datetime, sizeof(datetime), "%Y-%m-%d %H:%M:%S", tm);
-		fprintf(stdlog, "time:%s\n", datetime);
-	}
 	fprintf(stdlog, "conf:%s\n", path);
-	fflush(stdlog);
 
 	f = sopen_read(path);
 	if (!f) {

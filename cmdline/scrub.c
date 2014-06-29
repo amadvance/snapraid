@@ -524,6 +524,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 
 	/* copy the info in the temp vector */
 	count = 0;
+	fprintf(stdlog, "block_count:%u\n", blockmax);
 	for(i=0;i<blockmax;++i) {
 		snapraid_info info = info_get(&state->infoarr, i);
 
@@ -544,6 +545,17 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 	/* sort it */
 	qsort(infomap, count, sizeof(snapraid_info), info_time_compare);
 
+	/* output the info map */
+	i = 0;
+	fprintf(stdlog, "info_count:%u\n", count);
+	while (i < count) {
+		unsigned j = i + 1;
+		while (j < count && info_get_time(infomap[i]) == info_get_time(infomap[j]))
+			++j;
+		fprintf(stdlog, "info_time:%"PRIu64":%u\n", (uint64_t)info_get_time(infomap[i]), j - i);
+		i = j;
+	}
+
 	/* don't check more block than the available ones */
 	if (countlimit > count)
 		countlimit = count;
@@ -560,6 +572,9 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 		/* if we select a 0 percentage, disable also the time limit */
 		timelimit = 0;
 	}
+
+	fprintf(stdlog, "time_limit:%"PRIu64"\n", (uint64_t)timelimit);
+	fprintf(stdlog, "count_limit:%u\n", countlimit);
 
 	/* free the temp vector */
 	free(infomap);

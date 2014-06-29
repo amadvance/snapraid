@@ -137,7 +137,6 @@ int state_status(struct snapraid_state* state)
 	fprintf(stdlog, "summary:hash:%s\n", hash_config_name(state->hash));
 	fprintf(stdlog, "summary:prev_hash:%s\n", hash_config_name(state->prevhash));
 	fprintf(stdlog, "summary:best_hash:%s\n", hash_config_name(state->besthash));
-	fprintf(stdlog, "summary:block_count:%u\n", blockmax);
 	fflush(stdlog);
 
 	/* copy the info a temp vector, and count bad/rehash/unsynced blocks */
@@ -146,6 +145,7 @@ int state_status(struct snapraid_state* state)
 	count = 0;
 	rehash = 0;
 	unsynced_blocks = 0;
+	fprintf(stdlog, "block_count:%u\n", blockmax);
 	for(i=0;i<blockmax;++i) {
 		int one_invalid;
 		int one_valid;
@@ -192,7 +192,6 @@ int state_status(struct snapraid_state* state)
 	fprintf(stdlog, "summary:has_unsynced:%u\n", unsynced_blocks);
 	fprintf(stdlog, "summary:has_rehash:%u\n", rehash);
 	fprintf(stdlog, "summary:has_bad:%u\n", bad);
-	fprintf(stdlog, "summary:time_count:%u\n", count);
 	fflush(stdlog);
 
 	if (!count) {
@@ -204,16 +203,16 @@ int state_status(struct snapraid_state* state)
 	/* sort the info to get the time info */
 	qsort(infomap, count, sizeof(snapraid_info), info_time_compare);
 
-	/* info for making the graph */
+	/* output the info map */
 	i = 0;
+	fprintf(stdlog, "info_count:%u\n", count);
 	while (i < count) {
 		unsigned j = i + 1;
 		while (j < count && info_get_time(infomap[i]) == info_get_time(infomap[j]))
 			++j;
-		fprintf(stdlog, "time:%"PRIu64":%u\n", (uint64_t)info_get_time(infomap[i]), j - i);
+		fprintf(stdlog, "info_time:%"PRIu64":%u\n", (uint64_t)info_get_time(infomap[i]), j - i);
 		i = j;
 	}
-	fflush(stdlog);
 
 	oldest = info_get_time(infomap[0]);
 	median = info_get_time(infomap[count / 2]);

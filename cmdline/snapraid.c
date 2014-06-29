@@ -385,6 +385,9 @@ int main(int argc, char* argv[])
 	const char* gen_conf;
 	const char* run;
 	int period;
+	time_t t;
+	struct tm* tm;
+	int i;
 
 	os_init();
 	raid_init();
@@ -795,6 +798,21 @@ int main(int argc, char* argv[])
 
 	/* open the log file */
 	log_open(log);
+
+	/* print generic info into the log */
+	t = time(0);
+	tm = localtime(&t);
+	fprintf(stdlog, "version:%s\n", PACKAGE_VERSION);
+	fprintf(stdlog, "unixtime:%"PRIi64"\n", (int64_t)t);
+	if (tm) {
+		char datetime[64];
+		strftime(datetime, sizeof(datetime), "%Y-%m-%d %H:%M:%S", tm);
+		fprintf(stdlog, "time:%s\n", datetime);
+	}
+	fprintf(stdlog, "command:%s\n", command);
+	for(i=0;i<argc;++i)
+		fprintf(stdlog, "argv:%u:%s\n", i, argv[i]);
+	fflush(stdlog);
 
 	if (!opt.skip_self)
 		selftest();
