@@ -4254,6 +4254,8 @@ int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, b
 		if (!state->opt.gui) {
 			printf("Not starting for interruption\n");
 		}
+		fprintf(stdlog, "sigint:0: SIGINT received\n");
+		fflush(stdlog);
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
@@ -4366,6 +4368,8 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 			printf("\n");
 			printf("Stopping for interruption at block %u\n", blockpos);
 		}
+		fprintf(stdlog, "sigint:%u: SIGINT received\n", blockpos);
+		fflush(stdlog);
 		return 1;
 		/* LCOV_EXCL_STOP */
 	}
