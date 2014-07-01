@@ -199,7 +199,7 @@ endif
 # Now sync with force-nocopy
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --force-nocopy sync
 	echo --- Nano
-	touch -d "2001-02-01 12:34:56" bench/disk1/a/a*
+	touch -t 200102011234.56 bench/disk1/a/a*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) test-nano
 	echo --- Check the --gen-conf command
