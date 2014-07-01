@@ -739,6 +739,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		}
 
 		/* if we have only silent errors we can try to fix them on-the-fly */
+		/* note the the fix is not written to disk, but used only to */
+		/* compute the new parity */
 		if (!error_on_this_block && silent_error_on_this_block) {
 			unsigned failed_mac;
 			int something_to_recover = 0;

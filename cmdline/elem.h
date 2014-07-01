@@ -80,11 +80,11 @@ struct snapraid_filter {
  * The block is new and not yet hashed.
  * This happens when a new block overwrite a just removed block, or an empty space.
  *
- * The block hash field IS set but it may be also INVALID or ZERO,
- * and it represents the hash of the OLD data.
+ * The block hash field MAY be set and it represents the hash of the OLD data.
+ * The hash may be also INVALID or ZERO.
  *
- * If the block was empty, the hash is set to the special ZERO value.
- * If the block was lost, the hash is set to the special INVALID value.
+ * If the OLD block was empty, the hash is set to the special ZERO value.
+ * If the OLD block was lost, the hash is set to the special INVALID value.
  *
  * The parity for this disk is not updated, but it contains the old data referenced by the hash.
  *
