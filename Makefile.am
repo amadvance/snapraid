@@ -187,6 +187,17 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
 	echo --- Dry
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) test-dry
+	echo --- Copy detection
+# Create a file and sync with it
+	echo 123 > bench/disk1/COPY
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+# Corrupt and move it to another disk
+	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 1 bench/disk1/COPY
+	mv bench/disk1/COPY bench/disk2/COPY
+# Now sync with failure as the data won't match
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-expect-failure sync
+# Now sync with force-nocopy
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --force-nocopy sync
 	echo --- Nano
 	touch -d "2001-02-01 12:34:56" bench/disk1/a/a*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
