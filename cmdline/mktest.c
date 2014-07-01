@@ -222,7 +222,7 @@ void fallback(int f, struct stat* st)
 	}
 }
 
-void writ(const char* path, int size, int silent_error)
+void writ(const char* path, int size)
 {
 	struct stat st;
 
@@ -257,6 +257,7 @@ void writ(const char* path, int size, int silent_error)
 			start = rnd(st.st_size);
 		else
 			start = 0;
+
 		if (fseek(f, start, SEEK_SET) != 0) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "Error seeking %s\n", path);
@@ -271,12 +272,103 @@ void writ(const char* path, int size, int silent_error)
 			--count;
 		}
 
+		fclose(f);
+	}
+}
+
+void damage(const char* path, int size)
+{
+	struct stat st;
+
+	if (!size)
+		return;
+
+	if (lstat(path, &st) != 0) {
+		if (errno == ENOENT)
+			return; /* it may be already deleted */
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Error accessing %s\n", path);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (S_ISREG(st.st_mode)) {
+		/* file */
+		FILE* f;
+		off_t start;
+		unsigned char* data;
+		int i;
+
+		f = fopen(path, "r+b");
+		if (!f) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error writing %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		/* not over the end */
+		if (size > st.st_size)
+			size = st.st_size;
+
+		/* start at random position inside the file */
+		if (size < st.st_size)
+			start = rnd(st.st_size - size);
+		else
+			start = 0;
+
+		data = malloc(size);
+		if (!data) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Low memoru %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (fseek(f, start, SEEK_SET) != 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error seeking %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (fread(data, size, 1, f) != 1) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error reading %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		/* corrupt ensuring always different data */
+		for(i=0;i<size;++i) {
+			unsigned char c;
+
+			do {
+				c = rnd(256);
+			} while (c == data[i]);
+
+			data[i] = c;
+		}
+
+		if (fseek(f, start, SEEK_SET) != 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error seeking %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (fwrite(data, size, 1, f) != 1) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error writing %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
 		/* flush changes before restoring the time */
 		fflush(f);
 		
 		/* restore the previous modification time */
-		if (silent_error)
-			fallback(fileno(f), &st);
+		fallback(fileno(f), &st);
 
 		fclose(f);
 	}
@@ -419,7 +511,7 @@ void change(const char* path, int size)
 
 		if (r == 0) {
 			/* write */
-			writ(path, size, 0);
+			writ(path, size);
 		} else if (r == 1) {
 			/* append */
 			append(path, size);
@@ -489,9 +581,8 @@ int main(int argc, char* argv[])
 					generate(i+1, rnd(size));
 			}
 		}
-	} else if (strcmp(argv[1], "damage") == 0 || strcmp(argv[1], "write") == 0) {
+	} else if (strcmp(argv[1], "write") == 0) {
 		int fail, size;
-		int silent_error = strcmp(argv[1], "damage") == 0;
 
 		if (argc < 6) {
 			/* LCOV_EXCL_START */
@@ -510,7 +601,30 @@ int main(int argc, char* argv[])
 
 		for(i=b;i<argc;++i) {
 			for(j=0;j<fail;++j) {
-				writ(argv[i], rndnotzero(size), silent_error);
+				writ(argv[i], rndnotzero(size));
+			}
+		}
+	} else if (strcmp(argv[1], "damage") == 0) {
+		int fail, size;
+
+		if (argc < 6) {
+			/* LCOV_EXCL_START */
+			help();
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		seed = atoi(argv[2]);
+		fail = atoi(argv[3]);
+		size = atoi(argv[4]);
+		b = 5;
+
+		/* sort the file names */
+		qsort(&argv[b], argc - b,  sizeof(argv[b]), qsort_strcmp);
+
+		for(i=b;i<argc;++i) {
+			for(j=0;j<fail;++j) {
+				damage(argv[i], rndnotzero(size));
 			}
 		}
 	} else if (strcmp(argv[1], "append") == 0) {
