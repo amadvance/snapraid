@@ -3,9 +3,6 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
-/* close the last file in the disk */
-in sync.c
-
 - Next
 
 * In status prints the allocated parity in each data disk.

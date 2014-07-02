@@ -1,7 +1,7 @@
 SnapRAID HISTORY
 ================
 
-6.3 2014/6 (BETA)
+6.3 2014/7 (BETA)
 =================
  * The -N, --force-nocopy option now also works if you used previously
    "sync" commands without it.
@@ -16,6 +16,8 @@ SnapRAID HISTORY
    each disk and what is spent in CPU computation.
  * In Windows, if the disk doesn't support reading physical offsets,
    allows SnapRAID to continue anyway.
+ * A more precise counting of how may block to scrub. Now it's exact
+   regardless the order of the blocks timing.
 
 6.2 2014/5
 ==========

@@ -35,7 +35,7 @@ struct snapraid_rehash {
 	struct snapraid_block* block;
 };
 
-static int state_scrub_process(struct snapraid_state* state, struct snapraid_parity** parity, block_off_t blockstart, block_off_t blockmax, time_t timelimit, block_off_t countlimit, time_t now)
+static int state_scrub_process(struct snapraid_state* state, struct snapraid_parity** parity, block_off_t blockstart, block_off_t blockmax, time_t timelimit, block_off_t lastlimit, time_t now)
 {
 	struct snapraid_handle* handle;
 	void* rehandle_alloc;
@@ -49,7 +49,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	data_off_t countsize;
 	block_off_t countpos;
 	block_off_t countmax;
-	block_off_t recountmax;
+	block_off_t countlast;
 	block_off_t autosavedone;
 	block_off_t autosavelimit;
 	block_off_t autosavemissing;
@@ -76,6 +76,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 	/* first count the number of blocks to process */
 	countmax = 0;
+	countlast = 0;
 	for(i=blockstart;i<blockmax;++i) {
 		time_t blocktime;
 		snapraid_info info;
@@ -104,13 +105,15 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			}
 
 			/* if the time is less than the limit, always include */
-			/* otherwise, check if we reached the max count */
+			/* otherwise, check if we reached the last limit count */
 			if (blocktime == timelimit) {
 				/* if we reached the count limit */
-				if (countmax >= countlimit) {
+				if (countlast >= lastlimit) {
 					/* skip it */
 					continue;
 				}
+
+				++countlast;
 			}
 		}
 
@@ -126,8 +129,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 	countsize = 0;
 	countpos = 0;
+	countlast = 0;
 	state_progress_begin(state, blockstart, blockmax, countmax);
-	recountmax = 0;
 	for(i=blockstart;i<blockmax;++i) {
 		time_t blocktime;
 		snapraid_info info;
@@ -160,17 +163,17 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			}
 
 			/* if the time is less than the limit, always include */
-			/* otherwise, check if we reaced the count max */
+			/* otherwise, check if we reached the last limit count */
 			if (blocktime == timelimit) {
 				/* if we reached the count limit */
-				if (recountmax >= countlimit) {
+				if (countlast >= lastlimit) {
 					/* skip it */
 					continue;
 				}
+
+				++countlast;
 			}
 		}
-
-		++recountmax;
 
 		/* one more block processed for autosave */
 		++autosavedone;
@@ -476,6 +479,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 {
 	block_off_t blockmax;
 	block_off_t countlimit;
+	block_off_t lastlimit;
 	block_off_t i;
 	time_t timelimit;
 	time_t recentlimit;
@@ -556,25 +560,33 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 		i = j;
 	}
 
-	/* don't check more block than the available ones */
+	/* no more than the full count */
 	if (countlimit > count)
 		countlimit = count;
 
+	/* decrease until we reach the specific recentlimit */
+	while (countlimit > 0 && info_get_time(infomap[countlimit - 1]) > recentlimit)
+		--countlimit;
+
+	/* if there is something to scrub */
 	if (countlimit > 0) {
-		/* get the time limit */
+		/* get the most recent time we want to scrub */
 		timelimit = info_get_time(infomap[countlimit - 1]);
 
-		/* don't scrub too recent blocks */
-		if (timelimit > recentlimit) {
-			timelimit = recentlimit;
-		}
+		/* count how many entries for this exact time we have to scrub */
+		/* if the blocks have all the same time, we end with countlimit == lastlimit */
+		lastlimit = 1;
+		while (countlimit > lastlimit && info_get_time(infomap[countlimit - lastlimit - 1]) == timelimit)
+			++lastlimit;
 	} else {
-		/* if we select a 0 percentage, disable also the time limit */
+		/* if nothing to scrub, disable also other limits */
 		timelimit = 0;
+		lastlimit = 0;
 	}
 
-	fprintf(stdlog, "time_limit:%"PRIu64"\n", (uint64_t)timelimit);
 	fprintf(stdlog, "count_limit:%u\n", countlimit);
+	fprintf(stdlog, "time_limit:%"PRIu64"\n", (uint64_t)timelimit);
+	fprintf(stdlog, "last_limit:%u\n", lastlimit);
 
 	/* free the temp vector */
 	free(infomap);
@@ -595,7 +607,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 
 	error = 0;
 
-	ret = state_scrub_process(state, parity_ptr, 0, blockmax, timelimit, countlimit, now);
+	ret = state_scrub_process(state, parity_ptr, 0, blockmax, timelimit, lastlimit, now);
 	if (ret == -1) {
 		++error;
 		/* continue, as we are already exiting */
