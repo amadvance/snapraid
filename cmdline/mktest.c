@@ -364,6 +364,8 @@ void damage(const char* path, int size)
 			/* LCOV_EXCL_STOP */
 		}
 
+		free(data);
+
 		/* flush changes before restoring the time */
 		fflush(f);
 		
