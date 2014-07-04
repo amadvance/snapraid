@@ -195,7 +195,7 @@ endif
 	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 1 bench/disk1/COPY
 	mv bench/disk1/COPY bench/disk2/COPY
 # Now sync with failure as the data won't match
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-expect-failure sync
+	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-expect-failure sync
 # Now sync with force-nocopy
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --force-nocopy sync
 	echo --- Nano
