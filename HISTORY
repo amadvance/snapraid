@@ -5,19 +5,17 @@ SnapRAID HISTORY
 =================
  * The -N, --force-nocopy option now also works if you used previously
    "sync" commands without it.
- * Added a new -F, --force-full option that forces a full sync reusing
-   the hash data present in the content file.
-   This may be useful when using an old content file like the backup
-   one.
- * Auto exclude the lock file.
- * Don't prints the 'UUID set' message anymore because it's the normal
-   condition for empty disks.
  * In 'sync' keeps stats about the amount of time spent waiting for
    each disk and what is spent in CPU computation.
- * In Windows, if the disk doesn't support reading physical offsets,
-   allows SnapRAID to continue anyway.
+ * Auto exclude the lock file.
  * A more precise counting of how may block to scrub. Now it's exact
    regardless the order of the blocks timing.
+ * Don't prints the 'UUID set' message anymore because it's the normal
+   condition for empty disks.
+ * In Windows, if the disk doesn't support reading physical offsets,
+   allows SnapRAID to continue anyway.
+ * Added a new -F, --force-full option that forces a full sync reusing
+   the hash data present in the content file.
 
 6.2 2014/5
 ==========
