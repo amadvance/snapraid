@@ -4342,7 +4342,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 			for(l=0;l<state->level;++l)
 				tick_total += state->tick[l];
 			if (tick_total)
-				printf(", CPU %"PRIu64"%%", state->tick_cpu * 100ULL / tick_total);
+				printf(", CPU %"PRIu64"%%", state->tick_cpu * 100U / tick_total);
 
 			if (delta > 5 && countpos > 0) {
 				unsigned m, h;
@@ -4408,7 +4408,7 @@ void state_usage_print(struct snapraid_state* state)
 			printf(" %s:", disk->name);
 		else
 			printf(" ");
-		printf("%"PRIu64"%%", disk->tick * 100ULL / tick_total);
+		printf("%"PRIu64"%%", disk->tick * 100U / tick_total);
 	}
 	printf("\n");
 
@@ -4418,7 +4418,7 @@ void state_usage_print(struct snapraid_state* state)
 			printf(" %s:", lev_config_name(l));
 		else
 			printf(" ");
-		printf("%"PRIu64"%%", state->tick[l] * 100ULL / tick_total);
+		printf("%"PRIu64"%%", state->tick[l] * 100U / tick_total);
 	}
 	printf("\n");
 }
