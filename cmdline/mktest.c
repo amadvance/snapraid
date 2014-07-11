@@ -64,7 +64,7 @@ void create_file(const char* path, int size)
 			/* LCOV_EXCL_STOP */
 		}
 	} else {
-		/* don't recreate a 0 file to avoid ZERO protection */
+		/* don't truncate files to 0 size to avoid ZERO file size protection */
 		++size;
 	}
 
@@ -291,6 +291,9 @@ void damage(const char* path, int size)
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	if (st.st_size == 0)
+		return;
 
 	if (S_ISREG(st.st_mode)) {
 		/* file */
