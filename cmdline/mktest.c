@@ -125,7 +125,7 @@ unsigned char* file_read(const char* path, int size, int extra_alloc)
 
 	data = malloc(size + extra_alloc);
 
-	f = open(path, O_RDONLY);
+	f = open(path, O_RDONLY | O_BINARY);
 	if (f < 0) {
 		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error opening file %s\n", path);
@@ -154,7 +154,7 @@ void file_write(const char* path, const unsigned char* data, int size, struct st
 {
 	int f;
 
-	f = creat(path, S_IRUSR | S_IWUSR);
+	f = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_NOFOLLOW, 0600);
 	if (f < 0) {
 		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error creating file %s\n", path);
