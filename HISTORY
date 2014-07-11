@@ -1,8 +1,8 @@
 SnapRAID HISTORY
 ================
 
-6.3 2014/7 (BETA)
-=================
+6.3 2014/7
+==========
  * The -N, --force-nocopy option now also works if you used previously
    "sync" commands without it.
  * In 'sync' keeps stats about the amount of time spent waiting for
