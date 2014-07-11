@@ -268,7 +268,7 @@ void writ(const char* path, int size)
 		/* write garbage, in case also over the end */
 		count = size;
 		while (count) {
-			fputc(rnd(256), f);
+			fputc(rndnotzero(256), f);
 			--count;
 		}
 
@@ -347,7 +347,7 @@ void damage(const char* path, int size)
 			unsigned char c;
 
 			do {
-				c = rnd(256);
+				c = rndnotzero(256);
 			} while (c == data[i]);
 
 			data[i] = c;
@@ -410,7 +410,7 @@ void append(const char* path, int size)
 		/* write garbage, in case also over the end */
 		count = rnd(size);
 		while (count) {
-			fputc(rnd(256), f);
+			fputc(rndnotzero(256), f);
 			--count;
 		}
 
