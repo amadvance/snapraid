@@ -123,6 +123,10 @@
 #endif
 #endif
 
+#if HAVE_MACH_MACH_TIME_H
+#include <mach/mach_time.h>
+#endif
+
 #if HAVE_DIRENT_H
 #include <dirent.h>
 #define NAMLEN(dirent) strlen((dirent)->d_name)

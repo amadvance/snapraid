@@ -239,7 +239,7 @@ uint64_t tick(void)
 {
 #if HAVE_MACH_ABSOLUTE_TIME
 	/* for Mac OS X */
-	return match_absolute_time();
+	return mach_absolute_time();
 #elif HAVE_CLOCK_GETTIME && (defined(CLOCK_MONOTONIC) || defined(CLOCK_MONOTONIC_RAW))
 	/* for Linux */
 	struct timespec tv;
