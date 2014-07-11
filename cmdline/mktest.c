@@ -17,6 +17,9 @@
 
 #include "portable.h"
 
+/****************************************************************************/
+/* random */
+
 /**
  * Pseudo random number generator.
  */
@@ -29,12 +32,19 @@ unsigned rnd(unsigned max)
 	return (seed >> 32) % max;
 }
 
-unsigned rndnotzero(unsigned max)
+unsigned rndnz(unsigned max)
 {
 	if (max <= 1)
 		return 1;
 	else
 		return rnd(max - 1) + 1;
+}
+
+void rndnz_range(unsigned char* data, int size)
+{
+	int i;
+	for(i=0;i<size;++i)
+		data[i] = rndnz(256);
 }
 
 char CHARSET[] = "qwertyuiopasdfghjklzxcvbnm1234567890 .-+";
@@ -50,12 +60,139 @@ void rnd_name(char* file)
 	*file = 0;
 }
 
-void create_file(const char* path, int size)
-{
-	FILE* f;
-	int count;
+/****************************************************************************/
+/* file */
 
-	/* remove the existing file if any */
+int file_cmp(const void* a, const void* b)
+{
+	return strcmp(a, b);
+}
+
+void file_fallback(int f, struct stat* st)
+{
+#if HAVE_FUTIMENS
+	struct timespec tv[2];
+#else
+	struct timeval tv[2];
+#endif
+	int ret;
+
+#if HAVE_FUTIMENS /* futimens() is preferred because it gives nanosecond precision */
+	tv[0].tv_sec = st->st_mtime;
+	if (STAT_NSEC(st) != STAT_NSEC_INVALID)
+		tv[0].tv_nsec = STAT_NSEC(st);
+	else
+		tv[0].tv_nsec = 0;
+	tv[1].tv_sec = tv[0].tv_sec;
+	tv[1].tv_nsec = tv[0].tv_nsec;
+
+	ret = futimens(f, tv);
+#elif HAVE_FUTIMES /* fallback to futimes() if nanosecond precision is not available */
+	tv[0].tv_sec = st->st_mtime;
+	if (STAT_NSEC(st) != STAT_NSEC_INVALID)
+		tv[0].tv_usec = STAT_NSEC(st) / 1000;
+	else
+		tv[0].tv_usec = 0;
+	tv[1].tv_sec = tv[0].tv_sec;
+	tv[1].tv_usec = tv[0].tv_usec;
+
+	ret = futimes(f, tv);
+#elif HAVE_FUTIMESAT /* fallback to futimesat() for Solaris, it only has futimesat() */
+	tv[0].tv_sec = st->st_mtime;
+	if (STAT_NSEC(st) != STAT_NSEC_INVALID)
+		tv[0].tv_usec = STAT_NSEC(st) / 1000;
+	else
+		tv[0].tv_usec = 0;
+	tv[1].tv_sec = tv[0].tv_sec;
+	tv[1].tv_usec = tv[0].tv_usec;
+
+	ret = futimesat(f, 0, tv);
+#else
+#error No function available to set file timestamps
+#endif
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Error restoring time\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+}
+
+unsigned char* file_read(const char* path, int size, int extra_alloc)
+{
+	unsigned char* data;
+	int f;
+
+	data = malloc(size + extra_alloc);
+
+	f = open(path, O_RDONLY);
+	if (f < 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Error opening file %s\n", path);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (read(f, data, size) != size) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Error reading file %s\n", path);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (close(f) != 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Error closing file %s\n", path);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	return data;
+}
+
+void file_write(const char* path, const unsigned char* data, int size, struct stat* st)
+{
+	int f;
+
+	f = creat(path, S_IRUSR | S_IWUSR);
+	if (f < 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Error creating file %s\n", path);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (write(f, data, size) != size) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Error writing file %s\n", path);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (st != 0) {
+		file_fallback(f, st);
+	}
+
+	if (close(f) != 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Error closing file %s\n", path);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+}
+
+/****************************************************************************/
+/* cmd */
+
+/**
+ * Creates a file with random content.
+ * - If the file exists it's rewritten, but avoiding to truncating it to 0.
+ */
+void cmd_generate_file(const char* path, int size)
+{
+	unsigned char* data;
+
+	/* remove the existing file/symlink if any */
 	if (remove(path) != 0) {
 		if (errno != ENOENT) {
 			/* LCOV_EXCL_START */
@@ -68,32 +205,28 @@ void create_file(const char* path, int size)
 		++size;
 	}
 
-	f = fopen(path, "wb");
-	if (!f) {
-		/* LCOV_EXCL_START */
-		fprintf(stderr, "Error writing file %s\n", path);
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
+	data = malloc(size);
 
-	count = size;
-	while (count) {
-		/* We don't write zero bytes because we want to test */
-		/* the recovering of new files, after an aborted sync */
-		/* If the files contains full blocks at zero */
-		/* this is an impossible condition to recover */
-		/* because we cannot differentiate between an unused block */
-		/* and a file filled with 0 */
-		fputc(rndnotzero(256), f);
-		--count;
-	}
+	/* We don't write zero bytes because we want to test */
+	/* the recovering of new files, after an aborted sync */
+	/* If the files contains full blocks at zero */
+	/* this is an impossible condition to recover */
+	/* because we cannot differentiate between an unused block */
+	/* and a file filled with 0 */
+	rndnz_range(data, size);
 
-	fclose(f);
+	file_write(path, data, size, 0);
+
+	free(data);
 }
 
-void create_symlink(const char* path, const char* linkto)
+/**
+ * Create a symlink.
+ * - If the file already exists, it's removed.
+ */
+void cmd_generate_symlink(const char* path, const char* linkto)
 {
-	/* remove the existing file if any */
+	/* remove the existing file/symlink if any */
 	if (remove(path) != 0) {
 		if (errno != ENOENT) {
 			/* LCOV_EXCL_START */
@@ -111,7 +244,10 @@ void create_symlink(const char* path, const char* linkto)
 	}
 }
 
-void generate(int disk, int size)
+/**
+ * Create a file or a symlink with a random name.
+ */
+void cmd_generate(int disk, int size)
 {
 	char path[PATH_MAX];
 	char* file;
@@ -163,75 +299,27 @@ void generate(int disk, int size)
 
 		rnd_name(linkto);
 
-		create_symlink(path, linkto);
+		cmd_generate_symlink(path, linkto);
 	} else
 #endif
 	{
 		/* file */
-		create_file(path, size);
+		cmd_generate_file(path, size);
 	}
 }
 
-void fallback(int f, struct stat* st)
-{
-#if HAVE_FUTIMENS
-	struct timespec tv[2];
-#else
-	struct timeval tv[2];
-#endif
-	int ret;
-
-#if HAVE_FUTIMENS /* futimens() is preferred because it gives nanosecond precision */
-	tv[0].tv_sec = st->st_mtime;
-	if (STAT_NSEC(st) != STAT_NSEC_INVALID)
-		tv[0].tv_nsec = STAT_NSEC(st);
-	else
-		tv[0].tv_nsec = 0;
-	tv[1].tv_sec = tv[0].tv_sec;
-	tv[1].tv_nsec = tv[0].tv_nsec;
-
-	ret = futimens(f, tv);
-#elif HAVE_FUTIMES /* fallback to futimes() if nanosecond precision is not available */
-	tv[0].tv_sec = st->st_mtime;
-	if (STAT_NSEC(st) != STAT_NSEC_INVALID)
-		tv[0].tv_usec = STAT_NSEC(st) / 1000;
-	else
-		tv[0].tv_usec = 0;
-	tv[1].tv_sec = tv[0].tv_sec;
-	tv[1].tv_usec = tv[0].tv_usec;
-
-	ret = futimes(f, tv);
-#elif HAVE_FUTIMESAT /* fallback to futimesat() for Solaris, it only has futimesat() */
-	tv[0].tv_sec = st->st_mtime;
-	if (STAT_NSEC(st) != STAT_NSEC_INVALID)
-		tv[0].tv_usec = STAT_NSEC(st) / 1000;
-	else
-		tv[0].tv_usec = 0;
-	tv[1].tv_sec = tv[0].tv_sec;
-	tv[1].tv_usec = tv[0].tv_usec;
-
-	ret = futimesat(f, 0, tv);
-#else
-#error No function available to set file timestamps
-#endif
-	if (ret != 0) {
-		/* LCOV_EXCL_START */
-		fprintf(stderr, "Error restoring time\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-}
-
-void writ(const char* path, int size)
+/**
+ * Write a partially a file.
+ * - The file must exist.
+ * - The file size is not changed.
+ * - The written data may be equal or not at the already existing one.
+ * - If it's a symlink nothing is done. 
+ */
+void cmd_write(const char* path, int size)
 {
 	struct stat st;
 
-	if (!size)
-		return;
-
 	if (lstat(path, &st) != 0) {
-		if (errno == ENOENT)
-			return; /* it may be already deleted */
 		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error accessing %s\n", path);
 		exit(EXIT_FAILURE);
@@ -239,76 +327,10 @@ void writ(const char* path, int size)
 	}
 
 	if (S_ISREG(st.st_mode)) {
-		/* file */
-		FILE* f;
-		off_t start;
-		int count;
-
-		f = fopen(path, "r+b");
-		if (!f) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Error writing %s\n", path);
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
-
-		/* start at random position inside the file */
-		if (st.st_size)
-			start = rnd(st.st_size);
-		else
-			start = 0;
-
-		if (fseek(f, start, SEEK_SET) != 0) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Error seeking %s\n", path);
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
-
-		/* write garbage, in case also over the end */
-		count = size;
-		while (count) {
-			fputc(rndnotzero(256), f);
-			--count;
-		}
-
-		fclose(f);
-	}
-}
-
-void damage(const char* path, int size)
-{
-	struct stat st;
-
-	if (!size)
-		return;
-
-	if (lstat(path, &st) != 0) {
-		if (errno == ENOENT)
-			return; /* it may be already deleted */
-		/* LCOV_EXCL_START */
-		fprintf(stderr, "Error accessing %s\n", path);
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	if (st.st_size == 0)
-		return;
-
-	if (S_ISREG(st.st_mode)) {
-		/* file */
-		FILE* f;
-		off_t start;
 		unsigned char* data;
-		int i;
+		off_t start;
 
-		f = fopen(path, "r+b");
-		if (!f) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Error writing %s\n", path);
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
+		data = file_read(path, st.st_size, 0);
 
 		/* not over the end */
 		if (size > st.st_size)
@@ -320,75 +342,85 @@ void damage(const char* path, int size)
 		else
 			start = 0;
 
-		data = malloc(size);
-		if (!data) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Low memoru %s\n", path);
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
+		rndnz_range(data + start, size);
 
-		if (fseek(f, start, SEEK_SET) != 0) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Error seeking %s\n", path);
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
+		file_write(path, data, st.st_size, 0);
 
-		if (fread(data, size, 1, f) != 1) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Error reading %s\n", path);
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
+		free(data);
+	}
+}
+
+/**
+ * Damage a file.
+ * - The file must exist.
+ * - The file size is not changed.
+ * - The written data is SURELY different than the already existing one.
+ * - The file timestamp is NOT modified.
+ * - If it's a symlink nothing is done.
+ */
+void cmd_damage(const char* path, int size)
+{
+	struct stat st;
+
+	/* here a 0 size means to change nothing */
+	/* as also the timestamp should not be changed */
+	if (!size)
+		return;
+
+	if (lstat(path, &st) != 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Error accessing %s\n", path);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (st.st_size == 0)
+		return;
+
+	if (S_ISREG(st.st_mode)) {
+		off_t start;
+		unsigned char* data;
+		int i;
+
+		data = file_read(path, st.st_size, 0);
+
+		/* not over the end */
+		if (size > st.st_size)
+			size = st.st_size;
+
+		/* start at random position inside the file */
+		if (size < st.st_size)
+			start = rnd(st.st_size - size);
+		else
+			start = 0;
 
 		/* corrupt ensuring always different data */
 		for(i=0;i<size;++i) {
 			unsigned char c;
 
 			do {
-				c = rndnotzero(256);
-			} while (c == data[i]);
+				c = rndnz(256);
+			} while (c == data[start + i]);
 
-			data[i] = c;
+			data[start + i] = c;
 		}
 
-		if (fseek(f, start, SEEK_SET) != 0) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Error seeking %s\n", path);
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
-
-		if (fwrite(data, size, 1, f) != 1) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Error writing %s\n", path);
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
+		file_write(path, data, st.st_size, &st);
 
 		free(data);
-
-		/* flush changes before restoring the time */
-		fflush(f);
-		
-		/* restore the previous modification time */
-		fallback(fileno(f), &st);
-
-		fclose(f);
 	}
 }
 
-void append(const char* path, int size)
+/**
+ * Append to a file.
+ * - The file must exist.
+ * - If it's a symlink nothing is done.
+ */
+void cmd_append(const char* path, int size)
 {
 	struct stat st;
 
-	if (!size)
-		return;
-
 	if (lstat(path, &st) != 0) {
-		if (errno == ENOENT)
-			return; /* it may be already deleted */
 		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error accessing %s\n", path);
 		exit(EXIT_FAILURE);
@@ -396,38 +428,29 @@ void append(const char* path, int size)
 	}
 
 	if (S_ISREG(st.st_mode)) {
-		FILE* f;
-		int count;
+		unsigned char* data;
 
-		f = fopen(path, "ab");
-		if (!f) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Error appending %s\n", path);
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
+		data = file_read(path, st.st_size, size);
 
-		/* write garbage, in case also over the end */
-		count = rnd(size);
-		while (count) {
-			fputc(rndnotzero(256), f);
-			--count;
-		}
+		rndnz_range(data + st.st_size, size);
 
-		fclose(f);
+		file_write(path, data, st.st_size + size, 0);
+
+		free(data);
 	}
 }
 
-void truncat(const char* path, int size)
+/**
+ * Truncate a file.
+ * - The file must exist.
+ * - The file is NEVER truncated to 0.
+ * - If it's a symlink nothing is done.
+ */
+void cmd_truncate(const char* path, int size)
 {
 	struct stat st;
 
-	if (!size)
-		return;
-
 	if (lstat(path, &st) != 0) {
-		if (errno == ENOENT)
-			return; /* it may be already deleted */
 		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error accessing %s\n", path);
 		exit(EXIT_FAILURE);
@@ -435,40 +458,44 @@ void truncat(const char* path, int size)
 	}
 
 	if (S_ISREG(st.st_mode)) {
-		FILE* f;
-		off_t start;
-		int count;
+		unsigned char* data;
 
-		f = fopen(path, "r+b");
-		if (!f) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Error writing %s\n", path);
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
+		data = file_read(path, st.st_size, size);
+
+		/* if file is empty, just rewrite it */
+		if (st.st_size == 0) {
+			size = 0;
+		} else {
+			/* don't truncate files to 0 size to avoid ZERO file size protection */
+			if (size >= st.st_size)
+				size = st.st_size - 1;
 		}
 
-		/* truncate at random position inside the file */
-		count = rnd(size);
-		if (count > st.st_size)
-			count = st.st_size;
-		start = st.st_size - count;
+		file_write(path, data, st.st_size - size, 0);
 
-		/* don't truncate to 0 to avoid ZERO protection */
-		if (start == 0)
-			start = 1;
-    
-		if (ftruncate(fileno(f), start) != 0) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Error truncating %s\n", path);
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
-
-		fclose(f);
+		free(data);
 	}
 }
 
-void change(const char* path, int size)
+/**
+ * Delete a file.
+ * - The file must exist.
+ */
+void cmd_delete(const char* path)
+{
+	if (remove(path) != 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Error removing %s\n", path);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+}
+
+/**
+ * Change a file. Or deleted/truncated/append/created.
+ * - The file must exist.
+ */
+void cmd_change(const char* path, int size)
 {
 	struct stat st;
 
@@ -476,8 +503,6 @@ void change(const char* path, int size)
 		return;
 
 	if (lstat(path, &st) != 0) {
-		if (errno == ENOENT)
-			return; /* it may be already deleted */
 		/* LCOV_EXCL_START */
 		fprintf(stderr, "Error accessing %s\n", path);
 		exit(EXIT_FAILURE);
@@ -507,7 +532,7 @@ void change(const char* path, int size)
 
 			rnd_name(linkto);
 
-			create_symlink(path, linkto);
+			cmd_generate_symlink(path, linkto);
 		}
 	} else if (S_ISREG(st.st_mode)) {
 		int r;
@@ -515,22 +540,13 @@ void change(const char* path, int size)
 		r = rnd(4);
 
 		if (r == 0) {
-			/* write */
-			writ(path, size);
+			cmd_write(path, size);
 		} else if (r == 1) {
-			/* append */
-			append(path, size);
+			cmd_append(path, size);
 		} else if (r == 2) {
-			/* truncate */
-			truncat(path, size);
+			cmd_truncate(path, size);
 		} else {
-			/* delete */
-			if (remove(path) != 0) {
-				/* LCOV_EXCL_START */
-				fprintf(stderr, "Error removing %s\n", path);
-				exit(EXIT_FAILURE);
-				/* LCOV_EXCL_STOP */
-			}
+			cmd_delete(path);
 		}
 	}
 }
@@ -545,11 +561,6 @@ void help(void)
 	printf("\tmktest change SEED FAIL_SIZE FILE\n");
 	printf("\tmktest append SEED FAIL_SIZE FILE\n");
 	printf("\tmktest truncate SEED FAIL_SIZE FILE\n");
-}
-
-int qsort_strcmp(const void* a, const void* b)
-{
-	return strcmp(a, b);
 }
 
 int main(int argc, char* argv[])
@@ -579,11 +590,13 @@ int main(int argc, char* argv[])
 		for(i=0;i<disk;++i) {
 			for(j=0;j<file;++j) {
 				if (j == 0)
-					generate(i+1, size);
+					/* create at least a big one */
+					cmd_generate(i+1, size);
 				else if (j == 1)
-					generate(i+1, 0);
+					/* create at least an empty one */
+					cmd_generate(i+1, 0);
 				else
-					generate(i+1, rnd(size));
+					cmd_generate(i+1, rnd(size));
 			}
 		}
 	} else if (strcmp(argv[1], "write") == 0) {
@@ -602,13 +615,11 @@ int main(int argc, char* argv[])
 		b = 5;
 
 		/* sort the file names */
-		qsort(&argv[b], argc - b,  sizeof(argv[b]), qsort_strcmp);
+		qsort(&argv[b], argc - b,  sizeof(argv[b]), file_cmp);
 
-		for(i=b;i<argc;++i) {
-			for(j=0;j<fail;++j) {
-				writ(argv[i], rndnotzero(size));
-			}
-		}
+		for(i=b;i<argc;++i)
+			for(j=0;j<fail;++j)
+				cmd_write(argv[i], rnd(size));
 	} else if (strcmp(argv[1], "damage") == 0) {
 		int fail, size;
 
@@ -625,13 +636,11 @@ int main(int argc, char* argv[])
 		b = 5;
 
 		/* sort the file names */
-		qsort(&argv[b], argc - b,  sizeof(argv[b]), qsort_strcmp);
+		qsort(&argv[b], argc - b,  sizeof(argv[b]), file_cmp);
 
-		for(i=b;i<argc;++i) {
-			for(j=0;j<fail;++j) {
-				damage(argv[i], rndnotzero(size));
-			}
-		}
+		for(i=b;i<argc;++i)
+			for(j=0;j<fail;++j)
+				cmd_damage(argv[i], rndnz(size)); /* at least one byte */
 	} else if (strcmp(argv[1], "append") == 0) {
 		int size;
 
@@ -647,11 +656,10 @@ int main(int argc, char* argv[])
 		b = 4;
 
 		/* sort the file names */
-		qsort(&argv[b], argc - b,  sizeof(argv[b]), qsort_strcmp);
+		qsort(&argv[b], argc - b,  sizeof(argv[b]), file_cmp);
 
-		for(i=b;i<argc;++i) {
-			append(argv[i], rndnotzero(size));
-		}
+		for(i=b;i<argc;++i)
+			cmd_append(argv[i], rnd(size));
 	} else if (strcmp(argv[1], "truncate") == 0) {
 		int size;
 
@@ -667,11 +675,10 @@ int main(int argc, char* argv[])
 		b = 4;
 
 		/* sort the file names */
-		qsort(&argv[b], argc - b,  sizeof(argv[b]), qsort_strcmp);
+		qsort(&argv[b], argc - b,  sizeof(argv[b]), file_cmp);
 
-		for(i=b;i<argc;++i) {
-			truncat(argv[i], rnd(size));
-		}
+		for(i=b;i<argc;++i)
+			cmd_truncate(argv[i], rnd(size));
 	} else if (strcmp(argv[1], "change") == 0) {
 		int size;
 
@@ -687,11 +694,10 @@ int main(int argc, char* argv[])
 		b = 4;
 
 		/* sort the file names */
-		qsort(&argv[b], argc - b,  sizeof(argv[b]), qsort_strcmp);
+		qsort(&argv[b], argc - b,  sizeof(argv[b]), file_cmp);
 
-		for(i=b;i<argc;++i) {
-			change(argv[i], rnd(size));
-		}
+		for(i=b;i<argc;++i)
+			cmd_change(argv[i], rnd(size));
 	} else {
 		/* LCOV_EXCL_START */
 		help();
