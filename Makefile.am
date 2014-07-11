@@ -121,11 +121,30 @@ maintainer-clean-local:
 
 # Automatic testing
 
+# Base options
+# --test-skip-device
+# Is required to allow testing in the same disk
+#
+# --test-skip-self
+# It just makes the test a little faster
+#
+# --test-force-order-alpha
+# Ensures to process files always in the same order despites
+# the inode, physical location, and dir order assigned by the OS.
 CHECKFLAGS_BASE = --test-skip-device --test-skip-self --test-force-order-alpha
+
+# Verbose options
 CHECKFLAGS_VERBOSE = $(CHECKFLAGS_BASE) -v -G
+
+# Quiet options
 CHECKFLAGS = $(CHECKFLAGS_BASE) -q
+
+# Number of files to create
 CHECKCOUNT = 1000
+
+# Size of files to create
 CHECKSIZE = 4000
+
 CONF = $(srcdir)/test/test-par6.conf
 HOLE = $(srcdir)/test/test-par6-hole.conf
 PAR1 = $(srcdir)/test/test-par1.conf
@@ -174,7 +193,7 @@ endif
 	echo DUP > bench/disk1/DUP1
 	echo DUP > bench/disk1/DUP2
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) diff > output.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-order-physical sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Some commands with a not empty array
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) dup -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) list -l test.log > output.log
@@ -241,7 +260,7 @@ endif
 	ln bench/disk3/file_hardlink1 bench/disk3/file_hardlink2
 	ln bench/disk3/file_hardlink1 bench/disk3/file_hardlink3
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) diff > output.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-fallocate -c $(PAR1) --test-force-order-inode sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-fallocate -c $(PAR1) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-sequential -c $(PAR1) check
 	echo --- Some commands with a not empty array

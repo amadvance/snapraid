@@ -894,6 +894,14 @@ static int dd_ino_compare(const void* void_a, const void* void_b)
 }
 #endif
 
+static int dd_name_compare(const void* void_a, const void* void_b)
+{
+	const struct dirent_sorted* a = void_a;
+	const struct dirent_sorted* b = void_b;
+
+	return strcmp(a->d_name, b->d_name);
+}
+
 /**
  * Returns the stat info of a dir entry.
  */
@@ -1024,11 +1032,17 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 	}
 
 #if HAVE_STRUCT_DIRENT_D_INO
-	/* if inodes are persistent */
-	if (!disk->has_volatile_inodes) {
+	if (state->opt.force_order == SORT_ALPHA) {
+		/* if requested sort alphabetically */
+		/* this is mainly done for testing to ensure to always */
+		/* process in the same way in different platforms */
+		tommy_list_sort(&list, dd_name_compare);
+	} else if (!disk->has_volatile_inodes) {
+		/* if inodes are persistent */
 		/* sort the list of dir entries by inodes */
 		tommy_list_sort(&list, dd_ino_compare);
 	}
+	/* otherwise just keep the insertion order */
 #endif
 
 	/* process the sorted dir entries */
