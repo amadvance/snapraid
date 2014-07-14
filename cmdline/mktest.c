@@ -516,6 +516,7 @@ void cmd_truncate(const char* path, int size)
 
 	if (S_ISREG(st.st_mode)) {
 		off_t off;
+		int f;
 
 		/* if file is empty, just rewrite it */
 		if (st.st_size == 0) {
@@ -528,9 +529,24 @@ void cmd_truncate(const char* path, int size)
 
 		off = st.st_size - size;
 
-		if (truncate(path, off) != 0) {
+		f = open(path, O_WRONLY | O_BINARY | O_NOFOLLOW);
+		if (f < 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error opening file %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (ftruncate(f, off) != 0) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "Error truncating file %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (close(f) != 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error closing file %s\n", path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
