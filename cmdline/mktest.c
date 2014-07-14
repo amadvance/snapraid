@@ -47,6 +47,22 @@ void rndnz_range(unsigned char* data, int size)
 		data[i] = rndnz(256);
 }
 
+void rndnz_damage(unsigned char* data, int size)
+{
+	int i;
+
+	/* corrupt ensuring always different data */
+	for(i=0;i<size;++i) {
+		unsigned char c;
+
+		do {
+			c = rndnz(256);
+		} while (c == data[i]);
+
+		data[i] = c;
+	}
+}
+
 char CHARSET[] = "qwertyuiopasdfghjklzxcvbnm1234567890 .-+";
 #define CHARSET_LEN (sizeof(CHARSET)-1)
 
@@ -68,7 +84,7 @@ int file_cmp(const void* a, const void* b)
 	return strcmp(a, b);
 }
 
-void file_fallback(int f, struct stat* st)
+int fallback(int f, struct stat* st)
 {
 #if HAVE_FUTIMENS
 	struct timespec tv[2];
@@ -110,75 +126,7 @@ void file_fallback(int f, struct stat* st)
 #else
 #error No function available to set file timestamps
 #endif
-	if (ret != 0) {
-		/* LCOV_EXCL_START */
-		fprintf(stderr, "Error restoring time\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-}
-
-unsigned char* file_read(const char* path, int size, int extra_alloc)
-{
-	unsigned char* data;
-	int f;
-
-	data = malloc(size + extra_alloc);
-
-	f = open(path, O_RDONLY | O_BINARY);
-	if (f < 0) {
-		/* LCOV_EXCL_START */
-		fprintf(stderr, "Error opening file %s\n", path);
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	if (read(f, data, size) != size) {
-		/* LCOV_EXCL_START */
-		fprintf(stderr, "Error reading file %s\n", path);
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	if (close(f) != 0) {
-		/* LCOV_EXCL_START */
-		fprintf(stderr, "Error closing file %s\n", path);
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	return data;
-}
-
-void file_write(const char* path, const unsigned char* data, int size, struct stat* st)
-{
-	int f;
-
-	f = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_NOFOLLOW, 0600);
-	if (f < 0) {
-		/* LCOV_EXCL_START */
-		fprintf(stderr, "Error creating file %s\n", path);
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	if (write(f, data, size) != size) {
-		/* LCOV_EXCL_START */
-		fprintf(stderr, "Error writing file %s\n", path);
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	if (st != 0) {
-		file_fallback(f, st);
-	}
-
-	if (close(f) != 0) {
-		/* LCOV_EXCL_START */
-		fprintf(stderr, "Error closing file %s\n", path);
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
+	return ret;
 }
 
 /****************************************************************************/
@@ -191,6 +139,7 @@ void file_write(const char* path, const unsigned char* data, int size, struct st
 void cmd_generate_file(const char* path, int size)
 {
 	unsigned char* data;
+	int f;
 
 	/* remove the existing file/symlink if any */
 	if (remove(path) != 0) {
@@ -215,7 +164,27 @@ void cmd_generate_file(const char* path, int size)
 	/* and a file filled with 0 */
 	rndnz_range(data, size);
 
-	file_write(path, data, size, 0);
+	f = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_NOFOLLOW, 0600);
+	if (f < 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Error creating file %s\n", path);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (write(f, data, size) != size) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Error writing file %s\n", path);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (close(f) != 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Error closing file %s\n", path);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
 
 	free(data);
 }
@@ -328,9 +297,8 @@ void cmd_write(const char* path, int size)
 
 	if (S_ISREG(st.st_mode)) {
 		unsigned char* data;
-		off_t start;
-
-		data = file_read(path, st.st_size, 0);
+		off_t off;
+		int f;
 
 		/* not over the end */
 		if (size > st.st_size)
@@ -338,13 +306,42 @@ void cmd_write(const char* path, int size)
 
 		/* start at random position inside the file */
 		if (size < st.st_size)
-			start = rnd(st.st_size - size);
+			off = rnd(st.st_size - size);
 		else
-			start = 0;
+			off = 0;
 
-		rndnz_range(data + start, size);
+		data = malloc(size);
 
-		file_write(path, data, st.st_size, 0);
+		rndnz_range(data, size);
+
+		f = open(path, O_WRONLY | O_BINARY | O_NOFOLLOW);
+		if (f < 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error creating file %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (lseek(f, off, SEEK_SET) != off) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error seeking file %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (write(f, data, size) != size) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error writing file %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (close(f) != 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error closing file %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
 
 		free(data);
 	}
@@ -378,11 +375,9 @@ void cmd_damage(const char* path, int size)
 		return;
 
 	if (S_ISREG(st.st_mode)) {
-		off_t start;
+		off_t off;
 		unsigned char* data;
-		int i;
-
-		data = file_read(path, st.st_size, 0);
+		int f;
 
 		/* not over the end */
 		if (size > st.st_size)
@@ -390,22 +385,63 @@ void cmd_damage(const char* path, int size)
 
 		/* start at random position inside the file */
 		if (size < st.st_size)
-			start = rnd(st.st_size - size);
+			off = rnd(st.st_size - size);
 		else
-			start = 0;
+			off = 0;
 
-		/* corrupt ensuring always different data */
-		for(i=0;i<size;++i) {
-			unsigned char c;
+		data = malloc(size);
 
-			do {
-				c = rndnz(256);
-			} while (c == data[start + i]);
-
-			data[start + i] = c;
+		f = open(path, O_RDWR | O_BINARY | O_NOFOLLOW);
+		if (f < 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error creating file %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 
-		file_write(path, data, st.st_size, &st);
+		if (lseek(f, off, SEEK_SET) != off) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error seeking file %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (read(f, data, size) != size) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error writing file %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		rndnz_damage(data, size);
+
+		if (lseek(f, off, SEEK_SET) != off) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error seeking file %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (write(f, data, size) != size) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error writing file %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (fallback(f, &st) != 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error setting time for file %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (close(f) != 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error closing file %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
 
 		free(data);
 	}
@@ -429,12 +465,33 @@ void cmd_append(const char* path, int size)
 
 	if (S_ISREG(st.st_mode)) {
 		unsigned char* data;
+		int f;
 
-		data = file_read(path, st.st_size, size);
+		data = malloc(size);
 
-		rndnz_range(data + st.st_size, size);
+		rndnz_range(data, size);
 
-		file_write(path, data, st.st_size + size, 0);
+		f = open(path, O_WRONLY | O_APPEND | O_BINARY | O_NOFOLLOW);
+		if (f < 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error opening file %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (write(f, data, size) != size) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error writing file %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (close(f) != 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error closing file %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
 
 		free(data);
 	}
@@ -458,9 +515,7 @@ void cmd_truncate(const char* path, int size)
 	}
 
 	if (S_ISREG(st.st_mode)) {
-		unsigned char* data;
-
-		data = file_read(path, st.st_size, size);
+		off_t off;
 
 		/* if file is empty, just rewrite it */
 		if (st.st_size == 0) {
@@ -471,9 +526,14 @@ void cmd_truncate(const char* path, int size)
 				size = st.st_size - 1;
 		}
 
-		file_write(path, data, st.st_size - size, 0);
+		off = st.st_size - size;
 
-		free(data);
+		if (truncate(path, off) != 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error truncating file %s\n", path);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
 	}
 }
 
