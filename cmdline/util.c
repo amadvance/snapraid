@@ -1438,16 +1438,54 @@ size_t malloc_counter(void)
 	return mcounter;
 }
 
+static int malloc_printn(int f, size_t value)
+{
+	char buf[32];
+	int i;
+
+	if (!value) {
+		return write(2, buf, 2);
+	}
+
+	i = sizeof(buf);
+	while (value) {
+		buf[--i] = (value % 10) + '0';
+		value /= 10;
+	}
+
+	return write(f, buf + i, sizeof(buf) - i);
+}
+
+static void malloc_fail(size_t size)
+{
+	/* don't use printf to avoid any possible extra allocation */
+	/* LCOV_EXCL_START */
+	int f = 2; /* stderr */
+
+	if (write(f, "Low Memory\n", 11) < 0)
+		return;
+	if (write(f, "Allocating ", 11) < 0)
+		return;
+	if (malloc_printn(f, size) < 0)
+		return;
+	if (write(f, " bytes\n", 7) < 0)
+		return;
+	if (write(f, "Allocated ", 10) < 0)
+		return;
+	if (malloc_printn(f, malloc_counter()) < 0)
+		return;
+	if (write(f, " bytes\n", 7) < 0)
+		return;
+	/* LCOV_EXCL_STOP */
+}
+
 void* malloc_nofail(size_t size)
 {
 	void* ptr = malloc(size);
 
 	if (!ptr) {
 		/* LCOV_EXCL_START */
-		/* don't use printf to avoid any possible extra allocation */
-		if (write(2, "Low Memory\n", 11) != 11) {
-			/* ignore error */
-		}
+		malloc_fail(size);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1478,10 +1516,7 @@ char* strdup_nofail(const char* str)
 
 	if (!ptr) {
 		/* LCOV_EXCL_START */
-		/* don't use printf to avoid any possible extra allocation */
-		if (write(2, "Low Memory\n", 11) != 11) {
-			/* ignore error */
-		}
+		malloc_fail(size);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
