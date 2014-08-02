@@ -949,6 +949,9 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		) {
 			autosavedone = 0; /* restart the counter */
 
+			/* until now is CPU */
+			state_usage_cpu(state);
+
 			state_progress_stop(state);
 
 			printf("Autosaving...\n");
