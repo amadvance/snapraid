@@ -194,16 +194,6 @@ void raid_zero(void *zero)
 	raid_zero_block = zero;
 }
 
-/**
- * Buffer for raid_rec_dataonly().
- */
-static void *raid_waste_block;
-
-void raid_waste(void *waste)
-{
-	raid_waste_block = waste;
-}
-
 /*
  * Forwarders for parity computation.
  *
@@ -287,40 +277,76 @@ void raid_invert(uint8_t *M, uint8_t *V, int n)
  *
  * This is the parity expressed as Pa,Qa,Ra,Sa,Ta,Ua
  * in the equations.
- *
- * Note that all the other parities not in the ip[] vector
- * are destroyed.
  */
 void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v)
 {
 	void *p[RAID_PARITY_MAX];
 	void *pa[RAID_PARITY_MAX];
-	int i;
+	int i, j;
+	int np;
+	void* latest;
 
-	for (i = 0; i < nr; ++i) {
-		/* keep a copy of the parity buffer */
-		p[i] = v[nd+ip[i]];
+	/* number of parities used */
+	np = ip[nr - 1] + 1;
 
-		/* buffer for missing data blocks */
-		pa[i] = v[id[i]];
+	/* latest missing data block */
+	latest = v[id[nr - 1]];
 
-		/* set at zero the missing data blocks */
-		v[id[i]] = raid_zero_block;
+	/* setup pointers for delta computation */
+	for (i = 0, j = 0; i < np; ++i) {
+		/* keep a copy of the original parity vector */
+		p[i] = v[nd + i];
 
-		/* compute the parity over the missing data blocks */
-		v[nd+ip[i]] = pa[i];
+		if (j < nr && ip[j] == i) {
+			/*
+			 * Set used parities to point to the missing
+			 * data blocks.
+			 *
+			 * The related data blocks are instead set
+			 * to point to the "zero" buffer.
+			 */
+
+			/* buffer for missing data blocks */
+			pa[j] = v[id[j]];
+
+			/* set at zero the missing data blocks */
+			v[id[j]] = raid_zero_block;
+
+			/* compute the parity over the missing data blocks */
+			v[nd + i] = pa[j];
+
+			/* check for the next used entry */
+			++j;
+		} else {
+			/*
+			 * Unused parities are going to be rewritten with
+			 * not significative data, becase we don't have
+			 * functions able to compute only a subset of
+			 * parities.
+			 *
+			 * To avoid this, we use reuse parity buffers, assuming
+			 * that all the parity functions write parities in order.
+			 *
+			 * We assign the unused parity block to the same block of the
+			 * latest used parity that we know it will be written.
+			 *
+			 * This means that this block will be written multiple times
+			 * and only the latest write will contain the correct data.
+			 */
+			v[nd + i] = latest;
+		}
 	}
 
 	/* recompute the minimal parity required */
-	raid_gen(nd, ip[nr - 1] + 1, size, v);
+	raid_gen(nd, np, size, v);
 
-	for (i = 0; i < nr; ++i) {
-		/* restore disk buffers as before */
-		v[id[i]] = pa[i];
+	/* restore data buffers as before */
+	for (j = 0; j < nr; ++j)
+		v[id[j]] = pa[j];
 
-		/* restore parity buffers as before */
-		v[nd+ip[i]] = p[i];
-	}
+	/* restore parity buffers as before */
+	for (i = 0; i < np; ++i)
+		v[nd + i] = p[i];
 }
 
 /**
@@ -507,37 +533,7 @@ void raid_rec_dataonly(int nr, int *id, int *ip, int nd, size_t size, void **v)
 	BUG_ON(size % 64 != 0);
 
 	/* if failed data is present */
-	if (nr != 0) {
-		/* if there is a waste buffer, use it to save unused parities */
-		if (raid_waste_block != 0) {
-			void *p[RAID_PARITY_MAX];
-			int i, j;
-			int np;
-
-			/* number of parities used */
-			np = ip[nr - 1] + 1;
-
-			/* set unused parities to the waste buffer */
-			for (i = 0, j = 0; i < np; ++i) {
-				p[i] = v[nd+i];
-
-				if (j < nr && ip[j] == i) {
-					/* this parity is used for recovering */
-					++j;
-				} else {
-					/* this parity is not used */
-					v[nd+i] = raid_waste_block;
-				}
-			}
-
-			raid_rec_ptr[nr - 1](nr, id, ip, nd, size, v);
-
-			/* restore pointers */
-			for (i = 0; i < np; ++i)
-				v[nd+i] = p[i];
-		} else {
-			raid_rec_ptr[nr - 1](nr, id, ip, nd, size, v);
-		}
-	}
+	if (nr != 0)
+		raid_rec_ptr[nr - 1](nr, id, ip, nd, size, v);
 }
 

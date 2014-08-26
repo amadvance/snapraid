@@ -70,16 +70,12 @@ void raid_mode(int mode);
 /**
  * Sets the zero buffer to use in recovering.
  *
- * Before calling raid_rec_dataonly() and raid_recpar() you must provide a memory
+ * Before calling raid_rec() and raid_rec_dataonly() you must provide a memory
  * buffer filled with zero with the same size of the blocks to recover.
+ *
+ * This buffer is only read and never written.
  */
 void raid_zero(void *zero);
-
-/**
- * Sets an additional buffer used by raid_rec_dataonly() to avoid to overwrite
- * unused parities.
- */
-void raid_waste(void *zero);
 
 /**
  * Computes the parity blocks.
@@ -118,7 +114,7 @@ void raid_gen(int nd, int np, size_t size, void **v);
  * provided parities are correct the resulting data will be also correct.
  * If parities are wrong, also the resulting recovered data will be wrong.
  * This happens even in the case you have more parities blocks than needed,
- * and some form of integrity verification is possible.
+ * and some form of integrity verification would be possible.
  *
  * @nr Number of failed data and parity blocks to recover.
  * @ir[] Vector of @nr indexes of the data and parity blocks to recover.
@@ -139,13 +135,10 @@ void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v);
  * Recovers failures of data blocks using the specified parities.
  *
  * The data blocks marked as bad in the @id vector are recovered.
- *
- * If you have provided an additional buffer with raid_waste(), the
- * parity blocks are not modified. Without this buffer, the content of
- * parities blocks not specified in the @ip vector will be destroyed.
+ * The parity blocks are not modified.
  *
  * @nr Number of failed data blocks to recover.
- * @id[] Vector of @nr indexes of the data blocksto recover.
+ * @id[] Vector of @nr indexes of the data blocks to recover.
  *   The indexes start from 0. They must be in order.
  * @ip[] Vector of @nr indexes of the parity blocks to use for recovering.
  *   The indexes start from 0. They must be in order.
