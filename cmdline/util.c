@@ -1505,6 +1505,11 @@ void* malloc_nofail(size_t size)
 	return ptr;
 }
 
+void* cmalloc_nofail(size_t count, size_t size)
+{
+	return malloc_nofail(count * size);
+}
+
 char* strdup_nofail(const char* str)
 {
 	size_t size;
