@@ -361,7 +361,7 @@ struct snapraid_map {
 /**
  * Info.
  */
-typedef unsigned snapraid_info;
+typedef uint32_t snapraid_info;
 
 /**
  * Allocates a content.
