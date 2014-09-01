@@ -30,7 +30,7 @@ If they do not match, stop the processing.
 This can be done to avoid to use not synchronized parity and content files,
 resulting in wrong data.
 But if the sync process is killed we need a way to resyncronize them.
-Or maybe we should allow parity never than content, but not viceversa.
+Or maybe we should allow parity newer than content, but not viceversa.
 
 * Add an option for dup to list only duplicates with different name.
 This supposing that if a file has the same name, it's intentionally duplicated.
@@ -104,6 +104,7 @@ File with the same name will get an extra extension like ".1", ".2".
 
 * Use Async IO for Linux (libaio).
 See thread: https://sourceforge.net/p/snapraid/discussion/1677233/thread/a300a10b/
+Docs at: http://www.fsl.cs.sunysb.edu/~vass/linux-aio.txt
 
 * Create a filesystem snapshot at every sync, and use it in all the other commands
 automatically.

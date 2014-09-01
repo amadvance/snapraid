@@ -2150,11 +2150,13 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 
 			/* if no info is present  */
 			if (!info) {
+				/* LCOV_EXCL_START */
 				/* set a fake info block */
 				info = info_make(save_time, 0, 0);
 
 				/* insert the info in the array */
 				info_set(&state->infoarr, b, info);
+				/* LCOV_EXCL_STOP */
 			}
 		}
 	}
