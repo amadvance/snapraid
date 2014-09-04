@@ -24,7 +24,7 @@
 /****************************************************************************/
 /* handle */
 
-int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, int skip_sequential)
+int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, int mode)
 {
 	int ret;
 	int flags;
@@ -51,9 +51,12 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 	/* O_BINARY: open as binary file (Windows only) */
 	/* O_NOFOLLOW: do not follow links to ensure to open the real file */
 	/* O_SEQUENTIAL: improve performance for sequential access (Windows only) */
+	/* O_DIRECT: required by libaio */
 	flags = O_BINARY | O_NOFOLLOW;
-	if (!skip_sequential)
+	if ((mode & MODE_SEQUENTIAL) != 0)
 		flags |= O_SEQUENTIAL;
+	if ((mode & MODE_DIRECT) != 0)
+		flags |= O_DIRECT;
 
 	/* open for read write */
 	handle->f = open(handle->path, flags | O_RDWR);
@@ -135,8 +138,8 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 	}
 
 #if HAVE_POSIX_FADVISE
-	if (!skip_sequential) {
-		/* advise sequential access */
+	if ((mode & MODE_SEQUENTIAL) != 0) {
+			/* advise sequential access */
 		ret = posix_fadvise(handle->f, 0, 0, POSIX_FADV_SEQUENTIAL);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
@@ -150,7 +153,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 	return 0;
 }
 
-int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int skip_sequential, FILE* out)
+int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int mode, FILE* out)
 {
 	int ret;
 	int flags;
@@ -170,9 +173,12 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 	/* O_BINARY: open as binary file (Windows only) */
 	/* O_NOFOLLOW: do not follow links to ensure to open the real file */
 	/* O_SEQUENTIAL: improve performance for sequential access (Windows only) */
+	/* O_DIRECT: required by libaio */
 	flags = O_BINARY | O_NOFOLLOW;
-	if (!skip_sequential)
+	if ((mode & MODE_SEQUENTIAL) != 0)
 		flags |= O_SEQUENTIAL;
+	if ((mode & MODE_DIRECT) != 0)
+		flags |= O_DIRECT;
 
 	/* open for read */
 	handle->f = open_noatime(handle->path, flags | O_RDONLY);
@@ -202,7 +208,7 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 	handle->valid_size = handle->st.st_size;
 
 #if HAVE_POSIX_FADVISE
-	if (!skip_sequential) {
+	if ((mode & MODE_SEQUENTIAL) != 0) {
 		/* advise sequential access */
 		ret = posix_fadvise(handle->f, 0, 0, POSIX_FADV_SEQUENTIAL);
 		if (ret != 0) {

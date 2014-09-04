@@ -20,6 +20,7 @@
 #include "elem.h"
 #include "state.h"
 #include "parity.h"
+#include "handle.h"
 
 /****************************************************************************/
 /* parity */
@@ -88,7 +89,7 @@ void parity_overflow(struct snapraid_state* state, data_off_t size)
 	}
 }
 
-int parity_create(struct snapraid_parity* parity, const char* path, data_off_t* out_size, int skip_sequential)
+int parity_create(struct snapraid_parity* parity, const char* path, data_off_t* out_size, int mode)
 {
 	int ret;
 	int flags;
@@ -98,8 +99,10 @@ int parity_create(struct snapraid_parity* parity, const char* path, data_off_t* 
 	/* opening in sequential mode in Windows */
 	/* O_SEQUENTIAL: opening in sequential mode in Windows */
 	flags = O_RDWR | O_CREAT | O_BINARY | O_SEQUENTIAL;
-	if (!skip_sequential)
+	if ((mode & MODE_SEQUENTIAL) != 0)
 		flags |= O_SEQUENTIAL;
+	if ((mode & MODE_DIRECT) != 0)
+		flags |= O_DIRECT;
 	parity->f = open(parity->path, flags, 0600);
 	if (parity->f == -1) {
 		/* LCOV_EXCL_START */
@@ -118,7 +121,7 @@ int parity_create(struct snapraid_parity* parity, const char* path, data_off_t* 
 	}
 
 #if HAVE_POSIX_FADVISE
-	if (!skip_sequential) {
+	if ((mode & MODE_SEQUENTIAL) != 0) {
 		/* advise sequential access */
 		ret = posix_fadvise(parity->f, 0, 0, POSIX_FADV_SEQUENTIAL);
 		if (ret != 0) {
@@ -262,7 +265,7 @@ bail:
 	/* LCOV_EXCL_STOP */
 }
 
-int parity_open(struct snapraid_parity* parity, const char* path, int skip_sequential)
+int parity_open(struct snapraid_parity* parity, const char* path, int mode)
 {
 	int ret;
 	int flags;
@@ -273,8 +276,10 @@ int parity_open(struct snapraid_parity* parity, const char* path, int skip_seque
 	/* O_SEQUENTIAL: opening in sequential mode in Windows */
 	/* O_NOATIME: do not change access time */
 	flags = O_RDONLY | O_BINARY;
-	if (!skip_sequential)
+	if ((mode & MODE_SEQUENTIAL) != 0)
 		flags |= O_SEQUENTIAL;
+	if ((mode & MODE_DIRECT) != 0)
+		flags |= O_DIRECT;
 	parity->f = open_noatime(parity->path, flags);
 	if (parity->f == -1) {
 		fprintf(stderr, "Error opening parity file '%s'. %s.\n", parity->path, strerror(errno));
@@ -294,7 +299,7 @@ int parity_open(struct snapraid_parity* parity, const char* path, int skip_seque
 	parity->valid_size = parity->st.st_size;
 
 #if HAVE_POSIX_FADVISE
-	if (!skip_sequential) {
+	if ((mode & MODE_SEQUENTIAL) != 0) {
 		/* advise sequential access */
 		ret = posix_fadvise(parity->f, 0, 0, POSIX_FADV_SEQUENTIAL);
 		if (ret != 0) {

@@ -42,7 +42,7 @@ void parity_overflow(struct snapraid_state* state, data_off_t size);
  * Creates the parity file.
  * \param out_size Return the size of the parity file.
  */
-int parity_create(struct snapraid_parity* parity, const char* path, data_off_t* out_size, int skip_sequential);
+int parity_create(struct snapraid_parity* parity, const char* path, data_off_t* out_size, int mode);
 
 /**
  * Changes the parity size.
@@ -53,7 +53,7 @@ int parity_chsize(struct snapraid_parity* parity, data_off_t size, data_off_t* o
 /**
  * Opens an already existing parity file.
  */
-int parity_open(struct snapraid_parity* parity, const char* path, int skip_sequential);
+int parity_open(struct snapraid_parity* parity, const char* path, int mode);
 
 /**
  * Flushes the parity file in the disk.

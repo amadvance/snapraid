@@ -70,7 +70,7 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 	/* open for read */
 	/* O_SEQUENTIAL: opening in sequential mode in Windows */
 	flags = O_RDONLY | O_BINARY;
-	if (!state->opt.skip_sequential)
+	if ((state->file_mode & MODE_SEQUENTIAL) != 0)
 		flags |= O_SEQUENTIAL;
 	f = open(path, flags);
 	if (f == -1) {
@@ -81,7 +81,7 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 	}
 
 #if HAVE_POSIX_FADVISE
-	if (!state->opt.skip_sequential) {
+	if ((state->file_mode & MODE_SEQUENTIAL) != 0) {
 		/* advise sequential access */
 		ret = posix_fadvise(f, 0, 0, POSIX_FADV_SEQUENTIAL);
 		if (ret != 0) {

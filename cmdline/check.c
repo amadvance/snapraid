@@ -773,7 +773,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				/* if fixing, and the file is not excluded, we must open for writing */
 				if (fix && !file_flag_has(block_file_get(block), FILE_IS_EXCLUDED)) {
 					/* if fixing, create the file, open for writing and resize if required */
-					ret = handle_create(&handle[j], block_file_get(block), state->opt.skip_sequential);
+					ret = handle_create(&handle[j], block_file_get(block), state->file_mode);
 					if (ret == -1) {
 						/* LCOV_EXCL_START */
 						if (errno == EACCES) {
@@ -806,7 +806,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					}
 				} else {
 					/* if checking or hashing, open the file only for reading */
-					ret = handle_open(&handle[j], block_file_get(block), state->opt.skip_sequential, stdlog);
+					ret = handle_open(&handle[j], block_file_get(block), state->file_mode, stdlog);
 					if (ret == -1) {
 						/* save the failed block for the check/fix */
 						failed[failed_count].is_bad = 1;
@@ -1802,7 +1802,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 		/* if it fails, we cannot continue */
 		for(l=0;l<state->level;++l) {
 			parity_ptr[l] = &parity[l];
-			ret = parity_create(parity_ptr[l], state->parity_path[l], &out_size, state->opt.skip_sequential);
+			ret = parity_create(parity_ptr[l], state->parity_path[l], &out_size, state->file_mode);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
 				fprintf(stderr, "WARNING! Without an accessible %s file, it isn't possible to fix any error.\n", lev_name(l));
@@ -1823,7 +1823,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 		/* it may fail if the file doesn't exist, in this case we continue to check the files */
 		for(l=0;l<state->level;++l) {
 			parity_ptr[l] = &parity[l];
-			ret = parity_open(parity_ptr[l], state->parity_path[l], state->opt.skip_sequential);
+			ret = parity_open(parity_ptr[l], state->parity_path[l], state->file_mode);
 			if (ret == -1) {
 				printf("No accessible %s file, only files will be checked.\n", lev_name(l));
 				/* continue anyway */
