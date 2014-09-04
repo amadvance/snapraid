@@ -19,8 +19,11 @@
  * Memory alignment provided by raid_malloc_align().
  *
  * It should guarantee good cache performance everywhere.
+ *
+ * Note that to allows use with libaio, a minimal alingment of
+ * 512 is required.
  */
-#define RAID_MALLOC_ALIGN 256
+#define RAID_MALLOC_ALIGN 512
 
 /**
  * Memory displacement to avoid cache address sharing on contiguous blocks,
@@ -54,7 +57,7 @@
  *    genz    5838 [MB/s]
  *
  */
-#define RAID_MALLOC_DISPLACEMENT (7*256)
+#define RAID_MALLOC_DISPLACEMENT (3*RAID_MALLOC_ALIGN)
 
 /**
  * Aligned malloc.

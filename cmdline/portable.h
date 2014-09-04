@@ -86,6 +86,10 @@
 #include <linux/fiemap.h>
 #endif
 
+#if HAVE_LIBAIO_H
+#include <libaio.h>
+#endif
+
 /**
  * Includes some standard headers.
  */
@@ -186,6 +190,13 @@
  */
 #if HAVE_FLOCK && HAVE_FTRUNCATE
 #define HAVE_LOCKFILE 1
+#endif
+
+/**
+ * Enables libaio support.
+ */
+#if HAVE_LIBAIO_H && HAVE_IO_SUBMIT
+#define HAVE_LIBAIO 1
 #endif
 
 /**

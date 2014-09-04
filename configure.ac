@@ -80,6 +80,11 @@ AC_CHECK_FUNCS([mach_absolute_time])
 AC_SEARCH_LIBS([clock_gettime], [rt])
 AC_CHECK_FUNCS([clock_gettime])
 
+dnl Checks for libaio
+AC_CHECK_HEADERS([libaio.h])
+AC_SEARCH_LIBS([io_submit], [aio])
+AC_CHECK_FUNCS([io_submit])
+
 dnl Checks for architecture
 AC_C_BIGENDIAN
 

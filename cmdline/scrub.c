@@ -28,18 +28,60 @@
 /* scrub */
 
 /**
- * Buffer for storing the new hashes.
+ * Buffer for storing data contex.
  */
-struct snapraid_rehash {
-	unsigned char hash[HASH_SIZE];
-	struct snapraid_block* block;
+struct snapraid_data_contex {
+	int skipped; /**< If this block is skipped. */
+	struct snapraid_block* block; /**< Pointer at the assigned block. 0 if none. */
+
+	/**
+	 * If the block is rehashed.
+	 * if ::has_rehash is 1, ::rehash contains the new hash.
+	 */
+	int has_rehash;
+	unsigned char rehash[HASH_SIZE];
+
+	/**
+	 * If the file on this disk is synced
+	 * If not synched, silent errors are assumed as expected error.
+	 */
+	int file_is_unsynced;
+
+#if HAVE_LIBAIO
+	/**
+	 * Result of libaio operation.
+	 */
+	struct iocb aio_res;
+#endif
+	/**
+	 * Result of syncronous operation.
+	 */
+	int sio_res;
+};
+
+/**
+ * Buffer for storing parity contex.
+ */
+struct snapraid_parity_context {
+#if HAVE_LIBAIO
+	/**
+	 * Result of libaio operation.
+	 */
+	struct iocb aio_res;
+#endif
+	/**
+	 * Result of syncronous operation.
+	 */
+	int sio_res;
 };
 
 static int state_scrub_process(struct snapraid_state* state, struct snapraid_parity** parity, block_off_t blockstart, block_off_t blockmax, time_t timelimit, block_off_t lastlimit, time_t now)
 {
 	struct snapraid_handle* handle;
-	void* rehandle_alloc;
-	struct snapraid_rehash* rehandle;
+	void* data_handle_alloc;
+	struct snapraid_data_contex* data_handle;
+	void* parity_handle_alloc;
+	struct snapraid_parity_context* parity_handle;
 	unsigned diskmax;
 	block_off_t i;
 	unsigned j;
@@ -53,6 +95,10 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	block_off_t autosavedone;
 	block_off_t autosavelimit;
 	block_off_t autosavemissing;
+#ifdef HAVE_LIBAIO
+	io_context_t aio_data; /**< AIO context for data. */
+	io_context_t aio_parity; /**< AIO context for parity. */
+#endif
 	int ret;
 	unsigned error;
 	unsigned silent_error;
@@ -61,8 +107,11 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	/* maps the disks to handles */
 	handle = handle_map(state, &diskmax);
 
-	/* rehash buffers */
-	rehandle = malloc_nofail_align(diskmax * sizeof(struct snapraid_rehash), &rehandle_alloc);
+	/* data contex */
+	data_handle = malloc_nofail_align(diskmax * sizeof(struct snapraid_data_contex), &data_handle_alloc);
+
+	/* parity contex */
+	parity_handle = malloc_nofail_align(state->level * sizeof(struct snapraid_parity_context), &parity_handle_alloc);
 
 	/* we need disk + 2 for each parity level buffers */
 	buffermax = diskmax + state->level * 2;
@@ -73,6 +122,24 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 	error = 0;
 	silent_error = 0;
+
+#ifdef HAVE_LIBAIO
+	/* setup the libaio context */
+	ret = io_setup(diskmax, &aio_data);
+	if (ret < 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Libaio io_setup() failed: %s.\n", strerror(-ret));
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	ret = io_setup(state->level, &aio_parity);
+	if (ret < 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Libaio io_setup() failed: %s.\n", strerror(-ret));
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+#endif
 
 	/* first count the number of blocks to process */
 	countmax = 0;
@@ -134,10 +201,23 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	for(i=blockstart;i<blockmax;++i) {
 		time_t blocktime;
 		snapraid_info info;
-		int error_on_this_block;
+		int data_error_on_this_block;
+		int parity_error_on_this_block;
 		int silent_error_on_this_block;
 		int block_is_unsynced;
 		int rehash;
+		int sio_i;
+		int sio_data_submit = 0;
+		int sio_data_index[diskmax];
+		int sio_parity_submit = 0;
+		int sio_parity_index[state->level];
+		unsigned char* buffer_recov[LEV_MAX];
+#ifdef HAVE_LIBAIO
+		int aio_i;
+		int aio_data_submit = 0;
+		int aio_parity_submit = 0;
+		struct io_event aio_events[1];
+#endif
 
 		/* if it's unused */
 		info = info_get(&state->infoarr, i);
@@ -180,7 +260,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		--autosavemissing;
 
 		/* by default process the block, and skip it if something goes wrong */
-		error_on_this_block = 0;
+		data_error_on_this_block = 0;
+		parity_error_on_this_block = 0;
 		silent_error_on_this_block = 0;
 
 		/* if all the blocks at this address are synced */
@@ -190,19 +271,25 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		/* if we have to use the old hash */
 		rehash = info_get_rehash(info);
 
-		/* for each disk, process the block */
+		/* buffers to store the parity read from disk */
+		for(l=0;l<state->level;++l)
+			buffer_recov[l] = buffer[diskmax + state->level + l];
+		for(;l<LEV_MAX;++l)
+			buffer_recov[l] = 0;
+
+		/* schedule data block */
 		for(j=0;j<diskmax;++j) {
-			int read_size;
-			unsigned char hash[HASH_SIZE];
 			struct snapraid_block* block;
-			int file_is_unsynced;
+			struct snapraid_data_contex* data_ctx = &data_handle[j];
+#if HAVE_LIBAIO
+			unsigned read_size;
+#endif
 
-			/* if the file on this disk is synced */
-			/* if not, silent errors are assumed as expected error */
-			file_is_unsynced = 0;
-
-			/* by default no rehash in case of "continue" */
-			rehandle[j].block = 0;
+			/* setup data handle, in case of "continue" */
+			data_ctx->skipped = 1;
+			data_ctx->block = 0;
+			data_ctx->has_rehash = 0;
+			data_ctx->file_is_unsynced = 0;
 
 			/* if the disk position is not used */
 			if (!handle[j].disk) {
@@ -211,8 +298,11 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				continue;
 			}
 
-			/* if the block is not used */
+			/* get the block */
 			block = disk_block_get(handle[j].disk, i);
+			data_ctx->block = block;
+
+			/* if the block is not used */
 			if (!block_has_file(block)) {
 				/* use an empty block */
 				memset(buffer[j], 0, state->block_size);
@@ -223,7 +313,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			if (block_has_invalid_parity(block)) {
 				/* report that the block and the file are not synced */
 				block_is_unsynced = 1;
-				file_is_unsynced = 1;
+				data_ctx->file_is_unsynced = 1;
 
 				/* follow */
 			}
@@ -246,13 +336,13 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				}
 			}
 
-			ret = handle_open(&handle[j], block_file_get(block), state->opt.skip_sequential, stderr);
+			ret = handle_open(&handle[j], block_file_get(block), state->file_mode, stderr);
 			if (ret == -1) {
 				/* file we have tried to open for error reporting */
 				struct snapraid_file* file = block_file_get(block);
 				fprintf(stdlog, "error:%u:%s:%s: Open error. %s\n", i, handle[j].disk->name, file->sub, strerror(errno));
 				++error;
-				error_on_this_block = 1;
+				data_error_on_this_block = 1;
 				continue;
 			}
 
@@ -264,20 +354,173 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			) {
 				/* report that the block and the file are not synced */
 				block_is_unsynced = 1;
-				file_is_unsynced = 1;
+				data_ctx->file_is_unsynced = 1;
 
 				/* follow */
 			}
 
+			/* block is processed */
+			data_ctx->skipped = 0;
+
 			/* note that we intentionally don't abort if the file has different attributes */
 			/* from the last sync, as we are expected to return errors if running */
 			/* in an unsynced array. This is just like the check command. */
+#if HAVE_LIBAIO
+			read_size = block_file_size(block, state->block_size);
 
-			read_size = handle_read(&handle[j], block, buffer[j], state->block_size, stderr);
-			if (read_size == -1) {
+			/* schedule asyncronous read if it's full block read */
+			if (read_size == state->block_size) {
+				struct iocb* aio_cbs[1];
+				data_off_t offset = block_file_pos(block) * (data_off_t)state->block_size;
+
+				/* setup the read request */
+				io_prep_pread(&data_ctx->aio_res, handle[j].f, buffer[j], state->block_size, offset);
+
+				/* set the request context */
+				data_ctx->aio_res.data = data_ctx;
+
+				/* submit the request */
+				aio_cbs[0] = &data_ctx->aio_res;
+				ret = io_submit(aio_data, 1, aio_cbs);
+				if (ret < 0) {
+					/* LCOV_EXCL_START */
+					fprintf(stderr, "Libaio io_submit() failed: %s.\n", strerror(-ret));
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
+				++aio_data_submit;
+			} else {
+				/* submit the syncronous operation */
+				sio_data_index[sio_data_submit] = j;
+
+				++sio_data_submit;
+			}
+#else
+			/* submit the syncronous operation */
+			sio_data_index[sio_data_submit] = j;
+
+			++sio_data_submit;
+#endif
+		}
+
+		/* schedule parity blocks */
+		for(l=0;l<state->level;++l) {
+#if HAVE_LIBAIO
+			struct snapraid_parity_context* parity_ctx = &parity_handle[l];
+			data_off_t offset = i * (data_off_t)state->block_size;
+			struct iocb* aio_cbs[1];
+
+			/* setup the read request */
+			io_prep_pread(&parity_ctx->aio_res, parity[l]->f, buffer_recov[l], state->block_size, offset);
+
+			/* set the request context */
+			parity_ctx->aio_res.data = parity_ctx;
+
+			/* submit the request */
+			aio_cbs[0] = &parity_ctx->aio_res;
+			ret = io_submit(aio_parity, 1, aio_cbs);
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				fprintf(stderr, "Libaio io_submit() failed: %s.\n", strerror(-ret));
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			++aio_parity_submit;
+#else
+			/* submit the syncronous operation */
+			sio_parity_index[sio_parity_submit] = l;
+
+			++sio_parity_submit;
+#endif
+		}
+
+		/* process pending data syncronous operations */
+		for(sio_i=0;sio_i<sio_data_submit;++sio_i) {
+			struct snapraid_data_contex* data_ctx;
+			struct snapraid_block* block;
+
+			j = sio_data_index[sio_i];
+			data_ctx = &data_handle[j];
+			block = data_ctx->block;
+
+#if HAVE_LIBAIO
+			/* disable O_DIRECT if enabled */
+			ret = fcntl(handle[j].f, F_GETFL);
+			if (ret < 0) {
+				data_ctx->sio_res = ret;
+				continue;
+			}
+			if ((ret & O_DIRECT) != 0) {
+				ret &= ~O_DIRECT;
+				ret = fcntl(handle[j].f, F_SETFL, (int)ret);
+				if (ret < 0) {
+					data_ctx->sio_res = ret;
+					continue;
+				}
+			}
+#endif
+			data_ctx->sio_res = handle_read(&handle[j], block, buffer[j], state->block_size, stderr);
+		}
+
+		/* process data blocks */
+		sio_i = 0;
+#if HAVE_LIBAIO
+		aio_i = 0;
+#endif
+		while (1) {
+			unsigned char hash[HASH_SIZE];
+			struct snapraid_data_contex* data_ctx;
+			struct snapraid_block* block;
+			int read_size;
+
+			/* first process syncronous operations */
+			if (sio_i < sio_data_submit) {
+				j = sio_data_index[sio_i];
+				data_ctx = &data_handle[j];
+				block = data_ctx->block;
+				read_size = data_ctx->sio_res;
+
+				/* next event */
+				++sio_i;
+			} else {
+#if HAVE_LIBAIO
+				/* if no more event, it's done */
+				if (aio_i >= aio_data_submit)
+					break;
+
+				/* wait for an asyncronous event */
+				ret = io_getevents(aio_data, 1, 1, aio_events, 0);
+				if (ret < 0) {
+					/* LCOV_EXCL_START */
+					fprintf(stderr, "Libaio io_getevents() failed: %s.\n", strerror(-ret));
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
+				/* get the disk processed */
+				data_ctx = aio_events[0].data;
+				read_size = aio_events[0].res;
+				block = data_ctx->block;
+				j = data_ctx - data_handle;
+
+				/* next event */
+				++aio_i;
+#else
+				/* no more event, it's done */
+				break;
+#endif
+			}
+
+			/* if the block is skipped, ignore it */
+			if (data_ctx->skipped)
+				continue;
+
+			if (read_size < 0) {
 				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u\n", i, handle[j].disk->name, handle[j].file->sub, block_file_pos(block));
 				++error;
-				error_on_this_block = 1;
+				data_error_on_this_block = 1;
 				continue;
 			}
 
@@ -287,9 +530,11 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			if (rehash) {
 				memhash(state->prevhash, state->prevhashseed, hash, buffer[j], read_size);
 
+				/* mark the block as rehashed */
+				data_ctx->has_rehash = 1;
+
 				/* compute the new hash, and store it */
-				rehandle[j].block = block;
-				memhash(state->hash, state->hashseed, rehandle[j].hash, buffer[j], read_size);
+				memhash(state->hash, state->hashseed, data_ctx->rehash, buffer[j], read_size);
 			} else {
 				memhash(state->hash, state->hashseed, hash, buffer[j], read_size);
 			}
@@ -300,9 +545,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, handle[j].file->sub, block_file_pos(block));
 
 					/* it's a silent error only if we are dealing with synced files */
-					if (file_is_unsynced) {
+					if (data_ctx->file_is_unsynced) {
 						++error;
-						error_on_this_block = 1;
+						data_error_on_this_block = 1;
 					} else {
 						fprintf(stderr, "Data error in file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
 						fprintf(stderr, "WARNING! Unexpected data error in a data disk! The block is now marked as bad!\n");
@@ -316,29 +561,72 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			}
 		}
 
-		/* if we have read all the data required and it's correct, proceed with the parity check */
-		if (!error_on_this_block && !silent_error_on_this_block) {
-			unsigned char* buffer_recov[LEV_MAX];
+		/* process pending parity syncronous operations */
+		for(sio_i=0;sio_i<sio_parity_submit;++sio_i) {
+			struct snapraid_parity_context* parity_ctx;
 
-			/* buffers for parity read and not computed */
-			for(l=0;l<state->level;++l)
-				buffer_recov[l] = buffer[diskmax + state->level + l];
-			for(;l<LEV_MAX;++l)
-				buffer_recov[l] = 0;
+			l = sio_parity_index[sio_i];
+			parity_ctx = &parity_handle[l];
 
-			/* read the parity */
-			for(l=0;l<state->level;++l) {
-				ret = parity_read(parity[l], i, buffer_recov[l], state->block_size, stdlog);
-				if (ret == -1) {
-					buffer_recov[l] = 0;
-					fprintf(stdlog, "parity_error:%u:%s: Read error\n", i, lev_config_name(l));
-					++error;
-					error_on_this_block = 1;
+			parity_ctx->sio_res = parity_read(parity[l], i, buffer_recov[l], state->block_size, stdlog);
+		}
 
-					/* follow */
+		/* process parity blocks */
+		sio_i = 0;
+#if HAVE_LIBAIO
+		aio_i = 0;
+#endif
+		while (1) {
+			struct snapraid_parity_context* parity_ctx;
+			int read_size;
+
+			if (sio_i < sio_parity_submit) {
+				l = sio_parity_index[sio_i];
+				parity_ctx = &parity_handle[l];
+				read_size = parity_ctx->sio_res;
+
+				/* next event */
+				++sio_i;
+			} else {
+#if HAVE_LIBAIO
+				/* if no more event, it's done */
+				if (aio_i >= aio_parity_submit)
+					break;
+
+				/* wait for an asyncronous event */
+				ret = io_getevents(aio_parity, 1, 1, aio_events, 0);
+				if (ret < 0) {
+					/* LCOV_EXCL_START */
+					fprintf(stderr, "Libaio io_getevents() failed: %s.\n", strerror(-ret));
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
 				}
+
+				/* get the disk processed */
+				parity_ctx = aio_events[0].data;
+				read_size = aio_events[0].res;
+				l = parity_ctx - parity_handle;
+
+				/* next event */
+				++aio_i;
+#else
+				/* no more event, it's done */
+				break;
+#endif
 			}
 
+			if (read_size == -1) {
+				buffer_recov[l] = 0;
+				fprintf(stdlog, "parity_error:%u:%s: Read error\n", i, lev_config_name(l));
+				++error;
+				parity_error_on_this_block = 1;
+
+				/* follow */
+			}
+		}
+
+		/* if we have read all the data required and it's correct, proceed with the parity check */
+		if (!data_error_on_this_block && !silent_error_on_this_block) {
 			/* compute the parity */
 			raid_gen(diskmax, state->level, state->block_size, buffer);
 
@@ -350,7 +638,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					/* it's a silent error only if we are dealing with synced blocks */
 					if (block_is_unsynced) {
 						++error;
-						error_on_this_block = 1;
+						parity_error_on_this_block = 1;
 					} else {
 						fprintf(stderr, "Data error in parity '%s' at position '%u'\n", lev_config_name(l), i);
 						fprintf(stderr, "WARNING! Unexpected data error in a parity disk! The block is now marked as bad!\n");
@@ -366,7 +654,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		if (silent_error_on_this_block) {
 			/* set the error status keeping the existing time and hash */
 			info_set(&state->infoarr, i, info_set_bad(info));
-		} else if (error_on_this_block) {
+		} else if (data_error_on_this_block || parity_error_on_this_block) {
 			/* do nothing, as this is a generic error */
 			/* likely caused by a not synced array */
 		} else {
@@ -374,8 +662,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			if (rehash) {
 				/* store all the new hash already computed */
 				for(j=0;j<diskmax;++j) {
-					if (rehandle[j].block)
-						memcpy(rehandle[j].block->hash, rehandle[j].hash, HASH_SIZE);
+					struct snapraid_data_contex* data_ctx = &data_handle[j];
+					if (data_ctx->has_rehash)
+						memcpy(data_ctx->block->hash, data_ctx->rehash, HASH_SIZE);
 				}
 			}
 
@@ -415,6 +704,23 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 	state_progress_end(state, countpos, countmax, countsize);
 
+#ifdef HAVE_LIBAIO
+	ret = io_destroy(aio_data);
+	if (ret < 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Libaio io_destroy() failed: %s.\n", strerror(-ret));
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	ret = io_destroy(aio_parity);
+	if (ret < 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Libaio io_destroy() failed: %s.\n", strerror(-ret));
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+#endif
+
 	if (error || silent_error) {
 		printf("\n");
 		printf("%8u read errors\n", error);
@@ -449,7 +755,8 @@ bail:
 	free(handle);
 	free(buffer_alloc);
 	free(buffer);
-	free(rehandle_alloc);
+	free(data_handle_alloc);
+	free(parity_handle_alloc);
 
 	if (state->opt.expect_recoverable) {
 		if (error + silent_error == 0)
@@ -491,6 +798,11 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 	unsigned error;
 	time_t now;
 	unsigned l;
+
+#ifdef HAVE_LIBAIO
+	/* O_DIRECT is required by libaio */
+	state->file_mode |= MODE_DIRECT;
+#endif
 
 	/* get the present time */
 	now = time(0);
@@ -594,7 +906,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 	/* open the file for reading */
 	for(l=0;l<state->level;++l) {
 		parity_ptr[l] = &parity[l];
-		ret = parity_open(parity_ptr[l], state->parity_path[l], state->opt.skip_sequential);
+		ret = parity_open(parity_ptr[l], state->parity_path[l], state->file_mode);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "WARNING! Without an accessible %s file, it isn't possible to scrub.\n", lev_name(l));
