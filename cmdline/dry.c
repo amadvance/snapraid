@@ -80,7 +80,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 				}
 
 				/* open the file only for reading */
-				ret = handle_open(&handle[j], block_file_get(block), state->opt.skip_sequential, stdlog);
+				ret = handle_open(&handle[j], block_file_get(block), state->file_mode, stdlog);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
 					fprintf(stderr, "DANGER! Unexpected open error in a data disk, it isn't possible to dry.\n");
@@ -182,7 +182,7 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	/* it may fail if the file doesn't exist, in this case we continue to dry the files */
 	for(l=0;l<state->level;++l) {
 		parity_ptr[l] = &parity[l];
-		ret = parity_open(parity_ptr[l], state->parity_path[l], state->opt.skip_sequential);
+		ret = parity_open(parity_ptr[l], state->parity_path[l], state->file_mode);
 		if (ret == -1) {
 			printf("No accessible %s file.\n", lev_name(l));
 			/* continue anyway */

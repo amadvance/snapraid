@@ -138,7 +138,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				}
 			}
 
-			ret = handle_open(&handle[j], block_file_get(block), state->opt.skip_sequential, stderr);
+			ret = handle_open(&handle[j], block_file_get(block), state->file_mode, stderr);
 			if (ret == -1) {
 				/* file we are processing for error reporting */
 				struct snapraid_file* file = block_file_get(block);
@@ -562,7 +562,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				}
 			}
 
-			ret = handle_open(&handle[j], block_file_get(block), state->opt.skip_sequential, stderr);
+			ret = handle_open(&handle[j], block_file_get(block), state->file_mode, stderr);
 			if (ret == -1) {
 				/* file we are processing for error reporting */
 				struct snapraid_file* file = block_file_get(block);
@@ -1050,7 +1050,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	for(l=0;l<level;++l) {
 		/* create the file and open for writing */
 		parity_ptr[l] = &parity[l];
-		ret = parity_create(parity_ptr[l], state->parity_path[l], &out_size, state->opt.skip_sequential);
+		ret = parity_create(parity_ptr[l], state->parity_path[l], &out_size, state->file_mode);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "WARNING! Without an accessible %s file, it isn't possible to sync.\n", lev_name(l));

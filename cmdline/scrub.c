@@ -246,7 +246,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				}
 			}
 
-			ret = handle_open(&handle[j], block_file_get(block), state->opt.skip_sequential, stderr);
+			ret = handle_open(&handle[j], block_file_get(block), state->file_mode, stderr);
 			if (ret == -1) {
 				/* file we have tried to open for error reporting */
 				struct snapraid_file* file = block_file_get(block);
@@ -594,7 +594,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 	/* open the file for reading */
 	for(l=0;l<state->level;++l) {
 		parity_ptr[l] = &parity[l];
-		ret = parity_open(parity_ptr[l], state->parity_path[l], state->opt.skip_sequential);
+		ret = parity_open(parity_ptr[l], state->parity_path[l], state->file_mode);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "WARNING! Without an accessible %s file, it isn't possible to scrub.\n", lev_name(l));
