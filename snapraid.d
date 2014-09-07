@@ -144,13 +144,13 @@ Getting Started
 
 	When this command completes, your data is SAFE.
 
-	At this point you can start using your array as you like, and periodically
+	Now you can start using your array as you like, and periodically
 	update the parity information running the "sync" command.
 
   Restoring and Undeleting
-	In recovering SnapRAID is more like a backup program than a RAID system,
-	and it can be used to restore or undelete only a single file or directory
-	to its previous state using the -f, --filter option :
+	In recovering, SnapRAID is more like a backup program than a RAID system,
+	and it can be used to restore or undelete a file or directory to its previous
+	state using the -f, --filter option :
 
 		:snapraid fix -f FILE
 
@@ -197,7 +197,8 @@ Getting Started
 		:snapraid -e fix
 
 	At the next "scrub" the errors will disappear from the "status" report
-	if really fixed. You can use -p 0 to scrub only blocks marked as bad.
+	if really fixed. To make it fast, you can use -p 0 to scrub only blocks
+	marked as bad.
 
 		:snapraid -p 0 scrub
 

@@ -261,12 +261,12 @@ will start where interrupted.
 .PP
 When this command completes, your data is SAFE.
 .PP
-At this point you can start using your array as you like, and periodically
+Now you can start using your array as you like, and periodically
 update the parity information running the \[dq]sync\[dq] command.
 .SS Restoring and Undeleting 
-In recovering SnapRAID is more like a backup program than a RAID system,
-and it can be used to restore or undelete only a single file or directory
-to its previous state using the \-f, \-\-filter option :
+In recovering, SnapRAID is more like a backup program than a RAID system,
+and it can be used to restore or undelete a file or directory to its previous
+state using the \-f, \-\-filter option :
 .PP
 .RS 4
 snapraid fix \-f FILE
@@ -352,7 +352,8 @@ snapraid \-e fix
 .RE
 .PP
 At the next \[dq]scrub\[dq] the errors will disappear from the \[dq]status\[dq] report
-if really fixed. You can use \-p 0 to scrub only blocks marked as bad.
+if really fixed. To make it fast, you can use \-p 0 to scrub only blocks
+marked as bad.
 .PP
 .RS 4
 snapraid \-p 0 scrub
