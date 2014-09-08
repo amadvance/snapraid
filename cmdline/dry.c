@@ -47,7 +47,9 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 
 	error = 0;
 
-	/* dry all the blocks in files */
+	/* drop until now */
+	state_usage_waste(state);
+
 	countmax = blockmax - blockstart;
 	countsize = 0;
 	countpos = 0;
@@ -57,14 +59,18 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 		for(j=0;j<diskmax;++j) {
 			int read_size;
 			struct snapraid_block* block = BLOCK_EMPTY;
+			struct snapraid_disk* disk = handle[j].disk;
 
-			if (handle[j].disk)
-				block = disk_block_get(handle[j].disk, i);
+			if (disk)
+				block = disk_block_get(disk, i);
 
 			if (!block_has_file(block)) {
 				/* if no file, nothing to do */
 				continue;
 			}
+
+			/* until now is CPU */
+			state_usage_cpu(state);
 
 			/* if the file is closed or different than the current one */
 			if (handle[j].file == 0 || handle[j].file != block_file_get(block)) {
@@ -94,10 +100,13 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			/* read from the file */
 			read_size = handle_read(&handle[j], block, buffer_aligned, state->block_size, stdlog);
 			if (read_size == -1) {
-				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
+				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u\n", i, disk->name, block_file_get(block)->sub, block_file_pos(block));
 				++error;
 				continue;
 			}
+
+			/* until now is disk */
+			state_usage_disk(state, disk);
 
 			countsize += read_size;
 		}
@@ -105,11 +114,17 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 		/* read the parity */
 		for(l=0;l<state->level;++l) {
 			if (parity[l]) {
+				/* until now is CPU */
+				state_usage_cpu(state);
+
 				ret = parity_read(parity[l], i, buffer_aligned, state->block_size, stdlog);
 				if (ret == -1) {
 					fprintf(stdlog, "parity_error:%u:%s: Read error\n", i, lev_config_name(l));
 					++error;
 				}
+
+				/* until now is parity */
+				state_usage_parity(state, l);
 			}
 		}
 
@@ -125,6 +140,8 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 	}
 
 	state_progress_end(state, countpos, countmax, countsize);
+
+	state_usage_print(state);
 
 bail:
 	/* close all the files left open */
