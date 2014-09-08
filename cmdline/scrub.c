@@ -127,6 +127,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	autosavemissing = countmax; /* blocks to do */
 	autosavedone = 0; /* blocks done */
 
+	/* drop until now */
+	state_usage_waste(state);
+
 	countsize = 0;
 	countpos = 0;
 	countlast = 0;
@@ -196,6 +199,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			unsigned char hash[HASH_SIZE];
 			struct snapraid_block* block;
 			int file_is_unsynced;
+			struct snapraid_disk* disk = handle[j].disk;
 
 			/* if the file on this disk is synced */
 			/* if not, silent errors are assumed as expected error */
@@ -205,14 +209,14 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			rehandle[j].block = 0;
 
 			/* if the disk position is not used */
-			if (!handle[j].disk) {
+			if (!disk) {
 				/* use an empty block */
 				memset(buffer[j], 0, state->block_size);
 				continue;
 			}
 
 			/* if the block is not used */
-			block = disk_block_get(handle[j].disk, i);
+			block = disk_block_get(disk, i);
 			if (!block_has_file(block)) {
 				/* use an empty block */
 				memset(buffer[j], 0, state->block_size);
@@ -228,6 +232,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				/* follow */
 			}
 
+			/* until now is CPU */
+			state_usage_cpu(state);
+
 			/* if the file is different than the current one, close it */
 			if (handle[j].file != 0 && handle[j].file != block_file_get(block)) {
 				/* keep a pointer at the file we are going to close for error reporting */
@@ -237,7 +244,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					/* LCOV_EXCL_START */
 					/* This one is really an unexpected error, because we are only reading */
 					/* and closing a descriptor should never fail */
-					fprintf(stdlog, "error:%u:%s:%s: Close error. %s\n", i, handle[j].disk->name, file->sub, strerror(errno));
+					fprintf(stdlog, "error:%u:%s:%s: Close error. %s\n", i, disk->name, file->sub, strerror(errno));
 					fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to scrub.\n");
 					printf("Stopping at block %u\n", i);
 					++error;
@@ -250,7 +257,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			if (ret == -1) {
 				/* file we have tried to open for error reporting */
 				struct snapraid_file* file = block_file_get(block);
-				fprintf(stdlog, "error:%u:%s:%s: Open error. %s\n", i, handle[j].disk->name, file->sub, strerror(errno));
+				fprintf(stdlog, "error:%u:%s:%s: Open error. %s\n", i, disk->name, file->sub, strerror(errno));
 				++error;
 				error_on_this_block = 1;
 				continue;
@@ -275,11 +282,14 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 			read_size = handle_read(&handle[j], block, buffer[j], state->block_size, stderr);
 			if (read_size == -1) {
-				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u\n", i, handle[j].disk->name, handle[j].file->sub, block_file_pos(block));
+				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u\n", i, disk->name, handle[j].file->sub, block_file_pos(block));
 				++error;
 				error_on_this_block = 1;
 				continue;
 			}
+
+			/* until now is disk */
+			state_usage_disk(state, disk);
 
 			countsize += read_size;
 
@@ -297,7 +307,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			if (block_has_updated_hash(block)) {
 				/* compare the hash */
 				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
-					fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, handle[j].file->sub, block_file_pos(block));
+					fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, disk->name, handle[j].file->sub, block_file_pos(block));
 
 					/* it's a silent error only if we are dealing with synced files */
 					if (file_is_unsynced) {
@@ -320,6 +330,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		if (!error_on_this_block && !silent_error_on_this_block) {
 			unsigned char* buffer_recov[LEV_MAX];
 
+			/* until now is CPU */
+			state_usage_cpu(state);
+
 			/* buffers for parity read and not computed */
 			for(l=0;l<state->level;++l)
 				buffer_recov[l] = buffer[diskmax + state->level + l];
@@ -337,6 +350,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 					/* follow */
 				}
+
+				/* until now is parity */
+				state_usage_parity(state, l);
 			}
 
 			/* compute the parity */
@@ -404,16 +420,24 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		) {
 			autosavedone = 0; /* restart the counter */
 
+			/* until now is CPU */
+			state_usage_cpu(state);
+
 			state_progress_stop(state);
 
 			printf("Autosaving...\n");
 			state_write(state);
 
 			state_progress_restart(state);
+
+			/* drop until now */
+			state_usage_waste(state);
 		}
 	}
 
 	state_progress_end(state, countpos, countmax, countsize);
+
+	state_usage_print(state);
 
 	if (error || silent_error) {
 		printf("\n");

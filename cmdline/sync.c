@@ -785,7 +785,6 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				/* we are sure that parity exists because */
 				/* we have at least one BLK block */
 				for(l=0;l<state->level;++l) {
-
 					ret = parity_read(parity[l], i, buffer[diskmax+l], state->block_size, stdlog);
 					if (ret == -1) {
 						/* LCOV_EXCL_START */

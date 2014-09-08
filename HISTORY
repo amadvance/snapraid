@@ -1,6 +1,10 @@
 SnapRAID HISTORY
 ================
 
+6.4 2014/9
+==========
+ * Keeps and print time spent waiting for each disk also in 'scrub'.
+
 6.3 2014/7
 ==========
  * The -N, --force-nocopy option now also works if you used previously
