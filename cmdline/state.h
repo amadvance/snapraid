@@ -171,6 +171,8 @@ struct snapraid_state {
 	time_t progress_time[PROGRESS_MAX]; /**< Last times of progress. */
 	block_off_t progress_pos[PROGRESS_MAX]; /**< Last positions of progress. */
 	data_off_t progress_size[PROGRESS_MAX]; /**< Last sizes of progress. */
+	uint64_t progress_tick_cpu[PROGRESS_MAX]; /**< Last cpu ticks of progress. */
+	uint64_t progress_tick_total[PROGRESS_MAX]; /**< Last total ticks of progress. */
 
 	int progress_ptr; /**< Pointer to the next position to fill. Rolling over. */
 	int progress_tick; /**< Number of measures done. */

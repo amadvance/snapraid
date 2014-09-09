@@ -4346,12 +4346,12 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 		/* if the previous measure is different */
 		if (state->progress_tick == 0 || state->progress_time[pred] != now) {
 			uint64_t tick_total;
-
-			printf("%u%%, %u MiB", countpos * 100 / countmax, (unsigned)(countsize / (1024*1024)));
+			uint64_t tick_cpu;
 
 			tick_total = state->tick_cpu + state->tick_io;
-			if (tick_total != 0)
-				printf(", CPU %"PRIu64"%%", state->tick_cpu * 100U / tick_total);
+			tick_cpu = state->tick_cpu;
+
+			printf("%u%%, %u MiB", countpos * 100 / countmax, (unsigned)(countsize / (1024*1024)));
 
 			/* if we have at least 5 measures */
 			if (state->progress_tick >= 5) {
@@ -4360,6 +4360,8 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 				time_t delta_time;
 				block_off_t delta_pos;
 				data_off_t delta_size;
+				uint64_t delta_tick_total;
+				uint64_t delta_tick_cpu;
 
 				/* number of past measures */
 				past = state->progress_tick;
@@ -4383,9 +4385,14 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 				delta_time = now - state->progress_time[oldest];
 				delta_pos = countpos - state->progress_pos[oldest];
 				delta_size = countsize - state->progress_size[oldest];
+				delta_tick_total = tick_total - state->progress_tick_total[oldest];
+				delta_tick_cpu = tick_cpu - state->progress_tick_cpu[oldest];
 
 				if (delta_time != 0)
 					printf(", %u MiB/s", (unsigned)(delta_size / (1024*1024) / delta_time));
+
+				if (delta_tick_total != 0)
+					printf(", CPU %"PRIu64"%%", delta_tick_cpu * 100U / delta_tick_total);
 
 				/* estimate the remaining time */
 				if (delta_pos != 0) {
@@ -4407,6 +4414,8 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 			state->progress_time[state->progress_ptr] = now;
 			state->progress_pos[state->progress_ptr] = countpos;
 			state->progress_size[state->progress_ptr] = countsize;
+			state->progress_tick_cpu[state->progress_ptr] = tick_cpu;
+			state->progress_tick_total[state->progress_ptr] = tick_total;
 
 			/* next position */
 			++state->progress_ptr;

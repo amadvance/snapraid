@@ -4,7 +4,7 @@ SnapRAID HISTORY
 6.4 2014/9
 ==========
  * Keeps and print the time spent waiting for each disk also in 'scrub'.
- * The speed and ETA estimations are now based on the last 100
+ * The CPU usage, speed and ETA estimations are now based on the last 100
    seconds rather than from the start.
 
 6.3 2014/7
