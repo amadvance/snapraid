@@ -92,6 +92,11 @@ struct snapraid_option {
 	int force_content_text; /**< Force the use of text version of content file. */
 };
 
+/**
+ * Number of measures of the operation progress.
+ */
+#define PROGRESS_MAX 100
+
 struct snapraid_state {
 	struct snapraid_option opt; /**< Setup options. */
 	int filter_hidden; /**< Filter out hidden files. */
@@ -153,10 +158,18 @@ struct snapraid_state {
 	block_off_t loaded_paritymax;
 
 	int clear_past_hash; /**< Clear all the hash from CHG and DELETED blocks when reading the state from an incomplete sync. */
-	time_t progress_start; /**< Start of processing for progress visualization. */
-	time_t progress_last; /**< Last update of progress visualization. */
-	time_t progress_interruption; /**< Start of the measure interruption. */
-	time_t progress_subtract; /**< Time to subtract for the interruptions. */
+
+	time_t progress_whole_start; /**< Initial start of the whole process. */
+	time_t progress_interruption; /**< Time of the start of the progress interruption. */
+	time_t progress_wasted; /**< Time wasted in interruptions. */
+
+	time_t progress_time[PROGRESS_MAX]; /**< Last times of progress. */
+	block_off_t progress_pos[PROGRESS_MAX]; /**< Last positions of progress. */
+	data_off_t progress_size[PROGRESS_MAX]; /**< Last sizes of progress. */
+
+	int progress_ptr; /**< Pointer to the next position to fill. Rolling over. */
+	int progress_tick; /**< Number of measures done. */
+
 	int no_conf; /**< Automatically add missing info. Used to load content without a configuration file. */
 };
 

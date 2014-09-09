@@ -4251,9 +4251,11 @@ int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, b
 
 		now = time(0);
 
-		state->progress_start = now;
-		state->progress_last = now;
-		state->progress_subtract = 0;
+		state->progress_whole_start = now;
+
+		state->progress_tick = 0;
+		state->progress_ptr = 0;
+		state->progress_wasted = 0;
 	}
 
 	/* stop if requested */
@@ -4284,7 +4286,7 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 
 		now = time(0);
 
-		elapsed = now - state->progress_start - state->progress_subtract;
+		elapsed = now - state->progress_whole_start - state->progress_wasted;
 
 		if (countmax) {
 			printf("%u%% completed, %u MiB processed", countpos * 100 / countmax, countsize_MiB);
@@ -4316,8 +4318,12 @@ void state_progress_restart(struct snapraid_state* state)
 
 	now = time(0);
 
+	/* reset the progress counter */
+	state->progress_tick = 0;
+	state->progress_ptr = 0;
+
 	if (now >= state->progress_interruption) /* avoid degenerated cases when the clock is manually adjusted */
-		state->progress_subtract += now - state->progress_interruption;
+		state->progress_wasted += now - state->progress_interruption;
 }
 
 int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize)
@@ -4329,18 +4335,20 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 		time_t now;
 		tommy_node* i;
 		unsigned l;
+		int pred;
 
 		now = time(0);
 
-		if (state->progress_last != now) {
+		/* previous position */
+		pred = state->progress_ptr + PROGRESS_MAX - 1;
+		if (pred >= PROGRESS_MAX)
+			pred -= PROGRESS_MAX;
+
+		/* if the previous measure is different */
+		if (state->progress_tick == 0 || state->progress_time[pred] != now) {
 			uint64_t tick_total;
-			time_t delta = now - state->progress_start - state->progress_subtract;
 
 			printf("%u%%, %u MiB", countpos * 100 / countmax, (unsigned)(countsize / (1024*1024)));
-
-			if (delta != 0) {
-				printf(", %u MiB/s", (unsigned)(countsize / (1024*1024) / delta));
-			}
 
 			tick_total = state->tick_cpu;
 			for(i=state->disklist;i!=0;i=i->next) {
@@ -4349,23 +4357,71 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 			}
 			for(l=0;l<state->level;++l)
 				tick_total += state->tick[l];
-			if (tick_total)
+			if (tick_total != 0)
 				printf(", CPU %"PRIu64"%%", state->tick_cpu * 100U / tick_total);
 
-			if (delta > 5 && countpos > 0) {
-				unsigned m, h;
-				data_off_t to_do = countmax - countpos;
+			/* if we have at least 5 measures */
+			if (state->progress_tick >= 5) {
+				int oldest;
+				int past;
+				time_t delta_time;
+				block_off_t delta_pos;
+				data_off_t delta_size;
 
-				m = to_do * delta / (60 * countpos);
+				/* number of past measures */
+				past = state->progress_tick;
 
-				h = m / 60;
-				m = m % 60;
+				/* drop the oldest ones, to promptly */
+				/* skip the startup phase */
+				past -= past / 5;
 
-				printf(", %u:%02u ETA%s", h, m, PROGRESS_CLEAR);
+				/* check how much we can go in the past */
+				if (past >= PROGRESS_MAX) {
+					/* the vector is filled, so we are already in position */
+					/* to get the possible oldest one */
+					oldest = state->progress_ptr;
+				} else {
+					/* go backward the number of positions selected */
+					oldest = state->progress_ptr + PROGRESS_MAX - past;
+					if (oldest >= PROGRESS_MAX)
+						oldest -= PROGRESS_MAX;
+				}
+
+				delta_time = now - state->progress_time[oldest];
+				delta_pos = countpos - state->progress_pos[oldest];
+				delta_size = countsize - state->progress_size[oldest];
+
+				if (delta_time != 0)
+					printf(", %u MiB/s", (unsigned)(delta_size / (1024*1024) / delta_time));
+
+				/* estimate the remaining time */
+				if (delta_pos != 0) {
+					unsigned m, h;
+					data_off_t to_do = countmax - countpos;
+
+					m = to_do * delta_time / (60 * delta_pos);
+
+					h = m / 60;
+					m = m % 60;
+
+					printf(", %u:%02u ETA%s", h, m, PROGRESS_CLEAR);
+				}
 			}
 			printf("\r");
 			fflush(stdout);
-			state->progress_last = now;
+
+			/* store the new measure */
+			state->progress_time[state->progress_ptr] = now;
+			state->progress_pos[state->progress_ptr] = countpos;
+			state->progress_size[state->progress_ptr] = countsize;
+
+			/* next position */
+			++state->progress_ptr;
+			if (state->progress_ptr >= PROGRESS_MAX)
+				state->progress_ptr -= PROGRESS_MAX;
+
+			/* one more measure */
+			++state->progress_tick;
 		}
 	}
 
