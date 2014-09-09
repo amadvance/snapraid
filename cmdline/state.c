@@ -85,8 +85,9 @@ void state_init(struct snapraid_state* state)
 	for(l=0;l<LEV_MAX;++l) {
 		state->parity_path[l][0] = 0;
 		state->parity_device[l] = 0;
-		state->tick[l] = 0;
+		state->tick_parity[l] = 0;
 	}
+	state->tick_io = 0;
 	state->tick_cpu = 0;
 	state->tick_last = tick();
 	state->share[0] = 0;
@@ -4333,8 +4334,6 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 		fflush(stdlog);
 	} else {
 		time_t now;
-		tommy_node* i;
-		unsigned l;
 		int pred;
 
 		now = time(0);
@@ -4350,13 +4349,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 
 			printf("%u%%, %u MiB", countpos * 100 / countmax, (unsigned)(countsize / (1024*1024)));
 
-			tick_total = state->tick_cpu;
-			for(i=state->disklist;i!=0;i=i->next) {
-				struct snapraid_disk* disk = i->data;
-				tick_total += disk->tick;
-			}
-			for(l=0;l<state->level;++l)
-				tick_total += state->tick[l];
+			tick_total = state->tick_cpu + state->tick_io;
 			if (tick_total != 0)
 				printf(", CPU %"PRIu64"%%", state->tick_cpu * 100U / tick_total);
 
@@ -4457,9 +4450,9 @@ void state_usage_print(struct snapraid_state* state)
 			tick_max = disk->tick;
 	}
 	for(l=0;l<state->level;++l) {
-		tick_total += state->tick[l];
-		if (state->tick[l] > tick_max)
-			tick_max = state->tick[l];
+		tick_total += state->tick_parity[l];
+		if (state->tick_parity[l] > tick_max)
+			tick_max = state->tick_parity[l];
 	}
 
 	if (!tick_total)
@@ -4478,11 +4471,11 @@ void state_usage_print(struct snapraid_state* state)
 
 	printf("Time for parity:");
 	for(l=0;l<state->level;++l) {
-		if (state->tick[l] == tick_max)
+		if (state->tick_parity[l] == tick_max)
 			printf(" %s:", lev_config_name(l));
 		else
 			printf(" ");
-		printf("%"PRIu64"%%", state->tick[l] * 100U / tick_total);
+		printf("%"PRIu64"%%", state->tick_parity[l] * 100U / tick_total);
 	}
 	printf("\n");
 }

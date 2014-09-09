@@ -129,14 +129,19 @@ struct snapraid_state {
 	tommy_arrayblkof infoarr; /**< Block information array. */
 
 	/**
-	 * Cumulative time used for parity disks.
-	 */
-	uint64_t tick[LEV_MAX];
-
-	/**
 	 * Cumulative time used for computations.
 	 */
 	uint64_t tick_cpu;
+
+	/**
+	 * Cumulative time used for all io operations of disks.
+	 */
+	uint64_t tick_io;
+
+	/**
+	 * Cumulative time used for parity disks.
+	 */
+	uint64_t tick_parity[LEV_MAX];
 
 	/**
 	 * Last time used for time measure.
@@ -301,9 +306,10 @@ static inline void state_usage_waste(struct snapraid_state* state)
 static inline void state_usage_cpu(struct snapraid_state* state)
 {
 	uint64_t now = tick();
+	uint64_t delta = now - state->tick_last;
 
 	/* increment the time spent in computations */
-	state->tick_cpu += now - state->tick_last;
+	state->tick_cpu += delta;
 
 	state->tick_last = now;
 }
@@ -314,9 +320,11 @@ static inline void state_usage_cpu(struct snapraid_state* state)
 static inline void state_usage_disk(struct snapraid_state* state, struct snapraid_disk* disk)
 {
 	uint64_t now = tick();
+	uint64_t delta = now - state->tick_last;
 
 	/* increment the time spent in the data disk */
-	disk->tick += now - state->tick_last;
+	disk->tick += delta;
+	state->tick_io += delta;
 
 	state->tick_last = now;
 }
@@ -327,11 +335,13 @@ static inline void state_usage_disk(struct snapraid_state* state, struct snaprai
 static inline void state_usage_parity(struct snapraid_state* state, unsigned level)
 {
 	uint64_t now = tick();
+	uint64_t delta = now - state->tick_last;
 
 	assert(level < LEV_MAX);
 
 	/* increment the time spent in the parity disk */
-	state->tick[level] += now - state->tick_last;
+	state->tick_parity[level] += delta;
+	state->tick_io += delta;
 
 	state->tick_last = now;
 }
