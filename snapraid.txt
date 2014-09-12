@@ -592,7 +592,7 @@ SnapRAID provides the following options:
         If SnapRAID detects a such condition, it stops proceeding
         unless you specify this option.
         This allows to easily detect when after a system crash,
-        some accessed files were zeroed.
+        some accessed files were truncated.
         This is a possible condition in Linux with the ext3/ext4
         filesystems.
         This option can be used only with the "sync" command.
@@ -667,6 +667,8 @@ SnapRAID provides the following options:
         HHMMSS. Note that in Windows batch files, you'll have to double
         the '%' char, like result-%%D.log. And to use '>>' you'll have
         to enclose the name in ", like ">>result.log".
+        To output the log to standard output or standard error,
+        you can use respectively ">&1" and ">&2".
 
     -s, --start BLKSTART
         Starts the processing from the specified

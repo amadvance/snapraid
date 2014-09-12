@@ -784,7 +784,7 @@ size that before was not.
 If SnapRAID detects a such condition, it stops proceeding
 unless you specify this option.
 This allows to easily detect when after a system crash,
-some accessed files were zeroed.
+some accessed files were truncated.
 This is a possible condition in Linux with the ext3/ext4
 filesystems.
 This option can be used only with the \[dq]sync\[dq] command.
@@ -859,6 +859,8 @@ replaced with the date and time in the format YYYYMMDD and
 HHMMSS. Note that in Windows batch files, you\'ll have to double
 the \'%\' char, like result\-%%D.log. And to use \'>>\' you\'ll have
 to enclose the name in \[dq], like \[dq]>>result.log\[dq].
+To output the log to standard output or standard error,
+you can use respectively \[dq]>&1\[dq] and \[dq]>&2\[dq].
 .TP
 .B \-s, \-\-start BLKSTART
 Starts the processing from the specified
