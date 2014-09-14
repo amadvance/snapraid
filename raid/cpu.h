@@ -106,19 +106,43 @@ static inline int raid_cpu_has_sse42(void)
 	return (reg[2] >> 20) & 1;
 }
 
-static inline int raid_cpu_has_avx(void)
+static inline int raid_cpu_has_xsavexrstor(void)
 {
 	uint32_t reg[4];
 
 	raid_cpuid(1, 0, reg);
 
-	return (reg[2] >> 28) & 1;
+	return (reg[2] >> 27) & 1;
+}
+
+static inline int raid_os_support_256bit_regs(void)
+{
+	uint32_t reg[4];
+
+	/* get the value of the Extended Control Register ecx=0 */
+	asm volatile(
+		"xgetbv\n"
+		: "=a" (reg[0]), "=d" (reg[3])
+		: "c" (0)
+	);
+
+	/* check if the OS save all the 256 bits registers */
+	return (reg[0] & 0x6) == 0x6;
 }
 
 static inline int raid_cpu_has_avx2(void)
 {
 	uint32_t reg[4];
 
+	/* check if the CPU supports XSAVE and XRSTOR, and also XGETBV */
+	if (!raid_cpu_has_xsavexrstor())
+		return 0;
+
+	/* check if the OS suports AVX2 registers */
+	if (!raid_os_support_256bit_regs())
+		return 0;
+
+	/* now check for AVX2 support */
 	raid_cpuid(7, 0, reg);
 
 	return (reg[1] >> 5) & 1;
