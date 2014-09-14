@@ -79,6 +79,11 @@ void raid_init(void)
 		raid_rec_ptr[4] = raid_recX_ssse3;
 		raid_rec_ptr[5] = raid_recX_ssse3;
 	}
+
+	if (raid_cpu_has_avx2()) {
+		raid_gen_ptr[0] = raid_gen1_avx2;
+		raid_gen_ptr[1] = raid_gen2_avx2;
+	}
 #endif
 
 	/* set the default mode */

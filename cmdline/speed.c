@@ -260,6 +260,10 @@ void speed(int period)
 #ifdef CONFIG_X86_64
 	printf("%8s", "ssse3e");
 #endif
+	printf("%8s", "avx2");
+#ifdef CONFIG_X86_64
+	printf("%8s", "avx2e");
+#endif
 #endif
 	printf("\n");
 
@@ -288,6 +292,19 @@ void speed(int period)
 	if (raid_cpu_has_sse2()) {
 		SPEED_START {
 			raid_gen1_sse2(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8"PRIu64, ds / dt);
+		fflush(stdout);
+	}
+
+	printf("%8s", "");
+	printf("%8s", "");
+	printf("%8s", "");
+
+	if (raid_cpu_has_avx2()) {
+		SPEED_START {
+			raid_gen1_avx2(nd, size, v);
 		} SPEED_STOP
 
 		printf("%8"PRIu64, ds / dt);
@@ -333,7 +350,21 @@ void speed(int period)
 
 		printf("%8"PRIu64, ds / dt);
 		fflush(stdout);
+#else
+		printf("%8s", "");
 #endif
+	}
+
+	printf("%8s", "");
+	printf("%8s", "");
+
+	if (raid_cpu_has_avx2()) {
+		SPEED_START {
+			raid_gen2_avx2(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8"PRIu64, ds / dt);
+		fflush(stdout);
 	}
 #endif
 	printf("\n");

@@ -57,14 +57,53 @@ void raid_gen1_sse2(int nd, size_t size, void **vv)
 #endif
 
 #ifdef CONFIG_X86
+/*
+ * GEN1 (RAID5 with xor) AVX2 implementation
+ *
+ * Intentionally don't process more than 64 bytes because 64 is the typical
+ * cache block, and processing 128 bytes doesn't increase performance, and in
+ * some cases it even decreases it.
+ */
+void raid_gen1_avx2(int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	int d, l;
+	size_t i;
+
+	l = nd - 1;
+	p = v[nd];
+
+	raid_asm_begin();
+
+	for (i = 0; i < size; i += 64) {
+		asm volatile("vmovdqa %0,%%ymm0" : : "m" (v[l][i]));
+		asm volatile("vmovdqa %0,%%ymm2" : : "m" (v[l][i+32]));
+		for (d = l-1; d >= 0; --d) {
+			asm volatile("vpxor %0,%%ymm0,%%ymm0" : : "m" (v[d][i]));
+			asm volatile("vpxor %0,%%ymm2,%%ymm2" : : "m" (v[d][i+32]));
+		}
+		asm volatile("vmovntdq %%ymm0,%0" : "=m" (p[i]));
+		asm volatile("vmovntdq %%ymm2,%0" : "=m" (p[i+32]));
+	}
+
+	raid_asm_end();
+}
+#endif
+
+#ifdef CONFIG_X86
 static const struct gfconst16 {
 	uint8_t poly[16];
 	uint8_t low4[16];
-} gfconst16  __aligned(32) = {
-	{ 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d,
-	  0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d },
-	{ 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
-	  0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f },
+} gfconst16 __aligned(32) = {
+	{
+		0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d,
+		0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d
+	},
+	{
+		0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f,
+		0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f, 0x0f
+	},
 };
 #endif
 
@@ -116,6 +155,59 @@ void raid_gen2_sse2(int nd, size_t size, void **vv)
 		asm volatile("movntdq %%xmm1,%0" : "=m" (p[i+16]));
 		asm volatile("movntdq %%xmm2,%0" : "=m" (q[i]));
 		asm volatile("movntdq %%xmm3,%0" : "=m" (q[i+16]));
+	}
+
+	raid_asm_end();
+}
+#endif
+
+#ifdef CONFIG_X86
+/*
+ * GEN2 (RAID6 with powers of 2) AVX2 implementation
+ */
+void raid_gen2_avx2(int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	uint8_t *q;
+	int d, l;
+	size_t i;
+
+	l = nd - 1;
+	p = v[nd];
+	q = v[nd+1];
+
+	raid_asm_begin();
+
+	asm volatile("vbroadcasti128 %0, %%ymm7" : : "m" (gfconst16.poly[0]));
+	asm volatile("vpxor %ymm6,%ymm6,%ymm6");
+
+	for (i = 0; i < size; i += 64) {
+		asm volatile("vmovdqa %0,%%ymm0" : : "m" (v[l][i]));
+		asm volatile("vmovdqa %0,%%ymm1" : : "m" (v[l][i+32]));
+		asm volatile("vmovdqa %ymm0,%ymm2");
+		asm volatile("vmovdqa %ymm1,%ymm3");
+		for (d = l-1; d >= 0; --d) {
+			asm volatile("vpcmpgtb %ymm2,%ymm6,%ymm4");
+			asm volatile("vpcmpgtb %ymm3,%ymm6,%ymm5");
+			asm volatile("vpaddb %ymm2,%ymm2,%ymm2");
+			asm volatile("vpaddb %ymm3,%ymm3,%ymm3");
+			asm volatile("vpand %ymm7,%ymm4,%ymm4");
+			asm volatile("vpand %ymm7,%ymm5,%ymm5");
+			asm volatile("vpxor %ymm4,%ymm2,%ymm2");
+			asm volatile("vpxor %ymm5,%ymm3,%ymm3");
+
+			asm volatile("vmovdqa %0,%%ymm4" : : "m" (v[d][i]));
+			asm volatile("vmovdqa %0,%%ymm5" : : "m" (v[d][i+32]));
+			asm volatile("vpxor %ymm4,%ymm0,%ymm0");
+			asm volatile("vpxor %ymm5,%ymm1,%ymm1");
+			asm volatile("vpxor %ymm4,%ymm2,%ymm2");
+			asm volatile("vpxor %ymm5,%ymm3,%ymm3");
+		}
+		asm volatile("vmovntdq %%ymm0,%0" : "=m" (p[i]));
+		asm volatile("vmovntdq %%ymm1,%0" : "=m" (p[i+32]));
+		asm volatile("vmovntdq %%ymm2,%0" : "=m" (q[i]));
+		asm volatile("vmovntdq %%ymm3,%0" : "=m" (q[i+32]));
 	}
 
 	raid_asm_end();

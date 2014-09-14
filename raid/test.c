@@ -309,6 +309,11 @@ int raid_test_par(int mode, int nd, size_t size)
 		f[nf++] = raid_gen2_sse2ext;
 #endif
 	}
+
+	if (raid_cpu_has_avx2()) {
+		f[nf++] = raid_gen1_avx2;
+		f[nf++] = raid_gen2_avx2;
+	}
 #endif
 
 	if (mode == RAID_MODE_CAUCHY) {

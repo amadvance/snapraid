@@ -43,6 +43,8 @@ static struct raid_func {
 	{ "ssse3", raid_rec1_ssse3 },
 	{ "ssse3", raid_rec2_ssse3 },
 	{ "ssse3", raid_recX_ssse3 },
+	{ "avx2", raid_gen1_avx2 },
+	{ "avx2", raid_gen2_avx2 },
 #endif
 
 #ifdef CONFIG_X86_64
