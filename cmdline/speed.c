@@ -297,9 +297,13 @@ void speed(int period)
 		fflush(stdout);
 	}
 
+#ifdef CONFIG_X86_64
 	printf("%8s", "");
+#endif
 	printf("%8s", "");
+#ifdef CONFIG_X86_64
 	printf("%8s", "");
+#endif
 
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
@@ -355,7 +359,9 @@ void speed(int period)
 	}
 
 	printf("%8s", "");
+#ifdef CONFIG_X86_64
 	printf("%8s", "");
+#endif
 
 	if (raid_cpu_has_avx2()) {
 		SPEED_START {
@@ -407,6 +413,23 @@ void speed(int period)
 		fflush(stdout);
 #endif
 	}
+
+	printf("%8s", "");
+#ifdef CONFIG_X86_64
+	printf("%8s", "");
+#endif
+	printf("%8s", "");
+
+#ifdef CONFIG_X86_64
+	if (raid_cpu_has_avx2()) {
+		SPEED_START {
+			raid_genz_avx2ext(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8"PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
 #endif
 	printf("\n");
 
@@ -453,6 +476,23 @@ void speed(int period)
 		fflush(stdout);
 #endif
 	}
+
+	printf("%8s", "");
+#ifdef CONFIG_X86_64
+	printf("%8s", "");
+#endif
+	printf("%8s", "");
+
+#ifdef CONFIG_X86_64
+	if (raid_cpu_has_avx2()) {
+		SPEED_START {
+			raid_gen3_avx2ext(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8"PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
 #endif
 	printf("\n");
 

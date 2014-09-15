@@ -335,6 +335,12 @@ int raid_test_par(int mode, int nd, size_t size)
 			f[nf++] = raid_gen6_ssse3ext;
 #endif
 		}
+
+#ifdef CONFIG_X86_64
+		if (raid_cpu_has_avx2()) {
+			f[nf++] = raid_gen3_avx2ext;
+		}
+#endif
 #endif
 	} else {
 		f[nf++] = raid_genz_int32;
@@ -347,6 +353,12 @@ int raid_test_par(int mode, int nd, size_t size)
 			f[nf++] = raid_genz_sse2ext;
 #endif
 		}
+
+#ifdef CONFIG_X86_64
+		if (raid_cpu_has_avx2()) {
+			f[nf++] = raid_genz_avx2ext;
+		}
+#endif
 #endif
 	}
 
