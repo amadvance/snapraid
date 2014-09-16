@@ -3,6 +3,7 @@ SnapRAID HISTORY
 
 7.0 2014/9
 ==========
+ * Adds AVX2 support to improve parity generation speed.
  * Keeps and print the time spent waiting for each disk also in 'scrub'.
  * The CPU usage, speed and ETA estimations are now based on the last 100
    seconds rather than from the start.
