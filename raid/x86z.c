@@ -19,13 +19,19 @@ static const struct gfzconst16 {
 	uint8_t poly[16];
 	uint8_t half[16];
 	uint8_t low7[16];
-} gfzconst16  __aligned(64) = {
-	{ 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d,
-	  0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d },
-	{ 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e,
-	  0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e },
-	{ 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
-	  0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f }
+} gfzconst16 __aligned(64) = {
+	{
+		0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d,
+		0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d
+	},
+	{
+		0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e,
+		0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e, 0x8e
+	},
+	{
+		0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f,
+		0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f, 0x7f
+	}
 };
 #endif
 
@@ -164,6 +170,85 @@ void raid_genz_sse2ext(int nd, size_t size, void **vv)
 		asm volatile("movntdq %%xmm2,%0" : "=m" (r[i]));
 		asm volatile("movntdq %%xmm10,%0" : "=m" (r[i+16]));
 	}
+
+	raid_asm_end();
+}
+#endif
+
+#ifdef CONFIG_X86_64
+/*
+ * GENz (triple parity with powers of 2^-1) AVX2 implementation
+ *
+ * Note that it uses 16 registers, meaning that x64 is required.
+ */
+void raid_genz_avx2ext(int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t **)vv;
+	uint8_t *p;
+	uint8_t *q;
+	uint8_t *r;
+	int d, l;
+	size_t i;
+
+	l = nd - 1;
+	p = v[nd];
+	q = v[nd+1];
+	r = v[nd+2];
+
+	raid_asm_begin();
+
+	asm volatile("vbroadcasti128 %0,%%ymm7" : : "m" (gfzconst16.poly[0]));
+	asm volatile("vbroadcasti128 %0,%%ymm3" : : "m" (gfzconst16.half[0]));
+	asm volatile("vbroadcasti128 %0,%%ymm11" : : "m" (gfzconst16.low7[0]));
+	asm volatile("vpxor %ymm15,%ymm15,%ymm15");
+
+	for (i = 0; i < size; i += 64) {
+		asm volatile("vmovdqa %0,%%ymm0" : : "m" (v[l][i]));
+		asm volatile("vmovdqa %0,%%ymm8" : : "m" (v[l][i+32]));
+		asm volatile("vmovdqa %ymm0,%ymm1");
+		asm volatile("vmovdqa %ymm8,%ymm9");
+		asm volatile("vmovdqa %ymm0,%ymm2");
+		asm volatile("vmovdqa %ymm8,%ymm10");
+		for (d = l-1; d >= 0; --d) {
+			asm volatile("vpsllw $7,%ymm2,%ymm6");
+			asm volatile("vpsllw $7,%ymm10,%ymm14");
+			asm volatile("vpsrlw $1,%ymm2,%ymm2");
+			asm volatile("vpsrlw $1,%ymm10,%ymm10");
+			asm volatile("vpcmpgtb %ymm1,%ymm15,%ymm4");
+			asm volatile("vpcmpgtb %ymm9,%ymm15,%ymm12");
+			asm volatile("vpcmpgtb %ymm6,%ymm15,%ymm5");
+			asm volatile("vpcmpgtb %ymm14,%ymm15,%ymm13");
+			asm volatile("vpaddb %ymm1,%ymm1,%ymm1");
+			asm volatile("vpaddb %ymm9,%ymm9,%ymm9");
+			asm volatile("vpand %ymm11,%ymm2,%ymm2");
+			asm volatile("vpand %ymm11,%ymm10,%ymm10");
+			asm volatile("vpand %ymm7,%ymm4,%ymm4");
+			asm volatile("vpand %ymm7,%ymm12,%ymm12");
+			asm volatile("vpand %ymm3,%ymm5,%ymm5");
+			asm volatile("vpand %ymm3,%ymm13,%ymm13");
+			asm volatile("vpxor %ymm4,%ymm1,%ymm1");
+			asm volatile("vpxor %ymm12,%ymm9,%ymm9");
+			asm volatile("vpxor %ymm5,%ymm2,%ymm2");
+			asm volatile("vpxor %ymm13,%ymm10,%ymm10");
+
+			asm volatile("vmovdqa %0,%%ymm4" : : "m" (v[d][i]));
+			asm volatile("vmovdqa %0,%%ymm12" : : "m" (v[d][i+32]));
+			asm volatile("vpxor %ymm4,%ymm0,%ymm0");
+			asm volatile("vpxor %ymm4,%ymm1,%ymm1");
+			asm volatile("vpxor %ymm4,%ymm2,%ymm2");
+			asm volatile("vpxor %ymm12,%ymm8,%ymm8");
+			asm volatile("vpxor %ymm12,%ymm9,%ymm9");
+			asm volatile("vpxor %ymm12,%ymm10,%ymm10");
+		}
+		asm volatile("vmovntdq %%ymm0,%0" : "=m" (p[i]));
+		asm volatile("vmovntdq %%ymm8,%0" : "=m" (p[i+32]));
+		asm volatile("vmovntdq %%ymm1,%0" : "=m" (q[i]));
+		asm volatile("vmovntdq %%ymm9,%0" : "=m" (q[i+32]));
+		asm volatile("vmovntdq %%ymm2,%0" : "=m" (r[i]));
+		asm volatile("vmovntdq %%ymm10,%0" : "=m" (r[i+32]));
+	}
+
+	asm volatile("vzeroupper" : : : "memory");
 
 	raid_asm_end();
 }

@@ -185,18 +185,24 @@ int raid_test_rec(int mode, int nd, size_t size)
 #ifdef CONFIG_X86
 			if (raid_cpu_has_ssse3())
 				f[i][nf[i]++] = raid_rec1_ssse3;
+			if (raid_cpu_has_avx2())
+				f[i][nf[i]++] = raid_rec1_avx2;
 #endif
 		} else if (i == 1) {
 			f[i][nf[i]++] = raid_rec2_int8;
 #ifdef CONFIG_X86
 			if (raid_cpu_has_ssse3())
 				f[i][nf[i]++] = raid_rec2_ssse3;
+			if (raid_cpu_has_avx2())
+				f[i][nf[i]++] = raid_rec2_avx2;
 #endif
 		} else {
 			f[i][nf[i]++] = raid_recX_int8;
 #ifdef CONFIG_X86
 			if (raid_cpu_has_ssse3())
 				f[i][nf[i]++] = raid_recX_ssse3;
+			if (raid_cpu_has_avx2())
+				f[i][nf[i]++] = raid_recX_avx2;
 #endif
 		}
 	}
@@ -309,6 +315,11 @@ int raid_test_par(int mode, int nd, size_t size)
 		f[nf++] = raid_gen2_sse2ext;
 #endif
 	}
+
+	if (raid_cpu_has_avx2()) {
+		f[nf++] = raid_gen1_avx2;
+		f[nf++] = raid_gen2_avx2;
+	}
 #endif
 
 	if (mode == RAID_MODE_CAUCHY) {
@@ -330,6 +341,15 @@ int raid_test_par(int mode, int nd, size_t size)
 			f[nf++] = raid_gen6_ssse3ext;
 #endif
 		}
+
+#ifdef CONFIG_X86_64
+		if (raid_cpu_has_avx2()) {
+			f[nf++] = raid_gen3_avx2ext;
+			f[nf++] = raid_gen4_avx2ext;
+			f[nf++] = raid_gen5_avx2ext;
+			f[nf++] = raid_gen6_avx2ext;
+		}
+#endif
 #endif
 	} else {
 		f[nf++] = raid_genz_int32;
@@ -342,6 +362,11 @@ int raid_test_par(int mode, int nd, size_t size)
 			f[nf++] = raid_genz_sse2ext;
 #endif
 		}
+
+#ifdef CONFIG_X86_64
+		if (raid_cpu_has_avx2())
+			f[nf++] = raid_genz_avx2ext;
+#endif
 #endif
 	}
 
