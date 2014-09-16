@@ -248,6 +248,8 @@ void raid_genz_avx2ext(int nd, size_t size, void **vv)
 		asm volatile("vmovntdq %%ymm10,%0" : "=m" (r[i+32]));
 	}
 
+	asm volatile("vzeroupper" : : : "memory");
+
 	raid_asm_end();
 }
 #endif

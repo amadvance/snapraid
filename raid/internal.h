@@ -85,18 +85,24 @@ void raid_gen3_avx2ext(int nd, size_t size, void **vv);
 void raid_gen4_int8(int nd, size_t size, void **vv);
 void raid_gen4_ssse3(int nd, size_t size, void **vv);
 void raid_gen4_ssse3ext(int nd, size_t size, void **vv);
+void raid_gen4_avx2ext(int nd, size_t size, void **vv);
 void raid_gen5_int8(int nd, size_t size, void **vv);
 void raid_gen5_ssse3(int nd, size_t size, void **vv);
 void raid_gen5_ssse3ext(int nd, size_t size, void **vv);
+void raid_gen5_avx2ext(int nd, size_t size, void **vv);
 void raid_gen6_int8(int nd, size_t size, void **vv);
 void raid_gen6_ssse3(int nd, size_t size, void **vv);
 void raid_gen6_ssse3ext(int nd, size_t size, void **vv);
+void raid_gen6_avx2ext(int nd, size_t size, void **vv);
 void raid_rec1_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_recX_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec1_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_rec2_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_rec1_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_rec2_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv);
+void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv);
 
 /*
  * Internal naming.

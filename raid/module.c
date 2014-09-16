@@ -86,7 +86,16 @@ void raid_init(void)
 #ifdef CONFIG_X86_64
 		raid_gen3_ptr = raid_gen3_avx2ext;
 		raid_genz_ptr = raid_genz_avx2ext;
+		raid_gen_ptr[3] = raid_gen4_avx2ext;
+		raid_gen_ptr[4] = raid_gen5_avx2ext;
+		raid_gen_ptr[5] = raid_gen6_avx2ext;
 #endif
+		raid_rec_ptr[0] = raid_rec1_avx2;
+		raid_rec_ptr[1] = raid_rec2_avx2;
+		raid_rec_ptr[2] = raid_recX_avx2;
+		raid_rec_ptr[3] = raid_recX_avx2;
+		raid_rec_ptr[4] = raid_recX_avx2;
+		raid_rec_ptr[5] = raid_recX_avx2;
 	}
 #endif
 
