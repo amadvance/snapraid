@@ -138,7 +138,7 @@ static inline int raid_cpu_has_avx2(void)
 	if (!raid_cpu_has_xsavexrstor())
 		return 0;
 
-	/* check if the OS suports AVX2 registers */
+	/* check if the OS supports AVX2 registers */
 	if (!raid_os_support_256bit_regs())
 		return 0;
 

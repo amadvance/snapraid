@@ -127,7 +127,7 @@ void speed(int period)
 			raid_cpu_has_sse2() ? " sse2" : "",
 			raid_cpu_has_ssse3() ? " ssse3" : "",
 			raid_cpu_has_sse42() ? " sse42" : "",
-			raid_cpu_has_avx2() ? "avx2" : "",
+			raid_cpu_has_avx2() ? " avx2" : "",
 			raid_cpu_has_slowmult() ? " slowmult" : "",
 			raid_cpu_has_slowpshufb() ? " slowpshufb" : "",
 			raid_cpu_has_slowextendedreg() ? " slowext" : ""
@@ -156,7 +156,7 @@ void speed(int period)
 
 	printf("Speed test using %u data buffers of %u bytes, for a total of %u KiB.\n", nd, size, nd * size / 1024);
 	printf("Memory blocks have a displacement of %u bytes to improve cache performance.\n", RAID_MALLOC_DISPLACEMENT);
-	printf("The reported value is the aggregate bandwidth of all data blocks in MiB/s,\n");
+	printf("The reported values are the aggregate bandwidth of all data blocks in MiB/s,\n");
 	printf("not counting parity blocks.\n");
 	printf("\n");
 
@@ -478,10 +478,6 @@ void speed(int period)
 	}
 
 	printf("%8s", "");
-#ifdef CONFIG_X86_64
-	printf("%8s", "");
-#endif
-	printf("%8s", "");
 
 #ifdef CONFIG_X86_64
 	if (raid_cpu_has_avx2()) {
@@ -539,6 +535,19 @@ void speed(int period)
 		fflush(stdout);
 #endif
 	}
+
+	printf("%8s", "");
+
+#ifdef CONFIG_X86_64
+	if (raid_cpu_has_avx2()) {
+		SPEED_START {
+			raid_gen4_avx2ext(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8"PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
 #endif
 	printf("\n");
 
@@ -585,6 +594,19 @@ void speed(int period)
 		fflush(stdout);
 #endif
 	}
+
+	printf("%8s", "");
+
+#ifdef CONFIG_X86_64
+	if (raid_cpu_has_avx2()) {
+		SPEED_START {
+			raid_gen5_avx2ext(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8"PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
 #endif
 	printf("\n");
 
@@ -631,6 +653,19 @@ void speed(int period)
 		fflush(stdout);
 #endif
 	}
+
+	printf("%8s", "");
+
+#ifdef CONFIG_X86_64
+	if (raid_cpu_has_avx2()) {
+		SPEED_START {
+			raid_gen6_avx2ext(nd, size, v);
+		} SPEED_STOP
+
+		printf("%8"PRIu64, ds / dt);
+		fflush(stdout);
+	}
+#endif
 #endif
 	printf("\n");
 	printf("\n");
@@ -642,6 +677,7 @@ void speed(int period)
 	printf("%8s", "int8");
 #ifdef CONFIG_X86
 	printf("%8s", "ssse3");
+	printf("%8s", "avx2");
 #endif
 	printf("\n");
 
@@ -664,6 +700,16 @@ void speed(int period)
 			for (j = 0; j < nd; ++j)
 				/* +1 to avoid GEN1 optimized case */
 				raid_rec1_ssse3(1, id, ip + 1, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8"PRIu64, ds / dt);
+	}
+
+	if (raid_cpu_has_avx2()) {
+		SPEED_START {
+			for (j = 0; j < nd; ++j)
+				/* +1 to avoid GEN1 optimized case */
+				raid_rec1_avx2(1, id, ip + 1, nd, size, v);
 		} SPEED_STOP
 
 		printf("%8"PRIu64, ds / dt);
@@ -694,6 +740,16 @@ void speed(int period)
 
 		printf("%8"PRIu64, ds / dt);
 	}
+
+	if (raid_cpu_has_avx2()) {
+		SPEED_START {
+			for (j = 0; j < nd; ++j)
+				/* +1 to avoid GEN1 optimized case */
+				raid_rec2_avx2(2, id, ip + 1, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8"PRIu64, ds / dt);
+	}
 #endif
 	printf("\n");
 
@@ -714,6 +770,15 @@ void speed(int period)
 		SPEED_START {
 			for (j = 0; j < nd; ++j)
 				raid_recX_ssse3(3, id, ip, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8"PRIu64, ds / dt);
+	}
+
+	if (raid_cpu_has_avx2()) {
+		SPEED_START {
+			for (j = 0; j < nd; ++j)
+				raid_recX_avx2(3, id, ip, nd, size, v);
 		} SPEED_STOP
 
 		printf("%8"PRIu64, ds / dt);
@@ -742,6 +807,15 @@ void speed(int period)
 
 		printf("%8"PRIu64, ds / dt);
 	}
+
+	if (raid_cpu_has_avx2()) {
+		SPEED_START {
+			for (j = 0; j < nd; ++j)
+				raid_recX_avx2(4, id, ip, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8"PRIu64, ds / dt);
+	}
 #endif
 	printf("\n");
 
@@ -766,6 +840,15 @@ void speed(int period)
 
 		printf("%8"PRIu64, ds / dt);
 	}
+
+	if (raid_cpu_has_avx2()) {
+		SPEED_START {
+			for (j = 0; j < nd; ++j)
+				raid_recX_avx2(5, id, ip, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8"PRIu64, ds / dt);
+	}
 #endif
 	printf("\n");
 
@@ -786,6 +869,15 @@ void speed(int period)
 		SPEED_START {
 			for (j = 0; j < nd; ++j)
 				raid_recX_ssse3(6, id, ip, nd, size, v);
+		} SPEED_STOP
+
+		printf("%8"PRIu64, ds / dt);
+	}
+
+	if (raid_cpu_has_avx2()) {
+		SPEED_START {
+			for (j = 0; j < nd; ++j)
+				raid_recX_avx2(6, id, ip, nd, size, v);
 		} SPEED_STOP
 
 		printf("%8"PRIu64, ds / dt);
