@@ -239,8 +239,6 @@ void speed(void)
 
 		printf("%8"PRIu64, ds / dt);
 		fflush(stdout);
-#else
-		printf("%8s", "");
 #endif
 	}
 
