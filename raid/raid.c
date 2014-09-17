@@ -205,8 +205,8 @@ void raid_zero(void *zero)
  * @nd Number of data blocks
  * @size Size of the blocks pointed by @v. It must be a multipler of 64.
  * @v Vector of pointers to the blocks of data and parity.
- *   It has (@nd + #parities) elements. The starting elements are the blocks for
- *   data, following with the parity blocks.
+ *   It has (@nd + #parities) elements. The starting elements are the blocks
+ *   for data, following with the parity blocks.
  *   Each block has @size bytes.
  */
 void (*raid_gen_ptr[RAID_PARITY_MAX])(int nd, size_t size, void **vv);
@@ -275,8 +275,7 @@ void raid_invert(uint8_t *M, uint8_t *V, int n)
  * Computes the parity without the missing data blocks
  * and store it in the buffers of such data blocks.
  *
- * This is the parity expressed as Pa,Qa,Ra,Sa,Ta,Ua
- * in the equations.
+ * This is the parity expressed as Pa,Qa,Ra,Sa,Ta,Ua in the equations.
  */
 void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v)
 {
@@ -286,7 +285,8 @@ void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v)
 	int np;
 	void* latest;
 
-	/* number of parities used */
+	/* total number of parities we are going to process */
+	/* they are both the used and the unused ones */
 	np = ip[nr - 1] + 1;
 
 	/* latest missing data block */
@@ -297,7 +297,7 @@ void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v)
 		/* keep a copy of the original parity vector */
 		p[i] = v[nd + i];
 
-		if (j < nr && ip[j] == i) {
+		if (ip[j] == i) {
 			/*
 			 * Set used parities to point to the missing
 			 * data blocks.
@@ -305,6 +305,10 @@ void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v)
 			 * The related data blocks are instead set
 			 * to point to the "zero" buffer.
 			 */
+
+			/* the latest parity to use ends the for loop and */
+			/* then it cannot happen to process more of them */
+			BUG_ON(j >= nr);
 
 			/* buffer for missing data blocks */
 			pa[j] = v[id[j]];
@@ -324,20 +328,27 @@ void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v)
 			 * functions able to compute only a subset of
 			 * parities.
 			 *
-			 * To avoid this, we use reuse parity buffers, assuming
-			 * that all the parity functions write parities in order.
+			 * To avoid this, we use reuse parity buffers,
+			 * assuming that all the parity functions write
+			 * parities in order.
 			 *
-			 * We assign the unused parity block to the same block of the
-			 * latest used parity that we know it will be written.
+			 * We assign the unused parity block to the same
+			 * block of the latest used parity that we know it
+			 * will be written.
 			 *
-			 * This means that this block will be written multiple times
-			 * and only the latest write will contain the correct data.
+			 * This means that this block will be written
+			 * multiple times and only the latest write will
+			 * contain the correct data.
 			 */
 			v[nd + i] = latest;
 		}
 	}
 
-	/* recompute the minimal parity required */
+	/* all the parities have to be processed */
+	BUG_ON(j != nr);
+
+	/* recompute the parity, note that np may be smaller than the */
+	/* total number of parities available */
 	raid_gen(nd, np, size, v);
 
 	/* restore data buffers as before */
