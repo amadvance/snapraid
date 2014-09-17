@@ -59,13 +59,13 @@
  * affecting badly the performance.
  *
  * Hopefully there is a method to implement parallel multiplications
- * using SSSE3 instructions [1][5]. Method competitive with the
+ * using SSSE3 or AVX2 instructions [1][5]. Method competitive with the
  * computation of triple parity using power coefficients.
  *
  * Another important property of the Cauchy matrix is that we can setup
  * the first two rows with coeffients equal at the RAID5 and RAID6 approach
  * decribed, resulting in a compatible extension, and requiring SSSE3
- * instructions only if triple parity or beyond is used.
+ * or AVX2 instructions only if triple parity or beyond is used.
  *
  * The matrix is also adjusted, multipling each row by a constant factor
  * to make the first column of all 1, to optimize the computation for
@@ -130,33 +130,33 @@
  * always not singular due the properties of the matrix A[].
  *
  * Resulting speed in x64, with 8 data disks, using a stripe of 256 KiB,
- * for a Core i7-3740QM CPU @ 2.7GHz is:
+ * for a Core i5-4670K Haswell Quad-Core 3.4GHz is:
  *
- *             int8   int32   int64    sse2   sse2e   ssse3  ssse3e
- *   gen1             11927   22075   36004
- *   gen2              3378    5874   18235   19164
- *   gen3       844                                    8814    9419
- *   gen4       665                                    6836    7415
- *   gen5       537                                    5388    5686
- *   gen6       449                                    4307    4789
+ *             int8   int32   int64    sse2   ssse3    avx2
+ *   gen1             13339   25438   45438           50588
+ *   gen2              4115    6514   21840           32201
+ *   gen3       814                           10154   18613
+ *   gen4       620                            7569   14229
+ *   gen5       496                            5149   10051
+ *   gen6       413                            4239    8190
  *
- * Values are in MiB/s of data processed, not counting generated parity.
+ * Values are in MiB/s of data processed by a single thread, not counting
+ * generated parity.
  *
- * You can replicate these results in your machine using the "snapraid -T"
- * command.
+ * You can replicate these results in your machine using the
+ * "raid/test/speedtest.c" program.
  *
  * For comparison, the triple parity computation using the power
  * coeffients "1,2,2^-1" is only a little faster than the one based on
- * the Cauchy matrix if SSSE3 is present.
+ * the Cauchy matrix if SSSE3 or AVX2 is present.
  *
- *             int8   int32   int64    sse2   sse2e   ssse3  ssse3e
- *   genz              2112    3118    9589   10304
- *
+ *             int8   int32   int64    sse2   ssse3    avx2
+ *   genz              2337    2874   10920           18944
  *
  * In conclusion, the use of power coefficients, and specifically powers
  * of 1,2,2^-1, is the best option to implement triple parity in CPUs
- * without SSSE3.
- * But if a modern CPU with SSSE3 (or similar) is available, the Cauchy
+ * without SSSE3 and AVX2.
+ * But if a modern CPU with SSSE3 or AVX2 is available, the Cauchy
  * matrix is the best option because it provides a fast and general
  * approach working for any number of parities.
  *
