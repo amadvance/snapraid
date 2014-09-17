@@ -9,14 +9,14 @@
 # covtest - Runs a coverage test.
 #
 
-CC  = gcc
+CC = gcc
+LD = ld
 CFLAGS = -I.. -Wall -Wextra -g
 ifeq ($(COVERAGE),)
 CFLAGS += -O2
 else
 CFLAGS += -O0 --coverage -DCOVERAGE=1
 endif
-LD = ld
 OBJS = raid.o int.o intz.o x86.o x86z.o tables.o memory.o test.o helper.o module.o tag.o
 
 %.o: ../%.c

@@ -22,6 +22,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <inttypes.h>
 
 /**
  * Like raid_invert() but optimized to only check if the matrix is
@@ -120,7 +121,7 @@ static __always_inline int test_sub_matrix(int nr, long long *total)
 	if (count != expected)
 		return -1;
 
-	printf("\rTested %lld matrix\n", count);
+	printf("\rTested %"PRIi64" matrix\n", count);
 
 	*total += count;
 
@@ -152,7 +153,7 @@ int test_all_sub_matrix(void)
 	if (test_sub_matrix(6, &total) != 0)
 		return -1;
 
-	printf("\nTested in total %lld matrix\n", total);
+	printf("\nTested in total %"PRIi64" matrix\n", total);
 
 	return 0;
 }
@@ -160,6 +161,9 @@ int test_all_sub_matrix(void)
 int main(void)
 {
 	printf("Matrix inversion test for the RAID Cauchy library\n\n");
+
+	/* required to set the gfgen table */
+	raid_init();
 
 	if (test_all_sub_matrix() != 0) {
 		printf("FAILED!\n");
