@@ -175,7 +175,9 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	block_off_t blockmax;
 	int ret;
 	struct snapraid_parity parity[LEV_MAX];
-	struct snapraid_parity* parity_ptr[LEV_MAX];
+	/* the following initialization is to avoid clang warnings about */
+	/* potential state->level change, that never happens */
+	struct snapraid_parity* parity_ptr[LEV_MAX] = { 0 };
 	unsigned error;
 	unsigned l;
 

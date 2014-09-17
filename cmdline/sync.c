@@ -1021,15 +1021,15 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	data_off_t out_size;
 	int ret;
 	struct snapraid_parity parity[LEV_MAX];
-	struct snapraid_parity* parity_ptr[LEV_MAX];
+	/* the following initialization is to avoid clang warnings about */
+	/* potential state->level change, that never happens */
+	struct snapraid_parity* parity_ptr[LEV_MAX] = { 0 };
 	unsigned unrecoverable_error;
 	unsigned l;
-	unsigned level;
 	int skip_sync = 0;
 
 	printf("Initializing...\n");
 
-	level = state->level;
 	blockmax = parity_size(state);
 	size = blockmax * (data_off_t)state->block_size;
 	loaded_size = state->loaded_paritymax * (data_off_t)state->block_size;
@@ -1046,7 +1046,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		blockmax = blockstart + blockcount;
 	}
 
-	for(l=0;l<level;++l) {
+	for(l=0;l<state->level;++l) {
 		/* create the file and open for writing */
 		parity_ptr[l] = &parity[l];
 		ret = parity_create(parity_ptr[l], state->parity_path[l], &out_size, state->file_mode);
@@ -1112,7 +1112,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		}
 	}
 
-	for(l=0;l<level;++l) {
+	for(l=0;l<state->level;++l) {
 		ret = parity_sync(parity_ptr[l]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */

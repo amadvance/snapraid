@@ -40,6 +40,8 @@ void **raid_malloc_vector(int nd, int n, size_t size, void **freeptr)
 	unsigned char *va;
 	int i;
 
+	BUG_ON(n <= 0 || nd < 0);
+
 	v = malloc(n * sizeof(void *));
 	if (!v)
 		return 0;
