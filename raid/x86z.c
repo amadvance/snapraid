@@ -14,6 +14,18 @@
 
 #include "internal.h"
 
+/**
+ * Disables in this file any use of SSE2/AVX2 registers by the compiler
+ * to avoid to messup with the registers use made by these functions.
+ *
+ * Note that this is just a precaution as there is no yet a known case
+ * of conflicting register use, even if formally possible.
+ */
+#ifdef CONFIG_X86
+#pragma GCC push_options
+#pragma GCC target ("no-sse2,no-avx2")
+#endif
+
 #ifdef CONFIG_X86
 static const struct gfzconst16 {
 	uint8_t poly[16];
@@ -253,4 +265,6 @@ void raid_genz_avx2ext(int nd, size_t size, void **vv)
 	raid_asm_end();
 }
 #endif
+
+#pragma GCC pop_options
 
