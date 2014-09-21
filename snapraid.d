@@ -518,16 +518,15 @@ Options
 
 	-h, --pre-hash
 		In the "sync" command run a preliminary hashing phase of all
-		the new data to ensure that during the parity computation
-		the data read is correct.
-		Normally in "sync" no preliminary hashing is done, and the new
-		data is hashed directly during the parity computation when it's
-		read for the first time,
-		This happens when the system is under heavy pressure due all
-		disks spinning and CPU busy, and in such extreme conditions,
-		if your machine has a latent hardware problem, it's possible to
-		encounter silent errors what cannot be detected because the data
-		is not yet hashed.
+		the new data to verify the data used in the parity computation.
+		Usually in "sync" no preliminary hashing is done, and the new
+		data is hashed just before the parity computation when it's read
+		for the first time,
+		Unfortunately, this process happens when the system is under
+		heavy load, with all disks spinning and a busy CPU.
+		This is an extreme condition for your machine, and if it has a
+		latent hardware problem, it's possible to encounter silent errors
+		what cannot be detected because the data is not yet hashed.
 		To avoid this risk, you can enable the "pre-hash" mode and have
 		all the data hashed two times to ensure its integrity.
 		This option can be used only with the "sync" command.
