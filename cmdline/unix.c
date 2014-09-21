@@ -161,7 +161,7 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 		return 0;
 	}
 
-	/* if empty, FIBMAP doesn't work */
+	/* if the file is empty, FIBMAP doesn't work, and we don't even try to use it */
 	if (st->st_size == 0) {
 		*physical = FILEPHY_WITHOUT_OFFSET;
 		if (close(f) == -1)
