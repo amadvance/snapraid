@@ -12,6 +12,9 @@ in the parity disks.
 * Avoid to do optimized move operation if more files with
 same timestamp/size are present.
 
+* In the log print file name as escaped to avoid that internal ":" and "\n"
+get misinterpreted.
+
 - Minor
 
 * Provides a way to rename disks in content file.
