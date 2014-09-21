@@ -14,15 +14,6 @@
 
 #include "internal.h"
 
-/**
- * Disables in this file any use of SSE/AVX registers by the compiler
- * to avoid to messup with the registers use made by the following functions.
- */
-#ifdef CONFIG_X86
-#pragma GCC push_options
-#pragma GCC target ("no-sse,no-avx")
-#endif
-
 #ifdef CONFIG_X86
 static const struct gfzconst16 {
 	uint8_t poly[16];
@@ -97,6 +88,8 @@ void raid_genz_sse2(int nd, size_t size, void **vv)
 		asm volatile("movntdq %%xmm1,%0" : "=m" (q[i]));
 		asm volatile("movntdq %%xmm2,%0" : "=m" (r[i]));
 	}
+
+	raid_asm_clobber_xmm8();
 
 	raid_asm_end();
 }
@@ -180,6 +173,8 @@ void raid_genz_sse2ext(int nd, size_t size, void **vv)
 		asm volatile("movntdq %%xmm10,%0" : "=m" (r[i+16]));
 	}
 
+	raid_asm_clobber_xmm16();
+
 	raid_asm_end();
 }
 #endif
@@ -257,13 +252,10 @@ void raid_genz_avx2ext(int nd, size_t size, void **vv)
 		asm volatile("vmovntdq %%ymm10,%0" : "=m" (r[i+32]));
 	}
 
-	asm volatile("vzeroupper" : : : "memory");
+	raid_asm_clobber_ymm16();
 
 	raid_asm_end();
 }
 #endif
 
-#ifdef CONFIG_X86
-#pragma GCC pop_options
-#endif
 
