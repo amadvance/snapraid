@@ -54,7 +54,7 @@
 #define ftruncate windows_ftruncate
 #define HAVE_FSYNC 1
 #undef fsync
-#define fsync _commit
+#define fsync windows_fsync
 #undef rename
 #define rename windows_rename
 #undef remove
@@ -190,6 +190,11 @@ int lstat_ex(const char* file, struct windows_stat* st);
  * Like the C ftruncate().
  */
 int windows_ftruncate(int fd, off64_t off);
+
+/**
+ * Like the C fsync().
+ */
+int windows_fsync(int fd);
 
 /**
  * Like the C futimes().

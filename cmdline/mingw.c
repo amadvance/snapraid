@@ -567,7 +567,10 @@ static void windows_errno(DWORD error)
 {
 	switch (error) {
 	case ERROR_INVALID_HANDLE :
-		errno = EBADF;
+		/* we check for a bad handle calling _get_osfhandle() */
+		/* and in such case we return EBADF */
+		/* Other cases are here identified with EINVAL */
+		errno = EINVAL;
 		break;
 	case ERROR_FILE_NOT_FOUND :
 	case ERROR_PATH_NOT_FOUND : /* in GetFileAttributeW() if internal path not found */
@@ -784,6 +787,29 @@ int windows_ftruncate(int fd, off64_t off)
 	}
 
 	if (!SetEndOfFile(h)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	return 0;
+}
+
+int windows_fsync(int fd)
+{
+	HANDLE h;
+
+	if (fd == -1) {
+		errno = EBADF;
+		return -1;
+	}
+
+	h = (HANDLE)_get_osfhandle(fd);
+	if (h == INVALID_HANDLE_VALUE) {
+		errno = EBADF;
+		return -1;
+	}
+
+	if (!FlushFileBuffers(h)) {
 		windows_errno(GetLastError());
 		return -1;
 	}
