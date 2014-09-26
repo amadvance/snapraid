@@ -82,7 +82,9 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 
 	countsize = 0;
 	countpos = 0;
-	if (state_progress_begin(state, blockstart, blockmax, countmax))
+	if (!state_progress_begin(state, blockstart, blockmax, countmax))
+		goto end;
+
 	for(j=0;j<diskmax;++j) {
 		struct snapraid_disk* disk = handle[j].disk;
 
@@ -272,6 +274,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 		}
 	}
 
+end:
 	state_progress_end(state, countpos, countmax, countsize);
 
 	if (error) {
@@ -420,7 +423,9 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 	countsize = 0;
 	countpos = 0;
-	if (state_progress_begin(state, blockstart, blockmax, countmax))
+	if (!state_progress_begin(state, blockstart, blockmax, countmax))
+		goto end;
+
 	for(i=blockstart;i<blockmax;++i) {
 		unsigned failed_count;
 		int one_invalid;
@@ -963,6 +968,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		}
 	}
 
+end:
 	state_progress_end(state, countpos, countmax, countsize);
 
 	state_usage_print(state);
