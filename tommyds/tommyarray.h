@@ -92,22 +92,14 @@ void tommy_array_grow(tommy_array* array, unsigned size);
  */
 tommy_inline void** tommy_array_ref(tommy_array* array, unsigned pos)
 {
-	unsigned bsr;  
+	unsigned bsr;
 
 	assert(pos < array->size);
 
-	/* special case for the first bucket */
-	if (pos < (1 << TOMMY_ARRAY_BIT)) {
-		return &array->bucket[0][pos];
-	}
+	/* get the highest bit set, in case of all 0, return 0 */
+	bsr = tommy_ilog2_u32(pos | 1);
 
-	/* get the highest bit set */
-	bsr = tommy_ilog2_u32(pos);
-
-	/* clear the highest bit */
-	pos -= 1 << bsr;
-
-	return &array->bucket[bsr - TOMMY_ARRAY_BIT + 1][pos];
+	return &array->bucket[bsr][pos];
 }
 
 /**

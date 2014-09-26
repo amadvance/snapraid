@@ -1505,9 +1505,27 @@ void* malloc_nofail(size_t size)
 	return ptr;
 }
 
-void* cmalloc_nofail(size_t count, size_t size)
+void* calloc_nofail(size_t count, size_t size)
 {
-	return malloc_nofail(count * size);
+	void* ptr;
+
+	size *= count;
+
+	/* see the note in malloc_nofail() of why we don't use calloc() */
+	ptr = malloc(size);
+
+	if (!ptr) {
+		/* LCOV_EXCL_START */
+		malloc_fail(size);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	memset(ptr, 0, size);
+
+	mcounter += size;
+
+	return ptr;
 }
 
 char* strdup_nofail(const char* str)

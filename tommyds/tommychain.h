@@ -211,9 +211,9 @@ tommy_inline void tommy_chain_mergesort(tommy_chain* chain, tommy_compare_func* 
 	while (mask != 1) {
 		mask >>= 1;
 		if (mask & 1) {
-			tommy_chain_merge_degenerated(&bit[i+1], &bit[i], cmp);
+			tommy_chain_merge_degenerated(&bit[i + 1], &bit[i], cmp);
 		} else {
-			bit[i+1] = bit[i];
+			bit[i + 1] = bit[i];
 		}
 		++i;
 	}

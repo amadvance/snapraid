@@ -24,7 +24,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
- 
+
 /** \file
  * Hash functions for the use with ::tommy_hashtable, ::tommy_hashdyn and ::tommy_hashlin.
  */
@@ -65,7 +65,7 @@ tommy_uint32_t tommy_hash_u32(tommy_uint32_t init_val, const void* void_key, tom
  * Using a different initialization value, you can generate a completely different set of hash values.
  * Use 0 if not relevalt.
  * \param void_key Pointer at the data to hash.
- * \param key_len Size of the data to hash. 
+ * \param key_len Size of the data to hash.
  * \note
  * This function is endianess independent.
  * \return The hash value of 64 bits.

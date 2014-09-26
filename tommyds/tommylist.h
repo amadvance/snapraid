@@ -96,7 +96,7 @@
  *
  *     i = i_next; // goes to the next element
  * }
- * \endcode 
+ * \endcode
  */
 
 #ifndef __TOMMYLIST_H
@@ -151,7 +151,7 @@ tommy_inline tommy_node* tommy_list_tail(tommy_list* list)
  */
 tommy_inline void tommy_list_insert_first(tommy_list* list, tommy_node* node)
 {
-	/* one element "circular" prev list */   
+	/* one element "circular" prev list */
 	node->prev = node;
 
 	/* one element "0 terminated" next list */
@@ -264,7 +264,7 @@ tommy_inline void* tommy_list_remove_existing(tommy_list* list, tommy_node* node
 	tommy_node* head = tommy_list_head(list);
 
 	/* remove from the "circular" prev list */
-	if (node->next) { 
+	if (node->next) {
 		node->next->prev = node->prev;
 	} else {
 		head->prev = node->prev; /* the last */
@@ -313,6 +313,7 @@ tommy_inline tommy_bool_t tommy_list_empty(tommy_list* list)
 tommy_inline void tommy_list_foreach(tommy_list* list, tommy_foreach_func* func)
 {
 	tommy_node* node = tommy_list_head(list);
+
 	while (node) {
 		void* data = node->data;
 		node = node->next;
@@ -326,6 +327,7 @@ tommy_inline void tommy_list_foreach(tommy_list* list, tommy_foreach_func* func)
 tommy_inline void tommy_list_foreach_arg(tommy_list* list, tommy_foreach_arg_func* func, void* arg)
 {
 	tommy_node* node = tommy_list_head(list);
+
 	while (node) {
 		void* data = node->data;
 		node = node->next;

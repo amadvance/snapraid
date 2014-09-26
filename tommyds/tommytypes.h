@@ -64,16 +64,25 @@ typedef int tommy_bool_t; /**< Generic boolean type. */
 /******************************************************************************/
 /* heap */
 
-/* by default uses malloc/realloc/free */
+/* by default uses malloc/calloc/realloc/free */
 
 /**
- * Generic malloc(), realloc() and free() functions.
- * Redefine them to what you need. By default they map to the C malloc(), realloc() and free().
+ * Generic malloc(), calloc(), realloc() and free() functions.
+ * Redefine them to what you need. By default they map to the C malloc(), calloc(), realloc() and free().
  */
-#if !defined(tommy_malloc) && !defined(tommy_realloc) && !defined(tommy_free)
+#if !defined(tommy_malloc) || !defined(tommy_calloc) || !defined(tommy_realloc) || !defined(tommy_free)
 #include <stdlib.h>
+#endif
+#if !defined(tommy_malloc)
 #define tommy_malloc malloc
+#endif
+#if !defined(tommy_calloc)
+#define tommy_calloc calloc
+#endif
+#if !defined(tommy_realloc)
 #define tommy_realloc realloc
+#endif
+#if !defined(tommy_free)
 #define tommy_free free
 #endif
 
@@ -109,7 +118,7 @@ typedef int tommy_bool_t; /**< Generic boolean type. */
  */
 #if !defined(tommy_likely)
 #if defined(__GNUC__)
-#define tommy_likely(x) __builtin_expect(!!(x),1)
+#define tommy_likely(x) __builtin_expect(!!(x), 1)
 #else
 #define tommy_likely(x) (x)
 #endif
@@ -120,7 +129,7 @@ typedef int tommy_bool_t; /**< Generic boolean type. */
  */
 #if !defined(tommy_unlikely)
 #if defined(__GNUC__)
-#define tommy_unlikely(x) __builtin_expect(!!(x),0)
+#define tommy_unlikely(x) __builtin_expect(!!(x), 0)
 #else
 #define tommy_unlikely(x) (x)
 #endif
@@ -235,14 +244,14 @@ typedef int tommy_compare_func(const void* obj_a, const void* obj_b);
  *     return *(const int*)arg != ((const struct object*)obj)->value;
  * }
  *
- * int value_to_find = 1; 
+ * int value_to_find = 1;
  * struct object* obj = tommy_hashtable_search(&hashtable, compare, &value_to_find, tommy_inthash_u32(value_to_find));
  * if (!obj) {
  *     // not found
  * } else {
  *     // found
  * }
- * \endcode 
+ * \endcode
  *
  */
 typedef int tommy_search_func(const void* arg, const void* obj);
@@ -278,7 +287,7 @@ typedef void tommy_foreach_arg_func(void* arg, void* obj);
  * Integer log2 for constants.
  * You can use it only for exact power of 2 up to 256.
  */
-#define TOMMY_ILOG2(value) ((value) == 256 ? 8 : (value) == 128 ? 7 :(value) == 64 ? 6 : (value) == 32 ? 5 : (value) == 16 ? 4 : (value) == 8 ? 3 : (value) == 4 ? 2 : (value) == 2 ? 1 : 0)
+#define TOMMY_ILOG2(value) ((value) == 256 ? 8 : (value) == 128 ? 7 : (value) == 64 ? 6 : (value) == 32 ? 5 : (value) == 16 ? 4 : (value) == 8 ? 3 : (value) == 4 ? 2 : (value) == 2 ? 1 : 0)
 
 /**
  * Bit scan reverse or integer log2.
@@ -288,9 +297,9 @@ typedef void tommy_foreach_arg_func(void* arg, void* obj);
  * To force a return 0 in this case, you can use tommy_ilog2(value | 1).
  *
  * Other interesting ways for bitscan can be found at:
- * 
- * Bit Twiddling Hacks 
- * http://graphics.stanford.edu/~seander/bithacks.html 
+ *
+ * Bit Twiddling Hacks
+ * http://graphics.stanford.edu/~seander/bithacks.html
  *
  * Chess Programming BitScan
  * http://chessprogramming.wikispaces.com/BitScan
@@ -356,7 +365,7 @@ tommy_inline unsigned tommy_ctz_u32(tommy_uint32_t value)
 		31, 27, 13, 23, 21, 19, 16, 7, 26, 12, 18, 6, 11, 5, 10, 9
 	};
 
-	return TOMMY_DE_BRUIJN_INDEX_CTZ[(tommy_uint32_t)(((value & -value) * 0x077CB531U)) >> 27];
+	return TOMMY_DE_BRUIJN_INDEX_CTZ[(tommy_uint32_t)(((value & - value) * 0x077CB531U)) >> 27];
 #endif
 }
 

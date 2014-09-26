@@ -27,48 +27,54 @@
 
 #include "tommyarray.h"
 
-#include <string.h> /* for memset */
-
 /******************************************************************************/
 /* array */
 
 void tommy_array_init(tommy_array* array)
 {
+	unsigned i;
+
 	/* fixed initial size */
 	array->bucket_bit = TOMMY_ARRAY_BIT;
 	array->bucket_max = 1 << array->bucket_bit;
-	array->bucket[0] = tommy_cast(void**, tommy_malloc(array->bucket_max * sizeof(void*)));
+	array->bucket[0] = tommy_cast(void**, tommy_calloc(array->bucket_max, sizeof(void*)));
+	for (i = 1; i < TOMMY_ARRAY_BIT; ++i)
+		array->bucket[i] = array->bucket[0];
 
-	/* initializes it with zeros */
-	memset(array->bucket[0], 0, array->bucket_max * sizeof(void*));
-
-	array->bucket_mac = 1;
+	array->bucket_mac = TOMMY_ARRAY_BIT;
 	array->size = 0;
 }
 
 void tommy_array_done(tommy_array* array)
 {
 	unsigned i;
-	for(i=0;i<array->bucket_mac;++i)
-		tommy_free(array->bucket[i]);
+
+	tommy_free(array->bucket[0]);
+	for (i = TOMMY_ARRAY_BIT; i < array->bucket_mac; ++i) {
+		void** segment = array->bucket[i];
+		tommy_free(&segment[1 << i]);
+	}
 }
 
 void tommy_array_grow(tommy_array* array, unsigned size)
 {
-	while (size > array->bucket_max) {
-		/* allocate one more bucket */
-		array->bucket[array->bucket_mac] = tommy_cast(void**, tommy_malloc(array->bucket_max * sizeof(void*)));
+	if (array->size >= size)
+		return;
+	array->size = size;
 
-		/* initializes it with zeros */
-		memset(array->bucket[array->bucket_mac], 0, array->bucket_max * sizeof(void*));
+	while (size > array->bucket_max) {
+		void** segment;
+
+		/* allocate one more segment */
+		segment = tommy_cast(void**, tommy_calloc(array->bucket_max, sizeof(void*)));
+
+		/* store it adjusting the offset */
+		array->bucket[array->bucket_mac] = &segment[-array->bucket_max];
 
 		++array->bucket_mac;
 		++array->bucket_bit;
 		array->bucket_max = 1 << array->bucket_bit;
 	}
-
-	if (array->size < size)
-		array->size = size;
 }
 
 tommy_size_t tommy_array_memory_usage(tommy_array* array)

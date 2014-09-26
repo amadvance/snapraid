@@ -52,7 +52,7 @@
 /**
  * Elements for each block.
  */
-#define TOMMY_ARRAYBLK_SIZE (64 * 1024)
+#define TOMMY_ARRAYBLK_SIZE (4 * 1024)
 
 /**
  * Array.

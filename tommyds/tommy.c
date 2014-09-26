@@ -30,6 +30,7 @@
 
 /* redefine the malloc for tommy use */
 #define tommy_malloc malloc_nofail
+#define tommy_calloc calloc_nofail
 #define tommy_free free
 
 #include "tommyhash.c"

@@ -32,15 +32,15 @@
  * the size then it reaches a load factor greater than 0.5 and it halves the size with a load
  * factor lower than 0.125.
  *
- * All the elements are reallocated in a single resize operation done inside 
+ * All the elements are reallocated in a single resize operation done inside
  * tommy_hashdyn_insert() or tommy_hashdyn_remove().
  *
- * Note that the resize operation takes approximatively 100 [ms] with 1 million of elements, 
+ * Note that the resize operation takes approximatively 100 [ms] with 1 million of elements,
  * and 1 [second] with 10 millions. This could be a problem in real-time applications.
  *
- * The resize also fragment the heap, as it involves allocating a double-sized table, copy elements, 
+ * The resize also fragment the heap, as it involves allocating a double-sized table, copy elements,
  * and deallocating the older table. Leaving a big hole in the heap.
- * 
+ *
  * The ::tommy_hashlin hashtable fixes both problems.
  *
  * To initialize the hashtable you have to call tommy_hashdyn_init().
@@ -81,7 +81,7 @@
  *     return *(const int*)arg != ((const struct object*)obj)->value;
  * }
  *
- * int value_to_find = 1; 
+ * int value_to_find = 1;
  * struct object* obj = tommy_hashdyn_search(&hashdyn, compare, &value_to_find, tommy_inthash_u32(value_to_find));
  * if (!obj) {
  *     // not found
@@ -96,7 +96,7 @@
  * different keys.
  *
  * \code
- * int value_to_find = 1; 
+ * int value_to_find = 1;
  * tommy_node* i = tommy_hashdyn_bucket(&hashdyn, tommy_inthash_u32(value_to_find));
  * while (i) {
  *     struct object* obj = i->data; // gets the object pointer
@@ -129,7 +129,7 @@
  *
  * Note that you cannot iterates over all the elements in the hashtable using the
  * hashtable itself. You have to insert all the elements also in a ::tommy_list,
- * and use the list to iterate. See the \ref multiindex example for more detail.   
+ * and use the list to iterate. See the \ref multiindex example for more detail.
  */
 
 #ifndef __TOMMYHASHDYN_H
@@ -200,7 +200,7 @@ void* tommy_hashdyn_remove(tommy_hashdyn* hashdyn, tommy_search_func* cmp, const
  * The bucket is guaranteed to contain ALL the elements with the specified hash,
  * but it can contain also others.
  * You can access elements in the bucket following the ::next pointer until 0.
- * \param hash Hash of the element to find. 
+ * \param hash Hash of the element to find.
  * \return The head of the bucket, or 0 if empty.
  */
 tommy_inline tommy_hashdyn_node* tommy_hashdyn_bucket(tommy_hashdyn* hashdyn, tommy_hash_t hash)
@@ -221,6 +221,7 @@ tommy_inline tommy_hashdyn_node* tommy_hashdyn_bucket(tommy_hashdyn* hashdyn, to
 tommy_inline void* tommy_hashdyn_search(tommy_hashdyn* hashdyn, tommy_search_func* cmp, const void* cmp_arg, tommy_hash_t hash)
 {
 	tommy_hashdyn_node* i = tommy_hashdyn_bucket(hashdyn, hash);
+
 	while (i) {
 		/* we first check if the hash matches, as in the same bucket we may have multiples hash values */
 		if (i->key == hash && cmp(cmp_arg, i->data) == 0)
@@ -236,6 +237,16 @@ tommy_inline void* tommy_hashdyn_search(tommy_hashdyn* hashdyn, tommy_search_fun
  * \return The tommy_node::data field of the node removed.
  */
 void* tommy_hashdyn_remove_existing(tommy_hashdyn* hashdyn, tommy_hashdyn_node* node);
+
+/**
+ * Calls the specified function for each element in the hashtable.
+ */
+void tommy_hashdyn_foreach(tommy_hashdyn* hashdyn, tommy_foreach_func* func);
+
+/**
+ * Calls the specified function with argument for each element in the hashtable.
+ */
+void tommy_hashdyn_foreach_arg(tommy_hashdyn* hashdyn, tommy_foreach_arg_func* func, void* arg);
 
 /**
  * Gets the number of elements.

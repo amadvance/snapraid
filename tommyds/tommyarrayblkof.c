@@ -27,8 +27,6 @@
 
 #include "tommyarrayblkof.h"
 
-#include <string.h> /* for memset */
-
 /******************************************************************************/
 /* array */
 
@@ -43,7 +41,7 @@ void tommy_arrayblkof_done(tommy_arrayblkof* array)
 {
 	unsigned i;
 
-	for(i=0;i<tommy_array_size(&array->block);++i)
+	for (i = 0; i < tommy_array_size(&array->block); ++i)
 		tommy_free(tommy_array_get(&array->block, i));
 
 	tommy_array_done(&array->block);
@@ -51,8 +49,15 @@ void tommy_arrayblkof_done(tommy_arrayblkof* array)
 
 void tommy_arrayblkof_grow(tommy_arrayblkof* array, unsigned size)
 {
-	unsigned block_max = (size + TOMMY_ARRAYBLK_SIZE - 1) / TOMMY_ARRAYBLK_SIZE;
-	unsigned block_mac = tommy_array_size(&array->block);
+	unsigned block_max;
+	unsigned block_mac;
+
+	if (array->size >= size)
+		return;
+	array->size = size;
+
+	block_max = (size + TOMMY_ARRAYBLK_SIZE - 1) / TOMMY_ARRAYBLK_SIZE;
+	block_mac = tommy_array_size(&array->block);
 
 	if (block_mac < block_max) {
 		/* grow the block array */
@@ -60,10 +65,7 @@ void tommy_arrayblkof_grow(tommy_arrayblkof* array, unsigned size)
 
 		/* allocate new blocks */
 		while (block_mac < block_max) {
-			void* ptr = tommy_malloc(TOMMY_ARRAYBLK_SIZE * array->element_size);
-
-			/* initializes it with zeros */
-			memset(ptr, 0, TOMMY_ARRAYBLK_SIZE * array->element_size);
+			void* ptr = tommy_calloc(TOMMY_ARRAYBLK_SIZE, array->element_size);
 
 			/* set the new block */
 			tommy_array_set(&array->block, block_mac, ptr);
@@ -71,9 +73,6 @@ void tommy_arrayblkof_grow(tommy_arrayblkof* array, unsigned size)
 			++block_mac;
 		}
 	}
-
-	if (array->size < size)
-		array->size = size;
 }
 
 tommy_size_t tommy_arrayblkof_memory_usage(tommy_arrayblkof* array)

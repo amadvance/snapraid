@@ -468,7 +468,7 @@ void* malloc_nofail(size_t size);
  * Safe cmalloc.
  * If no memory is available, it aborts.
  */
-void* cmalloc_nofail(size_t count, size_t size);
+void* calloc_nofail(size_t count, size_t size);
 
 /**
  * Safe aligned malloc.
