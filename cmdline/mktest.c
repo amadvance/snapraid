@@ -25,7 +25,7 @@
  */
 unsigned long long seed = 0;
 
-unsigned rnd(unsigned max) 
+unsigned rnd(unsigned max)
 {
 	seed = seed * 6364136223846793005LL + 1442695040888963407LL;
 
@@ -43,7 +43,8 @@ unsigned rndnz(unsigned max)
 void rndnz_range(unsigned char* data, int size)
 {
 	int i;
-	for(i=0;i<size;++i)
+
+	for (i = 0; i < size; ++i)
 		data[i] = rndnz(256);
 }
 
@@ -52,7 +53,7 @@ void rndnz_damage(unsigned char* data, int size)
 	int i;
 
 	/* corrupt ensuring always different data */
-	for(i=0;i<size;++i) {
+	for (i = 0; i < size; ++i) {
 		unsigned char c;
 
 		do {
@@ -64,11 +65,12 @@ void rndnz_damage(unsigned char* data, int size)
 }
 
 char CHARSET[] = "qwertyuiopasdfghjklzxcvbnm1234567890 .-+";
-#define CHARSET_LEN (sizeof(CHARSET)-1)
+#define CHARSET_LEN (sizeof(CHARSET) - 1)
 
 void rnd_name(char* file)
 {
 	int l = 1 + rnd(20);
+
 	while (l) {
 		*file++ = CHARSET[rnd(CHARSET_LEN)];
 		--l;
@@ -252,8 +254,8 @@ void cmd_generate(int disk, int size)
 			|| strcmp(file, "nul") == 0
 			|| strcmp(file, "aux") == 0
 			|| file[0] == ' '
-			|| file[strlen(file)-1] == ' '
-			|| file[strlen(file)-1] == '.'
+			|| file[strlen(file) - 1] == ' '
+			|| file[strlen(file) - 1] == '.'
 		) {
 			continue;
 		}
@@ -282,7 +284,7 @@ void cmd_generate(int disk, int size)
  * - The file must exist.
  * - The file size is not changed.
  * - The written data may be equal or not at the already existing one.
- * - If it's a symlink nothing is done. 
+ * - If it's a symlink nothing is done.
  */
 void cmd_write(const char* path, int size)
 {
@@ -663,16 +665,16 @@ int main(int argc, char* argv[])
 		file = atoi(argv[4]);
 		size = atoi(argv[5]);
 
-		for(i=0;i<disk;++i) {
-			for(j=0;j<file;++j) {
+		for (i = 0; i < disk; ++i) {
+			for (j = 0; j < file; ++j) {
 				if (j == 0)
 					/* create at least a big one */
-					cmd_generate(i+1, size);
+					cmd_generate(i + 1, size);
 				else if (j == 1)
 					/* create at least an empty one */
-					cmd_generate(i+1, 0);
+					cmd_generate(i + 1, 0);
 				else
-					cmd_generate(i+1, rnd(size));
+					cmd_generate(i + 1, rnd(size));
 			}
 		}
 	} else if (strcmp(argv[1], "write") == 0) {
@@ -691,10 +693,10 @@ int main(int argc, char* argv[])
 		b = 5;
 
 		/* sort the file names */
-		qsort(&argv[b], argc - b,  sizeof(argv[b]), file_cmp);
+		qsort(&argv[b], argc - b, sizeof(argv[b]), file_cmp);
 
-		for(i=b;i<argc;++i)
-			for(j=0;j<fail;++j)
+		for (i = b; i < argc; ++i)
+			for (j = 0; j < fail; ++j)
 				cmd_write(argv[i], rnd(size));
 	} else if (strcmp(argv[1], "damage") == 0) {
 		int fail, size;
@@ -712,10 +714,10 @@ int main(int argc, char* argv[])
 		b = 5;
 
 		/* sort the file names */
-		qsort(&argv[b], argc - b,  sizeof(argv[b]), file_cmp);
+		qsort(&argv[b], argc - b, sizeof(argv[b]), file_cmp);
 
-		for(i=b;i<argc;++i)
-			for(j=0;j<fail;++j)
+		for (i = b; i < argc; ++i)
+			for (j = 0; j < fail; ++j)
 				cmd_damage(argv[i], rndnz(size)); /* at least one byte */
 	} else if (strcmp(argv[1], "append") == 0) {
 		int size;
@@ -732,9 +734,9 @@ int main(int argc, char* argv[])
 		b = 4;
 
 		/* sort the file names */
-		qsort(&argv[b], argc - b,  sizeof(argv[b]), file_cmp);
+		qsort(&argv[b], argc - b, sizeof(argv[b]), file_cmp);
 
-		for(i=b;i<argc;++i)
+		for (i = b; i < argc; ++i)
 			cmd_append(argv[i], rnd(size));
 	} else if (strcmp(argv[1], "truncate") == 0) {
 		int size;
@@ -751,9 +753,9 @@ int main(int argc, char* argv[])
 		b = 4;
 
 		/* sort the file names */
-		qsort(&argv[b], argc - b,  sizeof(argv[b]), file_cmp);
+		qsort(&argv[b], argc - b, sizeof(argv[b]), file_cmp);
 
-		for(i=b;i<argc;++i)
+		for (i = b; i < argc; ++i)
 			cmd_truncate(argv[i], rnd(size));
 	} else if (strcmp(argv[1], "change") == 0) {
 		int size;
@@ -770,9 +772,9 @@ int main(int argc, char* argv[])
 		b = 4;
 
 		/* sort the file names */
-		qsort(&argv[b], argc - b,  sizeof(argv[b]), file_cmp);
+		qsort(&argv[b], argc - b, sizeof(argv[b]), file_cmp);
 
-		for(i=b;i<argc;++i)
+		for (i = b; i < argc; ++i)
 			cmd_change(argv[i], rnd(size));
 	} else {
 		/* LCOV_EXCL_START */

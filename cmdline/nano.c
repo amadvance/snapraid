@@ -29,12 +29,12 @@ void state_nano(struct snapraid_state* state)
 	printf("Setting nanosecond timestamps...\n");
 
 	/* for all disks */
-	for(i=state->disklist;i!=0;i=i->next) {
+	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 		tommy_node* j;
 
 		/* for all files */
-		for(j=disk->filelist;j!=0;j=j->next) {
+		for (j = disk->filelist; j != 0; j = j->next) {
 			struct snapraid_file* file = j->data;
 
 			/* if the file has a zero nanosecond timestamp */

@@ -102,10 +102,10 @@ static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned d
 	hash_checked = 0; /* keep track if we check at least one block */
 
 	/* check if the recovered blocks are OK */
-	for(j=0;j<failed_count;++j) {
+	for (j = 0; j < failed_count; ++j) {
 		/* if we are expected to recover this block */
 		if (!failed[failed_map[j]].is_outofdate
-			/* if the block has a hash to check */
+		        /* if the block has a hash to check */
 			&& block_has_updated_hash(failed[failed_map[j]].block)
 		) {
 			/* if a hash doesn't match, fail the check */
@@ -142,7 +142,7 @@ static int is_parity_matching(struct snapraid_state* state, unsigned diskmax, un
 	raid_gen(diskmax, i + 1, state->block_size, buffer);
 
 	/* if the recovered parity block matches */
-	if (memcmp(buffer[diskmax+i], buffer_recov[i], state->block_size) == 0) {
+	if (memcmp(buffer[diskmax + i], buffer_recov[i], state->block_size) == 0) {
 		/* recompute all the redundancy information */
 		raid_gen(diskmax, state->level, state->block_size, buffer);
 		return 1;
@@ -177,16 +177,16 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 	error = 0;
 
 	/* setup vector of failed disk indexes */
-	for(i=0;i<failed_count;++i)
+	for (i = 0; i < failed_count; ++i)
 		id[i] = failed[failed_map[i]].index;
 
 	/* check if there is at least a failed block that can be checked for correctness using the hash */
 	/* if there isn't, we have to sacrifice a parity block to check that the result is correct */
 	has_hash = 0;
-	for(i=0;i<failed_count;++i) {
+	for (i = 0; i < failed_count; ++i) {
 		/* if we are expected to recover this block */
 		if (!failed[failed_map[i]].is_outofdate
-			/* if the block has a hash to check */
+		        /* if the block has a hash to check */
 			&& block_has_updated_hash(failed[failed_map[i]].block)
 		)
 			has_hash = 1;
@@ -202,7 +202,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 		combination_first(r, n, ip);
 		do {
 			/* if a parity is missing, do nothing */
-			for(i=0;i<r;++i) {
+			for (i = 0; i < r; ++i) {
 				if (buffer_recov[ip[i]] == 0)
 					break;
 			}
@@ -210,19 +210,19 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 				continue;
 
 			/* copy the parities to use, one less because the last is used for checking */
-			for(i=0;i<r-1;++i)
-				memcpy(buffer[diskmax+ip[i]], buffer_recov[ip[i]], state->block_size);
+			for (i = 0; i < r - 1; ++i)
+				memcpy(buffer[diskmax + ip[i]], buffer_recov[ip[i]], state->block_size);
 
 			/* recover using one less parity, the ip[r-1] one */
-			raid_rec_dataonly(r-1, id, ip, diskmax, state->block_size, buffer);
+			raid_rec_dataonly(r - 1, id, ip, diskmax, state->block_size, buffer);
 
 			/* use the remaining ip[r-1] parity to check the result */
-			if (is_parity_matching(state, diskmax, ip[r-1], buffer, buffer_recov))
+			if (is_parity_matching(state, diskmax, ip[r - 1], buffer, buffer_recov))
 				return 0;
 
 			/* log */
 			fprintf(stdlog, "parity_error:%u:", pos);
-			for(i=0;i<r;++i) {
+			for (i = 0; i < r; ++i) {
 				if (i != 0)
 					fprintf(stdlog, "/");
 				fprintf(stdlog, "%s", lev_config_name(ip[i]));
@@ -242,7 +242,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 		combination_first(r, n, ip);
 		do {
 			/* if a parity is missing, do nothing */
-			for(i=0;i<r;++i) {
+			for (i = 0; i < r; ++i) {
 				if (buffer_recov[ip[i]] == 0)
 					break;
 			}
@@ -250,8 +250,8 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 				continue;
 
 			/* copy the parities to use */
-			for(i=0;i<r;++i)
-				memcpy(buffer[diskmax+ip[i]], buffer_recov[ip[i]], state->block_size);
+			for (i = 0; i < r; ++i)
+				memcpy(buffer[diskmax + ip[i]], buffer_recov[ip[i]], state->block_size);
 
 			/* recover */
 			raid_rec_dataonly(r, id, ip, diskmax, state->block_size, buffer);
@@ -262,7 +262,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 
 			/* log */
 			fprintf(stdlog, "parity_error:%u:", pos);
-			for(i=0;i<r;++i) {
+			for (i = 0; i < r; ++i) {
 				if (i != 0)
 					fprintf(stdlog, "/");
 				fprintf(stdlog, "%s", lev_config_name(ip[i]));
@@ -299,7 +299,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 	}
 
 	/* logs the status */
-	for(j=0;j<failed_count;++j) {
+	for (j = 0; j < failed_count; ++j) {
 		const char* state;
 		const char* hash;
 		const char* data;
@@ -312,8 +312,8 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 		case BLOCK_STATE_REP : state = "replace"; break;
 		case BLOCK_STATE_BLK : state = "block"; break;
 		/* LCOV_EXCL_START */
-		default: state = "unknown"; break;
-		/* LCOV_EXCL_STOP */
+		default : state = "unknown"; break;
+			/* LCOV_EXCL_STOP */
 		}
 
 		if (hash_is_invalid(block->hash)) {
@@ -360,7 +360,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 
 	n = 0;
 	something_to_recover = 0; /* keep track if there is at least one block to fix */
-	for(j=0;j<failed_count;++j) {
+	for (j = 0; j < failed_count; ++j) {
 		if (failed[j].is_bad) {
 			unsigned block_state = block_state_get(failed[j].block);
 
@@ -368,7 +368,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 
 			/* if we have the hash for it */
 			if ((block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP)
-				/* try to fetch the block using the known hash */
+			        /* try to fetch the block using the known hash */
 				&& state_import_fetch(state, rehash, failed[j].block->hash, buffer[failed[j].index]) == 0
 			) {
 				/* we already have corrected it! */
@@ -399,7 +399,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 		/* if they were BAD we have to use some euristics to ensure that we have recovered  */
 		/* the state after the sync. If unsure, we assume the worst case */
 
-		for(j=0;j<failed_count;++j) {
+		for (j = 0; j < failed_count; ++j) {
 			/* we take care only of BAD blocks we have to write back */
 			if (failed[j].is_bad) {
 				unsigned block_state = block_state_get(failed[j].block);
@@ -470,7 +470,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 	n = 0;
 	something_to_recover = 0; /* keep track if there is at least one block to fix */
 	something_unsynced = 0; /* keep track if we have some unsynced info to process */
-	for(j=0;j<failed_count;++j) {
+	for (j = 0; j < failed_count; ++j) {
 		unsigned block_state = block_state_get(failed[j].block);
 
 		if (block_state == BLOCK_STATE_DELETED
@@ -541,7 +541,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 			/* that we don't want to save into disk */
 			/* we have already marked them, but we redo it for logging */
 
-			for(j=0;j<failed_count;++j) {
+			for (j = 0; j < failed_count; ++j) {
 				/* we take care only of BAD blocks we have to write back */
 				if (failed[j].is_bad) {
 					unsigned block_state = block_state_get(failed[j].block);
@@ -611,8 +611,8 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		mtest_vector(buffermax, state->block_size, buffer);
 
 	/* fill up the zero buffer */
-	memset(buffer[buffermax-1], 0, state->block_size);
-	raid_zero(buffer[buffermax-1]);
+	memset(buffer[buffermax - 1], 0, state->block_size);
+	raid_zero(buffer[buffermax - 1]);
 
 	failed = malloc_nofail(diskmax * sizeof(struct failed_struct));
 	failed_map = malloc_nofail(diskmax * sizeof(unsigned));
@@ -623,12 +623,12 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 	/* first count the number of blocks to process */
 	countmax = 0;
-	for(i=blockstart;i<blockmax;++i) {
+	for (i = blockstart; i < blockmax; ++i) {
 		int one_tocheck;
 
 		/* for each disk */
 		one_tocheck = 0;
-		for(j=0;j<diskmax;++j) {
+		for (j = 0; j < diskmax; ++j) {
 			struct snapraid_block* block = BLOCK_EMPTY;
 			if (handle[j].disk)
 				block = disk_block_get(handle[j].disk, i);
@@ -654,7 +654,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 	countsize = 0;
 	countpos = 0;
 	state_progress_begin(state, blockstart, blockmax, countmax);
-	for(i=blockstart;i<blockmax;++i) {
+	for (i = blockstart; i < blockmax; ++i) {
 		unsigned failed_count;
 		int one_tocheck;
 		int valid_parity;
@@ -663,7 +663,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 		/* for each disk */
 		one_tocheck = 0;
-		for(j=0;j<diskmax;++j) {
+		for (j = 0; j < diskmax; ++j) {
 			struct snapraid_block* block = BLOCK_EMPTY;
 			if (handle[j].disk)
 				block = disk_block_get(handle[j].disk, i);
@@ -699,7 +699,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		rehash = info_get_rehash(info);
 
 		/* for each disk, process the block */
-		for(j=0;j<diskmax;++j) {
+		for (j = 0; j < diskmax; ++j) {
 			int read_size;
 			unsigned char hash[HASH_SIZE];
 			struct snapraid_block* block;
@@ -913,16 +913,16 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			void* buffer_zero;
 
 			/* buffers for parity read and not computed */
-			for(l=0;l<state->level;++l)
+			for (l = 0; l < state->level; ++l)
 				buffer_recov[l] = buffer[diskmax + state->level + l];
-			for(;l<LEV_MAX;++l)
+			for (; l < LEV_MAX; ++l)
 				buffer_recov[l] = 0;
 
 			/* the zero buffer is the last one */
-			buffer_zero = buffer[buffermax-1];
+			buffer_zero = buffer[buffermax - 1];
 
 			/* read the parity */
-			for(l=0;l<state->level;++l) {
+			for (l = 0; l < state->level; ++l) {
 				if (parity[l]) {
 					ret = parity_read(parity[l], i, buffer_recov[l], state->block_size, stdlog);
 					if (ret == -1) {
@@ -945,13 +945,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				++unrecoverable_error;
 
 				/* print a list of all the errors in files */
-				for(j=0;j<failed_count;++j) {
+				for (j = 0; j < failed_count; ++j) {
 					if (failed[j].is_bad)
 						fprintf(stdlog, "unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
 				}
 
 				/* keep track of damaged files */
-				for(j=0;j<failed_count;++j) {
+				for (j = 0; j < failed_count; ++j) {
 					if (failed[j].is_bad)
 						file_flag_set(block_file_get(failed[j].block), FILE_IS_DAMAGED);
 				}
@@ -962,7 +962,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				int partial_recover_error = 0;
 
 				/* print a list of all the errors in files */
-				for(j=0;j<failed_count;++j) {
+				for (j = 0; j < failed_count; ++j) {
 					if (failed[j].is_bad && failed[j].is_outofdate) {
 						++partial_recover_error;
 						fprintf(stdlog, "unrecoverable:%u:%s:%s: Unrecoverable unsynced error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
@@ -978,7 +978,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				/* and doesn't make sense to try to fix it */
 				if (valid_parity) {
 					/* check the parity */
-					for(l=0;l<state->level;++l) {
+					for (l = 0; l < state->level; ++l) {
 						if (buffer_recov[l] != 0 && memcmp(buffer_recov[l], buffer[diskmax + l], state->block_size) != 0) {
 							buffer_recov[l] = 0;
 
@@ -991,7 +991,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				/* now writes recovered files */
 				if (fix) {
 					/* update the fixed files */
-					for(j=0;j<failed_count;++j) {
+					for (j = 0; j < failed_count; ++j) {
 						/* nothing to do if it doesn't need recovering */
 						if (!failed[j].is_bad)
 							continue;
@@ -1037,7 +1037,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					/* for blocks that are going to have it computed in the sync completion */
 					if (valid_parity) {
 						/* update the parity */
-						for(l=0;l<state->level;++l) {
+						for (l = 0; l < state->level; ++l) {
 							if (buffer_recov[l] == 0 && parity[l] != 0) {
 								ret = parity_write(parity[l], i, buffer[diskmax + l], state->block_size);
 								if (ret == -1) {
@@ -1057,7 +1057,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					}
 				} else {
 					/* if we are not fixing, we just set the FIXED flag */
-					for(j=0;j<failed_count;++j) {
+					for (j = 0; j < failed_count; ++j) {
 						if (failed[j].is_bad) {
 							file_flag_set(block_file_get(failed[j].block), FILE_IS_FIXED);
 						}
@@ -1066,7 +1066,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			}
 		} else {
 			/* if we are not checking, we just set the DAMAGED flag */
-			for(j=0;j<failed_count;++j) {
+			for (j = 0; j < failed_count; ++j) {
 				if (failed[j].is_bad) {
 					file_flag_set(block_file_get(failed[j].block), FILE_IS_DAMAGED);
 				}
@@ -1075,7 +1075,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 		/* for all the files prints the final status, and does the final time fix */
 		/* we also ensure to close files after processing the last block */
-		for(j=0;j<diskmax;++j) {
+		for (j = 0; j < diskmax; ++j) {
 			struct snapraid_block* block = BLOCK_EMPTY;
 			struct snapraid_file* collide_file;
 			struct snapraid_file* file;
@@ -1260,7 +1260,7 @@ close_and_continue:
 	}
 
 	/* for each disk, recover empty files, symlinks and empty dirs */
-	for(i=0;i<diskmax;++i) {
+	for (i = 0; i < diskmax; ++i) {
 		tommy_node* node;
 		struct snapraid_disk* disk;
 
@@ -1306,7 +1306,7 @@ close_and_continue:
 			} else if (st.st_size != 0) {
 				unsuccesful = 1;
 
-				fprintf(stdlog, "error:%s:%s: Empty file error for size '%"PRIu64"'\n", disk->name, file->sub, st.st_size);
+				fprintf(stdlog, "error:%s:%s: Empty file error for size '%" PRIu64 "'\n", disk->name, file->sub, st.st_size);
 				++error;
 			}
 
@@ -1627,7 +1627,7 @@ close_and_continue:
 
 bail:
 	/* close all the files left open */
-	for(j=0;j<diskmax;++j) {
+	for (j = 0; j < diskmax; ++j) {
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
@@ -1642,7 +1642,7 @@ bail:
 	/* it happens only when aborting */
 	if (fix) {
 		/* for each disk */
-		for(i=0;i<diskmax;++i) {
+		for (i = 0; i < diskmax; ++i) {
 			tommy_node* node;
 			struct snapraid_disk* disk;
 
@@ -1800,7 +1800,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 	if (fix) {
 		/* if fixing, create the file and open for writing */
 		/* if it fails, we cannot continue */
-		for(l=0;l<state->level;++l) {
+		for (l = 0; l < state->level; ++l) {
 			parity_ptr[l] = &parity[l];
 			ret = parity_create(parity_ptr[l], state->parity_path[l], &out_size, state->file_mode);
 			if (ret == -1) {
@@ -1821,7 +1821,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 	} else if (!state->opt.auditonly) {
 		/* if checking, open the file for reading */
 		/* it may fail if the file doesn't exist, in this case we continue to check the files */
-		for(l=0;l<state->level;++l) {
+		for (l = 0; l < state->level; ++l) {
 			parity_ptr[l] = &parity[l];
 			ret = parity_open(parity_ptr[l], state->parity_path[l], state->file_mode);
 			if (ret == -1) {
@@ -1832,7 +1832,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 		}
 	} else {
 		/* otherwise don't use any parity */
-		for(l=0;l<state->level;++l)
+		for (l = 0; l < state->level; ++l)
 			parity_ptr[l] = 0;
 	}
 
@@ -1857,7 +1857,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 	}
 
 	/* try to close only if opened */
-	for(l=0;l<state->level;++l) {
+	for (l = 0; l < state->level; ++l) {
 		if (parity_ptr[l]) {
 			ret = parity_close(parity_ptr[l]);
 			/* LCOV_EXCL_START */

@@ -69,7 +69,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 		char path_from[PATH_MAX];
 
 		/* check if exists a .unrecoverable copy, and rename to the real one */
-		pathprint(path_from , sizeof(path_from), "%s.unrecoverable", handle->path);
+		pathprint(path_from, sizeof(path_from), "%s.unrecoverable", handle->path);
 
 		if (rename(path_from, handle->path) == 0) {
 			/* open for read write */
@@ -136,7 +136,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 
 #if HAVE_POSIX_FADVISE
 	if ((mode & MODE_SEQUENTIAL) != 0) {
-			/* advise sequential access */
+		/* advise sequential access */
 		ret = posix_fadvise(handle->f, 0, 0, POSIX_FADV_SEQUENTIAL);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
@@ -256,7 +256,7 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 
 	/* check if we are going to read only not initialized data */
 	if (offset >= handle->valid_size) {
-		fprintf(out, "Reading missing data from file '%s' at offset %"PRIu64".\n", handle->path, offset);
+		fprintf(out, "Reading missing data from file '%s' at offset %" PRIu64 ".\n", handle->path, offset);
 		return -1;
 	}
 
@@ -265,7 +265,7 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 #if !HAVE_PREAD
 	if (lseek(handle->f, offset, SEEK_SET) != offset) {
 		/* LCOV_EXCL_START */
-		fprintf(out, "Error seeking file '%s' at offset %"PRIu64". %s.\n", handle->path, offset, strerror(errno));
+		fprintf(out, "Error seeking file '%s' at offset %" PRIu64 ". %s.\n", handle->path, offset, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -282,12 +282,12 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 
 		if (read_ret < 0) {
 			/* LCOV_EXCL_START */
-			fprintf(out, "Error reading file '%s' at offset %"PRIu64" for size %u. %s.\n", handle->path, offset + count, read_size - count, strerror(errno));
+			fprintf(out, "Error reading file '%s' at offset %" PRIu64 " for size %u. %s.\n", handle->path, offset + count, read_size - count, strerror(errno));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
 		if (read_ret == 0) {
-			fprintf(out, "Unexpected end of file '%s' at offset %"PRIu64". %s.\n", handle->path, offset, strerror(errno));
+			fprintf(out, "Unexpected end of file '%s' at offset %" PRIu64 ". %s.\n", handle->path, offset, strerror(errno));
 			return -1;
 		}
 
@@ -382,7 +382,7 @@ struct snapraid_handle* handle_map(struct snapraid_state* state, unsigned* handl
 
 	/* get the size of the mapping */
 	size = 0;
-	for(i=state->maplist;i!=0;i=i->next) {
+	for (i = state->maplist; i != 0; i = i->next) {
 		struct snapraid_map* map = i->data;
 		if (map->position > size)
 			size = map->position;
@@ -391,7 +391,7 @@ struct snapraid_handle* handle_map(struct snapraid_state* state, unsigned* handl
 
 	handle = malloc_nofail(size * sizeof(struct snapraid_handle));
 
-	for(j=0;j<size;++j) {
+	for (j = 0; j < size; ++j) {
 		/* default for empty position */
 		handle[j].disk = 0;
 		handle[j].file = 0;
@@ -400,18 +400,18 @@ struct snapraid_handle* handle_map(struct snapraid_state* state, unsigned* handl
 	}
 
 	/* set the vector */
-	for(i=state->disklist;i!=0;i=i->next) {
+	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_map* map;
 		struct snapraid_disk* disk = i->data;
 		tommy_node* k;
 
 		/* search the mapping for this disk */
-		for(k=state->maplist;k!=0;k=k->next) {
+		for (k = state->maplist; k != 0; k = k->next) {
 			map = k->data;
 			if (strcmp(disk->name, map->name) == 0)
 				break;
 		}
-		if (k==0) {
+		if (k == 0) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "Internal error for inconsistent disk mapping.\n");
 			exit(EXIT_FAILURE);

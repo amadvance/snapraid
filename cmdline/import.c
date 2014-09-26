@@ -29,6 +29,7 @@ int import_block_hash_compare(const void* void_arg, const void* void_data)
 {
 	const unsigned char* arg = void_arg;
 	const struct snapraid_import_block* block = void_data;
+
 	return memcmp(arg, block->hash, HASH_SIZE);
 }
 
@@ -36,6 +37,7 @@ int import_block_prevhash_compare(const void* void_arg, const void* void_data)
 {
 	const unsigned char* arg = void_arg;
 	const struct snapraid_import_block* block = void_data;
+
 	return memcmp(arg, block->prevhash, HASH_SIZE);
 }
 
@@ -94,7 +96,7 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 #endif
 
 	offset = 0;
-	for(i=0;i<file->blockmax;++i) {
+	for (i = 0; i < file->blockmax; ++i) {
 		struct snapraid_import_block* block = &file->blockvec[i];
 		unsigned read_size = block_size;
 		if (read_size > size)
@@ -231,8 +233,8 @@ static void import_dir(struct snapraid_state* state, const char* dir)
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
-   
-	while (1) { 
+
+	while (1) {
 		char path[PATH_MAX];
 		struct stat st;
 		const char* name;

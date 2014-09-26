@@ -54,9 +54,9 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 	countsize = 0;
 	countpos = 0;
 	state_progress_begin(state, blockstart, blockmax, countmax);
-	for(i=blockstart;i<blockmax;++i) {
+	for (i = blockstart; i < blockmax; ++i) {
 		/* for each disk, process the block */
-		for(j=0;j<diskmax;++j) {
+		for (j = 0; j < diskmax; ++j) {
 			int read_size;
 			struct snapraid_block* block = BLOCK_EMPTY;
 			struct snapraid_disk* disk = handle[j].disk;
@@ -112,7 +112,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 		}
 
 		/* read the parity */
-		for(l=0;l<state->level;++l) {
+		for (l = 0; l < state->level; ++l) {
 			if (parity[l]) {
 				/* until now is CPU */
 				state_usage_cpu(state);
@@ -145,7 +145,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 
 bail:
 	/* close all the files left open */
-	for(j=0;j<diskmax;++j) {
+	for (j = 0; j < diskmax; ++j) {
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
@@ -199,7 +199,7 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	/* open the file for reading */
 	/* it may fail if the file doesn't exist, in this case we continue to dry the files */
-	for(l=0;l<state->level;++l) {
+	for (l = 0; l < state->level; ++l) {
 		parity_ptr[l] = &parity[l];
 		ret = parity_open(parity_ptr[l], state->parity_path[l], state->file_mode);
 		if (ret == -1) {
@@ -223,7 +223,7 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	}
 
 	/* try to close only if opened */
-	for(l=0;l<state->level;++l) {
+	for (l = 0; l < state->level; ++l) {
 		if (parity_ptr[l]) {
 			ret = parity_close(parity_ptr[l]);
 			if (ret == -1) {

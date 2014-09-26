@@ -67,7 +67,7 @@ int state_status(struct snapraid_state* state)
 	file_size = 0;
 	file_fragmented = 0;
 	extra_fragment = 0;
-	for(node_disk=state->disklist;node_disk!=0;node_disk=node_disk->next) {
+	for (node_disk = state->disklist; node_disk != 0; node_disk = node_disk->next) {
 		struct snapraid_disk* disk = node_disk->data;
 		tommy_node* node;
 		unsigned disk_file_count = 0;
@@ -90,7 +90,7 @@ int state_status(struct snapraid_state* state)
 
 				fragmented = 0;
 				prev_pos = file->blockvec[0].parity_pos;
-				for(i=1;i<file->blockmax;++i) {
+				for (i = 1; i < file->blockmax; ++i) {
 					block_off_t parity_pos = file->blockvec[i].parity_pos;
 					if (prev_pos + 1 != parity_pos) {
 						fragmented = 1;
@@ -116,7 +116,7 @@ int state_status(struct snapraid_state* state)
 		fprintf(stdlog, "summary:disk_file_count:%s:%u\n", disk->name, disk_file_count);
 		fprintf(stdlog, "summary:disk_fragmented_file_count:%s:%u\n", disk->name, disk_file_fragmented);
 		fprintf(stdlog, "summary:disk_excess_fragment_count:%s:%u\n", disk->name, disk_extra_fragment);
-		fprintf(stdlog, "summary:disk_file_size:%s:%"PRIu64"\n", disk->name, disk_file_size);
+		fprintf(stdlog, "summary:disk_file_size:%s:%" PRIu64 "\n", disk->name, disk_file_size);
 	}
 
 	printf("\n");
@@ -124,16 +124,16 @@ int state_status(struct snapraid_state* state)
 	printf("Files: %u\n", file_count);
 	printf("Fragmented files: %u\n", file_fragmented);
 	printf("Excess fragments: %u\n", extra_fragment);
-	printf("Files size: %"PRIu64" GiB\n", file_size / (1024*1024*1024) );
-	printf("Parity size: %"PRIu64" GiB\n", blockmax * (uint64_t)state->block_size / (1024*1024*1024) );
+	printf("Files size: %" PRIu64 " GiB\n", file_size / (1024 * 1024 * 1024) );
+	printf("Parity size: %" PRIu64 " GiB\n", blockmax * (uint64_t)state->block_size / (1024 * 1024 * 1024) );
 
 	printf("\n");
 
 	fprintf(stdlog, "summary:file_count:%u\n", file_count);
 	fprintf(stdlog, "summary:fragmented_file_count:%u\n", file_fragmented);
 	fprintf(stdlog, "summary:excess_fragment_count:%u\n", extra_fragment);
-	fprintf(stdlog, "summary:file_size:%"PRIu64"\n", file_size);
-	fprintf(stdlog, "summary:parity_size:%"PRIu64"\n", blockmax * (uint64_t)state->block_size);
+	fprintf(stdlog, "summary:file_size:%" PRIu64 "\n", file_size);
+	fprintf(stdlog, "summary:parity_size:%" PRIu64 "\n", blockmax * (uint64_t)state->block_size);
 	fprintf(stdlog, "summary:hash:%s\n", hash_config_name(state->hash));
 	fprintf(stdlog, "summary:prev_hash:%s\n", hash_config_name(state->prevhash));
 	fprintf(stdlog, "summary:best_hash:%s\n", hash_config_name(state->besthash));
@@ -146,7 +146,7 @@ int state_status(struct snapraid_state* state)
 	rehash = 0;
 	unsynced_blocks = 0;
 	fprintf(stdlog, "block_count:%u\n", blockmax);
-	for(i=0;i<blockmax;++i) {
+	for (i = 0; i < blockmax; ++i) {
 		int one_invalid;
 		int one_valid;
 
@@ -155,7 +155,7 @@ int state_status(struct snapraid_state* state)
 		/* for each disk */
 		one_invalid = 0;
 		one_valid = 0;
-		for(node_disk=state->disklist;node_disk!=0;node_disk=node_disk->next) {
+		for (node_disk = state->disklist; node_disk != 0; node_disk = node_disk->next) {
 			struct snapraid_disk* disk = node_disk->data;
 			struct snapraid_block* block = disk_block_get(disk, i);
 
@@ -183,9 +183,9 @@ int state_status(struct snapraid_state* state)
 
 		if (state->opt.gui) {
 			if (info != 0)
-				fprintf(stdlog, "block:%u:%"PRIu64":%s:%s:%s:%s\n", i, (uint64_t)info_get_time(info), one_valid ? "used": "", one_invalid ? "unsynced" : "", info_get_bad(info) ? "bad" : "", info_get_rehash(info) ? "rehash" : "");
+				fprintf(stdlog, "block:%u:%" PRIu64 ":%s:%s:%s:%s\n", i, (uint64_t)info_get_time(info), one_valid ? "used" : "", one_invalid ? "unsynced" : "", info_get_bad(info) ? "bad" : "", info_get_rehash(info) ? "rehash" : "");
 			else
-				fprintf(stdlog, "block_noinfo:%u:%s:%s\n", i, one_valid ? "used": "", one_invalid ? "unsynced" : "");
+				fprintf(stdlog, "block_noinfo:%u:%s:%s\n", i, one_valid ? "used" : "", one_invalid ? "unsynced" : "");
 		}
 	}
 
@@ -210,7 +210,7 @@ int state_status(struct snapraid_state* state)
 		unsigned j = i + 1;
 		while (j < count && info_get_time(infomap[i]) == info_get_time(infomap[j]))
 			++j;
-		fprintf(stdlog, "info_time:%"PRIu64":%u\n", (uint64_t)info_get_time(infomap[i]), j - i);
+		fprintf(stdlog, "info_time:%" PRIu64 ":%u\n", (uint64_t)info_get_time(infomap[i]), j - i);
 		i = j;
 	}
 
@@ -224,11 +224,11 @@ int state_status(struct snapraid_state* state)
 	/* compute graph limits */
 	barpos = 0;
 	barmax = 0;
-	for(i=0;i<GRAPH_COLUMN;++i) {
+	for (i = 0; i < GRAPH_COLUMN; ++i) {
 		time_t limit;
 		unsigned step;
 
-		limit = oldest + (newest - oldest) * (i+1) / GRAPH_COLUMN;
+		limit = oldest + (newest - oldest) * (i + 1) / GRAPH_COLUMN;
 
 		step = 0;
 		while (barpos < count && info_get_time(infomap[barpos]) <= limit) {
@@ -243,19 +243,19 @@ int state_status(struct snapraid_state* state)
 	}
 
 	/* print the graph */
-	for(y=0;y<GRAPH_ROW;++y) {
+	for (y = 0; y < GRAPH_ROW; ++y) {
 		if (y == 0)
 			printf("%3u%% ", barmax * 100 / count);
 		else if (y == GRAPH_ROW - 1)
 			printf("  0%% ");
-		else if (y == GRAPH_ROW/2)
+		else if (y == GRAPH_ROW / 2)
 			printf("%3u%% ", barmax * 50 / count);
 		else
 			printf("     ");
-		for(x=0;x<GRAPH_COLUMN;++x) {
-			unsigned pivot = barmax * (GRAPH_ROW-y) / GRAPH_ROW;
+		for (x = 0; x < GRAPH_COLUMN; ++x) {
+			unsigned pivot = barmax * (GRAPH_ROW - y) / GRAPH_ROW;
 			/* if it's the baseline */
-			if (y == GRAPH_ROW-1) {
+			if (y == GRAPH_ROW - 1) {
 				if (bar[x] >= pivot) {
 					printf("*");
 				} else if (bar[x] > 0) {
@@ -307,13 +307,13 @@ int state_status(struct snapraid_state* state)
 		printf("They are at blocks:");
 
 		/* print all the errors */
-		for(i=0;i<blockmax;++i) {
+		for (i = 0; i < blockmax; ++i) {
 			snapraid_info info = info_get(&state->infoarr, i);
 
 			/* skip unused blocks */
 			if (info == 0)
 				continue;
-			
+
 			if (info_get_bad(info))
 				printf(" %u", i);
 		}

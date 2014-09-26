@@ -77,7 +77,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	/* first count the number of blocks to process */
 	countmax = 0;
 	countlast = 0;
-	for(i=blockstart;i<blockmax;++i) {
+	for (i = blockstart; i < blockmax; ++i) {
 		time_t blocktime;
 		snapraid_info info;
 
@@ -134,7 +134,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	countpos = 0;
 	countlast = 0;
 	state_progress_begin(state, blockstart, blockmax, countmax);
-	for(i=blockstart;i<blockmax;++i) {
+	for (i = blockstart; i < blockmax; ++i) {
 		time_t blocktime;
 		snapraid_info info;
 		int error_on_this_block;
@@ -194,7 +194,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		rehash = info_get_rehash(info);
 
 		/* for each disk, process the block */
-		for(j=0;j<diskmax;++j) {
+		for (j = 0; j < diskmax; ++j) {
 			int read_size;
 			unsigned char hash[HASH_SIZE];
 			struct snapraid_block* block;
@@ -334,13 +334,13 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			state_usage_cpu(state);
 
 			/* buffers for parity read and not computed */
-			for(l=0;l<state->level;++l)
+			for (l = 0; l < state->level; ++l)
 				buffer_recov[l] = buffer[diskmax + state->level + l];
-			for(;l<LEV_MAX;++l)
+			for (; l < LEV_MAX; ++l)
 				buffer_recov[l] = 0;
 
 			/* read the parity */
-			for(l=0;l<state->level;++l) {
+			for (l = 0; l < state->level; ++l) {
 				ret = parity_read(parity[l], i, buffer_recov[l], state->block_size, stdlog);
 				if (ret == -1) {
 					buffer_recov[l] = 0;
@@ -359,7 +359,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			raid_gen(diskmax, state->level, state->block_size, buffer);
 
 			/* compare the parity */
-			for(l=0;l<state->level;++l) {
+			for (l = 0; l < state->level; ++l) {
 				if (buffer_recov[l] && memcmp(buffer[diskmax + l], buffer_recov[l], state->block_size) != 0) {
 					fprintf(stdlog, "parity_error:%u:%s: Data error\n", i, lev_config_name(l));
 
@@ -389,7 +389,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			/* if rehash is needed */
 			if (rehash) {
 				/* store all the new hash already computed */
-				for(j=0;j<diskmax;++j) {
+				for (j = 0; j < diskmax; ++j) {
 					if (rehandle[j].block)
 						memcpy(rehandle[j].block->hash, rehandle[j].hash, HASH_SIZE);
 				}
@@ -459,7 +459,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	fflush(stdlog);
 
 bail:
-	for(j=0;j<diskmax;++j) {
+	for (j = 0; j < diskmax; ++j) {
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
@@ -553,7 +553,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 	/* copy the info in the temp vector */
 	count = 0;
 	fprintf(stdlog, "block_count:%u\n", blockmax);
-	for(i=0;i<blockmax;++i) {
+	for (i = 0; i < blockmax; ++i) {
 		snapraid_info info = info_get(&state->infoarr, i);
 
 		/* skip unused blocks */
@@ -580,7 +580,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 		unsigned j = i + 1;
 		while (j < count && info_get_time(infomap[i]) == info_get_time(infomap[j]))
 			++j;
-		fprintf(stdlog, "info_time:%"PRIu64":%u\n", (uint64_t)info_get_time(infomap[i]), j - i);
+		fprintf(stdlog, "info_time:%" PRIu64 ":%u\n", (uint64_t)info_get_time(infomap[i]), j - i);
 		i = j;
 	}
 
@@ -609,14 +609,14 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 	}
 
 	fprintf(stdlog, "count_limit:%u\n", countlimit);
-	fprintf(stdlog, "time_limit:%"PRIu64"\n", (uint64_t)timelimit);
+	fprintf(stdlog, "time_limit:%" PRIu64 "\n", (uint64_t)timelimit);
 	fprintf(stdlog, "last_limit:%u\n", lastlimit);
 
 	/* free the temp vector */
 	free(infomap);
 
 	/* open the file for reading */
-	for(l=0;l<state->level;++l) {
+	for (l = 0; l < state->level; ++l) {
 		parity_ptr[l] = &parity[l];
 		ret = parity_open(parity_ptr[l], state->parity_path[l], state->file_mode);
 		if (ret == -1) {
@@ -637,7 +637,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 		/* continue, as we are already exiting */
 	}
 
-	for(l=0;l<state->level;++l) {
+	for (l = 0; l < state->level; ++l) {
 		ret = parity_close(parity_ptr[l]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */

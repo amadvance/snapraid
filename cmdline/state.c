@@ -82,7 +82,7 @@ void state_init(struct snapraid_state* state)
 	state->block_size = 256 * 1024; /* default 256 KiB */
 	state->raid_mode = RAID_MODE_CAUCHY;
 	state->file_mode = MODE_SEQUENTIAL;
-	for(l=0;l<LEV_MAX;++l) {
+	for (l = 0; l < LEV_MAX; ++l) {
 		state->parity_path[l][0] = 0;
 		state->parity_device[l] = 0;
 		state->tick_parity[l] = 0;
@@ -139,7 +139,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 		}
 	}
 
-	for(l=0;l<state->level;++l) {
+	for (l = 0; l < state->level; ++l) {
 		if (state->parity_path[l][0] == 0) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "No '%s' specification in '%s'\n", lev_config_name(l), path);
@@ -156,10 +156,10 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 	}
 
 	/* checks for equal paths */
-	for(i=state->contentlist;i!=0;i=i->next) {
+	for (i = state->contentlist; i != 0; i = i->next) {
 		struct snapraid_content* content = i->data;
 
-		for(l=0;l<state->level;++l) {
+		for (l = 0; l < state->level; ++l) {
 			if (pathcmp(state->parity_path[l], content->content) == 0) {
 				/* LCOV_EXCL_START */
 				fprintf(stderr, "Same path used for '%s' and 'content' as '%s'\n", lev_config_name(l), content->content);
@@ -171,7 +171,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 
 	/* check if all the data and parity disks are different */
 	if (!state->opt.skip_device) {
-		for(i=state->disklist;i!=0;i=i->next) {
+		for (i = state->disklist; i != 0; i = i->next) {
 			tommy_node* j;
 			struct snapraid_disk* disk = i->data;
 
@@ -188,13 +188,13 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 #endif
 
 			if (!state->opt.force_device) {
-				for(j=i->next;j!=0;j=j->next) {
+				for (j = i->next; j != 0; j = j->next) {
 					struct snapraid_disk* other = j->data;
 					if (disk->device == other->device) {
 						/* LCOV_EXCL_START */
 						fprintf(stderr, "Disks '%s' and '%s' are on the same device.\n", disk->dir, other->dir);
 #ifdef _WIN32
-						fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", disk->device);
+						fprintf(stderr, "Both have the serial number '%" PRIx64 "'.\n", disk->device);
 						fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
 						fprintf(stderr, "to change one of the disk serial.\n");
 #endif
@@ -208,12 +208,12 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 				}
 			}
 
-			for(l=0;l<state->level;++l) {
+			for (l = 0; l < state->level; ++l) {
 				if (disk->device == state->parity_device[l]) {
 					/* LCOV_EXCL_START */
 					fprintf(stderr, "Disk '%s' and %s '%s' are on the same device.\n", disk->dir, lev_name(l), state->parity_path[l]);
 #ifdef _WIN32
-					fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", disk->device);
+					fprintf(stderr, "Both have the serial number '%" PRIx64 "'.\n", disk->device);
 					fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
 					fprintf(stderr, "to change one of the disk serial.\n");
 #endif
@@ -226,7 +226,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 				/* LCOV_EXCL_START */
 				fprintf(stderr, "Disk '%s' and pool '%s' are on the same device.\n", disk->dir, state->pool);
 #ifdef _WIN32
-				fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", disk->device);
+				fprintf(stderr, "Both have the serial number '%" PRIx64 "'.\n", disk->device);
 				fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
 				fprintf(stderr, "to change one of the disk serial.\n");
 #endif
@@ -236,7 +236,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 		}
 
 #ifdef _WIN32
-		for(l=0;l<state->level;++l) {
+		for (l = 0; l < state->level; ++l) {
 			if (state->parity_device[l] == 0) {
 				/* LCOV_EXCL_START */
 				fprintf(stderr, "Disk '%s' has a zero serial number.\n", state->parity_path[l]);
@@ -259,29 +259,29 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 		}
 #endif
 
-		for(l=0;l<state->level;++l) {
+		for (l = 0; l < state->level; ++l) {
 			unsigned j;
-			for(j=l+1;j<state->level;++j) {
+			for (j = l + 1; j < state->level; ++j) {
 				if (state->parity_device[l] == state->parity_device[j]) {
 					/* LCOV_EXCL_START */
 					fprintf(stderr, "Parity '%s' and '%s' are on the same device.\n", state->parity_path[l], state->parity_path[j]);
 #ifdef _WIN32
-					fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", state->parity_device[l]);
+					fprintf(stderr, "Both have the serial number '%" PRIx64 "'.\n", state->parity_device[l]);
 					fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
 					fprintf(stderr, "to change one of the disk serial.\n");
-#endif			
+#endif
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
 			}
 		}
 
-		for(l=0;l<state->level;++l) {
+		for (l = 0; l < state->level; ++l) {
 			if (state->pool[0] != 0 && state->pool_device == state->parity_device[l]) {
 				/* LCOV_EXCL_START */
 				fprintf(stderr, "Pool '%s' and parity '%s' are on the same device.\n", state->pool, state->parity_path[l]);
 #ifdef _WIN32
-				fprintf(stderr, "Both have the serial number '%"PRIx64"'.\n", state->pool_device);
+				fprintf(stderr, "Both have the serial number '%" PRIx64 "'.\n", state->pool_device);
 				fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
 				fprintf(stderr, "to change one of the disk serial.\n");
 #endif
@@ -296,12 +296,12 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 		unsigned content_count;
 
 		content_count = 0;
-		for(i=state->contentlist;i!=0;i=i->next) {
+		for (i = state->contentlist; i != 0; i = i->next) {
 			tommy_node* j;
 			struct snapraid_content* content = i->data;
 
 			/* check if there are others in the same disk */
-			for(j=i->next;j!=0;j=j->next) {
+			for (j = i->next; j != 0; j = j->next) {
 				struct snapraid_content* other = j->data;
 				if (content->device == other->device) {
 					break;
@@ -315,9 +315,9 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 			++content_count;
 		}
 
-		if (content_count < state->level+1) {
+		if (content_count < state->level + 1) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "You must have at least %d 'content' files in different disks.\n", state->level+1);
+			fprintf(stderr, "You must have at least %d 'content' files in different disks.\n", state->level + 1);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -338,10 +338,10 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 	}
 
 	/* ensure that specified filter disks are valid ones */
-	for(i=tommy_list_head(filterlist_disk);i!=0;i=i->next) {
+	for (i = tommy_list_head(filterlist_disk); i != 0; i = i->next) {
 		tommy_node* j;
 		struct snapraid_filter* filter = i->data;
-		for(j=state->disklist;j!=0;j=j->next) {
+		for (j = state->disklist; j != 0; j = j->next) {
 			struct snapraid_disk* disk = j->data;
 			if (fnmatch(filter->pattern, disk->name, FNM_CASEINSENSITIVE_FOR_WIN) == 0)
 				break;
@@ -354,7 +354,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 		}
 	}
 
-	
+
 }
 
 void state_config(struct snapraid_state* state, const char* path, const char* command, struct snapraid_option* opt, tommy_list* filterlist_disk)
@@ -417,7 +417,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 		sgetspace(f);
 
 		if (strcmp(tag, "blocksize") == 0
-			/* block_size is the old format of the option */
+		        /* block_size is the old format of the option */
 			|| strcmp(tag, "block_size") == 0) {
 
 			ret = sgetu32(f, &state->block_size);
@@ -433,7 +433,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
-			if (state->block_size > 16*1024) {
+			if (state->block_size > 16 * 1024) {
 				/* LCOV_EXCL_START */
 				fprintf(stderr, "Too big 'blocksize' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
@@ -476,7 +476,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				level = 2;
 				state->raid_mode = RAID_MODE_VANDERMONDE;
 				break;
-			default:
+			default :
 				/* LCOV_EXCL_START */
 				fprintf(stderr, "Invalid '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
@@ -622,7 +622,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			}
 
 			/* check if the content file is already specified */
-			for(i=state->contentlist;i!=0;i=i->next) {
+			for (i = state->contentlist; i != 0; i = i->next) {
 				content = i->data;
 				if (pathcmp(content->content, buffer) == 0)
 					break;
@@ -705,7 +705,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			}
 
 			/* check if the disk name already exists */
-			for(i=state->disklist;i!=0;i=i->next) {
+			for (i = state->disklist; i != 0; i = i->next) {
 				disk = i->data;
 				if (strcmp(disk->name, buffer) == 0)
 					break;
@@ -879,13 +879,13 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	/* intentionally not set the prevhashseed, if used valgrind will warn about it */
 
 	fprintf(stdlog, "blocksize:%u\n", state->block_size);
-	for(i=state->disklist;i!=0;i=i->next) {
+	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 		fprintf(stdlog, "disk:%s:%s\n", disk->name, disk->dir);
 	}
 
 	fprintf(stdlog, "mode:%s\n", lev_raid_name(state->raid_mode, state->level));
-	for(l=0;l<state->level;++l)
+	for (l = 0; l < state->level; ++l)
 		fprintf(stdlog, "%s:%s\n", lev_config_name(l), state->parity_path[l]);
 	if (state->pool[0] != 0)
 		fprintf(stdlog, "pool:%s\n", state->pool);
@@ -906,12 +906,12 @@ static void state_map(struct snapraid_state* state)
 	/* this happens when a disk is removed from the configuration file */
 	/* From SnapRAID 4.0 mappings are automatically removed if a disk is not used */
 	/* when saving the content file, but we keep this code to import older content files. */
-	for(i=state->maplist;i!=0;) {
+	for (i = state->maplist; i != 0; ) {
 		struct snapraid_map* map = i->data;
 		struct snapraid_disk* disk;
 		tommy_node* j;
 
-		for(j=state->disklist;j!=0;j=j->next) {
+		for (j = state->disklist; j != 0; j = j->next) {
 			disk = j->data;
 			if (strcmp(disk->name, map->name) == 0) {
 				/* disk found */
@@ -921,8 +921,8 @@ static void state_map(struct snapraid_state* state)
 
 		/* go to the next mapping before removing */
 		i = i->next;
-		
-		if (j==0) {
+
+		if (j == 0) {
 			/* disk not found, remove the mapping */
 			tommy_list_remove_existing(&state->maplist, &map->node);
 			map_free(map);
@@ -932,32 +932,32 @@ static void state_map(struct snapraid_state* state)
 	/* maps each unmapped disk present in the configuration file in the first available hole */
 	/* this happens when you add disks for the first time in the configuration file */
 	hole = 0; /* first position to try */
-	for(i=state->disklist;i!=0;i=i->next) {
+	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 		struct snapraid_map* map;
 		tommy_node* j;
 
 		/* check if the disk is already mapped */
-		for(j=state->maplist;j!=0;j=j->next) {
+		for (j = state->maplist; j != 0; j = j->next) {
 			map = j->data;
 			if (strcmp(disk->name, map->name) == 0) {
 				/* mapping found */
 				break;
 			}
 		}
-		if (j!=0)
+		if (j != 0)
 			continue;
 
 		/* mapping not found, search for an hole */
 		while (1) {
-			for(j=state->maplist;j!=0;j=j->next) {
+			for (j = state->maplist; j != 0; j = j->next) {
 				map = j->data;
 				if (map->position == hole) {
 					/* position already used */
 					break;
 				}
 			}
-			if (j==0) {
+			if (j == 0) {
 				/* hole found */
 				break;
 			}
@@ -978,14 +978,14 @@ static void state_map(struct snapraid_state* state)
 
 	/* checks if mapping match the disk uuid */
 	uuid_mismatch = 0;
-	for(i=state->maplist;i!=0;i=i->next) {
+	for (i = state->maplist; i != 0; i = i->next) {
 		struct snapraid_map* map = i->data;
 		struct snapraid_disk* disk;
 		tommy_node* j;
 		char uuid[UUID_MAX];
 		int ret;
 
-		for(j=state->disklist;j!=0;j=j->next) {
+		for (j = state->disklist; j != 0; j = j->next) {
 			disk = j->data;
 			if (strcmp(disk->name, map->name) == 0) {
 				/* disk found */
@@ -993,7 +993,7 @@ static void state_map(struct snapraid_state* state)
 			}
 		}
 
-		if (j==0) {
+		if (j == 0) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "Internal inconsistency for mapping '%s'\n", map->name);
 			exit(EXIT_FAILURE);
@@ -1044,7 +1044,7 @@ static void state_map(struct snapraid_state* state)
 
 	/* count the number of data disks, including holes left after removing some */
 	diskcount = 0;
-	for(i=state->maplist;i!=0;i=i->next) {
+	for (i = state->maplist; i != 0; i = i->next) {
 		struct snapraid_map* map = i->data;
 
 		if (map->position + 1 > diskcount)
@@ -1079,10 +1079,10 @@ static void state_content_check(struct snapraid_state* state, const char* path)
 	tommy_node* i;
 
 	/* checks that any map has different name and position */
-	for(i=state->maplist;i!=0;i=i->next) {
+	for (i = state->maplist; i != 0; i = i->next) {
 		struct snapraid_map* map = i->data;
 		tommy_node* j;
-		for(j=i->next;j!=0;j=j->next) {
+		for (j = i->next; j != 0; j = j->next) {
 			struct snapraid_map* other = j->data;
 			if (strcmp(map->name, other->name) == 0) {
 				/* LCOV_EXCL_START */
@@ -1110,7 +1110,7 @@ static int position_is_required(struct snapraid_state* state, block_off_t pos)
 	tommy_node* i;
 
 	/* check for each disk */
-	for(i=state->disklist;i!=0;i=i->next) {
+	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 		struct snapraid_block* block = disk_block_get(disk, pos);
 
@@ -1139,7 +1139,7 @@ static int info_is_required(struct snapraid_state* state, block_off_t pos)
 	tommy_node* i;
 
 	/* check for each disk */
-	for(i=state->disklist;i!=0;i=i->next) {
+	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 		struct snapraid_block* block = disk_block_get(disk, pos);
 
@@ -1156,7 +1156,7 @@ static void position_clear_deleted(struct snapraid_state* state, block_off_t pos
 	tommy_node* i;
 
 	/* check for each disk if block is really used */
-	for(i=state->disklist;i!=0;i=i->next) {
+	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 		struct snapraid_block* block = disk_block_get(disk, pos);
 
@@ -1185,7 +1185,7 @@ static struct snapraid_disk* find_disk(struct snapraid_state* state, const char*
 {
 	tommy_node* i;
 
-	for(i=state->disklist;i!=0;i=i->next) {
+	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 		if (strcmp(disk->name, name) == 0)
 			return disk;
@@ -2150,7 +2150,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 
 	/* to be backward compatible with old context files without info */
 	/* create info records if missing */
-	for(b=0;b<blockmax;++b) {
+	for (b = 0; b < blockmax; ++b) {
 		/* if the position is used */
 		if (info_is_required(state, b)) {
 			snapraid_info info = info_get(&state->infoarr, b);
@@ -2204,7 +2204,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 	/* clear the info for unused blocks */
 	/* and get some other info */
 	info_has_rehash = 0; /* if there is a rehash info */
-	for(b=0;b<blockmax;++b) {
+	for (b = 0; b < blockmax; ++b) {
 		/* if the position is used */
 		if (position_is_required(state, b)) {
 			snapraid_info info = info_get(&state->infoarr, b);
@@ -2280,7 +2280,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 	}
 
 	/* for each map */
-	for(i=state->maplist;i!=0;i=i->next) {
+	for (i = state->maplist; i != 0; i = i->next) {
 		struct snapraid_map* map = i->data;
 		struct snapraid_disk* disk;
 
@@ -2322,7 +2322,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 	}
 
 	/* for each disk */
-	for(i=state->disklist;i!=0;i=i->next) {
+	for (i = state->disklist; i != 0; i = i->next) {
 		tommy_node* j;
 		struct snapraid_disk* disk = i->data;
 
@@ -2331,7 +2331,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 			continue;
 
 		/* for each file */
-		for(j=disk->filelist;j!=0;j=j->next) {
+		for (j = disk->filelist; j != 0; j = j->next) {
 			struct snapraid_file* file = j->data;
 			uint64_t size;
 			uint64_t mtime_sec;
@@ -2366,7 +2366,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 			}
 
 			/* for each block in the file */
-			for(b=0;b<file->blockmax;++b) {
+			for (b = 0; b < file->blockmax; ++b) {
 				struct snapraid_block* block = &file->blockvec[b];
 				unsigned block_state = block_state_get(block);
 
@@ -2388,7 +2388,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 				case BLOCK_STATE_REP :
 					sputsl("rep ", f);
 					break;
-				default:
+				default :
 					/* LCOV_EXCL_START */
 					fprintf(stderr, "Internal inconsistency in state for block %u state %u\n", block->parity_pos, block_state);
 					exit(EXIT_FAILURE);
@@ -2415,7 +2415,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 		}
 
 		/* for each link */
-		for(j=disk->linklist;j!=0;j=j->next) {
+		for (j = disk->linklist; j != 0; j = j->next) {
 			struct snapraid_link* link = j->data;
 
 			switch (link_flag_get(link, FILE_IS_LINK_MASK)) {
@@ -2445,7 +2445,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 		}
 
 		/* for each dir */
-		for(j=disk->dirlist;j!=0;j=j->next) {
+		for (j = disk->dirlist; j != 0; j = j->next) {
 			struct snapraid_dir* dir = j->data;
 
 			sputsl("dir ", f);
@@ -2473,7 +2473,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
-		for(b=0;b<blockmax;++b) {
+		for (b = 0; b < blockmax; ++b) {
 			if (is_block_deleted(disk, b)) {
 				struct snapraid_block* block = disk_block_get(disk, b);
 
@@ -2484,7 +2484,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
-			
+
 				sputsl("off ", f);
 				sputu32(b, f);
 				sputc(' ', f);
@@ -2501,7 +2501,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 	}
 
 	/* write the info for each block */
-	for(b=0;b<blockmax;++b) {
+	for (b = 0; b < blockmax; ++b) {
 		snapraid_info info = info_get(&state->infoarr, b);
 
 		/* save only stuffs different than 0 */
@@ -2555,7 +2555,7 @@ static void decoding_error(const char* path, STREAM* f)
 
 	if (seof(f)) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Unexpected end of content file '%s' at offset %"PRIi64"\n", path, stell(f));
+		fprintf(stderr, "Unexpected end of content file '%s' at offset %" PRIi64 "\n", path, stell(f));
 		fprintf(stderr, "This content file is truncated. Use an alternate copy.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
@@ -2563,12 +2563,12 @@ static void decoding_error(const char* path, STREAM* f)
 
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Error reading the content file '%s' at offset %"PRIi64"\n", path, stell(f));
+		fprintf(stderr, "Error reading the content file '%s' at offset %" PRIi64 "\n", path, stell(f));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
-	fprintf(stderr, "Decoding error in '%s' at offset %"PRIi64"\n", path, stell(f));
+	fprintf(stderr, "Decoding error in '%s' at offset %" PRIi64 "\n", path, stell(f));
 
 	buf[0] = 0;
 	buf[1] = 0;
@@ -2591,7 +2591,7 @@ static void decoding_error(const char* path, STREAM* f)
 
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Error flushing the content file '%s' at offset %"PRIi64"\n", path, stell(f));
+		fprintf(stderr, "Error flushing the content file '%s' at offset %" PRIi64 "\n", path, stell(f));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -2840,7 +2840,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 					case 'p' :
 						block_state_set(block, BLOCK_STATE_REP);
 						break;
-					default:
+					default :
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
 						fprintf(stderr, "Invalid block type!\n");
@@ -3123,7 +3123,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 					/* go to the next run */
 					v_pos += v_count;
 					break;
-				default:
+				default :
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
 					fprintf(stderr, "Invalid hole type!\n");
@@ -3283,7 +3283,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			case 'k' :
 				state->hash = HASH_SPOOKY2;
 				break;
-			default:
+			default :
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
 				fprintf(stderr, "Invalid checksum!\n");
@@ -3310,7 +3310,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			case 'k' :
 				state->prevhash = HASH_SPOOKY2;
 				break;
-			default:
+			default :
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
 				fprintf(stderr, "Invalid checksum!\n");
@@ -3419,7 +3419,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				/* here don't call decoding_error() because it's too late to get the crc */
-				fprintf(stderr, "Error reading the CRC in '%s' at offset %"PRIi64"\n", path, stell(f));
+				fprintf(stderr, "Error reading the CRC in '%s' at offset %" PRIi64 "\n", path, stell(f));
 				fprintf(stderr, "This content file is damaged! Use an alternate copy.\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
@@ -3448,7 +3448,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Error reading the content file '%s' at offset %"PRIi64"\n", path, stell(f));
+		fprintf(stderr, "Error reading the content file '%s' at offset %" PRIi64 "\n", path, stell(f));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -3464,7 +3464,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 	/* check that the stored parity size matches the loaded state */
 	if (blockmax != parity_size(state)) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Internal inconsistency in parity size in '%s' at offset %"PRIi64"\n", path, stell(f));
+		fprintf(stderr, "Internal inconsistency in parity size in '%s' at offset %" PRIi64 "\n", path, stell(f));
 		if (state->opt.skip_content_check) {
 			fprintf(stderr, "Overriding from %u to %u.\n", blockmax, parity_size(state));
 			blockmax = parity_size(state);
@@ -3514,7 +3514,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	/* and get some other info */
 	info_oldest = 0; /* oldest time in info */
 	info_has_rehash = 0; /* if there is a rehash info */
-	for(b=0;b<blockmax;++b) {
+	for (b = 0; b < blockmax; ++b) {
 		/* if the position is used */
 		if (position_is_required(state, b)) {
 			snapraid_info info = info_get(&state->infoarr, b);
@@ -3599,7 +3599,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 
 	/* for each map */
 	mapping_idx = 0;
-	for(i=state->maplist;i!=0;i=i->next) {
+	for (i = state->maplist; i != 0; i = i->next) {
 		struct snapraid_map* map = i->data;
 		struct snapraid_disk* disk;
 
@@ -3635,7 +3635,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	}
 
 	/* for each disk */
-	for(i=state->disklist;i!=0;i=i->next) {
+	for (i = state->disklist; i != 0; i = i->next) {
 		tommy_node* j;
 		struct snapraid_disk* disk = i->data;
 
@@ -3644,7 +3644,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 			continue;
 
 		/* for each file */
-		for(j=disk->filelist;j!=0;j=j->next) {
+		for (j = disk->filelist; j != 0; j = j->next) {
 			struct snapraid_file* file = j->data;
 			struct snapraid_block* blockvec = file->blockvec;
 			uint64_t size;
@@ -3681,15 +3681,15 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 				unsigned block_state = block_state_get(blockvec + begin);
 				uint32_t v_pos = blockvec[begin].parity_pos;
 				uint32_t v_count;
-				
+
 				block_off_t end;
 
 				/* find the end of run of blocks */
 				end = begin + 1;
 				while (end < file->blockmax
 					&& block_state == block_state_get(blockvec + end)
-					&& blockvec[end-1].parity_pos + 1 == blockvec[end].parity_pos)
-				{
+					&& blockvec[end - 1].parity_pos + 1 == blockvec[end].parity_pos
+				) {
 					++end;
 				}
 
@@ -3703,7 +3703,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 				case BLOCK_STATE_REP :
 					sputc('p', f);
 					break;
-				default:
+				default :
 					/* LCOV_EXCL_START */
 					fprintf(stderr, "Internal inconsistency in state for block %u state %u\n", v_pos, block_state);
 					exit(EXIT_FAILURE);
@@ -3716,7 +3716,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 				sputb32(v_count, f);
 
 				/* write hashes */
-				for(b=begin;b<end;++b) {
+				for (b = begin; b < end; ++b) {
 					struct snapraid_block* block = blockvec + b;
 
 					/* consistency check */
@@ -3747,7 +3747,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 		}
 
 		/* for each link */
-		for(j=disk->linklist;j!=0;j=j->next) {
+		for (j = disk->linklist; j != 0; j = j->next) {
 			struct snapraid_link* link = j->data;
 
 			switch (link_flag_get(link, FILE_IS_LINK_MASK)) {
@@ -3773,7 +3773,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 		}
 
 		/* for each dir */
-		for(j=disk->dirlist;j!=0;j=j->next) {
+		for (j = disk->dirlist; j != 0; j = j->next) {
 			struct snapraid_dir* dir = j->data;
 
 			sputc('r', f);
@@ -3808,8 +3808,8 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 			/* find the end of run of blocks */
 			end = begin + 1;
 			while (end < blockmax
-				&& is_deleted == is_block_deleted(disk, end))
-			{
+				&& is_deleted == is_block_deleted(disk, end)
+			) {
 				++end;
 			}
 
@@ -3868,8 +3868,8 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 		/* find the end of run of blocks */
 		end = begin + 1;
 		while (end < blockmax
-			&& info == info_get(&state->infoarr, end))
-		{
+			&& info == info_get(&state->infoarr, end)
+		) {
 			++end;
 		}
 
@@ -4011,7 +4011,7 @@ void state_read(struct snapraid_state* state)
 			if (other_st.st_size != st.st_size) {
 				fprintf(stderr, "WARNING! Content files '%s' and '%s' have a different size!\n", path, other_path);
 				fprintf(stderr, "Likely one of the two is broken!\n");
-		
+
 				/* ensure to rewrite all the content files */
 				state->need_write = 1;
 			}
@@ -4174,14 +4174,14 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 
 	if (state->opt.verbose) {
 		tommy_node* k;
-		for(k=tommy_list_head(filterlist_disk);k!=0;k=k->next) {
+		for (k = tommy_list_head(filterlist_disk); k != 0; k = k->next) {
 			struct snapraid_filter* filter = k->data;
 			printf("\t%s", filter->pattern);
 			if (filter->is_disk)
 				printf("//");
 			printf("\n");
 		}
-		for(k=tommy_list_head(filterlist_file);k!=0;k=k->next) {
+		for (k = tommy_list_head(filterlist_file); k != 0; k = k->next) {
 			struct snapraid_filter* filter = k->data;
 			printf("\t%s", filter->pattern);
 			if (filter->is_dir)
@@ -4195,7 +4195,7 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 	}
 
 	/* for each disk */
-	for(i=state->disklist;i!=0;i=i->next) {
+	for (i = state->disklist; i != 0; i = i->next) {
 		tommy_node* j;
 		struct snapraid_disk* disk = i->data;
 
@@ -4204,7 +4204,7 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 			printf("Scanning disk %s...\n", disk->name);
 
 		/* for each file */
-		for(j=tommy_list_head(&disk->filelist);j!=0;j=j->next) {
+		for (j = tommy_list_head(&disk->filelist); j != 0; j = j->next) {
 			struct snapraid_file* file = j->data;
 
 			if (filter_path(filterlist_disk, disk->name, file->sub) != 0
@@ -4217,7 +4217,7 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 		}
 
 		/* for each link */
-		for(j=tommy_list_head(&disk->linklist);j!=0;j=j->next) {
+		for (j = tommy_list_head(&disk->linklist); j != 0; j = j->next) {
 			struct snapraid_link* link = j->data;
 
 			if (filter_path(filterlist_disk, disk->name, link->sub) != 0
@@ -4229,7 +4229,7 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 		}
 
 		/* for each dir */
-		for(j=tommy_list_head(&disk->dirlist);j!=0;j=j->next) {
+		for (j = tommy_list_head(&disk->dirlist); j != 0; j = j->next) {
 			struct snapraid_dir* dir = j->data;
 
 			if (filter_dir(filterlist_disk, disk->name, dir->sub) != 0
@@ -4245,7 +4245,7 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, block_off_t blockmax, block_off_t countmax)
 {
 	if (state->opt.gui) {
-		fprintf(stdlog,"run:begin:%u:%u:%u\n", blockstart, blockmax, countmax);
+		fprintf(stdlog, "run:begin:%u:%u:%u\n", blockstart, blockmax, countmax);
 		fflush(stdlog);
 	} else {
 		time_t now;
@@ -4283,7 +4283,7 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 		time_t now;
 		time_t elapsed;
 
-		unsigned countsize_MiB = (countsize + 1024*1024 - 1) / (1024*1024);
+		unsigned countsize_MiB = (countsize + 1024 * 1024 - 1) / (1024 * 1024);
 
 		now = time(0);
 
@@ -4309,7 +4309,7 @@ void state_progress_stop(struct snapraid_state* state)
 	now = time(0);
 
 	printf("\n");
-	
+
 	state->progress_interruption = now;
 }
 
@@ -4330,7 +4330,7 @@ void state_progress_restart(struct snapraid_state* state)
 int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize)
 {
 	if (state->opt.gui) {
-		fprintf(stdlog, "run:pos:%u:%u:%"PRIu64"\n", blockpos, countpos, countsize);
+		fprintf(stdlog, "run:pos:%u:%u:%" PRIu64 "\n", blockpos, countpos, countsize);
 		fflush(stdlog);
 	} else {
 		time_t now;
@@ -4351,7 +4351,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 			tick_total = state->tick_cpu + state->tick_io;
 			tick_cpu = state->tick_cpu;
 
-			printf("%u%%, %u MiB", countpos * 100 / countmax, (unsigned)(countsize / (1024*1024)));
+			printf("%u%%, %u MiB", countpos * 100 / countmax, (unsigned)(countsize / (1024 * 1024)));
 
 			/* if we have at least 5 measures */
 			if (state->progress_tick >= 5) {
@@ -4389,10 +4389,10 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 				delta_tick_cpu = tick_cpu - state->progress_tick_cpu[oldest];
 
 				if (delta_time != 0)
-					printf(", %u MiB/s", (unsigned)(delta_size / (1024*1024) / delta_time));
+					printf(", %u MiB/s", (unsigned)(delta_size / (1024 * 1024) / delta_time));
 
 				if (delta_tick_total != 0)
-					printf(", CPU %"PRIu64"%%", delta_tick_cpu * 100U / delta_tick_total);
+					printf(", CPU %" PRIu64 "%%", delta_tick_cpu * 100U / delta_tick_total);
 
 				/* estimate the remaining time */
 				if (delta_pos != 0) {
@@ -4452,13 +4452,13 @@ void state_usage_print(struct snapraid_state* state)
 
 	tick_max = 0;
 	tick_total = 0;
-	for(i=state->disklist;i!=0;i=i->next) {
+	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 		tick_total += disk->tick;
 		if (disk->tick > tick_max)
 			tick_max = disk->tick;
 	}
-	for(l=0;l<state->level;++l) {
+	for (l = 0; l < state->level; ++l) {
 		tick_total += state->tick_parity[l];
 		if (state->tick_parity[l] > tick_max)
 			tick_max = state->tick_parity[l];
@@ -4468,23 +4468,23 @@ void state_usage_print(struct snapraid_state* state)
 		return;
 
 	printf("Time for disk:");
-	for(i=state->disklist;i!=0;i=i->next) {
+	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 		if (disk->tick == tick_max)
 			printf(" %s:", disk->name);
 		else
 			printf(" ");
-		printf("%"PRIu64"%%", disk->tick * 100U / tick_total);
+		printf("%" PRIu64 "%%", disk->tick * 100U / tick_total);
 	}
 	printf("\n");
 
 	printf("Time for parity:");
-	for(l=0;l<state->level;++l) {
+	for (l = 0; l < state->level; ++l) {
 		if (state->tick_parity[l] == tick_max)
 			printf(" %s:", lev_config_name(l));
 		else
 			printf(" ");
-		printf("%"PRIu64"%%", state->tick_parity[l] * 100U / tick_total);
+		printf("%" PRIu64 "%%", state->tick_parity[l] * 100U / tick_total);
 	}
 	printf("\n");
 }
@@ -4516,7 +4516,7 @@ void generate_configuration(const char* path)
 	printf("# Use this blocksize\n");
 	printf("blocksize %u\n", state.block_size / 1024);
 	printf("\n");
-	for(i=0;i<LEV_MAX;++i) {
+	for (i = 0; i < LEV_MAX; ++i) {
 		printf("# Set the correct path for the %s file%s\n", lev_name(i), i != 0 ? " (if used)" : "");
 		printf("%s ENTER_HERE_THE_PARITY_FILE\n", lev_config_name(i));
 		printf("\n");
@@ -4524,7 +4524,7 @@ void generate_configuration(const char* path)
 	printf("# Add any other content file\n");
 	printf("content %s\n", path);
 	printf("\n");
-	for(j=state.maplist;j;j=j->next) {
+	for (j = state.maplist; j; j = j->next) {
 		struct snapraid_map* map = j->data;
 		struct snapraid_disk* disk;
 		printf("# Set the correct dir for disk '%s'\n", map->name);

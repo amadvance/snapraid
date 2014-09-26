@@ -192,7 +192,7 @@ struct snapraid_block {
  * meaning that they don't have any previous content.
  * This is important because it means that deleting them, you are not going
  * to lose something that cannot be recovered.
- * Note that excluded files won't ever get this flag. 
+ * Note that excluded files won't ever get this flag.
  */
 #define FILE_IS_CREATED 0x20
 
@@ -256,7 +256,7 @@ struct snapraid_link {
 	/* nodes for data structures */
 	tommy_node nodelist;
 	tommy_hashdyn_node nodeset;
-}; 
+};
 
 /**
  * Dir.
@@ -268,7 +268,7 @@ struct snapraid_dir {
 	/* nodes for data structures */
 	tommy_node nodelist;
 	tommy_hashdyn_node nodeset;
-}; 
+};
 
 /**
  * Deleted entry.
@@ -521,7 +521,7 @@ static inline int hash_is_invalid(const unsigned char* hash)
 {
 	unsigned i;
 
-	for(i=0;i<HASH_SIZE;++i)
+	for (i = 0; i < HASH_SIZE; ++i)
 		if (hash[i] != 0x00)
 			return 0;
 
@@ -537,7 +537,7 @@ static inline int hash_is_zero(const unsigned char* hash)
 {
 	unsigned i;
 
-	for(i=0;i<HASH_SIZE;++i)
+	for (i = 0; i < HASH_SIZE; ++i)
 		if (hash[i] != 0xFF)
 			return 0;
 
@@ -578,7 +578,7 @@ static inline int block_has_file(const struct snapraid_block* block)
 	unsigned state = block_state_get(block);
 
 	return state == BLOCK_STATE_BLK
-		|| state == BLOCK_STATE_CHG || state == BLOCK_STATE_REP;
+	       || state == BLOCK_STATE_CHG || state == BLOCK_STATE_REP;
 }
 
 /**
@@ -591,7 +591,7 @@ static inline int block_has_invalid_parity(const struct snapraid_block* block)
 	unsigned state = block_state_get(block);
 
 	return state == BLOCK_STATE_DELETED
-		|| state == BLOCK_STATE_CHG || state == BLOCK_STATE_REP;
+	       || state == BLOCK_STATE_CHG || state == BLOCK_STATE_REP;
 }
 
 /**
@@ -862,6 +862,7 @@ static inline snapraid_info info_make(time_t last_access, int error, int rehash)
 {
 	/* clear the lowest bits as reserved for other information */
 	snapraid_info info = last_access & ~0x3;
+
 	if (error != 0)
 		info |= 0x1;
 	if (rehash != 0)
@@ -930,7 +931,7 @@ static inline void info_set(tommy_arrayblkof* array, unsigned pos, snapraid_info
 static inline snapraid_info info_get(tommy_arrayblkof* array, unsigned pos)
 {
 	snapraid_info info;
-	
+
 	if (pos >= tommy_arrayblkof_size(array))
 		return 0;
 

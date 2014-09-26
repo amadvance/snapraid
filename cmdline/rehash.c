@@ -59,7 +59,7 @@ void state_rehash(struct snapraid_state* state)
 	randomize(state->hashseed, HASH_SIZE);
 
 	/* mark all the block for rehashing */
-	for(i=0;i<blockmax;++i) {
+	for (i = 0; i < blockmax; ++i) {
 		snapraid_info info;
 
 		/* if it's unused */

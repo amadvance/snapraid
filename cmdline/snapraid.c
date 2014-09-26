@@ -75,7 +75,7 @@ void usage(void)
 
 void memory(void)
 {
-	fprintf(stdlog, "memory:used:%"PRIu64"\n", (uint64_t)malloc_counter());
+	fprintf(stdlog, "memory:used:%" PRIu64 "\n", (uint64_t)malloc_counter());
 	printf("Using %u MiB of memory.\n", (unsigned)(malloc_counter() / 1024 / 1024));
 }
 
@@ -134,7 +134,7 @@ void log_open(const char* log)
 	}
 
 	/* process the path */
-	for(*path=0;*log!=0;) {
+	for (*path = 0; *log != 0; ) {
 		switch (*log) {
 		case '%' :
 			++log;
@@ -148,14 +148,14 @@ void log_open(const char* log)
 			case 'D' :
 				pathcat(path, sizeof(path), text_D);
 				break;
-			default:
+			default :
 				/* LCOV_EXCL_START */
 				fprintf(stderr, "Invalid type specifier '%c' in the log file.\n", *log);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 			break;
-		default:
+		default :
 			pathcatc(path, sizeof(path), *log);
 			break;
 		}
@@ -421,7 +421,7 @@ int main(int argc, char* argv[])
 #else
 		getopt(argc, argv, OPTIONS))
 #endif
-	!= EOF) {
+		!= EOF) {
 		switch (c) {
 		case 'c' :
 			pathimport(conf, sizeof(conf), optarg);
@@ -435,7 +435,7 @@ int main(int argc, char* argv[])
 				/* LCOV_EXCL_STOP */
 			}
 			tommy_list_insert_tail(&filterlist_file, &filter->node, filter);
-			} break;
+		} break;
 		case 'd' : {
 			struct snapraid_filter* filter = filter_alloc_disk(1, optarg);
 			if (!filter) {
@@ -445,7 +445,7 @@ int main(int argc, char* argv[])
 				/* LCOV_EXCL_STOP */
 			}
 			tommy_list_insert_tail(&filterlist_disk, &filter->node, filter);
-			} break;
+		} break;
 		case 'm' :
 			filter_missing = 1;
 			break;
@@ -623,7 +623,7 @@ int main(int argc, char* argv[])
 		case OPT_TEST_RUN :
 			run = optarg;
 			break;
-		default:
+		default :
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "Unknown option '%c'\n", (char)c);
 			exit(EXIT_FAILURE);
@@ -682,7 +682,7 @@ int main(int argc, char* argv[])
 	switch (operation) {
 	case OPERATION_CHECK :
 		break;
-	default:
+	default :
 		if (opt.auditonly) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "You cannot use -a, --audit-only with the '%s' command\n", command);
@@ -694,7 +694,7 @@ int main(int argc, char* argv[])
 	switch (operation) {
 	case OPERATION_SYNC :
 		break;
-	default:
+	default :
 		if (opt.prehash) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "You cannot use -h, --pre-hash with the '%s' command\n", command);
@@ -736,7 +736,7 @@ int main(int argc, char* argv[])
 	case OPERATION_FIX :
 	case OPERATION_DRY :
 		break;
-	default:
+	default :
 		if (!tommy_list_empty(&filterlist_file)) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "You cannot use -f, --filter with the '%s' command\n", command);
@@ -761,7 +761,7 @@ int main(int argc, char* argv[])
 	case OPERATION_CHECK :
 	case OPERATION_FIX :
 		break;
-	default:
+	default :
 		if (filter_error != 0) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "You cannot use -e, --filter-error with the '%s' command\n", command);
@@ -774,7 +774,7 @@ int main(int argc, char* argv[])
 	case OPERATION_CHECK :
 	case OPERATION_FIX :
 		break;
-	default:
+	default :
 		if (import != 0) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "You cannot import with the '%s' command\n", command);
@@ -803,14 +803,14 @@ int main(int argc, char* argv[])
 	t = time(0);
 	tm = localtime(&t);
 	fprintf(stdlog, "version:%s\n", PACKAGE_VERSION);
-	fprintf(stdlog, "unixtime:%"PRIi64"\n", (int64_t)t);
+	fprintf(stdlog, "unixtime:%" PRIi64 "\n", (int64_t)t);
 	if (tm) {
 		char datetime[64];
 		strftime(datetime, sizeof(datetime), "%Y-%m-%d %H:%M:%S", tm);
 		fprintf(stdlog, "time:%s\n", datetime);
 	}
 	fprintf(stdlog, "command:%s\n", command);
-	for(i=0;i<argc;++i)
+	for (i = 0; i < argc; ++i)
 		fprintf(stdlog, "argv:%u:%s\n", i, argv[i]);
 	fflush(stdlog);
 
@@ -870,14 +870,14 @@ int main(int argc, char* argv[])
 
 		/* save the new state before the sync */
 		/* this allow to recover the case of the changes in the array after an aborted sync. */
-		
+
 		/* for example, think at this case: */
 		/* - add some files at the array */
 		/* - run a sync command, it will recompute the parity adding the new files */
 		/* - abort the sync command before it stores the new content file */
 		/* - delete the not yet synced files from the array */
 		/* - run a new sync command */
-		
+
 		/* the new sync command has now way to know that the parity file was modified */
 		/* because the files triggering these changes are now deleted */
 		/* and they aren't listed in the content file */

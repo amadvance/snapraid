@@ -167,7 +167,7 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 	state->need_write = 1;
 
 	/* free all the blocks of the file */
-	for(i=0;i<file->blockmax;++i) {
+	for (i = 0; i < file->blockmax; ++i) {
 		struct snapraid_block* block = &file->blockvec[i];
 		block_off_t block_pos = block->parity_pos;
 		unsigned block_state;
@@ -211,7 +211,7 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 			/* we just don't know the old hash, and then we set it to invalid */
 			hash_invalid_set(deleted->block.hash);
 			break;
-		default:
+		default :
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "Internal inconsistency in deallocating for block %u state %u\n", block->parity_pos, block_state);
 			exit(EXIT_FAILURE);
@@ -239,7 +239,7 @@ static int file_is_full_invalid_parity_and_stable(struct snapraid_state* state, 
 		return 0;
 
 	/* check all blocks */
-	for(i=0;i<file->blockmax;++i) {
+	for (i = 0; i < file->blockmax; ++i) {
 		struct snapraid_block* block = &file->blockvec[i];
 		snapraid_info info;
 
@@ -271,7 +271,7 @@ static int file_is_full_hashed_and_stable(struct snapraid_state* state, struct s
 		return 0;
 
 	/* check all blocks */
-	for(i=0;i<file->blockmax;++i) {
+	for (i = 0; i < file->blockmax; ++i) {
 		struct snapraid_block* block = &file->blockvec[i];
 		snapraid_info info;
 
@@ -357,7 +357,7 @@ static void scan_file_insert(struct snapraid_scan* scan, struct snapraid_file* f
 	/* allocate the blocks of the file */
 	block_pos = disk->first_free_block;
 	block_max = tommy_arrayblk_size(&disk->blockarr);
-	for(i=0;i<file->blockmax;++i) {
+	for (i = 0; i < file->blockmax; ++i) {
 		snapraid_info info;
 		struct snapraid_block* block = &file->blockvec[i];
 
@@ -381,7 +381,7 @@ static void scan_file_insert(struct snapraid_scan* scan, struct snapraid_file* f
 		if (block_has_updated_hash(block) && !info_get_rehash(info)) {
 			/* the only possible case is for REP blocks */
 			assert(block_state_get(block) == BLOCK_STATE_REP);
-		
+
 			/* convert to a REP block */
 			block_state_set(&file->blockvec[i], BLOCK_STATE_REP);
 
@@ -482,6 +482,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 	/* always search with the new inode, in the all new inodes found until now, */
 	/* with the eventual presence of also the past inodes */
 	uint64_t inode = st->st_ino;
+
 	file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
 
 	/* identify moved files with past inodes and hardlinks with the new inodes */
@@ -490,10 +491,10 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 		if (file->size == st->st_size
 			&& file->mtime_sec == st->st_mtime
 			&& (file->mtime_nsec == STAT_NSEC(st)
-				/* always accept the stored value if it's STAT_NSEC_INVALID */
-				/* it happens when upgrading from an old version of SnapRAID */
-				/* not yet supporting the nanosecond field */
-				|| file->mtime_nsec == STAT_NSEC_INVALID
+		        /* always accept the stored value if it's STAT_NSEC_INVALID */
+		        /* it happens when upgrading from an old version of SnapRAID */
+		        /* not yet supporting the nanosecond field */
+			|| file->mtime_nsec == STAT_NSEC_INVALID
 			)
 		) {
 			/* check if multiple files have the same inode */
@@ -504,7 +505,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 					return;
 				} else {
 					/* LCOV_EXCL_START */
-					fprintf(stderr, "Internal inode '%"PRIu64"' inconsistency for file '%s%s' already present\n", (uint64_t)st->st_ino, disk->dir, sub);
+					fprintf(stderr, "Internal inode '%" PRIu64 "' inconsistency for file '%s%s' already present\n", (uint64_t)st->st_ino, disk->dir, sub);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -568,7 +569,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 		/* for sure it cannot be already present */
 		if (file_flag_has(file, FILE_IS_PRESENT)) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "Internal inode '%"PRIu64"' inconsistency for files '%s%s' and '%s%s' matching and already present but different\n", file->inode, disk->dir, sub, disk->dir, file->sub);
+			fprintf(stderr, "Internal inode '%" PRIu64 "' inconsistency for files '%s%s' and '%s%s' matching and already present but different\n", file->inode, disk->dir, sub, disk->dir, file->sub);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -613,7 +614,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 			/* here the inode has to be different, otherwise we would have found it before */
 			if (file->inode == st->st_ino) {
 				/* LCOV_EXCL_START */
-				fprintf(stderr, "Internal inconsistency in inode '%"PRIu64"' for files '%s%s' as unexpected matching\n", file->inode, disk->dir, sub);
+				fprintf(stderr, "Internal inconsistency in inode '%" PRIu64 "' for files '%s%s' as unexpected matching\n", file->inode, disk->dir, sub);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -631,10 +632,10 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 		if (file->size == st->st_size
 			&& file->mtime_sec == st->st_mtime
 			&& (file->mtime_nsec == STAT_NSEC(st)
-				/* always accept the stored value if it's STAT_NSEC_INVALID */
-				/* it happens when upgrading from an old version of SnapRAID */
-				/* not yet supporting the nanosecond field */
-				|| file->mtime_nsec == STAT_NSEC_INVALID
+		        /* always accept the stored value if it's STAT_NSEC_INVALID */
+		        /* it happens when upgrading from an old version of SnapRAID */
+		        /* not yet supporting the nanosecond field */
+			|| file->mtime_nsec == STAT_NSEC_INVALID
 			)
 		) {
 			/* mark as present */
@@ -695,7 +696,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 		}
 
 		/* here if the file is changed but with the correct name */
-		
+
 		/* do a safety check to ensure that the common ext4 case of zeroing */
 		/* the size of a file after a crash doesn't propagate to the backup */
 		if (file->size != 0 && st->st_size == 0) {
@@ -745,7 +746,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 		tommy_uint32_t hash = file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec);
 
 		/* search for a file with the same name and stamp in all the disks */
-		for(i=state->disklist;i!=0;i=i->next) {
+		for (i = state->disklist; i != 0; i = i->next) {
 			struct snapraid_disk* other_disk = i->data;
 			struct snapraid_file* other_file;
 
@@ -1048,7 +1049,7 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 
 	/* process the sorted dir entries */
 	node = list;
-	while (node!=0) {
+	while (node != 0) {
 		char path_next[PATH_MAX];
 		char sub_next[PATH_MAX];
 		struct dirent_sorted* dd = node->data;
@@ -1192,7 +1193,7 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 			if (filter_path(&state->filterlist, disk->name, sub_next) == 0) {
 				/* late stat */
 				if (!st) st = DSTAT(path_next, dd, &st_buf);
-			
+
 				fprintf(stderr, "WARNING! Ignoring special '%s' file '%s'\n", stat_desc(st), path_next);
 			} else {
 				if (state->opt.verbose) {
@@ -1224,7 +1225,7 @@ void state_scan(struct snapraid_state* state, int output)
 		printf("Comparing...\n");
 
 	/* first scan all the directory and find new and deleted files */
-	for(i=state->disklist;i!=0;i=i->next) {
+	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 		struct snapraid_scan* scan;
 		tommy_node* node;
@@ -1293,7 +1294,7 @@ void state_scan(struct snapraid_state* state, int output)
 	/* only when all disks have all the new files found */
 
 	/* now process all the new and deleted files */
-	for(i=scanlist;i!=0;i=i->next) {
+	for (i = scanlist; i != 0; i = i->next) {
 		struct snapraid_scan* scan = i->data;
 		struct snapraid_disk* disk = scan->disk;
 		tommy_node* node;
@@ -1392,7 +1393,7 @@ void state_scan(struct snapraid_state* state, int output)
 					/* if verbose, prints the list of duplicates */
 					/* if they are supposed real offsets */
 					if (state->opt.verbose && phy_last != FILEPHY_UNREPORTED_OFFSET) {
-						fprintf(stderr, "WARNING! Files '%s%s' and '%s%s' have the same physical offset %"PRId64".\n", disk->dir, phy_file_last->sub, disk->dir, file->sub, phy_last);
+						fprintf(stderr, "WARNING! Files '%s%s' and '%s%s' have the same physical offset %" PRId64 ".\n", disk->dir, phy_file_last->sub, disk->dir, file->sub, phy_last);
 					}
 					++phy_dup;
 				}
@@ -1442,7 +1443,7 @@ void state_scan(struct snapraid_state* state, int output)
 	/* checks for disks where all the previously existing files where removed */
 	if (!state->opt.force_empty) {
 		done = 0;
-		for(i=state->disklist,j=scanlist;i!=0;i=i->next,j=j->next) {
+		for (i = state->disklist, j = scanlist; i != 0; i = i->next, j = j->next) {
 			struct snapraid_disk* disk = i->data;
 			struct snapraid_scan* scan = j->data;
 
@@ -1469,7 +1470,7 @@ void state_scan(struct snapraid_state* state, int output)
 	/* checks for disks without the physical offset support */
 	if (state->opt.force_order == SORT_PHYSICAL) {
 		done = 0;
-		for(i=state->disklist;i!=0;i=i->next) {
+		for (i = state->disklist; i != 0; i = i->next) {
 			struct snapraid_disk* disk = i->data;
 
 			if (disk->has_unreliable_physical) {
@@ -1488,7 +1489,7 @@ void state_scan(struct snapraid_state* state, int output)
 
 	/* checks for disks without persistent inodes */
 	done = 0;
-	for(i=state->disklist;i!=0;i=i->next) {
+	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 
 		if (disk->has_volatile_inodes) {
@@ -1506,7 +1507,7 @@ void state_scan(struct snapraid_state* state, int output)
 
 	/* checks for disks with changed UUID */
 	done = 0;
-	for(i=state->disklist;i!=0;i=i->next) {
+	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 
 		/* don't print the message if the UUID changed because before */
@@ -1528,7 +1529,7 @@ void state_scan(struct snapraid_state* state, int output)
 
 	/* checks for disks with unsupported UUID */
 	done = 0;
-	for(i=state->disklist;i!=0;i=i->next) {
+	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 
 		if (disk->has_unsupported_uuid) {
@@ -1557,7 +1558,7 @@ void state_scan(struct snapraid_state* state, int output)
 		total.count_remove = 0;
 		total.count_insert = 0;
 
-		for(i=scanlist;i!=0;i=i->next) {
+		for (i = scanlist; i != 0; i = i->next) {
 			struct snapraid_scan* scan = i->data;
 			total.count_equal += scan->count_equal;
 			total.count_move += scan->count_move;

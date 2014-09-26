@@ -113,7 +113,7 @@ void os_init(void)
 	if (!ntdll) {
 		fprintf(stderr, "Error loading the NTDLL module.\n");
 		exit(EXIT_FAILURE);
-	}	
+	}
 
 	/* load functions not always available */
 	ptr_SetThreadExecutionState = (void*)GetProcAddress(kernel32, "SetThreadExecutionState");
@@ -386,7 +386,7 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE
 			st->st_mode = S_IFCHR;
 			st->st_desc = "reparse-point-nfs";
 			break;
-		default:
+		default :
 			st->st_mode = S_IFCHR;
 			st->st_desc = "reparse-point";
 			break;
@@ -486,7 +486,7 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 			st->st_mode = S_IFCHR;
 			st->st_desc = "reparse-point-nfs";
 			break;
-		default:
+		default :
 			st->st_mode = S_IFCHR;
 			st->st_desc = "reparse-point";
 			break;
@@ -546,9 +546,9 @@ static void windows_finddata2dirent(const WIN32_FIND_DATAW* info, struct windows
 	size_t len;
 
 	name = u16tou8(info->cFileName);
-	
+
 	len = strlen(name);
-	
+
 	if (len + 1 >= sizeof(dirent->d_name)) {
 		fprintf(stderr, "Name too long\n");
 		exit(EXIT_FAILURE);
@@ -600,7 +600,7 @@ static void windows_errno(DWORD error)
 	case ERROR_PRIVILEGE_NOT_HELD : /* in CreateSymlinkW if no SeCreateSymbolicLinkPrivilige permission */
 		errno = EPERM;
 		break;
-	default:
+	default :
 		fprintf(stderr, "Unexpected Windows error %d.\n", (int)error);
 		errno = EIO;
 		break;
@@ -619,7 +619,7 @@ int windows_fstat(int fd, struct windows_stat* st)
 		return -1;
 	}
 
-	if (!GetFileInformationByHandle(h, &info))  {
+	if (!GetFileInformationByHandle(h, &info)) {
 		windows_errno(GetLastError());
 		return -1;
 	}
@@ -699,7 +699,7 @@ int lstat_ex(const char* file, struct windows_stat* st)
 		return -1;
 	}
 
-	if (!GetFileInformationByHandle(h, &info))  {
+	if (!GetFileInformationByHandle(h, &info)) {
 		DWORD error = GetLastError();
 		CloseHandle(h);
 		windows_errno(error);
@@ -740,7 +740,7 @@ int windows_stat(const char* file, struct windows_stat* st)
 		return -1;
 	}
 
-	if (!GetFileInformationByHandle(h, &info))  {
+	if (!GetFileInformationByHandle(h, &info)) {
 		DWORD error = GetLastError();
 		CloseHandle(h);
 		windows_errno(error);
@@ -830,7 +830,7 @@ int windows_fsync(int fd)
 			 */
 			return 0;
 
-		default:
+		default :
 			windows_errno(error);
 			return -1;
 		}
@@ -941,7 +941,7 @@ windows_dir* windows_opendir(const char* dir)
 
 	/* add final / and * */
 	len = wcslen(wdir);
-	if (len!= 0 && wdir[len-1] != '\\')
+	if (len != 0 && wdir[len - 1] != '\\')
 		wdir[len++] = L'\\';
 	wdir[len++] = L'*';
 	wdir[len++] = 0;
@@ -1063,27 +1063,27 @@ int windows_symlink(const char* existing, const char* file)
 #endif
 #ifndef REPARSE_DATA_BUFFER_HEADER_SIZE
 typedef struct _REPARSE_DATA_BUFFER {
-	DWORD  ReparseTag;
-	WORD   ReparseDataLength;
-	WORD   Reserved;
+	DWORD ReparseTag;
+	WORD ReparseDataLength;
+	WORD Reserved;
 	_ANONYMOUS_UNION union {
 		struct {
-			WORD   SubstituteNameOffset;
-			WORD   SubstituteNameLength;
-			WORD   PrintNameOffset;
-			WORD   PrintNameLength;
-			ULONG  Flags;
+			WORD SubstituteNameOffset;
+			WORD SubstituteNameLength;
+			WORD PrintNameOffset;
+			WORD PrintNameLength;
+			ULONG Flags;
 			WCHAR PathBuffer[1];
 		} SymbolicLinkReparseBuffer;
 		struct {
-			WORD   SubstituteNameOffset;
-			WORD   SubstituteNameLength;
-			WORD   PrintNameOffset;
-			WORD   PrintNameLength;
+			WORD SubstituteNameOffset;
+			WORD SubstituteNameLength;
+			WORD PrintNameOffset;
+			WORD PrintNameLength;
 			WCHAR PathBuffer[1];
 		} MountPointReparseBuffer;
 		struct {
-			BYTE   DataBuffer[1];
+			BYTE DataBuffer[1];
 		} GenericReparseBuffer;
 	} DUMMYUNIONNAME;
 } REPARSE_DATA_BUFFER, *PREPARSE_DATA_BUFFER;
@@ -1129,7 +1129,7 @@ int windows_readlink(const char* file, char* buffer, size_t size)
 
 	/* convert the name to UTF-8 */
 	name = u16tou8n(rdb->SymbolicLinkReparseBuffer.PathBuffer + rdb->SymbolicLinkReparseBuffer.PrintNameOffset,
-		rdb->SymbolicLinkReparseBuffer.PrintNameLength / 2, &len);
+			rdb->SymbolicLinkReparseBuffer.PrintNameLength / 2, &len);
 
 	/* check for overflow */
 	if (len > size) {

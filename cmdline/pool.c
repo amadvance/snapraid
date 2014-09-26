@@ -37,8 +37,8 @@ static int clean_dir(struct snapraid_state* state, const char* dir)
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
-   
-	while (1) { 
+
+	while (1) {
 		char path_next[PATH_MAX];
 		struct stat st;
 		const char* name;
@@ -220,19 +220,19 @@ void state_pool(struct snapraid_state* state)
 
 	/* for each disk */
 	count = 0;
-	for(i=state->disklist;i!=0;i=i->next) {
+	for (i = state->disklist; i != 0; i = i->next) {
 		tommy_node* j;
 		struct snapraid_disk* disk = i->data;
 
 		/* for each file */
-		for(j=disk->filelist;j!=0;j=j->next) {
+		for (j = disk->filelist; j != 0; j = j->next) {
 			struct snapraid_file* file = j->data;
 			make_link(pool_dir, share_dir, disk, file->sub);
 			++count;
 		}
 
 		/* for each link */
-		for(j=disk->linklist;j!=0;j=j->next) {
+		for (j = disk->linklist; j != 0; j = j->next) {
 			struct snapraid_link* link = j->data;
 			make_link(pool_dir, share_dir, disk, link->sub);
 			++count;

@@ -209,7 +209,7 @@ int fsinfo(const char* path, int* has_persistent_inode)
 {
 #if HAVE_STATFS && HAVE_STRUCT_STATFS_F_TYPE
 	struct statfs st;
-	
+
 	if (statfs(path, &st) != 0)
 		return -1;
 
@@ -220,7 +220,7 @@ int fsinfo(const char* path, int* has_persistent_inode)
 	case 0x4d44 : /* VFAT, "msdos" in the stat command */
 		*has_persistent_inode = 0;
 		break;
-	default:
+	default :
 		/* by default assume yes */
 		*has_persistent_inode = 1;
 		break;

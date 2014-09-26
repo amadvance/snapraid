@@ -176,9 +176,9 @@
 #endif
 
 #if HAVE_GETOPT_LONG
-#define SWITCH_GETOPT_LONG(a,b) a
+#define SWITCH_GETOPT_LONG(a, b) a
 #else
-#define SWITCH_GETOPT_LONG(a,b) b
+#define SWITCH_GETOPT_LONG(a, b) b
 #endif
 
 /**

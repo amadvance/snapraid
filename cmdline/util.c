@@ -102,7 +102,7 @@ STREAM* sopen_multi_write(unsigned count)
 	s->handle_size = count;
 	s->handle = malloc_nofail(count * sizeof(struct stream_handle));
 
-	for(i=0;i<count;++i)
+	for (i = 0; i < count; ++i)
 		s->handle[i].f = -1;
 
 	s->buffer = malloc_nofail(STREAM_SIZE);
@@ -163,7 +163,7 @@ int sclose(STREAM* s)
 		}
 	}
 
-	for(i=0;i<s->handle_size;++i) {
+	for (i = 0; i < s->handle_size; ++i) {
 		if (close(s->handle[i].f) != 0) {
 			/* LCOV_EXCL_START */
 			fail = 1;
@@ -252,7 +252,7 @@ int sflush(STREAM* s)
 	s->crc = crc32c(s->crc, s->buffer, size);
 	s->crc_uncached = s->crc;
 
-	for(i=0;i<s->handle_size;++i) {
+	for (i = 0; i < s->handle_size; ++i) {
 		ret = write(s->handle[i].f, s->buffer, size);
 
 		if (ret != size) {
@@ -424,7 +424,7 @@ int sgetlasttok(STREAM* f, char* str, int size)
 		/* LCOV_EXCL_STOP */
 	}
 
-	while (ret > 0 && (str[ret-1] == ' ' || str[ret-1] == '\t'))
+	while (ret > 0 && (str[ret - 1] == ' ' || str[ret - 1] == '\t'))
 		--ret;
 
 	str[ret] = 0;
@@ -437,13 +437,13 @@ int sgetu32(STREAM* f, uint32_t* value)
 	int c;
 
 	c = sgetc(f);
-	if (c>='0' && c<='9') {
+	if (c >= '0' && c <= '9') {
 		uint32_t v;
 
 		v = c - '0';
 
 		c = sgetc(f);
-		while (c>='0' && c<='9') {
+		while (c >= '0' && c <= '9') {
 			v *= 10;
 			v += c - '0';
 			c = sgetc(f);
@@ -466,13 +466,13 @@ int sgetu64(STREAM* f, uint64_t* value)
 	int c;
 
 	c = sgetc(f);
-	if (c>='0' && c<='9') {
+	if (c >= '0' && c <= '9') {
 		uint64_t v;
 
 		v = c - '0';
 
 		c = sgetc(f);
-		while (c>='0' && c<='9') {
+		while (c >= '0' && c <= '9') {
 			v *= 10;
 			v += c - '0';
 			c = sgetc(f);
@@ -872,7 +872,7 @@ int ssync(STREAM* s)
 {
 	unsigned i;
 
-	for(i=0;i<s->handle_size;++i) {
+	for (i = 0; i < s->handle_size; ++i) {
 		if (fsync(s->handle[i].f) != 0) {
 			/* LCOV_EXCL_START */
 			s->state = STREAM_STATE_ERROR;
@@ -1314,7 +1314,7 @@ void pathprint(char* dst, size_t size, const char* format, ...)
 {
 	size_t len;
 	va_list ap;
-	
+
 	va_start(ap, format);
 	len = vsnprintf(dst, size, format, ap);
 	va_end(ap);
@@ -1340,7 +1340,7 @@ void pathslash(char* dst, size_t size)
 		}
 
 		dst[len] = '/';
-		dst[len+1] = 0;
+		dst[len + 1] = 0;
 	}
 }
 
@@ -1589,12 +1589,12 @@ void** malloc_nofail_vector_align(int nd, int n, size_t size, void** freeptr)
 	return ptr;
 }
 
-void mrand_vector(int n , size_t size, void** vv)
+void mrand_vector(int n, size_t size, void** vv)
 {
 	raid_mrand_vector(n, size, vv);
 }
 
-void mtest_vector(int n , size_t size, void** vv)
+void mtest_vector(int n, size_t size, void** vv)
 {
 	if (raid_mtest_vector(n, size, vv) != 0) {
 		/* LCOV_EXCL_START */
@@ -1642,15 +1642,15 @@ static inline uint64_t util_rotl64(uint64_t x, int8_t r)
 static inline uint32_t util_swap32(uint32_t v)
 {
 	return (util_rotl32(v, 8) & 0x00ff00ff)
-		| (util_rotl32(v, 24) & 0xff00ff00);
+	       | (util_rotl32(v, 24) & 0xff00ff00);
 }
 
 static inline uint64_t util_swap64(uint64_t v)
 {
 	return (util_rotl64(v, 8) & 0x000000ff000000ffULL)
-		| (util_rotl64(v, 24) & 0x0000ff000000ff00ULL)
-		| (util_rotl64(v, 40) & 0x00ff000000ff0000ULL)
-		| (util_rotl64(v, 56) & 0xff000000ff000000ULL);
+	       | (util_rotl64(v, 24) & 0x0000ff000000ff00ULL)
+	       | (util_rotl64(v, 40) & 0x00ff000000ff0000ULL)
+	       | (util_rotl64(v, 56) & 0xff000000ff000000ULL);
 }
 #endif
 
@@ -1669,7 +1669,7 @@ void memhash(unsigned kind, const unsigned char* seed, void* digest, const void*
 	case HASH_SPOOKY2 :
 		SpookyHash128(src, size, seed, digest);
 		break;
-	default:
+	default :
 		/* LCOV_EXCL_START */
 		fprintf(stderr, "Internal inconsistency in hash function %u\n", kind);
 		exit(EXIT_FAILURE);
@@ -1684,7 +1684,7 @@ const char* hash_config_name(unsigned kind)
 	case HASH_UNDEFINED : return "undefined";
 	case HASH_MURMUR3 : return "murmur3";
 	case HASH_SPOOKY2 : return "spooky2";
-	default:
+	default :
 		/* LCOV_EXCL_START */
 		return "unknown";
 		/* LCOV_EXCL_STOP */
@@ -1699,7 +1699,7 @@ void randomize(void* void_ptr, unsigned size)
 	unsigned char* ptr = void_ptr;
 	unsigned i;
 
-	for(i=0;i<size;++i)
+	for (i = 0; i < size; ++i)
 		ptr[i] = rand();
 }
 

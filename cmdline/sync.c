@@ -53,14 +53,14 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 
 	/* first count the number of blocks to process */
 	countmax = 0;
-	for(j=0;j<diskmax;++j) {
+	for (j = 0; j < diskmax; ++j) {
 		struct snapraid_disk* disk = handle[j].disk;
 
 		/* if unused disk skip it */
 		if (!disk)
 			continue;
 
-		for(i=blockstart;i<blockmax;++i) {
+		for (i = blockstart; i < blockmax; ++i) {
 			struct snapraid_block* block;
 
 			block = disk_block_get(disk, i);
@@ -85,14 +85,14 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 	if (!state_progress_begin(state, blockstart, blockmax, countmax))
 		goto end;
 
-	for(j=0;j<diskmax;++j) {
+	for (j = 0; j < diskmax; ++j) {
 		struct snapraid_disk* disk = handle[j].disk;
 
 		/* if unused disk skip it */
 		if (!disk)
 			continue;
 
-		for(i=blockstart;i<blockmax;++i) {
+		for (i = blockstart; i < blockmax; ++i) {
 			snapraid_info info;
 			int rehash;
 			struct snapraid_block* block;
@@ -189,12 +189,12 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				struct snapraid_file* file = block_file_get(block);
 				fprintf(stdlog, "error:%u:%s:%s: Unexpected attribute change\n", i, disk->name, file->sub);
 				if (handle[j].st.st_size != file->size) {
-					fprintf(stderr, "Unexpected size change at file '%s' from %"PRIu64" to %"PRIu64".\n", handle[j].path, file->size, handle[j].st.st_size);
+					fprintf(stderr, "Unexpected size change at file '%s' from %" PRIu64 " to %" PRIu64 ".\n", handle[j].path, file->size, handle[j].st.st_size);
 				} else if (handle[j].st.st_mtime != file->mtime_sec
 					|| STAT_NSEC(&handle[j].st) != file->mtime_nsec) {
-					fprintf(stderr, "Unexpected time change at file '%s' from %"PRIu64".%d to %"PRIu64".%d.\n", handle[j].path, file->mtime_sec, file->mtime_nsec, (uint64_t)handle[j].st.st_mtime, (uint32_t)STAT_NSEC(&handle[j].st));
+					fprintf(stderr, "Unexpected time change at file '%s' from %" PRIu64 ".%d to %" PRIu64 ".%d.\n", handle[j].path, file->mtime_sec, file->mtime_nsec, (uint64_t)handle[j].st.st_mtime, (uint32_t)STAT_NSEC(&handle[j].st));
 				} else {
-					fprintf(stderr, "Unexpected inode change from %"PRIu64" to %"PRIu64" at file '%s'.\n", file->inode, (uint64_t)handle[j].st.st_ino, handle[j].path);
+					fprintf(stderr, "Unexpected inode change from %" PRIu64 " to %" PRIu64 " at file '%s'.\n", file->inode, (uint64_t)handle[j].st.st_ino, handle[j].path);
 				}
 				fprintf(stderr, "WARNING! You cannot modify files during a sync.\n");
 				fprintf(stderr, "Rerun the sync command when finished.\n");
@@ -290,7 +290,7 @@ end:
 	fprintf(stdlog, "hash_summary:error_readwrite:%u\n", error);
 
 bail:
-	for(j=0;j<diskmax;++j) {
+	for (j = 0; j < diskmax; ++j) {
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			fprintf(stderr, "DANGER! Unexpected close error in a data disk.\n");
@@ -372,8 +372,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		mtest_vector(buffermax, state->block_size, buffer);
 
 	/* fill up the zero buffer */
-	memset(buffer[buffermax-1], 0, state->block_size);
-	raid_zero(buffer[buffermax-1]);
+	memset(buffer[buffermax - 1], 0, state->block_size);
+	raid_zero(buffer[buffermax - 1]);
 
 	failed = malloc_nofail(diskmax * sizeof(struct failed_struct));
 	failed_map = malloc_nofail(diskmax * sizeof(unsigned));
@@ -383,14 +383,14 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 	/* first count the number of blocks to process */
 	countmax = 0;
-	for(i=blockstart;i<blockmax;++i) {
+	for (i = blockstart; i < blockmax; ++i) {
 		int one_invalid;
 		int one_valid;
 
 		/* for each disk */
 		one_invalid = 0;
 		one_valid = 0;
-		for(j=0;j<diskmax;++j) {
+		for (j = 0; j < diskmax; ++j) {
 			struct snapraid_block* block = BLOCK_EMPTY;
 			if (handle[j].disk)
 				block = disk_block_get(handle[j].disk, i);
@@ -426,7 +426,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	if (!state_progress_begin(state, blockstart, blockmax, countmax))
 		goto end;
 
-	for(i=blockstart;i<blockmax;++i) {
+	for (i = blockstart; i < blockmax; ++i) {
 		unsigned failed_count;
 		int one_invalid;
 		int one_valid;
@@ -440,7 +440,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		/* for each disk */
 		one_invalid = 0;
 		one_valid = 0;
-		for(j=0;j<diskmax;++j) {
+		for (j = 0; j < diskmax; ++j) {
 			struct snapraid_block* block = BLOCK_EMPTY;
 			if (handle[j].disk)
 				block = disk_block_get(handle[j].disk, i);
@@ -490,7 +490,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			parity_needs_to_be_updated = 1;
 
 		/* for each disk, process the block */
-		for(j=0;j<diskmax;++j) {
+		for (j = 0; j < diskmax; ++j) {
 			int read_size;
 			unsigned char hash[HASH_SIZE];
 			struct snapraid_block* block;
@@ -596,7 +596,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					error_on_this_block = 1;
 					continue;
 				}
-				
+
 				/* LCOV_EXCL_START */
 				fprintf(stdlog, "error:%u:%s:%s: Open error. %s\n", i, disk->name, file->sub, strerror(errno));
 				fprintf(stderr, "DANGER! Unexpected open error in a data disk, it isn't possible to sync.\n");
@@ -618,12 +618,12 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				struct snapraid_file* file = block_file_get(block);
 				fprintf(stdlog, "error:%u:%s:%s: Unexpected attribute change\n", i, disk->name, file->sub);
 				if (handle[j].st.st_size != file->size) {
-					fprintf(stderr, "Unexpected size change at file '%s' from %"PRIu64" to %"PRIu64".\n", handle[j].path, file->size, handle[j].st.st_size);
+					fprintf(stderr, "Unexpected size change at file '%s' from %" PRIu64 " to %" PRIu64 ".\n", handle[j].path, file->size, handle[j].st.st_size);
 				} else if (handle[j].st.st_mtime != file->mtime_sec
 					|| STAT_NSEC(&handle[j].st) != file->mtime_nsec) {
-					fprintf(stderr, "Unexpected time change at file '%s' from %"PRIu64".%d to %"PRIu64".%d.\n", handle[j].path, file->mtime_sec, file->mtime_nsec, (uint64_t)handle[j].st.st_mtime, (uint32_t)STAT_NSEC(&handle[j].st));
+					fprintf(stderr, "Unexpected time change at file '%s' from %" PRIu64 ".%d to %" PRIu64 ".%d.\n", handle[j].path, file->mtime_sec, file->mtime_nsec, (uint64_t)handle[j].st.st_mtime, (uint32_t)STAT_NSEC(&handle[j].st));
 				} else {
-					fprintf(stderr, "Unexpected inode change from %"PRIu64" to %"PRIu64" at file '%s'.\n", file->inode, (uint64_t)handle[j].st.st_ino, handle[j].path);
+					fprintf(stderr, "Unexpected inode change from %" PRIu64 " to %" PRIu64 " at file '%s'.\n", file->inode, (uint64_t)handle[j].st.st_ino, handle[j].path);
 				}
 				fprintf(stderr, "WARNING! You cannot modify files during a sync.\n");
 				fprintf(stderr, "Rerun the sync command when finished.\n");
@@ -733,7 +733,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 						parity_needs_to_be_updated = 1;
 					}
 				}
-			
+
 				/* copy the hash in the block, but doesn't mark the block as hashed */
 				/* this allow in case of skipped block to do not save the failed computation */
 				memcpy(block->hash, hash, HASH_SIZE);
@@ -752,7 +752,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 			/* setup the blocks to recover */
 			failed_mac = 0;
-			for(j=0;j<failed_count;++j) {
+			for (j = 0; j < failed_count; ++j) {
 				unsigned char* block_buffer = buffer[failed[j].index];
 				unsigned char* block_copy = buffer[diskmax + state->level + failed[j].index];
 				unsigned block_state = block_state_get(failed[j].block);
@@ -789,8 +789,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				/* read the parity */
 				/* we are sure that parity exists because */
 				/* we have at least one BLK block */
-				for(l=0;l<state->level;++l) {
-					ret = parity_read(parity[l], i, buffer[diskmax+l], state->block_size, stdlog);
+				for (l = 0; l < state->level; ++l) {
+					ret = parity_read(parity[l], i, buffer[diskmax + l], state->block_size, stdlog);
 					if (ret == -1) {
 						/* LCOV_EXCL_START */
 						fprintf(stdlog, "parity_error:%u:%s: Read error\n", i, lev_config_name(l));
@@ -810,7 +810,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				raid_rec(failed_mac, failed_map, diskmax, state->level, state->block_size, buffer);
 
 				/* check the result and prepare the data */
-				for(j=0;j<failed_count;++j) {
+				for (j = 0; j < failed_count; ++j) {
 					unsigned char hash[HASH_SIZE];
 					unsigned char* block_buffer = buffer[failed[j].index];
 					unsigned char* block_copy = buffer[diskmax + state->level + failed[j].index];
@@ -862,8 +862,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				state_usage_cpu(state);
 
 				/* write the parity */
-				for(l=0;l<state->level;++l) {
-					ret = parity_write(parity[l], i, buffer[diskmax+l], state->block_size);
+				for (l = 0; l < state->level; ++l) {
+					ret = parity_write(parity[l], i, buffer[diskmax + l], state->block_size);
 					if (ret == -1) {
 						/* LCOV_EXCL_START */
 						fprintf(stdlog, "parity_error:%u:%s: Write error\n", i, lev_config_name(l));
@@ -881,7 +881,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			}
 
 			/* for each disk, mark the blocks as processed */
-			for(j=0;j<diskmax;++j) {
+			for (j = 0; j < diskmax; ++j) {
 				struct snapraid_block* block = BLOCK_EMPTY;
 				if (handle[j].disk)
 					block = disk_block_get(handle[j].disk, i);
@@ -913,7 +913,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				/* if rehash is neeed */
 				if (rehash) {
 					/* store all the new hash already computed */
-					for(j=0;j<diskmax;++j) {
+					for (j = 0; j < diskmax; ++j) {
 						if (rehandle[j].block)
 							memcpy(rehandle[j].block->hash, rehandle[j].hash, HASH_SIZE);
 					}
@@ -993,7 +993,7 @@ end:
 	fflush(stdlog);
 
 bail:
-	for(j=0;j<diskmax;++j) {
+	for (j = 0; j < diskmax; ++j) {
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			fprintf(stderr, "DANGER! Unexpected close error in a data disk.\n");
@@ -1052,7 +1052,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		blockmax = blockstart + blockcount;
 	}
 
-	for(l=0;l<state->level;++l) {
+	for (l = 0; l < state->level; ++l) {
 		/* create the file and open for writing */
 		parity_ptr[l] = &parity[l];
 		ret = parity_create(parity_ptr[l], state->parity_path[l], &out_size, state->file_mode);
@@ -1118,7 +1118,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		}
 	}
 
-	for(l=0;l<state->level;++l) {
+	for (l = 0; l < state->level; ++l) {
 		ret = parity_sync(parity_ptr[l]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */

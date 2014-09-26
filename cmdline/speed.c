@@ -28,7 +28,7 @@
 /*
  * Size of the blocks to test.
  */
-#define TEST_SIZE (256*1024)
+#define TEST_SIZE (256 * 1024)
 
 /*
  * Number of data blocks to test.
@@ -61,9 +61,9 @@ static int64_t diffgettimeofday(struct timeval *start, struct timeval *stop)
  * Stop time measurement.
  */
 #define SPEED_STOP \
-		count += delta; \
-		gettimeofday(&stop, 0); \
-	} while (diffgettimeofday(&start, &stop) < period * 1000LL); \
+	count += delta; \
+	gettimeofday(&stop, 0); \
+	} while (diffgettimeofday(&start, &stop) < period * 1000LL) ; \
 	ds = size * (int64_t)count * nd; \
 	dt = diffgettimeofday(&start, &stop);
 
@@ -95,8 +95,8 @@ void speed(int period)
 		memset(v[i], i, size);
 
 	/* zero buffer */
-	memset(v[nd+RAID_PARITY_MAX], 0, size);
-	raid_zero(v[nd+RAID_PARITY_MAX]);
+	memset(v[nd + RAID_PARITY_MAX], 0, size);
+	raid_zero(v[nd + RAID_PARITY_MAX]);
 
 	/* hash seed */
 	for (i = 0; i < HASH_SIZE; ++i)
@@ -169,7 +169,7 @@ void speed(int period)
 			memset(v[j], j, size);
 	} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+	printf("%8" PRIu64, ds / dt);
 	printf("\n");
 	printf("\n");
 
@@ -184,7 +184,7 @@ void speed(int period)
 			crc32c_gen(0, v[j], size);
 	} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+	printf("%8" PRIu64, ds / dt);
 	printf("\n");
 
 	printf("%8s", "intel");
@@ -197,7 +197,7 @@ void speed(int period)
 				crc32c_x86(0, v[j], size);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 	}
 #endif
 	printf("\n");
@@ -231,7 +231,7 @@ void speed(int period)
 			memhash(HASH_MURMUR3, seed, digest, v[j], size);
 	} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
 	SPEED_START {
@@ -239,7 +239,7 @@ void speed(int period)
 			memhash(HASH_SPOOKY2, seed, digest, v[j], size);
 	} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+	printf("%8" PRIu64, ds / dt);
 	printf("\n");
 	printf("\n");
 
@@ -277,14 +277,14 @@ void speed(int period)
 		raid_gen1_int32(nd, size, v);
 	} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
 	SPEED_START {
 		raid_gen1_int64(nd, size, v);
 	} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
 #ifdef CONFIG_X86
@@ -293,7 +293,7 @@ void speed(int period)
 			raid_gen1_sse2(nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 	}
 
@@ -310,7 +310,7 @@ void speed(int period)
 			raid_gen1_avx2(nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 	}
 #endif
@@ -327,14 +327,14 @@ void speed(int period)
 		raid_gen2_int32(nd, size, v);
 	} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
 	SPEED_START {
 		raid_gen2_int64(nd, size, v);
 	} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
 #ifdef CONFIG_X86
@@ -343,7 +343,7 @@ void speed(int period)
 			raid_gen2_sse2(nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 
 #ifdef CONFIG_X86_64
@@ -351,7 +351,7 @@ void speed(int period)
 			raid_gen2_sse2ext(nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 #endif
 	}
@@ -366,7 +366,7 @@ void speed(int period)
 			raid_gen2_avx2(nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 	}
 #endif
@@ -383,14 +383,14 @@ void speed(int period)
 		raid_genz_int32(nd, size, v);
 	} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
 	SPEED_START {
 		raid_genz_int64(nd, size, v);
 	} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
 #ifdef CONFIG_X86
@@ -399,7 +399,7 @@ void speed(int period)
 			raid_genz_sse2(nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 
 #ifdef CONFIG_X86_64
@@ -407,7 +407,7 @@ void speed(int period)
 			raid_genz_sse2ext(nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 #endif
 	}
@@ -424,7 +424,7 @@ void speed(int period)
 			raid_genz_avx2ext(nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 	}
 #endif
@@ -440,7 +440,7 @@ void speed(int period)
 		raid_gen3_int8(nd, size, v);
 	} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
 	printf("%8s", "");
@@ -462,7 +462,7 @@ void speed(int period)
 			raid_gen3_ssse3(nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 
 #ifdef CONFIG_X86_64
@@ -470,7 +470,7 @@ void speed(int period)
 			raid_gen3_ssse3ext(nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 #endif
 	}
@@ -483,7 +483,7 @@ void speed(int period)
 			raid_gen3_avx2ext(nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 	}
 #endif
@@ -499,7 +499,7 @@ void speed(int period)
 		raid_gen4_int8(nd, size, v);
 	} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
 	printf("%8s", "");
@@ -521,7 +521,7 @@ void speed(int period)
 			raid_gen4_ssse3(nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 
 #ifdef CONFIG_X86_64
@@ -529,7 +529,7 @@ void speed(int period)
 			raid_gen4_ssse3ext(nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 #endif
 	}
@@ -542,7 +542,7 @@ void speed(int period)
 			raid_gen4_avx2ext(nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 	}
 #endif
@@ -558,7 +558,7 @@ void speed(int period)
 		raid_gen5_int8(nd, size, v);
 	} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
 	printf("%8s", "");
@@ -580,7 +580,7 @@ void speed(int period)
 			raid_gen5_ssse3(nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 
 #ifdef CONFIG_X86_64
@@ -588,7 +588,7 @@ void speed(int period)
 			raid_gen5_ssse3ext(nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 #endif
 	}
@@ -601,7 +601,7 @@ void speed(int period)
 			raid_gen5_avx2ext(nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 	}
 #endif
@@ -617,7 +617,7 @@ void speed(int period)
 		raid_gen6_int8(nd, size, v);
 	} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
 	printf("%8s", "");
@@ -639,7 +639,7 @@ void speed(int period)
 			raid_gen6_ssse3(nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 
 #ifdef CONFIG_X86_64
@@ -647,7 +647,7 @@ void speed(int period)
 			raid_gen6_ssse3ext(nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 #endif
 	}
@@ -660,7 +660,7 @@ void speed(int period)
 			raid_gen6_avx2ext(nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 		fflush(stdout);
 	}
 #endif
@@ -689,7 +689,7 @@ void speed(int period)
 			raid_rec1_int8(1, id, ip + 1, nd, size, v);
 	} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
 #ifdef CONFIG_X86
@@ -700,7 +700,7 @@ void speed(int period)
 				raid_rec1_ssse3(1, id, ip + 1, nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 	}
 
 	if (raid_cpu_has_avx2()) {
@@ -710,7 +710,7 @@ void speed(int period)
 				raid_rec1_avx2(1, id, ip + 1, nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 	}
 #endif
 	printf("\n");
@@ -725,7 +725,7 @@ void speed(int period)
 			raid_rec2_int8(2, id, ip + 1, nd, size, v);
 	} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
 #ifdef CONFIG_X86
@@ -736,7 +736,7 @@ void speed(int period)
 				raid_rec2_ssse3(2, id, ip + 1, nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 	}
 
 	if (raid_cpu_has_avx2()) {
@@ -746,7 +746,7 @@ void speed(int period)
 				raid_rec2_avx2(2, id, ip + 1, nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 	}
 #endif
 	printf("\n");
@@ -760,7 +760,7 @@ void speed(int period)
 			raid_recX_int8(3, id, ip, nd, size, v);
 	} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
 #ifdef CONFIG_X86
@@ -770,7 +770,7 @@ void speed(int period)
 				raid_recX_ssse3(3, id, ip, nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 	}
 
 	if (raid_cpu_has_avx2()) {
@@ -779,7 +779,7 @@ void speed(int period)
 				raid_recX_avx2(3, id, ip, nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 	}
 #endif
 	printf("\n");
@@ -793,7 +793,7 @@ void speed(int period)
 			raid_recX_int8(4, id, ip, nd, size, v);
 	} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
 #ifdef CONFIG_X86
@@ -803,7 +803,7 @@ void speed(int period)
 				raid_recX_ssse3(4, id, ip, nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 	}
 
 	if (raid_cpu_has_avx2()) {
@@ -812,7 +812,7 @@ void speed(int period)
 				raid_recX_avx2(4, id, ip, nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 	}
 #endif
 	printf("\n");
@@ -826,7 +826,7 @@ void speed(int period)
 			raid_recX_int8(5, id, ip, nd, size, v);
 	} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
 #ifdef CONFIG_X86
@@ -836,7 +836,7 @@ void speed(int period)
 				raid_recX_ssse3(5, id, ip, nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 	}
 
 	if (raid_cpu_has_avx2()) {
@@ -845,7 +845,7 @@ void speed(int period)
 				raid_recX_avx2(5, id, ip, nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 	}
 #endif
 	printf("\n");
@@ -859,7 +859,7 @@ void speed(int period)
 			raid_recX_int8(6, id, ip, nd, size, v);
 	} SPEED_STOP
 
-	printf("%8"PRIu64, ds / dt);
+	printf("%8" PRIu64, ds / dt);
 	fflush(stdout);
 
 #ifdef CONFIG_X86
@@ -869,7 +869,7 @@ void speed(int period)
 				raid_recX_ssse3(6, id, ip, nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 	}
 
 	if (raid_cpu_has_avx2()) {
@@ -878,7 +878,7 @@ void speed(int period)
 				raid_recX_avx2(6, id, ip, nd, size, v);
 		} SPEED_STOP
 
-		printf("%8"PRIu64, ds / dt);
+		printf("%8" PRIu64, ds / dt);
 	}
 #endif
 	printf("\n");

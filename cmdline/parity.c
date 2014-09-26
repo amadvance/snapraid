@@ -32,7 +32,7 @@ block_off_t parity_size(struct snapraid_state* state)
 
 	/* compute the size of the parity file */
 	parity_block = 0;
-	for(i=state->disklist;i!=0;i=i->next) {
+	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 
 		/* start from the declared size */
@@ -66,12 +66,12 @@ void parity_overflow(struct snapraid_state* state, data_off_t size)
 	blockalloc = size / state->block_size;
 
 	/* for all disks */
-	for(i=state->disklist;i!=0;i=i->next) {
+	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 		tommy_node* j;
 
 		/* for all files */
-		for(j=disk->filelist;j!=0;j=j->next) {
+		for (j = disk->filelist; j != 0; j = j->next) {
 			struct snapraid_file* file = j->data;
 
 			if (file->blockmax > 0) {
@@ -212,9 +212,9 @@ int parity_chsize(struct snapraid_parity* parity, data_off_t size, data_off_t* o
 		if (f_ret != 0) {
 			/* LCOV_EXCL_START */
 			if (f_errno == ENOSPC) {
-				fprintf(stderr, "Failed to grow parity file '%s' to size %"PRIu64" using %s due lack of space.\n", parity->path, size, call);
+				fprintf(stderr, "Failed to grow parity file '%s' to size %" PRIu64 " using %s due lack of space.\n", parity->path, size, call);
 			} else {
-				fprintf(stderr, "Error growing parity file '%s' to size %"PRIu64" using %s. Do you have enough space? %s.\n", parity->path, size, call, strerror(f_errno));
+				fprintf(stderr, "Error growing parity file '%s' to size %" PRIu64 " using %s. Do you have enough space? %s.\n", parity->path, size, call, strerror(f_errno));
 			}
 			goto bail;
 			/* LCOV_EXCL_STOP */
@@ -245,7 +245,7 @@ int parity_chsize(struct snapraid_parity* parity, data_off_t size, data_off_t* o
 		/* now check the error */
 		if (f_ret != 0) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "Error truncating parity file '%s' to size %"PRIu64". %s.\n", parity->path, size, strerror(f_errno));
+			fprintf(stderr, "Error truncating parity file '%s' to size %" PRIu64 ". %s.\n", parity->path, size, strerror(f_errno));
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
@@ -419,14 +419,14 @@ int parity_read(struct snapraid_parity* parity, block_off_t pos, unsigned char* 
 
 	/* check if we are going to read only not initialized data */
 	if (offset >= parity->valid_size) {
-		fprintf(out, "Reading missing data from file '%s' at offset %"PRIu64".\n", parity->path, offset);
+		fprintf(out, "Reading missing data from file '%s' at offset %" PRIu64 ".\n", parity->path, offset);
 		return -1;
 	}
 
 #if !HAVE_PREAD
 	if (lseek(parity->f, offset, SEEK_SET) != offset) {
 		/* LCOV_EXCL_START */
-		fprintf(out, "Error seeking file '%s' at offset %"PRIu64". %s.\n", parity->path, offset, strerror(errno));
+		fprintf(out, "Error seeking file '%s' at offset %" PRIu64 ". %s.\n", parity->path, offset, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -442,13 +442,13 @@ int parity_read(struct snapraid_parity* parity, block_off_t pos, unsigned char* 
 #endif
 		if (read_ret < 0) {
 			/* LCOV_EXCL_START */
-			fprintf(out, "Error reading file '%s' at offset %"PRIu64" for size %u. %s.\n", parity->path, offset + count, block_size - count, strerror(errno));
+			fprintf(out, "Error reading file '%s' at offset %" PRIu64 " for size %u. %s.\n", parity->path, offset + count, block_size - count, strerror(errno));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
 		if (read_ret == 0) {
 			/* LCOV_EXCL_START */
-			fprintf(out, "Unexpected end of file '%s' at offset %"PRIu64". %s.\n", parity->path, offset, strerror(errno));
+			fprintf(out, "Unexpected end of file '%s' at offset %" PRIu64 ". %s.\n", parity->path, offset, strerror(errno));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -463,5 +463,4 @@ int parity_read(struct snapraid_parity* parity, block_off_t pos, unsigned char* 
 
 	return block_size;
 }
-
 

@@ -53,7 +53,7 @@ struct snapraid_filter* filter_alloc_file(int direction, const char* pattern)
 	/* find first and last slash */
 	first = 0;
 	last = 0;
-	for(i=filter->pattern;*i;++i) {
+	for (i = filter->pattern; *i; ++i) {
 		if (*i == '/') {
 			if (!first)
 				first = i;
@@ -154,7 +154,7 @@ static int filter_recurse(struct snapraid_filter* filter, const char* const_path
 
 	/* filter for all the directories */
 	name = path;
-	for(i=0;path[i] != 0;++i) {
+	for (i = 0; path[i] != 0; ++i) {
 		if (path[i] == '/') {
 			/* set a terminator */
 			path[i] = 0;
@@ -185,7 +185,7 @@ static int filter_element(tommy_list* filterlist, const char* disk, const char* 
 	int direction = 1; /* by default include all */
 
 	/* for each filter */
-	for(i=tommy_list_head(filterlist);i!=0;i=i->next) {
+	for (i = tommy_list_head(filterlist); i != 0; i = i->next) {
 		int ret;
 		struct snapraid_filter* filter = i->data;
 
@@ -243,7 +243,7 @@ int filter_existence(int filter_missing, const char* dir, const char* sub)
 
 	/* we directly check if in the disk the file is present or not */
 	pathprint(path, sizeof(path), "%s%s", dir, sub);
-	
+
 	if (lstat(path, &st) != 0) {
 		/* if the file doesn't exist, we don't filter it out */
 		if (errno == ENOENT)
@@ -266,12 +266,12 @@ int filter_correctness(int filter_error, tommy_arrayblkof* infoarr, struct snapr
 		return 0;
 
 	/* check each block of the file */
-	for(i=0;i<file->blockmax;++i) {
+	for (i = 0; i < file->blockmax; ++i) {
 		struct snapraid_block* block;
 		snapraid_info info;
 
 		block = &file->blockvec[i];
-		
+
 		info = info_get(infoarr, block->parity_pos);
 
 		/* if the file has a bad block, don't exclude it */
@@ -287,7 +287,7 @@ int filter_content(tommy_list* contentlist, const char* path)
 {
 	tommy_node* i;
 
-	for(i=tommy_list_head(contentlist);i!=0;i=i->next) {
+	for (i = tommy_list_head(contentlist); i != 0; i = i->next) {
 		struct snapraid_content* content = i->data;
 		char tmp[PATH_MAX];
 
@@ -394,7 +394,7 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t 
 	file->blockvec = malloc_nofail(file->blockmax * sizeof(struct snapraid_block));
 
 	/* set the back pointer */
-	for(i=0;i<file->blockmax;++i) {
+	for (i = 0; i < file->blockmax; ++i) {
 		file->blockvec[i].parity_pos = POS_INVALID;
 		file->blockvec[i].file_mixed = 0;
 
@@ -447,7 +447,7 @@ void file_copy(struct snapraid_file* src_file, struct snapraid_file* dst_file)
 		/* LCOV_EXCL_STOP */
 	}
 
-	for(i=0;i<dst_file->blockmax;++i) {
+	for (i = 0; i < dst_file->blockmax; ++i) {
 		/* set a block with hash computed but without parity */
 		block_state_set(&dst_file->blockvec[i], BLOCK_STATE_REP);
 
@@ -461,6 +461,7 @@ void file_copy(struct snapraid_file* src_file, struct snapraid_file* dst_file)
 const char* file_name(const struct snapraid_file* file)
 {
 	const char* r = strrchr(file->sub, '/');
+
 	if (!r)
 		r = file->sub;
 	else
@@ -472,6 +473,7 @@ int file_inode_compare_to_arg(const void* void_arg, const void* void_data)
 {
 	const uint64_t* arg = void_arg;
 	const struct snapraid_file* file = void_data;
+
 	if (*arg < file->inode)
 		return -1;
 	if (*arg > file->inode)
@@ -483,6 +485,7 @@ int file_inode_compare(const void* void_a, const void* void_b)
 {
 	const struct snapraid_file* file_a = void_a;
 	const struct snapraid_file* file_b = void_b;
+
 	if (file_a->inode < file_b->inode)
 		return -1;
 	if (file_a->inode > file_b->inode)
@@ -494,6 +497,7 @@ int file_path_compare(const void* void_a, const void* void_b)
 {
 	const struct snapraid_file* file_a = void_a;
 	const struct snapraid_file* file_b = void_b;
+
 	return strcmp(file_a->sub, file_b->sub);
 }
 
@@ -501,6 +505,7 @@ int file_physical_compare(const void* void_a, const void* void_b)
 {
 	const struct snapraid_file* file_a = void_a;
 	const struct snapraid_file* file_b = void_b;
+
 	if (file_a->physical < file_b->physical)
 		return -1;
 	if (file_a->physical > file_b->physical)
@@ -512,6 +517,7 @@ int file_path_compare_to_arg(const void* void_arg, const void* void_data)
 {
 	const char* arg = void_arg;
 	const struct snapraid_file* file = void_data;
+
 	return strcmp(arg, file->sub);
 }
 
@@ -593,6 +599,7 @@ int link_name_compare_to_arg(const void* void_arg, const void* void_data)
 {
 	const char* arg = void_arg;
 	const struct snapraid_link* link = void_data;
+
 	return strcmp(arg, link->sub);
 }
 
@@ -600,6 +607,7 @@ int link_alpha_compare(const void* void_a, const void* void_b)
 {
 	const struct snapraid_link* link_a = void_a;
 	const struct snapraid_link* link_b = void_b;
+
 	return strcmp(link_a->sub, link_b->sub);
 }
 
@@ -624,6 +632,7 @@ int dir_name_compare(const void* void_arg, const void* void_data)
 {
 	const char* arg = void_arg;
 	const struct snapraid_dir* dir = void_data;
+
 	return strcmp(arg, dir->sub);
 }
 
@@ -695,7 +704,7 @@ int disk_is_empty(struct snapraid_disk* disk, block_off_t blockmax)
 
 	/* checks all the blocks to search for deleted ones */
 	/* this search is slow, but it's done only if no file is present */
-	for(i=0;i<blockmax;++i) {
+	for (i = 0; i < blockmax; ++i) {
 		struct snapraid_block* block = tommy_arrayblk_get(&disk->blockarr, i);
 		unsigned block_state = block_state_get(block);
 
@@ -706,7 +715,7 @@ int disk_is_empty(struct snapraid_disk* disk, block_off_t blockmax)
 		case BLOCK_STATE_DELETED :
 			/* if there is a deleted block, the disk is not empty */
 			return 0;
-		default:
+		default :
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "Internal inconsistency for used block in disk '%s' without files\n", disk->name);
 			exit(EXIT_FAILURE);
@@ -741,6 +750,7 @@ int info_time_compare(const void* void_a, const void* void_b)
 	const snapraid_info* info_b = void_b;
 	time_t time_a = info_get_time(*info_a);
 	time_t time_b = info_get_time(*info_b);
+
 	if (time_a < time_b)
 		return -1;
 	if (time_a > time_b)
