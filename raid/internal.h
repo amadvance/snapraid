@@ -172,7 +172,7 @@ static __always_inline void raid_asm_clobber_xmm4(void)
 	/* clobbers registers used in the asm code */
 	/* this is required because in the Windows ABI, */
 	/* registers xmm6-xmm15 should be kept by the callee. */
-	/* this clobber list force the compiler to same any */
+	/* this clobber list force the compiler to save any */
 	/* register that needs to be saved */
 #ifdef __SSE__
 	asm volatile("" : : : "%xmm0", "%xmm1", "%xmm2", "%xmm3");
