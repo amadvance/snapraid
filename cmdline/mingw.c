@@ -818,12 +818,18 @@ int windows_fsync(int fd)
 			 * FlushFileBuffers returns this error if the handle
 			 * doesn't support buffering, like the console output.
 			 *
-			 * We had report also for ATA-over-Ethernet reporting this
-			 * error.
+			 * We had a report that also ATA-over-Ethernet returns
+			 * this * error, but not enough sure to ignore it.
+			 * So, we use now an extended error reporting.
 			 */
-			return 0;
+			fprintf(stderr, "Unexpected Windows INVALID_HANDLE error in FlushFileBuffers().\n");
+			fprintf(stderr, "Are you using ATA-over-Ethernet ? Please report it.\n");
 
-		case ERROR_ACCESS_DENIED
+			/* normal error processing */
+			windows_errno(error);
+			return -1;
+
+		case ERROR_ACCESS_DENIED :
 			/*
 			 * FlushFileBuffers returns this error for read-only
 			 * data, that cannot have to be flushed.
