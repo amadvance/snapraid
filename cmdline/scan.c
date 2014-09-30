@@ -499,16 +499,17 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 		) {
 			/* check if multiple files have the same inode */
 			if (file_flag_has(file, FILE_IS_PRESENT)) {
-				if (st->st_nlink > 1) {
-					/* it's a hardlink */
-					scan_link(scan, output, sub, file->sub, FILE_IS_HARDLINK);
-					return;
-				} else {
+#if HAVE_STRUCT_STAT_ST_NLINK
+				if (st->st_nlink <= 1) {
 					/* LCOV_EXCL_START */
 					fprintf(stderr, "Internal inode '%" PRIu64 "' inconsistency for file '%s%s' already present\n", (uint64_t)st->st_ino, disk->dir, sub);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
+#endif
+				/* it's a hardlink */
+				scan_link(scan, output, sub, file->sub, FILE_IS_HARDLINK);
+				return;
 			}
 
 			/* mark as present */
@@ -1083,6 +1084,18 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 			/* get the type from stat */
 			st = DSTAT(path_next, dd, &st_buf);
 
+#if HAVE_LSTAT_EX
+			/* if the stat entry is incomplete, take care to fill it using the extended lstat() */
+			if (st->st_mode == 0)  {
+				if (lstat_ex(path_next, st) != 0) {
+					/* LCOV_EXCL_START */
+					fprintf(stderr, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+			}
+#endif
+
 			if (S_ISREG(st->st_mode))
 				type = 0;
 			else if (S_ISLNK(st->st_mode))
@@ -1097,19 +1110,22 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 			if (filter_path(&state->filterlist, disk->name, sub_next) == 0) {
 				uint64_t physical;
 
-				/* late stat */
-				if (!st) st = DSTAT(path_next, dd, &st_buf);
+				/* late stat, if not yet called */
+				if (!st)
+					st = DSTAT(path_next, dd, &st_buf);
 
 #if HAVE_LSTAT_EX
-				/* get inode info about the file, Windows needs an additional step */
-				/* also for hardlink, the real size of the file is read here */
-				if (lstat_ex(path_next, st) != 0) {
-					/* LCOV_EXCL_START */
-					fprintf(stderr, "Error in stat_inode file '%s'. %s.\n", path_next, strerror(errno));
-					exit(EXIT_FAILURE);
-					/* LCOV_EXCL_STOP */
+				/* if the stat entry is incomplete, take care to fill it using the extended lstat() */
+				if (st->st_ino == 0)  {
+					if (lstat_ex(path_next, st) != 0) {
+						/* LCOV_EXCL_START */
+						fprintf(stderr, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
+						exit(EXIT_FAILURE);
+						/* LCOV_EXCL_STOP */
+					}
 				}
 #endif
+
 				if (state->opt.force_order == SORT_PHYSICAL) {
 					if (filephy(path_next, st, &physical) != 0) {
 						/* LCOV_EXCL_START */

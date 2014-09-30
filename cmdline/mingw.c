@@ -32,7 +32,27 @@ typedef struct _FILE_ATTRIBUTE_TAG_INFO {
 	DWORD FileAttributes;
 	DWORD ReparseTag;
 } FILE_ATTRIBUTE_TAG_INFO;
+
+typedef struct _FILE_ID_BOTH_DIR_INFO {
+	DWORD NextEntryOffset;
+	DWORD FileIndex;
+	LARGE_INTEGER CreationTime;
+	LARGE_INTEGER LastAccessTime;
+	LARGE_INTEGER LastWriteTime;
+	LARGE_INTEGER ChangeTime;
+	LARGE_INTEGER EndOfFile;
+	LARGE_INTEGER AllocationSize;
+	DWORD FileAttributes;
+	DWORD FileNameLength;
+	DWORD EaSize;
+	CCHAR ShortNameLength;
+	WCHAR ShortName[12];
+	LARGE_INTEGER FileId;
+	WCHAR FileName[1];
+} FILE_ID_BOTH_DIR_INFO;
+
 #define FileAttributeTagInfo 9
+#define FileIdBothDirectoryInfo 10
 
 #ifndef IO_REPARSE_TAG_DEDUP
 #define IO_REPARSE_TAG_DEDUP (0x80000013)
@@ -184,26 +204,7 @@ static wchar_t* u8tou16(const char* src)
 /**
  * Converts a generic string from UTF16 to UTF8.
  */
-static char* u16tou8(const wchar_t* src)
-{
-	int ret;
-
-	if (++conv_utf8 == CONV_ROLL)
-		conv_utf8 = 0;
-
-	ret = WideCharToMultiByte(CP_UTF8, 0, src, -1, conv_utf8_buffer[conv_utf8], sizeof(conv_utf8_buffer[0]), 0, 0);
-	if (ret <= 0) {
-		fwprintf(stderr, L"Error converting name %s from UTF-16 to UTF-8\n", src);
-		exit(EXIT_FAILURE);
-	}
-
-	return conv_utf8_buffer[conv_utf8];
-}
-
-/**
- * Converts a generic string from UTF16 to UTF8.
- */
-static char* u16tou8n(const wchar_t* src, size_t number_of_wchar, size_t* result_length_without_terminator)
+static char* u16tou8(const wchar_t* src, size_t number_of_wchar, size_t* result_length_without_terminator)
 {
 	int ret;
 
@@ -212,7 +213,7 @@ static char* u16tou8n(const wchar_t* src, size_t number_of_wchar, size_t* result
 
 	ret = WideCharToMultiByte(CP_UTF8, 0, src, number_of_wchar, conv_utf8_buffer[conv_utf8], sizeof(conv_utf8_buffer[0]), 0, 0);
 	if (ret <= 0) {
-		fwprintf(stderr, L"Error converting from UTF-16 to UTF-8\n");
+		fprintf(stderr, "Error converting from UTF-16 to UTF-8\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -340,27 +341,31 @@ static BOOL GetReparseTagInfoByHandle(HANDLE hFile, FILE_ATTRIBUTE_TAG_INFO* lpF
 }
 
 /**
- * Converts Windows info to the Unix stat format.
+ * Converts Windows attr to the Unix stat format.
  */
-static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_ATTRIBUTE_TAG_INFO* tag, struct windows_stat* st)
+static void windows_attr2stat(DWORD FileAttributes, DWORD ReparseTag, struct windows_stat* st)
 {
-	uint64_t mtime;
-
 	/* Convert special attributes */
-	if ((info->dwFileAttributes & FILE_ATTRIBUTE_DEVICE) != 0) {
+	if ((FileAttributes & FILE_ATTRIBUTE_DEVICE) != 0) {
 		st->st_mode = S_IFBLK;
 		st->st_desc = "device";
-	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_OFFLINE) != 0) { /* Offline */
+	} else if ((FileAttributes & FILE_ATTRIBUTE_OFFLINE) != 0) { /* Offline */
 		st->st_mode = S_IFCHR;
 		st->st_desc = "offline";
-	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_TEMPORARY) != 0) { /* Temporary */
+	} else if ((FileAttributes & FILE_ATTRIBUTE_TEMPORARY) != 0) { /* Temporary */
 		st->st_mode = S_IFCHR;
 		st->st_desc = "temporary";
-	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) { /* Reparse point */
-		switch (tag->ReparseTag) {
-		/* For deduplicated files, assume that they are regular ones */
+	} else if ((FileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) { /* Reparse point */
+		switch (ReparseTag) {
+		/* if we don't have the ReparseTag information */
+		case 0 :
+			/* don't set the st_mode, to set it later calling lstat_ex() */
+			st->st_mode = 0;
+			st->st_desc = "unknown";
+			break;
+		/* for deduplicated files, assume that they are regular ones */
 		case IO_REPARSE_TAG_DEDUP :
-			if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+			if ((FileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
 				st->st_mode = S_IFDIR;
 				st->st_desc = "directory-dedup";
 			} else {
@@ -369,7 +374,7 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE
 			}
 			break;
 		case IO_REPARSE_TAG_SYMLINK :
-			if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+			if ((FileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
 				st->st_mode = S_IFLNKDIR;
 				st->st_desc = "reparse-point-symlink-dir";
 			} else {
@@ -377,11 +382,11 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE
 				st->st_desc = "reparse-point-symlink-file";
 			}
 			break;
-		/* All the other are skipped as reparse-point */
+		/* all the other are skipped as reparse-point */
 		case IO_REPARSE_TAG_MOUNT_POINT :
 			st->st_mode = S_IFCHR;
 			st->st_desc = "reparse-point-mount";
-			break;
+		break;
 		case IO_REPARSE_TAG_NFS :
 			st->st_mode = S_IFCHR;
 			st->st_desc = "reparse-point-nfs";
@@ -391,8 +396,8 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE
 			st->st_desc = "reparse-point";
 			break;
 		}
-	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0) { /* System */
-		if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+	} else if ((FileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0) { /* System */
+		if ((FileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
 			st->st_mode = S_IFCHR;
 			st->st_desc = "system-directory";
 		} else {
@@ -400,7 +405,7 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE
 			st->st_desc = "system-file";
 		}
 	} else {
-		if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
+		if ((FileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
 			st->st_mode = S_IFDIR;
 			st->st_desc = "directory";
 		} else {
@@ -409,8 +414,18 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE
 		}
 	}
 
-	/* Store the HIDDEN attribute in a separate field */
-	st->st_hidden = (info->dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0;
+	/* store the HIDDEN attribute in a separate field */
+	st->st_hidden = (FileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0;
+}
+
+/**
+ * Converts Windows info to the Unix stat format.
+ */
+static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_ATTRIBUTE_TAG_INFO* tag, struct windows_stat* st)
+{
+	uint64_t mtime;
+
+	windows_attr2stat(info->dwFileAttributes, tag->ReparseTag, st);
 
 	st->st_size = info->nFileSizeHigh;
 	st->st_size <<= 32;
@@ -434,7 +449,36 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE
 	st->st_ino <<= 32;
 	st->st_ino |= info->nFileIndexLow;
 
-	st->st_nlink = info->nNumberOfLinks;
+	st->st_dev = info->dwVolumeSerialNumber;
+}
+
+/**
+ * Converts Windows info to the Unix stat format.
+ */
+static void windows_stream2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_ID_BOTH_DIR_INFO* stream, struct windows_stat* st)
+{
+	uint64_t mtime;
+
+	/* The FILE_ID_BOTH_DIR_INFO doesn't have the ReparseTag information */
+	/* we could use instead FILE_ID_EXTD_DIR_INFO, but it's available only */
+	/* from Windows Server 2012 */
+	windows_attr2stat(stream->FileAttributes, 0, st);
+
+	st->st_size = stream->EndOfFile.QuadPart;
+
+	mtime = stream->LastWriteTime.QuadPart;
+
+	/*
+	 * Convert to unix time
+	 *
+	 * How To Convert a UNIX time_t to a Win32 FILETIME or SYSTEMTIME
+	 * http://support.microsoft.com/kb/167296
+	 */
+	mtime -= 116444736000000000LL;
+	st->st_mtime = mtime / 10000000;
+	st->st_mtimensec = (mtime % 10000000) * 100;
+
+	st->st_ino = stream->FileId.QuadPart;
 
 	st->st_dev = info->dwVolumeSerialNumber;
 }
@@ -446,71 +490,7 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 {
 	uint64_t mtime;
 
-	/* Convert special attributes */
-	if ((info->dwFileAttributes & FILE_ATTRIBUTE_DEVICE) != 0) {
-		st->st_mode = S_IFBLK;
-		st->st_desc = "device";
-	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_OFFLINE) != 0) { /* Offline */
-		st->st_mode = S_IFCHR;
-		st->st_desc = "offline";
-	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_TEMPORARY) != 0) { /* Temporary */
-		st->st_mode = S_IFCHR;
-		st->st_desc = "temporary";
-	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0) { /* Reparse point */
-		switch (info->dwReserved0) {
-		/* For deduplicated files, assume that they are regular ones */
-		case IO_REPARSE_TAG_DEDUP :
-			if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
-				st->st_mode = S_IFDIR;
-				st->st_desc = "directory-dedup";
-			} else {
-				st->st_mode = S_IFREG;
-				st->st_desc = "regular-dedup";
-			}
-			break;
-		case IO_REPARSE_TAG_SYMLINK :
-			if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
-				st->st_mode = S_IFLNKDIR;
-				st->st_desc = "reparse-point-symlink-dir";
-			} else {
-				st->st_mode = S_IFLNK;
-				st->st_desc = "reparse-point-symlink-file";
-			}
-			break;
-		/* All the other are skipped as reparse-point */
-		case IO_REPARSE_TAG_MOUNT_POINT :
-			st->st_mode = S_IFCHR;
-			st->st_desc = "reparse-point-mount";
-			break;
-		case IO_REPARSE_TAG_NFS :
-			st->st_mode = S_IFCHR;
-			st->st_desc = "reparse-point-nfs";
-			break;
-		default :
-			st->st_mode = S_IFCHR;
-			st->st_desc = "reparse-point";
-			break;
-		}
-	} else if ((info->dwFileAttributes & FILE_ATTRIBUTE_SYSTEM) != 0) { /* System */
-		if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
-			st->st_mode = S_IFCHR;
-			st->st_desc = "system-directory";
-		} else {
-			st->st_mode = S_IFREG;
-			st->st_desc = "system-file";
-		}
-	} else {
-		if ((info->dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0) {
-			st->st_mode = S_IFDIR;
-			st->st_desc = "directory";
-		} else {
-			st->st_mode = S_IFREG;
-			st->st_desc = "regular";
-		}
-	}
-
-	/* Store the HIDDEN attribute in a separate field */
-	st->st_hidden = (info->dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0;
+	windows_attr2stat(info->dwFileAttributes, info->dwReserved0, st);
 
 	st->st_size = info->nFileSizeHigh;
 	st->st_size <<= 32;
@@ -533,9 +513,6 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 	/* No inode information available */
 	st->st_ino = 0;
 
-	/* No link information available */
-	st->st_nlink = 0;
-
 	/* No device information available */
 	st->st_dev = 0;
 }
@@ -545,19 +522,35 @@ static void windows_finddata2dirent(const WIN32_FIND_DATAW* info, struct windows
 	const char* name;
 	size_t len;
 
-	name = u16tou8(info->cFileName);
-
-	len = strlen(name);
+	name = u16tou8(info->cFileName, wcslen(info->cFileName), &len);
 
 	if (len + 1 >= sizeof(dirent->d_name)) {
 		fprintf(stderr, "Name too long\n");
 		exit(EXIT_FAILURE);
 	}
 
-	memcpy(dirent->d_name, name, len + 1);
+	memcpy(dirent->d_name, name, len);
+	dirent->d_name[len] = 0;
 
-	/* Store the HIDDEN attribute in a separate field */
-	dirent->d_hidden = (info->dwFileAttributes & FILE_ATTRIBUTE_HIDDEN) != 0;
+	windows_finddata2stat(info, &dirent->d_stat);
+}
+
+static void windows_stream2dirent(const BY_HANDLE_FILE_INFORMATION* info, const FILE_ID_BOTH_DIR_INFO* stream, struct windows_dirent* dirent)
+{
+	const char* name;
+	size_t len;
+
+	name = u16tou8(stream->FileName, stream->FileNameLength / 2, &len);
+
+	if (len + 1 >= sizeof(dirent->d_name)) {
+		fprintf(stderr, "Name too long\n");
+		exit(EXIT_FAILURE);
+	}
+
+	memcpy(dirent->d_name, name, len);
+	dirent->d_name[len] = 0;
+
+	windows_stream2stat(info, stream, &dirent->d_stat);
 }
 
 /**
@@ -658,7 +651,7 @@ int windows_lstat(const char* file, struct windows_stat* st)
 
 void windows_dirent_lstat(const struct windows_dirent* dd, struct windows_stat* st)
 {
-	windows_finddata2stat(&dd->d_data, st);
+	memcpy(st, &dd->d_stat, sizeof(struct windows_stat));
 }
 
 int windows_mkdir(const char* file)
@@ -931,7 +924,22 @@ int windows_open(const char* file, int flags, ...)
 	return ret;
 }
 
-windows_dir* windows_opendir(const char* dir)
+struct windows_dir_struct {
+	BY_HANDLE_FILE_INFORMATION info;
+	WIN32_FIND_DATAW find;
+	HANDLE h;
+	struct windows_dirent entry;
+	unsigned char* buffer;
+	unsigned buffer_size;
+	unsigned buffer_pos;
+	int state;
+};
+
+#define DIR_STATE_EOF -1 /**< End of the dir stream */
+#define DIR_STATE_EMPTY 0 /**< The entry is empty. */
+#define DIR_STATE_FILLED 1 /**< The entry is valid. */
+
+static windows_dir* windows_opendir_find(const char* dir)
 {
 	wchar_t* wdir;
 	windows_dir* dirstream;
@@ -952,12 +960,12 @@ windows_dir* windows_opendir(const char* dir)
 	wdir[len++] = L'*';
 	wdir[len++] = 0;
 
-	dirstream->h = FindFirstFileW(wdir, &dirstream->buffer.d_data);
+	dirstream->h = FindFirstFileW(wdir, &dirstream->find);
 	if (dirstream->h == INVALID_HANDLE_VALUE) {
 		DWORD error = GetLastError();
 
 		if (error == ERROR_FILE_NOT_FOUND) {
-			dirstream->flags = -1; /* empty dir */
+			dirstream->state = DIR_STATE_EOF;
 			return dirstream;
 		}
 
@@ -966,47 +974,48 @@ windows_dir* windows_opendir(const char* dir)
 		return 0;
 	}
 
-	dirstream->flags = 1;
-
-	windows_finddata2dirent(&dirstream->buffer.d_data, &dirstream->buffer);
+	windows_finddata2dirent(&dirstream->find, &dirstream->entry);
+	dirstream->state = DIR_STATE_FILLED;
 
 	return dirstream;
 }
 
-struct windows_dirent* windows_readdir(windows_dir* dirstream)
+static struct windows_dirent* windows_readdir_find(windows_dir* dirstream)
 {
-	if (dirstream->flags == -1) {
-		errno = 0; /* end of stream */
-		return 0;
-	}
+	if (dirstream->state == DIR_STATE_EMPTY) {
+		if (!FindNextFileW(dirstream->h, &dirstream->find)) {
+			DWORD error = GetLastError();
 
-	if (dirstream->flags == 1) {
-		dirstream->flags = 0;
-		return &dirstream->buffer;
-	}
+			if (error != ERROR_NO_MORE_FILES) {
+				windows_errno(error);
+				return 0;
+			}
 
-	if (!FindNextFileW(dirstream->h, &dirstream->buffer.d_data)) {
-		DWORD error = GetLastError();
-
-		if (error == ERROR_NO_MORE_FILES) {
-			errno = 0; /* end of stream */
-			return 0;
+			dirstream->state = DIR_STATE_EOF;
+		} else {
+			windows_finddata2dirent(&dirstream->find, &dirstream->entry);
+			dirstream->state = DIR_STATE_FILLED;
 		}
-
-		windows_errno(error);
-		return 0;
 	}
 
-	windows_finddata2dirent(&dirstream->buffer.d_data, &dirstream->buffer);
+	if (dirstream->state == DIR_STATE_FILLED) {
+		dirstream->state = DIR_STATE_EMPTY;
+		return &dirstream->entry;
+	}
 
-	return &dirstream->buffer;
+	/* otherwise it's the end of stream */
+	assert(dirstream->state == DIR_STATE_EOF);
+	errno = 0;
+
+	return 0;
 }
 
-int windows_closedir(windows_dir* dirstream)
+static int windows_closedir_find(windows_dir* dirstream)
 {
 	if (dirstream->h != INVALID_HANDLE_VALUE) {
 		if (!FindClose(dirstream->h)) {
 			DWORD error = GetLastError();
+
 			free(dirstream);
 
 			windows_errno(error);
@@ -1019,9 +1028,177 @@ int windows_closedir(windows_dir* dirstream)
 	return 0;
 }
 
+static int windows_first_stream(windows_dir* dirstream)
+{
+	FILE_ID_BOTH_DIR_INFO* fd;
+
+	if (!ptr_GetFileInformationByHandleEx(dirstream->h, FileIdBothDirectoryInfo, dirstream->buffer, dirstream->buffer_size)) {
+		DWORD error = GetLastError();
+
+		if (error == ERROR_NO_MORE_FILES) {
+			dirstream->state = DIR_STATE_EOF;
+			return 0;
+		}
+
+		windows_errno(error);
+		return -1;
+	}
+
+	/* get the first entry */
+	dirstream->buffer_pos = 0;
+	fd = (FILE_ID_BOTH_DIR_INFO*)dirstream->buffer;
+	windows_stream2dirent(&dirstream->info, fd, &dirstream->entry);
+	dirstream->state = DIR_STATE_FILLED;
+
+	return 0;
+}
+
+static int windows_next_stream(windows_dir* dirstream)
+{
+	FILE_ID_BOTH_DIR_INFO* fd;
+
+	/* last entry read */
+	fd = (FILE_ID_BOTH_DIR_INFO*)(dirstream->buffer + dirstream->buffer_pos);
+
+	/* check if there is a next one */
+	if (fd->NextEntryOffset == 0) {
+		/* if not, fill it up again */
+		if (windows_first_stream(dirstream) != 0)
+			return -1;
+		return 0;
+	}
+
+	/* go to the next one */
+	dirstream->buffer_pos += fd->NextEntryOffset;
+	fd = (FILE_ID_BOTH_DIR_INFO*)(dirstream->buffer + dirstream->buffer_pos);
+	windows_stream2dirent(&dirstream->info, fd, &dirstream->entry);
+	dirstream->state = DIR_STATE_FILLED;
+
+	return 0;
+}
+
+static windows_dir* windows_opendir_stream(const char* dir)
+{
+	windows_dir* dirstream;
+	WCHAR* wdir;
+
+	dirstream = malloc(sizeof(windows_dir));
+	if (!dirstream) {
+		fprintf(stderr, "Low memory\n");
+		exit(EXIT_FAILURE);
+	}
+
+	wdir = convert(dir);
+
+	/* uses a 64 kB buffer for reading directory */
+	dirstream->buffer_size = 64 * 1024;
+	dirstream->buffer = malloc(dirstream->buffer_size);
+	if (!dirstream->buffer) {
+		fprintf(stderr, "Low memory\n");
+		exit(EXIT_FAILURE);
+	}
+
+	dirstream->h = CreateFileW(wdir, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+	if (dirstream->h == INVALID_HANDLE_VALUE) {
+		DWORD error = GetLastError();
+		free(dirstream->buffer);
+		free(dirstream);
+		windows_errno(error);
+		return 0;
+	}
+
+	/* get dir information for the VolumeSerialNumber */
+	/* this value is used for all the files in the dir */
+	if (!GetFileInformationByHandle(dirstream->h, &dirstream->info)) {
+		DWORD error = GetLastError();
+		CloseHandle(dirstream->h);
+		free(dirstream->buffer);
+		free(dirstream);
+		windows_errno(error);
+		return 0;
+	}
+
+	if (windows_first_stream(dirstream) != 0) {
+		CloseHandle(dirstream->h);
+		free(dirstream->buffer);
+		free(dirstream);
+		return 0;
+	}
+
+	return dirstream;
+}
+
+static struct windows_dirent* windows_readdir_stream(windows_dir* dirstream)
+{
+	if (dirstream->state == DIR_STATE_EMPTY) {
+		if (windows_next_stream(dirstream) != 0) {
+			free(dirstream->buffer);
+			free(dirstream);
+			return 0;
+		}
+	}
+
+	if (dirstream->state == DIR_STATE_FILLED) {
+		dirstream->state = DIR_STATE_EMPTY;
+		return &dirstream->entry;
+	}
+
+	/* otherwise it's the end of stream */
+	assert(dirstream->state == DIR_STATE_EOF);
+	errno = 0;
+
+	return 0;
+}
+
+static int windows_closedir_stream(windows_dir* dirstream)
+{
+	if (dirstream->h != INVALID_HANDLE_VALUE) {
+		if (!CloseHandle(dirstream->h)) {
+			DWORD error = GetLastError();
+
+			free(dirstream->buffer);
+			free(dirstream);
+
+			windows_errno(error);
+			return -1;
+		}
+	}
+
+	free(dirstream->buffer);
+	free(dirstream);
+
+	return 0;
+}
+
+windows_dir* windows_opendir(const char* dir)
+{
+	/* if we have GetFileInformationByHandleEx() we can read */
+	/* the directory using a stream */
+	if (ptr_GetFileInformationByHandleEx != 0)
+		return windows_opendir_stream(dir);
+	else
+		return windows_opendir_find(dir);
+}
+
+struct windows_dirent* windows_readdir(windows_dir* dirstream)
+{
+	if (ptr_GetFileInformationByHandleEx != 0)
+		return windows_readdir_stream(dirstream);
+	else
+		return windows_readdir_find(dirstream);
+}
+
+int windows_closedir(windows_dir* dirstream)
+{
+	if (ptr_GetFileInformationByHandleEx != 0)
+		return windows_closedir_stream(dirstream);
+	else
+		return windows_closedir_find(dirstream);
+}
+
 int windows_dirent_hidden(struct dirent* dd)
 {
-	return dd->d_hidden;
+	return dd->d_stat.st_hidden;
 }
 
 const char* windows_stat_desc(struct stat* st)
@@ -1134,7 +1311,7 @@ int windows_readlink(const char* file, char* buffer, size_t size)
 	}
 
 	/* convert the name to UTF-8 */
-	name = u16tou8n(rdb->SymbolicLinkReparseBuffer.PathBuffer + rdb->SymbolicLinkReparseBuffer.PrintNameOffset,
+	name = u16tou8(rdb->SymbolicLinkReparseBuffer.PathBuffer + rdb->SymbolicLinkReparseBuffer.PrintNameOffset,
 			rdb->SymbolicLinkReparseBuffer.PrintNameLength / 2, &len);
 
 	/* check for overflow */
