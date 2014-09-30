@@ -27,6 +27,8 @@
 
 #include "tommyarray.h"
 
+#include <stddef.h> /* for ptrdiff_t */
+
 /******************************************************************************/
 /* array */
 
@@ -69,7 +71,8 @@ void tommy_array_grow(tommy_array* array, unsigned size)
 		segment = tommy_cast(void**, tommy_calloc(array->bucket_max, sizeof(void*)));
 
 		/* store it adjusting the offset */
-		array->bucket[array->bucket_mac] = &segment[-array->bucket_max];
+		/* cast to ptrdiff_t to ensure to get a negative value */
+		array->bucket[array->bucket_mac] = &segment[-(ptrdiff_t)array->bucket_max];
 
 		++array->bucket_mac;
 		++array->bucket_bit;
