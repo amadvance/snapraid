@@ -1019,6 +1019,8 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 #if HAVE_STRUCT_DIRENT_D_STAT
 		/* convert dirent to lstat result */
 		dirent_lstat(dd, &entry->d_stat);
+
+		/* note that at this point the st_mode may be 0 */
 #endif
 		memcpy(entry->d_name, dd->d_name, name_len + 1);
 
@@ -1084,10 +1086,12 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 			/* get the type from stat */
 			st = DSTAT(path_next, dd, &st_buf);
 
-#if HAVE_LSTAT_EX
-			/* if the stat entry is incomplete, take care to fill it using the extended lstat() */
+#if HAVE_STRUCT_DIRENT_D_STAT
+			/* if the st_mode field is missing, takes care to fill it using normal lstat() */
+			/* at now this can happen only in Windows, but we cannot call here lstat_ex(), */
+			/* because we don't know what kind of file is it, and lstat_ex() doesn't always work */
 			if (st->st_mode == 0)  {
-				if (lstat_ex(path_next, st) != 0) {
+				if (lstat(path_next, st) != 0) {
 					/* LCOV_EXCL_START */
 					fprintf(stderr, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
 					exit(EXIT_FAILURE);
@@ -1115,8 +1119,9 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 					st = DSTAT(path_next, dd, &st_buf);
 
 #if HAVE_LSTAT_EX
-				/* if the stat entry is incomplete, take care to fill it using the extended lstat() */
-				if (st->st_ino == 0)  {
+				/* if the st_ino field is missing, takes care to fill it using the extended lstat() */
+				/* this can happen only in Windows */
+				if (st->st_ino == 0) {
 					if (lstat_ex(path_next, st) != 0) {
 						/* LCOV_EXCL_START */
 						fprintf(stderr, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
@@ -1177,8 +1182,9 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 		} else if (type == 2) { /* DIR */
 			if (filter_dir(&state->filterlist, disk->name, sub_next) == 0) {
 #ifndef _WIN32
-				/* late stat */
-				if (!st) st = DSTAT(path_next, dd, &st_buf);
+				/* late stat, if not yet called */
+				if (!st)
+					st = DSTAT(path_next, dd, &st_buf);
 
 				/* in Unix don't follow mount points in different devices */
 				/* in Windows we are already skipping them reporting them as special files */
@@ -1207,8 +1213,9 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 			}
 		} else {
 			if (filter_path(&state->filterlist, disk->name, sub_next) == 0) {
-				/* late stat */
-				if (!st) st = DSTAT(path_next, dd, &st_buf);
+				/* late stat, if not yet called */
+				if (!st)
+					st = DSTAT(path_next, dd, &st_buf);
 
 				fprintf(stderr, "WARNING! Ignoring special '%s' file '%s'\n", stat_desc(st), path_next);
 			} else {

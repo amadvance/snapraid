@@ -367,7 +367,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	/* copy the options */
 	state->opt = *opt;
 
-	/* if unsed, sort by physical order */
+	/* if unset, sort by physical order */
 	if (!state->opt.force_order)
 		state->opt.force_order = SORT_PHYSICAL;
 

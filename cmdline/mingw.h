@@ -142,13 +142,14 @@ struct windows_stat {
 int windows_fstat(int fd, struct windows_stat* st);
 
 /**
- * Like the C lstat() but without some information.
+ * Like the C lstat(), but with some limitations.
  *
  * The st_ino field may be 0 if it's not possible to read it in a fast way.
+ * Specifically this always happens.
  *
  * In case of hardlinks, the size and the attributes of the file can
- * be completely bogus, because changes made by other hardlinks are reported in the
- * directory entry only when the file is opened.
+ * be completely bogus, because changes made by other hardlinks are reported
+ * in the directory entry only when the file is opened.
  *
  * MSDN CreateHardLinks
  * http://msdn.microsoft.com/en-us/library/windows/desktop/aa363860%28v=vs.85%29.aspx
@@ -181,9 +182,14 @@ int windows_mkdir(const char* file);
 int windows_rmdir(const char* file);
 
 /**
- * Like the C lstat().
-
- * It doesn't work for all kind of files and directories. For example "\System Volume Information" cannot be opened.
+ * Like the C lstat(), but with some limitations.
+ *
+ * This call fills all the st_* fields of the stat struct.
+ *
+ * It doesn't work for all kinds of files and directories.
+ * You must call it only for regular files.
+ * For example, "\System Volume Information" cannot be accessed.
+ *
  * Note that instead lstat() works for all the files.
  */
 #define HAVE_LSTAT_EX 1
@@ -266,10 +272,15 @@ struct windows_dirent* windows_readdir(windows_dir* dirstream);
 int windows_closedir(windows_dir* dirstream);
 
 /**
- * Convert a dirent record to a lstat record.
+ * Convert a dirent record to a lstat record, but with some limitations.
  *
  * The st_mode field may be 0 if the file is a reparse point.
+ * Specifically this happens if we are using GetFileInformationByHandleEx()
+ * to read the directory stream.
+ *
  * The st_ino field may be 0 if it's not possible to read it in a fast way.
+ * Specifically this happens if we are using FindFirst/FindNext to enumerate
+ * the directory.
  *
  * In such cases, call lstat_ex() to fill the missing fields.
  */
