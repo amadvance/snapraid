@@ -90,6 +90,7 @@ struct snapraid_option {
 	int force_scrub_even; /**< Force scrub of all the even blocks. */
 	int force_content_write; /**< Force the update of the content file. */
 	int force_content_text; /**< Force the use of text version of content file. */
+	int force_scan_winfind; /**< Force the use of FindFirst/Next in Windows to list directories. */
 };
 
 /**

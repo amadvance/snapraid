@@ -233,6 +233,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_SKIP_PARITY_ACCESS 276
 #define OPT_TEST_EXPECT_FAILURE 277
 #define OPT_TEST_RUN 278
+#define OPT_TEST_FORCE_SCAN_WINFIND 279
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -328,6 +329,9 @@ struct option long_options[] = {
 	/* Run some command after loading the state and before the command */
 	{ "test-run", 1, 0, OPT_TEST_RUN },
 
+	/* Use the FindFirst/Next approach in Windows to list files */
+	{ "test-force-scan-winfind", 0, 0, OPT_TEST_FORCE_SCAN_WINFIND },
+
 	{ 0, 0, 0, 0 }
 };
 #endif
@@ -384,14 +388,11 @@ int main(int argc, char* argv[])
 	int lock;
 	const char* gen_conf;
 	const char* run;
+	int speedtest;
 	int period;
 	time_t t;
 	struct tm* tm;
 	int i;
-
-	os_init();
-	raid_init();
-	crc32c_init();
 
 	/* always different random numbers */
 	srand(time(0));
@@ -412,6 +413,7 @@ int main(int argc, char* argv[])
 	log = 0;
 	lock = 0;
 	gen_conf = 0;
+	speedtest = 0;
 	run = 0;
 
 	opterr = 0;
@@ -546,8 +548,8 @@ int main(int argc, char* argv[])
 			version();
 			exit(EXIT_SUCCESS);
 		case 'T' :
-			speed(period);
-			exit(EXIT_SUCCESS);
+			speedtest = 1;
+			break;
 		case 'C' :
 			gen_conf = optarg;
 			break;
@@ -623,12 +625,25 @@ int main(int argc, char* argv[])
 		case OPT_TEST_RUN :
 			run = optarg;
 			break;
+		case OPT_TEST_FORCE_SCAN_WINFIND :
+			opt.force_scan_winfind = 1;
+			break;
 		default :
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "Unknown option '%c'\n", (char)c);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
+	}
+
+	os_init(opt.force_scan_winfind);
+	raid_init();
+	crc32c_init();
+
+	if (speedtest != 0) {
+		speed(period);
+		os_done();
+		exit(EXIT_SUCCESS);
 	}
 
 	if (gen_conf != 0) {

@@ -119,9 +119,16 @@ static char* last_error;
  */
 static int is_wine;
 
-void os_init(void)
+/**
+ * If we should use the legacy FindFirst/Next way to list directories.
+ */
+static int is_scan_winfind;
+
+void os_init(int opt)
 {
 	HMODULE kernel32, ntdll;
+
+	is_scan_winfind = opt != 0;
 
 	kernel32 = GetModuleHandle("KERNEL32.DLL");
 	if (!kernel32) {
@@ -1174,7 +1181,7 @@ windows_dir* windows_opendir(const char* dir)
 {
 	/* if we have GetFileInformationByHandleEx() we can read */
 	/* the directory using a stream */
-	if (ptr_GetFileInformationByHandleEx != 0)
+	if (!is_scan_winfind && ptr_GetFileInformationByHandleEx != 0)
 		return windows_opendir_stream(dir);
 	else
 		return windows_opendir_find(dir);
@@ -1182,7 +1189,7 @@ windows_dir* windows_opendir(const char* dir)
 
 struct windows_dirent* windows_readdir(windows_dir* dirstream)
 {
-	if (ptr_GetFileInformationByHandleEx != 0)
+	if (!is_scan_winfind && ptr_GetFileInformationByHandleEx != 0)
 		return windows_readdir_stream(dirstream);
 	else
 		return windows_readdir_find(dirstream);
@@ -1190,7 +1197,7 @@ struct windows_dirent* windows_readdir(windows_dir* dirstream)
 
 int windows_closedir(windows_dir* dirstream)
 {
-	if (ptr_GetFileInformationByHandleEx != 0)
+	if (!is_scan_winfind && ptr_GetFileInformationByHandleEx != 0)
 		return windows_closedir_stream(dirstream);
 	else
 		return windows_closedir_find(dirstream);
