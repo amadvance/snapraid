@@ -290,6 +290,28 @@ static int file_is_full_hashed_and_stable(struct snapraid_state* state, struct s
 	return 1;
 }
 
+static void scan_file_delayed_insert(struct snapraid_scan* scan, struct snapraid_file* file)
+{
+	struct snapraid_state* state = scan->state;
+	struct snapraid_disk* disk = scan->disk;
+
+	/* if we sort for physical offsets we have to read them for the new files */
+	if (state->opt.force_order == SORT_PHYSICAL) {
+		char path_next[PATH_MAX];
+
+		pathprint(path_next, sizeof(path_next), "%s%s", disk->dir, file->sub);
+
+		if (filephy(path_next, file->size, &file->physical) != 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error in getting the physical offset of file '%s'. %s.\n", path_next, strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	tommy_list_insert_tail(&scan->file_insert_list, &file->nodelist, file);
+}
+
 /**
  * Keeps the file as it's (or with only a name/inode modification).
  *
@@ -314,7 +336,7 @@ static void scan_file_keep(struct snapraid_scan* scan, struct snapraid_file* fil
 		tommy_list_remove_existing(&disk->filelist, &file->nodelist);
 
 		/* insert the file in the delayed block allocation */
-		tommy_list_insert_tail(&scan->file_insert_list, &file->nodelist, file);
+		scan_file_delayed_insert(scan, file);
 	}
 }
 
@@ -789,7 +811,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 	tommy_hashdyn_insert(&disk->stampset, &file->stampset, file, file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec));
 
 	/* insert the file in the delayed block allocation */
-	tommy_list_insert_tail(&scan->file_insert_list, &file->nodelist, file);
+	scan_file_delayed_insert(scan, file);
 }
 
 /**
@@ -1112,7 +1134,6 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 
 		if (type == 0) { /* REG */
 			if (filter_path(&state->filterlist, disk->name, sub_next) == 0) {
-				uint64_t physical;
 
 				/* late stat, if not yet called */
 				if (!st)
@@ -1131,18 +1152,7 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 				}
 #endif
 
-				if (state->opt.force_order == SORT_PHYSICAL) {
-					if (filephy(path_next, st, &physical) != 0) {
-						/* LCOV_EXCL_START */
-						fprintf(stderr, "Error in getting the physical offset of file '%s'. %s.\n", path_next, strerror(errno));
-						exit(EXIT_FAILURE);
-						/* LCOV_EXCL_STOP */
-					}
-				} else {
-					physical = 0;
-				}
-
-				scan_file(scan, output, sub_next, st, physical);
+				scan_file(scan, output, sub_next, st, FILEPHY_UNREAD_OFFSET);
 				processed = 1;
 			} else {
 				if (state->opt.verbose) {
@@ -1326,6 +1336,9 @@ void state_scan(struct snapraid_state* state, int output)
 		uint64_t phy_last;
 		struct snapraid_file* phy_file_last;
 
+		if (!output)
+			printf("Mapping disk %s...\n", disk->name);
+
 		/* check for removed files */
 		node = disk->filelist;
 		while (node) {
@@ -1402,20 +1415,24 @@ void state_scan(struct snapraid_state* state, int output)
 
 		/* insert all the new files, we insert them only after the deletion */
 		/* to reuse the just freed space */
+		/* also check if the physical offset reported are fakes or not */
 		node = scan->file_insert_list;
 		phy_count = 0;
 		phy_dup = 0;
-		phy_last = -1;
+		phy_last = FILEPHY_UNREAD_OFFSET;
 		phy_file_last = 0;
 		while (node) {
 			struct snapraid_file* file = node->data;
 
 			/* if the file is not empty, count duplicate physical offsets */
 			if (state->opt.force_order == SORT_PHYSICAL && file->size != 0) {
-				if (phy_file_last != 0 && file->physical == phy_last && phy_last != FILEPHY_WITHOUT_OFFSET) {
-					/* if verbose, prints the list of duplicates */
-					/* if they are supposed real offsets */
-					if (state->opt.verbose && phy_last != FILEPHY_UNREPORTED_OFFSET) {
+				if (phy_file_last != 0 && file->physical == phy_last
+					/* files without offset are expected to have duplicates */
+					&& phy_last != FILEPHY_WITHOUT_OFFSET
+				) {
+					/* if verbose, prints the list of duplicates real offsets */
+					/* other cases are for offsets not supported, so we don't need to report them file by file */
+					if (state->opt.verbose && phy_last >= FILEPHY_REAL_OFFSET) {
 						fprintf(stderr, "WARNING! Files '%s%s' and '%s%s' have the same physical offset %" PRId64 ".\n", disk->dir, phy_file_last->sub, disk->dir, file->sub, phy_last);
 					}
 					++phy_dup;

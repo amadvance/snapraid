@@ -1339,7 +1339,7 @@ int devuuid(uint64_t device, char* uuid, size_t uuid_size)
 	return 0;
 }
 
-int filephy(const char* file, struct stat* st, uint64_t* physical)
+int filephy(const char* file, uint64_t size, uint64_t* physical)
 {
 	HANDLE h;
 	STARTING_VCN_INPUT_BUFFER svib;
@@ -1348,9 +1348,11 @@ int filephy(const char* file, struct stat* st, uint64_t* physical)
 	BOOL ret;
 	DWORD n;
 
-	/* in Wine just uses the inode number because FSCTL_GET_RETRIVIAL_POINTERS is not supported */
+	(void)size;
+
+	/* in Wine FSCTL_GET_RETRIVIAL_POINTERS is not supported */
 	if (is_wine) {
-		*physical = st->st_ino;
+		*physical = FILEPHY_UNREPORTED_OFFSET;
 		return 0;
 	}
 
