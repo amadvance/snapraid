@@ -17,6 +17,12 @@ get misinterpreted.
 
 * Shall CreateFileW use FILE_SHARE_DELETE ?
 
+* Merge lstat_sync() and filephy() ? This could save one CreateFileW()
+but it's not clear how it will behave with ReparsePoint, like dedup files.
+lsync_stat opens with BACKUP_SEMANTICS/REPARSE_POINT then instead filephy()
+opens with 0.
+See merge_lstat_sync_and_filephy.diff in contrib/
+
 - Minor
 
 * Provides a way to rename disks in content file.

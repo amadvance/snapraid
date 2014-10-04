@@ -1348,28 +1348,18 @@ int devuuid(uint64_t device, char* uuid, size_t uuid_size)
 	return 0;
 }
 
-int filephy(const char* file, uint64_t size, uint64_t* physical)
+static BOOL GetFilePhysicalOffset(HANDLE h, uint64_t* physical)
 {
-	HANDLE h;
 	STARTING_VCN_INPUT_BUFFER svib;
 	unsigned char rpb_buffer[sizeof(RETRIEVAL_POINTERS_BUFFER)];
 	RETRIEVAL_POINTERS_BUFFER* rpb = (RETRIEVAL_POINTERS_BUFFER*)&rpb_buffer;
 	BOOL ret;
 	DWORD n;
 
-	(void)size;
-
 	/* in Wine FSCTL_GET_RETRIVIAL_POINTERS is not supported */
 	if (is_wine) {
 		*physical = FILEPHY_UNREPORTED_OFFSET;
-		return 0;
-	}
-
-	/* open the handle of the file */
-	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
-	if (h == INVALID_HANDLE_VALUE) {
-		windows_errno(GetLastError());
-		return -1;
+		return TRUE;
 	}
 
 	/* set the output variable, just to be safe */
@@ -1389,29 +1379,45 @@ int filephy(const char* file, uint64_t size, uint64_t* physical)
 			/* In such case we report a specific fake address, to report this special condition */
 			/* that it's different from the 0 offset reported by the underline file system */
 			*physical = FILEPHY_WITHOUT_OFFSET;
-
-			CloseHandle(h);
-			return 0;
+			return TRUE;
 		} else if (error == ERROR_NOT_SUPPORTED) {
 			/* for disks shared on network this operation is not supported */
 			*physical = FILEPHY_UNREPORTED_OFFSET;
-
-			CloseHandle(h);
-			return 0;
+			return TRUE;
 		} else {
-			windows_errno(error);
-			CloseHandle(h);
-			return -1;
+			return FALSE;
 		}
 	}
-
-	CloseHandle(h);
 
 	if (rpb->ExtentCount < 1)
 		*physical = FILEPHY_UNREPORTED_OFFSET;
 	else
 		*physical = rpb->Extents[0].Lcn.QuadPart + FILEPHY_REAL_OFFSET;
 
+	return TRUE;
+}
+
+int filephy(const char* file, uint64_t size, uint64_t* physical)
+{
+	HANDLE h;
+
+	(void)size;
+
+	/* open the handle of the file */
+	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+	if (h == INVALID_HANDLE_VALUE) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	if (!GetFilePhysicalOffset(h, physical)) {
+		DWORD error = GetLastError();
+		CloseHandle(h);
+		windows_errno(error);
+		return -1;
+	}
+
+	CloseHandle(h);
 	return 0;
 }
 
