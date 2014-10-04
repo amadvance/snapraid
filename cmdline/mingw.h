@@ -80,6 +80,7 @@
 #define dirent_hidden windows_dirent_hidden
 #define HAVE_STRUCT_DIRENT_D_STAT 1
 #undef HAVE_STRUCT_DIRENT_D_INO
+#undef HAVE_STRUCT_STAT_ST_NLINK
 #define dirent_lstat windows_dirent_lstat
 #define stat_desc windows_stat_desc
 #undef sleep
@@ -130,23 +131,26 @@ struct windows_stat {
 	int64_t st_mtime;
 	int32_t st_mtimensec;
 	uint32_t st_mode;
-	uint32_t st_nlink;
 	uint32_t st_dev;
 	int st_hidden;
 	const char* st_desc;
+	int st_sync; /**< If the information are in sync with the filesystem. */
 };
 
 /**
- * Like the C fstat() including the inode/device information.
+ * Like the C fstat().
  */
 int windows_fstat(int fd, struct windows_stat* st);
 
 /**
- * Like the C lstat() but without the inode information.
- * In Windows the inode information is not reported.
- * In Windows and in case of hardlinks, the size and the attributes of the file can
- * be completely bogus, because changes made by other hardlinks are reported in the
- * directory entry only when the file is opened.
+ * Like the C lstat(), but with some limitations.
+ *
+ * The st_ino field may be 0 if it's not possible to read it in a fast way.
+ * Specifically this always happens.
+ *
+ * In case of hardlinks, the size and the attributes of the file can
+ * be completely bogus, because changes made by other hardlinks are reported
+ * in the directory entry only when the file is opened.
  *
  * MSDN CreateHardLinks
  * http://msdn.microsoft.com/en-us/library/windows/desktop/aa363860%28v=vs.85%29.aspx
@@ -159,12 +163,12 @@ int windows_fstat(int fd, struct windows_stat* st);
  * 'However, the directory entry size and attribute information is updated only'
  * 'for the link through which the change was made.'
  *
- * Use lstat_ex() to override these limitations.
+ * Use lstat_sync() to override these limitations.
  */
 int windows_lstat(const char* file, struct windows_stat* st);
 
 /**
- * Like the C stat() including the inode/device information.
+ * Like the C stat().
  */
 int windows_stat(const char* file, struct windows_stat* st);
 
@@ -179,12 +183,18 @@ int windows_mkdir(const char* file);
 int windows_rmdir(const char* file);
 
 /**
- * Like the C lstat() including the inode/device information.
- * It doesn't work for all kind of files and directories. For example "\System Volume Information" cannot be opened.
+ * Like the C lstat(), but with some limitations.
+ *
+ * This call fills all the st_* fields of the stat struct.
+ *
+ * It doesn't work for all kinds of files and directories.
+ * You must call it only for regular files.
+ * For example, "\System Volume Information" cannot be accessed.
+ *
  * Note that instead lstat() works for all the files.
  */
-#define HAVE_LSTAT_EX 1
-int lstat_ex(const char* file, struct windows_stat* st);
+#define HAVE_LSTAT_SYNC 1
+int lstat_sync(const char* file, struct windows_stat* st);
 
 /**
  * Like the C ftruncate().
@@ -238,18 +248,13 @@ int windows_open(const char* file, int flags, ...);
  */
 struct windows_dirent {
 	char d_name[PATH_MAX];
-	int d_hidden;
-	WIN32_FIND_DATAW d_data;
+	struct windows_stat d_stat;
 };
 
 /**
  * Like the C DIR.
  */
-struct windows_dir_struct {
-	HANDLE h;
-	struct windows_dirent buffer;
-	int flags;
-};
+struct windows_dir_struct;
 typedef struct windows_dir_struct windows_dir;
 
 /**
@@ -268,8 +273,17 @@ struct windows_dirent* windows_readdir(windows_dir* dirstream);
 int windows_closedir(windows_dir* dirstream);
 
 /**
- * Convert a dirent record to a lstat record.
- * Just like the one obtained calling lstat().
+ * Convert a dirent record to a lstat record, but with some limitations.
+ *
+ * The st_mode field may be 0 if the file is a reparse point.
+ * Specifically this happens if we are using GetFileInformationByHandleEx()
+ * to read the directory stream.
+ *
+ * The st_ino field may be 0 if it's not possible to read it in a fast way.
+ * Specifically this happens if we are using FindFirst/FindNext to enumerate
+ * the directory.
+ *
+ * In such cases, call lstat_sync() to fill the missing fields.
  */
 void windows_dirent_lstat(const struct windows_dirent* dd, struct windows_stat* st);
 

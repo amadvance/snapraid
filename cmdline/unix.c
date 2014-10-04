@@ -129,7 +129,7 @@ int devuuid(uint64_t device, char* uuid, size_t uuid_size)
 }
 #endif
 
-int filephy(const char* path, struct stat* st, uint64_t* physical)
+int filephy(const char* path, uint64_t size, uint64_t* physical)
 {
 #if HAVE_LINUX_FIEMAP_H
 	/* In Linux gets the real physical address of the file */
@@ -162,7 +162,7 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 	}
 
 	/* if the file is empty, FIBMAP doesn't work, and we don't even try to use it */
-	if (st->st_size == 0) {
+	if (size == 0) {
 		*physical = FILEPHY_WITHOUT_OFFSET;
 		if (close(f) == -1)
 			return -1;
@@ -199,7 +199,7 @@ int filephy(const char* path, struct stat* st, uint64_t* physical)
 	*physical = FILEPHY_UNREPORTED_OFFSET;
 
 	(void)path; /* not used here */
-	(void)st;
+	(void)size;
 #endif
 
 	return 0;
@@ -267,8 +267,9 @@ uint64_t tick(void)
 #endif
 }
 
-void os_init(void)
+void os_init(int opt)
 {
+	(void)opt;
 }
 
 void os_done(void)

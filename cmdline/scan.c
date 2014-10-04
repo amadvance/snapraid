@@ -290,6 +290,85 @@ static int file_is_full_hashed_and_stable(struct snapraid_state* state, struct s
 	return 1;
 }
 
+static void scan_file_delayed_insert(struct snapraid_scan* scan, struct snapraid_file* file)
+{
+	struct snapraid_state* state = scan->state;
+	struct snapraid_disk* disk = scan->disk;
+
+	/* if we sort for physical offsets we have to read them for the new files */
+	if (state->opt.force_order == SORT_PHYSICAL) {
+		char path_next[PATH_MAX];
+
+		pathprint(path_next, sizeof(path_next), "%s%s", disk->dir, file->sub);
+
+		if (filephy(path_next, file->size, &file->physical) != 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error in getting the physical offset of file '%s'. %s.\n", path_next, strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	tommy_list_insert_tail(&scan->file_insert_list, &file->nodelist, file);
+}
+
+/**
+ * Refresh the file info.
+ *
+ * This is needed by Windows as the normal way to list directories may report not
+ * updated info. Only the GetFileInformationByHandle() func, called file-by-file,
+ * relly ensures to return synced info.
+ */
+static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struct stat* st)
+{
+#if HAVE_LSTAT_SYNC
+	struct snapraid_disk* disk = scan->disk;
+
+	/* if the st_sync is not set, ensure to get synced info */
+	if (st->st_sync == 0) {
+		char path_next[PATH_MAX];
+		struct stat synced_st;
+
+		pathprint(path_next, sizeof(path_next), "%s%s", disk->dir, sub);
+
+		if (lstat_sync(path_next, &synced_st) != 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error in stat file '%s'. %s.\n", path_next, strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (st->st_mtime != synced_st.st_mtime
+			|| st->st_mtimensec != synced_st.st_mtimensec
+		) {
+			fprintf(stderr, "WARNING! Detected uncached time change for file '%s'\n", sub);
+			fprintf(stderr, "It's better if you run SnapRAID without other processes running.\n");
+			st->st_mtime = synced_st.st_mtime;
+			st->st_mtimensec = synced_st.st_mtimensec;
+		}
+
+		if (st->st_size != synced_st.st_size) {
+			fprintf(stderr, "WARNING! Detected uncached size change for file '%s'\n", sub);
+			fprintf(stderr, "It's better if you run SnapRAID without other processes running.\n");
+			st->st_size = synced_st.st_size;
+		}
+
+		if (st->st_ino != synced_st.st_ino) {
+			fprintf(stderr, "DANGER! Detected uncached inode change for file '%s'\n", sub);
+			fprintf(stderr, "Please ensure to run SnapRAID without other processes running.\n");
+			/* at this point, it's too late to change inode */
+			/* and having inconsistent inodes may result to internal failures */
+			/* so, it's better to abort */
+			exit(EXIT_FAILURE);
+		}
+	}
+#else
+	(void)scan;
+	(void)sub;
+	(void)st;
+#endif
+}
+
 /**
  * Keeps the file as it's (or with only a name/inode modification).
  *
@@ -314,7 +393,7 @@ static void scan_file_keep(struct snapraid_scan* scan, struct snapraid_file* fil
 		tommy_list_remove_existing(&disk->filelist, &file->nodelist);
 
 		/* insert the file in the delayed block allocation */
-		tommy_list_insert_tail(&scan->file_insert_list, &file->nodelist, file);
+		scan_file_delayed_insert(scan, file);
 	}
 }
 
@@ -442,7 +521,7 @@ static void scan_file_insert(struct snapraid_scan* scan, struct snapraid_file* f
 /**
  * Processes a file.
  */
-static void scan_file(struct snapraid_scan* scan, int output, const char* sub, const struct stat* st, uint64_t physical)
+static void scan_file(struct snapraid_scan* scan, int output, const char* sub, struct stat* st, uint64_t physical)
 {
 	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
@@ -450,6 +529,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 	int add_insert;
 	int add_change;
 	tommy_node* i;
+	int is_original_file_size_different_than_zero;
 
 	/*
 	 * If the disk has persistent inodes and UUID, try a search on the past inodes,
@@ -499,16 +579,17 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 		) {
 			/* check if multiple files have the same inode */
 			if (file_flag_has(file, FILE_IS_PRESENT)) {
-				if (st->st_nlink > 1) {
-					/* it's a hardlink */
-					scan_link(scan, output, sub, file->sub, FILE_IS_HARDLINK);
-					return;
-				} else {
+#if HAVE_STRUCT_STAT_ST_NLINK
+				if (st->st_nlink <= 1) {
 					/* LCOV_EXCL_START */
 					fprintf(stderr, "Internal inode '%" PRIu64 "' inconsistency for file '%s%s' already present\n", (uint64_t)st->st_ino, disk->dir, sub);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
+#endif
+				/* it's a hardlink */
+				scan_link(scan, output, sub, file->sub, FILE_IS_HARDLINK);
+				return;
 			}
 
 			/* mark as present */
@@ -596,6 +677,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 
 	add_insert = 0;
 	add_change = 0;
+	is_original_file_size_different_than_zero = 0;
 
 	/* then try finding it by name */
 	file = tommy_hashdyn_search(&disk->pathset, file_path_compare_to_arg, sub, file_path_hash(sub));
@@ -697,19 +779,8 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 
 		/* here if the file is changed but with the correct name */
 
-		/* do a safety check to ensure that the common ext4 case of zeroing */
-		/* the size of a file after a crash doesn't propagate to the backup */
-		if (file->size != 0 && st->st_size == 0) {
-			if (!state->opt.force_zero) {
-				/* LCOV_EXCL_START */
-				fprintf(stderr, "The file '%s%s' has unexpected zero size! If this an expected state\n", disk->dir, sub);
-				fprintf(stderr, "you can '%s' anyway usinge 'snapraid --force-zero %s'\n", state->command, state->command);
-				fprintf(stderr, "Instead, it's possible that after a kernel crash this file was lost,\n");
-				fprintf(stderr, "and you can use 'snapraid --filter %s fix' to recover it.\n", sub);
-				exit(EXIT_FAILURE);
-				/* LCOV_EXCL_STOP */
-			}
-		}
+		/* keep track if the original file was not of zero size */
+		is_original_file_size_different_than_zero = file->size != 0;
 
 		/* it has the same name, so it's an update */
 		add_change = 1;
@@ -719,10 +790,10 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 			printf("update %s%s\n", disk->dir, file->sub);
 		}
 
-		/* remove it */
+		/* remove it, and continue to insert it again */
 		scan_file_remove(scan, file);
 
-		/* and continue to reinsert it */
+		/* and continue to reinsert it again */
 	} else {
 		/* if the name doesn't exist, it's a new file */
 		add_insert = 1;
@@ -733,6 +804,25 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 		}
 
 		/* and continue to insert it */
+	}
+
+	/* refresh the info, to ensure that they are synced, */
+	/* not that we refresh only the info of the new or modified files */
+	/* because this is slow operation */
+	scan_file_refresh(scan, sub, st);
+
+	/* do a safety check to ensure that the common ext4 case of zeroing */
+	/* the size of a file after a crash doesn't propagate to the backup */
+	if (is_original_file_size_different_than_zero && st->st_size == 0) {
+		if (!state->opt.force_zero) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "The file '%s%s' has unexpected zero size! If this an expected state\n", disk->dir, sub);
+			fprintf(stderr, "you can '%s' anyway usinge 'snapraid --force-zero %s'\n", state->command, state->command);
+			fprintf(stderr, "Instead, it's possible that after a kernel crash this file was lost,\n");
+			fprintf(stderr, "and you can use 'snapraid --filter %s fix' to recover it.\n", sub);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
 	}
 
 	/* insert it */
@@ -788,7 +878,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 	tommy_hashdyn_insert(&disk->stampset, &file->stampset, file, file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec));
 
 	/* insert the file in the delayed block allocation */
-	tommy_list_insert_tail(&scan->file_insert_list, &file->nodelist, file);
+	scan_file_delayed_insert(scan, file);
 }
 
 /**
@@ -1018,6 +1108,8 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 #if HAVE_STRUCT_DIRENT_D_STAT
 		/* convert dirent to lstat result */
 		dirent_lstat(dd, &entry->d_stat);
+
+		/* note that at this point the st_mode may be 0 */
 #endif
 		memcpy(entry->d_name, dd->d_name, name_len + 1);
 
@@ -1083,6 +1175,20 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 			/* get the type from stat */
 			st = DSTAT(path_next, dd, &st_buf);
 
+#if HAVE_STRUCT_DIRENT_D_STAT
+			/* if the st_mode field is missing, takes care to fill it using normal lstat() */
+			/* at now this can happen only in Windows, but we cannot call here lstat_sync(), */
+			/* because we don't know what kind of file is it, and lstat_sync() doesn't always work */
+			if (st->st_mode == 0)  {
+				if (lstat(path_next, st) != 0) {
+					/* LCOV_EXCL_START */
+					fprintf(stderr, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+			}
+#endif
+
 			if (S_ISREG(st->st_mode))
 				type = 0;
 			else if (S_ISLNK(st->st_mode))
@@ -1095,33 +1201,25 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 
 		if (type == 0) { /* REG */
 			if (filter_path(&state->filterlist, disk->name, sub_next) == 0) {
-				uint64_t physical;
 
-				/* late stat */
-				if (!st) st = DSTAT(path_next, dd, &st_buf);
+				/* late stat, if not yet called */
+				if (!st)
+					st = DSTAT(path_next, dd, &st_buf);
 
-#if HAVE_LSTAT_EX
-				/* get inode info about the file, Windows needs an additional step */
-				/* also for hardlink, the real size of the file is read here */
-				if (lstat_ex(path_next, st) != 0) {
-					/* LCOV_EXCL_START */
-					fprintf(stderr, "Error in stat_inode file '%s'. %s.\n", path_next, strerror(errno));
-					exit(EXIT_FAILURE);
-					/* LCOV_EXCL_STOP */
-				}
-#endif
-				if (state->opt.force_order == SORT_PHYSICAL) {
-					if (filephy(path_next, st, &physical) != 0) {
+#if HAVE_LSTAT_SYNC
+				/* if the st_ino field is missing, takes care to fill it using the extended lstat() */
+				/* this can happen only in Windows */
+				if (st->st_ino == 0) {
+					if (lstat_sync(path_next, st) != 0) {
 						/* LCOV_EXCL_START */
-						fprintf(stderr, "Error in getting the physical offset of file '%s'. %s.\n", path_next, strerror(errno));
+						fprintf(stderr, "Error in stat file '%s'. %s.\n", path_next, strerror(errno));
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}
-				} else {
-					physical = 0;
 				}
+#endif
 
-				scan_file(scan, output, sub_next, st, physical);
+				scan_file(scan, output, sub_next, st, FILEPHY_UNREAD_OFFSET);
 				processed = 1;
 			} else {
 				if (state->opt.verbose) {
@@ -1161,8 +1259,9 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 		} else if (type == 2) { /* DIR */
 			if (filter_dir(&state->filterlist, disk->name, sub_next) == 0) {
 #ifndef _WIN32
-				/* late stat */
-				if (!st) st = DSTAT(path_next, dd, &st_buf);
+				/* late stat, if not yet called */
+				if (!st)
+					st = DSTAT(path_next, dd, &st_buf);
 
 				/* in Unix don't follow mount points in different devices */
 				/* in Windows we are already skipping them reporting them as special files */
@@ -1191,8 +1290,9 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 			}
 		} else {
 			if (filter_path(&state->filterlist, disk->name, sub_next) == 0) {
-				/* late stat */
-				if (!st) st = DSTAT(path_next, dd, &st_buf);
+				/* late stat, if not yet called */
+				if (!st)
+					st = DSTAT(path_next, dd, &st_buf);
 
 				fprintf(stderr, "WARNING! Ignoring special '%s' file '%s'\n", stat_desc(st), path_next);
 			} else {
@@ -1303,6 +1403,9 @@ void state_scan(struct snapraid_state* state, int output)
 		uint64_t phy_last;
 		struct snapraid_file* phy_file_last;
 
+		if (!output)
+			printf("Mapping disk %s...\n", disk->name);
+
 		/* check for removed files */
 		node = disk->filelist;
 		while (node) {
@@ -1379,20 +1482,24 @@ void state_scan(struct snapraid_state* state, int output)
 
 		/* insert all the new files, we insert them only after the deletion */
 		/* to reuse the just freed space */
+		/* also check if the physical offset reported are fakes or not */
 		node = scan->file_insert_list;
 		phy_count = 0;
 		phy_dup = 0;
-		phy_last = -1;
+		phy_last = FILEPHY_UNREAD_OFFSET;
 		phy_file_last = 0;
 		while (node) {
 			struct snapraid_file* file = node->data;
 
 			/* if the file is not empty, count duplicate physical offsets */
 			if (state->opt.force_order == SORT_PHYSICAL && file->size != 0) {
-				if (phy_file_last != 0 && file->physical == phy_last && phy_last != FILEPHY_WITHOUT_OFFSET) {
-					/* if verbose, prints the list of duplicates */
-					/* if they are supposed real offsets */
-					if (state->opt.verbose && phy_last != FILEPHY_UNREPORTED_OFFSET) {
+				if (phy_file_last != 0 && file->physical == phy_last
+					/* files without offset are expected to have duplicates */
+					&& phy_last != FILEPHY_WITHOUT_OFFSET
+				) {
+					/* if verbose, prints the list of duplicates real offsets */
+					/* other cases are for offsets not supported, so we don't need to report them file by file */
+					if (state->opt.verbose && phy_last >= FILEPHY_REAL_OFFSET) {
 						fprintf(stderr, "WARNING! Files '%s%s' and '%s%s' have the same physical offset %" PRId64 ".\n", disk->dir, phy_file_last->sub, disk->dir, file->sub, phy_last);
 					}
 					++phy_dup;

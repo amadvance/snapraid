@@ -212,10 +212,9 @@ static inline int hardlink(const char* a, const char* b)
 int devuuid(uint64_t device, char* uuid, size_t size);
 
 /**
- * Special value returned when the file doesn't have a real offset.
- * For example, because it's stored in the NTFS MFT.
+ * Physical offset not yet read.
  */
-#define FILEPHY_WITHOUT_OFFSET 0
+#define FILEPHY_UNREAD_OFFSET 0
 
 /**
  * Special value returned when the filesystem doesn't report any offset for unknown reason.
@@ -223,16 +222,22 @@ int devuuid(uint64_t device, char* uuid, size_t size);
 #define FILEPHY_UNREPORTED_OFFSET 1
 
 /**
+ * Special value returned when the file doesn't have a real offset.
+ * For example, because it's stored in the NTFS MFT.
+ */
+#define FILEPHY_WITHOUT_OFFSET 2
+
+/**
  * Value indicating real offsets. All offsets greater or equal at this one are real.
  */
-#define FILEPHY_REAL_OFFSET 2
+#define FILEPHY_REAL_OFFSET 3
 
 /**
  * Get the physcal address of the specified file.
  * This is expected to be just a hint and not necessarely correct or unique.
  * Returns 0 on success.
  */
-int filephy(const char* path, struct stat* st, uint64_t* physical);
+int filephy(const char* path, uint64_t size, uint64_t* physical);
 
 /**
  * Checks if the underline filesystem support persistent inodes.
@@ -251,7 +256,7 @@ uint64_t tick(void);
 /**
  * Initializes the system.
  */
-void os_init(void);
+void os_init(int opt);
 
 /**
  * Deintialize the system.

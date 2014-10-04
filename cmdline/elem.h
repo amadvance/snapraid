@@ -643,7 +643,7 @@ static inline void file_flag_clear(struct snapraid_file* file, unsigned mask)
 /**
  * Allocates a file.
  */
-struct snapraid_file* file_alloc(unsigned block_size, const char* sub, uint64_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode, uint64_t physical);
+struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode, uint64_t physical);
 
 /**
  * Deallocates a file.
