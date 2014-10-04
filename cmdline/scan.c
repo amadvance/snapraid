@@ -1403,9 +1403,6 @@ void state_scan(struct snapraid_state* state, int output)
 		uint64_t phy_last;
 		struct snapraid_file* phy_file_last;
 
-		if (!output)
-			printf("Mapping disk %s...\n", disk->name);
-
 		/* check for removed files */
 		node = disk->filelist;
 		while (node) {
