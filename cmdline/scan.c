@@ -313,6 +313,63 @@ static void scan_file_delayed_insert(struct snapraid_scan* scan, struct snapraid
 }
 
 /**
+ * Refresh the file info.
+ *
+ * This is needed by Windows as the normal way to list directories may report not
+ * updated info. Only the GetFileInformationByHandle() func, called file-by-file,
+ * relly ensures to return synced info.
+ */
+static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struct stat* st)
+{
+#if HAVE_LSTAT_SYNC
+	struct snapraid_disk* disk = scan->disk;
+
+	/* if the st_sync is not set, ensure to get synced info */
+	if (st->st_sync == 0) {
+		char path_next[PATH_MAX];
+		struct stat synced_st;
+
+		pathprint(path_next, sizeof(path_next), "%s%s", disk->dir, sub);
+
+		if (lstat_sync(path_next, &synced_st) != 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error in stat file '%s'. %s.\n", path_next, strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (st->st_mtime != synced_st.st_mtime
+			|| st->st_mtimensec != synced_st.st_mtimensec
+		) {
+			fprintf(stderr, "WARNING! Detected uncached time change for file '%s'\n", sub);
+			fprintf(stderr, "It's better if you run SnapRAID without other processes running.\n");
+			st->st_mtime = synced_st.st_mtime;
+			st->st_mtimensec = synced_st.st_mtimensec;
+		}
+
+		if (st->st_size != synced_st.st_size) {
+			fprintf(stderr, "WARNING! Detected uncached size change for file '%s'\n", sub);
+			fprintf(stderr, "It's better if you run SnapRAID without other processes running.\n");
+			st->st_size = synced_st.st_size;
+		}
+
+		if (st->st_ino != synced_st.st_ino) {
+			fprintf(stderr, "DANGER! Detected uncached inode change for file '%s'\n", sub);
+			fprintf(stderr, "Please ensure to run SnapRAID without other processes running.\n");
+			/* at this point, it's too late to change inode */
+			/* and having inconsistent inodes may result to internal failures */
+			/* so, it's better to abort */
+			exit(EXIT_FAILURE);
+		}
+	}
+#else
+	(void)scan;
+	(void)sub;
+	(void)st;
+#endif
+}
+
+/**
  * Keeps the file as it's (or with only a name/inode modification).
  *
  * If the file is kept, nothing has to be done.
@@ -464,7 +521,7 @@ static void scan_file_insert(struct snapraid_scan* scan, struct snapraid_file* f
 /**
  * Processes a file.
  */
-static void scan_file(struct snapraid_scan* scan, int output, const char* sub, const struct stat* st, uint64_t physical)
+static void scan_file(struct snapraid_scan* scan, int output, const char* sub, struct stat* st, uint64_t physical)
 {
 	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
@@ -472,6 +529,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 	int add_insert;
 	int add_change;
 	tommy_node* i;
+	int is_original_file_size_different_than_zero;
 
 	/*
 	 * If the disk has persistent inodes and UUID, try a search on the past inodes,
@@ -619,6 +677,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 
 	add_insert = 0;
 	add_change = 0;
+	is_original_file_size_different_than_zero = 0;
 
 	/* then try finding it by name */
 	file = tommy_hashdyn_search(&disk->pathset, file_path_compare_to_arg, sub, file_path_hash(sub));
@@ -720,19 +779,8 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 
 		/* here if the file is changed but with the correct name */
 
-		/* do a safety check to ensure that the common ext4 case of zeroing */
-		/* the size of a file after a crash doesn't propagate to the backup */
-		if (file->size != 0 && st->st_size == 0) {
-			if (!state->opt.force_zero) {
-				/* LCOV_EXCL_START */
-				fprintf(stderr, "The file '%s%s' has unexpected zero size! If this an expected state\n", disk->dir, sub);
-				fprintf(stderr, "you can '%s' anyway usinge 'snapraid --force-zero %s'\n", state->command, state->command);
-				fprintf(stderr, "Instead, it's possible that after a kernel crash this file was lost,\n");
-				fprintf(stderr, "and you can use 'snapraid --filter %s fix' to recover it.\n", sub);
-				exit(EXIT_FAILURE);
-				/* LCOV_EXCL_STOP */
-			}
-		}
+		/* keep track if the original file was not of zero size */
+		is_original_file_size_different_than_zero = file->size != 0;
 
 		/* it has the same name, so it's an update */
 		add_change = 1;
@@ -742,10 +790,10 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 			printf("update %s%s\n", disk->dir, file->sub);
 		}
 
-		/* remove it */
+		/* remove it, and continue to insert it again */
 		scan_file_remove(scan, file);
 
-		/* and continue to reinsert it */
+		/* and continue to reinsert it again */
 	} else {
 		/* if the name doesn't exist, it's a new file */
 		add_insert = 1;
@@ -756,6 +804,25 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, c
 		}
 
 		/* and continue to insert it */
+	}
+
+	/* refresh the info, to ensure that they are synced, */
+	/* not that we refresh only the info of the new or modified files */
+	/* because this is slow operation */
+	scan_file_refresh(scan, sub, st);
+
+	/* do a safety check to ensure that the common ext4 case of zeroing */
+	/* the size of a file after a crash doesn't propagate to the backup */
+	if (is_original_file_size_different_than_zero && st->st_size == 0) {
+		if (!state->opt.force_zero) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "The file '%s%s' has unexpected zero size! If this an expected state\n", disk->dir, sub);
+			fprintf(stderr, "you can '%s' anyway usinge 'snapraid --force-zero %s'\n", state->command, state->command);
+			fprintf(stderr, "Instead, it's possible that after a kernel crash this file was lost,\n");
+			fprintf(stderr, "and you can use 'snapraid --filter %s fix' to recover it.\n", sub);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
 	}
 
 	/* insert it */
@@ -1110,8 +1177,8 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 
 #if HAVE_STRUCT_DIRENT_D_STAT
 			/* if the st_mode field is missing, takes care to fill it using normal lstat() */
-			/* at now this can happen only in Windows, but we cannot call here lstat_ex(), */
-			/* because we don't know what kind of file is it, and lstat_ex() doesn't always work */
+			/* at now this can happen only in Windows, but we cannot call here lstat_sync(), */
+			/* because we don't know what kind of file is it, and lstat_sync() doesn't always work */
 			if (st->st_mode == 0)  {
 				if (lstat(path_next, st) != 0) {
 					/* LCOV_EXCL_START */
@@ -1139,13 +1206,13 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 				if (!st)
 					st = DSTAT(path_next, dd, &st_buf);
 
-#if HAVE_LSTAT_EX
+#if HAVE_LSTAT_SYNC
 				/* if the st_ino field is missing, takes care to fill it using the extended lstat() */
 				/* this can happen only in Windows */
 				if (st->st_ino == 0) {
-					if (lstat_ex(path_next, st) != 0) {
+					if (lstat_sync(path_next, st) != 0) {
 						/* LCOV_EXCL_START */
-						fprintf(stderr, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
+						fprintf(stderr, "Error in stat file '%s'. %s.\n", path_next, strerror(errno));
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}

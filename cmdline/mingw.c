@@ -366,7 +366,7 @@ static void windows_attr2stat(DWORD FileAttributes, DWORD ReparseTag, struct win
 		switch (ReparseTag) {
 		/* if we don't have the ReparseTag information */
 		case 0 :
-			/* don't set the st_mode, to set it later calling lstat_ex() */
+			/* don't set the st_mode, to set it later calling lstat_sync() */
 			st->st_mode = 0;
 			st->st_desc = "unknown";
 			break;
@@ -457,6 +457,9 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE
 	st->st_ino |= info->nFileIndexLow;
 
 	st->st_dev = info->dwVolumeSerialNumber;
+
+	/* GetFileInformationByHandle() ensures to return synced information */
+	st->st_sync = 1;
 }
 
 /**
@@ -488,6 +491,9 @@ static void windows_stream2stat(const BY_HANDLE_FILE_INFORMATION* info, const FI
 	st->st_ino = stream->FileId.QuadPart;
 
 	st->st_dev = info->dwVolumeSerialNumber;
+
+	/* directory listing doesn't ensure to return synced information */
+	st->st_sync = 0;
 }
 
 /**
@@ -522,6 +528,9 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 
 	/* No device information available */
 	st->st_dev = 0;
+
+	/* directory listing doesn't ensure to return synced information */
+	st->st_sync = 0;
 }
 
 static void windows_finddata2dirent(const WIN32_FIND_DATAW* info, struct windows_dirent* dirent)
@@ -681,7 +690,7 @@ int windows_rmdir(const char* file)
 	return 0;
 }
 
-int lstat_ex(const char* file, struct windows_stat* st)
+int lstat_sync(const char* file, struct windows_stat* st)
 {
 	BY_HANDLE_FILE_INFORMATION info;
 	FILE_ATTRIBUTE_TAG_INFO tag;

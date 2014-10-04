@@ -134,6 +134,7 @@ struct windows_stat {
 	uint32_t st_dev;
 	int st_hidden;
 	const char* st_desc;
+	int st_sync; /**< If the information are in sync with the filesystem. */
 };
 
 /**
@@ -162,7 +163,7 @@ int windows_fstat(int fd, struct windows_stat* st);
  * 'However, the directory entry size and attribute information is updated only'
  * 'for the link through which the change was made.'
  *
- * Use lstat_ex() to override these limitations.
+ * Use lstat_sync() to override these limitations.
  */
 int windows_lstat(const char* file, struct windows_stat* st);
 
@@ -192,8 +193,8 @@ int windows_rmdir(const char* file);
  *
  * Note that instead lstat() works for all the files.
  */
-#define HAVE_LSTAT_EX 1
-int lstat_ex(const char* file, struct windows_stat* st);
+#define HAVE_LSTAT_SYNC 1
+int lstat_sync(const char* file, struct windows_stat* st);
 
 /**
  * Like the C ftruncate().
@@ -282,7 +283,7 @@ int windows_closedir(windows_dir* dirstream);
  * Specifically this happens if we are using FindFirst/FindNext to enumerate
  * the directory.
  *
- * In such cases, call lstat_ex() to fill the missing fields.
+ * In such cases, call lstat_sync() to fill the missing fields.
  */
 void windows_dirent_lstat(const struct windows_dirent* dd, struct windows_stat* st);
 
