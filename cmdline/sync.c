@@ -868,7 +868,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 						/* LCOV_EXCL_START */
 						fprintf(stdlog, "parity_error:%u:%s: Write error\n", i, lev_config_name(l));
 						fprintf(stderr, "DANGER! Write error in the %s disk, it isn't possible to sync.\n", lev_name(l));
-						fprintf(stderr, "Ensure that disk '%s' is sane.\n", lev_config_name(l));
+						fprintf(stderr, "Ensure that disk '%s' is sane and have some free space available.\n", lev_config_name(l));
 						printf("Stopping at block %u\n", i);
 						++error;
 						goto bail;
