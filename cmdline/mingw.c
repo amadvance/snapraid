@@ -1448,7 +1448,7 @@ const char* windows_strerror(int err)
 	if (!last_error)
 		return str;
 
-	snprintf(last_error, len, "%s [%u]", str, (unsigned)GetLastError());
+	snprintf(last_error, len, "%s [%d/%u]", str, err, (unsigned)GetLastError());
 	return last_error;
 }
 
