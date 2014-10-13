@@ -5,6 +5,8 @@ SnapRAID HISTORY
 ===========
  * Adds AVX2 support to improve parity generation speed.
  * A lot faster directory listing for Windows.
+ * More detailed 'status' report with single disk stats and
+   free space available.
  * Prints the time spent waiting for each disk also in 'scrub'.
  * The CPU usage, speed and ETA estimations are now based on the last 100
    seconds rather than from the start.

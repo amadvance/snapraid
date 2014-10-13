@@ -1421,12 +1421,66 @@ int filephy(const char* file, uint64_t size, uint64_t* physical)
 	return 0;
 }
 
-int fsinfo(const char* path, int* has_persistent_inode)
+int fsinfo(const char* path, int* has_persistent_inode, uint64_t* free_space)
 {
-	(void)path;
-
 	/* all FAT/exFAT/NTFS when managed from Windows have persistent inodes */
-	*has_persistent_inode = 1;
+	if (has_persistent_inode)
+		*has_persistent_inode = 1;
+
+	if (free_space) {
+		ULARGE_INTEGER total_free_bytes;
+		DWORD attr;
+		char dir[PATH_MAX];
+
+		if (strlen(path) + 1 > sizeof(dir)) {
+			windows_errno(ERROR_BUFFER_OVERFLOW);
+			return -1;
+		}
+
+		strcpy(dir, path);
+
+		/* get the file attributes */
+		attr = GetFileAttributesW(convert(dir));
+		if (attr == INVALID_FILE_ATTRIBUTES) {
+			DWORD error = GetLastError();
+
+			if (error != ERROR_FILE_NOT_FOUND) {
+				windows_errno(error);
+				return -1;
+			}
+
+			/* if it doesn't exist, we assume a file */
+			/* and we check for the containing dir */
+			attr = 0;
+		}
+
+		/* if it's not a directory, truncate the file name */
+		if ((attr & FILE_ATTRIBUTE_DIRECTORY) == 0) {
+			char* slash = strrchr(dir, '/');
+
+			/**
+			 * Cut the file name, but leave the last slash.
+			 *
+			 * This is done because a MSDN comment about using of UNC paths.
+			 *
+			 * MSDN 'GetDiskFreeSpaceEx function'
+			 * http://msdn.microsoft.com/en-us/library/windows/desktop/aa364937%28v=vs.85%29.aspx
+			 * If this parameter is a UNC name, it must include a trailing backslash,
+			 * for example, "\\MyServer\MyShare\".
+			 */
+			if (slash)
+				slash[1] = 0;
+		}
+
+		/* get the free space of the directory */
+		/* note that it must be a directory */
+		if (!GetDiskFreeSpaceExW(convert(dir), 0, 0, &total_free_bytes)) {
+			windows_errno(GetLastError());
+			return -1;
+		}
+
+		*free_space = total_free_bytes.QuadPart;
+	}
 
 	return 0;
 }

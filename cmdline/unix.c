@@ -205,31 +205,60 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 	return 0;
 }
 
-int fsinfo(const char* path, int* has_persistent_inode)
+int fsinfo(const char* path, int* has_persistent_inode, uint64_t* free_space)
 {
 #if HAVE_STATFS && HAVE_STRUCT_STATFS_F_TYPE
 	struct statfs st;
 
-	if (statfs(path, &st) != 0)
-		return -1;
+	if (statfs(path, &st) != 0) {
+		char dir[PATH_MAX];
+		char* slash;
+
+		if (errno != ENOENT) {
+			return -1;
+		}
+
+		/* if it doesn't exist, we assume a file */
+		/* and we check for the containing dir */
+		if (strlen(path) + 1 > sizeof(dir)) {
+			errno = ENAMETOOLONG;
+			return -1;
+		}
+
+		strcpy(dir, path);
+
+		slash = strrchr(dir, '/');
+		if (!slash)
+			return -1;
+
+		*slash = 0;
+		if (statfs(dir, &st) != 0)
+			return -1;
+	}
 
 	/* to get the fs type check "man stat" or "stat -f -t FILE" */
+	if (has_persistent_inode)
+		switch (st.f_type) {
+		case 0x65735546 : /* FUSE, "fuseblk" in the stat command */
+		case 0x4d44 : /* VFAT, "msdos" in the stat command */
+			*has_persistent_inode = 0;
+			break;
+		default :
+			/* by default assume yes */
+			*has_persistent_inode = 1;
+			break;
+		}
 
-	switch (st.f_type) {
-	case 0x65735546 : /* FUSE, "fuseblk" in the stat command */
-	case 0x4d44 : /* VFAT, "msdos" in the stat command */
-		*has_persistent_inode = 0;
-		break;
-	default :
-		/* by default assume yes */
-		*has_persistent_inode = 1;
-		break;
-	}
+	if (free_space)
+		*free_space = st.f_bsize * (uint64_t)st.f_bfree;
 #else
 	(void)path;
 
 	/* by default assume yes */
-	*has_persistent_inode = 1;
+	if (has_persistent_inode)
+		*has_persistent_inode = 1;
+	if (free_space)
+		*free_space = 0;
 #endif
 
 	return 0;

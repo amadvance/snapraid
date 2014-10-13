@@ -5,10 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
-* In status prints the allocated parity in each data disk.
-In case, also takes into account the extra available space
-in the parity disks.
-
 * Avoid to do optimized move operation if more files with
 same timestamp/size are present.
 

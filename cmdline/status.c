@@ -35,6 +35,14 @@ unsigned day_ago(time_t time, time_t now)
 #define GRAPH_COLUMN 70
 #define GRAPH_ROW 15
 
+static unsigned perc(uint64_t part, uint64_t total)
+{
+	if (!total)
+		return 0;
+
+	return (unsigned)(part * 100 / total);
+}
+
 int state_status(struct snapraid_state* state)
 {
 	block_off_t blockmax;
@@ -55,25 +63,60 @@ int state_status(struct snapraid_state* state)
 	unsigned file_fragmented;
 	unsigned extra_fragment;
 	uint64_t file_size;
+	uint64_t file_block_count;
+	uint64_t file_block_free;
+	uint64_t base = 1024 * 1024 * (uint64_t)1024;
+	block_off_t parity_block_free;
 	unsigned unsynced_blocks;
+	uint64_t free_space;
+	uint64_t wasted;
+	int ret;
 
 	/* get the present time */
 	now = time(0);
 
 	blockmax = parity_size(state);
 
+	fprintf(stdlog, "summary:block_size:%u\n", state->block_size);
+	fprintf(stdlog, "summary:parity_block_count:%u\n", blockmax);
+
+	/* get the free space on the first parity disk */
+	ret = fsinfo(state->parity_path[0], 0, &free_space);
+	if (ret < 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Error accessing file '%s' to get filesystem info. %s.\n", state->parity_path[0], strerror(errno));
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	parity_block_free = free_space / state->block_size;
+
+	fprintf(stdlog, "summary:parity_block_free:%s:%u\n", lev_config_name(0), parity_block_free);
+
+	printf("\n");
+	printf("   Files Fragmented Excess  Wasted  Used    Free  Use Name\n");
+	printf("            Files  Fragments GiB     GiB     GiB          \n");
+
 	/* count fragments */
 	file_count = 0;
 	file_size = 0;
+	file_block_count = 0;
+	file_block_free = 0;
 	file_fragmented = 0;
 	extra_fragment = 0;
 	for (node_disk = state->disklist; node_disk != 0; node_disk = node_disk->next) {
 		struct snapraid_disk* disk = node_disk->data;
 		tommy_node* node;
+		block_off_t i;
 		unsigned disk_file_count = 0;
 		unsigned disk_file_fragmented = 0;
 		unsigned disk_extra_fragment = 0;
+		block_off_t disk_block_count = 0;
 		uint64_t disk_file_size = 0;
+		block_off_t disk_block_free;
+		block_off_t disk_block_max_by_space;
+		block_off_t disk_block_max_by_parity;
+		block_off_t disk_block_max;
 
 		/* for each file in the disk */
 		node = disk->filelist;
@@ -104,32 +147,76 @@ int state_status(struct snapraid_state* state)
 					++file_fragmented;
 					++disk_file_fragmented;
 				}
+
+				disk_block_count += file->blockmax;
 			}
 
 			/* count files */
 			++file_count;
 			++disk_file_count;
 			file_size += file->size;
+			file_block_count += file->blockmax;
 			disk_file_size += file->size;
 		}
 
+		/* get the free space on the disk */
+		ret = fsinfo(disk->dir, 0, &free_space);
+		if (ret < 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error accessing disk '%s' to get filesystem info. %s.\n", disk->dir, strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		disk_block_free = free_space / state->block_size;
+
+		disk_block_max_by_space = disk_block_count + disk_block_free;
+		disk_block_max_by_parity = blockmax + parity_block_free;
+
+		/* the maximum usable space in a disk is limited by both */
+		/* the disk size and by the parity size */
+		disk_block_max = disk_block_max_by_space < disk_block_max_by_parity
+			? disk_block_max_by_space : disk_block_max_by_parity;
+
+		file_block_free += disk_block_max - disk_block_count;
+
+		printf("%8u", disk_file_count);
+		printf("%8u", disk_file_fragmented);
+		printf("%8u", disk_extra_fragment);
+
+		wasted = disk_block_count * (uint64_t)state->block_size - disk_file_size;
+		printf("%6" PRIu64 ".%01" PRIu64, wasted / base, (wasted * 10 / base) % 10);
+		printf("%8" PRIu64, disk_file_size / base);
+		printf("%8" PRIu64, (disk_block_max - disk_block_count) * (uint64_t)state->block_size / base);
+		printf(" %3u%%", perc(disk_block_count, disk_block_max));
+		printf(" %s\n", disk->name);
+
 		fprintf(stdlog, "summary:disk_file_count:%s:%u\n", disk->name, disk_file_count);
+		fprintf(stdlog, "summary:disk_block_count:%s:%u\n", disk->name, disk_block_count);
 		fprintf(stdlog, "summary:disk_fragmented_file_count:%s:%u\n", disk->name, disk_file_fragmented);
 		fprintf(stdlog, "summary:disk_excess_fragment_count:%s:%u\n", disk->name, disk_extra_fragment);
 		fprintf(stdlog, "summary:disk_file_size:%s:%" PRIu64 "\n", disk->name, disk_file_size);
+		fprintf(stdlog, "summary:disk_block_free:%s:%u\n", disk->name, disk_block_free);
+		fprintf(stdlog, "summary:disk_block_max_by_space:%s:%u\n", disk->name, disk_block_max_by_space);
+		fprintf(stdlog, "summary:disk_block_max_by_parity:%s:%u\n", disk->name, disk_block_max_by_parity);
+		fprintf(stdlog, "summary:disk_block_max:%s:%u\n", disk->name, disk_block_max);
 	}
 
-	printf("\n");
+	/* totals */
+	printf(" --------------------------------------------------------------------------\n");
+	printf("%8u", file_count);
+	printf("%8u", file_fragmented);
+	printf("%8u", extra_fragment);
 
-	printf("Files: %u\n", file_count);
-	printf("Fragmented files: %u\n", file_fragmented);
-	printf("Excess fragments: %u\n", extra_fragment);
-	printf("Files size: %" PRIu64 " GiB\n", file_size / (1024 * 1024 * 1024) );
-	printf("Parity size: %" PRIu64 " GiB\n", blockmax * (uint64_t)state->block_size / (1024 * 1024 * 1024) );
-
+	wasted = file_block_count * state->block_size - file_size;
+	printf("%6" PRIu64 ".%01" PRIu64, wasted / base, (wasted * 10 / base) % 10);
+	printf("%8" PRIu64, file_size / base);
+	printf("%8" PRIu64, file_block_free * state->block_size / base);
+	printf(" %3u%%", perc(file_block_count, file_block_count + file_block_free));
 	printf("\n");
 
 	fprintf(stdlog, "summary:file_count:%u\n", file_count);
+	fprintf(stdlog, "summary:file_block_count:%" PRIu64 "\n", file_block_count);
 	fprintf(stdlog, "summary:fragmented_file_count:%u\n", file_fragmented);
 	fprintf(stdlog, "summary:excess_fragment_count:%u\n", extra_fragment);
 	fprintf(stdlog, "summary:file_size:%" PRIu64 "\n", file_size);
@@ -242,16 +329,18 @@ int state_status(struct snapraid_state* state)
 		bar[i] = step;
 	}
 
+	printf("\n\n");
+
 	/* print the graph */
 	for (y = 0; y < GRAPH_ROW; ++y) {
 		if (y == 0)
-			printf("%3u%% ", barmax * 100 / count);
+			printf("%3u%%|", barmax * 100 / count);
 		else if (y == GRAPH_ROW - 1)
-			printf("  0%% ");
+			printf("  0%%|");
 		else if (y == GRAPH_ROW / 2)
-			printf("%3u%% ", barmax * 50 / count);
+			printf("%3u%%|", barmax * 50 / count);
 		else
-			printf("     ");
+			printf("    |");
 		for (x = 0; x < GRAPH_COLUMN; ++x) {
 			unsigned pivot = barmax * (GRAPH_ROW - y) / GRAPH_ROW;
 			/* if it's the baseline */
