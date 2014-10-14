@@ -613,9 +613,9 @@ endif
 	echo --- Delete some dirs in two disks, fix and check with PAR2 using the -d option for each disk
 	rm -r bench/disk2/b
 	rm -r bench/disk5/b
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR1) fix -l test-full1.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) -d disk2 fix -l test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) -d disk5 fix -l test.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR1) check -l test-full1.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) -d disk2 fix -l test-part1.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) -d disk5 fix -l test-part2.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Delete the parity, fix and check with PAR1
 	rm bench/parity
