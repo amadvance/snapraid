@@ -267,7 +267,10 @@ static void import_dir(struct snapraid_state* state, const char* dir)
 		dirent_lstat(dd, &st);
 
 		/* if the st_mode field is missing, takes care to fill it using normal lstat() */
-		/* at now this can happen only in Windows */
+		/* at now this can happen only in Windows (with HAVE_STRUCT_DIRENT_D_STAT defined), */
+		/* becasue we use a directory reading method that doesn't read info about ReparsePoint. */
+		/* Note that here we cannot call here lstat_sync(), because we don't know what kind */
+		/* of file is it, and lstat_sync() doesn't always work */
 		if (st.st_mode == 0)  {
 			if (lstat(path, &st) != 0) {
 				/* LCOV_EXCL_START */

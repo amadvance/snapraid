@@ -355,15 +355,28 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 		if (st->st_mtime != synced_st.st_mtime
 			|| st->st_mtimensec != synced_st.st_mtimensec
 		) {
+#ifndef _WIN32
+			/*
+			 * In Windows having different metadata is expected with open files
+			 * because the metadata in the directory is updated only when the file
+			 * is closed.
+			 *
+			 * See also:
+			 * Why is the file size reported incorrectly for files that are still being written to?
+			 * http://blogs.msdn.com/b/oldnewthing/archive/2011/12/26/10251026.aspx
+			 */
 			fprintf(stderr, "WARNING! Detected uncached time change for file '%s'\n", sub);
 			fprintf(stderr, "It's better if you run SnapRAID without other processes running.\n");
+#endif
 			st->st_mtime = synced_st.st_mtime;
 			st->st_mtimensec = synced_st.st_mtimensec;
 		}
 
 		if (st->st_size != synced_st.st_size) {
+#ifndef _WIN32
 			fprintf(stderr, "WARNING! Detected uncached size change for file '%s'\n", sub);
 			fprintf(stderr, "It's better if you run SnapRAID without other processes running.\n");
+#endif
 			st->st_size = synced_st.st_size;
 		}
 
@@ -1191,8 +1204,10 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 
 #if HAVE_STRUCT_DIRENT_D_STAT
 			/* if the st_mode field is missing, takes care to fill it using normal lstat() */
-			/* at now this can happen only in Windows, but we cannot call here lstat_sync(), */
-			/* because we don't know what kind of file is it, and lstat_sync() doesn't always work */
+			/* at now this can happen only in Windows (with HAVE_STRUCT_DIRENT_D_STAT defined), */
+			/* becasue we use a directory reading method that doesn't read info about ReparsePoint. */
+			/* Note that here we cannot call here lstat_sync(), because we don't know what kind */
+			/* of file is it, and lstat_sync() doesn't always work */
 			if (st->st_mode == 0)  {
 				if (lstat(path_next, st) != 0) {
 					/* LCOV_EXCL_START */
