@@ -185,7 +185,8 @@ int windows_rmdir(const char* file);
 /**
  * Like the C lstat(), but with some limitations.
  *
- * This call fills all the st_* fields of the stat struct.
+ * This call fills all the st_* fields of the stat struct,
+ * and if provided the pointer, also the physical offset.
  *
  * It doesn't work for all kinds of files and directories.
  * You must call it only for regular files.
@@ -194,7 +195,7 @@ int windows_rmdir(const char* file);
  * Note that instead lstat() works for all the files.
  */
 #define HAVE_LSTAT_SYNC 1
-int lstat_sync(const char* file, struct windows_stat* st);
+int lstat_sync(const char* file, struct windows_stat* st, uint64_t* physical);
 
 /**
  * Like the C ftruncate().

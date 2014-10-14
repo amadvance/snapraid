@@ -690,7 +690,56 @@ int windows_rmdir(const char* file)
 	return 0;
 }
 
-int lstat_sync(const char* file, struct windows_stat* st)
+static BOOL GetFilePhysicalOffset(HANDLE h, uint64_t* physical)
+{
+	STARTING_VCN_INPUT_BUFFER svib;
+	unsigned char rpb_buffer[sizeof(RETRIEVAL_POINTERS_BUFFER)];
+	RETRIEVAL_POINTERS_BUFFER* rpb = (RETRIEVAL_POINTERS_BUFFER*)&rpb_buffer;
+	BOOL ret;
+	DWORD n;
+
+	/* in Wine FSCTL_GET_RETRIVIAL_POINTERS is not supported */
+	if (is_wine) {
+		*physical = FILEPHY_UNREPORTED_OFFSET;
+		return TRUE;
+	}
+
+	/* set the output variable, just to be safe */
+	rpb->ExtentCount = 0;
+
+	/* read the physical address */
+	svib.StartingVcn.QuadPart = 0;
+	ret = DeviceIoControl(h, FSCTL_GET_RETRIEVAL_POINTERS, &svib, sizeof(svib), rpb_buffer, sizeof(rpb_buffer), &n, 0);
+	if (!ret) {
+		DWORD error = GetLastError();
+		if (error == ERROR_MORE_DATA) {
+			/* we ignore ERROR_MODE_DATA because we are interested only at the first entry */
+			/* and this is the expected error if the files has more entries */
+		} else if (error == ERROR_HANDLE_EOF) {
+			/* if the file is small, it can be stored in the Master File Table (MFT) */
+			/* and then it doesn't have a physical address */
+			/* In such case we report a specific fake address, to report this special condition */
+			/* that it's different from the 0 offset reported by the underline file system */
+			*physical = FILEPHY_WITHOUT_OFFSET;
+			return TRUE;
+		} else if (error == ERROR_NOT_SUPPORTED) {
+			/* for disks shared on network this operation is not supported */
+			*physical = FILEPHY_UNREPORTED_OFFSET;
+			return TRUE;
+		} else {
+			return FALSE;
+		}
+	}
+
+	if (rpb->ExtentCount < 1)
+		*physical = FILEPHY_UNREPORTED_OFFSET;
+	else
+		*physical = rpb->Extents[0].Lcn.QuadPart + FILEPHY_REAL_OFFSET;
+
+	return TRUE;
+}
+
+int lstat_sync(const char* file, struct windows_stat* st, uint64_t* physical)
 {
 	BY_HANDLE_FILE_INFORMATION info;
 	FILE_ATTRIBUTE_TAG_INFO tag;
@@ -720,6 +769,16 @@ int lstat_sync(const char* file, struct windows_stat* st)
 		CloseHandle(h);
 		windows_errno(error);
 		return -1;
+	}
+
+	/* read the physical offset, only if a pointer is provided */
+	if (physical != 0) {
+		if (!GetFilePhysicalOffset(h, physical)) {
+			DWORD error = GetLastError();
+			CloseHandle(h);
+			windows_errno(error);
+			return -1;
+		}
 	}
 
 	if (!CloseHandle(h)) {
@@ -1346,55 +1405,6 @@ int devuuid(uint64_t device, char* uuid, size_t uuid_size)
 
 	snprintf(uuid, uuid_size, "%08x", (unsigned)device);
 	return 0;
-}
-
-static BOOL GetFilePhysicalOffset(HANDLE h, uint64_t* physical)
-{
-	STARTING_VCN_INPUT_BUFFER svib;
-	unsigned char rpb_buffer[sizeof(RETRIEVAL_POINTERS_BUFFER)];
-	RETRIEVAL_POINTERS_BUFFER* rpb = (RETRIEVAL_POINTERS_BUFFER*)&rpb_buffer;
-	BOOL ret;
-	DWORD n;
-
-	/* in Wine FSCTL_GET_RETRIVIAL_POINTERS is not supported */
-	if (is_wine) {
-		*physical = FILEPHY_UNREPORTED_OFFSET;
-		return TRUE;
-	}
-
-	/* set the output variable, just to be safe */
-	rpb->ExtentCount = 0;
-
-	/* read the physical address */
-	svib.StartingVcn.QuadPart = 0;
-	ret = DeviceIoControl(h, FSCTL_GET_RETRIEVAL_POINTERS, &svib, sizeof(svib), rpb_buffer, sizeof(rpb_buffer), &n, 0);
-	if (!ret) {
-		DWORD error = GetLastError();
-		if (error == ERROR_MORE_DATA) {
-			/* we ignore ERROR_MODE_DATA because we are interested only at the first entry */
-			/* and this is the expected error if the files has more entries */
-		} else if (error == ERROR_HANDLE_EOF) {
-			/* if the file is small, it can be stored in the Master File Table (MFT) */
-			/* and then it doesn't have a physical address */
-			/* In such case we report a specific fake address, to report this special condition */
-			/* that it's different from the 0 offset reported by the underline file system */
-			*physical = FILEPHY_WITHOUT_OFFSET;
-			return TRUE;
-		} else if (error == ERROR_NOT_SUPPORTED) {
-			/* for disks shared on network this operation is not supported */
-			*physical = FILEPHY_UNREPORTED_OFFSET;
-			return TRUE;
-		} else {
-			return FALSE;
-		}
-	}
-
-	if (rpb->ExtentCount < 1)
-		*physical = FILEPHY_UNREPORTED_OFFSET;
-	else
-		*physical = rpb->Extents[0].Lcn.QuadPart + FILEPHY_REAL_OFFSET;
-
-	return TRUE;
 }
 
 int filephy(const char* file, uint64_t size, uint64_t* physical)

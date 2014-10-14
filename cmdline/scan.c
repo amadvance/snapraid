@@ -295,8 +295,10 @@ static void scan_file_delayed_insert(struct snapraid_scan* scan, struct snapraid
 	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
 
-	/* if we sort for physical offsets we have to read them for the new files */
-	if (state->opt.force_order == SORT_PHYSICAL) {
+	/* if we sort for physical offsets we have to read them for new files */
+	if (state->opt.force_order == SORT_PHYSICAL
+		&& file->physical == FILEPHY_UNREAD_OFFSET
+	) {
 		char path_next[PATH_MAX];
 
 		pathprint(path_next, sizeof(path_next), "%s%s", disk->dir, file->sub);
@@ -318,10 +320,13 @@ static void scan_file_delayed_insert(struct snapraid_scan* scan, struct snapraid
  * This is needed by Windows as the normal way to list directories may report not
  * updated info. Only the GetFileInformationByHandle() func, called file-by-file,
  * relly ensures to return synced info.
+ *
+ * If this happens, we read also the physical offset, to avoid to read it later.
  */
-static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struct stat* st)
+static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struct stat* st, uint64_t* physical)
 {
 #if HAVE_LSTAT_SYNC
+	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
 
 	/* if the st_sync is not set, ensure to get synced info */
@@ -331,7 +336,16 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 
 		pathprint(path_next, sizeof(path_next), "%s%s", disk->dir, sub);
 
-		if (lstat_sync(path_next, &synced_st) != 0) {
+		/* if we sort for physical offsets we have to read them for new files */
+		if (state->opt.force_order == SORT_PHYSICAL
+			&& *physical == FILEPHY_UNREAD_OFFSET
+		) {
+			/* do nothing, leave the pointer to read the physical offset */
+		} else {
+			physical = 0; /* set the pointer to 0 to read nothing */
+		}
+
+		if (lstat_sync(path_next, &synced_st, physical) != 0) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "Error in stat file '%s'. %s.\n", path_next, strerror(errno));
 			exit(EXIT_FAILURE);
@@ -809,7 +823,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, s
 	/* refresh the info, to ensure that they are synced, */
 	/* not that we refresh only the info of the new or modified files */
 	/* because this is slow operation */
-	scan_file_refresh(scan, sub, st);
+	scan_file_refresh(scan, sub, st, &physical);
 
 	/* do a safety check to ensure that the common ext4 case of zeroing */
 	/* the size of a file after a crash doesn't propagate to the backup */
@@ -1210,7 +1224,7 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 				/* if the st_ino field is missing, takes care to fill it using the extended lstat() */
 				/* this can happen only in Windows */
 				if (st->st_ino == 0) {
-					if (lstat_sync(path_next, st) != 0) {
+					if (lstat_sync(path_next, st, 0) != 0) {
 						/* LCOV_EXCL_START */
 						fprintf(stderr, "Error in stat file '%s'. %s.\n", path_next, strerror(errno));
 						exit(EXIT_FAILURE);
