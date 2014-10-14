@@ -702,18 +702,21 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		for (j = 0; j < diskmax; ++j) {
 			int read_size;
 			unsigned char hash[HASH_SIZE];
+			struct snapraid_disk* disk;
 			struct snapraid_block* block;
+			struct snapraid_file* file;
 			unsigned block_state;
 
 			/* if the disk position is not used */
-			if (!handle[j].disk) {
+			disk = handle[j].disk;
+			if (!disk) {
 				/* use an empty block */
 				memset(buffer[j], 0, state->block_size);
 				continue;
 			}
 
 			/* if the disk block is not used */
-			block = disk_block_get(handle[j].disk, i);
+			block = disk_block_get(disk, i);
 			if (block == BLOCK_EMPTY) {
 				/* use an empty block */
 				memset(buffer[j], 0, state->block_size);
@@ -748,8 +751,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				continue;
 			}
 
+			/* get the file of this block */
+			file = block_file_get(block);
+
 			/* if we are only hashing, we can skip excluded files and don't event read them */
-			if (state->opt.auditonly && file_flag_has(block_file_get(block), FILE_IS_EXCLUDED)) {
+			if (state->opt.auditonly && file_flag_has(file, FILE_IS_EXCLUDED)) {
 				/* use an empty block */
 				/* in true, this is unnecessary, becase we are not checking any parity */
 				/* but we keep it for completeness */
@@ -758,7 +764,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			}
 
 			/* if the file is closed or different than the current one */
-			if (handle[j].file == 0 || handle[j].file != block_file_get(block)) {
+			if (handle[j].file == 0 || handle[j].file != file) {
 				/* close the old one, if any */
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
@@ -771,9 +777,9 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				}
 
 				/* if fixing, and the file is not excluded, we must open for writing */
-				if (fix && !file_flag_has(block_file_get(block), FILE_IS_EXCLUDED)) {
+				if (fix && !file_flag_has(file, FILE_IS_EXCLUDED)) {
 					/* if fixing, create the file, open for writing and resize if required */
-					ret = handle_create(&handle[j], block_file_get(block), state->file_mode);
+					ret = handle_create(&handle[j], file, state->file_mode);
 					if (ret == -1) {
 						/* LCOV_EXCL_START */
 						if (errno == EACCES) {
@@ -790,11 +796,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					/* check if the file was larger and now truncated */
 					if (handle[j].truncated != 0) {
 						fprintf(stdlog, "File '%s' is larger than expected.\n", handle[j].path);
-						fprintf(stdlog, "error:%u:%s:%s: Size error\n", i, handle[j].disk->name, block_file_get(block)->sub);
+						fprintf(stdlog, "error:%u:%s:%s: Size error\n", i, disk->name, file->sub);
 						++error;
 
 						/* this is already a recovered error */
-						fprintf(stdlog, "fixed:%u:%s:%s: Fixed size\n", i, handle[j].disk->name, block_file_get(block)->sub);
+						fprintf(stdlog, "fixed:%u:%s:%s: Fixed size\n", i, disk->name, file->sub);
 						++recovered_error;
 					}
 
@@ -802,11 +808,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					if (handle[j].created != 0) {
 						/* if fragmented, it may be reopened, so remember that the file */
 						/* was originally missing */
-						file_flag_set(block_file_get(block), FILE_IS_CREATED);
+						file_flag_set(file, FILE_IS_CREATED);
 					}
 				} else {
 					/* if checking or hashing, open the file only for reading */
-					ret = handle_open(&handle[j], block_file_get(block), state->file_mode, stdlog);
+					ret = handle_open(&handle[j], file, state->file_mode, stdlog);
 					if (ret == -1) {
 						/* save the failed block for the check/fix */
 						failed[failed_count].is_bad = 1;
@@ -816,22 +822,22 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						failed[failed_count].handle = &handle[j];
 						++failed_count;
 
-						fprintf(stdlog, "error:%u:%s:%s: Open error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
+						fprintf(stdlog, "error:%u:%s:%s: Open error at position %u\n", i, disk->name, file->sub, block_file_pos(block));
 						++error;
 						continue;
 					}
 
 					/* check if it's a larger file, but not if already notified */
-					if (!file_flag_has(block_file_get(block), FILE_IS_LARGER)
-						&& handle[j].st.st_size > block_file_get(block)->size
+					if (!file_flag_has(file, FILE_IS_LARGER)
+						&& handle[j].st.st_size > file->size
 					) {
 						fprintf(stdlog, "File '%s' is larger than expected.\n", handle[j].path);
-						fprintf(stdlog, "error:%u:%s:%s: Size error\n", i, handle[j].disk->name, block_file_get(block)->sub);
+						fprintf(stdlog, "error:%u:%s:%s: Size error\n", i, disk->name, file->sub);
 						++error;
 
 						/* if fragmented, it may be reopened, so store the notification */
 						/* to prevent to signal and count the error more than one time */
-						file_flag_set(block_file_get(block), FILE_IS_LARGER);
+						file_flag_set(file, FILE_IS_LARGER);
 					}
 				}
 			}
@@ -847,7 +853,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
+				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u\n", i, disk->name, file->sub, block_file_pos(block));
 				++error;
 				continue;
 			}
@@ -888,7 +894,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, handle[j].disk->name, block_file_get(block)->sub, block_file_pos(block));
+				fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, disk->name, file->sub, block_file_pos(block));
 				++error;
 				continue;
 			}
@@ -1076,22 +1082,27 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		/* for all the files prints the final status, and does the final time fix */
 		/* we also ensure to close files after processing the last block */
 		for (j = 0; j < diskmax; ++j) {
-			struct snapraid_block* block = BLOCK_EMPTY;
+			struct snapraid_block* block;
+			struct snapraid_disk* disk;
 			struct snapraid_file* collide_file;
 			struct snapraid_file* file;
 			char path[PATH_MAX];
 			uint64_t inode;
 
-			if (handle[j].disk)
-				block = disk_block_get(handle[j].disk, i);
+			disk = handle[j].disk;
+			if (!disk) {
+				/* if no disk, nothing to do */
+				continue;
+			}
 
+			block = disk_block_get(disk, i);
 			if (!block_has_file(block)) {
 				/* if no file, nothing to do */
 				continue;
 			}
 
 			file = block_file_get(block);
-			pathprint(path, sizeof(path), "%s%s", handle[j].disk->dir, file->sub);
+			pathprint(path, sizeof(path), "%s%s", disk->dir, file->sub);
 
 			/* if the file is open, it must be the correct block one */
 			/* note tha if the file is excluded, it's also possible to have it not opened, */
@@ -1127,7 +1138,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					/* rename it to .unrecoverable */
 					char path_to[PATH_MAX];
 
-					pathprint(path_to, sizeof(path_to), "%s%s.unrecoverable", handle[j].disk->dir, file->sub);
+					pathprint(path_to, sizeof(path_to), "%s%s.unrecoverable", disk->dir, file->sub);
 
 					/* ensure to close the file before renaming */
 					ret = handle_close(&handle[j]);
@@ -1152,7 +1163,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						/* LCOV_EXCL_STOP */
 					}
 
-					fprintf(stdlog, "status:unrecoverable:%s:%s\n", handle[j].disk->name, file->sub);
+					fprintf(stdlog, "status:unrecoverable:%s:%s\n", disk->name, file->sub);
 					if (!state->opt.quiet) {
 						printf("unrecoverable %s\n", path);
 					}
@@ -1167,7 +1178,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					goto close_and_continue;
 				}
 
-				fprintf(stdlog, "status:recovered:%s:%s\n", handle[j].disk->name, file->sub);
+				fprintf(stdlog, "status:recovered:%s:%s\n", disk->name, file->sub);
 				if (!state->opt.quiet) {
 					printf("recovered %s\n", path);
 				}
@@ -1175,7 +1186,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				inode = handle[j].st.st_ino;
 
 				/* search for the corresponding inode */
-				collide_file = tommy_hashdyn_search(&handle[j].disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
+				collide_file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
 
 				/* if the inode is already in the database and it refers at a different file name, */
 				/* we can fix the file time ONLY if the time and size allow to differentiate */
@@ -1204,30 +1215,30 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						/* LCOV_EXCL_STOP */
 					}
 				} else {
-					fprintf(stdlog, "collision:%s:%s:%s: Not setting modification time to avoid inode collision\n", handle[j].disk->name, block_file_get(block)->sub, collide_file->sub);
+					fprintf(stdlog, "collision:%s:%s:%s: Not setting modification time to avoid inode collision\n", disk->name, file->sub, collide_file->sub);
 				}
 			} else {
 				/* we are not fixing, but only checking */
 				/* print just the final status */
 				if (file_flag_has(file, FILE_IS_DAMAGED)) {
 					if (state->opt.auditonly) {
-						fprintf(stdlog, "status:damaged:%s:%s\n", handle[j].disk->name, file->sub);
+						fprintf(stdlog, "status:damaged:%s:%s\n", disk->name, file->sub);
 						if (!state->opt.quiet) {
 							printf("damaged %s\n", path);
 						}
 					} else {
-						fprintf(stdlog, "status:unrecoverable:%s:%s\n", handle[j].disk->name, file->sub);
+						fprintf(stdlog, "status:unrecoverable:%s:%s\n", disk->name, file->sub);
 						if (!state->opt.quiet) {
 							printf("unrecoverable %s\n", path);
 						}
 					}
 				} else if (file_flag_has(file, FILE_IS_FIXED)) {
-					fprintf(stdlog, "status:recoverable:%s:%s\n", handle[j].disk->name, file->sub);
+					fprintf(stdlog, "status:recoverable:%s:%s\n", disk->name, file->sub);
 					if (!state->opt.quiet) {
 						printf("recoverable %s\n", path);
 					}
 				} else {
-					fprintf(stdlog, "status:correct:%s:%s\n", handle[j].disk->name, file->sub);
+					fprintf(stdlog, "status:correct:%s:%s\n", disk->name, file->sub);
 					if (state->opt.verbose) {
 						printf("correct %s\n", path);
 					}
