@@ -393,6 +393,7 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 	(void)scan;
 	(void)sub;
 	(void)st;
+	(void)physical;
 #endif
 }
 
