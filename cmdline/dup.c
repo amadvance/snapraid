@@ -32,8 +32,7 @@ struct snapraid_hash {
 	unsigned char hash[HASH_SIZE]; /**< Hash of the whole file. */
 
 	/* nodes for data structures */
-	tommy_node nodelist;
-	tommy_hashdyn_node nodeset;
+	tommy_hashdyn_node node;
 };
 
 struct snapraid_hash* hash_alloc(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
@@ -87,13 +86,11 @@ int hash_compare(const void* void_arg, const void* void_data)
 void state_dup(struct snapraid_state* state)
 {
 	tommy_hashdyn hashset;
-	tommy_list hashlist;
 	tommy_node* i;
 	unsigned count;
 	data_off_t size;
 
 	tommy_hashdyn_init(&hashset);
-	tommy_list_init(&hashlist);
 
 	count = 0;
 	size = 0;
@@ -131,13 +128,12 @@ void state_dup(struct snapraid_state* state)
 				printf("%12" PRIu64 " %s%s = %s%s\n", file->size, disk->dir, file->sub, dup->disk->dir, dup->file->sub);
 				hash_free(hash);
 			} else {
-				tommy_hashdyn_insert(&hashset, &hash->nodeset, hash, hash32);
-				tommy_list_insert_tail(&hashlist, &hash->nodelist, hash);
+				tommy_hashdyn_insert(&hashset, &hash->node, hash, hash32);
 			}
 		}
 	}
 
-	tommy_list_foreach(&hashlist, (tommy_foreach_func*)hash_free);
+	tommy_hashdyn_foreach(&hashset, (tommy_foreach_func*)hash_free);
 	tommy_hashdyn_done(&hashset);
 
 	printf("\n");
