@@ -60,7 +60,7 @@ int raid_selftest(void);
  * Sets the mode to use. One of RAID_MODE_*.
  *
  * You can change mode at any time, and it will affect next calls to raid_gen(),
- * raid_rec() and raid_recpar().
+ * raid_rec() and raid_rec_dataonly().
  *
  * The two modes are compatible for the first two levels of parity.
  * The third one is different.
@@ -83,11 +83,11 @@ void raid_zero(void *zero);
  * This function computes the specified number of parity blocks of the
  * provided set of data blocks.
  *
- * Each parity block, will allow to recover on data block.
+ * Each parity block, will allow to recover one data block.
  *
  * @nd Number of data blocks.
  * @np Number of parities blocks to compute.
- * @size Size of the blocks pointed by @v. It must be a multipler of 64.
+ * @size Size of the blocks pointed by @v. It must be a multiplier of 64.
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @np) elements. The starting elements are the blocks for
  *   data, following with the parity blocks.
@@ -123,7 +123,7 @@ void raid_gen(int nd, int np, size_t size, void **v);
  *   @nd + 1, just like positions in the @v vector.
  * @nd Number of data blocks.
  * @np Number of parity blocks.
- * @size Size of the blocks pointed by @v. It must be a multipler of 64.
+ * @size Size of the blocks pointed by @v. It must be a multiplier of 64.
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @np) elements. The starting elements are the blocks
  *   for data, following with the parity blocks.
@@ -143,7 +143,7 @@ void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v);
  * @ip[] Vector of @nr indexes of the parity blocks to use for recovering.
  *   The indexes start from 0. They must be in order.
  * @nd Number of data blocks.
- * @size Size of the blocks pointed by @v. It must be a multipler of 64.
+ * @size Size of the blocks pointed by @v. It must be a multiplier of 64.
  * @v Vector of pointers to the blocks of data and parity.
  *   It has (@nd + @ip[@nr - 1] + 1) elements. The starting elements are the
  *   blocks for data, following with the parity blocks.
