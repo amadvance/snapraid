@@ -20,6 +20,7 @@
 #include "util.h"
 #include "elem.h"
 #include "import.h"
+#include "search.h"
 #include "state.h"
 #include "parity.h"
 #include "handle.h"
@@ -369,7 +370,8 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 			/* if we have the hash for it */
 			if ((block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP)
 			        /* try to fetch the block using the known hash */
-				&& state_import_fetch(state, rehash, failed[j].block->hash, buffer[failed[j].index]) == 0
+				&& (state_import_fetch(state, rehash, failed[j].block, buffer[failed[j].index]) == 0
+					|| state_search_fetch(state, rehash, failed[j].block, buffer[failed[j].index]) == 0)
 			) {
 				/* we already have corrected it! */
 				fprintf(stdlog, "hash_import: Fixed entry %u\n", j);
@@ -498,7 +500,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 				/* try to fetch the old block using the old hash for CHG and DELETED blocks */
 			} else if ((block_state == BLOCK_STATE_CHG || block_state == BLOCK_STATE_DELETED)
 				&& hash_is_real(failed[j].block->hash)
-				&& state_import_fetch(state, rehash, failed[j].block->hash, buffer[failed[j].index]) == 0) {
+				&& state_import_fetch(state, rehash, failed[j].block, buffer[failed[j].index]) == 0) {
 
 				/* note that from now the buffer is definitively lost */
 				/* we can do this only because it's the last retry of recovering */

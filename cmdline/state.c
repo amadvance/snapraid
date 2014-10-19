@@ -19,6 +19,7 @@
 
 #include "elem.h"
 #include "import.h"
+#include "search.h"
 #include "state.h"
 #include "util.h"
 #include "parity.h"
@@ -106,6 +107,7 @@ void state_init(struct snapraid_state* state)
 	tommy_list_init(&state->importlist);
 	tommy_hashdyn_init(&state->importset);
 	tommy_hashdyn_init(&state->previmportset);
+	tommy_hashdyn_init(&state->searchset);
 	tommy_arrayblkof_init(&state->infoarr, sizeof(snapraid_info));
 }
 
@@ -116,8 +118,10 @@ void state_done(struct snapraid_state* state)
 	tommy_list_foreach(&state->contentlist, (tommy_foreach_func*)content_free);
 	tommy_list_foreach(&state->filterlist, (tommy_foreach_func*)filter_free);
 	tommy_list_foreach(&state->importlist, (tommy_foreach_func*)import_file_free);
+	tommy_hashdyn_foreach(&state->searchset, (tommy_foreach_func*)search_file_free);
 	tommy_hashdyn_done(&state->importset);
 	tommy_hashdyn_done(&state->previmportset);
+	tommy_hashdyn_done(&state->searchset);
 	tommy_arrayblkof_done(&state->infoarr);
 }
 

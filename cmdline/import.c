@@ -148,11 +148,12 @@ void import_file_free(struct snapraid_import_file* file)
 	free(file);
 }
 
-int state_import_fetch(struct snapraid_state* state, int rehash, const unsigned char* hash, unsigned char* buffer)
+int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid_block* missing_block, unsigned char* buffer)
 {
 	struct snapraid_import_block* block;
 	int ret;
 	int f;
+	const unsigned char* hash = missing_block->hash;
 	unsigned block_size = state->block_size;
 	unsigned read_size;
 	unsigned char buffer_hash[HASH_SIZE];

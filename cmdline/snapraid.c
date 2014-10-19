@@ -21,6 +21,7 @@
 #include "util.h"
 #include "elem.h"
 #include "import.h"
+#include "search.h"
 #include "state.h"
 #include "raid/raid.h"
 
@@ -234,6 +235,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_EXPECT_FAILURE 277
 #define OPT_TEST_RUN 278
 #define OPT_TEST_FORCE_SCAN_WINFIND 279
+#define OPT_TEST_IMPORT_CONTENT 280
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -332,6 +334,9 @@ struct option long_options[] = {
 	/* Use the FindFirst/Next approach in Windows to list files */
 	{ "test-force-scan-winfind", 0, 0, OPT_TEST_FORCE_SCAN_WINFIND },
 
+	/* Alternative import working by data */
+	{ "test-import-content", 1, 0, OPT_TEST_IMPORT_CONTENT },
+
 	{ 0, 0, 0, 0 }
 };
 #endif
@@ -383,7 +388,8 @@ int main(int argc, char* argv[])
 	int olderthan;
 	char* e;
 	const char* command;
-	const char* import;
+	const char* import_timestamp;
+	const char* import_content;
 	const char* log;
 	int lock;
 	const char* gen_conf;
@@ -409,7 +415,8 @@ int main(int argc, char* argv[])
 	filter_error = 0;
 	percentage = -1;
 	olderthan = -1;
-	import = 0;
+	import_timestamp = 0;
+	import_content = 0;
 	log = 0;
 	lock = 0;
 	gen_conf = 0;
@@ -491,13 +498,22 @@ int main(int argc, char* argv[])
 			}
 			break;
 		case 'i' :
-			if (import) {
+			if (import_timestamp) {
 				/* LCOV_EXCL_START */
-				fprintf(stderr, "Import directory '%s' already specified as '%s'\n", optarg, import);
+				fprintf(stderr, "Import directory '%s' already specified as '%s'\n", optarg, import_timestamp);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
-			import = optarg;
+			import_timestamp = optarg;
+			break;
+		case OPT_TEST_IMPORT_CONTENT :
+			if (import_content) {
+				/* LCOV_EXCL_START */
+				fprintf(stderr, "Import directory '%s' already specified as '%s'\n", optarg, import_content);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+			import_content = optarg;
 			break;
 		case 'l' :
 			if (log) {
@@ -790,7 +806,7 @@ int main(int argc, char* argv[])
 	case OPERATION_FIX :
 		break;
 	default :
-		if (import != 0) {
+		if (import_timestamp != 0 || import_content != 0) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "You cannot import with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
@@ -1011,8 +1027,10 @@ int main(int argc, char* argv[])
 	} else {
 		state_read(&state);
 
-		if (import != 0)
-			state_import(&state, import);
+		if (import_timestamp != 0)
+			state_search(&state, import_timestamp);
+		if (import_content != 0)
+			state_import(&state, import_content);
 
 		/* apply the command line filter */
 		state_filter(&state, &filterlist_file, &filterlist_disk, filter_missing, filter_error);

@@ -63,7 +63,7 @@ void import_file_free(struct snapraid_import_file* file);
  * Fetch a block from the specified hash.
  * Return ==0 if the block is found, and copied into buffer.
  */
-int state_import_fetch(struct snapraid_state* state, int prevhash, const unsigned char* hash, unsigned char* buffer);
+int state_import_fetch(struct snapraid_state* state, int prevhash, struct snapraid_block* missing_block, unsigned char* buffer);
 
 /**
  * Import files from the specified directory.

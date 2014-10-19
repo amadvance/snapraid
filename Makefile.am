@@ -35,6 +35,7 @@ snapraid_SOURCES = \
 	cmdline/selftest.c \
 	cmdline/speed.c \
 	cmdline/import.c \
+	cmdline/search.c \
 	cmdline/mingw.c \
 	cmdline/unix.c
 
@@ -74,6 +75,7 @@ noinst_HEADERS = \
 	cmdline/spooky2test.c \
 	cmdline/fnmatch.h \
 	cmdline/import.h \
+	cmdline/search.h \
 	cmdline/mingw.h \
 	cmdline/unix.h
 
@@ -508,7 +510,14 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-scrub-even scrub
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
-	echo --- Delete files from three disks and check/fix with import in PAR2
+	echo --- Delete files from three disks and check/fix with import by data in PAR2
+	rm -r bench/disk1/a
+	rm -r bench/disk2/a
+	mv bench/disk3/a bench/a
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-import-content bench/a -c $(PAR2) fix -l test.log
+	rm -r bench/a
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	echo --- Delete files from three disks and check/fix with import by timestamp in PAR2
 	rm -r bench/disk1/a
 	rm -r bench/disk2/a
 	mv bench/disk3/a bench/a

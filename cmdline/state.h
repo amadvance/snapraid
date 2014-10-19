@@ -127,6 +127,7 @@ struct snapraid_state {
 	tommy_list importlist; /**< List of import file. */
 	tommy_hashdyn importset; /**< Hashtable by hash of all the import blocks. */
 	tommy_hashdyn previmportset; /**< Hashtable by prevhash of all the import blocks. Valid only if we are in a rehash state. */
+	tommy_hashdyn searchset; /**< Hashtable by timestamp of all the search files. */
 	tommy_arrayblkof infoarr; /**< Block information array. */
 
 	/**
