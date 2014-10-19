@@ -92,16 +92,27 @@ struct snapraid_filter {
  * data used to compute the parity, because the sync process was interrupted at an unknown point,
  * and the parity may or may not be updated.
  *
- * For this reson we clear all such hashes when reading the state from an incomplete sync when
- * starting a new sync, because sync is affected by sych hashes.
- * Check and fix are instead able to work with unsynced hashes.
- * Scrub is not affected because it ignores CHG/DELETED blocks.
+ * For this reson we clear all such hashes when reading the state from an incomplete sync before
+ * starting a new sync, because sync is affected by such hashes, as sync updates the parity, only
+ * if the new data read for CHG blocks has a mismatching hash.
+ * Clearing is done setting the ::clear_past_hash flag before reading the state.
+ * No clearing is done in other commands, as check and fix are instead able to work with unsynced
+ * hashes, and scrub ignores CHG/DELETED blocks.
  */
 #define BLOCK_STATE_CHG 2
 
 /**
  * The block is new and hashed.
  * This happens when a new block overwrite a just removed block, or an empty space.
+ *
+ * Note that when the file copy heuristic is enabled, the REP blocks may be set
+ * using this euristic, meaning that the hash may be wrong.
+ *
+ * For this reason, when the ::force_nocopy flag is enabled in sync, we convert all the REP blocks
+ * to CHG, invalidating the stored hash.
+ * Clearing is done setting the ::clear_past_hash flag before reading the state.
+ * No cleaering is done in other commands, as they don't stop the process like in sync
+ * when there is a false silent error.
  *
  * The block hash field IS set, and it represents the hash of the new data.
  * The parity for this disk is not updated.
@@ -120,10 +131,12 @@ struct snapraid_filter {
  * data used to compute the parity, because the sync process was interrupted at an unknown point,
  * and the parity may or may not be updated.
  *
- * For this reson we clear all such hashes when reading the state from an incomplete sync when
- * starting a new sync, because sync is affected by sych hashes.
- * Check and fix are instead able to work with unsynced hashes.
- * Scrub is not affected because it ignores CHG/DELETED blocks.
+ * A now the sync process is not affected by DELETED hash, so clearing won't be really needed,
+ * but considering that we have to do it for CHG blocks, we do it also for DELETED ones,
+ * clearing all the past hashes.
+ * Clearing is done setting the ::clear_past_hash flag before reading the state.
+ * No clearing is done in other commands, as check and fix are instead able to work with unsynced
+ * hashes, and scrub ignores CHG/DELETED blocks.
  */
 #define BLOCK_STATE_DELETED 4
 

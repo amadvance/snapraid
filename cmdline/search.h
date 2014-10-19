@@ -55,5 +55,10 @@ int state_search_fetch(struct snapraid_state* state, int prevhash, struct snapra
  */
 void state_search(struct snapraid_state* state, const char* dir);
 
+/**
+ * Import files from all the data disks.
+ */
+void state_search_array(struct snapraid_state* state);
+
 #endif
 

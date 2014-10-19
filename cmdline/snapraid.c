@@ -724,18 +724,25 @@ int main(int argc, char* argv[])
 
 	switch (operation) {
 	case OPERATION_SYNC :
+	case OPERATION_CHECK :
+	case OPERATION_FIX :
+		break;
+	default :
+		if (opt.force_nocopy) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "You cannot use -N, --force-nocopy with the '%s' command\n", command);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	switch (operation) {
+	case OPERATION_SYNC :
 		break;
 	default :
 		if (opt.prehash) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "You cannot use -h, --pre-hash with the '%s' command\n", command);
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
-
-		if (opt.force_nocopy) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "You cannot use -N, --force-nocopy with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1027,10 +1034,18 @@ int main(int argc, char* argv[])
 	} else {
 		state_read(&state);
 
-		if (import_timestamp != 0)
-			state_search(&state, import_timestamp);
-		if (import_content != 0)
-			state_import(&state, import_content);
+		/* if we are also trying to recover */
+		if (!state.opt.auditonly) {
+			/* import the user specified dirs */
+			if (import_timestamp != 0)
+				state_search(&state, import_timestamp);
+			if (import_content != 0)
+				state_import(&state, import_content);
+
+			/* import from all the array */
+			if (!state.opt.force_nocopy)
+				state_search_array(&state);
+		}
 
 		/* apply the command line filter */
 		state_filter(&state, &filterlist_file, &filterlist_disk, filter_missing, filter_error);

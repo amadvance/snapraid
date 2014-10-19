@@ -630,16 +630,19 @@ SnapRAID provides the following options:
         This option can be used only with the "fix" command.
 
     -N, --force-nocopy
-        In the "sync" command, disables the copy detection heuristic.
-        Without this option SnapRAID assumes that files with the
-        same name, size, and nanosecond timestamp are copies with the
+        In the "sync", "check and "fix" commands, disables the copy
+        detection heuristic.
+        Without this option SnapRAID assumes that files with same
+        attributes, like name, size and timestamp are copies with the
         same data.
-        This allows to identify copied files from one dir to another,
-        and to reuse the already computed hash information to detect
-        silent errors in the copy.
+        This allows to identify copied or moved files from one disk
+        to another, and to reuse the already computed hash information
+        to detect silent errors or to recover missing files.
         This behavior, in some rare cases, may result in false positives,
-        and this option allow to resolve them.
-        This option can be used only with the "sync" command.
+        or in a slow process due the many hash verifications, and this
+        option allows to resolve them.
+        This option can be used only with the "sync", "check" and "fix"
+        commands.
 
     -F, --force-full
         In the "sync" command, forces a full rebuild of the parity.
@@ -1064,8 +1067,8 @@ You can get a detailed list of all the unrecoverable blocks in the fix.log file
 checking all the lines starting with "unrecoverable:"
 
 If you are not satisfied of the recovering, you can retry it as many time you wish.
-For example, if you have moved away some files from other disks after the last "sync",
-you can retry to put them inplace, and retry the "fix".
+For example, if you have remove some files after the last "sync", you can retry
+to put them inplace, and retry the "fix".
 
 If you are satisfied of the recovering, you can now proceed further,
 but take care that after syncing you will no more able to retry the

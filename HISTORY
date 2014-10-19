@@ -3,10 +3,19 @@ SnapRAID HISTORY
 
 7.0 2014/10
 ===========
- * Adds AVX2 support to improve parity generation speed.
- * A lot faster directory listing for Windows.
+ * In 'check' and 'fix' the array is scanned to find any moved files
+   that could be used to recover missing data. Files are identified by
+   timestamp, and then they are recognized also if moved to a different
+   disk. Note that even if there are false positive they are identified
+   checking the hash, so they have not effect, besides making the
+   process a little slower. To disable this new behaviour you can use
+   the -N, --force-nocopy option.
+ * The -i, --import command now identifies files by timestamp making it
+   very fast in importing directories.
  * More detailed 'status' report with single disk stats and
    free space available.
+ * A lot faster directory listing for Windows.
+ * Adds AVX2 support to improve parity generation speed.
  * Prints the time spent waiting for each disk also in 'scrub'.
  * The CPU usage, speed and ETA estimations are now based on the last 100
    seconds rather than from the start.

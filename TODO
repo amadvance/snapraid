@@ -104,18 +104,6 @@ File with the same name will get an extra extension like ".1", ".2".
 
 * Use threads to scan all the disks at the same time.
 
-* When checking/fixing opens someway renamed files.
-We have various report of failed fix for rename operations.
-Most of the time the log files became so big, that users cannot even open it,
-and then have no way to understand the problem.
-This could be fixed opening the file by inode.
-This is possible in Windows Vista with OpenFileById, but not in *nix.
-But we can anyway scan all files, and search for inode.
-Btrfs has BTRFS_IOC_INO_PATHS for root use.
-http://stackoverflow.com/questions/4606774/why-cant-files-be-manipulated-by-inode
-Besides that, scanning all files and comparing inode and/or nano timestamp
-is likely better anyway as it leave more options open.
-
 * Create a filesystem snapshot at every sync, and use it in all the other commands
 automatically.
 At the next sync, drop the old snapshot and create a new one.

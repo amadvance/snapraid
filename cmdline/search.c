@@ -238,3 +238,17 @@ void state_search(struct snapraid_state* state, const char* dir)
 	search_dir(state, dir);
 }
 
+void state_search_array(struct snapraid_state* state)
+{
+	tommy_node* i;
+
+	/* import from all the disks */
+	for (i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+
+		printf("Scanning disk %s...\n", disk->name);
+
+		search_dir(state, disk->dir);
+	}
+}
+

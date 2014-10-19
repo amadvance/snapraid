@@ -1356,7 +1356,10 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			/* if we are disabling the copy optimization */
 			/* we want also to clear any already previously stored information */
 			/* in other sync commands */
-			if (state->opt.force_nocopy
+			/* note that this is required only in sync, and we detect */
+			/* this using the clear_past_hash flag */
+			if (state->clear_past_hash
+				&& state->opt.force_nocopy
 				&& block_state_get(block) == BLOCK_STATE_REP
 			) {
 				/* set the hash value to INVALID */
@@ -2880,7 +2883,10 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 					/* if we are disabling the copy optimization */
 					/* we want also to clear any already previously stored information */
 					/* in other sync commands */
-					if (state->opt.force_nocopy
+					/* note that this is required only in sync, and we detect */
+					/* this using the clear_past_hash flag */
+					if (state->clear_past_hash
+						&& state->opt.force_nocopy
 						&& block_state_get(block) == BLOCK_STATE_REP
 					) {
 						/* set the hash value to INVALID */

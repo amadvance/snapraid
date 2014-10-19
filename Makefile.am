@@ -524,6 +524,13 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -i bench/a -c $(PAR2) fix -l test.log
 	rm -r bench/a
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	echo --- Delete files from three disks and check/fix with automatic import in PAR2
+	rm -r bench/disk1/a
+	rm -r bench/disk2/a
+	mv bench/disk3/a bench/disk1/a_from_disk3
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
+	rm -r bench/disk1/a_from_disk3
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Abort sync late with additions, delete them and recover with PAR2
 	echo --- This triggers the recovering with q using p to check the validity
 	cp -pR bench/disk1/a bench/disk1/a_copy
