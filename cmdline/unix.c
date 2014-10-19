@@ -193,7 +193,7 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 	/* In this way we keep them in the directory traversal order */
 	/* that at least keeps files in the same directory together. */
 	/* Note also that in newer filesystem with snapshot, like ZFS, */
-	/* the inode doesn't represent even less the disk position, becasue files */
+	/* the inode doesn't represent even less the disk position, because files */
 	/* are not overwritten in place, but rewritten in another location */
 	/* of the disk. */
 	*physical = FILEPHY_UNREPORTED_OFFSET;

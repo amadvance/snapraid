@@ -248,7 +248,7 @@ int fsinfo(const char* path, int* has_persistent_inode, uint64_t* free_space);
 /**
  * Get the tick counter value.
  *
- * Note that the frequency is unspecified, becasue the time measure
+ * Note that the frequency is unspecified, because the time measure
  * is meant to be used to compare the ratio between usage times.
  */
 uint64_t tick(void);

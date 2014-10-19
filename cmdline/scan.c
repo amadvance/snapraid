@@ -1206,7 +1206,7 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 #if HAVE_STRUCT_DIRENT_D_STAT
 			/* if the st_mode field is missing, takes care to fill it using normal lstat() */
 			/* at now this can happen only in Windows (with HAVE_STRUCT_DIRENT_D_STAT defined), */
-			/* becasue we use a directory reading method that doesn't read info about ReparsePoint. */
+			/* because we use a directory reading method that doesn't read info about ReparsePoint. */
 			/* Note that here we cannot call here lstat_sync(), because we don't know what kind */
 			/* of file is it, and lstat_sync() doesn't always work */
 			if (st->st_mode == 0)  {
