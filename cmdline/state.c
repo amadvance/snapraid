@@ -4254,20 +4254,20 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 
 int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, block_off_t blockmax, block_off_t countmax)
 {
+	time_t now;
+
 	if (state->opt.gui) {
 		fprintf(stdlog, "run:begin:%u:%u:%u\n", blockstart, blockmax, countmax);
 		fflush(stdlog);
-	} else {
-		time_t now;
-
-		now = time(0);
-
-		state->progress_whole_start = now;
-
-		state->progress_tick = 0;
-		state->progress_ptr = 0;
-		state->progress_wasted = 0;
 	}
+
+	now = time(0);
+
+	state->progress_whole_start = now;
+
+	state->progress_tick = 0;
+	state->progress_ptr = 0;
+	state->progress_wasted = 0;
 
 	/* stop if requested */
 	if (global_interrupt) {
@@ -4310,15 +4310,14 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 	}
 }
 
-#define PROGRESS_CLEAR "          "
-
 void state_progress_stop(struct snapraid_state* state)
 {
 	time_t now;
 
 	now = time(0);
 
-	printf("\n");
+	if (!state->opt.gui)
+		printf("\n");
 
 	state->progress_interruption = now;
 }
@@ -4337,104 +4336,113 @@ void state_progress_restart(struct snapraid_state* state)
 		state->progress_wasted += now - state->progress_interruption;
 }
 
+#define PROGRESS_CLEAR "          "
+
 int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize)
 {
-	if (state->opt.gui) {
-		fprintf(stdlog, "run:pos:%u:%u:%" PRIu64 "\n", blockpos, countpos, countsize);
-		fflush(stdlog);
-	} else {
-		time_t now;
-		int pred;
+	time_t now;
+	int pred;
 
-		now = time(0);
+	now = time(0);
 
-		/* previous position */
-		pred = state->progress_ptr + PROGRESS_MAX - 1;
-		if (pred >= PROGRESS_MAX)
-			pred -= PROGRESS_MAX;
+	/* previous position */
+	pred = state->progress_ptr + PROGRESS_MAX - 1;
+	if (pred >= PROGRESS_MAX)
+		pred -= PROGRESS_MAX;
 
-		/* if the previous measure is different */
-		if (state->progress_tick == 0 || state->progress_time[pred] != now) {
-			uint64_t tick_total;
-			uint64_t tick_cpu;
+	/* if the previous measure is different */
+	if (state->progress_tick == 0 || state->progress_time[pred] != now) {
+		uint64_t tick_total;
+		uint64_t tick_cpu;
+		unsigned out_perc = 0;
+		unsigned out_speed = 0;
+		unsigned out_cpu = 0;
+		unsigned out_eta = 0;
 
-			tick_total = state->tick_cpu + state->tick_io;
-			tick_cpu = state->tick_cpu;
+		tick_total = state->tick_cpu + state->tick_io;
+		tick_cpu = state->tick_cpu;
 
-			printf("%u%%, %u MiB", countpos * 100 / countmax, (unsigned)(countsize / (1024 * 1024)));
+		/* completion percentage */
+		if (countmax)
+			out_perc = countpos * 100 / countmax;
 
-			/* if we have at least 5 measures */
-			if (state->progress_tick >= 5) {
-				int oldest;
-				int past;
-				time_t delta_time;
-				block_off_t delta_pos;
-				data_off_t delta_size;
-				uint64_t delta_tick_total;
-				uint64_t delta_tick_cpu;
+		/* if we have at least 5 measures */
+		if (state->progress_tick >= 5) {
+			int oldest;
+			int past;
+			time_t delta_time;
+			block_off_t delta_pos;
+			data_off_t delta_size;
+			uint64_t delta_tick_total;
+			uint64_t delta_tick_cpu;
 
-				/* number of past measures */
-				past = state->progress_tick;
+			/* number of past measures */
+			past = state->progress_tick;
 
-				/* drop the oldest ones, to promptly */
-				/* skip the startup phase */
-				past -= past / 5;
+			/* drop the oldest ones, to promptly */
+			/* skip the startup phase */
+			past -= past / 5;
 
-				/* check how much we can go in the past */
-				if (past >= PROGRESS_MAX) {
-					/* the vector is filled, so we are already in position */
-					/* to get the possible oldest one */
-					oldest = state->progress_ptr;
-				} else {
-					/* go backward the number of positions selected */
-					oldest = state->progress_ptr + PROGRESS_MAX - past;
-					if (oldest >= PROGRESS_MAX)
-						oldest -= PROGRESS_MAX;
-				}
-
-				delta_time = now - state->progress_time[oldest];
-				delta_pos = countpos - state->progress_pos[oldest];
-				delta_size = countsize - state->progress_size[oldest];
-				delta_tick_total = tick_total - state->progress_tick_total[oldest];
-				delta_tick_cpu = tick_cpu - state->progress_tick_cpu[oldest];
-
-				if (delta_time != 0)
-					printf(", %u MiB/s", (unsigned)(delta_size / (1024 * 1024) / delta_time));
-
-				if (delta_tick_total != 0)
-					printf(", CPU %" PRIu64 "%%", delta_tick_cpu * 100U / delta_tick_total);
-
-				/* estimate the remaining time */
-				if (delta_pos != 0) {
-					unsigned m, h;
-					data_off_t to_do = countmax - countpos;
-
-					m = to_do * delta_time / (60 * delta_pos);
-
-					h = m / 60;
-					m = m % 60;
-
-					printf(", %u:%02u ETA%s", h, m, PROGRESS_CLEAR);
-				}
+			/* check how much we can go in the past */
+			if (past >= PROGRESS_MAX) {
+				/* the vector is filled, so we are already in position */
+				/* to get the possible oldest one */
+				oldest = state->progress_ptr;
+			} else {
+				/* go backward the number of positions selected */
+				oldest = state->progress_ptr + PROGRESS_MAX - past;
+				if (oldest >= PROGRESS_MAX)
+					oldest -= PROGRESS_MAX;
 			}
-			printf("\r");
-			fflush(stdout);
 
-			/* store the new measure */
-			state->progress_time[state->progress_ptr] = now;
-			state->progress_pos[state->progress_ptr] = countpos;
-			state->progress_size[state->progress_ptr] = countsize;
-			state->progress_tick_cpu[state->progress_ptr] = tick_cpu;
-			state->progress_tick_total[state->progress_ptr] = tick_total;
+			delta_time = now - state->progress_time[oldest];
+			delta_pos = countpos - state->progress_pos[oldest];
+			delta_size = countsize - state->progress_size[oldest];
+			delta_tick_total = tick_total - state->progress_tick_total[oldest];
+			delta_tick_cpu = tick_cpu - state->progress_tick_cpu[oldest];
 
-			/* next position */
-			++state->progress_ptr;
-			if (state->progress_ptr >= PROGRESS_MAX)
-				state->progress_ptr -= PROGRESS_MAX;
+			/* estimate the speed in MiB/s */
+			if (delta_time != 0)
+				out_speed = (unsigned)(delta_size / (1024 * 1024) / delta_time);
 
-			/* one more measure */
-			++state->progress_tick;
+			/* estimate the cpu usage percentage */
+			if (delta_tick_total != 0)
+				out_cpu = (unsigned)(delta_tick_cpu * 100U / delta_tick_total);
+
+			/* estimate the remaining time in minutes */
+			if (delta_pos != 0)
+				out_eta = (countmax - countpos) * delta_time / (60 * delta_pos);
 		}
+
+		if (state->opt.gui) {
+			fprintf(stdlog, "run:pos:%u:%u:%" PRIu64 ":%u:%u:%u:%u\n", blockpos, countpos, countsize, out_perc, out_eta, out_speed, out_cpu);
+			fflush(stdlog);
+		} else {
+			printf("%u%%, %u MiB", out_perc, (unsigned)(countsize / (1024 * 1024)));
+			if (out_speed)
+				printf(", %u MiB/s", out_speed);
+			if (out_cpu)
+				printf(", CPU %u%%", out_cpu);
+			if (out_eta)
+				printf(", %u:%02u ETA", out_eta / 60, out_eta % 60);
+			printf("%s\r", PROGRESS_CLEAR);
+			fflush(stdout);
+		}
+
+		/* store the new measure */
+		state->progress_time[state->progress_ptr] = now;
+		state->progress_pos[state->progress_ptr] = countpos;
+		state->progress_size[state->progress_ptr] = countsize;
+		state->progress_tick_cpu[state->progress_ptr] = tick_cpu;
+		state->progress_tick_total[state->progress_ptr] = tick_total;
+
+		/* next position */
+		++state->progress_ptr;
+		if (state->progress_ptr >= PROGRESS_MAX)
+			state->progress_ptr -= PROGRESS_MAX;
+
+		/* one more measure */
+		++state->progress_tick;
 	}
 
 	/* stop if requested */

@@ -233,7 +233,7 @@ endif
 	rm bench/disk5/a/9*
 	rm bench/disk6/a/9*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) diff > output.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) sync -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	echo --- Move some files, sync and check
 	mv bench/disk1/a/9* bench/disk4/a
