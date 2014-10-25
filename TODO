@@ -18,9 +18,11 @@ get misinterpreted.
 * Don't insert new files if they are too recent and opened by other
 applications.
 
-* Create filler files in data disk to avoid to put in too much data.
-
 * Provides a way to rename disks in content file.
+
+* Allow to filter also in diff, to limit the output
+to some dir or disk. Also excluding a specific disk could
+be useful
 
 * Checks if splitting hash/parity computation in 4K pages
 can improve speed in sync. That should increase cache locality,
