@@ -26,16 +26,16 @@
  */
 
 /** \file
- * Dynamic array based on blocks of fixed sizes.
+ * Dynamic array based on blocks of fixed size.
  *
- * This array is able to grow dynamically upon request.
+ * This array is able to grow dynamically upon request, without any reallocation.
  *
- * The resize involve an allocation of a new array block, without reallocating
- * the already allocated memory, and then not increasing the heap fragmentation,
+ * The grow operation involves an allocation of a new array block, without reallocating
+ * the already used memory, and then not increasing the heap fragmentation,
  * and minimize the space occupation.
- * This means that the address of the allocated blocks never change.
+ * This also implies that the address of the stored elements never change.
  *
- * Allocated blocks are always of the same fixed size of 64 Ki pointers.
+ * Allocated blocks are always of the same fixed size of 4 Ki pointers.
  */
 
 #ifndef __TOMMYARRAYBLK_H
@@ -55,11 +55,12 @@
 #define TOMMY_ARRAYBLK_SIZE (4 * 1024)
 
 /**
- * Array.
+ * Array container type.
+ * \note Don't use internal fields directly, but access the container only using functions.
  */
 typedef struct tommy_arrayblk_struct {
 	tommy_array block; /**< Array of blocks. */
-	unsigned size; /**< Currently allocated and initialized size. */
+	tommy_count_t count; /**< Number of initialized elements in the array. */
 } tommy_arrayblk;
 
 /**
@@ -73,21 +74,21 @@ void tommy_arrayblk_init(tommy_arrayblk* array);
 void tommy_arrayblk_done(tommy_arrayblk* array);
 
 /**
- * Grow the size up to the specified value.
+ * Grows the size up to the specified value.
  * All the new elements in the array are initialized with the 0 value.
  */
-void tommy_arrayblk_grow(tommy_arrayblk* array, unsigned size);
+void tommy_arrayblk_grow(tommy_arrayblk* array, tommy_count_t size);
 
 /**
  * Gets a reference of the element at the specified position.
  * You must be sure that space for this position is already
  * allocated calling tommy_arrayblk_grow().
  */
-tommy_inline void** tommy_arrayblk_ref(tommy_arrayblk* array, unsigned pos)
+tommy_inline void** tommy_arrayblk_ref(tommy_arrayblk* array, tommy_count_t pos)
 {
 	void** ptr;
 
-	assert(pos < array->size);
+	assert(pos < array->count);
 
 	ptr = tommy_cast(void**, tommy_array_get(&array->block, pos / TOMMY_ARRAYBLK_SIZE));
 
@@ -99,7 +100,7 @@ tommy_inline void** tommy_arrayblk_ref(tommy_arrayblk* array, unsigned pos)
  * You must be sure that space for this position is already
  * allocated calling tommy_arrayblk_grow().
  */
-tommy_inline void tommy_arrayblk_set(tommy_arrayblk* array, unsigned pos, void* element)
+tommy_inline void tommy_arrayblk_set(tommy_arrayblk* array, tommy_count_t pos, void* element)
 {
 	*tommy_arrayblk_ref(array, pos) = element;
 }
@@ -109,7 +110,7 @@ tommy_inline void tommy_arrayblk_set(tommy_arrayblk* array, unsigned pos, void* 
  * You must be sure that space for this position is already
  * allocated calling tommy_arrayblk_grow().
  */
-tommy_inline void* tommy_arrayblk_get(tommy_arrayblk* array, unsigned pos)
+tommy_inline void* tommy_arrayblk_get(tommy_arrayblk* array, tommy_count_t pos)
 {
 	return *tommy_arrayblk_ref(array, pos);
 }
@@ -119,7 +120,7 @@ tommy_inline void* tommy_arrayblk_get(tommy_arrayblk* array, unsigned pos)
  */
 tommy_inline void tommy_arrayblk_insert(tommy_arrayblk* array, void* element)
 {
-	unsigned pos = array->size;
+	tommy_count_t pos = array->count;
 
 	tommy_arrayblk_grow(array, pos + 1);
 
@@ -129,9 +130,9 @@ tommy_inline void tommy_arrayblk_insert(tommy_arrayblk* array, void* element)
 /**
  * Gets the initialized size of the array.
  */
-tommy_inline unsigned tommy_arrayblk_size(tommy_arrayblk* array)
+tommy_inline tommy_count_t tommy_arrayblk_size(tommy_arrayblk* array)
 {
-	return array->size;
+	return array->count;
 }
 
 /**

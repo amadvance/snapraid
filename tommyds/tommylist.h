@@ -108,7 +108,7 @@
 /* list */
 
 /**
- * Double linked list for collisions into hashtables.
+ * Double linked list type.
  */
 typedef tommy_node* tommy_list;
 
@@ -309,6 +309,31 @@ tommy_inline tommy_bool_t tommy_list_empty(tommy_list* list)
 
 /**
  * Calls the specified function for each element in the list.
+ *
+ * You can use this function to deallocate all the elements
+ * inserted in a list.
+ *
+ * \code
+ * tommy_list list;
+ *
+ * // initializes the list
+ * tommy_list_init(&list);
+ *
+ * ...
+ *
+ * // creates an object
+ * struct object* obj = malloc(sizeof(struct object));
+ *
+ * ...
+ *
+ * // insert it in the list
+ * tommy_list_insert_tail(&list, &obj->node, obj);
+ *
+ * ...
+ *
+ * // deallocates all the objects iterating the list
+ * tommy_list_foreach(&list, free);
+ * \endcode
  */
 tommy_inline void tommy_list_foreach(tommy_list* list, tommy_foreach_func* func)
 {

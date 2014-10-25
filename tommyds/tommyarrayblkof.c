@@ -30,16 +30,17 @@
 /******************************************************************************/
 /* array */
 
-void tommy_arrayblkof_init(tommy_arrayblkof* array, unsigned element_size)
+void tommy_arrayblkof_init(tommy_arrayblkof* array, tommy_size_t element_size)
 {
 	tommy_array_init(&array->block);
+
 	array->element_size = element_size;
-	array->size = 0;
+	array->count = 0;
 }
 
 void tommy_arrayblkof_done(tommy_arrayblkof* array)
 {
-	unsigned i;
+	tommy_count_t i;
 
 	for (i = 0; i < tommy_array_size(&array->block); ++i)
 		tommy_free(tommy_array_get(&array->block, i));
@@ -47,16 +48,16 @@ void tommy_arrayblkof_done(tommy_arrayblkof* array)
 	tommy_array_done(&array->block);
 }
 
-void tommy_arrayblkof_grow(tommy_arrayblkof* array, unsigned size)
+void tommy_arrayblkof_grow(tommy_arrayblkof* array, tommy_count_t count)
 {
-	unsigned block_max;
-	unsigned block_mac;
+	tommy_count_t block_max;
+	tommy_count_t block_mac;
 
-	if (array->size >= size)
+	if (array->count >= count)
 		return;
-	array->size = size;
+	array->count = count;
 
-	block_max = (size + TOMMY_ARRAYBLK_SIZE - 1) / TOMMY_ARRAYBLK_SIZE;
+	block_max = (count + TOMMY_ARRAYBLK_SIZE - 1) / TOMMY_ARRAYBLK_SIZE;
 	block_mac = tommy_array_size(&array->block);
 
 	if (block_mac < block_max) {
