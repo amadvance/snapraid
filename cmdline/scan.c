@@ -82,7 +82,7 @@ static void scan_link_insert(struct snapraid_scan* scan, struct snapraid_link* l
 /**
  * Processes a symbolic link.
  */
-static void scan_link(struct snapraid_scan* scan, int output, const char* sub, const char* linkto, unsigned link_flag)
+static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, const char* linkto, unsigned link_flag)
 {
 	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
@@ -119,7 +119,7 @@ static void scan_link(struct snapraid_scan* scan, int output, const char* sub, c
 			++scan->count_change;
 
 			fprintf(stdlog, "scan:update:%s:%s\n", disk->name, link->sub);
-			if (output) {
+			if (is_diff) {
 				printf("update %s%s\n", disk->dir, link->sub);
 			}
 
@@ -136,7 +136,7 @@ static void scan_link(struct snapraid_scan* scan, int output, const char* sub, c
 		++scan->count_insert;
 
 		fprintf(stdlog, "scan:add:%s:%s\n", disk->name, sub);
-		if (output) {
+		if (is_diff) {
 			printf("add %s%s\n", disk->dir, sub);
 		}
 
@@ -549,7 +549,7 @@ static void scan_file_insert(struct snapraid_scan* scan, struct snapraid_file* f
 /**
  * Processes a file.
  */
-static void scan_file(struct snapraid_scan* scan, int output, const char* sub, struct stat* st, uint64_t physical)
+static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, struct stat* st, uint64_t physical)
 {
 	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
@@ -616,7 +616,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, s
 				}
 #endif
 				/* it's a hardlink */
-				scan_link(scan, output, sub, file->sub, FILE_IS_HARDLINK);
+				scan_link(scan, is_diff, sub, file->sub, FILE_IS_HARDLINK);
 				return;
 			}
 
@@ -639,7 +639,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, s
 				++scan->count_move;
 
 				fprintf(stdlog, "scan:move:%s:%s:%s\n", disk->name, file->sub, sub);
-				if (output) {
+				if (is_diff) {
 					printf("move %s%s -> %s%s\n", disk->dir, file->sub, disk->dir, sub);
 				}
 
@@ -772,7 +772,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, s
 				++scan->count_restore;
 
 				fprintf(stdlog, "scan:restore:%s:%s\n", disk->name, sub);
-				if (output) {
+				if (is_diff) {
 					printf("restore %s%s\n", disk->dir, sub);
 				}
 
@@ -814,7 +814,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, s
 		add_change = 1;
 
 		fprintf(stdlog, "scan:update:%s:%s\n", disk->name, file->sub);
-		if (output) {
+		if (is_diff) {
 			printf("update %s%s\n", disk->dir, file->sub);
 		}
 
@@ -827,7 +827,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, s
 		add_insert = 1;
 
 		fprintf(stdlog, "scan:add:%s:%s\n", disk->name, sub);
-		if (output) {
+		if (is_diff) {
 			printf("add %s%s\n", disk->dir, sub);
 		}
 
@@ -844,11 +844,13 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, s
 	if (is_original_file_size_different_than_zero && st->st_size == 0) {
 		if (!state->opt.force_zero) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "The file '%s%s' has unexpected zero size! If this an expected state\n", disk->dir, sub);
-			fprintf(stderr, "you can '%s' anyway usinge 'snapraid --force-zero %s'\n", state->command, state->command);
-			fprintf(stderr, "Instead, it's possible that after a kernel crash this file was lost,\n");
+			fprintf(stderr, "The file '%s%s' has unexpected zero size!\n", disk->dir, sub);
+			fprintf(stderr, "It's possible that after a kernel crash this file was lost,\n");
 			fprintf(stderr, "and you can use 'snapraid --filter %s fix' to recover it.\n", sub);
-			exit(EXIT_FAILURE);
+			if (!is_diff) {
+				fprintf(stderr, "If this an expected condition you can '%s' anyway using 'snapraid --force-zero %s'\n", state->command, state->command);
+				exit(EXIT_FAILURE);
+			}
 			/* LCOV_EXCL_STOP */
 		}
 	}
@@ -886,7 +888,7 @@ static void scan_file(struct snapraid_scan* scan, int output, const char* sub, s
 				++scan->count_copy;
 
 				fprintf(stdlog, "scan:copy:%s:%s:%s:%s\n", other_disk->name, other_file->sub, disk->name, file->sub);
-				if (output) {
+				if (is_diff) {
 					printf("copy %s%s -> %s%s\n", other_disk->dir, other_file->sub, disk->dir, file->sub);
 				}
 
@@ -1048,7 +1050,7 @@ struct stat* dstat(const char* file, struct stat* st)
  * Processes a directory.
  * Return != 0 if at least one file or link is processed.
  */
-static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, const char* sub)
+static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, const char* sub)
 {
 	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
@@ -1249,7 +1251,7 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 				}
 #endif
 
-				scan_file(scan, output, sub_next, st, FILEPHY_UNREAD_OFFSET);
+				scan_file(scan, is_diff, sub_next, st, FILEPHY_UNREAD_OFFSET);
 				processed = 1;
 			} else {
 				if (state->opt.verbose) {
@@ -1279,7 +1281,7 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 				subnew[ret] = 0;
 
 				/* process as a symbolic link */
-				scan_link(scan, output, sub_next, subnew, FILE_IS_SYMLINK);
+				scan_link(scan, is_diff, sub_next, subnew, FILE_IS_SYMLINK);
 				processed = 1;
 			} else {
 				if (state->opt.verbose) {
@@ -1306,7 +1308,7 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 					pathslash(path_next, sizeof(path_next));
 					pathcpy(sub_dir, sizeof(sub_dir), sub_next);
 					pathslash(sub_dir, sizeof(sub_dir));
-					if (scan_dir(scan, output, path_next, sub_dir) == 0) {
+					if (scan_dir(scan, is_diff, path_next, sub_dir) == 0) {
 						/* scan the directory as empty dir */
 						scan_emptydir(scan, sub_next);
 					}
@@ -1342,7 +1344,7 @@ static int scan_dir(struct snapraid_scan* scan, int output, const char* dir, con
 	return processed;
 }
 
-void state_scan(struct snapraid_state* state, int output)
+void state_scan(struct snapraid_state* state, int is_diff)
 {
 	tommy_node* i;
 	tommy_node* j;
@@ -1351,7 +1353,7 @@ void state_scan(struct snapraid_state* state, int output)
 
 	tommy_list_init(&scanlist);
 
-	if (output)
+	if (is_diff)
 		printf("Comparing...\n");
 
 	/* first scan all the directory and find new and deleted files */
@@ -1378,7 +1380,7 @@ void state_scan(struct snapraid_state* state, int output)
 
 		tommy_list_insert_tail(&scanlist, &scan->node, scan);
 
-		if (!output)
+		if (!is_diff)
 			printf("Scanning disk %s...\n", disk->name);
 
 		/* check if the disk supports persistent inodes */
@@ -1416,7 +1418,7 @@ void state_scan(struct snapraid_state* state, int output)
 			}
 		}
 
-		scan_dir(scan, output, disk->dir, "");
+		scan_dir(scan, is_diff, disk->dir, "");
 	}
 
 	/* we split the search in two phases because to detect files */
@@ -1446,7 +1448,7 @@ void state_scan(struct snapraid_state* state, int output)
 				++scan->count_remove;
 
 				fprintf(stdlog, "scan:remove:%s:%s\n", disk->name, file->sub);
-				if (output) {
+				if (is_diff) {
 					printf("remove %s%s\n", disk->dir, file->sub);
 				}
 
@@ -1467,7 +1469,7 @@ void state_scan(struct snapraid_state* state, int output)
 				++scan->count_remove;
 
 				fprintf(stdlog, "scan:remove:%s:%s\n", disk->name, link->sub);
-				if (output) {
+				if (is_diff) {
 					printf("remove %s%s\n", disk->dir, link->sub);
 				}
 
@@ -1584,20 +1586,22 @@ void state_scan(struct snapraid_state* state, int output)
 			if (scan->count_equal == 0 && scan->count_move == 0 && scan->count_restore == 0 && (scan->count_remove != 0 || scan->count_change != 0)) {
 				if (!done) {
 					done = 1;
-					fprintf(stderr, "All the files previously present in disk '%s' at dir '%s'", disk->name, disk->dir);
+					fprintf(stderr, "WARNING! All the files previously present in disk '%s' at dir '%s'", disk->name, disk->dir);
 				} else {
 					fprintf(stderr, ", disk '%s' at dir '%s'", disk->name, disk->dir);
 				}
 			}
 		}
 		if (done) {
-			fprintf(stderr, " are now missing or rewritten!\n");
+			fprintf(stderr, "\nare now missing or rewritten!\n");
 			fprintf(stderr, "This could happen when deleting all the files from a disk,\n");
-			fprintf(stderr, "and restoring them with a program not setting correctly the timestamps.\n");
-			fprintf(stderr, "If this is really what you are doing, you can '%s' anyway, \n", state->command);
-			fprintf(stderr, "using 'snapraid --force-empty %s'.\n", state->command);
-			fprintf(stderr, "Instead, it's possible that you have some disks not mounted.\n");
-			exit(EXIT_FAILURE);
+			fprintf(stderr, "and restoring them with a program that it's not setting\n");
+			fprintf(stderr, "correctly the timestamps.\n");
+			fprintf(stderr, "It's also possible that you have some disks not mounted.\n");
+			if (!is_diff) {
+				fprintf(stderr, "If you want to '%s' anyway, use 'snapraid --force-empty %s'.", state->command, state->command);
+				exit(EXIT_FAILURE);
+			}
 		}
 	}
 
@@ -1680,7 +1684,7 @@ void state_scan(struct snapraid_state* state, int output)
 	}
 
 
-	if (state->opt.verbose || output) {
+	if (state->opt.verbose || is_diff) {
 		struct snapraid_scan total;
 		int no_difference;
 
@@ -1703,8 +1707,8 @@ void state_scan(struct snapraid_state* state, int output)
 			total.count_insert += scan->count_insert;
 		}
 
-		if (state->opt.verbose || output) {
-			if (output)
+		if (state->opt.verbose || is_diff) {
+			if (is_diff)
 				printf("\n");
 			printf("%8u equal\n", total.count_equal);
 			printf("%8u moved\n", total.count_move);
@@ -1726,7 +1730,7 @@ void state_scan(struct snapraid_state* state, int output)
 		no_difference = !total.count_move && !total.count_copy && !total.count_restore
 			&& !total.count_change && !total.count_remove && !total.count_insert;
 
-		if (output) {
+		if (is_diff) {
 			if (no_difference) {
 				printf("No differences\n");
 			} else {
