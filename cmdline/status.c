@@ -69,7 +69,7 @@ int state_status(struct snapraid_state* state)
 	block_off_t parity_block_free;
 	unsigned unsynced_blocks;
 	uint64_t free_space;
-	uint64_t wasted;
+	uint64_t all_wasted;
 	int ret;
 
 	/* get the present time */
@@ -104,6 +104,7 @@ int state_status(struct snapraid_state* state)
 	file_block_free = 0;
 	file_fragmented = 0;
 	extra_fragment = 0;
+	all_wasted = 0;
 	for (node_disk = state->disklist; node_disk != 0; node_disk = node_disk->next) {
 		struct snapraid_disk* disk = node_disk->data;
 		tommy_node* node;
@@ -117,6 +118,7 @@ int state_status(struct snapraid_state* state)
 		block_off_t disk_block_max_by_space;
 		block_off_t disk_block_max_by_parity;
 		block_off_t disk_block_max;
+		uint64_t wasted;
 
 		/* for each file in the disk */
 		node = disk->filelist;
@@ -173,18 +175,26 @@ int state_status(struct snapraid_state* state)
 		disk_block_max_by_space = disk_block_count + disk_block_free;
 		disk_block_max_by_parity = blockmax + parity_block_free;
 
-		/* the maximum usable space in a disk is limited by both */
-		/* the disk size and by the parity size */
-		disk_block_max = disk_block_max_by_space < disk_block_max_by_parity
-			? disk_block_max_by_space : disk_block_max_by_parity;
+		/* the maximum usable space in a disk is limited by the smaller */
+		/* between the disk size and the parity size */
+		/* the wasted space is the space that have to leave */
+		/* free on the data disk, when the parity is filled up */
+		if (disk_block_max_by_space < disk_block_max_by_parity) {
+			disk_block_max = disk_block_max_by_space;
+			/* no wasted space, as we have enough parity */
+			wasted = 0;
+		} else {
+			disk_block_max = disk_block_max_by_parity;
+			/* wasted space is the difference of the two maximum size */
+			wasted = (disk_block_max_by_space - disk_block_max_by_parity) * (uint64_t)state->block_size;
+		}
 
+		all_wasted += wasted;
 		file_block_free += disk_block_max - disk_block_count;
 
 		printf("%8u", disk_file_count);
 		printf("%8u", disk_file_fragmented);
 		printf("%8u", disk_extra_fragment);
-
-		wasted = disk_block_count * (uint64_t)state->block_size - disk_file_size;
 		printf("%6" PRIu64 ".%01" PRIu64, wasted / base, (wasted * 10 / base) % 10);
 		printf("%8" PRIu64, disk_file_size / base);
 		printf("%8" PRIu64, (disk_block_max - disk_block_count) * (uint64_t)state->block_size / base);
@@ -207,9 +217,7 @@ int state_status(struct snapraid_state* state)
 	printf("%8u", file_count);
 	printf("%8u", file_fragmented);
 	printf("%8u", extra_fragment);
-
-	wasted = file_block_count * state->block_size - file_size;
-	printf("%6" PRIu64 ".%01" PRIu64, wasted / base, (wasted * 10 / base) % 10);
+	printf("%6" PRIu64 ".%01" PRIu64, all_wasted / base, (all_wasted * 10 / base) % 10);
 	printf("%8" PRIu64, file_size / base);
 	printf("%8" PRIu64, file_block_free * state->block_size / base);
 	printf(" %3u%%", perc(file_block_count, file_block_count + file_block_free));
