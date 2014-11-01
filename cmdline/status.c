@@ -114,6 +114,7 @@ int state_status(struct snapraid_state* state)
 		unsigned disk_extra_fragment = 0;
 		block_off_t disk_block_count = 0;
 		uint64_t disk_file_size = 0;
+		block_off_t disk_block_latest_used = 0;
 		block_off_t disk_block_free;
 		block_off_t disk_block_max_by_space;
 		block_off_t disk_block_max_by_parity;
@@ -129,7 +130,7 @@ int state_status(struct snapraid_state* state)
 			node = node->next; /* next node */
 
 			/* check fragmentation */
-			if (file->size) {
+			if (file->blockmax != 0) {
 				block_off_t prev_pos;
 				int fragmented;
 
@@ -143,6 +144,11 @@ int state_status(struct snapraid_state* state)
 						++disk_extra_fragment;
 					}
 					prev_pos = parity_pos;
+				}
+
+				/* keep track of latest block used */
+				if (file->blockvec[file->blockmax - 1].parity_pos > disk_block_latest_used) {
+					disk_block_latest_used = file->blockvec[file->blockmax - 1].parity_pos;
 				}
 
 				if (fragmented) {
@@ -177,7 +183,7 @@ int state_status(struct snapraid_state* state)
 
 		/* the maximum usable space in a disk is limited by the smaller */
 		/* between the disk size and the parity size */
-		/* the wasted space is the space that have to leave */
+		/* the wasted space is the space that we have to leave */
 		/* free on the data disk, when the parity is filled up */
 		if (disk_block_max_by_space < disk_block_max_by_parity) {
 			disk_block_max = disk_block_max_by_space;
@@ -206,6 +212,7 @@ int state_status(struct snapraid_state* state)
 		fprintf(stdlog, "summary:disk_fragmented_file_count:%s:%u\n", disk->name, disk_file_fragmented);
 		fprintf(stdlog, "summary:disk_excess_fragment_count:%s:%u\n", disk->name, disk_extra_fragment);
 		fprintf(stdlog, "summary:disk_file_size:%s:%" PRIu64 "\n", disk->name, disk_file_size);
+		fprintf(stdlog, "summary:disk_block_allocated:%s:%u\n", disk->name, disk_block_latest_used + 1);
 		fprintf(stdlog, "summary:disk_block_free:%s:%u\n", disk->name, disk_block_free);
 		fprintf(stdlog, "summary:disk_block_max_by_space:%s:%u\n", disk->name, disk_block_max_by_space);
 		fprintf(stdlog, "summary:disk_block_max_by_parity:%s:%u\n", disk->name, disk_block_max_by_parity);
@@ -229,6 +236,7 @@ int state_status(struct snapraid_state* state)
 	fprintf(stdlog, "summary:excess_fragment_count:%u\n", extra_fragment);
 	fprintf(stdlog, "summary:file_size:%" PRIu64 "\n", file_size);
 	fprintf(stdlog, "summary:parity_size:%" PRIu64 "\n", blockmax * (uint64_t)state->block_size);
+	fprintf(stdlog, "summary:parity_size_max:%" PRIu64 "\n", (blockmax + parity_block_free) * (uint64_t)state->block_size);
 	fprintf(stdlog, "summary:hash:%s\n", hash_config_name(state->hash));
 	fprintf(stdlog, "summary:prev_hash:%s\n", hash_config_name(state->prevhash));
 	fprintf(stdlog, "summary:best_hash:%s\n", hash_config_name(state->besthash));
