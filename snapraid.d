@@ -427,7 +427,7 @@ Commands
 
 	This option can be used to change the hash kind used,
 	typically when upgrading from a 32 bits system to a 64
-	bits one to switch from MurmurHash3 to the faster SpookyHash.
+	bits one, to switch from MurmurHash3 to the faster SpookyHash.
 
 	If you are already using the optimal hash, this command
 	do nothing and tells you that nothing has to be done.
@@ -762,7 +762,7 @@ Configuration
 
   blocksize SIZE_IN_KIBIBYTES
 	Defines the basic block size in kibi bytes of the parity.
-	One kibi bytes is 1024 bytes. The default is blocksize is 256
+	One kibi bytes is 1024 bytes. The default blocksize is 256
 	and it should work for most cases.
 
 	A reason to use a different blocksize is if your system has less
@@ -794,6 +794,10 @@ Configuration
 	block size, you are going to waste 12 GiB of parity, that may result
 	in 12 GiB less space available in the data disk.
 
+	You can get the amount of wasted space in each disk using the "status"
+	command. This is the amount of space that you must leave free in the data
+	disks, or use for files not included in the array.
+
 	To avoid to problem, you can use a bigger partition for parity.
 	For example, if you have the parity partition bigger than 12 GiB
 	than data disks, you have enough extra space to handle up to 100000
@@ -807,9 +811,6 @@ Configuration
 	This results in about 1.5% of extra space. Meaning about 48 GiB for
 	a 3 TiB disk, that allows about 400000 files in each data disk without
 	any wasted space.
-
-	Note also, that any file in data disks that is excluded from the parity
-	computation, counts for its size as extra parity space for such data disk.
 
     autosave SIZE_IN_GIBIBYTES
 	Automatically save the state when syncing after the specified amount
