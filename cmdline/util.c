@@ -1444,7 +1444,7 @@ static int malloc_printn(int f, size_t value)
 	int i;
 
 	if (!value) {
-		return write(2, buf, 2);
+		return write(f, "0", 1);
 	}
 
 	i = sizeof(buf);
