@@ -61,8 +61,12 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			struct snapraid_block* block = BLOCK_EMPTY;
 			struct snapraid_disk* disk = handle[j].disk;
 
-			if (disk)
-				block = disk_block_get(disk, i);
+			if (!disk) {
+				/* if no disk, nothing to do */
+				continue;
+			}
+
+			block = disk_block_get(disk, i);
 
 			if (!block_has_file(block)) {
 				/* if no file, nothing to do */
