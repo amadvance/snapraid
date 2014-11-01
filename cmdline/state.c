@@ -1218,7 +1218,6 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 	block_off_t paritymax;
 	unsigned line;
 	unsigned count_file;
-	unsigned count_block;
 	unsigned count_hardlink;
 	unsigned count_symlink;
 	unsigned count_dir;
@@ -1231,7 +1230,6 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 	blockmax = 0;
 	paritymax = 0;
 	count_file = 0;
-	count_block = 0;
 	count_hardlink = 0;
 	count_symlink = 0;
 	count_dir = 0;
@@ -1395,9 +1393,6 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				file = 0;
 				disk = 0;
 			}
-
-			/* stat */
-			++count_block;
 		} else if (strcmp(tag, "inf") == 0) {
 			/* "inf" command */
 			block_off_t v_pos;
@@ -2180,7 +2175,6 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 
 	if (state->opt.verbose) {
 		printf("%8u files\n", count_file);
-		printf("%8u blocks\n", count_block);
 		printf("%8u hardlinks\n", count_hardlink);
 		printf("%8u symlinks\n", count_symlink);
 		printf("%8u empty dirs\n", count_dir);
@@ -2190,7 +2184,6 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 static void state_write_text(struct snapraid_state* state, STREAM* f)
 {
 	unsigned count_file;
-	unsigned count_block;
 	unsigned count_hardlink;
 	unsigned count_symlink;
 	unsigned count_dir;
@@ -2200,7 +2193,6 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 	int info_has_rehash;
 
 	count_file = 0;
-	count_block = 0;
 	count_hardlink = 0;
 	count_symlink = 0;
 	count_dir = 0;
@@ -2414,8 +2406,6 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
-
-				++count_block;
 			}
 
 			++count_file;
@@ -2543,7 +2533,6 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 
 	if (state->opt.verbose) {
 		printf("%8u files\n", count_file);
-		printf("%8u blocks\n", count_block);
 		printf("%8u hardlinks\n", count_hardlink);
 		printf("%8u symlinks\n", count_symlink);
 		printf("%8u empty dirs\n", count_dir);
@@ -2626,7 +2615,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 	block_off_t blockmax;
 	block_off_t paritymax;
 	unsigned count_file;
-	unsigned count_block;
 	unsigned count_hardlink;
 	unsigned count_symlink;
 	unsigned count_dir;
@@ -2639,7 +2627,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 	blockmax = 0;
 	paritymax = 0;
 	count_file = 0;
-	count_block = 0;
 	count_hardlink = 0;
 	count_symlink = 0;
 	count_dir = 0;
@@ -2915,9 +2902,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 					/* insert the block in the block array */
 					tommy_arrayblk_set(&disk->blockarr, v_pos, block);
-
-					/* stat */
-					++count_block;
 
 					/* go to the next block */
 					++v_idx;
@@ -3489,7 +3473,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 	if (state->opt.verbose) {
 		printf("%8u files\n", count_file);
-		printf("%8u blocks\n", count_block);
 		printf("%8u hardlinks\n", count_hardlink);
 		printf("%8u symlinks\n", count_symlink);
 		printf("%8u empty dirs\n", count_dir);
@@ -3499,7 +3482,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 static void state_write_binary(struct snapraid_state* state, STREAM* f)
 {
 	unsigned count_file;
-	unsigned count_block;
 	unsigned count_hardlink;
 	unsigned count_symlink;
 	unsigned count_dir;
@@ -3512,7 +3494,6 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	int mapping_idx;
 
 	count_file = 0;
-	count_block = 0;
 	count_hardlink = 0;
 	count_symlink = 0;
 	count_dir = 0;
@@ -3747,8 +3728,6 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 					/* LCOV_EXCL_STOP */
 				}
 
-				count_block += v_count;
-
 				/* next begin position */
 				begin = end;
 			}
@@ -3924,7 +3903,6 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 
 	if (state->opt.verbose) {
 		printf("%8u files\n", count_file);
-		printf("%8u blocks\n", count_block);
 		printf("%8u hardlinks\n", count_hardlink);
 		printf("%8u symlinks\n", count_symlink);
 		printf("%8u empty dirs\n", count_dir);

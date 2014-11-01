@@ -1,7 +1,7 @@
 SnapRAID HISTORY
 ================
 
-7.0 2014/10
+7.0 2014/11
 ===========
  * In 'check' and 'fix' the array is scanned to find any moved files
    that could be used to recover missing data. Files are identified by
