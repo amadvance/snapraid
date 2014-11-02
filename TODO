@@ -15,6 +15,8 @@ get misinterpreted.
 
 - Minor
 
+* Spinup all drives at startup.
+
 * Don't insert new files if they are too recent and opened by other
 applications.
 
@@ -22,19 +24,12 @@ applications.
 
 * Allow to filter also in diff, to limit the output
 to some dir or disk. Also excluding a specific disk could
-be useful
+be useful.
 
 * Checks if splitting hash/parity computation in 4K pages
 can improve speed in sync. That should increase cache locality,
 because we read the data two times for hash and and parity,
 and if we manage to keep it in the cache, we should save time.
-
-* In the content file save the timestamp of the parity files.
-If they do not match, stop the processing.
-This can be done to avoid to use not synchronized parity and content files,
-resulting in wrong data.
-But if the sync process is killed we need a way to resyncronize them.
-Or maybe we should allow parity newer than content, but not viceversa.
 
 * Add an option for dup to list only duplicates with different name.
 This supposing that if a file has the same name, it's intentionally duplicated.
@@ -80,13 +75,6 @@ rest of the block.
 The problem is that we don't have any hash to ensure that the block is partially recovered,
 or completely garbage. But it makes sense to anyway write the "most likely" correct one.
 
-* In the repair() function the heuristic to detect if we recovered after the sync, can be extended
-to all the previous blocks, because we always proceed in block order during a sync.
-So, if for a block we can detect that we recovered using updated parity data,
-also for all the previous blocks this is true.
-Anyway, the case where this information could be useful should be present
-only if changes are committed after an aborted sync.
-
 - Pooling
 
 * Add a new "commit" command to move changes from the pool to the array.
@@ -128,6 +116,15 @@ Rejected TODO
 =============
 
 This is a list of rejected TODO items.
+
+* In the content file save the timestamp of the parity files.
+If they do not match, stop the processing.
+This can be done to avoid to use not synchronized parity and content files,
+resulting in wrong data.
+But if the sync process is killed we need a way to resyncronize them.
+Or maybe we should allow parity newer than content, but not viceversa.
+- The corner cases are too many. A fixed parity may be never.
+A someway modified content may be never. So, the time is not really significative.
 
 * Use Async IO for Linux (libaio).
 See thread: https://sourceforge.net/p/snapraid/discussion/1677233/thread/a300a10b/
@@ -248,4 +245,17 @@ thread should be able to do them.
 Use the "snapraid -T" comment to see the speed.
 Also, all the file operations are already done in background by the OS,
 so no improvement is expect from this side.
+
+* In the repair() function the heuristic to detect if we recovered after the sync,
+can be extended to all the previous blocks, because we always proceed in block
+order during a sync.
+So, if for a block we can detect that we recovered using updated parity data,
+also for all the previous blocks this is true.
+Anyway, the case where this information could be useful should be present
+only if changes are committed after an aborted sync.
+- No real advantage on that, beside some speed gain in fix.
+The risk would be instead to miss some recovery opportunity.
+So, makes sense to have it a little slower but trying any
+possible recovery strategy.
+
 
