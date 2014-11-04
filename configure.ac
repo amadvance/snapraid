@@ -11,6 +11,7 @@ AC_PROG_CC
 AC_USE_SYSTEM_EXTENSIONS
 AC_CHECK_PROG([VALGRIND],[valgrind],[valgrind],[])
 AC_CHECK_PROG([WINE],[wine],[wine],[])
+AC_CHECK_PROG([SDE],[sde],[sde],[])
 AC_CHECK_PROG([ADVD2],[advd2],[advd2],[])
 AM_CONDITIONAL(HAVE_ADVD2, [test x"$ADVD2" != x])
 
@@ -118,8 +119,6 @@ AM_CONDITIONAL(HAVE_SYMLINK, [test x"$SYMLINK" != x])
 AC_ARG_ENABLE([profiler],
 	[AS_HELP_STRING([--enable-profiler],[enable the use of gprof for code coverage])],
 	[
-	TESTENV=""
-	FAILENV="$TESTENV"
 	CFLAGS="-O2 -pg -g"
 	],
 	[])
@@ -127,8 +126,6 @@ AC_ARG_ENABLE([profiler],
 AC_ARG_ENABLE([coverage],
 	[AS_HELP_STRING([--enable-coverage],[enable the use of gcov for code coverage])],
 	[
-	TESTENV=""
-	FAILENV="$TESTENV"
 	CFLAGS="-O0 -g -fprofile-arcs -ftest-coverage"
 	],
 	[])
@@ -151,11 +148,20 @@ AC_ARG_ENABLE([sgcheck],
 	],
 	[])
 
+AC_ARG_ENABLE([sde],
+	[AS_HELP_STRING([--enable-sde],[enable the use of SDE emulator in testing])],
+	[
+	TESTENV_SSE2="$SDE -p4 --"
+	TESTENV_SSE4="$SDE -msm --"
+	TESTENV_AVX2="$SDE --"
+	EMULATOR=1
+	],
+	[])
+AM_CONDITIONAL(HAVE_EMULATOR, [test x"$EMULATOR" != x])
+
 AC_ARG_ENABLE([debug],
 	[AS_HELP_STRING([--enable-debug],[enable debugging])],
 	[
-	TESTENV=""
-	FAILENV="$TESTENV"
 	CFLAGS="-O0 -g -Wall -Wextra"
 	],
 	[])
@@ -175,6 +181,10 @@ AC_ARG_ENABLE([warning],
 
 AC_ARG_VAR([TESTENV], [Test environment])
 AC_ARG_VAR([FAILENV], [Test environment for failing tests])
+AC_ARG_VAR([TESTENV_SSE2], [Test environment for SSE2])
+AC_ARG_VAR([TESTENV_SSSE3], [Test environment for SSSE3])
+AC_ARG_VAR([TESTENV_AVX2], [Test environment for AVX2])
+
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
 

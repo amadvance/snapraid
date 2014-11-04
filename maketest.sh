@@ -3,7 +3,7 @@
 
 make distclean
 
-if ! ./configure --enable-coverage; then
+if ! ./configure --enable-coverage --enable-sde; then
 	exit 1
 fi
 
