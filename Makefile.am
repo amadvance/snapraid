@@ -176,9 +176,12 @@ check-local:
 	echo --- Run the speed test
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -T
 if HAVE_EMULATOR
+# Run speed test in different architectures
 	$(TESTENV_SSE2) ./snapraid$(EXEEXT) --test-skip-device -T
 	$(TESTENV_SSSE3) ./snapraid$(EXEEXT) --test-skip-device -T
 	$(TESTENV_AVX2) ./snapraid$(EXEEXT) --test-skip-device -T
+# Run the self test in AVX2
+	$(TESTENV_AVX2) ./snapraid$(EXEEXT) --test-skip-device -c $(CONF) status
 endif
 	echo --- Some commands with empty array
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) diff
