@@ -236,6 +236,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_RUN 278
 #define OPT_TEST_FORCE_SCAN_WINFIND 279
 #define OPT_TEST_IMPORT_CONTENT 280
+#define OPT_TEST_FORCE_PROGRESS 281
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -336,6 +337,9 @@ struct option long_options[] = {
 
 	/* Alternative import working by data */
 	{ "test-import-content", 1, 0, OPT_TEST_IMPORT_CONTENT },
+
+	/* Force immediate progress state update */
+	{ "test-force-progress", 0, 0, OPT_TEST_FORCE_PROGRESS },
 
 	{ 0, 0, 0, 0 }
 };
@@ -643,6 +647,9 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_TEST_FORCE_SCAN_WINFIND :
 			opt.force_scan_winfind = 1;
+			break;
+		case OPT_TEST_FORCE_PROGRESS :
+			opt.force_progress = 1;
 			break;
 		default :
 			/* LCOV_EXCL_START */

@@ -91,6 +91,7 @@ struct snapraid_option {
 	int force_content_write; /**< Force the update of the content file. */
 	int force_content_text; /**< Force the use of text version of content file. */
 	int force_scan_winfind; /**< Force the use of FindFirst/Next in Windows to list directories. */
+	int force_progress; /**< Force the use of the progress status. */
 };
 
 /**
