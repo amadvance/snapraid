@@ -262,11 +262,30 @@ static int tommy_test_search(const void* arg, const void* obj)
 	return arg != obj;
 }
 
+static unsigned tommy_test_foreach_count;
+
+static void tommy_test_foreach(void* obj)
+{
+	(void)obj;
+
+	++tommy_test_foreach_count;
+}
+
+static void tommy_test_foreach_arg(void* void_arg, void* obj)
+{
+	unsigned* arg = void_arg;
+
+	(void)obj;
+
+	++*arg;
+}
+
 static void test_tommy(void)
 {
 	tommy_array array;
 	tommy_arrayblk arrayblk;
 	tommy_arrayblkof arrayblkof;
+	tommy_list list;
 	tommy_hashdyn hashdyn;
 	tommy_hashdyn_node node[TOMMY_SIZE];
 	unsigned i;
@@ -302,6 +321,17 @@ static void test_tommy(void)
 	tommy_arrayblk_done(&arrayblk);
 	tommy_array_done(&array);
 
+	tommy_list_init(&list);
+
+	if (!tommy_list_empty(&list))
+		goto bail;
+
+	if (tommy_list_tail(&list))
+		goto bail;
+
+	if (tommy_list_head(&list))
+		goto bail;
+
 	tommy_hashdyn_init(&hashdyn);
 
 	for (i = 0; i < TOMMY_SIZE; ++i)
@@ -311,6 +341,16 @@ static void test_tommy(void)
 		goto bail;
 
 	if (tommy_hashdyn_memory_usage(&hashdyn) < TOMMY_SIZE * sizeof(void*))
+		goto bail;
+
+	tommy_test_foreach_count = 0;
+	tommy_hashdyn_foreach(&hashdyn, tommy_test_foreach);
+	if (tommy_test_foreach_count != TOMMY_SIZE)
+		goto bail;
+
+	tommy_test_foreach_count = 0;
+	tommy_hashdyn_foreach_arg(&hashdyn, tommy_test_foreach_arg, &tommy_test_foreach_count);
+	if (tommy_test_foreach_count != TOMMY_SIZE)
 		goto bail;
 
 	for (i = 0; i < TOMMY_SIZE / 2; ++i)
