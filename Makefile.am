@@ -135,6 +135,9 @@ maintainer-clean-local:
 # the inode, physical location, and dir order assigned by the OS.
 CHECKFLAGS_BASE = --test-skip-device --test-skip-self --test-force-order-alpha --test-force-progress
 
+# Physical offset options
+CHECKFLAGS_PHYSICAL = --test-skip-device --test-skip-self --test-force-order-physical -q
+
 # Verbose options
 CHECKFLAGS_VERBOSE = $(CHECKFLAGS_BASE) -v -G
 
@@ -198,13 +201,19 @@ if HAVE_SYMLINK
 endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
-	echo --- Create some files, sync and check
+	echo --- Create some files
 	$(TESTENV) ./mktest$(EXEEXT) generate 1 6 $(CHECKCOUNT) $(CHECKSIZE)
 	echo DUP > bench/disk1/DUP1
 	echo DUP > bench/disk1/DUP2
+	echo --- Some commands with a not empty array
+# Run a sync using physical offset
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_PHYSICAL) -c $(CONF) diff > output.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_PHYSICAL) -c $(CONF) sync
+# Now reset the array, as we normally test with alpha order
+	rm bench/content bench/?-content
+# Now rebuild the array with alpha order and do some commands
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) diff > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
-	echo --- Some commands with a not empty array
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) dup -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) list -l test.log > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status -l test.log
