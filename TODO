@@ -47,9 +47,6 @@ This 'init' will work also without a content file, and parity files.
 Instead 'sync' will require all of them.
 This will also help when running with the parity filesystem unmounted.
 
-* Adds a log configuration option to save log files with the date in the name.
-This could help to keep track of what happens during automated operations.
-
 * In fix an existing symlink with the same name of a file to be recovered may stop
 the process making the create() operation to fail.
 The same for directories, when recreating the directory tree.
@@ -65,6 +62,13 @@ add also a kind of device_id, increasing the memory required.
 But it should be only few bits for each file. So, it should be manageable.
 A lot of discussions about this feature :)
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/b2cd9385/
+
+* Like the previous one, but only for parity. This is simpler as it doesn't
+has the inode issue, but in true you can do the same just merging the disks
+with LVM or similar.
+Anyway, checking the UUID, we can avoid that users messup with disk specifications.
+See discussion at:
+https://sourceforge.net/p/snapraid/discussion/1677233/thread/02b2a2ae/
 
 * Rename sync->backup and fix->restore. It seems to me a naming expressing
 better the meaning of the commands. But not yet sure.
