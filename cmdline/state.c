@@ -1026,6 +1026,7 @@ static void state_map(struct snapraid_state* state)
 	if (state->no_conf)
 		return;
 
+	/* counter for the number of UUID mismatches */
 	uuid_mismatch = 0;
 
 	/* checks if mapping match the disk uuid */
@@ -1088,11 +1089,21 @@ static void state_map(struct snapraid_state* state)
 				continue;
 			}
 
-			/* update the uuid in the mapping */
-			/* at now we don't enforce uuid for parity */
-			/* as the user is expected to have a different file name */
-			/* for each parity file */
-			pathcpy(state->parity[l].uuid, sizeof(state->parity[l].uuid), uuid);
+			/* if the uuid is changed */
+			if (strcmp(uuid, state->parity[l].uuid) != 0) {
+				/* if the previous uuid is available */
+				if (state->parity[l].uuid[0] != 0) {
+					/* count the number of uuid change */
+					++uuid_mismatch;
+					fprintf(stderr, "UUID change for parity '%s' from '%s' to '%s'\n", lev_config_name(l), state->parity[l].uuid, uuid);
+				}
+
+				/* update the uuid */
+				pathcpy(state->parity[l].uuid, sizeof(state->parity[l].uuid), uuid);
+
+				/* write the new state with the new uuid */
+				state->need_write = 1;
+			}
 		}
 	}
 

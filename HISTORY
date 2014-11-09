@@ -19,6 +19,8 @@ SnapRAID HISTORY
  * Prints the time spent waiting for each disk also in 'scrub'.
  * The CPU usage, speed and ETA estimations are now based on the last 100
    seconds rather than from the start.
+ * Keeps track of the UUID of the parity disks to check them before
+   operating.
  * Windows binary built with gcc 4.8.1 using the MXE cross compiler 2.23.
 
 6.3 2014/7
