@@ -320,7 +320,7 @@ struct snapraid_disk {
 	int has_different_uuid; /**< If the disk has a different UUID, meaning that it is not the same filesystem. */
 	int has_unsupported_uuid; /**< If the disk doesn't report UUID, meaning it's not supported. */
 	int had_empty_uuid; /**< If the disk had an empty UUID, meaning that it's a new disk. */
-	int mapping; /**< Index in the mapping vector. Used only as buffer when writing the content file. */
+	int mapping_idx; /**< Index in the mapping vector. Used only as buffer when writing the content file. */
 
 	/**<
 	 * Block array of the disk.

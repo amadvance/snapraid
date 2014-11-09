@@ -357,8 +357,6 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 			/* LCOV_EXCL_STOP */
 		}
 	}
-
-
 }
 
 void state_config(struct snapraid_state* state, const char* path, const char* command, struct snapraid_option* opt, tommy_list* filterlist_disk)
@@ -897,6 +895,33 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 }
 
 /**
+ * Finds a disk by name.
+ */
+static struct snapraid_disk* find_disk(struct snapraid_state* state, const char* name)
+{
+	tommy_node* i;
+
+	for (i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+		if (strcmp(disk->name, name) == 0)
+			return disk;
+	}
+
+	if (state->no_conf) {
+		/* without a configuration file, add disks automatically */
+		struct snapraid_disk* disk;
+
+		disk = disk_alloc(name, "DUMMY/", -1);
+
+		tommy_list_insert_tail(&state->disklist, &disk->node, disk);
+
+		return disk;
+	}
+
+	return 0;
+}
+
+/**
  * Updates the disk mapping if required.
  */
 static void state_map(struct snapraid_state* state)
@@ -913,20 +938,13 @@ static void state_map(struct snapraid_state* state)
 	for (i = state->maplist; i != 0; ) {
 		struct snapraid_map* map = i->data;
 		struct snapraid_disk* disk;
-		tommy_node* j;
 
-		for (j = state->disklist; j != 0; j = j->next) {
-			disk = j->data;
-			if (strcmp(disk->name, map->name) == 0) {
-				/* disk found */
-				break;
-			}
-		}
+		disk = find_disk(state, map->name);
 
 		/* go to the next mapping before removing */
 		i = i->next;
 
-		if (j == 0) {
+		if (disk == 0) {
 			/* disk not found, remove the mapping */
 			tommy_list_remove_existing(&state->maplist, &map->node);
 			map_free(map);
@@ -985,19 +1003,11 @@ static void state_map(struct snapraid_state* state)
 	for (i = state->maplist; i != 0; i = i->next) {
 		struct snapraid_map* map = i->data;
 		struct snapraid_disk* disk;
-		tommy_node* j;
 		char uuid[UUID_MAX];
 		int ret;
 
-		for (j = state->disklist; j != 0; j = j->next) {
-			disk = j->data;
-			if (strcmp(disk->name, map->name) == 0) {
-				/* disk found */
-				break;
-			}
-		}
-
-		if (j == 0) {
+		disk = find_disk(state, map->name);
+		if (disk == 0) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "Internal inconsistency for mapping '%s'\n", map->name);
 			exit(EXIT_FAILURE);
@@ -1180,33 +1190,6 @@ static int is_block_deleted(struct snapraid_disk* disk, block_off_t pos)
 	struct snapraid_block* block = disk_block_get(disk, pos);
 
 	return block_state_get(block) == BLOCK_STATE_DELETED;
-}
-
-/**
- * Finds a disk by name.
- */
-static struct snapraid_disk* find_disk(struct snapraid_state* state, const char* name)
-{
-	tommy_node* i;
-
-	for (i = state->disklist; i != 0; i = i->next) {
-		struct snapraid_disk* disk = i->data;
-		if (strcmp(disk->name, name) == 0)
-			return disk;
-	}
-
-	if (state->no_conf) {
-		/* without a configuration file, add disks automatically */
-		struct snapraid_disk* disk;
-
-		disk = disk_alloc(name, "DUMMY/", -1);
-
-		tommy_list_insert_tail(&state->disklist, &disk->node, disk);
-
-		return disk;
-	}
-
-	return 0;
 }
 
 static void state_read_text(struct snapraid_state* state, const char* path, STREAM* f, time_t save_time)
@@ -2313,10 +2296,10 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 			}
 
 			/* mark the disk as with mapping */
-			disk->mapping = 0;
+			disk->mapping_idx = 0;
 		} else {
 			/* mark the disk as without mapping */
-			disk->mapping = -1;
+			disk->mapping_idx = -1;
 		}
 	}
 
@@ -2326,7 +2309,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 		struct snapraid_disk* disk = i->data;
 
 		/* if the disk is not mapped, skip it */
-		if (disk->mapping < 0)
+		if (disk->mapping_idx < 0)
 			continue;
 
 		/* for each file */
@@ -3617,11 +3600,11 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 			}
 
 			/* assign the mapping index used to identify disks */
-			disk->mapping = mapping_idx;
+			disk->mapping_idx = mapping_idx;
 			++mapping_idx;
 		} else {
 			/* mark the disk as without mapping */
-			disk->mapping = -1;
+			disk->mapping_idx = -1;
 		}
 	}
 
@@ -3631,7 +3614,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 		struct snapraid_disk* disk = i->data;
 
 		/* if the disk is not mapped, skip it */
-		if (disk->mapping < 0)
+		if (disk->mapping_idx < 0)
 			continue;
 
 		/* for each file */
@@ -3649,7 +3632,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 			inode = file->inode;
 
 			sputc('f', f);
-			sputb32(disk->mapping, f);
+			sputb32(disk->mapping_idx, f);
 			sputb64(size, f);
 			sputb64(mtime_sec, f);
 			/* encode STAT_NSEC_INVALID as 0 */
@@ -3750,7 +3733,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 				break;
 			}
 
-			sputb32(disk->mapping, f);
+			sputb32(disk->mapping_idx, f);
 			sputbs(link->sub, f);
 			sputbs(link->linkto, f);
 			if (serror(f)) {
@@ -3766,7 +3749,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 			struct snapraid_dir* dir = j->data;
 
 			sputc('r', f);
-			sputb32(disk->mapping, f);
+			sputb32(disk->mapping_idx, f);
 			sputbs(dir->sub, f);
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
@@ -3780,7 +3763,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 
 		/* deleted blocks of the disk */
 		sputc('h', f);
-		sputb32(disk->mapping, f);
+		sputb32(disk->mapping_idx, f);
 		if (serror(f)) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));

@@ -655,7 +655,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 	disk->has_different_uuid = 0;
 	disk->has_unsupported_uuid = 0;
 	disk->had_empty_uuid = 0;
-	disk->mapping = -1;
+	disk->mapping_idx = -1;
 	tommy_list_init(&disk->filelist);
 	tommy_list_init(&disk->deletedlist);
 	tommy_hashdyn_init(&disk->inodeset);
