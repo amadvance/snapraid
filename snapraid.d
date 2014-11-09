@@ -285,6 +285,9 @@ Commands
 	are the blocks without checking, and all the recorded silent
 	errors encountered while scrubbing.
 
+	Note that the information presented refers at the latest time you run "sync".
+	Later modifications are not taken into account.
+
 	Nothing is modified.
 
   sync

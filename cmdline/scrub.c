@@ -629,9 +629,6 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 
 	printf("Scrubbing...\n");
 
-	/* after opening parity files, refresh the free info */
-	state_refresh(state);
-
 	error = 0;
 
 	ret = state_scrub_process(state, parity_ptr, 0, blockmax, timelimit, lastlimit, now);

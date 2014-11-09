@@ -70,9 +70,13 @@ int state_status(struct snapraid_state* state)
 	block_off_t parity_block_free;
 	unsigned unsynced_blocks;
 	uint64_t all_wasted;
+	int free_not_zero;
 
 	/* get the present time */
 	now = time(0);
+
+	/* keep track if at least a free info is available */
+	free_not_zero = 0;
 
 	blockmax = parity_size(state);
 
@@ -86,6 +90,8 @@ int state_status(struct snapraid_state* state)
 		fprintf(stdlog, "summary:parity_block_free:%s:%u\n", lev_config_name(l), state->parity[l].free_blocks);
 		if (state->parity[l].free_blocks < parity_block_free)
 			parity_block_free = state->parity[l].free_blocks;
+		if (state->parity[l].free_blocks != 0)
+			free_not_zero = 1;
 	}
 	fprintf(stdlog, "summary:parity_block_free_min:%u\n", parity_block_free);
 
@@ -162,6 +168,9 @@ int state_status(struct snapraid_state* state)
 			disk_file_size += file->size;
 		}
 
+		if (disk->free_blocks != 0)
+			free_not_zero = 1;
+
 		/* get the free block info */
 		disk_block_max_by_space = disk_block_count + disk->free_blocks;
 		disk_block_max_by_parity = blockmax + parity_block_free;
@@ -215,6 +224,10 @@ int state_status(struct snapraid_state* state)
 	printf("%8" PRIu64, file_block_free * state->block_size / base);
 	printf(" %3u%%", perc(file_block_count, file_block_count + file_block_free));
 	printf("\n");
+
+	/* warn about invalid data free info */
+	if (!free_not_zero)
+		printf("\nWARNING! Free space info will be valid after the first sync.\n");
 
 	fprintf(stdlog, "summary:file_count:%u\n", file_count);
 	fprintf(stdlog, "summary:file_block_count:%" PRIu64 "\n", file_block_count);
