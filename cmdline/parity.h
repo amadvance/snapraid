@@ -21,7 +21,7 @@
 /****************************************************************************/
 /* parity */
 
-struct snapraid_parity {
+struct snapraid_parity_handle {
 	char path[PATH_MAX]; /**< Path of the file. */
 	int f; /**< Handle of the file. */
 	struct stat st; /**< Stat info of the opened file. */
@@ -42,38 +42,38 @@ void parity_overflow(struct snapraid_state* state, data_off_t size);
  * Creates the parity file.
  * \param out_size Return the size of the parity file.
  */
-int parity_create(struct snapraid_parity* parity, const char* path, data_off_t* out_size, int mode);
+int parity_create(struct snapraid_parity_handle* parity, const char* path, data_off_t* out_size, int mode);
 
 /**
  * Changes the parity size.
  * \param out_size Return the size of the parity file. The out_size is set also on error to reflect a partial resize.
  */
-int parity_chsize(struct snapraid_parity* parity, data_off_t size, data_off_t* out_size, int skip_fallocate);
+int parity_chsize(struct snapraid_parity_handle* parity, data_off_t size, data_off_t* out_size, int skip_fallocate);
 
 /**
  * Opens an already existing parity file.
  */
-int parity_open(struct snapraid_parity* parity, const char* path, int mode);
+int parity_open(struct snapraid_parity_handle* parity, const char* path, int mode);
 
 /**
  * Flushes the parity file in the disk.
  */
-int parity_sync(struct snapraid_parity* parity);
+int parity_sync(struct snapraid_parity_handle* parity);
 
 /**
  * Closes the parity file.
  */
-int parity_close(struct snapraid_parity* parity);
+int parity_close(struct snapraid_parity_handle* parity);
 
 /**
  * Read a block from the parity file.
  */
-int parity_read(struct snapraid_parity* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size, FILE* out);
+int parity_read(struct snapraid_parity_handle* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size, FILE* out);
 
 /**
  * Writes a block in the parity file.
  */
-int parity_write(struct snapraid_parity* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size);
+int parity_write(struct snapraid_parity_handle* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size);
 
 #endif
 

@@ -35,7 +35,7 @@ struct snapraid_rehash {
 	struct snapraid_block* block;
 };
 
-static int state_scrub_process(struct snapraid_state* state, struct snapraid_parity** parity, block_off_t blockstart, block_off_t blockmax, time_t timelimit, block_off_t lastlimit, time_t now)
+static int state_scrub_process(struct snapraid_state* state, struct snapraid_parity_handle** parity, block_off_t blockstart, block_off_t blockmax, time_t timelimit, block_off_t lastlimit, time_t now)
 {
 	struct snapraid_handle* handle;
 	void* rehandle_alloc;
@@ -509,8 +509,8 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 	time_t recentlimit;
 	unsigned count;
 	int ret;
-	struct snapraid_parity parity[LEV_MAX];
-	struct snapraid_parity* parity_ptr[LEV_MAX];
+	struct snapraid_parity_handle parity[LEV_MAX];
+	struct snapraid_parity_handle* parity_ptr[LEV_MAX];
 	snapraid_info* infomap;
 	unsigned error;
 	time_t now;

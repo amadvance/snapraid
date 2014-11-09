@@ -89,7 +89,7 @@ void parity_overflow(struct snapraid_state* state, data_off_t size)
 	}
 }
 
-int parity_create(struct snapraid_parity* parity, const char* path, data_off_t* out_size, int mode)
+int parity_create(struct snapraid_parity_handle* parity, const char* path, data_off_t* out_size, int mode)
 {
 	int ret;
 	int flags;
@@ -146,7 +146,7 @@ bail:
 	/* LCOV_EXCL_STOP */
 }
 
-int parity_chsize(struct snapraid_parity* parity, data_off_t size, data_off_t* out_size, int skip_fallocate)
+int parity_chsize(struct snapraid_parity_handle* parity, data_off_t size, data_off_t* out_size, int skip_fallocate)
 {
 	int ret;
 
@@ -263,7 +263,7 @@ bail:
 	/* LCOV_EXCL_STOP */
 }
 
-int parity_open(struct snapraid_parity* parity, const char* path, int mode)
+int parity_open(struct snapraid_parity_handle* parity, const char* path, int mode)
 {
 	int ret;
 	int flags;
@@ -318,7 +318,7 @@ bail:
 	/* LCOV_EXCL_STOP */
 }
 
-int parity_sync(struct snapraid_parity* parity)
+int parity_sync(struct snapraid_parity_handle* parity)
 {
 #if HAVE_FSYNC
 	int ret;
@@ -338,7 +338,7 @@ int parity_sync(struct snapraid_parity* parity)
 	return 0;
 }
 
-int parity_close(struct snapraid_parity* parity)
+int parity_close(struct snapraid_parity_handle* parity)
 {
 	int ret;
 
@@ -364,7 +364,7 @@ int parity_close(struct snapraid_parity* parity)
 	return 0;
 }
 
-int parity_write(struct snapraid_parity* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size)
+int parity_write(struct snapraid_parity_handle* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size)
 {
 	ssize_t write_ret;
 	data_off_t offset;
@@ -409,7 +409,7 @@ int parity_write(struct snapraid_parity* parity, block_off_t pos, unsigned char*
 	return 0;
 }
 
-int parity_read(struct snapraid_parity* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size, FILE* out)
+int parity_read(struct snapraid_parity_handle* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size, FILE* out)
 {
 	ssize_t read_ret;
 	data_off_t offset;

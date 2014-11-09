@@ -583,7 +583,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 		return -1;
 }
 
-static int state_check_process(struct snapraid_state* state, int fix, struct snapraid_parity** parity, block_off_t blockstart, block_off_t blockmax)
+static int state_check_process(struct snapraid_state* state, int fix, struct snapraid_parity_handle** parity, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
 	unsigned diskmax;
@@ -1788,8 +1788,8 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 	data_off_t size;
 	data_off_t out_size;
 	int ret;
-	struct snapraid_parity parity[LEV_MAX];
-	struct snapraid_parity* parity_ptr[LEV_MAX];
+	struct snapraid_parity_handle parity[LEV_MAX];
+	struct snapraid_parity_handle* parity_ptr[LEV_MAX];
 	unsigned error;
 	unsigned l;
 

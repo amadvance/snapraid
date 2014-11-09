@@ -326,7 +326,7 @@ struct snapraid_rehash {
 	struct snapraid_block* block;
 };
 
-static int state_sync_process(struct snapraid_state* state, struct snapraid_parity** parity, block_off_t blockstart, block_off_t blockmax)
+static int state_sync_process(struct snapraid_state* state, struct snapraid_parity_handle** parity, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
 	void* rehandle_alloc;
@@ -1026,10 +1026,10 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	data_off_t size;
 	data_off_t out_size;
 	int ret;
-	struct snapraid_parity parity[LEV_MAX];
+	struct snapraid_parity_handle parity[LEV_MAX];
 	/* the following initialization is to avoid clang warnings about */
 	/* potential state->level change, that never happens */
-	struct snapraid_parity* parity_ptr[LEV_MAX] = { 0 };
+	struct snapraid_parity_handle* parity_ptr[LEV_MAX] = { 0 };
 	unsigned unrecoverable_error;
 	unsigned l;
 	int skip_sync = 0;
