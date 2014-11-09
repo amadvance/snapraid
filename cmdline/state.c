@@ -2285,6 +2285,10 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				}
 			}
 
+			/* auto configure if configuration is missing */
+			if (state->no_conf && v_level < LEV_MAX && v_level >= state->level)
+				state->level = v_level + 1;
+
 			/* if we use this parity entry */
 			if (v_level < state->level) {
 				/* set the parity info */
@@ -3712,6 +3716,10 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				/* LCOV_EXCL_STOP */
 			}
 
+			/* auto configure if configuration is missing */
+			if (state->no_conf && v_level < LEV_MAX && v_level >= state->level)
+				state->level = v_level + 1;
+
 			/* if we use this parity entry */
 			if (v_level < state->level) {
 				/* set the parity info */
@@ -4852,8 +4860,10 @@ void generate_configuration(const char* path)
 	printf("# Use this blocksize\n");
 	printf("blocksize %u\n", state.block_size / 1024);
 	printf("\n");
-	for (i = 0; i < LEV_MAX; ++i) {
-		printf("# Set the correct path for the %s file%s\n", lev_name(i), i != 0 ? " (if used)" : "");
+	for (i = 0; i < state.level; ++i) {
+		printf("# Set the correct path for the %s file\n", lev_name(i));
+		if (state.parity[i].uuid[0])
+			printf("# The file was in the disk with id '%s'\n", state.parity[i].uuid);
 		printf("%s ENTER_HERE_THE_PARITY_FILE\n", lev_config_name(i));
 		printf("\n");
 	}
@@ -4864,7 +4874,8 @@ void generate_configuration(const char* path)
 		struct snapraid_map* map = j->data;
 		struct snapraid_disk* disk;
 		printf("# Set the correct dir for disk '%s'\n", map->name);
-		printf("# Disk '%s' is the one with system id '%s'\n", map->name, map->uuid);
+		if (map->uuid[0])
+			printf("# Disk '%s' is the one with id '%s'\n", map->name, map->uuid);
 		disk = find_disk(&state, map->name);
 		if (disk && disk->filelist) {
 			struct snapraid_file* file = disk->filelist->data;
