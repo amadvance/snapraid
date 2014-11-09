@@ -12,8 +12,8 @@ SnapRAID HISTORY
    the -N, --force-nocopy option.
  * The -i, --import command now identifies files by timestamp making it
    very fast in importing directories.
- * More detailed 'status' report with single disk stats and
-   free space available.
+ * More detailed 'status' report with single disk stats and free space
+   available.
  * A lot faster directory listing for Windows.
  * Adds AVX2 support to improve parity generation speed.
  * Prints the time spent waiting for each disk also in 'scrub'.
@@ -22,6 +22,11 @@ SnapRAID HISTORY
  * Keeps track of the UUID of the parity disks to check them before
    operating.
  * Windows binary built with gcc 4.8.1 using the MXE cross compiler 2.23.
+
+ 6.4 2014/11
+===========
+ * Adds support for the new binary format of SnapRAID 7.0.
+   This allows to downgrade from version 7.0 to 6.x or previous.
 
 6.3 2014/7
 ==========
