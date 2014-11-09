@@ -81,10 +81,10 @@ int state_status(struct snapraid_state* state)
 	fprintf(stdlog, "summary:parity_block_count:%u\n", blockmax);
 
 	/* get the free space on the first parity disk */
-	ret = fsinfo(state->parity_path[0], 0, &free_space);
+	ret = fsinfo(state->parity[0].path, 0, &free_space);
 	if (ret < 0) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Error accessing file '%s' to get filesystem info. %s.\n", state->parity_path[0], strerror(errno));
+		fprintf(stderr, "Error accessing file '%s' to get filesystem info. %s.\n", state->parity[0].path, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}

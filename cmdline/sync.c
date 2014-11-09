@@ -1055,7 +1055,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	for (l = 0; l < state->level; ++l) {
 		/* create the file and open for writing */
 		parity_ptr[l] = &parity[l];
-		ret = parity_create(parity_ptr[l], state->parity_path[l], &out_size, state->file_mode);
+		ret = parity_create(parity_ptr[l], state->parity[l].path, &out_size, state->file_mode);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "WARNING! Without an accessible %s file, it isn't possible to sync.\n", lev_name(l));
@@ -1068,7 +1068,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 			/* if the file is too small */
 			if (out_size < loaded_size) {
 				/* LCOV_EXCL_START */
-				fprintf(stderr, "DANGER! The %s file %s is smaller than the expected %" PRId64 ".\n", lev_name(l), state->parity_path[l], loaded_size);
+				fprintf(stderr, "DANGER! The %s file %s is smaller than the expected %" PRId64 ".\n", lev_name(l), state->parity[l].path, loaded_size);
 				fprintf(stderr, "If this happens because you are using an old content file,\n");
 				fprintf(stderr, "you can 'sync' anyway using 'snapraid --force-full sync'\n");
 				fprintf(stderr, "to force a full rebuild of the parity.\n");

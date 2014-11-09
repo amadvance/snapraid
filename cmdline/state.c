@@ -84,8 +84,8 @@ void state_init(struct snapraid_state* state)
 	state->raid_mode = RAID_MODE_CAUCHY;
 	state->file_mode = MODE_SEQUENTIAL;
 	for (l = 0; l < LEV_MAX; ++l) {
-		state->parity_path[l][0] = 0;
-		state->parity_device[l] = 0;
+		state->parity[l].path[0] = 0;
+		state->parity[l].device = 0;
 		state->tick_parity[l] = 0;
 	}
 	state->tick_io = 0;
@@ -144,7 +144,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 	}
 
 	for (l = 0; l < state->level; ++l) {
-		if (state->parity_path[l][0] == 0) {
+		if (state->parity[l].path[0] == 0) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "No '%s' specification in '%s'\n", lev_config_name(l), path);
 			exit(EXIT_FAILURE);
@@ -164,7 +164,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 		struct snapraid_content* content = i->data;
 
 		for (l = 0; l < state->level; ++l) {
-			if (pathcmp(state->parity_path[l], content->content) == 0) {
+			if (pathcmp(state->parity[l].path, content->content) == 0) {
 				/* LCOV_EXCL_START */
 				fprintf(stderr, "Same path used for '%s' and 'content' as '%s'\n", lev_config_name(l), content->content);
 				exit(EXIT_FAILURE);
@@ -213,9 +213,9 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 			}
 
 			for (l = 0; l < state->level; ++l) {
-				if (disk->device == state->parity_device[l]) {
+				if (disk->device == state->parity[l].device) {
 					/* LCOV_EXCL_START */
-					fprintf(stderr, "Disk '%s' and %s '%s' are on the same device.\n", disk->dir, lev_name(l), state->parity_path[l]);
+					fprintf(stderr, "Disk '%s' and %s '%s' are on the same device.\n", disk->dir, lev_name(l), state->parity[l].path);
 #ifdef _WIN32
 					fprintf(stderr, "Both have the serial number '%" PRIx64 "'.\n", disk->device);
 					fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
@@ -241,9 +241,9 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 
 #ifdef _WIN32
 		for (l = 0; l < state->level; ++l) {
-			if (state->parity_device[l] == 0) {
+			if (state->parity[l].device == 0) {
 				/* LCOV_EXCL_START */
-				fprintf(stderr, "Disk '%s' has a zero serial number.\n", state->parity_path[l]);
+				fprintf(stderr, "Disk '%s' has a zero serial number.\n", state->parity[l].path);
 				fprintf(stderr, "This is not necessarely wrong, but for using SnapRAID\n");
 				fprintf(stderr, "it's better to change the serial number of the disk.\n");
 				fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'.\n");
@@ -266,11 +266,11 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 		for (l = 0; l < state->level; ++l) {
 			unsigned j;
 			for (j = l + 1; j < state->level; ++j) {
-				if (state->parity_device[l] == state->parity_device[j]) {
+				if (state->parity[l].device == state->parity[j].device) {
 					/* LCOV_EXCL_START */
-					fprintf(stderr, "Parity '%s' and '%s' are on the same device.\n", state->parity_path[l], state->parity_path[j]);
+					fprintf(stderr, "Parity '%s' and '%s' are on the same device.\n", state->parity[l].path, state->parity[j].path);
 #ifdef _WIN32
-					fprintf(stderr, "Both have the serial number '%" PRIx64 "'.\n", state->parity_device[l]);
+					fprintf(stderr, "Both have the serial number '%" PRIx64 "'.\n", state->parity[l].device);
 					fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
 					fprintf(stderr, "to change one of the disk serial.\n");
 #endif
@@ -281,9 +281,9 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 		}
 
 		for (l = 0; l < state->level; ++l) {
-			if (state->pool[0] != 0 && state->pool_device == state->parity_device[l]) {
+			if (state->pool[0] != 0 && state->pool_device == state->parity[l].device) {
 				/* LCOV_EXCL_START */
-				fprintf(stderr, "Pool '%s' and parity '%s' are on the same device.\n", state->pool, state->parity_path[l]);
+				fprintf(stderr, "Pool '%s' and parity '%s' are on the same device.\n", state->pool, state->parity[l].path);
 #ifdef _WIN32
 				fprintf(stderr, "Both have the serial number '%" PRIx64 "'.\n", state->pool_device);
 				fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
@@ -487,7 +487,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				/* LCOV_EXCL_STOP */
 			}
 
-			if (*state->parity_path[level]) {
+			if (*state->parity[level].path) {
 				/* LCOV_EXCL_START */
 				fprintf(stderr, "Multiple '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
@@ -509,7 +509,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				/* LCOV_EXCL_STOP */
 			}
 
-			pathimport(state->parity_path[level], sizeof(state->parity_path[level]), buffer);
+			pathimport(state->parity[level].path, sizeof(state->parity[level].path), buffer);
 
 			if (!state->opt.skip_parity_access) {
 				struct stat st;
@@ -528,10 +528,10 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 					/* LCOV_EXCL_STOP */
 				}
 
-				state->parity_device[level] = st.st_dev;
+				state->parity[level].device = st.st_dev;
 			} else {
 				/* if parity is skipped, uses a fake device */
-				state->parity_device[level] = -1LL - level;
+				state->parity[level].device = -1LL - level;
 			}
 
 			/* adjust the level */
@@ -890,7 +890,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 	fprintf(stdlog, "mode:%s\n", lev_raid_name(state->raid_mode, state->level));
 	for (l = 0; l < state->level; ++l)
-		fprintf(stdlog, "%s:%s\n", lev_config_name(l), state->parity_path[l]);
+		fprintf(stdlog, "%s:%s\n", lev_config_name(l), state->parity[l].path);
 	if (state->pool[0] != 0)
 		fprintf(stdlog, "pool:%s\n", state->pool);
 	fflush(stdlog);

@@ -372,6 +372,14 @@ struct snapraid_map {
 };
 
 /**
+ * Parity.
+ */
+struct snapraid_parity {
+	char path[PATH_MAX]; /**< Path of the parity file. */
+	uint64_t device; /**< Device identifier of the parity. */
+};
+
+/**
  * Info.
  */
 typedef uint32_t snapraid_info;
