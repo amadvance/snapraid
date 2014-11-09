@@ -1090,6 +1090,9 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		}
 	}
 
+	/* after opening and resizing parity files, refresh the free info */
+	state_refresh(state);
+
 	unrecoverable_error = 0;
 
 	if (state->opt.prehash) {

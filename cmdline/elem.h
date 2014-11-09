@@ -308,6 +308,9 @@ struct snapraid_disk {
 
 	uint64_t tick; /**< Usage time of the disk. */
 
+	block_off_t total_blocks; /**< Number of total blocks. */
+	block_off_t free_blocks; /**< Number of free blocks at the last sync. */
+
 	/**
 	 * First free searching block.
 	 * Note that it doesn't necessarely point at the first free block,
@@ -364,8 +367,10 @@ struct snapraid_disk {
  */
 struct snapraid_map {
 	char name[PATH_MAX]; /**< Name of the disk. */
-	unsigned position; /**< Position of the disk in the parity. */
 	char uuid[UUID_MAX]; /**< UUID of the disk. Empty if unknown. */
+	block_off_t total_blocks; /**< Number of total blocks. */
+	block_off_t free_blocks; /**< Number of free blocks at last 'sync'. */
+	unsigned position; /**< Position of the disk in the parity. */
 
 	/* nodes for data structures */
 	tommy_node node;
@@ -376,7 +381,15 @@ struct snapraid_map {
  */
 struct snapraid_parity {
 	char path[PATH_MAX]; /**< Path of the parity file. */
+	char uuid[UUID_MAX]; /**< UUID of the disk. Empty if unknown. */
 	uint64_t device; /**< Device identifier of the parity. */
+	block_off_t total_blocks; /**< Number of total blocks. */
+	block_off_t free_blocks; /**< Number of free blocks at the last sync. */
+
+	/**
+	 * Cumulative time used for parity disks.
+	 */
+	uint64_t tick;
 };
 
 /**
@@ -869,7 +882,7 @@ int disk_is_empty(struct snapraid_disk* disk, block_off_t blockmax);
  * Allocates a disk mapping.
  * Uses uuid="" if not available.
  */
-struct snapraid_map* map_alloc(const char* name, unsigned position, const char* uuid);
+struct snapraid_map* map_alloc(const char* name, unsigned position, block_off_t total_blocks, block_off_t free_blocks, const char* uuid);
 
 /**
  * Deallocates a disk mapping.

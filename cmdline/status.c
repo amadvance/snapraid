@@ -52,6 +52,7 @@ int state_status(struct snapraid_state* state)
 	block_off_t bad;
 	block_off_t rehash;
 	block_off_t count;
+	unsigned l;
 	unsigned dayoldest, daymedian, daynewest;
 	unsigned bar[GRAPH_COLUMN];
 	unsigned barpos;
@@ -68,9 +69,7 @@ int state_status(struct snapraid_state* state)
 	uint64_t base = 1024 * 1024 * (uint64_t)1024;
 	block_off_t parity_block_free;
 	unsigned unsynced_blocks;
-	uint64_t free_space;
 	uint64_t all_wasted;
-	int ret;
 
 	/* get the present time */
 	now = time(0);
@@ -80,18 +79,15 @@ int state_status(struct snapraid_state* state)
 	fprintf(stdlog, "summary:block_size:%u\n", state->block_size);
 	fprintf(stdlog, "summary:parity_block_count:%u\n", blockmax);
 
-	/* get the free space on the first parity disk */
-	ret = fsinfo(state->parity[0].path, 0, &free_space);
-	if (ret < 0) {
-		/* LCOV_EXCL_START */
-		fprintf(stderr, "Error accessing file '%s' to get filesystem info. %s.\n", state->parity[0].path, strerror(errno));
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
+	/* get the minimum parity free space */
+	parity_block_free = state->parity[0].free_blocks;
+	for (l = 0; l < state->level; ++l) {
+		fprintf(stdlog, "summary:parity_block_total:%s:%u\n", lev_config_name(l), state->parity[l].total_blocks);
+		fprintf(stdlog, "summary:parity_block_free:%s:%u\n", lev_config_name(l), state->parity[l].free_blocks);
+		if (state->parity[l].free_blocks < parity_block_free)
+			parity_block_free = state->parity[l].free_blocks;
 	}
-
-	parity_block_free = free_space / state->block_size;
-
-	fprintf(stdlog, "summary:parity_block_free:%s:%u\n", lev_config_name(0), parity_block_free);
+	fprintf(stdlog, "summary:parity_block_free_min:%u\n", parity_block_free);
 
 	printf("\n");
 	printf("   Files Fragmented Excess  Wasted  Used    Free  Use Name\n");
@@ -115,7 +111,6 @@ int state_status(struct snapraid_state* state)
 		block_off_t disk_block_count = 0;
 		uint64_t disk_file_size = 0;
 		block_off_t disk_block_latest_used = 0;
-		block_off_t disk_block_free;
 		block_off_t disk_block_max_by_space;
 		block_off_t disk_block_max_by_parity;
 		block_off_t disk_block_max;
@@ -167,18 +162,8 @@ int state_status(struct snapraid_state* state)
 			disk_file_size += file->size;
 		}
 
-		/* get the free space on the disk */
-		ret = fsinfo(disk->dir, 0, &free_space);
-		if (ret < 0) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Error accessing disk '%s' to get filesystem info. %s.\n", disk->dir, strerror(errno));
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
-
-		disk_block_free = free_space / state->block_size;
-
-		disk_block_max_by_space = disk_block_count + disk_block_free;
+		/* get the free block info */
+		disk_block_max_by_space = disk_block_count + disk->free_blocks;
 		disk_block_max_by_parity = blockmax + parity_block_free;
 
 		/* the maximum usable space in a disk is limited by the smaller */
@@ -213,7 +198,8 @@ int state_status(struct snapraid_state* state)
 		fprintf(stdlog, "summary:disk_excess_fragment_count:%s:%u\n", disk->name, disk_extra_fragment);
 		fprintf(stdlog, "summary:disk_file_size:%s:%" PRIu64 "\n", disk->name, disk_file_size);
 		fprintf(stdlog, "summary:disk_block_allocated:%s:%u\n", disk->name, disk_block_latest_used + 1);
-		fprintf(stdlog, "summary:disk_block_free:%s:%u\n", disk->name, disk_block_free);
+		fprintf(stdlog, "summary:disk_block_total:%s:%u\n", disk->name, disk->total_blocks);
+		fprintf(stdlog, "summary:disk_block_free:%s:%u\n", disk->name, disk->free_blocks);
 		fprintf(stdlog, "summary:disk_block_max_by_space:%s:%u\n", disk->name, disk_block_max_by_space);
 		fprintf(stdlog, "summary:disk_block_max_by_parity:%s:%u\n", disk->name, disk_block_max_by_parity);
 		fprintf(stdlog, "summary:disk_block_max:%s:%u\n", disk->name, disk_block_max);

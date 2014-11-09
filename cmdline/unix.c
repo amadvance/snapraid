@@ -205,7 +205,7 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 	return 0;
 }
 
-int fsinfo(const char* path, int* has_persistent_inode, uint64_t* free_space)
+int fsinfo(const char* path, int* has_persistent_inode, uint64_t* total_space, uint64_t* free_space)
 {
 #if HAVE_STATFS && HAVE_STRUCT_STATFS_F_TYPE
 	struct statfs st;
@@ -249,6 +249,8 @@ int fsinfo(const char* path, int* has_persistent_inode, uint64_t* free_space)
 			break;
 		}
 
+	if (total_space)
+		*total_space = st.f_bsize * (uint64_t)st.f_blocks;
 	if (free_space)
 		*free_space = st.f_bsize * (uint64_t)st.f_bfree;
 #else
@@ -257,6 +259,8 @@ int fsinfo(const char* path, int* has_persistent_inode, uint64_t* free_space)
 	/* by default assume yes */
 	if (has_persistent_inode)
 		*has_persistent_inode = 1;
+	if (total_space)
+		*total_space = 0;
 	if (free_space)
 		*free_space = 0;
 #endif

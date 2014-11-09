@@ -649,6 +649,8 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 
 	disk->device = dev;
 	disk->tick = 0;
+	disk->total_blocks = 0;
+	disk->free_blocks = 0;
 	disk->first_free_block = 0;
 	disk->has_volatile_inodes = 0;
 	disk->has_unreliable_physical = 0;
@@ -727,14 +729,16 @@ int disk_is_empty(struct snapraid_disk* disk, block_off_t blockmax)
 	return 1;
 }
 
-struct snapraid_map* map_alloc(const char* name, unsigned position, const char* uuid)
+struct snapraid_map* map_alloc(const char* name, unsigned position, block_off_t total_blocks, block_off_t free_blocks, const char* uuid)
 {
 	struct snapraid_map* map;
 
 	map = malloc_nofail(sizeof(struct snapraid_map));
 	pathcpy(map->name, sizeof(map->name), name);
-	pathcpy(map->uuid, sizeof(map->uuid), uuid);
 	map->position = position;
+	map->total_blocks = total_blocks;
+	map->free_blocks = free_blocks;
+	pathcpy(map->uuid, sizeof(map->uuid), uuid);
 
 	return map;
 }

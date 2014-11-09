@@ -237,6 +237,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_FORCE_SCAN_WINFIND 279
 #define OPT_TEST_IMPORT_CONTENT 280
 #define OPT_TEST_FORCE_PROGRESS 281
+#define OPT_TEST_SKIP_DISK_ACCESS 282
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -340,6 +341,9 @@ struct option long_options[] = {
 
 	/* Force immediate progress state update */
 	{ "test-force-progress", 0, 0, OPT_TEST_FORCE_PROGRESS },
+
+	/* Skip the disk access */
+	{ "test-skip-disk-access", 0, 0, OPT_TEST_SKIP_DISK_ACCESS },
 
 	{ 0, 0, 0, 0 }
 };
@@ -604,6 +608,9 @@ int main(int argc, char* argv[])
 		case OPT_TEST_SKIP_PARITY_ACCESS :
 			opt.skip_parity_access = 1;
 			break;
+		case OPT_TEST_SKIP_DISK_ACCESS :
+			opt.skip_disk_access = 1;
+			break;
 		case OPT_TEST_FORCE_MURMUR3 :
 			opt.force_murmur3 = 1;
 			break;
@@ -829,12 +836,24 @@ int main(int argc, char* argv[])
 	}
 
 	switch (operation) {
+	case OPERATION_LIST :
+	case OPERATION_DUP :
+	case OPERATION_STATUS :
+	case OPERATION_REWRITE :
+	case OPERATION_REHASH :
+		/* avoid to check and access data disks if not needed */
+		opt.skip_disk_access = 1;
+		break;
+	}
+
+	switch (operation) {
 	case OPERATION_DIFF :
 	case OPERATION_LIST :
 	case OPERATION_DUP :
 	case OPERATION_POOL :
 	case OPERATION_STATUS :
 	case OPERATION_REWRITE :
+	case OPERATION_REHASH :
 	case OPERATION_NANO :
 		/* avoid to check and access parity disks if not needed */
 		opt.skip_parity_access = 1;

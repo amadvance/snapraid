@@ -82,6 +82,7 @@ struct snapraid_option {
 	int skip_self; /**< Skip the self-test. */
 	int skip_content_check; /**< Relax some content file checks. */
 	int skip_parity_access; /**< Skip the parity access for commands that don't need it. */
+	int skip_disk_access; /**< Skip the data disk access for commands that don't need it. */
 	int kill_after_sync; /**< Kill the process after sync without saving the final state. */
 	int force_murmur3; /**< Force Murmur3 choice. */
 	int force_spooky2; /**< Force Spooky2 choice. */
@@ -139,11 +140,6 @@ struct snapraid_state {
 	 * Cumulative time used for all io operations of disks.
 	 */
 	uint64_t tick_io;
-
-	/**
-	 * Cumulative time used for parity disks.
-	 */
-	uint64_t tick_parity[LEV_MAX];
 
 	/**
 	 * Last time used for time measure.
@@ -264,6 +260,13 @@ void state_list(struct snapraid_state* state);
 void state_pool(struct snapraid_state* state);
 
 /**
+ * Refresh the free space info.
+ *
+ * Note that it requires disks access.
+ */
+void state_refresh(struct snapraid_state* state);
+
+/**
  * Filter files, symlinks and dirs.
  * Apply an additional filter to the list currently loaded.
  */
@@ -344,7 +347,7 @@ static inline void state_usage_parity(struct snapraid_state* state, unsigned lev
 	assert(level < LEV_MAX);
 
 	/* increment the time spent in the parity disk */
-	state->tick_parity[level] += delta;
+	state->parity[level].tick += delta;
 	state->tick_io += delta;
 
 	state->tick_last = now;

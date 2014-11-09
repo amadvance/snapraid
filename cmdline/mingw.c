@@ -1431,13 +1431,14 @@ int filephy(const char* file, uint64_t size, uint64_t* physical)
 	return 0;
 }
 
-int fsinfo(const char* path, int* has_persistent_inode, uint64_t* free_space)
+int fsinfo(const char* path, int* has_persistent_inode, uint64_t* total_space, uint64_t* free_space)
 {
 	/* all FAT/exFAT/NTFS when managed from Windows have persistent inodes */
 	if (has_persistent_inode)
 		*has_persistent_inode = 1;
 
-	if (free_space) {
+	if (free_space || total_space) {
+		ULARGE_INTEGER total_bytes;
 		ULARGE_INTEGER total_free_bytes;
 		DWORD attr;
 		char dir[PATH_MAX];
@@ -1484,12 +1485,15 @@ int fsinfo(const char* path, int* has_persistent_inode, uint64_t* free_space)
 
 		/* get the free space of the directory */
 		/* note that it must be a directory */
-		if (!GetDiskFreeSpaceExW(convert(dir), 0, 0, &total_free_bytes)) {
+		if (!GetDiskFreeSpaceExW(convert(dir), 0, &total_bytes, &total_free_bytes)) {
 			windows_errno(GetLastError());
 			return -1;
 		}
 
-		*free_space = total_free_bytes.QuadPart;
+		if (total_space)
+			*total_space = total_bytes.QuadPart;
+		if (free_space)
+			*free_space = total_free_bytes.QuadPart;
 	}
 
 	return 0;

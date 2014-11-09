@@ -1384,7 +1384,7 @@ void state_scan(struct snapraid_state* state, int is_diff)
 			printf("Scanning disk %s...\n", disk->name);
 
 		/* check if the disk supports persistent inodes */
-		ret = fsinfo(disk->dir, &has_persistent_inode, 0);
+		ret = fsinfo(disk->dir, &has_persistent_inode, 0, 0);
 		if (ret < 0) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "Error accessing disk '%s' to get filesystem info. %s.\n", disk->dir, strerror(errno));

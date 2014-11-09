@@ -85,8 +85,11 @@ void state_init(struct snapraid_state* state)
 	state->file_mode = MODE_SEQUENTIAL;
 	for (l = 0; l < LEV_MAX; ++l) {
 		state->parity[l].path[0] = 0;
+		state->parity[l].uuid[0] = 0;
 		state->parity[l].device = 0;
-		state->tick_parity[l] = 0;
+		state->parity[l].total_blocks = 0;
+		state->parity[l].free_blocks = 0;
+		state->parity[l].tick = 0;
 	}
 	state->tick_io = 0;
 	state->tick_cpu = 0;
@@ -173,8 +176,8 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 		}
 	}
 
-	/* check if all the data and parity disks are different */
-	if (!state->opt.skip_device) {
+	/* check device of data disks */
+	if (!state->opt.skip_device && !state->opt.skip_disk_access) {
 		for (i = state->disklist; i != 0; i = i->next) {
 			tommy_node* j;
 			struct snapraid_disk* disk = i->data;
@@ -212,17 +215,19 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 				}
 			}
 
-			for (l = 0; l < state->level; ++l) {
-				if (disk->device == state->parity[l].device) {
-					/* LCOV_EXCL_START */
-					fprintf(stderr, "Disk '%s' and %s '%s' are on the same device.\n", disk->dir, lev_name(l), state->parity[l].path);
+			if (!state->opt.skip_parity_access) {
+				for (l = 0; l < state->level; ++l) {
+					if (disk->device == state->parity[l].device) {
+						/* LCOV_EXCL_START */
+						fprintf(stderr, "Disk '%s' and %s '%s' are on the same device.\n", disk->dir, lev_name(l), state->parity[l].path);
 #ifdef _WIN32
-					fprintf(stderr, "Both have the serial number '%" PRIx64 "'.\n", disk->device);
-					fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
-					fprintf(stderr, "to change one of the disk serial.\n");
+						fprintf(stderr, "Both have the serial number '%" PRIx64 "'.\n", disk->device);
+						fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
+						fprintf(stderr, "to change one of the disk serial.\n");
 #endif
-					exit(EXIT_FAILURE);
-					/* LCOV_EXCL_STOP */
+						exit(EXIT_FAILURE);
+						/* LCOV_EXCL_STOP */
+					}
 				}
 			}
 
@@ -238,7 +243,10 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 				/* LCOV_EXCL_STOP */
 			}
 		}
+	}
 
+	/* check device of parity disks */
+	if (!state->opt.skip_device && !state->opt.skip_parity_access) {
 #ifdef _WIN32
 		for (l = 0; l < state->level; ++l) {
 			if (state->parity[l].device == 0) {
@@ -250,16 +258,6 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
-		}
-
-		if (state->pool[0] != 0 && state->pool_device == 0) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Disk '%s' has a zero serial number.\n", state->pool);
-			fprintf(stderr, "This is not necessarely wrong, but for using SnapRAID\n");
-			fprintf(stderr, "it's better to change the serial number of the disk.\n");
-			fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'.\n");
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
 		}
 #endif
 
@@ -294,6 +292,21 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 			}
 		}
 	}
+
+	/* check device of pool disk */
+#ifdef _WIN32
+	if (!state->opt.skip_device) {
+		if (state->pool[0] != 0 && state->pool_device == 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Disk '%s' has a zero serial number.\n", state->pool);
+			fprintf(stderr, "This is not necessarely wrong, but for using SnapRAID\n");
+			fprintf(stderr, "it's better to change the serial number of the disk.\n");
+			fprintf(stderr, "Try using the 'VolumeID' tool by 'Mark Russinovich'.\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+#endif
 
 	/* count the content files */
 	if (!state->opt.skip_device) {
@@ -529,7 +542,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				state->parity[level].device = st.st_dev;
 			} else {
 				/* if parity is skipped, uses a fake device */
-				state->parity[level].device = -1LL - level;
+				state->parity[level].device = 0;
 			}
 
 			/* adjust the level */
@@ -662,8 +675,8 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 		} else if (strcmp(tag, "disk") == 0) {
 			char dir[PATH_MAX];
 			char device[PATH_MAX];
-			struct stat st;
 			struct snapraid_disk* disk;
+			uint64_t dev;
 
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
@@ -699,12 +712,6 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 			/* get the device of the dir */
 			pathimport(device, sizeof(device), dir);
-			if (stat(device, &st) != 0) {
-				/* LCOV_EXCL_START */
-				fprintf(stderr, "Error accessing 'disk' '%s' specification in '%s' at line %u\n", dir, device, line);
-				exit(EXIT_FAILURE);
-				/* LCOV_EXCL_STOP */
-			}
 
 			/* check if the disk name already exists */
 			for (i = state->disklist; i != 0; i = i->next) {
@@ -719,7 +726,23 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				/* LCOV_EXCL_STOP */
 			}
 
-			disk = disk_alloc(buffer, dir, st.st_dev);
+			if (!state->opt.skip_disk_access) {
+				struct stat st;
+
+				if (stat(device, &st) != 0) {
+					/* LCOV_EXCL_START */
+					fprintf(stderr, "Error accessing 'disk' '%s' specification in '%s' at line %u\n", dir, device, line);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
+				dev = st.st_dev;
+			} else {
+				/* if data disks are skipped, uses a fake device */
+				dev = 0;
+			}
+
+			disk = disk_alloc(buffer, dir, dev);
 
 			tommy_list_insert_tail(&state->disklist, &disk->node, disk);
 		} else if (strcmp(tag, "nohidden") == 0) {
@@ -930,6 +953,7 @@ static void state_map(struct snapraid_state* state)
 	tommy_node* i;
 	unsigned uuid_mismatch;
 	unsigned diskcount;
+	unsigned l;
 
 	/* removes all the mapping without a disk */
 	/* this happens when a disk is removed from the configuration file */
@@ -967,8 +991,12 @@ static void state_map(struct snapraid_state* state)
 				break;
 			}
 		}
-		if (j != 0)
+		if (j != 0) {
+			/* mapping is present, then copy the free blocks into to disk */
+			disk->total_blocks = map->total_blocks;
+			disk->free_blocks = map->free_blocks;
 			continue;
+		}
 
 		/* mapping not found, search for an hole */
 		while (1) {
@@ -989,7 +1017,7 @@ static void state_map(struct snapraid_state* state)
 		}
 
 		/* insert the new mapping */
-		map = map_alloc(disk->name, hole, "");
+		map = map_alloc(disk->name, hole, 0, 0, "");
 
 		tommy_list_insert_tail(&state->maplist, &map->node, map);
 	}
@@ -998,50 +1026,73 @@ static void state_map(struct snapraid_state* state)
 	if (state->no_conf)
 		return;
 
-	/* checks if mapping match the disk uuid */
 	uuid_mismatch = 0;
-	for (i = state->maplist; i != 0; i = i->next) {
-		struct snapraid_map* map = i->data;
-		struct snapraid_disk* disk;
-		char uuid[UUID_MAX];
-		int ret;
 
-		disk = find_disk(state, map->name);
-		if (disk == 0) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Internal inconsistency for mapping '%s'\n", map->name);
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
+	/* checks if mapping match the disk uuid */
+	if (!state->opt.skip_disk_access) {
+		for (i = state->maplist; i != 0; i = i->next) {
+			struct snapraid_map* map = i->data;
+			struct snapraid_disk* disk;
+			char uuid[UUID_MAX];
+			int ret;
 
-		ret = devuuid(disk->device, uuid, sizeof(uuid));
-		if (ret != 0) {
-			/* uuid not available, just ignore but marks the disk with unsupported UUID */
-			disk->has_unsupported_uuid = 1;
-			continue;
-		}
-
-		/* if the uuid is changed */
-		if (strcmp(uuid, map->uuid) != 0) {
-			/* mark the disk as with an UUID change */
-			disk->has_different_uuid = 1;
-
-			/* if the previous uuid is available */
-			if (map->uuid[0] != 0) {
-				/* count the number of uuid change */
-				++uuid_mismatch;
-				fprintf(stderr, "UUID change for disk '%s' from '%s' to '%s'\n", disk->name, map->uuid, uuid);
-			} else {
-				/* no message here, because having a disk without */
-				/* UUID is the normal state of an empty disk */
-				disk->had_empty_uuid = 1;
+			disk = find_disk(state, map->name);
+			if (disk == 0) {
+				/* LCOV_EXCL_START */
+				fprintf(stderr, "Internal inconsistency for mapping '%s'\n", map->name);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
 			}
 
-			/* update the uuid in the mapping, */
-			pathcpy(map->uuid, sizeof(map->uuid), uuid);
+			ret = devuuid(disk->device, uuid, sizeof(uuid));
+			if (ret != 0) {
+				/* uuid not available, just ignore but marks the disk with unsupported UUID */
+				disk->has_unsupported_uuid = 1;
+				continue;
+			}
 
-			/* write the new state with the new uuid */
-			state->need_write = 1;
+			/* if the uuid is changed */
+			if (strcmp(uuid, map->uuid) != 0) {
+				/* mark the disk as with an UUID change */
+				disk->has_different_uuid = 1;
+
+				/* if the previous uuid is available */
+				if (map->uuid[0] != 0) {
+					/* count the number of uuid change */
+					++uuid_mismatch;
+					fprintf(stderr, "UUID change for disk '%s' from '%s' to '%s'\n", disk->name, map->uuid, uuid);
+				} else {
+					/* no message here, because having a disk without */
+					/* UUID is the normal state of an empty disk */
+					disk->had_empty_uuid = 1;
+				}
+
+				/* update the uuid in the mapping, */
+				pathcpy(map->uuid, sizeof(map->uuid), uuid);
+
+				/* write the new state with the new uuid */
+				state->need_write = 1;
+			}
+		}
+	}
+
+	/* checks the parity uuid */
+	if (!state->opt.skip_parity_access) {
+		for (l = 0; l < state->level; ++l) {
+			char uuid[UUID_MAX];
+			int ret;
+
+			ret = devuuid(state->parity[l].device, uuid, sizeof(uuid));
+			if (ret != 0) {
+				/* uuid not available, just ignore */
+				continue;
+			}
+
+			/* update the uuid in the mapping */
+			/* at now we don't enforce uuid for parity */
+			/* as the user is expected to have a different file name */
+			/* for each parity file */
+			pathcpy(state->parity[l].uuid, sizeof(state->parity[l].uuid), uuid);
 		}
 	}
 
@@ -1083,6 +1134,67 @@ static void state_map(struct snapraid_state* state)
 	} else if (diskcount >= 5 && state->level < 2) {
 		fprintf(stderr, "WARNING! With %u disks it's recommended to use two parity levels.\n", diskcount);
 	}
+}
+
+void state_refresh(struct snapraid_state* state)
+{
+	tommy_node* i;
+	unsigned l;
+
+	/* for all disks */
+	for (i = state->maplist; i != 0; i = i->next) {
+		struct snapraid_map* map = i->data;
+		struct snapraid_disk* disk;
+		uint64_t total_space;
+		uint64_t free_space;
+		int ret;
+
+		disk = find_disk(state, map->name);
+		if (disk == 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Internal inconsistency for mapping '%s'\n", map->name);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		ret = fsinfo(disk->dir, 0, &total_space, &free_space);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error accessing disk '%s' to get filesystem info. %s.\n", disk->dir, strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		/* set the new free blocks */
+		map->total_blocks = total_space / state->block_size;
+		map->free_blocks = free_space / state->block_size;
+
+		/* also update the disk info */
+		disk->total_blocks = map->total_blocks;
+		disk->free_blocks = map->free_blocks;
+	}
+
+	/* for all parities */
+	for (l = 0; l < state->level; ++l) {
+		uint64_t total_space;
+		uint64_t free_space;
+		int ret;
+
+		ret = fsinfo(state->parity[l].path, 0, &total_space, &free_space);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error accessing file '%s' to get filesystem info. %s.\n", state->parity[l].path, strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		/* set the new free blocks */
+		state->parity[l].total_blocks = total_space / state->block_size;
+		state->parity[l].free_blocks = free_space / state->block_size;
+	}
+
+	/* note what we don't set need_write = 1, because we don't want */
+	/* to update the content file only for the free space info. */
 }
 
 /**
@@ -2020,10 +2132,12 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
-		} else if (strcmp(tag, "map") == 0) {
+		} else if (strcmp(tag, "map") == 0 || strcmp(tag, "mapping") == 0) {
 			struct snapraid_map* map;
 			char uuid[UUID_MAX];
 			uint32_t v_pos;
+			uint32_t v_total_blocks;
+			uint32_t v_free_blocks;
 
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
@@ -2049,6 +2163,46 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				/* LCOV_EXCL_STOP */
 			}
 
+			/* from SnapRAID 7.0 the 'mapping' command includes the free space */
+			if (strcmp(tag, "mapping") == 0) {
+				c = sgetc(f);
+				if (c != ' ') {
+					/* LCOV_EXCL_START */
+					fprintf(stderr, "Invalid 'map' specification in '%s' at line %u\n", path, line);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
+				ret = sgetu32(f, &v_total_blocks);
+				if (ret < 0) {
+					/* LCOV_EXCL_START */
+					fprintf(stderr, "Invalid 'map' specification in '%s' at line %u\n", path, line);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
+				c = sgetc(f);
+				if (c != ' ') {
+					/* LCOV_EXCL_START */
+					fprintf(stderr, "Invalid 'map' specification in '%s' at line %u\n", path, line);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
+				ret = sgetu32(f, &v_free_blocks);
+				if (ret < 0) {
+					/* LCOV_EXCL_START */
+					fprintf(stderr, "Invalid 'map' specification in '%s' at line %u\n", path, line);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+			} else {
+				v_total_blocks = 0;
+				v_free_blocks = 0;
+			}
+
+			/* check if the uuid is present */
+			/* uuid must be the latest one as it could be also empty */
 			c = sgetc(f);
 			if (c != ' ') {
 				sungetc(c, f);
@@ -2064,9 +2218,80 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				}
 			}
 
-			map = map_alloc(buffer, v_pos, uuid);
+			map = map_alloc(buffer, v_pos, v_total_blocks, v_free_blocks, uuid);
 
 			tommy_list_insert_tail(&state->maplist, &map->node, map);
+		} else if (strcmp(tag, "parity") == 0) {
+			/* from SnapRAID 7.0 the 'parity' command includes the free space */
+			char uuid[UUID_MAX];
+			uint32_t v_level;
+			uint32_t v_total_blocks;
+			uint32_t v_free_blocks;
+
+			ret = sgetu32(f, &v_level);
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				fprintf(stderr, "Invalid 'parity' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			c = sgetc(f);
+			if (c != ' ') {
+				/* LCOV_EXCL_START */
+				fprintf(stderr, "Invalid 'parity' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			ret = sgetu32(f, &v_total_blocks);
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				fprintf(stderr, "Invalid 'parity' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			c = sgetc(f);
+			if (c != ' ') {
+				/* LCOV_EXCL_START */
+				fprintf(stderr, "Invalid 'parity' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			ret = sgetu32(f, &v_free_blocks);
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				fprintf(stderr, "Invalid 'parity' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			/* check if the uuid is present */
+			/* uuid must be the latest one as it could be also empty */
+			c = sgetc(f);
+			if (c != ' ') {
+				sungetc(c, f);
+				uuid[0] = 0;
+			} else {
+				/* read the uuid */
+				ret = sgettok(f, uuid, sizeof(uuid));
+				if (ret < 0) {
+					/* LCOV_EXCL_START */
+					fprintf(stderr, "Invalid 'map' specification in '%s' at line %u\n", path, line);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+			}
+
+			/* if we use this parity entry */
+			if (v_level < state->level) {
+				/* set the parity info */
+				pathcpy(state->parity[v_level].uuid, sizeof(state->parity[v_level].uuid), uuid);
+				state->parity[v_level].total_blocks = v_total_blocks;
+				state->parity[v_level].free_blocks = v_free_blocks;
+			}
 		} else if (strcmp(tag, "sign") == 0) {
 			uint32_t sign;
 
@@ -2174,6 +2399,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 	block_off_t b;
 	block_off_t blockmax;
 	int info_has_rehash;
+	unsigned l;
 
 	count_file = 0;
 	count_hardlink = 0;
@@ -2277,16 +2503,21 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 
 		/* save the mapping only for not empty disks */
 		if (!disk_is_empty(disk, blockmax)) {
-			sputsl("map ", f);
+			sputsl("mapping ", f);
 			sputs(map->name, f);
 			sputc(' ', f);
 			sputu32(map->position, f);
+			sputc(' ', f);
+			sputu32(map->total_blocks, f);
+			sputc(' ', f);
+			sputu32(map->free_blocks, f);
 
 			/* if there is an uuid, print it */
 			if (map->uuid[0]) {
 				sputc(' ', f);
 				sputs(map->uuid, f);
 			}
+
 			sputeol(f);
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
@@ -2300,6 +2531,30 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 		} else {
 			/* mark the disk as without mapping */
 			disk->mapping_idx = -1;
+		}
+	}
+
+	/* for each parity */
+	for (l = 0; l < state->level; ++l) {
+		sputsl("parity ", f);
+		sputu32(l, f);
+		sputc(' ', f);
+		sputu32(state->parity[l].total_blocks, f);
+		sputc(' ', f);
+		sputu32(state->parity[l].free_blocks, f);
+
+		/* if there is an uuid, print it */
+		if (state->parity[l].uuid[0]) {
+			sputc(' ', f);
+			sputs(state->parity[l].uuid, f);
+		}
+
+		sputeol(f);
+		if (serror(f)) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -2625,7 +2880,16 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
-	if (memcmp(buffer, "SNAPCNT1\n\3\0\0", 12) != 0) {
+
+	/*
+	 * File format versions:
+	 *  - SNAPCNT1/SnapRAID 4.0 First version.
+	 *  - SNAPCNT2/SnapRAID 7.0 Adds entries 'M' and 'P', to add free_blocks support.
+	 *    The previous 'm' entry is now deprecated, but supported for importing.
+	 *    Similarly for text file, we add 'mapping' and 'parity' deprecating 'map'.
+	 */
+	if (memcmp(buffer, "SNAPCNT1\n\3\0\0", 12) != 0
+		&& memcmp(buffer, "SNAPCNT2\n\3\0\0", 12) != 0) {
 		/* LCOV_EXCL_START */
 		if (memcmp(buffer, "SNAPCNT", 7) != 0) {
 			decoding_error(path, f);
@@ -3335,10 +3599,12 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
-		} else if (c == 'm') {
+		} else if (c == 'm' || c == 'M') {
 			struct snapraid_map* map;
 			char uuid[UUID_MAX];
 			uint32_t v_pos;
+			uint32_t v_total_blocks;
+			uint32_t v_free_blocks;
 			struct snapraid_disk* disk;
 
 			ret = sgetbs(f, buffer, sizeof(buffer));
@@ -3357,6 +3623,28 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				/* LCOV_EXCL_STOP */
 			}
 
+			/* from SnapRAID 7.0 the 'M' command includes the free space */
+			if (c == 'M') {
+				ret = sgetb32(f, &v_total_blocks);
+				if (ret < 0) {
+					/* LCOV_EXCL_START */
+					decoding_error(path, f);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
+				ret = sgetb32(f, &v_free_blocks);
+				if (ret < 0) {
+					/* LCOV_EXCL_START */
+					decoding_error(path, f);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+			} else {
+				v_total_blocks = 0;
+				v_free_blocks = 0;
+			}
+
 			/* read the uuid */
 			ret = sgetbs(f, uuid, sizeof(uuid));
 			if (ret < 0) {
@@ -3366,7 +3654,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				/* LCOV_EXCL_STOP */
 			}
 
-			map = map_alloc(buffer, v_pos, uuid);
+			map = map_alloc(buffer, v_pos, v_total_blocks, v_free_blocks, uuid);
 
 			tommy_list_insert_tail(&state->maplist, &map->node, map);
 
@@ -3385,6 +3673,52 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			tommy_array_grow(&disk_mapping, mapping_max + 1);
 			tommy_array_set(&disk_mapping, mapping_max, disk);
 			++mapping_max;
+		} else if (c == 'P') {
+			/* from SnapRAID 7.0 the 'P' command includes the free space */
+			char uuid[UUID_MAX];
+			uint32_t v_level;
+			uint32_t v_total_blocks;
+			uint32_t v_free_blocks;
+
+			ret = sgetb32(f, &v_level);
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			ret = sgetb32(f, &v_total_blocks);
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			ret = sgetb32(f, &v_free_blocks);
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			ret = sgetbs(f, uuid, sizeof(uuid));
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			/* if we use this parity entry */
+			if (v_level < state->level) {
+				/* set the parity info */
+				pathcpy(state->parity[v_level].uuid, sizeof(state->parity[v_level].uuid), uuid);
+				state->parity[v_level].total_blocks = v_total_blocks;
+				state->parity[v_level].free_blocks = v_free_blocks;
+			}
 		} else if (c == 'N') {
 			uint32_t crc_stored;
 			uint32_t crc_computed;
@@ -3475,6 +3809,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	time_t info_oldest;
 	int info_has_rehash;
 	int mapping_idx;
+	unsigned l;
 
 	count_file = 0;
 	count_hardlink = 0;
@@ -3513,7 +3848,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	}
 
 	/* write header */
-	swrite("SNAPCNT1\n\3\0\0", 12, f);
+	swrite("SNAPCNT2\n\3\0\0", 12, f);
 
 	/* write block size and block max */
 	sputc('z', f);
@@ -3588,9 +3923,11 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 
 		/* save the mapping only for not empty disks */
 		if (!disk_is_empty(disk, blockmax)) {
-			sputc('m', f);
+			sputc('M', f);
 			sputbs(map->name, f);
 			sputb32(map->position, f);
+			sputb32(map->total_blocks, f);
+			sputb32(map->free_blocks, f);
 			sputbs(map->uuid, f);
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
@@ -3605,6 +3942,21 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 		} else {
 			/* mark the disk as without mapping */
 			disk->mapping_idx = -1;
+		}
+	}
+
+	/* for each parity */
+	for (l = 0; l < state->level; ++l) {
+		sputc('P', f);
+		sputb32(l, f);
+		sputb32(state->parity[l].total_blocks, f);
+		sputb32(state->parity[l].free_blocks, f);
+		sputbs(state->parity[l].uuid, f);
+		if (serror(f)) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -4443,9 +4795,9 @@ void state_usage_print(struct snapraid_state* state)
 			tick_max = disk->tick;
 	}
 	for (l = 0; l < state->level; ++l) {
-		tick_total += state->tick_parity[l];
-		if (state->tick_parity[l] > tick_max)
-			tick_max = state->tick_parity[l];
+		tick_total += state->parity[l].tick;
+		if (state->parity[l].tick > tick_max)
+			tick_max = state->parity[l].tick;
 	}
 
 	if (!tick_total)
@@ -4464,11 +4816,11 @@ void state_usage_print(struct snapraid_state* state)
 
 	printf("Time for parity:");
 	for (l = 0; l < state->level; ++l) {
-		if (state->tick_parity[l] == tick_max)
+		if (state->parity[l].tick == tick_max)
 			printf(" %s:", lev_config_name(l));
 		else
 			printf(" ");
-		printf("%" PRIu64 "%%", state->tick_parity[l] * 100U / tick_total);
+		printf("%" PRIu64 "%%", state->parity[l].tick * 100U / tick_total);
 	}
 	printf("\n");
 }
