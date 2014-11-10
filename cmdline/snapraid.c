@@ -226,7 +226,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_FORCE_ORDER_INODE 268
 #define OPT_TEST_FORCE_ORDER_ALPHA 269
 #define OPT_TEST_FORCE_ORDER_DIR 270
-#define OPT_TEST_FORCE_SCRUB 271
+#define OPT_TEST_FORCE_SCRUB_AT 271
 #define OPT_TEST_FORCE_SCRUB_EVEN 272
 #define OPT_TEST_FORCE_CONTENT_WRITE 273
 #define OPT_TEST_FORCE_CONTENT_TEXT 274
@@ -238,6 +238,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_IMPORT_CONTENT 280
 #define OPT_TEST_FORCE_PROGRESS 281
 #define OPT_TEST_SKIP_DISK_ACCESS 282
+#define OPT_TEST_FORCE_AUTOSAVE_AT 283
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -310,7 +311,7 @@ struct option long_options[] = {
 	{ "test-force-order-dir", 0, 0, OPT_TEST_FORCE_ORDER_DIR },
 
 	/* Force scrub of the specified number of blocks */
-	{ "test-force-scrub", 1, 0, OPT_TEST_FORCE_SCRUB },
+	{ "test-force-scrub-at", 1, 0, OPT_TEST_FORCE_SCRUB_AT },
 
 	/* Force scrub of all the even blocks. This is really for testing, don't try it */
 	{ "test-force-scrub-even", 0, 0, OPT_TEST_FORCE_SCRUB_EVEN },
@@ -344,6 +345,9 @@ struct option long_options[] = {
 
 	/* Skip the disk access */
 	{ "test-skip-disk-access", 0, 0, OPT_TEST_SKIP_DISK_ACCESS },
+
+	/* Force autosave at the specified block */
+	{ "test-force-autosave-at", 1, 0, OPT_TEST_FORCE_AUTOSAVE_AT },
 
 	{ 0, 0, 0, 0 }
 };
@@ -632,8 +636,8 @@ int main(int argc, char* argv[])
 		case OPT_TEST_FORCE_ORDER_DIR :
 			opt.force_order = SORT_DIR;
 			break;
-		case OPT_TEST_FORCE_SCRUB :
-			opt.force_scrub = atoi(optarg);
+		case OPT_TEST_FORCE_SCRUB_AT :
+			opt.force_scrub_at = atoi(optarg);
 			break;
 		case OPT_TEST_FORCE_SCRUB_EVEN :
 			opt.force_scrub_even = 1;
@@ -657,6 +661,9 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_TEST_FORCE_PROGRESS :
 			opt.force_progress = 1;
+			break;
+		case OPT_TEST_FORCE_AUTOSAVE_AT :
+			opt.force_autosave_at = atoi(optarg);
 			break;
 		default :
 			/* LCOV_EXCL_START */

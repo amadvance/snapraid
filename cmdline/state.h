@@ -87,12 +87,13 @@ struct snapraid_option {
 	int force_murmur3; /**< Force Murmur3 choice. */
 	int force_spooky2; /**< Force Spooky2 choice. */
 	int force_order; /**< Force sorting order. One of the SORT_* defines. */
-	unsigned force_scrub; /**< Force scrub for the specified number of blocks. */
+	unsigned force_scrub_at; /**< Force scrub for the specified number of blocks. */
 	int force_scrub_even; /**< Force scrub of all the even blocks. */
 	int force_content_write; /**< Force the update of the content file. */
 	int force_content_text; /**< Force the use of text version of content file. */
 	int force_scan_winfind; /**< Force the use of FindFirst/Next in Windows to list directories. */
 	int force_progress; /**< Force the use of the progress status. */
+	unsigned force_autosave_at; /**< Force autosave at the specified block. */
 };
 
 /**

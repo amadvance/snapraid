@@ -947,9 +947,11 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		}
 
 		/* autosave */
-		if (state->autosave != 0
+		if ((state->autosave != 0
 			&& autosavedone >= autosavelimit /* if we have reached the limit */
-			&& autosavemissing >= autosavelimit /* if we have at least a full step to do */
+			&& autosavemissing >= autosavelimit) /* if we have at least a full step to do */
+			/* or if we have a forced autosave at the specified block */
+			|| (state->opt.force_autosave_at != 0 && state->opt.force_autosave_at == i)
 		) {
 			autosavedone = 0; /* restart the counter */
 

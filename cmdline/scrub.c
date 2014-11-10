@@ -527,9 +527,9 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 		/* no limit */
 		countlimit = blockmax;
 		recentlimit = now;
-	} else if (state->opt.force_scrub) {
+	} else if (state->opt.force_scrub_at) {
 		/* scrub the specified amount of blocks */
-		countlimit = state->opt.force_scrub;
+		countlimit = state->opt.force_scrub_at;
 		recentlimit = now;
 	} else {
 		/* by default scrub 1/12 of the array */
