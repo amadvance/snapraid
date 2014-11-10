@@ -877,6 +877,16 @@ int windows_fsync(int fd)
 		return -1;
 	}
 
+	/*
+	 * "The FlushFileBuffers API can be used to flush all the outstanding data
+	 * and metadata on a single file or a whole volume. However, frequent use
+	 * of this API can cause reduced throughput. Internally, Windows uses the
+	 * SCSI Synchronize Cache or the IDE/ATAPI Flush cache commands."
+	 *
+	 * From:
+	 * "Windows Write Caching - Part 2 An overview for Application Developers"
+	 * http://winntfs.com/2012/11/29/windows-write-caching-part-2-an-overview-for-application-developers/
+	 */
 	if (!FlushFileBuffers(h)) {
 		DWORD error = GetLastError();
 
@@ -887,7 +897,7 @@ int windows_fsync(int fd)
 			 * doesn't support buffering, like the console output.
 			 *
 			 * We had a report that also ATA-over-Ethernet returns
-			 * this * error, but not enough sure to ignore it.
+			 * this error, but not enough sure to ignore it.
 			 * So, we use now an extended error reporting.
 			 */
 			fprintf(stderr, "Unexpected Windows INVALID_HANDLE error in FlushFileBuffers().\n");
