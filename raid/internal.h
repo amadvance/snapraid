@@ -17,6 +17,8 @@
 
 /*
  * Supported architecture.
+ *
+ * Detect the target architecture directly from the compiler.
  */
 #if defined(__i386__)
 #define CONFIG_X86 1
@@ -26,6 +28,41 @@
 #if defined(__x86_64__)
 #define CONFIG_X86 1
 #define CONFIG_X86_64 1
+#endif
+
+/*
+ * Supported instruction sets.
+ *
+ * It may happen that the assembler is too old to support
+ * all instructions, even if the architecture supports them.
+ * These defines allow to exclude from the build the not supported ones.
+ *
+ * If in your project you use a predefined assembler, you can define them
+ * using fixed values, instead of using the HAVE_* defines.
+ */
+#if HAVE_CONFIG_H
+
+/* Includes the project configuration for HAVE_* defines */
+#include "../config.h"
+
+#if HAVE_SSE2 /* Enables SSE2 only if the assembler supports it */
+#define CONFIG_SSE2 1
+#endif
+
+#if HAVE_SSSE3 /* Enables SSSE3 only if the assembler supports it */
+#define CONFIG_SSSE3 1
+#endif
+
+#if HAVE_AVX2 /* Enables AVX2 only if the assembler supports it */
+#define CONFIG_AVX2 1
+#endif
+#else
+/* If no config file, assumes the assembler supports everything in x86 */
+#ifdef CONFIG_X86
+#define CONFIG_SSE2 1
+#define CONFIG_SSSE3 1
+#define CONFIG_AVX2 1
+#endif
 #endif
 
 /*
@@ -160,11 +197,13 @@ static __always_inline void raid_asm_begin(void)
 
 static __always_inline void raid_asm_end(void)
 {
-	/* SSE2 and AVX2 code uses non-temporal writes, like movntdq, */
+	/* SSE2 and AVX2 code uses non-temporal writes, like MOVNTDQ, */
 	/* that use a weak memory model. To ensure that other processors */
 	/* see correctly the data written, we use a store-store memory */
 	/* barrier at the end of the asm code */
+#ifdef CONFIG_SSE2
 	asm volatile("sfence" : : : "memory");
+#endif
 }
 
 static __always_inline void raid_asm_clobber_xmm4(void)
@@ -174,7 +213,9 @@ static __always_inline void raid_asm_clobber_xmm4(void)
 	/* registers xmm6-xmm15 should be kept by the callee. */
 	/* this clobber list force the compiler to save any */
 	/* register that needs to be saved */
-#ifdef __SSE__
+	/* we check for __SSE2_ because we require that the */
+	/* compiler supports SSE2 registers in the clobber list */
+#if defined(CONFIG_SSE2) && defined(__SSE2__)
 	asm volatile("" : : : "%xmm0", "%xmm1", "%xmm2", "%xmm3");
 #endif
 }
@@ -182,7 +223,7 @@ static __always_inline void raid_asm_clobber_xmm4(void)
 static __always_inline void raid_asm_clobber_xmm8(void)
 {
 	raid_asm_clobber_xmm4();
-#ifdef __SSE__
+#if defined(CONFIG_SSE2) && defined(__SSE2__)
 	asm volatile("" : : : "%xmm4", "%xmm5", "%xmm6", "%xmm7");
 #endif
 }
@@ -193,21 +234,25 @@ static __always_inline void raid_asm_clobber_ymm4(void)
 	/* reset the upper part of the ymm registers */
 	/* to avoid the 70 clocks penality on the next */
 	/* xmm register use */
+#ifdef CONFIG_AVX2
 	asm volatile("vzeroupper" : : : "memory");
+#endif
 }
 
 static __always_inline void raid_asm_clobber_ymm8(void)
 {
 	raid_asm_clobber_xmm8();
+#ifdef CONFIG_AVX2
 	asm volatile("vzeroupper" : : : "memory");
-}
 #endif
+}
+#endif /* CONFIG_X86 */
 
 #ifdef CONFIG_X86_64
 static __always_inline void raid_asm_clobber_xmm16(void)
 {
 	raid_asm_clobber_xmm8();
-#ifdef __SSE__
+#if defined(CONFIG_SSE2) && defined(__SSE2__)
 	asm volatile("" : : : "%xmm8", "%xmm9", "%xmm10", "%xmm11");
 	asm volatile("" : : : "%xmm12", "%xmm13", "%xmm14", "%xmm15");
 #endif
@@ -216,9 +261,11 @@ static __always_inline void raid_asm_clobber_xmm16(void)
 static __always_inline void raid_asm_clobber_ymm16(void)
 {
 	raid_asm_clobber_xmm16();
+#ifdef CONFIG_AVX2
 	asm volatile("vzeroupper" : : : "memory");
-}
 #endif
+}
+#endif /* CONFIG_X86_64 */
 
 #endif
 

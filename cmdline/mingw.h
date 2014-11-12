@@ -23,10 +23,13 @@
 #include <wchar.h>
 
 /**
- * Assume to always have CRC32B if running in x86
+ * Always assume that the assembler supports SSE2, SSSE3, SSE42 and AVX2 instructions in x86
  */
 #ifdef CONFIG_X86
-#define HAVE_CRC32B 1
+#define HAVE_SSE2 1
+#define HAVE_SSSE3 1
+#define HAVE_SSE42 1
+#define HAVE_AVX2 1
 #endif
 
 /**

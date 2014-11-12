@@ -121,12 +121,15 @@ static inline int raid_os_support_256bit_regs(void)
 
 	/* get the value of the Extended Control Register ecx=0 */
 	asm volatile(
-		"xgetbv\n"
+		/* uses a direct encoding of the XGETBV instruction as only recent */
+		/* assemblers support it. */
+		/* the next line is equivalent at: "xgetbv\n" */
+		".byte 0x0f, 0x01, 0xd0\n"
 		: "=a" (reg[0]), "=d" (reg[3])
 		: "c" (0)
 	);
 
-	/* check if the OS save all the 256 bits registers */
+	/* check if the OS saves the 256 bits registers in task switch */
 	return (reg[0] & 0x6) == 0x6;
 }
 
@@ -134,7 +137,7 @@ static inline int raid_cpu_has_avx2(void)
 {
 	uint32_t reg[4];
 
-	/* check if the CPU supports XSAVE and XRSTOR, and also XGETBV */
+	/* check if the CPU supports XSAVE and XRSTOR, and XGETBV */
 	if (!raid_cpu_has_xsavexrstor())
 		return 0;
 

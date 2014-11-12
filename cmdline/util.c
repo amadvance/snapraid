@@ -1185,8 +1185,7 @@ uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size)
 	return crc;
 }
 
-#if HAVE_CRC32B
-
+#if HAVE_SSE42
 uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size)
 {
 #ifdef CONFIG_X86_64
@@ -1228,7 +1227,7 @@ uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, unsigned size);
 void crc32c_init(void)
 {
 	crc32c = crc32c_gen;
-#if HAVE_CRC32B
+#if HAVE_SSE42
 	if (raid_cpu_has_sse42()) {
 		crc32c = crc32c_x86;
 	}

@@ -88,22 +88,70 @@ dnl Checks for compiler
 AC_CHECK_CC_OPT([-Wall], CFLAGS="$CFLAGS -Wall", [])
 AC_CHECK_CC_OPT([-Wextra], CFLAGS="$CFLAGS -Wextra", [])
 
-dnl Checks for AS supporting the CRC instruction. In OpenBSD 5.4 it's not.
-AC_MSG_CHECKING([for crc32b])
-asmcrc=no
+dnl Checks for AS supporting the SSE2 instructions.
+AC_MSG_CHECKING([for sse2])
+asmsse2=no
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#if defined(__i386__) || defined(__x86_64__)
+	void f(void)
+	{
+		asm volatile("pxor %xmm0,%xmm1");
+	}
+#else
+#error not x86
+#endif
+]])],
+[AC_DEFINE([HAVE_SSE2], [1], [Define to 1 if sse2 is supported by the assembler.]) asmsse2=yes])
+AC_MSG_RESULT([$asmsse2])
+
+dnl Checks for AS supporting the SSSE3 instructions.
+AC_MSG_CHECKING([for ssse3])
+asmssse3=no
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#if defined(__i386__) || defined(__x86_64__)
+	void f(void)
+	{
+		asm volatile("pshufb %xmm0,%xmm1");
+	}
+#else
+#error not x86
+#endif
+]])],
+[AC_DEFINE([HAVE_SSSE3], [1], [Define to 1 if ssse3 is supported by the assembler.]) asmssse3=yes])
+AC_MSG_RESULT([$asmssse3])
+
+dnl Checks for AS supporting the SSE4.2 instructions.
+AC_MSG_CHECKING([for sse42])
+asmsse42=no
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #if defined(__i386__) || defined(__x86_64__) 
 	unsigned f(unsigned crc, unsigned char b)
 	{
-		asm volatile ("crc32b %1, %0\n" : "+r" (crc) : "rm" (b));
+		asm volatile("crc32b %1, %0" : "+r" (crc) : "rm" (b));
 		return crc;
 	}
 #else
 #error not x86
 #endif
 ]])],
-[AC_DEFINE([HAVE_CRC32B], [1], [Define if statvfs exists.]) asmcrc=yes])
-AC_MSG_RESULT([$asmcrc])
+[AC_DEFINE([HAVE_SSE42], [1], [Define to 1 if sse4.2 is supported by the assembler.]) asmsse42=yes])
+AC_MSG_RESULT([$asmsse42])
+
+dnl Checks for AS supporting the AVX2 instructions.
+AC_MSG_CHECKING([for avx2])
+asmavx2=no
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#if defined(__i386__) || defined(__x86_64__)
+	void f(void* ptr)
+	{
+		asm volatile("vbroadcasti128 %0, %%ymm0" : : "m" (ptr));
+	}
+#else
+#error not x86
+#endif
+]])],
+[AC_DEFINE([HAVE_AVX2], [1], [Define to 1 if avx2 is supported by the assembler.]) asmavx2=yes])
+AC_MSG_RESULT([$asmavx2])
 
 dnl Checks for test environment
 AS_CASE([$host],

@@ -33,9 +33,12 @@ static struct raid_func {
 	{ "int8", raid_recX_int8 },
 
 #ifdef CONFIG_X86
+#ifdef CONFIG_SSE2
 	{ "sse2", raid_gen1_sse2 },
 	{ "sse2", raid_gen2_sse2 },
 	{ "sse2", raid_genz_sse2 },
+#endif
+#ifdef CONFIG_SSSE3
 	{ "ssse3", raid_gen3_ssse3 },
 	{ "ssse3", raid_gen4_ssse3 },
 	{ "ssse3", raid_gen5_ssse3 },
@@ -43,11 +46,14 @@ static struct raid_func {
 	{ "ssse3", raid_rec1_ssse3 },
 	{ "ssse3", raid_rec2_ssse3 },
 	{ "ssse3", raid_recX_ssse3 },
+#endif
+#ifdef CONFIG_AVX2
 	{ "avx2", raid_gen1_avx2 },
 	{ "avx2", raid_gen2_avx2 },
 	{ "avx2", raid_rec1_avx2 },
 	{ "avx2", raid_rec2_avx2 },
 	{ "avx2", raid_recX_avx2 },
+#endif
 #endif
 
 #ifdef CONFIG_X86_64
