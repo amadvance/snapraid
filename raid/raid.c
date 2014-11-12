@@ -171,7 +171,7 @@
 /**
  * Generator matrix currently used.
  */
-const uint8_t(*raid_gfgen)[256];
+const uint8_t (*raid_gfgen)[256];
 
 void raid_mode(int mode)
 {
