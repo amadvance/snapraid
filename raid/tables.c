@@ -8799,9 +8799,9 @@ const uint8_t __aligned(256) raid_gfinv[256] =
  * Power matrix used to generate parity.
  * This matrix is valid for up to 3 parity with 251 data disks.
  *
- * 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 
- * 01 02 04 08 10 20 40 80 1d 3a 74 e8 cd 87 13 26 4c 98 2d 5a b4 75 ea c9 8f 03 06 0c 18 30 60 c0 9d 27 4e 9c 25 4a 94 35 6a d4 b5 77 ee c1 9f 23 46 8c 05 0a 14 28 50 a0 5d ba 69 d2 b9 6f de a1 5f be 61 c2 99 2f 5e bc 65 ca 89 0f 1e 3c 78 f0 fd e7 d3 bb 6b d6 b1 7f fe e1 df a3 5b b6 71 e2 d9 af 43 86 11 22 44 88 0d 1a 34 68 d0 bd 67 ce 81 1f 3e 7c f8 ed c7 93 3b 76 ec c5 97 33 66 cc 85 17 2e 5c b8 6d da a9 4f 9e 21 42 84 15 2a 54 a8 4d 9a 29 52 a4 55 aa 49 92 39 72 e4 d5 b7 73 e6 d1 bf 63 c6 91 3f 7e fc e5 d7 b3 7b f6 f1 ff e3 db ab 4b 96 31 62 c4 95 37 6e dc a5 57 ae 41 82 19 32 64 c8 8d 07 0e 1c 38 70 e0 dd a7 53 a6 51 a2 59 b2 79 f2 f9 ef c3 9b 2b 56 ac 45 8a 09 12 24 48 90 3d 7a f4 f5 f7 f3 fb eb cb 8b 0b 16 2c 58 b0 7d fa e9 cf 83 1b 36 6c 
- * 01 8e 47 ad d8 6c 36 1b 83 cf e9 fa 7d b0 58 2c 16 0b 8b cb eb fb f3 f7 f5 f4 7a 3d 90 48 24 12 09 8a 45 ac 56 2b 9b c3 ef f9 f2 79 b2 59 a2 51 a6 53 a7 dd e0 70 38 1c 0e 07 8d c8 64 32 19 82 41 ae 57 a5 dc 6e 37 95 c4 62 31 96 4b ab db e3 ff f1 f6 7b b3 d7 e5 fc 7e 3f 91 c6 63 bf d1 e6 73 b7 d5 e4 72 39 92 49 aa 55 a4 52 29 9a 4d a8 54 2a 15 84 42 21 9e 4f a9 da 6d b8 5c 2e 17 85 cc 66 33 97 c5 ec 76 3b 93 c7 ed f8 7c 3e 1f 81 ce 67 bd d0 68 34 1a 0d 88 44 22 11 86 43 af d9 e2 71 b6 5b a3 df e1 fe 7f b1 d6 6b bb d3 e7 fd f0 78 3c 1e 0f 89 ca 65 bc 5e 2f 99 c2 61 be 5f a1 de 6f b9 d2 69 ba 5d a0 50 28 14 0a 05 8c 46 23 9f c1 ee 77 b5 d4 6a 35 94 4a 25 9c 4e 27 9d c0 60 30 18 0c 06 03 8f c9 ea 75 b4 5a 2d 98 4c 26 13 87 cd e8 74 3a 1d 80 40 20 
+ * 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
+ * 01 02 04 08 10 20 40 80 1d 3a 74 e8 cd 87 13 26 4c 98 2d 5a b4 75 ea c9 8f 03 06 0c 18 30 60 c0 9d 27 4e 9c 25 4a 94 35 6a d4 b5 77 ee c1 9f 23 46 8c 05 0a 14 28 50 a0 5d ba 69 d2 b9 6f de a1 5f be 61 c2 99 2f 5e bc 65 ca 89 0f 1e 3c 78 f0 fd e7 d3 bb 6b d6 b1 7f fe e1 df a3 5b b6 71 e2 d9 af 43 86 11 22 44 88 0d 1a 34 68 d0 bd 67 ce 81 1f 3e 7c f8 ed c7 93 3b 76 ec c5 97 33 66 cc 85 17 2e 5c b8 6d da a9 4f 9e 21 42 84 15 2a 54 a8 4d 9a 29 52 a4 55 aa 49 92 39 72 e4 d5 b7 73 e6 d1 bf 63 c6 91 3f 7e fc e5 d7 b3 7b f6 f1 ff e3 db ab 4b 96 31 62 c4 95 37 6e dc a5 57 ae 41 82 19 32 64 c8 8d 07 0e 1c 38 70 e0 dd a7 53 a6 51 a2 59 b2 79 f2 f9 ef c3 9b 2b 56 ac 45 8a 09 12 24 48 90 3d 7a f4 f5 f7 f3 fb eb cb 8b 0b 16 2c 58 b0 7d fa e9 cf 83 1b 36 6c
+ * 01 8e 47 ad d8 6c 36 1b 83 cf e9 fa 7d b0 58 2c 16 0b 8b cb eb fb f3 f7 f5 f4 7a 3d 90 48 24 12 09 8a 45 ac 56 2b 9b c3 ef f9 f2 79 b2 59 a2 51 a6 53 a7 dd e0 70 38 1c 0e 07 8d c8 64 32 19 82 41 ae 57 a5 dc 6e 37 95 c4 62 31 96 4b ab db e3 ff f1 f6 7b b3 d7 e5 fc 7e 3f 91 c6 63 bf d1 e6 73 b7 d5 e4 72 39 92 49 aa 55 a4 52 29 9a 4d a8 54 2a 15 84 42 21 9e 4f a9 da 6d b8 5c 2e 17 85 cc 66 33 97 c5 ec 76 3b 93 c7 ed f8 7c 3e 1f 81 ce 67 bd d0 68 34 1a 0d 88 44 22 11 86 43 af d9 e2 71 b6 5b a3 df e1 fe 7f b1 d6 6b bb d3 e7 fd f0 78 3c 1e 0f 89 ca 65 bc 5e 2f 99 c2 61 be 5f a1 de 6f b9 d2 69 ba 5d a0 50 28 14 0a 05 8c 46 23 9f c1 ee 77 b5 d4 6a 35 94 4a 25 9c 4e 27 9d c0 60 30 18 0c 06 03 8f c9 ea 75 b4 5a 2d 98 4c 26 13 87 cd e8 74 3a 1d 80 40 20
  */
 const uint8_t __aligned(256) raid_gfvandermonde[3][256] =
 {
@@ -8837,7 +8837,7 @@ const uint8_t __aligned(256) raid_gfvandermonde[3][256] =
 		0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
 		0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
 		0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-		0x01, 0x01, 0x01, 
+		0x01, 0x01, 0x01,
 	},
 	{
 		0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
@@ -8871,7 +8871,7 @@ const uint8_t __aligned(256) raid_gfvandermonde[3][256] =
 		0x12, 0x24, 0x48, 0x90, 0x3d, 0x7a, 0xf4, 0xf5,
 		0xf7, 0xf3, 0xfb, 0xeb, 0xcb, 0x8b, 0x0b, 0x16,
 		0x2c, 0x58, 0xb0, 0x7d, 0xfa, 0xe9, 0xcf, 0x83,
-		0x1b, 0x36, 0x6c, 
+		0x1b, 0x36, 0x6c,
 	},
 	{
 		0x01, 0x8e, 0x47, 0xad, 0xd8, 0x6c, 0x36, 0x1b,
@@ -8905,7 +8905,7 @@ const uint8_t __aligned(256) raid_gfvandermonde[3][256] =
 		0xc0, 0x60, 0x30, 0x18, 0x0c, 0x06, 0x03, 0x8f,
 		0xc9, 0xea, 0x75, 0xb4, 0x5a, 0x2d, 0x98, 0x4c,
 		0x26, 0x13, 0x87, 0xcd, 0xe8, 0x74, 0x3a, 0x1d,
-		0x80, 0x40, 0x20, 
+		0x80, 0x40, 0x20,
 	},
 };
 
@@ -8913,12 +8913,12 @@ const uint8_t __aligned(256) raid_gfvandermonde[3][256] =
  * Cauchy matrix used to generate parity.
  * This matrix is valid for up to 6 parity with 251 data disks.
  *
- * 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 
- * 01 02 04 08 10 20 40 80 1d 3a 74 e8 cd 87 13 26 4c 98 2d 5a b4 75 ea c9 8f 03 06 0c 18 30 60 c0 9d 27 4e 9c 25 4a 94 35 6a d4 b5 77 ee c1 9f 23 46 8c 05 0a 14 28 50 a0 5d ba 69 d2 b9 6f de a1 5f be 61 c2 99 2f 5e bc 65 ca 89 0f 1e 3c 78 f0 fd e7 d3 bb 6b d6 b1 7f fe e1 df a3 5b b6 71 e2 d9 af 43 86 11 22 44 88 0d 1a 34 68 d0 bd 67 ce 81 1f 3e 7c f8 ed c7 93 3b 76 ec c5 97 33 66 cc 85 17 2e 5c b8 6d da a9 4f 9e 21 42 84 15 2a 54 a8 4d 9a 29 52 a4 55 aa 49 92 39 72 e4 d5 b7 73 e6 d1 bf 63 c6 91 3f 7e fc e5 d7 b3 7b f6 f1 ff e3 db ab 4b 96 31 62 c4 95 37 6e dc a5 57 ae 41 82 19 32 64 c8 8d 07 0e 1c 38 70 e0 dd a7 53 a6 51 a2 59 b2 79 f2 f9 ef c3 9b 2b 56 ac 45 8a 09 12 24 48 90 3d 7a f4 f5 f7 f3 fb eb cb 8b 0b 16 2c 58 b0 7d fa e9 cf 83 1b 36 6c 
- * 01 f5 d2 c4 9a 71 f1 7f fc 87 c1 c6 19 2f 40 55 3d ba 53 04 9c 61 34 8c 46 68 70 3e cc 7d 74 75 b5 db 0c df 9e 6d 79 eb 63 9f 38 d0 94 a5 24 89 5c 65 5b ae 37 33 4c dd 47 f4 02 a6 39 d8 9d 2d 62 b9 2e 0f 2b 60 58 e4 f8 6c 72 b0 85 4d 95 41 1c 23 05 99 32 c5 0e 82 91 14 d1 af f9 b3 07 97 6e 0b 67 3b 78 e6 28 22 4f a3 ca 48 de 1d a8 17 6f 90 aa 31 5a f3 e9 a9 44 30 56 09 59 6a 42 cd e5 d6 86 d9 bf cb 26 66 7c d5 be 25 1f e0 98 27 92 51 c7 45 2c c0 ad a7 69 f7 b4 e8 84 e1 18 88 3c 76 20 5e 9b 1e 0d 81 4a bd 16 8a ac 93 ce 1a c2 0a 3f fd e3 77 6b d7 ef a4 80 a1 36 ed a2 12 57 b6 29 8d 7b c8 52 c3 bc b8 21 d4 ea d3 06 ab 2a 1b 5f b7 10 ec 64 f6 e2 11 50 83 54 3a fa fb f2 43 b1 ff e7 c9 03 bb ee 13 8b dc 35 b2 da cf a0 96 49 4e 08 73 f0 7e fe 15 4b 
- * 01 bb a6 d7 c7 07 ce 82 4a 2f a5 9b b6 60 f1 ad e7 f4 06 d2 df 2e ca 65 5c 48 21 aa cd 4e c1 61 38 0a 3e d1 d5 cb 10 dc 5e 24 b8 de 79 36 43 72 d9 f8 f9 a2 a4 6a 3d ea 8e 03 f5 ab b4 5d b5 53 6b 39 86 b0 50 74 96 84 5a 4b e8 49 e5 51 ef 12 bc 89 5b 2b 29 09 c3 57 1e 37 76 0b 64 8a 52 59 80 da a8 44 95 3c 33 e6 7c af 6c b1 9d fc 92 d6 d8 ff a7 77 04 13 73 66 28 7d 83 fb 5f 63 25 19 bd c5 3b 6e 20 35 55 42 31 e1 b9 9e 90 d4 ba db f7 2a e9 3a a0 75 7a d3 02 ee 9c c6 1f 14 cc 22 4d 30 71 58 11 85 4f 6f 6d 1d cf fa 54 a9 17 a3 0f ae 0d 1c c2 d0 32 16 f6 c0 7f 2d 15 f3 1b f2 ed b3 45 c8 ac 7b 2c e2 e4 bf be 9f 34 05 70 3f 98 fe 62 18 9a 56 8d 93 97 78 4c 7e 27 87 08 8b ec 67 0e 1a 23 8c 68 99 94 40 b2 a1 eb b7 26 f0 dd e3 69 0c c4 88 41 81 91 e0 fd 
- * 01 97 7f 9c 7c 18 bd a2 58 1a da 74 70 a3 e5 47 29 07 f5 80 23 e9 fa 46 54 a0 99 95 53 9b 0b c7 09 c0 78 89 92 e3 0d b0 2a 8c fb 17 3f 26 65 87 27 5c 66 61 79 4d 32 b3 8d 52 e2 82 3d f9 c5 02 bc 4c 73 48 62 af ba 41 d9 c4 2f b1 33 b8 15 7d cf 3a a9 5f 84 6d 34 1b 44 94 72 81 42 be cc 4b 0a 6f 5a 22 36 b5 3c 9d 13 7e 08 dd d6 5e 04 fc 5b ec ef f1 6e 1e 77 24 e6 c6 aa cb fd 51 67 06 6a 4a 88 db b2 c2 5d 43 40 f7 50 a8 f2 7a 71 a4 d2 bf 31 90 19 9a 8e f6 c3 a6 e7 60 12 ee 2d de 38 e8 b7 98 c1 28 f3 05 96 63 d1 b9 14 9f 1d 83 68 75 ed 16 03 ce e4 df e0 10 ae 69 55 91 2e 4e fe 21 1f 9e e1 d5 cd ca f0 8b 2b c9 8a 93 bb 57 20 86 1c a1 4f 3e 25 d4 6c a5 6b a7 37 ff 39 35 0c f8 ea 56 45 8f 2c 59 ab 85 eb 49 0f dc d8 76 b6 f4 0e 11 b4 d0 30 d3 3b ad d7 
- * 01 2b 3f cf 73 2c d6 ed cb 74 15 78 8a c1 17 c9 89 68 21 ab 76 3b 4b 5a 6e 0e b9 d3 b6 3e 36 86 bf a2 a7 30 14 eb c7 2d 96 67 20 b5 9a e0 a8 c6 80 04 8d fe 75 5e 23 ca 8f 48 99 0d df 8e b8 70 29 9c 44 69 3d a5 c2 90 d2 1c 9b 02 1d 98 93 ec 84 e8 64 4c 3a 8b 97 f3 e5 c0 7d 26 c8 08 a0 62 82 55 f7 33 f6 51 63 4d 77 da fd c3 38 6d ee 09 47 a3 05 de a6 f1 22 25 6a 0c 81 b2 6b 58 d5 b3 fc fb 28 7f 07 dc 7a 9e d0 37 b4 e1 1a 24 03 ae 94 ba 88 2f ea 2e 8c 5b bb 79 d1 11 ff a4 19 3c 2a 4e 52 e3 95 bd 31 5d 35 4a 41 c4 db 42 c5 0b 49 1b 7c e4 b0 9d 45 f0 a9 61 57 06 d4 40 91 56 13 fa 87 ac 27 54 dd 59 1f 71 39 43 6c f9 be 4f f4 1e 32 cd e9 7e 7b 66 5f ef e7 6f 0a 60 d7 b7 83 92 e2 af 72 f8 b1 50 10 ce 18 53 a1 cc ad 12 34 0f f5 aa 16 e6 f2 d8 85 9f bc 
+ * 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
+ * 01 02 04 08 10 20 40 80 1d 3a 74 e8 cd 87 13 26 4c 98 2d 5a b4 75 ea c9 8f 03 06 0c 18 30 60 c0 9d 27 4e 9c 25 4a 94 35 6a d4 b5 77 ee c1 9f 23 46 8c 05 0a 14 28 50 a0 5d ba 69 d2 b9 6f de a1 5f be 61 c2 99 2f 5e bc 65 ca 89 0f 1e 3c 78 f0 fd e7 d3 bb 6b d6 b1 7f fe e1 df a3 5b b6 71 e2 d9 af 43 86 11 22 44 88 0d 1a 34 68 d0 bd 67 ce 81 1f 3e 7c f8 ed c7 93 3b 76 ec c5 97 33 66 cc 85 17 2e 5c b8 6d da a9 4f 9e 21 42 84 15 2a 54 a8 4d 9a 29 52 a4 55 aa 49 92 39 72 e4 d5 b7 73 e6 d1 bf 63 c6 91 3f 7e fc e5 d7 b3 7b f6 f1 ff e3 db ab 4b 96 31 62 c4 95 37 6e dc a5 57 ae 41 82 19 32 64 c8 8d 07 0e 1c 38 70 e0 dd a7 53 a6 51 a2 59 b2 79 f2 f9 ef c3 9b 2b 56 ac 45 8a 09 12 24 48 90 3d 7a f4 f5 f7 f3 fb eb cb 8b 0b 16 2c 58 b0 7d fa e9 cf 83 1b 36 6c
+ * 01 f5 d2 c4 9a 71 f1 7f fc 87 c1 c6 19 2f 40 55 3d ba 53 04 9c 61 34 8c 46 68 70 3e cc 7d 74 75 b5 db 0c df 9e 6d 79 eb 63 9f 38 d0 94 a5 24 89 5c 65 5b ae 37 33 4c dd 47 f4 02 a6 39 d8 9d 2d 62 b9 2e 0f 2b 60 58 e4 f8 6c 72 b0 85 4d 95 41 1c 23 05 99 32 c5 0e 82 91 14 d1 af f9 b3 07 97 6e 0b 67 3b 78 e6 28 22 4f a3 ca 48 de 1d a8 17 6f 90 aa 31 5a f3 e9 a9 44 30 56 09 59 6a 42 cd e5 d6 86 d9 bf cb 26 66 7c d5 be 25 1f e0 98 27 92 51 c7 45 2c c0 ad a7 69 f7 b4 e8 84 e1 18 88 3c 76 20 5e 9b 1e 0d 81 4a bd 16 8a ac 93 ce 1a c2 0a 3f fd e3 77 6b d7 ef a4 80 a1 36 ed a2 12 57 b6 29 8d 7b c8 52 c3 bc b8 21 d4 ea d3 06 ab 2a 1b 5f b7 10 ec 64 f6 e2 11 50 83 54 3a fa fb f2 43 b1 ff e7 c9 03 bb ee 13 8b dc 35 b2 da cf a0 96 49 4e 08 73 f0 7e fe 15 4b
+ * 01 bb a6 d7 c7 07 ce 82 4a 2f a5 9b b6 60 f1 ad e7 f4 06 d2 df 2e ca 65 5c 48 21 aa cd 4e c1 61 38 0a 3e d1 d5 cb 10 dc 5e 24 b8 de 79 36 43 72 d9 f8 f9 a2 a4 6a 3d ea 8e 03 f5 ab b4 5d b5 53 6b 39 86 b0 50 74 96 84 5a 4b e8 49 e5 51 ef 12 bc 89 5b 2b 29 09 c3 57 1e 37 76 0b 64 8a 52 59 80 da a8 44 95 3c 33 e6 7c af 6c b1 9d fc 92 d6 d8 ff a7 77 04 13 73 66 28 7d 83 fb 5f 63 25 19 bd c5 3b 6e 20 35 55 42 31 e1 b9 9e 90 d4 ba db f7 2a e9 3a a0 75 7a d3 02 ee 9c c6 1f 14 cc 22 4d 30 71 58 11 85 4f 6f 6d 1d cf fa 54 a9 17 a3 0f ae 0d 1c c2 d0 32 16 f6 c0 7f 2d 15 f3 1b f2 ed b3 45 c8 ac 7b 2c e2 e4 bf be 9f 34 05 70 3f 98 fe 62 18 9a 56 8d 93 97 78 4c 7e 27 87 08 8b ec 67 0e 1a 23 8c 68 99 94 40 b2 a1 eb b7 26 f0 dd e3 69 0c c4 88 41 81 91 e0 fd
+ * 01 97 7f 9c 7c 18 bd a2 58 1a da 74 70 a3 e5 47 29 07 f5 80 23 e9 fa 46 54 a0 99 95 53 9b 0b c7 09 c0 78 89 92 e3 0d b0 2a 8c fb 17 3f 26 65 87 27 5c 66 61 79 4d 32 b3 8d 52 e2 82 3d f9 c5 02 bc 4c 73 48 62 af ba 41 d9 c4 2f b1 33 b8 15 7d cf 3a a9 5f 84 6d 34 1b 44 94 72 81 42 be cc 4b 0a 6f 5a 22 36 b5 3c 9d 13 7e 08 dd d6 5e 04 fc 5b ec ef f1 6e 1e 77 24 e6 c6 aa cb fd 51 67 06 6a 4a 88 db b2 c2 5d 43 40 f7 50 a8 f2 7a 71 a4 d2 bf 31 90 19 9a 8e f6 c3 a6 e7 60 12 ee 2d de 38 e8 b7 98 c1 28 f3 05 96 63 d1 b9 14 9f 1d 83 68 75 ed 16 03 ce e4 df e0 10 ae 69 55 91 2e 4e fe 21 1f 9e e1 d5 cd ca f0 8b 2b c9 8a 93 bb 57 20 86 1c a1 4f 3e 25 d4 6c a5 6b a7 37 ff 39 35 0c f8 ea 56 45 8f 2c 59 ab 85 eb 49 0f dc d8 76 b6 f4 0e 11 b4 d0 30 d3 3b ad d7
+ * 01 2b 3f cf 73 2c d6 ed cb 74 15 78 8a c1 17 c9 89 68 21 ab 76 3b 4b 5a 6e 0e b9 d3 b6 3e 36 86 bf a2 a7 30 14 eb c7 2d 96 67 20 b5 9a e0 a8 c6 80 04 8d fe 75 5e 23 ca 8f 48 99 0d df 8e b8 70 29 9c 44 69 3d a5 c2 90 d2 1c 9b 02 1d 98 93 ec 84 e8 64 4c 3a 8b 97 f3 e5 c0 7d 26 c8 08 a0 62 82 55 f7 33 f6 51 63 4d 77 da fd c3 38 6d ee 09 47 a3 05 de a6 f1 22 25 6a 0c 81 b2 6b 58 d5 b3 fc fb 28 7f 07 dc 7a 9e d0 37 b4 e1 1a 24 03 ae 94 ba 88 2f ea 2e 8c 5b bb 79 d1 11 ff a4 19 3c 2a 4e 52 e3 95 bd 31 5d 35 4a 41 c4 db 42 c5 0b 49 1b 7c e4 b0 9d 45 f0 a9 61 57 06 d4 40 91 56 13 fa 87 ac 27 54 dd 59 1f 71 39 43 6c f9 be 4f f4 1e 32 cd e9 7e 7b 66 5f ef e7 6f 0a 60 d7 b7 83 92 e2 af 72 f8 b1 50 10 ce 18 53 a1 cc ad 12 34 0f f5 aa 16 e6 f2 d8 85 9f bc
  */
 const uint8_t __aligned(256) raid_gfcauchy[6][256] =
 {
@@ -8954,7 +8954,7 @@ const uint8_t __aligned(256) raid_gfcauchy[6][256] =
 		0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
 		0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
 		0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01,
-		0x01, 0x01, 0x01, 
+		0x01, 0x01, 0x01,
 	},
 	{
 		0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80,
@@ -8988,7 +8988,7 @@ const uint8_t __aligned(256) raid_gfcauchy[6][256] =
 		0x12, 0x24, 0x48, 0x90, 0x3d, 0x7a, 0xf4, 0xf5,
 		0xf7, 0xf3, 0xfb, 0xeb, 0xcb, 0x8b, 0x0b, 0x16,
 		0x2c, 0x58, 0xb0, 0x7d, 0xfa, 0xe9, 0xcf, 0x83,
-		0x1b, 0x36, 0x6c, 
+		0x1b, 0x36, 0x6c,
 	},
 	{
 		0x01, 0xf5, 0xd2, 0xc4, 0x9a, 0x71, 0xf1, 0x7f,
@@ -9022,7 +9022,7 @@ const uint8_t __aligned(256) raid_gfcauchy[6][256] =
 		0xf2, 0x43, 0xb1, 0xff, 0xe7, 0xc9, 0x03, 0xbb,
 		0xee, 0x13, 0x8b, 0xdc, 0x35, 0xb2, 0xda, 0xcf,
 		0xa0, 0x96, 0x49, 0x4e, 0x08, 0x73, 0xf0, 0x7e,
-		0xfe, 0x15, 0x4b, 
+		0xfe, 0x15, 0x4b,
 	},
 	{
 		0x01, 0xbb, 0xa6, 0xd7, 0xc7, 0x07, 0xce, 0x82,
@@ -9056,7 +9056,7 @@ const uint8_t __aligned(256) raid_gfcauchy[6][256] =
 		0xec, 0x67, 0x0e, 0x1a, 0x23, 0x8c, 0x68, 0x99,
 		0x94, 0x40, 0xb2, 0xa1, 0xeb, 0xb7, 0x26, 0xf0,
 		0xdd, 0xe3, 0x69, 0x0c, 0xc4, 0x88, 0x41, 0x81,
-		0x91, 0xe0, 0xfd, 
+		0x91, 0xe0, 0xfd,
 	},
 	{
 		0x01, 0x97, 0x7f, 0x9c, 0x7c, 0x18, 0xbd, 0xa2,
@@ -9090,7 +9090,7 @@ const uint8_t __aligned(256) raid_gfcauchy[6][256] =
 		0x0c, 0xf8, 0xea, 0x56, 0x45, 0x8f, 0x2c, 0x59,
 		0xab, 0x85, 0xeb, 0x49, 0x0f, 0xdc, 0xd8, 0x76,
 		0xb6, 0xf4, 0x0e, 0x11, 0xb4, 0xd0, 0x30, 0xd3,
-		0x3b, 0xad, 0xd7, 
+		0x3b, 0xad, 0xd7,
 	},
 	{
 		0x01, 0x2b, 0x3f, 0xcf, 0x73, 0x2c, 0xd6, 0xed,
@@ -9124,7 +9124,7 @@ const uint8_t __aligned(256) raid_gfcauchy[6][256] =
 		0x83, 0x92, 0xe2, 0xaf, 0x72, 0xf8, 0xb1, 0x50,
 		0x10, 0xce, 0x18, 0x53, 0xa1, 0xcc, 0xad, 0x12,
 		0x34, 0x0f, 0xf5, 0xaa, 0x16, 0xe6, 0xf2, 0xd8,
-		0x85, 0x9f, 0xbc, 
+		0x85, 0x9f, 0xbc,
 	},
 };
 

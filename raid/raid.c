@@ -171,7 +171,7 @@
 /**
  * Generator matrix currently used.
  */
-const uint8_t (*raid_gfgen)[256];
+const uint8_t(*raid_gfgen)[256];
 
 void raid_mode(int mode)
 {
@@ -239,7 +239,7 @@ void raid_invert(uint8_t *M, uint8_t *V, int n)
 	/* set the identity matrix in V */
 	for (i = 0; i < n; ++i)
 		for (j = 0; j < n; ++j)
-			V[i*n+j] = i == j;
+			V[i * n + j] = i == j;
 
 	/* for each element in the diagonal */
 	for (k = 0; k < n; ++k) {
@@ -248,13 +248,13 @@ void raid_invert(uint8_t *M, uint8_t *V, int n)
 		/* the diagonal element cannot be 0 because */
 		/* we are inverting matrices with all the square */
 		/* submatrices not singular */
-		BUG_ON(M[k*n+k] == 0);
+		BUG_ON(M[k * n + k] == 0);
 
 		/* make the diagonal element to be 1 */
-		f = inv(M[k*n+k]);
+		f = inv(M[k * n + k]);
 		for (j = 0; j < n; ++j) {
-			M[k*n+j] = mul(f, M[k*n+j]);
-			V[k*n+j] = mul(f, V[k*n+j]);
+			M[k * n + j] = mul(f, M[k * n + j]);
+			V[k * n + j] = mul(f, V[k * n + j]);
 		}
 
 		/* make all the elements over and under the diagonal */
@@ -262,10 +262,10 @@ void raid_invert(uint8_t *M, uint8_t *V, int n)
 		for (i = 0; i < n; ++i) {
 			if (i == k)
 				continue;
-			f = M[i*n+k];
+			f = M[i * n + k];
 			for (j = 0; j < n; ++j) {
-				M[i*n+j] ^= mul(f, M[k*n+j]);
-				V[i*n+j] ^= mul(f, V[k*n+j]);
+				M[i * n + j] ^= mul(f, M[k * n + j]);
+				V[i * n + j] ^= mul(f, V[k * n + j]);
 			}
 		}
 	}
@@ -420,7 +420,7 @@ void raid_rec1of1(int *id, int nd, size_t size, void **v)
  */
 void raid_rec2of2_int8(int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	size_t i;
 	uint8_t *p;
 	uint8_t *pa;
@@ -429,14 +429,14 @@ void raid_rec2of2_int8(int *id, int *ip, int nd, size_t size, void **vv)
 	const uint8_t *T[2];
 
 	/* get multiplication tables */
-	T[0] = table(inv(pow2(id[1]-id[0]) ^ 1));
+	T[0] = table(inv(pow2(id[1] - id[0]) ^ 1));
 	T[1] = table(inv(pow2(id[0]) ^ pow2(id[1])));
 
 	/* compute delta parity */
 	raid_delta_gen(2, id, ip, nd, size, vv);
 
 	p = v[nd];
-	q = v[nd+1];
+	q = v[nd + 1];
 	pa = v[id[0]];
 	qa = v[id[1]];
 

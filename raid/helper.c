@@ -80,10 +80,10 @@ void raid_insert(int n, int *v, int i)
 	v[n] = i;
 
 	/* swap until in the correct position */
-	while (n > 0 && v[n-1] > v[n]) {
+	while (n > 0 && v[n - 1] > v[n]) {
 		/* swap */
-		int t = v[n-1];
-		v[n-1] = v[n];
+		int t = v[n - 1];
+		v[n - 1] = v[n];
 		v[n] = t;
 
 		/* previous position */

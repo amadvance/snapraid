@@ -35,6 +35,7 @@ static int ibc(int n, int r)
 static int ipow(int n, int r)
 {
 	int v = 1;
+
 	while (r) {
 		v *= n;
 		--r;
@@ -94,7 +95,7 @@ int raid_test_insert(void)
 
 			/* check order */
 			for (j = 1; j < r; ++j)
-				if (i[j-1] > i[j])
+				if (i[j - 1] > i[j])
 					return -1;
 		} while (permutation_next(r, RAID_PARITY_MAX, p));
 	}
@@ -121,7 +122,7 @@ int raid_test_sort(void)
 
 			/* check order */
 			for (j = 1; j < r; ++j)
-				if (i[j-1] > i[j])
+				if (i[j - 1] > i[j])
 					return -1;
 		} while (permutation_next(r, RAID_PARITY_MAX, p));
 	}
@@ -145,6 +146,7 @@ int raid_test_rec(int mode, int nd, size_t size)
 	int i;
 	int j;
 	int nr;
+
 	void (*f[RAID_PARITY_MAX][4])(
 		int nr, int *id, int *ip, int nd, size_t size, void **vbuf);
 	int nf[RAID_PARITY_MAX];
@@ -169,10 +171,10 @@ int raid_test_rec(int mode, int nd, size_t size)
 	for (i = 0; i < np; ++i)
 		parity_save[i] = parity[i];
 
-	memset(v[nv-2], 0, size);
-	raid_zero(v[nv-2]);
+	memset(v[nv - 2], 0, size);
+	raid_zero(v[nv - 2]);
 
-	waste = v[nv-1];
+	waste = v[nv - 1];
 
 	/* fill data disk with random */
 	raid_mrand_vector(nd, size, v);
@@ -235,7 +237,7 @@ int raid_test_rec(int mode, int nd, size_t size)
 			combination_first(nr, np, ip);
 			do {
 				/* for each recover function */
-				for (j = 0; j < nf[nr-1]; ++j) {
+				for (j = 0; j < nf[nr - 1]; ++j) {
 					/* set */
 					for (i = 0; i < nr; ++i) {
 						/* remove the missing data */
@@ -246,7 +248,7 @@ int raid_test_rec(int mode, int nd, size_t size)
 					}
 
 					/* recover */
-					f[nr-1][j](nr, id, ip, nd, size, v);
+					f[nr - 1][j](nr, id, ip, nd, size, v);
 
 					/* check */
 					for (i = 0; i < nr; ++i)
@@ -281,7 +283,8 @@ int raid_test_par(int mode, int nd, size_t size)
 	void **v;
 	int nv;
 	int i, j;
-	void (*f[64])(int nd, size_t size, void **vbuf);
+
+	void (*f[64]) (int nd, size_t size, void **vbuf);
 	int nf;
 	int np;
 

@@ -69,17 +69,17 @@ static __always_inline uint8_t A(int p, int d)
 /*
  * Dereference as uint8_t
  */
-#define v_8(p) (*(uint8_t *)&(p))
+#define v_8(p) (*(uint8_t*)&(p))
 
 /*
  * Dereference as uint32_t
  */
-#define v_32(p) (*(uint32_t *)&(p))
+#define v_32(p) (*(uint32_t*)&(p))
 
 /*
  * Dereference as uint64_t
  */
-#define v_64(p) (*(uint64_t *)&(p))
+#define v_64(p) (*(uint64_t*)&(p))
 
 /*
  * Multiply each byte of a uint32 by 2 in the GF(2^8).
@@ -87,6 +87,7 @@ static __always_inline uint8_t A(int p, int d)
 static __always_inline uint32_t x2_32(uint32_t v)
 {
 	uint32_t mask = v & 0x80808080U;
+
 	mask = (mask << 1) - (mask >> 7);
 	v = (v << 1) & 0xfefefefeU;
 	v ^= mask & 0x1d1d1d1dU;
@@ -99,6 +100,7 @@ static __always_inline uint32_t x2_32(uint32_t v)
 static __always_inline uint64_t x2_64(uint64_t v)
 {
 	uint64_t mask = v & 0x8080808080808080ULL;
+
 	mask = (mask << 1) - (mask >> 7);
 	v = (v << 1) & 0xfefefefefefefefeULL;
 	v ^= mask & 0x1d1d1d1d1d1d1d1dULL;
@@ -111,6 +113,7 @@ static __always_inline uint64_t x2_64(uint64_t v)
 static __always_inline uint32_t d2_32(uint32_t v)
 {
 	uint32_t mask = v & 0x01010101U;
+
 	mask = (mask << 8) - mask;
 	v = (v >> 1) & 0x7f7f7f7fU;
 	v ^= mask & 0x8e8e8e8eU;
@@ -123,6 +126,7 @@ static __always_inline uint32_t d2_32(uint32_t v)
 static __always_inline uint64_t d2_64(uint64_t v)
 {
 	uint64_t mask = v & 0x0101010101010101ULL;
+
 	mask = (mask << 8) - mask;
 	v = (v >> 1) & 0x7f7f7f7f7f7f7f7fULL;
 	v ^= mask & 0x8e8e8e8e8e8e8e8eULL;

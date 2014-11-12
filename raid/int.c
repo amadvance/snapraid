@@ -20,7 +20,7 @@
  */
 void raid_gen1_int32(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	int d, l;
 	size_t i;
@@ -33,13 +33,13 @@ void raid_gen1_int32(int nd, size_t size, void **vv)
 
 	for (i = 0; i < size; i += 8) {
 		p0 = v_32(v[l][i]);
-		p1 = v_32(v[l][i+4]);
-		for (d = l-1; d >= 0; --d) {
+		p1 = v_32(v[l][i + 4]);
+		for (d = l - 1; d >= 0; --d) {
 			p0 ^= v_32(v[d][i]);
-			p1 ^= v_32(v[d][i+4]);
+			p1 ^= v_32(v[d][i + 4]);
 		}
 		v_32(p[i]) = p0;
-		v_32(p[i+4]) = p1;
+		v_32(p[i + 4]) = p1;
 	}
 }
 
@@ -48,7 +48,7 @@ void raid_gen1_int32(int nd, size_t size, void **vv)
  */
 void raid_gen1_int64(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	int d, l;
 	size_t i;
@@ -61,13 +61,13 @@ void raid_gen1_int64(int nd, size_t size, void **vv)
 
 	for (i = 0; i < size; i += 16) {
 		p0 = v_64(v[l][i]);
-		p1 = v_64(v[l][i+8]);
-		for (d = l-1; d >= 0; --d) {
+		p1 = v_64(v[l][i + 8]);
+		for (d = l - 1; d >= 0; --d) {
 			p0 ^= v_64(v[d][i]);
-			p1 ^= v_64(v[d][i+8]);
+			p1 ^= v_64(v[d][i + 8]);
 		}
 		v_64(p[i]) = p0;
-		v_64(p[i+8]) = p1;
+		v_64(p[i + 8]) = p1;
 	}
 }
 
@@ -76,7 +76,7 @@ void raid_gen1_int64(int nd, size_t size, void **vv)
  */
 void raid_gen2_int32(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *q;
 	int d, l;
@@ -87,14 +87,14 @@ void raid_gen2_int32(int nd, size_t size, void **vv)
 
 	l = nd - 1;
 	p = v[nd];
-	q = v[nd+1];
+	q = v[nd + 1];
 
 	for (i = 0; i < size; i += 8) {
 		q0 = p0 = v_32(v[l][i]);
-		q1 = p1 = v_32(v[l][i+4]);
-		for (d = l-1; d >= 0; --d) {
+		q1 = p1 = v_32(v[l][i + 4]);
+		for (d = l - 1; d >= 0; --d) {
 			d0 = v_32(v[d][i]);
-			d1 = v_32(v[d][i+4]);
+			d1 = v_32(v[d][i + 4]);
 
 			p0 ^= d0;
 			p1 ^= d1;
@@ -106,9 +106,9 @@ void raid_gen2_int32(int nd, size_t size, void **vv)
 			q1 ^= d1;
 		}
 		v_32(p[i]) = p0;
-		v_32(p[i+4]) = p1;
+		v_32(p[i + 4]) = p1;
 		v_32(q[i]) = q0;
-		v_32(q[i+4]) = q1;
+		v_32(q[i + 4]) = q1;
 	}
 }
 
@@ -117,7 +117,7 @@ void raid_gen2_int32(int nd, size_t size, void **vv)
  */
 void raid_gen2_int64(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *q;
 	int d, l;
@@ -128,14 +128,14 @@ void raid_gen2_int64(int nd, size_t size, void **vv)
 
 	l = nd - 1;
 	p = v[nd];
-	q = v[nd+1];
+	q = v[nd + 1];
 
 	for (i = 0; i < size; i += 16) {
 		q0 = p0 = v_64(v[l][i]);
-		q1 = p1 = v_64(v[l][i+8]);
-		for (d = l-1; d >= 0; --d) {
+		q1 = p1 = v_64(v[l][i + 8]);
+		for (d = l - 1; d >= 0; --d) {
 			d0 = v_64(v[d][i]);
-			d1 = v_64(v[d][i+8]);
+			d1 = v_64(v[d][i + 8]);
 
 			p0 ^= d0;
 			p1 ^= d1;
@@ -147,9 +147,9 @@ void raid_gen2_int64(int nd, size_t size, void **vv)
 			q1 ^= d1;
 		}
 		v_64(p[i]) = p0;
-		v_64(p[i+8]) = p1;
+		v_64(p[i + 8]) = p1;
 		v_64(q[i]) = q0;
-		v_64(q[i+8]) = q1;
+		v_64(q[i + 8]) = q1;
 	}
 }
 
@@ -163,7 +163,7 @@ void raid_gen2_int64(int nd, size_t size, void **vv)
  */
 void raid_gen3_int8(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -174,8 +174,8 @@ void raid_gen3_int8(int nd, size_t size, void **vv)
 
 	l = nd - 1;
 	p = v[nd];
-	q = v[nd+1];
-	r = v[nd+2];
+	q = v[nd + 1];
+	r = v[nd + 2];
 
 	for (i = 0; i < size; i += 1) {
 		p0 = q0 = r0 = 0;
@@ -210,7 +210,7 @@ void raid_gen3_int8(int nd, size_t size, void **vv)
  */
 void raid_gen4_int8(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -222,9 +222,9 @@ void raid_gen4_int8(int nd, size_t size, void **vv)
 
 	l = nd - 1;
 	p = v[nd];
-	q = v[nd+1];
-	r = v[nd+2];
-	s = v[nd+3];
+	q = v[nd + 1];
+	r = v[nd + 2];
+	s = v[nd + 3];
 
 	for (i = 0; i < size; i += 1) {
 		p0 = q0 = r0 = s0 = 0;
@@ -262,7 +262,7 @@ void raid_gen4_int8(int nd, size_t size, void **vv)
  */
 void raid_gen5_int8(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -275,10 +275,10 @@ void raid_gen5_int8(int nd, size_t size, void **vv)
 
 	l = nd - 1;
 	p = v[nd];
-	q = v[nd+1];
-	r = v[nd+2];
-	s = v[nd+3];
-	t = v[nd+4];
+	q = v[nd + 1];
+	r = v[nd + 2];
+	s = v[nd + 3];
+	t = v[nd + 4];
 
 	for (i = 0; i < size; i += 1) {
 		p0 = q0 = r0 = s0 = t0 = 0;
@@ -319,7 +319,7 @@ void raid_gen5_int8(int nd, size_t size, void **vv)
  */
 void raid_gen6_int8(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -333,11 +333,11 @@ void raid_gen6_int8(int nd, size_t size, void **vv)
 
 	l = nd - 1;
 	p = v[nd];
-	q = v[nd+1];
-	r = v[nd+2];
-	s = v[nd+3];
-	t = v[nd+4];
-	u = v[nd+5];
+	q = v[nd + 1];
+	r = v[nd + 2];
+	s = v[nd + 3];
+	t = v[nd + 4];
+	u = v[nd + 5];
 
 	for (i = 0; i < size; i += 1) {
 		p0 = q0 = r0 = s0 = t0 = u0 = 0;
@@ -385,7 +385,7 @@ void raid_gen6_int8(int nd, size_t size, void **vv)
  */
 void raid_rec1_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *pa;
 	const uint8_t *T;
@@ -413,7 +413,7 @@ void raid_rec1_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	/* compute delta parity */
 	raid_delta_gen(1, id, ip, nd, size, vv);
 
-	p = v[nd+ip[0]];
+	p = v[nd + ip[0]];
 	pa = v[id[0]];
 
 	for (i = 0; i < size; ++i) {
@@ -438,15 +438,15 @@ void raid_rec1_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
  */
 void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *pa;
 	uint8_t *q;
 	uint8_t *qa;
 	const int N = 2;
 	const uint8_t *T[N][N];
-	uint8_t G[N*N];
-	uint8_t V[N*N];
+	uint8_t G[N * N];
+	uint8_t V[N * N];
 	size_t i;
 	int j, k;
 
@@ -461,7 +461,7 @@ void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	/* setup the coefficients matrix */
 	for (j = 0; j < N; ++j)
 		for (k = 0; k < N; ++k)
-			G[j*N+k] = A(ip[j], id[k]);
+			G[j * N + k] = A(ip[j], id[k]);
 
 	/* invert it to solve the system of linear equations */
 	raid_invert(G, V, N);
@@ -469,13 +469,13 @@ void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	/* get multiplication tables */
 	for (j = 0; j < N; ++j)
 		for (k = 0; k < N; ++k)
-			T[j][k] = table(V[j*N+k]);
+			T[j][k] = table(V[j * N + k]);
 
 	/* compute delta parity */
 	raid_delta_gen(2, id, ip, nd, size, vv);
 
-	p = v[nd+ip[0]];
-	q = v[nd+ip[1]];
+	p = v[nd + ip[0]];
+	q = v[nd + ip[1]];
 	pa = v[id[0]];
 	qa = v[id[1]];
 
@@ -506,19 +506,19 @@ void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
  */
 void raid_recX_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p[RAID_PARITY_MAX];
 	uint8_t *pa[RAID_PARITY_MAX];
 	const uint8_t *T[RAID_PARITY_MAX][RAID_PARITY_MAX];
-	uint8_t G[RAID_PARITY_MAX*RAID_PARITY_MAX];
-	uint8_t V[RAID_PARITY_MAX*RAID_PARITY_MAX];
+	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
+	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	size_t i;
 	int j, k;
 
 	/* setup the coefficients matrix */
 	for (j = 0; j < nr; ++j)
 		for (k = 0; k < nr; ++k)
-			G[j*nr+k] = A(ip[j], id[k]);
+			G[j * nr + k] = A(ip[j], id[k]);
 
 	/* invert it to solve the system of linear equations */
 	raid_invert(G, V, nr);
@@ -526,13 +526,13 @@ void raid_recX_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	/* get multiplication tables */
 	for (j = 0; j < nr; ++j)
 		for (k = 0; k < nr; ++k)
-			T[j][k] = table(V[j*nr+k]);
+			T[j][k] = table(V[j * nr + k]);
 
 	/* compute delta parity */
 	raid_delta_gen(nr, id, ip, nd, size, vv);
 
 	for (j = 0; j < nr; ++j) {
-		p[j] = v[nd+ip[j]];
+		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
 

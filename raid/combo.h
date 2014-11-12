@@ -145,7 +145,7 @@ recurse:
 	/* initialize all the next positions, if any */
 	while (i < r) {
 		/* each position start at the next value of the previous one */
-		c[i] = c[i-1] + 1;
+		c[i] = c[i - 1] + 1;
 		++i;
 	}
 

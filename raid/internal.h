@@ -202,7 +202,7 @@ static __always_inline void raid_asm_end(void)
 	/* see correctly the data written, we use a store-store memory */
 	/* barrier at the end of the asm code */
 #ifdef CONFIG_SSE2
-	asm volatile("sfence" : : : "memory");
+	asm volatile ("sfence" : : : "memory");
 #endif
 }
 
@@ -216,7 +216,7 @@ static __always_inline void raid_asm_clobber_xmm4(void)
 	/* we check for __SSE2_ because we require that the */
 	/* compiler supports SSE2 registers in the clobber list */
 #if defined(CONFIG_SSE2) && defined(__SSE2__)
-	asm volatile("" : : : "%xmm0", "%xmm1", "%xmm2", "%xmm3");
+	asm volatile ("" : : : "%xmm0", "%xmm1", "%xmm2", "%xmm3");
 #endif
 }
 
@@ -224,7 +224,7 @@ static __always_inline void raid_asm_clobber_xmm8(void)
 {
 	raid_asm_clobber_xmm4();
 #if defined(CONFIG_SSE2) && defined(__SSE2__)
-	asm volatile("" : : : "%xmm4", "%xmm5", "%xmm6", "%xmm7");
+	asm volatile ("" : : : "%xmm4", "%xmm5", "%xmm6", "%xmm7");
 #endif
 }
 
@@ -235,7 +235,7 @@ static __always_inline void raid_asm_clobber_ymm4(void)
 	/* to avoid the 70 clocks penality on the next */
 	/* xmm register use */
 #ifdef CONFIG_AVX2
-	asm volatile("vzeroupper" : : : "memory");
+	asm volatile ("vzeroupper" : : : "memory");
 #endif
 }
 
@@ -243,7 +243,7 @@ static __always_inline void raid_asm_clobber_ymm8(void)
 {
 	raid_asm_clobber_xmm8();
 #ifdef CONFIG_AVX2
-	asm volatile("vzeroupper" : : : "memory");
+	asm volatile ("vzeroupper" : : : "memory");
 #endif
 }
 #endif /* CONFIG_X86 */
@@ -253,8 +253,8 @@ static __always_inline void raid_asm_clobber_xmm16(void)
 {
 	raid_asm_clobber_xmm8();
 #if defined(CONFIG_SSE2) && defined(__SSE2__)
-	asm volatile("" : : : "%xmm8", "%xmm9", "%xmm10", "%xmm11");
-	asm volatile("" : : : "%xmm12", "%xmm13", "%xmm14", "%xmm15");
+	asm volatile ("" : : : "%xmm8", "%xmm9", "%xmm10", "%xmm11");
+	asm volatile ("" : : : "%xmm12", "%xmm13", "%xmm14", "%xmm15");
 #endif
 }
 
@@ -262,7 +262,7 @@ static __always_inline void raid_asm_clobber_ymm16(void)
 {
 	raid_asm_clobber_xmm16();
 #ifdef CONFIG_AVX2
-	asm volatile("vzeroupper" : : : "memory");
+	asm volatile ("vzeroupper" : : : "memory");
 #endif
 }
 #endif /* CONFIG_X86_64 */

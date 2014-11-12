@@ -25,7 +25,7 @@
  */
 void raid_gen1_sse2(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	int d, l;
 	size_t i;
@@ -37,19 +37,19 @@ void raid_gen1_sse2(int nd, size_t size, void **vv)
 
 	for (i = 0; i < size; i += 64) {
 		asm volatile ("movdqa %0,%%xmm0" : : "m" (v[l][i]));
-		asm volatile ("movdqa %0,%%xmm1" : : "m" (v[l][i+16]));
-		asm volatile ("movdqa %0,%%xmm2" : : "m" (v[l][i+32]));
-		asm volatile ("movdqa %0,%%xmm3" : : "m" (v[l][i+48]));
-		for (d = l-1; d >= 0; --d) {
+		asm volatile ("movdqa %0,%%xmm1" : : "m" (v[l][i + 16]));
+		asm volatile ("movdqa %0,%%xmm2" : : "m" (v[l][i + 32]));
+		asm volatile ("movdqa %0,%%xmm3" : : "m" (v[l][i + 48]));
+		for (d = l - 1; d >= 0; --d) {
 			asm volatile ("pxor %0,%%xmm0" : : "m" (v[d][i]));
-			asm volatile ("pxor %0,%%xmm1" : : "m" (v[d][i+16]));
-			asm volatile ("pxor %0,%%xmm2" : : "m" (v[d][i+32]));
-			asm volatile ("pxor %0,%%xmm3" : : "m" (v[d][i+48]));
+			asm volatile ("pxor %0,%%xmm1" : : "m" (v[d][i + 16]));
+			asm volatile ("pxor %0,%%xmm2" : : "m" (v[d][i + 32]));
+			asm volatile ("pxor %0,%%xmm3" : : "m" (v[d][i + 48]));
 		}
 		asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
-		asm volatile ("movntdq %%xmm1,%0" : "=m" (p[i+16]));
-		asm volatile ("movntdq %%xmm2,%0" : "=m" (p[i+32]));
-		asm volatile ("movntdq %%xmm3,%0" : "=m" (p[i+48]));
+		asm volatile ("movntdq %%xmm1,%0" : "=m" (p[i + 16]));
+		asm volatile ("movntdq %%xmm2,%0" : "=m" (p[i + 32]));
+		asm volatile ("movntdq %%xmm3,%0" : "=m" (p[i + 48]));
 	}
 
 	raid_asm_clobber_xmm4();
@@ -68,7 +68,7 @@ void raid_gen1_sse2(int nd, size_t size, void **vv)
  */
 void raid_gen1_avx2(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	int d, l;
 	size_t i;
@@ -80,13 +80,13 @@ void raid_gen1_avx2(int nd, size_t size, void **vv)
 
 	for (i = 0; i < size; i += 64) {
 		asm volatile ("vmovdqa %0,%%ymm0" : : "m" (v[l][i]));
-		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (v[l][i+32]));
-		for (d = l-1; d >= 0; --d) {
+		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (v[l][i + 32]));
+		for (d = l - 1; d >= 0; --d) {
 			asm volatile ("vpxor %0,%%ymm0,%%ymm0" : : "m" (v[d][i]));
-			asm volatile ("vpxor %0,%%ymm1,%%ymm1" : : "m" (v[d][i+32]));
+			asm volatile ("vpxor %0,%%ymm1,%%ymm1" : : "m" (v[d][i + 32]));
 		}
 		asm volatile ("vmovntdq %%ymm0,%0" : "=m" (p[i]));
-		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (p[i+32]));
+		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (p[i + 32]));
 	}
 
 	raid_asm_clobber_ymm4();
@@ -99,7 +99,8 @@ void raid_gen1_avx2(int nd, size_t size, void **vv)
 static const struct gfconst16 {
 	uint8_t poly[16];
 	uint8_t low4[16];
-} gfconst16 __aligned(32) = {
+} gfconst16 __aligned(32) =
+{
 	{
 		0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d,
 		0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d
@@ -117,7 +118,7 @@ static const struct gfconst16 {
  */
 void raid_gen2_sse2(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *q;
 	int d, l;
@@ -125,7 +126,7 @@ void raid_gen2_sse2(int nd, size_t size, void **vv)
 
 	l = nd - 1;
 	p = v[nd];
-	q = v[nd+1];
+	q = v[nd + 1];
 
 	raid_asm_begin();
 
@@ -133,10 +134,10 @@ void raid_gen2_sse2(int nd, size_t size, void **vv)
 
 	for (i = 0; i < size; i += 32) {
 		asm volatile ("movdqa %0,%%xmm0" : : "m" (v[l][i]));
-		asm volatile ("movdqa %0,%%xmm1" : : "m" (v[l][i+16]));
+		asm volatile ("movdqa %0,%%xmm1" : : "m" (v[l][i + 16]));
 		asm volatile ("movdqa %xmm0,%xmm2");
 		asm volatile ("movdqa %xmm1,%xmm3");
-		for (d = l-1; d >= 0; --d) {
+		for (d = l - 1; d >= 0; --d) {
 			asm volatile ("pxor %xmm4,%xmm4");
 			asm volatile ("pxor %xmm5,%xmm5");
 			asm volatile ("pcmpgtb %xmm2,%xmm4");
@@ -149,16 +150,16 @@ void raid_gen2_sse2(int nd, size_t size, void **vv)
 			asm volatile ("pxor %xmm5,%xmm3");
 
 			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
-			asm volatile ("movdqa %0,%%xmm5" : : "m" (v[d][i+16]));
+			asm volatile ("movdqa %0,%%xmm5" : : "m" (v[d][i + 16]));
 			asm volatile ("pxor %xmm4,%xmm0");
 			asm volatile ("pxor %xmm5,%xmm1");
 			asm volatile ("pxor %xmm4,%xmm2");
 			asm volatile ("pxor %xmm5,%xmm3");
 		}
 		asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
-		asm volatile ("movntdq %%xmm1,%0" : "=m" (p[i+16]));
+		asm volatile ("movntdq %%xmm1,%0" : "=m" (p[i + 16]));
 		asm volatile ("movntdq %%xmm2,%0" : "=m" (q[i]));
-		asm volatile ("movntdq %%xmm3,%0" : "=m" (q[i+16]));
+		asm volatile ("movntdq %%xmm3,%0" : "=m" (q[i + 16]));
 	}
 
 	raid_asm_clobber_xmm8();
@@ -173,7 +174,7 @@ void raid_gen2_sse2(int nd, size_t size, void **vv)
  */
 void raid_gen2_avx2(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *q;
 	int d, l;
@@ -181,7 +182,7 @@ void raid_gen2_avx2(int nd, size_t size, void **vv)
 
 	l = nd - 1;
 	p = v[nd];
-	q = v[nd+1];
+	q = v[nd + 1];
 
 	raid_asm_begin();
 
@@ -190,10 +191,10 @@ void raid_gen2_avx2(int nd, size_t size, void **vv)
 
 	for (i = 0; i < size; i += 64) {
 		asm volatile ("vmovdqa %0,%%ymm0" : : "m" (v[l][i]));
-		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (v[l][i+32]));
+		asm volatile ("vmovdqa %0,%%ymm1" : : "m" (v[l][i + 32]));
 		asm volatile ("vmovdqa %ymm0,%ymm2");
 		asm volatile ("vmovdqa %ymm1,%ymm3");
-		for (d = l-1; d >= 0; --d) {
+		for (d = l - 1; d >= 0; --d) {
 			asm volatile ("vpcmpgtb %ymm2,%ymm6,%ymm4");
 			asm volatile ("vpcmpgtb %ymm3,%ymm6,%ymm5");
 			asm volatile ("vpaddb %ymm2,%ymm2,%ymm2");
@@ -204,16 +205,16 @@ void raid_gen2_avx2(int nd, size_t size, void **vv)
 			asm volatile ("vpxor %ymm5,%ymm3,%ymm3");
 
 			asm volatile ("vmovdqa %0,%%ymm4" : : "m" (v[d][i]));
-			asm volatile ("vmovdqa %0,%%ymm5" : : "m" (v[d][i+32]));
+			asm volatile ("vmovdqa %0,%%ymm5" : : "m" (v[d][i + 32]));
 			asm volatile ("vpxor %ymm4,%ymm0,%ymm0");
 			asm volatile ("vpxor %ymm5,%ymm1,%ymm1");
 			asm volatile ("vpxor %ymm4,%ymm2,%ymm2");
 			asm volatile ("vpxor %ymm5,%ymm3,%ymm3");
 		}
 		asm volatile ("vmovntdq %%ymm0,%0" : "=m" (p[i]));
-		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (p[i+32]));
+		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (p[i + 32]));
 		asm volatile ("vmovntdq %%ymm2,%0" : "=m" (q[i]));
-		asm volatile ("vmovntdq %%ymm3,%0" : "=m" (q[i+32]));
+		asm volatile ("vmovntdq %%ymm3,%0" : "=m" (q[i + 32]));
 	}
 
 	raid_asm_clobber_ymm8();
@@ -230,7 +231,7 @@ void raid_gen2_avx2(int nd, size_t size, void **vv)
  */
 void raid_gen2_sse2ext(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *q;
 	int d, l;
@@ -238,7 +239,7 @@ void raid_gen2_sse2ext(int nd, size_t size, void **vv)
 
 	l = nd - 1;
 	p = v[nd];
-	q = v[nd+1];
+	q = v[nd + 1];
 
 	raid_asm_begin();
 
@@ -246,14 +247,14 @@ void raid_gen2_sse2ext(int nd, size_t size, void **vv)
 
 	for (i = 0; i < size; i += 64) {
 		asm volatile ("movdqa %0,%%xmm0" : : "m" (v[l][i]));
-		asm volatile ("movdqa %0,%%xmm1" : : "m" (v[l][i+16]));
-		asm volatile ("movdqa %0,%%xmm2" : : "m" (v[l][i+32]));
-		asm volatile ("movdqa %0,%%xmm3" : : "m" (v[l][i+48]));
+		asm volatile ("movdqa %0,%%xmm1" : : "m" (v[l][i + 16]));
+		asm volatile ("movdqa %0,%%xmm2" : : "m" (v[l][i + 32]));
+		asm volatile ("movdqa %0,%%xmm3" : : "m" (v[l][i + 48]));
 		asm volatile ("movdqa %xmm0,%xmm4");
 		asm volatile ("movdqa %xmm1,%xmm5");
 		asm volatile ("movdqa %xmm2,%xmm6");
 		asm volatile ("movdqa %xmm3,%xmm7");
-		for (d = l-1; d >= 0; --d) {
+		for (d = l - 1; d >= 0; --d) {
 			asm volatile ("pxor %xmm8,%xmm8");
 			asm volatile ("pxor %xmm9,%xmm9");
 			asm volatile ("pxor %xmm10,%xmm10");
@@ -276,9 +277,9 @@ void raid_gen2_sse2ext(int nd, size_t size, void **vv)
 			asm volatile ("pxor %xmm11,%xmm7");
 
 			asm volatile ("movdqa %0,%%xmm8" : : "m" (v[d][i]));
-			asm volatile ("movdqa %0,%%xmm9" : : "m" (v[d][i+16]));
-			asm volatile ("movdqa %0,%%xmm10" : : "m" (v[d][i+32]));
-			asm volatile ("movdqa %0,%%xmm11" : : "m" (v[d][i+48]));
+			asm volatile ("movdqa %0,%%xmm9" : : "m" (v[d][i + 16]));
+			asm volatile ("movdqa %0,%%xmm10" : : "m" (v[d][i + 32]));
+			asm volatile ("movdqa %0,%%xmm11" : : "m" (v[d][i + 48]));
 			asm volatile ("pxor %xmm8,%xmm0");
 			asm volatile ("pxor %xmm9,%xmm1");
 			asm volatile ("pxor %xmm10,%xmm2");
@@ -289,13 +290,13 @@ void raid_gen2_sse2ext(int nd, size_t size, void **vv)
 			asm volatile ("pxor %xmm11,%xmm7");
 		}
 		asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
-		asm volatile ("movntdq %%xmm1,%0" : "=m" (p[i+16]));
-		asm volatile ("movntdq %%xmm2,%0" : "=m" (p[i+32]));
-		asm volatile ("movntdq %%xmm3,%0" : "=m" (p[i+48]));
+		asm volatile ("movntdq %%xmm1,%0" : "=m" (p[i + 16]));
+		asm volatile ("movntdq %%xmm2,%0" : "=m" (p[i + 32]));
+		asm volatile ("movntdq %%xmm3,%0" : "=m" (p[i + 48]));
 		asm volatile ("movntdq %%xmm4,%0" : "=m" (q[i]));
-		asm volatile ("movntdq %%xmm5,%0" : "=m" (q[i+16]));
-		asm volatile ("movntdq %%xmm6,%0" : "=m" (q[i+32]));
-		asm volatile ("movntdq %%xmm7,%0" : "=m" (q[i+48]));
+		asm volatile ("movntdq %%xmm5,%0" : "=m" (q[i + 16]));
+		asm volatile ("movntdq %%xmm6,%0" : "=m" (q[i + 32]));
+		asm volatile ("movntdq %%xmm7,%0" : "=m" (q[i + 48]));
 	}
 
 	raid_asm_clobber_xmm16();
@@ -310,7 +311,7 @@ void raid_gen2_sse2ext(int nd, size_t size, void **vv)
  */
 void raid_gen3_ssse3(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -319,13 +320,13 @@ void raid_gen3_ssse3(int nd, size_t size, void **vv)
 
 	l = nd - 1;
 	p = v[nd];
-	q = v[nd+1];
-	r = v[nd+2];
+	q = v[nd + 1];
+	r = v[nd + 2];
 
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (i = 0; i < 3; ++i)
-			memcpy(v[1+i], v[0], size);
+			memcpy(v[1 + i], v[0], size);
 		return;
 	}
 
@@ -354,7 +355,7 @@ void raid_gen3_ssse3(int nd, size_t size, void **vv)
 		asm volatile ("pxor   %xmm6,%xmm2");
 
 		/* intermediate disks */
-		for (d = l-1; d > 0; --d) {
+		for (d = l - 1; d > 0; --d) {
 			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
 
 			asm volatile ("pxor %xmm5,%xmm5");
@@ -411,7 +412,7 @@ void raid_gen3_ssse3(int nd, size_t size, void **vv)
  */
 void raid_gen3_ssse3ext(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -420,13 +421,13 @@ void raid_gen3_ssse3ext(int nd, size_t size, void **vv)
 
 	l = nd - 1;
 	p = v[nd];
-	q = v[nd+1];
-	r = v[nd+2];
+	q = v[nd + 1];
+	r = v[nd + 2];
 
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (i = 0; i < 3; ++i)
-			memcpy(v[1+i], v[0], size);
+			memcpy(v[1 + i], v[0], size);
 		return;
 	}
 
@@ -439,7 +440,7 @@ void raid_gen3_ssse3ext(int nd, size_t size, void **vv)
 	for (i = 0; i < size; i += 32) {
 		/* last disk without the by two multiplication */
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[l][i]));
-		asm volatile ("movdqa %0,%%xmm12" : : "m" (v[l][i+16]));
+		asm volatile ("movdqa %0,%%xmm12" : : "m" (v[l][i + 16]));
 
 		asm volatile ("movdqa %xmm4,%xmm0");
 		asm volatile ("movdqa %xmm4,%xmm1");
@@ -467,9 +468,9 @@ void raid_gen3_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile ("pxor   %xmm15,%xmm10");
 
 		/* intermediate disks */
-		for (d = l-1; d > 0; --d) {
+		for (d = l - 1; d > 0; --d) {
 			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
-			asm volatile ("movdqa %0,%%xmm12" : : "m" (v[d][i+16]));
+			asm volatile ("movdqa %0,%%xmm12" : : "m" (v[d][i + 16]));
 
 			asm volatile ("pxor %xmm5,%xmm5");
 			asm volatile ("pxor %xmm13,%xmm13");
@@ -512,7 +513,7 @@ void raid_gen3_ssse3ext(int nd, size_t size, void **vv)
 
 		/* first disk with all coefficients at 1 */
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[0][i]));
-		asm volatile ("movdqa %0,%%xmm12" : : "m" (v[0][i+16]));
+		asm volatile ("movdqa %0,%%xmm12" : : "m" (v[0][i + 16]));
 
 		asm volatile ("pxor %xmm5,%xmm5");
 		asm volatile ("pxor %xmm13,%xmm13");
@@ -533,11 +534,11 @@ void raid_gen3_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile ("pxor %xmm12,%xmm10");
 
 		asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
-		asm volatile ("movntdq %%xmm8,%0" : "=m" (p[i+16]));
+		asm volatile ("movntdq %%xmm8,%0" : "=m" (p[i + 16]));
 		asm volatile ("movntdq %%xmm1,%0" : "=m" (q[i]));
-		asm volatile ("movntdq %%xmm9,%0" : "=m" (q[i+16]));
+		asm volatile ("movntdq %%xmm9,%0" : "=m" (q[i + 16]));
 		asm volatile ("movntdq %%xmm2,%0" : "=m" (r[i]));
-		asm volatile ("movntdq %%xmm10,%0" : "=m" (r[i+16]));
+		asm volatile ("movntdq %%xmm10,%0" : "=m" (r[i + 16]));
 	}
 
 	raid_asm_clobber_xmm16();
@@ -554,7 +555,7 @@ void raid_gen3_ssse3ext(int nd, size_t size, void **vv)
  */
 void raid_gen3_avx2ext(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -563,13 +564,13 @@ void raid_gen3_avx2ext(int nd, size_t size, void **vv)
 
 	l = nd - 1;
 	p = v[nd];
-	q = v[nd+1];
-	r = v[nd+2];
+	q = v[nd + 1];
+	r = v[nd + 2];
 
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (i = 0; i < 3; ++i)
-			memcpy(v[1+i], v[0], size);
+			memcpy(v[1 + i], v[0], size);
 		return;
 	}
 
@@ -582,7 +583,7 @@ void raid_gen3_avx2ext(int nd, size_t size, void **vv)
 	for (i = 0; i < size; i += 64) {
 		/* last disk without the by two multiplication */
 		asm volatile ("vmovdqa %0,%%ymm4" : : "m" (v[l][i]));
-		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[l][i+32]));
+		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[l][i + 32]));
 
 		asm volatile ("vmovdqa %ymm4,%ymm0");
 		asm volatile ("vmovdqa %ymm4,%ymm1");
@@ -606,9 +607,9 @@ void raid_gen3_avx2ext(int nd, size_t size, void **vv)
 		asm volatile ("vpxor   %ymm15,%ymm10,%ymm10");
 
 		/* intermediate disks */
-		for (d = l-1; d > 0; --d) {
+		for (d = l - 1; d > 0; --d) {
 			asm volatile ("vmovdqa %0,%%ymm4" : : "m" (v[d][i]));
-			asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[d][i+32]));
+			asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[d][i + 32]));
 
 			asm volatile ("vpxor %ymm5,%ymm5,%ymm5");
 			asm volatile ("vpxor %ymm13,%ymm13,%ymm13");
@@ -647,7 +648,7 @@ void raid_gen3_avx2ext(int nd, size_t size, void **vv)
 
 		/* first disk with all coefficients at 1 */
 		asm volatile ("vmovdqa %0,%%ymm4" : : "m" (v[0][i]));
-		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[0][i+32]));
+		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[0][i + 32]));
 
 		asm volatile ("vpxor %ymm5,%ymm5,%ymm5");
 		asm volatile ("vpxor %ymm13,%ymm13,%ymm13");
@@ -668,11 +669,11 @@ void raid_gen3_avx2ext(int nd, size_t size, void **vv)
 		asm volatile ("vpxor %ymm12,%ymm10,%ymm10");
 
 		asm volatile ("vmovntdq %%ymm0,%0" : "=m" (p[i]));
-		asm volatile ("vmovntdq %%ymm8,%0" : "=m" (p[i+32]));
+		asm volatile ("vmovntdq %%ymm8,%0" : "=m" (p[i + 32]));
 		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (q[i]));
-		asm volatile ("vmovntdq %%ymm9,%0" : "=m" (q[i+32]));
+		asm volatile ("vmovntdq %%ymm9,%0" : "=m" (q[i + 32]));
 		asm volatile ("vmovntdq %%ymm2,%0" : "=m" (r[i]));
-		asm volatile ("vmovntdq %%ymm10,%0" : "=m" (r[i+32]));
+		asm volatile ("vmovntdq %%ymm10,%0" : "=m" (r[i + 32]));
 	}
 
 	raid_asm_clobber_ymm16();
@@ -687,7 +688,7 @@ void raid_gen3_avx2ext(int nd, size_t size, void **vv)
  */
 void raid_gen4_ssse3(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -697,14 +698,14 @@ void raid_gen4_ssse3(int nd, size_t size, void **vv)
 
 	l = nd - 1;
 	p = v[nd];
-	q = v[nd+1];
-	r = v[nd+2];
-	s = v[nd+3];
+	q = v[nd + 1];
+	r = v[nd + 2];
+	s = v[nd + 3];
 
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (i = 0; i < 4; ++i)
-			memcpy(v[1+i], v[0], size);
+			memcpy(v[1 + i], v[0], size);
 		return;
 	}
 
@@ -737,7 +738,7 @@ void raid_gen4_ssse3(int nd, size_t size, void **vv)
 		asm volatile ("pxor   %xmm7,%xmm3");
 
 		/* intermediate disks */
-		for (d = l-1; d > 0; --d) {
+		for (d = l - 1; d > 0; --d) {
 			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
 			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
 
@@ -807,7 +808,7 @@ void raid_gen4_ssse3(int nd, size_t size, void **vv)
  */
 void raid_gen4_ssse3ext(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -817,14 +818,14 @@ void raid_gen4_ssse3ext(int nd, size_t size, void **vv)
 
 	l = nd - 1;
 	p = v[nd];
-	q = v[nd+1];
-	r = v[nd+2];
-	s = v[nd+3];
+	q = v[nd + 1];
+	r = v[nd + 2];
+	s = v[nd + 3];
 
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (i = 0; i < 4; ++i)
-			memcpy(v[1+i], v[0], size);
+			memcpy(v[1 + i], v[0], size);
 		return;
 	}
 
@@ -835,7 +836,7 @@ void raid_gen4_ssse3ext(int nd, size_t size, void **vv)
 		/* last disk without the by two multiplication */
 		asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[l][i]));
-		asm volatile ("movdqa %0,%%xmm12" : : "m" (v[l][i+16]));
+		asm volatile ("movdqa %0,%%xmm12" : : "m" (v[l][i + 16]));
 
 		asm volatile ("movdqa %xmm4,%xmm0");
 		asm volatile ("movdqa %xmm4,%xmm1");
@@ -874,11 +875,11 @@ void raid_gen4_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile ("pxor   %xmm15,%xmm11");
 
 		/* intermediate disks */
-		for (d = l-1; d > 0; --d) {
+		for (d = l - 1; d > 0; --d) {
 			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
 			asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
 			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
-			asm volatile ("movdqa %0,%%xmm12" : : "m" (v[d][i+16]));
+			asm volatile ("movdqa %0,%%xmm12" : : "m" (v[d][i + 16]));
 
 			asm volatile ("pxor %xmm5,%xmm5");
 			asm volatile ("pxor %xmm13,%xmm13");
@@ -936,7 +937,7 @@ void raid_gen4_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
 		asm volatile ("movdqa %0,%%xmm15" : : "m" (gfconst16.low4[0]));
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[0][i]));
-		asm volatile ("movdqa %0,%%xmm12" : : "m" (v[0][i+16]));
+		asm volatile ("movdqa %0,%%xmm12" : : "m" (v[0][i + 16]));
 
 		asm volatile ("pxor %xmm5,%xmm5");
 		asm volatile ("pxor %xmm13,%xmm13");
@@ -959,13 +960,13 @@ void raid_gen4_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile ("pxor %xmm12,%xmm11");
 
 		asm volatile ("movntdq %%xmm0,%0" : "=m" (p[i]));
-		asm volatile ("movntdq %%xmm8,%0" : "=m" (p[i+16]));
+		asm volatile ("movntdq %%xmm8,%0" : "=m" (p[i + 16]));
 		asm volatile ("movntdq %%xmm1,%0" : "=m" (q[i]));
-		asm volatile ("movntdq %%xmm9,%0" : "=m" (q[i+16]));
+		asm volatile ("movntdq %%xmm9,%0" : "=m" (q[i + 16]));
 		asm volatile ("movntdq %%xmm2,%0" : "=m" (r[i]));
-		asm volatile ("movntdq %%xmm10,%0" : "=m" (r[i+16]));
+		asm volatile ("movntdq %%xmm10,%0" : "=m" (r[i + 16]));
 		asm volatile ("movntdq %%xmm3,%0" : "=m" (s[i]));
-		asm volatile ("movntdq %%xmm11,%0" : "=m" (s[i+16]));
+		asm volatile ("movntdq %%xmm11,%0" : "=m" (s[i + 16]));
 	}
 
 	raid_asm_clobber_xmm16();
@@ -982,7 +983,7 @@ void raid_gen4_ssse3ext(int nd, size_t size, void **vv)
  */
 void raid_gen4_avx2ext(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -992,14 +993,14 @@ void raid_gen4_avx2ext(int nd, size_t size, void **vv)
 
 	l = nd - 1;
 	p = v[nd];
-	q = v[nd+1];
-	r = v[nd+2];
-	s = v[nd+3];
+	q = v[nd + 1];
+	r = v[nd + 2];
+	s = v[nd + 3];
 
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (i = 0; i < 4; ++i)
-			memcpy(v[1+i], v[0], size);
+			memcpy(v[1 + i], v[0], size);
 		return;
 	}
 
@@ -1010,7 +1011,7 @@ void raid_gen4_avx2ext(int nd, size_t size, void **vv)
 		/* last disk without the by two multiplication */
 		asm volatile ("vbroadcasti128 %0,%%ymm15" : : "m" (gfconst16.low4[0]));
 		asm volatile ("vmovdqa %0,%%ymm4" : : "m" (v[l][i]));
-		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[l][i+32]));
+		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[l][i + 32]));
 
 		asm volatile ("vmovdqa %ymm4,%ymm0");
 		asm volatile ("vmovdqa %ymm4,%ymm1");
@@ -1043,11 +1044,11 @@ void raid_gen4_avx2ext(int nd, size_t size, void **vv)
 		asm volatile ("vpxor   %ymm15,%ymm11,%ymm11");
 
 		/* intermediate disks */
-		for (d = l-1; d > 0; --d) {
+		for (d = l - 1; d > 0; --d) {
 			asm volatile ("vbroadcasti128 %0,%%ymm7" : : "m" (gfconst16.poly[0]));
 			asm volatile ("vbroadcasti128 %0,%%ymm15" : : "m" (gfconst16.low4[0]));
 			asm volatile ("vmovdqa %0,%%ymm4" : : "m" (v[d][i]));
-			asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[d][i+32]));
+			asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[d][i + 32]));
 
 			asm volatile ("vpxor %ymm5,%ymm5,%ymm5");
 			asm volatile ("vpxor %ymm13,%ymm13,%ymm13");
@@ -1099,7 +1100,7 @@ void raid_gen4_avx2ext(int nd, size_t size, void **vv)
 		asm volatile ("vbroadcasti128 %0,%%ymm7" : : "m" (gfconst16.poly[0]));
 		asm volatile ("vbroadcasti128 %0,%%ymm15" : : "m" (gfconst16.low4[0]));
 		asm volatile ("vmovdqa %0,%%ymm4" : : "m" (v[0][i]));
-		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[0][i+32]));
+		asm volatile ("vmovdqa %0,%%ymm12" : : "m" (v[0][i + 32]));
 
 		asm volatile ("vpxor %ymm5,%ymm5,%ymm5");
 		asm volatile ("vpxor %ymm13,%ymm13,%ymm13");
@@ -1122,13 +1123,13 @@ void raid_gen4_avx2ext(int nd, size_t size, void **vv)
 		asm volatile ("vpxor %ymm12,%ymm11,%ymm11");
 
 		asm volatile ("vmovntdq %%ymm0,%0" : "=m" (p[i]));
-		asm volatile ("vmovntdq %%ymm8,%0" : "=m" (p[i+32]));
+		asm volatile ("vmovntdq %%ymm8,%0" : "=m" (p[i + 32]));
 		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (q[i]));
-		asm volatile ("vmovntdq %%ymm9,%0" : "=m" (q[i+32]));
+		asm volatile ("vmovntdq %%ymm9,%0" : "=m" (q[i + 32]));
 		asm volatile ("vmovntdq %%ymm2,%0" : "=m" (r[i]));
-		asm volatile ("vmovntdq %%ymm10,%0" : "=m" (r[i+32]));
+		asm volatile ("vmovntdq %%ymm10,%0" : "=m" (r[i + 32]));
 		asm volatile ("vmovntdq %%ymm3,%0" : "=m" (s[i]));
-		asm volatile ("vmovntdq %%ymm11,%0" : "=m" (s[i+32]));
+		asm volatile ("vmovntdq %%ymm11,%0" : "=m" (s[i + 32]));
 	}
 
 	raid_asm_clobber_ymm16();
@@ -1147,7 +1148,7 @@ __attribute__((force_align_arg_pointer))
 #endif
 void raid_gen5_ssse3(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -1159,15 +1160,15 @@ void raid_gen5_ssse3(int nd, size_t size, void **vv)
 
 	l = nd - 1;
 	p = v[nd];
-	q = v[nd+1];
-	r = v[nd+2];
-	s = v[nd+3];
-	t = v[nd+4];
+	q = v[nd + 1];
+	r = v[nd + 2];
+	s = v[nd + 3];
+	t = v[nd + 4];
 
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (i = 0; i < 5; ++i)
-			memcpy(v[1+i], v[0], size);
+			memcpy(v[1 + i], v[0], size);
 		return;
 	}
 
@@ -1206,7 +1207,7 @@ void raid_gen5_ssse3(int nd, size_t size, void **vv)
 		asm volatile ("pxor   %xmm7,%xmm3");
 
 		/* intermediate disks */
-		for (d = l-1; d > 0; --d) {
+		for (d = l - 1; d > 0; --d) {
 			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
 			asm volatile ("movdqa %0,%%xmm6" : : "m" (p0[0]));
 			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
@@ -1287,7 +1288,7 @@ void raid_gen5_ssse3(int nd, size_t size, void **vv)
  */
 void raid_gen5_ssse3ext(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -1298,15 +1299,15 @@ void raid_gen5_ssse3ext(int nd, size_t size, void **vv)
 
 	l = nd - 1;
 	p = v[nd];
-	q = v[nd+1];
-	r = v[nd+2];
-	s = v[nd+3];
-	t = v[nd+4];
+	q = v[nd + 1];
+	r = v[nd + 2];
+	s = v[nd + 3];
+	t = v[nd + 4];
 
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (i = 0; i < 5; ++i)
-			memcpy(v[1+i], v[0], size);
+			memcpy(v[1 + i], v[0], size);
 		return;
 	}
 
@@ -1347,7 +1348,7 @@ void raid_gen5_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile ("pxor   %xmm13,%xmm4");
 
 		/* intermediate disks */
-		for (d = l-1; d > 0; --d) {
+		for (d = l - 1; d > 0; --d) {
 			asm volatile ("movdqa %0,%%xmm10" : : "m" (v[d][i]));
 
 			asm volatile ("pxor %xmm11,%xmm11");
@@ -1422,7 +1423,7 @@ void raid_gen5_ssse3ext(int nd, size_t size, void **vv)
  */
 void raid_gen5_avx2ext(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -1433,15 +1434,15 @@ void raid_gen5_avx2ext(int nd, size_t size, void **vv)
 
 	l = nd - 1;
 	p = v[nd];
-	q = v[nd+1];
-	r = v[nd+2];
-	s = v[nd+3];
-	t = v[nd+4];
+	q = v[nd + 1];
+	r = v[nd + 2];
+	s = v[nd + 3];
+	t = v[nd + 4];
 
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (i = 0; i < 5; ++i)
-			memcpy(v[1+i], v[0], size);
+			memcpy(v[1 + i], v[0], size);
 		return;
 	}
 
@@ -1482,7 +1483,7 @@ void raid_gen5_avx2ext(int nd, size_t size, void **vv)
 		asm volatile ("vpxor   %ymm13,%ymm4,%ymm4");
 
 		/* intermediate disks */
-		for (d = l-1; d > 0; --d) {
+		for (d = l - 1; d > 0; --d) {
 			asm volatile ("vmovdqa %0,%%ymm10" : : "m" (v[d][i]));
 
 			asm volatile ("vpcmpgtb %ymm1,%ymm8,%ymm11");
@@ -1556,7 +1557,7 @@ __attribute__((force_align_arg_pointer))
 #endif
 void raid_gen6_ssse3(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -1570,16 +1571,16 @@ void raid_gen6_ssse3(int nd, size_t size, void **vv)
 
 	l = nd - 1;
 	p = v[nd];
-	q = v[nd+1];
-	r = v[nd+2];
-	s = v[nd+3];
-	t = v[nd+4];
-	u = v[nd+5];
+	q = v[nd + 1];
+	r = v[nd + 2];
+	s = v[nd + 3];
+	t = v[nd + 4];
+	u = v[nd + 5];
 
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (i = 0; i < 6; ++i)
-			memcpy(v[1+i], v[0], size);
+			memcpy(v[1 + i], v[0], size);
 		return;
 	}
 
@@ -1624,7 +1625,7 @@ void raid_gen6_ssse3(int nd, size_t size, void **vv)
 		asm volatile ("pxor   %xmm7,%xmm3");
 
 		/* intermediate disks */
-		for (d = l-1; d > 0; --d) {
+		for (d = l - 1; d > 0; --d) {
 			asm volatile ("movdqa %0,%%xmm5" : : "m" (p0[0]));
 			asm volatile ("movdqa %0,%%xmm6" : : "m" (q0[0]));
 			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
@@ -1718,7 +1719,7 @@ void raid_gen6_ssse3(int nd, size_t size, void **vv)
  */
 void raid_gen6_ssse3ext(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -1730,16 +1731,16 @@ void raid_gen6_ssse3ext(int nd, size_t size, void **vv)
 
 	l = nd - 1;
 	p = v[nd];
-	q = v[nd+1];
-	r = v[nd+2];
-	s = v[nd+3];
-	t = v[nd+4];
-	u = v[nd+5];
+	q = v[nd + 1];
+	r = v[nd + 2];
+	s = v[nd + 3];
+	t = v[nd + 4];
+	u = v[nd + 5];
 
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (i = 0; i < 6; ++i)
-			memcpy(v[1+i], v[0], size);
+			memcpy(v[1 + i], v[0], size);
 		return;
 	}
 
@@ -1786,7 +1787,7 @@ void raid_gen6_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile ("pxor   %xmm13,%xmm5");
 
 		/* intermediate disks */
-		for (d = l-1; d > 0; --d) {
+		for (d = l - 1; d > 0; --d) {
 			asm volatile ("movdqa %0,%%xmm10" : : "m" (v[d][i]));
 
 			asm volatile ("pxor %xmm11,%xmm11");
@@ -1870,7 +1871,7 @@ void raid_gen6_ssse3ext(int nd, size_t size, void **vv)
  */
 void raid_gen6_avx2ext(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -1882,16 +1883,16 @@ void raid_gen6_avx2ext(int nd, size_t size, void **vv)
 
 	l = nd - 1;
 	p = v[nd];
-	q = v[nd+1];
-	r = v[nd+2];
-	s = v[nd+3];
-	t = v[nd+4];
-	u = v[nd+5];
+	q = v[nd + 1];
+	r = v[nd + 2];
+	s = v[nd + 3];
+	t = v[nd + 4];
+	u = v[nd + 5];
 
 	/* special case with only one data disk */
 	if (l == 0) {
 		for (i = 0; i < 6; ++i)
-			memcpy(v[1+i], v[0], size);
+			memcpy(v[1 + i], v[0], size);
 		return;
 	}
 
@@ -1938,7 +1939,7 @@ void raid_gen6_avx2ext(int nd, size_t size, void **vv)
 		asm volatile ("vpxor   %ymm13,%ymm5,%ymm5");
 
 		/* intermediate disks */
-		for (d = l-1; d > 0; --d) {
+		for (d = l - 1; d > 0; --d) {
 			asm volatile ("vmovdqa %0,%%ymm10" : : "m" (v[d][i]));
 
 			asm volatile ("vpcmpgtb %ymm1,%ymm8,%ymm11");
@@ -2017,7 +2018,7 @@ void raid_gen6_avx2ext(int nd, size_t size, void **vv)
  */
 void raid_rec1_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *pa;
 	uint8_t G;
@@ -2041,7 +2042,7 @@ void raid_rec1_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	/* compute delta parity */
 	raid_delta_gen(1, id, ip, nd, size, vv);
 
-	p = v[nd+ip[0]];
+	p = v[nd + ip[0]];
 	pa = v[id[0]];
 
 	raid_asm_begin();
@@ -2078,12 +2079,12 @@ void raid_rec1_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
  */
 void raid_rec2_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	const int N = 2;
 	uint8_t *p[N];
 	uint8_t *pa[N];
-	uint8_t G[N*N];
-	uint8_t V[N*N];
+	uint8_t G[N * N];
+	uint8_t V[N * N];
 	size_t i;
 	int j, k;
 
@@ -2092,7 +2093,7 @@ void raid_rec2_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	/* setup the coefficients matrix */
 	for (j = 0; j < N; ++j)
 		for (k = 0; k < N; ++k)
-			G[j*N+k] = A(ip[j], id[k]);
+			G[j * N + k] = A(ip[j], id[k]);
 
 	/* invert it to solve the system of linear equations */
 	raid_invert(G, V, N);
@@ -2101,7 +2102,7 @@ void raid_rec2_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	raid_delta_gen(N, id, ip, nd, size, vv);
 
 	for (j = 0; j < N; ++j) {
-		p[j] = v[nd+ip[j]];
+		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
 
@@ -2186,19 +2187,19 @@ void raid_rec2_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
  */
 void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	int N = nr;
 	uint8_t *p[RAID_PARITY_MAX];
 	uint8_t *pa[RAID_PARITY_MAX];
-	uint8_t G[RAID_PARITY_MAX*RAID_PARITY_MAX];
-	uint8_t V[RAID_PARITY_MAX*RAID_PARITY_MAX];
+	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
+	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	size_t i;
 	int j, k;
 
 	/* setup the coefficients matrix */
 	for (j = 0; j < N; ++j)
 		for (k = 0; k < N; ++k)
-			G[j*N+k] = A(ip[j], id[k]);
+			G[j * N + k] = A(ip[j], id[k]);
 
 	/* invert it to solve the system of linear equations */
 	raid_invert(G, V, N);
@@ -2207,7 +2208,7 @@ void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	raid_delta_gen(N, id, ip, nd, size, vv);
 
 	for (j = 0; j < N; ++j) {
-		p[j] = v[nd+ip[j]];
+		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
 
@@ -2232,7 +2233,7 @@ void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 			asm volatile ("pxor %xmm1,%xmm1");
 
 			for (k = 0; k < N; ++k) {
-				uint8_t m = V[j*N+k];
+				uint8_t m = V[j * N + k];
 
 				asm volatile ("movdqa %0,%%xmm2" : : "m" (gfmulpshufb[m][0][0]));
 				asm volatile ("movdqa %0,%%xmm3" : : "m" (gfmulpshufb[m][1][0]));
@@ -2265,7 +2266,7 @@ void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
  */
 void raid_rec1_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	uint8_t *p;
 	uint8_t *pa;
 	uint8_t G;
@@ -2289,7 +2290,7 @@ void raid_rec1_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	/* compute delta parity */
 	raid_delta_gen(1, id, ip, nd, size, vv);
 
-	p = v[nd+ip[0]];
+	p = v[nd + ip[0]];
 	pa = v[id[0]];
 
 	raid_asm_begin();
@@ -2323,12 +2324,12 @@ void raid_rec1_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
  */
 void raid_rec2_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	const int N = 2;
 	uint8_t *p[N];
 	uint8_t *pa[N];
-	uint8_t G[N*N];
-	uint8_t V[N*N];
+	uint8_t G[N * N];
+	uint8_t V[N * N];
 	size_t i;
 	int j, k;
 
@@ -2337,7 +2338,7 @@ void raid_rec2_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	/* setup the coefficients matrix */
 	for (j = 0; j < N; ++j)
 		for (k = 0; k < N; ++k)
-			G[j*N+k] = A(ip[j], id[k]);
+			G[j * N + k] = A(ip[j], id[k]);
 
 	/* invert it to solve the system of linear equations */
 	raid_invert(G, V, N);
@@ -2346,7 +2347,7 @@ void raid_rec2_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	raid_delta_gen(N, id, ip, nd, size, vv);
 
 	for (j = 0; j < N; ++j) {
-		p[j] = v[nd+ip[j]];
+		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
 
@@ -2423,19 +2424,19 @@ void raid_rec2_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
  */
 void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	int N = nr;
 	uint8_t *p[RAID_PARITY_MAX];
 	uint8_t *pa[RAID_PARITY_MAX];
-	uint8_t G[RAID_PARITY_MAX*RAID_PARITY_MAX];
-	uint8_t V[RAID_PARITY_MAX*RAID_PARITY_MAX];
+	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
+	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	size_t i;
 	int j, k;
 
 	/* setup the coefficients matrix */
 	for (j = 0; j < N; ++j)
 		for (k = 0; k < N; ++k)
-			G[j*N+k] = A(ip[j], id[k]);
+			G[j * N + k] = A(ip[j], id[k]);
 
 	/* invert it to solve the system of linear equations */
 	raid_invert(G, V, N);
@@ -2444,7 +2445,7 @@ void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	raid_delta_gen(N, id, ip, nd, size, vv);
 
 	for (j = 0; j < N; ++j) {
-		p[j] = v[nd+ip[j]];
+		p[j] = v[nd + ip[j]];
 		pa[j] = v[id[j]];
 	}
 
@@ -2469,7 +2470,7 @@ void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 			asm volatile ("vpxor %ymm1,%ymm1,%ymm1");
 
 			for (k = 0; k < N; ++k) {
-				uint8_t m = V[j*N+k];
+				uint8_t m = V[j * N + k];
 
 				asm volatile ("vbroadcasti128 %0,%%ymm2" : : "m" (gfmulpshufb[m][0][0]));
 				asm volatile ("vbroadcasti128 %0,%%ymm3" : : "m" (gfmulpshufb[m][1][0]));

@@ -19,9 +19,9 @@
 
 static inline void raid_cpuid(uint32_t func_eax, uint32_t sub_ecx, uint32_t *reg)
 {
-	asm volatile(
+	asm volatile (
 #if defined(__i386__) && defined(__PIC__)
-		/* allow compilation in PIC mode saving ebx */
+	        /* allow compilation in PIC mode saving ebx */
 		"xchgl %%ebx, %1\n"
 		"cpuid\n"
 		"xchgl %%ebx, %1\n"
@@ -44,9 +44,9 @@ static inline void raid_cpu_info(char *vendor, unsigned *family, unsigned *model
 
 	raid_cpuid(0, 0, reg);
 
-	((uint32_t *)vendor)[0] = reg[1];
-	((uint32_t *)vendor)[1] = reg[3];
-	((uint32_t *)vendor)[2] = reg[2];
+	((uint32_t*)vendor)[0] = reg[1];
+	((uint32_t*)vendor)[1] = reg[3];
+	((uint32_t*)vendor)[2] = reg[2];
 	vendor[12] = 0;
 
 	raid_cpuid(1, 0, reg);
@@ -120,10 +120,10 @@ static inline int raid_os_support_256bit_regs(void)
 	uint32_t reg[4];
 
 	/* get the value of the Extended Control Register ecx=0 */
-	asm volatile(
-		/* uses a direct encoding of the XGETBV instruction as only recent */
-		/* assemblers support it. */
-		/* the next line is equivalent at: "xgetbv\n" */
+	asm volatile (
+	        /* uses a direct encoding of the XGETBV instruction as only recent */
+	        /* assemblers support it. */
+	        /* the next line is equivalent at: "xgetbv\n" */
 		".byte 0x0f, 0x01, 0xd0\n"
 		: "=a" (reg[0]), "=d" (reg[3])
 		: "c" (0)

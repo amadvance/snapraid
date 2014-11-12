@@ -59,7 +59,7 @@ void **raid_malloc_vector(int nd, int n, size_t size, void **freeptr)
 
 	/* reverse order of the data blocks */
 	/* because they are usually accessed from the last one */
-	for (i = 0; i < nd/2; ++i) {
+	for (i = 0; i < nd / 2; ++i) {
 		void *ptr = v[i];
 		v[i] = v[nd - 1 - i];
 		v[nd - 1 - i] = ptr;
@@ -70,7 +70,7 @@ void **raid_malloc_vector(int nd, int n, size_t size, void **freeptr)
 
 void raid_mrand_vector(int n, size_t size, void **vv)
 {
-	unsigned char **v = (unsigned char **)vv;
+	unsigned char **v = (unsigned char**)vv;
 	int i;
 	size_t j;
 
@@ -81,7 +81,7 @@ void raid_mrand_vector(int n, size_t size, void **vv)
 
 int raid_mtest_vector(int n, size_t size, void **vv)
 {
-	unsigned char **v = (unsigned char **)vv;
+	unsigned char **v = (unsigned char**)vv;
 	int i;
 	size_t j;
 	unsigned k;
@@ -113,9 +113,9 @@ int raid_mtest_vector(int n, size_t size, void **vv)
 		/* backward fill with complement */
 		for (i = 0; i < n; ++i) {
 			for (j = size; j > 0; --j) {
-				if (v[i][j-1] != p)
+				if (v[i][j - 1] != p)
 					return -1;
-				v[i][j-1] = d;
+				v[i][j - 1] = d;
 			}
 		}
 	}

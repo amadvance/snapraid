@@ -23,7 +23,7 @@ static uint8_t gfmul(uint8_t a, uint8_t b)
 	uint8_t v;
 
 	v = 0;
-	while (b)  {
+	while (b) {
 		if ((b & 1) != 0)
 			v ^= a;
 
@@ -55,7 +55,7 @@ uint8_t gfinv[256];
  * Number of disks.
  * This is the number of columns of the generator matrix.
  */
-#define DISK (257-PARITY)
+#define DISK (257 - PARITY)
 
 /**
  * Setup the Cauchy matrix used to generate the parity.
@@ -82,7 +82,7 @@ static void set_cauchy(uint8_t *matrix)
 	 *   -   -   -   -   -   -
 	 */
 	for (i = 0; i < DISK; ++i)
-		matrix[0*DISK+i] = 1;
+		matrix[0 * DISK + i] = 1;
 
 	/*
 	 * Second row is formed with powers 2^i, and it's the first
@@ -117,7 +117,7 @@ static void set_cauchy(uint8_t *matrix)
 	 */
 	inv_x = 1;
 	for (i = 0; i < DISK; ++i) {
-		matrix[1*DISK+i] = inv_x;
+		matrix[1 * DISK + i] = inv_x;
 		inv_x = gfmul(2, inv_x);
 	}
 
@@ -143,11 +143,11 @@ static void set_cauchy(uint8_t *matrix)
 	 * 167  39 213  59 153  82
 	 */
 	y = 2;
-	for (j = 0; j < PARITY-2; ++j) {
+	for (j = 0; j < PARITY - 2; ++j) {
 		inv_x = 1;
 		for (i = 0; i < DISK; ++i) {
 			uint8_t x = gfinv[inv_x];
-			matrix[(j+2)*DISK+i] = gfinv[y ^ x];
+			matrix[(j + 2) * DISK + i] = gfinv[y ^ x];
 			inv_x = gfmul(2, inv_x);
 		}
 
@@ -167,11 +167,11 @@ static void set_cauchy(uint8_t *matrix)
 	 *   1 245 210 196 154 113
 	 *   1 187 166 215   7 106
 	 */
-	for (j = 0; j < PARITY-2; ++j) {
-		uint8_t f = gfinv[matrix[(j+2)*DISK]];
+	for (j = 0; j < PARITY - 2; ++j) {
+		uint8_t f = gfinv[matrix[(j + 2) * DISK]];
 
 		for (i = 0; i < DISK; ++i)
-			matrix[(j+2)*DISK+i] = gfmul(matrix[(j+2)*DISK+i], f);
+			matrix[(j + 2) * DISK + i] = gfmul(matrix[(j + 2) * DISK + i], f);
 	}
 }
 
@@ -185,17 +185,17 @@ static void set_power(uint8_t *matrix)
 
 	v = 1;
 	for (i = 0; i < DISK; ++i)
-		matrix[0*DISK+i] = v;
+		matrix[0 * DISK + i] = v;
 
 	v = 1;
 	for (i = 0; i < DISK; ++i) {
-		matrix[1*DISK+i] = v;
+		matrix[1 * DISK + i] = v;
 		v = gfmul(2, v);
 	}
 
 	v = 1;
 	for (i = 0; i < DISK; ++i) {
-		matrix[2*DISK+i] = v;
+		matrix[2 * DISK + i] = v;
 		v = gfmul(0x8e, v);
 	}
 }
@@ -306,7 +306,7 @@ int main(void)
 	for (p = 0; p < 3; ++p) {
 		printf(" * ");
 		for (i = 0; i < DISK; ++i)
-			printf("%02x ", matrix[p*DISK+i]);
+			printf("%02x ", matrix[p * DISK + i]);
 		printf("\n");
 	}
 	printf(" */\n");
@@ -317,7 +317,7 @@ int main(void)
 		for (i = 0; i < DISK; ++i) {
 			if (i % 8 == 0)
 				printf("\t\t");
-			printf("0x%02x,", matrix[p*DISK+i]);
+			printf("0x%02x,", matrix[p * DISK + i]);
 			if (i % 8 == 7)
 				printf("\n");
 			else
@@ -337,7 +337,7 @@ int main(void)
 	for (p = 0; p < PARITY; ++p) {
 		printf(" * ");
 		for (i = 0; i < DISK; ++i)
-			printf("%02x ", matrix[p*DISK+i]);
+			printf("%02x ", matrix[p * DISK + i]);
 		printf("\n");
 	}
 	printf(" */\n");
@@ -348,7 +348,7 @@ int main(void)
 		for (i = 0; i < DISK; ++i) {
 			if (i % 8 == 0)
 				printf("\t\t");
-			printf("0x%02x,", matrix[p*DISK+i]);
+			printf("0x%02x,", matrix[p * DISK + i]);
 			if (i % 8 == 7)
 				printf("\n");
 			else
@@ -374,7 +374,7 @@ int main(void)
 			for (j = 0; j < 2; ++j) {
 				printf("\t\t\t{ ");
 				for (k = 0; k < 16; ++k) {
-					v = gfmul(matrix[p*DISK+i], k);
+					v = gfmul(matrix[p * DISK + i], k);
 					if (j == 1)
 						v = gfmul(v, 16);
 					printf("0x%02x", (unsigned)v);

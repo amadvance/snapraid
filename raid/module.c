@@ -114,7 +114,7 @@ void raid_init(void)
  */
 void raid_gen_ref(int nd, int np, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t **)vv;
+	uint8_t **v = (uint8_t**)vv;
 	size_t i;
 
 	for (i = 0; i < size; ++i) {
@@ -160,13 +160,13 @@ static int raid_test_par(int nd, int np, size_t size, void **v, void **ref)
 
 	/* setup parity */
 	for (i = 0; i < np; ++i)
-		t[nd+i] = v[nd+i];
+		t[nd + i] = v[nd + i];
 
 	raid_gen(nd, np, size, t);
 
 	/* compare parity */
 	for (i = 0; i < np; ++i)
-		if (memcmp(t[nd+i], ref[nd+i], size) != 0)
+		if (memcmp(t[nd + i], ref[nd + i], size) != 0)
 			return -1;
 
 	return 0;
@@ -181,7 +181,7 @@ static int raid_test_rec(int nr, int *ir, int nd, int np, size_t size, void **v,
 	void *t[TEST_COUNT + RAID_PARITY_MAX];
 
 	/* setup vector */
-	for (i = 0, j = 0; i < nd+np; ++i) {
+	for (i = 0, j = 0; i < nd + np; ++i) {
 		if (j < nr && ir[j] == i) {
 			/* this block has to be recovered */
 			t[i] = v[i];
@@ -195,7 +195,7 @@ static int raid_test_rec(int nr, int *ir, int nd, int np, size_t size, void **v,
 	raid_rec(nr, ir, nd, np, size, t);
 
 	/* compare all data and parity */
-	for (i = 0; i < nd+np; ++i) {
+	for (i = 0; i < nd + np; ++i) {
 		if (t[i] != ref[i] && memcmp(t[i], ref[i], size) != 0) {
 			return -1;
 		}
@@ -226,16 +226,16 @@ int raid_selftest(void)
 	if (!v)
 		return -1;
 
-	memset(v[nv-1], 0, size);
-	raid_zero(v[nv-1]);
+	memset(v[nv - 1], 0, size);
+	raid_zero(v[nv - 1]);
 
 	/* use the multiplication table as data */
 	for (i = 0; i < nd; ++i)
-		ref[i] = ((uint8_t *)gfmul) + size * i;
+		ref[i] = ((uint8_t*)gfmul) + size * i;
 
 	/* setup reference parity */
 	for (i = 0; i < RAID_PARITY_MAX; ++i)
-		ref[nd+i] = v[nd+RAID_PARITY_MAX+i];
+		ref[nd + i] = v[nd + RAID_PARITY_MAX + i];
 
 	/* compute reference parity */
 	raid_gen_ref(nd, RAID_PARITY_MAX, size, ref);
@@ -284,5 +284,4 @@ bail:
 
 	return ret;
 }
-
 

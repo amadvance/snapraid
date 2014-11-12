@@ -75,6 +75,7 @@ static struct raid_func {
 static const char *raid_tag(void *func)
 {
 	struct raid_func *i = RAID_FUNC;
+
 	while (i->name != 0) {
 		if (i->p == func)
 			return i->name;
