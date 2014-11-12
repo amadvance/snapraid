@@ -206,6 +206,7 @@ static __always_inline void raid_asm_end(void)
 #endif
 }
 
+#ifdef CONFIG_SSE2
 static __always_inline void raid_asm_clobber_xmm4(void)
 {
 	/* clobbers registers used in the asm code */
@@ -215,56 +216,61 @@ static __always_inline void raid_asm_clobber_xmm4(void)
 	/* register that needs to be saved */
 	/* we check for __SSE2_ because we require that the */
 	/* compiler supports SSE2 registers in the clobber list */
-#if defined(CONFIG_SSE2) && defined(__SSE2__)
+#ifdef __SSE2__
 	asm volatile ("" : : : "%xmm0", "%xmm1", "%xmm2", "%xmm3");
 #endif
 }
+#endif
 
+#ifdef CONFIG_SSE2
 static __always_inline void raid_asm_clobber_xmm8(void)
 {
 	raid_asm_clobber_xmm4();
-#if defined(CONFIG_SSE2) && defined(__SSE2__)
+#ifdef __SSE2__
 	asm volatile ("" : : : "%xmm4", "%xmm5", "%xmm6", "%xmm7");
 #endif
 }
+#endif
 
+#ifdef CONFIG_AVX2
 static __always_inline void raid_asm_clobber_ymm4(void)
 {
 	raid_asm_clobber_xmm4();
 	/* reset the upper part of the ymm registers */
 	/* to avoid the 70 clocks penality on the next */
 	/* xmm register use */
-#ifdef CONFIG_AVX2
 	asm volatile ("vzeroupper" : : : "memory");
-#endif
 }
+#endif
 
+#ifdef CONFIG_AVX2
 static __always_inline void raid_asm_clobber_ymm8(void)
 {
 	raid_asm_clobber_xmm8();
-#ifdef CONFIG_AVX2
 	asm volatile ("vzeroupper" : : : "memory");
-#endif
 }
+#endif
 #endif /* CONFIG_X86 */
 
 #ifdef CONFIG_X86_64
+#ifdef CONFIG_SSE2
 static __always_inline void raid_asm_clobber_xmm16(void)
 {
 	raid_asm_clobber_xmm8();
-#if defined(CONFIG_SSE2) && defined(__SSE2__)
+#ifdef __SSE2__
 	asm volatile ("" : : : "%xmm8", "%xmm9", "%xmm10", "%xmm11");
 	asm volatile ("" : : : "%xmm12", "%xmm13", "%xmm14", "%xmm15");
 #endif
 }
+#endif
 
+#ifdef CONFIG_AVX2
 static __always_inline void raid_asm_clobber_ymm16(void)
 {
 	raid_asm_clobber_xmm16();
-#ifdef CONFIG_AVX2
 	asm volatile ("vzeroupper" : : : "memory");
-#endif
 }
+#endif
 #endif /* CONFIG_X86_64 */
 
 #endif
