@@ -39,29 +39,29 @@ static __always_inline int raid_invert_fast(uint8_t *M, int n)
 		/* the diagonal element cannot be 0 because */
 		/* we are inverting matrices with all the square */
 		/* submatrices not singular */
-		if (M[k*n+k] == 0)
+		if (M[k * n + k] == 0)
 			return -1;
 
 		/* make the diagonal element to be 1 */
-		f = inv(M[k*n+k]);
+		f = inv(M[k * n + k]);
 		for (j = 0; j < n; ++j)
-			M[k*n+j] = mul(f, M[k*n+j]);
+			M[k * n + j] = mul(f, M[k * n + j]);
 
 		/* make all the elements over and under the diagonal */
 		/* to be zero */
 		for (i = 0; i < n; ++i) {
 			if (i == k)
 				continue;
-			f = M[i*n+k];
+			f = M[i * n + k];
 			for (j = 0; j < n; ++j)
-				M[i*n+j] ^= mul(f, M[k*n+j]);
+				M[i * n + j] ^= mul(f, M[k * n + j]);
 		}
 	}
 
 	return 0;
 }
 
-#define TEST_REFRESH (4*1024*1024)
+#define TEST_REFRESH (4 * 1024 * 1024)
 
 /**
  * Precomputed number of square submatrices of size nr.
@@ -105,7 +105,7 @@ static __always_inline int test_sub_matrix(int nr, long long *total)
 			/* setup the submatrix */
 			for (i = 0; i < nr; ++i)
 				for (j = 0; j < nr; ++j)
-					M[i*nr+j] = gfgen[ip[i]][id[j]];
+					M[i * nr + j] = gfgen[ip[i]][id[j]];
 
 			/* invert */
 			if (raid_invert_fast(M, nr) != 0)
@@ -121,7 +121,7 @@ static __always_inline int test_sub_matrix(int nr, long long *total)
 	if (count != expected)
 		return -1;
 
-	printf("\rTested %"PRIi64" matrix\n", count);
+	printf("\rTested %" PRIi64 " matrix\n", count);
 
 	*total += count;
 
@@ -153,7 +153,7 @@ int test_all_sub_matrix(void)
 	if (test_sub_matrix(6, &total) != 0)
 		return -1;
 
-	printf("\nTested in total %"PRIi64" matrix\n", total);
+	printf("\nTested in total %" PRIi64 " matrix\n", total);
 
 	return 0;
 }
