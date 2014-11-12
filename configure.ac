@@ -198,10 +198,16 @@ AC_ARG_ENABLE([sgcheck],
 
 AC_ARG_ENABLE([sde],
 	[AS_HELP_STRING([--enable-sde],[enable the use of SDE emulator in testing])],
+dnl p4 -> Pentium4 with SSE2
+dnl mrm -> Merom with SSSE3
+dnl nhm -> Nehalem with SSE4.2
+dnl hsw -> Haswell with AVX2
+dnl knl -> Knights Landing with AVX512
 	[
 	TESTENV_SSE2="$SDE -p4 --"
-	TESTENV_SSE4="$SDE -msm --"
-	TESTENV_AVX2="$SDE --"
+	TESTENV_SSSE3="$SDE -mrm --"
+	TESTENV_SSE42="$SDE -nhm --"
+	TESTENV_AVX2="$SDE -hsw --"
 	EMULATOR=1
 	],
 	[])
@@ -231,6 +237,7 @@ AC_ARG_VAR([TESTENV], [Test environment])
 AC_ARG_VAR([FAILENV], [Test environment for failing tests])
 AC_ARG_VAR([TESTENV_SSE2], [Test environment for SSE2])
 AC_ARG_VAR([TESTENV_SSSE3], [Test environment for SSSE3])
+AC_ARG_VAR([TESTENV_SSE42], [Test environment for SSE42])
 AC_ARG_VAR([TESTENV_AVX2], [Test environment for AVX2])
 
 AC_CONFIG_FILES([Makefile])

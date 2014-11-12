@@ -174,17 +174,19 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -H
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -V
 	$(TESTENV) ./mktest$(EXEEXT)
-	echo --- Run the self test only this time
-	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -c $(CONF) status
-	echo --- Run the speed test
-	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -T
 if HAVE_EMULATOR
-# Run speed test in different architectures
-	$(TESTENV_SSE2) ./snapraid$(EXEEXT) --test-skip-device -T
-	$(TESTENV_SSSE3) ./snapraid$(EXEEXT) --test-skip-device -T
-	$(TESTENV_AVX2) ./snapraid$(EXEEXT) --test-skip-device -T
 # Run the self test in AVX2
 	$(TESTENV_AVX2) ./snapraid$(EXEEXT) --test-skip-device -c $(CONF) status
+# Run the speed test in different architectures
+	$(TESTENV_SSE2) ./snapraid$(EXEEXT) --test-skip-device -T
+	$(TESTENV_SSSE3) ./snapraid$(EXEEXT) --test-skip-device -T
+	$(TESTENV_SSE42) ./snapraid$(EXEEXT) --test-skip-device -T
+	$(TESTENV_AVX2) ./snapraid$(EXEEXT) --test-skip-device -T
+else
+# Run the self test natively
+	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -c $(CONF) status
+# Run the speed test natively
+	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -T
 endif
 	echo --- Some commands with empty array
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) diff
