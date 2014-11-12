@@ -1211,7 +1211,7 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 			/* because we use a directory reading method that doesn't read info about ReparsePoint. */
 			/* Note that here we cannot call here lstat_sync(), because we don't know what kind */
 			/* of file is it, and lstat_sync() doesn't always work */
-			if (st->st_mode == 0)  {
+			if (st->st_mode == 0) {
 				if (lstat(path_next, st) != 0) {
 					/* LCOV_EXCL_START */
 					fprintf(stderr, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
@@ -1523,7 +1523,7 @@ void state_scan(struct snapraid_state* state, int is_diff)
 			/* if the file is not empty, count duplicate physical offsets */
 			if (state->opt.force_order == SORT_PHYSICAL && file->size != 0) {
 				if (phy_file_last != 0 && file->physical == phy_last
-					/* files without offset are expected to have duplicates */
+				        /* files without offset are expected to have duplicates */
 					&& phy_last != FILEPHY_WITHOUT_OFFSET
 				) {
 					/* if verbose, prints the list of duplicates real offsets */

@@ -393,7 +393,7 @@ static void windows_attr2stat(DWORD FileAttributes, DWORD ReparseTag, struct win
 		case IO_REPARSE_TAG_MOUNT_POINT :
 			st->st_mode = S_IFCHR;
 			st->st_desc = "reparse-point-mount";
-		break;
+			break;
 		case IO_REPARSE_TAG_NFS :
 			st->st_mode = S_IFCHR;
 			st->st_desc = "reparse-point-nfs";

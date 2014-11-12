@@ -70,7 +70,7 @@ static int clean_dir(struct snapraid_state* state, const char* dir)
 
 		/* if the st_mode field is missing, takes care to fill it using normal lstat() */
 		/* at now this can happen only in Windows */
-		if (st.st_mode == 0)  {
+		if (st.st_mode == 0) {
 			if (lstat(path_next, &st) != 0) {
 				/* LCOV_EXCL_START */
 				fprintf(stderr, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));

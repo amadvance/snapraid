@@ -272,7 +272,7 @@ static void import_dir(struct snapraid_state* state, const char* dir)
 		/* because we use a directory reading method that doesn't read info about ReparsePoint. */
 		/* Note that here we cannot call here lstat_sync(), because we don't know what kind */
 		/* of file is it, and lstat_sync() doesn't always work */
-		if (st.st_mode == 0)  {
+		if (st.st_mode == 0) {
 			if (lstat(path, &st) != 0) {
 				/* LCOV_EXCL_START */
 				fprintf(stderr, "Error in stat file/directory '%s'. %s.\n", path, strerror(errno));

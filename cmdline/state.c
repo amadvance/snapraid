@@ -4702,7 +4702,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 
 		/* if we have at least 5 measures */
 		if (state->progress_tick >= 5
-			/* or if we are running in test mode, with at least one measure */
+		        /* or if we are running in test mode, with at least one measure */
 			|| (state->opt.force_progress && state->progress_tick >= 1)
 		) {
 			int oldest;
