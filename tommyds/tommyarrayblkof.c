@@ -66,7 +66,7 @@ void tommy_arrayblkof_grow(tommy_arrayblkof* array, tommy_count_t count)
 
 		/* allocate new blocks */
 		while (block_mac < block_max) {
-			void* ptr = tommy_calloc(TOMMY_ARRAYBLK_SIZE, array->element_size);
+			void** ptr = tommy_calloc(TOMMY_ARRAYBLK_SIZE, array->element_size);
 
 			/* set the new block */
 			tommy_array_set(&array->block, block_mac, ptr);
