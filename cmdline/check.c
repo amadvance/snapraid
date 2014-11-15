@@ -631,9 +631,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		/* for each disk */
 		one_tocheck = 0;
 		for (j = 0; j < diskmax; ++j) {
-			struct snapraid_block* block = BLOCK_EMPTY;
-			if (handle[j].disk)
-				block = disk_block_get(handle[j].disk, i);
+			struct snapraid_block* block;
+
+			/* if no disk, nothing to check */
+			if (!handle[j].disk)
+				continue;
+
+			block = disk_block_get(handle[j].disk, i);
 
 			/* try to recover all files, even the ones without hash */
 			/* because in some cases we can recover also them */
@@ -666,9 +670,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		/* for each disk */
 		one_tocheck = 0;
 		for (j = 0; j < diskmax; ++j) {
-			struct snapraid_block* block = BLOCK_EMPTY;
-			if (handle[j].disk)
-				block = disk_block_get(handle[j].disk, i);
+			struct snapraid_block* block;
+
+			/* if no disk, nothing to check */
+			if (!handle[j].disk)
+				continue;
+
+			block = disk_block_get(handle[j].disk, i);
 
 			/* try to recover all files, even the ones without hash */
 			/* because in some cases we can recover also them */
