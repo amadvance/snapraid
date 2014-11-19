@@ -1683,7 +1683,6 @@ void state_scan(struct snapraid_state* state, int is_diff)
 		fprintf(stderr, ". Move operations won't be optimal.\n");
 	}
 
-
 	if (state->opt.verbose || is_diff) {
 		struct snapraid_scan total;
 		int no_difference;

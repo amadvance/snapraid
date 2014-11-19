@@ -149,7 +149,7 @@ int state_search_fetch(struct snapraid_state* state, int prevhash, struct snapra
 	return 0;
 }
 
-static void search_dir(struct snapraid_state* state, const char* dir)
+static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk, const char* dir, const char* sub)
 {
 	DIR* d;
 
@@ -162,7 +162,8 @@ static void search_dir(struct snapraid_state* state, const char* dir)
 	}
 
 	while (1) {
-		char path[PATH_MAX];
+		char path_next[PATH_MAX];
+		char sub_next[PATH_MAX];
 		struct stat st;
 		const char* name;
 		struct dirent* dd;
@@ -185,9 +186,24 @@ static void search_dir(struct snapraid_state* state, const char* dir)
 		if (name[0] == '.' && (name[1] == 0 || (name[1] == '.' && name[2] == 0)))
 			continue;
 
-		pathprint(path, sizeof(path), "%s", dir);
-		pathslash(path, sizeof(path));
-		pathcat(path, sizeof(path), name);
+		pathprint(path_next, sizeof(path_next), "%s%s", dir, name);
+		pathprint(sub_next, sizeof(sub_next), "%s%s", sub, name);
+
+		/* exclude hidden files even before calling lstat() */
+		if (disk != 0 && filter_hidden(state->filter_hidden, dd) != 0) {
+			if (state->opt.verbose) {
+				printf("Excluding hidden '%s'\n", path_next);
+			}
+			continue;
+		}
+
+		/* exclude content files even before calling lstat() */
+		if (disk != 0 && filter_content(&state->contentlist, path_next) != 0) {
+			if (state->opt.verbose) {
+				printf("Excluding content '%s'\n", path_next);
+			}
+			continue;
+		}
 
 #if HAVE_STRUCT_DIRENT_D_STAT
 		/* convert dirent to lstat result */
@@ -199,27 +215,41 @@ static void search_dir(struct snapraid_state* state, const char* dir)
 		/* Note that here we cannot call here lstat_sync(), because we don't know what kind */
 		/* of file is it, and lstat_sync() doesn't always work */
 		if (st.st_mode == 0) {
-			if (lstat(path, &st) != 0) {
+			if (lstat(path_next, &st) != 0) {
 				/* LCOV_EXCL_START */
-				fprintf(stderr, "Error in stat file/directory '%s'. %s.\n", path, strerror(errno));
+				fprintf(stderr, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 		}
 #else
 		/* get lstat info about the file */
-		if (lstat(path, &st) != 0) {
+		if (lstat(path_next, &st) != 0) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "Error in stat file/directory '%s'. %s.\n", path, strerror(errno));
+			fprintf(stderr, "Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 #endif
 
 		if (S_ISREG(st.st_mode)) {
-			search_file(state, path, st.st_size, st.st_mtime, STAT_NSEC(&st));
+			if (disk == 0 || filter_path(&state->filterlist, disk->name, sub_next) == 0) {
+				search_file(state, path_next, st.st_size, st.st_mtime, STAT_NSEC(&st));
+			} else {
+				if (state->opt.verbose) {
+					printf("Excluding link '%s'\n", path_next);
+				}
+			}
 		} else if (S_ISDIR(st.st_mode)) {
-			search_dir(state, path);
+			if (disk == 0 || filter_dir(&state->filterlist, disk->name, sub_next) == 0) {
+				pathslash(path_next, sizeof(path_next));
+				pathslash(sub_next, sizeof(sub_next));
+				search_dir(state, disk, path_next, sub_next);
+			} else {
+				if (state->opt.verbose) {
+					printf("Excluding directory '%s'\n", path_next);
+				}
+			}
 		}
 	}
 
@@ -233,9 +263,15 @@ static void search_dir(struct snapraid_state* state, const char* dir)
 
 void state_search(struct snapraid_state* state, const char* dir)
 {
+	char path[PATH_MAX];
+
 	printf("Importing...\n");
 
-	search_dir(state, dir);
+	/* add the final slash */
+	pathimport(path, sizeof(path), dir);
+	pathslash(path, sizeof(path));
+
+	search_dir(state, 0, path, "");
 }
 
 void state_search_array(struct snapraid_state* state)
@@ -248,7 +284,7 @@ void state_search_array(struct snapraid_state* state)
 
 		printf("Scanning disk %s...\n", disk->name);
 
-		search_dir(state, disk->dir);
+		search_dir(state, disk, disk->dir, "");
 	}
 }
 
