@@ -1637,19 +1637,23 @@ retry:
 	if (!ReadFile(h, buffer, size, &count, 0)) {
 		DWORD err = GetLastError();
 		/*
-		 * If Windows is not able to allocate memory pages for the disk cache
+		 * If Windows is not able to allocate memory from the PagedPool for the disk cache
 		 * it could return the ERROR_NO_SYSTEM_RESOURCES error.
 		 * In this case, the only possibility is to retry after a wait of few milliseconds.
 		 *
-		 * See:
 		 * SQL Server reports operating system error 1450 or 1452 or 665 (retries)
 		 * http://blogs.msdn.com/b/psssql/archive/2008/07/10/sql-server-reports-operating-system-error-1450-or-1452-or-665-retries.aspx
 		 *
 		 * 03-12-09 - ERROR_NO_SYSTEM_RESOURCES
 		 * http://cbloomrants.blogspot.it/2009/03/03-12-09-errornosystemresources.html
 		 *
-		 * SnapRAID Help Forum: Error reading file
-		 * https://sourceforge.net/projects/snapraid/forums/forum/1677233/topic/7273746
+		 * From SnapRAID Discussion Forum:
+		 *
+		 * Error reading file
+		 * https://sourceforge.net/p/snapraid/discussion/1677233/thread/6657fdbf/
+		 *
+		 * Unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pwrite(), retrying...
+		 * https://sourceforge.net/p/snapraid/discussion/1677233/thread/a7c25ba9/
 		 */
 		if (err == ERROR_NO_SYSTEM_RESOURCES) {
 			fprintf(stderr, "Unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pread(), retrying...\n");
@@ -1690,6 +1694,7 @@ retry:
 
 	if (!WriteFile(h, buffer, size, &count, 0)) {
 		DWORD err = GetLastError();
+		/* See windows_pread() for comments on this error management */
 		if (err == ERROR_NO_SYSTEM_RESOURCES) {
 			fprintf(stderr, "Unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pwrite(), retrying...\n");
 			Sleep(50);
