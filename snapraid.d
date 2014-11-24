@@ -962,11 +962,11 @@ Recovering
 
   STEP 1 -> Reconfigure
 	You need some space to recover, even better if you already have an additional
-	disk, but in case, also an external USB or remote one is enough.
+	disk, but in case, also an external USB or remote disk is enough.
     
 	Change the SnapRAID configuration file and make the "disk" option
-	of the failed disk to point to a place where you have enough empty space
-	to recover the files.
+	of the failed disk to point to the place where you have enough empty
+	space to recover the files.
 
 	For example, if you have that disk "d1" failed, you can change:
 
@@ -999,12 +999,12 @@ Recovering
 	to put them inplace, and retry the "fix".
 
 	If you are satisfied of the recovering, you can now proceed further,
-	but take care that after syncing you will no more able to retry the
+	but take care that after syncing you will be no more able to retry the
 	"fix" command!
 
   STEP 3 -> Check
 	As paranoid check, you can now run a "check" command to ensure that everything
-	is OK on the disk.
+	is OK on the recovered disk.
 
 		:snapraid -d NAME -a check
 
