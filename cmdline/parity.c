@@ -80,7 +80,8 @@ void parity_overflow(struct snapraid_state* state, data_off_t size)
 					fflush(stdlog);
 					if (first) {
 						first = 0;
-						printf("Files outside the parity:\n");
+						printf("\nYour data requires more parity than the available space.\n");
+						printf("Please move the following files to another data disk:\n");
 					}
 					printf("outofparity %s%s\n", disk->dir, file->sub);
 				}
