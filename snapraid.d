@@ -815,7 +815,7 @@ Configuration
 	a 3 TiB disk, that allows about 400000 files in each data disk without
 	any wasted space.
 
-    autosave SIZE_IN_GIBIBYTES
+  autosave SIZE_IN_GIBIBYTES
 	Automatically save the state when syncing after the specified amount
 	of GiB processed.
 	This option is useful to avoid to restart from scratch long "sync"
@@ -824,13 +824,13 @@ Configuration
 	The SIZE argument is specified in gibibytes. Where one gibi bytes
 	is 1073741824 bytes.
 
-    pool DIR
+  pool DIR
 	Defines the pooling directory where the virtual view of the disk
 	array is created using the "pool" command.
 
 	The directory must already exist.
 
-    share UNC_DIR
+  share UNC_DIR
 	Defines the Windows UNC path required to access the disks remotely.
 
 	If this option is specified, the symbolic links created in the pool
