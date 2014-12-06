@@ -196,20 +196,20 @@ run the "scrub" command.
 
 This command verifies only the oldest data in your array.
 Every run of the command checks about 12% of the array,
-but nothing newer than 10 days.
+but not newer than 10 days.
 You can use the -p, --percentage option to specify a different amount,
 and the -o, --older-than option to specify a different age in days.
 For example, to check 5% of the array older than 20 days use:
 
     snapraid -p 5 -o 20 scrub
 
-If silent errors are found, the corresponding blocks are marked as bad
-in the "content" file, and listed in the "status" command.
+If a silent or input error is found, the corresponding block is marked
+as bad in the "content" file, and listed in the "status" command.
 
     snapraid status
 
-To fix them, you can use the "fix" command filtering for files
-containing bad blocks:
+To fix them, you can use the "fix" command filtering for files containing
+bad blocks:
 
     snapraid -e fix
 
@@ -218,6 +218,10 @@ if really fixed. To make it fast, you can use -p 0 to scrub only blocks
 marked as bad.
 
     snapraid -p 0 scrub
+
+Take care that running scrub on a not synced array may result in
+errors caused by removed or modified files. These errors are reported
+in the "scrub" result, but related blocks are not marked as bad.
 
 4.3 Pooling
 -----------

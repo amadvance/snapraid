@@ -1,6 +1,12 @@
 SnapRAID HISTORY
 ================
 
+7.1 2014/12 (BETA)
+==================
+ * In 'scrub' keeps track of Input/Output errors like for silent
+   error to show them in the 'status' report, and to allow to
+   use the -e, --filter-error filter in 'check' and 'fix'.
+
 7.0 2014/11
 ===========
  * In 'check' and 'fix' the array is scanned to find any moved files

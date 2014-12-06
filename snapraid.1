@@ -319,7 +319,7 @@ snapraid scrub
 .PP
 This command verifies only the oldest data in your array.
 Every run of the command checks about 12% of the array,
-but nothing newer than 10 days.
+but not newer than 10 days.
 You can use the \-p, \-\-percentage option to specify a different amount,
 and the \-o, \-\-older\-than option to specify a different age in days.
 For example, to check 5% of the array older than 20 days use:
@@ -331,8 +331,8 @@ snapraid \-p 5 \-o 20 scrub
 .PD
 .RE
 .PP
-If silent errors are found, the corresponding blocks are marked as bad
-in the \[dq]content\[dq] file, and listed in the \[dq]status\[dq] command.
+If a silent or input error is found, the corresponding block is marked
+as bad in the \[dq]content\[dq] file, and listed in the \[dq]status\[dq] command.
 .PP
 .RS 4
 snapraid status
@@ -341,8 +341,8 @@ snapraid status
 .PD
 .RE
 .PP
-To fix them, you can use the \[dq]fix\[dq] command filtering for files
-containing bad blocks:
+To fix them, you can use the \[dq]fix\[dq] command filtering for files containing
+bad blocks:
 .PP
 .RS 4
 snapraid \-e fix
@@ -361,6 +361,10 @@ snapraid \-p 0 scrub
 .PP
 .PD
 .RE
+.PP
+Take care that running scrub on a not synced array may result in
+errors caused by removed or modified files. These errors are reported
+in the \[dq]scrub\[dq] result, but related blocks are not marked as bad.
 .SS Pooling 
 To have all the files in your array shown in the same directory tree,
 you can enable \[dq]pooling\[dq], that consists in creating a virtual view of all

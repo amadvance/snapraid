@@ -145,7 +145,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				/* file we are processing for error reporting */
 				struct snapraid_file* file = block_file_get(block);
 				if (errno == ENOENT) {
-					fprintf(stdlog, "error:%u:%s:%s: Open missing error\n", i, disk->name, file->sub);
+					fprintf(stdlog, "error:%u:%s:%s: Open missing error. %s\n", i, disk->name, file->sub, strerror(errno));
 					fprintf(stderr, "Missing file '%s'.\n", handle[j].path);
 					fprintf(stderr, "WARNING! You cannot modify data disk during a sync.\n");
 					fprintf(stderr, "Rerun the sync command when finished.\n");
@@ -157,7 +157,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 					continue;
 				}
 				if (errno == EACCES) {
-					fprintf(stdlog, "error:%u:%s:%s: Open access error\n", i, disk->name, file->sub);
+					fprintf(stdlog, "error:%u:%s:%s: Open access error. %s\n", i, disk->name, file->sub, strerror(errno));
 					fprintf(stderr, "No access at file '%s'.\n", handle[j].path);
 					fprintf(stderr, "WARNING! Please fix the access permission in the data disk.\n");
 					fprintf(stderr, "Rerun the sync command when finished.\n");
@@ -211,7 +211,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				/* LCOV_EXCL_START */
 				/* file we are processing for error reporting */
 				struct snapraid_file* file = block_file_get(block);
-				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u\n", i, disk->name, file->sub, block_file_pos(block));
+				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u. %s\n", i, disk->name, file->sub, block_file_pos(block), strerror(errno));
 				fprintf(stderr, "DANGER! Unexpected read error in a data disk, it isn't possible to sync.\n");
 				fprintf(stderr, "Ensure that disk '%s' is sane and that file '%s' can be read.\n", disk->dir, handle[j].path);
 				printf("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", file->sub);

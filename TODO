@@ -5,6 +5,10 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
+* copy report in diff is wrong.
+If "copy" is printed, avoid to print "add" and "remove".
+Now with "copy" we don't count add, but we cound "remove".
+
 * Avoid to do optimized move operation if more files with
 same timestamp/size are present.
 
