@@ -554,10 +554,10 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
 	struct snapraid_file* file;
-	int add_insert;
-	int add_change;
 	tommy_node* i;
 	int is_original_file_size_different_than_zero;
+	int is_file_already_present;
+	int is_file_reported;
 
 	/*
 	 * If the disk has persistent inodes and UUID, try a search on the past inodes,
@@ -703,13 +703,17 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		/* go further to find it by name */
 	}
 
-	add_insert = 0;
-	add_change = 0;
+	/* initialize for later overwrite */
+	is_file_reported = 0;
 	is_original_file_size_different_than_zero = 0;
 
 	/* then try finding it by name */
 	file = tommy_hashdyn_search(&disk->pathset, file_path_compare_to_arg, sub, file_path_hash(sub));
-	if (file) {
+
+	/* keep track if the file already exists */
+	is_file_already_present = file != 0;
+
+	if (is_file_already_present) {
 		/* if the file is without an inode */
 		if (file_flag_has(file, FILE_IS_WITHOUT_INODE)) {
 			/* set it now */
@@ -810,32 +814,14 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		/* keep track if the original file was not of zero size */
 		is_original_file_size_different_than_zero = file->size != 0;
 
-		/* it has the same name, so it's an update */
-		add_change = 1;
-
-		fprintf(stdlog, "scan:update:%s:%s\n", disk->name, file->sub);
-		if (is_diff) {
-			printf("update %s%s\n", disk->dir, file->sub);
-		}
-
 		/* remove it, and continue to insert it again */
 		scan_file_remove(scan, file);
 
-		/* and continue to reinsert it again */
-	} else {
-		/* if the name doesn't exist, it's a new file */
-		add_insert = 1;
-
-		fprintf(stdlog, "scan:add:%s:%s\n", disk->name, sub);
-		if (is_diff) {
-			printf("add %s%s\n", disk->dir, sub);
-		}
-
-		/* and continue to insert it */
+		/* and continue to insert it again */
 	}
 
 	/* refresh the info, to ensure that they are synced, */
-	/* not that we refresh only the info of the new or modified files */
+	/* note that we refresh only the info of the new or modified files */
 	/* because this is slow operation */
 	scan_file_refresh(scan, sub, st, &physical);
 
@@ -862,6 +848,10 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	file_flag_set(file, FILE_IS_PRESENT);
 
 	/* if copy detection is enabled */
+	/* note that the copy detection is tried also for updated files */
+	/* this makes sense because it may happen to have two different copies */
+	/* of the same file, and we move the right one over the wrong one */
+	/* in such case we have a "copy" over an "update" */
 	if (!state->opt.force_nocopy) {
 		tommy_uint32_t hash = file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec);
 
@@ -883,8 +873,6 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				file_copy(other_file, file);
 
 				/* revert old counter and use the copy one */
-				add_insert = 0;
-				add_change = 0;
 				++scan->count_copy;
 
 				fprintf(stdlog, "scan:copy:%s:%s:%s:%s\n", other_disk->name, other_file->sub, disk->name, file->sub);
@@ -892,15 +880,33 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 					printf("copy %s%s -> %s%s\n", other_disk->dir, other_file->sub, disk->dir, file->sub);
 				}
 
+				/* mark it as reported */
+				is_file_reported = 1;
+
 				/* no need to continue the search */
 				break;
 			}
 		}
 	}
 
-	/* modify counter */
-	scan->count_insert += add_insert;
-	scan->count_change += add_change;
+	/* if not yet reported, do it now */
+	if (!is_file_reported) {
+		if (is_file_already_present) {
+			++scan->count_change;
+
+			fprintf(stdlog, "scan:update:%s:%s\n", disk->name, sub);
+			if (is_diff) {
+				printf("update %s%s\n", disk->dir, sub);
+			}
+		} else {
+			++scan->count_insert;
+
+			fprintf(stdlog, "scan:add:%s:%s\n", disk->name, sub);
+			if (is_diff) {
+				printf("add %s%s\n", disk->dir, sub);
+			}
+		}
+	}
 
 	/* insert the file in the file hashtables, to allow to find duplicate hardlinks */
 	tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
