@@ -935,7 +935,7 @@ int main(int argc, char* argv[])
 		state_scan(&state, 0);
 
 		/* refresh the size info before the content write */
-		state_refresh(state);
+		state_refresh(&state);
 
 		memory();
 
