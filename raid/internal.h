@@ -43,7 +43,7 @@
 #if HAVE_CONFIG_H
 
 /* Includes the project configuration for HAVE_* defines */
-#include "../config.h"
+#include "config.h"
 
 #if HAVE_SSE2 /* Enables SSE2 only if the assembler supports it */
 #define CONFIG_SSE2 1
