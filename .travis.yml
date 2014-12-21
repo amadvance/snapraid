@@ -1,0 +1,7 @@
+language: c
+
+script: autoreconf -i && mkdir build && cd build && ../configure && make -j2 && make check && sudo make install
+
+compiler:
+  - clang
+  - gcc
