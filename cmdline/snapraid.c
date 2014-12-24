@@ -814,13 +814,6 @@ int main(int argc, char* argv[])
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
-	}
-
-	switch (operation) {
-	case OPERATION_CHECK :
-	case OPERATION_FIX :
-		break;
-	default :
 		if (filter_error != 0) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "You cannot use -e, --filter-error with the '%s' command\n", command);
