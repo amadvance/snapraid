@@ -48,7 +48,7 @@ typedef tommy_key_t tommy_hash_t;
  * from http://www.burtleburtle.net/bob/hash/doobs.html, function hashlittle().
  * \param init_val Initialization value.
  * Using a different initialization value, you can generate a completely different set of hash values.
- * Use 0 if not relevalt.
+ * Use 0 if not relevant.
  * \param void_key Pointer at the data to hash.
  * \param key_len Size of the data to hash.
  * \note
@@ -63,7 +63,7 @@ tommy_uint32_t tommy_hash_u32(tommy_uint32_t init_val, const void* void_key, tom
  * from http://www.burtleburtle.net/bob/hash/doobs.html, function hashlittle2().
  * \param init_val Initialization value.
  * Using a different initialization value, you can generate a completely different set of hash values.
- * Use 0 if not relevalt.
+ * Use 0 if not relevant.
  * \param void_key Pointer at the data to hash.
  * \param key_len Size of the data to hash.
  * \note

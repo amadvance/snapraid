@@ -243,7 +243,7 @@ typedef int tommy_compare_func(const void* obj_a, const void* obj_b);
  * Search function for elements.
  * \param arg Pointer at the value to search.
  * \param obj Pointer at the object to compare to.
- * \return ==0 if the value matches the element. != 0 if different.
+ * \return ==0 if the value matches the element. !=0 if different.
  *
  * Note that the first argument is a pointer to the value to search and
  * the second one is a pointer to the object to compare.
@@ -310,9 +310,9 @@ typedef void tommy_foreach_arg_func(void* arg, void* obj);
  * Return the bit index of the most significant 1 bit.
  *
  * If no bit is set, the result is undefined.
- * To force a return 0 in this case, you can use tommy_ilog2(value | 1).
+ * To force a return 0 in this case, you can use tommy_ilog2_u32(value | 1).
  *
- * Other interesting ways for bitscan can be found at:
+ * Other interesting ways for bitscan are at:
  *
  * Bit Twiddling Hacks
  * http://graphics.stanford.edu/~seander/bithacks.html
@@ -321,7 +321,7 @@ typedef void tommy_foreach_arg_func(void* arg, void* obj);
  * http://chessprogramming.wikispaces.com/BitScan
  *
  * \param value Value to scan. 0 is not allowed.
- * \return The index of the most significan bit set.
+ * \return The index of the most significant bit set.
  */
 tommy_inline tommy_uint_t tommy_ilog2_u32(tommy_uint32_t value)
 {
@@ -336,7 +336,8 @@ tommy_inline tommy_uint_t tommy_ilog2_u32(tommy_uint32_t value)
 	 * Where "x ^ 31 = 31 - x", but gcc does not optimize "31 - __builtin_clz(x)" to bsr(x),
 	 * but generates 31 - (bsr(x) xor 31).
 	 *
-	 * So we write "__builtin_clz(x) ^ 31" instead of "31 - __builtin_clz(x)".
+	 * So we write "__builtin_clz(x) ^ 31" instead of "31 - __builtin_clz(x)",
+	 * to allow the double xor to be optimized out.
 	 */
 	return __builtin_clz(value) ^ 31;
 #else

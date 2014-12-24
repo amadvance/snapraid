@@ -34,9 +34,8 @@ void tommy_list_concat(tommy_list* first, tommy_list* second)
 	tommy_node* first_tail;
 	tommy_node* second_head;
 
-	if (tommy_list_empty(second)) {
+	if (tommy_list_empty(second))
 		return;
-	}
 
 	if (tommy_list_empty(first)) {
 		*first = *second;
