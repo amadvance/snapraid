@@ -9,6 +9,7 @@ SnapRAID HISTORY
  * In 'diff' don't print the "add" entry if a "copy" one is already
    printed.
  * Fixes build with old compilers in the x64 platforms [Leigh Phillips].
+ * Fixes out-of-dir builds [Christoph Junghans].
 
 7.0 2014/11
 ===========
