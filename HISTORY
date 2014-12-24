@@ -8,6 +8,7 @@ SnapRAID HISTORY
    --filter-error filter in 'check' and 'fix'.
  * In 'diff' don't print the "add" entry if a "copy" one is already
    printed.
+ * Fixes build with old compilers in the x64 platforms [Leigh Phillips].
 
 7.0 2014/11
 ===========
