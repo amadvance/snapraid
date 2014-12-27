@@ -49,9 +49,19 @@ void state_nano(struct snapraid_state* state)
 
 				pathprint(path, sizeof(path), "%s%s", disk->dir, file->sub);
 
-				/* generate a new nanosecond timestamp different than 0 */
+				/* set a new nanosecond timestamp different than 0 */
 				do {
-					nsec = rand() % 1000000000;
+					uint32_t nano;
+
+					/* get a random nanosecond value */
+					if (randomize(&nano, sizeof(nano)) != 0) {
+						/* LCOV_EXCL_START */
+						fprintf(stderr, "Failed to get random values.\n");
+						exit(EXIT_FAILURE);
+						/* LCOV_EXCL_STOP */
+					}
+
+					nsec = nano % 1000000000;
 				} while (nsec == 0);
 
 				/* open it */
