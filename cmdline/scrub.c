@@ -141,7 +141,6 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		snapraid_info info;
 		int error_on_this_block;
 		int silent_error_on_this_block;
-		int io_error_on_this_block;
 		int block_is_unsynced;
 		int rehash;
 
@@ -188,7 +187,6 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		/* by default process the block, and skip it if something goes wrong */
 		error_on_this_block = 0;
 		silent_error_on_this_block = 0;
-		io_error_on_this_block = 0;
 
 		/* if all the blocks at this address are synced */
 		/* if not, parity is not even checked */
@@ -232,7 +230,6 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				/* report that the block and the file are not synced */
 				block_is_unsynced = 1;
 				file_is_unsynced = 1;
-
 				/* follow */
 			}
 
@@ -248,8 +245,18 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					/* LCOV_EXCL_START */
 					/* This one is really an unexpected error, because we are only reading */
 					/* and closing a descriptor should never fail */
+					if (errno == EIO) {
+						fprintf(stdlog, "error:%u:%s:%s: Close EIO error. %s\n", i, disk->name, file->sub, strerror(errno));
+						fprintf(stderr, "DANGER! Unexpected input/output close error in a data disk, it isn't possible to scrub.\n");
+						fprintf(stderr, "Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
+						printf("Stopping at block %u\n", i);
+						++io_error;
+						goto bail;
+					}
+
 					fprintf(stdlog, "error:%u:%s:%s: Close error. %s\n", i, disk->name, file->sub, strerror(errno));
-					fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to scrub.\n");
+					fprintf(stderr, "WARNING! Unexpected close error in a data disk, it isn't possible to scrub.\n");
+					fprintf(stderr, "Ensure that file '%s' can be accessed.\n", handle[j].path);
 					printf("Stopping at block %u\n", i);
 					++error;
 					goto bail;
@@ -261,6 +268,17 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			if (ret == -1) {
 				/* file we have tried to open for error reporting */
 				struct snapraid_file* file = block_file_get(block);
+				if (errno == EIO) {
+					/* LCOV_EXCL_START */
+					fprintf(stdlog, "error:%u:%s:%s: Open EIO error. %s\n", i, disk->name, file->sub, strerror(errno));
+					fprintf(stderr, "DANGER! Unexpected input/output open error in a data disk, it isn't possible to scrub.\n");
+					fprintf(stderr, "Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
+					printf("Stopping at block %u\n", i);
+					++io_error;
+					goto bail;
+					/* LCOV_EXCL_STOP */
+				}
+
 				fprintf(stdlog, "error:%u:%s:%s: Open error. %s\n", i, disk->name, file->sub, strerror(errno));
 				++error;
 				error_on_this_block = 1;
@@ -276,7 +294,6 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				/* report that the block and the file are not synced */
 				block_is_unsynced = 1;
 				file_is_unsynced = 1;
-
 				/* follow */
 			}
 
@@ -286,15 +303,22 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 			read_size = handle_read(&handle[j], block, buffer[j], state->block_size, stderr);
 			if (read_size == -1) {
+				/* file we are processing for error reporting */
+				struct snapraid_file* file = block_file_get(block);
 				if (errno == EIO) {
-					fprintf(stdlog, "error:%u:%s:%s: Input/Output error at position %u. %s\n", i, disk->name, handle[j].file->sub, block_file_pos(block), strerror(errno));
+					/* LCOV_EXCL_START */
+					fprintf(stdlog, "error:%u:%s:%s: Read EIO error at position %u. %s\n", i, disk->name, file->sub, block_file_pos(block), strerror(errno));
+					fprintf(stderr, "DANGER! Unexpected input/output read error in a data disk, it isn't possible to scrub.\n");
+					fprintf(stderr, "Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
+					printf("Stopping at block %u\n", i);
 					++io_error;
-					io_error_on_this_block = 1;
-				} else {
-					fprintf(stdlog, "error:%u:%s:%s: Read error at position %u. %s\n", i, disk->name, handle[j].file->sub, block_file_pos(block), strerror(errno));
-					++error;
-					error_on_this_block = 1;
+					goto bail;
+					/* LCOV_EXCL_STOP */
 				}
+
+				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u. %s\n", i, disk->name, file->sub, block_file_pos(block), strerror(errno));
+				++error;
+				error_on_this_block = 1;
 				continue;
 			}
 
@@ -337,7 +361,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		}
 
 		/* if we have read all the data required and it's correct, proceed with the parity check */
-		if (!error_on_this_block && !silent_error_on_this_block && !io_error_on_this_block) {
+		if (!error_on_this_block && !silent_error_on_this_block) {
 			unsigned char* buffer_recov[LEV_MAX];
 
 			/* until now is CPU */
@@ -356,15 +380,19 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					buffer_recov[l] = 0;
 
 					if (errno == EIO) {
-						fprintf(stdlog, "parity_error:%u:%s: Input/Output error. %s\n", i, lev_config_name(l), strerror(errno));
+						/* LCOV_EXCL_START */
+						fprintf(stdlog, "parity_error:%u:%s: Read EIO error. %s\n", i, lev_config_name(l), strerror(errno));
+						fprintf(stderr, "DANGER! input/output read error in the %s disk, it isn't possible to sync.\n", lev_name(l));
+						fprintf(stderr, "Ensure that disk '%s' is sane and can be read.\n", lev_config_name(l));
+						printf("Stopping at block %u\n", i);
 						++io_error;
-						io_error_on_this_block = 1;
-					} else {
-						fprintf(stdlog, "parity_error:%u:%s: Read error. %s\n", i, lev_config_name(l), strerror(errno));
-						++error;
-						error_on_this_block = 1;
+						goto bail;
+						/* LCOV_EXCL_STOP */
 					}
 
+					fprintf(stdlog, "parity_error:%u:%s: Read error. %s\n", i, lev_config_name(l), strerror(errno));
+					++error;
+					error_on_this_block = 1;
 					/* follow */
 				}
 
@@ -396,7 +424,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			}
 		}
 
-		if (silent_error_on_this_block || io_error_on_this_block) {
+		if (silent_error_on_this_block) {
 			/* set the error status keeping the existing time and hash */
 			info_set(&state->infoarr, i, info_set_bad(info));
 		} else if (error_on_this_block) {
@@ -458,7 +486,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 	if (error || silent_error || io_error) {
 		printf("\n");
-		printf("%8u other errors\n", error);
+		printf("%8u file errors\n", error);
 		printf("%8u io errors\n", io_error);
 		printf("%8u data errors\n", silent_error);
 		printf("WARNING! There are errors!\n");
@@ -468,10 +496,10 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			printf("Everything OK\n");
 	}
 
-	fprintf(stdlog, "summary:error_other:%u\n", error);
+	fprintf(stdlog, "summary:error_file:%u\n", error);
 	fprintf(stdlog, "summary:error_io:%u\n", io_error);
 	fprintf(stdlog, "summary:error_data:%u\n", silent_error);
-	if (error + silent_error == 0)
+	if (error + silent_error + io_error == 0)
 		fprintf(stdlog, "summary:exit:ok\n");
 	else
 		fprintf(stdlog, "summary:exit:error\n");
