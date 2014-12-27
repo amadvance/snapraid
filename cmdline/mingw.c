@@ -93,12 +93,6 @@ typedef struct {
 
 /**
  * Portable implementation of GetFileInformationByHandleEx.
- * This function is not available in Windows 2000.
- */
-static WORD (WINAPI* ptr_SetThreadExecutionState)(DWORD);
-
-/**
- * Portable implementation of GetFileInformationByHandleEx.
  * This function is not available in Windows XP.
  */
 static BOOL (WINAPI* ptr_GetFileInformationByHandleEx)(HANDLE, DWORD, LPVOID, DWORD);
@@ -133,7 +127,7 @@ static int is_scan_winfind;
 /**
  * Loaded ADVAPI32.DLL.
  */
-static HMODULE advapi32;
+static HMODULE dll_advapi32;
 
 void os_init(int opt)
 {
@@ -153,8 +147,8 @@ void os_init(int opt)
 		exit(EXIT_FAILURE);
 	}
 
-	advapi32 = LoadLibrary("ADVAPI32.DLL");
-	if (!advapi32) {
+	dll_advapi32 = LoadLibrary("ADVAPI32.DLL");
+	if (!dll_advapi32) {
 		fprintf(stderr, "Error loading the ADVAPI32 module.\n");
 		exit(EXIT_FAILURE);
 	}
@@ -163,23 +157,20 @@ void os_init(int opt)
 	is_wine = GetProcAddress(ntdll, "wine_get_version") != 0;
 
 	/* load functions not always available */
-	ptr_SetThreadExecutionState = (void*)GetProcAddress(kernel32, "SetThreadExecutionState");
 	ptr_GetFileInformationByHandleEx = (void*)GetProcAddress(kernel32, "GetFileInformationByHandleEx");
 	ptr_CreateSymbolicLinkW = (void*)GetProcAddress(kernel32, "CreateSymbolicLinkW");
 
-	ptr_RtlGenRandom = (void*)GetProcAddress(advapi32, "SystemFunction036");
+	ptr_RtlGenRandom = (void*)GetProcAddress(dll_advapi32, "SystemFunction036");
 	if (!ptr_RtlGenRandom) {
 		fprintf(stderr, "Error loading RtlGenRandom() from the ADVAPI32 module.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	/* set the thread execution level to avoid sleep */
-	if (ptr_SetThreadExecutionState) {
-		/* first try for Windows 7 */
-		if (ptr_SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED | WIN32_ES_AWAYMODE_REQUIRED) == 0) {
-			/* retry with the XP variant */
-			ptr_SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED);
-		}
+	/* first try for Windows 7 */
+	if (SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED | WIN32_ES_AWAYMODE_REQUIRED) == 0) {
+		/* retry with the XP variant */
+		SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED);
 	}
 
 	last_error = 0;
@@ -190,11 +181,9 @@ void os_done(void)
 	free(last_error);
 
 	/* restore the normal execution level */
-	if (ptr_SetThreadExecutionState) {
-		ptr_SetThreadExecutionState(WIN32_ES_CONTINUOUS);
-	}
+	SetThreadExecutionState(WIN32_ES_CONTINUOUS);
 
-	FreeLibrary(advapi32);
+	FreeLibrary(dll_advapi32);
 }
 
 /**
