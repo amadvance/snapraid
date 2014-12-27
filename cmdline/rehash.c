@@ -56,7 +56,12 @@ void state_rehash(struct snapraid_state* state)
 
 	/* set the new hash and seed */
 	state->hash = state->besthash;
-	randomize(state->hashseed, HASH_SIZE);
+	if (randomize(state->hashseed, HASH_SIZE) != 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Failed to get random values.\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
 
 	/* mark all the block for rehashing */
 	for (i = 0; i < blockmax; ++i) {

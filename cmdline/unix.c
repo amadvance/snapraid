@@ -300,6 +300,27 @@ uint64_t tick(void)
 #endif
 }
 
+int randomize(void* ptr, size_t size)
+{
+	int f;
+	ssize_t ret;
+
+	f = open("/dev/urandom", O_RDONLY);
+	if (f == -1)
+		return -1;
+
+	ret = read(f, ptr, size);
+	if (ret < 0 || (size_t)ret != size) {
+		close(f);
+		return -1;
+	}
+
+	if (close(f) != 0)
+		return -1;
+
+	return 0;
+}
+
 void os_init(int opt)
 {
 	(void)opt;

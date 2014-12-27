@@ -110,6 +110,12 @@ static BOOL (WINAPI* ptr_GetFileInformationByHandleEx)(HANDLE, DWORD, LPVOID, DW
 static BOOLEAN (WINAPI* ptr_CreateSymbolicLinkW)(LPWSTR, LPWSTR, DWORD);
 
 /**
+ * Direct access to RtlGenRandom().
+ * This function is accessible only with LoadLibrary() and it's availble from Windows XP.
+ */
+static BOOLEAN (WINAPI* ptr_RtlGenRandom)(PVOID, ULONG);
+
+/**
  * Description of the last error.
  */
 static char* last_error;
@@ -124,17 +130,16 @@ static int is_wine;
  */
 static int is_scan_winfind;
 
+/**
+ * Loaded ADVAPI32.DLL.
+ */
+static HMODULE advapi32;
+
 void os_init(int opt)
 {
-	HMODULE kernel32, ntdll;
+	HMODULE ntdll, kernel32;
 
 	is_scan_winfind = opt != 0;
-
-	kernel32 = GetModuleHandle("KERNEL32.DLL");
-	if (!kernel32) {
-		fprintf(stderr, "Error loading the KERNEL32 module.\n");
-		exit(EXIT_FAILURE);
-	}
 
 	ntdll = GetModuleHandle("NTDLL.DLL");
 	if (!ntdll) {
@@ -142,10 +147,31 @@ void os_init(int opt)
 		exit(EXIT_FAILURE);
 	}
 
+	kernel32 = GetModuleHandle("KERNEL32.DLL");
+	if (!kernel32) {
+		fprintf(stderr, "Error loading the KERNEL32 module.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	advapi32 = LoadLibrary("ADVAPI32.DLL");
+	if (!advapi32) {
+		fprintf(stderr, "Error loading the ADVAPI32 module.\n");
+		exit(EXIT_FAILURE);
+	}
+
+	/* check for Wine presence */
+	is_wine = GetProcAddress(ntdll, "wine_get_version") != 0;
+
 	/* load functions not always available */
 	ptr_SetThreadExecutionState = (void*)GetProcAddress(kernel32, "SetThreadExecutionState");
 	ptr_GetFileInformationByHandleEx = (void*)GetProcAddress(kernel32, "GetFileInformationByHandleEx");
 	ptr_CreateSymbolicLinkW = (void*)GetProcAddress(kernel32, "CreateSymbolicLinkW");
+
+	ptr_RtlGenRandom = (void*)GetProcAddress(advapi32, "SystemFunction036");
+	if (!ptr_RtlGenRandom) {
+		fprintf(stderr, "Error loading RtlGenRandom() from the ADVAPI32 module.\n");
+		exit(EXIT_FAILURE);
+	}
 
 	/* set the thread execution level to avoid sleep */
 	if (ptr_SetThreadExecutionState) {
@@ -155,8 +181,6 @@ void os_init(int opt)
 			ptr_SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED);
 		}
 	}
-
-	is_wine = GetProcAddress(ntdll, "wine_get_version") != 0;
 
 	last_error = 0;
 }
@@ -169,6 +193,8 @@ void os_done(void)
 	if (ptr_SetThreadExecutionState) {
 		ptr_SetThreadExecutionState(WIN32_ES_CONTINUOUS);
 	}
+
+	FreeLibrary(advapi32);
 }
 
 /**
@@ -1716,6 +1742,16 @@ uint64_t tick(void)
 		return 0;
 
 	return t.QuadPart;
+}
+
+int windows_randomize(void* ptr, size_t size)
+{
+	if (!ptr_RtlGenRandom(ptr, size)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	return 0;
 }
 
 #endif

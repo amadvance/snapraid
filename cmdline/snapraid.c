@@ -412,9 +412,6 @@ int main(int argc, char* argv[])
 	struct tm* tm;
 	int i;
 
-	/* always different random numbers */
-	srand(time(0));
-
 	/* defaults */
 	config(conf, sizeof(conf), argv[0]);
 	memset(&opt, 0, sizeof(opt));

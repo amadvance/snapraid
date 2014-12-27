@@ -896,7 +896,12 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	state->hash = state->besthash;
 
 	/* by default use a random hash seed */
-	randomize(state->hashseed, HASH_SIZE);
+	if (randomize(state->hashseed, HASH_SIZE) != 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Failed to get random values.\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
 
 	/* no previous hash by default */
 	state->prevhash = HASH_UNDEFINED;

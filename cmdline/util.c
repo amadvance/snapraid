@@ -1686,18 +1686,6 @@ const char* hash_config_name(unsigned kind)
 }
 
 /****************************************************************************/
-/* random */
-
-void randomize(void* void_ptr, unsigned size)
-{
-	unsigned char* ptr = void_ptr;
-	unsigned i;
-
-	for (i = 0; i < size; ++i)
-		ptr[i] = rand();
-}
-
-/****************************************************************************/
 /* lock */
 
 #if HAVE_LOCKFILE

@@ -527,14 +527,6 @@ void memhash(unsigned kind, const unsigned char* seed, void* digest, const void*
 const char* hash_config_name(unsigned kind);
 
 /****************************************************************************/
-/* random */
-
-/**
- * Write random values.
- */
-void randomize(void* ptr, unsigned size);
-
-/****************************************************************************/
 /* crc */
 
 /**
