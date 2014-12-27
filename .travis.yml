@@ -1,7 +1,10 @@
+# Travis CI configuration file
+
 language: c
 
-script: autoreconf -i && mkdir build && cd build && ../configure && make -j2 && make check && sudo make install
+script: autoreconf -i && ./configure && make distcheck
 
 compiler:
   - clang
   - gcc
+
