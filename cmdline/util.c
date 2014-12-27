@@ -1588,11 +1588,6 @@ void** malloc_nofail_vector_align(int nd, int n, size_t size, void** freeptr)
 	return ptr;
 }
 
-void mrand_vector(int n, size_t size, void** vv)
-{
-	raid_mrand_vector(n, size, vv);
-}
-
 void mtest_vector(int n, size_t size, void** vv)
 {
 	if (raid_mtest_vector(n, size, vv) != 0) {

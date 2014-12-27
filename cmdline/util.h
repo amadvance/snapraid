@@ -485,7 +485,7 @@ void** malloc_nofail_vector_align(int nd, int n, size_t size, void** freeptr);
 /**
  * Fills the memory vector with random data.
  */
-void mrand_vector(int n, size_t size, void** vv);
+void mrand_vector(unsigned seed, int n, size_t size, void** vv);
 
 /**
  * Tests the memory vector for RAM problems.

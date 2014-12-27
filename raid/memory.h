@@ -70,9 +70,9 @@ void *raid_malloc_align(size_t size, void **freeptr);
 void **raid_malloc_vector(int nd, int n, size_t size, void **freeptr);
 
 /**
- * Fills the memory vector with random data.
+ * Fills the memory vector with pseudo-random data based on the specified seed.
  */
-void raid_mrand_vector(int n, size_t size, void **vv);
+void raid_mrand_vector(unsigned seed, int n, size_t size, void **vv);
 
 /**
  * Tests the memory vector for RAM problems.

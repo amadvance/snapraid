@@ -68,15 +68,19 @@ void **raid_malloc_vector(int nd, int n, size_t size, void **freeptr)
 	return v;
 }
 
-void raid_mrand_vector(int n, size_t size, void **vv)
+void raid_mrand_vector(unsigned seed, int n, size_t size, void **vv)
 {
 	unsigned char **v = (unsigned char**)vv;
 	int i;
 	size_t j;
 
 	for (i = 0; i < n; ++i)
-		for (j = 0; j < size; ++j)
-			v[i][j] = rand();
+		for (j = 0; j < size; ++j) {
+			/* basic C99/C11 linear congruential generator */
+			seed = seed * 1103515245U + 12345U;
+
+			v[i][j] = seed >> 16;
+		}
 }
 
 int raid_mtest_vector(int n, size_t size, void **vv)
