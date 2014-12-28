@@ -1,12 +1,11 @@
 SnapRAID HISTORY
 ================
 
-7.1 2014/12 (BETA)
-==================
- * In 'scrub' keep track of Input/Output errors like for silent error
-   to show them in the 'status' report, and to allow to use the -e,
-   --filter-error filter in 'check' and 'fix'.
- * In 'diff' don't print the "add" entry if a "copy" one is already
+7.1 2015/01
+===========
+ * In 'scrub' and 'sync' detects and reports Input/Output errors
+   separately from generic file system errors.
+ * In 'diff' doesn't print the "add" entry if a "copy" one is already
    printed.
  * Fixes build with old compilers in the x64 platforms [Leigh Phillips].
  * Fixes out-of-dir builds [Christoph Junghans].
