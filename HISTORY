@@ -1,6 +1,9 @@
 SnapRAID HISTORY
 ================
 
+8.0 2015/01 BETA
+================
+
 7.1 2015/01
 ===========
  * In 'scrub' and 'sync' detects and reports Input/Output errors
