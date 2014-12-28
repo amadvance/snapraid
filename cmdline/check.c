@@ -605,7 +605,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 	handle = handle_map(state, &diskmax);
 
-	/* we need 1 * data + 2 * parity + + 1 * zero */
+	/* we need 1 * data + 2 * parity + 1 * zero */
 	buffermax = diskmax + 2 * state->level + 1;
 
 	buffer = malloc_nofail_vector_align(diskmax, buffermax, state->block_size, &buffer_alloc);
@@ -810,7 +810,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						file_flag_set(file, FILE_IS_CREATED);
 					}
 				} else {
-					/* if checking or hashing, open the file only for reading */
+					/* if checking or hashing or excluded, open the file only for reading */
 					ret = handle_open(&handle[j], file, state->file_mode, stdlog);
 					if (ret == -1) {
 						/* save the failed block for the check/fix */
@@ -1017,7 +1017,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						if (!failed[j].is_bad)
 							continue;
 
-						/* do not fix if the file filtered out */
+						/* do not fix if the file is filtered out */
 						if (file_flag_has(block_file_get(failed[j].block), FILE_IS_EXCLUDED))
 							continue;
 
@@ -1046,7 +1046,8 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 							continue;
 						}
 
-						/* mark the file as fixed */
+						/* mark the file as containing some fixes */
+						/* note that it could be also marked as damaged in other iterations */
 						file_flag_set(block_file_get(failed[j].block), FILE_IS_FIXED);
 
 						fprintf(stdlog, "fixed:%u:%s:%s: Fixed data error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
@@ -1122,7 +1123,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			pathprint(path, sizeof(path), "%s%s", disk->dir, file->sub);
 
 			/* if the file is open, it must be the correct block one */
-			/* note tha if the file is excluded, it's also possible to have it not opened, */
+			/* note the if the file is excluded, it's also possible to have it not opened, */
 			/* and have the handle[j].file pointing to NULL. */
 			/* A typical case is if the file is missing, */
 			/* and the read-only open failed before. */
@@ -1668,7 +1669,7 @@ bail:
 	}
 
 	/* remove all the files created from scratch that have not finished the processing */
-	/* it happens only when aborting */
+	/* it happens only when aborting pressing Ctrl+C or other reason. */
 	if (fix) {
 		/* for each disk */
 		for (i = 0; i < diskmax; ++i) {
