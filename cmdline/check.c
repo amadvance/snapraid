@@ -764,7 +764,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			/* get the file of this block */
 			file = block_file_get(block);
 
-			/* if we are only hashing, we can skip excluded files and don't event read them */
+			/* if we are only hashing, we can skip excluded files and don't even read them */
 			if (state->opt.auditonly && file_flag_has(file, FILE_IS_EXCLUDED)) {
 				/* use an empty block */
 				/* in true, this is unnecessary, becase we are not checking any parity */
@@ -1073,6 +1073,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					}
 				} else {
 					/* if we are not fixing, we just set the FIXED flag */
+					/* meaning that we could fix this file if we try */
 					for (j = 0; j < failed_count; ++j) {
 						if (failed[j].is_bad) {
 							file_flag_set(block_file_get(failed[j].block), FILE_IS_FIXED);
@@ -1082,6 +1083,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			}
 		} else {
 			/* if we are not checking, we just set the DAMAGED flag */
+			/* to report that the file is damaged, and we don't know if we can fix it */
 			for (j = 0; j < failed_count; ++j) {
 				if (failed[j].is_bad) {
 					file_flag_set(block_file_get(failed[j].block), FILE_IS_DAMAGED);
@@ -1132,7 +1134,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				continue;
 			}
 
-			/* if the file is excluded, we have nothing to fix */
+			/* if the file is excluded, we have nothing to adjust as the file is never written */
 			if (file_flag_has(file, FILE_IS_EXCLUDED)) {
 				/* nothing to do, but close the file */
 				goto close_and_continue;
@@ -1141,6 +1143,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			/* finish the fix process if it's the last block of the files */
 			if (fix) {
 				/* mark that we finished with this file */
+				/* to identify later any NOT finished ones */
 				file_flag_set(file, FILE_IS_FINISHED);
 
 				/* if the file is damaged, meaning that a fix failed */
