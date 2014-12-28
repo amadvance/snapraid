@@ -289,7 +289,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			if (handle[j].st.st_size != block_file_get(block)->size
 				|| handle[j].st.st_mtime != block_file_get(block)->mtime_sec
 				|| STAT_NSEC(&handle[j].st) != block_file_get(block)->mtime_nsec
-				|| handle[j].st.st_ino != block_file_get(block)->inode
+				/* don't check the inode to support filesystem without persistent inodes */
 			) {
 				/* report that the block and the file are not synced */
 				block_is_unsynced = 1;
