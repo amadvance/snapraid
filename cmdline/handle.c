@@ -44,7 +44,6 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 	}
 
 	/* initial values, changed later if required */
-	handle->truncated = 0;
 	handle->created = 0;
 
 	/* flags for opening */
@@ -111,29 +110,6 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 	/* get the size of the existing data */
 	handle->valid_size = handle->st.st_size;
 
-	/* Here we only truncate the file and we don't grow it */
-	/* as allocating real space for it would imply a too big performance drop, */
-	/* and allocating sparse space wouldn't improve the safety of subsequent writes. */
-	if (handle->st.st_size > file->size) {
-		ret = ftruncate(handle->f, file->size);
-		if (ret != 0) {
-			/* LCOV_EXCL_START */
-			if (errno == EACCES) {
-				fprintf(stderr, "Failed to truncate file '%s' for missing write permission.\n", handle->path);
-			} else {
-				fprintf(stderr, "Error truncating file '%s'. %s.\n", handle->path, strerror(errno));
-			}
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-
-		/* mark it as truncated */
-		handle->truncated = 1;
-
-		/* adjust the size to the truncated size */
-		handle->valid_size = file->size;
-	}
-
 #if HAVE_POSIX_FADVISE
 	if ((mode & MODE_SEQUENTIAL) != 0) {
 		/* advise sequential access */
@@ -150,6 +126,28 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 	return 0;
 }
 
+int handle_truncate(struct snapraid_handle* handle, struct snapraid_file* file)
+{
+	int ret;
+
+	ret = ftruncate(handle->f, file->size);
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		if (errno == EACCES) {
+			fprintf(stderr, "Failed to truncate file '%s' for missing write permission.\n", handle->path);
+		} else {
+			fprintf(stderr, "Error truncating file '%s'. %s.\n", handle->path, strerror(errno));
+		}
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* adjust the size to the truncated size */
+	handle->valid_size = file->size;
+
+	return 0;
+}
+
 int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int mode, FILE* out)
 {
 	int ret;
@@ -162,8 +160,7 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 
 	pathprint(handle->path, sizeof(handle->path), "%s%s", handle->disk->dir, file->sub);
 
-	/* for sure neither created and truncated */
-	handle->truncated = 0;
+	/* for sure not created */
 	handle->created = 0;
 
 	/* flags for opening */

@@ -803,17 +803,6 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						/* LCOV_EXCL_STOP */
 					}
 
-					/* check if the file was larger and now truncated */
-					if (handle[j].truncated != 0) {
-						fprintf(stdlog, "File '%s' is larger than expected.\n", handle[j].path);
-						fprintf(stdlog, "error:%u:%s:%s: Size error\n", i, disk->name, file->sub);
-						++error;
-
-						/* this is already a recovered error */
-						fprintf(stdlog, "fixed:%u:%s:%s: Fixed size\n", i, disk->name, file->sub);
-						++recovered_error;
-					}
-
 					/* check if the file was just created */
 					if (handle[j].created != 0) {
 						/* if fragmented, it may be reopened, so remember that the file */
@@ -836,19 +825,35 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						++error;
 						continue;
 					}
+				}
 
-					/* check if it's a larger file, but not if already notified */
-					if (!file_flag_has(file, FILE_IS_LARGER)
-						&& handle[j].st.st_size > file->size
-					) {
-						fprintf(stdlog, "File '%s' is larger than expected.\n", handle[j].path);
-						fprintf(stdlog, "error:%u:%s:%s: Size error\n", i, disk->name, file->sub);
-						++error;
+				/* check if it's a larger file, but not if already notified or excluded */
+				if (!file_flag_has(file, FILE_IS_LARGER)
+					&& !file_flag_has(file, FILE_IS_EXCLUDED)
+					&& handle[j].st.st_size > file->size
+				) {
+					fprintf(stdlog, "File '%s' is larger than expected.\n", handle[j].path);
+					fprintf(stdlog, "error:%u:%s:%s: Size error\n", i, disk->name, file->sub);
+					++error;
 
-						/* if fragmented, it may be reopened, so store the notification */
-						/* to prevent to signal and count the error more than one time */
-						file_flag_set(file, FILE_IS_LARGER);
+					if (fix) {
+						ret = handle_truncate(&handle[j], file);
+						if (ret == -1) {
+							/* LCOV_EXCL_START */
+							fprintf(stderr, "DANGER! Unexpected truncate error in a data disk, it isn't possible to fix.\n");
+							printf("Stopping at block %u\n", i);
+							++unrecoverable_error;
+							goto bail;
+							/* LCOV_EXCL_STOP */
+						}
+
+						fprintf(stdlog, "fixed:%u:%s:%s: Fixed size\n", i, disk->name, file->sub);
+						++recovered_error;
 					}
+
+					/* if fragmented, it may be reopened, so store the notification */
+					/* to prevent to report and/or truncate it again */
+					file_flag_set(file, FILE_IS_LARGER);
 				}
 			}
 
