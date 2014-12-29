@@ -756,9 +756,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 						continue;
 					} else { /* otherwise it's a BLK with silent error */
 						fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, disk->name, file->sub, block_file_pos(block));
-						fprintf(stderr, "Data error at file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
-						fprintf(stderr, "WARNING! Unexpected data error in a data disk! The block is now marked as bad!\n");
-						fprintf(stderr, "Try with 'snapraid -e fix' to recover!\n");
+						fprintf(stderr, "Data error in file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
 
 						/* save the failed block for the fix */
 						failed[failed_count].index = j;
@@ -1071,6 +1069,12 @@ end:
 	state_progress_end(state, countpos, countmax, countsize);
 
 	state_usage_print(state);
+
+	if (silent_error != 0) {
+		fprintf(stderr, "WARNING! Unexpected data errors! The respective blocks are now marked as bad!\n");
+		fprintf(stderr, "Use 'snapraid status' to list the bad blocks.\n");
+		fprintf(stderr, "Use 'snapraid -e fix' to recover.\n");
+	}
 
 	if (error || silent_error || io_error) {
 		printf("\n");
