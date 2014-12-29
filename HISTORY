@@ -3,6 +3,10 @@ SnapRAID HISTORY
 
 8.0 2015/01 BETA
 ================
+ * The -e, --filter-error option now doesn't write anymore fixes
+   to unsynced files. This helps in case you are running it on a
+   not synced array, removing the risk to revert some files to an
+   old state.
  * The -e, --filter-error option now is more efficient and triggers
    a lot less data to be read.
  * Renamed the -s and -t options to -S and -B as they are intended to
