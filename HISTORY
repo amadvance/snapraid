@@ -5,6 +5,8 @@ SnapRAID HISTORY
 ================
  * The -e, --filter-error option now is more efficient and triggers
    a lot less data to be read.
+ * Renamed the -s and -t options to -S and -B as they are intended to
+   be manual only operations.
 
 7.1 2015/01
 ===========

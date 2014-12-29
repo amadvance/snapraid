@@ -249,8 +249,8 @@ struct option long_options[] = {
 	{ "filter-error", 0, 0, 'e' },
 	{ "percentage", 1, 0, 'p' },
 	{ "older-than", 1, 0, 'o' },
-	{ "start", 1, 0, 's' },
-	{ "count", 1, 0, 't' },
+	{ "start", 1, 0, 'S' },
+	{ "count", 1, 0, 'B' },
 	{ "import", 1, 0, 'i' },
 	{ "log", 1, 0, 'l' },
 	{ "force-zero", 0, 0, 'Z' },
@@ -353,7 +353,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:f:d:mep:o:s:t:i:l:ZEUDNFahTC:vqHVG"
+#define OPTIONS "c:f:d:mep:o:S:B:i:l:ZEUDNFahTC:vqHVG"
 
 volatile int global_interrupt = 0;
 
@@ -492,7 +492,7 @@ int main(int argc, char* argv[])
 				/* LCOV_EXCL_STOP */
 			}
 			break;
-		case 's' :
+		case 'S' :
 			blockstart = strtoul(optarg, &e, 0);
 			if (!e || *e) {
 				/* LCOV_EXCL_START */
@@ -501,7 +501,7 @@ int main(int argc, char* argv[])
 				/* LCOV_EXCL_STOP */
 			}
 			break;
-		case 't' :
+		case 'B' :
 			blockcount = strtoul(optarg, &e, 0);
 			if (!e || *e) {
 				/* LCOV_EXCL_START */

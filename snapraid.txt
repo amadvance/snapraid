@@ -15,7 +15,7 @@ snapraid [-c, --conf CONFIG]
 	[-U, --force-uuid] [-D, --force-device]
 	[-N, --force-nocopy] [-F, --force-full]
 	[-v, --verbose] [-l, --log FILE]
-	[-s, --start BLKSTART] [-t, --count BLKCOUNT]
+	[-S, --start BLKSTART] [-T, --count BLKCOUNT]
 	status|sync|scrub|fix|check|list|diff|dup|pool|rehash
 
 snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
@@ -679,13 +679,13 @@ SnapRAID provides the following options:
         To output the log to standard output or standard error,
         you can use respectively ">&1" and ">&2".
 
-    -s, --start BLKSTART
+    -S, --start BLKSTART
         Starts the processing from the specified
         block number. It could be useful to retry to check
         or fix some specific block, in case of a damaged disk.
         It's present mainly for advanced manual recovering.
 
-    -t, --count BLKCOUNT
+    -T, --count BLKCOUNT
         Processes only the specified number of blocks.
         It's present mainly for advanced manual recovering.
 

@@ -509,19 +509,19 @@ endif
 	rm bench/disk2/a/5*
 	rm bench/disk3/a/6*
 	rm bench/disk4/a/6*
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -t 10 sync --test-force-content-text
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -B 10 sync --test-force-content-text
 	cp bench/content bench/content.txt
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) test-rewrite
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) --test-force-content-text test-rewrite
 	cmp bench/content bench/content.txt
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check -l test.log
 	$(TESTENV) ./mktest$(EXEEXT) generate 4 6 $(CHECKCOUNT) $(CHECKSIZE)
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -t 100 sync --test-force-content-text
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -B 100 sync --test-force-content-text
 	cp bench/content bench/content.txt
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) test-rewrite
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-content-text test-rewrite
 	cmp bench/content bench/content.txt
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -t 1000 sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -B 1000 sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
@@ -562,7 +562,7 @@ endif
 	echo --- Abort sync early with additions, delete them and recover with PAR2
 	echo --- This triggers the recovering with q using p to check the validity, but failing for new block being filled with zero
 	cp -pR bench/disk1/a bench/disk1/a_copy
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -t 1 --test-kill-after-sync -c $(CONF) sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -B 1 --test-kill-after-sync -c $(CONF) sync
 	rm -r bench/disk1/a_copy
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR2) fix -l test-fail-earlysyncadd.log
 	rm -r bench/disk1/a_copy
@@ -618,7 +618,7 @@ endif
 	cp -pR bench/disk1/a bench/disk1/a_copy
 	mv bench/disk1/a bench/a
 	mv bench/disk1/b bench/b
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -t 1 --test-kill-after-sync sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -B 1 --test-kill-after-sync sync
 	rm -r bench/disk2
 	mkdir bench/disk2
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR1) fix -l test-fail-earlysyncdel.log

@@ -38,7 +38,7 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
 .PD
-	[\-s, \-\-start BLKSTART] [\-t, \-\-count BLKCOUNT]
+	[\-S, \-\-start BLKSTART] [\-T, \-\-count BLKCOUNT]
 .PD 0
 .PP
 .PD
@@ -871,13 +871,13 @@ to enclose the name in \[dq], like \[dq]>>result.log\[dq].
 To output the log to standard output or standard error,
 you can use respectively \[dq]>&1\[dq] and \[dq]>&2\[dq].
 .TP
-.B \-s, \-\-start BLKSTART
+.B \-S, \-\-start BLKSTART
 Starts the processing from the specified
 block number. It could be useful to retry to check
 or fix some specific block, in case of a damaged disk.
 It\'s present mainly for advanced manual recovering.
 .TP
-.B \-t, \-\-count BLKCOUNT
+.B \-T, \-\-count BLKCOUNT
 Processes only the specified number of blocks.
 It\'s present mainly for advanced manual recovering.
 .TP
