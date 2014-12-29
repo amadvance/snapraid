@@ -11,7 +11,7 @@ Synopsis
 	:	[-U, --force-uuid] [-D, --force-device]
 	:	[-N, --force-nocopy] [-F, --force-full]
 	:	[-v, --verbose] [-l, --log FILE]
-	:	[-S, --start BLKSTART] [-T, --count BLKCOUNT]
+	:	[-S, --start BLKSTART] [-B, --count BLKCOUNT]
 	:	status|sync|scrub|fix|check|list|diff|dup|pool|rehash
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
@@ -640,7 +640,7 @@ Options
 		or fix some specific block, in case of a damaged disk.
 		It's present mainly for advanced manual recovering.
 
-	-T, --count BLKCOUNT
+	-B, --count BLKCOUNT
 		Processes only the specified number of blocks.
 		It's present mainly for advanced manual recovering.
 
