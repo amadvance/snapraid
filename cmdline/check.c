@@ -775,7 +775,7 @@ close_and_continue:
 /**
  * Check if we have to process the specified block index ::i.
  */
-static int block_is_enabled(struct snapraid_state* state, unsigned i, struct snapraid_handle* handle, unsigned diskmax)
+static int block_is_enabled(struct snapraid_state* state, block_off_t i, struct snapraid_handle* handle, unsigned diskmax)
 {
 	int one_tocheck;
 	snapraid_info info;

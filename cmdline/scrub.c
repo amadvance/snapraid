@@ -35,6 +35,53 @@ struct snapraid_rehash {
 	struct snapraid_block* block;
 };
 
+/**
+ * Check if we have to process the specified block index ::i.
+ */
+static int block_is_enabled(struct snapraid_state* state, block_off_t i, time_t timelimit, block_off_t lastlimit, block_off_t* countlast)
+{
+	time_t blocktime;
+	snapraid_info info;
+
+	/* if it's unused */
+	info = info_get(&state->infoarr, i);
+	if (info == 0) {
+		/* skip it */
+		return 0;
+	}
+
+	/* blocks marked as bad are always checked */
+	if (!info_get_bad(info)) {
+
+		/* if it's too new */
+		blocktime = info_get_time(info);
+		if (blocktime > timelimit) {
+			/* skip it */
+			return 0;
+		}
+
+		/* skip odd blocks, used only for testing */
+		if (state->opt.force_scrub_even && (i % 2) != 0) {
+			/* skip it */
+			return 0;
+		}
+
+		/* if the time is less than the limit, always include */
+		/* otherwise, check if we reached the last limit count */
+		if (blocktime == timelimit) {
+			/* if we reached the count limit */
+			if (*countlast >= lastlimit) {
+				/* skip it */
+				return 0;
+			}
+
+			++*countlast;
+		}
+	}
+
+	return 1;
+}
+
 static int state_scrub_process(struct snapraid_state* state, struct snapraid_parity_handle** parity, block_off_t blockstart, block_off_t blockmax, time_t timelimit, block_off_t lastlimit, time_t now)
 {
 	struct snapraid_handle* handle;
@@ -80,44 +127,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	countmax = 0;
 	countlast = 0;
 	for (i = blockstart; i < blockmax; ++i) {
-		time_t blocktime;
-		snapraid_info info;
-
-		/* if it's unused */
-		info = info_get(&state->infoarr, i);
-		if (info == 0) {
-			/* skip it */
+		if (!block_is_enabled(state, i, timelimit, lastlimit, &countlast))
 			continue;
-		}
-
-		/* blocks marked as bad are always checked */
-		if (!info_get_bad(info)) {
-
-			/* if it's too new */
-			blocktime = info_get_time(info);
-			if (blocktime > timelimit) {
-				/* skip it */
-				continue;
-			}
-
-			/* skip odd blocks, used only for testing */
-			if (state->opt.force_scrub_even && (i % 2) != 0) {
-				/* skip it */
-				continue;
-			}
-
-			/* if the time is less than the limit, always include */
-			/* otherwise, check if we reached the last limit count */
-			if (blocktime == timelimit) {
-				/* if we reached the count limit */
-				if (countlast >= lastlimit) {
-					/* skip it */
-					continue;
-				}
-
-				++countlast;
-			}
-		}
 
 		++countmax;
 	}
@@ -137,48 +148,14 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	countlast = 0;
 	state_progress_begin(state, blockstart, blockmax, countmax);
 	for (i = blockstart; i < blockmax; ++i) {
-		time_t blocktime;
 		snapraid_info info;
 		int error_on_this_block;
 		int silent_error_on_this_block;
 		int block_is_unsynced;
 		int rehash;
 
-		/* if it's unused */
-		info = info_get(&state->infoarr, i);
-		if (info == 0) {
-			/* skip it */
+		if (!block_is_enabled(state, i, timelimit, lastlimit, &countlast))
 			continue;
-		}
-
-		/* blocks marked as bad are always checked */
-		if (!info_get_bad(info)) {
-
-			/* if it's too new */
-			blocktime = info_get_time(info);
-			if (blocktime > timelimit) {
-				/* skip it */
-				continue;
-			}
-
-			/* skip odd blocks, used only for testing */
-			if (state->opt.force_scrub_even && (i % 2) != 0) {
-				/* skip it */
-				continue;
-			}
-
-			/* if the time is less than the limit, always include */
-			/* otherwise, check if we reached the last limit count */
-			if (blocktime == timelimit) {
-				/* if we reached the count limit */
-				if (countlast >= lastlimit) {
-					/* skip it */
-					continue;
-				}
-
-				++countlast;
-			}
-		}
 
 		/* one more block processed for autosave */
 		++autosavedone;
@@ -191,6 +168,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		/* if all the blocks at this address are synced */
 		/* if not, parity is not even checked */
 		block_is_unsynced = 0;
+
+		/* get block specific info */
+		info = info_get(&state->infoarr, i);
 
 		/* if we have to use the old hash */
 		rehash = info_get_rehash(info);
