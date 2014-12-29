@@ -343,7 +343,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Silently corrupt some files, scrub and fix filtering for error
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
-	$(TESTENV) ./mktest$(EXEEXT) damage 1 10 1 bench/disk1/a/*
+	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 1 bench/disk1/a/*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-expect-recoverable --test-force-scrub-at 100000 scrub
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) fix -e
@@ -352,8 +352,8 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -p 100 scrub
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	echo --- Silently corrupt some files, and sync with error presents
-	$(TESTENV) ./mktest$(EXEEXT) change 1 500 bench/disk1/a/*
-	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 500 bench/disk2/a/*
+	$(TESTENV) ./mktest$(EXEEXT) write 2 1 1 bench/disk1/a/*
+	$(TESTENV) ./mktest$(EXEEXT) damage 3 1 1 bench/disk2/a/*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-expect-recoverable sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 # Note that this fix -e command doesn't fix all the errors because
