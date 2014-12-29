@@ -634,11 +634,11 @@ void help(void)
 	printf("Test for " PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
 	printf("Usage:\n");
 	printf("\tmktest generate SEED DISK_NUM FILE_NUM FILE_SIZE\n");
-	printf("\tmktest damage SEED FAIL_NUM FAIL_SIZE FILE\n");
-	printf("\tmktest write SEED FAIL_NUM FAIL_SIZE FILE\n");
-	printf("\tmktest change SEED FAIL_SIZE FILE\n");
-	printf("\tmktest append SEED FAIL_SIZE FILE\n");
-	printf("\tmktest truncate SEED FAIL_SIZE FILE\n");
+	printf("\tmktest damage SEED NUM SIZE FILE\n");
+	printf("\tmktest write SEED NUM SIZE FILE\n");
+	printf("\tmktest change SEED SIZE FILE\n");
+	printf("\tmktest append SEED SIZE FILE\n");
+	printf("\tmktest truncate SEED SIZE FILE\n");
 }
 
 int main(int argc, char* argv[])
@@ -697,7 +697,7 @@ int main(int argc, char* argv[])
 
 		for (i = b; i < argc; ++i)
 			for (j = 0; j < fail; ++j)
-				cmd_write(argv[i], rnd(size));
+				cmd_write(argv[i], rndnz(size));
 	} else if (strcmp(argv[1], "damage") == 0) {
 		int fail, size;
 
@@ -737,7 +737,7 @@ int main(int argc, char* argv[])
 		qsort(&argv[b], argc - b, sizeof(argv[b]), file_cmp);
 
 		for (i = b; i < argc; ++i)
-			cmd_append(argv[i], rnd(size));
+			cmd_append(argv[i], rndnz(size)); /* at least one byte */
 	} else if (strcmp(argv[1], "truncate") == 0) {
 		int size;
 
