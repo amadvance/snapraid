@@ -583,6 +583,242 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 		return -1;
 }
 
+/**
+ * Post process all the files at the specified block index ::i.
+ * For each file, if we are at the last block, closes it,
+ * adjust the timestamp, and prints the result.
+ */
+static int file_post(struct snapraid_state* state, int fix, unsigned i, struct snapraid_handle* handle, unsigned diskmax)
+{
+	unsigned j;
+	int ret;
+
+	/* for all the files prints the final status, and does the final time fix */
+	/* we also ensure to close files after processing the last block */
+	for (j = 0; j < diskmax; ++j) {
+		struct snapraid_block* block;
+		struct snapraid_disk* disk;
+		struct snapraid_file* collide_file;
+		struct snapraid_file* file;
+		char path[PATH_MAX];
+		uint64_t inode;
+
+		disk = handle[j].disk;
+		if (!disk) {
+			/* if no disk, nothing to do */
+			continue;
+		}
+
+		block = disk_block_get(disk, i);
+		if (!block_has_file(block)) {
+			/* if no file, nothing to do */
+			continue;
+		}
+
+		file = block_file_get(block);
+		pathprint(path, sizeof(path), "%s%s", disk->dir, file->sub);
+
+		/* if it isn't the last block in the file */
+		if (!block_is_last(block)) {
+			/* nothing to do */
+			continue;
+		}
+
+		/* if the file is excluded, we have nothing to adjust as the file is never written */
+		if (file_flag_has(file, FILE_IS_EXCLUDED)
+			|| (state->opt.syncedonly && file_flag_has(file, FILE_IS_UNSYNCED))) {
+			/* nothing to do, but close the file */
+			goto close_and_continue;
+		}
+
+		/* if the file is opened and not excluded, it must be the correct one */
+		/* or at least pointing to NULL, in case it cannot be opened. */
+		if (handle[j].file != 0 && handle[j].file != file) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Internal inconsistency in opened file for block %u\n", block->parity_pos);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		/* finish the fix process if it's the last block of the files */
+		if (fix) {
+			/* mark that we finished with this file */
+			/* to identify later any NOT finished ones */
+			file_flag_set(file, FILE_IS_FINISHED);
+
+			/* if the file is damaged, meaning that a fix failed */
+			if (file_flag_has(file, FILE_IS_DAMAGED)) {
+				/* rename it to .unrecoverable */
+				char path_to[PATH_MAX];
+
+				pathprint(path_to, sizeof(path_to), "%s%s.unrecoverable", disk->dir, file->sub);
+
+				/* ensure to close the file before renaming */
+				ret = handle_close(&handle[j]);
+				if (ret != 0) {
+					/* LCOV_EXCL_START */
+					fprintf(stderr, "Error closing '%s'. %s.\n", path, strerror(errno));
+					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					return -1;
+					/* LCOV_EXCL_STOP */
+				}
+
+				ret = rename(path, path_to);
+				if (ret != 0) {
+					/* LCOV_EXCL_START */
+					fprintf(stderr, "Error renaming '%s' to '%s'. %s.\n", path, path_to, strerror(errno));
+					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					return -1;
+					/* LCOV_EXCL_STOP */
+				}
+
+				fprintf(stdlog, "status:unrecoverable:%s:%s\n", disk->name, file->sub);
+				if (!state->opt.quiet) {
+					printf("unrecoverable %s\n", path);
+				}
+
+				/* and do not set the time if damaged */
+				goto close_and_continue;
+			}
+
+			/* if the file is not fixed, meaning that it is untouched */
+			if (!file_flag_has(file, FILE_IS_FIXED)) {
+				/* nothing to do, but close the file */
+				goto close_and_continue;
+			}
+
+			fprintf(stdlog, "status:recovered:%s:%s\n", disk->name, file->sub);
+			if (!state->opt.quiet) {
+				printf("recovered %s\n", path);
+			}
+
+			inode = handle[j].st.st_ino;
+
+			/* search for the corresponding inode */
+			collide_file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
+
+			/* if the inode is already in the database and it refers at a different file name, */
+			/* we can fix the file time ONLY if the time and size allow to differentiate */
+			/* between the two files */
+
+			/* for example, suppose we delete a bunch of files with all the same size and time, */
+			/* when recreating them the inodes may be reused in a different order, */
+			/* and at the next sync some files may have matching inode/size/time even if different name */
+			/* not allowing sync to detect that the file is changed and not renamed */
+			if (!collide_file /* if not in the database, there is no collision */
+				|| strcmp(collide_file->sub, file->sub) == 0 /* if the name is the same, it's the right collision */
+				|| collide_file->size != file->size /* if the size is different, the collision is identified */
+				|| collide_file->mtime_sec != file->mtime_sec /* if the mtime is different, the collision is identified */
+				|| collide_file->mtime_nsec != file->mtime_nsec /* same for mtime_nsec */
+			) {
+				/* set the original modification time */
+				ret = handle_utime(&handle[j]);
+				if (ret == -1) {
+					/* LCOV_EXCL_START */
+					/* mark the file as damaged */
+					file_flag_set(file, FILE_IS_DAMAGED);
+					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					return -1;
+					/* LCOV_EXCL_STOP */
+				}
+			} else {
+				fprintf(stdlog, "collision:%s:%s:%s: Not setting modification time to avoid inode collision\n", disk->name, file->sub, collide_file->sub);
+			}
+		} else {
+			/* we are not fixing, but only checking */
+			/* print just the final status */
+			if (file_flag_has(file, FILE_IS_DAMAGED)) {
+				if (state->opt.auditonly) {
+					fprintf(stdlog, "status:damaged:%s:%s\n", disk->name, file->sub);
+					if (!state->opt.quiet) {
+						printf("damaged %s\n", path);
+					}
+				} else {
+					fprintf(stdlog, "status:unrecoverable:%s:%s\n", disk->name, file->sub);
+					if (!state->opt.quiet) {
+						printf("unrecoverable %s\n", path);
+					}
+				}
+			} else if (file_flag_has(file, FILE_IS_FIXED)) {
+				fprintf(stdlog, "status:recoverable:%s:%s\n", disk->name, file->sub);
+				if (!state->opt.quiet) {
+					printf("recoverable %s\n", path);
+				}
+			} else {
+				fprintf(stdlog, "status:correct:%s:%s\n", disk->name, file->sub);
+				if (state->opt.verbose) {
+					printf("correct %s\n", path);
+				}
+			}
+		}
+
+close_and_continue:
+		/* if the opened file is the correct one, close it */
+		/* in case of excluded and fragmented files it's possible */
+		/* that the opened file is not the current one */
+		if (handle[j].file == file) {
+			/* ensure to close the file just after finishing with it */
+			ret = handle_close(&handle[j]);
+			if (ret != 0) {
+				/* LCOV_EXCL_START */
+				fprintf(stderr, "Error closing '%s'. %s.\n", path, strerror(errno));
+				fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+		}
+	}
+
+	return 0;
+}
+
+/**
+ * Check if we have to process the specified block index ::i.
+ */
+static int block_is_enabled(struct snapraid_state* state, unsigned i, struct snapraid_handle* handle, unsigned diskmax)
+{
+	int one_tocheck;
+	snapraid_info info;
+	unsigned j;
+
+	/* get block specific info */
+	info = info_get(&state->infoarr, i);
+
+	/* if we filter for only bad blocks */
+	if (state->opt.badonly) {
+		/* skip if this is not bad */
+		if (!info_get_bad(info))
+			return 0;
+	}
+
+	/* for each disk */
+	one_tocheck = 0;
+	for (j = 0; j < diskmax; ++j) {
+		struct snapraid_block* block;
+
+		/* if no disk, nothing to check */
+		if (!handle[j].disk)
+			continue;
+
+		block = disk_block_get(handle[j].disk, i);
+
+		/* try to recover all files, even the ones without hash */
+		/* because in some cases we can recover also them */
+		if (block_has_file(block)
+			&& !file_flag_has(block_file_get(block), FILE_IS_EXCLUDED) /* only if the file is not filtered out */
+		) {
+			one_tocheck = 1;
+			break;
+		}
+	}
+
+	/* if no block to check skip */
+	if (!one_tocheck)
+		return 0;
+
+	return 1;
+}
+
 static int state_check_process(struct snapraid_state* state, int fix, struct snapraid_parity_handle** parity, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
@@ -626,33 +862,8 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 	/* first count the number of blocks to process */
 	countmax = 0;
 	for (i = blockstart; i < blockmax; ++i) {
-		int one_tocheck;
-
-		/* for each disk */
-		one_tocheck = 0;
-		for (j = 0; j < diskmax; ++j) {
-			struct snapraid_block* block;
-
-			/* if no disk, nothing to check */
-			if (!handle[j].disk)
-				continue;
-
-			block = disk_block_get(handle[j].disk, i);
-
-			/* try to recover all files, even the ones without hash */
-			/* because in some cases we can recover also them */
-			if (block_has_file(block)
-				&& !file_flag_has(block_file_get(block), FILE_IS_EXCLUDED) /* only if the file is not filtered out */
-			) {
-				one_tocheck = 1;
-				break;
-			}
-		}
-
-		/* if no block to check skip */
-		if (!one_tocheck)
+		if (!block_is_enabled(state, i, handle, diskmax))
 			continue;
-
 		++countmax;
 	}
 
@@ -662,40 +873,27 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 	state_progress_begin(state, blockstart, blockmax, countmax);
 	for (i = blockstart; i < blockmax; ++i) {
 		unsigned failed_count;
-		int one_tocheck;
 		int valid_parity;
 		snapraid_info info;
 		int rehash;
 
-		/* for each disk */
-		one_tocheck = 0;
-		for (j = 0; j < diskmax; ++j) {
-			struct snapraid_block* block;
-
-			/* if no disk, nothing to check */
-			if (!handle[j].disk)
-				continue;
-
-			block = disk_block_get(handle[j].disk, i);
-
-			/* try to recover all files, even the ones without hash */
-			/* because in some cases we can recover also them */
-			if (block_has_file(block)
-				&& !file_flag_has(block_file_get(block), FILE_IS_EXCLUDED) /* only if the file is not filtered out */
-			) {
-				one_tocheck = 1;
-				break;
+		if (!block_is_enabled(state, i, handle, diskmax)) {
+			/* post process the files */
+			ret = file_post(state, fix, i, handle, diskmax);
+			if (ret == -1) {
+				printf("Stopping at block %u\n", i);
+				++unrecoverable_error;
+				goto bail;
 			}
-		}
 
-		/* if no block to check skip */
-		if (!one_tocheck)
+			/* and now continue with the next block */
 			continue;
+		}
 
 		/* If we have valid parity, and it makes sense to check its content. */
 		/* If we already know that the parity is invalid, we just read the file */
-		/* but we don't report errors */
-		/* Note that if check==0, we'll anyway skip the full parity check, */
+		/* but we don't report parity errors */
+		/* Note that with auditonly, we anyway skip the full parity check, */
 		/* because we also don't read it at all */
 		valid_parity = 1;
 
@@ -741,7 +939,6 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				/* mark the parity as invalid, and don't try to check/fix it */
 				/* because it will be recomputed at the next sync */
 				valid_parity = 0;
-
 				/* follow */
 			}
 
@@ -810,7 +1007,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						file_flag_set(file, FILE_IS_CREATED);
 					}
 				} else {
-					/* if checking or hashing or excluded, open the file only for reading */
+					/* otherwise, open the file only for reading */
 					ret = handle_open(&handle[j], file, state->file_mode, stdlog);
 					if (ret == -1) {
 						/* save the failed block for the check/fix */
@@ -827,9 +1024,25 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					}
 				}
 
-				/* check if it's a larger file, but not if already notified or excluded */
-				if (!file_flag_has(file, FILE_IS_LARGER)
+				/* if it's the first open, and not excluded */
+				if (!file_flag_has(file, FILE_IS_OPENED)
+					&& !file_flag_has(file, FILE_IS_EXCLUDED)) {
+
+					/* check if the file is changed */
+					if (handle[j].st.st_size != block_file_get(block)->size
+						|| handle[j].st.st_mtime != block_file_get(block)->mtime_sec
+						|| STAT_NSEC(&handle[j].st) != block_file_get(block)->mtime_nsec
+						/* don't check the inode to support filesystem without persistent inodes */
+					) {
+						/* report that the file is not synced */
+						file_flag_set(file, FILE_IS_UNSYNCED);
+					}
+				}
+
+				/* if it's the first open, and not excluded and larger */
+				if (!file_flag_has(file, FILE_IS_OPENED)
 					&& !file_flag_has(file, FILE_IS_EXCLUDED)
+					&& !(state->opt.syncedonly && file_flag_has(file, FILE_IS_UNSYNCED))
 					&& handle[j].st.st_size > file->size
 				) {
 					fprintf(stdlog, "File '%s' is larger than expected.\n", handle[j].path);
@@ -850,11 +1063,12 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						fprintf(stdlog, "fixed:%u:%s:%s: Fixed size\n", i, disk->name, file->sub);
 						++recovered_error;
 					}
-
-					/* if fragmented, it may be reopened, so store the notification */
-					/* to prevent to report and/or truncate it again */
-					file_flag_set(file, FILE_IS_LARGER);
 				}
+
+				/* mark the file as opened at least one time */
+				/* this is used to avoid to check the unsynced and size */
+				/* more than one time, in case the file is reopened later */
+				file_flag_set(file, FILE_IS_OPENED);
 			}
 
 			/* read from the file */
@@ -1017,8 +1231,9 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						if (!failed[j].is_bad)
 							continue;
 
-						/* do not fix if the file is filtered out */
-						if (file_flag_has(block_file_get(failed[j].block), FILE_IS_EXCLUDED))
+						/* do not fix if the file is excluded */
+						if (file_flag_has(block_file_get(failed[j].block), FILE_IS_EXCLUDED)
+							|| (state->opt.syncedonly && file_flag_has(block_file_get(failed[j].block), FILE_IS_UNSYNCED)))
 							continue;
 
 						ret = handle_write(failed[j].handle, failed[j].block, buffer[failed[j].index], state->block_size);
@@ -1097,185 +1312,12 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			}
 		}
 
-		/* for all the files prints the final status, and does the final time fix */
-		/* we also ensure to close files after processing the last block */
-		for (j = 0; j < diskmax; ++j) {
-			struct snapraid_block* block;
-			struct snapraid_disk* disk;
-			struct snapraid_file* collide_file;
-			struct snapraid_file* file;
-			char path[PATH_MAX];
-			uint64_t inode;
-
-			disk = handle[j].disk;
-			if (!disk) {
-				/* if no disk, nothing to do */
-				continue;
-			}
-
-			block = disk_block_get(disk, i);
-			if (!block_has_file(block)) {
-				/* if no file, nothing to do */
-				continue;
-			}
-
-			file = block_file_get(block);
-			pathprint(path, sizeof(path), "%s%s", disk->dir, file->sub);
-
-			/* if the file is open, it must be the correct block one */
-			/* note the if the file is excluded, it's also possible to have it not opened, */
-			/* and have the handle[j].file pointing to NULL. */
-			/* A typical case is if the file is missing, */
-			/* and the read-only open failed before. */
-			if (handle[j].file != 0 && handle[j].file != file) {
-				/* LCOV_EXCL_START */
-				fprintf(stderr, "Internal inconsistency in opened file for block %u\n", block->parity_pos);
-				exit(EXIT_FAILURE);
-				/* LCOV_EXCL_STOP */
-			}
-
-			/* if it isn't the last block in the file */
-			if (!block_is_last(block)) {
-				/* nothing to do */
-				continue;
-			}
-
-			/* if the file is excluded, we have nothing to adjust as the file is never written */
-			if (file_flag_has(file, FILE_IS_EXCLUDED)) {
-				/* nothing to do, but close the file */
-				goto close_and_continue;
-			}
-
-			/* finish the fix process if it's the last block of the files */
-			if (fix) {
-				/* mark that we finished with this file */
-				/* to identify later any NOT finished ones */
-				file_flag_set(file, FILE_IS_FINISHED);
-
-				/* if the file is damaged, meaning that a fix failed */
-				if (file_flag_has(file, FILE_IS_DAMAGED)) {
-					/* rename it to .unrecoverable */
-					char path_to[PATH_MAX];
-
-					pathprint(path_to, sizeof(path_to), "%s%s.unrecoverable", disk->dir, file->sub);
-
-					/* ensure to close the file before renaming */
-					ret = handle_close(&handle[j]);
-					if (ret != 0) {
-						/* LCOV_EXCL_START */
-						fprintf(stderr, "Error closing '%s'. %s.\n", path, strerror(errno));
-						fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
-						printf("Stopping at block %u\n", i);
-						++unrecoverable_error;
-						goto bail;
-						/* LCOV_EXCL_STOP */
-					}
-
-					ret = rename(path, path_to);
-					if (ret != 0) {
-						/* LCOV_EXCL_START */
-						fprintf(stderr, "Error renaming '%s' to '%s'. %s.\n", path, path_to, strerror(errno));
-						fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
-						printf("Stopping at block %u\n", i);
-						++unrecoverable_error;
-						goto bail;
-						/* LCOV_EXCL_STOP */
-					}
-
-					fprintf(stdlog, "status:unrecoverable:%s:%s\n", disk->name, file->sub);
-					if (!state->opt.quiet) {
-						printf("unrecoverable %s\n", path);
-					}
-
-					/* and do not set the time if damaged */
-					continue;
-				}
-
-				/* if the file is not fixed, meaning that it is untouched */
-				if (!file_flag_has(file, FILE_IS_FIXED)) {
-					/* nothing to do, but close the file */
-					goto close_and_continue;
-				}
-
-				fprintf(stdlog, "status:recovered:%s:%s\n", disk->name, file->sub);
-				if (!state->opt.quiet) {
-					printf("recovered %s\n", path);
-				}
-
-				inode = handle[j].st.st_ino;
-
-				/* search for the corresponding inode */
-				collide_file = tommy_hashdyn_search(&disk->inodeset, file_inode_compare_to_arg, &inode, file_inode_hash(inode));
-
-				/* if the inode is already in the database and it refers at a different file name, */
-				/* we can fix the file time ONLY if the time and size allow to differentiate */
-				/* between the two files */
-
-				/* for example, suppose we delete a bunch of files with all the same size and time, */
-				/* when recreating them the inodes may be reused in a different order, */
-				/* and at the next sync some files may have matching inode/size/time even if different name */
-				/* not allowing sync to detect that the file is changed and not renamed */
-				if (!collide_file /* if not in the database, there is no collision */
-					|| strcmp(collide_file->sub, file->sub) == 0 /* if the name is the same, it's the right collision */
-					|| collide_file->size != file->size /* if the size is different, the collision is identified */
-					|| collide_file->mtime_sec != file->mtime_sec /* if the mtime is different, the collision is identified */
-					|| collide_file->mtime_nsec != file->mtime_nsec /* same for mtime_nsec */
-				) {
-					/* set the original modification time */
-					ret = handle_utime(&handle[j]);
-					if (ret == -1) {
-						/* LCOV_EXCL_START */
-						/* mark the file as damaged */
-						file_flag_set(file, FILE_IS_DAMAGED);
-						fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
-						printf("Stopping at block %u\n", i);
-						++unrecoverable_error;
-						goto bail;
-						/* LCOV_EXCL_STOP */
-					}
-				} else {
-					fprintf(stdlog, "collision:%s:%s:%s: Not setting modification time to avoid inode collision\n", disk->name, file->sub, collide_file->sub);
-				}
-			} else {
-				/* we are not fixing, but only checking */
-				/* print just the final status */
-				if (file_flag_has(file, FILE_IS_DAMAGED)) {
-					if (state->opt.auditonly) {
-						fprintf(stdlog, "status:damaged:%s:%s\n", disk->name, file->sub);
-						if (!state->opt.quiet) {
-							printf("damaged %s\n", path);
-						}
-					} else {
-						fprintf(stdlog, "status:unrecoverable:%s:%s\n", disk->name, file->sub);
-						if (!state->opt.quiet) {
-							printf("unrecoverable %s\n", path);
-						}
-					}
-				} else if (file_flag_has(file, FILE_IS_FIXED)) {
-					fprintf(stdlog, "status:recoverable:%s:%s\n", disk->name, file->sub);
-					if (!state->opt.quiet) {
-						printf("recoverable %s\n", path);
-					}
-				} else {
-					fprintf(stdlog, "status:correct:%s:%s\n", disk->name, file->sub);
-					if (state->opt.verbose) {
-						printf("correct %s\n", path);
-					}
-				}
-			}
-
-close_and_continue:
-			/* ensure to close the file just after finishing with it */
-			ret = handle_close(&handle[j]);
-			if (ret != 0) {
-				/* LCOV_EXCL_START */
-				fprintf(stderr, "Error closing '%s'. %s.\n", path, strerror(errno));
-				fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
-				printf("Stopping at block %u\n", i);
-				++unrecoverable_error;
-				goto bail;
-				/* LCOV_EXCL_STOP */
-			}
+		/* post process the files */
+		ret = file_post(state, fix, i, handle, diskmax);
+		if (ret == -1) {
+			printf("Stopping at block %u\n", i);
+			++unrecoverable_error;
+			goto bail;
 		}
 
 		/* count the number of processed block */

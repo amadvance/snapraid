@@ -64,7 +64,9 @@ struct snapraid_option {
 	int verbose; /**< Verbose output. */
 	int quiet; /**< Quiet output. */
 	int gui; /**< Gui output. */
-	int auditonly; /**< Enable the auditonly mode for check. */
+	int auditonly; /**< In check, checks only the hash and not the parity. */
+	int badonly; /**< In fix, fixes only the blocks marked as bad. */
+	int syncedonly; /**< In fix, fixes only files that are synced. */
 	int prehash; /**< Enables the prehash mode for sync. */
 	int force_zero; /**< Forced dangerous operations of synching files now with zero size. */
 	int force_empty; /**< Forced dangerous operations of synching disks now empty. */

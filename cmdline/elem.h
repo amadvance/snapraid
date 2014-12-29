@@ -180,24 +180,16 @@ struct snapraid_block {
 #define FILE_IS_EXCLUDED 0x02
 
 /**
- * If the file was originally larger, and then truncated to the expected size.
- * It's used only in check to avoid to report this condition more than one time,
- * in case the file is opened multiple times.
- * In fix it's not used, because the size is fixed just after the first opening.
- */
-#define FILE_IS_LARGER 0x04
-
-/**
  * If a fix was attempted but it failed.
  * It's used only in fix to mark that some data is unrecoverable.
  */
-#define FILE_IS_DAMAGED 0x08
+#define FILE_IS_DAMAGED 0x04
 
 /**
  * If a fix was done.
  * It's used only in fix to mark that some data was recovered.
  */
-#define FILE_IS_FIXED 0x10
+#define FILE_IS_FIXED 0x08
 
 /**
  * If the file was originally missing, and it was created in the fix process.
@@ -207,26 +199,32 @@ struct snapraid_block {
  * to lose something that cannot be recovered.
  * Note that excluded files won't ever get this flag.
  */
-#define FILE_IS_CREATED 0x20
+#define FILE_IS_CREATED 0x10
 
 /**
  * If the file has completed its processing, meaning that it won't be opened anymore.
  * It's used only in fix to mark when we finish processing one file.
  * Note that excluded files won't ever get this flag.
  */
-#define FILE_IS_FINISHED 0x40
+#define FILE_IS_FINISHED 0x20
 
 /**
  * If the file hash was obtained from a file copy
  * identified by the same name, size and stamp.
  */
-#define FILE_IS_COPY 0x80
+#define FILE_IS_COPY 0x40
 
-#define FILE_IS_HARDLINK 0x100 /**< If it's an hardlink. */
-#define FILE_IS_SYMLINK 0x200 /**< If it's a file symlink. */
-#define FILE_IS_SYMDIR 0x400 /**< If it's a dir symlink for Windows. Not yet supported. */
-#define FILE_IS_JUNCTION 0x800 /**< If it's a junction for Windows. Not yet supported. */
-#define FILE_IS_LINK_MASK 0xF00 /**< Mask for link type. */
+/**
+ * If the file was opened.
+ * It's used in fix to detect if it's the first time a file is opened.
+ */
+#define FILE_IS_OPENED 0x80
+
+/**
+ * If the file is modified from the latest sync.
+ * It's used in fix to store if the state of the file before being modified.
+ */
+#define FILE_IS_UNSYNCED 0x100
 
 /**
  * If the file is without inode.
@@ -235,7 +233,13 @@ struct snapraid_block {
  * In such cases we have to clear any stored duplicate inode.
  * After the scan process completes, no file should have this flag set.
  */
-#define FILE_IS_WITHOUT_INODE 0x1000
+#define FILE_IS_WITHOUT_INODE 0x200
+
+#define FILE_IS_HARDLINK 0x1000 /**< If it's an hardlink. */
+#define FILE_IS_SYMLINK 0x2000 /**< If it's a file symlink. */
+#define FILE_IS_SYMDIR 0x4000 /**< If it's a dir symlink for Windows. Not yet supported. */
+#define FILE_IS_JUNCTION 0x8000 /**< If it's a junction for Windows. Not yet supported. */
+#define FILE_IS_LINK_MASK 0xF000 /**< Mask for link type. */
 
 /**
  * File.

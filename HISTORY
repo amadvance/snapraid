@@ -3,6 +3,8 @@ SnapRAID HISTORY
 
 8.0 2015/01 BETA
 ================
+ * The -e, --filter-error option now is more efficient and triggers
+   a lot less data to be read.
 
 7.1 2015/01
 ===========

@@ -468,7 +468,11 @@ int main(int argc, char* argv[])
 			filter_missing = 1;
 			break;
 		case 'e' :
+			/* when processing only error, we filter both files and blocks */
+			/* and we apply fixes only to synced ones */
 			filter_error = 1;
+			opt.badonly = 1;
+			opt.syncedonly = 1;
 			break;
 		case 'p' :
 			percentage = strtoul(optarg, &e, 10);
