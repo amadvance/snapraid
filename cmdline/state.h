@@ -68,6 +68,7 @@ struct snapraid_option {
 	int badonly; /**< In fix, fixes only the blocks marked as bad. */
 	int syncedonly; /**< In fix, fixes only files that are synced. */
 	int prehash; /**< Enables the prehash mode for sync. */
+	unsigned io_error_limit; /**< Max number of input/output errors before aborting. */
 	int force_zero; /**< Forced dangerous operations of synching files now with zero size. */
 	int force_empty; /**< Forced dangerous operations of synching disks now empty. */
 	int force_uuid; /**< Forced dangerous operations of synching disks with uuid changed. */

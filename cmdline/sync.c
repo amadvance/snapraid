@@ -133,7 +133,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 					/* and closing a descriptor should never fail */
 					if (errno == EIO) {
 						fprintf(stdlog, "error:%u:%s:%s: Close EIO error. %s\n", i, disk->name, file->sub, strerror(errno));
-						fprintf(stderr, "DANGER! Unexpected input/output close error in a data disk, it isn't possible to scrub.\n");
+						fprintf(stderr, "DANGER! Unexpected input/output close error in a data disk, it isn't possible to sync.\n");
 						fprintf(stderr, "Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
 						printf("Stopping at block %u\n", i);
 						++io_error;
@@ -488,6 +488,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		unsigned failed_count;
 		int error_on_this_block;
 		int silent_error_on_this_block;
+		int io_error_on_this_block;
 		int fixed_error_on_this_block;
 		int parity_needs_to_be_updated;
 		snapraid_info info;
@@ -503,6 +504,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		/* by default process the block, and skip it if something go wrong */
 		error_on_this_block = 0;
 		silent_error_on_this_block = 0;
+		io_error_on_this_block = 0;
 		fixed_error_on_this_block = 0;
 
 		/* keep track of the number of failed blocks */
@@ -695,11 +697,18 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				struct snapraid_file* file = block_file_get(block);
 				if (errno == EIO) {
 					fprintf(stdlog, "error:%u:%s:%s: Read EIO error at position %u. %s\n", i, disk->name, file->sub, block_file_pos(block), strerror(errno));
-					fprintf(stderr, "DANGER! Unexpected input/output read error in a data disk, it isn't possible to sync.\n");
-					fprintf(stderr, "Ensure that disk '%s' is sane and that file '%s' can be read.\n", disk->dir, handle[j].path);
-					printf("Stopping at block %u\n", i);
+					if (io_error >= state->opt.io_error_limit) {
+						fprintf(stderr, "DANGER! Unexpected input/output read error in a data disk, it isn't possible to sync.\n");
+						fprintf(stderr, "Ensure that disk '%s' is sane and that file '%s' can be read.\n", disk->dir, handle[j].path);
+						printf("Stopping at block %u\n", i);
+						++io_error;
+						goto bail;
+					}
+
+					fprintf(stderr, "Input/Output error in file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
 					++io_error;
-					goto bail;
+					io_error_on_this_block = 1;
+					continue;
 				}
 
 				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u. %s\n", i, disk->name, file->sub, block_file_pos(block), strerror(errno));
@@ -805,7 +814,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		/* if we have only silent errors we can try to fix them on-the-fly */
 		/* note the the fix is not written to disk, but used only to */
 		/* compute the new parity */
-		if (!error_on_this_block && silent_error_on_this_block) {
+		if (!error_on_this_block && !io_error_on_this_block && silent_error_on_this_block) {
 			unsigned failed_mac;
 			int something_to_recover = 0;
 
@@ -854,15 +863,22 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 						/* LCOV_EXCL_START */
 						if (errno == EIO) {
 							fprintf(stdlog, "parity_error:%u:%s: Read EIO error. %s\n", i, lev_config_name(l), strerror(errno));
-							fprintf(stderr, "DANGER! input/output read error in the %s disk, it isn't possible to sync.\n", lev_name(l));
-							fprintf(stderr, "Ensure that disk '%s' is sane and can be read.\n", lev_config_name(l));
-							printf("Stopping at block %u\n", i);
+							if (io_error >= state->opt.io_error_limit) {
+								fprintf(stderr, "DANGER! Unexpected input/output read error in the %s disk, it isn't possible to sync.\n", lev_name(l));
+								fprintf(stderr, "Ensure that disk '%s' is sane and can be read.\n", lev_config_name(l));
+								printf("Stopping at block %u\n", i);
+								++io_error;
+								goto bail;
+							}
+
+							fprintf(stderr, "Input/Output error in parity '%s' at position '%u'\n", lev_config_name(l), i);
 							++io_error;
-							goto bail;
+							io_error_on_this_block = 1;
+							continue;
 						}
 
 						fprintf(stdlog, "parity_error:%u:%s: Read error. %s\n", i, lev_config_name(l), strerror(errno));
-						fprintf(stderr, "WARNING! Read error in the %s disk, it isn't possible to sync.\n", lev_name(l));
+						fprintf(stderr, "WARNING! Unexpected read error in the %s disk, it isn't possible to sync.\n", lev_name(l));
 						fprintf(stderr, "Ensure that disk '%s' can be read.\n", lev_config_name(l));
 						printf("Stopping at block %u\n", i);
 						++error;
@@ -874,51 +890,57 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					state_usage_parity(state, l);
 				}
 
-				/* try to fix the data */
-				raid_rec(failed_mac, failed_map, diskmax, state->level, state->block_size, buffer);
+				/* if no error in parity read */
+				if (!io_error_on_this_block) {
+					/* try to fix the data */
+					/* note that this is a simple fix algorithm, that doesn't take into */
+					/* account the case of a wrong parity */
+					/* only 'fix' supports the most advanced fixing */
+					raid_rec(failed_mac, failed_map, diskmax, state->level, state->block_size, buffer);
 
-				/* check the result and prepare the data */
-				for (j = 0; j < failed_count; ++j) {
-					unsigned char hash[HASH_SIZE];
-					unsigned char* block_buffer = buffer[failed[j].index];
-					unsigned char* block_copy = buffer[diskmax + state->level + failed[j].index];
-					unsigned block_state = block_state_get(failed[j].block);
+					/* check the result and prepare the data */
+					for (j = 0; j < failed_count; ++j) {
+						unsigned char hash[HASH_SIZE];
+						unsigned char* block_buffer = buffer[failed[j].index];
+						unsigned char* block_copy = buffer[diskmax + state->level + failed[j].index];
+						unsigned block_state = block_state_get(failed[j].block);
 
-					if (block_state == BLOCK_STATE_BLK) {
-						unsigned size = failed[j].size;
+						if (block_state == BLOCK_STATE_BLK) {
+							unsigned size = failed[j].size;
 
-						/* compute the hash of the recovered block */
-						if (rehash) {
-							memhash(state->prevhash, state->prevhashseed, hash, block_buffer, size);
+							/* compute the hash of the recovered block */
+							if (rehash) {
+								memhash(state->prevhash, state->prevhashseed, hash, block_buffer, size);
+							} else {
+								memhash(state->hash, state->hashseed, hash, block_buffer, size);
+							}
+
+							/* if the hash doesn't match */
+							if (memcmp(hash, failed[j].block->hash, HASH_SIZE) != 0) {
+								/* we have not recovered */
+								break;
+							}
+
+							/* pad with 0 if needed */
+							if (size < state->block_size)
+								memset(block_buffer + size, 0, state->block_size - size);
 						} else {
-							memhash(state->hash, state->hashseed, hash, block_buffer, size);
+							/* otherwise restore the content */
+							/* because we are not interested in the old state */
+							/* that it's recovered for CHG, REP and DELETED blocks */
+							memcpy(block_buffer, block_copy, state->block_size);
 						}
-
-						/* if the hash doesn't match */
-						if (memcmp(hash, failed[j].block->hash, HASH_SIZE) != 0) {
-							/* we have not recovered */
-							break;
-						}
-
-						/* pad with 0 if needed */
-						if (size < state->block_size)
-							memset(block_buffer + size, 0, state->block_size - size);
-					} else {
-						/* otherwise restore the content */
-						/* because we are not interested in the old state */
-						/* that it's recovered for CHG, REP and DELETED blocks */
-						memcpy(block_buffer, block_copy, state->block_size);
 					}
-				}
 
-				/* if all is processed, we have fixed it */
-				if (j == failed_count)
-					fixed_error_on_this_block = 1;
+					/* if all is processed, we have fixed it */
+					if (j == failed_count)
+						fixed_error_on_this_block = 1;
+				}
 			}
 		}
 
 		/* if we have read all the data required and it's correct, proceed with the parity */
-		if (!error_on_this_block
+		if (!error_on_this_block && !io_error_on_this_block
 			&& (!silent_error_on_this_block || fixed_error_on_this_block)
 		) {
 			/* updates the parity only if really needed */
@@ -936,11 +958,18 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 						/* LCOV_EXCL_START */
 						if (errno == EIO) {
 							fprintf(stdlog, "parity_error:%u:%s: Write EIO error. %s\n", i, lev_config_name(l), strerror(errno));
-							fprintf(stderr, "DANGER! Unexpected input/output write error in the %s disk, it isn't possible to sync.\n", lev_name(l));
-							fprintf(stderr, "Ensure that disk '%s' is sane and can be written.\n", lev_config_name(l));
-							printf("Stopping at block %u\n", i);
+							if (io_error >= state->opt.io_error_limit) {
+								fprintf(stderr, "DANGER! Unexpected input/output write error in the %s disk, it isn't possible to sync.\n", lev_name(l));
+								fprintf(stderr, "Ensure that disk '%s' is sane and can be written.\n", lev_config_name(l));
+								printf("Stopping at block %u\n", i);
+								++io_error;
+								goto bail;
+							}
+
+							fprintf(stderr, "Input/Output error in parity '%s' at position '%u'\n", lev_config_name(l), i);
 							++io_error;
-							goto bail;
+							io_error_on_this_block = 1;
+							continue;
 						}
 
 						fprintf(stdlog, "parity_error:%u:%s: Write error. %s\n", i, lev_config_name(l), strerror(errno));
@@ -957,26 +986,29 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				}
 			}
 
-			/* for each disk, mark the blocks as processed */
-			for (j = 0; j < diskmax; ++j) {
-				struct snapraid_block* block = BLOCK_EMPTY;
-				if (handle[j].disk)
-					block = disk_block_get(handle[j].disk, i);
+			/* if no error in parity write */
+			if (!io_error_on_this_block) {
+				/* for each disk, mark the blocks as processed */
+				for (j = 0; j < diskmax; ++j) {
+					struct snapraid_block* block = BLOCK_EMPTY;
+					if (handle[j].disk)
+						block = disk_block_get(handle[j].disk, i);
 
-				if (block == BLOCK_EMPTY) {
-					/* nothing to do */
-					continue;
+					if (block == BLOCK_EMPTY) {
+						/* nothing to do */
+						continue;
+					}
+
+					/* if it's a deleted block */
+					if (block_state_get(block) == BLOCK_STATE_DELETED) {
+						/* the parity is now updated without this block, so it's now empty */
+						tommy_arrayblk_set(&handle[j].disk->blockarr, i, BLOCK_EMPTY);
+						continue;
+					}
+
+					/* now all the blocks have the hash and the parity computed */
+					block_state_set(block, BLOCK_STATE_BLK);
 				}
-
-				/* if it's a deleted block */
-				if (block_state_get(block) == BLOCK_STATE_DELETED) {
-					/* the parity is now updated without this block, so it's now empty */
-					tommy_arrayblk_set(&handle[j].disk->blockarr, i, BLOCK_EMPTY);
-					continue;
-				}
-
-				/* now all the blocks have the hash and the parity computed */
-				block_state_set(block, BLOCK_STATE_BLK);
 			}
 
 			/* we update the info block only if we really have updated the parity */
@@ -986,6 +1018,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			/* because has no sense to refresh the time for data that we know bad */
 			if (parity_needs_to_be_updated
 				&& !silent_error_on_this_block
+				&& !io_error_on_this_block
 			) {
 				/* if rehash is neeed */
 				if (rehash) {
@@ -1002,10 +1035,10 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			}
 		}
 
-		/* if a silent error was found, even if corrected */
+		/* if a silent (even if corrected) or input/output error was found */
 		/* mark the block as bad to have check/fix to handle it */
 		/* because our correction is in memory only and not yet written */
-		if (silent_error_on_this_block) {
+		if (silent_error_on_this_block || io_error_on_this_block) {
 			/* set the error status keeping the other info */
 			info_set(&state->infoarr, i, info_set_bad(info));
 		}
@@ -1070,8 +1103,11 @@ end:
 
 	state_usage_print(state);
 
-	if (silent_error != 0) {
-		fprintf(stderr, "WARNING! Unexpected data errors! The respective blocks are now marked as bad!\n");
+	if (io_error)
+		fprintf(stderr, "WARNING! Unexpected input/output errors! The failing blocks are now marked as bad!\n");
+	if (silent_error)
+		fprintf(stderr, "WARNING! Unexpected data errors! The failing blocks are now marked as bad!\n");
+	if (io_error || silent_error) {
 		fprintf(stderr, "Use 'snapraid status' to list the bad blocks.\n");
 		fprintf(stderr, "Use 'snapraid -e fix' to recover.\n");
 	}
