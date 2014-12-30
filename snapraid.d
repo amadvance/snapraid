@@ -149,52 +149,31 @@ Getting Started
 	Now you can start using your array as you like, and periodically
 	update the parity information running the "sync" command.
 
-  Restoring and Undeleting
-	In recovering, SnapRAID is more like a backup program than a RAID system,
-	and it can be used to restore or undelete a file or directory to its previous
-	state using the -f, --filter option :
-
-		:snapraid fix -f FILE
-
-	or for a directory:
-
-		:snapraid fix -f DIR/
-
-	You can also use it to recover only accidentally deleted files inside
-	a directory using the -m, --filter-missing option, that restores
-	only missing files, leaving untouched all the others.
-
-		:snapraid fix -m -f DIR/
-
-	Or to recover all the deleted files in all the drives with:
-
-		:snapraid fix -m
-
-	If instead you have lost an entire disk and you want to recover it,
-	please see the 'Recovering' chapter.
-
   Scrubbing
 	To periodically check the data and parity for errors, you can
 	run the "scrub" command.
 
 		:snapraid scrub
 
-	This command verifies only the oldest data in your array.
-	Every run of the command checks about 12% of the array,
-	but not newer than 10 days.
+	This command verifies the data in your array comparing it with
+	the hash computed in the "sync" command.
+
+	Every run of the command checks about 12% of the array, but not data newer
+	than 10 days.
 	You can use the -p, --percentage option to specify a different amount,
 	and the -o, --older-than option to specify a different age in days.
 	For example, to check 5% of the array older than 20 days use:
 
 		:snapraid -p 5 -o 20 scrub
 
-	If a silent or input error is found, the corresponding block is marked
-	as bad in the "content" file, and listed in the "status" command.
+	If during the process, silent or input/output errors are found,
+	the corresponding blocks are marked as bad in the "content" file,
+	and listed in the "status" command.
 
 		:snapraid status
 
-	To fix them, you can use the "fix" command filtering for files containing
-	bad blocks:
+	To fix them, you can use the "fix" command filtering for bad blocks with
+	the -e, --filter-error options:
 
 		:snapraid -e fix
 
@@ -204,7 +183,7 @@ Getting Started
 
 		:snapraid -p 0 scrub
 
-	Take care that running scrub on a not synced array may result in
+	Take care that running "scrub" on a not synced array may result in
 	errors caused by removed or modified files. These errors are reported
 	in the "scrub" result, but related blocks are not marked as bad.
 
@@ -274,6 +253,106 @@ Getting Started
 
 		:fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 
+  Undeleting
+	SnapRAID is more like a backup program than a RAID system, and it
+	can be used to restore or undelete files to their previous state using
+	the -f, --filter option :
+
+		:snapraid fix -f FILE
+
+	or for a directory:
+
+		:snapraid fix -f DIR/
+
+	You can also use it to recover only accidentally deleted files inside
+	a directory using the -m, --filter-missing option, that restores
+	only missing files, leaving untouched all the others.
+
+		:snapraid fix -m -f DIR/
+
+	Or to recover all the deleted files in all the drives with:
+
+		:snapraid fix -m
+
+  Recovering
+	The worst happened, and you lost a disk!
+
+	DO NOT PANIC! You will be able to recover it!
+
+	The first thing you have to do is to avoid further changes at you disk array.
+	Disable any remote connection to it, any scheduled process, including any
+	scheduled SnapRAID nightly sync or scrub.
+
+	Then proceed with the following steps.
+
+    STEP 1 -> Reconfigure
+	You need some space to recover, even better if you already have an additional
+	disk, but in case, also an external USB or remote disk is enough.
+    
+	Change the SnapRAID configuration file to make the "disk" option
+	of the failed disk to point to the place where you have enough empty
+	space to recover the files.
+
+	For example, if you have that disk "d1" failed, you can change from:
+
+		:disk d1 /mnt/disk1/
+
+	to:
+
+		:disk d1 /mnt/new_spare_disk/
+
+    STEP 2 -> Fix
+	Run the fix command, storing the log in an external file with:
+
+		:snapraid -d NAME -l fix.log fix
+
+	Where NAME is the name of the disk, like "d1" as in our previous example.
+
+	This command will take a long time.
+
+	Take care that you need also few gigabytes free to store the fix.log file.
+	Run it from a disk with some free space.
+
+	Now you have recovered all the recoverable. If some file is partially or totally
+	unrecoverable, it will be renamed adding the ".unrecoverable" extension.
+
+	You can get a detailed list of all the unrecoverable blocks in the fix.log file
+	checking all the lines starting with "unrecoverable:"
+
+	If you are not satisfied of the recovering, you can retry it as many
+	time you wish.
+
+	For example, if you have removed files from the array after the last
+	"sync", this may result in some other files not recovered.
+	In this case, you can retry the "fix" using the -i, --import option,
+	specifing where these files are now, to include them again in the
+	recovering process.
+
+	If you are satisfied of the recovering, you can now proceed further,
+	but take care that after syncing you cannot retry the "fix" command
+	anymore!
+
+    STEP 3 -> Check
+	As paranoid check, you can now run a "check" command to ensure that
+	everything is OK on the recovered disk.
+
+		:snapraid -d NAME -a check
+
+	Where NAME is the name of the disk, like "d1" as in our previous example.
+
+	The options -d and -a tell SnapRAID to check only the specified disk,
+	and ignore all the parity data.
+
+	This command will take a long time, but if you are not paranoid,
+	you can skip it.
+
+    STEP 4 -> Sync
+	Run the "sync" command to resynchronize the array with the new disk.
+
+		:snapraid sync
+
+	If everything is recovered, this command is immediate.
+
 Commands
 	SnapRAID provides a few simple commands that allow to:
 
@@ -298,26 +377,32 @@ Commands
 
   sync
 	Updates the parity information. All the modified files
-	in the disk array are read, and the parity data is
-	recomputed.
-
-	Files are identified by path and/or inode and checked by
-	size and timestamp.
-	If the size or timestamp are different, the parity data is
-	recomputed for the whole file.
-	With inode you can move them on the disk without triggering
-	any parity recomputation.
+	in the disk array are read, and the corresponding parity
+	data is updated.
 
 	You can stop this process at any time pressing Ctrl+C,
 	without losing the work already done.
 	At the next run the "sync" process will start where
 	interrupted.
 
+	If during the process, silent or input/output errors are found,
+	the corresponding blocks are marked as bad.
+
+	Files are identified by path and/or inode and checked by
+	size and timestamp.
+	If the file size or timestamp are different, the parity data
+	is recomputed for the whole file.
+	If the file is moved or renamed in the same disk, keeping the
+	same inode, the parity is no recomputed.
+	If the file is moved to another disk, the parity is recomputed,
+	but the previously compute hash information is kept.
+
 	The "content" and "parity" files are modified if necessary.
 	The files in the array are NOT modified.
 
   scrub
-	Scrubs the array, checking for silent errors in data or parity disks.
+	Scrubs the array, checking for silent or input/output errors in data
+	and parity disks.
 
 	For each command invocation, the 12% of the array is checked, but
 	nothing that it's more recent than 10 days.
@@ -326,15 +411,15 @@ Commands
 
 	You can use the -p, --percentage option to specify a different amount,
 	and the -o, --older-than option to specify a different age in days.
-	You can have a full scrub with "-p100 -o0".
-
-	Any silent error identified is recorded in the content file,
-	and it's listed in the "status" command until it's fixed calling
-	"fix" and then "scrub".
+	You can have a full scrub with "-p 100 -o 0".
 
 	The oldest blocks are scrubbed first ensuring an optimal check.
-	Blocks already marked as bad are always checked, and if found
-	correct, they are automatically unmarked.
+
+	For any silent or input/output error found the corresponding blocks
+	are marked as bad in the "content" file.
+	These bad blocks are listed in "status", and can be fixed with "fix -e".
+	After the fix, at the next scrub they will be rechecked, and if found
+	corrected, the bad mark will be removed.
 
 	It's recommended to run "scrub" on a synced array, to avoid to have
 	reported error caused by unsynced data. These errors are recognized
@@ -352,18 +437,19 @@ Commands
 	Fix all the files and the parity data.
 
 	All the files and the parity data are compared with the snapshot
-	state saved in the last "sync" command.
-	If a difference is found, it's reverted at the stored snapshot.
+	state saved in the last "sync".
+	If a difference is found, it's reverted to the stored snapshot.
 
-	Note that "fix" doesn't differentiate from errors or intentional
-	changes at files. It just reverts the state at the last "sync" command.
+	Note that "fix" doesn't differentiate between errors and intentional
+	modifications. It inconditionally reverts the file state at the last "sync".
 
-	By default the full array is processed. Use the filter options
-	to select a subset of files or disks to operate on.
-	To know that file is checked, you can use the -v, --verbose option.
+	If no other option is specified the full array is processed.
+	Use the filter options to select a subset of files or disks to operate on.
 
-	To only fix errors found with "scrub" and reported in "status",
-	you can use the -e, --filter-error option.
+	To only fix the blocks marked bad during "sync" and "scrub",
+	use the -e, --filter-error option.
+	As difference from other filter options, with this one fixes are
+	applied only to files that are not modified from the the latest "sync".
 
 	All the files that cannot be fixed are renamed adding
 	the ".unrecoverable" extension.
@@ -377,20 +463,16 @@ Commands
   check
 	Verify all the files and the parity data.
 
-	It works just like "fix", but it only simulates a recovery
-	and no change is written in the array.
+	It works like "fix", but it only simulates a recovery and no change
+	is written in the array.
 
 	This command is mostly intended for manual verifications,
 	like after a recovery process or in other special conditions.
-	For periodic and scheduled checks uses the "scrub" command.
+	For periodic and scheduled checks uses "scrub".
 
 	If you use the -a, --audit-only option, only the file
 	data is checked, and the parity data is ignored for a
 	faster run.
-
-	By default the full array is processed. Use the filter options
-	to select a subset of files or disks to operate on.
-	To know that file is checked, you can use the -v, --verbose option.
 
 	Files are identified only by path, and not by inode.
 
@@ -398,13 +480,13 @@ Commands
 
   list
 	Lists all the files contained in the array at the time of the
-	last "sync" command.
+	last "sync".
 
 	Nothing is modified.
 
   diff
-	Lists all the files modified from the last "sync" command that
-	need to have their parity data recomputed.
+	Lists all the files modified from the last "sync" that need to have
+	their parity data recomputed.
 
 	This command doesn't check the file data, but only the file timestamp
 	size and inode.
@@ -442,13 +524,13 @@ Commands
 	do nothing and tells you that nothing has to be done.
 
 	The rehash isn't done immediately, but it takes place
-	progressively during the "sync" and "scrub" commands.
+	progressively during "sync" and "scrub".
 
-	You can get the rehash state using the "status" command.
+	You can get the rehash state using "status".
 
 	During the rehash, SnapRAID maintains full functionality,
-	with the only exception of the "dup" command not able to detect
-	duplicated files using a different hash.
+	with the only exception of "dup" not able to detect duplicated
+	files using a different hash.
 
 Options
 	SnapRAID provides the following options:
@@ -459,20 +541,18 @@ Options
 		the current directory in Windows.
 
 	-f, --filter PATTERN
-		Filters the files to process in the "check" and "fix"
-		commands.
+		Filters the files to process in "check" and "fix".
 		Only the files matching the entered pattern are processed.
 		This option can be used many times.
 		See the PATTERN section for more details in the
 		pattern specifications.
 		In Unix, ensure to quote globbing chars if used.
-		This option can be used only with the "check" and "fix" commands.
+		This option can be used only with "check" and "fix".
 		Note that it cannot be used with "sync" and "scrub", because they always
 		process the whole array.
 
 	-d, --filter-disk NAME
-		Filters the files to process in the "check" and "fix"
-		commands.
+		Filters the files to process in "check" and "fix".
 		Only the files present in the specified disk are processed.
 		You must specify a disk name as named in the configuration
 		file.
@@ -481,52 +561,48 @@ Options
 		If you combine more --filter, --filter-disk and --filter-missing options,
 		only files matching all the set of filters are selected.
 		This option can be used many times.
-		This option can be used only with the "check" and "fix" commands.
+		This option can be used only with "check" and "fix".
 		Note that it cannot be used with "sync" and "scrub", because they always
 		process the whole array.
 
 	-m, --filter-missing
-		Filters the files to process in the "check" and "fix"
-		commands.
+		Filters the files to process in "check" and "fix".
 		Only the files missing/deleted from the array are processed.
 		When used with "fix", this is a kind of "undelete" command.
 		If you combine more --filter, --filter-disk and --filter-missing options,
 		only files matching all the set of filters are selected.
-		This option can be used only with the "check" and "fix" commands.
+		This option can be used only with "check" and "fix".
 		Note that it cannot be used with "sync" and "scrub", because they always
 		process the whole array.
 
 	-e, --filter-error
-		Filters the files to process in the "check" and "fix"
-		commands.
-		It processes only the files containing blocks marked with silent
-		errors during the "sync" and "scrub" command, and listed in the
-		"status" command.
-		This option can be used only with the "check" and "fix" commands.
+		Filters the blocks to process in "check" and "fix".
+		It processes only the blocks marked with silent or input/output
+		errors during "sync" and "scrub", and listed in "status".
+		This option can be used only with "check" and "fix".
 
 	-p, --percentage PERC
-		Selects the part of the array to process in the "scrub" command.
+		Selects the part of the array to process in "scrub".
 		PERC is a numeric value from 0 to 100, default is 12.
 		When specifying 0, only the blocks marked as bad are scrubbed.
-		This option can be used only with the "scrub" command.
+		This option can be used only with "scrub".
 
 	-o, --older-than DAYS
-		Selects the older the part of the array to process in the
-		"scrub" command.
+		Selects the older the part of the array to process in "scrub".
 		DAYS is the minimum age in days for a block to be scrubbed,
 		default is 10.
 		Blocks marked as bad are always scrubbed despite this option.
-		This option can be used only with the "scrub" command.
+		This option can be used only with "scrub".
 
 	-a, --audit-only
-		In the "check" command verifies the hash of the files without
+		In "check" verifies the hash of the files without
 		doing any kind of check on the parity data.
 		If you are interested in checking only the file data this
 		option can speedup a lot the checking process.
-		This option can be used only with the "check" command.
+		This option can be used only with "check".
 
 	-h, --pre-hash
-		In the "sync" command run a preliminary hashing phase of all
+		In "sync" runs a preliminary hashing phase of all
 		the new data to verify the data used in the parity computation.
 		Usually in "sync" no preliminary hashing is done, and the new
 		data is hashed just before the parity computation when it's read
@@ -538,16 +614,16 @@ Options
 		what cannot be detected because the data is not yet hashed.
 		To avoid this risk, you can enable the "pre-hash" mode and have
 		all the data hashed two times to ensure its integrity.
-		This option can be used only with the "sync" command.
+		This option can be used only with "sync".
 
 	-i, --import DIR
 		Imports from the specified directory any file that you deleted
-		from the array after the last "sync" command.
-		If you still have such files, they could be used by the "check"
-		and "fix" commands to improve the recover process.
+		from the array after the last "sync".
+		If you still have such files, they could be used by "check"
+		and "fix" to improve the recover process.
 		The files are read also in subdirectories and they are
 		identified regardless of their name.
-		This option can be used only with the "check" and "fix" commands.
+		This option can be used only with "check" and "fix".
 
 	-Z, --force-zero
 		Forces the insecure operation of syncing a file with zero
@@ -558,7 +634,7 @@ Options
 		some accessed files were truncated.
 		This is a possible condition in Linux with the ext3/ext4
 		filesystems.
-		This option can be used only with the "sync" command.
+		This option can be used only with "sync".
 
 	-E, --force-empty
 		Forces the insecure operation of syncing a disk with all
@@ -568,7 +644,7 @@ Options
 		unless you specify this option.
 		This allows to easily detect when a data file-system is not
 		mounted.
-		This option can be used only with the "sync" command.
+		This option can be used only with "sync".
 
 	-U, --force-uuid
 		Forces the insecure operation of syncing, checking and fixing
@@ -580,8 +656,8 @@ Options
 		It's anyway allowed to have a single UUID change with
 		single parity, and more with multiple parity, because it's
 		the normal case of replacing disks after a recovery.
-		This option can be used only with the "sync", "check" or
-		"fix" command.
+		This option can be used only with "sync", "check" or
+		"fix".
 
 	-D, --force-device
 		Forces the insecure operation of fixing with disks on the same
@@ -591,11 +667,10 @@ Options
 		But it could happen that you want to temporarily restore a lost
 		disk in the free space left in an already used disk. and this
 		option allows you to continue anyway.
-		This option can be used only with the "fix" command.
+		This option can be used only with "fix".
 
 	-N, --force-nocopy
-		In the "sync", "check and "fix" commands, disables the copy
-		detection heuristic.
+		In "sync", "check and "fix", disables the copy detection heuristic.
 		Without this option SnapRAID assumes that files with same
 		attributes, like name, size and timestamp are copies with the
 		same data.
@@ -605,18 +680,17 @@ Options
 		This behavior, in some rare cases, may result in false positives,
 		or in a slow process due the many hash verifications, and this
 		option allows to resolve them.
-		This option can be used only with the "sync", "check" and "fix"
-		commands.
+		This option can be used only with "sync", "check" and "fix".
 
 	-F, --force-full
-		In the "sync" command, forces a full rebuild of the parity.
+		In "sync" forces a full rebuild of the parity.
 		This option can be used when you reverted back to an old content
-		file, and you still have the parity data.
+		file, but using a more recent parity data.
 		Instead of recomputing the parity from scratch, this allows
 		to reuse the hashes present in the content file to validate data,
 		and to maintain data protection during the "sync" process using
 		the old content file and the parity data you have.
-		This option can be used only with the "sync" command.
+		This option can be used only with "sync".
 
 	-l, --log FILE
 		Write a detailed log of errors found in check and fix.
@@ -813,8 +887,8 @@ Configuration
 	block size, you are going to waste 12 GiB of parity, that may result
 	in 12 GiB less space available in the data disk.
 
-	You can get the amount of wasted space in each disk using the "status"
-	command. This is the amount of space that you must leave free in the data
+	You can get the amount of wasted space in each disk using "status".
+	This is the amount of space that you must leave free in the data
 	disks, or use for files not included in the array.
 
 	To avoid to problem, you can use a bigger partition for parity.
@@ -964,79 +1038,6 @@ Pattern
 
 	In Unix, when using globbing chars in the command line, you have to
 	quote them. Otherwise the shell will try to expand them.
-
-Recovering
-	The worst happened, and you lost a disk!
-
-	DO NOT PANIC! You will be able to recover it!
-
-	The first thing you have to do is to avoid further changes at you disk array.
-	Disable any remote connection to it, any scheduled process, including any
-	scheduled SnapRAID nightly sync.
-
-	Then proceed with the following steps.
-
-  STEP 1 -> Reconfigure
-	You need some space to recover, even better if you already have an additional
-	disk, but in case, also an external USB or remote disk is enough.
-    
-	Change the SnapRAID configuration file and make the "disk" option
-	of the failed disk to point to the place where you have enough empty
-	space to recover the files.
-
-	For example, if you have that disk "d1" failed, you can change:
-
-		:disk d1 /mnt/disk1/
-
-	to:
-
-		:disk d1 /mnt/new_spare_disk/
-
-  STEP 2 -> Fix
-	Run the fix command, storing the log in an external file with:
-
-		:snapraid -d NAME -l fix.log fix
-
-	Where NAME is the name of the disk, like "d1" as in our previous example.
-
-	This command will take a long time.
-
-	Take care that you need also few gigabytes free to store the fix.log file.
-	Run it from a disk with some free space.
-
-	Now you have recovered all the recoverable. If some file is partially or totally
-	unrecoverable, it will be renamed adding the ".unrecoverable" extension.
-
-	You can get a detailed list of all the unrecoverable blocks in the fix.log file
-	checking all the lines starting with "unrecoverable:"
-
-	If you are not satisfied of the recovering, you can retry it as many time you wish.
-	For example, if you have remove some files after the last "sync", you can retry
-	to put them inplace, and retry the "fix".
-
-	If you are satisfied of the recovering, you can now proceed further,
-	but take care that after syncing you will be no more able to retry the
-	"fix" command!
-
-  STEP 3 -> Check
-	As paranoid check, you can now run a "check" command to ensure that everything
-	is OK on the recovered disk.
-
-		:snapraid -d NAME -a check
-
-	Where NAME is the name of the disk, like "d1" as in our previous example.
-
-	The options -d and -a tell SnapRAID to check only the specified disk,
-	and ignore all the parity data.
-
-	This command will take a long time.
-
-  STEP 4 -> Sync
-	Run the "sync" command to resynchronize the array with the new disk.
-
-		:snapraid sync
-
-	If everything is recovered, this command is immediate.
 
 Content
 	SnapRAID stores the list and checksums of your files in the content file.
