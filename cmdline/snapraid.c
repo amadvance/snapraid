@@ -247,6 +247,7 @@ struct option long_options[] = {
 	{ "older-than", 1, 0, 'o' },
 	{ "start", 1, 0, 'S' },
 	{ "count", 1, 0, 'B' },
+	{ "error-limit", 1, 0, 'L' },
 	{ "import", 1, 0, 'i' },
 	{ "log", 1, 0, 'l' },
 	{ "force-zero", 0, 0, 'Z' },
@@ -257,11 +258,11 @@ struct option long_options[] = {
 	{ "force-full", 0, 0, 'F' },
 	{ "audit-only", 0, 0, 'a' },
 	{ "pre-hash", 0, 0, 'h' },
-	{ "speed-test", 0, 0, 'T' },
+	{ "speed-test", 0, 0, 'T' }, /* undocumented speed test command */
 	{ "gen-conf", 1, 0, 'C' },
 	{ "verbose", 0, 0, 'v' },
-	{ "quiet", 0, 0, 'q' },
-	{ "gui", 0, 0, 'G' }, /* undocumented GUI interface command */
+	{ "quiet", 0, 0, 'q' }, /* undocumented quiet option */
+	{ "gui", 0, 0, 'G' }, /* undocumented GUI interface option */
 	{ "help", 0, 0, 'H' },
 	{ "version", 0, 0, 'V' },
 
@@ -349,7 +350,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:f:d:mep:o:S:B:i:l:ZEUDNFahTC:vqHVG"
+#define OPTIONS "c:f:d:mep:o:S:B:L:i:l:ZEUDNFahTC:vqHVG"
 
 volatile int global_interrupt = 0;
 
@@ -411,6 +412,7 @@ int main(int argc, char* argv[])
 	/* defaults */
 	config(conf, sizeof(conf), argv[0]);
 	memset(&opt, 0, sizeof(opt));
+	opt.io_error_limit = 100;
 	blockstart = 0;
 	blockcount = 0;
 	tommy_list_init(&filterlist_file);
@@ -502,6 +504,15 @@ int main(int argc, char* argv[])
 			if (!e || *e) {
 				/* LCOV_EXCL_START */
 				fprintf(stderr, "Invalid count number '%s'\n", optarg);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+			break;
+		case 'L' :
+			opt.io_error_limit = strtoul(optarg, &e, 0);
+			if (!e || *e) {
+				/* LCOV_EXCL_START */
+				fprintf(stderr, "Invalid error limit number '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}

@@ -22,6 +22,10 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
 .PD
+	[\-l, \-\-log FILE]
+.PD 0
+.PP
+.PD
 	[\-Z, \-\-force\-zero] [\-E, \-\-force\-empty]
 .PD 0
 .PP
@@ -34,11 +38,15 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
 .PD
-	[\-v, \-\-verbose] [\-l, \-\-log FILE]
+	[\-S, \-\-start BLKSTART] [\-B, \-\-count BLKCOUNT]
 .PD 0
 .PP
 .PD
-	[\-S, \-\-start BLKSTART] [\-B, \-\-count BLKCOUNT]
+	[\-L, \-\-error\-limit NUMBER]
+.PD 0
+.PP
+.PD
+	[\-v, \-\-verbose]
 .PD 0
 .PP
 .PD
@@ -870,6 +878,16 @@ the \'%\' char, like result\-%%D.log. And to use \'>>\' you\'ll have
 to enclose the name in \[dq], like \[dq]>>result.log\[dq].
 To output the log to standard output or standard error,
 you can use respectively \[dq]>&1\[dq] and \[dq]>&2\[dq].
+.TP
+.B \-L, \-\-error\-limit
+Sets a new error limit before stopping execution.
+By default SnapRAID stops if it encouters more than 100
+Input/Output errors, meaning that likely a disk is going to
+die.
+This options affects \[dq]sync\[dq] and \[dq]scrub\[dq], that are allowed
+to continue after the first bunch of disk errors, to try
+to complete at most their operations.
+Instead, \[dq]check\[dq] and \[dq]fix\[dq] always stop at the first error.
 .TP
 .B \-S, \-\-start BLKSTART
 Starts the processing from the specified

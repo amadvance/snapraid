@@ -3,6 +3,13 @@ SnapRAID HISTORY
 
 8.0 2015/01 BETA
 ================
+ * Allows "sync" and "scrub" to continue after the first
+   bunch of disk errors. Blocks with errors are marked as bad,
+   and you can try to fix them with the "fix -e" command.
+   The fix should then trigger the internal disk firmware to
+   reallocate the bad sector, and likely fixing the problem.
+   You can control the number of allowed errors with the new
+   -L, --error-limit option. The default is 100.
  * The -e, --filter-error option now doesn't write anymore fixes
    to unsynced files. This helps in case you are running it on a
    not synced array, removing the risk to revert some files to an

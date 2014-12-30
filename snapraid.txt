@@ -11,11 +11,13 @@ snapraid [-c, --conf CONFIG]
 	[-m, --filter-missing] [-e, --filter-error]
 	[-a, --audit-only] [-h, --pre-hash] [-i, --import DIR]
 	[-p, --percentage PERC] [-o, --older-than DAYS]
+	[-l, --log FILE]
 	[-Z, --force-zero] [-E, --force-empty]
 	[-U, --force-uuid] [-D, --force-device]
 	[-N, --force-nocopy] [-F, --force-full]
-	[-v, --verbose] [-l, --log FILE]
 	[-S, --start BLKSTART] [-B, --count BLKCOUNT]
+	[-L, --error-limit NUMBER]
+	[-v, --verbose]
 	status|sync|scrub|fix|check|list|diff|dup|pool|rehash
 
 snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
@@ -678,6 +680,16 @@ SnapRAID provides the following options:
         to enclose the name in ", like ">>result.log".
         To output the log to standard output or standard error,
         you can use respectively ">&1" and ">&2".
+
+    -L, --error-limit
+        Sets a new error limit before stopping execution.
+        By default SnapRAID stops if it encouters more than 100
+        Input/Output errors, meaning that likely a disk is going to
+        die.
+        This options affects "sync" and "scrub", that are allowed
+        to continue after the first bunch of disk errors, to try
+        to complete at most their operations.
+        Instead, "check" and "fix" always stop at the first error.
 
     -S, --start BLKSTART
         Starts the processing from the specified

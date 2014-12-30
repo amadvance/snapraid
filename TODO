@@ -5,6 +5,39 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
+* Improves the fix -e behaviour. At now it reads too mutch data,
+as it needs to verify the full files.
+This is done just to have confirmation that the file is OK,
+and then restore the file timestamp. But other approaches are possible.
+Indicatively we can do:
+- Read/Write only the marked bad error blocks
+- For all the files, owning this block:
+  - If the file is present and it has the original timestamp
+    - If yes, Write any fix to it, and keep the timestamp.
+    - If no, don't write the fix, and assume it as update.
+The issue could be that if the error is in a modified file
+after sync, it won't be fixed. But at now we detect only silent error,
+and they CANNOT be in modified files.
+So, if a file is modified, we just don't write it, at the next scrub
+the bad flag will be removed.
+
+Note that this way of checking the timestamp before writing fixes
+may have sense also for a generic fix.
+We already have the -m, --missing flag. It's already working in this way.
+--missing fixes only deleted/missing files.
+Like --stable fixes only synced files, but unsure of the use case.
+
+We have now:
+- Lost disk. fix -d DISK
+- Deleted files. fix -m / fix -f
+- Silent errors on scrub. fix -e
+Possible new:
+- Disk with failed read, that can be rewritten.
+  - Scrub could put them in error list, and fix could rewrite the sectors to make them right
+    This won't work for modified files, in that case the error will remain.
+    But scrub can report it in the screen and log about the file.
+  - Sync could proceed anyway, just skip such blocks index, and mark the sector as bad.
+
 * Avoid to do optimized move operation if more files with
 same timestamp/size are present.
 
