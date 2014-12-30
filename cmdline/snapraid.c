@@ -37,17 +37,17 @@ void usage(void)
 {
 	version();
 
-	printf("Usage: " PACKAGE " sync|status|scrub|diff|dup|pool|check|fix [options]\n");
+	printf("Usage: " PACKAGE " diff|sync|status|scrub|dup|pool|check|fix [options]\n");
 	printf("\n");
 	printf("Commands:\n");
-	printf("  sync   Syncronize the state of the array of disks\n");
-	printf("  pool   Create or update the virtual view of the array of disks\n");
 	printf("  diff   Show the changes that needs to be syncronized\n");
-	printf("  dup    Find duplicate files\n");
-	printf("  scrub  Scrub the array of disks\n");
+	printf("  sync   Syncronize the state of the array\n");
 	printf("  status Print the status of the array\n");
-	printf("  check  Check the array of disks\n");
-	printf("  fix    Fix the array of disks\n");
+	printf("  scrub  Scrub the array\n");
+	printf("  dup    Find duplicate files\n");
+	printf("  pool   Create or update the virtual view of the array\n");
+	printf("  check  Check the array\n");
+	printf("  fix    Fix the array\n");
 	printf("\n");
 	printf("Options:\n");
 	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE       ", "-c") "  Configuration file\n");
@@ -67,11 +67,7 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-D, --force-device    ", "-D") "  Force commands on disks with same device id\n");
 	printf("  " SWITCH_GETOPT_LONG("-N, --force-nocopy    ", "-N") "  Force commands disabling the copy detection\n");
 	printf("  " SWITCH_GETOPT_LONG("-F, --force-full      ", "-F") "  Force commands requiring a full sync\n");
-	printf("  " SWITCH_GETOPT_LONG("-s, --start BLKSTART  ", "-s") "  Start from the specified block number\n");
-	printf("  " SWITCH_GETOPT_LONG("-t, --count BLKCOUNT  ", "-t") "  Count of block to process\n");
 	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
-	printf("  " SWITCH_GETOPT_LONG("-H, --help            ", "-H") "  Help\n");
-	printf("  " SWITCH_GETOPT_LONG("-V, --version         ", "-V") "  Version\n");
 }
 
 void memory(void)
