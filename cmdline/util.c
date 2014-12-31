@@ -1437,14 +1437,21 @@ size_t malloc_counter(void)
 	return mcounter;
 }
 
-static int malloc_printn(int f, size_t value)
+static ssize_t malloc_print(int f, const char* str)
+{
+	ssize_t len = 0;
+	while (str[len])
+		++len;
+	return write(f, str, len);
+}
+
+static ssize_t malloc_printn(int f, size_t value)
 {
 	char buf[32];
 	int i;
 
-	if (!value) {
+	if (!value)
 		return write(f, "0", 1);
-	}
 
 	i = sizeof(buf);
 	while (value) {
@@ -1461,20 +1468,17 @@ static void malloc_fail(size_t size)
 	/* LCOV_EXCL_START */
 	int f = 2; /* stderr */
 
-	if (write(f, "Low Memory\n", 11) < 0)
-		return;
-	if (write(f, "Allocating ", 11) < 0)
-		return;
-	if (malloc_printn(f, size) < 0)
-		return;
-	if (write(f, " bytes\n", 7) < 0)
-		return;
-	if (write(f, "Allocated ", 10) < 0)
-		return;
-	if (malloc_printn(f, malloc_counter()) < 0)
-		return;
-	if (write(f, " bytes\n", 7) < 0)
-		return;
+	malloc_print(f, "Failed for Low Memory!\n");
+	malloc_print(f, "Allocating ");
+	malloc_printn(f, size);
+	malloc_print(f, " bytes.\n");
+	malloc_print(f, "Already allocated ");
+	malloc_printn(f, malloc_counter());
+	malloc_print(f, " bytes.\n");
+	if (sizeof(void*) == 4) {
+		malloc_print(f, "You are currently using a 32 bits executable.\n");
+		malloc_print(f, "If you have more than 4GB of memory, please upgrade to a 64 bits one.\n");
+	}
 	/* LCOV_EXCL_STOP */
 }
 
@@ -1558,10 +1562,7 @@ void* malloc_nofail_align(size_t size, void** freeptr)
 
 	if (!ptr) {
 		/* LCOV_EXCL_START */
-		/* don't use printf to avoid any possible extra allocation */
-		if (write(2, "Low Memory\n", 11) != 11) {
-			/* ignore error */
-		}
+		malloc_fail(size);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1577,10 +1578,7 @@ void** malloc_nofail_vector_align(int nd, int n, size_t size, void** freeptr)
 
 	if (!ptr) {
 		/* LCOV_EXCL_START */
-		/* don't use printf to avoid any possible extra allocation */
-		if (write(2, "Low Memory\n", 11) != 11) {
-			/* ignore error */
-		}
+		malloc_fail(n * size);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1593,7 +1591,7 @@ void mtest_vector(int n, size_t size, void** vv)
 	if (raid_mtest_vector(n, size, vv) != 0) {
 		/* LCOV_EXCL_START */
 		fprintf(stderr, "DANGER! Your RAM memory is broken! DO NOT PROCEED UNTIL FIXED!\n");
-		fprintf(stderr, "Try running some memory test like http://www.memtest86.com/\n");
+		fprintf(stderr, "Try running a memory test like http://www.memtest86.com/\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
