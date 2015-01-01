@@ -84,11 +84,11 @@ static void tommy_hashdyn_resize(tommy_hashdyn* hashdyn, tommy_count_t new_bucke
 			j = hashdyn->bucket[i];
 			while (j) {
 				tommy_hashdyn_node* j_next = j->next;
-				tommy_count_t index = j->key & new_bucket_mask;
-				if (new_bucket[index])
-					tommy_list_insert_tail_not_empty(new_bucket[index], j);
+				tommy_count_t pos = j->key & new_bucket_mask;
+				if (new_bucket[pos])
+					tommy_list_insert_tail_not_empty(new_bucket[pos], j);
 				else
-					tommy_list_insert_first(&new_bucket[index], j);
+					tommy_list_insert_first(&new_bucket[pos], j);
 				j = j_next;
 			}
 		}
