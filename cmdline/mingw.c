@@ -1755,6 +1755,8 @@ int randomize(void* ptr, size_t size)
  * In Windows printf() is not atomic, and multiple threads
  * will have output interleaved.
  *
+ * Note that even defining __USE_MINGW_ANSI_STDIO the problem persists.
+ *
  * See for example:
  *
  * Weird output when I use pthread and printf.
