@@ -16,6 +16,7 @@ snapraid_SOURCES = \
 	tommyds/tommy.c \
 	cmdline/snapraid.c \
 	cmdline/util.c \
+	cmdline/support.c \
 	cmdline/elem.c \
 	cmdline/state.c \
 	cmdline/scan.c \
@@ -66,6 +67,7 @@ noinst_HEADERS = \
 	cmdline/portable.h \
 	cmdline/snapraid.h \
 	cmdline/util.h \
+	cmdline/support.h \
 	cmdline/elem.h \
 	cmdline/state.h \
 	cmdline/parity.h \
@@ -82,7 +84,8 @@ noinst_HEADERS = \
 
 mktest_SOURCES = \
 	cmdline/mktest.c \
-	cmdline/mingw.c
+	cmdline/mingw.c \
+	cmdline/support.c
 
 EXTRA_DIST = \
 	autogen.sh \

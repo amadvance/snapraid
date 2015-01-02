@@ -17,6 +17,7 @@
 
 #include "portable.h"
 
+#include "support.h"
 #include "elem.h"
 #include "state.h"
 #include "parity.h"

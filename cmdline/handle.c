@@ -18,7 +18,7 @@
 #include "portable.h"
 
 #include "elem.h"
-#include "util.h"
+#include "support.h"
 #include "handle.h"
 
 /****************************************************************************/

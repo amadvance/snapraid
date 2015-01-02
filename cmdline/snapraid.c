@@ -18,7 +18,7 @@
 #include "portable.h"
 
 #include "snapraid.h"
-#include "util.h"
+#include "support.h"
 #include "elem.h"
 #include "import.h"
 #include "search.h"

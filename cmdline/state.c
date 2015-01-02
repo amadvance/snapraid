@@ -21,7 +21,7 @@
 #include "import.h"
 #include "search.h"
 #include "state.h"
-#include "util.h"
+#include "support.h"
 #include "parity.h"
 #include "raid/raid.h"
 #include "raid/cpu.h"

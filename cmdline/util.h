@@ -389,91 +389,7 @@ int sputble32(uint32_t value, STREAM* s);
 int sputbs(const char* str, STREAM* s);
 
 /****************************************************************************/
-/* path */
-
-/**
- * Copies a path limiting the size.
- * Aborts if too long.
- */
-void pathcpy(char* dst, size_t size, const char* src);
-
-/**
- * Concatenates a path limiting the size.
- * Aborts if too long.
- */
-void pathcat(char* dst, size_t size, const char* src);
-
-/**
- * Concatenates a path limiting the size.
- * Aborts if too long.
- */
-void pathcatc(char* dst, size_t size, char c);
-
-/**
- * Imports a path limiting the size.
- * In Windows all the backslash are converted to the C standard of forward slash.
- * Aborts if too long.
- */
-void pathimport(char* dst, size_t size, const char* src);
-
-/**
- * Exports a path limiting the size.
- * In Windows all the C slashes are converted to the Windows backslash.
- * Aborts if too long.
- */
-void pathexport(char* dst, size_t size, const char* src);
-
-/**
- * Prints a path.
- * Aborts if too long.
- */
-void pathprint(char* dst, size_t size, const char* format, ...);
-
-/**
- * Ensures the presence of a terminating slash, if it isn't empty.
- * Aborts if too long.
- */
-void pathslash(char* dst, size_t size);
-
-/**
- * Cuts everything after the latest slash.
- */
-void pathcut(char* dst);
-
-/**
- * Compare two paths.
- * In Windows it's case insentive and assumes \ equal at /.
- */
-int pathcmp(const char* a, const char* b);
-
-/****************************************************************************/
-/* filesystem */
-
-/**
- * Creates all the ancestor directories if missing.
- * The file name, after the last /, is ignored.
- */
-int mkancestor(const char* file);
-
-/****************************************************************************/
 /* memory */
-
-/**
- * Return the size of the allocated memory.
- */
-size_t malloc_counter(void);
-
-/**
- * Safe malloc.
- * If no memory is available, it aborts.
- */
-void* malloc_nofail(size_t size);
-
-/**
- * Safe cmalloc.
- * If no memory is available, it aborts.
- */
-void* calloc_nofail(size_t count, size_t size);
 
 /**
  * Safe aligned malloc.
@@ -488,21 +404,10 @@ void* malloc_nofail_align(size_t size, void** freeptr);
 void** malloc_nofail_vector_align(int nd, int n, size_t size, void** freeptr);
 
 /**
- * Fills the memory vector with random data.
- */
-void mrand_vector(unsigned seed, int n, size_t size, void** vv);
-
-/**
  * Tests the memory vector for RAM problems.
  * If a problem is found, it crashes.
  */
 void mtest_vector(int n, size_t size, void** vv);
-
-/**
- * Safe strdup.
- * If no memory is available, it aborts.
- */
-char* strdup_nofail(const char* str);
 
 /****************************************************************************/
 /* hash */
@@ -560,14 +465,6 @@ int lock_lock(const char* file);
  * Returns -1 on error.
  */
 int lock_unlock(int f);
-
-/****************************************************************************/
-/* file */
-
-/**
- * Changes the modification time of an open file.
- */
-int fmtime(int f, int64_t mtime_sec, int mtime_nsec);
 
 #endif
 

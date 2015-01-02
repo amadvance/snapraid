@@ -31,7 +31,7 @@
 #define tommy_free free
 
 #include "cmdline/portable.h"
-#include "cmdline/util.h" /* for malloc_nofail() */
+#include "cmdline/support.h" /* for malloc/calloc_nofail() */
 
 #include "tommyhash.c"
 #include "tommyarray.c"

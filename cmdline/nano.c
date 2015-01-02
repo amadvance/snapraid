@@ -17,7 +17,7 @@
 
 #include "portable.h"
 
-#include "util.h"
+#include "support.h"
 #include "elem.h"
 #include "state.h"
 #include "handle.h"

@@ -17,6 +17,7 @@
 
 #include "portable.h"
 
+#include "support.h"
 #include "state.h"
 
 void state_spin(struct snapraid_state* state, int operation)

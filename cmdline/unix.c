@@ -19,7 +19,7 @@
 
 #ifndef __MINGW32__ /* Only for Unix */
 
-#include "util.h"
+#include "support.h"
 
 /**
  * Standard exit codes.
