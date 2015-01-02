@@ -1733,7 +1733,7 @@ uint64_t tick(void)
 	return t.QuadPart;
 }
 
-int windows_randomize(void* ptr, size_t size)
+int randomize(void* ptr, size_t size)
 {
 	if (!ptr_RtlGenRandom(ptr, size)) {
 		windows_errno(GetLastError());

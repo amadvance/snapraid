@@ -115,8 +115,6 @@
 #define pread windows_pread
 #undef pwrite
 #define pwrite windows_pwrite
-#undef randomize
-#define randomize windows_randomize
 
 /**
  * If nanoseconds are not supported, we report the special STAT_NSEC_INVALID value,
@@ -353,11 +351,6 @@ ssize_t windows_pread(int f, void* buffer, size_t size, off_t offset);
  * Like pwrite().
  */
 ssize_t windows_pwrite(int f, const void* buffer, size_t size, off_t offset);
-
-/**
- * Like randomize().
- */
-int windows_randomize(void* ptr, size_t size);
 
 #endif
 #endif

@@ -53,10 +53,5 @@ int dirent_hidden(struct dirent* dd);
  */
 const char* stat_desc(struct stat* st);
 
-/**
- * Fill memory with psudeo-random values.
- */
-int randomize(void* ptr, size_t size);
-
 #endif
 

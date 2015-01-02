@@ -290,6 +290,11 @@ int exit_failure;
 #define EXIT_FAILURE exit_failure
 
 /**
+ * Fill memory with psudeo-random values.
+ */
+int randomize(void* ptr, size_t size);
+
+/**
  * Disk entry.
  */
 struct disk_struct {
