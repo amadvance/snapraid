@@ -17,9 +17,9 @@
 
 #include "portable.h"
 
-#include "util.h"
-
 #ifdef __MINGW32__ /* Only for MingW */
+
+#include "support.h"
 
 /**
  * Standard exit codes.
@@ -1733,6 +1733,12 @@ uint64_t tick(void)
 	return t.QuadPart;
 }
 
+uint64_t tick_ms(void)
+{
+	/* GetTickCount64() isn't supported in Windows XP */
+	return GetTickCount();
+}
+
 int randomize(void* ptr, size_t size)
 {
 	if (!ptr_RtlGenRandom(ptr, size)) {
@@ -1743,12 +1749,119 @@ int randomize(void* ptr, size_t size)
 	return 0;
 }
 
+/**
+ * Mutex used for printf.
+ *
+ * In Windows printf() is not atomic, and multiple threads
+ * will have output interleaved.
+ *
+ * See for example:
+ *
+ * Weird output when I use pthread and printf.
+ * http://stackoverflow.com/questions/13190254/weird-output-when-i-use-pthread-and-printf
+ */
+pthread_mutex_t io_lock = PTHREAD_MUTEX_INITIALIZER;
+
+/**
+ * Thread for spinning up.
+ *
+ * There isn't a defined way to spin up a device,
+ * so we just do a generic write access.
+ */
+static void* spinup(void* arg)
+{
+	disk_t* disk = arg;
+	dev_t device;
+	int f;
+	uint64_t start;
+	struct stat st;
+	char* slash;
+
+	start = tick_ms();
+
+	/* removes latest slash to make FindFirstFile() working */
+	slash = strrchr(disk->path, '/');
+	if (slash)
+		*slash = 0;
+
+	/* uses lstat, as it maps to FindFirstFile */
+	if (lstat(disk->path, &st) != 0) {
+		/* LCOV_EXCL_START */
+		pthread_mutex_lock(&io_lock);
+		fprintf(stderr, "Failed to stat device '%s'. %s.\n", disk->path, strerror(errno));
+		pthread_mutex_unlock(&io_lock);
+		return (void*)-1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* add again the final slash */
+	pathslash(disk->path, sizeof(disk->path));
+
+	/* set the device number for printing */
+	device = st.st_dev;
+
+	/* add a temporary name used for writing */
+	pathcat(disk->path, sizeof(disk->path), "snapraid-spinup.tmp");
+
+	/* create a temporary file, automatically deleted on close */
+	f = _wopen(convert(disk->path), _O_CREAT | _O_TEMPORARY | _O_RDWR,  _S_IREAD | _S_IWRITE);
+	if (f != -1)
+		close(f);
+
+	/* remove the added name */
+	pathcut(disk->path);
+
+	pthread_mutex_lock(&io_lock);
+	fprintf(stdout, "Spunup device '%" PRIx64 "' at '%s' in %" PRIu64 " ms.\n", (uint64_t)device, disk->path, tick_ms() - start);
+	fflush(stdout);
+	pthread_mutex_unlock(&io_lock);
+
+	return 0;
+}
+
 int diskspin(tommy_list* list, int operation)
 {
-	(void)list;
-	(void)operation;
+	tommy_node* i;
+	int fail = 0;
 
-	return -1;
+	/* we support only spinup */
+	if (operation != SPIN_UP)
+		return -1;
+
+	/* starts all threads */
+	for (i = tommy_list_head(list); i != 0; i = i->next) {
+		disk_t* disk = i->data;
+
+		if (pthread_create(&disk->thread, 0, spinup, disk) != 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Failed to create thread.\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	/* joins all threads */
+	for (i = tommy_list_head(list); i != 0; i = i->next) {
+		disk_t* disk = i->data;
+		void* retval;
+		if (pthread_join(disk->thread, &retval) != 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Failed to join thread.\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (retval != 0)
+			++fail;
+	}
+
+	if (fail != 0) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return 0;
 }
 
 #endif
