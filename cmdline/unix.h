@@ -18,6 +18,10 @@
 #ifndef __UNIX_H
 #define __UNIX_H
 
+#ifdef __linux__
+#define HAVE_LINUX_DEVICE 1 /**< In Linux enables special device support. */
+#endif
+
 #define O_BINARY 0 /**< Not used in Unix. */
 #define O_SEQUENTIAL 0 /**< In Unix posix_fadvise() shall be used. */
 

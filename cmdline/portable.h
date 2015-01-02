@@ -202,6 +202,9 @@
 #include "unix.h"
 #endif
 
+/**
+ * Include list support to have tommy_node.
+ */
 #include "tommyds/tommylist.h"
 
 /**

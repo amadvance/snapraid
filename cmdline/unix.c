@@ -337,6 +337,7 @@ int randomize(void* ptr, size_t size)
  * Read a file extracting the contained device number in %u:%u format.
  * Returns 0 on error.
  */
+#if HAVE_LINUX_DEVICE
 static dev_t devread(const char* path)
 {
 	int f;
@@ -396,10 +397,12 @@ static dev_t devread(const char* path)
 
 	return makedev(ma, mi);
 }
+#endif
 
 /**
  * Read a device tree filling the specified list of disk_t entries.
  */
+#if HAVE_LINUX_DEVICE
 static int devtree(dev_t device, tommy_list* list)
 {
 	char path[PATH_MAX];
@@ -511,10 +514,12 @@ static int devtree(dev_t device, tommy_list* list)
 
 	return 0;
 }
+#endif
 
 /**
  * Spin down a specific device.
  */
+#if HAVE_LINUX_DEVICE
 static int devdown(dev_t device)
 {
 	char cmd[128];
@@ -544,6 +549,7 @@ static int devdown(dev_t device)
 
 	return 0;
 }
+#endif
 
 /**
  * Compare two device entries.
@@ -609,6 +615,7 @@ static void* spinup(void* arg)
  */
 static void* spindown(void* arg)
 {
+#if HAVE_LINUX_DEVICE
 	disk_t* disk = arg;
 	dev_t device = disk->device;
 	uint64_t start;
@@ -624,11 +631,16 @@ static void* spindown(void* arg)
 	printf("Spundown device '%u:%u' at '%s' in %" PRIu64 " ms.\n", major(device), minor(device), disk->path, tick_ms() - start);
 
 	return 0;
+#else
+	(void)arg;
+	return (void*)-1;
+#endif
 }
 
 /**
  * Lists all the devices.
  */
+#if HAVE_LINUX_DEVICE
 static int spin_devices(tommy_list* list)
 {
 	tommy_node* i;
@@ -659,13 +671,67 @@ static int spin_devices(tommy_list* list)
 
 	return 0;
 }
+#endif
+
+static int spin_thread(tommy_list* list, void* (*func)(void* arg))
+{
+	int fail = 0;
+	tommy_node* i;
+
+#if HAVE_PTHREAD_CREATE
+	/* starts all threads */
+	for (i = tommy_list_head(list); i != 0; i = i->next) {
+		disk_t* disk = i->data;
+
+		if (pthread_create(&disk->thread, 0, func, disk) != 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Failed to create thread.\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	/* joins all threads */
+	for (i = tommy_list_head(list); i != 0; i = i->next) {
+		disk_t* disk = i->data;
+		void* retval;
+
+		if (pthread_join(disk->thread, &retval) != 0) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "Failed to join thread.\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (retval != 0)
+			++fail;
+	}
+#else
+	for (i = tommy_list_head(list); i != 0; i = i->next) {
+		disk_t* disk = i->data;
+
+		if (func(disk) != 0)
+			++fail;
+	}
+#endif
+	if (fail != 0) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return 0;
+}
 
 int diskspin(tommy_list* list, int operation)
 {
 	tommy_node* i;
 	tommy_list tree;
-	int fail = 0;
+	int ret;
 
+	tommy_list_init(&tree);
+
+#if HAVE_LINUX_DEVICE
 	if (operation == SPIN_DOWN || operation == SPIN_DEVICES) {
 		struct stat st;
 		/* sysfs and devfs interfaces are required */
@@ -686,8 +752,6 @@ int diskspin(tommy_list* list, int operation)
 	if (operation == SPIN_DEVICES)
 		return spin_devices(list);
 
-	tommy_list_init(&tree);
-
 	if (operation == SPIN_DOWN) {
 		/* for each device */
 		for (i = tommy_list_head(list); i != 0; i = i->next) {
@@ -702,7 +766,10 @@ int diskspin(tommy_list* list, int operation)
 				/* LCOV_EXCL_STOP */
 			}
 		}
-	} else {
+	}
+#endif
+
+	if (operation == SPIN_UP) {
 		/* duplicate the list */
 		for (i = tommy_list_head(list); i != 0; i = i->next) {
 			disk_t* disk = i->data;
@@ -727,57 +794,11 @@ int diskspin(tommy_list* list, int operation)
 			free(tommy_list_remove_existing(&tree, i->next));
 	}
 
-#if HAVE_PTHREAD_CREATE
-	/* starts all threads */
-	for (i = tommy_list_head(&tree); i != 0; i = i->next) {
-		disk_t* disk = i->data;
-
-		if (pthread_create(&disk->thread, 0, operation == SPIN_UP ? &spinup : &spindown, disk) != 0) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Failed to create thread.\n");
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
-	}
-
-	/* joins all threads */
-	for (i = tommy_list_head(&tree); i != 0; i = i->next) {
-		disk_t* disk = i->data;
-		void* retval;
-
-		if (pthread_join(disk->thread, &retval) != 0) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Failed to join thread.\n");
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
-
-		if (retval != 0)
-			++fail;
-	}
-#else
-	for (i = tommy_list_head(&tree); i != 0; i = i->next) {
-		disk_t* disk = i->data;
-
-		if (operation == SPIN_UP) {
-			if (spinup(disk) != 0)
-				++fail;
-		} else {
-			if (spindown(disk) != 0)
-				++fail;
-		}
-	}
-#endif
+	ret = spin_thread(&tree, operation == SPIN_UP ? spinup : spindown);
 
 	tommy_list_foreach(&tree, free);
 
-	if (fail != 0) {
-		/* LCOV_EXCL_START */
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	return 0;
+	return ret;
 }
 
 void os_init(int opt)
