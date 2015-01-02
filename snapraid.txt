@@ -18,7 +18,7 @@ snapraid [-c, --conf CONFIG]
 	[-S, --start BLKSTART] [-B, --count BLKCOUNT]
 	[-L, --error-limit NUMBER]
 	[-v, --verbose]
-	status|sync|scrub|fix|check|list|diff|dup|pool|rehash
+	status|diff|sync|scrub|fix|check|list|dup|up|down|pool|rehash
 
 snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
@@ -401,7 +401,18 @@ Later modifications are not taken into account.
 
 Nothing is modified.
 
-5.2 sync
+5.2 diff
+--------
+
+Lists all the files modified from the last "sync" that need to have
+their parity data recomputed.
+
+This command doesn't check the file data, but only the file timestamp
+size and inode.
+
+Nothing is modified.
+
+5.3 sync
 --------
 
 Updates the parity information. All the modified files
@@ -428,7 +439,7 @@ but the previously compute hash information is kept.
 The "content" and "parity" files are modified if necessary.
 The files in the array are NOT modified.
 
-5.3 scrub
+5.4 scrub
 ---------
 
 Scrubs the array, checking for silent or input/output errors in data
@@ -463,7 +474,7 @@ of each block, and to mark bad blocks.
 The "parity" files are NOT modified.
 The files in the array are NOT modified.
 
-5.4 fix
+5.5 fix
 -------
 
 Fix all the files and the parity data.
@@ -492,7 +503,7 @@ The "content" file is NOT modified.
 The "parity" files are modified if necessary.
 The files in the array are modified if necessary.
 
-5.5 check
+5.6 check
 ---------
 
 Verify all the files and the parity data.
@@ -512,22 +523,11 @@ Files are identified only by path, and not by inode.
 
 Nothing is modified.
 
-5.6 list
+5.7 list
 --------
 
 Lists all the files contained in the array at the time of the
 last "sync".
-
-Nothing is modified.
-
-5.7 diff
---------
-
-Lists all the files modified from the last "sync" that need to have
-their parity data recomputed.
-
-This command doesn't check the file data, but only the file timestamp
-size and inode.
 
 Nothing is modified.
 
@@ -540,8 +540,22 @@ precomputed hashes are used.
 
 Nothing is modified.
 
-5.9 pool
---------
+5.9 up
+------
+
+Spins up all the disks of the array.
+
+Nothing is modified.
+
+5.10 down
+---------
+
+Spins down all the disks of the array.
+
+Nothing is modified.
+
+5.11 pool
+---------
 
 Creates or updates in the "pooling" directory a virtual view of all
 the files of your disk array.
@@ -555,7 +569,7 @@ view of the array. Any other regular file is left in place.
 
 Nothing is modified outside the pool directory.
 
-5.10 rehash
+5.12 rehash
 -----------
 
 Schedules a rehash of the whole array.

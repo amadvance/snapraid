@@ -1743,5 +1743,13 @@ int windows_randomize(void* ptr, size_t size)
 	return 0;
 }
 
+int diskspin(tommy_list* list, int operation)
+{
+	(void)list;
+	(void)operation;
+
+	return -1;
+}
+
 #endif
 

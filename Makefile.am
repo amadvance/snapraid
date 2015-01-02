@@ -31,6 +31,7 @@ snapraid_SOURCES = \
 	cmdline/parity.c \
 	cmdline/handle.c \
 	cmdline/nano.c \
+	cmdline/spin.c \
 	cmdline/fnmatch.c \
 	cmdline/selftest.c \
 	cmdline/speed.c \
@@ -198,6 +199,9 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status -l ">&2"
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status -l ">>test.log"
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status -l test-%D-%T.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) up
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) down
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) test-devices
 if HAVE_SYMLINK
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) pool
 endif

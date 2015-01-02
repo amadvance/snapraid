@@ -162,6 +162,10 @@
 #include "fnmatch.h"
 #endif
 
+#if HAVE_PTHREAD_H
+#include <pthread.h>
+#endif
+
 /**
  * Disable case check in Windows.
  */
@@ -196,6 +200,8 @@
 #else
 #include "unix.h"
 #endif
+
+#include "tommyds/tommylist.h"
 
 /**
  * Another name for link() to avoid confusion with local variables called "link".
@@ -254,6 +260,11 @@ int fsinfo(const char* path, int* has_persistent_inode, uint64_t* total_space, u
 uint64_t tick(void);
 
 /**
+ * Get the tick counter value in millisecond.
+ */
+uint64_t tick_ms(void);
+
+/**
  * Initializes the system.
  */
 void os_init(int opt);
@@ -277,6 +288,28 @@ int exit_failure;
 #undef EXIT_FAILURE
 #define EXIT_SUCCESS exit_success
 #define EXIT_FAILURE exit_failure
+
+/**
+ * Disk entry.
+ */
+struct disk_struct {
+	char path[PATH_MAX]; /**< Mount point or contained directory. */
+	uint64_t device; /**< Device ID. */
+#if HAVE_PTHREAD_CREATE
+	pthread_t thread;
+#endif
+	tommy_node node;
+};
+typedef struct disk_struct disk_t;
+
+#define SPIN_DOWN 0
+#define SPIN_UP 1
+#define SPIN_DEVICES -1
+
+/**
+ * Spin all disks.
+ */
+int diskspin(tommy_list* list, int operation);
 
 #endif
 

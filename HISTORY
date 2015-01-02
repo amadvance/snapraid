@@ -3,6 +3,8 @@ SnapRAID HISTORY
 
 8.0 2015/01 BETA
 ================
+ * Adds new "spinup" and "spindown" commands to control the disks of
+   the array. Note that "spindown" is available only in Linux.
  * Allows "sync" and "scrub" to continue after the first
    bunch of disk errors. Blocks with errors are marked as bad,
    and you can fix them with the "fix -e" command.

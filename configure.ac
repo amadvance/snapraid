@@ -25,6 +25,7 @@ AC_HEADER_DIRENT
 AC_HEADER_TIME
 AC_CHECK_HEADERS([fcntl.h stddef.h stdint.h stdlib.h string.h limits.h])
 AC_CHECK_HEADERS([unistd.h getopt.h fnmatch.h io.h inttypes.h byteswap.h])
+AC_CHECK_HEADERS([pthread.h])
 AC_CHECK_HEADERS([sys/time.h sys/file.h sys/ioctl.h sys/vfs.h sys/statfs.h sys/param.h sys/mount.h])
 AC_CHECK_HEADERS([linux/fiemap.h linux/fs.h mach/mach_time.h])
 
@@ -80,6 +81,8 @@ AC_CHECK_FUNCS([fstatat flock statfs])
 AC_CHECK_FUNCS([mach_absolute_time])
 AC_SEARCH_LIBS([clock_gettime], [rt])
 AC_CHECK_FUNCS([clock_gettime])
+AC_CHECK_CC_OPT([-pthread], CFLAGS="$CFLAGS -pthread", [])
+AC_CHECK_FUNCS([pthread_create])
 
 dnl Checks for architecture
 AC_C_BIGENDIAN
@@ -167,14 +170,14 @@ AM_CONDITIONAL(HAVE_SYMLINK, [test x"$SYMLINK" != x])
 AC_ARG_ENABLE([profiler],
 	[AS_HELP_STRING([--enable-profiler],[enable the use of gprof for code coverage])],
 	[
-	CFLAGS="-O2 -pg -g"
+	CFLAGS="-O2 -pg -g -pthread"
 	],
 	[])
 
 AC_ARG_ENABLE([coverage],
 	[AS_HELP_STRING([--enable-coverage],[enable the use of gcov for code coverage])],
 	[
-	CFLAGS="-O0 -g -fprofile-arcs -ftest-coverage"
+	CFLAGS="-O0 -g -fprofile-arcs -ftest-coverage -pthread"
 	],
 	[])
 
@@ -216,7 +219,7 @@ AM_CONDITIONAL(HAVE_EMULATOR, [test x"$EMULATOR" != x])
 AC_ARG_ENABLE([debug],
 	[AS_HELP_STRING([--enable-debug],[enable debugging])],
 	[
-	CFLAGS="-O0 -g -Wall -Wextra"
+	CFLAGS="-O0 -g -pthread -Wall -Wextra"
 	],
 	[])
 

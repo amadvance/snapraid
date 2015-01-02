@@ -25,13 +25,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "cmdline/portable.h"
-#include "cmdline/util.h" /* for malloc_nofail() */
-
 /* redefine the malloc for tommy use */
 #define tommy_malloc malloc_nofail
 #define tommy_calloc calloc_nofail
 #define tommy_free free
+
+#include "cmdline/portable.h"
+#include "cmdline/util.h" /* for malloc_nofail() */
 
 #include "tommyhash.c"
 #include "tommyarray.c"

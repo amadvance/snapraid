@@ -14,7 +14,7 @@ Synopsis
 	:	[-S, --start BLKSTART] [-B, --count BLKCOUNT]
 	:	[-L, --error-limit NUMBER]
 	:	[-v, --verbose]
-	:	status|sync|scrub|fix|check|list|diff|dup|pool|rehash
+	:	status|diff|sync|scrub|fix|check|list|dup|up|down|pool|rehash
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
@@ -375,6 +375,15 @@ Commands
 
 	Nothing is modified.
 
+  diff
+	Lists all the files modified from the last "sync" that need to have
+	their parity data recomputed.
+
+	This command doesn't check the file data, but only the file timestamp
+	size and inode.
+
+	Nothing is modified.
+
   sync
 	Updates the parity information. All the modified files
 	in the disk array are read, and the corresponding parity
@@ -484,19 +493,20 @@ Commands
 
 	Nothing is modified.
 
-  diff
-	Lists all the files modified from the last "sync" that need to have
-	their parity data recomputed.
-
-	This command doesn't check the file data, but only the file timestamp
-	size and inode.
-
-	Nothing is modified.
-
   dup
 	Lists all the duplicate files. Two files are assumed equal if their
 	hashes are matching. The file data is not read, but only the
 	precomputed hashes are used.
+
+	Nothing is modified.
+
+  up
+	Spins up all the disks of the array.
+
+	Nothing is modified.
+
+  down
+	Spins down all the disks of the array.
 
 	Nothing is modified.
 

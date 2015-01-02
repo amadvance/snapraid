@@ -436,6 +436,11 @@ void pathprint(char* dst, size_t size, const char* format, ...);
 void pathslash(char* dst, size_t size);
 
 /**
+ * Cuts everything after the latest slash.
+ */
+void pathcut(char* dst);
+
+/**
  * Compare two paths.
  * In Windows it's case insentive and assumes \ equal at /.
  */

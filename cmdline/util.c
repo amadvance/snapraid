@@ -1343,6 +1343,15 @@ void pathslash(char* dst, size_t size)
 	}
 }
 
+void pathcut(char* dst)
+{
+	char* slash = strrchr(dst, '/');
+	if (slash)
+		slash[1] = 0;
+	else
+		dst[0] = 0;
+}
+
 int pathcmp(const char* a, const char* b)
 {
 #ifdef _WIN32

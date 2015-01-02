@@ -37,14 +37,17 @@ void usage(void)
 {
 	version();
 
-	printf("Usage: " PACKAGE " diff|sync|status|scrub|dup|pool|check|fix [options]\n");
+	printf("Usage: " PACKAGE " status|diff|sync|scrub|list|dup|up|down|pool|check|fix [options]\n");
 	printf("\n");
 	printf("Commands:\n");
+	printf("  status Print the status of the array\n");
 	printf("  diff   Show the changes that needs to be syncronized\n");
 	printf("  sync   Syncronize the state of the array\n");
-	printf("  status Print the status of the array\n");
 	printf("  scrub  Scrub the array\n");
+	printf("  list   List the array content\n");
 	printf("  dup    Find duplicate files\n");
+	printf("  up     Spinup the array\n");
+	printf("  down   Spindown the array\n");
 	printf("  pool   Create or update the virtual view of the array\n");
 	printf("  check  Check the array\n");
 	printf("  fix    Fix the array\n");
@@ -378,6 +381,9 @@ void signal_handler(int signal)
 #define OPERATION_STATUS 10
 #define OPERATION_REWRITE 11
 #define OPERATION_NANO 12
+#define OPERATION_SPINUP 13
+#define OPERATION_SPINDOWN 14
+#define OPERATION_DEVICES 15
 
 int main(int argc, char* argv[])
 {
@@ -731,6 +737,12 @@ int main(int argc, char* argv[])
 		operation = OPERATION_REWRITE;
 	} else if (strcmp(argv[optind], "test-nano") == 0) {
 		operation = OPERATION_NANO;
+	} else if (strcmp(argv[optind], "up") == 0) {
+		operation = OPERATION_SPINUP;
+	} else if (strcmp(argv[optind], "down") == 0) {
+		operation = OPERATION_SPINDOWN;
+	} else if (strcmp(argv[optind], "test-devices") == 0) {
+		operation = OPERATION_DEVICES;
 	} else {
 		/* LCOV_EXCL_START */
 		fprintf(stderr, "Unknown command '%s'\n", argv[optind]);
@@ -849,6 +861,7 @@ int main(int argc, char* argv[])
 	case OPERATION_STATUS :
 	case OPERATION_REWRITE :
 	case OPERATION_REHASH :
+	case OPERATION_SPINUP : /* skip because we want to do it in parallel */
 		/* avoid to check and access data disks if not needed */
 		opt.skip_disk_access = 1;
 		break;
@@ -863,8 +876,22 @@ int main(int argc, char* argv[])
 	case OPERATION_REWRITE :
 	case OPERATION_REHASH :
 	case OPERATION_NANO :
+	case OPERATION_SPINUP : /* skip because we want to do it in parallel */
 		/* avoid to check and access parity disks if not needed */
 		opt.skip_parity_access = 1;
+		break;
+	}
+
+	switch (operation) {
+	case OPERATION_DIFF :
+	case OPERATION_LIST :
+	case OPERATION_DUP :
+	case OPERATION_POOL :
+	case OPERATION_NANO :
+	case OPERATION_SPINUP :
+	case OPERATION_SPINDOWN :
+	case OPERATION_DEVICES :
+		opt.skip_self = 1;
 		break;
 	}
 
@@ -1050,6 +1077,12 @@ int main(int argc, char* argv[])
 		state_write(&state);
 
 		memory();
+	} else if (operation == OPERATION_SPINUP) {
+		state_spin(&state, SPIN_UP);
+	} else if (operation == OPERATION_SPINDOWN) {
+		state_spin(&state, SPIN_DOWN);
+	} else if (operation == OPERATION_DEVICES) {
+		state_spin(&state, SPIN_DEVICES);
 	} else if (operation == OPERATION_STATUS) {
 		state_read(&state);
 

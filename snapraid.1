@@ -50,7 +50,7 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
 .PD
-	status|sync|scrub|fix|check|list|diff|dup|pool|rehash
+	status|diff|sync|scrub|fix|check|list|dup|up|down|pool|rehash
 .PD 0
 .PP
 .PD
@@ -647,6 +647,14 @@ Note that the information presented refers at the latest time you run \[dq]sync\
 Later modifications are not taken into account.
 .PP
 Nothing is modified.
+.SS diff 
+Lists all the files modified from the last \[dq]sync\[dq] that need to have
+their parity data recomputed.
+.PP
+This command doesn\'t check the file data, but only the file timestamp
+size and inode.
+.PP
+Nothing is modified.
 .SS sync 
 Updates the parity information. All the modified files
 in the disk array are read, and the corresponding parity
@@ -751,18 +759,18 @@ Lists all the files contained in the array at the time of the
 last \[dq]sync\[dq].
 .PP
 Nothing is modified.
-.SS diff 
-Lists all the files modified from the last \[dq]sync\[dq] that need to have
-their parity data recomputed.
-.PP
-This command doesn\'t check the file data, but only the file timestamp
-size and inode.
-.PP
-Nothing is modified.
 .SS dup 
 Lists all the duplicate files. Two files are assumed equal if their
 hashes are matching. The file data is not read, but only the
 precomputed hashes are used.
+.PP
+Nothing is modified.
+.SS up 
+Spins up all the disks of the array.
+.PP
+Nothing is modified.
+.SS down 
+Spins down all the disks of the array.
 .PP
 Nothing is modified.
 .SS pool 
