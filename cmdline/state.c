@@ -4693,6 +4693,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 	) {
 		uint64_t tick_total;
 		uint64_t tick_cpu;
+		time_t elapsed;
 		unsigned out_perc = 0;
 		unsigned out_speed = 0;
 		unsigned out_cpu = 0;
@@ -4700,6 +4701,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 
 		tick_total = state->tick_cpu + state->tick_io;
 		tick_cpu = state->tick_cpu;
+		elapsed = now - state->progress_whole_start - state->progress_wasted;
 
 		/* completion percentage */
 		if (countmax)
@@ -4757,7 +4759,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 		}
 
 		if (state->opt.gui) {
-			fprintf(stdlog, "run:pos:%u:%u:%" PRIu64 ":%u:%u:%u:%u\n", blockpos, countpos, countsize, out_perc, out_eta, out_speed, out_cpu);
+			fprintf(stdlog, "run:pos:%u:%u:%" PRIu64 ":%u:%u:%u:%u:%" PRIu64 "\n", blockpos, countpos, countsize, out_perc, out_eta, out_speed, out_cpu, (uint64_t)elapsed);
 			fflush(stdlog);
 		} else {
 			printf("%u%%, %u MiB", out_perc, (unsigned)(countsize / (1024 * 1024)));
