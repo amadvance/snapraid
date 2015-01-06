@@ -15,7 +15,10 @@ get misinterpreted.
 
 - Minor
 
-* Spinup all drives at startup.
+* Should "diff" warn about not completed sync ?
+At now neither "diff" nor "status" return with an error code
+if this happen... Something better cold be done.
+See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/c96cdd31/
 
 * Don't insert new files if they are too recent and opened by other
 applications.
