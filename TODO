@@ -11,8 +11,6 @@ same timestamp/size are present.
 * In the log print file name as escaped to avoid that internal ":" and "\n"
 get misinterpreted.
 
-* Shall CreateFileW use FILE_SHARE_DELETE ?
-
 - Minor
 
 * Should "diff" warn about not completed sync ?

@@ -766,7 +766,7 @@ int lstat_sync(const char* file, struct windows_stat* st, uint64_t* physical)
 	 * Use FILE_FLAG_BACKUP_SEMANTICS to open directories (it's just ignored for files).
 	 * Use FILE_FLAG_OPEN_REPARSE_POINT to open symbolic links and not the their target.
 	 */
-	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, 0);
+	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -817,7 +817,7 @@ int windows_stat(const char* file, struct windows_stat* st)
 	 *
 	 * Use FILE_FLAG_BACKUP_SEMANTICS to open directories (it's just ignored for files).
 	 */
-	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -1198,7 +1198,7 @@ static windows_dir* windows_opendir_stream(const char* dir)
 		exit(EXIT_FAILURE);
 	}
 
-	dirstream->h = CreateFileW(wdir, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+	dirstream->h = CreateFileW(wdir, GENERIC_READ, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
 	if (dirstream->h == INVALID_HANDLE_VALUE) {
 		DWORD error = GetLastError();
 		free(dirstream->buffer);
@@ -1388,7 +1388,7 @@ int windows_readlink(const char* file, char* buffer, size_t size)
 	 * Use FILE_FLAG_BACKUP_SEMANTICS to open directories (it's just ignored for files).
 	 * Use FILE_FLAG_OPEN_REPARSE_POINT to open symbolic links and not the their target.
 	 */
-	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, 0);
+	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -1439,7 +1439,7 @@ int filephy(const char* file, uint64_t size, uint64_t* physical)
 	(void)size;
 
 	/* open the handle of the file */
-	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
