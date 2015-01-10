@@ -319,7 +319,7 @@ static void scan_file_delayed_insert(struct snapraid_scan* scan, struct snapraid
  *
  * This is needed by Windows as the normal way to list directories may report not
  * updated info. Only the GetFileInformationByHandle() func, called file-by-file,
- * relly ensures to return synced info.
+ * really ensures to return synced info.
  *
  * If this happens, we read also the physical offset, to avoid to read it later.
  */
