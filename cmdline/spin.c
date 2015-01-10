@@ -40,6 +40,7 @@ void state_spin(struct snapraid_state* state, int operation)
 
 		entry = malloc_nofail(sizeof(disk_t));
 
+		pathcpy(entry->name, sizeof(entry->name), disk->name);
 		pathprint(entry->path, sizeof(entry->path), "%s", disk->dir);
 		entry->device = disk->device;
 
@@ -52,6 +53,7 @@ void state_spin(struct snapraid_state* state, int operation)
 
 		entry = malloc_nofail(sizeof(disk_t));
 
+		pathcpy(entry->name, sizeof(entry->name), lev_config_name(j));
 		pathprint(entry->path, sizeof(entry->path), "%s", state->parity[j].path);
 		pathcut(entry->path); /* remove the parity file */
 		entry->device = state->parity[j].device;

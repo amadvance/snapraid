@@ -403,7 +403,7 @@ static dev_t devread(const char* path)
  * Read a device tree filling the specified list of disk_t entries.
  */
 #if HAVE_LINUX_DEVICE
-static int devtree(dev_t device, tommy_list* list)
+static int devtree(const char* name, dev_t device, tommy_list* list)
 {
 	char path[PATH_MAX];
 	DIR* d;
@@ -428,7 +428,7 @@ static int devtree(dev_t device, tommy_list* list)
 					/* LCOV_EXCL_STOP */
 				}
 
-				if (devtree(device, list) != 0) {
+				if (devtree(name, device, list) != 0) {
 					/* LCOV_EXCL_START */
 					return -1;
 					/* LCOV_EXCL_STOP */
@@ -491,6 +491,7 @@ static int devtree(dev_t device, tommy_list* list)
 
 		disk = malloc_nofail(sizeof(disk_t));
 
+		pathcpy(disk->name, sizeof(disk->name), name);
 		pathprint(disk->path, sizeof(disk->path), "/dev/%s", buf + 3);
 		disk->device = device;
 
@@ -653,7 +654,7 @@ static int spin_devices(tommy_list* list)
 		tommy_list_init(&tree);
 
 		/* expand the tree of devices */
-		if (devtree(disk->device, &tree) != 0) {
+		if (devtree(disk->name, disk->device, &tree) != 0) {
 			/* LCOV_EXCL_START */
 			tommy_list_foreach(&tree, free);
 			fprintf(stderr, "Failed to expand device '%u:%u'.\n", major(disk->device), minor(disk->device));
@@ -663,7 +664,7 @@ static int spin_devices(tommy_list* list)
 
 		for (j = tommy_list_head(&tree); j != 0; j = j->next) {
 			disk_t* entry = j->data;
-			printf("%u:%u\t%s\t%u:%u\t%s\n", major(entry->device), minor(entry->device), entry->path, major(disk->device), minor(disk->device), disk->path);
+			printf("%u:%u\t%s\t%u:%u\t%s\t%s\n", major(entry->device), minor(entry->device), entry->path, major(disk->device), minor(disk->device), disk->name, disk->path);
 		}
 
 		tommy_list_foreach(&tree, free);
@@ -758,7 +759,7 @@ int diskspin(tommy_list* list, int operation)
 			disk_t* disk = i->data;
 
 			/* expand the tree of devices */
-			if (devtree(disk->device, &tree) != 0) {
+			if (devtree(disk->name, disk->device, &tree) != 0) {
 				/* LCOV_EXCL_START */
 				tommy_list_foreach(&tree, free);
 				fprintf(stderr, "Failed to expand device '%u:%u'.\n", major(disk->device), minor(disk->device));

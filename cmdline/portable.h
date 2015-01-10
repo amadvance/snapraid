@@ -306,6 +306,7 @@ int randomize(void* ptr, size_t size);
  * Disk entry.
  */
 struct disk_struct {
+	char name[PATH_MAX]; /**< Name of the disk. */
 	char path[PATH_MAX]; /**< Mount point or contained directory. */
 	uint64_t device; /**< Device ID. */
 #if HAVE_PTHREAD_CREATE
