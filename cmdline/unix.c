@@ -399,6 +399,61 @@ static dev_t devread(const char* path)
 }
 #endif
 
+#if HAVE_LINUX_DEVICE
+static int devresolve(dev_t device, char* path, size_t path_size)
+{
+	struct stat st;
+	char buf[PATH_MAX];
+	int ret;
+
+	/* default device path from device number */
+	pathprint(path, path_size, "/dev/block/%u:%u", major(device), minor(device));
+
+	/* resolve the link from /dev/block */
+	ret = readlink(path, buf, sizeof(buf));
+	if (ret < 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Failed to readlink '%s'.\n", path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+	if (ret == sizeof(buf)) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Too long readlink '%s'.\n", path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	buf[ret] = 0;
+
+	if (buf[0] != '.' || buf[1] != '.' || buf[2] != '/') {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Unexpected link '%s' at '%s'.\n", buf, path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* set the real device path */
+	pathprint(path, path_size, "/dev/%s", buf + 3);
+
+	/* check the device */
+	if (stat(path, &st) != 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Failed to stat '%s'.\n", path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+	if (st.st_rdev != device) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Unexpected device '%u:%u' instead of '%u:%u' for '%s'.\n", major(st.st_rdev), minor(st.st_rdev), major(device), minor(device), path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return 0;
+}
+#endif
+
 /**
  * Read a device tree filling the specified list of disk_t entries.
  */
@@ -445,9 +500,7 @@ static int devtree(const char* name, dev_t device, tommy_list* list)
 	if (!slaves) {
 		/* this is a raw device */
 		struct stat st;
-		disk_t* disk;
-		char buf[PATH_MAX];
-		int ret;
+		devinfo_t* devinfo;
 
 		/* check if it's a partition */
 		pathprint(path, sizeof(path), "/sys/dev/block/%u:%u/partition", major(device), minor(device));
@@ -463,54 +516,21 @@ static int devtree(const char* name, dev_t device, tommy_list* list)
 			}
 		}
 
-		/* resolve the link from /dev/block */
-		pathprint(path, sizeof(path), "/dev/block/%u:%u", major(device), minor(device));
-
-		ret = readlink(path, buf, sizeof(buf));
-		if (ret < 0) {
+		/* get the real name of the device */
+		if (devresolve(device, path, sizeof(path)) != 0) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "Failed to readlink '%s'.\n", path);
-			return 0;
-			/* LCOV_EXCL_STOP */
-		}
-		if (ret == sizeof(buf)) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Too long readlink '%s'.\n", path);
-			return 0;
+			return -1;
 			/* LCOV_EXCL_STOP */
 		}
 
-		buf[ret] = 0;
+		devinfo = calloc_nofail(1, sizeof(devinfo_t));
 
-		if (buf[0] != '.' || buf[1] != '.' || buf[2] != '/') {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Unexpected link '%s' at '%s'.\n", buf, path);
-			return 0;
-			/* LCOV_EXCL_STOP */
-		}
-
-		disk = malloc_nofail(sizeof(disk_t));
-
-		pathcpy(disk->name, sizeof(disk->name), name);
-		pathprint(disk->path, sizeof(disk->path), "/dev/%s", buf + 3);
-		disk->device = device;
-
-		/* check the device */
-		if (stat(path, &st) != 0) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Failed to stat '%s'.\n", disk->path);
-			return 0;
-			/* LCOV_EXCL_STOP */
-		}
-		if (st.st_rdev != device) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "Unexpected device '%u:%u' instead of '%u:%u' for '%s'.\n", major(st.st_rdev), minor(st.st_rdev), major(device), minor(device), disk->path);
-			return 0;
-			/* LCOV_EXCL_STOP */
-		}
+		devinfo->device = device;
+		pathcpy(devinfo->name, sizeof(devinfo->name), name);
+		pathcpy(devinfo->file, sizeof(devinfo->file), path);
 
 		/* insert in the list */
-		tommy_list_insert_tail(list, &disk->node, disk);
+		tommy_list_insert_tail(list, &devinfo->node, devinfo);
 	}
 
 	return 0;
@@ -557,56 +577,88 @@ static int devdown(dev_t device)
  */
 static int devcompare(const void* void_a, const void* void_b)
 {
-	const disk_t* a = void_a;
-	const disk_t* b = void_b;
+	const devinfo_t* a = void_a;
+	const devinfo_t* b = void_b;
 
 	if (a->device < b->device)
 		return -1;
 	if (a->device > b->device)
 		return 1;
 
-	return strcmp(a->path, b->path);
+	return strcmp(a->mount, b->mount);
+}
+
+/**
+ * Spin up a device.
+ *
+ * There isn't a defined way to spin up a device,
+ * so we just do a generic write.
+ */
+static int devup(dev_t device, const char* mount)
+{
+	int ret;
+	char path[PATH_MAX];
+
+	(void)device;
+
+	/* add a temporary name used for writing */
+	pathprint(path, sizeof(path), "%s.snapraid-spinup", mount);
+
+	/* do a generic write, and immediately undo it */
+	ret = mkdir(path, 0);
+	if (ret != 0 && errno != EEXIST) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Failed to create dir '%s'.\n", path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* removes the just created dir */
+	rmdir(path);
+
+	return 0;
 }
 
 /**
  * Thread for spinning up.
  *
- * There isn't a defined way to spin up a device,
- * so we just do a generic write access.
+ * Note that filling up the devinfo object is done inside this thread,
+ * to avoid to block the main thread if the device need to be spin up
+ * to handle stat/resolve requests.
  */
-static void* spinup(void* arg)
+static void* thread_spinup(void* arg)
 {
-	disk_t* disk = arg;
-	dev_t device;
-	int ret;
-	uint64_t start;
+	devinfo_t* devinfo = arg;
 	struct stat st;
+	uint64_t start;
 
 	start = tick_ms();
 
-	/* first get the device number, this usually doesn't trigger a spinup */
-	if (stat(disk->path, &st) != 0) {
+	/* first get the device number, this usually doesn't trigger a thread_spinup */
+	if (stat(devinfo->mount, &st) != 0) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to stat device '%s'.\n", disk->path);
+		fprintf(stderr, "Failed to stat device '%s'.\n", devinfo->mount);
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
 	}
 
 	/* set the device number for printing */
-	device = st.st_dev;
+	devinfo->device = st.st_dev;
 
-	/* add a temporary name used for writing */
-	pathcat(disk->path, sizeof(disk->path), ".snapraid-spinup");
+	/* get the block device */
+	if (devresolve(devinfo->device, devinfo->file, sizeof(devinfo->file)) != 0) {
+		/* LCOV_EXCL_START */
+		return (void*)-1;
+		/* LCOV_EXCL_STOP */
+	}
 
-	/* do a generic write, and immediately undo it */
-	ret = mkdir(disk->path, 0);
-	if (ret == 0)
-		rmdir(disk->path);
+	if (devup(devinfo->device, devinfo->mount) != 0) {
+		/* LCOV_EXCL_START */
+		return (void*)-1;
+		/* LCOV_EXCL_STOP */
+	}
 
-	/* remove the added name */
-	pathcut(disk->path);
-
-	printf("Spunup device '%u:%u' at '%s' in %" PRIu64 " ms.\n", major(device), minor(device), disk->path, tick_ms() - start);
+	printf("Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
 
 	return 0;
 }
@@ -614,11 +666,11 @@ static void* spinup(void* arg)
 /**
  * Thread for spinning down.
  */
-static void* spindown(void* arg)
+static void* thread_spindown(void* arg)
 {
 #if HAVE_LINUX_DEVICE
-	disk_t* disk = arg;
-	dev_t device = disk->device;
+	devinfo_t* devinfo = arg;
+	dev_t device = devinfo->device;
 	uint64_t start;
 
 	start = tick_ms();
@@ -629,7 +681,7 @@ static void* spindown(void* arg)
 		/* LCOV_EXCL_STOP */
 	}
 
-	printf("Spundown device '%u:%u' at '%s' in %" PRIu64 " ms.\n", major(device), minor(device), disk->path, tick_ms() - start);
+	printf("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
 
 	return 0;
 #else
@@ -642,29 +694,37 @@ static void* spindown(void* arg)
  * Lists all the devices.
  */
 #if HAVE_LINUX_DEVICE
-static int spin_devices(tommy_list* list)
+static int device_list(tommy_list* list)
 {
 	tommy_node* i;
 
 	for (i = tommy_list_head(list); i != 0; i = i->next) {
 		tommy_list tree;
 		tommy_node* j;
-		disk_t* disk = i->data;
+		devinfo_t* devinfo = i->data;
 
 		tommy_list_init(&tree);
 
+		/* get the block device */
+		if (devresolve(devinfo->device, devinfo->file, sizeof(devinfo->file)) != 0) {
+			/* LCOV_EXCL_START */
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+
 		/* expand the tree of devices */
-		if (devtree(disk->name, disk->device, &tree) != 0) {
+		if (devtree(devinfo->name, devinfo->device, &tree) != 0) {
 			/* LCOV_EXCL_START */
 			tommy_list_foreach(&tree, free);
-			fprintf(stderr, "Failed to expand device '%u:%u'.\n", major(disk->device), minor(disk->device));
+			fprintf(stderr, "Failed to expand device '%u:%u'.\n", major(devinfo->device), minor(devinfo->device));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
 
 		for (j = tommy_list_head(&tree); j != 0; j = j->next) {
-			disk_t* entry = j->data;
-			printf("%u:%u\t%s\t%u:%u\t%s\t%s\n", major(entry->device), minor(entry->device), entry->path, major(disk->device), minor(disk->device), disk->name, disk->path);
+			devinfo_t* entry = j->data;
+
+			printf("%u:%u\t%s\t%u:%u\t%s\t%s\n", major(entry->device), minor(entry->device), entry->file, major(devinfo->device), minor(devinfo->device), devinfo->file, devinfo->name);
 		}
 
 		tommy_list_foreach(&tree, free);
@@ -674,7 +734,7 @@ static int spin_devices(tommy_list* list)
 }
 #endif
 
-static int spin_thread(tommy_list* list, void* (*func)(void* arg))
+static int device_thread(tommy_list* list, void* (*func)(void* arg))
 {
 	int fail = 0;
 	tommy_node* i;
@@ -682,9 +742,9 @@ static int spin_thread(tommy_list* list, void* (*func)(void* arg))
 #if HAVE_PTHREAD_CREATE
 	/* starts all threads */
 	for (i = tommy_list_head(list); i != 0; i = i->next) {
-		disk_t* disk = i->data;
+		devinfo_t* devinfo = i->data;
 
-		if (pthread_create(&disk->thread, 0, func, disk) != 0) {
+		if (pthread_create(&devinfo->thread, 0, func, devinfo) != 0) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "Failed to create thread.\n");
 			exit(EXIT_FAILURE);
@@ -694,10 +754,10 @@ static int spin_thread(tommy_list* list, void* (*func)(void* arg))
 
 	/* joins all threads */
 	for (i = tommy_list_head(list); i != 0; i = i->next) {
-		disk_t* disk = i->data;
+		devinfo_t* devinfo = i->data;
 		void* retval;
 
-		if (pthread_join(disk->thread, &retval) != 0) {
+		if (pthread_join(devinfo->thread, &retval) != 0) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "Failed to join thread.\n");
 			exit(EXIT_FAILURE);
@@ -709,9 +769,9 @@ static int spin_thread(tommy_list* list, void* (*func)(void* arg))
 	}
 #else
 	for (i = tommy_list_head(list); i != 0; i = i->next) {
-		disk_t* disk = i->data;
+		devinfo_t* devinfo = i->data;
 
-		if (func(disk) != 0)
+		if (func(devinfo) != 0)
 			++fail;
 	}
 #endif
@@ -724,7 +784,7 @@ static int spin_thread(tommy_list* list, void* (*func)(void* arg))
 	return 0;
 }
 
-int diskspin(tommy_list* list, int operation)
+int devquery(tommy_list* list, int operation)
 {
 	tommy_node* i;
 	tommy_list tree;
@@ -733,7 +793,7 @@ int diskspin(tommy_list* list, int operation)
 	tommy_list_init(&tree);
 
 #if HAVE_LINUX_DEVICE
-	if (operation == SPIN_DOWN || operation == SPIN_DEVICES) {
+	if (operation == DEVICE_DOWN || operation == DEVICE_LIST) {
 		struct stat st;
 		/* sysfs and devfs interfaces are required */
 		if (stat("/sys/dev/block", &st) != 0) {
@@ -750,19 +810,19 @@ int diskspin(tommy_list* list, int operation)
 		}
 	}
 
-	if (operation == SPIN_DEVICES)
-		return spin_devices(list);
+	if (operation == DEVICE_LIST)
+		return device_list(list);
 
-	if (operation == SPIN_DOWN) {
+	if (operation == DEVICE_DOWN) {
 		/* for each device */
 		for (i = tommy_list_head(list); i != 0; i = i->next) {
-			disk_t* disk = i->data;
+			devinfo_t* devinfo = i->data;
 
 			/* expand the tree of devices */
-			if (devtree(disk->name, disk->device, &tree) != 0) {
+			if (devtree(devinfo->name, devinfo->device, &tree) != 0) {
 				/* LCOV_EXCL_START */
 				tommy_list_foreach(&tree, free);
-				fprintf(stderr, "Failed to expand device '%u:%u'.\n", major(disk->device), minor(disk->device));
+				fprintf(stderr, "Failed to expand device '%u:%u'.\n", major(devinfo->device), minor(devinfo->device));
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
@@ -770,16 +830,17 @@ int diskspin(tommy_list* list, int operation)
 	}
 #endif
 
-	if (operation == SPIN_UP) {
+	if (operation == DEVICE_UP) {
 		/* duplicate the list */
 		for (i = tommy_list_head(list); i != 0; i = i->next) {
-			disk_t* disk = i->data;
-			disk_t* entry;
+			devinfo_t* devinfo = i->data;
+			devinfo_t* entry;
 
-			entry = malloc_nofail(sizeof(disk_t));
+			entry = calloc_nofail(1, sizeof(devinfo_t));
 
-			pathcpy(entry->path, sizeof(entry->path), disk->path);
-			entry->device = disk->device;
+			entry->device = devinfo->device;
+			pathcpy(entry->name, sizeof(entry->name), devinfo->name);
+			pathcpy(entry->mount, sizeof(entry->mount), devinfo->mount);
 
 			/* insert in the list */
 			tommy_list_insert_tail(&tree, &entry->node, entry);
@@ -795,7 +856,7 @@ int diskspin(tommy_list* list, int operation)
 			free(tommy_list_remove_existing(&tree, i->next));
 	}
 
-	ret = spin_thread(&tree, operation == SPIN_UP ? spinup : spindown);
+	ret = device_thread(&tree, operation == DEVICE_UP ? thread_spinup : thread_spindown);
 
 	tommy_list_foreach(&tree, free);
 

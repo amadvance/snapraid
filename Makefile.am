@@ -32,7 +32,7 @@ snapraid_SOURCES = \
 	cmdline/parity.c \
 	cmdline/handle.c \
 	cmdline/nano.c \
-	cmdline/spin.c \
+	cmdline/device.c \
 	cmdline/fnmatch.c \
 	cmdline/selftest.c \
 	cmdline/speed.c \

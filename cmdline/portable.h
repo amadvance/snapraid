@@ -305,25 +305,26 @@ int randomize(void* ptr, size_t size);
 /**
  * Disk entry.
  */
-struct disk_struct {
-	char name[PATH_MAX]; /**< Name of the disk. */
-	char path[PATH_MAX]; /**< Mount point or contained directory. */
+struct devinfo_struct {
 	uint64_t device; /**< Device ID. */
+	char name[PATH_MAX]; /**< Name of the disk. */
+	char mount[PATH_MAX]; /**< Mount point or other contained directory. */
+	char file[PATH_MAX]; /**< File device. */
 #if HAVE_PTHREAD_CREATE
 	pthread_t thread;
 #endif
 	tommy_node node;
 };
-typedef struct disk_struct disk_t;
+typedef struct devinfo_struct devinfo_t;
 
-#define SPIN_DOWN 0
-#define SPIN_UP 1
-#define SPIN_DEVICES -1
+#define DEVICE_DOWN 0
+#define DEVICE_UP 1
+#define DEVICE_LIST -1
 
 /**
  * Spin all disks.
  */
-int diskspin(tommy_list* list, int operation);
+int devquery(tommy_list* list, int operation);
 
 #endif
 

@@ -1078,11 +1078,11 @@ int main(int argc, char* argv[])
 
 		memory();
 	} else if (operation == OPERATION_SPINUP) {
-		state_spin(&state, SPIN_UP);
+		state_device(&state, DEVICE_UP);
 	} else if (operation == OPERATION_SPINDOWN) {
-		state_spin(&state, SPIN_DOWN);
+		state_device(&state, DEVICE_DOWN);
 	} else if (operation == OPERATION_DEVICES) {
-		state_spin(&state, SPIN_DEVICES);
+		state_device(&state, DEVICE_LIST);
 	} else if (operation == OPERATION_STATUS) {
 		state_read(&state);
 

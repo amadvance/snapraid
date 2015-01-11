@@ -1770,9 +1770,9 @@ pthread_mutex_t io_lock = PTHREAD_MUTEX_INITIALIZER;
  * There isn't a defined way to spin up a device,
  * so we just do a generic write access.
  */
-static void* spinup(void* arg)
+static void* thread_spinup(void* arg)
 {
-	disk_t* disk = arg;
+	devinfo_t* devinfo = arg;
 	dev_t device;
 	int f;
 	uint64_t start;
@@ -1782,59 +1782,59 @@ static void* spinup(void* arg)
 	start = tick_ms();
 
 	/* removes latest slash to make FindFirstFile() working */
-	slash = strrchr(disk->path, '/');
+	slash = strrchr(devinfo->mount, '/');
 	if (slash)
 		*slash = 0;
 
 	/* uses lstat, as it maps to FindFirstFile */
-	if (lstat(disk->path, &st) != 0) {
+	if (lstat(devinfo->mount, &st) != 0) {
 		/* LCOV_EXCL_START */
 		pthread_mutex_lock(&io_lock);
-		fprintf(stderr, "Failed to stat device '%s'. %s.\n", disk->path, strerror(errno));
+		fprintf(stderr, "Failed to stat devinfo '%s'. %s.\n", devinfo->mount, strerror(errno));
 		pthread_mutex_unlock(&io_lock);
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
 	}
 
 	/* add again the final slash */
-	pathslash(disk->path, sizeof(disk->path));
+	pathslash(devinfo->mount, sizeof(devinfo->mount));
 
 	/* set the device number for printing */
 	device = st.st_dev;
 
 	/* add a temporary name used for writing */
-	pathcat(disk->path, sizeof(disk->path), "snapraid-spinup.tmp");
+	pathcat(devinfo->mount, sizeof(devinfo->mount), "snapraid-thread_spinup.tmp");
 
 	/* create a temporary file, automatically deleted on close */
-	f = _wopen(convert(disk->path), _O_CREAT | _O_TEMPORARY | _O_RDWR,  _S_IREAD | _S_IWRITE);
+	f = _wopen(convert(devinfo->mount), _O_CREAT | _O_TEMPORARY | _O_RDWR,  _S_IREAD | _S_IWRITE);
 	if (f != -1)
 		close(f);
 
 	/* remove the added name */
-	pathcut(disk->path);
+	pathcut(devinfo->mount);
 
 	pthread_mutex_lock(&io_lock);
-	fprintf(stdout, "Spunup device '%" PRIx64 "' at '%s' in %" PRIu64 " ms.\n", (uint64_t)device, disk->path, tick_ms() - start);
+	fprintf(stdout, "Spunup device '%" PRIx64 "' for disk '%s' in %" PRIu64 " ms.\n", (uint64_t)device, devinfo->name, tick_ms() - start);
 	fflush(stdout);
 	pthread_mutex_unlock(&io_lock);
 
 	return 0;
 }
 
-int diskspin(tommy_list* list, int operation)
+int devquery(tommy_list* list, int operation)
 {
 	tommy_node* i;
 	int fail = 0;
 
-	/* we support only spinup */
-	if (operation != SPIN_UP)
+	/* we support only thread_spinup */
+	if (operation != DEVICE_UP)
 		return -1;
 
 	/* starts all threads */
 	for (i = tommy_list_head(list); i != 0; i = i->next) {
-		disk_t* disk = i->data;
+		devinfo_t* devinfo = i->data;
 
-		if (pthread_create(&disk->thread, 0, spinup, disk) != 0) {
+		if (pthread_create(&devinfo->thread, 0, thread_spinup, devinfo) != 0) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "Failed to create thread.\n");
 			exit(EXIT_FAILURE);
@@ -1844,9 +1844,9 @@ int diskspin(tommy_list* list, int operation)
 
 	/* joins all threads */
 	for (i = tommy_list_head(list); i != 0; i = i->next) {
-		disk_t* disk = i->data;
+		devinfo_t* devinfo = i->data;
 		void* retval;
-		if (pthread_join(disk->thread, &retval) != 0) {
+		if (pthread_join(devinfo->thread, &retval) != 0) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "Failed to join thread.\n");
 			exit(EXIT_FAILURE);

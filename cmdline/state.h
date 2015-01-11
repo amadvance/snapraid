@@ -218,9 +218,9 @@ void state_scan(struct snapraid_state* state, int is_diff);
 void state_nano(struct snapraid_state* state);
 
 /**
- * Spin up/down disks.
+ * Devices operations.
  */
-void state_spin(struct snapraid_state* state, int operation);
+void state_device(struct snapraid_state* state, int operation);
 
 /**
  * Syncs the parity data.

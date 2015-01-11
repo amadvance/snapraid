@@ -20,15 +20,15 @@
 #include "support.h"
 #include "state.h"
 
-void state_spin(struct snapraid_state* state, int operation)
+void state_device(struct snapraid_state* state, int operation)
 {
 	tommy_node* i;
 	unsigned j;
 	tommy_list list;
 
 	switch (operation) {
-	case SPIN_UP : printf("Spinup...\n"); break;
-	case SPIN_DOWN : printf("Spindown...\n"); break;
+	case DEVICE_UP : printf("Spinup...\n"); break;
+	case DEVICE_DOWN : printf("Spindown...\n"); break;
 	}
 
 	tommy_list_init(&list);
@@ -36,36 +36,36 @@ void state_spin(struct snapraid_state* state, int operation)
 	/* for all disks */
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
-		disk_t* entry;
+		devinfo_t* entry;
 
-		entry = malloc_nofail(sizeof(disk_t));
+		entry = calloc_nofail(1, sizeof(devinfo_t));
 
-		pathcpy(entry->name, sizeof(entry->name), disk->name);
-		pathprint(entry->path, sizeof(entry->path), "%s", disk->dir);
 		entry->device = disk->device;
+		pathcpy(entry->name, sizeof(entry->name), disk->name);
+		pathcpy(entry->mount, sizeof(entry->mount), disk->dir);
 
 		tommy_list_insert_tail(&list, &entry->node, entry);
 	}
 
 	/* for all parities */
 	for (j = 0; j < state->level; ++j) {
-		disk_t* entry;
+		devinfo_t* entry;
 
-		entry = malloc_nofail(sizeof(disk_t));
+		entry = calloc_nofail(1, sizeof(devinfo_t));
 
-		pathcpy(entry->name, sizeof(entry->name), lev_config_name(j));
-		pathprint(entry->path, sizeof(entry->path), "%s", state->parity[j].path);
-		pathcut(entry->path); /* remove the parity file */
 		entry->device = state->parity[j].device;
+		pathcpy(entry->name, sizeof(entry->name), lev_config_name(j));
+		pathcpy(entry->mount, sizeof(entry->mount), state->parity[j].path);
+		pathcut(entry->mount); /* remove the parity file */
 
 		tommy_list_insert_tail(&list, &entry->node, entry);
 	}
 
-	if (diskspin(&list, operation) != 0) {
+	if (devquery(&list, operation) != 0) {
 		switch (operation) {
-		case SPIN_UP : fprintf(stderr, "Spinup"); break;
-		case SPIN_DOWN : fprintf(stderr, "Spindown"); break;
-		case SPIN_DEVICES : fprintf(stderr, "List devices"); break;
+		case DEVICE_UP : fprintf(stderr, "Spinup"); break;
+		case DEVICE_DOWN : fprintf(stderr, "Spindown"); break;
+		case DEVICE_LIST : fprintf(stderr, "List"); break;
 		}
 		fprintf(stderr, " unsupported in this platform.\n");
 	}
