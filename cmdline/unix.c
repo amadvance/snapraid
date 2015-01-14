@@ -458,7 +458,7 @@ static int devresolve(dev_t device, char* path, size_t path_size)
  * Read a device tree filling the specified list of disk_t entries.
  */
 #if HAVE_LINUX_DEVICE
-static int devtree(const char* name, dev_t device, tommy_list* list)
+static int devtree(const char* name, dev_t device, devinfo_t* parent, tommy_list* list)
 {
 	char path[PATH_MAX];
 	DIR* d;
@@ -483,7 +483,7 @@ static int devtree(const char* name, dev_t device, tommy_list* list)
 					/* LCOV_EXCL_STOP */
 				}
 
-				if (devtree(name, device, list) != 0) {
+				if (devtree(name, device, parent, list) != 0) {
 					/* LCOV_EXCL_START */
 					return -1;
 					/* LCOV_EXCL_STOP */
@@ -516,7 +516,7 @@ static int devtree(const char* name, dev_t device, tommy_list* list)
 			}
 		}
 
-		/* get the real name of the device */
+		/* get the device file */
 		if (devresolve(device, path, sizeof(path)) != 0) {
 			/* LCOV_EXCL_START */
 			return -1;
@@ -528,6 +528,7 @@ static int devtree(const char* name, dev_t device, tommy_list* list)
 		devinfo->device = device;
 		pathcpy(devinfo->name, sizeof(devinfo->name), name);
 		pathcpy(devinfo->file, sizeof(devinfo->file), path);
+		devinfo->parent = parent;
 
 		/* insert in the list */
 		tommy_list_insert_tail(list, &devinfo->node, devinfo);
@@ -536,6 +537,84 @@ static int devtree(const char* name, dev_t device, tommy_list* list)
 	return 0;
 }
 #endif
+
+/**
+ * Gets SMART attributes.
+ */
+static int devsmart(dev_t device, uint64_t* smart, uint64_t* size, char* serial)
+{
+	char cmd[128];
+	FILE* f;
+	int inside;
+	unsigned i;
+
+	*serial = 0;
+	for (i = 0; i < SMART_COUNT; ++i)
+		smart[i] = SMART_UNASSIGNED;
+
+	snprintf(cmd, sizeof(cmd), "smartctl -a /dev/block/%u:%u", major(device), minor(device));
+
+	f = popen(cmd, "r");
+	if (!f) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Failed to run smartctrl -a on device '%u:%u'.\n", major(device), minor(device));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	inside = 0;
+	while (1) {
+		char buf[256];
+		char attr[64];
+		unsigned id;
+		unsigned long long raw;
+		char* s;
+
+		s = fgets(buf, sizeof(buf), f);
+
+		if (s == 0)
+			break;
+
+		/* skip initial spaces */
+		while (isspace(*s))
+			++s;
+
+		if (*s == 0) {
+			inside = 0;
+		} else if (strncmp(s, "ID# ", 4) == 0) {
+			inside = 1;
+		} else if (sscanf(s, "Serial Number: %63s", serial) == 1) {
+		} else if (sscanf(s, "User Capacity: %63s", attr) == 1) {
+			*size = 0;
+			for (i = 0; attr[i]; ++i) {
+				if (isdigit(attr[i])) {
+					*size *= 10;
+					*size += attr[i] - '0';
+				}
+			}
+		} else if (inside) {
+			if (sscanf(s, "%u %*s %*s %*u %*u %*u %*s %*s %*s %llu", &id, &raw) != 2) {
+				/* LCOV_EXCL_START */
+				fprintf(stderr, "Invalid smartctrl line '%s'.\n", buf);
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+
+			if (id >= SMART_COUNT) {
+				/* LCOV_EXCL_START */
+				fprintf(stderr, "Invalid SMART id '%u'.\n", id);
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+
+			smart[id] = raw;
+		}
+	}
+
+	pclose(f);
+
+	return 0;
+}
 
 /**
  * Spin down a specific device.
@@ -645,7 +724,7 @@ static void* thread_spinup(void* arg)
 	/* set the device number for printing */
 	devinfo->device = st.st_dev;
 
-	/* get the block device */
+	/* get the device file */
 	if (devresolve(devinfo->device, devinfo->file, sizeof(devinfo->file)) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
@@ -670,12 +749,11 @@ static void* thread_spindown(void* arg)
 {
 #if HAVE_LINUX_DEVICE
 	devinfo_t* devinfo = arg;
-	dev_t device = devinfo->device;
 	uint64_t start;
 
 	start = tick_ms();
 
-	if (devdown(device) != 0) {
+	if (devdown(devinfo->device) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -691,48 +769,20 @@ static void* thread_spindown(void* arg)
 }
 
 /**
- * Lists all the devices.
+ * Thread for spinning down.
  */
-#if HAVE_LINUX_DEVICE
-static int device_list(tommy_list* list)
+static void* thread_smart(void* arg)
 {
-	tommy_node* i;
+	devinfo_t* devinfo = arg;
 
-	for (i = tommy_list_head(list); i != 0; i = i->next) {
-		tommy_list tree;
-		tommy_node* j;
-		devinfo_t* devinfo = i->data;
-
-		tommy_list_init(&tree);
-
-		/* get the block device */
-		if (devresolve(devinfo->device, devinfo->file, sizeof(devinfo->file)) != 0) {
-			/* LCOV_EXCL_START */
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-
-		/* expand the tree of devices */
-		if (devtree(devinfo->name, devinfo->device, &tree) != 0) {
-			/* LCOV_EXCL_START */
-			tommy_list_foreach(&tree, free);
-			fprintf(stderr, "Failed to expand device '%u:%u'.\n", major(devinfo->device), minor(devinfo->device));
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-
-		for (j = tommy_list_head(&tree); j != 0; j = j->next) {
-			devinfo_t* entry = j->data;
-
-			printf("%u:%u\t%s\t%u:%u\t%s\t%s\n", major(entry->device), minor(entry->device), entry->file, major(devinfo->device), minor(devinfo->device), devinfo->file, devinfo->name);
-		}
-
-		tommy_list_foreach(&tree, free);
+	if (devsmart(devinfo->device, devinfo->smart, &devinfo->smart_size, devinfo->smart_serial) != 0) {
+		/* LCOV_EXCL_START */
+		return (void*)-1;
+		/* LCOV_EXCL_STOP */
 	}
 
 	return 0;
 }
-#endif
 
 static int device_thread(tommy_list* list, void* (*func)(void* arg))
 {
@@ -784,16 +834,13 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 	return 0;
 }
 
-int devquery(tommy_list* list, int operation)
+int devquery(tommy_list* high, tommy_list* low, int operation)
 {
 	tommy_node* i;
-	tommy_list tree;
-	int ret;
-
-	tommy_list_init(&tree);
+	void* (*func)(void* arg) = 0;
 
 #if HAVE_LINUX_DEVICE
-	if (operation == DEVICE_DOWN || operation == DEVICE_LIST) {
+	if (operation != DEVICE_UP) {
 		struct stat st;
 		/* sysfs and devfs interfaces are required */
 		if (stat("/sys/dev/block", &st) != 0) {
@@ -808,20 +855,22 @@ int devquery(tommy_list* list, int operation)
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
-	}
 
-	if (operation == DEVICE_LIST)
-		return device_list(list);
-
-	if (operation == DEVICE_DOWN) {
 		/* for each device */
-		for (i = tommy_list_head(list); i != 0; i = i->next) {
+		for (i = tommy_list_head(high); i != 0; i = i->next) {
 			devinfo_t* devinfo = i->data;
 
-			/* expand the tree of devices */
-			if (devtree(devinfo->name, devinfo->device, &tree) != 0) {
+			/* get the device file */
+			if (devresolve(devinfo->device, devinfo->file, sizeof(devinfo->file)) != 0) {
 				/* LCOV_EXCL_START */
-				tommy_list_foreach(&tree, free);
+				fprintf(stderr, "Failed to resolve device '%u:%u'.\n", major(devinfo->device), minor(devinfo->device));
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+
+			/* expand the tree of devices */
+			if (devtree(devinfo->name, devinfo->device, devinfo, low) != 0) {
+				/* LCOV_EXCL_START */
 				fprintf(stderr, "Failed to expand device '%u:%u'.\n", major(devinfo->device), minor(devinfo->device));
 				return -1;
 				/* LCOV_EXCL_STOP */
@@ -831,8 +880,8 @@ int devquery(tommy_list* list, int operation)
 #endif
 
 	if (operation == DEVICE_UP) {
-		/* duplicate the list */
-		for (i = tommy_list_head(list); i != 0; i = i->next) {
+		/* duplicate the high */
+		for (i = tommy_list_head(high); i != 0; i = i->next) {
 			devinfo_t* devinfo = i->data;
 			devinfo_t* entry;
 
@@ -842,25 +891,30 @@ int devquery(tommy_list* list, int operation)
 			pathcpy(entry->name, sizeof(entry->name), devinfo->name);
 			pathcpy(entry->mount, sizeof(entry->mount), devinfo->mount);
 
-			/* insert in the list */
-			tommy_list_insert_tail(&tree, &entry->node, entry);
+			/* insert in the high */
+			tommy_list_insert_tail(low, &entry->node, entry);
 		}
 	}
 
-	/* sort the list */
-	tommy_list_sort(&tree, devcompare);
+	/* sort the high */
+	tommy_list_sort(low, devcompare);
 
 	/* removes duplicates */
-	for (i = tommy_list_head(&tree); i != 0; i = i->next) {
+	for (i = tommy_list_head(low); i != 0; i = i->next) {
 		while (i->next != 0 && devcompare(i->data, i->next->data) == 0)
-			free(tommy_list_remove_existing(&tree, i->next));
+			free(tommy_list_remove_existing(low, i->next));
 	}
 
-	ret = device_thread(&tree, operation == DEVICE_UP ? thread_spinup : thread_spindown);
+	switch (operation) {
+	case DEVICE_UP : func = thread_spinup; break;
+	case DEVICE_DOWN : func = thread_spindown; break;
+	case DEVICE_SMART : func = thread_smart; break;
+	}
 
-	tommy_list_foreach(&tree, free);
+	if (!func)
+		return 0;
 
-	return ret;
+	return device_thread(low, func);
 }
 
 void os_init(int opt)

@@ -1821,17 +1821,19 @@ static void* thread_spinup(void* arg)
 	return 0;
 }
 
-int devquery(tommy_list* list, int operation)
+int devquery(tommy_list* high, tommy_list* low, int operation)
 {
 	tommy_node* i;
 	int fail = 0;
+
+	(void)low;
 
 	/* we support only thread_spinup */
 	if (operation != DEVICE_UP)
 		return -1;
 
 	/* starts all threads */
-	for (i = tommy_list_head(list); i != 0; i = i->next) {
+	for (i = tommy_list_head(high); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
 
 		if (pthread_create(&devinfo->thread, 0, thread_spinup, devinfo) != 0) {
@@ -1843,7 +1845,7 @@ int devquery(tommy_list* list, int operation)
 	}
 
 	/* joins all threads */
-	for (i = tommy_list_head(list); i != 0; i = i->next) {
+	for (i = tommy_list_head(high); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
 		void* retval;
 		if (pthread_join(devinfo->thread, &retval) != 0) {

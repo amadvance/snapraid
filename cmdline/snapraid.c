@@ -37,7 +37,7 @@ void usage(void)
 {
 	version();
 
-	printf("Usage: " PACKAGE " status|diff|sync|scrub|list|dup|up|down|pool|check|fix [options]\n");
+	printf("Usage: " PACKAGE " status|diff|sync|scrub|list|dup|up|down|smart|pool|check|fix [options]\n");
 	printf("\n");
 	printf("Commands:\n");
 	printf("  status Print the status of the array\n");
@@ -48,6 +48,7 @@ void usage(void)
 	printf("  dup    Find duplicate files\n");
 	printf("  up     Spinup the array\n");
 	printf("  down   Spindown the array\n");
+	printf("  smart  SMART attributes of the array\n");
 	printf("  pool   Create or update the virtual view of the array\n");
 	printf("  check  Check the array\n");
 	printf("  fix    Fix the array\n");
@@ -384,6 +385,7 @@ void signal_handler(int signal)
 #define OPERATION_SPINUP 13
 #define OPERATION_SPINDOWN 14
 #define OPERATION_DEVICES 15
+#define OPERATION_SMART 16
 
 int main(int argc, char* argv[])
 {
@@ -743,6 +745,8 @@ int main(int argc, char* argv[])
 		operation = OPERATION_SPINDOWN;
 	} else if (strcmp(argv[optind], "test-devices") == 0) {
 		operation = OPERATION_DEVICES;
+	} else if (strcmp(argv[optind], "smart") == 0) {
+		operation = OPERATION_SMART;
 	} else {
 		/* LCOV_EXCL_START */
 		fprintf(stderr, "Unknown command '%s'\n", argv[optind]);
@@ -861,7 +865,7 @@ int main(int argc, char* argv[])
 	case OPERATION_STATUS :
 	case OPERATION_REWRITE :
 	case OPERATION_REHASH :
-	case OPERATION_SPINUP : /* skip because we want to do it in parallel */
+	case OPERATION_SPINUP : /* we want to do it in different threads to avoid blocking */
 		/* avoid to check and access data disks if not needed */
 		opt.skip_disk_access = 1;
 		break;
@@ -876,7 +880,7 @@ int main(int argc, char* argv[])
 	case OPERATION_REWRITE :
 	case OPERATION_REHASH :
 	case OPERATION_NANO :
-	case OPERATION_SPINUP : /* skip because we want to do it in parallel */
+	case OPERATION_SPINUP : /* we want to do it in different threads to avoid blocking */
 		/* avoid to check and access parity disks if not needed */
 		opt.skip_parity_access = 1;
 		break;
@@ -891,6 +895,7 @@ int main(int argc, char* argv[])
 	case OPERATION_SPINUP :
 	case OPERATION_SPINDOWN :
 	case OPERATION_DEVICES :
+	case OPERATION_SMART :
 		opt.skip_self = 1;
 		break;
 	}
@@ -1083,6 +1088,8 @@ int main(int argc, char* argv[])
 		state_device(&state, DEVICE_DOWN);
 	} else if (operation == OPERATION_DEVICES) {
 		state_device(&state, DEVICE_LIST);
+	} else if (operation == OPERATION_SMART) {
+		state_device(&state, DEVICE_SMART);
 	} else if (operation == OPERATION_STATUS) {
 		state_read(&state);
 

@@ -95,6 +95,7 @@ int state_status(struct snapraid_state* state)
 	}
 	fprintf(stdlog, "summary:parity_block_free_min:%u\n", parity_block_free);
 
+	printf("SnapRAID status report:\n");
 	printf("\n");
 	printf("   Files Fragmented Excess  Wasted  Used    Free  Use Name\n");
 	printf("            Files  Fragments GiB     GiB     GiB          \n");

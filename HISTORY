@@ -3,6 +3,8 @@ SnapRAID HISTORY
 
 8.0 2015/01 BETA
 ================
+ * Adds new "smart" command to print a SMART report of the array.
+   At now it's available only in Linux.
  * Adds new "up" and "down" commands to spin up and down the disks of
    the array. Note that "down" is available only in Linux.
  * Allows "sync" and "scrub" to continue after the first

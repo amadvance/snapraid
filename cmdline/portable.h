@@ -303,13 +303,32 @@ int exit_failure;
 int randomize(void* ptr, size_t size);
 
 /**
- * Disk entry.
+ * SMART attributes.
+ */
+#define SMART_COUNT 256
+
+/**
+ * SMART max attribute length.
+ */
+#define SMART_MAX 64
+
+/**
+ * Value for unassigned SMART attribute.
+ */
+#define SMART_UNASSIGNED 0xFFFFFFFFFFFFFFFFULL
+
+/**
+ * Device info entry.
  */
 struct devinfo_struct {
 	uint64_t device; /**< Device ID. */
 	char name[PATH_MAX]; /**< Name of the disk. */
 	char mount[PATH_MAX]; /**< Mount point or other contained directory. */
 	char file[PATH_MAX]; /**< File device. */
+	struct devinfo_struct* parent; /**< Pointer at the parent if any. */
+	uint64_t smart[SMART_COUNT]; /**< SMART raw attributes. */
+	uint64_t  smart_size; /**< SMART size. */
+	char smart_serial[SMART_MAX]; /**< SMART serial number. */
 #if HAVE_PTHREAD_CREATE
 	pthread_t thread;
 #endif
@@ -317,14 +336,18 @@ struct devinfo_struct {
 };
 typedef struct devinfo_struct devinfo_t;
 
-#define DEVICE_DOWN 0
-#define DEVICE_UP 1
-#define DEVICE_LIST -1
+#define DEVICE_LIST 0
+#define DEVICE_DOWN 1
+#define DEVICE_UP 2
+#define DEVICE_SMART 3
 
 /**
- * Spin all disks.
+ * Query all the "high" level devices with the specified operation,
+ * and produces a list of "low" level devices to operate on.
+ *
+ * The resulting "low" device list must be already initialized.
  */
-int devquery(tommy_list* list, int operation);
+int devquery(tommy_list* high, tommy_list* low, int operation);
 
 #endif
 
