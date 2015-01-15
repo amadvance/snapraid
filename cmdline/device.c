@@ -161,10 +161,12 @@ static void state_smart(tommy_list* low)
 	printf("\n");
 	printf("   Temp");
 	printf("  Power");
+	printf("  Error");
 	printf("\n");
 	printf("     C°");
 	printf(" OnDays");
-	printf("   AFR");
+	printf("  Count");
+	printf("  AFR");
 	printf("  Size");
 	printf("  Serial/Name");
 	printf("\n");
@@ -186,11 +188,19 @@ static void state_smart(tommy_list* low)
 		else
 			printf("      -");
 
+		if (devinfo->smart[SMART_ERROR] != SMART_UNASSIGNED)
+			printf("%6" PRIu64, devinfo->smart[SMART_ERROR]);
+		else
+			printf("     -");
+
 		afr = smart_afr(devinfo->smart);
 
 		printf("%5.0f%%", afr * 100);
 
-		printf("  %2.1fT", devinfo->smart_size / 1E12);
+		if (devinfo->smart[SMART_SIZE] != SMART_UNASSIGNED)
+			printf("  %2.1fT", devinfo->smart[SMART_SIZE] / 1E12);
+		else
+			printf("     -");
 
 		printf("  %s", devinfo->smart_serial);
 

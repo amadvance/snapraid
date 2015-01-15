@@ -541,7 +541,7 @@ static int devtree(const char* name, dev_t device, devinfo_t* parent, tommy_list
 /**
  * Gets SMART attributes.
  */
-static int devsmart(dev_t device, uint64_t* smart, uint64_t* size, char* serial)
+static int devsmart(dev_t device, uint64_t* smart, char* serial)
 {
 	char cmd[128];
 	FILE* f;
@@ -551,6 +551,7 @@ static int devsmart(dev_t device, uint64_t* smart, uint64_t* size, char* serial)
 	*serial = 0;
 	for (i = 0; i < SMART_COUNT; ++i)
 		smart[i] = SMART_UNASSIGNED;
+	*serial = 0;
 
 	snprintf(cmd, sizeof(cmd), "smartctl -a /dev/block/%u:%u", major(device), minor(device));
 
@@ -581,15 +582,19 @@ static int devsmart(dev_t device, uint64_t* smart, uint64_t* size, char* serial)
 
 		if (*s == 0) {
 			inside = 0;
-		} else if (strncmp(s, "ID# ", 4) == 0) {
+		} else if (strncmp(s, "ID#", 3) == 0) {
 			inside = 1;
+		} else if (strncmp(s, "No Errors Logged", 16) == 0) {
+			smart[SMART_ERROR] = 0;
+		} else if (sscanf(s, "ATA Error Count: %llu", &raw) == 1) {
+			smart[SMART_ERROR] = raw;
 		} else if (sscanf(s, "Serial Number: %63s", serial) == 1) {
 		} else if (sscanf(s, "User Capacity: %63s", attr) == 1) {
-			*size = 0;
+			smart[SMART_SIZE] = 0;
 			for (i = 0; attr[i]; ++i) {
 				if (isdigit(attr[i])) {
-					*size *= 10;
-					*size += attr[i] - '0';
+					smart[SMART_SIZE] *= 10;
+					smart[SMART_SIZE] += attr[i] - '0';
 				}
 			}
 		} else if (inside) {
@@ -600,7 +605,7 @@ static int devsmart(dev_t device, uint64_t* smart, uint64_t* size, char* serial)
 				/* LCOV_EXCL_STOP */
 			}
 
-			if (id >= SMART_COUNT) {
+			if (id >= 256) {
 				/* LCOV_EXCL_START */
 				fprintf(stderr, "Invalid SMART id '%u'.\n", id);
 				return -1;
@@ -775,7 +780,7 @@ static void* thread_smart(void* arg)
 {
 	devinfo_t* devinfo = arg;
 
-	if (devsmart(devinfo->device, devinfo->smart, &devinfo->smart_size, devinfo->smart_serial) != 0) {
+	if (devsmart(devinfo->device, devinfo->smart, devinfo->smart_serial) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */

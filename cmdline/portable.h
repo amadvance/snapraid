@@ -305,7 +305,13 @@ int randomize(void* ptr, size_t size);
 /**
  * SMART attributes.
  */
-#define SMART_COUNT 256
+#define SMART_COUNT (256+2)
+
+/**
+ * Additional info attributes.
+ */
+#define SMART_ERROR 256 /**< ATA Error count. */
+#define SMART_SIZE 257 /**< Size in bytes. */
 
 /**
  * SMART max attribute length.
@@ -327,7 +333,6 @@ struct devinfo_struct {
 	char file[PATH_MAX]; /**< File device. */
 	struct devinfo_struct* parent; /**< Pointer at the parent if any. */
 	uint64_t smart[SMART_COUNT]; /**< SMART raw attributes. */
-	uint64_t  smart_size; /**< SMART size. */
 	char smart_serial[SMART_MAX]; /**< SMART serial number. */
 #if HAVE_PTHREAD_CREATE
 	pthread_t thread;
