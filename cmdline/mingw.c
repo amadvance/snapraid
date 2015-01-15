@@ -869,6 +869,15 @@ int windows_ftruncate(int fd, off64_t off)
 		return -1;
 	}
 
+	/*
+	 * Windows effectively reserves space, but it doesn't initialize it.
+	 * It's then important to write starting from the begin to the end,
+	 * to avoid to have Windows to fill the holes writing zeros.
+	 *
+	 * See:
+	 * "Why does my single-byte write take forever?"
+	 * http://blogs.msdn.com/b/oldnewthing/archive/2011/09/22/10215053.aspx
+	 */
 	if (!SetEndOfFile(h)) {
 		windows_errno(GetLastError());
 		return -1;
