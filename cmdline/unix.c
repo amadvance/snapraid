@@ -735,22 +735,6 @@ static int devdown(dev_t device)
 #endif
 
 /**
- * Compare two device entries.
- */
-static int devcompare(const void* void_a, const void* void_b)
-{
-	const devinfo_t* a = void_a;
-	const devinfo_t* b = void_b;
-
-	if (a->device < b->device)
-		return -1;
-	if (a->device > b->device)
-		return 1;
-
-	return strcmp(a->mount, b->mount);
-}
-
-/**
  * Spin up a device.
  *
  * There isn't a defined way to spin up a device,
@@ -977,15 +961,6 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 			/* insert in the high */
 			tommy_list_insert_tail(low, &entry->node, entry);
 		}
-	}
-
-	/* sort the high */
-	tommy_list_sort(low, devcompare);
-
-	/* removes duplicates */
-	for (i = tommy_list_head(low); i != 0; i = i->next) {
-		while (i->next != 0 && devcompare(i->data, i->next->data) == 0)
-			free(tommy_list_remove_existing(low, i->next));
 	}
 
 #if HAVE_LINUX_DEVICE
