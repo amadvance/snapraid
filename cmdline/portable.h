@@ -350,7 +350,7 @@ typedef struct devinfo_struct devinfo_t;
  * Query all the "high" level devices with the specified operation,
  * and produces a list of "low" level devices to operate on.
  *
- * The resulting "low" device list must be already initialized.
+ * The passed "low" device list must be already initialized.
  */
 int devquery(tommy_list* high, tommy_list* low, int operation);
 
