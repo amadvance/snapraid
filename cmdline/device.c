@@ -153,9 +153,44 @@ static double smart_afr(uint64_t* smart)
 	return afr;
 }
 
+/**
+ * Prints a string with space padding.
+ */
+static void printl(const char* str, size_t pad)
+{
+	size_t len;
+
+	printf(str);
+
+	len = strlen(str);
+
+	while (len < pad) {
+		printf(" ");
+		++len;
+	}
+}
+
 static void state_smart(tommy_list* low)
 {
 	tommy_node* i;
+	size_t device_pad;
+	size_t serial_pad;
+
+	/* compute lengths for padding */
+	device_pad = 0;
+	serial_pad = 0;
+	for (i = tommy_list_head(low); i != 0; i = i->next) {
+		size_t len;
+		devinfo_t* devinfo = i->data;
+
+		len = strlen(devinfo->file);
+		if (len > device_pad)
+			device_pad = len;
+
+		len = strlen(devinfo->smart_serial);
+		if (len > serial_pad)
+			serial_pad = len;
+	}
 
 	printf("SnapRAID SMART report:\n");
 	printf("\n");
@@ -168,7 +203,9 @@ static void state_smart(tommy_list* low)
 	printf("  Count");
 	printf("  AFR");
 	printf("  Size");
-	printf("  Serial/Name");
+	printf("  "); printl("Serial", serial_pad);
+	printf("  "); printl("Device", device_pad);
+	printf("  Name");
 	printf("\n");
 	printf(" --------------------------------------------------------------------------\n");
 
@@ -202,9 +239,23 @@ static void state_smart(tommy_list* low)
 		else
 			printf("     -");
 
-		printf("  %s", devinfo->smart_serial);
+		printf("  ");
+		if (*devinfo->smart_serial)
+			printl(devinfo->smart_serial, serial_pad);
+		else
+			printl("-", serial_pad);
 
-		printf("/%s", devinfo->name);
+		printf("  ");
+		if (*devinfo->file)
+			printl(devinfo->file, device_pad);
+		else
+			printl("-", device_pad);
+
+		printf("  ");
+		if (*devinfo->name)
+			printf("%s", devinfo->name);
+		else
+			printf("-");
 
 		printf("\n");
 	}
