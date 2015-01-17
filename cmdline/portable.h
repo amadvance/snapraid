@@ -171,6 +171,10 @@
 #include <pthread.h>
 #endif
 
+#if HAVE_MATH_H
+#include <math.h>
+#endif
+
 /**
  * Disable case check in Windows.
  */

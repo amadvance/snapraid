@@ -94,7 +94,7 @@ static struct afr_point AFR_198[] = {
 };
 
 /**
- * Computes the estimated AFR from a set of data points.
+ * Computes the estimated AFR (Annual Failure Rate) from a set of data points.
  */
 static double smart_afr_value(struct afr_point* tab, uint64_t value)
 {
@@ -127,6 +127,26 @@ static double smart_afr_value(struct afr_point* tab, uint64_t value)
 
 /**
  * Computes the estimated AFR of a set of SMART attributes.
+ *
+ * We assume the AFR (Annual Failure Rate) data from Backblaze
+ * defined as AFR = 8760/MTBF (Mean Time Between Failures in hours).
+ *
+ * This is consistent with their definition of AFR:
+ * "An annual failure rate of 100% means that if you have one disk drive slot
+ * and keep a drive running in it all the time, you can expect an average of
+ * one failure a year. If, on the other hand, you have one failure per month
+ * in your one drive slot, then your failure rate is 1200%. If you run n
+ * drives for t years with an annual failure rate of r, the number of failures
+ * is expected to be n * r * t."
+ *
+ * Note that this definition is different from the one given
+ * by Seagate, that defines AFR = 1 - exp(-8760/MTBF), that
+ * instead represents the probability of a failure in the next
+ * year, and then we call it as AFP (Annual Failure Probability).
+ *
+ * To combine the different AFR from different SMART attributes,
+ * we sums them as we assume that they are independent,
+ * (even if likely they are not).
  */
 static double smart_afr(uint64_t* smart)
 {
@@ -154,6 +174,70 @@ static double smart_afr(uint64_t* smart)
 }
 
 /**
+ * Factorial.
+ */
+static double fact(unsigned n)
+{
+	double v = 1;
+
+	while (n > 1)
+		v *= n--;
+
+	return v;
+}
+
+/**
+ * Probability of having exactly ::n events in a Poisson
+ * distribution with rate ::rate in a time unit.
+ */
+static double poisson_prob_n_failures(double rate, unsigned n)
+{
+	return pow(rate, n) * exp(-rate) / fact(n);
+}
+
+/**
+ * Probability of having ::n or more events in a Poisson
+ * distribution with rate ::rate in a time unit.
+ */
+static double poisson_prob_n_or_more_failures(double rate, unsigned n)
+{
+	double p_neg = 0;
+	unsigned i;
+
+	for (i = 0; i < n; ++i)
+		p_neg += poisson_prob_n_failures(rate, i);
+
+	return 1 - p_neg;
+}
+
+/**
+ * Probability of having a sequence of ::failure failures
+ * during the ::replace_time time in an array with the
+ * ::array_rate failure rate.
+ */
+static double raid_prob_of_one_or_more_failures(double array_rate, double replace_time, unsigned failure)
+{
+	/*
+	 * To compute the RAID probability of failure
+	 * we scale the ARRAY failure rate considering the joint
+	 * probability that after the first failure,
+	 * you need also extra N-1 failures during the replace time
+	 * to make the RAID to fail.
+	 */
+
+	/* probability of the next N-1 failure in the replace_time */
+	double prob_next_failures = poisson_prob_n_or_more_failures(array_rate * replace_time, failure - 1);
+
+	/* scaled rate for RAID */
+	double raid_rate = array_rate * prob_next_failures;
+
+	/* probability of at least one RAID failure */
+	/* note that this probability is very small, */
+	/* and it's almost equal at the probabilty of the first failure. */
+	return poisson_prob_n_or_more_failures(raid_rate, 1);
+}
+
+/**
  * Prints a string with space padding.
  */
 static void printl(const char* str, size_t pad)
@@ -170,11 +254,51 @@ static void printl(const char* str, size_t pad)
 	}
 }
 
-static void state_smart(tommy_list* low)
+/**
+ * Prints a probability with space padding.
+ */
+static void printp(double v, size_t pad)
+{
+	char buf[64];
+	const char* s = " %%";
+
+	if (v > 0.1)
+		snprintf(buf, sizeof(buf), "%5.2f%s", v, s);
+	else if (v > 0.01)
+		snprintf(buf, sizeof(buf), "%6.3f%s", v, s);
+	else if (v > 0.001)
+		snprintf(buf, sizeof(buf), "%7.4f%s", v, s);
+	else if (v > 0.0001)
+		snprintf(buf, sizeof(buf), "%8.5f%s", v, s);
+	else if (v > 0.00001)
+		snprintf(buf, sizeof(buf), "%9.6f%s", v, s);
+	else if (v > 0.000001)
+		snprintf(buf, sizeof(buf), "%10.7f%s", v, s);
+	else if (v > 0.0000001)
+		snprintf(buf, sizeof(buf), "%11.8f%s", v, s);
+	else if (v > 0.00000001)
+		snprintf(buf, sizeof(buf), "%12.9f%s", v, s);
+	else if (v > 0.000000001)
+		snprintf(buf, sizeof(buf), "%13.10f%s", v, s);
+	else if (v > 0.0000000001)
+		snprintf(buf, sizeof(buf), "%14.11f%s", v, s);
+	else if (v > 0.00000000001)
+		snprintf(buf, sizeof(buf), "%15.12f%s", v, s);
+	else if (v > 0.000000000001)
+		snprintf(buf, sizeof(buf), "%16.13f%s", v, s);
+	else
+		snprintf(buf, sizeof(buf), "%17.14f%s", v, s);
+	printl(buf, pad);
+}
+
+static void state_smart(unsigned level, tommy_list* low)
 {
 	tommy_node* i;
+	unsigned j;
 	size_t device_pad;
 	size_t serial_pad;
+	double array_afr;
+	double p_at_least_one_failure;
 
 	/* compute lengths for padding */
 	device_pad = 0;
@@ -197,18 +321,22 @@ static void state_smart(tommy_list* low)
 	printf("   Temp");
 	printf("  Power");
 	printf("  Error");
+	printf(" AFP");
+	printf(" Size");
 	printf("\n");
 	printf("     C°");
 	printf(" OnDays");
 	printf("  Count");
-	printf("  AFR");
-	printf("  Size");
+	printf("   %%");
+	printf("   TB");
 	printf("  "); printl("Serial", serial_pad);
 	printf("  "); printl("Device", device_pad);
-	printf("  Name");
+	printf("  Disk");
 	printf("\n");
-	printf(" --------------------------------------------------------------------------\n");
+	/*      |<##################################################################72>|####80>| */
+	printf(" -----------------------------------------------------------------------\n");
 
+	array_afr = 0;
 	for (i = tommy_list_head(low); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
 		double afr;
@@ -232,12 +360,16 @@ static void state_smart(tommy_list* low)
 
 		afr = smart_afr(devinfo->smart);
 
-		printf("%5.0f%%", afr * 100);
+		/* use only afr of disks in the array */
+		if (devinfo->parent != 0)
+			array_afr += afr;
+
+		printf("%5.0f", poisson_prob_n_or_more_failures(afr, 1) * 100);
 
 		if (devinfo->smart[SMART_SIZE] != SMART_UNASSIGNED)
-			printf("  %2.1fT", devinfo->smart[SMART_SIZE] / 1E12);
+			printf("  %2.1f", devinfo->smart[SMART_SIZE] / 1E12);
 		else
-			printf("     -");
+			printf("    -");
 
 		printf("  ");
 		if (*devinfo->smart_serial)
@@ -255,12 +387,49 @@ static void state_smart(tommy_list* low)
 		if (*devinfo->name)
 			printf("%s", devinfo->name);
 		else
-			printf("-");
+			printf("- (not in stats)");
 
 		printf("\n");
 	}
 
 	printf("\n");
+
+	/*
+	 * The probability of one and of at least one failure is computed assuming
+	 * a Poisson distribution with the estimated failure rate.
+	 */
+	p_at_least_one_failure = poisson_prob_n_or_more_failures(array_afr, 1);
+
+	/*      |<##################################################################72>|####80>| */
+	printf("Probability in the next year of at least one failure is: %.0f %%\n\n",
+		p_at_least_one_failure * 100);
+
+	/*      |<##################################################################72>|####80>| */
+	printf("Probability in the next year of a sequence of failures in a short\n");
+	printf("period of one/two/four weeks is:\n");
+	printf("\n");
+	printf("  Fails  1 Week                 2 Weeks              4 Weeks\n");
+	printf(" -----------------------------------------------------------------------\n");
+	for (j = 2; j < 8; ++j) {
+		const char* sep = level + 1 == j ? ">>> " : "    ";
+
+		printf("%5u", j);
+		printf(sep);
+		printp(raid_prob_of_one_or_more_failures(array_afr, 7.0 / 365, j) * 100, 20);
+		printf(sep);
+		printp(raid_prob_of_one_or_more_failures(array_afr, 14.0 / 365, j) * 100, 18);
+		printf(sep);
+		printp(raid_prob_of_one_or_more_failures(array_afr, 28.0 / 365, j) * 100, 14);
+		printf("\n");
+	}
+
+	printf("\n");
+
+	/*      |<##################################################################72>|####80>| */
+	printf("The line marked with >>> represents the probability that in the next\n");
+	printf("year you'll have a sequence of failures that your %s will NOT be\n", lev_config_name(level - 1));
+	printf("able to recover, assuming that failed disks are replaced in the\n");
+	printf("specified period.\n");
 }
 
 void state_device(struct snapraid_state* state, int operation)
@@ -328,7 +497,7 @@ void state_device(struct snapraid_state* state, int operation)
 #endif
 
 	if (operation == DEVICE_SMART) {
-		state_smart(&low);
+		state_smart(state->level, &low);
 	}
 
 	tommy_list_foreach(&high, free);

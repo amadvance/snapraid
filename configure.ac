@@ -25,7 +25,7 @@ AC_HEADER_DIRENT
 AC_HEADER_TIME
 AC_CHECK_HEADERS([fcntl.h stddef.h stdint.h stdlib.h string.h limits.h])
 AC_CHECK_HEADERS([unistd.h getopt.h fnmatch.h io.h inttypes.h byteswap.h])
-AC_CHECK_HEADERS([pthread.h])
+AC_CHECK_HEADERS([pthread.h math.h])
 AC_CHECK_HEADERS([sys/time.h sys/wait.h sys/file.h sys/ioctl.h sys/vfs.h sys/statfs.h sys/param.h sys/mount.h])
 AC_CHECK_HEADERS([linux/fiemap.h linux/fs.h mach/mach_time.h])
 
@@ -83,6 +83,7 @@ AC_SEARCH_LIBS([clock_gettime], [rt])
 AC_CHECK_FUNCS([clock_gettime])
 AC_CHECK_CC_OPT([-pthread], CFLAGS="$CFLAGS -pthread", [])
 AC_CHECK_FUNCS([pthread_create])
+AC_SEARCH_LIBS([exp], [m])
 
 dnl Checks for architecture
 AC_C_BIGENDIAN
