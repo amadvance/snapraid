@@ -19,6 +19,7 @@
 
 #include "support.h"
 #include "state.h"
+#include "raid/raid.h"
 
 /**
  * Annual Failure Rate data points from Backblaze.
@@ -205,36 +206,37 @@ static double poisson_prob_n_or_more_failures(double rate, unsigned n)
 	unsigned i;
 
 	for (i = 0; i < n; ++i)
-		p_neg += poisson_prob_n_failures(rate, i);
+		p_neg += poisson_prob_n_failures(rate, n - 1 - i);
 
 	return 1 - p_neg;
 }
 
 /**
- * Probability of having a sequence of ::failure failures
- * during the ::replace_time time in an array with the
- * ::array_rate failure rate.
+ * Probability of having data loss in a RAID system with the specified ::redundancy
+ * supposing the specified ::array_failure_rate, and ::replace_rate.
  */
-static double raid_prob_of_one_or_more_failures(double array_rate, double replace_time, unsigned failure)
+static double raid_prob_of_one_or_more_failures(double array_failure_rate, double replace_rate, unsigned n, unsigned redundancy)
 {
+	(void)n;
+
 	/*
 	 * To compute the RAID probability of failure
 	 * we scale the ARRAY failure rate considering the joint
 	 * probability that after the first failure,
-	 * you need also extra N-1 failures during the replace time
+	 * you need also extra failures during the replace time
 	 * to make the RAID to fail.
 	 */
 
-	/* probability of the next N-1 failure in the replace_time */
-	double prob_next_failures = poisson_prob_n_or_more_failures(array_rate * replace_time, failure - 1);
+	/* probability of the extra 1 failure in the replace time */
+	double prob_next_failures = poisson_prob_n_or_more_failures(array_failure_rate / replace_rate, redundancy);
 
 	/* scaled rate for RAID */
-	double raid_rate = array_rate * prob_next_failures;
+	double raid_failure_rate = array_failure_rate * prob_next_failures;
 
 	/* probability of at least one RAID failure */
-	/* note that this probability is very small, */
-	/* and it's almost equal at the probabilty of the first failure. */
-	return poisson_prob_n_or_more_failures(raid_rate, 1);
+	/* note that is almost equal at the probabilty of */
+	/* the first failure. */
+	return poisson_prob_n_or_more_failures(raid_failure_rate, 1);
 }
 
 /**
@@ -297,7 +299,8 @@ static void state_smart(unsigned level, tommy_list* low)
 	unsigned j;
 	size_t device_pad;
 	size_t serial_pad;
-	double array_afr;
+	double array_failure_rate;
+	unsigned array_n;
 	double p_at_least_one_failure;
 
 	/* compute lengths for padding */
@@ -336,7 +339,8 @@ static void state_smart(unsigned level, tommy_list* low)
 	/*      |<##################################################################72>|####80>| */
 	printf(" -----------------------------------------------------------------------\n");
 
-	array_afr = 0;
+	array_failure_rate = 0;
+	array_n = 0;
 	for (i = tommy_list_head(low); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
 		double afr;
@@ -361,8 +365,10 @@ static void state_smart(unsigned level, tommy_list* low)
 		afr = smart_afr(devinfo->smart);
 
 		/* use only afr of disks in the array */
-		if (devinfo->parent != 0)
-			array_afr += afr;
+		if (devinfo->parent != 0) {
+			array_failure_rate += afr;
+			++array_n;
+		}
 
 		printf("%5.0f", poisson_prob_n_or_more_failures(afr, 1) * 100);
 
@@ -394,42 +400,45 @@ static void state_smart(unsigned level, tommy_list* low)
 
 	printf("\n");
 
+	/*      |<##################################################################72>|####80>| */
+	printf("The AFP (Annual Failure Probability) is the probability that the disk is\n");
+	printf("going to fail in the next year.\n");
+	printf("\n");
+
 	/*
 	 * The probability of one and of at least one failure is computed assuming
-	 * a Poisson distribution with the estimated failure rate.
+	 * a Poisson distribution with the estimated array failure rate.
 	 */
-	p_at_least_one_failure = poisson_prob_n_or_more_failures(array_afr, 1);
+	p_at_least_one_failure = poisson_prob_n_or_more_failures(array_failure_rate, 1);
 
 	/*      |<##################################################################72>|####80>| */
-	printf("Probability in the next year of at least one failure is: %.0f %%\n\n",
-		p_at_least_one_failure * 100);
-
-	/*      |<##################################################################72>|####80>| */
-	printf("Probability in the next year of a sequence of failures in a short\n");
-	printf("period of one/two/four weeks is:\n");
+	printf("Probability of at least one disk failure in the next year is: %.0f %%\n", p_at_least_one_failure * 100);
 	printf("\n");
-	printf("  Fails  1 Week                 2 Weeks              4 Weeks\n");
-	printf(" -----------------------------------------------------------------------\n");
-	for (j = 2; j < 8; ++j) {
-		const char* sep = level + 1 == j ? ">>> " : "    ";
 
-		printf("%5u", j);
+	/*      |<##################################################################72>|####80>| */
+	printf("Probability of data loss in the next year for different repair times:\n");
+	printf("\n");
+	printf("  Parity  Reair 1 Week           Repair 2 Weeks       Repair 4 Weeks\n");
+	printf(" -----------------------------------------------------------------------\n");
+	for (j = 0; j < RAID_PARITY_MAX; ++j) {
+		const char* sep = "    ";
+
+		printf("%5u ", j + 1);
 		printf(sep);
-		printp(raid_prob_of_one_or_more_failures(array_afr, 7.0 / 365, j) * 100, 20);
+		printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 7, array_n, j + 1) * 100, 20);
 		printf(sep);
-		printp(raid_prob_of_one_or_more_failures(array_afr, 14.0 / 365, j) * 100, 18);
+		printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 14, array_n, j + 1) * 100, 18);
 		printf(sep);
-		printp(raid_prob_of_one_or_more_failures(array_afr, 28.0 / 365, j) * 100, 14);
+		printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 28, array_n, j + 1) * 100, 14);
 		printf("\n");
 	}
 
 	printf("\n");
 
 	/*      |<##################################################################72>|####80>| */
-	printf("The line marked with >>> represents the probability that in the next\n");
-	printf("year you'll have a sequence of failures that your %s will NOT be\n", lev_config_name(level - 1));
-	printf("able to recover, assuming that failed disks are replaced in the\n");
-	printf("specified period.\n");
+	printf("These are the probabilities that in the next year you'll have a sequence\n");
+	printf("of failures that your %s WONT be able to recover,\n", lev_config_name(level - 1));
+	printf("assuming that any failed disk is replaced in the specified repair time.\n");
 }
 
 void state_device(struct snapraid_state* state, int operation)
