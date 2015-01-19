@@ -217,21 +217,35 @@ static double poisson_prob_n_or_more_failures(double rate, unsigned n)
  */
 static double raid_prob_of_one_or_more_failures(double array_failure_rate, double replace_rate, unsigned n, unsigned redundancy)
 {
-	(void)n;
+	unsigned i;
+	double MTBF;
+	double MTTR;
+	double MTTDL;
+	double raid_failure_rate;
 
 	/*
-	 * To compute the RAID probability of failure
-	 * we scale the ARRAY failure rate considering the joint
-	 * probability that after the first failure,
-	 * you need also extra failures during the replace time
-	 * to make the RAID to fail.
+	 * Use the MTTDL model (Mean Time To Data Loss) to estimate the
+	 * failure rate of the array.
+	 *
+	 * See:
+	 * Garth Alan Gibson, "Redundant Disk Arrays: Reliable, Parallel Secondary Storage", 1990
 	 */
 
-	/* probability of the extra 1 failure in the replace time */
-	double prob_next_failures = poisson_prob_n_or_more_failures(array_failure_rate / replace_rate, redundancy);
+	/* get the Mean Time Between Failure of a single disk */
+	/* from the array failure rate */
+	MTBF = n / array_failure_rate;
 
-	/* scaled rate for RAID */
-	double raid_failure_rate = array_failure_rate * prob_next_failures;
+	/* get the Mean Time Between Repair (the time that a failed disk is replaced) */
+	/* from the repair rate */
+	MTTR = 1.0 / replace_rate;
+
+	/* use the approximated MTTDL equation */
+	MTTDL = pow(MTBF, redundancy + 1) / pow(MTTR, redundancy);
+	for (i = 0; i < redundancy + 1; ++i)
+		MTTDL /= n - i;
+
+	/* the raid failure rate is just the inverse of the MTTDL */
+	raid_failure_rate = 1.0 / MTTDL;
 
 	/* probability of at least one RAID failure */
 	/* note that is almost equal at the probabilty of */
