@@ -307,14 +307,13 @@ static void printp(double v, size_t pad)
 	printl(buf, pad);
 }
 
-static void state_smart(unsigned level, tommy_list* low)
+static void state_smart(unsigned n, tommy_list* low)
 {
 	tommy_node* i;
 	unsigned j;
 	size_t device_pad;
 	size_t serial_pad;
 	double array_failure_rate;
-	unsigned array_n;
 	double p_at_least_one_failure;
 
 	/* compute lengths for padding */
@@ -354,7 +353,6 @@ static void state_smart(unsigned level, tommy_list* low)
 	printf(" -----------------------------------------------------------------------\n");
 
 	array_failure_rate = 0;
-	array_n = 0;
 	for (i = tommy_list_head(low); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
 		double afr;
@@ -379,10 +377,8 @@ static void state_smart(unsigned level, tommy_list* low)
 		afr = smart_afr(devinfo->smart);
 
 		/* use only afr of disks in the array */
-		if (devinfo->parent != 0) {
+		if (devinfo->parent != 0)
 			array_failure_rate += afr;
-			++array_n;
-		}
 
 		printf("%5.0f", poisson_prob_n_or_more_failures(afr, 1) * 100);
 
@@ -430,20 +426,21 @@ static void state_smart(unsigned level, tommy_list* low)
 	printf("\n");
 
 	/*      |<##################################################################72>|####80>| */
-	printf("Probability of data loss in the next year for different repair times:\n");
+	printf("Probability of data loss in the next year for different parity and\n");
+	printf("scrub/repair times:\n");
 	printf("\n");
-	printf("  Parity  Reair 1 Week           Repair 2 Weeks       Repair 4 Weeks\n");
+	printf("  Parity  1 Week                 1 Month              3 Months\n");
 	printf(" -----------------------------------------------------------------------\n");
 	for (j = 0; j < RAID_PARITY_MAX; ++j) {
 		const char* sep = "    ";
 
-		printf("%5u ", j + 1);
+		printf("%6u", j + 1);
 		printf(sep);
-		printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 7, array_n, j + 1) * 100, 20);
+		printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 7, n, j + 1) * 100, 20);
 		printf(sep);
-		printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 14, array_n, j + 1) * 100, 18);
+		printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 30, n, j + 1) * 100, 18);
 		printf(sep);
-		printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 28, array_n, j + 1) * 100, 14);
+		printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 90, n, j + 1) * 100, 14);
 		printf("\n");
 	}
 
@@ -451,8 +448,8 @@ static void state_smart(unsigned level, tommy_list* low)
 
 	/*      |<##################################################################72>|####80>| */
 	printf("These are the probabilities that in the next year you'll have a sequence\n");
-	printf("of failures that your %s WONT be able to recover,\n", lev_config_name(level - 1));
-	printf("assuming that any failed disk is replaced in the specified repair time.\n");
+	printf("of failures that the parity WONT be able to recover, assuming that you\n");
+	printf("regularly scrub and repair the full array in the specified time.\n");
 }
 
 void state_device(struct snapraid_state* state, int operation)
@@ -520,7 +517,11 @@ void state_device(struct snapraid_state* state, int operation)
 #endif
 
 	if (operation == DEVICE_SMART) {
-		state_smart(state->level, &low);
+		/* count the logical disks forming the array */
+		unsigned count = state->level;
+		for (i = state->disklist; i != 0; i = i->next)
+			++count;
+		state_smart(count, &low);
 	}
 
 	tommy_list_foreach(&high, free);
