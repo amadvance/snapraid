@@ -299,6 +299,23 @@ tommy_inline tommy_bool_t tommy_list_empty(tommy_list* list)
 }
 
 /**
+ * Gets the number of elements.
+ * \note This operation is O(n).
+ */
+tommy_inline tommy_count_t tommy_list_count(tommy_list* list)
+{
+	tommy_count_t count = 0;
+	tommy_node* i = tommy_list_head(list);
+
+	while (i) {
+		++count;
+		i = i->next;
+	}
+
+	return count;
+}
+
+/**
  * Calls the specified function for each element in the list.
  *
  * You can use this function to deallocate all the elements

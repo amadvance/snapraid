@@ -517,11 +517,7 @@ void state_device(struct snapraid_state* state, int operation)
 #endif
 
 	if (operation == DEVICE_SMART) {
-		/* count the logical disks forming the array */
-		unsigned count = state->level;
-		for (i = state->disklist; i != 0; i = i->next)
-			++count;
-		state_smart(count, &low);
+		state_smart(state->level + tommy_list_count(&state->disklist), &low);
 	}
 
 	tommy_list_foreach(&high, free);
