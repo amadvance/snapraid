@@ -276,7 +276,7 @@ static void printl(const char* str, size_t pad)
 static void printp(double v, size_t pad)
 {
 	char buf[64];
-	const char* s = " %%";
+	const char* s = "%%";
 
 	if (v > 0.1)
 		snprintf(buf, sizeof(buf), "%5.2f%s", v, s);
@@ -337,13 +337,13 @@ static void state_smart(unsigned n, tommy_list* low)
 	printf("   Temp");
 	printf("  Power");
 	printf("  Error");
-	printf(" AFP");
+	printf("   FP");
 	printf(" Size");
 	printf("\n");
 	printf("     C°");
 	printf(" OnDays");
 	printf("  Count");
-	printf("   %%");
+	printf("     ");
 	printf("   TB");
 	printf("  "); printl("Serial", serial_pad);
 	printf("  "); printl("Device", device_pad);
@@ -380,7 +380,7 @@ static void state_smart(unsigned n, tommy_list* low)
 		if (devinfo->parent != 0)
 			array_failure_rate += afr;
 
-		printf("%5.0f", poisson_prob_n_or_more_failures(afr, 1) * 100);
+		printf("%5.0f%%", poisson_prob_n_or_more_failures(afr, 1) * 100);
 
 		if (devinfo->smart[SMART_SIZE] != SMART_UNASSIGNED)
 			printf("  %2.1f", devinfo->smart[SMART_SIZE] / 1E12);
@@ -410,11 +410,6 @@ static void state_smart(unsigned n, tommy_list* low)
 
 	printf("\n");
 
-	/*      |<##################################################################72>|####80>| */
-	printf("The AFP (Annual Failure Probability) is the probability that the disk is\n");
-	printf("going to fail in the next year.\n");
-	printf("\n");
-
 	/*
 	 * The probability of one and of at least one failure is computed assuming
 	 * a Poisson distribution with the estimated array failure rate.
@@ -422,34 +417,39 @@ static void state_smart(unsigned n, tommy_list* low)
 	p_at_least_one_failure = poisson_prob_n_or_more_failures(array_failure_rate, 1);
 
 	/*      |<##################################################################72>|####80>| */
-	printf("Probability of at least one disk failure in the next year is: %.0f %%\n", p_at_least_one_failure * 100);
+	printf("The FP column is the probability (in percentage) that the disk is going\n");
+	printf("to fail in the next year.\n");
+	printf("\n");
+
+	printf("Probability that one disk is going to fail in the next year is: %.0f%%\n", p_at_least_one_failure * 100);
 	printf("\n");
 
 	/*      |<##################################################################72>|####80>| */
 	printf("Probability of data loss in the next year for different parity and\n");
-	printf("scrub/repair times:\n");
+	printf("combined scrub and repair time:\n");
 	printf("\n");
-	printf("  Parity  1 Week                 1 Month              3 Months\n");
+	printf("  Parity  1 Week                1 Month             3 Months\n");
 	printf(" -----------------------------------------------------------------------\n");
 	for (j = 0; j < RAID_PARITY_MAX; ++j) {
 		const char* sep = "    ";
 
 		printf("%6u", j + 1);
 		printf(sep);
-		printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 7, n, j + 1) * 100, 20);
+		printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 7, n, j + 1) * 100, 19);
 		printf(sep);
-		printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 30, n, j + 1) * 100, 18);
+		printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 30, n, j + 1) * 100, 17);
 		printf(sep);
-		printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 90, n, j + 1) * 100, 14);
+		printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 90, n, j + 1) * 100, 13);
 		printf("\n");
 	}
 
 	printf("\n");
 
 	/*      |<##################################################################72>|####80>| */
-	printf("These are the probabilities that in the next year you'll have a sequence\n");
-	printf("of failures that the parity WONT be able to recover, assuming that you\n");
-	printf("regularly scrub and repair the full array in the specified time.\n");
+	printf("These values are the probabilities that in the next year you'll have a\n");
+	printf("sequence of failures that the parity WONT be able to recover, assuming\n");
+	printf("that you regularly scrub, and in case repair, the array in the specified\n");
+	printf("time.\n");
 }
 
 void state_device(struct snapraid_state* state, int operation)
