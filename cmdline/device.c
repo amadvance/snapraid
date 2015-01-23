@@ -24,8 +24,8 @@
 /**
  * Annual Failure Rate data points from Backblaze.
  *
- * From:
- * https://www.backblaze.com/blog-smart-stats-2014-8.html
+ * From: https://www.backblaze.com/blog-smart-stats-2014-8.html
+ * Mentioned link for future update: https://www.backblaze.com/smart
  */
 struct afr_point {
 	uint64_t value; /**< Value of the SMART raw attribute. */
@@ -143,7 +143,7 @@ static double smart_afr_value(struct afr_point* tab, uint64_t value)
  * Note that this definition is different from the one given
  * by Seagate, that defines AFR = 1 - exp(-8760/MTBF), that
  * instead represents the probability of a failure in the next
- * year, and then we call it as AFP (Annual Failure Probability).
+ * year.
  *
  * To combine the different AFR from different SMART attributes,
  * we sums them as we assume that they are independent,
@@ -406,6 +406,16 @@ static void state_smart(unsigned n, tommy_list* low)
 			printf("- (not in stats)");
 
 		printf("\n");
+
+		fprintf(stdlog, "smart:%s:%s:%s:%g\n", devinfo->file, devinfo->name, devinfo->smart_serial, afr);
+		for (j = 0; j < 256; ++j) {
+			if (devinfo->smart[j] != SMART_UNASSIGNED)
+				fprintf(stdlog, "attr:%s:%u:%" PRIu64 "\n", devinfo->file, j, devinfo->smart[j]);
+		}
+		if (devinfo->smart[SMART_SIZE] != SMART_UNASSIGNED)
+			fprintf(stdlog, "attr:%s:size:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_SIZE]);
+		if (devinfo->smart[SMART_ERROR] != SMART_UNASSIGNED)
+			fprintf(stdlog, "attr:%s:error:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_ERROR]);
 	}
 
 	printf("\n");
@@ -415,6 +425,8 @@ static void state_smart(unsigned n, tommy_list* low)
 	 * a Poisson distribution with the estimated array failure rate.
 	 */
 	p_at_least_one_failure = poisson_prob_n_or_more_failures(array_failure_rate, 1);
+
+	fprintf(stdlog, "summary:array_failure:%g:%g\n", array_failure_rate, p_at_least_one_failure);
 
 	/*      |<##################################################################72>|####80>| */
 	printf("The FP column is the probability (in percentage) that the disk is going\n");
