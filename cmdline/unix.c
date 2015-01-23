@@ -625,6 +625,7 @@ static int devsmart(dev_t device, uint64_t* smart, char* serial)
 	FILE* f;
 	int inside;
 	unsigned i;
+	int ret;
 
 	*serial = 0;
 	for (i = 0; i < SMART_COUNT; ++i)
@@ -636,7 +637,7 @@ static int devsmart(dev_t device, uint64_t* smart, char* serial)
 	f = popen(cmd, "r");
 	if (!f) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to run smartctrl -a on device '%u:%u'.\n", major(device), minor(device));
+		fprintf(stderr, "Failed to run smartctrl -a on device '%u:%u' (from open).\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -694,7 +695,13 @@ static int devsmart(dev_t device, uint64_t* smart, char* serial)
 		}
 	}
 
-	pclose(f);
+	ret = pclose(f);
+	if (!WIFEXITED(ret) || WEXITSTATUS(ret) != 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Failed to run smartctrl -a on device '%u:%u' (from pclose).\n", major(device), minor(device));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	return 0;
 }

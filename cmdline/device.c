@@ -515,21 +515,21 @@ void state_device(struct snapraid_state* state, int operation)
 		case DEVICE_SMART : fprintf(stderr, "SMART"); break;
 		}
 		fprintf(stderr, " unsupported in this platform.\n");
-	}
+	} else {
 
 #ifndef _WIN32
-	if (operation == DEVICE_LIST) {
-		for (i = tommy_list_head(&low); i != 0; i = i->next) {
-			devinfo_t* devinfo = i->data;
-			devinfo_t* parent = devinfo->parent;
+		if (operation == DEVICE_LIST) {
+			for (i = tommy_list_head(&low); i != 0; i = i->next) {
+				devinfo_t* devinfo = i->data;
+				devinfo_t* parent = devinfo->parent;
 
-			printf("%u:%u\t%s\t%u:%u\t%s\t%s\n", major(devinfo->device), minor(devinfo->device), devinfo->file, major(parent->device), minor(parent->device), parent->file, parent->name);
+				printf("%u:%u\t%s\t%u:%u\t%s\t%s\n", major(devinfo->device), minor(devinfo->device), devinfo->file, major(parent->device), minor(parent->device), parent->file, parent->name);
+			}
 		}
-	}
 #endif
 
-	if (operation == DEVICE_SMART) {
-		state_smart(state->level + tommy_list_count(&state->disklist), &low);
+		if (operation == DEVICE_SMART)
+			state_smart(state->level + tommy_list_count(&state->disklist), &low);
 	}
 
 	tommy_list_foreach(&high, free);
