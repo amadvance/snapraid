@@ -381,30 +381,27 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 			flag = 0;
 		if (flag & SMARTCTL_FLAG_FAIL)
 			printf("    FAIL");
-		else if (flag & SMARTCTL_FLAG_PREFAIL)
-			printf("  PREFAIL");
-		else if (flag & SMARTCTL_FLAG_PREFAIL_LOGGED)
+		else if (flag & (SMARTCTL_FLAG_PREFAIL | SMARTCTL_FLAG_PREFAIL_LOGGED))
 			printf("  PREFAIL");
 		else if (devinfo->smart[SMART_ERROR] != SMART_UNASSIGNED
 			&& devinfo->smart[SMART_ERROR] != 0)
 			printf("%8" PRIu64, devinfo->smart[SMART_ERROR]);
-		else if (flag & SMARTCTL_FLAG_ERROR)
+		else if (flag & (SMARTCTL_FLAG_ERROR | SMARTCTL_FLAG_ERROR_LOGGED))
 			printf("   ERROR");
-		else if (flag & SMARTCTL_FLAG_ERROR_LOGGED)
-			printf("   ERROR");
-		else if (flag & SMARTCTL_FLAG_OPEN)
-			printf("     n/a");
-		else if (flag & SMARTCTL_FLAG_COMMAND)
+		else if (flag & (SMARTCTL_FLAG_OPEN | SMARTCTL_FLAG_COMMAND))
 			printf("     n/a");
 		else if (devinfo->smart[SMART_ERROR] == 0)
 			printf("       0");
 		else
 			printf("       -");
 
-		/* if SSD, skip AFR estimation as data is from not SSD disks */
-		if (devinfo->smart[SMART_ROTATION_RATE] == 0) {
+		if (flag & (SMARTCTL_FLAG_OPEN | SMARTCTL_FLAG_COMMAND)) {
+			/* if error running smartctl, skip AFR estimation */
 			afr = 0;
-
+			printf("    -");
+		} else if (devinfo->smart[SMART_ROTATION_RATE] == 0) {
+			/* if SSD, skip AFR estimation as data is from not SSD disks */
+			afr = 0;
 			printf("    -");
 		} else {
 			afr = smart_afr(devinfo->smart);
