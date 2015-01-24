@@ -260,7 +260,7 @@ static void printl(const char* str, size_t pad)
 {
 	size_t len;
 
-	printf(str);
+	printf("%s", str);
 
 	len = strlen(str);
 
@@ -477,14 +477,12 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 	printf("  Parity  1 Week                1 Month             3 Months\n");
 	printf(" -----------------------------------------------------------------------\n");
 	for (j = 0; j < RAID_PARITY_MAX; ++j) {
-		const char* sep = "    ";
-
 		printf("%6u", j + 1);
-		printf(sep);
+		printf("    ");
 		printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 7, n, j + 1) * 100, 19);
-		printf(sep);
+		printf("    ");
 		printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 30, n, j + 1) * 100, 17);
-		printf(sep);
+		printf("    ");
 		printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 90, n, j + 1) * 100, 13);
 		printf("\n");
 	}
