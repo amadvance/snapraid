@@ -696,9 +696,21 @@ static int devsmart(dev_t device, uint64_t* smart, char* serial)
 	}
 
 	ret = pclose(f);
-	if (!WIFEXITED(ret) || WEXITSTATUS(ret) != 0) {
+	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to run smartctrl -a on device '%u:%u' (from pclose).\n", major(device), minor(device));
+		fprintf(stderr, "Failed to run smartctrl -a on device '%u:%u' (not exited).\n", major(device), minor(device));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+	if (WEXITSTATUS(ret) == 127) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Failed to run smartctrl -a on device '%u:%u' (from sh).\n", major(device), minor(device));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+	if (WEXITSTATUS(ret) != 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Failed to run smartctrl -a on device '%u:%u' with return code %d.\n", major(device), minor(device), WEXITSTATUS(ret));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -721,6 +733,12 @@ static int devdown(dev_t device)
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
 		fprintf(stderr, "Failed to run hdparm -y on device '%u:%u' (from system).\n", major(device), minor(device));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+	if (!WIFEXITED(ret)) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Failed to run hdparm -y on device '%u:%u' (not exited).\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
