@@ -394,4 +394,73 @@ char* strdup_nofail(const char* str)
 	return ptr;
 }
 
+/****************************************************************************/
+/* smartctl */
+
+int smartctl_attribute(FILE* f, uint64_t* smart, char* serial)
+{
+	unsigned i;
+	int inside;
+
+	/* preclear attribute */
+	*serial = 0;
+	for (i = 0; i < SMART_COUNT; ++i)
+		smart[i] = SMART_UNASSIGNED;
+
+	/* read the file */
+	inside = 0;
+	while (1) {
+		char buf[256];
+		char attr[64];
+		unsigned id;
+		uint64_t raw;
+		char* s;
+
+		s = fgets(buf, sizeof(buf), f);
+
+		if (s == 0)
+			break;
+
+		/* skip initial spaces */
+		while (isspace(*s))
+			++s;
+
+		if (*s == 0) {
+			inside = 0;
+		} else if (strncmp(s, "ID#", 3) == 0) {
+			inside = 1;
+		} else if (strncmp(s, "No Errors Logged", 16) == 0) {
+			smart[SMART_ERROR] = 0;
+		} else if (sscanf(s, "ATA Error Count: %" SCNu64, &raw) == 1) {
+			smart[SMART_ERROR] = raw;
+		} else if (sscanf(s, "Serial Number: %63s", serial) == 1) {
+		} else if (sscanf(s, "User Capacity: %63s", attr) == 1) {
+			smart[SMART_SIZE] = 0;
+			for (i = 0; attr[i]; ++i) {
+				if (isdigit(attr[i])) {
+					smart[SMART_SIZE] *= 10;
+					smart[SMART_SIZE] += attr[i] - '0';
+				}
+			}
+		} else if (inside) {
+			if (sscanf(s, "%u %*s %*s %*u %*u %*u %*s %*s %*s %" SCNu64, &id, &raw) != 2) {
+				/* LCOV_EXCL_START */
+				fprintf(stderr, "Invalid smartctl line '%s'.\n", buf);
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+
+			if (id >= 256) {
+				/* LCOV_EXCL_START */
+				fprintf(stderr, "Invalid SMART id '%u'.\n", id);
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+
+			smart[id] = raw;
+		}
+	}
+
+	return 0;
+}
 

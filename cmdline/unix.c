@@ -623,14 +623,7 @@ static int devsmart(dev_t device, uint64_t* smart, char* serial)
 {
 	char cmd[128];
 	FILE* f;
-	int inside;
-	unsigned i;
 	int ret;
-
-	*serial = 0;
-	for (i = 0; i < SMART_COUNT; ++i)
-		smart[i] = SMART_UNASSIGNED;
-	*serial = 0;
 
 	snprintf(cmd, sizeof(cmd), "smartctl -a /dev/block/%u:%u", major(device), minor(device));
 
@@ -642,57 +635,11 @@ static int devsmart(dev_t device, uint64_t* smart, char* serial)
 		/* LCOV_EXCL_STOP */
 	}
 
-	inside = 0;
-	while (1) {
-		char buf[256];
-		char attr[64];
-		unsigned id;
-		uint64_t raw;
-		char* s;
-
-		s = fgets(buf, sizeof(buf), f);
-
-		if (s == 0)
-			break;
-
-		/* skip initial spaces */
-		while (isspace(*s))
-			++s;
-
-		if (*s == 0) {
-			inside = 0;
-		} else if (strncmp(s, "ID#", 3) == 0) {
-			inside = 1;
-		} else if (strncmp(s, "No Errors Logged", 16) == 0) {
-			smart[SMART_ERROR] = 0;
-		} else if (sscanf(s, "ATA Error Count: %" SCNu64, &raw) == 1) {
-			smart[SMART_ERROR] = raw;
-		} else if (sscanf(s, "Serial Number: %63s", serial) == 1) {
-		} else if (sscanf(s, "User Capacity: %63s", attr) == 1) {
-			smart[SMART_SIZE] = 0;
-			for (i = 0; attr[i]; ++i) {
-				if (isdigit(attr[i])) {
-					smart[SMART_SIZE] *= 10;
-					smart[SMART_SIZE] += attr[i] - '0';
-				}
-			}
-		} else if (inside) {
-			if (sscanf(s, "%u %*s %*s %*u %*u %*u %*s %*s %*s %" SCNu64, &id, &raw) != 2) {
-				/* LCOV_EXCL_START */
-				fprintf(stderr, "Invalid smartctl line '%s'.\n", buf);
-				return -1;
-				/* LCOV_EXCL_STOP */
-			}
-
-			if (id >= 256) {
-				/* LCOV_EXCL_START */
-				fprintf(stderr, "Invalid SMART id '%u'.\n", id);
-				return -1;
-				/* LCOV_EXCL_STOP */
-			}
-
-			smart[id] = raw;
-		}
+	if (smartctl_attribute(f, smart, serial) != 0) {
+		/* LCOV_EXCL_START */
+		pclose(f);
+		return -1;
+		/* LCOV_EXCL_STOP */
 	}
 
 	ret = pclose(f);

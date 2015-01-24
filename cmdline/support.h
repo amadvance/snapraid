@@ -121,5 +121,14 @@ char* strdup_nofail(const char* str);
  */
 void malloc_fail(size_t size);
 
+/****************************************************************************/
+/* smartctl */
+
+/**
+ * Reads smartctl attributes from a stream.
+ * Returns -1 on error.
+ */
+int smartctl_attribute(FILE* f, uint64_t* smart, char* serial);
+
 #endif
 
