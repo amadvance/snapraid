@@ -393,21 +393,28 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 		else if (flag & SMARTCTL_FLAG_ERROR_LOGGED)
 			printf("   ERROR");
 		else if (flag & SMARTCTL_FLAG_OPEN)
-			printf("     n/o");
+			printf("     n/a");
 		else if (flag & SMARTCTL_FLAG_COMMAND)
-			printf("     n/c");
+			printf("     n/a");
 		else if (devinfo->smart[SMART_ERROR] == 0)
 			printf("       0");
 		else
 			printf("       -");
 
-		afr = smart_afr(devinfo->smart);
+		/* if SSD, skip AFR estimation as data is from not SSD disks */
+		if (devinfo->smart[SMART_ROTATION_RATE] == 0) {
+			afr = 0;
 
-		/* use only afr of disks in the array */
-		if (devinfo->parent != 0 || !have_parent)
-			array_failure_rate += afr;
+			printf("    -");
+		} else {
+			afr = smart_afr(devinfo->smart);
 
-		printf("%4.0f%%", poisson_prob_n_or_more_failures(afr, 1) * 100);
+			/* use only afr of disks in the array */
+			if (devinfo->parent != 0 || !have_parent)
+				array_failure_rate += afr;
+
+			printf("%4.0f%%", poisson_prob_n_or_more_failures(afr, 1) * 100);
+		}
 
 		if (devinfo->smart[SMART_SIZE] != SMART_UNASSIGNED)
 			printf("  %2.1f", devinfo->smart[SMART_SIZE] / 1E12);
@@ -446,6 +453,8 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 			fprintf(stdlog, "attr:%s:size:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_SIZE]);
 		if (devinfo->smart[SMART_ERROR] != SMART_UNASSIGNED)
 			fprintf(stdlog, "attr:%s:error:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_ERROR]);
+		if (devinfo->smart[SMART_ROTATION_RATE] != SMART_UNASSIGNED)
+			fprintf(stdlog, "attr:%s:rotationrate:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_ROTATION_RATE]);
 	}
 
 	printf("\n");
@@ -459,8 +468,8 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 	fprintf(stdlog, "summary:array_failure:%g:%g\n", array_failure_rate, p_at_least_one_failure);
 
 	/*      |<##################################################################72>|####80>| */
-	printf("The FP column is the probability (in percentage) that the disk is going\n");
-	printf("to fail in the next year.\n");
+	printf("The FP column is the estimated probability (in percentage) that the disk\n");
+	printf("is going to fail in the next year.\n");
 	printf("\n");
 
 	printf("Probability that one disk is going to fail in the next year is: %.0f%%\n", p_at_least_one_failure * 100);

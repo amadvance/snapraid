@@ -397,6 +397,28 @@ char* strdup_nofail(const char* str)
 /****************************************************************************/
 /* smartctl */
 
+/**
+ * Matches a string with the specified pattern.
+ * Like sscanf() a space match any sequence of spaces.
+ * Returns 0 if it matches.
+ */
+static int smatch(const char* str, const char* pattern)
+{
+	while (*pattern) {
+		if (isspace(*pattern)) {
+			++pattern;
+			while (isspace(*str))
+				++str;
+		} else if (*pattern == *str) {
+			++pattern;
+			++str;
+		} else
+			return -1;
+	}
+
+	return 0;
+}
+
 int smartctl_attribute(FILE* f, uint64_t* smart, char* serial)
 {
 	unsigned i;
@@ -427,13 +449,16 @@ int smartctl_attribute(FILE* f, uint64_t* smart, char* serial)
 
 		if (*s == 0) {
 			inside = 0;
-		} else if (strncmp(s, "ID#", 3) == 0) {
+		} else if (smatch(s, "ID#") == 0) {
 			inside = 1;
-		} else if (strncmp(s, "No Errors Logged", 16) == 0) {
+		} else if (smatch(s, "No Errors Logged") == 0) {
 			smart[SMART_ERROR] = 0;
 		} else if (sscanf(s, "ATA Error Count: %" SCNu64, &raw) == 1) {
 			smart[SMART_ERROR] = raw;
 		} else if (sscanf(s, "Serial Number: %63s", serial) == 1) {
+		} else if (smatch(s, "Rotation Rate: Solid State") == 0) {
+			smart[SMART_ROTATION_RATE] = 0;
+		} else if (sscanf(s, "Rotation Rate: %" SCNu64, &smart[SMART_ROTATION_RATE]) == 1) {
 		} else if (sscanf(s, "User Capacity: %63s", attr) == 1) {
 			smart[SMART_SIZE] = 0;
 			for (i = 0; attr[i]; ++i) {

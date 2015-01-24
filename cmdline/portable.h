@@ -313,16 +313,17 @@ int exit_failure;
 int randomize(void* ptr, size_t size);
 
 /**
- * SMART attributes.
- */
-#define SMART_COUNT (256+3)
-
-/**
- * Additional info attributes.
+ * Additional SMART attributes.
  */
 #define SMART_ERROR 256 /**< ATA Error count. */
 #define SMART_SIZE 257 /**< Size in bytes. */
-#define SMART_FLAGS 258 /**< Flags returned by smartctl. */
+#define SMART_ROTATION_RATE 258 /**< Rotation speed. 0 for SSD. */
+#define SMART_FLAGS 259 /**< Flags returned by smartctl. */
+
+/**
+ * SMART attributes count.
+ */
+#define SMART_COUNT 260
 
 /**
  * Flags returned by smartctl.
