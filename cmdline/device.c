@@ -307,7 +307,7 @@ static void printp(double v, size_t pad)
 	printl(buf, pad);
 }
 
-static void state_smart(unsigned n, tommy_list* low)
+static void state_smart(int verbose, unsigned n, tommy_list* low)
 {
 	tommy_node* i;
 	unsigned j;
@@ -434,9 +434,13 @@ static void state_smart(unsigned n, tommy_list* low)
 	printf("\n");
 
 	printf("Probability that one disk is going to fail in the next year is: %.0f%%\n", p_at_least_one_failure * 100);
-	printf("\n");
+
+	/* prints extra stats only in verbose mode */
+	if (!verbose)
+		return;
 
 	/*      |<##################################################################72>|####80>| */
+	printf("\n");
 	printf("Probability of data loss in the next year for different parity and\n");
 	printf("combined scrub and repair time:\n");
 	printf("\n");
@@ -529,7 +533,7 @@ void state_device(struct snapraid_state* state, int operation)
 #endif
 
 		if (operation == DEVICE_SMART)
-			state_smart(state->level + tommy_list_count(&state->disklist), &low);
+			state_smart(state->opt.verbose, state->level + tommy_list_count(&state->disklist), &low);
 	}
 
 	tommy_list_foreach(&high, free);
