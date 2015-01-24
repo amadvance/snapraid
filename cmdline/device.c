@@ -313,12 +313,14 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 	unsigned j;
 	size_t device_pad;
 	size_t serial_pad;
+	int have_parent;
 	double array_failure_rate;
 	double p_at_least_one_failure;
 
 	/* compute lengths for padding */
 	device_pad = 0;
 	serial_pad = 0;
+	have_parent = 0;
 	for (i = tommy_list_head(low); i != 0; i = i->next) {
 		size_t len;
 		devinfo_t* devinfo = i->data;
@@ -330,19 +332,22 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 		len = strlen(devinfo->smart_serial);
 		if (len > serial_pad)
 			serial_pad = len;
+
+		if (devinfo->parent != 0)
+			have_parent = 1;
 	}
 
 	printf("SnapRAID SMART report:\n");
 	printf("\n");
 	printf("   Temp");
 	printf("  Power");
-	printf("  Error");
+	printf("   Error");
 	printf("   FP");
 	printf(" Size");
 	printf("\n");
-	printf("     C°");
+	printf("      C");
 	printf(" OnDays");
-	printf("  Count");
+	printf("   Count");
 	printf("     ");
 	printf("   TB");
 	printf("  "); printl("Serial", serial_pad);
@@ -356,6 +361,7 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 	for (i = tommy_list_head(low); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
 		double afr;
+		uint64_t flag;
 
 		if (devinfo->smart[194] != SMART_UNASSIGNED)
 			printf("%7" PRIu64, devinfo->smart[194]);
@@ -369,18 +375,39 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 		else
 			printf("      -");
 
-		if (devinfo->smart[SMART_ERROR] != SMART_UNASSIGNED)
-			printf("%6" PRIu64, devinfo->smart[SMART_ERROR]);
+		if (devinfo->smart[SMART_FLAGS] != SMART_UNASSIGNED)
+			flag = devinfo->smart[SMART_FLAGS];
 		else
-			printf("     -");
+			flag = 0;
+		if (flag & SMARTCTL_FLAG_FAIL)
+			printf("    FAIL");
+		else if (flag & SMARTCTL_FLAG_PREFAIL)
+			printf("  PREFAIL");
+		else if (flag & SMARTCTL_FLAG_PREFAIL_LOGGED)
+			printf("  PREFAIL");
+		else if (devinfo->smart[SMART_ERROR] != SMART_UNASSIGNED
+			&& devinfo->smart[SMART_ERROR] != 0)
+			printf("%8" PRIu64, devinfo->smart[SMART_ERROR]);
+		else if (flag & SMARTCTL_FLAG_ERROR)
+			printf("   ERROR");
+		else if (flag & SMARTCTL_FLAG_ERROR_LOGGED)
+			printf("   ERROR");
+		else if (flag & SMARTCTL_FLAG_OPEN)
+			printf("     n/o");
+		else if (flag & SMARTCTL_FLAG_COMMAND)
+			printf("     n/c");
+		else if (devinfo->smart[SMART_ERROR] == 0)
+			printf("       0");
+		else
+			printf("       -");
 
 		afr = smart_afr(devinfo->smart);
 
 		/* use only afr of disks in the array */
-		if (devinfo->parent != 0)
+		if (devinfo->parent != 0 || !have_parent)
 			array_failure_rate += afr;
 
-		printf("%5.0f%%", poisson_prob_n_or_more_failures(afr, 1) * 100);
+		printf("%4.0f%%", poisson_prob_n_or_more_failures(afr, 1) * 100);
 
 		if (devinfo->smart[SMART_SIZE] != SMART_UNASSIGNED)
 			printf("  %2.1f", devinfo->smart[SMART_SIZE] / 1E12);
@@ -403,7 +430,10 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 		if (*devinfo->name)
 			printf("%s", devinfo->name);
 		else
-			printf("- (not in stats)");
+			printf("-");
+
+		if (devinfo->parent == 0 && have_parent)
+			printf(" (not in stats)");
 
 		printf("\n");
 

@@ -637,7 +637,7 @@ static int devsmart(dev_t device, uint64_t* smart, char* serial)
 	f = popen(cmd, "r");
 	if (!f) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to run smartctrl -a on device '%u:%u' (from open).\n", major(device), minor(device));
+		fprintf(stderr, "Failed to run smartctl -a on device '%u:%u' (from popen).\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -647,7 +647,7 @@ static int devsmart(dev_t device, uint64_t* smart, char* serial)
 		char buf[256];
 		char attr[64];
 		unsigned id;
-		unsigned long long raw;
+		uint64_t raw;
 		char* s;
 
 		s = fgets(buf, sizeof(buf), f);
@@ -665,7 +665,7 @@ static int devsmart(dev_t device, uint64_t* smart, char* serial)
 			inside = 1;
 		} else if (strncmp(s, "No Errors Logged", 16) == 0) {
 			smart[SMART_ERROR] = 0;
-		} else if (sscanf(s, "ATA Error Count: %llu", &raw) == 1) {
+		} else if (sscanf(s, "ATA Error Count: %" SCNu64, &raw) == 1) {
 			smart[SMART_ERROR] = raw;
 		} else if (sscanf(s, "Serial Number: %63s", serial) == 1) {
 		} else if (sscanf(s, "User Capacity: %63s", attr) == 1) {
@@ -677,9 +677,9 @@ static int devsmart(dev_t device, uint64_t* smart, char* serial)
 				}
 			}
 		} else if (inside) {
-			if (sscanf(s, "%u %*s %*s %*u %*u %*u %*s %*s %*s %llu", &id, &raw) != 2) {
+			if (sscanf(s, "%u %*s %*s %*u %*u %*u %*s %*s %*s %" SCNu64, &id, &raw) != 2) {
 				/* LCOV_EXCL_START */
-				fprintf(stderr, "Invalid smartctrl line '%s'.\n", buf);
+				fprintf(stderr, "Invalid smartctl line '%s'.\n", buf);
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
@@ -698,22 +698,26 @@ static int devsmart(dev_t device, uint64_t* smart, char* serial)
 	ret = pclose(f);
 	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to run smartctrl -a on device '%u:%u' (not exited).\n", major(device), minor(device));
+		fprintf(stderr, "Failed to run smartctl -a on device '%u:%u' (not exited).\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (WEXITSTATUS(ret) == 127) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to run smartctrl -a on device '%u:%u' (from sh).\n", major(device), minor(device));
+		fprintf(stderr, "Failed to run smartctl -a on device '%u:%u' (from sh).\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
-	if (WEXITSTATUS(ret) != 0) {
+	/* check only first bit, as other bits are used to report other conditions */
+	if ((WEXITSTATUS(ret) & 1) != 0) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to run smartctrl -a on device '%u:%u' with return code %d.\n", major(device), minor(device), WEXITSTATUS(ret));
+		fprintf(stderr, "Failed to run smartctl -a on device '%u:%u' with return code %xh.\n", major(device), minor(device), WEXITSTATUS(ret));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* store the return smartctl return value */
+	smart[SMART_FLAGS] = WEXITSTATUS(ret);
 
 	return 0;
 }
@@ -750,7 +754,7 @@ static int devdown(dev_t device)
 	}
 	if (WEXITSTATUS(ret) != 0) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to run hdparm -y on device '%u:%u' with return code %u.\n", major(device), minor(device), WEXITSTATUS(ret));
+		fprintf(stderr, "Failed to run hdparm -y on device '%u:%u' with return code %xh.\n", major(device), minor(device), WEXITSTATUS(ret));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -861,7 +865,7 @@ static void* thread_spindown(void* arg)
 }
 
 /**
- * Thread for spinning down.
+ * Thread for getting smart info.
  */
 static void* thread_smart(void* arg)
 {

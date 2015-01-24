@@ -315,13 +315,25 @@ int randomize(void* ptr, size_t size);
 /**
  * SMART attributes.
  */
-#define SMART_COUNT (256+2)
+#define SMART_COUNT (256+3)
 
 /**
  * Additional info attributes.
  */
 #define SMART_ERROR 256 /**< ATA Error count. */
 #define SMART_SIZE 257 /**< Size in bytes. */
+#define SMART_FLAGS 258 /**< Flags returned by smartctl. */
+
+/**
+ * Flags returned by smartctl.
+ */
+#define SMARTCTL_FLAG_OPEN (1 << 1) /**< Device open failed. */
+#define SMARTCTL_FLAG_COMMAND (1 << 2) /**< Some SMART or other ATA command to the disk failed. */
+#define SMARTCTL_FLAG_FAIL (1 << 3) /**< SMART status check returned "DISK FAILING". */
+#define SMARTCTL_FLAG_PREFAIL (1 << 4) /**< We found prefail Attributes <= threshold. */
+#define SMARTCTL_FLAG_PREFAIL_LOGGED (1 << 5) /**< SMART status check returned "DISK OK" but we found that some (usage or prefail) Attributes have been <= threshold at some time in the past. */
+#define SMARTCTL_FLAG_ERROR (1 << 6) /**< The device error log contains records of errors. */
+#define SMARTCTL_FLAG_ERROR_LOGGED (1 << 7) /**< The device self-test log contains records of errors. */
 
 /**
  * SMART max attribute length.
