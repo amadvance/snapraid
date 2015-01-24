@@ -1774,6 +1774,169 @@ int randomize(void* ptr, size_t size)
 pthread_mutex_t io_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /**
+ * Scan all the devices.
+ */
+static int devscan(tommy_list* list)
+{
+	char cmd[128];
+	FILE* f;
+	int ret;
+
+	snprintf(cmd, sizeof(cmd), "smartctl-nc.exe --scan-open");
+
+	f = popen(cmd, "r");
+	if (!f) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Failed to run smartctl --scan-open (from popen).\n");
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	while (1) {
+		char buf[256];
+		char* s;
+
+		s = fgets(buf, sizeof(buf), f);
+
+		if (s == 0)
+			break;
+
+		if (s[0] == '/') {
+			char* sep = strchr(s, ' ');
+			if (sep) {
+				devinfo_t* devinfo;
+
+				/* clear everything after the first space */
+				*sep = 0;
+
+				devinfo = calloc_nofail(1, sizeof(devinfo_t));
+
+				pathcpy(devinfo->file, sizeof(devinfo->file), s);
+
+				/* insert in the list */
+				tommy_list_insert_tail(list, &devinfo->node, devinfo);
+			}
+		}
+	}
+
+	ret = pclose(f);
+	if (ret == -1) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Failed to run smartctl --scan-open (from pclose).\n");
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Failed to run smartctl --scan-open with return code %xh.\n", ret);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return 0;
+}
+
+/**
+ * Gets SMART attributes.
+ */
+static int devsmart(const char* file, uint64_t* smart, char* serial)
+{
+	char cmd[128];
+	FILE* f;
+	int inside;
+	unsigned i;
+	int ret;
+
+	*serial = 0;
+	for (i = 0; i < SMART_COUNT; ++i)
+		smart[i] = SMART_UNASSIGNED;
+	*serial = 0;
+
+	snprintf(cmd, sizeof(cmd), "smartctl-nc.exe -a %s", file);
+
+	f = popen(cmd, "r");
+	if (!f) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Failed to run smartctl -a on device '%s' (from open).\n", file);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	inside = 0;
+	while (1) {
+		char buf[256];
+		char attr[64];
+		unsigned id;
+		uint64_t raw;
+		char* s;
+
+		s = fgets(buf, sizeof(buf), f);
+
+		if (s == 0)
+			break;
+
+		/* skip initial spaces */
+		while (isspace(*s))
+			++s;
+
+		if (*s == 0) {
+			inside = 0;
+		} else if (strncmp(s, "ID#", 3) == 0) {
+			inside = 1;
+		} else if (strncmp(s, "No Errors Logged", 16) == 0) {
+			smart[SMART_ERROR] = 0;
+		} else if (sscanf(s, "ATA Error Count: %" SCNu64, &raw) == 1) {
+			smart[SMART_ERROR] = raw;
+		} else if (sscanf(s, "Serial Number: %63s", serial) == 1) {
+		} else if (sscanf(s, "User Capacity: %63s", attr) == 1) {
+			smart[SMART_SIZE] = 0;
+			for (i = 0; attr[i]; ++i) {
+				if (isdigit(attr[i])) {
+					smart[SMART_SIZE] *= 10;
+					smart[SMART_SIZE] += attr[i] - '0';
+				}
+			}
+		} else if (inside) {
+			if (sscanf(s, "%u %*s %*s %*u %*u %*u %*s %*s %*s %" SCNu64, &id, &raw) != 2) {
+				/* LCOV_EXCL_START */
+				fprintf(stderr, "Invalid smartctl line '%s'.\n", buf);
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+
+			if (id >= 256) {
+				/* LCOV_EXCL_START */
+				fprintf(stderr, "Invalid SMART id '%u'.\n", id);
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+
+			smart[id] = raw;
+		}
+	}
+
+	ret = pclose(f);
+	if (ret == -1) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Failed to run smartctl -a on device '%s' (from pclose).\n", file);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+	/* check only first bit, as other bits are used to report other conditions */
+	if ((ret & 1) != 0) {
+		/* LCOV_EXCL_START */
+		fprintf(stderr, "Failed to run smartctl -a on device '%s' with return code %xh.\n", file, ret);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* store the return smartctl return value */
+	smart[SMART_FLAGS] = ret;
+
+	return 0;
+}
+
+/**
  * Thread for spinning up.
  *
  * There isn't a defined way to spin up a device,
@@ -1830,22 +1993,32 @@ static void* thread_spinup(void* arg)
 	return 0;
 }
 
-int devquery(tommy_list* high, tommy_list* low, int operation)
+/**
+ * Thread for getting smart info.
+ */
+static void* thread_smart(void* arg)
 {
-	tommy_node* i;
+	devinfo_t* devinfo = arg;
+
+	if (devsmart(devinfo->file, devinfo->smart, devinfo->smart_serial) != 0) {
+		/* LCOV_EXCL_START */
+		return (void*)-1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return 0;
+}
+
+static int device_thread(tommy_list* list, void* (*func)(void* arg))
+{
 	int fail = 0;
-
-	(void)low;
-
-	/* we support only thread_spinup */
-	if (operation != DEVICE_UP)
-		return -1;
+	tommy_node* i;
 
 	/* starts all threads */
-	for (i = tommy_list_head(high); i != 0; i = i->next) {
+	for (i = tommy_list_head(list); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
 
-		if (pthread_create(&devinfo->thread, 0, thread_spinup, devinfo) != 0) {
+		if (pthread_create(&devinfo->thread, 0, func, devinfo) != 0) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "Failed to create thread.\n");
 			exit(EXIT_FAILURE);
@@ -1854,9 +2027,10 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 	}
 
 	/* joins all threads */
-	for (i = tommy_list_head(high); i != 0; i = i->next) {
+	for (i = tommy_list_head(list); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
 		void* retval;
+
 		if (pthread_join(devinfo->thread, &retval) != 0) {
 			/* LCOV_EXCL_START */
 			fprintf(stderr, "Failed to join thread.\n");
@@ -1875,6 +2049,27 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 	}
 
 	return 0;
+}
+
+int devquery(tommy_list* high, tommy_list* low, int operation)
+{
+	tommy_list* list;
+	void* (*func)(void* arg);
+
+	/* we support only thread_spinup */
+	if (operation == DEVICE_UP) {
+		func = thread_spinup;
+		list = high;
+	} else if (operation == DEVICE_SMART) {
+		func = thread_smart;
+		list = low;
+		if (devscan(list) != 0)
+			return -1;
+	} else {
+		return -1;
+	}
+
+	return device_thread(list, func);
 }
 
 #endif
