@@ -900,6 +900,13 @@ int main(int argc, char* argv[])
 		break;
 	}
 
+	switch (operation) {
+	case OPERATION_SMART :
+		/* we can use this command to check the SMART status during operations */
+		opt.skip_lock = 1;
+		break;
+	}
+
 	/* open the log file */
 	log_open(log);
 
