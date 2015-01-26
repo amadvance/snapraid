@@ -901,8 +901,9 @@ int main(int argc, char* argv[])
 	}
 
 	switch (operation) {
+	case OPERATION_DEVICES :
 	case OPERATION_SMART :
-		/* we can use this command to check the SMART status during operations */
+		/* we may need to use these commands during operations */
 		opt.skip_lock = 1;
 		break;
 	}
