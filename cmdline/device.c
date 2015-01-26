@@ -436,9 +436,6 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 		else
 			printf("-");
 
-		if (devinfo->parent == 0 && have_parent)
-			printf(" (not in stats)");
-
 		printf("\n");
 
 		fprintf(stdlog, "smart:%s:%s:%s:%g\n", devinfo->file, devinfo->name, devinfo->smart_serial, afr);
