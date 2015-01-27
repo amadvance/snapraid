@@ -4554,8 +4554,8 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 		for (j = tommy_list_head(&disk->filelist); j != 0; j = j->next) {
 			struct snapraid_file* file = j->data;
 
-			if (filter_path(filterlist_disk, disk->name, file->sub) != 0
-				|| filter_path(filterlist_file, disk->name, file->sub) != 0
+			if (filter_path(filterlist_disk, 0, disk->name, file->sub) != 0
+				|| filter_path(filterlist_file, 0, disk->name, file->sub) != 0
 				|| filter_existence(filter_missing, disk->dir, file->sub) != 0
 				|| filter_correctness(filter_error, &state->infoarr, file) != 0
 			) {
@@ -4567,8 +4567,8 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 		for (j = tommy_list_head(&disk->linklist); j != 0; j = j->next) {
 			struct snapraid_link* link = j->data;
 
-			if (filter_path(filterlist_disk, disk->name, link->sub) != 0
-				|| filter_path(filterlist_file, disk->name, link->sub) != 0
+			if (filter_path(filterlist_disk, 0, disk->name, link->sub) != 0
+				|| filter_path(filterlist_file, 0, disk->name, link->sub) != 0
 				|| filter_existence(filter_missing, disk->dir, link->sub) != 0
 			) {
 				link_flag_set(link, FILE_IS_EXCLUDED);
@@ -4579,8 +4579,8 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 		for (j = tommy_list_head(&disk->dirlist); j != 0; j = j->next) {
 			struct snapraid_dir* dir = j->data;
 
-			if (filter_dir(filterlist_disk, disk->name, dir->sub) != 0
-				|| filter_dir(filterlist_file, disk->name, dir->sub) != 0
+			if (filter_dir(filterlist_disk, 0, disk->name, dir->sub) != 0
+				|| filter_dir(filterlist_file, 0, disk->name, dir->sub) != 0
 				|| filter_existence(filter_missing, disk->dir, dir->sub) != 0
 			) {
 				dir_flag_set(dir, FILE_IS_EXCLUDED);

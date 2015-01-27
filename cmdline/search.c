@@ -165,6 +165,7 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 	while (1) {
 		char path_next[PATH_MAX];
 		char sub_next[PATH_MAX];
+		struct snapraid_filter* reason = 0;
 		struct stat st;
 		const char* name;
 		struct dirent* dd;
@@ -234,21 +235,21 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 #endif
 
 		if (S_ISREG(st.st_mode)) {
-			if (disk == 0 || filter_path(&state->filterlist, disk->name, sub_next) == 0) {
+			if (disk == 0 || filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0) {
 				search_file(state, path_next, st.st_size, st.st_mtime, STAT_NSEC(&st));
 			} else {
 				if (state->opt.verbose) {
-					printf("Excluding link '%s'\n", path_next);
+					printf("Excluding link '%s' for rule '%s %s'\n", path_next, filter_type(reason), filter_pattern(reason));
 				}
 			}
 		} else if (S_ISDIR(st.st_mode)) {
-			if (disk == 0 || filter_dir(&state->filterlist, disk->name, sub_next) == 0) {
+			if (disk == 0 || filter_dir(&state->filterlist, &reason, disk->name, sub_next) == 0) {
 				pathslash(path_next, sizeof(path_next));
 				pathslash(sub_next, sizeof(sub_next));
 				search_dir(state, disk, path_next, sub_next);
 			} else {
 				if (state->opt.verbose) {
-					printf("Excluding directory '%s'\n", path_next);
+					printf("Excluding directory '%s' for rule '%s %s'\n", path_next, filter_type(reason), filter_pattern(reason));
 				}
 			}
 		}

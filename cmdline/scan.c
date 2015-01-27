@@ -1180,6 +1180,7 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 	while (node != 0) {
 		char path_next[PATH_MAX];
 		char sub_next[PATH_MAX];
+		struct snapraid_filter* reason = 0;
 		struct dirent_sorted* dd = node->data;
 		const char* name = dd->d_name;
 		struct stat* st;
@@ -1238,7 +1239,7 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 		}
 
 		if (type == 0) { /* REG */
-			if (filter_path(&state->filterlist, disk->name, sub_next) == 0) {
+			if (filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0) {
 
 				/* late stat, if not yet called */
 				if (!st)
@@ -1261,11 +1262,11 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 				processed = 1;
 			} else {
 				if (state->opt.verbose) {
-					printf("Excluding file '%s'\n", path_next);
+					printf("Excluding file '%s' for rule '%s %s'\n", path_next, filter_type(reason), filter_pattern(reason));
 				}
 			}
 		} else if (type == 1) { /* LNK */
-			if (filter_path(&state->filterlist, disk->name, sub_next) == 0) {
+			if (filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0) {
 				char subnew[PATH_MAX];
 				int ret;
 
@@ -1291,11 +1292,11 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 				processed = 1;
 			} else {
 				if (state->opt.verbose) {
-					printf("Excluding link '%s'\n", path_next);
+					printf("Excluding link '%s' for rule '%s %s'\n", path_next, filter_type(reason), filter_pattern(reason));
 				}
 			}
 		} else if (type == 2) { /* DIR */
-			if (filter_dir(&state->filterlist, disk->name, sub_next) == 0) {
+			if (filter_dir(&state->filterlist, &reason, disk->name, sub_next) == 0) {
 #ifndef _WIN32
 				/* late stat, if not yet called */
 				if (!st)
@@ -1323,11 +1324,11 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 				}
 			} else {
 				if (state->opt.verbose) {
-					printf("Excluding directory '%s'\n", path_next);
+					printf("Excluding directory '%s' for rule '%s %s'\n", path_next, filter_type(reason), filter_pattern(reason));
 				}
 			}
 		} else {
-			if (filter_path(&state->filterlist, disk->name, sub_next) == 0) {
+			if (filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0) {
 				/* late stat, if not yet called */
 				if (!st)
 					st = DSTAT(path_next, dd, &st_buf);
@@ -1335,7 +1336,7 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 				fprintf(stderr, "WARNING! Ignoring special '%s' file '%s'\n", stat_desc(st), path_next);
 			} else {
 				if (state->opt.verbose) {
-					printf("Excluding special file '%s'\n", path_next);
+					printf("Excluding special file '%s' for rule '%s %s'\n", path_next, filter_type(reason), filter_pattern(reason));
 				}
 			}
 		}

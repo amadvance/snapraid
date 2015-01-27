@@ -427,6 +427,16 @@ struct snapraid_filter* filter_alloc_disk(int is_include, const char* pattern);
 void filter_free(struct snapraid_filter* filter);
 
 /**
+ * Filter type description.
+ */
+const char* filter_type(struct snapraid_filter* filter);
+
+/**
+ * Filter patter description.
+ */
+const char* filter_pattern(struct snapraid_filter* filter);
+
+/**
  * Filter hidden files.
  * Return !=0 if it matches and it should be excluded.
  */
@@ -444,7 +454,7 @@ static inline int filter_hidden(int enable, struct dirent* dd)
  * For each element of the path all the filters are applied, until the first one that matches.
  * Return !=0 if it should be excluded.
  */
-int filter_path(tommy_list* filterlist, const char* disk, const char* sub);
+int filter_path(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub);
 
 /**
  * Filter a file/link/dir if missing.
@@ -464,7 +474,7 @@ int filter_correctness(int filter_error, tommy_arrayblkof* infoarr, struct snapr
  * For each element of the path all the filters are applied, until the first one that matches.
  * Return !=0 if should be excluded.
  */
-int filter_dir(tommy_list* filterlist, const char* disk, const char* sub);
+int filter_dir(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub);
 
 /**
  * Filters a path if it's a content file.

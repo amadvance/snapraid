@@ -125,8 +125,36 @@ void filter_free(struct snapraid_filter* filter)
 	free(filter);
 }
 
-static int filter_apply(struct snapraid_filter* filter, const char* path, const char* name, int is_dir)
+const char* filter_type(struct snapraid_filter* filter)
 {
+	if (filter->direction < 0) {
+		if (filter->is_disk)
+			return "exclude (disk)";
+		if (filter->is_path)
+			return "exclude (path)";
+		if (filter->is_dir)
+			return "exclude (dir)";
+		return "exclude (file)";
+	} else {
+		if (filter->is_disk)
+			return "include (disk)";
+		if (filter->is_path)
+			return "include (path)";
+		if (filter->is_dir)
+			return "include (dir)";
+		return "include (file)";
+	}
+}
+
+const char* filter_pattern(struct snapraid_filter* filter)
+{
+	return filter->pattern;
+}
+
+static int filter_apply(struct snapraid_filter* filter, struct snapraid_filter** reason, const char* path, const char* name, int is_dir)
+{
+	int ret = 0;
+
 	/* matches dirs with dirs and files with files */
 	if (filter->is_dir && !is_dir)
 		return 0;
@@ -136,16 +164,19 @@ static int filter_apply(struct snapraid_filter* filter, const char* path, const 
 	if (filter->is_path) {
 		/* skip initial slash, as always missing from the path */
 		if (fnmatch(filter->pattern + 1, path, FNM_PATHNAME | FNM_CASEINSENSITIVE_FOR_WIN) == 0)
-			return filter->direction;
+			ret = filter->direction;
 	} else {
 		if (fnmatch(filter->pattern, name, FNM_CASEINSENSITIVE_FOR_WIN) == 0)
-			return filter->direction;
+			ret = filter->direction;
 	}
 
-	return 0;
+	if (reason != 0 && ret < 0)
+		*reason = filter;
+
+	return ret;
 }
 
-static int filter_recurse(struct snapraid_filter* filter, const char* const_path, int is_dir)
+static int filter_recurse(struct snapraid_filter* filter, struct snapraid_filter** reason, const char* const_path, int is_dir)
 {
 	char path[PATH_MAX];
 	char* name;
@@ -161,7 +192,7 @@ static int filter_recurse(struct snapraid_filter* filter, const char* const_path
 			path[i] = 0;
 
 			/* filter the directory */
-			if (filter_apply(filter, path, name, 1) != 0)
+			if (filter_apply(filter, reason, path, name, 1) != 0)
 				return filter->direction;
 
 			/* restore the slash */
@@ -173,13 +204,13 @@ static int filter_recurse(struct snapraid_filter* filter, const char* const_path
 	}
 
 	/* filter the final file */
-	if (filter_apply(filter, path, name, is_dir) != 0)
+	if (filter_apply(filter, reason, path, name, is_dir) != 0)
 		return filter->direction;
 
 	return 0;
 }
 
-static int filter_element(tommy_list* filterlist, const char* disk, const char* sub, int is_dir)
+static int filter_element(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub, int is_dir)
 {
 	tommy_node* i;
 
@@ -195,8 +226,10 @@ static int filter_element(tommy_list* filterlist, const char* disk, const char* 
 				ret = filter->direction;
 			else
 				ret = 0;
+			if (reason != 0 && ret < 0)
+				*reason = filter;
 		} else {
-			ret = filter_recurse(filter, sub, is_dir);
+			ret = filter_recurse(filter, reason, sub, is_dir);
 		}
 
 		if (ret > 0) {
@@ -208,6 +241,8 @@ static int filter_element(tommy_list* filterlist, const char* disk, const char* 
 		} else {
 			/* default is opposite of the last filter */
 			direction = -filter->direction;
+			if (reason != 0 && direction < 0)
+				*reason = filter;
 			/* continue with the next one */
 		}
 	}
@@ -224,14 +259,14 @@ static int filter_element(tommy_list* filterlist, const char* disk, const char* 
 	return 0;
 }
 
-int filter_path(tommy_list* filterlist, const char* disk, const char* sub)
+int filter_path(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub)
 {
-	return filter_element(filterlist, disk, sub, 0);
+	return filter_element(filterlist, reason, disk, sub, 0);
 }
 
-int filter_dir(tommy_list* filterlist, const char* disk, const char* sub)
+int filter_dir(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub)
 {
-	return filter_element(filterlist, disk, sub, 1);
+	return filter_element(filterlist, reason, disk, sub, 1);
 }
 
 int filter_existence(int filter_missing, const char* dir, const char* sub)
