@@ -919,6 +919,18 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 		fprintf(stdlog, "%s:%s\n", lev_config_name(l), state->parity[l].path);
 	if (state->pool[0] != 0)
 		fprintf(stdlog, "pool:%s\n", state->pool);
+	if (state->share[0] != 0)
+		fprintf(stdlog, "share:%s\n", state->share);
+	if (state->autosave != 0)
+		fprintf(stdlog, "autosave:%" PRIu64 "\n", state->autosave);
+	for (i = tommy_list_head(&state->filterlist); i != 0; i = i->next) {
+		char out[PATH_MAX];
+		struct snapraid_filter* filter = i->data;
+		fprintf(stdlog, "filter:%s\n", filter_type(filter, out, sizeof(out)));
+	}
+	if (state->filter_hidden)
+		fprintf(stdlog, "filter:nohidden:\n");
+
 	fflush(stdlog);
 }
 
