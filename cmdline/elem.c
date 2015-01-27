@@ -125,30 +125,22 @@ void filter_free(struct snapraid_filter* filter)
 	free(filter);
 }
 
-const char* filter_type(struct snapraid_filter* filter)
+const char* filter_type(struct snapraid_filter* filter, char* out, size_t out_size)
 {
-	if (filter->direction < 0) {
-		if (filter->is_disk)
-			return "exclude (disk)";
-		if (filter->is_path)
-			return "exclude (path)";
-		if (filter->is_dir)
-			return "exclude (dir)";
-		return "exclude (file)";
-	} else {
-		if (filter->is_disk)
-			return "include (disk)";
-		if (filter->is_path)
-			return "include (path)";
-		if (filter->is_dir)
-			return "include (dir)";
-		return "include (file)";
-	}
-}
+	const char* direction;
+	if (filter->direction < 0)
+		direction = "exclude";
+	else
+		direction = "include";
 
-const char* filter_pattern(struct snapraid_filter* filter)
-{
-	return filter->pattern;
+	if (filter->is_disk)
+		pathprint(out, out_size, "%s %s:", direction, filter->pattern);
+	else if (filter->is_dir)
+		pathprint(out, out_size, "%s %s/", direction, filter->pattern);
+	else
+		pathprint(out, out_size, "%s %s", direction, filter->pattern);
+
+	return out;
 }
 
 static int filter_apply(struct snapraid_filter* filter, struct snapraid_filter** reason, const char* path, const char* name, int is_dir)

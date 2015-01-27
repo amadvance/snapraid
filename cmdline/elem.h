@@ -429,12 +429,7 @@ void filter_free(struct snapraid_filter* filter);
 /**
  * Filter type description.
  */
-const char* filter_type(struct snapraid_filter* filter);
-
-/**
- * Filter patter description.
- */
-const char* filter_pattern(struct snapraid_filter* filter);
+const char* filter_type(struct snapraid_filter* filter, char* out, size_t out_size);
 
 /**
  * Filter hidden files.

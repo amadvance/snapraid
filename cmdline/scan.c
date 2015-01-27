@@ -1180,6 +1180,7 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 	while (node != 0) {
 		char path_next[PATH_MAX];
 		char sub_next[PATH_MAX];
+		char out[PATH_MAX];
 		struct snapraid_filter* reason = 0;
 		struct dirent_sorted* dd = node->data;
 		const char* name = dd->d_name;
@@ -1262,7 +1263,7 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 				processed = 1;
 			} else {
 				if (state->opt.verbose) {
-					printf("Excluding file '%s' for rule '%s %s'\n", path_next, filter_type(reason), filter_pattern(reason));
+					printf("Excluding file '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
 				}
 			}
 		} else if (type == 1) { /* LNK */
@@ -1292,7 +1293,7 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 				processed = 1;
 			} else {
 				if (state->opt.verbose) {
-					printf("Excluding link '%s' for rule '%s %s'\n", path_next, filter_type(reason), filter_pattern(reason));
+					printf("Excluding link '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
 				}
 			}
 		} else if (type == 2) { /* DIR */
@@ -1324,7 +1325,7 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 				}
 			} else {
 				if (state->opt.verbose) {
-					printf("Excluding directory '%s' for rule '%s %s'\n", path_next, filter_type(reason), filter_pattern(reason));
+					printf("Excluding directory '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
 				}
 			}
 		} else {
@@ -1336,7 +1337,7 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 				fprintf(stderr, "WARNING! Ignoring special '%s' file '%s'\n", stat_desc(st), path_next);
 			} else {
 				if (state->opt.verbose) {
-					printf("Excluding special file '%s' for rule '%s %s'\n", path_next, filter_type(reason), filter_pattern(reason));
+					printf("Excluding special file '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
 				}
 			}
 		}
