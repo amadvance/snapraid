@@ -316,6 +316,7 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 	int have_parent;
 	double array_failure_rate;
 	double p_at_least_one_failure;
+	int make_it_fail = 0;
 
 	/* compute lengths for padding */
 	device_pad = 0;
@@ -394,6 +395,10 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 			printf("       0");
 		else
 			printf("       -");
+
+		/* if some fail/prefail attribute, make the command to fail */
+		if (flag & (SMARTCTL_FLAG_FAIL | SMARTCTL_FLAG_PREFAIL | SMARTCTL_FLAG_PREFAIL_LOGGED))
+			make_it_fail = 1;
 
 		if (flag & (SMARTCTL_FLAG_OPEN | SMARTCTL_FLAG_COMMAND)) {
 			/* if error running smartctl, skip AFR estimation */
@@ -497,6 +502,15 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 	printf("sequence of failures that the parity WONT be able to recover, assuming\n");
 	printf("that you regularly scrub, and in case repair, the array in the specified\n");
 	printf("time.\n");
+
+	if (make_it_fail) {
+		/* LCOV_EXCL_START */
+		printf("\n");
+		printf("DANGER! SMART is reporting that one or more disks are FAILING!\n");
+		printf("Please take immediate action!\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
 }
 
 void state_device(struct snapraid_state* state, int operation)
