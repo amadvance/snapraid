@@ -276,7 +276,7 @@ static void printl(const char* str, size_t pad)
 static void printp(double v, size_t pad)
 {
 	char buf[64];
-	const char* s = "%%";
+	const char* s = "%";
 
 	if (v > 0.1)
 		snprintf(buf, sizeof(buf), "%5.2f%s", v, s);
