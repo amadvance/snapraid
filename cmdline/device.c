@@ -395,8 +395,8 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 			printf("%8" PRIu64, devinfo->smart[SMART_ERROR]);
 		else if (flag & (SMARTCTL_FLAG_ERROR | SMARTCTL_FLAG_ERROR_LOGGED))
 			printf("   ERROR");
-		else if (flag & (SMARTCTL_FLAG_OPEN | SMARTCTL_FLAG_COMMAND))
-			printf("     n/a");
+		else if (flag & (SMARTCTL_FLAG_UNSUPPORTED | SMARTCTL_FLAG_OPEN | SMARTCTL_FLAG_COMMAND))
+			printf("       -");
 		else if (devinfo->smart[SMART_ERROR] == 0)
 			printf("       0");
 		else
@@ -406,7 +406,7 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 		if (flag & (SMARTCTL_FLAG_FAIL | SMARTCTL_FLAG_PREFAIL | SMARTCTL_FLAG_PREFAIL_LOGGED))
 			make_it_fail = 1;
 
-		if (flag & (SMARTCTL_FLAG_OPEN | SMARTCTL_FLAG_COMMAND)) {
+		if (flag & (SMARTCTL_FLAG_UNSUPPORTED | SMARTCTL_FLAG_OPEN | SMARTCTL_FLAG_COMMAND)) {
 			/* if error running smartctl, skip AFR estimation */
 			afr = 0;
 			printf("    -");

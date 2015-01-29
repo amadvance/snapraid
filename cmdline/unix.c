@@ -655,13 +655,6 @@ static int devsmart(dev_t device, uint64_t* smart, char* serial)
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
-	/* check only first bit, as other bits are used to report other conditions */
-	if ((WEXITSTATUS(ret) & 1) != 0) {
-		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to run smartctl -a on device '%u:%u' with return code %xh.\n", major(device), minor(device), WEXITSTATUS(ret));
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
 
 	/* store the return smartctl return value */
 	smart[SMART_FLAGS] = WEXITSTATUS(ret);

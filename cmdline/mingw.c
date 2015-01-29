@@ -1849,13 +1849,6 @@ static int devsmart(const char* file, uint64_t* smart, char* serial)
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
-	/* check only first bit, as other bits are used to report other conditions */
-	if ((ret & 1) != 0) {
-		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to run smartctl -a on device '%s' with return code %xh.\n", file, ret);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
 
 	/* store the return smartctl return value */
 	smart[SMART_FLAGS] = ret;

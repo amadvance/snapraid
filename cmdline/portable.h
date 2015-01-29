@@ -328,6 +328,7 @@ int randomize(void* ptr, size_t size);
 /**
  * Flags returned by smartctl.
  */
+#define SMARTCTL_FLAG_UNSUPPORTED (1 << 0) /**< Device not recognized, requiring the -d option. */
 #define SMARTCTL_FLAG_OPEN (1 << 1) /**< Device open failed. */
 #define SMARTCTL_FLAG_COMMAND (1 << 2) /**< Some SMART or other ATA command to the disk failed. */
 #define SMARTCTL_FLAG_FAIL (1 << 3) /**< SMART status check returned "DISK FAILING". */
