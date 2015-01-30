@@ -18,7 +18,7 @@ snapraid [-c, --conf CONFIG]
 	[-S, --start BLKSTART] [-B, --count BLKCOUNT]
 	[-L, --error-limit NUMBER]
 	[-v, --verbose]
-	status|diff|sync|scrub|fix|check|list|dup|up|down|pool|rehash
+	status|smart|up|down|diff|sync|scrub|fix|check|list|dup|up|down|pool|rehash
 
 snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
@@ -380,7 +380,8 @@ If everything is recovered, this command is immediate.
 
 SnapRAID provides a few simple commands that allow to:
 
-* Prints a report of the status of the array -> "status"
+* Prints the status of the array -> "status"
+* Controls the disks -> "smart", "up", "down"
 * Makes a backup/snapshot -> "sync"
 * Periodically checks data -> "scrub"
 * Restore the last backup/snapshot -> "fix".
@@ -401,7 +402,48 @@ Later modifications are not taken into account.
 
 Nothing is modified.
 
-5.2 diff
+5.2 smart
+---------
+
+Prints a SMART report of all the disks of the array.
+
+It includes an estimation of the probability of failure in the next
+year of each disk allowing to plan maintenance replacements of the
+disks that show suspicious attributes.
+
+If a SMART attribute reports that a disk is failing, "FAIL" or "PREFAIL"
+is printed for that disk, and SnapRAID returns with an error.
+In this case an immediate replacement of the disk is highly recommended.
+
+If the -v, --verbose option is specified a deeper statistical analysis
+is provided. This analysis can help you to decide if you need more
+or less parity.
+
+This command uses the "smartctl" tool, and it's equivalent to run
+"smartctl -a" on all the devices.
+
+Nothing is modified.
+
+5.3 up
+------
+
+Spins up all the disks of the array.
+
+Nothing is modified.
+
+5.4 down
+--------
+
+Spins down all the disks of the array.
+
+This command uses the "hdparm" tool, and it's equivalent to run
+"hdparm -y" or all the devices.
+
+It's not supported in Windows.
+
+Nothing is modified.
+
+5.5 diff
 --------
 
 Lists all the files modified from the last "sync" that need to have
@@ -412,7 +454,7 @@ size and inode.
 
 Nothing is modified.
 
-5.3 sync
+5.6 sync
 --------
 
 Updates the parity information. All the modified files
@@ -439,7 +481,7 @@ but the previously compute hash information is kept.
 The "content" and "parity" files are modified if necessary.
 The files in the array are NOT modified.
 
-5.4 scrub
+5.7 scrub
 ---------
 
 Scrubs the array, checking for silent or input/output errors in data
@@ -474,7 +516,7 @@ of each block, and to mark bad blocks.
 The "parity" files are NOT modified.
 The files in the array are NOT modified.
 
-5.5 fix
+5.8 fix
 -------
 
 Fix all the files and the parity data.
@@ -503,7 +545,7 @@ The "content" file is NOT modified.
 The "parity" files are modified if necessary.
 The files in the array are modified if necessary.
 
-5.6 check
+5.9 check
 ---------
 
 Verify all the files and the parity data.
@@ -523,16 +565,16 @@ Files are identified only by path, and not by inode.
 
 Nothing is modified.
 
-5.7 list
---------
+5.10 list
+---------
 
 Lists all the files contained in the array at the time of the
 last "sync".
 
 Nothing is modified.
 
-5.8 dup
--------
+5.11 dup
+--------
 
 Lists all the duplicate files. Two files are assumed equal if their
 hashes are matching. The file data is not read, but only the
@@ -540,21 +582,21 @@ precomputed hashes are used.
 
 Nothing is modified.
 
-5.9 up
-------
+5.12 up
+-------
 
 Spins up all the disks of the array.
 
 Nothing is modified.
 
-5.10 down
+5.13 down
 ---------
 
 Spins down all the disks of the array.
 
 Nothing is modified.
 
-5.11 pool
+5.14 pool
 ---------
 
 Creates or updates in the "pooling" directory a virtual view of all
@@ -569,7 +611,7 @@ view of the array. Any other regular file is left in place.
 
 Nothing is modified outside the pool directory.
 
-5.12 rehash
+5.15 rehash
 -----------
 
 Schedules a rehash of the whole array.

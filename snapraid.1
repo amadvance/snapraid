@@ -50,7 +50,7 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
 .PD
-	status|diff|sync|scrub|fix|check|list|dup|up|down|pool|rehash
+	status|smart|up|down|diff|sync|scrub|fix|check|list|dup|up|down|pool|rehash
 .PD 0
 .PP
 .PD
@@ -626,7 +626,9 @@ If everything is recovered, this command is immediate.
 SnapRAID provides a few simple commands that allow to:
 .PD 0
 .IP \(bu
-Prints a report of the status of the array \-> \[dq]status\[dq]
+Prints the status of the array \-> \[dq]status\[dq]
+.IP \(bu
+Controls the disks \-> \[dq]smart\[dq], \[dq]up\[dq], \[dq]down\[dq]
 .IP \(bu
 Makes a backup/snapshot \-> \[dq]sync\[dq]
 .IP \(bu
@@ -645,6 +647,38 @@ errors encountered while scrubbing.
 .PP
 Note that the information presented refers at the latest time you run \[dq]sync\[dq].
 Later modifications are not taken into account.
+.PP
+Nothing is modified.
+.SS smart 
+Prints a SMART report of all the disks of the array.
+.PP
+It includes an estimation of the probability of failure in the next
+year of each disk allowing to plan maintenance replacements of the
+disks that show suspicious attributes.
+.PP
+If a SMART attribute reports that a disk is failing, \[dq]FAIL\[dq] or \[dq]PREFAIL\[dq]
+is printed for that disk, and SnapRAID returns with an error.
+In this case an immediate replacement of the disk is highly recommended.
+.PP
+If the \-v, \-\-verbose option is specified a deeper statistical analysis
+is provided. This analysis can help you to decide if you need more
+or less parity.
+.PP
+This command uses the \[dq]smartctl\[dq] tool, and it\'s equivalent to run
+\[dq]smartctl \-a\[dq] on all the devices.
+.PP
+Nothing is modified.
+.SS up 
+Spins up all the disks of the array.
+.PP
+Nothing is modified.
+.SS down 
+Spins down all the disks of the array.
+.PP
+This command uses the \[dq]hdparm\[dq] tool, and it\'s equivalent to run
+\[dq]hdparm \-y\[dq] or all the devices.
+.PP
+It\'s not supported in Windows.
 .PP
 Nothing is modified.
 .SS diff 

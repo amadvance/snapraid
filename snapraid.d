@@ -14,7 +14,7 @@ Synopsis
 	:	[-S, --start BLKSTART] [-B, --count BLKCOUNT]
 	:	[-L, --error-limit NUMBER]
 	:	[-v, --verbose]
-	:	status|diff|sync|scrub|fix|check|list|dup|up|down|pool|rehash
+	:	status|smart|up|down|diff|sync|scrub|fix|check|list|dup|up|down|pool|rehash
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
@@ -356,7 +356,8 @@ Getting Started
 Commands
 	SnapRAID provides a few simple commands that allow to:
 
-	* Prints a report of the status of the array -> "status"
+	* Prints the status of the array -> "status"
+	* Controls the disks -> "smart", "up", "down"
 	* Makes a backup/snapshot -> "sync"
 	* Periodically checks data -> "scrub"
 	* Restore the last backup/snapshot -> "fix".
@@ -372,6 +373,41 @@ Commands
 
 	Note that the information presented refers at the latest time you run "sync".
 	Later modifications are not taken into account.
+
+	Nothing is modified.
+
+  smart
+	Prints a SMART report of all the disks of the array.
+
+	It includes an estimation of the probability of failure in the next
+	year of each disk allowing to plan maintenance replacements of the
+	disks that show suspicious attributes.
+
+	If a SMART attribute reports that a disk is failing, "FAIL" or "PREFAIL"
+	is printed for that disk, and SnapRAID returns with an error.
+	In this case an immediate replacement of the disk is highly recommended.
+
+	If the -v, --verbose option is specified a deeper statistical analysis
+	is provided. This analysis can help you to decide if you need more
+	or less parity.
+
+	This command uses the "smartctl" tool, and it's equivalent to run
+	"smartctl -a" on all the devices.
+
+	Nothing is modified.
+
+  up
+	Spins up all the disks of the array.
+
+	Nothing is modified.
+
+  down
+	Spins down all the disks of the array.
+
+	This command uses the "hdparm" tool, and it's equivalent to run
+	"hdparm -y" or all the devices.
+
+	It's not supported in Windows.
 
 	Nothing is modified.
 
