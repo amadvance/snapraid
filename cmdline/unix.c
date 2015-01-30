@@ -349,12 +349,14 @@ static dev_t devread(const char* path)
 	ret = read(f, buf, sizeof(buf));
 	if (ret < 0) {
 		/* LCOV_EXCL_START */
+		close(f);
 		fprintf(stderr, "Failed to read '%s'.\n", path);
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
 	if (ret == sizeof(buf)) {
 		/* LCOV_EXCL_START */
+		close(f);
 		fprintf(stderr, "Too long read '%s'.\n", path);
 		return 0;
 		/* LCOV_EXCL_STOP */
@@ -365,6 +367,7 @@ static dev_t devread(const char* path)
 	ma = strtoul(buf, &e, 10);
 	if (*e != ':') {
 		/* LCOV_EXCL_START */
+		close(f);
 		fprintf(stderr, "Invalid format in '%s' for '%s'.\n", path, buf);
 		return 0;
 		/* LCOV_EXCL_STOP */
@@ -373,6 +376,7 @@ static dev_t devread(const char* path)
 	mi = strtoul(e+1, &e, 10);
 	if (*e != 0 && !isspace(*e)) {
 		/* LCOV_EXCL_START */
+		close(f);
 		fprintf(stderr, "Invalid format in '%s' for '%s'.\n", path, buf);
 		return 0;
 		/* LCOV_EXCL_STOP */
@@ -470,12 +474,14 @@ static int devtree(const char* name, dev_t device, devinfo_t* parent, tommy_list
 				device = devread(path);
 				if (!device) {
 					/* LCOV_EXCL_START */
+					closedir(d);
 					return -1;
 					/* LCOV_EXCL_STOP */
 				}
 
 				if (devtree(name, device, parent, list) != 0) {
 					/* LCOV_EXCL_START */
+					closedir(d);
 					return -1;
 					/* LCOV_EXCL_STOP */
 				}
@@ -567,6 +573,7 @@ static int devscan(tommy_list* list)
 				device = devread(path);
 				if (!device) {
 					/* LCOV_EXCL_START */
+					closedir(d);
 					return -1;
 					/* LCOV_EXCL_STOP */
 				}
@@ -585,6 +592,7 @@ static int devscan(tommy_list* list)
 					/* get the device file */
 					if (devresolve(device, path, sizeof(path)) != 0) {
 						/* LCOV_EXCL_START */
+						closedir(d);
 						return -1;
 						/* LCOV_EXCL_STOP */
 					}
@@ -602,7 +610,6 @@ static int devscan(tommy_list* list)
 	}
 
 	closedir(d);
-
 	return 0;
 }
 #endif
