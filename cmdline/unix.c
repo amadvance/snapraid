@@ -76,6 +76,7 @@ int devuuid(uint64_t device, char* uuid, size_t uuid_size)
 {
 	int ret;
 	DIR* d;
+	struct dirent* dd;
 	struct stat st;
 
 	/* scan the UUID directory searching for the device */
@@ -85,19 +86,10 @@ int devuuid(uint64_t device, char* uuid, size_t uuid_size)
 		return -1;
 	}
 
-	while (1) {
-		struct dirent* dd;
-
-		dd = readdir(d);
-		if (dd == 0) {
-			/* not found or generic error */
-			goto bail;
-		}
-
+	while ((dd = readdir(d)) != 0) {
 		/* skip "." and ".." files, UUIDs never start with '.' */
-		if (dd->d_name[0] == '.') {
+		if (dd->d_name[0] == '.')
 			continue;
-		}
 
 		ret = fstatat(dirfd(d), dd->d_name, &st, 0);
 		if (ret != 0) {
@@ -107,15 +99,14 @@ int devuuid(uint64_t device, char* uuid, size_t uuid_size)
 
 		/* if it matches, we have the uuid */
 		if (S_ISBLK(st.st_mode) && st.st_rdev == (dev_t)device) {
-			snprintf(uuid, uuid_size, "%s", dd->d_name);
-			break;
+			/* found */
+			pathcpy(uuid, uuid_size, dd->d_name);
+			closedir(d);
+			return 0;
 		}
 	}
 
-	closedir(d);
-	return 0;
-
-bail:
+	/* not found */
 	closedir(d);
 	return -1;
 }
