@@ -881,13 +881,13 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 		/* sysfs and devfs interfaces are required */
 		if (stat("/sys/dev/block", &st) != 0) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "Missing interface sys/dev/block.\n");
+			fprintf(stderr, "Missing interface /sys/dev/block.\n");
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
 		if (stat("/dev/block", &st) != 0) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "Missing interface dev/block.\n");
+			fprintf(stderr, "Missing interface /dev/block.\n");
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
