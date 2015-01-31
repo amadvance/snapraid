@@ -50,6 +50,8 @@ int state_status(struct snapraid_state* state)
 	snapraid_info* infomap;
 	time_t now;
 	block_off_t bad;
+	block_off_t bad_first;
+	block_off_t bad_last;
 	block_off_t rehash;
 	block_off_t count;
 	unsigned l;
@@ -245,6 +247,8 @@ int state_status(struct snapraid_state* state)
 	/* copy the info a temp vector, and count bad/rehash/unsynced blocks */
 	infomap = malloc_nofail(blockmax * sizeof(snapraid_info));
 	bad = 0;
+	bad_first = 0;
+	bad_last = 0;
 	count = 0;
 	rehash = 0;
 	unsynced_blocks = 0;
@@ -275,8 +279,12 @@ int state_status(struct snapraid_state* state)
 
 		/* skip unused blocks */
 		if (info != 0) {
-			if (info_get_bad(info))
+			if (info_get_bad(info)) {
+				if (bad == 0)
+					bad_first = i;
+				bad_last = i;
 				++bad;
+			}
 
 			if (info_get_rehash(info))
 				++rehash;
@@ -294,7 +302,7 @@ int state_status(struct snapraid_state* state)
 
 	fprintf(stdlog, "summary:has_unsynced:%u\n", unsynced_blocks);
 	fprintf(stdlog, "summary:has_rehash:%u\n", rehash);
-	fprintf(stdlog, "summary:has_bad:%u\n", bad);
+	fprintf(stdlog, "summary:has_bad:%u:%u:%u\n", bad, bad_first, bad_last);
 	fflush(stdlog);
 
 	if (!count) {
@@ -407,11 +415,14 @@ int state_status(struct snapraid_state* state)
 	}
 
 	if (bad) {
+		block_off_t bad_print;
+
 		printf("DANGER! In the array there are %u errors!\n\n", bad);
 
-		printf("They are at blocks:");
+		printf("They are from block %u to %u, specifically at blocks:", bad_first, bad_last);
 
-		/* print all the errors */
+		/* print some of the errors */
+		bad_print = 0;
 		for (i = 0; i < blockmax; ++i) {
 			snapraid_info info = info_get(&state->infoarr, i);
 
@@ -419,8 +430,15 @@ int state_status(struct snapraid_state* state)
 			if (info == 0)
 				continue;
 
-			if (info_get_bad(info))
+			if (info_get_bad(info)) {
 				printf(" %u", i);
+				++bad_print;
+			}
+
+			if (bad_print > 100) {
+				printf(" and %u more...", bad - bad_print);
+				break;
+			}
 		}
 
 		printf("\n\n");
