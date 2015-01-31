@@ -1080,7 +1080,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					/* LCOV_EXCL_START */
 					fprintf(stdlog, "parity_error:%u:%s: Sync error\n", i, lev_config_name(l));
 					fprintf(stderr, "DANGER! Unexpected sync error in %s disk.\n", lev_name(l));
-					fprintf(stderr, "Ensure that disk '%s' is sane and have some free space available.\n", lev_config_name(l));
+					fprintf(stderr, "Ensure that disk '%s' is sane.\n", lev_config_name(l));
 					printf("Stopping at block %u\n", i);
 					++error;
 					goto bail;
@@ -1102,6 +1102,22 @@ end:
 	state_progress_end(state, countpos, countmax, countsize);
 
 	state_usage_print(state);
+
+	/* before returning we ensure that */
+	/* the parity is really written flushing the disk cache */
+	for (l = 0; l < state->level; ++l) {
+		ret = parity_sync(parity[l]);
+		if (ret == -1) {
+			/* LCOV_EXCL_START */
+			fprintf(stdlog, "parity_error:%u:%s: Sync error\n", i, lev_config_name(l));
+			fprintf(stderr, "DANGER! Unexpected sync error in %s disk.\n", lev_name(l));
+			fprintf(stderr, "Ensure that disk '%s' is sane.\n", lev_config_name(l));
+			printf("Stopping at block %u\n", i);
+			++error;
+			goto bail;
+			/* LCOV_EXCL_STOP */
+		}
+	}
 
 	if (io_error)
 		fprintf(stderr, "WARNING! Unexpected input/output errors! The failing blocks are now marked as bad!\n");
@@ -1271,15 +1287,6 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	}
 
 	for (l = 0; l < state->level; ++l) {
-		ret = parity_sync(parity_ptr[l]);
-		if (ret == -1) {
-			/* LCOV_EXCL_START */
-			fprintf(stderr, "DANGER! Unexpected sync error in %s disk.\n", lev_name(l));
-			++unrecoverable_error;
-			/* continue, as we are already exiting */
-			/* LCOV_EXCL_STOP */
-		}
-
 		ret = parity_close(parity_ptr[l]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
