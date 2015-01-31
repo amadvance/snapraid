@@ -794,7 +794,7 @@ int main(int argc, char* argv[])
 
 		if (opt.force_full) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "You cannot use -G, --force-full with the '%s' command\n", command);
+			fprintf(stderr, "You cannot use -F, --force-full with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
