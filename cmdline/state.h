@@ -150,20 +150,6 @@ struct snapraid_state {
 	 */
 	uint64_t tick_last;
 
-	/**
-	 * Required size of the parity file, computed from the loaded state.
-	 *
-	 * This size only counts BLK blocks, ignoring CHG, REL and DELETED ones,
-	 * because in such case the parity may be still not updated to contain them.
-	 *
-	 * In normal case it's also the blockmax size returned by parity_size().
-	 * In case of interrupted sync, this is the position + 1 of the last BLK block.
-	 * Potentionally smaller than parity_size().
-	 *
-	 * This value is used to check the minimal parity size before starting a sync.
-	 */
-	block_off_t loaded_paritymax;
-
 	int clear_past_hash; /**< Clear all the hash from CHG and DELETED blocks when reading the state from an incomplete sync. */
 
 	time_t progress_whole_start; /**< Initial start of the whole process. */

@@ -29,9 +29,25 @@ struct snapraid_parity_handle {
 };
 
 /**
- * Computes the size of the parity data in number of blocks.
+ * Computes the size of the allocated parity data in number of blocks.
+ *
+ * This includes parity blocks not yet written and still invalid.
  */
-block_off_t parity_size(struct snapraid_state* state);
+block_off_t parity_allocated_size(struct snapraid_state* state);
+
+/**
+ * Computes the size of the used parity data in number of blocks.
+ *
+ * This includes only parity blocks used for files, not counting
+ * potential invalid parity at the end.
+ *
+ * If the array is fully synched there is no difference between
+ * parity_allocate_size() and parity_used_size().
+ * But if the sync is interrupted, the parity_used_size() returns
+ * the position of the latest BLK block, ignoring CHG, REL and DELETED ones,
+ * because their parity may be still not even written in the parity file.
+ */
+block_off_t parity_used_size(struct snapraid_state* state);
 
 /**
  * Reports all the files outside the specified parity size.

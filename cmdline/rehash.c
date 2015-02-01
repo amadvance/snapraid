@@ -33,7 +33,7 @@ void state_rehash(struct snapraid_state* state)
 	block_off_t blockmax;
 	block_off_t i;
 
-	blockmax = parity_size(state);
+	blockmax = parity_allocated_size(state);
 
 	/* check if a rehash is already in progress */
 	if (state->prevhash != HASH_UNDEFINED) {

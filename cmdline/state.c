@@ -99,7 +99,6 @@ void state_init(struct snapraid_state* state)
 	state->pool_device = 0;
 	state->lockfile[0] = 0;
 	state->level = 1; /* default is the lowest protection */
-	state->loaded_paritymax = 0;
 	state->clear_past_hash = 0;
 	state->no_conf = 0;
 
@@ -1338,7 +1337,6 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 	struct snapraid_file* file;
 	block_off_t blockidx;
 	block_off_t blockmax;
-	block_off_t paritymax;
 	unsigned line;
 	unsigned count_file;
 	unsigned count_hardlink;
@@ -1351,7 +1349,6 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 	line = 1;
 	blockidx = 0;
 	blockmax = 0;
-	paritymax = 0;
 	count_file = 0;
 	count_hardlink = 0;
 	count_symlink = 0;
@@ -1420,10 +1417,6 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			switch (tag[0]) {
 			case 'b' :
 				block_state_set(block, BLOCK_STATE_BLK);
-
-				/* keep track of the required parity size */
-				if (v_pos + 1 > paritymax)
-					paritymax = v_pos + 1;
 				break;
 			case 'n' :
 				/* deprecated NEW blocks are converted to CHG ones */
@@ -2383,7 +2376,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 	}
 
 	/* check that the stored parity size matches the loaded state */
-	if (blockmax != parity_size(state)) {
+	if (blockmax != parity_allocated_size(state)) {
 		/* LCOV_EXCL_START */
 		fprintf(stderr, "Internal inconsistency in parity size in '%s' at line %u\n", path, line);
 		exit(EXIT_FAILURE);
@@ -2409,9 +2402,6 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			}
 		}
 	}
-
-	/* set the required parity size */
-	state->loaded_paritymax = paritymax;
 
 	if (state->opt.verbose) {
 		printf("%8u files\n", count_file);
@@ -2439,7 +2429,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 	count_dir = 0;
 
 	/* blocks of all array */
-	blockmax = parity_size(state);
+	blockmax = parity_allocated_size(state);
 
 	/* clear the info for unused blocks */
 	/* and get some other info */
@@ -2883,7 +2873,6 @@ static void decoding_error(const char* path, STREAM* f)
 static void state_read_binary(struct snapraid_state* state, const char* path, STREAM* f)
 {
 	block_off_t blockmax;
-	block_off_t paritymax;
 	unsigned count_file;
 	unsigned count_hardlink;
 	unsigned count_symlink;
@@ -2895,7 +2884,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 	uint32_t mapping_max;
 
 	blockmax = 0;
-	paritymax = 0;
 	count_file = 0;
 	count_hardlink = 0;
 	count_symlink = 0;
@@ -3098,10 +3086,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 					switch (c) {
 					case 'b' :
 						block_state_set(block, BLOCK_STATE_BLK);
-
-						/* keep track of the required parity size */
-						if (v_pos + 1 > paritymax)
-							paritymax = v_pos + 1;
 						break;
 					case 'n' :
 						/* deprecated NEW blocks are converted to CHG ones */
@@ -3809,20 +3793,17 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 	}
 
 	/* check that the stored parity size matches the loaded state */
-	if (blockmax != parity_size(state)) {
+	if (blockmax != parity_allocated_size(state)) {
 		/* LCOV_EXCL_START */
 		fprintf(stderr, "Internal inconsistency in parity size in '%s' at offset %" PRIi64 "\n", path, stell(f));
 		if (state->opt.skip_content_check) {
-			fprintf(stderr, "Overriding from %u to %u.\n", blockmax, parity_size(state));
-			blockmax = parity_size(state);
+			fprintf(stderr, "Overriding from %u to %u.\n", blockmax, parity_allocated_size(state));
+			blockmax = parity_allocated_size(state);
 		} else {
 			exit(EXIT_FAILURE);
 		}
 		/* LCOV_EXCL_STOP */
 	}
-
-	/* set the required parity size */
-	state->loaded_paritymax = paritymax;
 
 	if (state->opt.verbose) {
 		printf("%8u files\n", count_file);
@@ -3853,7 +3834,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	count_dir = 0;
 
 	/* blocks of all array */
-	blockmax = parity_size(state);
+	blockmax = parity_allocated_size(state);
 
 	/* clear the info for unused blocks */
 	/* and get some other info */

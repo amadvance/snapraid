@@ -544,7 +544,8 @@ static inline int block_has_updated_hash(const struct snapraid_block* block)
 }
 
 /**
- * Checks if the specified block has an a past hash.
+ * Checks if the specified block has a past hash,
+ * i.e. the hash of the data that it's now overwritten or lost.
  *
  * Note that EMPTY / BLK / REP return 0.
  */
@@ -635,6 +636,18 @@ static inline int block_has_invalid_parity(const struct snapraid_block* block)
 
 	return state == BLOCK_STATE_DELETED
 	       || state == BLOCK_STATE_CHG || state == BLOCK_STATE_REP;
+}
+
+/**
+ * Checks if the block is part of a file with valid parity.
+ *
+ * Note that anything different than BLK return 0.
+ */
+static inline int block_has_file_and_valid_parity(const struct snapraid_block* block)
+{
+	unsigned state = block_state_get(block);
+
+	return state == BLOCK_STATE_BLK;
 }
 
 /**

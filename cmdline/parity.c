@@ -26,7 +26,34 @@
 /****************************************************************************/
 /* parity */
 
-block_off_t parity_size(struct snapraid_state* state)
+block_off_t parity_allocated_size(struct snapraid_state* state)
+{
+	block_off_t parity_block;
+	tommy_node* i;
+
+	/* compute the size of the parity file */
+	parity_block = 0;
+	for (i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+
+		/* start from the declared size */
+		block_off_t block = tommy_arrayblk_size(&disk->blockarr);
+
+		/* decrease the block until an allocated one, but part of a file */
+		/* we don't stop at deleted blocks, because we want to have them cleared */
+		/* if they are at the end of the parity */
+		while (block > parity_block && !block_has_file(tommy_arrayblk_get(&disk->blockarr, block - 1)))
+			--block;
+
+		/* get the highest value */
+		if (block > parity_block)
+			parity_block = block;
+	}
+
+	return parity_block;
+}
+
+block_off_t parity_used_size(struct snapraid_state* state)
 {
 	block_off_t parity_block;
 	tommy_node* i;
@@ -40,9 +67,7 @@ block_off_t parity_size(struct snapraid_state* state)
 		block_off_t block = tommy_arrayblk_size(&disk->blockarr);
 
 		/* decrease the block until an used one */
-		/* we don't stop at deleted blocks, because we want to have them cleared */
-		/* if they are at the end of the parity */
-		while (block > parity_block && !block_has_file(tommy_arrayblk_get(&disk->blockarr, block - 1)))
+		while (block > parity_block && !block_has_file_and_valid_parity(tommy_arrayblk_get(&disk->blockarr, block - 1)))
 			--block;
 
 		/* get the highest value */

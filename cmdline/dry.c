@@ -187,7 +187,7 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	printf("Drying...\n");
 
-	blockmax = parity_size(state);
+	blockmax = parity_allocated_size(state);
 
 	if (blockstart > blockmax) {
 		/* LCOV_EXCL_START */

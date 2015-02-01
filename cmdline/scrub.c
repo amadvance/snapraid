@@ -567,7 +567,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 
 	printf("Initializing...\n");
 
-	blockmax = parity_size(state);
+	blockmax = parity_allocated_size(state);
 
 	if (state->opt.force_scrub_even) {
 		/* no limit */

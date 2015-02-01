@@ -1181,7 +1181,8 @@ bail:
 int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t blockcount)
 {
 	block_off_t blockmax;
-	data_off_t loaded_size;
+	block_off_t used_paritymax;
+	block_off_t file_paritymax;
 	data_off_t size;
 	data_off_t out_size;
 	int ret;
@@ -1195,9 +1196,14 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	printf("Initializing...\n");
 
-	blockmax = parity_size(state);
+	blockmax = parity_allocated_size(state);
 	size = blockmax * (data_off_t)state->block_size;
-	loaded_size = state->loaded_paritymax * (data_off_t)state->block_size;
+
+	/* minum size of the parity files we expect */
+	used_paritymax = parity_used_size(state);
+
+	/* effective size of the parity files */
+	file_paritymax = 0;
 
 	if (blockstart > blockmax) {
 		/* LCOV_EXCL_START */
@@ -1212,6 +1218,8 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	}
 
 	for (l = 0; l < state->level; ++l) {
+		block_off_t parityblocks;
+
 		/* create the file and open for writing */
 		parity_ptr[l] = &parity[l];
 		ret = parity_create(parity_ptr[l], state->parity[l].path, &out_size, state->file_mode);
@@ -1222,20 +1230,41 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 			/* LCOV_EXCL_STOP */
 		}
 
-		/* if we do a full sync, having a wrong parity size is expected */
-		if (!state->opt.force_full) {
-			/* if the file is too small */
-			if (out_size < loaded_size) {
-				/* LCOV_EXCL_START */
-				fprintf(stderr, "DANGER! The %s file %s is smaller than the expected %" PRId64 ".\n", lev_name(l), state->parity[l].path, loaded_size);
+		/* number of block in the parity file */
+		parityblocks = out_size / state->block_size;
+
+		/* if the file is too small */
+		if (parityblocks < used_paritymax) {
+			fprintf(stderr, "WARNING! The %s file %s has data only %u blocks instead of %u.\n", lev_name(l), state->parity[l].path, parityblocks, used_paritymax);
+		}
+
+		/* keep the smallest parity number of blocks */
+		if (l == 0 || file_paritymax > parityblocks)
+			file_paritymax = parityblocks;
+	}
+
+	/* if we do a full sync, having a wrong parity size is expected */
+	if (!state->opt.force_full) {
+		/* if the parities are too small */
+		if (file_paritymax < used_paritymax) {
+			/* LCOV_EXCL_START */
+			fprintf(stderr, "DANGER! One or more the parity files are smaller than expected!\n");
+			if (file_paritymax != 0) {
 				fprintf(stderr, "If this happens because you are using an old content file,\n");
 				fprintf(stderr, "you can 'sync' anyway using 'snapraid --force-full sync'\n");
 				fprintf(stderr, "to force a full rebuild of the parity.\n");
-				exit(EXIT_FAILURE);
-				/* LCOV_EXCL_STOP */
+			} else {
+				fprintf(stderr, "It's possible that the parity disks are not mounted.\n");
+				fprintf(stderr, "If instead you are adding a new parity level, you can 'sync' using\n");
+				fprintf(stderr, "'snapraid --force-full sync' to force a full rebuild of the parity.\n");
 			}
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
+	}
 
+	/* now change the size of all parities */
+	for (l = 0; l < state->level; ++l) {
 		/* change the size of the parity file, truncating or extending it */
 		/* from this point all the DELETED blocks after the end of the parity are invalid */
 		/* and they are automatically removed when we save the new content file */

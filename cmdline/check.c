@@ -1855,7 +1855,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 
 	printf("Initializing...\n");
 
-	blockmax = parity_size(state);
+	blockmax = parity_allocated_size(state);
 	size = blockmax * (data_off_t)state->block_size;
 
 	if (blockstart > blockmax) {

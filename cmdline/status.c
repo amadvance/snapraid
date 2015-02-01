@@ -80,7 +80,7 @@ int state_status(struct snapraid_state* state)
 	/* keep track if at least a free info is available */
 	free_not_zero = 0;
 
-	blockmax = parity_size(state);
+	blockmax = parity_allocated_size(state);
 
 	fprintf(stdlog, "summary:block_size:%u\n", state->block_size);
 	fprintf(stdlog, "summary:parity_block_count:%u\n", blockmax);
