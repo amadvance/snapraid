@@ -563,13 +563,14 @@ void state_device(struct snapraid_state* state, int operation)
 	}
 
 	if (devquery(&high, &low, operation) != 0) {
+		const char* ope = 0;
 		switch (operation) {
-		case DEVICE_UP : ferr("Spinup"); break;
-		case DEVICE_DOWN : ferr("Spindown"); break;
-		case DEVICE_LIST : ferr("List"); break;
-		case DEVICE_SMART : ferr("SMART"); break;
+		case DEVICE_UP : ope = "Spinup"; break;
+		case DEVICE_DOWN : ope = "Spindown"; break;
+		case DEVICE_LIST : ope = "List"; break;
+		case DEVICE_SMART : ope = "SMART"; break;
 		}
-		ferr(" unsupported in this platform.\n");
+		ferr("%s unsupported in this platform.\n", ope);
 	} else {
 
 #ifndef _WIN32
