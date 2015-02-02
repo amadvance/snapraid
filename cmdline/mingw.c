@@ -137,19 +137,19 @@ void os_init(int opt)
 
 	ntdll = GetModuleHandle("NTDLL.DLL");
 	if (!ntdll) {
-		fprintf(stderr, "Error loading the NTDLL module.\n");
+		ferr("Error loading the NTDLL module.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	kernel32 = GetModuleHandle("KERNEL32.DLL");
 	if (!kernel32) {
-		fprintf(stderr, "Error loading the KERNEL32 module.\n");
+		ferr("Error loading the KERNEL32 module.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	dll_advapi32 = LoadLibrary("ADVAPI32.DLL");
 	if (!dll_advapi32) {
-		fprintf(stderr, "Error loading the ADVAPI32 module.\n");
+		ferr("Error loading the ADVAPI32 module.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -162,7 +162,7 @@ void os_init(int opt)
 
 	ptr_RtlGenRandom = (void*)GetProcAddress(dll_advapi32, "SystemFunction036");
 	if (!ptr_RtlGenRandom) {
-		fprintf(stderr, "Error loading RtlGenRandom() from the ADVAPI32 module.\n");
+		ferr("Error loading RtlGenRandom() from the ADVAPI32 module.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -216,7 +216,7 @@ static wchar_t* u8tou16(const char* src)
 	ret = MultiByteToWideChar(CP_UTF8, 0, src, -1, conv_utf16_buffer[conv_utf16], sizeof(conv_utf16_buffer[0]) / sizeof(wchar_t));
 
 	if (ret <= 0) {
-		fprintf(stderr, "Error converting name '%s' from UTF-8 to UTF-16\n", src);
+		ferr("Error converting name '%s' from UTF-8 to UTF-16\n", src);
 		exit(EXIT_FAILURE);
 	}
 
@@ -235,7 +235,7 @@ static char* u16tou8(const wchar_t* src, size_t number_of_wchar, size_t* result_
 
 	ret = WideCharToMultiByte(CP_UTF8, 0, src, number_of_wchar, conv_utf8_buffer[conv_utf8], sizeof(conv_utf8_buffer[0]), 0, 0);
 	if (ret <= 0) {
-		fprintf(stderr, "Error converting from UTF-16 to UTF-8\n");
+		ferr("Error converting from UTF-16 to UTF-8\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -322,7 +322,7 @@ static wchar_t* convert_arg(const char* src, int only_if_required)
 	ret = MultiByteToWideChar(CP_UTF8, 0, src, -1, dst, sizeof(conv_utf16_buffer[0]) / sizeof(wchar_t) - count);
 
 	if (ret <= 0) {
-		fprintf(stderr, "Error converting name '%s' from UTF-8 to UTF-16\n", src);
+		ferr("Error converting name '%s' from UTF-8 to UTF-16\n", src);
 		exit(EXIT_FAILURE);
 	}
 
@@ -556,7 +556,7 @@ static void windows_finddata2dirent(const WIN32_FIND_DATAW* info, struct windows
 	name = u16tou8(info->cFileName, wcslen(info->cFileName), &len);
 
 	if (len + 1 >= sizeof(dirent->d_name)) {
-		fprintf(stderr, "Name too long\n");
+		ferr("Name too long\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -574,7 +574,7 @@ static void windows_stream2dirent(const BY_HANDLE_FILE_INFORMATION* info, const 
 	name = u16tou8(stream->FileName, stream->FileNameLength / 2, &len);
 
 	if (len + 1 >= sizeof(dirent->d_name)) {
-		fprintf(stderr, "Name too long\n");
+		ferr("Name too long\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -625,7 +625,7 @@ static void windows_errno(DWORD error)
 		errno = EPERM;
 		break;
 	default :
-		fprintf(stderr, "Unexpected Windows error %d.\n", (int)error);
+		ferr("Unexpected Windows error %d.\n", (int)error);
 		errno = EIO;
 		break;
 	}
@@ -924,8 +924,8 @@ int windows_fsync(int fd)
 			 * this error, but not enough sure to ignore it.
 			 * So, we use now an extended error reporting.
 			 */
-			fprintf(stderr, "Unexpected Windows INVALID_HANDLE error in FlushFileBuffers().\n");
-			fprintf(stderr, "Are you using ATA-over-Ethernet ? Please report it.\n");
+			ferr("Unexpected Windows INVALID_HANDLE error in FlushFileBuffers().\n");
+			ferr("Are you using ATA-over-Ethernet ? Please report it.\n");
 
 			/* normal error processing */
 			windows_errno(error);
@@ -1056,7 +1056,7 @@ static windows_dir* windows_opendir_find(const char* dir)
 
 	dirstream = malloc(sizeof(windows_dir));
 	if (!dirstream) {
-		fprintf(stderr, "Low memory\n");
+		ferr("Low memory\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -1193,7 +1193,7 @@ static windows_dir* windows_opendir_stream(const char* dir)
 
 	dirstream = malloc(sizeof(windows_dir));
 	if (!dirstream) {
-		fprintf(stderr, "Low memory\n");
+		ferr("Low memory\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -1203,7 +1203,7 @@ static windows_dir* windows_opendir_stream(const char* dir)
 	dirstream->buffer_size = 64 * 1024;
 	dirstream->buffer = malloc(dirstream->buffer_size);
 	if (!dirstream->buffer) {
-		fprintf(stderr, "Low memory\n");
+		ferr("Low memory\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -1680,7 +1680,7 @@ retry:
 		 * https://sourceforge.net/p/snapraid/discussion/1677233/thread/a7c25ba9/
 		 */
 		if (err == ERROR_NO_SYSTEM_RESOURCES) {
-			fprintf(stderr, "Unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pread(), retrying...\n");
+			ferr("Unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pread(), retrying...\n");
 			Sleep(50);
 			goto retry;
 		}
@@ -1720,7 +1720,7 @@ retry:
 		DWORD err = GetLastError();
 		/* See windows_pread() for comments on this error management */
 		if (err == ERROR_NO_SYSTEM_RESOURCES) {
-			fprintf(stderr, "Unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pwrite(), retrying...\n");
+			ferr("Unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pwrite(), retrying...\n");
 			Sleep(50);
 			goto retry;
 		}
@@ -1787,7 +1787,7 @@ static int devscan(tommy_list* list)
 	f = popen(cmd, "r");
 	if (!f) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to run smartctl --scan-open (from popen).\n");
+		ferr("Failed to run smartctl --scan-open (from popen).\n");
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1802,13 +1802,13 @@ static int devscan(tommy_list* list)
 	ret = pclose(f);
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to run smartctl --scan-open (from pclose).\n");
+		ferr("Failed to run smartctl --scan-open (from pclose).\n");
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to run smartctl --scan-open with return code %xh.\n", ret);
+		ferr("Failed to run smartctl --scan-open with return code %xh.\n", ret);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1830,7 +1830,7 @@ static int devsmart(const char* file, uint64_t* smart, char* serial)
 	f = popen(cmd, "r");
 	if (!f) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to run smartctl -a on device '%s' (from open).\n", file);
+		ferr("Failed to run smartctl -a on device '%s' (from open).\n", file);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1845,7 +1845,7 @@ static int devsmart(const char* file, uint64_t* smart, char* serial)
 	ret = pclose(f);
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to run smartctl -a on device '%s' (from pclose).\n", file);
+		ferr("Failed to run smartctl -a on device '%s' (from pclose).\n", file);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1882,7 +1882,7 @@ static void* thread_spinup(void* arg)
 	if (lstat(devinfo->mount, &st) != 0) {
 		/* LCOV_EXCL_START */
 		pthread_mutex_lock(&io_lock);
-		fprintf(stderr, "Failed to stat devinfo '%s'. %s.\n", devinfo->mount, strerror(errno));
+		ferr("Failed to stat devinfo '%s'. %s.\n", devinfo->mount, strerror(errno));
 		pthread_mutex_unlock(&io_lock);
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -1940,7 +1940,7 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 
 		if (pthread_create(&devinfo->thread, 0, func, devinfo) != 0) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "Failed to create thread.\n");
+			ferr("Failed to create thread.\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1953,7 +1953,7 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 
 		if (pthread_join(devinfo->thread, &retval) != 0) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "Failed to join thread.\n");
+			ferr("Failed to join thread.\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}

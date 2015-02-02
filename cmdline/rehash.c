@@ -38,14 +38,14 @@ void state_rehash(struct snapraid_state* state)
 	/* check if a rehash is already in progress */
 	if (state->prevhash != HASH_UNDEFINED) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "You already have a rehash in progress.\n");
+		ferr("You already have a rehash in progress.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (state->hash == state->besthash) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "You are already using the best hash for your platform.\n");
+		ferr("You are already using the best hash for your platform.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -58,7 +58,7 @@ void state_rehash(struct snapraid_state* state)
 	state->hash = state->besthash;
 	if (randomize(state->hashseed, HASH_SIZE) != 0) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to get random values.\n");
+		ferr("Failed to get random values.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -76,7 +76,7 @@ void state_rehash(struct snapraid_state* state)
 
 		if (info_get_rehash(info)) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "Internal inconsistency for a rehash already in progress\n");
+			ferr("Internal inconsistency for a rehash already in progress\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}

@@ -796,14 +796,10 @@ SnapRAID provides the following options:
         This option can be used only with "sync".
 
     -l, --log FILE
-        Write a detailed log of errors found in check and fix.
-        This log contains the exact specification of which block of
-        any file is not recoverable and why.
-        If this option is not specified, no detailed log is printed,
-        and you'll get only a summary at the end of the operations.
-        When checking and fixing this allows to keep separated
-        the possible huge list of errors from the human readable
-        output.
+        Write a detailed log of errors encoutered.
+        If this option is not specified, the errors are printed on
+        the screen, likely resulting in too much output in case
+        of many errors.
         If the specified path starts with '>>' the file is opened
         in append mode. Occurrences of '%D' and '%T' in the name are
         replaced with the date and time in the format YYYYMMDD and

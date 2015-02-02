@@ -20,6 +20,55 @@
 #include "support.h"
 
 /****************************************************************************/
+/* print */
+
+void fout(const char* format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	vfprintf(stdout, format, ap);
+	va_end(ap);
+}
+
+void ferr(const char* format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	vfprintf(stderr, format, ap);
+	if (stdlog) {
+		fprintf(stdlog, "msg: ");
+		vfprintf(stdlog, format, ap);
+	}
+	va_end(ap);
+}
+
+void flog(const char* format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	if (stdlog) {
+		fprintf(stdlog, "msg: ");
+		vfprintf(stdlog, format, ap);
+	} else {
+		vfprintf(stderr, format, ap);
+	}
+	va_end(ap);
+}
+
+void ftag(const char* format, ...)
+{
+	va_list ap;
+
+	va_start(ap, format);
+	if (stdlog)
+		vfprintf(stdlog, format, ap);
+	va_end(ap);
+}
+
+/****************************************************************************/
 /* path */
 
 void pathcpy(char* dst, size_t size, const char* src)
@@ -28,7 +77,7 @@ void pathcpy(char* dst, size_t size, const char* src)
 
 	if (len + 1 > size) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Path too long\n");
+		ferr("Path too long\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -43,7 +92,7 @@ void pathcat(char* dst, size_t size, const char* src)
 
 	if (dst_len + src_len + 1 > size) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Path too long\n");
+		ferr("Path too long\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -57,7 +106,7 @@ void pathcatc(char* dst, size_t size, char c)
 
 	if (dst_len + 2 > size) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Path too long\n");
+		ferr("Path too long\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -105,7 +154,7 @@ void pathprint(char* dst, size_t size, const char* format, ...)
 
 	if (len >= size) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Path too long\n");
+		ferr("Path too long\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -118,7 +167,7 @@ void pathslash(char* dst, size_t size)
 	if (len > 0 && dst[len - 1] != '/') {
 		if (len + 2 >= size) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "Path too long\n");
+			ferr("Path too long\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -213,7 +262,7 @@ int mkancestor(const char* file)
 	/* create it */
 	if (mkdir(dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) != 0) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Error creating directory '%s'. %s.\n", dir, strerror(errno));
+		ferr("Error creating directory '%s'. %s.\n", dir, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -469,14 +518,14 @@ int smartctl_attribute(FILE* f, uint64_t* smart, char* serial)
 		} else if (inside) {
 			if (sscanf(s, "%u %*s %*s %*u %*u %*u %*s %*s %*s %" SCNu64, &id, &raw) != 2) {
 				/* LCOV_EXCL_START */
-				fprintf(stderr, "Invalid smartctl line '%s'.\n", buf);
+				ferr("Invalid smartctl line '%s'.\n", buf);
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (id >= 256) {
 				/* LCOV_EXCL_START */
-				fprintf(stderr, "Invalid SMART id '%u'.\n", id);
+				ferr("Invalid SMART id '%u'.\n", id);
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}

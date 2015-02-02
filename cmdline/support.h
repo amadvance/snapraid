@@ -19,6 +19,50 @@
 #define __SUPPORT_H
 
 /****************************************************************************/
+/* log */
+
+/**
+ * Output message targgeted for the screen.
+ *
+ * Messages are in human readable format.
+ *
+ * These messages go in stdout.
+ */
+void fout(const char* format, ...) __attribute__((format(printf, 1, 2)));
+
+/**
+ * Error message printed before an early termination.
+ *
+ * Messages are in human readable format.
+ *
+ * These messages go in the log file and in stderr.
+ */
+void ferr(const char* format, ...) __attribute__((format(printf, 1, 2)));
+
+/**
+ * Log message printed after an error.
+ *
+ * Messages are in human readable format.
+ *
+ * These messages go in the log file if specified, otherwise in stderr.
+ */
+void flog(const char* format, ...) __attribute__((format(printf, 1, 2)));
+
+/**
+ * Tag message.
+ *
+ * Messages are in tag format, like "tag:entry:...".
+ *
+ * These messages go in the log file.
+ */
+void ftag(const char* format, ...) __attribute__((format(printf, 1, 2)));
+
+/**
+ * Pointer to log function.
+ */
+typedef void fptr(const char* format, ...);
+
+/****************************************************************************/
 /* path */
 
 /**
@@ -57,7 +101,7 @@ void pathexport(char* dst, size_t size, const char* src);
  * Prints a path.
  * Aborts if too long.
  */
-void pathprint(char* dst, size_t size, const char* format, ...);
+void pathprint(char* dst, size_t size, const char* format, ...) __attribute__((format(printf, 3, 4)));
 
 /**
  * Ensures the presence of a terminating slash, if it isn't empty.

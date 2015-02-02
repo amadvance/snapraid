@@ -112,7 +112,7 @@ static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned d
 		) {
 			/* if a hash doesn't match, fail the check */
 			if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0) {
-				fprintf(stdlog, "hash_error: Hash mismatch on entry %u\n", failed_map[j]);
+				ftag("hash_error: Hash mismatch on entry %u\n", failed_map[j]);
 				return 0;
 			}
 
@@ -223,13 +223,13 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 				return 0;
 
 			/* log */
-			fprintf(stdlog, "parity_error:%u:", pos);
+			ftag("parity_error:%u:", pos);
 			for (i = 0; i < r; ++i) {
 				if (i != 0)
-					fprintf(stdlog, "/");
-				fprintf(stdlog, "%s", lev_config_name(ip[i]));
+					ftag("/");
+				ftag("%s", lev_config_name(ip[i]));
 			}
-			fprintf(stdlog, ":parity: Parity mismatch\n");
+			ftag(":parity: Parity mismatch\n");
 			++error;
 		} while (combination_next(r, n, ip));
 	}
@@ -263,13 +263,13 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 				return 0;
 
 			/* log */
-			fprintf(stdlog, "parity_error:%u:", pos);
+			ftag("parity_error:%u:", pos);
 			for (i = 0; i < r; ++i) {
 				if (i != 0)
-					fprintf(stdlog, "/");
-				fprintf(stdlog, "%s", lev_config_name(ip[i]));
+					ftag("/");
+				ftag("%s", lev_config_name(ip[i]));
 			}
-			fprintf(stdlog, ":hash: Hash mismatch\n");
+			ftag(":hash: Hash mismatch\n");
 			++error;
 		} while (combination_next(r, n, ip));
 	}
@@ -278,7 +278,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 	if (error)
 		return error;
 
-	fprintf(stdlog, "strategy_error:%u: No strategy to recover from %u failures with %u parity %s hash\n",
+	ftag("strategy_error:%u: No strategy to recover from %u failures with %u parity %s hash\n",
 		pos, failed_count, n, has_hash ? "with" : "without");
 	return -1;
 }
@@ -338,9 +338,9 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 			disk = handle->disk->name;
 			sub = block_file_get(block)->sub;
 
-			fprintf(stdlog, "entry:%u:%s:%s:%s:%s:%s:%u:\n", j, state, hash, data, disk, sub, block_file_pos(block));
+			ftag("entry:%u:%s:%s:%s:%s:%s:%u:\n", j, state, hash, data, disk, sub, block_file_pos(block));
 		} else {
-			fprintf(stdlog, "entry:%u:%s:%s:%s:\n", j, state, hash, data);
+			ftag("entry:%u:%s:%s:%s:\n", j, state, hash, data);
 		}
 	}
 
@@ -375,7 +375,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 					|| state_search_fetch(state, rehash, failed[j].block, buffer[failed[j].index]) == 0)
 			) {
 				/* we already have corrected it! */
-				fprintf(stdlog, "hash_import: Fixed entry %u\n", j);
+				ftag("hash_import: Fixed entry %u\n", j);
 			} else {
 				/* otherwise try to recover it */
 				failed_map[n] = j;
@@ -389,7 +389,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 
 	/* if nothing to fix */
 	if (!something_to_recover) {
-		fprintf(stdlog, "recover_sync:%u:%u: Skipped for already recovered\n", pos, n);
+		ftag("recover_sync:%u:%u: Skipped for already recovered\n", pos, n);
 
 		/* recompute only the parity */
 		raid_gen(diskmax, state->level, state->block_size, buffer);
@@ -423,7 +423,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 					/* it may contain garbage */
 					failed[j].is_outofdate = 1;
 
-					fprintf(stdlog, "hash_unknown: Unknown hash on entry %u\n", j);
+					ftag("hash_unknown: Unknown hash on entry %u\n", j);
 				} else if (hash_is_zero(failed[j].block->hash)) {
 					/* if the block is not filled with 0, we are sure to have */
 					/* restored it to the state after the 'sync' */
@@ -434,7 +434,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 						/* it may contain garbage */
 						failed[j].is_outofdate = 1;
 
-						fprintf(stdlog, "hash_unknown: Maybe old zero on entry %u\n", j);
+						ftag("hash_unknown: Maybe old zero on entry %u\n", j);
 					}
 				} else {
 					/* if the hash is different than the previous one, we are sure to have */
@@ -446,7 +446,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 						/* it may contain garbage */
 						failed[j].is_outofdate = 1;
 
-						fprintf(stdlog, "hash_unknown: Maybe old data on entry %u\n", j);
+						ftag("hash_unknown: Maybe old data on entry %u\n", j);
 					}
 				}
 			}
@@ -458,9 +458,9 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 		error += ret;
 
 	if (ret < 0)
-		fprintf(stdlog, "recover_sync:%u:%u: Failed with no attempts\n", pos, n);
+		ftag("recover_sync:%u:%u: Failed with no attempts\n", pos, n);
 	else
-		fprintf(stdlog, "recover_sync:%u:%u: Failed with %d attempts\n", pos, n, ret);
+		ftag("recover_sync:%u:%u: Failed with %d attempts\n", pos, n, ret);
 
 	/* Now assume that the parity IS NOT updated at the current state, */
 	/* but still represent the state before the last 'sync' process. */
@@ -556,7 +556,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 						/* and we don't want to write it to the disk */
 						failed[j].is_outofdate = 1;
 
-						fprintf(stdlog, "hash_unknown: Surely old data on entry %u\n", j);
+						ftag("hash_unknown: Surely old data on entry %u\n", j);
 					}
 				}
 			}
@@ -567,11 +567,11 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 			error += ret;
 
 		if (ret < 0)
-			fprintf(stdlog, "recover_unsync:%u:%u: Failed with no attempts\n", pos, n);
+			ftag("recover_unsync:%u:%u: Failed with no attempts\n", pos, n);
 		else
-			fprintf(stdlog, "recover_unsync:%u:%u: Failed with %d attempts\n", pos, n, ret);
+			ftag("recover_unsync:%u:%u: Failed with %d attempts\n", pos, n, ret);
 	} else {
-		fprintf(stdlog, "recover_unsync:%u:%u: Skipped for%s%s\n", pos, n,
+		ftag("recover_unsync:%u:%u: Skipped for%s%s\n", pos, n,
 			!something_to_recover ? " nothing to recover" : "",
 			!something_unsynced ? " nothing unsynched" : ""
 		);
@@ -636,7 +636,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 		/* or at least pointing to NULL, in case it cannot be opened. */
 		if (handle[j].file != 0 && handle[j].file != file) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "Internal inconsistency in opened file for block %u\n", block->parity_pos);
+			ferr("Internal inconsistency in opened file for block %u\n", block->parity_pos);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -658,8 +658,8 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 				ret = handle_close(&handle[j]);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					fprintf(stderr, "Error closing '%s'. %s.\n", path, strerror(errno));
-					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					ferr("Error closing '%s'. %s.\n", path, strerror(errno));
+					ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					return -1;
 					/* LCOV_EXCL_STOP */
 				}
@@ -667,13 +667,13 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 				ret = rename(path, path_to);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					fprintf(stderr, "Error renaming '%s' to '%s'. %s.\n", path, path_to, strerror(errno));
-					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					ferr("Error renaming '%s' to '%s'. %s.\n", path, path_to, strerror(errno));
+					ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					return -1;
 					/* LCOV_EXCL_STOP */
 				}
 
-				fprintf(stdlog, "status:unrecoverable:%s:%s\n", disk->name, file->sub);
+				ftag("status:unrecoverable:%s:%s\n", disk->name, file->sub);
 				if (!state->opt.quiet) {
 					printf("unrecoverable %s\n", path);
 				}
@@ -688,7 +688,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 				goto close_and_continue;
 			}
 
-			fprintf(stdlog, "status:recovered:%s:%s\n", disk->name, file->sub);
+			ftag("status:recovered:%s:%s\n", disk->name, file->sub);
 			if (!state->opt.quiet) {
 				printf("recovered %s\n", path);
 			}
@@ -718,35 +718,35 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 					/* LCOV_EXCL_START */
 					/* mark the file as damaged */
 					file_flag_set(file, FILE_IS_DAMAGED);
-					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					return -1;
 					/* LCOV_EXCL_STOP */
 				}
 			} else {
-				fprintf(stdlog, "collision:%s:%s:%s: Not setting modification time to avoid inode collision\n", disk->name, file->sub, collide_file->sub);
+				ftag("collision:%s:%s:%s: Not setting modification time to avoid inode collision\n", disk->name, file->sub, collide_file->sub);
 			}
 		} else {
 			/* we are not fixing, but only checking */
 			/* print just the final status */
 			if (file_flag_has(file, FILE_IS_DAMAGED)) {
 				if (state->opt.auditonly) {
-					fprintf(stdlog, "status:damaged:%s:%s\n", disk->name, file->sub);
+					ftag("status:damaged:%s:%s\n", disk->name, file->sub);
 					if (!state->opt.quiet) {
 						printf("damaged %s\n", path);
 					}
 				} else {
-					fprintf(stdlog, "status:unrecoverable:%s:%s\n", disk->name, file->sub);
+					ftag("status:unrecoverable:%s:%s\n", disk->name, file->sub);
 					if (!state->opt.quiet) {
 						printf("unrecoverable %s\n", path);
 					}
 				}
 			} else if (file_flag_has(file, FILE_IS_FIXED)) {
-				fprintf(stdlog, "status:recoverable:%s:%s\n", disk->name, file->sub);
+				ftag("status:recoverable:%s:%s\n", disk->name, file->sub);
 				if (!state->opt.quiet) {
 					printf("recoverable %s\n", path);
 				}
 			} else {
-				fprintf(stdlog, "status:correct:%s:%s\n", disk->name, file->sub);
+				ftag("status:correct:%s:%s\n", disk->name, file->sub);
 				if (state->opt.verbose) {
 					printf("correct %s\n", path);
 				}
@@ -762,8 +762,8 @@ close_and_continue:
 			ret = handle_close(&handle[j]);
 			if (ret != 0) {
 				/* LCOV_EXCL_START */
-				fprintf(stderr, "Error closing '%s'. %s.\n", path, strerror(errno));
-				fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+				ferr("Error closing '%s'. %s.\n", path, strerror(errno));
+				ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
@@ -977,7 +977,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
-					fprintf(stderr, "DANGER! Unexpected close error in a data disk, it isn't possible to check.\n");
+					ferr("DANGER! Unexpected close error in a data disk, it isn't possible to check.\n");
 					printf("Stopping at block %u\n", i);
 					++unrecoverable_error;
 					goto bail;
@@ -991,9 +991,9 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					if (ret == -1) {
 						/* LCOV_EXCL_START */
 						if (errno == EACCES) {
-							fprintf(stderr, "WARNING! Please give write permission to the file.\n");
+							ferr("WARNING! Please give write permission to the file.\n");
 						} else {
-							fprintf(stderr, "DANGER! Without a working data disk, it isn't possible to fix errors on it.\n");
+							ferr("DANGER! Without a working data disk, it isn't possible to fix errors on it.\n");
 						}
 						printf("Stopping at block %u\n", i);
 						++unrecoverable_error;
@@ -1009,7 +1009,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					}
 				} else {
 					/* otherwise, open the file only for reading */
-					ret = handle_open(&handle[j], file, state->file_mode, stdlog);
+					ret = handle_open(&handle[j], file, state->file_mode, flog);
 					if (ret == -1) {
 						/* save the failed block for the check/fix */
 						failed[failed_count].is_bad = 1;
@@ -1019,7 +1019,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						failed[failed_count].handle = &handle[j];
 						++failed_count;
 
-						fprintf(stdlog, "error:%u:%s:%s: Open error at position %u\n", i, disk->name, file->sub, block_file_pos(block));
+						ftag("error:%u:%s:%s: Open error at position %u\n", i, disk->name, file->sub, block_file_pos(block));
 						++error;
 						continue;
 					}
@@ -1046,22 +1046,22 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					&& !(state->opt.syncedonly && file_flag_has(file, FILE_IS_UNSYNCED))
 					&& handle[j].st.st_size > file->size
 				) {
-					fprintf(stdlog, "File '%s' is larger than expected.\n", handle[j].path);
-					fprintf(stdlog, "error:%u:%s:%s: Size error\n", i, disk->name, file->sub);
+					flog("File '%s' is larger than expected.\n", handle[j].path);
+					ftag("error:%u:%s:%s: Size error\n", i, disk->name, file->sub);
 					++error;
 
 					if (fix) {
 						ret = handle_truncate(&handle[j], file);
 						if (ret == -1) {
 							/* LCOV_EXCL_START */
-							fprintf(stderr, "DANGER! Unexpected truncate error in a data disk, it isn't possible to fix.\n");
+							ferr("DANGER! Unexpected truncate error in a data disk, it isn't possible to fix.\n");
 							printf("Stopping at block %u\n", i);
 							++unrecoverable_error;
 							goto bail;
 							/* LCOV_EXCL_STOP */
 						}
 
-						fprintf(stdlog, "fixed:%u:%s:%s: Fixed size\n", i, disk->name, file->sub);
+						ftag("fixed:%u:%s:%s: Fixed size\n", i, disk->name, file->sub);
 						++recovered_error;
 					}
 				}
@@ -1073,7 +1073,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			}
 
 			/* read from the file */
-			read_size = handle_read(&handle[j], block, buffer[j], state->block_size, stdlog);
+			read_size = handle_read(&handle[j], block, buffer[j], state->block_size, flog);
 			if (read_size == -1) {
 				/* save the failed block for the check/fix */
 				failed[failed_count].is_bad = 1; /* it's bad because we cannot read it */
@@ -1083,7 +1083,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				fprintf(stdlog, "error:%u:%s:%s: Read error at position %u\n", i, disk->name, file->sub, block_file_pos(block));
+				ftag("error:%u:%s:%s: Read error at position %u\n", i, disk->name, file->sub, block_file_pos(block));
 				++error;
 				continue;
 			}
@@ -1124,7 +1124,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				fprintf(stdlog, "error:%u:%s:%s: Data error at position %u\n", i, disk->name, file->sub, block_file_pos(block));
+				ftag("error:%u:%s:%s: Data error at position %u\n", i, disk->name, file->sub, block_file_pos(block));
 				++error;
 				continue;
 			}
@@ -1160,11 +1160,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			/* read the parity */
 			for (l = 0; l < state->level; ++l) {
 				if (parity[l]) {
-					ret = parity_read(parity[l], i, buffer_recov[l], state->block_size, stdlog);
+					ret = parity_read(parity[l], i, buffer_recov[l], state->block_size, flog);
 					if (ret == -1) {
 						buffer_recov[l] = 0; /* no parity to use */
 
-						fprintf(stdlog, "parity_error:%u:%s: Read error\n", i, lev_config_name(l));
+						ftag("parity_error:%u:%s: Read error\n", i, lev_config_name(l));
 						++error;
 					}
 				} else {
@@ -1183,7 +1183,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				/* print a list of all the errors in files */
 				for (j = 0; j < failed_count; ++j) {
 					if (failed[j].is_bad)
-						fprintf(stdlog, "unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
+						ftag("unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
 				}
 
 				/* keep track of damaged files */
@@ -1201,7 +1201,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				for (j = 0; j < failed_count; ++j) {
 					if (failed[j].is_bad && failed[j].is_outofdate) {
 						++partial_recover_error;
-						fprintf(stdlog, "unrecoverable:%u:%s:%s: Unrecoverable unsynced error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
+						ftag("unrecoverable:%u:%s:%s: Unrecoverable unsynced error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
 					}
 				}
 				if (partial_recover_error != 0) {
@@ -1218,7 +1218,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						if (buffer_recov[l] != 0 && memcmp(buffer_recov[l], buffer[diskmax + l], state->block_size) != 0) {
 							buffer_recov[l] = 0;
 
-							fprintf(stdlog, "parity_error:%u:%s: Data error\n", i, lev_config_name(l));
+							ftag("parity_error:%u:%s: Data error\n", i, lev_config_name(l));
 							++error;
 						}
 					}
@@ -1244,10 +1244,10 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 							file_flag_set(block_file_get(failed[j].block), FILE_IS_DAMAGED);
 
 							if (errno == EACCES) {
-								fprintf(stderr, "WARNING! Please give write permission to the file.\n");
+								ferr("WARNING! Please give write permission to the file.\n");
 							} else {
 								/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
-								fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+								ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 							}
 							printf("Stopping at block %u\n", i);
 							++unrecoverable_error;
@@ -1266,7 +1266,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						/* note that it could be also marked as damaged in other iterations */
 						file_flag_set(block_file_get(failed[j].block), FILE_IS_FIXED);
 
-						fprintf(stdlog, "fixed:%u:%s:%s: Fixed data error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
+						ftag("fixed:%u:%s:%s: Fixed data error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
 						++recovered_error;
 					}
 
@@ -1281,14 +1281,14 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 								if (ret == -1) {
 									/* LCOV_EXCL_START */
 									/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
-									fprintf(stderr, "WARNING! Without a working %s disk, it isn't possible to fix errors on it.\n", lev_name(l));
+									ferr("WARNING! Without a working %s disk, it isn't possible to fix errors on it.\n", lev_name(l));
 									printf("Stopping at block %u\n", i);
 									++unrecoverable_error;
 									goto bail;
 									/* LCOV_EXCL_STOP */
 								}
 
-								fprintf(stdlog, "parity_fixed:%u:%s: Fixed data error\n", i, lev_config_name(l));
+								ftag("parity_fixed:%u:%s: Fixed data error\n", i, lev_config_name(l));
 								++recovered_error;
 							}
 						}
@@ -1368,18 +1368,18 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			if (ret == -1) {
 				unsuccesful = 1;
 
-				fprintf(stdlog, "Error stating empty file '%s'. %s.\n", path, strerror(errno));
-				fprintf(stdlog, "error:%s:%s: Empty file stat error\n", disk->name, file->sub);
+				flog("Error stating empty file '%s'. %s.\n", path, strerror(errno));
+				ftag("error:%s:%s: Empty file stat error\n", disk->name, file->sub);
 				++error;
 			} else if (!S_ISREG(st.st_mode)) {
 				unsuccesful = 1;
 
-				fprintf(stdlog, "error:%s:%s: Empty file error for not regular file\n", disk->name, file->sub);
+				ftag("error:%s:%s: Empty file error for not regular file\n", disk->name, file->sub);
 				++error;
 			} else if (st.st_size != 0) {
 				unsuccesful = 1;
 
-				fprintf(stdlog, "error:%s:%s: Empty file error for size '%" PRIu64 "'\n", disk->name, file->sub, st.st_size);
+				ftag("error:%s:%s: Empty file error for size '%" PRIu64 "'\n", disk->name, file->sub, st.st_size);
 				++error;
 			}
 
@@ -1390,7 +1390,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				ret = mkancestor(path);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					printf("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
@@ -1402,12 +1402,12 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				f = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_NOFOLLOW, 0600);
 				if (f == -1) {
 					/* LCOV_EXCL_START */
-					fprintf(stderr, "Error creating empty file '%s'. %s.\n", path, strerror(errno));
+					ferr("Error creating empty file '%s'. %s.\n", path, strerror(errno));
 					if (errno == EACCES) {
-						fprintf(stderr, "WARNING! Please give write permission to the file.\n");
+						ferr("WARNING! Please give write permission to the file.\n");
 					} else {
 						/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
-						fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+						ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					}
 					printf("Stopping\n");
 					++unrecoverable_error;
@@ -1421,8 +1421,8 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					/* LCOV_EXCL_START */
 					close(f);
 
-					fprintf(stderr, "Error timing file '%s'. %s.\n", file->sub, strerror(errno));
-					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					ferr("Error timing file '%s'. %s.\n", file->sub, strerror(errno));
+					ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					printf("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
@@ -1433,17 +1433,17 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				ret = close(f);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					printf("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
 				}
 
-				fprintf(stdlog, "fixed:%s:%s: Fixed empty file\n", disk->name, file->sub);
+				ftag("fixed:%s:%s: Fixed empty file\n", disk->name, file->sub);
 				++recovered_error;
 
-				fprintf(stdlog, "status:recovered:%s:%s\n", disk->name, file->sub);
+				ftag("status:recovered:%s:%s\n", disk->name, file->sub);
 				if (!state->opt.quiet) {
 					printf("recovered %s%s\n", disk->dir, file->sub);
 				}
@@ -1478,13 +1478,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret == -1) {
 					unsuccesful = 1;
 
-					fprintf(stdlog, "Error stating hardlink '%s'. %s.\n", path, strerror(errno));
-					fprintf(stdlog, "hardlinkerror:%s:%s:%s: Hardlink stat error\n", disk->name, link->sub, link->linkto);
+					flog("Error stating hardlink '%s'. %s.\n", path, strerror(errno));
+					ftag("hardlinkerror:%s:%s:%s: Hardlink stat error\n", disk->name, link->sub, link->linkto);
 					++error;
 				} else if (!S_ISREG(st.st_mode)) {
 					unsuccesful = 1;
 
-					fprintf(stdlog, "hardlinkerror:%s:%s:%s: Hardlink error for not regular file\n", disk->name, link->sub, link->linkto);
+					ftag("hardlinkerror:%s:%s:%s: Hardlink error for not regular file\n", disk->name, link->sub, link->linkto);
 					++error;
 				}
 
@@ -1508,19 +1508,19 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						}
 					}
 
-					fprintf(stdlog, "Error stating hardlink-to '%s'. %s.\n", pathto, strerror(errno));
-					fprintf(stdlog, "hardlinkerror:%s:%s:%s: Hardlink to stat error\n", disk->name, link->sub, link->linkto);
+					flog("Error stating hardlink-to '%s'. %s.\n", pathto, strerror(errno));
+					ftag("hardlinkerror:%s:%s:%s: Hardlink to stat error\n", disk->name, link->sub, link->linkto);
 					++error;
 				} else if (!S_ISREG(stto.st_mode)) {
 					unsuccesful = 1;
 
-					fprintf(stdlog, "hardlinkerror:%s:%s:%s: Hardlink-to error for not regular file\n", disk->name, link->sub, link->linkto);
+					ftag("hardlinkerror:%s:%s:%s: Hardlink-to error for not regular file\n", disk->name, link->sub, link->linkto);
 					++error;
 				} else if (!unsuccesful && st.st_ino != stto.st_ino) {
 					unsuccesful = 1;
 
-					fprintf(stdlog, "Mismatch hardlink '%s' and '%s'. Different inode.\n", path, pathto);
-					fprintf(stdlog, "hardlinkerror:%s:%s:%s: Hardlink mismatch for different inode\n", disk->name, link->sub, link->linkto);
+					flog("Mismatch hardlink '%s' and '%s'. Different inode.\n", path, pathto);
+					ftag("hardlinkerror:%s:%s:%s: Hardlink mismatch for different inode\n", disk->name, link->sub, link->linkto);
 					++error;
 				}
 			} else {
@@ -1530,14 +1530,14 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret < 0) {
 					unsuccesful = 1;
 
-					fprintf(stdlog, "Error reading symlink '%s'. %s.\n", path, strerror(errno));
-					fprintf(stdlog, "symlinkerror:%s:%s: Symlink read error\n", disk->name, link->sub);
+					flog("Error reading symlink '%s'. %s.\n", path, strerror(errno));
+					ftag("symlinkerror:%s:%s: Symlink read error\n", disk->name, link->sub);
 					++error;
 				} else if (ret >= PATH_MAX) {
 					unsuccesful = 1;
 
-					fprintf(stdlog, "Error reading symlink '%s'. Symlink too long.\n", path);
-					fprintf(stdlog, "symlinkerror:%s:%s: Symlink read error\n", disk->name, link->sub);
+					flog("Error reading symlink '%s'. Symlink too long.\n", path);
+					ftag("symlinkerror:%s:%s: Symlink read error\n", disk->name, link->sub);
 					++error;
 				} else {
 					linkto[ret] = 0;
@@ -1545,7 +1545,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					if (strcmp(linkto, link->linkto) != 0) {
 						unsuccesful = 1;
 
-						fprintf(stdlog, "symlinkerror:%s:%s: Symlink data error '%s' instead of '%s'\n", disk->name, link->sub, linkto, link->linkto);
+						ftag("symlinkerror:%s:%s: Symlink data error '%s' instead of '%s'\n", disk->name, link->sub, linkto, link->linkto);
 						++error;
 					}
 				}
@@ -1556,7 +1556,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				ret = mkancestor(path);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					printf("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
@@ -1567,8 +1567,8 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				ret = remove(path);
 				if (ret != 0 && errno != ENOENT) {
 					/* LCOV_EXCL_START */
-					fprintf(stderr, "Error removing '%s'. %s.\n", path, strerror(errno));
-					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					ferr("Error removing '%s'. %s.\n", path, strerror(errno));
+					ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					printf("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
@@ -1580,12 +1580,12 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					ret = hardlink(pathto, path);
 					if (ret != 0) {
 						/* LCOV_EXCL_START */
-						fprintf(stderr, "Error writing hardlink '%s' to '%s'. %s.\n", path, pathto, strerror(errno));
+						ferr("Error writing hardlink '%s' to '%s'. %s.\n", path, pathto, strerror(errno));
 						if (errno == EACCES) {
-							fprintf(stderr, "WARNING! Please give write permission to the hardlink.\n");
+							ferr("WARNING! Please give write permission to the hardlink.\n");
 						} else {
 							/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
-							fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+							ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 						}
 						printf("Stopping\n");
 						++unrecoverable_error;
@@ -1593,18 +1593,18 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						/* LCOV_EXCL_STOP */
 					}
 
-					fprintf(stdlog, "hardlinkfixed:%s:%s: Fixed hardlink error\n", disk->name, link->sub);
+					ftag("hardlinkfixed:%s:%s: Fixed hardlink error\n", disk->name, link->sub);
 					++recovered_error;
 				} else {
 					ret = symlink(link->linkto, path);
 					if (ret != 0) {
 						/* LCOV_EXCL_START */
-						fprintf(stderr, "Error writing symlink '%s' to '%s'. %s.\n", path, link->linkto, strerror(errno));
+						ferr("Error writing symlink '%s' to '%s'. %s.\n", path, link->linkto, strerror(errno));
 						if (errno == EACCES) {
-							fprintf(stderr, "WARNING! Please give write permission to the symlink.\n");
+							ferr("WARNING! Please give write permission to the symlink.\n");
 						} else {
 							/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
-							fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+							ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 						}
 						printf("Stopping\n");
 						++unrecoverable_error;
@@ -1612,11 +1612,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						/* LCOV_EXCL_STOP */
 					}
 
-					fprintf(stdlog, "symlinkfixed:%s:%s: Fixed symlink error\n", disk->name, link->sub);
+					ftag("symlinkfixed:%s:%s: Fixed symlink error\n", disk->name, link->sub);
 					++recovered_error;
 				}
 
-				fprintf(stdlog, "status:recovered:%s:%s\n", disk->name, link->sub);
+				ftag("status:recovered:%s:%s\n", disk->name, link->sub);
 				if (!state->opt.quiet) {
 					printf("recovered %s%s\n", disk->dir, link->sub);
 				}
@@ -1646,13 +1646,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			if (ret == -1) {
 				unsuccesful = 1;
 
-				fprintf(stdlog, "Error stating dir '%s'. %s.\n", path, strerror(errno));
-				fprintf(stdlog, "dir_error:%s:%s: Dir stat error\n", disk->name, dir->sub);
+				flog("Error stating dir '%s'. %s.\n", path, strerror(errno));
+				ftag("dir_error:%s:%s: Dir stat error\n", disk->name, dir->sub);
 				++error;
 			} else if (!S_ISDIR(st.st_mode)) {
 				unsuccesful = 1;
 
-				fprintf(stdlog, "dir_error:%s:%s: Dir error for not directory\n", disk->name, dir->sub);
+				ftag("dir_error:%s:%s: Dir error for not directory\n", disk->name, dir->sub);
 				++error;
 			}
 
@@ -1661,7 +1661,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				ret = mkancestor(path);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					printf("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
@@ -1672,12 +1672,12 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				ret = mkdir(path, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					fprintf(stderr, "Error creating dir '%s'. %s.\n", path, strerror(errno));
+					ferr("Error creating dir '%s'. %s.\n", path, strerror(errno));
 					if (errno == EACCES) {
-						fprintf(stderr, "WARNING! Please give write permission to the dir.\n");
+						ferr("WARNING! Please give write permission to the dir.\n");
 					} else {
 						/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
-						fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+						ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					}
 					printf("Stopping\n");
 					++unrecoverable_error;
@@ -1685,10 +1685,10 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					/* LCOV_EXCL_STOP */
 				}
 
-				fprintf(stdlog, "dir_fixed:%s:%s: Fixed dir error\n", disk->name, dir->sub);
+				ftag("dir_fixed:%s:%s: Fixed dir error\n", disk->name, dir->sub);
 				++recovered_error;
 
-				fprintf(stdlog, "status:recovered:%s:%s\n", disk->name, dir->sub);
+				ftag("status:recovered:%s:%s\n", disk->name, dir->sub);
 				if (!state->opt.quiet) {
 					printf("recovered %s%s\n", disk->dir, dir->sub);
 				}
@@ -1704,7 +1704,7 @@ bail:
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "DANGER! Unexpected close error in a data disk.\n");
+			ferr("DANGER! Unexpected close error in a data disk.\n");
 			++unrecoverable_error;
 			/* continue, as we are already exiting */
 			/* LCOV_EXCL_STOP */
@@ -1752,8 +1752,8 @@ bail:
 				ret = remove(path);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					fprintf(stderr, "Error removing '%s'. %s.\n", path, strerror(errno));
-					fprintf(stderr, "WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					ferr("Error removing '%s'. %s.\n", path, strerror(errno));
+					ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					++unrecoverable_error;
 					/* continue, as we are already exiting */
 					/* LCOV_EXCL_STOP */
@@ -1784,30 +1784,30 @@ bail:
 		printf("Everything OK\n");
 	}
 
-	fprintf(stdlog, "summary:error:%u\n", error);
+	ftag("summary:error:%u\n", error);
 	if (fix)
-		fprintf(stdlog, "summary:error_recovered:%u\n", recovered_error);
+		ftag("summary:error_recovered:%u\n", recovered_error);
 	if (!state->opt.auditonly)
-		fprintf(stdlog, "summary:error_unrecoverable:%u\n", unrecoverable_error);
+		ftag("summary:error_unrecoverable:%u\n", unrecoverable_error);
 	if (fix) {
 		if (error + recovered_error + unrecoverable_error == 0)
-			fprintf(stdlog, "summary:exit:ok\n");
+			ftag("summary:exit:ok\n");
 		else if (unrecoverable_error == 0)
-			fprintf(stdlog, "summary:exit:recovered\n");
+			ftag("summary:exit:recovered\n");
 		else
-			fprintf(stdlog, "summary:exit:unrecoverable\n");
+			ftag("summary:exit:unrecoverable\n");
 	} else if (!state->opt.auditonly) {
 		if (error + unrecoverable_error == 0)
-			fprintf(stdlog, "summary:exit:ok\n");
+			ftag("summary:exit:ok\n");
 		else if (unrecoverable_error == 0)
-			fprintf(stdlog, "summary:exit:recoverable\n");
+			ftag("summary:exit:recoverable\n");
 		else
-			fprintf(stdlog, "summary:exit:unrecoverable\n");
+			ftag("summary:exit:unrecoverable\n");
 	} else { /* audit only */
 		if (error == 0)
-			fprintf(stdlog, "summary:exit:ok\n");
+			ftag("summary:exit:ok\n");
 		else
-			fprintf(stdlog, "summary:exit:error\n");
+			ftag("summary:exit:error\n");
 	}
 	fflush(stdlog);
 
@@ -1860,7 +1860,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 
 	if (blockstart > blockmax) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Error in the specified starting block %u. It's bigger than the parity size %u.\n", blockstart, blockmax);
+		ferr("Error in the specified starting block %u. It's bigger than the parity size %u.\n", blockstart, blockmax);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1878,7 +1878,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 			ret = parity_create(parity_ptr[l], state->parity[l].path, &out_size, state->file_mode);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
-				fprintf(stderr, "WARNING! Without an accessible %s file, it isn't possible to fix any error.\n", lev_name(l));
+				ferr("WARNING! Without an accessible %s file, it isn't possible to fix any error.\n", lev_name(l));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1886,7 +1886,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 			ret = parity_chsize(parity_ptr[l], size, &out_size, state->opt.skip_fallocate);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
-				fprintf(stderr, "WARNING! Without an accessible %s file, it isn't possible to sync.\n", lev_name(l));
+				ferr("WARNING! Without an accessible %s file, it isn't possible to sync.\n", lev_name(l));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1935,7 +1935,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 			ret = parity_close(parity_ptr[l]);
 			/* LCOV_EXCL_START */
 			if (ret == -1) {
-				fprintf(stderr, "DANGER! Unexpected close error in %s disk.\n", lev_name(l));
+				ferr("DANGER! Unexpected close error in %s disk.\n", lev_name(l));
 				++error;
 				/* continue, as we are already exiting */
 			}

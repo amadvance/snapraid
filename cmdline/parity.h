@@ -18,6 +18,8 @@
 #ifndef __PARITY_H
 #define __PARITY_H
 
+#include "support.h"
+
 /****************************************************************************/
 /* parity */
 
@@ -84,7 +86,7 @@ int parity_close(struct snapraid_parity_handle* parity);
 /**
  * Read a block from the parity file.
  */
-int parity_read(struct snapraid_parity_handle* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size, FILE* out);
+int parity_read(struct snapraid_parity_handle* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size, fptr* out);
 
 /**
  * Writes a block in the parity file.

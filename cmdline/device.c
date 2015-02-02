@@ -449,17 +449,17 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 
 		printf("\n");
 
-		fprintf(stdlog, "smart:%s:%s:%s:%g\n", devinfo->file, devinfo->name, devinfo->smart_serial, afr);
+		ftag("smart:%s:%s:%s:%g\n", devinfo->file, devinfo->name, devinfo->smart_serial, afr);
 		for (j = 0; j < 256; ++j) {
 			if (devinfo->smart[j] != SMART_UNASSIGNED)
-				fprintf(stdlog, "attr:%s:%u:%" PRIu64 "\n", devinfo->file, j, devinfo->smart[j]);
+				ftag("attr:%s:%u:%" PRIu64 "\n", devinfo->file, j, devinfo->smart[j]);
 		}
 		if (devinfo->smart[SMART_SIZE] != SMART_UNASSIGNED)
-			fprintf(stdlog, "attr:%s:size:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_SIZE]);
+			ftag("attr:%s:size:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_SIZE]);
 		if (devinfo->smart[SMART_ERROR] != SMART_UNASSIGNED)
-			fprintf(stdlog, "attr:%s:error:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_ERROR]);
+			ftag("attr:%s:error:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_ERROR]);
 		if (devinfo->smart[SMART_ROTATION_RATE] != SMART_UNASSIGNED)
-			fprintf(stdlog, "attr:%s:rotationrate:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_ROTATION_RATE]);
+			ftag("attr:%s:rotationrate:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_ROTATION_RATE]);
 	}
 
 	printf("\n");
@@ -470,7 +470,7 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 	 */
 	p_at_least_one_failure = poisson_prob_n_or_more_failures(array_failure_rate, 1);
 
-	fprintf(stdlog, "summary:array_failure:%g:%g\n", array_failure_rate, p_at_least_one_failure);
+	ftag("summary:array_failure:%g:%g\n", array_failure_rate, p_at_least_one_failure);
 
 	/*      |<##################################################################72>|####80>| */
 	printf("The FP column is the estimated probability (in percentage) that the disk\n");
@@ -564,12 +564,12 @@ void state_device(struct snapraid_state* state, int operation)
 
 	if (devquery(&high, &low, operation) != 0) {
 		switch (operation) {
-		case DEVICE_UP : fprintf(stderr, "Spinup"); break;
-		case DEVICE_DOWN : fprintf(stderr, "Spindown"); break;
-		case DEVICE_LIST : fprintf(stderr, "List"); break;
-		case DEVICE_SMART : fprintf(stderr, "SMART"); break;
+		case DEVICE_UP : ferr("Spinup"); break;
+		case DEVICE_DOWN : ferr("Spindown"); break;
+		case DEVICE_LIST : ferr("List"); break;
+		case DEVICE_SMART : ferr("SMART"); break;
 		}
-		fprintf(stderr, " unsupported in this platform.\n");
+		ferr(" unsupported in this platform.\n");
 	} else {
 
 #ifndef _WIN32

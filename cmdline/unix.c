@@ -341,7 +341,7 @@ static dev_t devread(const char* path)
 	f = open(path, O_RDONLY);
 	if (f == -1) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to open '%s'.\n", path);
+		ferr("Failed to open '%s'.\n", path);
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
@@ -350,14 +350,14 @@ static dev_t devread(const char* path)
 	if (ret < 0) {
 		/* LCOV_EXCL_START */
 		close(f);
-		fprintf(stderr, "Failed to read '%s'.\n", path);
+		ferr("Failed to read '%s'.\n", path);
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
 	if (ret == sizeof(buf)) {
 		/* LCOV_EXCL_START */
 		close(f);
-		fprintf(stderr, "Too long read '%s'.\n", path);
+		ferr("Too long read '%s'.\n", path);
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
@@ -368,7 +368,7 @@ static dev_t devread(const char* path)
 	if (*e != ':') {
 		/* LCOV_EXCL_START */
 		close(f);
-		fprintf(stderr, "Invalid format in '%s' for '%s'.\n", path, buf);
+		ferr("Invalid format in '%s' for '%s'.\n", path, buf);
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
@@ -377,7 +377,7 @@ static dev_t devread(const char* path)
 	if (*e != 0 && !isspace(*e)) {
 		/* LCOV_EXCL_START */
 		close(f);
-		fprintf(stderr, "Invalid format in '%s' for '%s'.\n", path, buf);
+		ferr("Invalid format in '%s' for '%s'.\n", path, buf);
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
@@ -385,7 +385,7 @@ static dev_t devread(const char* path)
 	ret = close(f);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to close '%s'.\n", path);
+		ferr("Failed to close '%s'.\n", path);
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
@@ -408,13 +408,13 @@ static int devresolve(dev_t device, char* path, size_t path_size)
 	ret = readlink(path, buf, sizeof(buf));
 	if (ret < 0) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to readlink '%s'.\n", path);
+		ferr("Failed to readlink '%s'.\n", path);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (ret == sizeof(buf)) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Too long readlink '%s'.\n", path);
+		ferr("Too long readlink '%s'.\n", path);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -423,7 +423,7 @@ static int devresolve(dev_t device, char* path, size_t path_size)
 
 	if (buf[0] != '.' || buf[1] != '.' || buf[2] != '/') {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Unexpected link '%s' at '%s'.\n", buf, path);
+		ferr("Unexpected link '%s' at '%s'.\n", buf, path);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -434,13 +434,13 @@ static int devresolve(dev_t device, char* path, size_t path_size)
 	/* check the device */
 	if (stat(path, &st) != 0) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to stat '%s'.\n", path);
+		ferr("Failed to stat '%s'.\n", path);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (st.st_rdev != device) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Unexpected device '%u:%u' instead of '%u:%u' for '%s'.\n", major(st.st_rdev), minor(st.st_rdev), major(device), minor(device), path);
+		ferr("Unexpected device '%u:%u' instead of '%u:%u' for '%s'.\n", major(st.st_rdev), minor(st.st_rdev), major(device), minor(device), path);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -552,7 +552,7 @@ static int devscan(tommy_list* list)
 	d = opendir(dir);
 	if (d == 0) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to open dir '%s'.\n", dir);
+		ferr("Failed to open dir '%s'.\n", dir);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -628,7 +628,7 @@ static int devsmart(dev_t device, uint64_t* smart, char* serial)
 	f = popen(cmd, "r");
 	if (!f) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to run smartctl -a on device '%u:%u' (from popen).\n", major(device), minor(device));
+		ferr("Failed to run smartctl -a on device '%u:%u' (from popen).\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -643,13 +643,13 @@ static int devsmart(dev_t device, uint64_t* smart, char* serial)
 	ret = pclose(f);
 	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to run smartctl -a on device '%u:%u' (not exited).\n", major(device), minor(device));
+		ferr("Failed to run smartctl -a on device '%u:%u' (not exited).\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (WEXITSTATUS(ret) == 127) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to run smartctl -a on device '%u:%u' (from sh).\n", major(device), minor(device));
+		ferr("Failed to run smartctl -a on device '%u:%u' (from sh).\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -674,25 +674,25 @@ static int devdown(dev_t device)
 	ret = system(cmd);
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to run hdparm -y on device '%u:%u' (from system).\n", major(device), minor(device));
+		ferr("Failed to run hdparm -y on device '%u:%u' (from system).\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to run hdparm -y on device '%u:%u' (not exited).\n", major(device), minor(device));
+		ferr("Failed to run hdparm -y on device '%u:%u' (not exited).\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (WEXITSTATUS(ret) == 127) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to run hdparm -y on device '%u:%u' (from sh).\n", major(device), minor(device));
+		ferr("Failed to run hdparm -y on device '%u:%u' (from sh).\n", major(device), minor(device));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (WEXITSTATUS(ret) != 0) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to run hdparm -y on device '%u:%u' with return code %xh.\n", major(device), minor(device), WEXITSTATUS(ret));
+		ferr("Failed to run hdparm -y on device '%u:%u' with return code %xh.\n", major(device), minor(device), WEXITSTATUS(ret));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -721,7 +721,7 @@ static int devup(dev_t device, const char* mount)
 	ret = mkdir(path, 0);
 	if (ret != 0 && errno != EEXIST) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to create dir '%s'.\n", path);
+		ferr("Failed to create dir '%s'.\n", path);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -750,7 +750,7 @@ static void* thread_spinup(void* arg)
 	/* first get the device number, this usually doesn't trigger a thread_spinup */
 	if (stat(devinfo->mount, &st) != 0) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Failed to stat device '%s'.\n", devinfo->mount);
+		ferr("Failed to stat device '%s'.\n", devinfo->mount);
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -830,7 +830,7 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 
 		if (pthread_create(&devinfo->thread, 0, func, devinfo) != 0) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "Failed to create thread.\n");
+			ferr("Failed to create thread.\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -843,7 +843,7 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 
 		if (pthread_join(devinfo->thread, &retval) != 0) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "Failed to join thread.\n");
+			ferr("Failed to join thread.\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -879,13 +879,13 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 		/* sysfs and devfs interfaces are required */
 		if (stat("/sys/dev/block", &st) != 0) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "Missing interface /sys/dev/block.\n");
+			ferr("Missing interface /sys/dev/block.\n");
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
 		if (stat("/dev/block", &st) != 0) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "Missing interface /dev/block.\n");
+			ferr("Missing interface /dev/block.\n");
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -897,7 +897,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 			/* get the device file */
 			if (devresolve(devinfo->device, devinfo->file, sizeof(devinfo->file)) != 0) {
 				/* LCOV_EXCL_START */
-				fprintf(stderr, "Failed to resolve device '%u:%u'.\n", major(devinfo->device), minor(devinfo->device));
+				ferr("Failed to resolve device '%u:%u'.\n", major(devinfo->device), minor(devinfo->device));
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
@@ -905,7 +905,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 			/* expand the tree of devices */
 			if (devtree(devinfo->name, devinfo->device, devinfo, low) != 0) {
 				/* LCOV_EXCL_START */
-				fprintf(stderr, "Failed to expand device '%u:%u'.\n", major(devinfo->device), minor(devinfo->device));
+				ferr("Failed to expand device '%u:%u'.\n", major(devinfo->device), minor(devinfo->device));
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
@@ -935,7 +935,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 	if (operation == DEVICE_SMART) {
 		if (devscan(low) != 0) {
 			/* LCOV_EXCL_START */
-			fprintf(stderr, "Failed to list other devices.\n");
+			ferr("Failed to list other devices.\n");
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}

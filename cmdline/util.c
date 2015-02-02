@@ -926,8 +926,8 @@ void mtest_vector(int n, size_t size, void** vv)
 {
 	if (raid_mtest_vector(n, size, vv) != 0) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "DANGER! Your RAM memory is broken! DO NOT PROCEED UNTIL FIXED!\n");
-		fprintf(stderr, "Try running a memory test like http://www.memtest86.com/\n");
+		ferr("DANGER! Your RAM memory is broken! DO NOT PROCEED UNTIL FIXED!\n");
+		ferr("Try running a memory test like http://www.memtest86.com/\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1347,7 +1347,7 @@ void memhash(unsigned kind, const unsigned char* seed, void* digest, const void*
 		break;
 	default :
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Internal inconsistency in hash function %u\n", kind);
+		ferr("Internal inconsistency in hash function %u\n", kind);
 		exit(EXIT_FAILURE);
 		break;
 		/* LCOV_EXCL_STOP */
