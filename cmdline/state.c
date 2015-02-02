@@ -1142,12 +1142,17 @@ static void state_map(struct snapraid_state* state)
 		if (map->position + 1 > diskcount)
 			diskcount = map->position + 1;
 	}
+
+	/* ensure to don't go over the limit of the RAID engine */
 	if (diskcount > RAID_DATA_MAX) {
 		/* LCOV_EXCL_START */
 		fprintf(stderr, "Too many data disks. No more than %u.\n", RAID_DATA_MAX);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* now count the real number of data disks, excluding holes left after removing some */
+	diskcount = tommy_list_count(&state->maplist);
 
 	/* recommend number of parities */
 	if (diskcount >= 36 && state->level < 6) {
