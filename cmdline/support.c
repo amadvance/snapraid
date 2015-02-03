@@ -37,35 +37,41 @@ void ferr(const char* format, ...)
 
 	va_start(ap, format);
 	vfprintf(stderr, format, ap);
+	va_end(ap);
+
 	if (stdlog) {
+		va_start(ap, format);
 		fprintf(stdlog, "msg: ");
 		vfprintf(stdlog, format, ap);
+		va_end(ap);
 	}
-	va_end(ap);
 }
 
 void flog(const char* format, ...)
 {
 	va_list ap;
 
-	va_start(ap, format);
 	if (stdlog) {
+		va_start(ap, format);
 		fprintf(stdlog, "msg: ");
 		vfprintf(stdlog, format, ap);
+		va_start(ap, format);
 	} else {
+		va_start(ap, format);
 		vfprintf(stderr, format, ap);
+		va_start(ap, format);
 	}
-	va_end(ap);
 }
 
 void ftag(const char* format, ...)
 {
 	va_list ap;
 
-	va_start(ap, format);
-	if (stdlog)
+	if (stdlog) {
+		va_start(ap, format);
 		vfprintf(stdlog, format, ap);
-	va_end(ap);
+		va_end(ap);
+	}
 }
 
 /****************************************************************************/
