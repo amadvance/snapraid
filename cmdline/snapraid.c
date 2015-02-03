@@ -92,14 +92,9 @@ void log_open(const char* log)
 	time_t t;
 	struct tm* tm;
 
-	/* if no log file is specified, don't output */
-	if (log == 0) {
-#ifdef _WIN32
-		log = "NUL";
-#else
-		log = "/dev/null";
-#endif
-	}
+	/* leave stdlog at 0 if not specified */
+	if (log == 0)
+		return;
 
 	t = time(0);
 	tm = localtime(&t);
@@ -174,7 +169,7 @@ void log_open(const char* log)
 
 void log_close(const char* log)
 {
-	if (stdlog != stdout && stdlog != stderr) {
+	if (stdlog != stdout && stdlog != stderr && stdlog != 0) {
 		if (fclose(stdlog) != 0) {
 			/* LCOV_EXCL_START */
 			ferr("Error closing the log file '%s'. %s.\n", log, strerror(errno));
@@ -182,6 +177,8 @@ void log_close(const char* log)
 			/* LCOV_EXCL_STOP */
 		}
 	}
+
+	stdlog = 0;
 }
 
 /****************************************************************************/
