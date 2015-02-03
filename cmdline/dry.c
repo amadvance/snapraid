@@ -78,10 +78,11 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 
 			/* if the file is closed or different than the current one */
 			if (handle[j].file == 0 || handle[j].file != block_file_get(block)) {
-				/* close the old one, if any */
+				struct snapraid_file* file = handle[j].file;
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
+					ftag("error:%u:%s:%s: Close error. %s\n", i, disk->name, file->sub, strerror(errno));
 					ferr("DANGER! Unexpected close error in a data disk, it isn't possible to dry.\n");
 					printf("Stopping at block %u\n", i);
 					++error;
@@ -150,9 +151,12 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 bail:
 	/* close all the files left open */
 	for (j = 0; j < diskmax; ++j) {
+		struct snapraid_file* file = handle[j].file;
+		struct snapraid_disk* disk = handle[j].disk;
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
+			ftag("error:%u:%s:%s: Close error. %s\n", i, disk->name, file->sub, strerror(errno));
 			ferr("DANGER! Unexpected close error in a data disk.\n");
 			++error;
 			/* continue, as we are already exiting */

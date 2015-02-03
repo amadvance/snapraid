@@ -320,7 +320,8 @@ end:
 			printf("Everything OK\n");
 	}
 
-	ftag("hash_summary:error_readwrite:%u\n", error);
+	ftag("hash_summary:error_file:%u\n", error);
+	ftag("hash_summary:error_io:%u\n", io_error);
 
 	/* proceed without bailing out */
 	goto finish;
@@ -331,8 +332,11 @@ bail:
 
 	/* close files left open */
 	for (j = 0; j < diskmax; ++j) {
+		struct snapraid_file* file = handle[j].file;
+		struct snapraid_disk* disk = handle[j].disk;
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
+			ftag("error:%u:%s:%s: Close error. %s\n", i, disk->name, file->sub, strerror(errno));
 			ferr("DANGER! Unexpected close error in a data disk.\n");
 			++error;
 			/* continue, as we are already exiting */
@@ -1151,9 +1155,12 @@ end:
 
 bail:
 	for (j = 0; j < diskmax; ++j) {
+		struct snapraid_file* file = handle[j].file;
+		struct snapraid_disk* disk = handle[j].disk;
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
+			ftag("error:%u:%s:%s: Close error. %s\n", i, disk->name, file->sub, strerror(errno));
 			ferr("DANGER! Unexpected close error in a data disk.\n");
 			++error;
 			/* continue, as we are already exiting */

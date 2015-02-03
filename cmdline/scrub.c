@@ -299,7 +299,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 						/* LCOV_EXCL_STOP */
 					}
 
-					ferr("Input/Output error in file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
+					flog("Input/Output error in file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
 					++io_error;
 					io_error_on_this_block = 1;
 					continue;
@@ -337,7 +337,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 						++error;
 						error_on_this_block = 1;
 					} else {
-						ferr("Data error in file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
+						flog("Data error in file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
 						++silent_error;
 						silent_error_on_this_block = 1;
 					}
@@ -377,7 +377,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 							/* LCOV_EXCL_STOP */
 						}
 
-						ferr("Input/Output error in parity '%s' at position '%u'\n", lev_config_name(l), i);
+						flog("Input/Output error in parity '%s' at position '%u'\n", lev_config_name(l), i);
 						++io_error;
 						io_error_on_this_block = 1;
 						continue;
@@ -506,9 +506,12 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 bail:
 	for (j = 0; j < diskmax; ++j) {
+		struct snapraid_file* file = handle[j].file;
+		struct snapraid_disk* disk = handle[j].disk;
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
+			ftag("error:%u:%s:%s: Close error. %s\n", i, disk->name, file->sub, strerror(errno));
 			ferr("DANGER! Unexpected close error in a data disk.\n");
 			++error;
 			/* continue, as we are already exiting */
