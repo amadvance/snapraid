@@ -49,6 +49,11 @@ void ferr(const char* format, ...) __attribute__((format(printf, 1, 2)));
 void flog(const char* format, ...) __attribute__((format(printf, 1, 2)));
 
 /**
+ * Flush the log output.
+ */
+void fflush_log(void);
+
+/**
  * Tag message.
  *
  * Messages are in tag format, like "tag:entry:...".

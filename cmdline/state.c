@@ -930,7 +930,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	if (state->filter_hidden)
 		ftag("filter:nohidden:\n");
 
-	fflush(stdlog);
+	fflush_log();
 }
 
 /**
@@ -4284,7 +4284,7 @@ void state_read(struct snapraid_state* state)
 
 		if (!state->no_conf) {
 			ftag("content:%s\n", path);
-			fflush(stdlog);
+			fflush_log();
 		}
 		printf("Loading state from %s...\n", path);
 
@@ -4593,7 +4593,7 @@ int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, b
 
 	if (state->opt.gui) {
 		ftag("run:begin:%u:%u:%u\n", blockstart, blockmax, countmax);
-		fflush(stdlog);
+		fflush_log();
 	}
 
 	now = time(0);
@@ -4611,7 +4611,7 @@ int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, b
 			printf("Not starting for interruption\n");
 		}
 		ftag("sigint:0: SIGINT received\n");
-		fflush(stdlog);
+		fflush_log();
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
@@ -4623,7 +4623,7 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 {
 	if (state->opt.gui) {
 		ftag("run:end\n");
-		fflush(stdlog);
+		fflush_log();
 	} else {
 		time_t now;
 		time_t elapsed;
@@ -4758,7 +4758,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 
 		if (state->opt.gui) {
 			ftag("run:pos:%u:%u:%" PRIu64 ":%u:%u:%u:%u:%" PRIu64 "\n", blockpos, countpos, countsize, out_perc, out_eta, out_speed, out_cpu, (uint64_t)elapsed);
-			fflush(stdlog);
+			fflush_log();
 		} else {
 			printf("%u%%, %u MiB", out_perc, (unsigned)(countsize / (1024 * 1024)));
 			if (out_speed)
@@ -4795,7 +4795,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 			printf("Stopping for interruption at block %u\n", blockpos);
 		}
 		ftag("sigint:%u: SIGINT received\n", blockpos);
-		fflush(stdlog);
+		fflush_log();
 		return 1;
 		/* LCOV_EXCL_STOP */
 	}

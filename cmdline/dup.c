@@ -151,6 +151,6 @@ void state_dup(struct snapraid_state* state)
 	} else {
 		ftag("summary:exit:dup\n");
 	}
-	fflush(stdlog);
+	fflush_log();
 }
 

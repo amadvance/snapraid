@@ -1809,7 +1809,7 @@ bail:
 		else
 			ftag("summary:exit:error\n");
 	}
-	fflush(stdlog);
+	fflush_log();
 
 	free(failed);
 	free(failed_map);

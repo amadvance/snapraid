@@ -63,6 +63,12 @@ void flog(const char* format, ...)
 	}
 }
 
+void fflush_log(void)
+{
+	if (stdlog)
+		fflush(stdlog);
+}
+
 void ftag(const char* format, ...)
 {
 	va_list ap;

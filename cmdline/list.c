@@ -117,6 +117,6 @@ void state_list(struct snapraid_state* state)
 	ftag("summary:file_size:%" PRIu64 "\n", file_size);
 	ftag("summary:link_count:%u\n", link_count);
 	ftag("summary:exit:ok\n");
-	fflush(stdlog);
+	fflush_log();
 }
 

@@ -242,7 +242,7 @@ int state_status(struct snapraid_state* state)
 	ftag("summary:hash:%s\n", hash_config_name(state->hash));
 	ftag("summary:prev_hash:%s\n", hash_config_name(state->prevhash));
 	ftag("summary:best_hash:%s\n", hash_config_name(state->besthash));
-	fflush(stdlog);
+	fflush_log();
 
 	/* copy the info a temp vector, and count bad/rehash/unsynced blocks */
 	infomap = malloc_nofail(blockmax * sizeof(snapraid_info));
@@ -303,7 +303,7 @@ int state_status(struct snapraid_state* state)
 	ftag("summary:has_unsynced:%u\n", unsynced_blocks);
 	ftag("summary:has_rehash:%u\n", rehash);
 	ftag("summary:has_bad:%u:%u:%u\n", bad, bad_first, bad_last);
-	fflush(stdlog);
+	fflush_log();
 
 	if (!count) {
 		ferr("The array is empty.\n");

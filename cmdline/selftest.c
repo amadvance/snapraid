@@ -381,7 +381,7 @@ bail:
 void selftest(void)
 {
 	ftag("selftest:\n");
-	fflush(stdlog);
+	fflush_log();
 
 	printf("Self test...\n");
 

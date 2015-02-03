@@ -1750,7 +1750,7 @@ void state_scan(struct snapraid_state* state, int is_diff)
 		} else {
 			ftag("summary:exit:diff\n");
 		}
-		fflush(stdlog);
+		fflush_log();
 	}
 
 	tommy_list_foreach(&scanlist, (tommy_foreach_func*)free);

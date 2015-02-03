@@ -924,7 +924,7 @@ int main(int argc, char* argv[])
 	ftag("command:%s\n", command);
 	for (i = 0; i < argc; ++i)
 		ftag("argv:%u:%s\n", i, argv[i]);
-	fflush(stdlog);
+	fflush_log();
 
 	if (!opt.skip_self)
 		selftest();

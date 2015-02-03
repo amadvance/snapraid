@@ -502,7 +502,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		ftag("summary:exit:ok\n");
 	else
 		ftag("summary:exit:error\n");
-	fflush(stdlog);
+	fflush_log();
 
 bail:
 	for (j = 0; j < diskmax; ++j) {

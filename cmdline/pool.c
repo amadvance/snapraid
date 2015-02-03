@@ -259,6 +259,6 @@ void state_pool(struct snapraid_state* state)
 
 	ftag("summary:link_count::%u\n", count);
 	ftag("summary:exit:ok\n");
-	fflush(stdlog);
+	fflush_log();
 }
 

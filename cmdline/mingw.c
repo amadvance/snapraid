@@ -173,6 +173,11 @@ void os_init(int opt)
 		SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED);
 	}
 
+	/* set stdout and stderr as "line buffered" */
+	/* this ensures that messages are mixed correctly */
+	setvbuf(stdout, 0, _IOLBF, BUFSIZ);
+	setvbuf(stderr, 0, _IOLBF, BUFSIZ);
+
 	last_error = 0;
 }
 
@@ -1907,7 +1912,6 @@ static void* thread_spinup(void* arg)
 
 	pthread_mutex_lock(&io_lock);
 	fprintf(stdout, "Spunup device '%" PRIx64 "' for disk '%s' in %" PRIu64 " ms.\n", (uint64_t)device, devinfo->name, tick_ms() - start);
-	fflush(stdout);
 	pthread_mutex_unlock(&io_lock);
 
 	return 0;

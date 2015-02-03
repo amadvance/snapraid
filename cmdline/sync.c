@@ -1151,7 +1151,7 @@ end:
 		ftag("summary:exit:ok\n");
 	else
 		ftag("summary:exit:error\n");
-	fflush(stdlog);
+	fflush_log();
 
 bail:
 	for (j = 0; j < diskmax; ++j) {
