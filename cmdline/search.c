@@ -195,7 +195,7 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 		/* exclude hidden files even before calling lstat() */
 		if (disk != 0 && filter_hidden(state->filter_hidden, dd) != 0) {
 			if (state->opt.verbose) {
-				printf("Excluding hidden '%s'\n", path_next);
+				fout("Excluding hidden '%s'\n", path_next);
 			}
 			continue;
 		}
@@ -203,7 +203,7 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 		/* exclude content files even before calling lstat() */
 		if (disk != 0 && filter_content(&state->contentlist, path_next) != 0) {
 			if (state->opt.verbose) {
-				printf("Excluding content '%s'\n", path_next);
+				fout("Excluding content '%s'\n", path_next);
 			}
 			continue;
 		}
@@ -240,7 +240,7 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 				search_file(state, path_next, st.st_size, st.st_mtime, STAT_NSEC(&st));
 			} else {
 				if (state->opt.verbose) {
-					printf("Excluding link '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
+					fout("Excluding link '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
 				}
 			}
 		} else if (S_ISDIR(st.st_mode)) {
@@ -250,7 +250,7 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 				search_dir(state, disk, path_next, sub_next);
 			} else {
 				if (state->opt.verbose) {
-					printf("Excluding directory '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
+					fout("Excluding directory '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
 				}
 			}
 		}
@@ -268,7 +268,7 @@ void state_search(struct snapraid_state* state, const char* dir)
 {
 	char path[PATH_MAX];
 
-	printf("Importing...\n");
+	fout("Importing...\n");
 
 	/* add the final slash */
 	pathimport(path, sizeof(path), dir);
@@ -285,7 +285,7 @@ void state_search_array(struct snapraid_state* state)
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 
-		printf("Scanning disk %s...\n", disk->name);
+		fout("Scanning disk %s...\n", disk->name);
 
 		search_dir(state, disk, disk->dir, "");
 	}

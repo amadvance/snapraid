@@ -22,27 +22,30 @@
 /* log */
 
 /**
- * Output message targgeted for the screen.
+ * Output messages targgeted for the screen.
  *
  * Messages are in human readable format.
+ * They must include the full line output and terminate with '\n'.
  *
  * These messages go in stdout.
  */
 void fout(const char* format, ...) __attribute__((format(printf, 1, 2)));
 
 /**
- * Error message printed before an early termination.
+ * Error messages printed before an early termination.
  *
  * Messages are in human readable format.
+ * They must include the full line output and terminate with '\n'.
  *
  * These messages go in the log file and in stderr.
  */
 void ferr(const char* format, ...) __attribute__((format(printf, 1, 2)));
 
 /**
- * Log message printed after an error.
+ * Log messages printed after an error.
  *
  * Messages are in human readable format.
+ * They must include the full line output and terminate with '\n'.
  *
  * These messages go in the log file if specified, otherwise in stderr.
  */
@@ -54,7 +57,7 @@ void flog(const char* format, ...) __attribute__((format(printf, 1, 2)));
 void fflush_log(void);
 
 /**
- * Tag message.
+ * Tag messages.
  *
  * Messages are in tag format, like "tag:entry:...".
  *

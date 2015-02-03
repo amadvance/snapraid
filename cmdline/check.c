@@ -675,7 +675,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 
 				ftag("status:unrecoverable:%s:%s\n", disk->name, file->sub);
 				if (!state->opt.quiet) {
-					printf("unrecoverable %s\n", path);
+					fout("unrecoverable %s\n", path);
 				}
 
 				/* and do not set the time if damaged */
@@ -690,7 +690,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 
 			ftag("status:recovered:%s:%s\n", disk->name, file->sub);
 			if (!state->opt.quiet) {
-				printf("recovered %s\n", path);
+				fout("recovered %s\n", path);
 			}
 
 			inode = handle[j].st.st_ino;
@@ -732,23 +732,23 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 				if (state->opt.auditonly) {
 					ftag("status:damaged:%s:%s\n", disk->name, file->sub);
 					if (!state->opt.quiet) {
-						printf("damaged %s\n", path);
+						fout("damaged %s\n", path);
 					}
 				} else {
 					ftag("status:unrecoverable:%s:%s\n", disk->name, file->sub);
 					if (!state->opt.quiet) {
-						printf("unrecoverable %s\n", path);
+						fout("unrecoverable %s\n", path);
 					}
 				}
 			} else if (file_flag_has(file, FILE_IS_FIXED)) {
 				ftag("status:recoverable:%s:%s\n", disk->name, file->sub);
 				if (!state->opt.quiet) {
-					printf("recoverable %s\n", path);
+					fout("recoverable %s\n", path);
 				}
 			} else {
 				ftag("status:correct:%s:%s\n", disk->name, file->sub);
 				if (state->opt.verbose) {
-					printf("correct %s\n", path);
+					fout("correct %s\n", path);
 				}
 			}
 		}
@@ -1445,7 +1445,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 				ftag("status:recovered:%s:%s\n", disk->name, file->sub);
 				if (!state->opt.quiet) {
-					printf("recovered %s%s\n", disk->dir, file->sub);
+					fout("recovered %s%s\n", disk->dir, file->sub);
 				}
 			}
 		}
@@ -1618,7 +1618,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 				ftag("status:recovered:%s:%s\n", disk->name, link->sub);
 				if (!state->opt.quiet) {
-					printf("recovered %s%s\n", disk->dir, link->sub);
+					fout("recovered %s%s\n", disk->dir, link->sub);
 				}
 			}
 		}
@@ -1690,7 +1690,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 				ftag("status:recovered:%s:%s\n", disk->name, dir->sub);
 				if (!state->opt.quiet) {
-					printf("recovered %s%s\n", disk->dir, dir->sub);
+					fout("recovered %s%s\n", disk->dir, dir->sub);
 				}
 			}
 		}
@@ -1763,25 +1763,25 @@ bail:
 	}
 
 	if (error || recovered_error || unrecoverable_error) {
-		printf("\n");
-		printf("%8u read/data errors\n", error);
+		fout("\n");
+		fout("%8u read/data errors\n", error);
 		if (fix) {
-			printf("%8u recovered errors\n", recovered_error);
+			fout("%8u recovered errors\n", recovered_error);
 		}
 		if (unrecoverable_error) {
-			printf("%8u UNRECOVERABLE errors\n", unrecoverable_error);
-			printf("DANGER! There are unrecoverable errors!\n");
+			fout("%8u UNRECOVERABLE errors\n", unrecoverable_error);
+			fout("DANGER! There are unrecoverable errors!\n");
 		} else {
 			/* without checking, we don't know if they are really recoverable or not */
 			if (!state->opt.auditonly)
-				printf("%8u unrecoverable errors\n", unrecoverable_error);
+				fout("%8u unrecoverable errors\n", unrecoverable_error);
 			if (fix)
-				printf("Everything OK\n");
+				fout("Everything OK\n");
 			else
-				printf("WARNING! There are errors!\n");
+				fout("WARNING! There are errors!\n");
 		}
 	} else {
-		printf("Everything OK\n");
+		fout("Everything OK\n");
 	}
 
 	ftag("summary:error:%u\n", error);
@@ -1853,7 +1853,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 	unsigned error;
 	unsigned l;
 
-	printf("Initializing...\n");
+	fout("Initializing...\n");
 
 	blockmax = parity_allocated_size(state);
 	size = blockmax * (data_off_t)state->block_size;
@@ -1898,7 +1898,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 			parity_ptr[l] = &parity[l];
 			ret = parity_open(parity_ptr[l], state->parity[l].path, state->file_mode);
 			if (ret == -1) {
-				printf("No accessible %s file, only files will be checked.\n", lev_name(l));
+				fout("No accessible %s file, only files will be checked.\n", lev_name(l));
 				/* continue anyway */
 				parity_ptr[l] = 0;
 			}
@@ -1910,11 +1910,11 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 	}
 
 	if (fix)
-		printf("Fixing...\n");
+		fout("Fixing...\n");
 	else if (!state->opt.auditonly)
-		printf("Checking...\n");
+		fout("Checking...\n");
 	else
-		printf("Hashing...\n");
+		fout("Hashing...\n");
 
 	error = 0;
 

@@ -310,14 +310,14 @@ end:
 	state_progress_end(state, countpos, countmax, countsize);
 
 	if (error || io_error) {
-		printf("\n");
-		printf("%8u file errors\n", error);
-		printf("%8u io errors\n", io_error);
-		printf("WARNING! There are errors!\n");
+		fout("\n");
+		fout("%8u file errors\n", error);
+		fout("%8u io errors\n", io_error);
+		fout("WARNING! There are errors!\n");
 	} else {
 		/* print the result only if processed something */
 		if (countpos != 0)
-			printf("Everything OK\n");
+			fout("Everything OK\n");
 	}
 
 	ftag("hash_summary:error_file:%u\n", error);
@@ -1074,7 +1074,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 			state_progress_stop(state);
 
-			printf("Autosaving...\n");
+			fout("Autosaving...\n");
 
 			/* before writing the new content file we ensure that */
 			/* the parity is really written flushing the disk cache */
@@ -1133,15 +1133,15 @@ end:
 	}
 
 	if (error || silent_error || io_error) {
-		printf("\n");
-		printf("%8u file errors\n", error);
-		printf("%8u io errors\n", io_error);
-		printf("%8u data errors\n", silent_error);
-		printf("WARNING! There are errors!\n");
+		fout("\n");
+		fout("%8u file errors\n", error);
+		fout("%8u io errors\n", io_error);
+		fout("%8u data errors\n", silent_error);
+		fout("WARNING! There are errors!\n");
 	} else {
 		/* print the result only if processed something */
 		if (countpos != 0)
-			printf("Everything OK\n");
+			fout("Everything OK\n");
 	}
 
 	ftag("summary:error_file:%u\n", error);
@@ -1201,7 +1201,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	unsigned l;
 	int skip_sync = 0;
 
-	printf("Initializing...\n");
+	fout("Initializing...\n");
 
 	blockmax = parity_allocated_size(state);
 	size = blockmax * (data_off_t)state->block_size;
@@ -1291,7 +1291,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	unrecoverable_error = 0;
 
 	if (state->opt.prehash) {
-		printf("Hashing...\n");
+		fout("Hashing...\n");
 
 		ret = state_hash_process(state, blockstart, blockmax, &skip_sync);
 		if (ret == -1) {
@@ -1306,7 +1306,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	}
 
 	if (!skip_sync) {
-		printf("Syncing...\n");
+		fout("Syncing...\n");
 
 		/* skip degenerated cases of empty parity, or skipping all */
 		if (blockstart < blockmax) {
@@ -1318,7 +1318,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 				/* LCOV_EXCL_STOP */
 			}
 		} else {
-			printf("Nothing to do\n");
+			fout("Nothing to do\n");
 		}
 	}
 

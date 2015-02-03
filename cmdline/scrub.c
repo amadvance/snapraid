@@ -460,7 +460,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 			state_progress_stop(state);
 
-			printf("Autosaving...\n");
+			fout("Autosaving...\n");
 			state_write(state);
 
 			state_progress_restart(state);
@@ -484,15 +484,15 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	}
 
 	if (error || silent_error || io_error) {
-		printf("\n");
-		printf("%8u file errors\n", error);
-		printf("%8u io errors\n", io_error);
-		printf("%8u data errors\n", silent_error);
-		printf("WARNING! There are errors!\n");
+		fout("\n");
+		fout("%8u file errors\n", error);
+		fout("%8u io errors\n", io_error);
+		fout("%8u data errors\n", silent_error);
+		fout("WARNING! There are errors!\n");
 	} else {
 		/* print the result only if processed something */
 		if (countpos != 0)
-			printf("Everything OK\n");
+			fout("Everything OK\n");
 	}
 
 	ftag("summary:error_file:%u\n", error);
@@ -568,7 +568,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 	/* get the present time */
 	now = time(0);
 
-	printf("Initializing...\n");
+	fout("Initializing...\n");
 
 	blockmax = parity_allocated_size(state);
 
@@ -676,7 +676,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 		}
 	}
 
-	printf("Scrubbing...\n");
+	fout("Scrubbing...\n");
 
 	error = 0;
 

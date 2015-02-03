@@ -26,7 +26,7 @@ void state_nano(struct snapraid_state* state)
 {
 	tommy_node* i;
 
-	printf("Setting nanosecond timestamps...\n");
+	fout("Setting nanosecond timestamps...\n");
 
 	/* for all disks */
 	for (i = state->disklist; i != 0; i = i->next) {
@@ -126,7 +126,7 @@ void state_nano(struct snapraid_state* state)
 				state->need_write = 1;
 
 				ftag("nano:%s:%s\n", disk->name, file->sub);
-				printf("nano %s%s\n", disk->dir, file->sub);
+				fout("nano %s%s\n", disk->dir, file->sub);
 			}
 		}
 	}

@@ -165,9 +165,9 @@ bail:
 	}
 
 	if (error) {
-		printf("%u read errors\n", error);
+		fout("%u read errors\n", error);
 	} else {
-		printf("Everything OK\n");
+		fout("Everything OK\n");
 	}
 
 	free(handle);
@@ -189,7 +189,7 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	unsigned error;
 	unsigned l;
 
-	printf("Drying...\n");
+	fout("Drying...\n");
 
 	blockmax = parity_allocated_size(state);
 
@@ -211,7 +211,7 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		parity_ptr[l] = &parity[l];
 		ret = parity_open(parity_ptr[l], state->parity[l].path, state->file_mode);
 		if (ret == -1) {
-			printf("No accessible %s file.\n", lev_name(l));
+			fout("No accessible %s file.\n", lev_name(l));
 			/* continue anyway */
 			parity_ptr[l] = 0;
 		}

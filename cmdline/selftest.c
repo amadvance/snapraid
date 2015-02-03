@@ -383,7 +383,7 @@ void selftest(void)
 	ftag("selftest:\n");
 	fflush_log();
 
-	printf("Self test...\n");
+	fout("Self test...\n");
 
 	/* large file check */
 	if (sizeof(off_t) < sizeof(uint64_t)) {

@@ -771,7 +771,7 @@ static void* thread_spinup(void* arg)
 		/* LCOV_EXCL_STOP */
 	}
 
-	printf("Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
+	fout("Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
 
 	return 0;
 }
@@ -793,7 +793,7 @@ static void* thread_spindown(void* arg)
 		/* LCOV_EXCL_STOP */
 	}
 
-	printf("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
+	fout("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
 
 	return 0;
 #else

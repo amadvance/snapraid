@@ -96,7 +96,7 @@ void state_dup(struct snapraid_state* state)
 	count = 0;
 	size = 0;
 
-	printf("Comparing...\n");
+	fout("Comparing...\n");
 
 	/* for each disk */
 	for (i = state->disklist; i != 0; i = i->next) {
@@ -126,7 +126,7 @@ void state_dup(struct snapraid_state* state)
 				++count;
 				size += dup->file->size;
 				ftag("dup:%s:%s:%s:%s:%" PRIu64 ": dup\n", disk->name, file->sub, dup->disk->name, dup->file->sub, dup->file->size);
-				printf("%12" PRIu64 " %s%s = %s%s\n", file->size, disk->dir, file->sub, dup->disk->dir, dup->file->sub);
+				fout("%12" PRIu64 " %s%s = %s%s\n", file->size, disk->dir, file->sub, dup->disk->dir, dup->file->sub);
 				hash_free(hash);
 			} else {
 				tommy_hashdyn_insert(&hashset, &hash->node, hash, hash32);
@@ -137,12 +137,12 @@ void state_dup(struct snapraid_state* state)
 	tommy_hashdyn_foreach(&hashset, (tommy_foreach_func*)hash_free);
 	tommy_hashdyn_done(&hashset);
 
-	printf("\n");
-	printf("%8u duplicates, for %" PRIu64 " MiB\n", count, size / (1024 * 1024));
+	fout("\n");
+	fout("%8u duplicates, for %" PRIu64 " MiB\n", count, size / (1024 * 1024));
 	if (count)
-		printf("There are duplicates!\n");
+		fout("There are duplicates!\n");
 	else
-		printf("No duplicates\n");
+		fout("No duplicates\n");
 
 	ftag("summary:dup_count:%u\n", count);
 	ftag("summary:dup_size:%" PRIu64 "\n", size);

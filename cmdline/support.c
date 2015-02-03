@@ -29,6 +29,13 @@ void fout(const char* format, ...)
 	va_start(ap, format);
 	vfprintf(stdout, format, ap);
 	va_end(ap);
+
+	if (stdlog) {
+		va_start(ap, format);
+		fprintf(stdlog, "stdout: ");
+		vfprintf(stdlog, format, ap);
+		va_end(ap);
+	}
 }
 
 void ferr(const char* format, ...)
@@ -41,7 +48,7 @@ void ferr(const char* format, ...)
 
 	if (stdlog) {
 		va_start(ap, format);
-		fprintf(stdlog, "msg: ");
+		fprintf(stdlog, "stderr: ");
 		vfprintf(stdlog, format, ap);
 		va_end(ap);
 	}
@@ -53,7 +60,7 @@ void flog(const char* format, ...)
 
 	if (stdlog) {
 		va_start(ap, format);
-		fprintf(stdlog, "msg: ");
+		fprintf(stdlog, "stdlog: ");
 		vfprintf(stdlog, format, ap);
 		va_start(ap, format);
 	} else {

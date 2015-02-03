@@ -633,14 +633,14 @@ void cmd_change(const char* path, int size)
 
 void help(void)
 {
-	printf("Test for " PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
-	printf("Usage:\n");
-	printf("\tmktest generate SEED DISK_NUM FILE_NUM FILE_SIZE\n");
-	printf("\tmktest damage SEED NUM SIZE FILE\n");
-	printf("\tmktest write SEED NUM SIZE FILE\n");
-	printf("\tmktest change SEED SIZE FILE\n");
-	printf("\tmktest append SEED SIZE FILE\n");
-	printf("\tmktest truncate SEED SIZE FILE\n");
+	fout("Test for " PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
+	fout("Usage:\n");
+	fout("\tmktest generate SEED DISK_NUM FILE_NUM FILE_SIZE\n");
+	fout("\tmktest damage SEED NUM SIZE FILE\n");
+	fout("\tmktest write SEED NUM SIZE FILE\n");
+	fout("\tmktest change SEED SIZE FILE\n");
+	fout("\tmktest append SEED SIZE FILE\n");
+	fout("\tmktest truncate SEED SIZE FILE\n");
 }
 
 int main(int argc, char* argv[])

@@ -30,54 +30,54 @@
 
 void version(void)
 {
-	printf(PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
+	fout(PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
 }
 
 void usage(void)
 {
 	version();
 
-	printf("Usage: " PACKAGE " status|diff|sync|scrub|list|dup|up|down|smart|pool|check|fix [options]\n");
-	printf("\n");
-	printf("Commands:\n");
-	printf("  status Print the status of the array\n");
-	printf("  diff   Show the changes that needs to be syncronized\n");
-	printf("  sync   Syncronize the state of the array\n");
-	printf("  scrub  Scrub the array\n");
-	printf("  list   List the array content\n");
-	printf("  dup    Find duplicate files\n");
-	printf("  up     Spinup the array\n");
-	printf("  down   Spindown the array\n");
-	printf("  smart  SMART attributes of the array\n");
-	printf("  pool   Create or update the virtual view of the array\n");
-	printf("  check  Check the array\n");
-	printf("  fix    Fix the array\n");
-	printf("\n");
-	printf("Options:\n");
-	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE       ", "-c") "  Configuration file\n");
-	printf("  " SWITCH_GETOPT_LONG("-f, --filter PATTERN  ", "-f") "  Process only files matching the pattern\n");
-	printf("  " SWITCH_GETOPT_LONG("-d, --filter-disk NAME", "-f") "  Process only files in the specified disk\n");
-	printf("  " SWITCH_GETOPT_LONG("-m, --filter-missing  ", "-m") "  Process only missing/deleted files\n");
-	printf("  " SWITCH_GETOPT_LONG("-e, --filter-error    ", "-e") "  Process only files with errors\n");
-	printf("  " SWITCH_GETOPT_LONG("-p, --percentage PERC ", "-p") "  Process only a part of the array\n");
-	printf("  " SWITCH_GETOPT_LONG("-o, --older-than DAYS ", "-o") "  Process only the older part of the array\n");
-	printf("  " SWITCH_GETOPT_LONG("-i, --import DIR      ", "-i") "  Import deleted files\n");
-	printf("  " SWITCH_GETOPT_LONG("-l, --log FILE        ", "-l") "  Log file. Default none\n");
-	printf("  " SWITCH_GETOPT_LONG("-a, --audit-only      ", "-a") "  Check only file data and not parity\n");
-	printf("  " SWITCH_GETOPT_LONG("-h, --pre-hash        ", "-h") "  Pre hash all the new data\n");
-	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero      ", "-Z") "  Force synching of files that get zero size\n");
-	printf("  " SWITCH_GETOPT_LONG("-E, --force-empty     ", "-E") "  Force synching of disks that get empty\n");
-	printf("  " SWITCH_GETOPT_LONG("-U, --force-uuid      ", "-U") "  Force commands on disks with uuid changed\n");
-	printf("  " SWITCH_GETOPT_LONG("-D, --force-device    ", "-D") "  Force commands on disks with same device id\n");
-	printf("  " SWITCH_GETOPT_LONG("-N, --force-nocopy    ", "-N") "  Force commands disabling the copy detection\n");
-	printf("  " SWITCH_GETOPT_LONG("-F, --force-full      ", "-F") "  Force commands requiring a full sync\n");
-	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
+	fout("Usage: " PACKAGE " status|diff|sync|scrub|list|dup|up|down|smart|pool|check|fix [options]\n");
+	fout("\n");
+	fout("Commands:\n");
+	fout("  status Print the status of the array\n");
+	fout("  diff   Show the changes that needs to be syncronized\n");
+	fout("  sync   Syncronize the state of the array\n");
+	fout("  scrub  Scrub the array\n");
+	fout("  list   List the array content\n");
+	fout("  dup    Find duplicate files\n");
+	fout("  up     Spinup the array\n");
+	fout("  down   Spindown the array\n");
+	fout("  smart  SMART attributes of the array\n");
+	fout("  pool   Create or update the virtual view of the array\n");
+	fout("  check  Check the array\n");
+	fout("  fix    Fix the array\n");
+	fout("\n");
+	fout("Options:\n");
+	fout("  " SWITCH_GETOPT_LONG("-c, --conf FILE       ", "-c") "  Configuration file\n");
+	fout("  " SWITCH_GETOPT_LONG("-f, --filter PATTERN  ", "-f") "  Process only files matching the pattern\n");
+	fout("  " SWITCH_GETOPT_LONG("-d, --filter-disk NAME", "-f") "  Process only files in the specified disk\n");
+	fout("  " SWITCH_GETOPT_LONG("-m, --filter-missing  ", "-m") "  Process only missing/deleted files\n");
+	fout("  " SWITCH_GETOPT_LONG("-e, --filter-error    ", "-e") "  Process only files with errors\n");
+	fout("  " SWITCH_GETOPT_LONG("-p, --percentage PERC ", "-p") "  Process only a part of the array\n");
+	fout("  " SWITCH_GETOPT_LONG("-o, --older-than DAYS ", "-o") "  Process only the older part of the array\n");
+	fout("  " SWITCH_GETOPT_LONG("-i, --import DIR      ", "-i") "  Import deleted files\n");
+	fout("  " SWITCH_GETOPT_LONG("-l, --log FILE        ", "-l") "  Log file. Default none\n");
+	fout("  " SWITCH_GETOPT_LONG("-a, --audit-only      ", "-a") "  Check only file data and not parity\n");
+	fout("  " SWITCH_GETOPT_LONG("-h, --pre-hash        ", "-h") "  Pre hash all the new data\n");
+	fout("  " SWITCH_GETOPT_LONG("-Z, --force-zero      ", "-Z") "  Force synching of files that get zero size\n");
+	fout("  " SWITCH_GETOPT_LONG("-E, --force-empty     ", "-E") "  Force synching of disks that get empty\n");
+	fout("  " SWITCH_GETOPT_LONG("-U, --force-uuid      ", "-U") "  Force commands on disks with uuid changed\n");
+	fout("  " SWITCH_GETOPT_LONG("-D, --force-device    ", "-D") "  Force commands on disks with same device id\n");
+	fout("  " SWITCH_GETOPT_LONG("-N, --force-nocopy    ", "-N") "  Force commands disabling the copy detection\n");
+	fout("  " SWITCH_GETOPT_LONG("-F, --force-full      ", "-F") "  Force commands requiring a full sync\n");
+	fout("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
 }
 
 void memory(void)
 {
 	ftag("memory:used:%" PRIu64 "\n", (uint64_t)malloc_counter());
-	printf("Using %u MiB of memory.\n", (unsigned)(malloc_counter() / 1024 / 1024));
+	fout("Using %u MiB of memory.\n", (unsigned)(malloc_counter() / 1024 / 1024));
 }
 
 /****************************************************************************/

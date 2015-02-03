@@ -2409,10 +2409,10 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 	}
 
 	if (state->opt.verbose) {
-		printf("%8u files\n", count_file);
-		printf("%8u hardlinks\n", count_hardlink);
-		printf("%8u symlinks\n", count_symlink);
-		printf("%8u empty dirs\n", count_dir);
+		fout("%8u files\n", count_file);
+		fout("%8u hardlinks\n", count_hardlink);
+		fout("%8u symlinks\n", count_symlink);
+		fout("%8u empty dirs\n", count_dir);
 	}
 }
 
@@ -2797,10 +2797,10 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 	}
 
 	if (state->opt.verbose) {
-		printf("%8u files\n", count_file);
-		printf("%8u hardlinks\n", count_hardlink);
-		printf("%8u symlinks\n", count_symlink);
-		printf("%8u empty dirs\n", count_dir);
+		fout("%8u files\n", count_file);
+		fout("%8u hardlinks\n", count_hardlink);
+		fout("%8u symlinks\n", count_symlink);
+		fout("%8u empty dirs\n", count_dir);
 	}
 }
 
@@ -3811,10 +3811,10 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 	}
 
 	if (state->opt.verbose) {
-		printf("%8u files\n", count_file);
-		printf("%8u hardlinks\n", count_hardlink);
-		printf("%8u symlinks\n", count_symlink);
-		printf("%8u empty dirs\n", count_dir);
+		fout("%8u files\n", count_file);
+		fout("%8u hardlinks\n", count_hardlink);
+		fout("%8u symlinks\n", count_symlink);
+		fout("%8u empty dirs\n", count_dir);
 	}
 }
 
@@ -4259,10 +4259,10 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	}
 
 	if (state->opt.verbose) {
-		printf("%8u files\n", count_file);
-		printf("%8u hardlinks\n", count_hardlink);
-		printf("%8u symlinks\n", count_symlink);
-		printf("%8u empty dirs\n", count_dir);
+		fout("%8u files\n", count_file);
+		fout("%8u hardlinks\n", count_hardlink);
+		fout("%8u symlinks\n", count_symlink);
+		fout("%8u empty dirs\n", count_dir);
 	}
 }
 
@@ -4286,7 +4286,7 @@ void state_read(struct snapraid_state* state)
 			ftag("content:%s\n", path);
 			fflush_log();
 		}
-		printf("Loading state from %s...\n", path);
+		fout("Loading state from %s...\n", path);
 
 		f = sopen_read(path);
 		if (f != 0) {
@@ -4425,7 +4425,7 @@ void state_write(struct snapraid_state* state)
 	i = tommy_list_head(&state->contentlist);
 	while (i) {
 		struct snapraid_content* content = i->data;
-		printf("Saving state to %s...\n", content->content);
+		fout("Saving state to %s...\n", content->content);
 		++count_content;
 		i = i->next;
 	}
@@ -4515,28 +4515,22 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 	if (!filter_missing && !filter_error && tommy_list_empty(filterlist_file) && tommy_list_empty(filterlist_disk))
 		return;
 
-	printf("Filtering...\n");
+	fout("Filtering...\n");
 
 	if (state->opt.verbose) {
 		tommy_node* k;
 		for (k = tommy_list_head(filterlist_disk); k != 0; k = k->next) {
 			struct snapraid_filter* filter = k->data;
-			printf("\t%s", filter->pattern);
-			if (filter->is_disk)
-				printf("//");
-			printf("\n");
+			fout("\t%s%s\n", filter->pattern, filter->is_disk ? "//" : "");
 		}
 		for (k = tommy_list_head(filterlist_file); k != 0; k = k->next) {
 			struct snapraid_filter* filter = k->data;
-			printf("\t%s", filter->pattern);
-			if (filter->is_dir)
-				printf("/");
-			printf("\n");
+			fout("\t%s%s\n", filter->pattern, filter->is_dir ? "/" : "");
 		}
 		if (filter_missing)
-			printf("\t<missing>\n");
+			fout("\t<missing>\n");
 		if (filter_error)
-			printf("\t<error>\n");
+			fout("\t<error>\n");
 	}
 
 	/* for each disk */
@@ -4546,7 +4540,7 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 
 		/* if we filter for presence, we have to access the disk, so better to print something */
 		if (filter_missing)
-			printf("Scanning disk %s...\n", disk->name);
+			fout("Scanning disk %s...\n", disk->name);
 
 		/* for each file */
 		for (j = tommy_list_head(&disk->filelist); j != 0; j = j->next) {
@@ -4608,7 +4602,7 @@ int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, b
 	if (global_interrupt) {
 		/* LCOV_EXCL_START */
 		if (!state->opt.gui) {
-			printf("Not starting for interruption\n");
+			fout("Not starting for interruption\n");
 		}
 		ftag("sigint:0: SIGINT received\n");
 		fflush_log();
@@ -4640,7 +4634,7 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 				printf(" in %u:%02u", (unsigned)(elapsed / 3600), (unsigned)((elapsed % 3600) / 60));
 			printf("\n");
 		} else {
-			printf("Nothing to do\n");
+			fout("Nothing to do\n");
 		}
 	}
 }
@@ -4760,6 +4754,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 			ftag("run:pos:%u:%u:%" PRIu64 ":%u:%u:%u:%u:%" PRIu64 "\n", blockpos, countpos, countsize, out_perc, out_eta, out_speed, out_cpu, (uint64_t)elapsed);
 			fflush_log();
 		} else {
+			/* note that here we don't use fout() becase we don't want this in the log */
 			printf("%u%%, %u MiB", out_perc, (unsigned)(countsize / (1024 * 1024)));
 			if (out_speed)
 				printf(", %u MiB/s", out_speed);
@@ -4791,7 +4786,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 	if (global_interrupt) {
 		/* LCOV_EXCL_START */
 		if (!state->opt.gui) {
-			printf("\n");
+			ferr("\n");
 			ferr("Stopping for interruption at block %u\n", blockpos);
 		}
 		ftag("sigint:%u: SIGINT received\n", blockpos);
@@ -4871,36 +4866,36 @@ void generate_configuration(const char* path)
 	state_read(&state);
 
 	/* output a dummy configuration file */
-	printf("# Configuration file generated from %s\n", path);
-	printf("\n");
-	printf("# Use this blocksize\n");
-	printf("blocksize %u\n", state.block_size / 1024);
-	printf("\n");
+	fout("# Configuration file generated from %s\n", path);
+	fout("\n");
+	fout("# Use this blocksize\n");
+	fout("blocksize %u\n", state.block_size / 1024);
+	fout("\n");
 	for (i = 0; i < state.level; ++i) {
-		printf("# Set the correct path for the %s file\n", lev_name(i));
+		fout("# Set the correct path for the %s file\n", lev_name(i));
 		if (state.parity[i].uuid[0])
-			printf("# The file was in the disk with id '%s'\n", state.parity[i].uuid);
-		printf("%s ENTER_HERE_THE_PARITY_FILE\n", lev_config_name(i));
-		printf("\n");
+			fout("# The file was in the disk with id '%s'\n", state.parity[i].uuid);
+		fout("%s ENTER_HERE_THE_PARITY_FILE\n", lev_config_name(i));
+		fout("\n");
 	}
-	printf("# Add any other content file\n");
-	printf("content %s\n", path);
-	printf("\n");
+	fout("# Add any other content file\n");
+	fout("content %s\n", path);
+	fout("\n");
 	for (j = state.maplist; j; j = j->next) {
 		struct snapraid_map* map = j->data;
 		struct snapraid_disk* disk;
-		printf("# Set the correct dir for disk '%s'\n", map->name);
+		fout("# Set the correct dir for disk '%s'\n", map->name);
 		if (map->uuid[0])
-			printf("# Disk '%s' is the one with id '%s'\n", map->name, map->uuid);
+			fout("# Disk '%s' is the one with id '%s'\n", map->name, map->uuid);
 		disk = find_disk(&state, map->name);
 		if (disk && disk->filelist) {
 			struct snapraid_file* file = disk->filelist->data;
 			if (file) {
-				printf("# and containing: %s\n", file->sub);
+				fout("# and containing: %s\n", file->sub);
 			}
 		}
-		printf("disk %s ENTER_HERE_THE_DIR\n", map->name);
-		printf("\n");
+		fout("disk %s ENTER_HERE_THE_DIR\n", map->name);
+		fout("\n");
 	}
 
 	state_done(&state);

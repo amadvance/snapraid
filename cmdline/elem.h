@@ -19,6 +19,7 @@
 #define __ELEM_H
 
 #include "util.h"
+#include "support.h"
 #include "tommyds/tommylist.h"
 #include "tommyds/tommyhash.h"
 #include "tommyds/tommyhashdyn.h"
@@ -495,7 +496,7 @@ static inline void block_file_set(struct snapraid_block* block, struct snapraid_
 	/* ensure that the pointer doesn't use the flag space */
 	if ((ptr & (uintptr_t)BLOCK_STATE_MASK) != 0) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Internal error for pointer not aligned\n");
+		ferr("Internal error for pointer not aligned\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -522,7 +523,7 @@ static inline void block_state_set(struct snapraid_block* block, unsigned state)
 	/* ensure that the state can be stored inside the file pointer */
 	if ((state & BLOCK_STATE_MASK) != state) {
 		/* LCOV_EXCL_START */
-		fprintf(stderr, "Internal error when setting the block state %u\n", state);
+		ferr("Internal error when setting the block state %u\n", state);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}

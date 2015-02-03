@@ -309,7 +309,7 @@ void state_import(struct snapraid_state* state, const char* dir)
 {
 	char path[PATH_MAX];
 
-	printf("Importing...\n");
+	fout("Importing...\n");
 
 	/* add the final slash */
 	pathimport(path, sizeof(path), dir);

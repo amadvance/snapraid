@@ -131,7 +131,7 @@ static int clean_dir(struct snapraid_state* state, const char* dir)
 		} else {
 			ignored = 1;
 			if (state->opt.verbose) {
-				printf("Ignoring pool file '%s'\n", path_next);
+				fout("Ignoring pool file '%s'\n", path_next);
 			}
 		}
 	}
@@ -214,7 +214,7 @@ void state_pool(struct snapraid_state* state)
 		/* LCOV_EXCL_STOP */
 	}
 
-	printf("Cleaning...\n");
+	fout("Cleaning...\n");
 
 	/* pool directory with final slash */
 	pathprint(pool_dir, sizeof(pool_dir), "%s", state->pool);
@@ -227,7 +227,7 @@ void state_pool(struct snapraid_state* state)
 	/* first clear the previous pool tree */
 	clean_dir(state, pool_dir);
 
-	printf("Pooling...\n");
+	fout("Pooling...\n");
 
 	/* for each disk */
 	count = 0;
@@ -253,9 +253,9 @@ void state_pool(struct snapraid_state* state)
 	}
 
 	if (count)
-		printf("%u links created\n", count);
+		fout("%u links created\n", count);
 	else
-		printf("No link created\n");
+		fout("No link created\n");
 
 	ftag("summary:link_count::%u\n", count);
 	ftag("summary:exit:ok\n");

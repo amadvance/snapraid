@@ -37,7 +37,7 @@ void state_list(struct snapraid_state* state)
 	file_size = 0;
 	link_count = 0;
 
-	printf("Listing...\n");
+	fout("Listing...\n");
 
 	/* for each disk */
 	for (i = state->disklist; i != 0; i = i->next) {
@@ -109,9 +109,9 @@ void state_list(struct snapraid_state* state)
 			printf("%s%s -> %s%s\n", disk->dir, link->sub, disk->dir, link->linkto);
 		}
 	}
-	printf("\n");
-	printf("%8u files, for %" PRIu64 " GiB\n", file_count, file_size / (1024 * 1024 * 1024));
-	printf("%8u links\n", link_count);
+	fout("\n");
+	fout("%8u files, for %" PRIu64 " GiB\n", file_count, file_size / (1024 * 1024 * 1024));
+	fout("%8u links\n", link_count);
 
 	ftag("summary:file_count:%u\n", file_count);
 	ftag("summary:file_size:%" PRIu64 "\n", file_size);
