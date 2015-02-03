@@ -231,7 +231,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 						ftag("error:%u:%s:%s: Close EIO error. %s\n", i, disk->name, file->sub, strerror(errno));
 						ferr("DANGER! Unexpected input/output close error in a data disk, it isn't possible to scrub.\n");
 						ferr("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
-						printf("Stopping at block %u\n", i);
+						ferr("Stopping at block %u\n", i);
 						++io_error;
 						goto bail;
 					}
@@ -239,7 +239,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					ftag("error:%u:%s:%s: Close error. %s\n", i, disk->name, file->sub, strerror(errno));
 					ferr("WARNING! Unexpected close error in a data disk, it isn't possible to scrub.\n");
 					ferr("Ensure that file '%s' can be accessed.\n", handle[j].path);
-					printf("Stopping at block %u\n", i);
+					ferr("Stopping at block %u\n", i);
 					++error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
@@ -255,7 +255,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					ftag("error:%u:%s:%s: Open EIO error. %s\n", i, disk->name, file->sub, strerror(errno));
 					ferr("DANGER! Unexpected input/output open error in a data disk, it isn't possible to scrub.\n");
 					ferr("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
-					printf("Stopping at block %u\n", i);
+					ferr("Stopping at block %u\n", i);
 					++io_error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
@@ -293,7 +293,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 						/* LCOV_EXCL_START */
 						ferr("DANGER! Unexpected input/output read error in a data disk, it isn't possible to scrub.\n");
 						ferr("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
-						printf("Stopping at block %u\n", i);
+						ferr("Stopping at block %u\n", i);
 						++io_error;
 						goto bail;
 						/* LCOV_EXCL_STOP */
@@ -371,7 +371,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 							/* LCOV_EXCL_START */
 							ferr("DANGER! Unexpected input/output read error in the %s disk, it isn't possible to scrub.\n", lev_name(l));
 							ferr("Ensure that disk '%s' is sane and can be read.\n", lev_config_name(l));
-							printf("Stopping at block %u\n", i);
+							ferr("Stopping at block %u\n", i);
 							++io_error;
 							goto bail;
 							/* LCOV_EXCL_STOP */

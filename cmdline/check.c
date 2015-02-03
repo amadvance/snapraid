@@ -882,7 +882,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			/* post process the files */
 			ret = file_post(state, fix, i, handle, diskmax);
 			if (ret == -1) {
-				printf("Stopping at block %u\n", i);
+				ferr("Stopping at block %u\n", i);
 				++unrecoverable_error;
 				goto bail;
 			}
@@ -978,7 +978,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
 					ferr("DANGER! Unexpected close error in a data disk, it isn't possible to check.\n");
-					printf("Stopping at block %u\n", i);
+					ferr("Stopping at block %u\n", i);
 					++unrecoverable_error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
@@ -995,7 +995,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						} else {
 							ferr("DANGER! Without a working data disk, it isn't possible to fix errors on it.\n");
 						}
-						printf("Stopping at block %u\n", i);
+						ferr("Stopping at block %u\n", i);
 						++unrecoverable_error;
 						goto bail;
 						/* LCOV_EXCL_STOP */
@@ -1055,7 +1055,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						if (ret == -1) {
 							/* LCOV_EXCL_START */
 							ferr("DANGER! Unexpected truncate error in a data disk, it isn't possible to fix.\n");
-							printf("Stopping at block %u\n", i);
+							ferr("Stopping at block %u\n", i);
 							++unrecoverable_error;
 							goto bail;
 							/* LCOV_EXCL_STOP */
@@ -1249,7 +1249,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 								/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
 								ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 							}
-							printf("Stopping at block %u\n", i);
+							ferr("Stopping at block %u\n", i);
 							++unrecoverable_error;
 							goto bail;
 							/* LCOV_EXCL_STOP */
@@ -1282,7 +1282,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 									/* LCOV_EXCL_START */
 									/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
 									ferr("WARNING! Without a working %s disk, it isn't possible to fix errors on it.\n", lev_name(l));
-									printf("Stopping at block %u\n", i);
+									ferr("Stopping at block %u\n", i);
 									++unrecoverable_error;
 									goto bail;
 									/* LCOV_EXCL_STOP */
@@ -1316,7 +1316,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		/* post process the files */
 		ret = file_post(state, fix, i, handle, diskmax);
 		if (ret == -1) {
-			printf("Stopping at block %u\n", i);
+			ferr("Stopping at block %u\n", i);
 			++unrecoverable_error;
 			goto bail;
 		}
@@ -1391,7 +1391,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
-					printf("Stopping\n");
+					ferr("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
@@ -1409,7 +1409,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
 						ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					}
-					printf("Stopping\n");
+					ferr("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
@@ -1423,7 +1423,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 					ferr("Error timing file '%s'. %s.\n", file->sub, strerror(errno));
 					ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
-					printf("Stopping\n");
+					ferr("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
@@ -1434,7 +1434,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
-					printf("Stopping\n");
+					ferr("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
@@ -1557,7 +1557,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
-					printf("Stopping\n");
+					ferr("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
@@ -1569,7 +1569,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					/* LCOV_EXCL_START */
 					ferr("Error removing '%s'. %s.\n", path, strerror(errno));
 					ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
-					printf("Stopping\n");
+					ferr("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
@@ -1587,7 +1587,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 							/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
 							ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 						}
-						printf("Stopping\n");
+						ferr("Stopping\n");
 						++unrecoverable_error;
 						goto bail;
 						/* LCOV_EXCL_STOP */
@@ -1606,7 +1606,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 							/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
 							ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 						}
-						printf("Stopping\n");
+						ferr("Stopping\n");
 						++unrecoverable_error;
 						goto bail;
 						/* LCOV_EXCL_STOP */
@@ -1662,7 +1662,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
-					printf("Stopping\n");
+					ferr("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
@@ -1679,7 +1679,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						/* we do not use DANGER because it could be ENOSPC which is not always correctly reported */
 						ferr("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					}
-					printf("Stopping\n");
+					ferr("Stopping\n");
 					++unrecoverable_error;
 					goto bail;
 					/* LCOV_EXCL_STOP */

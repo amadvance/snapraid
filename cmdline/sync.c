@@ -135,7 +135,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 						ftag("error:%u:%s:%s: Close EIO error. %s\n", i, disk->name, file->sub, strerror(errno));
 						ferr("DANGER! Unexpected input/output close error in a data disk, it isn't possible to sync.\n");
 						ferr("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
-						printf("Stopping at block %u\n", i);
+						ferr("Stopping at block %u\n", i);
 						++io_error;
 						goto bail;
 					}
@@ -143,7 +143,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 					ftag("error:%u:%s:%s: Close error. %s\n", i, disk->name, file->sub, strerror(errno));
 					ferr("WARNING! Unexpected close error in a data disk, it isn't possible to sync.\n");
 					ferr("Ensure that file '%s' can be accessed.\n", handle[j].path);
-					printf("Stopping at block %u\n", i);
+					ferr("Stopping at block %u\n", i);
 					++error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
@@ -159,7 +159,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 					ftag("error:%u:%s:%s: Open EIO error. %s\n", i, disk->name, file->sub, strerror(errno));
 					ferr("DANGER! Unexpected input/output open error in a data disk, it isn't possible to sync.\n");
 					ferr("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
-					printf("Stopping at block %u\n", i);
+					ferr("Stopping at block %u\n", i);
 					++io_error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
@@ -190,7 +190,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				ftag("error:%u:%s:%s: Open error. %s\n", i, disk->name, file->sub, strerror(errno));
 				ferr("WARNING! Unexpected open error in a data disk, it isn't possible to sync.\n");
 				ferr("Ensure that file '%s' can be accessed.\n", handle[j].path);
-				printf("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", file->sub);
+				ferr("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", file->sub);
 				++error;
 				goto bail;
 				/* LCOV_EXCL_STOP */
@@ -230,7 +230,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 					ftag("error:%u:%s:%s: Read EIO error at position %u. %s\n", i, disk->name, file->sub, block_file_pos(block), strerror(errno));
 					ferr("DANGER! Unexpected input/output read error in a data disk, it isn't possible to sync.\n");
 					ferr("Ensure that disk '%s' is sane and that file '%s' can be read.\n", disk->dir, handle[j].path);
-					printf("Stopping at block %u\n", i);
+					ferr("Stopping at block %u\n", i);
 					++io_error;
 					goto bail;
 				}
@@ -238,7 +238,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				ftag("error:%u:%s:%s: Read error at position %u. %s\n", i, disk->name, file->sub, block_file_pos(block), strerror(errno));
 				ferr("WARNING! Unexpected read error in a data disk, it isn't possible to sync.\n");
 				ferr("Ensure that file '%s' can be read.\n", handle[j].path);
-				printf("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", file->sub);
+				ferr("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", file->sub);
 				++error;
 				goto bail;
 				/* LCOV_EXCL_STOP */
@@ -290,7 +290,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 					ftag("error:%u:%s:%s: Close EIO error. %s\n", blockmax, disk->name, file->sub, strerror(errno));
 					ferr("DANGER! Unexpected input/output close error in a data disk, it isn't possible to sync.\n");
 					ferr("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
-					printf("Stopping at block %u\n", blockmax);
+					ferr("Stopping at block %u\n", blockmax);
 					++io_error;
 					goto bail;
 				}
@@ -298,7 +298,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				ftag("error:%u:%s:%s: Close error. %s\n", blockmax, disk->name, file->sub, strerror(errno));
 				ferr("WARNING! Unexpected close error in a data disk, it isn't possible to sync.\n");
 				ferr("Ensure that file '%s' can be accessed.\n", handle[j].path);
-				printf("Stopping at block %u\n", blockmax);
+				ferr("Stopping at block %u\n", blockmax);
 				++error;
 				goto bail;
 				/* LCOV_EXCL_STOP */
@@ -605,7 +605,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 						ftag("error:%u:%s:%s: Close EIO error. %s\n", i, disk->name, file->sub, strerror(errno));
 						ferr("DANGER! Unexpected input/output close error in a data disk, it isn't possible to sync.\n");
 						ferr("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
-						printf("Stopping at block %u\n", i);
+						ferr("Stopping at block %u\n", i);
 						++io_error;
 						goto bail;
 					}
@@ -613,7 +613,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					ftag("error:%u:%s:%s: Close error. %s\n", i, disk->name, file->sub, strerror(errno));
 					ferr("WARNING! Unexpected close error in a data disk, it isn't possible to sync.\n");
 					ferr("Ensure that file '%s' can be accessed.\n", handle[j].path);
-					printf("Stopping at block %u\n", i);
+					ferr("Stopping at block %u\n", i);
 					++error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
@@ -629,7 +629,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					ftag("error:%u:%s:%s: Open EIO error. %s\n", i, disk->name, file->sub, strerror(errno));
 					ferr("DANGER! Unexpected input/output open error in a data disk, it isn't possible to sync.\n");
 					ferr("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
-					printf("Stopping at block %u\n", i);
+					ferr("Stopping at block %u\n", i);
 					++io_error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
@@ -662,7 +662,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				ftag("error:%u:%s:%s: Open error. %s\n", i, disk->name, file->sub, strerror(errno));
 				ferr("WARNING! Unexpected open error in a data disk, it isn't possible to sync.\n");
 				ferr("Ensure that file '%s' can be accessed.\n", handle[j].path);
-				printf("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", file->sub);
+				ferr("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", file->sub);
 				++error;
 				goto bail;
 				/* LCOV_EXCL_STOP */
@@ -704,7 +704,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					if (io_error >= state->opt.io_error_limit) {
 						ferr("DANGER! Unexpected input/output read error in a data disk, it isn't possible to sync.\n");
 						ferr("Ensure that disk '%s' is sane and that file '%s' can be read.\n", disk->dir, handle[j].path);
-						printf("Stopping at block %u\n", i);
+						ferr("Stopping at block %u\n", i);
 						++io_error;
 						goto bail;
 					}
@@ -718,7 +718,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				ftag("error:%u:%s:%s: Read error at position %u. %s\n", i, disk->name, file->sub, block_file_pos(block), strerror(errno));
 				ferr("WARNING! Unexpected read error in a data disk, it isn't possible to sync.\n");
 				ferr("Ensure that file '%s' can be read.\n", handle[j].path);
-				printf("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", file->sub);
+				ferr("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", file->sub);
 				++error;
 				goto bail;
 				/* LCOV_EXCL_STOP */
@@ -870,7 +870,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 							if (io_error >= state->opt.io_error_limit) {
 								ferr("DANGER! Unexpected input/output read error in the %s disk, it isn't possible to sync.\n", lev_name(l));
 								ferr("Ensure that disk '%s' is sane and can be read.\n", lev_config_name(l));
-								printf("Stopping at block %u\n", i);
+								ferr("Stopping at block %u\n", i);
 								++io_error;
 								goto bail;
 							}
@@ -884,7 +884,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 						ftag("parity_error:%u:%s: Read error. %s\n", i, lev_config_name(l), strerror(errno));
 						ferr("WARNING! Unexpected read error in the %s disk, it isn't possible to sync.\n", lev_name(l));
 						ferr("Ensure that disk '%s' can be read.\n", lev_config_name(l));
-						printf("Stopping at block %u\n", i);
+						ferr("Stopping at block %u\n", i);
 						++error;
 						goto bail;
 						/* LCOV_EXCL_STOP */
@@ -965,7 +965,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 							if (io_error >= state->opt.io_error_limit) {
 								ferr("DANGER! Unexpected input/output write error in the %s disk, it isn't possible to sync.\n", lev_name(l));
 								ferr("Ensure that disk '%s' is sane and can be written.\n", lev_config_name(l));
-								printf("Stopping at block %u\n", i);
+								ferr("Stopping at block %u\n", i);
 								++io_error;
 								goto bail;
 							}
@@ -979,7 +979,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 						ftag("parity_error:%u:%s: Write error. %s\n", i, lev_config_name(l), strerror(errno));
 						ferr("WARNING! Unexpected write error in the %s disk, it isn't possible to sync.\n", lev_name(l));
 						ferr("Ensure that disk '%s' has some free space available.\n", lev_config_name(l));
-						printf("Stopping at block %u\n", i);
+						ferr("Stopping at block %u\n", i);
 						++error;
 						goto bail;
 						/* LCOV_EXCL_STOP */
@@ -1085,7 +1085,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					ftag("parity_error:%u:%s: Sync error\n", i, lev_config_name(l));
 					ferr("DANGER! Unexpected sync error in %s disk.\n", lev_name(l));
 					ferr("Ensure that disk '%s' is sane.\n", lev_config_name(l));
-					printf("Stopping at block %u\n", i);
+					ferr("Stopping at block %u\n", i);
 					++error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
@@ -1116,7 +1116,7 @@ end:
 			ftag("parity_error:%u:%s: Sync error\n", i, lev_config_name(l));
 			ferr("DANGER! Unexpected sync error in %s disk.\n", lev_name(l));
 			ferr("Ensure that disk '%s' is sane.\n", lev_config_name(l));
-			printf("Stopping at block %u\n", i);
+			ferr("Stopping at block %u\n", i);
 			++error;
 			goto bail;
 			/* LCOV_EXCL_STOP */

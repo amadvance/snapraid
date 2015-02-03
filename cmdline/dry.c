@@ -84,7 +84,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 					/* LCOV_EXCL_START */
 					ftag("error:%u:%s:%s: Close error. %s\n", i, disk->name, file->sub, strerror(errno));
 					ferr("DANGER! Unexpected close error in a data disk, it isn't possible to dry.\n");
-					printf("Stopping at block %u\n", i);
+					ferr("Stopping at block %u\n", i);
 					++error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
@@ -95,7 +95,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
 					ferr("DANGER! Unexpected open error in a data disk, it isn't possible to dry.\n");
-					printf("Stopping at block %u\n", i);
+					ferr("Stopping at block %u\n", i);
 					++error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
