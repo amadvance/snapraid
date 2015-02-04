@@ -4618,7 +4618,9 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 	if (state->opt.gui) {
 		ftag("run:end\n");
 		fflush_log();
-	} else {
+	} else if (countmax == 0) {
+		fout("Nothing to do\n");
+	} else if (!state->opt.quiet) {
 		time_t now;
 		time_t elapsed;
 
@@ -4628,14 +4630,10 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 
 		elapsed = now - state->progress_whole_start - state->progress_wasted;
 
-		if (countmax) {
-			printf("%u%% completed, %u MiB processed", countpos * 100 / countmax, countsize_MiB);
-			if (elapsed >= 60)
-				printf(" in %u:%02u", (unsigned)(elapsed / 3600), (unsigned)((elapsed % 3600) / 60));
-			printf("\n");
-		} else {
-			fout("Nothing to do\n");
-		}
+		printf("%u%% completed, %u MiB processed", countpos * 100 / countmax, countsize_MiB);
+		if (elapsed >= 60)
+			printf(" in %u:%02u", (unsigned)(elapsed / 3600), (unsigned)((elapsed % 3600) / 60));
+		printf("\n");
 	}
 }
 
@@ -4645,7 +4643,7 @@ void state_progress_stop(struct snapraid_state* state)
 
 	now = time(0);
 
-	if (!state->opt.gui)
+	if (!state->opt.gui && !state->opt.quiet)
 		printf("\n");
 
 	state->progress_interruption = now;
@@ -4753,7 +4751,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 		if (state->opt.gui) {
 			ftag("run:pos:%u:%u:%" PRIu64 ":%u:%u:%u:%u:%" PRIu64 "\n", blockpos, countpos, countsize, out_perc, out_eta, out_speed, out_cpu, (uint64_t)elapsed);
 			fflush_log();
-		} else {
+		} else if (!state->opt.quiet) {
 			/* note that here we don't use fout() becase we don't want this in the log */
 			printf("%u%%, %u MiB", out_perc, (unsigned)(countsize / (1024 * 1024)));
 			if (out_speed)
