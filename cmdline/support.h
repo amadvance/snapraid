@@ -27,7 +27,7 @@
  * Messages are in human readable format.
  * They must include the full line output and terminate with '\n'.
  *
- * These messages go in stdout.
+ * These messages go in the log file and in stdout.
  */
 void fout(const char* format, ...) __attribute__((format(printf, 1, 2)));
 

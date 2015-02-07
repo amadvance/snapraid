@@ -293,7 +293,11 @@ void os_init(int opt);
 void os_done(void);
 
 /**
- * Global log file.
+ * Log file.
+ *
+ * This stream if fully buffered.
+ *
+ * If no log file is selected, it's 0.
  */
 FILE* stdlog;
 

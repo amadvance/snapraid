@@ -26,32 +26,38 @@ void fout(const char* format, ...)
 {
 	va_list ap;
 
-	va_start(ap, format);
-	vfprintf(stdout, format, ap);
-	va_end(ap);
-
+	/* first output the same message to stdlog and flush it */
+	/* to have the same behaviour of stdout */
 	if (stdlog) {
 		va_start(ap, format);
 		fprintf(stdlog, "stdout: ");
 		vfprintf(stdlog, format, ap);
 		va_end(ap);
+		fflush(stdlog);
 	}
+
+	va_start(ap, format);
+	vfprintf(stdout, format, ap);
+	va_end(ap);
 }
 
 void ferr(const char* format, ...)
 {
 	va_list ap;
 
-	va_start(ap, format);
-	vfprintf(stderr, format, ap);
-	va_end(ap);
-
+	/* first output the same message to stdlog and flush it */
+	/* to have the same behaviour of stderr */
 	if (stdlog) {
 		va_start(ap, format);
 		fprintf(stdlog, "stderr: ");
 		vfprintf(stdlog, format, ap);
+		fflush(stdlog);
 		va_end(ap);
 	}
+
+	va_start(ap, format);
+	vfprintf(stderr, format, ap);
+	va_end(ap);
 }
 
 void flog(const char* format, ...)
