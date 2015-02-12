@@ -371,8 +371,8 @@ Commands
 	are the blocks without checking, and all the recorded silent
 	errors encountered while scrubbing.
 
-	Note that the information presented refers at the latest time you run "sync".
-	Later modifications are not taken into account.
+	Note that the information presented refers at the latest time you
+	run "sync". Later modifications are not taken into account.
 
 	Nothing is modified.
 
@@ -920,7 +920,7 @@ Configuration
 	always allocated, and with many files this may result in a lot of unused
 	parity space. And when you completely fill the parity disk, you are not
 	allowed to add more files in the data disks.
-	But note that wasted parity doesn't sum between data disk. Wasted space
+	Note that wasted parity doesn't sum between data disk. Wasted space
 	resulting from a high number of files in a data disk, limits only
 	the amount of data in such data disk and not in others.
 
@@ -932,6 +932,8 @@ Configuration
 	You can get the amount of wasted space in each disk using "status".
 	This is the amount of space that you must leave free in the data
 	disks, or use for files not included in the array.
+	If this value is negative, it means that your are near to fill
+	the parity, and it represent the space you can still waste.
 
 	To avoid to problem, you can use a bigger partition for parity.
 	For example, if you have the parity partition bigger than 12 GiB

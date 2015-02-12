@@ -23,6 +23,8 @@ SnapRAID HISTORY
    old state.
  * The -e, --filter-error option is more efficient and triggers
    a lot less data to be read.
+ * In the "status" command the "Wasted" column now shows a negative
+   number for the amount of space that you can still waste.
  * Renames the -s and -t options to -S and -B as they are intended to
    be manual only operations.
 
