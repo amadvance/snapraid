@@ -125,7 +125,7 @@ void state_nano(struct snapraid_state* state)
 				/* state changed, we need to update it */
 				state->need_write = 1;
 
-				ftag("nano:%s:%s\n", disk->name, file->sub);
+				ftag("nano:%s:%s\n", disk->name, esc(file->sub));
 				fout("nano %s%s\n", disk->dir, file->sub);
 			}
 		}

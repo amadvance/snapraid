@@ -82,7 +82,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
-					ftag("error:%u:%s:%s: Close error. %s\n", i, disk->name, file->sub, strerror(errno));
+					ftag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
 					ferr("DANGER! Unexpected close error in a data disk, it isn't possible to dry.\n");
 					ferr("Stopping at block %u\n", i);
 					++error;
@@ -105,7 +105,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			/* read from the file */
 			read_size = handle_read(&handle[j], block, buffer_aligned, state->block_size, flog);
 			if (read_size == -1) {
-				ftag("error:%u:%s:%s: Read error at position %u\n", i, disk->name, block_file_get(block)->sub, block_file_pos(block));
+				ftag("error:%u:%s:%s: Read error at position %u\n", i, disk->name, esc(block_file_get(block)->sub), block_file_pos(block));
 				++error;
 				continue;
 			}
@@ -156,7 +156,7 @@ bail:
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			ftag("error:%u:%s:%s: Close error. %s\n", i, disk->name, file->sub, strerror(errno));
+			ftag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
 			ferr("DANGER! Unexpected close error in a data disk.\n");
 			++error;
 			/* continue, as we are already exiting */

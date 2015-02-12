@@ -93,6 +93,75 @@ void ftag(const char* format, ...)
 	}
 }
 
+/**
+ * Number of buffers for esc().
+ */
+#define ESC_MAX 4
+
+/**
+ * Buffer table to allow multiple calls to esc().
+ */
+static char esc_table[ESC_MAX][PATH_MAX*2+1];
+
+/**
+ * Next buffer to use.
+ */
+static unsigned esc_index = 0;
+
+#define ESCAPE(from,to) \
+	case from : \
+		if (p == end) \
+			goto bail; \
+		*p++ = '\\'; \
+		if (p == end) \
+			goto bail; \
+		*p++ = to; \
+		break
+
+const char* esc(const char* str)
+{
+	char* begin = esc_table[esc_index];
+	char* end = begin + PATH_MAX;
+	char* p = begin;
+
+	/* next call uses the next buffer */
+	esc_index = (esc_index + 1) % ESC_MAX;
+
+	/* copy string with escaping */
+	while (*str) {
+		char c = *str;
+
+		switch (c) {
+
+		ESCAPE('\n', 'n');
+		ESCAPE('\r', 'r');
+		ESCAPE(':', 'd');
+		ESCAPE('\\', '\\');
+
+		default:
+			if (p == end)
+				goto bail;
+			*p++ = c;
+			break;
+		}
+
+		++str;
+	}
+
+	/* put final 0 */
+	if (p == end)
+		goto bail;
+	*p = 0;
+
+	return begin;
+
+bail:
+	/* LCOV_EXCL_START */
+	ferr("Escape too long\n");
+	exit(EXIT_FAILURE);
+	/* LCOV_EXCL_STOP */
+}
+
 /****************************************************************************/
 /* path */
 

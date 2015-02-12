@@ -108,7 +108,7 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			++scan->count_equal;
 
 			if (state->opt.gui) {
-				ftag("scan:equal:%s:%s\n", disk->name, link->sub);
+				ftag("scan:equal:%s:%s\n", disk->name, esc(link->sub));
 			}
 		} else {
 			/* it's an update */
@@ -118,7 +118,7 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 
 			++scan->count_change;
 
-			ftag("scan:update:%s:%s\n", disk->name, link->sub);
+			ftag("scan:update:%s:%s\n", disk->name, esc(link->sub));
 			if (is_diff) {
 				fout("update %s%s\n", disk->dir, link->sub);
 			}
@@ -135,7 +135,7 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		/* create the new link */
 		++scan->count_insert;
 
-		ftag("scan:add:%s:%s\n", disk->name, sub);
+		ftag("scan:add:%s:%s\n", disk->name, esc(sub));
 		if (is_diff) {
 			fout("add %s%s\n", disk->dir, sub);
 		}
@@ -638,7 +638,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				/* if the path is different, it means a moved file with the same inode */
 				++scan->count_move;
 
-				ftag("scan:move:%s:%s:%s\n", disk->name, file->sub, sub);
+				ftag("scan:move:%s:%s:%s\n", disk->name, esc(file->sub), esc(sub));
 				if (is_diff) {
 					fout("move %s%s -> %s%s\n", disk->dir, file->sub, disk->dir, sub);
 				}
@@ -659,7 +659,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				++scan->count_equal;
 
 				if (state->opt.gui) {
-					ftag("scan:equal:%s:%s\n", disk->name, file->sub);
+					ftag("scan:equal:%s:%s\n", disk->name, esc(file->sub));
 				}
 			}
 
@@ -775,7 +775,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				/* like when restoring a backup that restores also the timestamp */
 				++scan->count_restore;
 
-				ftag("scan:restore:%s:%s\n", disk->name, sub);
+				ftag("scan:restore:%s:%s\n", disk->name, esc(sub));
 				if (is_diff) {
 					fout("restore %s%s\n", disk->dir, sub);
 				}
@@ -798,7 +798,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				++scan->count_equal;
 
 				if (state->opt.gui) {
-					ftag("scan:equal:%s:%s\n", disk->name, file->sub);
+					ftag("scan:equal:%s:%s\n", disk->name, esc(file->sub));
 				}
 			}
 
@@ -875,7 +875,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				/* revert old counter and use the copy one */
 				++scan->count_copy;
 
-				ftag("scan:copy:%s:%s:%s:%s\n", other_disk->name, other_file->sub, disk->name, file->sub);
+				ftag("scan:copy:%s:%s:%s:%s\n", other_disk->name, esc(other_file->sub), disk->name, esc(file->sub));
 				if (is_diff) {
 					fout("copy %s%s -> %s%s\n", other_disk->dir, other_file->sub, disk->dir, file->sub);
 				}
@@ -894,14 +894,14 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		if (is_file_already_present) {
 			++scan->count_change;
 
-			ftag("scan:update:%s:%s\n", disk->name, sub);
+			ftag("scan:update:%s:%s\n", disk->name, esc(sub));
 			if (is_diff) {
 				fout("update %s%s\n", disk->dir, sub);
 			}
 		} else {
 			++scan->count_insert;
 
-			ftag("scan:add:%s:%s\n", disk->name, sub);
+			ftag("scan:add:%s:%s\n", disk->name, esc(sub));
 			if (is_diff) {
 				fout("add %s%s\n", disk->dir, sub);
 			}
@@ -1455,7 +1455,7 @@ void state_scan(struct snapraid_state* state, int is_diff)
 			if (!file_flag_has(file, FILE_IS_PRESENT)) {
 				++scan->count_remove;
 
-				ftag("scan:remove:%s:%s\n", disk->name, file->sub);
+				ftag("scan:remove:%s:%s\n", disk->name, esc(file->sub));
 				if (is_diff) {
 					fout("remove %s%s\n", disk->dir, file->sub);
 				}
@@ -1476,7 +1476,7 @@ void state_scan(struct snapraid_state* state, int is_diff)
 			if (!link_flag_has(link, FILE_IS_PRESENT)) {
 				++scan->count_remove;
 
-				ftag("scan:remove:%s:%s\n", disk->name, link->sub);
+				ftag("scan:remove:%s:%s\n", disk->name, esc(link->sub));
 				if (is_diff) {
 					fout("remove %s%s\n", disk->dir, link->sub);
 				}

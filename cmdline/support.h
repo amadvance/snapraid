@@ -70,6 +70,13 @@ void ftag(const char* format, ...) __attribute__((format(printf, 1, 2)));
  */
 typedef void fptr(const char* format, ...);
 
+/**
+ * Escape a string.
+ *
+ * Chars ':', '\n', '\r' and '\' are escaped to '\d', '\\n', '\\r' and '\\'.
+ */
+const char* esc(const char* str);
+
 /****************************************************************************/
 /* path */
 

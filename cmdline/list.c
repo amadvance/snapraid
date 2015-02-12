@@ -59,7 +59,7 @@ void state_list(struct snapraid_state* state)
 			++file_count;
 			file_size += file->size;
 
-			ftag("file:%s:%s:%" PRIu64 ":%" PRIi64 ":%u:%" PRIi64 "\n", disk->name, file->sub, file->size, file->mtime_sec, file->mtime_nsec, file->inode);
+			ftag("file:%s:%s:%" PRIu64 ":%" PRIi64 ":%u:%" PRIi64 "\n", disk->name, esc(file->sub), file->size, file->mtime_sec, file->mtime_nsec, file->inode);
 
 			t = file->mtime_sec;
 #if HAVE_LOCALTIME_R
@@ -99,7 +99,7 @@ void state_list(struct snapraid_state* state)
 
 			++link_count;
 
-			ftag("link_%s:%s:%s:%s\n", type, disk->name, link->sub, link->linkto);
+			ftag("link_%s:%s:%s:%s\n", type, disk->name, esc(link->sub), esc(link->linkto));
 
 			printf("%12s ", type);
 			printf("                 ");

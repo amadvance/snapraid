@@ -846,7 +846,7 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 
 		printf("\n");
 
-		ftag("smart:%s:%s:%s:%g\n", devinfo->file, devinfo->name, devinfo->smart_serial, afr);
+		ftag("smart:%s:%s:%s:%g\n", devinfo->file, devinfo->name, esc(devinfo->smart_serial), afr);
 		for (j = 0; j < 256; ++j) {
 			if (devinfo->smart[j] != SMART_UNASSIGNED)
 				ftag("attr:%s:%u:%" PRIu64 "\n", devinfo->file, j, devinfo->smart[j]);

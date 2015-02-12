@@ -338,7 +338,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 			disk = handle->disk->name;
 			sub = block_file_get(block)->sub;
 
-			ftag("entry:%u:%s:%s:%s:%s:%s:%u:\n", j, state, hash, data, disk, sub, block_file_pos(block));
+			ftag("entry:%u:%s:%s:%s:%s:%s:%u:\n", j, state, hash, data, disk, esc(sub), block_file_pos(block));
 		} else {
 			ftag("entry:%u:%s:%s:%s:\n", j, state, hash, data);
 		}
@@ -673,7 +673,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 					/* LCOV_EXCL_STOP */
 				}
 
-				ftag("status:unrecoverable:%s:%s\n", disk->name, file->sub);
+				ftag("status:unrecoverable:%s:%s\n", disk->name, esc(file->sub));
 				if (!state->opt.quiet) {
 					fout("unrecoverable %s\n", path);
 				}
@@ -688,7 +688,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 				goto close_and_continue;
 			}
 
-			ftag("status:recovered:%s:%s\n", disk->name, file->sub);
+			ftag("status:recovered:%s:%s\n", disk->name, esc(file->sub));
 			if (!state->opt.quiet) {
 				fout("recovered %s\n", path);
 			}
@@ -723,30 +723,30 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 					/* LCOV_EXCL_STOP */
 				}
 			} else {
-				ftag("collision:%s:%s:%s: Not setting modification time to avoid inode collision\n", disk->name, file->sub, collide_file->sub);
+				ftag("collision:%s:%s:%s: Not setting modification time to avoid inode collision\n", disk->name, esc(file->sub), esc(collide_file->sub));
 			}
 		} else {
 			/* we are not fixing, but only checking */
 			/* print just the final status */
 			if (file_flag_has(file, FILE_IS_DAMAGED)) {
 				if (state->opt.auditonly) {
-					ftag("status:damaged:%s:%s\n", disk->name, file->sub);
+					ftag("status:damaged:%s:%s\n", disk->name, esc(file->sub));
 					if (!state->opt.quiet) {
 						fout("damaged %s\n", path);
 					}
 				} else {
-					ftag("status:unrecoverable:%s:%s\n", disk->name, file->sub);
+					ftag("status:unrecoverable:%s:%s\n", disk->name, esc(file->sub));
 					if (!state->opt.quiet) {
 						fout("unrecoverable %s\n", path);
 					}
 				}
 			} else if (file_flag_has(file, FILE_IS_FIXED)) {
-				ftag("status:recoverable:%s:%s\n", disk->name, file->sub);
+				ftag("status:recoverable:%s:%s\n", disk->name, esc(file->sub));
 				if (!state->opt.quiet) {
 					fout("recoverable %s\n", path);
 				}
 			} else {
-				ftag("status:correct:%s:%s\n", disk->name, file->sub);
+				ftag("status:correct:%s:%s\n", disk->name, esc(file->sub));
 				if (state->opt.verbose) {
 					fout("correct %s\n", path);
 				}
@@ -1019,7 +1019,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						failed[failed_count].handle = &handle[j];
 						++failed_count;
 
-						ftag("error:%u:%s:%s: Open error at position %u\n", i, disk->name, file->sub, block_file_pos(block));
+						ftag("error:%u:%s:%s: Open error at position %u\n", i, disk->name, esc(file->sub), block_file_pos(block));
 						++error;
 						continue;
 					}
@@ -1047,7 +1047,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					&& handle[j].st.st_size > file->size
 				) {
 					flog("File '%s' is larger than expected.\n", handle[j].path);
-					ftag("error:%u:%s:%s: Size error\n", i, disk->name, file->sub);
+					ftag("error:%u:%s:%s: Size error\n", i, disk->name, esc(file->sub));
 					++error;
 
 					if (fix) {
@@ -1061,7 +1061,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 							/* LCOV_EXCL_STOP */
 						}
 
-						ftag("fixed:%u:%s:%s: Fixed size\n", i, disk->name, file->sub);
+						ftag("fixed:%u:%s:%s: Fixed size\n", i, disk->name, esc(file->sub));
 						++recovered_error;
 					}
 				}
@@ -1083,7 +1083,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				ftag("error:%u:%s:%s: Read error at position %u\n", i, disk->name, file->sub, block_file_pos(block));
+				ftag("error:%u:%s:%s: Read error at position %u\n", i, disk->name, esc(file->sub), block_file_pos(block));
 				++error;
 				continue;
 			}
@@ -1124,7 +1124,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				ftag("error:%u:%s:%s: Data error at position %u\n", i, disk->name, file->sub, block_file_pos(block));
+				ftag("error:%u:%s:%s: Data error at position %u\n", i, disk->name, esc(file->sub), block_file_pos(block));
 				++error;
 				continue;
 			}
@@ -1183,7 +1183,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				/* print a list of all the errors in files */
 				for (j = 0; j < failed_count; ++j) {
 					if (failed[j].is_bad)
-						ftag("unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
+						ftag("unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].handle->disk->name, esc(block_file_get(failed[j].block)->sub), block_file_pos(failed[j].block));
 				}
 
 				/* keep track of damaged files */
@@ -1201,7 +1201,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				for (j = 0; j < failed_count; ++j) {
 					if (failed[j].is_bad && failed[j].is_outofdate) {
 						++partial_recover_error;
-						ftag("unrecoverable:%u:%s:%s: Unrecoverable unsynced error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
+						ftag("unrecoverable:%u:%s:%s: Unrecoverable unsynced error at position %u\n", i, failed[j].handle->disk->name, esc(block_file_get(failed[j].block)->sub), block_file_pos(failed[j].block));
 					}
 				}
 				if (partial_recover_error != 0) {
@@ -1266,7 +1266,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						/* note that it could be also marked as damaged in other iterations */
 						file_flag_set(block_file_get(failed[j].block), FILE_IS_FIXED);
 
-						ftag("fixed:%u:%s:%s: Fixed data error at position %u\n", i, failed[j].handle->disk->name, block_file_get(failed[j].block)->sub, block_file_pos(failed[j].block));
+						ftag("fixed:%u:%s:%s: Fixed data error at position %u\n", i, failed[j].handle->disk->name, esc(block_file_get(failed[j].block)->sub), block_file_pos(failed[j].block));
 						++recovered_error;
 					}
 
@@ -1369,17 +1369,17 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				unsuccesful = 1;
 
 				flog("Error stating empty file '%s'. %s.\n", path, strerror(errno));
-				ftag("error:%s:%s: Empty file stat error\n", disk->name, file->sub);
+				ftag("error:%s:%s: Empty file stat error\n", disk->name, esc(file->sub));
 				++error;
 			} else if (!S_ISREG(st.st_mode)) {
 				unsuccesful = 1;
 
-				ftag("error:%s:%s: Empty file error for not regular file\n", disk->name, file->sub);
+				ftag("error:%s:%s: Empty file error for not regular file\n", disk->name, esc(file->sub));
 				++error;
 			} else if (st.st_size != 0) {
 				unsuccesful = 1;
 
-				ftag("error:%s:%s: Empty file error for size '%" PRIu64 "'\n", disk->name, file->sub, st.st_size);
+				ftag("error:%s:%s: Empty file error for size '%" PRIu64 "'\n", disk->name, esc(file->sub), st.st_size);
 				++error;
 			}
 
@@ -1440,10 +1440,10 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					/* LCOV_EXCL_STOP */
 				}
 
-				ftag("fixed:%s:%s: Fixed empty file\n", disk->name, file->sub);
+				ftag("fixed:%s:%s: Fixed empty file\n", disk->name, esc(file->sub));
 				++recovered_error;
 
-				ftag("status:recovered:%s:%s\n", disk->name, file->sub);
+				ftag("status:recovered:%s:%s\n", disk->name, esc(file->sub));
 				if (!state->opt.quiet) {
 					fout("recovered %s%s\n", disk->dir, file->sub);
 				}
@@ -1479,12 +1479,12 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					unsuccesful = 1;
 
 					flog("Error stating hardlink '%s'. %s.\n", path, strerror(errno));
-					ftag("hardlinkerror:%s:%s:%s: Hardlink stat error\n", disk->name, link->sub, link->linkto);
+					ftag("hardlinkerror:%s:%s:%s: Hardlink stat error\n", disk->name, esc(link->sub), esc(link->linkto));
 					++error;
 				} else if (!S_ISREG(st.st_mode)) {
 					unsuccesful = 1;
 
-					ftag("hardlinkerror:%s:%s:%s: Hardlink error for not regular file\n", disk->name, link->sub, link->linkto);
+					ftag("hardlinkerror:%s:%s:%s: Hardlink error for not regular file\n", disk->name, esc(link->sub), esc(link->linkto));
 					++error;
 				}
 
@@ -1509,18 +1509,18 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					}
 
 					flog("Error stating hardlink-to '%s'. %s.\n", pathto, strerror(errno));
-					ftag("hardlinkerror:%s:%s:%s: Hardlink to stat error\n", disk->name, link->sub, link->linkto);
+					ftag("hardlinkerror:%s:%s:%s: Hardlink to stat error\n", disk->name, esc(link->sub), esc(link->linkto));
 					++error;
 				} else if (!S_ISREG(stto.st_mode)) {
 					unsuccesful = 1;
 
-					ftag("hardlinkerror:%s:%s:%s: Hardlink-to error for not regular file\n", disk->name, link->sub, link->linkto);
+					ftag("hardlinkerror:%s:%s:%s: Hardlink-to error for not regular file\n", disk->name, esc(link->sub), esc(link->linkto));
 					++error;
 				} else if (!unsuccesful && st.st_ino != stto.st_ino) {
 					unsuccesful = 1;
 
 					flog("Mismatch hardlink '%s' and '%s'. Different inode.\n", path, pathto);
-					ftag("hardlinkerror:%s:%s:%s: Hardlink mismatch for different inode\n", disk->name, link->sub, link->linkto);
+					ftag("hardlinkerror:%s:%s:%s: Hardlink mismatch for different inode\n", disk->name, esc(link->sub), esc(link->linkto));
 					++error;
 				}
 			} else {
@@ -1531,13 +1531,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					unsuccesful = 1;
 
 					flog("Error reading symlink '%s'. %s.\n", path, strerror(errno));
-					ftag("symlinkerror:%s:%s: Symlink read error\n", disk->name, link->sub);
+					ftag("symlinkerror:%s:%s: Symlink read error\n", disk->name, esc(link->sub));
 					++error;
 				} else if (ret >= PATH_MAX) {
 					unsuccesful = 1;
 
 					flog("Error reading symlink '%s'. Symlink too long.\n", path);
-					ftag("symlinkerror:%s:%s: Symlink read error\n", disk->name, link->sub);
+					ftag("symlinkerror:%s:%s: Symlink read error\n", disk->name, esc(link->sub));
 					++error;
 				} else {
 					linkto[ret] = 0;
@@ -1545,7 +1545,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					if (strcmp(linkto, link->linkto) != 0) {
 						unsuccesful = 1;
 
-						ftag("symlinkerror:%s:%s: Symlink data error '%s' instead of '%s'\n", disk->name, link->sub, linkto, link->linkto);
+						ftag("symlinkerror:%s:%s: Symlink data error '%s' instead of '%s'\n", disk->name, esc(link->sub), linkto, link->linkto);
 						++error;
 					}
 				}
@@ -1593,7 +1593,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						/* LCOV_EXCL_STOP */
 					}
 
-					ftag("hardlinkfixed:%s:%s: Fixed hardlink error\n", disk->name, link->sub);
+					ftag("hardlinkfixed:%s:%s: Fixed hardlink error\n", disk->name, esc(link->sub));
 					++recovered_error;
 				} else {
 					ret = symlink(link->linkto, path);
@@ -1612,11 +1612,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						/* LCOV_EXCL_STOP */
 					}
 
-					ftag("symlinkfixed:%s:%s: Fixed symlink error\n", disk->name, link->sub);
+					ftag("symlinkfixed:%s:%s: Fixed symlink error\n", disk->name, esc(link->sub));
 					++recovered_error;
 				}
 
-				ftag("status:recovered:%s:%s\n", disk->name, link->sub);
+				ftag("status:recovered:%s:%s\n", disk->name, esc(link->sub));
 				if (!state->opt.quiet) {
 					fout("recovered %s%s\n", disk->dir, link->sub);
 				}
@@ -1647,12 +1647,12 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				unsuccesful = 1;
 
 				flog("Error stating dir '%s'. %s.\n", path, strerror(errno));
-				ftag("dir_error:%s:%s: Dir stat error\n", disk->name, dir->sub);
+				ftag("dir_error:%s:%s: Dir stat error\n", disk->name, esc(dir->sub));
 				++error;
 			} else if (!S_ISDIR(st.st_mode)) {
 				unsuccesful = 1;
 
-				ftag("dir_error:%s:%s: Dir error for not directory\n", disk->name, dir->sub);
+				ftag("dir_error:%s:%s: Dir error for not directory\n", disk->name, esc(dir->sub));
 				++error;
 			}
 
@@ -1685,10 +1685,10 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					/* LCOV_EXCL_STOP */
 				}
 
-				ftag("dir_fixed:%s:%s: Fixed dir error\n", disk->name, dir->sub);
+				ftag("dir_fixed:%s:%s: Fixed dir error\n", disk->name, esc(dir->sub));
 				++recovered_error;
 
-				ftag("status:recovered:%s:%s\n", disk->name, dir->sub);
+				ftag("status:recovered:%s:%s\n", disk->name, esc(dir->sub));
 				if (!state->opt.quiet) {
 					fout("recovered %s%s\n", disk->dir, dir->sub);
 				}

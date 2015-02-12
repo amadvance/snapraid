@@ -8,9 +8,6 @@ This is the list of TODO items for SnapRAID.
 * Avoid to do optimized move operation if more files with
 same timestamp/size are present.
 
-* In the log print file name as escaped to avoid that internal ":" and "\n"
-get misinterpreted.
-
 - Minor
 
 * Should "diff" warn about not completed sync ?

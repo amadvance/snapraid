@@ -228,7 +228,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					/* This one is really an unexpected error, because we are only reading */
 					/* and closing a descriptor should never fail */
 					if (errno == EIO) {
-						ftag("error:%u:%s:%s: Close EIO error. %s\n", i, disk->name, file->sub, strerror(errno));
+						ftag("error:%u:%s:%s: Close EIO error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
 						ferr("DANGER! Unexpected input/output close error in a data disk, it isn't possible to scrub.\n");
 						ferr("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
 						ferr("Stopping at block %u\n", i);
@@ -236,7 +236,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 						goto bail;
 					}
 
-					ftag("error:%u:%s:%s: Close error. %s\n", i, disk->name, file->sub, strerror(errno));
+					ftag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
 					ferr("WARNING! Unexpected close error in a data disk, it isn't possible to scrub.\n");
 					ferr("Ensure that file '%s' can be accessed.\n", handle[j].path);
 					ferr("Stopping at block %u\n", i);
@@ -252,7 +252,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				struct snapraid_file* file = block_file_get(block);
 				if (errno == EIO) {
 					/* LCOV_EXCL_START */
-					ftag("error:%u:%s:%s: Open EIO error. %s\n", i, disk->name, file->sub, strerror(errno));
+					ftag("error:%u:%s:%s: Open EIO error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
 					ferr("DANGER! Unexpected input/output open error in a data disk, it isn't possible to scrub.\n");
 					ferr("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
 					ferr("Stopping at block %u\n", i);
@@ -261,7 +261,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					/* LCOV_EXCL_STOP */
 				}
 
-				ftag("error:%u:%s:%s: Open error. %s\n", i, disk->name, file->sub, strerror(errno));
+				ftag("error:%u:%s:%s: Open error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
 				++error;
 				error_on_this_block = 1;
 				continue;
@@ -288,7 +288,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				/* file we are processing for error reporting */
 				struct snapraid_file* file = block_file_get(block);
 				if (errno == EIO) {
-					ftag("error:%u:%s:%s: Read EIO error at position %u. %s\n", i, disk->name, file->sub, block_file_pos(block), strerror(errno));
+					ftag("error:%u:%s:%s: Read EIO error at position %u. %s\n", i, disk->name, esc(file->sub), block_file_pos(block), strerror(errno));
 					if (io_error >= state->opt.io_error_limit) {
 						/* LCOV_EXCL_START */
 						ferr("DANGER! Unexpected input/output read error in a data disk, it isn't possible to scrub.\n");
@@ -305,7 +305,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					continue;
 				}
 
-				ftag("error:%u:%s:%s: Read error at position %u. %s\n", i, disk->name, file->sub, block_file_pos(block), strerror(errno));
+				ftag("error:%u:%s:%s: Read error at position %u. %s\n", i, disk->name, esc(file->sub), block_file_pos(block), strerror(errno));
 				++error;
 				error_on_this_block = 1;
 				continue;
@@ -330,7 +330,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			if (block_has_updated_hash(block)) {
 				/* compare the hash */
 				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
-					ftag("error:%u:%s:%s: Data error at position %u\n", i, disk->name, handle[j].file->sub, block_file_pos(block));
+					ftag("error:%u:%s:%s: Data error at position %u\n", i, disk->name, esc(handle[j].file->sub), block_file_pos(block));
 
 					/* it's a silent error only if we are dealing with synced files */
 					if (file_is_unsynced) {
@@ -511,7 +511,7 @@ bail:
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			ftag("error:%u:%s:%s: Close error. %s\n", i, disk->name, file->sub, strerror(errno));
+			ftag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
 			ferr("DANGER! Unexpected close error in a data disk.\n");
 			++error;
 			/* continue, as we are already exiting */
