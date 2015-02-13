@@ -770,6 +770,11 @@ int lstat_sync(const char* file, struct windows_stat* st, uint64_t* physical)
 	 *
 	 * Use FILE_FLAG_BACKUP_SEMANTICS to open directories (it's just ignored for files).
 	 * Use FILE_FLAG_OPEN_REPARSE_POINT to open symbolic links and not the their target.
+	 *
+	 * Note that even with FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
+	 * and FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT some paths
+	 * cannot be opened like "C:\System Volume Information" resulting
+	 * in error ERROR_ACCESS_DENIED.
 	 */
 	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, 0);
 	if (h == INVALID_HANDLE_VALUE) {

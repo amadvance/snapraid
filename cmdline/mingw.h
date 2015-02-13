@@ -193,7 +193,8 @@ int windows_rmdir(const char* file);
  *
  * It doesn't work for all kinds of files and directories.
  * You must call it only for regular files.
- * For example, "\System Volume Information" cannot be accessed.
+ * For example, "C:\System Volume Information" cannot be accessed
+ * with error ERROR_ACCESS_DENIED.
  *
  * Note that instead lstat() works for all the files.
  */
