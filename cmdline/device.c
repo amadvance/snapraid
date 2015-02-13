@@ -810,7 +810,7 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 		} else if (devinfo->smart[SMART_ROTATION_RATE] == 0) {
 			/* if SSD, skip AFR estimation as data is from not SSD disks */
 			afr = 0;
-			printf("    -");
+			printf("  SSD");
 		} else {
 			afr = smart_afr(devinfo->smart);
 
