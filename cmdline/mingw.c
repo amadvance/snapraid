@@ -1874,17 +1874,12 @@ static void* thread_spinup(void* arg)
 	int f;
 	uint64_t start;
 	struct stat st;
-	char* slash;
 
 	start = tick_ms();
 
-	/* removes latest slash to make FindFirstFile() working */
-	slash = strrchr(devinfo->mount, '/');
-	if (slash)
-		*slash = 0;
-
-	/* uses lstat, as it maps to FindFirstFile */
-	if (lstat(devinfo->mount, &st) != 0) {
+	/* uses lstat_sync() that maps to CreateFile */
+	/* we cannot use FindFirstFile because it doesn't allow to open the root dir */
+	if (lstat_sync(devinfo->mount, &st, 0) != 0) {
 		/* LCOV_EXCL_START */
 		pthread_mutex_lock(&io_lock);
 		ferr("Failed to stat devinfo '%s'. %s.\n", devinfo->mount, strerror(errno));
