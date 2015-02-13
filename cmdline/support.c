@@ -610,9 +610,9 @@ int smartctl_attribute(FILE* f, uint64_t* smart, char* serial)
 				}
 			}
 		} else if (inside) {
-			if (sscanf(s, "%u %*s %*s %*u %*u %*u %*s %*s %*s %" SCNu64, &id, &raw) != 2) {
+			if (sscanf(s, "%u %*s %*s %*s %*s %*s %*s %*s %*s %" SCNu64, &id, &raw) != 2) {
 				/* LCOV_EXCL_START */
-				ferr("Invalid smartctl line '%s'.\n", buf);
+				ferr("Invalid smartctl line '%s'.\n", s);
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
