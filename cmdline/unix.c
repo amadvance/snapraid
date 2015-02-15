@@ -395,6 +395,9 @@ static dev_t devread(const char* path)
 #endif
 
 #if HAVE_LINUX_DEVICE
+/**
+ * Get the device file from the device number.
+ */
 static int devresolve(dev_t device, char* path, size_t path_size)
 {
 	struct stat st;
@@ -707,12 +710,10 @@ static int devdown(dev_t device)
  * There isn't a defined way to spin up a device,
  * so we just do a generic write.
  */
-static int devup(dev_t device, const char* mount)
+static int devup(const char* mount)
 {
 	int ret;
 	char path[PATH_MAX];
-
-	(void)device;
 
 	/* add a temporary name used for writing */
 	pathprint(path, sizeof(path), "%s.snapraid-spinup", mount);
@@ -765,7 +766,7 @@ static void* thread_spinup(void* arg)
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (devup(devinfo->device, devinfo->mount) != 0) {
+	if (devup(devinfo->mount) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */

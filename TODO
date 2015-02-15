@@ -3,11 +3,6 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
-- Next
-
-* Avoid to do optimized move operation if more files with
-same timestamp/size are present.
-
 - Minor
 
 * Should "diff" warn about not completed sync ?

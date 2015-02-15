@@ -189,11 +189,5 @@ void malloc_fail(size_t size);
  */
 int smartctl_attribute(FILE* f, uint64_t* smart, char* serial);
 
-/**
- * Reads smartctl --scan from a stream.
- * Returns 0 on success.
- */
-int smartctl_scan(FILE* f, tommy_list* list);
-
 #endif
 

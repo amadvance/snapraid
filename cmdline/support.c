@@ -631,34 +631,3 @@ int smartctl_attribute(FILE* f, uint64_t* smart, char* serial)
 	return 0;
 }
 
-int smartctl_scan(FILE* f, tommy_list* list)
-{
-	while (1) {
-		char buf[256];
-		char* s;
-
-		s = fgets(buf, sizeof(buf), f);
-		if (s == 0)
-			break;
-
-		if (*s == '/') {
-			char* sep = strchr(s, ' ');
-			if (sep) {
-				devinfo_t* devinfo;
-
-				/* clear everything after the first space */
-				*sep = 0;
-
-				devinfo = calloc_nofail(1, sizeof(devinfo_t));
-
-				pathcpy(devinfo->file, sizeof(devinfo->file), s);
-
-				/* insert in the list */
-				tommy_list_insert_tail(list, &devinfo->node, devinfo);
-			}
-		}
-	}
-
-	return 0;
-}
-

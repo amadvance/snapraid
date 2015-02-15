@@ -9,7 +9,7 @@ SnapRAID HISTORY
    This applies to all commands.
  * Adds new "smart" command to print a SMART report of the array.
  * Adds new "up" and "down" commands to spin up and down the disks of
-   the array. Note that "down" is available only in Linux.
+   the array.
  * Allows "sync" and "scrub" to continue after the first
    bunch of disk errors. Blocks with errors are marked as bad,
    and you can fix them with the "fix -e" command.
@@ -59,7 +59,7 @@ SnapRAID HISTORY
    operating.
  * Windows binary built with gcc 4.8.1 using the MXE cross compiler 2.23.
 
- 6.4 2014/11
+6.4 2014/11
 ===========
  * Adds support for the new binary format of SnapRAID 7.0.
    This allows to downgrade from version 7.0 to 6.x or previous.

@@ -91,6 +91,21 @@ typedef struct {
 } STARTING_VCN_INPUT_BUFFER;
 #endif
 
+#ifndef IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS
+#define IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS 0x560000
+
+typedef struct DISK_EXTENT {
+	DWORD DiskNumber;
+	LARGE_INTEGER StartingOffset;
+	LARGE_INTEGER ExtentLength;
+} DISK_EXTENT;
+
+typedef struct VOLUME_DISK_EXTENTS {
+	DWORD NumberOfDiskExtents;
+	DISK_EXTENT Extents[ANYSIZE_ARRAY];
+} VOLUME_DISK_EXTENTS;
+#endif
+
 /**
  * Portable implementation of GetFileInformationByHandleEx.
  * This function is not available in Windows XP.
@@ -292,8 +307,8 @@ static wchar_t* convert_arg(const char* src, int only_if_required)
 		/* 12 is an additional space for filename, required when creating directory */
 
 		/* do nothing */
-	} else if (is_slash(src[0]) && is_slash(src[1]) && src[2] == '?' && is_slash(src[3])) {
-		/* if it's already a '\\?\' path */
+	} else if (is_slash(src[0]) && is_slash(src[1]) && (src[2] == '?' || src[2] == '.') && is_slash(src[3])) {
+		/* if it's already a '\\?\' or '\\.\' path */
 
 		/* do nothing */
 	} else if (is_slash(src[0]) && is_slash(src[1])) {
@@ -1784,6 +1799,173 @@ int randomize(void* ptr, size_t size)
 pthread_mutex_t io_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /**
+ * Get the device file from a path inside the device.
+ */
+static int devresolve(const char* mount, char* file, size_t file_size)
+{
+	WCHAR volume_mount[MAX_PATH];
+	WCHAR volume_guid[MAX_PATH];
+	size_t len;
+	const char* volume;
+	DWORD i;
+
+	/* get the volume mount point from the disk path */
+	if (!GetVolumePathNameW(convert(mount), volume_mount, sizeof(volume_mount) / sizeof(WCHAR))) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	/* get the volume GUID path from the mount point */
+	if (!GetVolumeNameForVolumeMountPointW(volume_mount, volume_guid, sizeof(volume_guid) / sizeof(WCHAR))) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	/* remove the final slash, otherwise CreateFile() opens the filesystem */
+	/* and not the volume */
+	i = 0;
+	while (volume_guid[i] != 0)
+		++i;
+	if (i != 0 && volume_guid[i-1] == '\\')
+		volume_guid[i-1] = 0;
+
+	/* convert to utf8 */
+	/* use the +1 to include the final null in the output string */
+	volume = u16tou8(volume_guid, wcslen(volume_guid) + 1, &len);
+
+	pathcpy(file, file_size, volume);
+
+	return 0;
+}
+
+/**
+ * Read a device tree filling the specified list of disk_t entries.
+ */
+static int devtree(const char* name, const char* file, devinfo_t* parent, tommy_list* list)
+{
+	HANDLE h;
+	unsigned char vde_buffer[sizeof(VOLUME_DISK_EXTENTS)];
+	VOLUME_DISK_EXTENTS* vde = (VOLUME_DISK_EXTENTS*)&vde_buffer;
+	unsigned vde_size = sizeof(vde_buffer);
+	void* vde_alloc = 0;
+	BOOL ret;
+	DWORD n;
+	DWORD i;
+
+	/* open the volume */
+	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+	if (h == INVALID_HANDLE_VALUE) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	/* get the physical extents of the volume */
+	ret = DeviceIoControl(h, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, 0, 0, vde, vde_size, &n, 0);
+	if (!ret) {
+		DWORD error = GetLastError();
+		if (error != ERROR_MORE_DATA) {
+			CloseHandle(h);
+			windows_errno(error);
+		}
+
+		/* more than one extends, allocate more space */
+		vde_size = sizeof(VOLUME_DISK_EXTENTS) + vde->NumberOfDiskExtents * sizeof(DISK_EXTENT);
+		vde_alloc = malloc_nofail(vde_size);
+		vde = vde_alloc;
+
+		/* retry with more space */
+		ret = DeviceIoControl(h, IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS, 0, 0, vde, vde_size, &n, 0);
+	}
+	if (!ret) {
+		DWORD error = GetLastError();
+		CloseHandle(h);
+		windows_errno(error);
+		return -1;
+	}
+
+	for (i = 0; i < vde->NumberOfDiskExtents; ++i) {
+		devinfo_t* devinfo;
+
+		devinfo = calloc_nofail(1, sizeof(devinfo_t));
+
+		devinfo->device = vde->Extents[i].DiskNumber;
+		pathcpy(devinfo->name, sizeof(devinfo->name), name);
+		pathprint(devinfo->file, sizeof(devinfo->file), "\\\\.\\PhysicalDrive%" PRIu64, devinfo->device);
+		devinfo->parent = parent;
+
+		/* insert in the list */
+		tommy_list_insert_tail(list, &devinfo->node, devinfo);
+	}
+
+	if (!CloseHandle(h)) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	free(vde_alloc);
+
+	return 0;
+}
+
+/**
+ * Reads smartctl --scan from a stream.
+ * Returns 0 on success.
+ */
+static int smartctl_scan(FILE* f, tommy_list* list)
+{
+	while (1) {
+		char buf[256];
+		char* s;
+
+		s = fgets(buf, sizeof(buf), f);
+		if (s == 0)
+			break;
+
+		if (*s == '/') {
+			char* sep = strchr(s, ' ');
+			if (sep) {
+				tommy_node* i;
+				const char* number;
+				uint64_t device;
+
+				/* clear everything after the first space */
+				*sep = 0;
+
+				/* get the device number from the device file */
+				/* note that this is Windows specific */
+				/* for the format /dev/pdX of smartmontools */
+				number = s;
+				while (*number != 0 && !isdigit(*number))
+					++number;
+				device = atoi(number);
+
+				/* check if already present */
+				/* comparing the device file */
+				for (i = tommy_list_head(list); i != 0; i = i->next) {
+					devinfo_t* devinfo = i->data;
+					if (devinfo->device == device)
+						break;
+				}
+
+				/* if not found */
+				if (i == 0) {
+					devinfo_t* devinfo;
+
+					devinfo = calloc_nofail(1, sizeof(devinfo_t));
+					devinfo->device = device;
+					pathprint(devinfo->file, sizeof(devinfo->file), "\\\\.\\PhysicalDrive%" PRIu64, device);
+
+					/* insert in the list */
+					tommy_list_insert_tail(list, &devinfo->node, devinfo);
+				}
+			}
+		}
+	}
+
+	return 0;
+}
+
+/**
  * Scan all the devices.
  */
 static int devscan(tommy_list* list)
@@ -1792,7 +1974,7 @@ static int devscan(tommy_list* list)
 	FILE* f;
 	int ret;
 
-	snprintf(cmd, sizeof(cmd), "smartctl-nc.exe --scan-open");
+	snprintf(cmd, sizeof(cmd), "smartctl-nc.exe --scan-open -d pd");
 
 	f = popen(cmd, "r");
 	if (!f) {
@@ -1829,18 +2011,18 @@ static int devscan(tommy_list* list)
 /**
  * Gets SMART attributes.
  */
-static int devsmart(const char* file, uint64_t* smart, char* serial)
+static int devsmart(uint64_t device, uint64_t* smart, char* serial)
 {
 	char cmd[128];
 	FILE* f;
 	int ret;
 
-	snprintf(cmd, sizeof(cmd), "smartctl-nc.exe -a %s", file);
+	snprintf(cmd, sizeof(cmd), "smartctl-nc.exe -a /dev/pd%" PRIu64, device);
 
 	f = popen(cmd, "r");
 	if (!f) {
 		/* LCOV_EXCL_START */
-		ferr("Failed to run smartctl -a on device '%s' (from open).\n", file);
+		ferr("Failed to run smartctl -a on device '%" PRIu64"' (from open).\n", device);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1855,7 +2037,7 @@ static int devsmart(const char* file, uint64_t* smart, char* serial)
 	ret = pclose(f);
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
-		ferr("Failed to run smartctl -a on device '%s' (from pclose).\n", file);
+		ferr("Failed to run smartctl -a on device '%" PRIu64"' (from pclose).\n", device);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1867,18 +2049,66 @@ static int devsmart(const char* file, uint64_t* smart, char* serial)
 }
 
 /**
- * Thread for spinning up.
+ * Spin down a specific device.
+ */
+static int devdown(uint64_t device)
+{
+	char cmd[128];
+	int ret;
+
+	snprintf(cmd, sizeof(cmd), "hdparm.exe -y \\\\.\\PhysicalDrive%" PRIu64 " > nul", device);
+
+	ret = system(cmd);
+	if (ret == -1) {
+		/* LCOV_EXCL_START */
+		ferr("Failed to run hdparm -y on device '%" PRIu64 "' (from system).\n", device);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		ferr("Failed to run hdparm -y on device '%" PRIu64 "' with return code %xh.\n", device, ret);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return 0;
+}
+
+/**
+ * Spin up a device.
  *
  * There isn't a defined way to spin up a device,
- * so we just do a generic write access.
+ * so we just do a generic write.
+ */
+static int devup(const char* mount)
+{
+	int f;
+	char path[PATH_MAX];
+
+	/* add a temporary name used for writing */
+	pathprint(path, sizeof(path), "%s.snapraid-spinup.tmp", mount);
+
+	/* create a temporary file, automatically deleted on close */
+	f = _wopen(convert(path), _O_CREAT | _O_TEMPORARY | _O_RDWR,  _S_IREAD | _S_IWRITE);
+	if (f != -1)
+		close(f);
+
+	return 0;
+}
+
+/**
+ * Thread for spinning up.
+ *
+ * Note that filling up the devinfo object is done inside this thread,
+ * to avoid to block the main thread if the device need to be spin up
+ * to handle stat/resolve requests.
  */
 static void* thread_spinup(void* arg)
 {
 	devinfo_t* devinfo = arg;
-	dev_t device;
-	int f;
-	uint64_t start;
 	struct stat st;
+	uint64_t start;
 
 	start = tick_ms();
 
@@ -1887,31 +2117,55 @@ static void* thread_spinup(void* arg)
 	if (lstat_sync(devinfo->mount, &st, 0) != 0) {
 		/* LCOV_EXCL_START */
 		pthread_mutex_lock(&io_lock);
-		ferr("Failed to stat devinfo '%s'. %s.\n", devinfo->mount, strerror(errno));
+		ferr("Failed to stat path '%s'. %s.\n", devinfo->mount, strerror(errno));
 		pthread_mutex_unlock(&io_lock);
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* add again the final slash */
-	pathslash(devinfo->mount, sizeof(devinfo->mount));
+	/* set the device number */
+	devinfo->device = st.st_dev;
 
-	/* set the device number for printing */
-	device = st.st_dev;
+	if (devresolve(devinfo->mount, devinfo->file, sizeof(devinfo->file)) != 0) {
+		/* LCOV_EXCL_START */
+		pthread_mutex_lock(&io_lock);
+		ferr("Failed to resolve path '%s'.\n", devinfo->mount);
+		pthread_mutex_unlock(&io_lock);
+		return (void*)-1;
+		/* LCOV_EXCL_STOP */
+	}
 
-	/* add a temporary name used for writing */
-	pathcat(devinfo->mount, sizeof(devinfo->mount), "snapraid-thread_spinup.tmp");
-
-	/* create a temporary file, automatically deleted on close */
-	f = _wopen(convert(devinfo->mount), _O_CREAT | _O_TEMPORARY | _O_RDWR,  _S_IREAD | _S_IWRITE);
-	if (f != -1)
-		close(f);
-
-	/* remove the added name */
-	pathcut(devinfo->mount);
+	if (devup(devinfo->mount) != 0) {
+		/* LCOV_EXCL_START */
+		return (void*)-1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	pthread_mutex_lock(&io_lock);
-	fprintf(stdout, "Spunup device '%" PRIx64 "' for disk '%s' in %" PRIu64 " ms.\n", (uint64_t)device, devinfo->name, tick_ms() - start);
+	fprintf(stdout, "Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
+	pthread_mutex_unlock(&io_lock);
+
+	return 0;
+}
+
+/**
+ * Thread for spinning down.
+ */
+static void* thread_spindown(void* arg)
+{
+	devinfo_t* devinfo = arg;
+	uint64_t start;
+
+	start = tick_ms();
+
+	if (devdown(devinfo->device) != 0) {
+		/* LCOV_EXCL_START */
+		return (void*)-1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	pthread_mutex_lock(&io_lock);
+	fprintf(stdout, "Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
 	pthread_mutex_unlock(&io_lock);
 
 	return 0;
@@ -1924,7 +2178,7 @@ static void* thread_smart(void* arg)
 {
 	devinfo_t* devinfo = arg;
 
-	if (devsmart(devinfo->file, devinfo->smart, devinfo->smart_serial) != 0) {
+	if (devsmart(devinfo->device, devinfo->smart, devinfo->smart_serial) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -1977,23 +2231,68 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 
 int devquery(tommy_list* high, tommy_list* low, int operation)
 {
-	tommy_list* list;
-	void* (*func)(void* arg);
+	tommy_node* i;
+	void* (*func)(void* arg) = 0;
 
-	/* we support only thread_spinup */
-	if (operation == DEVICE_UP) {
-		func = thread_spinup;
-		list = high;
-	} else if (operation == DEVICE_SMART) {
-		func = thread_smart;
-		list = low;
-		if (devscan(list) != 0)
-			return -1;
-	} else {
-		return -1;
+	if (operation != DEVICE_UP) {
+		/* for each device */
+		for (i = tommy_list_head(high); i != 0; i = i->next) {
+			devinfo_t* devinfo = i->data;
+
+			if (devresolve(devinfo->mount, devinfo->file, sizeof(devinfo->file)) != 0) {
+				/* LCOV_EXCL_START */
+				ferr("Failed to resolve path '%s'.\n", devinfo->mount);
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+
+			/* expand the tree of devices */
+			if (devtree(devinfo->name, devinfo->file, devinfo, low) != 0) {
+				/* LCOV_EXCL_START */
+				ferr("Failed to expand device '%s'.\n", devinfo->file);
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+		}
 	}
 
-	return device_thread(list, func);
+	if (operation == DEVICE_UP) {
+		/* duplicate the high */
+		for (i = tommy_list_head(high); i != 0; i = i->next) {
+			devinfo_t* devinfo = i->data;
+			devinfo_t* entry;
+
+			entry = calloc_nofail(1, sizeof(devinfo_t));
+
+			entry->device = devinfo->device;
+			pathcpy(entry->name, sizeof(entry->name), devinfo->name);
+			pathcpy(entry->mount, sizeof(entry->mount), devinfo->mount);
+
+			/* insert in the high */
+			tommy_list_insert_tail(low, &entry->node, entry);
+		}
+	}
+
+	/* add other devices */
+	if (operation == DEVICE_SMART) {
+		if (devscan(low) != 0) {
+			/* LCOV_EXCL_START */
+			ferr("Failed to list other devices.\n");
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	switch (operation) {
+	case DEVICE_UP : func = thread_spinup; break;
+	case DEVICE_DOWN : func = thread_spindown; break;
+	case DEVICE_SMART : func = thread_smart; break;
+	}
+
+	if (!func)
+		return 0;
+
+	return device_thread(low, func);
 }
 
 #endif

@@ -804,7 +804,8 @@ distwindows-x86: $(DISTWIN)
 	rm -f $(PACKAGE)-$(VERSION)-windows-x86.zip
 	mkdir tmp
 	cp $(DISTWIN) tmp
-	cp support/smartctl-nc-x86.exe tmp/smartctl-nc.exe
+	cp support/smartctl-nc.exe tmp/smartctl-nc.exe
+	cp support/hdparm.exe tmp/hdparm.exe
 	utod < snapraid.conf.example.windows > tmp/snapraid.conf.example
 	utod < INSTALL.windows > tmp/install.txt
 	utod < README > tmp/readme.txt
@@ -819,7 +820,8 @@ distwindows-x64: $(DISTWIN)
 	rm -f $(PACKAGE)-$(VERSION)-windows-x64.zip
 	mkdir tmp
 	cp $(DISTWIN) tmp
-	cp support/smartctl-nc-x64.exe tmp/smartctl-nc.exe
+	cp support/smartctl-nc.exe tmp/smartctl-nc.exe
+	cp support/hdparm.exe tmp/hdparm.exe
 	utod < snapraid.conf.example.windows > tmp/snapraid.conf.example
 	utod < INSTALL.windows > tmp/install.txt
 	utod < README > tmp/readme.txt

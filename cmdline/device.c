@@ -968,17 +968,17 @@ void state_device(struct snapraid_state* state, int operation)
 		}
 		ferr("%s unsupported in this platform.\n", ope);
 	} else {
-
-#ifndef _WIN32
 		if (operation == DEVICE_LIST) {
 			for (i = tommy_list_head(&low); i != 0; i = i->next) {
 				devinfo_t* devinfo = i->data;
 				devinfo_t* parent = devinfo->parent;
-
+#ifdef _WIN32
+				printf("%" PRIu64 "\t%s\t%" PRIx64 "\t%s\t%s\n", devinfo->device, devinfo->file, parent->device, parent->file, parent->name);
+#else
 				printf("%u:%u\t%s\t%u:%u\t%s\t%s\n", major(devinfo->device), minor(devinfo->device), devinfo->file, major(parent->device), minor(parent->device), parent->file, parent->name);
+#endif
 			}
 		}
-#endif
 
 		if (operation == DEVICE_SMART)
 			state_smart(state->opt.verbose, state->level + tommy_list_count(&state->disklist), &low);
