@@ -224,36 +224,49 @@ static unsigned conv_utf8 = 0;
 static char conv_utf8_buffer[CONV_ROLL][PATH_MAX];
 
 /**
+ * Mutex used for conversion.
+ */
+static pthread_mutex_t conv_lock = PTHREAD_MUTEX_INITIALIZER;
+
+/**
  * Converts a generic string from UTF8 to UTF16.
  */
 static wchar_t* u8tou16(const char* src)
 {
 	int ret;
+	unsigned roll;
 
+	pthread_mutex_lock(&conv_lock);
 	if (++conv_utf16 == CONV_ROLL)
 		conv_utf16 = 0;
+	roll = conv_utf16;
+	pthread_mutex_unlock(&conv_lock);
 
-	ret = MultiByteToWideChar(CP_UTF8, 0, src, -1, conv_utf16_buffer[conv_utf16], sizeof(conv_utf16_buffer[0]) / sizeof(wchar_t));
+	ret = MultiByteToWideChar(CP_UTF8, 0, src, -1, conv_utf16_buffer[roll], sizeof(conv_utf16_buffer[0]) / sizeof(wchar_t));
 
 	if (ret <= 0) {
 		ferr("Error converting name '%s' from UTF-8 to UTF-16\n", src);
 		exit(EXIT_FAILURE);
 	}
 
-	return conv_utf16_buffer[conv_utf16];
+	return conv_utf16_buffer[roll];
 }
 
 /**
  * Converts a generic string from UTF16 to UTF8.
  */
-static char* u16tou8(const wchar_t* src, size_t number_of_wchar, size_t* result_length_without_terminator)
+static char* u16tou8ex(const wchar_t* src, size_t number_of_wchar, size_t* result_length_without_terminator)
 {
 	int ret;
+	unsigned roll;
 
+	pthread_mutex_lock(&conv_lock);
 	if (++conv_utf8 == CONV_ROLL)
 		conv_utf8 = 0;
+	roll = conv_utf8;
+	pthread_mutex_unlock(&conv_lock);
 
-	ret = WideCharToMultiByte(CP_UTF8, 0, src, number_of_wchar, conv_utf8_buffer[conv_utf8], sizeof(conv_utf8_buffer[0]), 0, 0);
+	ret = WideCharToMultiByte(CP_UTF8, 0, src, number_of_wchar, conv_utf8_buffer[roll], sizeof(conv_utf8_buffer[0]), 0, 0);
 	if (ret <= 0) {
 		ferr("Error converting from UTF-16 to UTF-8\n");
 		exit(EXIT_FAILURE);
@@ -261,7 +274,15 @@ static char* u16tou8(const wchar_t* src, size_t number_of_wchar, size_t* result_
 
 	*result_length_without_terminator = ret;
 
-	return conv_utf8_buffer[conv_utf8];
+	return conv_utf8_buffer[roll];
+}
+
+static char* u16tou8(const wchar_t* src)
+{
+	size_t len;
+
+	/* convert also the 0 terminator */
+	return u16tou8ex(src, wcslen(src) + 1, &len);
 }
 
 /**
@@ -573,7 +594,7 @@ static void windows_finddata2dirent(const WIN32_FIND_DATAW* info, struct windows
 	const char* name;
 	size_t len;
 
-	name = u16tou8(info->cFileName, wcslen(info->cFileName), &len);
+	name = u16tou8ex(info->cFileName, wcslen(info->cFileName), &len);
 
 	if (len + 1 >= sizeof(dirent->d_name)) {
 		ferr("Name too long\n");
@@ -591,7 +612,7 @@ static void windows_stream2dirent(const BY_HANDLE_FILE_INFORMATION* info, const 
 	const char* name;
 	size_t len;
 
-	name = u16tou8(stream->FileName, stream->FileNameLength / 2, &len);
+	name = u16tou8ex(stream->FileName, stream->FileNameLength / 2, &len);
 
 	if (len + 1 >= sizeof(dirent->d_name)) {
 		ferr("Name too long\n");
@@ -1445,7 +1466,7 @@ int windows_readlink(const char* file, char* buffer, size_t size)
 	}
 
 	/* convert the name to UTF-8 */
-	name = u16tou8(rdb->SymbolicLinkReparseBuffer.PathBuffer + rdb->SymbolicLinkReparseBuffer.PrintNameOffset,
+	name = u16tou8ex(rdb->SymbolicLinkReparseBuffer.PathBuffer + rdb->SymbolicLinkReparseBuffer.PrintNameOffset,
 			rdb->SymbolicLinkReparseBuffer.PrintNameLength / 2, &len);
 
 	/* check for overflow */
@@ -1796,7 +1817,7 @@ int randomize(void* ptr, size_t size)
  * Weird output when I use pthread and printf.
  * http://stackoverflow.com/questions/13190254/weird-output-when-i-use-pthread-and-printf
  */
-pthread_mutex_t io_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t io_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /**
  * Get the device file from a path inside the device.
@@ -1805,8 +1826,6 @@ static int devresolve(const char* mount, char* file, size_t file_size)
 {
 	WCHAR volume_mount[MAX_PATH];
 	WCHAR volume_guid[MAX_PATH];
-	size_t len;
-	const char* volume;
 	DWORD i;
 
 	/* get the volume mount point from the disk path */
@@ -1829,11 +1848,7 @@ static int devresolve(const char* mount, char* file, size_t file_size)
 	if (i != 0 && volume_guid[i-1] == '\\')
 		volume_guid[i-1] = 0;
 
-	/* convert to utf8 */
-	/* use the +1 to include the final null in the output string */
-	volume = u16tou8(volume_guid, wcslen(volume_guid) + 1, &len);
-
-	pathcpy(file, file_size, volume);
+	pathcpy(file, file_size, u16tou8(volume_guid));
 
 	return 0;
 }
