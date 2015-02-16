@@ -144,6 +144,39 @@ static int is_scan_winfind;
  */
 static HMODULE dll_advapi32;
 
+/**
+ * Executable dir.
+ *
+ * Or empty or terminating with '\'.
+ */
+static WCHAR exedir[MAX_PATH];
+
+/**
+ * Set the executable dir.
+ */
+static void exedir_init(void)
+{
+	DWORD size;
+	WCHAR* slash;
+
+	size = GetModuleFileNameW(0, exedir, MAX_PATH);
+	if (size == 0 || size == MAX_PATH) {
+		/* use empty dir */
+		exedir[0] = 0;
+		return;
+	}
+
+	slash = wcsrchr(exedir, L'\\');
+	if (!slash) {
+		/* use empty dir */
+		exedir[0] = 0;
+		return;
+	}
+
+	/* cut exe name */
+	slash[1] = 0;
+}
+
 void os_init(int opt)
 {
 	HMODULE ntdll, kernel32;
@@ -187,6 +220,8 @@ void os_init(int opt)
 		/* retry with the XP variant */
 		SetThreadExecutionState(WIN32_ES_CONTINUOUS | WIN32_ES_SYSTEM_REQUIRED);
 	}
+
+	exedir_init();
 
 	/* set stdout and stderr as "line buffered" */
 	/* this ensures that messages are mixed correctly */
@@ -1985,16 +2020,16 @@ static int smartctl_scan(FILE* f, tommy_list* list)
  */
 static int devscan(tommy_list* list)
 {
-	char cmd[128];
+	WCHAR cmd[MAX_PATH + 128];
 	FILE* f;
 	int ret;
 
-	snprintf(cmd, sizeof(cmd), "smartctl-nc.exe --scan-open -d pd");
+	snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl-nc.exe\" --scan-open -d pd", exedir);
 
-	f = popen(cmd, "r");
+	f = _wpopen(cmd, L"rt");
 	if (!f) {
 		/* LCOV_EXCL_START */
-		ferr("Failed to run smartctl --scan-open (from popen).\n");
+		ferr("Failed to run '%s' (from popen).\n", u16tou8(cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2009,13 +2044,13 @@ static int devscan(tommy_list* list)
 	ret = pclose(f);
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
-		ferr("Failed to run smartctl --scan-open (from pclose).\n");
+		ferr("Failed to run '%s' (from pclose).\n", u16tou8(cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Failed to run smartctl --scan-open with return code %xh.\n", ret);
+		ferr("Failed to run '%s' with return code %xh.\n", u16tou8(cmd), ret);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2028,16 +2063,16 @@ static int devscan(tommy_list* list)
  */
 static int devsmart(uint64_t device, uint64_t* smart, char* serial)
 {
-	char cmd[128];
+	WCHAR cmd[MAX_PATH + 128];
 	FILE* f;
 	int ret;
 
-	snprintf(cmd, sizeof(cmd), "smartctl-nc.exe -a /dev/pd%" PRIu64, device);
+	snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl-nc.exe\" -a /dev/pd%" PRIu64, exedir, device);
 
-	f = popen(cmd, "r");
+	f = _wpopen(cmd, L"rt");
 	if (!f) {
 		/* LCOV_EXCL_START */
-		ferr("Failed to run smartctl -a on device '%" PRIu64"' (from open).\n", device);
+		ferr("Failed to run '%s' (from popen).\n", u16tou8(cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2052,7 +2087,7 @@ static int devsmart(uint64_t device, uint64_t* smart, char* serial)
 	ret = pclose(f);
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
-		ferr("Failed to run smartctl -a on device '%" PRIu64"' (from pclose).\n", device);
+		ferr("Failed to run '%s' (from pclose).\n", u16tou8(cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2068,21 +2103,21 @@ static int devsmart(uint64_t device, uint64_t* smart, char* serial)
  */
 static int devdown(uint64_t device)
 {
-	char cmd[128];
+	WCHAR cmd[MAX_PATH + 128];
 	int ret;
 
-	snprintf(cmd, sizeof(cmd), "hdparm.exe -y \\\\.\\PhysicalDrive%" PRIu64 " > nul", device);
+	snwprintf(cmd, sizeof(cmd), L"\"%lshdparm.exe\" -y \\\\.\\PhysicalDrive%" PRIu64 " >nul 2>nul", exedir, device);
 
-	ret = system(cmd);
+	ret = _wsystem(cmd);
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
-		ferr("Failed to run hdparm -y on device '%" PRIu64 "' (from system).\n", device);
+		ferr("Failed to run '%s' (from system).\n", u16tou8(cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Failed to run hdparm -y on device '%" PRIu64 "' with return code %xh.\n", device, ret);
+		ferr("Failed to run '%s' with return code %xh.\n", u16tou8(cmd), ret);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
