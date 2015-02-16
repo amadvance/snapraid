@@ -29,7 +29,7 @@
  *
  * These messages go in the log file and in stdout.
  */
-void fout(const char* format, ...) __attribute__((format(printf, 1, 2)));
+void fout(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
 
 /**
  * Error messages printed before an early termination.
@@ -39,7 +39,7 @@ void fout(const char* format, ...) __attribute__((format(printf, 1, 2)));
  *
  * These messages go in the log file and in stderr.
  */
-void ferr(const char* format, ...) __attribute__((format(printf, 1, 2)));
+void ferr(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
 
 /**
  * Log messages printed after an error.
@@ -49,7 +49,7 @@ void ferr(const char* format, ...) __attribute__((format(printf, 1, 2)));
  *
  * These messages go in the log file if specified, otherwise in stderr.
  */
-void flog(const char* format, ...) __attribute__((format(printf, 1, 2)));
+void flog(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
 
 /**
  * Flush the log output.
@@ -63,7 +63,7 @@ void fflush_log(void);
  *
  * These messages go in the log file.
  */
-void ftag(const char* format, ...) __attribute__((format(printf, 1, 2)));
+void ftag(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
 
 /**
  * Pointer to log function.
@@ -116,7 +116,7 @@ void pathexport(char* dst, size_t size, const char* src);
  * Prints a path.
  * Aborts if too long.
  */
-void pathprint(char* dst, size_t size, const char* format, ...) __attribute__((format(printf, 3, 4)));
+void pathprint(char* dst, size_t size, const char* format, ...) __attribute__((format(attribute_printf, 3, 4)));
 
 /**
  * Ensures the presence of a terminating slash, if it isn't empty.

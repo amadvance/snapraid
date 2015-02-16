@@ -33,6 +33,19 @@
 #endif
 
 /**
+ * Specify the format attribute for printf.
+ */
+#ifdef __MINGW32__
+#ifdef __USE_MINGW_ANSI_STDIO
+#define attribute_printf gnu_printf /* GNU format */
+#else
+#define attribute_printf ms_printf /* MSVCRT format */
+#endif
+#else
+#define attribute_printf printf /* GNU format is the default one */
+#endif
+
+/**
  * Compiler extension
  */
 #ifndef __always_inline
