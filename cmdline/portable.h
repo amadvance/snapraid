@@ -25,10 +25,27 @@
 /***************************************************************************/
 /* Config */
 
-#ifdef __MINGW32__ /* Specific for MINGW */
-#define __USE_MINGW_ANSI_STDIO 1 /* Enable the GNU printf functions instead of using the MSVCRT ones */
-#define __MSVCRT_VERSION__ 0x0601 /* Define the MSVCRT version targetting Windows XP */
-#define _WIN32_WINNT 0x501 /* Include Windows XP CreateHardLinkW */
+#ifdef __MINGW32__
+/**
+ * Enable the GNU printf functions instead of using the MSVCRT ones.
+ *
+ * Note that this is the default if _POSIX is also defined.
+ * To disable it you have to set it to 0.
+ */
+#define __USE_MINGW_ANSI_STDIO 1
+
+/*
+ * Define the MSVCRT version targetting Windows XP.
+ */
+#define __MSVCRT_VERSION__ 0x0601
+
+/**
+ * Include Windows XP headers.
+ *
+ * Like for CreateHardLinkW().
+ */
+#define _WIN32_WINNT 0x501
+
 #include <windows.h>
 #endif
 
@@ -36,7 +53,7 @@
  * Specify the format attribute for printf.
  */
 #ifdef __MINGW32__
-#ifdef __USE_MINGW_ANSI_STDIO
+#if defined(__USE_MINGW_ANSI_STDIO) && __USE_MINGW_ANSI_STDIO == 1
 #define attribute_printf gnu_printf /* GNU format */
 #else
 #define attribute_printf ms_printf /* MSVCRT format */
