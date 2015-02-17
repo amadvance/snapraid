@@ -973,7 +973,7 @@ void state_device(struct snapraid_state* state, int operation)
 				devinfo_t* devinfo = i->data;
 				devinfo_t* parent = devinfo->parent;
 #ifdef _WIN32
-				printf("%" PRIu64 "\t%s\t%" PRIx64 "\t%s\t%s\n", devinfo->device, devinfo->file, parent->device, parent->file, parent->name);
+				printf("%" PRIu64 "\t%s\t%" PRIx64 "\t%s\t%s\n", devinfo->device, devinfo->wfile, parent->device, parent->wfile, parent->name);
 #else
 				printf("%u:%u\t%s\t%u:%u\t%s\t%s\n", major(devinfo->device), minor(devinfo->device), devinfo->file, major(parent->device), minor(parent->device), parent->file, parent->name);
 #endif

@@ -334,7 +334,7 @@ static int is_slash(char c)
  * If only_is_required is 1, the extended-length format is used only if required.
  *
  * The exact operation done is:
- * - If it's a '\\?\' path, convert any '/' to '\'.
+ * - If it's a '\\?\' or '\\.\' path, convert any '/' to '\'.
  * - If it's a disk designator path, like 'D:\' or 'D:/', it prepends '\\?\' to the path and convert any '/' to '\'.
  * - If it's a UNC path, like ''\\server'', it prepends '\\?\UNC\' to the path and convert any '/' to '\'.
  * - Otherwise, only the UTF conversion is done. In this case Windows imposes a limit of 260 chars, and automatically convert any '/' to '\'.
@@ -1857,11 +1857,12 @@ static pthread_mutex_t io_lock = PTHREAD_MUTEX_INITIALIZER;
 /**
  * Get the device file from a path inside the device.
  */
-static int devresolve(const char* mount, char* file, size_t file_size)
+static int devresolve(const char* mount, char* file, size_t file_size, char* wfile, size_t wfile_size)
 {
 	WCHAR volume_mount[MAX_PATH];
 	WCHAR volume_guid[MAX_PATH];
 	DWORD i;
+	char* p;
 
 	/* get the volume mount point from the disk path */
 	if (!GetVolumePathNameW(convert(mount), volume_mount, sizeof(volume_mount) / sizeof(WCHAR))) {
@@ -1883,7 +1884,21 @@ static int devresolve(const char* mount, char* file, size_t file_size)
 	if (i != 0 && volume_guid[i-1] == '\\')
 		volume_guid[i-1] = 0;
 
-	pathcpy(file, file_size, u16tou8(volume_guid));
+	pathcpy(wfile, wfile_size, u16tou8(volume_guid));
+
+	/* get the GUID start { */
+	p = strchr(wfile, '{');
+	if (!p)
+		p = wfile;
+	else
+		++p;
+
+	pathprint(file, file_size, "/dev/vol%s", p);
+
+	/* cut GUID end } */
+	p = strrchr(file, '}');
+	if (p)
+		*p = 0;
 
 	return 0;
 }
@@ -1891,7 +1906,7 @@ static int devresolve(const char* mount, char* file, size_t file_size)
 /**
  * Read a device tree filling the specified list of disk_t entries.
  */
-static int devtree(const char* name, const char* file, devinfo_t* parent, tommy_list* list)
+static int devtree(const char* name, const char* wfile, devinfo_t* parent, tommy_list* list)
 {
 	HANDLE h;
 	unsigned char vde_buffer[sizeof(VOLUME_DISK_EXTENTS)];
@@ -1903,7 +1918,7 @@ static int devtree(const char* name, const char* file, devinfo_t* parent, tommy_
 	DWORD i;
 
 	/* open the volume */
-	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+	h = CreateFileW(convert(wfile), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -1938,9 +1953,10 @@ static int devtree(const char* name, const char* file, devinfo_t* parent, tommy_
 
 		devinfo = calloc_nofail(1, sizeof(devinfo_t));
 
-		devinfo->device = vde->Extents[i].DiskNumber;
 		pathcpy(devinfo->name, sizeof(devinfo->name), name);
-		pathprint(devinfo->file, sizeof(devinfo->file), "\\\\.\\PhysicalDrive%" PRIu64, devinfo->device);
+		devinfo->device = vde->Extents[i].DiskNumber;
+		pathprint(devinfo->file, sizeof(devinfo->file), "/dev/pd%" PRIu64, devinfo->device);
+		pathprint(devinfo->wfile, sizeof(devinfo->wfile), "\\\\.\\PhysicalDrive%" PRIu64, devinfo->device);
 		devinfo->parent = parent;
 
 		/* insert in the list */
@@ -2003,7 +2019,8 @@ static int smartctl_scan(FILE* f, tommy_list* list)
 
 					devinfo = calloc_nofail(1, sizeof(devinfo_t));
 					devinfo->device = device;
-					pathprint(devinfo->file, sizeof(devinfo->file), "\\\\.\\PhysicalDrive%" PRIu64, device);
+					pathprint(devinfo->file, sizeof(devinfo->file), "/dev/pd%" PRIu64, devinfo->device);
+					pathprint(devinfo->wfile, sizeof(devinfo->wfile), "\\\\.\\PhysicalDrive%" PRIu64, devinfo->device);
 
 					/* insert in the list */
 					tommy_list_insert_tail(list, &devinfo->node, devinfo);
@@ -2176,7 +2193,7 @@ static void* thread_spinup(void* arg)
 	/* set the device number */
 	devinfo->device = st.st_dev;
 
-	if (devresolve(devinfo->mount, devinfo->file, sizeof(devinfo->file)) != 0) {
+	if (devresolve(devinfo->mount, devinfo->file, sizeof(devinfo->file), devinfo->wfile, sizeof(devinfo->wfile)) != 0) {
 		/* LCOV_EXCL_START */
 		pthread_mutex_lock(&io_lock);
 		ferr("Failed to resolve path '%s'.\n", devinfo->mount);
@@ -2289,7 +2306,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 		for (i = tommy_list_head(high); i != 0; i = i->next) {
 			devinfo_t* devinfo = i->data;
 
-			if (devresolve(devinfo->mount, devinfo->file, sizeof(devinfo->file)) != 0) {
+			if (devresolve(devinfo->mount, devinfo->file, sizeof(devinfo->file), devinfo->wfile, sizeof(devinfo->wfile)) != 0) {
 				/* LCOV_EXCL_START */
 				ferr("Failed to resolve path '%s'.\n", devinfo->mount);
 				return -1;
@@ -2297,7 +2314,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 			}
 
 			/* expand the tree of devices */
-			if (devtree(devinfo->name, devinfo->file, devinfo, low) != 0) {
+			if (devtree(devinfo->name, devinfo->wfile, devinfo, low) != 0) {
 				/* LCOV_EXCL_START */
 				ferr("Failed to expand device '%s'.\n", devinfo->file);
 				return -1;

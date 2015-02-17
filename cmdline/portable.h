@@ -389,6 +389,9 @@ struct devinfo_struct {
 	char name[PATH_MAX]; /**< Name of the disk. */
 	char mount[PATH_MAX]; /**< Mount point or other contained directory. */
 	char file[PATH_MAX]; /**< File device. */
+#ifdef _WIN32
+	char wfile[PATH_MAX]; /**< File device in Windows format. Like \\.\PhysicalDriveX, or \\?\Volume{X}. */
+#endif
 	struct devinfo_struct* parent; /**< Pointer at the parent if any. */
 	uint64_t smart[SMART_COUNT]; /**< SMART raw attributes. */
 	char smart_serial[SMART_MAX]; /**< SMART serial number. */
