@@ -81,7 +81,7 @@ STREAM* sopen_read(const char* file)
 	}
 #endif
 
-	s->buffer = malloc_nofail(STREAM_SIZE);
+	s->buffer = malloc_nofail_test(STREAM_SIZE);
 	s->pos = s->buffer;
 	s->end = s->buffer;
 	s->state = STREAM_STATE_READ;
@@ -106,7 +106,7 @@ STREAM* sopen_multi_write(unsigned count)
 	for (i = 0; i < count; ++i)
 		s->handle[i].f = -1;
 
-	s->buffer = malloc_nofail(STREAM_SIZE);
+	s->buffer = malloc_nofail_test(STREAM_SIZE);
 	s->pos = s->buffer;
 	s->end = s->buffer + STREAM_SIZE;
 	s->state = STREAM_STATE_WRITE;
@@ -336,7 +336,7 @@ int sread(STREAM* f, void* void_data, unsigned size)
 
 		sptrset(f, pos);
 	} else {
-		/* standard version using sputc() */
+		/* standard version using sgetc() */
 		while (size--) {
 			int c = sgetc(f);
 			if (c == EOF) {
@@ -918,6 +918,17 @@ void** malloc_nofail_vector_align(int nd, int n, size_t size, void** freeptr)
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	return ptr;
+}
+
+void* malloc_nofail_test(size_t size)
+{
+	void* ptr;
+
+	ptr = malloc_nofail(size);
+
+	mtest_vector(1, size, &ptr);
 
 	return ptr;
 }
