@@ -19,6 +19,58 @@
 #define __UTIL_H
 
 /****************************************************************************/
+/* crc */
+
+/**
+ * CRC initial value.
+ * Using a not zero value allows to detect a leading run of zeros.
+ */
+#define CRC_IV 0xffffffffU
+
+/**
+ * CRC-32 (Castagnoli) table.
+ */
+extern uint32_t CRC32C_0[256];
+extern uint32_t CRC32C_1[256];
+extern uint32_t CRC32C_2[256];
+extern uint32_t CRC32C_3[256];
+
+#if HAVE_SSE42
+/**
+ * If the CPU support the CRC instructions.
+ */
+extern int crc_x86;
+#endif
+
+/**
+ * Computes CRC-32 (Castagnoli) for a single byte without IV.
+ */
+static inline uint32_t crc32c_plain(uint32_t crc, unsigned char c)
+{
+#if HAVE_SSE42
+	if (tommy_likely(crc_x86)) {
+		asm("crc32b %1, %0\n" : "+r" (crc) : "m" (c));
+		return crc;
+	} else
+#endif
+	{
+		return CRC32C_0[(crc ^ c) & 0xff] ^ (crc >> 8);
+	}
+}
+
+/**
+ * Computes the CRC-32 (Castagnoli)
+ */
+uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, unsigned size);
+uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size);
+uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size);
+
+/**
+ * Initializes the CRC-32 (Castagnoli) support.
+ */
+void crc32c_init(void);
+
+/****************************************************************************/
 /* stream */
 
 #define STREAM_SIZE (64 * 1024) /**< Size of the buffer of the stream. */
@@ -43,8 +95,46 @@ struct stream {
 	struct stream_handle* handle; /**< Set of handles. */
 	off_t offset; /**< Offset into the file. */
 	off_t offset_uncached; /**< Offset into the file excluding the cached data. */
-	uint32_t crc; /**< CRC of the file. */
-	uint32_t crc_uncached; /**< CRC of the file excluding the cached data. */
+
+	/**
+	 * CRC of the data read or written in the file.
+	 *
+	 * If reading, it's the CRC of all data read from the file,
+	 * including the one in the buffer.
+	 * If writing it's all the data wrote to the file,
+	 * excluding the one still in buffer yet to be written.
+	 */
+	uint32_t crc;
+
+	/**
+	 * CRC of the file excluding the cached data in the buffer.
+	 *
+	 * If reading, it's the CRC of the data read from the file,
+	 * excluding the one in the buffer.
+	 * If writing it's all the data wrote to the file,
+	 * excluding the one still in buffer yet to be written.
+	 */
+	uint32_t crc_uncached;
+
+	/**
+	 * CRC of the data written to the stream.
+	 *
+	 * This is an extra check of the data that is written to
+	 * file to ensure that it's consistent even in case
+	 * of memory errors.
+	 *
+	 * This extra check takes about 2 seconds for each GB of
+	 * content file with the Intel CRC instruction,
+	 * and about 4 seconds without it.
+	 * But usually this doesn't slow down the write process,
+	 * as the disk is the bottle-neck.
+	 *
+	 * Note that this CRC doesn't have the IV processing.
+	 *
+	 * Not used in reading.
+	 * In writing, it's all the data wrote calling sput() functions.
+	 */
+	uint32_t crc_stream;
 };
 
 /**
@@ -105,6 +195,11 @@ int64_t stell(STREAM* s);
  * Gets the CRC of the processed data.
  */
 uint32_t scrc(STREAM* s);
+
+/**
+ * Gets the CRC of the processed data in put.
+ */
+uint32_t scrc_stream(STREAM* s);
 
 /**
  * Checks if the buffer has enough data loaded.
@@ -308,6 +403,7 @@ static inline int sputc(int c, STREAM* s)
 		if (sflush(s) != 0)
 			return -1;
 	}
+	s->crc_stream = crc32c_plain(s->crc_stream, c);
 	*s->pos++ = c;
 	return 0;
 }
@@ -440,21 +536,6 @@ void memhash(unsigned kind, const unsigned char* seed, void* digest, const void*
  * Return the hash name.
  */
 const char* hash_config_name(unsigned kind);
-
-/****************************************************************************/
-/* crc */
-
-/**
- * Computes the CRC-32 (Castagnoli)
- */
-uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, unsigned size);
-uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size);
-uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size);
-
-/**
- * Initializes the CRC-32 (Castagnoli) support.
- */
-void crc32c_init(void);
 
 /****************************************************************************/
 /* lock */

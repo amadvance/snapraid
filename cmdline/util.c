@@ -90,6 +90,7 @@ STREAM* sopen_read(const char* file)
 	s->offset_uncached = 0;
 	s->crc = 0;
 	s->crc_uncached = 0;
+	s->crc_stream = CRC_IV;
 
 	return s;
 }
@@ -115,6 +116,7 @@ STREAM* sopen_multi_write(unsigned count)
 	s->offset_uncached = 0;
 	s->crc = 0;
 	s->crc_uncached = 0;
+	s->crc_stream = CRC_IV;
 
 	return s;
 }
@@ -282,6 +284,11 @@ int64_t stell(STREAM* s)
 uint32_t scrc(STREAM*s)
 {
 	return crc32c(s->crc_uncached, s->buffer, s->pos - s->buffer);
+}
+
+uint32_t scrc_stream(STREAM*s)
+{
+	return s->crc_stream ^ CRC_IV;
 }
 
 int sgettok(STREAM* f, char* str, int size)
@@ -695,8 +702,10 @@ int swrite(const void* void_data, unsigned size, STREAM* f)
 		unsigned char* pos = sptrget(f);
 
 		/* copy it */
-		while (size--)
+		while (size--) {
+			f->crc_stream = crc32c_plain(f->crc_stream, *data);
 			*pos++ = *data++;
+		}
 
 		sptrset(f, pos);
 	} else {
@@ -947,7 +956,7 @@ void mtest_vector(int n, size_t size, void** vv)
 /****************************************************************************/
 /* crc */
 
-static uint32_t CRC32C_0[256] = {
+uint32_t CRC32C_0[256] = {
 	0x00000000, 0xf26b8303, 0xe13b70f7, 0x1350f3f4,
 	0xc79a971f, 0x35f1141c, 0x26a1e7e8, 0xd4ca64eb,
 	0x8ad958cf, 0x78b2dbcc, 0x6be22838, 0x9989ab3b,
@@ -1014,7 +1023,7 @@ static uint32_t CRC32C_0[256] = {
 	0xbe2da0a5, 0x4c4623a6, 0x5f16d052, 0xad7d5351
 };
 
-static uint32_t CRC32C_1[256] = {
+uint32_t CRC32C_1[256] = {
 	0x00000000, 0x13a29877, 0x274530ee, 0x34e7a899,
 	0x4e8a61dc, 0x5d28f9ab, 0x69cf5132, 0x7a6dc945,
 	0x9d14c3b8, 0x8eb65bcf, 0xba51f356, 0xa9f36b21,
@@ -1081,7 +1090,7 @@ static uint32_t CRC32C_1[256] = {
 	0x97048c1a, 0x84a6146d, 0xb041bcf4, 0xa3e32483
 };
 
-static uint32_t CRC32C_2[256] = {
+uint32_t CRC32C_2[256] = {
 	0x00000000, 0xa541927e, 0x4f6f520d, 0xea2ec073,
 	0x9edea41a, 0x3b9f3664, 0xd1b1f617, 0x74f06469,
 	0x38513ec5, 0x9d10acbb, 0x773e6cc8, 0xd27ffeb6,
@@ -1148,7 +1157,7 @@ static uint32_t CRC32C_2[256] = {
 	0x7b2bebdb, 0xde6a79a5, 0x3444b9d6, 0x91052ba8
 };
 
-static uint32_t CRC32C_3[256] = {
+uint32_t CRC32C_3[256] = {
 	0x00000000, 0xdd45aab8, 0xbf672381, 0x62228939,
 	0x7b2231f3, 0xa6679b4b, 0xc4451272, 0x1900b8ca,
 	0xf64463e6, 0x2b01c95e, 0x49234067, 0x9466eadf,
@@ -1215,12 +1224,6 @@ static uint32_t CRC32C_3[256] = {
 	0x4a21617b, 0x9764cbc3, 0xf54642fa, 0x2803e842
 };
 
-/**
- * CRC initial value.
- * Using a not zero value allows to detect a leading run of zeros.
- */
-#define CRC_IV 0xffffffffU
-
 uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size)
 {
 	crc ^= CRC_IV;
@@ -1255,21 +1258,21 @@ uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size)
 #ifdef CONFIG_X86_64
 	crc64 = crc;
 	while (size >= 8) {
-		asm volatile ("crc32q %1, %0\n" : "+r" (crc64) : "rm" (*(const uint64_t*)ptr));
+		asm("crc32q %1, %0\n" : "+r" (crc64) : "m" (*(const uint64_t*)ptr));
 		ptr += 8;
 		size -= 8;
 	}
 	crc = crc64;
 #else
 	while (size >= 4) {
-		asm volatile ("crc32l %1, %0\n" : "+r" (crc) : "rm" (*(const uint32_t*)ptr));
+		asm("crc32l %1, %0\n" : "+r" (crc) : "m" (*(const uint32_t*)ptr));
 		ptr += 4;
 		size -= 4;
 	}
 #endif
 
 	while (size) {
-		asm volatile ("crc32b %1, %0\n" : "+r" (crc) : "rm" (*ptr));
+		asm("crc32b %1, %0\n" : "+r" (crc) : "m" (*ptr));
 		++ptr;
 		--size;
 	}
@@ -1282,11 +1285,16 @@ uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size)
 
 uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, unsigned size);
 
+#if HAVE_SSE42
+int crc_x86;
+#endif
+
 void crc32c_init(void)
 {
 	crc32c = crc32c_gen;
 #if HAVE_SSE42
 	if (raid_cpu_has_sse42()) {
+		crc_x86 = 1;
 		crc32c = crc32c_x86;
 	}
 #endif

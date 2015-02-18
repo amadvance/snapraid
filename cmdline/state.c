@@ -3832,6 +3832,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	int info_has_rehash;
 	int mapping_idx;
 	unsigned l;
+	uint32_t crc;
 
 	count_file = 0;
 	count_hardlink = 0;
@@ -4250,7 +4251,30 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	}
 
 	sputc('N', f);
-	sputble32(scrc(f), f);
+
+	/* flush data written to the disk */
+	if (sflush(f)) {
+		/* LCOV_EXCL_START */
+		ferr("Error writing the content file '%s' (in flush before crc). %s.\n", serrorfile(f), strerror(errno));
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* get the file crc */
+	crc = scrc(f);
+
+	/* compare the crc of the data written to file */
+	/* with the one of the data written to the stream */
+	if (crc != scrc_stream(f)) {
+		/* LCOV_EXCL_START */
+		ferr("CRC mismatch writing the content stream.\n");
+		ferr("DANGER! Your RAM memory is broken! DO NOT PROCEED UNTIL FIXED!\n");
+		ferr("Try running a memory test like http://www.memtest86.com/\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	sputble32(crc, f);
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
 		ferr("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
