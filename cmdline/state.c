@@ -2742,7 +2742,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 				/* consistency check */
 				if (block->parity_pos != b) {
 					/* LCOV_EXCL_START */
-					ferr("Internal inconsistency in delete position %u instead of %u\n", block->parity_pos, b);
+					ferr("Internal inconsistency in delete position %u/%u!\n", block->parity_pos, b);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -3062,14 +3062,9 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 				if (v_pos + v_count > blockmax) {
 					/* LCOV_EXCL_START */
-					ferr("Internal inconsistency in block size!\n");
-					if (state->opt.skip_content_check) {
-						ferr("Overriding from %u to %u.\n", blockmax, v_pos + v_count);
-						blockmax = v_pos + v_count;
-					} else {
-						decoding_error(path, f);
-						exit(EXIT_FAILURE);
-					}
+					ferr("Internal inconsistency in block size %u/%u!\n", blockmax, v_pos + v_count);
+					decoding_error(path, f);
+					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_START */
 				}
 
@@ -3212,14 +3207,9 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 				if (v_pos + v_count > blockmax) {
 					/* LCOV_EXCL_START */
-					ferr("Internal inconsistency in info size!\n");
-					if (state->opt.skip_content_check) {
-						ferr("Overriding from %u to %u.\n", blockmax, v_pos + v_count);
-						blockmax = v_pos + v_count;
-					} else {
-						decoding_error(path, f);
-						exit(EXIT_FAILURE);
-					}
+					ferr("Internal inconsistency in info size %u/%u!\n", blockmax, v_pos + v_count);
+					decoding_error(path, f);
+					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
 
@@ -3312,14 +3302,9 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 				if (v_pos + v_count > blockmax) {
 					/* LCOV_EXCL_START */
-					ferr("Internal inconsistency in hole size!\n");
-					if (state->opt.skip_content_check) {
-						ferr("Overriding from %u to %u.\n", blockmax, v_pos + v_count);
-						blockmax = v_pos + v_count;
-					} else {
-						decoding_error(path, f);
-						exit(EXIT_FAILURE);
-					}
+					ferr("Internal inconsistency in hole size %u/%u!\n", blockmax, v_pos + v_count);
+					decoding_error(path, f);
+					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
 
@@ -3359,7 +3344,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 						/* we must not overwrite existing blocks */
 						if (disk_block_get(disk, v_pos) != BLOCK_EMPTY) {
 							/* LCOV_EXCL_START */
-							ferr("Internal inconsistency for used hole!\n");
+							ferr("Internal inconsistency for used hole at pos %u!\n", v_pos);
 							if (state->opt.skip_content_check) {
 								ferr("Overriding as used.\n");
 								deleted_free(deleted);
@@ -3800,9 +3785,9 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 	/* check that the stored parity size matches the loaded state */
 	if (blockmax != parity_allocated_size(state)) {
 		/* LCOV_EXCL_START */
-		ferr("Internal inconsistency in parity size in '%s' at offset %" PRIi64 "\n", path, stell(f));
+		ferr("Internal inconsistency in parity size %u/%u in '%s' at offset %" PRIi64 "\n", blockmax, parity_allocated_size(state), path, stell(f));
 		if (state->opt.skip_content_check) {
-			ferr("Overriding from %u to %u.\n", blockmax, parity_allocated_size(state));
+			ferr("Overriding.\n");
 			blockmax = parity_allocated_size(state);
 		} else {
 			exit(EXIT_FAILURE);
@@ -4173,7 +4158,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 					/* consistency check */
 					if (block->parity_pos != begin) {
 						/* LCOV_EXCL_START */
-						ferr("Internal inconsistency in delete position %u instead of %u\n", block->parity_pos, begin);
+						ferr("Internal inconsistency in delete position %u/%u!\n", block->parity_pos, begin);
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}
