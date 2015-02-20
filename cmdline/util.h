@@ -73,7 +73,7 @@ void crc32c_init(void);
 /****************************************************************************/
 /* stream */
 
-#define STREAM_SIZE (64 * 1024) /**< Size of the buffer of the stream. */
+unsigned STREAM_SIZE; /**< Size of the buffer of the stream. */
 
 #define STREAM_STATE_READ 0 /**< The stream is in a normal state of read. */
 #define STREAM_STATE_WRITE 1 /**< The stream is in a normal state of write. */

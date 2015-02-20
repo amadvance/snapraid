@@ -50,6 +50,8 @@ static unsigned strdecset[256] =
 /****************************************************************************/
 /* stream */
 
+unsigned STREAM_SIZE = 1024 * 64;
+
 STREAM* sopen_read(const char* file)
 {
 #if HAVE_POSIX_FADVISE

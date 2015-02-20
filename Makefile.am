@@ -1,5 +1,5 @@
 bin_PROGRAMS = snapraid
-check_PROGRAMS = mktest
+check_PROGRAMS = mktest mkstream
 
 snapraid_SOURCES = \
 	raid/raid.c \
@@ -87,6 +87,13 @@ mktest_SOURCES = \
 	cmdline/mingw.c \
 	cmdline/support.c
 
+mkstream_SOURCES = \
+	cmdline/mkstream.c \
+	cmdline/mingw.c \
+	cmdline/support.c \
+	cmdline/util.c \
+	raid/memory.c
+
 EXTRA_DIST = \
 	autogen.sh \
 	README AUTHORS HISTORY INSTALL COPYING TODO CHECK INSTALL.windows \
@@ -114,7 +121,7 @@ man_MANS = snapraid.1
 clean-local:
 	rm -f valgrind.log callgrind.log cachegrind.log
 	rm -rf bench
-	rm -f test*.log output.log
+	rm -f test*.log output.log stream*.bin
 	rm -f cmdline/*.gcda cmdline/*.gcno cmdline/*.gcov
 	rm -f raid/*.gcda raid/*.gcno raid/*.gcov
 	rm -f tommyds/*.gcda tommyds/*.gcno tommyds/*.gcov
@@ -174,6 +181,8 @@ check-local:
 	mkdir bench/disk5
 	mkdir bench/disk6
 	mkdir bench/pool
+	echo --- Stream
+	$(TESTENV) ./mkstream$(EXEEXT)
 	echo --- Help
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -H
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -V

@@ -1,12 +1,14 @@
 # archives
 *.zip
 *.tar.gz
+*.tgz
 
 # backups
 *~
 
 # logs
 *.log
+stream*.bin
 
 # autotools
 Makefile
@@ -29,6 +31,7 @@ stamp-h1
 # objects
 snapraid
 mktest
+mkstream
 *.o
 *.gcda
 *.gcno
@@ -46,4 +49,5 @@ paper/
 kernel/
 obj/
 bench/
+support/
 
