@@ -16,6 +16,7 @@ snapraid_SOURCES = \
 	tommyds/tommy.c \
 	cmdline/snapraid.c \
 	cmdline/util.c \
+	cmdline/stream.c \
 	cmdline/support.c \
 	cmdline/elem.c \
 	cmdline/state.c \
@@ -67,6 +68,7 @@ noinst_HEADERS = \
 	cmdline/portable.h \
 	cmdline/snapraid.h \
 	cmdline/util.h \
+	cmdline/stream.h \
 	cmdline/support.h \
 	cmdline/elem.h \
 	cmdline/state.h \
@@ -92,6 +94,7 @@ mkstream_SOURCES = \
 	cmdline/mingw.c \
 	cmdline/support.c \
 	cmdline/util.c \
+	cmdline/stream.c \
 	raid/memory.c
 
 EXTRA_DIST = \

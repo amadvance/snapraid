@@ -17,8 +17,7 @@
 
 #include "portable.h"
 
-#include "support.h"
-#include "util.h"
+#include "stream.h"
 
 #define STREAM_MAX 8
 #define BUFFER_MAX 64

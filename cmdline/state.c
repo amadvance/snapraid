@@ -23,6 +23,7 @@
 #include "state.h"
 #include "support.h"
 #include "parity.h"
+#include "stream.h"
 #include "raid/raid.h"
 #include "raid/cpu.h"
 
