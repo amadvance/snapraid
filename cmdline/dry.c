@@ -82,20 +82,20 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
-					ftag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
-					ferr("DANGER! Unexpected close error in a data disk, it isn't possible to dry.\n");
-					ferr("Stopping at block %u\n", i);
+					msg_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
+					msg_error("DANGER! Unexpected close error in a data disk, it isn't possible to dry.\n");
+					msg_error("Stopping at block %u\n", i);
 					++error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
 				}
 
 				/* open the file only for reading */
-				ret = handle_open(&handle[j], block_file_get(block), state->file_mode, ferr);
+				ret = handle_open(&handle[j], block_file_get(block), state->file_mode, msg_error);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
-					ferr("DANGER! Unexpected open error in a data disk, it isn't possible to dry.\n");
-					ferr("Stopping at block %u\n", i);
+					msg_error("DANGER! Unexpected open error in a data disk, it isn't possible to dry.\n");
+					msg_error("Stopping at block %u\n", i);
 					++error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
@@ -103,9 +103,9 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			}
 
 			/* read from the file */
-			read_size = handle_read(&handle[j], block, buffer_aligned, state->block_size, flog);
+			read_size = handle_read(&handle[j], block, buffer_aligned, state->block_size, msg_warning);
 			if (read_size == -1) {
-				ftag("error:%u:%s:%s: Read error at position %u\n", i, disk->name, esc(block_file_get(block)->sub), block_file_pos(block));
+				msg_tag("error:%u:%s:%s: Read error at position %u\n", i, disk->name, esc(block_file_get(block)->sub), block_file_pos(block));
 				++error;
 				continue;
 			}
@@ -122,9 +122,9 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 				/* until now is CPU */
 				state_usage_cpu(state);
 
-				ret = parity_read(parity[l], i, buffer_aligned, state->block_size, flog);
+				ret = parity_read(parity[l], i, buffer_aligned, state->block_size, msg_warning);
 				if (ret == -1) {
-					ftag("parity_error:%u:%s: Read error\n", i, lev_config_name(l));
+					msg_tag("parity_error:%u:%s: Read error\n", i, lev_config_name(l));
 					++error;
 				}
 
@@ -156,8 +156,8 @@ bail:
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			ftag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
-			ferr("DANGER! Unexpected close error in a data disk.\n");
+			msg_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
+			msg_error("DANGER! Unexpected close error in a data disk.\n");
 			++error;
 			/* continue, as we are already exiting */
 			/* LCOV_EXCL_STOP */
@@ -165,10 +165,14 @@ bail:
 	}
 
 	if (error) {
-		fout("%u read errors\n", error);
+		msg_status("\n");
+		msg_status("%8u errors\n", error);
 	} else {
-		fout("Everything OK\n");
+		msg_status("Everything OK\n");
 	}
+
+	if (error)
+		msg_error("DANGER! Unexpected errors!\n");
 
 	free(handle);
 	free(buffer_alloc);
@@ -189,13 +193,13 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	unsigned error;
 	unsigned l;
 
-	fout("Drying...\n");
+	msg_progress("Drying...\n");
 
 	blockmax = parity_allocated_size(state);
 
 	if (blockstart > blockmax) {
 		/* LCOV_EXCL_START */
-		ferr("Error in the specified starting block %u. It's bigger than the parity size %u.\n", blockstart, blockmax);
+		msg_error("Error in the specified starting block %u. It's bigger than the parity size %u.\n", blockstart, blockmax);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -211,7 +215,7 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		parity_ptr[l] = &parity[l];
 		ret = parity_open(parity_ptr[l], state->parity[l].path, state->file_mode);
 		if (ret == -1) {
-			fout("No accessible %s file.\n", lev_name(l));
+			msg_status("No accessible %s file.\n", lev_name(l));
 			/* continue anyway */
 			parity_ptr[l] = 0;
 		}

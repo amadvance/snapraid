@@ -26,7 +26,7 @@ void state_nano(struct snapraid_state* state)
 {
 	tommy_node* i;
 
-	fout("Setting nanosecond timestamps...\n");
+	msg_progress("Setting nanosecond timestamps...\n");
 
 	/* for all disks */
 	for (i = state->disklist; i != 0; i = i->next) {
@@ -56,7 +56,7 @@ void state_nano(struct snapraid_state* state)
 					/* get a random nanosecond value */
 					if (randomize(&nano, sizeof(nano)) != 0) {
 						/* LCOV_EXCL_START */
-						ferr("Failed to get random values.\n");
+						msg_error("Failed to get random values.\n");
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}
@@ -69,7 +69,7 @@ void state_nano(struct snapraid_state* state)
 				f = open(path, O_RDONLY | O_BINARY | O_NOFOLLOW);
 				if (f == -1) {
 					/* LCOV_EXCL_START */
-					ferr("Error opening file '%s'. %s.\n", path, strerror(errno));
+					msg_error("Error opening file '%s'. %s.\n", path, strerror(errno));
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -80,7 +80,7 @@ void state_nano(struct snapraid_state* state)
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
 					close(f);
-					ferr("Error accessing file '%s'. %s.\n", path, strerror(errno));
+					msg_error("Error accessing file '%s'. %s.\n", path, strerror(errno));
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -90,7 +90,7 @@ void state_nano(struct snapraid_state* state)
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					close(f);
-					ferr("Error timing file '%s'. %s.\n", path, strerror(errno));
+					msg_error("Error timing file '%s'. %s.\n", path, strerror(errno));
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -102,7 +102,7 @@ void state_nano(struct snapraid_state* state)
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
 					close(f);
-					ferr("Error accessing file '%s'. %s.\n", path, strerror(errno));
+					msg_error("Error accessing file '%s'. %s.\n", path, strerror(errno));
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -111,7 +111,7 @@ void state_nano(struct snapraid_state* state)
 				ret = close(f);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					ferr("Error closing file '%s'. %s.\n", path, strerror(errno));
+					msg_error("Error closing file '%s'. %s.\n", path, strerror(errno));
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -125,8 +125,8 @@ void state_nano(struct snapraid_state* state)
 				/* state changed, we need to update it */
 				state->need_write = 1;
 
-				ftag("nano:%s:%s\n", disk->name, esc(file->sub));
-				fout("nano %s%s\n", disk->dir, file->sub);
+				msg_tag("nano:%s:%s\n", disk->name, esc(file->sub));
+				msg_info("nano %s%s\n", disk->dir, file->sub);
 			}
 		}
 	}

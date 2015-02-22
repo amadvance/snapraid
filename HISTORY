@@ -3,32 +3,35 @@ SnapRAID HISTORY
 
 8.0 2015/02 BETA
 ================
- * Changes the log handling. If no log file is specified, all the
-   log goes to stderr. If a log file is specified, only the most
-   serious errors are printed on the screen.
-   This applies to all commands.
+ * Allows "sync" and "scrub" to continue after the first bunch of disk
+   errors. Blocks with errors are marked as bad, and you can fix them
+   with the "fix -e" command.
+   The fix is expected to force the disk firmware to reallocate the
+   bad sector, likely fixing the problem.
+   You can control the number of allowed errors with the new
+   -L, --error-limit option. The default is 100.
+ * The -e, --filter-error option doesn't write anymore fixes to
+   unsynced files. This helps in case you are running it on a not
+   synced array, removing the risk to revert some files to an old state.
+ * The -e, --filter-error option is now optimal and read only the minimal
+   amount of data necessary to fix the errors.
  * Adds new "smart" command to print a SMART report of the array.
  * Adds new "up" and "down" commands to spin up and down the disks of
    the array.
- * Allows "sync" and "scrub" to continue after the first
-   bunch of disk errors. Blocks with errors are marked as bad,
-   and you can fix them with the "fix -e" command.
-   The fix is expected to force the disk firmware to reallocate
-   the bad sector, likely fixing the problem.
-   You can control the number of allowed errors with the new
-   -L, --error-limit option. The default is 100.
- * The -e, --filter-error option doesn't write anymore fixes
-   to unsynced files. This helps in case you are running it on a
-   not synced array, removing the risk to revert some files to an
-   old state.
- * The -e, --filter-error option is more efficient and triggers
-   a lot less data to be read.
+ * Changes the log handling. If no log file is specified, all the
+   warnings and not fatal errors messages goes to stderr. If a log file
+   is specified, only fatal error messages are printed on the screen.
+   You can control the amount of informative messages on stdout with
+   the -q, --quiet and -v, --verbose options, that can be specified
+   multiple times to be more quiet or verbose.
  * In the "status" command the "Wasted" column now shows a negative
-   number for the amount of space that you can still waste.
+   number for the amount of space that you can still waste without
+   filling up the parity.
  * Renames the -s and -t options to -S and -B as they are intended to
    be manual only operations.
  * Windows binary built with gcc 4.8.1 using the MXE cross compiler 2.23,
-   with targets i686-w64-mingw32 and x86_64-w64-mingw32.
+   with targets i686-w64-mingw32 and x86_64-w64-mingw32. Before the x86
+   target was i686-pc-mingw32.
 
 7.1 2015/01
 ===========

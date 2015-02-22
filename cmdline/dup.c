@@ -96,7 +96,7 @@ void state_dup(struct snapraid_state* state)
 	count = 0;
 	size = 0;
 
-	fout("Comparing...\n");
+	msg_progress("Comparing...\n");
 
 	/* for each disk */
 	for (i = state->disklist; i != 0; i = i->next) {
@@ -125,8 +125,8 @@ void state_dup(struct snapraid_state* state)
 			if (dup) {
 				++count;
 				size += dup->file->size;
-				ftag("dup:%s:%s:%s:%s:%" PRIu64 ": dup\n", disk->name, esc(file->sub), dup->disk->name, esc(dup->file->sub), dup->file->size);
-				fout("%12" PRIu64 " %s%s = %s%s\n", file->size, disk->dir, file->sub, dup->disk->dir, dup->file->sub);
+				msg_tag("dup:%s:%s:%s:%s:%" PRIu64 ": dup\n", disk->name, esc(file->sub), dup->disk->name, esc(dup->file->sub), dup->file->size);
+				printf("%12" PRIu64 " %s%s = %s%s\n", file->size, disk->dir, file->sub, dup->disk->dir, dup->file->sub);
 				hash_free(hash);
 			} else {
 				tommy_hashdyn_insert(&hashset, &hash->node, hash, hash32);
@@ -137,20 +137,20 @@ void state_dup(struct snapraid_state* state)
 	tommy_hashdyn_foreach(&hashset, (tommy_foreach_func*)hash_free);
 	tommy_hashdyn_done(&hashset);
 
-	fout("\n");
-	fout("%8u duplicates, for %" PRIu64 " MiB\n", count, size / (1024 * 1024));
+	msg_status("\n");
+	msg_status("%8u duplicates, for %" PRIu64 " MiB\n", count, size / (1024 * 1024));
 	if (count)
-		fout("There are duplicates!\n");
+		msg_status("There are duplicates!\n");
 	else
-		fout("No duplicates\n");
+		msg_status("No duplicates\n");
 
-	ftag("summary:dup_count:%u\n", count);
-	ftag("summary:dup_size:%" PRIu64 "\n", size);
+	msg_tag("summary:dup_count:%u\n", count);
+	msg_tag("summary:dup_size:%" PRIu64 "\n", size);
 	if (count == 0) {
-		ftag("summary:exit:unique\n");
+		msg_tag("summary:exit:unique\n");
 	} else {
-		ftag("summary:exit:dup\n");
+		msg_tag("summary:exit:dup\n");
 	}
-	fflush_log();
+	msg_flush();
 }
 

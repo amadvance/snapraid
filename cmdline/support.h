@@ -22,48 +22,106 @@
 /* log */
 
 /**
- * Output messages targgeted for the screen.
+ * Fatal messages.
  *
- * Messages are in human readable format.
- * They must include the full line output and terminate with '\n'.
+ * Messages printed before an early termination.
  *
- * These messages go in the log file and in stdout.
+ * These messages go in the log file and in stderr inconditionally.
  */
-void fout(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+void msg_error(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
 
 /**
- * Error messages printed before an early termination.
+ * Warning messages.
  *
- * Messages are in human readable format.
- * They must include the full line output and terminate with '\n'.
+ * Messages reporting warnings or error conditions that don't prevent the program to run.
  *
- * These messages go in the log file and in stderr.
+ * Some of them could be also serious errors, like "silent errors".
+ * The summary results is anyway always printed with as errors.
+ *
+ * These messages go in the log file if specified, otherwise they go in stderr.
  */
-void ferr(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
-
-/**
- * Log messages printed after an error.
- *
- * Messages are in human readable format.
- * They must include the full line output and terminate with '\n'.
- *
- * These messages go in the log file if specified, otherwise in stderr.
- */
-void flog(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
-
-/**
- * Flush the log output.
- */
-void fflush_log(void);
+void msg_warning(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
 
 /**
  * Tag messages.
  *
  * Messages are in tag format, like "tag:entry:...".
  *
- * These messages go in the log file.
+ * These messages neves go on the screen, but only in the log file if specified.
+ *
+ * Note that this function, allows not \n terminated strings.
  */
-void ftag(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+void msg_tag(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+
+/**
+ * Message levels.
+ *
+ * The levels control the amount of information printed on the screen.
+ * Note that msg_error(), msg_warning() and msg_tag() are not influenced by this option.
+ *
+ * From the most quiet to the most verbose.
+ */
+#define MSG_STATUS -3
+#define MSG_INFO -2
+#define MSG_PROGRESS -1
+#define MSG_BAR 0
+#define MSG_VERBOSE 1
+
+/**
+ * Selected message level.
+ */
+extern int msg_level;
+
+/**
+ * State messages.
+ *
+ * Messages that tell what the program is doing or did, but limited to few lines.
+ * They are status information, and summary results.
+ */
+void msg_status(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+
+/**
+ * Info messages.
+ *
+ * Messages that tell what was done.
+ * Potentially a lot of messages are possible. They can still be on the screen,
+ * as losing them we don't lose information.
+ *
+ * These messages never go in the log file, becauae there is always a corresponding msg_tag().
+ */
+void msg_info(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+
+/**
+ * Progress messages.
+ *
+ * Message that tell the progress of program.
+ *
+ * These messages also go in the log file.
+ */
+void msg_progress(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+
+/**
+ * Progress bar messages.
+ *
+ * Message that show the percentage of the progress.
+ *
+ * These messages never go in the log file.
+ */
+void msg_bar(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+
+/**
+ * Verbose messages.
+ *
+ * Message that tell what is already expected.
+ *
+ * These messages also go in the log file.
+ */
+void msg_verbose(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+
+/**
+ * Flush the output.
+ */
+void msg_flush(void);
 
 /**
  * Pointer to log function.

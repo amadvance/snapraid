@@ -82,20 +82,20 @@ int state_status(struct snapraid_state* state)
 
 	blockmax = parity_allocated_size(state);
 
-	ftag("summary:block_size:%u\n", state->block_size);
-	ftag("summary:parity_block_count:%u\n", blockmax);
+	msg_tag("summary:block_size:%u\n", state->block_size);
+	msg_tag("summary:parity_block_count:%u\n", blockmax);
 
 	/* get the minimum parity free space */
 	parity_block_free = state->parity[0].free_blocks;
 	for (l = 0; l < state->level; ++l) {
-		ftag("summary:parity_block_total:%s:%u\n", lev_config_name(l), state->parity[l].total_blocks);
-		ftag("summary:parity_block_free:%s:%u\n", lev_config_name(l), state->parity[l].free_blocks);
+		msg_tag("summary:parity_block_total:%s:%u\n", lev_config_name(l), state->parity[l].total_blocks);
+		msg_tag("summary:parity_block_free:%s:%u\n", lev_config_name(l), state->parity[l].free_blocks);
 		if (state->parity[l].free_blocks < parity_block_free)
 			parity_block_free = state->parity[l].free_blocks;
 		if (state->parity[l].free_blocks != 0)
 			free_not_zero = 1;
 	}
-	ftag("summary:parity_block_free_min:%u\n", parity_block_free);
+	msg_tag("summary:parity_block_free_min:%u\n", parity_block_free);
 
 	printf("SnapRAID status report:\n");
 	printf("\n");
@@ -211,18 +211,18 @@ int state_status(struct snapraid_state* state)
 		printf(" %3u%%", perc(disk_block_count, disk_block_max));
 		printf(" %s\n", disk->name);
 
-		ftag("summary:disk_file_count:%s:%u\n", disk->name, disk_file_count);
-		ftag("summary:disk_block_count:%s:%u\n", disk->name, disk_block_count);
-		ftag("summary:disk_fragmented_file_count:%s:%u\n", disk->name, disk_file_fragmented);
-		ftag("summary:disk_excess_fragment_count:%s:%u\n", disk->name, disk_extra_fragment);
-		ftag("summary:disk_file_size:%s:%" PRIu64 "\n", disk->name, disk_file_size);
-		ftag("summary:disk_block_allocated:%s:%u\n", disk->name, disk_block_latest_used + 1);
-		ftag("summary:disk_block_total:%s:%u\n", disk->name, disk->total_blocks);
-		ftag("summary:disk_block_free:%s:%u\n", disk->name, disk->free_blocks);
-		ftag("summary:disk_block_max_by_space:%s:%u\n", disk->name, disk_block_max_by_space);
-		ftag("summary:disk_block_max_by_parity:%s:%u\n", disk->name, disk_block_max_by_parity);
-		ftag("summary:disk_block_max:%s:%u\n", disk->name, disk_block_max);
-		ftag("summary:disk_space_wasted:%s:%" PRId64 "\n", disk->name, wasted);
+		msg_tag("summary:disk_file_count:%s:%u\n", disk->name, disk_file_count);
+		msg_tag("summary:disk_block_count:%s:%u\n", disk->name, disk_block_count);
+		msg_tag("summary:disk_fragmented_file_count:%s:%u\n", disk->name, disk_file_fragmented);
+		msg_tag("summary:disk_excess_fragment_count:%s:%u\n", disk->name, disk_extra_fragment);
+		msg_tag("summary:disk_file_size:%s:%" PRIu64 "\n", disk->name, disk_file_size);
+		msg_tag("summary:disk_block_allocated:%s:%u\n", disk->name, disk_block_latest_used + 1);
+		msg_tag("summary:disk_block_total:%s:%u\n", disk->name, disk->total_blocks);
+		msg_tag("summary:disk_block_free:%s:%u\n", disk->name, disk->free_blocks);
+		msg_tag("summary:disk_block_max_by_space:%s:%u\n", disk->name, disk_block_max_by_space);
+		msg_tag("summary:disk_block_max_by_parity:%s:%u\n", disk->name, disk_block_max_by_parity);
+		msg_tag("summary:disk_block_max:%s:%u\n", disk->name, disk_block_max);
+		msg_tag("summary:disk_space_wasted:%s:%" PRId64 "\n", disk->name, wasted);
 	}
 
 	/* totals */
@@ -240,17 +240,17 @@ int state_status(struct snapraid_state* state)
 	if (!free_not_zero)
 		printf("\nWARNING! Free space info will be valid after the first sync.\n");
 
-	ftag("summary:file_count:%u\n", file_count);
-	ftag("summary:file_block_count:%" PRIu64 "\n", file_block_count);
-	ftag("summary:fragmented_file_count:%u\n", file_fragmented);
-	ftag("summary:excess_fragment_count:%u\n", extra_fragment);
-	ftag("summary:file_size:%" PRIu64 "\n", file_size);
-	ftag("summary:parity_size:%" PRIu64 "\n", blockmax * (uint64_t)state->block_size);
-	ftag("summary:parity_size_max:%" PRIu64 "\n", (blockmax + parity_block_free) * (uint64_t)state->block_size);
-	ftag("summary:hash:%s\n", hash_config_name(state->hash));
-	ftag("summary:prev_hash:%s\n", hash_config_name(state->prevhash));
-	ftag("summary:best_hash:%s\n", hash_config_name(state->besthash));
-	fflush_log();
+	msg_tag("summary:file_count:%u\n", file_count);
+	msg_tag("summary:file_block_count:%" PRIu64 "\n", file_block_count);
+	msg_tag("summary:fragmented_file_count:%u\n", file_fragmented);
+	msg_tag("summary:excess_fragment_count:%u\n", extra_fragment);
+	msg_tag("summary:file_size:%" PRIu64 "\n", file_size);
+	msg_tag("summary:parity_size:%" PRIu64 "\n", blockmax * (uint64_t)state->block_size);
+	msg_tag("summary:parity_size_max:%" PRIu64 "\n", (blockmax + parity_block_free) * (uint64_t)state->block_size);
+	msg_tag("summary:hash:%s\n", hash_config_name(state->hash));
+	msg_tag("summary:prev_hash:%s\n", hash_config_name(state->prevhash));
+	msg_tag("summary:best_hash:%s\n", hash_config_name(state->besthash));
+	msg_flush();
 
 	/* copy the info a temp vector, and count bad/rehash/unsynced blocks */
 	infomap = malloc_nofail(blockmax * sizeof(snapraid_info));
@@ -260,7 +260,7 @@ int state_status(struct snapraid_state* state)
 	count = 0;
 	rehash = 0;
 	unsynced_blocks = 0;
-	ftag("block_count:%u\n", blockmax);
+	msg_tag("block_count:%u\n", blockmax);
 	for (i = 0; i < blockmax; ++i) {
 		int one_invalid;
 		int one_valid;
@@ -302,19 +302,19 @@ int state_status(struct snapraid_state* state)
 
 		if (state->opt.gui) {
 			if (info != 0)
-				ftag("block:%u:%" PRIu64 ":%s:%s:%s:%s\n", i, (uint64_t)info_get_time(info), one_valid ? "used" : "", one_invalid ? "unsynced" : "", info_get_bad(info) ? "bad" : "", info_get_rehash(info) ? "rehash" : "");
+				msg_tag("block:%u:%" PRIu64 ":%s:%s:%s:%s\n", i, (uint64_t)info_get_time(info), one_valid ? "used" : "", one_invalid ? "unsynced" : "", info_get_bad(info) ? "bad" : "", info_get_rehash(info) ? "rehash" : "");
 			else
-				ftag("block_noinfo:%u:%s:%s\n", i, one_valid ? "used" : "", one_invalid ? "unsynced" : "");
+				msg_tag("block_noinfo:%u:%s:%s\n", i, one_valid ? "used" : "", one_invalid ? "unsynced" : "");
 		}
 	}
 
-	ftag("summary:has_unsynced:%u\n", unsynced_blocks);
-	ftag("summary:has_rehash:%u\n", rehash);
-	ftag("summary:has_bad:%u:%u:%u\n", bad, bad_first, bad_last);
-	fflush_log();
+	msg_tag("summary:has_unsynced:%u\n", unsynced_blocks);
+	msg_tag("summary:has_rehash:%u\n", rehash);
+	msg_tag("summary:has_bad:%u:%u:%u\n", bad, bad_first, bad_last);
+	msg_flush();
 
 	if (!count) {
-		ferr("The array is empty.\n");
+		msg_error("The array is empty.\n");
 		free(infomap);
 		return 0;
 	}
@@ -324,12 +324,12 @@ int state_status(struct snapraid_state* state)
 
 	/* output the info map */
 	i = 0;
-	ftag("info_count:%u\n", count);
+	msg_tag("info_count:%u\n", count);
 	while (i < count) {
 		unsigned j = i + 1;
 		while (j < count && info_get_time(infomap[i]) == info_get_time(infomap[j]))
 			++j;
-		ftag("info_time:%" PRIu64 ":%u\n", (uint64_t)info_get_time(infomap[i]), j - i);
+		msg_tag("info_time:%" PRIu64 ":%u\n", (uint64_t)info_get_time(infomap[i]), j - i);
 		i = j;
 	}
 

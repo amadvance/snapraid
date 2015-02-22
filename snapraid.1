@@ -46,7 +46,7 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
 .PD
-	[\-v, \-\-verbose]
+	[\-v, \-\-verbose] [\-q, \-\-quiet]
 .PD 0
 .PP
 .PD
@@ -998,11 +998,11 @@ the old content file and the parity data you have.
 This option can be used only with \[dq]sync\[dq].
 .TP
 .B \-l, \-\-log FILE
-Write a detailed log of errors encoutered.
-If this option is not specified, the errors are printed on
-the screen, likely resulting in too much output in case
-of many errors.
-If the specified path starts with \'>>\' the file is opened
+Write a detailed log in the specified file.
+If this option is not specified, the warnings and not fatal
+errors are printed on the screen, likely resulting in too much
+output in case of many errors.
+If the path starts with \'>>\' the file is opened
 in append mode. Occurrences of \'%D\' and \'%T\' in the name are
 replaced with the date and time in the format YYYYMMDD and
 HHMMSS. Note that in Windows batch files, you\'ll have to double
@@ -1041,7 +1041,14 @@ needed to reconstruct the disk mount points, in case you
 lose the entire system.
 .TP
 .B \-v, \-\-verbose
-Prints more information in the processing.
+Prints more information on the screen.
+.TP
+.B \-q, \-\-quiet
+Prints less information on the screen.
+If specified one time, removes the progress bar, if two
+times, the running operations, three times, the info
+messages, four times the status messages.
+Fatal errors are always printed.
 .TP
 .B \-H, \-\-help
 Prints a short help screen.

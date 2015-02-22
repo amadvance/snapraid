@@ -37,7 +37,7 @@ void state_list(struct snapraid_state* state)
 	file_size = 0;
 	link_count = 0;
 
-	fout("Listing...\n");
+	msg_progress("Listing...\n");
 
 	/* for each disk */
 	for (i = state->disklist; i != 0; i = i->next) {
@@ -59,7 +59,7 @@ void state_list(struct snapraid_state* state)
 			++file_count;
 			file_size += file->size;
 
-			ftag("file:%s:%s:%" PRIu64 ":%" PRIi64 ":%u:%" PRIi64 "\n", disk->name, esc(file->sub), file->size, file->mtime_sec, file->mtime_nsec, file->inode);
+			msg_tag("file:%s:%s:%" PRIu64 ":%" PRIi64 ":%u:%" PRIi64 "\n", disk->name, esc(file->sub), file->size, file->mtime_sec, file->mtime_nsec, file->inode);
 
 			t = file->mtime_sec;
 #if HAVE_LOCALTIME_R
@@ -71,9 +71,8 @@ void state_list(struct snapraid_state* state)
 			printf("%12" PRIu64 " ", file->size);
 			if (tm) {
 				printf("%04u/%02u/%02u %02u:%02u", tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday, tm->tm_hour, tm->tm_min);
-				if (state->opt.verbose) {
+				if (msg_level >= MSG_VERBOSE)
 					printf(":%02u.%03u", tm->tm_sec, file->mtime_nsec / 1000000);
-				}
 				printf(" ");
 			}
 			printf("%s%s\n", disk->dir, file->sub);
@@ -99,24 +98,24 @@ void state_list(struct snapraid_state* state)
 
 			++link_count;
 
-			ftag("link_%s:%s:%s:%s\n", type, disk->name, esc(link->sub), esc(link->linkto));
+			msg_tag("link_%s:%s:%s:%s\n", type, disk->name, esc(link->sub), esc(link->linkto));
 
 			printf("%12s ", type);
 			printf("                 ");
-			if (state->opt.verbose) {
+			if (msg_level >= MSG_VERBOSE)
 				printf("       ");
-			}
 			printf("%s%s -> %s%s\n", disk->dir, link->sub, disk->dir, link->linkto);
 		}
 	}
-	fout("\n");
-	fout("%8u files, for %" PRIu64 " GiB\n", file_count, file_size / (1024 * 1024 * 1024));
-	fout("%8u links\n", link_count);
 
-	ftag("summary:file_count:%u\n", file_count);
-	ftag("summary:file_size:%" PRIu64 "\n", file_size);
-	ftag("summary:link_count:%u\n", link_count);
-	ftag("summary:exit:ok\n");
-	fflush_log();
+	msg_status("\n");
+	msg_status("%8u files, for %" PRIu64 " GiB\n", file_count, file_size / (1024 * 1024 * 1024));
+	msg_status("%8u links\n", link_count);
+
+	msg_tag("summary:file_count:%u\n", file_count);
+	msg_tag("summary:file_size:%" PRIu64 "\n", file_size);
+	msg_tag("summary:link_count:%u\n", link_count);
+	msg_tag("summary:exit:ok\n");
+	msg_flush();
 }
 

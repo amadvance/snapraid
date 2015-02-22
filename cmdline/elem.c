@@ -277,7 +277,7 @@ int filter_existence(int filter_missing, const char* dir, const char* sub)
 		if (errno == ENOENT)
 			return 0;
 		/* LCOV_EXCL_START */
-		ferr("Error in stat file '%s'. %s.\n", path, strerror(errno));
+		msg_error("Error in stat file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -342,7 +342,7 @@ block_off_t block_file_pos(struct snapraid_block* block)
 
 	if (block < file->blockvec || block >= file->blockvec + file->blockmax) {
 		/* LCOV_EXCL_START */
-		ferr("Internal inconsistency in block %u ownership\n", block->parity_pos);
+		msg_error("Internal inconsistency in block %u ownership\n", block->parity_pos);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -456,21 +456,21 @@ void file_copy(struct snapraid_file* src_file, struct snapraid_file* dst_file)
 
 	if (src_file->size != dst_file->size) {
 		/* LCOV_EXCL_START */
-		ferr("Internal inconsistency in copy file with different size\n");
+		msg_error("Internal inconsistency in copy file with different size\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (src_file->mtime_sec != dst_file->mtime_sec) {
 		/* LCOV_EXCL_START */
-		ferr("Internal inconsistency in copy file with different mtime_sec\n");
+		msg_error("Internal inconsistency in copy file with different mtime_sec\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (src_file->mtime_nsec != dst_file->mtime_nsec) {
 		/* LCOV_EXCL_START */
-		ferr("Internal inconsistency in copy file with different mtime_nsec\n");
+		msg_error("Internal inconsistency in copy file with different mtime_nsec\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -747,7 +747,7 @@ int disk_is_empty(struct snapraid_disk* disk, block_off_t blockmax)
 			return 0;
 		default :
 			/* LCOV_EXCL_START */
-			ferr("Internal inconsistency for used block in disk '%s' without files\n", disk->name);
+			msg_error("Internal inconsistency for used block in disk '%s' without files\n", disk->name);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}

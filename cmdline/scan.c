@@ -94,7 +94,7 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		/* check if multiple files have the same name */
 		if (link_flag_has(link, FILE_IS_PRESENT)) {
 			/* LCOV_EXCL_START */
-			ferr("Internal inconsistency for link '%s%s'\n", disk->dir, sub);
+			msg_error("Internal inconsistency for link '%s%s'\n", disk->dir, sub);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -108,7 +108,7 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			++scan->count_equal;
 
 			if (state->opt.gui) {
-				ftag("scan:equal:%s:%s\n", disk->name, esc(link->sub));
+				msg_tag("scan:equal:%s:%s\n", disk->name, esc(link->sub));
 			}
 		} else {
 			/* it's an update */
@@ -118,9 +118,9 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 
 			++scan->count_change;
 
-			ftag("scan:update:%s:%s\n", disk->name, esc(link->sub));
+			msg_tag("scan:update:%s:%s\n", disk->name, esc(link->sub));
 			if (is_diff) {
-				fout("update %s%s\n", disk->dir, link->sub);
+				printf("update %s%s\n", disk->dir, link->sub);
 			}
 
 			/* update it */
@@ -135,9 +135,9 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		/* create the new link */
 		++scan->count_insert;
 
-		ftag("scan:add:%s:%s\n", disk->name, esc(sub));
+		msg_tag("scan:add:%s:%s\n", disk->name, esc(sub));
 		if (is_diff) {
-			fout("add %s%s\n", disk->dir, sub);
+			printf("add %s%s\n", disk->dir, sub);
 		}
 
 		/* and continue to insert it */
@@ -213,7 +213,7 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 			break;
 		default :
 			/* LCOV_EXCL_START */
-			ferr("Internal inconsistency in deallocating for block %u state %u\n", block->parity_pos, block_state);
+			msg_error("Internal inconsistency in deallocating for block %u state %u\n", block->parity_pos, block_state);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -305,7 +305,7 @@ static void scan_file_delayed_insert(struct snapraid_scan* scan, struct snapraid
 
 		if (filephy(path_next, file->size, &file->physical) != 0) {
 			/* LCOV_EXCL_START */
-			ferr("Error in getting the physical offset of file '%s'. %s.\n", path_next, strerror(errno));
+			msg_error("Error in getting the physical offset of file '%s'. %s.\n", path_next, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -347,7 +347,7 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 
 		if (lstat_sync(path_next, &synced_st, physical) != 0) {
 			/* LCOV_EXCL_START */
-			ferr("Error in stat file '%s'. %s.\n", path_next, strerror(errno));
+			msg_error("Error in stat file '%s'. %s.\n", path_next, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -365,8 +365,8 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 			 * Why is the file size reported incorrectly for files that are still being written to?
 			 * http://blogs.msdn.com/b/oldnewthing/archive/2011/12/26/10251026.aspx
 			 */
-			ferr("WARNING! Detected uncached time change for file '%s'\n", sub);
-			ferr("It's better if you run SnapRAID without other processes running.\n");
+			msg_error("WARNING! Detected uncached time change for file '%s'\n", sub);
+			msg_error("It's better if you run SnapRAID without other processes running.\n");
 #endif
 			st->st_mtime = synced_st.st_mtime;
 			st->st_mtimensec = synced_st.st_mtimensec;
@@ -374,15 +374,15 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 
 		if (st->st_size != synced_st.st_size) {
 #ifndef _WIN32
-			ferr("WARNING! Detected uncached size change for file '%s'\n", sub);
-			ferr("It's better if you run SnapRAID without other processes running.\n");
+			msg_error("WARNING! Detected uncached size change for file '%s'\n", sub);
+			msg_error("It's better if you run SnapRAID without other processes running.\n");
 #endif
 			st->st_size = synced_st.st_size;
 		}
 
 		if (st->st_ino != synced_st.st_ino) {
-			ferr("DANGER! Detected uncached inode change for file '%s'\n", sub);
-			ferr("Please ensure to run SnapRAID without other processes running.\n");
+			msg_error("DANGER! Detected uncached inode change for file '%s'\n", sub);
+			msg_error("Please ensure to run SnapRAID without other processes running.\n");
 			/* at this point, it's too late to change inode */
 			/* and having inconsistent inodes may result to internal failures */
 			/* so, it's better to abort */
@@ -610,7 +610,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 #if HAVE_STRUCT_STAT_ST_NLINK
 				if (st->st_nlink <= 1) {
 					/* LCOV_EXCL_START */
-					ferr("Internal inode '%" PRIu64 "' inconsistency for file '%s%s' already present\n", (uint64_t)st->st_ino, disk->dir, sub);
+					msg_error("Internal inode '%" PRIu64 "' inconsistency for file '%s%s' already present\n", (uint64_t)st->st_ino, disk->dir, sub);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -638,9 +638,9 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				/* if the path is different, it means a moved file with the same inode */
 				++scan->count_move;
 
-				ftag("scan:move:%s:%s:%s\n", disk->name, esc(file->sub), esc(sub));
+				msg_tag("scan:move:%s:%s:%s\n", disk->name, esc(file->sub), esc(sub));
 				if (is_diff) {
-					fout("move %s%s -> %s%s\n", disk->dir, file->sub, disk->dir, sub);
+					printf("move %s%s -> %s%s\n", disk->dir, file->sub, disk->dir, sub);
 				}
 
 				/* remove from the name set */
@@ -659,7 +659,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				++scan->count_equal;
 
 				if (state->opt.gui) {
-					ftag("scan:equal:%s:%s\n", disk->name, esc(file->sub));
+					msg_tag("scan:equal:%s:%s\n", disk->name, esc(file->sub));
 				}
 			}
 
@@ -678,7 +678,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		/* for sure it cannot be already present */
 		if (file_flag_has(file, FILE_IS_PRESENT)) {
 			/* LCOV_EXCL_START */
-			ferr("Internal inode '%" PRIu64 "' inconsistency for files '%s%s' and '%s%s' matching and already present but different\n", file->inode, disk->dir, sub, disk->dir, file->sub);
+			msg_error("Internal inode '%" PRIu64 "' inconsistency for files '%s%s' and '%s%s' matching and already present but different\n", file->inode, disk->dir, sub, disk->dir, file->sub);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -728,7 +728,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			/* here the inode has to be different, otherwise we would have found it before */
 			if (file->inode == st->st_ino) {
 				/* LCOV_EXCL_START */
-				ferr("Internal inconsistency in inode '%" PRIu64 "' for files '%s%s' as unexpected matching\n", file->inode, disk->dir, sub);
+				msg_error("Internal inconsistency in inode '%" PRIu64 "' for files '%s%s' as unexpected matching\n", file->inode, disk->dir, sub);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -737,7 +737,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		/* for sure it cannot be already present */
 		if (file_flag_has(file, FILE_IS_PRESENT)) {
 			/* LCOV_EXCL_START */
-			ferr("Internal inconsistency in path for file '%s%s' matching and already present\n", disk->dir, sub);
+			msg_error("Internal inconsistency in path for file '%s%s' matching and already present\n", disk->dir, sub);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -775,9 +775,9 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				/* like when restoring a backup that restores also the timestamp */
 				++scan->count_restore;
 
-				ftag("scan:restore:%s:%s\n", disk->name, esc(sub));
+				msg_tag("scan:restore:%s:%s\n", disk->name, esc(sub));
 				if (is_diff) {
-					fout("restore %s%s\n", disk->dir, sub);
+					printf("restore %s%s\n", disk->dir, sub);
 				}
 
 				/* remove from the inode set */
@@ -798,7 +798,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				++scan->count_equal;
 
 				if (state->opt.gui) {
-					ftag("scan:equal:%s:%s\n", disk->name, esc(file->sub));
+					msg_tag("scan:equal:%s:%s\n", disk->name, esc(file->sub));
 				}
 			}
 
@@ -830,11 +830,11 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	if (is_original_file_size_different_than_zero && st->st_size == 0) {
 		if (!state->opt.force_zero) {
 			/* LCOV_EXCL_START */
-			ferr("The file '%s%s' has unexpected zero size!\n", disk->dir, sub);
-			ferr("It's possible that after a kernel crash this file was lost,\n");
-			ferr("and you can use 'snapraid --filter %s fix' to recover it.\n", sub);
+			msg_error("The file '%s%s' has unexpected zero size!\n", disk->dir, sub);
+			msg_error("It's possible that after a kernel crash this file was lost,\n");
+			msg_error("and you can use 'snapraid --filter %s fix' to recover it.\n", sub);
 			if (!is_diff) {
-				ferr("If this an expected condition you can '%s' anyway using 'snapraid --force-zero %s'\n", state->command, state->command);
+				msg_error("If this an expected condition you can '%s' anyway using 'snapraid --force-zero %s'\n", state->command, state->command);
 				exit(EXIT_FAILURE);
 			}
 			/* LCOV_EXCL_STOP */
@@ -875,9 +875,9 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				/* revert old counter and use the copy one */
 				++scan->count_copy;
 
-				ftag("scan:copy:%s:%s:%s:%s\n", other_disk->name, esc(other_file->sub), disk->name, esc(file->sub));
+				msg_tag("scan:copy:%s:%s:%s:%s\n", other_disk->name, esc(other_file->sub), disk->name, esc(file->sub));
 				if (is_diff) {
-					fout("copy %s%s -> %s%s\n", other_disk->dir, other_file->sub, disk->dir, file->sub);
+					printf("copy %s%s -> %s%s\n", other_disk->dir, other_file->sub, disk->dir, file->sub);
 				}
 
 				/* mark it as reported */
@@ -894,16 +894,16 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		if (is_file_already_present) {
 			++scan->count_change;
 
-			ftag("scan:update:%s:%s\n", disk->name, esc(sub));
+			msg_tag("scan:update:%s:%s\n", disk->name, esc(sub));
 			if (is_diff) {
-				fout("update %s%s\n", disk->dir, sub);
+				printf("update %s%s\n", disk->dir, sub);
 			}
 		} else {
 			++scan->count_insert;
 
-			ftag("scan:add:%s:%s\n", disk->name, esc(sub));
+			msg_tag("scan:add:%s:%s\n", disk->name, esc(sub));
 			if (is_diff) {
-				fout("add %s%s\n", disk->dir, sub);
+				printf("add %s%s\n", disk->dir, sub);
 			}
 		}
 	}
@@ -966,7 +966,7 @@ static void scan_emptydir(struct snapraid_scan* scan, const char* sub)
 		/* check if multiple files have the same name */
 		if (dir_flag_has(dir, FILE_IS_PRESENT)) {
 			/* LCOV_EXCL_START */
-			ferr("Internal inconsistency for dir '%s%s'\n", disk->dir, sub);
+			msg_error("Internal inconsistency for dir '%s%s'\n", disk->dir, sub);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1044,7 +1044,7 @@ struct stat* dstat(const char* file, struct stat* st)
 {
 	if (lstat(file, st) != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Error in stat file/directory '%s'. %s.\n", file, strerror(errno));
+		msg_error("Error in stat file/directory '%s'. %s.\n", file, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1070,8 +1070,8 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 	d = opendir(dir);
 	if (!d) {
 		/* LCOV_EXCL_START */
-		ferr("Error opening directory '%s'. %s.\n", dir, strerror(errno));
-		ferr("You can exclude it in the config file with:\n\texclude /%s\n", sub);
+		msg_error("Error opening directory '%s'. %s.\n", dir, strerror(errno));
+		msg_error("You can exclude it in the config file with:\n\texclude /%s\n", sub);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1090,8 +1090,8 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 		dd = readdir(d);
 		if (dd == 0 && errno != 0) {
 			/* LCOV_EXCL_START */
-			ferr("Error reading directory '%s'. %s.\n", dir, strerror(errno));
-			ferr("You can exclude it in the config file with:\n\texclude /%s\n", sub);
+			msg_error("Error reading directory '%s'. %s.\n", dir, strerror(errno));
+			msg_error("You can exclude it in the config file with:\n\texclude /%s\n", sub);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1110,24 +1110,20 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 		/* check for not supported file names */
 		if (name[0] == 0) {
 			/* LCOV_EXCL_START */
-			ferr("Unsupported name '%s' in file '%s'.\n", name, path_next);
+			msg_error("Unsupported name '%s' in file '%s'.\n", name, path_next);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 
 		/* exclude hidden files even before calling lstat() */
 		if (filter_hidden(state->filter_hidden, dd) != 0) {
-			if (state->opt.verbose) {
-				fout("Excluding hidden '%s'\n", path_next);
-			}
+			msg_verbose("Excluding hidden '%s'\n", path_next);
 			continue;
 		}
 
 		/* exclude content files even before calling lstat() */
 		if (filter_content(&state->contentlist, path_next) != 0) {
-			if (state->opt.verbose) {
-				fout("Excluding content '%s'\n", path_next);
-			}
+			msg_verbose("Excluding content '%s'\n", path_next);
 			continue;
 		}
 
@@ -1155,7 +1151,7 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 
 	if (closedir(d) != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Error closing directory '%s'. %s.\n", dir, strerror(errno));
+		msg_error("Error closing directory '%s'. %s.\n", dir, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1222,7 +1218,7 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 			if (st->st_mode == 0) {
 				if (lstat(path_next, st) != 0) {
 					/* LCOV_EXCL_START */
-					ferr("Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
+					msg_error("Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -1252,7 +1248,7 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 				if (st->st_ino == 0) {
 					if (lstat_sync(path_next, st, 0) != 0) {
 						/* LCOV_EXCL_START */
-						ferr("Error in stat file '%s'. %s.\n", path_next, strerror(errno));
+						msg_error("Error in stat file '%s'. %s.\n", path_next, strerror(errno));
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}
@@ -1262,9 +1258,7 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 				scan_file(scan, is_diff, sub_next, st, FILEPHY_UNREAD_OFFSET);
 				processed = 1;
 			} else {
-				if (state->opt.verbose) {
-					fout("Excluding file '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
-				}
+				msg_verbose("Excluding file '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
 			}
 		} else if (type == 1) { /* LNK */
 			if (filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0) {
@@ -1274,13 +1268,13 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 				ret = readlink(path_next, subnew, sizeof(subnew));
 				if (ret >= PATH_MAX) {
 					/* LCOV_EXCL_START */
-					ferr("Error in readlink file '%s'. Symlink too long.\n", path_next);
+					msg_error("Error in readlink file '%s'. Symlink too long.\n", path_next);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
-					ferr("Error in readlink file '%s'. %s.\n", path_next, strerror(errno));
+					msg_error("Error in readlink file '%s'. %s.\n", path_next, strerror(errno));
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -1292,9 +1286,7 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 				scan_link(scan, is_diff, sub_next, subnew, FILE_IS_SYMLINK);
 				processed = 1;
 			} else {
-				if (state->opt.verbose) {
-					fout("Excluding link '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
-				}
+				msg_verbose("Excluding link '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
 			}
 		} else if (type == 2) { /* DIR */
 			if (filter_dir(&state->filterlist, &reason, disk->name, sub_next) == 0) {
@@ -1306,7 +1298,7 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 				/* in Unix don't follow mount points in different devices */
 				/* in Windows we are already skipping them reporting them as special files */
 				if ((uint64_t)st->st_dev != disk->device) {
-					ferr("WARNING! Ignoring mount point '%s' because it appears to be in a different device\n", path_next);
+					msg_error("WARNING! Ignoring mount point '%s' because it appears to be in a different device\n", path_next);
 				} else
 #endif
 				{
@@ -1324,9 +1316,7 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 					processed = 1;
 				}
 			} else {
-				if (state->opt.verbose) {
-					fout("Excluding directory '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
-				}
+				msg_verbose("Excluding directory '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
 			}
 		} else {
 			if (filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0) {
@@ -1334,11 +1324,9 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 				if (!st)
 					st = DSTAT(path_next, dd, &st_buf);
 
-				ferr("WARNING! Ignoring special '%s' file '%s'\n", stat_desc(st), path_next);
+				msg_error("WARNING! Ignoring special '%s' file '%s'\n", stat_desc(st), path_next);
 			} else {
-				if (state->opt.verbose) {
-					fout("Excluding special file '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
-				}
+				msg_verbose("Excluding special file '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
 			}
 		}
 
@@ -1358,11 +1346,14 @@ void state_scan(struct snapraid_state* state, int is_diff)
 	tommy_node* j;
 	tommy_list scanlist;
 	int done;
+	fptr* msg;
+	struct snapraid_scan total;
+	int no_difference;
 
 	tommy_list_init(&scanlist);
 
 	if (is_diff)
-		fout("Comparing...\n");
+		msg_progress("Comparing...\n");
 
 	/* first scan all the directory and find new and deleted files */
 	for (i = state->disklist; i != 0; i = i->next) {
@@ -1389,13 +1380,13 @@ void state_scan(struct snapraid_state* state, int is_diff)
 		tommy_list_insert_tail(&scanlist, &scan->node, scan);
 
 		if (!is_diff)
-			fout("Scanning disk %s...\n", disk->name);
+			msg_progress("Scanning disk %s...\n", disk->name);
 
 		/* check if the disk supports persistent inodes */
 		ret = fsinfo(disk->dir, &has_persistent_inode, 0, 0);
 		if (ret < 0) {
 			/* LCOV_EXCL_START */
-			ferr("Error accessing disk '%s' to get filesystem info. %s.\n", disk->dir, strerror(errno));
+			msg_error("Error accessing disk '%s' to get filesystem info. %s.\n", disk->dir, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1455,9 +1446,9 @@ void state_scan(struct snapraid_state* state, int is_diff)
 			if (!file_flag_has(file, FILE_IS_PRESENT)) {
 				++scan->count_remove;
 
-				ftag("scan:remove:%s:%s\n", disk->name, esc(file->sub));
+				msg_tag("scan:remove:%s:%s\n", disk->name, esc(file->sub));
 				if (is_diff) {
-					fout("remove %s%s\n", disk->dir, file->sub);
+					printf("remove %s%s\n", disk->dir, file->sub);
 				}
 
 				scan_file_remove(scan, file);
@@ -1476,9 +1467,9 @@ void state_scan(struct snapraid_state* state, int is_diff)
 			if (!link_flag_has(link, FILE_IS_PRESENT)) {
 				++scan->count_remove;
 
-				ftag("scan:remove:%s:%s\n", disk->name, esc(link->sub));
+				msg_tag("scan:remove:%s:%s\n", disk->name, esc(link->sub));
 				if (is_diff) {
-					fout("remove %s%s\n", disk->dir, link->sub);
+					printf("remove %s%s\n", disk->dir, link->sub);
 				}
 
 				scan_link_remove(scan, link);
@@ -1536,8 +1527,8 @@ void state_scan(struct snapraid_state* state, int is_diff)
 				) {
 					/* if verbose, prints the list of duplicates real offsets */
 					/* other cases are for offsets not supported, so we don't need to report them file by file */
-					if (state->opt.verbose && phy_last >= FILEPHY_REAL_OFFSET) {
-						ferr("WARNING! Files '%s%s' and '%s%s' have the same physical offset %" PRId64 ".\n", disk->dir, phy_file_last->sub, disk->dir, file->sub, phy_last);
+					if (phy_last >= FILEPHY_REAL_OFFSET) {
+						msg_warning("WARNING! Files '%s%s' and '%s%s' have the same physical offset %" PRId64 ".\n", disk->dir, phy_file_last->sub, disk->dir, file->sub, phy_last);
 					}
 					++phy_dup;
 				}
@@ -1594,20 +1585,20 @@ void state_scan(struct snapraid_state* state, int is_diff)
 			if (scan->count_equal == 0 && scan->count_move == 0 && scan->count_restore == 0 && (scan->count_remove != 0 || scan->count_change != 0)) {
 				if (!done) {
 					done = 1;
-					ferr("WARNING! All the files previously present in disk '%s' at dir '%s'", disk->name, disk->dir);
+					msg_error("WARNING! All the files previously present in disk '%s' at dir '%s'", disk->name, disk->dir);
 				} else {
-					ferr(", disk '%s' at dir '%s'", disk->name, disk->dir);
+					msg_error(", disk '%s' at dir '%s'", disk->name, disk->dir);
 				}
 			}
 		}
 		if (done) {
-			ferr("\nare now missing or rewritten!\n");
-			ferr("This could happen when deleting all the files from a disk,\n");
-			ferr("and restoring them with a program that it's not setting\n");
-			ferr("correctly the timestamps.\n");
-			ferr("It's also possible that you have some disks not mounted.\n");
+			msg_error("\nare now missing or rewritten!\n");
+			msg_error("This could happen when deleting all the files from a disk,\n");
+			msg_error("and restoring them with a program that it's not setting\n");
+			msg_error("correctly the timestamps.\n");
+			msg_error("It's also possible that you have some disks not mounted.\n");
 			if (!is_diff) {
-				ferr("If you want to '%s' anyway, use 'snapraid --force-empty %s'.", state->command, state->command);
+				msg_error("If you want to '%s' anyway, use 'snapraid --force-empty %s'.", state->command, state->command);
 				exit(EXIT_FAILURE);
 			}
 		}
@@ -1622,14 +1613,14 @@ void state_scan(struct snapraid_state* state, int is_diff)
 			if (disk->has_unreliable_physical) {
 				if (!done) {
 					done = 1;
-					ferr("WARNING! Physical offsets not supported for disk '%s'", disk->name);
+					msg_error("WARNING! Physical offsets not supported for disk '%s'", disk->name);
 				} else {
-					ferr(", '%s'", disk->name);
+					msg_error(", '%s'", disk->name);
 				}
 			}
 		}
 		if (done) {
-			ferr(". Files order won't be optimal.\n");
+			msg_error(". Files order won't be optimal.\n");
 		}
 	}
 
@@ -1641,14 +1632,14 @@ void state_scan(struct snapraid_state* state, int is_diff)
 		if (disk->has_volatile_inodes) {
 			if (!done) {
 				done = 1;
-				ferr("WARNING! Inodes are not persistent for disks: '%s'", disk->name);
+				msg_error("WARNING! Inodes are not persistent for disks: '%s'", disk->name);
 			} else {
-				ferr(", '%s'", disk->name);
+				msg_error(", '%s'", disk->name);
 			}
 		}
 	}
 	if (done) {
-		ferr(". Move operations won't be optimal.\n");
+		msg_error(". Move operations won't be optimal.\n");
 	}
 
 	/* checks for disks with changed UUID */
@@ -1663,14 +1654,14 @@ void state_scan(struct snapraid_state* state, int is_diff)
 		if (disk->has_different_uuid && !disk->had_empty_uuid) {
 			if (!done) {
 				done = 1;
-				ferr("WARNING! UUID is changed for disks: '%s'", disk->name);
+				msg_error("WARNING! UUID is changed for disks: '%s'", disk->name);
 			} else {
-				ferr(", '%s'", disk->name);
+				msg_error(", '%s'", disk->name);
 			}
 		}
 	}
 	if (done) {
-		ferr(". Move operations won't be optimal.\n");
+		msg_error(". Move operations won't be optimal.\n");
 	}
 
 	/* checks for disks with unsupported UUID */
@@ -1681,77 +1672,75 @@ void state_scan(struct snapraid_state* state, int is_diff)
 		if (disk->has_unsupported_uuid) {
 			if (!done) {
 				done = 1;
-				ferr("WARNING! UUID is unsupported for disks: '%s'", disk->name);
+				msg_error("WARNING! UUID is unsupported for disks: '%s'", disk->name);
 			} else {
-				ferr(", '%s'", disk->name);
+				msg_error(", '%s'", disk->name);
 			}
 		}
 	}
 	if (done) {
-		ferr(". Move operations won't be optimal.\n");
+		msg_error(". Move operations won't be optimal.\n");
 	}
 
-	if (state->opt.verbose || is_diff) {
-		struct snapraid_scan total;
-		int no_difference;
+	total.count_equal = 0;
+	total.count_move = 0;
+	total.count_copy = 0;
+	total.count_restore = 0;
+	total.count_change = 0;
+	total.count_remove = 0;
+	total.count_insert = 0;
 
-		total.count_equal = 0;
-		total.count_move = 0;
-		total.count_copy = 0;
-		total.count_restore = 0;
-		total.count_change = 0;
-		total.count_remove = 0;
-		total.count_insert = 0;
+	for (i = scanlist; i != 0; i = i->next) {
+		struct snapraid_scan* scan = i->data;
+		total.count_equal += scan->count_equal;
+		total.count_move += scan->count_move;
+		total.count_copy += scan->count_copy;
+		total.count_restore += scan->count_restore;
+		total.count_change += scan->count_change;
+		total.count_remove += scan->count_remove;
+		total.count_insert += scan->count_insert;
+	}
 
-		for (i = scanlist; i != 0; i = i->next) {
-			struct snapraid_scan* scan = i->data;
-			total.count_equal += scan->count_equal;
-			total.count_move += scan->count_move;
-			total.count_copy += scan->count_copy;
-			total.count_restore += scan->count_restore;
-			total.count_change += scan->count_change;
-			total.count_remove += scan->count_remove;
-			total.count_insert += scan->count_insert;
-		}
+	if (is_diff) {
+		msg_status("\n");
+		msg = msg_status;
+	} else {
+		msg = msg_verbose;
+	}
 
-		if (state->opt.verbose || is_diff) {
-			if (is_diff)
-				fout("\n");
-			fout("%8u equal\n", total.count_equal);
-			fout("%8u moved\n", total.count_move);
-			fout("%8u copied\n", total.count_copy);
-			fout("%8u restored\n", total.count_restore);
-			fout("%8u updated\n", total.count_change);
-			fout("%8u removed\n", total.count_remove);
-			fout("%8u added\n", total.count_insert);
-		}
+	msg("%8u equal\n", total.count_equal);
+	msg("%8u moved\n", total.count_move);
+	msg("%8u copied\n", total.count_copy);
+	msg("%8u restored\n", total.count_restore);
+	msg("%8u updated\n", total.count_change);
+	msg("%8u removed\n", total.count_remove);
+	msg("%8u added\n", total.count_insert);
 
-		ftag("summary:equal:%u\n", total.count_equal);
-		ftag("summary:moved:%u\n", total.count_move);
-		ftag("summary:copied:%u\n", total.count_copy);
-		ftag("summary:restored:%u\n", total.count_restore);
-		ftag("summary:updated:%u\n", total.count_change);
-		ftag("summary:removed:%u\n", total.count_remove);
-		ftag("summary:added:%u\n", total.count_insert);
+	msg_tag("summary:equal:%u\n", total.count_equal);
+	msg_tag("summary:moved:%u\n", total.count_move);
+	msg_tag("summary:copied:%u\n", total.count_copy);
+	msg_tag("summary:restored:%u\n", total.count_restore);
+	msg_tag("summary:updated:%u\n", total.count_change);
+	msg_tag("summary:removed:%u\n", total.count_remove);
+	msg_tag("summary:added:%u\n", total.count_insert);
 
-		no_difference = !total.count_move && !total.count_copy && !total.count_restore
-			&& !total.count_change && !total.count_remove && !total.count_insert;
+	no_difference = !total.count_move && !total.count_copy && !total.count_restore
+		&& !total.count_change && !total.count_remove && !total.count_insert;
 
-		if (is_diff) {
-			if (no_difference) {
-				fout("No differences\n");
-			} else {
-				fout("There are differences!\n");
-			}
-		}
-
+	if (is_diff) {
 		if (no_difference) {
-			ftag("summary:exit:equal\n");
+			msg_status("No differences\n");
 		} else {
-			ftag("summary:exit:diff\n");
+			msg_status("There are differences!\n");
 		}
-		fflush_log();
 	}
+
+	if (no_difference) {
+		msg_tag("summary:exit:equal\n");
+	} else {
+		msg_tag("summary:exit:diff\n");
+	}
+	msg_flush();
 
 	tommy_list_foreach(&scanlist, (tommy_foreach_func*)free);
 }

@@ -33,7 +33,7 @@ static int clean_dir(struct snapraid_state* state, const char* dir)
 	d = opendir(dir);
 	if (!d) {
 		/* LCOV_EXCL_START */
-		ferr("Error opening pool directory '%s'. %s.\n", dir, strerror(errno));
+		msg_error("Error opening pool directory '%s'. %s.\n", dir, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -49,7 +49,7 @@ static int clean_dir(struct snapraid_state* state, const char* dir)
 		dd = readdir(d);
 		if (dd == 0 && errno != 0) {
 			/* LCOV_EXCL_START */
-			ferr("Error reading pool directory '%s'. %s.\n", dir, strerror(errno));
+			msg_error("Error reading pool directory '%s'. %s.\n", dir, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -73,7 +73,7 @@ static int clean_dir(struct snapraid_state* state, const char* dir)
 		if (st.st_mode == 0) {
 			if (lstat(path_next, &st) != 0) {
 				/* LCOV_EXCL_START */
-				ferr("Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
+				msg_error("Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -82,7 +82,7 @@ static int clean_dir(struct snapraid_state* state, const char* dir)
 		/* get lstat info about the file */
 		if (lstat(path_next, &st) != 0) {
 			/* LCOV_EXCL_START */
-			ferr("Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
+			msg_error("Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -95,7 +95,7 @@ static int clean_dir(struct snapraid_state* state, const char* dir)
 			ret = remove(path_next);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				ferr("Error removing symlink '%s'. %s.\n", path_next, strerror(errno));
+				msg_error("Error removing symlink '%s'. %s.\n", path_next, strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -113,13 +113,13 @@ static int clean_dir(struct snapraid_state* state, const char* dir)
 						/* in Windows just ignore EACCES errors removing directories */
 						/* because it could happen that the directory is in use */
 						/* and it cannot be removed */
-						ferr("Directory '%s' not removed because it's in use.\n", path_next);
+						msg_error("Directory '%s' not removed because it's in use.\n", path_next);
 						ignored = 1;
 					} else
 #endif
 					{
 						/* LCOV_EXCL_START */
-						ferr("Error removing pool directory '%s'. %s.\n", path_next, strerror(errno));
+						msg_error("Error removing pool directory '%s'. %s.\n", path_next, strerror(errno));
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}
@@ -130,15 +130,13 @@ static int clean_dir(struct snapraid_state* state, const char* dir)
 			}
 		} else {
 			ignored = 1;
-			if (state->opt.verbose) {
-				fout("Ignoring pool file '%s'\n", path_next);
-			}
+			msg_verbose("Ignoring pool file '%s'\n", path_next);
 		}
 	}
 
 	if (closedir(d) != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Error closing pool directory '%s'. %s.\n", dir, strerror(errno));
+		msg_error("Error closing pool directory '%s'. %s.\n", dir, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -183,17 +181,17 @@ static void make_link(const char* pool_dir, const char* share_dir, struct snapra
 	ret = symlink(linkto_exported, path);
 	if (ret != 0) {
 		if (errno == EEXIST) {
-			ferr("WARNING! Duplicate pooling for '%s'\n", path);
+			msg_warning("WARNING! Duplicate pooling for '%s'\n", path);
 #ifdef _WIN32
 		} else if (errno == EPERM) {
 			/* LCOV_EXCL_START */
-			ferr("You must run as Adminstrator to be able to create symlinks.\n");
+			msg_error("You must run as Adminstrator to be able to create symlinks.\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 #endif
 		} else {
 			/* LCOV_EXCL_START */
-			ferr("Error writing symlink '%s'. %s.\n", path, strerror(errno));
+			msg_error("Error writing symlink '%s'. %s.\n", path, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -209,12 +207,12 @@ void state_pool(struct snapraid_state* state)
 
 	if (state->pool[0] == 0) {
 		/* LCOV_EXCL_START */
-		ferr("To use the 'pool' command you must set the pool directory in the configuration file\n");
+		msg_error("To use the 'pool' command you must set the pool directory in the configuration file\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
-	fout("Cleaning...\n");
+	msg_progress("Cleaning...\n");
 
 	/* pool directory with final slash */
 	pathprint(pool_dir, sizeof(pool_dir), "%s", state->pool);
@@ -227,7 +225,7 @@ void state_pool(struct snapraid_state* state)
 	/* first clear the previous pool tree */
 	clean_dir(state, pool_dir);
 
-	fout("Pooling...\n");
+	msg_progress("Pooling...\n");
 
 	/* for each disk */
 	count = 0;
@@ -253,12 +251,12 @@ void state_pool(struct snapraid_state* state)
 	}
 
 	if (count)
-		fout("%u links created\n", count);
+		msg_status("%u links created\n", count);
 	else
-		fout("No link created\n");
+		msg_status("No link created\n");
 
-	ftag("summary:link_count::%u\n", count);
-	ftag("summary:exit:ok\n");
-	fflush_log();
+	msg_tag("summary:link_count::%u\n", count);
+	msg_tag("summary:exit:ok\n");
+	msg_flush();
 }
 

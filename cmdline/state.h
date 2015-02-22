@@ -61,8 +61,6 @@ extern volatile int global_interrupt;
  * For all these options a value of 0 means nothing set, and to use the default.
  */
 struct snapraid_option {
-	int verbose; /**< Verbose output. */
-	int quiet; /**< Quiet output. */
 	int gui; /**< Gui output. */
 	int auditonly; /**< In check, checks only the hash and not the parity. */
 	int badonly; /**< In fix, fixes only the blocks marked as bad. */

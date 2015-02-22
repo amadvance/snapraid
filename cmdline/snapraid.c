@@ -30,54 +30,54 @@
 
 void version(void)
 {
-	fout(PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
+	msg_status(PACKAGE " v" VERSION " by Andrea Mazzoleni, " PACKAGE_URL "\n");
 }
 
 void usage(void)
 {
 	version();
 
-	fout("Usage: " PACKAGE " status|diff|sync|scrub|list|dup|up|down|smart|pool|check|fix [options]\n");
-	fout("\n");
-	fout("Commands:\n");
-	fout("  status Print the status of the array\n");
-	fout("  diff   Show the changes that needs to be syncronized\n");
-	fout("  sync   Syncronize the state of the array\n");
-	fout("  scrub  Scrub the array\n");
-	fout("  list   List the array content\n");
-	fout("  dup    Find duplicate files\n");
-	fout("  up     Spinup the array\n");
-	fout("  down   Spindown the array\n");
-	fout("  smart  SMART attributes of the array\n");
-	fout("  pool   Create or update the virtual view of the array\n");
-	fout("  check  Check the array\n");
-	fout("  fix    Fix the array\n");
-	fout("\n");
-	fout("Options:\n");
-	fout("  " SWITCH_GETOPT_LONG("-c, --conf FILE       ", "-c") "  Configuration file\n");
-	fout("  " SWITCH_GETOPT_LONG("-f, --filter PATTERN  ", "-f") "  Process only files matching the pattern\n");
-	fout("  " SWITCH_GETOPT_LONG("-d, --filter-disk NAME", "-f") "  Process only files in the specified disk\n");
-	fout("  " SWITCH_GETOPT_LONG("-m, --filter-missing  ", "-m") "  Process only missing/deleted files\n");
-	fout("  " SWITCH_GETOPT_LONG("-e, --filter-error    ", "-e") "  Process only files with errors\n");
-	fout("  " SWITCH_GETOPT_LONG("-p, --percentage PERC ", "-p") "  Process only a part of the array\n");
-	fout("  " SWITCH_GETOPT_LONG("-o, --older-than DAYS ", "-o") "  Process only the older part of the array\n");
-	fout("  " SWITCH_GETOPT_LONG("-i, --import DIR      ", "-i") "  Import deleted files\n");
-	fout("  " SWITCH_GETOPT_LONG("-l, --log FILE        ", "-l") "  Log file. Default none\n");
-	fout("  " SWITCH_GETOPT_LONG("-a, --audit-only      ", "-a") "  Check only file data and not parity\n");
-	fout("  " SWITCH_GETOPT_LONG("-h, --pre-hash        ", "-h") "  Pre hash all the new data\n");
-	fout("  " SWITCH_GETOPT_LONG("-Z, --force-zero      ", "-Z") "  Force synching of files that get zero size\n");
-	fout("  " SWITCH_GETOPT_LONG("-E, --force-empty     ", "-E") "  Force synching of disks that get empty\n");
-	fout("  " SWITCH_GETOPT_LONG("-U, --force-uuid      ", "-U") "  Force commands on disks with uuid changed\n");
-	fout("  " SWITCH_GETOPT_LONG("-D, --force-device    ", "-D") "  Force commands on disks with same device id\n");
-	fout("  " SWITCH_GETOPT_LONG("-N, --force-nocopy    ", "-N") "  Force commands disabling the copy detection\n");
-	fout("  " SWITCH_GETOPT_LONG("-F, --force-full      ", "-F") "  Force commands requiring a full sync\n");
-	fout("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
+	printf("Usage: " PACKAGE " status|diff|sync|scrub|list|dup|up|down|smart|pool|check|fix [options]\n");
+	printf("\n");
+	printf("Commands:\n");
+	printf("  status Print the status of the array\n");
+	printf("  diff   Show the changes that needs to be syncronized\n");
+	printf("  sync   Syncronize the state of the array\n");
+	printf("  scrub  Scrub the array\n");
+	printf("  list   List the array content\n");
+	printf("  dup    Find duplicate files\n");
+	printf("  up     Spinup the array\n");
+	printf("  down   Spindown the array\n");
+	printf("  smart  SMART attributes of the array\n");
+	printf("  pool   Create or update the virtual view of the array\n");
+	printf("  check  Check the array\n");
+	printf("  fix    Fix the array\n");
+	printf("\n");
+	printf("Options:\n");
+	printf("  " SWITCH_GETOPT_LONG("-c, --conf FILE       ", "-c") "  Configuration file\n");
+	printf("  " SWITCH_GETOPT_LONG("-f, --filter PATTERN  ", "-f") "  Process only files matching the pattern\n");
+	printf("  " SWITCH_GETOPT_LONG("-d, --filter-disk NAME", "-f") "  Process only files in the specified disk\n");
+	printf("  " SWITCH_GETOPT_LONG("-m, --filter-missing  ", "-m") "  Process only missing/deleted files\n");
+	printf("  " SWITCH_GETOPT_LONG("-e, --filter-error    ", "-e") "  Process only files with errors\n");
+	printf("  " SWITCH_GETOPT_LONG("-p, --percentage PERC ", "-p") "  Process only a part of the array\n");
+	printf("  " SWITCH_GETOPT_LONG("-o, --older-than DAYS ", "-o") "  Process only the older part of the array\n");
+	printf("  " SWITCH_GETOPT_LONG("-i, --import DIR      ", "-i") "  Import deleted files\n");
+	printf("  " SWITCH_GETOPT_LONG("-l, --log FILE        ", "-l") "  Log file. Default none\n");
+	printf("  " SWITCH_GETOPT_LONG("-a, --audit-only      ", "-a") "  Check only file data and not parity\n");
+	printf("  " SWITCH_GETOPT_LONG("-h, --pre-hash        ", "-h") "  Pre hash all the new data\n");
+	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero      ", "-Z") "  Force synching of files that get zero size\n");
+	printf("  " SWITCH_GETOPT_LONG("-E, --force-empty     ", "-E") "  Force synching of disks that get empty\n");
+	printf("  " SWITCH_GETOPT_LONG("-U, --force-uuid      ", "-U") "  Force commands on disks with uuid changed\n");
+	printf("  " SWITCH_GETOPT_LONG("-D, --force-device    ", "-D") "  Force commands on disks with same device id\n");
+	printf("  " SWITCH_GETOPT_LONG("-N, --force-nocopy    ", "-N") "  Force commands disabling the copy detection\n");
+	printf("  " SWITCH_GETOPT_LONG("-F, --force-full      ", "-F") "  Force commands requiring a full sync\n");
+	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
 }
 
 void memory(void)
 {
-	ftag("memory:used:%" PRIu64 "\n", (uint64_t)malloc_counter());
-	fout("Using %u MiB of memory.\n", (unsigned)(malloc_counter() / 1024 / 1024));
+	msg_tag("memory:used:%" PRIu64 "\n", (uint64_t)malloc_counter());
+	msg_progress("Using %u MiB of memory.\n", (unsigned)(malloc_counter() / 1024 / 1024));
 }
 
 /****************************************************************************/
@@ -146,7 +146,7 @@ void log_open(const char* log)
 				break;
 			default :
 				/* LCOV_EXCL_START */
-				ferr("Invalid type specifier '%c' in the log file.\n", *log);
+				msg_error("Invalid type specifier '%c' in the log file.\n", *log);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -161,7 +161,7 @@ void log_open(const char* log)
 	stdlog = fopen(path, mode);
 	if (!stdlog) {
 		/* LCOV_EXCL_START */
-		ferr("Error opening the log file '%s'. %s.\n", path, strerror(errno));
+		msg_error("Error opening the log file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -172,7 +172,7 @@ void log_close(const char* log)
 	if (stdlog != stdout && stdlog != stderr && stdlog != 0) {
 		if (fclose(stdlog) != 0) {
 			/* LCOV_EXCL_START */
-			ferr("Error closing the log file '%s'. %s.\n", log, strerror(errno));
+			msg_error("Error closing the log file '%s'. %s.\n", log, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -451,7 +451,7 @@ int main(int argc, char* argv[])
 			struct snapraid_filter* filter = filter_alloc_file(1, optarg);
 			if (!filter) {
 				/* LCOV_EXCL_START */
-				ferr("Invalid filter specification '%s'\n", optarg);
+				msg_error("Invalid filter specification '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -461,7 +461,7 @@ int main(int argc, char* argv[])
 			struct snapraid_filter* filter = filter_alloc_disk(1, optarg);
 			if (!filter) {
 				/* LCOV_EXCL_START */
-				ferr("Invalid filter specification '%s'\n", optarg);
+				msg_error("Invalid filter specification '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -481,7 +481,7 @@ int main(int argc, char* argv[])
 			percentage = strtoul(optarg, &e, 10);
 			if (!e || *e || percentage > 100) {
 				/* LCOV_EXCL_START */
-				ferr("Invalid percentage '%s'\n", optarg);
+				msg_error("Invalid percentage '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -490,7 +490,7 @@ int main(int argc, char* argv[])
 			olderthan = strtoul(optarg, &e, 10);
 			if (!e || *e || olderthan > 1000) {
 				/* LCOV_EXCL_START */
-				ferr("Invalid number of days '%s'\n", optarg);
+				msg_error("Invalid number of days '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -499,7 +499,7 @@ int main(int argc, char* argv[])
 			blockstart = strtoul(optarg, &e, 0);
 			if (!e || *e) {
 				/* LCOV_EXCL_START */
-				ferr("Invalid start position '%s'\n", optarg);
+				msg_error("Invalid start position '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -508,7 +508,7 @@ int main(int argc, char* argv[])
 			blockcount = strtoul(optarg, &e, 0);
 			if (!e || *e) {
 				/* LCOV_EXCL_START */
-				ferr("Invalid count number '%s'\n", optarg);
+				msg_error("Invalid count number '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -517,7 +517,7 @@ int main(int argc, char* argv[])
 			opt.io_error_limit = strtoul(optarg, &e, 0);
 			if (!e || *e) {
 				/* LCOV_EXCL_START */
-				ferr("Invalid error limit number '%s'\n", optarg);
+				msg_error("Invalid error limit number '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -525,7 +525,7 @@ int main(int argc, char* argv[])
 		case 'i' :
 			if (import_timestamp) {
 				/* LCOV_EXCL_START */
-				ferr("Import directory '%s' already specified as '%s'\n", optarg, import_timestamp);
+				msg_error("Import directory '%s' already specified as '%s'\n", optarg, import_timestamp);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -534,7 +534,7 @@ int main(int argc, char* argv[])
 		case OPT_TEST_IMPORT_CONTENT :
 			if (import_content) {
 				/* LCOV_EXCL_START */
-				ferr("Import directory '%s' already specified as '%s'\n", optarg, import_content);
+				msg_error("Import directory '%s' already specified as '%s'\n", optarg, import_content);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -543,7 +543,7 @@ int main(int argc, char* argv[])
 		case 'l' :
 			if (log) {
 				/* LCOV_EXCL_START */
-				ferr("Log file '%s' already specified as '%s'\n", optarg, log);
+				msg_error("Log file '%s' already specified as '%s'\n", optarg, log);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -574,10 +574,10 @@ int main(int argc, char* argv[])
 			opt.prehash = 1;
 			break;
 		case 'v' :
-			opt.verbose = 1;
+			++msg_level;
 			break;
 		case 'q' :
-			opt.quiet = 1;
+			--msg_level;
 			break;
 		case 'G' :
 			opt.gui = 1;
@@ -680,7 +680,7 @@ int main(int argc, char* argv[])
 			break;
 		default :
 			/* LCOV_EXCL_START */
-			ferr("Unknown option '%c'\n", (char)c);
+			msg_error("Unknown option '%c'\n", (char)c);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -746,7 +746,7 @@ int main(int argc, char* argv[])
 		operation = OPERATION_SMART;
 	} else {
 		/* LCOV_EXCL_START */
-		ferr("Unknown command '%s'\n", argv[optind]);
+		msg_error("Unknown command '%s'\n", argv[optind]);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -758,7 +758,7 @@ int main(int argc, char* argv[])
 	default :
 		if (opt.auditonly) {
 			/* LCOV_EXCL_START */
-			ferr("You cannot use -a, --audit-only with the '%s' command\n", command);
+			msg_error("You cannot use -a, --audit-only with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -772,7 +772,7 @@ int main(int argc, char* argv[])
 	default :
 		if (opt.force_nocopy) {
 			/* LCOV_EXCL_START */
-			ferr("You cannot use -N, --force-nocopy with the '%s' command\n", command);
+			msg_error("You cannot use -N, --force-nocopy with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -784,14 +784,14 @@ int main(int argc, char* argv[])
 	default :
 		if (opt.prehash) {
 			/* LCOV_EXCL_START */
-			ferr("You cannot use -h, --pre-hash with the '%s' command\n", command);
+			msg_error("You cannot use -h, --pre-hash with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 
 		if (opt.force_full) {
 			/* LCOV_EXCL_START */
-			ferr("You cannot use -F, --force-full with the '%s' command\n", command);
+			msg_error("You cannot use -F, --force-full with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -799,14 +799,14 @@ int main(int argc, char* argv[])
 
 	if (opt.force_full && opt.force_nocopy) {
 		/* LCOV_EXCL_START */
-		ferr("You cannot use the -F, --force-full and -N, --force-nocopy options at the same time\n");
+		msg_error("You cannot use the -F, --force-full and -N, --force-nocopy options at the same time\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (opt.prehash && opt.force_nocopy) {
 		/* LCOV_EXCL_START */
-		ferr("You cannot use the -h, --pre-hash and -N, --force-nocopy options at the same time\n");
+		msg_error("You cannot use the -h, --pre-hash and -N, --force-nocopy options at the same time\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -819,25 +819,25 @@ int main(int argc, char* argv[])
 	default :
 		if (!tommy_list_empty(&filterlist_file)) {
 			/* LCOV_EXCL_START */
-			ferr("You cannot use -f, --filter with the '%s' command\n", command);
+			msg_error("You cannot use -f, --filter with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 		if (!tommy_list_empty(&filterlist_disk)) {
 			/* LCOV_EXCL_START */
-			ferr("You cannot use -d, --filter-disk with the '%s' command\n", command);
+			msg_error("You cannot use -d, --filter-disk with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 		if (filter_missing != 0) {
 			/* LCOV_EXCL_START */
-			ferr("You cannot use -m, --filter-missing with the '%s' command\n", command);
+			msg_error("You cannot use -m, --filter-missing with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 		if (filter_error != 0) {
 			/* LCOV_EXCL_START */
-			ferr("You cannot use -e, --filter-error with the '%s' command\n", command);
+			msg_error("You cannot use -e, --filter-error with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -850,7 +850,7 @@ int main(int argc, char* argv[])
 	default :
 		if (import_timestamp != 0 || import_content != 0) {
 			/* LCOV_EXCL_START */
-			ferr("You cannot import with the '%s' command\n", command);
+			msg_error("You cannot import with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -911,17 +911,17 @@ int main(int argc, char* argv[])
 	/* print generic info into the log */
 	t = time(0);
 	tm = localtime(&t);
-	ftag("version:%s\n", PACKAGE_VERSION);
-	ftag("unixtime:%" PRIi64 "\n", (int64_t)t);
+	msg_tag("version:%s\n", PACKAGE_VERSION);
+	msg_tag("unixtime:%" PRIi64 "\n", (int64_t)t);
 	if (tm) {
 		char datetime[64];
 		strftime(datetime, sizeof(datetime), "%Y-%m-%d %H:%M:%S", tm);
-		ftag("time:%s\n", datetime);
+		msg_tag("time:%s\n", datetime);
 	}
-	ftag("command:%s\n", command);
+	msg_tag("command:%s\n", command);
 	for (i = 0; i < argc; ++i)
-		ftag("argv:%u:%s\n", i, argv[i]);
-	fflush_log();
+		msg_tag("argv:%u:%s\n", i, argv[i]);
+	msg_flush();
 
 	if (!opt.skip_self)
 		selftest();
@@ -941,10 +941,10 @@ int main(int argc, char* argv[])
 		if (lock == -1) {
 			/* LCOV_EXCL_START */
 			if (errno != EWOULDBLOCK) {
-				ferr("Error creating the lock file '%s'. %s.\n", state.lockfile, strerror(errno));
+				msg_error("Error creating the lock file '%s'. %s.\n", state.lockfile, strerror(errno));
 			} else {
-				ferr("The lock file '%s' is already locked!\n", state.lockfile);
-				ferr("SnapRAID is already in use!\n");
+				msg_error("The lock file '%s' is already locked!\n", state.lockfile);
+				msg_error("SnapRAID is already in use!\n");
 			}
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
@@ -1002,7 +1002,7 @@ int main(int argc, char* argv[])
 			ret = system(run); /* ignore error */
 			if (ret != 0) {
 				/* LCOV_EXCL_START */
-				ferr("Error in running command '%s'.\n", run);
+				msg_error("Error in running command '%s'.\n", run);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1158,7 +1158,7 @@ int main(int argc, char* argv[])
 	if (!opt.skip_lock) {
 		if (lock_unlock(lock) == -1) {
 			/* LCOV_EXCL_START */
-			ferr("Error closing the lock file '%s'. %s.\n", state.lockfile, strerror(errno));
+			msg_error("Error closing the lock file '%s'. %s.\n", state.lockfile, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}

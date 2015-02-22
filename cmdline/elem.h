@@ -496,7 +496,7 @@ static inline void block_file_set(struct snapraid_block* block, struct snapraid_
 	/* ensure that the pointer doesn't use the flag space */
 	if ((ptr & (uintptr_t)BLOCK_STATE_MASK) != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Internal error for pointer not aligned\n");
+		msg_error("Internal error for pointer not aligned\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -523,7 +523,7 @@ static inline void block_state_set(struct snapraid_block* block, unsigned state)
 	/* ensure that the state can be stored inside the file pointer */
 	if ((state & BLOCK_STATE_MASK) != state) {
 		/* LCOV_EXCL_START */
-		ferr("Internal error when setting the block state %u\n", state);
+		msg_error("Internal error when setting the block state %u\n", state);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}

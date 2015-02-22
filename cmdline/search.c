@@ -79,14 +79,14 @@ int search_file_compare(const void* void_arg, const void* void_data)
 	f = open(path, O_RDONLY | O_BINARY);
 	if (f == -1) {
 		/* LCOV_EXCL_START */
-		ferr("Error opening file '%s'. %s.\n", path, strerror(errno));
+		msg_error("Error opening file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (lseek(f, arg->offset, SEEK_SET) != arg->offset) {
 		/* LCOV_EXCL_START */
-		ferr("Error seeking file '%s'. %s.\n", path, strerror(errno));
+		msg_error("Error seeking file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -94,7 +94,7 @@ int search_file_compare(const void* void_arg, const void* void_data)
 	ret = read(f, arg->buffer, arg->read_size);
 	if (ret < 0 || (unsigned)ret != arg->read_size) {
 		/* LCOV_EXCL_START */
-		ferr("Error reading file '%s'. %s.\n", path, strerror(errno));
+		msg_error("Error reading file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -102,7 +102,7 @@ int search_file_compare(const void* void_arg, const void* void_data)
 	ret = close(f);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Error closing file '%s'. %s.\n", path, strerror(errno));
+		msg_error("Error closing file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -157,7 +157,7 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 	d = opendir(dir);
 	if (!d) {
 		/* LCOV_EXCL_START */
-		ferr("Error opening directory '%s'. %s.\n", dir, strerror(errno));
+		msg_error("Error opening directory '%s'. %s.\n", dir, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -176,7 +176,7 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 		dd = readdir(d);
 		if (dd == 0 && errno != 0) {
 			/* LCOV_EXCL_START */
-			ferr("Error reading directory '%s'. %s.\n", dir, strerror(errno));
+			msg_error("Error reading directory '%s'. %s.\n", dir, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -194,17 +194,13 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 
 		/* exclude hidden files even before calling lstat() */
 		if (disk != 0 && filter_hidden(state->filter_hidden, dd) != 0) {
-			if (state->opt.verbose) {
-				fout("Excluding hidden '%s'\n", path_next);
-			}
+			msg_verbose("Excluding hidden '%s'\n", path_next);
 			continue;
 		}
 
 		/* exclude content files even before calling lstat() */
 		if (disk != 0 && filter_content(&state->contentlist, path_next) != 0) {
-			if (state->opt.verbose) {
-				fout("Excluding content '%s'\n", path_next);
-			}
+			msg_verbose("Excluding content '%s'\n", path_next);
 			continue;
 		}
 
@@ -220,7 +216,7 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 		if (st.st_mode == 0) {
 			if (lstat(path_next, &st) != 0) {
 				/* LCOV_EXCL_START */
-				ferr("Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
+				msg_error("Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -229,7 +225,7 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 		/* get lstat info about the file */
 		if (lstat(path_next, &st) != 0) {
 			/* LCOV_EXCL_START */
-			ferr("Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
+			msg_error("Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -239,9 +235,7 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 			if (disk == 0 || filter_path(&state->filterlist, &reason, disk->name, sub_next) == 0) {
 				search_file(state, path_next, st.st_size, st.st_mtime, STAT_NSEC(&st));
 			} else {
-				if (state->opt.verbose) {
-					fout("Excluding link '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
-				}
+				msg_verbose("Excluding link '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
 			}
 		} else if (S_ISDIR(st.st_mode)) {
 			if (disk == 0 || filter_dir(&state->filterlist, &reason, disk->name, sub_next) == 0) {
@@ -249,16 +243,14 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 				pathslash(sub_next, sizeof(sub_next));
 				search_dir(state, disk, path_next, sub_next);
 			} else {
-				if (state->opt.verbose) {
-					fout("Excluding directory '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
-				}
+				msg_verbose("Excluding directory '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
 			}
 		}
 	}
 
 	if (closedir(d) != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Error closing directory '%s'. %s.\n", dir, strerror(errno));
+		msg_error("Error closing directory '%s'. %s.\n", dir, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -268,7 +260,7 @@ void state_search(struct snapraid_state* state, const char* dir)
 {
 	char path[PATH_MAX];
 
-	fout("Importing...\n");
+	msg_progress("Importing...\n");
 
 	/* add the final slash */
 	pathimport(path, sizeof(path), dir);
@@ -285,7 +277,7 @@ void state_search_array(struct snapraid_state* state)
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 
-		fout("Scanning disk %s...\n", disk->name);
+		msg_progress("Scanning disk %s...\n", disk->name);
 
 		search_dir(state, disk, disk->dir, "");
 	}

@@ -185,19 +185,19 @@ void os_init(int opt)
 
 	ntdll = GetModuleHandle("NTDLL.DLL");
 	if (!ntdll) {
-		ferr("Error loading the NTDLL module.\n");
+		msg_error("Error loading the NTDLL module.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	kernel32 = GetModuleHandle("KERNEL32.DLL");
 	if (!kernel32) {
-		ferr("Error loading the KERNEL32 module.\n");
+		msg_error("Error loading the KERNEL32 module.\n");
 		exit(EXIT_FAILURE);
 	}
 
 	dll_advapi32 = LoadLibrary("ADVAPI32.DLL");
 	if (!dll_advapi32) {
-		ferr("Error loading the ADVAPI32 module.\n");
+		msg_error("Error loading the ADVAPI32 module.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -210,7 +210,7 @@ void os_init(int opt)
 
 	ptr_RtlGenRandom = (void*)GetProcAddress(dll_advapi32, "SystemFunction036");
 	if (!ptr_RtlGenRandom) {
-		ferr("Error loading RtlGenRandom() from the ADVAPI32 module.\n");
+		msg_error("Error loading RtlGenRandom() from the ADVAPI32 module.\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -280,7 +280,7 @@ static wchar_t* u8tou16(const char* src)
 	ret = MultiByteToWideChar(CP_UTF8, 0, src, -1, conv_utf16_buffer[roll], sizeof(conv_utf16_buffer[0]) / sizeof(wchar_t));
 
 	if (ret <= 0) {
-		ferr("Error converting name '%s' from UTF-8 to UTF-16\n", src);
+		msg_error("Error converting name '%s' from UTF-8 to UTF-16\n", src);
 		exit(EXIT_FAILURE);
 	}
 
@@ -303,7 +303,7 @@ static char* u16tou8ex(const wchar_t* src, size_t number_of_wchar, size_t* resul
 
 	ret = WideCharToMultiByte(CP_UTF8, 0, src, number_of_wchar, conv_utf8_buffer[roll], sizeof(conv_utf8_buffer[0]), 0, 0);
 	if (ret <= 0) {
-		ferr("Error converting from UTF-16 to UTF-8\n");
+		msg_error("Error converting from UTF-16 to UTF-8\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -398,7 +398,7 @@ static wchar_t* convert_arg(const char* src, int only_if_required)
 	ret = MultiByteToWideChar(CP_UTF8, 0, src, -1, dst, sizeof(conv_utf16_buffer[0]) / sizeof(wchar_t) - count);
 
 	if (ret <= 0) {
-		ferr("Error converting name '%s' from UTF-8 to UTF-16\n", src);
+		msg_error("Error converting name '%s' from UTF-8 to UTF-16\n", src);
 		exit(EXIT_FAILURE);
 	}
 
@@ -632,7 +632,7 @@ static void windows_finddata2dirent(const WIN32_FIND_DATAW* info, struct windows
 	name = u16tou8ex(info->cFileName, wcslen(info->cFileName), &len);
 
 	if (len + 1 >= sizeof(dirent->d_name)) {
-		ferr("Name too long\n");
+		msg_error("Name too long\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -650,7 +650,7 @@ static void windows_stream2dirent(const BY_HANDLE_FILE_INFORMATION* info, const 
 	name = u16tou8ex(stream->FileName, stream->FileNameLength / 2, &len);
 
 	if (len + 1 >= sizeof(dirent->d_name)) {
-		ferr("Name too long\n");
+		msg_error("Name too long\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -701,7 +701,7 @@ static void windows_errno(DWORD error)
 		errno = EPERM;
 		break;
 	default :
-		ferr("Unexpected Windows error %d.\n", (int)error);
+		msg_error("Unexpected Windows error %d.\n", (int)error);
 		errno = EIO;
 		break;
 	}
@@ -1005,8 +1005,8 @@ int windows_fsync(int fd)
 			 * this error, but not enough sure to ignore it.
 			 * So, we use now an extended error reporting.
 			 */
-			ferr("Unexpected Windows INVALID_HANDLE error in FlushFileBuffers().\n");
-			ferr("Are you using ATA-over-Ethernet ? Please report it.\n");
+			msg_error("Unexpected Windows INVALID_HANDLE error in FlushFileBuffers().\n");
+			msg_error("Are you using ATA-over-Ethernet ? Please report it.\n");
 
 			/* normal error processing */
 			windows_errno(error);
@@ -1137,7 +1137,7 @@ static windows_dir* windows_opendir_find(const char* dir)
 
 	dirstream = malloc(sizeof(windows_dir));
 	if (!dirstream) {
-		ferr("Low memory\n");
+		msg_error("Low memory\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -1274,7 +1274,7 @@ static windows_dir* windows_opendir_stream(const char* dir)
 
 	dirstream = malloc(sizeof(windows_dir));
 	if (!dirstream) {
-		ferr("Low memory\n");
+		msg_error("Low memory\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -1284,7 +1284,7 @@ static windows_dir* windows_opendir_stream(const char* dir)
 	dirstream->buffer_size = 64 * 1024;
 	dirstream->buffer = malloc(dirstream->buffer_size);
 	if (!dirstream->buffer) {
-		ferr("Low memory\n");
+		msg_error("Low memory\n");
 		exit(EXIT_FAILURE);
 	}
 
@@ -1761,7 +1761,7 @@ retry:
 		 * https://sourceforge.net/p/snapraid/discussion/1677233/thread/a7c25ba9/
 		 */
 		if (err == ERROR_NO_SYSTEM_RESOURCES) {
-			ferr("Unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pread(), retrying...\n");
+			msg_error("Unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pread(), retrying...\n");
 			Sleep(50);
 			goto retry;
 		}
@@ -1801,7 +1801,7 @@ retry:
 		DWORD err = GetLastError();
 		/* See windows_pread() for comments on this error management */
 		if (err == ERROR_NO_SYSTEM_RESOURCES) {
-			ferr("Unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pwrite(), retrying...\n");
+			msg_error("Unexpected Windows ERROR_NO_SYSTEM_RESOURCES in pwrite(), retrying...\n");
 			Sleep(50);
 			goto retry;
 		}
@@ -2046,7 +2046,7 @@ static int devscan(tommy_list* list)
 	f = _wpopen(cmd, L"rt");
 	if (!f) {
 		/* LCOV_EXCL_START */
-		ferr("Failed to run '%s' (from popen).\n", u16tou8(cmd));
+		msg_error("Failed to run '%s' (from popen).\n", u16tou8(cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2061,13 +2061,13 @@ static int devscan(tommy_list* list)
 	ret = pclose(f);
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
-		ferr("Failed to run '%s' (from pclose).\n", u16tou8(cmd));
+		msg_error("Failed to run '%s' (from pclose).\n", u16tou8(cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Failed to run '%s' with return code %xh.\n", u16tou8(cmd), ret);
+		msg_error("Failed to run '%s' with return code %xh.\n", u16tou8(cmd), ret);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2089,7 +2089,7 @@ static int devsmart(uint64_t device, uint64_t* smart, char* serial)
 	f = _wpopen(cmd, L"rt");
 	if (!f) {
 		/* LCOV_EXCL_START */
-		ferr("Failed to run '%s' (from popen).\n", u16tou8(cmd));
+		msg_error("Failed to run '%s' (from popen).\n", u16tou8(cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2104,7 +2104,7 @@ static int devsmart(uint64_t device, uint64_t* smart, char* serial)
 	ret = pclose(f);
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
-		ferr("Failed to run '%s' (from pclose).\n", u16tou8(cmd));
+		msg_error("Failed to run '%s' (from pclose).\n", u16tou8(cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2128,13 +2128,13 @@ static int devdown(uint64_t device)
 	ret = _wsystem(cmd);
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
-		ferr("Failed to run '%s' (from system).\n", u16tou8(cmd));
+		msg_error("Failed to run '%s' (from system).\n", u16tou8(cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Failed to run '%s' with return code %xh.\n", u16tou8(cmd), ret);
+		msg_error("Failed to run '%s' with return code %xh.\n", u16tou8(cmd), ret);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2184,7 +2184,7 @@ static void* thread_spinup(void* arg)
 	if (lstat_sync(devinfo->mount, &st, 0) != 0) {
 		/* LCOV_EXCL_START */
 		pthread_mutex_lock(&io_lock);
-		ferr("Failed to stat path '%s'. %s.\n", devinfo->mount, strerror(errno));
+		msg_error("Failed to stat path '%s'. %s.\n", devinfo->mount, strerror(errno));
 		pthread_mutex_unlock(&io_lock);
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -2196,7 +2196,7 @@ static void* thread_spinup(void* arg)
 	if (devresolve(devinfo->mount, devinfo->file, sizeof(devinfo->file), devinfo->wfile, sizeof(devinfo->wfile)) != 0) {
 		/* LCOV_EXCL_START */
 		pthread_mutex_lock(&io_lock);
-		ferr("Failed to resolve path '%s'.\n", devinfo->mount);
+		msg_error("Failed to resolve path '%s'.\n", devinfo->mount);
 		pthread_mutex_unlock(&io_lock);
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -2209,7 +2209,7 @@ static void* thread_spinup(void* arg)
 	}
 
 	pthread_mutex_lock(&io_lock);
-	fprintf(stdout, "Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
+	msg_status("Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
 	pthread_mutex_unlock(&io_lock);
 
 	return 0;
@@ -2232,7 +2232,7 @@ static void* thread_spindown(void* arg)
 	}
 
 	pthread_mutex_lock(&io_lock);
-	fprintf(stdout, "Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
+	msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
 	pthread_mutex_unlock(&io_lock);
 
 	return 0;
@@ -2265,7 +2265,7 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 
 		if (pthread_create(&devinfo->thread, 0, func, devinfo) != 0) {
 			/* LCOV_EXCL_START */
-			ferr("Failed to create thread.\n");
+			msg_error("Failed to create thread.\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -2278,7 +2278,7 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 
 		if (pthread_join(devinfo->thread, &retval) != 0) {
 			/* LCOV_EXCL_START */
-			ferr("Failed to join thread.\n");
+			msg_error("Failed to join thread.\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -2308,7 +2308,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 
 			if (devresolve(devinfo->mount, devinfo->file, sizeof(devinfo->file), devinfo->wfile, sizeof(devinfo->wfile)) != 0) {
 				/* LCOV_EXCL_START */
-				ferr("Failed to resolve path '%s'.\n", devinfo->mount);
+				msg_error("Failed to resolve path '%s'.\n", devinfo->mount);
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
@@ -2316,7 +2316,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 			/* expand the tree of devices */
 			if (devtree(devinfo->name, devinfo->wfile, devinfo, low) != 0) {
 				/* LCOV_EXCL_START */
-				ferr("Failed to expand device '%s'.\n", devinfo->file);
+				msg_error("Failed to expand device '%s'.\n", devinfo->file);
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
@@ -2344,7 +2344,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 	if (operation == DEVICE_SMART) {
 		if (devscan(low) != 0) {
 			/* LCOV_EXCL_START */
-			ferr("Failed to list other devices.\n");
+			msg_error("Failed to list other devices.\n");
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}

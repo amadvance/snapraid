@@ -22,34 +22,18 @@
 /****************************************************************************/
 /* print */
 
-void fout(const char* format, ...)
+int msg_level = 0;
+
+void msg_error(const char* format, ...)
 {
 	va_list ap;
 
 	/* first output the same message to stdlog and flush it */
-	/* to have the same behaviour of stdout */
+	/* to avoid to mix messages in case streams are redirected */
+	/* to the same file */
 	if (stdlog) {
 		va_start(ap, format);
-		fprintf(stdlog, "stdout: ");
-		vfprintf(stdlog, format, ap);
-		va_end(ap);
-		fflush(stdlog);
-	}
-
-	va_start(ap, format);
-	vfprintf(stdout, format, ap);
-	va_end(ap);
-}
-
-void ferr(const char* format, ...)
-{
-	va_list ap;
-
-	/* first output the same message to stdlog and flush it */
-	/* to have the same behaviour of stderr */
-	if (stdlog) {
-		va_start(ap, format);
-		fprintf(stdlog, "stderr: ");
+		fprintf(stdlog, "msg:error: ");
 		vfprintf(stdlog, format, ap);
 		fflush(stdlog);
 		va_end(ap);
@@ -60,13 +44,13 @@ void ferr(const char* format, ...)
 	va_end(ap);
 }
 
-void flog(const char* format, ...)
+void msg_warning(const char* format, ...)
 {
 	va_list ap;
 
 	if (stdlog) {
 		va_start(ap, format);
-		fprintf(stdlog, "stdlog: ");
+		fprintf(stdlog, "msg:warning: ");
 		vfprintf(stdlog, format, ap);
 		va_start(ap, format);
 	} else {
@@ -76,13 +60,7 @@ void flog(const char* format, ...)
 	}
 }
 
-void fflush_log(void)
-{
-	if (stdlog)
-		fflush(stdlog);
-}
-
-void ftag(const char* format, ...)
+void msg_tag(const char* format, ...)
 {
 	va_list ap;
 
@@ -91,6 +69,107 @@ void ftag(const char* format, ...)
 		vfprintf(stdlog, format, ap);
 		va_end(ap);
 	}
+}
+
+void msg_status(const char* format, ...)
+{
+	va_list ap;
+
+	/* first output the same message to stdlog and flush it */
+	/* to avoid to mix messages in case streams are redirected */
+	/* to the same file */
+	if (stdlog) {
+		va_start(ap, format);
+		fprintf(stdlog, "msg:status: ");
+		vfprintf(stdlog, format, ap);
+		va_end(ap);
+		fflush(stdlog);
+	}
+
+	if (msg_level >= MSG_STATUS) {
+		va_start(ap, format);
+		vfprintf(stdout, format, ap);
+		va_end(ap);
+	}
+}
+
+void msg_info(const char* format, ...)
+{
+	va_list ap;
+
+	/* don't output in stdlog as these messages */
+	/* are always paired with a msg_tag() call */
+
+	if (msg_level >= MSG_INFO) {
+		va_start(ap, format);
+		vfprintf(stdout, format, ap);
+		va_end(ap);
+	}
+}
+
+void msg_progress(const char* format, ...)
+{
+	va_list ap;
+
+	/* first output the same message to stdlog and flush it */
+	/* to avoid to mix messages in case streams are redirected */
+	/* to the same file */
+	if (stdlog) {
+		va_start(ap, format);
+		fprintf(stdlog, "msg:progress: ");
+		vfprintf(stdlog, format, ap);
+		va_end(ap);
+		fflush(stdlog);
+	}
+
+	if (msg_level >= MSG_PROGRESS) {
+		va_start(ap, format);
+		vfprintf(stdout, format, ap);
+		va_end(ap);
+	}
+}
+
+void msg_bar(const char* format, ...)
+{
+	va_list ap;
+
+	/* don't output in stdlog as these messages */
+	/* are intended for screen only */
+
+	if (msg_level >= MSG_BAR) {
+		va_start(ap, format);
+		vfprintf(stdout, format, ap);
+		va_end(ap);
+	}
+}
+
+void msg_verbose(const char* format, ...)
+{
+	va_list ap;
+
+	/* first output the same message to stdlog and flush it */
+	/* to avoid to mix messages in case streams are redirected */
+	/* to the same file */
+	if (stdlog) {
+		va_start(ap, format);
+		fprintf(stdlog, "msg:verbose: ");
+		vfprintf(stdlog, format, ap);
+		va_end(ap);
+		fflush(stdlog);
+	}
+
+	if (msg_level >= MSG_VERBOSE) {
+		va_start(ap, format);
+		vfprintf(stdout, format, ap);
+		va_end(ap);
+	}
+}
+
+void msg_flush(void)
+{
+	if (stdlog)
+		fflush(stdlog);
+	fflush(stdout);
 }
 
 /**
@@ -157,7 +236,7 @@ const char* esc(const char* str)
 
 bail:
 	/* LCOV_EXCL_START */
-	ferr("Escape too long\n");
+	msg_error("Escape too long\n");
 	exit(EXIT_FAILURE);
 	/* LCOV_EXCL_STOP */
 }
@@ -171,7 +250,7 @@ void pathcpy(char* dst, size_t size, const char* src)
 
 	if (len + 1 > size) {
 		/* LCOV_EXCL_START */
-		ferr("Path too long\n");
+		msg_error("Path too long\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -186,7 +265,7 @@ void pathcat(char* dst, size_t size, const char* src)
 
 	if (dst_len + src_len + 1 > size) {
 		/* LCOV_EXCL_START */
-		ferr("Path too long\n");
+		msg_error("Path too long\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -200,7 +279,7 @@ void pathcatc(char* dst, size_t size, char c)
 
 	if (dst_len + 2 > size) {
 		/* LCOV_EXCL_START */
-		ferr("Path too long\n");
+		msg_error("Path too long\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -248,7 +327,7 @@ void pathprint(char* dst, size_t size, const char* format, ...)
 
 	if (len >= size) {
 		/* LCOV_EXCL_START */
-		ferr("Path too long\n");
+		msg_error("Path too long\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -261,7 +340,7 @@ void pathslash(char* dst, size_t size)
 	if (len > 0 && dst[len - 1] != '/') {
 		if (len + 2 >= size) {
 			/* LCOV_EXCL_START */
-			ferr("Path too long\n");
+			msg_error("Path too long\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -356,7 +435,7 @@ int mkancestor(const char* file)
 	/* create it */
 	if (mkdir(dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Error creating directory '%s'. %s.\n", dir, strerror(errno));
+		msg_error("Error creating directory '%s'. %s.\n", dir, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -612,14 +691,14 @@ int smartctl_attribute(FILE* f, uint64_t* smart, char* serial)
 		} else if (inside) {
 			if (sscanf(s, "%u %*s %*s %*s %*s %*s %*s %*s %*s %" SCNu64, &id, &raw) != 2) {
 				/* LCOV_EXCL_START */
-				ferr("Invalid smartctl line '%s'.\n", s);
+				msg_error("Invalid smartctl line '%s'.\n", s);
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (id >= 256) {
 				/* LCOV_EXCL_START */
-				ferr("Invalid SMART id '%u'.\n", id);
+				msg_error("Invalid SMART id '%u'.\n", id);
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}

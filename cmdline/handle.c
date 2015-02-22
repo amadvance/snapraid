@@ -90,7 +90,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 		handle->f = -1;
 		handle->valid_size = 0;
 
-		ferr("Error opening file '%s'. %s.\n", handle->path, strerror(errno));
+		msg_error("Error opening file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -102,7 +102,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 	ret = fstat(handle->f, &handle->st);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Error accessing file '%s'. %s.\n", handle->path, strerror(errno));
+		msg_error("Error accessing file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -116,7 +116,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 		ret = posix_fadvise(handle->f, 0, 0, POSIX_FADV_SEQUENTIAL);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			ferr("Error advising file '%s'. %s.\n", handle->path, strerror(ret));
+			msg_error("Error advising file '%s'. %s.\n", handle->path, strerror(ret));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -134,9 +134,9 @@ int handle_truncate(struct snapraid_handle* handle, struct snapraid_file* file)
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
 		if (errno == EACCES) {
-			ferr("Failed to truncate file '%s' for missing write permission.\n", handle->path);
+			msg_error("Failed to truncate file '%s' for missing write permission.\n", handle->path);
 		} else {
-			ferr("Error truncating file '%s'. %s.\n", handle->path, strerror(errno));
+			msg_error("Error truncating file '%s'. %s.\n", handle->path, strerror(errno));
 		}
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -223,7 +223,7 @@ int handle_close(struct snapraid_handle* handle)
 		ret = close(handle->f);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			ferr("Error closing file '%s'. %s.\n", handle->file->sub, strerror(errno));
+			msg_error("Error closing file '%s'. %s.\n", handle->file->sub, strerror(errno));
 
 			/* invalidate for error */
 			handle->file = 0;
@@ -325,7 +325,7 @@ int handle_write(struct snapraid_handle* handle, struct snapraid_block* block, u
 #else
 	if (lseek(handle->f, offset, SEEK_SET) != offset) {
 		/* LCOV_EXCL_START */
-		ferr("Error seeking file '%s'. %s.\n", handle->path, strerror(errno));
+		msg_error("Error seeking file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -334,7 +334,7 @@ int handle_write(struct snapraid_handle* handle, struct snapraid_block* block, u
 #endif
 	if (write_ret != (ssize_t)write_size) { /* conversion is safe because block_size is always small */
 		/* LCOV_EXCL_START */
-		ferr("Error writing file '%s'. %s.\n", handle->path, strerror(errno));
+		msg_error("Error writing file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -362,7 +362,7 @@ int handle_utime(struct snapraid_handle* handle)
 
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Error timing file '%s'. %s.\n", handle->file->sub, strerror(errno));
+		msg_error("Error timing file '%s'. %s.\n", handle->file->sub, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -410,7 +410,7 @@ struct snapraid_handle* handle_map(struct snapraid_state* state, unsigned* handl
 		}
 		if (k == 0) {
 			/* LCOV_EXCL_START */
-			ferr("Internal error for inconsistent disk mapping.\n");
+			msg_error("Internal error for inconsistent disk mapping.\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}

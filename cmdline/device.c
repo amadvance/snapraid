@@ -710,7 +710,7 @@ static void printp(double v, size_t pad)
 	printl(buf, pad);
 }
 
-static void state_smart(int verbose, unsigned n, tommy_list* low)
+static void state_smart(unsigned n, tommy_list* low)
 {
 	tommy_node* i;
 	unsigned j;
@@ -846,17 +846,17 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 
 		printf("\n");
 
-		ftag("smart:%s:%s:%s:%g\n", devinfo->file, devinfo->name, esc(devinfo->smart_serial), afr);
+		msg_tag("smart:%s:%s:%s:%g\n", devinfo->file, devinfo->name, esc(devinfo->smart_serial), afr);
 		for (j = 0; j < 256; ++j) {
 			if (devinfo->smart[j] != SMART_UNASSIGNED)
-				ftag("attr:%s:%u:%" PRIu64 "\n", devinfo->file, j, devinfo->smart[j]);
+				msg_tag("attr:%s:%u:%" PRIu64 "\n", devinfo->file, j, devinfo->smart[j]);
 		}
 		if (devinfo->smart[SMART_SIZE] != SMART_UNASSIGNED)
-			ftag("attr:%s:size:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_SIZE]);
+			msg_tag("attr:%s:size:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_SIZE]);
 		if (devinfo->smart[SMART_ERROR] != SMART_UNASSIGNED)
-			ftag("attr:%s:error:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_ERROR]);
+			msg_tag("attr:%s:error:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_ERROR]);
 		if (devinfo->smart[SMART_ROTATION_RATE] != SMART_UNASSIGNED)
-			ftag("attr:%s:rotationrate:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_ROTATION_RATE]);
+			msg_tag("attr:%s:rotationrate:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_ROTATION_RATE]);
 	}
 
 	printf("\n");
@@ -873,10 +873,10 @@ static void state_smart(int verbose, unsigned n, tommy_list* low)
 	p_at_least_one_failure = poisson_prob_n_or_more_failures(array_failure_rate, 1);
 
 	printf("Probability that one disk is going to fail in the next year is %.0f%%,\n", p_at_least_one_failure * 100);
-	ftag("summary:array_failure:%g:%g\n", array_failure_rate, p_at_least_one_failure);
+	msg_tag("summary:array_failure:%g:%g\n", array_failure_rate, p_at_least_one_failure);
 
 	/* prints extra stats only in verbose mode */
-	if (!verbose)
+	if (msg_level < MSG_VERBOSE)
 		return;
 
 	/*      |<##################################################################72>|####80>| */
@@ -923,8 +923,8 @@ void state_device(struct snapraid_state* state, int operation)
 	tommy_list low;
 
 	switch (operation) {
-	case DEVICE_UP : printf("Spinup...\n"); break;
-	case DEVICE_DOWN : printf("Spindown...\n"); break;
+	case DEVICE_UP : msg_progress("Spinup...\n"); break;
+	case DEVICE_DOWN : msg_progress("Spindown...\n"); break;
 	}
 
 	tommy_list_init(&high);
@@ -966,7 +966,7 @@ void state_device(struct snapraid_state* state, int operation)
 		case DEVICE_LIST : ope = "List"; break;
 		case DEVICE_SMART : ope = "SMART"; break;
 		}
-		ferr("%s unsupported in this platform.\n", ope);
+		msg_error("%s unsupported in this platform.\n", ope);
 	} else {
 		if (operation == DEVICE_LIST) {
 			for (i = tommy_list_head(&low); i != 0; i = i->next) {
@@ -981,7 +981,7 @@ void state_device(struct snapraid_state* state, int operation)
 		}
 
 		if (operation == DEVICE_SMART)
-			state_smart(state->opt.verbose, state->level + tommy_list_count(&state->disklist), &low);
+			state_smart(state->level + tommy_list_count(&state->disklist), &low);
 	}
 
 	tommy_list_foreach(&high, free);

@@ -160,7 +160,7 @@ static void test_hash(void)
 		digest = tommy_hash_u32(seed32, buffer_aligned, TEST_MURMUR3[i].len);
 		if (digest != TEST_HASH32[i].digest) {
 			/* LCOV_EXCL_START */
-			ferr("Failed hash32 test\n");
+			msg_error("Failed hash32 test\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -172,7 +172,7 @@ static void test_hash(void)
 		digest = tommy_hash_u64(seed64, buffer_aligned, TEST_MURMUR3[i].len);
 		if (digest != TEST_HASH64[i].digest) {
 			/* LCOV_EXCL_START */
-			ferr("Failed hash64 test\n");
+			msg_error("Failed hash64 test\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -185,7 +185,7 @@ static void test_hash(void)
 		memhash(HASH_MURMUR3, seed_aligned, digest, buffer_aligned, TEST_MURMUR3[i].len);
 		if (memcmp(digest, TEST_MURMUR3[i].digest, HASH_SIZE) != 0) {
 			/* LCOV_EXCL_START */
-			ferr("Failed Murmur3 test\n");
+			msg_error("Failed Murmur3 test\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -197,7 +197,7 @@ static void test_hash(void)
 		memhash(HASH_SPOOKY2, seed_aligned, digest, buffer_aligned, TEST_SPOOKY2[i].len);
 		if (memcmp(digest, TEST_SPOOKY2[i].digest, HASH_SIZE) != 0) {
 			/* LCOV_EXCL_START */
-			ferr("Failed Spooky2 test\n");
+			msg_error("Failed Spooky2 test\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -246,7 +246,7 @@ static void test_crc32c(void)
 		digest = crc32c(0, (const unsigned char*)TEST_CRC32C[i].data, TEST_CRC32C[i].len);
 		if (digest != TEST_CRC32C[i].digest) {
 			/* LCOV_EXCL_START */
-			ferr("Failed CRC32C test\n");
+			msg_error("Failed CRC32C test\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -373,22 +373,22 @@ static void test_tommy(void)
 	return;
 bail:
 	/* LCOV_EXCL_START */
-	ferr("Failed tommy test\n");
+	msg_error("Failed tommy test\n");
 	exit(EXIT_FAILURE);
 	/* LCOV_EXCL_STOP */
 }
 
 void selftest(void)
 {
-	ftag("selftest:\n");
-	fflush_log();
+	msg_tag("selftest:\n");
+	msg_flush();
 
-	fout("Self test...\n");
+	msg_progress("Self test...\n");
 
 	/* large file check */
 	if (sizeof(off_t) < sizeof(uint64_t)) {
 		/* LCOV_EXCL_START */
-		ferr("Missing support for large files\n");
+		msg_error("Missing support for large files\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -398,55 +398,55 @@ void selftest(void)
 	test_tommy();
 	if (raid_selftest() != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Failed SELF test\n");
+		msg_error("Failed SELF test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_sort() != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Failed SORT test\n");
+		msg_error("Failed SORT test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_insert() != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Failed INSERT test\n");
+		msg_error("Failed INSERT test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_combo() != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Failed COMBO test\n");
+		msg_error("Failed COMBO test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_par(RAID_MODE_VANDERMONDE, 32, 256) != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Failed GEN Vandermonde test\n");
+		msg_error("Failed GEN Vandermonde test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_rec(RAID_MODE_VANDERMONDE, 12, 256) != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Failed REC Vandermonde test\n");
+		msg_error("Failed REC Vandermonde test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_par(RAID_MODE_CAUCHY, 32, 256) != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Failed GEN Cauchy test\n");
+		msg_error("Failed GEN Cauchy test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_rec(RAID_MODE_CAUCHY, 12, 256) != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Failed REC Cauchy test\n");
+		msg_error("Failed REC Cauchy test\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 	if (raid_test_par(RAID_MODE_CAUCHY, 1, 256) != 0) {
 		/* LCOV_EXCL_START */
-		ferr("Failed GEN Cauchy test sigle data disk\n");
+		msg_error("Failed GEN Cauchy test sigle data disk\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}

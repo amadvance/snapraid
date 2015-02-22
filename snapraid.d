@@ -13,7 +13,7 @@ Synopsis
 	:	[-N, --force-nocopy] [-F, --force-full]
 	:	[-S, --start BLKSTART] [-B, --count BLKCOUNT]
 	:	[-L, --error-limit NUMBER]
-	:	[-v, --verbose]
+	:	[-v, --verbose] [-q, --quiet]
 	:	status|smart|up|down|diff|sync|scrub|fix|check|list|dup|up|down|pool|rehash
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
@@ -739,11 +739,11 @@ Options
 		This option can be used only with "sync".
 
 	-l, --log FILE
-		Write a detailed log of errors encoutered.
-		If this option is not specified, the errors are printed on
-		the screen, likely resulting in too much output in case
-		of many errors.
-		If the specified path starts with '>>' the file is opened
+		Write a detailed log in the specified file.
+		If this option is not specified, the warnings and not fatal
+		errors are printed on the screen, likely resulting in too much
+		output in case of many errors.
+		If the path starts with '>>' the file is opened
 		in append mode. Occurrences of '%D' and '%T' in the name are
 		replaced with the date and time in the format YYYYMMDD and
 		HHMMSS. Note that in Windows batch files, you'll have to double
@@ -782,7 +782,14 @@ Options
 		lose the entire system.
 
 	-v, --verbose
-		Prints more information in the processing.
+		Prints more information on the screen.
+
+	-q, --quiet
+		Prints less information on the screen.
+		If specified one time, removes the progress bar, if two
+		times, the running operations, three times, the info
+		messages, four times the status messages.
+		Fatal errors are always printed.
 
 	-H, --help
 		Prints a short help screen.

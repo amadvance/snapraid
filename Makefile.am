@@ -150,13 +150,13 @@ maintainer-clean-local:
 CHECKFLAGS_BASE = --test-skip-device --test-skip-self --test-force-order-alpha --test-force-progress
 
 # Physical offset options
-CHECKFLAGS_PHYSICAL = --test-skip-device --test-skip-self --test-force-order-physical -q
+CHECKFLAGS_PHYSICAL = --test-skip-device --test-skip-self --test-force-order-physical -q -q -q
 
 # Verbose options
 CHECKFLAGS_VERBOSE = $(CHECKFLAGS_BASE) -v -G
 
 # Quiet options
-CHECKFLAGS = $(CHECKFLAGS_BASE) -q
+CHECKFLAGS = $(CHECKFLAGS_BASE) -q -q -q
 
 # Number of files to create
 CHECKCOUNT = 1000
