@@ -1,7 +1,7 @@
 SnapRAID
 ========
 
-SnapRAID is a backup program for a disk array.
+SnapRAID is a backup program for disk arrays.
 
 SnapRAID stores redundancy information in the disk array,
 and it allows recovering from up to six disk failures.
