@@ -2041,7 +2041,7 @@ static int devscan(tommy_list* list)
 	FILE* f;
 	int ret;
 
-	snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl-nc.exe\" --scan-open -d pd", exedir);
+	snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" --scan-open -d pd", exedir);
 
 	f = _wpopen(cmd, L"rt");
 	if (!f) {
@@ -2084,7 +2084,7 @@ static int devsmart(uint64_t device, uint64_t* smart, char* serial)
 	FILE* f;
 	int ret;
 
-	snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl-nc.exe\" -a /dev/pd%" PRIu64, exedir, device);
+	snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -a /dev/pd%" PRIu64, exedir, device);
 
 	f = _wpopen(cmd, L"rt");
 	if (!f) {
