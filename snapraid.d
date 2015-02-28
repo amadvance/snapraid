@@ -20,8 +20,8 @@ Synopsis
 
 Description
 	SnapRAID is a backup program for disk arrays. It stores parity
-	information of your data and it's able to recover from up to six
-	disk failures.
+	information of your data and it recovers from up to six disk
+	failures.
 
 	SnapRAID is mainly targeted for a home media center, with a lot of
 	big files that rarely change.
