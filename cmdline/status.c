@@ -193,7 +193,8 @@ int state_status(struct snapraid_state* state)
 		wasted = (int64_t)disk_block_max_by_space - (int64_t)disk_block_max_by_parity;
 		wasted *= state->block_size;
 
-		all_wasted += wasted;
+		if (wasted > 0)
+			all_wasted += wasted;
 		file_block_free += disk_block_max - disk_block_count;
 
 		printf("%8u", disk_file_count);
@@ -202,7 +203,9 @@ int state_status(struct snapraid_state* state)
 		if (wasted < -100LL * 1024 * 1024 * 1024) {
 			printf("       -");
 		} else if (wasted < 0) {
-			printf("%6" PRId64 ".%01" PRIu64, wasted / (int64_t)base, (-wasted * 10 / base) % 10);
+			char buffer[32];
+			snprintf(buffer, sizeof(buffer), "-%" PRId64 ".%01" PRIu64, -wasted / base, (-wasted * 10 / base) % 10);
+			printf("%8s", buffer);
 		} else {
 			printf("%6" PRIu64 ".%01" PRIu64, wasted / base, (wasted * 10 / base) % 10);
 		}
