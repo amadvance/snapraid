@@ -192,9 +192,14 @@ void state_read(struct snapraid_state* state);
 void state_write(struct snapraid_state* state);
 
 /**
+ * Diff all the disks.
+ */
+int state_diff(struct snapraid_state* state);
+
+/**
  * Scans all the disks to update the state.
  */
-void state_scan(struct snapraid_state* state, int is_diff);
+void state_scan(struct snapraid_state* state);
 
 /**
  * Sets the nanosecond timestamp of all files that have a zero value.

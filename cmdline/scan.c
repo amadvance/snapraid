@@ -20,6 +20,7 @@
 #include "support.h"
 #include "elem.h"
 #include "state.h"
+#include "parity.h"
 
 struct snapraid_scan {
 	struct snapraid_state* state; /**< State used. */
@@ -1340,7 +1341,7 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 	return processed;
 }
 
-void state_scan(struct snapraid_state* state, int is_diff)
+static int state_diffscan(struct snapraid_state* state, int is_diff)
 {
 	tommy_node* i;
 	tommy_node* j;
@@ -1743,5 +1744,27 @@ void state_scan(struct snapraid_state* state, int is_diff)
 	msg_flush();
 
 	tommy_list_foreach(&scanlist, (tommy_foreach_func*)free);
+
+	if (is_diff) {
+		/* check for file difference */
+		if (!no_difference)
+			return -1;
+
+		/* check also for incomplete "sync" */
+		if (parity_is_invalid(state))
+			return -1;
+	}
+
+	return 0;
+}
+
+int state_diff(struct snapraid_state* state)
+{
+	return state_diffscan(state, 1);
+}
+
+void state_scan(struct snapraid_state* state)
+{
+	(void)state_diffscan(state, 0); /* ignore return value */
 }
 

@@ -52,6 +52,20 @@ block_off_t parity_allocated_size(struct snapraid_state* state);
 block_off_t parity_used_size(struct snapraid_state* state);
 
 /**
+ * Checks if the parity needs to be updated with a "sync".
+ *
+ * This is the same logic used in "status" to detect an incomplete "sync",
+ * that ignores invalid block, if they are not used by a file in any disk.
+ * This means that DELETED blocks won't necessarely imply an invalid parity.
+ */
+int parity_is_invalid(struct snapraid_state* state);
+
+/**
+ * If parity has some
+ */
+int parity_is_invalid(struct snapraid_state* state);
+
+/**
  * Reports all the files outside the specified parity size.
  */
 void parity_overflow(struct snapraid_state* state, data_off_t size);

@@ -957,7 +957,14 @@ int main(int argc, char* argv[])
 	if (operation == OPERATION_DIFF) {
 		state_read(&state);
 
-		state_scan(&state, 1);
+		ret = state_diff(&state);
+
+		/* abort if required */
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
 	} else if (operation == OPERATION_SYNC) {
 
 		/* in the next state read ensures to clear all the past hashes in case */
@@ -970,7 +977,7 @@ int main(int argc, char* argv[])
 
 		state_read(&state);
 
-		state_scan(&state, 0);
+		state_scan(&state);
 
 		/* refresh the size info before the content write */
 		state_refresh(&state);

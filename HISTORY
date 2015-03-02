@@ -13,8 +13,10 @@ SnapRAID HISTORY
  * The -e, --filter-error option doesn't write anymore fixes to
    unsynced files. This helps in case you are running it on a not
    synced array, removing the risk to revert some files to an old state.
- * The -e, --filter-error option is now optimal and read only the minimal
-   amount of data necessary to fix the errors.
+ * The -e, --filter-error option is now optimal and read only the
+   minimal amount of data necessary to fix the errors.
+ * The "diff" command returns with an error code if a "sync" is
+   required.
  * Adds new "smart" command to print a SMART report of the array.
  * Adds new "up" and "down" commands to spin up and down the disks of
    the array.

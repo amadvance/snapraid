@@ -5,11 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - Minor
 
-* Should "diff" warn about not completed sync ?
-At now neither "diff" nor "status" return with an error code
-if this happen... Something better cold be done.
-See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/c96cdd31/
-
 * Restore ownership and permissions, at least in Unix.
 
 * Restore directory timestamps.
