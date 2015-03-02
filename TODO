@@ -10,10 +10,14 @@ At now neither "diff" nor "status" return with an error code
 if this happen... Something better cold be done.
 See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/c96cdd31/
 
-* Don't insert new files if they are too recent and opened by other
-applications.
+* Restore ownership and permissions, at least in Unix.
+
+* Restore directory timestamps.
 
 * Provides a way to rename disks in content file.
+
+* Don't insert new files if they are too recent and opened by other
+applications.
 
 * Allow to filter also in diff, to limit the output
 to some dir or disk. Also excluding a specific disk could
@@ -26,10 +30,6 @@ and if we manage to keep it in the cache, we should save time.
 
 * Add an option for dup to list only duplicates with different name.
 This supposing that if a file has the same name, it's intentionally duplicated.
-
-* Restore ownership and permission, at least in Unix.
-
-* Restore directory timestamps.
 
 * Enable storing of creation time NTFS, crtime/birth time EXT4.
 But see: http://unix.stackexchange.com/questions/50177/birth-is-empty-on-ext4
