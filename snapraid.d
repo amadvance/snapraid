@@ -407,8 +407,6 @@ Commands
 	This command uses the "hdparm" tool, and it's equivalent to run
 	"hdparm -y" or all the devices.
 
-	It's not supported in Windows.
-
 	Nothing is modified.
 
   diff

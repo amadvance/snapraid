@@ -439,8 +439,6 @@ Spins down all the disks of the array.
 This command uses the "hdparm" tool, and it's equivalent to run
 "hdparm -y" or all the devices.
 
-It's not supported in Windows.
-
 Nothing is modified.
 
 5.5 diff
