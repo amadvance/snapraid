@@ -18,17 +18,13 @@ applications.
 to some dir or disk. Also excluding a specific disk could
 be useful.
 
+* Add an option for dup to list only duplicates with different name.
+This supposing that if a file has the same name, it's intentionally duplicated.
+
 * Checks if splitting hash/parity computation in 4K pages
 can improve speed in sync. That should increase cache locality,
 because we read the data two times for hash and and parity,
 and if we manage to keep it in the cache, we should save time.
-
-* Add an option for dup to list only duplicates with different name.
-This supposing that if a file has the same name, it's intentionally duplicated.
-
-* Enable storing of creation time NTFS, crtime/birth time EXT4.
-But see: http://unix.stackexchange.com/questions/50177/birth-is-empty-on-ext4
-coreutils stat has an example, but it doesn't work in Linux (see lib/stat-time.h)
 
 * A new 'init' command to differentiate the first 'sync' operation.
 This 'init' will work also without a content file, and parity files.
@@ -108,6 +104,11 @@ Rejected TODO
 =============
 
 This is a list of rejected TODO items.
+
+* Enable storing of creation time NTFS, crtime/birth time EXT4.
+But see: http://unix.stackexchange.com/questions/50177/birth-is-empty-on-ext4
+coreutils stat has an example, but it doesn't work in Linux (see lib/stat-time.h)
+- Not supported in Linux.
 
 * In the content file save the timestamp of the parity files.
 If they do not match, stop the processing.
