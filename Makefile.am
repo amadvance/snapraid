@@ -191,13 +191,14 @@ check-local:
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -V
 	$(TESTENV) ./mktest$(EXEEXT)
 if HAVE_EMULATOR
-# Run the self test in AVX2
-	$(TESTENV_AVX2) ./snapraid$(EXEEXT) --test-skip-device -c $(CONF) status
+# Run the self test in AVX512
+	$(TESTENV_AVX512) ./snapraid$(EXEEXT) --test-skip-device -c $(CONF) status
 # Run the speed test in different architectures
 	$(TESTENV_SSE2) ./snapraid$(EXEEXT) --test-skip-device -T
 	$(TESTENV_SSSE3) ./snapraid$(EXEEXT) --test-skip-device -T
 	$(TESTENV_SSE42) ./snapraid$(EXEEXT) --test-skip-device -T
 	$(TESTENV_AVX2) ./snapraid$(EXEEXT) --test-skip-device -T
+	$(TESTENV_AVX512) ./snapraid$(EXEEXT) --test-skip-device -T
 else
 # Run the self test natively
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -c $(CONF) status

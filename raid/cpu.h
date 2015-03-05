@@ -35,6 +35,19 @@ static inline void raid_cpuid(uint32_t func_eax, uint32_t sub_ecx, uint32_t *reg
 	);
 }
 
+static inline void raid_xgetbv(uint32_t* reg)
+{
+	/* get the value of the Extended Control Register ecx=0 */
+	asm volatile (
+	        /* uses a direct encoding of the XGETBV instruction as only recent */
+	        /* assemblers support it. */
+	        /* the next line is equivalent at: "xgetbv\n" */
+		".byte 0x0f, 0x01, 0xd0\n"
+		: "=a" (reg[0]), "=d" (reg[3])
+		: "c" (0)
+	);
+}
+
 #define CPU_VENDOR_MAX 13
 
 static inline void raid_cpu_info(char *vendor, unsigned *family, unsigned *model)
@@ -106,49 +119,56 @@ static inline int raid_cpu_has_sse42(void)
 	return (reg[2] >> 20) & 1;
 }
 
-static inline int raid_cpu_has_xsavexrstor(void)
-{
-	uint32_t reg[4];
-
-	raid_cpuid(1, 0, reg);
-
-	return (reg[2] >> 27) & 1;
-}
-
-static inline int raid_os_support_256bit_regs(void)
-{
-	uint32_t reg[4];
-
-	/* get the value of the Extended Control Register ecx=0 */
-	asm volatile (
-	        /* uses a direct encoding of the XGETBV instruction as only recent */
-	        /* assemblers support it. */
-	        /* the next line is equivalent at: "xgetbv\n" */
-		".byte 0x0f, 0x01, 0xd0\n"
-		: "=a" (reg[0]), "=d" (reg[3])
-		: "c" (0)
-	);
-
-	/* check if the OS saves the 256 bits registers in task switch */
-	return (reg[0] & 0x6) == 0x6;
-}
-
 static inline int raid_cpu_has_avx2(void)
 {
 	uint32_t reg[4];
+	uint32_t mask;
 
-	/* check if the CPU supports XSAVE and XRSTOR, and XGETBV */
-	if (!raid_cpu_has_xsavexrstor())
+	/* check for XSAVE/XGETBV and AVX */
+	raid_cpuid(1, 0, reg);
+	mask = (1 << 27) | (1 << 28);
+	if ((reg[2] & mask) != mask)
 		return 0;
 
-	/* check if the OS supports AVX2 registers */
-	if (!raid_os_support_256bit_regs())
-		return 0;
-
-	/* now check for AVX2 support */
+	/* check for AVX2 */
 	raid_cpuid(7, 0, reg);
+	mask = 1 << 5; /* AVX2 */;
+	if ((reg[1] & mask) != mask)
+		return 0;
 
-	return (reg[1] >> 5) & 1;
+	/* check if the OS saves the XMM and YMM registers */
+	raid_xgetbv(reg);
+	mask = (1 << 1) | (2 << 1);
+	if ((reg[0] & mask) != mask)
+		return 0;
+
+	return 1;
+}
+
+static inline int raid_cpu_has_avx512(void)
+{
+	uint32_t reg[4];
+	uint32_t mask;
+
+	/* check for XSAVE/XGETBV and AVX */
+	raid_cpuid(1, 0, reg);
+	mask = (1 << 27) | (1 << 28);
+	if ((reg[2] & mask) != mask)
+		return 0;
+
+	/* check for AVX512F */
+	raid_cpuid(7, 0, reg);
+	mask = 1 << 16;
+	if ((reg[1] & mask) != mask)
+		return 0;
+
+	/* check if the OS saves the XMM, YMM and ZMM registers */
+	raid_xgetbv(reg);
+	mask = (1 << 1) | (2 << 1) | (7 << 5);
+	if ((reg[0] & mask) != mask)
+		return 0;
+
+	return 1;
 }
 
 /**

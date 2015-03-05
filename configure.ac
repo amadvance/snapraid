@@ -156,6 +156,22 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 [AC_DEFINE([HAVE_AVX2], [1], [Define to 1 if avx2 is supported by the assembler.]) asmavx2=yes])
 AC_MSG_RESULT([$asmavx2])
 
+dnl Checks for AS supporting the AVX512 instructions.
+AC_MSG_CHECKING([for avx512])
+asmavx512=no
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#if defined(__i386__) || defined(__x86_64__)
+	void f(void* ptr)
+	{
+		asm volatile("vbroadcasti64x4 %0, %%zmm0" : : "m" (ptr));
+	}
+#else
+#error not x86
+#endif
+]])],
+[AC_DEFINE([HAVE_AVX512], [1], [Define to 1 if avx512 is supported by the assembler.]) asmavx512=yes])
+AC_MSG_RESULT([$asmavx512])
+
 dnl Checks for test environment
 AS_CASE([$host],
 	[*-*-mingw*],
@@ -211,6 +227,7 @@ dnl knl -> Knights Landing with AVX512
 	TESTENV_SSSE3="$SDE -mrm --"
 	TESTENV_SSE42="$SDE -nhm --"
 	TESTENV_AVX2="$SDE -hsw --"
+	TESTENV_AVX512="$SDE -knl --"
 	EMULATOR=1
 	],
 	[])
@@ -242,6 +259,7 @@ AC_ARG_VAR([TESTENV_SSE2], [Test environment for SSE2])
 AC_ARG_VAR([TESTENV_SSSE3], [Test environment for SSSE3])
 AC_ARG_VAR([TESTENV_SSE42], [Test environment for SSE42])
 AC_ARG_VAR([TESTENV_AVX2], [Test environment for AVX2])
+AC_ARG_VAR([TESTENV_AVX512], [Test environment for AVX512])
 
 AC_CONFIG_FILES([Makefile])
 AC_OUTPUT
