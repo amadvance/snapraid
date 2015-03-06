@@ -145,7 +145,7 @@ static inline int raid_cpu_has_avx2(void)
 	return 1;
 }
 
-static inline int raid_cpu_has_avx512(void)
+static inline int raid_cpu_has_avx512f(void)
 {
 	uint32_t reg[4];
 	uint32_t mask;
@@ -159,6 +159,32 @@ static inline int raid_cpu_has_avx512(void)
 	/* check for AVX512F */
 	raid_cpuid(7, 0, reg);
 	mask = 1 << 16;
+	if ((reg[1] & mask) != mask)
+		return 0;
+
+	/* check if the OS saves the XMM, YMM and ZMM registers */
+	raid_xgetbv(reg);
+	mask = (1 << 1) | (2 << 1) | (7 << 5);
+	if ((reg[0] & mask) != mask)
+		return 0;
+
+	return 1;
+}
+
+static inline int raid_cpu_has_avx512bw(void)
+{
+	uint32_t reg[4];
+	uint32_t mask;
+
+	/* check for XSAVE/XGETBV and AVX */
+	raid_cpuid(1, 0, reg);
+	mask = (1 << 27) | (1 << 28);
+	if ((reg[2] & mask) != mask)
+		return 0;
+
+	/* check for AVX512F and AVX512BW */
+	raid_cpuid(7, 0, reg);
+	mask = (1 << 16) | (1 << 30);
 	if ((reg[1] & mask) != mask)
 		return 0;
 

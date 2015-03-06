@@ -103,6 +103,12 @@ void raid_init(void)
 		raid_rec_ptr[5] = raid_recX_avx2;
 	}
 #endif
+
+#ifdef CONFIG_AVX512F
+	if (raid_cpu_has_avx512f()) {
+		raid_gen_ptr[0] = raid_gen1_avx512f;
+	}
+#endif
 #endif /* CONFIG_X86 */
 
 	/* set the default mode */

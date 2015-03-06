@@ -122,13 +122,14 @@ void speed(int period)
 
 		raid_cpu_info(vendor, &family, &model);
 
-		printf("CPU %s, family %u, model %u, flags%s%s%s%s%s%s%s%s%s\n", vendor, family, model,
+		printf("CPU %s, family %u, model %u, flags%s%s%s%s%s%s%s%s%s%s\n", vendor, family, model,
 			raid_cpu_has_mmx() ? " mmx" : "",
 			raid_cpu_has_sse2() ? " sse2" : "",
 			raid_cpu_has_ssse3() ? " ssse3" : "",
 			raid_cpu_has_sse42() ? " sse42" : "",
 			raid_cpu_has_avx2() ? " avx2" : "",
-			raid_cpu_has_avx512() ? " avx512" : "",
+			raid_cpu_has_avx512f() ? " avx512f" : "",
+			raid_cpu_has_avx512bw() ? " avx512bw" : "",
 			raid_cpu_has_slowmult() ? " slowmult" : "",
 			raid_cpu_has_slowpshufb() ? " slowpshufb" : "",
 			raid_cpu_has_slowextendedreg() ? " slowext" : ""

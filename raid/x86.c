@@ -95,6 +95,40 @@ void raid_gen1_avx2(int nd, size_t size, void **vv)
 }
 #endif
 
+#if defined(CONFIG_X86) && defined(CONFIG_AVX512F)
+/*
+ * GEN1 (RAID5 with xor) AVX512F implementation
+ *
+ * Intentionally don't process more than 64 bytes because 64 is the typical
+ * cache block, and processing 128 bytes doesn't increase performance, and in
+ * some cases it even decreases it.
+ */
+void raid_gen1_avx512f(int nd, size_t size, void **vv)
+{
+	uint8_t **v = (uint8_t**)vv;
+	uint8_t *p;
+	int d, l;
+	size_t i;
+
+	l = nd - 1;
+	p = v[nd];
+
+	raid_asm_begin();
+
+	for (i = 0; i < size; i += 64) {
+		asm volatile ("vmovdqa64 %0,%%zmm0" : : "m" (v[l][i]));
+		for (d = l - 1; d >= 0; --d) {
+			asm volatile ("vpxorq %0,%%zmm0,%%zmm0" : : "m" (v[d][i]));
+		}
+		asm volatile ("vmovntdq %%zmm0,%0" : "=m" (p[i]));
+	}
+
+	raid_asm_clobber_ymm4();
+
+	raid_asm_end();
+}
+#endif
+
 #if defined(CONFIG_X86) && defined(CONFIG_SSE2)
 static const struct gfconst16 {
 	uint8_t poly[16];

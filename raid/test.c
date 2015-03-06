@@ -339,6 +339,12 @@ int raid_test_par(int mode, int nd, size_t size)
 		f[nf++] = raid_gen2_avx2;
 	}
 #endif
+
+#ifdef CONFIG_AVX512F
+	if (raid_cpu_has_avx512f()) {
+		f[nf++] = raid_gen1_avx512f;
+	}
+#endif
 #endif /* CONFIG_X86 */
 
 	if (mode == RAID_MODE_CAUCHY) {

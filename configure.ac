@@ -156,9 +156,9 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 [AC_DEFINE([HAVE_AVX2], [1], [Define to 1 if avx2 is supported by the assembler.]) asmavx2=yes])
 AC_MSG_RESULT([$asmavx2])
 
-dnl Checks for AS supporting the AVX512 instructions.
-AC_MSG_CHECKING([for avx512])
-asmavx512=no
+dnl Checks for AS supporting the AVX512F instructions.
+AC_MSG_CHECKING([for avx512f])
+asmavx512f=no
 AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #if defined(__i386__) || defined(__x86_64__)
 	void f(void* ptr)
@@ -169,8 +169,24 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 #error not x86
 #endif
 ]])],
-[AC_DEFINE([HAVE_AVX512], [1], [Define to 1 if avx512 is supported by the assembler.]) asmavx512=yes])
-AC_MSG_RESULT([$asmavx512])
+[AC_DEFINE([HAVE_AVX512F], [1], [Define to 1 if avx512f is supported by the assembler.]) asmavx512f=yes])
+AC_MSG_RESULT([$asmavx512f])
+
+dnl Checks for AS supporting the AVX512BW instructions.
+AC_MSG_CHECKING([for avx512bw])
+asmavx512bw=no
+AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
+#if defined(__i386__) || defined(__x86_64__)
+	void f(void* ptr)
+	{
+		asm volatile("vpshufb %0, %%zmm0, %%zmm1" : : "m" (ptr));
+	}
+#else
+#error not x86
+#endif
+]])],
+[AC_DEFINE([HAVE_AVX512BW], [1], [Define to 1 if avx512bw is supported by the assembler.]) asmavx512bw=yes])
+AC_MSG_RESULT([$asmavx512bw])
 
 dnl Checks for test environment
 AS_CASE([$host],
@@ -221,13 +237,14 @@ dnl p4 -> Pentium4 with SSE2
 dnl mrm -> Merom with SSSE3
 dnl nhm -> Nehalem with SSE4.2
 dnl hsw -> Haswell with AVX2
-dnl knl -> Knights Landing with AVX512
+dnl knl -> Knights Landing with AVX512F
+dnl skx -> Skylake Xeon with AVX512BW
 	[
 	TESTENV_SSE2="$SDE -p4 --"
 	TESTENV_SSSE3="$SDE -mrm --"
 	TESTENV_SSE42="$SDE -nhm --"
 	TESTENV_AVX2="$SDE -hsw --"
-	TESTENV_AVX512="$SDE -knl --"
+	TESTENV_AVX512="$SDE -skx --"
 	EMULATOR=1
 	],
 	[])

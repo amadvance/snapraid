@@ -56,8 +56,16 @@
 #if HAVE_AVX2 /* Enables AVX2 only if the assembler supports it */
 #define CONFIG_AVX2 1
 #endif
+
+#if HAVE_AVX512F /* Enables AVX2512F only if the assembler supports it */
+#define CONFIG_AVX512F 1
+#endif
+
+#if HAVE_AVX512BW /* Enables AVX2512BW only if the assembler supports it */
+#define CONFIG_AVX512BW 1
+#endif
 #else
-/* If no config file, assumes the assembler supports everything in x86 */
+/* If no config file, assumes the assembler supports everything in x86 up to AVX2 */
 #ifdef CONFIG_X86
 #define CONFIG_SSE2 1
 #define CONFIG_SSSE3 1
@@ -105,6 +113,7 @@ void raid_gen1_int32(int nd, size_t size, void **vv);
 void raid_gen1_int64(int nd, size_t size, void **vv);
 void raid_gen1_sse2(int nd, size_t size, void **vv);
 void raid_gen1_avx2(int nd, size_t size, void **vv);
+void raid_gen1_avx512f(int nd, size_t size, void **vv);
 void raid_gen2_int32(int nd, size_t size, void **vv);
 void raid_gen2_int64(int nd, size_t size, void **vv);
 void raid_gen2_sse2(int nd, size_t size, void **vv);
