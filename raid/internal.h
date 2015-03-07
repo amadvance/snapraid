@@ -57,10 +57,6 @@
 #define CONFIG_AVX2 1
 #endif
 
-#if HAVE_AVX512F /* Enables AVX2512F only if the assembler supports it */
-#define CONFIG_AVX512F 1
-#endif
-
 #if HAVE_AVX512BW /* Enables AVX2512BW only if the assembler supports it */
 #define CONFIG_AVX512BW 1
 #endif
@@ -113,12 +109,13 @@ void raid_gen1_int32(int nd, size_t size, void **vv);
 void raid_gen1_int64(int nd, size_t size, void **vv);
 void raid_gen1_sse2(int nd, size_t size, void **vv);
 void raid_gen1_avx2(int nd, size_t size, void **vv);
-void raid_gen1_avx512f(int nd, size_t size, void **vv);
+void raid_gen1_avx512bw(int nd, size_t size, void **vv);
 void raid_gen2_int32(int nd, size_t size, void **vv);
 void raid_gen2_int64(int nd, size_t size, void **vv);
 void raid_gen2_sse2(int nd, size_t size, void **vv);
 void raid_gen2_avx2(int nd, size_t size, void **vv);
 void raid_gen2_sse2ext(int nd, size_t size, void **vv);
+void raid_gen2_avx512bw(int nd, size_t size, void **vv);
 void raid_genz_int32(int nd, size_t size, void **vv);
 void raid_genz_int64(int nd, size_t size, void **vv);
 void raid_genz_sse2(int nd, size_t size, void **vv);
@@ -206,18 +203,15 @@ static __always_inline void raid_asm_begin(void)
 
 static __always_inline void raid_asm_end(void)
 {
-	/* SSE2 and AVX2 code uses non-temporal writes, like MOVNTDQ, */
+	/* SSE and AVX code uses non-temporal writes, like MOVNTDQ, */
 	/* that use a weak memory model. To ensure that other processors */
 	/* see correctly the data written, we use a store-store memory */
 	/* barrier at the end of the asm code */
 #ifdef CONFIG_SSE2
 	asm volatile ("sfence" : : : "memory");
 #endif
-}
 
 #ifdef CONFIG_SSE2
-static __always_inline void raid_asm_clobber_xmm4(void)
-{
 	/* clobbers registers used in the asm code */
 	/* this is required because in the Windows ABI, */
 	/* registers xmm6-xmm15 should be kept by the callee. */
@@ -227,60 +221,22 @@ static __always_inline void raid_asm_clobber_xmm4(void)
 	/* compiler supports SSE2 registers in the clobber list */
 #ifdef __SSE2__
 	asm volatile ("" : : : "%xmm0", "%xmm1", "%xmm2", "%xmm3");
-#endif
-}
-#endif
-
-#ifdef CONFIG_SSE2
-static __always_inline void raid_asm_clobber_xmm8(void)
-{
-	raid_asm_clobber_xmm4();
-#ifdef __SSE2__
 	asm volatile ("" : : : "%xmm4", "%xmm5", "%xmm6", "%xmm7");
+#ifdef CONFIG_X86_64
+	asm volatile ("" : : : "%xmm8", "%xmm9", "%xmm10", "%xmm11");
+	asm volatile ("" : : : "%xmm12", "%xmm13", "%xmm14", "%xmm15");
 #endif
-}
+#endif
 #endif
 
 #ifdef CONFIG_AVX2
-static __always_inline void raid_asm_clobber_ymm4(void)
-{
-	raid_asm_clobber_xmm4();
 	/* reset the upper part of the ymm registers */
 	/* to avoid the 70 clocks penality on the next */
 	/* xmm register use */
 	asm volatile ("vzeroupper" : : : "memory");
-}
 #endif
-
-#ifdef CONFIG_AVX2
-static __always_inline void raid_asm_clobber_ymm8(void)
-{
-	raid_asm_clobber_xmm8();
-	asm volatile ("vzeroupper" : : : "memory");
 }
-#endif
 #endif /* CONFIG_X86 */
-
-#ifdef CONFIG_X86_64
-#ifdef CONFIG_SSE2
-static __always_inline void raid_asm_clobber_xmm16(void)
-{
-	raid_asm_clobber_xmm8();
-#ifdef __SSE2__
-	asm volatile ("" : : : "%xmm8", "%xmm9", "%xmm10", "%xmm11");
-	asm volatile ("" : : : "%xmm12", "%xmm13", "%xmm14", "%xmm15");
-#endif
-}
-#endif
-
-#ifdef CONFIG_AVX2
-static __always_inline void raid_asm_clobber_ymm16(void)
-{
-	raid_asm_clobber_xmm16();
-	asm volatile ("vzeroupper" : : : "memory");
-}
-#endif
-#endif /* CONFIG_X86_64 */
 
 #endif
 

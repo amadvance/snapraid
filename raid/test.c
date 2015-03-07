@@ -340,9 +340,10 @@ int raid_test_par(int mode, int nd, size_t size)
 	}
 #endif
 
-#ifdef CONFIG_AVX512F
-	if (raid_cpu_has_avx512f()) {
-		f[nf++] = raid_gen1_avx512f;
+#ifdef CONFIG_AVX512BW
+	if (raid_cpu_has_avx512bw()) {
+		f[nf++] = raid_gen1_avx512bw;
+		f[nf++] = raid_gen2_avx512bw;
 	}
 #endif
 #endif /* CONFIG_X86 */

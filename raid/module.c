@@ -104,9 +104,10 @@ void raid_init(void)
 	}
 #endif
 
-#ifdef CONFIG_AVX512F
-	if (raid_cpu_has_avx512f()) {
-		raid_gen_ptr[0] = raid_gen1_avx512f;
+#ifdef CONFIG_AVX512BW
+	if (raid_cpu_has_avx512bw()) {
+		raid_gen_ptr[0] = raid_gen1_avx512bw;
+		raid_gen_ptr[1] = raid_gen2_avx512bw;
 	}
 #endif
 #endif /* CONFIG_X86 */

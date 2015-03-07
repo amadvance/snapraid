@@ -122,13 +122,11 @@ void speed(int period)
 
 		raid_cpu_info(vendor, &family, &model);
 
-		printf("CPU %s, family %u, model %u, flags%s%s%s%s%s%s%s%s%s%s\n", vendor, family, model,
-			raid_cpu_has_mmx() ? " mmx" : "",
+		printf("CPU %s, family %u, model %u, flags%s%s%s%s%s%s%s%s\n", vendor, family, model,
 			raid_cpu_has_sse2() ? " sse2" : "",
 			raid_cpu_has_ssse3() ? " ssse3" : "",
-			raid_cpu_has_sse42() ? " sse42" : "",
+			raid_cpu_has_crc32() ? " crc32" : "",
 			raid_cpu_has_avx2() ? " avx2" : "",
-			raid_cpu_has_avx512f() ? " avx512f" : "",
 			raid_cpu_has_avx512bw() ? " avx512bw" : "",
 			raid_cpu_has_slowmult() ? " slowmult" : "",
 			raid_cpu_has_slowpshufb() ? " slowpshufb" : "",
@@ -193,7 +191,7 @@ void speed(int period)
 	fflush(stdout);
 
 #if HAVE_SSE42
-	if (raid_cpu_has_sse42()) {
+	if (raid_cpu_has_crc32()) {
 		SPEED_START {
 			for (j = 0; j < nd; ++j)
 				crc32c_x86(0, v[j], size);

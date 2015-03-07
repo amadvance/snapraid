@@ -156,22 +156,6 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 [AC_DEFINE([HAVE_AVX2], [1], [Define to 1 if avx2 is supported by the assembler.]) asmavx2=yes])
 AC_MSG_RESULT([$asmavx2])
 
-dnl Checks for AS supporting the AVX512F instructions.
-AC_MSG_CHECKING([for avx512f])
-asmavx512f=no
-AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
-#if defined(__i386__) || defined(__x86_64__)
-	void f(void* ptr)
-	{
-		asm volatile("vbroadcasti64x4 %0, %%zmm0" : : "m" (ptr));
-	}
-#else
-#error not x86
-#endif
-]])],
-[AC_DEFINE([HAVE_AVX512F], [1], [Define to 1 if avx512f is supported by the assembler.]) asmavx512f=yes])
-AC_MSG_RESULT([$asmavx512f])
-
 dnl Checks for AS supporting the AVX512BW instructions.
 AC_MSG_CHECKING([for avx512bw])
 asmavx512bw=no

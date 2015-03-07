@@ -54,8 +54,9 @@ static struct raid_func {
 	{ "avx2", raid_rec2_avx2 },
 	{ "avx2", raid_recX_avx2 },
 #endif
-#ifdef CONFIG_AVX512F
-	{ "avx512f", raid_gen1_avx512f },
+#ifdef CONFIG_AVX512BW
+	{ "avx512bw", raid_gen1_avx512bw },
+	{ "avx512bw", raid_gen2_avx512bw },
 #endif
 #endif
 

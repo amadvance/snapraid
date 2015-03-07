@@ -83,118 +83,124 @@ static inline void raid_cpu_info(char *vendor, unsigned *family, unsigned *model
 	}
 }
 
-static inline int raid_cpu_has_mmx(void)
+static inline int raid_cpu_match_sse(uint32_t cpuid_1_ecx, uint32_t cpuid_1_edx)
 {
 	uint32_t reg[4];
 
 	raid_cpuid(1, 0, reg);
+	if ((reg[2] & cpuid_1_ecx) != cpuid_1_ecx)
+		return 0;
+	if ((reg[3] & cpuid_1_edx) != cpuid_1_edx)
+		return 0;
 
-	return (reg[3] >> 23) & 1;
+	return 1;
+}
+
+static inline int raid_cpu_match_avx(uint32_t cpuid_1_ecx, uint32_t cpuid_7_ebx, uint32_t xcr0)
+{
+	uint32_t reg[4];
+
+	raid_cpuid(1, 0, reg);
+	if ((reg[2] & cpuid_1_ecx) != cpuid_1_ecx)
+		return 0;
+
+	raid_xgetbv(reg);
+	if ((reg[0] & xcr0) != xcr0)
+		return 0;
+
+	raid_cpuid(7, 0, reg);
+	if ((reg[1] & cpuid_7_ebx) != cpuid_7_ebx)
+		return 0;
+
+	return 1;
 }
 
 static inline int raid_cpu_has_sse2(void)
 {
-	uint32_t reg[4];
-
-	raid_cpuid(1, 0, reg);
-
-	return (reg[3] >> 26) & 1;
+	/*
+	 * Intel® 64 and IA-32 Architectures Software Developer's Manual
+	 * 325462-048US September 2013
+	 *
+	 * 11.6.2 Checking for SSE/SSE2 Support
+	 * Before an application attempts to use the SSE and/or SSE2 extensions, it should check
+	 * that they are present on the processor:
+	 * 1. Check that the processor supports the CPUID instruction. Bit 21 of the EFLAGS
+	 * register can be used to check processor's support the CPUID instruction.
+	 * 2. Check that the processor supports the SSE and/or SSE2 extensions (true if
+	 * CPUID.01H:EDX.SSE[bit 25] = 1 and/or CPUID.01H:EDX.SSE2[bit 26] = 1).
+	 */
+	return raid_cpu_match_sse(
+		0,
+		1 << 26); /* SSE2 */
 }
 
 static inline int raid_cpu_has_ssse3(void)
 {
-	uint32_t reg[4];
-
-	raid_cpuid(1, 0, reg);
-
-	return (reg[2] >> 9) & 1;
+	/*
+	 * Intel® 64 and IA-32 Architectures Software Developer's Manual
+	 * 325462-048US September 2013
+	 *
+	 * 12.7.2 Checking for SSSE3 Support
+	 * Before an application attempts to use the SSSE3 extensions, the application should
+	 * follow the steps illustrated in Section 11.6.2, "Checking for SSE/SSE2 Support."
+	 * Next, use the additional step provided below:
+	 * Check that the processor supports SSSE3 (if CPUID.01H:ECX.SSSE3[bit 9] = 1).
+	 */
+	return raid_cpu_match_sse(
+		1 << 9, /* SSSE3 */
+		1 << 26); /* SSE2 */
 }
 
-static inline int raid_cpu_has_sse42(void)
+static inline int raid_cpu_has_crc32(void)
 {
-	uint32_t reg[4];
-
-	raid_cpuid(1, 0, reg);
-
-	return (reg[2] >> 20) & 1;
+	/*
+	 * Intel® 64 and IA-32 Architectures Software Developer's Manual
+	 * 325462-048US September 2013
+	 *
+	 * 12.12.3 Checking for SSE4.2 Support
+	 * ...
+	 * Before an application attempts to use the CRC32 instruction, it must check
+	 * that the processor supports SSE4.2 (if CPUID.01H:ECX.SSE4_2[bit 20] = 1).
+	 */
+	return raid_cpu_match_sse(
+		1 << 20, /* CRC32 */
+		0); /* SSE2 */
 }
 
 static inline int raid_cpu_has_avx2(void)
 {
-	uint32_t reg[4];
-	uint32_t mask;
-
-	/* check for XSAVE/XGETBV and AVX */
-	raid_cpuid(1, 0, reg);
-	mask = (1 << 27) | (1 << 28);
-	if ((reg[2] & mask) != mask)
-		return 0;
-
-	/* check for AVX2 */
-	raid_cpuid(7, 0, reg);
-	mask = 1 << 5; /* AVX2 */;
-	if ((reg[1] & mask) != mask)
-		return 0;
-
-	/* check if the OS saves the XMM and YMM registers */
-	raid_xgetbv(reg);
-	mask = (1 << 1) | (2 << 1);
-	if ((reg[0] & mask) != mask)
-		return 0;
-
-	return 1;
-}
-
-static inline int raid_cpu_has_avx512f(void)
-{
-	uint32_t reg[4];
-	uint32_t mask;
-
-	/* check for XSAVE/XGETBV and AVX */
-	raid_cpuid(1, 0, reg);
-	mask = (1 << 27) | (1 << 28);
-	if ((reg[2] & mask) != mask)
-		return 0;
-
-	/* check for AVX512F */
-	raid_cpuid(7, 0, reg);
-	mask = 1 << 16;
-	if ((reg[1] & mask) != mask)
-		return 0;
-
-	/* check if the OS saves the XMM, YMM and ZMM registers */
-	raid_xgetbv(reg);
-	mask = (1 << 1) | (2 << 1) | (7 << 5);
-	if ((reg[0] & mask) != mask)
-		return 0;
-
-	return 1;
+	/*
+	 * Intel Architecture Instruction Set Extensions Programming Reference
+	 * 319433-022 October 2014
+	 *
+	 * 14.7.1 Detection of AVX2
+	 * Hardware support for AVX2 is indicated by CPUID.(EAX=07H, ECX=0H):EBX.AVX2[bit 5]=1.
+	 * Application Software must identify that hardware supports AVX, after that it must
+	 * also detect support for AVX2 by checking CPUID.(EAX=07H, ECX=0H):EBX.AVX2[bit 5].
+	 */
+	return raid_cpu_match_avx(
+		(1 << 27) | (1 << 5), /* OSXSAVE and AVX */
+		1 << 5, /* AVX2 */
+		3 << 1); /* OS saves XMM and YMM registers */
 }
 
 static inline int raid_cpu_has_avx512bw(void)
 {
-	uint32_t reg[4];
-	uint32_t mask;
-
-	/* check for XSAVE/XGETBV and AVX */
-	raid_cpuid(1, 0, reg);
-	mask = (1 << 27) | (1 << 28);
-	if ((reg[2] & mask) != mask)
-		return 0;
-
-	/* check for AVX512F and AVX512BW */
-	raid_cpuid(7, 0, reg);
-	mask = (1 << 16) | (1 << 30);
-	if ((reg[1] & mask) != mask)
-		return 0;
-
-	/* check if the OS saves the XMM, YMM and ZMM registers */
-	raid_xgetbv(reg);
-	mask = (1 << 1) | (2 << 1) | (7 << 5);
-	if ((reg[0] & mask) != mask)
-		return 0;
-
-	return 1;
+	/*
+	 * Intel Architecture Instruction Set Extensions Programming Reference
+	 * 319433-022 October 2014
+	 *
+	 * 2.2 Detection of 512-bit Instruction Groups of Intel AVX-512 Family
+	 * 1) Detect CPUID.1:ECX.OSXSAVE[bit 27] = 1 (XGETBV enabled for application use)
+	 * 2) Execute XGETBV and verify that XCR0[7:5] = `111b' (OPMASK state, upper 256-bit of
+	 * ZMM0-ZMM15 and ZMM16-ZMM31 state are enabled by OS) and that XCR0[2:1] = `11b'
+	 * (XMM state and YMM state are enabled by OS).
+	 * 3) Verify both CPUID.0x7.0:EBX.AVX512F[bit 16] = 1, CPUID.0x7.0:EBX.AVX512BW[bit 30] = 1.
+	 */
+	return raid_cpu_match_avx(
+		(1 << 27) | (1 << 28), /* XSAVE/XGETBV and AVX */
+		(1 << 16) | (1 << 30), /* AVX512F and AVX512BW */
+		(3 << 1) | (7 << 5)); /* OS saves XMM, YMM and ZMM registers */
 }
 
 /**

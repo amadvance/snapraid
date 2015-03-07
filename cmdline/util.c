@@ -419,7 +419,7 @@ void crc32c_init(void)
 {
 	crc32c = crc32c_gen;
 #if HAVE_SSE42
-	if (raid_cpu_has_sse42()) {
+	if (raid_cpu_has_crc32()) {
 		crc_x86 = 1;
 		crc32c = crc32c_x86;
 	}
