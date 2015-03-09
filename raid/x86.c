@@ -2219,7 +2219,6 @@ void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 }
 #endif
 
-
 #if defined(CONFIG_X86) && defined(CONFIG_AVX2)
 /*
  * RAID recovering for one disk AVX2 implementation

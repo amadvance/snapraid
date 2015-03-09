@@ -48,8 +48,8 @@ covtest:
 	$(MAKE) lcov_reset
 	$(MAKE) COVERAGE=1 all
 	./fulltest
-	./speedtest
 	./selftest
+	./speedtest
 	$(MAKE) lcov_capture
 	$(MAKE) lcov_html
 
