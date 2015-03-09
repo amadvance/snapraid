@@ -201,17 +201,15 @@ static __always_inline void raid_asm_begin(void)
 {
 }
 
-static __always_inline void raid_asm_end(void)
+#ifdef CONFIG_SSE2
+static __always_inline void raid_asm_sse_end(void)
 {
 	/* SSE and AVX code uses non-temporal writes, like MOVNTDQ, */
 	/* that use a weak memory model. To ensure that other processors */
 	/* see correctly the data written, we use a store-store memory */
 	/* barrier at the end of the asm code */
-#ifdef CONFIG_SSE2
 	asm volatile ("sfence" : : : "memory");
-#endif
 
-#ifdef CONFIG_SSE2
 	/* clobbers registers used in the asm code */
 	/* this is required because in the Windows ABI, */
 	/* registers xmm6-xmm15 should be kept by the callee. */
@@ -227,15 +225,20 @@ static __always_inline void raid_asm_end(void)
 	asm volatile ("" : : : "%xmm12", "%xmm13", "%xmm14", "%xmm15");
 #endif
 #endif
+}
 #endif
 
 #ifdef CONFIG_AVX2
+static __always_inline void raid_asm_avx_end(void)
+{
+	raid_asm_sse_end();
+
 	/* reset the upper part of the ymm registers */
 	/* to avoid the 70 clocks penality on the next */
 	/* xmm register use */
 	asm volatile ("vzeroupper" : : : "memory");
-#endif
 }
+#endif
 #endif /* CONFIG_X86 */
 
 #endif

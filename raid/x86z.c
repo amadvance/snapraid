@@ -90,7 +90,7 @@ void raid_genz_sse2(int nd, size_t size, void **vv)
 		asm volatile ("movntdq %%xmm2,%0" : "=m" (r[i]));
 	}
 
-	raid_asm_end();
+	raid_asm_sse_end();
 }
 #endif
 
@@ -172,7 +172,7 @@ void raid_genz_sse2ext(int nd, size_t size, void **vv)
 		asm volatile ("movntdq %%xmm10,%0" : "=m" (r[i + 16]));
 	}
 
-	raid_asm_end();
+	raid_asm_sse_end();
 }
 #endif
 
@@ -249,7 +249,7 @@ void raid_genz_avx2ext(int nd, size_t size, void **vv)
 		asm volatile ("vmovntdq %%ymm10,%0" : "=m" (r[i + 32]));
 	}
 
-	raid_asm_end();
+	raid_asm_avx_end();
 }
 #endif
 

@@ -52,7 +52,7 @@ void raid_gen1_sse2(int nd, size_t size, void **vv)
 		asm volatile ("movntdq %%xmm3,%0" : "=m" (p[i + 48]));
 	}
 
-	raid_asm_end();
+	raid_asm_sse_end();
 }
 #endif
 
@@ -87,7 +87,7 @@ void raid_gen1_avx2(int nd, size_t size, void **vv)
 		asm volatile ("vmovntdq %%ymm1,%0" : "=m" (p[i + 32]));
 	}
 
-	raid_asm_end();
+	raid_asm_avx_end();
 }
 #endif
 
@@ -123,7 +123,7 @@ void raid_gen1_avx512bw(int nd, size_t size, void **vv)
 		asm volatile ("vmovntdq %%zmm0,%0" : "=m" (p[i]));
 	}
 
-	raid_asm_end();
+	raid_asm_avx_end();
 }
 #endif
 
@@ -194,7 +194,7 @@ void raid_gen2_sse2(int nd, size_t size, void **vv)
 		asm volatile ("movntdq %%xmm3,%0" : "=m" (q[i + 16]));
 	}
 
-	raid_asm_end();
+	raid_asm_sse_end();
 }
 #endif
 
@@ -247,7 +247,7 @@ void raid_gen2_avx2(int nd, size_t size, void **vv)
 		asm volatile ("vmovntdq %%ymm3,%0" : "=m" (q[i + 32]));
 	}
 
-	raid_asm_end();
+	raid_asm_avx_end();
 }
 #endif
 
@@ -289,7 +289,7 @@ void raid_gen2_avx512bw(int nd, size_t size, void **vv)
 		asm volatile ("vmovntdq %%zmm2,%0" : "=m" (q[i]));
 	}
 
-	raid_asm_end();
+	raid_asm_avx_end();
 }
 #endif
 
@@ -369,7 +369,7 @@ void raid_gen2_sse2ext(int nd, size_t size, void **vv)
 		asm volatile ("movntdq %%xmm7,%0" : "=m" (q[i + 48]));
 	}
 
-	raid_asm_end();
+	raid_asm_sse_end();
 }
 #endif
 
@@ -466,7 +466,7 @@ void raid_gen3_ssse3(int nd, size_t size, void **vv)
 		asm volatile ("movntdq %%xmm2,%0" : "=m" (r[i]));
 	}
 
-	raid_asm_end();
+	raid_asm_sse_end();
 }
 #endif
 
@@ -607,7 +607,7 @@ void raid_gen3_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile ("movntdq %%xmm10,%0" : "=m" (r[i + 16]));
 	}
 
-	raid_asm_end();
+	raid_asm_sse_end();
 }
 #endif
 
@@ -740,7 +740,7 @@ void raid_gen3_avx2ext(int nd, size_t size, void **vv)
 		asm volatile ("vmovntdq %%ymm10,%0" : "=m" (r[i + 32]));
 	}
 
-	raid_asm_end();
+	raid_asm_avx_end();
 }
 #endif
 
@@ -856,7 +856,7 @@ void raid_gen4_ssse3(int nd, size_t size, void **vv)
 		asm volatile ("movntdq %%xmm3,%0" : "=m" (s[i]));
 	}
 
-	raid_asm_end();
+	raid_asm_sse_end();
 }
 #endif
 
@@ -1029,7 +1029,7 @@ void raid_gen4_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile ("movntdq %%xmm11,%0" : "=m" (s[i + 16]));
 	}
 
-	raid_asm_end();
+	raid_asm_sse_end();
 }
 #endif
 
@@ -1190,7 +1190,7 @@ void raid_gen4_avx2ext(int nd, size_t size, void **vv)
 		asm volatile ("vmovntdq %%ymm11,%0" : "=m" (s[i + 32]));
 	}
 
-	raid_asm_end();
+	raid_asm_avx_end();
 }
 #endif
 
@@ -1330,7 +1330,7 @@ void raid_gen5_ssse3(int nd, size_t size, void **vv)
 		asm volatile ("movntdq %%xmm3,%0" : "=m" (t[i]));
 	}
 
-	raid_asm_end();
+	raid_asm_sse_end();
 }
 #endif
 
@@ -1463,7 +1463,7 @@ void raid_gen5_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile ("movntdq %%xmm4,%0" : "=m" (t[i]));
 	}
 
-	raid_asm_end();
+	raid_asm_sse_end();
 }
 #endif
 
@@ -1593,7 +1593,7 @@ void raid_gen5_avx2ext(int nd, size_t size, void **vv)
 		asm volatile ("vmovntdq %%ymm4,%0" : "=m" (t[i]));
 	}
 
-	raid_asm_end();
+	raid_asm_avx_end();
 }
 #endif
 
@@ -1755,7 +1755,7 @@ void raid_gen6_ssse3(int nd, size_t size, void **vv)
 		asm volatile ("movntdq %%xmm3,%0" : "=m" (u[i]));
 	}
 
-	raid_asm_end();
+	raid_asm_sse_end();
 }
 #endif
 
@@ -1905,7 +1905,7 @@ void raid_gen6_ssse3ext(int nd, size_t size, void **vv)
 		asm volatile ("movntdq %%xmm5,%0" : "=m" (u[i]));
 	}
 
-	raid_asm_end();
+	raid_asm_sse_end();
 }
 #endif
 
@@ -2052,7 +2052,7 @@ void raid_gen6_avx2ext(int nd, size_t size, void **vv)
 		asm volatile ("vmovntdq %%ymm5,%0" : "=m" (u[i]));
 	}
 
-	raid_asm_end();
+	raid_asm_avx_end();
 }
 #endif
 
@@ -2111,7 +2111,7 @@ void raid_rec1_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		asm volatile ("movdqa %%xmm2,%0" : "=m" (pa[i]));
 	}
 
-	raid_asm_end();
+	raid_asm_sse_end();
 }
 #endif
 
@@ -2217,7 +2217,7 @@ void raid_rec2_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		asm volatile ("movdqa %%xmm6,%0" : "=m" (pa[1][i]));
 	}
 
-	raid_asm_end();
+	raid_asm_sse_end();
 }
 #endif
 
@@ -2293,7 +2293,7 @@ void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		}
 	}
 
-	raid_asm_end();
+	raid_asm_sse_end();
 }
 #endif
 
@@ -2350,7 +2350,7 @@ void raid_rec1_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		asm volatile ("vmovdqa %%ymm2,%0" : "=m" (pa[i]));
 	}
 
-	raid_asm_end();
+	raid_asm_avx_end();
 }
 #endif
 
@@ -2448,7 +2448,7 @@ void raid_rec2_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		asm volatile ("vmovdqa %%ymm6,%0" : "=m" (pa[1][i]));
 	}
 
-	raid_asm_end();
+	raid_asm_avx_end();
 }
 #endif
 
@@ -2523,7 +2523,7 @@ void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		}
 	}
 
-	raid_asm_end();
+	raid_asm_avx_end();
 }
 #endif
 
