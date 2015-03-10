@@ -139,9 +139,9 @@ void raid_gen(int nd, int np, size_t size, void **v);
 void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v);
 
 /**
- * Recovers failures in data blocks using the specified parities.
+ * Recovers failures in data blocks only.
  *
- * The data blocks marked as bad in the @id vector are recovered.
+ * This function recovers all the data blocks marked as bad in the @id vector.
  * The parity blocks are not modified.
  *
  * @nr Number of failed data blocks to recover.

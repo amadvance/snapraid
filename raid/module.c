@@ -180,9 +180,42 @@ static int raid_test_rec(int nr, int *ir, int nd, int np, size_t size, void **v,
 	int i, j;
 	void *t[TEST_COUNT + RAID_PARITY_MAX];
 
-	/* setup vector */
+	/* setup data and parity vector */
 	for (i = 0, j = 0; i < nd + np; ++i) {
 		if (j < nr && ir[j] == i) {
+			/* this block has to be recovered */
+			t[i] = v[i];
+			++j;
+		} else {
+			/* this block is used for recovering */
+			t[i] = ref[i];
+		}
+	}
+
+	raid_rec(nr, ir, nd, np, size, t);
+
+	/* compare all data and parity */
+	for (i = 0; i < nd + np; ++i) {
+		if (t[i] != ref[i]
+			&& memcmp(t[i], ref[i], size) != 0) {
+			return -1;
+		}
+	}
+
+	return 0;
+}
+
+/*
+ * Recovering test for dataonly.
+ */
+static int raid_test_rec_dataonly(int nr, int *id, int *ip, int nd, int np, size_t size, void **v, void **ref)
+{
+	int i, j;
+	void *t[TEST_COUNT + RAID_PARITY_MAX];
+
+	/* setup data vector */
+	for (i = 0, j = 0; i < nd; ++i) {
+		if (j < nr && id[j] == i) {
 			/* this block has to be recovered */
 			t[i] = v[i];
 			++j;
@@ -192,11 +225,25 @@ static int raid_test_rec(int nr, int *ir, int nd, int np, size_t size, void **v,
 		}
 	}
 
-	raid_rec(nr, ir, nd, np, size, t);
+	/* setup parity vector */
+	for (i = 0, j = 0; i < np; ++i) {
+		if (j < nr && ip[j] == i) {
+			/* this block is used for recovering */
+			t[nd + i] = ref[nd + i];
+			++j;
+		} else {
+			/* this block should not be read or written */
+			t[nd + i] = 0;
+		}
+	}
+
+	raid_rec_dataonly(nr, id, ip, nd, size, t);
 
 	/* compare all data and parity */
-	for (i = 0; i < nd + np; ++i) {
-		if (t[i] != ref[i] && memcmp(t[i], ref[i], size) != 0) {
+	for (i = 0; i < nd; ++i) {
+		if (t[i] != ref[i]
+			&& t[i] != 0
+			&& memcmp(t[i], ref[i], size) != 0) {
 			return -1;
 		}
 	}
@@ -216,6 +263,7 @@ int raid_selftest(void)
 	void **v;
 	void *ref[nd + RAID_PARITY_MAX];
 	int ir[RAID_PARITY_MAX];
+	int ip[RAID_PARITY_MAX];
 	int i, np;
 	int ret = 0;
 
@@ -247,18 +295,33 @@ int raid_selftest(void)
 		if (ret != 0)
 			goto bail;
 
-		/* test recovering with full broken data disks */
-		for (i = 0; i < np; ++i)
+		/* test recovering with broken ending data disks */
+		for (i = 0; i < np; ++i) {
+			/* bad data */
 			ir[i] = nd - np + i;
+
+			/* good parity */
+			ip[i] = i;
+		}
 
 		ret = raid_test_rec(np, ir, nd, np, size, v, ref);
 		if (ret != 0)
 			goto bail;
 
-		/* test recovering with half broken data and leading parity */
-		for (i = 0; i < np / 2; ++i)
+		ret = raid_test_rec_dataonly(np, ir, ip, nd, np, size, v, ref);
+		if (ret != 0)
+			goto bail;
+
+		/* test recovering with broken leading data and broken leading parity */
+		for (i = 0; i < np / 2; ++i) {
+			/* bad data */
 			ir[i] = i;
 
+			/* good parity */
+			ip[i] = (np + 1) / 2 + i;
+		}
+
+		/* bad parity */
 		for (i = 0; i < (np + 1) / 2; ++i)
 			ir[np / 2 + i] = nd + i;
 
@@ -266,14 +329,28 @@ int raid_selftest(void)
 		if (ret != 0)
 			goto bail;
 
-		/* test recovering with half broken data and ending parity */
-		for (i = 0; i < np / 2; ++i)
+		ret = raid_test_rec_dataonly(np / 2, ir, ip, nd, np, size, v, ref);
+		if (ret != 0)
+			goto bail;
+
+		/* test recovering with broken leading data and broken ending parity */
+		for (i = 0; i < np / 2; ++i) {
+			/* bad data */
 			ir[i] = i;
 
+			/* good parity */
+			ip[i] = i;
+		}
+
+		/* bad parity */
 		for (i = 0; i < (np + 1) / 2; ++i)
 			ir[np / 2 + i] = nd + np - (np + 1) / 2 + i;
 
 		ret = raid_test_rec(np, ir, nd, np, size, v, ref);
+		if (ret != 0)
+			goto bail;
+
+		ret = raid_test_rec_dataonly(np / 2, ir, ip, nd, np, size, v, ref);
 		if (ret != 0)
 			goto bail;
 	}
