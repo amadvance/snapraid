@@ -304,9 +304,9 @@ int main(void)
 	printf(" * This matrix is valid for up to %u parity with %u data disks.\n", 3, DISK);
 	printf(" *\n");
 	for (p = 0; p < 3; ++p) {
-		printf(" * ");
+		printf(" *");
 		for (i = 0; i < DISK; ++i)
-			printf("%02x ", matrix[p * DISK + i]);
+			printf(" %02x", matrix[p * DISK + i]);
 		printf("\n");
 	}
 	printf(" */\n");
@@ -318,10 +318,12 @@ int main(void)
 			if (i % 8 == 0)
 				printf("\t\t");
 			printf("0x%02x,", matrix[p * DISK + i]);
-			if (i % 8 == 7)
-				printf("\n");
-			else
-				printf(" ");
+			if (i != DISK - 1) {
+				if (i % 8 == 7)
+					printf("\n");
+				else
+					printf(" ");
+			}
 		}
 		printf("\n\t},\n");
 	}
@@ -335,9 +337,9 @@ int main(void)
 	printf(" * This matrix is valid for up to %u parity with %u data disks.\n", PARITY, DISK);
 	printf(" *\n");
 	for (p = 0; p < PARITY; ++p) {
-		printf(" * ");
+		printf(" *");
 		for (i = 0; i < DISK; ++i)
-			printf("%02x ", matrix[p * DISK + i]);
+			printf(" %02x", matrix[p * DISK + i]);
 		printf("\n");
 	}
 	printf(" */\n");
@@ -349,10 +351,12 @@ int main(void)
 			if (i % 8 == 0)
 				printf("\t\t");
 			printf("0x%02x,", matrix[p * DISK + i]);
-			if (i % 8 == 7)
-				printf("\n");
-			else
-				printf(" ");
+			if (i != DISK - 1) {
+				if (i % 8 == 7)
+					printf("\n");
+				else
+					printf(" ");
+			}
 		}
 		printf("\n\t},\n");
 	}
