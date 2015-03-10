@@ -164,7 +164,7 @@ static inline int raid_cpu_has_crc32(void)
 	 */
 	return raid_cpu_match_sse(
 		1 << 20, /* CRC32 */
-		0); /* SSE2 */
+		0);
 }
 
 static inline int raid_cpu_has_avx2(void)
@@ -173,13 +173,19 @@ static inline int raid_cpu_has_avx2(void)
 	 * Intel Architecture Instruction Set Extensions Programming Reference
 	 * 319433-022 October 2014
 	 *
+	 * 14.3 Detection of AVX instructions
+	 * 1) Detect CPUID.1:ECX.OSXSAVE[bit 27] = 1 (XGETBV enabled for application use1)
+	 * 2) Issue XGETBV and verify that XCR0[2:1] = `11b' (XMM state and YMM state are enabled by OS).
+	 * 3) detect CPUID.1:ECX.AVX[bit 28] = 1 (AVX instructions supported).
+	 * (Step 3 can be done in any order relative to 1 and 2)
+	 *
 	 * 14.7.1 Detection of AVX2
 	 * Hardware support for AVX2 is indicated by CPUID.(EAX=07H, ECX=0H):EBX.AVX2[bit 5]=1.
 	 * Application Software must identify that hardware supports AVX, after that it must
 	 * also detect support for AVX2 by checking CPUID.(EAX=07H, ECX=0H):EBX.AVX2[bit 5].
 	 */
 	return raid_cpu_match_avx(
-		(1 << 27) | (1 << 5), /* OSXSAVE and AVX */
+		(1 << 27) | (1 << 28), /* OSXSAVE and AVX */
 		1 << 5, /* AVX2 */
 		3 << 1); /* OS saves XMM and YMM registers */
 }
@@ -197,8 +203,11 @@ static inline int raid_cpu_has_avx512bw(void)
 	 * (XMM state and YMM state are enabled by OS).
 	 * 3) Verify both CPUID.0x7.0:EBX.AVX512F[bit 16] = 1, CPUID.0x7.0:EBX.AVX512BW[bit 30] = 1.
 	 */
+
+	/* note that intentionally we don't check for AVX and AVX2 */
+	/* because the documentation doesn't require that */
 	return raid_cpu_match_avx(
-		(1 << 27) | (1 << 28), /* XSAVE/XGETBV and AVX */
+		1 << 27, /* XSAVE/XGETBV */
 		(1 << 16) | (1 << 30), /* AVX512F and AVX512BW */
 		(3 << 1) | (7 << 5)); /* OS saves XMM, YMM and ZMM registers */
 }
