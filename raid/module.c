@@ -165,9 +165,11 @@ static int raid_test_par(int nd, int np, size_t size, void **v, void **ref)
 	raid_gen(nd, np, size, t);
 
 	/* compare parity */
-	for (i = 0; i < np; ++i)
-		if (memcmp(t[nd + i], ref[nd + i], size) != 0)
+	for (i = 0; i < np; ++i) {
+		if (memcmp(t[nd + i], ref[nd + i], size) != 0) {
 			return -1;
+		}
+	}
 
 	return 0;
 }
