@@ -191,12 +191,12 @@ extern const uint8_t (*raid_gfgen)[256];
  * Assembler blocks.
  */
 #ifdef CONFIG_X86
-static __always_inline void raid_asm_begin(void)
+#ifdef CONFIG_SSE2
+static __always_inline void raid_sse_begin(void)
 {
 }
 
-#ifdef CONFIG_SSE2
-static __always_inline void raid_asm_sse_end(void)
+static __always_inline void raid_sse_end(void)
 {
 	/* SSE and AVX code uses non-temporal writes, like MOVNTDQ, */
 	/* that use a weak memory model. To ensure that other processors */
@@ -223,9 +223,13 @@ static __always_inline void raid_asm_sse_end(void)
 #endif
 
 #ifdef CONFIG_AVX2
-static __always_inline void raid_asm_avx_end(void)
+static __always_inline void raid_avx_begin(void)
 {
-	raid_asm_sse_end();
+}
+
+static __always_inline void raid_avx_end(void)
+{
+	raid_sse_end();
 
 	/* reset the upper part of the ymm registers */
 	/* to avoid the 70 clocks penality on the next */

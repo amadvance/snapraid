@@ -54,7 +54,7 @@ void raid_genz_sse2(int nd, size_t size, void **vv)
 	q = v[nd + 1];
 	r = v[nd + 2];
 
-	raid_asm_begin();
+	raid_sse_begin();
 
 	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfzconst16.poly[0]));
 	asm volatile ("movdqa %0,%%xmm3" : : "m" (gfzconst16.half[0]));
@@ -90,7 +90,7 @@ void raid_genz_sse2(int nd, size_t size, void **vv)
 		asm volatile ("movntdq %%xmm2,%0" : "=m" (r[i]));
 	}
 
-	raid_asm_sse_end();
+	raid_sse_end();
 }
 #endif
 
@@ -114,7 +114,7 @@ void raid_genz_sse2ext(int nd, size_t size, void **vv)
 	q = v[nd + 1];
 	r = v[nd + 2];
 
-	raid_asm_begin();
+	raid_sse_begin();
 
 	asm volatile ("movdqa %0,%%xmm7" : : "m" (gfzconst16.poly[0]));
 	asm volatile ("movdqa %0,%%xmm3" : : "m" (gfzconst16.half[0]));
@@ -172,7 +172,7 @@ void raid_genz_sse2ext(int nd, size_t size, void **vv)
 		asm volatile ("movntdq %%xmm10,%0" : "=m" (r[i + 16]));
 	}
 
-	raid_asm_sse_end();
+	raid_sse_end();
 }
 #endif
 
@@ -196,7 +196,7 @@ void raid_genz_avx2ext(int nd, size_t size, void **vv)
 	q = v[nd + 1];
 	r = v[nd + 2];
 
-	raid_asm_begin();
+	raid_avx_begin();
 
 	asm volatile ("vbroadcasti128 %0,%%ymm7" : : "m" (gfzconst16.poly[0]));
 	asm volatile ("vbroadcasti128 %0,%%ymm3" : : "m" (gfzconst16.half[0]));
@@ -249,7 +249,7 @@ void raid_genz_avx2ext(int nd, size_t size, void **vv)
 		asm volatile ("vmovntdq %%ymm10,%0" : "=m" (r[i + 32]));
 	}
 
-	raid_asm_avx_end();
+	raid_avx_end();
 }
 #endif
 
