@@ -283,7 +283,7 @@ void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v)
 	void *pa[RAID_PARITY_MAX];
 	int i, j;
 	int np;
-	void* latest;
+	void *latest;
 
 	/* total number of parities we are going to process */
 	/* they are both the used and the unused ones */
@@ -420,7 +420,7 @@ void raid_rec1of1(int *id, int nd, size_t size, void **v)
  */
 void raid_rec2of2_int8(int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	size_t i;
 	uint8_t *p;
 	uint8_t *pa;

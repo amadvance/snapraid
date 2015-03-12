@@ -93,7 +93,7 @@
 /*
  * Internal functions.
  *
- * These are intented to provide access for testing.
+ * These are intended to provide access for testing.
  */
 int raid_selftest(void);
 void raid_gen_ref(int nd, int np, size_t size, void **vv);
@@ -225,6 +225,7 @@ static __always_inline void raid_sse_end(void)
 #ifdef CONFIG_AVX2
 static __always_inline void raid_avx_begin(void)
 {
+	raid_sse_begin();
 }
 
 static __always_inline void raid_avx_end(void)

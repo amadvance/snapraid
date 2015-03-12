@@ -147,6 +147,7 @@ static void set_cauchy(uint8_t *matrix)
 		inv_x = 1;
 		for (i = 0; i < DISK; ++i) {
 			uint8_t x = gfinv[inv_x];
+
 			matrix[(j + 2) * DISK + i] = gfinv[y ^ x];
 			inv_x = gfmul(2, inv_x);
 		}

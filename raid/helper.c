@@ -83,6 +83,7 @@ void raid_insert(int n, int *v, int i)
 	while (n > 0 && v[n - 1] > v[n]) {
 		/* swap */
 		int t = v[n - 1];
+
 		v[n - 1] = v[n];
 		v[n] = t;
 

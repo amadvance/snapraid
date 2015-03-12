@@ -110,11 +110,11 @@ void raid_init(void)
 }
 
 /*
- * Refence parity computation.
+ * Reference parity computation.
  */
 void raid_gen_ref(int nd, int np, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	size_t i;
 
 	for (i = 0; i < size; ++i) {
@@ -281,7 +281,7 @@ int raid_selftest(void)
 
 	/* use the multiplication table as data */
 	for (i = 0; i < nd; ++i)
-		ref[i] = ((uint8_t*)gfmul) + size * i;
+		ref[i] = ((uint8_t *)gfmul) + size * i;
 
 	/* setup reference parity */
 	for (i = 0; i < RAID_PARITY_MAX; ++i)

@@ -132,6 +132,8 @@ int raid_test_sort(void)
 
 int raid_test_rec(int mode, int nd, size_t size)
 {
+	void (*f[RAID_PARITY_MAX][4])(
+		int nr, int *id, int *ip, int nd, size_t size, void **vbuf);
 	void *v_alloc;
 	void **v;
 	void **data;
@@ -146,9 +148,6 @@ int raid_test_rec(int mode, int nd, size_t size)
 	int i;
 	int j;
 	int nr;
-
-	void (*f[RAID_PARITY_MAX][4])(
-		int nr, int *id, int *ip, int nd, size_t size, void **vbuf);
 	int nf[RAID_PARITY_MAX];
 	int np;
 
@@ -279,12 +278,11 @@ bail:
 
 int raid_test_par(int mode, int nd, size_t size)
 {
+	void (*f[64]) (int nd, size_t size, void **vbuf);
 	void *v_alloc;
 	void **v;
 	int nv;
 	int i, j;
-
-	void (*f[64]) (int nd, size_t size, void **vbuf);
 	int nf;
 	int np;
 

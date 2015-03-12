@@ -25,7 +25,7 @@
  */
 void raid_gen1_sse2(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	int d, l;
 	size_t i;
@@ -66,7 +66,7 @@ void raid_gen1_sse2(int nd, size_t size, void **vv)
  */
 void raid_gen1_avx2(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	int d, l;
 	size_t i;
@@ -95,8 +95,7 @@ void raid_gen1_avx2(int nd, size_t size, void **vv)
 static const struct gfconst16 {
 	uint8_t poly[16];
 	uint8_t low4[16];
-} gfconst16 __aligned(32) =
-{
+} gfconst16 __aligned(32) = {
 	{
 		0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d,
 		0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d, 0x1d
@@ -114,7 +113,7 @@ static const struct gfconst16 {
  */
 void raid_gen2_sse2(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	int d, l;
@@ -168,7 +167,7 @@ void raid_gen2_sse2(int nd, size_t size, void **vv)
  */
 void raid_gen2_avx2(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	int d, l;
@@ -223,7 +222,7 @@ void raid_gen2_avx2(int nd, size_t size, void **vv)
  */
 void raid_gen2_sse2ext(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	int d, l;
@@ -301,7 +300,7 @@ void raid_gen2_sse2ext(int nd, size_t size, void **vv)
  */
 void raid_gen3_ssse3(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -400,7 +399,7 @@ void raid_gen3_ssse3(int nd, size_t size, void **vv)
  */
 void raid_gen3_ssse3ext(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -541,7 +540,7 @@ void raid_gen3_ssse3ext(int nd, size_t size, void **vv)
  */
 void raid_gen3_avx2ext(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -672,7 +671,7 @@ void raid_gen3_avx2ext(int nd, size_t size, void **vv)
  */
 void raid_gen4_ssse3(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -790,7 +789,7 @@ void raid_gen4_ssse3(int nd, size_t size, void **vv)
  */
 void raid_gen4_ssse3ext(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -963,7 +962,7 @@ void raid_gen4_ssse3ext(int nd, size_t size, void **vv)
  */
 void raid_gen4_avx2ext(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -1126,7 +1125,7 @@ __attribute__((force_align_arg_pointer))
 #endif
 void raid_gen5_ssse3(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -1264,7 +1263,7 @@ void raid_gen5_ssse3(int nd, size_t size, void **vv)
  */
 void raid_gen5_ssse3ext(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -1397,7 +1396,7 @@ void raid_gen5_ssse3ext(int nd, size_t size, void **vv)
  */
 void raid_gen5_avx2ext(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -1529,7 +1528,7 @@ __attribute__((force_align_arg_pointer))
 #endif
 void raid_gen6_ssse3(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -1689,7 +1688,7 @@ void raid_gen6_ssse3(int nd, size_t size, void **vv)
  */
 void raid_gen6_ssse3ext(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -1839,7 +1838,7 @@ void raid_gen6_ssse3ext(int nd, size_t size, void **vv)
  */
 void raid_gen6_avx2ext(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -1984,7 +1983,7 @@ void raid_gen6_avx2ext(int nd, size_t size, void **vv)
  */
 void raid_rec1_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *pa;
 	uint8_t G;
@@ -2043,7 +2042,7 @@ void raid_rec1_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
  */
 void raid_rec2_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	const int N = 2;
 	uint8_t *p[N];
 	uint8_t *pa[N];
@@ -2149,7 +2148,7 @@ void raid_rec2_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
  */
 void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	int N = nr;
 	uint8_t *p[RAID_PARITY_MAX];
 	uint8_t *pa[RAID_PARITY_MAX];
@@ -2225,7 +2224,7 @@ void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
  */
 void raid_rec1_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *pa;
 	uint8_t G;
@@ -2281,7 +2280,7 @@ void raid_rec1_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
  */
 void raid_rec2_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	const int N = 2;
 	uint8_t *p[N];
 	uint8_t *pa[N];
@@ -2379,7 +2378,7 @@ void raid_rec2_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
  */
 void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	int N = nr;
 	uint8_t *p[RAID_PARITY_MAX];
 	uint8_t *pa[RAID_PARITY_MAX];

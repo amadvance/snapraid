@@ -61,6 +61,7 @@ void **raid_malloc_vector(int nd, int n, size_t size, void **freeptr)
 	/* because they are usually accessed from the last one */
 	for (i = 0; i < nd / 2; ++i) {
 		void *ptr = v[i];
+
 		v[i] = v[nd - 1 - i];
 		v[nd - 1 - i] = ptr;
 	}

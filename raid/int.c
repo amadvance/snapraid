@@ -20,7 +20,7 @@
  */
 void raid_gen1_int32(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	int d, l;
 	size_t i;
@@ -48,7 +48,7 @@ void raid_gen1_int32(int nd, size_t size, void **vv)
  */
 void raid_gen1_int64(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	int d, l;
 	size_t i;
@@ -76,7 +76,7 @@ void raid_gen1_int64(int nd, size_t size, void **vv)
  */
 void raid_gen2_int32(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	int d, l;
@@ -117,7 +117,7 @@ void raid_gen2_int32(int nd, size_t size, void **vv)
  */
 void raid_gen2_int64(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	int d, l;
@@ -163,7 +163,7 @@ void raid_gen2_int64(int nd, size_t size, void **vv)
  */
 void raid_gen3_int8(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -210,7 +210,7 @@ void raid_gen3_int8(int nd, size_t size, void **vv)
  */
 void raid_gen4_int8(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -262,7 +262,7 @@ void raid_gen4_int8(int nd, size_t size, void **vv)
  */
 void raid_gen5_int8(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -319,7 +319,7 @@ void raid_gen5_int8(int nd, size_t size, void **vv)
  */
 void raid_gen6_int8(int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *q;
 	uint8_t *r;
@@ -385,7 +385,7 @@ void raid_gen6_int8(int nd, size_t size, void **vv)
  */
 void raid_rec1_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *pa;
 	const uint8_t *T;
@@ -438,7 +438,7 @@ void raid_rec1_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
  */
 void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p;
 	uint8_t *pa;
 	uint8_t *q;
@@ -506,7 +506,7 @@ void raid_rec2_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
  */
 void raid_recX_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 {
-	uint8_t **v = (uint8_t**)vv;
+	uint8_t **v = (uint8_t **)vv;
 	uint8_t *p[RAID_PARITY_MAX];
 	uint8_t *pa[RAID_PARITY_MAX];
 	const uint8_t *T[RAID_PARITY_MAX][RAID_PARITY_MAX];
@@ -546,6 +546,7 @@ void raid_recX_int8(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 		/* reconstruct */
 		for (j = 0; j < nr; ++j) {
 			uint8_t b = 0;
+
 			for (k = 0; k < nr; ++k)
 				b ^= T[j][k][PD[k]];
 			pa[j][i] = b;

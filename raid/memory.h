@@ -35,7 +35,7 @@
  * To avoid this effect, it's better if all the blocks are allocated
  * with a fixed displacement trying to reduce the cache addresses sharing.
  *
- * The selected value was choosen empirically with some speed tests
+ * The selected displacement was chosen empirically with some speed tests
  * with 8/12/16/20/24 data buffers of 256 KB.
  *
  * These are the results in MB/s with no displacement:
