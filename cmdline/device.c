@@ -872,7 +872,7 @@ static void state_smart(unsigned n, tommy_list* low)
 	 */
 	p_at_least_one_failure = poisson_prob_n_or_more_failures(array_failure_rate, 1);
 
-	printf("Probability that one disk is going to fail in the next year is %.0f%%,\n", p_at_least_one_failure * 100);
+	printf("Probability that at least one disk is going to fail in the next year is %.0f%%.\n", p_at_least_one_failure * 100);
 	msg_tag("summary:array_failure:%g:%g\n", array_failure_rate, p_at_least_one_failure);
 
 	/* prints extra stats only in verbose mode */
