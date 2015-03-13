@@ -77,7 +77,15 @@ void usage(void)
 void memory(void)
 {
 	msg_tag("memory:used:%" PRIu64 "\n", (uint64_t)malloc_counter());
+
+	/* size of the block + the size of the blockarr pointer to it */
+	msg_tag("memory:block:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_block) + sizeof(void*)));
+
+	/* size of the file + the size of the 3 hashtables pointers to it, * 2 for the hashtable grow factor */
+	msg_tag("memory:file:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_file) + 3*2*sizeof(void*)));
+
 	msg_progress("Using %u MiB of memory.\n", (unsigned)(malloc_counter() / 1024 / 1024));
+
 }
 
 /****************************************************************************/

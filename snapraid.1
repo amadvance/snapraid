@@ -1169,7 +1169,8 @@ than 4 GiB of memory. As a rule of thumb, with 4 GiB or more memory
 use the default 256, with 2 GiB use 512, and with 1 GiB use 1024.
 .PP
 In more details SnapRAID requires about TS*28/BS bytes
-of RAM memory to run. Where TS is the total size in bytes of
+of RAM memory to run in the 32 bits version, and TS*36/BS
+in the 64 bits one. Where TS is the total size in bytes of
 your disk array, and BS is the block size in bytes.
 .PP
 For example with 4 disk of 3 TiB and a block size of 256 KiB
@@ -1183,11 +1184,11 @@ RAM = (4 * 3 * 2^40) * 28 / (256 * 2^10) = 1.4 GiB
 Another reason to use a different blocksize is if you have a lot of small
 files. In the order of many millions.
 .PP
-In details, for each file, even of few bytes, a whole block of parity is
-always allocated, and with many files this may result in a lot of unused
-parity space. And when you completely fill the parity disk, you are not
+For each file, even of few bytes, a whole block of parity is allocated,
+and with many files this may result in a lot of unused parity space.
+And when you completely fill the parity disk, you are not
 allowed to add more files in the data disks.
-Note that wasted parity doesn\'t sum between data disk. Wasted space
+Anywa, the wasted parity doesn\'t sum between data disk. Wasted space
 resulting from a high number of files in a data disk, limits only
 the amount of data in such data disk and not in others.
 .PP
@@ -1200,9 +1201,9 @@ You can get the amount of wasted space in each disk using \[dq]status\[dq].
 This is the amount of space that you must leave free in the data
 disks, or use for files not included in the array.
 If this value is negative, it means that your are near to fill
-the parity, and it represent the space you can still waste.
+the parity, and it represents the space you can still waste.
 .PP
-To avoid to problem, you can use a bigger partition for parity.
+To avoid the problem, you can use a bigger partition for parity.
 For example, if you have the parity partition bigger than 12 GiB
 than data disks, you have enough extra space to handle up to 100000
 files in each data disk.
