@@ -202,6 +202,13 @@ void raid_zero(void *zero)
  * The number of parities to compute is implicit in the position in the
  * forwarder vector. Position at index #i, computes (#i+1) parities.
  *
+ * All these functions give the guarantee that parities are written
+ * in order. First parity P, then parity Q, and so on.
+ * This allows to specify the same memory buffer for multiple parities
+ * knowning that you'll get the latest written one.
+ * This characteristic is used by the raid_delta_gen() function to
+ * avoid to damage unused parities in recovering.
+ *
  * @nd Number of data blocks
  * @size Size of the blocks pointed by @v. It must be a multipler of 64.
  * @v Vector of pointers to the blocks of data and parity.
@@ -328,7 +335,7 @@ void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v)
 			 * functions able to compute only a subset of
 			 * parities.
 			 *
-			 * To avoid this, we use reuse parity buffers,
+			 * To avoid this, we reuse parity buffers,
 			 * assuming that all the parity functions write
 			 * parities in order.
 			 *
