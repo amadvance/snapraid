@@ -73,20 +73,33 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifndef BUG_ON
+/*
+ * Inverse assert.
+ */
 #define BUG_ON(a) assert(!(a))
-#endif
 
+/*
+ * Forced inline.
+ */
 #ifndef __always_inline
 #define __always_inline inline __attribute__((always_inline))
 #endif
 
+/*
+ * Forced alignment.
+ */
 #ifndef __aligned
 #define __aligned(a) __attribute__((aligned(a)))
 #endif
 
 /*
- * Includes the headers.
+ * Align a pointer at the specified size.
+ */
+#define __align_ptr(ptr, size) \
+	(void*)((uintptr_t)(((uint8_t*)ptr) + size - 1) & ~(uintptr_t)(size - 1))
+
+/*
+ * Includes the main interface header.
  */
 #include "raid.h"
 
