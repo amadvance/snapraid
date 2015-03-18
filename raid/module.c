@@ -167,7 +167,9 @@ static int raid_test_par(int nd, int np, size_t size, void **v, void **ref)
 	/* compare parity */
 	for (i = 0; i < np; ++i) {
 		if (memcmp(t[nd + i], ref[nd + i], size) != 0) {
+			/* LCOV_EXCL_START */
 			return -1;
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -200,7 +202,9 @@ static int raid_test_rec(int nr, int *ir, int nd, int np, size_t size, void **v,
 	for (i = 0; i < nd + np; ++i) {
 		if (t[i] != ref[i]
 			&& memcmp(t[i], ref[i], size) != 0) {
+			/* LCOV_EXCL_START */
 			return -1;
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -246,7 +250,9 @@ static int raid_test_rec_dataonly(int nr, int *id, int *ip, int nd, int np, size
 		if (t[i] != ref[i]
 			&& t[i] != 0
 			&& memcmp(t[i], ref[i], size) != 0) {
+			/* LCOV_EXCL_START */
 			return -1;
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -273,8 +279,11 @@ int raid_selftest(void)
 	BUG_ON(nd * size > 65536);
 
 	v = raid_malloc_vector(nd, nv, size, &v_alloc);
-	if (!v)
+	if (!v) {
+		/* LCOV_EXCL_START */
 		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	memset(v[nv - 1], 0, size);
 	raid_zero(v[nv - 1]);
@@ -294,8 +303,11 @@ int raid_selftest(void)
 	for (np = 1; np <= RAID_PARITY_MAX; ++np) {
 		/* test parity generation */
 		ret = raid_test_par(nd, np, size, v, ref);
-		if (ret != 0)
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
 			goto bail;
+			/* LCOV_EXCL_STOP */
+		}
 
 		/* test recovering with broken ending data disks */
 		for (i = 0; i < np; ++i) {
@@ -307,12 +319,18 @@ int raid_selftest(void)
 		}
 
 		ret = raid_test_rec(np, ir, nd, np, size, v, ref);
-		if (ret != 0)
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
 			goto bail;
+			/* LCOV_EXCL_STOP */
+		}
 
 		ret = raid_test_rec_dataonly(np, ir, ip, nd, np, size, v, ref);
-		if (ret != 0)
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
 			goto bail;
+			/* LCOV_EXCL_STOP */
+		}
 
 		/* test recovering with broken leading data and broken leading parity */
 		for (i = 0; i < np / 2; ++i) {
@@ -328,12 +346,18 @@ int raid_selftest(void)
 			ir[np / 2 + i] = nd + i;
 
 		ret = raid_test_rec(np, ir, nd, np, size, v, ref);
-		if (ret != 0)
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
 			goto bail;
+			/* LCOV_EXCL_STOP */
+		}
 
 		ret = raid_test_rec_dataonly(np / 2, ir, ip, nd, np, size, v, ref);
-		if (ret != 0)
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
 			goto bail;
+			/* LCOV_EXCL_STOP */
+		}
 
 		/* test recovering with broken leading data and broken ending parity */
 		for (i = 0; i < np / 2; ++i) {
@@ -349,12 +373,18 @@ int raid_selftest(void)
 			ir[np / 2 + i] = nd + np - (np + 1) / 2 + i;
 
 		ret = raid_test_rec(np, ir, nd, np, size, v, ref);
-		if (ret != 0)
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
 			goto bail;
+			/* LCOV_EXCL_STOP */
+		}
 
 		ret = raid_test_rec_dataonly(np / 2, ir, ip, nd, np, size, v, ref);
-		if (ret != 0)
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
 			goto bail;
+			/* LCOV_EXCL_STOP */
+		}
 	}
 
 bail:

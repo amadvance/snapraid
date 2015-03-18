@@ -58,8 +58,11 @@ int raid_test_combo(void)
 			++count;
 		} while (combination_next(r, RAID_PARITY_MAX, p));
 
-		if (count != ibc(RAID_PARITY_MAX, r))
+		if (count != ibc(RAID_PARITY_MAX, r)) {
+			/* LCOV_EXCL_START */
 			return -1;
+			/* LCOV_EXCL_STOP */
+		}
 	}
 
 	for (r = 1; r <= RAID_PARITY_MAX; ++r) {
@@ -71,8 +74,11 @@ int raid_test_combo(void)
 			++count;
 		} while (permutation_next(r, RAID_PARITY_MAX, p));
 
-		if (count != ipow(RAID_PARITY_MAX, r))
+		if (count != ipow(RAID_PARITY_MAX, r)) {
+			/* LCOV_EXCL_START */
 			return -1;
+			/* LCOV_EXCL_STOP */
+		}
 	}
 
 	return 0;
@@ -94,9 +100,13 @@ int raid_test_insert(void)
 				raid_insert(j, i, p[j]);
 
 			/* check order */
-			for (j = 1; j < r; ++j)
-				if (i[j - 1] > i[j])
+			for (j = 1; j < r; ++j) {
+				if (i[j - 1] > i[j]) {
+					/* LCOV_EXCL_START */
 					return -1;
+					/* LCOV_EXCL_STOP */
+				}
+			}
 		} while (permutation_next(r, RAID_PARITY_MAX, p));
 	}
 
@@ -121,9 +131,13 @@ int raid_test_sort(void)
 			raid_sort(r, i);
 
 			/* check order */
-			for (j = 1; j < r; ++j)
-				if (i[j - 1] > i[j])
+			for (j = 1; j < r; ++j) {
+				if (i[j - 1] > i[j]) {
+					/* LCOV_EXCL_START */
 					return -1;
+					/* LCOV_EXCL_STOP */
+				}
+			}
 		} while (permutation_next(r, RAID_PARITY_MAX, p));
 	}
 
@@ -160,8 +174,11 @@ int raid_test_rec(int mode, int nd, size_t size)
 	nv = nd + np * 2 + 2;
 
 	v = raid_malloc_vector(nd, nv, size, &v_alloc);
-	if (!v)
+	if (!v) {
+		/* LCOV_EXCL_START */
 		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	data = v;
 	parity = v + nd;
@@ -250,9 +267,13 @@ int raid_test_rec(int mode, int nd, size_t size)
 					f[nr - 1][j](nr, id, ip, nd, size, v);
 
 					/* check */
-					for (i = 0; i < nr; ++i)
-						if (memcmp(test[i], data_save[i], size) != 0)
+					for (i = 0; i < nr; ++i) {
+						if (memcmp(test[i], data_save[i], size) != 0) {
+							/* LCOV_EXCL_START */
 							goto bail;
+							/* LCOV_EXCL_STOP */
+						}
+					}
 
 					/* restore */
 					for (i = 0; i < nr; ++i) {
@@ -271,9 +292,11 @@ int raid_test_rec(int mode, int nd, size_t size)
 	return 0;
 
 bail:
+	/* LCOV_EXCL_START */
 	free(v_alloc);
 	free(v);
 	return -1;
+	/* LCOV_EXCL_STOP */
 }
 
 int raid_test_par(int mode, int nd, size_t size)
@@ -295,12 +318,18 @@ int raid_test_par(int mode, int nd, size_t size)
 	nv = nd + np * 2;
 
 	v = raid_malloc_vector(nd, nv, size, &v_alloc);
-	if (!v)
+	if (!v) {
+		/* LCOV_EXCL_START */
 		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	/* check memory */
-	if (raid_mtest_vector(nv, size, v) != 0)
+	if (raid_mtest_vector(nv, size, v) != 0) {
+		/* LCOV_EXCL_START */
 		goto bail;
+		/* LCOV_EXCL_STOP */
+	}
 
 	/* fill with pseudo-random data with the arbitrary seed "2" */
 	raid_mrand_vector(2, nv, size, v);
@@ -401,9 +430,13 @@ int raid_test_par(int mode, int nd, size_t size)
 		f[j](nd, size, v);
 
 		/* check it */
-		for (i = 0; i < np; ++i)
-			if (memcmp(v[nd + np + i], v[nd + i], size) != 0)
+		for (i = 0; i < np; ++i) {
+			if (memcmp(v[nd + np + i], v[nd + i], size) != 0) {
+				/* LCOV_EXCL_START */
 				goto bail;
+				/* LCOV_EXCL_STOP */
+			}
+		}
 	}
 
 	free(v_alloc);
@@ -411,8 +444,10 @@ int raid_test_par(int mode, int nd, size_t size)
 	return 0;
 
 bail:
+	/* LCOV_EXCL_START */
 	free(v_alloc);
 	free(v);
 	return -1;
+	/* LCOV_EXCL_STOP */
 }
 

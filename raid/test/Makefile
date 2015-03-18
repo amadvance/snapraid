@@ -7,15 +7,22 @@
 # invtest - Runs an extensive matrix inversion test of all the 377.342.351.231
 #           possible square submatrices of the Cauchy matrix used.
 # covtest - Runs a coverage test.
+# sdecovtest - Runs a coverage test with the sde emulator.
 #
 
+MACHINE = $(shell uname -m)
+ifeq ($(MACHINE),i686)
+SDE = sde
+else
+SDE = sde64
+endif
 CC = gcc
 LD = ld
 CFLAGS = -I.. -Wall -Wextra -g
 ifeq ($(COVERAGE),)
 CFLAGS += -O2
 else
-CFLAGS += -O0 --coverage -DCOVERAGE=1
+CFLAGS += -O0 --coverage -DCOVERAGE=1 -DNDEBUG=1
 endif
 OBJS = raid.o int.o intz.o x86.o x86z.o tables.o memory.o test.o helper.o module.o tag.o
 
@@ -53,6 +60,23 @@ covtest:
 	$(MAKE) lcov_capture
 	$(MAKE) lcov_html
 
+# Use this target to run a coverage test using lcov and the sde
+sdecovtest:
+	$(MAKE) clean
+	$(MAKE) lcov_reset
+	$(MAKE) COVERAGE=1 all
+	$(SDE) -p4 -- ./fulltest
+	$(SDE) -mrm -- ./fulltest
+	$(SDE) -nhm -- ./fulltest
+	$(SDE) -hsw -- ./fulltest
+	$(SDE) -p4 -- ./selftest
+	$(SDE) -mrm -- ./selftest
+	$(SDE) -nhm -- ./selftest
+	$(SDE) -hsw -- ./selftest
+	$(SDE) -hsw -- ./speedtest
+	$(MAKE) lcov_capture
+	$(MAKE) lcov_html
+
 lcov_reset:
 	lcov --directory . -z
 	rm -f lcov.info
@@ -66,7 +90,10 @@ lcov_html:
 	genhtml --branch-coverage -o coverage lcov.info
 
 clean:
-	rm -f *.o mktables fulltest speedtest selftest invtest
+	rm -f *.o mktables tables.c
 	rm -f *.gcda *.gcno lcov.info
 	rm -rf coverage
+
+distclean: clean
+	rm -f fulltest speedtest selftest invtest
 

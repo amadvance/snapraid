@@ -21,8 +21,11 @@ void *raid_malloc_align(size_t size, void **freeptr)
 	uintptr_t offset;
 
 	ptr = malloc(size + RAID_MALLOC_ALIGN);
-	if (!ptr)
+	if (!ptr) {
+		/* LCOV_EXCL_START */
 		return 0;
+		/* LCOV_EXCL_STOP */
+	}
 
 	*freeptr = ptr;
 
@@ -43,13 +46,18 @@ void **raid_malloc_vector(int nd, int n, size_t size, void **freeptr)
 	BUG_ON(n <= 0 || nd < 0);
 
 	v = malloc(n * sizeof(void *));
-	if (!v)
+	if (!v) {
+		/* LCOV_EXCL_START */
 		return 0;
+		/* LCOV_EXCL_STOP */
+	}
 
 	va = raid_malloc_align(n * (size + RAID_MALLOC_DISPLACEMENT), freeptr);
 	if (!va) {
+		/* LCOV_EXCL_START */
 		free(v);
 		return 0;
+		/* LCOV_EXCL_STOP */
 	}
 
 	for (i = 0; i < n; ++i) {
@@ -107,8 +115,11 @@ int raid_mtest_vector(int n, size_t size, void **vv)
 		/* forward fill */
 		for (i = 0; i < n; ++i) {
 			for (j = 0; j < size; ++j) {
-				if (v[i][j] != p)
+				if (v[i][j] != p) {
+					/* LCOV_EXCL_START */
 					return -1;
+					/* LCOV_EXCL_STOP */
+				}
 				v[i][j] = d;
 			}
 		}
@@ -118,8 +129,11 @@ int raid_mtest_vector(int n, size_t size, void **vv)
 		/* backward fill with complement */
 		for (i = 0; i < n; ++i) {
 			for (j = size; j > 0; --j) {
-				if (v[i][j - 1] != p)
+				if (v[i][j - 1] != p) {
+					/* LCOV_EXCL_START */
 					return -1;
+					/* LCOV_EXCL_STOP */
+				}
 				v[i][j - 1] = d;
 			}
 		}

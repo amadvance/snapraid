@@ -87,7 +87,10 @@ static const char *raid_tag(void *func)
 			return i->name;
 		++i;
 	}
+
+	/* LCOV_EXCL_START */
 	return "unknown";
+	/* LCOV_EXCL_STOP */
 }
 
 const char *raid_gen1_tag(void)
