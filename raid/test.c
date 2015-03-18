@@ -278,7 +278,7 @@ bail:
 
 int raid_test_par(int mode, int nd, size_t size)
 {
-	void (*f[64]) (int nd, size_t size, void **vbuf);
+	void (*f[64])(int nd, size_t size, void **vbuf);
 	void *v_alloc;
 	void **v;
 	int nv;

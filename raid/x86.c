@@ -1130,7 +1130,7 @@ void raid_gen5_ssse3(int nd, size_t size, void **vv)
 	int d, l;
 	size_t i;
 	uint8_t buffer[16+16];
-	uint8_t* p0 = __align_ptr(buffer, 16);
+	uint8_t *pd = __align_ptr(buffer, 16);
 
 	l = nd - 1;
 	p = v[nd];
@@ -1154,7 +1154,7 @@ void raid_gen5_ssse3(int nd, size_t size, void **vv)
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[l][i]));
 
 		asm volatile ("movdqa %xmm4,%xmm0");
-		asm volatile ("movdqa %%xmm4,%0" : "=m" (p0[0]));
+		asm volatile ("movdqa %%xmm4,%0" : "=m" (pd[0]));
 
 		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 		asm volatile ("movdqa %xmm4,%xmm5");
@@ -1183,7 +1183,7 @@ void raid_gen5_ssse3(int nd, size_t size, void **vv)
 		/* intermediate disks */
 		for (d = l - 1; d > 0; --d) {
 			asm volatile ("movdqa %0,%%xmm4" : : "m" (v[d][i]));
-			asm volatile ("movdqa %0,%%xmm6" : : "m" (p0[0]));
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (pd[0]));
 			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
 
 			asm volatile ("pxor %xmm5,%xmm5");
@@ -1194,7 +1194,7 @@ void raid_gen5_ssse3(int nd, size_t size, void **vv)
 
 			asm volatile ("pxor %xmm4,%xmm0");
 			asm volatile ("pxor %xmm4,%xmm6");
-			asm volatile ("movdqa %%xmm6,%0" : "=m" (p0[0]));
+			asm volatile ("movdqa %%xmm6,%0" : "=m" (pd[0]));
 
 			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 			asm volatile ("movdqa %xmm4,%xmm5");
@@ -1226,7 +1226,7 @@ void raid_gen5_ssse3(int nd, size_t size, void **vv)
 
 		/* first disk with all coefficients at 1 */
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[0][i]));
-		asm volatile ("movdqa %0,%%xmm6" : : "m" (p0[0]));
+		asm volatile ("movdqa %0,%%xmm6" : : "m" (pd[0]));
 		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
 
 		asm volatile ("pxor %xmm5,%xmm5");
@@ -1531,7 +1531,7 @@ void raid_gen6_ssse3(int nd, size_t size, void **vv)
 	int d, l;
 	size_t i;
 	uint8_t buffer[2*16+16];
-	uint8_t* p0 = __align_ptr(buffer, 16);
+	uint8_t *pd = __align_ptr(buffer, 16);
 
 	l = nd - 1;
 	p = v[nd];
@@ -1555,8 +1555,8 @@ void raid_gen6_ssse3(int nd, size_t size, void **vv)
 		/* last disk without the by two multiplication */
 		asm volatile ("movdqa %0,%%xmm4" : : "m" (v[l][i]));
 
-		asm volatile ("movdqa %%xmm4,%0" : "=m" (p0[0]));
-		asm volatile ("movdqa %%xmm4,%0" : "=m" (p0[16]));
+		asm volatile ("movdqa %%xmm4,%0" : "=m" (pd[0]));
+		asm volatile ("movdqa %%xmm4,%0" : "=m" (pd[16]));
 
 		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 		asm volatile ("movdqa %xmm4,%xmm5");
@@ -1590,8 +1590,8 @@ void raid_gen6_ssse3(int nd, size_t size, void **vv)
 
 		/* intermediate disks */
 		for (d = l - 1; d > 0; --d) {
-			asm volatile ("movdqa %0,%%xmm5" : : "m" (p0[0]));
-			asm volatile ("movdqa %0,%%xmm6" : : "m" (p0[16]));
+			asm volatile ("movdqa %0,%%xmm5" : : "m" (pd[0]));
+			asm volatile ("movdqa %0,%%xmm6" : : "m" (pd[16]));
 			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
 
 			asm volatile ("pxor %xmm4,%xmm4");
@@ -1604,8 +1604,8 @@ void raid_gen6_ssse3(int nd, size_t size, void **vv)
 
 			asm volatile ("pxor %xmm4,%xmm5");
 			asm volatile ("pxor %xmm4,%xmm6");
-			asm volatile ("movdqa %%xmm5,%0" : "=m" (p0[0]));
-			asm volatile ("movdqa %%xmm6,%0" : "=m" (p0[16]));
+			asm volatile ("movdqa %%xmm5,%0" : "=m" (pd[0]));
+			asm volatile ("movdqa %%xmm6,%0" : "=m" (pd[16]));
 
 			asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.low4[0]));
 			asm volatile ("movdqa %xmm4,%xmm5");
@@ -1643,8 +1643,8 @@ void raid_gen6_ssse3(int nd, size_t size, void **vv)
 		}
 
 		/* first disk with all coefficients at 1 */
-		asm volatile ("movdqa %0,%%xmm5" : : "m" (p0[0]));
-		asm volatile ("movdqa %0,%%xmm6" : : "m" (p0[16]));
+		asm volatile ("movdqa %0,%%xmm5" : : "m" (pd[0]));
+		asm volatile ("movdqa %0,%%xmm6" : : "m" (pd[16]));
 		asm volatile ("movdqa %0,%%xmm7" : : "m" (gfconst16.poly[0]));
 
 		asm volatile ("pxor %xmm4,%xmm4");
@@ -2148,7 +2148,7 @@ void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	uint8_t buffer[RAID_PARITY_MAX*16+16];
-	uint8_t *PD = __align_ptr(buffer, 16);
+	uint8_t *pd = __align_ptr(buffer, 16);
 	size_t i;
 	int j, k;
 
@@ -2178,7 +2178,7 @@ void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 			asm volatile ("movdqa %0,%%xmm0" : : "m" (p[j][i]));
 			asm volatile ("movdqa %0,%%xmm1" : : "m" (pa[j][i]));
 			asm volatile ("pxor   %xmm1,%xmm0");
-			asm volatile ("movdqa %%xmm0,%0" : "=m" (PD[j*16]));
+			asm volatile ("movdqa %%xmm0,%0" : "=m" (pd[j*16]));
 		}
 
 		/* reconstruct */
@@ -2191,7 +2191,7 @@ void raid_recX_ssse3(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 				asm volatile ("movdqa %0,%%xmm2" : : "m" (gfmulpshufb[m][0][0]));
 				asm volatile ("movdqa %0,%%xmm3" : : "m" (gfmulpshufb[m][1][0]));
-				asm volatile ("movdqa %0,%%xmm4" : : "m" (PD[k*16]));
+				asm volatile ("movdqa %0,%%xmm4" : : "m" (pd[k*16]));
 				asm volatile ("movdqa %xmm4,%xmm5");
 				asm volatile ("psrlw  $4,%xmm5");
 				asm volatile ("pand   %xmm7,%xmm4");
@@ -2378,7 +2378,7 @@ void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 	uint8_t G[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	uint8_t V[RAID_PARITY_MAX * RAID_PARITY_MAX];
 	uint8_t buffer[RAID_PARITY_MAX*32+32];
-	uint8_t *PD = __align_ptr(buffer, 32);
+	uint8_t *pd = __align_ptr(buffer, 32);
 	size_t i;
 	int j, k;
 
@@ -2408,7 +2408,7 @@ void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 			asm volatile ("vmovdqa %0,%%ymm0" : : "m" (p[j][i]));
 			asm volatile ("vmovdqa %0,%%ymm1" : : "m" (pa[j][i]));
 			asm volatile ("vpxor   %ymm1,%ymm0,%ymm0");
-			asm volatile ("vmovdqa %%ymm0,%0" : "=m" (PD[j*32]));
+			asm volatile ("vmovdqa %%ymm0,%0" : "=m" (pd[j*32]));
 		}
 
 		/* reconstruct */
@@ -2421,7 +2421,7 @@ void raid_recX_avx2(int nr, int *id, int *ip, int nd, size_t size, void **vv)
 
 				asm volatile ("vbroadcasti128 %0,%%ymm2" : : "m" (gfmulpshufb[m][0][0]));
 				asm volatile ("vbroadcasti128 %0,%%ymm3" : : "m" (gfmulpshufb[m][1][0]));
-				asm volatile ("vmovdqa %0,%%ymm4" : : "m" (PD[k*32]));
+				asm volatile ("vmovdqa %0,%%ymm4" : : "m" (pd[k*32]));
 				asm volatile ("vpsrlw  $4,%ymm4,%ymm5");
 				asm volatile ("vpand   %ymm7,%ymm4,%ymm4");
 				asm volatile ("vpand   %ymm7,%ymm5,%ymm5");

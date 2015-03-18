@@ -71,7 +71,7 @@ void **raid_malloc_vector(int nd, int n, size_t size, void **freeptr)
 
 void raid_mrand_vector(unsigned seed, int n, size_t size, void **vv)
 {
-	unsigned char **v = (unsigned char**)vv;
+	unsigned char **v = (unsigned char **)vv;
 	int i;
 	size_t j;
 
@@ -86,7 +86,7 @@ void raid_mrand_vector(unsigned seed, int n, size_t size, void **vv)
 
 int raid_mtest_vector(int n, size_t size, void **vv)
 {
-	unsigned char **v = (unsigned char**)vv;
+	unsigned char **v = (unsigned char **)vv;
 	int i;
 	size_t j;
 	unsigned k;

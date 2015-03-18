@@ -95,8 +95,14 @@
 /*
  * Align a pointer at the specified size.
  */
-#define __align_ptr(ptr, size) \
-	(void*)((uintptr_t)(((uint8_t*)ptr) + size - 1) & ~(uintptr_t)(size - 1))
+static __always_inline void *__align_ptr(void *ptr, uintptr_t size)
+{
+	uintptr_t offset = (uintptr_t)ptr;
+
+	offset = (offset + size - 1U) & ~(size - 1U);
+
+	return (void *)offset;
+}
 
 /*
  * Includes the main interface header.
