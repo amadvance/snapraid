@@ -56,35 +56,69 @@ int main(void)
 	printf("\nPlease wait about 60 seconds...\n\n");
 
 	printf("Test sorting...\n");
-	if (raid_test_sort() != 0)
+	if (raid_test_sort() != 0) {
+		/* LCOV_EXCL_START */
 		goto bail;
+		/* LCOV_EXCL_STOP */
+	}
+
 	printf("Test insertion...\n");
-	if (raid_test_insert() != 0)
+	if (raid_test_insert() != 0) {
+		/* LCOV_EXCL_START */
 		goto bail;
+		/* LCOV_EXCL_STOP */
+	}
+
 	printf("Test combinations/permutations...\n");
-	if (raid_test_combo() != 0)
+	if (raid_test_combo() != 0) {
+		/* LCOV_EXCL_START */
 		goto bail;
+		/* LCOV_EXCL_STOP */
+	}
+
 	printf("Test Cauchy parity generation with %u data disks...\n", RAID_DATA_MAX);
-	if (raid_test_par(RAID_MODE_CAUCHY, RAID_DATA_MAX, TEST_SIZE) != 0)
+	if (raid_test_par(RAID_MODE_CAUCHY, RAID_DATA_MAX, TEST_SIZE) != 0) {
+		/* LCOV_EXCL_START */
 		goto bail;
+		/* LCOV_EXCL_STOP */
+	}
+
 	printf("Test Cauchy parity generation with 1 data disk...\n");
-	if (raid_test_par(RAID_MODE_CAUCHY, 1, TEST_SIZE) != 0)
+	if (raid_test_par(RAID_MODE_CAUCHY, 1, TEST_SIZE) != 0) {
+		/* LCOV_EXCL_START */
 		goto bail;
+		/* LCOV_EXCL_STOP */
+	}
+
 	printf("Test Cauchy recovering with all combinations of %u data and 6 parity blocks...\n", TEST_COUNT);
-	if (raid_test_rec(RAID_MODE_CAUCHY, TEST_COUNT, TEST_SIZE) != 0)
+	if (raid_test_rec(RAID_MODE_CAUCHY, TEST_COUNT, TEST_SIZE) != 0) {
+		/* LCOV_EXCL_START */
 		goto bail;
+		/* LCOV_EXCL_STOP */
+	}
+
 	printf("Test Vandermonde parity generation with %u data disks...\n", RAID_DATA_MAX);
-	if (raid_test_par(RAID_MODE_VANDERMONDE, RAID_DATA_MAX, TEST_SIZE) != 0)
+	if (raid_test_par(RAID_MODE_VANDERMONDE, RAID_DATA_MAX, TEST_SIZE) != 0) {
+		/* LCOV_EXCL_START */
 		goto bail;
+		/* LCOV_EXCL_STOP */
+	}
+
 	printf("Test Vandermonde recovering with all combinations of %u data and 3 parity blocks...\n", TEST_COUNT);
-	if (raid_test_rec(RAID_MODE_VANDERMONDE, TEST_COUNT, TEST_SIZE) != 0)
+	if (raid_test_rec(RAID_MODE_VANDERMONDE, TEST_COUNT, TEST_SIZE) != 0) {
+		/* LCOV_EXCL_START */
 		goto bail;
+		/* LCOV_EXCL_STOP */
+	}
+
 
 	printf("OK\n");
 	return 0;
 
 bail:
+	/* LCOV_EXCL_START */
 	printf("FAILED!\n");
 	exit(EXIT_FAILURE);
+	/* LCOV_EXCL_STOP */
 }
 

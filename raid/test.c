@@ -13,7 +13,6 @@
  */
 
 #include "internal.h"
-#include "helper.h"
 #include "cpu.h"
 #include "combo.h"
 #include "memory.h"

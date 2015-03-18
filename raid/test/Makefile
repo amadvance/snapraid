@@ -65,11 +65,11 @@ sdecovtest:
 	$(MAKE) clean
 	$(MAKE) lcov_reset
 	$(MAKE) COVERAGE=1 all
-	$(SDE) -p4 -- ./fulltest
+	$(SDE) -p4p -- ./fulltest
 	$(SDE) -mrm -- ./fulltest
 	$(SDE) -nhm -- ./fulltest
 	$(SDE) -hsw -- ./fulltest
-	$(SDE) -p4 -- ./selftest
+	$(SDE) -p4p -- ./selftest
 	$(SDE) -mrm -- ./selftest
 	$(SDE) -nhm -- ./selftest
 	$(SDE) -hsw -- ./selftest

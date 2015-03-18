@@ -105,9 +105,10 @@ static __always_inline void *__align_ptr(void *ptr, uintptr_t size)
 }
 
 /*
- * Includes the main interface header.
+ * Includes the main interface headers.
  */
 #include "raid.h"
+#include "helper.h"
 
 /*
  * Internal functions.

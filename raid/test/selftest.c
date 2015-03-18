@@ -28,8 +28,10 @@ int main(void)
 
 	printf("Self test...\n");
 	if (raid_selftest() != 0) {
+		/* LCOV_EXCL_START */
 		printf("FAILED!\n");
 		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
 	printf("OK\n\n");
 
