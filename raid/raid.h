@@ -67,7 +67,7 @@ int raid_selftest(void);
  * Sets the mode to use. One of RAID_MODE_*.
  *
  * You can change mode at any time, and it will affect next calls to raid_gen(),
- * raid_rec() and raid_rec_dataonly().
+ * raid_rec() and raid_data().
  *
  * The two modes are compatible for the first two levels of parity.
  * The third one is different.
@@ -77,7 +77,7 @@ void raid_mode(int mode);
 /**
  * Sets the zero buffer to use in recovering.
  *
- * Before calling raid_rec() and raid_rec_dataonly() you must provide a memory
+ * Before calling raid_rec() and raid_data() you must provide a memory
  * buffer filled with zero with the same size of the blocks to recover.
  *
  * This buffer is only read and never written.
@@ -156,7 +156,7 @@ void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v);
  *   blocks for data, following with the parity blocks.
  *   Each blocks has @size bytes.
  */
-void raid_rec_dataonly(int nr, int *id, int *ip, int nd, size_t size, void **v);
+void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v);
 
 /**
  * Check the provided failed blocks combination.

@@ -545,7 +545,7 @@ void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v)
 		raid_gen(nd, ir[nr - 1] - nd + 1, size, v);
 }
 
-void raid_rec_dataonly(int nr, int *id, int *ip, int nd, size_t size, void **v)
+void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v)
 {
 	BUG_ON(nr > nd);
 	BUG_ON(size % 64 != 0);

@@ -216,7 +216,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 				memcpy(buffer[diskmax + ip[i]], buffer_recov[ip[i]], state->block_size);
 
 			/* recover using one less parity, the ip[r-1] one */
-			raid_rec_dataonly(r - 1, id, ip, diskmax, state->block_size, buffer);
+			raid_data(r - 1, id, ip, diskmax, state->block_size, buffer);
 
 			/* use the remaining ip[r-1] parity to check the result */
 			if (is_parity_matching(state, diskmax, ip[r - 1], buffer, buffer_recov))
@@ -256,7 +256,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 				memcpy(buffer[diskmax + ip[i]], buffer_recov[ip[i]], state->block_size);
 
 			/* recover */
-			raid_rec_dataonly(r, id, ip, diskmax, state->block_size, buffer);
+			raid_data(r, id, ip, diskmax, state->block_size, buffer);
 
 			/* use the hash to check the result */
 			if (is_hash_matching(state, rehash, diskmax, failed, failed_map, failed_count, buffer, buffer_zero))
