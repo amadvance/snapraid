@@ -3,6 +3,7 @@ check_PROGRAMS = mktest mkstream
 
 snapraid_SOURCES = \
 	raid/raid.c \
+	raid/check.c \
 	raid/module.c \
 	raid/tables.c \
 	raid/int.c \

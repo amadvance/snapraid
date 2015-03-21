@@ -260,6 +260,49 @@ static int raid_test_rec_dataonly(int nr, int *id, int *ip, int nd, int np, size
 }
 
 /*
+ * Scan test.
+ */
+static int raid_test_scan(int nr, int *ir, int nd, int np, size_t size, void **v, void **ref)
+{
+	int i, j, ret;
+	void *t[TEST_COUNT + RAID_PARITY_MAX];
+	int is[RAID_PARITY_MAX];
+
+	/* setup data and parity vector */
+	for (i = 0, j = 0; i < nd + np; ++i) {
+		if (j < nr && ir[j] == i) {
+			/* this block is bad */
+			t[i] = v[i];
+			++j;
+
+			/* make it really bad */
+			memset(t[i], i, size);
+		} else {
+			/* this block is used for recovering */
+			t[i] = ref[i];
+		}
+	}
+
+	ret = raid_scan(is, nd, np, size, t);
+
+	/* compare identified bad blocks */
+	if (ret != nr) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+	for (i = 0; i < nr; ++i) {
+		if (ir[i] != is[i]) {
+			/* LCOV_EXCL_START */
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	return 0;
+}
+
+/*
  * Basic functionality self test.
  */
 int raid_selftest(void)
@@ -380,6 +423,23 @@ int raid_selftest(void)
 		}
 
 		ret = raid_test_rec_dataonly(np / 2, ir, ip, nd, np, size, v, ref);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			goto bail;
+			/* LCOV_EXCL_STOP */
+		}
+
+		/* scan test with broken data and parity */
+		for (i = 0; i < np / 2; ++i) {
+			/* bad data */
+			ir[i] = i;
+		}
+		for (i = 0; i < (np - 1) / 2; ++i) {
+			/* bad parity */
+			ir[np / 2 + i] = nd + i;
+		}
+
+		ret = raid_test_scan(np - 1, ir, nd, np, size, v, ref);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			goto bail;

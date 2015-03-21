@@ -124,7 +124,7 @@ void raid_gen(int nd, int np, size_t size, void **v);
  * and some form of integrity verification would be possible.
  *
  * @nr Number of failed data and parity blocks to recover.
- * @ir[] Vector of @nr indexes of the data and parity blocks to recover.
+ * @ir[] Vector of @nr indexes of the failed data and parity blocks.
  *   The indexes start from 0. They must be in order.
  *   The first parity is represented with value @nd, the second with value
  *   @nd + 1, just like positions in the @v vector.
@@ -157,6 +157,73 @@ void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v);
  *   Each blocks has @size bytes.
  */
 void raid_rec_dataonly(int nr, int *id, int *ip, int nd, size_t size, void **v);
+
+/**
+ * Check the provided failed blocks combination.
+ *
+ * This function checks if the specified failed blocks combination satisfies
+ * the redundancy information. A combination is assumed matching, if the
+ * remaining valid parity is matching the expected value after recovering.
+ *
+ * The number of failed blocks @nr must be strictly less than the number of
+ * parities @np, because you need one more parity to validate the recovering.
+ *
+ * No data or parity blocks are modified.
+ *
+ * @nr Number of failed data and parity blocks.
+ * @ir[] Vector of @nr indexes of the failed data and parity blocks.
+ *   The indexes start from 0. They must be in order.
+ *   The first parity is represented with value @nd, the second with value
+ *   @nd + 1, just like positions in the @v vector.
+ * @nd Number of data blocks.
+ * @np Number of parity blocks.
+ * @size Size of the blocks pointed by @v. It must be a multiplier of 64.
+ * @v Vector of pointers to the blocks of data and parity.
+ *   It has (@nd + @np) elements. The starting elements are the blocks
+ *   for data, following with the parity blocks.
+ *   Each block has @size bytes.
+ * @return 0 if the check is satisfied. -1 otherwise.
+ */
+int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v);
+
+/**
+ * Scan for failed blocks.
+ *
+ * This function identifies the failed data and parity blocks using the
+ * available redundancy.
+ *
+ * It uses a brute force method, and then the call can be expansive.
+ * The expected execution time is proportional at the binomial coefficient
+ * @np + @nd choose @np - 1, usually written as:
+ *
+ * ( @np + @nd )
+ * (           )
+ * (  @np - 1  )
+ *
+ * No data or parity blocks are modified.
+ *
+ * The failed block indexes are returned in the @ir vector.
+ * It must have space for at least @np - 1 values.
+ *
+ * The returned @ir vector can then be used in a raid_rec() call to recover
+ * the failed data and parity blocks.
+ *
+ * @ir[] Vector filled with the indexes of the failed data and parity blocks.
+ *   The indexes start from 0 and they are in order.
+ *   The first parity is represented with value @nd, the second with value
+ *   @nd + 1, just like positions in the @v vector.
+ * @nd Number of data blocks.
+ * @np Number of parity blocks.
+ * @size Size of the blocks pointed by @v. It must be a multiplier of 64.
+ * @v Vector of pointers to the blocks of data and parity.
+ *   It has (@nd + @np) elements. The starting elements are the blocks
+ *   for data, following with the parity blocks.
+ *   Each block has @size bytes.
+ * @return Number of block indexes returned in the @ir vector.
+ *   0 if no error is detected.
+ *   -1 if it's not possible to identify the failed disks.
+ */
+int raid_scan(int *ir, int nd, int np, size_t size, void **v);
 
 #endif
 
