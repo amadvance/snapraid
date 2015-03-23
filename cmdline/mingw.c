@@ -223,11 +223,6 @@ void os_init(int opt)
 
 	exedir_init();
 
-	/* set stdout and stderr as "line buffered" */
-	/* this ensures that messages are mixed correctly */
-	setvbuf(stdout, 0, _IOLBF, BUFSIZ);
-	setvbuf(stderr, 0, _IOLBF, BUFSIZ);
-
 	last_error = 0;
 }
 

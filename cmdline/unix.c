@@ -958,11 +958,6 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 void os_init(int opt)
 {
 	(void)opt;
-
-	/* set stdout and stderr as "line buffered" */
-	/* this ensures that messages are mixed correctly */
-	setvbuf(stdout, 0, _IOLBF, BUFSIZ);
-	setvbuf(stderr, 0, _IOLBF, BUFSIZ);
 }
 
 void os_done(void)

@@ -136,13 +136,13 @@ void parity_overflow(struct snapraid_state* state, data_off_t size)
 			if (file->blockmax > 0) {
 				if (file->blockvec[file->blockmax - 1].parity_pos >= blockalloc) {
 					msg_tag("outofparity:%s:%s\n", disk->name, esc(file->sub));
-					msg_flush();
 					if (first) {
 						first = 0;
 						msg_warning("\nYour data requires more parity than the available space.\n");
 						msg_warning("Please move the files 'outofparity' to another data disk:\n");
 					}
 					msg_warning("outofparity %s%s\n", disk->dir, file->sub);
+					msg_flush();
 				}
 			}
 		}

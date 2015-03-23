@@ -50,6 +50,8 @@ void msg_warning(const char* format, ...) __attribute__((format(attribute_printf
  * These messages neves go on the screen, but only in the log file if specified.
  *
  * Note that this function, allows not \n terminated strings.
+ *
+ * These messages are buffered. Use msg_flush() to flush them.
  */
 void msg_tag(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
 
@@ -106,6 +108,8 @@ void msg_progress(const char* format, ...) __attribute__((format(attribute_print
  * Message that show the percentage of the progress.
  *
  * These messages never go in the log file.
+ *
+ * These messages are buffered. Use msg_flush() to flush them.
  */
 void msg_bar(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
 

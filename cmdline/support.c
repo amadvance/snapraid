@@ -24,13 +24,22 @@
 
 int msg_level = 0;
 
+/*
+ * Note that in the following functions we always flush both
+ * stdout and stderr, because we want to ensure that they mixes
+ * well when redirected to files
+ *
+ * The buffering is similar at the "line buffered" one, that
+ * is not available on Windows, so we emulate it in this way.
+ *
+ * For stdlog the flush is only limited.
+ * To ensure flushing the caller should use msg_flush().
+ */
+
 void msg_error(const char* format, ...)
 {
 	va_list ap;
 
-	/* first output the same message to stdlog and flush it */
-	/* to avoid to mix messages in case streams are redirected */
-	/* to the same file */
 	if (stdlog) {
 		va_start(ap, format);
 		fprintf(stdlog, "msg:error: ");
@@ -41,6 +50,7 @@ void msg_error(const char* format, ...)
 
 	va_start(ap, format);
 	vfprintf(stderr, format, ap);
+	fflush(stderr);
 	va_end(ap);
 }
 
@@ -52,10 +62,12 @@ void msg_warning(const char* format, ...)
 		va_start(ap, format);
 		fprintf(stdlog, "msg:warning: ");
 		vfprintf(stdlog, format, ap);
+		fflush(stdlog);
 		va_start(ap, format);
 	} else {
 		va_start(ap, format);
 		vfprintf(stderr, format, ap);
+		fflush(stderr);
 		va_start(ap, format);
 	}
 }
@@ -75,20 +87,18 @@ void msg_status(const char* format, ...)
 {
 	va_list ap;
 
-	/* first output the same message to stdlog and flush it */
-	/* to avoid to mix messages in case streams are redirected */
-	/* to the same file */
 	if (stdlog) {
 		va_start(ap, format);
 		fprintf(stdlog, "msg:status: ");
 		vfprintf(stdlog, format, ap);
-		va_end(ap);
 		fflush(stdlog);
+		va_end(ap);
 	}
 
 	if (msg_level >= MSG_STATUS) {
 		va_start(ap, format);
 		vfprintf(stdout, format, ap);
+		fflush(stdout);
 		va_end(ap);
 	}
 }
@@ -103,6 +113,7 @@ void msg_info(const char* format, ...)
 	if (msg_level >= MSG_INFO) {
 		va_start(ap, format);
 		vfprintf(stdout, format, ap);
+		fflush(stdout);
 		va_end(ap);
 	}
 }
@@ -111,20 +122,18 @@ void msg_progress(const char* format, ...)
 {
 	va_list ap;
 
-	/* first output the same message to stdlog and flush it */
-	/* to avoid to mix messages in case streams are redirected */
-	/* to the same file */
 	if (stdlog) {
 		va_start(ap, format);
 		fprintf(stdlog, "msg:progress: ");
 		vfprintf(stdlog, format, ap);
-		va_end(ap);
 		fflush(stdlog);
+		va_end(ap);
 	}
 
 	if (msg_level >= MSG_PROGRESS) {
 		va_start(ap, format);
 		vfprintf(stdout, format, ap);
+		fflush(stdout);
 		va_end(ap);
 	}
 }
@@ -135,6 +144,7 @@ void msg_bar(const char* format, ...)
 
 	/* don't output in stdlog as these messages */
 	/* are intended for screen only */
+	/* also don't flush stdout as they are intended to be partial messages */
 
 	if (msg_level >= MSG_BAR) {
 		va_start(ap, format);
@@ -147,20 +157,18 @@ void msg_verbose(const char* format, ...)
 {
 	va_list ap;
 
-	/* first output the same message to stdlog and flush it */
-	/* to avoid to mix messages in case streams are redirected */
-	/* to the same file */
 	if (stdlog) {
 		va_start(ap, format);
 		fprintf(stdlog, "msg:verbose: ");
 		vfprintf(stdlog, format, ap);
-		va_end(ap);
 		fflush(stdlog);
+		va_end(ap);
 	}
 
 	if (msg_level >= MSG_VERBOSE) {
 		va_start(ap, format);
 		vfprintf(stdout, format, ap);
+		fflush(stdout);
 		va_end(ap);
 	}
 }
@@ -170,6 +178,7 @@ void msg_flush(void)
 	if (stdlog)
 		fflush(stdlog);
 	fflush(stdout);
+	fflush(stderr);
 }
 
 /**

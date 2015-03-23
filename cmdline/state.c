@@ -930,7 +930,6 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	}
 	if (state->filter_hidden)
 		msg_tag("filter:nohidden:\n");
-
 	msg_flush();
 }
 
@@ -4633,6 +4632,7 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 		if (elapsed >= 60)
 			msg_bar(" in %u:%02u", (unsigned)(elapsed / 3600), (unsigned)((elapsed % 3600) / 60));
 		msg_bar("\n");
+		msg_flush();
 	}
 }
 
@@ -4642,8 +4642,10 @@ void state_progress_stop(struct snapraid_state* state)
 
 	now = time(0);
 
-	if (!state->opt.gui)
+	if (!state->opt.gui) {
 		msg_bar("\n");
+		msg_flush();
+	}
 
 	state->progress_interruption = now;
 }
@@ -4759,7 +4761,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 			if (out_eta)
 				msg_bar(", %u:%02u ETA", out_eta / 60, out_eta % 60);
 			msg_bar("%s\r", PROGRESS_CLEAR);
-			fflush(stdout);
+			msg_flush();
 		}
 
 		/* store the new measure */
