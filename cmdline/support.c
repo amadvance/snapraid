@@ -63,12 +63,12 @@ void msg_warning(const char* format, ...)
 		fprintf(stdlog, "msg:warning: ");
 		vfprintf(stdlog, format, ap);
 		fflush(stdlog);
-		va_start(ap, format);
+		va_end(ap);
 	} else {
 		va_start(ap, format);
 		vfprintf(stderr, format, ap);
 		fflush(stderr);
-		va_start(ap, format);
+		va_end(ap);
 	}
 }
 
