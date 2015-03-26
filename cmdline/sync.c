@@ -309,10 +309,13 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 end:
 	state_progress_end(state, countpos, countmax, countsize);
 
-	if (error || io_error) {
+	/* note that at this point no io_error is possible */
+	/* becasue at the first one we bail out */
+	assert(io_error == 0);
+
+	if (error) {
 		msg_status("\n");
 		msg_status("%8u file errors\n", error);
-		msg_status("%8u io errors\n", io_error);
 	} else {
 		/* print the result only if processed something */
 		if (countpos != 0)
@@ -321,11 +324,8 @@ end:
 
 	if (error)
 		msg_error("WARNING! Unexpected file errors!\n");
-	if (io_error)
-		msg_error("DANGER! Unexpected input/output errors! The failing blocks are now marked as bad!\n");
 
 	msg_tag("hash_summary:error_file:%u\n", error);
-	msg_tag("hash_summary:error_io:%u\n", io_error);
 
 	/* proceed without bailing out */
 	goto finish;
