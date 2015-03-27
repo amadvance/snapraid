@@ -222,8 +222,12 @@ void (*raid_genz_ptr)(int nd, size_t size, void **vv);
 
 void raid_gen(int nd, int np, size_t size, void **v)
 {
-	BUG_ON(np < 1 || np > RAID_PARITY_MAX);
+	/* enforce limit on size */
 	BUG_ON(size % 64 != 0);
+
+	/* enforce limit on number of failures */
+	BUG_ON(np < 1);
+	BUG_ON(np > RAID_PARITY_MAX);
 
 	raid_gen_ptr[np - 1](nd, size, v);
 }
@@ -493,17 +497,24 @@ void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v)
 	int nrd; /* number of data blocks to recover */
 	int nrp; /* number of parity blocks to recover */
 
-	/* enforce limits on size */
+	/* enforce limit on size */
 	BUG_ON(size % 64 != 0);
 
-	/* enforce the order in the index vector */
-	BUG_ON(nr >= 2 && ir[0] > ir[1]);
-	BUG_ON(nr >= 3 && ir[1] > ir[2]);
-	BUG_ON(nr >= 4 && ir[2] > ir[3]);
-	BUG_ON(nr >= 5 && ir[3] > ir[4]);
-	BUG_ON(nr >= 6 && ir[4] > ir[5]);
+	/* enforce limit on number of failures */
+	BUG_ON(nr > np);
+	BUG_ON(np > RAID_PARITY_MAX);
 
-	/* counts the number of data blocks to recover */
+	/* enforce order in index vector */
+	BUG_ON(nr >= 2 && ir[0] >= ir[1]);
+	BUG_ON(nr >= 3 && ir[1] >= ir[2]);
+	BUG_ON(nr >= 4 && ir[2] >= ir[3]);
+	BUG_ON(nr >= 5 && ir[3] >= ir[4]);
+	BUG_ON(nr >= 6 && ir[4] >= ir[5]);
+
+	/* enforce limit on index vector */
+	BUG_ON(nr > 0 && ir[nr-1] >= nd + np);
+
+	/* count the number of data blocks to recover */
 	nrd = 0;
 	while (nrd < nr && ir[nrd] < nd)
 		++nrd;
@@ -511,12 +522,9 @@ void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v)
 	/* all the remaining are parity */
 	nrp = nr - nrd;
 
-	/* enforce basic sanity in arguments */
+	/* enforce limit on number of failures */
 	BUG_ON(nrd > nd);
 	BUG_ON(nrp > np);
-
-	/* ensure that we have enough parity to recover */
-	BUG_ON(nrd + nrp > np);
 
 	/* if failed data is present */
 	if (nrd != 0) {
@@ -547,8 +555,29 @@ void raid_rec(int nr, int *ir, int nd, int np, size_t size, void **v)
 
 void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v)
 {
-	BUG_ON(nr > nd);
+	/* enforce limit on size */
 	BUG_ON(size % 64 != 0);
+
+	/* enforce limit on number of failures */
+	BUG_ON(nr > nd);
+	BUG_ON(nr > RAID_PARITY_MAX);
+
+	/* enforce order in index vector for data */
+	BUG_ON(nr >= 2 && id[0] >= id[1]);
+	BUG_ON(nr >= 3 && id[1] >= id[2]);
+	BUG_ON(nr >= 4 && id[2] >= id[3]);
+	BUG_ON(nr >= 5 && id[3] >= id[4]);
+	BUG_ON(nr >= 6 && id[4] >= id[5]);
+
+	/* enforce limit on index vector for data */
+	BUG_ON(nr > 0 && id[nr-1] >= nd);
+
+	/* enforce order in index vector for parity */
+	BUG_ON(nr >= 2 && ip[0] >= ip[1]);
+	BUG_ON(nr >= 3 && ip[1] >= ip[2]);
+	BUG_ON(nr >= 4 && ip[2] >= ip[3]);
+	BUG_ON(nr >= 5 && ip[3] >= ip[4]);
+	BUG_ON(nr >= 6 && ip[4] >= ip[5]);
 
 	/* if failed data is present */
 	if (nr != 0)

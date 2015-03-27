@@ -36,11 +36,10 @@
  * @ip[] Vector of @nv indexes of the valid parity blocks.
  *   The indexes start from 0. They must be in order.
  * @nd Number of data blocks.
- * @np Number of parity blocks.
  * @size Size of the blocks pointed by @v. It must be a multipler of 64.
  * @v Vector of pointers to the blocks of data and parity.
- *   It has (@nd + @np) elements. The starting elements are the blocks
- *   for data, following with the parity blocks.
+ *   It has (@nd + @ip[@nv - 1] + 1) elements. The starting elements are the
+ *   blocks for data, following with the parity blocks.
  *   Each block has @size bytes. 
  * @return 0 if the check is satisfied. -1 otherwise.
  */
@@ -122,7 +121,22 @@ int raid_check(int nr, int *ir, int nd, int np, size_t size, void **v)
 	int rd;
 	int i, j;
 
-	BUG_ON(nr >= np);
+	/* enforce limit on size */
+	BUG_ON(size % 64 != 0);
+
+	/* enforce limit on number of failures */
+	BUG_ON(nr >= np); /* >= because we check with extra parity */
+	BUG_ON(np > RAID_PARITY_MAX);
+
+	/* enforce order in index vector */
+	BUG_ON(nr >= 2 && ir[0] >= ir[1]);
+	BUG_ON(nr >= 3 && ir[1] >= ir[2]);
+	BUG_ON(nr >= 4 && ir[2] >= ir[3]);
+	BUG_ON(nr >= 5 && ir[3] >= ir[4]);
+	BUG_ON(nr >= 6 && ir[4] >= ir[5]);
+
+	/* enforce limit on index vector */
+	BUG_ON(nr > 0 && ir[nr-1] >= nd + np);
 
 	/* count failed data disk */
 	rd = 0;
