@@ -54,13 +54,12 @@ exclude /lost+found/
 #blocksize 256
 
 # Automatically save the state when synching after the specied amount
-# of GiB processed (uncomment to enable).
+# of GB processed (uncomment to enable).
 # This option is useful to avoid to restart from scratch long 'sync'
 # commands interrupted by a machine crash.
 # It also improves the recovering if a disk break during a 'sync'.
-# The SIZE argument is specified in gibi bytes -> 1073741824 bytes
 # Default value is 0, meaning disabled.
-# Format: "autosave SIZE_IN_GiB"
+# Format: "autosave SIZE_IN_GB"
 #autosave 500
 
 # Defines the pooling directory where the virtual view of the disk

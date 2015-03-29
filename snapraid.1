@@ -1173,29 +1173,29 @@ of RAM memory to run in the 32 bits version, and TS*36/BS
 in the 64 bits one. Where TS is the total size in bytes of
 your disk array, and BS is the block size in bytes.
 .PP
-For example with 4 disk of 3 TiB and a block size of 256 KiB
+For example with 8 disk of 4 TB and a block size of 256 KiB
 (1 KiB = 1024 bytes) you have:
 .PP
-RAM = (4 * 3 * 2^40) * 28 / (256 * 2^10) = 1.4 GiB
+RAM = (8 * 4 * 10^12) * 28 / (256 * 2^10) = 3.2 GiB
 .PD 0
 .PP
 .PD
 .PP
-Another reason to use a different blocksize is if you have a lot of small
-files. In the order of many millions.
+Another reason to use a different blocksize is if you have a lot of
+small files. In the order of many millions.
 .PP
 For each file, even of few bytes, a whole block of parity is allocated,
 and with many files this may result in a lot of unused parity space.
 And when you completely fill the parity disk, you are not
 allowed to add more files in the data disks.
-Anywa, the wasted parity doesn\'t sum between data disk. Wasted space
+Anyway, the wasted parity doesn\'t sum between data disks. Wasted space
 resulting from a high number of files in a data disk, limits only
 the amount of data in such data disk and not in others.
 .PP
 As approximation, you can assume that half of the block size is
 wasted for each file. For example, with 100000 files and a 256 KiB
-block size, you are going to waste 12 GiB of parity, that may result
-in 12 GiB less space available in the data disk.
+block size, you are going to waste 13 GB of parity, that may result
+in 13 GB less space available in the data disk.
 .PP
 You can get the amount of wasted space in each disk using \[dq]status\[dq].
 This is the amount of space that you must leave free in the data
@@ -1204,7 +1204,7 @@ If this value is negative, it means that your are near to fill
 the parity, and it represents the space you can still waste.
 .PP
 To avoid the problem, you can use a bigger partition for parity.
-For example, if you have the parity partition bigger than 12 GiB
+For example, if you have the parity partition bigger than 13 GB
 than data disks, you have enough extra space to handle up to 100000
 files in each data disk.
 .PP
@@ -1218,17 +1218,15 @@ mkfs.ext4 \-m 0 \-T largefile4 DEVICE
 .PD
 .RE
 .PP
-This results in about 1.5% of extra space. Meaning about 48 GiB for
-a 3 TiB disk, that allows about 400000 files in each data disk without
+This results in about 1.5% of extra space. Meaning about 60 GB for
+a 4 TB disk, that allows about 460000 files in each data disk without
 any wasted space.
-.SS autosave SIZE_IN_GIBIBYTES 
+.SS autosave SIZE_IN_GIGABYTES 
 Automatically save the state when syncing after the specified amount
-of GiB processed.
+of GB processed.
 This option is useful to avoid to restart from scratch long \[dq]sync\[dq]
 commands interrupted by a machine crash, or any other event that
 may interrupt SnapRAID.
-The SIZE argument is specified in gibibytes. Where one gibi bytes
-is 1073741824 bytes.
 .SS pool DIR 
 Defines the pooling directory where the virtual view of the disk
 array is created using the \[dq]pool\[dq] command.

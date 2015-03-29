@@ -826,8 +826,8 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				/* LCOV_EXCL_STOP */
 			}
 
-			/* convert to GiB */
-			state->autosave *= 1024 * 1024 * 1024;
+			/* convert to GB */
+			state->autosave *= GIGA;
 		} else if (tag[0] == 0) {
 			/* allow empty lines */
 		} else if (tag[0] == '#') {
