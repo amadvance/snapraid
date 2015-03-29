@@ -42,6 +42,12 @@ const char* lev_config_name(unsigned level);
 /* state */
 
 /**
+ * Units for disk space.
+ */
+#define MEGA (1000 * 1000)
+#define GIGA (1000 * 1000 * 1000)
+
+/**
  * File modes.
  */
 #define MODE_SEQUENTIAL 1 /**< Open the file in sequential mode. */

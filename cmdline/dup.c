@@ -138,7 +138,7 @@ void state_dup(struct snapraid_state* state)
 	tommy_hashdyn_done(&hashset);
 
 	msg_status("\n");
-	msg_status("%8u duplicates, for %" PRIu64 " MiB\n", count, size / (1024 * 1024));
+	msg_status("%8u duplicates, for %" PRIu64 " GB\n", count, size / GIGA);
 	if (count)
 		msg_status("There are duplicates!\n");
 	else

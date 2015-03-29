@@ -109,7 +109,7 @@ void state_list(struct snapraid_state* state)
 	}
 
 	msg_status("\n");
-	msg_status("%8u files, for %" PRIu64 " GiB\n", file_count, file_size / (1024 * 1024 * 1024));
+	msg_status("%8u files, for %" PRIu64 " GB\n", file_count, file_size / GIGA);
 	msg_status("%8u links\n", link_count);
 
 	msg_tag("summary:file_count:%u\n", file_count);

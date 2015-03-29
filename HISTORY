@@ -29,6 +29,8 @@ SnapRAID HISTORY
  * In the "status" command the "Wasted" column now shows a negative
    number for the amount of space that you can still waste without
    filling up the parity.
+ * In the "status" and others commands we now use GB instead of GiB,
+   when referring to disk space.
  * Renames the -s and -t options to -S and -B as they are intended to
    be manual only operations.
  * Windows binary built with gcc 4.8.1 using the MXE cross compiler 2.23,

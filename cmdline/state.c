@@ -4622,13 +4622,13 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 		time_t now;
 		time_t elapsed;
 
-		unsigned countsize_MiB = (countsize + 1024 * 1024 - 1) / (1024 * 1024);
+		unsigned countsize_MB = (countsize + MEGA - 1) / MEGA;
 
 		now = time(0);
 
 		elapsed = now - state->progress_whole_start - state->progress_wasted;
 
-		msg_bar("%u%% completed, %u MiB processed", countpos * 100 / countmax, countsize_MiB);
+		msg_bar("%u%% completed, %u MB processed", countpos * 100 / countmax, countsize_MB);
 		if (elapsed >= 60)
 			msg_bar(" in %u:%02u", (unsigned)(elapsed / 3600), (unsigned)((elapsed % 3600) / 60));
 		msg_bar("\n");
@@ -4738,7 +4738,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 
 			/* estimate the speed in MiB/s */
 			if (delta_time != 0)
-				out_speed = (unsigned)(delta_size / (1024 * 1024) / delta_time);
+				out_speed = (unsigned)(delta_size / MEGA / delta_time);
 
 			/* estimate the cpu usage percentage */
 			if (delta_tick_total != 0)
@@ -4753,7 +4753,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 			msg_tag("run:pos:%u:%u:%" PRIu64 ":%u:%u:%u:%u:%" PRIu64 "\n", blockpos, countpos, countsize, out_perc, out_eta, out_speed, out_cpu, (uint64_t)elapsed);
 			msg_flush();
 		} else {
-			msg_bar("%u%%, %u MiB", out_perc, (unsigned)(countsize / (1024 * 1024)));
+			msg_bar("%u%%, %u MiB", out_perc, (unsigned)(countsize / MEGA));
 			if (out_speed)
 				msg_bar(", %u MiB/s", out_speed);
 			if (out_cpu)

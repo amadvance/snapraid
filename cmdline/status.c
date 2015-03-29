@@ -68,7 +68,6 @@ int state_status(struct snapraid_state* state)
 	uint64_t file_size;
 	uint64_t file_block_count;
 	uint64_t file_block_free;
-	uint64_t base = 1024 * 1024 * 1024ULL;
 	block_off_t parity_block_free;
 	unsigned unsynced_blocks;
 	uint64_t all_wasted;
@@ -100,7 +99,7 @@ int state_status(struct snapraid_state* state)
 	printf("SnapRAID status report:\n");
 	printf("\n");
 	printf("   Files Fragmented Excess  Wasted  Used    Free  Use Name\n");
-	printf("            Files  Fragments GiB     GiB     GiB          \n");
+	printf("            Files  Fragments  GB      GB      GB\n");
 
 	/* count fragments */
 	file_count = 0;
@@ -200,17 +199,17 @@ int state_status(struct snapraid_state* state)
 		printf("%8u", disk_file_count);
 		printf("%8u", disk_file_fragmented);
 		printf("%8u", disk_extra_fragment);
-		if (wasted < -100LL * 1024 * 1024 * 1024) {
+		if (wasted < -100LL * GIGA) {
 			printf("       -");
 		} else if (wasted < 0) {
 			char buffer[32];
-			snprintf(buffer, sizeof(buffer), "-%" PRId64 ".%01" PRIu64, -wasted / base, (-wasted * 10 / base) % 10);
+			snprintf(buffer, sizeof(buffer), "-%" PRId64 ".%01" PRIu64, -wasted / GIGA, (-wasted * 10 / GIGA) % 10);
 			printf("%8s", buffer);
 		} else {
-			printf("%6" PRIu64 ".%01" PRIu64, wasted / base, (wasted * 10 / base) % 10);
+			printf("%6" PRIu64 ".%01" PRIu64, wasted / GIGA, (wasted * 10 / GIGA) % 10);
 		}
-		printf("%8" PRIu64, disk_file_size / base);
-		printf("%8" PRIu64, (disk_block_max - disk_block_count) * (uint64_t)state->block_size / base);
+		printf("%8" PRIu64, disk_file_size / GIGA);
+		printf("%8" PRIu64, (disk_block_max - disk_block_count) * (uint64_t)state->block_size / GIGA);
 		printf(" %3u%%", perc(disk_block_count, disk_block_max));
 		printf(" %s\n", disk->name);
 
@@ -233,9 +232,9 @@ int state_status(struct snapraid_state* state)
 	printf("%8u", file_count);
 	printf("%8u", file_fragmented);
 	printf("%8u", extra_fragment);
-	printf("%6" PRIu64 ".%01" PRIu64, all_wasted / base, (all_wasted * 10 / base) % 10);
-	printf("%8" PRIu64, file_size / base);
-	printf("%8" PRIu64, file_block_free * state->block_size / base);
+	printf("%6" PRIu64 ".%01" PRIu64, all_wasted / GIGA, (all_wasted * 10 / GIGA) % 10);
+	printf("%8" PRIu64, file_size / GIGA);
+	printf("%8" PRIu64, file_block_free * state->block_size / GIGA);
 	printf(" %3u%%", perc(file_block_count, file_block_count + file_block_free));
 	printf("\n");
 
