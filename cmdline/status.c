@@ -201,12 +201,8 @@ int state_status(struct snapraid_state* state)
 		printf("%8u", disk_extra_fragment);
 		if (wasted < -100LL * GIGA) {
 			printf("       -");
-		} else if (wasted < 0) {
-			char buffer[32];
-			snprintf(buffer, sizeof(buffer), "-%" PRId64 ".%01" PRIu64, -wasted / GIGA, (-wasted * 10 / GIGA) % 10);
-			printf("%8s", buffer);
 		} else {
-			printf("%6" PRIu64 ".%01" PRIu64, wasted / GIGA, (wasted * 10 / GIGA) % 10);
+			printf("%8.1f", (double)wasted / GIGA);
 		}
 		printf("%8" PRIu64, disk_file_size / GIGA);
 		printf("%8" PRIu64, (disk_block_max - disk_block_count) * (uint64_t)state->block_size / GIGA);
@@ -232,7 +228,7 @@ int state_status(struct snapraid_state* state)
 	printf("%8u", file_count);
 	printf("%8u", file_fragmented);
 	printf("%8u", extra_fragment);
-	printf("%6" PRIu64 ".%01" PRIu64, all_wasted / GIGA, (all_wasted * 10 / GIGA) % 10);
+	printf("%8.1f", (double)all_wasted / GIGA);
 	printf("%8" PRIu64, file_size / GIGA);
 	printf("%8" PRIu64, file_block_free * state->block_size / GIGA);
 	printf(" %3u%%", perc(file_block_count, file_block_count + file_block_free));
