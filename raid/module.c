@@ -455,6 +455,8 @@ int raid_selftest(void)
 		/* LCOV_EXCL_STOP */
 	}
 
+	ret = 0;
+
 bail:
 	free(v);
 	free(v_alloc);
