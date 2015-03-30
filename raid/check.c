@@ -165,7 +165,7 @@ int raid_scan(int *ir, int nd, int np, size_t size, void **v)
 	int r;
 
 	/* check the special case of no failure */
-	if (raid_check(0, 0, nd, np, size, v) == 0)
+	if (np != 0 && raid_check(0, 0, nd, np, size, v) == 0)
 		return 0;
 
 	/* for each number of possible failures */
