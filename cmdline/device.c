@@ -52,13 +52,13 @@
 /*
  * Divider for SMART attribute 5
  */
-unsigned SMART_5_STEP = 1;
+static unsigned SMART_5_STEP = 1;
 
 /*
  * Failure rate for 30 days, for a disk
  * with SMART attribute 5 at a given value.
  */
-double SMART_5_R[SMART_MEASURES] = {
+static double SMART_5_R[SMART_MEASURES] = {
 	0.0034, 0.0738, 0.0883, 0.0960, 0.1016,
 	0.1062, 0.1106, 0.1142, 0.1189, 0.1259,
 	0.1307, 0.1337, 0.1368, 0.1400, 0.1419,
@@ -116,13 +116,13 @@ double SMART_5_R[SMART_MEASURES] = {
 /*
  * Divider for SMART attribute 187
  */
-unsigned SMART_187_STEP = 1;
+static unsigned SMART_187_STEP = 1;
 
 /*
  * Failure rate for 30 days, for a disk
  * with SMART attribute 187 at a given value.
  */
-double SMART_187_R[SMART_MEASURES] = {
+static double SMART_187_R[SMART_MEASURES] = {
 	0.0048, 0.0957, 0.1157, 0.1306, 0.1415,
 	0.1501, 0.1695, 0.2444, 0.2714, 0.2925,
 	0.3113, 0.3284, 0.3515, 0.4054, 0.4331,
@@ -180,13 +180,13 @@ double SMART_187_R[SMART_MEASURES] = {
 /*
  * Divider for SMART attribute 188
  */
-unsigned SMART_188_STEP = 1;
+static unsigned SMART_188_STEP = 1;
 
 /*
  * Failure rate for 30 days, for a disk
  * with SMART attribute 188 at a given value.
  */
-double SMART_188_R[SMART_MEASURES] = {
+static double SMART_188_R[SMART_MEASURES] = {
 	0.0028, 0.0312, 0.0493, 0.0625, 0.0712,
 	0.0773, 0.0818, 0.0891, 0.0950, 0.1006,
 	0.1054, 0.1093, 0.1129, 0.1193, 0.1241,
@@ -244,13 +244,13 @@ double SMART_188_R[SMART_MEASURES] = {
 /*
  * Divider for SMART attribute 193
  */
-unsigned SMART_193_STEP = 1626;
+static unsigned SMART_193_STEP = 1626;
 
 /*
  * Failure rate for 30 days, for a disk
  * with SMART attribute 193 at a given value.
  */
-double SMART_193_R[SMART_MEASURES] = {
+static double SMART_193_R[SMART_MEASURES] = {
 	0.0000, 0.0029, 0.0033, 0.0040, 0.0046,
 	0.0051, 0.0059, 0.0065, 0.0073, 0.0080,
 	0.0088, 0.0096, 0.0104, 0.0112, 0.0117,
@@ -308,13 +308,13 @@ double SMART_193_R[SMART_MEASURES] = {
 /*
  * Divider for SMART attribute 197
  */
-unsigned SMART_197_STEP = 1;
+static unsigned SMART_197_STEP = 1;
 
 /*
  * Failure rate for 30 days, for a disk
  * with SMART attribute 197 at a given value.
  */
-double SMART_197_R[SMART_MEASURES] = {
+static double SMART_197_R[SMART_MEASURES] = {
 	0.0036, 0.2430, 0.3027, 0.3349, 0.3533,
 	0.3632, 0.3722, 0.3790, 0.4199, 0.6417,
 	0.6517, 0.6583, 0.6647, 0.6680, 0.6737,
@@ -372,13 +372,13 @@ double SMART_197_R[SMART_MEASURES] = {
 /*
  * Divider for SMART attribute 198
  */
-unsigned SMART_198_STEP = 1;
+static unsigned SMART_198_STEP = 1;
 
 /*
  * Failure rate for 30 days, for a disk
  * with SMART attribute 198 at a given value.
  */
-double SMART_198_R[SMART_MEASURES] = {
+static double SMART_198_R[SMART_MEASURES] = {
 	0.0038, 0.3963, 0.4189, 0.4297, 0.4364,
 	0.4393, 0.4433, 0.4490, 0.4909, 0.7634,
 	0.7649, 0.7683, 0.7689, 0.7703, 0.7717,
@@ -436,13 +436,13 @@ double SMART_198_R[SMART_MEASURES] = {
 /*
  * Divider for SMART attribute 199
  */
-unsigned SMART_199_STEP = 1;
+static unsigned SMART_199_STEP = 1;
 
 /*
  * Failure rate for 30 days, for a disk
  * with SMART attribute 199 at a given value.
  */
-double SMART_199_R[SMART_MEASURES] = {
+static double SMART_199_R[SMART_MEASURES] = {
 	0.0037, 0.0449, 0.0680, 0.0872, 0.1023,
 	0.1153, 0.1272, 0.1375, 0.1462, 0.1564,
 	0.1641, 0.1722, 0.1790, 0.1846, 0.1915,
@@ -512,7 +512,7 @@ static double smart_afr_value(double* tab, unsigned step, uint64_t value)
 }
 
 /**
- * Computes the estimated Annual Failure Rare of a set of SMART attributes.
+ * Computes the estimated Annual Failure Rate of a set of SMART attributes.
  *
  * We define the Annual Failure Rate as the average number of
  * failures you expect in a year from a disk slot:
@@ -786,7 +786,7 @@ static void state_smart(unsigned n, tommy_list* low)
 		if (flag & SMARTCTL_FLAG_FAIL)
 			printf("    FAIL");
 		else if (flag & (SMARTCTL_FLAG_PREFAIL | SMARTCTL_FLAG_PREFAIL_LOGGED))
-			printf("  PREFAIL");
+			printf(" PREFAIL");
 		else if (devinfo->smart[SMART_ERROR] != SMART_UNASSIGNED
 			&& devinfo->smart[SMART_ERROR] != 0)
 			printf("%8" PRIu64, devinfo->smart[SMART_ERROR]);
@@ -822,7 +822,7 @@ static void state_smart(unsigned n, tommy_list* low)
 		}
 
 		if (devinfo->smart[SMART_SIZE] != SMART_UNASSIGNED)
-			printf("  %2.1f", devinfo->smart[SMART_SIZE] / 1E12);
+			printf(" %4.1f", devinfo->smart[SMART_SIZE] / 1E12);
 		else
 			printf("    -");
 
@@ -877,7 +877,7 @@ static void state_smart(unsigned n, tommy_list* low)
 
 	/* prints extra stats only in verbose mode */
 	if (msg_level < MSG_VERBOSE)
-		return;
+		goto bail;
 
 	/*      |<##################################################################72>|####80>| */
 	printf("\n");
@@ -905,14 +905,75 @@ static void state_smart(unsigned n, tommy_list* low)
 	printf("that you regularly scrub, and in case repair, the array in the specified\n");
 	printf("time.\n");
 
+bail:
 	if (make_it_fail) {
-		/* LCOV_EXCL_START */
 		printf("\n");
 		printf("DANGER! SMART is reporting that one or more disks are FAILING!\n");
 		printf("Please take immediate action!\n");
 		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
 	}
+}
+
+/**
+ * Fill with fake data the device list.
+ */
+static int devtest(tommy_list* low, int operation)
+{
+	unsigned c;
+
+	if (operation != DEVICE_SMART)
+		return -1;
+
+	/* add some fake data */
+	for (c = 0; c < 16; ++c) {
+		devinfo_t* entry;
+		int j;
+
+		entry = calloc_nofail(1, sizeof(devinfo_t));
+
+		entry->device = c;
+
+		tommy_list_insert_tail(low, &entry->node, entry);
+
+		for (j = 0; j < 256; ++j) {
+			switch (c) {
+			case 0 : entry->smart[j] = 0; break;
+			case 1 : entry->smart[j] = SMART_UNASSIGNED; break;
+			default : entry->smart[j] = c; break;
+			}
+		}
+
+		if (c == 0) {
+			entry->smart_serial[0] = 0;
+			entry->file[0] = 0;
+			entry->name[0] = 0;
+			entry->smart[SMART_SIZE] = SMART_UNASSIGNED;
+			entry->smart[SMART_ROTATION_RATE] = 0;
+		} else {
+			snprintf(entry->smart_serial, sizeof(entry->smart_serial), "%u", c);
+			pathcpy(entry->file, sizeof(entry->name), "file");
+			pathcpy(entry->name, sizeof(entry->name), "name");
+			entry->smart[SMART_SIZE] = c * TERA;
+			entry->smart[SMART_ROTATION_RATE] = 7200;
+		}
+
+		entry->smart[SMART_ERROR] = 0;
+		entry->smart[SMART_FLAGS] = SMART_UNASSIGNED;
+
+		switch (c) {
+		case 3 : entry->smart[SMART_ERROR] = 1; break;
+		case 4 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_UNSUPPORTED; break;
+		case 5 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_COMMAND; break;
+		case 6 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_OPEN; break;
+		case 7 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_FAIL; break;
+		case 8 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_PREFAIL; break;
+		case 9 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_PREFAIL_LOGGED; break;
+		case 10 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_ERROR; break;
+		case 11 : entry->smart[SMART_FLAGS] = SMARTCTL_FLAG_ERROR_LOGGED; break;
+		}
+	}
+
+	return 0;
 }
 
 void state_device(struct snapraid_state* state, int operation)
@@ -921,6 +982,7 @@ void state_device(struct snapraid_state* state, int operation)
 	unsigned j;
 	tommy_list high;
 	tommy_list low;
+	int ret;
 
 	switch (operation) {
 	case DEVICE_UP : msg_progress("Spinup...\n"); break;
@@ -958,7 +1020,12 @@ void state_device(struct snapraid_state* state, int operation)
 		tommy_list_insert_tail(&high, &entry->node, entry);
 	}
 
-	if (devquery(&high, &low, operation) != 0) {
+	if (state->opt.fake_device)
+		ret = devtest(&low, operation);
+	else
+		ret = devquery(&high, &low, operation);
+
+	if (ret != 0) {
 		const char* ope = 0;
 		switch (operation) {
 		case DEVICE_UP : ope = "Spinup"; break;

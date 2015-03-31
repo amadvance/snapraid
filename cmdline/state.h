@@ -46,6 +46,7 @@ const char* lev_config_name(unsigned level);
  */
 #define MEGA (1000 * 1000)
 #define GIGA (1000 * 1000 * 1000)
+#define TERA (1000 * 1000 * 1000 * 1000LL)
 
 /**
  * File modes.
@@ -101,6 +102,7 @@ struct snapraid_option {
 	int force_scan_winfind; /**< Force the use of FindFirst/Next in Windows to list directories. */
 	int force_progress; /**< Force the use of the progress status. */
 	unsigned force_autosave_at; /**< Force autosave at the specified block. */
+	int fake_device; /**< Fake device data. */
 };
 
 /**

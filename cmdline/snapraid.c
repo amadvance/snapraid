@@ -244,6 +244,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_FORCE_PROGRESS 281
 #define OPT_TEST_SKIP_DISK_ACCESS 282
 #define OPT_TEST_FORCE_AUTOSAVE_AT 283
+#define OPT_TEST_FAKE_DEVICE 284
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -354,6 +355,9 @@ struct option long_options[] = {
 
 	/* Force autosave at the specified block */
 	{ "test-force-autosave-at", 1, 0, OPT_TEST_FORCE_AUTOSAVE_AT },
+
+	/* Fake device data */
+	{ "test-fake-device", 0, 0, OPT_TEST_FAKE_DEVICE },
 
 	{ 0, 0, 0, 0 }
 };
@@ -685,6 +689,9 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_TEST_FORCE_AUTOSAVE_AT :
 			opt.force_autosave_at = atoi(optarg);
+			break;
+		case OPT_TEST_FAKE_DEVICE :
+			opt.fake_device = 1;
 			break;
 		default :
 			/* LCOV_EXCL_START */
