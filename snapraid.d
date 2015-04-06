@@ -14,7 +14,7 @@ Synopsis
 	:	[-S, --start BLKSTART] [-B, --count BLKCOUNT]
 	:	[-L, --error-limit NUMBER]
 	:	[-v, --verbose] [-q, --quiet]
-	:	status|smart|up|down|diff|sync|scrub|fix|check|list|dup|up|down|pool|rehash
+	:	status|smart|up|down|diff|sync|scrub|fix|check|list|dup|up|down|pool|devices|rehash
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
@@ -560,15 +560,31 @@ Commands
 
 	Nothing is modified outside the pool directory.
 
+  devices
+	Prints the low level devices used by the array.
+
+	This command prints the devices associations in place in the array,
+	and it's mainly intended as a script interface.
+
+	The first two columns are the low level device id and path.
+	The next two columns are the high level device id and path.
+	The latest column if the disk name in the array.
+
+	In most cases you have one low level device for each disk in the
+	array, but in some more complex configurations, you may have multple
+	low level devices used by a single disk in the array.
+
+	Nothing is modified.
+
   rehash
 	Schedules a rehash of the whole array.
 
-	This option can be used to change the hash kind used,
-	typically when upgrading from a 32 bits system to a 64
-	bits one, to switch from MurmurHash3 to the faster SpookyHash.
+	This command changes the hash kind used, typically when upgrading
+	from a 32 bits system to a 64 bits one, to switch from
+	MurmurHash3 to the faster SpookyHash.
 
 	If you are already using the optimal hash, this command
-	do nothing and tells you that nothing has to be done.
+	does nothing and tells you that nothing has to be done.
 
 	The rehash isn't done immediately, but it takes place
 	progressively during "sync" and "scrub".

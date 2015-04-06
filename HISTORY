@@ -20,6 +20,8 @@ SnapRAID HISTORY
  * Adds new "smart" command to print a SMART report of the array.
  * Adds new "up" and "down" commands to spin up and down the disks of
    the array.
+ * Adds new "devices" command to print the devices associations in
+   the array.
  * Changes the log handling. If no log file is specified, all the
    warnings and not fatal errors messages goes to stderr. If a log file
    is specified, only fatal error messages are printed on the screen.

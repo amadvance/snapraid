@@ -755,7 +755,7 @@ int main(int argc, char* argv[])
 		operation = OPERATION_SPINUP;
 	} else if (strcmp(argv[optind], "down") == 0) {
 		operation = OPERATION_SPINDOWN;
-	} else if (strcmp(argv[optind], "test-devices") == 0) {
+	} else if (strcmp(argv[optind], "devices") == 0) {
 		operation = OPERATION_DEVICES;
 	} else if (strcmp(argv[optind], "smart") == 0) {
 		operation = OPERATION_SMART;

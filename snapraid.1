@@ -50,7 +50,7 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
 .PD
-	status|smart|up|down|diff|sync|scrub|fix|check|list|dup|up|down|pool|rehash
+	status|smart|up|down|diff|sync|scrub|fix|check|list|dup|up|down|pool|devices|rehash
 .PD 0
 .PP
 .PD
@@ -820,15 +820,30 @@ subdirectories are deleted and replaced with the new
 view of the array. Any other regular file is left in place.
 .PP
 Nothing is modified outside the pool directory.
+.SS devices 
+Prints the low level devices used by the array.
+.PP
+This command prints the devices associations in place in the array,
+and it\'s mainly intended as a script interface.
+.PP
+The first two columns are the low level device id and path.
+The next two columns are the high level device id and path.
+The latest column if the disk name in the array.
+.PP
+In most cases you have one low level device for each disk in the
+array, but in some more complex configurations, you may have multple
+low level devices used by a single disk in the array.
+.PP
+Nothing is modified.
 .SS rehash 
 Schedules a rehash of the whole array.
 .PP
-This option can be used to change the hash kind used,
-typically when upgrading from a 32 bits system to a 64
-bits one, to switch from MurmurHash3 to the faster SpookyHash.
+This command changes the hash kind used, typically when upgrading
+from a 32 bits system to a 64 bits one, to switch from
+MurmurHash3 to the faster SpookyHash.
 .PP
 If you are already using the optimal hash, this command
-do nothing and tells you that nothing has to be done.
+does nothing and tells you that nothing has to be done.
 .PP
 The rehash isn\'t done immediately, but it takes place
 progressively during \[dq]sync\[dq] and \[dq]scrub\[dq].
