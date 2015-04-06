@@ -531,45 +531,51 @@ static double smart_afr_value(double* tab, unsigned step, uint64_t value)
 static double smart_afr(uint64_t* smart)
 {
 	double afr = 0;
+	uint64_t mask32 = 0xffffffffU;
+	uint64_t mask16 = 0xffffU;
 
 	if (smart[5] != SMART_UNASSIGNED) {
-		double r = smart_afr_value(SMART_5_R, SMART_5_STEP, smart[5]);
+		double r = smart_afr_value(SMART_5_R, SMART_5_STEP, smart[5] & mask32);
 		if (afr < r)
 			afr = r;
 	}
 
 	if (smart[187] != SMART_UNASSIGNED) {
-		double r = smart_afr_value(SMART_187_R, SMART_187_STEP, smart[187]);
+		/* with some disks, only the lower 16 bits are significative */
+		/* See: http://web.archive.org/web/20130507072056/http://media.kingston.com/support/downloads/MKP_306_SMART_attribute.pdf */
+		double r = smart_afr_value(SMART_187_R, SMART_187_STEP, smart[187] & mask16);
 		if (afr < r)
 			afr = r;
 	}
 
 	if (smart[188] != SMART_UNASSIGNED) {
-		double r = smart_afr_value(SMART_188_R, SMART_188_STEP, smart[188]);
+		/* with Seagate disks, there are three different 16 bits value reported */
+		/* the lowest one is the most significative */
+		double r = smart_afr_value(SMART_188_R, SMART_188_STEP, smart[188] & mask16);
 		if (afr < r)
 			afr = r;
 	}
 
 	if (smart[193] != SMART_UNASSIGNED) {
-		double r = smart_afr_value(SMART_193_R, SMART_193_STEP, smart[193]);
+		double r = smart_afr_value(SMART_193_R, SMART_193_STEP, smart[193] & mask32);
 		if (afr < r)
 			afr = r;
 	}
 
 	if (smart[197] != SMART_UNASSIGNED) {
-		double r = smart_afr_value(SMART_197_R, SMART_197_STEP, smart[197]);
+		double r = smart_afr_value(SMART_197_R, SMART_197_STEP, smart[197] & mask32);
 		if (afr < r)
 			afr = r;
 	}
 
 	if (smart[198] != SMART_UNASSIGNED) {
-		double r = smart_afr_value(SMART_198_R, SMART_198_STEP, smart[198]);
+		double r = smart_afr_value(SMART_198_R, SMART_198_STEP, smart[198] & mask32);
 		if (afr < r)
 			afr = r;
 	}
 
 	if (smart[199] != SMART_UNASSIGNED) {
-		double r = smart_afr_value(SMART_199_R, SMART_199_STEP, smart[199]);
+		double r = smart_afr_value(SMART_199_R, SMART_199_STEP, smart[199] & mask32);
 		if (afr < r)
 			afr = r;
 	}
@@ -720,6 +726,8 @@ static void state_smart(unsigned n, tommy_list* low)
 	double array_failure_rate;
 	double p_at_least_one_failure;
 	int make_it_fail = 0;
+	uint64_t mask32 = 0xffffffffU;
+	uint64_t mask16 = 0xffffU;
 
 	/* compute lengths for padding */
 	device_pad = 0;
@@ -768,14 +776,14 @@ static void state_smart(unsigned n, tommy_list* low)
 		uint64_t flag;
 
 		if (devinfo->smart[194] != SMART_UNASSIGNED)
-			printf("%7" PRIu64, devinfo->smart[194]);
+			printf("%7" PRIu64, devinfo->smart[194] & mask16);
 		else if (devinfo->smart[190] != SMART_UNASSIGNED)
-			printf("%7" PRIu64, devinfo->smart[190]);
+			printf("%7" PRIu64, devinfo->smart[190] & mask16);
 		else
 			printf("      -");
 
 		if (devinfo->smart[9] != SMART_UNASSIGNED)
-			printf("%7" PRIu64, devinfo->smart[9] / 24);
+			printf("%7" PRIu64, (devinfo->smart[9] & mask32) / 24);
 		else
 			printf("      -");
 
@@ -849,7 +857,7 @@ static void state_smart(unsigned n, tommy_list* low)
 		msg_tag("smart:%s:%s:%s:%g\n", devinfo->file, devinfo->name, esc(devinfo->smart_serial), afr);
 		for (j = 0; j < 256; ++j) {
 			if (devinfo->smart[j] != SMART_UNASSIGNED)
-				msg_tag("attr:%s:%u:%" PRIu64 "\n", devinfo->file, j, devinfo->smart[j]);
+				msg_tag("attr:%s:%u:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, j, devinfo->smart[j], devinfo->smart[j]);
 		}
 		if (devinfo->smart[SMART_SIZE] != SMART_UNASSIGNED)
 			msg_tag("attr:%s:size:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_SIZE]);
