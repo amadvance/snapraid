@@ -800,8 +800,6 @@ static void state_smart(unsigned n, tommy_list* low)
 			printf("%8" PRIu64, devinfo->smart[SMART_ERROR]);
 		else if (flag & (SMARTCTL_FLAG_ERROR | SMARTCTL_FLAG_ERROR_LOGGED))
 			printf("   ERROR");
-		else if (flag & (SMARTCTL_FLAG_UNSUPPORTED | SMARTCTL_FLAG_OPEN))
-			printf("       -");
 		else if (devinfo->smart[SMART_ERROR] == 0)
 			printf("       0");
 		else
@@ -814,7 +812,11 @@ static void state_smart(unsigned n, tommy_list* low)
 		if (flag & (SMARTCTL_FLAG_UNSUPPORTED | SMARTCTL_FLAG_OPEN)) {
 			/* if error running smartctl, skip AFR estimation */
 			afr = 0;
-			printf("    -");
+			printf("  n/a");
+		} else if (devinfo->smart[SMART_ROTATION_RATE] == SMART_UNASSIGNED) {
+			/* if no rotation rate, we don't know if it's SSD or not */
+			afr = 0;
+			printf("  n/k");
 		} else if (devinfo->smart[SMART_ROTATION_RATE] == 0) {
 			/* if SSD, skip AFR estimation as data is from not SSD disks */
 			afr = 0;
@@ -822,11 +824,16 @@ static void state_smart(unsigned n, tommy_list* low)
 		} else {
 			afr = smart_afr(devinfo->smart);
 
-			/* use only the disks in the array */
-			if (devinfo->parent != 0 || !have_parent)
-				array_failure_rate += afr;
+			if (afr == 0) {
+				/* this happens only if no data */
+				printf("    -");
+			} else {
+				/* use only the disks in the array */
+				if (devinfo->parent != 0 || !have_parent)
+					array_failure_rate += afr;
 
-			printf("%4.0f%%", poisson_prob_n_or_more_failures(afr, 1) * 100);
+				printf("%4.0f%%", poisson_prob_n_or_more_failures(afr, 1) * 100);
+			}
 		}
 
 		if (devinfo->smart[SMART_SIZE] != SMART_UNASSIGNED)

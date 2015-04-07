@@ -2078,9 +2078,12 @@ static int devsmart(uint64_t device, uint64_t* smart, char* serial)
 	WCHAR cmd[MAX_PATH + 128];
 	FILE* f;
 	int ret;
+	int retry;
 
 	snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -a /dev/pd%" PRIu64, exedir, device);
 
+	retry = 0;
+loop:
 	f = _wpopen(cmd, L"rt");
 	if (!f) {
 		/* LCOV_EXCL_START */
@@ -2104,7 +2107,31 @@ static int devsmart(uint64_t device, uint64_t* smart, char* serial)
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* store the return smartctl return value */
+	if (retry == 0) {
+		/*
+		 * Handle some common cases in Windows.
+		 *
+		 * Sometimes the "type" autodetection is wrong, and the command fails at identification
+		 * stage, returning with error 2, or even with error 0, and with no info at all.
+		 * We detect this conditon checking the PowerOnHours, Size and RotationRate attributes.
+		 *
+		 * In such conditions we retry using the "sat" type, that often allow to proceed.
+		 *
+		 * Note that getting error 4 is instead very common, even with full info gathering.
+		 */
+		if ((ret == 0 || ret == 2)
+			&& smart[9] == SMART_UNASSIGNED
+			&& smart[SMART_SIZE] == SMART_UNASSIGNED
+			&& smart[SMART_ROTATION_RATE] == SMART_UNASSIGNED
+		) {
+			/* retry using the "sat" type */
+			snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -a /dev/pd%" PRIu64 " -d sat", exedir, device);
+			++retry;
+			goto loop;
+		}
+	}
+
+	/* store the smartctl return value */
 	smart[SMART_FLAGS] = ret;
 
 	return 0;
