@@ -946,6 +946,7 @@ void state_device(struct snapraid_state* state, int operation)
 		entry->device = disk->device;
 		pathcpy(entry->name, sizeof(entry->name), disk->name);
 		pathcpy(entry->mount, sizeof(entry->mount), disk->dir);
+		pathcpy(entry->smartctl, sizeof(entry->smartctl), disk->smartctl);
 
 		tommy_list_insert_tail(&high, &entry->node, entry);
 	}
@@ -959,6 +960,7 @@ void state_device(struct snapraid_state* state, int operation)
 		entry->device = state->parity[j].device;
 		pathcpy(entry->name, sizeof(entry->name), lev_config_name(j));
 		pathcpy(entry->mount, sizeof(entry->mount), state->parity[j].path);
+		pathcpy(entry->smartctl, sizeof(entry->smartctl), state->parity[j].smartctl);
 		pathcut(entry->mount); /* remove the parity file */
 
 		tommy_list_insert_tail(&high, &entry->node, entry);

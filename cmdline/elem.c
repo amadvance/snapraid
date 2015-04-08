@@ -675,6 +675,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 	/* ensure that the dir terminate with "/" if it isn't empty */
 	pathslash(disk->dir, sizeof(disk->dir));
 
+	disk->smartctl[0] = 0;
 	disk->device = dev;
 	disk->tick = 0;
 	disk->total_blocks = 0;

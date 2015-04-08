@@ -47,7 +47,7 @@ void msg_warning(const char* format, ...) __attribute__((format(attribute_printf
  *
  * Messages are in tag format, like "tag:entry:...".
  *
- * These messages neves go on the screen, but only in the log file if specified.
+ * These messages never go on the screen, but only in the log file if specified.
  *
  * Note that this function, allows not \n terminated strings.
  *

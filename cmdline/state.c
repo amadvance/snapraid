@@ -55,6 +55,48 @@ const char* lev_config_name(unsigned l)
 	return 0;
 }
 
+static int lev_config_scan(const char* s, unsigned* level, unsigned* mode)
+{
+	if (strcmp(s, "parity") == 0 || strcmp(s, "1-parity") == 0) {
+		*level = 0;
+		return 0;
+	}
+
+	if (strcmp(s, "q-parity") == 0 || strcmp(s, "2-parity") == 0) {
+		*level = 1;
+		return 0;
+	}
+
+	if (strcmp(s, "r-parity") == 0 || strcmp(s, "3-parity") == 0) {
+		*level = 2;
+		return 0;
+	}
+
+	if (strcmp(s, "4-parity") == 0) {
+		*level = 3;
+		return 0;
+	}
+
+	if (strcmp(s, "5-parity") == 0) {
+		*level = 4;
+		return 0;
+	}
+
+	if (strcmp(s, "6-parity") == 0) {
+		*level = 5;
+		return 0;
+	}
+
+	if (strcmp(s, "z-parity") == 0) {
+		*level = 2;
+		if (mode)
+			*mode = RAID_MODE_VANDERMONDE;
+		return 0;
+	}
+
+	return -1;
+}
+
 const char* lev_raid_name(unsigned mode, unsigned n)
 {
 	switch (n) {
@@ -415,6 +457,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 		char buffer[PATH_MAX];
 		int ret;
 		int c;
+		unsigned level;
 
 		/* skip initial spaces */
 		sgetspace(f);
@@ -462,41 +505,9 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				/* LCOV_EXCL_STOP */
 			}
 			state->block_size *= 1024;
-		} else if (strcmp(tag, "parity") == 0
-			|| strcmp(tag, "q-parity") == 0
-			|| strcmp(tag, "r-parity") == 0
-			|| strcmp(tag, "1-parity") == 0
-			|| strcmp(tag, "2-parity") == 0
-			|| strcmp(tag, "3-parity") == 0
-			|| strcmp(tag, "4-parity") == 0
-			|| strcmp(tag, "5-parity") == 0
-			|| strcmp(tag, "6-parity") == 0
-			|| strcmp(tag, "z-parity") == 0
-		) {
+		} else if (lev_config_scan(tag, &level, &state->raid_mode) == 0) {
 			char device[PATH_MAX];
 			char* slash;
-			unsigned level;
-
-			switch (tag[0]) {
-			case 'p' : level = 0; break;
-			case 'q' : level = 1; break;
-			case 'r' : level = 2; break;
-			case '1' : level = 0; break;
-			case '2' : level = 1; break;
-			case '3' : level = 2; break;
-			case '4' : level = 3; break;
-			case '5' : level = 4; break;
-			case '6' : level = 5; break;
-			case 'z' :
-				level = 2;
-				state->raid_mode = RAID_MODE_VANDERMONDE;
-				break;
-			default :
-				/* LCOV_EXCL_START */
-				msg_error("Invalid '%s' specification in '%s' at line %u\n", tag, path, line);
-				exit(EXIT_FAILURE);
-				/* LCOV_EXCL_STOP */
-			}
 
 			if (*state->parity[level].path) {
 				/* LCOV_EXCL_START */
@@ -745,6 +756,74 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			disk = disk_alloc(buffer, dir, dev);
 
 			tommy_list_insert_tail(&state->disklist, &disk->node, disk);
+		} else if (strcmp(tag, "smartctl") == 0) {
+			char custom[PATH_MAX];
+
+			ret = sgettok(f, buffer, sizeof(buffer));
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				msg_error("Invalid 'smartctl' name specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			if (!*buffer) {
+				/* LCOV_EXCL_START */
+				msg_error("Empty 'smartctl' name specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			sgetspace(f);
+
+			ret = sgetlasttok(f, custom, sizeof(custom));
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				msg_error("Invalid 'smartctl' option specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			if (!*custom) {
+				/* LCOV_EXCL_START */
+				msg_error("Empty 'smartctl' option specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			/* search for parity */
+			if (lev_config_scan(buffer, &level, 0) == 0) {
+				if (state->parity[level].smartctl[0] != 0) {
+					/* LCOV_EXCL_START */
+					msg_error("Duplicate parity smartctl '%s' at line %u\n", buffer, line);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
+				pathcpy(state->parity[level].smartctl, sizeof(state->parity[level].smartctl), custom);
+			} else {
+				/* search the disk */
+				struct snapraid_disk* disk;
+				for (i = state->disklist; i != 0; i = i->next) {
+					disk = i->data;
+					if (strcmp(disk->name, buffer) == 0)
+						break;
+				}
+				if (!i) {
+					/* LCOV_EXCL_START */
+					msg_error("Missing disk smartctl '%s' at line %u\n", buffer, line);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+				if (disk->smartctl[0] != 0) {
+					/* LCOV_EXCL_START */
+					msg_error("Duplicate disk name '%s' at line %u\n", buffer, line);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+
+				pathcpy(disk->smartctl, sizeof(disk->smartctl), custom);
+			}
 		} else if (strcmp(tag, "nohidden") == 0) {
 			state->filter_hidden = 1;
 		} else if (strcmp(tag, "exclude") == 0) {

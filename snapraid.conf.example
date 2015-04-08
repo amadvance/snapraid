@@ -70,3 +70,15 @@ exclude /lost+found/
 # Format: "pool DIR"
 #pool /pool
 
+# Defines a custom smartctl command to obtain the SMART attributes
+# for each disk. This may be required for RAID controllers and for
+# some USB disk that cannot be autodetected.
+# In the specified options, the "%s" string is replaced by the device name.
+# Refers at the smartmontools documentation about the possible options:
+# RAID -> https://www.smartmontools.org/wiki/Supported_RAID-Controllers
+# USB -> https://www.smartmontools.org/wiki/Supported_USB-Devices
+#smartctl d1 -d sat %s
+#smartctl d2 -d usbjmicron %s
+#smartctl parity -d areca,1/1 /dev/sg0
+#smartctl 2-parity -d areca,2/1 /dev/sg0
+

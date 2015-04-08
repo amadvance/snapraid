@@ -667,6 +667,10 @@ or less parity.
 This command uses the \[dq]smartctl\[dq] tool, and it\'s equivalent to run
 \[dq]smartctl \-a\[dq] on all the devices.
 .PP
+If your devices are not autodetected correctly, you can configure
+a custom command using the \[dq]smartctl\[dq] option in the configuration
+file.
+.PP
 Nothing is modified.
 .SS up 
 Spins up all the disks of the array.
@@ -1260,6 +1264,30 @@ disk name as specified in the \[dq]disk\[dq] option, and finally adding the
 file dir and name.
 .PP
 This option is only required for Windows.
+.SS smartctl DISK/PARITY OPTIONS... 
+Defines a custom smartctl command to obtain the SMART attributes
+for each disk. This may be required for RAID controllers and for
+some USB disk that cannot be autodetected.
+.PP
+DISK is the same disk name specified in the \[dq]disk\[dq] option.
+PARITY is one of the parity name as \[dq]parity,[1,2,3,4,5,6,z]\-parity\[dq].
+.PP
+In the specified OPTIONS, the \[dq]%s\[dq] string is replaced by the
+device name. Note that in case of RAID controllers the device is likely
+fixed, and you don\'t have to use \[dq]%s\[dq].
+.PP
+Refers at the smartmontools documentation about the possible options:
+.PP
+.RS 4
+https://www.smartmontools.org/wiki/Supported_RAID\-Controllers
+.PD 0
+.PP
+.PD
+https://www.smartmontools.org/wiki/Supported_USB\-Devices
+.PD 0
+.PP
+.PD
+.RE
 .SS Examples 
 An example of a typical configuration for Unix is:
 .PP
@@ -1293,6 +1321,18 @@ exclude /lost+found/
 .PP
 .PD
 exclude /tmp/
+.PD 0
+.PP
+.PD
+smartctl d1 \-d sat %s
+.PD 0
+.PP
+.PD
+smartctl d2 \-d usbjmicron %s
+.PD 0
+.PP
+.PD
+smartctl parity \-d areca,1/1 /dev/sg0
 .PD 0
 .PP
 .PD
@@ -1334,6 +1374,18 @@ exclude \\$RECYCLE.BIN
 .PP
 .PD
 exclude \\System Volume Information
+.PD 0
+.PP
+.PD
+smartctl d1 \-d sat %s
+.PD 0
+.PP
+.PD
+smartctl d2 \-d usbjmicron %s
+.PD 0
+.PP
+.PD
+smartctl parity \-d areca,1/1 /dev/arcmsr0
 .PD 0
 .PP
 .PD

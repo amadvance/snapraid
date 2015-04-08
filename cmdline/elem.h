@@ -309,6 +309,7 @@ struct snapraid_deleted {
 struct snapraid_disk {
 	char name[PATH_MAX]; /**< Name of the disk. */
 	char dir[PATH_MAX]; /**< Mount point of the disk. It always terminates with /. */
+	char smartctl[PATH_MAX]; /**< Custom command for smartctl. Empty means auto. */
 	uint64_t device; /**< Device identifier. */
 
 	uint64_t tick; /**< Usage time of the disk. */
@@ -387,6 +388,7 @@ struct snapraid_map {
 struct snapraid_parity {
 	char path[PATH_MAX]; /**< Path of the parity file. */
 	char uuid[UUID_MAX]; /**< UUID of the disk. Empty if unknown. */
+	char smartctl[PATH_MAX]; /**< Custom command for smartctl. Empty means auto. */
 	uint64_t device; /**< Device identifier of the parity. */
 	block_off_t total_blocks; /**< Number of total blocks. */
 	block_off_t free_blocks; /**< Number of free blocks at the last sync. */

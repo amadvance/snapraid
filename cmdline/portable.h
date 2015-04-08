@@ -388,6 +388,7 @@ struct devinfo_struct {
 	uint64_t device; /**< Device ID. */
 	char name[PATH_MAX]; /**< Name of the disk. */
 	char mount[PATH_MAX]; /**< Mount point or other contained directory. */
+	char smartctl[PATH_MAX]; /**< Options for smartctl. */
 	char file[PATH_MAX]; /**< File device. */
 #ifdef _WIN32
 	char wfile[PATH_MAX]; /**< File device in Windows format. Like \\.\PhysicalDriveX, or \\?\Volume{X}. */

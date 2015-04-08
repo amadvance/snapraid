@@ -456,7 +456,7 @@ static int devresolve(dev_t device, char* path, size_t path_size)
  * Read a device tree filling the specified list of disk_t entries.
  */
 #if HAVE_LINUX_DEVICE
-static int devtree(const char* name, dev_t device, devinfo_t* parent, tommy_list* list)
+static int devtree(const char* name, const char* custom, dev_t device, devinfo_t* parent, tommy_list* list)
 {
 	char path[PATH_MAX];
 	DIR* d;
@@ -482,7 +482,7 @@ static int devtree(const char* name, dev_t device, devinfo_t* parent, tommy_list
 					/* LCOV_EXCL_STOP */
 				}
 
-				if (devtree(name, device, parent, list) != 0) {
+				if (devtree(name, custom, device, parent, list) != 0) {
 					/* LCOV_EXCL_START */
 					closedir(d);
 					return -1;
@@ -526,6 +526,7 @@ static int devtree(const char* name, dev_t device, devinfo_t* parent, tommy_list
 
 		devinfo->device = device;
 		pathcpy(devinfo->name, sizeof(devinfo->name), name);
+		pathcpy(devinfo->smartctl, sizeof(devinfo->smartctl), custom);
 		pathcpy(devinfo->file, sizeof(devinfo->file), path);
 		devinfo->parent = parent;
 
@@ -620,13 +621,25 @@ static int devscan(tommy_list* list)
 /**
  * Gets SMART attributes.
  */
-static int devsmart(dev_t device, uint64_t* smart, char* serial)
+static int devsmart(dev_t device, const char* name, const char* custom, uint64_t* smart, char* serial)
 {
 	char cmd[128];
+	char file[128];
 	FILE* f;
 	int ret;
 
-	snprintf(cmd, sizeof(cmd), "smartctl -a /dev/block/%u:%u", major(device), minor(device));
+	snprintf(file, sizeof(file), "/dev/block/%u:%u", major(device), minor(device));
+
+	/* if there is a custom command */
+	if (custom[0]) {
+		char option[128];
+		snprintf(option, sizeof(option), custom, file);
+		snprintf(cmd, sizeof(cmd), "smartctl -a %s", option);
+	} else {
+		snprintf(cmd, sizeof(cmd), "smartctl -a %s", file);
+	}
+
+	msg_tag("smartctl:%s: %s\n", name, cmd);
 
 	f = popen(cmd, "r");
 	if (!f) {
@@ -667,12 +680,14 @@ static int devsmart(dev_t device, uint64_t* smart, char* serial)
  * Spin down a specific device.
  */
 #if HAVE_LINUX_DEVICE
-static int devdown(dev_t device)
+static int devdown(dev_t device, const char* name)
 {
 	char cmd[128];
 	int ret;
 
 	snprintf(cmd, sizeof(cmd), "hdparm -y /dev/block/%u:%u >/dev/null 2>/dev/null", major(device), minor(device));
+
+	msg_tag("hdparm:%s: %s\n", name, cmd);
 
 	ret = system(cmd);
 	if (ret == -1) {
@@ -788,7 +803,7 @@ static void* thread_spindown(void* arg)
 
 	start = tick_ms();
 
-	if (devdown(devinfo->device) != 0) {
+	if (devdown(devinfo->device, devinfo->name) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -810,7 +825,7 @@ static void* thread_smart(void* arg)
 {
 	devinfo_t* devinfo = arg;
 
-	if (devsmart(devinfo->device, devinfo->smart, devinfo->smart_serial) != 0) {
+	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->smart_serial) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
@@ -904,7 +919,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 			}
 
 			/* expand the tree of devices */
-			if (devtree(devinfo->name, devinfo->device, devinfo, low) != 0) {
+			if (devtree(devinfo->name, devinfo->smartctl, devinfo->device, devinfo, low) != 0) {
 				/* LCOV_EXCL_START */
 				msg_error("Failed to expand device '%u:%u'.\n", major(devinfo->device), minor(devinfo->device));
 				return -1;
