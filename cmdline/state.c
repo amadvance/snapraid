@@ -128,6 +128,7 @@ void state_init(struct snapraid_state* state)
 	state->file_mode = MODE_SEQUENTIAL;
 	for (l = 0; l < LEV_MAX; ++l) {
 		state->parity[l].path[0] = 0;
+		state->parity[l].smartctl[0] = 0;
 		state->parity[l].uuid[0] = 0;
 		state->parity[l].device = 0;
 		state->parity[l].total_blocks = 0;
