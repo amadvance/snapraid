@@ -440,8 +440,8 @@ Nothing is modified.
 
 Spins down all the disks of the array.
 
-This command uses the "hdparm" tool, and it's equivalent to run
-"hdparm -y" or all the devices.
+This command uses the "smartctl" tool, and it's equivalent to run
+"smartctl -s standby,now" on all the devices.
 
 Nothing is modified.
 

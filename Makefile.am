@@ -819,7 +819,6 @@ distwindows-x86: $(DISTWIN)
 	mkdir tmp
 	cp $(DISTWIN) tmp
 	cp support/smartctl.exe tmp/smartctl.exe
-	cp support/hdparm.exe tmp/hdparm.exe
 	utod < snapraid.conf.example.windows > tmp/snapraid.conf.example
 	utod < INSTALL.windows > tmp/install.txt
 	utod < README > tmp/readme.txt
@@ -835,7 +834,6 @@ distwindows-x64: $(DISTWIN)
 	mkdir tmp
 	cp $(DISTWIN) tmp
 	cp support/smartctl.exe tmp/smartctl.exe
-	cp support/hdparm.exe tmp/hdparm.exe
 	utod < snapraid.conf.example.windows > tmp/snapraid.conf.example
 	utod < INSTALL.windows > tmp/install.txt
 	utod < README > tmp/readme.txt

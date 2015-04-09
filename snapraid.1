@@ -679,8 +679,8 @@ Nothing is modified.
 .SS down 
 Spins down all the disks of the array.
 .PP
-This command uses the \[dq]hdparm\[dq] tool, and it\'s equivalent to run
-\[dq]hdparm \-y\[dq] or all the devices.
+This command uses the \[dq]smartctl\[dq] tool, and it\'s equivalent to run
+\[dq]smartctl \-s standby,now\[dq] on all the devices.
 .PP
 Nothing is modified.
 .SS diff 

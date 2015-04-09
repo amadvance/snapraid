@@ -2039,12 +2039,14 @@ static int devscan(tommy_list* list)
 
 	snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" --scan-open -d pd", exedir);
 
-	msg_tag("smartctl:scan: smartctl --scan-open -d pd\n");
+	msg_tag("smartctl:run:scan: %s\n", u16tou8(cmd));
 
 	f = _wpopen(cmd, L"rt");
 	if (!f) {
 		/* LCOV_EXCL_START */
+		pthread_mutex_lock(&io_lock);
 		msg_error("Failed to run '%s' (from popen).\n", u16tou8(cmd));
+		pthread_mutex_unlock(&io_lock);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2059,16 +2061,22 @@ static int devscan(tommy_list* list)
 	ret = pclose(f);
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
+		pthread_mutex_lock(&io_lock);
 		msg_error("Failed to run '%s' (from pclose).\n", u16tou8(cmd));
+		pthread_mutex_unlock(&io_lock);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
+		pthread_mutex_lock(&io_lock);
 		msg_error("Failed to run '%s' with return code %xh.\n", u16tou8(cmd), ret);
+		pthread_mutex_unlock(&io_lock);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
+
+	msg_tag("smartctl:ret:scan: 0x%x\n", ret);
 
 	return 0;
 }
@@ -2091,21 +2099,23 @@ static int devsmart(uint64_t device, const char* name, const char* custom, uint6
 		char option[128];
 		snprintf(option, sizeof(option), custom, file);
 		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -a %s", exedir, option);
-
-		msg_tag("smartctl:%s: smartctl -a %s\n", name, option);
 	} else {
 		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -a %s", exedir, file);
-
-		msg_tag("smartctl:%s: smartctl -a %s\n", name, file);
 	}
 
 	count = 0;
 
 retry:
+	pthread_mutex_lock(&io_lock);
+	msg_tag("smartctl:run:%s: %s\n", name, u16tou8(cmd));
+	pthread_mutex_unlock(&io_lock);
+
 	f = _wpopen(cmd, L"rt");
 	if (!f) {
 		/* LCOV_EXCL_START */
+		pthread_mutex_lock(&io_lock);
 		msg_error("Failed to run '%s' (from popen).\n", u16tou8(cmd));
+		pthread_mutex_unlock(&io_lock);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2118,9 +2128,16 @@ retry:
 	}
 
 	ret = pclose(f);
+
+	pthread_mutex_lock(&io_lock);
+	msg_tag("smartctl:ret:%s: 0x%x\n", name, ret);
+	pthread_mutex_unlock(&io_lock);
+
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
+		pthread_mutex_lock(&io_lock);
 		msg_error("Failed to run '%s' (from pclose).\n", u16tou8(cmd));
+		pthread_mutex_unlock(&io_lock);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2134,7 +2151,7 @@ retry:
 		 * stage, returning with error 2, or even with error 0, and with no info at all.
 		 * We detect this conditon checking the PowerOnHours, Size and RotationRate attributes.
 		 *
-		 * In such conditions we retry using the "sat" type, that often allow to proceed.
+		 * In such conditions we retry using the "sat" type, that often allows to proceed.
 		 *
 		 * Note that getting error 4 is instead very common, even with full info gathering.
 		 */
@@ -2145,8 +2162,6 @@ retry:
 		) {
 			/* retry using the "sat" type */
 			snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -a -d sat %s", exedir, file);
-
-			msg_tag("smartctl:%s: smartctl -a -d sat %s\n", name, file);
 
 			++count;
 			goto retry;
@@ -2162,25 +2177,70 @@ retry:
 /**
  * Spin down a specific device.
  */
-static int devdown(uint64_t device, const char* name)
+static int devdown(uint64_t device, const char* name, const char* custom)
 {
 	WCHAR cmd[MAX_PATH + 128];
+	char file[128];
 	int ret;
+	int count;
 
-	snwprintf(cmd, sizeof(cmd), L"\"%lshdparm.exe\" -y \\\\.\\PhysicalDrive%" PRIu64 " >nul 2>nul", exedir, device);
+	snprintf(file, sizeof(file), "/dev/pd%" PRIu64, device);
 
-	msg_tag("hdparm:%s: hdparm -y \\\\.\\PhysicalDrive%" PRIu64 " >nul 2>nul\n", name, device);
+	/* if there is a custom command */
+	if (custom[0]) {
+		char option[128];
+		snprintf(option, sizeof(option), custom, file);
+		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -s standby,now %s >nul 2>nul", exedir, option);
+	} else {
+		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -s standby,now %s >nul 2>nul", exedir, file);
+	}
+
+	count = 0;
+
+retry:
+	pthread_mutex_lock(&io_lock);
+	msg_tag("smartctl:run:%s: %s\n", name, u16tou8(cmd));
+	pthread_mutex_unlock(&io_lock);
 
 	ret = _wsystem(cmd);
+
+	pthread_mutex_lock(&io_lock);
+	msg_tag("smartctl:ret:%s: 0x%x\n", name, ret);
+	pthread_mutex_unlock(&io_lock);
+
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
+		pthread_mutex_lock(&io_lock);
 		msg_error("Failed to run '%s' (from system).\n", u16tou8(cmd));
+		pthread_mutex_unlock(&io_lock);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
+
+	/* if first try without custom command */
+	if (count == 0 && custom[0] == 0) {
+		/*
+		 * Handle some common cases in Windows.
+		 *
+		 * Sometimes the "type" autodetection is wrong, and the command fails at identification
+		 * stage, returning with error 2.
+		 *
+		 * In such conditions we retry using the "sat" type, that often allows to proceed.
+		 */
+		if (ret == 2) {
+			/* retry using the "sat" type */
+			snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -s standby,now -d sat %s >nul 2>nul", exedir, file);
+
+			++count;
+			goto retry;
+		}
+	}
+
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
+		pthread_mutex_lock(&io_lock);
 		msg_error("Failed to run '%s' with return code %xh.\n", u16tou8(cmd), ret);
+		pthread_mutex_unlock(&io_lock);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2271,7 +2331,7 @@ static void* thread_spindown(void* arg)
 
 	start = tick_ms();
 
-	if (devdown(devinfo->device, devinfo->name) != 0) {
+	if (devdown(devinfo->device, devinfo->name, devinfo->smartctl) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */

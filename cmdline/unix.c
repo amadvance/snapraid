@@ -639,12 +639,12 @@ static int devsmart(dev_t device, const char* name, const char* custom, uint64_t
 		snprintf(cmd, sizeof(cmd), "smartctl -a %s", file);
 	}
 
-	msg_tag("smartctl:%s: %s\n", name, cmd);
+	msg_tag("smartctl:run:%s: %s\n", name, cmd);
 
 	f = popen(cmd, "r");
 	if (!f) {
 		/* LCOV_EXCL_START */
-		msg_error("Failed to run smartctl -a on device '%u:%u' (from popen).\n", major(device), minor(device));
+		msg_error("Failed to run '%s' (from popen).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -657,15 +657,18 @@ static int devsmart(dev_t device, const char* name, const char* custom, uint64_t
 	}
 
 	ret = pclose(f);
+
+	msg_tag("smartctl:ret:%s 0x%x\n", name, ret);
+
 	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
-		msg_error("Failed to run smartctl -a on device '%u:%u' (not exited).\n", major(device), minor(device));
+		msg_error("Failed to run '%s' (not exited).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (WEXITSTATUS(ret) == 127) {
 		/* LCOV_EXCL_START */
-		msg_error("Failed to run smartctl -a on device '%u:%u' (from sh).\n", major(device), minor(device));
+		msg_error("Failed to run '%s' (from sh).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -680,37 +683,50 @@ static int devsmart(dev_t device, const char* name, const char* custom, uint64_t
  * Spin down a specific device.
  */
 #if HAVE_LINUX_DEVICE
-static int devdown(dev_t device, const char* name)
+static int devdown(dev_t device, const char* name, const char* custom)
 {
 	char cmd[128];
+	char file[128];
 	int ret;
 
-	snprintf(cmd, sizeof(cmd), "hdparm -y /dev/block/%u:%u >/dev/null 2>/dev/null", major(device), minor(device));
+	snprintf(file, sizeof(file), "/dev/block/%u:%u", major(device), minor(device));
 
-	msg_tag("hdparm:%s: %s\n", name, cmd);
+	/* if there is a custom command */
+	if (custom[0]) {
+		char option[128];
+		snprintf(option, sizeof(option), custom, file);
+		snprintf(cmd, sizeof(cmd), "smartctl -s standby,now %s >/dev/null 2>/dev/null", option);
+	} else {
+		snprintf(cmd, sizeof(cmd), "smartctl -s standby,now %s >/dev/null 2>/dev/null", file);
+	}
+
+	msg_tag("smartctl:run:%s: %s\n", name, cmd);
 
 	ret = system(cmd);
+
+	msg_tag("smartctl:ret:%s: 0x%x\n", name, ret);
+
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
-		msg_error("Failed to run hdparm -y on device '%u:%u' (from system).\n", major(device), minor(device));
+		msg_error("Failed to run '%s' (from system).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
-		msg_error("Failed to run hdparm -y on device '%u:%u' (not exited).\n", major(device), minor(device));
+		msg_error("Failed to run '%s' (not exited).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (WEXITSTATUS(ret) == 127) {
 		/* LCOV_EXCL_START */
-		msg_error("Failed to run hdparm -y on device '%u:%u' (from sh).\n", major(device), minor(device));
+		msg_error("Failed to run '%s' (from sh).\n", cmd);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (WEXITSTATUS(ret) != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Failed to run hdparm -y on device '%u:%u' with return code %xh.\n", major(device), minor(device), WEXITSTATUS(ret));
+		msg_error("Failed to run '%s' with return code %xh.\n", cmd, WEXITSTATUS(ret));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -803,7 +819,7 @@ static void* thread_spindown(void* arg)
 
 	start = tick_ms();
 
-	if (devdown(devinfo->device, devinfo->name) != 0) {
+	if (devdown(devinfo->device, devinfo->name, devinfo->smartctl) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
