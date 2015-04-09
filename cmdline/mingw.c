@@ -1835,21 +1835,6 @@ int randomize(void* ptr, size_t size)
 }
 
 /**
- * Mutex used for printf.
- *
- * In Windows printf() is not atomic, and multiple threads
- * will have output interleaved.
- *
- * Note that even defining __USE_MINGW_ANSI_STDIO the problem persists.
- *
- * See for example:
- *
- * Weird output when I use pthread and printf.
- * http://stackoverflow.com/questions/13190254/weird-output-when-i-use-pthread-and-printf
- */
-static pthread_mutex_t io_lock = PTHREAD_MUTEX_INITIALIZER;
-
-/**
  * Get the device file from a path inside the device.
  */
 static int devresolve(const char* mount, char* file, size_t file_size, char* wfile, size_t wfile_size)
@@ -2044,9 +2029,7 @@ static int devscan(tommy_list* list)
 	f = _wpopen(cmd, L"rt");
 	if (!f) {
 		/* LCOV_EXCL_START */
-		pthread_mutex_lock(&io_lock);
 		msg_error("Failed to run '%s' (from popen).\n", u16tou8(cmd));
-		pthread_mutex_unlock(&io_lock);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2061,17 +2044,13 @@ static int devscan(tommy_list* list)
 	ret = pclose(f);
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
-		pthread_mutex_lock(&io_lock);
 		msg_error("Failed to run '%s' (from pclose).\n", u16tou8(cmd));
-		pthread_mutex_unlock(&io_lock);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		pthread_mutex_lock(&io_lock);
 		msg_error("Failed to run '%s' with return code %xh.\n", u16tou8(cmd), ret);
-		pthread_mutex_unlock(&io_lock);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2106,16 +2085,12 @@ static int devsmart(uint64_t device, const char* name, const char* custom, uint6
 	count = 0;
 
 retry:
-	pthread_mutex_lock(&io_lock);
 	msg_tag("smartctl:run:%s: %s\n", name, u16tou8(cmd));
-	pthread_mutex_unlock(&io_lock);
 
 	f = _wpopen(cmd, L"rt");
 	if (!f) {
 		/* LCOV_EXCL_START */
-		pthread_mutex_lock(&io_lock);
 		msg_error("Failed to run '%s' (from popen).\n", u16tou8(cmd));
-		pthread_mutex_unlock(&io_lock);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2129,15 +2104,11 @@ retry:
 
 	ret = pclose(f);
 
-	pthread_mutex_lock(&io_lock);
 	msg_tag("smartctl:ret:%s: 0x%x\n", name, ret);
-	pthread_mutex_unlock(&io_lock);
 
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
-		pthread_mutex_lock(&io_lock);
 		msg_error("Failed to run '%s' (from pclose).\n", u16tou8(cmd));
-		pthread_mutex_unlock(&io_lock);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2198,21 +2169,15 @@ static int devdown(uint64_t device, const char* name, const char* custom)
 	count = 0;
 
 retry:
-	pthread_mutex_lock(&io_lock);
 	msg_tag("smartctl:run:%s: %s\n", name, u16tou8(cmd));
-	pthread_mutex_unlock(&io_lock);
 
 	ret = _wsystem(cmd);
 
-	pthread_mutex_lock(&io_lock);
 	msg_tag("smartctl:ret:%s: 0x%x\n", name, ret);
-	pthread_mutex_unlock(&io_lock);
 
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
-		pthread_mutex_lock(&io_lock);
 		msg_error("Failed to run '%s' (from system).\n", u16tou8(cmd));
-		pthread_mutex_unlock(&io_lock);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2238,9 +2203,7 @@ retry:
 
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		pthread_mutex_lock(&io_lock);
 		msg_error("Failed to run '%s' with return code %xh.\n", u16tou8(cmd), ret);
-		pthread_mutex_unlock(&io_lock);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2289,9 +2252,7 @@ static void* thread_spinup(void* arg)
 	/* we cannot use FindFirstFile because it doesn't allow to open the root dir */
 	if (lstat_sync(devinfo->mount, &st, 0) != 0) {
 		/* LCOV_EXCL_START */
-		pthread_mutex_lock(&io_lock);
 		msg_error("Failed to stat path '%s'. %s.\n", devinfo->mount, strerror(errno));
-		pthread_mutex_unlock(&io_lock);
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2301,9 +2262,7 @@ static void* thread_spinup(void* arg)
 
 	if (devresolve(devinfo->mount, devinfo->file, sizeof(devinfo->file), devinfo->wfile, sizeof(devinfo->wfile)) != 0) {
 		/* LCOV_EXCL_START */
-		pthread_mutex_lock(&io_lock);
 		msg_error("Failed to resolve path '%s'.\n", devinfo->mount);
-		pthread_mutex_unlock(&io_lock);
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2314,9 +2273,7 @@ static void* thread_spinup(void* arg)
 		/* LCOV_EXCL_STOP */
 	}
 
-	pthread_mutex_lock(&io_lock);
 	msg_status("Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
-	pthread_mutex_unlock(&io_lock);
 
 	return 0;
 }
@@ -2337,9 +2294,7 @@ static void* thread_spindown(void* arg)
 		/* LCOV_EXCL_STOP */
 	}
 
-	pthread_mutex_lock(&io_lock);
 	msg_status("Spundown device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
-	pthread_mutex_unlock(&io_lock);
 
 	return 0;
 }

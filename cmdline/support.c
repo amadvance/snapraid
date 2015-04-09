@@ -24,6 +24,24 @@
 
 int msg_level = 0;
 
+/**
+ * Mutex used for printf.
+ *
+ * In Windows printf() is not atomic, and multiple threads
+ * will have output interleaved.
+ *
+ * Note that even defining __USE_MINGW_ANSI_STDIO the problem persists.
+ *
+ * See for example:
+ *
+ * Weird output when I use pthread and printf.
+ * http://stackoverflow.com/questions/13190254/weird-output-when-i-use-pthread-and-printf
+ *
+ * This is also required in other OS because we split output in stdlog in
+ * two fprintf calls.
+ */
+static pthread_mutex_t msg_lock = PTHREAD_MUTEX_INITIALIZER;
+
 /*
  * Note that in the following functions we always flush both
  * stdout and stderr, because we want to ensure that they mixes
@@ -40,6 +58,8 @@ void msg_error(const char* format, ...)
 {
 	va_list ap;
 
+	pthread_mutex_lock(&msg_lock);
+
 	if (stdlog) {
 		va_start(ap, format);
 		fprintf(stdlog, "msg:error: ");
@@ -52,11 +72,15 @@ void msg_error(const char* format, ...)
 	vfprintf(stderr, format, ap);
 	fflush(stderr);
 	va_end(ap);
+
+	pthread_mutex_unlock(&msg_lock);
 }
 
 void msg_warning(const char* format, ...)
 {
 	va_list ap;
+
+	pthread_mutex_lock(&msg_lock);
 
 	if (stdlog) {
 		va_start(ap, format);
@@ -70,6 +94,8 @@ void msg_warning(const char* format, ...)
 		fflush(stderr);
 		va_end(ap);
 	}
+
+	pthread_mutex_unlock(&msg_lock);
 }
 
 void msg_tag(const char* format, ...)
@@ -87,6 +113,8 @@ void msg_status(const char* format, ...)
 {
 	va_list ap;
 
+	pthread_mutex_lock(&msg_lock);
+
 	if (stdlog) {
 		va_start(ap, format);
 		fprintf(stdlog, "msg:status: ");
@@ -101,11 +129,15 @@ void msg_status(const char* format, ...)
 		fflush(stdout);
 		va_end(ap);
 	}
+
+	pthread_mutex_unlock(&msg_lock);
 }
 
 void msg_info(const char* format, ...)
 {
 	va_list ap;
+
+	pthread_mutex_lock(&msg_lock);
 
 	/* don't output in stdlog as these messages */
 	/* are always paired with a msg_tag() call */
@@ -116,11 +148,15 @@ void msg_info(const char* format, ...)
 		fflush(stdout);
 		va_end(ap);
 	}
+
+	pthread_mutex_unlock(&msg_lock);
 }
 
 void msg_progress(const char* format, ...)
 {
 	va_list ap;
+
+	pthread_mutex_lock(&msg_lock);
 
 	if (stdlog) {
 		va_start(ap, format);
@@ -136,11 +172,15 @@ void msg_progress(const char* format, ...)
 		fflush(stdout);
 		va_end(ap);
 	}
+
+	pthread_mutex_unlock(&msg_lock);
 }
 
 void msg_bar(const char* format, ...)
 {
 	va_list ap;
+
+	pthread_mutex_lock(&msg_lock);
 
 	/* don't output in stdlog as these messages */
 	/* are intended for screen only */
@@ -151,11 +191,15 @@ void msg_bar(const char* format, ...)
 		vfprintf(stdout, format, ap);
 		va_end(ap);
 	}
+
+	pthread_mutex_unlock(&msg_lock);
 }
 
 void msg_verbose(const char* format, ...)
 {
 	va_list ap;
+
+	pthread_mutex_lock(&msg_lock);
 
 	if (stdlog) {
 		va_start(ap, format);
@@ -171,14 +215,20 @@ void msg_verbose(const char* format, ...)
 		fflush(stdout);
 		va_end(ap);
 	}
+
+	pthread_mutex_unlock(&msg_lock);
 }
 
 void msg_flush(void)
 {
+	pthread_mutex_lock(&msg_lock);
+
 	if (stdlog)
 		fflush(stdlog);
 	fflush(stdout);
 	fflush(stderr);
+
+	pthread_mutex_unlock(&msg_lock);
 }
 
 /**
