@@ -723,20 +723,24 @@ static void state_smart(unsigned n, tommy_list* low)
 			flag = 0;
 		if (flag & SMARTCTL_FLAG_FAIL)
 			printf("    FAIL");
-		else if (flag & (SMARTCTL_FLAG_PREFAIL | SMARTCTL_FLAG_PREFAIL_LOGGED))
+		else if (flag & SMARTCTL_FLAG_PREFAIL)
 			printf(" PREFAIL");
+		else if (flag & SMARTCTL_FLAG_PREFAIL_LOGGED)
+			printf(" logfail");
 		else if (devinfo->smart[SMART_ERROR] != SMART_UNASSIGNED
 			&& devinfo->smart[SMART_ERROR] != 0)
 			printf("%8" PRIu64, devinfo->smart[SMART_ERROR]);
-		else if (flag & (SMARTCTL_FLAG_ERROR | SMARTCTL_FLAG_ERROR_LOGGED))
-			printf("   ERROR");
+		else if (flag & SMARTCTL_FLAG_ERROR)
+			printf("  logerr");
+		else if (flag & SMARTCTL_FLAG_ERROR_LOGGED)
+			printf(" selferr");
 		else if (devinfo->smart[SMART_ERROR] == 0)
 			printf("       0");
 		else
 			printf("       -");
 
 		/* if some fail/prefail attribute, make the command to fail */
-		if (flag & (SMARTCTL_FLAG_FAIL | SMARTCTL_FLAG_PREFAIL | SMARTCTL_FLAG_PREFAIL_LOGGED))
+		if (flag & (SMARTCTL_FLAG_FAIL | SMARTCTL_FLAG_PREFAIL))
 			make_it_fail = 1;
 
 		/* note that in older smartmontools, like 5.x, rotation rate is not present */
