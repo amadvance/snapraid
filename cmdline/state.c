@@ -415,6 +415,36 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 	}
 }
 
+/**
+ * Validate the smartctl command.
+ *
+ * It must contains only one %s string, and not other % chars.
+ */
+static int validate_smartctl(const char* custom)
+{
+	const char* s = custom;
+	int arg = 0;
+
+	while (*s) {
+		if (s[0] == '%' && s[1] == 's') {
+			if (arg) {
+				/* LCOV_EXCL_START */
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+			arg = 1;
+		} else if (s[0] == '%') {
+			/* LCOV_EXCL_START */
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+
+		++s;
+	}
+
+	return 0;
+}
+
 void state_config(struct snapraid_state* state, const char* path, const char* command, struct snapraid_option* opt, tommy_list* filterlist_disk)
 {
 	STREAM* f;
@@ -788,6 +818,13 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			if (!*custom) {
 				/* LCOV_EXCL_START */
 				msg_error("Empty 'smartctl' option specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			if (validate_smartctl(custom) != 0) {
+				/* LCOV_EXCL_START */
+				msg_error("Invalid 'smartctl' option specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
