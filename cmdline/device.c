@@ -801,6 +801,8 @@ static void state_smart(unsigned n, tommy_list* low)
 			msg_tag("attr:%s:error:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_ERROR]);
 		if (devinfo->smart[SMART_ROTATION_RATE] != SMART_UNASSIGNED)
 			msg_tag("attr:%s:rotationrate:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_ROTATION_RATE]);
+		if (devinfo->smart[SMART_FLAGS] != SMART_UNASSIGNED)
+			msg_tag("attr:%s:flags:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, devinfo->smart[SMART_FLAGS], devinfo->smart[SMART_FLAGS]);
 	}
 
 	printf("\n");
