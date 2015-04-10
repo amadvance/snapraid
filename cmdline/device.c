@@ -793,7 +793,7 @@ static void state_smart(unsigned n, tommy_list* low)
 		msg_tag("smart:%s:%s:%s:%g\n", devinfo->file, devinfo->name, esc(devinfo->smart_serial), afr);
 		for (j = 0; j < 256; ++j) {
 			if (devinfo->smart[j] != SMART_UNASSIGNED)
-				msg_tag("attr:%s:%u:%" PRIu64 ":0x%" PRIx64 "\n", devinfo->file, j, devinfo->smart[j], devinfo->smart[j]);
+				msg_tag("attr:%s:%u:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, j, devinfo->smart[j], devinfo->smart[j]);
 		}
 		if (devinfo->smart[SMART_SIZE] != SMART_UNASSIGNED)
 			msg_tag("attr:%s:size:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_SIZE]);

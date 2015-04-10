@@ -658,7 +658,7 @@ static int devsmart(dev_t device, const char* name, const char* custom, uint64_t
 
 	ret = pclose(f);
 
-	msg_tag("smartctl:ret:%s 0x%x\n", name, ret);
+	msg_tag("smartctl:ret:%s %x\n", name, ret);
 
 	if (!WIFEXITED(ret)) {
 		/* LCOV_EXCL_START */
@@ -704,7 +704,7 @@ static int devdown(dev_t device, const char* name, const char* custom)
 
 	ret = system(cmd);
 
-	msg_tag("smartctl:ret:%s: 0x%x\n", name, ret);
+	msg_tag("smartctl:ret:%s: %x\n", name, ret);
 
 	if (ret == -1) {
 		/* LCOV_EXCL_START */

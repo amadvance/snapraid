@@ -2055,7 +2055,7 @@ static int devscan(tommy_list* list)
 		/* LCOV_EXCL_STOP */
 	}
 
-	msg_tag("smartctl:ret:scan: 0x%x\n", ret);
+	msg_tag("smartctl:ret:scan: %x\n", ret);
 
 	return 0;
 }
@@ -2104,7 +2104,7 @@ retry:
 
 	ret = pclose(f);
 
-	msg_tag("smartctl:ret:%s: 0x%x\n", name, ret);
+	msg_tag("smartctl:ret:%s: %x\n", name, ret);
 
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
@@ -2173,7 +2173,7 @@ retry:
 
 	ret = _wsystem(cmd);
 
-	msg_tag("smartctl:ret:%s: 0x%x\n", name, ret);
+	msg_tag("smartctl:ret:%s: %x\n", name, ret);
 
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
