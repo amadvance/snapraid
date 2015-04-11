@@ -743,7 +743,7 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 		/* remove extraneous chars */
 		s = polish(buf);
 
-		msg_tag("smartctl:text:%s:%s: %s\n", file, name, s);
+		msg_tag("smartctl:%s:%s:out: %s\n", file, name, s);
 
 		/* skip initial spaces */
 		while (isspace(*s))
@@ -805,7 +805,7 @@ int smartctl_flush(FILE* f, const char* file, const char* name)
 		/* remove extraneous chars */
 		s = polish(buf);
 
-		msg_tag("smartctl:text:%s:%s: %s\n", file, name, s);
+		msg_tag("smartctl:%s:%s:out: %s\n", file, name, s);
 	}
 
 	return 0;
