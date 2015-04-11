@@ -139,6 +139,15 @@ typedef void fptr(const char* format, ...);
  */
 const char* esc(const char* str);
 
+/**
+ * Polish a string.
+ *
+ * Not printable chars are replaced by spaces.
+ *
+ * Note that the passed string is modified.
+ */
+char* polish(char* s);
+
 /****************************************************************************/
 /* path */
 
@@ -249,7 +258,12 @@ void malloc_fail(size_t size);
  * Reads smartctl attributes from a stream.
  * Returns 0 on success.
  */
-int smartctl_attribute(FILE* f, uint64_t* smart, char* serial);
+int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* smart, char* serial);
+
+/**
+ * Flush smartctl output from a stream.
+ */
+int smartctl_flush(FILE* f, const char* file, const char* name);
 
 #endif
 

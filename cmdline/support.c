@@ -304,6 +304,19 @@ bail:
 	/* LCOV_EXCL_STOP */
 }
 
+char* polish(char* s)
+{
+	char* i = s;
+
+	while (*i) {
+		if (isspace(*i) || !isprint(*i))
+			*i = ' ';
+		++i;
+	}
+
+	return s;
+}
+
 /****************************************************************************/
 /* path */
 
@@ -704,7 +717,7 @@ static int smatch(const char* str, const char* pattern)
 	return 0;
 }
 
-int smartctl_attribute(FILE* f, uint64_t* smart, char* serial)
+int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* smart, char* serial)
 {
 	unsigned i;
 	int inside;
@@ -726,6 +739,11 @@ int smartctl_attribute(FILE* f, uint64_t* smart, char* serial)
 		s = fgets(buf, sizeof(buf), f);
 		if (s == 0)
 			break;
+
+		/* remove extraneous chars */
+		s = polish(buf);
+
+		msg_tag("smartctl:text:%s:%s: %s\n", file, name, s);
 
 		/* skip initial spaces */
 		while (isspace(*s))
@@ -768,6 +786,26 @@ int smartctl_attribute(FILE* f, uint64_t* smart, char* serial)
 
 			smart[id] = raw;
 		}
+	}
+
+	return 0;
+}
+
+int smartctl_flush(FILE* f, const char* file, const char* name)
+{
+	/* read the file */
+	while (1) {
+		char buf[256];
+		char* s;
+
+		s = fgets(buf, sizeof(buf), f);
+		if (s == 0)
+			break;
+
+		/* remove extraneous chars */
+		s = polish(buf);
+
+		msg_tag("smartctl:text:%s:%s: %s\n", file, name, s);
 	}
 
 	return 0;

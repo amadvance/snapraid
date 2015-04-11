@@ -1968,6 +1968,11 @@ static int smartctl_scan(FILE* f, tommy_list* list)
 		if (s == 0)
 			break;
 
+		/* remove extraneous chars */
+		s = polish(buf);
+
+		msg_tag("smartctl:scan::text: %s\n", s);
+
 		if (*s == '/') {
 			char* sep = strchr(s, ' ');
 			if (sep) {
@@ -2024,7 +2029,7 @@ static int devscan(tommy_list* list)
 
 	snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" --scan-open -d pd", exedir);
 
-	msg_tag("smartctl:run:scan: %s\n", u16tou8(cmd));
+	msg_tag("smartctl:scan::run: %s\n", u16tou8(cmd));
 
 	f = _wpopen(cmd, L"rt");
 	if (!f) {
@@ -2042,6 +2047,9 @@ static int devscan(tommy_list* list)
 	}
 
 	ret = pclose(f);
+
+	msg_tag("smartctl:scan::ret: %x\n", ret);
+
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
 		msg_error("Failed to run '%s' (from pclose).\n", u16tou8(cmd));
@@ -2054,8 +2062,6 @@ static int devscan(tommy_list* list)
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
-
-	msg_tag("smartctl:ret:scan: %x\n", ret);
 
 	return 0;
 }
@@ -2085,7 +2091,7 @@ static int devsmart(uint64_t device, const char* name, const char* custom, uint6
 	count = 0;
 
 retry:
-	msg_tag("smartctl:run:%s: %s\n", name, u16tou8(cmd));
+	msg_tag("smartctl:%s:%s:run: %s\n", file, name, u16tou8(cmd));
 
 	f = _wpopen(cmd, L"rt");
 	if (!f) {
@@ -2095,7 +2101,7 @@ retry:
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (smartctl_attribute(f, smart, serial) != 0) {
+	if (smartctl_attribute(f, file, name, smart, serial) != 0) {
 		/* LCOV_EXCL_START */
 		pclose(f);
 		return -1;
@@ -2104,7 +2110,7 @@ retry:
 
 	ret = pclose(f);
 
-	msg_tag("smartctl:ret:%s: %x\n", name, ret);
+	msg_tag("smartctl:%s:%s:ret: %x\n", file, name, ret);
 
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
@@ -2152,6 +2158,7 @@ static int devdown(uint64_t device, const char* name, const char* custom)
 {
 	WCHAR cmd[MAX_PATH + 128];
 	char file[128];
+	FILE* f;
 	int ret;
 	int count;
 
@@ -2161,23 +2168,38 @@ static int devdown(uint64_t device, const char* name, const char* custom)
 	if (custom[0]) {
 		char option[128];
 		snprintf(option, sizeof(option), custom, file);
-		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -s standby,now %s >nul 2>nul", exedir, option);
+		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -s standby,now %s", exedir, option);
 	} else {
-		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -s standby,now %s >nul 2>nul", exedir, file);
+		snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -s standby,now %s", exedir, file);
 	}
 
 	count = 0;
 
 retry:
-	msg_tag("smartctl:run:%s: %s\n", name, u16tou8(cmd));
+	msg_tag("smartctl:%s:%s:run: %s\n", file, name, u16tou8(cmd));
 
-	ret = _wsystem(cmd);
+	f = _wpopen(cmd, L"rt");
+	if (!f) {
+		/* LCOV_EXCL_START */
+		msg_error("Failed to run '%s' (from popen).\n", u16tou8(cmd));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
-	msg_tag("smartctl:ret:%s: %x\n", name, ret);
+	if (smartctl_flush(f, file, name) != 0) {
+		/* LCOV_EXCL_START */
+		pclose(f);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	ret = pclose(f);
+
+	msg_tag("smartctl:%s:%s:ret: %x\n", file, name, ret);
 
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
-		msg_error("Failed to run '%s' (from system).\n", u16tou8(cmd));
+		msg_error("Failed to run '%s' (from pclose).\n", u16tou8(cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2194,7 +2216,7 @@ retry:
 		 */
 		if (ret == 2) {
 			/* retry using the "sat" type */
-			snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -s standby,now -d sat %s >nul 2>nul", exedir, file);
+			snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" -s standby,now -d sat %s", exedir, file);
 
 			++count;
 			goto retry;
