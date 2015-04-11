@@ -102,11 +102,15 @@ void msg_tag(const char* format, ...)
 {
 	va_list ap;
 
+	pthread_mutex_lock(&msg_lock);
+
 	if (stdlog) {
 		va_start(ap, format);
 		vfprintf(stdlog, format, ap);
 		va_end(ap);
 	}
+
+	pthread_mutex_unlock(&msg_lock);
 }
 
 void msg_status(const char* format, ...)
