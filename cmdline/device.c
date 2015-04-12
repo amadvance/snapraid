@@ -794,19 +794,22 @@ static void state_smart(unsigned n, tommy_list* low)
 
 		printf("\n");
 
-		msg_tag("smart:%s:%s:%s:%g\n", devinfo->file, devinfo->name, esc(devinfo->smart_serial), afr);
-		for (j = 0; j < 256; ++j) {
-			if (devinfo->smart[j] != SMART_UNASSIGNED)
-				msg_tag("attr:%s:%u:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, j, devinfo->smart[j], devinfo->smart[j]);
-		}
+		msg_tag("smart:%s:%s\n", devinfo->file, devinfo->name);
+		if (devinfo->smart_serial[0])
+			msg_tag("attr:%s:%s:serial:%s\n", devinfo->file, devinfo->name, esc(devinfo->smart_serial));
+		if (afr != 0)
+			msg_tag("attr:%s:%s:afr:%g\n", devinfo->file, devinfo->name, afr);
 		if (devinfo->smart[SMART_SIZE] != SMART_UNASSIGNED)
-			msg_tag("attr:%s:size:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_SIZE]);
+			msg_tag("attr:%s:%s:size:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_SIZE]);
 		if (devinfo->smart[SMART_ERROR] != SMART_UNASSIGNED)
-			msg_tag("attr:%s:error:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_ERROR]);
+			msg_tag("attr:%s:%s:error:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_ERROR]);
 		if (devinfo->smart[SMART_ROTATION_RATE] != SMART_UNASSIGNED)
-			msg_tag("attr:%s:rotationrate:%" PRIu64 "\n", devinfo->file, devinfo->smart[SMART_ROTATION_RATE]);
+			msg_tag("attr:%s:%s:rotationrate:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_ROTATION_RATE]);
 		if (devinfo->smart[SMART_FLAGS] != SMART_UNASSIGNED)
-			msg_tag("attr:%s:flags:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, devinfo->smart[SMART_FLAGS], devinfo->smart[SMART_FLAGS]);
+			msg_tag("attr:%s:%s:flags:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_FLAGS], devinfo->smart[SMART_FLAGS]);
+		for (j = 0; j < 256; ++j)
+			if (devinfo->smart[j] != SMART_UNASSIGNED)
+				msg_tag("attr:%s:%s:%u:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, devinfo->name, j, devinfo->smart[j], devinfo->smart[j]);
 	}
 
 	printf("\n");
