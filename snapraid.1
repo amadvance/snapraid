@@ -50,7 +50,11 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
 .PD
-	status|smart|up|down|diff|sync|scrub|fix|check|list|dup|up|down|pool|devices|rehash
+	status|smart|up|down|diff|sync|scrub|fix|check|list|dup
+.PD 0
+.PP
+.PD
+	|up|down|pool|devices|rehash
 .PD 0
 .PP
 .PD
@@ -653,12 +657,38 @@ Nothing is modified.
 Prints a SMART report of all the disks of the array.
 .PP
 It includes an estimation of the probability of failure in the next
-year of each disk allowing to plan maintenance replacements of the
-disks that show suspicious attributes.
+year allowing to plan maintenance replacements of the disks that show
+suspicious attributes.
 .PP
-If a SMART attribute reports that a disk is failing, \[dq]FAIL\[dq] or \[dq]PREFAIL\[dq]
-is printed for that disk, and SnapRAID returns with an error.
+This probability estimation obtained correlating the SMART attributes
+of the disks, with the Backblaze data available at:
+.PP
+.RS 4
+https://www.backblaze.com/hard\-drive\-test\-data.html
+.PD 0
+.PP
+.PD
+.RE
+.PP
+If SMART reports that a disk is failing, \[dq]FAIL\[dq] or \[dq]PREFAIL\[dq] is printed
+for that disk, and SnapRAID returns with an error.
 In this case an immediate replacement of the disk is highly recommended.
+.PP
+Other possible strings are:
+.RS 4
+.PD 0
+.HP 4
+.I logfail
+In the past some attributes were lower than
+the threshold.
+.HP 4
+.I logerr
+The device error log contains errors.
+.HP 4
+.I selferr
+The device self\-test log contains errors.
+.PD
+.RE
 .PP
 If the \-v, \-\-verbose option is specified a deeper statistical analysis
 is provided. This analysis can help you to decide if you need more
@@ -1336,6 +1366,10 @@ smartctl parity \-d areca,1/1 /dev/sg0
 .PD 0
 .PP
 .PD
+smartctl 2\-parity \-d areca,2/1 /dev/sg0
+.PD 0
+.PP
+.PD
 .RE
 .PP
 An example of a typical configuration for Windows is:
@@ -1386,6 +1420,10 @@ smartctl d2 \-d usbjmicron %s
 .PP
 .PD
 smartctl parity \-d areca,1/1 /dev/arcmsr0
+.PD 0
+.PP
+.PD
+smartctl 2\-parity \-d areca,2/1 /dev/arcmsr0
 .PD 0
 .PP
 .PD

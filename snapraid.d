@@ -14,7 +14,8 @@ Synopsis
 	:	[-S, --start BLKSTART] [-B, --count BLKCOUNT]
 	:	[-L, --error-limit NUMBER]
 	:	[-v, --verbose] [-q, --quiet]
-	:	status|smart|up|down|diff|sync|scrub|fix|check|list|dup|up|down|pool|devices|rehash
+	:	status|smart|up|down|diff|sync|scrub|fix|check|list|dup
+	:	|up|down|pool|devices|rehash
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
@@ -380,12 +381,23 @@ Commands
 	Prints a SMART report of all the disks of the array.
 
 	It includes an estimation of the probability of failure in the next
-	year of each disk allowing to plan maintenance replacements of the
-	disks that show suspicious attributes.
+	year allowing to plan maintenance replacements of the disks that show
+	suspicious attributes.
 
-	If a SMART attribute reports that a disk is failing, "FAIL" or "PREFAIL"
-	is printed for that disk, and SnapRAID returns with an error.
+	This probability estimation obtained correlating the SMART attributes
+	of the disks, with the Backblaze data available at:
+
+		:https://www.backblaze.com/hard-drive-test-data.html
+
+	If SMART reports that a disk is failing, "FAIL" or "PREFAIL" is printed
+	for that disk, and SnapRAID returns with an error.
 	In this case an immediate replacement of the disk is highly recommended.
+
+	Other possible strings are:
+		logfail - In the past some attributes were lower than
+			the threshold.
+		logerr - The device error log contains errors.
+		selferr - The device self-test log contains errors.
 
 	If the -v, --verbose option is specified a deeper statistical analysis
 	is provided. This analysis can help you to decide if you need more
@@ -1036,6 +1048,7 @@ Configuration
 		:smartctl d1 -d sat %s
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/sg0
+		:smartctl 2-parity -d areca,2/1 /dev/sg0
 
 	An example of a typical configuration for Windows is:
 
@@ -1051,6 +1064,7 @@ Configuration
 		:smartctl d1 -d sat %s
 		:smartctl d2 -d usbjmicron %s
 		:smartctl parity -d areca,1/1 /dev/arcmsr0
+		:smartctl 2-parity -d areca,2/1 /dev/arcmsr0
 
 Pattern
 	Patterns are used to select a subset of files to exclude or include in
