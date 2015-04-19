@@ -389,11 +389,11 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 #endif
 	if (state->raid_mode == RAID_MODE_CAUCHY) {
 		if (state->level == 3) {
-			msg_warning("WARNING! Your CPU doesn't have a fast implementation for triple parity.\n");
-			msg_warning("WARNING! It's recommended to switch to 'z-parity' instead than '3-parity'.\n");
+			msg_error("WARNING! Your CPU doesn't have a fast implementation for triple parity.\n");
+			msg_error("WARNING! It's recommended to switch to 'z-parity' instead than '3-parity'.\n");
 		} else if (state->level > 3) {
-			msg_warning("WARNING! Your CPU doesn't have a fast implementation beyond triple parity.\n");
-			msg_warning("WARNING! It's recommended to reduce the parity levels to triple parity.\n");
+			msg_error("WARNING! Your CPU doesn't have a fast implementation beyond triple parity.\n");
+			msg_error("WARNING! It's recommended to reduce the parity levels to triple parity.\n");
 		}
 	}
 
@@ -1273,15 +1273,15 @@ static void state_map(struct snapraid_state* state)
 
 	/* recommend number of parities */
 	if (diskcount >= 36 && state->level < 6) {
-		msg_warning("WARNING! With %u disks it's recommended to use six parity levels.\n", diskcount);
+		msg_error("WARNING! With %u disks it's recommended to use six parity levels.\n", diskcount);
 	} else if (diskcount >= 29 && state->level < 5) {
-		msg_warning("WARNING! With %u disks it's recommended to use five parity levels.\n", diskcount);
+		msg_error("WARNING! With %u disks it's recommended to use five parity levels.\n", diskcount);
 	} else if (diskcount >= 22 && state->level < 4) {
-		msg_warning("WARNING! With %u disks it's recommended to use four parity levels.\n", diskcount);
+		msg_error("WARNING! With %u disks it's recommended to use four parity levels.\n", diskcount);
 	} else if (diskcount >= 15 && state->level < 3) {
-		msg_warning("WARNING! With %u disks it's recommended to use three parity levels.\n", diskcount);
+		msg_error("WARNING! With %u disks it's recommended to use three parity levels.\n", diskcount);
 	} else if (diskcount >= 5 && state->level < 2) {
-		msg_warning("WARNING! With %u disks it's recommended to use two parity levels.\n", diskcount);
+		msg_error("WARNING! With %u disks it's recommended to use two parity levels.\n", diskcount);
 	}
 }
 
@@ -4421,7 +4421,7 @@ void state_read(struct snapraid_state* state)
 
 			/* otherwise continue */
 			if (node->next) {
-				msg_warning("WARNING! Content file '%s' not found, trying with another copy...\n", path);
+				msg_error("WARNING! Content file '%s' not found, trying with another copy...\n", path);
 
 				/* ensure to rewrite all the content files */
 				state->need_write = 1;
@@ -4472,8 +4472,8 @@ void state_read(struct snapraid_state* state)
 		} else {
 			/* if the size is different */
 			if (other_st.st_size != st.st_size) {
-				msg_warning("WARNING! Content files '%s' and '%s' have a different size!\n", path, other_path);
-				msg_warning("Likely one of the two is broken!\n");
+				msg_error("WARNING! Content files '%s' and '%s' have a different size!\n", path, other_path);
+				msg_error("Likely one of the two is broken!\n");
 
 				/* ensure to rewrite all the content files */
 				state->need_write = 1;

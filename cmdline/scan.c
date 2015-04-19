@@ -1529,7 +1529,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 					/* if verbose, prints the list of duplicates real offsets */
 					/* other cases are for offsets not supported, so we don't need to report them file by file */
 					if (phy_last >= FILEPHY_REAL_OFFSET) {
-						msg_warning("WARNING! Files '%s%s' and '%s%s' have the same physical offset %" PRId64 ".\n", disk->dir, phy_file_last->sub, disk->dir, file->sub, phy_last);
+						msg_error("WARNING! Files '%s%s' and '%s%s' have the same physical offset %" PRId64 ".\n", disk->dir, phy_file_last->sub, disk->dir, file->sub, phy_last);
 					}
 					++phy_dup;
 				}

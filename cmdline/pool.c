@@ -181,7 +181,7 @@ static void make_link(const char* pool_dir, const char* share_dir, struct snapra
 	ret = symlink(linkto_exported, path);
 	if (ret != 0) {
 		if (errno == EEXIST) {
-			msg_warning("WARNING! Duplicate pooling for '%s'\n", path);
+			msg_error("WARNING! Duplicate pooling for '%s'\n", path);
 #ifdef _WIN32
 		} else if (errno == EPERM) {
 			/* LCOV_EXCL_START */
