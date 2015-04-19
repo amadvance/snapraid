@@ -30,6 +30,8 @@ content /mnt/disk2/snapraid.content
 
 # Defines the data disks to use
 # The name and mount point association is relevant for parity, do not change it
+# WARNING: Adding here your /home, /var or /tmp disks is NOT a good idea!
+# SnapRAID is better suited for files that rarely changes!
 # Format: "disk DISK_NAME DISK_MOUNT_POINT"
 disk d1 /mnt/disk1/
 disk d2 /mnt/disk2/

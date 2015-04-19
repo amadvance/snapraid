@@ -53,17 +53,16 @@ Limitations
 	consider before using it.
 
 	The main one is that if a disk fails, and you haven't recently synced,
-	you may not able to do a complete recover.
+	you may be unable to do a complete recover.
 	More specifically, you may be unable to recover up to the size of the
 	amount of the changed or deleted files from the last sync operation.
 	This happens even if the files changed or deleted are not in the
-	failed disk.
-	New added files don't prevent the recovering of the already existing
-	files. You may only lose the just added files, if they are on the failed
-	disk.
+	failed disk. This is the reason because SnapRAID is better suited for
+	data that rarely change.
 
-	This is the reason because SnapRAID is better suited for data that
-	rarely change.
+	Instead the new added files don't prevent the recovering of the already
+	existing files. You may only lose the just added files, if they are on
+	the failed disk.
 
 	Other limitations are:
 
@@ -95,6 +94,12 @@ Getting Started
 	These disks will be dedicated to store the "parity" files.
 	You should not store your data in them.
 
+	Then you have to define the "data" disks that you want to protect
+	with SnapRAID. The protection is more effective if these disks
+	contain data that rarely change. For this reason it's better to
+	DO NOT include the Windows C:\ disk, or the Unix /home, /var and /tmp
+	disks.
+
 	The list of files is saved in the "content" files, usually
 	stored in the data, parity or boot disks.
 	These files contain the details of your backup, with all the
@@ -107,9 +112,9 @@ Getting Started
 	of protection, and that your disks are present in:
 
 		:/mnt/diskp <- selected disk for parity
-		:/mnt/disk1 <- first disk to backup
-		:/mnt/disk2 <- second disk to backup
-		:/mnt/disk3 <- third disk to backup
+		:/mnt/disk1 <- first disk to protect
+		:/mnt/disk2 <- second disk to protect
+		:/mnt/disk3 <- third disk to protect
 
 	you have to create the configuration file /etc/snapraid.conf with
 	the following options:
