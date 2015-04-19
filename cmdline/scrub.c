@@ -291,7 +291,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					msg_tag("error:%u:%s:%s: Read EIO error at position %u. %s\n", i, disk->name, esc(file->sub), block_file_pos(block), strerror(errno));
 					if (io_error >= state->opt.io_error_limit) {
 						/* LCOV_EXCL_START */
-						msg_error("DANGER! Unexpected input/output read error in a data disk, it isn't possible to scrub.\n");
+						msg_error("DANGER! Too many input/output read error in a data disk, it isn't possible to scrub.\n");
 						msg_error("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
 						msg_error("Stopping at block %u\n", i);
 						++io_error;
@@ -369,7 +369,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 						msg_tag("parity_error:%u:%s: Read EIO error. %s\n", i, lev_config_name(l), strerror(errno));
 						if (io_error >= state->opt.io_error_limit) {
 							/* LCOV_EXCL_START */
-							msg_error("DANGER! Unexpected input/output read error in the %s disk, it isn't possible to scrub.\n", lev_name(l));
+							msg_error("DANGER! Too many input/output read error in the %s disk, it isn't possible to scrub.\n", lev_name(l));
 							msg_error("Ensure that disk '%s' is sane and can be read.\n", lev_config_name(l));
 							msg_error("Stopping at block %u\n", i);
 							++io_error;
