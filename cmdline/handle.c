@@ -148,10 +148,13 @@ int handle_truncate(struct snapraid_handle* handle, struct snapraid_file* file)
 	return 0;
 }
 
-int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int mode, fptr* out)
+int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int mode, fptr* out, fptr* out_missing)
 {
 	int ret;
 	int flags;
+
+	if (!out_missing)
+		out_missing = out;
 
 	/* if already opened, nothing to do */
 	if (handle->file == file && handle->f != -1) {
@@ -179,7 +182,10 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 		handle->f = -1;
 		handle->valid_size = 0;
 
-		out("Error opening file '%s'. %s.\n", handle->path, strerror(errno));
+		if (errno == ENOENT)
+			out_missing("Missing file '%s'.\n", handle->path);
+		else
+			out("Error opening file '%s'. %s.\n", handle->path, strerror(errno));
 		return -1;
 	}
 
@@ -242,7 +248,7 @@ int handle_close(struct snapraid_handle* handle)
 	return 0;
 }
 
-int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size, fptr* out)
+int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size, fptr* out, fptr* out_missing)
 {
 	ssize_t read_ret;
 	data_off_t offset;
@@ -251,9 +257,16 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 
 	offset = block_file_pos(block) * (data_off_t)block_size;
 
+	if (!out_missing)
+		out_missing = out;
+
 	/* check if we are going to read only not initialized data */
 	if (offset >= handle->valid_size) {
-		out("Reading missing data from file '%s' at offset %" PRIu64 ".\n", handle->path, offset);
+		/* if the file is missing, it's at 0 size, or it's rebuilt while reading */
+		if (offset == handle->valid_size || handle->valid_size == 0)
+			out_missing("Reading data from missing file '%s' at offset %" PRIu64 ".\n", handle->path, offset);
+		else
+			out("Reading missing data from file '%s' at offset %" PRIu64 ".\n", handle->path, offset);
 		return -1;
 	}
 

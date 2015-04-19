@@ -246,7 +246,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				}
 			}
 
-			ret = handle_open(&handle[j], block_file_get(block), state->file_mode, msg_warning);
+			ret = handle_open(&handle[j], block_file_get(block), state->file_mode, msg_warning, 0);
 			if (ret == -1) {
 				/* file we have tried to open for error reporting */
 				struct snapraid_file* file = block_file_get(block);
@@ -283,7 +283,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			/* from the last sync, as we are expected to return errors if running */
 			/* in an unsynced array. This is just like the check command. */
 
-			read_size = handle_read(&handle[j], block, buffer[j], state->block_size, msg_warning);
+			read_size = handle_read(&handle[j], block, buffer[j], state->block_size, msg_warning, 0);
 			if (read_size == -1) {
 				/* file we are processing for error reporting */
 				struct snapraid_file* file = block_file_get(block);

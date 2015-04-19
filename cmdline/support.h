@@ -43,6 +43,13 @@ void msg_error(const char* format, ...) __attribute__((format(attribute_printf, 
 void msg_warning(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
 
 /**
+ * Warning messages, without fallback to stderr.
+ *
+ * These messages go in the log file if specified, otherwise they are lost.
+ */
+void msg_expected(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+
+/**
  * Tag messages.
  *
  * Messages are in tag format, like "tag:entry:...".

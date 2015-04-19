@@ -98,6 +98,23 @@ void msg_warning(const char* format, ...)
 	pthread_mutex_unlock(&msg_lock);
 }
 
+void msg_expected(const char* format, ...)
+{
+	va_list ap;
+
+	pthread_mutex_lock(&msg_lock);
+
+	if (stdlog) {
+		va_start(ap, format);
+		fprintf(stdlog, "msg:warning: ");
+		vfprintf(stdlog, format, ap);
+		fflush(stdlog);
+		va_end(ap);
+	}
+
+	pthread_mutex_unlock(&msg_lock);
+}
+
 void msg_tag(const char* format, ...)
 {
 	va_list ap;

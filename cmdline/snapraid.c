@@ -481,6 +481,7 @@ int main(int argc, char* argv[])
 		} break;
 		case 'm' :
 			filter_missing = 1;
+			opt.expected_missing = 1;
 			break;
 		case 'e' :
 			/* when processing only error, we filter both files and blocks */

@@ -999,7 +999,8 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					}
 				} else {
 					/* otherwise, open the file only for reading */
-					ret = handle_open(&handle[j], file, state->file_mode, msg_warning);
+					ret = handle_open(&handle[j], file, state->file_mode,
+						msg_warning, state->opt.expected_missing ? msg_expected : 0);
 					if (ret == -1) {
 						/* save the failed block for the check/fix */
 						failed[failed_count].is_bad = 1;
@@ -1063,7 +1064,8 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			}
 
 			/* read from the file */
-			read_size = handle_read(&handle[j], block, buffer[j], state->block_size, msg_warning);
+			read_size = handle_read(&handle[j], block, buffer[j], state->block_size,
+				msg_warning, state->opt.expected_missing ? msg_expected : 0);
 			if (read_size == -1) {
 				/* save the failed block for the check/fix */
 				failed[failed_count].is_bad = 1; /* it's bad because we cannot read it */

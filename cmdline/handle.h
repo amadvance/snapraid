@@ -53,7 +53,7 @@ int handle_truncate(struct snapraid_handle* handle, struct snapraid_file* file);
  * Opens a file.
  * The file is opened for reading.
  */
-int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int mode, fptr* out);
+int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int mode, fptr* out, fptr* out_missing);
 
 /**
  * Closes a file.
@@ -64,7 +64,7 @@ int handle_close(struct snapraid_handle* handle);
  * Read a block from a file.
  * If the read block is shorter, it's padded with 0.
  */
-int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size, fptr* out);
+int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size, fptr* out, fptr* out_missing);
 
 /**
  * Writes a block to a file.

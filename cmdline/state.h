@@ -103,6 +103,7 @@ struct snapraid_option {
 	int force_progress; /**< Force the use of the progress status. */
 	unsigned force_autosave_at; /**< Force autosave at the specified block. */
 	int fake_device; /**< Fake device data. */
+	int expected_missing; /**< If missing files are expected and should not be reported. */
 };
 
 /**

@@ -150,7 +150,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				}
 			}
 
-			ret = handle_open(&handle[j], block_file_get(block), state->file_mode, msg_warning);
+			ret = handle_open(&handle[j], block_file_get(block), state->file_mode, msg_warning, 0);
 			if (ret == -1) {
 				/* file we have tried to open for error reporting */
 				struct snapraid_file* file = block_file_get(block);
@@ -221,7 +221,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				continue;
 			}
 
-			read_size = handle_read(&handle[j], block, buffer, state->block_size, msg_error);
+			read_size = handle_read(&handle[j], block, buffer, state->block_size, msg_error, 0);
 			if (read_size == -1) {
 				/* LCOV_EXCL_START */
 				/* file we are processing for error reporting */
@@ -624,7 +624,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				}
 			}
 
-			ret = handle_open(&handle[j], block_file_get(block), state->file_mode, msg_warning);
+			ret = handle_open(&handle[j], block_file_get(block), state->file_mode, msg_warning, 0);
 			if (ret == -1) {
 				/* file we have tried to open for error reporting */
 				struct snapraid_file* file = block_file_get(block);
@@ -698,7 +698,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				continue;
 			}
 
-			read_size = handle_read(&handle[j], block, buffer[j], state->block_size, msg_warning);
+			read_size = handle_read(&handle[j], block, buffer[j], state->block_size, msg_warning, 0);
 			if (read_size == -1) {
 				/* LCOV_EXCL_START */
 				/* file we are processing for error reporting */

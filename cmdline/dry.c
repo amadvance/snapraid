@@ -91,7 +91,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 				}
 
 				/* open the file only for reading */
-				ret = handle_open(&handle[j], block_file_get(block), state->file_mode, msg_error);
+				ret = handle_open(&handle[j], block_file_get(block), state->file_mode, msg_error, 0);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
 					msg_error("DANGER! Unexpected open error in a data disk, it isn't possible to dry.\n");
@@ -103,7 +103,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			}
 
 			/* read from the file */
-			read_size = handle_read(&handle[j], block, buffer_aligned, state->block_size, msg_warning);
+			read_size = handle_read(&handle[j], block, buffer_aligned, state->block_size, msg_warning, 0);
 			if (read_size == -1) {
 				msg_tag("error:%u:%s:%s: Read error at position %u\n", i, disk->name, esc(block_file_get(block)->sub), block_file_pos(block));
 				++error;
