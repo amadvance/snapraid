@@ -205,8 +205,15 @@ int state_status(struct snapraid_state* state)
 			printf("%8.1f", (double)wasted / GIGA);
 		}
 		printf("%8" PRIu64, disk_file_size / GIGA);
-		printf("%8" PRIu64, (disk_block_max - disk_block_count) * (uint64_t)state->block_size / GIGA);
-		printf(" %3u%%", perc(disk_block_count, disk_block_max));
+
+		if (disk_block_max == 0 && disk_block_count == 0) {
+			/* if the disk is empty and we don't have the free space info */
+			printf("       -");
+			printf("   - ");
+		} else {
+			printf("%8" PRIu64, (disk_block_max - disk_block_count) * (uint64_t)state->block_size / GIGA);
+			printf(" %3u%%", perc(disk_block_count, disk_block_max));
+		}
 		printf(" %s\n", disk->name);
 
 		msg_tag("summary:disk_file_count:%s:%u\n", disk->name, disk_file_count);
