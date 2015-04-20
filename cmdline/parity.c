@@ -135,14 +135,13 @@ void parity_overflow(struct snapraid_state* state, data_off_t size)
 
 			if (file->blockmax > 0) {
 				if (file->blockvec[file->blockmax - 1].parity_pos >= blockalloc) {
-					msg_tag("outofparity:%s:%s\n", disk->name, esc(file->sub));
+					log_tag("outofparity:%s:%s\n", disk->name, esc(file->sub));
 					if (first) {
 						first = 0;
-						msg_error("\nYour data requires more parity than the available space.\n");
-						msg_error("Please move the files 'outofparity' to another data disk:\n");
+						log_fatal("\nYour data requires more parity than the available space.\n");
+						log_fatal("Please move the files 'outofparity' to another data disk:\n");
 					}
-					msg_error("outofparity %s%s\n", disk->dir, file->sub);
-					msg_flush();
+					log_fatal("outofparity %s%s\n", disk->dir, file->sub);
 				}
 			}
 		}
@@ -164,7 +163,7 @@ int parity_create(struct snapraid_parity_handle* parity, const char* path, data_
 	parity->f = open(parity->path, flags, 0600);
 	if (parity->f == -1) {
 		/* LCOV_EXCL_START */
-		msg_error("Error opening parity file '%s'. %s.\n", parity->path, strerror(errno));
+		log_fatal("Error opening parity file '%s'. %s.\n", parity->path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -173,7 +172,7 @@ int parity_create(struct snapraid_parity_handle* parity, const char* path, data_
 	ret = fstat(parity->f, &parity->st);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Error accessing parity file '%s'. %s.\n", parity->path, strerror(errno));
+		log_fatal("Error accessing parity file '%s'. %s.\n", parity->path, strerror(errno));
 		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
@@ -184,7 +183,7 @@ int parity_create(struct snapraid_parity_handle* parity, const char* path, data_
 		ret = posix_fadvise(parity->f, 0, 0, POSIX_FADV_SEQUENTIAL);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error advising parity file '%s'. %s.\n", parity->path, strerror(ret));
+			log_fatal("Error advising parity file '%s'. %s.\n", parity->path, strerror(ret));
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
@@ -260,7 +259,7 @@ int parity_chsize(struct snapraid_parity_handle* parity, data_off_t size, data_o
 		ret = fstat(parity->f, &parity->st);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error accessing parity file '%s'. %s.\n", parity->path, strerror(errno));
+			log_fatal("Error accessing parity file '%s'. %s.\n", parity->path, strerror(errno));
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
@@ -272,9 +271,9 @@ int parity_chsize(struct snapraid_parity_handle* parity, data_off_t size, data_o
 		if (f_ret != 0) {
 			/* LCOV_EXCL_START */
 			if (f_errno == ENOSPC) {
-				msg_error("Failed to grow parity file '%s' to size %" PRIu64 " using %s due lack of space.\n", parity->path, size, call);
+				log_fatal("Failed to grow parity file '%s' to size %" PRIu64 " using %s due lack of space.\n", parity->path, size, call);
 			} else {
-				msg_error("Error growing parity file '%s' to size %" PRIu64 " using %s. Do you have enough space? %s.\n", parity->path, size, call, strerror(f_errno));
+				log_fatal("Error growing parity file '%s' to size %" PRIu64 " using %s. Do you have enough space? %s.\n", parity->path, size, call, strerror(f_errno));
 			}
 			goto bail;
 			/* LCOV_EXCL_STOP */
@@ -294,7 +293,7 @@ int parity_chsize(struct snapraid_parity_handle* parity, data_off_t size, data_o
 		ret = fstat(parity->f, &parity->st);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error accessing parity file '%s'. %s.\n", parity->path, strerror(errno));
+			log_fatal("Error accessing parity file '%s'. %s.\n", parity->path, strerror(errno));
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
@@ -305,7 +304,7 @@ int parity_chsize(struct snapraid_parity_handle* parity, data_off_t size, data_o
 		/* now check the error */
 		if (f_ret != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error truncating parity file '%s' to size %" PRIu64 ". %s.\n", parity->path, size, strerror(f_errno));
+			log_fatal("Error truncating parity file '%s' to size %" PRIu64 ". %s.\n", parity->path, size, strerror(f_errno));
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
@@ -338,7 +337,7 @@ int parity_open(struct snapraid_parity_handle* parity, const char* path, int mod
 		flags |= O_SEQUENTIAL;
 	parity->f = open_noatime(parity->path, flags);
 	if (parity->f == -1) {
-		msg_error("Error opening parity file '%s'. %s.\n", parity->path, strerror(errno));
+		log_fatal("Error opening parity file '%s'. %s.\n", parity->path, strerror(errno));
 		return -1;
 	}
 
@@ -346,7 +345,7 @@ int parity_open(struct snapraid_parity_handle* parity, const char* path, int mod
 	ret = fstat(parity->f, &parity->st);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Error accessing parity file '%s'. %s.\n", parity->path, strerror(errno));
+		log_fatal("Error accessing parity file '%s'. %s.\n", parity->path, strerror(errno));
 		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
@@ -360,7 +359,7 @@ int parity_open(struct snapraid_parity_handle* parity, const char* path, int mod
 		ret = posix_fadvise(parity->f, 0, 0, POSIX_FADV_SEQUENTIAL);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error advising parity file '%s'. %s.\n", parity->path, strerror(ret));
+			log_fatal("Error advising parity file '%s'. %s.\n", parity->path, strerror(ret));
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
@@ -389,7 +388,7 @@ int parity_sync(struct snapraid_parity_handle* parity)
 	ret = fsync(parity->f);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Error synching parity file '%s'. %s.\n", parity->path, strerror(errno));
+		log_fatal("Error synching parity file '%s'. %s.\n", parity->path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -412,7 +411,7 @@ int parity_close(struct snapraid_parity_handle* parity)
 		/* This is a serious error, as it may be the result of a failed write */
 		/* identified at later time. */
 		/* In a normal filesystem (not NFS) it should never happen */
-		msg_error("Error closing parity file '%s'. %s.\n", parity->path, strerror(errno));
+		log_fatal("Error closing parity file '%s'. %s.\n", parity->path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -437,9 +436,9 @@ int parity_write(struct snapraid_parity_handle* parity, block_off_t pos, unsigne
 	if (lseek(parity->f, offset, SEEK_SET) != offset) {
 		/* LCOV_EXCL_START */
 		if (errno == ENOSPC) {
-			msg_error("Failed to grow parity file '%s' using lseek due lack of space.\n", parity->path);
+			log_fatal("Failed to grow parity file '%s' using lseek due lack of space.\n", parity->path);
 		} else {
-			msg_error("Error seeking file '%s'. %s.\n", parity->path, strerror(errno));
+			log_fatal("Error seeking file '%s'. %s.\n", parity->path, strerror(errno));
 		}
 		return -1;
 		/* LCOV_EXCL_STOP */
@@ -450,9 +449,9 @@ int parity_write(struct snapraid_parity_handle* parity, block_off_t pos, unsigne
 	if (write_ret != (ssize_t)block_size) { /* conversion is safe because block_size is always small */
 		/* LCOV_EXCL_START */
 		if (errno == ENOSPC) {
-			msg_error("Failed to grow parity file '%s' using write due lack of space.\n", parity->path);
+			log_fatal("Failed to grow parity file '%s' using write due lack of space.\n", parity->path);
 		} else {
-			msg_error("Error writing file '%s'. %s.\n", parity->path, strerror(errno));
+			log_fatal("Error writing file '%s'. %s.\n", parity->path, strerror(errno));
 		}
 		return -1;
 		/* LCOV_EXCL_STOP */

@@ -149,7 +149,7 @@ void cmd_generate_file(const char* path, int size)
 	if (remove(path) != 0) {
 		if (errno != ENOENT) {
 			/* LCOV_EXCL_START */
-			msg_error("Error removing file %s\n", path);
+			log_fatal("Error removing file %s\n", path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -171,21 +171,21 @@ void cmd_generate_file(const char* path, int size)
 	f = open(path, O_WRONLY | O_CREAT | O_TRUNC | O_BINARY | O_NOFOLLOW, 0600);
 	if (f < 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Error creating file %s\n", path);
+		log_fatal("Error creating file %s\n", path);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (write(f, data, size) != size) {
 		/* LCOV_EXCL_START */
-		msg_error("Error writing file %s\n", path);
+		log_fatal("Error writing file %s\n", path);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (close(f) != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Error closing file %s\n", path);
+		log_fatal("Error closing file %s\n", path);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -203,7 +203,7 @@ void cmd_generate_symlink(const char* path, const char* linkto)
 	if (remove(path) != 0) {
 		if (errno != ENOENT) {
 			/* LCOV_EXCL_START */
-			msg_error("Error removing file %s\n", path);
+			log_fatal("Error removing file %s\n", path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -211,7 +211,7 @@ void cmd_generate_symlink(const char* path, const char* linkto)
 
 	if (symlink(linkto, path) != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Error writing symlink %s\n", path);
+		log_fatal("Error writing symlink %s\n", path);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -236,7 +236,7 @@ void cmd_generate(int disk, int size)
 	if (mkdir(path, 0777) != 0) {
 		if (errno != EEXIST) {
 			/* LCOV_EXCL_START */
-			msg_error("Error creating directory %s\n", path);
+			log_fatal("Error creating directory %s\n", path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -294,7 +294,7 @@ void cmd_write(const char* path, int size)
 
 	if (lstat(path, &st) != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Error accessing %s\n", path);
+		log_fatal("Error accessing %s\n", path);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -321,28 +321,28 @@ void cmd_write(const char* path, int size)
 		f = open(path, O_WRONLY | O_BINARY | O_NOFOLLOW);
 		if (f < 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error creating file %s\n", path);
+			log_fatal("Error creating file %s\n", path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 
 		if (lseek(f, off, SEEK_SET) != off) {
 			/* LCOV_EXCL_START */
-			msg_error("Error seeking file %s\n", path);
+			log_fatal("Error seeking file %s\n", path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 
 		if (write(f, data, size) != size) {
 			/* LCOV_EXCL_START */
-			msg_error("Error writing file %s\n", path);
+			log_fatal("Error writing file %s\n", path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 
 		if (close(f) != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error closing file %s\n", path);
+			log_fatal("Error closing file %s\n", path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -370,7 +370,7 @@ void cmd_damage(const char* path, int size)
 
 	if (lstat(path, &st) != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Error accessing %s\n", path);
+		log_fatal("Error accessing %s\n", path);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -398,21 +398,21 @@ void cmd_damage(const char* path, int size)
 		f = open(path, O_RDWR | O_BINARY | O_NOFOLLOW);
 		if (f < 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error creating file %s\n", path);
+			log_fatal("Error creating file %s\n", path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 
 		if (lseek(f, off, SEEK_SET) != off) {
 			/* LCOV_EXCL_START */
-			msg_error("Error seeking file %s\n", path);
+			log_fatal("Error seeking file %s\n", path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 
 		if (read(f, data, size) != size) {
 			/* LCOV_EXCL_START */
-			msg_error("Error writing file %s\n", path);
+			log_fatal("Error writing file %s\n", path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -421,28 +421,28 @@ void cmd_damage(const char* path, int size)
 
 		if (lseek(f, off, SEEK_SET) != off) {
 			/* LCOV_EXCL_START */
-			msg_error("Error seeking file %s\n", path);
+			log_fatal("Error seeking file %s\n", path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 
 		if (write(f, data, size) != size) {
 			/* LCOV_EXCL_START */
-			msg_error("Error writing file %s\n", path);
+			log_fatal("Error writing file %s\n", path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 
 		if (fallback(f, &st) != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error setting time for file %s\n", path);
+			log_fatal("Error setting time for file %s\n", path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 
 		if (close(f) != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error closing file %s\n", path);
+			log_fatal("Error closing file %s\n", path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -462,7 +462,7 @@ void cmd_append(const char* path, int size)
 
 	if (lstat(path, &st) != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Error accessing %s\n", path);
+		log_fatal("Error accessing %s\n", path);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -478,21 +478,21 @@ void cmd_append(const char* path, int size)
 		f = open(path, O_WRONLY | O_APPEND | O_BINARY | O_NOFOLLOW);
 		if (f < 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error opening file %s\n", path);
+			log_fatal("Error opening file %s\n", path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 
 		if (write(f, data, size) != size) {
 			/* LCOV_EXCL_START */
-			msg_error("Error writing file %s\n", path);
+			log_fatal("Error writing file %s\n", path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 
 		if (close(f) != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error closing file %s\n", path);
+			log_fatal("Error closing file %s\n", path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -513,7 +513,7 @@ void cmd_truncate(const char* path, int size)
 
 	if (lstat(path, &st) != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Error accessing %s\n", path);
+		log_fatal("Error accessing %s\n", path);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -536,21 +536,21 @@ void cmd_truncate(const char* path, int size)
 		f = open(path, O_WRONLY | O_BINARY | O_NOFOLLOW);
 		if (f < 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error opening file %s\n", path);
+			log_fatal("Error opening file %s\n", path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 
 		if (ftruncate(f, off) != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error truncating file %s\n", path);
+			log_fatal("Error truncating file %s\n", path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 
 		if (close(f) != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error closing file %s\n", path);
+			log_fatal("Error closing file %s\n", path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -565,7 +565,7 @@ void cmd_delete(const char* path)
 {
 	if (remove(path) != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Error removing %s\n", path);
+		log_fatal("Error removing %s\n", path);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -584,7 +584,7 @@ void cmd_change(const char* path, int size)
 
 	if (lstat(path, &st) != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Error accessing %s\n", path);
+		log_fatal("Error accessing %s\n", path);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -595,7 +595,7 @@ void cmd_change(const char* path, int size)
 			/* delete */
 			if (remove(path) != 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Error removing %s\n", path);
+				log_fatal("Error removing %s\n", path);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -605,7 +605,7 @@ void cmd_change(const char* path, int size)
 
 			if (remove(path) != 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Error removing %s\n", path);
+				log_fatal("Error removing %s\n", path);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}

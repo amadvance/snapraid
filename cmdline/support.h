@@ -22,32 +22,37 @@
 /* log */
 
 /**
- * Fatal messages.
+ * Fatal error messages.
  *
  * Messages printed before an early termination.
  *
  * These messages go in the log file and in stderr inconditionally.
  */
-void msg_error(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+void log_fatal(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
 
 /**
- * Warning messages.
+ * Unexpected error messages.
  *
- * Messages reporting warnings or error conditions that don't prevent the program to run.
+ * Messages reporting error conditions that don't prevent the program to run.
  *
  * Some of them could be also serious errors, like "silent errors".
- * The summary results is anyway always printed with as errors.
+ * In such case, the summary result is always printed as error,
+ * and we are sure to notify the user in some way.
  *
  * These messages go in the log file if specified, otherwise they go in stderr.
  */
-void msg_warning(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+void log_error(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
 
 /**
- * Warning messages, without fallback to stderr.
+ * Expected error messages, without fallback to stderr.
+ *
+ * These errors are "someway" expected, and then they never go to screen.
+ * For example, when undeleting missing files, the messages for missing files
+ * are not shown.
  *
  * These messages go in the log file if specified, otherwise they are lost.
  */
-void msg_expected(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+void log_expected(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
 
 /**
  * Tag messages.
@@ -60,13 +65,26 @@ void msg_expected(const char* format, ...) __attribute__((format(attribute_print
  *
  * These messages are buffered. Use msg_flush() to flush them.
  */
-void msg_tag(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+void log_tag(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
+
+/**
+ * Flush the log.
+ */
+void log_flush(void);
+
+/**
+ * Pointer to log function.
+ */
+typedef void fptr(const char* format, ...);
+
+/****************************************************************************/
+/* message */
 
 /**
  * Message levels.
  *
  * The levels control the amount of information printed on the screen.
- * Note that msg_error(), msg_warning() and msg_tag() are not influenced by this option.
+ * Note that log_fatal(), log_error(), log_expected() and log_tag() are not affected by this option.
  *
  * From the most quiet to the most verbose.
  */
@@ -96,7 +114,7 @@ void msg_status(const char* format, ...) __attribute__((format(attribute_printf,
  * Potentially a lot of messages are possible. They can still be on the screen,
  * as losing them we don't lose information.
  *
- * These messages never go in the log file, becauae there is always a corresponding msg_tag().
+ * These messages never go in the log file, becauae there is always a corresponding log_tag().
  */
 void msg_info(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
 
@@ -134,10 +152,8 @@ void msg_verbose(const char* format, ...) __attribute__((format(attribute_printf
  */
 void msg_flush(void);
 
-/**
- * Pointer to log function.
- */
-typedef void fptr(const char* format, ...);
+/****************************************************************************/
+/* escape */
 
 /**
  * Escape a string.

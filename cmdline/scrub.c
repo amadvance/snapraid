@@ -228,40 +228,40 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					/* This one is really an unexpected error, because we are only reading */
 					/* and closing a descriptor should never fail */
 					if (errno == EIO) {
-						msg_tag("error:%u:%s:%s: Close EIO error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
-						msg_error("DANGER! Unexpected input/output close error in a data disk, it isn't possible to scrub.\n");
-						msg_error("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
-						msg_error("Stopping at block %u\n", i);
+						log_tag("error:%u:%s:%s: Close EIO error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
+						log_fatal("DANGER! Unexpected input/output close error in a data disk, it isn't possible to scrub.\n");
+						log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
+						log_fatal("Stopping at block %u\n", i);
 						++io_error;
 						goto bail;
 					}
 
-					msg_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
-					msg_error("WARNING! Unexpected close error in a data disk, it isn't possible to scrub.\n");
-					msg_error("Ensure that file '%s' can be accessed.\n", handle[j].path);
-					msg_error("Stopping at block %u\n", i);
+					log_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
+					log_fatal("WARNING! Unexpected close error in a data disk, it isn't possible to scrub.\n");
+					log_fatal("Ensure that file '%s' can be accessed.\n", handle[j].path);
+					log_fatal("Stopping at block %u\n", i);
 					++error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
 				}
 			}
 
-			ret = handle_open(&handle[j], block_file_get(block), state->file_mode, msg_warning, 0);
+			ret = handle_open(&handle[j], block_file_get(block), state->file_mode, log_error, 0);
 			if (ret == -1) {
 				/* file we have tried to open for error reporting */
 				struct snapraid_file* file = block_file_get(block);
 				if (errno == EIO) {
 					/* LCOV_EXCL_START */
-					msg_tag("error:%u:%s:%s: Open EIO error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
-					msg_error("DANGER! Unexpected input/output open error in a data disk, it isn't possible to scrub.\n");
-					msg_error("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
-					msg_error("Stopping at block %u\n", i);
+					log_tag("error:%u:%s:%s: Open EIO error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
+					log_fatal("DANGER! Unexpected input/output open error in a data disk, it isn't possible to scrub.\n");
+					log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
+					log_fatal("Stopping at block %u\n", i);
 					++io_error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
 				}
 
-				msg_tag("error:%u:%s:%s: Open error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
+				log_tag("error:%u:%s:%s: Open error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
 				++error;
 				error_on_this_block = 1;
 				continue;
@@ -283,29 +283,29 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			/* from the last sync, as we are expected to return errors if running */
 			/* in an unsynced array. This is just like the check command. */
 
-			read_size = handle_read(&handle[j], block, buffer[j], state->block_size, msg_warning, 0);
+			read_size = handle_read(&handle[j], block, buffer[j], state->block_size, log_error, 0);
 			if (read_size == -1) {
 				/* file we are processing for error reporting */
 				struct snapraid_file* file = block_file_get(block);
 				if (errno == EIO) {
-					msg_tag("error:%u:%s:%s: Read EIO error at position %u. %s\n", i, disk->name, esc(file->sub), block_file_pos(block), strerror(errno));
+					log_tag("error:%u:%s:%s: Read EIO error at position %u. %s\n", i, disk->name, esc(file->sub), block_file_pos(block), strerror(errno));
 					if (io_error >= state->opt.io_error_limit) {
 						/* LCOV_EXCL_START */
-						msg_error("DANGER! Too many input/output read error in a data disk, it isn't possible to scrub.\n");
-						msg_error("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
-						msg_error("Stopping at block %u\n", i);
+						log_fatal("DANGER! Too many input/output read error in a data disk, it isn't possible to scrub.\n");
+						log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
+						log_fatal("Stopping at block %u\n", i);
 						++io_error;
 						goto bail;
 						/* LCOV_EXCL_STOP */
 					}
 
-					msg_warning("Input/Output error in file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
+					log_error("Input/Output error in file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
 					++io_error;
 					io_error_on_this_block = 1;
 					continue;
 				}
 
-				msg_tag("error:%u:%s:%s: Read error at position %u. %s\n", i, disk->name, esc(file->sub), block_file_pos(block), strerror(errno));
+				log_tag("error:%u:%s:%s: Read error at position %u. %s\n", i, disk->name, esc(file->sub), block_file_pos(block), strerror(errno));
 				++error;
 				error_on_this_block = 1;
 				continue;
@@ -330,14 +330,14 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			if (block_has_updated_hash(block)) {
 				/* compare the hash */
 				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
-					msg_tag("error:%u:%s:%s: Data error at position %u\n", i, disk->name, esc(handle[j].file->sub), block_file_pos(block));
+					log_tag("error:%u:%s:%s: Data error at position %u\n", i, disk->name, esc(handle[j].file->sub), block_file_pos(block));
 
 					/* it's a silent error only if we are dealing with synced files */
 					if (file_is_unsynced) {
 						++error;
 						error_on_this_block = 1;
 					} else {
-						msg_warning("Data error in file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
+						log_error("Data error in file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
 						++silent_error;
 						silent_error_on_this_block = 1;
 					}
@@ -361,29 +361,29 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 			/* read the parity */
 			for (l = 0; l < state->level; ++l) {
-				ret = parity_read(parity[l], i, buffer_recov[l], state->block_size, msg_warning);
+				ret = parity_read(parity[l], i, buffer_recov[l], state->block_size, log_error);
 				if (ret == -1) {
 					buffer_recov[l] = 0;
 
 					if (errno == EIO) {
-						msg_tag("parity_error:%u:%s: Read EIO error. %s\n", i, lev_config_name(l), strerror(errno));
+						log_tag("parity_error:%u:%s: Read EIO error. %s\n", i, lev_config_name(l), strerror(errno));
 						if (io_error >= state->opt.io_error_limit) {
 							/* LCOV_EXCL_START */
-							msg_error("DANGER! Too many input/output read error in the %s disk, it isn't possible to scrub.\n", lev_name(l));
-							msg_error("Ensure that disk '%s' is sane and can be read.\n", lev_config_name(l));
-							msg_error("Stopping at block %u\n", i);
+							log_fatal("DANGER! Too many input/output read error in the %s disk, it isn't possible to scrub.\n", lev_name(l));
+							log_fatal("Ensure that disk '%s' is sane and can be read.\n", lev_config_name(l));
+							log_fatal("Stopping at block %u\n", i);
 							++io_error;
 							goto bail;
 							/* LCOV_EXCL_STOP */
 						}
 
-						msg_warning("Input/Output error in parity '%s' at position '%u'\n", lev_config_name(l), i);
+						log_error("Input/Output error in parity '%s' at position '%u'\n", lev_config_name(l), i);
 						++io_error;
 						io_error_on_this_block = 1;
 						continue;
 					}
 
-					msg_tag("parity_error:%u:%s: Read error. %s\n", i, lev_config_name(l), strerror(errno));
+					log_tag("parity_error:%u:%s: Read error. %s\n", i, lev_config_name(l), strerror(errno));
 					++error;
 					error_on_this_block = 1;
 					continue;
@@ -399,14 +399,14 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			/* compare the parity */
 			for (l = 0; l < state->level; ++l) {
 				if (buffer_recov[l] && memcmp(buffer[diskmax + l], buffer_recov[l], state->block_size) != 0) {
-					msg_tag("parity_error:%u:%s: Data error\n", i, lev_config_name(l));
+					log_tag("parity_error:%u:%s: Data error\n", i, lev_config_name(l));
 
 					/* it's a silent error only if we are dealing with synced blocks */
 					if (block_is_unsynced) {
 						++error;
 						error_on_this_block = 1;
 					} else {
-						msg_error("Data error in parity '%s' at position '%u'\n", lev_config_name(l), i);
+						log_fatal("Data error in parity '%s' at position '%u'\n", lev_config_name(l), i);
 						++silent_error;
 						silent_error_on_this_block = 1;
 					}
@@ -486,24 +486,24 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	}
 
 	if (error)
-		msg_error("WARNING! Unexpected file errors!\n");
+		log_fatal("WARNING! Unexpected file errors!\n");
 	if (io_error)
-		msg_error("DANGER! Unexpected input/output errors! The failing blocks are now marked as bad!\n");
+		log_fatal("DANGER! Unexpected input/output errors! The failing blocks are now marked as bad!\n");
 	if (silent_error)
-		msg_error("DANGER! Unexpected data errors! The failing blocks are now marked as bad!\n");
+		log_fatal("DANGER! Unexpected data errors! The failing blocks are now marked as bad!\n");
 	if (io_error || silent_error) {
-		msg_error("Use 'snapraid status' to list the bad blocks.\n");
-		msg_error("Use 'snapraid -e fix' to recover.\n");
+		log_fatal("Use 'snapraid status' to list the bad blocks.\n");
+		log_fatal("Use 'snapraid -e fix' to recover.\n");
 	}
 
-	msg_tag("summary:error_file:%u\n", error);
-	msg_tag("summary:error_io:%u\n", io_error);
-	msg_tag("summary:error_data:%u\n", silent_error);
+	log_tag("summary:error_file:%u\n", error);
+	log_tag("summary:error_io:%u\n", io_error);
+	log_tag("summary:error_data:%u\n", silent_error);
 	if (error + silent_error + io_error == 0)
-		msg_tag("summary:exit:ok\n");
+		log_tag("summary:exit:ok\n");
 	else
-		msg_tag("summary:exit:error\n");
-	msg_flush();
+		log_tag("summary:exit:error\n");
+	log_flush();
 
 bail:
 	for (j = 0; j < diskmax; ++j) {
@@ -512,8 +512,8 @@ bail:
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			msg_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
-			msg_error("DANGER! Unexpected close error in a data disk.\n");
+			log_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
+			log_fatal("DANGER! Unexpected close error in a data disk.\n");
 			++error;
 			/* continue, as we are already exiting */
 			/* LCOV_EXCL_STOP */
@@ -602,7 +602,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 
 	/* copy the info in the temp vector */
 	count = 0;
-	msg_tag("block_count:%u\n", blockmax);
+	log_tag("block_count:%u\n", blockmax);
 	for (i = 0; i < blockmax; ++i) {
 		snapraid_info info = info_get(&state->infoarr, i);
 
@@ -615,7 +615,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 
 	if (!count) {
 		/* LCOV_EXCL_START */
-		msg_error("The array appears to be empty.\n");
+		log_fatal("The array appears to be empty.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -625,12 +625,12 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 
 	/* output the info map */
 	i = 0;
-	msg_tag("info_count:%u\n", count);
+	log_tag("info_count:%u\n", count);
 	while (i < count) {
 		unsigned j = i + 1;
 		while (j < count && info_get_time(infomap[i]) == info_get_time(infomap[j]))
 			++j;
-		msg_tag("info_time:%" PRIu64 ":%u\n", (uint64_t)info_get_time(infomap[i]), j - i);
+		log_tag("info_time:%" PRIu64 ":%u\n", (uint64_t)info_get_time(infomap[i]), j - i);
 		i = j;
 	}
 
@@ -658,9 +658,9 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 		lastlimit = 0;
 	}
 
-	msg_tag("count_limit:%u\n", countlimit);
-	msg_tag("time_limit:%" PRIu64 "\n", (uint64_t)timelimit);
-	msg_tag("last_limit:%u\n", lastlimit);
+	log_tag("count_limit:%u\n", countlimit);
+	log_tag("time_limit:%" PRIu64 "\n", (uint64_t)timelimit);
+	log_tag("last_limit:%u\n", lastlimit);
 
 	/* free the temp vector */
 	free(infomap);
@@ -671,7 +671,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 		ret = parity_open(parity_ptr[l], state->parity[l].path, state->file_mode);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			msg_error("WARNING! Without an accessible %s file, it isn't possible to scrub.\n", lev_name(l));
+			log_fatal("WARNING! Without an accessible %s file, it isn't possible to scrub.\n", lev_name(l));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -691,7 +691,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 		ret = parity_close(parity_ptr[l]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			msg_error("DANGER! Unexpected close error in %s disk.\n", lev_name(l));
+			log_fatal("DANGER! Unexpected close error in %s disk.\n", lev_name(l));
 			++error;
 			/* continue, as we are already exiting */
 			/* LCOV_EXCL_STOP */

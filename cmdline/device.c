@@ -794,22 +794,22 @@ static void state_smart(unsigned n, tommy_list* low)
 
 		printf("\n");
 
-		msg_tag("smart:%s:%s\n", devinfo->file, devinfo->name);
+		log_tag("smart:%s:%s\n", devinfo->file, devinfo->name);
 		if (devinfo->smart_serial[0])
-			msg_tag("attr:%s:%s:serial:%s\n", devinfo->file, devinfo->name, esc(devinfo->smart_serial));
+			log_tag("attr:%s:%s:serial:%s\n", devinfo->file, devinfo->name, esc(devinfo->smart_serial));
 		if (afr != 0)
-			msg_tag("attr:%s:%s:afr:%g\n", devinfo->file, devinfo->name, afr);
+			log_tag("attr:%s:%s:afr:%g\n", devinfo->file, devinfo->name, afr);
 		if (devinfo->smart[SMART_SIZE] != SMART_UNASSIGNED)
-			msg_tag("attr:%s:%s:size:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_SIZE]);
+			log_tag("attr:%s:%s:size:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_SIZE]);
 		if (devinfo->smart[SMART_ERROR] != SMART_UNASSIGNED)
-			msg_tag("attr:%s:%s:error:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_ERROR]);
+			log_tag("attr:%s:%s:error:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_ERROR]);
 		if (devinfo->smart[SMART_ROTATION_RATE] != SMART_UNASSIGNED)
-			msg_tag("attr:%s:%s:rotationrate:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_ROTATION_RATE]);
+			log_tag("attr:%s:%s:rotationrate:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_ROTATION_RATE]);
 		if (devinfo->smart[SMART_FLAGS] != SMART_UNASSIGNED)
-			msg_tag("attr:%s:%s:flags:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_FLAGS], devinfo->smart[SMART_FLAGS]);
+			log_tag("attr:%s:%s:flags:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_FLAGS], devinfo->smart[SMART_FLAGS]);
 		for (j = 0; j < 256; ++j)
 			if (devinfo->smart[j] != SMART_UNASSIGNED)
-				msg_tag("attr:%s:%s:%u:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, devinfo->name, j, devinfo->smart[j], devinfo->smart[j]);
+				log_tag("attr:%s:%s:%u:%" PRIu64 ":%" PRIx64 "\n", devinfo->file, devinfo->name, j, devinfo->smart[j], devinfo->smart[j]);
 	}
 
 	printf("\n");
@@ -826,7 +826,7 @@ static void state_smart(unsigned n, tommy_list* low)
 	p_at_least_one_failure = poisson_prob_n_or_more_failures(array_failure_rate, 1);
 
 	printf("Probability that at least one disk is going to fail in the next year is %.0f%%.\n", p_at_least_one_failure * 100);
-	msg_tag("summary:array_failure:%g:%g\n", array_failure_rate, p_at_least_one_failure);
+	log_tag("summary:array_failure:%g:%g\n", array_failure_rate, p_at_least_one_failure);
 
 	/* prints extra stats only in verbose mode */
 	if (msg_level < MSG_VERBOSE)
@@ -988,7 +988,7 @@ void state_device(struct snapraid_state* state, int operation)
 		case DEVICE_LIST : ope = "List"; break;
 		case DEVICE_SMART : ope = "SMART"; break;
 		}
-		msg_error("%s unsupported in this platform.\n", ope);
+		log_fatal("%s unsupported in this platform.\n", ope);
 	} else {
 		if (operation == DEVICE_LIST) {
 			for (i = tommy_list_head(&low); i != 0; i = i->next) {

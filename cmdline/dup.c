@@ -125,7 +125,7 @@ void state_dup(struct snapraid_state* state)
 			if (dup) {
 				++count;
 				size += dup->file->size;
-				msg_tag("dup:%s:%s:%s:%s:%" PRIu64 ": dup\n", disk->name, esc(file->sub), dup->disk->name, esc(dup->file->sub), dup->file->size);
+				log_tag("dup:%s:%s:%s:%s:%" PRIu64 ": dup\n", disk->name, esc(file->sub), dup->disk->name, esc(dup->file->sub), dup->file->size);
 				printf("%12" PRIu64 " %s%s = %s%s\n", file->size, disk->dir, file->sub, dup->disk->dir, dup->file->sub);
 				hash_free(hash);
 			} else {
@@ -144,13 +144,13 @@ void state_dup(struct snapraid_state* state)
 	else
 		msg_status("No duplicates\n");
 
-	msg_tag("summary:dup_count:%u\n", count);
-	msg_tag("summary:dup_size:%" PRIu64 "\n", size);
+	log_tag("summary:dup_count:%u\n", count);
+	log_tag("summary:dup_size:%" PRIu64 "\n", size);
 	if (count == 0) {
-		msg_tag("summary:exit:unique\n");
+		log_tag("summary:exit:unique\n");
 	} else {
-		msg_tag("summary:exit:dup\n");
+		log_tag("summary:exit:dup\n");
 	}
-	msg_flush();
+	log_flush();
 }
 

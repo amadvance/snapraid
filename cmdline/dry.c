@@ -82,20 +82,20 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
-					msg_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
-					msg_error("DANGER! Unexpected close error in a data disk, it isn't possible to dry.\n");
-					msg_error("Stopping at block %u\n", i);
+					log_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
+					log_fatal("DANGER! Unexpected close error in a data disk, it isn't possible to dry.\n");
+					log_fatal("Stopping at block %u\n", i);
 					++error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
 				}
 
 				/* open the file only for reading */
-				ret = handle_open(&handle[j], block_file_get(block), state->file_mode, msg_error, 0);
+				ret = handle_open(&handle[j], block_file_get(block), state->file_mode, log_fatal, 0);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
-					msg_error("DANGER! Unexpected open error in a data disk, it isn't possible to dry.\n");
-					msg_error("Stopping at block %u\n", i);
+					log_fatal("DANGER! Unexpected open error in a data disk, it isn't possible to dry.\n");
+					log_fatal("Stopping at block %u\n", i);
 					++error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
@@ -103,9 +103,9 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			}
 
 			/* read from the file */
-			read_size = handle_read(&handle[j], block, buffer_aligned, state->block_size, msg_warning, 0);
+			read_size = handle_read(&handle[j], block, buffer_aligned, state->block_size, log_error, 0);
 			if (read_size == -1) {
-				msg_tag("error:%u:%s:%s: Read error at position %u\n", i, disk->name, esc(block_file_get(block)->sub), block_file_pos(block));
+				log_tag("error:%u:%s:%s: Read error at position %u\n", i, disk->name, esc(block_file_get(block)->sub), block_file_pos(block));
 				++error;
 				continue;
 			}
@@ -122,9 +122,9 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 				/* until now is CPU */
 				state_usage_cpu(state);
 
-				ret = parity_read(parity[l], i, buffer_aligned, state->block_size, msg_warning);
+				ret = parity_read(parity[l], i, buffer_aligned, state->block_size, log_error);
 				if (ret == -1) {
-					msg_tag("parity_error:%u:%s: Read error\n", i, lev_config_name(l));
+					log_tag("parity_error:%u:%s: Read error\n", i, lev_config_name(l));
 					++error;
 				}
 
@@ -156,8 +156,8 @@ bail:
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			msg_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
-			msg_error("DANGER! Unexpected close error in a data disk.\n");
+			log_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
+			log_fatal("DANGER! Unexpected close error in a data disk.\n");
 			++error;
 			/* continue, as we are already exiting */
 			/* LCOV_EXCL_STOP */
@@ -172,7 +172,7 @@ bail:
 	}
 
 	if (error)
-		msg_error("DANGER! Unexpected errors!\n");
+		log_fatal("DANGER! Unexpected errors!\n");
 
 	free(handle);
 	free(buffer_alloc);
@@ -199,7 +199,7 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	if (blockstart > blockmax) {
 		/* LCOV_EXCL_START */
-		msg_error("Error in the specified starting block %u. It's bigger than the parity size %u.\n", blockstart, blockmax);
+		log_fatal("Error in the specified starting block %u. It's bigger than the parity size %u.\n", blockstart, blockmax);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}

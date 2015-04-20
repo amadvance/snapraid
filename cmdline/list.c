@@ -59,7 +59,7 @@ void state_list(struct snapraid_state* state)
 			++file_count;
 			file_size += file->size;
 
-			msg_tag("file:%s:%s:%" PRIu64 ":%" PRIi64 ":%u:%" PRIi64 "\n", disk->name, esc(file->sub), file->size, file->mtime_sec, file->mtime_nsec, file->inode);
+			log_tag("file:%s:%s:%" PRIu64 ":%" PRIi64 ":%u:%" PRIi64 "\n", disk->name, esc(file->sub), file->size, file->mtime_sec, file->mtime_nsec, file->inode);
 
 			t = file->mtime_sec;
 #if HAVE_LOCALTIME_R
@@ -98,7 +98,7 @@ void state_list(struct snapraid_state* state)
 
 			++link_count;
 
-			msg_tag("link_%s:%s:%s:%s\n", type, disk->name, esc(link->sub), esc(link->linkto));
+			log_tag("link_%s:%s:%s:%s\n", type, disk->name, esc(link->sub), esc(link->linkto));
 
 			printf("%12s ", type);
 			printf("                 ");
@@ -112,10 +112,10 @@ void state_list(struct snapraid_state* state)
 	msg_status("%8u files, for %" PRIu64 " GB\n", file_count, file_size / GIGA);
 	msg_status("%8u links\n", link_count);
 
-	msg_tag("summary:file_count:%u\n", file_count);
-	msg_tag("summary:file_size:%" PRIu64 "\n", file_size);
-	msg_tag("summary:link_count:%u\n", link_count);
-	msg_tag("summary:exit:ok\n");
-	msg_flush();
+	log_tag("summary:file_count:%u\n", file_count);
+	log_tag("summary:file_size:%" PRIu64 "\n", file_size);
+	log_tag("summary:link_count:%u\n", link_count);
+	log_tag("summary:exit:ok\n");
+	log_flush();
 }
 

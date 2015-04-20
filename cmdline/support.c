@@ -50,11 +50,11 @@ static pthread_mutex_t msg_lock = PTHREAD_MUTEX_INITIALIZER;
  * The buffering is similar at the "line buffered" one, that
  * is not available on Windows, so we emulate it in this way.
  *
- * For stdlog the flush is only limited.
- * To ensure flushing the caller should use msg_flush().
+ * For stdlog flushing is limited. To ensure flushing the
+ * caller should use log_flush().
  */
 
-void msg_error(const char* format, ...)
+void log_fatal(const char* format, ...)
 {
 	va_list ap;
 
@@ -62,7 +62,7 @@ void msg_error(const char* format, ...)
 
 	if (stdlog) {
 		va_start(ap, format);
-		fprintf(stdlog, "msg:error: ");
+		fprintf(stdlog, "msg:fatal: ");
 		vfprintf(stdlog, format, ap);
 		fflush(stdlog);
 		va_end(ap);
@@ -76,7 +76,7 @@ void msg_error(const char* format, ...)
 	pthread_mutex_unlock(&msg_lock);
 }
 
-void msg_warning(const char* format, ...)
+void log_error(const char* format, ...)
 {
 	va_list ap;
 
@@ -84,7 +84,7 @@ void msg_warning(const char* format, ...)
 
 	if (stdlog) {
 		va_start(ap, format);
-		fprintf(stdlog, "msg:warning: ");
+		fprintf(stdlog, "msg:error: ");
 		vfprintf(stdlog, format, ap);
 		fflush(stdlog);
 		va_end(ap);
@@ -98,7 +98,7 @@ void msg_warning(const char* format, ...)
 	pthread_mutex_unlock(&msg_lock);
 }
 
-void msg_expected(const char* format, ...)
+void log_expected(const char* format, ...)
 {
 	va_list ap;
 
@@ -106,7 +106,7 @@ void msg_expected(const char* format, ...)
 
 	if (stdlog) {
 		va_start(ap, format);
-		fprintf(stdlog, "msg:warning: ");
+		fprintf(stdlog, "msg:expected: ");
 		vfprintf(stdlog, format, ap);
 		fflush(stdlog);
 		va_end(ap);
@@ -115,7 +115,7 @@ void msg_expected(const char* format, ...)
 	pthread_mutex_unlock(&msg_lock);
 }
 
-void msg_tag(const char* format, ...)
+void log_tag(const char* format, ...)
 {
 	va_list ap;
 
@@ -124,8 +124,22 @@ void msg_tag(const char* format, ...)
 	if (stdlog) {
 		va_start(ap, format);
 		vfprintf(stdlog, format, ap);
+		/* here we intentionally don't flush */
+		/* to make the output faster */
 		va_end(ap);
 	}
+
+	pthread_mutex_unlock(&msg_lock);
+}
+
+void log_flush(void)
+{
+	pthread_mutex_lock(&msg_lock);
+
+	if (stdlog)
+		fflush(stdlog);
+	fflush(stdout);
+	fflush(stderr);
 
 	pthread_mutex_unlock(&msg_lock);
 }
@@ -244,8 +258,6 @@ void msg_flush(void)
 {
 	pthread_mutex_lock(&msg_lock);
 
-	if (stdlog)
-		fflush(stdlog);
 	fflush(stdout);
 	fflush(stderr);
 
@@ -316,7 +328,7 @@ const char* esc(const char* str)
 
 bail:
 	/* LCOV_EXCL_START */
-	msg_error("Escape too long\n");
+	log_fatal("Escape too long\n");
 	exit(EXIT_FAILURE);
 	/* LCOV_EXCL_STOP */
 }
@@ -343,7 +355,7 @@ void pathcpy(char* dst, size_t size, const char* src)
 
 	if (len + 1 > size) {
 		/* LCOV_EXCL_START */
-		msg_error("Path too long\n");
+		log_fatal("Path too long\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -358,7 +370,7 @@ void pathcat(char* dst, size_t size, const char* src)
 
 	if (dst_len + src_len + 1 > size) {
 		/* LCOV_EXCL_START */
-		msg_error("Path too long\n");
+		log_fatal("Path too long\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -372,7 +384,7 @@ void pathcatc(char* dst, size_t size, char c)
 
 	if (dst_len + 2 > size) {
 		/* LCOV_EXCL_START */
-		msg_error("Path too long\n");
+		log_fatal("Path too long\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -420,7 +432,7 @@ void pathprint(char* dst, size_t size, const char* format, ...)
 
 	if (len >= size) {
 		/* LCOV_EXCL_START */
-		msg_error("Path too long\n");
+		log_fatal("Path too long\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -433,7 +445,7 @@ void pathslash(char* dst, size_t size)
 	if (len > 0 && dst[len - 1] != '/') {
 		if (len + 2 >= size) {
 			/* LCOV_EXCL_START */
-			msg_error("Path too long\n");
+			log_fatal("Path too long\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -528,7 +540,7 @@ int mkancestor(const char* file)
 	/* create it */
 	if (mkdir(dir, S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH) != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Error creating directory '%s'. %s.\n", dir, strerror(errno));
+		log_fatal("Error creating directory '%s'. %s.\n", dir, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -760,7 +772,7 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 		/* remove extraneous chars */
 		s = polish(buf);
 
-		msg_tag("smartctl:%s:%s:out: %s\n", file, name, s);
+		log_tag("smartctl:%s:%s:out: %s\n", file, name, s);
 
 		/* skip initial spaces */
 		while (isspace(*s))
@@ -789,14 +801,14 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 		} else if (inside) {
 			if (sscanf(s, "%u %*s %*s %*s %*s %*s %*s %*s %*s %" SCNu64, &id, &raw) != 2) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid smartctl line '%s'.\n", s);
+				log_fatal("Invalid smartctl line '%s'.\n", s);
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (id >= 256) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid SMART id '%u'.\n", id);
+				log_fatal("Invalid SMART id '%u'.\n", id);
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
@@ -822,7 +834,7 @@ int smartctl_flush(FILE* f, const char* file, const char* name)
 		/* remove extraneous chars */
 		s = polish(buf);
 
-		msg_tag("smartctl:%s:%s:out: %s\n", file, name, s);
+		log_tag("smartctl:%s:%s:out: %s\n", file, name, s);
 	}
 
 	return 0;

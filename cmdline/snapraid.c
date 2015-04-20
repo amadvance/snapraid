@@ -76,13 +76,13 @@ void usage(void)
 
 void memory(void)
 {
-	msg_tag("memory:used:%" PRIu64 "\n", (uint64_t)malloc_counter());
+	log_tag("memory:used:%" PRIu64 "\n", (uint64_t)malloc_counter());
 
 	/* size of the block + the size of the blockarr pointer to it */
-	msg_tag("memory:block:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_block) + sizeof(void*)));
+	log_tag("memory:block:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_block) + sizeof(void*)));
 
 	/* size of the file + the size of the 3 hashtables pointers to it, * 2 for the hashtable grow factor */
-	msg_tag("memory:file:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_file) + 3*2*sizeof(void*)));
+	log_tag("memory:file:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_file) + 3*2*sizeof(void*)));
 
 	msg_progress("Using %u MiB of memory.\n", (unsigned)(malloc_counter() / (1024 * 1024)));
 
@@ -154,7 +154,7 @@ void log_open(const char* log)
 				break;
 			default :
 				/* LCOV_EXCL_START */
-				msg_error("Invalid type specifier '%c' in the log file.\n", *log);
+				log_fatal("Invalid type specifier '%c' in the log file.\n", *log);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -169,7 +169,7 @@ void log_open(const char* log)
 	stdlog = fopen(path, mode);
 	if (!stdlog) {
 		/* LCOV_EXCL_START */
-		msg_error("Error opening the log file '%s'. %s.\n", path, strerror(errno));
+		log_fatal("Error opening the log file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -180,7 +180,7 @@ void log_close(const char* log)
 	if (stdlog != stdout && stdlog != stderr && stdlog != 0) {
 		if (fclose(stdlog) != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error closing the log file '%s'. %s.\n", log, strerror(errno));
+			log_fatal("Error closing the log file '%s'. %s.\n", log, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -463,7 +463,7 @@ int main(int argc, char* argv[])
 			struct snapraid_filter* filter = filter_alloc_file(1, optarg);
 			if (!filter) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid filter specification '%s'\n", optarg);
+				log_fatal("Invalid filter specification '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -473,7 +473,7 @@ int main(int argc, char* argv[])
 			struct snapraid_filter* filter = filter_alloc_disk(1, optarg);
 			if (!filter) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid filter specification '%s'\n", optarg);
+				log_fatal("Invalid filter specification '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -494,7 +494,7 @@ int main(int argc, char* argv[])
 			percentage = strtoul(optarg, &e, 10);
 			if (!e || *e || percentage > 100) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid percentage '%s'\n", optarg);
+				log_fatal("Invalid percentage '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -503,7 +503,7 @@ int main(int argc, char* argv[])
 			olderthan = strtoul(optarg, &e, 10);
 			if (!e || *e || olderthan > 1000) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid number of days '%s'\n", optarg);
+				log_fatal("Invalid number of days '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -512,7 +512,7 @@ int main(int argc, char* argv[])
 			blockstart = strtoul(optarg, &e, 0);
 			if (!e || *e) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid start position '%s'\n", optarg);
+				log_fatal("Invalid start position '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -521,7 +521,7 @@ int main(int argc, char* argv[])
 			blockcount = strtoul(optarg, &e, 0);
 			if (!e || *e) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid count number '%s'\n", optarg);
+				log_fatal("Invalid count number '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -530,7 +530,7 @@ int main(int argc, char* argv[])
 			opt.io_error_limit = strtoul(optarg, &e, 0);
 			if (!e || *e) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid error limit number '%s'\n", optarg);
+				log_fatal("Invalid error limit number '%s'\n", optarg);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -538,7 +538,7 @@ int main(int argc, char* argv[])
 		case 'i' :
 			if (import_timestamp) {
 				/* LCOV_EXCL_START */
-				msg_error("Import directory '%s' already specified as '%s'\n", optarg, import_timestamp);
+				log_fatal("Import directory '%s' already specified as '%s'\n", optarg, import_timestamp);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -547,7 +547,7 @@ int main(int argc, char* argv[])
 		case OPT_TEST_IMPORT_CONTENT :
 			if (import_content) {
 				/* LCOV_EXCL_START */
-				msg_error("Import directory '%s' already specified as '%s'\n", optarg, import_content);
+				log_fatal("Import directory '%s' already specified as '%s'\n", optarg, import_content);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -556,7 +556,7 @@ int main(int argc, char* argv[])
 		case 'l' :
 			if (log) {
 				/* LCOV_EXCL_START */
-				msg_error("Log file '%s' already specified as '%s'\n", optarg, log);
+				log_fatal("Log file '%s' already specified as '%s'\n", optarg, log);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -696,7 +696,7 @@ int main(int argc, char* argv[])
 			break;
 		default :
 			/* LCOV_EXCL_START */
-			msg_error("Unknown option '%c'\n", (char)c);
+			log_fatal("Unknown option '%c'\n", (char)c);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -762,7 +762,7 @@ int main(int argc, char* argv[])
 		operation = OPERATION_SMART;
 	} else {
 		/* LCOV_EXCL_START */
-		msg_error("Unknown command '%s'\n", argv[optind]);
+		log_fatal("Unknown command '%s'\n", argv[optind]);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -774,7 +774,7 @@ int main(int argc, char* argv[])
 	default :
 		if (opt.auditonly) {
 			/* LCOV_EXCL_START */
-			msg_error("You cannot use -a, --audit-only with the '%s' command\n", command);
+			log_fatal("You cannot use -a, --audit-only with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -788,7 +788,7 @@ int main(int argc, char* argv[])
 	default :
 		if (opt.force_nocopy) {
 			/* LCOV_EXCL_START */
-			msg_error("You cannot use -N, --force-nocopy with the '%s' command\n", command);
+			log_fatal("You cannot use -N, --force-nocopy with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -800,14 +800,14 @@ int main(int argc, char* argv[])
 	default :
 		if (opt.prehash) {
 			/* LCOV_EXCL_START */
-			msg_error("You cannot use -h, --pre-hash with the '%s' command\n", command);
+			log_fatal("You cannot use -h, --pre-hash with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 
 		if (opt.force_full) {
 			/* LCOV_EXCL_START */
-			msg_error("You cannot use -F, --force-full with the '%s' command\n", command);
+			log_fatal("You cannot use -F, --force-full with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -815,14 +815,14 @@ int main(int argc, char* argv[])
 
 	if (opt.force_full && opt.force_nocopy) {
 		/* LCOV_EXCL_START */
-		msg_error("You cannot use the -F, --force-full and -N, --force-nocopy options at the same time\n");
+		log_fatal("You cannot use the -F, --force-full and -N, --force-nocopy options at the same time\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (opt.prehash && opt.force_nocopy) {
 		/* LCOV_EXCL_START */
-		msg_error("You cannot use the -h, --pre-hash and -N, --force-nocopy options at the same time\n");
+		log_fatal("You cannot use the -h, --pre-hash and -N, --force-nocopy options at the same time\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -835,25 +835,25 @@ int main(int argc, char* argv[])
 	default :
 		if (!tommy_list_empty(&filterlist_file)) {
 			/* LCOV_EXCL_START */
-			msg_error("You cannot use -f, --filter with the '%s' command\n", command);
+			log_fatal("You cannot use -f, --filter with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 		if (!tommy_list_empty(&filterlist_disk)) {
 			/* LCOV_EXCL_START */
-			msg_error("You cannot use -d, --filter-disk with the '%s' command\n", command);
+			log_fatal("You cannot use -d, --filter-disk with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 		if (filter_missing != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("You cannot use -m, --filter-missing with the '%s' command\n", command);
+			log_fatal("You cannot use -m, --filter-missing with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 		if (filter_error != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("You cannot use -e, --filter-error with the '%s' command\n", command);
+			log_fatal("You cannot use -e, --filter-error with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -866,7 +866,7 @@ int main(int argc, char* argv[])
 	default :
 		if (import_timestamp != 0 || import_content != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("You cannot import with the '%s' command\n", command);
+			log_fatal("You cannot import with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -927,17 +927,17 @@ int main(int argc, char* argv[])
 	/* print generic info into the log */
 	t = time(0);
 	tm = localtime(&t);
-	msg_tag("version:%s\n", PACKAGE_VERSION);
-	msg_tag("unixtime:%" PRIi64 "\n", (int64_t)t);
+	log_tag("version:%s\n", PACKAGE_VERSION);
+	log_tag("unixtime:%" PRIi64 "\n", (int64_t)t);
 	if (tm) {
 		char datetime[64];
 		strftime(datetime, sizeof(datetime), "%Y-%m-%d %H:%M:%S", tm);
-		msg_tag("time:%s\n", datetime);
+		log_tag("time:%s\n", datetime);
 	}
-	msg_tag("command:%s\n", command);
+	log_tag("command:%s\n", command);
 	for (i = 0; i < argc; ++i)
-		msg_tag("argv:%u:%s\n", i, argv[i]);
-	msg_flush();
+		log_tag("argv:%u:%s\n", i, argv[i]);
+	log_flush();
 
 	if (!opt.skip_self)
 		selftest();
@@ -957,10 +957,10 @@ int main(int argc, char* argv[])
 		if (lock == -1) {
 			/* LCOV_EXCL_START */
 			if (errno != EWOULDBLOCK) {
-				msg_error("Error creating the lock file '%s'. %s.\n", state.lockfile, strerror(errno));
+				log_fatal("Error creating the lock file '%s'. %s.\n", state.lockfile, strerror(errno));
 			} else {
-				msg_error("The lock file '%s' is already locked!\n", state.lockfile);
-				msg_error("SnapRAID is already in use!\n");
+				log_fatal("The lock file '%s' is already locked!\n", state.lockfile);
+				log_fatal("SnapRAID is already in use!\n");
 			}
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
@@ -1025,7 +1025,7 @@ int main(int argc, char* argv[])
 			ret = system(run); /* ignore error */
 			if (ret != 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Error in running command '%s'.\n", run);
+				log_fatal("Error in running command '%s'.\n", run);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1181,7 +1181,7 @@ int main(int argc, char* argv[])
 	if (!opt.skip_lock) {
 		if (lock_unlock(lock) == -1) {
 			/* LCOV_EXCL_START */
-			msg_error("Error closing the lock file '%s'. %s.\n", state.lockfile, strerror(errno));
+			log_fatal("Error closing the lock file '%s'. %s.\n", state.lockfile, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}

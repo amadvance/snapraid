@@ -183,7 +183,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 	if (state->raid_mode == RAID_MODE_VANDERMONDE) {
 		if (state->level > 3) {
 			/* LCOV_EXCL_START */
-			msg_error("If you use the z-parity you cannot have more than 3 parities.\n");
+			log_fatal("If you use the z-parity you cannot have more than 3 parities.\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STIO */
 		}
@@ -192,7 +192,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 	for (l = 0; l < state->level; ++l) {
 		if (state->parity[l].path[0] == 0) {
 			/* LCOV_EXCL_START */
-			msg_error("No '%s' specification in '%s'\n", lev_config_name(l), path);
+			log_fatal("No '%s' specification in '%s'\n", lev_config_name(l), path);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -200,7 +200,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 
 	if (tommy_list_empty(&state->contentlist)) {
 		/* LCOV_EXCL_START */
-		msg_error("No 'content' specification in '%s'\n", path);
+		log_fatal("No 'content' specification in '%s'\n", path);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -212,7 +212,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 		for (l = 0; l < state->level; ++l) {
 			if (pathcmp(state->parity[l].path, content->content) == 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Same path used for '%s' and 'content' as '%s'\n", lev_config_name(l), content->content);
+				log_fatal("Same path used for '%s' and 'content' as '%s'\n", lev_config_name(l), content->content);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -228,10 +228,10 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 #ifdef _WIN32
 			if (disk->device == 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Disk '%s' has a zero serial number.\n", disk->dir);
-				msg_error("This is not necessarely wrong, but for using SnapRAID\n");
-				msg_error("it's better to change the serial number of the disk.\n");
-				msg_error("Try using the 'VolumeID' tool by 'Mark Russinovich'.\n");
+				log_fatal("Disk '%s' has a zero serial number.\n", disk->dir);
+				log_fatal("This is not necessarely wrong, but for using SnapRAID\n");
+				log_fatal("it's better to change the serial number of the disk.\n");
+				log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'.\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -242,15 +242,15 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 					struct snapraid_disk* other = j->data;
 					if (disk->device == other->device) {
 						/* LCOV_EXCL_START */
-						msg_error("Disks '%s' and '%s' are on the same device.\n", disk->dir, other->dir);
+						log_fatal("Disks '%s' and '%s' are on the same device.\n", disk->dir, other->dir);
 #ifdef _WIN32
-						msg_error("Both have the serial number '%" PRIx64 "'.\n", disk->device);
-						msg_error("Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
-						msg_error("to change one of the disk serial.\n");
+						log_fatal("Both have the serial number '%" PRIx64 "'.\n", disk->device);
+						log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
+						log_fatal("to change one of the disk serial.\n");
 #endif
 						/* in "fix" we allow to continue anyway */
 						if (strcmp(state->command, "fix") == 0) {
-							msg_error("You can '%s' anyway, using 'snapraid --force-device %s'.\n", state->command, state->command);
+							log_fatal("You can '%s' anyway, using 'snapraid --force-device %s'.\n", state->command, state->command);
 						}
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
@@ -262,11 +262,11 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 				for (l = 0; l < state->level; ++l) {
 					if (disk->device == state->parity[l].device) {
 						/* LCOV_EXCL_START */
-						msg_error("Disk '%s' and %s '%s' are on the same device.\n", disk->dir, lev_name(l), state->parity[l].path);
+						log_fatal("Disk '%s' and %s '%s' are on the same device.\n", disk->dir, lev_name(l), state->parity[l].path);
 #ifdef _WIN32
-						msg_error("Both have the serial number '%" PRIx64 "'.\n", disk->device);
-						msg_error("Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
-						msg_error("to change one of the disk serial.\n");
+						log_fatal("Both have the serial number '%" PRIx64 "'.\n", disk->device);
+						log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
+						log_fatal("to change one of the disk serial.\n");
 #endif
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
@@ -276,11 +276,11 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 
 			if (state->pool[0] != 0 && disk->device == state->pool_device) {
 				/* LCOV_EXCL_START */
-				msg_error("Disk '%s' and pool '%s' are on the same device.\n", disk->dir, state->pool);
+				log_fatal("Disk '%s' and pool '%s' are on the same device.\n", disk->dir, state->pool);
 #ifdef _WIN32
-				msg_error("Both have the serial number '%" PRIx64 "'.\n", disk->device);
-				msg_error("Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
-				msg_error("to change one of the disk serial.\n");
+				log_fatal("Both have the serial number '%" PRIx64 "'.\n", disk->device);
+				log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
+				log_fatal("to change one of the disk serial.\n");
 #endif
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
@@ -294,10 +294,10 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 		for (l = 0; l < state->level; ++l) {
 			if (state->parity[l].device == 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Disk '%s' has a zero serial number.\n", state->parity[l].path);
-				msg_error("This is not necessarely wrong, but for using SnapRAID\n");
-				msg_error("it's better to change the serial number of the disk.\n");
-				msg_error("Try using the 'VolumeID' tool by 'Mark Russinovich'.\n");
+				log_fatal("Disk '%s' has a zero serial number.\n", state->parity[l].path);
+				log_fatal("This is not necessarely wrong, but for using SnapRAID\n");
+				log_fatal("it's better to change the serial number of the disk.\n");
+				log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'.\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -309,11 +309,11 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 			for (j = l + 1; j < state->level; ++j) {
 				if (state->parity[l].device == state->parity[j].device) {
 					/* LCOV_EXCL_START */
-					msg_error("Parity '%s' and '%s' are on the same device.\n", state->parity[l].path, state->parity[j].path);
+					log_fatal("Parity '%s' and '%s' are on the same device.\n", state->parity[l].path, state->parity[j].path);
 #ifdef _WIN32
-					msg_error("Both have the serial number '%" PRIx64 "'.\n", state->parity[l].device);
-					msg_error("Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
-					msg_error("to change one of the disk serial.\n");
+					log_fatal("Both have the serial number '%" PRIx64 "'.\n", state->parity[l].device);
+					log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
+					log_fatal("to change one of the disk serial.\n");
 #endif
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
@@ -324,11 +324,11 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 		for (l = 0; l < state->level; ++l) {
 			if (state->pool[0] != 0 && state->pool_device == state->parity[l].device) {
 				/* LCOV_EXCL_START */
-				msg_error("Pool '%s' and parity '%s' are on the same device.\n", state->pool, state->parity[l].path);
+				log_fatal("Pool '%s' and parity '%s' are on the same device.\n", state->pool, state->parity[l].path);
 #ifdef _WIN32
-				msg_error("Both have the serial number '%" PRIx64 "'.\n", state->pool_device);
-				msg_error("Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
-				msg_error("to change one of the disk serial.\n");
+				log_fatal("Both have the serial number '%" PRIx64 "'.\n", state->pool_device);
+				log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
+				log_fatal("to change one of the disk serial.\n");
 #endif
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
@@ -341,10 +341,10 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 	if (!state->opt.skip_device) {
 		if (state->pool[0] != 0 && state->pool_device == 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Disk '%s' has a zero serial number.\n", state->pool);
-			msg_error("This is not necessarely wrong, but for using SnapRAID\n");
-			msg_error("it's better to change the serial number of the disk.\n");
-			msg_error("Try using the 'VolumeID' tool by 'Mark Russinovich'.\n");
+			log_fatal("Disk '%s' has a zero serial number.\n", state->pool);
+			log_fatal("This is not necessarely wrong, but for using SnapRAID\n");
+			log_fatal("it's better to change the serial number of the disk.\n");
+			log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'.\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -377,7 +377,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 
 		if (content_count < state->level + 1) {
 			/* LCOV_EXCL_START */
-			msg_error("You must have at least %d 'content' files in different disks.\n", state->level + 1);
+			log_fatal("You must have at least %d 'content' files in different disks.\n", state->level + 1);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -389,11 +389,11 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 #endif
 	if (state->raid_mode == RAID_MODE_CAUCHY) {
 		if (state->level == 3) {
-			msg_error("WARNING! Your CPU doesn't have a fast implementation for triple parity.\n");
-			msg_error("WARNING! It's recommended to switch to 'z-parity' instead than '3-parity'.\n");
+			log_fatal("WARNING! Your CPU doesn't have a fast implementation for triple parity.\n");
+			log_fatal("WARNING! It's recommended to switch to 'z-parity' instead than '3-parity'.\n");
 		} else if (state->level > 3) {
-			msg_error("WARNING! Your CPU doesn't have a fast implementation beyond triple parity.\n");
-			msg_error("WARNING! It's recommended to reduce the parity levels to triple parity.\n");
+			log_fatal("WARNING! Your CPU doesn't have a fast implementation beyond triple parity.\n");
+			log_fatal("WARNING! It's recommended to reduce the parity levels to triple parity.\n");
 		}
 	}
 
@@ -408,7 +408,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 		}
 		if (j == 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Option -d, --filter-disk %s doesn't match any disk.\n", filter->pattern);
+			log_fatal("Option -d, --filter-disk %s doesn't match any disk.\n", filter->pattern);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -466,17 +466,17 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	/* store current command */
 	state->command = command;
 
-	msg_tag("conf:%s\n", path);
+	log_tag("conf:%s\n", path);
 
 	f = sopen_read(path);
 	if (!f) {
 		/* LCOV_EXCL_START */
 		if (errno == ENOENT) {
-			msg_error("No configuration file found at '%s'\n", path);
+			log_fatal("No configuration file found at '%s'\n", path);
 		} else if (errno == EACCES) {
-			msg_error("You do not have rights to access the configuration file '%s'\n", path);
+			log_fatal("You do not have rights to access the configuration file '%s'\n", path);
 		} else {
-			msg_error("Error opening the configuration file '%s'. %s.\n", path, strerror(errno));
+			log_fatal("Error opening the configuration file '%s'. %s.\n", path, strerror(errno));
 		}
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
@@ -497,7 +497,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 		ret = sgettok(f, tag, sizeof(tag));
 		if (ret < 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error reading the configuration file '%s' at line %u\n", path, line);
+			log_fatal("Error reading the configuration file '%s' at line %u\n", path, line);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -512,26 +512,26 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			ret = sgetu32(f, &state->block_size);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'blocksize' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'blocksize' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 			if (state->block_size < 1) {
 				/* LCOV_EXCL_START */
-				msg_error("Too small 'blocksize' specification in '%s' at line %u\n", path, line);
+				log_fatal("Too small 'blocksize' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 			if (state->block_size > 16 * 1024) {
 				/* LCOV_EXCL_START */
-				msg_error("Too big 'blocksize' specification in '%s' at line %u\n", path, line);
+				log_fatal("Too big 'blocksize' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 			/* check if it's a power of 2 */
 			if ((state->block_size & (state->block_size - 1)) != 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Not power of 2 'blocksize' specification in '%s' at line %u\n", path, line);
+				log_fatal("Not power of 2 'blocksize' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -542,7 +542,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 			if (*state->parity[level].path) {
 				/* LCOV_EXCL_START */
-				msg_error("Multiple '%s' specification in '%s' at line %u\n", tag, path, line);
+				log_fatal("Multiple '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -550,14 +550,14 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			ret = sgetlasttok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid '%s' specification in '%s' at line %u\n", tag, path, line);
+				log_fatal("Invalid '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (!*buffer) {
 				/* LCOV_EXCL_START */
-				msg_error("Empty '%s' specification in '%s' at line %u\n", tag, path, line);
+				log_fatal("Empty '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -576,7 +576,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 					pathcpy(device, sizeof(device), ".");
 				if (stat(device, &st) != 0) {
 					/* LCOV_EXCL_START */
-					msg_error("Error accessing 'parity' dir '%s' specification in '%s' at line %u\n", device, path, line);
+					log_fatal("Error accessing 'parity' dir '%s' specification in '%s' at line %u\n", device, path, line);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -593,7 +593,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 		} else if (strcmp(tag, "share") == 0) {
 			if (*state->share) {
 				/* LCOV_EXCL_START */
-				msg_error("Multiple 'share' specification in '%s' at line %u\n", path, line);
+				log_fatal("Multiple 'share' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -601,14 +601,14 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			ret = sgetlasttok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'share' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'share' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (!*buffer) {
 				/* LCOV_EXCL_START */
-				msg_error("Empty 'share' specification in '%s' at line %u\n", path, line);
+				log_fatal("Empty 'share' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -619,7 +619,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 			if (*state->pool) {
 				/* LCOV_EXCL_START */
-				msg_error("Multiple 'pool' specification in '%s' at line %u\n", path, line);
+				log_fatal("Multiple 'pool' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -627,14 +627,14 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			ret = sgetlasttok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'pool' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'pool' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (!*buffer) {
 				/* LCOV_EXCL_START */
-				msg_error("Empty 'pool' specification in '%s' at line %u\n", path, line);
+				log_fatal("Empty 'pool' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -644,7 +644,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			/* get the device of the directory containing the pool tree */
 			if (stat(buffer, &st) != 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Error accessing 'pool' dir '%s' specification in '%s' at line %u\n", buffer, path, line);
+				log_fatal("Error accessing 'pool' dir '%s' specification in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -659,21 +659,21 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			ret = sgetlasttok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'content' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'content' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (pathcmp(buffer, "/dev/null") == 0 || pathcmp(buffer, "NUL") == 0) {
 				/* LCOV_EXCL_START */
-				msg_error("You cannot use the null device as 'content' specification in '%s' at line %u\n", path, line);
+				log_fatal("You cannot use the null device as 'content' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (!*buffer) {
 				/* LCOV_EXCL_START */
-				msg_error("Empty 'content' specification in '%s' at line %u\n", path, line);
+				log_fatal("Empty 'content' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -686,7 +686,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			}
 			if (i) {
 				/* LCOV_EXCL_START */
-				msg_error("Duplicate 'content' specification in '%s' at line %u\n", path, line);
+				log_fatal("Duplicate 'content' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -700,7 +700,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				pathcpy(device, sizeof(device), ".");
 			if (stat(device, &st) != 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Error accessing 'content' dir '%s' specification in '%s' at line %u\n", device, path, line);
+				log_fatal("Error accessing 'content' dir '%s' specification in '%s' at line %u\n", device, path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -723,14 +723,14 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'disk' name specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'disk' name specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (!*buffer) {
 				/* LCOV_EXCL_START */
-				msg_error("Empty 'disk' name specification in '%s' at line %u\n", path, line);
+				log_fatal("Empty 'disk' name specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -740,14 +740,14 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			ret = sgetlasttok(f, dir, sizeof(dir));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'disk' dir specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'disk' dir specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (!*dir) {
 				/* LCOV_EXCL_START */
-				msg_error("Empty 'disk' dir specification in '%s' at line %u\n", path, line);
+				log_fatal("Empty 'disk' dir specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -763,7 +763,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			}
 			if (i) {
 				/* LCOV_EXCL_START */
-				msg_error("Duplicate disk name '%s' at line %u\n", buffer, line);
+				log_fatal("Duplicate disk name '%s' at line %u\n", buffer, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -773,7 +773,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 				if (stat(device, &st) != 0) {
 					/* LCOV_EXCL_START */
-					msg_error("Error accessing 'disk' '%s' specification in '%s' at line %u\n", dir, device, line);
+					log_fatal("Error accessing 'disk' '%s' specification in '%s' at line %u\n", dir, device, line);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -793,14 +793,14 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'smartctl' name specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'smartctl' name specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (!*buffer) {
 				/* LCOV_EXCL_START */
-				msg_error("Empty 'smartctl' name specification in '%s' at line %u\n", path, line);
+				log_fatal("Empty 'smartctl' name specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -810,21 +810,21 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			ret = sgetlasttok(f, custom, sizeof(custom));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'smartctl' option specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'smartctl' option specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (!*custom) {
 				/* LCOV_EXCL_START */
-				msg_error("Empty 'smartctl' option specification in '%s' at line %u\n", path, line);
+				log_fatal("Empty 'smartctl' option specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (validate_smartctl(custom) != 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'smartctl' option specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'smartctl' option specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -833,7 +833,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			if (lev_config_scan(buffer, &level, 0) == 0) {
 				if (state->parity[level].smartctl[0] != 0) {
 					/* LCOV_EXCL_START */
-					msg_error("Duplicate parity smartctl '%s' at line %u\n", buffer, line);
+					log_fatal("Duplicate parity smartctl '%s' at line %u\n", buffer, line);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -849,13 +849,13 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				}
 				if (!i) {
 					/* LCOV_EXCL_START */
-					msg_error("Missing disk smartctl '%s' at line %u\n", buffer, line);
+					log_fatal("Missing disk smartctl '%s' at line %u\n", buffer, line);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
 				if (disk->smartctl[0] != 0) {
 					/* LCOV_EXCL_START */
-					msg_error("Duplicate disk name '%s' at line %u\n", buffer, line);
+					log_fatal("Duplicate disk name '%s' at line %u\n", buffer, line);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -870,14 +870,14 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			ret = sgetlasttok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'exclude' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'exclude' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (!*buffer) {
 				/* LCOV_EXCL_START */
-				msg_error("Empty 'exclude' specification in '%s' at line %u\n", path, line);
+				log_fatal("Empty 'exclude' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -885,7 +885,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			filter = filter_alloc_file(-1, buffer);
 			if (!filter) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'exclude' specification '%s' in '%s' at line %u\n", buffer, path, line);
+				log_fatal("Invalid 'exclude' specification '%s' in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -896,14 +896,14 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			ret = sgetlasttok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'include' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'include' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (!*buffer) {
 				/* LCOV_EXCL_START */
-				msg_error("Empty 'include' specification in '%s' at line %u\n", path, line);
+				log_fatal("Empty 'include' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -911,7 +911,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			filter = filter_alloc_file(1, buffer);
 			if (!filter) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'include' specification '%s' in '%s' at line %u\n", buffer, path, line);
+				log_fatal("Invalid 'include' specification '%s' in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -922,14 +922,14 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			ret = sgetlasttok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'autosave' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'autosave' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (!*buffer) {
 				/* LCOV_EXCL_START */
-				msg_error("Empty 'autosave' specification in '%s' at line %u\n", path, line);
+				log_fatal("Empty 'autosave' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -938,7 +938,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 			if (!e || *e) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'autosave' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'autosave' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -951,13 +951,13 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			ret = sgetline(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid comment in '%s' at line %u\n", path, line);
+				log_fatal("Invalid comment in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 		} else {
 			/* LCOV_EXCL_START */
-			msg_error("Invalid command '%s' in '%s' at line %u\n", tag, path, line);
+			log_fatal("Invalid command '%s' in '%s' at line %u\n", tag, path, line);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -972,7 +972,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 		}
 		if (c != '\n') {
 			/* LCOV_EXCL_START */
-			msg_error("Extra data in '%s' at line %u\n", path, line);
+			log_fatal("Extra data in '%s' at line %u\n", path, line);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -981,7 +981,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
-		msg_error("Error reading the configuration file '%s' at line %u\n", path, line);
+		log_fatal("Error reading the configuration file '%s' at line %u\n", path, line);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1015,7 +1015,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	/* by default use a random hash seed */
 	if (randomize(state->hashseed, HASH_SIZE) != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Failed to get random values.\n");
+		log_fatal("Failed to get random values.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1025,29 +1025,29 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 	/* intentionally not set the prevhashseed, if used valgrind will warn about it */
 
-	msg_tag("blocksize:%u\n", state->block_size);
+	log_tag("blocksize:%u\n", state->block_size);
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
-		msg_tag("disk:%s:%s\n", disk->name, disk->dir);
+		log_tag("disk:%s:%s\n", disk->name, disk->dir);
 	}
 
-	msg_tag("mode:%s\n", lev_raid_name(state->raid_mode, state->level));
+	log_tag("mode:%s\n", lev_raid_name(state->raid_mode, state->level));
 	for (l = 0; l < state->level; ++l)
-		msg_tag("%s:%s\n", lev_config_name(l), state->parity[l].path);
+		log_tag("%s:%s\n", lev_config_name(l), state->parity[l].path);
 	if (state->pool[0] != 0)
-		msg_tag("pool:%s\n", state->pool);
+		log_tag("pool:%s\n", state->pool);
 	if (state->share[0] != 0)
-		msg_tag("share:%s\n", state->share);
+		log_tag("share:%s\n", state->share);
 	if (state->autosave != 0)
-		msg_tag("autosave:%" PRIu64 "\n", state->autosave);
+		log_tag("autosave:%" PRIu64 "\n", state->autosave);
 	for (i = tommy_list_head(&state->filterlist); i != 0; i = i->next) {
 		char out[PATH_MAX];
 		struct snapraid_filter* filter = i->data;
-		msg_tag("filter:%s\n", filter_type(filter, out, sizeof(out)));
+		log_tag("filter:%s\n", filter_type(filter, out, sizeof(out)));
 	}
 	if (state->filter_hidden)
-		msg_tag("filter:nohidden:\n");
-	msg_flush();
+		log_tag("filter:nohidden:\n");
+	log_flush();
 }
 
 /**
@@ -1173,7 +1173,7 @@ static void state_map(struct snapraid_state* state)
 			disk = find_disk(state, map->name);
 			if (disk == 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Internal inconsistency for mapping '%s'\n", map->name);
+				log_fatal("Internal inconsistency for mapping '%s'\n", map->name);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1194,7 +1194,7 @@ static void state_map(struct snapraid_state* state)
 				if (map->uuid[0] != 0) {
 					/* count the number of uuid change */
 					++uuid_mismatch;
-					msg_error("UUID change for disk '%s' from '%s' to '%s'\n", disk->name, map->uuid, uuid);
+					log_fatal("UUID change for disk '%s' from '%s' to '%s'\n", disk->name, map->uuid, uuid);
 				} else {
 					/* no message here, because having a disk without */
 					/* UUID is the normal state of an empty disk */
@@ -1228,7 +1228,7 @@ static void state_map(struct snapraid_state* state)
 				if (state->parity[l].uuid[0] != 0) {
 					/* count the number of uuid change */
 					++uuid_mismatch;
-					msg_error("UUID change for parity '%s' from '%s' to '%s'\n", lev_config_name(l), state->parity[l].uuid, uuid);
+					log_fatal("UUID change for parity '%s' from '%s' to '%s'\n", lev_config_name(l), state->parity[l].uuid, uuid);
 				}
 
 				/* update the uuid */
@@ -1242,11 +1242,11 @@ static void state_map(struct snapraid_state* state)
 
 	if (!state->opt.force_uuid && uuid_mismatch > state->level) {
 		/* LCOV_EXCL_START */
-		msg_error("Too many disks have UUID changed from the latest 'sync'.\n");
-		msg_error("If this happens because you really replaced them,\n");
-		msg_error("you can '%s' anyway, using 'snapraid --force-uuid %s'.\n", state->command, state->command);
-		msg_error("Instead, it's possible that you messed up the disk mount points,\n");
-		msg_error("and you have to restore the mount points at the state of the latest sync.\n");
+		log_fatal("Too many disks have UUID changed from the latest 'sync'.\n");
+		log_fatal("If this happens because you really replaced them,\n");
+		log_fatal("you can '%s' anyway, using 'snapraid --force-uuid %s'.\n", state->command, state->command);
+		log_fatal("Instead, it's possible that you messed up the disk mount points,\n");
+		log_fatal("and you have to restore the mount points at the state of the latest sync.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1263,7 +1263,7 @@ static void state_map(struct snapraid_state* state)
 	/* ensure to don't go over the limit of the RAID engine */
 	if (diskcount > RAID_DATA_MAX) {
 		/* LCOV_EXCL_START */
-		msg_error("Too many data disks. No more than %u.\n", RAID_DATA_MAX);
+		log_fatal("Too many data disks. No more than %u.\n", RAID_DATA_MAX);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1273,15 +1273,15 @@ static void state_map(struct snapraid_state* state)
 
 	/* recommend number of parities */
 	if (diskcount >= 36 && state->level < 6) {
-		msg_error("WARNING! With %u disks it's recommended to use six parity levels.\n", diskcount);
+		log_fatal("WARNING! With %u disks it's recommended to use six parity levels.\n", diskcount);
 	} else if (diskcount >= 29 && state->level < 5) {
-		msg_error("WARNING! With %u disks it's recommended to use five parity levels.\n", diskcount);
+		log_fatal("WARNING! With %u disks it's recommended to use five parity levels.\n", diskcount);
 	} else if (diskcount >= 22 && state->level < 4) {
-		msg_error("WARNING! With %u disks it's recommended to use four parity levels.\n", diskcount);
+		log_fatal("WARNING! With %u disks it's recommended to use four parity levels.\n", diskcount);
 	} else if (diskcount >= 15 && state->level < 3) {
-		msg_error("WARNING! With %u disks it's recommended to use three parity levels.\n", diskcount);
+		log_fatal("WARNING! With %u disks it's recommended to use three parity levels.\n", diskcount);
 	} else if (diskcount >= 5 && state->level < 2) {
-		msg_error("WARNING! With %u disks it's recommended to use two parity levels.\n", diskcount);
+		log_fatal("WARNING! With %u disks it's recommended to use two parity levels.\n", diskcount);
 	}
 }
 
@@ -1301,7 +1301,7 @@ void state_refresh(struct snapraid_state* state)
 		disk = find_disk(state, map->name);
 		if (disk == 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Internal inconsistency for mapping '%s'\n", map->name);
+			log_fatal("Internal inconsistency for mapping '%s'\n", map->name);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1309,7 +1309,7 @@ void state_refresh(struct snapraid_state* state)
 		ret = fsinfo(disk->dir, 0, &total_space, &free_space);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error accessing disk '%s' to get filesystem info. %s.\n", disk->dir, strerror(errno));
+			log_fatal("Error accessing disk '%s' to get filesystem info. %s.\n", disk->dir, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1332,7 +1332,7 @@ void state_refresh(struct snapraid_state* state)
 		ret = fsinfo(state->parity[l].path, 0, &total_space, &free_space);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error accessing file '%s' to get filesystem info. %s.\n", state->parity[l].path, strerror(errno));
+			log_fatal("Error accessing file '%s' to get filesystem info. %s.\n", state->parity[l].path, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1361,13 +1361,13 @@ static void state_content_check(struct snapraid_state* state, const char* path)
 			struct snapraid_map* other = j->data;
 			if (strcmp(map->name, other->name) == 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Colliding 'map' disk specification in '%s'\n", path);
+				log_fatal("Colliding 'map' disk specification in '%s'\n", path);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 			if (map->position == other->position) {
 				/* LCOV_EXCL_START */
-				msg_error("Colliding 'map' index specification in '%s'\n", path);
+				log_fatal("Colliding 'map' index specification in '%s'\n", path);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1486,7 +1486,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 		ret = sgettok(f, tag, sizeof(tag));
 		if (ret < 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error reading the configuration file '%s' at line %u\n", path, line);
+			log_fatal("Error reading the configuration file '%s' at line %u\n", path, line);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1506,7 +1506,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 
 			if (!file) {
 				/* LCOV_EXCL_START */
-				msg_error("Unexpected '%s' specification in '%s' at line %u\n", tag, path, line);
+				log_fatal("Unexpected '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1514,14 +1514,14 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgetu32(f, &v_pos);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid '%s' specification in '%s' at line %u\n", tag, path, line);
+				log_fatal("Invalid '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (blockidx >= file->blockmax) {
 				/* LCOV_EXCL_START */
-				msg_error("Internal inconsistency in '%s' specification in '%s' at line %u\n", tag, path, line);
+				log_fatal("Internal inconsistency in '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1530,7 +1530,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 
 			if (block->parity_pos != POS_INVALID) {
 				/* LCOV_EXCL_START */
-				msg_error("Internal inconsistency in '%s' specification in '%s' at line %u\n", tag, path, line);
+				log_fatal("Internal inconsistency in '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1563,7 +1563,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				c = sgetc(f);
 				if (c != ' ') {
 					/* LCOV_EXCL_START */
-					msg_error("Invalid '%s' specification in '%s' at line %u\n", tag, path, line);
+					log_fatal("Invalid '%s' specification in '%s' at line %u\n", tag, path, line);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -1571,7 +1571,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				ret = sgethex(f, block->hash, HASH_SIZE);
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
-					msg_error("Invalid '%s' specification in '%s' at line %u\n", tag, path, line);
+					log_fatal("Invalid '%s' specification in '%s' at line %u\n", tag, path, line);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -1616,7 +1616,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			/* we must not overwrite existing blocks */
 			if (disk_block_get(disk, v_pos) != BLOCK_EMPTY) {
 				/* LCOV_EXCL_START */
-				msg_error("Internal inconsistency for '%s' specification in '%s' at line %u\n", tag, path, line);
+				log_fatal("Internal inconsistency for '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1642,14 +1642,14 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgetu32(f, &v_pos);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'inf' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'inf' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (v_pos >= blockmax) {
 				/* LCOV_EXCL_START */
-				msg_error("Internal inconsistency in position for 'inf' specification in '%s' at line %u\n", path, line);
+				log_fatal("Internal inconsistency in position for 'inf' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1657,7 +1657,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			c = sgetc(f);
 			if (c != ' ') {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'inf' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'inf' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1665,7 +1665,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgetu32(f, &t);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'inf' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'inf' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1678,7 +1678,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				ret = sgettok(f, buffer, sizeof(buffer));
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
-					msg_error("Invalid 'inf' specification in '%s' at line %u\n", path, line);
+					log_fatal("Invalid 'inf' specification in '%s' at line %u\n", path, line);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -1690,13 +1690,13 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 
 					if (state->prevhash == HASH_UNDEFINED) {
 						/* LCOV_EXCL_START */
-						msg_error("Internal inconsistency for missing previous checksum in '%s' at line %u\n", path, line);
+						log_fatal("Internal inconsistency for missing previous checksum in '%s' at line %u\n", path, line);
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}
 				} else {
 					/* LCOV_EXCL_START */
-					msg_error("Invalid 'inf' specification '%s' in '%s' at line %u\n", buffer, path, line);
+					log_fatal("Invalid 'inf' specification '%s' in '%s' at line %u\n", buffer, path, line);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -1716,7 +1716,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 
 			if (!disk) {
 				/* LCOV_EXCL_START */
-				msg_error("Unexpected 'off' specification in '%s' at line %u\n", path, line);
+				log_fatal("Unexpected 'off' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1727,7 +1727,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgetu32(f, &v_pos);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'off' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'off' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1738,7 +1738,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			c = sgetc(f);
 			if (c != ' ') {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'off' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'off' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1747,7 +1747,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgethex(f, deleted->block.hash, HASH_SIZE);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'off' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'off' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1761,7 +1761,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			/* we must not overwrite existing blocks */
 			if (disk_block_get(disk, v_pos) != BLOCK_EMPTY) {
 				/* LCOV_EXCL_START */
-				msg_error("Internal inconsistency for 'off' specification in '%s' at line %u\n", path, line);
+				log_fatal("Internal inconsistency for 'off' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1782,7 +1782,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 
 			if (file) {
 				/* LCOV_EXCL_START */
-				msg_error("Missing 'blk' specification in '%s' at line %u\n", path, line);
+				log_fatal("Missing 'blk' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1790,7 +1790,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'file' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1798,7 +1798,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			c = sgetc(f);
 			if (c != ' ') {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'file' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1806,7 +1806,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgetu64(f, &v_size);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'file' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1814,7 +1814,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			c = sgetc(f);
 			if (c != ' ') {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'file' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1822,7 +1822,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgetu64(f, &v_mtime_sec);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'file' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1832,7 +1832,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				ret = sgetu32(f, &v_mtime_nsec);
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
-					msg_error("Invalid 'file' specification in '%s' at line %u\n", path, line);
+					log_fatal("Invalid 'file' specification in '%s' at line %u\n", path, line);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -1845,7 +1845,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 
 			if (c != ' ') {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'file' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1853,7 +1853,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgetu64(f, &v_inode);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'file' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1861,7 +1861,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			c = sgetc(f);
 			if (c != ' ') {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'file' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1869,14 +1869,14 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgetline(f, sub, sizeof(sub));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'file' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (!*sub) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'file' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'file' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1885,7 +1885,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			disk = find_disk(state, buffer);
 			if (!disk) {
 				/* LCOV_EXCL_START */
-				msg_error("Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
+				log_fatal("Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1915,7 +1915,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 
 			if (file) {
 				/* LCOV_EXCL_START */
-				msg_error("Missing 'blk' specification in '%s' at line %u\n", path, line);
+				log_fatal("Missing 'blk' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1923,7 +1923,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'hole' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'hole' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1932,7 +1932,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			disk = find_disk(state, buffer);
 			if (!disk) {
 				/* LCOV_EXCL_START */
-				msg_error("Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
+				log_fatal("Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1946,7 +1946,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'symlink' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'symlink' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1954,7 +1954,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			c = sgetc(f);
 			if (c != ' ') {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'symlink' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'symlink' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1962,7 +1962,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgetline(f, sub, sizeof(sub));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'symlink' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'symlink' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1970,7 +1970,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			c = sgeteol(f);
 			if (c != '\n') {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'symlink' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'symlink' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1979,13 +1979,13 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgettok(f, tokento, sizeof(tokento));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'symlink' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'symlink' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 			if (strcmp(tokento, "to") != 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'symlink' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'symlink' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1993,7 +1993,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			c = sgetc(f);
 			if (c != ' ') {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'symlink' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'symlink' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2001,14 +2001,14 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgetline(f, linkto, sizeof(linkto));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'symlink' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'symlink' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (!*sub || !*linkto) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'symlink' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'symlink' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2017,7 +2017,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			disk = find_disk(state, buffer);
 			if (!disk) {
 				/* LCOV_EXCL_START */
-				msg_error("Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
+				log_fatal("Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2041,7 +2041,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2049,7 +2049,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			c = sgetc(f);
 			if (c != ' ') {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2057,7 +2057,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgetline(f, sub, sizeof(sub));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2065,7 +2065,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			c = sgeteol(f);
 			if (c != '\n') {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2074,13 +2074,13 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgettok(f, tokento, sizeof(tokento));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 			if (strcmp(tokento, "to") != 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2088,7 +2088,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			c = sgetc(f);
 			if (c != ' ') {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2096,14 +2096,14 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgetline(f, linkto, sizeof(linkto));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (!*sub || !*linkto) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'hardlink' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2112,7 +2112,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			disk = find_disk(state, buffer);
 			if (!disk) {
 				/* LCOV_EXCL_START */
-				msg_error("Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
+				log_fatal("Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2134,7 +2134,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'dir' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'dir' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2142,7 +2142,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			c = sgetc(f);
 			if (c != ' ') {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'dir' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'dir' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2150,14 +2150,14 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgetline(f, sub, sizeof(sub));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'dir' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'dir' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (!*sub) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'dir' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'dir' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2166,7 +2166,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			disk = find_disk(state, buffer);
 			if (!disk) {
 				/* LCOV_EXCL_START */
-				msg_error("Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
+				log_fatal("Disk named '%s' not found in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2185,7 +2185,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'checksum' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'checksum' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2196,7 +2196,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				state->hash = HASH_SPOOKY2;
 			} else {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'checksum' specification '%s' in '%s' at line %u\n", buffer, path, line);
+				log_fatal("Invalid 'checksum' specification '%s' in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2207,7 +2207,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				ret = sgethex(f, state->hashseed, HASH_SIZE);
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
-					msg_error("Invalid 'seed' specification in '%s' at line %u\n", path, line);
+					log_fatal("Invalid 'seed' specification in '%s' at line %u\n", path, line);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -2220,7 +2220,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'prevchecksum' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'prevchecksum' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2231,7 +2231,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				state->prevhash = HASH_SPOOKY2;
 			} else {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'prevchecksum' specification '%s' in '%s' at line %u\n", buffer, path, line);
+				log_fatal("Invalid 'prevchecksum' specification '%s' in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2239,7 +2239,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			c = sgetc(f);
 			if (c != ' ') {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'prevchecksum' specification '%s' in '%s' at line %u\n", buffer, path, line);
+				log_fatal("Invalid 'prevchecksum' specification '%s' in '%s' at line %u\n", buffer, path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2248,7 +2248,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgethex(f, state->prevhashseed, HASH_SIZE);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'seed' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'seed' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2258,7 +2258,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgetu32(f, &blksize);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'blksize' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'blksize' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2270,8 +2270,8 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 
 			if (blksize != state->block_size) {
 				/* LCOV_EXCL_START */
-				msg_error("Mismatching 'blksize' and 'blocksize' specification in '%s' at line %u\n", path, line);
-				msg_error("Please restore the 'blocksize' value in the configuration file to '%u'\n", blksize / 1024);
+				log_fatal("Mismatching 'blksize' and 'blocksize' specification in '%s' at line %u\n", path, line);
+				log_fatal("Please restore the 'blocksize' value in the configuration file to '%u'\n", blksize / 1024);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2285,7 +2285,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'map' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'map' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2293,7 +2293,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			c = sgetc(f);
 			if (c != ' ') {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'map' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'map' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2301,7 +2301,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgetu32(f, &v_pos);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'map' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'map' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2311,7 +2311,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				c = sgetc(f);
 				if (c != ' ') {
 					/* LCOV_EXCL_START */
-					msg_error("Invalid 'map' specification in '%s' at line %u\n", path, line);
+					log_fatal("Invalid 'map' specification in '%s' at line %u\n", path, line);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -2319,7 +2319,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				ret = sgetu32(f, &v_total_blocks);
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
-					msg_error("Invalid 'map' specification in '%s' at line %u\n", path, line);
+					log_fatal("Invalid 'map' specification in '%s' at line %u\n", path, line);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -2327,7 +2327,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				c = sgetc(f);
 				if (c != ' ') {
 					/* LCOV_EXCL_START */
-					msg_error("Invalid 'map' specification in '%s' at line %u\n", path, line);
+					log_fatal("Invalid 'map' specification in '%s' at line %u\n", path, line);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -2335,7 +2335,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				ret = sgetu32(f, &v_free_blocks);
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
-					msg_error("Invalid 'map' specification in '%s' at line %u\n", path, line);
+					log_fatal("Invalid 'map' specification in '%s' at line %u\n", path, line);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -2355,7 +2355,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				ret = sgettok(f, uuid, sizeof(uuid));
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
-					msg_error("Invalid 'map' specification in '%s' at line %u\n", path, line);
+					log_fatal("Invalid 'map' specification in '%s' at line %u\n", path, line);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -2374,7 +2374,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgetu32(f, &v_level);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'parity' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'parity' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2382,7 +2382,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			c = sgetc(f);
 			if (c != ' ') {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'parity' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'parity' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2390,7 +2390,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgetu32(f, &v_total_blocks);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'parity' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'parity' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2398,7 +2398,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			c = sgetc(f);
 			if (c != ' ') {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'parity' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'parity' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2406,7 +2406,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgetu32(f, &v_free_blocks);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'parity' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'parity' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2422,7 +2422,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 				ret = sgettok(f, uuid, sizeof(uuid));
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
-					msg_error("Invalid 'map' specification in '%s' at line %u\n", path, line);
+					log_fatal("Invalid 'map' specification in '%s' at line %u\n", path, line);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -2445,7 +2445,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgetu32(f, &sign);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid 'sign' specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'sign' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2458,13 +2458,13 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			ret = sgetline(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Invalid comment in '%s' at line %u\n", path, line);
+				log_fatal("Invalid comment in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 		} else {
 			/* LCOV_EXCL_START */
-			msg_error("Invalid command '%s' in '%s' at line %u\n", tag, path, line);
+			log_fatal("Invalid command '%s' in '%s' at line %u\n", tag, path, line);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -2476,7 +2476,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 		}
 		if (c != '\n') {
 			/* LCOV_EXCL_START */
-			msg_error("Extra data in '%s' at line %u\n", path, line);
+			log_fatal("Extra data in '%s' at line %u\n", path, line);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -2485,14 +2485,14 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
-		msg_error("Error reading the content file '%s' at line %u\n", path, line);
+		log_fatal("Error reading the content file '%s' at line %u\n", path, line);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (file) {
 		/* LCOV_EXCL_START */
-		msg_error("Missing 'blk' specification in '%s' at line %u\n", path, line);
+		log_fatal("Missing 'blk' specification in '%s' at line %u\n", path, line);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -2500,7 +2500,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 	/* check that the stored parity size matches the loaded state */
 	if (blockmax != parity_allocated_size(state)) {
 		/* LCOV_EXCL_START */
-		msg_error("Internal inconsistency in parity size in '%s' at line %u\n", path, line);
+		log_fatal("Internal inconsistency in parity size in '%s' at line %u\n", path, line);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -2578,7 +2578,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 	sputeol(f);
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
-		msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+		log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -2589,7 +2589,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 		sputsl("checksum spooky2", f);
 	} else {
 		/* LCOV_EXCL_START */
-		msg_error("Unexpected hash when writing the content file '%s'.\n", serrorfile(f));
+		log_fatal("Unexpected hash when writing the content file '%s'.\n", serrorfile(f));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -2598,7 +2598,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 	sputeol(f);
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
-		msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+		log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -2613,7 +2613,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 				sputsl("prevchecksum spooky2", f);
 			} else {
 				/* LCOV_EXCL_START */
-				msg_error("Unexpected prevhash when writing the content file '%s'.\n", serrorfile(f));
+				log_fatal("Unexpected prevhash when writing the content file '%s'.\n", serrorfile(f));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2622,7 +2622,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 			sputeol(f);
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
-				msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2638,7 +2638,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 		disk = find_disk(state, map->name);
 		if (!disk) {
 			/* LCOV_EXCL_START */
-			msg_error("Internal inconsistency for unmapped disk '%s'\n", map->name);
+			log_fatal("Internal inconsistency for unmapped disk '%s'\n", map->name);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -2663,7 +2663,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 			sputeol(f);
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
-				msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2694,7 +2694,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 		sputeol(f);
 		if (serror(f)) {
 			/* LCOV_EXCL_START */
-			msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+			log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -2739,7 +2739,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 			sputeol(f);
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
-				msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2752,7 +2752,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 				/* consistency check */
 				if (block != disk_block_get(disk, block->parity_pos)) {
 					/* LCOV_EXCL_START */
-					msg_error("Internal inconsistency mismatch for block %u state %u in file '%s'\n", block->parity_pos, block_state, file->sub);
+					log_fatal("Internal inconsistency mismatch for block %u state %u in file '%s'\n", block->parity_pos, block_state, file->sub);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -2769,7 +2769,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 					break;
 				default :
 					/* LCOV_EXCL_START */
-					msg_error("Internal inconsistency in state for block %u state %u\n", block->parity_pos, block_state);
+					log_fatal("Internal inconsistency in state for block %u state %u\n", block->parity_pos, block_state);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -2782,7 +2782,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 				sputeol(f);
 				if (serror(f)) {
 					/* LCOV_EXCL_START */
-					msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+					log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -2815,7 +2815,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 			sputeol(f);
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
-				msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2832,7 +2832,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 			sputeol(f);
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
-				msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2846,7 +2846,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 		sputeol(f);
 		if (serror(f)) {
 			/* LCOV_EXCL_START */
-			msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+			log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -2857,7 +2857,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 				/* consistency check */
 				if (block->parity_pos != b) {
 					/* LCOV_EXCL_START */
-					msg_error("Internal inconsistency in delete position %u/%u!\n", block->parity_pos, b);
+					log_fatal("Internal inconsistency in delete position %u/%u!\n", block->parity_pos, b);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -2869,7 +2869,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 				sputeol(f);
 				if (serror(f)) {
 					/* LCOV_EXCL_START */
-					msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+					log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -2897,7 +2897,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 			sputeol(f);
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
-				msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2906,7 +2906,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
-		msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+		log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -2929,20 +2929,20 @@ static void decoding_error(const char* path, STREAM* f)
 
 	if (seof(f)) {
 		/* LCOV_EXCL_START */
-		msg_error("Unexpected end of content file '%s' at offset %" PRIi64 "\n", path, stell(f));
-		msg_error("This content file is truncated. Use an alternate copy.\n");
+		log_fatal("Unexpected end of content file '%s' at offset %" PRIi64 "\n", path, stell(f));
+		log_fatal("This content file is truncated. Use an alternate copy.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
-		msg_error("Error reading the content file '%s' at offset %" PRIi64 "\n", path, stell(f));
+		log_fatal("Error reading the content file '%s' at offset %" PRIi64 "\n", path, stell(f));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
-	msg_error("Decoding error in '%s' at offset %" PRIi64 "\n", path, stell(f));
+	log_fatal("Decoding error in '%s' at offset %" PRIi64 "\n", path, stell(f));
 
 	buf[0] = 0;
 	buf[1] = 0;
@@ -2965,7 +2965,7 @@ static void decoding_error(const char* path, STREAM* f)
 
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
-		msg_error("Error flushing the content file '%s' at offset %" PRIi64 "\n", path, stell(f));
+		log_fatal("Error flushing the content file '%s' at offset %" PRIi64 "\n", path, stell(f));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -2980,11 +2980,11 @@ static void decoding_error(const char* path, STREAM* f)
 	crc_stored = crc32c(crc_stored, buf, 4);
 
 	if (crc_computed != crc_stored) {
-		msg_error("Mismatching CRC in '%s'\n", path);
-		msg_error("This content file is damaged! Use an alternate copy.\n");
+		log_fatal("Mismatching CRC in '%s'\n", path);
+		log_fatal("This content file is damaged! Use an alternate copy.\n");
 		exit(EXIT_FAILURE);
 	} else {
-		msg_error("The file CRC is correct!\n");
+		log_fatal("The file CRC is correct!\n");
 	}
 }
 
@@ -3014,7 +3014,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 	if (ret < 0) {
 		/* LCOV_EXCL_START */
 		decoding_error(path, f);
-		msg_error("Invalid header!\n");
+		log_fatal("Invalid header!\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -3031,9 +3031,9 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 		/* LCOV_EXCL_START */
 		if (memcmp(buffer, "SNAPCNT", 7) != 0) {
 			decoding_error(path, f);
-			msg_error("Invalid header!\n");
+			log_fatal("Invalid header!\n");
 		} else {
-			msg_error("The content file '%s' was generated with a newer version of SnapRAID!\n", path);
+			log_fatal("The content file '%s' was generated with a newer version of SnapRAID!\n", path);
 		}
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
@@ -3064,7 +3064,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			if (ret < 0 || mapping >= mapping_max) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				msg_error("Internal inconsistency in mapping index!\n");
+				log_fatal("Internal inconsistency in mapping index!\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -3082,7 +3082,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			if (v_size / state->block_size > blockmax) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				msg_error("Internal inconsistency in file size too big!\n");
+				log_fatal("Internal inconsistency in file size too big!\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -3168,14 +3168,14 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				if (v_idx + v_count > file->blockmax) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					msg_error("Internal inconsistency in block number!\n");
+					log_fatal("Internal inconsistency in block number!\n");
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
 
 				if (v_pos + v_count > blockmax) {
 					/* LCOV_EXCL_START */
-					msg_error("Internal inconsistency in block size %u/%u!\n", blockmax, v_pos + v_count);
+					log_fatal("Internal inconsistency in block size %u/%u!\n", blockmax, v_pos + v_count);
 					decoding_error(path, f);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_START */
@@ -3191,7 +3191,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 					if (block->parity_pos != POS_INVALID) {
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
-						msg_error("Internal inconsistency in block position!\n");
+						log_fatal("Internal inconsistency in block position!\n");
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}
@@ -3213,7 +3213,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 					default :
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
-						msg_error("Invalid block type!\n");
+						log_fatal("Invalid block type!\n");
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}
@@ -3271,7 +3271,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 					if (disk_block_get(disk, v_pos) != BLOCK_EMPTY) {
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
-						msg_error("Internal inconsistency in block existence!\n");
+						log_fatal("Internal inconsistency in block existence!\n");
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}
@@ -3320,7 +3320,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 				if (v_pos + v_count > blockmax) {
 					/* LCOV_EXCL_START */
-					msg_error("Internal inconsistency in info size %u/%u!\n", blockmax, v_pos + v_count);
+					log_fatal("Internal inconsistency in info size %u/%u!\n", blockmax, v_pos + v_count);
 					decoding_error(path, f);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
@@ -3352,7 +3352,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 					if (rehash && state->prevhash == HASH_UNDEFINED) {
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
-						msg_error("Internal inconsistency for missing previous checksum!\n");
+						log_fatal("Internal inconsistency for missing previous checksum!\n");
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}
@@ -3371,7 +3371,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 						if (!info) {
 							/* LCOV_EXCL_START */
 							decoding_error(path, f);
-							msg_error("Internal inconsistency for missing info!\n");
+							log_fatal("Internal inconsistency for missing info!\n");
 							exit(EXIT_FAILURE);
 							/* LCOV_EXCL_STOP */
 						}
@@ -3395,7 +3395,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			if (ret < 0 || mapping >= mapping_max) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				msg_error("Internal inconsistency in mapping index!\n");
+				log_fatal("Internal inconsistency in mapping index!\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -3415,7 +3415,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 				if (v_pos + v_count > blockmax) {
 					/* LCOV_EXCL_START */
-					msg_error("Internal inconsistency in hole size %u/%u!\n", blockmax, v_pos + v_count);
+					log_fatal("Internal inconsistency in hole size %u/%u!\n", blockmax, v_pos + v_count);
 					decoding_error(path, f);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
@@ -3457,9 +3457,9 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 						/* we must not overwrite existing blocks */
 						if (disk_block_get(disk, v_pos) != BLOCK_EMPTY) {
 							/* LCOV_EXCL_START */
-							msg_error("Internal inconsistency for used hole at pos %u!\n", v_pos);
+							log_fatal("Internal inconsistency for used hole at pos %u!\n", v_pos);
 							if (state->opt.skip_content_check) {
-								msg_error("Overriding as used.\n");
+								log_fatal("Overriding as used.\n");
 								deleted_free(deleted);
 							} else {
 								decoding_error(path, f);
@@ -3486,7 +3486,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				default :
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					msg_error("Invalid hole type!\n");
+					log_fatal("Invalid hole type!\n");
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -3503,7 +3503,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			if (ret < 0 || mapping >= mapping_max) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				msg_error("Internal inconsistency in mapping index!\n");
+				log_fatal("Internal inconsistency in mapping index!\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -3553,7 +3553,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			if (ret < 0 || mapping >= mapping_max) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				msg_error("Internal inconsistency in mapping index!\n");
+				log_fatal("Internal inconsistency in mapping index!\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -3602,7 +3602,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			if (ret < 0 || mapping >= mapping_max) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				msg_error("Internal inconsistency in mapping index!\n");
+				log_fatal("Internal inconsistency in mapping index!\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -3646,7 +3646,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			default :
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				msg_error("Invalid checksum!\n");
+				log_fatal("Invalid checksum!\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -3673,7 +3673,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			default :
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				msg_error("Invalid checksum!\n");
+				log_fatal("Invalid checksum!\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -3705,8 +3705,8 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			if (blksize != state->block_size) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				msg_error("Mismatching 'blksize' and 'blocksize' specification!\n");
-				msg_error("Please restore the 'blocksize' value in the configuration file to '%u'\n", blksize / 1024);
+				log_fatal("Mismatching 'blksize' and 'blocksize' specification!\n");
+				log_fatal("Please restore the 'blocksize' value in the configuration file to '%u'\n", blksize / 1024);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -3782,8 +3782,8 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			if (!disk) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				msg_error("Disk named '%s' not present in the configuration file!\n", buffer);
-				msg_error("If you have removed it from the configuration file, please restore it\n");
+				log_fatal("Disk named '%s' not present in the configuration file!\n", buffer);
+				log_fatal("If you have removed it from the configuration file, please restore it\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -3853,8 +3853,8 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				/* here don't call decoding_error() because it's too late to get the crc */
-				msg_error("Error reading the CRC in '%s' at offset %" PRIi64 "\n", path, stell(f));
-				msg_error("This content file is damaged! Use an alternate copy.\n");
+				log_fatal("Error reading the CRC in '%s' at offset %" PRIi64 "\n", path, stell(f));
+				log_fatal("This content file is damaged! Use an alternate copy.\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -3862,8 +3862,8 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			if (crc_stored != crc_computed) {
 				/* LCOV_EXCL_START */
 				/* here don't call decoding_error() because it's too late to get the crc */
-				msg_error("Mismatching CRC in '%s'\n", path);
-				msg_error("This content file is damaged! Use an alternate copy.\n");
+				log_fatal("Mismatching CRC in '%s'\n", path);
+				log_fatal("This content file is damaged! Use an alternate copy.\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -3872,7 +3872,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 		} else {
 			/* LCOV_EXCL_START */
 			decoding_error(path, f);
-			msg_error("Invalid command '%c'!\n", (char)c);
+			log_fatal("Invalid command '%c'!\n", (char)c);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -3882,15 +3882,15 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
-		msg_error("Error reading the content file '%s' at offset %" PRIi64 "\n", path, stell(f));
+		log_fatal("Error reading the content file '%s' at offset %" PRIi64 "\n", path, stell(f));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (!crc_checked) {
 		/* LCOV_EXCL_START */
-		msg_error("Finished reading '%s' without finding the CRC\n", path);
-		msg_error("This content file is truncated or damaged! Use an alternate copy.\n");
+		log_fatal("Finished reading '%s' without finding the CRC\n", path);
+		log_fatal("This content file is truncated or damaged! Use an alternate copy.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -3898,9 +3898,9 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 	/* check that the stored parity size matches the loaded state */
 	if (blockmax != parity_allocated_size(state)) {
 		/* LCOV_EXCL_START */
-		msg_error("Internal inconsistency in parity size %u/%u in '%s' at offset %" PRIi64 "\n", blockmax, parity_allocated_size(state), path, stell(f));
+		log_fatal("Internal inconsistency in parity size %u/%u in '%s' at offset %" PRIi64 "\n", blockmax, parity_allocated_size(state), path, stell(f));
 		if (state->opt.skip_content_check) {
-			msg_error("Overriding.\n");
+			log_fatal("Overriding.\n");
 			blockmax = parity_allocated_size(state);
 		} else {
 			exit(EXIT_FAILURE);
@@ -3976,7 +3976,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	sputb32(blockmax, f);
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
-		msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+		log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -3988,14 +3988,14 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 		sputc('k', f);
 	} else {
 		/* LCOV_EXCL_START */
-		msg_error("Unexpected hash when writing the content file '%s'.\n", serrorfile(f));
+		log_fatal("Unexpected hash when writing the content file '%s'.\n", serrorfile(f));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 	swrite(state->hashseed, HASH_SIZE, f);
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
-		msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+		log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -4011,14 +4011,14 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 				sputc('k', f);
 			} else {
 				/* LCOV_EXCL_START */
-				msg_error("Unexpected prevhash when writing the content file '%s'.\n", serrorfile(f));
+				log_fatal("Unexpected prevhash when writing the content file '%s'.\n", serrorfile(f));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 			swrite(state->prevhashseed, HASH_SIZE, f);
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
-				msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -4035,7 +4035,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 		disk = find_disk(state, map->name);
 		if (!disk) {
 			/* LCOV_EXCL_START */
-			msg_error("Internal inconsistency for unmapped disk '%s'\n", map->name);
+			log_fatal("Internal inconsistency for unmapped disk '%s'\n", map->name);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -4050,7 +4050,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 			sputbs(map->uuid, f);
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
-				msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -4073,7 +4073,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 		sputbs(state->parity[l].uuid, f);
 		if (serror(f)) {
 			/* LCOV_EXCL_START */
-			msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+			log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -4115,7 +4115,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 			sputbs(file->sub, f);
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
-				msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -4150,7 +4150,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 					break;
 				default :
 					/* LCOV_EXCL_START */
-					msg_error("Internal inconsistency in state for block %u state %u\n", v_pos, block_state);
+					log_fatal("Internal inconsistency in state for block %u state %u\n", v_pos, block_state);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -4167,7 +4167,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 					/* consistency check */
 					if (block != disk_block_get(disk, block->parity_pos)) {
 						/* LCOV_EXCL_START */
-						msg_error("Internal inconsistency in mismatch for block %u state %u in file '%s'\n", block->parity_pos, block_state, file->sub);
+						log_fatal("Internal inconsistency in mismatch for block %u state %u in file '%s'\n", block->parity_pos, block_state, file->sub);
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}
@@ -4177,7 +4177,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 
 				if (serror(f)) {
 					/* LCOV_EXCL_START */
-					msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+					log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -4209,7 +4209,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 			sputbs(link->linkto, f);
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
-				msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -4224,7 +4224,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 			sputbs(dir->sub, f);
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
-				msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -4237,7 +4237,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 		sputb32(disk->mapping_idx, f);
 		if (serror(f)) {
 			/* LCOV_EXCL_START */
-			msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+			log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -4269,7 +4269,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 					/* consistency check */
 					if (block->parity_pos != begin) {
 						/* LCOV_EXCL_START */
-						msg_error("Internal inconsistency in delete position %u/%u!\n", block->parity_pos, begin);
+						log_fatal("Internal inconsistency in delete position %u/%u!\n", block->parity_pos, begin);
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}
@@ -4289,7 +4289,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
-				msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -4337,7 +4337,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 
 		if (serror(f)) {
 			/* LCOV_EXCL_START */
-			msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+			log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -4351,7 +4351,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	/* flush data written to the disk */
 	if (sflush(f)) {
 		/* LCOV_EXCL_START */
-		msg_error("Error writing the content file '%s' (in flush before crc). %s.\n", serrorfile(f), strerror(errno));
+		log_fatal("Error writing the content file '%s' (in flush before crc). %s.\n", serrorfile(f), strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -4363,9 +4363,9 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	/* with the one of the data written to the stream */
 	if (crc != scrc_stream(f)) {
 		/* LCOV_EXCL_START */
-		msg_error("CRC mismatch writing the content stream.\n");
-		msg_error("DANGER! Your RAM memory is broken! DO NOT PROCEED UNTIL FIXED!\n");
-		msg_error("Try running a memory test like http://www.memtest86.com/\n");
+		log_fatal("CRC mismatch writing the content stream.\n");
+		log_fatal("DANGER! Your RAM memory is broken! DO NOT PROCEED UNTIL FIXED!\n");
+		log_fatal("Try running a memory test like http://www.memtest86.com/\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -4373,7 +4373,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	sputble32(crc, f);
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
-		msg_error("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+		log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -4401,8 +4401,8 @@ void state_read(struct snapraid_state* state)
 		pathcpy(path, sizeof(path), content->content);
 
 		if (!state->no_conf) {
-			msg_tag("content:%s\n", path);
-			msg_flush();
+			log_tag("content:%s\n", path);
+			log_flush();
 		}
 		msg_progress("Loading state from %s...\n", path);
 
@@ -4414,14 +4414,14 @@ void state_read(struct snapraid_state* state)
 			/* if it's real error of an existing file, abort */
 			if (errno != ENOENT) {
 				/* LCOV_EXCL_START */
-				msg_error("Error opening the content file '%s'. %s.\n", path, strerror(errno));
+				log_fatal("Error opening the content file '%s'. %s.\n", path, strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			/* otherwise continue */
 			if (node->next) {
-				msg_error("WARNING! Content file '%s' not found, trying with another copy...\n", path);
+				log_fatal("WARNING! Content file '%s' not found, trying with another copy...\n", path);
 
 				/* ensure to rewrite all the content files */
 				state->need_write = 1;
@@ -4434,7 +4434,7 @@ void state_read(struct snapraid_state* state)
 
 	/* if not found, assume empty */
 	if (!f) {
-		msg_error("No content file found. Assuming empty.\n");
+		log_fatal("No content file found. Assuming empty.\n");
 
 		/* create the initial mapping */
 		state_map(state);
@@ -4445,7 +4445,7 @@ void state_read(struct snapraid_state* state)
 	ret = fstat(shandle(f), &st);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Error stating the content file '%s'. %s.\n", path, strerror(errno));
+		log_fatal("Error stating the content file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -4462,7 +4462,7 @@ void state_read(struct snapraid_state* state)
 			/* allow missing content files, but not any other kind of error */
 			if (errno != ENOENT) {
 				/* LCOV_EXCL_START */
-				msg_error("Error stating the content file '%s'. %s.\n", other_path, strerror(errno));
+				log_fatal("Error stating the content file '%s'. %s.\n", other_path, strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -4472,8 +4472,8 @@ void state_read(struct snapraid_state* state)
 		} else {
 			/* if the size is different */
 			if (other_st.st_size != st.st_size) {
-				msg_error("WARNING! Content files '%s' and '%s' have a different size!\n", path, other_path);
-				msg_error("Likely one of the two is broken!\n");
+				log_fatal("WARNING! Content files '%s' and '%s' have a different size!\n", path, other_path);
+				log_fatal("Likely one of the two is broken!\n");
 
 				/* ensure to rewrite all the content files */
 				state->need_write = 1;
@@ -4514,10 +4514,10 @@ void state_read(struct snapraid_state* state)
 
 	if (state->hash == HASH_UNDEFINED) {
 		/* LCOV_EXCL_START */
-		msg_error("The checksum to use is not specified.\n");
-		msg_error("This happens because you are likely upgrading from SnapRAID 1.0.\n");
-		msg_error("To use a new SnapRAID you must restart from scratch,\n");
-		msg_error("deleting all the content and parity files.\n");
+		log_fatal("The checksum to use is not specified.\n");
+		log_fatal("This happens because you are likely upgrading from SnapRAID 1.0.\n");
+		log_fatal("To use a new SnapRAID you must restart from scratch,\n");
+		log_fatal("deleting all the content and parity files.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -4552,7 +4552,7 @@ void state_write(struct snapraid_state* state)
 	f = sopen_multi_write(count_content);
 	if (!f) {
 		/* LCOV_EXCL_START */
-		msg_error("Error opening the content files.\n");
+		log_fatal("Error opening the content files.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -4565,7 +4565,7 @@ void state_write(struct snapraid_state* state)
 		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
 		if (sopen_multi_file(f, k, tmp) != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error opening the content file '%s'. %s.\n", tmp, strerror(errno));
+			log_fatal("Error opening the content file '%s'. %s.\n", tmp, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -4583,7 +4583,7 @@ void state_write(struct snapraid_state* state)
 
 	if (sflush(f) != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Error writing the content file '%s', in flush(). %s.\n", serrorfile(f), strerror(errno));
+		log_fatal("Error writing the content file '%s', in flush(). %s.\n", serrorfile(f), strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -4591,7 +4591,7 @@ void state_write(struct snapraid_state* state)
 #if HAVE_FSYNC
 	if (ssync(f) != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Error writing the content file '%s' in sync(). %s.\n", serrorfile(f), strerror(errno));
+		log_fatal("Error writing the content file '%s' in sync(). %s.\n", serrorfile(f), strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -4599,7 +4599,7 @@ void state_write(struct snapraid_state* state)
 
 	if (sclose(f) != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Error closing the content files in close(). %s.\n", strerror(errno));
+		log_fatal("Error closing the content files in close(). %s.\n", strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -4613,7 +4613,7 @@ void state_write(struct snapraid_state* state)
 		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
 		if (rename(tmp, content->content) != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error renaming the content file '%s' to '%s' in rename(). %s.\n", tmp, content->content, strerror(errno));
+			log_fatal("Error renaming the content file '%s' to '%s' in rename(). %s.\n", tmp, content->content, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -4701,8 +4701,8 @@ int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, b
 	time_t now;
 
 	if (state->opt.gui) {
-		msg_tag("run:begin:%u:%u:%u\n", blockstart, blockmax, countmax);
-		msg_flush();
+		log_tag("run:begin:%u:%u:%u\n", blockstart, blockmax, countmax);
+		log_flush();
 	}
 
 	now = time(0);
@@ -4719,8 +4719,8 @@ int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, b
 		if (!state->opt.gui) {
 			msg_status("Not starting for interruption\n");
 		}
-		msg_tag("sigint:0: SIGINT received\n");
-		msg_flush();
+		log_tag("sigint:0: SIGINT received\n");
+		log_flush();
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
@@ -4731,8 +4731,8 @@ int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, b
 void state_progress_end(struct snapraid_state* state, block_off_t countpos, block_off_t countmax, data_off_t countsize)
 {
 	if (state->opt.gui) {
-		msg_tag("run:end\n");
-		msg_flush();
+		log_tag("run:end\n");
+		log_flush();
 	} else if (countmax == 0) {
 		msg_status("Nothing to do\n");
 	} else {
@@ -4867,8 +4867,8 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 		}
 
 		if (state->opt.gui) {
-			msg_tag("run:pos:%u:%u:%" PRIu64 ":%u:%u:%u:%u:%" PRIu64 "\n", blockpos, countpos, countsize, out_perc, out_eta, out_speed, out_cpu, (uint64_t)elapsed);
-			msg_flush();
+			log_tag("run:pos:%u:%u:%" PRIu64 ":%u:%u:%u:%u:%" PRIu64 "\n", blockpos, countpos, countsize, out_perc, out_eta, out_speed, out_cpu, (uint64_t)elapsed);
+			log_flush();
 		} else {
 			msg_bar("%u%%, %u MiB", out_perc, (unsigned)(countsize / MEGA));
 			if (out_speed)
@@ -4901,11 +4901,11 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 	if (global_interrupt) {
 		/* LCOV_EXCL_START */
 		if (!state->opt.gui) {
-			msg_error("\n");
-			msg_error("Stopping for interruption at block %u\n", blockpos);
+			log_fatal("\n");
+			log_fatal("Stopping for interruption at block %u\n", blockpos);
 		}
-		msg_tag("sigint:%u: SIGINT received\n", blockpos);
-		msg_flush();
+		log_tag("sigint:%u: SIGINT received\n", blockpos);
+		log_flush();
 		return 1;
 		/* LCOV_EXCL_STOP */
 	}

@@ -56,7 +56,7 @@ void state_nano(struct snapraid_state* state)
 					/* get a random nanosecond value */
 					if (randomize(&nano, sizeof(nano)) != 0) {
 						/* LCOV_EXCL_START */
-						msg_error("Failed to get random values.\n");
+						log_fatal("Failed to get random values.\n");
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}
@@ -69,7 +69,7 @@ void state_nano(struct snapraid_state* state)
 				f = open(path, O_RDONLY | O_BINARY | O_NOFOLLOW);
 				if (f == -1) {
 					/* LCOV_EXCL_START */
-					msg_error("Error opening file '%s'. %s.\n", path, strerror(errno));
+					log_fatal("Error opening file '%s'. %s.\n", path, strerror(errno));
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -80,7 +80,7 @@ void state_nano(struct snapraid_state* state)
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
 					close(f);
-					msg_error("Error accessing file '%s'. %s.\n", path, strerror(errno));
+					log_fatal("Error accessing file '%s'. %s.\n", path, strerror(errno));
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -90,7 +90,7 @@ void state_nano(struct snapraid_state* state)
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
 					close(f);
-					msg_error("Error timing file '%s'. %s.\n", path, strerror(errno));
+					log_fatal("Error timing file '%s'. %s.\n", path, strerror(errno));
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -102,7 +102,7 @@ void state_nano(struct snapraid_state* state)
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
 					close(f);
-					msg_error("Error accessing file '%s'. %s.\n", path, strerror(errno));
+					log_fatal("Error accessing file '%s'. %s.\n", path, strerror(errno));
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -111,7 +111,7 @@ void state_nano(struct snapraid_state* state)
 				ret = close(f);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					msg_error("Error closing file '%s'. %s.\n", path, strerror(errno));
+					log_fatal("Error closing file '%s'. %s.\n", path, strerror(errno));
 					continue;
 					/* LCOV_EXCL_STOP */
 				}
@@ -125,7 +125,7 @@ void state_nano(struct snapraid_state* state)
 				/* state changed, we need to update it */
 				state->need_write = 1;
 
-				msg_tag("nano:%s:%s\n", disk->name, esc(file->sub));
+				log_tag("nano:%s:%s\n", disk->name, esc(file->sub));
 				msg_info("nano %s%s\n", disk->dir, file->sub);
 			}
 		}

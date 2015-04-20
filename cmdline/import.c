@@ -78,7 +78,7 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 	f = open(path, flags);
 	if (f == -1) {
 		/* LCOV_EXCL_START */
-		msg_error("Error opening file '%s'. %s.\n", path, strerror(errno));
+		log_fatal("Error opening file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -89,7 +89,7 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 		ret = posix_fadvise(f, 0, 0, POSIX_FADV_SEQUENTIAL);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error advising file '%s'. %s.\n", path, strerror(ret));
+			log_fatal("Error advising file '%s'. %s.\n", path, strerror(ret));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -106,7 +106,7 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 		ret = read(f, buffer, read_size);
 		if (ret < 0 || (unsigned)ret != read_size) {
 			/* LCOV_EXCL_START */
-			msg_error("Error reading file '%s'. %s.\n", path, strerror(errno));
+			log_fatal("Error reading file '%s'. %s.\n", path, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -132,7 +132,7 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 	ret = close(f);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Error closing file '%s'. %s.\n", path, strerror(errno));
+		log_fatal("Error closing file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -174,14 +174,14 @@ int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid
 	f = open(path, O_RDONLY | O_BINARY);
 	if (f == -1) {
 		/* LCOV_EXCL_START */
-		msg_error("Error opening file '%s'. %s.\n", path, strerror(errno));
+		log_fatal("Error opening file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (lseek(f, block->offset, SEEK_SET) != block->offset) {
 		/* LCOV_EXCL_START */
-		msg_error("Error seeking file '%s'. %s.\n", path, strerror(errno));
+		log_fatal("Error seeking file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -189,7 +189,7 @@ int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid
 	ret = read(f, buffer, read_size);
 	if (ret < 0 || (unsigned)ret != read_size) {
 		/* LCOV_EXCL_START */
-		msg_error("Error reading file '%s'. %s.\n", path, strerror(errno));
+		log_fatal("Error reading file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -197,7 +197,7 @@ int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid
 	ret = close(f);
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Error closing file '%s'. %s.\n", path, strerror(errno));
+		log_fatal("Error closing file '%s'. %s.\n", path, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -215,8 +215,8 @@ int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid
 
 	if (memcmp(buffer_hash, hash, HASH_SIZE) != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Error in data reading file '%s'.\n", path);
-		msg_error("Please don't change imported files while running.\n");
+		log_fatal("Error in data reading file '%s'.\n", path);
+		log_fatal("Please don't change imported files while running.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -231,7 +231,7 @@ static void import_dir(struct snapraid_state* state, const char* dir)
 	d = opendir(dir);
 	if (!d) {
 		/* LCOV_EXCL_START */
-		msg_error("Error opening directory '%s'. %s.\n", dir, strerror(errno));
+		log_fatal("Error opening directory '%s'. %s.\n", dir, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -247,7 +247,7 @@ static void import_dir(struct snapraid_state* state, const char* dir)
 		dd = readdir(d);
 		if (dd == 0 && errno != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error reading directory '%s'. %s.\n", dir, strerror(errno));
+			log_fatal("Error reading directory '%s'. %s.\n", dir, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -274,7 +274,7 @@ static void import_dir(struct snapraid_state* state, const char* dir)
 		if (st.st_mode == 0) {
 			if (lstat(path_next, &st) != 0) {
 				/* LCOV_EXCL_START */
-				msg_error("Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
+				log_fatal("Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -283,7 +283,7 @@ static void import_dir(struct snapraid_state* state, const char* dir)
 		/* get lstat info about the file */
 		if (lstat(path_next, &st) != 0) {
 			/* LCOV_EXCL_START */
-			msg_error("Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
+			log_fatal("Error in stat file/directory '%s'. %s.\n", path_next, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -299,7 +299,7 @@ static void import_dir(struct snapraid_state* state, const char* dir)
 
 	if (closedir(d) != 0) {
 		/* LCOV_EXCL_START */
-		msg_error("Error closing directory '%s'. %s.\n", dir, strerror(errno));
+		log_fatal("Error closing directory '%s'. %s.\n", dir, strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
