@@ -79,15 +79,17 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			/* if the file is closed or different than the current one */
 			if (handle[j].file == 0 || handle[j].file != block_file_get(block)) {
 				struct snapraid_file* file = handle[j].file;
-				ret = handle_close(&handle[j]);
-				if (ret == -1) {
-					/* LCOV_EXCL_START */
-					log_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
-					log_fatal("DANGER! Unexpected close error in a data disk, it isn't possible to dry.\n");
-					log_fatal("Stopping at block %u\n", i);
-					++error;
-					goto bail;
-					/* LCOV_EXCL_STOP */
+				if (file != 0) {
+					ret = handle_close(&handle[j]);
+					if (ret == -1) {
+						/* LCOV_EXCL_START */
+						log_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
+						log_fatal("DANGER! Unexpected close error in a data disk, it isn't possible to dry.\n");
+						log_fatal("Stopping at block %u\n", i);
+						++error;
+						goto bail;
+						/* LCOV_EXCL_STOP */
+					}
 				}
 
 				/* open the file only for reading */
