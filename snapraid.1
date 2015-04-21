@@ -596,7 +596,7 @@ time you wish.
 For example, if you have removed files from the array after the last
 \[dq]sync\[dq], this may result in some other files not recovered.
 In this case, you can retry the \[dq]fix\[dq] using the \-i, \-\-import option,
-specifing where these files are now, to include them again in the
+specifying where these files are now, to include them again in the
 recovering process.
 .PP
 If you are satisfied of the recovering, you can now proceed further,
@@ -793,7 +793,7 @@ state saved in the last \[dq]sync\[dq].
 If a difference is found, it\'s reverted to the stored snapshot.
 .PP
 Note that \[dq]fix\[dq] doesn\'t differentiate between errors and intentional
-modifications. It inconditionally reverts the file state at the last \[dq]sync\[dq].
+modifications. It unconditionally reverts the file state at the last \[dq]sync\[dq].
 .PP
 If no other option is specified the full array is processed.
 Use the filter options to select a subset of files or disks to operate on.
@@ -870,7 +870,7 @@ The next two columns are the high level device id and path.
 The latest column if the disk name in the array.
 .PP
 In most cases you have one low level device for each disk in the
-array, but in some more complex configurations, you may have multple
+array, but in some more complex configurations, you may have multiple
 low level devices used by a single disk in the array.
 .PP
 Nothing is modified.
@@ -1068,7 +1068,7 @@ you can use respectively \[dq]>&1\[dq] and \[dq]>&2\[dq].
 .TP
 .B \-L, \-\-error\-limit
 Sets a new error limit before stopping execution.
-By default SnapRAID stops if it encouters more than 100
+By default SnapRAID stops if it encounters more than 100
 Input/Output errors, meaning that likely a disk is going to
 die.
 This options affects \[dq]sync\[dq] and \[dq]scrub\[dq], that are allowed

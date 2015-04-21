@@ -331,7 +331,7 @@ Getting Started
 	For example, if you have removed files from the array after the last
 	"sync", this may result in some other files not recovered.
 	In this case, you can retry the "fix" using the -i, --import option,
-	specifing where these files are now, to include them again in the
+	specifying where these files are now, to include them again in the
 	recovering process.
 
 	If you are satisfied of the recovering, you can now proceed further,
@@ -508,7 +508,7 @@ Commands
 	If a difference is found, it's reverted to the stored snapshot.
 
 	Note that "fix" doesn't differentiate between errors and intentional
-	modifications. It inconditionally reverts the file state at the last "sync".
+	modifications. It unconditionally reverts the file state at the last "sync".
 
 	If no other option is specified the full array is processed.
 	Use the filter options to select a subset of files or disks to operate on.
@@ -592,7 +592,7 @@ Commands
 	The latest column if the disk name in the array.
 
 	In most cases you have one low level device for each disk in the
-	array, but in some more complex configurations, you may have multple
+	array, but in some more complex configurations, you may have multiple
 	low level devices used by a single disk in the array.
 
 	Nothing is modified.
@@ -792,7 +792,7 @@ Options
 
 	-L, --error-limit
 		Sets a new error limit before stopping execution.
-		By default SnapRAID stops if it encouters more than 100
+		By default SnapRAID stops if it encounters more than 100
 		Input/Output errors, meaning that likely a disk is going to
 		die.
 		This options affects "sync" and "scrub", that are allowed

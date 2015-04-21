@@ -13,7 +13,7 @@ SnapRAID HISTORY
  * The -e, --filter-error option doesn't write anymore fixes to
    unsynced files. This helps in case you are running it on a not
    synced array, removing the risk to revert some files to an old state.
- * The -e, --filter-error option is now optimal and read only the
+ * The -e, --filter-error option is now optimal and reads only the
    minimal amount of data necessary to fix the errors.
  * The "diff" command returns with an error code if a "sync" is
    required.
@@ -55,7 +55,7 @@ SnapRAID HISTORY
    timestamp, and then they are recognized also if moved to a different
    disk. Note that even if there are false positive they are identified
    checking the hash, so they have not effect, besides making the
-   process a little slower. To disable this new behaviour you can use
+   process a little slower. To disable this new behavior you can use
    the -N, --force-nocopy option.
  * The -i, --import command now identifies files by timestamp making it
    very fast in importing directories.
@@ -221,7 +221,7 @@ SnapRAID HISTORY
 4.1 2013/9
 ==========
  * If the underline filesystem doesn't support the FIEMAP command,
-   automatically fallback to use FIBMAP for sorting files.
+   automatically fall back to use FIBMAP for sorting files.
  * Fixed the import of content files from previous version of SnapRAID that
    are the result of an incomplete sync.
  * Added a new -C, --gen-conf option to generate a dummy configuration
@@ -389,7 +389,7 @@ SnapRAID HISTORY
    disks instead than in the parity disks.
  * Added a checksum at the content file to ensure its integrity.
  * Using fallocate() instead posix_fallocate() to avoid the very slow
-   posix_fallocate() fallback of writing the whole file.
+   posix_fallocate() fall back of writing the whole file.
 
 1.7 2011/11
 ===========
@@ -425,7 +425,7 @@ SnapRAID HISTORY
   This avoids parity errors if the sync process is aborted without
   saving the content file and you made changes at the disk array before
   another "sync" command was done.
-  More specifically, deletions or truncations of not yet synched files
+  More specifically, deletions or truncations of not yet synced files
   after the aborted sync, and before the next sync command, may have damaged
   the parity data. New file additions were instead safe.
   If these conditions may have happened to you a "check" command (also
