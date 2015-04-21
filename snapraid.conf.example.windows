@@ -59,7 +59,7 @@ exclude \Windows\
 # Format: "blocksize SIZE_IN_KiB"
 #blocksize 256
 
-# Automatically save the state when synching after the specied amount
+# Automatically save the state when syncing after the specified amount
 # of GB processed (uncomment to enable).
 # This option is useful to avoid to restart from scratch long 'sync'
 # commands interrupted by a machine crash.
