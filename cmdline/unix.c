@@ -800,12 +800,14 @@ static void* thread_spinup(void* arg)
 	/* set the device number for printing */
 	devinfo->device = st.st_dev;
 
-	/* get the device file */
+#if HAVE_LINUX_DEVICE
+	/* get the device file, but only in Linux and only for the message */
 	if (devresolve(devinfo->device, devinfo->file, sizeof(devinfo->file)) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
 	}
+#endif
 
 	if (devup(devinfo->mount) != 0) {
 		/* LCOV_EXCL_START */
@@ -813,7 +815,11 @@ static void* thread_spinup(void* arg)
 		/* LCOV_EXCL_STOP */
 	}
 
+#if HAVE_LINUX_DEVICE
 	msg_status("Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
+#else
+	msg_status("Spunup device '%u:%u' for disk '%s' in %" PRIu64 " ms.\n", major(devinfo->device), minor(devinfo->device), devinfo->name, tick_ms() - start);
+#endif
 
 	return 0;
 }
