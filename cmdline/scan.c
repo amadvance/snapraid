@@ -1748,11 +1748,11 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	if (is_diff) {
 		/* check for file difference */
 		if (!no_difference)
-			return -1;
+			return 1;
 
 		/* check also for incomplete "sync" */
 		if (parity_is_invalid(state))
-			return -1;
+			return 1;
 	}
 
 	return 0;

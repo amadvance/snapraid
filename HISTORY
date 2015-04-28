@@ -1,6 +1,12 @@
 SnapRAID HISTORY
 ================
 
+8.1 2015/05
+===========
+ * Fix builds issues in generic Unix platforms.
+ * The "diff" command returns with error code 2 if a "sync" is
+   required, to differentiate with the generic error code 1.
+
 8.0 2015/04
 ===========
  * Allows "sync" and "scrub" to continue after the first bunch of disk

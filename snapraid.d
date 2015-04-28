@@ -437,8 +437,8 @@ Commands
 	This command doesn't check the file data, but only the file timestamp
 	size and inode.
 
-	If a "sync" is not required, the return error code is 0. Otherwise,
-	it's 1.
+	If a "sync" is required, the process return code is 2, instead of the
+	default 0. The return code 1 is instead for a generic error condition.
 
 	Nothing is modified.
 

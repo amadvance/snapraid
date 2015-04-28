@@ -22,10 +22,11 @@
 #include "support.h"
 
 /**
- * Standard exit codes.
+ * Exit codes.
  */
 int exit_success = 0;
 int exit_failure = 1;
+int exit_sync_needed = 2;
 
 int open_noatime(const char* file, int flags)
 {

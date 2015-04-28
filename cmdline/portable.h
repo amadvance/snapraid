@@ -336,10 +336,12 @@ FILE* stdlog;
  */
 int exit_success;
 int exit_failure;
+int exit_sync_needed;
 #undef EXIT_SUCCESS
 #undef EXIT_FAILURE
 #define EXIT_SUCCESS exit_success
 #define EXIT_FAILURE exit_failure
+#define EXIT_SYNC_NEEDED exit_sync_needed
 
 /**
  * Fill memory with psudeo-random values.

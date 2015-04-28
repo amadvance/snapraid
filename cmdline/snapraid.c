@@ -245,6 +245,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_SKIP_DISK_ACCESS 282
 #define OPT_TEST_FORCE_AUTOSAVE_AT 283
 #define OPT_TEST_FAKE_DEVICE 284
+#define OPT_TEST_EXPECT_NEED_SYNC 285
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -337,6 +338,9 @@ struct option long_options[] = {
 
 	/* Exit generic failure */
 	{ "test-expect-failure", 0, 0, OPT_TEST_EXPECT_FAILURE },
+
+	/* Exit generic need sync */
+	{ "test-expect-need-sync", 0, 0, OPT_TEST_EXPECT_NEED_SYNC },
 
 	/* Run some command after loading the state and before the command */
 	{ "test-run", 1, 0, OPT_TEST_RUN },
@@ -675,9 +679,14 @@ int main(int argc, char* argv[])
 			opt.force_content_text = 1;
 			break;
 		case OPT_TEST_EXPECT_FAILURE :
-			/* invert the exit code */
+			/* invert the exit codes */
 			exit_success = 1;
 			exit_failure = 0;
+			break;
+		case OPT_TEST_EXPECT_NEED_SYNC :
+			/* invert the exit codes */
+			exit_success = 1;
+			exit_sync_needed = 0;
 			break;
 		case OPT_TEST_RUN :
 			run = optarg;
@@ -975,12 +984,9 @@ int main(int argc, char* argv[])
 
 		ret = state_diff(&state);
 
-		/* abort if required */
-		if (ret != 0) {
-			/* LCOV_EXCL_START */
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
+		/* abort if sync needed */
+		if (ret > 0)
+			exit(EXIT_SYNC_NEEDED);
 	} else if (operation == OPERATION_SYNC) {
 
 		/* in the next state read ensures to clear all the past hashes in case */
