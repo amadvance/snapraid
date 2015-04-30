@@ -31,11 +31,11 @@ struct snapraid_scan {
 	 */
 	unsigned count_equal; /**< Files equal. */
 	unsigned count_move; /**< Files with a different name, but equal inode, size and timestamp in the same disk. */
-	unsigned count_copy; /**< Files with same name, size and timestamp, in a different disk. */
 	unsigned count_restore; /**< Files with equal name, size and timestamp, but different inode. */
-	unsigned count_change; /**< Files modified. */
-	unsigned count_remove; /**< Files removed. */
+	unsigned count_change; /**< Files with same name, but different size and/or timestamp. */
+	unsigned count_copy; /**< Files new, with same name size and timestamp of a file in a different disk. */
 	unsigned count_insert; /**< Files new. */
+	unsigned count_remove; /**< Files removed. */
 
 	tommy_list file_insert_list; /**< Files to insert. */
 	tommy_list link_insert_list; /**< Links to insert. */
@@ -1578,26 +1578,44 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 
 	/* checks for disks where all the previously existing files where removed */
 	if (!state->opt.force_empty) {
+		int all_missing = 0;
+		int all_rewritten = 0;
 		done = 0;
 		for (i = state->disklist, j = scanlist; i != 0; i = i->next, j = j->next) {
 			struct snapraid_disk* disk = i->data;
 			struct snapraid_scan* scan = j->data;
 
-			if (scan->count_equal == 0 && scan->count_move == 0 && scan->count_restore == 0 && (scan->count_remove != 0 || scan->count_change != 0)) {
+			if (scan->count_equal == 0
+				&& scan->count_move == 0
+				&& scan->count_restore == 0
+				&& (scan->count_remove != 0 || scan->count_change != 0)
+			) {
 				if (!done) {
 					done = 1;
 					log_fatal("WARNING! All the files previously present in disk '%s' at dir '%s'", disk->name, disk->dir);
 				} else {
 					log_fatal(", disk '%s' at dir '%s'", disk->name, disk->dir);
 				}
+
+				/* detect the special condition of all files missing */
+				if (scan->count_change == 0)
+					all_missing = 1;
+
+				/* detect the special condition of all files rewritten */
+				if (scan->count_remove == 0)
+					all_rewritten = 1;
 			}
 		}
 		if (done) {
 			log_fatal("\nare now missing or rewritten!\n");
-			log_fatal("This could happen when deleting all the files from a disk,\n");
-			log_fatal("and restoring them with a program that it's not setting\n");
-			log_fatal("correctly the timestamps.\n");
-			log_fatal("It's also possible that you have some disks not mounted.\n");
+			if (all_rewritten) {
+				log_fatal("This could happen when restoring a disk with a backup\n");
+				log_fatal("program that is not setting correctly the timestamps.\n");
+			}
+			if (all_missing) {
+				log_fatal("This could happen when some disks are not mounted\n");
+				log_fatal("in the expected directory.\n");
+			}
 			if (!is_diff) {
 				log_fatal("If you want to '%s' anyway, use 'snapraid --force-empty %s'.", state->command, state->command);
 				exit(EXIT_FAILURE);
