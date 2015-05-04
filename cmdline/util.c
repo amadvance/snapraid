@@ -485,16 +485,30 @@ void memhash(unsigned kind, const unsigned char* seed, void* digest, const void*
 {
 	switch (kind) {
 	case HASH_MURMUR3 :
-		MurmurHash3_x86_128(src, size, seed, digest);
+		murmur3(src, size, seed, digest);
 		break;
 	case HASH_SPOOKY2 :
-		SpookyHash128(src, size, seed, digest);
+		spooky2(src, size, seed, digest);
 		break;
 	default :
 		/* LCOV_EXCL_START */
 		log_fatal("Internal inconsistency in hash function %u\n", kind);
 		exit(EXIT_FAILURE);
-		break;
+		/* LCOV_EXCL_STOP */
+	}
+}
+
+int memflip(unsigned kind, const unsigned char* seed, const void* digest, void* src, unsigned size)
+{
+	switch (kind) {
+	case HASH_MURMUR3 :
+		return murmur3_flip(src, size, seed, digest);
+	case HASH_SPOOKY2 :
+		return spooky2_flip(src, size, seed, digest);
+	default :
+		/* LCOV_EXCL_START */
+		log_fatal("Internal inconsistency in hash function %u\n", kind);
+		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 }

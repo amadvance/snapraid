@@ -75,30 +75,54 @@ uint32_t c2 = 0xab0e9789;
 uint32_t c3 = 0x38b34ae5;
 uint32_t c4 = 0xa1e38b93;
 
-void MurmurHash3_x86_128(const void* key, unsigned len, const uint8_t* seed, void* out)
-{
-	const uint8_t* data = key;
-	unsigned nblocks = len / 16;
-	unsigned i;
-	const uint32_t* blocks;
+struct murmur3_context {
+	uint32_t h1;
+	uint32_t h2;
+	uint32_t h3;
+	uint32_t h4;
+	uint32_t size;
+};
 
-	uint32_t h1 = ((const uint32_t*)seed)[0];
-	uint32_t h2 = ((const uint32_t*)seed)[1];
-	uint32_t h3 = ((const uint32_t*)seed)[2];
-	uint32_t h4 = ((const uint32_t*)seed)[3];
+#define MURMUR3_BLOCK_SIZE 16
+
+void murmur3_init(struct murmur3_context* ctx, const uint8_t* seed)
+{
+	ctx->h1 = ((const uint32_t*)seed)[0];
+	ctx->h2 = ((const uint32_t*)seed)[1];
+	ctx->h3 = ((const uint32_t*)seed)[2];
+	ctx->h4 = ((const uint32_t*)seed)[3];
 
 #if WORDS_BIGENDIAN
-	h1 = util_swap32(h1);
-	h2 = util_swap32(h2);
-	h3 = util_swap32(h3);
-	h4 = util_swap32(h4);
+	ctx->h1 = util_swap32(h1);
+	ctx->h2 = util_swap32(h2);
+	ctx->h3 = util_swap32(h3);
+	ctx->h4 = util_swap32(h4);
 #endif
 
+	ctx->size = 0;
+}
+
+void murmur3_block(struct murmur3_context* ctx, const void* data, size_t size)
+{
+	uint32_t h1, h2, h3, h4;
+	size_t nblocks;
+	const uint32_t* blocks;
+	const uint32_t* end;
+
+	h1 = ctx->h1;
+	h2 = ctx->h2;
+	h3 = ctx->h3;
+	h4 = ctx->h4;
+
+	assert(size % MURMUR3_BLOCK_SIZE == 0);
+
 	blocks = (const uint32_t*)data;
+	nblocks = size / MURMUR3_BLOCK_SIZE;
+	end = blocks + nblocks * 4;
 
 	/* body */
-
-	for (i = 0; i < nblocks; ++i) {
+	ctx->size += size;
+	while (blocks < end) {
 		uint32_t k1 = blocks[0];
 		uint32_t k2 = blocks[1];
 		uint32_t k3 = blocks[2];
@@ -130,63 +154,139 @@ void MurmurHash3_x86_128(const void* key, unsigned len, const uint8_t* seed, voi
 		blocks += 4;
 	}
 
+	ctx->h1 = h1;
+	ctx->h2 = h2;
+	ctx->h3 = h3;
+	ctx->h4 = h4;
+}
+
+void murmur3_final(struct murmur3_context* ctx, const void* data, size_t size, void* digest)
+{
+	const uint8_t* tail = (const uint8_t*)data;
+
+	uint32_t k1 = 0;
+	uint32_t k2 = 0;
+	uint32_t k3 = 0;
+	uint32_t k4 = 0;
+
+	assert(size < MURMUR3_BLOCK_SIZE);
+
 	/* tail */
-	{
-		const uint8_t* tail = (const uint8_t*)blocks;
-
-		uint32_t k1 = 0;
-		uint32_t k2 = 0;
-		uint32_t k3 = 0;
-		uint32_t k4 = 0;
-
-		switch (len & 15) {
-		case 15 : k4 ^= tail[14] << 16;
-		case 14 : k4 ^= tail[13] << 8;
-		case 13 : k4 ^= tail[12] << 0;
-			k4 *= c4; k4 = util_rotl32(k4, 18); k4 *= c1; h4 ^= k4;
-		case 12 : k3 ^= tail[11] << 24;
-		case 11 : k3 ^= tail[10] << 16;
-		case 10 : k3 ^= tail[ 9] << 8;
-		case 9 : k3 ^= tail[ 8] << 0;
-			k3 *= c3; k3 = util_rotl32(k3, 17); k3 *= c4; h3 ^= k3;
-		case 8 : k2 ^= tail[ 7] << 24;
-		case 7 : k2 ^= tail[ 6] << 16;
-		case 6 : k2 ^= tail[ 5] << 8;
-		case 5 : k2 ^= tail[ 4] << 0;
-			k2 *= c2; k2 = util_rotl32(k2, 16); k2 *= c3; h2 ^= k2;
-		case 4 : k1 ^= tail[ 3] << 24;
-		case 3 : k1 ^= tail[ 2] << 16;
-		case 2 : k1 ^= tail[ 1] << 8;
-		case 1 : k1 ^= tail[ 0] << 0;
-			k1 *= c1; k1 = util_rotl32(k1, 15); k1 *= c2; h1 ^= k1;
-		}
+	ctx->size += size;
+	switch (size) {
+	case 15 : k4 ^= tail[14] << 16;
+	case 14 : k4 ^= tail[13] << 8;
+	case 13 : k4 ^= tail[12] << 0;
+		k4 *= c4; k4 = util_rotl32(k4, 18); k4 *= c1; ctx->h4 ^= k4;
+	case 12 : k3 ^= tail[11] << 24;
+	case 11 : k3 ^= tail[10] << 16;
+	case 10 : k3 ^= tail[ 9] << 8;
+	case 9 : k3 ^= tail[ 8] << 0;
+		k3 *= c3; k3 = util_rotl32(k3, 17); k3 *= c4; ctx->h3 ^= k3;
+	case 8 : k2 ^= tail[ 7] << 24;
+	case 7 : k2 ^= tail[ 6] << 16;
+	case 6 : k2 ^= tail[ 5] << 8;
+	case 5 : k2 ^= tail[ 4] << 0;
+		k2 *= c2; k2 = util_rotl32(k2, 16); k2 *= c3; ctx->h2 ^= k2;
+	case 4 : k1 ^= tail[ 3] << 24;
+	case 3 : k1 ^= tail[ 2] << 16;
+	case 2 : k1 ^= tail[ 1] << 8;
+	case 1 : k1 ^= tail[ 0] << 0;
+		k1 *= c1; k1 = util_rotl32(k1, 15); k1 *= c2; ctx->h1 ^= k1;
 	}
 
 	/* finalization */
+	ctx->h1 ^= ctx->size; ctx->h2 ^= ctx->size; ctx->h3 ^= ctx->size; ctx->h4 ^= ctx->size;
 
-	h1 ^= len; h2 ^= len; h3 ^= len; h4 ^= len;
+	ctx->h1 += ctx->h2;
+	ctx->h1 += ctx->h3;
+	ctx->h1 += ctx->h4;
+	ctx->h2 += ctx->h1;
+	ctx->h3 += ctx->h1;
+	ctx->h4 += ctx->h1;
 
-	h1 += h2; h1 += h3; h1 += h4;
-	h2 += h1; h3 += h1; h4 += h1;
+	ctx->h1 = fmix32(ctx->h1);
+	ctx->h2 = fmix32(ctx->h2);
+	ctx->h3 = fmix32(ctx->h3);
+	ctx->h4 = fmix32(ctx->h4);
 
-	h1 = fmix32(h1);
-	h2 = fmix32(h2);
-	h3 = fmix32(h3);
-	h4 = fmix32(h4);
-
-	h1 += h2; h1 += h3; h1 += h4;
-	h2 += h1; h3 += h1; h4 += h1;
+	ctx->h1 += ctx->h2;
+	ctx->h1 += ctx->h3;
+	ctx->h1 += ctx->h4;
+	ctx->h2 += ctx->h1;
+	ctx->h3 += ctx->h1;
+	ctx->h4 += ctx->h1;
 
 #if WORDS_BIGENDIAN
-	h1 = util_swap32(h1);
-	h2 = util_swap32(h2);
-	h3 = util_swap32(h3);
-	h4 = util_swap32(h4);
+	ctx->h1 = util_swap32(ctx->h1);
+	ctx->h2 = util_swap32(ctx->h2);
+	ctx->h3 = util_swap32(ctx->h3);
+	ctx->h4 = util_swap32(ctx->h4);
 #endif
 
-	((uint32_t*)out)[0] = h1;
-	((uint32_t*)out)[1] = h2;
-	((uint32_t*)out)[2] = h3;
-	((uint32_t*)out)[3] = h4;
+	((uint32_t*)digest)[0] = ctx->h1;
+	((uint32_t*)digest)[1] = ctx->h2;
+	((uint32_t*)digest)[2] = ctx->h3;
+	((uint32_t*)digest)[3] = ctx->h4;
+}
+
+void murmur3(const void* void_data, size_t size, const uint8_t* seed, void* digest)
+{
+	struct murmur3_context ctx;
+	const uint8_t* data = (const uint8_t*)void_data;
+
+	size_t tail = size % MURMUR3_BLOCK_SIZE;
+	size_t body = size - tail;
+
+	murmur3_init(&ctx, seed);
+	murmur3_block(&ctx, data, body);
+	murmur3_final(&ctx, data + body, tail, digest);
+}
+
+int murmur3_flip(void* void_data, size_t size, const uint8_t* seed, const void* digest)
+{
+	struct murmur3_context last_ctx;
+	size_t last_off;
+	size_t off;
+	uint8_t* data = (uint8_t*)void_data;
+
+	size_t tail = size % MURMUR3_BLOCK_SIZE;
+	size_t body = size - tail;
+
+	murmur3_init(&last_ctx, seed);
+	last_off = 0;
+
+	for (off = 0; off < size; ++off) {
+		unsigned bit;
+
+		if (off == last_off + MURMUR3_BLOCK_SIZE) {
+			/* process one more block */
+			murmur3_block(&last_ctx, data + last_off, MURMUR3_BLOCK_SIZE);
+			last_off += MURMUR3_BLOCK_SIZE;
+		}
+
+		/* try all bits */
+		for (bit = 0; bit < 8; ++bit) {
+			struct murmur3_context ctx;
+			uint8_t out[16];
+
+			/* flip the bit */
+			data[off] ^= 1 << bit;
+
+			/* compute the new hash from this point */
+			ctx = last_ctx;
+			murmur3_block(&ctx, data + last_off, body - last_off);
+			murmur3_final(&ctx, data + body, tail, out);
+
+			/* check if the digest is correct */
+			if (memcmp(digest, out, 16) == 0)
+				return 0;
+
+			/* restore the bit */
+			data[off] ^= 1 << bit;
+		}
+	}
+
+	return -1;
 }
 

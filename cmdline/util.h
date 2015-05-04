@@ -119,6 +119,13 @@ void crc32c_init(void);
 void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, unsigned size);
 
 /**
+ * Flips some bit in the data to make it to match the HASH.
+ * Seed is a 128 bit vector.
+ * Returns 0 on success.
+ */
+int memflip(unsigned kind, const unsigned char* seed, const void* digest, void* src, unsigned size);
+
+/**
  * Return the hash name.
  */
 const char* hash_config_name(unsigned kind);
