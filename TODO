@@ -30,6 +30,9 @@ struct node {
 
 * Provides a way to rename disks in content file.
 
+* When a bad block with silent error is corrected,
+print some stats in the log about the error bit pattern.
+
 * Don't insert new files if they are too recent and opened by other
 applications.
 
