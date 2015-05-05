@@ -79,7 +79,12 @@ int search_file_compare(const void* void_arg, const void* void_data)
 	f = open(path, O_RDONLY | O_BINARY);
 	if (f == -1) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error opening file '%s'. %s.\n", path, strerror(errno));
+		if (errno == ENOENT) {
+			log_fatal("DANGER! file '%s' disappeared.\n", path);
+			log_fatal("If you moved it, please rerun the same command.\n");
+		} else {
+			log_fatal("Error opening file '%s'. %s.\n", path, strerror(errno));
+		}
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
