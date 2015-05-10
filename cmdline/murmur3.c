@@ -75,12 +75,12 @@ uint32_t c2 = 0xab0e9789;
 uint32_t c3 = 0x38b34ae5;
 uint32_t c4 = 0xa1e38b93;
 
-void MurmurHash3_x86_128(const void* key, unsigned len, const uint8_t* seed, void* out)
+void MurmurHash3_x86_128(const void* data, size_t size, const uint8_t* seed, void* digest)
 {
-	const uint8_t* data = key;
-	unsigned nblocks = len / 16;
-	unsigned i;
+	size_t nblocks;
 	const uint32_t* blocks;
+	const uint32_t* end;
+	size_t remainder;
 
 	uint32_t h1 = ((const uint32_t*)seed)[0];
 	uint32_t h2 = ((const uint32_t*)seed)[1];
@@ -94,11 +94,12 @@ void MurmurHash3_x86_128(const void* key, unsigned len, const uint8_t* seed, voi
 	h4 = util_swap32(h4);
 #endif
 
-	blocks = (const uint32_t*)data;
+	nblocks = size / 16;
+	blocks = data;
+	end = blocks + nblocks * 4;
 
 	/* body */
-
-	for (i = 0; i < nblocks; ++i) {
+	while (blocks < end) {
 		uint32_t k1 = blocks[0];
 		uint32_t k2 = blocks[1];
 		uint32_t k3 = blocks[2];
@@ -131,7 +132,8 @@ void MurmurHash3_x86_128(const void* key, unsigned len, const uint8_t* seed, voi
 	}
 
 	/* tail */
-	{
+	remainder = size & 15;
+	if (remainder != 0) {
 		const uint8_t* tail = (const uint8_t*)blocks;
 
 		uint32_t k1 = 0;
@@ -139,7 +141,7 @@ void MurmurHash3_x86_128(const void* key, unsigned len, const uint8_t* seed, voi
 		uint32_t k3 = 0;
 		uint32_t k4 = 0;
 
-		switch (len & 15) {
+		switch (remainder) {
 		case 15 : k4 ^= tail[14] << 16;
 		case 14 : k4 ^= tail[13] << 8;
 		case 13 : k4 ^= tail[12] << 0;
@@ -163,8 +165,7 @@ void MurmurHash3_x86_128(const void* key, unsigned len, const uint8_t* seed, voi
 	}
 
 	/* finalization */
-
-	h1 ^= len; h2 ^= len; h3 ^= len; h4 ^= len;
+	h1 ^= size; h2 ^= size; h3 ^= size; h4 ^= size;
 
 	h1 += h2; h1 += h3; h1 += h4;
 	h2 += h1; h3 += h1; h4 += h1;
@@ -184,9 +185,9 @@ void MurmurHash3_x86_128(const void* key, unsigned len, const uint8_t* seed, voi
 	h4 = util_swap32(h4);
 #endif
 
-	((uint32_t*)out)[0] = h1;
-	((uint32_t*)out)[1] = h2;
-	((uint32_t*)out)[2] = h3;
-	((uint32_t*)out)[3] = h4;
+	((uint32_t*)digest)[0] = h1;
+	((uint32_t*)digest)[1] = h2;
+	((uint32_t*)digest)[2] = h3;
+	((uint32_t*)digest)[3] = h4;
 }
 
