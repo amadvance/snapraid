@@ -3,7 +3,7 @@ SnapRAID HISTORY
 
 8.1 2015/05
 ===========
- * Fix builds issues in generic Unix platforms.
+ * Fix build issues in generic Unix platforms, including Mac OS X.
  * The "diff" command returns with error code 2 if a "sync" is
    required, to differentiate with the generic error code 1.
 
