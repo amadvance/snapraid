@@ -6,6 +6,8 @@ SnapRAID HISTORY
  * Fix build issues in generic Unix platforms, including Mac OS X.
  * The "diff" command returns with error code 2 if a "sync" is
    required, to differentiate with the generic error code 1.
+ * Reduced the effect of SMART attribute 193 on the failure
+   probability to avoid some false positive reports.
 
 8.0 2015/04
 ===========
