@@ -468,6 +468,7 @@ int main(int argc, char* argv[])
 			if (!filter) {
 				/* LCOV_EXCL_START */
 				log_fatal("Invalid filter specification '%s'\n", optarg);
+				log_fatal("Filters using relative paths are not supported. Ensure to add an initial slash\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}

@@ -886,6 +886,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			if (!filter) {
 				/* LCOV_EXCL_START */
 				log_fatal("Invalid 'exclude' specification '%s' in '%s' at line %u\n", buffer, path, line);
+				log_fatal("Filters using relative paths are not supported. Ensure to add an initial slash\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -912,6 +913,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			if (!filter) {
 				/* LCOV_EXCL_START */
 				log_fatal("Invalid 'include' specification '%s' in '%s' at line %u\n", buffer, path, line);
+				log_fatal("Filters using relative paths are not supported. Ensure to add an initial slash\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
