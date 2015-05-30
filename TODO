@@ -33,12 +33,15 @@ struct node {
 * When a bad block with silent error is corrected,
 print some stats in the log about the error bit pattern.
 
-* Don't insert new files if they are too recent and opened by other
-applications.
-
 * Allow to filter also in diff, to limit the output
 to some dir or disk. Also excluding a specific disk could
 be useful.
+
+* Allow to scrub/check/verify the just synched data.
+Like an option to scrub only recent data.
+
+* Don't insert new files if they are too recent and opened by other
+applications.
 
 * Add an option for dup to list only duplicates with different name.
 This supposing that if a file has the same name, it's intentionally duplicated.
