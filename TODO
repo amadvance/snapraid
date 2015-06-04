@@ -3,6 +3,23 @@ SnapRAID TODO
 
 This is the list of TODO items for SnapRAID.
 
+- Next
+
+* Allow to scrub/check/verify the just synched data.
+Like an option to scrub only recent data.
+Or more simply, we can add a new option at sync that avoid
+to write the time info for just synched data, to ensure
+that is scrubbed before any already scrubbed one.
+Maybe we can also make this the new default behaviour,
+as this is something that make sense, and make the next
+version 9.0.
+
+- In log, when hash doesn't match in recovering, make
+sense to print such hash, to check why it doesn't match.
+* A single bit error in hash ?
+* Check if all the recovering attempts are recoving
+the same bad data, meaning that likely the original hash was wrong ?
+
 - Minor
 
 * Check how to reduce memory occupation using smaller memory block.
@@ -36,9 +53,6 @@ print some stats in the log about the error bit pattern.
 * Allow to filter also in diff, to limit the output
 to some dir or disk. Also excluding a specific disk could
 be useful.
-
-* Allow to scrub/check/verify the just synched data.
-Like an option to scrub only recent data.
 
 * Don't insert new files if they are too recent and opened by other
 applications.
