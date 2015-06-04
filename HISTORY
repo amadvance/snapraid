@@ -1,6 +1,10 @@
 SnapRAID HISTORY
 ================
 
+8.2 2015/06
+===========
+ * Update 'best' RAID functions for recent Atom CPUs.
+
 8.1 2015/05
 ===========
  * Fix build issues in generic Unix platforms, including Mac OS X.

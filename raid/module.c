@@ -50,11 +50,11 @@ void raid_init(void)
 #ifdef CONFIG_X86_64
 		if (raid_cpu_has_slowextendedreg()) {
 			raid_gen_ptr[1] = raid_gen2_sse2;
-			raid_genz_ptr = raid_genz_sse2;
 		} else {
 			raid_gen_ptr[1] = raid_gen2_sse2ext;
-			raid_genz_ptr = raid_genz_sse2ext;
 		}
+		/* note that raid_cpu_has_slowextendedreg() doesn't affect parz */
+		raid_genz_ptr = raid_genz_sse2ext;
 #else
 		raid_gen_ptr[1] = raid_gen2_sse2;
 		raid_genz_ptr = raid_genz_sse2;

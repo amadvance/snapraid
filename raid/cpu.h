@@ -213,6 +213,38 @@ static inline int raid_cpu_has_avx512bw(void)
 }
 
 /**
+ * Check if it's an Intel Atom CPU.
+ */
+static inline int raid_cpu_is_atom(unsigned family, unsigned model)
+{
+	if (family != 6)
+		return 0;
+
+	/*
+	 * x86 Architecture CPUID
+	 * http://www.sandpile.org/x86/cpuid.htm
+	 *
+	 * Intel Atom
+	 * 1C (28) Atom (45 nm) with 512 KB on-die L2
+	 * 26 (38) Atom (45 nm) with 512 KB on-die L2
+	 * 36 (54) Atom (32 nm) with 512 KB on-die L2
+	 * 27 (39) Atom (32 nm) with 512 KB on-die L2
+	 * 35 (53) Atom (?? nm) with ??? KB on-die L2
+	 * 4A (74) Atom 2C (22 nm) 1 MB L2 + PowerVR (TGR)
+	 * 5A (90) Atom 4C (22 nm) 2 MB L2 + PowerVR (ANN)
+	 * 37 (55) Atom 4C (22 nm) 2 MB L2 + Intel Gen7 (BYT)
+	 * 4C (76) Atom 4C (14 nm) 2 MB L2 + Intel Gen8 (BSW)
+	 * 5D (93) Atom 4C (28 nm TSMC) 1 MB L2 + Mali (SoFIA)
+	 * 4D (77) Atom 8C (22 nm) 4 MB L2 (AVN)
+	 * ?? Atom ?C (14 nm) ? MB L2 (DVN)
+	 */
+	return model == 28 || model == 38 || model == 54
+		|| model == 39 || model == 53 || model == 74
+		|| model == 90 || model == 55 || model == 76
+		|| model == 93 || model == 77;
+}
+
+/**
  * Check if the processor has a slow MULT implementation.
  * If yes, it's better to use a hash not based on multiplication.
  */
@@ -222,16 +254,21 @@ static inline int raid_cpu_has_slowmult(void)
 	unsigned family;
 	unsigned model;
 
+	/*
+	 * In some cases Murmur3 based on MUL instruction,
+	 * is a LOT slower than Spooky2 based on SHIFTs.
+	 */
 	raid_cpu_info(vendor, &family, &model);
 
 	if (strcmp(vendor, "GenuineIntel") == 0) {
 		/*
-		 * Intel Atom
-		 * Murmur3 based on MUL instruction, is a lot slower
-		 * than Spooky2 based on SHIFTs.
-		 * Like: 378 MB/s vs 3413 MB/s
+		 * Intel Atom (Model 28)
+		 * murmur3:378 MB/s, spooky2:3413 MB/s (x86)
+		 *
+		 * Intel Atom (Model 77)
+		 * murmur3:1311 MB/s, spooky2:4056 MB/s (x64)
 		 */
-		if (family == 6 && model == 28)
+		if (raid_cpu_is_atom(family, model))
 			return 1;
 	}
 
@@ -248,16 +285,29 @@ static inline int raid_cpu_has_slowextendedreg(void)
 	unsigned family;
 	unsigned model;
 
+	/*
+	 * In some cases the PAR2 implementation using 16 SSE registers
+	 * is a LITTLE slower than the one using only the first 8 registers.
+	 * This doesn't happen for PARZ.
+	 */
 	raid_cpu_info(vendor, &family, &model);
 
 	if (strcmp(vendor, "AuthenticAMD") == 0) {
 		/*
 		 * AMD Bulldozer
-		 * PAR1/PAR2 implementations using 16 SSE registers are slower
-		 * than ones using only the first 8 registers.
-		 * Like: 4465 MB/s vs 4922 MB/s.
+		 * par2_sse2:4922 MB/s, par2_sse2e:4465 MB/s
 		 */
 		if (family == 21)
+			return 1;
+	}
+
+	if (strcmp(vendor, "GenuineIntel") == 0) {
+		/*
+		 * Intel Atom (Model 77)
+		 * par2_sse2:5686 MB/s, par2_sse2e:5250 MB/s
+		 * parz_sse2:3100 MB/s, parz_sse2e:3400 MB/s
+		 */
+		if (raid_cpu_is_atom(family, model))
 			return 1;
 	}
 
