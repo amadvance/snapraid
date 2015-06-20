@@ -837,9 +837,10 @@ SnapRAID provides the following options:
 
     -l, --log FILE
         Write a detailed log in the specified file.
-        If this option is not specified, the warnings and not fatal
-        errors are printed on the screen, likely resulting in too much
-        output in case of many errors.
+        If this option is not specified, unexpected errors are printed
+        on the screen, likely resulting in too much output in case of
+        many errors. When -l, --log is specified, on the screen, go only
+        fatal errors that makes SnapRAID to stop progress.
         If the path starts with '>>' the file is opened
         in append mode. Occurrences of '%D' and '%T' in the name are
         replaced with the date and time in the format YYYYMMDD and
@@ -880,13 +881,17 @@ SnapRAID provides the following options:
 
     -v, --verbose
         Prints more information on the screen.
+        If specified one time, it prints excluded files
+        and more stats.
+        This option has no effect on the log files.
 
     -q, --quiet
         Prints less information on the screen.
         If specified one time, removes the progress bar, if two
         times, the running operations, three times, the info
         messages, four times the status messages.
-        Fatal errors are always printed.
+        Fatal errors are always printed on the screen.
+        This option has no effect on the log files.
 
     -H, --help
         Prints a short help screen.
