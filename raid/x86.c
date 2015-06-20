@@ -15,6 +15,16 @@
 #include "internal.h"
 #include "gf.h"
 
+/*
+ * For x86 optimizations you can see:
+ *
+ * Software optimization resources
+ * http://www.agner.org/optimize/
+ *
+ * x86, x64 Instruction Latency, Memory Latency and CPUID dumps
+ * http://users.atw.hu/instlatx64/
+ */
+
 #if defined(CONFIG_X86) && defined(CONFIG_SSE2)
 /*
  * GEN1 (RAID5 with xor) SSE2 implementation
