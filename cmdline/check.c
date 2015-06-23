@@ -1469,12 +1469,12 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					unsuccesful = 1;
 
 					log_error("Error stating hardlink '%s'. %s.\n", path, strerror(errno));
-					log_tag("hardlinkerror:%s:%s:%s: Hardlink stat error\n", disk->name, esc(link->sub), esc(link->linkto));
+					log_tag("hardlink_error:%s:%s:%s: Hardlink stat error\n", disk->name, esc(link->sub), esc(link->linkto));
 					++error;
 				} else if (!S_ISREG(st.st_mode)) {
 					unsuccesful = 1;
 
-					log_tag("hardlinkerror:%s:%s:%s: Hardlink error for not regular file\n", disk->name, esc(link->sub), esc(link->linkto));
+					log_tag("hardlink_error:%s:%s:%s: Hardlink error for not regular file\n", disk->name, esc(link->sub), esc(link->linkto));
 					++error;
 				}
 
@@ -1499,18 +1499,18 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					}
 
 					log_error("Error stating hardlink-to '%s'. %s.\n", pathto, strerror(errno));
-					log_tag("hardlinkerror:%s:%s:%s: Hardlink to stat error\n", disk->name, esc(link->sub), esc(link->linkto));
+					log_tag("hardlink_error:%s:%s:%s: Hardlink to stat error\n", disk->name, esc(link->sub), esc(link->linkto));
 					++error;
 				} else if (!S_ISREG(stto.st_mode)) {
 					unsuccesful = 1;
 
-					log_tag("hardlinkerror:%s:%s:%s: Hardlink-to error for not regular file\n", disk->name, esc(link->sub), esc(link->linkto));
+					log_tag("hardlink_error:%s:%s:%s: Hardlink-to error for not regular file\n", disk->name, esc(link->sub), esc(link->linkto));
 					++error;
 				} else if (!unsuccesful && st.st_ino != stto.st_ino) {
 					unsuccesful = 1;
 
 					log_error("Mismatch hardlink '%s' and '%s'. Different inode.\n", path, pathto);
-					log_tag("hardlinkerror:%s:%s:%s: Hardlink mismatch for different inode\n", disk->name, esc(link->sub), esc(link->linkto));
+					log_tag("hardlink_error:%s:%s:%s: Hardlink mismatch for different inode\n", disk->name, esc(link->sub), esc(link->linkto));
 					++error;
 				}
 			} else {
@@ -1521,13 +1521,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					unsuccesful = 1;
 
 					log_error("Error reading symlink '%s'. %s.\n", path, strerror(errno));
-					log_tag("symlinkerror:%s:%s: Symlink read error\n", disk->name, esc(link->sub));
+					log_tag("symlink_error:%s:%s: Symlink read error\n", disk->name, esc(link->sub));
 					++error;
 				} else if (ret >= PATH_MAX) {
 					unsuccesful = 1;
 
 					log_error("Error reading symlink '%s'. Symlink too long.\n", path);
-					log_tag("symlinkerror:%s:%s: Symlink read error\n", disk->name, esc(link->sub));
+					log_tag("symlink_error:%s:%s: Symlink read error\n", disk->name, esc(link->sub));
 					++error;
 				} else {
 					linkto[ret] = 0;
@@ -1535,7 +1535,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					if (strcmp(linkto, link->linkto) != 0) {
 						unsuccesful = 1;
 
-						log_tag("symlinkerror:%s:%s: Symlink data error '%s' instead of '%s'\n", disk->name, esc(link->sub), linkto, link->linkto);
+						log_tag("symlink_error:%s:%s: Symlink data error '%s' instead of '%s'\n", disk->name, esc(link->sub), linkto, link->linkto);
 						++error;
 					}
 				}
@@ -1583,7 +1583,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						/* LCOV_EXCL_STOP */
 					}
 
-					log_tag("hardlinkfixed:%s:%s: Fixed hardlink error\n", disk->name, esc(link->sub));
+					log_tag("hardlink_fixed:%s:%s: Fixed hardlink error\n", disk->name, esc(link->sub));
 					++recovered_error;
 				} else {
 					ret = symlink(link->linkto, path);
@@ -1602,7 +1602,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						/* LCOV_EXCL_STOP */
 					}
 
-					log_tag("symlinkfixed:%s:%s: Fixed symlink error\n", disk->name, esc(link->sub));
+					log_tag("symlink_fixed:%s:%s: Fixed symlink error\n", disk->name, esc(link->sub));
 					++recovered_error;
 				}
 
