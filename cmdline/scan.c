@@ -1057,7 +1057,7 @@ struct stat* dstat(const char* file, struct stat* st)
  * Processes a directory.
  * Return != 0 if at least one file or link is processed.
  */
-static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, const char* sub)
+static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const char* dir, const char* sub)
 {
 	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
@@ -1072,7 +1072,10 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 	if (!d) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error opening directory '%s'. %s.\n", dir, strerror(errno));
-		log_fatal("You can exclude it in the config file with:\n\texclude /%s\n", sub);
+		if (level == 0)
+			log_fatal("If this is the disk mount point, remember to create it manually\n");
+		else
+			log_fatal("If it's a permission problem, you can exclude it in the config file with:\n\texclude /%s\n", sub);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1309,7 +1312,7 @@ static int scan_dir(struct snapraid_scan* scan, int is_diff, const char* dir, co
 					pathslash(path_next, sizeof(path_next));
 					pathcpy(sub_dir, sizeof(sub_dir), sub_next);
 					pathslash(sub_dir, sizeof(sub_dir));
-					if (scan_dir(scan, is_diff, path_next, sub_dir) == 0) {
+					if (scan_dir(scan, level + 1, is_diff, path_next, sub_dir) == 0) {
 						/* scan the directory as empty dir */
 						scan_emptydir(scan, sub_next);
 					}
@@ -1418,7 +1421,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			}
 		}
 
-		scan_dir(scan, is_diff, disk->dir, "");
+		scan_dir(scan, 0, is_diff, disk->dir, "");
 	}
 
 	/* we split the search in two phases because to detect files */
