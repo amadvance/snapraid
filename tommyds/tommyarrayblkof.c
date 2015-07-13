@@ -57,7 +57,7 @@ void tommy_arrayblkof_grow(tommy_arrayblkof* array, tommy_count_t count)
 		return;
 	array->count = count;
 
-	block_max = (count + TOMMY_ARRAYBLK_SIZE - 1) / TOMMY_ARRAYBLK_SIZE;
+	block_max = (count + TOMMY_ARRAYBLKOF_SIZE - 1) / TOMMY_ARRAYBLKOF_SIZE;
 	block_mac = tommy_array_size(&array->block);
 
 	if (block_mac < block_max) {
@@ -66,7 +66,7 @@ void tommy_arrayblkof_grow(tommy_arrayblkof* array, tommy_count_t count)
 
 		/* allocate new blocks */
 		while (block_mac < block_max) {
-			void** ptr = tommy_cast(void**, tommy_calloc(TOMMY_ARRAYBLK_SIZE, array->element_size));
+			void** ptr = tommy_cast(void**, tommy_calloc(TOMMY_ARRAYBLKOF_SIZE, array->element_size));
 
 			/* set the new block */
 			tommy_array_set(&array->block, block_mac, ptr);
