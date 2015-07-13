@@ -17,6 +17,15 @@ Maybe we can also make this the new default behaviour,
 as this is something that make sense, and make the next
 version 9.0.
 
+* Improvement in fix, due missing disks, when using -d DISK.
+A. Don't halt due to missing content files as long as there is one valid content file
+B. Don't halt due to missing disks when enough parity exist to replace them.
+See thread: https://sourceforge.net/p/snapraid/discussion/1677233/thread/b1387089/
+Two disks died, like d5 and d6, but recovering with "-d d5" was not possible
+because disk d6 disappeared, like I:\ drive missing, including its mount point and
+content file. In Linux likely the mount point would be still present, but not in Windows.
+The content file is instead missing in all platforms.
+
 - In log, when hash doesn't match in recovering, make
 sense to print such hash, to check why it doesn't match.
 * A single bit error in hash ?
