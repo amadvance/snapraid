@@ -140,8 +140,8 @@ the following options:
     disk d2 /mnt/disk2/
     disk d3 /mnt/disk3/
 
-If you are in Windows, you should use drive letters and backslashes
-instead of slashes, and if you like, also file extensions.
+If you are in Windows, you should use the Windows path format, with drive
+letters and backslashes instead of slashes.
 
     parity E:\snapraid.parity
     content C:\snapraid\snapraid.content
@@ -150,6 +150,11 @@ instead of slashes, and if you like, also file extensions.
     disk d1 F:\array\
     disk d2 G:\array\
     disk d3 H:\array\
+
+If you have many disks, and you run out of drive letters, you can mount
+disks directly in sub folders. See:
+
+    https://www.google.com/search?q=Windows+mount+point
 
 At this point you are ready to start the "sync" command to build the
 parity information.
