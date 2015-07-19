@@ -385,6 +385,9 @@ Commands
 	Note that the information presented refers at the latest time you
 	run "sync". Later modifications are not taken into account.
 
+	If bad blocks were detected, their block numbers are listed.
+	To fix them, you can use the "fix -e" command.
+
 	Nothing is modified.
 
   smart
@@ -492,6 +495,7 @@ Commands
 	These bad blocks are listed in "status", and can be fixed with "fix -e".
 	After the fix, at the next scrub they will be rechecked, and if found
 	corrected, the bad mark will be removed.
+	To scrub only the bad blocks, you can use the "scrub -p 0" command.
 
 	It's recommended to run "scrub" on a synced array, to avoid to have
 	reported error caused by unsynced data. These errors are recognized

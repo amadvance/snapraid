@@ -667,6 +667,9 @@ errors encountered while scrubbing.
 Note that the information presented refers at the latest time you
 run \[dq]sync\[dq]. Later modifications are not taken into account.
 .PP
+If bad blocks were detected, their block numbers are listed.
+To fix them, you can use the \[dq]fix \-e\[dq] command.
+.PP
 Nothing is modified.
 .SS smart 
 Prints a SMART report of all the disks of the array.
@@ -783,6 +786,7 @@ are marked as bad in the \[dq]content\[dq] file.
 These bad blocks are listed in \[dq]status\[dq], and can be fixed with \[dq]fix \-e\[dq].
 After the fix, at the next scrub they will be rechecked, and if found
 corrected, the bad mark will be removed.
+To scrub only the bad blocks, you can use the \[dq]scrub \-p 0\[dq] command.
 .PP
 It\'s recommended to run \[dq]scrub\[dq] on a synced array, to avoid to have
 reported error caused by unsynced data. These errors are recognized
