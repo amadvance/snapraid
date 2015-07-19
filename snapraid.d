@@ -45,7 +45,7 @@ Description
 
 	The official site of SnapRAID is:
 
-		:http://snapraid.sourceforge.net
+		:http://amadvance.github.io/snapraid/
 
 Limitations
 	SnapRAID is in between a RAID and a Backup program trying to get the best
