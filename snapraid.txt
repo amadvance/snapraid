@@ -52,7 +52,7 @@ features of SnapRAID are:
 
 The official site of SnapRAID is:
 
-    http://amadvance.github.io/snapraid/
+    http://www.snapraid.it/
 
 
 3 LIMITATIONS
