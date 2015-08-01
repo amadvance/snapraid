@@ -142,7 +142,7 @@ is it possible to recover the data in the not failed disks?</td>
 <td>One</td><td>One</td><td>One</td><td>One</td><td>All</td><td>All</td><td>All</td></tr>
 
 <tr><td><span class="bold">Filled disk</span><br/>Can you start with already filled disks?</td>
-<td>Yes</td><td>No<a href="#4">[4]</td><td>Yes</td><td>Yes</td><td>No</td><td>No</td><td>No</td></tr>
+<td>Yes</td><td>Partial<a href="#4">[4]</td><td>Yes</td><td>Yes</td><td>No</td><td>No</td><td>No</td></tr>
 
 <tr><td><span class="bold">Operating system</span><br/>Which OS is supported?</td>
 <td>Linux<br/>Windows<br/>Mac&nbsp;OS&nbsp;X<br/>OpenIndiana<br/>Solaris<br/>BSD</td><td>Linux</td><td>Windows<br/>Linux</td><td>Windows</td><td>Linux <a href="#5">[5]</a><br/>Mac&nbsp;OS&nbsp;X<br/>OpenIndiana<br/>Solaris<br/>BSD</td><td>Linux</td><td>Windows</td></tr>
@@ -209,7 +209,7 @@ always using the best known RAID algorithm and implementation.
 
 <p>
 <a id="4">[4]</a> - unRAID allows to use filled disks but only if they are already
-formatted with the ReiserFS filesystem.
+formatted with the ReiserFS, XFS or Btrfs filesystems. But not ext4 or NTFS.
 </p>
 
 <p>
