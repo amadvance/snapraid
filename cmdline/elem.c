@@ -46,6 +46,8 @@ struct snapraid_filter* filter_alloc_file(int direction, const char* pattern)
 	char* i;
 	char* first;
 	char* last;
+	int token_is_valid;
+	int token_is_filled;
 
 	filter = malloc_nofail(sizeof(struct snapraid_filter));
 	pathimport(filter->pattern, sizeof(filter->pattern), pattern);
@@ -54,12 +56,35 @@ struct snapraid_filter* filter_alloc_file(int direction, const char* pattern)
 	/* find first and last slash */
 	first = 0;
 	last = 0;
+	/* reject invalid tokens, like "<empty>", ".", ".." and more dots */
+	token_is_valid = 0;
+	token_is_filled = 0;
 	for (i = filter->pattern; *i; ++i) {
 		if (*i == '/') {
+			/* reject invalid tokens, but accept an empty one as first */
+			if (!token_is_valid && (first != 0 || token_is_filled)) {
+				free(filter);
+				return 0;
+			}
+			token_is_valid = 0;
+			token_is_filled = 0;
+
+			/* update slash position */
 			if (!first)
 				first = i;
 			last = i;
+		} else if (*i != '.') {
+			token_is_valid = 1;
+			token_is_filled = 1;
+		} else {
+			token_is_filled = 1;
 		}
+	}
+
+	/* reject invalid tokens, but accept an empty one as last, but not if it's the only one */
+	if (!token_is_valid && (first == 0 || token_is_filled)) {
+		free(filter);
+		return 0;
 	}
 
 	/* it's a file filter */
@@ -86,10 +111,8 @@ struct snapraid_filter* filter_alloc_file(int direction, const char* pattern)
 
 		/* a slash must be the first char, as we don't support PATH/FILE and PATH/DIR/ */
 		if (filter->pattern[0] != '/') {
-			/* LCOV_EXCL_START */
 			free(filter);
 			return 0;
-			/* LCOV_EXCL_STOP */
 		}
 	}
 

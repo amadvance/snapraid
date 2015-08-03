@@ -270,6 +270,9 @@ endif
 	echo --- Filter
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) -d disk1 check > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) -f \\*a -f a/ -f /b/a\\* check > output.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) --test-expect-failure -f . check > output.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) --test-expect-failure -f ./ check > output.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) --test-expect-failure -f a/a check > output.log
 	echo --- Delete some files and sync
 	rm bench/disk4/a/9*
 	rm bench/disk5/a/9*

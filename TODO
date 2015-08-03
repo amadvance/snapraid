@@ -5,9 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
-* Check if filters contains "." or "..". Return an error in this case.
-Command line with -f. And also exclude/include rules.
-
 * Allow to scrub/check/verify the just synched data.
 Like an option to scrub only recent data.
 Or more simply, we can add a new option at sync that avoid

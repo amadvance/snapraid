@@ -1,9 +1,10 @@
 SnapRAID HISTORY
 ================
 
-8.2 2015/06
+8.2 2015/08
 ===========
  * Update 'best' RAID functions for recent Atom CPUs.
+ * Validate filters specificatinos rejecting relative paths.
 
 8.1 2015/05
 ===========
