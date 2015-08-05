@@ -3,7 +3,7 @@ AC_PREREQ([2.65])
 AC_INIT([snapraid], [8.1], [], [], [http://www.snapraid.it])
 AM_INIT_AUTOMAKE([foreign no-dependencies subdir-objects])
 AC_CONFIG_SRCDIR([cmdline/snapraid.c])
-AC_CONFIG_HEADER([config.h])
+AC_CONFIG_HEADERS([config.h])
 AC_CANONICAL_HOST
 
 dnl Checks for programs.
@@ -90,6 +90,9 @@ AC_C_BIGENDIAN
 dnl Checks for compiler
 AC_CHECK_CC_OPT([-Wall], CFLAGS="$CFLAGS -Wall", [])
 AC_CHECK_CC_OPT([-Wextra], CFLAGS="$CFLAGS -Wextra", [])
+AC_CHECK_CC_OPT([-Wuninitialized], CFLAGS="$CFLAGS -Wuninitialized", [])
+AC_CHECK_CC_OPT([-Wshadow], CFLAGS="$CFLAGS -Wshadow", [])
+AC_CHECK_CC_OPT([-Wpadded], CFLAGS="$CFLAGS -Wpadded", [])
 
 dnl Checks for AS supporting the SSE2 instructions.
 AC_MSG_CHECKING([for sse2])

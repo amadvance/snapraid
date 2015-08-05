@@ -491,4 +491,10 @@ fnmatch (pattern, string, flags)
 
 #endif	/* _LIBC or not __GNU_LIBRARY__.  */
 
+#else
+
+/* avoid the warning: ISO C forbids an empty translation unit */
+extern int make_iso_compilers_happy;
+
 #endif
+

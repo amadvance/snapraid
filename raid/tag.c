@@ -16,7 +16,7 @@
 
 static struct raid_func {
 	const char *name;
-	void *p;
+	void (*p)();
 } RAID_FUNC[] = {
 	{ "int8", raid_gen3_int8 },
 	{ "int8", raid_gen4_int8 },
@@ -78,7 +78,7 @@ static struct raid_func {
 	{ 0, 0 }
 };
 
-static const char *raid_tag(void *func)
+static const char *raid_tag(void (*func)())
 {
 	struct raid_func *i = RAID_FUNC;
 

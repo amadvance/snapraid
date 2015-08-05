@@ -302,19 +302,19 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 
 	/* logs the status */
 	for (j = 0; j < failed_count; ++j) {
-		const char* state;
+		const char* desc;
 		const char* hash;
 		const char* data;
 		struct snapraid_block* block = failed[j].block;
 		unsigned block_state = block_state_get(block);
 
 		switch (block_state) {
-		case BLOCK_STATE_DELETED : state = "delete"; break;
-		case BLOCK_STATE_CHG : state = "change"; break;
-		case BLOCK_STATE_REP : state = "replace"; break;
-		case BLOCK_STATE_BLK : state = "block"; break;
+		case BLOCK_STATE_DELETED : desc = "delete"; break;
+		case BLOCK_STATE_CHG : desc = "change"; break;
+		case BLOCK_STATE_REP : desc = "replace"; break;
+		case BLOCK_STATE_BLK : desc = "block"; break;
 		/* LCOV_EXCL_START */
-		default : state = "unknown"; break;
+		default : desc = "unknown"; break;
 			/* LCOV_EXCL_STOP */
 		}
 
@@ -338,9 +338,9 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 			disk = handle->disk->name;
 			sub = block_file_get(block)->sub;
 
-			log_tag("entry:%u:%s:%s:%s:%s:%s:%u:\n", j, state, hash, data, disk, esc(sub), block_file_pos(block));
+			log_tag("entry:%u:%s:%s:%s:%s:%s:%u:\n", j, desc, hash, data, disk, esc(sub), block_file_pos(block));
 		} else {
-			log_tag("entry:%u:%s:%s:%s:\n", j, state, hash, data);
+			log_tag("entry:%u:%s:%s:%s:\n", j, desc, hash, data);
 		}
 	}
 

@@ -112,7 +112,7 @@ int state_status(struct snapraid_state* state)
 	for (node_disk = state->disklist; node_disk != 0; node_disk = node_disk->next) {
 		struct snapraid_disk* disk = node_disk->data;
 		tommy_node* node;
-		block_off_t i;
+		block_off_t j;
 		unsigned disk_file_count = 0;
 		unsigned disk_file_fragmented = 0;
 		unsigned disk_extra_fragment = 0;
@@ -139,8 +139,8 @@ int state_status(struct snapraid_state* state)
 
 				fragmented = 0;
 				prev_pos = file->blockvec[0].parity_pos;
-				for (i = 1; i < file->blockmax; ++i) {
-					block_off_t parity_pos = file->blockvec[i].parity_pos;
+				for (j = 1; j < file->blockmax; ++j) {
+					block_off_t parity_pos = file->blockvec[j].parity_pos;
 					if (prev_pos + 1 != parity_pos) {
 						fragmented = 1;
 						++extra_fragment;
