@@ -354,8 +354,9 @@ errors caused by removed or modified files. These errors are reported
 in the \[dq]scrub\[dq] result, but related blocks are not marked as bad.
 .SS Pooling 
 To have all the files in your array shown in the same directory tree,
-you can enable \[dq]pooling\[dq], that consists in creating a virtual view of all
-the files in your array using symbolic links.
+you can enable the \[dq]pooling\[dq] feature. It consists in creating a
+read\-only virtual view of all the files in your array using symbolic
+links.
 .PP
 You can configure the \[dq]pooling\[dq] directory in the configuration file with:
 .PP
@@ -493,8 +494,8 @@ and share the following dirs in the network:
 .PP
 to allow remote clients to access all the files at \\\\darkstar\\\\pool.
 .PP
-You may also need to configure remote clients, to enable the access at
-remote symlinks with the command:
+You may also need to configure remote clients enablinh access at remote
+symlinks with the command:
 .PP
 .RS 4
 fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1

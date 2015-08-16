@@ -200,8 +200,9 @@ Getting Started
 
   Pooling
 	To have all the files in your array shown in the same directory tree,
-	you can enable "pooling", that consists in creating a virtual view of all
-	the files in your array using symbolic links.
+	you can enable the "pooling" feature. It consists in creating a
+	read-only virtual view of all the files in your array using symbolic
+	links.
 
 	You can configure the "pooling" directory in the configuration file with:
 
@@ -259,8 +260,8 @@ Getting Started
 
 	to allow remote clients to access all the files at \\darkstar\\pool.
 
-	You may also need to configure remote clients, to enable the access at
-	remote symlinks with the command:
+	You may also need to configure remote clients enablinh access at remote
+	symlinks with the command:
 
 		:fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
 
