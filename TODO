@@ -5,15 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
-* Allow to scrub/check/verify the just synched data.
-Like an option to scrub only recent data.
-Or more simply, we can add a new option at sync that avoid
-to write the time info for just synched data, to ensure
-that is scrubbed before any already scrubbed one.
-Maybe we can also make this the new default behaviour,
-as this is something that make sense, and make the next
-version 9.0.
-
 * Improvement in fix, due missing disks, when using -d DISK.
 A. Don't halt due to missing content files as long as there is one valid content file
 B. Don't halt due to missing disks when enough parity exist to replace them.

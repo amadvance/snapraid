@@ -976,6 +976,19 @@ static inline int info_get_justsynced(snapraid_info info)
 }
 
 /**
+ * Get the latest scrub time.
+ *
+ * If the block was not scrubbed, 0 is returned.
+ */
+static inline time_t info_get_scrubtime(snapraid_info info)
+{
+	if (info_get_justsynced(info))
+		return 0;
+	else
+		return info_get_time(info);
+}
+
+/**
  * Marks the block address as with error.
  */
 static inline snapraid_info info_set_bad(snapraid_info info)
@@ -1019,9 +1032,9 @@ static inline snapraid_info info_get(tommy_arrayblkof* array, unsigned pos)
 }
 
 /**
- * Compares info by time.
+ * Compare times
  */
-int info_time_compare(const void* void_a, const void* void_b);
+int time_compare(const void* void_a, const void* void_b);
 
 #endif
 

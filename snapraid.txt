@@ -527,7 +527,9 @@ You can use the -p, --percentage option to specify a different amount,
 and the -o, --older-than option to specify a different age in days.
 You can have a full scrub with "-p 100 -o 0".
 
-The oldest blocks are scrubbed first ensuring an optimal check.
+The just synched blocks are scrubbed first, then are scrubbed the blocks
+with the oldest scrub time.
+To get some stats of the scrub times, you can use the "status" command.
 
 For any silent or input/output error found the corresponding blocks
 are marked as bad in the "content" file.

@@ -54,7 +54,7 @@ static int block_is_enabled(struct snapraid_state* state, block_off_t i, time_t 
 	if (!info_get_bad(info)) {
 
 		/* if it's too new */
-		blocktime = info_get_time(info);
+		blocktime = info_get_scrubtime(info);
 		if (blocktime > timelimit) {
 			/* skip it */
 			return 0;
@@ -561,7 +561,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 	int ret;
 	struct snapraid_parity_handle parity[LEV_MAX];
 	struct snapraid_parity_handle* parity_ptr[LEV_MAX];
-	snapraid_info* infomap;
+	time_t* timemap;
 	unsigned error;
 	time_t now;
 	unsigned l;
@@ -598,7 +598,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 	/* identify the time limit */
 	/* we sort all the block times, and we identify the time limit for which we reach the quota */
 	/* this allow to process first the oldest blocks */
-	infomap = malloc_nofail(blockmax * sizeof(snapraid_info));
+	timemap = malloc_nofail(blockmax * sizeof(time_t));
 
 	/* copy the info in the temp vector */
 	count = 0;
@@ -610,7 +610,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 		if (info == 0)
 			continue;
 
-		infomap[count++] = info;
+		timemap[count++] = info_get_scrubtime(info);
 	}
 
 	if (!count) {
@@ -621,16 +621,16 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 	}
 
 	/* sort it */
-	qsort(infomap, count, sizeof(snapraid_info), info_time_compare);
+	qsort(timemap, count, sizeof(time_t), time_compare);
 
 	/* output the info map */
 	i = 0;
 	log_tag("info_count:%u\n", count);
 	while (i < count) {
 		unsigned j = i + 1;
-		while (j < count && info_get_time(infomap[i]) == info_get_time(infomap[j]))
+		while (j < count && timemap[i] == timemap[j])
 			++j;
-		log_tag("info_time:%" PRIu64 ":%u\n", (uint64_t)info_get_time(infomap[i]), j - i);
+		log_tag("info_time:%" PRIu64 ":%u\n", (uint64_t)timemap[i], j - i);
 		i = j;
 	}
 
@@ -639,18 +639,18 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 		countlimit = count;
 
 	/* decrease until we reach the specific recentlimit */
-	while (countlimit > 0 && info_get_time(infomap[countlimit - 1]) > recentlimit)
+	while (countlimit > 0 && timemap[countlimit - 1] > recentlimit)
 		--countlimit;
 
 	/* if there is something to scrub */
 	if (countlimit > 0) {
 		/* get the most recent time we want to scrub */
-		timelimit = info_get_time(infomap[countlimit - 1]);
+		timelimit = timemap[countlimit - 1];
 
 		/* count how many entries for this exact time we have to scrub */
 		/* if the blocks have all the same time, we end with countlimit == lastlimit */
 		lastlimit = 1;
-		while (countlimit > lastlimit && info_get_time(infomap[countlimit - lastlimit - 1]) == timelimit)
+		while (countlimit > lastlimit && timemap[countlimit - lastlimit - 1] == timelimit)
 			++lastlimit;
 	} else {
 		/* if nothing to scrub, disable also other limits */
@@ -663,7 +663,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 	log_tag("last_limit:%u\n", lastlimit);
 
 	/* free the temp vector */
-	free(infomap);
+	free(timemap);
 
 	/* open the file for reading */
 	for (l = 0; l < state->level; ++l) {

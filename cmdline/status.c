@@ -47,7 +47,7 @@ int state_status(struct snapraid_state* state)
 {
 	block_off_t blockmax;
 	block_off_t i;
-	snapraid_info* infomap;
+	time_t* timemap;
 	time_t now;
 	block_off_t bad;
 	block_off_t bad_first;
@@ -70,6 +70,7 @@ int state_status(struct snapraid_state* state)
 	uint64_t file_block_free;
 	block_off_t parity_block_free;
 	unsigned unsynced_blocks;
+	unsigned unscrubbed_blocks;
 	uint64_t all_wasted;
 	int free_not_zero;
 
@@ -258,13 +259,14 @@ int state_status(struct snapraid_state* state)
 	log_flush();
 
 	/* copy the info a temp vector, and count bad/rehash/unsynced blocks */
-	infomap = malloc_nofail(blockmax * sizeof(snapraid_info));
+	timemap = malloc_nofail(blockmax * sizeof(time_t));
 	bad = 0;
 	bad_first = 0;
 	bad_last = 0;
 	count = 0;
 	rehash = 0;
 	unsynced_blocks = 0;
+	unscrubbed_blocks = 0;
 	log_tag("block_count:%u\n", blockmax);
 	for (i = 0; i < blockmax; ++i) {
 		int one_invalid;
@@ -302,7 +304,10 @@ int state_status(struct snapraid_state* state)
 			if (info_get_rehash(info))
 				++rehash;
 
-			infomap[count++] = info;
+			if (info_get_justsynced(info))
+				++unscrubbed_blocks;
+
+			timemap[count++] = info_get_time(info);
 		}
 
 		if (state->opt.gui) {
@@ -314,33 +319,34 @@ int state_status(struct snapraid_state* state)
 	}
 
 	log_tag("summary:has_unsynced:%u\n", unsynced_blocks);
+	log_tag("summary:has_unscrubbed:%u\n", unscrubbed_blocks);
 	log_tag("summary:has_rehash:%u\n", rehash);
 	log_tag("summary:has_bad:%u:%u:%u\n", bad, bad_first, bad_last);
 	log_flush();
 
 	if (!count) {
 		log_fatal("The array is empty.\n");
-		free(infomap);
+		free(timemap);
 		return 0;
 	}
 
 	/* sort the info to get the time info */
-	qsort(infomap, count, sizeof(snapraid_info), info_time_compare);
+	qsort(timemap, count, sizeof(time_t), time_compare);
 
 	/* output the info map */
 	i = 0;
 	log_tag("info_count:%u\n", count);
 	while (i < count) {
 		unsigned j = i + 1;
-		while (j < count && info_get_time(infomap[i]) == info_get_time(infomap[j]))
+		while (j < count && timemap[i] == timemap[j])
 			++j;
-		log_tag("info_time:%" PRIu64 ":%u\n", (uint64_t)info_get_time(infomap[i]), j - i);
+		log_tag("info_time:%" PRIu64 ":%u\n", (uint64_t)timemap[i], j - i);
 		i = j;
 	}
 
-	oldest = info_get_time(infomap[0]);
-	median = info_get_time(infomap[count / 2]);
-	newest = info_get_time(infomap[count - 1]);
+	oldest = info_get_time(timemap[0]);
+	median = info_get_time(timemap[count / 2]);
+	newest = info_get_time(timemap[count - 1]);
 	dayoldest = day_ago(oldest, now);
 	daymedian = day_ago(median, now);
 	daynewest = day_ago(newest, now);
@@ -355,7 +361,7 @@ int state_status(struct snapraid_state* state)
 		limit = oldest + (newest - oldest) * (i + 1) / GRAPH_COLUMN;
 
 		step = 0;
-		while (barpos < count && info_get_time(infomap[barpos]) <= limit) {
+		while (barpos < count && timemap[barpos] <= limit) {
 			++barpos;
 			++step;
 		}
@@ -402,7 +408,7 @@ int state_status(struct snapraid_state* state)
 		}
 		printf("\n");
 	}
-	printf("   %3u                    days ago of the last scrub                    %3u\n", dayoldest, daynewest);
+	printf("   %3u                    days ago of the last scrub/sync               %3u\n", dayoldest, daynewest);
 
 	printf("\n");
 
@@ -415,6 +421,12 @@ int state_status(struct snapraid_state* state)
 		printf("You have a sync in progress at %u%%.\n", (blockmax - unsynced_blocks) * 100 / blockmax);
 	} else {
 		printf("No sync is in progress.\n");
+	}
+
+	if (unscrubbed_blocks) {
+		printf("You need to scrub at least the %u%% to check the latest sync.\n", (unscrubbed_blocks * 100 + blockmax - 1) / blockmax);
+	} else {
+		printf("The full array was scrubbed at least one time.\n");
 	}
 
 	if (rehash) {
@@ -463,7 +475,7 @@ int state_status(struct snapraid_state* state)
 	}
 
 	/* free the temp vector */
-	free(infomap);
+	free(timemap);
 
 	return 0;
 }

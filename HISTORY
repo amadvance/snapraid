@@ -3,8 +3,14 @@ SnapRAID HISTORY
 
 8.2 2015/08
 ===========
+ * The synced blocks are now scrubbed with priority over all
+   the already scrubbed ones.
+   This allows to verify as early as possible that the written
+   parity during sync is really correct.
+   The "status" command reports the amount of scrub necessary to
+   ensure to scrub all the synched blocks.
  * Update 'best' RAID functions for recent Atom CPUs.
- * Validate filters specificatinos rejecting relative paths.
+ * Validate filters specifications rejecting relative paths.
 
 8.1 2015/05
 ===========

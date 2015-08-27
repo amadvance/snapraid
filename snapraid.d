@@ -489,7 +489,9 @@ Commands
 	and the -o, --older-than option to specify a different age in days.
 	You can have a full scrub with "-p 100 -o 0".
 
-	The oldest blocks are scrubbed first ensuring an optimal check.
+	The just synched blocks never scrubbed, are scrubbed first, then are
+	scrubbed the blocks with the oldest scrub time.
+	To get some stats of the scrub times, you can use the "status" command.
 
 	For any silent or input/output error found the corresponding blocks
 	are marked as bad in the "content" file.
@@ -498,8 +500,8 @@ Commands
 	corrected, the bad mark will be removed.
 	To scrub only the bad blocks, you can use the "scrub -p 0" command.
 
-	It's recommended to run "scrub" on a synced array, to avoid to have
-	reported error caused by unsynced data. These errors are recognized
+	It's recommended to run "scrub" only on a synced array, to avoid to
+	have reported error caused by unsynced data. These errors are recognized
 	as not being silent errors, and the blocks are not marked as bad,
 	but such errors are reported in the output of the command.
 
