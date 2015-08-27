@@ -915,27 +915,37 @@ struct snapraid_map* map_alloc(const char* name, unsigned position, block_off_t 
 void map_free(struct snapraid_map* map);
 
 /**
+ * Mask used to store additional information in the info bits.
+ *
+ * These bits reduce the granurality of the time in the memory representation.
+ */
+#define INFO_MASK 0x7
+
+/**
  * Makes an info.
  */
-static inline snapraid_info info_make(time_t last_access, int error, int rehash)
+static inline snapraid_info info_make(time_t last_access, int error, int rehash, int justsynced)
 {
 	/* clear the lowest bits as reserved for other information */
-	snapraid_info info = last_access & ~0x3;
+	snapraid_info info = last_access & ~INFO_MASK;
 
 	if (error != 0)
 		info |= 0x1;
 	if (rehash != 0)
 		info |= 0x2;
+	if (justsynced != 0)
+		info |= 0x4;
 	return info;
 }
 
 /**
  * Extracts the time information.
  * This is the last time when the block was know to be correct.
+ * The "scrubbed" info tells if the time is referreing at the latest sync or scrub.
  */
 static inline time_t info_get_time(snapraid_info info)
 {
-	return info & ~0x3;
+	return info & ~INFO_MASK;
 }
 
 /**
@@ -954,6 +964,15 @@ static inline int info_get_bad(snapraid_info info)
 static inline int info_get_rehash(snapraid_info info)
 {
 	return (info & 0x2) != 0;
+}
+
+/**
+ * Extracts the scrubbed information.
+ * Reports if the block address was never scrubbed.
+ */
+static inline int info_get_justsynced(snapraid_info info)
+{
+	return (info & 0x4) != 0;
 }
 
 /**

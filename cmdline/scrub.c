@@ -415,7 +415,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		}
 
 		if (silent_error_on_this_block || io_error_on_this_block) {
-			/* set the error status keeping the existing time and hash */
+			/* set the error status keeping other info */
 			info_set(&state->infoarr, i, info_set_bad(info));
 		} else if (error_on_this_block) {
 			/* do nothing, as this is a generic error */
@@ -432,7 +432,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 			/* update the time info of the block */
 			/* and clear any other flag */
-			info_set(&state->infoarr, i, info_make(now, 0, 0));
+			info_set(&state->infoarr, i, info_make(now, 0, 0, 0));
 		}
 
 		/* mark the state as needing write */

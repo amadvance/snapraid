@@ -1020,7 +1020,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			}
 
 			/* we update the info block only if we really have updated the parity */
-			/* because otherwise the time info would be misleading as we didn't */
+			/* because otherwise the time/justsynced info would be misleading as we didn't */
 			/* wrote the parity at this time */
 			/* we also update the info block only if no silent error was found */
 			/* because has no sense to refresh the time for data that we know bad */
@@ -1039,7 +1039,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 				/* update the time info of the block */
 				/* we are also clearing any previous bad and rehash flag */
-				info_set(&state->infoarr, i, info_make(now, 0, 0));
+				info_set(&state->infoarr, i, info_make(now, 0, 0, 1));
 			}
 		}
 

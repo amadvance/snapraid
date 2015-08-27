@@ -1639,6 +1639,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			snapraid_info info;
 			int rehash;
 			int bad;
+			int justsynced;
 			uint32_t t;
 
 			ret = sgetu32(f, &v_pos);
@@ -1675,6 +1676,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			/* read extra tags if present */
 			rehash = 0;
 			bad = 0;
+			justsynced = 0;
 			c = sgetc(f);
 			while (c == ' ') {
 				ret = sgettok(f, buffer, sizeof(buffer));
@@ -1696,6 +1698,8 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}
+				} else if (strcmp(buffer, "justsynced") == 0) {
+					justsynced = 1;
 				} else {
 					/* LCOV_EXCL_START */
 					log_fatal("Invalid 'inf' specification '%s' in '%s' at line %u\n", buffer, path, line);
@@ -1707,7 +1711,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			}
 			sungetc(c, f);
 
-			info = info_make(t, bad, rehash);
+			info = info_make(t, bad, rehash, justsynced);
 
 			/* insert the info in the array */
 			info_set(&state->infoarr, v_pos, info);
@@ -2518,7 +2522,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			if (!info) {
 				/* LCOV_EXCL_START */
 				/* set a fake info block */
-				info = info_make(save_time, 0, 0);
+				info = info_make(save_time, 0, 0, 0);
 
 				/* insert the info in the array */
 				info_set(&state->infoarr, b, info);
@@ -2895,6 +2899,9 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 			}
 			if (info_get_rehash(info)) {
 				sputsl(" rehash", f);
+			}
+			if (info_get_justsynced(info)) {
+				sputsl(" justsynced", f);
 			}
 			sputeol(f);
 			if (serror(f)) {
@@ -3306,8 +3313,9 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 			v_pos = 0;
 			while (v_pos < blockmax) {
-				int rehash;
 				int bad;
+				int rehash;
+				int justsynced;
 				uint32_t t;
 				uint32_t flag;
 				uint32_t v_count;
@@ -3350,6 +3358,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 					/* analyze the flags */
 					bad = (flag & 2) != 0;
 					rehash = (flag & 4) != 0;
+					justsynced = (flag & 8) != 0;
 
 					if (rehash && state->prevhash == HASH_UNDEFINED) {
 						/* LCOV_EXCL_START */
@@ -3359,7 +3368,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 						/* LCOV_EXCL_STOP */
 					}
 
-					info = info_make(t + v_oldest, bad, rehash);
+					info = info_make(t + v_oldest, bad, rehash, justsynced);
 				} else {
 					info = 0;
 				}
@@ -4328,6 +4337,8 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 				flag |= 2;
 			if (info_get_rehash(info))
 				flag |= 4;
+			if (info_get_justsynced(info))
+				flag |= 8;
 			sputb32(flag, f);
 
 			t = info_get_time(info) - info_oldest;
