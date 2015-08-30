@@ -481,7 +481,7 @@ Commands
 	and parity disks.
 
 	For each command invocation, the 12% of the array is checked, but
-	nothing that it's more recent than 10 days.
+	nothing that was already scrubbed in the last 10 days.
 	This means that scrubbing once a week, every bit of data is checked
 	at least one time every two months.
 
@@ -489,9 +489,15 @@ Commands
 	and the -o, --older-than option to specify a different age in days.
 	You can have a full scrub with "-p 100 -o 0".
 
-	The just synched blocks never scrubbed, are scrubbed first, then are
-	scrubbed the blocks with the oldest scrub time.
-	To get some stats of the scrub times, you can use the "status" command.
+	When the selected amout doesn't allow a full scrub, the blocks
+	priority is:
+	* The blocks already marked as bad, to verify their status.
+	* The new sycnched blocks never scrubbed, to verify if their
+		parity data was written correctly.
+	* All the reimainig blocks, but starting from the oldest ones
+		ensuring an optimal check.
+
+	To get the details of the scrub status use the "status" command.
 
 	For any silent or input/output error found the corresponding blocks
 	are marked as bad in the "content" file.
