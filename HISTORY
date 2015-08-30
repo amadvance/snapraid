@@ -1,7 +1,7 @@
 SnapRAID HISTORY
 ================
 
-8.2 2015/08
+9.0 2015/09
 ===========
  * The synced blocks are now scrubbed with priority over all
    the already scrubbed ones.
