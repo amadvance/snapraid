@@ -32,8 +32,8 @@ void test(void)
 	unsigned i, j;
 	uint32_t u32 = -1L;
 	uint64_t u64 = -1LL;
-	uint32_t crc_stored;
-	uint32_t crc_computed;
+	uint32_t put_crc_stored;
+	uint32_t put_crc_computed;
 
 	crc32c_init();
 
@@ -91,16 +91,16 @@ void test(void)
 	}
 
 
-	crc_stored = scrc(s);
-	crc_computed = scrc_stream(s);
+	put_crc_stored = scrc(s);
+	put_crc_computed = scrc_stream(s);
 
-	if (crc_stored != crc_computed) {
+	if (put_crc_stored != put_crc_computed) {
 		/* LCOV_EXCL_START */
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (sputble32(crc_stored, s) != 0) {
+	if (sputble32(put_crc_stored, s) != 0) {
 		/* LCOV_EXCL_START */
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
@@ -113,8 +113,8 @@ void test(void)
 	}
 
 	for (i = 0; i < STREAM_MAX; ++i) {
-		uint32_t crc_stored;
-		uint32_t crc_computed;
+		uint32_t get_crc_stored;
+		uint32_t get_crc_computed;
 		snprintf(file, sizeof(file),  "stream%u.bin", i);
 
 		s = sopen_read(file);
@@ -172,15 +172,21 @@ void test(void)
 			}
 		}
 
-		crc_computed = scrc(s);
+		get_crc_computed = scrc(s);
 
-		if (sgetble32(s, &crc_stored) != 0) {
+		if (sgetble32(s, &get_crc_stored) != 0) {
 			/* LCOV_EXCL_START */
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 
-		if (crc_stored != crc_computed) {
+		if (get_crc_stored != get_crc_computed) {
+			/* LCOV_EXCL_START */
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (get_crc_stored != put_crc_stored) {
 			/* LCOV_EXCL_START */
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
