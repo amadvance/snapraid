@@ -3,6 +3,11 @@ SnapRAID HISTORY
 
 9.0 2015/09
 ===========
+ * Fixes an invalid assumption that could happen when using the
+   -e, --filter-error option with "fix" or "check".
+   This was triggered by a very specific pattern of fragmented files
+   and bad blocks combination, not so easy to reproduce.
+   This had no bad effect, if not preventing the command to run.
  * The synced blocks are now scrubbed with priority over all
    the already scrubbed ones.
    This allows to verify as early as possible that the written
