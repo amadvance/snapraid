@@ -588,11 +588,20 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
  * Post process all the files at the specified block index ::i.
  * For each file, if we are at the last block, closes it,
  * adjust the timestamp, and prints the result.
+ *
+ * This works with the assumption to always process the whole files to
+ * fix. This assumption is not always correct, and in such case we have to
+ * skip the whole postprocessing. And example, is when fixing only bad blocks.
  */
 static int file_post(struct snapraid_state* state, int fix, unsigned i, struct snapraid_handle* handle, unsigned diskmax)
 {
 	unsigned j;
 	int ret;
+
+	/* if we are processing only bad blocks, we don't have to do any postprocessing */
+	/* as we don't have any guarantee to process the last block of the fixed files */
+	if (state->opt.badonly)
+		return 0;
 
 	/* for all the files prints the final status, and does the final time fix */
 	/* we also ensure to close files after processing the last block */
