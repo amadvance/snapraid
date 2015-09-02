@@ -641,15 +641,6 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 			goto close_and_continue;
 		}
 
-		/* if the file is opened and not excluded, it must be the correct one */
-		/* or at least pointing to NULL, in case it cannot be opened. */
-		if (handle[j].file != 0 && handle[j].file != file) {
-			/* LCOV_EXCL_START */
-			log_fatal("Internal inconsistency in opened file for block %u\n", block->parity_pos);
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
-
 		/* finish the fix process if it's the last block of the files */
 		if (fix) {
 			/* mark that we finished with this file */
@@ -664,13 +655,15 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 				pathprint(path_to, sizeof(path_to), "%s%s.unrecoverable", disk->dir, file->sub);
 
 				/* ensure to close the file before renaming */
-				ret = handle_close(&handle[j]);
-				if (ret != 0) {
-					/* LCOV_EXCL_START */
-					log_fatal("Error closing '%s'. %s.\n", path, strerror(errno));
-					log_fatal("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
-					return -1;
-					/* LCOV_EXCL_STOP */
+				if (handle[j].file == file) {
+					ret = handle_close(&handle[j]);
+					if (ret != 0) {
+						/* LCOV_EXCL_START */
+						log_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
+						log_fatal("DANGER! Unexpected close error in a data disk.\n");
+						return -1;
+						/* LCOV_EXCL_STOP */
+					}
 				}
 
 				ret = rename(path, path_to);
@@ -693,6 +686,31 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 			if (!file_flag_has(file, FILE_IS_FIXED)) {
 				/* nothing to do, but close the file */
 				goto close_and_continue;
+			}
+
+			/* if the file is closed or different than the one expected, reopen it */
+			/* a different open file could happen when filtering for bad blocks */
+			if (handle[j].file != file) {
+				/* close a potential different file */
+				ret = handle_close(&handle[j]);
+				if (ret != 0) {
+					/* LCOV_EXCL_START */
+					log_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(handle[j].file->sub), strerror(errno));
+					log_fatal("DANGER! Unexpected close error in a data disk.\n");
+					return -1;
+					/* LCOV_EXCL_STOP */
+				}
+
+				/* reopen it as readonly, as to set the mtime readonly access it's enough */
+				/* we know that the file exists because it has the FILE_IS_FIXED tag */
+				ret = handle_open(&handle[j], file, state->file_mode, log_error, 0);
+				if (ret != 0) {
+					/* LCOV_EXCL_START */
+					log_fatal("Error opening '%s'. %s.\n", path, strerror(errno));
+					log_fatal("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+					return -1;
+					/* LCOV_EXCL_STOP */
+				}
 			}
 
 			log_tag("status:recovered:%s:%s\n", disk->name, esc(file->sub));
