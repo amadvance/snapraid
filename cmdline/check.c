@@ -706,7 +706,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 				ret = handle_open(&handle[j], file, state->file_mode, log_error, 0);
 				if (ret != 0) {
 					/* LCOV_EXCL_START */
-					log_fatal("Error opening '%s'. %s.\n", path, strerror(errno));
+					log_tag("error:%u:%s:%s: Open error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
 					log_fatal("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
 					return -1;
 					/* LCOV_EXCL_STOP */

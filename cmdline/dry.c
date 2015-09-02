@@ -60,6 +60,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			int read_size;
 			struct snapraid_block* block = BLOCK_EMPTY;
 			struct snapraid_disk* disk = handle[j].disk;
+			struct snapraid_file* file;
 
 			if (!disk) {
 				/* if no disk, nothing to do */
@@ -73,29 +74,31 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 				continue;
 			}
 
+			/* get the file of this block */
+			file = block_file_get(block);
+
 			/* until now is CPU */
 			state_usage_cpu(state);
 
 			/* if the file is closed or different than the current one */
-			if (handle[j].file == 0 || handle[j].file != block_file_get(block)) {
-				struct snapraid_file* file = handle[j].file;
-				if (file != 0) {
-					ret = handle_close(&handle[j]);
-					if (ret == -1) {
-						/* LCOV_EXCL_START */
-						log_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
-						log_fatal("DANGER! Unexpected close error in a data disk, it isn't possible to dry.\n");
-						log_fatal("Stopping at block %u\n", i);
-						++error;
-						goto bail;
-						/* LCOV_EXCL_STOP */
-					}
+			if (handle[j].file == 0 || handle[j].file != file) {
+				/* close the old one, if any */
+				ret = handle_close(&handle[j]);
+				if (ret == -1) {
+					/* LCOV_EXCL_START */
+					log_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(handle[j].file->sub), strerror(errno));
+					log_fatal("DANGER! Unexpected close error in a data disk, it isn't possible to dry.\n");
+					log_fatal("Stopping at block %u\n", i);
+					++error;
+					goto bail;
+					/* LCOV_EXCL_STOP */
 				}
 
 				/* open the file only for reading */
-				ret = handle_open(&handle[j], block_file_get(block), state->file_mode, log_fatal, 0);
+				ret = handle_open(&handle[j], file, state->file_mode, log_fatal, 0);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
+					log_tag("error:%u:%s:%s: Open error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
 					log_fatal("DANGER! Unexpected open error in a data disk, it isn't possible to dry.\n");
 					log_fatal("Stopping at block %u\n", i);
 					++error;
@@ -107,7 +110,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			/* read from the file */
 			read_size = handle_read(&handle[j], block, buffer_aligned, state->block_size, log_error, 0);
 			if (read_size == -1) {
-				log_tag("error:%u:%s:%s: Read error at position %u\n", i, disk->name, esc(block_file_get(block)->sub), block_file_pos(block));
+				log_tag("error:%u:%s:%s: Read error at position %u\n", i, disk->name, esc(file->sub), block_file_pos(block));
 				++error;
 				continue;
 			}
