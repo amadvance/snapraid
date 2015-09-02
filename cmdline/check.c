@@ -758,11 +758,12 @@ close_and_continue:
 		/* that the opened file is not the current one */
 		if (handle[j].file == file) {
 			/* ensure to close the file just after finishing with it */
+			/* to avoid to keep it open without any possible use */
 			ret = handle_close(&handle[j]);
 			if (ret != 0) {
 				/* LCOV_EXCL_START */
-				log_fatal("Error closing '%s'. %s.\n", path, strerror(errno));
-				log_fatal("WARNING! Without a working data disk, it isn't possible to fix errors on it.\n");
+				log_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
+				log_fatal("DANGER! Unexpected close error in a data disk.\n");
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
@@ -976,7 +977,8 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
-					log_fatal("DANGER! Unexpected close error in a data disk, it isn't possible to check.\n");
+					log_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(handle[j].file->sub), strerror(errno));
+					log_fatal("DANGER! Unexpected close error in a data disk.\n");
 					log_fatal("Stopping at block %u\n", i);
 					++unrecoverable_error;
 					goto bail;
@@ -1696,9 +1698,12 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 bail:
 	/* close all the files left open */
 	for (j = 0; j < diskmax; ++j) {
+		struct snapraid_file* file = handle[j].file;
+		struct snapraid_disk* disk = handle[j].disk;
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
+			log_tag("error:%u:%s:%s: Close error. %s\n", blockmax, disk->name, esc(file->sub), strerror(errno));
 			log_fatal("DANGER! Unexpected close error in a data disk.\n");
 			++unrecoverable_error;
 			/* continue, as we are already exiting */
