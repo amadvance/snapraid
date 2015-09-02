@@ -23,6 +23,8 @@ features of SnapRAID are:
 * You can add disks at any time.
 * It doesn't lock-in your data. You can stop using SnapRAID at any
   time without the need to reformat or move data.
+* To access a file, a single disk needs to spin, saving power and
+  producing less noise.
 
 The official site of SnapRAID is:
 
