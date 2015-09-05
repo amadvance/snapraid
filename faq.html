@@ -157,8 +157,27 @@ RAIDs are mirroring solutions that propagate changes immediately to the parity d
 In this sense, RAIDs are not backups, because they don't allow to restore an old state of the array.
 </p>
 <p>
-SnapRAID is instead more similar at a backup solution, and you can restore the state of the last backup made.
+SnapRAID is instead more similar at a backup solution, and you can restore the state of the last backup.
 For example, with SnapRAID, if you delete by accident a file, you can easily restore it.
+</p>
+<p>
+Others advantages over traditional RAID5/6 solutions are:
+<ul>
+<li>All your data is hashed to ensure data integrity and to avoid silent corruption.</li>
+<li>If the failed disks are too many to allow a recovery, you lose the data only on the failed disks.
+All the data in the other disks is safe.</li>
+<li>If you accidentally delete some files in a disk, you can recover them.</li>
+<li>You can start with already filled disks.</li>
+<li>The disks can have different sizes.</li>
+<li>You can add disks at any time.</li>
+<li>It doesn't lock-in your data. You can stop using SnapRAID at any time
+without the need to reformat or move data.</li>
+<li>To access a file, a single disk needs to spin, saving power and
+producing less noise.</li>
+<li>You can have up to six parity levels compared to the one of RAID5 and the two of RAID6.</li>
+</ul>
+Obviously RAID has other advantages, like having a better speed due data striping.
+What is best for you, depends on your specific use case.
 </p>
 
 <a id="difffile"><h3>How is it different than ZFS/Btrfs snapshots and NTFS Shadow Copy?</h3></a>
@@ -166,6 +185,23 @@ For example, with SnapRAID, if you delete by accident a file, you can easily res
 SnapRAID creates a filesystem snapshot conceptually similar at other snapshot solutions.
 The difference is that the purpose of SnapRAID is to be able to recover a disk to the saved state
 after a complete disk failure.
+</p>
+<p>
+SnapRAID is more similar at the RAID-Z/RAID functionality of ZFS/Btrfs.
+Compared to them, SnapRAID has the following advantages:
+<ul>
+<li>If the failed disks are too many to allow a recovery, you lose the data only on the failed disks.
+All the data in the other disks is safe.</li>
+<li>You can start with already filled disks.</li>
+<li>You can add disks at any time (not possible with ZFS, but possible with Btrfs).</li>
+<li>It doesn't lock-in your data. You can stop using SnapRAID at any time
+without the need to reformat or move data.</li>
+<li>To access a file, a single disk needs to spin, saving power and
+producing less noise.</li>
+<li>You can have up to six parity levels compared to the three of ZFS RAID-Z and the two of Btrfs RAID-5/6.</li>
+</ul>
+Obviously ZFS/Btrfs have other advantages, like being real-time solutions.
+What is best for you, depends on your specific use case.
 </p>
 
 <a id="diffbak"><h3>How is it different than other backup solutions?</h3></a>
@@ -175,15 +211,19 @@ With SnapRAID you need only one additional parity disk to be able to recover the
 Adding more parity disks, you can recover from more disk failures.
 </p>
 <p>
-Note anyway, that only a full backup allows to recover from a complete failure of the disk array and
+Note that only a full backup allows to recover from a complete failure of the disk array and
 it's surely the preferred solution if you can afford it.
-SnapRAID is a good option only if a full backup is not a possible solution.
+SnapRAID is a good option if a full backup is not a possible solution.
 </p>
 
 <a id="adv"><h3>What are the advantages of SnapRAID compared to similar solutions like unRAID/FlexRAID/Windows Storage Spaces?</h3></a>
 <p>
 You can see the <a href="compare.html">Compare</a> page to see it compared to other similar solutions.
-In short, SnapRAID is reliable, OpenSource, multi-platform and free.
+</p>
+<p>
+A strong advantage of SnapRAID is the <span class="bold">integrity and silent error management</span> that is at the same level (if not better)
+of the ZFS and Btrfs filesystems. Instead, unRAID and Storage Space have no integrity check at all!
+FlexRAID is at least able to report silent errors, <a href="http://forum.flexraid.com/index.php/topic,3233.0.html">but not to fix them</a>.
 </p>
 
 <a id="cost"><h3>How much does it cost?</h3></a>

@@ -92,7 +92,7 @@ and if <span class="bold">all your disks are spinning when reading one file</spa
 </p>
 
 <table class="compare">
-<tr><th></th><th><span class="bold">SnapRAID</span></th><th>unRAID</th><th>FlexRAID</th><th>disParity</th><th>ZFS</th><th>Btrfs</th><th>Storage Spaces</th></tr>
+<tr><th width="30%"></th><th><span class="bold">SnapRAID</span></th><th>unRAID</th><th>FlexRAID</th><th>disParity</th><th>ZFS</th><th>Btrfs</th><th>Storage Spaces</th></tr>
 
 <tr><td><span class="bold">Redundancy model</span><br/>Real-time computes parity at real-time like RAID,
 snapshot at request time, like Backup.</td>
@@ -141,8 +141,16 @@ is it possible to recover the data in the not failed disks?</td>
 <tr><td><span class="bold">Power/Noise</span><br/>How many disks are spinning when reading a single file?</td>
 <td>One</td><td>One</td><td>One</td><td>One</td><td>All</td><td>All</td><td>All</td></tr>
 
-<tr><td><span class="bold">Filled disk</span><br/>Can you start with already filled disks?</td>
+<tr><td><span class="bold">Filled disks</span><br/>Can you start with already filled disks?</td>
 <td>Yes</td><td>Partial<a href="#4">[4]</td><td>Yes</td><td>Yes</td><td>No</td><td>No</td><td>No</td></tr>
+
+<tr><td><span class="bold">Add disks</span><br/>Can you add disks at later time?</td>
+<td>Yes</td><td>Yes</td><td>Yes</td><td>Yes</td><td>No</td><td>Yes</td><td>Yes</td></tr>
+
+<!--
+ZFS does't allow to add new disks to a raidz pool
+http://serverfault.com/questions/190207/how-can-i-add-one-disk-to-an-existing-raidz-zpool
+-->
 
 <tr><td><span class="bold">Operating system</span><br/>Which OS is supported?</td>
 <td>Linux<br/>Windows<br/>Mac&nbsp;OS&nbsp;X<br/>OpenIndiana<br/>Solaris<br/>BSD</td><td>Linux</td><td>Windows<br/>Linux</td><td>Windows</td><td>Linux <a href="#5">[5]</a><br/>Mac&nbsp;OS&nbsp;X<br/>OpenIndiana<br/>Solaris<br/>BSD</td><td>Linux</td><td>Windows</td></tr>
@@ -152,6 +160,10 @@ is it possible to recover the data in the not failed disks?</td>
 
 <!---
 ZFS 2009 is the data of the "Triple-Parity RAID-Z" article by Adam Leventhal
+
+RAID 1987 is the date of the paper:
+"A Case for Redundant Arrays of Inexpensive Disks (RAID)", David A. Patterson, Garth A. Gibson and Randy H. Katz
+http://www.eecs.berkeley.edu/Pubs/TechRpts/1987/5853.html
 -->
 
 <tr><td><span class="bold">License/Price</span><br/>
