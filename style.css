@@ -16,7 +16,7 @@ a img {
 
 /* No dots around clicked links */
 a, a:active {
-	outline: none;
+	outline:none;
 }
 
 /* Class to any floated elements */
@@ -83,18 +83,20 @@ body {
 	background-color:#ffffff;
 	margin:0px;
 	padding:0px;
-	overflow-y: scroll;
+	overflow-y:scroll;
 }
 
 /* title */
 
 #title {
-	background: #0a64a4;
+	background:#0a64a4;
 	padding:0px;
 }
 
 #title img {
-	width: 100%;
+	width:100%;
+	/* avoid to scale up the image */
+	max-width:1600px;
 }
 
 /* bar */
@@ -121,7 +123,7 @@ body {
 
 #bottombar {
 	background-color:#bacad9;
-	min-height: 90px;
+	min-height:90px;
 	padding-top:16px;
 	padding-bottom:16px;
 	padding-left:5%;
@@ -130,8 +132,8 @@ body {
 
 #bottombar img {
 	/* scale down the image if there is no space */
-	max-width: 50%;
-	height: auto;
+	max-width:50%;
+	height:auto;
 }
 
 #bottombar a {
@@ -166,13 +168,13 @@ body {
 }
 .download td
 {
-	border: 2px solid black;
+	border:2px solid black;
 	text-align:left;
 	padding:5px;
 }
 .download th
 {
-	border: 2px solid black;
+	border:2px solid black;
 	font-size:1.1em;
 	text-align:left;
 	padding:5px;
@@ -188,12 +190,12 @@ body {
 }
 .compare td
 {
-	border: 2px solid black;
+	border:2px solid black;
 	text-align:center;
 }
 .compare th
 {
-	border: 2px solid black;
+	border:2px solid black;
 	font-size:1.1em;
 	padding:5px;
 	background-color:#bacad9;
