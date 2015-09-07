@@ -128,6 +128,12 @@ body {
 	padding-right:5%;
 }
 
+#bottombar img {
+	/* scale down the image if there is no space */
+	max-width: 50%;
+	height: auto;
+}
+
 #bottombar a {
 	color:#0c5da5;
 	font-family:sans-serif;
