@@ -97,6 +97,7 @@ body {
 	width:100%;
 	/* avoid to scale up the image */
 	max-width:1200px;
+	height:auto;
 }
 
 /* bar */
