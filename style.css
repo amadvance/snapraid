@@ -132,12 +132,6 @@ body {
 	overflow:auto;
 }
 
-#bottombar img {
-	/* scale down the image if there is no space */
-	max-width:50%;
-	height:auto;
-}
-
 #bottombar a {
 	color:#0c5da5;
 	font-family:sans-serif;
@@ -148,9 +142,15 @@ body {
 	color:#0c5da5;
 }
 
-#bottomentry {
+.half {
 	float:left;
 	width:50%;
+}
+
+.half img {
+	/* scale down the image if there is no space */
+	max-width:50%;
+	height:auto;
 }
 
 /* main */
