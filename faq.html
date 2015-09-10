@@ -24,7 +24,7 @@
 </head>
 <body>
 <div id="title">
-<img src="index.png" width="1200" height="150" alt="Title"/>
+<img src="index.png" width="1200" height="150" alt="Title">
 </div>
 <div id="bar">
 <a href="index.html">About</a>
@@ -70,7 +70,7 @@ Frequently Asked Questions for <span class="bold">SnapRAID</span>.
 <li><a href="#fs">Which filesystem is recommended for SnapRAID ?</a></li>
 <li><a href="#hardware">Which hardware configuration is recommended?</a></li>
 <li><a href="#cpu">Is a multi-core CPU recommended?</a></li>
-<li><a href="#64">Is a 64 bit operating system recommended?</a></li>
+<li><a href="#bit64">Is a 64 bit operating system recommended?</a></li>
 <li><a href="#mem">How much memory SnapRAID requires to run?</a></li>
 <li><a href="#smart">Do I have to check the SMART attributes of my disks?</a></li>
 <li><a href="#multios">Is it possible to use SnapRAID in a dual boot configuration, like Windows and Linux?</a></li>
@@ -162,6 +162,7 @@ For example, with SnapRAID, if you delete by accident a file, you can easily res
 </p>
 <p>
 Others advantages over traditional RAID5/6 solutions are:
+</p>
 <ul>
 <li>All your data is hashed to ensure data integrity and to avoid silent corruption.</li>
 <li>If the failed disks are too many to allow a recovery, you lose the data only on the failed disks.
@@ -176,6 +177,7 @@ without the need to reformat or move data.</li>
 producing less noise.</li>
 <li>You can have up to six parity levels compared to the one of RAID5 and the two of RAID6.</li>
 </ul>
+<p>
 Obviously RAID has other advantages, like having a better speed due data striping.
 What is best for you, depends on your specific use case.
 </p>
@@ -189,6 +191,7 @@ after a complete disk failure.
 <p>
 SnapRAID is more similar at the RAID-Z/RAID functionality of ZFS/Btrfs.
 Compared to them, SnapRAID has the following advantages:
+</p>
 <ul>
 <li>If the failed disks are too many to allow a recovery, you lose the data only on the failed disks.
 All the data in the other disks is safe.</li>
@@ -200,6 +203,7 @@ without the need to reformat or move data.</li>
 producing less noise.</li>
 <li>You can have up to six parity levels compared to the three of ZFS RAID-Z and the two of Btrfs RAID-5/6.</li>
 </ul>
+<p>
 Obviously ZFS/Btrfs have other advantages, like being real-time solutions.
 What is best for you, depends on your specific use case.
 </p>
@@ -251,13 +255,13 @@ with any other pooling solutions.
 <p>
 For encryption, SMART monitoring, Power control and Data Recovery you can use other tools.
 Here some suggestions:
-<p>
+</p>
 <table class="compare">
 <tr><th></th><th>Linux</th><th>Windows</th><th>Mac OS X</th></tr>
 <tr>
 <td>Encryption</td>
 <td>
-<a href="http://en.wikipedia.org/wiki/Dm-crypt">dmcrypt/LUKS</a><br/>
+<a href="http://en.wikipedia.org/wiki/Dm-crypt">dmcrypt/LUKS</a><br>
 (<a href="http://zackreed.me/articles/79-encrypted-snapraid">tutorial</a>)</td>
 <td>
 <!--
@@ -275,7 +279,7 @@ Discontinued? 28/5/2014
 <tr>
 <td>Virtual views/storage pooling</td>
 <td><a href="http://romanrm.ru/en/mhddfs">mhddfs</a>
-(<a href="http://zackreed.me/articles/84-snapraid-with-mhddfs">tutorial</a>)</a>,
+(<a href="http://zackreed.me/articles/84-snapraid-with-mhddfs">tutorial</a>),
 <a href="http://aufs.sourceforge.net/">aufs</a>,
 <a href="http://www.greyhole.net/">Greyhole</a>
 </td>
@@ -327,7 +331,6 @@ Dead site?
 <td></td>
 </tr>
 </table>
-</p>
 
 <a id="bakhome"><h3>Is SnapRAID suitable to backup the home/My Documents directory?</h3></a>
 <p>
@@ -353,8 +356,8 @@ For a setup example in Ubuntu 14.04 you can check the <a href="http://zackreed.m
 <p>
 As a rule of thumb you can stay with one parity disk (RAID5) with up to four data disks,
 and then using one parity disk for each group of seven data disks, like in the table:
+</p>
 
-<p>
 <table class="download">
 <tr><th>Parities</th><th>Data disks</th></tr>
 <tr>
@@ -382,7 +385,6 @@ and then using one parity disk for each group of seven data disks, like in the t
 <td>36 - 42</td>
 </tr>
 </table>
-</p>
 
 <p>
 This table takes into account that more parity levels also help to recover from unsynced array,
@@ -405,9 +407,11 @@ Some interesting articles about number of parity levels and failure rate of disk
 </p>
 
 <a id="fs"><h3>Which filesystem is recommended for SnapRAID ?</h3></a>
+<p>
 For the data disks, you can use whatever filesystem you like.
 For the parity disks, follow these suggestions:
-<p>
+</p>
+
 <table class="download">
 <tr><th>FileSystem</th><th>Result</th></tr>
 <tr>
@@ -427,7 +431,7 @@ You can anyway use it if you limit the use of the parity disk to contain only th
 <tr>
 <td>JFS</td>
 <td>No. It doesn't support the <a href="http://www.kernel.org/doc/man-pages/online/pages/man2/fallocate.2.html">fallocate()</a> command needed to allocated the parity files.
-<br/>
+<br>
 It also doesn't seem to implement at the best the <a href="http://pubs.opengroup.org/onlinepubs/009695399/functions/posix_fadvise.html">posix_fadvise()</a> command.</td>
 </tr>
 <tr>
@@ -449,11 +453,12 @@ You can anyway use it if you limit the use of the parity disk to contain only th
 <td>OK</td>
 </tr>
 </table>
-</p>
+
 <p>
 In Linux, to get more space for the parity, it's recommended to format the parity filesystem with the <em>-m 0 -T largefile4</em> options.
-Like: <pre>mkfs.ext4 -m 0 -T largefile4 DEVICE</pre>
+Like:
 </p>
+<pre>mkfs.ext4 -m 0 -T largefile4 DEVICE</pre>
 
 <a id="hardware"><h3>Which hardware configuration is recommended?</h3></a>
 <p>
@@ -471,12 +476,14 @@ and <a href="https://www.backblaze.com/blog/enterprise-drive-reliability/">Backb
 <a id="cpu"><h3>Is a multi-core CPU recommended?</h3></a>
 <p>
 No. SnapRAID is usually not CPU bound. The limiting factor is the read performance from disks.
-So, also a single core CPU should be enough.<br/>
+So, also a single core CPU should be enough.
+</p>
+<p>
 For example, in my system I get a combined read speed of 400 MiB/s,
 but SnapRAID is able to hash at 12000 MiB/s in a single core.
 </p>
 
-<a id="64"><h3>Is a 64 bit operating system recommended?</h3></a>
+<a id="bit64"><h3>Is a 64 bit operating system recommended?</h3></a>
 <p>
 Yes. SnapRAID works better in a 64 bit operating system. It can access more than 4 GiB of memory,
 and use faster hashing and parity algorithms.
@@ -522,6 +529,7 @@ different than zero, replace the disk as recommended by
 <p>
 Check also <a href="http://research.google.com/pubs/pub32774.html">Google's Failure trends in a large disk drive population</a>
 where is found that:
+</p>
 <pre>after the first reallocation, drives are
 over 14 times more likely to fail within
 60 days than drives without reallocation
@@ -533,9 +541,10 @@ counts.</pre>
 <pre>after the first offline reallocation, drives have over
 21 times higher chances of failure within 60 days than
 drives without offline reallocations.</pre>
-</p>
+<p>
 that also recommens to replace the disk after the first error in the SMART attributes <b>Reallocated_Sector_Ct (5)</b>,
 <b>Current_Pending_Sector (197)</b> and <b>Offline_Uncorrectable (198)</b>.
+</p>
 
 <a id="multios"><h3>Is it possible to use SnapRAID in a dual boot configuration, like Windows and Linux?</h3></a>
 <p>
@@ -598,6 +607,7 @@ using a drive letter. Just like in Linux.
 <a id="guidelines"><h3>What are the most important things to do to prevent damages?</h3></a>
 <p>
 If you want to minimize the probability to lose data, do this:
+</p>
 <ul>
 <li>Before running the first "sync", check your RAM memory with a program
 like <a href="http://www.memtest86.com/">memtest86</a>.
@@ -609,16 +619,15 @@ to monitor the SMART attributes.
 At the first <b>Reallocated_Sector_Ct</b>, <b>Current_Pending_Sector</b> or <b>Offline_Uncorrectable</b>, replace the disk,
 even if it still works.</li>
 </ul>
-</p>
 
 <a id="adddatadisk"><h3>How can I add an additional data disk to an existing array?</h3></a>
 <p>
 To add a new data disk at the array, add the new "disk" option in the configuration file,
 and then run a "sync" command.
+</p>
 <pre>
 snapraid sync
 </pre>
-</p>
 
 <a id="remdatadisk"><h3>How can I remove a data disk from an existing array?</h3></a>
 <p>
@@ -642,9 +651,11 @@ Your array is now without any reference to the removed disk.
 <p>
 To add a new parity level, add the proper "N-parity" option in the configuration file, and then run the "sync" command,
 using the "F, --force-full" option:
+</p>
 <pre>
 snapraid -F sync
 </pre>
+<p>
 The "-F" option tells at SnapRAID to recompute the full parity.
 </p>
 <p>
@@ -668,9 +679,11 @@ maintaining the same directory structure and names.
 <p>
 Then change the SnapRAID configuration to point the disk at the new mount point and run a "diff"
 command to ensure that everything is placed correctly.
+</p>
 <pre>
 snapraid diff
 </pre>
+<p>
 If "diff" reports some "added" or "removed" files likely you have copied files
 with a different directory structure.
 In such case you have to fix it, until "diff" reports only "equal", "restored" or "copied" files.
@@ -678,24 +691,24 @@ In such case you have to fix it, until "diff" reports only "equal", "restored" o
 <p>
 Now you can check that the files were really copied correctly, you can run a "check" audit command
 limited to the replaced disk to check the checksum of all the files.
+</p>
 <pre>
 snapraid check -a -d DISK_NAME
 </pre>
-</p>
 <p>
 Finally you can run "sync" to update the SnapRAID state. This command will be almost immediate.
+</p>
 <pre>
 snapraid sync
 </pre>
-</p>
 
 <a id="reppardisk"><h3>How can I replace a parity disk?</h3></a>
 <p>
 If the disk is still accessible, first ensure to have a synched array running a sync command:
+</p>
 <pre>
 snapraid sync
 </pre>
-</p>
 <p>
 Then you can copy the big parity file to the new disk,
 and configure the new parity location in the configuration file.
@@ -703,9 +716,11 @@ and configure the new parity location in the configuration file.
 <p>
 In Linux a good copy command is <a href="http://www.gnu.org/software/ddrescue/">ddrescue</a>.
 You can use:
+</p>
 <pre>
 ddrescue /OLD_DISK/parity /NEW_DISK/parity /tmp/copy.log
 </pre>
+<p>
 This will copy the parity file from the old to new location, and in case of errors,
 it will continue copying what can be copied.
 To retry to copy the problematic sections, you can just retry the same copy
@@ -718,10 +733,11 @@ just run a "fix" command.
 </p>
 <p>
 If instead you completely lost the parity file, you can run the "fix" command to recreate it.
+</p>
 <pre>
 snapraid fix
 </pre>
-</p>
+
 <a id="defrag"><h3>Can I defragment the data and parity disks?</h3></a>
 <p>
 Yes, you can defragment data and parity disks. Defragmentation doesn't invalidate the SnapRAID data.
@@ -755,18 +771,22 @@ Ensure to disable this option in TrueCrypt.
 <a id="undelete"><h3>How can I undelete a just deleted file?</h3></a>
 <p>
 Simply run the "fix" command using a filter for the specified file. Like:
+</p>
 <pre>
 snapraid fix -f my_just_deleted_file
 </pre>
+<p>
 To undelete a directory use:
+</p>
 <pre>
 snapraid fix -f my_just_deleted_dir/
 </pre>
+<p>
 To undelete all the missing files use:
+</p>
 <pre>
 snapraid fix -m
 </pre>
-</p>
 
 <a id="addandbreak"><h3>What happen if I add files and a disk breaks before I have updated the parity with "sync"?</h3></a>
 <p>
@@ -789,10 +809,10 @@ but outside the directory tree checked by SnapRAID. Then you can run the "sync" 
 its completion really delete the files.
 In case you get a disk failure during the "sync", you have to just run the "fix" command specifying where
 the deleted files are stored:
+</p>
 <pre>
 snapraid fix -i dir_of_deleted_files
 </pre>
-</p>
 
 <a id="syncandbreak"><h3>What happen if a disk breaks during a "sync" ?</h3></a>
 <p>
@@ -829,37 +849,41 @@ Another thing to check is the disk cabling and the CPU heat.
 </p>
 <p>
 Another possibility is that you are using programs that change files without modifying the time-stamp of the file itself.
-<br/>
+<br>
 In Linux this is almost guaranteed by the operating system. The only exception is for memory mapped files
 not yet closed.
-<br/>
+<br>
 In Windows it's a bit trickier. Even using normal writes, you have the guarantee of an updated time-stamp
 only after closing it.
 See the <a href="http://msdn.microsoft.com/en-us/library/windows/desktop/aa365747%28v=vs.85%29.aspx">MSDN WriteFile():</a>
+</p>
 <pre>
 When writing to a file, the last write time is not fully updated until
 all handles used for writing have been closed. Therefore, to ensure an
 accurate last write time, close the file handle immediately after writing
 to the file.
 </pre>
+<p>
 When using memory mapped file, the program must ensure to update the time-stamp manually,
 because Windows doesn't do it automatically.
 See the <a href="http://msdn.microsoft.com/en-us/library/windows/desktop/aa366537%28v=vs.85%29.aspx">MSDN CreateFileMapping():</a>
+</p>
 <pre>
 When modifying a file through a mapped view, the last modification timestamp
 may not be updated automatically. If required, the caller should use SetFileTime
 to set the timestamp.
 </pre>
+<p>
 To avoid all these Windows problems, simply ensure to run "sync" when no program is using the files into the array.
 </p>
 
 <a id="log"><h3>How can I store in a file all the messages from a check and fix command</h3></a>
 <p>
 To generate a log file you can use the "-l" option.
+</p>
 <pre>
 snapraid check -l mylog.log
 </pre>
-</p>
 
 <a id="recconf"><h3>How can I recover the snapraid.conf file</h3></a>
 <p>
@@ -867,10 +891,10 @@ There is the dedicated -C, --gen-conf command that writes a template configurati
 compatible with your content file.
 Note that this configuration requires some manual adjustments to set the disk mount points,
 but in the comments you'll find the required information to do so.
+</p>
 <pre>
 snapraid -C snapraid.content > snapraid.conf.new
 </pre>
-</p>
 
 <h2>Tech</h2>
 
@@ -893,13 +917,13 @@ An introduction to this problem is in this article:
 <p>
 A good analysis of this risk is in the paper:
 <a href="http://www.cs.toronto.edu/~bianca/papers/fast08.pdf">An Analysis of Data Corruption in the Storage Stack</a>
+</p>
 <pre>
 A significant number (8% on average) of corruptions
 are detected during RAID reconstruction, creating the
 possibility of data loss. In this case, protection against
 double disk failures is necessary to prevent data loss.
 </pre>
-</p>
 
 <a id="multithread"><h3>Is SnapRAID multithread?</h3></a>
 <p>
@@ -950,10 +974,12 @@ Trying an automatic long sequence of retries, will likely kill the disk.
 </p>
 <p>
 If after a such error, you want to retry, you have to just repeat the command.
-<br/>
+</p>
+<p>
 In the case of "fix" and "check" commands you can restart from the interrupted point using the "-s, --start"
 option specifying the block number that generated the error.
-<br/>
+</p>
+<p>
 In the case of "sync" command, the latest state is anyway saved before termination.
 So, just restarting it will continue where stopped.
 </p>
@@ -967,37 +993,48 @@ It's created where the first content file is placed.
 <h2>Performance</h2>
 
 <a id="perfhardware"><h3>Which is the optimal hardware configuration to get the best performance?</h3></a>
+<p>
 The most important factor is to connect all the disks using (E)SATA connections,
 to avoid slowdown caused by the controller. Avoid any kind of USB disks.
-<br/>
+</p>
+<p>
 The second important factor is use disks with similar performance, because the read/write
 speed is limited by the slowest disk of the array.
 After a sync operation, it's printed a short stats with the wait times for each disk,
 that could help to identify a bottleneck caused by a slow disk.
-<br/>
+</p>
+<p>
 As last, a fast CPU could improve the speed when having a lot of disks.
 You can detect if the CPU is a limiting factor, checking the CPU usage during sync operations.
-<br/>
+</p>
 
 <a id="blocksize"><h3>Which is the optimal blocksize to get the best performance?</h3></a>
+<p>
 The default blocksize should be already the best one.
-<br/>
+</p>
+<p>
 Note that increasing it doesn't necessarely improve the performance.
 In some cases, it could decrease it.
+</p>
 
 <a id="readahead"><h3>Which is the optimal Linux read-ahead size to get the best performance?</h3></a>
+<p>
 The default Linux read-ahead size of 128 KiB already ensures the best performance
 for the default SnapRAID block size of 256 KiB.
 If you use a bigger block size, you should configure the read-ahead size to be at least equal
 to half of the SnapRAID block size.
-<br/>
+</p>
+<p>
 For example, if you want to use a SnapRAID block size of 512 KiB,
 it's recommended to configure a read-ahead size of 256 KiB for sdX using:
+</p>
 <pre>
 echo 256 > /sys/block/sdX/queue/read_ahead_kb
 </pre>
+<p>
 Note that if you want to use a SnapRAID block size smaller than 256 KiB, it's recommended to don't configure a specific
 read-ahead size, and just use the default value.
+</p>
 
 <a id="speed"><h3>How fast are the hash and parity computation?</h3></a>
 <p>
@@ -1064,9 +1101,11 @@ RAID functions used for recovering with 'fix':
 Likely you have too few free memory, and the Linux out-of-memory OOM killer terminates SnapRAID
 because it's using too much memory.
 You can use the free command to check how much free memory you have.
+</p>
 <pre>
 free -m
 </pre>
+<p>
 If it's too small, you have to install more memory in the machine.
 </p>
 
@@ -1084,9 +1123,11 @@ to reduce the size of the needed parity.
 <p>
 If you are using Linux, an alternate approach is to reformat the parity disk using
 specific options to increase the available space, like:
+</p>
 <pre>
 mkfs.ext4 -m 0 -T largefile4 DEVICE
 </pre>
+<p>
 The '-T largefile4' and '-m 0' options should give more space available for the parity file.
 </p>
 
@@ -1097,17 +1138,17 @@ The '-T largefile4' and '-m 0' options should give more space available for the 
 
 <div class="half">
 <span class="bold">Donate with</span>
-<br/>
-<a href="http://sourceforge.net/p/snapraid/donate/"><img src="paypal.png" width="160" height="60" alt="PayPal"/></a>
-<a href="https://coinkite.com/u/amadvance/"><img src="bitcoin.png" width="160" height="60" alt="BitCoin"/></a>
+<br>
+<a href="http://sourceforge.net/p/snapraid/donate/"><img src="paypal.png" width="160" height="60" alt="PayPal"></a>
+<a href="https://coinkite.com/u/amadvance/"><img src="bitcoin.png" width="160" height="60" alt="BitCoin"></a>
 </div>
 
 <div class="half">
 <span class="bold">Find other resources at</span>
-<br/>
-<a href="https://github.com/amadvance/snapraid/"><img src="github.png" width="160" height="60" alt="GitHub"/></a>
-<a href="http://sourceforge.net/projects/snapraid/"><img src="sourceforge.png" width="115" height="60" alt="SourceForge"/></a>
-<a href="https://travis-ci.org/amadvance/snapraid/"><img src="travisci.png" width="64" height="60" alt="TravisCI"/></a>
+<br>
+<a href="https://github.com/amadvance/snapraid/"><img src="github.png" width="160" height="60" alt="GitHub"></a>
+<a href="http://sourceforge.net/projects/snapraid/"><img src="sourceforge.png" width="115" height="60" alt="SourceForge"></a>
+<a href="https://travis-ci.org/amadvance/snapraid/"><img src="travisci.png" width="64" height="60" alt="TravisCI"></a>
 </div>
 
 </div>
