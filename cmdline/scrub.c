@@ -330,14 +330,16 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			if (block_has_updated_hash(block)) {
 				/* compare the hash */
 				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
-					log_tag("error:%u:%s:%s: Data error at position %u\n", i, disk->name, esc(handle[j].file->sub), block_file_pos(block));
+					unsigned diff = memdiff(hash, block->hash, HASH_SIZE);
+
+					log_tag("error:%u:%s:%s: Data error at position %u, diff bits %u\n", i, disk->name, esc(handle[j].file->sub), block_file_pos(block), diff);
 
 					/* it's a silent error only if we are dealing with synced files */
 					if (file_is_unsynced) {
 						++error;
 						error_on_this_block = 1;
 					} else {
-						log_error("Data error in file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
+						log_error("Data error in file '%s' at position '%u', diff bits %u\n", handle[j].path, block_file_pos(block), diff);
 						++silent_error;
 						silent_error_on_this_block = 1;
 					}
@@ -399,14 +401,16 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			/* compare the parity */
 			for (l = 0; l < state->level; ++l) {
 				if (buffer_recov[l] && memcmp(buffer[diskmax + l], buffer_recov[l], state->block_size) != 0) {
-					log_tag("parity_error:%u:%s: Data error\n", i, lev_config_name(l));
+					unsigned diff = memdiff(buffer[diskmax + l], buffer_recov[l], state->block_size);
+
+					log_tag("parity_error:%u:%s: Data error, diff bits %u\n", i, lev_config_name(l), diff);
 
 					/* it's a silent error only if we are dealing with synced blocks */
 					if (block_is_unsynced) {
 						++error;
 						error_on_this_block = 1;
 					} else {
-						log_fatal("Data error in parity '%s' at position '%u'\n", lev_config_name(l), i);
+						log_fatal("Data error in parity '%s' at position '%u', diff bits %u\n", lev_config_name(l), i, diff);
 						++silent_error;
 						silent_error_on_this_block = 1;
 					}

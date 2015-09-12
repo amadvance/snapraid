@@ -1137,6 +1137,8 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 			/* compare the hash */
 			if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
+				unsigned diff = memdiff(hash, block->hash, HASH_SIZE);
+
 				/* save the failed block for the check/fix */
 				failed[failed_count].is_bad = 1; /* it's bad because the hash doesn't match */
 				failed[failed_count].is_outofdate = 0;
@@ -1145,7 +1147,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				log_tag("error:%u:%s:%s: Data error at position %u\n", i, disk->name, esc(file->sub), block_file_pos(block));
+				log_tag("error:%u:%s:%s: Data error at position %u, diff bits %u\n", i, disk->name, esc(file->sub), block_file_pos(block), diff);
 				++error;
 				continue;
 			}
@@ -1237,9 +1239,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					/* check the parity */
 					for (l = 0; l < state->level; ++l) {
 						if (buffer_recov[l] != 0 && memcmp(buffer_recov[l], buffer[diskmax + l], state->block_size) != 0) {
+							unsigned diff = memdiff(buffer_recov[l], buffer[diskmax + l], state->block_size);
+
 							buffer_recov[l] = 0;
 
-							log_tag("parity_error:%u:%s: Data error\n", i, lev_config_name(l));
+							log_tag("parity_error:%u:%s: Data error, diff bits %u\n", i, lev_config_name(l), diff);
 							++error;
 						}
 					}

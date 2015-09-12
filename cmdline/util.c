@@ -512,6 +512,25 @@ const char* hash_config_name(unsigned kind)
 	}
 }
 
+unsigned memdiff(const unsigned char* data1, const unsigned char* data2, unsigned size)
+{
+	unsigned i;
+	unsigned count;
+
+	count = 0;
+	for (i = 0; i < size; ++i) {
+		unsigned j;
+		unsigned char diff = data1[i] ^ data2[i];
+		for (j = 0; j < 8; ++j) {
+			if ((diff & 1) != 0)
+				++count;
+			diff >>= 1;
+		}
+	}
+
+	return 0;
+}
+
 /****************************************************************************/
 /* lock */
 

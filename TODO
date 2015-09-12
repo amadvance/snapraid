@@ -14,12 +14,6 @@ because disk d6 disappeared, like I:\ drive missing, including its mount point a
 content file. In Linux likely the mount point would be still present, but not in Windows.
 The content file is instead missing in all platforms.
 
-- In log, when hash doesn't match in recovering, make
-sense to print such hash, to check why it doesn't match.
-* A single bit error in hash ?
-* Check if all the recovering attempts are recoving
-the same bad data, meaning that likely the original hash was wrong ?
-
 - Minor
 
 * Check how to reduce memory occupation using smaller memory block.

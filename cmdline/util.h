@@ -123,6 +123,11 @@ void memhash(unsigned kind, const unsigned char* seed, void* digest, const void*
  */
 const char* hash_config_name(unsigned kind);
 
+/**
+ * Count the number of different bits in the two buffers.
+ */
+unsigned memdiff(const unsigned char* data1, const unsigned char* data2, size_t size);
+
 /****************************************************************************/
 /* lock */
 

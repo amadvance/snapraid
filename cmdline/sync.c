@@ -772,8 +772,9 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 						error_on_this_block = 1;
 						continue;
 					} else { /* otherwise it's a BLK with silent error */
-						log_tag("error:%u:%s:%s: Data error at position %u\n", i, disk->name, esc(file->sub), block_file_pos(block));
-						log_error("Data error in file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
+						unsigned diff = memdiff(hash, block->hash, HASH_SIZE);
+						log_tag("error:%u:%s:%s: Data error at position %u, diff bits %u\n", i, disk->name, esc(file->sub), block_file_pos(block), diff);
+						log_error("Data error in file '%s' at position '%u', diff bits %u\n", handle[j].path, block_file_pos(block), diff);
 
 						/* save the failed block for the fix */
 						failed[failed_count].index = j;
