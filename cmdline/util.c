@@ -481,7 +481,7 @@ static inline uint64_t util_swap64(uint64_t v)
 #include "murmur3.c"
 #include "spooky2.c"
 
-void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, unsigned size)
+void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, size_t size)
 {
 	switch (kind) {
 	case HASH_MURMUR3 :

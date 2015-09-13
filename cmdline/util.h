@@ -116,7 +116,7 @@ void crc32c_init(void);
  * Computes the HASH of a memory block.
  * Seed is a 128 bit vector.
  */
-void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, unsigned size);
+void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, size_t size);
 
 /**
  * Return the hash name.
