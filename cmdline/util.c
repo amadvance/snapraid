@@ -512,9 +512,9 @@ const char* hash_config_name(unsigned kind)
 	}
 }
 
-unsigned memdiff(const unsigned char* data1, const unsigned char* data2, unsigned size)
+unsigned memdiff(const unsigned char* data1, const unsigned char* data2, size_t size)
 {
-	unsigned i;
+	size_t i;
 	unsigned count;
 
 	count = 0;
