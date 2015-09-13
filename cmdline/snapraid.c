@@ -441,8 +441,8 @@ int main(int argc, char* argv[])
 	period = 1000;
 	filter_missing = 0;
 	filter_error = 0;
-	percentage = -1;
-	olderthan = -1;
+	percentage = SCRUB_AUTO;
+	olderthan = SCRUB_AUTO;
 	import_timestamp = 0;
 	import_content = 0;
 	log = 0;
@@ -496,12 +496,20 @@ int main(int argc, char* argv[])
 			opt.syncedonly = 1;
 			break;
 		case 'p' :
-			percentage = strtoul(optarg, &e, 10);
-			if (!e || *e || percentage > 100) {
-				/* LCOV_EXCL_START */
-				log_fatal("Invalid percentage '%s'\n", optarg);
-				exit(EXIT_FAILURE);
-				/* LCOV_EXCL_STOP */
+			if (strcmp(optarg, "bad") == 0) {
+				percentage = SCRUB_BAD;
+			} else if (strcmp(optarg, "sync") == 0) {
+				percentage = SCRUB_SYNC;
+			} else if (strcmp(optarg, "full") == 0) {
+				percentage = SCRUB_FULL;
+			} else {
+				percentage = strtoul(optarg, &e, 10);
+				if (!e || *e || percentage > 100) {
+					/* LCOV_EXCL_START */
+					log_fatal("Invalid percentage '%s'\n", optarg);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
 			}
 			break;
 		case 'o' :

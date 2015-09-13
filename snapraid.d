@@ -191,10 +191,10 @@ Getting Started
 		:snapraid -e fix
 
 	At the next "scrub" the errors will disappear from the "status" report
-	if really fixed. To make it fast, you can use -p 0 to scrub only blocks
+	if really fixed. To make it fast, you can use -p bad to scrub only blocks
 	marked as bad.
 
-		:snapraid -p 0 scrub
+		:snapraid -p bad scrub
 
 	Take care that running "scrub" on a not synced array may result in
 	errors caused by removed or modified files. These errors are reported
@@ -487,17 +487,23 @@ Commands
 	This means that scrubbing once a week, every bit of data is checked
 	at least one time every two months.
 
-	You can use the -p, --percentage option to specify a different amount,
-	and the -o, --older-than option to specify a different age in days.
-	You can have a full scrub with "-p 100 -o 0".
+	You can define a different scrub amount using the -p, --percentage
+	option that takes as argument:
+	bad - Scrub blocks marked bad.
+	synch - Scrub new synced blocks never scrubbed.
+	full - Scrub everything.
+	0-100 - Scrub the exact percentage of blocks.
 
-	When the selected amout doesn't allow a full scrub, the blocks
-	priority is:
-	* The blocks already marked as bad, to verify their status.
-	* The new sycnched blocks never scrubbed, to verify if their
+	If you specify a percentage amount, you can also use the -o, --older-than
+	option to define how old the block should be.
+	If the specified amount doesn't allow a full scrub, the blocks are
+	scrubbed with this priority:
+
+	* First blocks marked as bad, to verify their status.
+	* Then new synced blocks never scrubbed, to verify if their
 		parity data was written correctly.
-	* All the reimainig blocks, but starting from the oldest ones
-		ensuring an optimal check.
+	* And finally all the reimainig blocks, starting from ones with the oldest
+		scrub time.
 
 	To get the details of the scrub status use the "status" command.
 
@@ -506,7 +512,7 @@ Commands
 	These bad blocks are listed in "status", and can be fixed with "fix -e".
 	After the fix, at the next scrub they will be rechecked, and if found
 	corrected, the bad mark will be removed.
-	To scrub only the bad blocks, you can use the "scrub -p 0" command.
+	To scrub only the bad blocks, you can use the "scrub -p bad" command.
 
 	It's recommended to run "scrub" only on a synced array, to avoid to
 	have reported error caused by unsynced data. These errors are recognized
@@ -685,10 +691,12 @@ Options
 		errors during "sync" and "scrub", and listed in "status".
 		This option can be used only with "check" and "fix".
 
-	-p, --percentage PERC
+	-p, --percentage PERC|bad|sync|full
 		Selects the part of the array to process in "scrub".
 		PERC is a numeric value from 0 to 100, default is 12.
-		When specifying 0, only the blocks marked as bad are scrubbed.
+		Instead of a percentage, you can also specify the kind of scrub
+		you want: "bad" scrubs bad blocks, "sync" the synced block
+		not yet scrubbed, and "full" everything.
 		This option can be used only with "scrub".
 
 	-o, --older-than DAYS

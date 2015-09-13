@@ -242,6 +242,14 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 void state_rehash(struct snapraid_state* state);
 
 /**
+ * Scrub levels.
+ */
+#define SCRUB_AUTO -1 /**< Automatic selection. */
+#define SCRUB_BAD -2 /**< Scrub only the bad blocks. */
+#define SCRUB_SYNC -3 /**< Scub the latest synched data. */
+#define SCRUB_FULL -4 /**< Scrub everything. */
+
+/**
  * Scrub the files.
  */
 int state_scrub(struct snapraid_state* state, int percentage, int olderthan);

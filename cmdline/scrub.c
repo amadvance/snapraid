@@ -559,9 +559,10 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 	block_off_t countlimit;
 	block_off_t lastlimit;
 	block_off_t i;
+	block_off_t count_unscrubbed;
+	block_off_t count;
 	time_t timelimit;
 	time_t recentlimit;
-	unsigned count;
 	int ret;
 	struct snapraid_parity_handle parity[LEV_MAX];
 	struct snapraid_parity_handle* parity_ptr[LEV_MAX];
@@ -575,6 +576,14 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 
 	msg_progress("Initializing...\n");
 
+	if ((percentage == SCRUB_BAD || percentage == SCRUB_SYNC || percentage == SCRUB_FULL)
+		&& olderthan >= 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("You cannot specify -o, --older-than only with a numeric percentage.\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
 	blockmax = parity_allocated_size(state);
 
 	if (state->opt.force_scrub_even) {
@@ -585,18 +594,26 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 		/* scrub the specified amount of blocks */
 		countlimit = state->opt.force_scrub_at;
 		recentlimit = now;
+	} else if (percentage == SCRUB_FULL || percentage == SCRUB_SYNC) {
+		countlimit = blockmax;
+		recentlimit = now;
+	} else if (percentage == SCRUB_BAD) {
+		countlimit = 0;
+		recentlimit = now;
 	} else {
-		/* by default scrub 1/12 of the array */
-		countlimit = md(blockmax, 1, 12);
-
-		if (percentage != -1)
+		if (percentage >= 0) {
 			countlimit = md(blockmax, percentage, 100);
+		} else {
+			/* by default scrub 1/12 of the array */
+			countlimit = md(blockmax, 1, 12);
+		}
 
-		/* by default use a 10 day time limit */
-		recentlimit = now - 10 * 24 * 3600;
-
-		if (olderthan != -1)
+		if (olderthan >= 0) {
 			recentlimit = now - olderthan * 24 * 3600;
+		} else {
+			/* by default use a 10 day time limit */
+			recentlimit = now - 10 * 24 * 3600;
+		}
 	}
 
 	/* identify the time limit */
@@ -606,15 +623,22 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 
 	/* copy the info in the temp vector */
 	count = 0;
+	count_unscrubbed = 0;
 	log_tag("block_count:%u\n", blockmax);
 	for (i = 0; i < blockmax; ++i) {
 		snapraid_info info = info_get(&state->infoarr, i);
+		time_t scrub_time;
 
 		/* skip unused blocks */
 		if (info == 0)
 			continue;
 
-		timemap[count++] = info_get_scrubtime(info);
+		scrub_time = info_get_scrubtime(info);
+
+		if (scrub_time == 0)
+			++count_unscrubbed;
+
+		timemap[count++] = scrub_time;
 	}
 
 	if (!count) {
@@ -636,6 +660,12 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 			++j;
 		log_tag("info_time:%" PRIu64 ":%u\n", (uint64_t)timemap[i], j - i);
 		i = j;
+	}
+
+	/* scrub the number of sync block if required */
+	if (percentage == SCRUB_SYNC) {
+		countlimit = count_unscrubbed;
+		recentlimit = now;
 	}
 
 	/* no more than the full count */
