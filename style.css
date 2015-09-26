@@ -83,6 +83,7 @@ body {
 	background-color:#ffffff;
 	margin:0px;
 	padding:0px;
+	/* always show the vertical scroll bar */
 	overflow-y:scroll;
 }
 
@@ -129,6 +130,7 @@ body {
 	padding-bottom:16px;
 	padding-left:5%;
 	padding-right:5%;
+	/* extend it to contain all the inside elements */
 	overflow:auto;
 }
 
@@ -138,6 +140,12 @@ body {
 	padding-left:1em;
 }
 
+#footer img {
+	/* scale down the image if there is no space */
+	max-width:50%;
+	height:auto;
+}
+
 #footer .bold {
 	color:#0c5da5;
 }
@@ -145,12 +153,6 @@ body {
 .column {
 	float:left;
 	width:50%;
-}
-
-.column img {
-	/* scale down the image if there is no space */
-	max-width:50%;
-	height:auto;
 }
 
 /* main */
