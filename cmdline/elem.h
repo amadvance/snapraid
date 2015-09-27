@@ -112,7 +112,7 @@ struct snapraid_filter {
  * For this reason, when the ::force_nocopy flag is enabled in sync, we convert all the REP blocks
  * to CHG, invalidating the stored hash.
  * Clearing is done setting the ::clear_past_hash flag before reading the state.
- * No cleaering is done in other commands, as they don't stop the process like in sync
+ * No clearing is done in other commands, as they don't stop the process like in sync
  * when there is a false silent error.
  *
  * The block hash field IS set, and it represents the hash of the new data.
