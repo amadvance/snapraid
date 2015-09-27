@@ -968,16 +968,17 @@ just after the 'sync' completed.
 
 <h3 id="retryop">Does SnapRAID retry reads or writes if a disk is not working?</h3>
 <p>
-No. SnapRAID never retries disk operations. At the first reported Input/Output error,
-it just stops the execution.
+No. SnapRAID never retries disk operations. It reports the error and then it tries
+to continue anyway. After a limit of 100 errors, it then stops the execution.
 </p>
 <p>
 In these conditions, it's better to allow the user to try to save manually as much as data possible
 before the disk dies definitively.
 Trying an automatic long sequence of retries, will likely kill the disk.
+If you want to retry, you have to just repeat the command.
 </p>
 <p>
-If after a such error, you want to retry, you have to just repeat the command.
+You can control the 100 errors limit using the "-L, --error-limit" option.
 </p>
 <p>
 In the case of "fix" and "check" commands you can restart from the interrupted point using the "-s, --start"
