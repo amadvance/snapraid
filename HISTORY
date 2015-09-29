@@ -13,9 +13,11 @@ SnapRAID HISTORY
    This allows to verify as early as possible that the written
    parity during sync is really correct.
    The "status" command reports the amount of scrub necessary to
-   ensure to scrub all the synched blocks.
+   ensure to scrub all the synced blocks.
  * The -p, --percentage option supports the new the arguments:
    "bad", "sync" and "full" to define the kind of scrub to do.
+ * Extends the -h, --pre-hash option to also verify moved and
+   copied files into the array before running a 'sync'.
  * Update 'best' RAID functions for recent Atom CPUs.
  * Validate filters specifications rejecting relative paths.
 

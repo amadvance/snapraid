@@ -257,7 +257,8 @@ endif
 # Corrupt and move it to another disk
 	$(TESTENV) ./mktest$(EXEEXT) damage 1 1 1 bench/disk1/COPY
 	mv bench/disk1/COPY bench/disk2/COPY
-# Now sync with failure as the data won't match
+# Now sync with failure as the data won't match. We have two points of failure, pre-hash and sync
+	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-expect-failure -h sync
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-expect-failure sync
 # Now sync with force-nocopy
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --force-nocopy sync

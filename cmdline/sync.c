@@ -63,15 +63,15 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 
 		for (i = blockstart; i < blockmax; ++i) {
 			struct snapraid_block* block;
+			unsigned block_state;
 
 			block = disk_block_get(disk, i);
 
-			/* if no file in this block, skip it */
-			if (!block_has_file(block))
-				continue;
+			/* get the state of the block */
+			block_state = block_state_get(block);
 
-			/* if the block already has a hash, skip it */
-			if (block_has_updated_hash(block))
+			/* process REP and CHG blocks */
+			if (block_state != BLOCK_STATE_REP && block_state != BLOCK_STATE_CHG)
 				continue;
 
 			++countmax;
@@ -99,19 +99,16 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			struct snapraid_block* block;
 			int read_size;
 			unsigned char hash[HASH_SIZE];
+			unsigned block_state;
 
 			block = disk_block_get(disk, i);
 
-			/* if no file in this block, skip it */
-			if (!block_has_file(block))
-				continue;
+			/* get the state of the block */
+			block_state = block_state_get(block);
 
-			/* if the block already has a hash, skip it */
-			if (block_has_updated_hash(block))
+			/* process REP and CHG blocks */
+			if (block_state != BLOCK_STATE_REP && block_state != BLOCK_STATE_CHG)
 				continue;
-
-			/* here only CHG blocks are allowed */
-			assert(block_state_get(block) == BLOCK_STATE_CHG);
 
 			/* get block specific info */
 			info = info_get(&state->infoarr, i);
@@ -256,14 +253,45 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				memhash(state->hash, state->hashseed, hash, buffer, read_size);
 			}
 
-			/* copy the hash in the block */
-			memcpy(block->hash, hash, HASH_SIZE);
+			if (block_state == BLOCK_STATE_REP) {
+				/* compare the hash */
+				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
+					/* file we are processing for error reporting */
+					struct snapraid_file* file = block_file_get(block);
 
-			/* and mark the block as hashed */
-			block_state_set(block, BLOCK_STATE_REP);
+					log_tag("error:%u:%s:%s: Unexpected data change\n", i, disk->name, esc(file->sub));
+					log_error("Data change at file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
+					log_error("WARNING! Unexpected data modification of a file without parity!\n");
 
-			/* mark the state as needing write */
-			state->need_write = 1;
+					if (file_flag_has(file, FILE_IS_COPY)) {
+						log_error("This file was detected as a copy of another file with the same name, size,\n");
+						log_error("and timestamp, but the file data isn't matching the assumed copy.\n");
+						log_error("If this is a false positive, and the files are expected to be different,\n");
+						log_error("you can 'sync' anyway using 'snapraid --force-nocopy sync'\n");
+					} else {
+						log_error("Try removing the file from the array and rerun the 'sync' command!\n");
+					}
+
+					/* block sync to allow a recovery before overwriting */
+					/* the parity needed to make such recovery */
+					*skip_sync = 1; /* avoid to run the next sync */
+
+					++error;
+					continue;
+				}
+			} else {
+				/* the only other case is BLOCK_STATE_CHG */
+				assert(block_state == BLOCK_STATE_CHG);
+
+				/* copy the hash in the block */
+				memcpy(block->hash, hash, HASH_SIZE);
+
+				/* and mark the block as hashed */
+				block_state_set(block, BLOCK_STATE_REP);
+
+				/* mark the state as needing write */
+				state->need_write = 1;
+			}
 
 			/* count the number of processed block */
 			++countpos;
@@ -1307,6 +1335,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 			/* LCOV_EXCL_STOP */
 		}
 
+		/* save with the new hash information */
 		if (state->need_write)
 			state_write(state);
 	}

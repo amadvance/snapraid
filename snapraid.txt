@@ -773,18 +773,21 @@ SnapRAID provides the following options:
         This option can be used only with "check".
 
     -h, --pre-hash
-        In "sync" runs a preliminary hashing phase of all
-        the new data to verify the data used in the parity computation.
+        In "sync" runs a preliminary hashing phase of all the new data
+        to have an additional verification before the parity computation.
         Usually in "sync" no preliminary hashing is done, and the new
         data is hashed just before the parity computation when it's read
-        for the first time,
+        for the first time.
         Unfortunately, this process happens when the system is under
-        heavy load, with all disks spinning and a busy CPU.
-        This is an extreme condition for your machine, and if it has a
+        heavy load, with all disks spinning and with a busy CPU.
+        This is an extreme condition for the machine, and if it has a
         latent hardware problem, it's possible to encounter silent errors
         what cannot be detected because the data is not yet hashed.
         To avoid this risk, you can enable the "pre-hash" mode and have
-        all the data hashed two times to ensure its integrity.
+        all the data read two times to ensure its integrity.
+        This option also verifies the files moved inside the array,
+        to ensure that the move operation went succesfully, and in case
+        to block the sync and to allow to run a fix operation.
         This option can be used only with "sync".
 
     -i, --import DIR
