@@ -266,7 +266,6 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 		struct snapraid_block* block = fs_file2block_get(disk, file, i);
 		block_off_t parity_pos = fs_file2par_get(disk, file, i);
 		unsigned block_state;
-		struct snapraid_deleted* deleted;
 
 		/* adjust the first free position */
 		/* note that doing all the deletions before alllocations, */
@@ -274,9 +273,6 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 		/* but we keep this code anyway for completeness. */
 		if (disk->first_free_block > parity_pos)
 			disk->first_free_block = parity_pos;
-
-		/* allocated a new deleted block from the block we are going to delete */
-		deleted = deleted_dup(block);
 
 		/* in case we scan after an aborted sync, */
 		/* we could get also intermediate states */
@@ -299,12 +295,12 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 				/* - File is now deleted after the aborted sync */
 				/* - Sync again, deleting the blocks (exactly here) */
 				/*   with the hash of CHG block not represeting the real parity state */
-				hash_invalid_set(deleted->block.hash);
+				hash_invalid_set(block->hash);
 			}
 			break;
 		case BLOCK_STATE_REP :
 			/* we just don't know the old hash, and then we set it to invalid */
-			hash_invalid_set(deleted->block.hash);
+			hash_invalid_set(block->hash);
 			break;
 		default :
 			/* LCOV_EXCL_START */
@@ -313,14 +309,15 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 			/* LCOV_EXCL_STOP */
 		}
 
-		/* insert it in the list of deleted blocks */
-		tommy_list_insert_tail(&disk->deletedlist, &deleted->node, deleted);
+		/* set the block as deleted */
+		block_state_set(block, BLOCK_STATE_DELETED);
 
-		/* set the deleted block in the block array */
-		fs_par2block_set(disk, parity_pos, &deleted->block);
+		/* remove the file reference */
+		block_file_set(block, 0);
 	}
 
-	file_free(file);
+	/* insert it in the list of deleted blocks */
+	tommy_list_insert_tail(&disk->deletedlist, &file->nodelist, file);
 }
 
 static void scan_file_delayed_allocate(struct snapraid_scan* scan, struct snapraid_file* file)
@@ -510,7 +507,7 @@ static void scan_file_insert(struct snapraid_scan* scan, struct snapraid_file* f
 	tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
 	tommy_hashdyn_insert(&disk->stampset, &file->stampset, file, file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec));
 
-	/* delayed allocationg of the parity */
+	/* delayed allocation of the parity */
 	scan_file_delayed_allocate(scan, file);
 }
 

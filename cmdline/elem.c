@@ -394,36 +394,6 @@ unsigned block_file_size(struct snapraid_block* block, unsigned block_size)
 	return block_size;
 }
 
-struct snapraid_deleted* deleted_alloc(void)
-{
-	struct snapraid_deleted* deleted;
-
-	deleted = malloc_nofail(sizeof(struct snapraid_deleted));
-
-	/* set the state as deleted */
-	deleted->block.file_mixed = BLOCK_STATE_DELETED;
-
-	return deleted;
-}
-
-struct snapraid_deleted* deleted_dup(struct snapraid_block* block)
-{
-	struct snapraid_deleted* deleted;
-
-	deleted = deleted_alloc();
-
-	/* copy data from deleted block */
-	deleted->block.parity_pos = block->parity_pos;
-	memcpy(deleted->block.hash, block->hash, HASH_SIZE);
-
-	return deleted;
-}
-
-void deleted_free(struct snapraid_deleted* deleted)
-{
-	free(deleted);
-}
-
 struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode, uint64_t physical)
 {
 	struct snapraid_file* file;
@@ -752,7 +722,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 void disk_free(struct snapraid_disk* disk)
 {
 	tommy_list_foreach(&disk->filelist, (tommy_foreach_func*)file_free);
-	tommy_list_foreach(&disk->deletedlist, (tommy_foreach_func*)deleted_free);
+	tommy_list_foreach(&disk->deletedlist, (tommy_foreach_func*)file_free);
 	tommy_hashdyn_done(&disk->inodeset);
 	tommy_hashdyn_done(&disk->pathset);
 	tommy_hashdyn_done(&disk->stampset);

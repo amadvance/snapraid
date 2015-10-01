@@ -1925,6 +1925,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 		} else if (c == 'h') {
 			/* hole */
 			uint32_t v_pos;
+			uint32_t i;
 			struct snapraid_disk* disk;
 			uint32_t mapping;
 
@@ -1941,6 +1942,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			v_pos = 0;
 			while (v_pos < blockmax) {
 				uint32_t v_count;
+				struct snapraid_file* deleted;
 
 				ret = sgetb32(f, &v_count);
 				if (ret < 0) {
@@ -1964,17 +1966,29 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				switch (c) {
 				case 'o' :
 					/* if it's a run of deleted blocks */
-					while (v_count) {
-						struct snapraid_deleted* deleted;
 
-						/* allocate a new deleted block */
-						deleted = deleted_alloc();
+					/* allocate the deleted file */
+					deleted = file_alloc(state->block_size, "", v_count * state->block_size, 0, 0, 0, 0);
+
+					/* insert it in the list of deleted files */
+					tommy_list_insert_tail(&disk->deletedlist, &deleted->nodelist, deleted);
+
+					/* process all blocks */
+					i = 0;
+					while (v_count) {
+						struct snapraid_block* block = &deleted->blockvec[i];
+
+						/* set the block as deleted */
+						block_state_set(block, BLOCK_STATE_DELETED);
+
+						/* remove the file reference */
+						block_file_set(block, 0);
 
 						/* set the position */
-						deleted->block.parity_pos = v_pos;
+						block->parity_pos = v_pos;
 
 						/* read the hash */
-						ret = sread(f, deleted->block.hash, HASH_SIZE);
+						ret = sread(f, block->hash, HASH_SIZE);
 						if (ret < 0) {
 							/* LCOV_EXCL_START */
 							decoding_error(path, f);
@@ -1985,7 +1999,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 						/* if we are clearing undeterminated hashes */
 						if (state->clear_past_hash) {
 							/* set the hash value to INVALID */
-							hash_invalid_set(deleted->block.hash);
+							hash_invalid_set(block->hash);
 						}
 
 						/* we must not overwrite existing blocks */
@@ -1994,23 +2008,20 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 							log_fatal("Internal inconsistency for used hole at pos %u!\n", v_pos);
 							if (state->opt.skip_content_check) {
 								log_fatal("Overriding as used.\n");
-								deleted_free(deleted);
 							} else {
 								decoding_error(path, f);
 								exit(EXIT_FAILURE);
 							}
 							/* LCOV_EXCL_STOP */
 						} else {
-							/* insert it in the list of deleted blocks */
-							tommy_list_insert_tail(&disk->deletedlist, &deleted->node, deleted);
-
 							/* insert the block in the block array */
-							fs_par2block_set(disk, v_pos, &deleted->block);
+							fs_par2block_set(disk, v_pos, block);
 						}
 
 						/* go to next block */
 						++v_pos;
 						--v_count;
+						++i;
 					}
 					break;
 				case 'O' :

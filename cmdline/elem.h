@@ -289,21 +289,6 @@ struct snapraid_dir {
 };
 
 /**
- * Deleted entry.
- */
-struct snapraid_deleted {
-	/**
-	 * Deleted block.
-	 * This block is always in state BLOCK_STATE_DELETED,
-	 * and it's used to keep the old hash during a sync.
-	 */
-	struct snapraid_block block;
-
-	/* nodes for data structures */
-	tommy_node node;
-};
-
-/**
  * Disk.
  */
 struct snapraid_disk {
@@ -344,7 +329,7 @@ struct snapraid_disk {
 	tommy_list filelist;
 
 	/**
-	 * List of all the snapraid_deleted blocks for the disk.
+	 * List of all the deleted file for the disk.
 	 *
 	 * These files are kept allocated, because the blocks are still referenced in
 	 * the ::blockarr.
