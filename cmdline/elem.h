@@ -503,7 +503,7 @@ static inline void block_file_set(struct snapraid_block* block, struct snapraid_
 		/* LCOV_EXCL_STOP */
 	}
 
-	block->file_mixed = (block->file_mixed & ~(uintptr_t)BLOCK_STATE_MASK) | ptr;
+	block->file_mixed = (block->file_mixed & (uintptr_t)BLOCK_STATE_MASK) | ptr;
 }
 
 /**
