@@ -234,7 +234,6 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_FORCE_SCRUB_AT 271
 #define OPT_TEST_FORCE_SCRUB_EVEN 272
 #define OPT_TEST_FORCE_CONTENT_WRITE 273
-#define OPT_TEST_FORCE_CONTENT_TEXT 274
 #define OPT_TEST_SKIP_CONTENT_CHECK 275
 #define OPT_TEST_SKIP_PARITY_ACCESS 276
 #define OPT_TEST_EXPECT_FAILURE 277
@@ -326,9 +325,6 @@ struct option long_options[] = {
 
 	/* Force write of the content file even if no modification is done */
 	{ "test-force-content-write", 0, 0, OPT_TEST_FORCE_CONTENT_WRITE },
-
-	/* Force the use of text content file */
-	{ "test-force-content-text", 0, 0, OPT_TEST_FORCE_CONTENT_TEXT },
 
 	/* Relax the checks done at the content file */
 	{ "test-skip-content-check", 0, 0, OPT_TEST_SKIP_CONTENT_CHECK },
@@ -683,9 +679,6 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_TEST_FORCE_CONTENT_WRITE :
 			opt.force_content_write = 1;
-			break;
-		case OPT_TEST_FORCE_CONTENT_TEXT :
-			opt.force_content_text = 1;
 			break;
 		case OPT_TEST_EXPECT_FAILURE :
 			/* invert the exit codes */
