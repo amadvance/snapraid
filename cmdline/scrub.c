@@ -200,7 +200,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			}
 
 			/* if the block is not used */
-			block = disk_block_get(disk, i);
+			block = fs_par2block_get(disk, i);
 			if (!block_has_file(block)) {
 				/* use an empty block */
 				memset(buffer[j], 0, state->block_size);

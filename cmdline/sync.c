@@ -65,7 +65,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			struct snapraid_block* block;
 			unsigned block_state;
 
-			block = disk_block_get(disk, i);
+			block = fs_par2block_get(disk, i);
 
 			/* get the state of the block */
 			block_state = block_state_get(block);
@@ -101,7 +101,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			unsigned char hash[HASH_SIZE];
 			unsigned block_state;
 
-			block = disk_block_get(disk, i);
+			block = fs_par2block_get(disk, i);
 
 			/* get the state of the block */
 			block_state = block_state_get(block);
@@ -424,7 +424,7 @@ static int block_is_enabled(block_off_t i, struct snapraid_handle* handle, unsig
 		if (!handle[j].disk)
 			continue;
 
-		block = disk_block_get(handle[j].disk, i);
+		block = fs_par2block_get(handle[j].disk, i);
 
 		if (block_has_file(block))
 			one_valid = 1;
@@ -584,7 +584,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			}
 
 			/* get the block */
-			block = disk_block_get(disk, i);
+			block = fs_par2block_get(disk, i);
 
 			/* get the state of the block */
 			block_state = block_state_get(block);
@@ -1029,7 +1029,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				for (j = 0; j < diskmax; ++j) {
 					struct snapraid_block* block = BLOCK_EMPTY;
 					if (handle[j].disk)
-						block = disk_block_get(handle[j].disk, i);
+						block = fs_par2block_get(handle[j].disk, i);
 
 					if (block == BLOCK_EMPTY) {
 						/* nothing to do */
@@ -1039,7 +1039,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					/* if it's a deleted block */
 					if (block_state_get(block) == BLOCK_STATE_DELETED) {
 						/* the parity is now updated without this block, so it's now empty */
-						tommy_arrayblk_set(&handle[j].disk->blockarr, i, BLOCK_EMPTY);
+						fs_par2block_clear(handle[j].disk, i);
 						continue;
 					}
 

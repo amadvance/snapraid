@@ -309,7 +309,7 @@ int filter_existence(int filter_missing, const char* dir, const char* sub)
 	return 1;
 }
 
-int filter_correctness(int filter_error, tommy_arrayblkof* infoarr, struct snapraid_file* file)
+int filter_correctness(int filter_error, tommy_arrayblkof* infoarr, struct snapraid_disk* disk, struct snapraid_file* file)
 {
 	unsigned i;
 
@@ -318,12 +318,8 @@ int filter_correctness(int filter_error, tommy_arrayblkof* infoarr, struct snapr
 
 	/* check each block of the file */
 	for (i = 0; i < file->blockmax; ++i) {
-		struct snapraid_block* block;
-		snapraid_info info;
-
-		block = &file->blockvec[i];
-
-		info = info_get(infoarr, block->parity_pos);
+		block_off_t parity_pos = fs_file2par_get(disk, file, i);
+		snapraid_info info = info_get(infoarr, parity_pos);
 
 		/* if the file has a bad block, don't exclude it */
 		if (info_get_bad(info))
@@ -444,7 +440,6 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_
 	file->flag = 0;
 	file->blockvec = malloc_nofail(file->blockmax * sizeof(struct snapraid_block));
 
-	/* set the back pointer */
 	for (i = 0; i < file->blockmax; ++i) {
 		file->blockvec[i].parity_pos = POS_INVALID;
 		file->blockvec[i].file_mixed = 0;
@@ -460,10 +455,40 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_
 	return file;
 }
 
+struct snapraid_file* file_dup(struct snapraid_file* copy)
+{
+	struct snapraid_file* file;
+	block_off_t i;
+
+	file = malloc_nofail(sizeof(struct snapraid_file));
+	file->sub = strdup_nofail(copy->sub);
+	file->size = copy->size;
+	file->blockmax = copy->blockmax;
+	file->mtime_sec = copy->mtime_sec;
+	file->mtime_nsec = copy->mtime_nsec;
+	file->inode = copy->inode;
+	file->physical = copy->physical;
+	file->flag = copy->flag;
+	file->blockvec = malloc_nofail(file->blockmax * sizeof(struct snapraid_block));
+
+	for (i = 0; i < file->blockmax; ++i) {
+		file->blockvec[i].file_mixed = copy->blockvec[i].file_mixed;
+		file->blockvec[i].parity_pos = copy->blockvec[i].parity_pos;
+		memcpy(file->blockvec[i].hash, copy->blockvec[i].hash, HASH_SIZE);
+
+		/* set the file to overwrite the copied one */
+		block_file_set(&file->blockvec[i], file);
+	}
+
+	return file;
+}
+
 void file_free(struct snapraid_file* file)
 {
 	free(file->sub);
+	file->sub = 0;
 	free(file->blockvec);
+	file->blockvec = 0;
 	free(file);
 }
 
@@ -737,6 +762,71 @@ void disk_free(struct snapraid_disk* disk)
 	tommy_hashdyn_done(&disk->dirset);
 	tommy_arrayblk_done(&disk->blockarr);
 	free(disk);
+}
+
+block_off_t disk_block_size(struct snapraid_disk* disk)
+{
+	return tommy_arrayblk_size(&disk->blockarr);
+}
+
+void fs_par2file_set(struct snapraid_disk* disk, block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos)
+{
+	(void)disk;
+
+	assert(file_pos < file->blockmax);
+
+	file->blockvec[file_pos].parity_pos = parity_pos;
+}
+
+struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos)
+{
+	struct snapraid_block* block = fs_par2block_get(disk, parity_pos);
+
+	if (block == BLOCK_EMPTY)
+		return 0;
+
+	if (file_pos)
+		*file_pos = block_file_pos(block);
+
+	return block_file_get(block);
+}
+
+block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)
+{
+	(void)disk;
+
+	assert(file_pos < file->blockmax);
+
+	return file->blockvec[file_pos].parity_pos;
+}
+
+struct snapraid_block* fs_file2block_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)
+{
+	(void)disk;
+
+	assert(file_pos < file->blockmax);
+
+	return &file->blockvec[file_pos];
+}
+
+void fs_par2block_clear(struct snapraid_disk* disk, block_off_t pos)
+{
+	tommy_arrayblk_grow(&disk->blockarr, pos + 1);
+	tommy_arrayblk_set(&disk->blockarr, pos, BLOCK_EMPTY);
+}
+
+void fs_par2block_set(struct snapraid_disk* disk, block_off_t pos, struct snapraid_block* block)
+{
+	tommy_arrayblk_grow(&disk->blockarr, pos + 1);
+	tommy_arrayblk_set(&disk->blockarr, pos, block);
+}
+
+struct snapraid_block* fs_par2block_get(struct snapraid_disk* disk, block_off_t parity_pos)
+{
+	if (parity_pos < tommy_arrayblk_size(&disk->blockarr))
+		return tommy_arrayblk_get(&disk->blockarr, parity_pos);
+	else
+		return BLOCK_EMPTY;
 }
 
 int disk_is_empty(struct snapraid_disk* disk, block_off_t blockmax)

@@ -1389,7 +1389,7 @@ static int position_is_required(struct snapraid_state* state, block_off_t pos)
 	/* check for each disk */
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
-		struct snapraid_block* block = disk_block_get(disk, pos);
+		struct snapraid_block* block = fs_par2block_get(disk, pos);
 
 		/* if we have at least one file, the position is needed */
 		if (block_has_file(block))
@@ -1418,7 +1418,7 @@ static int info_is_required(struct snapraid_state* state, block_off_t pos)
 	/* check for each disk */
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
-		struct snapraid_block* block = disk_block_get(disk, pos);
+		struct snapraid_block* block = fs_par2block_get(disk, pos);
 
 		/* if we have at least one synced file, the info is required */
 		if (block_state_get(block) == BLOCK_STATE_BLK)
@@ -1435,12 +1435,12 @@ static void position_clear_deleted(struct snapraid_state* state, block_off_t pos
 	/* check for each disk if block is really used */
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
-		struct snapraid_block* block = disk_block_get(disk, pos);
+		struct snapraid_block* block = fs_par2block_get(disk, pos);
 
 		/* if the block is deleted */
 		if (block_state_get(block) == BLOCK_STATE_DELETED) {
 			/* set it to empty */
-			tommy_arrayblk_set(&disk->blockarr, pos, BLOCK_EMPTY);
+			fs_par2block_clear(disk, pos);
 		}
 	}
 }
@@ -1450,7 +1450,7 @@ static void position_clear_deleted(struct snapraid_state* state, block_off_t pos
  */
 static int is_block_deleted(struct snapraid_disk* disk, block_off_t pos)
 {
-	struct snapraid_block* block = disk_block_get(disk, pos);
+	struct snapraid_block* block = fs_par2block_get(disk, pos);
 
 	return block_state_get(block) == BLOCK_STATE_DELETED;
 }
@@ -1616,7 +1616,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			}
 
 			/* we must not overwrite existing blocks */
-			if (disk_block_get(disk, v_pos) != BLOCK_EMPTY) {
+			if (fs_par2block_get(disk, v_pos) != BLOCK_EMPTY) {
 				/* LCOV_EXCL_START */
 				log_fatal("Internal inconsistency for '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
@@ -1624,8 +1624,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			}
 
 			/* insert the block in the block array */
-			tommy_arrayblk_grow(&disk->blockarr, v_pos + 1);
-			tommy_arrayblk_set(&disk->blockarr, v_pos, block);
+			fs_par2block_set(disk, v_pos, block);
 
 			/* check for termination of the block list */
 			++blockidx;
@@ -1765,7 +1764,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			}
 
 			/* we must not overwrite existing blocks */
-			if (disk_block_get(disk, v_pos) != BLOCK_EMPTY) {
+			if (fs_par2block_get(disk, v_pos) != BLOCK_EMPTY) {
 				/* LCOV_EXCL_START */
 				log_fatal("Internal inconsistency for 'off' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
@@ -1776,8 +1775,7 @@ static void state_read_text(struct snapraid_state* state, const char* path, STRE
 			tommy_list_insert_tail(&disk->deletedlist, &deleted->node, deleted);
 
 			/* insert the block in the block array */
-			tommy_arrayblk_grow(&disk->blockarr, v_pos + 1);
-			tommy_arrayblk_set(&disk->blockarr, v_pos, &deleted->block);
+			fs_par2block_set(disk, v_pos, &deleted->block);
 		} else if (strcmp(tag, "file") == 0) {
 			/* file */
 			char sub[PATH_MAX];
@@ -2756,7 +2754,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 				unsigned block_state = block_state_get(block);
 
 				/* consistency check */
-				if (block != disk_block_get(disk, block->parity_pos)) {
+				if (block != fs_par2block_get(disk, block->parity_pos)) {
 					/* LCOV_EXCL_START */
 					log_fatal("Internal inconsistency mismatch for block %u state %u in file '%s'\n", block->parity_pos, block_state, file->sub);
 					exit(EXIT_FAILURE);
@@ -2858,7 +2856,7 @@ static void state_write_text(struct snapraid_state* state, STREAM* f)
 		}
 		for (b = 0; b < blockmax; ++b) {
 			if (is_block_deleted(disk, b)) {
-				struct snapraid_block* block = disk_block_get(disk, b);
+				struct snapraid_block* block = fs_par2block_get(disk, b);
 
 				/* consistency check */
 				if (block->parity_pos != b) {
@@ -3190,9 +3188,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 					/* LCOV_EXCL_START */
 				}
 
-				/* grow the array */
-				tommy_arrayblk_grow(&disk->blockarr, v_pos + v_count);
-
 				/* fill the blocks in the run */
 				while (v_count) {
 					struct snapraid_block* block = &file->blockvec[v_idx];
@@ -3277,7 +3272,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 					}
 
 					/* we must not overwrite existing blocks */
-					if (disk_block_get(disk, v_pos) != BLOCK_EMPTY) {
+					if (fs_par2block_get(disk, v_pos) != BLOCK_EMPTY) {
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
 						log_fatal("Internal inconsistency in block existence!\n");
@@ -3286,7 +3281,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 					}
 
 					/* insert the block in the block array */
-					tommy_arrayblk_set(&disk->blockarr, v_pos, block);
+					fs_par2block_set(disk, v_pos, block);
 
 					/* go to the next block */
 					++v_idx;
@@ -3437,9 +3432,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 				switch (c) {
 				case 'o' :
-					/* grow the array */
-					tommy_arrayblk_grow(&disk->blockarr, v_pos + v_count);
-
 					/* if it's a run of deleted blocks */
 					while (v_count) {
 						struct snapraid_deleted* deleted;
@@ -3466,7 +3458,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 						}
 
 						/* we must not overwrite existing blocks */
-						if (disk_block_get(disk, v_pos) != BLOCK_EMPTY) {
+						if (fs_par2block_get(disk, v_pos) != BLOCK_EMPTY) {
 							/* LCOV_EXCL_START */
 							log_fatal("Internal inconsistency for used hole at pos %u!\n", v_pos);
 							if (state->opt.skip_content_check) {
@@ -3482,7 +3474,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 							tommy_list_insert_tail(&disk->deletedlist, &deleted->node, deleted);
 
 							/* insert the block in the block array */
-							tommy_arrayblk_set(&disk->blockarr, v_pos, &deleted->block);
+							fs_par2block_set(disk, v_pos, &deleted->block);
 						}
 
 						/* go to next block */
@@ -4176,7 +4168,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 					struct snapraid_block* block = blockvec + b;
 
 					/* consistency check */
-					if (block != disk_block_get(disk, block->parity_pos)) {
+					if (block != fs_par2block_get(disk, block->parity_pos)) {
 						/* LCOV_EXCL_START */
 						log_fatal("Internal inconsistency in mismatch for block %u state %u in file '%s'\n", block->parity_pos, block_state, file->sub);
 						exit(EXIT_FAILURE);
@@ -4275,7 +4267,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 
 				/* write all the hash */
 				while (begin < end) {
-					struct snapraid_block* block = disk_block_get(disk, begin);
+					struct snapraid_block* block = fs_par2block_get(disk, begin);
 
 					/* consistency check */
 					if (block->parity_pos != begin) {
@@ -4677,7 +4669,7 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 			if (filter_path(filterlist_disk, 0, disk->name, file->sub) != 0
 				|| filter_path(filterlist_file, 0, disk->name, file->sub) != 0
 				|| filter_existence(filter_missing, disk->dir, file->sub) != 0
-				|| filter_correctness(filter_error, &state->infoarr, file) != 0
+				|| filter_correctness(filter_error, &state->infoarr, disk, file) != 0
 			) {
 				file_flag_set(file, FILE_IS_EXCLUDED);
 			}

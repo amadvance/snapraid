@@ -56,6 +56,18 @@ Very fast to load from disk as we insert only at the end.
 + We can also get rid of deleted blocks, as the hash will be stored anyway.
 + We can put the state into the hash, dropping 3 bits of the hash of the 128 ones.
 
+- A problem is that we are going to move hash from file to parity.
+How to keep the hash of the file when the file is not in the parity ?
+We'll have to allocate hash also in the file, and move data.
+We can keep the hash ALWAYS on the file!
+But how to handle DELETED blocks ? At now we handle them one-by-one,
+We have to change to handle them like files, to allow to have DELETED files, inside the tree.
+Here the problem is how to handle when DELETED blocks are overwritten.
+Note that we need the UNDELETE state to allow to recover in FIX.
+The HASH is also used to search for DELETED blocks.
+
+TODO CONVERT DELETED BLOCKS TO DELETE FILES
+
 * Restore ownership and permissions, at least in Unix.
 
 * Restore directory timestamps.

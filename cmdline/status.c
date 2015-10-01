@@ -136,12 +136,13 @@ int state_status(struct snapraid_state* state)
 			/* check fragmentation */
 			if (file->blockmax != 0) {
 				block_off_t prev_pos;
+				block_off_t last_pos;
 				int fragmented;
 
 				fragmented = 0;
-				prev_pos = file->blockvec[0].parity_pos;
+				prev_pos = fs_file2par_get(disk, file, 0);
 				for (j = 1; j < file->blockmax; ++j) {
-					block_off_t parity_pos = file->blockvec[j].parity_pos;
+					block_off_t parity_pos = fs_file2par_get(disk, file, j);
 					if (prev_pos + 1 != parity_pos) {
 						fragmented = 1;
 						++extra_fragment;
@@ -151,8 +152,9 @@ int state_status(struct snapraid_state* state)
 				}
 
 				/* keep track of latest block used */
-				if (file->blockvec[file->blockmax - 1].parity_pos > disk_block_latest_used) {
-					disk_block_latest_used = file->blockvec[file->blockmax - 1].parity_pos;
+				last_pos = fs_file2par_get(disk, file, file->blockmax - 1);
+				if (last_pos > disk_block_latest_used) {
+					disk_block_latest_used = last_pos;
 				}
 
 				if (fragmented) {
@@ -279,7 +281,7 @@ int state_status(struct snapraid_state* state)
 		one_valid = 0;
 		for (node_disk = state->disklist; node_disk != 0; node_disk = node_disk->next) {
 			struct snapraid_disk* disk = node_disk->data;
-			struct snapraid_block* block = disk_block_get(disk, i);
+			struct snapraid_block* block = fs_par2block_get(disk, i);
 
 			if (block_has_file(block))
 				one_valid = 1;

@@ -465,7 +465,7 @@ int filter_existence(int filter_missing, const char* dir, const char* sub);
  * Filter a file if bad.
  * Return !=0 if the file is correct and it should be excluded.
  */
-int filter_correctness(int filter_error, tommy_arrayblkof* infoarr, struct snapraid_file* file);
+int filter_correctness(int filter_error, tommy_arrayblkof* infoarr, struct snapraid_disk* disk, struct snapraid_file* file);
 
 /**
  * Filters a dir using a list of filters.
@@ -503,7 +503,7 @@ static inline void block_file_set(struct snapraid_block* block, struct snapraid_
 		/* LCOV_EXCL_STOP */
 	}
 
-	block->file_mixed = (block->file_mixed & ~(uintptr_t)BLOCK_STATE_MASK) | ptr;
+	block->file_mixed = (block->file_mixed & (uintptr_t)BLOCK_STATE_MASK) | ptr;
 }
 
 /**
@@ -700,12 +700,17 @@ static inline void file_flag_clear(struct snapraid_file* file, unsigned mask)
 }
 
 /**
- * Allocates a file.
+ * Allocate a file.
  */
 struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode, uint64_t physical);
 
 /**
- * Deallocates a file.
+ * Duplicate a file.
+ */
+struct snapraid_file* file_dup(struct snapraid_file* copy);
+
+/**
+ * Deallocate a file.
  */
 void file_free(struct snapraid_file* file);
 
@@ -884,16 +889,47 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 void disk_free(struct snapraid_disk* disk);
 
 /**
- * Gets a specific block of a disk.
- * Returns 0 if the block is over the end of the disk or not used.
+ * Get the size of the disk in blocks.
  */
-static inline struct snapraid_block* disk_block_get(struct snapraid_disk* disk, block_off_t pos)
-{
-	if (pos < tommy_arrayblk_size(&disk->blockarr))
-		return tommy_arrayblk_get(&disk->blockarr, pos);
-	else
-		return BLOCK_EMPTY;
-}
+block_off_t disk_block_size(struct snapraid_disk* disk);
+
+/**
+ * Set a filesystem mapping between file and parity positions.
+ */
+void fs_par2file_set(struct snapraid_disk* disk, block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos);
+
+/**
+ * Get the file position from the parity position.
+ * Return 0 if no file is using it.
+ */
+struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos);
+
+/**
+ * Get the parity position from the file position.
+ */
+block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos);
+
+/**
+ * Get the block from the file position.
+ */
+struct snapraid_block* fs_file2block_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos);
+
+/**
+ * Clear a specific block.
+ */
+void fs_par2block_clear(struct snapraid_disk* disk, block_off_t pos);
+
+/**
+ * Set the block from parity position.
+ * In case of holes, everything is initialized to 0.
+ */
+void fs_par2block_set(struct snapraid_disk* disk, block_off_t pos, struct snapraid_block* block);
+
+/**
+ * Get the block from the parity position.
+ * Returns BLOCK_EMPTY==0 if the block is over the end of the disk or not used.
+ */
+struct snapraid_block* fs_par2block_get(struct snapraid_disk* disk, block_off_t parity_pos);
 
 /**
  * Check if a disk is totally empty and can be discarded from the content file.
