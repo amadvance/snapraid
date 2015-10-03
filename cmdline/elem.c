@@ -355,43 +355,22 @@ int filter_content(tommy_list* contentlist, const char* path)
 	return 0;
 }
 
-block_off_t block_file_pos(struct snapraid_block* block)
+/**
+ * Sets the file containing the block.
+ */
+static void block_file_set(struct snapraid_block* block, struct snapraid_file* file)
 {
-	struct snapraid_file* file = block_file_get(block);
+	uintptr_t ptr = (uintptr_t)file;
 
-	if (block < file->blockvec || block >= file->blockvec + file->blockmax) {
+	/* ensure that the pointer doesn't use the flag space */
+	if ((ptr & (uintptr_t)BLOCK_STATE_MASK) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency in block %u ownership\n", block->parity_pos);
+		log_fatal("Internal error for pointer not aligned\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
-	return block - file->blockvec;
-}
-
-int block_is_last(struct snapraid_block* block)
-{
-	struct snapraid_file* file = block_file_get(block);
-
-	return block == file->blockvec + file->blockmax - 1;
-}
-
-unsigned block_file_size(struct snapraid_block* block, unsigned block_size)
-{
-	block_off_t pos = block_file_pos(block);
-
-	/* if it's the last block */
-	if (pos + 1 == block_file_get(block)->blockmax) {
-		unsigned remainder;
-		if (block_file_get(block)->size == 0)
-			return 0;
-		remainder = block_file_get(block)->size % block_size;
-		if (remainder == 0)
-			remainder = block_size;
-		return remainder;
-	}
-
-	return block_size;
+	block->private_file_mixed = (block->private_file_mixed & (uintptr_t)BLOCK_STATE_MASK) | ptr;
 }
 
 struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode, uint64_t physical)
@@ -411,8 +390,8 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_
 	file->blockvec = malloc_nofail(file->blockmax * sizeof(struct snapraid_block));
 
 	for (i = 0; i < file->blockmax; ++i) {
-		file->blockvec[i].parity_pos = POS_INVALID;
-		file->blockvec[i].file_mixed = 0;
+		file->blockvec[i].private_parity_pos = POS_INVALID;
+		file->blockvec[i].private_file_mixed = 0;
 
 		/* set the file */
 		block_file_set(&file->blockvec[i], file);
@@ -442,8 +421,8 @@ struct snapraid_file* file_dup(struct snapraid_file* copy)
 	file->blockvec = malloc_nofail(file->blockmax * sizeof(struct snapraid_block));
 
 	for (i = 0; i < file->blockmax; ++i) {
-		file->blockvec[i].file_mixed = copy->blockvec[i].file_mixed;
-		file->blockvec[i].parity_pos = copy->blockvec[i].parity_pos;
+		file->blockvec[i].private_file_mixed = copy->blockvec[i].private_file_mixed;
+		file->blockvec[i].private_parity_pos = copy->blockvec[i].private_parity_pos;
 		memcpy(file->blockvec[i].hash, copy->blockvec[i].hash, HASH_SIZE);
 
 		/* set the file to overwrite the copied one */
@@ -513,6 +492,37 @@ const char* file_name(const struct snapraid_file* file)
 	else
 		++r;
 	return r;
+}
+
+unsigned file_block_size(struct snapraid_file* file, block_off_t file_pos, unsigned block_size)
+{
+	/* if it's the last block */
+	if (file_pos + 1 == file->blockmax) {
+		unsigned remainder;
+		if (file->size == 0)
+			return 0;
+		remainder = file->size % block_size;
+		if (remainder == 0)
+			remainder = block_size;
+		return remainder;
+	}
+
+	return block_size;
+}
+
+int file_block_is_last(struct snapraid_file* file, block_off_t file_pos)
+{
+	if (file_pos == 0 && file->blockmax == 0)
+		return 1;
+
+	if (file_pos >= file->blockmax) {
+		/* LCOV_EXCL_START */
+		log_fatal("Internal inconsistency in file block position\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	return file_pos == file->blockmax - 1;
 }
 
 int file_inode_compare_to_arg(const void* void_arg, const void* void_data)
@@ -745,20 +755,29 @@ void fs_par2file_set(struct snapraid_disk* disk, block_off_t parity_pos, struct 
 
 	assert(file_pos < file->blockmax);
 
-	file->blockvec[file_pos].parity_pos = parity_pos;
+	file->blockvec[file_pos].private_parity_pos = parity_pos;
 }
 
 struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos)
 {
 	struct snapraid_block* block = fs_par2block_get(disk, parity_pos);
+	struct snapraid_file* file = (struct snapraid_file*)(block->private_file_mixed & ~(uintptr_t)BLOCK_STATE_MASK);
 
 	if (block == BLOCK_EMPTY)
 		return 0;
 
-	if (file_pos)
-		*file_pos = block_file_pos(block);
+	if (file_pos) {
+		if (block < file->blockvec || block >= file->blockvec + file->blockmax) {
+			/* LCOV_EXCL_START */
+			log_fatal("Internal inconsistency in block %u ownership\n", block->private_parity_pos);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
 
-	return block_file_get(block);
+		*file_pos = block - file->blockvec;
+	}
+
+	return file;
 }
 
 block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)
@@ -767,7 +786,7 @@ block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* fi
 
 	assert(file_pos < file->blockmax);
 
-	return file->blockvec[file_pos].parity_pos;
+	return file->blockvec[file_pos].private_parity_pos;
 }
 
 struct snapraid_block* fs_file2block_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)

@@ -248,14 +248,14 @@ int handle_close(struct snapraid_handle* handle)
 	return 0;
 }
 
-int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size, fptr* out, fptr* out_missing)
+int handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned char* block_buffer, unsigned block_size, fptr* out, fptr* out_missing)
 {
 	ssize_t read_ret;
 	data_off_t offset;
 	unsigned read_size;
 	unsigned count;
 
-	offset = block_file_pos(block) * (data_off_t)block_size;
+	offset = file_pos * (data_off_t)block_size;
 
 	if (!out_missing)
 		out_missing = out;
@@ -270,7 +270,7 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 		return -1;
 	}
 
-	read_size = block_file_size(block, block_size);
+	read_size = file_block_size(handle->file, file_pos, block_size);
 
 #if !HAVE_PREAD
 	if (lseek(handle->f, offset, SEEK_SET) != offset) {
@@ -323,15 +323,15 @@ int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, un
 	return read_size;
 }
 
-int handle_write(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size)
+int handle_write(struct snapraid_handle* handle, block_off_t file_pos, unsigned char* block_buffer, unsigned block_size)
 {
 	ssize_t write_ret;
 	data_off_t offset;
 	unsigned write_size;
 
-	offset = block_file_pos(block) * (data_off_t)block_size;
+	offset = file_pos * (data_off_t)block_size;
 
-	write_size = block_file_size(block, block_size);
+	write_size = file_block_size(handle->file, file_pos, block_size);
 
 #if HAVE_PWRITE
 	write_ret = pwrite(handle->f, block_buffer, write_size, offset);

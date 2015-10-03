@@ -69,6 +69,17 @@ struct snapraid_filter {
 };
 
 /**
+ * Block pointer used to represent unused blocks.
+ */
+#define BLOCK_EMPTY 0
+
+/**
+ * This block is an empty one.
+ * Note that an empty block is represent with ::BLOCK_EMPTY.
+ */
+#define BLOCK_STATE_EMPTY 0
+
+/**
  * The block has both the hash and the parity computed.
  * This is the normal state of a saved block.
  *
@@ -148,25 +159,13 @@ struct snapraid_filter {
 #define BLOCK_STATE_MASK 7
 
 /**
- * This block is an empty one.
- * Note that this state cannot be stored inside the block,
- * and it's represented by the block ::BLOCK_EMPTY.
- */
-#define BLOCK_STATE_EMPTY 8
-
-/**
  * Block of a file.
  */
 struct snapraid_block {
-	uintptr_t file_mixed; /**< Back pointer to the file owning this block, mixed with some flags. */
-	block_off_t parity_pos; /**< Position of the block in the parity. */
+	uintptr_t private_file_mixed; /**< Back pointer to the file owning this block, mixed with some flags. */
+	block_off_t private_parity_pos; /**< Position of the block in the parity. */
 	unsigned char hash[HASH_SIZE]; /**< Hash of the block. */
 };
-
-/**
- * Block pointer used to mark unused blocks.
- */
-#define BLOCK_EMPTY 0
 
 /**
  * If a file is present in the disk.
@@ -466,85 +465,6 @@ int filter_dir(tommy_list* filterlist, struct snapraid_filter** reason, const ch
 int filter_content(tommy_list* contentlist, const char* path);
 
 /**
- * Gets the file containing the block.
- */
-static inline struct snapraid_file* block_file_get(struct snapraid_block* block)
-{
-	return (struct snapraid_file*)(block->file_mixed & ~(uintptr_t)BLOCK_STATE_MASK);
-}
-
-/**
- * Sets the file containing the block.
- */
-static inline void block_file_set(struct snapraid_block* block, struct snapraid_file* file)
-{
-	uintptr_t ptr = (uintptr_t)file;
-
-	/* ensure that the pointer doesn't use the flag space */
-	if ((ptr & (uintptr_t)BLOCK_STATE_MASK) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal("Internal error for pointer not aligned\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	block->file_mixed = (block->file_mixed & (uintptr_t)BLOCK_STATE_MASK) | ptr;
-}
-
-/**
- * Get the state of the block.
- *
- * For this function, it's allowed to pass a NULL block
- * pointer than results in the BLOCK_STATE_EMPTY state.
- */
-static inline unsigned block_state_get(const struct snapraid_block* block)
-{
-	if (block == BLOCK_EMPTY)
-		return BLOCK_STATE_EMPTY;
-
-	return block->file_mixed & BLOCK_STATE_MASK;
-}
-
-static inline void block_state_set(struct snapraid_block* block, unsigned state)
-{
-	/* ensure that the state can be stored inside the file pointer */
-	if ((state & BLOCK_STATE_MASK) != state) {
-		/* LCOV_EXCL_START */
-		log_fatal("Internal error when setting the block state %u\n", state);
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	block->file_mixed &= ~(uintptr_t)BLOCK_STATE_MASK;
-	block->file_mixed |= state & BLOCK_STATE_MASK;
-}
-
-/**
- * Checks if the specified block has an updated hash.
- *
- * Note that EMPTY / CHG / DELETED return 0.
- */
-static inline int block_has_updated_hash(const struct snapraid_block* block)
-{
-	unsigned state = block_state_get(block);
-
-	return state == BLOCK_STATE_BLK || state == BLOCK_STATE_REP;
-}
-
-/**
- * Checks if the specified block has a past hash,
- * i.e. the hash of the data that it's now overwritten or lost.
- *
- * Note that EMPTY / BLK / REP return 0.
- */
-static inline int block_has_past_hash(const struct snapraid_block* block)
-{
-	unsigned state = block_state_get(block);
-
-	return state == BLOCK_STATE_CHG || state == BLOCK_STATE_DELETED;
-}
-
-/**
  * Checks if the specified hash is invalid.
  *
  * An invalid hash is represented with all bytes at 0x00.
@@ -601,6 +521,59 @@ static inline void hash_zero_set(unsigned char* hash)
 }
 
 /**
+ * Get the state of the block.
+ *
+ * For this function, it's allowed to pass a NULL block
+ * pointer than results in the BLOCK_STATE_EMPTY state.
+ */
+static inline unsigned block_state_get(const struct snapraid_block* block)
+{
+	if (block == BLOCK_EMPTY)
+		return BLOCK_STATE_EMPTY;
+
+	return block->private_file_mixed & BLOCK_STATE_MASK;
+}
+
+static inline void block_state_set(struct snapraid_block* block, unsigned state)
+{
+	/* ensure that the state can be stored inside the file pointer */
+	if ((state & BLOCK_STATE_MASK) != state) {
+		/* LCOV_EXCL_START */
+		log_fatal("Internal error when setting the block state %u\n", state);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	block->private_file_mixed &= ~(uintptr_t)BLOCK_STATE_MASK;
+	block->private_file_mixed |= state & BLOCK_STATE_MASK;
+}
+
+/**
+ * Checks if the specified block has an updated hash.
+ *
+ * Note that EMPTY / CHG / DELETED return 0.
+ */
+static inline int block_has_updated_hash(const struct snapraid_block* block)
+{
+	unsigned state = block_state_get(block);
+
+	return state == BLOCK_STATE_BLK || state == BLOCK_STATE_REP;
+}
+
+/**
+ * Checks if the specified block has a past hash,
+ * i.e. the hash of the data that it's now overwritten or lost.
+ *
+ * Note that EMPTY / BLK / REP return 0.
+ */
+static inline int block_has_past_hash(const struct snapraid_block* block)
+{
+	unsigned state = block_state_get(block);
+
+	return state == BLOCK_STATE_CHG || state == BLOCK_STATE_DELETED;
+}
+
+/**
  * Checks if the specified block is part of a file.
  *
  * Note that EMPTY / DELETED return 0.
@@ -637,37 +610,6 @@ static inline int block_has_file_and_valid_parity(const struct snapraid_block* b
 
 	return state == BLOCK_STATE_BLK;
 }
-
-/**
- * Gets the relative position of a block inside the file.
- */
-block_off_t block_file_pos(struct snapraid_block* block);
-
-/**
- * Checks if the block is the last in the file.
- */
-int block_is_last(struct snapraid_block* block);
-
-/**
- * Gets the size in bytes of the block.
- * If it's the last block of a file it could be less than block_size.
- */
-unsigned block_file_size(struct snapraid_block* block, unsigned block_size);
-
-/**
- * Allocates a deleted block.
- */
-struct snapraid_deleted* deleted_alloc(void);
-
-/**
- * Allocates a deleted block from a real one.
- */
-struct snapraid_deleted* deleted_dup(struct snapraid_block* block);
-
-/**
- * Frees a deleted block.
- */
-void deleted_free(struct snapraid_deleted* deleted);
 
 static inline int file_flag_has(const struct snapraid_file* file, unsigned mask)
 {
@@ -713,6 +655,17 @@ void file_copy(struct snapraid_file* src_file, struct snapraid_file* dest_file);
  * Returns the name of the file, without the dir.
  */
 const char* file_name(const struct snapraid_file* file);
+
+/**
+ * Checks if the block is the last in the file.
+ */
+int file_block_is_last(struct snapraid_file* file, block_off_t file_pos);
+
+/**
+ * Gets the size in bytes of the block.
+ * If it's the last block of a file it could be less than block_size.
+ */
+unsigned file_block_size(struct snapraid_file* file, block_off_t file_pos, unsigned block_size);
 
 /**
  * Compares a file with an inode.

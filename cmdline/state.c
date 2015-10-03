@@ -1723,7 +1723,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				while (v_count) {
 					struct snapraid_block* block = &file->blockvec[v_idx];
 
-					if (block->parity_pos != POS_INVALID) {
+					if (block->private_parity_pos != POS_INVALID) {
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
 						log_fatal("Internal inconsistency in block position!\n");
@@ -1753,7 +1753,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 						/* LCOV_EXCL_STOP */
 					}
 
-					block->parity_pos = v_pos;
+					block->private_parity_pos = v_pos;
 
 					/* read the hash only for 'blk/chg/rep', and not for 'new' */
 					if (c != 'n') {
@@ -1981,11 +1981,8 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 						/* set the block as deleted */
 						block_state_set(block, BLOCK_STATE_DELETED);
 
-						/* remove the file reference */
-						block_file_set(block, 0);
-
 						/* set the position */
-						block->parity_pos = v_pos;
+						block->private_parity_pos = v_pos;
 
 						/* read the hash */
 						ret = sread(f, block->hash, HASH_SIZE);
@@ -2669,7 +2666,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 			begin = 0;
 			while (begin < file->blockmax) {
 				unsigned block_state = block_state_get(blockvec + begin);
-				uint32_t v_pos = blockvec[begin].parity_pos;
+				uint32_t v_pos = blockvec[begin].private_parity_pos;
 				uint32_t v_count;
 
 				block_off_t end;
@@ -2678,7 +2675,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 				end = begin + 1;
 				while (end < file->blockmax
 					&& block_state == block_state_get(blockvec + end)
-					&& blockvec[end - 1].parity_pos + 1 == blockvec[end].parity_pos
+					&& blockvec[end - 1].private_parity_pos + 1 == blockvec[end].private_parity_pos
 				) {
 					++end;
 				}
@@ -2710,9 +2707,9 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 					struct snapraid_block* block = blockvec + b;
 
 					/* consistency check */
-					if (block != fs_par2block_get(disk, block->parity_pos)) {
+					if (block != fs_par2block_get(disk, block->private_parity_pos)) {
 						/* LCOV_EXCL_START */
-						log_fatal("Internal inconsistency in mismatch for block %u state %u in file '%s'\n", block->parity_pos, block_state, file->sub);
+						log_fatal("Internal inconsistency in mismatch for block %u state %u in file '%s'\n", block->private_parity_pos, block_state, file->sub);
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}
@@ -2812,9 +2809,9 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 					struct snapraid_block* block = fs_par2block_get(disk, begin);
 
 					/* consistency check */
-					if (block->parity_pos != begin) {
+					if (block->private_parity_pos != begin) {
 						/* LCOV_EXCL_START */
-						log_fatal("Internal inconsistency in delete position %u/%u!\n", block->parity_pos, begin);
+						log_fatal("Internal inconsistency in delete position %u/%u!\n", block->private_parity_pos, begin);
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}

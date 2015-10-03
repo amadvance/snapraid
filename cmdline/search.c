@@ -130,7 +130,7 @@ int search_file_compare(const void* void_arg, const void* void_data)
 	return 0;
 }
 
-int state_search_fetch(struct snapraid_state* state, int prevhash, struct snapraid_block* missing_block, unsigned char* buffer)
+int state_search_fetch(struct snapraid_state* state, int prevhash, struct snapraid_file* missing_file, block_off_t missing_file_pos, struct snapraid_block* missing_block, unsigned char* buffer)
 {
 	struct snapraid_search_file* file;
 	tommy_uint32_t file_hash;
@@ -138,10 +138,10 @@ int state_search_fetch(struct snapraid_state* state, int prevhash, struct snapra
 
 	arg.state = state;
 	arg.block = missing_block;
-	arg.file = block_file_get(missing_block);
+	arg.file = missing_file;
 	arg.buffer = buffer;
-	arg.offset = state->block_size * (data_off_t)block_file_pos(missing_block);
-	arg.read_size = block_file_size(missing_block, state->block_size);
+	arg.offset = state->block_size * (data_off_t)missing_file_pos;
+	arg.read_size = file_block_size(missing_file, missing_file_pos, state->block_size);
 	arg.prevhash = prevhash;
 
 	file_hash = file_stamp_hash(arg.file->size, arg.file->mtime_sec, arg.file->mtime_nsec);

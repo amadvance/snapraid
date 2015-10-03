@@ -58,9 +58,10 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 		/* for each disk, process the block */
 		for (j = 0; j < diskmax; ++j) {
 			int read_size;
-			struct snapraid_block* block = BLOCK_EMPTY;
+			struct snapraid_block* block;
 			struct snapraid_disk* disk = handle[j].disk;
 			struct snapraid_file* file;
+			block_off_t file_pos;
 
 			if (!disk) {
 				/* if no disk, nothing to do */
@@ -75,7 +76,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			}
 
 			/* get the file of this block */
-			file = block_file_get(block);
+			file = fs_par2file_get(disk, i, &file_pos);
 
 			/* until now is CPU */
 			state_usage_cpu(state);
@@ -108,9 +109,9 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			}
 
 			/* read from the file */
-			read_size = handle_read(&handle[j], block, buffer_aligned, state->block_size, log_error, 0);
+			read_size = handle_read(&handle[j], file_pos, buffer_aligned, state->block_size, log_error, 0);
 			if (read_size == -1) {
-				log_tag("error:%u:%s:%s: Read error at position %u\n", i, disk->name, esc(file->sub), block_file_pos(block));
+				log_tag("error:%u:%s:%s: Read error at position %u\n", i, disk->name, esc(file->sub), file_pos);
 				++error;
 				continue;
 			}

@@ -184,6 +184,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			struct snapraid_block* block;
 			int file_is_unsynced;
 			struct snapraid_disk* disk = handle[j].disk;
+			struct snapraid_file* file;
+			block_off_t file_pos;
 
 			/* if the file on this disk is synced */
 			/* if not, silent errors are assumed as expected error */
@@ -207,6 +209,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				continue;
 			}
 
+			/* get the file of this block */
+			file = fs_par2file_get(disk, i, &file_pos);
+
 			/* if the block is unsynced, errors are expected */
 			if (block_has_invalid_parity(block)) {
 				/* report that the block and the file are not synced */
@@ -219,16 +224,16 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			state_usage_cpu(state);
 
 			/* if the file is different than the current one, close it */
-			if (handle[j].file != 0 && handle[j].file != block_file_get(block)) {
+			if (handle[j].file != 0 && handle[j].file != file) {
 				/* keep a pointer at the file we are going to close for error reporting */
-				struct snapraid_file* file = handle[j].file;
+				struct snapraid_file* report = handle[j].file;
 				ret = handle_close(&handle[j]);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
 					/* This one is really an unexpected error, because we are only reading */
 					/* and closing a descriptor should never fail */
 					if (errno == EIO) {
-						log_tag("error:%u:%s:%s: Close EIO error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
+						log_tag("error:%u:%s:%s: Close EIO error. %s\n", i, disk->name, esc(report->sub), strerror(errno));
 						log_fatal("DANGER! Unexpected input/output close error in a data disk, it isn't possible to scrub.\n");
 						log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
 						log_fatal("Stopping at block %u\n", i);
@@ -236,7 +241,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 						goto bail;
 					}
 
-					log_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
+					log_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(report->sub), strerror(errno));
 					log_fatal("WARNING! Unexpected close error in a data disk, it isn't possible to scrub.\n");
 					log_fatal("Ensure that file '%s' can be accessed.\n", handle[j].path);
 					log_fatal("Stopping at block %u\n", i);
@@ -246,10 +251,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				}
 			}
 
-			ret = handle_open(&handle[j], block_file_get(block), state->file_mode, log_error, 0);
+			ret = handle_open(&handle[j], file, state->file_mode, log_error, 0);
 			if (ret == -1) {
-				/* file we have tried to open for error reporting */
-				struct snapraid_file* file = block_file_get(block);
 				if (errno == EIO) {
 					/* LCOV_EXCL_START */
 					log_tag("error:%u:%s:%s: Open EIO error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
@@ -268,9 +271,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			}
 
 			/* check if the file is changed */
-			if (handle[j].st.st_size != block_file_get(block)->size
-				|| handle[j].st.st_mtime != block_file_get(block)->mtime_sec
-				|| STAT_NSEC(&handle[j].st) != block_file_get(block)->mtime_nsec
+			if (handle[j].st.st_size != file->size
+				|| handle[j].st.st_mtime != file->mtime_sec
+				|| STAT_NSEC(&handle[j].st) != file->mtime_nsec
 				/* don't check the inode to support filesystem without persistent inodes */
 			) {
 				/* report that the block and the file are not synced */
@@ -283,12 +286,10 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			/* from the last sync, as we are expected to return errors if running */
 			/* in an unsynced array. This is just like the check command. */
 
-			read_size = handle_read(&handle[j], block, buffer[j], state->block_size, log_error, 0);
+			read_size = handle_read(&handle[j], file_pos, buffer[j], state->block_size, log_error, 0);
 			if (read_size == -1) {
-				/* file we are processing for error reporting */
-				struct snapraid_file* file = block_file_get(block);
 				if (errno == EIO) {
-					log_tag("error:%u:%s:%s: Read EIO error at position %u. %s\n", i, disk->name, esc(file->sub), block_file_pos(block), strerror(errno));
+					log_tag("error:%u:%s:%s: Read EIO error at position %u. %s\n", i, disk->name, esc(file->sub), file_pos, strerror(errno));
 					if (io_error >= state->opt.io_error_limit) {
 						/* LCOV_EXCL_START */
 						log_fatal("DANGER! Too many input/output read error in a data disk, it isn't possible to scrub.\n");
@@ -299,13 +300,13 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 						/* LCOV_EXCL_STOP */
 					}
 
-					log_error("Input/Output error in file '%s' at position '%u'\n", handle[j].path, block_file_pos(block));
+					log_error("Input/Output error in file '%s' at position '%u'\n", handle[j].path, file_pos);
 					++io_error;
 					io_error_on_this_block = 1;
 					continue;
 				}
 
-				log_tag("error:%u:%s:%s: Read error at position %u. %s\n", i, disk->name, esc(file->sub), block_file_pos(block), strerror(errno));
+				log_tag("error:%u:%s:%s: Read error at position %u. %s\n", i, disk->name, esc(file->sub), file_pos, strerror(errno));
 				++error;
 				error_on_this_block = 1;
 				continue;
@@ -332,14 +333,14 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
 					unsigned diff = memdiff(hash, block->hash, HASH_SIZE);
 
-					log_tag("error:%u:%s:%s: Data error at position %u, diff bits %u\n", i, disk->name, esc(handle[j].file->sub), block_file_pos(block), diff);
+					log_tag("error:%u:%s:%s: Data error at position %u, diff bits %u\n", i, disk->name, esc(file->sub), file_pos, diff);
 
 					/* it's a silent error only if we are dealing with synced files */
 					if (file_is_unsynced) {
 						++error;
 						error_on_this_block = 1;
 					} else {
-						log_error("Data error in file '%s' at position '%u', diff bits %u\n", handle[j].path, block_file_pos(block), diff);
+						log_error("Data error in file '%s' at position '%u', diff bits %u\n", handle[j].path, file_pos, diff);
 						++silent_error;
 						silent_error_on_this_block = 1;
 					}

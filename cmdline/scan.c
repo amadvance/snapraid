@@ -178,7 +178,7 @@ static void scan_file_allocate(struct snapraid_scan* scan, struct snapraid_file*
 			++parity_pos;
 
 		/* set the position */
-		block->parity_pos = parity_pos;
+		block->private_parity_pos = parity_pos;
 
 		/* get block specific info */
 		info = info_get(&state->infoarr, parity_pos);
@@ -304,16 +304,13 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 			break;
 		default :
 			/* LCOV_EXCL_START */
-			log_fatal("Internal inconsistency in deallocating for block %u state %u\n", block->parity_pos, block_state);
+			log_fatal("Internal inconsistency in deallocating for block %u state %u\n", parity_pos, block_state);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 
 		/* set the block as deleted */
 		block_state_set(block, BLOCK_STATE_DELETED);
-
-		/* remove the file reference */
-		block_file_set(block, 0);
 	}
 
 	/* insert it in the list of deleted blocks */

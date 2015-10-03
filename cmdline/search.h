@@ -48,7 +48,7 @@ void search_file_free(struct snapraid_search_file* file);
  * Fetch a file from the size, timestamp and name.
  * Return ==0 if the block is found, and copied into buffer.
  */
-int state_search_fetch(struct snapraid_state* state, int prevhash, struct snapraid_block* missing_block, unsigned char* buffer);
+int state_search_fetch(struct snapraid_state* state, int prevhash, struct snapraid_file* missing_file, block_off_t missing_file_pos, struct snapraid_block* missing_block, unsigned char* buffer);
 
 /**
  * Import files from the specified directory.
