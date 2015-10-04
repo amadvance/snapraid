@@ -22,31 +22,6 @@
 #include "stream.h"
 
 /****************************************************************************/
-/* hex conversion table */
-
-static char strhexset[16] = "0123456789abcdef";
-
-static unsigned strdecset[256] =
-{
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	0, 1, 2, 3, 4, 5, 6, 7, 8, 9, -1, -1, -1, -1, -1, -1,
-	-1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
-	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
-};
-
-/****************************************************************************/
 /* stream */
 
 unsigned STREAM_SIZE = 1024 * 64;
@@ -470,108 +445,6 @@ int sgetu32(STREAM* f, uint32_t* value)
 	}
 }
 
-int sgetu64(STREAM* f, uint64_t* value)
-{
-	int c;
-
-	c = sgetc(f);
-	if (c >= '0' && c <= '9') {
-		uint64_t v;
-
-		v = c - '0';
-
-		c = sgetc(f);
-		while (c >= '0' && c <= '9') {
-			v *= 10;
-			v += c - '0';
-			c = sgetc(f);
-		}
-
-		*value = v;
-
-		sungetc(c, f);
-		return 0;
-	} else {
-		/* LCOV_EXCL_START */
-		/* nothing read */
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-}
-
-int sgethex(STREAM* f, void* void_data, int size)
-{
-	unsigned char* data = void_data;
-
-	/* if there is enough data in memory */
-	if (sptrlookup(f, size * 2)) {
-		/* optimized version with all the data in memory */
-		unsigned char* pos = sptrget(f);
-		unsigned x = 0;
-
-		while (size--) {
-			unsigned b0;
-			unsigned b1;
-			unsigned b;
-
-			b0 = strdecset[pos[0]];
-			b1 = strdecset[pos[1]];
-			pos += 2;
-
-			b = (b0 << 4) | b1;
-
-			x |= b;
-
-			*data++ = b;
-		}
-
-		/* at the end check if a digit was wrong */
-		if (x > 0xFF) {
-			/* LCOV_EXCL_START */
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-
-		sptrset(f, pos);
-	} else {
-		/* standard version using sgetc() */
-		while (size--) {
-			unsigned b0;
-			unsigned b1;
-			unsigned b;
-			int c;
-
-			c = sgetc(f);
-			if (c == EOF) {
-				/* LCOV_EXCL_START */
-				return -1;
-				/* LCOV_EXCL_STOP */
-			}
-			b0 = strdecset[(unsigned char)c];
-
-			c = sgetc(f);
-			if (c == EOF) {
-				/* LCOV_EXCL_START */
-				return -1;
-				/* LCOV_EXCL_STOP */
-			}
-			b1 = strdecset[(unsigned char)c];
-
-			b = (b0 << 4) | b1;
-
-			if (b > 0xFF) {
-				/* LCOV_EXCL_START */
-				return -1;
-				/* LCOV_EXCL_STOP */
-			}
-
-			*data++ = b;
-		}
-	}
-
-	return 0;
-}
-
 int sgetb32(STREAM* f, uint32_t* value)
 {
 	uint32_t v;
@@ -680,19 +553,6 @@ int sgetbs(STREAM* f, char* str, int size)
 	return sread(f, str, (int)len);
 }
 
-int sputs(const char* str, STREAM* f)
-{
-	while (*str) {
-		if (sputc(*str++, f) != 0) {
-			/* LCOV_EXCL_START */
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-	}
-
-	return 0;
-}
-
 int swrite(const void* void_data, unsigned size, STREAM* f)
 {
 	const unsigned char* data = void_data;
@@ -717,94 +577,6 @@ int swrite(const void* void_data, unsigned size, STREAM* f)
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
-		}
-	}
-
-	return 0;
-}
-
-int sputu32(uint32_t value, STREAM* s)
-{
-	char buf[16];
-	int i;
-
-	if (!value)
-		return sputc('0', s);
-
-	i = sizeof(buf);
-
-	while (value) {
-		buf[--i] = (value % 10) + '0';
-		value /= 10;
-	}
-
-	return swrite(buf + i, sizeof(buf) - i, s);
-}
-
-int sputu64(uint64_t value, STREAM* s)
-{
-	char buf[32];
-	uint32_t value32;
-	int i;
-
-	if (!value)
-		return sputc('0', s);
-
-	i = sizeof(buf);
-
-	while (value > 0xFFFFFFFF) {
-		buf[--i] = (value % 10) + '0';
-		value /= 10;
-	}
-
-	value32 = (uint32_t)value;
-
-	while (value32) {
-		buf[--i] = (value32 % 10) + '0';
-		value32 /= 10;
-	}
-
-	return swrite(buf + i, sizeof(buf) - i, s);
-}
-
-int sputhex(const void* void_data, int size, STREAM* f)
-{
-	const unsigned char* data = void_data;
-
-	/* if there is enough space in memory */
-	if (sptrlookup(f, size * 2)) {
-		/* optimized version with all the data in memory */
-		unsigned char* pos = sptrget(f);
-
-		while (size) {
-			unsigned b = *data;
-
-			*pos++ = strhexset[b >> 4];
-			*pos++ = strhexset[b & 0xF];
-
-			++data;
-			--size;
-		}
-
-		sptrset(f, pos);
-	} else {
-		/* standard version using sputc() */
-		while (size) {
-			unsigned b = *data;
-
-			if (sputc(strhexset[b >> 4], f) != 0) {
-				/* LCOV_EXCL_START */
-				return -1;
-				/* LCOV_EXCL_STOP */
-			}
-			if (sputc(strhexset[b & 0xF], f) != 0) {
-				/* LCOV_EXCL_START */
-				return -1;
-				/* LCOV_EXCL_STOP */
-			}
-
-			++data;
-			--size;
 		}
 	}
 
