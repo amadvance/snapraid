@@ -331,6 +331,12 @@ struct snapraid_disk {
 	tommy_tree fs_file;
 
 	/**
+	 * Last chunk we accessed.
+	 * It's used to optimize access of sequential blocks.
+	 */
+	struct snapraid_chunk* fs_last;
+
+	/**
 	 * List of all the snapraid_file for the disk.
 	 */
 	tommy_list filelist;

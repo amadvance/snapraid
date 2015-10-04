@@ -746,6 +746,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 	tommy_hashdyn_init(&disk->dirset);
 	tommy_tree_init(&disk->fs_parity, chunk_parity_compare);
 	tommy_tree_init(&disk->fs_file, chunk_file_compare);
+	disk->fs_last = 0;
 
 	return disk;
 }
@@ -855,18 +856,28 @@ static int chunk_parity_inside_compare(const void* void_a, const void* void_b)
 	return 0;
 }
 
-struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos)
+static struct snapraid_chunk* fs_par2chunk_get(struct snapraid_disk* disk, block_off_t parity_pos)
 {
-	struct chunk_parity_inside arg = { parity_pos };
-	struct snapraid_chunk* chunk = tommy_tree_search_compare(&disk->fs_parity, chunk_parity_inside_compare, &arg);
+	struct snapraid_chunk* chunk;
+
+	/* check if the last accessed chunk matches */
+	if (disk->fs_last
+		&& parity_pos >= disk->fs_last->parity_pos
+		&& parity_pos < disk->fs_last->parity_pos + disk->fs_last->count
+	) {
+		chunk = disk->fs_last;
+	} else {
+		struct chunk_parity_inside arg = { parity_pos };
+		chunk = tommy_tree_search_compare(&disk->fs_parity, chunk_parity_inside_compare, &arg);
+	}
 
 	if (!chunk)
 		return 0;
 
-	if (file_pos)
-		*file_pos = chunk->file_pos + (parity_pos - chunk->parity_pos);
+	/* store the last accessed chunk */
+	disk->fs_last = chunk;
 
-	return chunk->file;
+	return chunk;
 }
 
 struct chunk_file_inside {
@@ -895,11 +906,50 @@ static int chunk_file_inside_compare(const void* void_a, const void* void_b)
 	return 0;
 }
 
+static struct snapraid_chunk* fs_file2chunk_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)
+{
+	struct snapraid_chunk* chunk;
+
+	/* check if the last accessed chunk matches */
+	if (disk->fs_last
+		&& file == disk->fs_last->file
+		&& file_pos >= disk->fs_last->file_pos
+		&& file_pos < disk->fs_last->file_pos + disk->fs_last->count
+	) {
+		chunk = disk->fs_last;
+	} else {
+		struct chunk_file_inside arg = { file, file_pos };
+		chunk = tommy_tree_search_compare(&disk->fs_file, chunk_file_inside_compare, &arg);
+	}
+
+	if (!chunk)
+		return 0;
+
+	/* store the last accessed chunk */
+	disk->fs_last = chunk;
+
+	return chunk;
+}
+
+struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos)
+{
+	struct snapraid_chunk* chunk;
+
+	chunk = fs_par2chunk_get(disk, parity_pos);
+	if (!chunk)
+		return 0;
+
+	if (file_pos)
+		*file_pos = chunk->file_pos + (parity_pos - chunk->parity_pos);
+
+	return chunk->file;
+}
+
 block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)
 {
-	struct chunk_file_inside arg = { file, file_pos };
-	struct snapraid_chunk* chunk = tommy_tree_search_compare(&disk->fs_file, chunk_file_inside_compare, &arg);
+	struct snapraid_chunk* chunk;
 
+	chunk = fs_file2chunk_get(disk, file, file_pos);
 	if (!chunk) {
 		/* LCOV_EXCL_START */
 		log_fatal("Internal inconsistency for a file without parity in disk '%s'\n", disk->name);
@@ -916,9 +966,7 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
 
 	if (file_pos > 0) {
 		/* search an existing chunk for the previous file_pos */
-		struct chunk_file_inside arg = { file, file_pos - 1 };
-
-		chunk = tommy_tree_search_compare(&disk->fs_file, chunk_file_inside_compare, &arg);
+		chunk = fs_file2chunk_get(disk, file, file_pos - 1);
 
 		if (chunk != 0 && parity_pos == chunk->parity_pos + chunk->count) {
 			/* ensure that we are really extending a chunk */
@@ -942,13 +990,16 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
 	/* insert te chunk in the trees */
 	tommy_tree_insert(&disk->fs_parity, &chunk->parity_node, chunk);
 	tommy_tree_insert(&disk->fs_file, &chunk->file_node, chunk);
+
+	/* store the last accessed chunk */
+	disk->fs_last = chunk;
 }
 
 void fs_deallocate(struct snapraid_disk* disk, block_off_t parity_pos)
 {
-	struct chunk_parity_inside arg = { parity_pos };
-	struct snapraid_chunk* chunk = tommy_tree_search_compare(&disk->fs_parity, chunk_parity_inside_compare, &arg);
+	struct snapraid_chunk* chunk;
 
+	chunk = fs_par2chunk_get(disk, parity_pos);
 	if (!chunk) {
 		/* LCOV_EXCL_START */
 		log_fatal("Internal inconsistency for clearing a not existing block in disk '%s'\n", disk->name);
@@ -964,6 +1015,9 @@ void fs_deallocate(struct snapraid_disk* disk, block_off_t parity_pos)
 
 		/* deallocate */
 		chunk_free(chunk);
+
+		/* clear the last accessed chunk */
+		disk->fs_last = 0;
 		return;
 	}
 
