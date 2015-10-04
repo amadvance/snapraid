@@ -16,58 +16,6 @@ The content file is instead missing in all platforms.
 
 - Minor
 
-* Check how to reduce memory occupation using smaller memory block.
-We can reduce the memory occupation from 28 (32bit)/36 (64bit) to 17 bytes.
-16 for the hash and 1 for the type.
-
-+ We can store the parity_position<->file,pos relation using some form of binary tree,
-and then drop completely blockarr, and the extra data in memory_block.
-
-struct node {
-	uint32 parity_pos /* parity position */
-	file* file_ptr; /* pointer at the file */
-	uint32 file_pos; /* position in the file */
-	uint32 count; /* number of sequential blocks */
-	void* left_by_pp; /* tree by parity_pos */
-	void* right_by_pp;
-	void* left_by_fp; /* tree by file,offset */
-	void* right_by_fp;
-};
-
-4*8*number_of_fragments = 32*30000 = 960 KB
-but we have to add the extra allocation for each small block, so it could be
-(4*8+32)**number_of_fragments = 64*30000 = 1920 KB = 1.9 MB
-Low memory occupation.
-We can likely make a fast insertion at the end when loading, putting nodes in a list,
-and later insert them in the tree.
-
-+ Or instead of a tree we can use two vectors with binary search.
-
-parity_pos -> file,pos
-[parity_pos,file_ptr,file_pos] 4+4+4
-
-file,pos -> parity_pos
-[file_ptr,file_pos,parity_pos] 4+4+4
-
-(3*4*2)*number_of_fragments=24*30000 = 720 KB = 0.7 MB
-Less memory occupation, but slow to change in the middle, like removing and adding files.
-Very fast to load from disk as we insert only at the end.
-
-+ We can also get rid of deleted blocks, as the hash will be stored anyway.
-+ We can put the state into the hash, dropping 3 bits of the hash of the 128 ones.
-
-- A problem is that we are going to move hash from file to parity.
-How to keep the hash of the file when the file is not in the parity ?
-We'll have to allocate hash also in the file, and move data.
-We can keep the hash ALWAYS on the file!
-But how to handle DELETED blocks ? At now we handle them one-by-one,
-We have to change to handle them like files, to allow to have DELETED files, inside the tree.
-Here the problem is how to handle when DELETED blocks are overwritten.
-Note that we need the UNDELETE state to allow to recover in FIX.
-The HASH is also used to search for DELETED blocks.
-
-TODO CONVERT DELETED BLOCKS TO DELETE FILES
-
 * Restore ownership and permissions, at least in Unix.
 
 * Restore directory timestamps.

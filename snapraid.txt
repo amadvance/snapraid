@@ -1063,15 +1063,14 @@ A reason to use a different blocksize is if your system has less
 than 4 GiB of memory. As a rule of thumb, with 4 GiB or more memory
 use the default 256, with 2 GiB use 512, and with 1 GiB use 1024.
 
-In more details SnapRAID requires about TS*28/BS bytes
-of RAM memory to run in the 32 bits version, and TS*36/BS
-in the 64 bits one. Where TS is the total size in bytes of
-your disk array, and BS is the block size in bytes.
+In more details SnapRAID requires about TS*17/BS bytes of RAM memory.
+Where TS is the total size in bytes of your disk array, and BS is the
+block size in bytes.
 
-For example with 8 disk of 4 TB and a block size of 256 KiB
+For example with 8 disks of 4 TB and a block size of 256 KiB
 (1 KiB = 1024 bytes) you have:
 
-RAM = (8 * 4 * 10^12) * 28 / (256 * 2^10) = 3.2 GiB
+RAM = (8 * 4 * 10^12) * 17 / (256 * 2^10) = 1.9 GiB
 
 Another reason to use a different blocksize is if you have a lot of
 small files. In the order of many millions.
