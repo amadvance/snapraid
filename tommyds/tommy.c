@@ -38,5 +38,6 @@
 #include "tommyarrayblk.c"
 #include "tommyarrayblkof.c"
 #include "tommylist.c"
+#include "tommytree.c"
 #include "tommyhashdyn.c"
 

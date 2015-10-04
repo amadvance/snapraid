@@ -37,7 +37,7 @@ block_off_t parity_allocated_size(struct snapraid_state* state)
 		struct snapraid_disk* disk = i->data;
 
 		/* start from the declared size */
-		block_off_t block = disk_block_size(disk);
+		block_off_t block = disk_size(disk);
 
 		/* decrease the block until an allocated one, but part of a file */
 		/* we don't stop at deleted blocks, because we want to have them cleared */
@@ -64,7 +64,7 @@ block_off_t parity_used_size(struct snapraid_state* state)
 		struct snapraid_disk* disk = i->data;
 
 		/* start from the declared size */
-		block_off_t block = disk_block_size(disk);
+		block_off_t block = disk_size(disk);
 
 		/* decrease the block until an used one */
 		while (block > parity_block && !block_has_file_and_valid_parity(fs_par2block_get(disk, block - 1)))

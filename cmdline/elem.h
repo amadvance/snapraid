@@ -20,8 +20,9 @@
 
 #include "util.h"
 #include "support.h"
-#include "tommyds/tommylist.h"
 #include "tommyds/tommyhash.h"
+#include "tommyds/tommylist.h"
+#include "tommyds/tommytree.h"
 #include "tommyds/tommyhashdyn.h"
 #include "tommyds/tommyarray.h"
 #include "tommyds/tommyarrayblk.h"
@@ -153,18 +154,11 @@ struct snapraid_filter {
 #define BLOCK_STATE_DELETED 4
 
 /**
- * Mask used to store the previous states of the block.
- * Used to mix them inside the file pointer.
- */
-#define BLOCK_STATE_MASK 7
-
-/**
  * Block of a file.
  */
 struct snapraid_block {
-	uintptr_t private_file_mixed; /**< Back pointer to the file owning this block, mixed with some flags. */
-	block_off_t private_parity_pos; /**< Position of the block in the parity. */
 	unsigned char hash[HASH_SIZE]; /**< Hash of the block. */
+	unsigned char state; /**< State of the block. */
 };
 
 /**
@@ -288,6 +282,20 @@ struct snapraid_dir {
 };
 
 /**
+ * Chunk.
+ *
+ * A chunk represents a fragment of a file mapped into the parity.
+ */
+struct snapraid_chunk {
+	struct snapraid_file* file; /* File containing this chunk. */
+	block_off_t parity_pos; /**< Parity position. */
+	block_off_t file_pos; /**< Position in the file. */
+	block_off_t count; /**< Number of sequential blocks in the file and parity. */
+	tommy_tree_node parity_node; /**< Tree sorted by <parity_pos>. */
+	tommy_tree_node file_node; /**< Tree sorter by <file,file_pos>. */
+};
+
+/**
  * Disk.
  */
 struct snapraid_disk {
@@ -315,12 +323,12 @@ struct snapraid_disk {
 	int had_empty_uuid; /**< If the disk had an empty UUID, meaning that it's a new disk. */
 	int mapping_idx; /**< Index in the mapping vector. Used only as buffer when writing the content file. */
 
-	/**<
-	 * Block array of the disk.
-	 *
-	 * Each element points to a snapraid_block structure, or it's BLOCK_EMPTY.
+	/**
+	 * Mapping of chunks in the parity.
+	 * Sorted by <parity_pos> and by <file,file_pos>
 	 */
-	tommy_arrayblk blockarr;
+	tommy_tree fs_parity;
+	tommy_tree fs_file;
 
 	/**
 	 * List of all the snapraid_file for the disk.
@@ -531,21 +539,15 @@ static inline unsigned block_state_get(const struct snapraid_block* block)
 	if (block == BLOCK_EMPTY)
 		return BLOCK_STATE_EMPTY;
 
-	return block->private_file_mixed & BLOCK_STATE_MASK;
+	return block->state;
 }
 
+/**
+ * Set the state of the block.
+ */
 static inline void block_state_set(struct snapraid_block* block, unsigned state)
 {
-	/* ensure that the state can be stored inside the file pointer */
-	if ((state & BLOCK_STATE_MASK) != state) {
-		/* LCOV_EXCL_START */
-		log_fatal("Internal error when setting the block state %u\n", state);
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	block->private_file_mixed &= ~(uintptr_t)BLOCK_STATE_MASK;
-	block->private_file_mixed |= state & BLOCK_STATE_MASK;
+	block->state = state;
 }
 
 /**
@@ -724,6 +726,26 @@ static inline tommy_uint32_t file_stamp_hash(data_off_t size, int64_t mtime_sec,
 	return tommy_inthash_u32((tommy_uint32_t)size ^ tommy_inthash_u32(mtime_sec ^ tommy_inthash_u32(mtime_nsec)));
 }
 
+/**
+ * Allocate a chunk.
+ */
+struct snapraid_chunk* chunk_alloc(block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos, block_off_t count);
+
+/**
+ * Deallocate a chunk.
+ */
+void chunk_free(struct snapraid_chunk* chunk);
+
+/**
+ * Compare chunk by parity position.
+ */
+int chunk_parity_compare(const void* void_a, const void* void_b);
+
+/**
+ * Compare chunk by file and file position.
+ */
+int chunk_file_compare(const void* void_a, const void* void_b);
+
 static inline int link_flag_has(const struct snapraid_link* link, unsigned mask)
 {
 	return (link->flag & mask) == mask;
@@ -829,12 +851,41 @@ void disk_free(struct snapraid_disk* disk);
 /**
  * Get the size of the disk in blocks.
  */
-block_off_t disk_block_size(struct snapraid_disk* disk);
+block_off_t disk_size(struct snapraid_disk* disk);
 
 /**
- * Set a filesystem mapping between file and parity positions.
+ * Check if a disk is totally empty and can be discarded from the content file.
+ * A disk is empty if it doesn't contain any file, symlink, hardlink or dir
+ * and without any DELETED block.
+ * The blockmax is used to limit the search of DELETED block up to blockmax.
  */
-void fs_par2file_set(struct snapraid_disk* disk, block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos);
+int disk_is_empty(struct snapraid_disk* disk, block_off_t blockmax);
+
+/**
+ * Allocate a parity position for the specified file position.
+ *
+ * After this call you can use the par2file/par2block operations
+ * to query the relation.
+ */
+void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos);
+
+/**
+ * Deallocate the parity position.
+ *
+ * After this call you can the par2file/par2block operations
+ * won't find anymore the parity association.
+ */
+void fs_deallocate(struct snapraid_disk* disk, block_off_t pos);
+
+/**
+ * Get the block from the file position.
+ */
+static inline struct snapraid_block* fs_file2block_get(struct snapraid_file* file, block_off_t file_pos)
+{
+	assert(file_pos < file->blockmax);
+
+	return &file->blockvec[file_pos];
+}
 
 /**
  * Get the file position from the parity position.
@@ -848,34 +899,10 @@ struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, block_off_t pa
 block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos);
 
 /**
- * Get the block from the file position.
- */
-struct snapraid_block* fs_file2block_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos);
-
-/**
- * Clear a specific block.
- */
-void fs_par2block_clear(struct snapraid_disk* disk, block_off_t pos);
-
-/**
- * Set the block from parity position.
- * In case of holes, everything is initialized to 0.
- */
-void fs_par2block_set(struct snapraid_disk* disk, block_off_t pos, struct snapraid_block* block);
-
-/**
  * Get the block from the parity position.
  * Returns BLOCK_EMPTY==0 if the block is over the end of the disk or not used.
  */
 struct snapraid_block* fs_par2block_get(struct snapraid_disk* disk, block_off_t parity_pos);
-
-/**
- * Check if a disk is totally empty and can be discarded from the content file.
- * A disk is empty if it doesn't contain any file, symlink, hardlink or dir
- * and without any DELETED block.
- * The blockmax is used to limit the search of DELETED block up to blockmax.
- */
-int disk_is_empty(struct snapraid_disk* disk, block_off_t blockmax);
 
 /**
  * Allocates a disk mapping.

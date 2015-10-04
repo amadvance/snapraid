@@ -355,24 +355,6 @@ int filter_content(tommy_list* contentlist, const char* path)
 	return 0;
 }
 
-/**
- * Sets the file containing the block.
- */
-static void block_file_set(struct snapraid_block* block, struct snapraid_file* file)
-{
-	uintptr_t ptr = (uintptr_t)file;
-
-	/* ensure that the pointer doesn't use the flag space */
-	if ((ptr & (uintptr_t)BLOCK_STATE_MASK) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal("Internal error for pointer not aligned\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	block->private_file_mixed = (block->private_file_mixed & (uintptr_t)BLOCK_STATE_MASK) | ptr;
-}
-
 struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_t size, uint64_t mtime_sec, int mtime_nsec, uint64_t inode, uint64_t physical)
 {
 	struct snapraid_file* file;
@@ -390,13 +372,6 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_
 	file->blockvec = malloc_nofail(file->blockmax * sizeof(struct snapraid_block));
 
 	for (i = 0; i < file->blockmax; ++i) {
-		file->blockvec[i].private_parity_pos = POS_INVALID;
-		file->blockvec[i].private_file_mixed = 0;
-
-		/* set the file */
-		block_file_set(&file->blockvec[i], file);
-
-		/* set an invalid hash */
 		block_state_set(&file->blockvec[i], BLOCK_STATE_CHG);
 		hash_invalid_set(file->blockvec[i].hash);
 	}
@@ -421,12 +396,8 @@ struct snapraid_file* file_dup(struct snapraid_file* copy)
 	file->blockvec = malloc_nofail(file->blockmax * sizeof(struct snapraid_block));
 
 	for (i = 0; i < file->blockmax; ++i) {
-		file->blockvec[i].private_file_mixed = copy->blockvec[i].private_file_mixed;
-		file->blockvec[i].private_parity_pos = copy->blockvec[i].private_parity_pos;
+		file->blockvec[i].state = copy->blockvec[i].state;
 		memcpy(file->blockvec[i].hash, copy->blockvec[i].hash, HASH_SIZE);
-
-		/* set the file to overwrite the copied one */
-		block_file_set(&file->blockvec[i], file);
 	}
 
 	return file;
@@ -632,6 +603,55 @@ int file_pathstamp_compare(const void* void_a, const void* void_b)
 	return file_stamp_compare(void_a, void_b);
 }
 
+struct snapraid_chunk* chunk_alloc(block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos, block_off_t count)
+{
+	struct snapraid_chunk* chunk;
+
+	chunk = malloc_nofail(sizeof(struct snapraid_chunk));
+	chunk->parity_pos = parity_pos;
+	chunk->file = file;
+	chunk->file_pos = file_pos;
+	chunk->count = count;
+
+	return chunk;
+}
+
+void chunk_free(struct snapraid_chunk* chunk)
+{
+	free(chunk);
+}
+
+int chunk_parity_compare(const void* void_a, const void* void_b)
+{
+	const struct snapraid_chunk* arg_a = void_a;
+	const struct snapraid_chunk* arg_b = void_b;
+
+	if (arg_a->parity_pos < arg_b->parity_pos)
+		return -1;
+	if (arg_a->parity_pos > arg_b->parity_pos)
+		return 1;
+
+	return 0;
+}
+
+int chunk_file_compare(const void* void_a, const void* void_b)
+{
+	const struct snapraid_chunk* arg_a = void_a;
+	const struct snapraid_chunk* arg_b = void_b;
+
+	if (arg_a->file < arg_b->file)
+		return -1;
+	if (arg_a->file > arg_b->file)
+		return 1;
+
+	if (arg_a->file_pos < arg_b->file_pos)
+		return -1;
+	if (arg_a->file_pos > arg_b->file_pos)
+		return 1;
+
+	return 0;
+}
+
 struct snapraid_link* link_alloc(const char* sub, const char* linkto, unsigned link_flag)
 {
 	struct snapraid_link* link;
@@ -724,7 +744,8 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 	tommy_hashdyn_init(&disk->linkset);
 	tommy_list_init(&disk->dirlist);
 	tommy_hashdyn_init(&disk->dirset);
-	tommy_arrayblk_init(&disk->blockarr);
+	tommy_tree_init(&disk->fs_parity, chunk_parity_compare);
+	tommy_tree_init(&disk->fs_file, chunk_file_compare);
 
 	return disk;
 }
@@ -733,6 +754,7 @@ void disk_free(struct snapraid_disk* disk)
 {
 	tommy_list_foreach(&disk->filelist, (tommy_foreach_func*)file_free);
 	tommy_list_foreach(&disk->deletedlist, (tommy_foreach_func*)file_free);
+	tommy_tree_foreach(&disk->fs_file, (tommy_foreach_func*)chunk_free);
 	tommy_hashdyn_done(&disk->inodeset);
 	tommy_hashdyn_done(&disk->pathset);
 	tommy_hashdyn_done(&disk->stampset);
@@ -740,87 +762,32 @@ void disk_free(struct snapraid_disk* disk)
 	tommy_hashdyn_done(&disk->linkset);
 	tommy_list_foreach(&disk->dirlist, (tommy_foreach_func*)dir_free);
 	tommy_hashdyn_done(&disk->dirset);
-	tommy_arrayblk_done(&disk->blockarr);
 	free(disk);
 }
 
-block_off_t disk_block_size(struct snapraid_disk* disk)
+struct chunk_disk_empty {
+	block_off_t blockmax;
+};
+
+/**
+ * Search for any block inside the specified blockmax.
+ */
+static int chunk_disk_empty_compare(const void* void_a, const void* void_b)
 {
-	return tommy_arrayblk_size(&disk->blockarr);
-}
+	const struct chunk_disk_empty* arg_a = void_a;
+	const struct snapraid_chunk* arg_b = void_b;
 
-void fs_par2file_set(struct snapraid_disk* disk, block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos)
-{
-	(void)disk;
-
-	assert(file_pos < file->blockmax);
-
-	file->blockvec[file_pos].private_parity_pos = parity_pos;
-}
-
-struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos)
-{
-	struct snapraid_block* block = fs_par2block_get(disk, parity_pos);
-	struct snapraid_file* file = (struct snapraid_file*)(block->private_file_mixed & ~(uintptr_t)BLOCK_STATE_MASK);
-
-	if (block == BLOCK_EMPTY)
+	/* if the block is inside the specified blockmax, it's found */
+	if (arg_a->blockmax > arg_b->parity_pos)
 		return 0;
 
-	if (file_pos) {
-		if (block < file->blockvec || block >= file->blockvec + file->blockmax) {
-			/* LCOV_EXCL_START */
-			log_fatal("Internal inconsistency in block %u ownership\n", block->private_parity_pos);
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
-
-		*file_pos = block - file->blockvec;
-	}
-
-	return file;
-}
-
-block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)
-{
-	(void)disk;
-
-	assert(file_pos < file->blockmax);
-
-	return file->blockvec[file_pos].private_parity_pos;
-}
-
-struct snapraid_block* fs_file2block_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)
-{
-	(void)disk;
-
-	assert(file_pos < file->blockmax);
-
-	return &file->blockvec[file_pos];
-}
-
-void fs_par2block_clear(struct snapraid_disk* disk, block_off_t pos)
-{
-	tommy_arrayblk_grow(&disk->blockarr, pos + 1);
-	tommy_arrayblk_set(&disk->blockarr, pos, BLOCK_EMPTY);
-}
-
-void fs_par2block_set(struct snapraid_disk* disk, block_off_t pos, struct snapraid_block* block)
-{
-	tommy_arrayblk_grow(&disk->blockarr, pos + 1);
-	tommy_arrayblk_set(&disk->blockarr, pos, block);
-}
-
-struct snapraid_block* fs_par2block_get(struct snapraid_disk* disk, block_off_t parity_pos)
-{
-	if (parity_pos < tommy_arrayblk_size(&disk->blockarr))
-		return tommy_arrayblk_get(&disk->blockarr, parity_pos);
-	else
-		return BLOCK_EMPTY;
+	/* otherwise search for a smaller one */
+	return -1;
 }
 
 int disk_is_empty(struct snapraid_disk* disk, block_off_t blockmax)
 {
-	block_off_t i;
+	struct chunk_disk_empty arg = { blockmax };
 
 	/* if there is an element, it's not empty */
 	/* even if links and dirs have no block allocation */
@@ -831,33 +798,206 @@ int disk_is_empty(struct snapraid_disk* disk, block_off_t blockmax)
 	if (!tommy_list_empty(&disk->dirlist))
 		return 0;
 
-	/* limit the search to the size of the disk */
-	if (blockmax > tommy_arrayblk_size(&disk->blockarr))
-		blockmax = tommy_arrayblk_size(&disk->blockarr);
-
-	/* checks all the blocks to search for deleted ones */
-	/* this search is slow, but it's done only if no file is present */
-	for (i = 0; i < blockmax; ++i) {
-		struct snapraid_block* block = tommy_arrayblk_get(&disk->blockarr, i);
-		unsigned block_state = block_state_get(block);
-
-		switch (block_state) {
-		case BLOCK_STATE_EMPTY :
-			/* empty block are expected for an empty disk */
-			break;
-		case BLOCK_STATE_DELETED :
-			/* if there is a deleted block, the disk is not empty */
-			return 0;
-		default :
-			/* LCOV_EXCL_START */
-			log_fatal("Internal inconsistency for used block in disk '%s' without files\n", disk->name);
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
-	}
+	/* search for any chunk inside blockmax */
+	if (tommy_tree_search_compare(&disk->fs_parity, chunk_disk_empty_compare, &arg) != 0)
+		return 0;
 
 	/* finally, it's empty */
 	return 1;
+}
+
+struct chunk_disk_size {
+	block_off_t size;
+};
+
+/**
+ * Search for the chunk with the highest parity position.
+ *
+ * The maximum parity position is stored as size.
+ */
+static int chunk_disk_size_compare(const void* void_a, const void* void_b)
+{
+	struct chunk_disk_size* arg_a = (void*)void_a;
+	const struct snapraid_chunk* arg_b = void_b;
+
+	/* get the maximum size */
+	if (arg_a->size < arg_b->parity_pos + arg_b->count)
+		arg_a->size = arg_b->parity_pos + arg_b->count;
+
+	/* search always for a bigger one */
+	return 1;
+}
+
+block_off_t disk_size(struct snapraid_disk* disk)
+{
+	struct chunk_disk_size arg = { 0 };
+	tommy_tree_search_compare(&disk->fs_parity, chunk_disk_size_compare, &arg);
+	return arg.size;
+}
+
+struct chunk_parity_inside {
+	block_off_t parity_pos;
+};
+
+/**
+ * Search for the chunk containing the specified parity position.
+ */
+static int chunk_parity_inside_compare(const void* void_a, const void* void_b)
+{
+	const struct chunk_parity_inside* arg_a = void_a;
+	const struct snapraid_chunk* arg_b = void_b;
+
+	if (arg_a->parity_pos < arg_b->parity_pos)
+		return -1;
+	if (arg_a->parity_pos >= arg_b->parity_pos + arg_b->count)
+		return 1;
+
+	return 0;
+}
+
+struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos)
+{
+	struct chunk_parity_inside arg = { parity_pos };
+	struct snapraid_chunk* chunk = tommy_tree_search_compare(&disk->fs_parity, chunk_parity_inside_compare, &arg);
+
+	if (!chunk)
+		return 0;
+
+	if (file_pos)
+		*file_pos = chunk->file_pos + (parity_pos - chunk->parity_pos);
+
+	return chunk->file;
+}
+
+struct chunk_file_inside {
+	struct snapraid_file* file;
+	block_off_t file_pos;
+};
+
+/**
+ * Search for the chunk containing the specified file position.
+ */
+static int chunk_file_inside_compare(const void* void_a, const void* void_b)
+{
+	const struct chunk_file_inside* arg_a = void_a;
+	const struct snapraid_chunk* arg_b = void_b;
+
+	if (arg_a->file < arg_b->file)
+		return -1;
+	if (arg_a->file > arg_b->file)
+		return 1;
+
+	if (arg_a->file_pos < arg_b->file_pos)
+		return -1;
+	if (arg_a->file_pos >= arg_b->file_pos + arg_b->count)
+		return 1;
+
+	return 0;
+}
+
+block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)
+{
+	struct chunk_file_inside arg = { file, file_pos };
+	struct snapraid_chunk* chunk = tommy_tree_search_compare(&disk->fs_file, chunk_file_inside_compare, &arg);
+
+	if (!chunk) {
+		/* LCOV_EXCL_START */
+		log_fatal("Internal inconsistency for a file without parity in disk '%s'\n", disk->name);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	return chunk->parity_pos + (file_pos - chunk->file_pos);
+}
+
+void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos)
+{
+	struct snapraid_chunk* chunk;
+
+	if (file_pos > 0) {
+		/* search an existing chunk for the previous file_pos */
+		struct chunk_file_inside arg = { file, file_pos - 1 };
+
+		chunk = tommy_tree_search_compare(&disk->fs_file, chunk_file_inside_compare, &arg);
+
+		if (chunk != 0 && parity_pos == chunk->parity_pos + chunk->count) {
+			/* ensure that we are really extending a chunk */
+			if (file_pos != chunk->file_pos + chunk->count) {
+				/* LCOV_EXCL_START */
+				log_fatal("Internal inconsistency extending a chunk in disk '%s'\n", disk->name);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			/* extend the existing chunk */
+			++chunk->count;
+
+			return;
+		}
+	}
+
+	/* a chunk doesn't exist, and we have to create a new one */
+	chunk = chunk_alloc(parity_pos, file, file_pos, 1);
+
+	/* insert te chunk in the trees */
+	tommy_tree_insert(&disk->fs_parity, &chunk->parity_node, chunk);
+	tommy_tree_insert(&disk->fs_file, &chunk->file_node, chunk);
+}
+
+void fs_deallocate(struct snapraid_disk* disk, block_off_t parity_pos)
+{
+	struct chunk_parity_inside arg = { parity_pos };
+	struct snapraid_chunk* chunk = tommy_tree_search_compare(&disk->fs_parity, chunk_parity_inside_compare, &arg);
+
+	if (!chunk) {
+		/* LCOV_EXCL_START */
+		log_fatal("Internal inconsistency for clearing a not existing block in disk '%s'\n", disk->name);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* if it's the only block of the chunk, delete it */
+	if (chunk->count == 1) {
+		/* remove from the trees */
+		tommy_tree_remove(&disk->fs_parity, chunk);
+		tommy_tree_remove(&disk->fs_file, chunk);
+
+		/* deallocate */
+		chunk_free(chunk);
+		return;
+	}
+
+	/* if it's at the start of the chunk, shrink the chunk */
+	if (parity_pos == chunk->parity_pos) {
+		++chunk->parity_pos;
+		++chunk->file_pos;
+		--chunk->count;
+		return;
+	}
+
+	/* if it's at the end of the chunk, shrink the chunk */
+	if (parity_pos == chunk->parity_pos + chunk->count - 1) {
+		--chunk->count;
+		return;
+	}
+
+	/* LCOV_EXCL_START */
+	log_fatal("Internal inconsistency for clearing in the middle of a chunk in disk '%s'\n", disk->name);
+	exit(EXIT_FAILURE);
+	/* LCOV_EXCL_STOP */
+}
+
+struct snapraid_block* fs_par2block_get(struct snapraid_disk* disk, block_off_t parity_pos)
+{
+	struct snapraid_file* file;
+	block_off_t file_pos;
+
+	file = fs_par2file_get(disk, parity_pos, &file_pos);
+
+	if (!file)
+		return BLOCK_EMPTY;
+
+	return fs_file2block_get(file, file_pos);
 }
 
 struct snapraid_map* map_alloc(const char* name, unsigned position, block_off_t total_blocks, block_off_t free_blocks, const char* uuid)

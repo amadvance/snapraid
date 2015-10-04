@@ -1031,7 +1031,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					/* if it's a deleted block */
 					if (block_state_get(block) == BLOCK_STATE_DELETED) {
 						/* the parity is now updated without this block, so it's now empty */
-						fs_par2block_clear(handle[j].disk, i);
+						fs_deallocate(handle[j].disk, i);
 						continue;
 					}
 

@@ -78,14 +78,14 @@ void memory(void)
 {
 	log_tag("memory:used:%" PRIu64 "\n", (uint64_t)malloc_counter());
 
-	/* size of the block + the size of the blockarr pointer to it */
-	log_tag("memory:block:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_block) + sizeof(void*)));
-
-	/* size of the file + the size of the 3 hashtables pointers to it, * 2 for the hashtable grow factor */
-	log_tag("memory:file:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_file) + 3*2*sizeof(void*)));
+	/* size of the block */
+	log_tag("memory:block:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_block)));
+	log_tag("memory:chunk:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_chunk)));
+	log_tag("memory:file:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_file)));
+	log_tag("memory:link:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_link)));
+	log_tag("memory:dir:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_dir)));
 
 	msg_progress("Using %u MiB of memory.\n", (unsigned)(malloc_counter() / (1024 * 1024)));
-
 }
 
 /****************************************************************************/

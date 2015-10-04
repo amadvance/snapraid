@@ -170,18 +170,26 @@ static void scan_file_allocate(struct snapraid_scan* scan, struct snapraid_file*
 	/* allocate the blocks of the file */
 	parity_pos = disk->first_free_block;
 	for (i = 0; i < file->blockmax; ++i) {
+		struct snapraid_block* block;
+		struct snapraid_block* over_block;
 		snapraid_info info;
-		struct snapraid_block* block = fs_file2block_get(disk, file, i);
 
 		/* increment the position until the first really free block */
 		while (block_has_file(fs_par2block_get(disk, parity_pos)))
 			++parity_pos;
 
-		/* set the position */
-		block->private_parity_pos = parity_pos;
+		/* get block we are going to overwrite, if any */
+		over_block = fs_par2block_get(disk, parity_pos);
+
+		/* deallocate it */
+		if (over_block != BLOCK_EMPTY)
+			fs_deallocate(disk, parity_pos);
 
 		/* get block specific info */
 		info = info_get(&state->infoarr, parity_pos);
+
+		/* get the new block we are going to write */
+		block = fs_file2block_get(file, i);
 
 		/* if the file block already has an updated hash without rehash */
 		if (block_has_updated_hash(block) && !info_get_rehash(info)) {
@@ -193,26 +201,22 @@ static void scan_file_allocate(struct snapraid_scan* scan, struct snapraid_file*
 
 			/* and keep the hash as it's */
 		} else {
-			struct snapraid_block* over_block;
-			unsigned block_state;
+			unsigned over_state;
 
 			/* convert to a CHG block */
 			block_state_set(block, BLOCK_STATE_CHG);
 
-			/* block to overwrite */
-			over_block = fs_par2block_get(disk, parity_pos);
-
 			/* state of the block we are going to overwrite */
-			block_state = block_state_get(over_block);
+			over_state = block_state_get(over_block);
 
 			/* if the block is an empty one */
-			if (block_state == BLOCK_STATE_EMPTY) {
+			if (over_state == BLOCK_STATE_EMPTY) {
 				/* the block was empty and filled with zeros */
 				/* set the hash to the special ZERO value */
 				hash_zero_set(block->hash);
 			} else {
 				/* otherwise it's a DELETED one */
-				assert(block_state == BLOCK_STATE_DELETED);
+				assert(over_state == BLOCK_STATE_DELETED);
 
 				/* copy the past hash of the block */
 				memcpy(block->hash, over_block->hash, HASH_SIZE);
@@ -235,7 +239,7 @@ static void scan_file_allocate(struct snapraid_scan* scan, struct snapraid_file*
 		}
 
 		/* store in the disk map, after invalidating all the other blocks */
-		fs_par2block_set(disk, parity_pos, block);
+		fs_allocate(disk, parity_pos, file, i);
 
 		/* set the new free position */
 		disk->first_free_block = parity_pos + 1;
@@ -263,7 +267,7 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 
 	/* free all the blocks of the file */
 	for (i = 0; i < file->blockmax; ++i) {
-		struct snapraid_block* block = fs_file2block_get(disk, file, i);
+		struct snapraid_block* block = fs_file2block_get(file, i);
 		block_off_t parity_pos = fs_file2par_get(disk, file, i);
 		unsigned block_state;
 
@@ -357,7 +361,7 @@ static int file_is_full_invalid_parity_and_stable(struct snapraid_state* state, 
 	/* check all blocks */
 	for (i = 0; i < file->blockmax; ++i) {
 		snapraid_info info;
-		struct snapraid_block* block = fs_file2block_get(disk, file, i);
+		struct snapraid_block* block = fs_file2block_get(file, i);
 		block_off_t parity_pos = fs_file2par_get(disk, file, i);
 
 		/* exclude blocks with parity */
@@ -390,7 +394,7 @@ static int file_is_full_hashed_and_stable(struct snapraid_state* state, struct s
 	/* check all blocks */
 	for (i = 0; i < file->blockmax; ++i) {
 		snapraid_info info;
-		struct snapraid_block* block = fs_file2block_get(disk, file, i);
+		struct snapraid_block* block = fs_file2block_get(file, i);
 		block_off_t parity_pos = fs_file2par_get(disk, file, i);
 
 		/* exclude blocks without hash */

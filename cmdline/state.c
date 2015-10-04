@@ -1440,7 +1440,7 @@ static void position_clear_deleted(struct snapraid_state* state, block_off_t pos
 		/* if the block is deleted */
 		if (block_state_get(block) == BLOCK_STATE_DELETED) {
 			/* set it to empty */
-			fs_par2block_clear(disk, pos);
+			fs_deallocate(disk, pos);
 		}
 	}
 }
@@ -1721,15 +1721,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 				/* fill the blocks in the run */
 				while (v_count) {
-					struct snapraid_block* block = &file->blockvec[v_idx];
-
-					if (block->private_parity_pos != POS_INVALID) {
-						/* LCOV_EXCL_START */
-						decoding_error(path, f);
-						log_fatal("Internal inconsistency in block position!\n");
-						exit(EXIT_FAILURE);
-						/* LCOV_EXCL_STOP */
-					}
+					struct snapraid_block* block = fs_file2block_get(file, v_idx);
 
 					switch (c) {
 					case 'b' :
@@ -1752,8 +1744,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 						exit(EXIT_FAILURE);
 						/* LCOV_EXCL_STOP */
 					}
-
-					block->private_parity_pos = v_pos;
 
 					/* read the hash only for 'blk/chg/rep', and not for 'new' */
 					if (c != 'n') {
@@ -1811,8 +1801,8 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 						/* LCOV_EXCL_STOP */
 					}
 
-					/* insert the block in the block array */
-					fs_par2block_set(disk, v_pos, block);
+					/* set the parity association */
+					fs_allocate(disk, v_pos, file, v_idx);
 
 					/* go to the next block */
 					++v_idx;
@@ -1925,7 +1915,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 		} else if (c == 'h') {
 			/* hole */
 			uint32_t v_pos;
-			uint32_t i;
 			struct snapraid_disk* disk;
 			uint32_t mapping;
 
@@ -1941,6 +1930,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 
 			v_pos = 0;
 			while (v_pos < blockmax) {
+				uint32_t v_idx;
 				uint32_t v_count;
 				struct snapraid_file* deleted;
 
@@ -1967,22 +1957,19 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 				case 'o' :
 					/* if it's a run of deleted blocks */
 
-					/* allocate the deleted file */
+					/* allocate a fake deleted file */
 					deleted = file_alloc(state->block_size, "", v_count * state->block_size, 0, 0, 0, 0);
 
 					/* insert it in the list of deleted files */
 					tommy_list_insert_tail(&disk->deletedlist, &deleted->nodelist, deleted);
 
 					/* process all blocks */
-					i = 0;
+					v_idx = 0;
 					while (v_count) {
-						struct snapraid_block* block = &deleted->blockvec[i];
+						struct snapraid_block* block = fs_file2block_get(deleted, v_idx);
 
 						/* set the block as deleted */
 						block_state_set(block, BLOCK_STATE_DELETED);
-
-						/* set the position */
-						block->private_parity_pos = v_pos;
 
 						/* read the hash */
 						ret = sread(f, block->hash, HASH_SIZE);
@@ -2012,13 +1999,13 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 							/* LCOV_EXCL_STOP */
 						} else {
 							/* insert the block in the block array */
-							fs_par2block_set(disk, v_pos, block);
+							fs_allocate(disk, v_pos, deleted, v_idx);
 						}
 
 						/* go to next block */
 						++v_pos;
+						++v_idx;
 						--v_count;
-						++i;
 					}
 					break;
 				case 'O' :
@@ -2463,7 +2450,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	unsigned count_symlink;
 	unsigned count_dir;
 	tommy_node* i;
-	block_off_t b;
+	block_off_t idx;
 	block_off_t blockmax;
 	block_off_t begin;
 	time_t info_oldest;
@@ -2484,10 +2471,10 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	/* and get some other info */
 	info_oldest = 0; /* oldest time in info */
 	info_has_rehash = 0; /* if there is a rehash info */
-	for (b = 0; b < blockmax; ++b) {
+	for (idx = 0; idx < blockmax; ++idx) {
 		/* if the position is used */
-		if (position_is_required(state, b)) {
-			snapraid_info info = info_get(&state->infoarr, b);
+		if (position_is_required(state, idx)) {
+			snapraid_info info = info_get(&state->infoarr, idx);
 
 			/* only if there is some info to store */
 			if (info) {
@@ -2501,10 +2488,10 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 			}
 		} else {
 			/* clear any previous info */
-			info_set(&state->infoarr, b, 0);
+			info_set(&state->infoarr, idx, 0);
 
 			/* and clear any deleted blocks */
-			position_clear_deleted(state, b);
+			position_clear_deleted(state, idx);
 		}
 	}
 
@@ -2633,7 +2620,6 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 		/* for each file */
 		for (j = disk->filelist; j != 0; j = j->next) {
 			struct snapraid_file* file = j->data;
-			struct snapraid_block* blockvec = file->blockvec;
 			uint64_t size;
 			uint64_t mtime_sec;
 			int32_t mtime_nsec;
@@ -2665,22 +2651,23 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 			/* for all the blocks of the file */
 			begin = 0;
 			while (begin < file->blockmax) {
-				unsigned block_state = block_state_get(blockvec + begin);
-				uint32_t v_pos = blockvec[begin].private_parity_pos;
+				unsigned v_state = block_state_get(fs_file2block_get(file, begin));
+				block_off_t v_pos = fs_file2par_get(disk, file, begin);
 				uint32_t v_count;
 
 				block_off_t end;
 
 				/* find the end of run of blocks */
 				end = begin + 1;
-				while (end < file->blockmax
-					&& block_state == block_state_get(blockvec + end)
-					&& blockvec[end - 1].private_parity_pos + 1 == blockvec[end].private_parity_pos
-				) {
+				while (end < file->blockmax) {
+					if (v_state != block_state_get(fs_file2block_get(file, end)))
+						break;
+					if (v_pos + (end - begin) != fs_file2par_get(disk, file, end))
+						break;
 					++end;
 				}
 
-				switch (block_state) {
+				switch (v_state) {
 				case BLOCK_STATE_BLK :
 					sputc('b', f);
 					break;
@@ -2692,7 +2679,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 					break;
 				default :
 					/* LCOV_EXCL_START */
-					log_fatal("Internal inconsistency in state for block %u state %u\n", v_pos, block_state);
+					log_fatal("Internal inconsistency in state for block %u state %u\n", v_pos, v_state);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -2703,16 +2690,8 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 				sputb32(v_count, f);
 
 				/* write hashes */
-				for (b = begin; b < end; ++b) {
-					struct snapraid_block* block = blockvec + b;
-
-					/* consistency check */
-					if (block != fs_par2block_get(disk, block->private_parity_pos)) {
-						/* LCOV_EXCL_START */
-						log_fatal("Internal inconsistency in mismatch for block %u state %u in file '%s'\n", block->private_parity_pos, block_state, file->sub);
-						exit(EXIT_FAILURE);
-						/* LCOV_EXCL_STOP */
-					}
+				for (idx = begin; idx < end; ++idx) {
+					struct snapraid_block* block = fs_file2block_get(file, idx);
 
 					swrite(block->hash, HASH_SIZE, f);
 				}
@@ -2807,14 +2786,6 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 				/* write all the hash */
 				while (begin < end) {
 					struct snapraid_block* block = fs_par2block_get(disk, begin);
-
-					/* consistency check */
-					if (block->private_parity_pos != begin) {
-						/* LCOV_EXCL_START */
-						log_fatal("Internal inconsistency in delete position %u/%u!\n", block->private_parity_pos, begin);
-						exit(EXIT_FAILURE);
-						/* LCOV_EXCL_STOP */
-					}
 
 					swrite(block->hash, HASH_SIZE, f);
 

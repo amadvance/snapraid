@@ -59,6 +59,7 @@ noinst_HEADERS = \
 	tommyds/tommyhash.h \
 	tommyds/tommyhashdyn.h \
 	tommyds/tommylist.h \
+	tommyds/tommytree.h \
 	tommyds/tommytypes.h \
 	tommyds/tommyarray.c \
 	tommyds/tommyarrayblk.c \
@@ -66,6 +67,7 @@ noinst_HEADERS = \
 	tommyds/tommyhash.c \
 	tommyds/tommyhashdyn.c \
 	tommyds/tommylist.c \
+	tommyds/tommytree.c \
 	cmdline/portable.h \
 	cmdline/snapraid.h \
 	cmdline/util.h \
