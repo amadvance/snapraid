@@ -229,6 +229,16 @@ struct snapraid_block {
  */
 #define FILE_IS_WITHOUT_INODE 0x200
 
+/**
+ * The file is deleted.
+ * This happens when a file is deleted from the array,
+ * but it's keep inside the parity until the next sync.
+ *
+ * During the filesystem check we needs this information,
+ * because deleted files may be present only partially.
+ */
+#define FILE_IS_DELETED 0x400
+
 #define FILE_IS_HARDLINK 0x1000 /**< If it's an hardlink. */
 #define FILE_IS_SYMLINK 0x2000 /**< If it's a file symlink. */
 #define FILE_IS_SYMDIR 0x4000 /**< If it's a dir symlink for Windows. Not yet supported. */
@@ -866,6 +876,12 @@ block_off_t disk_size(struct snapraid_disk* disk);
  * The blockmax is used to limit the search of DELETED block up to blockmax.
  */
 int disk_is_empty(struct snapraid_disk* disk, block_off_t blockmax);
+
+/**
+ * Check the filesystem for errors.
+ * Return 0 if it's OK.
+ */
+int fs_check(struct snapraid_disk* disk);
 
 /**
  * Allocate a parity position for the specified file position.

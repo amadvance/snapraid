@@ -771,7 +771,7 @@ struct chunk_disk_empty {
 };
 
 /**
- * Search for any block inside the specified blockmax.
+ * Compare the chunk if inside the specified blockmax.
  */
 static int chunk_disk_empty_compare(const void* void_a, const void* void_b)
 {
@@ -812,7 +812,7 @@ struct chunk_disk_size {
 };
 
 /**
- * Search for the chunk with the highest parity position.
+ * Compare the chunk by highest parity position.
  *
  * The maximum parity position is stored as size.
  */
@@ -836,12 +836,179 @@ block_off_t disk_size(struct snapraid_disk* disk)
 	return arg.size;
 }
 
+struct chunk_check {
+	const struct snapraid_chunk* prev;
+	int result;
+};
+
+void chunk_parity_check_foreach(void* void_arg, void* void_obj)
+{
+	struct chunk_check* arg = void_arg;
+	const struct snapraid_chunk* obj = void_obj;
+	const struct snapraid_chunk* prev = arg->prev;
+
+	/* set the next previous block */
+	arg->prev = obj;
+
+	/* stop reporting if too many errors */
+	if (arg->result > 100) {
+		/* LCOV_EXCL_START */
+		return;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* check only if there is a previous block */
+	if (!prev)
+		return;
+
+	/* check the order */
+	if (prev->parity_pos >= obj->parity_pos) {
+		/* LCOV_EXCL_START */
+		log_fatal("Internal inconsistency in parity order for files '%s' at '%u:%u' and '%s' at '%u:%u'\n",
+			prev->file->sub, prev->parity_pos, prev->count, obj->file->sub, obj->parity_pos, obj->count);
+		++arg->result;
+		return;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* check that the chunks don't overlap */
+	if (prev->parity_pos + prev->count > obj->parity_pos) {
+		/* LCOV_EXCL_START */
+		log_fatal("Internal inconsistency for parity overlap for files '%s' at '%u:%u' and '%s' at '%u:%u'\n",
+			prev->file->sub, prev->parity_pos, prev->count, obj->file->sub, obj->parity_pos, obj->count);
+		++arg->result;
+		return;
+		/* LCOV_EXCL_STOP */
+	}
+}
+
+void chunk_file_check_foreach(void* void_arg, void* void_obj)
+{
+	struct chunk_check* arg = void_arg;
+	const struct snapraid_chunk* obj = void_obj;
+	const struct snapraid_chunk* prev = arg->prev;
+
+	/* set the next previous block */
+	arg->prev = obj;
+
+	/* stop reporting if too many errors */
+	if (arg->result > 100) {
+		/* LCOV_EXCL_START */
+		return;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* note that for deleted files, some chunks may be missing */
+
+	/* if the files are different */
+	if (!prev || prev->file != obj->file) {
+		if (prev != 0) {
+			if (file_flag_has(prev->file, FILE_IS_DELETED)) {
+				/* check that the chunk doesn't overflow the file */
+				if (prev->file_pos + prev->count > prev->file->blockmax) {
+					/* LCOV_EXCL_START */
+					log_fatal("Internal inconsistency in delete end for file '%s' at '%u:%u' overflowing size '%u'\n",
+						prev->file->sub, prev->file_pos, prev->count, prev->file->blockmax);
+					++arg->result;
+					return;
+					/* LCOV_EXCL_STOP */
+				}
+			} else {
+				/* check that the chunk ends the file */
+				if (prev->file_pos + prev->count != prev->file->blockmax) {
+					/* LCOV_EXCL_START */
+					log_fatal("Internal inconsistency in file end for file '%s' at '%u:%u' instead of size '%u'\n",
+						prev->file->sub, prev->file_pos, prev->count, prev->file->blockmax);
+					++arg->result;
+					return;
+					/* LCOV_EXCL_STOP */
+				}
+			}
+		}
+
+		if (file_flag_has(obj->file, FILE_IS_DELETED)) {
+			/* check that the chunk doesn't overflow the file */
+			if (obj->file_pos + obj->count > obj->file->blockmax) {
+				/* LCOV_EXCL_START */
+				log_fatal("Internal inconsistency in delete start for file '%s' at '%u:%u' overflowing size '%u'\n",
+					obj->file->sub, obj->file_pos, obj->count, obj->file->blockmax);
+				++arg->result;
+				return;
+				/* LCOV_EXCL_STOP */
+			}
+		} else {
+			/* check that the chunk starts the file */
+			if (obj->file_pos != 0) {
+				/* LCOV_EXCL_START */
+				log_fatal("Internal inconsistency in file start for file '%s' at '%u:%u'\n",
+					obj->file->sub, obj->file_pos, obj->count);
+				++arg->result;
+				return;
+				/* LCOV_EXCL_STOP */
+			}
+		}
+	} else {
+		/* check the order */
+		if (prev->file_pos >= obj->file_pos) {
+			/* LCOV_EXCL_START */
+			log_fatal("Internal inconsistency in file order for file '%s' at '%u:%u' and at '%u:%u'\n",
+				prev->file->sub, prev->file_pos, prev->count, obj->file_pos, obj->count);
+			++arg->result;
+			return;
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (file_flag_has(obj->file, FILE_IS_DELETED)) {
+			/* check that the chunks don't overlap */
+			if (prev->file_pos + prev->count > obj->file_pos) {
+				/* LCOV_EXCL_START */
+				log_fatal("Internal inconsistency in delete sequence for file '%s' at '%u:%u' and at '%u:%u'\n",
+					prev->file->sub, prev->file_pos, prev->count, obj->file_pos, obj->count);
+				++arg->result;
+				return;
+				/* LCOV_EXCL_STOP */
+			}
+		} else {
+			/* check that the chunks are sequential */
+			if (prev->file_pos + prev->count != obj->file_pos) {
+				/* LCOV_EXCL_START */
+				log_fatal("Internal inconsistency in file sequence for file '%s' at '%u:%u' and at '%u:%u'\n",
+					prev->file->sub, prev->file_pos, prev->count, obj->file_pos, obj->count);
+				++arg->result;
+				return;
+				/* LCOV_EXCL_STOP */
+			}
+		}
+	}
+}
+
+int fs_check(struct snapraid_disk* disk)
+{
+	struct chunk_check arg;
+
+	/* error count starts from 0 */
+	arg.result = 0;
+
+	/* check parity sequence */
+	arg.prev = 0;
+	tommy_tree_foreach_arg(&disk->fs_parity, chunk_parity_check_foreach, &arg);
+
+	/* check file sequence */
+	arg.prev = 0;
+	tommy_tree_foreach_arg(&disk->fs_file, chunk_file_check_foreach, &arg);
+
+	if (arg.result != 0)
+		return -1;
+
+	return 0;
+}
+
 struct chunk_parity_inside {
 	block_off_t parity_pos;
 };
 
 /**
- * Search for the chunk containing the specified parity position.
+ * Compare the chunk if containing the specified parity position.
  */
 static int chunk_parity_inside_compare(const void* void_a, const void* void_b)
 {
@@ -856,6 +1023,11 @@ static int chunk_parity_inside_compare(const void* void_a, const void* void_b)
 	return 0;
 }
 
+/**
+ * Seach the chunk at the specified parity position.
+ * The search is optimized for sequential accesses.
+ * \return If not found return 0
+ */
 static struct snapraid_chunk* fs_par2chunk_get(struct snapraid_disk* disk, block_off_t parity_pos)
 {
 	struct snapraid_chunk* chunk;
@@ -886,7 +1058,7 @@ struct chunk_file_inside {
 };
 
 /**
- * Search for the chunk containing the specified file position.
+ * Compare the chunk if containing the specified file position.
  */
 static int chunk_file_inside_compare(const void* void_a, const void* void_b)
 {
@@ -906,6 +1078,11 @@ static int chunk_file_inside_compare(const void* void_a, const void* void_b)
 	return 0;
 }
 
+/**
+ * Seach the chunk at the specified file position.
+ * The search is optimized for sequential accesses.
+ * \return If not found return 0
+ */
 static struct snapraid_chunk* fs_file2chunk_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)
 {
 	struct snapraid_chunk* chunk;
@@ -952,7 +1129,7 @@ block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* fi
 	chunk = fs_file2chunk_get(disk, file, file_pos);
 	if (!chunk) {
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency for a file without parity in disk '%s'\n", disk->name);
+		log_fatal("Internal inconsistency when resolving a file to a not existing chunk in disk '%s'\n", disk->name);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -963,16 +1140,18 @@ block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* fi
 void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos)
 {
 	struct snapraid_chunk* chunk;
+	struct snapraid_chunk* parity_chunk;
+	struct snapraid_chunk* file_chunk;
 
 	if (file_pos > 0) {
 		/* search an existing chunk for the previous file_pos */
 		chunk = fs_file2chunk_get(disk, file, file_pos - 1);
 
 		if (chunk != 0 && parity_pos == chunk->parity_pos + chunk->count) {
-			/* ensure that we are really extending a chunk */
+			/* ensure that we are extending the chunk at the end */
 			if (file_pos != chunk->file_pos + chunk->count) {
 				/* LCOV_EXCL_START */
-				log_fatal("Internal inconsistency extending a chunk in disk '%s'\n", disk->name);
+				log_fatal("Internal inconsistency extending a chunk in the middle in disk '%s'\n", disk->name);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -988,8 +1167,15 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
 	chunk = chunk_alloc(parity_pos, file, file_pos, 1);
 
 	/* insert te chunk in the trees */
-	tommy_tree_insert(&disk->fs_parity, &chunk->parity_node, chunk);
-	tommy_tree_insert(&disk->fs_file, &chunk->file_node, chunk);
+	parity_chunk = tommy_tree_insert(&disk->fs_parity, &chunk->parity_node, chunk);
+	file_chunk = tommy_tree_insert(&disk->fs_file, &chunk->file_node, chunk);
+
+	if (parity_chunk != chunk || file_chunk != chunk) {
+		/* LCOV_EXCL_START */
+		log_fatal("Internal inconsistency when allocating a chunk that already exists in disk '%s'\n", disk->name);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
 
 	/* store the last accessed chunk */
 	disk->fs_last = chunk;
@@ -1002,7 +1188,7 @@ void fs_deallocate(struct snapraid_disk* disk, block_off_t parity_pos)
 	chunk = fs_par2chunk_get(disk, parity_pos);
 	if (!chunk) {
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency for clearing a not existing block in disk '%s'\n", disk->name);
+		log_fatal("Internal inconsistency when deallocating a not existing chunk in disk '%s'\n", disk->name);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1036,7 +1222,7 @@ void fs_deallocate(struct snapraid_disk* disk, block_off_t parity_pos)
 	}
 
 	/* LCOV_EXCL_START */
-	log_fatal("Internal inconsistency for clearing in the middle of a chunk in disk '%s'\n", disk->name);
+	log_fatal("Internal inconsistency when deallocating a chunk in the middle in disk '%s'\n", disk->name);
 	exit(EXIT_FAILURE);
 	/* LCOV_EXCL_STOP */
 }

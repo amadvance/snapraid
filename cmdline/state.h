@@ -372,6 +372,12 @@ static inline void state_usage_parity(struct snapraid_state* state, unsigned lev
  */
 void state_usage_print(struct snapraid_state* state);
 
+/**
+ * Check the filesystem on all disks.
+ * On error it aborts.
+ */
+void state_fscheck(struct snapraid_state* state, const char* ope);
+
 /****************************************************************************/
 /* misc */
 

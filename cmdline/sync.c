@@ -1019,9 +1019,12 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			if (!io_error_on_this_block) {
 				/* for each disk, mark the blocks as processed */
 				for (j = 0; j < diskmax; ++j) {
-					struct snapraid_block* block = BLOCK_EMPTY;
-					if (handle[j].disk)
-						block = fs_par2block_get(handle[j].disk, i);
+					struct snapraid_block* block;
+
+					if (!handle[j].disk)
+						continue;
+
+					block = fs_par2block_get(handle[j].disk, i);
 
 					if (block == BLOCK_EMPTY) {
 						/* nothing to do */

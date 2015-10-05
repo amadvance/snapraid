@@ -1792,15 +1792,6 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 						block_state_set(block, BLOCK_STATE_REP);
 					}
 
-					/* we must not overwrite existing blocks */
-					if (fs_par2block_get(disk, v_pos) != BLOCK_EMPTY) {
-						/* LCOV_EXCL_START */
-						decoding_error(path, f);
-						log_fatal("Internal inconsistency in block existence!\n");
-						exit(EXIT_FAILURE);
-						/* LCOV_EXCL_STOP */
-					}
-
 					/* set the parity association */
 					fs_allocate(disk, v_pos, file, v_idx);
 
@@ -1958,7 +1949,10 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 					/* if it's a run of deleted blocks */
 
 					/* allocate a fake deleted file */
-					deleted = file_alloc(state->block_size, "", v_count * state->block_size, 0, 0, 0, 0);
+					deleted = file_alloc(state->block_size, "<deleted>", v_count * state->block_size, 0, 0, 0, 0);
+
+					/* mark the file as deleted */
+					file_flag_set(deleted, FILE_IS_DELETED);
 
 					/* insert it in the list of deleted files */
 					tommy_list_insert_tail(&disk->deletedlist, &deleted->nodelist, deleted);
@@ -1986,21 +1980,8 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 							hash_invalid_set(block->hash);
 						}
 
-						/* we must not overwrite existing blocks */
-						if (fs_par2block_get(disk, v_pos) != BLOCK_EMPTY) {
-							/* LCOV_EXCL_START */
-							log_fatal("Internal inconsistency for used hole at pos %u!\n", v_pos);
-							if (state->opt.skip_content_check) {
-								log_fatal("Overriding as used.\n");
-							} else {
-								decoding_error(path, f);
-								exit(EXIT_FAILURE);
-							}
-							/* LCOV_EXCL_STOP */
-						} else {
-							/* insert the block in the block array */
-							fs_allocate(disk, v_pos, deleted, v_idx);
-						}
+						/* insert the block in the block array */
+						fs_allocate(disk, v_pos, deleted, v_idx);
 
 						/* go to next block */
 						++v_pos;
@@ -2424,6 +2405,9 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 		/* LCOV_EXCL_STOP */
 	}
 
+	/* check the filesystem on all disks */
+	state_fscheck(state, "after read");
+
 	/* check that the stored parity size matches the loaded state */
 	if (blockmax != parity_allocated_size(state)) {
 		/* LCOV_EXCL_START */
@@ -2466,6 +2450,9 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 
 	/* blocks of all array */
 	blockmax = parity_allocated_size(state);
+
+	/* check the filesystem on all disks */
+	state_fscheck(state, "before write");
 
 	/* clear the info for unused blocks */
 	/* and get some other info */
@@ -3471,6 +3458,23 @@ void state_usage_print(struct snapraid_state* state)
 			printf("%" PRIu64 "%%", state->parity[l].tick * 100U / tick_total);
 		}
 		printf("\n");
+	}
+}
+
+void state_fscheck(struct snapraid_state* state, const char* ope)
+{
+	tommy_node* i;
+
+	/* check the filesystem on all disks */
+	for (i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+
+		if (fs_check(disk) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Internal inconsistency in filesystem for disk '%s' %s\n", disk->name, ope);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
 	}
 }
 

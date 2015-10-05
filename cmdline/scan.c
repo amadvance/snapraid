@@ -317,6 +317,9 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 		block_state_set(block, BLOCK_STATE_DELETED);
 	}
 
+	/* mark the file as deleted */
+	file_flag_set(file, FILE_IS_DELETED);
+
 	/* insert it in the list of deleted blocks */
 	tommy_list_insert_tail(&disk->deletedlist, &file->nodelist, file);
 }
@@ -1771,6 +1774,9 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	log_flush();
 
 	tommy_list_foreach(&scanlist, (tommy_foreach_func*)free);
+
+	/* check the filesystem on all disks */
+	state_fscheck(state, "after scan");
 
 	if (is_diff) {
 		/* check for file difference */
