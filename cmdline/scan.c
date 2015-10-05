@@ -155,34 +155,128 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 }
 
 /**
- * Removes the specified file from the parity.
+ * Insert the specified file in the parity.
+ */
+static void scan_file_allocate(struct snapraid_scan* scan, struct snapraid_file* file)
+{
+	struct snapraid_state* state = scan->state;
+	struct snapraid_disk* disk = scan->disk;
+	block_off_t i;
+	block_off_t parity_pos;
+
+	/* state changed */
+	state->need_write = 1;
+
+	/* allocate the blocks of the file */
+	parity_pos = disk->first_free_block;
+	for (i = 0; i < file->blockmax; ++i) {
+		struct snapraid_block* block;
+		struct snapraid_block* over_block;
+		snapraid_info info;
+
+		/* increment the position until the first really free block */
+		while (block_has_file(fs_par2block_get(disk, parity_pos)))
+			++parity_pos;
+
+		/* get block we are going to overwrite, if any */
+		over_block = fs_par2block_get(disk, parity_pos);
+
+		/* deallocate it */
+		if (over_block != BLOCK_EMPTY)
+			fs_deallocate(disk, parity_pos);
+
+		/* get block specific info */
+		info = info_get(&state->infoarr, parity_pos);
+
+		/* get the new block we are going to write */
+		block = fs_file2block_get(file, i);
+
+		/* if the file block already has an updated hash without rehash */
+		if (block_has_updated_hash(block) && !info_get_rehash(info)) {
+			/* the only possible case is for REP blocks */
+			assert(block_state_get(block) == BLOCK_STATE_REP);
+
+			/* convert to a REP block */
+			block_state_set(block, BLOCK_STATE_REP);
+
+			/* and keep the hash as it's */
+		} else {
+			unsigned over_state;
+
+			/* convert to a CHG block */
+			block_state_set(block, BLOCK_STATE_CHG);
+
+			/* state of the block we are going to overwrite */
+			over_state = block_state_get(over_block);
+
+			/* if the block is an empty one */
+			if (over_state == BLOCK_STATE_EMPTY) {
+				/* the block was empty and filled with zeros */
+				/* set the hash to the special ZERO value */
+				hash_zero_set(block->hash);
+			} else {
+				/* otherwise it's a DELETED one */
+				assert(over_state == BLOCK_STATE_DELETED);
+
+				/* copy the past hash of the block */
+				memcpy(block->hash, over_block->hash, HASH_SIZE);
+
+				/* if we have not already cleared the past hash */
+				if (!state->clear_past_hash) {
+					/* in this case we don't know if the old state is still the one */
+					/* stored inside the parity, because after an aborted sync, the parity */
+					/* may be or may be not have been updated with the new data */
+					/* Then we reset the hash to a bogus value */
+					/* For example: */
+					/* - One file is deleted */
+					/* - Sync aborted after, updating the parity to the new state, */
+					/*   but without saving the content file representing this new state. */
+					/* - Another file is added again (exactly here) */
+					/*   with the hash of DELETED block not represeting the real parity state */
+					hash_invalid_set(block->hash);
+				}
+			}
+		}
+
+		/* store in the disk map, after invalidating all the other blocks */
+		fs_allocate(disk, parity_pos, file, i);
+
+		/* set the new free position */
+		disk->first_free_block = parity_pos + 1;
+	}
+
+	/* insert in the list of contained files */
+	tommy_list_insert_tail(&disk->filelist, &file->nodelist, file);
+}
+
+/**
+ * Remove the specified file from the parity.
+ * The file is then inserted in the deleted set, and it should no be deallocated.
  */
 static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_file* file)
 {
 	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
-
 	block_off_t i;
+
+	/* remove from the list of contained files */
+	tommy_list_remove_existing(&disk->filelist, &file->nodelist);
 
 	/* state changed */
 	state->need_write = 1;
 
 	/* free all the blocks of the file */
 	for (i = 0; i < file->blockmax; ++i) {
-		struct snapraid_block* block = &file->blockvec[i];
-		block_off_t block_pos = block->parity_pos;
+		struct snapraid_block* block = fs_file2block_get(file, i);
+		block_off_t parity_pos = fs_file2par_get(disk, file, i);
 		unsigned block_state;
-		struct snapraid_deleted* deleted;
 
 		/* adjust the first free position */
 		/* note that doing all the deletions before alllocations, */
 		/* first_free_block is always 0 and the "if" is never triggered */
 		/* but we keep this code anyway for completeness. */
-		if (disk->first_free_block > block_pos)
-			disk->first_free_block = block_pos;
-
-		/* allocated a new deleted block from the block we are going to delete */
-		deleted = deleted_dup(block);
+		if (disk->first_free_block > parity_pos)
+			disk->first_free_block = parity_pos;
 
 		/* in case we scan after an aborted sync, */
 		/* we could get also intermediate states */
@@ -205,93 +299,32 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 				/* - File is now deleted after the aborted sync */
 				/* - Sync again, deleting the blocks (exactly here) */
 				/*   with the hash of CHG block not represeting the real parity state */
-				hash_invalid_set(deleted->block.hash);
+				hash_invalid_set(block->hash);
 			}
 			break;
 		case BLOCK_STATE_REP :
 			/* we just don't know the old hash, and then we set it to invalid */
-			hash_invalid_set(deleted->block.hash);
+			hash_invalid_set(block->hash);
 			break;
 		default :
 			/* LCOV_EXCL_START */
-			log_fatal("Internal inconsistency in deallocating for block %u state %u\n", block->parity_pos, block_state);
+			log_fatal("Internal inconsistency in deallocating for block %u state %u\n", parity_pos, block_state);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 
-		/* insert it in the list of deleted blocks */
-		tommy_list_insert_tail(&disk->deletedlist, &deleted->node, deleted);
-
-		/* set the deleted block in the block array */
-		tommy_arrayblk_set(&disk->blockarr, block_pos, &deleted->block);
-	}
-}
-
-/**
- * Checks if a file is completely formed of blocks with invalid parity,
- * and no rehash is tagged, and if it has at least one block.
- */
-static int file_is_full_invalid_parity_and_stable(struct snapraid_state* state, struct snapraid_file* file)
-{
-	block_off_t i;
-
-	/* with no block, it never has an invalid parity */
-	if (file->blockmax == 0)
-		return 0;
-
-	/* check all blocks */
-	for (i = 0; i < file->blockmax; ++i) {
-		struct snapraid_block* block = &file->blockvec[i];
-		snapraid_info info;
-
-		/* exclude blocks with parity */
-		if (!block_has_invalid_parity(block))
-			return 0;
-
-		/* get block specific info */
-		info = info_get(&state->infoarr, block->parity_pos);
-
-		/* if rehash fails */
-		if (info_get_rehash(info))
-			return 0;
+		/* set the block as deleted */
+		block_state_set(block, BLOCK_STATE_DELETED);
 	}
 
-	return 1;
+	/* mark the file as deleted */
+	file_flag_set(file, FILE_IS_DELETED);
+
+	/* insert it in the list of deleted blocks */
+	tommy_list_insert_tail(&disk->deletedlist, &file->nodelist, file);
 }
 
-/**
- * Checks if a file is completely formed of blocks with an updated hash,
- * and no rehash is tagged, and if it has at least one block.
- */
-static int file_is_full_hashed_and_stable(struct snapraid_state* state, struct snapraid_file* file)
-{
-	block_off_t i;
-
-	/* with no block, it never has a hash */
-	if (file->blockmax == 0)
-		return 0;
-
-	/* check all blocks */
-	for (i = 0; i < file->blockmax; ++i) {
-		struct snapraid_block* block = &file->blockvec[i];
-		snapraid_info info;
-
-		/* exclude blocks without hash */
-		if (!block_has_updated_hash(block))
-			return 0;
-
-		/* get block specific info */
-		info = info_get(&state->infoarr, block->parity_pos);
-
-		/* exclude blocks needing a rehash */
-		if (info_get_rehash(info))
-			return 0;
-	}
-
-	return 1;
-}
-
-static void scan_file_delayed_insert(struct snapraid_scan* scan, struct snapraid_file* file)
+static void scan_file_delayed_allocate(struct snapraid_scan* scan, struct snapraid_file* file)
 {
 	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
@@ -312,7 +345,74 @@ static void scan_file_delayed_insert(struct snapraid_scan* scan, struct snapraid
 		}
 	}
 
+	/* insert in the delayed list */
 	tommy_list_insert_tail(&scan->file_insert_list, &file->nodelist, file);
+}
+
+/**
+ * Checks if a file is completely formed of blocks with invalid parity,
+ * and no rehash is tagged, and if it has at least one block.
+ */
+static int file_is_full_invalid_parity_and_stable(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
+{
+	block_off_t i;
+
+	/* with no block, it never has an invalid parity */
+	if (file->blockmax == 0)
+		return 0;
+
+	/* check all blocks */
+	for (i = 0; i < file->blockmax; ++i) {
+		snapraid_info info;
+		struct snapraid_block* block = fs_file2block_get(file, i);
+		block_off_t parity_pos = fs_file2par_get(disk, file, i);
+
+		/* exclude blocks with parity */
+		if (!block_has_invalid_parity(block))
+			return 0;
+
+		/* get block specific info */
+		info = info_get(&state->infoarr, parity_pos);
+
+		/* if rehash fails */
+		if (info_get_rehash(info))
+			return 0;
+	}
+
+	return 1;
+}
+
+/**
+ * Checks if a file is completely formed of blocks with an updated hash,
+ * and no rehash is tagged, and if it has at least one block.
+ */
+static int file_is_full_hashed_and_stable(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
+{
+	block_off_t i;
+
+	/* with no block, it never has a hash */
+	if (file->blockmax == 0)
+		return 0;
+
+	/* check all blocks */
+	for (i = 0; i < file->blockmax; ++i) {
+		snapraid_info info;
+		struct snapraid_block* block = fs_file2block_get(file, i);
+		block_off_t parity_pos = fs_file2par_get(disk, file, i);
+
+		/* exclude blocks without hash */
+		if (!block_has_updated_hash(block))
+			return 0;
+
+		/* get block specific info */
+		info = info_get(&state->infoarr, parity_pos);
+
+		/* exclude blocks needing a rehash */
+		if (info_get_rehash(info))
+			return 0;
+	}
+
+	return 1;
 }
 
 /**
@@ -399,7 +499,43 @@ static void scan_file_refresh(struct snapraid_scan* scan, const char* sub, struc
 }
 
 /**
- * Keeps the file as it's (or with only a name/inode modification).
+ * Insert the file in the data set.
+ */
+static void scan_file_insert(struct snapraid_scan* scan, struct snapraid_file* file)
+{
+	struct snapraid_disk* disk = scan->disk;
+
+	/* insert the file in the containers */
+	if (!file_flag_has(file, FILE_IS_WITHOUT_INODE))
+		tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
+	tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
+	tommy_hashdyn_insert(&disk->stampset, &file->stampset, file, file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec));
+
+	/* delayed allocation of the parity */
+	scan_file_delayed_allocate(scan, file);
+}
+
+/**
+ * Remove the file from the data set.
+ *
+ * File is then deleted.
+ */
+static void scan_file_remove(struct snapraid_scan* scan, struct snapraid_file* file)
+{
+	struct snapraid_disk* disk = scan->disk;
+
+	/* remove the file from the containers */
+	if (!file_flag_has(file, FILE_IS_WITHOUT_INODE))
+		tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
+	tommy_hashdyn_remove_existing(&disk->pathset, &file->pathset);
+	tommy_hashdyn_remove_existing(&disk->stampset, &file->stampset);
+
+	/* deallocate the file from the parity */
+	scan_file_deallocate(scan, file);
+}
+
+/**
+ * Keep the file as it's (or with only a name/inode modification).
  *
  * If the file is kept, nothing has to be done.
  *
@@ -414,137 +550,15 @@ static void scan_file_keep(struct snapraid_scan* scan, struct snapraid_file* fil
 	struct snapraid_disk* disk = scan->disk;
 
 	/* if the file is full invalid, schedule a reinsert at later stage */
-	if (file_is_full_invalid_parity_and_stable(scan->state, file)) {
-		/* deallocate the file from the parity */
-		scan_file_deallocate(scan, file);
+	if (file_is_full_invalid_parity_and_stable(scan->state, disk, file)) {
+		struct snapraid_file* copy = file_dup(file);
 
-		/* remove the file from the list */
-		tommy_list_remove_existing(&disk->filelist, &file->nodelist);
+		/* remove the file */
+		scan_file_remove(scan, file);
 
-		/* insert the file in the delayed block allocation */
-		scan_file_delayed_insert(scan, file);
+		/* reinsert the copy in the delayed list */
+		scan_file_insert(scan, copy);
 	}
-}
-
-/**
- * Removes the specified file from the data set.
- */
-static void scan_file_remove(struct snapraid_scan* scan, struct snapraid_file* file)
-{
-	struct snapraid_disk* disk = scan->disk;
-
-	/* deallocate the file from the parity */
-	scan_file_deallocate(scan, file);
-
-	/* remove the file from the file containers */
-	if (!file_flag_has(file, FILE_IS_WITHOUT_INODE)) {
-		tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
-	}
-	tommy_hashdyn_remove_existing(&disk->pathset, &file->pathset);
-	tommy_hashdyn_remove_existing(&disk->stampset, &file->stampset);
-	tommy_list_remove_existing(&disk->filelist, &file->nodelist);
-
-	/* deallocate */
-	file_free(file);
-}
-
-/**
- * Inserts the specified file in the data set.
- */
-static void scan_file_insert(struct snapraid_scan* scan, struct snapraid_file* file)
-{
-	struct snapraid_state* state = scan->state;
-	struct snapraid_disk* disk = scan->disk;
-	block_off_t i;
-	block_off_t block_max;
-	block_off_t block_pos;
-
-	/* state changed */
-	state->need_write = 1;
-
-	/* allocate the blocks of the file */
-	block_pos = disk->first_free_block;
-	block_max = tommy_arrayblk_size(&disk->blockarr);
-	for (i = 0; i < file->blockmax; ++i) {
-		snapraid_info info;
-		struct snapraid_block* block = &file->blockvec[i];
-
-		/* increment the position until the first really free block */
-		while (block_pos < block_max && block_has_file(tommy_arrayblk_get(&disk->blockarr, block_pos)))
-			++block_pos;
-
-		/* if not found, allocate a new one */
-		if (block_pos == block_max) {
-			++block_max;
-			tommy_arrayblk_grow(&disk->blockarr, block_max);
-		}
-
-		/* set the position */
-		block->parity_pos = block_pos;
-
-		/* get block specific info */
-		info = info_get(&state->infoarr, block_pos);
-
-		/* if the file block already has an updated hash without rehash */
-		if (block_has_updated_hash(block) && !info_get_rehash(info)) {
-			/* the only possible case is for REP blocks */
-			assert(block_state_get(block) == BLOCK_STATE_REP);
-
-			/* convert to a REP block */
-			block_state_set(&file->blockvec[i], BLOCK_STATE_REP);
-
-			/* and keep the hash as it's */
-		} else {
-			struct snapraid_block* over_block;
-			unsigned block_state;
-
-			/* convert to a CHG block */
-			block_state_set(block, BLOCK_STATE_CHG);
-
-			/* block to overwrite */
-			over_block = tommy_arrayblk_get(&disk->blockarr, block_pos);
-
-			/* state of the block we are going to overwrite */
-			block_state = block_state_get(over_block);
-
-			/* if the block is an empty one */
-			if (block_state == BLOCK_STATE_EMPTY) {
-				/* the block was empty and filled with zeros */
-				/* set the hash to the special ZERO value */
-				hash_zero_set(block->hash);
-			} else {
-				/* otherwise it's a DELETED one */
-				assert(block_state == BLOCK_STATE_DELETED);
-
-				/* copy the past hash of the block */
-				memcpy(block->hash, over_block->hash, HASH_SIZE);
-
-				/* if we have not already cleared the past hash */
-				if (!state->clear_past_hash) {
-					/* in this case we don't know if the old state is still the one */
-					/* stored inside the parity, because after an aborted sync, the parity */
-					/* may be or may be not have been updated with the new data */
-					/* Then we reset the hash to a bogus value */
-					/* For example: */
-					/* - One file is deleted */
-					/* - Sync aborted after, updating the parity to the new state, */
-					/*   but without saving the content file representing this new state. */
-					/* - Another file is added again (exactly here) */
-					/*   with the hash of DELETED block not represeting the real parity state */
-					hash_invalid_set(block->hash);
-				}
-			}
-		}
-
-		/* store in the disk map, after invalidating all the other blocks */
-		tommy_arrayblk_set(&disk->blockarr, block_pos, block);
-
-		/* set the new free position */
-		disk->first_free_block = block_pos + 1;
-	}
-
-	/* note that the file is already added in the file hashtables */
-	tommy_list_insert_tail(&disk->filelist, &file->nodelist, file);
 }
 
 /**
@@ -869,7 +883,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				other_file = tommy_hashdyn_search(&other_disk->stampset, file_pathstamp_compare, file, hash);
 
 			/* if found, and it's a fully hashed file */
-			if (other_file && file_is_full_hashed_and_stable(scan->state, other_file)) {
+			if (other_file && file_is_full_hashed_and_stable(scan->state, other_disk, other_file)) {
 				/* assume that the file is a copy, and reuse the hash */
 				file_copy(other_file, file);
 
@@ -909,13 +923,8 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		}
 	}
 
-	/* insert the file in the file hashtables, to allow to find duplicate hardlinks */
-	tommy_hashdyn_insert(&disk->inodeset, &file->nodeset, file, file_inode_hash(file->inode));
-	tommy_hashdyn_insert(&disk->pathset, &file->pathset, file, file_path_hash(file->sub));
-	tommy_hashdyn_insert(&disk->stampset, &file->stampset, file, file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec));
-
-	/* insert the file in the delayed block allocation */
-	scan_file_delayed_insert(scan, file);
+	/* insert the file in the delayed list */
+	scan_file_insert(scan, file);
 }
 
 /**
@@ -1544,8 +1553,8 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			/* next node */
 			node = node->next;
 
-			/* insert it */
-			scan_file_insert(scan, file);
+			/* insert in the parity */
+			scan_file_allocate(scan, file);
 		}
 
 		/* mark the disk without reliable physical offset if it has duplicates */
@@ -1765,6 +1774,9 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	log_flush();
 
 	tommy_list_foreach(&scanlist, (tommy_foreach_func*)free);
+
+	/* check the filesystem on all disks */
+	state_fscheck(state, "after scan");
 
 	if (is_diff) {
 		/* check for file difference */

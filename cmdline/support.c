@@ -597,6 +597,9 @@ int fmtime(int f, int64_t mtime_sec, int mtime_nsec)
 /****************************************************************************/
 /* memory */
 
+/**
+ * Total amount of memory allocated.
+ */
 static size_t mcounter;
 
 size_t malloc_counter(void)
@@ -604,6 +607,7 @@ size_t malloc_counter(void)
 	return mcounter;
 }
 
+/* LCOV_EXCL_START */
 static ssize_t malloc_print(int f, const char* str)
 {
 	ssize_t len = 0;
@@ -611,7 +615,9 @@ static ssize_t malloc_print(int f, const char* str)
 		++len;
 	return write(f, str, len);
 }
+/* LCOV_EXCL_STOP */
 
+/* LCOV_EXCL_START */
 static ssize_t malloc_printn(int f, size_t value)
 {
 	char buf[32];
@@ -628,11 +634,12 @@ static ssize_t malloc_printn(int f, size_t value)
 
 	return write(f, buf + i, sizeof(buf) - i);
 }
+/* LCOV_EXCL_STOP */
 
+/* LCOV_EXCL_START */
 void malloc_fail(size_t size)
 {
 	/* don't use printf to avoid any possible extra allocation */
-	/* LCOV_EXCL_START */
 	int f = 2; /* stderr */
 
 	malloc_print(f, "Failed for Low Memory!\n");
@@ -646,8 +653,8 @@ void malloc_fail(size_t size)
 		malloc_print(f, "You are currently using a 32 bits executable.\n");
 		malloc_print(f, "If you have more than 4GB of memory, please upgrade to a 64 bits one.\n");
 	}
-	/* LCOV_EXCL_STOP */
 }
+/* LCOV_EXCL_STOP */
 
 void* malloc_nofail(size_t size)
 {

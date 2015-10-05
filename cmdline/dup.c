@@ -50,9 +50,11 @@ struct snapraid_hash* hash_alloc(struct snapraid_state* state, struct snapraid_d
 
 	/* set the back pointer */
 	for (i = 0; i < file->blockmax; ++i) {
-		memcpy(buf + i * HASH_SIZE, file->blockvec[i].hash, HASH_SIZE);
+		struct snapraid_block* block = fs_file2block_get(file, i);
 
-		if (!block_has_updated_hash(&file->blockvec[i])) {
+		memcpy(buf + i * HASH_SIZE, block->hash, HASH_SIZE);
+
+		if (!block_has_updated_hash(block)) {
 			free(buf);
 			free(hash);
 			return 0;

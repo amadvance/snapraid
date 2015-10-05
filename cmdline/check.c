@@ -56,26 +56,26 @@ struct failed_struct {
 	int is_outofdate;
 
 	unsigned index; /**< Index of the failed block. */
-	struct snapraid_block* block; /**< The failed block, or BLOCK_DELETED for a deleted block */
-	struct snapraid_handle* handle; /**< The file containing the failed block, or 0 for a deleted block */
+	struct snapraid_block* block; /**< The failed block */
+	struct snapraid_disk* disk; /**< The failed disk. */
+	struct snapraid_file* file; /**< The failed file. 0 for DELETED block. */
+	block_off_t file_pos; /**< Offset inside the file */
+	struct snapraid_handle* handle; /**< The handle containing the failed block, or 0 for a DELETED block */
 };
 
 /**
  * Checks if a block hash matches the specified buffer.
  * Return ==0 if equal
  */
-static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_block* block, unsigned char* buffer, unsigned char* buffer_zero)
+static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_block* block, unsigned pos_size, unsigned char* buffer, unsigned char* buffer_zero)
 {
 	unsigned char hash[HASH_SIZE];
-	unsigned size;
-
-	size = block_file_size(block, state->block_size);
 
 	/* now compute the hash of the valid part */
 	if (rehash) {
-		memhash(state->prevhash, state->prevhashseed, hash, buffer, size);
+		memhash(state->prevhash, state->prevhashseed, hash, buffer, pos_size);
 	} else {
-		memhash(state->hash, state->hashseed, hash, buffer, size);
+		memhash(state->hash, state->hashseed, hash, buffer, pos_size);
 	}
 
 	/* compare the hash */
@@ -84,8 +84,8 @@ static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_bl
 	}
 
 	/* compare to the end of the block */
-	if (size < state->block_size) {
-		if (memcmp(buffer + size, buffer_zero + size, state->block_size - size) != 0) {
+	if (pos_size < state->block_size) {
+		if (memcmp(buffer + pos_size, buffer_zero + pos_size, state->block_size - pos_size) != 0) {
 			return -1;
 		}
 	}
@@ -111,7 +111,8 @@ static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned d
 			&& block_has_updated_hash(failed[failed_map[j]].block)
 		) {
 			/* if a hash doesn't match, fail the check */
-			if (blockcmp(state, rehash, failed[failed_map[j]].block, buffer[failed[failed_map[j]].index], buffer_zero) != 0) {
+			unsigned pos_size = file_block_size(failed[failed_map[j]].file, failed[failed_map[j]].file_pos, state->block_size);
+			if (blockcmp(state, rehash, failed[failed_map[j]].block, pos_size, buffer[failed[failed_map[j]].index], buffer_zero) != 0) {
 				log_tag("hash_error: Hash mismatch on entry %u\n", failed_map[j]);
 				return 0;
 			}
@@ -188,7 +189,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 	for (i = 0; i < failed_count; ++i) {
 		/* if we are expected to recover this block */
 		if (!failed[failed_map[i]].is_outofdate
-		        /* if the block has a hash to check */
+			/* if the block has a hash to check */
 			&& block_has_updated_hash(failed[failed_map[i]].block)
 		)
 			has_hash = 1;
@@ -331,14 +332,12 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 		else
 			data = "good";
 
-		if (failed[j].handle) {
-			const char* disk;
-			const char* sub;
-			struct snapraid_handle* handle = failed[j].handle;
-			disk = handle->disk->name;
-			sub = block_file_get(block)->sub;
+		if (failed[j].file) {
+			struct snapraid_disk* disk = failed[j].disk;
+			struct snapraid_file* file = failed[j].file;
+			block_off_t file_pos = failed[j].file_pos;
 
-			log_tag("entry:%u:%s:%s:%s:%s:%s:%u:\n", j, desc, hash, data, disk, esc(sub), block_file_pos(block));
+			log_tag("entry:%u:%s:%s:%s:%s:%s:%u:\n", j, desc, hash, data, disk->name, esc(file->sub), file_pos);
 		} else {
 			log_tag("entry:%u:%s:%s:%s:\n", j, desc, hash, data);
 		}
@@ -372,7 +371,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 			if ((block_state == BLOCK_STATE_BLK || block_state == BLOCK_STATE_REP)
 			        /* try to fetch the block using the known hash */
 				&& (state_import_fetch(state, rehash, failed[j].block, buffer[failed[j].index]) == 0
-					|| state_search_fetch(state, rehash, failed[j].block, buffer[failed[j].index]) == 0)
+					|| state_search_fetch(state, rehash, failed[j].file, failed[j].file_pos, failed[j].block, buffer[failed[j].index]) == 0)
 			) {
 				/* we already have corrected it! */
 				log_tag("hash_import: Fixed entry %u\n", j);
@@ -442,7 +441,8 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 					/* instead, if the hash matches, it could be either that the */
 					/* block after the sync has this hash, or that */
 					/* we restored the block before the 'sync'. */
-					if (blockcmp(state, rehash, failed[j].block, buffer[failed[j].index], buffer_zero) == 0) {
+					unsigned pos_size = file_block_size(failed[j].file, failed[j].file_pos, state->block_size);
+					if (blockcmp(state, rehash, failed[j].block, pos_size, buffer[failed[j].index], buffer_zero) == 0) {
 						/* it may contain garbage */
 						failed[j].is_outofdate = 1;
 
@@ -610,6 +610,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 		struct snapraid_disk* disk;
 		struct snapraid_file* collide_file;
 		struct snapraid_file* file;
+		block_off_t file_pos;
 		char path[PATH_MAX];
 		uint64_t inode;
 
@@ -619,17 +620,17 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 			continue;
 		}
 
-		block = disk_block_get(disk, i);
+		block = fs_par2block_get(disk, i);
 		if (!block_has_file(block)) {
 			/* if no file, nothing to do */
 			continue;
 		}
 
-		file = block_file_get(block);
+		file = fs_par2file_get(disk, i, &file_pos);
 		pathprint(path, sizeof(path), "%s%s", disk->dir, file->sub);
 
 		/* if it isn't the last block in the file */
-		if (!block_is_last(block)) {
+		if (!file_block_is_last(file, file_pos)) {
 			/* nothing to do */
 			continue;
 		}
@@ -819,15 +820,16 @@ static int block_is_enabled(struct snapraid_state* state, block_off_t i, struct 
 		if (!handle[j].disk)
 			continue;
 
-		block = disk_block_get(handle[j].disk, i);
+		block = fs_par2block_get(handle[j].disk, i);
 
 		/* try to recover all files, even the ones without hash */
 		/* because in some cases we can recover also them */
-		if (block_has_file(block)
-			&& !file_flag_has(block_file_get(block), FILE_IS_EXCLUDED) /* only if the file is not filtered out */
-		) {
-			one_tocheck = 1;
-			break;
+		if (block_has_file(block)) {
+			struct snapraid_file* file = fs_par2file_get(handle[j].disk, i, 0);
+			if (!file_flag_has(file, FILE_IS_EXCLUDED)) { /* only if the file is not filtered out */
+				one_tocheck = 1;
+				break;
+			}
 		}
 	}
 
@@ -932,6 +934,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			struct snapraid_disk* disk;
 			struct snapraid_block* block;
 			struct snapraid_file* file;
+			block_off_t file_pos;
 			unsigned block_state;
 
 			/* if the disk position is not used */
@@ -943,7 +946,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			}
 
 			/* if the disk block is not used */
-			block = disk_block_get(disk, i);
+			block = fs_par2block_get(disk, i);
 			if (block == BLOCK_EMPTY) {
 				/* use an empty block */
 				memset(buffer[j], 0, state->block_size);
@@ -968,17 +971,20 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 				/* store it in the failed set, because potentially */
 				/* the parity may be still computed with the previous content */
-				failed[failed_count].is_bad = 0;
+				failed[failed_count].is_bad = 0; /* note that is_bad==0 <=> file==0 */
 				failed[failed_count].is_outofdate = 0;
 				failed[failed_count].index = j;
 				failed[failed_count].block = block;
+				failed[failed_count].disk = disk;
+				failed[failed_count].file = 0;
+				failed[failed_count].file_pos = 0;
 				failed[failed_count].handle = 0;
 				++failed_count;
 				continue;
 			}
 
 			/* get the file of this block */
-			file = block_file_get(block);
+			file = fs_par2file_get(disk, i, &file_pos);
 
 			/* if we are only hashing, we can skip excluded files and don't even read them */
 			if (state->opt.auditonly && file_flag_has(file, FILE_IS_EXCLUDED)) {
@@ -1036,10 +1042,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						failed[failed_count].is_outofdate = 0;
 						failed[failed_count].index = j;
 						failed[failed_count].block = block;
+						failed[failed_count].disk = disk;
+						failed[failed_count].file = file;
+						failed[failed_count].file_pos = file_pos;
 						failed[failed_count].handle = &handle[j];
 						++failed_count;
 
-						log_tag("error:%u:%s:%s: Open error at position %u\n", i, disk->name, esc(file->sub), block_file_pos(block));
+						log_tag("error:%u:%s:%s: Open error at position %u\n", i, disk->name, esc(file->sub), file_pos);
 						++error;
 						continue;
 					}
@@ -1050,9 +1059,9 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					&& !file_flag_has(file, FILE_IS_EXCLUDED)) {
 
 					/* check if the file is changed */
-					if (handle[j].st.st_size != block_file_get(block)->size
-						|| handle[j].st.st_mtime != block_file_get(block)->mtime_sec
-						|| STAT_NSEC(&handle[j].st) != block_file_get(block)->mtime_nsec
+					if (handle[j].st.st_size != file->size
+						|| handle[j].st.st_mtime != file->mtime_sec
+						|| STAT_NSEC(&handle[j].st) != file->mtime_nsec
 						/* don't check the inode to support filesystem without persistent inodes */
 					) {
 						/* report that the file is not synced */
@@ -1093,7 +1102,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			}
 
 			/* read from the file */
-			read_size = handle_read(&handle[j], block, buffer[j], state->block_size,
+			read_size = handle_read(&handle[j], file_pos, buffer[j], state->block_size,
 				log_error, state->opt.expected_missing ? log_expected : 0);
 			if (read_size == -1) {
 				/* save the failed block for the check/fix */
@@ -1101,10 +1110,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].is_outofdate = 0;
 				failed[failed_count].index = j;
 				failed[failed_count].block = block;
+				failed[failed_count].disk = disk;
+				failed[failed_count].file = file;
+				failed[failed_count].file_pos = file_pos;
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				log_tag("error:%u:%s:%s: Read error at position %u\n", i, disk->name, esc(file->sub), block_file_pos(block));
+				log_tag("error:%u:%s:%s: Read error at position %u\n", i, disk->name, esc(file->sub), file_pos);
 				++error;
 				continue;
 			}
@@ -1121,6 +1133,9 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].is_outofdate = 0;
 				failed[failed_count].index = j;
 				failed[failed_count].block = block;
+				failed[failed_count].disk = disk;
+				failed[failed_count].file = file;
+				failed[failed_count].file_pos = file_pos;
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 				continue;
@@ -1144,10 +1159,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].is_outofdate = 0;
 				failed[failed_count].index = j;
 				failed[failed_count].block = block;
+				failed[failed_count].disk = disk;
+				failed[failed_count].file = file;
+				failed[failed_count].file_pos = file_pos;
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 
-				log_tag("error:%u:%s:%s: Data error at position %u, diff bits %u\n", i, disk->name, esc(file->sub), block_file_pos(block), diff);
+				log_tag("error:%u:%s:%s: Data error at position %u, diff bits %u\n", i, disk->name, esc(file->sub), file_pos, diff);
 				++error;
 				continue;
 			}
@@ -1160,6 +1178,9 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				failed[failed_count].is_outofdate = 0;
 				failed[failed_count].index = j;
 				failed[failed_count].block = block;
+				failed[failed_count].disk = disk;
+				failed[failed_count].file = file;
+				failed[failed_count].file_pos = file_pos;
 				failed[failed_count].handle = &handle[j];
 				++failed_count;
 				continue;
@@ -1206,13 +1227,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				/* print a list of all the errors in files */
 				for (j = 0; j < failed_count; ++j) {
 					if (failed[j].is_bad)
-						log_tag("unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].handle->disk->name, esc(block_file_get(failed[j].block)->sub), block_file_pos(failed[j].block));
+						log_tag("unrecoverable:%u:%s:%s: Unrecoverable error at position %u\n", i, failed[j].disk->name, esc(failed[j].file->sub), failed[j].file_pos);
 				}
 
 				/* keep track of damaged files */
 				for (j = 0; j < failed_count; ++j) {
 					if (failed[j].is_bad)
-						file_flag_set(block_file_get(failed[j].block), FILE_IS_DAMAGED);
+						file_flag_set(failed[j].file, FILE_IS_DAMAGED);
 				}
 			} else {
 				/* now counts partial recovers */
@@ -1224,7 +1245,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				for (j = 0; j < failed_count; ++j) {
 					if (failed[j].is_bad && failed[j].is_outofdate) {
 						++partial_recover_error;
-						log_tag("unrecoverable:%u:%s:%s: Unrecoverable unsynced error at position %u\n", i, failed[j].handle->disk->name, esc(block_file_get(failed[j].block)->sub), block_file_pos(failed[j].block));
+						log_tag("unrecoverable:%u:%s:%s: Unrecoverable unsynced error at position %u\n", i, failed[j].disk->name, esc(failed[j].file->sub), failed[j].file_pos);
 					}
 				}
 				if (partial_recover_error != 0) {
@@ -1258,15 +1279,15 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 							continue;
 
 						/* do not fix if the file is excluded */
-						if (file_flag_has(block_file_get(failed[j].block), FILE_IS_EXCLUDED)
-							|| (state->opt.syncedonly && file_flag_has(block_file_get(failed[j].block), FILE_IS_UNSYNCED)))
+						if (file_flag_has(failed[j].file, FILE_IS_EXCLUDED)
+							|| (state->opt.syncedonly && file_flag_has(failed[j].file, FILE_IS_UNSYNCED)))
 							continue;
 
-						ret = handle_write(failed[j].handle, failed[j].block, buffer[failed[j].index], state->block_size);
+						ret = handle_write(failed[j].handle, failed[j].file_pos, buffer[failed[j].index], state->block_size);
 						if (ret == -1) {
 							/* LCOV_EXCL_START */
 							/* mark the file as damaged */
-							file_flag_set(block_file_get(failed[j].block), FILE_IS_DAMAGED);
+							file_flag_set(failed[j].file, FILE_IS_DAMAGED);
 
 							if (errno == EACCES) {
 								log_fatal("WARNING! Please give write permission to the file.\n");
@@ -1283,15 +1304,15 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						/* if we are not sure that the recovered content is uptodate */
 						if (failed[j].is_outofdate) {
 							/* mark the file as damaged */
-							file_flag_set(block_file_get(failed[j].block), FILE_IS_DAMAGED);
+							file_flag_set(failed[j].file, FILE_IS_DAMAGED);
 							continue;
 						}
 
 						/* mark the file as containing some fixes */
 						/* note that it could be also marked as damaged in other iterations */
-						file_flag_set(block_file_get(failed[j].block), FILE_IS_FIXED);
+						file_flag_set(failed[j].file, FILE_IS_FIXED);
 
-						log_tag("fixed:%u:%s:%s: Fixed data error at position %u\n", i, failed[j].handle->disk->name, esc(block_file_get(failed[j].block)->sub), block_file_pos(failed[j].block));
+						log_tag("fixed:%u:%s:%s: Fixed data error at position %u\n", i, failed[j].disk->name, esc(failed[j].file->sub), failed[j].file_pos);
 						++recovered_error;
 					}
 
@@ -1323,7 +1344,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					/* meaning that we could fix this file if we try */
 					for (j = 0; j < failed_count; ++j) {
 						if (failed[j].is_bad) {
-							file_flag_set(block_file_get(failed[j].block), FILE_IS_FIXED);
+							file_flag_set(failed[j].file, FILE_IS_FIXED);
 						}
 					}
 				}
@@ -1333,7 +1354,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			/* to report that the file is damaged, and we don't know if we can fix it */
 			for (j = 0; j < failed_count; ++j) {
 				if (failed[j].is_bad) {
-					file_flag_set(block_file_get(failed[j].block), FILE_IS_DAMAGED);
+					file_flag_set(failed[j].file, FILE_IS_DAMAGED);
 				}
 			}
 		}

@@ -305,19 +305,6 @@ int sgetlasttok(STREAM* f, char* str, int size);
  */
 int sgetu32(STREAM* f, uint32_t* value);
 
-/**
- * Reads a 64 bit number.
- * Stops at the first not digit char.
- * Returns <0 if there isn't enough to read.
- */
-int sgetu64(STREAM* f, uint64_t* value);
-
-/**
- * Reads an hexadecimal string of fixed length.
- * Returns <0 if there isn't enough to read.
- */
-int sgethex(STREAM* f, void* data, int size);
-
 /****************************************************************************/
 /* binary get */
 
@@ -377,40 +364,10 @@ static inline int sputeol(STREAM* s)
 }
 
 /**
- * Writes a string.
- * Returns 0 on success or -1 on error.
- */
-int sputs(const char* str, STREAM* f);
-
-/**
  * Write a sized string.
  * Returns 0 on success or -1 on error.
  */
 int swrite(const void* data, unsigned size, STREAM* f);
-
-/**
- * Write a string literal (constant string).
- * Returns 0 on success or -1 on error.
- */
-#define sputsl(str, f) swrite(str, sizeof(str) - 1, f)
-
-/**
- * Writes a 32 bit number.
- * Returns 0 on success or -1 on error.
- */
-int sputu32(uint32_t value, STREAM* s);
-
-/**
- * Writes a 64 bit number.
- * Returns 0 on success or -1 on error.
- */
-int sputu64(uint64_t value, STREAM* s);
-
-/**
- * Writes a hexadecimal string of fixed length.
- * Returns 0 on success or -1 on error.
- */
-int sputhex(const void* void_data, int size, STREAM* s);
 
 /****************************************************************************/
 /* binary put */

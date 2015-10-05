@@ -46,7 +46,7 @@ struct snapraid_import_block {
  */
 struct snapraid_import_file {
 	data_off_t size; /**< Size of the file. */
-	struct snapraid_import_block* blockvec; /**< All the blocks of the file. */
+	struct snapraid_import_block* blockimp; /**< All the blocks of the file. */
 	block_off_t blockmax; /**< Number of blocks. */
 	char* path; /**< Full path of the file. */
 

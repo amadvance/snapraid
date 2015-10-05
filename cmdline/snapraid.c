@@ -78,14 +78,14 @@ void memory(void)
 {
 	log_tag("memory:used:%" PRIu64 "\n", (uint64_t)malloc_counter());
 
-	/* size of the block + the size of the blockarr pointer to it */
-	log_tag("memory:block:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_block) + sizeof(void*)));
-
-	/* size of the file + the size of the 3 hashtables pointers to it, * 2 for the hashtable grow factor */
-	log_tag("memory:file:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_file) + 3*2*sizeof(void*)));
+	/* size of the block */
+	log_tag("memory:block:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_block)));
+	log_tag("memory:chunk:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_chunk)));
+	log_tag("memory:file:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_file)));
+	log_tag("memory:link:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_link)));
+	log_tag("memory:dir:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_dir)));
 
 	msg_progress("Using %u MiB of memory.\n", (unsigned)(malloc_counter() / (1024 * 1024)));
-
 }
 
 /****************************************************************************/
@@ -234,7 +234,6 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_FORCE_SCRUB_AT 271
 #define OPT_TEST_FORCE_SCRUB_EVEN 272
 #define OPT_TEST_FORCE_CONTENT_WRITE 273
-#define OPT_TEST_FORCE_CONTENT_TEXT 274
 #define OPT_TEST_SKIP_CONTENT_CHECK 275
 #define OPT_TEST_SKIP_PARITY_ACCESS 276
 #define OPT_TEST_EXPECT_FAILURE 277
@@ -326,9 +325,6 @@ struct option long_options[] = {
 
 	/* Force write of the content file even if no modification is done */
 	{ "test-force-content-write", 0, 0, OPT_TEST_FORCE_CONTENT_WRITE },
-
-	/* Force the use of text content file */
-	{ "test-force-content-text", 0, 0, OPT_TEST_FORCE_CONTENT_TEXT },
 
 	/* Relax the checks done at the content file */
 	{ "test-skip-content-check", 0, 0, OPT_TEST_SKIP_CONTENT_CHECK },
@@ -684,9 +680,6 @@ int main(int argc, char* argv[])
 		case OPT_TEST_FORCE_CONTENT_WRITE :
 			opt.force_content_write = 1;
 			break;
-		case OPT_TEST_FORCE_CONTENT_TEXT :
-			opt.force_content_text = 1;
-			break;
 		case OPT_TEST_EXPECT_FAILURE :
 			/* invert the exit codes */
 			exit_success = 1;
@@ -1001,9 +994,29 @@ int main(int argc, char* argv[])
 		/* in the next state read ensures to clear all the past hashes in case */
 		/* we are reading from an incomplete sync */
 		/* The undeterminated hash are only for CHG/DELETED blocks for which we don't */
-		/* know if the previous interrupted sync was able to update or not the parity */
+		/* know if the previous interrupted sync was able to update or not the parity. */
 		/* The sync process instead needs to trust this information because it's used */
 		/* to avoid to recompute the parity if all the input are equals as before. */
+
+		/* In these cases we don't know if the old state is still the one */
+		/* stored inside the parity, because after an aborted sync, the parity */
+		/* may be or may be not have been updated with the data that may be now */
+		/* deleted. Then we reset the hash to a bogus value. */
+
+		/* An example for CHG blocks is: */
+		/* - One file is added creating a CHG block with ZERO state */
+		/* - Sync aborted after updating the parity to the new state, */
+		/*   but without saving the content file representing this new BLK state. */
+		/* - File is now deleted after the aborted sync */
+		/* - Sync again, deleting the blocks overt the CHG ones */
+		/*   with the hash of CHG blocks not represeting the real parity state */
+
+		/* An example for DELETED blocks is: */
+		/* - One file is deleted creating DELETED blocks */
+		/* - Sync aborted after, updating the parity to the new state, */
+		/*   but without saving the content file representing this new EMPTY state. */
+		/* - Another file is added again over the DELETE ones */
+		/*   with the hash of DELETED blocks not represeting the real parity state */
 		state.clear_past_hash = 1;
 
 		state_read(&state);

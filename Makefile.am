@@ -59,6 +59,7 @@ noinst_HEADERS = \
 	tommyds/tommyhash.h \
 	tommyds/tommyhashdyn.h \
 	tommyds/tommylist.h \
+	tommyds/tommytree.h \
 	tommyds/tommytypes.h \
 	tommyds/tommyarray.c \
 	tommyds/tommyarrayblk.c \
@@ -66,6 +67,7 @@ noinst_HEADERS = \
 	tommyds/tommyhash.c \
 	tommyds/tommyhashdyn.c \
 	tommyds/tommylist.c \
+	tommyds/tommytree.c \
 	cmdline/portable.h \
 	cmdline/snapraid.h \
 	cmdline/util.h \
@@ -225,6 +227,33 @@ if HAVE_SYMLINK
 endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
+	echo -- Filesystem allocation test
+	head -c 8192 /dev/zero > bench/disk1/TEST
+	head -c 8192 /dev/zero > bench/disk2/TEST
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+# Now delete the file, and do a partial sync to force a deallocation in the middle of a file
+	rm bench/disk1/TEST
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -E -S 1 -B 1 sync
+# Now force a deallocation at the end
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -E -S 7 -B 1 sync
+	rm bench/disk2/TEST
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -E sync
+	echo -- Filesystem fragmentation test
+	head -c 8192 /dev/zero > bench/disk1/TEST1
+	head -c 8192 /dev/zero > bench/disk1/TEST2
+	head -c 8192 /dev/zero > bench/disk1/TEST3
+	head -c 8192 /dev/zero > bench/disk1/TEST4
+	head -c 8192 /dev/zero > bench/disk1/TEST5
+	head -c 8192 /dev/zero > bench/disk1/TEST6
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+# Now delete some files, and create a bigger one to fill the holes
+	rm bench/disk1/TEST1
+	rm bench/disk1/TEST3
+	rm bench/disk1/TEST5
+	head -c 65536 /dev/zero > bench/disk1/TESTX
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	rm -r bench/disk1/TEST*
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -E sync
 	echo --- Create some files
 	$(TESTENV) ./mktest$(EXEEXT) generate 1 6 $(CHECKCOUNT) $(CHECKSIZE)
 	echo DUP > bench/disk1/DUP1
@@ -532,23 +561,17 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR6) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
-	echo --- Delete some files and create some new, sync and check in multiple steps using text content
+	echo --- Delete some files and create some new, sync and check in multiple steps
 	rm bench/disk1/a/4*
 	rm bench/disk2/a/5*
 	rm bench/disk3/a/6*
 	rm bench/disk4/a/6*
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -B 10 sync --test-force-content-text
-	cp bench/content bench/content.txt
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -B 10 sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) test-rewrite
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) --test-force-content-text test-rewrite
-	cmp bench/content bench/content.txt
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check -l test.log
 	$(TESTENV) ./mktest$(EXEEXT) generate 4 6 $(CHECKCOUNT) $(CHECKSIZE)
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -B 100 sync --test-force-content-text
-	cp bench/content bench/content.txt
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -B 100 sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) test-rewrite
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-content-text test-rewrite
-	cmp bench/content bench/content.txt
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -B 1000 sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync

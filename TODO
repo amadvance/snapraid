@@ -16,25 +16,6 @@ The content file is instead missing in all platforms.
 
 - Minor
 
-* Check how to reduce memory occupation using smaller memory block.
-We can theoreticallty reduce the memory occupation from 28/36 to
-17 bytes. 16 for the hash and 1 for the type.
-We can store the parity_position<->file,pos relation using some form of binary tree,
-and then drop completely blockarr, and the extra data in memory_block.
-A simpler simplification is to convert, blockarr to a parity_position->file,pos
-relation, removing the file pointer inside the block.
-
-struct node {
-	uint32 parity_pos /* parity position */
-	file* file; /* pointer at the file */
-	uint32 offset; /* position in the file */
-	uint32 count; /* number of sequential blocks */
-	void* left_by_pp; /* tree by parity_pos */
-	void* right_by_pp;
-	void* left_by_fp; /* tree by file,offset */
-	void* right_by_fp;
-};
-
 * Restore ownership and permissions, at least in Unix.
 
 * Restore directory timestamps.
@@ -95,6 +76,17 @@ But if only some bytes, or a sector, is wrong, it should be possible to recover 
 rest of the block.
 The problem is that we don't have any hash to ensure that the block is partially recovered,
 or completely garbage. But it makes sense to anyway write the "most likely" correct one.
+
+* How to handle corrupt copied/moved files ? At now pre-hash checks them,
+but if a corruption is found, it stops the sync process.
+This is not optimal, as that blocks sync until a manual intervention.
+This is the reason why the check of REP (copied) blocks is not enabled by default,
+but only inside pre-hash.
+A possible solution could be:
+If a copied block is corrupt, we can recover the original one from parity (if moved),
+or read it directly from disk (if copied), and we can use this one to build the parity,
+working around the corruption, that can be later fixed with "fix".
+This requires to process first copied blocks, with a possible complex dependency chain.
 
 - Pooling
 

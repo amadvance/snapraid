@@ -14,6 +14,9 @@ SnapRAID HISTORY
    parity during sync is really correct.
    The "status" command reports the amount of scrub necessary to
    ensure to scrub all the synced blocks.
+ * Reduced the RAM memory usage, expecially with big files.
+   For each block, it now uses 17 bytes, instead of 28 bytes
+   (for 32 bit) and 36 bytes (for 64 bit).
  * The -p, --percentage option supports the new the arguments:
    "bad", "sync" and "full" to define the kind of scrub to do.
  * Extends the -h, --pre-hash option to also verify moved and

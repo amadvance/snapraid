@@ -64,12 +64,12 @@ int handle_close(struct snapraid_handle* handle);
  * Read a block from a file.
  * If the read block is shorter, it's padded with 0.
  */
-int handle_read(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size, fptr* out, fptr* out_missing);
+int handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned char* block_buffer, unsigned block_size, fptr* out, fptr* out_missing);
 
 /**
  * Writes a block to a file.
  */
-int handle_write(struct snapraid_handle* handle, struct snapraid_block* block, unsigned char* block_buffer, unsigned block_size);
+int handle_write(struct snapraid_handle* handle, block_off_t file_pos, unsigned char* block_buffer, unsigned block_size);
 
 /**
  * Changes the modification time of the file to the saved value.
