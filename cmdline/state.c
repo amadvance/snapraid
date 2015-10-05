@@ -1403,7 +1403,7 @@ static int position_is_required(struct snapraid_state* state, block_off_t pos)
  * Checks if the info block is REQUIREQ.
  *
  * This is used to ensure that we keep the last check used for scrubbing.
- * and the we add it when importing old context files.
+ * and that we add it when importing old context files.
  *
  * Note that you can have position without info blocks, for example
  * if all the blocks are not synced.

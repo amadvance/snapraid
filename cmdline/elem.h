@@ -894,7 +894,7 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
 /**
  * Deallocate the parity position.
  *
- * After this call you can the par2file/par2block operations
+ * After this call the par2file/par2block operations
  * won't find anymore the parity association.
  */
 void fs_deallocate(struct snapraid_disk* disk, block_off_t pos);

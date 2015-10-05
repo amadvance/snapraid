@@ -227,6 +227,33 @@ if HAVE_SYMLINK
 endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
+	echo -- Filesystem allocation test
+	head -c 8192 /dev/zero > bench/disk1/TEST
+	head -c 8192 /dev/zero > bench/disk2/TEST
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+# Now delete the file, and do a partial sync to force a deallocation in the middle of a file
+	rm bench/disk1/TEST
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -E -S 1 -B 1 sync
+# Now force a deallocation at the end
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -E -S 7 -B 1 sync
+	rm bench/disk2/TEST
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -E sync
+	echo -- Filesystem fragmentation test
+	head -c 8192 /dev/zero > bench/disk1/TEST1
+	head -c 8192 /dev/zero > bench/disk1/TEST2
+	head -c 8192 /dev/zero > bench/disk1/TEST3
+	head -c 8192 /dev/zero > bench/disk1/TEST4
+	head -c 8192 /dev/zero > bench/disk1/TEST5
+	head -c 8192 /dev/zero > bench/disk1/TEST6
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+# Now delete some files, and create a bigger one to fill the holes
+	rm bench/disk1/TEST1
+	rm bench/disk1/TEST3
+	rm bench/disk1/TEST5
+	head -c 65536 /dev/zero > bench/disk1/TESTX
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	rm -r bench/disk1/TEST*
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -E sync
 	echo --- Create some files
 	$(TESTENV) ./mktest$(EXEEXT) generate 1 6 $(CHECKCOUNT) $(CHECKSIZE)
 	echo DUP > bench/disk1/DUP1

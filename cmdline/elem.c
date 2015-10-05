@@ -1166,7 +1166,7 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
 	/* a chunk doesn't exist, and we have to create a new one */
 	chunk = chunk_alloc(parity_pos, file, file_pos, 1);
 
-	/* insert te chunk in the trees */
+	/* insert the chunk in the trees */
 	parity_chunk = tommy_tree_insert(&disk->fs_parity, &chunk->parity_node, chunk);
 	file_chunk = tommy_tree_insert(&disk->fs_file, &chunk->file_node, chunk);
 
@@ -1184,6 +1184,10 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
 void fs_deallocate(struct snapraid_disk* disk, block_off_t parity_pos)
 {
 	struct snapraid_chunk* chunk;
+	struct snapraid_chunk* second_chunk;
+	struct snapraid_chunk* parity_chunk;
+	struct snapraid_chunk* file_chunk;
+	block_off_t first_count, second_count;
 
 	chunk = fs_par2chunk_get(disk, parity_pos);
 	if (!chunk) {
@@ -1221,10 +1225,29 @@ void fs_deallocate(struct snapraid_disk* disk, block_off_t parity_pos)
 		return;
 	}
 
-	/* LCOV_EXCL_START */
-	log_fatal("Internal inconsistency when deallocating a chunk in the middle in disk '%s'\n", disk->name);
-	exit(EXIT_FAILURE);
-	/* LCOV_EXCL_STOP */
+	/* otherwise it's in the middle */
+	first_count = parity_pos - chunk->parity_pos;
+	second_count = chunk->count - first_count - 1;
+
+	/* adjust the first chunk */
+	chunk->count = first_count;
+
+	/* allocate the second chunk */
+	second_chunk = chunk_alloc(chunk->parity_pos + first_count + 1, chunk->file, chunk->file_pos + first_count + 1, second_count);
+
+	/* insert the chunk in the trees */
+	parity_chunk = tommy_tree_insert(&disk->fs_parity, &second_chunk->parity_node, second_chunk);
+	file_chunk = tommy_tree_insert(&disk->fs_file, &second_chunk->file_node, second_chunk);
+
+	if (parity_chunk != second_chunk || file_chunk != second_chunk) {
+		/* LCOV_EXCL_START */
+		log_fatal("Internal inconsistency when splitting a chunk in disk '%s'\n", disk->name);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* store the last accessed chunk */
+	disk->fs_last = second_chunk;
 }
 
 struct snapraid_block* fs_par2block_get(struct snapraid_disk* disk, block_off_t parity_pos)
