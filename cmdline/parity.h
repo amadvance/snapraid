@@ -31,14 +31,14 @@ struct snapraid_parity_handle {
 };
 
 /**
- * Computes the size of the allocated parity data in number of blocks.
+ * Compute the size of the allocated parity data in number of blocks.
  *
  * This includes parity blocks not yet written and still invalid.
  */
 block_off_t parity_allocated_size(struct snapraid_state* state);
 
 /**
- * Computes the size of the used parity data in number of blocks.
+ * Compute the size of the used parity data in number of blocks.
  *
  * This includes only parity blocks used for files, not counting
  * potential invalid parity at the end.
@@ -52,7 +52,7 @@ block_off_t parity_allocated_size(struct snapraid_state* state);
 block_off_t parity_used_size(struct snapraid_state* state);
 
 /**
- * Checks if the parity needs to be updated with a "sync".
+ * Check if the parity needs to be updated with a "sync".
  *
  * This is the same logic used in "status" to detect an incomplete "sync",
  * that ignores invalid block, if they are not used by a file in any disk.
@@ -66,34 +66,34 @@ int parity_is_invalid(struct snapraid_state* state);
 int parity_is_invalid(struct snapraid_state* state);
 
 /**
- * Reports all the files outside the specified parity size.
+ * Report all the files outside the specified parity size.
  */
 void parity_overflow(struct snapraid_state* state, data_off_t size);
 
 /**
- * Creates the parity file.
+ * Create the parity file.
  * \param out_size Return the size of the parity file.
  */
 int parity_create(struct snapraid_parity_handle* parity, const char* path, data_off_t* out_size, int mode);
 
 /**
- * Changes the parity size.
+ * Change the parity size.
  * \param out_size Return the size of the parity file. The out_size is set also on error to reflect a partial resize.
  */
 int parity_chsize(struct snapraid_parity_handle* parity, data_off_t size, data_off_t* out_size, int skip_fallocate);
 
 /**
- * Opens an already existing parity file.
+ * Open an already existing parity file.
  */
 int parity_open(struct snapraid_parity_handle* parity, const char* path, int mode);
 
 /**
- * Flushes the parity file in the disk.
+ * Flush the parity file in the disk.
  */
 int parity_sync(struct snapraid_parity_handle* parity);
 
 /**
- * Closes the parity file.
+ * Close the parity file.
  */
 int parity_close(struct snapraid_parity_handle* parity);
 
@@ -103,7 +103,7 @@ int parity_close(struct snapraid_parity_handle* parity);
 int parity_read(struct snapraid_parity_handle* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size, fptr* out);
 
 /**
- * Writes a block in the parity file.
+ * Write a block in the parity file.
  */
 int parity_write(struct snapraid_parity_handle* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size);
 

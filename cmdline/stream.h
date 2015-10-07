@@ -98,66 +98,66 @@ struct stream {
 typedef struct stream STREAM;
 
 /**
- * Opens a stream for reading. Like fopen("r").
+ * Open a stream for reading. Like fopen("r").
  */
 STREAM* sopen_read(const char* file);
 
 /**
- * Opens a stream for writing. Like fopen("w").
+ * Open a stream for writing. Like fopen("w").
  */
 STREAM* sopen_write(const char* file);
 
 /**
- * Opens a set of streams for writing. Like fopen("w").
+ * Open a set of streams for writing. Like fopen("w").
  */
 STREAM* sopen_multi_write(unsigned count);
 
 /**
- * Specifies the file to open.
+ * Specify the file to open.
  */
 int sopen_multi_file(STREAM* s, unsigned i, const char* file);
 
 /**
- * Closes a stream. Like fclose().
+ * Close a stream. Like fclose().
  */
 int sclose(STREAM* s);
 
 /**
- * Returns the handle of the file.
+ * Return the handle of the file.
  * In case of multi file, the first one is returned.
  */
 int shandle(STREAM* s);
 
 /**
- * Fills the read stream buffer and read a char.
+ * Fill the read stream buffer and read a char.
  * \note Don't call this directly, but use sgetc().
  * \return The char read, or EOF on error.
  */
 int sfill(STREAM* s);
 
 /**
- * Flushes the write stream buffer.
+ * Flush the write stream buffer.
  * \return 0 on success, or EOF on error.
  */
 int sflush(STREAM* s);
 
 /**
- * Gets the file pointer.
+ * Get the file pointer.
  */
 int64_t stell(STREAM* s);
 
 /**
- * Gets the CRC of the processed data.
+ * Get the CRC of the processed data.
  */
 uint32_t scrc(STREAM* s);
 
 /**
- * Gets the CRC of the processed data in put.
+ * Get the CRC of the processed data in put.
  */
 uint32_t scrc_stream(STREAM* s);
 
 /**
- * Checks if the buffer has enough data loaded.
+ * Check if the buffer has enough data loaded.
  */
 static inline int sptrlookup(STREAM* s, int size)
 {
@@ -165,7 +165,7 @@ static inline int sptrlookup(STREAM* s, int size)
 }
 
 /**
- * Gets the current stream ptr.
+ * Get the current stream ptr.
  */
 static inline unsigned char* sptrget(STREAM* s)
 {
@@ -173,7 +173,7 @@ static inline unsigned char* sptrget(STREAM* s)
 }
 
 /**
- * Sets the current stream ptr.
+ * Set the current stream ptr.
  */
 static inline void sptrset(STREAM* s, unsigned char* ptr)
 {
@@ -181,7 +181,7 @@ static inline void sptrset(STREAM* s, unsigned char* ptr)
 }
 
 /**
- * Checks the error status. Like ferror().
+ * Check the error status. Like ferror().
  */
 static inline int serror(STREAM* s)
 {
@@ -189,7 +189,7 @@ static inline int serror(STREAM* s)
 }
 
 /**
- * Checks the eof status. Like feof().
+ * Check the eof status. Like feof().
  */
 static inline int seof(STREAM* s)
 {
@@ -197,7 +197,7 @@ static inline int seof(STREAM* s)
 }
 
 /**
- * Gets the index of the handle that caused the error.
+ * Get the index of the handle that caused the error.
  */
 static inline int serrorindex(STREAM* s)
 {
@@ -205,7 +205,7 @@ static inline int serrorindex(STREAM* s)
 }
 
 /**
- * Gets the path of the handle that caused the error.
+ * Get the path of the handle that caused the error.
  */
 static inline const char* serrorfile(STREAM* s)
 {
@@ -221,7 +221,7 @@ int ssync(STREAM* s);
 /* get */
 
 /**
- * Reads a char. Like fgetc().
+ * Read a char. Like fgetc().
  */
 static inline int sgetc(STREAM* s)
 {
@@ -231,7 +231,7 @@ static inline int sgetc(STREAM* s)
 }
 
 /**
- * Unreads a char.
+ * Unread a char.
  * Like ungetc() but you have to unget the same char read.
  */
 static inline void sungetc(int c, STREAM* s)
@@ -241,13 +241,13 @@ static inline void sungetc(int c, STREAM* s)
 }
 
 /**
- * Reads a fixed amount of chars.
- * Returns 0 on success, or -1 on error.
+ * Read a fixed amount of chars.
+ * Return 0 on success, or -1 on error.
  */
 int sread(STREAM* f, void* void_data, unsigned size);
 
 /**
- * Gets a char from a stream, ignoring one '\r'.
+ * Get a char from a stream, ignoring one '\r'.
  */
 static inline int sgeteol(STREAM* f)
 {
@@ -261,8 +261,8 @@ static inline int sgeteol(STREAM* f)
 }
 
 /**
- * Reads all the spaces and tabs.
- * Returns the number of spaces and tabs read.
+ * Read all the spaces and tabs.
+ * Return the number of spaces and tabs read.
  */
 static inline int sgetspace(STREAM* f)
 {
@@ -280,28 +280,28 @@ static inline int sgetspace(STREAM* f)
 }
 
 /**
- * Reads until the first space or tab.
- * Stops at the first ' ', '\t', '\n' or EOF.
- * Returns <0 if the buffer is too small, or the number of chars read.
+ * Read until the first space or tab.
+ * Stop at the first ' ', '\t', '\n' or EOF.
+ * Return <0 if the buffer is too small, or the number of chars read.
  */
 int sgettok(STREAM* f, char* str, int size);
 
 /**
- * Reads until the end of line.
- * Stops at the first '\n' or EOF. Note that '\n' is left in the stream.
- * Returns <0 if the buffer is too small, or the number of chars read.
+ * Read until the end of line.
+ * Stop at the first '\n' or EOF. Note that '\n' is left in the stream.
+ * Return <0 if the buffer is too small, or the number of chars read.
  */
 int sgetline(STREAM* f, char* str, int size);
 
 /**
- * Like sgetline() but removes ' ' and '\t' at the end.
+ * Like sgetline() but remove ' ' and '\t' at the end.
  */
 int sgetlasttok(STREAM* f, char* str, int size);
 
 /**
- * Reads a 32 bit number.
- * Stops at the first not digit char or EOF.
- * Returns <0 if there isn't enough to read.
+ * Read a 32 bit number.
+ * Stop at the first not digit char or EOF.
+ * Return <0 if there isn't enough to read.
  */
 int sgetu32(STREAM* f, uint32_t* value);
 
@@ -309,26 +309,26 @@ int sgetu32(STREAM* f, uint32_t* value);
 /* binary get */
 
 /**
- * Reads a binary 32 bit number in packet format.
- * Returns <0 if there isn't enough to read.
+ * Read a binary 32 bit number in packet format.
+ * Return <0 if there isn't enough to read.
  */
 int sgetb32(STREAM* f, uint32_t* value);
 
 /**
- * Reads a binary 64 bit number in packet format.
- * Returns <0 if there isn't enough to read.
+ * Read a binary 64 bit number in packet format.
+ * Return <0 if there isn't enough to read.
  */
 int sgetb64(STREAM* f, uint64_t* value);
 
 /**
- * Reads a binary 32 bit number in little endian format.
- * Returns <0 if there isn't enough to read.
+ * Read a binary 32 bit number in little endian format.
+ * Return <0 if there isn't enough to read.
  */
 int sgetble32(STREAM* f, uint32_t* value);
 
 /**
- * Reads a binary string.
- * Returns -1 on error or if the buffer is too small, or the number of chars read.
+ * Read a binary string.
+ * Return -1 on error or if the buffer is too small, or the number of chars read.
  */
 int sgetbs(STREAM* f, char* str, int size);
 
@@ -336,8 +336,8 @@ int sgetbs(STREAM* f, char* str, int size);
 /* put */
 
 /**
- * Writes a char. Like fputc().
- * Returns 0 on success or -1 on error.
+ * Write a char. Like fputc().
+ * Return 0 on success or -1 on error.
  */
 static inline int sputc(int c, STREAM* s)
 {
@@ -351,8 +351,8 @@ static inline int sputc(int c, STREAM* s)
 }
 
 /**
- * Writes a end of line.
- * Returns 0 on success or -1 on error.
+ * Write a end of line.
+ * Return 0 on success or -1 on error.
  */
 static inline int sputeol(STREAM* s)
 {
@@ -365,7 +365,7 @@ static inline int sputeol(STREAM* s)
 
 /**
  * Write a sized string.
- * Returns 0 on success or -1 on error.
+ * Return 0 on success or -1 on error.
  */
 int swrite(const void* data, unsigned size, STREAM* f);
 
@@ -373,26 +373,26 @@ int swrite(const void* data, unsigned size, STREAM* f);
 /* binary put */
 
 /**
- * Writes a binary 32 bit number in packed format.
- * Returns 0 on success or -1 on error.
+ * Write a binary 32 bit number in packed format.
+ * Return 0 on success or -1 on error.
  */
 int sputb32(uint32_t value, STREAM* s);
 
 /**
- * Writes a binary 64 bit number in packed format.
- * Returns 0 on success or -1 on error.
+ * Write a binary 64 bit number in packed format.
+ * Return 0 on success or -1 on error.
  */
 int sputb64(uint64_t value, STREAM* s);
 
 /**
- * Writes a binary 32 bit number in little endian format.
- * Returns 0 on success or -1 on error.
+ * Write a binary 32 bit number in little endian format.
+ * Return 0 on success or -1 on error.
  */
 int sputble32(uint32_t value, STREAM* s);
 
 /**
- * Writes a binary string.
- * Returns 0 on success or -1 on error.
+ * Write a binary string.
+ * Return 0 on success or -1 on error.
  */
 int sputbs(const char* str, STREAM* s);
 

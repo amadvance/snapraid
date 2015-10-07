@@ -40,7 +40,7 @@ struct snapraid_search_file {
 };
 
 /**
- * Deallocates a search file.
+ * Deallocate a search file.
  */
 void search_file_free(struct snapraid_search_file* file);
 

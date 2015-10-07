@@ -137,7 +137,7 @@ int fallback(int f, struct stat* st)
 /* cmd */
 
 /**
- * Creates a file with random content.
+ * Create a file with random content.
  * - If the file exists it's rewritten, but avoiding to truncating it to 0.
  */
 void cmd_generate_file(const char* path, int size)

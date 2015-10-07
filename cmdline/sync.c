@@ -972,7 +972,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		if (!error_on_this_block && !io_error_on_this_block
 			&& (!silent_error_on_this_block || fixed_error_on_this_block)
 		) {
-			/* updates the parity only if really needed */
+			/* update the parity only if really needed */
 			if (parity_needs_to_be_updated) {
 				/* compute the parity */
 				raid_gen(diskmax, state->level, state->block_size, buffer);

@@ -732,9 +732,9 @@ char* strdup_nofail(const char* str)
 /* smartctl */
 
 /**
- * Matches a string with the specified pattern.
+ * Match a string with the specified pattern.
  * Like sscanf() a space match any sequence of spaces.
- * Returns 0 if it matches.
+ * Return 0 if it matches.
  */
 static int smatch(const char* str, const char* pattern)
 {

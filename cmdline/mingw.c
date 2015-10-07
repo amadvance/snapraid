@@ -28,7 +28,7 @@ int exit_success = 0;
 int exit_failure = 1;
 int exit_sync_needed = 2;
 
-/* Adds missing Windows declaration */
+/* Add missing Windows declaration */
 typedef struct _FILE_ATTRIBUTE_TAG_INFO {
 	DWORD FileAttributes;
 	DWORD ReparseTag;
@@ -260,7 +260,7 @@ static char conv_utf8_buffer[CONV_ROLL][PATH_MAX];
 static pthread_mutex_t conv_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /**
- * Converts a generic string from UTF8 to UTF16.
+ * Convert a generic string from UTF8 to UTF16.
  */
 static wchar_t* u8tou16(const char* src)
 {
@@ -284,7 +284,7 @@ static wchar_t* u8tou16(const char* src)
 }
 
 /**
- * Converts a generic string from UTF16 to UTF8.
+ * Convert a generic string from UTF16 to UTF8.
  */
 static char* u16tou8ex(const wchar_t* src, size_t number_of_wchar, size_t* result_length_without_terminator)
 {
@@ -325,7 +325,7 @@ static int is_slash(char c)
 }
 
 /**
- * Converts a path to the Windows format.
+ * Convert a path to the Windows format.
  *
  * If only_is_required is 1, the extended-length format is used only if required.
  *
@@ -435,7 +435,7 @@ static BOOL GetReparseTagInfoByHandle(HANDLE hFile, FILE_ATTRIBUTE_TAG_INFO* lpF
 }
 
 /**
- * Converts Windows attr to the Unix stat format.
+ * Convert Windows attr to the Unix stat format.
  */
 static void windows_attr2stat(DWORD FileAttributes, DWORD ReparseTag, struct windows_stat* st)
 {
@@ -513,7 +513,7 @@ static void windows_attr2stat(DWORD FileAttributes, DWORD ReparseTag, struct win
 }
 
 /**
- * Converts Windows info to the Unix stat format.
+ * Convert Windows info to the Unix stat format.
  */
 static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_ATTRIBUTE_TAG_INFO* tag, struct windows_stat* st)
 {
@@ -550,7 +550,7 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE
 }
 
 /**
- * Converts Windows info to the Unix stat format.
+ * Convert Windows info to the Unix stat format.
  */
 static void windows_stream2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_ID_BOTH_DIR_INFO* stream, struct windows_stat* st)
 {
@@ -584,7 +584,7 @@ static void windows_stream2stat(const BY_HANDLE_FILE_INFORMATION* info, const FI
 }
 
 /**
- * Converts Windows findfirst info to the Unix stat format.
+ * Convert Windows findfirst info to the Unix stat format.
  */
 static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_stat* st)
 {
@@ -657,7 +657,7 @@ static void windows_stream2dirent(const BY_HANDLE_FILE_INFORMATION* info, const 
 }
 
 /**
- * Converts Windows error to errno.
+ * Convert Windows error to errno.
  */
 static void windows_errno(DWORD error)
 {
@@ -1956,8 +1956,8 @@ static int devtree(const char* name, const char* custom, const char* wfile, devi
 }
 
 /**
- * Reads smartctl --scan from a stream.
- * Returns 0 on success.
+ * Read smartctl --scan from a stream.
+ * Return 0 on success.
  */
 static int smartctl_scan(FILE* f, tommy_list* list)
 {
@@ -2068,7 +2068,7 @@ static int devscan(tommy_list* list)
 }
 
 /**
- * Gets SMART attributes.
+ * Get SMART attributes.
  */
 static int devsmart(uint64_t device, const char* name, const char* custom, uint64_t* smart, char* serial)
 {

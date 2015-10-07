@@ -39,7 +39,7 @@ void** malloc_nofail_vector_align(int nd, int n, size_t size, void** freeptr);
 void* malloc_nofail_test(size_t size);
 
 /**
- * Tests the memory vector for RAM problems.
+ * Test the memory vector for RAM problems.
  * If a problem is found, it crashes.
  */
 void mtest_vector(int n, size_t size, void** vv);
@@ -69,7 +69,7 @@ extern int crc_x86;
 #endif
 
 /**
- * Computes CRC-32 (Castagnoli) for a single byte without IV.
+ * Compute CRC-32 (Castagnoli) for a single byte without IV.
  */
 static inline uint32_t crc32c_plain(uint32_t crc, unsigned char c)
 {
@@ -85,14 +85,14 @@ static inline uint32_t crc32c_plain(uint32_t crc, unsigned char c)
 }
 
 /**
- * Computes the CRC-32 (Castagnoli)
+ * Compute the CRC-32 (Castagnoli)
  */
 uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, unsigned size);
 uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size);
 uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size);
 
 /**
- * Initializes the CRC-32 (Castagnoli) support.
+ * Initialize the CRC-32 (Castagnoli) support.
  */
 void crc32c_init(void);
 
@@ -113,7 +113,7 @@ void crc32c_init(void);
 #define HASH_SPOOKY2 2
 
 /**
- * Computes the HASH of a memory block.
+ * Compute the HASH of a memory block.
  * Seed is a 128 bit vector.
  */
 void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, size_t size);
@@ -132,14 +132,14 @@ unsigned memdiff(const unsigned char* data1, const unsigned char* data2, size_t 
 /* lock */
 
 /**
- * Creates and locks the lock file.
- * Returns -1 on error, otherwise it's the file handle to pass to lock_unlock().
+ * Create and locks the lock file.
+ * Return -1 on error, otherwise it's the file handle to pass to lock_unlock().
  */
 int lock_lock(const char* file);
 
 /**
- * Unlocks the lock file.
- * Returns -1 on error.
+ * Unlock the lock file.
+ * Return -1 on error.
  */
 int lock_unlock(int f);
 

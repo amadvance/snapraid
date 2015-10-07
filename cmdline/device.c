@@ -593,7 +593,7 @@ static double raid_prob_of_one_or_more_failures(double array_failure_rate, doubl
 }
 
 /**
- * Prints a string with space padding.
+ * Print a string with space padding.
  */
 static void printl(const char* str, size_t pad)
 {
@@ -610,7 +610,7 @@ static void printl(const char* str, size_t pad)
 }
 
 /**
- * Prints a probability with space padding.
+ * Print a probability with space padding.
  */
 static void printp(double v, size_t pad)
 {
@@ -828,7 +828,7 @@ static void state_smart(unsigned n, tommy_list* low)
 	printf("Probability that at least one disk is going to fail in the next year is %.0f%%.\n", p_at_least_one_failure * 100);
 	log_tag("summary:array_failure:%g:%g\n", array_failure_rate, p_at_least_one_failure);
 
-	/* prints extra stats only in verbose mode */
+	/* print extra stats only in verbose mode */
 	if (msg_level < MSG_VERBOSE)
 		goto bail;
 

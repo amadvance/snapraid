@@ -35,7 +35,7 @@ struct snapraid_handle {
 };
 
 /**
- * Creates a file.
+ * Create a file.
  * The file is created if missing, and opened with write access.
  * If the file is created, the handle->created is set.
  * The initial size of the file is stored in the file->st struct.
@@ -50,13 +50,13 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 int handle_truncate(struct snapraid_handle* handle, struct snapraid_file* file);
 
 /**
- * Opens a file.
+ * Open a file.
  * The file is opened for reading.
  */
 int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int mode, fptr* out, fptr* out_missing);
 
 /**
- * Closes a file.
+ * Close a file.
  */
 int handle_close(struct snapraid_handle* handle);
 
@@ -67,17 +67,17 @@ int handle_close(struct snapraid_handle* handle);
 int handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned char* block_buffer, unsigned block_size, fptr* out, fptr* out_missing);
 
 /**
- * Writes a block to a file.
+ * Write a block to a file.
  */
 int handle_write(struct snapraid_handle* handle, block_off_t file_pos, unsigned char* block_buffer, unsigned block_size);
 
 /**
- * Changes the modification time of the file to the saved value.
+ * Change the modification time of the file to the saved value.
  */
 int handle_utime(struct snapraid_handle* handle);
 
 /**
- * Maps the unsorted list of disk to an ordered vector.
+ * Map the unsorted list of disk to an ordered vector.
  * \param diskmax The size of the vector.
  * \return The allocated vector of pointers.
  */

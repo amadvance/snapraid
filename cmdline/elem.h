@@ -413,27 +413,27 @@ struct snapraid_parity {
 typedef uint32_t snapraid_info;
 
 /**
- * Allocates a content.
+ * Allocate a content.
  */
 struct snapraid_content* content_alloc(const char* path, uint64_t dev);
 
 /**
- * Deallocates a content.
+ * Deallocate a content.
  */
 void content_free(struct snapraid_content* content);
 
 /**
- * Allocates a filter pattern for files and directories.
+ * Allocate a filter pattern for files and directories.
  */
 struct snapraid_filter* filter_alloc_file(int is_include, const char* pattern);
 
 /**
- * Allocates a filter pattern for disks.
+ * Allocate a filter pattern for disks.
  */
 struct snapraid_filter* filter_alloc_disk(int is_include, const char* pattern);
 
 /**
- * Deallocates an exclusion.
+ * Deallocate an exclusion.
  */
 void filter_free(struct snapraid_filter* filter);
 
@@ -456,7 +456,7 @@ static inline int filter_hidden(int enable, struct dirent* dd)
 }
 
 /**
- * Filters a path using a list of filters.
+ * Filter a path using a list of filters.
  * For each element of the path all the filters are applied, until the first one that matches.
  * Return !=0 if it should be excluded.
  */
@@ -476,20 +476,20 @@ int filter_existence(int filter_missing, const char* dir, const char* sub);
 int filter_correctness(int filter_error, tommy_arrayblkof* infoarr, struct snapraid_disk* disk, struct snapraid_file* file);
 
 /**
- * Filters a dir using a list of filters.
+ * Filter a dir using a list of filters.
  * For each element of the path all the filters are applied, until the first one that matches.
  * Return !=0 if should be excluded.
  */
 int filter_dir(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub);
 
 /**
- * Filters a path if it's a content file.
+ * Filter a path if it's a content file.
  * Return !=0 if should be excluded.
  */
 int filter_content(tommy_list* contentlist, const char* path);
 
 /**
- * Checks if the specified hash is invalid.
+ * Check if the specified hash is invalid.
  *
  * An invalid hash is represented with all bytes at 0x00.
  */
@@ -505,7 +505,7 @@ static inline int hash_is_invalid(const unsigned char* hash)
 }
 
 /**
- * Checks if the specified hash represent the zero block.
+ * Check if the specified hash represent the zero block.
  *
  * A zero hash is represented with all bytes at 0xFF.
  */
@@ -521,7 +521,7 @@ static inline int hash_is_zero(const unsigned char* hash)
 }
 
 /**
- * Checks if the specified hash is a real hash.
+ * Check if the specified hash is a real hash.
  */
 static inline int hash_is_real(const unsigned char* hash)
 {
@@ -567,7 +567,7 @@ static inline void block_state_set(struct snapraid_block* block, unsigned state)
 }
 
 /**
- * Checks if the specified block has an updated hash.
+ * Check if the specified block has an updated hash.
  *
  * Note that EMPTY / CHG / DELETED return 0.
  */
@@ -579,7 +579,7 @@ static inline int block_has_updated_hash(const struct snapraid_block* block)
 }
 
 /**
- * Checks if the specified block has a past hash,
+ * Check if the specified block has a past hash,
  * i.e. the hash of the data that it's now overwritten or lost.
  *
  * Note that EMPTY / BLK / REP return 0.
@@ -592,7 +592,7 @@ static inline int block_has_past_hash(const struct snapraid_block* block)
 }
 
 /**
- * Checks if the specified block is part of a file.
+ * Check if the specified block is part of a file.
  *
  * Note that EMPTY / DELETED return 0.
  */
@@ -605,7 +605,7 @@ static inline int block_has_file(const struct snapraid_block* block)
 }
 
 /**
- * Checks if the block has an invalid parity than needs to be updated.
+ * Check if the block has an invalid parity than needs to be updated.
  *
  * Note that EMPTY / BLK return 0.
  */
@@ -618,7 +618,7 @@ static inline int block_has_invalid_parity(const struct snapraid_block* block)
 }
 
 /**
- * Checks if the block is part of a file with valid parity.
+ * Check if the block is part of a file with valid parity.
  *
  * Note that anything different than BLK return 0.
  */
@@ -670,43 +670,43 @@ void file_rename(struct snapraid_file* file, const char* sub);
 void file_copy(struct snapraid_file* src_file, struct snapraid_file* dest_file);
 
 /**
- * Returns the name of the file, without the dir.
+ * Return the name of the file, without the dir.
  */
 const char* file_name(const struct snapraid_file* file);
 
 /**
- * Checks if the block is the last in the file.
+ * Check if the block is the last in the file.
  */
 int file_block_is_last(struct snapraid_file* file, block_off_t file_pos);
 
 /**
- * Gets the size in bytes of the block.
+ * Get the size in bytes of the block.
  * If it's the last block of a file it could be less than block_size.
  */
 unsigned file_block_size(struct snapraid_file* file, block_off_t file_pos, unsigned block_size);
 
 /**
- * Compares a file with an inode.
+ * Compare a file with an inode.
  */
 int file_inode_compare_to_arg(const void* void_arg, const void* void_data);
 
 /**
- * Compares files by inode.
+ * Compare files by inode.
  */
 int file_inode_compare(const void* void_a, const void* void_b);
 
 /**
- * Compares files by path.
+ * Compare files by path.
  */
 int file_path_compare(const void* void_a, const void* void_b);
 
 /**
- * Compares files by physical address.
+ * Compare files by physical address.
  */
 int file_physical_compare(const void* void_a, const void* void_b);
 
 /**
- * Computes the hash of a file inode.
+ * Compute the hash of a file inode.
  */
 static inline tommy_uint32_t file_inode_hash(uint64_t inode)
 {
@@ -714,7 +714,7 @@ static inline tommy_uint32_t file_inode_hash(uint64_t inode)
 }
 
 /**
- * Compares a file with a path.
+ * Compare a file with a path.
  */
 int file_path_compare_to_arg(const void* void_arg, const void* void_data);
 
@@ -727,7 +727,7 @@ int file_namestamp_compare(const void* void_a, const void* void_b);
 int file_pathstamp_compare(const void* void_a, const void* void_b);
 
 /**
- * Computes the hash of a file path.
+ * Compute the hash of a file path.
  */
 static inline tommy_uint32_t file_path_hash(const char* sub)
 {
@@ -735,7 +735,7 @@ static inline tommy_uint32_t file_path_hash(const char* sub)
 }
 
 /**
- * Computes the hash of a file stamp.
+ * Compute the hash of a file stamp.
  */
 static inline tommy_uint32_t file_stamp_hash(data_off_t size, int64_t mtime_sec, int mtime_nsec)
 {
@@ -789,12 +789,12 @@ static inline unsigned link_flag_get(struct snapraid_link* link, unsigned mask)
 }
 
 /**
- * Allocates a link.
+ * Allocate a link.
  */
 struct snapraid_link* link_alloc(const char* name, const char* link, unsigned link_flag);
 
 /**
- * Deallocates a link.
+ * Deallocate a link.
  */
 void link_free(struct snapraid_link* link);
 
@@ -804,12 +804,12 @@ void link_free(struct snapraid_link* link);
 int link_name_compare_to_arg(const void* void_arg, const void* void_data);
 
 /**
- * Compares links by path.
+ * Compare links by path.
  */
 int link_alpha_compare(const void* void_a, const void* void_b);
 
 /**
- * Computes the hash of a link name.
+ * Compute the hash of a link name.
  */
 static inline tommy_uint32_t link_name_hash(const char* name)
 {
@@ -832,12 +832,12 @@ static inline void dir_flag_clear(struct snapraid_dir* dir, unsigned mask)
 }
 
 /**
- * Allocates a dir.
+ * Allocate a dir.
  */
 struct snapraid_dir* dir_alloc(const char* name);
 
 /**
- * Deallocates a dir.
+ * Deallocate a dir.
  */
 void dir_free(struct snapraid_dir* dir);
 
@@ -847,7 +847,7 @@ void dir_free(struct snapraid_dir* dir);
 int dir_name_compare(const void* void_arg, const void* void_data);
 
 /**
- * Computes the hash of a dir name.
+ * Compute the hash of a dir name.
  */
 static inline tommy_uint32_t dir_name_hash(const char* name)
 {
@@ -855,12 +855,12 @@ static inline tommy_uint32_t dir_name_hash(const char* name)
 }
 
 /**
- * Allocates a disk.
+ * Allocate a disk.
  */
 struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev);
 
 /**
- * Deallocates a disk.
+ * Deallocate a disk.
  */
 void disk_free(struct snapraid_disk* disk);
 
@@ -922,18 +922,18 @@ block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* fi
 
 /**
  * Get the block from the parity position.
- * Returns BLOCK_EMPTY==0 if the block is over the end of the disk or not used.
+ * Return BLOCK_EMPTY==0 if the block is over the end of the disk or not used.
  */
 struct snapraid_block* fs_par2block_get(struct snapraid_disk* disk, block_off_t parity_pos);
 
 /**
- * Allocates a disk mapping.
+ * Allocate a disk mapping.
  * Uses uuid="" if not available.
  */
 struct snapraid_map* map_alloc(const char* name, unsigned position, block_off_t total_blocks, block_off_t free_blocks, const char* uuid);
 
 /**
- * Deallocates a disk mapping.
+ * Deallocate a disk mapping.
  */
 void map_free(struct snapraid_map* map);
 
@@ -945,7 +945,7 @@ void map_free(struct snapraid_map* map);
 #define INFO_MASK 0x7
 
 /**
- * Makes an info.
+ * Make an info.
  */
 static inline snapraid_info info_make(time_t last_access, int error, int rehash, int justsynced)
 {
@@ -962,7 +962,7 @@ static inline snapraid_info info_make(time_t last_access, int error, int rehash,
 }
 
 /**
- * Extracts the time information.
+ * Extract the time information.
  * This is the last time when the block was know to be correct.
  * The "scrubbed" info tells if the time is referreing at the latest sync or scrub.
  */
@@ -972,8 +972,8 @@ static inline time_t info_get_time(snapraid_info info)
 }
 
 /**
- * Extracts the error information.
- * Reports if the block address had some problem.
+ * Extract the error information.
+ * Report if the block address had some problem.
  */
 static inline int info_get_bad(snapraid_info info)
 {
@@ -981,8 +981,8 @@ static inline int info_get_bad(snapraid_info info)
 }
 
 /**
- * Extracts the rehash information.
- * Reports if the block address is using the old hash and needs to be rehashed.
+ * Extract the rehash information.
+ * Report if the block address is using the old hash and needs to be rehashed.
  */
 static inline int info_get_rehash(snapraid_info info)
 {
@@ -990,8 +990,8 @@ static inline int info_get_rehash(snapraid_info info)
 }
 
 /**
- * Extracts the scrubbed information.
- * Reports if the block address was never scrubbed.
+ * Extract the scrubbed information.
+ * Report if the block address was never scrubbed.
  */
 static inline int info_get_justsynced(snapraid_info info)
 {
@@ -1012,7 +1012,7 @@ static inline time_t info_get_scrubtime(snapraid_info info)
 }
 
 /**
- * Marks the block address as with error.
+ * Mark the block address as with error.
  */
 static inline snapraid_info info_set_bad(snapraid_info info)
 {
@@ -1020,7 +1020,7 @@ static inline snapraid_info info_set_bad(snapraid_info info)
 }
 
 /**
- * Marks the block address as with rehash.
+ * Mark the block address as with rehash.
  */
 static inline snapraid_info info_set_rehash(snapraid_info info)
 {
@@ -1028,7 +1028,7 @@ static inline snapraid_info info_set_rehash(snapraid_info info)
 }
 
 /**
- * Sets the info at the specified position.
+ * Set the info at the specified position.
  * The position is allocated if not yet done.
  */
 static inline void info_set(tommy_arrayblkof* array, unsigned pos, snapraid_info info)
@@ -1039,7 +1039,7 @@ static inline void info_set(tommy_arrayblkof* array, unsigned pos, snapraid_info
 }
 
 /**
- * Gets the info at the specified position.
+ * Get the info at the specified position.
  * For not allocated position, 0 is returned.
  */
 static inline snapraid_info info_get(tommy_arrayblkof* array, unsigned pos)

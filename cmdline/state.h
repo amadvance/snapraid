@@ -29,12 +29,12 @@
 #define LEV_MAX 6
 
 /**
- * Returns the parity name: Parity, 2-Parity, 3-Parity, 4-Parity, 5-Parity, 6-Parity.
+ * Return the parity name: Parity, 2-Parity, 3-Parity, 4-Parity, 5-Parity, 6-Parity.
  */
 const char* lev_name(unsigned level);
 
 /**
- * Returns the parity name used in the config file: parity, 2-parity, 3-parity, 4-parity, 5-parity, 6-parity.
+ * Return the parity name used in the config file: parity, 2-parity, 3-parity, 4-parity, 5-parity, 6-parity.
  */
 const char* lev_config_name(unsigned level);
 
@@ -175,27 +175,27 @@ struct snapraid_state {
 };
 
 /**
- * Initializes the state.
+ * Initialize the state.
  */
 void state_init(struct snapraid_state* state);
 
 /**
- * Deinitializes the state.
+ * Deinitialize the state.
  */
 void state_done(struct snapraid_state* state);
 
 /**
- * Reads the configuration file.
+ * Read the configuration file.
  */
 void state_config(struct snapraid_state* state, const char* path, const char* command, struct snapraid_option* opt, tommy_list* filterlist_disk);
 
 /**
- * Reads the state.
+ * Read the state.
  */
 void state_read(struct snapraid_state* state);
 
 /**
- * Writes the new state.
+ * Write the new state.
  */
 void state_write(struct snapraid_state* state);
 
@@ -205,12 +205,12 @@ void state_write(struct snapraid_state* state);
 int state_diff(struct snapraid_state* state);
 
 /**
- * Scans all the disks to update the state.
+ * Scan all the disks to update the state.
  */
 void state_scan(struct snapraid_state* state);
 
 /**
- * Sets the nanosecond timestamp of all files that have a zero value.
+ * Set the nanosecond timestamp of all files that have a zero value.
  */
 void state_nano(struct snapraid_state* state);
 
@@ -220,12 +220,12 @@ void state_nano(struct snapraid_state* state);
 void state_device(struct snapraid_state* state, int operation);
 
 /**
- * Syncs the parity data.
+ * Sync the parity data.
  */
 int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t blockcount);
 
 /**
- * Checks (and fixes) all the files and parity data.
+ * Check (and fixes) all the files and parity data.
  * \param fix If we have to fix, after checking.
  */
 int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, block_off_t blockcount);
@@ -259,7 +259,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan);
 int state_status(struct snapraid_state* state);
 
 /**
- * Finds duplicates.
+ * Find duplicates.
  */
 void state_dup(struct snapraid_state* state);
 
@@ -269,7 +269,7 @@ void state_dup(struct snapraid_state* state);
 void state_list(struct snapraid_state* state);
 
 /**
- * Creates pool tree.
+ * Create pool tree.
  */
 void state_pool(struct snapraid_state* state);
 
@@ -287,17 +287,17 @@ void state_refresh(struct snapraid_state* state);
 void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tommy_list* filterlist_disk, int filter_missing, int filter_error);
 
 /**
- * Begins the progress visualization.
+ * Begin the progress visualization.
  */
 int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, block_off_t blockmax, block_off_t countmax);
 
 /**
- * Ends the progress visualization.
+ * End the progress visualization.
  */
 void state_progress_end(struct snapraid_state* state, block_off_t countpos, block_off_t countmax, data_off_t countsize);
 
 /**
- * Writes the progress.
+ * Write the progress.
  */
 int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize);
 
@@ -368,7 +368,7 @@ static inline void state_usage_parity(struct snapraid_state* state, unsigned lev
 }
 
 /**
- * Prints the stats of the usage time.
+ * Print the stats of the usage time.
  */
 void state_usage_print(struct snapraid_state* state);
 

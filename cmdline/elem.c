@@ -170,7 +170,7 @@ static int filter_apply(struct snapraid_filter* filter, struct snapraid_filter**
 {
 	int ret = 0;
 
-	/* matches dirs with dirs and files with files */
+	/* match dirs with dirs and files with files */
 	if (filter->is_dir && !is_dir)
 		return 0;
 	if (!filter->is_dir && is_dir)

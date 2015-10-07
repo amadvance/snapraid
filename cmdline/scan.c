@@ -46,7 +46,7 @@ struct snapraid_scan {
 };
 
 /**
- * Removes the specified link from the data set.
+ * Remove the specified link from the data set.
  */
 static void scan_link_remove(struct snapraid_scan* scan, struct snapraid_link* link)
 {
@@ -65,7 +65,7 @@ static void scan_link_remove(struct snapraid_scan* scan, struct snapraid_link* l
 }
 
 /**
- * Inserts the specified link in the data set.
+ * Insert the specified link in the data set.
  */
 static void scan_link_insert(struct snapraid_scan* scan, struct snapraid_link* link)
 {
@@ -81,7 +81,7 @@ static void scan_link_insert(struct snapraid_scan* scan, struct snapraid_link* l
 }
 
 /**
- * Processes a symbolic link.
+ * Process a symbolic link.
  */
 static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, const char* linkto, unsigned link_flag)
 {
@@ -350,7 +350,7 @@ static void scan_file_delayed_allocate(struct snapraid_scan* scan, struct snapra
 }
 
 /**
- * Checks if a file is completely formed of blocks with invalid parity,
+ * Check if a file is completely formed of blocks with invalid parity,
  * and no rehash is tagged, and if it has at least one block.
  */
 static int file_is_full_invalid_parity_and_stable(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
@@ -383,7 +383,7 @@ static int file_is_full_invalid_parity_and_stable(struct snapraid_state* state, 
 }
 
 /**
- * Checks if a file is completely formed of blocks with an updated hash,
+ * Check if a file is completely formed of blocks with an updated hash,
  * and no rehash is tagged, and if it has at least one block.
  */
 static int file_is_full_hashed_and_stable(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)
@@ -562,7 +562,7 @@ static void scan_file_keep(struct snapraid_scan* scan, struct snapraid_file* fil
 }
 
 /**
- * Processes a file.
+ * Process a file.
  */
 static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, struct stat* st, uint64_t physical)
 {
@@ -928,7 +928,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 }
 
 /**
- * Removes the specified dir from the data set.
+ * Remove the specified dir from the data set.
  */
 static void scan_emptydir_remove(struct snapraid_scan* scan, struct snapraid_dir* dir)
 {
@@ -947,7 +947,7 @@ static void scan_emptydir_remove(struct snapraid_scan* scan, struct snapraid_dir
 }
 
 /**
- * Inserts the specified dir in the data set.
+ * Insert the specified dir in the data set.
  */
 static void scan_emptydir_insert(struct snapraid_scan* scan, struct snapraid_dir* dir)
 {
@@ -963,7 +963,7 @@ static void scan_emptydir_insert(struct snapraid_scan* scan, struct snapraid_dir
 }
 
 /**
- * Processes a dir.
+ * Process a dir.
  */
 static void scan_emptydir(struct snapraid_scan* scan, const char* sub)
 {
@@ -1040,7 +1040,7 @@ static int dd_name_compare(const void* void_a, const void* void_b)
 }
 
 /**
- * Returns the stat info of a dir entry.
+ * Return the stat info of a dir entry.
  */
 #if HAVE_STRUCT_DIRENT_D_STAT
 #define DSTAT(file, dd, buf) dstat(dd)
@@ -1063,7 +1063,7 @@ struct stat* dstat(const char* file, struct stat* st)
 #endif
 
 /**
- * Processes a directory.
+ * Process a directory.
  * Return != 0 if at least one file or link is processed.
  */
 static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const char* dir, const char* sub)
@@ -1409,7 +1409,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 
 		/* if inodes or UUID are not persistent/changed/unsupported */
 		if (disk->has_volatile_inodes || disk->has_different_uuid || disk->has_unsupported_uuid) {
-			/* removes all the inodes from the inode collection */
+			/* remove all the inodes from the inode collection */
 			/* if they are not persistent, all of them could be changed now */
 			/* and we don't want to find false matching ones */
 			/* see scan_file() for more details */
@@ -1538,7 +1538,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 				        /* files without offset are expected to have duplicates */
 					&& phy_last != FILEPHY_WITHOUT_OFFSET
 				) {
-					/* if verbose, prints the list of duplicates real offsets */
+					/* if verbose, print the list of duplicates real offsets */
 					/* other cases are for offsets not supported, so we don't need to report them file by file */
 					if (phy_last >= FILEPHY_REAL_OFFSET) {
 						log_fatal("WARNING! Files '%s%s' and '%s%s' have the same physical offset %" PRId64 ".\n", disk->dir, phy_file_last->sub, disk->dir, file->sub, phy_last);
@@ -1588,7 +1588,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		}
 	}
 
-	/* checks for disks where all the previously existing files where removed */
+	/* check for disks where all the previously existing files where removed */
 	if (!state->opt.force_empty) {
 		int all_missing = 0;
 		int all_rewritten = 0;
@@ -1635,7 +1635,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		}
 	}
 
-	/* checks for disks without the physical offset support */
+	/* check for disks without the physical offset support */
 	if (state->opt.force_order == SORT_PHYSICAL) {
 		done = 0;
 		for (i = state->disklist; i != 0; i = i->next) {
@@ -1655,7 +1655,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		}
 	}
 
-	/* checks for disks without persistent inodes */
+	/* check for disks without persistent inodes */
 	done = 0;
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
@@ -1673,7 +1673,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		log_fatal(". Move operations won't be optimal.\n");
 	}
 
-	/* checks for disks with changed UUID */
+	/* check for disks with changed UUID */
 	done = 0;
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
@@ -1695,7 +1695,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		log_fatal(". Move operations won't be optimal.\n");
 	}
 
-	/* checks for disks with unsupported UUID */
+	/* check for disks with unsupported UUID */
 	done = 0;
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;

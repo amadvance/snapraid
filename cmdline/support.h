@@ -175,51 +175,51 @@ char* polish(char* s);
 /* path */
 
 /**
- * Copies a path limiting the size.
- * Aborts if too long.
+ * Copy a path limiting the size.
+ * Abort if too long.
  */
 void pathcpy(char* dst, size_t size, const char* src);
 
 /**
- * Concatenates a path limiting the size.
- * Aborts if too long.
+ * Concatenate a path limiting the size.
+ * Abort if too long.
  */
 void pathcat(char* dst, size_t size, const char* src);
 
 /**
- * Concatenates a path limiting the size.
- * Aborts if too long.
+ * Concatenate a path limiting the size.
+ * Abort if too long.
  */
 void pathcatc(char* dst, size_t size, char c);
 
 /**
- * Imports a path limiting the size.
+ * Import a path limiting the size.
  * In Windows all the backslash are converted to the C standard of forward slash.
- * Aborts if too long.
+ * Abort if too long.
  */
 void pathimport(char* dst, size_t size, const char* src);
 
 /**
- * Exports a path limiting the size.
+ * Export a path limiting the size.
  * In Windows all the C slashes are converted to the Windows backslash.
- * Aborts if too long.
+ * Abort if too long.
  */
 void pathexport(char* dst, size_t size, const char* src);
 
 /**
- * Prints a path.
- * Aborts if too long.
+ * Print a path.
+ * Abort if too long.
  */
 void pathprint(char* dst, size_t size, const char* format, ...) __attribute__((format(attribute_printf, 3, 4)));
 
 /**
- * Ensures the presence of a terminating slash, if it isn't empty.
- * Aborts if too long.
+ * Ensure the presence of a terminating slash, if it isn't empty.
+ * Abort if too long.
  */
 void pathslash(char* dst, size_t size);
 
 /**
- * Cuts everything after the latest slash.
+ * Cut everything after the latest slash.
  */
 void pathcut(char* dst);
 
@@ -233,13 +233,13 @@ int pathcmp(const char* a, const char* b);
 /* filesystem */
 
 /**
- * Creates all the ancestor directories if missing.
+ * Create all the ancestor directories if missing.
  * The file name, after the last /, is ignored.
  */
 int mkancestor(const char* file);
 
 /**
- * Changes the modification time of an open file.
+ * Change the modification time of an open file.
  */
 int fmtime(int f, int64_t mtime_sec, int mtime_nsec);
 
@@ -278,8 +278,8 @@ void malloc_fail(size_t size);
 /* smartctl */
 
 /**
- * Reads smartctl attributes from a stream.
- * Returns 0 on success.
+ * Read smartctl attributes from a stream.
+ * Return 0 on success.
  */
 int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* smart, char* serial);
 

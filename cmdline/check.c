@@ -64,7 +64,7 @@ struct failed_struct {
 };
 
 /**
- * Checks if a block hash matches the specified buffer.
+ * Check if a block hash matches the specified buffer.
  * Return ==0 if equal
  */
 static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_block* block, unsigned pos_size, unsigned char* buffer, unsigned char* buffer_zero)
@@ -94,7 +94,7 @@ static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_bl
 }
 
 /**
- * Checks if the hash of all the failed block we are expecting to recover are now matching.
+ * Check if the hash of all the failed block we are expecting to recover are now matching.
  */
 static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, void* buffer_zero)
 {
@@ -137,7 +137,7 @@ static int is_hash_matching(struct snapraid_state* state, int rehash, unsigned d
 }
 
 /**
- * Checks if specified parity is now matching with a recomputed one.
+ * Check if specified parity is now matching with a recomputed one.
  */
 static int is_parity_matching(struct snapraid_state* state, unsigned diskmax, unsigned i, void** buffer, void** buffer_recov)
 {
@@ -156,7 +156,7 @@ static int is_parity_matching(struct snapraid_state* state, unsigned diskmax, un
 
 /**
  * Repair errors.
- * Returns <0 if failure for missing strategy, >0 if data is wrong and we cannot rebuild correctly, 0 on success.
+ * Return <0 if failure for missing strategy, >0 if data is wrong and we cannot rebuild correctly, 0 on success.
  * If success, the parity are computed in the buffer variable.
  */
 static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, unsigned diskmax, struct failed_struct* failed, unsigned* failed_map, unsigned failed_count, void** buffer, void** buffer_recov, void* buffer_zero)
@@ -587,7 +587,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 /**
  * Post process all the files at the specified block index ::i.
  * For each file, if we are at the last block, closes it,
- * adjust the timestamp, and prints the result.
+ * adjust the timestamp, and print the result.
  *
  * This works with the assumption to always process the whole files to
  * fix. This assumption is not always correct, and in such case we have to
@@ -603,7 +603,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 	if (state->opt.badonly)
 		return 0;
 
-	/* for all the files prints the final status, and does the final time fix */
+	/* for all the files print the final status, and does the final time fix */
 	/* we also ensure to close files after processing the last block */
 	for (j = 0; j < diskmax; ++j) {
 		struct snapraid_block* block;
@@ -1270,7 +1270,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					}
 				}
 
-				/* now writes recovered files */
+				/* now write recovered files */
 				if (fix) {
 					/* update the fixed files */
 					for (j = 0; j < failed_count; ++j) {
@@ -1862,7 +1862,7 @@ bail:
 	free(buffer_alloc);
 	free(buffer);
 
-	/* fails if some error are present after the run */
+	/* fail if some error are present after the run */
 	if (fix) {
 		if (state->opt.expect_unrecoverable) {
 			if (unrecoverable_error == 0)

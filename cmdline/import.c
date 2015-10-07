@@ -24,7 +24,7 @@
 /* import */
 
 /**
- * Compares the hash of two import blocks.
+ * Compare the hash of two import blocks.
  */
 int import_block_hash_compare(const void* void_arg, const void* void_data)
 {
@@ -43,7 +43,7 @@ int import_block_prevhash_compare(const void* void_arg, const void* void_data)
 }
 
 /**
- * Computes the hash of the hash for an import block.
+ * Compute the hash of the hash for an import block.
  * We just use the first 32 bit of the hash itself.
  */
 static inline tommy_uint32_t import_block_hash(const unsigned char* hash)

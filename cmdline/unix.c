@@ -126,7 +126,7 @@ int devuuid(uint64_t device, char* uuid, size_t uuid_size)
 int filephy(const char* path, uint64_t size, uint64_t* physical)
 {
 #if HAVE_LINUX_FIEMAP_H
-	/* In Linux gets the real physical address of the file */
+	/* In Linux get the real physical address of the file */
 	/* Note that FIEMAP doesn't require root permission */
 	int f;
 	struct {
@@ -327,7 +327,7 @@ int randomize(void* ptr, size_t size)
 
 /**
  * Read a file extracting the contained device number in %u:%u format.
- * Returns 0 on error.
+ * Return 0 on error.
  */
 #if HAVE_LINUX_DEVICE
 static dev_t devread(const char* path)
@@ -620,7 +620,7 @@ static int devscan(tommy_list* list)
 #endif
 
 /**
- * Gets SMART attributes.
+ * Get SMART attributes.
  */
 static int devsmart(dev_t device, const char* name, const char* custom, uint64_t* smart, char* serial)
 {
@@ -769,7 +769,7 @@ static int devup(const char* mount)
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* removes the just created dir */
+	/* remove the just created dir */
 	rmdir(path);
 
 	return 0;
@@ -873,7 +873,7 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 	tommy_node* i;
 
 #if HAVE_PTHREAD_CREATE
-	/* starts all threads */
+	/* start all threads */
 	for (i = tommy_list_head(list); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
 
@@ -885,7 +885,7 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 		}
 	}
 
-	/* joins all threads */
+	/* join all threads */
 	for (i = tommy_list_head(list); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
 		void* retval;

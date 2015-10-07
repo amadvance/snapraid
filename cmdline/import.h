@@ -55,7 +55,7 @@ struct snapraid_import_file {
 };
 
 /**
- * Deallocates an import file.
+ * Deallocate an import file.
  */
 void import_file_free(struct snapraid_import_file* file);
 

@@ -145,7 +145,7 @@ static int clean_dir(struct snapraid_state* state, const char* dir)
 }
 
 /**
- * Creates a link to the specified disk entry.
+ * Create a link to the specified disk entry.
  */
 static void make_link(const char* pool_dir, const char* share_dir, struct snapraid_disk* disk, const char* sub)
 {

@@ -541,7 +541,7 @@ bail:
 }
 
 /**
- * Returns a * b / c approximated to the upper value.
+ * Return a * b / c approximated to the upper value.
  */
 static uint32_t md(uint32_t a, uint32_t b, uint32_t c)
 {

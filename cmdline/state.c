@@ -172,7 +172,7 @@ void state_done(struct snapraid_state* state)
 }
 
 /**
- * Checks the configuration.
+ * Check the configuration.
  */
 static void state_config_check(struct snapraid_state* state, const char* path, tommy_list* filterlist_disk)
 {
@@ -205,7 +205,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* checks for equal paths */
+	/* check for equal paths */
 	for (i = state->contentlist; i != 0; i = i->next) {
 		struct snapraid_content* content = i->data;
 
@@ -1053,7 +1053,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 }
 
 /**
- * Finds a disk by name.
+ * Find a disk by name.
  */
 static struct snapraid_disk* find_disk(struct snapraid_state* state, const char* name)
 {
@@ -1080,7 +1080,7 @@ static struct snapraid_disk* find_disk(struct snapraid_state* state, const char*
 }
 
 /**
- * Updates the disk mapping if required.
+ * Update the disk mapping if required.
  */
 static void state_map(struct snapraid_state* state)
 {
@@ -1090,7 +1090,7 @@ static void state_map(struct snapraid_state* state)
 	unsigned diskcount;
 	unsigned l;
 
-	/* removes all the mapping without a disk */
+	/* remove all the mapping without a disk */
 	/* this happens when a disk is removed from the configuration file */
 	/* From SnapRAID 4.0 mappings are automatically removed if a disk is not used */
 	/* when saving the content file, but we keep this code to import older content files. */
@@ -1164,7 +1164,7 @@ static void state_map(struct snapraid_state* state)
 	/* counter for the number of UUID mismatches */
 	uuid_mismatch = 0;
 
-	/* checks if mapping match the disk uuid */
+	/* check if mapping match the disk uuid */
 	if (!state->opt.skip_disk_access) {
 		for (i = state->maplist; i != 0; i = i->next) {
 			struct snapraid_map* map = i->data;
@@ -1212,7 +1212,7 @@ static void state_map(struct snapraid_state* state)
 		}
 	}
 
-	/* checks the parity uuid */
+	/* check the parity uuid */
 	if (!state->opt.skip_parity_access) {
 		for (l = 0; l < state->level; ++l) {
 			char uuid[UUID_MAX];
@@ -1349,13 +1349,13 @@ void state_refresh(struct snapraid_state* state)
 }
 
 /**
- * Checks the content.
+ * Check the content.
  */
 static void state_content_check(struct snapraid_state* state, const char* path)
 {
 	tommy_node* i;
 
-	/* checks that any map has different name and position */
+	/* check that any map has different name and position */
 	for (i = state->maplist; i != 0; i = i->next) {
 		struct snapraid_map* map = i->data;
 		tommy_node* j;
@@ -1378,7 +1378,7 @@ static void state_content_check(struct snapraid_state* state, const char* path)
 }
 
 /**
- * Checks if the position is REQUIRED, or we can completely clear it from the state.
+ * Check if the position is REQUIRED, or we can completely clear it from the state.
  *
  * Note that position with only DELETED blocks are discarged.
  */
@@ -1400,7 +1400,7 @@ static int position_is_required(struct snapraid_state* state, block_off_t pos)
 }
 
 /**
- * Checks if the info block is REQUIREQ.
+ * Check if the info block is REQUIREQ.
  *
  * This is used to ensure that we keep the last check used for scrubbing.
  * and that we add it when importing old context files.
@@ -1446,7 +1446,7 @@ static void position_clear_deleted(struct snapraid_state* state, block_off_t pos
 }
 
 /**
- * Checks if a block position in a disk is deleted.
+ * Check if a block position in a disk is deleted.
  */
 static int is_block_deleted(struct snapraid_disk* disk, block_off_t pos)
 {
@@ -1678,7 +1678,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			tommy_hashdyn_insert(&disk->stampset, &file->stampset, file, file_stamp_hash(file->size, file->mtime_sec, file->mtime_nsec));
 			tommy_list_insert_tail(&disk->filelist, &file->nodelist, file);
 
-			/* reads all the blocks */
+			/* read all the blocks */
 			v_idx = 0;
 			while (v_idx < file->blockmax) {
 				block_off_t v_pos;
