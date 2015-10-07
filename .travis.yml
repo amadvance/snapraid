@@ -1,5 +1,7 @@
 # Travis CI configuration file
 
+sudo: false
+
 language: c
 
 script: autoreconf -i && ./configure && make distcheck
