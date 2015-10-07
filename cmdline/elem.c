@@ -1129,7 +1129,7 @@ block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* fi
 	chunk = fs_file2chunk_get(disk, file, file_pos);
 	if (!chunk) {
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency when resolving a file to a not existing chunk in disk '%s'\n", disk->name);
+		log_fatal("Internal inconsistency when resolving file '%s' at position '%u' in disk '%s'\n", file->sub, file_pos, disk->name);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1151,7 +1151,7 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
 			/* ensure that we are extending the chunk at the end */
 			if (file_pos != chunk->file_pos + chunk->count) {
 				/* LCOV_EXCL_START */
-				log_fatal("Internal inconsistency extending a chunk in the middle in disk '%s'\n", disk->name);
+				log_fatal("Internal inconsistency when allocating file '%s' at position '%u' in the middle of chunk '%u:%u' in disk '%s'\n", file->sub, file_pos, chunk->file_pos, chunk->count, disk->name);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1172,7 +1172,7 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
 
 	if (parity_chunk != chunk || file_chunk != chunk) {
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency when allocating a chunk that already exists in disk '%s'\n", disk->name);
+		log_fatal("Internal inconsistency when allocating file '%s' at position '%u' for existing chunk '%u:%u' in disk '%s'\n", file->sub, file_pos, chunk->file_pos, chunk->count, disk->name);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1192,7 +1192,7 @@ void fs_deallocate(struct snapraid_disk* disk, block_off_t parity_pos)
 	chunk = fs_par2chunk_get(disk, parity_pos);
 	if (!chunk) {
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency when deallocating a not existing chunk in disk '%s'\n", disk->name);
+		log_fatal("Internal inconsistency when deallocating parity position '%u' for not existing chunk in disk '%s'\n", parity_pos, disk->name);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1241,7 +1241,7 @@ void fs_deallocate(struct snapraid_disk* disk, block_off_t parity_pos)
 
 	if (parity_chunk != second_chunk || file_chunk != second_chunk) {
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency when splitting a chunk in disk '%s'\n", disk->name);
+		log_fatal("Internal inconsistency when deallocating parity position '%u' for splitting chunk '%u:%u' in disk '%s'\n", parity_pos, second_chunk->file_pos, second_chunk->count, disk->name);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
