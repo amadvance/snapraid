@@ -398,11 +398,25 @@ static int file_is_full_hashed_and_stable(struct snapraid_state* state, struct s
 	for (i = 0; i < file->blockmax; ++i) {
 		snapraid_info info;
 		struct snapraid_block* block = fs_file2block_get(file, i);
-		block_off_t parity_pos = fs_file2par_get(disk, file, i);
+		block_off_t parity_pos;
 
 		/* exclude blocks without hash */
 		if (!block_has_updated_hash(block))
 			return 0;
+
+		/*
+		 * Get the parity position, but only AFTER checking
+		 * that the file has an updated hash.
+		 * This is required because not hashed files may be
+		 * not yet mapped into parity.
+		 *
+		 * This happens when a new file is in the delayed insertion
+		 * list, and scan finds a copy of it, and it tries to copy
+		 * the hash info.
+		 * As just allocated files have only CHG blocks, checking that
+		 * the hash is updated is enough to exclude such cases.
+		 */
+		parity_pos = fs_file2par_get(disk, file, i);
 
 		/* get block specific info */
 		info = info_get(&state->infoarr, parity_pos);

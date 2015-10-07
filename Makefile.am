@@ -229,7 +229,8 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
 	echo -- Filesystem allocation test
 	head -c 8192 /dev/zero > bench/disk1/TEST
-	head -c 8192 /dev/zero > bench/disk2/TEST
+# Copy the file to trigger the copy optimization check
+	cp -a bench/disk1/TEST bench/disk2/TEST
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 # Now delete the file, and do a partial sync to force a deallocation in the middle of a file
 	rm bench/disk1/TEST
@@ -251,7 +252,7 @@ endif
 	rm bench/disk1/TEST3
 	rm bench/disk1/TEST5
 	head -c 65536 /dev/zero > bench/disk1/TESTX
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync -l ">&1"
 	rm -r bench/disk1/TEST*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -E sync
 	echo --- Create some files
