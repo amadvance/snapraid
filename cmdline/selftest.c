@@ -387,7 +387,7 @@ static void test_tommy(void)
 	tommy_tree_init(&tree, tommy_test_compare);
 
 	for (i = 0; i < TOMMY_SIZE; ++i)
-		tommy_tree_insert(&tree, &node[i], (void*)(i+1));
+		tommy_tree_insert(&tree, &node[i], (void*)(uintptr_t)(i+1));
 
 	/* try to insert a duplicate, count should not change */
 	if (tommy_tree_insert(&tree, &node[TOMMY_SIZE], (void*)1) != (void*)1)
@@ -425,11 +425,11 @@ static void test_tommy(void)
 		tommy_tree_remove_existing(&tree, &node[i]);
 
 	for (i = 0; i < TOMMY_SIZE / 2; ++i)
-		if (tommy_tree_remove(&tree, (void*)(i+1)) != 0)
+		if (tommy_tree_remove(&tree, (void*)(uintptr_t)(i+1)) != 0)
 			goto bail;
 
 	for (i = TOMMY_SIZE / 2; i < TOMMY_SIZE; ++i)
-		if (tommy_tree_remove(&tree, (void*)(i+1)) == 0)
+		if (tommy_tree_remove(&tree, (void*)(uintptr_t)(i+1)) == 0)
 			goto bail;
 
 	if (tommy_tree_count(&tree) != 0)
