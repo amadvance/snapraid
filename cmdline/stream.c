@@ -562,9 +562,10 @@ int swrite(const void* void_data, unsigned size, STREAM* f)
 		/* optimized version with all the data in memory */
 		unsigned char* pos = sptrget(f);
 
+		f->crc_stream = crc32c_plain(f->crc_stream, data, size);
+
 		/* copy it */
 		while (size--) {
-			f->crc_stream = crc32c_plain(f->crc_stream, *data);
 			*pos++ = *data++;
 		}
 

@@ -61,33 +61,100 @@ extern uint32_t CRC32C_1[256];
 extern uint32_t CRC32C_2[256];
 extern uint32_t CRC32C_3[256];
 
-#if HAVE_SSE42
 /**
  * If the CPU support the CRC instructions.
  */
+#if HAVE_SSE42
 extern int crc_x86;
 #endif
 
 /**
- * Compute CRC-32 (Castagnoli) for a single byte without IV.
+ * Compute CRC-32 (Castagnoli) for a single byte without the IV.
  */
-static inline uint32_t crc32c_plain(uint32_t crc, unsigned char c)
+static inline uint32_t crc32c_plain_char(uint32_t crc, unsigned char c)
 {
 #if HAVE_SSE42
 	if (tommy_likely(crc_x86)) {
 		asm("crc32b %1, %0\n" : "+r" (crc) : "m" (c));
 		return crc;
-	} else
-#endif
-	{
-		return CRC32C_0[(crc ^ c) & 0xff] ^ (crc >> 8);
 	}
+#endif
+	return CRC32C_0[(crc ^ c) & 0xff] ^ (crc >> 8);
+}
+
+/**
+ * Compute the CRC-32 (Castagnoli) without the IV.
+ */
+static inline uint32_t crc32c_gen_plain(uint32_t crc, const unsigned char* ptr, unsigned size)
+{
+	while (size >= 4) {
+		crc ^= ptr[0] | (uint32_t)ptr[1] << 8 | (uint32_t)ptr[2] << 16 | (uint32_t)ptr[3] << 24;
+		crc = CRC32C_3[crc & 0xff] ^ CRC32C_2[(crc >> 8) & 0xff] ^ CRC32C_1[(crc >> 16) & 0xff] ^ CRC32C_0[crc >> 24];
+		ptr += 4;
+		size -= 4;
+	}
+
+	while (size) {
+		crc = CRC32C_0[(crc ^ *ptr) & 0xff] ^ (crc >> 8);
+		++ptr;
+		--size;
+	}
+
+	return crc;
+}
+
+/**
+ * Compute the CRC-32 (Castagnoli) without the IV.
+ */
+#if HAVE_SSE42
+static inline uint32_t crc32c_x86_plain(uint32_t crc, const unsigned char* ptr, unsigned size)
+{
+#ifdef CONFIG_X86_64
+	uint64_t crc64 = crc;
+	while (size >= 8) {
+		asm("crc32q %1, %0\n" : "+r" (crc64) : "m" (*(const uint64_t*)ptr));
+		ptr += 8;
+		size -= 8;
+	}
+	crc = crc64;
+#else
+	while (size >= 4) {
+		asm("crc32l %1, %0\n" : "+r" (crc) : "m" (*(const uint32_t*)ptr));
+		ptr += 4;
+		size -= 4;
+	}
+#endif
+	while (size) {
+		asm("crc32b %1, %0\n" : "+r" (crc) : "m" (*ptr));
+		++ptr;
+		--size;
+	}
+
+	return crc;
+}
+#endif
+
+/**
+ * Compute CRC-32 (Castagnoli) without the IV.
+ */
+static inline uint32_t crc32c_plain(uint32_t crc, const unsigned char* ptr, unsigned size)
+{
+#if HAVE_SSE42
+	if (tommy_likely(crc_x86)) {
+		return crc32c_x86_plain(crc, ptr, size);
+	}
+#endif
+	return crc32c_gen_plain(crc, ptr, size);
 }
 
 /**
  * Compute the CRC-32 (Castagnoli)
  */
 uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, unsigned size);
+
+/**
+ * Internal entry points for testing.
+ */
 uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size);
 uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size);
 

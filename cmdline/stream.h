@@ -345,7 +345,7 @@ static inline int sputc(int c, STREAM* s)
 		if (sflush(s) != 0)
 			return -1;
 	}
-	s->crc_stream = crc32c_plain(s->crc_stream, c);
+	s->crc_stream = crc32c_plain_char(s->crc_stream, c);
 	*s->pos++ = c;
 	return 0;
 }

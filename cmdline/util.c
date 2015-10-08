@@ -350,22 +350,15 @@ uint32_t CRC32C_3[256] = {
 	0x4a21617b, 0x9764cbc3, 0xf54642fa, 0x2803e842
 };
 
+#if HAVE_SSE42
+int crc_x86;
+#endif
+
 uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size)
 {
 	crc ^= CRC_IV;
 
-	while (size >= 4) {
-		crc ^= ptr[0] | (uint32_t)ptr[1] << 8 | (uint32_t)ptr[2] << 16 | (uint32_t)ptr[3] << 24;
-		crc = CRC32C_3[crc & 0xff] ^ CRC32C_2[(crc >> 8) & 0xff] ^ CRC32C_1[(crc >> 16) & 0xff] ^ CRC32C_0[crc >> 24];
-		ptr += 4;
-		size -= 4;
-	}
-
-	while (size) {
-		crc = CRC32C_0[(crc ^ *ptr) & 0xff] ^ (crc >> 8);
-		++ptr;
-		--size;
-	}
+	crc = crc32c_gen_plain(crc, ptr, size);
 
 	crc ^= CRC_IV;
 
@@ -375,33 +368,9 @@ uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size)
 #if HAVE_SSE42
 uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size)
 {
-#ifdef CONFIG_X86_64
-	uint64_t crc64;
-#endif
-
 	crc ^= CRC_IV;
 
-#ifdef CONFIG_X86_64
-	crc64 = crc;
-	while (size >= 8) {
-		asm("crc32q %1, %0\n" : "+r" (crc64) : "m" (*(const uint64_t*)ptr));
-		ptr += 8;
-		size -= 8;
-	}
-	crc = crc64;
-#else
-	while (size >= 4) {
-		asm("crc32l %1, %0\n" : "+r" (crc) : "m" (*(const uint32_t*)ptr));
-		ptr += 4;
-		size -= 4;
-	}
-#endif
-
-	while (size) {
-		asm("crc32b %1, %0\n" : "+r" (crc) : "m" (*ptr));
-		++ptr;
-		--size;
-	}
+	crc = crc32c_x86_plain(crc, ptr, size);
 
 	crc ^= CRC_IV;
 
@@ -410,10 +379,6 @@ uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size)
 #endif
 
 uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, unsigned size);
-
-#if HAVE_SSE42
-int crc_x86;
-#endif
 
 void crc32c_init(void)
 {
