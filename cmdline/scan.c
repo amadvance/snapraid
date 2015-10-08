@@ -365,11 +365,19 @@ static int file_is_full_invalid_parity_and_stable(struct snapraid_state* state, 
 	for (i = 0; i < file->blockmax; ++i) {
 		snapraid_info info;
 		struct snapraid_block* block = fs_file2block_get(file, i);
-		block_off_t parity_pos = fs_file2par_get(disk, file, i);
+		block_off_t parity_pos;
 
 		/* exclude blocks with parity */
 		if (!block_has_invalid_parity(block))
 			return 0;
+
+		/*
+		 * Get the parity position, but only after checking
+		 * that the file has invalid parity.
+		 * This is not really required, as we are sure
+		 * that 'kept" files are mapped into parity.
+		 */
+		parity_pos = fs_file2par_get(disk, file, i);
 
 		/* get block specific info */
 		info = info_get(&state->infoarr, parity_pos);
