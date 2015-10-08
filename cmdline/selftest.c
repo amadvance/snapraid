@@ -243,8 +243,12 @@ static void test_crc32c(void)
 
 	for (i = 0; TEST_CRC32C[i].data; ++i) {
 		uint32_t digest;
+		uint32_t digest_gen;
+
 		digest = crc32c(0, (const unsigned char*)TEST_CRC32C[i].data, TEST_CRC32C[i].len);
-		if (digest != TEST_CRC32C[i].digest) {
+		digest_gen = crc32c_gen(0, (const unsigned char*)TEST_CRC32C[i].data, TEST_CRC32C[i].len);
+
+		if (digest != TEST_CRC32C[i].digest || digest_gen != TEST_CRC32C[i].digest) {
 			/* LCOV_EXCL_START */
 			log_fatal("Failed CRC32C test\n");
 			exit(EXIT_FAILURE);
