@@ -140,14 +140,17 @@ static tommy_tree_node* tommy_tree_insert_node(tommy_compare_func* cmp, tommy_tr
 
 void* tommy_tree_insert(tommy_tree* tree, tommy_tree_node* node, void* data)
 {
-	node->data = data;
-	node->prev = 0;
-	node->next = 0;
-	node->key = 0;
+	tommy_tree_node* insert = node;
 
-	tree->root = tommy_tree_insert_node(tree->cmp, tree->root, &node);
+	insert->data = data;
+	insert->prev = 0;
+	insert->next = 0;
+	insert->key = 0;
 
-	++tree->count;
+	tree->root = tommy_tree_insert_node(tree->cmp, tree->root, &insert);
+
+	if (insert == node)
+		++tree->count;
 
 	return node->data;
 }
@@ -185,6 +188,8 @@ void* tommy_tree_remove(tommy_tree* tree, void* data)
 
 	if (!node)
 		return 0;
+
+	--tree->count;
 
 	return node->data;
 }
@@ -229,7 +234,11 @@ void* tommy_tree_search_compare(tommy_tree* tree, tommy_compare_func* cmp, void*
 
 void* tommy_tree_remove_existing(tommy_tree* tree, tommy_tree_node* node)
 {
-	return tommy_tree_remove(tree, node->data);
+	void* data = tommy_tree_remove(tree, node->data);
+
+	assert(data != 0);
+
+	return data;
 }
 
 static void tommy_tree_foreach_node(tommy_tree_node* root, tommy_foreach_func* func)

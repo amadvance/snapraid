@@ -267,6 +267,15 @@ static int tommy_test_search(const void* arg, const void* obj)
 	return arg != obj;
 }
 
+static int tommy_test_compare(const void* void_arg_a, const void* void_arg_b)
+{
+	if (void_arg_a < void_arg_b)
+		return -1;
+	if (void_arg_a > void_arg_b)
+		return 1;
+	return 0;
+}
+
 static unsigned tommy_test_foreach_count;
 
 static void tommy_test_foreach(void* obj)
@@ -292,7 +301,8 @@ static void test_tommy(void)
 	tommy_arrayblkof arrayblkof;
 	tommy_list list;
 	tommy_hashdyn hashdyn;
-	tommy_hashdyn_node node[TOMMY_SIZE];
+	tommy_tree tree;
+	tommy_node node[TOMMY_SIZE+1];
 	unsigned i;
 
 	tommy_array_init(&array);
@@ -345,7 +355,7 @@ static void test_tommy(void)
 	if (tommy_hashdyn_count(&hashdyn) != TOMMY_SIZE)
 		goto bail;
 
-	if (tommy_hashdyn_memory_usage(&hashdyn) < TOMMY_SIZE * sizeof(void*))
+	if (tommy_hashdyn_memory_usage(&hashdyn) < TOMMY_SIZE * sizeof(tommy_node))
 		goto bail;
 
 	tommy_test_foreach_count = 0;
@@ -373,6 +383,57 @@ static void test_tommy(void)
 		goto bail;
 
 	tommy_hashdyn_done(&hashdyn);
+
+	tommy_tree_init(&tree, tommy_test_compare);
+
+	for (i = 0; i < TOMMY_SIZE; ++i)
+		tommy_tree_insert(&tree, &node[i], (void*)(i+1));
+
+	/* try to insert a duplicate, count should not change */
+	if (tommy_tree_insert(&tree, &node[TOMMY_SIZE], (void*)1) != (void*)1)
+		goto bail;
+
+	if (tommy_tree_count(&tree) != TOMMY_SIZE)
+		goto bail;
+
+	if (tommy_tree_memory_usage(&tree) < TOMMY_SIZE * sizeof(tommy_node))
+		goto bail;
+
+	if (tommy_tree_search(&tree, (void*)1) != (void*)1)
+		goto bail;
+
+	if (tommy_tree_search(&tree, (void*)-1) != 0)
+		goto bail;
+
+	if (tommy_tree_search_compare(&tree, tommy_test_compare, (void*)1) != (void*)1)
+		goto bail;
+
+	if (tommy_tree_search_compare(&tree, tommy_test_compare, (void*)-1) != 0)
+		goto bail;
+
+	tommy_test_foreach_count = 0;
+	tommy_tree_foreach(&tree, tommy_test_foreach);
+	if (tommy_test_foreach_count != TOMMY_SIZE)
+		goto bail;
+
+	tommy_test_foreach_count = 0;
+	tommy_tree_foreach_arg(&tree, tommy_test_foreach_arg, &tommy_test_foreach_count);
+	if (tommy_test_foreach_count != TOMMY_SIZE)
+		goto bail;
+
+	for (i = 0; i < TOMMY_SIZE / 2; ++i)
+		tommy_tree_remove_existing(&tree, &node[i]);
+
+	for (i = 0; i < TOMMY_SIZE / 2; ++i)
+		if (tommy_tree_remove(&tree, (void*)(i+1)) != 0)
+			goto bail;
+
+	for (i = TOMMY_SIZE / 2; i < TOMMY_SIZE; ++i)
+		if (tommy_tree_remove(&tree, (void*)(i+1)) == 0)
+			goto bail;
+
+	if (tommy_tree_count(&tree) != 0)
+		goto bail;
 
 	return;
 bail:

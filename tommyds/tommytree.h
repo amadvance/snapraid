@@ -28,18 +28,23 @@
 /** \file
  * AVL tree.
  *
- * This tree is a standard AVL tree implementation that stores elements in the order defined
- * by the comparsion function.
+ * This tree is a standard AVL tree implementation that stores elements in the
+ * order defined by the comparsion function.
+ *
+ * As difference from other tommy containers, duplicate elements cannot be inserted.
  *
  * \code
  * tommy_tree tree;
+ *
+ * To initialize a tree you have to call tommy_tree_init() specifing a comparison
+ * function that will define the order in the tree.
  *
  * tommy_tree_init(&tree, cmp);
  * \endcode
  *
  * To insert elements in the tree you have to call tommy_tree_insert() for
  * each element.
- * In the insertion call you have to specify the address of the node, the
+ * In the insertion call you have to specify the address of the node and the
  * address of the object.
  * The address of the object is used to initialize the tommy_node::data field
  * of the node.
@@ -75,7 +80,8 @@
  * providing the key to search and remove.
  *
  * \code
- * struct object* obj = tommy_tree_remove(&tree, value_to_remove);
+ * struct object value_to_remove = { 1 };
+ * struct object* obj = tommy_tree_remove(&tree, &value_to_remove);
  * if (obj) {
  *     free(obj); // frees the object allocated memory
  * }
@@ -84,7 +90,7 @@
  * To destroy the tree you have to remove all the elements.
  *
  * If you need to iterate over all the elements in the tree, you can use
- * tommy_hashtable_foreach() or tommy_hashtable_foreach_arg().
+ * tommy_tree_foreach() or tommy_tree_foreach_arg().
  * If you need a more precise control with a real iteration, you have to insert
  * all the elements also in a ::tommy_list, and use the list to iterate.
  * See the \ref multiindex example for more detail. 
@@ -104,6 +110,10 @@
  */
 typedef tommy_node tommy_tree_node;
 
+/**
+ * Tree container type.
+ * \note Don't use internal fields directly, but access the container only using functions.
+ */
 typedef struct tommy_tree_struct {
 	tommy_tree_node* root; /**< Root node. */
 	tommy_count_t count; /**< Number of elements. */
@@ -112,13 +122,14 @@ typedef struct tommy_tree_struct {
 
 /**
  * Initializes the tree.
+ * \param cmp The comparison function that defines the orderin the tree.
  */
 void tommy_tree_init(tommy_tree* tree, tommy_compare_func* cmp);
 
 /**
  * Inserts an element in the tree.
  * If the element is already present, it's not inserted again.
- * You have to provide the pointer of the node embedded into the object,
+ * You have to provide the pointer of the node embedded into the object and
  * the pointer at the object.
  * \param node Pointer at the node embedded into the object to insert.
  * \param data Pointer at the object to insert.
@@ -143,13 +154,13 @@ void* tommy_tree_remove(tommy_tree* tree, void* data);
 void* tommy_tree_search(tommy_tree* tree, void* data);
 
 /**
- * Searches an element in the tree with a specific compare function.
+ * Searches an element in the tree with a specific comparison function.
  *
  * Like tommy_tree_search() but you can specify a different comparison function.
  * Note that this function must define a suborder of the original one.
  *
- * The ::data argument is going to always be the first argument of the comparison function,
- * and it can be something different than the objects in the tree.
+ * The ::data argument will be the first argument of the comparison function,
+ * and it can be of a different type of the objects in the tree.
  */
 void* tommy_tree_search_compare(tommy_tree* tree, tommy_compare_func* cmp, void* cmp_arg);
 
@@ -180,7 +191,7 @@ void* tommy_tree_remove_existing(tommy_tree* tree, tommy_tree_node* node);
  *
  * ...
  *
- * // insert it in the hashtable
+ * // insert it in the tree
  * tommy_tree_insert(&tree, &obj->node, obj);
  *
  * ...
