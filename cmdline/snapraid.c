@@ -390,11 +390,12 @@ void signal_handler(int signal)
 #define OPERATION_SCRUB 9
 #define OPERATION_STATUS 10
 #define OPERATION_REWRITE 11
-#define OPERATION_NANO 12
-#define OPERATION_SPINUP 13
-#define OPERATION_SPINDOWN 14
-#define OPERATION_DEVICES 15
-#define OPERATION_SMART 16
+#define OPERATION_READ 12
+#define OPERATION_NANO 13
+#define OPERATION_SPINUP 14
+#define OPERATION_SPINDOWN 15
+#define OPERATION_DEVICES 16
+#define OPERATION_SMART 17
 
 int main(int argc, char* argv[])
 {
@@ -761,6 +762,8 @@ int main(int argc, char* argv[])
 		operation = OPERATION_STATUS;
 	} else if (strcmp(argv[optind], "test-rewrite") == 0) {
 		operation = OPERATION_REWRITE;
+	} else if (strcmp(argv[optind], "test-read") == 0) {
+		operation = OPERATION_READ;
 	} else if (strcmp(argv[optind], "test-nano") == 0) {
 		operation = OPERATION_NANO;
 	} else if (strcmp(argv[optind], "up") == 0) {
@@ -888,6 +891,7 @@ int main(int argc, char* argv[])
 	case OPERATION_DUP :
 	case OPERATION_STATUS :
 	case OPERATION_REWRITE :
+	case OPERATION_READ :
 	case OPERATION_REHASH :
 	case OPERATION_SPINUP : /* we want to do it in different threads to avoid blocking */
 		/* avoid to check and access data disks if not needed */
@@ -902,6 +906,7 @@ int main(int argc, char* argv[])
 	case OPERATION_POOL :
 	case OPERATION_STATUS :
 	case OPERATION_REWRITE :
+	case OPERATION_READ :
 	case OPERATION_REHASH :
 	case OPERATION_NANO :
 	case OPERATION_SPINUP : /* we want to do it in different threads to avoid blocking */
@@ -1128,6 +1133,10 @@ int main(int argc, char* argv[])
 		state_read(&state);
 
 		state_write(&state);
+
+		memory();
+	} else if (operation == OPERATION_READ) {
+		state_read(&state);
 
 		memory();
 	} else if (operation == OPERATION_NANO) {
