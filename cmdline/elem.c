@@ -469,13 +469,13 @@ unsigned file_block_size(struct snapraid_file* file, block_off_t file_pos, unsig
 {
 	/* if it's the last block */
 	if (file_pos + 1 == file->blockmax) {
-		unsigned remainder;
+		unsigned block_remainder;
 		if (file->size == 0)
 			return 0;
-		remainder = file->size % block_size;
-		if (remainder == 0)
-			remainder = block_size;
-		return remainder;
+		block_remainder = file->size % block_size;
+		if (block_remainder == 0)
+			block_remainder = block_size;
+		return block_remainder;
 	}
 
 	return block_size;
@@ -654,37 +654,37 @@ int chunk_file_compare(const void* void_a, const void* void_b)
 
 struct snapraid_link* link_alloc(const char* sub, const char* linkto, unsigned link_flag)
 {
-	struct snapraid_link* link;
+	struct snapraid_link* slink;
 
-	link = malloc_nofail(sizeof(struct snapraid_link));
-	link->sub = strdup_nofail(sub);
-	link->linkto = strdup_nofail(linkto);
-	link->flag = link_flag;
+	slink = malloc_nofail(sizeof(struct snapraid_link));
+	slink->sub = strdup_nofail(sub);
+	slink->linkto = strdup_nofail(linkto);
+	slink->flag = link_flag;
 
-	return link;
+	return slink;
 }
 
-void link_free(struct snapraid_link* link)
+void link_free(struct snapraid_link* slink)
 {
-	free(link->sub);
-	free(link->linkto);
-	free(link);
+	free(slink->sub);
+	free(slink->linkto);
+	free(slink);
 }
 
 int link_name_compare_to_arg(const void* void_arg, const void* void_data)
 {
 	const char* arg = void_arg;
-	const struct snapraid_link* link = void_data;
+	const struct snapraid_link* slink = void_data;
 
-	return strcmp(arg, link->sub);
+	return strcmp(arg, slink->sub);
 }
 
 int link_alpha_compare(const void* void_a, const void* void_b)
 {
-	const struct snapraid_link* link_a = void_a;
-	const struct snapraid_link* link_b = void_b;
+	const struct snapraid_link* slink_a = void_a;
+	const struct snapraid_link* slink_b = void_b;
 
-	return strcmp(link_a->sub, link_b->sub);
+	return strcmp(slink_a->sub, slink_b->sub);
 }
 
 struct snapraid_dir* dir_alloc(const char* sub)

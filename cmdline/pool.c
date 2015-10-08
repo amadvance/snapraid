@@ -242,8 +242,8 @@ void state_pool(struct snapraid_state* state)
 
 		/* for each link */
 		for (j = disk->linklist; j != 0; j = j->next) {
-			struct snapraid_link* link = j->data;
-			make_link(pool_dir, share_dir, disk, link->sub);
+			struct snapraid_link* slink = j->data;
+			make_link(pool_dir, share_dir, disk, slink->sub);
 			++count;
 		}
 

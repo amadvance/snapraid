@@ -752,13 +752,13 @@ static int devdown(dev_t device, const char* name, const char* custom)
  * There isn't a defined way to spin up a device,
  * so we just do a generic write.
  */
-static int devup(const char* mount)
+static int devup(const char* mountpoint)
 {
 	int ret;
 	char path[PATH_MAX];
 
 	/* add a temporary name used for writing */
-	pathprint(path, sizeof(path), "%s.snapraid-spinup", mount);
+	pathprint(path, sizeof(path), "%s.snapraid-spinup", mountpoint);
 
 	/* do a generic write, and immediately undo it */
 	ret = mkdir(path, 0);

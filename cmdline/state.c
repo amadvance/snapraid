@@ -2005,7 +2005,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			/* symlink */
 			char sub[PATH_MAX];
 			char linkto[PATH_MAX];
-			struct snapraid_link* link;
+			struct snapraid_link* slink;
 			struct snapraid_disk* disk;
 			uint32_t mapping;
 
@@ -2043,11 +2043,11 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			}
 
 			/* allocate the link as symbolic link */
-			link = link_alloc(sub, linkto, FILE_IS_SYMLINK);
+			slink = link_alloc(sub, linkto, FILE_IS_SYMLINK);
 
 			/* insert the link in the link containers */
-			tommy_hashdyn_insert(&disk->linkset, &link->nodeset, link, link_name_hash(link->sub));
-			tommy_list_insert_tail(&disk->linklist, &link->nodelist, link);
+			tommy_hashdyn_insert(&disk->linkset, &slink->nodeset, slink, link_name_hash(slink->sub));
+			tommy_list_insert_tail(&disk->linklist, &slink->nodelist, slink);
 
 			/* stat */
 			++count_symlink;
@@ -2055,7 +2055,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			/* hardlink */
 			char sub[PATH_MAX];
 			char linkto[PATH_MAX];
-			struct snapraid_link* link;
+			struct snapraid_link* slink;
 			struct snapraid_disk* disk;
 			uint32_t mapping;
 
@@ -2093,11 +2093,11 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 			}
 
 			/* allocate the link as hard link */
-			link = link_alloc(sub, linkto, FILE_IS_HARDLINK);
+			slink = link_alloc(sub, linkto, FILE_IS_HARDLINK);
 
 			/* insert the link in the link containers */
-			tommy_hashdyn_insert(&disk->linkset, &link->nodeset, link, link_name_hash(link->sub));
-			tommy_list_insert_tail(&disk->linklist, &link->nodelist, link);
+			tommy_hashdyn_insert(&disk->linkset, &slink->nodeset, slink, link_name_hash(slink->sub));
+			tommy_list_insert_tail(&disk->linklist, &slink->nodelist, slink);
 
 			/* stat */
 			++count_hardlink;
@@ -2465,10 +2465,10 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 
 			/* only if there is some info to store */
 			if (info) {
-				time_t time = info_get_time(info);
+				time_t info_time = info_get_time(info);
 
-				if (!info_oldest || time < info_oldest)
-					info_oldest = time;
+				if (!info_oldest || info_time < info_oldest)
+					info_oldest = info_time;
 
 				if (info_get_rehash(info))
 					info_has_rehash = 1;
@@ -2699,9 +2699,9 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 
 		/* for each link */
 		for (j = disk->linklist; j != 0; j = j->next) {
-			struct snapraid_link* link = j->data;
+			struct snapraid_link* slink = j->data;
 
-			switch (link_flag_get(link, FILE_IS_LINK_MASK)) {
+			switch (link_flag_get(slink, FILE_IS_LINK_MASK)) {
 			case FILE_IS_HARDLINK :
 				sputc('a', f);
 				++count_hardlink;
@@ -2713,8 +2713,8 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 			}
 
 			sputb32(disk->mapping_idx, f);
-			sputbs(link->sub, f);
-			sputbs(link->linkto, f);
+			sputbs(slink->sub, f);
+			sputbs(slink->linkto, f);
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
 				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
@@ -3171,13 +3171,13 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 
 		/* for each link */
 		for (j = tommy_list_head(&disk->linklist); j != 0; j = j->next) {
-			struct snapraid_link* link = j->data;
+			struct snapraid_link* slink = j->data;
 
-			if (filter_path(filterlist_disk, 0, disk->name, link->sub) != 0
-				|| filter_path(filterlist_file, 0, disk->name, link->sub) != 0
-				|| filter_existence(filter_missing, disk->dir, link->sub) != 0
+			if (filter_path(filterlist_disk, 0, disk->name, slink->sub) != 0
+				|| filter_path(filterlist_file, 0, disk->name, slink->sub) != 0
+				|| filter_existence(filter_missing, disk->dir, slink->sub) != 0
 			) {
-				link_flag_set(link, FILE_IS_EXCLUDED);
+				link_flag_set(slink, FILE_IS_EXCLUDED);
 			}
 		}
 

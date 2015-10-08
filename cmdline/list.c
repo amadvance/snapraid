@@ -83,10 +83,10 @@ void state_list(struct snapraid_state* state)
 
 		/* for each link */
 		for (j = disk->linklist; j != 0; j = j->next) {
-			struct snapraid_link* link = j->data;
+			struct snapraid_link* slink = j->data;
 			const char* type;
 
-			switch (link->flag & FILE_IS_LINK_MASK) {
+			switch (slink->flag & FILE_IS_LINK_MASK) {
 			case FILE_IS_HARDLINK : type = "hardlink"; break;
 			case FILE_IS_SYMLINK : type = "symlink"; break;
 			case FILE_IS_SYMDIR : type = "symdir"; break;
@@ -98,13 +98,13 @@ void state_list(struct snapraid_state* state)
 
 			++link_count;
 
-			log_tag("link_%s:%s:%s:%s\n", type, disk->name, esc(link->sub), esc(link->linkto));
+			log_tag("link_%s:%s:%s:%s\n", type, disk->name, esc(slink->sub), esc(slink->linkto));
 
 			printf("%12s ", type);
 			printf("                 ");
 			if (msg_level >= MSG_VERBOSE)
 				printf("       ");
-			printf("%s%s -> %s%s\n", disk->dir, link->sub, disk->dir, link->linkto);
+			printf("%s%s -> %s%s\n", disk->dir, slink->sub, disk->dir, slink->linkto);
 		}
 	}
 

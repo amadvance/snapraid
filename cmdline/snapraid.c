@@ -91,7 +91,7 @@ void memory(void)
 /****************************************************************************/
 /* log */
 
-void log_open(const char* log)
+void log_open(const char* file)
 {
 	char path[PATH_MAX];
 	const char* mode;
@@ -101,7 +101,7 @@ void log_open(const char* log)
 	struct tm* tm;
 
 	/* leave stdlog at 0 if not specified */
-	if (log == 0)
+	if (file == 0)
 		return;
 
 	t = time(0);
@@ -118,31 +118,31 @@ void log_open(const char* log)
 
 	/* file mode */
 	mode = "wt";
-	if (*log == '>') {
-		++log;
+	if (*file == '>') {
+		++file;
 
-		if (*log == '>') {
+		if (*file == '>') {
 			mode = "at";
-			++log;
+			++file;
 		}
 
-		if (log[0] == '&' && log[1] == '1') {
+		if (file[0] == '&' && file[1] == '1') {
 			stdlog = stdout;
 			return;
 		}
 
-		if (log[0] == '&' && log[1] == '2') {
+		if (file[0] == '&' && file[1] == '2') {
 			stdlog = stderr;
 			return;
 		}
 	}
 
 	/* process the path */
-	for (*path = 0; *log != 0; ) {
-		switch (*log) {
+	for (*path = 0; *file != 0; ) {
+		switch (*file) {
 		case '%' :
-			++log;
-			switch (*log) {
+			++file;
+			switch (*file) {
 			case '%' :
 				pathcatc(path, sizeof(path), '%');
 				break;
@@ -154,16 +154,16 @@ void log_open(const char* log)
 				break;
 			default :
 				/* LCOV_EXCL_START */
-				log_fatal("Invalid type specifier '%c' in the log file.\n", *log);
+				log_fatal("Invalid type specifier '%c' in the log file.\n", *file);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 			break;
 		default :
-			pathcatc(path, sizeof(path), *log);
+			pathcatc(path, sizeof(path), *file);
 			break;
 		}
-		++log;
+		++file;
 	}
 
 	stdlog = fopen(path, mode);
@@ -175,12 +175,12 @@ void log_open(const char* log)
 	}
 }
 
-void log_close(const char* log)
+void log_close(const char* file)
 {
 	if (stdlog != stdout && stdlog != stderr && stdlog != 0) {
 		if (fclose(stdlog) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error closing the log file '%s'. %s.\n", log, strerror(errno));
+			log_fatal("Error closing the log file '%s'. %s.\n", file, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -368,9 +368,9 @@ struct option long_options[] = {
 volatile int global_interrupt = 0;
 
 /* LCOV_EXCL_START */
-void signal_handler(int signal)
+void signal_handler(int signum)
 {
-	switch (signal) {
+	switch (signum) {
 	case SIGINT :
 		global_interrupt = 1;
 		break;
@@ -417,7 +417,7 @@ int main(int argc, char* argv[])
 	const char* command;
 	const char* import_timestamp;
 	const char* import_content;
-	const char* log;
+	const char* log_file;
 	int lock;
 	const char* gen_conf;
 	const char* run;
@@ -442,7 +442,7 @@ int main(int argc, char* argv[])
 	olderthan = SCRUB_AUTO;
 	import_timestamp = 0;
 	import_content = 0;
-	log = 0;
+	log_file = 0;
 	lock = 0;
 	gen_conf = 0;
 	speedtest = 0;
@@ -564,13 +564,13 @@ int main(int argc, char* argv[])
 			import_content = optarg;
 			break;
 		case 'l' :
-			if (log) {
+			if (log_file) {
 				/* LCOV_EXCL_START */
-				log_fatal("Log file '%s' already specified as '%s'\n", optarg, log);
+				log_fatal("Log file '%s' already specified as '%s'\n", optarg, log_file);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
-			log = optarg;
+			log_file = optarg;
 			break;
 		case 'Z' :
 			opt.force_zero = 1;
@@ -938,7 +938,7 @@ int main(int argc, char* argv[])
 	}
 
 	/* open the log file */
-	log_open(log);
+	log_open(log_file);
 
 	/* print generic info into the log */
 	t = time(0);
@@ -1212,7 +1212,7 @@ int main(int argc, char* argv[])
 	}
 
 	/* close log file */
-	log_close(log);
+	log_close(log_file);
 
 #if HAVE_LOCKFILE
 	if (!opt.skip_lock) {

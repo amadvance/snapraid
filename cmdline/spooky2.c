@@ -115,7 +115,7 @@ void SpookyHash128(const void* data, size_t size, const uint8_t* seed, uint8_t* 
 	size_t nblocks;
 	const uint64_t* blocks;
 	const uint64_t* end;
-	size_t remainder;
+	size_t size_remainder;
 #if WORDS_BIGENDIAN
 	unsigned i;
 #endif
@@ -149,10 +149,10 @@ void SpookyHash128(const void* data, size_t size, const uint8_t* seed, uint8_t* 
 	}
 
 	/* tail */
-	remainder = (size - ((const uint8_t*)end - (const uint8_t*)data));
-	memcpy(buf, end, remainder);
-	memset(((uint8_t*)buf) + remainder, 0, sc_blockSize - remainder);
-	((uint8_t*)buf)[sc_blockSize - 1] = remainder;
+	size_remainder = (size - ((const uint8_t*)end - (const uint8_t*)data));
+	memcpy(buf, end, size_remainder);
+	memset(((uint8_t*)buf) + size_remainder, 0, sc_blockSize - size_remainder);
+	((uint8_t*)buf)[sc_blockSize - 1] = size_remainder;
 
 	/* finalization */
 #if WORDS_BIGENDIAN

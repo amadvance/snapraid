@@ -48,7 +48,7 @@ struct snapraid_scan {
 /**
  * Remove the specified link from the data set.
  */
-static void scan_link_remove(struct snapraid_scan* scan, struct snapraid_link* link)
+static void scan_link_remove(struct snapraid_scan* scan, struct snapraid_link* slink)
 {
 	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
@@ -57,17 +57,17 @@ static void scan_link_remove(struct snapraid_scan* scan, struct snapraid_link* l
 	state->need_write = 1;
 
 	/* remove the file from the link containers */
-	tommy_hashdyn_remove_existing(&disk->linkset, &link->nodeset);
-	tommy_list_remove_existing(&disk->linklist, &link->nodelist);
+	tommy_hashdyn_remove_existing(&disk->linkset, &slink->nodeset);
+	tommy_list_remove_existing(&disk->linklist, &slink->nodelist);
 
 	/* deallocate */
-	link_free(link);
+	link_free(slink);
 }
 
 /**
  * Insert the specified link in the data set.
  */
-static void scan_link_insert(struct snapraid_scan* scan, struct snapraid_link* link)
+static void scan_link_insert(struct snapraid_scan* scan, struct snapraid_link* slink)
 {
 	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
@@ -76,8 +76,8 @@ static void scan_link_insert(struct snapraid_scan* scan, struct snapraid_link* l
 	state->need_write = 1;
 
 	/* insert the link in the link containers */
-	tommy_hashdyn_insert(&disk->linkset, &link->nodeset, link, link_name_hash(link->sub));
-	tommy_list_insert_tail(&disk->linklist, &link->nodelist, link);
+	tommy_hashdyn_insert(&disk->linkset, &slink->nodeset, slink, link_name_hash(slink->sub));
+	tommy_list_insert_tail(&disk->linklist, &slink->nodelist, slink);
 }
 
 /**
@@ -87,13 +87,13 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 {
 	struct snapraid_state* state = scan->state;
 	struct snapraid_disk* disk = scan->disk;
-	struct snapraid_link* link;
+	struct snapraid_link* slink;
 
 	/* check if the link already exists */
-	link = tommy_hashdyn_search(&disk->linkset, link_name_compare_to_arg, sub, link_name_hash(sub));
-	if (link) {
+	slink = tommy_hashdyn_search(&disk->linkset, link_name_compare_to_arg, sub, link_name_hash(sub));
+	if (slink) {
 		/* check if multiple files have the same name */
-		if (link_flag_has(link, FILE_IS_PRESENT)) {
+		if (link_flag_has(slink, FILE_IS_PRESENT)) {
 			/* LCOV_EXCL_START */
 			log_fatal("Internal inconsistency for link '%s%s'\n", disk->dir, sub);
 			exit(EXIT_FAILURE);
@@ -101,15 +101,15 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		}
 
 		/* mark as present */
-		link_flag_set(link, FILE_IS_PRESENT);
+		link_flag_set(slink, FILE_IS_PRESENT);
 
 		/* check if the link is not changed and it's of the same kind */
-		if (strcmp(link->linkto, linkto) == 0 && link_flag == link_flag_get(link, FILE_IS_LINK_MASK)) {
+		if (strcmp(slink->linkto, linkto) == 0 && link_flag == link_flag_get(slink, FILE_IS_LINK_MASK)) {
 			/* it's equal */
 			++scan->count_equal;
 
 			if (state->opt.gui) {
-				log_tag("scan:equal:%s:%s\n", disk->name, esc(link->sub));
+				log_tag("scan:equal:%s:%s\n", disk->name, esc(slink->sub));
 			}
 		} else {
 			/* it's an update */
@@ -119,15 +119,15 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 
 			++scan->count_change;
 
-			log_tag("scan:update:%s:%s\n", disk->name, esc(link->sub));
+			log_tag("scan:update:%s:%s\n", disk->name, esc(slink->sub));
 			if (is_diff) {
-				printf("update %s%s\n", disk->dir, link->sub);
+				printf("update %s%s\n", disk->dir, slink->sub);
 			}
 
 			/* update it */
-			free(link->linkto);
-			link->linkto = strdup_nofail(linkto);
-			link_flag_let(link, link_flag, FILE_IS_LINK_MASK);
+			free(slink->linkto);
+			slink->linkto = strdup_nofail(linkto);
+			link_flag_let(slink, link_flag, FILE_IS_LINK_MASK);
 		}
 
 		/* nothing more to do */
@@ -145,13 +145,13 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	}
 
 	/* insert it */
-	link = link_alloc(sub, linkto, link_flag);
+	slink = link_alloc(sub, linkto, link_flag);
 
 	/* mark it as present */
-	link_flag_set(link, FILE_IS_PRESENT);
+	link_flag_set(slink, FILE_IS_PRESENT);
 
 	/* insert it in the delayed insert list */
-	tommy_list_insert_tail(&scan->link_insert_list, &link->nodelist, link);
+	tommy_list_insert_tail(&scan->link_insert_list, &slink->nodelist, slink);
 }
 
 /**
@@ -1493,21 +1493,21 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		/* check for removed links */
 		node = disk->linklist;
 		while (node) {
-			struct snapraid_link* link = node->data;
+			struct snapraid_link* slink = node->data;
 
 			/* next node */
 			node = node->next;
 
 			/* remove if not present */
-			if (!link_flag_has(link, FILE_IS_PRESENT)) {
+			if (!link_flag_has(slink, FILE_IS_PRESENT)) {
 				++scan->count_remove;
 
-				log_tag("scan:remove:%s:%s\n", disk->name, esc(link->sub));
+				log_tag("scan:remove:%s:%s\n", disk->name, esc(slink->sub));
 				if (is_diff) {
-					printf("remove %s%s\n", disk->dir, link->sub);
+					printf("remove %s%s\n", disk->dir, slink->sub);
 				}
 
-				scan_link_remove(scan, link);
+				scan_link_remove(scan, slink);
 			}
 		}
 
@@ -1588,13 +1588,13 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		/* insert all the new links */
 		node = scan->link_insert_list;
 		while (node) {
-			struct snapraid_link* link = node->data;
+			struct snapraid_link* slink = node->data;
 
 			/* next node */
 			node = node->next;
 
 			/* insert it */
-			scan_link_insert(scan, link);
+			scan_link_insert(scan, slink);
 		}
 
 		/* insert all the new dirs */

@@ -27,9 +27,9 @@
 /****************************************************************************/
 /* status */
 
-unsigned day_ago(time_t time, time_t now)
+unsigned day_ago(time_t ref, time_t now)
 {
-	return (now - time) / (24 * 3600);
+	return (now - ref) / (24 * 3600);
 }
 
 #define GRAPH_COLUMN 70

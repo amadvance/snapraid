@@ -80,7 +80,7 @@ void MurmurHash3_x86_128(const void* data, size_t size, const uint8_t* seed, voi
 	size_t nblocks;
 	const uint32_t* blocks;
 	const uint32_t* end;
-	size_t remainder;
+	size_t size_remainder;
 
 	uint32_t h1 = ((const uint32_t*)seed)[0];
 	uint32_t h2 = ((const uint32_t*)seed)[1];
@@ -132,8 +132,8 @@ void MurmurHash3_x86_128(const void* data, size_t size, const uint8_t* seed, voi
 	}
 
 	/* tail */
-	remainder = size & 15;
-	if (remainder != 0) {
+	size_remainder = size & 15;
+	if (size_remainder != 0) {
 		const uint8_t* tail = (const uint8_t*)blocks;
 
 		uint32_t k1 = 0;
@@ -141,7 +141,7 @@ void MurmurHash3_x86_128(const void* data, size_t size, const uint8_t* seed, voi
 		uint32_t k3 = 0;
 		uint32_t k4 = 0;
 
-		switch (remainder) {
+		switch (size_remainder) {
 		case 15 : k4 ^= tail[14] << 16;
 		case 14 : k4 ^= tail[13] << 8;
 		case 13 : k4 ^= tail[12] << 0;

@@ -123,12 +123,12 @@ void state_dup(struct snapraid_state* state)
 
 			hash32 = hash_hash(hash);
 
-			struct snapraid_hash* dup = tommy_hashdyn_search(&hashset, hash_compare, hash->hash, hash32);
-			if (dup) {
+			struct snapraid_hash* found = tommy_hashdyn_search(&hashset, hash_compare, hash->hash, hash32);
+			if (found) {
 				++count;
-				size += dup->file->size;
-				log_tag("dup:%s:%s:%s:%s:%" PRIu64 ": dup\n", disk->name, esc(file->sub), dup->disk->name, esc(dup->file->sub), dup->file->size);
-				printf("%12" PRIu64 " %s%s = %s%s\n", file->size, disk->dir, file->sub, dup->disk->dir, dup->file->sub);
+				size += found->file->size;
+				log_tag("dup:%s:%s:%s:%s:%" PRIu64 ": dup\n", disk->name, esc(file->sub), found->disk->name, esc(found->file->sub), found->file->size);
+				printf("%12" PRIu64 " %s%s = %s%s\n", file->size, disk->dir, file->sub, found->disk->dir, found->file->sub);
 				hash_free(hash);
 			} else {
 				tommy_hashdyn_insert(&hashset, &hash->node, hash, hash32);

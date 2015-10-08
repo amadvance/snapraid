@@ -762,41 +762,41 @@ int chunk_parity_compare(const void* void_a, const void* void_b);
  */
 int chunk_file_compare(const void* void_a, const void* void_b);
 
-static inline int link_flag_has(const struct snapraid_link* link, unsigned mask)
+static inline int link_flag_has(const struct snapraid_link* slink, unsigned mask)
 {
-	return (link->flag & mask) == mask;
+	return (slink->flag & mask) == mask;
 }
 
-static inline void link_flag_set(struct snapraid_link* link, unsigned mask)
+static inline void link_flag_set(struct snapraid_link* slink, unsigned mask)
 {
-	link->flag |= mask;
+	slink->flag |= mask;
 }
 
-static inline void link_flag_clear(struct snapraid_link* link, unsigned mask)
+static inline void link_flag_clear(struct snapraid_link* slink, unsigned mask)
 {
-	link->flag &= ~mask;
+	slink->flag &= ~mask;
 }
 
-static inline void link_flag_let(struct snapraid_link* link, unsigned flag, unsigned mask)
+static inline void link_flag_let(struct snapraid_link* slink, unsigned flag, unsigned mask)
 {
-	link->flag &= ~mask;
-	link->flag |= flag & mask;
+	slink->flag &= ~mask;
+	slink->flag |= flag & mask;
 }
 
-static inline unsigned link_flag_get(struct snapraid_link* link, unsigned mask)
+static inline unsigned link_flag_get(struct snapraid_link* slink, unsigned mask)
 {
-	return link->flag & mask;
+	return slink->flag & mask;
 }
 
 /**
  * Allocate a link.
  */
-struct snapraid_link* link_alloc(const char* name, const char* link, unsigned link_flag);
+struct snapraid_link* link_alloc(const char* name, const char* slink, unsigned link_flag);
 
 /**
  * Deallocate a link.
  */
-void link_free(struct snapraid_link* link);
+void link_free(struct snapraid_link* slink);
 
 /**
  * Compare a link with a name.
