@@ -338,19 +338,26 @@ endif
 	mkdir bench/disk3/empty3a
 	mkdir bench/disk3/empty3a/emptyinner
 	mkdir bench/disk3/empty3b
-	echo 1 > bench/disk1/file_hardlink1
-	ln bench/disk1/file_hardlink1 bench/disk1/file_hardlink2
-	ln bench/disk1/file_hardlink1 bench/disk1/file_hardlink3
-	echo 22 > bench/disk2/file_hardlink1
-	ln bench/disk2/file_hardlink1 bench/disk2/file_hardlink2
-	ln bench/disk2/file_hardlink1 bench/disk2/file_hardlink3
-	echo 333 > bench/disk3/file_hardlink1
-	ln bench/disk3/file_hardlink1 bench/disk3/file_hardlink2
-	ln bench/disk3/file_hardlink1 bench/disk3/file_hardlink3
+	echo 1 > bench/disk1/target1
+	ln bench/disk1/target1 bench/disk1/file_hardlink1
+	ln bench/disk1/target1 bench/disk1/file_hardlink2
+	ln bench/disk1/target1 bench/disk1/file_hardlink3
+	ln -s bench/disk1/target1 bench/disk1/file_symlink1
+	ln -s bench/disk1/target1 bench/disk1/file_symlink2
+	ln -s bench/disk1/target1 bench/disk1/file_symlink3
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) --test-expect-need-sync diff > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-fallocate -c $(PAR1) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-sequential -c $(PAR1) check
+#### CHANGE LINKS ####
+	echo 2 > bench/disk1/target2
+	rm bench/disk1/file_hardlink1
+	ln bench/disk1/target2 bench/disk1/file_hardlink1
+	rm bench/disk1/file_symlink1
+	ln -s bench/disk1/target2 bench/disk1/file_symlink1
+	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) --test-expect-need-sync diff > output.log
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) sync
+#### MISC COMMANDS ####
 	echo --- Some commands with a not empty array
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) dup
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) list > output.log
