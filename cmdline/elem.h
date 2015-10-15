@@ -239,6 +239,13 @@ struct snapraid_block {
  */
 #define FILE_IS_DELETED 0x400
 
+/**
+ * The file is missing.
+ * This happens in fix/check when a file is cannot be opened,
+ * and marking it as such prevents to retry to open it again.
+ */
+#define FILE_IS_MISSING 0x800
+
 #define FILE_IS_HARDLINK 0x1000 /**< If it's an hardlink. */
 #define FILE_IS_SYMLINK 0x2000 /**< If it's a file symlink. */
 #define FILE_IS_SYMDIR 0x4000 /**< If it's a dir symlink for Windows. Not yet supported. */

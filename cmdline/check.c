@@ -1033,9 +1033,12 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						file_flag_set(file, FILE_IS_CREATED);
 					}
 				} else {
-					/* otherwise, open the file only for reading */
-					ret = handle_open(&handle[j], file, state->file_mode,
-						log_error, state->opt.expected_missing ? log_expected : 0);
+					/* open the file only for reading */
+					if (!file_flag_has(file, FILE_IS_MISSING))
+						ret = handle_open(&handle[j], file, state->file_mode,
+							log_error, state->opt.expected_missing ? log_expected : 0);
+					else
+						ret = -1; /* if the file is missing, we cannot open it */
 					if (ret == -1) {
 						/* save the failed block for the check/fix */
 						failed[failed_count].is_bad = 1;
@@ -1050,6 +1053,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 
 						log_tag("error:%u:%s:%s: Open error at position %u\n", i, disk->name, esc(file->sub), file_pos);
 						++error;
+
+						/* mark the file as missing, to avoid to retry to open it again */
+						/* note that this can be done only if we are not fixing it */
+						/* otherwise, it could be recreated */
+						file_flag_set(file, FILE_IS_MISSING);
 						continue;
 					}
 				}
