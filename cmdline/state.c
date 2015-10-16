@@ -134,6 +134,7 @@ void state_init(struct snapraid_state* state)
 		state->parity[l].total_blocks = 0;
 		state->parity[l].free_blocks = 0;
 		state->parity[l].tick = 0;
+		state->parity[l].skip_access = 0;
 	}
 	state->tick_io = 0;
 	state->tick_cpu = 0;
@@ -225,6 +226,10 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 			tommy_node* j;
 			struct snapraid_disk* disk = i->data;
 
+			/* skip data disks that are not accessible */
+			if (disk->skip_access)
+				continue;
+
 #ifdef _WIN32
 			if (disk->device == 0) {
 				/* LCOV_EXCL_START */
@@ -237,10 +242,15 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 			}
 #endif
 
-			if (!state->opt.force_device) {
-				for (j = i->next; j != 0; j = j->next) {
-					struct snapraid_disk* other = j->data;
-					if (disk->device == other->device) {
+			for (j = i->next; j != 0; j = j->next) {
+				struct snapraid_disk* other = j->data;
+				if (disk->device == other->device) {
+					if (state->opt.force_device) {
+						/* mark disks to be skipped */
+						disk->skip_access = 1;
+						other->skip_access = 1;
+						msg_progress("DANGER! Ignoring that disks '%s' and '%s' are on the same device\n", disk->name, other->name);
+					} else {
 						/* LCOV_EXCL_START */
 						log_fatal("Disks '%s' and '%s' are on the same device.\n", disk->dir, other->dir);
 #ifdef _WIN32
@@ -257,6 +267,10 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 					}
 				}
 			}
+
+			/* skip data disks that are not accessible */
+			if (disk->skip_access)
+				continue;
 
 			if (!state->opt.skip_parity_access) {
 				for (l = 0; l < state->level; ++l) {
@@ -290,8 +304,14 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 
 	/* check device of parity disks */
 	if (!state->opt.skip_device && !state->opt.skip_parity_access) {
-#ifdef _WIN32
 		for (l = 0; l < state->level; ++l) {
+			unsigned j;
+
+			/* skip parity disks that are not accessible */
+			if (state->parity[l].skip_access)
+				continue;
+
+#ifdef _WIN32
 			if (state->parity[l].device == 0) {
 				/* LCOV_EXCL_START */
 				log_fatal("Disk '%s' has a zero serial number.\n", state->parity[l].path);
@@ -301,27 +321,37 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
-		}
 #endif
 
-		for (l = 0; l < state->level; ++l) {
-			unsigned j;
 			for (j = l + 1; j < state->level; ++j) {
 				if (state->parity[l].device == state->parity[j].device) {
-					/* LCOV_EXCL_START */
-					log_fatal("Parity '%s' and '%s' are on the same device.\n", state->parity[l].path, state->parity[j].path);
+					if (state->opt.force_device) {
+						/* mark disks to be skipped */
+						state->parity[l].skip_access = 1;
+						state->parity[j].skip_access = 1;
+						msg_progress("DANGER! Skipping parities '%s' and '%s' on the same device\n", lev_config_name(l), lev_config_name(j));
+					} else {
+						/* LCOV_EXCL_START */
+						log_fatal("Parity '%s' and '%s' are on the same device.\n", state->parity[l].path, state->parity[j].path);
 #ifdef _WIN32
-					log_fatal("Both have the serial number '%" PRIx64 "'.\n", state->parity[l].device);
-					log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
-					log_fatal("to change one of the disk serial.\n");
+						log_fatal("Both have the serial number '%" PRIx64 "'.\n", state->parity[l].device);
+						log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
+						log_fatal("to change one of the disk serial.\n");
 #endif
-					exit(EXIT_FAILURE);
-					/* LCOV_EXCL_STOP */
+						/* in "fix" we allow to continue anyway */
+						if (strcmp(state->command, "fix") == 0) {
+							log_fatal("You can '%s' anyway, using 'snapraid --force-device %s'.\n", state->command, state->command);
+						}
+						exit(EXIT_FAILURE);
+						/* LCOV_EXCL_STOP */
+					}
 				}
 			}
-		}
 
-		for (l = 0; l < state->level; ++l) {
+			/* skip parity disks that are not accessible */
+			if (state->parity[l].skip_access)
+				continue;
+
 			if (state->pool[0] != 0 && state->pool_device == state->parity[l].device) {
 				/* LCOV_EXCL_START */
 				log_fatal("Pool '%s' and parity '%s' are on the same device.\n", state->pool, state->parity[l].path);
@@ -352,7 +382,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 #endif
 
 	/* count the content files */
-	if (!state->opt.skip_device) {
+	if (!state->opt.skip_device && !state->opt.skip_content_access) {
 		unsigned content_count;
 
 		content_count = 0;
@@ -539,6 +569,8 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 		} else if (lev_config_scan(tag, &level, &state->raid_mode) == 0) {
 			char device[PATH_MAX];
 			char* slash;
+			uint64_t dev;
+			int skip_access;
 
 			if (*state->parity[level].path) {
 				/* LCOV_EXCL_START */
@@ -564,6 +596,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 			pathimport(state->parity[level].path, sizeof(state->parity[level].path), buffer);
 
+			skip_access = 0;
 			if (!state->opt.skip_parity_access) {
 				struct stat st;
 
@@ -574,18 +607,35 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 					*slash = 0;
 				else
 					pathcpy(device, sizeof(device), ".");
-				if (stat(device, &st) != 0) {
-					/* LCOV_EXCL_START */
-					log_fatal("Error accessing 'parity' dir '%s' specification in '%s' at line %u\n", device, path, line);
-					exit(EXIT_FAILURE);
-					/* LCOV_EXCL_STOP */
-				}
 
-				state->parity[level].device = st.st_dev;
+				if (stat(device, &st) == 0) {
+					dev = st.st_dev;
+				} else {
+					/* if the disk can be skipped */
+					if (state->opt.force_device) {
+						/* use a fake device, and mark the disk to be skipped */
+						dev = 0;
+						skip_access = 1;
+						msg_progress("DANGER! Skipping unaccessible parity disk '%s'...\n", tag);
+					} else {
+						/* LCOV_EXCL_START */
+						log_fatal("Error accessing 'parity' dir '%s' specification in '%s' at line %u\n", device, path, line);
+
+						/* in "fix" we allow to continue anyway */
+						if (strcmp(state->command, "fix") == 0) {
+							log_fatal("You can '%s' anyway, using 'snapraid --force-device %s'.\n", state->command, state->command);
+						}
+						exit(EXIT_FAILURE);
+						/* LCOV_EXCL_STOP */
+					}
+				}
 			} else {
-				/* if parity is skipped, uses a fake device */
-				state->parity[level].device = 0;
+				/* use a fake device */
+				dev = 0;
 			}
+
+			state->parity[level].device = dev;
+			state->parity[level].skip_access = skip_access;
 
 			/* adjust the level */
 			if (state->level < level + 1)
@@ -655,6 +705,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			char device[PATH_MAX];
 			char* slash;
 			struct stat st;
+			uint64_t dev;
 
 			ret = sgetlasttok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
@@ -698,20 +749,28 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				*slash = 0;
 			else
 				pathcpy(device, sizeof(device), ".");
-			if (stat(device, &st) != 0) {
-				/* LCOV_EXCL_START */
-				log_fatal("Error accessing 'content' dir '%s' specification in '%s' at line %u\n", device, path, line);
-				exit(EXIT_FAILURE);
-				/* LCOV_EXCL_STOP */
+			if (stat(device, &st) == 0) {
+				dev = st.st_dev;
+			} else {
+				if (state->opt.skip_content_access) {
+					/* use a fake device */
+					dev = 0;
+					msg_progress("WARNING! Skipping unaccessible content file '%s'...\n", buffer);
+				} else {
+					/* LCOV_EXCL_START */
+					log_fatal("Error accessing 'content' dir '%s' specification in '%s' at line %u\n", device, path, line);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
 			}
 
-			/* set the lock file at the first content file */
-			if (tommy_list_empty(&state->contentlist)) {
+			/* set the lock file at the first accessible content file */
+			if (state->lockfile[0] == 0 && dev != 0) {
 				pathcpy(state->lockfile, sizeof(state->lockfile), buffer);
 				pathcat(state->lockfile, sizeof(state->lockfile), ".lock");
 			}
 
-			content = content_alloc(buffer, st.st_dev);
+			content = content_alloc(buffer, dev);
 
 			tommy_list_insert_tail(&state->contentlist, &content->node, content);
 		} else if (strcmp(tag, "disk") == 0) {
@@ -719,6 +778,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			char device[PATH_MAX];
 			struct snapraid_disk* disk;
 			uint64_t dev;
+			int skip_access;
 
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
@@ -768,23 +828,38 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				/* LCOV_EXCL_STOP */
 			}
 
+			/* if the disk has to be present */
+			skip_access = 0;
 			if (!state->opt.skip_disk_access) {
 				struct stat st;
 
-				if (stat(device, &st) != 0) {
-					/* LCOV_EXCL_START */
-					log_fatal("Error accessing 'disk' '%s' specification in '%s' at line %u\n", dir, device, line);
-					exit(EXIT_FAILURE);
-					/* LCOV_EXCL_STOP */
-				}
+				if (stat(device, &st) == 0) {
+					dev = st.st_dev;
+				} else {
+					/* if the disk can be skipped */
+					if (state->opt.force_device) {
+						/* use a fake device, and mark the disk to be skipped */
+						dev = 0;
+						skip_access = 1;
+						msg_progress("DANGER! Skipping unaccessible data disk '%s'...\n", buffer);
+					} else {
+						/* LCOV_EXCL_START */
+						log_fatal("Error accessing 'disk' '%s' specification in '%s' at line %u\n", dir, device, line);
 
-				dev = st.st_dev;
+						/* in "fix" we allow to continue anyway */
+						if (strcmp(state->command, "fix") == 0) {
+							log_fatal("You can '%s' anyway, using 'snapraid --force-device %s'.\n", state->command, state->command);
+						}
+						exit(EXIT_FAILURE);
+						/* LCOV_EXCL_STOP */
+					}
+				}
 			} else {
-				/* if data disks are skipped, uses a fake device */
+				/* use a fake device */
 				dev = 0;
 			}
 
-			disk = disk_alloc(buffer, dir, dev);
+			disk = disk_alloc(buffer, dir, dev, skip_access);
 
 			tommy_list_insert_tail(&state->disklist, &disk->node, disk);
 		} else if (strcmp(tag, "smartctl") == 0) {
@@ -1069,7 +1144,7 @@ static struct snapraid_disk* find_disk(struct snapraid_state* state, const char*
 		/* without a configuration file, add disks automatically */
 		struct snapraid_disk* disk;
 
-		disk = disk_alloc(name, "DUMMY/", -1);
+		disk = disk_alloc(name, "DUMMY/", -1, 0);
 
 		tommy_list_insert_tail(&state->disklist, &disk->node, disk);
 
@@ -3122,6 +3197,38 @@ void state_write(struct snapraid_state* state)
 
 	state->need_write = 0; /* no write needed anymore */
 	state->checked_read = 0; /* what we wrote is not checked in read */
+}
+
+void state_skip(struct snapraid_state* state)
+{
+	tommy_node* i;
+
+	/* for each disk */
+	for (i = state->disklist; i != 0; i = i->next) {
+		tommy_node* j;
+		struct snapraid_disk* disk = i->data;
+
+		if (!disk->skip_access)
+			continue;
+
+		/* for each file */
+		for (j = tommy_list_head(&disk->filelist); j != 0; j = j->next) {
+			struct snapraid_file* file = j->data;
+			file_flag_set(file, FILE_IS_EXCLUDED);
+		}
+
+		/* for each link */
+		for (j = tommy_list_head(&disk->linklist); j != 0; j = j->next) {
+			struct snapraid_link* slink = j->data;
+			link_flag_set(slink, FILE_IS_EXCLUDED);
+		}
+
+		/* for each dir */
+		for (j = tommy_list_head(&disk->dirlist); j != 0; j = j->next) {
+			struct snapraid_dir* dir = j->data;
+			dir_flag_set(dir, FILE_IS_EXCLUDED);
+		}
+	}
 }
 
 void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tommy_list* filterlist_disk, int filter_missing, int filter_error)

@@ -20,6 +20,9 @@ SnapRAID HISTORY
    uses 17 bytes of memory, instead of the previous 28 bytes
    (for 32 bit) or 36 bytes (for 64 bit).
    This could result is a memory saving of up the 50%.
+ * Extends the -D, --force-device option to ignore more
+   erroneous conditions in the 'fix' command, like unaccessible
+   disks, or disks sharing the same physical device.
  * Extends the -h, --pre-hash option to also verify moved and
    copied files into the array before running a 'sync'.
  * Update 'best' RAID functions for recent Atom CPUs.

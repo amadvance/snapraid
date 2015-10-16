@@ -339,6 +339,7 @@ struct snapraid_disk {
 	int has_unsupported_uuid; /**< If the disk doesn't report UUID, meaning it's not supported. */
 	int had_empty_uuid; /**< If the disk had an empty UUID, meaning that it's a new disk. */
 	int mapping_idx; /**< Index in the mapping vector. Used only as buffer when writing the content file. */
+	int skip_access; /**< If the disk is unaccessible and it should be skipped. */
 
 	/**
 	 * Mapping of chunks in the parity.
@@ -407,6 +408,7 @@ struct snapraid_parity {
 	uint64_t device; /**< Device identifier of the parity. */
 	block_off_t total_blocks; /**< Number of total blocks. */
 	block_off_t free_blocks; /**< Number of free blocks at the last sync. */
+	int skip_access; /**< If the disk is unaccessible and it should be skipped. */
 
 	/**
 	 * Cumulative time used for parity disks.
@@ -864,7 +866,7 @@ static inline tommy_uint32_t dir_name_hash(const char* name)
 /**
  * Allocate a disk.
  */
-struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev);
+struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev, int skip);
 
 /**
  * Deallocate a disk.

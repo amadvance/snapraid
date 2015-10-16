@@ -775,13 +775,12 @@ Options
 		"fix".
 
 	-D, --force-device
-		Forces the insecure operation of fixing with disks on the same
-		physical device.
-		If SnapRAID detects that some disks have the same device ID,
-		it stops proceeding, because it's not a supported configuration.
-		But it could happen that you want to temporarily restore a lost
-		disk in the free space left in an already used disk. and this
-		option allows you to continue anyway.
+		Forces the insecure operation of fixing with unaccessible disks,
+		or with disks on the same physical device.
+		Like if you lost two data disks, and you have a spare disk to recover
+		only the first one, and you want to ignore the second unaccessible disk.
+		Or if you want to recover a disk in the free space left in an
+		already used disk, sharing the same physical device.
 		This option can be used only with "fix".
 
 	-N, --force-nocopy

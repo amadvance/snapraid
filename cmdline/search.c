@@ -282,7 +282,11 @@ void state_search_array(struct snapraid_state* state)
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 
-		msg_progress("Scanning disk %s...\n", disk->name);
+		/* skip data disks that are not accessible */
+		if (disk->skip_access)
+			continue;
+
+		msg_progress("Searching disk %s...\n", disk->name);
 
 		search_dir(state, disk, disk->dir, "");
 	}

@@ -1927,6 +1927,12 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 		/* if fixing, create the file and open for writing */
 		/* if it fails, we cannot continue */
 		for (l = 0; l < state->level; ++l) {
+			/* skip parity disks that are not accessible */
+			if (state->parity[l].skip_access) {
+				parity_ptr[l] = 0;
+				continue;
+			}
+
 			parity_ptr[l] = &parity[l];
 			ret = parity_create(parity_ptr[l], state->parity[l].path, &out_size, state->file_mode);
 			if (ret == -1) {

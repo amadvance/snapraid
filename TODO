@@ -5,15 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
-* Improvement in fix, due missing disks, when using -d DISK.
-A. Don't halt due to missing content files as long as there is one valid content file
-B. Don't halt due to missing disks when enough parity exist to replace them.
-See thread: https://sourceforge.net/p/snapraid/discussion/1677233/thread/b1387089/
-Two disks died, like d5 and d6, but recovering with "-d d5" was not possible
-because disk d6 disappeared, like I:\ drive missing, including its mount point and
-content file. In Linux likely the mount point would be still present, but not in Windows.
-The content file is instead missing in all platforms.
-
 - Minor
 
 * Restore ownership and permissions, at least in Unix.

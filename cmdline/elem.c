@@ -712,7 +712,7 @@ int dir_name_compare(const void* void_arg, const void* void_data)
 	return strcmp(arg, dir->sub);
 }
 
-struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev)
+struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev, int skip)
 {
 	struct snapraid_disk* disk;
 
@@ -735,6 +735,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 	disk->has_unsupported_uuid = 0;
 	disk->had_empty_uuid = 0;
 	disk->mapping_idx = -1;
+	disk->skip_access = skip;
 	tommy_list_init(&disk->filelist);
 	tommy_list_init(&disk->deletedlist);
 	tommy_hashdyn_init(&disk->inodeset);

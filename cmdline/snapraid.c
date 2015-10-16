@@ -68,7 +68,7 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero      ", "-Z") "  Force synching of files that get zero size\n");
 	printf("  " SWITCH_GETOPT_LONG("-E, --force-empty     ", "-E") "  Force synching of disks that get empty\n");
 	printf("  " SWITCH_GETOPT_LONG("-U, --force-uuid      ", "-U") "  Force commands on disks with uuid changed\n");
-	printf("  " SWITCH_GETOPT_LONG("-D, --force-device    ", "-D") "  Force commands on disks with same device id\n");
+	printf("  " SWITCH_GETOPT_LONG("-D, --force-device    ", "-D") "  Force commands with unaccessible/shared disks\n");
 	printf("  " SWITCH_GETOPT_LONG("-N, --force-nocopy    ", "-N") "  Force commands disabling the copy detection\n");
 	printf("  " SWITCH_GETOPT_LONG("-F, --force-full      ", "-F") "  Force commands requiring a full sync\n");
 	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
@@ -795,6 +795,18 @@ int main(int argc, char* argv[])
 	}
 
 	switch (operation) {
+	case OPERATION_FIX :
+		break;
+	default :
+		if (opt.force_device) {
+			/* LCOV_EXCL_START */
+			log_fatal("You cannot use -D, --force-device with the '%s' command\n", command);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	switch (operation) {
 	case OPERATION_SYNC :
 	case OPERATION_CHECK :
 	case OPERATION_FIX :
@@ -916,6 +928,14 @@ int main(int argc, char* argv[])
 	}
 
 	switch (operation) {
+	case OPERATION_FIX :
+	case OPERATION_CHECK :
+		/* avoid to stop processing if a content file is not accessible */
+		opt.skip_content_access = 1;
+		break;
+	}
+
+	switch (operation) {
 	case OPERATION_DIFF :
 	case OPERATION_LIST :
 	case OPERATION_DUP :
@@ -968,7 +988,7 @@ int main(int argc, char* argv[])
 
 #if HAVE_LOCKFILE
 	/* create the lock file */
-	if (!opt.skip_lock) {
+	if (!opt.skip_lock && state.lockfile[0]) {
 		lock = lock_lock(state.lockfile);
 		if (lock == -1) {
 			/* LCOV_EXCL_START */
@@ -1089,7 +1109,8 @@ int main(int argc, char* argv[])
 	} else if (operation == OPERATION_DRY) {
 		state_read(&state);
 
-		/* apply the command line filter */
+		/* filter */
+		state_skip(&state);
 		state_filter(&state, &filterlist_file, &filterlist_disk, filter_missing, filter_error);
 
 		memory();
@@ -1189,7 +1210,8 @@ int main(int argc, char* argv[])
 				state_search_array(&state);
 		}
 
-		/* apply the command line filter */
+		/* filter */
+		state_skip(&state);
 		state_filter(&state, &filterlist_file, &filterlist_disk, filter_missing, filter_error);
 
 		memory();
@@ -1215,7 +1237,7 @@ int main(int argc, char* argv[])
 	log_close(log_file);
 
 #if HAVE_LOCKFILE
-	if (!opt.skip_lock) {
+	if (!opt.skip_lock && state.lockfile[0]) {
 		if (lock_unlock(lock) == -1) {
 			/* LCOV_EXCL_START */
 			log_fatal("Error closing the lock file '%s'. %s.\n", state.lockfile, strerror(errno));
