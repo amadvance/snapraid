@@ -885,6 +885,15 @@ int main(int argc, char* argv[])
 		}
 	}
 
+	/* errors must be always fixed on all disks */
+	/* becasue we don't keep the information on what disk is the error */
+	if (filter_error != 0 && !tommy_list_empty(&filterlist_disk)) {
+		/* LCOV_EXCL_START */
+		log_fatal("You cannot use -e, --filter-error and -d, --filter-disk at the same time\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
 	switch (operation) {
 	case OPERATION_CHECK :
 	case OPERATION_FIX :

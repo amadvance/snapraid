@@ -135,6 +135,7 @@ void state_init(struct snapraid_state* state)
 		state->parity[l].free_blocks = 0;
 		state->parity[l].tick = 0;
 		state->parity[l].skip_access = 0;
+		state->parity[l].is_excluded = 0;
 	}
 	state->tick_io = 0;
 	state->tick_cpu = 0;
@@ -437,10 +438,16 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 				break;
 		}
 		if (j == 0) {
-			/* LCOV_EXCL_START */
-			log_fatal("Option -d, --filter-disk %s doesn't match any disk.\n", filter->pattern);
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
+			/* check matching with parity disks */
+			for (l = 0; l < state->level; ++l)
+				if (fnmatch(filter->pattern, lev_config_name(l), FNM_CASEINSENSITIVE_FOR_WIN) == 0)
+					break;
+			if (l == state->level) {
+				/* LCOV_EXCL_START */
+				log_fatal("Option -d, --filter-disk %s doesn't match any data or parity disk.\n", filter->pattern);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
 		}
 	}
 }
@@ -3234,6 +3241,7 @@ void state_skip(struct snapraid_state* state)
 void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tommy_list* filterlist_disk, int filter_missing, int filter_error)
 {
 	tommy_node* i;
+	unsigned l;
 
 	/* if no filter, include all */
 	if (!filter_missing && !filter_error && tommy_list_empty(filterlist_file) && tommy_list_empty(filterlist_disk))
@@ -3297,6 +3305,26 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 				|| filter_existence(filter_missing, disk->dir, dir->sub) != 0
 			) {
 				dir_flag_set(dir, FILE_IS_EXCLUDED);
+			}
+		}
+	}
+
+	/* if we are filtering by disk */
+	if (!tommy_list_empty(filterlist_disk)) {
+		/* for each parity disk */
+		for (l = 0; l < state->level; ++l) {
+			/* check if the parity is excluded by name */
+			if (filter_path(filterlist_disk, 0, lev_config_name(l), 0) != 0) {
+				/* excluded the parity from further operation */
+				state->parity[l].is_excluded = 1;
+			}
+		}
+	} else {
+		/* if we are filtering by file, exclude all parity */
+		if (filter_missing || !tommy_list_empty(filterlist_file)) {
+			/* for each parity disk */
+			for (l = 0; l < state->level; ++l) {
+				state->parity[l].is_excluded = 1;
 			}
 		}
 	}

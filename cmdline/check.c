@@ -797,9 +797,9 @@ close_and_continue:
  */
 static int block_is_enabled(struct snapraid_state* state, block_off_t i, struct snapraid_handle* handle, unsigned diskmax)
 {
-	int one_tocheck;
 	snapraid_info info;
 	unsigned j;
+	unsigned l;
 
 	/* get block specific info */
 	info = info_get(&state->infoarr, i);
@@ -811,8 +811,14 @@ static int block_is_enabled(struct snapraid_state* state, block_off_t i, struct 
 			return 0;
 	}
 
+	/* for each parity */
+	for (l = 0; l < state->level; ++l) {
+		if (!state->parity[l].is_excluded) {
+			return 1;
+		}
+	}
+
 	/* for each disk */
-	one_tocheck = 0;
 	for (j = 0; j < diskmax; ++j) {
 		struct snapraid_block* block;
 
@@ -827,17 +833,12 @@ static int block_is_enabled(struct snapraid_state* state, block_off_t i, struct 
 		if (block_has_file(block)) {
 			struct snapraid_file* file = fs_par2file_get(handle[j].disk, i, 0);
 			if (!file_flag_has(file, FILE_IS_EXCLUDED)) { /* only if the file is not filtered out */
-				one_tocheck = 1;
-				break;
+				return 1;
 			}
 		}
 	}
 
-	/* if no block to check skip */
-	if (!one_tocheck)
-		return 0;
-
-	return 1;
+	return 0;
 }
 
 static int state_check_process(struct snapraid_state* state, int fix, struct snapraid_parity_handle** parity, block_off_t blockstart, block_off_t blockmax)
@@ -1270,6 +1271,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						if (buffer_recov[l] != 0 && memcmp(buffer_recov[l], buffer[diskmax + l], state->block_size) != 0) {
 							unsigned diff = memdiff(buffer_recov[l], buffer[diskmax + l], state->block_size);
 
+							/* mark that the read parity is wrong, setting ptr to 0 */
 							buffer_recov[l] = 0;
 
 							log_tag("parity_error:%u:%s: Data error, diff bits %u\n", i, lev_config_name(l), diff);
@@ -1330,7 +1332,13 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					if (valid_parity) {
 						/* update the parity */
 						for (l = 0; l < state->level; ++l) {
-							if (buffer_recov[l] == 0 && parity[l] != 0) {
+							/* if the parity on disk is wrong */
+							if (buffer_recov[l] == 0
+								/* and we have access at the parity */
+								&& parity[l] != 0
+								/* and the parity is not excluded */
+								&& !state->parity[l].is_excluded
+							) {
 								ret = parity_write(parity[l], i, buffer[diskmax + l], state->block_size);
 								if (ret == -1) {
 									/* LCOV_EXCL_START */

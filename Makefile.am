@@ -366,8 +366,7 @@ if HAVE_SYMLINK
 endif
 	echo --- Extend PAR1 to max parity with fix and check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(CONF) check -l test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) fix -l test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) check
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) fix -d 2-parity -d 3-parity -d 4-parity -d 5-parity -d 6-parity -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 #### SCRUB ####
 	echo --- Scrub some times

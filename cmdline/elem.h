@@ -409,6 +409,7 @@ struct snapraid_parity {
 	block_off_t total_blocks; /**< Number of total blocks. */
 	block_off_t free_blocks; /**< Number of free blocks at the last sync. */
 	int skip_access; /**< If the disk is unaccessible and it should be skipped. */
+	int is_excluded; /**< If the parity is excluded by disk filter. */
 
 	/**
 	 * Cumulative time used for parity disks.
