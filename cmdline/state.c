@@ -250,7 +250,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 						/* mark disks to be skipped */
 						disk->skip_access = 1;
 						other->skip_access = 1;
-						msg_progress("DANGER! Ignoring that disks '%s' and '%s' are on the same device\n", disk->name, other->name);
+						log_fatal("DANGER! Ignoring that disks '%s' and '%s' are on the same device\n", disk->name, other->name);
 					} else {
 						/* LCOV_EXCL_START */
 						log_fatal("Disks '%s' and '%s' are on the same device.\n", disk->dir, other->dir);
@@ -330,7 +330,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 						/* mark disks to be skipped */
 						state->parity[l].skip_access = 1;
 						state->parity[j].skip_access = 1;
-						msg_progress("DANGER! Skipping parities '%s' and '%s' on the same device\n", lev_config_name(l), lev_config_name(j));
+						log_fatal("DANGER! Skipping parities '%s' and '%s' on the same device\n", lev_config_name(l), lev_config_name(j));
 					} else {
 						/* LCOV_EXCL_START */
 						log_fatal("Parity '%s' and '%s' are on the same device.\n", state->parity[l].path, state->parity[j].path);
@@ -623,7 +623,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 						/* use a fake device, and mark the disk to be skipped */
 						dev = 0;
 						skip_access = 1;
-						msg_progress("DANGER! Skipping unaccessible parity disk '%s'...\n", tag);
+						log_fatal("DANGER! Skipping unaccessible parity disk '%s'...\n", tag);
 					} else {
 						/* LCOV_EXCL_START */
 						log_fatal("Error accessing 'parity' dir '%s' specification in '%s' at line %u\n", device, path, line);
@@ -762,7 +762,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				if (state->opt.skip_content_access) {
 					/* use a fake device */
 					dev = 0;
-					msg_progress("WARNING! Skipping unaccessible content file '%s'...\n", buffer);
+					log_fatal("WARNING! Skipping unaccessible content file '%s'...\n", buffer);
 				} else {
 					/* LCOV_EXCL_START */
 					log_fatal("Error accessing 'content' dir '%s' specification in '%s' at line %u\n", device, path, line);
@@ -848,7 +848,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 						/* use a fake device, and mark the disk to be skipped */
 						dev = 0;
 						skip_access = 1;
-						msg_progress("DANGER! Skipping unaccessible data disk '%s'...\n", buffer);
+						log_fatal("DANGER! Skipping unaccessible data disk '%s'...\n", buffer);
 					} else {
 						/* LCOV_EXCL_START */
 						log_fatal("Error accessing 'disk' '%s' specification in '%s' at line %u\n", dir, device, line);
