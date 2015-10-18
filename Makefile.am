@@ -111,6 +111,7 @@ EXTRA_DIST = \
 	test/test-par5.conf \
 	test/test-par6.conf \
 	test/test-par6-hole.conf \
+	test/test-par6-noaccess.conf \
 	snapraid.conf.example \
 	configure.windows-x86 configure.windows-x64 snapraid.conf.example.windows \
 	acinclude.m4 \
@@ -169,6 +170,7 @@ CHECKSIZE = 4000
 
 CONF = $(srcdir)/test/test-par6.conf
 HOLE = $(srcdir)/test/test-par6-hole.conf
+NOACCESS = $(srcdir)/test/test-par6-noaccess.conf
 PAR1 = $(srcdir)/test/test-par1.conf
 PAR2 = $(srcdir)/test/test-par2.conf
 PAR3 = $(srcdir)/test/test-par3.conf
@@ -368,6 +370,9 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(CONF) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) fix -d 2-parity -d 3-parity -d 4-parity -d 5-parity -d 6-parity -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
+	echo --- Fix with unaccessible parity and disk
+	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(NOACCESS) fix --test-expect-failure
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(NOACCESS) fix --force-device --test-expect-recoverable -l test.log
 #### SCRUB ####
 	echo --- Scrub some times
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-scrub-at 100 scrub
