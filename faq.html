@@ -266,7 +266,8 @@ Here some suggestions:
 <td>Encryption</td>
 <td>
 <a href="http://en.wikipedia.org/wiki/Dm-crypt">dmcrypt/LUKS</a><br>
-(<a href="http://zackreed.me/articles/79-encrypted-snapraid">tutorial</a>)</td>
+(<a href="http://zackreed.me/articles/79-encrypted-snapraid">tutorial</a>)
+</td>
 <td>
 <!--
 Discontinued? 28/5/2014
@@ -282,8 +283,13 @@ Discontinued? 28/5/2014
 </tr>
 <tr>
 <td>Virtual views/storage pooling</td>
-<td><a href="http://romanrm.ru/en/mhddfs">mhddfs</a>
+<td>
+<a href="http://romanrm.ru/en/mhddfs">mhddfs</a>
 (<a href="http://zackreed.me/articles/84-snapraid-with-mhddfs">tutorial</a>),
+
+<a href="https://github.com/trapexit/mergerfs">mergefs</a>
+(<a href="http://zackreed.me/articles/92-mergerfs-another-good-option-to-pool-your-snapraid-disks">tutorial</a>),
+
 <a href="http://aufs.sourceforge.net/">aufs</a>,
 <a href="http://www.greyhole.net/">Greyhole</a>
 </td>
@@ -632,6 +638,9 @@ and then run a "sync" command.
 <pre>
 snapraid sync
 </pre>
+<p>
+If the disk is empty, the "sync" command will be immediate.
+</p>
 
 <h3 id="remdatadisk">How can I remove a data disk from an existing array?</h3>
 <p>
