@@ -370,13 +370,32 @@ volatile int global_interrupt = 0;
 /* LCOV_EXCL_START */
 void signal_handler(int signum)
 {
-	switch (signum) {
-	case SIGINT :
-		global_interrupt = 1;
-		break;
-	}
+	(void)signum;
+
+	/* report the request of interruption */
+	global_interrupt = 1;
 }
 /* LCOV_EXCL_STOP */
+
+void signal_init(void)
+{
+#if HAVE_SIGACTION
+	struct sigaction sa;
+
+	sa.sa_handler = signal_handler;
+	sigemptyset(&sa.sa_mask);
+
+	/* use the SA_RESTART to automatically restart interrupted system calls */
+	sa.sa_flags = SA_RESTART;
+
+	sigaction(SIGHUP, &sa, 0);
+	sigaction(SIGTERM, &sa, 0);
+	sigaction(SIGINT, &sa, 0);
+	sigaction(SIGQUIT, &sa, 0);
+#else
+	signal(SIGINT, signal_handler);
+#endif
+}
 
 #define OPERATION_DIFF 0
 #define OPERATION_SYNC 1
@@ -1062,8 +1081,8 @@ int main(int argc, char* argv[])
 
 		memory();
 
-		/* intercept Ctrl+C */
-		signal(SIGINT, &signal_handler);
+		/* intercept signals while operating */
+		signal_init();
 
 		/* save the new state before the sync */
 		/* this allow to recover the case of the changes in the array after an aborted sync. */
@@ -1124,15 +1143,15 @@ int main(int argc, char* argv[])
 
 		memory();
 
-		/* intercept Ctrl+C */
-		signal(SIGINT, &signal_handler);
+		/* intercept signals while operating */
+		signal_init();
 
 		state_dry(&state, blockstart, blockcount);
 	} else if (operation == OPERATION_REHASH) {
 		state_read(&state);
 
-		/* intercept Ctrl+C */
-		signal(SIGINT, &signal_handler);
+		/* intercept signals while operating */
+		signal_init();
 
 		state_rehash(&state);
 
@@ -1144,8 +1163,8 @@ int main(int argc, char* argv[])
 
 		memory();
 
-		/* intercept Ctrl+C */
-		signal(SIGINT, &signal_handler);
+		/* intercept signals while operating */
+		signal_init();
 
 		ret = state_scrub(&state, percentage, olderthan);
 
@@ -1162,6 +1181,9 @@ int main(int argc, char* argv[])
 	} else if (operation == OPERATION_REWRITE) {
 		state_read(&state);
 
+		/* intercept signals while operating */
+		signal_init();
+
 		state_write(&state);
 
 		memory();
@@ -1173,6 +1195,9 @@ int main(int argc, char* argv[])
 		state_read(&state);
 
 		state_nano(&state);
+
+		/* intercept signals while operating */
+		signal_init();
 
 		state_write(&state);
 
@@ -1225,8 +1250,8 @@ int main(int argc, char* argv[])
 
 		memory();
 
-		/* intercept Ctrl+C */
-		signal(SIGINT, &signal_handler);
+		/* intercept signals while operating */
+		signal_init();
 
 		if (operation == OPERATION_CHECK) {
 			ret = state_check(&state, 0, blockstart, blockcount);

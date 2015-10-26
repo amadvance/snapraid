@@ -43,8 +43,6 @@ The same for directories, when recreating the directory tree.
 * If a directory exists with the same name of a parity/content file be more explicative
 on the error message. See: https://sourceforge.net/projects/snapraid/forums/forum/1677233/topic/4861034
 
-* Support interrupted operations with EINTR. For remote filesystems it could be relevant.
-
 * Allow to specify more than one disk directories to cover the case of multi partitions.
 Different partitions have duplicate inode. The only way to support this is to
 add also a kind of device_id, increasing the memory required.
