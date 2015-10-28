@@ -90,7 +90,6 @@ void test(void)
 		}
 	}
 
-
 	put_crc_stored = scrc(s);
 	put_crc_computed = scrc_stream(s);
 
@@ -172,9 +171,16 @@ void test(void)
 			}
 		}
 
+		/* get the computed CRC *before* reading the stored one */
 		get_crc_computed = scrc(s);
 
 		if (sgetble32(s, &get_crc_stored) != 0) {
+			/* LCOV_EXCL_START */
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (get_crc_stored != put_crc_stored) {
 			/* LCOV_EXCL_START */
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
@@ -186,7 +192,48 @@ void test(void)
 			/* LCOV_EXCL_STOP */
 		}
 
+		if (sclose(s) != 0) {
+			/* LCOV_EXCL_START */
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	for (i = 0; i < STREAM_MAX; ++i) {
+		uint32_t get_crc_stored;
+		uint32_t get_crc_computed;
+		unsigned char buf[4];
+		snprintf(file, sizeof(file),  "stream%u.bin", i);
+
+		s = sopen_read(file);
+		if (s == 0) {
+			/* LCOV_EXCL_START */
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (sdeplete(s, buf) != 0) {
+			/* LCOV_EXCL_START */
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		/* get the stored crc from the last four bytes */
+		get_crc_stored = buf[0] | (uint32_t)buf[1] << 8 | (uint32_t)buf[2] << 16 | (uint32_t)buf[3] << 24;
+
 		if (get_crc_stored != put_crc_stored) {
+			/* LCOV_EXCL_START */
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		/* get the computed CRC *after* reading the stored one */
+		get_crc_computed = scrc(s);
+
+		/* adjust the stored crc to include itself */
+		get_crc_stored = crc32c(get_crc_stored, buf, 4);
+
+		if (get_crc_stored != get_crc_computed) {
 			/* LCOV_EXCL_START */
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
