@@ -129,11 +129,11 @@ int sclose(STREAM* s);
 int shandle(STREAM* s);
 
 /**
- * Fill the read stream buffer and read a char.
- * \note Don't call this directly, but use sgetc().
- * \return The char read, or EOF on error.
+ * Read the stream until the end, and return the latest 4 chars.
+ * The CRC of the file is also computed, and you can get it using scrc().
+ * \return 0 on success, or EOF on error.
  */
-int sfill(STREAM* s);
+int sdeplete(STREAM* s, unsigned char* last);
 
 /**
  * Flush the write stream buffer.
@@ -221,12 +221,18 @@ int ssync(STREAM* s);
 /* get */
 
 /**
+ * \internal Used by sgetc().
+ * \note Don't call this directly, but use sgetc().
+ */
+int sgetc_uncached(STREAM* s);
+
+/**
  * Read a char. Like fgetc().
  */
 static inline int sgetc(STREAM* s)
 {
-	if (s->pos == s->end)
-		return sfill(s);
+	if (tommy_unlikely(s->pos == s->end))
+		return sgetc_uncached(s);
 	return *s->pos++;
 }
 

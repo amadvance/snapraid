@@ -1564,26 +1564,7 @@ static void decoding_error(const char* path, STREAM* f)
 
 	log_fatal("Decoding error in '%s' at offset %" PRIi64 "\n", path, stell(f));
 
-	buf[0] = 0;
-	buf[1] = 0;
-	buf[2] = 0;
-	buf[3] = 0;
-
-	/* read until the end of the file */
-	while (1) {
-		int c = sgetc(f);
-		if (c == EOF) {
-			break;
-		}
-
-		/* keep the last four bytes */
-		buf[0] = buf[1];
-		buf[1] = buf[2];
-		buf[2] = buf[3];
-		buf[3] = c;
-	}
-
-	if (serror(f)) {
+	if (sdeplete(f, buf) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error flushing the content file '%s' at offset %" PRIi64 "\n", path, stell(f));
 		exit(EXIT_FAILURE);

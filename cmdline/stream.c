@@ -174,7 +174,11 @@ int shandle(STREAM* s)
 	return s->handle[0].f;
 }
 
-int sfill(STREAM* s)
+/**
+ * Fill the read stream buffer.
+ * \return 0 if at least on char is read, or EOF on error.
+ */
+static int sfill(STREAM* s)
 {
 	ssize_t ret;
 
@@ -208,7 +212,45 @@ int sfill(STREAM* s)
 	s->pos = s->buffer;
 	s->end = s->buffer + ret;
 
-	return *s->pos++;
+	return 0;
+}
+
+int sdeplete(STREAM* s, unsigned char* last)
+{
+	/* last four bytes */
+	last[0] = 0;
+	last[1] = 0;
+	last[2] = 0;
+	last[3] = 0;
+
+	while (1) {
+		/* increase the position up to 4 bytes before the end */
+		if (s->pos + 4 <= s->end)
+			s->pos = s->end - 4;
+
+		/* insert the last 4 bytes */
+		while (s->pos < s->end) {
+			last[0] = last[1];
+			last[1] = last[2];
+			last[2] = last[3];
+			last[3] = *s->pos++;
+		}
+
+		/* fill again the buffer until the end of the file */
+		if (sfill(s) != 0) {
+			/* on error fail */
+			if (serror(s)) {
+				/* LCOV_EXCL_START */
+				return EOF;
+				/* LCOV_EXCL_STOP */
+			}
+
+			/* on EOF terminate */
+			break;
+		}
+	}
+
+	return 0;
 }
 
 int sflush(STREAM* s)
@@ -265,6 +307,14 @@ uint32_t scrc(STREAM*s)
 uint32_t scrc_stream(STREAM*s)
 {
 	return s->crc_stream ^ CRC_IV;
+}
+
+int sgetc_uncached(STREAM* s)
+{
+	/* if at the end of the buffer, fill it */
+	if (s->pos == s->end && sfill(s) != 0)
+		return EOF;
+	return *s->pos++;
 }
 
 int sgettok(STREAM* f, char* str, int size)
