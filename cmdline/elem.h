@@ -54,6 +54,12 @@ typedef int64_t data_off_t;
 struct snapraid_content {
 	char content[PATH_MAX]; /**< Path of the content file. */
 	uint64_t device; /**< Device identifier. */
+	uint32_t crc; /**< Expected crc. */
+#if HAVE_PTHREAD_CREATE
+	pthread_t thread; /**< Thread used for verification. */
+#else
+	void* retval; /**< Result of the verification. */
+#endif
 	tommy_node node; /**< Next node in the list. */
 };
 

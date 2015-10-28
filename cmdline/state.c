@@ -1589,7 +1589,7 @@ static void decoding_error(const char* path, STREAM* f)
 	}
 }
 
-static void state_read_binary(struct snapraid_state* state, const char* path, STREAM* f)
+static void state_read_content(struct snapraid_state* state, const char* path, STREAM* f)
 {
 	block_off_t blockmax;
 	unsigned count_file;
@@ -2490,7 +2490,7 @@ static void state_read_binary(struct snapraid_state* state, const char* path, ST
 	msg_verbose("%8u empty dirs\n", count_dir);
 }
 
-static void state_write_binary(struct snapraid_state* state, STREAM* f)
+static void state_write_content(struct snapraid_state* state, STREAM* f, uint32_t* crc)
 {
 	unsigned count_file;
 	unsigned count_hardlink;
@@ -2504,7 +2504,6 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	int info_has_rehash;
 	int mapping_idx;
 	unsigned l;
-	uint32_t crc;
 
 	count_file = 0;
 	count_hardlink = 0;
@@ -2922,11 +2921,11 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 	}
 
 	/* get the file crc */
-	crc = scrc(f);
+	*crc = scrc(f);
 
 	/* compare the crc of the data written to file */
 	/* with the one of the data written to the stream */
-	if (crc != scrc_stream(f)) {
+	if (*crc != scrc_stream(f)) {
 		/* LCOV_EXCL_START */
 		log_fatal("CRC mismatch writing the content stream.\n");
 		log_fatal("DANGER! Your RAM memory is broken! DO NOT PROCEED UNTIL FIXED!\n");
@@ -2935,7 +2934,7 @@ static void state_write_binary(struct snapraid_state* state, STREAM* f)
 		/* LCOV_EXCL_STOP */
 	}
 
-	sputble32(crc, f);
+	sputble32(*crc, f);
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
@@ -3067,7 +3066,7 @@ void state_read(struct snapraid_state* state)
 
 	/* guess the file type from the first char */
 	if (c == 'S') {
-		state_read_binary(state, path, f);
+		state_read_content(state, path, f);
 	} else {
 		/* LCOV_EXCL_START */
 		log_fatal("The text file format is not supported anymore.\n");
@@ -3096,12 +3095,154 @@ void state_read(struct snapraid_state* state)
 	state->checked_read = 1;
 }
 
+static void* state_verify_thread(void* arg)
+{
+	struct snapraid_content* content = arg;
+	STREAM* f;
+	char tmp[PATH_MAX];
+	unsigned char buf[4];
+	uint32_t crc_stored;
+	uint32_t crc_computed;
+
+	pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
+
+	f = sopen_read(tmp);
+	if (f == 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Error reopening the content file '%s'. %s.\n", tmp, strerror(errno));
+		return content;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (sdeplete(f, buf) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Error flushing the content file '%s'. %s.\n", tmp, strerror(errno));
+		return content;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* get the stored crc from the last four bytes */
+	crc_stored = buf[0] | (uint32_t)buf[1] << 8 | (uint32_t)buf[2] << 16 | (uint32_t)buf[3] << 24;
+
+	if (crc_stored != content->crc) {
+		/* LCOV_EXCL_START */
+		log_fatal("DANGER! Wrong stored CRC in '%s'\n", tmp);
+		return content;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* get the computed crc */
+	crc_computed = scrc(f);
+
+	/* adjust the stored crc to include itself */
+	crc_stored = crc32c(crc_stored, buf, 4);
+
+	if (crc_computed != crc_stored) {
+		/* LCOV_EXCL_START */
+		log_fatal("DANGER! Wrong file CRC in '%s'\n", tmp);
+		return content;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (sclose(f) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Error closing the content file '%s'. %s.\n", tmp, strerror(errno));
+		return content;
+		/* LCOV_EXCL_STOP */
+	}
+
+	return 0;
+}
+
+static void state_verify(struct snapraid_state* state, uint32_t crc)
+{
+	tommy_node* i;
+	int fail;
+
+	/* start all reading threads */
+	i = tommy_list_head(&state->contentlist);
+	while (i) {
+		struct snapraid_content* content = i->data;
+
+		msg_progress("Verifying %s...\n", content->content);
+
+		/* set the expected crc */
+		content->crc = crc;
+
+#if HAVE_PTHREAD_CREATE
+		if (pthread_create(&content->thread, 0, state_verify_thread, content) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Failed to create thread.\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+#else
+		content->retval = state_verify_thread(content);
+#endif
+
+		i = i->next;
+	}
+
+	/* join all thread */
+	fail = 0;
+	i = tommy_list_head(&state->contentlist);
+	while (i) {
+		struct snapraid_content* content = i->data;
+		void* retval;
+
+#if HAVE_PTHREAD_CREATE
+		if (pthread_join(content->thread, &retval) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Failed to join thread.\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+#else
+		retval = content->retval;
+#endif
+		if (retval)
+			fail = 1;
+
+		i = i->next;
+	}
+
+	/* abort on failure */
+	if (fail) {
+		/* LCOV_EXCL_START */
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+}
+
+static void state_rename(struct snapraid_state* state)
+{
+	tommy_node* i;
+
+	i = tommy_list_head(&state->contentlist);
+	while (i) {
+		struct snapraid_content* content = i->data;
+		char tmp[PATH_MAX];
+
+		/* now renames the just written copy with the correct name */
+		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
+		if (rename(tmp, content->content) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Error renaming the content file '%s' to '%s' in rename(). %s.\n", tmp, content->content, strerror(errno));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		i = i->next;
+	}
+}
+
 void state_write(struct snapraid_state* state)
 {
 	STREAM* f;
 	unsigned count_content;
 	tommy_node* i;
 	unsigned k;
+	uint32_t crc;
 
 	/* count the content files */
 	count_content = 0;
@@ -3138,7 +3279,7 @@ void state_write(struct snapraid_state* state)
 		i = i->next;
 	}
 
-	state_write_binary(state, f);
+	state_write_content(state, f, &crc);
 
 	/* Use the sequence fflush() -> fsync() -> fclose() -> rename() to ensure */
 	/* than even in a system crash event we have one valid copy of the file. */
@@ -3161,27 +3302,16 @@ void state_write(struct snapraid_state* state)
 
 	if (sclose(f) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Error closing the content files in close(). %s.\n", strerror(errno));
+		log_fatal("Error closing the content files. %s.\n", strerror(errno));
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
-	i = tommy_list_head(&state->contentlist);
-	while (i) {
-		struct snapraid_content* content = i->data;
-		char tmp[PATH_MAX];
+	/* verify the just written temp files */
+	state_verify(state, crc);
 
-		/* now renames the just written copy with the correct name */
-		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
-		if (rename(tmp, content->content) != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal("Error renaming the content file '%s' to '%s' in rename(). %s.\n", tmp, content->content, strerror(errno));
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
-
-		i = i->next;
-	}
+	/* rename the temp files, over the real ones */
+	state_rename(state);
 
 	state->need_write = 0; /* no write needed anymore */
 	state->checked_read = 0; /* what we wrote is not checked in read */
