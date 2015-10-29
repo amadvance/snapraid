@@ -351,8 +351,18 @@ static inline int sputc(int c, STREAM* s)
 		if (sflush(s) != 0)
 			return -1;
 	}
+
+	/**
+	 * Update the crc *before* writing the data in the buffer
+	 *
+	 * This must be done before the memory write,
+	 * to be able to detect memory errors on the buffer,
+	 * happening before we write it on the file.
+	 */
 	s->crc_stream = crc32c_plain_char(s->crc_stream, c);
+
 	*s->pos++ = c;
+
 	return 0;
 }
 

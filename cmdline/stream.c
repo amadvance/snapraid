@@ -269,10 +269,6 @@ int sflush(STREAM* s)
 	if (!size)
 		return 0;
 
-	/* update the crc */
-	s->crc = crc32c(s->crc, s->buffer, size);
-	s->crc_uncached = s->crc;
-
 	for (i = 0; i < s->handle_size; ++i) {
 		ret = write(s->handle[i].f, s->buffer, size);
 
@@ -284,6 +280,16 @@ int sflush(STREAM* s)
 			/* LCOV_EXCL_STOP */
 		}
 	}
+
+	/*
+	 * Update the crc *after* writing the data.
+	 *
+	 * This must be done after the file write,
+	 * to be able to detect memory errors on the buffer,
+	 * happening during the write.
+	 */
+	s->crc = crc32c(s->crc, s->buffer, size);
+	s->crc_uncached = s->crc;
 
 	/* update the offset */
 	s->offset += size;
@@ -612,12 +618,18 @@ int swrite(const void* void_data, unsigned size, STREAM* f)
 		/* optimized version with all the data in memory */
 		unsigned char* pos = sptrget(f);
 
+		/**
+		 * Update the crc *before* writing the data in the buffer
+		 *
+		 * This must be done before the memory write,
+		 * to be able to detect memory errors on the buffer,
+		 * happening before we write it on the file.
+		 */
 		f->crc_stream = crc32c_plain(f->crc_stream, data, size);
 
 		/* copy it */
-		while (size--) {
+		while (size--)
 			*pos++ = *data++;
-		}
 
 		sptrset(f, pos);
 	} else {
