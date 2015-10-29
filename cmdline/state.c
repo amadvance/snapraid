@@ -2490,19 +2490,44 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	msg_verbose("%8u empty dirs\n", count_dir);
 }
 
-static void state_write_content(struct snapraid_state* state, STREAM* f, uint32_t* crc)
-{
+struct state_write_thread_context {
+	struct snapraid_state* state;
+	struct snapraid_content* content;
+#if HAVE_PTHREAD_CREATE
+	pthread_t thread;
+#else
+	void* retval;
+#endif
+	/* input */
+	block_off_t blockmax;
+	time_t info_oldest;
+	int info_has_rehash;
+	/* output */
+	uint32_t crc;
 	unsigned count_file;
 	unsigned count_hardlink;
 	unsigned count_symlink;
 	unsigned count_dir;
+};
+
+static void* state_write_thread(void* arg)
+{
+	struct state_write_thread_context* context = arg;
+	struct snapraid_content* content = context->content;
+	struct snapraid_state* state = context->state;
+	block_off_t blockmax = context->blockmax;
+	time_t info_oldest = context->info_oldest;
+	int info_has_rehash = context->info_has_rehash;
+	uint32_t crc;
+	unsigned count_file;
+	unsigned count_hardlink;
+	unsigned count_symlink;
+	unsigned count_dir;
+	char tmp[PATH_MAX];
+	STREAM* f;
 	tommy_node* i;
 	block_off_t idx;
-	block_off_t blockmax;
 	block_off_t begin;
-	time_t info_oldest;
-	int info_has_rehash;
-	int mapping_idx;
 	unsigned l;
 
 	count_file = 0;
@@ -2510,38 +2535,13 @@ static void state_write_content(struct snapraid_state* state, STREAM* f, uint32_
 	count_symlink = 0;
 	count_dir = 0;
 
-	/* blocks of all array */
-	blockmax = parity_allocated_size(state);
-
-	/* check the filesystem on all disks */
-	state_fscheck(state, "before write");
-
-	/* clear the info for unused blocks */
-	/* and get some other info */
-	info_oldest = 0; /* oldest time in info */
-	info_has_rehash = 0; /* if there is a rehash info */
-	for (idx = 0; idx < blockmax; ++idx) {
-		/* if the position is used */
-		if (position_is_required(state, idx)) {
-			snapraid_info info = info_get(&state->infoarr, idx);
-
-			/* only if there is some info to store */
-			if (info) {
-				time_t info_time = info_get_time(info);
-
-				if (!info_oldest || info_time < info_oldest)
-					info_oldest = info_time;
-
-				if (info_get_rehash(info))
-					info_has_rehash = 1;
-			}
-		} else {
-			/* clear any previous info */
-			info_set(&state->infoarr, idx, 0);
-
-			/* and clear any deleted blocks */
-			position_clear_deleted(state, idx);
-		}
+	pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
+	f = sopen_write(tmp);
+	if (f == 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Error opening the content file '%s'. %s.\n", tmp, strerror(errno));
+		return context;
+		/* LCOV_EXCL_STOP */
 	}
 
 	/* write header */
@@ -2555,7 +2555,7 @@ static void state_write_content(struct snapraid_state* state, STREAM* f, uint32_
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-		exit(EXIT_FAILURE);
+		return context;
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -2567,14 +2567,14 @@ static void state_write_content(struct snapraid_state* state, STREAM* f, uint32_
 	} else {
 		/* LCOV_EXCL_START */
 		log_fatal("Unexpected hash when writing the content file '%s'.\n", serrorfile(f));
-		exit(EXIT_FAILURE);
+		return context;
 		/* LCOV_EXCL_STOP */
 	}
 	swrite(state->hashseed, HASH_SIZE, f);
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-		exit(EXIT_FAILURE);
+		return context;
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -2590,21 +2590,20 @@ static void state_write_content(struct snapraid_state* state, STREAM* f, uint32_
 			} else {
 				/* LCOV_EXCL_START */
 				log_fatal("Unexpected prevhash when writing the content file '%s'.\n", serrorfile(f));
-				exit(EXIT_FAILURE);
+				return context;
 				/* LCOV_EXCL_STOP */
 			}
 			swrite(state->prevhashseed, HASH_SIZE, f);
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
 				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-				exit(EXIT_FAILURE);
+				return context;
 				/* LCOV_EXCL_STOP */
 			}
 		}
 	}
 
 	/* for each map */
-	mapping_idx = 0;
 	for (i = state->maplist; i != 0; i = i->next) {
 		struct snapraid_map* map = i->data;
 		struct snapraid_disk* disk;
@@ -2614,12 +2613,12 @@ static void state_write_content(struct snapraid_state* state, STREAM* f, uint32_
 		if (!disk) {
 			/* LCOV_EXCL_START */
 			log_fatal("Internal inconsistency for unmapped disk '%s'\n", map->name);
-			exit(EXIT_FAILURE);
+			return context;
 			/* LCOV_EXCL_STOP */
 		}
 
-		/* save the mapping only for not empty disks */
-		if (!disk_is_empty(disk, blockmax)) {
+		/* save the mapping only if disk is mapped */
+		if (disk->mapping_idx != -1) {
 			sputc('M', f);
 			sputbs(map->name, f);
 			sputb32(map->position, f);
@@ -2629,16 +2628,9 @@ static void state_write_content(struct snapraid_state* state, STREAM* f, uint32_
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
 				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-				exit(EXIT_FAILURE);
+				return context;
 				/* LCOV_EXCL_STOP */
 			}
-
-			/* assign the mapping index used to identify disks */
-			disk->mapping_idx = mapping_idx;
-			++mapping_idx;
-		} else {
-			/* mark the disk as without mapping */
-			disk->mapping_idx = -1;
 		}
 	}
 
@@ -2652,7 +2644,7 @@ static void state_write_content(struct snapraid_state* state, STREAM* f, uint32_
 		if (serror(f)) {
 			/* LCOV_EXCL_START */
 			log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-			exit(EXIT_FAILURE);
+			return context;
 			/* LCOV_EXCL_STOP */
 		}
 	}
@@ -2693,7 +2685,7 @@ static void state_write_content(struct snapraid_state* state, STREAM* f, uint32_
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
 				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-				exit(EXIT_FAILURE);
+				return context;
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -2729,7 +2721,7 @@ static void state_write_content(struct snapraid_state* state, STREAM* f, uint32_
 				default :
 					/* LCOV_EXCL_START */
 					log_fatal("Internal inconsistency in state for block %u state %u\n", v_pos, v_state);
-					exit(EXIT_FAILURE);
+					return context;
 					/* LCOV_EXCL_STOP */
 				}
 
@@ -2748,7 +2740,7 @@ static void state_write_content(struct snapraid_state* state, STREAM* f, uint32_
 				if (serror(f)) {
 					/* LCOV_EXCL_START */
 					log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-					exit(EXIT_FAILURE);
+					return context;
 					/* LCOV_EXCL_STOP */
 				}
 
@@ -2780,7 +2772,7 @@ static void state_write_content(struct snapraid_state* state, STREAM* f, uint32_
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
 				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-				exit(EXIT_FAILURE);
+				return context;
 				/* LCOV_EXCL_STOP */
 			}
 		}
@@ -2795,7 +2787,7 @@ static void state_write_content(struct snapraid_state* state, STREAM* f, uint32_
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
 				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-				exit(EXIT_FAILURE);
+				return context;
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -2808,7 +2800,7 @@ static void state_write_content(struct snapraid_state* state, STREAM* f, uint32_
 		if (serror(f)) {
 			/* LCOV_EXCL_START */
 			log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-			exit(EXIT_FAILURE);
+			return context;
 			/* LCOV_EXCL_STOP */
 		}
 		begin = 0;
@@ -2852,7 +2844,7 @@ static void state_write_content(struct snapraid_state* state, STREAM* f, uint32_
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
 				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-				exit(EXIT_FAILURE);
+				return context;
 				/* LCOV_EXCL_STOP */
 			}
 		}
@@ -2902,7 +2894,7 @@ static void state_write_content(struct snapraid_state* state, STREAM* f, uint32_
 		if (serror(f)) {
 			/* LCOV_EXCL_START */
 			log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-			exit(EXIT_FAILURE);
+			return context;
 			/* LCOV_EXCL_STOP */
 		}
 
@@ -2916,28 +2908,230 @@ static void state_write_content(struct snapraid_state* state, STREAM* f, uint32_
 	if (sflush(f)) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error writing the content file '%s' (in flush before crc). %s.\n", serrorfile(f), strerror(errno));
-		exit(EXIT_FAILURE);
+		return context;
 		/* LCOV_EXCL_STOP */
 	}
 
 	/* get the file crc */
-	*crc = scrc(f);
+	crc = scrc(f);
 
 	/* compare the crc of the data written to file */
 	/* with the one of the data written to the stream */
-	if (*crc != scrc_stream(f)) {
+	if (crc != scrc_stream(f)) {
 		/* LCOV_EXCL_START */
 		log_fatal("CRC mismatch writing the content stream.\n");
 		log_fatal("DANGER! Your RAM memory is broken! DO NOT PROCEED UNTIL FIXED!\n");
 		log_fatal("Try running a memory test like http://www.memtest86.com/\n");
-		exit(EXIT_FAILURE);
+		return context;
 		/* LCOV_EXCL_STOP */
 	}
 
-	sputble32(*crc, f);
+	sputble32(crc, f);
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
+		return context;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* Use the sequence fflush() -> fsync() -> fclose() -> rename() to ensure */
+	/* than even in a system crash event we have one valid copy of the file. */
+	if (sflush(f) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Error writing the content file '%s', in flush(). %s.\n", serrorfile(f), strerror(errno));
+		return context;
+		/* LCOV_EXCL_STOP */
+	}
+
+#if HAVE_FSYNC
+	if (ssync(f) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Error writing the content file '%s' in sync(). %s.\n", serrorfile(f), strerror(errno));
+		return context;
+		/* LCOV_EXCL_STOP */
+	}
+#endif
+
+	if (sclose(f) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Error closing the content files. %s.\n", strerror(errno));
+		return context;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* set output variables */
+	context->crc = crc;
+	context->count_file = count_file;
+	context->count_hardlink = count_hardlink;
+	context->count_symlink = count_symlink;
+	context->count_dir = count_dir;
+
+	return 0;
+}
+
+static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
+{
+	tommy_node* i;
+	int fail;
+	block_off_t blockmax;
+	time_t info_oldest;
+	int info_has_rehash;
+	int mapping_idx;
+	block_off_t idx;
+	uint32_t crc;
+	unsigned count_file;
+	unsigned count_hardlink;
+	unsigned count_symlink;
+	unsigned count_dir;
+	int first;
+
+	/* blocks of all array */
+	blockmax = parity_allocated_size(state);
+
+	/* check the filesystem on all disks */
+	state_fscheck(state, "before write");
+
+	/* clear the info for unused blocks */
+	/* and get some other info */
+	info_oldest = 0; /* oldest time in info */
+	info_has_rehash = 0; /* if there is a rehash info */
+	for (idx = 0; idx < blockmax; ++idx) {
+		/* if the position is used */
+		if (position_is_required(state, idx)) {
+			snapraid_info info = info_get(&state->infoarr, idx);
+
+			/* only if there is some info to store */
+			if (info) {
+				time_t info_time = info_get_time(info);
+
+				if (!info_oldest || info_time < info_oldest)
+					info_oldest = info_time;
+
+				if (info_get_rehash(info))
+					info_has_rehash = 1;
+			}
+		} else {
+			/* clear any previous info */
+			info_set(&state->infoarr, idx, 0);
+
+			/* and clear any deleted blocks */
+			position_clear_deleted(state, idx);
+		}
+	}
+
+	/* map disks */
+	mapping_idx = 0;
+	for (i = state->maplist; i != 0; i = i->next) {
+		struct snapraid_map* map = i->data;
+		struct snapraid_disk* disk;
+
+		/* find the disk for this mapping */
+		disk = find_disk(state, map->name);
+		if (!disk) {
+			/* LCOV_EXCL_START */
+			log_fatal("Internal inconsistency for unmapped disk '%s'\n", map->name);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		/* save the mapping only for not empty disks */
+		if (!disk_is_empty(disk, blockmax)) {
+			/* assign the mapping index used to identify disks */
+			disk->mapping_idx = mapping_idx;
+			++mapping_idx;
+		} else {
+			/* mark the disk as without mapping */
+			disk->mapping_idx = -1;
+		}
+	}
+
+	/* start all writing threads */
+	i = tommy_list_head(&state->contentlist);
+	while (i) {
+		struct snapraid_content* content = i->data;
+		struct state_write_thread_context* context;
+
+		/* allocate the thread context */
+		context = malloc_nofail(sizeof(struct state_write_thread_context));
+		content->context = context;
+
+		/* initialize */
+		context->state = state;
+		context->content = content;
+		context->blockmax = blockmax;
+		context->info_oldest = info_oldest;
+		context->info_has_rehash = info_has_rehash;
+
+		msg_progress("Saving state to %s...\n", content->content);
+
+#if HAVE_PTHREAD_CREATE
+		if (pthread_create(&context->thread, 0, state_write_thread, context) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Failed to create thread.\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+#else
+		content->retval = state_write_thread(context);
+#endif
+
+		i = i->next;
+	}
+
+	/* join all thread */
+	fail = 0;
+	first = 1;
+	crc = 0;
+	count_file = 0;
+	count_hardlink = 0;
+	count_symlink = 0;
+	count_dir = 0;
+	i = tommy_list_head(&state->contentlist);
+	while (i) {
+		struct snapraid_content* content = i->data;
+		struct state_write_thread_context* context = content->context;
+		void* retval;
+
+#if HAVE_PTHREAD_CREATE
+		if (pthread_join(context->thread, &retval) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Failed to join thread.\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+#else
+		retval = context->retval;
+#endif
+		if (retval) {
+			fail = 1;
+		} else {
+			if (first) {
+				first = 0;
+				crc = context->crc;
+				count_file = context->count_file;
+				count_hardlink = context->count_hardlink;
+				count_symlink = context->count_symlink;
+				count_dir = context->count_dir;
+			} else {
+				if (crc != context->crc) {
+					/* LCOV_EXCL_START */
+					log_fatal("Different CRCs writing content streams.\n");
+					log_fatal("DANGER! Your RAM memory is broken! DO NOT PROCEED UNTIL FIXED!\n");
+					log_fatal("Try running a memory test like http://www.memtest86.com/\n");
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
+			}
+		}
+
+		free(context);
+
+		i = i->next;
+	}
+
+	/* abort on failure */
+	if (fail) {
+		/* LCOV_EXCL_START */
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -2946,6 +3140,8 @@ static void state_write_content(struct snapraid_state* state, STREAM* f, uint32_
 	msg_verbose("%8u hardlinks\n", count_hardlink);
 	msg_verbose("%8u symlinks\n", count_symlink);
 	msg_verbose("%8u empty dirs\n", count_dir);
+
+	*out_crc = crc;
 }
 
 void state_read(struct snapraid_state* state)
@@ -3095,9 +3291,22 @@ void state_read(struct snapraid_state* state)
 	state->checked_read = 1;
 }
 
+struct state_verify_thread_context {
+	struct snapraid_state* state;
+	struct snapraid_content* content;
+#if HAVE_PTHREAD_CREATE
+	pthread_t thread;
+#else
+	void* retval;
+#endif
+	/* input */
+	uint32_t crc;
+};
+
 static void* state_verify_thread(void* arg)
 {
-	struct snapraid_content* content = arg;
+	struct state_verify_thread_context* context = arg;
+	struct snapraid_content* content = context->content;
 	STREAM* f;
 	char tmp[PATH_MAX];
 	unsigned char buf[4];
@@ -3110,24 +3319,24 @@ static void* state_verify_thread(void* arg)
 	if (f == 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error reopening the content file '%s'. %s.\n", tmp, strerror(errno));
-		return content;
+		return context;
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (sdeplete(f, buf) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error flushing the content file '%s'. %s.\n", tmp, strerror(errno));
-		return content;
+		return context;
 		/* LCOV_EXCL_STOP */
 	}
 
 	/* get the stored crc from the last four bytes */
 	crc_stored = buf[0] | (uint32_t)buf[1] << 8 | (uint32_t)buf[2] << 16 | (uint32_t)buf[3] << 24;
 
-	if (crc_stored != content->crc) {
+	if (crc_stored != context->crc) {
 		/* LCOV_EXCL_START */
 		log_fatal("DANGER! Wrong stored CRC in '%s'\n", tmp);
-		return content;
+		return context;
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -3140,21 +3349,21 @@ static void* state_verify_thread(void* arg)
 	if (crc_computed != crc_stored) {
 		/* LCOV_EXCL_START */
 		log_fatal("DANGER! Wrong file CRC in '%s'\n", tmp);
-		return content;
+		return context;
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (sclose(f) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error closing the content file '%s'. %s.\n", tmp, strerror(errno));
-		return content;
+		return context;
 		/* LCOV_EXCL_STOP */
 	}
 
 	return 0;
 }
 
-static void state_verify(struct snapraid_state* state, uint32_t crc)
+static void state_verify_content(struct snapraid_state* state, uint32_t crc)
 {
 	tommy_node* i;
 	int fail;
@@ -3163,21 +3372,28 @@ static void state_verify(struct snapraid_state* state, uint32_t crc)
 	i = tommy_list_head(&state->contentlist);
 	while (i) {
 		struct snapraid_content* content = i->data;
+		struct state_verify_thread_context* context;
+
+		/* allocate the thread context */
+		context = malloc_nofail(sizeof(struct state_verify_thread_context));
+		content->context = context;
+
+		/* initialize */
+		context->state = state;
+		context->content = content;
+		context->crc = crc;
 
 		msg_progress("Verifying %s...\n", content->content);
 
-		/* set the expected crc */
-		content->crc = crc;
-
 #if HAVE_PTHREAD_CREATE
-		if (pthread_create(&content->thread, 0, state_verify_thread, content) != 0) {
+		if (pthread_create(&context->thread, 0, state_verify_thread, context) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Failed to create thread.\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 #else
-		content->retval = state_verify_thread(content);
+		content->retval = state_verify_thread(context);
 #endif
 
 		i = i->next;
@@ -3188,20 +3404,23 @@ static void state_verify(struct snapraid_state* state, uint32_t crc)
 	i = tommy_list_head(&state->contentlist);
 	while (i) {
 		struct snapraid_content* content = i->data;
+		struct state_verify_thread_context* context = content->context;
 		void* retval;
 
 #if HAVE_PTHREAD_CREATE
-		if (pthread_join(content->thread, &retval) != 0) {
+		if (pthread_join(context->thread, &retval) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Failed to join thread.\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
 #else
-		retval = content->retval;
+		retval = context->retval;
 #endif
 		if (retval)
 			fail = 1;
+
+		free(context);
 
 		i = i->next;
 	}
@@ -3214,7 +3433,7 @@ static void state_verify(struct snapraid_state* state, uint32_t crc)
 	}
 }
 
-static void state_rename(struct snapraid_state* state)
+static void state_rename_content(struct snapraid_state* state)
 {
 	tommy_node* i;
 
@@ -3238,80 +3457,16 @@ static void state_rename(struct snapraid_state* state)
 
 void state_write(struct snapraid_state* state)
 {
-	STREAM* f;
-	unsigned count_content;
-	tommy_node* i;
-	unsigned k;
 	uint32_t crc;
 
-	/* count the content files */
-	count_content = 0;
-	i = tommy_list_head(&state->contentlist);
-	while (i) {
-		struct snapraid_content* content = i->data;
-		msg_progress("Saving state to %s...\n", content->content);
-		++count_content;
-		i = i->next;
-	}
+	/* write all the content files */
+	state_write_content(state, &crc);
 
-	/* open all the content files */
-	f = sopen_multi_write(count_content);
-	if (!f) {
-		/* LCOV_EXCL_START */
-		log_fatal("Error opening the content files.\n");
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
+	/* verify the just written files */
+	state_verify_content(state, crc);
 
-	k = 0;
-	i = tommy_list_head(&state->contentlist);
-	while (i) {
-		struct snapraid_content* content = i->data;
-		char tmp[PATH_MAX];
-		pathprint(tmp, sizeof(tmp), "%s.tmp", content->content);
-		if (sopen_multi_file(f, k, tmp) != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal("Error opening the content file '%s'. %s.\n", tmp, strerror(errno));
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
-		++k;
-		i = i->next;
-	}
-
-	state_write_content(state, f, &crc);
-
-	/* Use the sequence fflush() -> fsync() -> fclose() -> rename() to ensure */
-	/* than even in a system crash event we have one valid copy of the file. */
-
-	if (sflush(f) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal("Error writing the content file '%s', in flush(). %s.\n", serrorfile(f), strerror(errno));
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-#if HAVE_FSYNC
-	if (ssync(f) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal("Error writing the content file '%s' in sync(). %s.\n", serrorfile(f), strerror(errno));
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-#endif
-
-	if (sclose(f) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal("Error closing the content files. %s.\n", strerror(errno));
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* verify the just written temp files */
-	state_verify(state, crc);
-
-	/* rename the temp files, over the real ones */
-	state_rename(state);
+	/* rename the new files, over the old ones */
+	state_rename_content(state);
 
 	state->need_write = 0; /* no write needed anymore */
 	state->checked_read = 0; /* what we wrote is not checked in read */

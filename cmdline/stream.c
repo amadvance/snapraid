@@ -129,6 +129,18 @@ int sopen_multi_file(STREAM* s, unsigned i, const char* file)
 	return 0;
 }
 
+STREAM* sopen_write(const char* file)
+{
+	STREAM* s = sopen_multi_write(1);
+
+	if (sopen_multi_file(s, 0, file) != 0) {
+		sclose(s);
+		return 0;
+	}
+
+	return s;
+}
+
 int sclose(STREAM* s)
 {
 	int fail = 0;
