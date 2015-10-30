@@ -163,10 +163,18 @@ CHECKFLAGS_VERBOSE = $(CHECKFLAGS_BASE) -v -G
 CHECKFLAGS = $(CHECKFLAGS_BASE) -q -q -q
 
 # Number of files to create
+if !HAVE_MEMORY_CHECKER
 CHECKCOUNT = 1000
+else
+CHECKCOUNT = 500
+endif
 
 # Size of files to create
+if !HAVE_MEMORY_CHECKER
 CHECKSIZE = 4000
+else
+CHECKSIZE = 100
+endif
 
 CONF = $(srcdir)/test/test-par6.conf
 HOLE = $(srcdir)/test/test-par6-hole.conf
@@ -191,11 +199,21 @@ check-local:
 	mkdir bench/pool
 	echo --- Stream
 	$(TESTENV) ./mkstream$(EXEEXT)
+if HAVE_THREAD_CHECKER
+#### THREAD TEST ####
+	echo --- Create some files
+	$(TESTENV) ./mktest$(EXEEXT) generate 1 6 $(CHECKCOUNT) $(CHECKSIZE)
+	echo --- Some commands that use threads
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) test-rewrite
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) scrub
+else
 #### COMMAND LINE ####
 	echo --- Help
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -H
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -V
 	$(TESTENV) ./mktest$(EXEEXT)
+if !HAVE_MEMORY_CHECKER
 if HAVE_EMULATOR
 # Run the self test in AVX2
 	$(TESTENV_AVX2) ./snapraid$(EXEEXT) --test-skip-device -c $(CONF) status
@@ -209,6 +227,7 @@ else
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -c $(CONF) status
 # Run the speed test natively
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -T
+endif
 endif
 #### EMPTY ####
 	echo --- Some commands with empty array
@@ -276,7 +295,7 @@ endif
 	rm bench/content bench/?-content
 # Now rebuild the array with alpha order and murmur3 and do some commands
 # Later we will convert it to spooky2 to test both hashes
-	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) --test-expect-need-sync  diff > output.log
+	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) --test-expect-need-sync diff > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-murmur3 --test-force-autosave-at 100 sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) dup -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) list -l test.log > output.log
@@ -404,7 +423,7 @@ endif
 	echo HASH > bench/disk1/HASH-RM
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "rm bench/disk1/HASH-RM" --test-expect-failure -h sync
 	echo HASH > bench/disk1/HASH-CHMOD
-# Doesn't run this test as root because the root user overrride permissions
+# Doesn't run this test as root because the root user override permissions
 	if [[ $$EUID -ne 0 ]]; then \
 		$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-run "chmod a-r bench/disk1/HASH-CHMOD" --test-expect-failure -h sync; \
 	fi
@@ -511,6 +530,7 @@ endif
 	mv bench/disk4/a/7* bench/disk4/b/
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
+if !HAVE_MEMORY_CHECKER
 #### RECOVER 1 ####
 	echo --- Delete one disk, fix and check with PAR1
 	rm -r bench/disk3
@@ -594,6 +614,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR6) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+endif
 #### MULTI STEP ####
 	echo --- Delete some files and create some new, sync and check in multiple steps
 	rm bench/disk1/a/4*
@@ -813,6 +834,7 @@ endif
 	echo --- Sync after all the fixes
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
+endif
 	echo Success!
 
 # Manual testing

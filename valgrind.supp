@@ -1,0 +1,19 @@
+{
+   Global counter of allocated memory
+   Helgrind:Race
+   fun:malloc_nofail
+}
+
+{
+   Global counter of allocated memory
+   drd:ConflictingAccess
+   fun:malloc_nofail
+}
+
+{
+   printf reports false positves when printing more than one variables at time
+   exp-sgcheck:SorG
+   ...
+   fun:printf
+}
+

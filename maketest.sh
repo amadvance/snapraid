@@ -26,6 +26,22 @@ if ! make check distclean; then
 	exit 1
 fi
 
+if ! ./configure --enable-helgrind; then
+	exit 1
+fi
+
+if ! make check distclean; then
+	exit 1
+fi
+
+if ! ./configure --enable-drd; then
+	exit 1
+fi
+
+if ! make check distclean; then
+	exit 1
+fi
+
 if ! ./configure ; then
 	exit 1
 fi
