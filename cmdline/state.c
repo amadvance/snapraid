@@ -1464,7 +1464,7 @@ static void state_content_check(struct snapraid_state* state, const char* path)
  *
  * Note that position with only DELETED blocks are discarged.
  */
-static int position_is_required(struct snapraid_state* state, block_off_t pos)
+static int fs_position_is_required(struct snapraid_state* state, block_off_t pos)
 {
 	tommy_node* i;
 
@@ -1493,7 +1493,7 @@ static int position_is_required(struct snapraid_state* state, block_off_t pos)
  * Note also that not requiring an info block, doesn't mean that if present it
  * can be discarded.
  */
-static int info_is_required(struct snapraid_state* state, block_off_t pos)
+static int fs_info_is_required(struct snapraid_state* state, block_off_t pos)
 {
 	tommy_node* i;
 
@@ -1510,7 +1510,7 @@ static int info_is_required(struct snapraid_state* state, block_off_t pos)
 	return 0;
 }
 
-static void position_clear_deleted(struct snapraid_state* state, block_off_t pos)
+static void fs_position_clear_deleted(struct snapraid_state* state, block_off_t pos)
 {
 	tommy_node* i;
 
@@ -1530,9 +1530,9 @@ static void position_clear_deleted(struct snapraid_state* state, block_off_t pos
 /**
  * Check if a block position in a disk is deleted.
  */
-static int is_block_deleted(struct snapraid_disk* disk, block_off_t pos)
+static int fs_is_block_deleted_ts(struct snapraid_disk* disk, struct snapraid_chunk** fs_last, block_off_t pos)
 {
-	struct snapraid_block* block = fs_par2block_get(disk, pos);
+	struct snapraid_block* block = fs_par2block_get_ts(disk, fs_last, pos);
 
 	return block_state_get(block) == BLOCK_STATE_DELETED;
 }
@@ -1948,7 +1948,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					info_set(&state->infoarr, v_pos, info);
 
 					/* ensure that an info is present only for used positions */
-					if (info_is_required(state, v_pos)) {
+					if (fs_info_is_required(state, v_pos)) {
 						if (!info) {
 							/* LCOV_EXCL_START */
 							decoding_error(path, f);
@@ -2653,6 +2653,14 @@ static void* state_write_thread(void* arg)
 	for (i = state->disklist; i != 0; i = i->next) {
 		tommy_node* j;
 		struct snapraid_disk* disk = i->data;
+		struct snapraid_chunk* fs_last;
+
+		/**
+		 * This is the last accessed chunk in the tree operations.
+		 * Here we are inside a thread, and we cannot use the
+		 * ::disk member to store this information.
+		 */
+		fs_last = 0;
 
 		/* if the disk is not mapped, skip it */
 		if (disk->mapping_idx < 0)
@@ -2693,7 +2701,7 @@ static void* state_write_thread(void* arg)
 			begin = 0;
 			while (begin < file->blockmax) {
 				unsigned v_state = block_state_get(fs_file2block_get(file, begin));
-				block_off_t v_pos = fs_file2par_get(disk, file, begin);
+				block_off_t v_pos = fs_file2par_get_ts(disk, &fs_last, file, begin);
 				uint32_t v_count;
 
 				block_off_t end;
@@ -2703,7 +2711,7 @@ static void* state_write_thread(void* arg)
 				while (end < file->blockmax) {
 					if (v_state != block_state_get(fs_file2block_get(file, end)))
 						break;
-					if (v_pos + (end - begin) != fs_file2par_get(disk, file, end))
+					if (v_pos + (end - begin) != fs_file2par_get_ts(disk, &fs_last, file, end))
 						break;
 					++end;
 				}
@@ -2808,12 +2816,12 @@ static void* state_write_thread(void* arg)
 			int is_deleted;
 			block_off_t end;
 
-			is_deleted = is_block_deleted(disk, begin);
+			is_deleted = fs_is_block_deleted_ts(disk, &fs_last, begin);
 
 			/* find the end of run of blocks */
 			end = begin + 1;
 			while (end < blockmax
-				&& is_deleted == is_block_deleted(disk, end)
+				&& is_deleted == fs_is_block_deleted_ts(disk, &fs_last, end)
 			) {
 				++end;
 			}
@@ -2826,7 +2834,7 @@ static void* state_write_thread(void* arg)
 
 				/* write all the hash */
 				while (begin < end) {
-					struct snapraid_block* block = fs_par2block_get(disk, begin);
+					struct snapraid_block* block = fs_par2block_get_ts(disk, &fs_last, begin);
 
 					swrite(block->hash, HASH_SIZE, f);
 
@@ -2997,7 +3005,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	info_has_rehash = 0; /* if there is a rehash info */
 	for (idx = 0; idx < blockmax; ++idx) {
 		/* if the position is used */
-		if (position_is_required(state, idx)) {
+		if (fs_position_is_required(state, idx)) {
 			snapraid_info info = info_get(&state->infoarr, idx);
 
 			/* only if there is some info to store */
@@ -3015,7 +3023,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 			info_set(&state->infoarr, idx, 0);
 
 			/* and clear any deleted blocks */
-			position_clear_deleted(state, idx);
+			fs_position_clear_deleted(state, idx);
 		}
 	}
 

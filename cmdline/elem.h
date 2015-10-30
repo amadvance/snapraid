@@ -321,9 +321,7 @@ struct snapraid_disk {
 	char dir[PATH_MAX]; /**< Mount point of the disk. It always terminates with /. */
 	char smartctl[PATH_MAX]; /**< Custom command for smartctl. Empty means auto. */
 	uint64_t device; /**< Device identifier. */
-
 	uint64_t tick; /**< Usage time of the disk. */
-
 	block_off_t total_blocks; /**< Number of total blocks. */
 	block_off_t free_blocks; /**< Number of free blocks at the last sync. */
 
@@ -899,6 +897,8 @@ int fs_check(struct snapraid_disk* disk);
  *
  * After this call you can use the par2file/par2block operations
  * to query the relation.
+ *
+ * \note This function is NOT thread-safe as it uses the the disk cache. +
  */
 void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos);
 
@@ -907,6 +907,8 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
  *
  * After this call the par2file/par2block operations
  * won't find anymore the parity association.
+ *
+ * \note This function is NOT thread-safe as it uses the the disk cache.
  */
 void fs_deallocate(struct snapraid_disk* disk, block_off_t pos);
 
@@ -921,21 +923,48 @@ static inline struct snapraid_block* fs_file2block_get(struct snapraid_file* fil
 }
 
 /**
+ * Like fs_file2par_get() but thread-safe.
+ */
+struct snapraid_file* fs_par2file_get_ts(struct snapraid_disk* disk, struct snapraid_chunk** fs_last, block_off_t parity_pos, block_off_t* file_pos);
+
+/**
  * Get the file position from the parity position.
  * Return 0 if no file is using it.
+ * \note This function is NOT thread-safe as it uses the the disk cache.
  */
-struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos);
+static inline struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos)
+{
+	return fs_par2file_get_ts(disk, &disk->fs_last, parity_pos, file_pos);
+}
+
+/**
+ * Like fs_file2par_get() but thread-safe.
+ */
+block_off_t fs_file2par_get_ts(struct snapraid_disk* disk, struct snapraid_chunk** fs_last, struct snapraid_file* file, block_off_t file_pos);
 
 /**
  * Get the parity position from the file position.
+ * \note This function is NOT thread-safe as it uses the the disk cache.
  */
-block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos);
+static inline block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)
+{
+	return fs_file2par_get_ts(disk, &disk->fs_last, file, file_pos);
+}
+
+/**
+ * Like fs_par2block_get() but thread-safe.
+ */
+struct snapraid_block* fs_par2block_get_ts(struct snapraid_disk* disk, struct snapraid_chunk** fs_last, block_off_t parity_pos);
 
 /**
  * Get the block from the parity position.
  * Return BLOCK_EMPTY==0 if the block is over the end of the disk or not used.
+ * \note This function is NOT thread-safe as it uses the the disk cache. 
  */
-struct snapraid_block* fs_par2block_get(struct snapraid_disk* disk, block_off_t parity_pos);
+static inline struct snapraid_block* fs_par2block_get(struct snapraid_disk* disk, block_off_t parity_pos)
+{
+	return fs_par2block_get_ts(disk, &disk->fs_last, parity_pos);
+}
 
 /**
  * Allocate a disk mapping.
