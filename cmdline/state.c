@@ -2540,7 +2540,7 @@ static void* state_write_thread(void* arg)
 	if (f == 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error opening the content file '%s'. %s.\n", tmp, strerror(errno));
-		return context;
+		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -2555,7 +2555,7 @@ static void* state_write_thread(void* arg)
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-		return context;
+		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -2567,14 +2567,14 @@ static void* state_write_thread(void* arg)
 	} else {
 		/* LCOV_EXCL_START */
 		log_fatal("Unexpected hash when writing the content file '%s'.\n", serrorfile(f));
-		return context;
+		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
 	swrite(state->hashseed, HASH_SIZE, f);
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-		return context;
+		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -2590,14 +2590,14 @@ static void* state_write_thread(void* arg)
 			} else {
 				/* LCOV_EXCL_START */
 				log_fatal("Unexpected prevhash when writing the content file '%s'.\n", serrorfile(f));
-				return context;
+				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
 			swrite(state->prevhashseed, HASH_SIZE, f);
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
 				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-				return context;
+				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
 		}
@@ -2613,7 +2613,7 @@ static void* state_write_thread(void* arg)
 		if (!disk) {
 			/* LCOV_EXCL_START */
 			log_fatal("Internal inconsistency for unmapped disk '%s'\n", map->name);
-			return context;
+			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
 
@@ -2628,7 +2628,7 @@ static void* state_write_thread(void* arg)
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
 				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-				return context;
+				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
 		}
@@ -2644,7 +2644,7 @@ static void* state_write_thread(void* arg)
 		if (serror(f)) {
 			/* LCOV_EXCL_START */
 			log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-			return context;
+			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
 	}
@@ -2693,7 +2693,7 @@ static void* state_write_thread(void* arg)
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
 				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-				return context;
+				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -2729,7 +2729,7 @@ static void* state_write_thread(void* arg)
 				default :
 					/* LCOV_EXCL_START */
 					log_fatal("Internal inconsistency in state for block %u state %u\n", v_pos, v_state);
-					return context;
+					goto bail;
 					/* LCOV_EXCL_STOP */
 				}
 
@@ -2748,7 +2748,7 @@ static void* state_write_thread(void* arg)
 				if (serror(f)) {
 					/* LCOV_EXCL_START */
 					log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-					return context;
+					goto bail;
 					/* LCOV_EXCL_STOP */
 				}
 
@@ -2780,7 +2780,7 @@ static void* state_write_thread(void* arg)
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
 				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-				return context;
+				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
 		}
@@ -2795,7 +2795,7 @@ static void* state_write_thread(void* arg)
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
 				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-				return context;
+				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -2808,7 +2808,7 @@ static void* state_write_thread(void* arg)
 		if (serror(f)) {
 			/* LCOV_EXCL_START */
 			log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-			return context;
+			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
 		begin = 0;
@@ -2852,7 +2852,7 @@ static void* state_write_thread(void* arg)
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
 				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-				return context;
+				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
 		}
@@ -2902,7 +2902,7 @@ static void* state_write_thread(void* arg)
 		if (serror(f)) {
 			/* LCOV_EXCL_START */
 			log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-			return context;
+			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
 
@@ -2916,7 +2916,7 @@ static void* state_write_thread(void* arg)
 	if (sflush(f)) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error writing the content file '%s' (in flush before crc). %s.\n", serrorfile(f), strerror(errno));
-		return context;
+		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -2930,7 +2930,7 @@ static void* state_write_thread(void* arg)
 		log_fatal("CRC mismatch writing the content stream.\n");
 		log_fatal("DANGER! Your RAM memory is broken! DO NOT PROCEED UNTIL FIXED!\n");
 		log_fatal("Try running a memory test like http://www.memtest86.com/\n");
-		return context;
+		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -2938,7 +2938,7 @@ static void* state_write_thread(void* arg)
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
-		return context;
+		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -2947,7 +2947,7 @@ static void* state_write_thread(void* arg)
 	if (sflush(f) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error writing the content file '%s', in flush(). %s.\n", serrorfile(f), strerror(errno));
-		return context;
+		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -2955,15 +2955,16 @@ static void* state_write_thread(void* arg)
 	if (ssync(f) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error writing the content file '%s' in sync(). %s.\n", serrorfile(f), strerror(errno));
-		return context;
+		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
 #endif
 
 	if (sclose(f) != 0) {
 		/* LCOV_EXCL_START */
+		f = 0;
 		log_fatal("Error closing the content files. %s.\n", strerror(errno));
-		return context;
+		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -2975,6 +2976,14 @@ static void* state_write_thread(void* arg)
 	context->count_dir = count_dir;
 
 	return 0;
+
+	/* LCOV_EXCL_START */
+bail:
+	/* cleanup resources */
+	if (f != 0)
+		sclose(f);
+	return context;
+	/* LCOV_EXCL_STOP */
 }
 
 static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
@@ -3329,14 +3338,14 @@ static void* state_verify_thread(void* arg)
 	if (f == 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error reopening the content file '%s'. %s.\n", tmp, strerror(errno));
-		return context;
+		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (sdeplete(f, buf) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error flushing the content file '%s'. %s.\n", tmp, strerror(errno));
-		return context;
+		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -3346,7 +3355,7 @@ static void* state_verify_thread(void* arg)
 	if (crc_stored != context->crc) {
 		/* LCOV_EXCL_START */
 		log_fatal("DANGER! Wrong stored CRC in '%s'\n", tmp);
-		return context;
+		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -3359,18 +3368,27 @@ static void* state_verify_thread(void* arg)
 	if (crc_computed != crc_stored) {
 		/* LCOV_EXCL_START */
 		log_fatal("DANGER! Wrong file CRC in '%s'\n", tmp);
-		return context;
+		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (sclose(f) != 0) {
 		/* LCOV_EXCL_START */
+		f = 0;
 		log_fatal("Error closing the content file '%s'. %s.\n", tmp, strerror(errno));
-		return context;
+		goto bail;
 		/* LCOV_EXCL_STOP */
 	}
 
 	return 0;
+
+bail:
+	/* LCOV_EXCL_START */
+	/* cleanup resources */
+	if (f != 0)
+		sclose(f);
+	return context;
+	/* LCOV_EXCL_STOP */
 }
 
 static void state_verify_content(struct snapraid_state* state, uint32_t crc)
