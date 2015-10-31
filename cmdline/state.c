@@ -3111,7 +3111,9 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		retval = context->retval;
 #endif
 		if (retval) {
+			/* LCOV_EXCL_START */
 			fail = 1;
+			/* LCOV_EXCL_STOP */
 		} else {
 			if (first) {
 				first = 0;
@@ -3425,8 +3427,11 @@ static void state_verify_content(struct snapraid_state* state, uint32_t crc)
 #else
 		retval = context->retval;
 #endif
-		if (retval)
+		if (retval) {
+			/* LCOV_EXCL_START */
 			fail = 1;
+			/* LCOV_EXCL_STOP */
+		}
 
 		free(context);
 
