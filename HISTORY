@@ -1,7 +1,7 @@
 SnapRAID HISTORY
 ================
 
-9.0 2015/10
+9.0 2015/11
 ===========
  * Fixes an invalid assumption that could happen when using the
    -e, --filter-error option with "fix" or "check".
@@ -20,8 +20,12 @@ SnapRAID HISTORY
    uses 17 bytes of memory, instead of the previous 28 bytes
    (for 32 bit) or 36 bytes (for 64 bit).
    This could result is a memory saving of up the 50%.
- * When writing content files, always verify them before
-   replacing the previous ones.
+ * Content files are now written asyncronously from different
+   threads to avoid the unfortunate condition that a memory
+   error affects all of them in the same way.
+   After writing them, they are also read again to verify their CRC.
+   This is done to ensure thay they are really OK, even in the
+   case of the worst possible silent errors.
  * Extends the -D, --force-device option to ignore more
    erroneous conditions in the 'fix' command, like unaccessible
    disks, or disks sharing the same physical device.
