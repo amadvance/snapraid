@@ -58,6 +58,7 @@ Frequently Asked Questions for <span class="bold">SnapRAID</span>.
 <li><a href="#enc">Does SnapRAID provide encryption, virtual views/storage pooling, SMART monitoring and Power control?</a></li>
 <li><a href="#bakhome">Is SnapRAID suitable to backup the home/My Documents directory?</a></li>
 <li><a href="#bakos">Is SnapRAID suitable to backup the boot OS disk?</a></li>
+<li><a href="#hashonly">Can SnapRAID hash files wihout parity computation?</a></li>
 </ul>
 
 
@@ -357,6 +358,17 @@ in any other way.
 No. For the disk used for booting your machine and containing the OS files,
 it's better to use another solution, like RAID1 or a mirror copy.
 SnapRAID needs an OS to run, and then it cannot recover the OS if the OS is missing.
+</p>
+
+
+<h3 id="hashonly">Can SnapRAID hash files wihout parity computation?</h3>
+<p>
+No. It's not possible to use SnapRAID to only hash files. The hashing used by SnapRAID is meant to be used
+in combination of parity computation, and it's not the best implementation for a hash only solution.
+</p>
+<p>
+You can find a list of file verification tools at:
+<a href="https://en.wikipedia.org/wiki/Comparison_of_file_verification_software">Wikipedia: Comparison_of_file_verification_software</a>.
 </p>
 
 <h2>Setup</h2>
