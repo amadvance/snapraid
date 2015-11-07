@@ -1032,7 +1032,7 @@ Configuration
 	any wasted space.
 
   autosave SIZE_IN_GIGABYTES
-	Automatically save the state when syncing after the specified amount
+	Automatically save the state when syncing or scrubbing after the specified amount
 	of GB processed.
 	This option is useful to avoid to restart from scratch long "sync"
 	commands interrupted by a machine crash, or any other event that
