@@ -764,9 +764,9 @@ size and timestamp.
 If the file size or timestamp are different, the parity data
 is recomputed for the whole file.
 If the file is moved or renamed in the same disk, keeping the
-same inode, the parity is no recomputed.
+same inode, the parity is not recomputed.
 If the file is moved to another disk, the parity is recomputed,
-but the previously compute hash information is kept.
+but the previously computed hash information is kept.
 .PP
 The \[dq]content\[dq] and \[dq]parity\[dq] files are modified if necessary.
 The files in the array are NOT modified.
@@ -826,19 +826,27 @@ All the files and the parity data are compared with the snapshot
 state saved in the last \[dq]sync\[dq].
 If a difference is found, it\'s reverted to the stored snapshot.
 .PP
-Note that \[dq]fix\[dq] doesn\'t differentiate between errors and intentional
-modifications. It unconditionally reverts the file state at the last \[dq]sync\[dq].
+The \[dq]fix\[dq] command doesn\'t differentiate between errors and
+intentional modifications. It unconditionally reverts the file state
+at the last \[dq]sync\[dq].
 .PP
 If no other option is specified the full array is processed.
 Use the filter options to select a subset of files or disks to operate on.
 .PP
 To only fix the blocks marked bad during \[dq]sync\[dq] and \[dq]scrub\[dq],
 use the \-e, \-\-filter\-error option.
-As difference from other filter options, with this one fixes are
+As difference from other filter options, with this one the fixes are
 applied only to files that are not modified from the the latest \[dq]sync\[dq].
 .PP
-All the files that cannot be fixed are renamed adding
-the \[dq].unrecoverable\[dq] extension.
+All the files that cannot be fixed are renamed adding the
+\[dq].unrecoverable\[dq] extension.
+.PP
+Before fixing, the full array is scanned to find any moved file,
+after the last \[dq]sync\[dq] operation.
+These files are identified by their timestamp, ignoring their name
+and directory, and are used in the recovering process if necessary.
+If you moved some of them outside the array, you can use the \-i, \-\-import
+option to specify additional directories to scan.
 .PP
 Files are identified only by path, and not by inode.
 .PP

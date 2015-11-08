@@ -471,9 +471,9 @@ Commands
 	If the file size or timestamp are different, the parity data
 	is recomputed for the whole file.
 	If the file is moved or renamed in the same disk, keeping the
-	same inode, the parity is no recomputed.
+	same inode, the parity is not recomputed.
 	If the file is moved to another disk, the parity is recomputed,
-	but the previously compute hash information is kept.
+	but the previously computed hash information is kept.
 
 	The "content" and "parity" files are modified if necessary.
 	The files in the array are NOT modified.
@@ -531,19 +531,27 @@ Commands
 	state saved in the last "sync".
 	If a difference is found, it's reverted to the stored snapshot.
 
-	Note that "fix" doesn't differentiate between errors and intentional
-	modifications. It unconditionally reverts the file state at the last "sync".
+	The "fix" command doesn't differentiate between errors and
+	intentional modifications. It unconditionally reverts the file state
+	at the last "sync".
 
 	If no other option is specified the full array is processed.
 	Use the filter options to select a subset of files or disks to operate on.
 
 	To only fix the blocks marked bad during "sync" and "scrub",
 	use the -e, --filter-error option.
-	As difference from other filter options, with this one fixes are
+	As difference from other filter options, with this one the fixes are
 	applied only to files that are not modified from the the latest "sync".
 
-	All the files that cannot be fixed are renamed adding
-	the ".unrecoverable" extension.
+	All the files that cannot be fixed are renamed adding the
+	".unrecoverable" extension.
+
+	Before fixing, the full array is scanned to find any moved file,
+	after the last "sync" operation.
+	These files are identified by their timestamp, ignoring their name
+	and directory, and are used in the recovering process if necessary.
+	If you moved some of them outside the array, you can use the -i, --import
+	option to specify additional directories to scan.
 
 	Files are identified only by path, and not by inode.
 
