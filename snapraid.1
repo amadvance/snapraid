@@ -18,11 +18,11 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
 .PD
-	[\-p, \-\-percentage PERC] [\-o, \-\-older\-than DAYS]
+	[\-p, \-\-percentage PERC|bad|sync|full]
 .PD 0
 .PP
 .PD
-	[\-l, \-\-log FILE]
+	[\-o, \-\-older\-than DAYS] [\-l, \-\-log FILE]
 .PD 0
 .PP
 .PD
@@ -307,8 +307,8 @@ snapraid scrub
 This command verifies the data in your array comparing it with
 the hash computed in the \[dq]sync\[dq] command.
 .PP
-Every run of the command checks about 12% of the array, but not data newer
-than 10 days.
+Every run of the command checks the 15% of the array, but not data
+already scrubbed in the previous 10 days.
 You can use the \-p, \-\-percentage option to specify a different amount,
 and the \-o, \-\-older\-than option to specify a different age in days.
 For example, to check 5% of the array older than 20 days use:
@@ -774,15 +774,13 @@ The files in the array are NOT modified.
 Scrubs the array, checking for silent or input/output errors in data
 and parity disks.
 .PP
-For each command invocation, the 12% of the array is checked, but
+For each command invocation, the 15% of the array is checked, but
 nothing that was already scrubbed in the last 10 days.
-This means that scrubbing once a week, every bit of data is checked
-at least one time every two months.
 .PP
 You can define a different scrub amount using the \-p, \-\-percentage
 option that takes as argument:
 bad \- Scrub blocks marked bad.
-synch \- Scrub new synced blocks never scrubbed.
+sync \- Scrub new synced blocks never scrubbed.
 full \- Scrub everything.
 0\-100 \- Scrub the exact percentage of blocks.
 .PP
@@ -981,10 +979,10 @@ This option can be used only with \[dq]check\[dq] and \[dq]fix\[dq].
 .TP
 .B \-p, \-\-percentage PERC|bad|sync|full
 Selects the part of the array to process in \[dq]scrub\[dq].
-PERC is a numeric value from 0 to 100, default is 12.
+PERC is a numeric value from 0 to 100, default is 20.
 Instead of a percentage, you can also specify the kind of scrub
-you want: \[dq]bad\[dq] scrubs bad blocks, \[dq]sync\[dq] the synced block
-not yet scrubbed, and \[dq]full\[dq] everything.
+you want: \[dq]bad\[dq] scrubs bad blocks, \[dq]sync\[dq] the blocks not yet
+scrubbed, and \[dq]full\[dq] for everything.
 This option can be used only with \[dq]scrub\[dq].
 .TP
 .B \-o, \-\-older\-than DAYS

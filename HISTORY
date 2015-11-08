@@ -12,6 +12,9 @@ SnapRAID HISTORY
    the already scrubbed ones.
    This allows to verify as early as possible that the written
    parity during sync is really correct.
+   This means that the selected percentage to scrub should take care
+   also of the just synced blocks. For this reason the default scrub
+   percentage is now increased to the 15%.
    The "status" command reports the amount of scrub necessary to
    ensure to scrub all the synced blocks.
  * The -p, --percentage option supports the new the arguments:

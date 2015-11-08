@@ -6,8 +6,8 @@ Synopsis
 	:	[-f, --filter PATTERN] [-d, --filter-disk NAME]
 	:	[-m, --filter-missing] [-e, --filter-error]
 	:	[-a, --audit-only] [-h, --pre-hash] [-i, --import DIR]
-	:	[-p, --percentage PERC] [-o, --older-than DAYS]
-	:	[-l, --log FILE]
+	:	[-p, --percentage PERC|bad|sync|full]
+	:	[-o, --older-than DAYS] [-l, --log FILE]
 	:	[-Z, --force-zero] [-E, --force-empty]
 	:	[-U, --force-uuid] [-D, --force-device]
 	:	[-N, --force-nocopy] [-F, --force-full]
@@ -171,8 +171,8 @@ Getting Started
 	This command verifies the data in your array comparing it with
 	the hash computed in the "sync" command.
 
-	Every run of the command checks about 12% of the array, but not data newer
-	than 10 days.
+	Every run of the command checks the 15% of the array, but not data
+	already scrubbed in the previous 10 days.
 	You can use the -p, --percentage option to specify a different amount,
 	and the -o, --older-than option to specify a different age in days.
 	For example, to check 5% of the array older than 20 days use:
@@ -482,15 +482,13 @@ Commands
 	Scrubs the array, checking for silent or input/output errors in data
 	and parity disks.
 
-	For each command invocation, the 12% of the array is checked, but
+	For each command invocation, the 15% of the array is checked, but
 	nothing that was already scrubbed in the last 10 days.
-	This means that scrubbing once a week, every bit of data is checked
-	at least one time every two months.
 
 	You can define a different scrub amount using the -p, --percentage
 	option that takes as argument:
 	bad - Scrub blocks marked bad.
-	synch - Scrub new synced blocks never scrubbed.
+	sync - Scrub new synced blocks never scrubbed.
 	full - Scrub everything.
 	0-100 - Scrub the exact percentage of blocks.
 
@@ -695,10 +693,10 @@ Options
 
 	-p, --percentage PERC|bad|sync|full
 		Selects the part of the array to process in "scrub".
-		PERC is a numeric value from 0 to 100, default is 12.
+		PERC is a numeric value from 0 to 100, default is 20.
 		Instead of a percentage, you can also specify the kind of scrub
-		you want: "bad" scrubs bad blocks, "sync" the synced block
-		not yet scrubbed, and "full" everything.
+		you want: "bad" scrubs bad blocks, "sync" the blocks not yet
+		scrubbed, and "full" for everything.
 		This option can be used only with "scrub".
 
 	-o, --older-than DAYS
