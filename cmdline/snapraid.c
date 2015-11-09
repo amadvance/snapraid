@@ -514,8 +514,8 @@ int main(int argc, char* argv[])
 		case 'p' :
 			if (strcmp(optarg, "bad") == 0) {
 				percentage = SCRUB_BAD;
-			} else if (strcmp(optarg, "sync") == 0) {
-				percentage = SCRUB_SYNC;
+			} else if (strcmp(optarg, "new") == 0) {
+				percentage = SCRUB_NEW;
 			} else if (strcmp(optarg, "full") == 0) {
 				percentage = SCRUB_FULL;
 			} else {

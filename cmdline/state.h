@@ -246,8 +246,9 @@ void state_rehash(struct snapraid_state* state);
  */
 #define SCRUB_AUTO -1 /**< Automatic selection. */
 #define SCRUB_BAD -2 /**< Scrub only the bad blocks. */
-#define SCRUB_SYNC -3 /**< Scub the latest synched data. */
+#define SCRUB_NEW -3 /**< Scub the new blocks. */
 #define SCRUB_FULL -4 /**< Scrub everything. */
+#define SCRUB_EVEN -5 /**< Even blocks. */
 
 /**
  * Scrub the files.

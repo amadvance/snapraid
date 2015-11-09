@@ -36,53 +36,70 @@ struct snapraid_rehash {
 };
 
 /**
+ * Scrub plan to use.
+ */
+struct snapraid_plan {
+	int plan; /**< One of the SCRUB_*. */
+	time_t timelimit; /**< Time limit. Valid only with SCRUB_AUTO. */
+	block_off_t lastlimit; /**< Number of blocks allowed with time exactly at ::timelimit. */
+	block_off_t countlast; /**< Counter of blocks with time exactly at ::timelimit. */
+};
+
+/**
  * Check if we have to process the specified block index ::i.
  */
-static int block_is_enabled(struct snapraid_state* state, block_off_t i, time_t timelimit, block_off_t lastlimit, block_off_t* countlast)
+static int block_is_enabled(struct snapraid_state* state, block_off_t i, struct snapraid_plan* plan)
 {
 	time_t blocktime;
 	snapraid_info info;
 
-	/* if it's unused */
+	/* don't scrub unused blocks in all plans */
 	info = info_get(&state->infoarr, i);
-	if (info == 0) {
+	if (info == 0)
+		return 0;
+
+	/* bad blocks are always scrubbed in all plans */
+	if (info_get_bad(info))
+		return 1;
+
+	switch (plan->plan) {
+	case SCRUB_FULL :
+		/* in 'full' plan everything is scrubbed */
+		return 1;
+	case SCRUB_EVEN :
+		/* in 'even' plan, scrub only even blocks */
+		return i % 2 == 0;
+	case SCRUB_NEW :
+		/* in 'sync' plan, only blocks never scrubbed */
+		return info_get_justsynced(info);
+	case SCRUB_BAD :
+		/* in 'bad' plan, only bad blocks (already reported) */
+		return 0;
+	}
+
+	/* if it's too new */
+	blocktime = info_get_time(info);
+	if (blocktime > plan->timelimit) {
 		/* skip it */
 		return 0;
 	}
 
-	/* blocks marked as bad are always checked */
-	if (!info_get_bad(info)) {
-
-		/* if it's too new */
-		blocktime = info_get_scrubtime(info);
-		if (blocktime > timelimit) {
+	/* if the time is less than the limit, always include */
+	/* otherwise, check if we reached the last limit count */
+	if (blocktime == plan->timelimit) {
+		/* if we reached the count limit */
+		if (plan->countlast >= plan->lastlimit) {
 			/* skip it */
 			return 0;
 		}
 
-		/* skip odd blocks, used only for testing */
-		if (state->opt.force_scrub_even && (i % 2) != 0) {
-			/* skip it */
-			return 0;
-		}
-
-		/* if the time is less than the limit, always include */
-		/* otherwise, check if we reached the last limit count */
-		if (blocktime == timelimit) {
-			/* if we reached the count limit */
-			if (*countlast >= lastlimit) {
-				/* skip it */
-				return 0;
-			}
-
-			++*countlast;
-		}
+		++plan->countlast;
 	}
 
 	return 1;
 }
 
-static int state_scrub_process(struct snapraid_state* state, struct snapraid_parity_handle** parity, block_off_t blockstart, block_off_t blockmax, time_t timelimit, block_off_t lastlimit, time_t now)
+static int state_scrub_process(struct snapraid_state* state, struct snapraid_parity_handle** parity, block_off_t blockstart, block_off_t blockmax, struct snapraid_plan* plan, time_t now)
 {
 	struct snapraid_handle* handle;
 	void* rehandle_alloc;
@@ -96,7 +113,6 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	data_off_t countsize;
 	block_off_t countpos;
 	block_off_t countmax;
-	block_off_t countlast;
 	block_off_t autosavedone;
 	block_off_t autosavelimit;
 	block_off_t autosavemissing;
@@ -125,9 +141,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 	/* first count the number of blocks to process */
 	countmax = 0;
-	countlast = 0;
+	plan->countlast = 0;
 	for (i = blockstart; i < blockmax; ++i) {
-		if (!block_is_enabled(state, i, timelimit, lastlimit, &countlast))
+		if (!block_is_enabled(state, i, plan))
 			continue;
 
 		++countmax;
@@ -145,7 +161,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 	countsize = 0;
 	countpos = 0;
-	countlast = 0;
+	plan->countlast = 0;
 	state_progress_begin(state, blockstart, blockmax, countmax);
 	for (i = blockstart; i < blockmax; ++i) {
 		snapraid_info info;
@@ -155,7 +171,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		int block_is_unsynced;
 		int rehash;
 
-		if (!block_is_enabled(state, i, timelimit, lastlimit, &countlast))
+		if (!block_is_enabled(state, i, plan))
 			continue;
 
 		/* one more block processed for autosave */
@@ -558,15 +574,13 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 {
 	block_off_t blockmax;
 	block_off_t countlimit;
-	block_off_t lastlimit;
 	block_off_t i;
-	block_off_t count_unscrubbed;
 	block_off_t count;
-	time_t timelimit;
 	time_t recentlimit;
 	int ret;
 	struct snapraid_parity_handle parity[LEV_MAX];
 	struct snapraid_parity_handle* parity_ptr[LEV_MAX];
+	struct snapraid_plan plan;
 	time_t* timemap;
 	unsigned error;
 	time_t now;
@@ -577,7 +591,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 
 	msg_progress("Initializing...\n");
 
-	if ((percentage == SCRUB_BAD || percentage == SCRUB_SYNC || percentage == SCRUB_FULL)
+	if ((percentage == SCRUB_BAD || percentage == SCRUB_NEW || percentage == SCRUB_FULL)
 		&& olderthan >= 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("You cannot specify -o, --older-than only with a numeric percentage.\n");
@@ -587,26 +601,30 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 
 	blockmax = parity_allocated_size(state);
 
+	/* preinitialize to avoid warnings */
+	countlimit = 0;
+	recentlimit = 0;
+
 	if (state->opt.force_scrub_even) {
-		/* no limit */
-		countlimit = blockmax;
-		recentlimit = now;
+		plan.plan = SCRUB_EVEN;
+	} else if (percentage == SCRUB_FULL) {
+		plan.plan = SCRUB_FULL;
+	} else if (percentage == SCRUB_NEW) {
+		plan.plan = SCRUB_NEW;
+	} else if (percentage == SCRUB_BAD) {
+		plan.plan = SCRUB_BAD;
 	} else if (state->opt.force_scrub_at) {
 		/* scrub the specified amount of blocks */
+		plan.plan = SCRUB_AUTO;
 		countlimit = state->opt.force_scrub_at;
 		recentlimit = now;
-	} else if (percentage == SCRUB_FULL || percentage == SCRUB_SYNC) {
-		countlimit = blockmax;
-		recentlimit = now;
-	} else if (percentage == SCRUB_BAD) {
-		countlimit = 0;
-		recentlimit = now;
 	} else {
+		plan.plan = SCRUB_AUTO;
 		if (percentage >= 0) {
 			countlimit = md(blockmax, percentage, 100);
 		} else {
-			/* by default scrub 15% of the array (100*3/20=15) */
-			countlimit = md(blockmax, 3, 20);
+			/* by default scrub 12.5% of the array (100/8=12.5) */
+			countlimit = md(blockmax, 1, 8);
 		}
 
 		if (olderthan >= 0) {
@@ -624,22 +642,15 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 
 	/* copy the info in the temp vector */
 	count = 0;
-	count_unscrubbed = 0;
 	log_tag("block_count:%u\n", blockmax);
 	for (i = 0; i < blockmax; ++i) {
 		snapraid_info info = info_get(&state->infoarr, i);
-		time_t scrub_time;
 
 		/* skip unused blocks */
 		if (info == 0)
 			continue;
 
-		scrub_time = info_get_scrubtime(info);
-
-		if (scrub_time == 0)
-			++count_unscrubbed;
-
-		timemap[count++] = scrub_time;
+		timemap[count++] = info_get_time(info);
 	}
 
 	if (!count) {
@@ -663,39 +674,37 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 		i = j;
 	}
 
-	/* scrub the number of sync block if required */
-	if (percentage == SCRUB_SYNC) {
-		countlimit = count_unscrubbed;
-		recentlimit = now;
+	/* compute the limits from count/recentlimit */
+	if (plan.plan == SCRUB_AUTO) {
+		/* no more than the full count */
+		if (countlimit > count)
+			countlimit = count;
+
+		/* decrease until we reach the specific recentlimit */
+		while (countlimit > 0 && timemap[countlimit - 1] > recentlimit)
+			--countlimit;
+
+		/* if there is something to scrub */
+		if (countlimit > 0) {
+			/* get the most recent time we want to scrub */
+			plan.timelimit = timemap[countlimit - 1];
+
+			/* count how many entries for this exact time we have to scrub */
+			/* if the blocks have all the same time, we end with countlimit == lastlimit */
+			plan.lastlimit = 1;
+			while (countlimit > plan.lastlimit && timemap[countlimit - plan.lastlimit - 1] == plan.timelimit)
+				++plan.lastlimit;
+		} else {
+			/* if nothing to scrub, disable also other limits */
+			plan.timelimit = 0;
+			plan.lastlimit = 0;
+		}
+
+		log_tag("count_limit:%u\n", countlimit);
 	}
 
-	/* no more than the full count */
-	if (countlimit > count)
-		countlimit = count;
-
-	/* decrease until we reach the specific recentlimit */
-	while (countlimit > 0 && timemap[countlimit - 1] > recentlimit)
-		--countlimit;
-
-	/* if there is something to scrub */
-	if (countlimit > 0) {
-		/* get the most recent time we want to scrub */
-		timelimit = timemap[countlimit - 1];
-
-		/* count how many entries for this exact time we have to scrub */
-		/* if the blocks have all the same time, we end with countlimit == lastlimit */
-		lastlimit = 1;
-		while (countlimit > lastlimit && timemap[countlimit - lastlimit - 1] == timelimit)
-			++lastlimit;
-	} else {
-		/* if nothing to scrub, disable also other limits */
-		timelimit = 0;
-		lastlimit = 0;
-	}
-
-	log_tag("count_limit:%u\n", countlimit);
-	log_tag("time_limit:%" PRIu64 "\n", (uint64_t)timelimit);
-	log_tag("last_limit:%u\n", lastlimit);
+	log_tag("time_limit:%" PRIu64 "\n", (uint64_t)plan.timelimit);
+	log_tag("last_limit:%u\n", plan.lastlimit);
 
 	/* free the temp vector */
 	free(timemap);
@@ -716,7 +725,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 
 	error = 0;
 
-	ret = state_scrub_process(state, parity_ptr, 0, blockmax, timelimit, lastlimit, now);
+	ret = state_scrub_process(state, parity_ptr, 0, blockmax, &plan, now);
 	if (ret == -1) {
 		++error;
 		/* continue, as we are already exiting */

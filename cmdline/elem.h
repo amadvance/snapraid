@@ -1039,19 +1039,6 @@ static inline int info_get_justsynced(snapraid_info info)
 }
 
 /**
- * Get the latest scrub time.
- *
- * If the block was not scrubbed, 0 is returned.
- */
-static inline time_t info_get_scrubtime(snapraid_info info)
-{
-	if (info_get_justsynced(info))
-		return 0;
-	else
-		return info_get_time(info);
-}
-
-/**
  * Mark the block address as with error.
  */
 static inline snapraid_info info_set_bad(snapraid_info info)

@@ -451,7 +451,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -o 0 scrub
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -p full scrub
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -p sync scrub
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -p new scrub
 	echo --- Silently corrupt some files, and sync with error presents
 	$(TESTENV) ./mktest$(EXEEXT) write 2 1 1 bench/disk1/a/*
 	$(TESTENV) ./mktest$(EXEEXT) damage 3 1 1 bench/disk2/a/*

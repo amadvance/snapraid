@@ -8,25 +8,22 @@ SnapRAID HISTORY
    This was triggered by a very specific pattern of fragmented files
    and bad blocks combination, not so easy to reproduce.
    This had no bad effect, if not preventing the command to run.
- * The synced blocks are now scrubbed with priority over all
-   the already scrubbed ones.
-   This allows to verify as early as possible that the written
-   parity during sync is really correct.
-   This means that the selected percentage to scrub should take care
-   also of the just synced blocks. For this reason the default scrub
-   percentage is now increased to the 15%.
-   The "status" command reports the amount of scrub necessary to
-   ensure to scrub all the synced blocks.
- * The -p, --percentage option supports the new the arguments:
-   "bad", "sync" and "full" to define the kind of scrub to do.
  * Drastically reduces the memory usage. For each block, it now
    uses 17 bytes of memory, instead of the previous 28 bytes
    (for 32 bit) or 36 bytes (for 64 bit).
    This could result is a memory saving of up the 50%.
+ * The -p, --percentage option can be used to define a scrub plan:
+   "new", "bad" and "full".
+   The "new" plan scrubs all the new synced  blocks not yet scrubbed.
+   This allows to verify as early as possible that the written
+   parity during sync is really correct. You can use the "status" command
+   to show the amount blocks not yet scrubbed.
+   The "bad" scrubs only bad blocks.
+   The "full" scrubs all blocks.
  * Content files are now written asyncronously from different
    threads to avoid the unfortunate condition that a memory
    error affects all of them in the same way.
-   After writing them, they are also read again to verify their CRC.
+   After writing, they are read again to verify their CRC.
    This is done to ensure thay they are really OK, even in the
    case of the worst possible silent errors.
  * Extends the -D, --force-device option to ignore more
