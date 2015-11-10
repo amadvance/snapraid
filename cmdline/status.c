@@ -43,6 +43,11 @@ static unsigned perc(uint64_t part, uint64_t total)
 	return (unsigned)(part * 100 / total);
 }
 
+/**
+ * Bit used to mark unscrubbed time info.
+ */
+#define TIME_NEW 1
+
 int state_status(struct snapraid_state* state)
 {
 	block_off_t blockmax;
@@ -56,7 +61,8 @@ int state_status(struct snapraid_state* state)
 	block_off_t count;
 	unsigned l;
 	unsigned dayoldest, daymedian, daynewest;
-	unsigned bar[GRAPH_COLUMN];
+	unsigned bar_scrubbed[GRAPH_COLUMN];
+	unsigned bar_new[GRAPH_COLUMN];
 	unsigned barpos;
 	unsigned barmax;
 	time_t oldest, newest, median;
@@ -296,6 +302,8 @@ int state_status(struct snapraid_state* state)
 
 		/* skip unused blocks */
 		if (info != 0) {
+			time_t scrub_time;
+
 			if (info_get_bad(info)) {
 				if (bad == 0)
 					bad_first = i;
@@ -306,10 +314,16 @@ int state_status(struct snapraid_state* state)
 			if (info_get_rehash(info))
 				++rehash;
 
-			if (info_get_justsynced(info))
+			scrub_time = info_get_time(info);
+
+			if (info_get_justsynced(info)) {
 				++unscrubbed_blocks;
 
-			timemap[count++] = info_get_time(info);
+				/* mark the time as not scrubbed */
+				scrub_time |= TIME_NEW;
+			}
+
+			timemap[count++] = scrub_time;
 		}
 
 		if (state->opt.gui) {
@@ -342,7 +356,11 @@ int state_status(struct snapraid_state* state)
 		unsigned j = i + 1;
 		while (j < count && timemap[i] == timemap[j])
 			++j;
-		log_tag("info_time:%" PRIu64 ":%u\n", (uint64_t)timemap[i], j - i);
+		if ((timemap[i] & TIME_NEW) == 0) {
+			log_tag("info_time:%" PRIu64 ":%u:scrubbed\n", (uint64_t)timemap[i], j - i);
+		} else {
+			log_tag("info_time:%" PRIu64 ":%u:new\n", (uint64_t)(timemap[i] & ~TIME_NEW), j - i);
+		}
 		i = j;
 	}
 
@@ -358,20 +376,25 @@ int state_status(struct snapraid_state* state)
 	barmax = 0;
 	for (i = 0; i < GRAPH_COLUMN; ++i) {
 		time_t limit;
-		unsigned step;
+		unsigned step_scrubbed, step_new;
 
 		limit = oldest + (newest - oldest) * (i + 1) / GRAPH_COLUMN;
 
-		step = 0;
+		step_scrubbed = 0;
+		step_new = 0;
 		while (barpos < count && timemap[barpos] <= limit) {
 			++barpos;
-			++step;
+			if ((timemap[barpos] & TIME_NEW) != 0)
+				++step_new;
+			else
+				++step_scrubbed;
 		}
 
-		if (step > barmax)
-			barmax = step;
+		if (step_new + step_scrubbed > barmax)
+			barmax = step_new + step_scrubbed;
 
-		bar[i] = step;
+		bar_scrubbed[i] = step_scrubbed;
+		bar_new[i] = step_new;
 	}
 
 	printf("\n\n");
@@ -387,25 +410,26 @@ int state_status(struct snapraid_state* state)
 		else
 			printf("    |");
 		for (x = 0; x < GRAPH_COLUMN; ++x) {
-			unsigned pivot = barmax * (GRAPH_ROW - y) / GRAPH_ROW;
-			/* if it's the baseline */
-			if (y == GRAPH_ROW - 1) {
-				if (bar[x] >= pivot) {
+			unsigned pivot_upper = barmax * (GRAPH_ROW - y) / GRAPH_ROW;
+			unsigned pivot_lower = barmax * (GRAPH_ROW - 1 - y) / GRAPH_ROW;
+			unsigned both = bar_scrubbed[x] + bar_new[x];
+			unsigned scrubbed = bar_scrubbed[x];
+
+			if (both > pivot_upper) {
+				if (scrubbed > pivot_lower)
 					printf("*");
-				} else if (bar[x] > 0) {
-					printf("+");
-				} else {
-					printf("_");
-				}
+				else
+					printf("o");
+			} else if (both > pivot_lower) {
+				if (scrubbed == both)
+					printf("*");
+				else
+					printf("o");
 			} else {
-				unsigned halfpivot = pivot - barmax / GRAPH_ROW / 2;
-				if (bar[x] >= pivot) {
-					printf("*");
-				} else if (bar[x] >= halfpivot) {
-					printf("+");
-				} else {
+				if (y == GRAPH_ROW - 1)
+					printf("_");
+				else
 					printf(" ");
-				}
 			}
 		}
 		printf("\n");

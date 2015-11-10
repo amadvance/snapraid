@@ -20,6 +20,8 @@ SnapRAID HISTORY
    command to show the amount blocks not yet scrubbed.
    The "bad" scrubs only bad blocks.
    The "full" scrubs all blocks.
+ * The graph in the "status" command now show scrubbed blocks
+   with '*' and synced, but not yet scrubbed, blocks with 'o'.
  * Content files are now written asyncronously from different
    threads to avoid the unfortunate condition that a memory
    error affects all of them in the same way.

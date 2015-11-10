@@ -417,6 +417,10 @@ run "sync". Later modifications are not taken into account.
 If bad blocks were detected, their block numbers are listed.
 To fix them, you can use the "fix -e" command.
 
+It also shows a graph representing the the last time each block
+was scrubbed or synced. Scrubbed blocks are shown with '*',
+blocks synced but not yet scrubbed with 'o'.
+
 Nothing is modified.
 
 5.2 smart
