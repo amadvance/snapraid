@@ -426,7 +426,7 @@ int state_status(struct snapraid_state* state)
 	}
 
 	if (unscrubbed_blocks) {
-		printf("You need to scrub at least the %u%% to check the latest sync.\n", (unscrubbed_blocks * 100 + blockmax - 1) / blockmax);
+		printf("The %u%% of the array is not scrubbed.\n", (unscrubbed_blocks * 100 + blockmax - 1) / blockmax);
 	} else {
 		printf("The full array was scrubbed at least one time.\n");
 	}
