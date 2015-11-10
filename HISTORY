@@ -18,10 +18,12 @@ SnapRAID HISTORY
    This allows to verify as early as possible that the written
    parity during sync is really correct. You can use the "status"
    command to show the amount blocks not yet scrubbed.
-   The "bad" scrubs only bad blocks.
-   The "full" scrubs all blocks.
+   The "bad" plan scrubs only bad blocks.
+   The "full" plan scrubs all blocks.
  * The graph in the "status" command now show scrubbed blocks
-   with '*' and synced, but not yet scrubbed, blocks with 'o'.
+   with '*', and synced, but not yet scrubbed, blocks with 'o'.
+   Note that when upgrading from a previous version, all blocks
+   are assumed scrubbed the first time.
  * Content files are now written asyncronously from different
    threads to avoid the unfortunate condition that a memory
    error affects all of them in the same way.
