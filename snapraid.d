@@ -6,7 +6,7 @@ Synopsis
 	:	[-f, --filter PATTERN] [-d, --filter-disk NAME]
 	:	[-m, --filter-missing] [-e, --filter-error]
 	:	[-a, --audit-only] [-h, --pre-hash] [-i, --import DIR]
-	:	[-p, --percentage PERC|bad|new|full]
+	:	[-p, --plan PERC|bad|new|full]
 	:	[-o, --older-than DAYS] [-l, --log FILE]
 	:	[-Z, --force-zero] [-E, --force-empty]
 	:	[-U, --force-uuid] [-D, --force-device]
@@ -173,7 +173,7 @@ Getting Started
 
 	Every run of the command checks the 12.5% of the array, but not data
 	already scrubbed in the previous 10 days.
-	You can use the -p, --percentage option to specify a different amount,
+	You can use the -p, --plan option to specify a different amount,
 	and the -o, --older-than option to specify a different age in days.
 	For example, to check 5% of the array older than 20 days use:
 
@@ -487,7 +487,7 @@ Commands
 	This means that scrubbing once a week, every bit of data is checked
 	at least one time every two months.
 
-	You can define a different scrub plan or amount using the -p, --percentage
+	You can define a different scrub plan or amount using the -p, --plan
 	option that takes as argument:
 	bad - Scrub blocks marked bad.
 	new - Scrub just synced blocks not yet scrubbed.
@@ -696,7 +696,7 @@ Options
 		errors during "sync" and "scrub", and listed in "status".
 		This option can be used only with "check" and "fix".
 
-	-p, --percentage PERC|bad|new|full
+	-p, --plan PERC|bad|new|full
 		Selects the scrub plan. If PERC is a numeric value from 0 to 100,
 		it's interpreted as the percentage of blocks to scrub.
 		Instead of a percentage, you can also specify a plan:

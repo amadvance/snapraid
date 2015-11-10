@@ -12,12 +12,12 @@ SnapRAID HISTORY
    uses 17 bytes of memory, instead of the previous 28 bytes
    (for 32 bit) or 36 bytes (for 64 bit).
    This could result is a memory saving of up the 50%.
- * The -p, --percentage option can be used to define a scrub plan:
-   "new", "bad" and "full".
+ * The -p, --plan option (old --percentage) can be used to
+   define a scrub plan: "new", "bad" and "full".
    The "new" plan scrubs all the new synced  blocks not yet scrubbed.
    This allows to verify as early as possible that the written
-   parity during sync is really correct. You can use the "status" command
-   to show the amount blocks not yet scrubbed.
+   parity during sync is really correct. You can use the "status"
+   command to show the amount blocks not yet scrubbed.
    The "bad" scrubs only bad blocks.
    The "full" scrubs all blocks.
  * Content files are now written asyncronously from different

@@ -59,7 +59,7 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-d, --filter-disk NAME", "-f") "  Process only files in the specified disk\n");
 	printf("  " SWITCH_GETOPT_LONG("-m, --filter-missing  ", "-m") "  Process only missing/deleted files\n");
 	printf("  " SWITCH_GETOPT_LONG("-e, --filter-error    ", "-e") "  Process only files with errors\n");
-	printf("  " SWITCH_GETOPT_LONG("-p, --percentage PERC ", "-p") "  Process only a part of the array\n");
+	printf("  " SWITCH_GETOPT_LONG("-p, --plan PLAN       ", "-p") "  Define a scrub plan or percentage\n");
 	printf("  " SWITCH_GETOPT_LONG("-o, --older-than DAYS ", "-o") "  Process only the older part of the array\n");
 	printf("  " SWITCH_GETOPT_LONG("-i, --import DIR      ", "-i") "  Import deleted files\n");
 	printf("  " SWITCH_GETOPT_LONG("-l, --log FILE        ", "-l") "  Log file. Default none\n");
@@ -253,7 +253,8 @@ struct option long_options[] = {
 	{ "filter-disk", 1, 0, 'd' },
 	{ "filter-missing", 0, 0, 'm' },
 	{ "filter-error", 0, 0, 'e' },
-	{ "percentage", 1, 0, 'p' },
+	{ "percentage", 1, 0, 'p' }, /* legacy name for --plan */
+	{ "plan", 1, 0, 'p' },
 	{ "older-than", 1, 0, 'o' },
 	{ "start", 1, 0, 'S' },
 	{ "count", 1, 0, 'B' },
@@ -430,7 +431,7 @@ int main(int argc, char* argv[])
 	tommy_list filterlist_disk;
 	int filter_missing;
 	int filter_error;
-	int percentage;
+	int plan;
 	int olderthan;
 	char* e;
 	const char* command;
@@ -457,7 +458,7 @@ int main(int argc, char* argv[])
 	period = 1000;
 	filter_missing = 0;
 	filter_error = 0;
-	percentage = SCRUB_AUTO;
+	plan = SCRUB_AUTO;
 	olderthan = SCRUB_AUTO;
 	import_timestamp = 0;
 	import_content = 0;
@@ -513,16 +514,16 @@ int main(int argc, char* argv[])
 			break;
 		case 'p' :
 			if (strcmp(optarg, "bad") == 0) {
-				percentage = SCRUB_BAD;
+				plan = SCRUB_BAD;
 			} else if (strcmp(optarg, "new") == 0) {
-				percentage = SCRUB_NEW;
+				plan = SCRUB_NEW;
 			} else if (strcmp(optarg, "full") == 0) {
-				percentage = SCRUB_FULL;
+				plan = SCRUB_FULL;
 			} else {
-				percentage = strtoul(optarg, &e, 10);
-				if (!e || *e || percentage > 100) {
+				plan = strtoul(optarg, &e, 10);
+				if (!e || *e || plan > 100) {
 					/* LCOV_EXCL_START */
-					log_fatal("Invalid percentage '%s'\n", optarg);
+					log_fatal("Invalid plan/percentage '%s'\n", optarg);
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
@@ -1166,7 +1167,7 @@ int main(int argc, char* argv[])
 		/* intercept signals while operating */
 		signal_init();
 
-		ret = state_scrub(&state, percentage, olderthan);
+		ret = state_scrub(&state, plan, olderthan);
 
 		/* save the new state if required */
 		if (state.need_write || state.opt.force_content_write)

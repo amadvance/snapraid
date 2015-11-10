@@ -570,7 +570,7 @@ static uint32_t md(uint32_t a, uint32_t b, uint32_t c)
 	return v;
 }
 
-int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
+int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 {
 	block_off_t blockmax;
 	block_off_t countlimit;
@@ -580,7 +580,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 	int ret;
 	struct snapraid_parity_handle parity[LEV_MAX];
 	struct snapraid_parity_handle* parity_ptr[LEV_MAX];
-	struct snapraid_plan plan;
+	struct snapraid_plan ps;
 	time_t* timemap;
 	unsigned error;
 	time_t now;
@@ -591,10 +591,10 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 
 	msg_progress("Initializing...\n");
 
-	if ((percentage == SCRUB_BAD || percentage == SCRUB_NEW || percentage == SCRUB_FULL)
+	if ((plan == SCRUB_BAD || plan == SCRUB_NEW || plan == SCRUB_FULL)
 		&& olderthan >= 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("You cannot specify -o, --older-than only with a numeric percentage.\n");
+		log_fatal("You can specify -o, --older-than only with a numeric percentage.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -606,22 +606,22 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 	recentlimit = 0;
 
 	if (state->opt.force_scrub_even) {
-		plan.plan = SCRUB_EVEN;
-	} else if (percentage == SCRUB_FULL) {
-		plan.plan = SCRUB_FULL;
-	} else if (percentage == SCRUB_NEW) {
-		plan.plan = SCRUB_NEW;
-	} else if (percentage == SCRUB_BAD) {
-		plan.plan = SCRUB_BAD;
+		ps.plan = SCRUB_EVEN;
+	} else if (plan == SCRUB_FULL) {
+		ps.plan = SCRUB_FULL;
+	} else if (plan == SCRUB_NEW) {
+		ps.plan = SCRUB_NEW;
+	} else if (plan == SCRUB_BAD) {
+		ps.plan = SCRUB_BAD;
 	} else if (state->opt.force_scrub_at) {
 		/* scrub the specified amount of blocks */
-		plan.plan = SCRUB_AUTO;
+		ps.plan = SCRUB_AUTO;
 		countlimit = state->opt.force_scrub_at;
 		recentlimit = now;
 	} else {
-		plan.plan = SCRUB_AUTO;
-		if (percentage >= 0) {
-			countlimit = md(blockmax, percentage, 100);
+		ps.plan = SCRUB_AUTO;
+		if (plan >= 0) {
+			countlimit = md(blockmax, plan, 100);
 		} else {
 			/* by default scrub 12.5% of the array (100/8=12.5) */
 			countlimit = md(blockmax, 1, 8);
@@ -675,7 +675,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 	}
 
 	/* compute the limits from count/recentlimit */
-	if (plan.plan == SCRUB_AUTO) {
+	if (ps.plan == SCRUB_AUTO) {
 		/* no more than the full count */
 		if (countlimit > count)
 			countlimit = count;
@@ -687,24 +687,24 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 		/* if there is something to scrub */
 		if (countlimit > 0) {
 			/* get the most recent time we want to scrub */
-			plan.timelimit = timemap[countlimit - 1];
+			ps.timelimit = timemap[countlimit - 1];
 
 			/* count how many entries for this exact time we have to scrub */
 			/* if the blocks have all the same time, we end with countlimit == lastlimit */
-			plan.lastlimit = 1;
-			while (countlimit > plan.lastlimit && timemap[countlimit - plan.lastlimit - 1] == plan.timelimit)
-				++plan.lastlimit;
+			ps.lastlimit = 1;
+			while (countlimit > ps.lastlimit && timemap[countlimit - ps.lastlimit - 1] == ps.timelimit)
+				++ps.lastlimit;
 		} else {
 			/* if nothing to scrub, disable also other limits */
-			plan.timelimit = 0;
-			plan.lastlimit = 0;
+			ps.timelimit = 0;
+			ps.lastlimit = 0;
 		}
 
 		log_tag("count_limit:%u\n", countlimit);
 	}
 
-	log_tag("time_limit:%" PRIu64 "\n", (uint64_t)plan.timelimit);
-	log_tag("last_limit:%u\n", plan.lastlimit);
+	log_tag("time_limit:%" PRIu64 "\n", (uint64_t)ps.timelimit);
+	log_tag("last_limit:%u\n", ps.lastlimit);
 
 	/* free the temp vector */
 	free(timemap);
@@ -725,7 +725,7 @@ int state_scrub(struct snapraid_state* state, int percentage, int olderthan)
 
 	error = 0;
 
-	ret = state_scrub_process(state, parity_ptr, 0, blockmax, &plan, now);
+	ret = state_scrub_process(state, parity_ptr, 0, blockmax, &ps, now);
 	if (ret == -1) {
 		++error;
 		/* continue, as we are already exiting */
