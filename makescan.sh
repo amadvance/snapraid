@@ -10,7 +10,7 @@ if ! ./configure ; then
 	exit 1
 fi
 
-export PATH=$PATH:contrib/cov-analysis-linux-7.5.0/bin
+export PATH=$PATH:contrib/cov-analysis-linux-7.7.0.4/bin
 
 if ! cov-build --dir cov-int make; then
 	exit 1
