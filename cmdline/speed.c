@@ -67,6 +67,14 @@ static int64_t diffgettimeofday(struct timeval *start, struct timeval *stop)
 	ds = size * (int64_t)count * nd; \
 	dt = diffgettimeofday(&start, &stop);
 
+/**
+ * Global variable used to propagate side effects.
+ *
+ * This is required to avoid optimizing compilers
+ * to remove code without side effects.
+ */
+static unsigned side_effect;
+
 void speed(int period)
 {
 	struct timeval start;
@@ -179,7 +187,7 @@ void speed(int period)
 
 	SPEED_START {
 		for (j = 0; j < nd; ++j)
-			crc32c_gen(0, v[j], size);
+			side_effect += crc32c_gen(0, v[j], size);
 	} SPEED_STOP
 
 	printf("%8" PRIu64, ds / dt);
@@ -192,7 +200,7 @@ void speed(int period)
 	if (raid_cpu_has_crc32()) {
 		SPEED_START {
 			for (j = 0; j < nd; ++j)
-				crc32c_x86(0, v[j], size);
+				side_effect += crc32c_x86(0, v[j], size);
 		} SPEED_STOP
 
 		printf("%8" PRIu64, ds / dt);
