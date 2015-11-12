@@ -623,8 +623,8 @@ int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 		if (plan >= 0) {
 			countlimit = md(blockmax, plan, 100);
 		} else {
-			/* by default scrub 12.5% of the array (100/8=12.5) */
-			countlimit = md(blockmax, 1, 8);
+			/* by default scrub 8.33% of the array (100/12=8.(3)) */
+			countlimit = md(blockmax, 1, 12);
 		}
 
 		if (olderthan >= 0) {

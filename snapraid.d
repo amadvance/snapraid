@@ -171,7 +171,7 @@ Getting Started
 	This command verifies the data in your array comparing it with
 	the hash computed in the "sync" command.
 
-	Every run of the command checks the 12.5% of the array, but not data
+	Every run of the command checks about the 8% of the array, but not data
 	already scrubbed in the previous 10 days.
 	You can use the -p, --plan option to specify a different amount,
 	and the -o, --older-than option to specify a different age in days.
@@ -486,10 +486,10 @@ Commands
 	Scrubs the array, checking for silent or input/output errors in data
 	and parity disks.
 
-	For each command invocation, the 12.5% of the array is checked, but
+	For each command invocation, about the 8% of the array is checked, but
 	nothing that was already scrubbed in the last 10 days.
 	This means that scrubbing once a week, every bit of data is checked
-	at least one time every two months.
+	at least one time every three months.
 
 	You can define a different scrub plan or amount using the -p, --plan
 	option that takes as argument:
