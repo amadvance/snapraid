@@ -364,9 +364,9 @@ int state_status(struct snapraid_state* state)
 		i = j;
 	}
 
-	oldest = info_get_time(timemap[0]);
-	median = info_get_time(timemap[count / 2]);
-	newest = info_get_time(timemap[count - 1]);
+	oldest = timemap[0];
+	median = timemap[count / 2];
+	newest = timemap[count - 1];
 	dayoldest = day_ago(oldest, now);
 	daymedian = day_ago(median, now);
 	daynewest = day_ago(newest, now);
