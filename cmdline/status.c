@@ -383,11 +383,11 @@ int state_status(struct snapraid_state* state)
 		step_scrubbed = 0;
 		step_new = 0;
 		while (barpos < count && timemap[barpos] <= limit) {
-			++barpos;
 			if ((timemap[barpos] & TIME_NEW) != 0)
 				++step_new;
 			else
 				++step_scrubbed;
+			++barpos;
 		}
 
 		if (step_new + step_scrubbed > barmax)
