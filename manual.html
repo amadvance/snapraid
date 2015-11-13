@@ -52,8 +52,8 @@ snapraid [-c, --conf CONFIG]
 &nbsp;&nbsp;&nbsp;&nbsp;[-f, --filter PATTERN] [-d, --filter-disk NAME]
 &nbsp;&nbsp;&nbsp;&nbsp;[-m, --filter-missing] [-e, --filter-error]
 &nbsp;&nbsp;&nbsp;&nbsp;[-a, --audit-only] [-h, --pre-hash] [-i, --import DIR]
-&nbsp;&nbsp;&nbsp;&nbsp;[-p, --percentage PERC] [-o, --older-than DAYS]
-&nbsp;&nbsp;&nbsp;&nbsp;[-l, --log FILE]
+&nbsp;&nbsp;&nbsp;&nbsp;[-p, --plan PERC|bad|new|full]
+&nbsp;&nbsp;&nbsp;&nbsp;[-o, --older-than DAYS] [-l, --log FILE]
 &nbsp;&nbsp;&nbsp;&nbsp;[-Z, --force-zero] [-E, --force-empty]
 &nbsp;&nbsp;&nbsp;&nbsp;[-U, --force-uuid] [-D, --force-device]
 &nbsp;&nbsp;&nbsp;&nbsp;[-N, --force-nocopy] [-F, --force-full]
@@ -105,6 +105,10 @@ You can add disks at any time.
 <li>
 It doesn't lock-in your data. You can stop using SnapRAID at any
 time without the need to reformat or move data.
+</li>
+<li>
+To access a file, a single disk needs to spin, saving power and
+producing less noise.
 </li>
 </ul>
 <p>
@@ -276,9 +280,9 @@ snapraid scrub
 This command verifies the data in your array comparing it with
 the hash computed in the "sync" command.
 <p>
-Every run of the command checks about 12% of the array, but not data newer
-than 10 days.
-You can use the -p, --percentage option to specify a different amount,
+Every run of the command checks about the 8% of the array, but not data
+already scrubbed in the previous 10 days.
+You can use the -p, --plan option to specify a different amount,
 and the -o, --older-than option to specify a different age in days.
 For example, to check 5% of the array older than 20 days use:
 <p>
@@ -308,12 +312,12 @@ snapraid -e fix
 </td></tr></table>
 <p>
 At the next "scrub" the errors will disappear from the "status" report
-if really fixed. To make it fast, you can use -p 0 to scrub only blocks
+if really fixed. To make it fast, you can use -p bad to scrub only blocks
 marked as bad.
 <p>
 <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
-snapraid -p 0 scrub
+snapraid -p bad scrub
 </pre>
 </td></tr></table>
 <p>
@@ -324,8 +328,9 @@ in the "scrub" result, but related blocks are not marked as bad.
 Pooling
 </h3>
 To have all the files in your array shown in the same directory tree,
-you can enable "pooling", that consists in creating a virtual view of all
-the files in your array using symbolic links.
+you can enable the "pooling" feature. It consists in creating a
+read-only virtual view of all the files in your array using symbolic
+links.
 <p>
 You can configure the "pooling" directory in the configuration file with:
 <p>
@@ -411,8 +416,8 @@ and share the following dirs in the network:
 <p>
 to allow remote clients to access all the files at \\darkstar\\pool.
 <p>
-You may also need to configure remote clients, to enable the access at
-remote symlinks with the command:
+You may also need to configure remote clients enablinh access at remote
+symlinks with the command:
 <p>
 <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
@@ -599,6 +604,10 @@ run "sync". Later modifications are not taken into account.
 If bad blocks were detected, their block numbers are listed.
 To fix them, you can use the "fix -e" command.
 <p>
+It also shows a graph representing the the last time each block
+was scrubbed or synced. Scrubbed blocks are shown with '*',
+blocks synced but not yet scrubbed with 'o'.
+<p>
 Nothing is modified.
 <h3><a name="5.2">5.2</a> 
 smart
@@ -702,9 +711,9 @@ size and timestamp.
 If the file size or timestamp are different, the parity data
 is recomputed for the whole file.
 If the file is moved or renamed in the same disk, keeping the
-same inode, the parity is no recomputed.
+same inode, the parity is not recomputed.
 If the file is moved to another disk, the parity is recomputed,
-but the previously compute hash information is kept.
+but the previously computed hash information is kept.
 <p>
 The "content" and "parity" files are modified if necessary.
 The files in the array are NOT modified.
@@ -714,26 +723,35 @@ scrub
 Scrubs the array, checking for silent or input/output errors in data
 and parity disks.
 <p>
-For each command invocation, the 12% of the array is checked, but
-nothing that it's more recent than 10 days.
+For each command invocation, about the 8% of the array is checked, but
+nothing that was already scrubbed in the last 10 days.
 This means that scrubbing once a week, every bit of data is checked
-at least one time every two months.
+at least one time every three months.
 <p>
-You can use the -p, --percentage option to specify a different amount,
-and the -o, --older-than option to specify a different age in days.
-You can have a full scrub with "-p 100 -o 0".
+You can define a different scrub plan or amount using the -p, --plan
+option that takes as argument:
+bad - Scrub blocks marked bad.
+new - Scrub just synced blocks not yet scrubbed.
+full - Scrub everything.
+0-100 - Scrub the exact percentage of blocks.
 <p>
+If you specify a percentage amount, you can also use the -o, --older-than
+option to define how old the block should be.
 The oldest blocks are scrubbed first ensuring an optimal check.
+If instead you want to scrub the just synced blocks, not yet scrubbed,
+you should use the "-p new" option.
+<p>
+To get the details of the scrub status use the "status" command.
 <p>
 For any silent or input/output error found the corresponding blocks
 are marked as bad in the "content" file.
 These bad blocks are listed in "status", and can be fixed with "fix -e".
 After the fix, at the next scrub they will be rechecked, and if found
 corrected, the bad mark will be removed.
-To scrub only the bad blocks, you can use the "scrub -p 0" command.
+To scrub only the bad blocks, you can use the "scrub -p bad" command.
 <p>
-It's recommended to run "scrub" on a synced array, to avoid to have
-reported error caused by unsynced data. These errors are recognized
+It's recommended to run "scrub" only on a synced array, to avoid to
+have reported error caused by unsynced data. These errors are recognized
 as not being silent errors, and the blocks are not marked as bad,
 but such errors are reported in the output of the command.
 <p>
@@ -752,19 +770,27 @@ All the files and the parity data are compared with the snapshot
 state saved in the last "sync".
 If a difference is found, it's reverted to the stored snapshot.
 <p>
-Note that "fix" doesn't differentiate between errors and intentional
-modifications. It unconditionally reverts the file state at the last "sync".
+The "fix" command doesn't differentiate between errors and
+intentional modifications. It unconditionally reverts the file state
+at the last "sync".
 <p>
 If no other option is specified the full array is processed.
 Use the filter options to select a subset of files or disks to operate on.
 <p>
 To only fix the blocks marked bad during "sync" and "scrub",
 use the -e, --filter-error option.
-As difference from other filter options, with this one fixes are
+As difference from other filter options, with this one the fixes are
 applied only to files that are not modified from the the latest "sync".
 <p>
-All the files that cannot be fixed are renamed adding
-the ".unrecoverable" extension.
+All the files that cannot be fixed are renamed adding the
+".unrecoverable" extension.
+<p>
+Before fixing, the full array is scanned to find any moved file,
+after the last "sync" operation.
+These files are identified by their timestamp, ignoring their name
+and directory, and are used in the recovering process if necessary.
+If you moved some of them outside the array, you can use the -i, --import
+option to specify additional directories to scan.
 <p>
 Files are identified only by path, and not by inode.
 <p>
@@ -908,6 +934,8 @@ In "check", you can make it faster, specifying also -a, --audit-only
 option, to avoid to access other disks to check parity data.
 If you combine more --filter, --filter-disk and --filter-missing options,
 only files matching all the set of filters are selected.
+You can also specify parity disks with the names: "parity", "2-parity",
+"3-parity", ... to limit the operations a specific parity disk.
 This option can be used many times.
 This option can be used only with "check" and "fix".
 Note that it cannot be used with "sync" and "scrub", because they always
@@ -940,11 +968,13 @@ This option can be used only with "check" and "fix".
 </table>
 <table width="100%" border="0" cellspacing="0" cellpadding="2">
 <tr valign="top" align="left"><td><strong>
--p, --percentage PERC
+-p, --plan PERC|bad|new|full
 </strong></td></tr><tr><td>
-Selects the part of the array to process in "scrub".
-PERC is a numeric value from 0 to 100, default is 12.
-When specifying 0, only the blocks marked as bad are scrubbed.
+Selects the scrub plan. If PERC is a numeric value from 0 to 100,
+it's interpreted as the percentage of blocks to scrub.
+Instead of a percentage, you can also specify a plan:
+"bad" scrubs bad blocks, "new" the blocks not yet scrubbed,
+and "full" for everything.
 This option can be used only with "scrub".
 </td></tr>
 </table>
@@ -974,18 +1004,21 @@ This option can be used only with "check".
 <tr valign="top" align="left"><td><strong>
 -h, --pre-hash
 </strong></td></tr><tr><td>
-In "sync" runs a preliminary hashing phase of all
-the new data to verify the data used in the parity computation.
+In "sync" runs a preliminary hashing phase of all the new data
+to have an additional verification before the parity computation.
 Usually in "sync" no preliminary hashing is done, and the new
 data is hashed just before the parity computation when it's read
-for the first time,
+for the first time.
 Unfortunately, this process happens when the system is under
-heavy load, with all disks spinning and a busy CPU.
-This is an extreme condition for your machine, and if it has a
+heavy load, with all disks spinning and with a busy CPU.
+This is an extreme condition for the machine, and if it has a
 latent hardware problem, it's possible to encounter silent errors
 what cannot be detected because the data is not yet hashed.
 To avoid this risk, you can enable the "pre-hash" mode and have
-all the data hashed two times to ensure its integrity.
+all the data read two times to ensure its integrity.
+This option also verifies the files moved inside the array,
+to ensure that the move operation went succesfully, and in case
+to block the sync and to allow to run a fix operation.
 This option can be used only with "sync".
 </td></tr>
 </table>
@@ -1052,13 +1085,12 @@ This option can be used only with "sync", "check" or
 <tr valign="top" align="left"><td><strong>
 -D, --force-device
 </strong></td></tr><tr><td>
-Forces the insecure operation of fixing with disks on the same
-physical device.
-If SnapRAID detects that some disks have the same device ID,
-it stops proceeding, because it's not a supported configuration.
-But it could happen that you want to temporarily restore a lost
-disk in the free space left in an already used disk. and this
-option allows you to continue anyway.
+Forces the insecure operation of fixing with unaccessible disks,
+or with disks on the same physical device.
+Like if you lost two data disks, and you have a spare disk to recover
+only the first one, and you want to ignore the second unaccessible disk.
+Or if you want to recover a disk in the free space left in an
+already used disk, sharing the same physical device.
 This option can be used only with "fix".
 </td></tr>
 </table>
@@ -1328,16 +1360,15 @@ A reason to use a different blocksize is if your system has less
 than 4 GiB of memory. As a rule of thumb, with 4 GiB or more memory
 use the default 256, with 2 GiB use 512, and with 1 GiB use 1024.
 <p>
-In more details SnapRAID requires about TS*28/BS bytes
-of RAM memory to run in the 32 bits version, and TS*36/BS
-in the 64 bits one. Where TS is the total size in bytes of
-your disk array, and BS is the block size in bytes.
+In more details SnapRAID requires about TS*17/BS bytes of RAM memory.
+Where TS is the total size in bytes of your disk array, and BS is the
+block size in bytes.
 <p>
-For example with 8 disk of 4 TB and a block size of 256 KiB
+For example with 8 disks of 4 TB and a block size of 256 KiB
 (1 KiB = 1024 bytes) you have:
 <p>
 <pre>
-RAM = (8 * 4 * 10^12) * 28 / (256 * 2^10) = 3.2 GiB
+RAM = (8 * 4 * 10^12) * 17 / (256 * 2^10) = 1.9 GiB
 </pre>
 <p>
 Another reason to use a different blocksize is if you have a lot of
@@ -1382,7 +1413,7 @@ any wasted space.
 <h3><a name="7.9">7.9</a> 
 autosave SIZE_IN_GIGABYTES
 </h3>
-Automatically save the state when syncing after the specified amount
+Automatically save the state when syncing or scrubbing after the specified amount
 of GB processed.
 This option is useful to avoid to restart from scratch long "sync"
 commands interrupted by a machine crash, or any other event that
