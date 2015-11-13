@@ -31,17 +31,17 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntry">4</td>
-            <td class="headerCovTableEntry">5</td>
-            <td class="headerCovTableEntryMed">80.0 %</td>
+            <td class="headerCovTableEntry">28</td>
+            <td class="headerCovTableEntry">30</td>
+            <td class="headerCovTableEntryHi">93.3 %</td>
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-05-12</td>
+            <td class="headerValue">2015-11-13</td>
             <td></td>
             <td class="headerItem">Functions:</td>
-            <td class="headerCovTableEntry">1</td>
-            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">4</td>
+            <td class="headerCovTableEntry">4</td>
             <td class="headerCovTableEntryHi">100.0 %</td>
           </tr>
           <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
@@ -101,7 +101,7 @@
 <span class="lineNum">      39 </span>            : void* malloc_nofail_test(size_t size);
 <span class="lineNum">      40 </span>            : 
 <span class="lineNum">      41 </span>            : /**
-<span class="lineNum">      42 </span>            :  * Tests the memory vector for RAM problems.
+<span class="lineNum">      42 </span>            :  * Test the memory vector for RAM problems.
 <span class="lineNum">      43 </span>            :  * If a problem is found, it crashes.
 <span class="lineNum">      44 </span>            :  */
 <span class="lineNum">      45 </span>            : void mtest_vector(int n, size_t size, void** vv);
@@ -123,85 +123,157 @@
 <span class="lineNum">      61 </span>            : extern uint32_t CRC32C_2[256];
 <span class="lineNum">      62 </span>            : extern uint32_t CRC32C_3[256];
 <span class="lineNum">      63 </span>            : 
-<span class="lineNum">      64 </span>            : #if HAVE_SSE42
-<span class="lineNum">      65 </span>            : /**
-<span class="lineNum">      66 </span>            :  * If the CPU support the CRC instructions.
-<span class="lineNum">      67 </span>            :  */
+<span class="lineNum">      64 </span>            : /**
+<span class="lineNum">      65 </span>            :  * If the CPU support the CRC instructions.
+<span class="lineNum">      66 </span>            :  */
+<span class="lineNum">      67 </span>            : #if HAVE_SSE42
 <span class="lineNum">      68 </span>            : extern int crc_x86;
 <span class="lineNum">      69 </span>            : #endif
 <span class="lineNum">      70 </span>            : 
 <span class="lineNum">      71 </span>            : /**
-<a name="72"><span class="lineNum">      72 </span>            :  * Computes CRC-32 (Castagnoli) for a single byte without IV.</a>
+<a name="72"><span class="lineNum">      72 </span>            :  * Compute CRC-32 (Castagnoli) for a single byte without the IV.</a>
 <span class="lineNum">      73 </span>            :  */
-<span class="lineNum">      74 </span><span class="lineCov">  134187612 : static inline uint32_t crc32c_plain(uint32_t crc, unsigned char c)</span>
+<span class="lineNum">      74 </span><span class="lineCov">   23710549 : static inline uint32_t crc32c_plain_char(uint32_t crc, unsigned char c)</span>
 <span class="lineNum">      75 </span>            : {
 <span class="lineNum">      76 </span>            : #if HAVE_SSE42
-<span class="lineNum">      77 </span><span class="lineCov">  134187612 :         if (tommy_likely(crc_x86)) {</span>
-<span class="lineNum">      78 </span><span class="lineCov">  134187612 :                 asm(&quot;crc32b %1, %0\n&quot; : &quot;+r&quot; (crc) : &quot;m&quot; (c));</span>
-<span class="lineNum">      79 </span><span class="lineCov">  134187612 :                 return crc;</span>
-<span class="lineNum">      80 </span>            :         } else
+<span class="lineNum">      77 </span><span class="lineCov">   23710549 :         if (tommy_likely(crc_x86)) {</span>
+<span class="lineNum">      78 </span><span class="lineCov">   23710549 :                 asm(&quot;crc32b %1, %0\n&quot; : &quot;+r&quot; (crc) : &quot;m&quot; (c));</span>
+<span class="lineNum">      79 </span><span class="lineCov">   23710549 :                 return crc;</span>
+<span class="lineNum">      80 </span>            :         }
 <span class="lineNum">      81 </span>            : #endif
-<span class="lineNum">      82 </span>            :         {
-<span class="lineNum">      83 </span><span class="lineNoCov">          0 :                 return CRC32C_0[(crc ^ c) &amp; 0xff] ^ (crc &gt;&gt; 8);</span>
-<span class="lineNum">      84 </span>            :         }
-<span class="lineNum">      85 </span>            : }
-<span class="lineNum">      86 </span>            : 
-<span class="lineNum">      87 </span>            : /**
-<span class="lineNum">      88 </span>            :  * Computes the CRC-32 (Castagnoli)
-<span class="lineNum">      89 </span>            :  */
-<span class="lineNum">      90 </span>            : uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, unsigned size);
-<span class="lineNum">      91 </span>            : uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size);
-<span class="lineNum">      92 </span>            : uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size);
-<span class="lineNum">      93 </span>            : 
-<span class="lineNum">      94 </span>            : /**
-<span class="lineNum">      95 </span>            :  * Initializes the CRC-32 (Castagnoli) support.
-<span class="lineNum">      96 </span>            :  */
-<span class="lineNum">      97 </span>            : void crc32c_init(void);
-<span class="lineNum">      98 </span>            : 
-<span class="lineNum">      99 </span>            : /****************************************************************************/
-<span class="lineNum">     100 </span>            : /* hash */
-<span class="lineNum">     101 </span>            : 
-<span class="lineNum">     102 </span>            : /**
-<span class="lineNum">     103 </span>            :  * Size of the hash.
-<span class="lineNum">     104 </span>            :  */
+<span class="lineNum">      82 </span><span class="lineNoCov">          0 :         return CRC32C_0[(crc ^ c) &amp; 0xff] ^ (crc &gt;&gt; 8);</span>
+<span class="lineNum">      83 </span>            : }
+<span class="lineNum">      84 </span>            : 
+<span class="lineNum">      85 </span>            : /**
+<a name="86"><span class="lineNum">      86 </span>            :  * Compute the CRC-32 (Castagnoli) without the IV.</a>
+<span class="lineNum">      87 </span>            :  */
+<span class="lineNum">      88 </span><span class="lineCov">        337 : static inline uint32_t crc32c_gen_plain(uint32_t crc, const unsigned char* ptr, unsigned size)</span>
+<span class="lineNum">      89 </span>            : {
+<span class="lineNum">      90 </span><span class="lineCov">   20972361 :         while (size &gt;= 4) {</span>
+<span class="lineNum">      91 </span><span class="lineCov">   20971687 :                 crc ^= ptr[0] | (uint32_t)ptr[1] &lt;&lt; 8 | (uint32_t)ptr[2] &lt;&lt; 16 | (uint32_t)ptr[3] &lt;&lt; 24;</span>
+<span class="lineNum">      92 </span><span class="lineCov">   20971687 :                 crc = CRC32C_3[crc &amp; 0xff] ^ CRC32C_2[(crc &gt;&gt; 8) &amp; 0xff] ^ CRC32C_1[(crc &gt;&gt; 16) &amp; 0xff] ^ CRC32C_0[crc &gt;&gt; 24];</span>
+<span class="lineNum">      93 </span><span class="lineCov">   20971687 :                 ptr += 4;</span>
+<span class="lineNum">      94 </span><span class="lineCov">   20971687 :                 size -= 4;</span>
+<span class="lineNum">      95 </span>            :         }
+<span class="lineNum">      96 </span>            : 
+<span class="lineNum">      97 </span><span class="lineCov">        683 :         while (size) {</span>
+<span class="lineNum">      98 </span><span class="lineCov">          9 :                 crc = CRC32C_0[(crc ^ *ptr) &amp; 0xff] ^ (crc &gt;&gt; 8);</span>
+<span class="lineNum">      99 </span><span class="lineCov">          9 :                 ++ptr;</span>
+<span class="lineNum">     100 </span><span class="lineCov">          9 :                 --size;</span>
+<span class="lineNum">     101 </span>            :         }
+<span class="lineNum">     102 </span>            : 
+<span class="lineNum">     103 </span><span class="lineCov">        337 :         return crc;</span>
+<span class="lineNum">     104 </span>            : }
 <span class="lineNum">     105 </span>            : 
-<span class="lineNum">     106 </span>            : #define HASH_SIZE 16
-<span class="lineNum">     107 </span>            : 
-<span class="lineNum">     108 </span>            : /**
-<span class="lineNum">     109 </span>            :  * Hash kinds.
-<span class="lineNum">     110 </span>            :  */
-<span class="lineNum">     111 </span>            : #define HASH_UNDEFINED 0
-<span class="lineNum">     112 </span>            : #define HASH_MURMUR3 1
-<span class="lineNum">     113 </span>            : #define HASH_SPOOKY2 2
-<span class="lineNum">     114 </span>            : 
-<span class="lineNum">     115 </span>            : /**
-<span class="lineNum">     116 </span>            :  * Computes the HASH of a memory block.
-<span class="lineNum">     117 </span>            :  * Seed is a 128 bit vector.
-<span class="lineNum">     118 </span>            :  */
-<span class="lineNum">     119 </span>            : void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, unsigned size);
-<span class="lineNum">     120 </span>            : 
-<span class="lineNum">     121 </span>            : /**
-<span class="lineNum">     122 </span>            :  * Return the hash name.
-<span class="lineNum">     123 </span>            :  */
-<span class="lineNum">     124 </span>            : const char* hash_config_name(unsigned kind);
-<span class="lineNum">     125 </span>            : 
-<span class="lineNum">     126 </span>            : /****************************************************************************/
-<span class="lineNum">     127 </span>            : /* lock */
-<span class="lineNum">     128 </span>            : 
-<span class="lineNum">     129 </span>            : /**
-<span class="lineNum">     130 </span>            :  * Creates and locks the lock file.
-<span class="lineNum">     131 </span>            :  * Returns -1 on error, otherwise it's the file handle to pass to lock_unlock().
-<span class="lineNum">     132 </span>            :  */
-<span class="lineNum">     133 </span>            : int lock_lock(const char* file);
-<span class="lineNum">     134 </span>            : 
-<span class="lineNum">     135 </span>            : /**
-<span class="lineNum">     136 </span>            :  * Unlocks the lock file.
-<span class="lineNum">     137 </span>            :  * Returns -1 on error.
-<span class="lineNum">     138 </span>            :  */
-<span class="lineNum">     139 </span>            : int lock_unlock(int f);
-<span class="lineNum">     140 </span>            : 
-<span class="lineNum">     141 </span>            : #endif
-<span class="lineNum">     142 </span>            : 
+<span class="lineNum">     106 </span>            : /**
+<span class="lineNum">     107 </span>            :  * Compute the CRC-32 (Castagnoli) without the IV.
+<a name="108"><span class="lineNum">     108 </span>            :  */</a>
+<span class="lineNum">     109 </span>            : #if HAVE_SSE42
+<span class="lineNum">     110 </span><span class="lineCov">  131430214 : static inline uint32_t crc32c_x86_plain(uint32_t crc, const unsigned char* ptr, unsigned size)</span>
+<span class="lineNum">     111 </span>            : {
+<span class="lineNum">     112 </span>            : #ifdef CONFIG_X86_64
+<span class="lineNum">     113 </span>            :         uint64_t crc64 = crc;
+<span class="lineNum">     114 </span>            :         while (size &gt;= 8) {
+<span class="lineNum">     115 </span>            :                 asm(&quot;crc32q %1, %0\n&quot; : &quot;+r&quot; (crc64) : &quot;m&quot; (*(const uint64_t*)ptr));
+<span class="lineNum">     116 </span>            :                 ptr += 8;
+<span class="lineNum">     117 </span>            :                 size -= 8;
+<span class="lineNum">     118 </span>            :         }
+<span class="lineNum">     119 </span>            :         crc = crc64;
+<span class="lineNum">     120 </span>            : #else
+<span class="lineNum">     121 </span><span class="lineCov">  972142050 :         while (size &gt;= 4) {</span>
+<span class="lineNum">     122 </span><span class="lineCov">  709281622 :                 asm(&quot;crc32l %1, %0\n&quot; : &quot;+r&quot; (crc) : &quot;m&quot; (*(const uint32_t*)ptr));</span>
+<span class="lineNum">     123 </span><span class="lineCov">  709281622 :                 ptr += 4;</span>
+<span class="lineNum">     124 </span><span class="lineCov">  709281622 :                 size -= 4;</span>
+<span class="lineNum">     125 </span>            :         }
+<span class="lineNum">     126 </span>            : #endif
+<span class="lineNum">     127 </span><span class="lineCov">  382290808 :         while (size) {</span>
+<span class="lineNum">     128 </span><span class="lineCov">  119430380 :                 asm(&quot;crc32b %1, %0\n&quot; : &quot;+r&quot; (crc) : &quot;m&quot; (*ptr));</span>
+<span class="lineNum">     129 </span><span class="lineCov">  119430380 :                 ++ptr;</span>
+<span class="lineNum">     130 </span><span class="lineCov">  119430380 :                 --size;</span>
+<span class="lineNum">     131 </span>            :         }
+<span class="lineNum">     132 </span>            : 
+<span class="lineNum">     133 </span><span class="lineCov">  131430214 :         return crc;</span>
+<span class="lineNum">     134 </span>            : }
+<span class="lineNum">     135 </span>            : #endif
+<span class="lineNum">     136 </span>            : 
+<span class="lineNum">     137 </span>            : /**
+<a name="138"><span class="lineNum">     138 </span>            :  * Compute CRC-32 (Castagnoli) without the IV.</a>
+<span class="lineNum">     139 </span>            :  */
+<span class="lineNum">     140 </span><span class="lineCov">  130044002 : static inline uint32_t crc32c_plain(uint32_t crc, const unsigned char* ptr, unsigned size)</span>
+<span class="lineNum">     141 </span>            : {
+<span class="lineNum">     142 </span>            : #if HAVE_SSE42
+<span class="lineNum">     143 </span><span class="lineCov">  130044002 :         if (tommy_likely(crc_x86)) {</span>
+<span class="lineNum">     144 </span><span class="lineCov">  130044002 :                 return crc32c_x86_plain(crc, ptr, size);</span>
+<span class="lineNum">     145 </span>            :         }
+<span class="lineNum">     146 </span>            : #endif
+<span class="lineNum">     147 </span><span class="lineNoCov">          0 :         return crc32c_gen_plain(crc, ptr, size);</span>
+<span class="lineNum">     148 </span>            : }
+<span class="lineNum">     149 </span>            : 
+<span class="lineNum">     150 </span>            : /**
+<span class="lineNum">     151 </span>            :  * Compute the CRC-32 (Castagnoli)
+<span class="lineNum">     152 </span>            :  */
+<span class="lineNum">     153 </span>            : uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, unsigned size);
+<span class="lineNum">     154 </span>            : 
+<span class="lineNum">     155 </span>            : /**
+<span class="lineNum">     156 </span>            :  * Internal entry points for testing.
+<span class="lineNum">     157 </span>            :  */
+<span class="lineNum">     158 </span>            : uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size);
+<span class="lineNum">     159 </span>            : uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size);
+<span class="lineNum">     160 </span>            : 
+<span class="lineNum">     161 </span>            : /**
+<span class="lineNum">     162 </span>            :  * Initialize the CRC-32 (Castagnoli) support.
+<span class="lineNum">     163 </span>            :  */
+<span class="lineNum">     164 </span>            : void crc32c_init(void);
+<span class="lineNum">     165 </span>            : 
+<span class="lineNum">     166 </span>            : /****************************************************************************/
+<span class="lineNum">     167 </span>            : /* hash */
+<span class="lineNum">     168 </span>            : 
+<span class="lineNum">     169 </span>            : /**
+<span class="lineNum">     170 </span>            :  * Size of the hash.
+<span class="lineNum">     171 </span>            :  */
+<span class="lineNum">     172 </span>            : 
+<span class="lineNum">     173 </span>            : #define HASH_SIZE 16
+<span class="lineNum">     174 </span>            : 
+<span class="lineNum">     175 </span>            : /**
+<span class="lineNum">     176 </span>            :  * Hash kinds.
+<span class="lineNum">     177 </span>            :  */
+<span class="lineNum">     178 </span>            : #define HASH_UNDEFINED 0
+<span class="lineNum">     179 </span>            : #define HASH_MURMUR3 1
+<span class="lineNum">     180 </span>            : #define HASH_SPOOKY2 2
+<span class="lineNum">     181 </span>            : 
+<span class="lineNum">     182 </span>            : /**
+<span class="lineNum">     183 </span>            :  * Compute the HASH of a memory block.
+<span class="lineNum">     184 </span>            :  * Seed is a 128 bit vector.
+<span class="lineNum">     185 </span>            :  */
+<span class="lineNum">     186 </span>            : void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, size_t size);
+<span class="lineNum">     187 </span>            : 
+<span class="lineNum">     188 </span>            : /**
+<span class="lineNum">     189 </span>            :  * Return the hash name.
+<span class="lineNum">     190 </span>            :  */
+<span class="lineNum">     191 </span>            : const char* hash_config_name(unsigned kind);
+<span class="lineNum">     192 </span>            : 
+<span class="lineNum">     193 </span>            : /**
+<span class="lineNum">     194 </span>            :  * Count the number of different bits in the two buffers.
+<span class="lineNum">     195 </span>            :  */
+<span class="lineNum">     196 </span>            : unsigned memdiff(const unsigned char* data1, const unsigned char* data2, size_t size);
+<span class="lineNum">     197 </span>            : 
+<span class="lineNum">     198 </span>            : /****************************************************************************/
+<span class="lineNum">     199 </span>            : /* lock */
+<span class="lineNum">     200 </span>            : 
+<span class="lineNum">     201 </span>            : /**
+<span class="lineNum">     202 </span>            :  * Create and locks the lock file.
+<span class="lineNum">     203 </span>            :  * Return -1 on error, otherwise it's the file handle to pass to lock_unlock().
+<span class="lineNum">     204 </span>            :  */
+<span class="lineNum">     205 </span>            : int lock_lock(const char* file);
+<span class="lineNum">     206 </span>            : 
+<span class="lineNum">     207 </span>            : /**
+<span class="lineNum">     208 </span>            :  * Unlock the lock file.
+<span class="lineNum">     209 </span>            :  * Return -1 on error.
+<span class="lineNum">     210 </span>            :  */
+<span class="lineNum">     211 </span>            : int lock_unlock(int f);
+<span class="lineNum">     212 </span>            : 
+<span class="lineNum">     213 </span>            : #endif
+<span class="lineNum">     214 </span>            : 
 </pre>
       </td>
     </tr>

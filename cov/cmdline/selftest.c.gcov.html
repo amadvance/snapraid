@@ -31,17 +31,17 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntry">114</td>
-            <td class="headerCovTableEntry">130</td>
-            <td class="headerCovTableEntryMed">87.7 %</td>
+            <td class="headerCovTableEntry">144</td>
+            <td class="headerCovTableEntry">172</td>
+            <td class="headerCovTableEntryMed">83.7 %</td>
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-05-12</td>
+            <td class="headerValue">2015-11-13</td>
             <td></td>
             <td class="headerItem">Functions:</td>
-            <td class="headerCovTableEntry">7</td>
-            <td class="headerCovTableEntry">7</td>
+            <td class="headerCovTableEntry">8</td>
+            <td class="headerCovTableEntry">8</td>
             <td class="headerCovTableEntryHi">100.0 %</td>
           </tr>
           <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
@@ -305,215 +305,280 @@
 <span class="lineNum">     243 </span>            : 
 <span class="lineNum">     244 </span><span class="lineCov">         18 :         for (i = 0; TEST_CRC32C[i].data; ++i) {</span>
 <span class="lineNum">     245 </span>            :                 uint32_t digest;
-<span class="lineNum">     246 </span><span class="lineCov">         17 :                 digest = crc32c(0, (const unsigned char*)TEST_CRC32C[i].data, TEST_CRC32C[i].len);</span>
-<span class="lineNum">     247 </span><span class="lineCov">         17 :                 if (digest != TEST_CRC32C[i].digest) {</span>
-<span class="lineNum">     248 </span>            :                         /* LCOV_EXCL_START */
-<span class="lineNum">     249 </span>            :                         log_fatal(&quot;Failed CRC32C test\n&quot;);
-<span class="lineNum">     250 </span>            :                         exit(EXIT_FAILURE);
-<span class="lineNum">     251 </span>            :                         /* LCOV_EXCL_STOP */
-<span class="lineNum">     252 </span>            :                 }
-<span class="lineNum">     253 </span>            :         }
-<span class="lineNum">     254 </span><span class="lineCov">          1 : }</span>
-<span class="lineNum">     255 </span>            : 
-<span class="lineNum">     256 </span>            : /**
-<span class="lineNum">     257 </span>            :  * Size of tommy data structures.
-<span class="lineNum">     258 </span>            :  */
-<a name="259"><span class="lineNum">     259 </span>            : #define TOMMY_SIZE 256</a>
-<span class="lineNum">     260 </span>            : 
-<span class="lineNum">     261 </span><span class="lineCov">        384 : static int tommy_test_search(const void* arg, const void* obj)</span>
-<span class="lineNum">     262 </span>            : {
-<span class="lineNum">     263 </span><span class="lineCov">        384 :         return arg != obj;</span>
-<span class="lineNum">     264 </span>            : }
-<span class="lineNum">     265 </span>            : 
-<a name="266"><span class="lineNum">     266 </span>            : static unsigned tommy_test_foreach_count;</a>
-<span class="lineNum">     267 </span>            : 
-<span class="lineNum">     268 </span><span class="lineCov">        256 : static void tommy_test_foreach(void* obj)</span>
-<span class="lineNum">     269 </span>            : {
-<span class="lineNum">     270 </span>            :         (void)obj;
-<span class="lineNum">     271 </span>            : 
-<span class="lineNum">     272 </span><span class="lineCov">        256 :         ++tommy_test_foreach_count;</span>
-<a name="273"><span class="lineNum">     273 </span><span class="lineCov">        256 : }</span></a>
-<span class="lineNum">     274 </span>            : 
-<span class="lineNum">     275 </span><span class="lineCov">        256 : static void tommy_test_foreach_arg(void* void_arg, void* obj)</span>
-<span class="lineNum">     276 </span>            : {
-<span class="lineNum">     277 </span><span class="lineCov">        256 :         unsigned* arg = void_arg;</span>
+<span class="lineNum">     246 </span>            :                 uint32_t digest_gen;
+<span class="lineNum">     247 </span>            : 
+<span class="lineNum">     248 </span><span class="lineCov">         17 :                 digest = crc32c(0, (const unsigned char*)TEST_CRC32C[i].data, TEST_CRC32C[i].len);</span>
+<span class="lineNum">     249 </span><span class="lineCov">         17 :                 digest_gen = crc32c_gen(0, (const unsigned char*)TEST_CRC32C[i].data, TEST_CRC32C[i].len);</span>
+<span class="lineNum">     250 </span>            : 
+<span class="lineNum">     251 </span><span class="lineCov">         17 :                 if (digest != TEST_CRC32C[i].digest || digest_gen != TEST_CRC32C[i].digest) {</span>
+<span class="lineNum">     252 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     253 </span>            :                         log_fatal(&quot;Failed CRC32C test\n&quot;);
+<span class="lineNum">     254 </span>            :                         exit(EXIT_FAILURE);
+<span class="lineNum">     255 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     256 </span>            :                 }
+<span class="lineNum">     257 </span>            :         }
+<span class="lineNum">     258 </span><span class="lineCov">          1 : }</span>
+<span class="lineNum">     259 </span>            : 
+<span class="lineNum">     260 </span>            : /**
+<span class="lineNum">     261 </span>            :  * Size of tommy data structures.
+<span class="lineNum">     262 </span>            :  */
+<a name="263"><span class="lineNum">     263 </span>            : #define TOMMY_SIZE 256</a>
+<span class="lineNum">     264 </span>            : 
+<span class="lineNum">     265 </span><span class="lineCov">        384 : static int tommy_test_search(const void* arg, const void* obj)</span>
+<span class="lineNum">     266 </span>            : {
+<span class="lineNum">     267 </span><span class="lineCov">        384 :         return arg != obj;</span>
+<a name="268"><span class="lineNum">     268 </span>            : }</a>
+<span class="lineNum">     269 </span>            : 
+<span class="lineNum">     270 </span><span class="lineCov">       4324 : static int tommy_test_compare(const void* void_arg_a, const void* void_arg_b)</span>
+<span class="lineNum">     271 </span>            : {
+<span class="lineNum">     272 </span><span class="lineCov">       4324 :         if (void_arg_a &lt; void_arg_b)</span>
+<span class="lineNum">     273 </span><span class="lineCov">       2007 :                 return -1;</span>
+<span class="lineNum">     274 </span><span class="lineCov">       2317 :         if (void_arg_a &gt; void_arg_b)</span>
+<span class="lineNum">     275 </span><span class="lineCov">       2058 :                 return 1;</span>
+<span class="lineNum">     276 </span><span class="lineCov">        259 :         return 0;</span>
+<span class="lineNum">     277 </span>            : }
 <span class="lineNum">     278 </span>            : 
-<span class="lineNum">     279 </span>            :         (void)obj;
+<a name="279"><span class="lineNum">     279 </span>            : static unsigned tommy_test_foreach_count;</a>
 <span class="lineNum">     280 </span>            : 
-<span class="lineNum">     281 </span><span class="lineCov">        256 :         ++*arg;</span>
-<a name="282"><span class="lineNum">     282 </span><span class="lineCov">        256 : }</span></a>
-<span class="lineNum">     283 </span>            : 
-<span class="lineNum">     284 </span><span class="lineCov">          1 : static void test_tommy(void)</span>
-<span class="lineNum">     285 </span>            : {
-<span class="lineNum">     286 </span>            :         tommy_array array;
-<span class="lineNum">     287 </span>            :         tommy_arrayblk arrayblk;
-<span class="lineNum">     288 </span>            :         tommy_arrayblkof arrayblkof;
-<span class="lineNum">     289 </span>            :         tommy_list list;
-<span class="lineNum">     290 </span>            :         tommy_hashdyn hashdyn;
-<span class="lineNum">     291 </span>            :         tommy_hashdyn_node node[TOMMY_SIZE];
-<span class="lineNum">     292 </span>            :         unsigned i;
+<span class="lineNum">     281 </span><span class="lineCov">        512 : static void tommy_test_foreach(void* obj)</span>
+<span class="lineNum">     282 </span>            : {
+<span class="lineNum">     283 </span>            :         (void)obj;
+<span class="lineNum">     284 </span>            : 
+<span class="lineNum">     285 </span><span class="lineCov">        512 :         ++tommy_test_foreach_count;</span>
+<a name="286"><span class="lineNum">     286 </span><span class="lineCov">        512 : }</span></a>
+<span class="lineNum">     287 </span>            : 
+<span class="lineNum">     288 </span><span class="lineCov">        512 : static void tommy_test_foreach_arg(void* void_arg, void* obj)</span>
+<span class="lineNum">     289 </span>            : {
+<span class="lineNum">     290 </span><span class="lineCov">        512 :         unsigned* arg = void_arg;</span>
+<span class="lineNum">     291 </span>            : 
+<span class="lineNum">     292 </span>            :         (void)obj;
 <span class="lineNum">     293 </span>            : 
-<span class="lineNum">     294 </span><span class="lineCov">          1 :         tommy_array_init(&amp;array);</span>
-<span class="lineNum">     295 </span><span class="lineCov">          1 :         tommy_arrayblk_init(&amp;arrayblk);</span>
-<span class="lineNum">     296 </span><span class="lineCov">          1 :         tommy_arrayblkof_init(&amp;arrayblkof, sizeof(unsigned));</span>
-<span class="lineNum">     297 </span>            : 
-<span class="lineNum">     298 </span><span class="lineCov">        257 :         for (i = 0; i &lt; TOMMY_SIZE; ++i) {</span>
-<span class="lineNum">     299 </span><span class="lineCov">        256 :                 tommy_array_insert(&amp;array, &amp;node[i]);</span>
-<span class="lineNum">     300 </span><span class="lineCov">        256 :                 tommy_arrayblk_insert(&amp;arrayblk, &amp;node[i]);</span>
-<span class="lineNum">     301 </span><span class="lineCov">        256 :                 tommy_arrayblkof_grow(&amp;arrayblkof, i + 1);</span>
-<span class="lineNum">     302 </span><span class="lineCov">        256 :                 *(unsigned*)tommy_arrayblkof_ref(&amp;arrayblkof, i) = i;</span>
-<span class="lineNum">     303 </span>            :         }
-<span class="lineNum">     304 </span>            : 
-<span class="lineNum">     305 </span><span class="lineCov">          1 :         if (tommy_array_memory_usage(&amp;array) &lt; TOMMY_SIZE * sizeof(void*))</span>
-<span class="lineNum">     306 </span><span class="lineNoCov">          0 :                 goto bail;</span>
-<span class="lineNum">     307 </span><span class="lineCov">          1 :         if (tommy_arrayblk_memory_usage(&amp;arrayblk) &lt; TOMMY_SIZE * sizeof(void*))</span>
-<span class="lineNum">     308 </span><span class="lineNoCov">          0 :                 goto bail;</span>
-<span class="lineNum">     309 </span><span class="lineCov">          1 :         if (tommy_arrayblkof_memory_usage(&amp;arrayblkof) &lt; TOMMY_SIZE * sizeof(unsigned))</span>
-<span class="lineNum">     310 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     294 </span><span class="lineCov">        512 :         ++*arg;</span>
+<a name="295"><span class="lineNum">     295 </span><span class="lineCov">        512 : }</span></a>
+<span class="lineNum">     296 </span>            : 
+<span class="lineNum">     297 </span><span class="lineCov">          1 : static void test_tommy(void)</span>
+<span class="lineNum">     298 </span>            : {
+<span class="lineNum">     299 </span>            :         tommy_array array;
+<span class="lineNum">     300 </span>            :         tommy_arrayblk arrayblk;
+<span class="lineNum">     301 </span>            :         tommy_arrayblkof arrayblkof;
+<span class="lineNum">     302 </span>            :         tommy_list list;
+<span class="lineNum">     303 </span>            :         tommy_hashdyn hashdyn;
+<span class="lineNum">     304 </span>            :         tommy_tree tree;
+<span class="lineNum">     305 </span>            :         tommy_node node[TOMMY_SIZE+1];
+<span class="lineNum">     306 </span>            :         unsigned i;
+<span class="lineNum">     307 </span>            : 
+<span class="lineNum">     308 </span><span class="lineCov">          1 :         tommy_array_init(&amp;array);</span>
+<span class="lineNum">     309 </span><span class="lineCov">          1 :         tommy_arrayblk_init(&amp;arrayblk);</span>
+<span class="lineNum">     310 </span><span class="lineCov">          1 :         tommy_arrayblkof_init(&amp;arrayblkof, sizeof(unsigned));</span>
 <span class="lineNum">     311 </span>            : 
 <span class="lineNum">     312 </span><span class="lineCov">        257 :         for (i = 0; i &lt; TOMMY_SIZE; ++i) {</span>
-<span class="lineNum">     313 </span><span class="lineCov">        256 :                 if (tommy_array_get(&amp;array, i) != &amp;node[i])</span>
-<span class="lineNum">     314 </span><span class="lineNoCov">          0 :                         goto bail;</span>
-<span class="lineNum">     315 </span><span class="lineCov">        256 :                 if (tommy_arrayblk_get(&amp;arrayblk, i) != &amp;node[i])</span>
-<span class="lineNum">     316 </span><span class="lineNoCov">          0 :                         goto bail;</span>
-<span class="lineNum">     317 </span><span class="lineCov">        256 :                 if (*(unsigned*)tommy_arrayblkof_ref(&amp;arrayblkof, i) != i)</span>
-<span class="lineNum">     318 </span><span class="lineNoCov">          0 :                         goto bail;</span>
-<span class="lineNum">     319 </span>            :         }
-<span class="lineNum">     320 </span>            : 
-<span class="lineNum">     321 </span><span class="lineCov">          1 :         tommy_arrayblkof_done(&amp;arrayblkof);</span>
-<span class="lineNum">     322 </span><span class="lineCov">          1 :         tommy_arrayblk_done(&amp;arrayblk);</span>
-<span class="lineNum">     323 </span><span class="lineCov">          1 :         tommy_array_done(&amp;array);</span>
-<span class="lineNum">     324 </span>            : 
-<span class="lineNum">     325 </span><span class="lineCov">          1 :         tommy_list_init(&amp;list);</span>
-<span class="lineNum">     326 </span>            : 
-<span class="lineNum">     327 </span><span class="lineCov">          1 :         if (!tommy_list_empty(&amp;list))</span>
-<span class="lineNum">     328 </span><span class="lineNoCov">          0 :                 goto bail;</span>
-<span class="lineNum">     329 </span>            : 
-<span class="lineNum">     330 </span><span class="lineCov">          1 :         if (tommy_list_tail(&amp;list))</span>
-<span class="lineNum">     331 </span><span class="lineNoCov">          0 :                 goto bail;</span>
-<span class="lineNum">     332 </span>            : 
-<span class="lineNum">     333 </span><span class="lineCov">          1 :         if (tommy_list_head(&amp;list))</span>
-<span class="lineNum">     334 </span><span class="lineNoCov">          0 :                 goto bail;</span>
-<span class="lineNum">     335 </span>            : 
-<span class="lineNum">     336 </span><span class="lineCov">          1 :         tommy_hashdyn_init(&amp;hashdyn);</span>
-<span class="lineNum">     337 </span>            : 
-<span class="lineNum">     338 </span><span class="lineCov">        257 :         for (i = 0; i &lt; TOMMY_SIZE; ++i)</span>
-<span class="lineNum">     339 </span><span class="lineCov">        256 :                 tommy_hashdyn_insert(&amp;hashdyn, &amp;node[i], &amp;node[i], i % 64);</span>
+<span class="lineNum">     313 </span><span class="lineCov">        256 :                 tommy_array_insert(&amp;array, &amp;node[i]);</span>
+<span class="lineNum">     314 </span><span class="lineCov">        256 :                 tommy_arrayblk_insert(&amp;arrayblk, &amp;node[i]);</span>
+<span class="lineNum">     315 </span><span class="lineCov">        256 :                 tommy_arrayblkof_grow(&amp;arrayblkof, i + 1);</span>
+<span class="lineNum">     316 </span><span class="lineCov">        256 :                 *(unsigned*)tommy_arrayblkof_ref(&amp;arrayblkof, i) = i;</span>
+<span class="lineNum">     317 </span>            :         }
+<span class="lineNum">     318 </span>            : 
+<span class="lineNum">     319 </span><span class="lineCov">          1 :         if (tommy_array_memory_usage(&amp;array) &lt; TOMMY_SIZE * sizeof(void*))</span>
+<span class="lineNum">     320 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     321 </span><span class="lineCov">          1 :         if (tommy_arrayblk_memory_usage(&amp;arrayblk) &lt; TOMMY_SIZE * sizeof(void*))</span>
+<span class="lineNum">     322 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     323 </span><span class="lineCov">          1 :         if (tommy_arrayblkof_memory_usage(&amp;arrayblkof) &lt; TOMMY_SIZE * sizeof(unsigned))</span>
+<span class="lineNum">     324 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     325 </span>            : 
+<span class="lineNum">     326 </span><span class="lineCov">        257 :         for (i = 0; i &lt; TOMMY_SIZE; ++i) {</span>
+<span class="lineNum">     327 </span><span class="lineCov">        256 :                 if (tommy_array_get(&amp;array, i) != &amp;node[i])</span>
+<span class="lineNum">     328 </span><span class="lineNoCov">          0 :                         goto bail;</span>
+<span class="lineNum">     329 </span><span class="lineCov">        256 :                 if (tommy_arrayblk_get(&amp;arrayblk, i) != &amp;node[i])</span>
+<span class="lineNum">     330 </span><span class="lineNoCov">          0 :                         goto bail;</span>
+<span class="lineNum">     331 </span><span class="lineCov">        256 :                 if (*(unsigned*)tommy_arrayblkof_ref(&amp;arrayblkof, i) != i)</span>
+<span class="lineNum">     332 </span><span class="lineNoCov">          0 :                         goto bail;</span>
+<span class="lineNum">     333 </span>            :         }
+<span class="lineNum">     334 </span>            : 
+<span class="lineNum">     335 </span><span class="lineCov">          1 :         tommy_arrayblkof_done(&amp;arrayblkof);</span>
+<span class="lineNum">     336 </span><span class="lineCov">          1 :         tommy_arrayblk_done(&amp;arrayblk);</span>
+<span class="lineNum">     337 </span><span class="lineCov">          1 :         tommy_array_done(&amp;array);</span>
+<span class="lineNum">     338 </span>            : 
+<span class="lineNum">     339 </span><span class="lineCov">          1 :         tommy_list_init(&amp;list);</span>
 <span class="lineNum">     340 </span>            : 
-<span class="lineNum">     341 </span><span class="lineCov">          1 :         if (tommy_hashdyn_count(&amp;hashdyn) != TOMMY_SIZE)</span>
+<span class="lineNum">     341 </span><span class="lineCov">          1 :         if (!tommy_list_empty(&amp;list))</span>
 <span class="lineNum">     342 </span><span class="lineNoCov">          0 :                 goto bail;</span>
 <span class="lineNum">     343 </span>            : 
-<span class="lineNum">     344 </span><span class="lineCov">          1 :         if (tommy_hashdyn_memory_usage(&amp;hashdyn) &lt; TOMMY_SIZE * sizeof(void*))</span>
+<span class="lineNum">     344 </span><span class="lineCov">          1 :         if (tommy_list_tail(&amp;list))</span>
 <span class="lineNum">     345 </span><span class="lineNoCov">          0 :                 goto bail;</span>
 <span class="lineNum">     346 </span>            : 
-<span class="lineNum">     347 </span><span class="lineCov">          1 :         tommy_test_foreach_count = 0;</span>
-<span class="lineNum">     348 </span><span class="lineCov">          1 :         tommy_hashdyn_foreach(&amp;hashdyn, tommy_test_foreach);</span>
-<span class="lineNum">     349 </span><span class="lineCov">          1 :         if (tommy_test_foreach_count != TOMMY_SIZE)</span>
-<span class="lineNum">     350 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     347 </span><span class="lineCov">          1 :         if (tommy_list_head(&amp;list))</span>
+<span class="lineNum">     348 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     349 </span>            : 
+<span class="lineNum">     350 </span><span class="lineCov">          1 :         tommy_hashdyn_init(&amp;hashdyn);</span>
 <span class="lineNum">     351 </span>            : 
-<span class="lineNum">     352 </span><span class="lineCov">          1 :         tommy_test_foreach_count = 0;</span>
-<span class="lineNum">     353 </span><span class="lineCov">          1 :         tommy_hashdyn_foreach_arg(&amp;hashdyn, tommy_test_foreach_arg, &amp;tommy_test_foreach_count);</span>
-<span class="lineNum">     354 </span><span class="lineCov">          1 :         if (tommy_test_foreach_count != TOMMY_SIZE)</span>
-<span class="lineNum">     355 </span><span class="lineNoCov">          0 :                 goto bail;</span>
-<span class="lineNum">     356 </span>            : 
-<span class="lineNum">     357 </span><span class="lineCov">        129 :         for (i = 0; i &lt; TOMMY_SIZE / 2; ++i)</span>
-<span class="lineNum">     358 </span><span class="lineCov">        128 :                 tommy_hashdyn_remove_existing(&amp;hashdyn, &amp;node[i]);</span>
-<span class="lineNum">     359 </span>            : 
-<span class="lineNum">     360 </span><span class="lineCov">        129 :         for (i = 0; i &lt; TOMMY_SIZE / 2; ++i)</span>
-<span class="lineNum">     361 </span><span class="lineCov">        128 :                 if (tommy_hashdyn_remove(&amp;hashdyn, tommy_test_search, &amp;node[i], i % 64) != 0)</span>
-<span class="lineNum">     362 </span><span class="lineNoCov">          0 :                         goto bail;</span>
-<span class="lineNum">     363 </span>            : 
-<span class="lineNum">     364 </span><span class="lineCov">        129 :         for (i = TOMMY_SIZE / 2; i &lt; TOMMY_SIZE; ++i)</span>
-<span class="lineNum">     365 </span><span class="lineCov">        128 :                 if (tommy_hashdyn_remove(&amp;hashdyn, tommy_test_search, &amp;node[i], i % 64) == 0)</span>
-<span class="lineNum">     366 </span><span class="lineNoCov">          0 :                         goto bail;</span>
-<span class="lineNum">     367 </span>            : 
-<span class="lineNum">     368 </span><span class="lineCov">          1 :         if (tommy_hashdyn_count(&amp;hashdyn) != 0)</span>
+<span class="lineNum">     352 </span><span class="lineCov">        257 :         for (i = 0; i &lt; TOMMY_SIZE; ++i)</span>
+<span class="lineNum">     353 </span><span class="lineCov">        256 :                 tommy_hashdyn_insert(&amp;hashdyn, &amp;node[i], &amp;node[i], i % 64);</span>
+<span class="lineNum">     354 </span>            : 
+<span class="lineNum">     355 </span><span class="lineCov">          1 :         if (tommy_hashdyn_count(&amp;hashdyn) != TOMMY_SIZE)</span>
+<span class="lineNum">     356 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     357 </span>            : 
+<span class="lineNum">     358 </span><span class="lineCov">          1 :         if (tommy_hashdyn_memory_usage(&amp;hashdyn) &lt; TOMMY_SIZE * sizeof(tommy_node))</span>
+<span class="lineNum">     359 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     360 </span>            : 
+<span class="lineNum">     361 </span><span class="lineCov">          1 :         tommy_test_foreach_count = 0;</span>
+<span class="lineNum">     362 </span><span class="lineCov">          1 :         tommy_hashdyn_foreach(&amp;hashdyn, tommy_test_foreach);</span>
+<span class="lineNum">     363 </span><span class="lineCov">          1 :         if (tommy_test_foreach_count != TOMMY_SIZE)</span>
+<span class="lineNum">     364 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     365 </span>            : 
+<span class="lineNum">     366 </span><span class="lineCov">          1 :         tommy_test_foreach_count = 0;</span>
+<span class="lineNum">     367 </span><span class="lineCov">          1 :         tommy_hashdyn_foreach_arg(&amp;hashdyn, tommy_test_foreach_arg, &amp;tommy_test_foreach_count);</span>
+<span class="lineNum">     368 </span><span class="lineCov">          1 :         if (tommy_test_foreach_count != TOMMY_SIZE)</span>
 <span class="lineNum">     369 </span><span class="lineNoCov">          0 :                 goto bail;</span>
 <span class="lineNum">     370 </span>            : 
-<span class="lineNum">     371 </span><span class="lineCov">          1 :         tommy_hashdyn_done(&amp;hashdyn);</span>
-<span class="lineNum">     372 </span>            : 
-<span class="lineNum">     373 </span><span class="lineCov">          1 :         return;</span>
-<span class="lineNum">     374 </span>            : bail:
-<span class="lineNum">     375 </span>            :         /* LCOV_EXCL_START */
-<span class="lineNum">     376 </span>            :         log_fatal(&quot;Failed tommy test\n&quot;);
-<span class="lineNum">     377 </span>            :         exit(EXIT_FAILURE);
-<span class="lineNum">     378 </span>            :         /* LCOV_EXCL_STOP */
-<a name="379"><span class="lineNum">     379 </span>            : }</a>
-<span class="lineNum">     380 </span>            : 
-<span class="lineNum">     381 </span><span class="lineCov">          1 : void selftest(void)</span>
-<span class="lineNum">     382 </span>            : {
-<span class="lineNum">     383 </span><span class="lineCov">          1 :         log_tag(&quot;selftest:\n&quot;);</span>
-<span class="lineNum">     384 </span><span class="lineCov">          1 :         log_flush();</span>
-<span class="lineNum">     385 </span>            : 
-<span class="lineNum">     386 </span><span class="lineCov">          1 :         msg_progress(&quot;Self test...\n&quot;);</span>
-<span class="lineNum">     387 </span>            : 
-<span class="lineNum">     388 </span>            :         /* large file check */
-<span class="lineNum">     389 </span>            :         if (sizeof(off_t) &lt; sizeof(uint64_t)) {
-<span class="lineNum">     390 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     391 </span>            :                 log_fatal(&quot;Missing support for large files\n&quot;);
-<span class="lineNum">     392 </span>            :                 exit(EXIT_FAILURE);
-<span class="lineNum">     393 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     394 </span>            :         }
+<span class="lineNum">     371 </span><span class="lineCov">        129 :         for (i = 0; i &lt; TOMMY_SIZE / 2; ++i)</span>
+<span class="lineNum">     372 </span><span class="lineCov">        128 :                 tommy_hashdyn_remove_existing(&amp;hashdyn, &amp;node[i]);</span>
+<span class="lineNum">     373 </span>            : 
+<span class="lineNum">     374 </span><span class="lineCov">        129 :         for (i = 0; i &lt; TOMMY_SIZE / 2; ++i)</span>
+<span class="lineNum">     375 </span><span class="lineCov">        128 :                 if (tommy_hashdyn_remove(&amp;hashdyn, tommy_test_search, &amp;node[i], i % 64) != 0)</span>
+<span class="lineNum">     376 </span><span class="lineNoCov">          0 :                         goto bail;</span>
+<span class="lineNum">     377 </span>            : 
+<span class="lineNum">     378 </span><span class="lineCov">        129 :         for (i = TOMMY_SIZE / 2; i &lt; TOMMY_SIZE; ++i)</span>
+<span class="lineNum">     379 </span><span class="lineCov">        128 :                 if (tommy_hashdyn_remove(&amp;hashdyn, tommy_test_search, &amp;node[i], i % 64) == 0)</span>
+<span class="lineNum">     380 </span><span class="lineNoCov">          0 :                         goto bail;</span>
+<span class="lineNum">     381 </span>            : 
+<span class="lineNum">     382 </span><span class="lineCov">          1 :         if (tommy_hashdyn_count(&amp;hashdyn) != 0)</span>
+<span class="lineNum">     383 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     384 </span>            : 
+<span class="lineNum">     385 </span><span class="lineCov">          1 :         tommy_hashdyn_done(&amp;hashdyn);</span>
+<span class="lineNum">     386 </span>            : 
+<span class="lineNum">     387 </span><span class="lineCov">          1 :         tommy_tree_init(&amp;tree, tommy_test_compare);</span>
+<span class="lineNum">     388 </span>            : 
+<span class="lineNum">     389 </span><span class="lineCov">        257 :         for (i = 0; i &lt; TOMMY_SIZE; ++i)</span>
+<span class="lineNum">     390 </span><span class="lineCov">        256 :                 tommy_tree_insert(&amp;tree, &amp;node[i], (void*)(uintptr_t)(i+1));</span>
+<span class="lineNum">     391 </span>            : 
+<span class="lineNum">     392 </span>            :         /* try to insert a duplicate, count should not change */
+<span class="lineNum">     393 </span><span class="lineCov">          1 :         if (tommy_tree_insert(&amp;tree, &amp;node[TOMMY_SIZE], (void*)1) != (void*)1)</span>
+<span class="lineNum">     394 </span><span class="lineNoCov">          0 :                 goto bail;</span>
 <span class="lineNum">     395 </span>            : 
-<span class="lineNum">     396 </span><span class="lineCov">          1 :         test_hash();</span>
-<span class="lineNum">     397 </span><span class="lineCov">          1 :         test_crc32c();</span>
-<span class="lineNum">     398 </span><span class="lineCov">          1 :         test_tommy();</span>
-<span class="lineNum">     399 </span><span class="lineCov">          1 :         if (raid_selftest() != 0) {</span>
-<span class="lineNum">     400 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     401 </span>            :                 log_fatal(&quot;Failed SELF test\n&quot;);
-<span class="lineNum">     402 </span>            :                 exit(EXIT_FAILURE);
-<span class="lineNum">     403 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     404 </span>            :         }
-<span class="lineNum">     405 </span><span class="lineCov">          1 :         if (raid_test_sort() != 0) {</span>
-<span class="lineNum">     406 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     407 </span>            :                 log_fatal(&quot;Failed SORT test\n&quot;);
-<span class="lineNum">     408 </span>            :                 exit(EXIT_FAILURE);
-<span class="lineNum">     409 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     410 </span>            :         }
-<span class="lineNum">     411 </span><span class="lineCov">          1 :         if (raid_test_insert() != 0) {</span>
-<span class="lineNum">     412 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     413 </span>            :                 log_fatal(&quot;Failed INSERT test\n&quot;);
-<span class="lineNum">     414 </span>            :                 exit(EXIT_FAILURE);
-<span class="lineNum">     415 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     416 </span>            :         }
-<span class="lineNum">     417 </span><span class="lineCov">          1 :         if (raid_test_combo() != 0) {</span>
-<span class="lineNum">     418 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     419 </span>            :                 log_fatal(&quot;Failed COMBO test\n&quot;);
-<span class="lineNum">     420 </span>            :                 exit(EXIT_FAILURE);
-<span class="lineNum">     421 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     422 </span>            :         }
-<span class="lineNum">     423 </span><span class="lineCov">          1 :         if (raid_test_par(RAID_MODE_VANDERMONDE, 32, 256) != 0) {</span>
-<span class="lineNum">     424 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     425 </span>            :                 log_fatal(&quot;Failed GEN Vandermonde test\n&quot;);
-<span class="lineNum">     426 </span>            :                 exit(EXIT_FAILURE);
-<span class="lineNum">     427 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     428 </span>            :         }
-<span class="lineNum">     429 </span><span class="lineCov">          1 :         if (raid_test_rec(RAID_MODE_VANDERMONDE, 12, 256) != 0) {</span>
-<span class="lineNum">     430 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     431 </span>            :                 log_fatal(&quot;Failed REC Vandermonde test\n&quot;);
-<span class="lineNum">     432 </span>            :                 exit(EXIT_FAILURE);
-<span class="lineNum">     433 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     434 </span>            :         }
-<span class="lineNum">     435 </span><span class="lineCov">          1 :         if (raid_test_par(RAID_MODE_CAUCHY, 32, 256) != 0) {</span>
-<span class="lineNum">     436 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     437 </span>            :                 log_fatal(&quot;Failed GEN Cauchy test\n&quot;);
-<span class="lineNum">     438 </span>            :                 exit(EXIT_FAILURE);
-<span class="lineNum">     439 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     440 </span>            :         }
-<span class="lineNum">     441 </span><span class="lineCov">          1 :         if (raid_test_rec(RAID_MODE_CAUCHY, 12, 256) != 0) {</span>
-<span class="lineNum">     442 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     443 </span>            :                 log_fatal(&quot;Failed REC Cauchy test\n&quot;);
-<span class="lineNum">     444 </span>            :                 exit(EXIT_FAILURE);
-<span class="lineNum">     445 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     446 </span>            :         }
-<span class="lineNum">     447 </span><span class="lineCov">          1 :         if (raid_test_par(RAID_MODE_CAUCHY, 1, 256) != 0) {</span>
-<span class="lineNum">     448 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     449 </span>            :                 log_fatal(&quot;Failed GEN Cauchy test sigle data disk\n&quot;);
-<span class="lineNum">     450 </span>            :                 exit(EXIT_FAILURE);
-<span class="lineNum">     451 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     452 </span>            :         }
-<span class="lineNum">     453 </span><span class="lineCov">          1 : }</span>
-<span class="lineNum">     454 </span>            : 
+<span class="lineNum">     396 </span><span class="lineCov">          1 :         if (tommy_tree_count(&amp;tree) != TOMMY_SIZE)</span>
+<span class="lineNum">     397 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     398 </span>            : 
+<span class="lineNum">     399 </span><span class="lineCov">          1 :         if (tommy_tree_memory_usage(&amp;tree) &lt; TOMMY_SIZE * sizeof(tommy_node))</span>
+<span class="lineNum">     400 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     401 </span>            : 
+<span class="lineNum">     402 </span><span class="lineCov">          1 :         if (tommy_tree_search(&amp;tree, (void*)1) != (void*)1)</span>
+<span class="lineNum">     403 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     404 </span>            : 
+<span class="lineNum">     405 </span><span class="lineCov">          1 :         if (tommy_tree_search(&amp;tree, (void*)-1) != 0)</span>
+<span class="lineNum">     406 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     407 </span>            : 
+<span class="lineNum">     408 </span><span class="lineCov">          1 :         if (tommy_tree_search_compare(&amp;tree, tommy_test_compare, (void*)1) != (void*)1)</span>
+<span class="lineNum">     409 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     410 </span>            : 
+<span class="lineNum">     411 </span><span class="lineCov">          1 :         if (tommy_tree_search_compare(&amp;tree, tommy_test_compare, (void*)-1) != 0)</span>
+<span class="lineNum">     412 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     413 </span>            : 
+<span class="lineNum">     414 </span><span class="lineCov">          1 :         tommy_test_foreach_count = 0;</span>
+<span class="lineNum">     415 </span><span class="lineCov">          1 :         tommy_tree_foreach(&amp;tree, tommy_test_foreach);</span>
+<span class="lineNum">     416 </span><span class="lineCov">          1 :         if (tommy_test_foreach_count != TOMMY_SIZE)</span>
+<span class="lineNum">     417 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     418 </span>            : 
+<span class="lineNum">     419 </span><span class="lineCov">          1 :         tommy_test_foreach_count = 0;</span>
+<span class="lineNum">     420 </span><span class="lineCov">          1 :         tommy_tree_foreach_arg(&amp;tree, tommy_test_foreach_arg, &amp;tommy_test_foreach_count);</span>
+<span class="lineNum">     421 </span><span class="lineCov">          1 :         if (tommy_test_foreach_count != TOMMY_SIZE)</span>
+<span class="lineNum">     422 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     423 </span>            : 
+<span class="lineNum">     424 </span><span class="lineCov">        129 :         for (i = 0; i &lt; TOMMY_SIZE / 2; ++i)</span>
+<span class="lineNum">     425 </span><span class="lineCov">        128 :                 tommy_tree_remove_existing(&amp;tree, &amp;node[i]);</span>
+<span class="lineNum">     426 </span>            : 
+<span class="lineNum">     427 </span><span class="lineCov">        129 :         for (i = 0; i &lt; TOMMY_SIZE / 2; ++i)</span>
+<span class="lineNum">     428 </span><span class="lineCov">        128 :                 if (tommy_tree_remove(&amp;tree, (void*)(uintptr_t)(i+1)) != 0)</span>
+<span class="lineNum">     429 </span><span class="lineNoCov">          0 :                         goto bail;</span>
+<span class="lineNum">     430 </span>            : 
+<span class="lineNum">     431 </span><span class="lineCov">        129 :         for (i = TOMMY_SIZE / 2; i &lt; TOMMY_SIZE; ++i)</span>
+<span class="lineNum">     432 </span><span class="lineCov">        128 :                 if (tommy_tree_remove(&amp;tree, (void*)(uintptr_t)(i+1)) == 0)</span>
+<span class="lineNum">     433 </span><span class="lineNoCov">          0 :                         goto bail;</span>
+<span class="lineNum">     434 </span>            : 
+<span class="lineNum">     435 </span><span class="lineCov">          1 :         if (tommy_tree_count(&amp;tree) != 0)</span>
+<span class="lineNum">     436 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     437 </span>            : 
+<span class="lineNum">     438 </span><span class="lineCov">          2 :         return;</span>
+<span class="lineNum">     439 </span>            : bail:
+<span class="lineNum">     440 </span>            :         /* LCOV_EXCL_START */
+<span class="lineNum">     441 </span>            :         log_fatal(&quot;Failed tommy test\n&quot;);
+<span class="lineNum">     442 </span>            :         exit(EXIT_FAILURE);
+<span class="lineNum">     443 </span>            :         /* LCOV_EXCL_STOP */
+<a name="444"><span class="lineNum">     444 </span>            : }</a>
+<span class="lineNum">     445 </span>            : 
+<span class="lineNum">     446 </span><span class="lineCov">          1 : void selftest(void)</span>
+<span class="lineNum">     447 </span>            : {
+<span class="lineNum">     448 </span><span class="lineCov">          1 :         log_tag(&quot;selftest:\n&quot;);</span>
+<span class="lineNum">     449 </span><span class="lineCov">          1 :         log_flush();</span>
+<span class="lineNum">     450 </span>            : 
+<span class="lineNum">     451 </span><span class="lineCov">          1 :         msg_progress(&quot;Self test...\n&quot;);</span>
+<span class="lineNum">     452 </span>            : 
+<span class="lineNum">     453 </span>            :         /* large file check */
+<span class="lineNum">     454 </span>            :         if (sizeof(off_t) &lt; sizeof(uint64_t)) {
+<span class="lineNum">     455 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     456 </span>            :                 log_fatal(&quot;Missing support for large files\n&quot;);
+<span class="lineNum">     457 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     458 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     459 </span>            :         }
+<span class="lineNum">     460 </span>            : 
+<span class="lineNum">     461 </span><span class="lineCov">          1 :         test_hash();</span>
+<span class="lineNum">     462 </span><span class="lineCov">          1 :         test_crc32c();</span>
+<span class="lineNum">     463 </span><span class="lineCov">          1 :         test_tommy();</span>
+<span class="lineNum">     464 </span><span class="lineCov">          1 :         if (raid_selftest() != 0) {</span>
+<span class="lineNum">     465 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     466 </span>            :                 log_fatal(&quot;Failed SELF test\n&quot;);
+<span class="lineNum">     467 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     468 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     469 </span>            :         }
+<span class="lineNum">     470 </span><span class="lineCov">          1 :         if (raid_test_sort() != 0) {</span>
+<span class="lineNum">     471 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     472 </span>            :                 log_fatal(&quot;Failed SORT test\n&quot;);
+<span class="lineNum">     473 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     474 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     475 </span>            :         }
+<span class="lineNum">     476 </span><span class="lineCov">          1 :         if (raid_test_insert() != 0) {</span>
+<span class="lineNum">     477 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     478 </span>            :                 log_fatal(&quot;Failed INSERT test\n&quot;);
+<span class="lineNum">     479 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     480 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     481 </span>            :         }
+<span class="lineNum">     482 </span><span class="lineCov">          1 :         if (raid_test_combo() != 0) {</span>
+<span class="lineNum">     483 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     484 </span>            :                 log_fatal(&quot;Failed COMBO test\n&quot;);
+<span class="lineNum">     485 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     486 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     487 </span>            :         }
+<span class="lineNum">     488 </span><span class="lineCov">          1 :         if (raid_test_par(RAID_MODE_VANDERMONDE, 32, 256) != 0) {</span>
+<span class="lineNum">     489 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     490 </span>            :                 log_fatal(&quot;Failed GEN Vandermonde test\n&quot;);
+<span class="lineNum">     491 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     492 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     493 </span>            :         }
+<span class="lineNum">     494 </span><span class="lineCov">          1 :         if (raid_test_rec(RAID_MODE_VANDERMONDE, 12, 256) != 0) {</span>
+<span class="lineNum">     495 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     496 </span>            :                 log_fatal(&quot;Failed REC Vandermonde test\n&quot;);
+<span class="lineNum">     497 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     498 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     499 </span>            :         }
+<span class="lineNum">     500 </span><span class="lineCov">          1 :         if (raid_test_par(RAID_MODE_CAUCHY, 32, 256) != 0) {</span>
+<span class="lineNum">     501 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     502 </span>            :                 log_fatal(&quot;Failed GEN Cauchy test\n&quot;);
+<span class="lineNum">     503 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     504 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     505 </span>            :         }
+<span class="lineNum">     506 </span><span class="lineCov">          1 :         if (raid_test_rec(RAID_MODE_CAUCHY, 12, 256) != 0) {</span>
+<span class="lineNum">     507 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     508 </span>            :                 log_fatal(&quot;Failed REC Cauchy test\n&quot;);
+<span class="lineNum">     509 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     510 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     511 </span>            :         }
+<span class="lineNum">     512 </span><span class="lineCov">          1 :         if (raid_test_par(RAID_MODE_CAUCHY, 1, 256) != 0) {</span>
+<span class="lineNum">     513 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     514 </span>            :                 log_fatal(&quot;Failed GEN Cauchy test sigle data disk\n&quot;);
+<span class="lineNum">     515 </span>            :                 exit(EXIT_FAILURE);
+<span class="lineNum">     516 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     517 </span>            :         }
+<span class="lineNum">     518 </span><span class="lineCov">          1 : }</span>
+<span class="lineNum">     519 </span>            : 
 </pre>
       </td>
     </tr>

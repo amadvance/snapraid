@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-05-12</td>
+            <td class="headerValue">2015-11-13</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">1</td>
@@ -316,14 +316,14 @@
 <span class="lineNum">     254 </span>            : /**
 <a name="255"><span class="lineNum">     255 </span>            :  * Another name for link() to avoid confusion with local variables called &quot;link&quot;.</a>
 <span class="lineNum">     256 </span>            :  */
-<span class="lineNum">     257 </span><span class="lineCov">         32 : static inline int hardlink(const char* a, const char* b)</span>
+<span class="lineNum">     257 </span><span class="lineCov">         12 : static inline int hardlink(const char* a, const char* b)</span>
 <span class="lineNum">     258 </span>            : {
-<span class="lineNum">     259 </span><span class="lineCov">         32 :         return link(a, b);</span>
+<span class="lineNum">     259 </span><span class="lineCov">         12 :         return link(a, b);</span>
 <span class="lineNum">     260 </span>            : }
 <span class="lineNum">     261 </span>            : 
 <span class="lineNum">     262 </span>            : /**
 <span class="lineNum">     263 </span>            :  * Get the device UUID.
-<span class="lineNum">     264 </span>            :  * Returns 0 on success.
+<span class="lineNum">     264 </span>            :  * Return 0 on success.
 <span class="lineNum">     265 </span>            :  */
 <span class="lineNum">     266 </span>            : int devuuid(uint64_t device, char* uuid, size_t size);
 <span class="lineNum">     267 </span>            : 
@@ -351,13 +351,13 @@
 <span class="lineNum">     289 </span>            : /**
 <span class="lineNum">     290 </span>            :  * Get the physcal address of the specified file.
 <span class="lineNum">     291 </span>            :  * This is expected to be just a hint and not necessarely correct or unique.
-<span class="lineNum">     292 </span>            :  * Returns 0 on success.
+<span class="lineNum">     292 </span>            :  * Return 0 on success.
 <span class="lineNum">     293 </span>            :  */
 <span class="lineNum">     294 </span>            : int filephy(const char* path, uint64_t size, uint64_t* physical);
 <span class="lineNum">     295 </span>            : 
 <span class="lineNum">     296 </span>            : /**
-<span class="lineNum">     297 </span>            :  * Checks if the underline filesystem support persistent inodes.
-<span class="lineNum">     298 </span>            :  * Returns -1 on error, 0 on success.
+<span class="lineNum">     297 </span>            :  * Check if the underline filesystem support persistent inodes.
+<span class="lineNum">     298 </span>            :  * Return -1 on error, 0 on success.
 <span class="lineNum">     299 </span>            :  */
 <span class="lineNum">     300 </span>            : int fsinfo(const char* path, int* has_persistent_inode, uint64_t* total_space, uint64_t* free_space);
 <span class="lineNum">     301 </span>            : 

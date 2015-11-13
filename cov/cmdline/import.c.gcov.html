@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-05-12</td>
+            <td class="headerValue">2015-11-13</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">8</td>
@@ -86,31 +86,31 @@
 <span class="lineNum">      24 </span>            : /* import */
 <span class="lineNum">      25 </span>            : 
 <span class="lineNum">      26 </span>            : /**
-<a name="27"><span class="lineNum">      27 </span>            :  * Compares the hash of two import blocks.</a>
+<a name="27"><span class="lineNum">      27 </span>            :  * Compare the hash of two import blocks.</a>
 <span class="lineNum">      28 </span>            :  */
-<span class="lineNum">      29 </span><span class="lineCov">       2232 : int import_block_hash_compare(const void* void_arg, const void* void_data)</span>
+<span class="lineNum">      29 </span><span class="lineCov">       2234 : int import_block_hash_compare(const void* void_arg, const void* void_data)</span>
 <span class="lineNum">      30 </span>            : {
-<span class="lineNum">      31 </span><span class="lineCov">       2232 :         const unsigned char* arg = void_arg;</span>
-<span class="lineNum">      32 </span><span class="lineCov">       2232 :         const struct snapraid_import_block* block = void_data;</span>
+<span class="lineNum">      31 </span><span class="lineCov">       2234 :         const unsigned char* arg = void_arg;</span>
+<span class="lineNum">      32 </span><span class="lineCov">       2234 :         const struct snapraid_import_block* block = void_data;</span>
 <span class="lineNum">      33 </span>            : 
-<span class="lineNum">      34 </span><span class="lineCov">       2232 :         return memcmp(arg, block-&gt;hash, HASH_SIZE);</span>
+<span class="lineNum">      34 </span><span class="lineCov">       2234 :         return memcmp(arg, block-&gt;hash, HASH_SIZE);</span>
 <a name="35"><span class="lineNum">      35 </span>            : }</a>
 <span class="lineNum">      36 </span>            : 
-<span class="lineNum">      37 </span><span class="lineCov">       2240 : int import_block_prevhash_compare(const void* void_arg, const void* void_data)</span>
+<span class="lineNum">      37 </span><span class="lineCov">       2238 : int import_block_prevhash_compare(const void* void_arg, const void* void_data)</span>
 <span class="lineNum">      38 </span>            : {
-<span class="lineNum">      39 </span><span class="lineCov">       2240 :         const unsigned char* arg = void_arg;</span>
-<span class="lineNum">      40 </span><span class="lineCov">       2240 :         const struct snapraid_import_block* block = void_data;</span>
+<span class="lineNum">      39 </span><span class="lineCov">       2238 :         const unsigned char* arg = void_arg;</span>
+<span class="lineNum">      40 </span><span class="lineCov">       2238 :         const struct snapraid_import_block* block = void_data;</span>
 <span class="lineNum">      41 </span>            : 
-<span class="lineNum">      42 </span><span class="lineCov">       2240 :         return memcmp(arg, block-&gt;prevhash, HASH_SIZE);</span>
+<span class="lineNum">      42 </span><span class="lineCov">       2238 :         return memcmp(arg, block-&gt;prevhash, HASH_SIZE);</span>
 <span class="lineNum">      43 </span>            : }
 <span class="lineNum">      44 </span>            : 
 <span class="lineNum">      45 </span>            : /**
-<span class="lineNum">      46 </span>            :  * Computes the hash of the hash for an import block.
+<span class="lineNum">      46 </span>            :  * Compute the hash of the hash for an import block.
 <a name="47"><span class="lineNum">      47 </span>            :  * We just use the first 32 bit of the hash itself.</a>
 <span class="lineNum">      48 </span>            :  */
-<span class="lineNum">      49 </span><span class="lineCov">     647895 : static inline tommy_uint32_t import_block_hash(const unsigned char* hash)</span>
+<span class="lineNum">      49 </span><span class="lineCov">     653410 : static inline tommy_uint32_t import_block_hash(const unsigned char* hash)</span>
 <span class="lineNum">      50 </span>            : {
-<span class="lineNum">      51 </span><span class="lineCov">     647895 :         return *(const tommy_uint32_t*)hash;</span>
+<span class="lineNum">      51 </span><span class="lineCov">     653410 :         return *(const tommy_uint32_t*)hash;</span>
 <a name="52"><span class="lineNum">      52 </span>            : }</a>
 <span class="lineNum">      53 </span>            : 
 <span class="lineNum">      54 </span><span class="lineCov">       1750 : static void import_file(struct snapraid_state* state, const char* path, uint64_t size)</span>
@@ -128,7 +128,7 @@
 <span class="lineNum">      66 </span><span class="lineCov">       1750 :         file-&gt;path = strdup_nofail(path);</span>
 <span class="lineNum">      67 </span><span class="lineCov">       1750 :         file-&gt;size = size;</span>
 <span class="lineNum">      68 </span><span class="lineCov">       1750 :         file-&gt;blockmax = (size + block_size - 1) / block_size;</span>
-<span class="lineNum">      69 </span><span class="lineCov">       1750 :         file-&gt;blockvec = malloc_nofail(file-&gt;blockmax * sizeof(struct snapraid_import_block));</span>
+<span class="lineNum">      69 </span><span class="lineCov">       1750 :         file-&gt;blockimp = malloc_nofail(file-&gt;blockmax * sizeof(struct snapraid_import_block));</span>
 <span class="lineNum">      70 </span>            : 
 <span class="lineNum">      71 </span><span class="lineCov">       1750 :         buffer = malloc_nofail(block_size);</span>
 <span class="lineNum">      72 </span>            : 
@@ -160,7 +160,7 @@
 <span class="lineNum">      98 </span>            : 
 <span class="lineNum">      99 </span><span class="lineCov">       1750 :         offset = 0;</span>
 <span class="lineNum">     100 </span><span class="lineCov">       6222 :         for (i = 0; i &lt; file-&gt;blockmax; ++i) {</span>
-<span class="lineNum">     101 </span><span class="lineCov">       4472 :                 struct snapraid_import_block* block = &amp;file-&gt;blockvec[i];</span>
+<span class="lineNum">     101 </span><span class="lineCov">       4472 :                 struct snapraid_import_block* block = &amp;file-&gt;blockimp[i];</span>
 <span class="lineNum">     102 </span><span class="lineCov">       4472 :                 unsigned read_size = block_size;</span>
 <span class="lineNum">     103 </span><span class="lineCov">       4472 :                 if (read_size &gt; size)</span>
 <span class="lineNum">     104 </span><span class="lineCov">       1745 :                         read_size = size;</span>
@@ -207,28 +207,28 @@
 <span class="lineNum">     145 </span><span class="lineCov">       1750 : void import_file_free(struct snapraid_import_file* file)</span>
 <span class="lineNum">     146 </span>            : {
 <span class="lineNum">     147 </span><span class="lineCov">       1750 :         free(file-&gt;path);</span>
-<span class="lineNum">     148 </span><span class="lineCov">       1750 :         free(file-&gt;blockvec);</span>
+<span class="lineNum">     148 </span><span class="lineCov">       1750 :         free(file-&gt;blockimp);</span>
 <span class="lineNum">     149 </span><span class="lineCov">       1750 :         free(file);</span>
 <a name="150"><span class="lineNum">     150 </span><span class="lineCov">       1750 : }</span></a>
 <span class="lineNum">     151 </span>            : 
-<span class="lineNum">     152 </span><span class="lineCov">     638951 : int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid_block* missing_block, unsigned char* buffer)</span>
+<span class="lineNum">     152 </span><span class="lineCov">     644466 : int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid_block* missing_block, unsigned char* buffer)</span>
 <span class="lineNum">     153 </span>            : {
 <span class="lineNum">     154 </span>            :         struct snapraid_import_block* block;
 <span class="lineNum">     155 </span>            :         int ret;
 <span class="lineNum">     156 </span>            :         int f;
-<span class="lineNum">     157 </span><span class="lineCov">     638951 :         const unsigned char* hash = missing_block-&gt;hash;</span>
-<span class="lineNum">     158 </span><span class="lineCov">     638951 :         unsigned block_size = state-&gt;block_size;</span>
+<span class="lineNum">     157 </span><span class="lineCov">     644466 :         const unsigned char* hash = missing_block-&gt;hash;</span>
+<span class="lineNum">     158 </span><span class="lineCov">     644466 :         unsigned block_size = state-&gt;block_size;</span>
 <span class="lineNum">     159 </span>            :         unsigned read_size;
 <span class="lineNum">     160 </span>            :         unsigned char buffer_hash[HASH_SIZE];
 <span class="lineNum">     161 </span>            :         const char* path;
 <span class="lineNum">     162 </span>            : 
-<span class="lineNum">     163 </span><span class="lineCov">     638951 :         if (rehash) {</span>
+<span class="lineNum">     163 </span><span class="lineCov">     644466 :         if (rehash) {</span>
 <span class="lineNum">     164 </span><span class="lineCov">      28985 :                 block = tommy_hashdyn_search(&amp;state-&gt;previmportset, import_block_prevhash_compare, hash, import_block_hash(hash));</span>
 <span class="lineNum">     165 </span>            :         } else {
-<span class="lineNum">     166 </span><span class="lineCov">     609966 :                 block = tommy_hashdyn_search(&amp;state-&gt;importset, import_block_hash_compare, hash, import_block_hash(hash));</span>
+<span class="lineNum">     166 </span><span class="lineCov">     615481 :                 block = tommy_hashdyn_search(&amp;state-&gt;importset, import_block_hash_compare, hash, import_block_hash(hash));</span>
 <span class="lineNum">     167 </span>            :         }
-<span class="lineNum">     168 </span><span class="lineCov">     638951 :         if (!block)</span>
-<span class="lineNum">     169 </span><span class="lineCov">     634479 :                 return -1;</span>
+<span class="lineNum">     168 </span><span class="lineCov">     644466 :         if (!block)</span>
+<span class="lineNum">     169 </span><span class="lineCov">     639994 :                 return -1;</span>
 <span class="lineNum">     170 </span>            : 
 <span class="lineNum">     171 </span><span class="lineCov">       4472 :         path = block-&gt;file-&gt;path;</span>
 <span class="lineNum">     172 </span><span class="lineCov">       4472 :         read_size = block-&gt;size;</span>
@@ -276,9 +276,9 @@
 <span class="lineNum">     214 </span>            : 
 <span class="lineNum">     215 </span>            :         /* recheck the hash */
 <span class="lineNum">     216 </span><span class="lineCov">       4472 :         if (rehash)</span>
-<span class="lineNum">     217 </span><span class="lineCov">       2240 :                 memhash(state-&gt;prevhash, state-&gt;prevhashseed, buffer_hash, buffer, read_size);</span>
+<span class="lineNum">     217 </span><span class="lineCov">       2238 :                 memhash(state-&gt;prevhash, state-&gt;prevhashseed, buffer_hash, buffer, read_size);</span>
 <span class="lineNum">     218 </span>            :         else
-<span class="lineNum">     219 </span><span class="lineCov">       2232 :                 memhash(state-&gt;hash, state-&gt;hashseed, buffer_hash, buffer, read_size);</span>
+<span class="lineNum">     219 </span><span class="lineCov">       2234 :                 memhash(state-&gt;hash, state-&gt;hashseed, buffer_hash, buffer, read_size);</span>
 <span class="lineNum">     220 </span>            : 
 <span class="lineNum">     221 </span><span class="lineCov">       4472 :         if (memcmp(buffer_hash, hash, HASH_SIZE) != 0) {</span>
 <span class="lineNum">     222 </span>            :                 /* LCOV_EXCL_START */

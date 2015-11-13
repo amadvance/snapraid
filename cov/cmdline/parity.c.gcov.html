@@ -32,12 +32,12 @@
             <td></td>
             <td class="headerItem">Lines:</td>
             <td class="headerCovTableEntry">111</td>
-            <td class="headerCovTableEntry">139</td>
-            <td class="headerCovTableEntryMed">79.9 %</td>
+            <td class="headerCovTableEntry">140</td>
+            <td class="headerCovTableEntryMed">79.3 %</td>
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-05-12</td>
+            <td class="headerValue">2015-11-13</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">10</td>
@@ -88,56 +88,56 @@
 <span class="lineNum">      26 </span>            : /****************************************************************************/
 <a name="27"><span class="lineNum">      27 </span>            : /* parity */</a>
 <span class="lineNum">      28 </span>            : 
-<span class="lineNum">      29 </span><span class="lineCov">        553 : block_off_t parity_allocated_size(struct snapraid_state* state)</span>
+<span class="lineNum">      29 </span><span class="lineCov">        589 : block_off_t parity_allocated_size(struct snapraid_state* state)</span>
 <span class="lineNum">      30 </span>            : {
 <span class="lineNum">      31 </span>            :         block_off_t parity_block;
 <span class="lineNum">      32 </span>            :         tommy_node* i;
 <span class="lineNum">      33 </span>            : 
 <span class="lineNum">      34 </span>            :         /* compute the size of the parity file */
-<span class="lineNum">      35 </span><span class="lineCov">        553 :         parity_block = 0;</span>
-<span class="lineNum">      36 </span><span class="lineCov">       3861 :         for (i = state-&gt;disklist; i != 0; i = i-&gt;next) {</span>
-<span class="lineNum">      37 </span><span class="lineCov">       3308 :                 struct snapraid_disk* disk = i-&gt;data;</span>
+<span class="lineNum">      35 </span><span class="lineCov">        589 :         parity_block = 0;</span>
+<span class="lineNum">      36 </span><span class="lineCov">       4113 :         for (i = state-&gt;disklist; i != 0; i = i-&gt;next) {</span>
+<span class="lineNum">      37 </span><span class="lineCov">       3524 :                 struct snapraid_disk* disk = i-&gt;data;</span>
 <span class="lineNum">      38 </span>            : 
 <span class="lineNum">      39 </span>            :                 /* start from the declared size */
-<span class="lineNum">      40 </span><span class="lineCov">       3308 :                 block_off_t block = tommy_arrayblk_size(&amp;disk-&gt;blockarr);</span>
+<span class="lineNum">      40 </span><span class="lineCov">       3524 :                 block_off_t block = disk_size(disk);</span>
 <span class="lineNum">      41 </span>            : 
 <span class="lineNum">      42 </span>            :                 /* decrease the block until an allocated one, but part of a file */
 <span class="lineNum">      43 </span>            :                 /* we don't stop at deleted blocks, because we want to have them cleared */
 <span class="lineNum">      44 </span>            :                 /* if they are at the end of the parity */
-<span class="lineNum">      45 </span><span class="lineCov">     189015 :                 while (block &gt; parity_block &amp;&amp; !block_has_file(tommy_arrayblk_get(&amp;disk-&gt;blockarr, block - 1)))</span>
-<span class="lineNum">      46 </span><span class="lineCov">     182399 :                         --block;</span>
+<span class="lineNum">      45 </span><span class="lineCov">     189514 :                 while (block &gt; parity_block &amp;&amp; !block_has_file(fs_par2block_get(disk, block - 1)))</span>
+<span class="lineNum">      46 </span><span class="lineCov">     182466 :                         --block;</span>
 <span class="lineNum">      47 </span>            : 
 <span class="lineNum">      48 </span>            :                 /* get the highest value */
-<span class="lineNum">      49 </span><span class="lineCov">       3308 :                 if (block &gt; parity_block)</span>
-<span class="lineNum">      50 </span><span class="lineCov">       2041 :                         parity_block = block;</span>
+<span class="lineNum">      49 </span><span class="lineCov">       3524 :                 if (block &gt; parity_block)</span>
+<span class="lineNum">      50 </span><span class="lineCov">       2273 :                         parity_block = block;</span>
 <span class="lineNum">      51 </span>            :         }
 <span class="lineNum">      52 </span>            : 
-<span class="lineNum">      53 </span><span class="lineCov">        553 :         return parity_block;</span>
+<span class="lineNum">      53 </span><span class="lineCov">        589 :         return parity_block;</span>
 <a name="54"><span class="lineNum">      54 </span>            : }</a>
 <span class="lineNum">      55 </span>            : 
-<span class="lineNum">      56 </span><span class="lineCov">         63 : block_off_t parity_used_size(struct snapraid_state* state)</span>
+<span class="lineNum">      56 </span><span class="lineCov">         72 : block_off_t parity_used_size(struct snapraid_state* state)</span>
 <span class="lineNum">      57 </span>            : {
 <span class="lineNum">      58 </span>            :         block_off_t parity_block;
 <span class="lineNum">      59 </span>            :         tommy_node* i;
 <span class="lineNum">      60 </span>            : 
 <span class="lineNum">      61 </span>            :         /* compute the size of the parity file */
-<span class="lineNum">      62 </span><span class="lineCov">         63 :         parity_block = 0;</span>
-<span class="lineNum">      63 </span><span class="lineCov">        440 :         for (i = state-&gt;disklist; i != 0; i = i-&gt;next) {</span>
-<span class="lineNum">      64 </span><span class="lineCov">        377 :                 struct snapraid_disk* disk = i-&gt;data;</span>
+<span class="lineNum">      62 </span><span class="lineCov">         72 :         parity_block = 0;</span>
+<span class="lineNum">      63 </span><span class="lineCov">        503 :         for (i = state-&gt;disklist; i != 0; i = i-&gt;next) {</span>
+<span class="lineNum">      64 </span><span class="lineCov">        431 :                 struct snapraid_disk* disk = i-&gt;data;</span>
 <span class="lineNum">      65 </span>            : 
 <span class="lineNum">      66 </span>            :                 /* start from the declared size */
-<span class="lineNum">      67 </span><span class="lineCov">        377 :                 block_off_t block = tommy_arrayblk_size(&amp;disk-&gt;blockarr);</span>
+<span class="lineNum">      67 </span><span class="lineCov">        431 :                 block_off_t block = disk_size(disk);</span>
 <span class="lineNum">      68 </span>            : 
 <span class="lineNum">      69 </span>            :                 /* decrease the block until an used one */
-<span class="lineNum">      70 </span><span class="lineCov">     221368 :                 while (block &gt; parity_block &amp;&amp; !block_has_file_and_valid_parity(tommy_arrayblk_get(&amp;disk-&gt;blockarr, block - 1)))</span>
-<span class="lineNum">      71 </span><span class="lineCov">     220614 :                         --block;</span>
+<span class="lineNum">      70 </span><span class="lineCov">     221703 :                 while (block &gt; parity_block &amp;&amp; !block_has_file_and_valid_parity(fs_par2block_get(disk, block - 1)))</span>
+<span class="lineNum">      71 </span><span class="lineCov">     220841 :                         --block;</span>
 <span class="lineNum">      72 </span>            : 
 <span class="lineNum">      73 </span>            :                 /* get the highest value */
-<span class="lineNum">      74 </span><span class="lineCov">        377 :                 if (block &gt; parity_block)</span>
-<span class="lineNum">      75 </span><span class="lineCov">        235 :                         parity_block = block;</span>
+<span class="lineNum">      74 </span><span class="lineCov">        431 :                 if (block &gt; parity_block)</span>
+<span class="lineNum">      75 </span><span class="lineCov">        262 :                         parity_block = block;</span>
 <span class="lineNum">      76 </span>            :         }
 <span class="lineNum">      77 </span>            : 
-<span class="lineNum">      78 </span><span class="lineCov">         63 :         return parity_block;</span>
+<span class="lineNum">      78 </span><span class="lineCov">         72 :         return parity_block;</span>
 <a name="79"><span class="lineNum">      79 </span>            : }</a>
 <span class="lineNum">      80 </span>            : 
 <span class="lineNum">      81 </span><span class="lineCov">          1 : int parity_is_invalid(struct snapraid_state* state)</span>
@@ -157,7 +157,7 @@
 <span class="lineNum">      95 </span><span class="lineNoCov">          0 :                 one_valid = 0;</span>
 <span class="lineNum">      96 </span><span class="lineNoCov">          0 :                 for (node_disk = state-&gt;disklist; node_disk != 0; node_disk = node_disk-&gt;next) {</span>
 <span class="lineNum">      97 </span><span class="lineNoCov">          0 :                         struct snapraid_disk* disk = node_disk-&gt;data;</span>
-<span class="lineNum">      98 </span><span class="lineNoCov">          0 :                         struct snapraid_block* block = disk_block_get(disk, i);</span>
+<span class="lineNum">      98 </span><span class="lineNoCov">          0 :                         struct snapraid_block* block = fs_par2block_get(disk, i);</span>
 <span class="lineNum">      99 </span>            : 
 <span class="lineNum">     100 </span><span class="lineNoCov">          0 :                         if (block_has_file(block))</span>
 <span class="lineNum">     101 </span><span class="lineNoCov">          0 :                                 one_valid = 1;</span>
@@ -196,395 +196,396 @@
 <span class="lineNum">     134 </span><span class="lineNoCov">          0 :                         struct snapraid_file* file = j-&gt;data;</span>
 <span class="lineNum">     135 </span>            : 
 <span class="lineNum">     136 </span><span class="lineNoCov">          0 :                         if (file-&gt;blockmax &gt; 0) {</span>
-<span class="lineNum">     137 </span><span class="lineNoCov">          0 :                                 if (file-&gt;blockvec[file-&gt;blockmax - 1].parity_pos &gt;= blockalloc) {</span>
-<span class="lineNum">     138 </span><span class="lineNoCov">          0 :                                         log_tag(&quot;outofparity:%s:%s\n&quot;, disk-&gt;name, esc(file-&gt;sub));</span>
-<span class="lineNum">     139 </span><span class="lineNoCov">          0 :                                         if (first) {</span>
-<span class="lineNum">     140 </span><span class="lineNoCov">          0 :                                                 first = 0;</span>
-<span class="lineNum">     141 </span><span class="lineNoCov">          0 :                                                 log_fatal(&quot;\nYour data requires more parity than the available space.\n&quot;);</span>
-<span class="lineNum">     142 </span><span class="lineNoCov">          0 :                                                 log_fatal(&quot;Please move the files 'outofparity' to another data disk:\n&quot;);</span>
-<span class="lineNum">     143 </span>            :                                         }
-<span class="lineNum">     144 </span><span class="lineNoCov">          0 :                                         log_fatal(&quot;outofparity %s%s\n&quot;, disk-&gt;dir, file-&gt;sub);</span>
-<span class="lineNum">     145 </span>            :                                 }
-<span class="lineNum">     146 </span>            :                         }
-<span class="lineNum">     147 </span>            :                 }
-<span class="lineNum">     148 </span>            :         }
-<a name="149"><span class="lineNum">     149 </span>            : }</a>
-<span class="lineNum">     150 </span>            : 
-<span class="lineNum">     151 </span><span class="lineCov">        497 : int parity_create(struct snapraid_parity_handle* parity, const char* path, data_off_t* out_size, int mode)</span>
-<span class="lineNum">     152 </span>            : {
-<span class="lineNum">     153 </span>            :         int ret;
-<span class="lineNum">     154 </span>            :         int flags;
-<span class="lineNum">     155 </span>            : 
-<span class="lineNum">     156 </span><span class="lineCov">        497 :         pathcpy(parity-&gt;path, sizeof(parity-&gt;path), path);</span>
-<span class="lineNum">     157 </span>            : 
-<span class="lineNum">     158 </span>            :         /* opening in sequential mode in Windows */
-<span class="lineNum">     159 </span>            :         /* O_SEQUENTIAL: opening in sequential mode in Windows */
-<span class="lineNum">     160 </span><span class="lineCov">        497 :         flags = O_RDWR | O_CREAT | O_BINARY;</span>
-<span class="lineNum">     161 </span><span class="lineCov">        497 :         if ((mode &amp; MODE_SEQUENTIAL) != 0)</span>
-<span class="lineNum">     162 </span><span class="lineCov">        497 :                 flags |= O_SEQUENTIAL;</span>
-<span class="lineNum">     163 </span><span class="lineCov">        497 :         parity-&gt;f = open(parity-&gt;path, flags, 0600);</span>
-<span class="lineNum">     164 </span><span class="lineCov">        497 :         if (parity-&gt;f == -1) {</span>
-<span class="lineNum">     165 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     166 </span>            :                 log_fatal(&quot;Error opening parity file '%s'. %s.\n&quot;, parity-&gt;path, strerror(errno));
-<span class="lineNum">     167 </span>            :                 return -1;
-<span class="lineNum">     168 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     169 </span>            :         }
-<span class="lineNum">     170 </span>            : 
-<span class="lineNum">     171 </span>            :         /* get the stat info */
-<span class="lineNum">     172 </span><span class="lineCov">        497 :         ret = fstat(parity-&gt;f, &amp;parity-&gt;st);</span>
-<span class="lineNum">     173 </span><span class="lineCov">        497 :         if (ret != 0) {</span>
-<span class="lineNum">     174 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     175 </span>            :                 log_fatal(&quot;Error accessing parity file '%s'. %s.\n&quot;, parity-&gt;path, strerror(errno));
-<span class="lineNum">     176 </span>            :                 goto bail;
-<span class="lineNum">     177 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     178 </span>            :         }
-<span class="lineNum">     179 </span>            : 
-<span class="lineNum">     180 </span>            : #if HAVE_POSIX_FADVISE
-<span class="lineNum">     181 </span><span class="lineCov">        497 :         if ((mode &amp; MODE_SEQUENTIAL) != 0) {</span>
-<span class="lineNum">     182 </span>            :                 /* advise sequential access */
-<span class="lineNum">     183 </span><span class="lineCov">        497 :                 ret = posix_fadvise(parity-&gt;f, 0, 0, POSIX_FADV_SEQUENTIAL);</span>
-<span class="lineNum">     184 </span><span class="lineCov">        497 :                 if (ret != 0) {</span>
-<span class="lineNum">     185 </span>            :                         /* LCOV_EXCL_START */
-<span class="lineNum">     186 </span>            :                         log_fatal(&quot;Error advising parity file '%s'. %s.\n&quot;, parity-&gt;path, strerror(ret));
-<span class="lineNum">     187 </span>            :                         goto bail;
-<span class="lineNum">     188 </span>            :                         /* LCOV_EXCL_STOP */
-<span class="lineNum">     189 </span>            :                 }
-<span class="lineNum">     190 </span>            :         }
-<span class="lineNum">     191 </span>            : #endif
-<span class="lineNum">     192 </span>            : 
-<span class="lineNum">     193 </span>            :         /* get the size of the existing data */
-<span class="lineNum">     194 </span><span class="lineCov">        497 :         parity-&gt;valid_size = parity-&gt;st.st_size;</span>
-<span class="lineNum">     195 </span><span class="lineCov">        497 :         *out_size = parity-&gt;st.st_size;</span>
-<span class="lineNum">     196 </span>            : 
-<span class="lineNum">     197 </span><span class="lineCov">        497 :         return 0;</span>
-<span class="lineNum">     198 </span>            : 
-<span class="lineNum">     199 </span>            : bail:
-<span class="lineNum">     200 </span>            :         /* LCOV_EXCL_START */
-<span class="lineNum">     201 </span>            :         close(parity-&gt;f);
-<span class="lineNum">     202 </span>            :         parity-&gt;f = -1;
-<span class="lineNum">     203 </span>            :         parity-&gt;valid_size = 0;
-<span class="lineNum">     204 </span>            :         return -1;
-<span class="lineNum">     205 </span>            :         /* LCOV_EXCL_STOP */
-<a name="206"><span class="lineNum">     206 </span>            : }</a>
-<span class="lineNum">     207 </span>            : 
-<span class="lineNum">     208 </span><span class="lineCov">        497 : int parity_chsize(struct snapraid_parity_handle* parity, data_off_t size, data_off_t* out_size, int skip_fallocate)</span>
-<span class="lineNum">     209 </span>            : {
-<span class="lineNum">     210 </span>            :         int ret;
-<span class="lineNum">     211 </span>            : 
-<span class="lineNum">     212 </span><span class="lineCov">        497 :         if (parity-&gt;st.st_size &lt; size) {</span>
-<span class="lineNum">     213 </span>            :                 int f_ret;
-<span class="lineNum">     214 </span>            :                 int f_errno;
-<span class="lineNum">     215 </span>            :                 const char* call;
-<span class="lineNum">     216 </span>            : 
-<span class="lineNum">     217 </span>            : #if HAVE_FALLOCATE
-<span class="lineNum">     218 </span><span class="lineCov">         65 :                 call = &quot;fallocate&quot;;</span>
-<span class="lineNum">     219 </span><span class="lineCov">         65 :                 if (!skip_fallocate) {</span>
-<span class="lineNum">     220 </span>            :                         /* allocate real space using the specific Linux fallocate() operation. */
-<span class="lineNum">     221 </span>            :                         /* If the underline filesystem doesn't support it, this operation fails, */
-<span class="lineNum">     222 </span>            :                         /* instead posix_fallocate() fallbacks to write the whole file. */
-<span class="lineNum">     223 </span><span class="lineCov">         64 :                         ret = fallocate(parity-&gt;f, 0, 0, size);</span>
-<span class="lineNum">     224 </span>            : 
-<span class="lineNum">     225 </span>            :                         /* fallocate() returns the error number as positive integer, */
-<span class="lineNum">     226 </span>            :                         /* and in this case it doesn't set errno, just like posix_fallocate() */
-<span class="lineNum">     227 </span>            :                         /* Checking the glibc code (2.11.1 and 2.14.1) it seems that ENOSYS */
-<span class="lineNum">     228 </span>            :                         /* may be returned in errno, so we support both the return way */
-<span class="lineNum">     229 </span><span class="lineCov">         64 :                         if (ret &gt; 0) { /* if a positive error is returned, convert it to errno */</span>
-<span class="lineNum">     230 </span>            :                                 /* LCOV_EXCL_START */
-<span class="lineNum">     231 </span>            :                                 errno = ret;
-<span class="lineNum">     232 </span>            :                                 ret = -1;
-<span class="lineNum">     233 </span>            :                                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     234 </span>            :                         }
-<span class="lineNum">     235 </span>            :                 } else {
-<span class="lineNum">     236 </span><span class="lineCov">          1 :                         errno = EOPNOTSUPP;</span>
-<span class="lineNum">     237 </span><span class="lineCov">          1 :                         ret = -1;</span>
-<span class="lineNum">     238 </span>            :                 }
-<span class="lineNum">     239 </span>            : 
-<span class="lineNum">     240 </span>            :                 /* we get EOPNOTSUPP if the operation is not supported, like in ext3/ext2 */
-<span class="lineNum">     241 </span>            :                 /* or ENOSYS with kernel before 2.6.23 */
-<span class="lineNum">     242 </span><span class="lineCov">         65 :                 if (errno == EOPNOTSUPP || errno == ENOSYS) {</span>
-<span class="lineNum">     243 </span>            :                         /* fallback using ftruncate() */
-<span class="lineNum">     244 </span><span class="lineCov">          1 :                         call = &quot;ftruncate&quot;;</span>
-<span class="lineNum">     245 </span><span class="lineCov">          1 :                         ret = ftruncate(parity-&gt;f, size);</span>
-<span class="lineNum">     246 </span>            :                 }
-<span class="lineNum">     247 </span>            : #else
-<span class="lineNum">     248 </span>            :                 (void)skip_fallocate; /* avoid the warning */
-<span class="lineNum">     249 </span>            : 
-<span class="lineNum">     250 </span>            :                 /* allocate using a sparse file */
-<span class="lineNum">     251 </span>            :                 call = &quot;ftruncate&quot;;
-<span class="lineNum">     252 </span>            :                 ret = ftruncate(parity-&gt;f, size);
-<span class="lineNum">     253 </span>            : #endif
-<span class="lineNum">     254 </span>            :                 /* save the state of the grow operation */
-<span class="lineNum">     255 </span><span class="lineCov">         65 :                 f_ret = ret;</span>
-<span class="lineNum">     256 </span><span class="lineCov">         65 :                 f_errno = errno;</span>
-<span class="lineNum">     257 </span>            : 
-<span class="lineNum">     258 </span>            :                 /* get the stat info */
-<span class="lineNum">     259 </span><span class="lineCov">         65 :                 ret = fstat(parity-&gt;f, &amp;parity-&gt;st);</span>
-<span class="lineNum">     260 </span><span class="lineCov">         65 :                 if (ret != 0) {</span>
-<span class="lineNum">     261 </span>            :                         /* LCOV_EXCL_START */
-<span class="lineNum">     262 </span>            :                         log_fatal(&quot;Error accessing parity file '%s'. %s.\n&quot;, parity-&gt;path, strerror(errno));
-<span class="lineNum">     263 </span>            :                         goto bail;
-<span class="lineNum">     264 </span>            :                         /* LCOV_EXCL_STOP */
-<span class="lineNum">     265 </span>            :                 }
-<span class="lineNum">     266 </span>            : 
-<span class="lineNum">     267 </span>            :                 /* return the new size */
-<span class="lineNum">     268 </span><span class="lineCov">         65 :                 *out_size = parity-&gt;st.st_size;</span>
-<span class="lineNum">     269 </span>            : 
-<span class="lineNum">     270 </span>            :                 /* now check the error */
-<span class="lineNum">     271 </span><span class="lineCov">         65 :                 if (f_ret != 0) {</span>
-<span class="lineNum">     272 </span>            :                         /* LCOV_EXCL_START */
-<span class="lineNum">     273 </span>            :                         if (f_errno == ENOSPC) {
-<span class="lineNum">     274 </span>            :                                 log_fatal(&quot;Failed to grow parity file '%s' to size %&quot; PRIu64 &quot; using %s due lack of space.\n&quot;, parity-&gt;path, size, call);
-<span class="lineNum">     275 </span>            :                         } else {
-<span class="lineNum">     276 </span>            :                                 log_fatal(&quot;Error growing parity file '%s' to size %&quot; PRIu64 &quot; using %s. Do you have enough space? %s.\n&quot;, parity-&gt;path, size, call, strerror(f_errno));
-<span class="lineNum">     277 </span>            :                         }
-<span class="lineNum">     278 </span>            :                         goto bail;
-<span class="lineNum">     279 </span>            :                         /* LCOV_EXCL_STOP */
-<span class="lineNum">     280 </span>            :                 }
-<span class="lineNum">     281 </span><span class="lineCov">        432 :         } else if (parity-&gt;st.st_size &gt; size) {</span>
-<span class="lineNum">     282 </span>            :                 int f_ret;
-<span class="lineNum">     283 </span>            :                 int f_errno;
-<span class="lineNum">     284 </span>            : 
-<span class="lineNum">     285 </span>            :                 /* truncate the parity file */
-<span class="lineNum">     286 </span><span class="lineCov">         36 :                 ret = ftruncate(parity-&gt;f, size);</span>
-<span class="lineNum">     287 </span>            : 
-<span class="lineNum">     288 </span>            :                 /* save the state of the shrink operation */
-<span class="lineNum">     289 </span><span class="lineCov">         36 :                 f_ret = ret;</span>
-<span class="lineNum">     290 </span><span class="lineCov">         36 :                 f_errno = errno;</span>
-<span class="lineNum">     291 </span>            : 
-<span class="lineNum">     292 </span>            :                 /* get the stat info */
-<span class="lineNum">     293 </span><span class="lineCov">         36 :                 ret = fstat(parity-&gt;f, &amp;parity-&gt;st);</span>
-<span class="lineNum">     294 </span><span class="lineCov">         36 :                 if (ret != 0) {</span>
-<span class="lineNum">     295 </span>            :                         /* LCOV_EXCL_START */
-<span class="lineNum">     296 </span>            :                         log_fatal(&quot;Error accessing parity file '%s'. %s.\n&quot;, parity-&gt;path, strerror(errno));
-<span class="lineNum">     297 </span>            :                         goto bail;
-<span class="lineNum">     298 </span>            :                         /* LCOV_EXCL_STOP */
-<span class="lineNum">     299 </span>            :                 }
-<span class="lineNum">     300 </span>            : 
-<span class="lineNum">     301 </span>            :                 /* return the new size */
-<span class="lineNum">     302 </span><span class="lineCov">         36 :                 *out_size = parity-&gt;st.st_size;</span>
-<span class="lineNum">     303 </span>            : 
-<span class="lineNum">     304 </span>            :                 /* now check the error */
-<span class="lineNum">     305 </span><span class="lineCov">         36 :                 if (f_ret != 0) {</span>
-<span class="lineNum">     306 </span>            :                         /* LCOV_EXCL_START */
-<span class="lineNum">     307 </span>            :                         log_fatal(&quot;Error truncating parity file '%s' to size %&quot; PRIu64 &quot;. %s.\n&quot;, parity-&gt;path, size, strerror(f_errno));
-<span class="lineNum">     308 </span>            :                         goto bail;
-<span class="lineNum">     309 </span>            :                         /* LCOV_EXCL_STOP */
-<span class="lineNum">     310 </span>            :                 }
-<span class="lineNum">     311 </span>            : 
-<span class="lineNum">     312 </span>            :                 /* adjust the valid to the new size */
-<span class="lineNum">     313 </span><span class="lineCov">         36 :                 parity-&gt;valid_size = size;</span>
-<span class="lineNum">     314 </span>            :         }
-<span class="lineNum">     315 </span>            : 
-<span class="lineNum">     316 </span><span class="lineCov">        497 :         return 0;</span>
-<span class="lineNum">     317 </span>            : 
-<span class="lineNum">     318 </span>            : bail:
-<span class="lineNum">     319 </span>            :         /* LCOV_EXCL_START */
-<span class="lineNum">     320 </span>            :         parity-&gt;valid_size = 0;
-<span class="lineNum">     321 </span>            :         return -1;
-<span class="lineNum">     322 </span>            :         /* LCOV_EXCL_STOP */
-<a name="323"><span class="lineNum">     323 </span>            : }</a>
-<span class="lineNum">     324 </span>            : 
-<span class="lineNum">     325 </span><span class="lineCov">        391 : int parity_open(struct snapraid_parity_handle* parity, const char* path, int mode)</span>
-<span class="lineNum">     326 </span>            : {
-<span class="lineNum">     327 </span>            :         int ret;
-<span class="lineNum">     328 </span>            :         int flags;
-<span class="lineNum">     329 </span>            : 
-<span class="lineNum">     330 </span><span class="lineCov">        391 :         pathcpy(parity-&gt;path, sizeof(parity-&gt;path), path);</span>
-<span class="lineNum">     331 </span>            : 
-<span class="lineNum">     332 </span>            :         /* open for read */
-<span class="lineNum">     333 </span>            :         /* O_SEQUENTIAL: opening in sequential mode in Windows */
-<span class="lineNum">     334 </span>            :         /* O_NOATIME: do not change access time */
-<span class="lineNum">     335 </span><span class="lineCov">        391 :         flags = O_RDONLY | O_BINARY;</span>
-<span class="lineNum">     336 </span><span class="lineCov">        391 :         if ((mode &amp; MODE_SEQUENTIAL) != 0)</span>
-<span class="lineNum">     337 </span><span class="lineCov">        390 :                 flags |= O_SEQUENTIAL;</span>
-<span class="lineNum">     338 </span><span class="lineCov">        391 :         parity-&gt;f = open_noatime(parity-&gt;path, flags);</span>
-<span class="lineNum">     339 </span><span class="lineCov">        391 :         if (parity-&gt;f == -1) {</span>
-<span class="lineNum">     340 </span><span class="lineCov">          1 :                 log_fatal(&quot;Error opening parity file '%s'. %s.\n&quot;, parity-&gt;path, strerror(errno));</span>
-<span class="lineNum">     341 </span><span class="lineCov">          1 :                 return -1;</span>
-<span class="lineNum">     342 </span>            :         }
-<span class="lineNum">     343 </span>            : 
-<span class="lineNum">     344 </span>            :         /* get the stat info */
-<span class="lineNum">     345 </span><span class="lineCov">        390 :         ret = fstat(parity-&gt;f, &amp;parity-&gt;st);</span>
-<span class="lineNum">     346 </span><span class="lineCov">        390 :         if (ret != 0) {</span>
-<span class="lineNum">     347 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     348 </span>            :                 log_fatal(&quot;Error accessing parity file '%s'. %s.\n&quot;, parity-&gt;path, strerror(errno));
-<span class="lineNum">     349 </span>            :                 goto bail;
-<span class="lineNum">     350 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     351 </span>            :         }
-<span class="lineNum">     352 </span>            : 
-<span class="lineNum">     353 </span>            :         /* get the size of the exising data */
-<span class="lineNum">     354 </span><span class="lineCov">        390 :         parity-&gt;valid_size = parity-&gt;st.st_size;</span>
-<span class="lineNum">     355 </span>            : 
-<span class="lineNum">     356 </span>            : #if HAVE_POSIX_FADVISE
-<span class="lineNum">     357 </span><span class="lineCov">        390 :         if ((mode &amp; MODE_SEQUENTIAL) != 0) {</span>
-<span class="lineNum">     358 </span>            :                 /* advise sequential access */
-<span class="lineNum">     359 </span><span class="lineCov">        389 :                 ret = posix_fadvise(parity-&gt;f, 0, 0, POSIX_FADV_SEQUENTIAL);</span>
-<span class="lineNum">     360 </span><span class="lineCov">        389 :                 if (ret != 0) {</span>
-<span class="lineNum">     361 </span>            :                         /* LCOV_EXCL_START */
-<span class="lineNum">     362 </span>            :                         log_fatal(&quot;Error advising parity file '%s'. %s.\n&quot;, parity-&gt;path, strerror(ret));
-<span class="lineNum">     363 </span>            :                         goto bail;
-<span class="lineNum">     364 </span>            :                         /* LCOV_EXCL_STOP */
-<span class="lineNum">     365 </span>            :                 }
-<span class="lineNum">     366 </span>            :         }
-<span class="lineNum">     367 </span>            : #endif
-<span class="lineNum">     368 </span>            : 
-<span class="lineNum">     369 </span><span class="lineCov">        390 :         return 0;</span>
-<span class="lineNum">     370 </span>            : 
-<span class="lineNum">     371 </span>            : bail:
-<span class="lineNum">     372 </span>            :         /* LCOV_EXCL_START */
-<span class="lineNum">     373 </span>            :         close(parity-&gt;f);
-<span class="lineNum">     374 </span>            :         parity-&gt;f = -1;
-<span class="lineNum">     375 </span>            :         parity-&gt;valid_size = 0;
-<span class="lineNum">     376 </span>            :         return -1;
-<span class="lineNum">     377 </span>            :         /* LCOV_EXCL_STOP */
-<a name="378"><span class="lineNum">     378 </span>            : }</a>
-<span class="lineNum">     379 </span>            : 
-<span class="lineNum">     380 </span><span class="lineCov">        368 : int parity_sync(struct snapraid_parity_handle* parity)</span>
-<span class="lineNum">     381 </span>            : {
-<span class="lineNum">     382 </span>            : #if HAVE_FSYNC
-<span class="lineNum">     383 </span>            :         int ret;
-<span class="lineNum">     384 </span>            : 
-<span class="lineNum">     385 </span>            :         /* Ensure that data changes are written to disk. */
-<span class="lineNum">     386 </span>            :         /* This is required to ensure that parity is more updated than content */
-<span class="lineNum">     387 </span>            :         /* in case of a system crash. */
-<span class="lineNum">     388 </span><span class="lineCov">        368 :         ret = fsync(parity-&gt;f);</span>
-<span class="lineNum">     389 </span><span class="lineCov">        368 :         if (ret != 0) {</span>
-<span class="lineNum">     390 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     391 </span>            :                 log_fatal(&quot;Error synching parity file '%s'. %s.\n&quot;, parity-&gt;path, strerror(errno));
-<span class="lineNum">     392 </span>            :                 return -1;
-<span class="lineNum">     393 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     394 </span>            :         }
-<span class="lineNum">     395 </span>            : #endif
-<span class="lineNum">     396 </span>            : 
-<span class="lineNum">     397 </span><span class="lineCov">        368 :         return 0;</span>
-<a name="398"><span class="lineNum">     398 </span>            : }</a>
-<span class="lineNum">     399 </span>            : 
-<span class="lineNum">     400 </span><span class="lineCov">        887 : int parity_close(struct snapraid_parity_handle* parity)</span>
-<span class="lineNum">     401 </span>            : {
-<span class="lineNum">     402 </span>            :         int ret;
-<span class="lineNum">     403 </span>            : 
-<span class="lineNum">     404 </span><span class="lineCov">        887 :         ret = close(parity-&gt;f);</span>
-<span class="lineNum">     405 </span><span class="lineCov">        887 :         if (ret != 0) {</span>
-<span class="lineNum">     406 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     407 </span>            :                 /* invalidate for error */
-<span class="lineNum">     408 </span>            :                 parity-&gt;f = -1;
-<span class="lineNum">     409 </span>            :                 parity-&gt;valid_size = 0;
-<span class="lineNum">     410 </span>            : 
-<span class="lineNum">     411 </span>            :                 /* This is a serious error, as it may be the result of a failed write */
-<span class="lineNum">     412 </span>            :                 /* identified at later time. */
-<span class="lineNum">     413 </span>            :                 /* In a normal filesystem (not NFS) it should never happen */
-<span class="lineNum">     414 </span>            :                 log_fatal(&quot;Error closing parity file '%s'. %s.\n&quot;, parity-&gt;path, strerror(errno));
-<span class="lineNum">     415 </span>            :                 return -1;
-<span class="lineNum">     416 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     417 </span>            :         }
-<span class="lineNum">     418 </span>            : 
-<span class="lineNum">     419 </span>            :         /* reset the descriptor */
-<span class="lineNum">     420 </span><span class="lineCov">        887 :         parity-&gt;f = -1;</span>
-<span class="lineNum">     421 </span><span class="lineCov">        887 :         parity-&gt;valid_size = 0;</span>
-<span class="lineNum">     422 </span>            : 
-<span class="lineNum">     423 </span><span class="lineCov">        887 :         return 0;</span>
-<a name="424"><span class="lineNum">     424 </span>            : }</a>
-<span class="lineNum">     425 </span>            : 
-<span class="lineNum">     426 </span><span class="lineCov">     500002 : int parity_write(struct snapraid_parity_handle* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size)</span>
-<span class="lineNum">     427 </span>            : {
-<span class="lineNum">     428 </span>            :         ssize_t write_ret;
-<span class="lineNum">     429 </span>            :         data_off_t offset;
-<span class="lineNum">     430 </span>            : 
-<span class="lineNum">     431 </span><span class="lineCov">     500002 :         offset = pos * (data_off_t)block_size;</span>
-<span class="lineNum">     432 </span>            : 
-<span class="lineNum">     433 </span>            : #if HAVE_PWRITE
-<span class="lineNum">     434 </span><span class="lineCov">     500002 :         write_ret = pwrite(parity-&gt;f, block_buffer, block_size, offset);</span>
-<span class="lineNum">     435 </span>            : #else
-<span class="lineNum">     436 </span>            :         if (lseek(parity-&gt;f, offset, SEEK_SET) != offset) {
-<span class="lineNum">     437 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     438 </span>            :                 if (errno == ENOSPC) {
-<span class="lineNum">     439 </span>            :                         log_fatal(&quot;Failed to grow parity file '%s' using lseek due lack of space.\n&quot;, parity-&gt;path);
-<span class="lineNum">     440 </span>            :                 } else {
-<span class="lineNum">     441 </span>            :                         log_fatal(&quot;Error seeking file '%s'. %s.\n&quot;, parity-&gt;path, strerror(errno));
-<span class="lineNum">     442 </span>            :                 }
-<span class="lineNum">     443 </span>            :                 return -1;
-<span class="lineNum">     444 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     445 </span>            :         }
-<span class="lineNum">     446 </span>            : 
-<span class="lineNum">     447 </span>            :         write_ret = write(parity-&gt;f, block_buffer, block_size);
-<span class="lineNum">     448 </span>            : #endif
-<span class="lineNum">     449 </span><span class="lineCov">     500002 :         if (write_ret != (ssize_t)block_size) { /* conversion is safe because block_size is always small */</span>
-<span class="lineNum">     450 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     451 </span>            :                 if (errno == ENOSPC) {
-<span class="lineNum">     452 </span>            :                         log_fatal(&quot;Failed to grow parity file '%s' using write due lack of space.\n&quot;, parity-&gt;path);
-<span class="lineNum">     453 </span>            :                 } else {
-<span class="lineNum">     454 </span>            :                         log_fatal(&quot;Error writing file '%s'. %s.\n&quot;, parity-&gt;path, strerror(errno));
-<span class="lineNum">     455 </span>            :                 }
-<span class="lineNum">     456 </span>            :                 return -1;
-<span class="lineNum">     457 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     458 </span>            :         }
-<span class="lineNum">     459 </span>            : 
-<span class="lineNum">     460 </span>            :         /* adjust the size of the valid data */
-<span class="lineNum">     461 </span><span class="lineCov">     500002 :         if (parity-&gt;valid_size &lt; offset + block_size) {</span>
-<span class="lineNum">     462 </span><span class="lineCov">     169982 :                 parity-&gt;valid_size = offset + block_size;</span>
-<span class="lineNum">     463 </span>            :         }
-<span class="lineNum">     464 </span>            : 
-<span class="lineNum">     465 </span>            :         /* Here doesn't make sense to call posix_fadvise(..., POSIX_FADV_DONTNEED) because */
-<span class="lineNum">     466 </span>            :         /* at this time the data is still in not yet written and it cannot be discharged. */
-<span class="lineNum">     467 </span>            : 
-<span class="lineNum">     468 </span><span class="lineCov">     500002 :         return 0;</span>
-<a name="469"><span class="lineNum">     469 </span>            : }</a>
-<span class="lineNum">     470 </span>            : 
-<span class="lineNum">     471 </span><span class="lineCov">    3405588 : int parity_read(struct snapraid_parity_handle* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size, fptr* out)</span>
-<span class="lineNum">     472 </span>            : {
-<span class="lineNum">     473 </span>            :         ssize_t read_ret;
-<span class="lineNum">     474 </span>            :         data_off_t offset;
-<span class="lineNum">     475 </span>            :         unsigned count;
-<span class="lineNum">     476 </span>            : 
-<span class="lineNum">     477 </span><span class="lineCov">    3405588 :         offset = pos * (data_off_t)block_size;</span>
-<span class="lineNum">     478 </span>            : 
-<span class="lineNum">     479 </span>            :         /* check if we are going to read only not initialized data */
-<span class="lineNum">     480 </span><span class="lineCov">    3405588 :         if (offset &gt;= parity-&gt;valid_size) {</span>
-<span class="lineNum">     481 </span><span class="lineCov">      90270 :                 out(&quot;Reading missing data from file '%s' at offset %&quot; PRIu64 &quot;.\n&quot;, parity-&gt;path, offset);</span>
-<span class="lineNum">     482 </span><span class="lineCov">      90270 :                 return -1;</span>
-<span class="lineNum">     483 </span>            :         }
-<span class="lineNum">     484 </span>            : 
-<span class="lineNum">     485 </span>            : #if !HAVE_PREAD
-<span class="lineNum">     486 </span>            :         if (lseek(parity-&gt;f, offset, SEEK_SET) != offset) {
-<span class="lineNum">     487 </span>            :                 /* LCOV_EXCL_START */
-<span class="lineNum">     488 </span>            :                 out(&quot;Error seeking file '%s' at offset %&quot; PRIu64 &quot;. %s.\n&quot;, parity-&gt;path, offset, strerror(errno));
-<span class="lineNum">     489 </span>            :                 return -1;
-<span class="lineNum">     490 </span>            :                 /* LCOV_EXCL_STOP */
-<span class="lineNum">     491 </span>            :         }
-<span class="lineNum">     492 </span>            : #endif
-<span class="lineNum">     493 </span>            : 
-<span class="lineNum">     494 </span><span class="lineCov">    3315318 :         count = 0;</span>
-<span class="lineNum">     495 </span>            :         do {
-<span class="lineNum">     496 </span>            : 
-<span class="lineNum">     497 </span>            : #if HAVE_PREAD
-<span class="lineNum">     498 </span><span class="lineCov">    3315318 :                 read_ret = pread(parity-&gt;f, block_buffer + count, block_size - count, offset + count);</span>
-<span class="lineNum">     499 </span>            : #else
-<span class="lineNum">     500 </span>            :                 read_ret = read(parity-&gt;f, block_buffer + count, block_size - count);
-<span class="lineNum">     501 </span>            : #endif
-<span class="lineNum">     502 </span><span class="lineCov">    3315318 :                 if (read_ret &lt; 0) {</span>
-<span class="lineNum">     503 </span>            :                         /* LCOV_EXCL_START */
-<span class="lineNum">     504 </span>            :                         out(&quot;Error reading file '%s' at offset %&quot; PRIu64 &quot; for size %u. %s.\n&quot;, parity-&gt;path, offset + count, block_size - count, strerror(errno));
-<span class="lineNum">     505 </span>            :                         return -1;
-<span class="lineNum">     506 </span>            :                         /* LCOV_EXCL_STOP */
-<span class="lineNum">     507 </span>            :                 }
-<span class="lineNum">     508 </span><span class="lineCov">    3315318 :                 if (read_ret == 0) {</span>
-<span class="lineNum">     509 </span>            :                         /* LCOV_EXCL_START */
-<span class="lineNum">     510 </span>            :                         out(&quot;Unexpected end of file '%s' at offset %&quot; PRIu64 &quot;. %s.\n&quot;, parity-&gt;path, offset, strerror(errno));
-<span class="lineNum">     511 </span>            :                         return -1;
-<span class="lineNum">     512 </span>            :                         /* LCOV_EXCL_STOP */
-<span class="lineNum">     513 </span>            :                 }
-<span class="lineNum">     514 </span>            : 
-<span class="lineNum">     515 </span><span class="lineCov">    3315318 :                 count += read_ret;</span>
-<span class="lineNum">     516 </span><span class="lineCov">    3315318 :         } while (count &lt; block_size);</span>
-<span class="lineNum">     517 </span>            : 
-<span class="lineNum">     518 </span>            :         /* Here isn't needed to call posix_fadvise(..., POSIX_FADV_DONTNEED) */
-<span class="lineNum">     519 </span>            :         /* because we already advised sequential access with POSIX_FADV_SEQUENTIAL. */
-<span class="lineNum">     520 </span>            :         /* In Linux 2.6.33 it's enough to ensure that data is not kept in the cache. */
-<span class="lineNum">     521 </span>            :         /* Better to do nothing and save a syscall for each block. */
-<span class="lineNum">     522 </span>            : 
-<span class="lineNum">     523 </span><span class="lineCov">    3315318 :         return block_size;</span>
-<span class="lineNum">     524 </span>            : }
-<span class="lineNum">     525 </span>            : 
+<span class="lineNum">     137 </span><span class="lineNoCov">          0 :                                 block_off_t parity_pos = fs_file2par_get(disk, file, file-&gt;blockmax - 1);</span>
+<span class="lineNum">     138 </span><span class="lineNoCov">          0 :                                 if (parity_pos &gt;= blockalloc) {</span>
+<span class="lineNum">     139 </span><span class="lineNoCov">          0 :                                         log_tag(&quot;outofparity:%s:%s\n&quot;, disk-&gt;name, esc(file-&gt;sub));</span>
+<span class="lineNum">     140 </span><span class="lineNoCov">          0 :                                         if (first) {</span>
+<span class="lineNum">     141 </span><span class="lineNoCov">          0 :                                                 first = 0;</span>
+<span class="lineNum">     142 </span><span class="lineNoCov">          0 :                                                 log_fatal(&quot;\nYour data requires more parity than the available space.\n&quot;);</span>
+<span class="lineNum">     143 </span><span class="lineNoCov">          0 :                                                 log_fatal(&quot;Please move the files 'outofparity' to another data disk:\n&quot;);</span>
+<span class="lineNum">     144 </span>            :                                         }
+<span class="lineNum">     145 </span><span class="lineNoCov">          0 :                                         log_fatal(&quot;outofparity %s%s\n&quot;, disk-&gt;dir, file-&gt;sub);</span>
+<span class="lineNum">     146 </span>            :                                 }
+<span class="lineNum">     147 </span>            :                         }
+<span class="lineNum">     148 </span>            :                 }
+<span class="lineNum">     149 </span>            :         }
+<a name="150"><span class="lineNum">     150 </span>            : }</a>
+<span class="lineNum">     151 </span>            : 
+<span class="lineNum">     152 </span><span class="lineCov">        551 : int parity_create(struct snapraid_parity_handle* parity, const char* path, data_off_t* out_size, int mode)</span>
+<span class="lineNum">     153 </span>            : {
+<span class="lineNum">     154 </span>            :         int ret;
+<span class="lineNum">     155 </span>            :         int flags;
+<span class="lineNum">     156 </span>            : 
+<span class="lineNum">     157 </span><span class="lineCov">        551 :         pathcpy(parity-&gt;path, sizeof(parity-&gt;path), path);</span>
+<span class="lineNum">     158 </span>            : 
+<span class="lineNum">     159 </span>            :         /* opening in sequential mode in Windows */
+<span class="lineNum">     160 </span>            :         /* O_SEQUENTIAL: opening in sequential mode in Windows */
+<span class="lineNum">     161 </span><span class="lineCov">        551 :         flags = O_RDWR | O_CREAT | O_BINARY;</span>
+<span class="lineNum">     162 </span><span class="lineCov">        551 :         if ((mode &amp; MODE_SEQUENTIAL) != 0)</span>
+<span class="lineNum">     163 </span><span class="lineCov">        551 :                 flags |= O_SEQUENTIAL;</span>
+<span class="lineNum">     164 </span><span class="lineCov">        551 :         parity-&gt;f = open(parity-&gt;path, flags, 0600);</span>
+<span class="lineNum">     165 </span><span class="lineCov">        551 :         if (parity-&gt;f == -1) {</span>
+<span class="lineNum">     166 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     167 </span>            :                 log_fatal(&quot;Error opening parity file '%s'. %s.\n&quot;, parity-&gt;path, strerror(errno));
+<span class="lineNum">     168 </span>            :                 return -1;
+<span class="lineNum">     169 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     170 </span>            :         }
+<span class="lineNum">     171 </span>            : 
+<span class="lineNum">     172 </span>            :         /* get the stat info */
+<span class="lineNum">     173 </span><span class="lineCov">        551 :         ret = fstat(parity-&gt;f, &amp;parity-&gt;st);</span>
+<span class="lineNum">     174 </span><span class="lineCov">        551 :         if (ret != 0) {</span>
+<span class="lineNum">     175 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     176 </span>            :                 log_fatal(&quot;Error accessing parity file '%s'. %s.\n&quot;, parity-&gt;path, strerror(errno));
+<span class="lineNum">     177 </span>            :                 goto bail;
+<span class="lineNum">     178 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     179 </span>            :         }
+<span class="lineNum">     180 </span>            : 
+<span class="lineNum">     181 </span>            : #if HAVE_POSIX_FADVISE
+<span class="lineNum">     182 </span><span class="lineCov">        551 :         if ((mode &amp; MODE_SEQUENTIAL) != 0) {</span>
+<span class="lineNum">     183 </span>            :                 /* advise sequential access */
+<span class="lineNum">     184 </span><span class="lineCov">        551 :                 ret = posix_fadvise(parity-&gt;f, 0, 0, POSIX_FADV_SEQUENTIAL);</span>
+<span class="lineNum">     185 </span><span class="lineCov">        551 :                 if (ret != 0) {</span>
+<span class="lineNum">     186 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     187 </span>            :                         log_fatal(&quot;Error advising parity file '%s'. %s.\n&quot;, parity-&gt;path, strerror(ret));
+<span class="lineNum">     188 </span>            :                         goto bail;
+<span class="lineNum">     189 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     190 </span>            :                 }
+<span class="lineNum">     191 </span>            :         }
+<span class="lineNum">     192 </span>            : #endif
+<span class="lineNum">     193 </span>            : 
+<span class="lineNum">     194 </span>            :         /* get the size of the existing data */
+<span class="lineNum">     195 </span><span class="lineCov">        551 :         parity-&gt;valid_size = parity-&gt;st.st_size;</span>
+<span class="lineNum">     196 </span><span class="lineCov">        551 :         *out_size = parity-&gt;st.st_size;</span>
+<span class="lineNum">     197 </span>            : 
+<span class="lineNum">     198 </span><span class="lineCov">        551 :         return 0;</span>
+<span class="lineNum">     199 </span>            : 
+<span class="lineNum">     200 </span>            : bail:
+<span class="lineNum">     201 </span>            :         /* LCOV_EXCL_START */
+<span class="lineNum">     202 </span>            :         close(parity-&gt;f);
+<span class="lineNum">     203 </span>            :         parity-&gt;f = -1;
+<span class="lineNum">     204 </span>            :         parity-&gt;valid_size = 0;
+<span class="lineNum">     205 </span>            :         return -1;
+<span class="lineNum">     206 </span>            :         /* LCOV_EXCL_STOP */
+<a name="207"><span class="lineNum">     207 </span>            : }</a>
+<span class="lineNum">     208 </span>            : 
+<span class="lineNum">     209 </span><span class="lineCov">        551 : int parity_chsize(struct snapraid_parity_handle* parity, data_off_t size, data_off_t* out_size, int skip_fallocate)</span>
+<span class="lineNum">     210 </span>            : {
+<span class="lineNum">     211 </span>            :         int ret;
+<span class="lineNum">     212 </span>            : 
+<span class="lineNum">     213 </span><span class="lineCov">        551 :         if (parity-&gt;st.st_size &lt; size) {</span>
+<span class="lineNum">     214 </span>            :                 int f_ret;
+<span class="lineNum">     215 </span>            :                 int f_errno;
+<span class="lineNum">     216 </span>            :                 const char* call;
+<span class="lineNum">     217 </span>            : 
+<span class="lineNum">     218 </span>            : #if HAVE_FALLOCATE
+<span class="lineNum">     219 </span><span class="lineCov">         83 :                 call = &quot;fallocate&quot;;</span>
+<span class="lineNum">     220 </span><span class="lineCov">         83 :                 if (!skip_fallocate) {</span>
+<span class="lineNum">     221 </span>            :                         /* allocate real space using the specific Linux fallocate() operation. */
+<span class="lineNum">     222 </span>            :                         /* If the underline filesystem doesn't support it, this operation fails, */
+<span class="lineNum">     223 </span>            :                         /* instead posix_fallocate() fallbacks to write the whole file. */
+<span class="lineNum">     224 </span><span class="lineCov">         82 :                         ret = fallocate(parity-&gt;f, 0, 0, size);</span>
+<span class="lineNum">     225 </span>            : 
+<span class="lineNum">     226 </span>            :                         /* fallocate() returns the error number as positive integer, */
+<span class="lineNum">     227 </span>            :                         /* and in this case it doesn't set errno, just like posix_fallocate() */
+<span class="lineNum">     228 </span>            :                         /* Checking the glibc code (2.11.1 and 2.14.1) it seems that ENOSYS */
+<span class="lineNum">     229 </span>            :                         /* may be returned in errno, so we support both the return way */
+<span class="lineNum">     230 </span><span class="lineCov">         82 :                         if (ret &gt; 0) { /* if a positive error is returned, convert it to errno */</span>
+<span class="lineNum">     231 </span>            :                                 /* LCOV_EXCL_START */
+<span class="lineNum">     232 </span>            :                                 errno = ret;
+<span class="lineNum">     233 </span>            :                                 ret = -1;
+<span class="lineNum">     234 </span>            :                                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     235 </span>            :                         }
+<span class="lineNum">     236 </span>            :                 } else {
+<span class="lineNum">     237 </span><span class="lineCov">          1 :                         errno = EOPNOTSUPP;</span>
+<span class="lineNum">     238 </span><span class="lineCov">          1 :                         ret = -1;</span>
+<span class="lineNum">     239 </span>            :                 }
+<span class="lineNum">     240 </span>            : 
+<span class="lineNum">     241 </span>            :                 /* we get EOPNOTSUPP if the operation is not supported, like in ext3/ext2 */
+<span class="lineNum">     242 </span>            :                 /* or ENOSYS with kernel before 2.6.23 */
+<span class="lineNum">     243 </span><span class="lineCov">         83 :                 if (errno == EOPNOTSUPP || errno == ENOSYS) {</span>
+<span class="lineNum">     244 </span>            :                         /* fallback using ftruncate() */
+<span class="lineNum">     245 </span><span class="lineCov">          1 :                         call = &quot;ftruncate&quot;;</span>
+<span class="lineNum">     246 </span><span class="lineCov">          1 :                         ret = ftruncate(parity-&gt;f, size);</span>
+<span class="lineNum">     247 </span>            :                 }
+<span class="lineNum">     248 </span>            : #else
+<span class="lineNum">     249 </span>            :                 (void)skip_fallocate; /* avoid the warning */
+<span class="lineNum">     250 </span>            : 
+<span class="lineNum">     251 </span>            :                 /* allocate using a sparse file */
+<span class="lineNum">     252 </span>            :                 call = &quot;ftruncate&quot;;
+<span class="lineNum">     253 </span>            :                 ret = ftruncate(parity-&gt;f, size);
+<span class="lineNum">     254 </span>            : #endif
+<span class="lineNum">     255 </span>            :                 /* save the state of the grow operation */
+<span class="lineNum">     256 </span><span class="lineCov">         83 :                 f_ret = ret;</span>
+<span class="lineNum">     257 </span><span class="lineCov">         83 :                 f_errno = errno;</span>
+<span class="lineNum">     258 </span>            : 
+<span class="lineNum">     259 </span>            :                 /* get the stat info */
+<span class="lineNum">     260 </span><span class="lineCov">         83 :                 ret = fstat(parity-&gt;f, &amp;parity-&gt;st);</span>
+<span class="lineNum">     261 </span><span class="lineCov">         83 :                 if (ret != 0) {</span>
+<span class="lineNum">     262 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     263 </span>            :                         log_fatal(&quot;Error accessing parity file '%s'. %s.\n&quot;, parity-&gt;path, strerror(errno));
+<span class="lineNum">     264 </span>            :                         goto bail;
+<span class="lineNum">     265 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     266 </span>            :                 }
+<span class="lineNum">     267 </span>            : 
+<span class="lineNum">     268 </span>            :                 /* return the new size */
+<span class="lineNum">     269 </span><span class="lineCov">         83 :                 *out_size = parity-&gt;st.st_size;</span>
+<span class="lineNum">     270 </span>            : 
+<span class="lineNum">     271 </span>            :                 /* now check the error */
+<span class="lineNum">     272 </span><span class="lineCov">         83 :                 if (f_ret != 0) {</span>
+<span class="lineNum">     273 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     274 </span>            :                         if (f_errno == ENOSPC) {
+<span class="lineNum">     275 </span>            :                                 log_fatal(&quot;Failed to grow parity file '%s' to size %&quot; PRIu64 &quot; using %s due lack of space.\n&quot;, parity-&gt;path, size, call);
+<span class="lineNum">     276 </span>            :                         } else {
+<span class="lineNum">     277 </span>            :                                 log_fatal(&quot;Error growing parity file '%s' to size %&quot; PRIu64 &quot; using %s. Do you have enough space? %s.\n&quot;, parity-&gt;path, size, call, strerror(f_errno));
+<span class="lineNum">     278 </span>            :                         }
+<span class="lineNum">     279 </span>            :                         goto bail;
+<span class="lineNum">     280 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     281 </span>            :                 }
+<span class="lineNum">     282 </span><span class="lineCov">        468 :         } else if (parity-&gt;st.st_size &gt; size) {</span>
+<span class="lineNum">     283 </span>            :                 int f_ret;
+<span class="lineNum">     284 </span>            :                 int f_errno;
+<span class="lineNum">     285 </span>            : 
+<span class="lineNum">     286 </span>            :                 /* truncate the parity file */
+<span class="lineNum">     287 </span><span class="lineCov">         48 :                 ret = ftruncate(parity-&gt;f, size);</span>
+<span class="lineNum">     288 </span>            : 
+<span class="lineNum">     289 </span>            :                 /* save the state of the shrink operation */
+<span class="lineNum">     290 </span><span class="lineCov">         48 :                 f_ret = ret;</span>
+<span class="lineNum">     291 </span><span class="lineCov">         48 :                 f_errno = errno;</span>
+<span class="lineNum">     292 </span>            : 
+<span class="lineNum">     293 </span>            :                 /* get the stat info */
+<span class="lineNum">     294 </span><span class="lineCov">         48 :                 ret = fstat(parity-&gt;f, &amp;parity-&gt;st);</span>
+<span class="lineNum">     295 </span><span class="lineCov">         48 :                 if (ret != 0) {</span>
+<span class="lineNum">     296 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     297 </span>            :                         log_fatal(&quot;Error accessing parity file '%s'. %s.\n&quot;, parity-&gt;path, strerror(errno));
+<span class="lineNum">     298 </span>            :                         goto bail;
+<span class="lineNum">     299 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     300 </span>            :                 }
+<span class="lineNum">     301 </span>            : 
+<span class="lineNum">     302 </span>            :                 /* return the new size */
+<span class="lineNum">     303 </span><span class="lineCov">         48 :                 *out_size = parity-&gt;st.st_size;</span>
+<span class="lineNum">     304 </span>            : 
+<span class="lineNum">     305 </span>            :                 /* now check the error */
+<span class="lineNum">     306 </span><span class="lineCov">         48 :                 if (f_ret != 0) {</span>
+<span class="lineNum">     307 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     308 </span>            :                         log_fatal(&quot;Error truncating parity file '%s' to size %&quot; PRIu64 &quot;. %s.\n&quot;, parity-&gt;path, size, strerror(f_errno));
+<span class="lineNum">     309 </span>            :                         goto bail;
+<span class="lineNum">     310 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     311 </span>            :                 }
+<span class="lineNum">     312 </span>            : 
+<span class="lineNum">     313 </span>            :                 /* adjust the valid to the new size */
+<span class="lineNum">     314 </span><span class="lineCov">         48 :                 parity-&gt;valid_size = size;</span>
+<span class="lineNum">     315 </span>            :         }
+<span class="lineNum">     316 </span>            : 
+<span class="lineNum">     317 </span><span class="lineCov">        551 :         return 0;</span>
+<span class="lineNum">     318 </span>            : 
+<span class="lineNum">     319 </span>            : bail:
+<span class="lineNum">     320 </span>            :         /* LCOV_EXCL_START */
+<span class="lineNum">     321 </span>            :         parity-&gt;valid_size = 0;
+<span class="lineNum">     322 </span>            :         return -1;
+<span class="lineNum">     323 </span>            :         /* LCOV_EXCL_STOP */
+<a name="324"><span class="lineNum">     324 </span>            : }</a>
+<span class="lineNum">     325 </span>            : 
+<span class="lineNum">     326 </span><span class="lineCov">        402 : int parity_open(struct snapraid_parity_handle* parity, const char* path, int mode)</span>
+<span class="lineNum">     327 </span>            : {
+<span class="lineNum">     328 </span>            :         int ret;
+<span class="lineNum">     329 </span>            :         int flags;
+<span class="lineNum">     330 </span>            : 
+<span class="lineNum">     331 </span><span class="lineCov">        402 :         pathcpy(parity-&gt;path, sizeof(parity-&gt;path), path);</span>
+<span class="lineNum">     332 </span>            : 
+<span class="lineNum">     333 </span>            :         /* open for read */
+<span class="lineNum">     334 </span>            :         /* O_SEQUENTIAL: opening in sequential mode in Windows */
+<span class="lineNum">     335 </span>            :         /* O_NOATIME: do not change access time */
+<span class="lineNum">     336 </span><span class="lineCov">        402 :         flags = O_RDONLY | O_BINARY;</span>
+<span class="lineNum">     337 </span><span class="lineCov">        402 :         if ((mode &amp; MODE_SEQUENTIAL) != 0)</span>
+<span class="lineNum">     338 </span><span class="lineCov">        401 :                 flags |= O_SEQUENTIAL;</span>
+<span class="lineNum">     339 </span><span class="lineCov">        402 :         parity-&gt;f = open_noatime(parity-&gt;path, flags);</span>
+<span class="lineNum">     340 </span><span class="lineCov">        402 :         if (parity-&gt;f == -1) {</span>
+<span class="lineNum">     341 </span><span class="lineCov">          1 :                 log_fatal(&quot;Error opening parity file '%s'. %s.\n&quot;, parity-&gt;path, strerror(errno));</span>
+<span class="lineNum">     342 </span><span class="lineCov">          1 :                 return -1;</span>
+<span class="lineNum">     343 </span>            :         }
+<span class="lineNum">     344 </span>            : 
+<span class="lineNum">     345 </span>            :         /* get the stat info */
+<span class="lineNum">     346 </span><span class="lineCov">        401 :         ret = fstat(parity-&gt;f, &amp;parity-&gt;st);</span>
+<span class="lineNum">     347 </span><span class="lineCov">        401 :         if (ret != 0) {</span>
+<span class="lineNum">     348 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     349 </span>            :                 log_fatal(&quot;Error accessing parity file '%s'. %s.\n&quot;, parity-&gt;path, strerror(errno));
+<span class="lineNum">     350 </span>            :                 goto bail;
+<span class="lineNum">     351 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     352 </span>            :         }
+<span class="lineNum">     353 </span>            : 
+<span class="lineNum">     354 </span>            :         /* get the size of the exising data */
+<span class="lineNum">     355 </span><span class="lineCov">        401 :         parity-&gt;valid_size = parity-&gt;st.st_size;</span>
+<span class="lineNum">     356 </span>            : 
+<span class="lineNum">     357 </span>            : #if HAVE_POSIX_FADVISE
+<span class="lineNum">     358 </span><span class="lineCov">        401 :         if ((mode &amp; MODE_SEQUENTIAL) != 0) {</span>
+<span class="lineNum">     359 </span>            :                 /* advise sequential access */
+<span class="lineNum">     360 </span><span class="lineCov">        400 :                 ret = posix_fadvise(parity-&gt;f, 0, 0, POSIX_FADV_SEQUENTIAL);</span>
+<span class="lineNum">     361 </span><span class="lineCov">        400 :                 if (ret != 0) {</span>
+<span class="lineNum">     362 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     363 </span>            :                         log_fatal(&quot;Error advising parity file '%s'. %s.\n&quot;, parity-&gt;path, strerror(ret));
+<span class="lineNum">     364 </span>            :                         goto bail;
+<span class="lineNum">     365 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     366 </span>            :                 }
+<span class="lineNum">     367 </span>            :         }
+<span class="lineNum">     368 </span>            : #endif
+<span class="lineNum">     369 </span>            : 
+<span class="lineNum">     370 </span><span class="lineCov">        401 :         return 0;</span>
+<span class="lineNum">     371 </span>            : 
+<span class="lineNum">     372 </span>            : bail:
+<span class="lineNum">     373 </span>            :         /* LCOV_EXCL_START */
+<span class="lineNum">     374 </span>            :         close(parity-&gt;f);
+<span class="lineNum">     375 </span>            :         parity-&gt;f = -1;
+<span class="lineNum">     376 </span>            :         parity-&gt;valid_size = 0;
+<span class="lineNum">     377 </span>            :         return -1;
+<span class="lineNum">     378 </span>            :         /* LCOV_EXCL_STOP */
+<a name="379"><span class="lineNum">     379 </span>            : }</a>
+<span class="lineNum">     380 </span>            : 
+<span class="lineNum">     381 </span><span class="lineCov">        399 : int parity_sync(struct snapraid_parity_handle* parity)</span>
+<span class="lineNum">     382 </span>            : {
+<span class="lineNum">     383 </span>            : #if HAVE_FSYNC
+<span class="lineNum">     384 </span>            :         int ret;
+<span class="lineNum">     385 </span>            : 
+<span class="lineNum">     386 </span>            :         /* Ensure that data changes are written to disk. */
+<span class="lineNum">     387 </span>            :         /* This is required to ensure that parity is more updated than content */
+<span class="lineNum">     388 </span>            :         /* in case of a system crash. */
+<span class="lineNum">     389 </span><span class="lineCov">        399 :         ret = fsync(parity-&gt;f);</span>
+<span class="lineNum">     390 </span><span class="lineCov">        399 :         if (ret != 0) {</span>
+<span class="lineNum">     391 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     392 </span>            :                 log_fatal(&quot;Error synching parity file '%s'. %s.\n&quot;, parity-&gt;path, strerror(errno));
+<span class="lineNum">     393 </span>            :                 return -1;
+<span class="lineNum">     394 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     395 </span>            :         }
+<span class="lineNum">     396 </span>            : #endif
+<span class="lineNum">     397 </span>            : 
+<span class="lineNum">     398 </span><span class="lineCov">        399 :         return 0;</span>
+<a name="399"><span class="lineNum">     399 </span>            : }</a>
+<span class="lineNum">     400 </span>            : 
+<span class="lineNum">     401 </span><span class="lineCov">        952 : int parity_close(struct snapraid_parity_handle* parity)</span>
+<span class="lineNum">     402 </span>            : {
+<span class="lineNum">     403 </span>            :         int ret;
+<span class="lineNum">     404 </span>            : 
+<span class="lineNum">     405 </span><span class="lineCov">        952 :         ret = close(parity-&gt;f);</span>
+<span class="lineNum">     406 </span><span class="lineCov">        952 :         if (ret != 0) {</span>
+<span class="lineNum">     407 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     408 </span>            :                 /* invalidate for error */
+<span class="lineNum">     409 </span>            :                 parity-&gt;f = -1;
+<span class="lineNum">     410 </span>            :                 parity-&gt;valid_size = 0;
+<span class="lineNum">     411 </span>            : 
+<span class="lineNum">     412 </span>            :                 /* This is a serious error, as it may be the result of a failed write */
+<span class="lineNum">     413 </span>            :                 /* identified at later time. */
+<span class="lineNum">     414 </span>            :                 /* In a normal filesystem (not NFS) it should never happen */
+<span class="lineNum">     415 </span>            :                 log_fatal(&quot;Error closing parity file '%s'. %s.\n&quot;, parity-&gt;path, strerror(errno));
+<span class="lineNum">     416 </span>            :                 return -1;
+<span class="lineNum">     417 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     418 </span>            :         }
+<span class="lineNum">     419 </span>            : 
+<span class="lineNum">     420 </span>            :         /* reset the descriptor */
+<span class="lineNum">     421 </span><span class="lineCov">        952 :         parity-&gt;f = -1;</span>
+<span class="lineNum">     422 </span><span class="lineCov">        952 :         parity-&gt;valid_size = 0;</span>
+<span class="lineNum">     423 </span>            : 
+<span class="lineNum">     424 </span><span class="lineCov">        952 :         return 0;</span>
+<a name="425"><span class="lineNum">     425 </span>            : }</a>
+<span class="lineNum">     426 </span>            : 
+<span class="lineNum">     427 </span><span class="lineCov">     505320 : int parity_write(struct snapraid_parity_handle* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size)</span>
+<span class="lineNum">     428 </span>            : {
+<span class="lineNum">     429 </span>            :         ssize_t write_ret;
+<span class="lineNum">     430 </span>            :         data_off_t offset;
+<span class="lineNum">     431 </span>            : 
+<span class="lineNum">     432 </span><span class="lineCov">     505320 :         offset = pos * (data_off_t)block_size;</span>
+<span class="lineNum">     433 </span>            : 
+<span class="lineNum">     434 </span>            : #if HAVE_PWRITE
+<span class="lineNum">     435 </span><span class="lineCov">     505320 :         write_ret = pwrite(parity-&gt;f, block_buffer, block_size, offset);</span>
+<span class="lineNum">     436 </span>            : #else
+<span class="lineNum">     437 </span>            :         if (lseek(parity-&gt;f, offset, SEEK_SET) != offset) {
+<span class="lineNum">     438 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     439 </span>            :                 if (errno == ENOSPC) {
+<span class="lineNum">     440 </span>            :                         log_fatal(&quot;Failed to grow parity file '%s' using lseek due lack of space.\n&quot;, parity-&gt;path);
+<span class="lineNum">     441 </span>            :                 } else {
+<span class="lineNum">     442 </span>            :                         log_fatal(&quot;Error seeking file '%s'. %s.\n&quot;, parity-&gt;path, strerror(errno));
+<span class="lineNum">     443 </span>            :                 }
+<span class="lineNum">     444 </span>            :                 return -1;
+<span class="lineNum">     445 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     446 </span>            :         }
+<span class="lineNum">     447 </span>            : 
+<span class="lineNum">     448 </span>            :         write_ret = write(parity-&gt;f, block_buffer, block_size);
+<span class="lineNum">     449 </span>            : #endif
+<span class="lineNum">     450 </span><span class="lineCov">     505320 :         if (write_ret != (ssize_t)block_size) { /* conversion is safe because block_size is always small */</span>
+<span class="lineNum">     451 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     452 </span>            :                 if (errno == ENOSPC) {
+<span class="lineNum">     453 </span>            :                         log_fatal(&quot;Failed to grow parity file '%s' using write due lack of space.\n&quot;, parity-&gt;path);
+<span class="lineNum">     454 </span>            :                 } else {
+<span class="lineNum">     455 </span>            :                         log_fatal(&quot;Error writing file '%s'. %s.\n&quot;, parity-&gt;path, strerror(errno));
+<span class="lineNum">     456 </span>            :                 }
+<span class="lineNum">     457 </span>            :                 return -1;
+<span class="lineNum">     458 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     459 </span>            :         }
+<span class="lineNum">     460 </span>            : 
+<span class="lineNum">     461 </span>            :         /* adjust the size of the valid data */
+<span class="lineNum">     462 </span><span class="lineCov">     505320 :         if (parity-&gt;valid_size &lt; offset + block_size) {</span>
+<span class="lineNum">     463 </span><span class="lineCov">     170559 :                 parity-&gt;valid_size = offset + block_size;</span>
+<span class="lineNum">     464 </span>            :         }
+<span class="lineNum">     465 </span>            : 
+<span class="lineNum">     466 </span>            :         /* Here doesn't make sense to call posix_fadvise(..., POSIX_FADV_DONTNEED) because */
+<span class="lineNum">     467 </span>            :         /* at this time the data is still in not yet written and it cannot be discharged. */
+<span class="lineNum">     468 </span>            : 
+<span class="lineNum">     469 </span><span class="lineCov">     505320 :         return 0;</span>
+<a name="470"><span class="lineNum">     470 </span>            : }</a>
+<span class="lineNum">     471 </span>            : 
+<span class="lineNum">     472 </span><span class="lineCov">    3488589 : int parity_read(struct snapraid_parity_handle* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size, fptr* out)</span>
+<span class="lineNum">     473 </span>            : {
+<span class="lineNum">     474 </span>            :         ssize_t read_ret;
+<span class="lineNum">     475 </span>            :         data_off_t offset;
+<span class="lineNum">     476 </span>            :         unsigned count;
+<span class="lineNum">     477 </span>            : 
+<span class="lineNum">     478 </span><span class="lineCov">    3488589 :         offset = pos * (data_off_t)block_size;</span>
+<span class="lineNum">     479 </span>            : 
+<span class="lineNum">     480 </span>            :         /* check if we are going to read only not initialized data */
+<span class="lineNum">     481 </span><span class="lineCov">    3488589 :         if (offset &gt;= parity-&gt;valid_size) {</span>
+<span class="lineNum">     482 </span><span class="lineCov">      90275 :                 out(&quot;Reading missing data from file '%s' at offset %&quot; PRIu64 &quot;.\n&quot;, parity-&gt;path, offset);</span>
+<span class="lineNum">     483 </span><span class="lineCov">      90275 :                 return -1;</span>
+<span class="lineNum">     484 </span>            :         }
+<span class="lineNum">     485 </span>            : 
+<span class="lineNum">     486 </span>            : #if !HAVE_PREAD
+<span class="lineNum">     487 </span>            :         if (lseek(parity-&gt;f, offset, SEEK_SET) != offset) {
+<span class="lineNum">     488 </span>            :                 /* LCOV_EXCL_START */
+<span class="lineNum">     489 </span>            :                 out(&quot;Error seeking file '%s' at offset %&quot; PRIu64 &quot;. %s.\n&quot;, parity-&gt;path, offset, strerror(errno));
+<span class="lineNum">     490 </span>            :                 return -1;
+<span class="lineNum">     491 </span>            :                 /* LCOV_EXCL_STOP */
+<span class="lineNum">     492 </span>            :         }
+<span class="lineNum">     493 </span>            : #endif
+<span class="lineNum">     494 </span>            : 
+<span class="lineNum">     495 </span><span class="lineCov">    3398314 :         count = 0;</span>
+<span class="lineNum">     496 </span>            :         do {
+<span class="lineNum">     497 </span>            : 
+<span class="lineNum">     498 </span>            : #if HAVE_PREAD
+<span class="lineNum">     499 </span><span class="lineCov">    3398314 :                 read_ret = pread(parity-&gt;f, block_buffer + count, block_size - count, offset + count);</span>
+<span class="lineNum">     500 </span>            : #else
+<span class="lineNum">     501 </span>            :                 read_ret = read(parity-&gt;f, block_buffer + count, block_size - count);
+<span class="lineNum">     502 </span>            : #endif
+<span class="lineNum">     503 </span><span class="lineCov">    3398314 :                 if (read_ret &lt; 0) {</span>
+<span class="lineNum">     504 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     505 </span>            :                         out(&quot;Error reading file '%s' at offset %&quot; PRIu64 &quot; for size %u. %s.\n&quot;, parity-&gt;path, offset + count, block_size - count, strerror(errno));
+<span class="lineNum">     506 </span>            :                         return -1;
+<span class="lineNum">     507 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     508 </span>            :                 }
+<span class="lineNum">     509 </span><span class="lineCov">    3398314 :                 if (read_ret == 0) {</span>
+<span class="lineNum">     510 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     511 </span>            :                         out(&quot;Unexpected end of file '%s' at offset %&quot; PRIu64 &quot;. %s.\n&quot;, parity-&gt;path, offset, strerror(errno));
+<span class="lineNum">     512 </span>            :                         return -1;
+<span class="lineNum">     513 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     514 </span>            :                 }
+<span class="lineNum">     515 </span>            : 
+<span class="lineNum">     516 </span><span class="lineCov">    3398314 :                 count += read_ret;</span>
+<span class="lineNum">     517 </span><span class="lineCov">    3398314 :         } while (count &lt; block_size);</span>
+<span class="lineNum">     518 </span>            : 
+<span class="lineNum">     519 </span>            :         /* Here isn't needed to call posix_fadvise(..., POSIX_FADV_DONTNEED) */
+<span class="lineNum">     520 </span>            :         /* because we already advised sequential access with POSIX_FADV_SEQUENTIAL. */
+<span class="lineNum">     521 </span>            :         /* In Linux 2.6.33 it's enough to ensure that data is not kept in the cache. */
+<span class="lineNum">     522 </span>            :         /* Better to do nothing and save a syscall for each block. */
+<span class="lineNum">     523 </span>            : 
+<span class="lineNum">     524 </span><span class="lineCov">    3398314 :         return block_size;</span>
+<span class="lineNum">     525 </span>            : }
+<span class="lineNum">     526 </span>            : 
 </pre>
       </td>
     </tr>

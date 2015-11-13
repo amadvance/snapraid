@@ -31,18 +31,18 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntry">39</td>
-            <td class="headerCovTableEntry">43</td>
-            <td class="headerCovTableEntryHi">90.7 %</td>
+            <td class="headerCovTableEntry">37</td>
+            <td class="headerCovTableEntry">41</td>
+            <td class="headerCovTableEntryHi">90.2 %</td>
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-05-12</td>
+            <td class="headerValue">2015-11-13</td>
             <td></td>
             <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">10</td>
             <td class="headerCovTableEntry">11</td>
-            <td class="headerCovTableEntry">12</td>
-            <td class="headerCovTableEntryHi">91.7 %</td>
+            <td class="headerCovTableEntryHi">90.9 %</td>
           </tr>
           <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
         </table>
@@ -160,98 +160,98 @@
 <span class="lineNum">      98 </span>            : typedef struct stream STREAM;
 <span class="lineNum">      99 </span>            : 
 <span class="lineNum">     100 </span>            : /**
-<span class="lineNum">     101 </span>            :  * Opens a stream for reading. Like fopen(&quot;r&quot;).
+<span class="lineNum">     101 </span>            :  * Open a stream for reading. Like fopen(&quot;r&quot;).
 <span class="lineNum">     102 </span>            :  */
 <span class="lineNum">     103 </span>            : STREAM* sopen_read(const char* file);
 <span class="lineNum">     104 </span>            : 
 <span class="lineNum">     105 </span>            : /**
-<span class="lineNum">     106 </span>            :  * Opens a stream for writing. Like fopen(&quot;w&quot;).
+<span class="lineNum">     106 </span>            :  * Open a stream for writing. Like fopen(&quot;w&quot;).
 <span class="lineNum">     107 </span>            :  */
 <span class="lineNum">     108 </span>            : STREAM* sopen_write(const char* file);
 <span class="lineNum">     109 </span>            : 
 <span class="lineNum">     110 </span>            : /**
-<span class="lineNum">     111 </span>            :  * Opens a set of streams for writing. Like fopen(&quot;w&quot;).
+<span class="lineNum">     111 </span>            :  * Open a set of streams for writing. Like fopen(&quot;w&quot;).
 <span class="lineNum">     112 </span>            :  */
 <span class="lineNum">     113 </span>            : STREAM* sopen_multi_write(unsigned count);
 <span class="lineNum">     114 </span>            : 
 <span class="lineNum">     115 </span>            : /**
-<span class="lineNum">     116 </span>            :  * Specifies the file to open.
+<span class="lineNum">     116 </span>            :  * Specify the file to open.
 <span class="lineNum">     117 </span>            :  */
 <span class="lineNum">     118 </span>            : int sopen_multi_file(STREAM* s, unsigned i, const char* file);
 <span class="lineNum">     119 </span>            : 
 <span class="lineNum">     120 </span>            : /**
-<span class="lineNum">     121 </span>            :  * Closes a stream. Like fclose().
+<span class="lineNum">     121 </span>            :  * Close a stream. Like fclose().
 <span class="lineNum">     122 </span>            :  */
 <span class="lineNum">     123 </span>            : int sclose(STREAM* s);
 <span class="lineNum">     124 </span>            : 
 <span class="lineNum">     125 </span>            : /**
-<span class="lineNum">     126 </span>            :  * Returns the handle of the file.
+<span class="lineNum">     126 </span>            :  * Return the handle of the file.
 <span class="lineNum">     127 </span>            :  * In case of multi file, the first one is returned.
 <span class="lineNum">     128 </span>            :  */
 <span class="lineNum">     129 </span>            : int shandle(STREAM* s);
 <span class="lineNum">     130 </span>            : 
 <span class="lineNum">     131 </span>            : /**
-<span class="lineNum">     132 </span>            :  * Fills the read stream buffer and read a char.
-<span class="lineNum">     133 </span>            :  * \note Don't call this directly, but use sgetc().
-<span class="lineNum">     134 </span>            :  * \return The char read, or EOF on error.
+<span class="lineNum">     132 </span>            :  * Read the stream until the end, and return the latest 4 chars.
+<span class="lineNum">     133 </span>            :  * The CRC of the file is also computed, and you can get it using scrc().
+<span class="lineNum">     134 </span>            :  * \return 0 on success, or EOF on error.
 <span class="lineNum">     135 </span>            :  */
-<span class="lineNum">     136 </span>            : int sfill(STREAM* s);
+<span class="lineNum">     136 </span>            : int sdeplete(STREAM* s, unsigned char* last);
 <span class="lineNum">     137 </span>            : 
 <span class="lineNum">     138 </span>            : /**
-<span class="lineNum">     139 </span>            :  * Flushes the write stream buffer.
+<span class="lineNum">     139 </span>            :  * Flush the write stream buffer.
 <span class="lineNum">     140 </span>            :  * \return 0 on success, or EOF on error.
 <span class="lineNum">     141 </span>            :  */
 <span class="lineNum">     142 </span>            : int sflush(STREAM* s);
 <span class="lineNum">     143 </span>            : 
 <span class="lineNum">     144 </span>            : /**
-<span class="lineNum">     145 </span>            :  * Gets the file pointer.
+<span class="lineNum">     145 </span>            :  * Get the file pointer.
 <span class="lineNum">     146 </span>            :  */
 <span class="lineNum">     147 </span>            : int64_t stell(STREAM* s);
 <span class="lineNum">     148 </span>            : 
 <span class="lineNum">     149 </span>            : /**
-<span class="lineNum">     150 </span>            :  * Gets the CRC of the processed data.
+<span class="lineNum">     150 </span>            :  * Get the CRC of the processed data.
 <span class="lineNum">     151 </span>            :  */
 <span class="lineNum">     152 </span>            : uint32_t scrc(STREAM* s);
 <span class="lineNum">     153 </span>            : 
 <span class="lineNum">     154 </span>            : /**
-<span class="lineNum">     155 </span>            :  * Gets the CRC of the processed data in put.
+<span class="lineNum">     155 </span>            :  * Get the CRC of the processed data in put.
 <span class="lineNum">     156 </span>            :  */
 <span class="lineNum">     157 </span>            : uint32_t scrc_stream(STREAM* s);
 <span class="lineNum">     158 </span>            : 
 <span class="lineNum">     159 </span>            : /**
-<a name="160"><span class="lineNum">     160 </span>            :  * Checks if the buffer has enough data loaded.</a>
+<a name="160"><span class="lineNum">     160 </span>            :  * Check if the buffer has enough data loaded.</a>
 <span class="lineNum">     161 </span>            :  */
-<span class="lineNum">     162 </span><span class="lineCov">   33382914 : static inline int sptrlookup(STREAM* s, int size)</span>
+<span class="lineNum">     162 </span><span class="lineCov">  140856705 : static inline int sptrlookup(STREAM* s, int size)</span>
 <span class="lineNum">     163 </span>            : {
-<span class="lineNum">     164 </span><span class="lineCov">   33382914 :         return s-&gt;pos + size &lt;= s-&gt;end;</span>
+<span class="lineNum">     164 </span><span class="lineCov">  140856705 :         return s-&gt;pos + size &lt;= s-&gt;end;</span>
 <span class="lineNum">     165 </span>            : }
 <span class="lineNum">     166 </span>            : 
 <span class="lineNum">     167 </span>            : /**
-<a name="168"><span class="lineNum">     168 </span>            :  * Gets the current stream ptr.</a>
+<a name="168"><span class="lineNum">     168 </span>            :  * Get the current stream ptr.</a>
 <span class="lineNum">     169 </span>            :  */
-<span class="lineNum">     170 </span><span class="lineCov">   33339678 : static inline unsigned char* sptrget(STREAM* s)</span>
+<span class="lineNum">     170 </span><span class="lineCov">  143442663 : static inline unsigned char* sptrget(STREAM* s)</span>
 <span class="lineNum">     171 </span>            : {
-<span class="lineNum">     172 </span><span class="lineCov">   33339678 :         return s-&gt;pos;</span>
+<span class="lineNum">     172 </span><span class="lineCov">  143442663 :         return s-&gt;pos;</span>
 <span class="lineNum">     173 </span>            : }
 <span class="lineNum">     174 </span>            : 
 <span class="lineNum">     175 </span>            : /**
-<a name="176"><span class="lineNum">     176 </span>            :  * Sets the current stream ptr.</a>
+<a name="176"><span class="lineNum">     176 </span>            :  * Set the current stream ptr.</a>
 <span class="lineNum">     177 </span>            :  */
-<span class="lineNum">     178 </span><span class="lineCov">   33339678 : static inline void sptrset(STREAM* s, unsigned char* ptr)</span>
+<span class="lineNum">     178 </span><span class="lineCov">  139615572 : static inline void sptrset(STREAM* s, unsigned char* ptr)</span>
 <span class="lineNum">     179 </span>            : {
-<span class="lineNum">     180 </span><span class="lineCov">   33339678 :         s-&gt;pos = ptr;</span>
-<span class="lineNum">     181 </span><span class="lineCov">   33339678 : }</span>
+<span class="lineNum">     180 </span><span class="lineCov">  139615572 :         s-&gt;pos = ptr;</span>
+<span class="lineNum">     181 </span><span class="lineCov">  139615572 : }</span>
 <span class="lineNum">     182 </span>            : 
 <span class="lineNum">     183 </span>            : /**
-<a name="184"><span class="lineNum">     184 </span>            :  * Checks the error status. Like ferror().</a>
+<a name="184"><span class="lineNum">     184 </span>            :  * Check the error status. Like ferror().</a>
 <span class="lineNum">     185 </span>            :  */
-<span class="lineNum">     186 </span><span class="lineCov">    3924482 : static inline int serror(STREAM* s)</span>
+<span class="lineNum">     186 </span><span class="lineCov">   24801447 : static inline int serror(STREAM* s)</span>
 <span class="lineNum">     187 </span>            : {
-<span class="lineNum">     188 </span><span class="lineCov">    3924482 :         return s-&gt;state == STREAM_STATE_ERROR;</span>
+<span class="lineNum">     188 </span><span class="lineCov">   24801447 :         return s-&gt;state == STREAM_STATE_ERROR;</span>
 <span class="lineNum">     189 </span>            : }
 <span class="lineNum">     190 </span>            : 
 <span class="lineNum">     191 </span>            : /**
-<a name="192"><span class="lineNum">     192 </span>            :  * Checks the eof status. Like feof().</a>
+<a name="192"><span class="lineNum">     192 </span>            :  * Check the eof status. Like feof().</a>
 <span class="lineNum">     193 </span>            :  */
 <span class="lineNum">     194 </span><span class="lineCov">          1 : static inline int seof(STREAM* s)</span>
 <span class="lineNum">     195 </span>            : {
@@ -259,7 +259,7 @@
 <span class="lineNum">     197 </span>            : }
 <span class="lineNum">     198 </span>            : 
 <span class="lineNum">     199 </span>            : /**
-<span class="lineNum">     200 </span>            :  * Gets the index of the handle that caused the error.
+<span class="lineNum">     200 </span>            :  * Get the index of the handle that caused the error.
 <span class="lineNum">     201 </span>            :  */
 <span class="lineNum">     202 </span>            : static inline int serrorindex(STREAM* s)
 <span class="lineNum">     203 </span>            : {
@@ -267,7 +267,7 @@
 <span class="lineNum">     205 </span>            : }
 <span class="lineNum">     206 </span>            : 
 <span class="lineNum">     207 </span>            : /**
-<a name="208"><span class="lineNum">     208 </span>            :  * Gets the path of the handle that caused the error.</a>
+<a name="208"><span class="lineNum">     208 </span>            :  * Get the path of the handle that caused the error.</a>
 <span class="lineNum">     209 </span>            :  */
 <span class="lineNum">     210 </span><span class="lineNoCov">          0 : static inline const char* serrorfile(STREAM* s)</span>
 <span class="lineNum">     211 </span>            : {
@@ -283,226 +283,199 @@
 <span class="lineNum">     221 </span>            : /* get */
 <span class="lineNum">     222 </span>            : 
 <span class="lineNum">     223 </span>            : /**
-<a name="224"><span class="lineNum">     224 </span>            :  * Reads a char. Like fgetc().</a>
-<span class="lineNum">     225 </span>            :  */
-<span class="lineNum">     226 </span><span class="lineCov">   90674228 : static inline int sgetc(STREAM* s)</span>
-<span class="lineNum">     227 </span>            : {
-<span class="lineNum">     228 </span><span class="lineCov">   90674228 :         if (s-&gt;pos == s-&gt;end)</span>
-<span class="lineNum">     229 </span><span class="lineCov">     298684 :                 return sfill(s);</span>
-<span class="lineNum">     230 </span><span class="lineCov">   90375544 :         return *s-&gt;pos++;</span>
-<span class="lineNum">     231 </span>            : }
-<span class="lineNum">     232 </span>            : 
-<span class="lineNum">     233 </span>            : /**
-<span class="lineNum">     234 </span>            :  * Unreads a char.
-<a name="235"><span class="lineNum">     235 </span>            :  * Like ungetc() but you have to unget the same char read.</a>
-<span class="lineNum">     236 </span>            :  */
-<span class="lineNum">     237 </span><span class="lineCov">    1215267 : static inline void sungetc(int c, STREAM* s)</span>
-<span class="lineNum">     238 </span>            : {
-<span class="lineNum">     239 </span><span class="lineCov">    1215267 :         if (c != EOF)</span>
-<span class="lineNum">     240 </span><span class="lineCov">    1214552 :                 --s-&gt;pos;</span>
-<span class="lineNum">     241 </span><span class="lineCov">    1215267 : }</span>
-<span class="lineNum">     242 </span>            : 
-<span class="lineNum">     243 </span>            : /**
-<span class="lineNum">     244 </span>            :  * Reads a fixed amount of chars.
-<span class="lineNum">     245 </span>            :  * Returns 0 on success, or -1 on error.
-<span class="lineNum">     246 </span>            :  */
-<span class="lineNum">     247 </span>            : int sread(STREAM* f, void* void_data, unsigned size);
+<span class="lineNum">     224 </span>            :  * \internal Used by sgetc().
+<span class="lineNum">     225 </span>            :  * \note Don't call this directly, but use sgetc().
+<span class="lineNum">     226 </span>            :  */
+<span class="lineNum">     227 </span>            : int sgetc_uncached(STREAM* s);
+<span class="lineNum">     228 </span>            : 
+<span class="lineNum">     229 </span>            : /**
+<a name="230"><span class="lineNum">     230 </span>            :  * Read a char. Like fgetc().</a>
+<span class="lineNum">     231 </span>            :  */
+<span class="lineNum">     232 </span><span class="lineCov">   81925866 : static inline int sgetc(STREAM* s)</span>
+<span class="lineNum">     233 </span>            : {
+<span class="lineNum">     234 </span><span class="lineCov">   81925866 :         if (tommy_unlikely(s-&gt;pos == s-&gt;end))</span>
+<span class="lineNum">     235 </span><span class="lineCov">     298580 :                 return sgetc_uncached(s);</span>
+<span class="lineNum">     236 </span><span class="lineCov">   81627286 :         return *s-&gt;pos++;</span>
+<span class="lineNum">     237 </span>            : }
+<span class="lineNum">     238 </span>            : 
+<span class="lineNum">     239 </span>            : /**
+<span class="lineNum">     240 </span>            :  * Unread a char.
+<a name="241"><span class="lineNum">     241 </span>            :  * Like ungetc() but you have to unget the same char read.</a>
+<span class="lineNum">     242 </span>            :  */
+<span class="lineNum">     243 </span><span class="lineCov">      32166 : static inline void sungetc(int c, STREAM* s)</span>
+<span class="lineNum">     244 </span>            : {
+<span class="lineNum">     245 </span><span class="lineCov">      32166 :         if (c != EOF)</span>
+<span class="lineNum">     246 </span><span class="lineCov">      31428 :                 --s-&gt;pos;</span>
+<span class="lineNum">     247 </span><span class="lineCov">      32166 : }</span>
 <span class="lineNum">     248 </span>            : 
 <span class="lineNum">     249 </span>            : /**
-<a name="250"><span class="lineNum">     250 </span>            :  * Gets a char from a stream, ignoring one '\r'.</a>
-<span class="lineNum">     251 </span>            :  */
-<span class="lineNum">     252 </span><span class="lineCov">     373075 : static inline int sgeteol(STREAM* f)</span>
-<span class="lineNum">     253 </span>            : {
-<span class="lineNum">     254 </span>            :         int c;
-<span class="lineNum">     255 </span>            : 
-<span class="lineNum">     256 </span><span class="lineCov">     373075 :         c = sgetc(f);</span>
-<span class="lineNum">     257 </span><span class="lineCov">     373075 :         if (c == '\r')</span>
-<span class="lineNum">     258 </span><span class="lineNoCov">          0 :                 c = sgetc(f);</span>
-<span class="lineNum">     259 </span>            : 
-<span class="lineNum">     260 </span><span class="lineCov">     373075 :         return c;</span>
-<span class="lineNum">     261 </span>            : }
-<span class="lineNum">     262 </span>            : 
-<span class="lineNum">     263 </span>            : /**
-<span class="lineNum">     264 </span>            :  * Reads all the spaces and tabs.
-<a name="265"><span class="lineNum">     265 </span>            :  * Returns the number of spaces and tabs read.</a>
-<span class="lineNum">     266 </span>            :  */
-<span class="lineNum">     267 </span><span class="lineCov">      18303 : static inline int sgetspace(STREAM* f)</span>
-<span class="lineNum">     268 </span>            : {
-<span class="lineNum">     269 </span><span class="lineCov">      18303 :         int count = 0;</span>
-<span class="lineNum">     270 </span>            :         int c;
-<span class="lineNum">     271 </span>            : 
-<span class="lineNum">     272 </span><span class="lineCov">      18303 :         c = sgetc(f);</span>
-<span class="lineNum">     273 </span><span class="lineCov">      43388 :         while (c == ' ' || c == '\t') {</span>
-<span class="lineNum">     274 </span><span class="lineCov">       6782 :                 ++count;</span>
-<span class="lineNum">     275 </span><span class="lineCov">       6782 :                 c = sgetc(f);</span>
-<span class="lineNum">     276 </span>            :         }
+<span class="lineNum">     250 </span>            :  * Read a fixed amount of chars.
+<span class="lineNum">     251 </span>            :  * Return 0 on success, or -1 on error.
+<span class="lineNum">     252 </span>            :  */
+<span class="lineNum">     253 </span>            : int sread(STREAM* f, void* void_data, unsigned size);
+<span class="lineNum">     254 </span>            : 
+<span class="lineNum">     255 </span>            : /**
+<a name="256"><span class="lineNum">     256 </span>            :  * Get a char from a stream, ignoring one '\r'.</a>
+<span class="lineNum">     257 </span>            :  */
+<span class="lineNum">     258 </span><span class="lineCov">       5807 : static inline int sgeteol(STREAM* f)</span>
+<span class="lineNum">     259 </span>            : {
+<span class="lineNum">     260 </span>            :         int c;
+<span class="lineNum">     261 </span>            : 
+<span class="lineNum">     262 </span><span class="lineCov">       5807 :         c = sgetc(f);</span>
+<span class="lineNum">     263 </span><span class="lineCov">       5807 :         if (c == '\r')</span>
+<span class="lineNum">     264 </span><span class="lineNoCov">          0 :                 c = sgetc(f);</span>
+<span class="lineNum">     265 </span>            : 
+<span class="lineNum">     266 </span><span class="lineCov">       5807 :         return c;</span>
+<span class="lineNum">     267 </span>            : }
+<span class="lineNum">     268 </span>            : 
+<span class="lineNum">     269 </span>            : /**
+<span class="lineNum">     270 </span>            :  * Read all the spaces and tabs.
+<a name="271"><span class="lineNum">     271 </span>            :  * Return the number of spaces and tabs read.</a>
+<span class="lineNum">     272 </span>            :  */
+<span class="lineNum">     273 </span><span class="lineCov">      19238 : static inline int sgetspace(STREAM* f)</span>
+<span class="lineNum">     274 </span>            : {
+<span class="lineNum">     275 </span><span class="lineCov">      19238 :         int count = 0;</span>
+<span class="lineNum">     276 </span>            :         int c;
 <span class="lineNum">     277 </span>            : 
-<span class="lineNum">     278 </span><span class="lineCov">      18303 :         sungetc(c, f);</span>
-<span class="lineNum">     279 </span><span class="lineCov">      18303 :         return count;</span>
-<span class="lineNum">     280 </span>            : }
-<span class="lineNum">     281 </span>            : 
-<span class="lineNum">     282 </span>            : /**
-<span class="lineNum">     283 </span>            :  * Reads until the first space or tab.
-<span class="lineNum">     284 </span>            :  * Stops at the first ' ', '\t', '\n' or EOF.
-<span class="lineNum">     285 </span>            :  * Returns &lt;0 if the buffer is too small, or the number of chars read.
-<span class="lineNum">     286 </span>            :  */
-<span class="lineNum">     287 </span>            : int sgettok(STREAM* f, char* str, int size);
-<span class="lineNum">     288 </span>            : 
-<span class="lineNum">     289 </span>            : /**
-<span class="lineNum">     290 </span>            :  * Reads until the end of line.
-<span class="lineNum">     291 </span>            :  * Stops at the first '\n' or EOF. Note that '\n' is left in the stream.
-<span class="lineNum">     292 </span>            :  * Returns &lt;0 if the buffer is too small, or the number of chars read.
-<span class="lineNum">     293 </span>            :  */
-<span class="lineNum">     294 </span>            : int sgetline(STREAM* f, char* str, int size);
-<span class="lineNum">     295 </span>            : 
-<span class="lineNum">     296 </span>            : /**
-<span class="lineNum">     297 </span>            :  * Like sgetline() but removes ' ' and '\t' at the end.
-<span class="lineNum">     298 </span>            :  */
-<span class="lineNum">     299 </span>            : int sgetlasttok(STREAM* f, char* str, int size);
-<span class="lineNum">     300 </span>            : 
-<span class="lineNum">     301 </span>            : /**
-<span class="lineNum">     302 </span>            :  * Reads a 32 bit number.
-<span class="lineNum">     303 </span>            :  * Stops at the first not digit char or EOF.
-<span class="lineNum">     304 </span>            :  * Returns &lt;0 if there isn't enough to read.
-<span class="lineNum">     305 </span>            :  */
-<span class="lineNum">     306 </span>            : int sgetu32(STREAM* f, uint32_t* value);
-<span class="lineNum">     307 </span>            : 
-<span class="lineNum">     308 </span>            : /**
-<span class="lineNum">     309 </span>            :  * Reads a 64 bit number.
-<span class="lineNum">     310 </span>            :  * Stops at the first not digit char.
-<span class="lineNum">     311 </span>            :  * Returns &lt;0 if there isn't enough to read.
-<span class="lineNum">     312 </span>            :  */
-<span class="lineNum">     313 </span>            : int sgetu64(STREAM* f, uint64_t* value);
-<span class="lineNum">     314 </span>            : 
-<span class="lineNum">     315 </span>            : /**
-<span class="lineNum">     316 </span>            :  * Reads an hexadecimal string of fixed length.
-<span class="lineNum">     317 </span>            :  * Returns &lt;0 if there isn't enough to read.
-<span class="lineNum">     318 </span>            :  */
-<span class="lineNum">     319 </span>            : int sgethex(STREAM* f, void* data, int size);
-<span class="lineNum">     320 </span>            : 
-<span class="lineNum">     321 </span>            : /****************************************************************************/
-<span class="lineNum">     322 </span>            : /* binary get */
-<span class="lineNum">     323 </span>            : 
-<span class="lineNum">     324 </span>            : /**
-<span class="lineNum">     325 </span>            :  * Reads a binary 32 bit number in packet format.
-<span class="lineNum">     326 </span>            :  * Returns &lt;0 if there isn't enough to read.
-<span class="lineNum">     327 </span>            :  */
-<span class="lineNum">     328 </span>            : int sgetb32(STREAM* f, uint32_t* value);
-<span class="lineNum">     329 </span>            : 
-<span class="lineNum">     330 </span>            : /**
-<span class="lineNum">     331 </span>            :  * Reads a binary 64 bit number in packet format.
-<span class="lineNum">     332 </span>            :  * Returns &lt;0 if there isn't enough to read.
-<span class="lineNum">     333 </span>            :  */
-<span class="lineNum">     334 </span>            : int sgetb64(STREAM* f, uint64_t* value);
-<span class="lineNum">     335 </span>            : 
-<span class="lineNum">     336 </span>            : /**
-<span class="lineNum">     337 </span>            :  * Reads a binary 32 bit number in little endian format.
-<span class="lineNum">     338 </span>            :  * Returns &lt;0 if there isn't enough to read.
-<span class="lineNum">     339 </span>            :  */
-<span class="lineNum">     340 </span>            : int sgetble32(STREAM* f, uint32_t* value);
-<span class="lineNum">     341 </span>            : 
-<span class="lineNum">     342 </span>            : /**
-<span class="lineNum">     343 </span>            :  * Reads a binary string.
-<span class="lineNum">     344 </span>            :  * Returns -1 on error or if the buffer is too small, or the number of chars read.
-<span class="lineNum">     345 </span>            :  */
-<span class="lineNum">     346 </span>            : int sgetbs(STREAM* f, char* str, int size);
-<span class="lineNum">     347 </span>            : 
-<span class="lineNum">     348 </span>            : /****************************************************************************/
-<span class="lineNum">     349 </span>            : /* put */
-<span class="lineNum">     350 </span>            : 
-<span class="lineNum">     351 </span>            : /**
-<span class="lineNum">     352 </span>            :  * Writes a char. Like fputc().
-<a name="353"><span class="lineNum">     353 </span>            :  * Returns 0 on success or -1 on error.</a>
-<span class="lineNum">     354 </span>            :  */
-<span class="lineNum">     355 </span><span class="lineCov">    6554039 : static inline int sputc(int c, STREAM* s)</span>
-<span class="lineNum">     356 </span>            : {
-<span class="lineNum">     357 </span><span class="lineCov">    6554039 :         if (s-&gt;pos == s-&gt;end) {</span>
-<span class="lineNum">     358 </span><span class="lineCov">      38695 :                 if (sflush(s) != 0)</span>
-<span class="lineNum">     359 </span><span class="lineNoCov">          0 :                         return -1;</span>
-<span class="lineNum">     360 </span>            :         }
-<span class="lineNum">     361 </span><span class="lineCov">    6554039 :         s-&gt;crc_stream = crc32c_plain(s-&gt;crc_stream, c);</span>
-<span class="lineNum">     362 </span><span class="lineCov">    6554039 :         *s-&gt;pos++ = c;</span>
-<span class="lineNum">     363 </span><span class="lineCov">    6554039 :         return 0;</span>
-<span class="lineNum">     364 </span>            : }
+<span class="lineNum">     278 </span><span class="lineCov">      19238 :         c = sgetc(f);</span>
+<span class="lineNum">     279 </span><span class="lineCov">      45607 :         while (c == ' ' || c == '\t') {</span>
+<span class="lineNum">     280 </span><span class="lineCov">       7131 :                 ++count;</span>
+<span class="lineNum">     281 </span><span class="lineCov">       7131 :                 c = sgetc(f);</span>
+<span class="lineNum">     282 </span>            :         }
+<span class="lineNum">     283 </span>            : 
+<span class="lineNum">     284 </span><span class="lineCov">      19238 :         sungetc(c, f);</span>
+<span class="lineNum">     285 </span><span class="lineCov">      19238 :         return count;</span>
+<span class="lineNum">     286 </span>            : }
+<span class="lineNum">     287 </span>            : 
+<span class="lineNum">     288 </span>            : /**
+<span class="lineNum">     289 </span>            :  * Read until the first space or tab.
+<span class="lineNum">     290 </span>            :  * Stop at the first ' ', '\t', '\n' or EOF.
+<span class="lineNum">     291 </span>            :  * Return &lt;0 if the buffer is too small, or the number of chars read.
+<span class="lineNum">     292 </span>            :  */
+<span class="lineNum">     293 </span>            : int sgettok(STREAM* f, char* str, int size);
+<span class="lineNum">     294 </span>            : 
+<span class="lineNum">     295 </span>            : /**
+<span class="lineNum">     296 </span>            :  * Read until the end of line.
+<span class="lineNum">     297 </span>            :  * Stop at the first '\n' or EOF. Note that '\n' is left in the stream.
+<span class="lineNum">     298 </span>            :  * Return &lt;0 if the buffer is too small, or the number of chars read.
+<span class="lineNum">     299 </span>            :  */
+<span class="lineNum">     300 </span>            : int sgetline(STREAM* f, char* str, int size);
+<span class="lineNum">     301 </span>            : 
+<span class="lineNum">     302 </span>            : /**
+<span class="lineNum">     303 </span>            :  * Like sgetline() but remove ' ' and '\t' at the end.
+<span class="lineNum">     304 </span>            :  */
+<span class="lineNum">     305 </span>            : int sgetlasttok(STREAM* f, char* str, int size);
+<span class="lineNum">     306 </span>            : 
+<span class="lineNum">     307 </span>            : /**
+<span class="lineNum">     308 </span>            :  * Read a 32 bit number.
+<span class="lineNum">     309 </span>            :  * Stop at the first not digit char or EOF.
+<span class="lineNum">     310 </span>            :  * Return &lt;0 if there isn't enough to read.
+<span class="lineNum">     311 </span>            :  */
+<span class="lineNum">     312 </span>            : int sgetu32(STREAM* f, uint32_t* value);
+<span class="lineNum">     313 </span>            : 
+<span class="lineNum">     314 </span>            : /****************************************************************************/
+<span class="lineNum">     315 </span>            : /* binary get */
+<span class="lineNum">     316 </span>            : 
+<span class="lineNum">     317 </span>            : /**
+<span class="lineNum">     318 </span>            :  * Read a binary 32 bit number in packet format.
+<span class="lineNum">     319 </span>            :  * Return &lt;0 if there isn't enough to read.
+<span class="lineNum">     320 </span>            :  */
+<span class="lineNum">     321 </span>            : int sgetb32(STREAM* f, uint32_t* value);
+<span class="lineNum">     322 </span>            : 
+<span class="lineNum">     323 </span>            : /**
+<span class="lineNum">     324 </span>            :  * Read a binary 64 bit number in packet format.
+<span class="lineNum">     325 </span>            :  * Return &lt;0 if there isn't enough to read.
+<span class="lineNum">     326 </span>            :  */
+<span class="lineNum">     327 </span>            : int sgetb64(STREAM* f, uint64_t* value);
+<span class="lineNum">     328 </span>            : 
+<span class="lineNum">     329 </span>            : /**
+<span class="lineNum">     330 </span>            :  * Read a binary 32 bit number in little endian format.
+<span class="lineNum">     331 </span>            :  * Return &lt;0 if there isn't enough to read.
+<span class="lineNum">     332 </span>            :  */
+<span class="lineNum">     333 </span>            : int sgetble32(STREAM* f, uint32_t* value);
+<span class="lineNum">     334 </span>            : 
+<span class="lineNum">     335 </span>            : /**
+<span class="lineNum">     336 </span>            :  * Read a binary string.
+<span class="lineNum">     337 </span>            :  * Return -1 on error or if the buffer is too small, or the number of chars read.
+<span class="lineNum">     338 </span>            :  */
+<span class="lineNum">     339 </span>            : int sgetbs(STREAM* f, char* str, int size);
+<span class="lineNum">     340 </span>            : 
+<span class="lineNum">     341 </span>            : /****************************************************************************/
+<span class="lineNum">     342 </span>            : /* put */
+<span class="lineNum">     343 </span>            : 
+<span class="lineNum">     344 </span>            : /**
+<span class="lineNum">     345 </span>            :  * Write a char. Like fputc().
+<a name="346"><span class="lineNum">     346 </span>            :  * Return 0 on success or -1 on error.</a>
+<span class="lineNum">     347 </span>            :  */
+<span class="lineNum">     348 </span><span class="lineCov">   23657932 : static inline int sputc(int c, STREAM* s)</span>
+<span class="lineNum">     349 </span>            : {
+<span class="lineNum">     350 </span><span class="lineCov">   23657932 :         if (s-&gt;pos == s-&gt;end) {</span>
+<span class="lineNum">     351 </span><span class="lineCov">      49796 :                 if (sflush(s) != 0)</span>
+<span class="lineNum">     352 </span><span class="lineNoCov">          0 :                         return -1;</span>
+<span class="lineNum">     353 </span>            :         }
+<span class="lineNum">     354 </span>            : 
+<span class="lineNum">     355 </span>            :         /**
+<span class="lineNum">     356 </span>            :          * Update the crc *before* writing the data in the buffer
+<span class="lineNum">     357 </span>            :          *
+<span class="lineNum">     358 </span>            :          * This must be done before the memory write,
+<span class="lineNum">     359 </span>            :          * to be able to detect memory errors on the buffer,
+<span class="lineNum">     360 </span>            :          * happening before we write it on the file.
+<span class="lineNum">     361 </span>            :          */
+<span class="lineNum">     362 </span><span class="lineCov">   23657933 :         s-&gt;crc_stream = crc32c_plain_char(s-&gt;crc_stream, c);</span>
+<span class="lineNum">     363 </span>            : 
+<span class="lineNum">     364 </span><span class="lineCov">   23816691 :         *s-&gt;pos++ = c;</span>
 <span class="lineNum">     365 </span>            : 
-<span class="lineNum">     366 </span>            : /**
-<span class="lineNum">     367 </span>            :  * Writes a end of line.
-<a name="368"><span class="lineNum">     368 </span>            :  * Returns 0 on success or -1 on error.</a>
-<span class="lineNum">     369 </span>            :  */
-<span class="lineNum">     370 </span><span class="lineCov">     386633 : static inline int sputeol(STREAM* s)</span>
-<span class="lineNum">     371 </span>            : {
-<span class="lineNum">     372 </span>            : #ifdef _WIN32
-<span class="lineNum">     373 </span>            :         if (sputc('\r', s) != 0)
-<span class="lineNum">     374 </span>            :                 return -1;
-<span class="lineNum">     375 </span>            : #endif
-<span class="lineNum">     376 </span><span class="lineCov">     386633 :         return sputc('\n', s);</span>
-<span class="lineNum">     377 </span>            : }
-<span class="lineNum">     378 </span>            : 
-<span class="lineNum">     379 </span>            : /**
-<span class="lineNum">     380 </span>            :  * Writes a string.
-<span class="lineNum">     381 </span>            :  * Returns 0 on success or -1 on error.
-<span class="lineNum">     382 </span>            :  */
-<span class="lineNum">     383 </span>            : int sputs(const char* str, STREAM* f);
-<span class="lineNum">     384 </span>            : 
-<span class="lineNum">     385 </span>            : /**
-<span class="lineNum">     386 </span>            :  * Write a sized string.
-<span class="lineNum">     387 </span>            :  * Returns 0 on success or -1 on error.
-<span class="lineNum">     388 </span>            :  */
-<span class="lineNum">     389 </span>            : int swrite(const void* data, unsigned size, STREAM* f);
+<span class="lineNum">     366 </span><span class="lineCov">   23816691 :         return 0;</span>
+<span class="lineNum">     367 </span>            : }
+<span class="lineNum">     368 </span>            : 
+<span class="lineNum">     369 </span>            : /**
+<span class="lineNum">     370 </span>            :  * Write a end of line.
+<span class="lineNum">     371 </span>            :  * Return 0 on success or -1 on error.
+<span class="lineNum">     372 </span>            :  */
+<span class="lineNum">     373 </span>            : static inline int sputeol(STREAM* s)
+<span class="lineNum">     374 </span>            : {
+<span class="lineNum">     375 </span>            : #ifdef _WIN32
+<span class="lineNum">     376 </span>            :         if (sputc('\r', s) != 0)
+<span class="lineNum">     377 </span>            :                 return -1;
+<span class="lineNum">     378 </span>            : #endif
+<span class="lineNum">     379 </span>            :         return sputc('\n', s);
+<span class="lineNum">     380 </span>            : }
+<span class="lineNum">     381 </span>            : 
+<span class="lineNum">     382 </span>            : /**
+<span class="lineNum">     383 </span>            :  * Write a sized string.
+<span class="lineNum">     384 </span>            :  * Return 0 on success or -1 on error.
+<span class="lineNum">     385 </span>            :  */
+<span class="lineNum">     386 </span>            : int swrite(const void* data, unsigned size, STREAM* f);
+<span class="lineNum">     387 </span>            : 
+<span class="lineNum">     388 </span>            : /****************************************************************************/
+<span class="lineNum">     389 </span>            : /* binary put */
 <span class="lineNum">     390 </span>            : 
 <span class="lineNum">     391 </span>            : /**
-<span class="lineNum">     392 </span>            :  * Write a string literal (constant string).
-<span class="lineNum">     393 </span>            :  * Returns 0 on success or -1 on error.
+<span class="lineNum">     392 </span>            :  * Write a binary 32 bit number in packed format.
+<span class="lineNum">     393 </span>            :  * Return 0 on success or -1 on error.
 <span class="lineNum">     394 </span>            :  */
-<span class="lineNum">     395 </span>            : #define sputsl(str, f) swrite(str, sizeof(str) - 1, f)
+<span class="lineNum">     395 </span>            : int sputb32(uint32_t value, STREAM* s);
 <span class="lineNum">     396 </span>            : 
 <span class="lineNum">     397 </span>            : /**
-<span class="lineNum">     398 </span>            :  * Writes a 32 bit number.
-<span class="lineNum">     399 </span>            :  * Returns 0 on success or -1 on error.
+<span class="lineNum">     398 </span>            :  * Write a binary 64 bit number in packed format.
+<span class="lineNum">     399 </span>            :  * Return 0 on success or -1 on error.
 <span class="lineNum">     400 </span>            :  */
-<span class="lineNum">     401 </span>            : int sputu32(uint32_t value, STREAM* s);
+<span class="lineNum">     401 </span>            : int sputb64(uint64_t value, STREAM* s);
 <span class="lineNum">     402 </span>            : 
 <span class="lineNum">     403 </span>            : /**
-<span class="lineNum">     404 </span>            :  * Writes a 64 bit number.
-<span class="lineNum">     405 </span>            :  * Returns 0 on success or -1 on error.
+<span class="lineNum">     404 </span>            :  * Write a binary 32 bit number in little endian format.
+<span class="lineNum">     405 </span>            :  * Return 0 on success or -1 on error.
 <span class="lineNum">     406 </span>            :  */
-<span class="lineNum">     407 </span>            : int sputu64(uint64_t value, STREAM* s);
+<span class="lineNum">     407 </span>            : int sputble32(uint32_t value, STREAM* s);
 <span class="lineNum">     408 </span>            : 
 <span class="lineNum">     409 </span>            : /**
-<span class="lineNum">     410 </span>            :  * Writes a hexadecimal string of fixed length.
-<span class="lineNum">     411 </span>            :  * Returns 0 on success or -1 on error.
+<span class="lineNum">     410 </span>            :  * Write a binary string.
+<span class="lineNum">     411 </span>            :  * Return 0 on success or -1 on error.
 <span class="lineNum">     412 </span>            :  */
-<span class="lineNum">     413 </span>            : int sputhex(const void* void_data, int size, STREAM* s);
+<span class="lineNum">     413 </span>            : int sputbs(const char* str, STREAM* s);
 <span class="lineNum">     414 </span>            : 
-<span class="lineNum">     415 </span>            : /****************************************************************************/
-<span class="lineNum">     416 </span>            : /* binary put */
-<span class="lineNum">     417 </span>            : 
-<span class="lineNum">     418 </span>            : /**
-<span class="lineNum">     419 </span>            :  * Writes a binary 32 bit number in packed format.
-<span class="lineNum">     420 </span>            :  * Returns 0 on success or -1 on error.
-<span class="lineNum">     421 </span>            :  */
-<span class="lineNum">     422 </span>            : int sputb32(uint32_t value, STREAM* s);
-<span class="lineNum">     423 </span>            : 
-<span class="lineNum">     424 </span>            : /**
-<span class="lineNum">     425 </span>            :  * Writes a binary 64 bit number in packed format.
-<span class="lineNum">     426 </span>            :  * Returns 0 on success or -1 on error.
-<span class="lineNum">     427 </span>            :  */
-<span class="lineNum">     428 </span>            : int sputb64(uint64_t value, STREAM* s);
-<span class="lineNum">     429 </span>            : 
-<span class="lineNum">     430 </span>            : /**
-<span class="lineNum">     431 </span>            :  * Writes a binary 32 bit number in little endian format.
-<span class="lineNum">     432 </span>            :  * Returns 0 on success or -1 on error.
-<span class="lineNum">     433 </span>            :  */
-<span class="lineNum">     434 </span>            : int sputble32(uint32_t value, STREAM* s);
-<span class="lineNum">     435 </span>            : 
-<span class="lineNum">     436 </span>            : /**
-<span class="lineNum">     437 </span>            :  * Writes a binary string.
-<span class="lineNum">     438 </span>            :  * Returns 0 on success or -1 on error.
-<span class="lineNum">     439 </span>            :  */
-<span class="lineNum">     440 </span>            : int sputbs(const char* str, STREAM* s);
-<span class="lineNum">     441 </span>            : 
-<span class="lineNum">     442 </span>            : #endif
-<span class="lineNum">     443 </span>            : 
+<span class="lineNum">     415 </span>            : #endif
+<span class="lineNum">     416 </span>            : 
 </pre>
       </td>
     </tr>

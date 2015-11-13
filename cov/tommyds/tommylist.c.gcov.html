@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-05-12</td>
+            <td class="headerValue">2015-11-13</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">3</td>
@@ -90,60 +90,60 @@
 <span class="lineNum">      28 </span>            : #include &quot;tommylist.h&quot;
 <a name="29"><span class="lineNum">      29 </span>            : #include &quot;tommychain.h&quot;</a>
 <span class="lineNum">      30 </span>            : 
-<span class="lineNum">      31 </span><span class="lineCov">      63344 : void tommy_list_concat(tommy_list* first, tommy_list* second)</span>
+<span class="lineNum">      31 </span><span class="lineCov">      63152 : void tommy_list_concat(tommy_list* first, tommy_list* second)</span>
 <span class="lineNum">      32 </span>            : {
 <span class="lineNum">      33 </span>            :         tommy_node* first_head;
 <span class="lineNum">      34 </span>            :         tommy_node* first_tail;
 <span class="lineNum">      35 </span>            :         tommy_node* second_head;
 <span class="lineNum">      36 </span>            : 
-<span class="lineNum">      37 </span><span class="lineCov">      63344 :         if (tommy_list_empty(second))</span>
-<span class="lineNum">      38 </span><span class="lineCov">      56041 :                 return;</span>
+<span class="lineNum">      37 </span><span class="lineCov">      63152 :         if (tommy_list_empty(second))</span>
+<span class="lineNum">      38 </span><span class="lineCov">      55852 :                 return;</span>
 <span class="lineNum">      39 </span>            : 
-<span class="lineNum">      40 </span><span class="lineCov">       7303 :         if (tommy_list_empty(first)) {</span>
-<span class="lineNum">      41 </span><span class="lineCov">       6462 :                 *first = *second;</span>
-<span class="lineNum">      42 </span><span class="lineCov">       6462 :                 return;</span>
+<span class="lineNum">      40 </span><span class="lineCov">       7300 :         if (tommy_list_empty(first)) {</span>
+<span class="lineNum">      41 </span><span class="lineCov">       6458 :                 *first = *second;</span>
+<span class="lineNum">      42 </span><span class="lineCov">       6458 :                 return;</span>
 <span class="lineNum">      43 </span>            :         }
 <span class="lineNum">      44 </span>            : 
-<span class="lineNum">      45 </span><span class="lineCov">        841 :         first_head = tommy_list_head(first);</span>
-<span class="lineNum">      46 </span><span class="lineCov">        841 :         second_head = tommy_list_head(second);</span>
-<span class="lineNum">      47 </span><span class="lineCov">        841 :         first_tail = tommy_list_tail(first);</span>
+<span class="lineNum">      45 </span><span class="lineCov">        842 :         first_head = tommy_list_head(first);</span>
+<span class="lineNum">      46 </span><span class="lineCov">        842 :         second_head = tommy_list_head(second);</span>
+<span class="lineNum">      47 </span><span class="lineCov">        842 :         first_tail = tommy_list_tail(first);</span>
 <span class="lineNum">      48 </span>            : 
 <span class="lineNum">      49 </span>            :         /* set the &quot;circular&quot; prev list */
-<span class="lineNum">      50 </span><span class="lineCov">        841 :         first_head-&gt;prev = second_head-&gt;prev;</span>
-<span class="lineNum">      51 </span><span class="lineCov">        841 :         second_head-&gt;prev = first_tail;</span>
+<span class="lineNum">      50 </span><span class="lineCov">        842 :         first_head-&gt;prev = second_head-&gt;prev;</span>
+<span class="lineNum">      51 </span><span class="lineCov">        842 :         second_head-&gt;prev = first_tail;</span>
 <span class="lineNum">      52 </span>            : 
 <span class="lineNum">      53 </span>            :         /* set the &quot;0 terminated&quot; next list */
-<span class="lineNum">      54 </span><span class="lineCov">        841 :         first_tail-&gt;next = second_head;</span>
+<span class="lineNum">      54 </span><span class="lineCov">        842 :         first_tail-&gt;next = second_head;</span>
 <span class="lineNum">      55 </span>            : }
 <span class="lineNum">      56 </span>            : 
 <span class="lineNum">      57 </span>            : /** \internal
 <a name="58"><span class="lineNum">      58 </span>            :  * Setup a list.</a>
 <span class="lineNum">      59 </span>            :  */
-<span class="lineNum">      60 </span><span class="lineCov">       1403 : tommy_inline void tommy_list_set(tommy_list* list, tommy_node* head, tommy_node* tail)</span>
+<span class="lineNum">      60 </span><span class="lineCov">       1473 : tommy_inline void tommy_list_set(tommy_list* list, tommy_node* head, tommy_node* tail)</span>
 <span class="lineNum">      61 </span>            : {
-<span class="lineNum">      62 </span><span class="lineCov">       1403 :         head-&gt;prev = tail;</span>
-<span class="lineNum">      63 </span><span class="lineCov">       1403 :         tail-&gt;next = 0;</span>
-<span class="lineNum">      64 </span><span class="lineCov">       1403 :         *list = head;</span>
-<a name="65"><span class="lineNum">      65 </span><span class="lineCov">       1403 : }</span></a>
+<span class="lineNum">      62 </span><span class="lineCov">       1473 :         head-&gt;prev = tail;</span>
+<span class="lineNum">      63 </span><span class="lineCov">       1473 :         tail-&gt;next = 0;</span>
+<span class="lineNum">      64 </span><span class="lineCov">       1473 :         *list = head;</span>
+<a name="65"><span class="lineNum">      65 </span><span class="lineCov">       1473 : }</span></a>
 <span class="lineNum">      66 </span>            : 
-<span class="lineNum">      67 </span><span class="lineCov">       1951 : void tommy_list_sort(tommy_list* list, tommy_compare_func* cmp)</span>
+<span class="lineNum">      67 </span><span class="lineCov">       2129 : void tommy_list_sort(tommy_list* list, tommy_compare_func* cmp)</span>
 <span class="lineNum">      68 </span>            : {
 <span class="lineNum">      69 </span>            :         tommy_chain chain;
 <span class="lineNum">      70 </span>            :         tommy_node* head;
 <span class="lineNum">      71 </span>            : 
-<span class="lineNum">      72 </span><span class="lineCov">       1951 :         if (tommy_list_empty(list))</span>
-<span class="lineNum">      73 </span><span class="lineCov">       2499 :                 return;</span>
+<span class="lineNum">      72 </span><span class="lineCov">       2129 :         if (tommy_list_empty(list))</span>
+<span class="lineNum">      73 </span><span class="lineCov">       2785 :                 return;</span>
 <span class="lineNum">      74 </span>            : 
-<span class="lineNum">      75 </span><span class="lineCov">       1403 :         head = tommy_list_head(list);</span>
+<span class="lineNum">      75 </span><span class="lineCov">       1473 :         head = tommy_list_head(list);</span>
 <span class="lineNum">      76 </span>            : 
 <span class="lineNum">      77 </span>            :         /* create a chain from the list */
-<span class="lineNum">      78 </span><span class="lineCov">       1403 :         chain.head = head;</span>
-<span class="lineNum">      79 </span><span class="lineCov">       1403 :         chain.tail = head-&gt;prev;</span>
+<span class="lineNum">      78 </span><span class="lineCov">       1473 :         chain.head = head;</span>
+<span class="lineNum">      79 </span><span class="lineCov">       1473 :         chain.tail = head-&gt;prev;</span>
 <span class="lineNum">      80 </span>            : 
-<span class="lineNum">      81 </span><span class="lineCov">       1403 :         tommy_chain_mergesort(&amp;chain, cmp);</span>
+<span class="lineNum">      81 </span><span class="lineCov">       1473 :         tommy_chain_mergesort(&amp;chain, cmp);</span>
 <span class="lineNum">      82 </span>            : 
 <span class="lineNum">      83 </span>            :         /* restore the list */
-<span class="lineNum">      84 </span><span class="lineCov">       1403 :         tommy_list_set(list, chain.head, chain.tail);</span>
+<span class="lineNum">      84 </span><span class="lineCov">       1473 :         tommy_list_set(list, chain.head, chain.tail);</span>
 <span class="lineNum">      85 </span>            : }
 <span class="lineNum">      86 </span>            : 
 </pre>

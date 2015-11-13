@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-05-12</td>
+            <td class="headerValue">2015-11-13</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">3</td>
@@ -267,9 +267,9 @@
 <span class="lineNum">     205 </span>            :  * \param hash Hash of the element to find.
 <a name="206"><span class="lineNum">     206 </span>            :  * \return The head of the bucket, or 0 if empty.</a>
 <span class="lineNum">     207 </span>            :  */
-<span class="lineNum">     208 </span><span class="lineCov">    3016498 : tommy_inline tommy_hashdyn_node* tommy_hashdyn_bucket(tommy_hashdyn* hashdyn, tommy_hash_t hash)</span>
+<span class="lineNum">     208 </span><span class="lineCov">    3071206 : tommy_inline tommy_hashdyn_node* tommy_hashdyn_bucket(tommy_hashdyn* hashdyn, tommy_hash_t hash)</span>
 <span class="lineNum">     209 </span>            : {
-<span class="lineNum">     210 </span><span class="lineCov">    3016498 :         return hashdyn-&gt;bucket[hash &amp; hashdyn-&gt;bucket_mask];</span>
+<span class="lineNum">     210 </span><span class="lineCov">    3071206 :         return hashdyn-&gt;bucket[hash &amp; hashdyn-&gt;bucket_mask];</span>
 <span class="lineNum">     211 </span>            : }
 <span class="lineNum">     212 </span>            : 
 <span class="lineNum">     213 </span>            : /**
@@ -282,17 +282,17 @@
 <span class="lineNum">     220 </span>            :  * \param hash Hash of the element to find.
 <a name="221"><span class="lineNum">     221 </span>            :  * \return The first element found, or 0 if none.</a>
 <span class="lineNum">     222 </span>            :  */
-<span class="lineNum">     223 </span><span class="lineCov">    3016498 : tommy_inline void* tommy_hashdyn_search(tommy_hashdyn* hashdyn, tommy_search_func* cmp, const void* cmp_arg, tommy_hash_t hash)</span>
+<span class="lineNum">     223 </span><span class="lineCov">    3071206 : tommy_inline void* tommy_hashdyn_search(tommy_hashdyn* hashdyn, tommy_search_func* cmp, const void* cmp_arg, tommy_hash_t hash)</span>
 <span class="lineNum">     224 </span>            : {
-<span class="lineNum">     225 </span><span class="lineCov">    3016498 :         tommy_hashdyn_node* i = tommy_hashdyn_bucket(hashdyn, hash);</span>
+<span class="lineNum">     225 </span><span class="lineCov">    3071206 :         tommy_hashdyn_node* i = tommy_hashdyn_bucket(hashdyn, hash);</span>
 <span class="lineNum">     226 </span>            : 
-<span class="lineNum">     227 </span><span class="lineCov">    6702222 :         while (i) {</span>
+<span class="lineNum">     227 </span><span class="lineCov">    6828628 :         while (i) {</span>
 <span class="lineNum">     228 </span>            :                 /* we first check if the hash matches, as in the same bucket we may have multiples hash values */
-<span class="lineNum">     229 </span><span class="lineCov">    1684040 :                 if (i-&gt;key == hash &amp;&amp; cmp(cmp_arg, i-&gt;data) == 0)</span>
-<span class="lineNum">     230 </span><span class="lineCov">    1014814 :                         return i-&gt;data;</span>
-<span class="lineNum">     231 </span><span class="lineCov">     669226 :                 i = i-&gt;next;</span>
+<span class="lineNum">     229 </span><span class="lineCov">    1729368 :                 if (i-&gt;key == hash &amp;&amp; cmp(cmp_arg, i-&gt;data) == 0)</span>
+<span class="lineNum">     230 </span><span class="lineCov">    1043152 :                         return i-&gt;data;</span>
+<span class="lineNum">     231 </span><span class="lineCov">     686216 :                 i = i-&gt;next;</span>
 <span class="lineNum">     232 </span>            :         }
-<span class="lineNum">     233 </span><span class="lineCov">    2001684 :         return 0;</span>
+<span class="lineNum">     233 </span><span class="lineCov">    2028054 :         return 0;</span>
 <span class="lineNum">     234 </span>            : }
 <span class="lineNum">     235 </span>            : 
 <span class="lineNum">     236 </span>            : /**

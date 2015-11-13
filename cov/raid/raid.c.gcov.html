@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-05-12</td>
+            <td class="headerValue">2015-11-13</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">9</td>
@@ -235,26 +235,26 @@
 <span class="lineNum">     173 </span>            :  */
 <a name="174"><span class="lineNum">     174 </span>            : const uint8_t (*raid_gfgen)[256];</a>
 <span class="lineNum">     175 </span>            : 
-<span class="lineNum">     176 </span><span class="lineCov">        480 : void raid_mode(int mode)</span>
+<span class="lineNum">     176 </span><span class="lineCov">        503 : void raid_mode(int mode)</span>
 <span class="lineNum">     177 </span>            : {
-<span class="lineNum">     178 </span><span class="lineCov">        480 :         if (mode == RAID_MODE_VANDERMONDE) {</span>
+<span class="lineNum">     178 </span><span class="lineCov">        503 :         if (mode == RAID_MODE_VANDERMONDE) {</span>
 <span class="lineNum">     179 </span><span class="lineCov">          2 :                 raid_gen_ptr[2] = raid_genz_ptr;</span>
 <span class="lineNum">     180 </span><span class="lineCov">          2 :                 raid_gfgen = gfvandermonde;</span>
 <span class="lineNum">     181 </span>            :         } else {
-<span class="lineNum">     182 </span><span class="lineCov">        478 :                 raid_gen_ptr[2] = raid_gen3_ptr;</span>
-<span class="lineNum">     183 </span><span class="lineCov">        478 :                 raid_gfgen = gfcauchy;</span>
+<span class="lineNum">     182 </span><span class="lineCov">        501 :                 raid_gen_ptr[2] = raid_gen3_ptr;</span>
+<span class="lineNum">     183 </span><span class="lineCov">        501 :                 raid_gfgen = gfcauchy;</span>
 <span class="lineNum">     184 </span>            :         }
-<span class="lineNum">     185 </span><span class="lineCov">        480 : }</span>
+<span class="lineNum">     185 </span><span class="lineCov">        503 : }</span>
 <span class="lineNum">     186 </span>            : 
 <span class="lineNum">     187 </span>            : /**
 <span class="lineNum">     188 </span>            :  * Buffer filled with 0 used in recovering.
 <span class="lineNum">     189 </span>            :  */
 <a name="190"><span class="lineNum">     190 </span>            : static void *raid_zero_block;</a>
 <span class="lineNum">     191 </span>            : 
-<span class="lineNum">     192 </span><span class="lineCov">        187 : void raid_zero(void *zero)</span>
+<span class="lineNum">     192 </span><span class="lineCov">        193 : void raid_zero(void *zero)</span>
 <span class="lineNum">     193 </span>            : {
-<span class="lineNum">     194 </span><span class="lineCov">        187 :         raid_zero_block = zero;</span>
-<span class="lineNum">     195 </span><span class="lineCov">        187 : }</span>
+<span class="lineNum">     194 </span><span class="lineCov">        193 :         raid_zero_block = zero;</span>
+<span class="lineNum">     195 </span><span class="lineCov">        193 : }</span>
 <span class="lineNum">     196 </span>            : 
 <span class="lineNum">     197 </span>            : /*
 <span class="lineNum">     198 </span>            :  * Forwarders for parity computation.
@@ -282,17 +282,17 @@
 <span class="lineNum">     220 </span>            : void (*raid_gen3_ptr)(int nd, size_t size, void **vv);
 <a name="221"><span class="lineNum">     221 </span>            : void (*raid_genz_ptr)(int nd, size_t size, void **vv);</a>
 <span class="lineNum">     222 </span>            : 
-<span class="lineNum">     223 </span><span class="lineCov">    1196804 : void raid_gen(int nd, int np, size_t size, void **v)</span>
+<span class="lineNum">     223 </span><span class="lineCov">    1212640 : void raid_gen(int nd, int np, size_t size, void **v)</span>
 <span class="lineNum">     224 </span>            : {
 <span class="lineNum">     225 </span>            :         /* enforce limit on size */
-<span class="lineNum">     226 </span><span class="lineCov">    1196804 :         BUG_ON(size % 64 != 0);</span>
+<span class="lineNum">     226 </span><span class="lineCov">    1212640 :         BUG_ON(size % 64 != 0);</span>
 <span class="lineNum">     227 </span>            : 
 <span class="lineNum">     228 </span>            :         /* enforce limit on number of failures */
-<span class="lineNum">     229 </span><span class="lineCov">    1196804 :         BUG_ON(np &lt; 1);</span>
-<span class="lineNum">     230 </span><span class="lineCov">    1196804 :         BUG_ON(np &gt; RAID_PARITY_MAX);</span>
+<span class="lineNum">     229 </span><span class="lineCov">    1212640 :         BUG_ON(np &lt; 1);</span>
+<span class="lineNum">     230 </span><span class="lineCov">    1212640 :         BUG_ON(np &gt; RAID_PARITY_MAX);</span>
 <span class="lineNum">     231 </span>            : 
-<span class="lineNum">     232 </span><span class="lineCov">    1196804 :         raid_gen_ptr[np - 1](nd, size, v);</span>
-<span class="lineNum">     233 </span><span class="lineCov">    1196804 : }</span>
+<span class="lineNum">     232 </span><span class="lineCov">    1212640 :         raid_gen_ptr[np - 1](nd, size, v);</span>
+<span class="lineNum">     233 </span><span class="lineCov">    1212640 : }</span>
 <span class="lineNum">     234 </span>            : 
 <span class="lineNum">     235 </span>            : /**
 <span class="lineNum">     236 </span>            :  * Inverts the square matrix M of size nxn into V.
@@ -305,44 +305,44 @@
 <span class="lineNum">     243 </span>            :  * @V Destination matrix where the result is put.
 <a name="244"><span class="lineNum">     244 </span>            :  * @n Number of rows and columns of the matrix.</a>
 <span class="lineNum">     245 </span>            :  */
-<span class="lineNum">     246 </span><span class="lineCov">     172492 : void raid_invert(uint8_t *M, uint8_t *V, int n)</span>
+<span class="lineNum">     246 </span><span class="lineCov">     172870 : void raid_invert(uint8_t *M, uint8_t *V, int n)</span>
 <span class="lineNum">     247 </span>            : {
 <span class="lineNum">     248 </span>            :         int i, j, k;
 <span class="lineNum">     249 </span>            : 
 <span class="lineNum">     250 </span>            :         /* set the identity matrix in V */
-<span class="lineNum">     251 </span><span class="lineCov">     797645 :         for (i = 0; i &lt; n; ++i)</span>
-<span class="lineNum">     252 </span><span class="lineCov">    3220636 :                 for (j = 0; j &lt; n; ++j)</span>
-<span class="lineNum">     253 </span><span class="lineCov">    2595483 :                         V[i * n + j] = i == j;</span>
+<span class="lineNum">     251 </span><span class="lineCov">     798767 :         for (i = 0; i &lt; n; ++i)</span>
+<span class="lineNum">     252 </span><span class="lineCov">    3222808 :                 for (j = 0; j &lt; n; ++j)</span>
+<span class="lineNum">     253 </span><span class="lineCov">    2596911 :                         V[i * n + j] = i == j;</span>
 <span class="lineNum">     254 </span>            : 
 <span class="lineNum">     255 </span>            :         /* for each element in the diagonal */
-<span class="lineNum">     256 </span><span class="lineCov">     797645 :         for (k = 0; k &lt; n; ++k) {</span>
+<span class="lineNum">     256 </span><span class="lineCov">     798767 :         for (k = 0; k &lt; n; ++k) {</span>
 <span class="lineNum">     257 </span>            :                 uint8_t f;
 <span class="lineNum">     258 </span>            : 
 <span class="lineNum">     259 </span>            :                 /* the diagonal element cannot be 0 because */
 <span class="lineNum">     260 </span>            :                 /* we are inverting matrices with all the square */
 <span class="lineNum">     261 </span>            :                 /* submatrices not singular */
-<span class="lineNum">     262 </span><span class="lineCov">     625153 :                 BUG_ON(M[k * n + k] == 0);</span>
+<span class="lineNum">     262 </span><span class="lineCov">     625897 :                 BUG_ON(M[k * n + k] == 0);</span>
 <span class="lineNum">     263 </span>            : 
 <span class="lineNum">     264 </span>            :                 /* make the diagonal element to be 1 */
-<span class="lineNum">     265 </span><span class="lineCov">    1250306 :                 f = inv(M[k * n + k]);</span>
-<span class="lineNum">     266 </span><span class="lineCov">    3220636 :                 for (j = 0; j &lt; n; ++j) {</span>
-<span class="lineNum">     267 </span><span class="lineCov">    5190966 :                         M[k * n + j] = mul(f, M[k * n + j]);</span>
-<span class="lineNum">     268 </span><span class="lineCov">    5190966 :                         V[k * n + j] = mul(f, V[k * n + j]);</span>
+<span class="lineNum">     265 </span><span class="lineCov">    1251794 :                 f = inv(M[k * n + k]);</span>
+<span class="lineNum">     266 </span><span class="lineCov">    3222808 :                 for (j = 0; j &lt; n; ++j) {</span>
+<span class="lineNum">     267 </span><span class="lineCov">    5193822 :                         M[k * n + j] = mul(f, M[k * n + j]);</span>
+<span class="lineNum">     268 </span><span class="lineCov">    5193822 :                         V[k * n + j] = mul(f, V[k * n + j]);</span>
 <span class="lineNum">     269 </span>            :                 }
 <span class="lineNum">     270 </span>            : 
 <span class="lineNum">     271 </span>            :                 /* make all the elements over and under the diagonal */
 <span class="lineNum">     272 </span>            :                 /* to be zero */
-<span class="lineNum">     273 </span><span class="lineCov">    3220636 :                 for (i = 0; i &lt; n; ++i) {</span>
-<span class="lineNum">     274 </span><span class="lineCov">    2595483 :                         if (i == k)</span>
-<span class="lineNum">     275 </span><span class="lineCov">     625153 :                                 continue;</span>
-<span class="lineNum">     276 </span><span class="lineCov">    1970330 :                         f = M[i * n + k];</span>
-<span class="lineNum">     277 </span><span class="lineCov">   11280588 :                         for (j = 0; j &lt; n; ++j) {</span>
-<span class="lineNum">     278 </span><span class="lineCov">   18620516 :                                 M[i * n + j] ^= mul(f, M[k * n + j]);</span>
-<span class="lineNum">     279 </span><span class="lineCov">   18620516 :                                 V[i * n + j] ^= mul(f, V[k * n + j]);</span>
+<span class="lineNum">     273 </span><span class="lineCov">    3222808 :                 for (i = 0; i &lt; n; ++i) {</span>
+<span class="lineNum">     274 </span><span class="lineCov">    2596911 :                         if (i == k)</span>
+<span class="lineNum">     275 </span><span class="lineCov">     625897 :                                 continue;</span>
+<span class="lineNum">     276 </span><span class="lineCov">    1971014 :                         f = M[i * n + k];</span>
+<span class="lineNum">     277 </span><span class="lineCov">   11282400 :                         for (j = 0; j &lt; n; ++j) {</span>
+<span class="lineNum">     278 </span><span class="lineCov">   18622772 :                                 M[i * n + j] ^= mul(f, M[k * n + j]);</span>
+<span class="lineNum">     279 </span><span class="lineCov">   18622772 :                                 V[i * n + j] ^= mul(f, V[k * n + j]);</span>
 <span class="lineNum">     280 </span>            :                         }
 <span class="lineNum">     281 </span>            :                 }
 <span class="lineNum">     282 </span>            :         }
-<span class="lineNum">     283 </span><span class="lineCov">     172492 : }</span>
+<span class="lineNum">     283 </span><span class="lineCov">     172870 : }</span>
 <span class="lineNum">     284 </span>            : 
 <span class="lineNum">     285 </span>            : /**
 <span class="lineNum">     286 </span>            :  * Computes the parity without the missing data blocks
@@ -350,7 +350,7 @@
 <span class="lineNum">     288 </span>            :  *
 <a name="289"><span class="lineNum">     289 </span>            :  * This is the parity expressed as Pa,Qa,Ra,Sa,Ta,Ua in the equations.</a>
 <span class="lineNum">     290 </span>            :  */
-<span class="lineNum">     291 </span><span class="lineCov">     171154 : void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v)</span>
+<span class="lineNum">     291 </span><span class="lineCov">     171518 : void raid_delta_gen(int nr, int *id, int *ip, int nd, size_t size, void **v)</span>
 <span class="lineNum">     292 </span>            : {
 <span class="lineNum">     293 </span>            :         void *p[RAID_PARITY_MAX];
 <span class="lineNum">     294 </span>            :         void *pa[RAID_PARITY_MAX];
@@ -360,17 +360,17 @@
 <span class="lineNum">     298 </span>            : 
 <span class="lineNum">     299 </span>            :         /* total number of parities we are going to process */
 <span class="lineNum">     300 </span>            :         /* they are both the used and the unused ones */
-<span class="lineNum">     301 </span><span class="lineCov">     171154 :         np = ip[nr - 1] + 1;</span>
+<span class="lineNum">     301 </span><span class="lineCov">     171518 :         np = ip[nr - 1] + 1;</span>
 <span class="lineNum">     302 </span>            : 
 <span class="lineNum">     303 </span>            :         /* latest missing data block */
-<span class="lineNum">     304 </span><span class="lineCov">     171154 :         latest = v[id[nr - 1]];</span>
+<span class="lineNum">     304 </span><span class="lineCov">     171518 :         latest = v[id[nr - 1]];</span>
 <span class="lineNum">     305 </span>            : 
 <span class="lineNum">     306 </span>            :         /* setup pointers for delta computation */
-<span class="lineNum">     307 </span><span class="lineCov">     872118 :         for (i = 0, j = 0; i &lt; np; ++i) {</span>
+<span class="lineNum">     307 </span><span class="lineCov">     873198 :         for (i = 0, j = 0; i &lt; np; ++i) {</span>
 <span class="lineNum">     308 </span>            :                 /* keep a copy of the original parity vector */
-<span class="lineNum">     309 </span><span class="lineCov">     700964 :                 p[i] = v[nd + i];</span>
+<span class="lineNum">     309 </span><span class="lineCov">     701680 :                 p[i] = v[nd + i];</span>
 <span class="lineNum">     310 </span>            : 
-<span class="lineNum">     311 </span><span class="lineCov">     700964 :                 if (ip[j] == i) {</span>
+<span class="lineNum">     311 </span><span class="lineCov">     701680 :                 if (ip[j] == i) {</span>
 <span class="lineNum">     312 </span>            :                         /*
 <span class="lineNum">     313 </span>            :                          * Set used parities to point to the missing
 <span class="lineNum">     314 </span>            :                          * data blocks.
@@ -381,19 +381,19 @@
 <span class="lineNum">     319 </span>            : 
 <span class="lineNum">     320 </span>            :                         /* the latest parity to use ends the for loop and */
 <span class="lineNum">     321 </span>            :                         /* then it cannot happen to process more of them */
-<span class="lineNum">     322 </span><span class="lineCov">     605141 :                         BUG_ON(j &gt;= nr);</span>
+<span class="lineNum">     322 </span><span class="lineCov">     605871 :                         BUG_ON(j &gt;= nr);</span>
 <span class="lineNum">     323 </span>            : 
 <span class="lineNum">     324 </span>            :                         /* buffer for missing data blocks */
-<span class="lineNum">     325 </span><span class="lineCov">     605141 :                         pa[j] = v[id[j]];</span>
+<span class="lineNum">     325 </span><span class="lineCov">     605871 :                         pa[j] = v[id[j]];</span>
 <span class="lineNum">     326 </span>            : 
 <span class="lineNum">     327 </span>            :                         /* set at zero the missing data blocks */
-<span class="lineNum">     328 </span><span class="lineCov">     605141 :                         v[id[j]] = raid_zero_block;</span>
+<span class="lineNum">     328 </span><span class="lineCov">     605871 :                         v[id[j]] = raid_zero_block;</span>
 <span class="lineNum">     329 </span>            : 
 <span class="lineNum">     330 </span>            :                         /* compute the parity over the missing data blocks */
-<span class="lineNum">     331 </span><span class="lineCov">     605141 :                         v[nd + i] = pa[j];</span>
+<span class="lineNum">     331 </span><span class="lineCov">     605871 :                         v[nd + i] = pa[j];</span>
 <span class="lineNum">     332 </span>            : 
 <span class="lineNum">     333 </span>            :                         /* check for the next used entry */
-<span class="lineNum">     334 </span><span class="lineCov">     605141 :                         ++j;</span>
+<span class="lineNum">     334 </span><span class="lineCov">     605871 :                         ++j;</span>
 <span class="lineNum">     335 </span>            :                 } else {
 <span class="lineNum">     336 </span>            :                         /*
 <span class="lineNum">     337 </span>            :                          * Unused parities are going to be rewritten with
@@ -413,25 +413,25 @@
 <span class="lineNum">     351 </span>            :                          * multiple times and only the latest write will
 <span class="lineNum">     352 </span>            :                          * contain the correct data.
 <span class="lineNum">     353 </span>            :                          */
-<span class="lineNum">     354 </span><span class="lineCov">      95823 :                         v[nd + i] = latest;</span>
+<span class="lineNum">     354 </span><span class="lineCov">      95809 :                         v[nd + i] = latest;</span>
 <span class="lineNum">     355 </span>            :                 }
 <span class="lineNum">     356 </span>            :         }
 <span class="lineNum">     357 </span>            : 
 <span class="lineNum">     358 </span>            :         /* all the parities have to be processed */
-<span class="lineNum">     359 </span><span class="lineCov">     171154 :         BUG_ON(j != nr);</span>
+<span class="lineNum">     359 </span><span class="lineCov">     171518 :         BUG_ON(j != nr);</span>
 <span class="lineNum">     360 </span>            : 
 <span class="lineNum">     361 </span>            :         /* recompute the parity, note that np may be smaller than the */
 <span class="lineNum">     362 </span>            :         /* total number of parities available */
-<span class="lineNum">     363 </span><span class="lineCov">     171154 :         raid_gen(nd, np, size, v);</span>
+<span class="lineNum">     363 </span><span class="lineCov">     171518 :         raid_gen(nd, np, size, v);</span>
 <span class="lineNum">     364 </span>            : 
 <span class="lineNum">     365 </span>            :         /* restore data buffers as before */
-<span class="lineNum">     366 </span><span class="lineCov">     776295 :         for (j = 0; j &lt; nr; ++j)</span>
-<span class="lineNum">     367 </span><span class="lineCov">     605141 :                 v[id[j]] = pa[j];</span>
+<span class="lineNum">     366 </span><span class="lineCov">     777389 :         for (j = 0; j &lt; nr; ++j)</span>
+<span class="lineNum">     367 </span><span class="lineCov">     605871 :                 v[id[j]] = pa[j];</span>
 <span class="lineNum">     368 </span>            : 
 <span class="lineNum">     369 </span>            :         /* restore parity buffers as before */
-<span class="lineNum">     370 </span><span class="lineCov">     872118 :         for (i = 0; i &lt; np; ++i)</span>
-<span class="lineNum">     371 </span><span class="lineCov">     700964 :                 v[nd + i] = p[i];</span>
-<span class="lineNum">     372 </span><span class="lineCov">     171154 : }</span>
+<span class="lineNum">     370 </span><span class="lineCov">     873198 :         for (i = 0; i &lt; np; ++i)</span>
+<span class="lineNum">     371 </span><span class="lineCov">     701680 :                 v[nd + i] = p[i];</span>
+<span class="lineNum">     372 </span><span class="lineCov">     171518 : }</span>
 <span class="lineNum">     373 </span>            : 
 <span class="lineNum">     374 </span>            : /**
 <span class="lineNum">     375 </span>            :  * Recover failure of one data block for PAR1.
@@ -444,29 +444,29 @@
 <span class="lineNum">     382 </span>            :  *
 <a name="383"><span class="lineNum">     383 </span>            :  * Dx = Pd</a>
 <span class="lineNum">     384 </span>            :  */
-<span class="lineNum">     385 </span><span class="lineCov">     100552 : void raid_rec1of1(int *id, int nd, size_t size, void **v)</span>
+<span class="lineNum">     385 </span><span class="lineCov">     104713 : void raid_rec1of1(int *id, int nd, size_t size, void **v)</span>
 <span class="lineNum">     386 </span>            : {
 <span class="lineNum">     387 </span>            :         void *p;
 <span class="lineNum">     388 </span>            :         void *pa;
 <span class="lineNum">     389 </span>            : 
 <span class="lineNum">     390 </span>            :         /* for PAR1 we can directly compute the missing block */
 <span class="lineNum">     391 </span>            :         /* and we don't need to use the zero buffer */
-<span class="lineNum">     392 </span><span class="lineCov">     100552 :         p = v[nd];</span>
-<span class="lineNum">     393 </span><span class="lineCov">     100552 :         pa = v[id[0]];</span>
+<span class="lineNum">     392 </span><span class="lineCov">     104713 :         p = v[nd];</span>
+<span class="lineNum">     393 </span><span class="lineCov">     104713 :         pa = v[id[0]];</span>
 <span class="lineNum">     394 </span>            : 
 <span class="lineNum">     395 </span>            :         /* use the parity as missing data block */
-<span class="lineNum">     396 </span><span class="lineCov">     100552 :         v[id[0]] = p;</span>
+<span class="lineNum">     396 </span><span class="lineCov">     104713 :         v[id[0]] = p;</span>
 <span class="lineNum">     397 </span>            : 
 <span class="lineNum">     398 </span>            :         /* compute the parity over the missing data block */
-<span class="lineNum">     399 </span><span class="lineCov">     100552 :         v[nd] = pa;</span>
+<span class="lineNum">     399 </span><span class="lineCov">     104713 :         v[nd] = pa;</span>
 <span class="lineNum">     400 </span>            : 
 <span class="lineNum">     401 </span>            :         /* compute */
-<span class="lineNum">     402 </span><span class="lineCov">     100552 :         raid_gen(nd, 1, size, v);</span>
+<span class="lineNum">     402 </span><span class="lineCov">     104713 :         raid_gen(nd, 1, size, v);</span>
 <span class="lineNum">     403 </span>            : 
 <span class="lineNum">     404 </span>            :         /* restore as before */
-<span class="lineNum">     405 </span><span class="lineCov">     100552 :         v[id[0]] = pa;</span>
-<span class="lineNum">     406 </span><span class="lineCov">     100552 :         v[nd] = p;</span>
-<span class="lineNum">     407 </span><span class="lineCov">     100552 : }</span>
+<span class="lineNum">     405 </span><span class="lineCov">     104713 :         v[id[0]] = pa;</span>
+<span class="lineNum">     406 </span><span class="lineCov">     104713 :         v[nd] = p;</span>
+<span class="lineNum">     407 </span><span class="lineCov">     104713 : }</span>
 <span class="lineNum">     408 </span>            : 
 <span class="lineNum">     409 </span>            : /**
 <span class="lineNum">     410 </span>            :  * Recover failure of two data blocks for PAR2.
@@ -615,36 +615,36 @@
 <span class="lineNum">     553 </span><span class="lineCov">         12 :                 raid_gen(nd, ir[nr - 1] - nd + 1, size, v);</span>
 <a name="554"><span class="lineNum">     554 </span><span class="lineCov">        901 : }</span></a>
 <span class="lineNum">     555 </span>            : 
-<span class="lineNum">     556 </span><span class="lineCov">     213294 : void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v)</span>
+<span class="lineNum">     556 </span><span class="lineCov">     217819 : void raid_data(int nr, int *id, int *ip, int nd, size_t size, void **v)</span>
 <span class="lineNum">     557 </span>            : {
 <span class="lineNum">     558 </span>            :         /* enforce limit on size */
-<span class="lineNum">     559 </span><span class="lineCov">     213294 :         BUG_ON(size % 64 != 0);</span>
+<span class="lineNum">     559 </span><span class="lineCov">     217819 :         BUG_ON(size % 64 != 0);</span>
 <span class="lineNum">     560 </span>            : 
 <span class="lineNum">     561 </span>            :         /* enforce limit on number of failures */
-<span class="lineNum">     562 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt; nd);</span>
-<span class="lineNum">     563 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt; RAID_PARITY_MAX);</span>
+<span class="lineNum">     562 </span><span class="lineCov">     217819 :         BUG_ON(nr &gt; nd);</span>
+<span class="lineNum">     563 </span><span class="lineCov">     217819 :         BUG_ON(nr &gt; RAID_PARITY_MAX);</span>
 <span class="lineNum">     564 </span>            : 
 <span class="lineNum">     565 </span>            :         /* enforce order in index vector for data */
-<span class="lineNum">     566 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt;= 2 &amp;&amp; id[0] &gt;= id[1]);</span>
-<span class="lineNum">     567 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt;= 3 &amp;&amp; id[1] &gt;= id[2]);</span>
-<span class="lineNum">     568 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt;= 4 &amp;&amp; id[2] &gt;= id[3]);</span>
-<span class="lineNum">     569 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt;= 5 &amp;&amp; id[3] &gt;= id[4]);</span>
-<span class="lineNum">     570 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt;= 6 &amp;&amp; id[4] &gt;= id[5]);</span>
+<span class="lineNum">     566 </span><span class="lineCov">     217819 :         BUG_ON(nr &gt;= 2 &amp;&amp; id[0] &gt;= id[1]);</span>
+<span class="lineNum">     567 </span><span class="lineCov">     217819 :         BUG_ON(nr &gt;= 3 &amp;&amp; id[1] &gt;= id[2]);</span>
+<span class="lineNum">     568 </span><span class="lineCov">     217819 :         BUG_ON(nr &gt;= 4 &amp;&amp; id[2] &gt;= id[3]);</span>
+<span class="lineNum">     569 </span><span class="lineCov">     217819 :         BUG_ON(nr &gt;= 5 &amp;&amp; id[3] &gt;= id[4]);</span>
+<span class="lineNum">     570 </span><span class="lineCov">     217819 :         BUG_ON(nr &gt;= 6 &amp;&amp; id[4] &gt;= id[5]);</span>
 <span class="lineNum">     571 </span>            : 
 <span class="lineNum">     572 </span>            :         /* enforce limit on index vector for data */
-<span class="lineNum">     573 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt; 0 &amp;&amp; id[nr-1] &gt;= nd);</span>
+<span class="lineNum">     573 </span><span class="lineCov">     217819 :         BUG_ON(nr &gt; 0 &amp;&amp; id[nr-1] &gt;= nd);</span>
 <span class="lineNum">     574 </span>            : 
 <span class="lineNum">     575 </span>            :         /* enforce order in index vector for parity */
-<span class="lineNum">     576 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt;= 2 &amp;&amp; ip[0] &gt;= ip[1]);</span>
-<span class="lineNum">     577 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt;= 3 &amp;&amp; ip[1] &gt;= ip[2]);</span>
-<span class="lineNum">     578 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt;= 4 &amp;&amp; ip[2] &gt;= ip[3]);</span>
-<span class="lineNum">     579 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt;= 5 &amp;&amp; ip[3] &gt;= ip[4]);</span>
-<span class="lineNum">     580 </span><span class="lineCov">     213294 :         BUG_ON(nr &gt;= 6 &amp;&amp; ip[4] &gt;= ip[5]);</span>
+<span class="lineNum">     576 </span><span class="lineCov">     217819 :         BUG_ON(nr &gt;= 2 &amp;&amp; ip[0] &gt;= ip[1]);</span>
+<span class="lineNum">     577 </span><span class="lineCov">     217819 :         BUG_ON(nr &gt;= 3 &amp;&amp; ip[1] &gt;= ip[2]);</span>
+<span class="lineNum">     578 </span><span class="lineCov">     217819 :         BUG_ON(nr &gt;= 4 &amp;&amp; ip[2] &gt;= ip[3]);</span>
+<span class="lineNum">     579 </span><span class="lineCov">     217819 :         BUG_ON(nr &gt;= 5 &amp;&amp; ip[3] &gt;= ip[4]);</span>
+<span class="lineNum">     580 </span><span class="lineCov">     217819 :         BUG_ON(nr &gt;= 6 &amp;&amp; ip[4] &gt;= ip[5]);</span>
 <span class="lineNum">     581 </span>            : 
 <span class="lineNum">     582 </span>            :         /* if failed data is present */
-<span class="lineNum">     583 </span><span class="lineCov">     213294 :         if (nr != 0)</span>
-<span class="lineNum">     584 </span><span class="lineCov">     213292 :                 raid_rec_ptr[nr - 1](nr, id, ip, nd, size, v);</span>
-<span class="lineNum">     585 </span><span class="lineCov">     213294 : }</span>
+<span class="lineNum">     583 </span><span class="lineCov">     217819 :         if (nr != 0)</span>
+<span class="lineNum">     584 </span><span class="lineCov">     217817 :                 raid_rec_ptr[nr - 1](nr, id, ip, nd, size, v);</span>
+<span class="lineNum">     585 </span><span class="lineCov">     217819 : }</span>
 <span class="lineNum">     586 </span>            : 
 </pre>
       </td>

@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-05-12</td>
+            <td class="headerValue">2015-11-13</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">4</td>
@@ -91,12 +91,12 @@
 <span class="lineNum">      29 </span>            : #define LEV_MAX 6
 <span class="lineNum">      30 </span>            : 
 <span class="lineNum">      31 </span>            : /**
-<span class="lineNum">      32 </span>            :  * Returns the parity name: Parity, 2-Parity, 3-Parity, 4-Parity, 5-Parity, 6-Parity.
+<span class="lineNum">      32 </span>            :  * Return the parity name: Parity, 2-Parity, 3-Parity, 4-Parity, 5-Parity, 6-Parity.
 <span class="lineNum">      33 </span>            :  */
 <span class="lineNum">      34 </span>            : const char* lev_name(unsigned level);
 <span class="lineNum">      35 </span>            : 
 <span class="lineNum">      36 </span>            : /**
-<span class="lineNum">      37 </span>            :  * Returns the parity name used in the config file: parity, 2-parity, 3-parity, 4-parity, 5-parity, 6-parity.
+<span class="lineNum">      37 </span>            :  * Return the parity name used in the config file: parity, 2-parity, 3-parity, 4-parity, 5-parity, 6-parity.
 <span class="lineNum">      38 </span>            :  */
 <span class="lineNum">      39 </span>            : const char* lev_config_name(unsigned level);
 <span class="lineNum">      40 </span>            : 
@@ -153,14 +153,14 @@
 <span class="lineNum">      91 </span>            :         int skip_content_check; /**&lt; Relax some content file checks. */
 <span class="lineNum">      92 </span>            :         int skip_parity_access; /**&lt; Skip the parity access for commands that don't need it. */
 <span class="lineNum">      93 </span>            :         int skip_disk_access; /**&lt; Skip the data disk access for commands that don't need it. */
-<span class="lineNum">      94 </span>            :         int kill_after_sync; /**&lt; Kill the process after sync without saving the final state. */
-<span class="lineNum">      95 </span>            :         int force_murmur3; /**&lt; Force Murmur3 choice. */
-<span class="lineNum">      96 </span>            :         int force_spooky2; /**&lt; Force Spooky2 choice. */
-<span class="lineNum">      97 </span>            :         int force_order; /**&lt; Force sorting order. One of the SORT_* defines. */
-<span class="lineNum">      98 </span>            :         unsigned force_scrub_at; /**&lt; Force scrub for the specified number of blocks. */
-<span class="lineNum">      99 </span>            :         int force_scrub_even; /**&lt; Force scrub of all the even blocks. */
-<span class="lineNum">     100 </span>            :         int force_content_write; /**&lt; Force the update of the content file. */
-<span class="lineNum">     101 </span>            :         int force_content_text; /**&lt; Force the use of text version of content file. */
+<span class="lineNum">      94 </span>            :         int skip_content_access; /**&lt; Skip the content access for commands that don't need it. */
+<span class="lineNum">      95 </span>            :         int kill_after_sync; /**&lt; Kill the process after sync without saving the final state. */
+<span class="lineNum">      96 </span>            :         int force_murmur3; /**&lt; Force Murmur3 choice. */
+<span class="lineNum">      97 </span>            :         int force_spooky2; /**&lt; Force Spooky2 choice. */
+<span class="lineNum">      98 </span>            :         int force_order; /**&lt; Force sorting order. One of the SORT_* defines. */
+<span class="lineNum">      99 </span>            :         unsigned force_scrub_at; /**&lt; Force scrub for the specified number of blocks. */
+<span class="lineNum">     100 </span>            :         int force_scrub_even; /**&lt; Force scrub of all the even blocks. */
+<span class="lineNum">     101 </span>            :         int force_content_write; /**&lt; Force the update of the content file. */
 <span class="lineNum">     102 </span>            :         int force_scan_winfind; /**&lt; Force the use of FindFirst/Next in Windows to list directories. */
 <span class="lineNum">     103 </span>            :         int force_progress; /**&lt; Force the use of the progress status. */
 <span class="lineNum">     104 </span>            :         unsigned force_autosave_at; /**&lt; Force autosave at the specified block. */
@@ -238,27 +238,27 @@
 <span class="lineNum">     176 </span>            : };
 <span class="lineNum">     177 </span>            : 
 <span class="lineNum">     178 </span>            : /**
-<span class="lineNum">     179 </span>            :  * Initializes the state.
+<span class="lineNum">     179 </span>            :  * Initialize the state.
 <span class="lineNum">     180 </span>            :  */
 <span class="lineNum">     181 </span>            : void state_init(struct snapraid_state* state);
 <span class="lineNum">     182 </span>            : 
 <span class="lineNum">     183 </span>            : /**
-<span class="lineNum">     184 </span>            :  * Deinitializes the state.
+<span class="lineNum">     184 </span>            :  * Deinitialize the state.
 <span class="lineNum">     185 </span>            :  */
 <span class="lineNum">     186 </span>            : void state_done(struct snapraid_state* state);
 <span class="lineNum">     187 </span>            : 
 <span class="lineNum">     188 </span>            : /**
-<span class="lineNum">     189 </span>            :  * Reads the configuration file.
+<span class="lineNum">     189 </span>            :  * Read the configuration file.
 <span class="lineNum">     190 </span>            :  */
 <span class="lineNum">     191 </span>            : void state_config(struct snapraid_state* state, const char* path, const char* command, struct snapraid_option* opt, tommy_list* filterlist_disk);
 <span class="lineNum">     192 </span>            : 
 <span class="lineNum">     193 </span>            : /**
-<span class="lineNum">     194 </span>            :  * Reads the state.
+<span class="lineNum">     194 </span>            :  * Read the state.
 <span class="lineNum">     195 </span>            :  */
 <span class="lineNum">     196 </span>            : void state_read(struct snapraid_state* state);
 <span class="lineNum">     197 </span>            : 
 <span class="lineNum">     198 </span>            : /**
-<span class="lineNum">     199 </span>            :  * Writes the new state.
+<span class="lineNum">     199 </span>            :  * Write the new state.
 <span class="lineNum">     200 </span>            :  */
 <span class="lineNum">     201 </span>            : void state_write(struct snapraid_state* state);
 <span class="lineNum">     202 </span>            : 
@@ -268,12 +268,12 @@
 <span class="lineNum">     206 </span>            : int state_diff(struct snapraid_state* state);
 <span class="lineNum">     207 </span>            : 
 <span class="lineNum">     208 </span>            : /**
-<span class="lineNum">     209 </span>            :  * Scans all the disks to update the state.
+<span class="lineNum">     209 </span>            :  * Scan all the disks to update the state.
 <span class="lineNum">     210 </span>            :  */
 <span class="lineNum">     211 </span>            : void state_scan(struct snapraid_state* state);
 <span class="lineNum">     212 </span>            : 
 <span class="lineNum">     213 </span>            : /**
-<span class="lineNum">     214 </span>            :  * Sets the nanosecond timestamp of all files that have a zero value.
+<span class="lineNum">     214 </span>            :  * Set the nanosecond timestamp of all files that have a zero value.
 <span class="lineNum">     215 </span>            :  */
 <span class="lineNum">     216 </span>            : void state_nano(struct snapraid_state* state);
 <span class="lineNum">     217 </span>            : 
@@ -283,12 +283,12 @@
 <span class="lineNum">     221 </span>            : void state_device(struct snapraid_state* state, int operation);
 <span class="lineNum">     222 </span>            : 
 <span class="lineNum">     223 </span>            : /**
-<span class="lineNum">     224 </span>            :  * Syncs the parity data.
+<span class="lineNum">     224 </span>            :  * Sync the parity data.
 <span class="lineNum">     225 </span>            :  */
 <span class="lineNum">     226 </span>            : int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t blockcount);
 <span class="lineNum">     227 </span>            : 
 <span class="lineNum">     228 </span>            : /**
-<span class="lineNum">     229 </span>            :  * Checks (and fixes) all the files and parity data.
+<span class="lineNum">     229 </span>            :  * Check (and fixes) all the files and parity data.
 <span class="lineNum">     230 </span>            :  * \param fix If we have to fix, after checking.
 <span class="lineNum">     231 </span>            :  */
 <span class="lineNum">     232 </span>            : int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, block_off_t blockcount);
@@ -304,139 +304,160 @@
 <span class="lineNum">     242 </span>            : void state_rehash(struct snapraid_state* state);
 <span class="lineNum">     243 </span>            : 
 <span class="lineNum">     244 </span>            : /**
-<span class="lineNum">     245 </span>            :  * Scrub the files.
+<span class="lineNum">     245 </span>            :  * Scrub levels.
 <span class="lineNum">     246 </span>            :  */
-<span class="lineNum">     247 </span>            : int state_scrub(struct snapraid_state* state, int percentage, int olderthan);
-<span class="lineNum">     248 </span>            : 
-<span class="lineNum">     249 </span>            : /**
-<span class="lineNum">     250 </span>            :  * Print the status.
-<span class="lineNum">     251 </span>            :  */
-<span class="lineNum">     252 </span>            : int state_status(struct snapraid_state* state);
-<span class="lineNum">     253 </span>            : 
-<span class="lineNum">     254 </span>            : /**
-<span class="lineNum">     255 </span>            :  * Finds duplicates.
-<span class="lineNum">     256 </span>            :  */
-<span class="lineNum">     257 </span>            : void state_dup(struct snapraid_state* state);
-<span class="lineNum">     258 </span>            : 
-<span class="lineNum">     259 </span>            : /**
-<span class="lineNum">     260 </span>            :  * List content.
-<span class="lineNum">     261 </span>            :  */
-<span class="lineNum">     262 </span>            : void state_list(struct snapraid_state* state);
-<span class="lineNum">     263 </span>            : 
-<span class="lineNum">     264 </span>            : /**
-<span class="lineNum">     265 </span>            :  * Creates pool tree.
-<span class="lineNum">     266 </span>            :  */
-<span class="lineNum">     267 </span>            : void state_pool(struct snapraid_state* state);
-<span class="lineNum">     268 </span>            : 
-<span class="lineNum">     269 </span>            : /**
-<span class="lineNum">     270 </span>            :  * Refresh the free space info.
-<span class="lineNum">     271 </span>            :  *
-<span class="lineNum">     272 </span>            :  * Note that it requires disks access.
-<span class="lineNum">     273 </span>            :  */
-<span class="lineNum">     274 </span>            : void state_refresh(struct snapraid_state* state);
-<span class="lineNum">     275 </span>            : 
-<span class="lineNum">     276 </span>            : /**
-<span class="lineNum">     277 </span>            :  * Filter files, symlinks and dirs.
-<span class="lineNum">     278 </span>            :  * Apply an additional filter to the list currently loaded.
-<span class="lineNum">     279 </span>            :  */
-<span class="lineNum">     280 </span>            : void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tommy_list* filterlist_disk, int filter_missing, int filter_error);
-<span class="lineNum">     281 </span>            : 
-<span class="lineNum">     282 </span>            : /**
-<span class="lineNum">     283 </span>            :  * Begins the progress visualization.
-<span class="lineNum">     284 </span>            :  */
-<span class="lineNum">     285 </span>            : int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, block_off_t blockmax, block_off_t countmax);
-<span class="lineNum">     286 </span>            : 
-<span class="lineNum">     287 </span>            : /**
-<span class="lineNum">     288 </span>            :  * Ends the progress visualization.
-<span class="lineNum">     289 </span>            :  */
-<span class="lineNum">     290 </span>            : void state_progress_end(struct snapraid_state* state, block_off_t countpos, block_off_t countmax, data_off_t countsize);
-<span class="lineNum">     291 </span>            : 
-<span class="lineNum">     292 </span>            : /**
-<span class="lineNum">     293 </span>            :  * Writes the progress.
+<span class="lineNum">     247 </span>            : #define SCRUB_AUTO -1 /**&lt; Automatic selection. */
+<span class="lineNum">     248 </span>            : #define SCRUB_BAD -2 /**&lt; Scrub only the bad blocks. */
+<span class="lineNum">     249 </span>            : #define SCRUB_NEW -3 /**&lt; Scub the new blocks. */
+<span class="lineNum">     250 </span>            : #define SCRUB_FULL -4 /**&lt; Scrub everything. */
+<span class="lineNum">     251 </span>            : #define SCRUB_EVEN -5 /**&lt; Even blocks. */
+<span class="lineNum">     252 </span>            : 
+<span class="lineNum">     253 </span>            : /**
+<span class="lineNum">     254 </span>            :  * Scrub the files.
+<span class="lineNum">     255 </span>            :  */
+<span class="lineNum">     256 </span>            : int state_scrub(struct snapraid_state* state, int plan, int olderthan);
+<span class="lineNum">     257 </span>            : 
+<span class="lineNum">     258 </span>            : /**
+<span class="lineNum">     259 </span>            :  * Print the status.
+<span class="lineNum">     260 </span>            :  */
+<span class="lineNum">     261 </span>            : int state_status(struct snapraid_state* state);
+<span class="lineNum">     262 </span>            : 
+<span class="lineNum">     263 </span>            : /**
+<span class="lineNum">     264 </span>            :  * Find duplicates.
+<span class="lineNum">     265 </span>            :  */
+<span class="lineNum">     266 </span>            : void state_dup(struct snapraid_state* state);
+<span class="lineNum">     267 </span>            : 
+<span class="lineNum">     268 </span>            : /**
+<span class="lineNum">     269 </span>            :  * List content.
+<span class="lineNum">     270 </span>            :  */
+<span class="lineNum">     271 </span>            : void state_list(struct snapraid_state* state);
+<span class="lineNum">     272 </span>            : 
+<span class="lineNum">     273 </span>            : /**
+<span class="lineNum">     274 </span>            :  * Create pool tree.
+<span class="lineNum">     275 </span>            :  */
+<span class="lineNum">     276 </span>            : void state_pool(struct snapraid_state* state);
+<span class="lineNum">     277 </span>            : 
+<span class="lineNum">     278 </span>            : /**
+<span class="lineNum">     279 </span>            :  * Refresh the free space info.
+<span class="lineNum">     280 </span>            :  *
+<span class="lineNum">     281 </span>            :  * Note that it requires disks access.
+<span class="lineNum">     282 </span>            :  */
+<span class="lineNum">     283 </span>            : void state_refresh(struct snapraid_state* state);
+<span class="lineNum">     284 </span>            : 
+<span class="lineNum">     285 </span>            : /**
+<span class="lineNum">     286 </span>            :  * Skip files, symlinks and dirs.
+<span class="lineNum">     287 </span>            :  * Apply any skip access disk.
+<span class="lineNum">     288 </span>            :  */
+<span class="lineNum">     289 </span>            : void state_skip(struct snapraid_state* state);
+<span class="lineNum">     290 </span>            : 
+<span class="lineNum">     291 </span>            : /**
+<span class="lineNum">     292 </span>            :  * Filter files, symlinks and dirs.
+<span class="lineNum">     293 </span>            :  * Apply an additional filter to the list currently loaded.
 <span class="lineNum">     294 </span>            :  */
-<span class="lineNum">     295 </span>            : int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize);
+<span class="lineNum">     295 </span>            : void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tommy_list* filterlist_disk, int filter_missing, int filter_error);
 <span class="lineNum">     296 </span>            : 
 <span class="lineNum">     297 </span>            : /**
-<span class="lineNum">     298 </span>            :  * Stop temporarely the progress.
+<span class="lineNum">     298 </span>            :  * Begin the progress visualization.
 <span class="lineNum">     299 </span>            :  */
-<span class="lineNum">     300 </span>            : void state_progress_stop(struct snapraid_state* state);
+<span class="lineNum">     300 </span>            : int state_progress_begin(struct snapraid_state* state, block_off_t blockstart, block_off_t blockmax, block_off_t countmax);
 <span class="lineNum">     301 </span>            : 
 <span class="lineNum">     302 </span>            : /**
-<span class="lineNum">     303 </span>            :  * Restart the progress.
+<span class="lineNum">     303 </span>            :  * End the progress visualization.
 <span class="lineNum">     304 </span>            :  */
-<span class="lineNum">     305 </span>            : void state_progress_restart(struct snapraid_state* state);
+<span class="lineNum">     305 </span>            : void state_progress_end(struct snapraid_state* state, block_off_t countpos, block_off_t countmax, data_off_t countsize);
 <span class="lineNum">     306 </span>            : 
 <span class="lineNum">     307 </span>            : /**
-<a name="308"><span class="lineNum">     308 </span>            :  * Set the usage time as wasted one not counted.</a>
+<span class="lineNum">     308 </span>            :  * Write the progress.
 <span class="lineNum">     309 </span>            :  */
-<span class="lineNum">     310 </span><span class="lineCov">         80 : static inline void state_usage_waste(struct snapraid_state* state)</span>
-<span class="lineNum">     311 </span>            : {
-<span class="lineNum">     312 </span><span class="lineCov">         80 :         uint64_t now = tick();</span>
-<span class="lineNum">     313 </span>            : 
-<span class="lineNum">     314 </span><span class="lineCov">         80 :         state-&gt;tick_last = now;</span>
-<span class="lineNum">     315 </span><span class="lineCov">         80 : }</span>
+<span class="lineNum">     310 </span>            : int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize);
+<span class="lineNum">     311 </span>            : 
+<span class="lineNum">     312 </span>            : /**
+<span class="lineNum">     313 </span>            :  * Stop temporarely the progress.
+<span class="lineNum">     314 </span>            :  */
+<span class="lineNum">     315 </span>            : void state_progress_stop(struct snapraid_state* state);
 <span class="lineNum">     316 </span>            : 
 <span class="lineNum">     317 </span>            : /**
-<a name="318"><span class="lineNum">     318 </span>            :  * Set the usage time for CPU.</a>
+<span class="lineNum">     318 </span>            :  * Restart the progress.
 <span class="lineNum">     319 </span>            :  */
-<span class="lineNum">     320 </span><span class="lineCov">     682853 : static inline void state_usage_cpu(struct snapraid_state* state)</span>
-<span class="lineNum">     321 </span>            : {
-<span class="lineNum">     322 </span><span class="lineCov">     682853 :         uint64_t now = tick();</span>
-<span class="lineNum">     323 </span><span class="lineCov">     682853 :         uint64_t delta = now - state-&gt;tick_last;</span>
-<span class="lineNum">     324 </span>            : 
-<span class="lineNum">     325 </span>            :         /* increment the time spent in computations */
-<span class="lineNum">     326 </span><span class="lineCov">     682853 :         state-&gt;tick_cpu += delta;</span>
-<span class="lineNum">     327 </span>            : 
-<span class="lineNum">     328 </span><span class="lineCov">     682853 :         state-&gt;tick_last = now;</span>
-<span class="lineNum">     329 </span><span class="lineCov">     682853 : }</span>
-<span class="lineNum">     330 </span>            : 
-<span class="lineNum">     331 </span>            : /**
-<a name="332"><span class="lineNum">     332 </span>            :  * Set the usage time for data disk.</a>
-<span class="lineNum">     333 </span>            :  */
-<span class="lineNum">     334 </span><span class="lineCov">     544351 : static inline void state_usage_disk(struct snapraid_state* state, struct snapraid_disk* disk)</span>
-<span class="lineNum">     335 </span>            : {
-<span class="lineNum">     336 </span><span class="lineCov">     544351 :         uint64_t now = tick();</span>
-<span class="lineNum">     337 </span><span class="lineCov">     544351 :         uint64_t delta = now - state-&gt;tick_last;</span>
-<span class="lineNum">     338 </span>            : 
-<span class="lineNum">     339 </span>            :         /* increment the time spent in the data disk */
-<span class="lineNum">     340 </span><span class="lineCov">     544351 :         disk-&gt;tick += delta;</span>
-<span class="lineNum">     341 </span><span class="lineCov">     544351 :         state-&gt;tick_io += delta;</span>
+<span class="lineNum">     320 </span>            : void state_progress_restart(struct snapraid_state* state);
+<span class="lineNum">     321 </span>            : 
+<span class="lineNum">     322 </span>            : /**
+<a name="323"><span class="lineNum">     323 </span>            :  * Set the usage time as wasted one not counted.</a>
+<span class="lineNum">     324 </span>            :  */
+<span class="lineNum">     325 </span><span class="lineCov">         89 : static inline void state_usage_waste(struct snapraid_state* state)</span>
+<span class="lineNum">     326 </span>            : {
+<span class="lineNum">     327 </span><span class="lineCov">         89 :         uint64_t now = tick();</span>
+<span class="lineNum">     328 </span>            : 
+<span class="lineNum">     329 </span><span class="lineCov">         89 :         state-&gt;tick_last = now;</span>
+<span class="lineNum">     330 </span><span class="lineCov">         89 : }</span>
+<span class="lineNum">     331 </span>            : 
+<span class="lineNum">     332 </span>            : /**
+<a name="333"><span class="lineNum">     333 </span>            :  * Set the usage time for CPU.</a>
+<span class="lineNum">     334 </span>            :  */
+<span class="lineNum">     335 </span><span class="lineCov">     771844 : static inline void state_usage_cpu(struct snapraid_state* state)</span>
+<span class="lineNum">     336 </span>            : {
+<span class="lineNum">     337 </span><span class="lineCov">     771844 :         uint64_t now = tick();</span>
+<span class="lineNum">     338 </span><span class="lineCov">     771844 :         uint64_t delta = now - state-&gt;tick_last;</span>
+<span class="lineNum">     339 </span>            : 
+<span class="lineNum">     340 </span>            :         /* increment the time spent in computations */
+<span class="lineNum">     341 </span><span class="lineCov">     771844 :         state-&gt;tick_cpu += delta;</span>
 <span class="lineNum">     342 </span>            : 
-<span class="lineNum">     343 </span><span class="lineCov">     544351 :         state-&gt;tick_last = now;</span>
-<span class="lineNum">     344 </span><span class="lineCov">     544351 : }</span>
+<span class="lineNum">     343 </span><span class="lineCov">     771844 :         state-&gt;tick_last = now;</span>
+<span class="lineNum">     344 </span><span class="lineCov">     771844 : }</span>
 <span class="lineNum">     345 </span>            : 
 <span class="lineNum">     346 </span>            : /**
-<a name="347"><span class="lineNum">     347 </span>            :  * Set the usage time for parity disk.</a>
+<a name="347"><span class="lineNum">     347 </span>            :  * Set the usage time for data disk.</a>
 <span class="lineNum">     348 </span>            :  */
-<span class="lineNum">     349 </span><span class="lineCov">     582974 : static inline void state_usage_parity(struct snapraid_state* state, unsigned level)</span>
+<span class="lineNum">     349 </span><span class="lineCov">     621730 : static inline void state_usage_disk(struct snapraid_state* state, struct snapraid_disk* disk)</span>
 <span class="lineNum">     350 </span>            : {
-<span class="lineNum">     351 </span><span class="lineCov">     582974 :         uint64_t now = tick();</span>
-<span class="lineNum">     352 </span><span class="lineCov">     582974 :         uint64_t delta = now - state-&gt;tick_last;</span>
+<span class="lineNum">     351 </span><span class="lineCov">     621730 :         uint64_t now = tick();</span>
+<span class="lineNum">     352 </span><span class="lineCov">     621730 :         uint64_t delta = now - state-&gt;tick_last;</span>
 <span class="lineNum">     353 </span>            : 
-<span class="lineNum">     354 </span><span class="lineCov">     582974 :         assert(level &lt; LEV_MAX);</span>
-<span class="lineNum">     355 </span>            : 
-<span class="lineNum">     356 </span>            :         /* increment the time spent in the parity disk */
-<span class="lineNum">     357 </span><span class="lineCov">     582974 :         state-&gt;parity[level].tick += delta;</span>
-<span class="lineNum">     358 </span><span class="lineCov">     582974 :         state-&gt;tick_io += delta;</span>
-<span class="lineNum">     359 </span>            : 
-<span class="lineNum">     360 </span><span class="lineCov">     582974 :         state-&gt;tick_last = now;</span>
-<span class="lineNum">     361 </span><span class="lineCov">     582974 : }</span>
-<span class="lineNum">     362 </span>            : 
-<span class="lineNum">     363 </span>            : /**
-<span class="lineNum">     364 </span>            :  * Prints the stats of the usage time.
-<span class="lineNum">     365 </span>            :  */
-<span class="lineNum">     366 </span>            : void state_usage_print(struct snapraid_state* state);
-<span class="lineNum">     367 </span>            : 
-<span class="lineNum">     368 </span>            : /****************************************************************************/
-<span class="lineNum">     369 </span>            : /* misc */
+<span class="lineNum">     354 </span>            :         /* increment the time spent in the data disk */
+<span class="lineNum">     355 </span><span class="lineCov">     621730 :         disk-&gt;tick += delta;</span>
+<span class="lineNum">     356 </span><span class="lineCov">     621730 :         state-&gt;tick_io += delta;</span>
+<span class="lineNum">     357 </span>            : 
+<span class="lineNum">     358 </span><span class="lineCov">     621730 :         state-&gt;tick_last = now;</span>
+<span class="lineNum">     359 </span><span class="lineCov">     621730 : }</span>
+<span class="lineNum">     360 </span>            : 
+<span class="lineNum">     361 </span>            : /**
+<a name="362"><span class="lineNum">     362 </span>            :  * Set the usage time for parity disk.</a>
+<span class="lineNum">     363 </span>            :  */
+<span class="lineNum">     364 </span><span class="lineCov">     652636 : static inline void state_usage_parity(struct snapraid_state* state, unsigned level)</span>
+<span class="lineNum">     365 </span>            : {
+<span class="lineNum">     366 </span><span class="lineCov">     652636 :         uint64_t now = tick();</span>
+<span class="lineNum">     367 </span><span class="lineCov">     652636 :         uint64_t delta = now - state-&gt;tick_last;</span>
+<span class="lineNum">     368 </span>            : 
+<span class="lineNum">     369 </span><span class="lineCov">     652636 :         assert(level &lt; LEV_MAX);</span>
 <span class="lineNum">     370 </span>            : 
-<span class="lineNum">     371 </span>            : /**
-<span class="lineNum">     372 </span>            :  * Generate a dummy configuration file from a content file.
-<span class="lineNum">     373 </span>            :  */
-<span class="lineNum">     374 </span>            : void generate_configuration(const char* content);
-<span class="lineNum">     375 </span>            : 
-<span class="lineNum">     376 </span>            : #endif
+<span class="lineNum">     371 </span>            :         /* increment the time spent in the parity disk */
+<span class="lineNum">     372 </span><span class="lineCov">     652636 :         state-&gt;parity[level].tick += delta;</span>
+<span class="lineNum">     373 </span><span class="lineCov">     652636 :         state-&gt;tick_io += delta;</span>
+<span class="lineNum">     374 </span>            : 
+<span class="lineNum">     375 </span><span class="lineCov">     652636 :         state-&gt;tick_last = now;</span>
+<span class="lineNum">     376 </span><span class="lineCov">     652636 : }</span>
 <span class="lineNum">     377 </span>            : 
+<span class="lineNum">     378 </span>            : /**
+<span class="lineNum">     379 </span>            :  * Print the stats of the usage time.
+<span class="lineNum">     380 </span>            :  */
+<span class="lineNum">     381 </span>            : void state_usage_print(struct snapraid_state* state);
+<span class="lineNum">     382 </span>            : 
+<span class="lineNum">     383 </span>            : /**
+<span class="lineNum">     384 </span>            :  * Check the filesystem on all disks.
+<span class="lineNum">     385 </span>            :  * On error it aborts.
+<span class="lineNum">     386 </span>            :  */
+<span class="lineNum">     387 </span>            : void state_fscheck(struct snapraid_state* state, const char* ope);
+<span class="lineNum">     388 </span>            : 
+<span class="lineNum">     389 </span>            : /****************************************************************************/
+<span class="lineNum">     390 </span>            : /* misc */
+<span class="lineNum">     391 </span>            : 
+<span class="lineNum">     392 </span>            : /**
+<span class="lineNum">     393 </span>            :  * Generate a dummy configuration file from a content file.
+<span class="lineNum">     394 </span>            :  */
+<span class="lineNum">     395 </span>            : void generate_configuration(const char* content);
+<span class="lineNum">     396 </span>            : 
+<span class="lineNum">     397 </span>            : #endif
+<span class="lineNum">     398 </span>            : 
 </pre>
       </td>
     </tr>

@@ -1,0 +1,301 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+
+<html lang="en">
+
+<head>
+  <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+  <title>LCOV - lcov.info - tommyds/tommytree.h</title>
+  <link rel="stylesheet" type="text/css" href="../gcov.css">
+</head>
+
+<body>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="title">LCOV - code coverage report</td></tr>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+
+    <tr>
+      <td width="100%">
+        <table cellpadding=1 border=0 width="100%">
+          <tr>
+            <td width="10%" class="headerItem">Current view:</td>
+            <td width="35%" class="headerValue"><a href="../index.html">top level</a> - <a href="index.html">tommyds</a> - tommytree.h<span style="font-size: 80%;"> (source / <a href="tommytree.h.func.html">functions</a>)</span></td>
+            <td width="5%"></td>
+            <td width="15%"></td>
+            <td width="10%" class="headerCovTableHead">Hit</td>
+            <td width="10%" class="headerCovTableHead">Total</td>
+            <td width="15%" class="headerCovTableHead">Coverage</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Test:</td>
+            <td class="headerValue">lcov.info</td>
+            <td></td>
+            <td class="headerItem">Lines:</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntry">2</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr>
+            <td class="headerItem">Date:</td>
+            <td class="headerValue">2015-11-13</td>
+            <td></td>
+            <td class="headerItem">Functions:</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntry">1</td>
+            <td class="headerCovTableEntryHi">100.0 %</td>
+          </tr>
+          <tr><td><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+        </table>
+      </td>
+    </tr>
+
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+  </table>
+
+  <table cellpadding=0 cellspacing=0 border=0>
+    <tr>
+      <td><br></td>
+    </tr>
+    <tr>
+      <td>
+<pre class="sourceHeading">          Line data    Source code</pre>
+<pre class="source">
+<a name="1"><span class="lineNum">       1 </span>            : /*</a>
+<span class="lineNum">       2 </span>            :  * Copyright (c) 2015, Andrea Mazzoleni. All rights reserved.
+<span class="lineNum">       3 </span>            :  *
+<span class="lineNum">       4 </span>            :  * Redistribution and use in source and binary forms, with or without
+<span class="lineNum">       5 </span>            :  * modification, are permitted provided that the following conditions
+<span class="lineNum">       6 </span>            :  * are met:
+<span class="lineNum">       7 </span>            :  *
+<span class="lineNum">       8 </span>            :  * 1. Redistributions of source code must retain the above copyright
+<span class="lineNum">       9 </span>            :  *    notice, this list of conditions and the following disclaimer.
+<span class="lineNum">      10 </span>            :  *
+<span class="lineNum">      11 </span>            :  * 2. Redistributions in binary form must reproduce the above copyright
+<span class="lineNum">      12 </span>            :  *    notice, this list of conditions and the following disclaimer in the
+<span class="lineNum">      13 </span>            :  *    documentation and/or other materials provided with the distribution.
+<span class="lineNum">      14 </span>            :  *
+<span class="lineNum">      15 </span>            :  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS &quot;AS IS&quot;
+<span class="lineNum">      16 </span>            :  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+<span class="lineNum">      17 </span>            :  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+<span class="lineNum">      18 </span>            :  * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+<span class="lineNum">      19 </span>            :  * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+<span class="lineNum">      20 </span>            :  * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+<span class="lineNum">      21 </span>            :  * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+<span class="lineNum">      22 </span>            :  * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+<span class="lineNum">      23 </span>            :  * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+<span class="lineNum">      24 </span>            :  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+<span class="lineNum">      25 </span>            :  * POSSIBILITY OF SUCH DAMAGE.
+<span class="lineNum">      26 </span>            :  */
+<span class="lineNum">      27 </span>            : 
+<span class="lineNum">      28 </span>            : /** \file
+<span class="lineNum">      29 </span>            :  * AVL tree.
+<span class="lineNum">      30 </span>            :  *
+<span class="lineNum">      31 </span>            :  * This tree is a standard AVL tree implementation that stores elements in the
+<span class="lineNum">      32 </span>            :  * order defined by the comparsion function.
+<span class="lineNum">      33 </span>            :  *
+<span class="lineNum">      34 </span>            :  * As difference from other tommy containers, duplicate elements cannot be inserted.
+<span class="lineNum">      35 </span>            :  *
+<span class="lineNum">      36 </span>            :  * \code
+<span class="lineNum">      37 </span>            :  * tommy_tree tree;
+<span class="lineNum">      38 </span>            :  *
+<span class="lineNum">      39 </span>            :  * To initialize a tree you have to call tommy_tree_init() specifing a comparison
+<span class="lineNum">      40 </span>            :  * function that will define the order in the tree.
+<span class="lineNum">      41 </span>            :  *
+<span class="lineNum">      42 </span>            :  * tommy_tree_init(&amp;tree, cmp);
+<span class="lineNum">      43 </span>            :  * \endcode
+<span class="lineNum">      44 </span>            :  *
+<span class="lineNum">      45 </span>            :  * To insert elements in the tree you have to call tommy_tree_insert() for
+<span class="lineNum">      46 </span>            :  * each element.
+<span class="lineNum">      47 </span>            :  * In the insertion call you have to specify the address of the node and the
+<span class="lineNum">      48 </span>            :  * address of the object.
+<span class="lineNum">      49 </span>            :  * The address of the object is used to initialize the tommy_node::data field
+<span class="lineNum">      50 </span>            :  * of the node.
+<span class="lineNum">      51 </span>            :  *
+<span class="lineNum">      52 </span>            :  * \code
+<span class="lineNum">      53 </span>            :  * struct object {
+<span class="lineNum">      54 </span>            :  *     int value;
+<span class="lineNum">      55 </span>            :  *     // other fields
+<span class="lineNum">      56 </span>            :  *     tommy_tree_node node;
+<span class="lineNum">      57 </span>            :  * };
+<span class="lineNum">      58 </span>            :  *
+<span class="lineNum">      59 </span>            :  * struct object* obj = malloc(sizeof(struct object)); // creates the object
+<span class="lineNum">      60 </span>            :  *
+<span class="lineNum">      61 </span>            :  * obj-&gt;value = ...; // initializes the object
+<span class="lineNum">      62 </span>            :  *
+<span class="lineNum">      63 </span>            :  * tommy_tree_insert(&amp;tree, &amp;obj-&gt;node, obj); // inserts the object
+<span class="lineNum">      64 </span>            :  * \endcode
+<span class="lineNum">      65 </span>            :  *
+<span class="lineNum">      66 </span>            :  * To find and element in the tree you have to call tommy_tree_search() providing
+<span class="lineNum">      67 </span>            :  * the key to search.
+<span class="lineNum">      68 </span>            :  *
+<span class="lineNum">      69 </span>            :  * \code
+<span class="lineNum">      70 </span>            :  * struct object value_to_find = { 1 };
+<span class="lineNum">      71 </span>            :  * struct object* obj = tommy_tree_search(&amp;tree, &amp;value_to_find);
+<span class="lineNum">      72 </span>            :  * if (!obj) {
+<span class="lineNum">      73 </span>            :  *     // not found
+<span class="lineNum">      74 </span>            :  * } else {
+<span class="lineNum">      75 </span>            :  *     // found
+<span class="lineNum">      76 </span>            :  * }
+<span class="lineNum">      77 </span>            :  * \endcode
+<span class="lineNum">      78 </span>            :  *
+<span class="lineNum">      79 </span>            :  * To remove an element from the tree you have to call tommy_tree_remove()
+<span class="lineNum">      80 </span>            :  * providing the key to search and remove.
+<span class="lineNum">      81 </span>            :  *
+<span class="lineNum">      82 </span>            :  * \code
+<span class="lineNum">      83 </span>            :  * struct object value_to_remove = { 1 };
+<span class="lineNum">      84 </span>            :  * struct object* obj = tommy_tree_remove(&amp;tree, &amp;value_to_remove);
+<span class="lineNum">      85 </span>            :  * if (obj) {
+<span class="lineNum">      86 </span>            :  *     free(obj); // frees the object allocated memory
+<span class="lineNum">      87 </span>            :  * }
+<span class="lineNum">      88 </span>            :  * \endcode
+<span class="lineNum">      89 </span>            :  *
+<span class="lineNum">      90 </span>            :  * To destroy the tree you have to remove all the elements.
+<span class="lineNum">      91 </span>            :  *
+<span class="lineNum">      92 </span>            :  * If you need to iterate over all the elements in the tree, you can use
+<span class="lineNum">      93 </span>            :  * tommy_tree_foreach() or tommy_tree_foreach_arg().
+<span class="lineNum">      94 </span>            :  * If you need a more precise control with a real iteration, you have to insert
+<span class="lineNum">      95 </span>            :  * all the elements also in a ::tommy_list, and use the list to iterate.
+<span class="lineNum">      96 </span>            :  * See the \ref multiindex example for more detail. 
+<span class="lineNum">      97 </span>            :  */
+<span class="lineNum">      98 </span>            : 
+<span class="lineNum">      99 </span>            : #ifndef __TOMMYTREE_H
+<span class="lineNum">     100 </span>            : #define __TOMMYTREE_H
+<span class="lineNum">     101 </span>            : 
+<span class="lineNum">     102 </span>            : #include &quot;tommytypes.h&quot;
+<span class="lineNum">     103 </span>            : 
+<span class="lineNum">     104 </span>            : /******************************************************************************/
+<span class="lineNum">     105 </span>            : /* tree */
+<span class="lineNum">     106 </span>            : 
+<span class="lineNum">     107 </span>            : /**
+<span class="lineNum">     108 </span>            :  * Tree node.
+<span class="lineNum">     109 </span>            :  * This is the node that you have to include inside your objects.
+<span class="lineNum">     110 </span>            :  */
+<span class="lineNum">     111 </span>            : typedef tommy_node tommy_tree_node;
+<span class="lineNum">     112 </span>            : 
+<span class="lineNum">     113 </span>            : /**
+<span class="lineNum">     114 </span>            :  * Tree container type.
+<span class="lineNum">     115 </span>            :  * \note Don't use internal fields directly, but access the container only using functions.
+<span class="lineNum">     116 </span>            :  */
+<span class="lineNum">     117 </span>            : typedef struct tommy_tree_struct {
+<span class="lineNum">     118 </span>            :         tommy_tree_node* root; /**&lt; Root node. */
+<span class="lineNum">     119 </span>            :         tommy_count_t count; /**&lt; Number of elements. */
+<span class="lineNum">     120 </span>            :         tommy_compare_func* cmp; /**&lt; Comparison function. */
+<span class="lineNum">     121 </span>            : } tommy_tree;
+<span class="lineNum">     122 </span>            : 
+<span class="lineNum">     123 </span>            : /**
+<span class="lineNum">     124 </span>            :  * Initializes the tree.
+<span class="lineNum">     125 </span>            :  * \param cmp The comparison function that defines the orderin the tree.
+<span class="lineNum">     126 </span>            :  */
+<span class="lineNum">     127 </span>            : void tommy_tree_init(tommy_tree* tree, tommy_compare_func* cmp);
+<span class="lineNum">     128 </span>            : 
+<span class="lineNum">     129 </span>            : /**
+<span class="lineNum">     130 </span>            :  * Inserts an element in the tree.
+<span class="lineNum">     131 </span>            :  * If the element is already present, it's not inserted again.
+<span class="lineNum">     132 </span>            :  * You have to provide the pointer of the node embedded into the object and
+<span class="lineNum">     133 </span>            :  * the pointer at the object.
+<span class="lineNum">     134 </span>            :  * \param node Pointer at the node embedded into the object to insert.
+<span class="lineNum">     135 </span>            :  * \param data Pointer at the object to insert.
+<span class="lineNum">     136 </span>            :  * \return The element in the tree. Either the already existing one, or the one just inserted.
+<span class="lineNum">     137 </span>            :  */
+<span class="lineNum">     138 </span>            : void* tommy_tree_insert(tommy_tree* tree, tommy_tree_node* node, void* data);
+<span class="lineNum">     139 </span>            : 
+<span class="lineNum">     140 </span>            : /**
+<span class="lineNum">     141 </span>            :  * Searches and removes an element.
+<span class="lineNum">     142 </span>            :  * If the element is not found, 0 is returned.
+<span class="lineNum">     143 </span>            :  * \param data Element used for comparison.
+<span class="lineNum">     144 </span>            :  * \return The removed element, or 0 if not found.
+<span class="lineNum">     145 </span>            :  */
+<span class="lineNum">     146 </span>            : void* tommy_tree_remove(tommy_tree* tree, void* data);
+<span class="lineNum">     147 </span>            : 
+<span class="lineNum">     148 </span>            : /**
+<span class="lineNum">     149 </span>            :  * Searches an element in the tree.
+<span class="lineNum">     150 </span>            :  * If the element is not found, 0 is returned. 
+<span class="lineNum">     151 </span>            :  * \param data Element used for comparison.
+<span class="lineNum">     152 </span>            :  * \return The first element found, or 0 if none.
+<span class="lineNum">     153 </span>            :  */
+<span class="lineNum">     154 </span>            : void* tommy_tree_search(tommy_tree* tree, void* data);
+<span class="lineNum">     155 </span>            : 
+<span class="lineNum">     156 </span>            : /**
+<span class="lineNum">     157 </span>            :  * Searches an element in the tree with a specific comparison function.
+<span class="lineNum">     158 </span>            :  *
+<span class="lineNum">     159 </span>            :  * Like tommy_tree_search() but you can specify a different comparison function.
+<span class="lineNum">     160 </span>            :  * Note that this function must define a suborder of the original one.
+<span class="lineNum">     161 </span>            :  *
+<span class="lineNum">     162 </span>            :  * The ::data argument will be the first argument of the comparison function,
+<span class="lineNum">     163 </span>            :  * and it can be of a different type of the objects in the tree.
+<span class="lineNum">     164 </span>            :  */
+<span class="lineNum">     165 </span>            : void* tommy_tree_search_compare(tommy_tree* tree, tommy_compare_func* cmp, void* cmp_arg);
+<span class="lineNum">     166 </span>            : 
+<span class="lineNum">     167 </span>            : /**
+<span class="lineNum">     168 </span>            :  * Removes an element from the tree.
+<span class="lineNum">     169 </span>            :  * You must already have the address of the element to remove.
+<span class="lineNum">     170 </span>            :  * \return The tommy_node::data field of the node removed.
+<span class="lineNum">     171 </span>            :  */
+<span class="lineNum">     172 </span>            : void* tommy_tree_remove_existing(tommy_tree* tree, tommy_tree_node* node);
+<span class="lineNum">     173 </span>            : 
+<span class="lineNum">     174 </span>            : /**
+<span class="lineNum">     175 </span>            :  * Calls the specified function for each element in the tree.
+<span class="lineNum">     176 </span>            :  *
+<span class="lineNum">     177 </span>            :  * The elements are processed in order.
+<span class="lineNum">     178 </span>            :  *
+<span class="lineNum">     179 </span>            :  * You can use this function to deallocate all the elements inserted.
+<span class="lineNum">     180 </span>            :  *
+<span class="lineNum">     181 </span>            :  * \code
+<span class="lineNum">     182 </span>            :  * tommy_tree tree;
+<span class="lineNum">     183 </span>            :  *
+<span class="lineNum">     184 </span>            :  * // initializes the tree
+<span class="lineNum">     185 </span>            :  * tommy_tree_init(&amp;tree, cmp);
+<span class="lineNum">     186 </span>            :  *
+<span class="lineNum">     187 </span>            :  * ...
+<span class="lineNum">     188 </span>            :  *
+<span class="lineNum">     189 </span>            :  * // creates an object
+<span class="lineNum">     190 </span>            :  * struct object* obj = malloc(sizeof(struct object));
+<span class="lineNum">     191 </span>            :  *
+<span class="lineNum">     192 </span>            :  * ...
+<span class="lineNum">     193 </span>            :  *
+<span class="lineNum">     194 </span>            :  * // insert it in the tree
+<span class="lineNum">     195 </span>            :  * tommy_tree_insert(&amp;tree, &amp;obj-&gt;node, obj);
+<span class="lineNum">     196 </span>            :  *
+<span class="lineNum">     197 </span>            :  * ...
+<span class="lineNum">     198 </span>            :  *
+<span class="lineNum">     199 </span>            :  * // deallocates all the objects iterating the tree
+<span class="lineNum">     200 </span>            :  * tommy_tree_foreach(&amp;tree, free);
+<span class="lineNum">     201 </span>            :  * \endcode
+<span class="lineNum">     202 </span>            :  */
+<span class="lineNum">     203 </span>            : void tommy_tree_foreach(tommy_tree* tree, tommy_foreach_func* func);
+<span class="lineNum">     204 </span>            : 
+<span class="lineNum">     205 </span>            : /**
+<span class="lineNum">     206 </span>            :  * Calls the specified function with an argument for each element in the tree.
+<span class="lineNum">     207 </span>            :  */
+<span class="lineNum">     208 </span>            : void tommy_tree_foreach_arg(tommy_tree* tree, tommy_foreach_arg_func* func, void* arg);
+<span class="lineNum">     209 </span>            : 
+<span class="lineNum">     210 </span>            : /**
+<a name="211"><span class="lineNum">     211 </span>            :  * Gets the number of elements.</a>
+<span class="lineNum">     212 </span>            :  */
+<span class="lineNum">     213 </span><span class="lineCov">          3 : tommy_inline tommy_count_t tommy_tree_count(tommy_tree* tree)</span>
+<span class="lineNum">     214 </span>            : {
+<span class="lineNum">     215 </span><span class="lineCov">          3 :         return tree-&gt;count;</span>
+<span class="lineNum">     216 </span>            : }
+<span class="lineNum">     217 </span>            : 
+<span class="lineNum">     218 </span>            : /**
+<span class="lineNum">     219 </span>            :  * Gets the size of allocated memory.
+<span class="lineNum">     220 </span>            :  * It includes the size of the ::tommy_tree_node of the stored elements.
+<span class="lineNum">     221 </span>            :  */
+<span class="lineNum">     222 </span>            : tommy_size_t tommy_tree_memory_usage(tommy_tree* tree);
+<span class="lineNum">     223 </span>            : 
+<span class="lineNum">     224 </span>            : #endif
+<span class="lineNum">     225 </span>            : 
+</pre>
+      </td>
+    </tr>
+  </table>
+  <br>
+
+  <table width="100%" border=0 cellspacing=0 cellpadding=0>
+    <tr><td class="ruler"><img src="../glass.png" width=3 height=3 alt=""></td></tr>
+    <tr><td class="versionInfo">Generated by: <a href="http://ltp.sourceforge.net/coverage/lcov.php" target="_parent">LCOV version 1.10</a></td></tr>
+  </table>
+  <br>
+
+</body>
+</html>

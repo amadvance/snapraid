@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-05-12</td>
+            <td class="headerValue">2015-11-13</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">11</td>
@@ -78,7 +78,7 @@
 <span class="lineNum">      16 </span>            : 
 <span class="lineNum">      17 </span>            : static struct raid_func {
 <span class="lineNum">      18 </span>            :         const char *name;
-<span class="lineNum">      19 </span>            :         void *p;
+<span class="lineNum">      19 </span>            :         void (*p)();
 <span class="lineNum">      20 </span>            : } RAID_FUNC[] = {
 <span class="lineNum">      21 </span>            :         { &quot;int8&quot;, raid_gen3_int8 },
 <span class="lineNum">      22 </span>            :         { &quot;int8&quot;, raid_gen4_int8 },
@@ -140,7 +140,7 @@
 <span class="lineNum">      78 </span>            :         { 0, 0 }
 <a name="79"><span class="lineNum">      79 </span>            : };</a>
 <span class="lineNum">      80 </span>            : 
-<span class="lineNum">      81 </span><span class="lineCov">         52 : static const char *raid_tag(void *func)</span>
+<span class="lineNum">      81 </span><span class="lineCov">         52 : static const char *raid_tag(void (*func)())</span>
 <span class="lineNum">      82 </span>            : {
 <span class="lineNum">      83 </span><span class="lineCov">         52 :         struct raid_func *i = RAID_FUNC;</span>
 <span class="lineNum">      84 </span>            : 

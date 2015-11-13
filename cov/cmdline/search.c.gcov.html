@@ -31,13 +31,13 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntry">90</td>
-            <td class="headerCovTableEntry">98</td>
-            <td class="headerCovTableEntryHi">91.8 %</td>
+            <td class="headerCovTableEntry">92</td>
+            <td class="headerCovTableEntry">100</td>
+            <td class="headerCovTableEntryHi">92.0 %</td>
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-05-12</td>
+            <td class="headerValue">2015-11-13</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">7</td>
@@ -85,27 +85,27 @@
 <span class="lineNum">      23 </span>            : /****************************************************************************/
 <a name="24"><span class="lineNum">      24 </span>            : /* search */</a>
 <span class="lineNum">      25 </span>            : 
-<span class="lineNum">      26 </span><span class="lineCov">    1844870 : static void search_file(struct snapraid_state* state, const char* path, data_off_t size, int64_t mtime_sec, int mtime_nsec)</span>
+<span class="lineNum">      26 </span><span class="lineCov">    1842333 : static void search_file(struct snapraid_state* state, const char* path, data_off_t size, int64_t mtime_sec, int mtime_nsec)</span>
 <span class="lineNum">      27 </span>            : {
 <span class="lineNum">      28 </span>            :         struct snapraid_search_file* file;
 <span class="lineNum">      29 </span>            :         tommy_uint32_t file_hash;
 <span class="lineNum">      30 </span>            : 
-<span class="lineNum">      31 </span><span class="lineCov">    1844870 :         file = malloc_nofail(sizeof(struct snapraid_search_file));</span>
-<span class="lineNum">      32 </span><span class="lineCov">    1844870 :         file-&gt;path = strdup_nofail(path);</span>
-<span class="lineNum">      33 </span><span class="lineCov">    1844870 :         file-&gt;size = size;</span>
-<span class="lineNum">      34 </span><span class="lineCov">    1844870 :         file-&gt;mtime_sec = mtime_sec;</span>
-<span class="lineNum">      35 </span><span class="lineCov">    1844870 :         file-&gt;mtime_nsec = mtime_nsec;</span>
+<span class="lineNum">      31 </span><span class="lineCov">    1842333 :         file = malloc_nofail(sizeof(struct snapraid_search_file));</span>
+<span class="lineNum">      32 </span><span class="lineCov">    1842333 :         file-&gt;path = strdup_nofail(path);</span>
+<span class="lineNum">      33 </span><span class="lineCov">    1842333 :         file-&gt;size = size;</span>
+<span class="lineNum">      34 </span><span class="lineCov">    1842333 :         file-&gt;mtime_sec = mtime_sec;</span>
+<span class="lineNum">      35 </span><span class="lineCov">    1842333 :         file-&gt;mtime_nsec = mtime_nsec;</span>
 <span class="lineNum">      36 </span>            : 
-<span class="lineNum">      37 </span><span class="lineCov">    1844870 :         file_hash = file_stamp_hash(file-&gt;size, file-&gt;mtime_sec, file-&gt;mtime_nsec);</span>
+<span class="lineNum">      37 </span><span class="lineCov">    1842333 :         file_hash = file_stamp_hash(file-&gt;size, file-&gt;mtime_sec, file-&gt;mtime_nsec);</span>
 <span class="lineNum">      38 </span>            : 
-<span class="lineNum">      39 </span><span class="lineCov">    1844870 :         tommy_hashdyn_insert(&amp;state-&gt;searchset, &amp;file-&gt;node, file, file_hash);</span>
-<a name="40"><span class="lineNum">      40 </span><span class="lineCov">    1844870 : }</span></a>
+<span class="lineNum">      39 </span><span class="lineCov">    1842333 :         tommy_hashdyn_insert(&amp;state-&gt;searchset, &amp;file-&gt;node, file, file_hash);</span>
+<a name="40"><span class="lineNum">      40 </span><span class="lineCov">    1842333 : }</span></a>
 <span class="lineNum">      41 </span>            : 
-<span class="lineNum">      42 </span><span class="lineCov">    1844870 : void search_file_free(struct snapraid_search_file* file)</span>
+<span class="lineNum">      42 </span><span class="lineCov">    1842333 : void search_file_free(struct snapraid_search_file* file)</span>
 <span class="lineNum">      43 </span>            : {
-<span class="lineNum">      44 </span><span class="lineCov">    1844870 :         free(file-&gt;path);</span>
-<span class="lineNum">      45 </span><span class="lineCov">    1844870 :         free(file);</span>
-<span class="lineNum">      46 </span><span class="lineCov">    1844870 : }</span>
+<span class="lineNum">      44 </span><span class="lineCov">    1842333 :         free(file-&gt;path);</span>
+<span class="lineNum">      45 </span><span class="lineCov">    1842333 :         free(file);</span>
+<span class="lineNum">      46 </span><span class="lineCov">    1842333 : }</span>
 <span class="lineNum">      47 </span>            : 
 <span class="lineNum">      48 </span>            : struct search_file_compare_arg {
 <span class="lineNum">      49 </span>            :         const struct snapraid_state* state;
@@ -117,29 +117,29 @@
 <span class="lineNum">      55 </span>            :         int prevhash;
 <a name="56"><span class="lineNum">      56 </span>            : };</a>
 <span class="lineNum">      57 </span>            : 
-<span class="lineNum">      58 </span><span class="lineCov">      11468 : int search_file_compare(const void* void_arg, const void* void_data)</span>
+<span class="lineNum">      58 </span><span class="lineCov">      11531 : int search_file_compare(const void* void_arg, const void* void_data)</span>
 <span class="lineNum">      59 </span>            : {
-<span class="lineNum">      60 </span><span class="lineCov">      11468 :         const struct search_file_compare_arg* arg = void_arg;</span>
-<span class="lineNum">      61 </span><span class="lineCov">      11468 :         const struct snapraid_search_file* file = void_data;</span>
-<span class="lineNum">      62 </span><span class="lineCov">      11468 :         const struct snapraid_state* state = arg-&gt;state;</span>
+<span class="lineNum">      60 </span><span class="lineCov">      11531 :         const struct search_file_compare_arg* arg = void_arg;</span>
+<span class="lineNum">      61 </span><span class="lineCov">      11531 :         const struct snapraid_search_file* file = void_data;</span>
+<span class="lineNum">      62 </span><span class="lineCov">      11531 :         const struct snapraid_state* state = arg-&gt;state;</span>
 <span class="lineNum">      63 </span>            :         unsigned char buffer_hash[HASH_SIZE];
-<span class="lineNum">      64 </span><span class="lineCov">      11468 :         const char* path = file-&gt;path;</span>
+<span class="lineNum">      64 </span><span class="lineCov">      11531 :         const char* path = file-&gt;path;</span>
 <span class="lineNum">      65 </span>            :         int f;
 <span class="lineNum">      66 </span>            :         ssize_t ret;
 <span class="lineNum">      67 </span>            : 
 <span class="lineNum">      68 </span>            :         /* compare file info */
-<span class="lineNum">      69 </span><span class="lineCov">      11468 :         if (arg-&gt;file-&gt;size != file-&gt;size)</span>
+<span class="lineNum">      69 </span><span class="lineCov">      11531 :         if (arg-&gt;file-&gt;size != file-&gt;size)</span>
 <span class="lineNum">      70 </span><span class="lineNoCov">          0 :                 return -1;</span>
 <span class="lineNum">      71 </span>            : 
-<span class="lineNum">      72 </span><span class="lineCov">      11468 :         if (arg-&gt;file-&gt;mtime_sec != file-&gt;mtime_sec)</span>
+<span class="lineNum">      72 </span><span class="lineCov">      11531 :         if (arg-&gt;file-&gt;mtime_sec != file-&gt;mtime_sec)</span>
 <span class="lineNum">      73 </span><span class="lineNoCov">          0 :                 return -1;</span>
 <span class="lineNum">      74 </span>            : 
-<span class="lineNum">      75 </span><span class="lineCov">      11468 :         if (arg-&gt;file-&gt;mtime_nsec != file-&gt;mtime_nsec)</span>
+<span class="lineNum">      75 </span><span class="lineCov">      11531 :         if (arg-&gt;file-&gt;mtime_nsec != file-&gt;mtime_nsec)</span>
 <span class="lineNum">      76 </span><span class="lineNoCov">          0 :                 return -1;</span>
 <span class="lineNum">      77 </span>            : 
 <span class="lineNum">      78 </span>            :         /* read the block and compare the hash */
-<span class="lineNum">      79 </span><span class="lineCov">      11468 :         f = open(path, O_RDONLY | O_BINARY);</span>
-<span class="lineNum">      80 </span><span class="lineCov">      11468 :         if (f == -1) {</span>
+<span class="lineNum">      79 </span><span class="lineCov">      11531 :         f = open(path, O_RDONLY | O_BINARY);</span>
+<span class="lineNum">      80 </span><span class="lineCov">      11531 :         if (f == -1) {</span>
 <span class="lineNum">      81 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">      82 </span>            :                 if (errno == ENOENT) {
 <span class="lineNum">      83 </span>            :                         log_fatal(&quot;DANGER! file '%s' disappeared.\n&quot;, path);
@@ -151,23 +151,23 @@
 <span class="lineNum">      89 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">      90 </span>            :         }
 <span class="lineNum">      91 </span>            : 
-<span class="lineNum">      92 </span><span class="lineCov">      11468 :         if (lseek(f, arg-&gt;offset, SEEK_SET) != arg-&gt;offset) {</span>
+<span class="lineNum">      92 </span><span class="lineCov">      11531 :         if (lseek(f, arg-&gt;offset, SEEK_SET) != arg-&gt;offset) {</span>
 <span class="lineNum">      93 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">      94 </span>            :                 log_fatal(&quot;Error seeking file '%s'. %s.\n&quot;, path, strerror(errno));
 <span class="lineNum">      95 </span>            :                 exit(EXIT_FAILURE);
 <span class="lineNum">      96 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">      97 </span>            :         }
 <span class="lineNum">      98 </span>            : 
-<span class="lineNum">      99 </span><span class="lineCov">      11468 :         ret = read(f, arg-&gt;buffer, arg-&gt;read_size);</span>
-<span class="lineNum">     100 </span><span class="lineCov">      11468 :         if (ret &lt; 0 || (unsigned)ret != arg-&gt;read_size) {</span>
+<span class="lineNum">      99 </span><span class="lineCov">      11531 :         ret = read(f, arg-&gt;buffer, arg-&gt;read_size);</span>
+<span class="lineNum">     100 </span><span class="lineCov">      11531 :         if (ret &lt; 0 || (unsigned)ret != arg-&gt;read_size) {</span>
 <span class="lineNum">     101 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     102 </span>            :                 log_fatal(&quot;Error reading file '%s'. %s.\n&quot;, path, strerror(errno));
 <span class="lineNum">     103 </span>            :                 exit(EXIT_FAILURE);
 <span class="lineNum">     104 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     105 </span>            :         }
 <span class="lineNum">     106 </span>            : 
-<span class="lineNum">     107 </span><span class="lineCov">      11468 :         ret = close(f);</span>
-<span class="lineNum">     108 </span><span class="lineCov">      11468 :         if (ret != 0) {</span>
+<span class="lineNum">     107 </span><span class="lineCov">      11531 :         ret = close(f);</span>
+<span class="lineNum">     108 </span><span class="lineCov">      11531 :         if (ret != 0) {</span>
 <span class="lineNum">     109 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     110 </span>            :                 log_fatal(&quot;Error closing file '%s'. %s.\n&quot;, path, strerror(errno));
 <span class="lineNum">     111 </span>            :                 exit(EXIT_FAILURE);
@@ -175,54 +175,54 @@
 <span class="lineNum">     113 </span>            :         }
 <span class="lineNum">     114 </span>            : 
 <span class="lineNum">     115 </span>            :         /* compute the hash */
-<span class="lineNum">     116 </span><span class="lineCov">      11468 :         if (arg-&gt;prevhash)</span>
-<span class="lineNum">     117 </span><span class="lineCov">       4503 :                 memhash(state-&gt;prevhash, state-&gt;prevhashseed, buffer_hash, arg-&gt;buffer, arg-&gt;read_size);</span>
+<span class="lineNum">     116 </span><span class="lineCov">      11531 :         if (arg-&gt;prevhash)</span>
+<span class="lineNum">     117 </span><span class="lineCov">       4483 :                 memhash(state-&gt;prevhash, state-&gt;prevhashseed, buffer_hash, arg-&gt;buffer, arg-&gt;read_size);</span>
 <span class="lineNum">     118 </span>            :         else
-<span class="lineNum">     119 </span><span class="lineCov">       6965 :                 memhash(state-&gt;hash, state-&gt;hashseed, buffer_hash, arg-&gt;buffer, arg-&gt;read_size);</span>
+<span class="lineNum">     119 </span><span class="lineCov">       7048 :                 memhash(state-&gt;hash, state-&gt;hashseed, buffer_hash, arg-&gt;buffer, arg-&gt;read_size);</span>
 <span class="lineNum">     120 </span>            : 
 <span class="lineNum">     121 </span>            :         /* check if the hash is matching */
-<span class="lineNum">     122 </span><span class="lineCov">      11468 :         if (memcmp(buffer_hash, arg-&gt;block-&gt;hash, HASH_SIZE) != 0)</span>
-<span class="lineNum">     123 </span><span class="lineCov">       2086 :                 return -1;</span>
+<span class="lineNum">     122 </span><span class="lineCov">      11531 :         if (memcmp(buffer_hash, arg-&gt;block-&gt;hash, HASH_SIZE) != 0)</span>
+<span class="lineNum">     123 </span><span class="lineCov">       2119 :                 return -1;</span>
 <span class="lineNum">     124 </span>            : 
-<span class="lineNum">     125 </span><span class="lineCov">       9382 :         if (arg-&gt;read_size != state-&gt;block_size) {</span>
+<span class="lineNum">     125 </span><span class="lineCov">       9412 :         if (arg-&gt;read_size != state-&gt;block_size) {</span>
 <span class="lineNum">     126 </span>            :                 /* fill the remaining with 0 */
-<span class="lineNum">     127 </span><span class="lineCov">       3922 :                 memset(arg-&gt;buffer + arg-&gt;read_size, 0, state-&gt;block_size - arg-&gt;read_size);</span>
+<span class="lineNum">     127 </span><span class="lineCov">       3956 :                 memset(arg-&gt;buffer + arg-&gt;read_size, 0, state-&gt;block_size - arg-&gt;read_size);</span>
 <span class="lineNum">     128 </span>            :         }
 <span class="lineNum">     129 </span>            : 
-<span class="lineNum">     130 </span><span class="lineCov">       9382 :         return 0;</span>
+<span class="lineNum">     130 </span><span class="lineCov">       9412 :         return 0;</span>
 <a name="131"><span class="lineNum">     131 </span>            : }</a>
 <span class="lineNum">     132 </span>            : 
-<span class="lineNum">     133 </span><span class="lineCov">     625435 : int state_search_fetch(struct snapraid_state* state, int prevhash, struct snapraid_block* missing_block, unsigned char* buffer)</span>
+<span class="lineNum">     133 </span><span class="lineCov">     630950 : int state_search_fetch(struct snapraid_state* state, int prevhash, struct snapraid_file* missing_file, block_off_t missing_file_pos, struct snapraid_block* missing_block, unsigned char* buffer)</span>
 <span class="lineNum">     134 </span>            : {
 <span class="lineNum">     135 </span>            :         struct snapraid_search_file* file;
 <span class="lineNum">     136 </span>            :         tommy_uint32_t file_hash;
 <span class="lineNum">     137 </span>            :         struct search_file_compare_arg arg;
 <span class="lineNum">     138 </span>            : 
-<span class="lineNum">     139 </span><span class="lineCov">     625435 :         arg.state = state;</span>
-<span class="lineNum">     140 </span><span class="lineCov">     625435 :         arg.block = missing_block;</span>
-<span class="lineNum">     141 </span><span class="lineCov">     625435 :         arg.file = block_file_get(missing_block);</span>
-<span class="lineNum">     142 </span><span class="lineCov">     625435 :         arg.buffer = buffer;</span>
-<span class="lineNum">     143 </span><span class="lineCov">     625435 :         arg.offset = state-&gt;block_size * (data_off_t)block_file_pos(missing_block);</span>
-<span class="lineNum">     144 </span><span class="lineCov">     625435 :         arg.read_size = block_file_size(missing_block, state-&gt;block_size);</span>
-<span class="lineNum">     145 </span><span class="lineCov">     625435 :         arg.prevhash = prevhash;</span>
+<span class="lineNum">     139 </span><span class="lineCov">     630950 :         arg.state = state;</span>
+<span class="lineNum">     140 </span><span class="lineCov">     630950 :         arg.block = missing_block;</span>
+<span class="lineNum">     141 </span><span class="lineCov">     630950 :         arg.file = missing_file;</span>
+<span class="lineNum">     142 </span><span class="lineCov">     630950 :         arg.buffer = buffer;</span>
+<span class="lineNum">     143 </span><span class="lineCov">     630950 :         arg.offset = state-&gt;block_size * (data_off_t)missing_file_pos;</span>
+<span class="lineNum">     144 </span><span class="lineCov">     630950 :         arg.read_size = file_block_size(missing_file, missing_file_pos, state-&gt;block_size);</span>
+<span class="lineNum">     145 </span><span class="lineCov">     630950 :         arg.prevhash = prevhash;</span>
 <span class="lineNum">     146 </span>            : 
-<span class="lineNum">     147 </span><span class="lineCov">     625435 :         file_hash = file_stamp_hash(arg.file-&gt;size, arg.file-&gt;mtime_sec, arg.file-&gt;mtime_nsec);</span>
+<span class="lineNum">     147 </span><span class="lineCov">     630950 :         file_hash = file_stamp_hash(arg.file-&gt;size, arg.file-&gt;mtime_sec, arg.file-&gt;mtime_nsec);</span>
 <span class="lineNum">     148 </span>            : 
 <span class="lineNum">     149 </span>            :         /* search in the hashtable, and also check if the data matches the hash */
-<span class="lineNum">     150 </span><span class="lineCov">     625435 :         file = tommy_hashdyn_search(&amp;state-&gt;searchset, search_file_compare, &amp;arg, file_hash);</span>
-<span class="lineNum">     151 </span><span class="lineCov">     625435 :         if (!file)</span>
-<span class="lineNum">     152 </span><span class="lineCov">     616053 :                 return -1;</span>
+<span class="lineNum">     150 </span><span class="lineCov">     630950 :         file = tommy_hashdyn_search(&amp;state-&gt;searchset, search_file_compare, &amp;arg, file_hash);</span>
+<span class="lineNum">     151 </span><span class="lineCov">     630950 :         if (!file)</span>
+<span class="lineNum">     152 </span><span class="lineCov">     621538 :                 return -1;</span>
 <span class="lineNum">     153 </span>            : 
 <span class="lineNum">     154 </span>            :         /* if found, buffer is already set with data */
-<span class="lineNum">     155 </span><span class="lineCov">       9382 :         return 0;</span>
+<span class="lineNum">     155 </span><span class="lineCov">       9412 :         return 0;</span>
 <a name="156"><span class="lineNum">     156 </span>            : }</a>
 <span class="lineNum">     157 </span>            : 
-<span class="lineNum">     158 </span><span class="lineCov">       2465 : static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk, const char* dir, const char* sub)</span>
+<span class="lineNum">     158 </span><span class="lineCov">       2462 : static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk, const char* dir, const char* sub)</span>
 <span class="lineNum">     159 </span>            : {
 <span class="lineNum">     160 </span>            :         DIR* d;
 <span class="lineNum">     161 </span>            : 
-<span class="lineNum">     162 </span><span class="lineCov">       2465 :         d = opendir(dir);</span>
-<span class="lineNum">     163 </span><span class="lineCov">       2465 :         if (!d) {</span>
+<span class="lineNum">     162 </span><span class="lineCov">       2462 :         d = opendir(dir);</span>
+<span class="lineNum">     163 </span><span class="lineCov">       2462 :         if (!d) {</span>
 <span class="lineNum">     164 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     165 </span>            :                 log_fatal(&quot;Error opening directory '%s'. %s.\n&quot;, dir, strerror(errno));
 <span class="lineNum">     166 </span>            :                 exit(EXIT_FAILURE);
@@ -233,40 +233,40 @@
 <span class="lineNum">     171 </span>            :                 char path_next[PATH_MAX];
 <span class="lineNum">     172 </span>            :                 char sub_next[PATH_MAX];
 <span class="lineNum">     173 </span>            :                 char out[PATH_MAX];
-<span class="lineNum">     174 </span><span class="lineCov">    2041185 :                 struct snapraid_filter* reason = 0;</span>
+<span class="lineNum">     174 </span><span class="lineCov">    2039139 :                 struct snapraid_filter* reason = 0;</span>
 <span class="lineNum">     175 </span>            :                 struct stat st;
 <span class="lineNum">     176 </span>            :                 const char* name;
 <span class="lineNum">     177 </span>            :                 struct dirent* dd;
 <span class="lineNum">     178 </span>            : 
 <span class="lineNum">     179 </span>            :                 /* clear errno to detect erroneous conditions */
-<span class="lineNum">     180 </span><span class="lineCov">    2041185 :                 errno = 0;</span>
-<span class="lineNum">     181 </span><span class="lineCov">    2041185 :                 dd = readdir(d);</span>
-<span class="lineNum">     182 </span><span class="lineCov">    2041185 :                 if (dd == 0 &amp;&amp; errno != 0) {</span>
+<span class="lineNum">     180 </span><span class="lineCov">    2039139 :                 errno = 0;</span>
+<span class="lineNum">     181 </span><span class="lineCov">    2039139 :                 dd = readdir(d);</span>
+<span class="lineNum">     182 </span><span class="lineCov">    2039139 :                 if (dd == 0 &amp;&amp; errno != 0) {</span>
 <span class="lineNum">     183 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     184 </span>            :                         log_fatal(&quot;Error reading directory '%s'. %s.\n&quot;, dir, strerror(errno));
 <span class="lineNum">     185 </span>            :                         exit(EXIT_FAILURE);
 <span class="lineNum">     186 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     187 </span>            :                 }
-<span class="lineNum">     188 </span><span class="lineCov">    2041185 :                 if (dd == 0) {</span>
-<span class="lineNum">     189 </span><span class="lineCov">       2465 :                         break; /* finished */</span>
+<span class="lineNum">     188 </span><span class="lineCov">    2039139 :                 if (dd == 0) {</span>
+<span class="lineNum">     189 </span><span class="lineCov">       2462 :                         break; /* finished */</span>
 <span class="lineNum">     190 </span>            :                 }
 <span class="lineNum">     191 </span>            : 
 <span class="lineNum">     192 </span>            :                 /* skip &quot;.&quot; and &quot;..&quot; files */
-<span class="lineNum">     193 </span><span class="lineCov">    2038720 :                 name = dd-&gt;d_name;</span>
-<span class="lineNum">     194 </span><span class="lineCov">    2038720 :                 if (name[0] == '.' &amp;&amp; (name[1] == 0 || (name[1] == '.' &amp;&amp; name[2] == 0)))</span>
-<span class="lineNum">     195 </span><span class="lineCov">       9860 :                         continue;</span>
+<span class="lineNum">     193 </span><span class="lineCov">    2036677 :                 name = dd-&gt;d_name;</span>
+<span class="lineNum">     194 </span><span class="lineCov">    2036677 :                 if (name[0] == '.' &amp;&amp; (name[1] == 0 || (name[1] == '.' &amp;&amp; name[2] == 0)))</span>
+<span class="lineNum">     195 </span><span class="lineCov">       9848 :                         continue;</span>
 <span class="lineNum">     196 </span>            : 
-<span class="lineNum">     197 </span><span class="lineCov">    2033790 :                 pathprint(path_next, sizeof(path_next), &quot;%s%s&quot;, dir, name);</span>
-<span class="lineNum">     198 </span><span class="lineCov">    2033790 :                 pathprint(sub_next, sizeof(sub_next), &quot;%s%s&quot;, sub, name);</span>
+<span class="lineNum">     197 </span><span class="lineCov">    2031753 :                 pathprint(path_next, sizeof(path_next), &quot;%s%s&quot;, dir, name);</span>
+<span class="lineNum">     198 </span><span class="lineCov">    2031753 :                 pathprint(sub_next, sizeof(sub_next), &quot;%s%s&quot;, sub, name);</span>
 <span class="lineNum">     199 </span>            : 
 <span class="lineNum">     200 </span>            :                 /* exclude hidden files even before calling lstat() */
-<span class="lineNum">     201 </span><span class="lineCov">    2033790 :                 if (disk != 0 &amp;&amp; filter_hidden(state-&gt;filter_hidden, dd) != 0) {</span>
+<span class="lineNum">     201 </span><span class="lineCov">    2031753 :                 if (disk != 0 &amp;&amp; filter_hidden(state-&gt;filter_hidden, dd) != 0) {</span>
 <span class="lineNum">     202 </span><span class="lineNoCov">          0 :                         msg_verbose(&quot;Excluding hidden '%s'\n&quot;, path_next);</span>
 <span class="lineNum">     203 </span><span class="lineNoCov">          0 :                         continue;</span>
 <span class="lineNum">     204 </span>            :                 }
 <span class="lineNum">     205 </span>            : 
 <span class="lineNum">     206 </span>            :                 /* exclude content files even before calling lstat() */
-<span class="lineNum">     207 </span><span class="lineCov">    2033790 :                 if (disk != 0 &amp;&amp; filter_content(&amp;state-&gt;contentlist, path_next) != 0) {</span>
+<span class="lineNum">     207 </span><span class="lineCov">    2031753 :                 if (disk != 0 &amp;&amp; filter_content(&amp;state-&gt;contentlist, path_next) != 0) {</span>
 <span class="lineNum">     208 </span><span class="lineNoCov">          0 :                         msg_verbose(&quot;Excluding content '%s'\n&quot;, path_next);</span>
 <span class="lineNum">     209 </span><span class="lineNoCov">          0 :                         continue;</span>
 <span class="lineNum">     210 </span>            :                 }
@@ -290,7 +290,7 @@
 <span class="lineNum">     228 </span>            :                 }
 <span class="lineNum">     229 </span>            : #else
 <span class="lineNum">     230 </span>            :                 /* get lstat info about the file */
-<span class="lineNum">     231 </span><span class="lineCov">    2033790 :                 if (lstat(path_next, &amp;st) != 0) {</span>
+<span class="lineNum">     231 </span><span class="lineCov">    2031753 :                 if (lstat(path_next, &amp;st) != 0) {</span>
 <span class="lineNum">     232 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     233 </span>            :                         log_fatal(&quot;Error in stat file/directory '%s'. %s.\n&quot;, path_next, strerror(errno));
 <span class="lineNum">     234 </span>            :                         exit(EXIT_FAILURE);
@@ -298,30 +298,30 @@
 <span class="lineNum">     236 </span>            :                 }
 <span class="lineNum">     237 </span>            : #endif
 <span class="lineNum">     238 </span>            : 
-<span class="lineNum">     239 </span><span class="lineCov">    2033790 :                 if (S_ISREG(st.st_mode)) {</span>
-<span class="lineNum">     240 </span><span class="lineCov">    1969797 :                         if (disk == 0 || filter_path(&amp;state-&gt;filterlist, &amp;reason, disk-&gt;name, sub_next) == 0) {</span>
-<span class="lineNum">     241 </span><span class="lineCov">    1844870 :                                 search_file(state, path_next, st.st_size, st.st_mtime, STAT_NSEC(&amp;st));</span>
+<span class="lineNum">     239 </span><span class="lineCov">    2031753 :                 if (S_ISREG(st.st_mode)) {</span>
+<span class="lineNum">     240 </span><span class="lineCov">    1967420 :                         if (disk == 0 || filter_path(&amp;state-&gt;filterlist, &amp;reason, disk-&gt;name, sub_next) == 0) {</span>
+<span class="lineNum">     241 </span><span class="lineCov">    1842333 :                                 search_file(state, path_next, st.st_size, st.st_mtime, STAT_NSEC(&amp;st));</span>
 <span class="lineNum">     242 </span>            :                         } else {
-<span class="lineNum">     243 </span><span class="lineCov">     124927 :                                 msg_verbose(&quot;Excluding link '%s' for rule '%s'\n&quot;, path_next, filter_type(reason, out, sizeof(out)));</span>
+<span class="lineNum">     243 </span><span class="lineCov">     125087 :                                 msg_verbose(&quot;Excluding link '%s' for rule '%s'\n&quot;, path_next, filter_type(reason, out, sizeof(out)));</span>
 <span class="lineNum">     244 </span>            :                         }
-<span class="lineNum">     245 </span><span class="lineCov">      63993 :                 } else if (S_ISDIR(st.st_mode)) {</span>
-<span class="lineNum">     246 </span><span class="lineCov">       1783 :                         if (disk == 0 || filter_dir(&amp;state-&gt;filterlist, &amp;reason, disk-&gt;name, sub_next) == 0) {</span>
-<span class="lineNum">     247 </span><span class="lineCov">       1783 :                                 pathslash(path_next, sizeof(path_next));</span>
-<span class="lineNum">     248 </span><span class="lineCov">       1783 :                                 pathslash(sub_next, sizeof(sub_next));</span>
-<span class="lineNum">     249 </span><span class="lineCov">       1783 :                                 search_dir(state, disk, path_next, sub_next);</span>
+<span class="lineNum">     245 </span><span class="lineCov">      64333 :                 } else if (S_ISDIR(st.st_mode)) {</span>
+<span class="lineNum">     246 </span><span class="lineCov">       1781 :                         if (disk == 0 || filter_dir(&amp;state-&gt;filterlist, &amp;reason, disk-&gt;name, sub_next) == 0) {</span>
+<span class="lineNum">     247 </span><span class="lineCov">       1781 :                                 pathslash(path_next, sizeof(path_next));</span>
+<span class="lineNum">     248 </span><span class="lineCov">       1781 :                                 pathslash(sub_next, sizeof(sub_next));</span>
+<span class="lineNum">     249 </span><span class="lineCov">       1781 :                                 search_dir(state, disk, path_next, sub_next);</span>
 <span class="lineNum">     250 </span>            :                         } else {
 <span class="lineNum">     251 </span><span class="lineNoCov">          0 :                                 msg_verbose(&quot;Excluding directory '%s' for rule '%s'\n&quot;, path_next, filter_type(reason, out, sizeof(out)));</span>
 <span class="lineNum">     252 </span>            :                         }
 <span class="lineNum">     253 </span>            :                 }
-<span class="lineNum">     254 </span><span class="lineCov">    2038720 :         }</span>
+<span class="lineNum">     254 </span><span class="lineCov">    2036677 :         }</span>
 <span class="lineNum">     255 </span>            : 
-<span class="lineNum">     256 </span><span class="lineCov">       2465 :         if (closedir(d) != 0) {</span>
+<span class="lineNum">     256 </span><span class="lineCov">       2462 :         if (closedir(d) != 0) {</span>
 <span class="lineNum">     257 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     258 </span>            :                 log_fatal(&quot;Error closing directory '%s'. %s.\n&quot;, dir, strerror(errno));
 <span class="lineNum">     259 </span>            :                 exit(EXIT_FAILURE);
 <span class="lineNum">     260 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     261 </span>            :         }
-<a name="262"><span class="lineNum">     262 </span><span class="lineCov">       2465 : }</span></a>
+<a name="262"><span class="lineNum">     262 </span><span class="lineCov">       2462 : }</span></a>
 <span class="lineNum">     263 </span>            : 
 <span class="lineNum">     264 </span><span class="lineCov">          1 : void state_search(struct snapraid_state* state, const char* dir)</span>
 <span class="lineNum">     265 </span>            : {
@@ -344,12 +344,16 @@
 <span class="lineNum">     282 </span><span class="lineCov">        795 :         for (i = state-&gt;disklist; i != 0; i = i-&gt;next) {</span>
 <span class="lineNum">     283 </span><span class="lineCov">        681 :                 struct snapraid_disk* disk = i-&gt;data;</span>
 <span class="lineNum">     284 </span>            : 
-<span class="lineNum">     285 </span><span class="lineCov">        681 :                 msg_progress(&quot;Scanning disk %s...\n&quot;, disk-&gt;name);</span>
-<span class="lineNum">     286 </span>            : 
-<span class="lineNum">     287 </span><span class="lineCov">        681 :                 search_dir(state, disk, disk-&gt;dir, &quot;&quot;);</span>
-<span class="lineNum">     288 </span>            :         }
-<span class="lineNum">     289 </span><span class="lineCov">        114 : }</span>
+<span class="lineNum">     285 </span>            :                 /* skip data disks that are not accessible */
+<span class="lineNum">     286 </span><span class="lineCov">        681 :                 if (disk-&gt;skip_access)</span>
+<span class="lineNum">     287 </span><span class="lineCov">          1 :                         continue;</span>
+<span class="lineNum">     288 </span>            : 
+<span class="lineNum">     289 </span><span class="lineCov">        680 :                 msg_progress(&quot;Searching disk %s...\n&quot;, disk-&gt;name);</span>
 <span class="lineNum">     290 </span>            : 
+<span class="lineNum">     291 </span><span class="lineCov">        680 :                 search_dir(state, disk, disk-&gt;dir, &quot;&quot;);</span>
+<span class="lineNum">     292 </span>            :         }
+<span class="lineNum">     293 </span><span class="lineCov">        114 : }</span>
+<span class="lineNum">     294 </span>            : 
 </pre>
       </td>
     </tr>

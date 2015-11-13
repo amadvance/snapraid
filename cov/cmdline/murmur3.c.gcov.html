@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-05-12</td>
+            <td class="headerValue">2015-11-13</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">2</td>
@@ -91,14 +91,14 @@
 <span class="lineNum">      29 </span>            : // domain. The author hereby disclaims copyright to this source code.
 <a name="30"><span class="lineNum">      30 </span>            : </a>
 <span class="lineNum">      31 </span>            : /* Finalization mix - force all bits of a hash block to avalanche */
-<span class="lineNum">      32 </span><span class="lineCov">    8699708 : static inline uint32_t fmix32(uint32_t h)</span>
+<span class="lineNum">      32 </span><span class="lineCov">    9010320 : static inline uint32_t fmix32(uint32_t h)</span>
 <span class="lineNum">      33 </span>            : {
-<span class="lineNum">      34 </span><span class="lineCov">    8699708 :         h ^= h &gt;&gt; 16;</span>
-<span class="lineNum">      35 </span><span class="lineCov">    8699708 :         h *= 0x85ebca6b;</span>
-<span class="lineNum">      36 </span><span class="lineCov">    8699708 :         h ^= h &gt;&gt; 13;</span>
-<span class="lineNum">      37 </span><span class="lineCov">    8699708 :         h *= 0xc2b2ae35;</span>
-<span class="lineNum">      38 </span><span class="lineCov">    8699708 :         h ^= h &gt;&gt; 16;</span>
-<span class="lineNum">      39 </span><span class="lineCov">    8699708 :         return h;</span>
+<span class="lineNum">      34 </span><span class="lineCov">    9010320 :         h ^= h &gt;&gt; 16;</span>
+<span class="lineNum">      35 </span><span class="lineCov">    9010320 :         h *= 0x85ebca6b;</span>
+<span class="lineNum">      36 </span><span class="lineCov">    9010320 :         h ^= h &gt;&gt; 13;</span>
+<span class="lineNum">      37 </span><span class="lineCov">    9010320 :         h *= 0xc2b2ae35;</span>
+<span class="lineNum">      38 </span><span class="lineCov">    9010320 :         h ^= h &gt;&gt; 16;</span>
+<span class="lineNum">      39 </span><span class="lineCov">    9010320 :         return h;</span>
 <span class="lineNum">      40 </span>            : }
 <span class="lineNum">      41 </span>            : 
 <span class="lineNum">      42 </span>            : /*
@@ -137,17 +137,17 @@
 <span class="lineNum">      75 </span>            : uint32_t c3 = 0x38b34ae5;
 <a name="76"><span class="lineNum">      76 </span>            : uint32_t c4 = 0xa1e38b93;</a>
 <span class="lineNum">      77 </span>            : 
-<span class="lineNum">      78 </span><span class="lineCov">    2174927 : void MurmurHash3_x86_128(const void* data, size_t size, const uint8_t* seed, void* digest)</span>
+<span class="lineNum">      78 </span><span class="lineCov">    2252580 : void MurmurHash3_x86_128(const void* data, size_t size, const uint8_t* seed, void* digest)</span>
 <span class="lineNum">      79 </span>            : {
 <span class="lineNum">      80 </span>            :         size_t nblocks;
 <span class="lineNum">      81 </span>            :         const uint32_t* blocks;
 <span class="lineNum">      82 </span>            :         const uint32_t* end;
-<span class="lineNum">      83 </span>            :         size_t remainder;
+<span class="lineNum">      83 </span>            :         size_t size_remainder;
 <span class="lineNum">      84 </span>            : 
-<span class="lineNum">      85 </span><span class="lineCov">    2174927 :         uint32_t h1 = ((const uint32_t*)seed)[0];</span>
-<span class="lineNum">      86 </span><span class="lineCov">    2174927 :         uint32_t h2 = ((const uint32_t*)seed)[1];</span>
-<span class="lineNum">      87 </span><span class="lineCov">    2174927 :         uint32_t h3 = ((const uint32_t*)seed)[2];</span>
-<span class="lineNum">      88 </span><span class="lineCov">    2174927 :         uint32_t h4 = ((const uint32_t*)seed)[3];</span>
+<span class="lineNum">      85 </span><span class="lineCov">    2252580 :         uint32_t h1 = ((const uint32_t*)seed)[0];</span>
+<span class="lineNum">      86 </span><span class="lineCov">    2252580 :         uint32_t h2 = ((const uint32_t*)seed)[1];</span>
+<span class="lineNum">      87 </span><span class="lineCov">    2252580 :         uint32_t h3 = ((const uint32_t*)seed)[2];</span>
+<span class="lineNum">      88 </span><span class="lineCov">    2252580 :         uint32_t h4 = ((const uint32_t*)seed)[3];</span>
 <span class="lineNum">      89 </span>            : 
 <span class="lineNum">      90 </span>            : #if WORDS_BIGENDIAN
 <span class="lineNum">      91 </span>            :         h1 = util_swap32(h1);
@@ -156,16 +156,16 @@
 <span class="lineNum">      94 </span>            :         h4 = util_swap32(h4);
 <span class="lineNum">      95 </span>            : #endif
 <span class="lineNum">      96 </span>            : 
-<span class="lineNum">      97 </span><span class="lineCov">    2174927 :         nblocks = size / 16;</span>
-<span class="lineNum">      98 </span><span class="lineCov">    2174927 :         blocks = data;</span>
-<span class="lineNum">      99 </span><span class="lineCov">    2174927 :         end = blocks + nblocks * 4;</span>
+<span class="lineNum">      97 </span><span class="lineCov">    2252580 :         nblocks = size / 16;</span>
+<span class="lineNum">      98 </span><span class="lineCov">    2252580 :         blocks = data;</span>
+<span class="lineNum">      99 </span><span class="lineCov">    2252580 :         end = blocks + nblocks * 4;</span>
 <span class="lineNum">     100 </span>            : 
 <span class="lineNum">     101 </span>            :         /* body */
-<span class="lineNum">     102 </span><span class="lineCov">  115758500 :         while (blocks &lt; end) {</span>
-<span class="lineNum">     103 </span><span class="lineCov">  111408646 :                 uint32_t k1 = blocks[0];</span>
-<span class="lineNum">     104 </span><span class="lineCov">  111408646 :                 uint32_t k2 = blocks[1];</span>
-<span class="lineNum">     105 </span><span class="lineCov">  111408646 :                 uint32_t k3 = blocks[2];</span>
-<span class="lineNum">     106 </span><span class="lineCov">  111408646 :                 uint32_t k4 = blocks[3];</span>
+<span class="lineNum">     102 </span><span class="lineCov">  119858362 :         while (blocks &lt; end) {</span>
+<span class="lineNum">     103 </span><span class="lineCov">  115353202 :                 uint32_t k1 = blocks[0];</span>
+<span class="lineNum">     104 </span><span class="lineCov">  115353202 :                 uint32_t k2 = blocks[1];</span>
+<span class="lineNum">     105 </span><span class="lineCov">  115353202 :                 uint32_t k3 = blocks[2];</span>
+<span class="lineNum">     106 </span><span class="lineCov">  115353202 :                 uint32_t k4 = blocks[3];</span>
 <span class="lineNum">     107 </span>            : 
 <span class="lineNum">     108 </span>            : #if WORDS_BIGENDIAN
 <span class="lineNum">     109 </span>            :                 k1 = util_swap32(k1);
@@ -174,71 +174,71 @@
 <span class="lineNum">     112 </span>            :                 k4 = util_swap32(k4);
 <span class="lineNum">     113 </span>            : #endif
 <span class="lineNum">     114 </span>            : 
-<span class="lineNum">     115 </span><span class="lineCov">  111408646 :                 k1 *= c1; k1 = util_rotl32(k1, 15); k1 *= c2; h1 ^= k1;</span>
+<span class="lineNum">     115 </span><span class="lineCov">  115353202 :                 k1 *= c1; k1 = util_rotl32(k1, 15); k1 *= c2; h1 ^= k1;</span>
 <span class="lineNum">     116 </span>            : 
-<span class="lineNum">     117 </span><span class="lineCov">  111408646 :                 h1 = util_rotl32(h1, 19); h1 += h2; h1 = h1 * 5 + 0x561ccd1b;</span>
+<span class="lineNum">     117 </span><span class="lineCov">  115353202 :                 h1 = util_rotl32(h1, 19); h1 += h2; h1 = h1 * 5 + 0x561ccd1b;</span>
 <span class="lineNum">     118 </span>            : 
-<span class="lineNum">     119 </span><span class="lineCov">  111408646 :                 k2 *= c2; k2 = util_rotl32(k2, 16); k2 *= c3; h2 ^= k2;</span>
+<span class="lineNum">     119 </span><span class="lineCov">  115353202 :                 k2 *= c2; k2 = util_rotl32(k2, 16); k2 *= c3; h2 ^= k2;</span>
 <span class="lineNum">     120 </span>            : 
-<span class="lineNum">     121 </span><span class="lineCov">  111408646 :                 h2 = util_rotl32(h2, 17); h2 += h3; h2 = h2 * 5 + 0x0bcaa747;</span>
+<span class="lineNum">     121 </span><span class="lineCov">  115353202 :                 h2 = util_rotl32(h2, 17); h2 += h3; h2 = h2 * 5 + 0x0bcaa747;</span>
 <span class="lineNum">     122 </span>            : 
-<span class="lineNum">     123 </span><span class="lineCov">  111408646 :                 k3 *= c3; k3 = util_rotl32(k3, 17); k3 *= c4; h3 ^= k3;</span>
+<span class="lineNum">     123 </span><span class="lineCov">  115353202 :                 k3 *= c3; k3 = util_rotl32(k3, 17); k3 *= c4; h3 ^= k3;</span>
 <span class="lineNum">     124 </span>            : 
-<span class="lineNum">     125 </span><span class="lineCov">  111408646 :                 h3 = util_rotl32(h3, 15); h3 += h4; h3 = h3 * 5 + 0x96cd1c35;</span>
+<span class="lineNum">     125 </span><span class="lineCov">  115353202 :                 h3 = util_rotl32(h3, 15); h3 += h4; h3 = h3 * 5 + 0x96cd1c35;</span>
 <span class="lineNum">     126 </span>            : 
-<span class="lineNum">     127 </span><span class="lineCov">  111408646 :                 k4 *= c4; k4 = util_rotl32(k4, 18); k4 *= c1; h4 ^= k4;</span>
+<span class="lineNum">     127 </span><span class="lineCov">  115353202 :                 k4 *= c4; k4 = util_rotl32(k4, 18); k4 *= c1; h4 ^= k4;</span>
 <span class="lineNum">     128 </span>            : 
-<span class="lineNum">     129 </span><span class="lineCov">  111408646 :                 h4 = util_rotl32(h4, 13); h4 += h1; h4 = h4 * 5 + 0x32ac3b17;</span>
+<span class="lineNum">     129 </span><span class="lineCov">  115353202 :                 h4 = util_rotl32(h4, 13); h4 += h1; h4 = h4 * 5 + 0x32ac3b17;</span>
 <span class="lineNum">     130 </span>            : 
-<span class="lineNum">     131 </span><span class="lineCov">  111408646 :                 blocks += 4;</span>
+<span class="lineNum">     131 </span><span class="lineCov">  115353202 :                 blocks += 4;</span>
 <span class="lineNum">     132 </span>            :         }
 <span class="lineNum">     133 </span>            : 
 <span class="lineNum">     134 </span>            :         /* tail */
-<span class="lineNum">     135 </span><span class="lineCov">    2174927 :         remainder = size &amp; 15;</span>
-<span class="lineNum">     136 </span><span class="lineCov">    2174927 :         if (remainder != 0) {</span>
-<span class="lineNum">     137 </span><span class="lineCov">     818892 :                 const uint8_t* tail = (const uint8_t*)blocks;</span>
+<span class="lineNum">     135 </span><span class="lineCov">    2252580 :         size_remainder = size &amp; 15;</span>
+<span class="lineNum">     136 </span><span class="lineCov">    2252580 :         if (size_remainder != 0) {</span>
+<span class="lineNum">     137 </span><span class="lineCov">     848217 :                 const uint8_t* tail = (const uint8_t*)blocks;</span>
 <span class="lineNum">     138 </span>            : 
-<span class="lineNum">     139 </span><span class="lineCov">     818892 :                 uint32_t k1 = 0;</span>
-<span class="lineNum">     140 </span><span class="lineCov">     818892 :                 uint32_t k2 = 0;</span>
-<span class="lineNum">     141 </span><span class="lineCov">     818892 :                 uint32_t k3 = 0;</span>
-<span class="lineNum">     142 </span><span class="lineCov">     818892 :                 uint32_t k4 = 0;</span>
+<span class="lineNum">     139 </span><span class="lineCov">     848217 :                 uint32_t k1 = 0;</span>
+<span class="lineNum">     140 </span><span class="lineCov">     848217 :                 uint32_t k2 = 0;</span>
+<span class="lineNum">     141 </span><span class="lineCov">     848217 :                 uint32_t k3 = 0;</span>
+<span class="lineNum">     142 </span><span class="lineCov">     848217 :                 uint32_t k4 = 0;</span>
 <span class="lineNum">     143 </span>            : 
-<span class="lineNum">     144 </span><span class="lineCov">     818892 :                 switch (remainder) {</span>
-<span class="lineNum">     145 </span><span class="lineCov">      53434 :                 case 15 : k4 ^= tail[14] &lt;&lt; 16;</span>
-<span class="lineNum">     146 </span><span class="lineCov">     108492 :                 case 14 : k4 ^= tail[13] &lt;&lt; 8;</span>
-<span class="lineNum">     147 </span><span class="lineCov">     163702 :                 case 13 : k4 ^= tail[12] &lt;&lt; 0;</span>
-<span class="lineNum">     148 </span><span class="lineCov">     163702 :                         k4 *= c4; k4 = util_rotl32(k4, 18); k4 *= c1; h4 ^= k4;</span>
-<span class="lineNum">     149 </span><span class="lineCov">     218979 :                 case 12 : k3 ^= tail[11] &lt;&lt; 24;</span>
-<span class="lineNum">     150 </span><span class="lineCov">     274534 :                 case 11 : k3 ^= tail[10] &lt;&lt; 16;</span>
-<span class="lineNum">     151 </span><span class="lineCov">     329422 :                 case 10 : k3 ^= tail[ 9] &lt;&lt; 8;</span>
-<span class="lineNum">     152 </span><span class="lineCov">     385757 :                 case 9 : k3 ^= tail[ 8] &lt;&lt; 0;</span>
-<span class="lineNum">     153 </span><span class="lineCov">     385757 :                         k3 *= c3; k3 = util_rotl32(k3, 17); k3 *= c4; h3 ^= k3;</span>
-<span class="lineNum">     154 </span><span class="lineCov">     442006 :                 case 8 : k2 ^= tail[ 7] &lt;&lt; 24;</span>
-<span class="lineNum">     155 </span><span class="lineCov">     494153 :                 case 7 : k2 ^= tail[ 6] &lt;&lt; 16;</span>
-<span class="lineNum">     156 </span><span class="lineCov">     549477 :                 case 6 : k2 ^= tail[ 5] &lt;&lt; 8;</span>
-<span class="lineNum">     157 </span><span class="lineCov">     602557 :                 case 5 : k2 ^= tail[ 4] &lt;&lt; 0;</span>
-<span class="lineNum">     158 </span><span class="lineCov">     602557 :                         k2 *= c2; k2 = util_rotl32(k2, 16); k2 *= c3; h2 ^= k2;</span>
-<span class="lineNum">     159 </span><span class="lineCov">     656596 :                 case 4 : k1 ^= tail[ 3] &lt;&lt; 24;</span>
-<span class="lineNum">     160 </span><span class="lineCov">     709640 :                 case 3 : k1 ^= tail[ 2] &lt;&lt; 16;</span>
-<span class="lineNum">     161 </span><span class="lineCov">     763641 :                 case 2 : k1 ^= tail[ 1] &lt;&lt; 8;</span>
-<span class="lineNum">     162 </span><span class="lineCov">     818892 :                 case 1 : k1 ^= tail[ 0] &lt;&lt; 0;</span>
-<span class="lineNum">     163 </span><span class="lineCov">     818892 :                         k1 *= c1; k1 = util_rotl32(k1, 15); k1 *= c2; h1 ^= k1;</span>
+<span class="lineNum">     144 </span><span class="lineCov">     848217 :                 switch (size_remainder) {</span>
+<span class="lineNum">     145 </span><span class="lineCov">      55797 :                 case 15 : k4 ^= tail[14] &lt;&lt; 16;</span>
+<span class="lineNum">     146 </span><span class="lineCov">     112943 :                 case 14 : k4 ^= tail[13] &lt;&lt; 8;</span>
+<span class="lineNum">     147 </span><span class="lineCov">     170169 :                 case 13 : k4 ^= tail[12] &lt;&lt; 0;</span>
+<span class="lineNum">     148 </span><span class="lineCov">     170169 :                         k4 *= c4; k4 = util_rotl32(k4, 18); k4 *= c1; h4 ^= k4;</span>
+<span class="lineNum">     149 </span><span class="lineCov">     227575 :                 case 12 : k3 ^= tail[11] &lt;&lt; 24;</span>
+<span class="lineNum">     150 </span><span class="lineCov">     284886 :                 case 11 : k3 ^= tail[10] &lt;&lt; 16;</span>
+<span class="lineNum">     151 </span><span class="lineCov">     341909 :                 case 10 : k3 ^= tail[ 9] &lt;&lt; 8;</span>
+<span class="lineNum">     152 </span><span class="lineCov">     400365 :                 case 9 : k3 ^= tail[ 8] &lt;&lt; 0;</span>
+<span class="lineNum">     153 </span><span class="lineCov">     400365 :                         k3 *= c3; k3 = util_rotl32(k3, 17); k3 *= c4; h3 ^= k3;</span>
+<span class="lineNum">     154 </span><span class="lineCov">     458648 :                 case 8 : k2 ^= tail[ 7] &lt;&lt; 24;</span>
+<span class="lineNum">     155 </span><span class="lineCov">     512723 :                 case 7 : k2 ^= tail[ 6] &lt;&lt; 16;</span>
+<span class="lineNum">     156 </span><span class="lineCov">     569585 :                 case 6 : k2 ^= tail[ 5] &lt;&lt; 8;</span>
+<span class="lineNum">     157 </span><span class="lineCov">     624551 :                 case 5 : k2 ^= tail[ 4] &lt;&lt; 0;</span>
+<span class="lineNum">     158 </span><span class="lineCov">     624551 :                         k2 *= c2; k2 = util_rotl32(k2, 16); k2 *= c3; h2 ^= k2;</span>
+<span class="lineNum">     159 </span><span class="lineCov">     680593 :                 case 4 : k1 ^= tail[ 3] &lt;&lt; 24;</span>
+<span class="lineNum">     160 </span><span class="lineCov">     735635 :                 case 3 : k1 ^= tail[ 2] &lt;&lt; 16;</span>
+<span class="lineNum">     161 </span><span class="lineCov">     791529 :                 case 2 : k1 ^= tail[ 1] &lt;&lt; 8;</span>
+<span class="lineNum">     162 </span><span class="lineCov">     848217 :                 case 1 : k1 ^= tail[ 0] &lt;&lt; 0;</span>
+<span class="lineNum">     163 </span><span class="lineCov">     848217 :                         k1 *= c1; k1 = util_rotl32(k1, 15); k1 *= c2; h1 ^= k1;</span>
 <span class="lineNum">     164 </span>            :                 }
 <span class="lineNum">     165 </span>            :         }
 <span class="lineNum">     166 </span>            : 
 <span class="lineNum">     167 </span>            :         /* finalization */
-<span class="lineNum">     168 </span><span class="lineCov">    2174927 :         h1 ^= size; h2 ^= size; h3 ^= size; h4 ^= size;</span>
+<span class="lineNum">     168 </span><span class="lineCov">    2252580 :         h1 ^= size; h2 ^= size; h3 ^= size; h4 ^= size;</span>
 <span class="lineNum">     169 </span>            : 
-<span class="lineNum">     170 </span><span class="lineCov">    2174927 :         h1 += h2; h1 += h3; h1 += h4;</span>
-<span class="lineNum">     171 </span><span class="lineCov">    2174927 :         h2 += h1; h3 += h1; h4 += h1;</span>
+<span class="lineNum">     170 </span><span class="lineCov">    2252580 :         h1 += h2; h1 += h3; h1 += h4;</span>
+<span class="lineNum">     171 </span><span class="lineCov">    2252580 :         h2 += h1; h3 += h1; h4 += h1;</span>
 <span class="lineNum">     172 </span>            : 
-<span class="lineNum">     173 </span><span class="lineCov">    2174927 :         h1 = fmix32(h1);</span>
-<span class="lineNum">     174 </span><span class="lineCov">    2174927 :         h2 = fmix32(h2);</span>
-<span class="lineNum">     175 </span><span class="lineCov">    2174927 :         h3 = fmix32(h3);</span>
-<span class="lineNum">     176 </span><span class="lineCov">    2174927 :         h4 = fmix32(h4);</span>
+<span class="lineNum">     173 </span><span class="lineCov">    2252580 :         h1 = fmix32(h1);</span>
+<span class="lineNum">     174 </span><span class="lineCov">    2252580 :         h2 = fmix32(h2);</span>
+<span class="lineNum">     175 </span><span class="lineCov">    2252580 :         h3 = fmix32(h3);</span>
+<span class="lineNum">     176 </span><span class="lineCov">    2252580 :         h4 = fmix32(h4);</span>
 <span class="lineNum">     177 </span>            : 
-<span class="lineNum">     178 </span><span class="lineCov">    2174927 :         h1 += h2; h1 += h3; h1 += h4;</span>
-<span class="lineNum">     179 </span><span class="lineCov">    2174927 :         h2 += h1; h3 += h1; h4 += h1;</span>
+<span class="lineNum">     178 </span><span class="lineCov">    2252580 :         h1 += h2; h1 += h3; h1 += h4;</span>
+<span class="lineNum">     179 </span><span class="lineCov">    2252580 :         h2 += h1; h3 += h1; h4 += h1;</span>
 <span class="lineNum">     180 </span>            : 
 <span class="lineNum">     181 </span>            : #if WORDS_BIGENDIAN
 <span class="lineNum">     182 </span>            :         h1 = util_swap32(h1);
@@ -247,11 +247,11 @@
 <span class="lineNum">     185 </span>            :         h4 = util_swap32(h4);
 <span class="lineNum">     186 </span>            : #endif
 <span class="lineNum">     187 </span>            : 
-<span class="lineNum">     188 </span><span class="lineCov">    2174927 :         ((uint32_t*)digest)[0] = h1;</span>
-<span class="lineNum">     189 </span><span class="lineCov">    2174927 :         ((uint32_t*)digest)[1] = h2;</span>
-<span class="lineNum">     190 </span><span class="lineCov">    2174927 :         ((uint32_t*)digest)[2] = h3;</span>
-<span class="lineNum">     191 </span><span class="lineCov">    2174927 :         ((uint32_t*)digest)[3] = h4;</span>
-<span class="lineNum">     192 </span><span class="lineCov">    2174927 : }</span>
+<span class="lineNum">     188 </span><span class="lineCov">    2252580 :         ((uint32_t*)digest)[0] = h1;</span>
+<span class="lineNum">     189 </span><span class="lineCov">    2252580 :         ((uint32_t*)digest)[1] = h2;</span>
+<span class="lineNum">     190 </span><span class="lineCov">    2252580 :         ((uint32_t*)digest)[2] = h3;</span>
+<span class="lineNum">     191 </span><span class="lineCov">    2252580 :         ((uint32_t*)digest)[3] = h4;</span>
+<span class="lineNum">     192 </span><span class="lineCov">    2252580 : }</span>
 <span class="lineNum">     193 </span>            : 
 </pre>
       </td>

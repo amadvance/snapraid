@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-05-12</td>
+            <td class="headerValue">2015-11-13</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">2</td>
@@ -385,7 +385,7 @@
 <span class="lineNum">     323 </span>            :  * \param value Value to scan. 0 is not allowed.
 <a name="324"><span class="lineNum">     324 </span>            :  * \return The index of the most significant bit set.</a>
 <span class="lineNum">     325 </span>            :  */
-<span class="lineNum">     326 </span><span class="lineCov">   58148940 : tommy_inline tommy_uint_t tommy_ilog2_u32(tommy_uint32_t value)</span>
+<span class="lineNum">     326 </span><span class="lineCov">   15274023 : tommy_inline tommy_uint_t tommy_ilog2_u32(tommy_uint32_t value)</span>
 <span class="lineNum">     327 </span>            : {
 <span class="lineNum">     328 </span>            : #if defined(_MSC_VER)
 <span class="lineNum">     329 </span>            :         unsigned long count;
@@ -401,7 +401,7 @@
 <span class="lineNum">     339 </span>            :          * So we write &quot;__builtin_clz(x) ^ 31&quot; instead of &quot;31 - __builtin_clz(x)&quot;,
 <span class="lineNum">     340 </span>            :          * to allow the double xor to be optimized out.
 <span class="lineNum">     341 </span>            :          */
-<span class="lineNum">     342 </span><span class="lineCov">   58148940 :         return __builtin_clz(value) ^ 31;</span>
+<span class="lineNum">     342 </span><span class="lineCov">   15274023 :         return __builtin_clz(value) ^ 31;</span>
 <span class="lineNum">     343 </span>            : #else
 <span class="lineNum">     344 </span>            :         /* Find the log base 2 of an N-bit integer in O(lg(N)) operations with multiply and lookup */
 <span class="lineNum">     345 </span>            :         /* from http://graphics.stanford.edu/~seander/bithacks.html */
@@ -428,14 +428,14 @@
 <span class="lineNum">     366 </span>            :  * \param value Value to scan. 0 is not allowed.
 <a name="367"><span class="lineNum">     367 </span>            :  * \return The index of the least significant bit set.</a>
 <span class="lineNum">     368 </span>            :  */
-<span class="lineNum">     369 </span><span class="lineCov">       1403 : tommy_inline tommy_uint_t tommy_ctz_u32(tommy_uint32_t value)</span>
+<span class="lineNum">     369 </span><span class="lineCov">       1473 : tommy_inline tommy_uint_t tommy_ctz_u32(tommy_uint32_t value)</span>
 <span class="lineNum">     370 </span>            : {
 <span class="lineNum">     371 </span>            : #if defined(_MSC_VER)
 <span class="lineNum">     372 </span>            :         unsigned long count;
 <span class="lineNum">     373 </span>            :         _BitScanForward(&amp;count, value);
 <span class="lineNum">     374 </span>            :         return count;
 <span class="lineNum">     375 </span>            : #elif defined(__GNUC__)
-<span class="lineNum">     376 </span><span class="lineCov">       1403 :         return __builtin_ctz(value);</span>
+<span class="lineNum">     376 </span><span class="lineCov">       1473 :         return __builtin_ctz(value);</span>
 <span class="lineNum">     377 </span>            : #else
 <span class="lineNum">     378 </span>            :         /* Count the consecutive zero bits (trailing) on the right with multiply and lookup */
 <span class="lineNum">     379 </span>            :         /* from http://graphics.stanford.edu/~seander/bithacks.html */
