@@ -7,6 +7,14 @@ This is the list of TODO items for SnapRAID.
 
 - Minor
 
+* Some programs are misusing the FILE_ATTRIBUTE_TEMPORARY.
+In fact, it makes sense as it's a good way to control the cache on the file,
+so, despite the name, that usage could be common for not temporary files.
+https://sourceforge.net/p/snapraid/discussion/1677233/thread/57d40108/
+
+* Disable the "force-zero" check on Windows. No reason to have it.
+https://sourceforge.net/p/snapraid/discussion/1677233/thread/88144165/
+
 * Restore ownership and permissions, at least in Unix.
 
 * Restore directory timestamps.
