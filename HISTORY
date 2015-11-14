@@ -1,6 +1,12 @@
 SnapRAID HISTORY
 ================
 
+9.1 2015/12
+===========
+ * In Winwdows disables the file zero check requring the --force-zero
+   option. This check is intended for possible case using ext3/4 in Linux,
+   and there is no evidence that in Windows it's possible at all.
+
 9.0 2015/11
 ===========
  * Fixes an invalid assumption that could happen when using the

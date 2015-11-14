@@ -862,8 +862,10 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	/* because this is slow operation */
 	scan_file_refresh(scan, sub, st, &physical);
 
+#ifndef _WIN32
 	/* do a safety check to ensure that the common ext4 case of zeroing */
 	/* the size of a file after a crash doesn't propagate to the backup */
+	/* this check is specific for Linux, so we disable it on Windows */
 	if (is_original_file_size_different_than_zero && st->st_size == 0) {
 		if (!state->opt.force_zero) {
 			/* LCOV_EXCL_START */
@@ -877,6 +879,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			/* LCOV_EXCL_STOP */
 		}
 	}
+#endif
 
 	/* insert it */
 	file = file_alloc(state->block_size, sub, st->st_size, st->st_mtime, STAT_NSEC(st), st->st_ino, physical);
