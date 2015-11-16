@@ -251,7 +251,7 @@ static void scan_file_allocate(struct snapraid_scan* scan, struct snapraid_file*
 
 /**
  * Remove the specified file from the parity.
- * The file is then inserted in the deleted set, and it should no be deallocated.
+ * The file is then inserted in the deleted set, and it should not be deallocated.
  */
 static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_file* file)
 {

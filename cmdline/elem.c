@@ -607,6 +607,9 @@ struct snapraid_chunk* chunk_alloc(block_off_t parity_pos, struct snapraid_file*
 {
 	struct snapraid_chunk* chunk;
 
+	assert(count != 0);
+	assert(file_pos + count <= file->blockmax);
+
 	chunk = malloc_nofail(sizeof(struct snapraid_chunk));
 	chunk->parity_pos = parity_pos;
 	chunk->file = file;
@@ -858,6 +861,15 @@ void chunk_parity_check_foreach(void* void_arg, void* void_obj)
 		/* LCOV_EXCL_STOP */
 	}
 
+	if (obj->count == 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Internal inconsistency in parity count zero for file '%s' at '%u'\n",
+			obj->file->sub, obj->parity_pos);
+		++arg->result;
+		return;
+		/* LCOV_EXCL_STOP */
+	}
+
 	/* check only if there is a previous block */
 	if (!prev)
 		return;
@@ -895,6 +907,15 @@ void chunk_file_check_foreach(void* void_arg, void* void_obj)
 	/* stop reporting if too many errors */
 	if (arg->result > 100) {
 		/* LCOV_EXCL_START */
+		return;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (obj->count == 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Internal inconsistency in file count zero for file '%s' at '%u'\n",
+			obj->file->sub, obj->file_pos);
+		++arg->result;
 		return;
 		/* LCOV_EXCL_STOP */
 	}
@@ -1130,7 +1151,7 @@ block_off_t fs_file2par_get_ts(struct snapraid_disk* disk, struct snapraid_chunk
 	chunk = fs_file2chunk_get_ts(disk, fs_last, file, file_pos);
 	if (!chunk) {
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency when resolving file '%s' at position '%u' in disk '%s'\n", file->sub, file_pos, disk->name);
+		log_fatal("Internal inconsistency when resolving file '%s' at position '%u/%u' in disk '%s'\n", file->sub, file_pos, file->blockmax, disk->name);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
@@ -1152,7 +1173,7 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
 			/* ensure that we are extending the chunk at the end */
 			if (file_pos != chunk->file_pos + chunk->count) {
 				/* LCOV_EXCL_START */
-				log_fatal("Internal inconsistency when allocating file '%s' at position '%u' in the middle of chunk '%u:%u' in disk '%s'\n", file->sub, file_pos, chunk->file_pos, chunk->count, disk->name);
+				log_fatal("Internal inconsistency when allocating file '%s' at position '%u/%u' in the middle of chunk '%u:%u' in disk '%s'\n", file->sub, file_pos, file->blockmax, chunk->file_pos, chunk->count, disk->name);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1173,7 +1194,7 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
 
 	if (parity_chunk != chunk || file_chunk != chunk) {
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency when allocating file '%s' at position '%u' for existing chunk '%u:%u' in disk '%s'\n", file->sub, file_pos, chunk->file_pos, chunk->count, disk->name);
+		log_fatal("Internal inconsistency when allocating file '%s' at position '%u/%u' for existing chunk '%u:%u' in disk '%s'\n", file->sub, file_pos, file->blockmax, chunk->file_pos, chunk->count, disk->name);
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}

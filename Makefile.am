@@ -287,6 +287,7 @@ endif
 	$(TESTENV) ./mktest$(EXEEXT) generate 1 6 $(CHECKCOUNT) $(CHECKSIZE)
 	echo DUP > bench/disk1/DUP1
 	echo DUP > bench/disk1/DUP2
+	head -c 0 /dev/zero > bench/disk1/ZERO
 	echo --- Some commands with a not empty array
 # Run a sync using physical offset
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_PHYSICAL) -c $(CONF) --test-expect-need-sync diff > output.log
