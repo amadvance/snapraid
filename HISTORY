@@ -1,11 +1,14 @@
 SnapRAID HISTORY
 ================
 
-9.1 2015/12
+9.1 2015/11
 ===========
  * In Winwdows disables the file zero check requring the --force-zero
    option. This check is intended for possible case using ext3/4 in Linux,
    and there is no evidence that in Windows it's possible at all.
+ * Windows binaries built with gcc 4.9.3 using the MXE cross compiler at
+   commitc 62bcdbee56e87c81f1faa105b8777a5879d4e2e with targets
+   i686-w64-mingw32 and x86_64-w64-mingw32 and optimization -O2.
 
 9.0 2015/11
 ===========
