@@ -2012,7 +2012,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* if it's a run of deleted blocks */
 
 					/* allocate a fake deleted file */
-					deleted = file_alloc(state->block_size, "<deleted>", v_count * state->block_size, 0, 0, 0, 0);
+					deleted = file_alloc(state->block_size, "<deleted>", v_count * (data_off_t)state->block_size, 0, 0, 0, 0);
 
 					/* mark the file as deleted */
 					file_flag_set(deleted, FILE_IS_DELETED);
