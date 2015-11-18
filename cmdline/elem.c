@@ -607,8 +607,18 @@ struct snapraid_chunk* chunk_alloc(block_off_t parity_pos, struct snapraid_file*
 {
 	struct snapraid_chunk* chunk;
 
-	assert(count != 0);
-	assert(file_pos + count <= file->blockmax);
+	if (count == 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Internal inconsistency when allocating empty chunk for file '%s' at position '%u/%u'\n", file->sub, file_pos, file->blockmax);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+	if (file_pos + count > file->blockmax) {
+		/* LCOV_EXCL_START */
+		log_fatal("Internal inconsistency when allocating overflowing chunk for file '%s' at position '%u:%u/%u'\n", file->sub, file_pos, count, file->blockmax);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
 
 	chunk = malloc_nofail(sizeof(struct snapraid_chunk));
 	chunk->parity_pos = parity_pos;
@@ -1270,6 +1280,19 @@ void fs_deallocate(struct snapraid_disk* disk, block_off_t parity_pos)
 
 	/* store the last accessed chunk */
 	disk->fs_last = second_chunk;
+}
+
+struct snapraid_block* fs_file2block_get(struct snapraid_file* file, block_off_t file_pos)
+{
+	if (file_pos >= file->blockmax) {
+		/* LCOV_EXCL_START */
+		log_fatal("Internal inconsistency when dereferencing file '%s' at position '%u/%u'\n", file->sub, file_pos, file->blockmax);
+		abort();
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	return &file->blockvec[file_pos];
 }
 
 struct snapraid_block* fs_par2block_get_ts(struct snapraid_disk* disk, struct snapraid_chunk** fs_last, block_off_t parity_pos)

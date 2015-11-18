@@ -915,12 +915,7 @@ void fs_deallocate(struct snapraid_disk* disk, block_off_t pos);
 /**
  * Get the block from the file position.
  */
-static inline struct snapraid_block* fs_file2block_get(struct snapraid_file* file, block_off_t file_pos)
-{
-	assert(file_pos < file->blockmax);
-
-	return &file->blockvec[file_pos];
-}
+struct snapraid_block* fs_file2block_get(struct snapraid_file* file, block_off_t file_pos);
 
 /**
  * Like fs_file2par_get() but thread-safe.
