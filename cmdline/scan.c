@@ -879,6 +879,9 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			/* LCOV_EXCL_STOP */
 		}
 	}
+#else
+	/* avoid the unused warning in Windows */
+	(void)is_original_file_size_different_than_zero;
 #endif
 
 	/* insert it */
