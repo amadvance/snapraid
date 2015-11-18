@@ -63,6 +63,12 @@ table, td
 	font-weight:bold;
 }
 
+.danger {
+	color:#ff0000;
+	font-weight:bold;
+	font-size:150%;
+}
+
 .highlight {
 	color:#408dd2;
 	font-weight:bold;
