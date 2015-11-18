@@ -26,7 +26,7 @@
  *
  * Messages printed before an early termination.
  *
- * These messages go in the log file and in stderr inconditionally.
+ * These messages go in the log file and in stderr unconditionally.
  */
 void log_fatal(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
 
