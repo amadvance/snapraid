@@ -238,66 +238,35 @@ void os_done(void)
 }
 
 /**
- * Number of conversion buffers.
+ * Size in chars of conversion buffers for u8to16() and u16to8().
  */
-#define CONV_ROLL 4
-
-/**
- * Buffers for UTF16.
- */
-static unsigned conv_utf16 = 0;
-static wchar_t conv_utf16_buffer[CONV_ROLL][PATH_MAX];
-
-/**
- * Buffers for UTF8.
- */
-static unsigned conv_utf8 = 0;
-static char conv_utf8_buffer[CONV_ROLL][PATH_MAX];
-
-/**
- * Mutex used for conversion.
- */
-static pthread_mutex_t conv_lock = PTHREAD_MUTEX_INITIALIZER;
+#define CONV_MAX PATH_MAX
 
 /**
  * Convert a generic string from UTF8 to UTF16.
  */
-static wchar_t* u8tou16(const char* src)
+static wchar_t* u8tou16(wchar_t* conv_buf, const char* src)
 {
 	int ret;
-	unsigned roll;
 
-	pthread_mutex_lock(&conv_lock);
-	if (++conv_utf16 == CONV_ROLL)
-		conv_utf16 = 0;
-	roll = conv_utf16;
-	pthread_mutex_unlock(&conv_lock);
-
-	ret = MultiByteToWideChar(CP_UTF8, 0, src, -1, conv_utf16_buffer[roll], sizeof(conv_utf16_buffer[0]) / sizeof(wchar_t));
+	ret = MultiByteToWideChar(CP_UTF8, 0, src, -1, conv_buf, CONV_MAX);
 
 	if (ret <= 0) {
 		log_fatal("Error converting name '%s' from UTF-8 to UTF-16\n", src);
 		exit(EXIT_FAILURE);
 	}
 
-	return conv_utf16_buffer[roll];
+	return conv_buf;
 }
 
 /**
  * Convert a generic string from UTF16 to UTF8.
  */
-static char* u16tou8ex(const wchar_t* src, size_t number_of_wchar, size_t* result_length_without_terminator)
+static char* u16tou8ex(char* conv_buf, const wchar_t* src, size_t number_of_wchar, size_t* result_length_without_terminator)
 {
 	int ret;
-	unsigned roll;
 
-	pthread_mutex_lock(&conv_lock);
-	if (++conv_utf8 == CONV_ROLL)
-		conv_utf8 = 0;
-	roll = conv_utf8;
-	pthread_mutex_unlock(&conv_lock);
-
-	ret = WideCharToMultiByte(CP_UTF8, 0, src, number_of_wchar, conv_utf8_buffer[roll], sizeof(conv_utf8_buffer[0]), 0, 0);
+	ret = WideCharToMultiByte(CP_UTF8, 0, src, number_of_wchar, conv_buf, CONV_MAX, 0, 0);
 	if (ret <= 0) {
 		log_fatal("Error converting from UTF-16 to UTF-8\n");
 		exit(EXIT_FAILURE);
@@ -305,15 +274,15 @@ static char* u16tou8ex(const wchar_t* src, size_t number_of_wchar, size_t* resul
 
 	*result_length_without_terminator = ret;
 
-	return conv_utf8_buffer[roll];
+	return conv_buf;
 }
 
-static char* u16tou8(const wchar_t* src)
+static char* u16tou8(char* conv_buf, const wchar_t* src)
 {
 	size_t len;
 
 	/* convert also the 0 terminator */
-	return u16tou8ex(src, wcslen(src) + 1, &len);
+	return u16tou8ex(conv_buf, src, wcslen(src) + 1, &len);
 }
 
 /**
@@ -339,16 +308,13 @@ static int is_slash(char c)
  * Naming Files, Paths, and Namespaces
  * http://msdn.microsoft.com/en-us/library/windows/desktop/aa365247%28v=vs.85%29.aspx#maxpath
  */
-static wchar_t* convert_arg(const char* src, int only_if_required)
+static wchar_t* convert_arg(wchar_t* conv_buf, const char* src, int only_if_required)
 {
 	int ret;
 	wchar_t* dst;
 	int count;
 
-	if (++conv_utf16 == CONV_ROLL)
-		conv_utf16 = 0;
-
-	dst = conv_utf16_buffer[conv_utf16];
+	dst = conv_buf;
 
 	/* note that we always check for both / and \ because the path is blindly */
 	/* converted to unix format by path_import() */
@@ -389,9 +355,9 @@ static wchar_t* convert_arg(const char* src, int only_if_required)
 	}
 
 	/* chars already used */
-	count = dst - conv_utf16_buffer[conv_utf16];
+	count = dst - conv_buf;
 
-	ret = MultiByteToWideChar(CP_UTF8, 0, src, -1, dst, sizeof(conv_utf16_buffer[0]) / sizeof(wchar_t) - count);
+	ret = MultiByteToWideChar(CP_UTF8, 0, src, -1, dst, CONV_MAX - count);
 
 	if (ret <= 0) {
 		log_fatal("Error converting name '%s' from UTF-8 to UTF-16\n", src);
@@ -408,11 +374,11 @@ static wchar_t* convert_arg(const char* src, int only_if_required)
 		++dst;
 	}
 
-	return conv_utf16_buffer[conv_utf16];
+	return conv_buf;
 }
 
-#define convert(a) convert_arg(a, 0)
-#define convert_if_required(a) convert_arg(a, 1)
+#define convert(buf, a) convert_arg(buf, a, 0)
+#define convert_if_required(buf, a) convert_arg(buf, a, 1)
 
 static BOOL GetReparseTagInfoByHandle(HANDLE hFile, FILE_ATTRIBUTE_TAG_INFO* lpFileAttributeTagInfo, DWORD dwFileAttributes)
 {
@@ -622,10 +588,11 @@ static void windows_finddata2stat(const WIN32_FIND_DATAW* info, struct windows_s
 
 static void windows_finddata2dirent(const WIN32_FIND_DATAW* info, struct windows_dirent* dirent)
 {
+	char conv_buf[CONV_MAX];
 	const char* name;
 	size_t len;
 
-	name = u16tou8ex(info->cFileName, wcslen(info->cFileName), &len);
+	name = u16tou8ex(conv_buf, info->cFileName, wcslen(info->cFileName), &len);
 
 	if (len + 1 >= sizeof(dirent->d_name)) {
 		log_fatal("Name too long\n");
@@ -640,10 +607,11 @@ static void windows_finddata2dirent(const WIN32_FIND_DATAW* info, struct windows
 
 static void windows_stream2dirent(const BY_HANDLE_FILE_INFORMATION* info, const FILE_ID_BOTH_DIR_INFO* stream, struct windows_dirent* dirent)
 {
+	char conv_buf[CONV_MAX];
 	const char* name;
 	size_t len;
 
-	name = u16tou8ex(stream->FileName, stream->FileNameLength / 2, &len);
+	name = u16tou8ex(conv_buf, stream->FileName, stream->FileNameLength / 2, &len);
 
 	if (len + 1 >= sizeof(dirent->d_name)) {
 		log_fatal("Name too long\n");
@@ -732,11 +700,12 @@ int windows_fstat(int fd, struct windows_stat* st)
 
 int windows_lstat(const char* file, struct windows_stat* st)
 {
+	wchar_t conv_buf[CONV_MAX];
 	HANDLE h;
 	WIN32_FIND_DATAW data;
 
 	/* FindFirstFileW by default gets information of symbolic links and not of their targets */
-	h = FindFirstFileW(convert(file), &data);
+	h = FindFirstFileW(convert(conv_buf, file), &data);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -759,7 +728,9 @@ void windows_dirent_lstat(const struct windows_dirent* dd, struct windows_stat* 
 
 int windows_mkdir(const char* file)
 {
-	if (!CreateDirectoryW(convert(file), 0)) {
+	wchar_t conv_buf[CONV_MAX];
+
+	if (!CreateDirectoryW(convert(conv_buf, file), 0)) {
 		windows_errno(GetLastError());
 		return -1;
 	}
@@ -769,7 +740,9 @@ int windows_mkdir(const char* file)
 
 int windows_rmdir(const char* file)
 {
-	if (!RemoveDirectoryW(convert(file))) {
+	wchar_t conv_buf[CONV_MAX];
+
+	if (!RemoveDirectoryW(convert(conv_buf, file))) {
 		windows_errno(GetLastError());
 		return -1;
 	}
@@ -828,6 +801,7 @@ static BOOL GetFilePhysicalOffset(HANDLE h, uint64_t* physical)
 
 int lstat_sync(const char* file, struct windows_stat* st, uint64_t* physical)
 {
+	wchar_t conv_buf[CONV_MAX];
 	BY_HANDLE_FILE_INFORMATION info;
 	FILE_ATTRIBUTE_TAG_INFO tag;
 	HANDLE h;
@@ -843,7 +817,7 @@ int lstat_sync(const char* file, struct windows_stat* st, uint64_t* physical)
 	 * cannot be opened like "C:\System Volume Information" resulting
 	 * in error ERROR_ACCESS_DENIED.
 	 */
-	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, 0);
+	h = CreateFileW(convert(conv_buf, file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -885,6 +859,7 @@ int lstat_sync(const char* file, struct windows_stat* st, uint64_t* physical)
 
 int windows_stat(const char* file, struct windows_stat* st)
 {
+	wchar_t conv_buf[CONV_MAX];
 	BY_HANDLE_FILE_INFORMATION info;
 	FILE_ATTRIBUTE_TAG_INFO tag;
 	HANDLE h;
@@ -894,7 +869,7 @@ int windows_stat(const char* file, struct windows_stat* st)
 	 *
 	 * Use FILE_FLAG_BACKUP_SEMANTICS to open directories (it's just ignored for files).
 	 */
-	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
+	h = CreateFileW(convert(conv_buf, file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -1065,6 +1040,9 @@ int windows_futimens(int fd, struct windows_timespec tv[2])
 
 int windows_rename(const char* from, const char* to)
 {
+	wchar_t conv_buf_from[CONV_MAX];
+	wchar_t conv_buf_to[CONV_MAX];
+
 	/*
 	 * Implements an atomic rename in Windows.
 	 * Not really atomic at now to support XP.
@@ -1072,7 +1050,7 @@ int windows_rename(const char* from, const char* to)
 	 * Is an atomic file rename (with overwrite) possible on Windows?
 	 * http://stackoverflow.com/questions/167414/is-an-atomic-file-rename-with-overwrite-possible-on-windows
 	 */
-	if (!MoveFileExW(convert(from), convert(to), MOVEFILE_REPLACE_EXISTING)) {
+	if (!MoveFileExW(convert(conv_buf_from, from), convert(conv_buf_to, to), MOVEFILE_REPLACE_EXISTING)) {
 		windows_errno(GetLastError());
 		return -1;
 	}
@@ -1082,7 +1060,9 @@ int windows_rename(const char* from, const char* to)
 
 int windows_remove(const char* file)
 {
-	if (!DeleteFileW(convert(file))) {
+	wchar_t conv_buf[CONV_MAX];
+
+	if (!DeleteFileW(convert(conv_buf, file))) {
 		windows_errno(GetLastError());
 		return -1;
 	}
@@ -1092,19 +1072,23 @@ int windows_remove(const char* file)
 
 FILE* windows_fopen(const char* file, const char* mode)
 {
-	return _wfopen(convert(file), u8tou16(mode));
+	wchar_t conv_buf_file[CONV_MAX];
+	wchar_t conv_buf_mode[CONV_MAX];
+
+	return _wfopen(convert(conv_buf_file, file), u8tou16(conv_buf_mode, mode));
 }
 
 int windows_open(const char* file, int flags, ...)
 {
+	wchar_t conv_buf[CONV_MAX];
 	va_list args;
 	int ret;
 
 	va_start(args, flags);
 	if ((flags & O_CREAT) != 0)
-		ret = _wopen(convert(file), flags, va_arg(args, int));
+		ret = _wopen(convert(conv_buf, file), flags, va_arg(args, int));
 	else
-		ret = _wopen(convert(file), flags);
+		ret = _wopen(convert(conv_buf, file), flags);
 	va_end(args);
 
 	return ret;
@@ -1127,6 +1111,7 @@ struct windows_dir_struct {
 
 static windows_dir* windows_opendir_find(const char* dir)
 {
+	wchar_t conv_buf[CONV_MAX];
 	wchar_t* wdir;
 	windows_dir* dirstream;
 	size_t len;
@@ -1137,7 +1122,7 @@ static windows_dir* windows_opendir_find(const char* dir)
 		exit(EXIT_FAILURE);
 	}
 
-	wdir = convert(dir);
+	wdir = convert(conv_buf, dir);
 
 	/* add final / and * */
 	len = wcslen(wdir);
@@ -1265,6 +1250,7 @@ static int windows_next_stream(windows_dir* dirstream)
 
 static windows_dir* windows_opendir_stream(const char* dir)
 {
+	wchar_t conv_buf[CONV_MAX];
 	windows_dir* dirstream;
 	WCHAR* wdir;
 
@@ -1274,7 +1260,7 @@ static windows_dir* windows_opendir_stream(const char* dir)
 		exit(EXIT_FAILURE);
 	}
 
-	wdir = convert(dir);
+	wdir = convert(conv_buf, dir);
 
 	/* uses a 64 kB buffer for reading directory */
 	dirstream->buffer_size = 64 * 1024;
@@ -1399,7 +1385,10 @@ void windows_sleep(unsigned seconds)
 
 int windows_link(const char* existing, const char* file)
 {
-	if (!CreateHardLinkW(convert(file), convert(existing), 0)) {
+	wchar_t conv_buf_file[CONV_MAX];
+	wchar_t conv_buf_existing[CONV_MAX];
+
+	if (!CreateHardLinkW(convert(conv_buf_file, file), convert(conv_buf_existing, existing), 0)) {
 		windows_errno(GetLastError());
 		return -1;
 	}
@@ -1409,6 +1398,9 @@ int windows_link(const char* existing, const char* file)
 
 int windows_symlink(const char* existing, const char* file)
 {
+	wchar_t conv_buf_file[CONV_MAX];
+	wchar_t conv_buf_existing[CONV_MAX];
+
 	if (!ptr_CreateSymbolicLinkW) {
 		windows_errno(ERROR_NOT_SUPPORTED);
 		return -1;
@@ -1418,7 +1410,7 @@ int windows_symlink(const char* existing, const char* file)
 	/* otherwise the link creation fails. */
 	/* But we don't want to always convert it, to avoid to recreate */
 	/* user symlinks different than they were before */
-	if (!ptr_CreateSymbolicLinkW(convert(file), convert_if_required(existing), 0)) {
+	if (!ptr_CreateSymbolicLinkW(convert(conv_buf_file, file), convert_if_required(conv_buf_existing, existing), 0)) {
 		windows_errno(GetLastError());
 		return -1;
 	}
@@ -1460,6 +1452,8 @@ typedef struct _REPARSE_DATA_BUFFER {
 
 int windows_readlink(const char* file, char* buffer, size_t size)
 {
+	wchar_t conv_buf_file[CONV_MAX];
+	char conv_buf_name[CONV_MAX];
 	HANDLE h;
 	const char* name;
 	size_t len;
@@ -1474,7 +1468,7 @@ int windows_readlink(const char* file, char* buffer, size_t size)
 	 * Use FILE_FLAG_BACKUP_SEMANTICS to open directories (it's just ignored for files).
 	 * Use FILE_FLAG_OPEN_REPARSE_POINT to open symbolic links and not the their target.
 	 */
-	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, 0);
+	h = CreateFileW(convert(conv_buf_file, file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -1497,8 +1491,9 @@ int windows_readlink(const char* file, char* buffer, size_t size)
 	}
 
 	/* convert the name to UTF-8 */
-	name = u16tou8ex(rdb->SymbolicLinkReparseBuffer.PathBuffer + rdb->SymbolicLinkReparseBuffer.PrintNameOffset,
-			rdb->SymbolicLinkReparseBuffer.PrintNameLength / 2, &len);
+	name = u16tou8ex(conv_buf_name,
+		rdb->SymbolicLinkReparseBuffer.PathBuffer + rdb->SymbolicLinkReparseBuffer.PrintNameOffset,
+		rdb->SymbolicLinkReparseBuffer.PrintNameLength / 2, &len);
 
 	/* check for overflow */
 	if (len > size) {
@@ -1520,12 +1515,13 @@ int devuuid(uint64_t device, char* uuid, size_t uuid_size)
 
 int filephy(const char* file, uint64_t size, uint64_t* physical)
 {
+	wchar_t conv_buf[CONV_MAX];
 	HANDLE h;
 
 	(void)size;
 
 	/* open the handle of the file */
-	h = CreateFileW(convert(file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
+	h = CreateFileW(convert(conv_buf, file), 0, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, 0, OPEN_EXISTING, 0, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -1544,6 +1540,8 @@ int filephy(const char* file, uint64_t size, uint64_t* physical)
 
 int fsinfo(const char* path, int* has_persistent_inode, uint64_t* total_space, uint64_t* free_space)
 {
+	wchar_t conv_buf[CONV_MAX];
+
 	/* all FAT/exFAT/NTFS when managed from Windows have persistent inodes */
 	if (has_persistent_inode)
 		*has_persistent_inode = 1;
@@ -1562,7 +1560,7 @@ int fsinfo(const char* path, int* has_persistent_inode, uint64_t* total_space, u
 		strcpy(dir, path);
 
 		/* get the file attributes */
-		attr = GetFileAttributesW(convert(dir));
+		attr = GetFileAttributesW(convert(conv_buf, dir));
 		if (attr == INVALID_FILE_ATTRIBUTES) {
 			DWORD error = GetLastError();
 
@@ -1596,7 +1594,7 @@ int fsinfo(const char* path, int* has_persistent_inode, uint64_t* total_space, u
 
 		/* get the free space of the directory */
 		/* note that it must be a directory */
-		if (!GetDiskFreeSpaceExW(convert(dir), 0, &total_bytes, &total_free_bytes)) {
+		if (!GetDiskFreeSpaceExW(convert(conv_buf, dir), 0, &total_bytes, &total_free_bytes)) {
 			windows_errno(GetLastError());
 			return -1;
 		}
@@ -1840,13 +1838,15 @@ int randomize(void* ptr, size_t size)
  */
 static int devresolve(const char* mount, char* file, size_t file_size, char* wfile, size_t wfile_size)
 {
+	wchar_t conv_buf_mount[CONV_MAX];
+	char conv_buf_volume_guid[CONV_MAX];
 	WCHAR volume_mount[MAX_PATH];
 	WCHAR volume_guid[MAX_PATH];
 	DWORD i;
 	char* p;
 
 	/* get the volume mount point from the disk path */
-	if (!GetVolumePathNameW(convert(mount), volume_mount, sizeof(volume_mount) / sizeof(WCHAR))) {
+	if (!GetVolumePathNameW(convert(conv_buf_mount, mount), volume_mount, sizeof(volume_mount) / sizeof(WCHAR))) {
 		windows_errno(GetLastError());
 		return -1;
 	}
@@ -1865,7 +1865,7 @@ static int devresolve(const char* mount, char* file, size_t file_size, char* wfi
 	if (i != 0 && volume_guid[i-1] == '\\')
 		volume_guid[i-1] = 0;
 
-	pathcpy(wfile, wfile_size, u16tou8(volume_guid));
+	pathcpy(wfile, wfile_size, u16tou8(conv_buf_volume_guid, volume_guid));
 
 	/* get the GUID start { */
 	p = strchr(wfile, '{');
@@ -1889,6 +1889,7 @@ static int devresolve(const char* mount, char* file, size_t file_size, char* wfi
  */
 static int devtree(const char* name, const char* custom, const char* wfile, devinfo_t* parent, tommy_list* list)
 {
+	wchar_t conv_buf[CONV_MAX];
 	HANDLE h;
 	unsigned char vde_buffer[sizeof(VOLUME_DISK_EXTENTS)];
 	VOLUME_DISK_EXTENTS* vde = (VOLUME_DISK_EXTENTS*)&vde_buffer;
@@ -1899,7 +1900,7 @@ static int devtree(const char* name, const char* custom, const char* wfile, devi
 	DWORD i;
 
 	/* open the volume */
-	h = CreateFileW(convert(wfile), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
+	h = CreateFileW(convert(conv_buf, wfile), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, 0, OPEN_EXISTING, 0, 0);
 	if (h == INVALID_HANDLE_VALUE) {
 		windows_errno(GetLastError());
 		return -1;
@@ -2024,18 +2025,19 @@ static int smartctl_scan(FILE* f, tommy_list* list)
  */
 static int devscan(tommy_list* list)
 {
+	char conv_buf[CONV_MAX];
 	WCHAR cmd[MAX_PATH + 128];
 	FILE* f;
 	int ret;
 
 	snwprintf(cmd, sizeof(cmd), L"\"%lssmartctl.exe\" --scan-open -d pd", exedir);
 
-	log_tag("smartctl:scan::run: %s\n", u16tou8(cmd));
+	log_tag("smartctl:scan::run: %s\n", u16tou8(conv_buf, cmd));
 
 	f = _wpopen(cmd, L"rt");
 	if (!f) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to run '%s' (from popen).\n", u16tou8(cmd));
+		log_fatal("Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2053,13 +2055,13 @@ static int devscan(tommy_list* list)
 
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to run '%s' (from pclose).\n", u16tou8(cmd));
+		log_fatal("Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to run '%s' with return code %xh.\n", u16tou8(cmd), ret);
+		log_fatal("Failed to run '%s' with return code %xh.\n", u16tou8(conv_buf, cmd), ret);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2072,6 +2074,7 @@ static int devscan(tommy_list* list)
  */
 static int devsmart(uint64_t device, const char* name, const char* custom, uint64_t* smart, char* serial)
 {
+	char conv_buf[CONV_MAX];
 	WCHAR cmd[MAX_PATH + 128];
 	char file[128];
 	FILE* f;
@@ -2092,12 +2095,12 @@ static int devsmart(uint64_t device, const char* name, const char* custom, uint6
 	count = 0;
 
 retry:
-	log_tag("smartctl:%s:%s:run: %s\n", file, name, u16tou8(cmd));
+	log_tag("smartctl:%s:%s:run: %s\n", file, name, u16tou8(conv_buf, cmd));
 
 	f = _wpopen(cmd, L"rt");
 	if (!f) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to run '%s' (from popen).\n", u16tou8(cmd));
+		log_fatal("Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2115,7 +2118,7 @@ retry:
 
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to run '%s' (from pclose).\n", u16tou8(cmd));
+		log_fatal("Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2157,6 +2160,7 @@ retry:
  */
 static int devdown(uint64_t device, const char* name, const char* custom)
 {
+	char conv_buf[CONV_MAX];
 	WCHAR cmd[MAX_PATH + 128];
 	char file[128];
 	FILE* f;
@@ -2177,12 +2181,12 @@ static int devdown(uint64_t device, const char* name, const char* custom)
 	count = 0;
 
 retry:
-	log_tag("smartctl:%s:%s:run: %s\n", file, name, u16tou8(cmd));
+	log_tag("smartctl:%s:%s:run: %s\n", file, name, u16tou8(conv_buf, cmd));
 
 	f = _wpopen(cmd, L"rt");
 	if (!f) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to run '%s' (from popen).\n", u16tou8(cmd));
+		log_fatal("Failed to run '%s' (from popen).\n", u16tou8(conv_buf, cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2200,7 +2204,7 @@ retry:
 
 	if (ret == -1) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to run '%s' (from pclose).\n", u16tou8(cmd));
+		log_fatal("Failed to run '%s' (from pclose).\n", u16tou8(conv_buf, cmd));
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2226,7 +2230,7 @@ retry:
 
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Failed to run '%s' with return code %xh.\n", u16tou8(cmd), ret);
+		log_fatal("Failed to run '%s' with return code %xh.\n", u16tou8(conv_buf, cmd), ret);
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
@@ -2242,6 +2246,7 @@ retry:
  */
 static int devup(const char* mount)
 {
+	wchar_t conv_buf[CONV_MAX];
 	int f;
 	char path[PATH_MAX];
 
@@ -2249,7 +2254,7 @@ static int devup(const char* mount)
 	pathprint(path, sizeof(path), "%s.snapraid-spinup.tmp", mount);
 
 	/* create a temporary file, automatically deleted on close */
-	f = _wopen(convert(path), _O_CREAT | _O_TEMPORARY | _O_RDWR,  _S_IREAD | _S_IWRITE);
+	f = _wopen(convert(conv_buf, path), _O_CREAT | _O_TEMPORARY | _O_RDWR,  _S_IREAD | _S_IWRITE);
 	if (f != -1)
 		close(f);
 
