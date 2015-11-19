@@ -32,6 +32,7 @@ stamp-h1
 snapraid
 mktest
 mkstream
+*.exe
 *.o
 *.gcda
 *.gcno
@@ -50,4 +51,7 @@ kernel/
 obj/
 bench/
 support/
+archive/
+www/
+wiki/
 
