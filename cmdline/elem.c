@@ -1287,7 +1287,6 @@ struct snapraid_block* fs_file2block_get(struct snapraid_file* file, block_off_t
 	if (file_pos >= file->blockmax) {
 		/* LCOV_EXCL_START */
 		log_fatal("Internal inconsistency when dereferencing file '%s' at position '%u/%u'\n", file->sub, file_pos, file->blockmax);
-		abort();
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
