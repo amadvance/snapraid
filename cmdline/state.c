@@ -3089,7 +3089,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 			/* LCOV_EXCL_STOP */
 		}
 #else
-		content->retval = state_write_thread(context);
+		context->retval = state_write_thread(context);
 #endif
 
 		i = i->next;
