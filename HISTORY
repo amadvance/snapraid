@@ -3,20 +3,19 @@ SnapRAID HISTORY
 
 9.1 2015/11
 ===========
- * Fixes a bug when reading a content file with a deleted entry
-   bigger than 4 GB. This was a regression introduced in
-   version 9.0 that could result in the impossibility to read
-   a valid content file, after a deletion of a file bigger than 4 GB
-   in the array.
-   If this happened to you, just upgrading to 9.1 fixes the issue,
-   and it allows you to continue to work.
+ * Fixes a bug when reading a content file with a deleted entry bigger
+   than 4 GB. This was a regression introduced in version 9.0 that
+   could result in the impossibility to read a valid content file,
+   after a deletion of a file bigger than 4 GB in the array.
+   If this happened to you, just upgrading to 9.1 fixes the issue, and
+   it allows you to continue to work.
    Note that this bug only prevented to run 9.0, but your data was still
    protected and could have been recovered using the versions 8.1 or 9.1.
- * In Winwdows disables the file zero check requring the --force-zero
+ * In Windows disables the file zero check requiring the --force-zero
    option. This check is intended for possible case using ext3/4 in Linux,
    and there is no evidence that in Windows it's possible at all.
  * Windows binaries built with gcc 4.9.3 using the MXE cross compiler at
-   commitc 62bcdbee56e87c81f1faa105b8777a5879d4e2e with targets
+   commit 62bcdbee56e87c81f1faa105b8777a5879d4e2e with targets
    i686-w64-mingw32 and x86_64-w64-mingw32 and optimization -O2.
 
 9.0 2015/11
