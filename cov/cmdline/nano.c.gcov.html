@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-11-13</td>
+            <td class="headerValue">2015-11-20</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">1</td>
@@ -96,13 +96,13 @@
 <span class="lineNum">      34 </span>            :                 tommy_node* j;
 <span class="lineNum">      35 </span>            : 
 <span class="lineNum">      36 </span>            :                 /* for all files */
-<span class="lineNum">      37 </span><span class="lineCov">       5723 :                 for (j = disk-&gt;filelist; j != 0; j = j-&gt;next) {</span>
-<span class="lineNum">      38 </span><span class="lineCov">       5717 :                         struct snapraid_file* file = j-&gt;data;</span>
+<span class="lineNum">      37 </span><span class="lineCov">       5724 :                 for (j = disk-&gt;filelist; j != 0; j = j-&gt;next) {</span>
+<span class="lineNum">      38 </span><span class="lineCov">       5718 :                         struct snapraid_file* file = j-&gt;data;</span>
 <span class="lineNum">      39 </span>            : 
 <span class="lineNum">      40 </span>            :                         /* if the file has a zero nanosecond timestamp */
 <span class="lineNum">      41 </span>            :                         /* note that symbolic links are not in the file list */
 <span class="lineNum">      42 </span>            :                         /* and then are not processed */
-<span class="lineNum">      43 </span><span class="lineCov">       5717 :                         if (file-&gt;mtime_nsec == 0) {</span>
+<span class="lineNum">      43 </span><span class="lineCov">       5718 :                         if (file-&gt;mtime_nsec == 0) {</span>
 <span class="lineNum">      44 </span>            :                                 char path[PATH_MAX];
 <span class="lineNum">      45 </span>            :                                 struct stat st;
 <span class="lineNum">      46 </span>            :                                 int f;

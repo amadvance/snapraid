@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-11-13</td>
+            <td class="headerValue">2015-11-20</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">5</td>
@@ -119,83 +119,83 @@
 <span class="lineNum">      57 </span>            : /**
 <a name="58"><span class="lineNum">      58 </span>            :  * Splices a chain in the middle of another chain.</a>
 <span class="lineNum">      59 </span>            :  */
-<span class="lineNum">      60 </span><span class="lineCov">    4083447 : tommy_inline void tommy_chain_splice(tommy_node* first_before, tommy_node* first_after, tommy_node* second_head, tommy_node* second_tail)</span>
+<span class="lineNum">      60 </span><span class="lineCov">    4073661 : tommy_inline void tommy_chain_splice(tommy_node* first_before, tommy_node* first_after, tommy_node* second_head, tommy_node* second_tail)</span>
 <span class="lineNum">      61 </span>            : {
 <span class="lineNum">      62 </span>            :         /* set the prev list */
-<span class="lineNum">      63 </span><span class="lineCov">    4083447 :         first_after-&gt;prev = second_tail;</span>
-<span class="lineNum">      64 </span><span class="lineCov">    4083447 :         second_head-&gt;prev = first_before;</span>
+<span class="lineNum">      63 </span><span class="lineCov">    4073661 :         first_after-&gt;prev = second_tail;</span>
+<span class="lineNum">      64 </span><span class="lineCov">    4073661 :         second_head-&gt;prev = first_before;</span>
 <span class="lineNum">      65 </span>            : 
 <span class="lineNum">      66 </span>            :         /* set the next list */
-<span class="lineNum">      67 </span><span class="lineCov">    4083447 :         first_before-&gt;next = second_head;</span>
-<span class="lineNum">      68 </span><span class="lineCov">    4083447 :         second_tail-&gt;next = first_after;</span>
-<span class="lineNum">      69 </span><span class="lineCov">    4083447 : }</span>
+<span class="lineNum">      67 </span><span class="lineCov">    4073661 :         first_before-&gt;next = second_head;</span>
+<span class="lineNum">      68 </span><span class="lineCov">    4073661 :         second_tail-&gt;next = first_after;</span>
+<span class="lineNum">      69 </span><span class="lineCov">    4073661 : }</span>
 <span class="lineNum">      70 </span>            : 
 <span class="lineNum">      71 </span>            : /**
 <a name="72"><span class="lineNum">      72 </span>            :  * Concats two chains.</a>
 <span class="lineNum">      73 </span>            :  */
-<span class="lineNum">      74 </span><span class="lineCov">    1147561 : tommy_inline void tommy_chain_concat(tommy_node* first_tail, tommy_node* second_head)</span>
+<span class="lineNum">      74 </span><span class="lineCov">    1147870 : tommy_inline void tommy_chain_concat(tommy_node* first_tail, tommy_node* second_head)</span>
 <span class="lineNum">      75 </span>            : {
 <span class="lineNum">      76 </span>            :         /* set the prev list */
-<span class="lineNum">      77 </span><span class="lineCov">    1147561 :         second_head-&gt;prev = first_tail;</span>
+<span class="lineNum">      77 </span><span class="lineCov">    1147870 :         second_head-&gt;prev = first_tail;</span>
 <span class="lineNum">      78 </span>            : 
 <span class="lineNum">      79 </span>            :         /* set the next list */
-<span class="lineNum">      80 </span><span class="lineCov">    1147561 :         first_tail-&gt;next = second_head;</span>
-<span class="lineNum">      81 </span><span class="lineCov">    1147561 : }</span>
+<span class="lineNum">      80 </span><span class="lineCov">    1147870 :         first_tail-&gt;next = second_head;</span>
+<span class="lineNum">      81 </span><span class="lineCov">    1147870 : }</span>
 <span class="lineNum">      82 </span>            : 
 <span class="lineNum">      83 </span>            : /**
 <a name="84"><span class="lineNum">      84 </span>            :  * Merges two chains.</a>
 <span class="lineNum">      85 </span>            :  */
-<span class="lineNum">      86 </span><span class="lineCov">     427404 : tommy_inline void tommy_chain_merge(tommy_chain* first, tommy_chain* second, tommy_compare_func* cmp)</span>
+<span class="lineNum">      86 </span><span class="lineCov">     427121 : tommy_inline void tommy_chain_merge(tommy_chain* first, tommy_chain* second, tommy_compare_func* cmp)</span>
 <span class="lineNum">      87 </span>            : {
-<span class="lineNum">      88 </span><span class="lineCov">     427404 :         tommy_node* first_i = first-&gt;head;</span>
-<span class="lineNum">      89 </span><span class="lineCov">     427404 :         tommy_node* second_i = second-&gt;head;</span>
+<span class="lineNum">      88 </span><span class="lineCov">     427121 :         tommy_node* first_i = first-&gt;head;</span>
+<span class="lineNum">      89 </span><span class="lineCov">     427121 :         tommy_node* second_i = second-&gt;head;</span>
 <span class="lineNum">      90 </span>            : 
 <span class="lineNum">      91 </span>            :         /* merge */
 <span class="lineNum">      92 </span>            :         while (1) {
-<span class="lineNum">      93 </span><span class="lineCov">    8885557 :                 if (cmp(first_i-&gt;data, second_i-&gt;data) &gt; 0) {</span>
-<span class="lineNum">      94 </span><span class="lineCov">    4294267 :                         tommy_node* next = second_i-&gt;next;</span>
-<span class="lineNum">      95 </span><span class="lineCov">    4294267 :                         if (first_i == first-&gt;head) {</span>
-<span class="lineNum">      96 </span><span class="lineCov">     210820 :                                 tommy_chain_concat(second_i, first_i);</span>
-<span class="lineNum">      97 </span><span class="lineCov">     210820 :                                 first-&gt;head = second_i;</span>
+<span class="lineNum">      93 </span><span class="lineCov">    8866117 :                 if (cmp(first_i-&gt;data, second_i-&gt;data) &gt; 0) {</span>
+<span class="lineNum">      94 </span><span class="lineCov">    4284467 :                         tommy_node* next = second_i-&gt;next;</span>
+<span class="lineNum">      95 </span><span class="lineCov">    4284467 :                         if (first_i == first-&gt;head) {</span>
+<span class="lineNum">      96 </span><span class="lineCov">     210806 :                                 tommy_chain_concat(second_i, first_i);</span>
+<span class="lineNum">      97 </span><span class="lineCov">     210806 :                                 first-&gt;head = second_i;</span>
 <span class="lineNum">      98 </span>            :                         } else {
-<span class="lineNum">      99 </span><span class="lineCov">    4083447 :                                 tommy_chain_splice(first_i-&gt;prev, first_i, second_i, second_i);</span>
+<span class="lineNum">      99 </span><span class="lineCov">    4073661 :                                 tommy_chain_splice(first_i-&gt;prev, first_i, second_i, second_i);</span>
 <span class="lineNum">     100 </span>            :                         }
-<span class="lineNum">     101 </span><span class="lineCov">    4294267 :                         if (second_i == second-&gt;tail)</span>
-<span class="lineNum">     102 </span><span class="lineCov">     217096 :                                 break;</span>
-<span class="lineNum">     103 </span><span class="lineCov">    4077171 :                         second_i = next;</span>
+<span class="lineNum">     101 </span><span class="lineCov">    4284467 :                         if (second_i == second-&gt;tail)</span>
+<span class="lineNum">     102 </span><span class="lineCov">     216890 :                                 break;</span>
+<span class="lineNum">     103 </span><span class="lineCov">    4067577 :                         second_i = next;</span>
 <span class="lineNum">     104 </span>            :                 } else {
-<span class="lineNum">     105 </span><span class="lineCov">    4591290 :                         if (first_i == first-&gt;tail) {</span>
-<span class="lineNum">     106 </span><span class="lineCov">     210308 :                                 tommy_chain_concat(first_i, second_i);</span>
-<span class="lineNum">     107 </span><span class="lineCov">     210308 :                                 first-&gt;tail = second-&gt;tail;</span>
-<span class="lineNum">     108 </span><span class="lineCov">     210308 :                                 break;</span>
+<span class="lineNum">     105 </span><span class="lineCov">    4581650 :                         if (first_i == first-&gt;tail) {</span>
+<span class="lineNum">     106 </span><span class="lineCov">     210231 :                                 tommy_chain_concat(first_i, second_i);</span>
+<span class="lineNum">     107 </span><span class="lineCov">     210231 :                                 first-&gt;tail = second-&gt;tail;</span>
+<span class="lineNum">     108 </span><span class="lineCov">     210231 :                                 break;</span>
 <span class="lineNum">     109 </span>            :                         }
-<span class="lineNum">     110 </span><span class="lineCov">    4380982 :                         first_i = first_i-&gt;next;</span>
+<span class="lineNum">     110 </span><span class="lineCov">    4371419 :                         first_i = first_i-&gt;next;</span>
 <span class="lineNum">     111 </span>            :                 }
-<span class="lineNum">     112 </span><span class="lineCov">    8458153 :         }</span>
-<span class="lineNum">     113 </span><span class="lineCov">     427404 : }</span>
+<span class="lineNum">     112 </span><span class="lineCov">    8438996 :         }</span>
+<span class="lineNum">     113 </span><span class="lineCov">     427121 : }</span>
 <span class="lineNum">     114 </span>            : 
 <span class="lineNum">     115 </span>            : /**
 <span class="lineNum">     116 </span>            :  * Merges two chains managing special degenerated cases.
 <a name="117"><span class="lineNum">     117 </span>            :  * It's funtionally equivalent at tommy_chain_merge() but faster with already ordered chains.</a>
 <span class="lineNum">     118 </span>            :  */
-<span class="lineNum">     119 </span><span class="lineCov">    1153837 : tommy_inline void tommy_chain_merge_degenerated(tommy_chain* first, tommy_chain* second, tommy_compare_func* cmp)</span>
+<span class="lineNum">     119 </span><span class="lineCov">    1153954 : tommy_inline void tommy_chain_merge_degenerated(tommy_chain* first, tommy_chain* second, tommy_compare_func* cmp)</span>
 <span class="lineNum">     120 </span>            : {
 <span class="lineNum">     121 </span>            :         /* identify the condition first &lt;= second */
-<span class="lineNum">     122 </span><span class="lineCov">    1153837 :         if (cmp(first-&gt;tail-&gt;data, second-&gt;head-&gt;data) &lt;= 0) {</span>
-<span class="lineNum">     123 </span><span class="lineCov">     422569 :                 tommy_chain_concat(first-&gt;tail, second-&gt;head);</span>
-<span class="lineNum">     124 </span><span class="lineCov">     422569 :                 first-&gt;tail = second-&gt;tail;</span>
-<span class="lineNum">     125 </span><span class="lineCov">     422569 :                 return;</span>
+<span class="lineNum">     122 </span><span class="lineCov">    1153954 :         if (cmp(first-&gt;tail-&gt;data, second-&gt;head-&gt;data) &lt;= 0) {</span>
+<span class="lineNum">     123 </span><span class="lineCov">     422991 :                 tommy_chain_concat(first-&gt;tail, second-&gt;head);</span>
+<span class="lineNum">     124 </span><span class="lineCov">     422991 :                 first-&gt;tail = second-&gt;tail;</span>
+<span class="lineNum">     125 </span><span class="lineCov">     422991 :                 return;</span>
 <span class="lineNum">     126 </span>            :         }
 <span class="lineNum">     127 </span>            : 
 <span class="lineNum">     128 </span>            :         /* identify the condition second &lt; first */
 <span class="lineNum">     129 </span>            :         /* here we must be strict on comparison to keep the sort stable */
-<span class="lineNum">     130 </span><span class="lineCov">     731268 :         if (cmp(second-&gt;tail-&gt;data, first-&gt;head-&gt;data) &lt; 0) {</span>
-<span class="lineNum">     131 </span><span class="lineCov">     303864 :                 tommy_chain_concat(second-&gt;tail, first-&gt;head);</span>
-<span class="lineNum">     132 </span><span class="lineCov">     303864 :                 first-&gt;head = second-&gt;head;</span>
-<span class="lineNum">     133 </span><span class="lineCov">     303864 :                 return;</span>
+<span class="lineNum">     130 </span><span class="lineCov">     730963 :         if (cmp(second-&gt;tail-&gt;data, first-&gt;head-&gt;data) &lt; 0) {</span>
+<span class="lineNum">     131 </span><span class="lineCov">     303842 :                 tommy_chain_concat(second-&gt;tail, first-&gt;head);</span>
+<span class="lineNum">     132 </span><span class="lineCov">     303842 :                 first-&gt;head = second-&gt;head;</span>
+<span class="lineNum">     133 </span><span class="lineCov">     303842 :                 return;</span>
 <span class="lineNum">     134 </span>            :         }
 <span class="lineNum">     135 </span>            : 
-<span class="lineNum">     136 </span><span class="lineCov">     427404 :         tommy_chain_merge(first, second, cmp);</span>
+<span class="lineNum">     136 </span><span class="lineCov">     427121 :         tommy_chain_merge(first, second, cmp);</span>
 <span class="lineNum">     137 </span>            : }
 <span class="lineNum">     138 </span>            : 
 <span class="lineNum">     139 </span>            : /**
@@ -241,42 +241,42 @@
 <span class="lineNum">     179 </span>            :                 tommy_chain* last;
 <span class="lineNum">     180 </span>            : 
 <span class="lineNum">     181 </span>            :                 /* carry bit to add */
-<span class="lineNum">     182 </span><span class="lineCov">    1155310 :                 last = &amp;bit[TOMMY_CHAIN_BIT_MAX];</span>
-<span class="lineNum">     183 </span><span class="lineCov">    1155310 :                 bit[TOMMY_CHAIN_BIT_MAX].head = node;</span>
-<span class="lineNum">     184 </span><span class="lineCov">    1155310 :                 bit[TOMMY_CHAIN_BIT_MAX].tail = node;</span>
-<span class="lineNum">     185 </span><span class="lineCov">    1155310 :                 next = node-&gt;next;</span>
+<span class="lineNum">     182 </span><span class="lineCov">    1155427 :                 last = &amp;bit[TOMMY_CHAIN_BIT_MAX];</span>
+<span class="lineNum">     183 </span><span class="lineCov">    1155427 :                 bit[TOMMY_CHAIN_BIT_MAX].head = node;</span>
+<span class="lineNum">     184 </span><span class="lineCov">    1155427 :                 bit[TOMMY_CHAIN_BIT_MAX].tail = node;</span>
+<span class="lineNum">     185 </span><span class="lineCov">    1155427 :                 next = node-&gt;next;</span>
 <span class="lineNum">     186 </span>            : 
 <span class="lineNum">     187 </span>            :                 /* add the bit, propagating the carry */
-<span class="lineNum">     188 </span><span class="lineCov">    1155310 :                 i = 0;</span>
-<span class="lineNum">     189 </span><span class="lineCov">    1155310 :                 mask = counter;</span>
-<span class="lineNum">     190 </span><span class="lineCov">    3459162 :                 while ((mask &amp; 1) != 0) {</span>
-<span class="lineNum">     191 </span><span class="lineCov">    1148542 :                         tommy_chain_merge_degenerated(&amp;bit[i], last, cmp);</span>
-<span class="lineNum">     192 </span><span class="lineCov">    1148542 :                         mask &gt;&gt;= 1;</span>
-<span class="lineNum">     193 </span><span class="lineCov">    1148542 :                         last = &amp;bit[i];</span>
-<span class="lineNum">     194 </span><span class="lineCov">    1148542 :                         ++i;</span>
+<span class="lineNum">     188 </span><span class="lineCov">    1155427 :                 i = 0;</span>
+<span class="lineNum">     189 </span><span class="lineCov">    1155427 :                 mask = counter;</span>
+<span class="lineNum">     190 </span><span class="lineCov">    3459506 :                 while ((mask &amp; 1) != 0) {</span>
+<span class="lineNum">     191 </span><span class="lineCov">    1148652 :                         tommy_chain_merge_degenerated(&amp;bit[i], last, cmp);</span>
+<span class="lineNum">     192 </span><span class="lineCov">    1148652 :                         mask &gt;&gt;= 1;</span>
+<span class="lineNum">     193 </span><span class="lineCov">    1148652 :                         last = &amp;bit[i];</span>
+<span class="lineNum">     194 </span><span class="lineCov">    1148652 :                         ++i;</span>
 <span class="lineNum">     195 </span>            :                 }
 <span class="lineNum">     196 </span>            : 
 <span class="lineNum">     197 </span>            :                 /* copy the carry in the first empty bit */
-<span class="lineNum">     198 </span><span class="lineCov">    1155310 :                 bit[i] = *last;</span>
+<span class="lineNum">     198 </span><span class="lineCov">    1155427 :                 bit[i] = *last;</span>
 <span class="lineNum">     199 </span>            : 
 <span class="lineNum">     200 </span>            :                 /* add the carry in the counter */
-<span class="lineNum">     201 </span><span class="lineCov">    1155310 :                 ++counter;</span>
+<span class="lineNum">     201 </span><span class="lineCov">    1155427 :                 ++counter;</span>
 <span class="lineNum">     202 </span>            : 
-<span class="lineNum">     203 </span><span class="lineCov">    1155310 :                 if (node == tail)</span>
+<span class="lineNum">     203 </span><span class="lineCov">    1155427 :                 if (node == tail)</span>
 <span class="lineNum">     204 </span><span class="lineCov">       1473 :                         break;</span>
-<span class="lineNum">     205 </span><span class="lineCov">    1153837 :                 node = next;</span>
-<span class="lineNum">     206 </span><span class="lineCov">    1153837 :         }</span>
+<span class="lineNum">     205 </span><span class="lineCov">    1153954 :                 node = next;</span>
+<span class="lineNum">     206 </span><span class="lineCov">    1153954 :         }</span>
 <span class="lineNum">     207 </span>            : 
 <span class="lineNum">     208 </span>            :         /* merge the buckets */
 <span class="lineNum">     209 </span><span class="lineCov">       1473 :         i = tommy_ctz_u32(counter);</span>
 <span class="lineNum">     210 </span><span class="lineCov">       1473 :         mask = counter &gt;&gt; i;</span>
-<span class="lineNum">     211 </span><span class="lineCov">      10798 :         while (mask != 1) {</span>
-<span class="lineNum">     212 </span><span class="lineCov">       7852 :                 mask &gt;&gt;= 1;</span>
-<span class="lineNum">     213 </span><span class="lineCov">       7852 :                 if (mask &amp; 1)</span>
-<span class="lineNum">     214 </span><span class="lineCov">       5295 :                         tommy_chain_merge_degenerated(&amp;bit[i + 1], &amp;bit[i], cmp);</span>
+<span class="lineNum">     211 </span><span class="lineCov">      10792 :         while (mask != 1) {</span>
+<span class="lineNum">     212 </span><span class="lineCov">       7846 :                 mask &gt;&gt;= 1;</span>
+<span class="lineNum">     213 </span><span class="lineCov">       7846 :                 if (mask &amp; 1)</span>
+<span class="lineNum">     214 </span><span class="lineCov">       5302 :                         tommy_chain_merge_degenerated(&amp;bit[i + 1], &amp;bit[i], cmp);</span>
 <span class="lineNum">     215 </span>            :                 else
-<span class="lineNum">     216 </span><span class="lineCov">       2557 :                         bit[i + 1] = bit[i];</span>
-<span class="lineNum">     217 </span><span class="lineCov">       7852 :                 ++i;</span>
+<span class="lineNum">     216 </span><span class="lineCov">       2544 :                         bit[i + 1] = bit[i];</span>
+<span class="lineNum">     217 </span><span class="lineCov">       7846 :                 ++i;</span>
 <span class="lineNum">     218 </span>            :         }
 <span class="lineNum">     219 </span>            : 
 <span class="lineNum">     220 </span><span class="lineCov">       1473 :         *chain = bit[i];</span>

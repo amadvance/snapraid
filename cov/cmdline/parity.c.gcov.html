@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-11-13</td>
+            <td class="headerValue">2015-11-20</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">10</td>
@@ -129,8 +129,8 @@
 <span class="lineNum">      67 </span><span class="lineCov">        431 :                 block_off_t block = disk_size(disk);</span>
 <span class="lineNum">      68 </span>            : 
 <span class="lineNum">      69 </span>            :                 /* decrease the block until an used one */
-<span class="lineNum">      70 </span><span class="lineCov">     221703 :                 while (block &gt; parity_block &amp;&amp; !block_has_file_and_valid_parity(fs_par2block_get(disk, block - 1)))</span>
-<span class="lineNum">      71 </span><span class="lineCov">     220841 :                         --block;</span>
+<span class="lineNum">      70 </span><span class="lineCov">     221700 :                 while (block &gt; parity_block &amp;&amp; !block_has_file_and_valid_parity(fs_par2block_get(disk, block - 1)))</span>
+<span class="lineNum">      71 </span><span class="lineCov">     220838 :                         --block;</span>
 <span class="lineNum">      72 </span>            : 
 <span class="lineNum">      73 </span>            :                 /* get the highest value */
 <span class="lineNum">      74 </span><span class="lineCov">        431 :                 if (block &gt; parity_block)</span>
@@ -486,15 +486,15 @@
 <span class="lineNum">     424 </span><span class="lineCov">        952 :         return 0;</span>
 <a name="425"><span class="lineNum">     425 </span>            : }</a>
 <span class="lineNum">     426 </span>            : 
-<span class="lineNum">     427 </span><span class="lineCov">     505320 : int parity_write(struct snapraid_parity_handle* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size)</span>
+<span class="lineNum">     427 </span><span class="lineCov">     506040 : int parity_write(struct snapraid_parity_handle* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size)</span>
 <span class="lineNum">     428 </span>            : {
 <span class="lineNum">     429 </span>            :         ssize_t write_ret;
 <span class="lineNum">     430 </span>            :         data_off_t offset;
 <span class="lineNum">     431 </span>            : 
-<span class="lineNum">     432 </span><span class="lineCov">     505320 :         offset = pos * (data_off_t)block_size;</span>
+<span class="lineNum">     432 </span><span class="lineCov">     506040 :         offset = pos * (data_off_t)block_size;</span>
 <span class="lineNum">     433 </span>            : 
 <span class="lineNum">     434 </span>            : #if HAVE_PWRITE
-<span class="lineNum">     435 </span><span class="lineCov">     505320 :         write_ret = pwrite(parity-&gt;f, block_buffer, block_size, offset);</span>
+<span class="lineNum">     435 </span><span class="lineCov">     506040 :         write_ret = pwrite(parity-&gt;f, block_buffer, block_size, offset);</span>
 <span class="lineNum">     436 </span>            : #else
 <span class="lineNum">     437 </span>            :         if (lseek(parity-&gt;f, offset, SEEK_SET) != offset) {
 <span class="lineNum">     438 </span>            :                 /* LCOV_EXCL_START */
@@ -509,7 +509,7 @@
 <span class="lineNum">     447 </span>            : 
 <span class="lineNum">     448 </span>            :         write_ret = write(parity-&gt;f, block_buffer, block_size);
 <span class="lineNum">     449 </span>            : #endif
-<span class="lineNum">     450 </span><span class="lineCov">     505320 :         if (write_ret != (ssize_t)block_size) { /* conversion is safe because block_size is always small */</span>
+<span class="lineNum">     450 </span><span class="lineCov">     506040 :         if (write_ret != (ssize_t)block_size) { /* conversion is safe because block_size is always small */</span>
 <span class="lineNum">     451 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     452 </span>            :                 if (errno == ENOSPC) {
 <span class="lineNum">     453 </span>            :                         log_fatal(&quot;Failed to grow parity file '%s' using write due lack of space.\n&quot;, parity-&gt;path);
@@ -521,26 +521,26 @@
 <span class="lineNum">     459 </span>            :         }
 <span class="lineNum">     460 </span>            : 
 <span class="lineNum">     461 </span>            :         /* adjust the size of the valid data */
-<span class="lineNum">     462 </span><span class="lineCov">     505320 :         if (parity-&gt;valid_size &lt; offset + block_size) {</span>
+<span class="lineNum">     462 </span><span class="lineCov">     506040 :         if (parity-&gt;valid_size &lt; offset + block_size) {</span>
 <span class="lineNum">     463 </span><span class="lineCov">     170559 :                 parity-&gt;valid_size = offset + block_size;</span>
 <span class="lineNum">     464 </span>            :         }
 <span class="lineNum">     465 </span>            : 
 <span class="lineNum">     466 </span>            :         /* Here doesn't make sense to call posix_fadvise(..., POSIX_FADV_DONTNEED) because */
 <span class="lineNum">     467 </span>            :         /* at this time the data is still in not yet written and it cannot be discharged. */
 <span class="lineNum">     468 </span>            : 
-<span class="lineNum">     469 </span><span class="lineCov">     505320 :         return 0;</span>
+<span class="lineNum">     469 </span><span class="lineCov">     506040 :         return 0;</span>
 <a name="470"><span class="lineNum">     470 </span>            : }</a>
 <span class="lineNum">     471 </span>            : 
-<span class="lineNum">     472 </span><span class="lineCov">    3488589 : int parity_read(struct snapraid_parity_handle* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size, fptr* out)</span>
+<span class="lineNum">     472 </span><span class="lineCov">    3488577 : int parity_read(struct snapraid_parity_handle* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size, fptr* out)</span>
 <span class="lineNum">     473 </span>            : {
 <span class="lineNum">     474 </span>            :         ssize_t read_ret;
 <span class="lineNum">     475 </span>            :         data_off_t offset;
 <span class="lineNum">     476 </span>            :         unsigned count;
 <span class="lineNum">     477 </span>            : 
-<span class="lineNum">     478 </span><span class="lineCov">    3488589 :         offset = pos * (data_off_t)block_size;</span>
+<span class="lineNum">     478 </span><span class="lineCov">    3488577 :         offset = pos * (data_off_t)block_size;</span>
 <span class="lineNum">     479 </span>            : 
 <span class="lineNum">     480 </span>            :         /* check if we are going to read only not initialized data */
-<span class="lineNum">     481 </span><span class="lineCov">    3488589 :         if (offset &gt;= parity-&gt;valid_size) {</span>
+<span class="lineNum">     481 </span><span class="lineCov">    3488577 :         if (offset &gt;= parity-&gt;valid_size) {</span>
 <span class="lineNum">     482 </span><span class="lineCov">      90275 :                 out(&quot;Reading missing data from file '%s' at offset %&quot; PRIu64 &quot;.\n&quot;, parity-&gt;path, offset);</span>
 <span class="lineNum">     483 </span><span class="lineCov">      90275 :                 return -1;</span>
 <span class="lineNum">     484 </span>            :         }
@@ -554,36 +554,36 @@
 <span class="lineNum">     492 </span>            :         }
 <span class="lineNum">     493 </span>            : #endif
 <span class="lineNum">     494 </span>            : 
-<span class="lineNum">     495 </span><span class="lineCov">    3398314 :         count = 0;</span>
+<span class="lineNum">     495 </span><span class="lineCov">    3398302 :         count = 0;</span>
 <span class="lineNum">     496 </span>            :         do {
 <span class="lineNum">     497 </span>            : 
 <span class="lineNum">     498 </span>            : #if HAVE_PREAD
-<span class="lineNum">     499 </span><span class="lineCov">    3398314 :                 read_ret = pread(parity-&gt;f, block_buffer + count, block_size - count, offset + count);</span>
+<span class="lineNum">     499 </span><span class="lineCov">    3398302 :                 read_ret = pread(parity-&gt;f, block_buffer + count, block_size - count, offset + count);</span>
 <span class="lineNum">     500 </span>            : #else
 <span class="lineNum">     501 </span>            :                 read_ret = read(parity-&gt;f, block_buffer + count, block_size - count);
 <span class="lineNum">     502 </span>            : #endif
-<span class="lineNum">     503 </span><span class="lineCov">    3398314 :                 if (read_ret &lt; 0) {</span>
+<span class="lineNum">     503 </span><span class="lineCov">    3398302 :                 if (read_ret &lt; 0) {</span>
 <span class="lineNum">     504 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     505 </span>            :                         out(&quot;Error reading file '%s' at offset %&quot; PRIu64 &quot; for size %u. %s.\n&quot;, parity-&gt;path, offset + count, block_size - count, strerror(errno));
 <span class="lineNum">     506 </span>            :                         return -1;
 <span class="lineNum">     507 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     508 </span>            :                 }
-<span class="lineNum">     509 </span><span class="lineCov">    3398314 :                 if (read_ret == 0) {</span>
+<span class="lineNum">     509 </span><span class="lineCov">    3398302 :                 if (read_ret == 0) {</span>
 <span class="lineNum">     510 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     511 </span>            :                         out(&quot;Unexpected end of file '%s' at offset %&quot; PRIu64 &quot;. %s.\n&quot;, parity-&gt;path, offset, strerror(errno));
 <span class="lineNum">     512 </span>            :                         return -1;
 <span class="lineNum">     513 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     514 </span>            :                 }
 <span class="lineNum">     515 </span>            : 
-<span class="lineNum">     516 </span><span class="lineCov">    3398314 :                 count += read_ret;</span>
-<span class="lineNum">     517 </span><span class="lineCov">    3398314 :         } while (count &lt; block_size);</span>
+<span class="lineNum">     516 </span><span class="lineCov">    3398302 :                 count += read_ret;</span>
+<span class="lineNum">     517 </span><span class="lineCov">    3398302 :         } while (count &lt; block_size);</span>
 <span class="lineNum">     518 </span>            : 
 <span class="lineNum">     519 </span>            :         /* Here isn't needed to call posix_fadvise(..., POSIX_FADV_DONTNEED) */
 <span class="lineNum">     520 </span>            :         /* because we already advised sequential access with POSIX_FADV_SEQUENTIAL. */
 <span class="lineNum">     521 </span>            :         /* In Linux 2.6.33 it's enough to ensure that data is not kept in the cache. */
 <span class="lineNum">     522 </span>            :         /* Better to do nothing and save a syscall for each block. */
 <span class="lineNum">     523 </span>            : 
-<span class="lineNum">     524 </span><span class="lineCov">    3398314 :         return block_size;</span>
+<span class="lineNum">     524 </span><span class="lineCov">    3398302 :         return block_size;</span>
 <span class="lineNum">     525 </span>            : }
 <span class="lineNum">     526 </span>            : 
 </pre>

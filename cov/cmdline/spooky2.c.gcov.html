@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-11-13</td>
+            <td class="headerValue">2015-11-20</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">1</td>
@@ -170,7 +170,7 @@
 <span class="lineNum">     108 </span>            : //
 <a name="109"><span class="lineNum">     109 </span>            : #define sc_const 0xdeadbeefdeadbeefLL</a>
 <span class="lineNum">     110 </span>            : 
-<span class="lineNum">     111 </span><span class="lineCov">    3470873 : void SpookyHash128(const void* data, size_t size, const uint8_t* seed, uint8_t* digest)</span>
+<span class="lineNum">     111 </span><span class="lineCov">    3472174 : void SpookyHash128(const void* data, size_t size, const uint8_t* seed, uint8_t* digest)</span>
 <span class="lineNum">     112 </span>            : {
 <span class="lineNum">     113 </span>            :         uint64_t h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11;
 <span class="lineNum">     114 </span>            :         uint64_t buf[sc_numVars];
@@ -182,39 +182,39 @@
 <span class="lineNum">     120 </span>            :         unsigned i;
 <span class="lineNum">     121 </span>            : #endif
 <span class="lineNum">     122 </span>            : 
-<span class="lineNum">     123 </span><span class="lineCov">    3470873 :         h9 = ((const uint64_t*)seed)[0];</span>
-<span class="lineNum">     124 </span><span class="lineCov">    3470873 :         h10 = ((const uint64_t*)seed)[1];</span>
+<span class="lineNum">     123 </span><span class="lineCov">    3472174 :         h9 = ((const uint64_t*)seed)[0];</span>
+<span class="lineNum">     124 </span><span class="lineCov">    3472174 :         h10 = ((const uint64_t*)seed)[1];</span>
 <span class="lineNum">     125 </span>            : 
 <span class="lineNum">     126 </span>            : #if WORDS_BIGENDIAN
 <span class="lineNum">     127 </span>            :         h9 = util_swap64(h9);
 <span class="lineNum">     128 </span>            :         h10 = util_swap64(h10);
 <span class="lineNum">     129 </span>            : #endif
 <span class="lineNum">     130 </span>            : 
-<span class="lineNum">     131 </span><span class="lineCov">    3470873 :         h0 = h3 = h6 = h9;</span>
-<span class="lineNum">     132 </span><span class="lineCov">    3470873 :         h1 = h4 = h7 = h10;</span>
-<span class="lineNum">     133 </span><span class="lineCov">    3470873 :         h2 = h5 = h8 = h11 = sc_const;</span>
+<span class="lineNum">     131 </span><span class="lineCov">    3472174 :         h0 = h3 = h6 = h9;</span>
+<span class="lineNum">     132 </span><span class="lineCov">    3472174 :         h1 = h4 = h7 = h10;</span>
+<span class="lineNum">     133 </span><span class="lineCov">    3472174 :         h2 = h5 = h8 = h11 = sc_const;</span>
 <span class="lineNum">     134 </span>            : 
-<span class="lineNum">     135 </span><span class="lineCov">    3470873 :         nblocks = size / sc_blockSize;</span>
-<span class="lineNum">     136 </span><span class="lineCov">    3470873 :         blocks = data;</span>
-<span class="lineNum">     137 </span><span class="lineCov">    3470873 :         end = blocks + nblocks * sc_numVars;</span>
+<span class="lineNum">     135 </span><span class="lineCov">    3472174 :         nblocks = size / sc_blockSize;</span>
+<span class="lineNum">     136 </span><span class="lineCov">    3472174 :         blocks = data;</span>
+<span class="lineNum">     137 </span><span class="lineCov">    3472174 :         end = blocks + nblocks * sc_numVars;</span>
 <span class="lineNum">     138 </span>            : 
 <span class="lineNum">     139 </span>            :         /* body */
-<span class="lineNum">     140 </span><span class="lineCov">   34954199 :         while (blocks &lt; end) {</span>
+<span class="lineNum">     140 </span><span class="lineCov">   34945798 :         while (blocks &lt; end) {</span>
 <span class="lineNum">     141 </span>            : #if WORDS_BIGENDIAN
 <span class="lineNum">     142 </span>            :                 for (i = 0; i &lt; sc_numVars; ++i)
 <span class="lineNum">     143 </span>            :                         buf[i] = util_swap64(blocks[i]);
 <span class="lineNum">     144 </span>            :                 Mix(buf, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);
 <span class="lineNum">     145 </span>            : #else
-<span class="lineNum">     146 </span><span class="lineCov">   28012453 :                 Mix(blocks, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);</span>
+<span class="lineNum">     146 </span><span class="lineCov">   28001450 :                 Mix(blocks, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);</span>
 <span class="lineNum">     147 </span>            : #endif
-<span class="lineNum">     148 </span><span class="lineCov">   28012453 :                 blocks += sc_numVars;</span>
+<span class="lineNum">     148 </span><span class="lineCov">   28001450 :                 blocks += sc_numVars;</span>
 <span class="lineNum">     149 </span>            :         }
 <span class="lineNum">     150 </span>            : 
 <span class="lineNum">     151 </span>            :         /* tail */
-<span class="lineNum">     152 </span><span class="lineCov">    3470873 :         size_remainder = (size - ((const uint8_t*)end - (const uint8_t*)data));</span>
-<span class="lineNum">     153 </span><span class="lineCov">    3470873 :         memcpy(buf, end, size_remainder);</span>
-<span class="lineNum">     154 </span><span class="lineCov">    3470873 :         memset(((uint8_t*)buf) + size_remainder, 0, sc_blockSize - size_remainder);</span>
-<span class="lineNum">     155 </span><span class="lineCov">    3470873 :         ((uint8_t*)buf)[sc_blockSize - 1] = size_remainder;</span>
+<span class="lineNum">     152 </span><span class="lineCov">    3472174 :         size_remainder = (size - ((const uint8_t*)end - (const uint8_t*)data));</span>
+<span class="lineNum">     153 </span><span class="lineCov">    3472174 :         memcpy(buf, end, size_remainder);</span>
+<span class="lineNum">     154 </span><span class="lineCov">    3472174 :         memset(((uint8_t*)buf) + size_remainder, 0, sc_blockSize - size_remainder);</span>
+<span class="lineNum">     155 </span><span class="lineCov">    3472174 :         ((uint8_t*)buf)[sc_blockSize - 1] = size_remainder;</span>
 <span class="lineNum">     156 </span>            : 
 <span class="lineNum">     157 </span>            :         /* finalization */
 <span class="lineNum">     158 </span>            : #if WORDS_BIGENDIAN
@@ -222,16 +222,16 @@
 <span class="lineNum">     160 </span>            :                 buf[i] = util_swap64(buf[i]);
 <span class="lineNum">     161 </span>            : #endif
 <span class="lineNum">     162 </span>            : 
-<span class="lineNum">     163 </span><span class="lineCov">    3470873 :         End(buf, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);</span>
+<span class="lineNum">     163 </span><span class="lineCov">    3472174 :         End(buf, h0, h1, h2, h3, h4, h5, h6, h7, h8, h9, h10, h11);</span>
 <span class="lineNum">     164 </span>            : 
 <span class="lineNum">     165 </span>            : #if WORDS_BIGENDIAN
 <span class="lineNum">     166 </span>            :         h0 = util_swap64(h0);
 <span class="lineNum">     167 </span>            :         h1 = util_swap64(h1);
 <span class="lineNum">     168 </span>            : #endif
 <span class="lineNum">     169 </span>            : 
-<span class="lineNum">     170 </span><span class="lineCov">    3470873 :         ((uint64_t*)digest)[0] = h0;</span>
-<span class="lineNum">     171 </span><span class="lineCov">    3470873 :         ((uint64_t*)digest)[1] = h1;</span>
-<span class="lineNum">     172 </span><span class="lineCov">    3470873 : }</span>
+<span class="lineNum">     170 </span><span class="lineCov">    3472174 :         ((uint64_t*)digest)[0] = h0;</span>
+<span class="lineNum">     171 </span><span class="lineCov">    3472174 :         ((uint64_t*)digest)[1] = h1;</span>
+<span class="lineNum">     172 </span><span class="lineCov">    3472174 : }</span>
 <span class="lineNum">     173 </span>            : 
 </pre>
       </td>

@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-11-13</td>
+            <td class="headerValue">2015-11-20</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">4</td>
@@ -122,12 +122,12 @@
 <span class="lineNum">      60 </span>            : 
 <span class="lineNum">      61 </span>            :         /* bad blocks are always scrubbed in all plans */
 <span class="lineNum">      62 </span><span class="lineCov">     111818 :         if (info_get_bad(info))</span>
-<span class="lineNum">      63 </span><span class="lineCov">       3606 :                 return 1;</span>
+<span class="lineNum">      63 </span><span class="lineCov">       3604 :                 return 1;</span>
 <span class="lineNum">      64 </span>            : 
-<span class="lineNum">      65 </span><span class="lineCov">     108212 :         switch (plan-&gt;plan) {</span>
+<span class="lineNum">      65 </span><span class="lineCov">     108214 :         switch (plan-&gt;plan) {</span>
 <span class="lineNum">      66 </span>            :         case SCRUB_FULL :
 <span class="lineNum">      67 </span>            :                 /* in 'full' plan everything is scrubbed */
-<span class="lineNum">      68 </span><span class="lineCov">      16918 :                 return 1;</span>
+<span class="lineNum">      68 </span><span class="lineCov">      16920 :                 return 1;</span>
 <span class="lineNum">      69 </span>            :         case SCRUB_EVEN :
 <span class="lineNum">      70 </span>            :                 /* in 'even' plan, scrub only even blocks */
 <span class="lineNum">      71 </span><span class="lineCov">      18398 :                 return i % 2 == 0;</span>
@@ -143,19 +143,19 @@
 <span class="lineNum">      81 </span><span class="lineCov">      56052 :         blocktime = info_get_time(info);</span>
 <span class="lineNum">      82 </span><span class="lineCov">      56052 :         if (blocktime &gt; plan-&gt;timelimit) {</span>
 <span class="lineNum">      83 </span>            :                 /* skip it */
-<span class="lineNum">      84 </span><span class="lineCov">      20666 :                 return 0;</span>
+<span class="lineNum">      84 </span><span class="lineCov">      22506 :                 return 0;</span>
 <span class="lineNum">      85 </span>            :         }
 <span class="lineNum">      86 </span>            : 
 <span class="lineNum">      87 </span>            :         /* if the time is less than the limit, always include */
 <span class="lineNum">      88 </span>            :         /* otherwise, check if we reached the last limit count */
-<span class="lineNum">      89 </span><span class="lineCov">      35386 :         if (blocktime == plan-&gt;timelimit) {</span>
+<span class="lineNum">      89 </span><span class="lineCov">      33546 :         if (blocktime == plan-&gt;timelimit) {</span>
 <span class="lineNum">      90 </span>            :                 /* if we reached the count limit */
-<span class="lineNum">      91 </span><span class="lineCov">      18912 :                 if (plan-&gt;countlast &gt;= plan-&gt;lastlimit) {</span>
+<span class="lineNum">      91 </span><span class="lineCov">      16872 :                 if (plan-&gt;countlast &gt;= plan-&gt;lastlimit) {</span>
 <span class="lineNum">      92 </span>            :                         /* skip it */
-<span class="lineNum">      93 </span><span class="lineCov">      13722 :                         return 0;</span>
+<span class="lineNum">      93 </span><span class="lineCov">      11882 :                         return 0;</span>
 <span class="lineNum">      94 </span>            :                 }
 <span class="lineNum">      95 </span>            : 
-<span class="lineNum">      96 </span><span class="lineCov">       5190 :                 ++plan-&gt;countlast;</span>
+<span class="lineNum">      96 </span><span class="lineCov">       4990 :                 ++plan-&gt;countlast;</span>
 <span class="lineNum">      97 </span>            :         }
 <span class="lineNum">      98 </span>            : 
 <span class="lineNum">      99 </span><span class="lineCov">      21664 :         return 1;</span>
@@ -304,9 +304,9 @@
 <span class="lineNum">     242 </span>            :                         /* if the file is different than the current one, close it */
 <span class="lineNum">     243 </span><span class="lineCov">     166241 :                         if (handle[j].file != 0 &amp;&amp; handle[j].file != file) {</span>
 <span class="lineNum">     244 </span>            :                                 /* keep a pointer at the file we are going to close for error reporting */
-<span class="lineNum">     245 </span><span class="lineCov">      78213 :                                 struct snapraid_file* report = handle[j].file;</span>
-<span class="lineNum">     246 </span><span class="lineCov">      78213 :                                 ret = handle_close(&amp;handle[j]);</span>
-<span class="lineNum">     247 </span><span class="lineCov">      78213 :                                 if (ret == -1) {</span>
+<span class="lineNum">     245 </span><span class="lineCov">      78552 :                                 struct snapraid_file* report = handle[j].file;</span>
+<span class="lineNum">     246 </span><span class="lineCov">      78552 :                                 ret = handle_close(&amp;handle[j]);</span>
+<span class="lineNum">     247 </span><span class="lineCov">      78552 :                                 if (ret == -1) {</span>
 <span class="lineNum">     248 </span>            :                                         /* LCOV_EXCL_START */
 <span class="lineNum">     249 </span>            :                                         /* This one is really an unexpected error, because we are only reading */
 <span class="lineNum">     250 </span>            :                                         /* and closing a descriptor should never fail */
@@ -351,12 +351,12 @@
 <span class="lineNum">     289 </span>            :                         /* check if the file is changed */
 <span class="lineNum">     290 </span><span class="lineCov">     166241 :                         if (handle[j].st.st_size != file-&gt;size</span>
 <span class="lineNum">     291 </span><span class="lineCov">     166241 :                                 || handle[j].st.st_mtime != file-&gt;mtime_sec</span>
-<span class="lineNum">     292 </span><span class="lineCov">     160519 :                                 || STAT_NSEC(&amp;handle[j].st) != file-&gt;mtime_nsec</span>
+<span class="lineNum">     292 </span><span class="lineCov">     160522 :                                 || STAT_NSEC(&amp;handle[j].st) != file-&gt;mtime_nsec</span>
 <span class="lineNum">     293 </span>            :                                 /* don't check the inode to support filesystem without persistent inodes */
 <span class="lineNum">     294 </span>            :                         ) {
 <span class="lineNum">     295 </span>            :                                 /* report that the block and the file are not synced */
-<span class="lineNum">     296 </span><span class="lineCov">       5722 :                                 block_is_unsynced = 1;</span>
-<span class="lineNum">     297 </span><span class="lineCov">       5722 :                                 file_is_unsynced = 1;</span>
+<span class="lineNum">     296 </span><span class="lineCov">       5719 :                                 block_is_unsynced = 1;</span>
+<span class="lineNum">     297 </span><span class="lineCov">       5719 :                                 file_is_unsynced = 1;</span>
 <span class="lineNum">     298 </span>            :                                 /* follow */
 <span class="lineNum">     299 </span>            :                         }
 <span class="lineNum">     300 </span>            : 
@@ -728,12 +728,12 @@
 <span class="lineNum">     666 </span>            :         /* output the info map */
 <span class="lineNum">     667 </span><span class="lineCov">         11 :         i = 0;</span>
 <span class="lineNum">     668 </span><span class="lineCov">         11 :         log_tag(&quot;info_count:%u\n&quot;, count);</span>
-<span class="lineNum">     669 </span><span class="lineCov">         51 :         while (i &lt; count) {</span>
-<span class="lineNum">     670 </span><span class="lineCov">         29 :                 unsigned j = i + 1;</span>
-<span class="lineNum">     671 </span><span class="lineCov">      55938 :                 while (j &lt; count &amp;&amp; timemap[i] == timemap[j])</span>
-<span class="lineNum">     672 </span><span class="lineCov">      55880 :                         ++j;</span>
-<span class="lineNum">     673 </span><span class="lineCov">         29 :                 log_tag(&quot;info_time:%&quot; PRIu64 &quot;:%u\n&quot;, (uint64_t)timemap[i], j - i);</span>
-<span class="lineNum">     674 </span><span class="lineCov">         29 :                 i = j;</span>
+<span class="lineNum">     669 </span><span class="lineCov">         54 :         while (i &lt; count) {</span>
+<span class="lineNum">     670 </span><span class="lineCov">         32 :                 unsigned j = i + 1;</span>
+<span class="lineNum">     671 </span><span class="lineCov">      55941 :                 while (j &lt; count &amp;&amp; timemap[i] == timemap[j])</span>
+<span class="lineNum">     672 </span><span class="lineCov">      55877 :                         ++j;</span>
+<span class="lineNum">     673 </span><span class="lineCov">         32 :                 log_tag(&quot;info_time:%&quot; PRIu64 &quot;:%u\n&quot;, (uint64_t)timemap[i], j - i);</span>
+<span class="lineNum">     674 </span><span class="lineCov">         32 :                 i = j;</span>
 <span class="lineNum">     675 </span>            :         }
 <span class="lineNum">     676 </span>            : 
 <span class="lineNum">     677 </span>            :         /* compute the limits from count/recentlimit */
@@ -754,8 +754,8 @@
 <span class="lineNum">     692 </span>            :                         /* count how many entries for this exact time we have to scrub */
 <span class="lineNum">     693 </span>            :                         /* if the blocks have all the same time, we end with countlimit == lastlimit */
 <span class="lineNum">     694 </span><span class="lineCov">          5 :                         ps.lastlimit = 1;</span>
-<span class="lineNum">     695 </span><span class="lineCov">       2600 :                         while (countlimit &gt; ps.lastlimit &amp;&amp; timemap[countlimit - ps.lastlimit - 1] == ps.timelimit)</span>
-<span class="lineNum">     696 </span><span class="lineCov">       2590 :                                 ++ps.lastlimit;</span>
+<span class="lineNum">     695 </span><span class="lineCov">       2500 :                         while (countlimit &gt; ps.lastlimit &amp;&amp; timemap[countlimit - ps.lastlimit - 1] == ps.timelimit)</span>
+<span class="lineNum">     696 </span><span class="lineCov">       2490 :                                 ++ps.lastlimit;</span>
 <span class="lineNum">     697 </span>            :                 } else {
 <span class="lineNum">     698 </span>            :                         /* if nothing to scrub, disable also other limits */
 <span class="lineNum">     699 </span><span class="lineCov">          1 :                         ps.timelimit = 0;</span>
@@ -763,53 +763,52 @@
 <span class="lineNum">     701 </span>            :                 }
 <span class="lineNum">     702 </span>            : 
 <span class="lineNum">     703 </span><span class="lineCov">          6 :                 log_tag(&quot;count_limit:%u\n&quot;, countlimit);</span>
-<span class="lineNum">     704 </span>            :         }
-<span class="lineNum">     705 </span>            : 
-<span class="lineNum">     706 </span><span class="lineCov">         11 :         log_tag(&quot;time_limit:%&quot; PRIu64 &quot;\n&quot;, (uint64_t)ps.timelimit);</span>
-<span class="lineNum">     707 </span><span class="lineCov">         11 :         log_tag(&quot;last_limit:%u\n&quot;, ps.lastlimit);</span>
-<span class="lineNum">     708 </span>            : 
-<span class="lineNum">     709 </span>            :         /* free the temp vector */
-<span class="lineNum">     710 </span><span class="lineCov">         11 :         free(timemap);</span>
-<span class="lineNum">     711 </span>            : 
-<span class="lineNum">     712 </span>            :         /* open the file for reading */
-<span class="lineNum">     713 </span><span class="lineCov">         77 :         for (l = 0; l &lt; state-&gt;level; ++l) {</span>
-<span class="lineNum">     714 </span><span class="lineCov">         66 :                 parity_ptr[l] = &amp;parity[l];</span>
-<span class="lineNum">     715 </span><span class="lineCov">         66 :                 ret = parity_open(parity_ptr[l], state-&gt;parity[l].path, state-&gt;file_mode);</span>
-<span class="lineNum">     716 </span><span class="lineCov">         66 :                 if (ret == -1) {</span>
-<span class="lineNum">     717 </span>            :                         /* LCOV_EXCL_START */
-<span class="lineNum">     718 </span>            :                         log_fatal(&quot;WARNING! Without an accessible %s file, it isn't possible to scrub.\n&quot;, lev_name(l));
-<span class="lineNum">     719 </span>            :                         exit(EXIT_FAILURE);
-<span class="lineNum">     720 </span>            :                         /* LCOV_EXCL_STOP */
-<span class="lineNum">     721 </span>            :                 }
-<span class="lineNum">     722 </span>            :         }
-<span class="lineNum">     723 </span>            : 
-<span class="lineNum">     724 </span><span class="lineCov">         11 :         msg_progress(&quot;Scrubbing...\n&quot;);</span>
-<span class="lineNum">     725 </span>            : 
-<span class="lineNum">     726 </span><span class="lineCov">         11 :         error = 0;</span>
-<span class="lineNum">     727 </span>            : 
-<span class="lineNum">     728 </span><span class="lineCov">         11 :         ret = state_scrub_process(state, parity_ptr, 0, blockmax, &amp;ps, now);</span>
-<span class="lineNum">     729 </span><span class="lineCov">         11 :         if (ret == -1) {</span>
-<span class="lineNum">     730 </span><span class="lineNoCov">          0 :                 ++error;</span>
-<span class="lineNum">     731 </span>            :                 /* continue, as we are already exiting */
-<span class="lineNum">     732 </span>            :         }
-<span class="lineNum">     733 </span>            : 
-<span class="lineNum">     734 </span><span class="lineCov">         77 :         for (l = 0; l &lt; state-&gt;level; ++l) {</span>
-<span class="lineNum">     735 </span><span class="lineCov">         66 :                 ret = parity_close(parity_ptr[l]);</span>
-<span class="lineNum">     736 </span><span class="lineCov">         66 :                 if (ret == -1) {</span>
-<span class="lineNum">     737 </span>            :                         /* LCOV_EXCL_START */
-<span class="lineNum">     738 </span>            :                         log_fatal(&quot;DANGER! Unexpected close error in %s disk.\n&quot;, lev_name(l));
-<span class="lineNum">     739 </span>            :                         ++error;
-<span class="lineNum">     740 </span>            :                         /* continue, as we are already exiting */
-<span class="lineNum">     741 </span>            :                         /* LCOV_EXCL_STOP */
-<span class="lineNum">     742 </span>            :                 }
-<span class="lineNum">     743 </span>            :         }
-<span class="lineNum">     744 </span>            : 
-<span class="lineNum">     745 </span>            :         /* abort if required */
-<span class="lineNum">     746 </span><span class="lineCov">         11 :         if (error != 0)</span>
-<span class="lineNum">     747 </span><span class="lineNoCov">          0 :                 return -1;</span>
-<span class="lineNum">     748 </span><span class="lineCov">         11 :         return 0;</span>
-<span class="lineNum">     749 </span>            : }
-<span class="lineNum">     750 </span>            : 
+<span class="lineNum">     704 </span><span class="lineCov">          6 :                 log_tag(&quot;time_limit:%&quot; PRIu64 &quot;\n&quot;, (uint64_t)ps.timelimit);</span>
+<span class="lineNum">     705 </span><span class="lineCov">          6 :                 log_tag(&quot;last_limit:%u\n&quot;, ps.lastlimit);</span>
+<span class="lineNum">     706 </span>            :         }
+<span class="lineNum">     707 </span>            : 
+<span class="lineNum">     708 </span>            :         /* free the temp vector */
+<span class="lineNum">     709 </span><span class="lineCov">         11 :         free(timemap);</span>
+<span class="lineNum">     710 </span>            : 
+<span class="lineNum">     711 </span>            :         /* open the file for reading */
+<span class="lineNum">     712 </span><span class="lineCov">         77 :         for (l = 0; l &lt; state-&gt;level; ++l) {</span>
+<span class="lineNum">     713 </span><span class="lineCov">         66 :                 parity_ptr[l] = &amp;parity[l];</span>
+<span class="lineNum">     714 </span><span class="lineCov">         66 :                 ret = parity_open(parity_ptr[l], state-&gt;parity[l].path, state-&gt;file_mode);</span>
+<span class="lineNum">     715 </span><span class="lineCov">         66 :                 if (ret == -1) {</span>
+<span class="lineNum">     716 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     717 </span>            :                         log_fatal(&quot;WARNING! Without an accessible %s file, it isn't possible to scrub.\n&quot;, lev_name(l));
+<span class="lineNum">     718 </span>            :                         exit(EXIT_FAILURE);
+<span class="lineNum">     719 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     720 </span>            :                 }
+<span class="lineNum">     721 </span>            :         }
+<span class="lineNum">     722 </span>            : 
+<span class="lineNum">     723 </span><span class="lineCov">         11 :         msg_progress(&quot;Scrubbing...\n&quot;);</span>
+<span class="lineNum">     724 </span>            : 
+<span class="lineNum">     725 </span><span class="lineCov">         11 :         error = 0;</span>
+<span class="lineNum">     726 </span>            : 
+<span class="lineNum">     727 </span><span class="lineCov">         11 :         ret = state_scrub_process(state, parity_ptr, 0, blockmax, &amp;ps, now);</span>
+<span class="lineNum">     728 </span><span class="lineCov">         11 :         if (ret == -1) {</span>
+<span class="lineNum">     729 </span><span class="lineNoCov">          0 :                 ++error;</span>
+<span class="lineNum">     730 </span>            :                 /* continue, as we are already exiting */
+<span class="lineNum">     731 </span>            :         }
+<span class="lineNum">     732 </span>            : 
+<span class="lineNum">     733 </span><span class="lineCov">         77 :         for (l = 0; l &lt; state-&gt;level; ++l) {</span>
+<span class="lineNum">     734 </span><span class="lineCov">         66 :                 ret = parity_close(parity_ptr[l]);</span>
+<span class="lineNum">     735 </span><span class="lineCov">         66 :                 if (ret == -1) {</span>
+<span class="lineNum">     736 </span>            :                         /* LCOV_EXCL_START */
+<span class="lineNum">     737 </span>            :                         log_fatal(&quot;DANGER! Unexpected close error in %s disk.\n&quot;, lev_name(l));
+<span class="lineNum">     738 </span>            :                         ++error;
+<span class="lineNum">     739 </span>            :                         /* continue, as we are already exiting */
+<span class="lineNum">     740 </span>            :                         /* LCOV_EXCL_STOP */
+<span class="lineNum">     741 </span>            :                 }
+<span class="lineNum">     742 </span>            :         }
+<span class="lineNum">     743 </span>            : 
+<span class="lineNum">     744 </span>            :         /* abort if required */
+<span class="lineNum">     745 </span><span class="lineCov">         11 :         if (error != 0)</span>
+<span class="lineNum">     746 </span><span class="lineNoCov">          0 :                 return -1;</span>
+<span class="lineNum">     747 </span><span class="lineCov">         11 :         return 0;</span>
+<span class="lineNum">     748 </span>            : }
+<span class="lineNum">     749 </span>            : 
 </pre>
       </td>
     </tr>

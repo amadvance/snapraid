@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-11-13</td>
+            <td class="headerValue">2015-11-20</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">4</td>
@@ -110,13 +110,13 @@
 <span class="lineNum">      48 </span><span class="lineCov">        227 :         tommy_array_done(&amp;array-&gt;block);</span>
 <a name="49"><span class="lineNum">      49 </span><span class="lineCov">        227 : }</span></a>
 <span class="lineNum">      50 </span>            : 
-<span class="lineNum">      51 </span><span class="lineCov">    1609618 : void tommy_arrayblkof_grow(tommy_arrayblkof* array, tommy_count_t count)</span>
+<span class="lineNum">      51 </span><span class="lineCov">    1609741 : void tommy_arrayblkof_grow(tommy_arrayblkof* array, tommy_count_t count)</span>
 <span class="lineNum">      52 </span>            : {
 <span class="lineNum">      53 </span>            :         tommy_count_t block_max;
 <span class="lineNum">      54 </span>            :         tommy_count_t block_mac;
 <span class="lineNum">      55 </span>            : 
-<span class="lineNum">      56 </span><span class="lineCov">    1609618 :         if (array-&gt;count &gt;= count)</span>
-<span class="lineNum">      57 </span><span class="lineCov">    1700455 :                 return;</span>
+<span class="lineNum">      56 </span><span class="lineCov">    1609741 :         if (array-&gt;count &gt;= count)</span>
+<span class="lineNum">      57 </span><span class="lineCov">    1700701 :                 return;</span>
 <span class="lineNum">      58 </span><span class="lineCov">    1518781 :         array-&gt;count = count;</span>
 <span class="lineNum">      59 </span>            : 
 <span class="lineNum">      60 </span><span class="lineCov">    1518781 :         block_max = (count + TOMMY_ARRAYBLKOF_SIZE - 1) / TOMMY_ARRAYBLKOF_SIZE;</span>

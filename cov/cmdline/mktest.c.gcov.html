@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-11-13</td>
+            <td class="headerValue">2015-11-20</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">18</td>
@@ -89,28 +89,28 @@
 <span class="lineNum">      27 </span>            :  */
 <a name="28"><span class="lineNum">      28 </span>            : unsigned long long seed = 0;</a>
 <span class="lineNum">      29 </span>            : 
-<span class="lineNum">      30 </span><span class="lineCov">   50983914 : unsigned rnd(unsigned max)</span>
+<span class="lineNum">      30 </span><span class="lineCov">   50988385 : unsigned rnd(unsigned max)</span>
 <span class="lineNum">      31 </span>            : {
-<span class="lineNum">      32 </span><span class="lineCov">   50983914 :         seed = seed * 6364136223846793005LL + 1442695040888963407LL;</span>
+<span class="lineNum">      32 </span><span class="lineCov">   50988385 :         seed = seed * 6364136223846793005LL + 1442695040888963407LL;</span>
 <span class="lineNum">      33 </span>            : 
-<span class="lineNum">      34 </span><span class="lineCov">   50983914 :         return (seed &gt;&gt; 32) % max;</span>
+<span class="lineNum">      34 </span><span class="lineCov">   50988385 :         return (seed &gt;&gt; 32) % max;</span>
 <a name="35"><span class="lineNum">      35 </span>            : }</a>
 <span class="lineNum">      36 </span>            : 
-<span class="lineNum">      37 </span><span class="lineCov">   50573376 : unsigned rndnz(unsigned max)</span>
+<span class="lineNum">      37 </span><span class="lineCov">   50578180 : unsigned rndnz(unsigned max)</span>
 <span class="lineNum">      38 </span>            : {
-<span class="lineNum">      39 </span><span class="lineCov">   50573376 :         if (max &lt;= 1)</span>
+<span class="lineNum">      39 </span><span class="lineCov">   50578180 :         if (max &lt;= 1)</span>
 <span class="lineNum">      40 </span><span class="lineCov">       2831 :                 return 1;</span>
 <span class="lineNum">      41 </span>            :         else
-<span class="lineNum">      42 </span><span class="lineCov">   50570545 :                 return rnd(max - 1) + 1;</span>
+<span class="lineNum">      42 </span><span class="lineCov">   50575349 :                 return rnd(max - 1) + 1;</span>
 <a name="43"><span class="lineNum">      43 </span>            : }</a>
 <span class="lineNum">      44 </span>            : 
-<span class="lineNum">      45 </span><span class="lineCov">      31157 : void rndnz_range(unsigned char* data, int size)</span>
+<span class="lineNum">      45 </span><span class="lineCov">      31195 : void rndnz_range(unsigned char* data, int size)</span>
 <span class="lineNum">      46 </span>            : {
 <span class="lineNum">      47 </span>            :         int i;
 <span class="lineNum">      48 </span>            : 
-<span class="lineNum">      49 </span><span class="lineCov">   50599273 :         for (i = 0; i &lt; size; ++i)</span>
-<span class="lineNum">      50 </span><span class="lineCov">   50568116 :                 data[i] = rndnz(256);</span>
-<a name="51"><span class="lineNum">      51 </span><span class="lineCov">      31157 : }</span></a>
+<span class="lineNum">      49 </span><span class="lineCov">   50604116 :         for (i = 0; i &lt; size; ++i)</span>
+<span class="lineNum">      50 </span><span class="lineCov">   50572921 :                 data[i] = rndnz(256);</span>
+<a name="51"><span class="lineNum">      51 </span><span class="lineCov">      31195 : }</span></a>
 <span class="lineNum">      52 </span>            : 
 <span class="lineNum">      53 </span><span class="lineCov">       1821 : void rndnz_damage(unsigned char* data, int size)</span>
 <span class="lineNum">      54 </span>            : {
@@ -121,8 +121,8 @@
 <span class="lineNum">      59 </span>            :                 unsigned char c;
 <span class="lineNum">      60 </span>            : 
 <span class="lineNum">      61 </span>            :                 do {
-<span class="lineNum">      62 </span><span class="lineCov">       1829 :                         c = rndnz(256);</span>
-<span class="lineNum">      63 </span><span class="lineCov">       1829 :                 } while (c == data[i]);</span>
+<span class="lineNum">      62 </span><span class="lineCov">       1828 :                         c = rndnz(256);</span>
+<span class="lineNum">      63 </span><span class="lineCov">       1828 :                 } while (c == data[i]);</span>
 <span class="lineNum">      64 </span>            : 
 <span class="lineNum">      65 </span><span class="lineCov">       1821 :                 data[i] = c;</span>
 <span class="lineNum">      66 </span>            :         }
@@ -131,23 +131,23 @@
 <span class="lineNum">      69 </span>            : char CHARSET[] = &quot;qwertyuiopasdfghjklzxcvbnm1234567890 .-+&quot;;
 <a name="70"><span class="lineNum">      70 </span>            : #define CHARSET_LEN (sizeof(CHARSET) - 1)</a>
 <span class="lineNum">      71 </span>            : 
-<span class="lineNum">      72 </span><span class="lineCov">      26855 : void rnd_name(char* file)</span>
+<span class="lineNum">      72 </span><span class="lineCov">      26824 : void rnd_name(char* file)</span>
 <span class="lineNum">      73 </span>            : {
-<span class="lineNum">      74 </span><span class="lineCov">      26855 :         int l = 1 + rnd(20);</span>
+<span class="lineNum">      74 </span><span class="lineCov">      26824 :         int l = 1 + rnd(20);</span>
 <span class="lineNum">      75 </span>            : 
-<span class="lineNum">      76 </span><span class="lineCov">     335689 :         while (l) {</span>
-<span class="lineNum">      77 </span><span class="lineCov">     281979 :                 *file++ = CHARSET[rnd(CHARSET_LEN)];</span>
-<span class="lineNum">      78 </span><span class="lineCov">     281979 :                 --l;</span>
+<span class="lineNum">      76 </span><span class="lineCov">     335360 :         while (l) {</span>
+<span class="lineNum">      77 </span><span class="lineCov">     281712 :                 *file++ = CHARSET[rnd(CHARSET_LEN)];</span>
+<span class="lineNum">      78 </span><span class="lineCov">     281712 :                 --l;</span>
 <span class="lineNum">      79 </span>            :         }
-<span class="lineNum">      80 </span><span class="lineCov">      26855 :         *file = 0;</span>
-<span class="lineNum">      81 </span><span class="lineCov">      26855 : }</span>
+<span class="lineNum">      80 </span><span class="lineCov">      26824 :         *file = 0;</span>
+<span class="lineNum">      81 </span><span class="lineCov">      26824 : }</span>
 <span class="lineNum">      82 </span>            : 
 <span class="lineNum">      83 </span>            : /****************************************************************************/
 <a name="84"><span class="lineNum">      84 </span>            : /* file */</a>
 <span class="lineNum">      85 </span>            : 
-<span class="lineNum">      86 </span><span class="lineCov">     146649 : int file_cmp(const void* a, const void* b)</span>
+<span class="lineNum">      86 </span><span class="lineCov">     146608 : int file_cmp(const void* a, const void* b)</span>
 <span class="lineNum">      87 </span>            : {
-<span class="lineNum">      88 </span><span class="lineCov">     146649 :         return strcmp(a, b);</span>
+<span class="lineNum">      88 </span><span class="lineCov">     146608 :         return strcmp(a, b);</span>
 <a name="89"><span class="lineNum">      89 </span>            : }</a>
 <span class="lineNum">      90 </span>            : 
 <span class="lineNum">      91 </span><span class="lineCov">       1821 : int fallback(int f, struct stat* st)</span>
@@ -259,11 +259,11 @@
 <span class="lineNum">     197 </span>            :  * Create a symlink.
 <a name="198"><span class="lineNum">     198 </span>            :  * - If the file already exists, it's removed.</a>
 <span class="lineNum">     199 </span>            :  */
-<span class="lineNum">     200 </span><span class="lineCov">        946 : void cmd_generate_symlink(const char* path, const char* linkto)</span>
+<span class="lineNum">     200 </span><span class="lineCov">        915 : void cmd_generate_symlink(const char* path, const char* linkto)</span>
 <span class="lineNum">     201 </span>            : {
 <span class="lineNum">     202 </span>            :         /* remove the existing file/symlink if any */
-<span class="lineNum">     203 </span><span class="lineCov">        946 :         if (remove(path) != 0) {</span>
-<span class="lineNum">     204 </span><span class="lineCov">        925 :                 if (errno != ENOENT) {</span>
+<span class="lineNum">     203 </span><span class="lineCov">        915 :         if (remove(path) != 0) {</span>
+<span class="lineNum">     204 </span><span class="lineCov">        894 :                 if (errno != ENOENT) {</span>
 <span class="lineNum">     205 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     206 </span>            :                         log_fatal(&quot;Error removing file %s\n&quot;, path);
 <span class="lineNum">     207 </span>            :                         exit(EXIT_FAILURE);
@@ -271,13 +271,13 @@
 <span class="lineNum">     209 </span>            :                 }
 <span class="lineNum">     210 </span>            :         }
 <span class="lineNum">     211 </span>            : 
-<span class="lineNum">     212 </span><span class="lineCov">        946 :         if (symlink(linkto, path) != 0) {</span>
+<span class="lineNum">     212 </span><span class="lineCov">        915 :         if (symlink(linkto, path) != 0) {</span>
 <span class="lineNum">     213 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     214 </span>            :                 log_fatal(&quot;Error writing symlink %s\n&quot;, path);
 <span class="lineNum">     215 </span>            :                 exit(EXIT_FAILURE);
 <span class="lineNum">     216 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     217 </span>            :         }
-<span class="lineNum">     218 </span><span class="lineCov">        946 : }</span>
+<span class="lineNum">     218 </span><span class="lineCov">        915 : }</span>
 <span class="lineNum">     219 </span>            : 
 <span class="lineNum">     220 </span>            : /**
 <a name="221"><span class="lineNum">     221 </span>            :  * Create a file or a symlink with a random name.</a>
@@ -350,68 +350,68 @@
 <span class="lineNum">     288 </span>            :  * - The written data may be equal or not at the already existing one.
 <a name="289"><span class="lineNum">     289 </span>            :  * - If it's a symlink nothing is done.</a>
 <span class="lineNum">     290 </span>            :  */
-<span class="lineNum">     291 </span><span class="lineCov">       4738 : void cmd_write(const char* path, int size)</span>
+<span class="lineNum">     291 </span><span class="lineCov">       4703 : void cmd_write(const char* path, int size)</span>
 <span class="lineNum">     292 </span>            : {
 <span class="lineNum">     293 </span>            :         struct stat st;
 <span class="lineNum">     294 </span>            : 
-<span class="lineNum">     295 </span><span class="lineCov">       4738 :         if (lstat(path, &amp;st) != 0) {</span>
+<span class="lineNum">     295 </span><span class="lineCov">       4703 :         if (lstat(path, &amp;st) != 0) {</span>
 <span class="lineNum">     296 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     297 </span>            :                 log_fatal(&quot;Error accessing %s\n&quot;, path);
 <span class="lineNum">     298 </span>            :                 exit(EXIT_FAILURE);
 <span class="lineNum">     299 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     300 </span>            :         }
 <span class="lineNum">     301 </span>            : 
-<span class="lineNum">     302 </span><span class="lineCov">       4738 :         if (S_ISREG(st.st_mode)) {</span>
+<span class="lineNum">     302 </span><span class="lineCov">       4703 :         if (S_ISREG(st.st_mode)) {</span>
 <span class="lineNum">     303 </span>            :                 unsigned char* data;
 <span class="lineNum">     304 </span>            :                 off_t off;
 <span class="lineNum">     305 </span>            :                 int f;
 <span class="lineNum">     306 </span>            : 
 <span class="lineNum">     307 </span>            :                 /* not over the end */
-<span class="lineNum">     308 </span><span class="lineCov">       4711 :                 if (size &gt; st.st_size)</span>
-<span class="lineNum">     309 </span><span class="lineCov">        181 :                         size = st.st_size;</span>
+<span class="lineNum">     308 </span><span class="lineCov">       4676 :                 if (size &gt; st.st_size)</span>
+<span class="lineNum">     309 </span><span class="lineCov">        179 :                         size = st.st_size;</span>
 <span class="lineNum">     310 </span>            : 
 <span class="lineNum">     311 </span>            :                 /* start at random position inside the file */
-<span class="lineNum">     312 </span><span class="lineCov">       4711 :                 if (size &lt; st.st_size)</span>
-<span class="lineNum">     313 </span><span class="lineCov">       4530 :                         off = rnd(st.st_size - size);</span>
+<span class="lineNum">     312 </span><span class="lineCov">       4676 :                 if (size &lt; st.st_size)</span>
+<span class="lineNum">     313 </span><span class="lineCov">       4496 :                         off = rnd(st.st_size - size);</span>
 <span class="lineNum">     314 </span>            :                 else
-<span class="lineNum">     315 </span><span class="lineCov">        181 :                         off = 0;</span>
+<span class="lineNum">     315 </span><span class="lineCov">        180 :                         off = 0;</span>
 <span class="lineNum">     316 </span>            : 
-<span class="lineNum">     317 </span><span class="lineCov">       4711 :                 data = malloc(size);</span>
+<span class="lineNum">     317 </span><span class="lineCov">       4676 :                 data = malloc(size);</span>
 <span class="lineNum">     318 </span>            : 
-<span class="lineNum">     319 </span><span class="lineCov">       4711 :                 rndnz_range(data, size);</span>
+<span class="lineNum">     319 </span><span class="lineCov">       4676 :                 rndnz_range(data, size);</span>
 <span class="lineNum">     320 </span>            : 
-<span class="lineNum">     321 </span><span class="lineCov">       4711 :                 f = open(path, O_WRONLY | O_BINARY | O_NOFOLLOW);</span>
-<span class="lineNum">     322 </span><span class="lineCov">       4711 :                 if (f &lt; 0) {</span>
+<span class="lineNum">     321 </span><span class="lineCov">       4676 :                 f = open(path, O_WRONLY | O_BINARY | O_NOFOLLOW);</span>
+<span class="lineNum">     322 </span><span class="lineCov">       4676 :                 if (f &lt; 0) {</span>
 <span class="lineNum">     323 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     324 </span>            :                         log_fatal(&quot;Error creating file %s\n&quot;, path);
 <span class="lineNum">     325 </span>            :                         exit(EXIT_FAILURE);
 <span class="lineNum">     326 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     327 </span>            :                 }
 <span class="lineNum">     328 </span>            : 
-<span class="lineNum">     329 </span><span class="lineCov">       4711 :                 if (lseek(f, off, SEEK_SET) != off) {</span>
+<span class="lineNum">     329 </span><span class="lineCov">       4676 :                 if (lseek(f, off, SEEK_SET) != off) {</span>
 <span class="lineNum">     330 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     331 </span>            :                         log_fatal(&quot;Error seeking file %s\n&quot;, path);
 <span class="lineNum">     332 </span>            :                         exit(EXIT_FAILURE);
 <span class="lineNum">     333 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     334 </span>            :                 }
 <span class="lineNum">     335 </span>            : 
-<span class="lineNum">     336 </span><span class="lineCov">       4711 :                 if (write(f, data, size) != size) {</span>
+<span class="lineNum">     336 </span><span class="lineCov">       4676 :                 if (write(f, data, size) != size) {</span>
 <span class="lineNum">     337 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     338 </span>            :                         log_fatal(&quot;Error writing file %s\n&quot;, path);
 <span class="lineNum">     339 </span>            :                         exit(EXIT_FAILURE);
 <span class="lineNum">     340 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     341 </span>            :                 }
 <span class="lineNum">     342 </span>            : 
-<span class="lineNum">     343 </span><span class="lineCov">       4711 :                 if (close(f) != 0) {</span>
+<span class="lineNum">     343 </span><span class="lineCov">       4676 :                 if (close(f) != 0) {</span>
 <span class="lineNum">     344 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     345 </span>            :                         log_fatal(&quot;Error closing file %s\n&quot;, path);
 <span class="lineNum">     346 </span>            :                         exit(EXIT_FAILURE);
 <span class="lineNum">     347 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     348 </span>            :                 }
 <span class="lineNum">     349 </span>            : 
-<span class="lineNum">     350 </span><span class="lineCov">       4711 :                 free(data);</span>
+<span class="lineNum">     350 </span><span class="lineCov">       4676 :                 free(data);</span>
 <span class="lineNum">     351 </span>            :         }
-<span class="lineNum">     352 </span><span class="lineCov">       4738 : }</span>
+<span class="lineNum">     352 </span><span class="lineCov">       4703 : }</span>
 <span class="lineNum">     353 </span>            : 
 <span class="lineNum">     354 </span>            : /**
 <span class="lineNum">     355 </span>            :  * Damage a file.
@@ -518,50 +518,50 @@
 <span class="lineNum">     456 </span>            :  * - The file must exist.
 <a name="457"><span class="lineNum">     457 </span>            :  * - If it's a symlink nothing is done.</a>
 <span class="lineNum">     458 </span>            :  */
-<span class="lineNum">     459 </span><span class="lineCov">       3179 : void cmd_append(const char* path, int size)</span>
+<span class="lineNum">     459 </span><span class="lineCov">       3252 : void cmd_append(const char* path, int size)</span>
 <span class="lineNum">     460 </span>            : {
 <span class="lineNum">     461 </span>            :         struct stat st;
 <span class="lineNum">     462 </span>            : 
-<span class="lineNum">     463 </span><span class="lineCov">       3179 :         if (lstat(path, &amp;st) != 0) {</span>
+<span class="lineNum">     463 </span><span class="lineCov">       3252 :         if (lstat(path, &amp;st) != 0) {</span>
 <span class="lineNum">     464 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     465 </span>            :                 log_fatal(&quot;Error accessing %s\n&quot;, path);
 <span class="lineNum">     466 </span>            :                 exit(EXIT_FAILURE);
 <span class="lineNum">     467 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     468 </span>            :         }
 <span class="lineNum">     469 </span>            : 
-<span class="lineNum">     470 </span><span class="lineCov">       3179 :         if (S_ISREG(st.st_mode)) {</span>
+<span class="lineNum">     470 </span><span class="lineCov">       3252 :         if (S_ISREG(st.st_mode)) {</span>
 <span class="lineNum">     471 </span>            :                 unsigned char* data;
 <span class="lineNum">     472 </span>            :                 int f;
 <span class="lineNum">     473 </span>            : 
-<span class="lineNum">     474 </span><span class="lineCov">       3179 :                 data = malloc(size);</span>
+<span class="lineNum">     474 </span><span class="lineCov">       3252 :                 data = malloc(size);</span>
 <span class="lineNum">     475 </span>            : 
-<span class="lineNum">     476 </span><span class="lineCov">       3179 :                 rndnz_range(data, size);</span>
+<span class="lineNum">     476 </span><span class="lineCov">       3252 :                 rndnz_range(data, size);</span>
 <span class="lineNum">     477 </span>            : 
-<span class="lineNum">     478 </span><span class="lineCov">       3179 :                 f = open(path, O_WRONLY | O_APPEND | O_BINARY | O_NOFOLLOW);</span>
-<span class="lineNum">     479 </span><span class="lineCov">       3179 :                 if (f &lt; 0) {</span>
+<span class="lineNum">     478 </span><span class="lineCov">       3252 :                 f = open(path, O_WRONLY | O_APPEND | O_BINARY | O_NOFOLLOW);</span>
+<span class="lineNum">     479 </span><span class="lineCov">       3252 :                 if (f &lt; 0) {</span>
 <span class="lineNum">     480 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     481 </span>            :                         log_fatal(&quot;Error opening file %s\n&quot;, path);
 <span class="lineNum">     482 </span>            :                         exit(EXIT_FAILURE);
 <span class="lineNum">     483 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     484 </span>            :                 }
 <span class="lineNum">     485 </span>            : 
-<span class="lineNum">     486 </span><span class="lineCov">       3179 :                 if (write(f, data, size) != size) {</span>
+<span class="lineNum">     486 </span><span class="lineCov">       3252 :                 if (write(f, data, size) != size) {</span>
 <span class="lineNum">     487 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     488 </span>            :                         log_fatal(&quot;Error writing file %s\n&quot;, path);
 <span class="lineNum">     489 </span>            :                         exit(EXIT_FAILURE);
 <span class="lineNum">     490 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     491 </span>            :                 }
 <span class="lineNum">     492 </span>            : 
-<span class="lineNum">     493 </span><span class="lineCov">       3179 :                 if (close(f) != 0) {</span>
+<span class="lineNum">     493 </span><span class="lineCov">       3252 :                 if (close(f) != 0) {</span>
 <span class="lineNum">     494 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     495 </span>            :                         log_fatal(&quot;Error closing file %s\n&quot;, path);
 <span class="lineNum">     496 </span>            :                         exit(EXIT_FAILURE);
 <span class="lineNum">     497 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     498 </span>            :                 }
 <span class="lineNum">     499 </span>            : 
-<span class="lineNum">     500 </span><span class="lineCov">       3179 :                 free(data);</span>
+<span class="lineNum">     500 </span><span class="lineCov">       3252 :                 free(data);</span>
 <span class="lineNum">     501 </span>            :         }
-<span class="lineNum">     502 </span><span class="lineCov">       3179 : }</span>
+<span class="lineNum">     502 </span><span class="lineCov">       3252 : }</span>
 <span class="lineNum">     503 </span>            : 
 <span class="lineNum">     504 </span>            : /**
 <span class="lineNum">     505 </span>            :  * Truncate a file.
@@ -569,69 +569,69 @@
 <span class="lineNum">     507 </span>            :  * - The file is NEVER truncated to 0.
 <a name="508"><span class="lineNum">     508 </span>            :  * - If it's a symlink nothing is done.</a>
 <span class="lineNum">     509 </span>            :  */
-<span class="lineNum">     510 </span><span class="lineCov">       3173 : void cmd_truncate(const char* path, int size)</span>
+<span class="lineNum">     510 </span><span class="lineCov">       3151 : void cmd_truncate(const char* path, int size)</span>
 <span class="lineNum">     511 </span>            : {
 <span class="lineNum">     512 </span>            :         struct stat st;
 <span class="lineNum">     513 </span>            : 
-<span class="lineNum">     514 </span><span class="lineCov">       3173 :         if (lstat(path, &amp;st) != 0) {</span>
+<span class="lineNum">     514 </span><span class="lineCov">       3151 :         if (lstat(path, &amp;st) != 0) {</span>
 <span class="lineNum">     515 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     516 </span>            :                 log_fatal(&quot;Error accessing %s\n&quot;, path);
 <span class="lineNum">     517 </span>            :                 exit(EXIT_FAILURE);
 <span class="lineNum">     518 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     519 </span>            :         }
 <span class="lineNum">     520 </span>            : 
-<span class="lineNum">     521 </span><span class="lineCov">       3173 :         if (S_ISREG(st.st_mode)) {</span>
+<span class="lineNum">     521 </span><span class="lineCov">       3151 :         if (S_ISREG(st.st_mode)) {</span>
 <span class="lineNum">     522 </span>            :                 off_t off;
 <span class="lineNum">     523 </span>            :                 int f;
 <span class="lineNum">     524 </span>            : 
 <span class="lineNum">     525 </span>            :                 /* if file is empty, just rewrite it */
-<span class="lineNum">     526 </span><span class="lineCov">       3173 :                 if (st.st_size == 0) {</span>
-<span class="lineNum">     527 </span><span class="lineCov">          2 :                         size = 0;</span>
+<span class="lineNum">     526 </span><span class="lineCov">       3151 :                 if (st.st_size == 0) {</span>
+<span class="lineNum">     527 </span><span class="lineCov">          3 :                         size = 0;</span>
 <span class="lineNum">     528 </span>            :                 } else {
 <span class="lineNum">     529 </span>            :                         /* don't truncate files to 0 size to avoid ZERO file size protection */
-<span class="lineNum">     530 </span><span class="lineCov">       3171 :                         if (size &gt;= st.st_size)</span>
-<span class="lineNum">     531 </span><span class="lineCov">        171 :                                 size = st.st_size - 1;</span>
+<span class="lineNum">     530 </span><span class="lineCov">       3148 :                         if (size &gt;= st.st_size)</span>
+<span class="lineNum">     531 </span><span class="lineCov">        193 :                                 size = st.st_size - 1;</span>
 <span class="lineNum">     532 </span>            :                 }
 <span class="lineNum">     533 </span>            : 
-<span class="lineNum">     534 </span><span class="lineCov">       3173 :                 off = st.st_size - size;</span>
+<span class="lineNum">     534 </span><span class="lineCov">       3151 :                 off = st.st_size - size;</span>
 <span class="lineNum">     535 </span>            : 
-<span class="lineNum">     536 </span><span class="lineCov">       3173 :                 f = open(path, O_WRONLY | O_BINARY | O_NOFOLLOW);</span>
-<span class="lineNum">     537 </span><span class="lineCov">       3173 :                 if (f &lt; 0) {</span>
+<span class="lineNum">     536 </span><span class="lineCov">       3151 :                 f = open(path, O_WRONLY | O_BINARY | O_NOFOLLOW);</span>
+<span class="lineNum">     537 </span><span class="lineCov">       3151 :                 if (f &lt; 0) {</span>
 <span class="lineNum">     538 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     539 </span>            :                         log_fatal(&quot;Error opening file %s\n&quot;, path);
 <span class="lineNum">     540 </span>            :                         exit(EXIT_FAILURE);
 <span class="lineNum">     541 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     542 </span>            :                 }
 <span class="lineNum">     543 </span>            : 
-<span class="lineNum">     544 </span><span class="lineCov">       3173 :                 if (ftruncate(f, off) != 0) {</span>
+<span class="lineNum">     544 </span><span class="lineCov">       3151 :                 if (ftruncate(f, off) != 0) {</span>
 <span class="lineNum">     545 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     546 </span>            :                         log_fatal(&quot;Error truncating file %s\n&quot;, path);
 <span class="lineNum">     547 </span>            :                         exit(EXIT_FAILURE);
 <span class="lineNum">     548 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     549 </span>            :                 }
 <span class="lineNum">     550 </span>            : 
-<span class="lineNum">     551 </span><span class="lineCov">       3173 :                 if (close(f) != 0) {</span>
+<span class="lineNum">     551 </span><span class="lineCov">       3151 :                 if (close(f) != 0) {</span>
 <span class="lineNum">     552 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     553 </span>            :                         log_fatal(&quot;Error closing file %s\n&quot;, path);
 <span class="lineNum">     554 </span>            :                         exit(EXIT_FAILURE);
 <span class="lineNum">     555 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     556 </span>            :                 }
 <span class="lineNum">     557 </span>            :         }
-<span class="lineNum">     558 </span><span class="lineCov">       3173 : }</span>
+<span class="lineNum">     558 </span><span class="lineCov">       3151 : }</span>
 <span class="lineNum">     559 </span>            : 
 <span class="lineNum">     560 </span>            : /**
 <span class="lineNum">     561 </span>            :  * Delete a file.
 <a name="562"><span class="lineNum">     562 </span>            :  * - The file must exist.</a>
 <span class="lineNum">     563 </span>            :  */
-<span class="lineNum">     564 </span><span class="lineCov">       3172 : void cmd_delete(const char* path)</span>
+<span class="lineNum">     564 </span><span class="lineCov">       3155 : void cmd_delete(const char* path)</span>
 <span class="lineNum">     565 </span>            : {
-<span class="lineNum">     566 </span><span class="lineCov">       3172 :         if (remove(path) != 0) {</span>
+<span class="lineNum">     566 </span><span class="lineCov">       3155 :         if (remove(path) != 0) {</span>
 <span class="lineNum">     567 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     568 </span>            :                 log_fatal(&quot;Error removing %s\n&quot;, path);
 <span class="lineNum">     569 </span>            :                 exit(EXIT_FAILURE);
 <span class="lineNum">     570 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     571 </span>            :         }
-<span class="lineNum">     572 </span><span class="lineCov">       3172 : }</span>
+<span class="lineNum">     572 </span><span class="lineCov">       3155 : }</span>
 <span class="lineNum">     573 </span>            : 
 <span class="lineNum">     574 </span>            : /**
 <span class="lineNum">     575 </span>            :  * Change a file. Or deleted/truncated/append/created.
@@ -642,20 +642,20 @@
 <span class="lineNum">     580 </span>            :         struct stat st;
 <span class="lineNum">     581 </span>            : 
 <span class="lineNum">     582 </span><span class="lineCov">      13128 :         if (!size)</span>
-<span class="lineNum">     583 </span><span class="lineCov">      13151 :                 return;</span>
+<span class="lineNum">     583 </span><span class="lineCov">      13152 :                 return;</span>
 <span class="lineNum">     584 </span>            : 
-<span class="lineNum">     585 </span><span class="lineCov">      13105 :         if (lstat(path, &amp;st) != 0) {</span>
+<span class="lineNum">     585 </span><span class="lineCov">      13104 :         if (lstat(path, &amp;st) != 0) {</span>
 <span class="lineNum">     586 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     587 </span>            :                 log_fatal(&quot;Error accessing %s\n&quot;, path);
 <span class="lineNum">     588 </span>            :                 exit(EXIT_FAILURE);
 <span class="lineNum">     589 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     590 </span>            :         }
 <span class="lineNum">     591 </span>            : 
-<span class="lineNum">     592 </span><span class="lineCov">      13105 :         if (S_ISLNK(st.st_mode)) {</span>
+<span class="lineNum">     592 </span><span class="lineCov">      13104 :         if (S_ISLNK(st.st_mode)) {</span>
 <span class="lineNum">     593 </span>            :                 /* symlink */
 <span class="lineNum">     594 </span><span class="lineCov">        392 :                 if (rnd(2) == 0) {</span>
 <span class="lineNum">     595 </span>            :                         /* delete */
-<span class="lineNum">     596 </span><span class="lineCov">        179 :                         if (remove(path) != 0) {</span>
+<span class="lineNum">     596 </span><span class="lineCov">        210 :                         if (remove(path) != 0) {</span>
 <span class="lineNum">     597 </span>            :                                 /* LCOV_EXCL_START */
 <span class="lineNum">     598 </span>            :                                 log_fatal(&quot;Error removing %s\n&quot;, path);
 <span class="lineNum">     599 </span>            :                                 exit(EXIT_FAILURE);
@@ -665,30 +665,30 @@
 <span class="lineNum">     603 </span>            :                         /* recreate */
 <span class="lineNum">     604 </span>            :                         char linkto[PATH_MAX];
 <span class="lineNum">     605 </span>            : 
-<span class="lineNum">     606 </span><span class="lineCov">        213 :                         if (remove(path) != 0) {</span>
+<span class="lineNum">     606 </span><span class="lineCov">        182 :                         if (remove(path) != 0) {</span>
 <span class="lineNum">     607 </span>            :                                 /* LCOV_EXCL_START */
 <span class="lineNum">     608 </span>            :                                 log_fatal(&quot;Error removing %s\n&quot;, path);
 <span class="lineNum">     609 </span>            :                                 exit(EXIT_FAILURE);
 <span class="lineNum">     610 </span>            :                                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     611 </span>            :                         }
 <span class="lineNum">     612 </span>            : 
-<span class="lineNum">     613 </span><span class="lineCov">        213 :                         rnd_name(linkto);</span>
+<span class="lineNum">     613 </span><span class="lineCov">        182 :                         rnd_name(linkto);</span>
 <span class="lineNum">     614 </span>            : 
-<span class="lineNum">     615 </span><span class="lineCov">        213 :                         cmd_generate_symlink(path, linkto);</span>
+<span class="lineNum">     615 </span><span class="lineCov">        182 :                         cmd_generate_symlink(path, linkto);</span>
 <span class="lineNum">     616 </span>            :                 }
-<span class="lineNum">     617 </span><span class="lineCov">      12713 :         } else if (S_ISREG(st.st_mode)) {</span>
+<span class="lineNum">     617 </span><span class="lineCov">      12712 :         } else if (S_ISREG(st.st_mode)) {</span>
 <span class="lineNum">     618 </span>            :                 int r;
 <span class="lineNum">     619 </span>            : 
-<span class="lineNum">     620 </span><span class="lineCov">      12713 :                 r = rnd(4);</span>
+<span class="lineNum">     620 </span><span class="lineCov">      12712 :                 r = rnd(4);</span>
 <span class="lineNum">     621 </span>            : 
-<span class="lineNum">     622 </span><span class="lineCov">      12713 :                 if (r == 0) {</span>
-<span class="lineNum">     623 </span><span class="lineCov">       3189 :                         cmd_write(path, size);</span>
-<span class="lineNum">     624 </span><span class="lineCov">       9524 :                 } else if (r == 1) {</span>
-<span class="lineNum">     625 </span><span class="lineCov">       3179 :                         cmd_append(path, size);</span>
-<span class="lineNum">     626 </span><span class="lineCov">       6345 :                 } else if (r == 2) {</span>
-<span class="lineNum">     627 </span><span class="lineCov">       3173 :                         cmd_truncate(path, size);</span>
+<span class="lineNum">     622 </span><span class="lineCov">      12712 :                 if (r == 0) {</span>
+<span class="lineNum">     623 </span><span class="lineCov">       3154 :                         cmd_write(path, size);</span>
+<span class="lineNum">     624 </span><span class="lineCov">       9558 :                 } else if (r == 1) {</span>
+<span class="lineNum">     625 </span><span class="lineCov">       3252 :                         cmd_append(path, size);</span>
+<span class="lineNum">     626 </span><span class="lineCov">       6306 :                 } else if (r == 2) {</span>
+<span class="lineNum">     627 </span><span class="lineCov">       3151 :                         cmd_truncate(path, size);</span>
 <span class="lineNum">     628 </span>            :                 } else {
-<span class="lineNum">     629 </span><span class="lineCov">       3172 :                         cmd_delete(path);</span>
+<span class="lineNum">     629 </span><span class="lineCov">       3155 :                         cmd_delete(path);</span>
 <span class="lineNum">     630 </span>            :                 }
 <span class="lineNum">     631 </span>            :         }
 <a name="632"><span class="lineNum">     632 </span>            : }</a>

@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-11-13</td>
+            <td class="headerValue">2015-11-20</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">21</td>
@@ -90,15 +90,15 @@
 <span class="lineNum">      28 </span>            : int exit_failure = 1;
 <a name="29"><span class="lineNum">      29 </span>            : int exit_sync_needed = 2;</a>
 <span class="lineNum">      30 </span>            : 
-<span class="lineNum">      31 </span><span class="lineCov">    1639793 : int open_noatime(const char* file, int flags)</span>
+<span class="lineNum">      31 </span><span class="lineCov">    1640600 : int open_noatime(const char* file, int flags)</span>
 <span class="lineNum">      32 </span>            : {
 <span class="lineNum">      33 </span>            : #ifdef O_NOATIME
-<span class="lineNum">      34 </span><span class="lineCov">    1639793 :         int f = open(file, flags | O_NOATIME);</span>
+<span class="lineNum">      34 </span><span class="lineCov">    1640600 :         int f = open(file, flags | O_NOATIME);</span>
 <span class="lineNum">      35 </span>            : 
 <span class="lineNum">      36 </span>            :         /* only root is allowed to use O_NOATIME, in case retry without it */
-<span class="lineNum">      37 </span><span class="lineCov">    1639793 :         if (f == -1 &amp;&amp; errno == EPERM)</span>
+<span class="lineNum">      37 </span><span class="lineCov">    1640600 :         if (f == -1 &amp;&amp; errno == EPERM)</span>
 <span class="lineNum">      38 </span><span class="lineNoCov">          0 :                 f = open(file, flags);</span>
-<span class="lineNum">      39 </span><span class="lineCov">    1639793 :         return f;</span>
+<span class="lineNum">      39 </span><span class="lineCov">    1640600 :         return f;</span>
 <span class="lineNum">      40 </span>            : #else
 <span class="lineNum">      41 </span>            :         return open(file, flags);
 <span class="lineNum">      42 </span>            : #endif
@@ -185,7 +185,7 @@
 <span class="lineNum">     123 </span>            : }
 <a name="124"><span class="lineNum">     124 </span>            : #endif</a>
 <span class="lineNum">     125 </span>            : 
-<span class="lineNum">     126 </span><span class="lineCov">      11430 : int filephy(const char* path, uint64_t size, uint64_t* physical)</span>
+<span class="lineNum">     126 </span><span class="lineCov">      11432 : int filephy(const char* path, uint64_t size, uint64_t* physical)</span>
 <span class="lineNum">     127 </span>            : {
 <span class="lineNum">     128 </span>            : #if HAVE_LINUX_FIEMAP_H
 <span class="lineNum">     129 </span>            :         /* In Linux get the real physical address of the file */
@@ -197,24 +197,24 @@
 <span class="lineNum">     135 </span>            :         } fm;
 <span class="lineNum">     136 </span>            :         unsigned int blknum;
 <span class="lineNum">     137 </span>            : 
-<span class="lineNum">     138 </span><span class="lineCov">      11430 :         f = open(path, O_RDONLY);</span>
-<span class="lineNum">     139 </span><span class="lineCov">      11430 :         if (f == -1) {</span>
+<span class="lineNum">     138 </span><span class="lineCov">      11432 :         f = open(path, O_RDONLY);</span>
+<span class="lineNum">     139 </span><span class="lineCov">      11432 :         if (f == -1) {</span>
 <span class="lineNum">     140 </span><span class="lineNoCov">          0 :                 return -1;</span>
 <span class="lineNum">     141 </span>            :         }
 <span class="lineNum">     142 </span>            : 
 <span class="lineNum">     143 </span>            :         /* first try with FIEMAP */
 <span class="lineNum">     144 </span>            :         /* if works for ext2, ext3, ext4, xfs, btrfs */
-<span class="lineNum">     145 </span><span class="lineCov">      11430 :         memset(&amp;fm, 0, sizeof(fm));</span>
-<span class="lineNum">     146 </span><span class="lineCov">      11430 :         fm.fiemap.fm_start = 0;</span>
-<span class="lineNum">     147 </span><span class="lineCov">      11430 :         fm.fiemap.fm_length = ~0ULL;</span>
-<span class="lineNum">     148 </span><span class="lineCov">      11430 :         fm.fiemap.fm_flags = FIEMAP_FLAG_SYNC; /* required to ensure that just created files report a valid address and not 0 */</span>
-<span class="lineNum">     149 </span><span class="lineCov">      11430 :         fm.fiemap.fm_extent_count = 1; /* we are interested only at the first block */</span>
+<span class="lineNum">     145 </span><span class="lineCov">      11432 :         memset(&amp;fm, 0, sizeof(fm));</span>
+<span class="lineNum">     146 </span><span class="lineCov">      11432 :         fm.fiemap.fm_start = 0;</span>
+<span class="lineNum">     147 </span><span class="lineCov">      11432 :         fm.fiemap.fm_length = ~0ULL;</span>
+<span class="lineNum">     148 </span><span class="lineCov">      11432 :         fm.fiemap.fm_flags = FIEMAP_FLAG_SYNC; /* required to ensure that just created files report a valid address and not 0 */</span>
+<span class="lineNum">     149 </span><span class="lineCov">      11432 :         fm.fiemap.fm_extent_count = 1; /* we are interested only at the first block */</span>
 <span class="lineNum">     150 </span>            : 
-<span class="lineNum">     151 </span><span class="lineCov">      11430 :         if (ioctl(f, FS_IOC_FIEMAP, &amp;fm) != -1) {</span>
-<span class="lineNum">     152 </span><span class="lineCov">      11430 :                 *physical = fm.fiemap.fm_extents[0].fe_physical + FILEPHY_REAL_OFFSET;</span>
-<span class="lineNum">     153 </span><span class="lineCov">      11430 :                 if (close(f) == -1)</span>
+<span class="lineNum">     151 </span><span class="lineCov">      11432 :         if (ioctl(f, FS_IOC_FIEMAP, &amp;fm) != -1) {</span>
+<span class="lineNum">     152 </span><span class="lineCov">      11432 :                 *physical = fm.fiemap.fm_extents[0].fe_physical + FILEPHY_REAL_OFFSET;</span>
+<span class="lineNum">     153 </span><span class="lineCov">      11432 :                 if (close(f) == -1)</span>
 <span class="lineNum">     154 </span><span class="lineNoCov">          0 :                         return -1;</span>
-<span class="lineNum">     155 </span><span class="lineCov">      11430 :                 return 0;</span>
+<span class="lineNum">     155 </span><span class="lineCov">      11432 :                 return 0;</span>
 <span class="lineNum">     156 </span>            :         }
 <span class="lineNum">     157 </span>            : 
 <span class="lineNum">     158 </span>            :         /* if the file is empty, FIBMAP doesn't work, and we don't even try to use it */
@@ -324,7 +324,7 @@
 <span class="lineNum">     262 </span><span class="lineCov">       2175 :         return 0;</span>
 <a name="263"><span class="lineNum">     263 </span>            : }</a>
 <span class="lineNum">     264 </span>            : 
-<span class="lineNum">     265 </span><span class="lineCov">    2046547 : uint64_t tick(void)</span>
+<span class="lineNum">     265 </span><span class="lineCov">    2049010 : uint64_t tick(void)</span>
 <span class="lineNum">     266 </span>            : {
 <span class="lineNum">     267 </span>            : #if HAVE_MACH_ABSOLUTE_TIME
 <span class="lineNum">     268 </span>            :         /* for Mac OS X */
@@ -335,14 +335,14 @@
 <span class="lineNum">     273 </span>            : 
 <span class="lineNum">     274 </span>            :         /* nanosecond precision with clock_gettime() */
 <span class="lineNum">     275 </span>            : #if defined(CLOCK_MONOTONIC_RAW)
-<span class="lineNum">     276 </span><span class="lineCov">    2046547 :         if (clock_gettime(CLOCK_MONOTONIC_RAW, &amp;tv) != 0) {</span>
+<span class="lineNum">     276 </span><span class="lineCov">    2049010 :         if (clock_gettime(CLOCK_MONOTONIC_RAW, &amp;tv) != 0) {</span>
 <span class="lineNum">     277 </span>            : #else
 <span class="lineNum">     278 </span>            :         if (clock_gettime(CLOCK_MONOTONIC, &amp;tv) != 0) {
 <span class="lineNum">     279 </span>            : #endif
 <span class="lineNum">     280 </span><span class="lineNoCov">          0 :                 return 0;</span>
 <span class="lineNum">     281 </span>            :         }
 <span class="lineNum">     282 </span>            : 
-<span class="lineNum">     283 </span><span class="lineCov">    2046547 :         return tv.tv_sec * 1000000000ULL + tv.tv_nsec;</span>
+<span class="lineNum">     283 </span><span class="lineCov">    2049010 :         return tv.tv_sec * 1000000000ULL + tv.tv_nsec;</span>
 <span class="lineNum">     284 </span>            : #else
 <span class="lineNum">     285 </span>            :         /* other platforms */
 <span class="lineNum">     286 </span>            :         struct timeval tv;
@@ -504,14 +504,14 @@
 <span class="lineNum">     442 </span>            :                 return -1;
 <span class="lineNum">     443 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     444 </span>            :         }
-<span class="lineNum">     445 </span><span class="lineCov">         96 :         if (st.st_rdev != device) {</span>
+<span class="lineNum">     445 </span><span class="lineCov">         97 :         if (st.st_rdev != device) {</span>
 <span class="lineNum">     446 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     447 </span>            :                 log_fatal(&quot;Unexpected device '%u:%u' instead of '%u:%u' for '%s'.\n&quot;, major(st.st_rdev), minor(st.st_rdev), major(device), minor(device), path);
 <span class="lineNum">     448 </span>            :                 return -1;
 <span class="lineNum">     449 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     450 </span>            :         }
 <span class="lineNum">     451 </span>            : 
-<span class="lineNum">     452 </span><span class="lineCov">         96 :         return 0;</span>
+<span class="lineNum">     452 </span><span class="lineCov">         97 :         return 0;</span>
 <span class="lineNum">     453 </span>            : }
 <span class="lineNum">     454 </span>            : #endif
 <span class="lineNum">     455 </span>            : 

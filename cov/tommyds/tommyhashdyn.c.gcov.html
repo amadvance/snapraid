@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-11-13</td>
+            <td class="headerValue">2015-11-20</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">11</td>
@@ -112,7 +112,7 @@
 <span class="lineNum">      50 </span>            : /**
 <a name="51"><span class="lineNum">      51 </span>            :  * Resize the bucket vector.</a>
 <span class="lineNum">      52 </span>            :  */
-<span class="lineNum">      53 </span><span class="lineCov">      39872 : static void tommy_hashdyn_resize(tommy_hashdyn* hashdyn, tommy_count_t new_bucket_bit)</span>
+<span class="lineNum">      53 </span><span class="lineCov">      39860 : static void tommy_hashdyn_resize(tommy_hashdyn* hashdyn, tommy_count_t new_bucket_bit)</span>
 <span class="lineNum">      54 </span>            : {
 <span class="lineNum">      55 </span>            :         tommy_count_t bucket_bit;
 <span class="lineNum">      56 </span>            :         tommy_count_t bucket_max;
@@ -120,38 +120,38 @@
 <span class="lineNum">      58 </span>            :         tommy_count_t new_bucket_mask;
 <span class="lineNum">      59 </span>            :         tommy_hashdyn_node** new_bucket;
 <span class="lineNum">      60 </span>            : 
-<span class="lineNum">      61 </span><span class="lineCov">      39872 :         bucket_bit = hashdyn-&gt;bucket_bit;</span>
-<span class="lineNum">      62 </span><span class="lineCov">      39872 :         bucket_max = hashdyn-&gt;bucket_max;</span>
+<span class="lineNum">      61 </span><span class="lineCov">      39860 :         bucket_bit = hashdyn-&gt;bucket_bit;</span>
+<span class="lineNum">      62 </span><span class="lineCov">      39860 :         bucket_max = hashdyn-&gt;bucket_max;</span>
 <span class="lineNum">      63 </span>            : 
-<span class="lineNum">      64 </span><span class="lineCov">      39872 :         new_bucket_max = 1 &lt;&lt; new_bucket_bit;</span>
-<span class="lineNum">      65 </span><span class="lineCov">      39872 :         new_bucket_mask = new_bucket_max - 1;</span>
+<span class="lineNum">      64 </span><span class="lineCov">      39860 :         new_bucket_max = 1 &lt;&lt; new_bucket_bit;</span>
+<span class="lineNum">      65 </span><span class="lineCov">      39860 :         new_bucket_mask = new_bucket_max - 1;</span>
 <span class="lineNum">      66 </span>            : 
 <span class="lineNum">      67 </span>            :         /* allocate the new vector using malloc() and not calloc() */
 <span class="lineNum">      68 </span>            :         /* because data is fully initialized in the update process */
-<span class="lineNum">      69 </span><span class="lineCov">      39872 :         new_bucket = tommy_cast(tommy_hashdyn_node**, tommy_malloc(new_bucket_max * sizeof(tommy_hashdyn_node*)));</span>
+<span class="lineNum">      69 </span><span class="lineCov">      39860 :         new_bucket = tommy_cast(tommy_hashdyn_node**, tommy_malloc(new_bucket_max * sizeof(tommy_hashdyn_node*)));</span>
 <span class="lineNum">      70 </span>            : 
 <span class="lineNum">      71 </span>            :         /* reinsert all the elements */
-<span class="lineNum">      72 </span><span class="lineCov">      39872 :         if (new_bucket_bit &gt; bucket_bit) {</span>
+<span class="lineNum">      72 </span><span class="lineCov">      39860 :         if (new_bucket_bit &gt; bucket_bit) {</span>
 <span class="lineNum">      73 </span>            :                 tommy_count_t i;
 <span class="lineNum">      74 </span>            : 
 <span class="lineNum">      75 </span>            :                 /* grow */
-<span class="lineNum">      76 </span><span class="lineCov">   31392079 :                 for (i = 0; i &lt; bucket_max; ++i) {</span>
+<span class="lineNum">      76 </span><span class="lineCov">   31390627 :                 for (i = 0; i &lt; bucket_max; ++i) {</span>
 <span class="lineNum">      77 </span>            :                         tommy_hashdyn_node* j;
 <span class="lineNum">      78 </span>            : 
 <span class="lineNum">      79 </span>            :                         /* setup the new two buckets */
-<span class="lineNum">      80 </span><span class="lineCov">   31352256 :                         new_bucket[i] = 0;</span>
-<span class="lineNum">      81 </span><span class="lineCov">   31352256 :                         new_bucket[i + bucket_max] = 0;</span>
+<span class="lineNum">      80 </span><span class="lineCov">   31350816 :                         new_bucket[i] = 0;</span>
+<span class="lineNum">      81 </span><span class="lineCov">   31350816 :                         new_bucket[i + bucket_max] = 0;</span>
 <span class="lineNum">      82 </span>            : 
 <span class="lineNum">      83 </span>            :                         /* reinsert the bucket */
-<span class="lineNum">      84 </span><span class="lineCov">   31352256 :                         j = hashdyn-&gt;bucket[i];</span>
-<span class="lineNum">      85 </span><span class="lineCov">   78380640 :                         while (j) {</span>
-<span class="lineNum">      86 </span><span class="lineCov">   15676128 :                                 tommy_hashdyn_node* j_next = j-&gt;next;</span>
-<span class="lineNum">      87 </span><span class="lineCov">   15676128 :                                 tommy_count_t pos = j-&gt;key &amp; new_bucket_mask;</span>
-<span class="lineNum">      88 </span><span class="lineCov">   15676128 :                                 if (new_bucket[pos])</span>
-<span class="lineNum">      89 </span><span class="lineCov">    1859714 :                                         tommy_list_insert_tail_not_empty(new_bucket[pos], j);</span>
+<span class="lineNum">      84 </span><span class="lineCov">   31350816 :                         j = hashdyn-&gt;bucket[i];</span>
+<span class="lineNum">      85 </span><span class="lineCov">   78377040 :                         while (j) {</span>
+<span class="lineNum">      86 </span><span class="lineCov">   15675408 :                                 tommy_hashdyn_node* j_next = j-&gt;next;</span>
+<span class="lineNum">      87 </span><span class="lineCov">   15675408 :                                 tommy_count_t pos = j-&gt;key &amp; new_bucket_mask;</span>
+<span class="lineNum">      88 </span><span class="lineCov">   15675408 :                                 if (new_bucket[pos])</span>
+<span class="lineNum">      89 </span><span class="lineCov">    1860861 :                                         tommy_list_insert_tail_not_empty(new_bucket[pos], j);</span>
 <span class="lineNum">      90 </span>            :                                 else
-<span class="lineNum">      91 </span><span class="lineCov">   13816414 :                                         tommy_list_insert_first(&amp;new_bucket[pos], j);</span>
-<span class="lineNum">      92 </span><span class="lineCov">   15676128 :                                 j = j_next;</span>
+<span class="lineNum">      91 </span><span class="lineCov">   13814547 :                                         tommy_list_insert_first(&amp;new_bucket[pos], j);</span>
+<span class="lineNum">      92 </span><span class="lineCov">   15675408 :                                 j = j_next;</span>
 <span class="lineNum">      93 </span>            :                         }
 <span class="lineNum">      94 </span>            :                 }
 <span class="lineNum">      95 </span>            :         } else {
@@ -167,59 +167,59 @@
 <span class="lineNum">     105 </span>            :                 }
 <span class="lineNum">     106 </span>            :         }
 <span class="lineNum">     107 </span>            : 
-<span class="lineNum">     108 </span><span class="lineCov">      39872 :         tommy_free(hashdyn-&gt;bucket);</span>
+<span class="lineNum">     108 </span><span class="lineCov">      39860 :         tommy_free(hashdyn-&gt;bucket);</span>
 <span class="lineNum">     109 </span>            : 
 <span class="lineNum">     110 </span>            :         /* setup */
-<span class="lineNum">     111 </span><span class="lineCov">      39872 :         hashdyn-&gt;bucket_bit = new_bucket_bit;</span>
-<span class="lineNum">     112 </span><span class="lineCov">      39872 :         hashdyn-&gt;bucket_max = new_bucket_max;</span>
-<span class="lineNum">     113 </span><span class="lineCov">      39872 :         hashdyn-&gt;bucket_mask = new_bucket_mask;</span>
-<span class="lineNum">     114 </span><span class="lineCov">      39872 :         hashdyn-&gt;bucket = new_bucket;</span>
-<span class="lineNum">     115 </span><span class="lineCov">      39872 : }</span>
+<span class="lineNum">     111 </span><span class="lineCov">      39860 :         hashdyn-&gt;bucket_bit = new_bucket_bit;</span>
+<span class="lineNum">     112 </span><span class="lineCov">      39860 :         hashdyn-&gt;bucket_max = new_bucket_max;</span>
+<span class="lineNum">     113 </span><span class="lineCov">      39860 :         hashdyn-&gt;bucket_mask = new_bucket_mask;</span>
+<span class="lineNum">     114 </span><span class="lineCov">      39860 :         hashdyn-&gt;bucket = new_bucket;</span>
+<span class="lineNum">     115 </span><span class="lineCov">      39860 : }</span>
 <span class="lineNum">     116 </span>            : 
 <span class="lineNum">     117 </span>            : /**
 <a name="118"><span class="lineNum">     118 </span>            :  * Grow.</a>
 <span class="lineNum">     119 </span>            :  */
-<span class="lineNum">     120 </span><span class="lineCov">   12860390 : tommy_inline void hashdyn_grow_step(tommy_hashdyn* hashdyn)</span>
+<span class="lineNum">     120 </span><span class="lineCov">   12860296 : tommy_inline void hashdyn_grow_step(tommy_hashdyn* hashdyn)</span>
 <span class="lineNum">     121 </span>            : {
 <span class="lineNum">     122 </span>            :         /* grow if more than 50% full */
-<span class="lineNum">     123 </span><span class="lineCov">   12860390 :         if (hashdyn-&gt;count &gt;= hashdyn-&gt;bucket_max / 2)</span>
-<span class="lineNum">     124 </span><span class="lineCov">      39823 :                 tommy_hashdyn_resize(hashdyn, hashdyn-&gt;bucket_bit + 1);</span>
-<span class="lineNum">     125 </span><span class="lineCov">   12860390 : }</span>
+<span class="lineNum">     123 </span><span class="lineCov">   12860296 :         if (hashdyn-&gt;count &gt;= hashdyn-&gt;bucket_max / 2)</span>
+<span class="lineNum">     124 </span><span class="lineCov">      39811 :                 tommy_hashdyn_resize(hashdyn, hashdyn-&gt;bucket_bit + 1);</span>
+<span class="lineNum">     125 </span><span class="lineCov">   12860296 : }</span>
 <span class="lineNum">     126 </span>            : 
 <span class="lineNum">     127 </span>            : /**
 <a name="128"><span class="lineNum">     128 </span>            :  * Shrink.</a>
 <span class="lineNum">     129 </span>            :  */
-<span class="lineNum">     130 </span><span class="lineCov">     284934 : tommy_inline void hashdyn_shrink_step(tommy_hashdyn* hashdyn)</span>
+<span class="lineNum">     130 </span><span class="lineCov">     284348 : tommy_inline void hashdyn_shrink_step(tommy_hashdyn* hashdyn)</span>
 <span class="lineNum">     131 </span>            : {
 <span class="lineNum">     132 </span>            :         /* shrink if less than 12.5% full */
-<span class="lineNum">     133 </span><span class="lineCov">     284934 :         if (hashdyn-&gt;count &lt;= hashdyn-&gt;bucket_max / 8 &amp;&amp; hashdyn-&gt;bucket_bit &gt; TOMMY_HASHDYN_BIT)</span>
+<span class="lineNum">     133 </span><span class="lineCov">     284348 :         if (hashdyn-&gt;count &lt;= hashdyn-&gt;bucket_max / 8 &amp;&amp; hashdyn-&gt;bucket_bit &gt; TOMMY_HASHDYN_BIT)</span>
 <span class="lineNum">     134 </span><span class="lineCov">         49 :                 tommy_hashdyn_resize(hashdyn, hashdyn-&gt;bucket_bit - 1);</span>
-<a name="135"><span class="lineNum">     135 </span><span class="lineCov">     284934 : }</span></a>
+<a name="135"><span class="lineNum">     135 </span><span class="lineCov">     284348 : }</span></a>
 <span class="lineNum">     136 </span>            : 
-<span class="lineNum">     137 </span><span class="lineCov">   12860390 : void tommy_hashdyn_insert(tommy_hashdyn* hashdyn, tommy_hashdyn_node* node, void* data, tommy_hash_t hash)</span>
+<span class="lineNum">     137 </span><span class="lineCov">   12860296 : void tommy_hashdyn_insert(tommy_hashdyn* hashdyn, tommy_hashdyn_node* node, void* data, tommy_hash_t hash)</span>
 <span class="lineNum">     138 </span>            : {
-<span class="lineNum">     139 </span><span class="lineCov">   12860390 :         tommy_count_t pos = hash &amp; hashdyn-&gt;bucket_mask;</span>
+<span class="lineNum">     139 </span><span class="lineCov">   12860296 :         tommy_count_t pos = hash &amp; hashdyn-&gt;bucket_mask;</span>
 <span class="lineNum">     140 </span>            : 
-<span class="lineNum">     141 </span><span class="lineCov">   12860390 :         tommy_list_insert_tail(&amp;hashdyn-&gt;bucket[pos], node, data);</span>
+<span class="lineNum">     141 </span><span class="lineCov">   12860296 :         tommy_list_insert_tail(&amp;hashdyn-&gt;bucket[pos], node, data);</span>
 <span class="lineNum">     142 </span>            : 
-<span class="lineNum">     143 </span><span class="lineCov">   12860390 :         node-&gt;key = hash;</span>
+<span class="lineNum">     143 </span><span class="lineCov">   12860296 :         node-&gt;key = hash;</span>
 <span class="lineNum">     144 </span>            : 
-<span class="lineNum">     145 </span><span class="lineCov">   12860390 :         ++hashdyn-&gt;count;</span>
+<span class="lineNum">     145 </span><span class="lineCov">   12860296 :         ++hashdyn-&gt;count;</span>
 <span class="lineNum">     146 </span>            : 
-<span class="lineNum">     147 </span><span class="lineCov">   12860390 :         hashdyn_grow_step(hashdyn);</span>
-<a name="148"><span class="lineNum">     148 </span><span class="lineCov">   12860390 : }</span></a>
+<span class="lineNum">     147 </span><span class="lineCov">   12860296 :         hashdyn_grow_step(hashdyn);</span>
+<a name="148"><span class="lineNum">     148 </span><span class="lineCov">   12860296 : }</span></a>
 <span class="lineNum">     149 </span>            : 
-<span class="lineNum">     150 </span><span class="lineCov">     284806 : void* tommy_hashdyn_remove_existing(tommy_hashdyn* hashdyn, tommy_hashdyn_node* node)</span>
+<span class="lineNum">     150 </span><span class="lineCov">     284220 : void* tommy_hashdyn_remove_existing(tommy_hashdyn* hashdyn, tommy_hashdyn_node* node)</span>
 <span class="lineNum">     151 </span>            : {
-<span class="lineNum">     152 </span><span class="lineCov">     284806 :         tommy_count_t pos = node-&gt;key &amp; hashdyn-&gt;bucket_mask;</span>
+<span class="lineNum">     152 </span><span class="lineCov">     284220 :         tommy_count_t pos = node-&gt;key &amp; hashdyn-&gt;bucket_mask;</span>
 <span class="lineNum">     153 </span>            : 
-<span class="lineNum">     154 </span><span class="lineCov">     284806 :         tommy_list_remove_existing(&amp;hashdyn-&gt;bucket[pos], node);</span>
+<span class="lineNum">     154 </span><span class="lineCov">     284220 :         tommy_list_remove_existing(&amp;hashdyn-&gt;bucket[pos], node);</span>
 <span class="lineNum">     155 </span>            : 
-<span class="lineNum">     156 </span><span class="lineCov">     284806 :         --hashdyn-&gt;count;</span>
+<span class="lineNum">     156 </span><span class="lineCov">     284220 :         --hashdyn-&gt;count;</span>
 <span class="lineNum">     157 </span>            : 
-<span class="lineNum">     158 </span><span class="lineCov">     284806 :         hashdyn_shrink_step(hashdyn);</span>
+<span class="lineNum">     158 </span><span class="lineCov">     284220 :         hashdyn_shrink_step(hashdyn);</span>
 <span class="lineNum">     159 </span>            : 
-<span class="lineNum">     160 </span><span class="lineCov">     284806 :         return node-&gt;data;</span>
+<span class="lineNum">     160 </span><span class="lineCov">     284220 :         return node-&gt;data;</span>
 <a name="161"><span class="lineNum">     161 </span>            : }</a>
 <span class="lineNum">     162 </span>            : 
 <span class="lineNum">     163 </span><span class="lineCov">        256 : void* tommy_hashdyn_remove(tommy_hashdyn* hashdyn, tommy_search_func* cmp, const void* cmp_arg, tommy_hash_t hash)</span>
@@ -253,10 +253,10 @@
 <span class="lineNum">     191 </span><span class="lineCov">    5812246 :         for (pos = 0; pos &lt; bucket_max; ++pos) {</span>
 <span class="lineNum">     192 </span><span class="lineCov">    5812016 :                 tommy_hashdyn_node* node = bucket[pos];</span>
 <span class="lineNum">     193 </span>            : 
-<span class="lineNum">     194 </span><span class="lineCov">   13483575 :                 while (node) {</span>
-<span class="lineNum">     195 </span><span class="lineCov">    1859543 :                         void* data = node-&gt;data;</span>
-<span class="lineNum">     196 </span><span class="lineCov">    1859543 :                         node = node-&gt;next;</span>
-<span class="lineNum">     197 </span><span class="lineCov">    1859543 :                         func(data);</span>
+<span class="lineNum">     194 </span><span class="lineCov">   13483818 :                 while (node) {</span>
+<span class="lineNum">     195 </span><span class="lineCov">    1859786 :                         void* data = node-&gt;data;</span>
+<span class="lineNum">     196 </span><span class="lineCov">    1859786 :                         node = node-&gt;next;</span>
+<span class="lineNum">     197 </span><span class="lineCov">    1859786 :                         func(data);</span>
 <span class="lineNum">     198 </span>            :                 }
 <span class="lineNum">     199 </span>            :         }
 <a name="200"><span class="lineNum">     200 </span><span class="lineCov">        230 : }</span></a>

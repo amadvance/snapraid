@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-11-13</td>
+            <td class="headerValue">2015-11-20</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">4</td>
@@ -94,7 +94,7 @@
 <span class="lineNum">      32 </span><span class="lineCov">        290 :         offset = ((uintptr_t)ptr) % RAID_MALLOC_ALIGN;</span>
 <span class="lineNum">      33 </span>            : 
 <span class="lineNum">      34 </span><span class="lineCov">        290 :         if (offset != 0)</span>
-<span class="lineNum">      35 </span><span class="lineCov">        284 :                 ptr += RAID_MALLOC_ALIGN - offset;</span>
+<span class="lineNum">      35 </span><span class="lineCov">        287 :                 ptr += RAID_MALLOC_ALIGN - offset;</span>
 <span class="lineNum">      36 </span>            : 
 <span class="lineNum">      37 </span><span class="lineCov">        290 :         return ptr;</span>
 <a name="38"><span class="lineNum">      38 </span>            : }</a>
@@ -154,9 +154,9 @@
 <span class="lineNum">      92 </span>            :                 }
 <a name="93"><span class="lineNum">      93 </span><span class="lineCov">          5 : }</span></a>
 <span class="lineNum">      94 </span>            : 
-<span class="lineNum">      95 </span><span class="lineCov">       2583 : int raid_mtest_vector(int n, size_t size, void **vv)</span>
+<span class="lineNum">      95 </span><span class="lineCov">       2579 : int raid_mtest_vector(int n, size_t size, void **vv)</span>
 <span class="lineNum">      96 </span>            : {
-<span class="lineNum">      97 </span><span class="lineCov">       2583 :         unsigned char **v = (unsigned char **)vv;</span>
+<span class="lineNum">      97 </span><span class="lineCov">       2579 :         unsigned char **v = (unsigned char **)vv;</span>
 <span class="lineNum">      98 </span>            :         int i;
 <span class="lineNum">      99 </span>            :         size_t j;
 <span class="lineNum">     100 </span>            :         unsigned k;
@@ -164,39 +164,39 @@
 <span class="lineNum">     102 </span>            :         unsigned char p;
 <span class="lineNum">     103 </span>            : 
 <span class="lineNum">     104 </span>            :         /* fill with 0 */
-<span class="lineNum">     105 </span><span class="lineCov">       2583 :         d = 0;</span>
-<span class="lineNum">     106 </span><span class="lineCov">       5257 :         for (i = 0; i &lt; n; ++i)</span>
-<span class="lineNum">     107 </span><span class="lineCov">  136288434 :                 for (j = 0; j &lt; size; ++j)</span>
-<span class="lineNum">     108 </span><span class="lineCov">  136285760 :                         v[i][j] = d;</span>
+<span class="lineNum">     105 </span><span class="lineCov">       2579 :         d = 0;</span>
+<span class="lineNum">     106 </span><span class="lineCov">       5254 :         for (i = 0; i &lt; n; ++i)</span>
+<span class="lineNum">     107 </span><span class="lineCov">  137567034 :                 for (j = 0; j &lt; size; ++j)</span>
+<span class="lineNum">     108 </span><span class="lineCov">  137564359 :                         v[i][j] = d;</span>
 <span class="lineNum">     109 </span>            : 
 <span class="lineNum">     110 </span>            :         /* test with all the byte patterns */
-<span class="lineNum">     111 </span><span class="lineCov">     661234 :         for (k = 1; k &lt; 256; ++k) {</span>
-<span class="lineNum">     112 </span><span class="lineCov">     658651 :                 p = d;</span>
-<span class="lineNum">     113 </span><span class="lineCov">     658651 :                 d = k;</span>
+<span class="lineNum">     111 </span><span class="lineCov">     661244 :         for (k = 1; k &lt; 256; ++k) {</span>
+<span class="lineNum">     112 </span><span class="lineCov">     658661 :                 p = d;</span>
+<span class="lineNum">     113 </span><span class="lineCov">     658661 :                 d = k;</span>
 <span class="lineNum">     114 </span>            : 
 <span class="lineNum">     115 </span>            :                 /* forward fill */
-<span class="lineNum">     116 </span><span class="lineCov">    1340760 :                 for (i = 0; i &lt; n; ++i) {</span>
-<span class="lineNum">     117 </span><span class="lineCov">24240075844 :                         for (j = 0; j &lt; size; ++j) {</span>
-<span class="lineNum">     118 </span><span class="lineCov">24239393735 :                                 if (v[i][j] != p) {</span>
+<span class="lineNum">     116 </span><span class="lineCov">    1340781 :                 for (i = 0; i &lt; n; ++i) {</span>
+<span class="lineNum">     117 </span><span class="lineCov">24484944507 :                         for (j = 0; j &lt; size; ++j) {</span>
+<span class="lineNum">     118 </span><span class="lineCov">24484262387 :                                 if (v[i][j] != p) {</span>
 <span class="lineNum">     119 </span>            :                                         /* LCOV_EXCL_START */
 <span class="lineNum">     120 </span>            :                                         return -1;
 <span class="lineNum">     121 </span>            :                                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     122 </span>            :                                 }
-<span class="lineNum">     123 </span><span class="lineCov">24239393729 :                                 v[i][j] = d;</span>
+<span class="lineNum">     123 </span><span class="lineCov">24484262387 :                                 v[i][j] = d;</span>
 <span class="lineNum">     124 </span>            :                         }
 <span class="lineNum">     125 </span>            :                 }
 <span class="lineNum">     126 </span>            : 
-<span class="lineNum">     127 </span><span class="lineCov">     658645 :                 p = d;</span>
-<span class="lineNum">     128 </span><span class="lineCov">     658645 :                 d = ~p;</span>
+<span class="lineNum">     127 </span><span class="lineCov">     658661 :                 p = d;</span>
+<span class="lineNum">     128 </span><span class="lineCov">     658661 :                 d = ~p;</span>
 <span class="lineNum">     129 </span>            :                 /* backward fill with complement */
-<span class="lineNum">     130 </span><span class="lineCov">    1340755 :                 for (i = 0; i &lt; n; ++i) {</span>
-<span class="lineNum">     131 </span><span class="lineCov">23878874802 :                         for (j = size; j &gt; 0; --j) {</span>
-<span class="lineNum">     132 </span><span class="lineCov">23878192692 :                                 if (v[i][j - 1] != p) {</span>
+<span class="lineNum">     130 </span><span class="lineCov">    1340786 :                 for (i = 0; i &lt; n; ++i) {</span>
+<span class="lineNum">     131 </span><span class="lineCov">24126962138 :                         for (j = size; j &gt; 0; --j) {</span>
+<span class="lineNum">     132 </span><span class="lineCov">24126280013 :                                 if (v[i][j - 1] != p) {</span>
 <span class="lineNum">     133 </span>            :                                         /* LCOV_EXCL_START */
 <span class="lineNum">     134 </span>            :                                         return -1;
 <span class="lineNum">     135 </span>            :                                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     136 </span>            :                                 }
-<span class="lineNum">     137 </span><span class="lineCov">23878192698 :                                 v[i][j - 1] = d;</span>
+<span class="lineNum">     137 </span><span class="lineCov">24126280017 :                                 v[i][j - 1] = d;</span>
 <span class="lineNum">     138 </span>            :                         }
 <span class="lineNum">     139 </span>            :                 }
 <span class="lineNum">     140 </span>            :         }

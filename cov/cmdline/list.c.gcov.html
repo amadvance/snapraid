@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-11-13</td>
+            <td class="headerValue">2015-11-20</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">1</td>
@@ -110,34 +110,34 @@
 <span class="lineNum">      48 </span><span class="lineCov">         18 :                 tommy_list_sort(&amp;disk-&gt;filelist, file_path_compare);</span>
 <span class="lineNum">      49 </span>            : 
 <span class="lineNum">      50 </span>            :                 /* for each file */
-<span class="lineNum">      51 </span><span class="lineCov">      16996 :                 for (j = disk-&gt;filelist; j != 0; j = j-&gt;next) {</span>
-<span class="lineNum">      52 </span><span class="lineCov">      16978 :                         struct snapraid_file* file = j-&gt;data;</span>
+<span class="lineNum">      51 </span><span class="lineCov">      16998 :                 for (j = disk-&gt;filelist; j != 0; j = j-&gt;next) {</span>
+<span class="lineNum">      52 </span><span class="lineCov">      16980 :                         struct snapraid_file* file = j-&gt;data;</span>
 <span class="lineNum">      53 </span>            : #if HAVE_LOCALTIME_R
 <span class="lineNum">      54 </span>            :                         struct tm tm_res;
 <span class="lineNum">      55 </span>            : #endif
 <span class="lineNum">      56 </span>            :                         struct tm* tm;
 <span class="lineNum">      57 </span>            :                         time_t t;
 <span class="lineNum">      58 </span>            : 
-<span class="lineNum">      59 </span><span class="lineCov">      16978 :                         ++file_count;</span>
-<span class="lineNum">      60 </span><span class="lineCov">      16978 :                         file_size += file-&gt;size;</span>
+<span class="lineNum">      59 </span><span class="lineCov">      16980 :                         ++file_count;</span>
+<span class="lineNum">      60 </span><span class="lineCov">      16980 :                         file_size += file-&gt;size;</span>
 <span class="lineNum">      61 </span>            : 
-<span class="lineNum">      62 </span><span class="lineCov">      16978 :                         log_tag(&quot;file:%s:%s:%&quot; PRIu64 &quot;:%&quot; PRIi64 &quot;:%u:%&quot; PRIi64 &quot;\n&quot;, disk-&gt;name, esc(file-&gt;sub), file-&gt;size, file-&gt;mtime_sec, file-&gt;mtime_nsec, file-&gt;inode);</span>
+<span class="lineNum">      62 </span><span class="lineCov">      16980 :                         log_tag(&quot;file:%s:%s:%&quot; PRIu64 &quot;:%&quot; PRIi64 &quot;:%u:%&quot; PRIi64 &quot;\n&quot;, disk-&gt;name, esc(file-&gt;sub), file-&gt;size, file-&gt;mtime_sec, file-&gt;mtime_nsec, file-&gt;inode);</span>
 <span class="lineNum">      63 </span>            : 
-<span class="lineNum">      64 </span><span class="lineCov">      16978 :                         t = file-&gt;mtime_sec;</span>
+<span class="lineNum">      64 </span><span class="lineCov">      16980 :                         t = file-&gt;mtime_sec;</span>
 <span class="lineNum">      65 </span>            : #if HAVE_LOCALTIME_R
-<span class="lineNum">      66 </span><span class="lineCov">      16978 :                         tm = localtime_r(&amp;t, &amp;tm_res);</span>
+<span class="lineNum">      66 </span><span class="lineCov">      16980 :                         tm = localtime_r(&amp;t, &amp;tm_res);</span>
 <span class="lineNum">      67 </span>            : #else
 <span class="lineNum">      68 </span>            :                         tm = localtime(&amp;t);
 <span class="lineNum">      69 </span>            : #endif
 <span class="lineNum">      70 </span>            : 
-<span class="lineNum">      71 </span><span class="lineCov">      16978 :                         printf(&quot;%12&quot; PRIu64 &quot; &quot;, file-&gt;size);</span>
-<span class="lineNum">      72 </span><span class="lineCov">      16978 :                         if (tm) {</span>
-<span class="lineNum">      73 </span><span class="lineCov">      16978 :                                 printf(&quot;%04u/%02u/%02u %02u:%02u&quot;, tm-&gt;tm_year + 1900, tm-&gt;tm_mon + 1, tm-&gt;tm_mday, tm-&gt;tm_hour, tm-&gt;tm_min);</span>
-<span class="lineNum">      74 </span><span class="lineCov">      16978 :                                 if (msg_level &gt;= MSG_VERBOSE)</span>
-<span class="lineNum">      75 </span><span class="lineCov">      16978 :                                         printf(&quot;:%02u.%03u&quot;, tm-&gt;tm_sec, file-&gt;mtime_nsec / 1000000);</span>
-<span class="lineNum">      76 </span><span class="lineCov">      16978 :                                 printf(&quot; &quot;);</span>
+<span class="lineNum">      71 </span><span class="lineCov">      16980 :                         printf(&quot;%12&quot; PRIu64 &quot; &quot;, file-&gt;size);</span>
+<span class="lineNum">      72 </span><span class="lineCov">      16980 :                         if (tm) {</span>
+<span class="lineNum">      73 </span><span class="lineCov">      16980 :                                 printf(&quot;%04u/%02u/%02u %02u:%02u&quot;, tm-&gt;tm_year + 1900, tm-&gt;tm_mon + 1, tm-&gt;tm_mday, tm-&gt;tm_hour, tm-&gt;tm_min);</span>
+<span class="lineNum">      74 </span><span class="lineCov">      16980 :                                 if (msg_level &gt;= MSG_VERBOSE)</span>
+<span class="lineNum">      75 </span><span class="lineCov">      16980 :                                         printf(&quot;:%02u.%03u&quot;, tm-&gt;tm_sec, file-&gt;mtime_nsec / 1000000);</span>
+<span class="lineNum">      76 </span><span class="lineCov">      16980 :                                 printf(&quot; &quot;);</span>
 <span class="lineNum">      77 </span>            :                         }
-<span class="lineNum">      78 </span><span class="lineCov">      16978 :                         printf(&quot;%s%s\n&quot;, disk-&gt;dir, file-&gt;sub);</span>
+<span class="lineNum">      78 </span><span class="lineCov">      16980 :                         printf(&quot;%s%s\n&quot;, disk-&gt;dir, file-&gt;sub);</span>
 <span class="lineNum">      79 </span>            :                 }
 <span class="lineNum">      80 </span>            : 
 <span class="lineNum">      81 </span>            :                 /* sort by name */

@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-11-13</td>
+            <td class="headerValue">2015-11-20</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">8</td>
@@ -108,9 +108,9 @@
 <span class="lineNum">      46 </span>            :  * Compute the hash of the hash for an import block.
 <a name="47"><span class="lineNum">      47 </span>            :  * We just use the first 32 bit of the hash itself.</a>
 <span class="lineNum">      48 </span>            :  */
-<span class="lineNum">      49 </span><span class="lineCov">     653410 : static inline tommy_uint32_t import_block_hash(const unsigned char* hash)</span>
+<span class="lineNum">      49 </span><span class="lineCov">     652942 : static inline tommy_uint32_t import_block_hash(const unsigned char* hash)</span>
 <span class="lineNum">      50 </span>            : {
-<span class="lineNum">      51 </span><span class="lineCov">     653410 :         return *(const tommy_uint32_t*)hash;</span>
+<span class="lineNum">      51 </span><span class="lineCov">     652942 :         return *(const tommy_uint32_t*)hash;</span>
 <a name="52"><span class="lineNum">      52 </span>            : }</a>
 <span class="lineNum">      53 </span>            : 
 <span class="lineNum">      54 </span><span class="lineCov">       1750 : static void import_file(struct snapraid_state* state, const char* path, uint64_t size)</span>
@@ -211,24 +211,24 @@
 <span class="lineNum">     149 </span><span class="lineCov">       1750 :         free(file);</span>
 <a name="150"><span class="lineNum">     150 </span><span class="lineCov">       1750 : }</span></a>
 <span class="lineNum">     151 </span>            : 
-<span class="lineNum">     152 </span><span class="lineCov">     644466 : int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid_block* missing_block, unsigned char* buffer)</span>
+<span class="lineNum">     152 </span><span class="lineCov">     643998 : int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid_block* missing_block, unsigned char* buffer)</span>
 <span class="lineNum">     153 </span>            : {
 <span class="lineNum">     154 </span>            :         struct snapraid_import_block* block;
 <span class="lineNum">     155 </span>            :         int ret;
 <span class="lineNum">     156 </span>            :         int f;
-<span class="lineNum">     157 </span><span class="lineCov">     644466 :         const unsigned char* hash = missing_block-&gt;hash;</span>
-<span class="lineNum">     158 </span><span class="lineCov">     644466 :         unsigned block_size = state-&gt;block_size;</span>
+<span class="lineNum">     157 </span><span class="lineCov">     643998 :         const unsigned char* hash = missing_block-&gt;hash;</span>
+<span class="lineNum">     158 </span><span class="lineCov">     643998 :         unsigned block_size = state-&gt;block_size;</span>
 <span class="lineNum">     159 </span>            :         unsigned read_size;
 <span class="lineNum">     160 </span>            :         unsigned char buffer_hash[HASH_SIZE];
 <span class="lineNum">     161 </span>            :         const char* path;
 <span class="lineNum">     162 </span>            : 
-<span class="lineNum">     163 </span><span class="lineCov">     644466 :         if (rehash) {</span>
-<span class="lineNum">     164 </span><span class="lineCov">      28985 :                 block = tommy_hashdyn_search(&amp;state-&gt;previmportset, import_block_prevhash_compare, hash, import_block_hash(hash));</span>
+<span class="lineNum">     163 </span><span class="lineCov">     643998 :         if (rehash) {</span>
+<span class="lineNum">     164 </span><span class="lineCov">      28986 :                 block = tommy_hashdyn_search(&amp;state-&gt;previmportset, import_block_prevhash_compare, hash, import_block_hash(hash));</span>
 <span class="lineNum">     165 </span>            :         } else {
-<span class="lineNum">     166 </span><span class="lineCov">     615481 :                 block = tommy_hashdyn_search(&amp;state-&gt;importset, import_block_hash_compare, hash, import_block_hash(hash));</span>
+<span class="lineNum">     166 </span><span class="lineCov">     615012 :                 block = tommy_hashdyn_search(&amp;state-&gt;importset, import_block_hash_compare, hash, import_block_hash(hash));</span>
 <span class="lineNum">     167 </span>            :         }
-<span class="lineNum">     168 </span><span class="lineCov">     644466 :         if (!block)</span>
-<span class="lineNum">     169 </span><span class="lineCov">     639994 :                 return -1;</span>
+<span class="lineNum">     168 </span><span class="lineCov">     643998 :         if (!block)</span>
+<span class="lineNum">     169 </span><span class="lineCov">     639526 :                 return -1;</span>
 <span class="lineNum">     170 </span>            : 
 <span class="lineNum">     171 </span><span class="lineCov">       4472 :         path = block-&gt;file-&gt;path;</span>
 <span class="lineNum">     172 </span><span class="lineCov">       4472 :         read_size = block-&gt;size;</span>

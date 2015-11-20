@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-11-13</td>
+            <td class="headerValue">2015-11-20</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">0</td>
@@ -88,7 +88,7 @@
 <span class="lineNum">      26 </span>            :  */
 <span class="lineNum">      27 </span>            : static __always_inline uint8_t mul(uint8_t a, uint8_t b)
 <span class="lineNum">      28 </span>            : {
-<span class="lineNum">      29 </span><span class="lineCov">   23816594 :         return gfmul[a][b];</span>
+<span class="lineNum">      29 </span><span class="lineCov">   23813346 :         return gfmul[a][b];</span>
 <span class="lineNum">      30 </span>            : }
 <span class="lineNum">      31 </span>            : 
 <span class="lineNum">      32 </span>            : /*
@@ -97,9 +97,9 @@
 <span class="lineNum">      35 </span>            :  */
 <span class="lineNum">      36 </span>            : static __always_inline uint8_t inv(uint8_t v)
 <span class="lineNum">      37 </span>            : {
-<span class="lineNum">      38 </span><span class="lineCov">     635932 :         BUG_ON(v == 0); /* division by zero */</span>
+<span class="lineNum">      38 </span><span class="lineCov">     635522 :         BUG_ON(v == 0); /* division by zero */</span>
 <span class="lineNum">      39 </span>            : 
-<span class="lineNum">      40 </span><span class="lineCov">     635932 :         return gfinv[v];</span>
+<span class="lineNum">      40 </span><span class="lineCov">     635522 :         return gfinv[v];</span>
 <span class="lineNum">      41 </span>            : }
 <span class="lineNum">      42 </span>            : 
 <span class="lineNum">      43 </span>            : /*
@@ -125,7 +125,7 @@
 <span class="lineNum">      63 </span>            :  */
 <span class="lineNum">      64 </span>            : static __always_inline uint8_t A(int p, int d)
 <span class="lineNum">      65 </span>            : {
-<span class="lineNum">      66 </span><span class="lineCov">    2606682 :         return gfgen[p][d];</span>
+<span class="lineNum">      66 </span><span class="lineCov">    2605866 :         return gfgen[p][d];</span>
 <span class="lineNum">      67 </span>            : }
 <span class="lineNum">      68 </span>            : 
 <span class="lineNum">      69 </span>            : /*

@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-11-13</td>
+            <td class="headerValue">2015-11-20</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">4</td>
@@ -133,12 +133,12 @@
 <span class="lineNum">      71 </span>            : /**
 <a name="72"><span class="lineNum">      72 </span>            :  * Compute CRC-32 (Castagnoli) for a single byte without the IV.</a>
 <span class="lineNum">      73 </span>            :  */
-<span class="lineNum">      74 </span><span class="lineCov">   23710549 : static inline uint32_t crc32c_plain_char(uint32_t crc, unsigned char c)</span>
+<span class="lineNum">      74 </span><span class="lineCov">   23675077 : static inline uint32_t crc32c_plain_char(uint32_t crc, unsigned char c)</span>
 <span class="lineNum">      75 </span>            : {
 <span class="lineNum">      76 </span>            : #if HAVE_SSE42
-<span class="lineNum">      77 </span><span class="lineCov">   23710549 :         if (tommy_likely(crc_x86)) {</span>
-<span class="lineNum">      78 </span><span class="lineCov">   23710549 :                 asm(&quot;crc32b %1, %0\n&quot; : &quot;+r&quot; (crc) : &quot;m&quot; (c));</span>
-<span class="lineNum">      79 </span><span class="lineCov">   23710549 :                 return crc;</span>
+<span class="lineNum">      77 </span><span class="lineCov">   23675077 :         if (tommy_likely(crc_x86)) {</span>
+<span class="lineNum">      78 </span><span class="lineCov">   23675077 :                 asm(&quot;crc32b %1, %0\n&quot; : &quot;+r&quot; (crc) : &quot;m&quot; (c));</span>
+<span class="lineNum">      79 </span><span class="lineCov">   23675077 :                 return crc;</span>
 <span class="lineNum">      80 </span>            :         }
 <span class="lineNum">      81 </span>            : #endif
 <span class="lineNum">      82 </span><span class="lineNoCov">          0 :         return CRC32C_0[(crc ^ c) &amp; 0xff] ^ (crc &gt;&gt; 8);</span>
@@ -147,29 +147,29 @@
 <span class="lineNum">      85 </span>            : /**
 <a name="86"><span class="lineNum">      86 </span>            :  * Compute the CRC-32 (Castagnoli) without the IV.</a>
 <span class="lineNum">      87 </span>            :  */
-<span class="lineNum">      88 </span><span class="lineCov">        337 : static inline uint32_t crc32c_gen_plain(uint32_t crc, const unsigned char* ptr, unsigned size)</span>
+<span class="lineNum">      88 </span><span class="lineCov">        353 : static inline uint32_t crc32c_gen_plain(uint32_t crc, const unsigned char* ptr, unsigned size)</span>
 <span class="lineNum">      89 </span>            : {
-<span class="lineNum">      90 </span><span class="lineCov">   20972361 :         while (size &gt;= 4) {</span>
-<span class="lineNum">      91 </span><span class="lineCov">   20971687 :                 crc ^= ptr[0] | (uint32_t)ptr[1] &lt;&lt; 8 | (uint32_t)ptr[2] &lt;&lt; 16 | (uint32_t)ptr[3] &lt;&lt; 24;</span>
-<span class="lineNum">      92 </span><span class="lineCov">   20971687 :                 crc = CRC32C_3[crc &amp; 0xff] ^ CRC32C_2[(crc &gt;&gt; 8) &amp; 0xff] ^ CRC32C_1[(crc &gt;&gt; 16) &amp; 0xff] ^ CRC32C_0[crc &gt;&gt; 24];</span>
-<span class="lineNum">      93 </span><span class="lineCov">   20971687 :                 ptr += 4;</span>
-<span class="lineNum">      94 </span><span class="lineCov">   20971687 :                 size -= 4;</span>
+<span class="lineNum">      90 </span><span class="lineCov">   22020969 :         while (size &gt;= 4) {</span>
+<span class="lineNum">      91 </span><span class="lineCov">   22020263 :                 crc ^= ptr[0] | (uint32_t)ptr[1] &lt;&lt; 8 | (uint32_t)ptr[2] &lt;&lt; 16 | (uint32_t)ptr[3] &lt;&lt; 24;</span>
+<span class="lineNum">      92 </span><span class="lineCov">   22020263 :                 crc = CRC32C_3[crc &amp; 0xff] ^ CRC32C_2[(crc &gt;&gt; 8) &amp; 0xff] ^ CRC32C_1[(crc &gt;&gt; 16) &amp; 0xff] ^ CRC32C_0[crc &gt;&gt; 24];</span>
+<span class="lineNum">      93 </span><span class="lineCov">   22020263 :                 ptr += 4;</span>
+<span class="lineNum">      94 </span><span class="lineCov">   22020263 :                 size -= 4;</span>
 <span class="lineNum">      95 </span>            :         }
 <span class="lineNum">      96 </span>            : 
-<span class="lineNum">      97 </span><span class="lineCov">        683 :         while (size) {</span>
+<span class="lineNum">      97 </span><span class="lineCov">        715 :         while (size) {</span>
 <span class="lineNum">      98 </span><span class="lineCov">          9 :                 crc = CRC32C_0[(crc ^ *ptr) &amp; 0xff] ^ (crc &gt;&gt; 8);</span>
 <span class="lineNum">      99 </span><span class="lineCov">          9 :                 ++ptr;</span>
 <span class="lineNum">     100 </span><span class="lineCov">          9 :                 --size;</span>
 <span class="lineNum">     101 </span>            :         }
 <span class="lineNum">     102 </span>            : 
-<span class="lineNum">     103 </span><span class="lineCov">        337 :         return crc;</span>
+<span class="lineNum">     103 </span><span class="lineCov">        353 :         return crc;</span>
 <span class="lineNum">     104 </span>            : }
 <span class="lineNum">     105 </span>            : 
 <span class="lineNum">     106 </span>            : /**
 <span class="lineNum">     107 </span>            :  * Compute the CRC-32 (Castagnoli) without the IV.
 <a name="108"><span class="lineNum">     108 </span>            :  */</a>
 <span class="lineNum">     109 </span>            : #if HAVE_SSE42
-<span class="lineNum">     110 </span><span class="lineCov">  131430214 : static inline uint32_t crc32c_x86_plain(uint32_t crc, const unsigned char* ptr, unsigned size)</span>
+<span class="lineNum">     110 </span><span class="lineCov">  131602718 : static inline uint32_t crc32c_x86_plain(uint32_t crc, const unsigned char* ptr, unsigned size)</span>
 <span class="lineNum">     111 </span>            : {
 <span class="lineNum">     112 </span>            : #ifdef CONFIG_X86_64
 <span class="lineNum">     113 </span>            :         uint64_t crc64 = crc;
@@ -180,30 +180,30 @@
 <span class="lineNum">     118 </span>            :         }
 <span class="lineNum">     119 </span>            :         crc = crc64;
 <span class="lineNum">     120 </span>            : #else
-<span class="lineNum">     121 </span><span class="lineCov">  972142050 :         while (size &gt;= 4) {</span>
-<span class="lineNum">     122 </span><span class="lineCov">  709281622 :                 asm(&quot;crc32l %1, %0\n&quot; : &quot;+r&quot; (crc) : &quot;m&quot; (*(const uint32_t*)ptr));</span>
-<span class="lineNum">     123 </span><span class="lineCov">  709281622 :                 ptr += 4;</span>
-<span class="lineNum">     124 </span><span class="lineCov">  709281622 :                 size -= 4;</span>
+<span class="lineNum">     121 </span><span class="lineCov">  969717854 :         while (size &gt;= 4) {</span>
+<span class="lineNum">     122 </span><span class="lineCov">  706512418 :                 asm(&quot;crc32l %1, %0\n&quot; : &quot;+r&quot; (crc) : &quot;m&quot; (*(const uint32_t*)ptr));</span>
+<span class="lineNum">     123 </span><span class="lineCov">  706512418 :                 ptr += 4;</span>
+<span class="lineNum">     124 </span><span class="lineCov">  706512418 :                 size -= 4;</span>
 <span class="lineNum">     125 </span>            :         }
 <span class="lineNum">     126 </span>            : #endif
-<span class="lineNum">     127 </span><span class="lineCov">  382290808 :         while (size) {</span>
-<span class="lineNum">     128 </span><span class="lineCov">  119430380 :                 asm(&quot;crc32b %1, %0\n&quot; : &quot;+r&quot; (crc) : &quot;m&quot; (*ptr));</span>
-<span class="lineNum">     129 </span><span class="lineCov">  119430380 :                 ++ptr;</span>
-<span class="lineNum">     130 </span><span class="lineCov">  119430380 :                 --size;</span>
+<span class="lineNum">     127 </span><span class="lineCov">  382941674 :         while (size) {</span>
+<span class="lineNum">     128 </span><span class="lineCov">  119736238 :                 asm(&quot;crc32b %1, %0\n&quot; : &quot;+r&quot; (crc) : &quot;m&quot; (*ptr));</span>
+<span class="lineNum">     129 </span><span class="lineCov">  119736238 :                 ++ptr;</span>
+<span class="lineNum">     130 </span><span class="lineCov">  119736238 :                 --size;</span>
 <span class="lineNum">     131 </span>            :         }
 <span class="lineNum">     132 </span>            : 
-<span class="lineNum">     133 </span><span class="lineCov">  131430214 :         return crc;</span>
+<span class="lineNum">     133 </span><span class="lineCov">  131602718 :         return crc;</span>
 <span class="lineNum">     134 </span>            : }
 <span class="lineNum">     135 </span>            : #endif
 <span class="lineNum">     136 </span>            : 
 <span class="lineNum">     137 </span>            : /**
 <a name="138"><span class="lineNum">     138 </span>            :  * Compute CRC-32 (Castagnoli) without the IV.</a>
 <span class="lineNum">     139 </span>            :  */
-<span class="lineNum">     140 </span><span class="lineCov">  130044002 : static inline uint32_t crc32c_plain(uint32_t crc, const unsigned char* ptr, unsigned size)</span>
+<span class="lineNum">     140 </span><span class="lineCov">  128046334 : static inline uint32_t crc32c_plain(uint32_t crc, const unsigned char* ptr, unsigned size)</span>
 <span class="lineNum">     141 </span>            : {
 <span class="lineNum">     142 </span>            : #if HAVE_SSE42
-<span class="lineNum">     143 </span><span class="lineCov">  130044002 :         if (tommy_likely(crc_x86)) {</span>
-<span class="lineNum">     144 </span><span class="lineCov">  130044002 :                 return crc32c_x86_plain(crc, ptr, size);</span>
+<span class="lineNum">     143 </span><span class="lineCov">  128046334 :         if (tommy_likely(crc_x86)) {</span>
+<span class="lineNum">     144 </span><span class="lineCov">  128046334 :                 return crc32c_x86_plain(crc, ptr, size);</span>
 <span class="lineNum">     145 </span>            :         }
 <span class="lineNum">     146 </span>            : #endif
 <span class="lineNum">     147 </span><span class="lineNoCov">          0 :         return crc32c_gen_plain(crc, ptr, size);</span>

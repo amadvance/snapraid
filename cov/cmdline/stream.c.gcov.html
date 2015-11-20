@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-11-13</td>
+            <td class="headerValue">2015-11-20</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">28</td>
@@ -88,19 +88,19 @@
 <span class="lineNum">      26 </span>            : 
 <a name="27"><span class="lineNum">      27 </span>            : unsigned STREAM_SIZE = 1024 * 64;</a>
 <span class="lineNum">      28 </span>            : 
-<span class="lineNum">      29 </span><span class="lineCov">       1700 : STREAM* sopen_read(const char* file)</span>
+<span class="lineNum">      29 </span><span class="lineCov">       1701 : STREAM* sopen_read(const char* file)</span>
 <span class="lineNum">      30 </span>            : {
 <span class="lineNum">      31 </span>            : #if HAVE_POSIX_FADVISE
 <span class="lineNum">      32 </span>            :         int ret;
 <span class="lineNum">      33 </span>            : #endif
-<span class="lineNum">      34 </span><span class="lineCov">       1700 :         STREAM* s = malloc_nofail(sizeof(STREAM));</span>
+<span class="lineNum">      34 </span><span class="lineCov">       1701 :         STREAM* s = malloc_nofail(sizeof(STREAM));</span>
 <span class="lineNum">      35 </span>            : 
 <span class="lineNum">      36 </span><span class="lineCov">       1701 :         s-&gt;handle_size = 1;</span>
 <span class="lineNum">      37 </span><span class="lineCov">       1701 :         s-&gt;handle = malloc_nofail(sizeof(struct stream_handle));</span>
 <span class="lineNum">      38 </span>            : 
 <span class="lineNum">      39 </span><span class="lineCov">       1700 :         pathcpy(s-&gt;handle[0].path, sizeof(s-&gt;handle[0].path), file);</span>
 <span class="lineNum">      40 </span><span class="lineCov">       1701 :         s-&gt;handle[0].f = open(file, O_RDONLY | O_BINARY | O_SEQUENTIAL);</span>
-<span class="lineNum">      41 </span><span class="lineCov">       1701 :         if (s-&gt;handle[0].f == -1) {</span>
+<span class="lineNum">      41 </span><span class="lineCov">       1700 :         if (s-&gt;handle[0].f == -1) {</span>
 <span class="lineNum">      42 </span><span class="lineCov">         50 :                 free(s-&gt;handle);</span>
 <span class="lineNum">      43 </span><span class="lineCov">         50 :                 free(s);</span>
 <span class="lineNum">      44 </span><span class="lineCov">         50 :                 return 0;</span>
@@ -108,8 +108,8 @@
 <span class="lineNum">      46 </span>            : 
 <span class="lineNum">      47 </span>            : #if HAVE_POSIX_FADVISE
 <span class="lineNum">      48 </span>            :         /* advise sequential access */
-<span class="lineNum">      49 </span><span class="lineCov">       1651 :         ret = posix_fadvise(s-&gt;handle[0].f, 0, 0, POSIX_FADV_SEQUENTIAL);</span>
-<span class="lineNum">      50 </span><span class="lineCov">       1651 :         if (ret != 0) {</span>
+<span class="lineNum">      49 </span><span class="lineCov">       1650 :         ret = posix_fadvise(s-&gt;handle[0].f, 0, 0, POSIX_FADV_SEQUENTIAL);</span>
+<span class="lineNum">      50 </span><span class="lineCov">       1644 :         if (ret != 0) {</span>
 <span class="lineNum">      51 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">      52 </span>            :                 close(s-&gt;handle[0].f);
 <span class="lineNum">      53 </span>            :                 free(s-&gt;handle);
@@ -119,33 +119,33 @@
 <span class="lineNum">      57 </span>            :         }
 <span class="lineNum">      58 </span>            : #endif
 <span class="lineNum">      59 </span>            : 
-<span class="lineNum">      60 </span><span class="lineCov">       1651 :         s-&gt;buffer = malloc_nofail_test(STREAM_SIZE);</span>
-<span class="lineNum">      61 </span><span class="lineCov">       1651 :         s-&gt;pos = s-&gt;buffer;</span>
-<span class="lineNum">      62 </span><span class="lineCov">       1651 :         s-&gt;end = s-&gt;buffer;</span>
-<span class="lineNum">      63 </span><span class="lineCov">       1651 :         s-&gt;state = STREAM_STATE_READ;</span>
-<span class="lineNum">      64 </span><span class="lineCov">       1651 :         s-&gt;state_index = 0;</span>
-<span class="lineNum">      65 </span><span class="lineCov">       1651 :         s-&gt;offset = 0;</span>
-<span class="lineNum">      66 </span><span class="lineCov">       1651 :         s-&gt;offset_uncached = 0;</span>
-<span class="lineNum">      67 </span><span class="lineCov">       1651 :         s-&gt;crc = 0;</span>
-<span class="lineNum">      68 </span><span class="lineCov">       1651 :         s-&gt;crc_uncached = 0;</span>
-<span class="lineNum">      69 </span><span class="lineCov">       1651 :         s-&gt;crc_stream = CRC_IV;</span>
+<span class="lineNum">      60 </span><span class="lineCov">       1644 :         s-&gt;buffer = malloc_nofail_test(STREAM_SIZE);</span>
+<span class="lineNum">      61 </span><span class="lineCov">       1650 :         s-&gt;pos = s-&gt;buffer;</span>
+<span class="lineNum">      62 </span><span class="lineCov">       1650 :         s-&gt;end = s-&gt;buffer;</span>
+<span class="lineNum">      63 </span><span class="lineCov">       1650 :         s-&gt;state = STREAM_STATE_READ;</span>
+<span class="lineNum">      64 </span><span class="lineCov">       1650 :         s-&gt;state_index = 0;</span>
+<span class="lineNum">      65 </span><span class="lineCov">       1650 :         s-&gt;offset = 0;</span>
+<span class="lineNum">      66 </span><span class="lineCov">       1650 :         s-&gt;offset_uncached = 0;</span>
+<span class="lineNum">      67 </span><span class="lineCov">       1650 :         s-&gt;crc = 0;</span>
+<span class="lineNum">      68 </span><span class="lineCov">       1650 :         s-&gt;crc_uncached = 0;</span>
+<span class="lineNum">      69 </span><span class="lineCov">       1650 :         s-&gt;crc_stream = CRC_IV;</span>
 <span class="lineNum">      70 </span>            : 
-<span class="lineNum">      71 </span><span class="lineCov">       1651 :         return s;</span>
+<span class="lineNum">      71 </span><span class="lineCov">       1650 :         return s;</span>
 <a name="72"><span class="lineNum">      72 </span>            : }</a>
 <span class="lineNum">      73 </span>            : 
-<span class="lineNum">      74 </span><span class="lineCov">        929 : STREAM* sopen_multi_write(unsigned count)</span>
+<span class="lineNum">      74 </span><span class="lineCov">        928 : STREAM* sopen_multi_write(unsigned count)</span>
 <span class="lineNum">      75 </span>            : {
 <span class="lineNum">      76 </span>            :         unsigned i;
 <span class="lineNum">      77 </span>            : 
-<span class="lineNum">      78 </span><span class="lineCov">        929 :         STREAM* s = malloc_nofail(sizeof(STREAM));</span>
+<span class="lineNum">      78 </span><span class="lineCov">        928 :         STREAM* s = malloc_nofail(sizeof(STREAM));</span>
 <span class="lineNum">      79 </span>            : 
 <span class="lineNum">      80 </span><span class="lineCov">        929 :         s-&gt;handle_size = count;</span>
 <span class="lineNum">      81 </span><span class="lineCov">        929 :         s-&gt;handle = malloc_nofail(count * sizeof(struct stream_handle));</span>
 <span class="lineNum">      82 </span>            : 
-<span class="lineNum">      83 </span><span class="lineCov">       1970 :         for (i = 0; i &lt; count; ++i)</span>
-<span class="lineNum">      84 </span><span class="lineCov">       1041 :                 s-&gt;handle[i].f = -1;</span>
+<span class="lineNum">      83 </span><span class="lineCov">       1968 :         for (i = 0; i &lt; count; ++i)</span>
+<span class="lineNum">      84 </span><span class="lineCov">       1040 :                 s-&gt;handle[i].f = -1;</span>
 <span class="lineNum">      85 </span>            : 
-<span class="lineNum">      86 </span><span class="lineCov">        929 :         s-&gt;buffer = malloc_nofail_test(STREAM_SIZE);</span>
+<span class="lineNum">      86 </span><span class="lineCov">        928 :         s-&gt;buffer = malloc_nofail_test(STREAM_SIZE);</span>
 <span class="lineNum">      87 </span><span class="lineCov">        929 :         s-&gt;pos = s-&gt;buffer;</span>
 <span class="lineNum">      88 </span><span class="lineCov">        929 :         s-&gt;end = s-&gt;buffer + STREAM_SIZE;</span>
 <span class="lineNum">      89 </span><span class="lineCov">        929 :         s-&gt;state = STREAM_STATE_WRITE;</span>
@@ -203,21 +203,21 @@
 <span class="lineNum">     141 </span><span class="lineCov">        913 :         return s;</span>
 <a name="142"><span class="lineNum">     142 </span>            : }</a>
 <span class="lineNum">     143 </span>            : 
-<span class="lineNum">     144 </span><span class="lineCov">       2576 : int sclose(STREAM* s)</span>
+<span class="lineNum">     144 </span><span class="lineCov">       2575 : int sclose(STREAM* s)</span>
 <span class="lineNum">     145 </span>            : {
-<span class="lineNum">     146 </span><span class="lineCov">       2576 :         int fail = 0;</span>
+<span class="lineNum">     146 </span><span class="lineCov">       2575 :         int fail = 0;</span>
 <span class="lineNum">     147 </span>            :         unsigned i;
 <span class="lineNum">     148 </span>            : 
-<span class="lineNum">     149 </span><span class="lineCov">       2576 :         if (s-&gt;state == STREAM_STATE_WRITE) {</span>
-<span class="lineNum">     150 </span><span class="lineCov">        928 :                 if (sflush(s) != 0) {</span>
+<span class="lineNum">     149 </span><span class="lineCov">       2575 :         if (s-&gt;state == STREAM_STATE_WRITE) {</span>
+<span class="lineNum">     150 </span><span class="lineCov">        927 :                 if (sflush(s) != 0) {</span>
 <span class="lineNum">     151 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     152 </span>            :                         fail = 1;
 <span class="lineNum">     153 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     154 </span>            :                 }
 <span class="lineNum">     155 </span>            :         }
 <span class="lineNum">     156 </span>            : 
-<span class="lineNum">     157 </span><span class="lineCov">       5267 :         for (i = 0; i &lt; s-&gt;handle_size; ++i) {</span>
-<span class="lineNum">     158 </span><span class="lineCov">       2689 :                 if (close(s-&gt;handle[i].f) != 0) {</span>
+<span class="lineNum">     157 </span><span class="lineCov">       5266 :         for (i = 0; i &lt; s-&gt;handle_size; ++i) {</span>
+<span class="lineNum">     158 </span><span class="lineCov">       2688 :                 if (close(s-&gt;handle[i].f) != 0) {</span>
 <span class="lineNum">     159 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     160 </span>            :                         fail = 1;
 <span class="lineNum">     161 </span>            :                         /* LCOV_EXCL_STOP */
@@ -252,41 +252,41 @@
 <span class="lineNum">     190 </span>            :  * Fill the read stream buffer.
 <a name="191"><span class="lineNum">     191 </span>            :  * \return 0 if at least on char is read, or EOF on error.</a>
 <span class="lineNum">     192 </span>            :  */
-<span class="lineNum">     193 </span><span class="lineCov">     606448 : static int sfill(STREAM* s)</span>
+<span class="lineNum">     193 </span><span class="lineCov">     606496 : static int sfill(STREAM* s)</span>
 <span class="lineNum">     194 </span>            : {
 <span class="lineNum">     195 </span>            :         ssize_t ret;
 <span class="lineNum">     196 </span>            : 
-<span class="lineNum">     197 </span><span class="lineCov">     606448 :         if (s-&gt;state != STREAM_STATE_READ) {</span>
+<span class="lineNum">     197 </span><span class="lineCov">     606496 :         if (s-&gt;state != STREAM_STATE_READ) {</span>
 <span class="lineNum">     198 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     199 </span>            :                 return EOF;
 <span class="lineNum">     200 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     201 </span>            :         }
 <span class="lineNum">     202 </span>            : 
-<span class="lineNum">     203 </span><span class="lineCov">     605464 :         ret = read(s-&gt;handle[0].f, s-&gt;buffer, STREAM_SIZE);</span>
+<span class="lineNum">     203 </span><span class="lineCov">     605512 :         ret = read(s-&gt;handle[0].f, s-&gt;buffer, STREAM_SIZE);</span>
 <span class="lineNum">     204 </span>            : 
-<span class="lineNum">     205 </span><span class="lineCov">     605464 :         if (ret &lt; 0) {</span>
+<span class="lineNum">     205 </span><span class="lineCov">     605512 :         if (ret &lt; 0) {</span>
 <span class="lineNum">     206 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     207 </span>            :                 s-&gt;state = STREAM_STATE_ERROR;
 <span class="lineNum">     208 </span>            :                 return EOF;
 <span class="lineNum">     209 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     210 </span>            :         }
-<span class="lineNum">     211 </span><span class="lineCov">     605464 :         if (ret == 0) {</span>
+<span class="lineNum">     211 </span><span class="lineCov">     605512 :         if (ret == 0) {</span>
 <span class="lineNum">     212 </span><span class="lineCov">       1522 :                 s-&gt;state = STREAM_STATE_EOF;</span>
 <span class="lineNum">     213 </span><span class="lineCov">       1522 :                 return EOF;</span>
 <span class="lineNum">     214 </span>            :         }
 <span class="lineNum">     215 </span>            : 
 <span class="lineNum">     216 </span>            :         /* update the crc */
-<span class="lineNum">     217 </span><span class="lineCov">     603942 :         s-&gt;crc_uncached = s-&gt;crc;</span>
-<span class="lineNum">     218 </span><span class="lineCov">     603942 :         s-&gt;crc = crc32c(s-&gt;crc, s-&gt;buffer, ret);</span>
+<span class="lineNum">     217 </span><span class="lineCov">     603990 :         s-&gt;crc_uncached = s-&gt;crc;</span>
+<span class="lineNum">     218 </span><span class="lineCov">     603990 :         s-&gt;crc = crc32c(s-&gt;crc, s-&gt;buffer, ret);</span>
 <span class="lineNum">     219 </span>            : 
 <span class="lineNum">     220 </span>            :         /* update the offset */
-<span class="lineNum">     221 </span><span class="lineCov">     603942 :         s-&gt;offset_uncached = s-&gt;offset;</span>
-<span class="lineNum">     222 </span><span class="lineCov">     603942 :         s-&gt;offset += ret;</span>
+<span class="lineNum">     221 </span><span class="lineCov">     603990 :         s-&gt;offset_uncached = s-&gt;offset;</span>
+<span class="lineNum">     222 </span><span class="lineCov">     603990 :         s-&gt;offset += ret;</span>
 <span class="lineNum">     223 </span>            : 
-<span class="lineNum">     224 </span><span class="lineCov">     603942 :         s-&gt;pos = s-&gt;buffer;</span>
-<span class="lineNum">     225 </span><span class="lineCov">     603942 :         s-&gt;end = s-&gt;buffer + ret;</span>
+<span class="lineNum">     224 </span><span class="lineCov">     603990 :         s-&gt;pos = s-&gt;buffer;</span>
+<span class="lineNum">     225 </span><span class="lineCov">     603990 :         s-&gt;end = s-&gt;buffer + ret;</span>
 <span class="lineNum">     226 </span>            : 
-<span class="lineNum">     227 </span><span class="lineCov">     603942 :         return 0;</span>
+<span class="lineNum">     227 </span><span class="lineCov">     603990 :         return 0;</span>
 <a name="228"><span class="lineNum">     228 </span>            : }</a>
 <span class="lineNum">     229 </span>            : 
 <span class="lineNum">     230 </span><span class="lineCov">       1042 : int sdeplete(STREAM* s, unsigned char* last)</span>
@@ -299,19 +299,19 @@
 <span class="lineNum">     237 </span>            : 
 <span class="lineNum">     238 </span>            :         while (1) {
 <span class="lineNum">     239 </span>            :                 /* increase the position up to 4 bytes before the end */
-<span class="lineNum">     240 </span><span class="lineCov">     307868 :                 if (s-&gt;pos + 4 &lt;= s-&gt;end)</span>
-<span class="lineNum">     241 </span><span class="lineCov">     148091 :                         s-&gt;pos = s-&gt;end - 4;</span>
+<span class="lineNum">     240 </span><span class="lineCov">     307911 :                 if (s-&gt;pos + 4 &lt;= s-&gt;end)</span>
+<span class="lineNum">     241 </span><span class="lineCov">     148134 :                         s-&gt;pos = s-&gt;end - 4;</span>
 <span class="lineNum">     242 </span>            : 
 <span class="lineNum">     243 </span>            :                 /* insert the last 4 bytes */
-<span class="lineNum">     244 </span><span class="lineCov">    1467868 :                 while (s-&gt;pos &lt; s-&gt;end) {</span>
-<span class="lineNum">     245 </span><span class="lineCov">     852132 :                         last[0] = last[1];</span>
-<span class="lineNum">     246 </span><span class="lineCov">     852132 :                         last[1] = last[2];</span>
-<span class="lineNum">     247 </span><span class="lineCov">     852132 :                         last[2] = last[3];</span>
-<span class="lineNum">     248 </span><span class="lineCov">     852132 :                         last[3] = *s-&gt;pos++;</span>
+<span class="lineNum">     244 </span><span class="lineCov">    1468126 :                 while (s-&gt;pos &lt; s-&gt;end) {</span>
+<span class="lineNum">     245 </span><span class="lineCov">     852304 :                         last[0] = last[1];</span>
+<span class="lineNum">     246 </span><span class="lineCov">     852304 :                         last[1] = last[2];</span>
+<span class="lineNum">     247 </span><span class="lineCov">     852304 :                         last[2] = last[3];</span>
+<span class="lineNum">     248 </span><span class="lineCov">     852304 :                         last[3] = *s-&gt;pos++;</span>
 <span class="lineNum">     249 </span>            :                 }
 <span class="lineNum">     250 </span>            : 
 <span class="lineNum">     251 </span>            :                 /* fill again the buffer until the end of the file */
-<span class="lineNum">     252 </span><span class="lineCov">     307868 :                 if (sfill(s) != 0) {</span>
+<span class="lineNum">     252 </span><span class="lineCov">     307911 :                 if (sfill(s) != 0) {</span>
 <span class="lineNum">     253 </span>            :                         /* on error fail */
 <span class="lineNum">     254 </span><span class="lineCov">       1042 :                         if (serror(s)) {</span>
 <span class="lineNum">     255 </span>            :                                 /* LCOV_EXCL_START */
@@ -322,31 +322,31 @@
 <span class="lineNum">     260 </span>            :                         /* on EOF terminate */
 <span class="lineNum">     261 </span><span class="lineCov">       1042 :                         break;</span>
 <span class="lineNum">     262 </span>            :                 }
-<span class="lineNum">     263 </span><span class="lineCov">     306826 :         }</span>
+<span class="lineNum">     263 </span><span class="lineCov">     306869 :         }</span>
 <span class="lineNum">     264 </span>            : 
 <span class="lineNum">     265 </span><span class="lineCov">       1042 :         return 0;</span>
 <a name="266"><span class="lineNum">     266 </span>            : }</a>
 <span class="lineNum">     267 </span>            : 
-<span class="lineNum">     268 </span><span class="lineCov">      52551 : int sflush(STREAM* s)</span>
+<span class="lineNum">     268 </span><span class="lineCov">      52590 : int sflush(STREAM* s)</span>
 <span class="lineNum">     269 </span>            : {
 <span class="lineNum">     270 </span>            :         ssize_t ret;
 <span class="lineNum">     271 </span>            :         ssize_t size;
 <span class="lineNum">     272 </span>            :         unsigned i;
 <span class="lineNum">     273 </span>            : 
-<span class="lineNum">     274 </span><span class="lineCov">      52551 :         if (s-&gt;state != STREAM_STATE_WRITE) {</span>
+<span class="lineNum">     274 </span><span class="lineCov">      52590 :         if (s-&gt;state != STREAM_STATE_WRITE) {</span>
 <span class="lineNum">     275 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     276 </span>            :                 return EOF;
 <span class="lineNum">     277 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     278 </span>            :         }
 <span class="lineNum">     279 </span>            : 
-<span class="lineNum">     280 </span><span class="lineCov">      52551 :         size = s-&gt;pos - s-&gt;buffer;</span>
-<span class="lineNum">     281 </span><span class="lineCov">      52551 :         if (!size)</span>
-<span class="lineNum">     282 </span><span class="lineCov">        913 :                 return 0;</span>
+<span class="lineNum">     280 </span><span class="lineCov">      52590 :         size = s-&gt;pos - s-&gt;buffer;</span>
+<span class="lineNum">     281 </span><span class="lineCov">      52590 :         if (!size)</span>
+<span class="lineNum">     282 </span><span class="lineCov">        909 :                 return 0;</span>
 <span class="lineNum">     283 </span>            : 
-<span class="lineNum">     284 </span><span class="lineCov">     359365 :         for (i = 0; i &lt; s-&gt;handle_size; ++i) {</span>
-<span class="lineNum">     285 </span><span class="lineCov">     307726 :                 ret = write(s-&gt;handle[i].f, s-&gt;buffer, size);</span>
+<span class="lineNum">     284 </span><span class="lineCov">     359449 :         for (i = 0; i &lt; s-&gt;handle_size; ++i) {</span>
+<span class="lineNum">     285 </span><span class="lineCov">     307768 :                 ret = write(s-&gt;handle[i].f, s-&gt;buffer, size);</span>
 <span class="lineNum">     286 </span>            : 
-<span class="lineNum">     287 </span><span class="lineCov">     307727 :                 if (ret != size) {</span>
+<span class="lineNum">     287 </span><span class="lineCov">     307768 :                 if (ret != size) {</span>
 <span class="lineNum">     288 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     289 </span>            :                         s-&gt;state = STREAM_STATE_ERROR;
 <span class="lineNum">     290 </span>            :                         s-&gt;state_index = i;
@@ -362,16 +362,16 @@
 <span class="lineNum">     300 </span>            :          * to be able to detect memory errors on the buffer,
 <span class="lineNum">     301 </span>            :          * happening during the write.
 <span class="lineNum">     302 </span>            :          */
-<span class="lineNum">     303 </span><span class="lineCov">      51639 :         s-&gt;crc = crc32c(s-&gt;crc, s-&gt;buffer, size);</span>
-<span class="lineNum">     304 </span><span class="lineCov">      51639 :         s-&gt;crc_uncached = s-&gt;crc;</span>
+<span class="lineNum">     303 </span><span class="lineCov">      51681 :         s-&gt;crc = crc32c(s-&gt;crc, s-&gt;buffer, size);</span>
+<span class="lineNum">     304 </span><span class="lineCov">      51680 :         s-&gt;crc_uncached = s-&gt;crc;</span>
 <span class="lineNum">     305 </span>            : 
 <span class="lineNum">     306 </span>            :         /* update the offset */
-<span class="lineNum">     307 </span><span class="lineCov">      51639 :         s-&gt;offset += size;</span>
-<span class="lineNum">     308 </span><span class="lineCov">      51639 :         s-&gt;offset_uncached = s-&gt;offset;</span>
+<span class="lineNum">     307 </span><span class="lineCov">      51680 :         s-&gt;offset += size;</span>
+<span class="lineNum">     308 </span><span class="lineCov">      51680 :         s-&gt;offset_uncached = s-&gt;offset;</span>
 <span class="lineNum">     309 </span>            : 
-<span class="lineNum">     310 </span><span class="lineCov">      51639 :         s-&gt;pos = s-&gt;buffer;</span>
+<span class="lineNum">     310 </span><span class="lineCov">      51680 :         s-&gt;pos = s-&gt;buffer;</span>
 <span class="lineNum">     311 </span>            : 
-<span class="lineNum">     312 </span><span class="lineCov">      51639 :         return 0;</span>
+<span class="lineNum">     312 </span><span class="lineCov">      51680 :         return 0;</span>
 <a name="313"><span class="lineNum">     313 </span>            : }</a>
 <span class="lineNum">     314 </span>            : 
 <span class="lineNum">     315 </span><span class="lineCov">          1 : int64_t stell(STREAM* s)</span>
@@ -389,12 +389,12 @@
 <span class="lineNum">     327 </span><span class="lineCov">        929 :         return s-&gt;crc_stream ^ CRC_IV;</span>
 <a name="328"><span class="lineNum">     328 </span>            : }</a>
 <span class="lineNum">     329 </span>            : 
-<span class="lineNum">     330 </span><span class="lineCov">     298580 : int sgetc_uncached(STREAM* s)</span>
+<span class="lineNum">     330 </span><span class="lineCov">     298585 : int sgetc_uncached(STREAM* s)</span>
 <span class="lineNum">     331 </span>            : {
 <span class="lineNum">     332 </span>            :         /* if at the end of the buffer, fill it */
-<span class="lineNum">     333 </span><span class="lineCov">     298580 :         if (s-&gt;pos == s-&gt;end &amp;&amp; sfill(s) != 0)</span>
+<span class="lineNum">     333 </span><span class="lineCov">     298585 :         if (s-&gt;pos == s-&gt;end &amp;&amp; sfill(s) != 0)</span>
 <span class="lineNum">     334 </span><span class="lineCov">       1464 :                 return EOF;</span>
-<span class="lineNum">     335 </span><span class="lineCov">     297116 :         return *s-&gt;pos++;</span>
+<span class="lineNum">     335 </span><span class="lineCov">     297121 :         return *s-&gt;pos++;</span>
 <a name="336"><span class="lineNum">     336 </span>            : }</a>
 <span class="lineNum">     337 </span>            : 
 <span class="lineNum">     338 </span><span class="lineCov">       7623 : int sgettok(STREAM* f, char* str, int size)</span>
@@ -434,35 +434,35 @@
 <span class="lineNum">     372 </span><span class="lineCov">       7623 :         return i - str;</span>
 <a name="373"><span class="lineNum">     373 </span>            : }</a>
 <span class="lineNum">     374 </span>            : 
-<span class="lineNum">     375 </span><span class="lineCov">   12343180 : int sread(STREAM* f, void* void_data, unsigned size)</span>
+<span class="lineNum">     375 </span><span class="lineCov">   12342909 : int sread(STREAM* f, void* void_data, unsigned size)</span>
 <span class="lineNum">     376 </span>            : {
-<span class="lineNum">     377 </span><span class="lineCov">   12343180 :         unsigned char* data = void_data;</span>
+<span class="lineNum">     377 </span><span class="lineCov">   12342909 :         unsigned char* data = void_data;</span>
 <span class="lineNum">     378 </span>            : 
 <span class="lineNum">     379 </span>            :         /* if there is enough space in memory */
-<span class="lineNum">     380 </span><span class="lineCov">   12343180 :         if (sptrlookup(f, size)) {</span>
+<span class="lineNum">     380 </span><span class="lineCov">   12342909 :         if (sptrlookup(f, size)) {</span>
 <span class="lineNum">     381 </span>            :                 /* optimized version with all the data in memory */
-<span class="lineNum">     382 </span><span class="lineCov">   12317138 :                 unsigned char* pos = sptrget(f);</span>
+<span class="lineNum">     382 </span><span class="lineCov">   12316849 :                 unsigned char* pos = sptrget(f);</span>
 <span class="lineNum">     383 </span>            : 
 <span class="lineNum">     384 </span>            :                 /* copy it */
-<span class="lineNum">     385 </span><span class="lineCov">  209705167 :                 while (size--)</span>
-<span class="lineNum">     386 </span><span class="lineCov">  185070891 :                         *data++ = *pos++;</span>
+<span class="lineNum">     385 </span><span class="lineCov">  209697747 :                 while (size--)</span>
+<span class="lineNum">     386 </span><span class="lineCov">  185064049 :                         *data++ = *pos++;</span>
 <span class="lineNum">     387 </span>            : 
-<span class="lineNum">     388 </span><span class="lineCov">   12317138 :                 sptrset(f, pos);</span>
+<span class="lineNum">     388 </span><span class="lineCov">   12316849 :                 sptrset(f, pos);</span>
 <span class="lineNum">     389 </span>            :         } else {
 <span class="lineNum">     390 </span>            :                 /* standard version using sgetc() */
-<span class="lineNum">     391 </span><span class="lineCov">    1373473 :                 while (size--) {</span>
-<span class="lineNum">     392 </span><span class="lineCov">    1321389 :                         int c = sgetc(f);</span>
-<span class="lineNum">     393 </span><span class="lineCov">    1321389 :                         if (c == EOF) {</span>
+<span class="lineNum">     391 </span><span class="lineCov">    1373859 :                 while (size--) {</span>
+<span class="lineNum">     392 </span><span class="lineCov">    1321739 :                         int c = sgetc(f);</span>
+<span class="lineNum">     393 </span><span class="lineCov">    1321739 :                         if (c == EOF) {</span>
 <span class="lineNum">     394 </span>            :                                 /* LCOV_EXCL_START */
 <span class="lineNum">     395 </span>            :                                 return -1;
 <span class="lineNum">     396 </span>            :                                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     397 </span>            :                         }
 <span class="lineNum">     398 </span>            : 
-<span class="lineNum">     399 </span><span class="lineCov">    1321389 :                         *data++ = c;</span>
+<span class="lineNum">     399 </span><span class="lineCov">    1321739 :                         *data++ = c;</span>
 <span class="lineNum">     400 </span>            :                 }
 <span class="lineNum">     401 </span>            :         }
 <span class="lineNum">     402 </span>            : 
-<span class="lineNum">     403 </span><span class="lineCov">   12343180 :         return 0;</span>
+<span class="lineNum">     403 </span><span class="lineCov">   12342909 :         return 0;</span>
 <a name="404"><span class="lineNum">     404 </span>            : }</a>
 <span class="lineNum">     405 </span>            : 
 <span class="lineNum">     406 </span><span class="lineCov">       5069 : int sgetline(STREAM* f, char* str, int size)</span>
@@ -575,76 +575,76 @@
 <span class="lineNum">     513 </span>            :         }
 <a name="514"><span class="lineNum">     514 </span>            : }</a>
 <span class="lineNum">     515 </span>            : 
-<span class="lineNum">     516 </span><span class="lineCov">   18698507 : int sgetb32(STREAM* f, uint32_t* value)</span>
+<span class="lineNum">     516 </span><span class="lineCov">   18710390 : int sgetb32(STREAM* f, uint32_t* value)</span>
 <span class="lineNum">     517 </span>            : {
 <span class="lineNum">     518 </span>            :         uint32_t v;
 <span class="lineNum">     519 </span>            :         unsigned char b;
 <span class="lineNum">     520 </span>            :         unsigned char s;
 <span class="lineNum">     521 </span>            :         int c;
 <span class="lineNum">     522 </span>            : 
-<span class="lineNum">     523 </span><span class="lineCov">   18698507 :         v = 0;</span>
-<span class="lineNum">     524 </span><span class="lineCov">   18698507 :         s = 0;</span>
+<span class="lineNum">     523 </span><span class="lineCov">   18710390 :         v = 0;</span>
+<span class="lineNum">     524 </span><span class="lineCov">   18710390 :         s = 0;</span>
 <span class="lineNum">     525 </span>            : loop:
-<span class="lineNum">     526 </span><span class="lineCov">   35035464 :         c = sgetc(f);</span>
-<span class="lineNum">     527 </span><span class="lineCov">   35035464 :         if (c == EOF) {</span>
+<span class="lineNum">     526 </span><span class="lineCov">   35314985 :         c = sgetc(f);</span>
+<span class="lineNum">     527 </span><span class="lineCov">   35314985 :         if (c == EOF) {</span>
 <span class="lineNum">     528 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     529 </span>            :                 return -1;
 <span class="lineNum">     530 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     531 </span>            :         }
 <span class="lineNum">     532 </span>            : 
-<span class="lineNum">     533 </span><span class="lineCov">   35035464 :         b = (unsigned char)c;</span>
-<span class="lineNum">     534 </span><span class="lineCov">   35035464 :         if ((b &amp; 0x80) == 0) {</span>
-<span class="lineNum">     535 </span><span class="lineCov">   16336957 :                 v |= (uint32_t)b &lt;&lt; s;</span>
-<span class="lineNum">     536 </span><span class="lineCov">   16336957 :                 s += 7;</span>
-<span class="lineNum">     537 </span><span class="lineCov">   16336957 :                 if (s &gt;= 32) {</span>
+<span class="lineNum">     533 </span><span class="lineCov">   35314985 :         b = (unsigned char)c;</span>
+<span class="lineNum">     534 </span><span class="lineCov">   35314985 :         if ((b &amp; 0x80) == 0) {</span>
+<span class="lineNum">     535 </span><span class="lineCov">   16604595 :                 v |= (uint32_t)b &lt;&lt; s;</span>
+<span class="lineNum">     536 </span><span class="lineCov">   16604595 :                 s += 7;</span>
+<span class="lineNum">     537 </span><span class="lineCov">   16604595 :                 if (s &gt;= 32) {</span>
 <span class="lineNum">     538 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     539 </span>            :                         return -1;
 <span class="lineNum">     540 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     541 </span>            :                 }
-<span class="lineNum">     542 </span><span class="lineCov">   16336957 :                 goto loop;</span>
+<span class="lineNum">     542 </span><span class="lineCov">   16604595 :                 goto loop;</span>
 <span class="lineNum">     543 </span>            :         }
 <span class="lineNum">     544 </span>            : 
-<span class="lineNum">     545 </span><span class="lineCov">   18698507 :         v |= (uint32_t)(b &amp; 0x7f) &lt;&lt; s;</span>
+<span class="lineNum">     545 </span><span class="lineCov">   18710390 :         v |= (uint32_t)(b &amp; 0x7f) &lt;&lt; s;</span>
 <span class="lineNum">     546 </span>            : 
-<span class="lineNum">     547 </span><span class="lineCov">   18698507 :         *value = v;</span>
+<span class="lineNum">     547 </span><span class="lineCov">   18710390 :         *value = v;</span>
 <span class="lineNum">     548 </span>            : 
-<span class="lineNum">     549 </span><span class="lineCov">   18698507 :         return 0;</span>
+<span class="lineNum">     549 </span><span class="lineCov">   18710390 :         return 0;</span>
 <a name="550"><span class="lineNum">     550 </span>            : }</a>
 <span class="lineNum">     551 </span>            : 
-<span class="lineNum">     552 </span><span class="lineCov">   10465700 : int sgetb64(STREAM* f, uint64_t* value)</span>
+<span class="lineNum">     552 </span><span class="lineCov">   10465937 : int sgetb64(STREAM* f, uint64_t* value)</span>
 <span class="lineNum">     553 </span>            : {
 <span class="lineNum">     554 </span>            :         uint64_t v;
 <span class="lineNum">     555 </span>            :         unsigned char b;
 <span class="lineNum">     556 </span>            :         unsigned char s;
 <span class="lineNum">     557 </span>            :         int c;
 <span class="lineNum">     558 </span>            : 
-<span class="lineNum">     559 </span><span class="lineCov">   10465700 :         v = 0;</span>
-<span class="lineNum">     560 </span><span class="lineCov">   10465700 :         s = 0;</span>
+<span class="lineNum">     559 </span><span class="lineCov">   10465937 :         v = 0;</span>
+<span class="lineNum">     560 </span><span class="lineCov">   10465937 :         s = 0;</span>
 <span class="lineNum">     561 </span>            : loop:
-<span class="lineNum">     562 </span><span class="lineCov">   38270922 :         c = sgetc(f);</span>
-<span class="lineNum">     563 </span><span class="lineCov">   38270922 :         if (c == EOF) {</span>
+<span class="lineNum">     562 </span><span class="lineCov">   38271575 :         c = sgetc(f);</span>
+<span class="lineNum">     563 </span><span class="lineCov">   38271575 :         if (c == EOF) {</span>
 <span class="lineNum">     564 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     565 </span>            :                 return -1;
 <span class="lineNum">     566 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     567 </span>            :         }
 <span class="lineNum">     568 </span>            : 
-<span class="lineNum">     569 </span><span class="lineCov">   38270922 :         b = (unsigned char)c;</span>
-<span class="lineNum">     570 </span><span class="lineCov">   38270922 :         if ((b &amp; 0x80) == 0) {</span>
-<span class="lineNum">     571 </span><span class="lineCov">   27805222 :                 v |= (uint64_t)b &lt;&lt; s;</span>
-<span class="lineNum">     572 </span><span class="lineCov">   27805222 :                 s += 7;</span>
-<span class="lineNum">     573 </span><span class="lineCov">   27805222 :                 if (s &gt;= 64) {</span>
+<span class="lineNum">     569 </span><span class="lineCov">   38271575 :         b = (unsigned char)c;</span>
+<span class="lineNum">     570 </span><span class="lineCov">   38271575 :         if ((b &amp; 0x80) == 0) {</span>
+<span class="lineNum">     571 </span><span class="lineCov">   27805638 :                 v |= (uint64_t)b &lt;&lt; s;</span>
+<span class="lineNum">     572 </span><span class="lineCov">   27805638 :                 s += 7;</span>
+<span class="lineNum">     573 </span><span class="lineCov">   27805638 :                 if (s &gt;= 64) {</span>
 <span class="lineNum">     574 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     575 </span>            :                         return -1;
 <span class="lineNum">     576 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     577 </span>            :                 }
-<span class="lineNum">     578 </span><span class="lineCov">   27805222 :                 goto loop;</span>
+<span class="lineNum">     578 </span><span class="lineCov">   27805638 :                 goto loop;</span>
 <span class="lineNum">     579 </span>            :         }
 <span class="lineNum">     580 </span>            : 
-<span class="lineNum">     581 </span><span class="lineCov">   10465700 :         v |= (uint64_t)(b &amp; 0x7f) &lt;&lt; s;</span>
+<span class="lineNum">     581 </span><span class="lineCov">   10465937 :         v |= (uint64_t)(b &amp; 0x7f) &lt;&lt; s;</span>
 <span class="lineNum">     582 </span>            : 
-<span class="lineNum">     583 </span><span class="lineCov">   10465700 :         *value = v;</span>
+<span class="lineNum">     583 </span><span class="lineCov">   10465937 :         *value = v;</span>
 <span class="lineNum">     584 </span>            : 
-<span class="lineNum">     585 </span><span class="lineCov">   10465700 :         return 0;</span>
+<span class="lineNum">     585 </span><span class="lineCov">   10465937 :         return 0;</span>
 <a name="586"><span class="lineNum">     586 </span>            : }</a>
 <span class="lineNum">     587 </span>            : 
 <span class="lineNum">     588 </span><span class="lineCov">        362 : int sgetble32(STREAM* f, uint32_t* value)</span>
@@ -662,35 +662,35 @@
 <span class="lineNum">     600 </span><span class="lineCov">        362 :         return 0;</span>
 <a name="601"><span class="lineNum">     601 </span>            : }</a>
 <span class="lineNum">     602 </span>            : 
-<span class="lineNum">     603 </span><span class="lineCov">    3732711 : int sgetbs(STREAM* f, char* str, int size)</span>
+<span class="lineNum">     603 </span><span class="lineCov">    3732790 : int sgetbs(STREAM* f, char* str, int size)</span>
 <span class="lineNum">     604 </span>            : {
 <span class="lineNum">     605 </span>            :         uint32_t len;
 <span class="lineNum">     606 </span>            : 
-<span class="lineNum">     607 </span><span class="lineCov">    3732711 :         if (sgetb32(f, &amp;len) &lt; 0) {</span>
+<span class="lineNum">     607 </span><span class="lineCov">    3732790 :         if (sgetb32(f, &amp;len) &lt; 0) {</span>
 <span class="lineNum">     608 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     609 </span>            :                 return -1;
 <span class="lineNum">     610 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     611 </span>            :         }
 <span class="lineNum">     612 </span>            : 
-<span class="lineNum">     613 </span><span class="lineCov">    3732711 :         if (len + 1 &gt; (uint32_t)size) {</span>
+<span class="lineNum">     613 </span><span class="lineCov">    3732790 :         if (len + 1 &gt; (uint32_t)size) {</span>
 <span class="lineNum">     614 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     615 </span>            :                 return -1;
 <span class="lineNum">     616 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     617 </span>            :         }
 <span class="lineNum">     618 </span>            : 
-<span class="lineNum">     619 </span><span class="lineCov">    3732711 :         str[len] = 0;</span>
+<span class="lineNum">     619 </span><span class="lineCov">    3732790 :         str[len] = 0;</span>
 <span class="lineNum">     620 </span>            : 
-<span class="lineNum">     621 </span><span class="lineCov">    3732711 :         return sread(f, str, (int)len);</span>
+<span class="lineNum">     621 </span><span class="lineCov">    3732790 :         return sread(f, str, (int)len);</span>
 <a name="622"><span class="lineNum">     622 </span>            : }</a>
 <span class="lineNum">     623 </span>            : 
-<span class="lineNum">     624 </span><span class="lineCov">  130046569 : int swrite(const void* void_data, unsigned size, STREAM* f)</span>
+<span class="lineNum">     624 </span><span class="lineCov">  129597634 : int swrite(const void* void_data, unsigned size, STREAM* f)</span>
 <span class="lineNum">     625 </span>            : {
-<span class="lineNum">     626 </span><span class="lineCov">  130046569 :         const unsigned char* data = void_data;</span>
+<span class="lineNum">     626 </span><span class="lineCov">  129597634 :         const unsigned char* data = void_data;</span>
 <span class="lineNum">     627 </span>            : 
 <span class="lineNum">     628 </span>            :         /* if there is enough space in memory */
-<span class="lineNum">     629 </span><span class="lineCov">  130046569 :         if (sptrlookup(f, size)) {</span>
+<span class="lineNum">     629 </span><span class="lineCov">  129597634 :         if (sptrlookup(f, size)) {</span>
 <span class="lineNum">     630 </span>            :                 /* optimized version with all the data in memory */
-<span class="lineNum">     631 </span><span class="lineCov">  127834006 :                 unsigned char* pos = sptrget(f);</span>
+<span class="lineNum">     631 </span><span class="lineCov">  128366511 :                 unsigned char* pos = sptrget(f);</span>
 <span class="lineNum">     632 </span>            : 
 <span class="lineNum">     633 </span>            :                 /**
 <span class="lineNum">     634 </span>            :                  * Update the crc *before* writing the data in the buffer
@@ -699,17 +699,17 @@
 <span class="lineNum">     637 </span>            :                  * to be able to detect memory errors on the buffer,
 <span class="lineNum">     638 </span>            :                  * happening before we write it on the file.
 <span class="lineNum">     639 </span>            :                  */
-<span class="lineNum">     640 </span><span class="lineCov">  129791160 :                 f-&gt;crc_stream = crc32c_plain(f-&gt;crc_stream, data, size);</span>
+<span class="lineNum">     640 </span><span class="lineCov">  127220529 :                 f-&gt;crc_stream = crc32c_plain(f-&gt;crc_stream, data, size);</span>
 <span class="lineNum">     641 </span>            : 
 <span class="lineNum">     642 </span>            :                 /* copy it */
-<span class="lineNum">     643 </span><span class="lineCov"> 1011408978 :                 while (size--)</span>
-<span class="lineNum">     644 </span><span class="lineCov">  752691158 :                         *pos++ = *data++;</span>
+<span class="lineNum">     643 </span><span class="lineCov">  984312399 :                 while (size--)</span>
+<span class="lineNum">     644 </span><span class="lineCov">  729779043 :                         *pos++ = *data++;</span>
 <span class="lineNum">     645 </span>            : 
-<span class="lineNum">     646 </span><span class="lineCov">  129358910 :                 sptrset(f, pos);</span>
+<span class="lineNum">     646 </span><span class="lineCov">  127266678 :                 sptrset(f, pos);</span>
 <span class="lineNum">     647 </span>            :         } else {
 <span class="lineNum">     648 </span>            :                 /* standard version using sputc() */
-<span class="lineNum">     649 </span><span class="lineCov">     355086 :                 while (size--) {</span>
-<span class="lineNum">     650 </span><span class="lineCov">     321067 :                         if (sputc(*data++, f) != 0) {</span>
+<span class="lineNum">     649 </span><span class="lineCov">     352837 :                 while (size--) {</span>
+<span class="lineNum">     650 </span><span class="lineCov">     318158 :                         if (sputc(*data++, f) != 0) {</span>
 <span class="lineNum">     651 </span>            :                                 /* LCOV_EXCL_START */
 <span class="lineNum">     652 </span>            :                                 return -1;
 <span class="lineNum">     653 </span>            :                                 /* LCOV_EXCL_STOP */
@@ -717,49 +717,49 @@
 <span class="lineNum">     655 </span>            :                 }
 <span class="lineNum">     656 </span>            :         }
 <span class="lineNum">     657 </span>            : 
-<span class="lineNum">     658 </span><span class="lineCov">  131892349 :         return 0;</span>
+<span class="lineNum">     658 </span><span class="lineCov">  129224881 :         return 0;</span>
 <a name="659"><span class="lineNum">     659 </span>            : }</a>
 <span class="lineNum">     660 </span>            : 
-<span class="lineNum">     661 </span><span class="lineCov">   62124806 : int sputb32(uint32_t value, STREAM* s)</span>
+<span class="lineNum">     661 </span><span class="lineCov">   62339359 : int sputb32(uint32_t value, STREAM* s)</span>
 <span class="lineNum">     662 </span>            : {
 <span class="lineNum">     663 </span>            :         unsigned char b;
 <span class="lineNum">     664 </span>            :         unsigned char buf[16];
 <span class="lineNum">     665 </span>            :         unsigned i;
 <span class="lineNum">     666 </span>            : 
-<span class="lineNum">     667 </span><span class="lineCov">   62124806 :         i = 0;</span>
+<span class="lineNum">     667 </span><span class="lineCov">   62339359 :         i = 0;</span>
 <span class="lineNum">     668 </span>            : loop:
-<span class="lineNum">     669 </span><span class="lineCov">  115908253 :         b = value &amp; 0x7f;</span>
-<span class="lineNum">     670 </span><span class="lineCov">  115908253 :         value &gt;&gt;= 7;</span>
+<span class="lineNum">     669 </span><span class="lineCov">  117525500 :         b = value &amp; 0x7f;</span>
+<span class="lineNum">     670 </span><span class="lineCov">  117525500 :         value &gt;&gt;= 7;</span>
 <span class="lineNum">     671 </span>            : 
-<span class="lineNum">     672 </span><span class="lineCov">  115908253 :         if (value) {</span>
-<span class="lineNum">     673 </span><span class="lineCov">   53783447 :                 buf[i++] = b;</span>
-<span class="lineNum">     674 </span><span class="lineCov">   53783447 :                 goto loop;</span>
+<span class="lineNum">     672 </span><span class="lineCov">  117525500 :         if (value) {</span>
+<span class="lineNum">     673 </span><span class="lineCov">   55186141 :                 buf[i++] = b;</span>
+<span class="lineNum">     674 </span><span class="lineCov">   55186141 :                 goto loop;</span>
 <span class="lineNum">     675 </span>            :         }
 <span class="lineNum">     676 </span>            : 
-<span class="lineNum">     677 </span><span class="lineCov">   62124806 :         buf[i++] = b | 0x80;</span>
+<span class="lineNum">     677 </span><span class="lineCov">   62339359 :         buf[i++] = b | 0x80;</span>
 <span class="lineNum">     678 </span>            : 
-<span class="lineNum">     679 </span><span class="lineCov">   62124806 :         return swrite(buf, i, s);</span>
+<span class="lineNum">     679 </span><span class="lineCov">   62339359 :         return swrite(buf, i, s);</span>
 <a name="680"><span class="lineNum">     680 </span>            : }</a>
 <span class="lineNum">     681 </span>            : 
-<span class="lineNum">     682 </span><span class="lineCov">   34119322 : int sputb64(uint64_t value, STREAM* s)</span>
+<span class="lineNum">     682 </span><span class="lineCov">   34173479 : int sputb64(uint64_t value, STREAM* s)</span>
 <span class="lineNum">     683 </span>            : {
 <span class="lineNum">     684 </span>            :         unsigned char b;
 <span class="lineNum">     685 </span>            :         unsigned char buf[16];
 <span class="lineNum">     686 </span>            :         unsigned i;
 <span class="lineNum">     687 </span>            : 
-<span class="lineNum">     688 </span><span class="lineCov">   34119322 :         i = 0;</span>
+<span class="lineNum">     688 </span><span class="lineCov">   34173479 :         i = 0;</span>
 <span class="lineNum">     689 </span>            : loop:
-<span class="lineNum">     690 </span><span class="lineCov">  124052999 :         b = value &amp; 0x7f;</span>
-<span class="lineNum">     691 </span><span class="lineCov">  124052999 :         value &gt;&gt;= 7;</span>
+<span class="lineNum">     690 </span><span class="lineCov">  124705929 :         b = value &amp; 0x7f;</span>
+<span class="lineNum">     691 </span><span class="lineCov">  124705929 :         value &gt;&gt;= 7;</span>
 <span class="lineNum">     692 </span>            : 
-<span class="lineNum">     693 </span><span class="lineCov">  124052999 :         if (value) {</span>
-<span class="lineNum">     694 </span><span class="lineCov">   89933677 :                 buf[i++] = b;</span>
-<span class="lineNum">     695 </span><span class="lineCov">   89933677 :                 goto loop;</span>
+<span class="lineNum">     693 </span><span class="lineCov">  124705929 :         if (value) {</span>
+<span class="lineNum">     694 </span><span class="lineCov">   90532450 :                 buf[i++] = b;</span>
+<span class="lineNum">     695 </span><span class="lineCov">   90532450 :                 goto loop;</span>
 <span class="lineNum">     696 </span>            :         }
 <span class="lineNum">     697 </span>            : 
-<span class="lineNum">     698 </span><span class="lineCov">   34119322 :         buf[i++] = b | 0x80;</span>
+<span class="lineNum">     698 </span><span class="lineCov">   34173479 :         buf[i++] = b | 0x80;</span>
 <span class="lineNum">     699 </span>            : 
-<span class="lineNum">     700 </span><span class="lineCov">   34119322 :         return swrite(buf, i, s);</span>
+<span class="lineNum">     700 </span><span class="lineCov">   34173479 :         return swrite(buf, i, s);</span>
 <a name="701"><span class="lineNum">     701 </span>            : }</a>
 <span class="lineNum">     702 </span>            : 
 <span class="lineNum">     703 </span><span class="lineCov">        929 : int sputble32(uint32_t value, STREAM* s)</span>
@@ -774,25 +774,25 @@
 <span class="lineNum">     712 </span><span class="lineCov">        929 :         return swrite(buf, 4, s);</span>
 <a name="713"><span class="lineNum">     713 </span>            : }</a>
 <span class="lineNum">     714 </span>            : 
-<span class="lineNum">     715 </span><span class="lineCov">   12250827 : int sputbs(const char* str, STREAM* f)</span>
+<span class="lineNum">     715 </span><span class="lineCov">   12306366 : int sputbs(const char* str, STREAM* f)</span>
 <span class="lineNum">     716 </span>            : {
-<span class="lineNum">     717 </span><span class="lineCov">   12250827 :         size_t len = strlen(str);</span>
+<span class="lineNum">     717 </span><span class="lineCov">   12306366 :         size_t len = strlen(str);</span>
 <span class="lineNum">     718 </span>            : 
-<span class="lineNum">     719 </span><span class="lineCov">   12250827 :         if (sputb32(len, f) != 0) {</span>
+<span class="lineNum">     719 </span><span class="lineCov">   12306366 :         if (sputb32(len, f) != 0) {</span>
 <span class="lineNum">     720 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     721 </span>            :                 return -1;
 <span class="lineNum">     722 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     723 </span>            :         }
 <span class="lineNum">     724 </span>            : 
-<span class="lineNum">     725 </span><span class="lineCov">   12311369 :         return swrite(str, len, f);</span>
+<span class="lineNum">     725 </span><span class="lineCov">   12287997 :         return swrite(str, len, f);</span>
 <span class="lineNum">     726 </span>            : }
 <a name="727"><span class="lineNum">     727 </span>            : </a>
 <span class="lineNum">     728 </span>            : #if HAVE_FSYNC
-<span class="lineNum">     729 </span><span class="lineCov">        913 : int ssync(STREAM* s)</span>
+<span class="lineNum">     729 </span><span class="lineCov">        912 : int ssync(STREAM* s)</span>
 <span class="lineNum">     730 </span>            : {
 <span class="lineNum">     731 </span>            :         unsigned i;
 <span class="lineNum">     732 </span>            : 
-<span class="lineNum">     733 </span><span class="lineCov">       1826 :         for (i = 0; i &lt; s-&gt;handle_size; ++i) {</span>
+<span class="lineNum">     733 </span><span class="lineCov">       1824 :         for (i = 0; i &lt; s-&gt;handle_size; ++i) {</span>
 <span class="lineNum">     734 </span><span class="lineCov">        913 :                 if (fsync(s-&gt;handle[i].f) != 0) {</span>
 <span class="lineNum">     735 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     736 </span>            :                         s-&gt;state = STREAM_STATE_ERROR;
@@ -802,7 +802,7 @@
 <span class="lineNum">     740 </span>            :                 }
 <span class="lineNum">     741 </span>            :         }
 <span class="lineNum">     742 </span>            : 
-<span class="lineNum">     743 </span><span class="lineCov">        913 :         return 0;</span>
+<span class="lineNum">     743 </span><span class="lineCov">        911 :         return 0;</span>
 <span class="lineNum">     744 </span>            : }
 <span class="lineNum">     745 </span>            : #endif
 <span class="lineNum">     746 </span>            : 
