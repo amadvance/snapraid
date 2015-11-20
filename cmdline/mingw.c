@@ -127,8 +127,9 @@ static BOOLEAN (WINAPI* ptr_RtlGenRandom)(PVOID, ULONG);
 
 /**
  * Description of the last error.
+ * It's stored in the thread local storage.
  */
-static char* last_error;
+static pthread_key_t last_error;
 
 /**
  * If we are running in Wine.
@@ -184,6 +185,12 @@ void os_init(int opt)
 
 	is_scan_winfind = opt != 0;
 
+	/* initialize the thread local storage for strerror(), using free() as desctructor */
+	if (pthread_key_create(&last_error, free) != 0) {
+		log_fatal("Error calling pthread_key_create().\n");
+		exit(EXIT_FAILURE);
+	}
+
 	ntdll = GetModuleHandle("NTDLL.DLL");
 	if (!ntdll) {
 		log_fatal("Error loading the NTDLL module.\n");
@@ -223,13 +230,12 @@ void os_init(int opt)
 	}
 
 	exedir_init();
-
-	last_error = 0;
 }
 
 void os_done(void)
 {
-	free(last_error);
+	/* delete the thread local storage for strerror() */
+	pthread_key_delete(last_error);
 
 	/* restore the normal execution level */
 	SetThreadExecutionState(WIN32_ES_CONTINUOUS);
@@ -1608,25 +1614,37 @@ int fsinfo(const char* path, int* has_persistent_inode, uint64_t* total_space, u
 	return 0;
 }
 
+/* ensure to call the real C strerror() */
 #undef strerror
 
 const char* windows_strerror(int err)
 {
 	/* get the normal C error from the specified err */
+	char* error;
+	char* previous;
 	const char* str = strerror(err);
 	size_t len = strlen(str);
 
 	/* adds space for GetLastError() */
 	len += 32;
 
-	/* reallocate */
-	free(last_error);
-	last_error = malloc(len);
-	if (!last_error)
+	/* allocate a new one */
+	error = malloc(len);
+	if (!error)
 		return str;
+	snprintf(error, len, "%s [%d/%u]", str, err, (unsigned)GetLastError());
 
-	snprintf(last_error, len, "%s [%d/%u]", str, err, (unsigned)GetLastError());
-	return last_error;
+	/* get previous one, if any */
+	previous = pthread_getspecific(last_error);
+
+	/* store in the thread local storage */
+	if (pthread_setspecific(last_error, error) != 0) {
+		free(error);
+		return str;
+	}
+
+	free(previous);
+	return error;
 }
 
 ssize_t windows_read(int fd, void* buffer, size_t size)
