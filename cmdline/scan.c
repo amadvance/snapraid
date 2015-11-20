@@ -250,8 +250,11 @@ static void scan_file_allocate(struct snapraid_scan* scan, struct snapraid_file*
 }
 
 /**
- * Remove the specified file from the parity.
- * The file is then inserted in the deleted set, and it should not be deallocated.
+ * Delete the specified file from the parity.
+ *
+ * Note that the parity remains allocated, but the blocks and the file are marked as DELETED.
+ * The file is then inserted in the deleted set, and it should not be deallocated,
+ * as the parity still references it.
  */
 static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_file* file)
 {
@@ -265,18 +268,21 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 	/* state changed */
 	state->need_write = 1;
 
+	/* here we are supposed to adjust the ::first_free_block position */
+	/* with the parity position we are deleting */
+	/* but we also know that we do only delayed insert, after all the deletion, */
+	/* so at this point ::first_free_block is always at 0, and we don't need to update it */
+	if (disk->first_free_block != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Internal inconsistency for first free position at '%u' deallocating file '%s'\n", disk->first_free_block, file->sub);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
 	/* free all the blocks of the file */
 	for (i = 0; i < file->blockmax; ++i) {
 		struct snapraid_block* block = fs_file2block_get(file, i);
-		block_off_t parity_pos = fs_file2par_get(disk, file, i);
 		unsigned block_state;
-
-		/* adjust the first free position */
-		/* note that doing all the deletions before alllocations, */
-		/* first_free_block is always 0 and the "if" is never triggered */
-		/* but we keep this code anyway for completeness. */
-		if (disk->first_free_block > parity_pos)
-			disk->first_free_block = parity_pos;
 
 		/* in case we scan after an aborted sync, */
 		/* we could get also intermediate states */
@@ -308,7 +314,7 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 			break;
 		default :
 			/* LCOV_EXCL_START */
-			log_fatal("Internal inconsistency in deallocating for block %u state %u\n", parity_pos, block_state);
+			log_fatal("Internal inconsistency in file '%s' deallocating block '%u:%u' state %u\n", file->sub, i, file->blockmax, block_state);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
