@@ -701,10 +701,9 @@ int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 		}
 
 		log_tag("count_limit:%u\n", countlimit);
+		log_tag("time_limit:%" PRIu64 "\n", (uint64_t)ps.timelimit);
+		log_tag("last_limit:%u\n", ps.lastlimit);
 	}
-
-	log_tag("time_limit:%" PRIu64 "\n", (uint64_t)ps.timelimit);
-	log_tag("last_limit:%u\n", ps.lastlimit);
 
 	/* free the temp vector */
 	free(timemap);
