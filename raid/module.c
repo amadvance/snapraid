@@ -65,10 +65,17 @@ void raid_init(void)
 #ifdef CONFIG_SSSE3
 	if (raid_cpu_has_ssse3()) {
 #ifdef CONFIG_X86_64
-		raid_gen3_ptr = raid_gen3_ssse3ext;
-		raid_gen_ptr[3] = raid_gen4_ssse3ext;
-		raid_gen_ptr[4] = raid_gen5_ssse3ext;
-		raid_gen_ptr[5] = raid_gen6_ssse3ext;
+		if (raid_cpu_has_slowextendedreg()) {
+			raid_gen3_ptr = raid_gen3_ssse3;
+			raid_gen_ptr[3] = raid_gen4_ssse3;
+			raid_gen_ptr[4] = raid_gen5_ssse3;
+			raid_gen_ptr[5] = raid_gen6_ssse3;
+		} else {
+			raid_gen3_ptr = raid_gen3_ssse3ext;
+			raid_gen_ptr[3] = raid_gen4_ssse3ext;
+			raid_gen_ptr[4] = raid_gen5_ssse3ext;
+			raid_gen_ptr[5] = raid_gen6_ssse3ext;
+		}
 #else
 		raid_gen3_ptr = raid_gen3_ssse3;
 		raid_gen_ptr[3] = raid_gen4_ssse3;

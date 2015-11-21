@@ -306,6 +306,18 @@ static inline int raid_cpu_has_slowextendedreg(void)
 		 * Intel Atom (Model 77)
 		 * par2_sse2:5686 MB/s, par2_sse2e:5250 MB/s
 		 * parz_sse2:3100 MB/s, parz_sse2e:3400 MB/s
+		 * par3_sse3:1921 MB/s, par3_sse3e:1813 MB/s
+		 * par4_sse3:1175 MB/s, par4_sse3e:1113 MB/s
+		 * par5_sse3:876 MB/s, par5_sse3e:675 MB/s
+		 * par6_sse3:705 MB/s, par6_sse3e:529 MB/s
+		 *
+		 * Intel Atom (Model 77) "Avoton C2750"
+		 * par2_sse2:5661 MB/s, par2_sse2e:5382 MB/s
+		 * parz_sse2:3110 MB/s, parz_sse2e:3450 MB/s
+		 * par3_sse3:1769 MB/s, par3_sse3e:1856 MB/s
+		 * par4_sse3:1221 MB/s, par4_sse3e:1141 MB/s
+		 * par5_sse3:910 MB/s, par5_sse3e:675 MB/s
+		 * par6_sse3:720 MB/s, par6_sse3e:534 MB/s
 		 */
 		if (raid_cpu_is_atom(family, model))
 			return 1;
