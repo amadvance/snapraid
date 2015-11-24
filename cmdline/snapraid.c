@@ -245,6 +245,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_FORCE_AUTOSAVE_AT 283
 #define OPT_TEST_FAKE_DEVICE 284
 #define OPT_TEST_EXPECT_NEED_SYNC 285
+#define OPT_NO_WARNINGS 286
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -359,6 +360,9 @@ struct option long_options[] = {
 
 	/* Fake device data */
 	{ "test-fake-device", 0, 0, OPT_TEST_FAKE_DEVICE },
+
+	/* Disable annoying warnings */
+	{ "test-no-warnings", 0, 0, OPT_NO_WARNINGS },
 
 	{ 0, 0, 0, 0 }
 };
@@ -725,6 +729,9 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_TEST_FAKE_DEVICE :
 			opt.fake_device = 1;
+			break;
+		case OPT_NO_WARNINGS :
+			opt.no_warnings = 1;
 			break;
 		default :
 			/* LCOV_EXCL_START */

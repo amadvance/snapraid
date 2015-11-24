@@ -250,7 +250,8 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 						/* mark disks to be skipped */
 						disk->skip_access = 1;
 						other->skip_access = 1;
-						log_fatal("DANGER! Ignoring that disks '%s' and '%s' are on the same device\n", disk->name, other->name);
+						if (!state->opt.no_warnings)
+							log_fatal("DANGER! Ignoring that disks '%s' and '%s' are on the same device\n", disk->name, other->name);
 					} else {
 						/* LCOV_EXCL_START */
 						log_fatal("Disks '%s' and '%s' are on the same device.\n", disk->dir, other->dir);
@@ -330,7 +331,8 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 						/* mark disks to be skipped */
 						state->parity[l].skip_access = 1;
 						state->parity[j].skip_access = 1;
-						log_fatal("DANGER! Skipping parities '%s' and '%s' on the same device\n", lev_config_name(l), lev_config_name(j));
+						if (!state->opt.no_warnings)
+							log_fatal("DANGER! Skipping parities '%s' and '%s' on the same device\n", lev_config_name(l), lev_config_name(j));
 					} else {
 						/* LCOV_EXCL_START */
 						log_fatal("Parity '%s' and '%s' are on the same device.\n", state->parity[l].path, state->parity[j].path);
@@ -418,7 +420,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 #ifdef CONFIG_X86
 	if (!raid_cpu_has_ssse3())
 #endif
-	if (state->raid_mode == RAID_MODE_CAUCHY) {
+	if (state->raid_mode == RAID_MODE_CAUCHY && !state->opt.no_warnings) {
 		if (state->level == 3) {
 			log_fatal("WARNING! Your CPU doesn't have a fast implementation for triple parity.\n");
 			log_fatal("WARNING! It's recommended to switch to 'z-parity' instead than '3-parity'.\n");
@@ -1356,16 +1358,18 @@ static void state_map(struct snapraid_state* state)
 	diskcount = tommy_list_count(&state->maplist);
 
 	/* recommend number of parities */
-	if (diskcount >= 36 && state->level < 6) {
-		log_fatal("WARNING! With %u disks it's recommended to use six parity levels.\n", diskcount);
-	} else if (diskcount >= 29 && state->level < 5) {
-		log_fatal("WARNING! With %u disks it's recommended to use five parity levels.\n", diskcount);
-	} else if (diskcount >= 22 && state->level < 4) {
-		log_fatal("WARNING! With %u disks it's recommended to use four parity levels.\n", diskcount);
-	} else if (diskcount >= 15 && state->level < 3) {
-		log_fatal("WARNING! With %u disks it's recommended to use three parity levels.\n", diskcount);
-	} else if (diskcount >= 5 && state->level < 2) {
-		log_fatal("WARNING! With %u disks it's recommended to use two parity levels.\n", diskcount);
+	if (!state->opt.no_warnings) {
+		if (diskcount >= 36 && state->level < 6) {
+			log_fatal("WARNING! With %u disks it's recommended to use six parity levels.\n", diskcount);
+		} else if (diskcount >= 29 && state->level < 5) {
+			log_fatal("WARNING! With %u disks it's recommended to use five parity levels.\n", diskcount);
+		} else if (diskcount >= 22 && state->level < 4) {
+			log_fatal("WARNING! With %u disks it's recommended to use four parity levels.\n", diskcount);
+		} else if (diskcount >= 15 && state->level < 3) {
+			log_fatal("WARNING! With %u disks it's recommended to use three parity levels.\n", diskcount);
+		} else if (diskcount >= 5 && state->level < 2) {
+			log_fatal("WARNING! With %u disks it's recommended to use two parity levels.\n", diskcount);
+		}
 	}
 }
 

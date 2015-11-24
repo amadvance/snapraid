@@ -243,7 +243,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) up
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) down
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) devices
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) smart
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) smart --test-no-warnings
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(CONF) smart --test-fake-device --test-expect-failure
 if HAVE_SYMLINK
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) pool
