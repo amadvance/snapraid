@@ -10,6 +10,9 @@
 *.log
 stream*.bin
 
+# upload
+makepush.sh
+
 # autotools
 Makefile
 Makefile.in
