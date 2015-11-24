@@ -2,7 +2,6 @@
 #
 
 rm -r cov-int
-rm snapraid.tgz
 
 make distclean
 
@@ -16,11 +15,11 @@ if ! cov-build --dir cov-int make; then
 	exit 1
 fi
 
-tar czf snapraid.tgz cov-int
+REVISION=`git describe`
+
+tar czf snapraid-$REVISION.tgz cov-int
 
 rm -r cov-int
 
-echo snapraid.tgz ready to upload to https://scan.coverity.com/projects/1986/builds/new
-
-
+echo snapraid-$REVISION.tgz ready to upload to https://scan.coverity.com/projects/1986/builds/new
 

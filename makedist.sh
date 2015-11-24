@@ -3,6 +3,9 @@
 
 make distclean
 
+# Reconfigure (with force) to get the latest revision from git
+autoreconf -f
+
 if ! ./configure.windows-x86; then
 	exit 1
 fi
