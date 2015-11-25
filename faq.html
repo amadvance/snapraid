@@ -703,6 +703,21 @@ Otherwise, copy all the files in the new disk,
 maintaining the same directory structure and names.
 </p>
 <p>
+In Linux use the command:
+</p>
+<pre>
+cp -av /from_dir/. /to_dir
+</pre>
+<p>
+WARNING! Do not use the 'rsync' command because <a href="https://bugzilla.samba.org/show_bug.cgi?id=6672">it's not able to copy the sub-second timestamps</a>.
+</p>
+<p>
+In Windows use the command:
+</p>
+<pre>
+robocopy F:\from_dir T:\to_dir /e /copyall
+</pre>
+<p>
 Then change the SnapRAID configuration to point the disk at the new mount point and run a "diff"
 command to ensure that everything is placed correctly.
 </p>
