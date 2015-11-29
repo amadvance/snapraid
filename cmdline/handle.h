@@ -32,6 +32,7 @@ struct snapraid_handle {
 	struct stat st; /**< Stat info of the opened file. */
 	data_off_t valid_size; /**< Size of the valid data. */
 	int created; /**< If the file was created, otherwise it was already existing. */
+	int xls; /**< If it's an .xls name file. */
 };
 
 /**

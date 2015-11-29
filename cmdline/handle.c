@@ -22,6 +22,62 @@
 #include "handle.h"
 
 /****************************************************************************/
+/* xls */
+
+static unsigned char XLS_MAGIC[8] = { 0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1 };
+
+/**
+ * Patch XLS files to clear hidden modification made by Excel.
+ *
+ * Excel modifies .XLS files even when just opening them, restoring
+ * the timestamp to its original value.
+ *
+ * To avoid that this operation invalidates the parity, we here patches
+ * the XLS files, clearing the date/time data usually modified.
+ *
+ * How to prevent Excel from modifying the file on exit?
+ * http://superuser.com/questions/664549/how-to-prevent-excel-from-modifying-the-file-on-exit
+ */
+void xls_patch(unsigned char* data, unsigned size)
+{
+	unsigned char* p;
+	unsigned char* end;
+
+	if (size < 512)
+		return;
+
+	/* check the header magic */
+	if (memcmp(data, XLS_MAGIC, 8) != 0)
+		return;
+
+	/* check the endianess */
+	if (data[0x1c] != 0xfe || data[0x1d] != 0xff)
+		return;
+
+	/* walk all the records */
+	end = data + size;
+	p = data;
+	while (p + 4 <= end) {
+		unsigned id = p[0] + ((unsigned)p[1] << 8);
+		unsigned len = p[2] + ((unsigned)p[3] << 8);
+
+		p += 4;
+
+		/* check if the record is complely in the block */
+		if (p + len > end)
+			return;
+
+		/* search for the USRINFO 193h record */
+		if (id == 0x193 && len >= 33) {
+			/* clear the data/time information */
+			memset(p + 24,0, 8);
+		}
+
+		p += len;
+	}
+}
+
+/****************************************************************************/
 /* handle */
 
 int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, int mode)
@@ -160,6 +216,9 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 	if (handle->file == file && handle->f != -1) {
 		return 0;
 	}
+
+	/* identify Excel files (FNM_CASEFOLD is case insensitive) */
+	handle->xls = fnmatch("*.xls", file->sub, FNM_CASEFOLD) == 0;
 
 	pathprint(handle->path, sizeof(handle->path), "%s%s", handle->disk->dir, file->sub);
 
@@ -308,6 +367,10 @@ int handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned c
 	if (read_size < block_size) {
 		memset(block_buffer + read_size, 0, block_size - read_size);
 	}
+
+	/* if it's an xls file, patch the header */
+	if (handle->xls && file_pos == 0)
+		xls_patch(block_buffer, block_size);
 
 	/* Here isn't needed to call posix_fadvise(..., POSIX_FADV_DONTNEED) */
 	/* because we already advised sequential access with POSIX_FADV_SEQUENTIAL. */
