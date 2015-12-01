@@ -282,6 +282,29 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync -l ">&1"
 	rm -r bench/disk1/TEST*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -E sync
+# Now create, duplicate, move and partial sync
+	head -c 8192 /dev/zero > bench/disk1/INVA1
+	head -c 8192 /dev/zero > bench/disk1/INVA2
+	head -c 8192 /dev/zero > bench/disk1/INVA3
+	head -c 8192 /dev/zero > bench/disk1/MOVE1
+	cp -a bench/disk1/MOVE1 bench/disk1/MOVE2
+	cp -a bench/disk1/MOVE1 bench/disk1/MOVE3
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+	mv bench/disk1/MOVE2 bench/disk2/MOVE2
+	mv bench/disk1/MOVE3 bench/disk3/MOVE3
+	head -c 8192 /dev/zero > bench/disk4/MOVE4
+	cp -a bench/disk1/INVA1 bench/disk1/EXTRA1
+	cp -a bench/disk1/INVA2 bench/disk1/EXTRA2
+	cp -a bench/disk1/INVA3 bench/disk1/EXTRA3
+	rm bench/disk1/INVA1
+	touch bench/disk1/INVA2
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-kill-after-sync sync
+	mv bench/disk2/MOVE2 bench/disk4/MOVE4
+	mv bench/disk3/MOVE3 bench/disk5/MOVE5
+	mv bench/disk4/MOVE4 bench/disk6/MOVE6
+	rm bench/disk1/EXTRA1
+	touch bench/disk1/EXTRA2
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -E sync
 #### NOT EMPTY ####
 	echo --- Create some files
 	$(TESTENV) ./mktest$(EXEEXT) generate 1 6 $(CHECKCOUNT) $(CHECKSIZE)

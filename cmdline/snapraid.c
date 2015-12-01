@@ -1133,8 +1133,12 @@ int main(int argc, char* argv[])
 		ret = state_sync(&state, blockstart, blockcount);
 
 		/* save the new state if required */
-		if (!opt.kill_after_sync && (state.need_write || state.opt.force_content_write))
-			state_write(&state);
+		if (!opt.kill_after_sync) {
+			if ((state.need_write || state.opt.force_content_write))
+				state_write(&state);
+		} else {
+			log_fatal("WARNING! Skipped state write for --test-kill-after-sync option.\n");
+		}
 
 		/* abort if required */
 		if (ret != 0) {
