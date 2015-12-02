@@ -424,7 +424,7 @@ struct snapraid_handle* handle_map(struct snapraid_state* state, unsigned* handl
 		if (k == 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Internal error for inconsistent disk mapping.\n");
-			exit(EXIT_FAILURE);
+			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
 

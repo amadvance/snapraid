@@ -425,21 +425,21 @@ void file_copy(struct snapraid_file* src_file, struct snapraid_file* dst_file)
 	if (src_file->size != dst_file->size) {
 		/* LCOV_EXCL_START */
 		log_fatal("Internal inconsistency in copy file with different size\n");
-		exit(EXIT_FAILURE);
+		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (src_file->mtime_sec != dst_file->mtime_sec) {
 		/* LCOV_EXCL_START */
 		log_fatal("Internal inconsistency in copy file with different mtime_sec\n");
-		exit(EXIT_FAILURE);
+		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 
 	if (src_file->mtime_nsec != dst_file->mtime_nsec) {
 		/* LCOV_EXCL_START */
 		log_fatal("Internal inconsistency in copy file with different mtime_nsec\n");
-		exit(EXIT_FAILURE);
+		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -489,7 +489,7 @@ int file_block_is_last(struct snapraid_file* file, block_off_t file_pos)
 	if (file_pos >= file->blockmax) {
 		/* LCOV_EXCL_START */
 		log_fatal("Internal inconsistency in file block position\n");
-		exit(EXIT_FAILURE);
+		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -610,13 +610,13 @@ struct snapraid_chunk* chunk_alloc(block_off_t parity_pos, struct snapraid_file*
 	if (count == 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Internal inconsistency when allocating empty chunk for file '%s' at position '%u/%u'\n", file->sub, file_pos, file->blockmax);
-		exit(EXIT_FAILURE);
+		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 	if (file_pos + count > file->blockmax) {
 		/* LCOV_EXCL_START */
 		log_fatal("Internal inconsistency when allocating overflowing chunk for file '%s' at position '%u:%u/%u'\n", file->sub, file_pos, count, file->blockmax);
-		exit(EXIT_FAILURE);
+		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -1162,7 +1162,7 @@ block_off_t fs_file2par_get_ts(struct snapraid_disk* disk, struct snapraid_chunk
 	if (!chunk) {
 		/* LCOV_EXCL_START */
 		log_fatal("Internal inconsistency when resolving file '%s' at position '%u/%u' in disk '%s'\n", file->sub, file_pos, file->blockmax, disk->name);
-		exit(EXIT_FAILURE);
+		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -1184,7 +1184,7 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
 			if (file_pos != chunk->file_pos + chunk->count) {
 				/* LCOV_EXCL_START */
 				log_fatal("Internal inconsistency when allocating file '%s' at position '%u/%u' in the middle of chunk '%u:%u' in disk '%s'\n", file->sub, file_pos, file->blockmax, chunk->file_pos, chunk->count, disk->name);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -1205,7 +1205,7 @@ void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snap
 	if (parity_chunk != chunk || file_chunk != chunk) {
 		/* LCOV_EXCL_START */
 		log_fatal("Internal inconsistency when allocating file '%s' at position '%u/%u' for existing chunk '%u:%u' in disk '%s'\n", file->sub, file_pos, file->blockmax, chunk->file_pos, chunk->count, disk->name);
-		exit(EXIT_FAILURE);
+		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -1225,7 +1225,7 @@ void fs_deallocate(struct snapraid_disk* disk, block_off_t parity_pos)
 	if (!chunk) {
 		/* LCOV_EXCL_START */
 		log_fatal("Internal inconsistency when deallocating parity position '%u' for not existing chunk in disk '%s'\n", parity_pos, disk->name);
-		exit(EXIT_FAILURE);
+		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -1274,7 +1274,7 @@ void fs_deallocate(struct snapraid_disk* disk, block_off_t parity_pos)
 	if (parity_chunk != second_chunk || file_chunk != second_chunk) {
 		/* LCOV_EXCL_START */
 		log_fatal("Internal inconsistency when deallocating parity position '%u' for splitting chunk '%u:%u' in disk '%s'\n", parity_pos, second_chunk->file_pos, second_chunk->count, disk->name);
-		exit(EXIT_FAILURE);
+		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -1287,7 +1287,7 @@ struct snapraid_block* fs_file2block_get(struct snapraid_file* file, block_off_t
 	if (file_pos >= file->blockmax) {
 		/* LCOV_EXCL_START */
 		log_fatal("Internal inconsistency when dereferencing file '%s' at position '%u/%u'\n", file->sub, file_pos, file->blockmax);
-		exit(EXIT_FAILURE);
+		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 

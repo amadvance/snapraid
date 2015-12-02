@@ -1260,7 +1260,7 @@ static void state_map(struct snapraid_state* state)
 			if (disk == 0) {
 				/* LCOV_EXCL_START */
 				log_fatal("Internal inconsistency for mapping '%s'\n", map->name);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -1390,7 +1390,7 @@ void state_refresh(struct snapraid_state* state)
 		if (disk == 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Internal inconsistency for mapping '%s'\n", map->name);
-			exit(EXIT_FAILURE);
+			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
 
@@ -1670,7 +1670,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
 				log_fatal("Internal inconsistency in mapping index!\n");
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 			disk = tommy_array_get(&disk_mapping, mapping);
@@ -1688,7 +1688,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
 				log_fatal("Internal inconsistency in file size too big!\n");
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -1774,7 +1774,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
 					log_fatal("Internal inconsistency in block number!\n");
-					exit(EXIT_FAILURE);
+					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
 
@@ -1782,7 +1782,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* LCOV_EXCL_START */
 					log_fatal("Internal inconsistency in block size %u/%u!\n", blockmax, v_pos + v_count);
 					decoding_error(path, f);
-					exit(EXIT_FAILURE);
+					os_abort();
 					/* LCOV_EXCL_START */
 				}
 
@@ -1904,9 +1904,9 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 
 				if (v_pos + v_count > blockmax) {
 					/* LCOV_EXCL_START */
-					log_fatal("Internal inconsistency in info size %u/%u!\n", blockmax, v_pos + v_count);
 					decoding_error(path, f);
-					exit(EXIT_FAILURE);
+					log_fatal("Internal inconsistency in info size %u/%u!\n", blockmax, v_pos + v_count);
+					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
 
@@ -1914,7 +1914,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					exit(EXIT_FAILURE);
+					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
 
@@ -1938,7 +1938,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
 						log_fatal("Internal inconsistency for missing previous checksum!\n");
-						exit(EXIT_FAILURE);
+						os_abort();
 						/* LCOV_EXCL_STOP */
 					}
 
@@ -1957,7 +1957,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 							/* LCOV_EXCL_START */
 							decoding_error(path, f);
 							log_fatal("Internal inconsistency for missing info!\n");
-							exit(EXIT_FAILURE);
+							os_abort();
 							/* LCOV_EXCL_STOP */
 						}
 					} else {
@@ -1981,7 +1981,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
 				log_fatal("Internal inconsistency in mapping index!\n");
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 			disk = tommy_array_get(&disk_mapping, mapping);
@@ -1996,15 +1996,15 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					exit(EXIT_FAILURE);
+					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
 
 				if (v_pos + v_count > blockmax) {
 					/* LCOV_EXCL_START */
-					log_fatal("Internal inconsistency in hole size %u/%u!\n", blockmax, v_pos + v_count);
 					decoding_error(path, f);
-					exit(EXIT_FAILURE);
+					log_fatal("Internal inconsistency in hole size %u/%u!\n", blockmax, v_pos + v_count);
+					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
 
@@ -2081,7 +2081,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
 				log_fatal("Internal inconsistency in mapping index!\n");
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 			disk = tommy_array_get(&disk_mapping, mapping);
@@ -2131,7 +2131,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
 				log_fatal("Internal inconsistency in mapping index!\n");
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 			disk = tommy_array_get(&disk_mapping, mapping);
@@ -2180,7 +2180,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
 				log_fatal("Internal inconsistency in mapping index!\n");
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 			disk = tommy_array_get(&disk_mapping, mapping);
@@ -3051,7 +3051,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		if (!disk) {
 			/* LCOV_EXCL_START */
 			log_fatal("Internal inconsistency for unmapped disk '%s'\n", map->name);
-			exit(EXIT_FAILURE);
+			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
 
@@ -3908,7 +3908,7 @@ void state_fscheck(struct snapraid_state* state, const char* ope)
 		if (fs_check(disk) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Internal inconsistency in filesystem for disk '%s' %s\n", disk->name, ope);
-			exit(EXIT_FAILURE);
+			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
 	}

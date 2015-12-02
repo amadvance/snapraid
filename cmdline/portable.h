@@ -69,6 +69,11 @@
 #define __always_inline inline __attribute__((always_inline))
 #endif
 
+#ifndef __noreturn
+#define __noreturn __attribute__((noreturn))
+#endif
+
+
 /**
  * Architecture.
  */
@@ -211,6 +216,10 @@
 #include <math.h>
 #endif
 
+#if HAVE_EXECINFO_H
+#include <execinfo.h>
+#endif
+
 /**
  * Disable case check in Windows.
  */
@@ -321,6 +330,11 @@ void os_init(int opt);
  * Deintialize the system.
  */
 void os_done(void);
+
+/**
+ * Abort the process with a stacktrace.
+ */
+void os_abort(void) __noreturn;
 
 /**
  * Log file.

@@ -96,7 +96,7 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		if (link_flag_has(slink, FILE_IS_PRESENT)) {
 			/* LCOV_EXCL_START */
 			log_fatal("Internal inconsistency for link '%s%s'\n", disk->dir, sub);
-			exit(EXIT_FAILURE);
+			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
 
@@ -275,7 +275,7 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 	if (disk->first_free_block != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Internal inconsistency for first free position at '%u' deallocating file '%s'\n", disk->first_free_block, file->sub);
-		exit(EXIT_FAILURE);
+		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -315,7 +315,7 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 		default :
 			/* LCOV_EXCL_START */
 			log_fatal("Internal inconsistency in file '%s' deallocating block '%u:%u' state %u\n", file->sub, i, file->blockmax, block_state);
-			exit(EXIT_FAILURE);
+			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
 
@@ -654,7 +654,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				if (st->st_nlink <= 1) {
 					/* LCOV_EXCL_START */
 					log_fatal("Internal inode '%" PRIu64 "' inconsistency for file '%s%s' already present\n", (uint64_t)st->st_ino, disk->dir, sub);
-					exit(EXIT_FAILURE);
+					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
 #endif
@@ -722,7 +722,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		if (file_flag_has(file, FILE_IS_PRESENT)) {
 			/* LCOV_EXCL_START */
 			log_fatal("Internal inode '%" PRIu64 "' inconsistency for files '%s%s' and '%s%s' matching and already present but different\n", file->inode, disk->dir, sub, disk->dir, file->sub);
-			exit(EXIT_FAILURE);
+			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
 
@@ -772,7 +772,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			if (file->inode == st->st_ino) {
 				/* LCOV_EXCL_START */
 				log_fatal("Internal inconsistency in inode '%" PRIu64 "' for files '%s%s' as unexpected matching\n", file->inode, disk->dir, sub);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 		}
@@ -781,7 +781,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		if (file_flag_has(file, FILE_IS_PRESENT)) {
 			/* LCOV_EXCL_START */
 			log_fatal("Internal inconsistency in path for file '%s%s' matching and already present\n", disk->dir, sub);
-			exit(EXIT_FAILURE);
+			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
 
@@ -1011,7 +1011,7 @@ static void scan_emptydir(struct snapraid_scan* scan, const char* sub)
 		if (dir_flag_has(dir, FILE_IS_PRESENT)) {
 			/* LCOV_EXCL_START */
 			log_fatal("Internal inconsistency for dir '%s%s'\n", disk->dir, sub);
-			exit(EXIT_FAILURE);
+			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
 

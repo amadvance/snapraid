@@ -243,6 +243,29 @@ void os_done(void)
 	FreeLibrary(dll_advapi32);
 }
 
+void os_abort(void)
+{
+	void* stack[32];
+	size_t size;
+	unsigned i;
+
+	printf("Stacktrace of " PACKAGE " v" VERSION);
+	printf(", mingw");
+#ifdef __GNUC__
+	printf(", gcc " __VERSION__);
+#endif
+	printf(", %d-bit", (int)sizeof(void *) * 8);
+	printf("\n");
+
+	/* get stackstrace, but without symbols */
+	size = CaptureStackBackTrace(0, 32, stack, NULL);
+
+	for (i=0; i<size; ++i)
+		printf("[bt] %02u: %p\n", i, stack[i]);
+
+	abort();
+}
+
 /**
  * Size in chars of conversion buffers for u8to16() and u16to8().
  */

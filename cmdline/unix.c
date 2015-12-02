@@ -1012,5 +1012,52 @@ void os_done(void)
 {
 }
 
+void os_abort(void)
+{
+#if HAVE_BACKTRACE && HAVE_BACKTRACE_SYMBOLS
+	void* stack[32];
+	char** messages;
+	size_t size;
+	unsigned i;
+
+	printf("Stacktrace of " PACKAGE " v" VERSION);
+#ifdef _linux
+	printf(", linux");
+#endif
+#ifdef __GNUC__
+	printf(", gcc " __VERSION__);
+#endif
+	printf(", %d-bit", (int)sizeof(void *) * 8);
+	printf("\n");
+
+	size = backtrace(stack, 32);
+
+	messages = backtrace_symbols(stack, size);
+
+	for (i=1; i<size; ++i) {
+		const char* msg;
+
+		if (messages)
+			msg = messages[i];
+		else
+			msg = "<unknown>";
+
+		printf("[bt] %02u: %s\n", i, msg);
+
+		if (messages) {
+			char addr2line[1024];
+			size_t j = 0;
+			while (msg[j] != '(' && msg[j] != ' ' && msg[j] != 0)
+				++j;
+
+			snprintf(addr2line, sizeof(addr2line), "addr2line %p -e %.*s", stack[i], j, msg);
+			system(addr2line);
+		}
+	}
+#endif
+
+	abort();
+}
+
 #endif
 

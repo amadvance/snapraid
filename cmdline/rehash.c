@@ -77,7 +77,7 @@ void state_rehash(struct snapraid_state* state)
 		if (info_get_rehash(info)) {
 			/* LCOV_EXCL_START */
 			log_fatal("Internal inconsistency for a rehash already in progress\n");
-			exit(EXIT_FAILURE);
+			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
 

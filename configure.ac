@@ -17,6 +17,12 @@ AC_CHECK_PROG([SDE],[sde],[sde],[])
 AC_CHECK_PROG([ADVD2],[advd2],[advd2],[])
 AM_CONDITIONAL(HAVE_ADVD2, [test x"$ADVD2" != x])
 
+dnl Compiler option to improve stacktrace
+AC_CHECK_CC_OPT([-fno-omit-frame-pointer], CFLAGS="$CFLAGS -fno-omit-frame-pointer", [])
+AC_CHECK_CC_OPT([-fno-inline-functions-called-once], CFLAGS="$CFLAGS -fno-inline-functions-called-once", [])
+AC_CHECK_CC_OPT([-fno-inline-small-functions], CFLAGS="$CFLAGS -fno-inline-small-functions", [])
+AC_CHECK_CC_OPT([-rdynamic], CFLAGS="$CFLAGS -rdynamic", [])
+
 dnl Checks for system.
 AC_SYS_LARGEFILE
 
@@ -29,7 +35,7 @@ AC_CHECK_HEADERS([fcntl.h stddef.h stdint.h stdlib.h string.h limits.h])
 AC_CHECK_HEADERS([unistd.h getopt.h fnmatch.h io.h inttypes.h byteswap.h])
 AC_CHECK_HEADERS([pthread.h math.h])
 AC_CHECK_HEADERS([sys/file.h sys/ioctl.h sys/vfs.h sys/statfs.h sys/param.h sys/mount.h])
-AC_CHECK_HEADERS([linux/fiemap.h linux/fs.h mach/mach_time.h])
+AC_CHECK_HEADERS([linux/fiemap.h linux/fs.h mach/mach_time.h execinfo.h])
 
 dnl Checks for typedefs, structures, and compiler characteristics.
 AC_C_CONST
@@ -80,6 +86,7 @@ AC_CHECK_FUNCS([pread pwrite getc_unlocked ferror_unlocked fnmatch])
 AC_CHECK_FUNCS([futimes futimens futimesat localtime_r])
 AC_CHECK_FUNCS([fstatat flock statfs])
 AC_CHECK_FUNCS([mach_absolute_time])
+AC_CHECK_FUNCS([backtrace backtrace_symbols])
 AC_SEARCH_LIBS([clock_gettime], [rt])
 AC_CHECK_FUNCS([clock_gettime])
 AC_CHECK_CC_OPT([-pthread], CFLAGS="$CFLAGS -pthread", [])
