@@ -1663,7 +1663,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 				log_fatal("in the expected directory.\n");
 			}
 			if (!is_diff) {
-				log_fatal("If you want to '%s' anyway, use 'snapraid --force-empty %s'.", state->command, state->command);
+				log_fatal("If you want to '%s' anyway, use 'snapraid --force-empty %s'.\n", state->command, state->command);
 				exit(EXIT_FAILURE);
 			}
 		}
