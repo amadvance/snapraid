@@ -246,6 +246,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_FAKE_DEVICE 284
 #define OPT_TEST_EXPECT_NEED_SYNC 285
 #define OPT_NO_WARNINGS 286
+#define OPT_TEST_FAKE_UUID 287
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -363,6 +364,9 @@ struct option long_options[] = {
 
 	/* Disable annoying warnings */
 	{ "test-no-warnings", 0, 0, OPT_NO_WARNINGS },
+
+	/* Fake UUID */
+	{ "test-fake-uuid", 0, 0, OPT_TEST_FAKE_UUID },
 
 	{ 0, 0, 0, 0 }
 };
@@ -732,6 +736,9 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_NO_WARNINGS :
 			opt.no_warnings = 1;
+			break;
+		case OPT_TEST_FAKE_UUID :
+			opt.fake_uuid = 2;
 			break;
 		default :
 			/* LCOV_EXCL_START */

@@ -1271,6 +1271,11 @@ static void state_map(struct snapraid_state* state)
 				continue;
 			}
 
+			if (state->opt.fake_uuid) {
+				snprintf(uuid, sizeof(uuid), "fake-uuid-%d", state->opt.fake_uuid);
+				--state->opt.fake_uuid;
+			}
+
 			/* if the uuid is changed */
 			if (strcmp(uuid, map->uuid) != 0) {
 				/* mark the disk as with an UUID change */

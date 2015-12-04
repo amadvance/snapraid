@@ -105,6 +105,7 @@ struct snapraid_option {
 	int fake_device; /**< Fake device data. */
 	int no_warnings; /**< Remove some warning messages. */
 	int expected_missing; /**< If missing files are expected and should not be reported. */
+	int fake_uuid; /**< Set fakes UUID for testing. */
 };
 
 /**
