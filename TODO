@@ -101,6 +101,20 @@ File with the same name will get an extra extension like ".1", ".2".
 
 * Use threads to scan all the disks at the same time.
 
+* https://sourceforge.net/p/snapraid/discussion/1677233/thread/2cb97e8a/
+Have two hashes for each file. One for the first segment, that may use only a part of the first parity block.
+And a second hash that takes care of the final segment, also using only part of a parity block.
+Intermediate blocks can be handled like now.
+The first and last segment can use only a part of the parity block, sharing it with other files,
+and then allowing big parity blocks.
++ Big parity block, like 1MB, and small file allocation, like 4KB.
+- It won't be possible to copy hash info from one disk to another, as copied files
+may have a different block splitting. Copied file should be allocated with the same exact
+splitting.
+- Dup detection can be handled with a dedicated hash covering the full file. But increasing
+the number of hash for each file to three.
+- No way to handle block import.
+
 * Create a filesystem snapshot at every sync, and use it in all the other commands
 automatically.
 At the next sync, drop the old snapshot and create a new one.
