@@ -93,6 +93,11 @@ AC_CHECK_CC_OPT([-pthread], CFLAGS="$CFLAGS -pthread", [])
 AC_CHECK_FUNCS([pthread_create])
 AC_SEARCH_LIBS([exp], [m])
 
+dnl Checks for libblkid
+AC_CHECK_HEADERS([blkid/blkid.h])
+AC_SEARCH_LIBS([blkid_probe_all], [blkid])
+AC_CHECK_FUNCS([blkid_devno_to_devname blkid_get_tag_value])
+
 dnl Checks for architecture
 AC_C_BIGENDIAN
 

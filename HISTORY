@@ -1,6 +1,11 @@
 SnapRAID HISTORY
 ================
 
+9.2 2015/12
+===========
+ * Adds UUID support to Btrfs filesystems. It's available only if the
+   libblkid library is available on the system.
+
 9.1 2015/11
 ===========
  * Fixes a bug when reading a content file with a deleted entry bigger

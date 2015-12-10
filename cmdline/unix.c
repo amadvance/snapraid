@@ -68,12 +68,21 @@ const char* stat_desc(struct stat* st)
 	return "unknown";
 }
 
-#if HAVE_FSTATAT
 /**
- * This function get the UUID using the /dev/disk/by-uuid/ links.
- * Comparing with the libblkid library, it works also from not root processes.
+ * Cache used by blkid.
  */
-int devuuid(uint64_t device, char* uuid, size_t uuid_size)
+#if HAVE_BLKID
+static blkid_cache cache = 0;
+#endif
+
+/**
+ * Get the UUID using the /dev/disk/by-uuid/ links.
+ * It doesn't require root permission, and the uuid are always updated.
+ * It doesn't work with Btrfs filesystems that don't export the main UUID
+ * in /dev/disk/by-uuid/.
+ */
+#if HAVE_FSTATAT
+static int devuuid_dev(uint64_t device, char* uuid, size_t uuid_size)
 {
 	int ret;
 	DIR* d;
@@ -98,6 +107,8 @@ int devuuid(uint64_t device, char* uuid, size_t uuid_size)
 			continue;
 		}
 
+		log_tag("uuid:dev:%s:%u:%u:\n", dd->d_name, major(st.st_rdev), minor(st.st_rdev));
+
 		/* if it matches, we have the uuid */
 		if (S_ISBLK(st.st_mode) && st.st_rdev == (dev_t)device) {
 			/* found */
@@ -111,17 +122,65 @@ int devuuid(uint64_t device, char* uuid, size_t uuid_size)
 	closedir(d);
 	return -1;
 }
-#else
+#endif
+
+/**
+ * Get the UUID using liblkid.
+ * It uses a cache to work without root permission, resultin in UUID
+ * not necessarely recent.
+ * We could call blkid_probe_all() to refresh the UUID, but it would
+ * require root permission to read the superblocks, and to have
+ * all the disks spinning.
+ */
+#if HAVE_BLKID
+static int devuuid_blkid(uint64_t device, char* uuid, size_t uuid_size)
+{
+	char* devname;
+	char* uuidname;
+
+	devname = blkid_devno_to_devname(device);
+	if (!devname) {
+		/* device mapping failed */
+		return -1;
+	}
+
+	uuidname = blkid_get_tag_value(cache, "UUID", devname);
+	if (!uuidname) {
+		/* uuid mapping failed */
+		free(devname);
+		return -1;
+	}
+
+	log_tag("uuid:blkid:%s:%u:%u:\n", uuidname, major(device), minor(device));
+
+	pathcpy(uuid, uuid_size, uuidname);
+
+	free(devname);
+	free(uuidname);
+	return 0;
+}
+#endif
+
 int devuuid(uint64_t device, char* uuid, size_t uuid_size)
 {
+	/* first try with the /dev/disk/by-uuid version */
+#if HAVE_FSTATAT
+	if (devuuid_dev(device, uuid, uuid_size) == 0)
+		return 0;
+#endif
+
+	/* fall back to blkid for other cases */
+#if HAVE_BLKID
+	if (devuuid_blkid(device, uuid, uuid_size) == 0)
+		return 0;
+#endif
+
+	/* not supported */
 	(void)device;
 	(void)uuid;
 	(void)uuid_size;
-
-	/* not supported */
 	return -1;
 }
-#endif
 
 int filephy(const char* path, uint64_t size, uint64_t* physical)
 {
@@ -1005,11 +1064,25 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 
 void os_init(int opt)
 {
+#if HAVE_BLKID
+	int ret;
+	ret = blkid_get_cache(&cache, NULL);
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("WARNING Failed to get blkid cache\n");
+		/* LCOV_EXCL_STOP */
+	}
+#endif
+
 	(void)opt;
 }
 
 void os_done(void)
 {
+#if HAVE_BLKID
+	if (cache != 0)
+		blkid_put_cache(cache);
+#endif
 }
 
 void os_abort(void)
