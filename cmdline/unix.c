@@ -107,12 +107,13 @@ static int devuuid_dev(uint64_t device, char* uuid, size_t uuid_size)
 			continue;
 		}
 
-		log_tag("uuid:dev:%s:%u:%u:\n", dd->d_name, major(st.st_rdev), minor(st.st_rdev));
-
 		/* if it matches, we have the uuid */
 		if (S_ISBLK(st.st_mode) && st.st_rdev == (dev_t)device) {
 			/* found */
 			pathcpy(uuid, uuid_size, dd->d_name);
+
+			log_tag("uuid:dev:%u:%u:%s:\n", major(device), minor(device), uuid);
+
 			closedir(d);
 			return 0;
 		}
@@ -151,9 +152,9 @@ static int devuuid_blkid(uint64_t device, char* uuid, size_t uuid_size)
 		return -1;
 	}
 
-	log_tag("uuid:blkid:%s:%u:%u:\n", uuidname, major(device), minor(device));
-
 	pathcpy(uuid, uuid_size, uuidname);
+
+	log_tag("uuid:dev:%u:%u:%s:\n", major(device), minor(device), uuid);
 
 	free(devname);
 	free(uuidname);
@@ -175,8 +176,9 @@ int devuuid(uint64_t device, char* uuid, size_t uuid_size)
 		return 0;
 #endif
 
+	log_tag("uuid:notfound:%u:%u:\n", major(device), minor(device));
+
 	/* not supported */
-	(void)device;
 	(void)uuid;
 	(void)uuid_size;
 	return -1;
