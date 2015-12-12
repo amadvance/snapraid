@@ -432,7 +432,12 @@ void pathprint(char* dst, size_t size, const char* format, ...)
 
 	if (len >= size) {
 		/* LCOV_EXCL_START */
-		log_fatal("Path too long '%s'\n", format);
+		if (size > 0) {
+			dst[size - 1] = 0;
+			log_fatal("Path too long '%s...'\n", dst);
+		} else {
+			log_fatal("Path too long for empty size'\n");
+		}
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -445,7 +450,7 @@ void pathslash(char* dst, size_t size)
 	if (len > 0 && dst[len - 1] != '/') {
 		if (len + 2 >= size) {
 			/* LCOV_EXCL_START */
-			log_fatal("Path too long\n");
+			log_fatal("Path too long '%s/'\n", dst);
 			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
