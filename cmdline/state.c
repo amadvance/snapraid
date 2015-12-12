@@ -1625,7 +1625,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 		/* LCOV_EXCL_START */
 		decoding_error(path, f);
 		log_fatal("Invalid header!\n");
-		exit(EXIT_FAILURE);
+		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -1642,10 +1642,11 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 		if (memcmp(buffer, "SNAPCNT", 7) != 0) {
 			decoding_error(path, f);
 			log_fatal("Invalid header!\n");
+			os_abort();
 		} else {
 			log_fatal("The content file '%s' was generated with a newer version of SnapRAID!\n", path);
+			exit(EXIT_FAILURE);
 		}
-		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -1684,7 +1685,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -1701,7 +1702,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -1709,7 +1710,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -1723,7 +1724,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -1731,13 +1732,13 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 			if (!*sub) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -1763,7 +1764,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					exit(EXIT_FAILURE);
+					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
 
@@ -1771,7 +1772,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					exit(EXIT_FAILURE);
+					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
 
@@ -1785,8 +1786,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 
 				if (v_pos + v_count > blockmax) {
 					/* LCOV_EXCL_START */
-					log_fatal("Internal inconsistency in block size %u/%u!\n", blockmax, v_pos + v_count);
 					decoding_error(path, f);
+					log_fatal("Internal inconsistency in block size %u/%u!\n", blockmax, v_pos + v_count);
 					os_abort();
 					/* LCOV_EXCL_START */
 				}
@@ -1813,7 +1814,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
 						log_fatal("Invalid block type!\n");
-						exit(EXIT_FAILURE);
+						os_abort();
 						/* LCOV_EXCL_STOP */
 					}
 
@@ -1823,7 +1824,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						if (ret < 0) {
 							/* LCOV_EXCL_START */
 							decoding_error(path, f);
-							exit(EXIT_FAILURE);
+							os_abort();
 							/* LCOV_EXCL_STOP */
 						}
 					} else {
@@ -1886,7 +1887,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -1903,7 +1904,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					exit(EXIT_FAILURE);
+					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
 
@@ -1930,7 +1931,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					if (ret < 0) {
 						/* LCOV_EXCL_START */
 						decoding_error(path, f);
-						exit(EXIT_FAILURE);
+						os_abort();
 						/* LCOV_EXCL_STOP */
 					}
 
@@ -2042,7 +2043,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						if (ret < 0) {
 							/* LCOV_EXCL_START */
 							decoding_error(path, f);
-							exit(EXIT_FAILURE);
+							os_abort();
 							/* LCOV_EXCL_STOP */
 						}
 
@@ -2069,7 +2070,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
 					log_fatal("Invalid hole type!\n");
-					exit(EXIT_FAILURE);
+					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
 			}
@@ -2095,7 +2096,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -2103,14 +2104,14 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (!*sub || !*linkto) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -2145,7 +2146,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -2153,14 +2154,14 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (!*sub || !*linkto) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -2194,14 +2195,14 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (!*sub) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -2229,7 +2230,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
 				log_fatal("Invalid checksum!\n");
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -2238,7 +2239,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 		} else if (c == 'C') {
@@ -2256,7 +2257,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
 				log_fatal("Invalid checksum!\n");
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -2265,7 +2266,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 		} else if (c == 'z') {
@@ -2275,7 +2276,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -2297,7 +2298,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 		} else if (c == 'm' || c == 'M') {
@@ -2312,7 +2313,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -2320,7 +2321,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -2330,7 +2331,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					exit(EXIT_FAILURE);
+					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
 
@@ -2338,7 +2339,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				if (ret < 0) {
 					/* LCOV_EXCL_START */
 					decoding_error(path, f);
-					exit(EXIT_FAILURE);
+					os_abort();
 					/* LCOV_EXCL_STOP */
 				}
 			} else {
@@ -2351,7 +2352,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -2385,7 +2386,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -2393,7 +2394,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -2401,7 +2402,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -2409,7 +2410,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				exit(EXIT_FAILURE);
+				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
@@ -2455,7 +2456,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			/* LCOV_EXCL_START */
 			decoding_error(path, f);
 			log_fatal("Invalid command '%c'!\n", (char)c);
-			exit(EXIT_FAILURE);
+			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
 	}
