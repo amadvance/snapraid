@@ -1103,6 +1103,7 @@ void os_abort(void)
 	printf(", gcc " __VERSION__);
 #endif
 	printf(", %d-bit", (int)sizeof(void *) * 8);
+	printf(", PATH_MAX=%d", PATH_MAX);
 	printf("\n");
 
 	size = backtrace(stack, 32);

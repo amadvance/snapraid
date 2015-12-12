@@ -90,11 +90,13 @@ noinst_HEADERS = \
 mktest_SOURCES = \
 	cmdline/mktest.c \
 	cmdline/mingw.c \
+	cmdline/unix.c \
 	cmdline/support.c
 
 mkstream_SOURCES = \
 	cmdline/mkstream.c \
 	cmdline/mingw.c \
+	cmdline/unix.c \
 	cmdline/support.c \
 	cmdline/util.c \
 	cmdline/stream.c \

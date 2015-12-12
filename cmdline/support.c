@@ -356,7 +356,7 @@ void pathcpy(char* dst, size_t size, const char* src)
 	if (len + 1 > size) {
 		/* LCOV_EXCL_START */
 		log_fatal("Path too long\n");
-		exit(EXIT_FAILURE);
+		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -371,7 +371,7 @@ void pathcat(char* dst, size_t size, const char* src)
 	if (dst_len + src_len + 1 > size) {
 		/* LCOV_EXCL_START */
 		log_fatal("Path too long\n");
-		exit(EXIT_FAILURE);
+		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -385,7 +385,7 @@ void pathcatc(char* dst, size_t size, char c)
 	if (dst_len + 2 > size) {
 		/* LCOV_EXCL_START */
 		log_fatal("Path too long\n");
-		exit(EXIT_FAILURE);
+		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 
@@ -433,7 +433,7 @@ void pathprint(char* dst, size_t size, const char* format, ...)
 	if (len >= size) {
 		/* LCOV_EXCL_START */
 		log_fatal("Path too long\n");
-		exit(EXIT_FAILURE);
+		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 }
@@ -446,7 +446,7 @@ void pathslash(char* dst, size_t size)
 		if (len + 2 >= size) {
 			/* LCOV_EXCL_START */
 			log_fatal("Path too long\n");
-			exit(EXIT_FAILURE);
+			os_abort();
 			/* LCOV_EXCL_STOP */
 		}
 
