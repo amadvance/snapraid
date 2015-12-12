@@ -864,7 +864,9 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 endif
-	echo Success!
+	echo Regression test completed with SUCCESS!
+	echo Please ignore any error message printed above, they are expected!
+	echo Everything is OK
 
 # Manual testing
 
