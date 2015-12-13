@@ -493,7 +493,7 @@ unsigned memdiff(const unsigned char* data1, const unsigned char* data2, size_t 
 		}
 	}
 
-	return 0;
+	return count;
 }
 
 /****************************************************************************/
