@@ -1,26 +1,36 @@
 #!/bin/sh
 #
 
+CHECK=check
+DEBUG=
+
+if test "x$1" = "x-f"; then
+CHECK=clean
+fi
+
+if test "x$1" = "x-d"; then
+CHECK=clean
+DEBUG=--enable-debug
+fi
+
 make distclean
 
 # Reconfigure (with force) to get the latest revision from git
 autoreconf -f
 
-if ! ./configure.windows-x86; then
+if ! ./configure.windows-x86 $DEBUG; then
 	exit 1
 fi
 
-if ! test "x$1" = "x-f"; then
-	if ! make check; then
-		exit 1
-	fi
+if ! make $CHECK; then
+	exit 1
 fi
 
 if ! make distwindows-x86 distclean; then
 	exit 1
 fi
 
-if ! ./configure.windows-x64; then
+if ! ./configure.windows-x64 $DEBUG; then
 	exit 1
 fi
 

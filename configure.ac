@@ -261,7 +261,8 @@ AM_CONDITIONAL(HAVE_EMULATOR, [test x"$EMULATOR" != x])
 AC_ARG_ENABLE([debug],
 	[AS_HELP_STRING([--enable-debug],[enable debugging])],
 	[
-	CFLAGS="-O0 -g -pthread -Wall -Wextra"
+	CFLAGS="-Og -g -pthread -Wall -Wextra"
+	AC_CHECK_CC_OPT([-rdynamic], CFLAGS="$CFLAGS -rdynamic", [])
 	],
 	[])
 
