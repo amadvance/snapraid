@@ -1325,6 +1325,8 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 					exit(EXIT_FAILURE);
 					/* LCOV_EXCL_STOP */
 				}
+				if (ret == 0)
+					log_fatal("WARNING! Empty symbolic link '%s'.\n", path_next);
 
 				/* readlink doesn't put the final 0 */
 				subnew[ret] = 0;

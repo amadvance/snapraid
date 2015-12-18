@@ -1738,6 +1738,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (!*sub) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal("Internal inconsistency for null file!\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -2100,15 +2101,16 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			ret = sgetbs(f, linkto, sizeof(linkto));
-			if (ret < 0) {
+			if (!*sub) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal("Internal inconsistency for null symlink!\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
-			if (!*sub || !*linkto) {
+			ret = sgetbs(f, linkto, sizeof(linkto));
+			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
 				os_abort();
@@ -2150,6 +2152,14 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
+			if (!*sub) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal("Internal inconsistency for null hardlink!\n");
+				os_abort();
+				/* LCOV_EXCL_STOP */
+			}
+
 			ret = sgetbs(f, linkto, sizeof(linkto));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
@@ -2158,9 +2168,10 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			if (!*sub || !*linkto) {
+			if (!*linkto) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal("Internal inconsistency for empty hardlink '%s'!\n", sub);
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -2202,6 +2213,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (!*sub) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
+				log_fatal("Internal inconsistency for null dir!\n");
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}

@@ -3,6 +3,7 @@ SnapRAID HISTORY
 
 9.2 2015/12
 ===========
+ * Allows symlinks pointing to an empty target.
  * Adds UUID support to Btrfs filesystems. It's available only if the
    libblkid library is available on the system.
 
