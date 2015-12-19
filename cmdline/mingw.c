@@ -264,7 +264,8 @@ void os_abort(void)
 	for (i=0; i<size; ++i)
 		printf("[bt] %02u: %p\n", i, stack[i]);
 
-	abort();
+	/* use exit() and not abort to avoid the Windows abort dialog */
+	exit(EXIT_FAILURE);
 }
 
 /**
