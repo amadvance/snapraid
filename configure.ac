@@ -1,7 +1,7 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_PREREQ([2.65])
 dnl Get version number from git
-m4_define([git_revision], m4_esyscmd_s([git describe --match 'v*' | sed 's/^v//']))
+m4_define([git_revision], m4_esyscmd_s([./autover.sh]))
 AC_INIT([snapraid], [git_revision], [], [], [http://www.snapraid.it])
 AM_INIT_AUTOMAKE([foreign no-dependencies subdir-objects])
 AC_CONFIG_SRCDIR([cmdline/snapraid.c])

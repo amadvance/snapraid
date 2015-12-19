@@ -102,8 +102,12 @@ mkstream_SOURCES = \
 	cmdline/stream.c \
 	raid/memory.c
 
+# Add the .version file in the distribution
+dist-hook:
+	$(srcdir)/autover.sh > $(distdir)/.version
+
 EXTRA_DIST = \
-	autogen.sh \
+	autogen.sh autover.sh \
 	README AUTHORS HISTORY INSTALL COPYING TODO CHECK INSTALL.windows \
 	snapraid.d snapraid.1 snapraid.txt \
 	test/test-par1.conf \
