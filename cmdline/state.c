@@ -924,14 +924,16 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 				pathcpy(state->parity[level].smartctl, sizeof(state->parity[level].smartctl), custom);
 			} else {
-				/* search the disk */
 				struct snapraid_disk* disk;
+
+				/* search the disk */
+				disk = 0;
 				for (i = state->disklist; i != 0; i = i->next) {
 					disk = i->data;
 					if (strcmp(disk->name, buffer) == 0)
 						break;
 				}
-				if (!i) {
+				if (!disk) {
 					/* LCOV_EXCL_START */
 					log_fatal("Missing disk smartctl '%s' at line %u\n", buffer, line);
 					exit(EXIT_FAILURE);

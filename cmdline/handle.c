@@ -416,12 +416,13 @@ struct snapraid_handle* handle_map(struct snapraid_state* state, unsigned* handl
 		tommy_node* k;
 
 		/* search the mapping for this disk */
+		map = 0;
 		for (k = state->maplist; k != 0; k = k->next) {
 			map = k->data;
 			if (strcmp(disk->name, map->name) == 0)
 				break;
 		}
-		if (k == 0) {
+		if (!map) {
 			/* LCOV_EXCL_START */
 			log_fatal("Internal error for inconsistent disk mapping.\n");
 			os_abort();
