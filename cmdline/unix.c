@@ -210,7 +210,25 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 	fm.fiemap.fm_extent_count = 1; /* we are interested only at the first block */
 
 	if (ioctl(f, FS_IOC_FIEMAP, &fm) != -1) {
-		*physical = fm.fiemap.fm_extents[0].fe_physical + FILEPHY_REAL_OFFSET;
+		uint32_t flags = fm.fiemap.fm_extents[0].fe_flags;
+		uint64_t offset = fm.fiemap.fm_extents[0].fe_physical;
+
+		/* check some condition for validating the offset */
+		if (flags & FIEMAP_EXTENT_DATA_INLINE) {
+			/* if the data is inline, we don't have an offset to report */
+			*physical = FILEPHY_WITHOUT_OFFSET;
+		} else if (flags & FIEMAP_EXTENT_UNKNOWN) {
+			/* if the offset is unknown, we don't have an offset to report */
+			*physical = FILEPHY_WITHOUT_OFFSET;
+		} else if (offset == 0) {
+			/* 0 is the general fallback for filesystems when */
+			/* they don't have an offset to report */
+			*physical = FILEPHY_WITHOUT_OFFSET;
+		} else {
+			/* finally report the real offset */
+			*physical = offset + FILEPHY_REAL_OFFSET;
+		}
+
 		if (close(f) == -1)
 			return -1;
 		return 0;
