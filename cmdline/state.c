@@ -1155,7 +1155,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 /**
  * Find a disk by name.
  */
-static struct snapraid_disk* find_disk(struct snapraid_state* state, const char* name)
+static struct snapraid_disk* find_disk_by_name(struct snapraid_state* state, const char* name)
 {
 	tommy_node* i;
 
@@ -1180,6 +1180,39 @@ static struct snapraid_disk* find_disk(struct snapraid_state* state, const char*
 }
 
 /**
+ * Find a disk by UUID.
+ */
+static struct snapraid_disk* find_disk_by_uuid(struct snapraid_state* state, const char* uuid)
+{
+	tommy_node* i;
+	struct snapraid_disk* found = 0;
+
+	/* special test case to find the first macthing UUID */
+	/* when testing UUID are all equal or not supported */
+	/* and we should handle this case specifically */
+	if (state->opt.match_first_uuid)
+		return state->disklist->data;
+
+	/* LCOV_EXCL_START */
+	/* never find an empty uuid */
+	if (!*uuid)
+		return 0;
+
+	for (i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+		if (strcmp(disk->uuid, uuid) == 0) {
+			/* never match duplicate UUID */
+			if (found)
+				return 0;
+			found = disk;
+		}
+	}
+
+	return found;
+	/* LCOV_EXCL_STOP */
+}
+
+/**
  * Update the disk mapping if required.
  */
 static void state_map(struct snapraid_state* state)
@@ -1198,7 +1231,7 @@ static void state_map(struct snapraid_state* state)
 		struct snapraid_map* map = i->data;
 		struct snapraid_disk* disk;
 
-		disk = find_disk(state, map->name);
+		disk = find_disk_by_name(state, map->name);
 
 		/* go to the next mapping before removing */
 		i = i->next;
@@ -1270,7 +1303,7 @@ static void state_map(struct snapraid_state* state)
 			struct snapraid_map* map = i->data;
 			struct snapraid_disk* disk;
 
-			disk = find_disk(state, map->name);
+			disk = find_disk_by_name(state, map->name);
 			if (disk == 0) {
 				/* LCOV_EXCL_START */
 				log_fatal("Internal inconsistency for mapping '%s'\n", map->name);
@@ -1398,7 +1431,7 @@ void state_refresh(struct snapraid_state* state)
 		uint64_t free_space;
 		int ret;
 
-		disk = find_disk(state, map->name);
+		disk = find_disk_by_name(state, map->name);
 		if (disk == 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Internal inconsistency for mapping '%s'\n", map->name);
@@ -2375,20 +2408,30 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			map = map_alloc(buffer, v_pos, v_total_blocks, v_free_blocks, uuid);
-
-			tommy_list_insert_tail(&state->maplist, &map->node, map);
-
 			/* find the disk */
-			disk = find_disk(state, buffer);
+			disk = find_disk_by_name(state, buffer);
+			if (!disk) {
+				/* search by UUID if renamed */
+				disk = find_disk_by_uuid(state, uuid);
+				if (disk) {
+					log_fatal("WARNING! Renaming disk '%s' to '%s'\n", buffer, disk->name);
+
+					/* write the new state with the new name */
+					state->need_write = 1;
+				}
+			}
 			if (!disk) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal("Disk named '%s' not present in the configuration file!\n", buffer);
+				log_fatal("Disk '%s' with uuid '%s' not present in the configuration file!\n", buffer, uuid);
 				log_fatal("If you have removed it from the configuration file, please restore it\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
+
+			map = map_alloc(disk->name, v_pos, v_total_blocks, v_free_blocks, uuid);
+
+			tommy_list_insert_tail(&state->maplist, &map->node, map);
 
 			/* insert in the mapping vector */
 			tommy_array_grow(&disk_mapping, mapping_max + 1);
@@ -2638,7 +2681,7 @@ static void* state_write_thread(void* arg)
 		struct snapraid_disk* disk;
 
 		/* find the disk for this mapping */
-		disk = find_disk(state, map->name);
+		disk = find_disk_by_name(state, map->name);
 		if (!disk) {
 			/* LCOV_EXCL_START */
 			log_fatal("Internal inconsistency for unmapped disk '%s'\n", map->name);
@@ -3072,7 +3115,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		struct snapraid_disk* disk;
 
 		/* find the disk for this mapping */
-		disk = find_disk(state, map->name);
+		disk = find_disk_by_name(state, map->name);
 		if (!disk) {
 			/* LCOV_EXCL_START */
 			log_fatal("Internal inconsistency for unmapped disk '%s'\n", map->name);
@@ -3982,7 +4025,7 @@ void generate_configuration(const char* path)
 		printf("# Set the correct dir for disk '%s'\n", map->name);
 		if (map->uuid[0])
 			printf("# Disk '%s' is the one with id '%s'\n", map->name, map->uuid);
-		disk = find_disk(&state, map->name);
+		disk = find_disk_by_name(&state, map->name);
 		if (disk && disk->filelist) {
 			struct snapraid_file* file = disk->filelist->data;
 			if (file) {

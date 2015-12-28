@@ -118,6 +118,7 @@ EXTRA_DIST = \
 	test/test-par6.conf \
 	test/test-par6-hole.conf \
 	test/test-par6-noaccess.conf \
+	test/test-par6-rename.conf \
 	snapraid.conf.example \
 	configure.windows-x86 configure.windows-x64 snapraid.conf.example.windows \
 	acinclude.m4 \
@@ -185,6 +186,7 @@ endif
 CONF = $(srcdir)/test/test-par6.conf
 HOLE = $(srcdir)/test/test-par6-hole.conf
 NOACCESS = $(srcdir)/test/test-par6-noaccess.conf
+RENAME = $(srcdir)/test/test-par6-rename.conf
 PAR1 = $(srcdir)/test/test-par1.conf
 PAR2 = $(srcdir)/test/test-par2.conf
 PAR3 = $(srcdir)/test/test-par3.conf
@@ -425,6 +427,9 @@ endif
 	echo --- Fix with unaccessible parity and disk
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(NOACCESS) fix --test-expect-failure
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(NOACCESS) fix --force-device --test-expect-recoverable -l test.log
+	echo -- Rename a disk
+	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RENAME) --test-match-first-uuid sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-match-first-uuid sync
 #### SCRUB ####
 	echo --- Scrub some times
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-scrub-at 100 scrub

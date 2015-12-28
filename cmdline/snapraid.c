@@ -247,6 +247,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_EXPECT_NEED_SYNC 285
 #define OPT_NO_WARNINGS 286
 #define OPT_TEST_FAKE_UUID 287
+#define OPT_TEST_MATCH_FIRST_UUID 288
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -367,6 +368,9 @@ struct option long_options[] = {
 
 	/* Fake UUID */
 	{ "test-fake-uuid", 0, 0, OPT_TEST_FAKE_UUID },
+
+	/* Match first UUID */
+	{ "test-match-first-uuid", 0, 0, OPT_TEST_MATCH_FIRST_UUID },
 
 	{ 0, 0, 0, 0 }
 };
@@ -739,6 +743,9 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_TEST_FAKE_UUID :
 			opt.fake_uuid = 2;
+			break;
+		case OPT_TEST_MATCH_FIRST_UUID :
+			opt.match_first_uuid = 1;
 			break;
 		default :
 			/* LCOV_EXCL_START */

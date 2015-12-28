@@ -6,6 +6,8 @@ SnapRAID HISTORY
  * Fixes support for symlinks pointing to an empty target. Before they
    were only partially supported, and their presence could result in
    a content file not readable.
+ * Autorename disks using the matching UUID. To rename a disk you can
+   now change directly the name in the configuration file.
  * Improves the physical offset ordering for the Btrfs filesystem,
    correctly detecting files that have not a physical offset, for
    whatever reason.
