@@ -32,6 +32,11 @@
 /* snapraid */
 
 /**
+ * Max UUID length.
+ */
+#define UUID_MAX 128
+
+/**
  * Invalid position.
  */
 #define POS_INVALID ((block_off_t)-1)
@@ -320,6 +325,8 @@ struct snapraid_disk {
 	char name[PATH_MAX]; /**< Name of the disk. */
 	char dir[PATH_MAX]; /**< Mount point of the disk. It always terminates with /. */
 	char smartctl[PATH_MAX]; /**< Custom command for smartctl. Empty means auto. */
+	char uuid[UUID_MAX]; /**< UUID of the disk. */
+
 	uint64_t device; /**< Device identifier. */
 	uint64_t tick; /**< Usage time of the disk. */
 	block_off_t total_blocks; /**< Number of total blocks. */
@@ -377,11 +384,6 @@ struct snapraid_disk {
 	/* nodes for data structures */
 	tommy_node node;
 };
-
-/**
- * Max UUID length.
- */
-#define UUID_MAX 128
 
 /**
  * Disk mapping.
@@ -866,7 +868,7 @@ static inline tommy_uint32_t dir_name_hash(const char* name)
 /**
  * Allocate a disk.
  */
-struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev, int skip);
+struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev, const char* uuid, int skip);
 
 /**
  * Deallocate a disk.

@@ -725,13 +725,14 @@ int dir_name_compare(const void* void_arg, const void* void_data)
 	return strcmp(arg, dir->sub);
 }
 
-struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev, int skip)
+struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev, const char* uuid, int skip)
 {
 	struct snapraid_disk* disk;
 
 	disk = malloc_nofail(sizeof(struct snapraid_disk));
 	pathcpy(disk->name, sizeof(disk->name), name);
 	pathimport(disk->dir, sizeof(disk->dir), dir);
+	pathcpy(disk->uuid, sizeof(disk->uuid), uuid);
 
 	/* ensure that the dir terminate with "/" if it isn't empty */
 	pathslash(disk->dir, sizeof(disk->dir));
@@ -745,7 +746,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 	disk->has_volatile_inodes = 0;
 	disk->has_unreliable_physical = 0;
 	disk->has_different_uuid = 0;
-	disk->has_unsupported_uuid = 0;
+	disk->has_unsupported_uuid = *uuid == 0; /* empty UUID means unsupported */
 	disk->had_empty_uuid = 0;
 	disk->mapping_idx = -1;
 	disk->skip_access = skip;

@@ -785,6 +785,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 		} else if (strcmp(tag, "disk") == 0) {
 			char dir[PATH_MAX];
 			char device[PATH_MAX];
+			char uuid[UUID_MAX];
 			struct snapraid_disk* disk;
 			uint64_t dev;
 			int skip_access;
@@ -844,11 +845,23 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 				if (stat(device, &st) == 0) {
 					dev = st.st_dev;
+
+					/* read the uuid, if unsupported use an empty one */
+					if (devuuid(dev, uuid, sizeof(uuid)) != 0) {
+						*uuid = 0;
+					}
+
+					/* fake a different UUID when testing */
+					if (state->opt.fake_uuid) {
+						snprintf(uuid, sizeof(uuid), "fake-uuid-%d", state->opt.fake_uuid);
+						--state->opt.fake_uuid;
+					}
 				} else {
 					/* if the disk can be skipped */
 					if (state->opt.force_device) {
 						/* use a fake device, and mark the disk to be skipped */
 						dev = 0;
+						*uuid = 0;
 						skip_access = 1;
 						log_fatal("DANGER! Skipping unaccessible data disk '%s'...\n", buffer);
 					} else {
@@ -866,9 +879,10 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			} else {
 				/* use a fake device */
 				dev = 0;
+				*uuid = 0;
 			}
 
-			disk = disk_alloc(buffer, dir, dev, skip_access);
+			disk = disk_alloc(buffer, dir, dev, uuid, skip_access);
 
 			tommy_list_insert_tail(&state->disklist, &disk->node, disk);
 		} else if (strcmp(tag, "smartctl") == 0) {
@@ -1155,7 +1169,7 @@ static struct snapraid_disk* find_disk(struct snapraid_state* state, const char*
 		/* without a configuration file, add disks automatically */
 		struct snapraid_disk* disk;
 
-		disk = disk_alloc(name, "DUMMY/", -1, 0);
+		disk = disk_alloc(name, "DUMMY/", -1, "", 0);
 
 		tommy_list_insert_tail(&state->disklist, &disk->node, disk);
 
@@ -1255,8 +1269,6 @@ static void state_map(struct snapraid_state* state)
 		for (i = state->maplist; i != 0; i = i->next) {
 			struct snapraid_map* map = i->data;
 			struct snapraid_disk* disk;
-			char uuid[UUID_MAX];
-			int ret;
 
 			disk = find_disk(state, map->name);
 			if (disk == 0) {
@@ -1266,20 +1278,13 @@ static void state_map(struct snapraid_state* state)
 				/* LCOV_EXCL_STOP */
 			}
 
-			ret = devuuid(disk->device, uuid, sizeof(uuid));
-			if (ret != 0) {
-				/* uuid not available, just ignore but marks the disk with unsupported UUID */
-				disk->has_unsupported_uuid = 1;
+			if (disk->has_unsupported_uuid) {
+				/* if uuid is not available, skip this one */
 				continue;
 			}
 
-			if (state->opt.fake_uuid) {
-				snprintf(uuid, sizeof(uuid), "fake-uuid-%d", state->opt.fake_uuid);
-				--state->opt.fake_uuid;
-			}
-
 			/* if the uuid is changed */
-			if (strcmp(uuid, map->uuid) != 0) {
+			if (strcmp(disk->uuid, map->uuid) != 0) {
 				/* mark the disk as with an UUID change */
 				disk->has_different_uuid = 1;
 
@@ -1287,7 +1292,7 @@ static void state_map(struct snapraid_state* state)
 				if (map->uuid[0] != 0) {
 					/* count the number of uuid change */
 					++uuid_mismatch;
-					log_fatal("UUID change for disk '%s' from '%s' to '%s'\n", disk->name, map->uuid, uuid);
+					log_fatal("UUID change for disk '%s' from '%s' to '%s'\n", disk->name, map->uuid, disk->uuid);
 				} else {
 					/* no message here, because having a disk without */
 					/* UUID is the normal state of an empty disk */
@@ -1295,7 +1300,7 @@ static void state_map(struct snapraid_state* state)
 				}
 
 				/* update the uuid in the mapping, */
-				pathcpy(map->uuid, sizeof(map->uuid), uuid);
+				pathcpy(map->uuid, sizeof(map->uuid), disk->uuid);
 
 				/* write the new state with the new uuid */
 				state->need_write = 1;
