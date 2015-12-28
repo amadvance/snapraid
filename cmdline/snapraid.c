@@ -364,7 +364,7 @@ struct option long_options[] = {
 	{ "test-fake-device", 0, 0, OPT_TEST_FAKE_DEVICE },
 
 	/* Disable annoying warnings */
-	{ "test-no-warnings", 0, 0, OPT_NO_WARNINGS },
+	{ "no-warnings", 0, 0, OPT_NO_WARNINGS },
 
 	/* Fake UUID */
 	{ "test-fake-uuid", 0, 0, OPT_TEST_FAKE_UUID },

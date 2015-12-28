@@ -13,6 +13,8 @@ SnapRAID HISTORY
    whatever reason.
  * Adds UUID support to Btrfs filesystems. It's present only if the
    libblkid library is available on the system.
+ * Added a new --no-warnings option to disable some repetitive warnings
+   that could be annoying to power users.
 
 9.1 2015/11
 ===========
