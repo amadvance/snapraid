@@ -3356,7 +3356,8 @@ void state_read(struct snapraid_state* state)
 		state_read_content(state, path, f);
 	} else {
 		/* LCOV_EXCL_START */
-		log_fatal("The text file format is not supported anymore.\n");
+		log_fatal("From SnapRAID v9.0 the text content file is not supported anymore.\n");
+		log_fatal("You have first to upgrade to SnapRAID v8.1 to convert it to binary format.\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
