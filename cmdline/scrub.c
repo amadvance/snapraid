@@ -39,6 +39,7 @@ struct snapraid_rehash {
  * Scrub plan to use.
  */
 struct snapraid_plan {
+	struct snapraid_state* state;
 	int plan; /**< One of the SCRUB_*. */
 	time_t timelimit; /**< Time limit. Valid only with SCRUB_AUTO. */
 	block_off_t lastlimit; /**< Number of blocks allowed with time exactly at ::timelimit. */
@@ -48,13 +49,13 @@ struct snapraid_plan {
 /**
  * Check if we have to process the specified block index ::i.
  */
-static int block_is_enabled(struct snapraid_state* state, block_off_t i, struct snapraid_plan* plan)
+static int block_is_enabled(struct snapraid_plan* plan, block_off_t i)
 {
 	time_t blocktime;
 	snapraid_info info;
 
 	/* don't scrub unused blocks in all plans */
-	info = info_get(&state->infoarr, i);
+	info = info_get(&plan->state->infoarr, i);
 	if (info == 0)
 		return 0;
 
@@ -105,7 +106,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	void* rehandle_alloc;
 	struct snapraid_rehash* rehandle;
 	unsigned diskmax;
-	block_off_t i;
+	block_off_t blockcur;
+	block_off_t blocknext;
 	unsigned j;
 	void* buffer_alloc;
 	void** buffer;
@@ -142,8 +144,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	/* first count the number of blocks to process */
 	countmax = 0;
 	plan->countlast = 0;
-	for (i = blockstart; i < blockmax; ++i) {
-		if (!block_is_enabled(state, i, plan))
+	for (blockcur = blockstart; blockcur < blockmax; ++blockcur) {
+		if (!block_is_enabled(plan, blockcur))
 			continue;
 
 		++countmax;
@@ -163,7 +165,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	countpos = 0;
 	plan->countlast = 0;
 	state_progress_begin(state, blockstart, blockmax, countmax);
-	for (i = blockstart; i < blockmax; ++i) {
+	blocknext = blockstart;
+
+	while (1) {
 		snapraid_info info;
 		int error_on_this_block;
 		int silent_error_on_this_block;
@@ -171,9 +175,16 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		int block_is_unsynced;
 		int rehash;
 
-		if (!block_is_enabled(state, i, plan))
-			continue;
+		/* go to the next block */
+		blockcur = blocknext;
+		if (blockcur >= blockmax)
+			break;
 
+		/* find the next block */
+		++blocknext;
+		while (blocknext < blockmax && !block_is_enabled(plan, blocknext))
+			++blocknext;
+	
 		/* one more block processed for autosave */
 		++autosavedone;
 		--autosavemissing;
@@ -188,7 +199,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		block_is_unsynced = 0;
 
 		/* get block specific info */
-		info = info_get(&state->infoarr, i);
+		info = info_get(&state->infoarr, blockcur);
 
 		/* if we have to use the old hash */
 		rehash = info_get_rehash(info);
@@ -218,7 +229,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			}
 
 			/* if the block is not used */
-			block = fs_par2block_get(disk, i);
+			block = fs_par2block_get(disk, blockcur);
 			if (!block_has_file(block)) {
 				/* use an empty block */
 				memset(buffer[j], 0, state->block_size);
@@ -226,7 +237,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			}
 
 			/* get the file of this block */
-			file = fs_par2file_get(disk, i, &file_pos);
+			file = fs_par2file_get(disk, blockcur, &file_pos);
 
 			/* if the block is unsynced, errors are expected */
 			if (block_has_invalid_parity(block)) {
@@ -249,18 +260,18 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					/* This one is really an unexpected error, because we are only reading */
 					/* and closing a descriptor should never fail */
 					if (errno == EIO) {
-						log_tag("error:%u:%s:%s: Close EIO error. %s\n", i, disk->name, esc(report->sub), strerror(errno));
+						log_tag("error:%u:%s:%s: Close EIO error. %s\n", blockcur, disk->name, esc(report->sub), strerror(errno));
 						log_fatal("DANGER! Unexpected input/output close error in a data disk, it isn't possible to scrub.\n");
 						log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
-						log_fatal("Stopping at block %u\n", i);
+						log_fatal("Stopping at block %u\n", blockcur);
 						++io_error;
 						goto bail;
 					}
 
-					log_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(report->sub), strerror(errno));
+					log_tag("error:%u:%s:%s: Close error. %s\n", blockcur, disk->name, esc(report->sub), strerror(errno));
 					log_fatal("WARNING! Unexpected close error in a data disk, it isn't possible to scrub.\n");
 					log_fatal("Ensure that file '%s' can be accessed.\n", handle[j].path);
-					log_fatal("Stopping at block %u\n", i);
+					log_fatal("Stopping at block %u\n", blockcur);
 					++error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
@@ -271,16 +282,16 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			if (ret == -1) {
 				if (errno == EIO) {
 					/* LCOV_EXCL_START */
-					log_tag("error:%u:%s:%s: Open EIO error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
+					log_tag("error:%u:%s:%s: Open EIO error. %s\n", blockcur, disk->name, esc(file->sub), strerror(errno));
 					log_fatal("DANGER! Unexpected input/output open error in a data disk, it isn't possible to scrub.\n");
 					log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
-					log_fatal("Stopping at block %u\n", i);
+					log_fatal("Stopping at block %u\n", blockcur);
 					++io_error;
 					goto bail;
 					/* LCOV_EXCL_STOP */
 				}
 
-				log_tag("error:%u:%s:%s: Open error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
+				log_tag("error:%u:%s:%s: Open error. %s\n", blockcur, disk->name, esc(file->sub), strerror(errno));
 				++error;
 				error_on_this_block = 1;
 				continue;
@@ -305,12 +316,12 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			read_size = handle_read(&handle[j], file_pos, buffer[j], state->block_size, log_error, 0);
 			if (read_size == -1) {
 				if (errno == EIO) {
-					log_tag("error:%u:%s:%s: Read EIO error at position %u. %s\n", i, disk->name, esc(file->sub), file_pos, strerror(errno));
+					log_tag("error:%u:%s:%s: Read EIO error at position %u. %s\n", blockcur, disk->name, esc(file->sub), file_pos, strerror(errno));
 					if (io_error >= state->opt.io_error_limit) {
 						/* LCOV_EXCL_START */
 						log_fatal("DANGER! Too many input/output read error in a data disk, it isn't possible to scrub.\n");
 						log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
-						log_fatal("Stopping at block %u\n", i);
+						log_fatal("Stopping at block %u\n", blockcur);
 						++io_error;
 						goto bail;
 						/* LCOV_EXCL_STOP */
@@ -322,7 +333,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					continue;
 				}
 
-				log_tag("error:%u:%s:%s: Read error at position %u. %s\n", i, disk->name, esc(file->sub), file_pos, strerror(errno));
+				log_tag("error:%u:%s:%s: Read error at position %u. %s\n", blockcur, disk->name, esc(file->sub), file_pos, strerror(errno));
 				++error;
 				error_on_this_block = 1;
 				continue;
@@ -349,7 +360,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
 					unsigned diff = memdiff(hash, block->hash, HASH_SIZE);
 
-					log_tag("error:%u:%s:%s: Data error at position %u, diff bits %u\n", i, disk->name, esc(file->sub), file_pos, diff);
+					log_tag("error:%u:%s:%s: Data error at position %u, diff bits %u\n", blockcur, disk->name, esc(file->sub), file_pos, diff);
 
 					/* it's a silent error only if we are dealing with synced files */
 					if (file_is_unsynced) {
@@ -380,29 +391,29 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 			/* read the parity */
 			for (l = 0; l < state->level; ++l) {
-				ret = parity_read(parity[l], i, buffer_recov[l], state->block_size, log_error);
+				ret = parity_read(parity[l], blockcur, buffer_recov[l], state->block_size, log_error);
 				if (ret == -1) {
 					buffer_recov[l] = 0;
 
 					if (errno == EIO) {
-						log_tag("parity_error:%u:%s: Read EIO error. %s\n", i, lev_config_name(l), strerror(errno));
+						log_tag("parity_error:%u:%s: Read EIO error. %s\n", blockcur, lev_config_name(l), strerror(errno));
 						if (io_error >= state->opt.io_error_limit) {
 							/* LCOV_EXCL_START */
 							log_fatal("DANGER! Too many input/output read error in the %s disk, it isn't possible to scrub.\n", lev_name(l));
 							log_fatal("Ensure that disk '%s' is sane and can be read.\n", lev_config_name(l));
-							log_fatal("Stopping at block %u\n", i);
+							log_fatal("Stopping at block %u\n", blockcur);
 							++io_error;
 							goto bail;
 							/* LCOV_EXCL_STOP */
 						}
 
-						log_error("Input/Output error in parity '%s' at position '%u'\n", lev_config_name(l), i);
+						log_error("Input/Output error in parity '%s' at position '%u'\n", lev_config_name(l), blockcur);
 						++io_error;
 						io_error_on_this_block = 1;
 						continue;
 					}
 
-					log_tag("parity_error:%u:%s: Read error. %s\n", i, lev_config_name(l), strerror(errno));
+					log_tag("parity_error:%u:%s: Read error. %s\n", blockcur, lev_config_name(l), strerror(errno));
 					++error;
 					error_on_this_block = 1;
 					continue;
@@ -420,14 +431,14 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				if (buffer_recov[l] && memcmp(buffer[diskmax + l], buffer_recov[l], state->block_size) != 0) {
 					unsigned diff = memdiff(buffer[diskmax + l], buffer_recov[l], state->block_size);
 
-					log_tag("parity_error:%u:%s: Data error, diff bits %u\n", i, lev_config_name(l), diff);
+					log_tag("parity_error:%u:%s: Data error, diff bits %u\n", blockcur, lev_config_name(l), diff);
 
 					/* it's a silent error only if we are dealing with synced blocks */
 					if (block_is_unsynced) {
 						++error;
 						error_on_this_block = 1;
 					} else {
-						log_fatal("Data error in parity '%s' at position '%u', diff bits %u\n", lev_config_name(l), i, diff);
+						log_fatal("Data error in parity '%s' at position '%u', diff bits %u\n", lev_config_name(l), blockcur, diff);
 						++silent_error;
 						silent_error_on_this_block = 1;
 					}
@@ -437,7 +448,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 		if (silent_error_on_this_block || io_error_on_this_block) {
 			/* set the error status keeping other info */
-			info_set(&state->infoarr, i, info_set_bad(info));
+			info_set(&state->infoarr, blockcur, info_set_bad(info));
 		} else if (error_on_this_block) {
 			/* do nothing, as this is a generic error */
 			/* likely caused by a not synced array */
@@ -453,7 +464,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 			/* update the time info of the block */
 			/* and clear any other flag */
-			info_set(&state->infoarr, i, info_make(now, 0, 0, 0));
+			info_set(&state->infoarr, blockcur, info_make(now, 0, 0, 0));
 		}
 
 		/* mark the state as needing write */
@@ -463,7 +474,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		++countpos;
 
 		/* progress */
-		if (state_progress(state, i, countpos, countmax, countsize)) {
+		if (state_progress(state, blockcur, countpos, countmax, countsize)) {
 			/* LCOV_EXCL_START */
 			break;
 			/* LCOV_EXCL_STOP */
@@ -533,7 +544,7 @@ bail:
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			log_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
+			log_tag("error:%u:%s:%s: Close error. %s\n", blockcur, disk->name, esc(file->sub), strerror(errno));
 			log_fatal("DANGER! Unexpected close error in a data disk.\n");
 			++error;
 			/* continue, as we are already exiting */
@@ -605,6 +616,7 @@ int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 	countlimit = 0;
 	recentlimit = 0;
 
+	ps.state = state;
 	if (state->opt.force_scrub_even) {
 		ps.plan = SCRUB_EVEN;
 	} else if (plan == SCRUB_FULL) {
