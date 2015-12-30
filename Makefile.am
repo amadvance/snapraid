@@ -16,6 +16,7 @@ snapraid_SOURCES = \
 	raid/tag.c \
 	tommyds/tommy.c \
 	cmdline/snapraid.c \
+	cmdline/io.c \
 	cmdline/util.c \
 	cmdline/stream.c \
 	cmdline/support.c \
@@ -70,6 +71,7 @@ noinst_HEADERS = \
 	tommyds/tommytree.c \
 	cmdline/portable.h \
 	cmdline/snapraid.h \
+	cmdline/io.h \
 	cmdline/util.h \
 	cmdline/stream.h \
 	cmdline/support.h \
