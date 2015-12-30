@@ -1942,7 +1942,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 			}
 
 			parity_ptr[l] = &parity[l];
-			ret = parity_create(parity_ptr[l], state->parity[l].path, &out_size, state->file_mode);
+			ret = parity_create(parity_ptr[l], l, state->parity[l].path, &out_size, state->file_mode);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
 				log_fatal("WARNING! Without an accessible %s file, it isn't possible to fix any error.\n", lev_name(l));
@@ -1963,7 +1963,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 		/* it may fail if the file doesn't exist, in this case we continue to check the files */
 		for (l = 0; l < state->level; ++l) {
 			parity_ptr[l] = &parity[l];
-			ret = parity_open(parity_ptr[l], state->parity[l].path, state->file_mode);
+			ret = parity_open(parity_ptr[l], l, state->parity[l].path, state->file_mode);
 			if (ret == -1) {
 				msg_status("No accessible %s file, only files will be checked.\n", lev_name(l));
 				/* continue anyway */

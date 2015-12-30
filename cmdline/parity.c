@@ -149,11 +149,12 @@ void parity_overflow(struct snapraid_state* state, data_off_t size)
 	}
 }
 
-int parity_create(struct snapraid_parity_handle* parity, const char* path, data_off_t* out_size, int mode)
+int parity_create(struct snapraid_parity_handle* parity, unsigned level, const char* path, data_off_t* out_size, int mode)
 {
 	int ret;
 	int flags;
 
+	parity->level = level;
 	pathcpy(parity->path, sizeof(parity->path), path);
 
 	/* opening in sequential mode in Windows */
@@ -323,11 +324,12 @@ bail:
 	/* LCOV_EXCL_STOP */
 }
 
-int parity_open(struct snapraid_parity_handle* parity, const char* path, int mode)
+int parity_open(struct snapraid_parity_handle* parity, unsigned level, const char* path, int mode)
 {
 	int ret;
 	int flags;
 
+	parity->level = level;
 	pathcpy(parity->path, sizeof(parity->path), path);
 
 	/* open for read */

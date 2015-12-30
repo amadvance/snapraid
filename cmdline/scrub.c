@@ -723,7 +723,7 @@ int state_scrub(struct snapraid_state* state, int plan, int olderthan)
 	/* open the file for reading */
 	for (l = 0; l < state->level; ++l) {
 		parity_ptr[l] = &parity[l];
-		ret = parity_open(parity_ptr[l], state->parity[l].path, state->file_mode);
+		ret = parity_open(parity_ptr[l], l, state->parity[l].path, state->file_mode);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
 			log_fatal("WARNING! Without an accessible %s file, it isn't possible to scrub.\n", lev_name(l));
