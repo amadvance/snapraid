@@ -2425,6 +2425,9 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				decoding_error(path, f);
 				log_fatal("Disk '%s' with uuid '%s' not present in the configuration file!\n", buffer, uuid);
 				log_fatal("If you have removed it from the configuration file, please restore it\n");
+				/* if it's a command without UUID, it cannot autorename using UUID */
+				if (state->opt.skip_disk_access)
+					log_fatal("If you have renamed it, run 'sync' to update the new name\n");
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
