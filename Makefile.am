@@ -673,6 +673,8 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-force-scrub-even scrub
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
+	$(MSG) Full sync to complete rehash
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -F sync
 	$(MSG) Delete files from three disks and check/fix with import by data in PAR2
 	rm -r bench/disk1/a
 	rm -r bench/disk2/a
