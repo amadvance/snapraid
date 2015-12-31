@@ -706,8 +706,10 @@ endif
 	rm -r bench/disk1/a_copy
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 	$(MSG) Abort sync early with additions, delete them and recover with PAR2
-	$(MSG) This triggers the recovering with q using p to check the validity, but failing for new block being filled with zero
+	$(MSG) This triggers the recovering with q using p to check the validity, but failing for new blocks being filled with zero
 	cp -pR bench/disk1/a bench/disk1/a_copy
+# Ensure that there is at least one zero filled file
+	head -c 8192 /dev/zero > bench/disk1/a_copy/ZERO_FILLED
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -B 1 --test-kill-after-sync -c $(CONF) sync
 	rm -r bench/disk1/a_copy
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR2) fix -l test-fail-earlysyncadd.log
