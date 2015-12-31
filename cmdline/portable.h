@@ -228,6 +228,13 @@
 #endif
 
 /**
+ * Enable thread use.
+ */
+#if HAVE_PTHREAD_H && HAVE_PTHREAD_CREATE
+#define HAVE_PTHREAD 1
+#endif
+
+/**
  * Disable case check in Windows.
  */
 #ifdef _WIN32
@@ -419,7 +426,7 @@ struct devinfo_struct {
 	struct devinfo_struct* parent; /**< Pointer at the parent if any. */
 	uint64_t smart[SMART_COUNT]; /**< SMART raw attributes. */
 	char smart_serial[SMART_MAX]; /**< SMART serial number. */
-#if HAVE_PTHREAD_CREATE
+#if HAVE_PTHREAD
 	pthread_t thread;
 #endif
 	tommy_node node;

@@ -76,7 +76,7 @@ void usage(void)
 
 void memory(void)
 {
-	log_tag("memory:used:%" PRIu64 "\n", (uint64_t)malloc_counter());
+	log_tag("memory:used:%" PRIu64 "\n", (uint64_t)malloc_counter_get());
 
 	/* size of the block */
 	log_tag("memory:block:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_block)));
@@ -85,7 +85,7 @@ void memory(void)
 	log_tag("memory:link:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_link)));
 	log_tag("memory:dir:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_dir)));
 
-	msg_progress("Using %u MiB of memory.\n", (unsigned)(malloc_counter() / (1024 * 1024)));
+	msg_progress("Using %u MiB of memory.\n", (unsigned)(malloc_counter_get() / (1024 * 1024)));
 }
 
 /****************************************************************************/

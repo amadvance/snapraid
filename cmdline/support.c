@@ -607,9 +607,35 @@ int fmtime(int f, int64_t mtime_sec, int mtime_nsec)
  */
 static size_t mcounter;
 
-size_t malloc_counter(void)
+/**
+ * Mutex protection for the global memory counter.
+ */
+#if HAVE_PTHREAD
+pthread_mutex_t mcounter_mutex = PTHREAD_MUTEX_INITIALIZER;
+#endif
+
+size_t malloc_counter_get(void)
 {
-	return mcounter;
+	size_t ret;
+#if HAVE_PTHREAD
+	pthread_mutex_lock(&mcounter_mutex);
+#endif
+	ret = mcounter;
+#if HAVE_PTHREAD
+	pthread_mutex_unlock(&mcounter_mutex);
+#endif
+	return ret;
+}
+
+void malloc_counter_inc(size_t inc)
+{
+#if HAVE_PTHREAD
+	pthread_mutex_lock(&mcounter_mutex);
+#endif
+	mcounter += inc;
+#if HAVE_PTHREAD
+	pthread_mutex_unlock(&mcounter_mutex);
+#endif
 }
 
 /* LCOV_EXCL_START */
@@ -652,7 +678,7 @@ void malloc_fail(size_t size)
 	malloc_printn(f, size);
 	malloc_print(f, " bytes.\n");
 	malloc_print(f, "Already allocated ");
-	malloc_printn(f, malloc_counter());
+	malloc_printn(f, malloc_counter_get());
 	malloc_print(f, " bytes.\n");
 	if (sizeof(void*) == 4) {
 		malloc_print(f, "You are currently using a 32 bits executable.\n");
@@ -682,7 +708,7 @@ void* malloc_nofail(size_t size)
 	memset(ptr, 0xA5, size);
 #endif
 
-	mcounter += size;
+	malloc_counter_inc(size);
 
 	return ptr;
 }
@@ -705,7 +731,7 @@ void* calloc_nofail(size_t count, size_t size)
 
 	memset(ptr, 0, size);
 
-	mcounter += size;
+	malloc_counter_inc(size);
 
 	return ptr;
 }
@@ -728,7 +754,7 @@ char* strdup_nofail(const char* str)
 
 	memcpy(ptr, str, size);
 
-	mcounter += size;
+	malloc_counter_inc(size);
 
 	return ptr;
 }

@@ -249,7 +249,7 @@ int fmtime(int f, int64_t mtime_sec, int mtime_nsec);
 /**
  * Return the size of the allocated memory.
  */
-size_t malloc_counter(void);
+size_t malloc_counter_get(void);
 
 /**
  * Safe malloc.

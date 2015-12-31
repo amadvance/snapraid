@@ -42,7 +42,7 @@
  * Multi thread for verify is instead always generally faster,
  * so we enable it if possible.
  */
-#if HAVE_PTHREAD_CREATE
+#if HAVE_PTHREAD
 /* #define HAVE_MT_WRITE 1 */
 #define HAVE_MT_VERIFY 1
 #endif
