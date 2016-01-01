@@ -213,7 +213,19 @@ if HAVE_THREAD_CHECKER
 	$(MSG) Create some files
 	$(TESTENV) ./mktest$(EXEEXT) generate 1 6 $(CHECKCOUNT) $(CHECKSIZE)
 	$(MSG) Some commands that use threads
+# First sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+# Remove, move and add some more
+	rm bench/disk4/a/9*
+	rm bench/disk5/a/9*
+	rm bench/disk6/a/9*
+	mv bench/disk1/a/9* bench/disk4/a
+	mv bench/disk2/a/9* bench/disk5/a
+	mv bench/disk3/a/9* bench/disk6/a
+	$(TESTENV) ./mktest$(EXEEXT) change 2 500 bench/disk2/b/* bench/disk3/b/*
+# Sync again
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+# Other commands that uses threads
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) test-rewrite
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) scrub
 else
