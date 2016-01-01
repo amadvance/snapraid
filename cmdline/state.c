@@ -27,6 +27,26 @@
 #include "raid/raid.h"
 #include "raid/cpu.h"
 
+/**
+ * Configure the multithread support.
+ *
+ * Multi thread for write could be either faster or slower, depending
+ * on the specific conditions. With multithreads it's likely faster
+ * writing to disk, but you'll need to access multiple times the same data,
+ * being potentially slower.
+ *
+ * For upcoming SnapRAID version it's planned to add a mutex protection
+ * at the filesystem structure, slowing down multiple data access,
+ * so we disable it.
+ *
+ * Multi thread for verify is instead always generally faster,
+ * so we enable it if possible.
+ */
+#if HAVE_PTHREAD_CREATE
+/* #define HAVE_MT_WRITE 1 */
+#define HAVE_MT_VERIFY 1
+#endif
+
 const char* lev_name(unsigned l)
 {
 	switch (l) {
@@ -2567,7 +2587,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 
 struct state_write_thread_context {
 	struct snapraid_state* state;
-#if HAVE_PTHREAD_CREATE
+#if HAVE_MT_WRITE
 	pthread_t thread;
 #endif
 	/* input */
@@ -3016,7 +3036,7 @@ static void* state_write_thread(void* arg)
 
 static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 {
-#ifdef HAVE_PTHREAD_CREATE
+#if HAVE_MT_WRITE
 	int fail;
 	int first;
 #else
@@ -3098,7 +3118,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		}
 	}
 
-#ifdef HAVE_PTHREAD_CREATE
+#if HAVE_MT_WRITE
 	/* start all writing threads */
 	i = tommy_list_head(&state->contentlist);
 	while (i) {
@@ -3470,7 +3490,7 @@ void state_read(struct snapraid_state* state)
 struct state_verify_thread_context {
 	struct snapraid_state* state;
 	struct snapraid_content* content;
-#if HAVE_PTHREAD_CREATE
+#if HAVE_MT_VERIFY
 	pthread_t thread;
 #else
 	void* retval;
@@ -3556,7 +3576,7 @@ static void state_verify_content(struct snapraid_state* state, uint32_t crc)
 		context->crc = crc;
 		context->f = f;
 
-#if HAVE_PTHREAD_CREATE
+#if HAVE_MT_VERIFY
 		if (pthread_create(&context->thread, 0, state_verify_thread, context) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Failed to create thread.\n");
@@ -3578,7 +3598,7 @@ static void state_verify_content(struct snapraid_state* state, uint32_t crc)
 		struct state_verify_thread_context* context = content->context;
 		void* retval;
 
-#if HAVE_PTHREAD_CREATE
+#if HAVE_MT_VERIFY
 		if (pthread_join(context->thread, &retval) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Failed to join thread.\n");

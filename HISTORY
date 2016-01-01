@@ -6,6 +6,10 @@ SnapRAID HISTORY
  * Fixes support for symlinks pointing to an empty target. Before they
    were only partially supported, and their presence could result in
    a content file not readable.
+   This also disables multi threads content write, as this was the issue
+   we tried to detect with this feature, as in fact it doesn't provide
+   a performance advantage. Content verification is instead still multi
+   threads because it provides a performance advantage.
  * Autorename disks using the matching UUID. To rename a disk you can
    now change directly the name in the configuration file.
  * Improves the physical offset ordering for the Btrfs filesystem,
