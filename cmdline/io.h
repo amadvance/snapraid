@@ -105,15 +105,6 @@ struct snapraid_worker {
 	 * Which buffer base index should be used for destination.
 	 */
 	unsigned buffer_skew;
-
-	/**
-	 * Last chunk we accessed.
-	 *
-	 * It's used to optimize access of sequential blocks.
-	 * We cannot use the one in ::disk because it's used
-	 * by the main thread.
-	 */
-	struct snapraid_chunk* fs_last;
 };
 
 /**

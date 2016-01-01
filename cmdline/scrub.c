@@ -121,7 +121,7 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 	}
 
 	/* get the block */
-	task->block = fs_par2block_get_ts(disk, &worker->fs_last, blockcur);
+	task->block = fs_par2block_get(disk, blockcur);
 
 	/* if the block is not used */
 	if (!block_has_file(task->block)) {
@@ -132,7 +132,7 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 	}
 
 	/* get the file of this block */
-	task->file = fs_par2file_get_ts(disk, &worker->fs_last, blockcur, &task->file_pos);
+	task->file = fs_par2file_get(disk, blockcur, &task->file_pos);
 
 	/* if the file is different than the current one, close it */
 	if (handle->file != 0 && handle->file != task->file) {

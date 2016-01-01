@@ -53,7 +53,6 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state, unsigned buff
 		struct snapraid_worker* worker = &io->worker_map[i];
 
 		worker->io = io;
-		worker->fs_last = 0;
 
 		if (i < handle_max) {
 			worker->handle = &handle_map[i];
