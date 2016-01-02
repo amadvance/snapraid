@@ -43,7 +43,7 @@
 #endif
 
 /**
- * Open a file with the O_NOATIME flag to avoid to update the acces time.
+ * Open a file with the O_NOATIME flag to avoid to update the access time.
  */
 int open_noatime(const char* file, int flags);
 

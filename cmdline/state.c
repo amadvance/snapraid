@@ -36,7 +36,7 @@
  * being potentially slower.
  *
  * For upcoming SnapRAID version it's planned to add a mutex protection
- * at the filesystem structure, slowing down multiple data access,
+ * at the file-system structure, slowing down multiple data access,
  * so we disable it.
  *
  * Multi thread for verify is instead always generally faster,
@@ -255,7 +255,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 			if (disk->device == 0) {
 				/* LCOV_EXCL_START */
 				log_fatal("Disk '%s' has a zero serial number.\n", disk->dir);
-				log_fatal("This is not necessarely wrong, but for using SnapRAID\n");
+				log_fatal("This is not necessarily wrong, but for using SnapRAID\n");
 				log_fatal("it's better to change the serial number of the disk.\n");
 				log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'.\n");
 				exit(EXIT_FAILURE);
@@ -337,7 +337,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 			if (state->parity[l].device == 0) {
 				/* LCOV_EXCL_START */
 				log_fatal("Disk '%s' has a zero serial number.\n", state->parity[l].path);
-				log_fatal("This is not necessarely wrong, but for using SnapRAID\n");
+				log_fatal("This is not necessarily wrong, but for using SnapRAID\n");
 				log_fatal("it's better to change the serial number of the disk.\n");
 				log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'.\n");
 				exit(EXIT_FAILURE);
@@ -395,7 +395,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 		if (state->pool[0] != 0 && state->pool_device == 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Disk '%s' has a zero serial number.\n", state->pool);
-			log_fatal("This is not necessarely wrong, but for using SnapRAID\n");
+			log_fatal("This is not necessarily wrong, but for using SnapRAID\n");
 			log_fatal("it's better to change the serial number of the disk.\n");
 			log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'.\n");
 			exit(EXIT_FAILURE);
@@ -645,7 +645,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 						/* use a fake device, and mark the disk to be skipped */
 						dev = 0;
 						skip_access = 1;
-						log_fatal("DANGER! Skipping unaccessible parity disk '%s'...\n", tag);
+						log_fatal("DANGER! Skipping inaccessible parity disk '%s'...\n", tag);
 					} else {
 						/* LCOV_EXCL_START */
 						log_fatal("Error accessing 'parity' dir '%s' specification in '%s' at line %u\n", device, path, line);
@@ -784,7 +784,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				if (state->opt.skip_content_access) {
 					/* use a fake device */
 					dev = 0;
-					log_fatal("WARNING! Skipping unaccessible content file '%s'...\n", buffer);
+					log_fatal("WARNING! Skipping inaccessible content file '%s'...\n", buffer);
 				} else {
 					/* LCOV_EXCL_START */
 					log_fatal("Error accessing 'content' dir '%s' specification in '%s' at line %u\n", device, path, line);
@@ -883,7 +883,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 						dev = 0;
 						*uuid = 0;
 						skip_access = 1;
-						log_fatal("DANGER! Skipping unaccessible data disk '%s'...\n", buffer);
+						log_fatal("DANGER! Skipping inaccessible data disk '%s'...\n", buffer);
 					} else {
 						/* LCOV_EXCL_START */
 						log_fatal("Error accessing 'disk' '%s' specification in '%s' at line %u\n", dir, device, line);
@@ -1207,7 +1207,7 @@ static struct snapraid_disk* find_disk_by_uuid(struct snapraid_state* state, con
 	tommy_node* i;
 	struct snapraid_disk* found = 0;
 
-	/* special test case to find the first macthing UUID */
+	/* special test case to find the first matching UUID */
 	/* when testing UUID are all equal or not supported */
 	/* and we should handle this case specifically */
 	if (state->opt.match_first_uuid)
@@ -1462,7 +1462,7 @@ void state_refresh(struct snapraid_state* state)
 		ret = fsinfo(disk->dir, 0, &total_space, &free_space);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error accessing disk '%s' to get filesystem info. %s.\n", disk->dir, strerror(errno));
+			log_fatal("Error accessing disk '%s' to get file-system info. %s.\n", disk->dir, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1485,7 +1485,7 @@ void state_refresh(struct snapraid_state* state)
 		ret = fsinfo(state->parity[l].path, 0, &total_space, &free_space);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error accessing file '%s' to get filesystem info. %s.\n", state->parity[l].path, strerror(errno));
+			log_fatal("Error accessing file '%s' to get file-system info. %s.\n", state->parity[l].path, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -2029,7 +2029,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						}
 					} else {
 						/* extra info are accepted for backward compatibility */
-						/* they are discarged at the first write */
+						/* they are discarded at the first write */
 					}
 
 					/* go to next block */
@@ -2075,7 +2075,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					/* LCOV_EXCL_STOP */
 				}
 
-				/* get the subcommand */
+				/* get the sub-command */
 				c = sgetc(f);
 
 				switch (c) {
@@ -2108,7 +2108,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 							/* LCOV_EXCL_STOP */
 						}
 
-						/* if we are clearing undeterminated hashes */
+						/* if we are clearing indeterminate hashes */
 						if (state->clear_past_hash) {
 							/* set the hash value to INVALID */
 							hash_invalid_set(block->hash);
@@ -2315,7 +2315,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 		} else if (c == 'C') {
-			/* get the subcommand */
+			/* get the sub-command */
 			c = sgetc(f);
 
 			switch (c) {
@@ -2563,7 +2563,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* check the filesystem on all disks */
+	/* check the file-system on all disks */
 	state_fscheck(state, "after read");
 
 	/* check that the stored parity size matches the loaded state */
@@ -3061,7 +3061,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 	/* blocks of all array */
 	blockmax = parity_allocated_size(state);
 
-	/* check the filesystem on all disks */
+	/* check the file-system on all disks */
 	state_fscheck(state, "before write");
 
 	/* clear the info for unused blocks */
@@ -3363,7 +3363,7 @@ void state_read(struct snapraid_state* state)
 
 		f = sopen_read(path);
 		if (f != 0) {
-			/* if openend stop the search */
+			/* if opened stop the search */
 			break;
 		} else {
 			/* if it's real error of an existing file, abort */
@@ -4069,13 +4069,13 @@ void state_fscheck(struct snapraid_state* state, const char* ope)
 {
 	tommy_node* i;
 
-	/* check the filesystem on all disks */
+	/* check the file-system on all disks */
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 
 		if (fs_check(disk) != 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Internal inconsistency in filesystem for disk '%s' %s\n", disk->name, ope);
+			log_fatal("Internal inconsistency in file-system for disk '%s' %s\n", disk->name, ope);
 			os_abort();
 			/* LCOV_EXCL_STOP */
 		}

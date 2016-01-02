@@ -114,7 +114,7 @@ void msg_status(const char* format, ...) __attribute__((format(attribute_printf,
  * Potentially a lot of messages are possible. They can still be on the screen,
  * as losing them we don't lose information.
  *
- * These messages never go in the log file, becauae there is always a corresponding log_tag().
+ * These messages never go in the log file, because there is always a corresponding log_tag().
  */
 void msg_info(const char* format, ...) __attribute__((format(attribute_printf, 1, 2)));
 
@@ -225,12 +225,12 @@ void pathcut(char* dst);
 
 /**
  * Compare two paths.
- * In Windows it's case insentive and assumes \ equal at /.
+ * In Windows it's case insensitive and assumes \ equal at /.
  */
 int pathcmp(const char* a, const char* b);
 
 /****************************************************************************/
-/* filesystem */
+/* file-system */
 
 /**
  * Create all the ancestor directories if missing.

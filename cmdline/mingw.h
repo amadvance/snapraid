@@ -137,7 +137,7 @@ struct windows_stat {
 	uint32_t st_dev;
 	int st_hidden;
 	const char* st_desc;
-	int st_sync; /**< If the information are in sync with the filesystem. */
+	int st_sync; /**< If the information are in sync with the file-system. */
 };
 
 /**

@@ -232,7 +232,7 @@ static void scan_file_allocate(struct snapraid_scan* scan, struct snapraid_file*
 					/* - Sync aborted after, updating the parity to the new state, */
 					/*   but without saving the content file representing this new state. */
 					/* - Another file is added again (exactly here) */
-					/*   with the hash of DELETED block not represeting the real parity state */
+					/*   with the hash of DELETED block not representing the real parity state */
 					hash_invalid_set(block->hash);
 				}
 			}
@@ -304,7 +304,7 @@ static void scan_file_deallocate(struct snapraid_scan* scan, struct snapraid_fil
 				/*   but without saving the content file representing this new state. */
 				/* - File is now deleted after the aborted sync */
 				/* - Sync again, deleting the blocks (exactly here) */
-				/*   with the hash of CHG block not represeting the real parity state */
+				/*   with the hash of CHG block not representing the real parity state */
 				hash_invalid_set(block->hash);
 			}
 			break;
@@ -606,7 +606,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	 * If the disk has persistent inodes and UUID, try a search on the past inodes,
 	 * to detect moved files.
 	 *
-	 * For persistent inodes we mean inodes that keep their values when the filesystem
+	 * For persistent inodes we mean inodes that keep their values when the file-system
 	 * is unmounted and remounted. This don't always happen.
 	 *
 	 * Cases found are:
@@ -620,10 +620,10 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	 * file recognition.
 	 *
 	 * For persistent UUID we mean that it has the same UUID as before.
-	 * Otherwise, if the UUID is changed, likely it's a new recreated filesystem,
+	 * Otherwise, if the UUID is changed, likely it's a new recreated file-system,
 	 * and then the inode have no meaning.
 	 *
-	 * Note that to disable the search by past inode, we do this implicitely
+	 * Note that to disable the search by past inode, we do this implicitly
 	 * removing all the past inode before searching for files.
 	 * This ensures that no file is found with a past inode, but at the same time,
 	 * it allows to find new files with the same inode, to identify them as hardlinks.
@@ -716,7 +716,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		/* here the file matches the inode, but not the other info */
 		/* if could be a modified file with the same name, */
 		/* or a restored/copied file that get assigned a previously used inode, */
-		/* or a filesystem with not persistent inodes */
+		/* or a file-system with not persistent inodes */
 
 		/* for sure it cannot be already present */
 		if (file_flag_has(file, FILE_IS_PRESENT)) {
@@ -728,7 +728,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 
 		/* assume a previously used inode, it's the worst case */
 		/* and we handle it removing the duplicate stored inode. */
-		/* If the file is found by name (not necessarely in this function call), */
+		/* If the file is found by name (not necessarily in this function call), */
 		/* it will have the inode restored, otherwise, it will get removed */
 
 		/* remove from the inode set */
@@ -1435,7 +1435,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		ret = fsinfo(disk->dir, &has_persistent_inode, 0, 0);
 		if (ret < 0) {
 			/* LCOV_EXCL_START */
-			log_fatal("Error accessing disk '%s' to get filesystem info. %s.\n", disk->dir, strerror(errno));
+			log_fatal("Error accessing disk '%s' to get file-system info. %s.\n", disk->dir, strerror(errno));
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1811,7 +1811,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 
 	tommy_list_foreach(&scanlist, (tommy_foreach_func*)free);
 
-	/* check the filesystem on all disks */
+	/* check the file-system on all disks */
 	state_fscheck(state, "after scan");
 
 	if (is_diff) {

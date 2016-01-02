@@ -43,7 +43,7 @@ block_off_t parity_allocated_size(struct snapraid_state* state);
  * This includes only parity blocks used for files, not counting
  * potential invalid parity at the end.
  *
- * If the array is fully synched there is no difference between
+ * If the array is fully synced there is no difference between
  * parity_allocate_size() and parity_used_size().
  * But if the sync is interrupted, the parity_used_size() returns
  * the position of the latest BLK block, ignoring CHG, REL and DELETED ones,
@@ -56,7 +56,7 @@ block_off_t parity_used_size(struct snapraid_state* state);
  *
  * This is the same logic used in "status" to detect an incomplete "sync",
  * that ignores invalid block, if they are not used by a file in any disk.
- * This means that DELETED blocks won't necessarely imply an invalid parity.
+ * This means that DELETED blocks won't necessarily imply an invalid parity.
  */
 int parity_is_invalid(struct snapraid_state* state);
 

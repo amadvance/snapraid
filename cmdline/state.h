@@ -74,11 +74,11 @@ struct snapraid_option {
 	int syncedonly; /**< In fix, fixes only files that are synced. */
 	int prehash; /**< Enables the prehash mode for sync. */
 	unsigned io_error_limit; /**< Max number of input/output errors before aborting. */
-	int force_zero; /**< Forced dangerous operations of synching files now with zero size. */
-	int force_empty; /**< Forced dangerous operations of synching disks now empty. */
-	int force_uuid; /**< Forced dangerous operations of synching disks with uuid changed. */
+	int force_zero; /**< Forced dangerous operations of syncing files now with zero size. */
+	int force_empty; /**< Forced dangerous operations of syncing disks now empty. */
+	int force_uuid; /**< Forced dangerous operations of syncing disks with uuid changed. */
 	int force_device; /**< Forced dangerous operations of using disks with save device id. */
-	int force_nocopy; /**< Force dangerous operations of synching files without using copy detection. */
+	int force_nocopy; /**< Force dangerous operations of syncing files without using copy detection. */
 	int force_full; /**< Force a full sync when using an old content file. */
 	int expect_unrecoverable; /**< Expect presence of unrecoverable error in checking or fixing. */
 	int expect_recoverable; /**< Expect presence of recoverable error in checking. */
@@ -313,7 +313,7 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize);
 
 /**
- * Stop temporarely the progress.
+ * Stop temporarily the progress.
  */
 void state_progress_stop(struct snapraid_state* state);
 
@@ -384,7 +384,7 @@ static inline void state_usage_parity(struct snapraid_state* state, unsigned lev
 void state_usage_print(struct snapraid_state* state);
 
 /**
- * Check the filesystem on all disks.
+ * Check the file-system on all disks.
  * On error it aborts.
  */
 void state_fscheck(struct snapraid_state* state, const char* ope);

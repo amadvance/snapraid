@@ -121,7 +121,7 @@ static BOOLEAN (WINAPI* ptr_CreateSymbolicLinkW)(LPWSTR, LPWSTR, DWORD);
 
 /**
  * Direct access to RtlGenRandom().
- * This function is accessible only with LoadLibrary() and it's availble from Windows XP.
+ * This function is accessible only with LoadLibrary() and it's available from Windows XP.
  */
 static BOOLEAN (WINAPI* ptr_RtlGenRandom)(PVOID, ULONG);
 
@@ -185,7 +185,7 @@ void os_init(int opt)
 
 	is_scan_winfind = opt != 0;
 
-	/* initialize the thread local storage for strerror(), using free() as desctructor */
+	/* initialize the thread local storage for strerror(), using free() as destructor */
 	if (pthread_key_create(&last_error, free) != 0) {
 		log_fatal("Error calling pthread_key_create().\n");
 		exit(EXIT_FAILURE);
@@ -1452,7 +1452,7 @@ int windows_symlink(const char* existing, const char* file)
 	return 0;
 }
 
-/* Adds missing defition in MingW winnt.h */
+/* Adds missing definitions in MingW winnt.h */
 #ifndef FSCTL_GET_REPARSE_POINT
 #define FSCTL_GET_REPARSE_POINT 0x000900a8
 #endif
@@ -1905,7 +1905,7 @@ static int devresolve(const char* mount, char* file, size_t file_size, char* wfi
 		return -1;
 	}
 
-	/* remove the final slash, otherwise CreateFile() opens the filesystem */
+	/* remove the final slash, otherwise CreateFile() opens the file-system */
 	/* and not the volume */
 	i = 0;
 	while (volume_guid[i] != 0)
@@ -2178,7 +2178,7 @@ retry:
 		 *
 		 * Sometimes the "type" autodetection is wrong, and the command fails at identification
 		 * stage, returning with error 2, or even with error 0, and with no info at all.
-		 * We detect this conditon checking the PowerOnHours, Size and RotationRate attributes.
+		 * We detect this condition checking the PowerOnHours, Size and RotationRate attributes.
 		 *
 		 * In such conditions we retry using the "sat" type, that often allows to proceed.
 		 *

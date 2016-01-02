@@ -294,7 +294,7 @@ int devuuid(uint64_t device, char* uuid, size_t size);
 #define FILEPHY_UNREAD_OFFSET 0
 
 /**
- * Special value returned when the filesystem doesn't report any offset for unknown reason.
+ * Special value returned when the file-system doesn't report any offset for unknown reason.
  */
 #define FILEPHY_UNREPORTED_OFFSET 1
 
@@ -311,13 +311,13 @@ int devuuid(uint64_t device, char* uuid, size_t size);
 
 /**
  * Get the physcal address of the specified file.
- * This is expected to be just a hint and not necessarely correct or unique.
+ * This is expected to be just a hint and not necessarily correct or unique.
  * Return 0 on success.
  */
 int filephy(const char* path, uint64_t size, uint64_t* physical);
 
 /**
- * Check if the underline filesystem support persistent inodes.
+ * Check if the underline file-system support persistent inodes.
  * Return -1 on error, 0 on success.
  */
 int fsinfo(const char* path, int* has_persistent_inode, uint64_t* total_space, uint64_t* free_space);
@@ -341,7 +341,7 @@ uint64_t tick_ms(void);
 void os_init(int opt);
 
 /**
- * Deintialize the system.
+ * Deinitialize the system.
  */
 void os_done(void);
 

@@ -111,7 +111,7 @@ struct snapraid_filter {
  * data used to compute the parity, because the sync process was interrupted at an unknown point,
  * and the parity may or may not be updated.
  *
- * For this reson we clear all such hashes when reading the state from an incomplete sync before
+ * For this reason we clear all such hashes when reading the state from an incomplete sync before
  * starting a new sync, because sync is affected by such hashes, as sync updates the parity, only
  * if the new data read for CHG blocks has a mismatching hash.
  * Clearing is done setting the ::clear_past_hash flag before reading the state.
@@ -125,7 +125,7 @@ struct snapraid_filter {
  * This happens when a new block overwrite a just removed block, or an empty space.
  *
  * Note that when the file copy heuristic is enabled, the REP blocks may be set
- * using this euristic, meaning that the hash may be wrong.
+ * using this heuristic, meaning that the hash may be wrong.
  *
  * For this reason, when the ::force_nocopy flag is enabled in sync, we convert all the REP blocks
  * to CHG, invalidating the stored hash.
@@ -228,7 +228,7 @@ struct snapraid_block {
 
 /**
  * If the file is without inode.
- * It could happen in filesystem where inodes are not persistent,
+ * It could happen in file-system where inodes are not persistent,
  * or when restoring a full disk with "fix".
  * In such cases we have to clear any stored duplicate inode.
  * After the scan process completes, no file should have this flag set.
@@ -240,7 +240,7 @@ struct snapraid_block {
  * This happens when a file is deleted from the array,
  * but it's keep inside the parity until the next sync.
  *
- * During the filesystem check we needs this information,
+ * During the file-system check we needs this information,
  * because deleted files may be present only partially.
  */
 #define FILE_IS_DELETED 0x400
@@ -310,7 +310,7 @@ struct snapraid_dir {
  * A chunk represents a fragment of a file mapped into the parity.
  */
 struct snapraid_chunk {
-	struct snapraid_file* file; /* File containing this chunk. */
+	struct snapraid_file* file; /**< File containing this chunk. */
 	block_off_t parity_pos; /**< Parity position. */
 	block_off_t file_pos; /**< Position in the file. */
 	block_off_t count; /**< Number of sequential blocks in the file and parity. */
@@ -334,18 +334,18 @@ struct snapraid_disk {
 
 	/**
 	 * First free searching block.
-	 * Note that it doesn't necessarely point at the first free block,
+	 * Note that it doesn't necessarily point at the first free block,
 	 * but it just tell you that no free block is present before this position.
 	 */
 	block_off_t first_free_block;
 
-	int has_volatile_inodes; /**< If the underline filesystem has not persistent inodes. */
+	int has_volatile_inodes; /**< If the underline file-system has not persistent inodes. */
 	int has_unreliable_physical; /**< If the physical offset of files has duplicates. */
-	int has_different_uuid; /**< If the disk has a different UUID, meaning that it is not the same filesystem. */
+	int has_different_uuid; /**< If the disk has a different UUID, meaning that it is not the same file-system. */
 	int has_unsupported_uuid; /**< If the disk doesn't report UUID, meaning it's not supported. */
 	int had_empty_uuid; /**< If the disk had an empty UUID, meaning that it's a new disk. */
 	int mapping_idx; /**< Index in the mapping vector. Used only as buffer when writing the content file. */
-	int skip_access; /**< If the disk is unaccessible and it should be skipped. */
+	int skip_access; /**< If the disk is inaccessible and it should be skipped. */
 
 	/**
 	 * Mapping of chunks in the parity.
@@ -409,7 +409,7 @@ struct snapraid_parity {
 	uint64_t device; /**< Device identifier of the parity. */
 	block_off_t total_blocks; /**< Number of total blocks. */
 	block_off_t free_blocks; /**< Number of free blocks at the last sync. */
-	int skip_access; /**< If the disk is unaccessible and it should be skipped. */
+	int skip_access; /**< If the disk is inaccessible and it should be skipped. */
 	int is_excluded; /**< If the parity is excluded by disk filter. */
 
 	/**
@@ -889,7 +889,7 @@ block_off_t disk_size(struct snapraid_disk* disk);
 int disk_is_empty(struct snapraid_disk* disk, block_off_t blockmax);
 
 /**
- * Check the filesystem for errors.
+ * Check the file-system for errors.
  * Return 0 if it's OK.
  */
 int fs_check(struct snapraid_disk* disk);
@@ -977,7 +977,7 @@ void map_free(struct snapraid_map* map);
 /**
  * Mask used to store additional information in the info bits.
  *
- * These bits reduce the granurality of the time in the memory representation.
+ * These bits reduce the granularity of the time in the memory representation.
  */
 #define INFO_MASK 0x7
 

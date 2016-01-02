@@ -487,7 +487,7 @@ int pathcmp(const char* a, const char* b)
 }
 
 /****************************************************************************/
-/* filesystem */
+/* file-system */
 
 int mkancestor(const char* file)
 {

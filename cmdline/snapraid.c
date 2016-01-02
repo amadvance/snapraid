@@ -41,13 +41,13 @@ void usage(void)
 	printf("\n");
 	printf("Commands:\n");
 	printf("  status Print the status of the array\n");
-	printf("  diff   Show the changes that needs to be syncronized\n");
-	printf("  sync   Syncronize the state of the array\n");
+	printf("  diff   Show the changes that needs to be synchronized\n");
+	printf("  sync   Synchronize the state of the array\n");
 	printf("  scrub  Scrub the array\n");
 	printf("  list   List the array content\n");
 	printf("  dup    Find duplicate files\n");
-	printf("  up     Spinup the array\n");
-	printf("  down   Spindown the array\n");
+	printf("  up     Spin-up the array\n");
+	printf("  down   Spin-down the array\n");
 	printf("  smart  SMART attributes of the array\n");
 	printf("  pool   Create or update the virtual view of the array\n");
 	printf("  check  Check the array\n");
@@ -64,11 +64,11 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-i, --import DIR      ", "-i") "  Import deleted files\n");
 	printf("  " SWITCH_GETOPT_LONG("-l, --log FILE        ", "-l") "  Log file. Default none\n");
 	printf("  " SWITCH_GETOPT_LONG("-a, --audit-only      ", "-a") "  Check only file data and not parity\n");
-	printf("  " SWITCH_GETOPT_LONG("-h, --pre-hash        ", "-h") "  Pre hash all the new data\n");
-	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero      ", "-Z") "  Force synching of files that get zero size\n");
-	printf("  " SWITCH_GETOPT_LONG("-E, --force-empty     ", "-E") "  Force synching of disks that get empty\n");
+	printf("  " SWITCH_GETOPT_LONG("-h, --pre-hash        ", "-h") "  Pre-hash all the new data\n");
+	printf("  " SWITCH_GETOPT_LONG("-Z, --force-zero      ", "-Z") "  Force syncing of files that get zero size\n");
+	printf("  " SWITCH_GETOPT_LONG("-E, --force-empty     ", "-E") "  Force syncing of disks that get empty\n");
 	printf("  " SWITCH_GETOPT_LONG("-U, --force-uuid      ", "-U") "  Force commands on disks with uuid changed\n");
-	printf("  " SWITCH_GETOPT_LONG("-D, --force-device    ", "-D") "  Force commands with unaccessible/shared disks\n");
+	printf("  " SWITCH_GETOPT_LONG("-D, --force-device    ", "-D") "  Force commands with inaccessible/shared disks\n");
 	printf("  " SWITCH_GETOPT_LONG("-N, --force-nocopy    ", "-N") "  Force commands disabling the copy detection\n");
 	printf("  " SWITCH_GETOPT_LONG("-F, --force-full      ", "-F") "  Force commands requiring a full sync\n");
 	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
@@ -927,7 +927,7 @@ int main(int argc, char* argv[])
 	}
 
 	/* errors must be always fixed on all disks */
-	/* becasue we don't keep the information on what disk is the error */
+	/* because we don't keep the information on what disk is the error */
 	if (filter_error != 0 && !tommy_list_empty(&filterlist_disk)) {
 		/* LCOV_EXCL_START */
 		log_fatal("You cannot use -e, --filter-error and -d, --filter-disk at the same time\n");
@@ -1068,7 +1068,7 @@ int main(int argc, char* argv[])
 
 		/* in the next state read ensures to clear all the past hashes in case */
 		/* we are reading from an incomplete sync */
-		/* The undeterminated hash are only for CHG/DELETED blocks for which we don't */
+		/* The indeterminate hash are only for CHG/DELETED blocks for which we don't */
 		/* know if the previous interrupted sync was able to update or not the parity. */
 		/* The sync process instead needs to trust this information because it's used */
 		/* to avoid to recompute the parity if all the input are equals as before. */
@@ -1083,15 +1083,15 @@ int main(int argc, char* argv[])
 		/* - Sync aborted after updating the parity to the new state, */
 		/*   but without saving the content file representing this new BLK state. */
 		/* - File is now deleted after the aborted sync */
-		/* - Sync again, deleting the blocks overt the CHG ones */
-		/*   with the hash of CHG blocks not represeting the real parity state */
+		/* - Sync again, deleting the blocks over the CHG ones */
+		/*   with the hash of CHG blocks not representing the real parity state */
 
 		/* An example for DELETED blocks is: */
 		/* - One file is deleted creating DELETED blocks */
 		/* - Sync aborted after, updating the parity to the new state, */
 		/*   but without saving the content file representing this new EMPTY state. */
 		/* - Another file is added again over the DELETE ones */
-		/*   with the hash of DELETED blocks not represeting the real parity state */
+		/*   with the hash of DELETED blocks not representing the real parity state */
 		state.clear_past_hash = 1;
 
 		state_read(&state);
@@ -1137,9 +1137,9 @@ int main(int argc, char* argv[])
 		/* waits some time to ensure that any concurrent modification done at the files, */
 		/* using the same mtime read by the scan process, will be read by sync. */
 		/* Note that any later modification done, potentially not read by sync, will have */
-		/* a different mtime, and it will be syncronized at the next sync. */
-		/* The worst case is the FAT filesystem with a two seconds resolution for mtime. */
-		/* If you don't use FAT, the wait is not needed, because most filesystems have now */
+		/* a different mtime, and it will be synchronized at the next sync. */
+		/* The worst case is the FAT file-system with a two seconds resolution for mtime. */
+		/* If you don't use FAT, the wait is not needed, because most file-systems have now */
 		/* at least microseconds resolution, but better to be safe. */
 		if (!opt.skip_self)
 			sleep(2);

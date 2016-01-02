@@ -118,7 +118,7 @@ void state_nano(struct snapraid_state* state)
 
 				/* set the same nanosecond value in the content file */
 				/* note that if the seconds value is already matching */
-				/* the file won't be synched because the content file will */
+				/* the file won't be synced because the content file will */
 				/* contain the new updated timestamp */
 				file->mtime_nsec = STAT_NSEC(&st);
 

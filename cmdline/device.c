@@ -38,7 +38,7 @@
  *    they really fail, not counting as a failure.
  *
  * The following tables are computed using the data from 2014-02-14 to 2014-12-31
- * becasue it's the period when more SMART attributes were gathered.
+ * because it's the period when more SMART attributes were gathered.
  *
  * In this period there are 47322 disk seen, with 1988 removed because failed,
  * and with 4121 removed because predicted to fail.
@@ -587,7 +587,7 @@ static double raid_prob_of_one_or_more_failures(double array_failure_rate, doubl
 	raid_failure_rate = 1.0 / MTTDL;
 
 	/* probability of at least one RAID failure */
-	/* note that is almost equal at the probabilty of */
+	/* note that is almost equal at the probability of */
 	/* the first failure. */
 	return poisson_prob_n_or_more_failures(raid_failure_rate, 1);
 }

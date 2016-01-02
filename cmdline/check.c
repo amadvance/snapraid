@@ -398,7 +398,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 	ret = repair_step(state, rehash, pos, diskmax, failed, failed_map, n, buffer, buffer_recov, buffer_zero);
 	if (ret == 0) {
 		/* reprocess the CHG blocks, for which we don't have a hash to check */
-		/* if they were BAD we have to use some euristics to ensure that we have recovered  */
+		/* if they were BAD we have to use some heuristics to ensure that we have recovered  */
 		/* the state after the sync. If unsure, we assume the worst case */
 
 		for (j = 0; j < failed_count; ++j) {
@@ -518,7 +518,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 			/* this applies to REP blocks because we are going to recover the old state */
 			/* and the REP hash represent the new one */
 			/* it also applies to CHG and DELETE blocks because we want to have */
-			/* a succesful recovering only if a BLK one is matching */
+			/* a successful recovering only if a BLK one is matching */
 			failed[j].is_outofdate = 1;
 		} else if (failed[j].is_bad) {
 			/* If the block is bad we don't know its content, and we try to recover it */
@@ -598,7 +598,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 	unsigned j;
 	int ret;
 
-	/* if we are processing only bad blocks, we don't have to do any postprocessing */
+	/* if we are processing only bad blocks, we don't have to do any post-processing */
 	/* as we don't have any guarantee to process the last block of the fixed files */
 	if (state->opt.badonly)
 		return 0;
@@ -990,7 +990,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			/* if we are only hashing, we can skip excluded files and don't even read them */
 			if (state->opt.auditonly && file_flag_has(file, FILE_IS_EXCLUDED)) {
 				/* use an empty block */
-				/* in true, this is unnecessary, becase we are not checking any parity */
+				/* in true, this is unnecessary, because we are not checking any parity */
 				/* but we keep it for completeness */
 				memset(buffer[j], 0, state->block_size);
 				continue;
@@ -1071,7 +1071,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					if (handle[j].st.st_size != file->size
 						|| handle[j].st.st_mtime != file->mtime_sec
 						|| STAT_NSEC(&handle[j].st) != file->mtime_nsec
-						/* don't check the inode to support filesystem without persistent inodes */
+						/* don't check the inode to support file-system without persistent inodes */
 					) {
 						/* report that the file is not synced */
 						file_flag_set(file, FILE_IS_UNSYNCED);

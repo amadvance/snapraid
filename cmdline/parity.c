@@ -219,7 +219,7 @@ int parity_chsize(struct snapraid_parity_handle* parity, data_off_t size, data_o
 		call = "fallocate";
 		if (!skip_fallocate) {
 			/* allocate real space using the specific Linux fallocate() operation. */
-			/* If the underline filesystem doesn't support it, this operation fails, */
+			/* If the underline file-system doesn't support it, this operation fails, */
 			/* instead posix_fallocate() fallbacks to write the whole file. */
 			ret = fallocate(parity->f, 0, 0, size);
 
@@ -351,7 +351,7 @@ int parity_open(struct snapraid_parity_handle* parity, const char* path, int mod
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* get the size of the exising data */
+	/* get the size of the existing data */
 	parity->valid_size = parity->st.st_size;
 
 #if HAVE_POSIX_FADVISE
@@ -411,7 +411,7 @@ int parity_close(struct snapraid_parity_handle* parity)
 
 		/* This is a serious error, as it may be the result of a failed write */
 		/* identified at later time. */
-		/* In a normal filesystem (not NFS) it should never happen */
+		/* In a normal file-system (not NFS) it should never happen */
 		log_fatal("Error closing parity file '%s'. %s.\n", parity->path, strerror(errno));
 		return -1;
 		/* LCOV_EXCL_STOP */

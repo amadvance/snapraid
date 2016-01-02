@@ -78,7 +78,7 @@ static blkid_cache cache = 0;
 /**
  * Get the UUID using the /dev/disk/by-uuid/ links.
  * It doesn't require root permission, and the uuid are always updated.
- * It doesn't work with Btrfs filesystems that don't export the main UUID
+ * It doesn't work with Btrfs file-systems that don't export the main UUID
  * in /dev/disk/by-uuid/.
  */
 #if HAVE_FSTATAT
@@ -128,7 +128,7 @@ static int devuuid_dev(uint64_t device, char* uuid, size_t uuid_size)
 /**
  * Get the UUID using liblkid.
  * It uses a cache to work without root permission, resultin in UUID
- * not necessarely recent.
+ * not necessarily recent.
  * We could call blkid_probe_all() to refresh the UUID, but it would
  * require root permission to read the superblocks, and to have
  * all the disks spinning.
@@ -221,7 +221,7 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 			/* if the offset is unknown, we don't have an offset to report */
 			*physical = FILEPHY_WITHOUT_OFFSET;
 		} else if (offset == 0) {
-			/* 0 is the general fallback for filesystems when */
+			/* 0 is the general fallback for file-systems when */
 			/* they don't have an offset to report */
 			*physical = FILEPHY_WITHOUT_OFFSET;
 		} else {
@@ -265,7 +265,7 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 	/* if it really improves performance. */
 	/* In this way we keep them in the directory traversal order */
 	/* that at least keeps files in the same directory together. */
-	/* Note also that in newer filesystem with snapshot, like ZFS, */
+	/* Note also that in newer file-system with snapshot, like ZFS, */
 	/* the inode doesn't represent even less the disk position, because files */
 	/* are not overwritten in place, but rewritten in another location */
 	/* of the disk. */

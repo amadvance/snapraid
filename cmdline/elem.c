@@ -1112,7 +1112,7 @@ static int chunk_file_inside_compare(const void* void_a, const void* void_b)
 }
 
 /**
- * Seach the chunk at the specified file position.
+ * Search the chunk at the specified file position.
  * The search is optimized for sequential accesses.
  * \return If not found return 0
  */

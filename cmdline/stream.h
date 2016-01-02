@@ -32,8 +32,8 @@ unsigned STREAM_SIZE;
 
 #define STREAM_STATE_READ 0 /**< The stream is in a normal state of read. */
 #define STREAM_STATE_WRITE 1 /**< The stream is in a normal state of write. */
-#define STREAM_STATE_ERROR -1 /**< An error was encoutered. */
-#define STREAM_STATE_EOF 2 /**< The end of file was encoutered. */
+#define STREAM_STATE_ERROR -1 /**< An error was encountered. */
+#define STREAM_STATE_EOF 2 /**< The end of file was encountered. */
 
 struct stream_handle {
 	int f; /**< Handle of the file. */
