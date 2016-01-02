@@ -222,7 +222,7 @@ AM_CONDITIONAL(HAVE_MEMORY_CHECKER, [test x"$MEMORY_CHECKER" != x])
 AC_ARG_ENABLE([helgrind],
 	[AS_HELP_STRING([--enable-helgrind],[enable the use of helgrind in testing])],
 	[
-	TESTENV="$VALGRIND --tool=helgrind --suppressions=valgrind.supp --error-exitcode=1"
+	TESTENV="$VALGRIND --tool=helgrind --fair-sched=try --suppressions=valgrind.supp --error-exitcode=1"
 	FAILENV="$TESTENV"
 	CFLAGS="$CFLAGS -DCHECKER"
 	THREAD_CHECKER=1
@@ -232,7 +232,7 @@ AC_ARG_ENABLE([helgrind],
 AC_ARG_ENABLE([drd],
 	[AS_HELP_STRING([--enable-drd],[enable the use of drd in testing])],
 	[
-	TESTENV="$VALGRIND --tool=drd --suppressions=valgrind.supp --error-exitcode=1"
+	TESTENV="$VALGRIND --tool=drd --fair-sched=try --suppressions=valgrind.supp --error-exitcode=1"
 	FAILENV="$TESTENV"
 	CFLAGS="$CFLAGS -DCHECKER"
 	THREAD_CHECKER=1
