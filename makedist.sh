@@ -2,15 +2,14 @@
 #
 
 CHECK=check
-DEBUG=
+DEBUG=--enable-debug
 
 if test "x$1" = "x-f"; then
 CHECK=clean
 fi
 
-if test "x$1" = "x-d"; then
-CHECK=clean
-DEBUG=--enable-debug
+if test "x$1" = "x-r"; then
+DEBUG=
 fi
 
 make distclean
