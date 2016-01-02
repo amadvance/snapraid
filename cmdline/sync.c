@@ -595,15 +595,6 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 		/* LCOV_EXCL_START */
 		if (errno == EIO) {
 			log_tag("error:%u:%s:%s: Read EIO error at position %u. %s\n", blockcur, disk->name, esc(task->file->sub), task->file_pos, strerror(errno));
-#if 0
-			if (io_error >= state->opt.io_error_limit) {
-				log_fatal("DANGER! Unexpected input/output read error in a data disk, it isn't possible to sync.\n");
-				log_fatal("Ensure that disk '%s' is sane and that file '%s' can be read.\n", disk->dir, handle->path);
-				log_fatal("Stopping at block %u\n", blockcur);
-				task->state = TASK_STATE_IOERROR;
-				return;
-			}
-#endif
 			log_error("Input/Output error in file '%s' at position '%u'\n", handle->path, task->file_pos);
 			task->state = TASK_STATE_IOERROR_CONTINUE;
 			return;
@@ -841,6 +832,14 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			}
 			if (task->state == TASK_STATE_IOERROR_CONTINUE) {
 				++io_error;
+				if (io_error >= state->opt.io_error_limit) {
+					log_fatal("DANGER! Unexpected input/output read error in a data disk, it isn't possible to sync.\n");
+					log_fatal("Ensure that disk '%s' is sane and that file '%s' can be read.\n", disk->dir, task->path);
+					log_fatal("Stopping at block %u\n", blockcur);
+					goto bail;
+				}
+
+				/* otherwise continue */
 				io_error_on_this_block = 1;
 				continue;
 			}
