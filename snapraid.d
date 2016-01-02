@@ -77,7 +77,7 @@ Limitations
 	* It's able to recover damages only from a limited number of disks.
 		With a Backup you are able to recover from a complete
 		failure of the whole disk array.
-	* Only file, timestamps, symlinks and hardlinks are saved.
+	* Only file, time-stamps, symlinks and hardlinks are saved.
 		Permissions, ownership and extended attributes are not saved.
 
 Getting Started
@@ -105,7 +105,7 @@ Getting Started
 	The list of files is saved in the "content" files, usually
 	stored in the data, parity or boot disks.
 	These files contain the details of your backup, with all the
-	checksums to verify its integrity.
+	check-sums to verify its integrity.
 	The "content" file is stored in multiple copies, and each one must
 	be in a different disk, to ensure that in even in case of multiple
 	disk failures at least one copy is available.
@@ -240,7 +240,7 @@ Getting Started
 
 	To make it working, besides sharing in the network the pool directory,
 	you must also share all the disks independently, using as share points
-	the disk names as defined in the config file. You must also specify in
+	the disk names as defined in the configuration file. You must also specify in
 	the "share" option of the configure file, the Windows UNC path that remote
 	clients needs to use to access such shared disks.
 
@@ -426,7 +426,7 @@ Commands
 	This command uses the "smartctl" tool, and it's equivalent to run
 	"smartctl -a" on all the devices.
 
-	If your devices are not autodetected correctly, you can configure
+	If your devices are not auto-detected correctly, you can configure
 	a custom command using the "smartctl" option in the configuration
 	file.
 
@@ -449,7 +449,7 @@ Commands
 	Lists all the files modified from the last "sync" that need to have
 	their parity data recomputed.
 
-	This command doesn't check the file data, but only the file timestamp
+	This command doesn't check the file data, but only the file time-stamp
 	size and inode.
 
 	If a "sync" is required, the process return code is 2, instead of the
@@ -471,8 +471,8 @@ Commands
 	the corresponding blocks are marked as bad.
 
 	Files are identified by path and/or inode and checked by
-	size and timestamp.
-	If the file size or timestamp are different, the parity data
+	size and time-stamp.
+	If the file size or time-stamp are different, the parity data
 	is recomputed for the whole file.
 	If the file is moved or renamed in the same disk, keeping the
 	same inode, the parity is not recomputed.
@@ -549,7 +549,7 @@ Commands
 
 	Before fixing, the full array is scanned to find any moved file,
 	after the last "sync" operation.
-	These files are identified by their timestamp, ignoring their name
+	These files are identified by their time-stamp, ignoring their name
 	and directory, and are used in the recovering process if necessary.
 	If you moved some of them outside the array, you can use the -i, --import
 	option to specify additional directories to scan.
@@ -736,7 +736,7 @@ Options
 		To avoid this risk, you can enable the "pre-hash" mode and have
 		all the data read two times to ensure its integrity.
 		This option also verifies the files moved inside the array,
-		to ensure that the move operation went succesfully, and in case
+		to ensure that the move operation went successfully, and in case
 		to block the sync and to allow to run a fix operation.
 		This option can be used only with "sync".
 
@@ -757,7 +757,7 @@ Options
 		This allows to easily detect when after a system crash,
 		some accessed files were truncated.
 		This is a possible condition in Linux with the ext3/ext4
-		filesystems.
+		file-systems.
 		This option can be used only with "sync".
 
 	-E, --force-empty
@@ -784,10 +784,10 @@ Options
 		"fix".
 
 	-D, --force-device
-		Forces the insecure operation of fixing with unaccessible disks,
+		Forces the insecure operation of fixing with inaccessible disks,
 		or with disks on the same physical device.
 		Like if you lost two data disks, and you have a spare disk to recover
-		only the first one, and you want to ignore the second unaccessible disk.
+		only the first one, and you want to ignore the second inaccessible disk.
 		Or if you want to recover a disk in the free space left in an
 		already used disk, sharing the same physical device.
 		This option can be used only with "fix".
@@ -795,7 +795,7 @@ Options
 	-N, --force-nocopy
 		In "sync", "check and "fix", disables the copy detection heuristic.
 		Without this option SnapRAID assumes that files with same
-		attributes, like name, size and timestamp are copies with the
+		attributes, like name, size and time-stamp are copies with the
 		same data.
 		This allows to identify copied or moved files from one disk
 		to another, and to reuse the already computed hash information
@@ -939,7 +939,7 @@ Configuration
 	and using 'fix' to recreate it.
 
   content FILE
-	Defines the file to use to store the list and checksums of all the
+	Defines the file to use to store the list and check-sums of all the
 	files present in your disk array.
 
 	It can be placed in the disk used to store data, parity, or
@@ -956,7 +956,7 @@ Configuration
   disk NAME DIR
 	Defines the name and the mount point of the disks of the array.
 	NAME is used to identify the disk, and it must be unique.
-	DIR is the mount point of the disk in the filesystem.
+	DIR is the mount point of the disk in the file-system.
 
 	You can change the mount point as you like, as long you
 	keep the NAME fixed.
@@ -1068,7 +1068,7 @@ Configuration
   smartctl DISK/PARITY OPTIONS...
 	Defines a custom smartctl command to obtain the SMART attributes
 	for each disk. This may be required for RAID controllers and for
-	some USB disk that cannot be autodetected.
+	some USB disk that cannot be auto-detected.
 
 	DISK is the same disk name specified in the "disk" option.
 	PARITY is one of the parity name as "parity,[1,2,3,4,5,6,z]-parity".
@@ -1143,7 +1143,7 @@ Pattern
 		This pattern is applied only to directories and not to files.
 
 	Note that when you specify an absolute path starting with /, it's
-	applied at the array root dir and not at the local filesystem root dir.
+	applied at the array root dir and not at the local file-system root dir.
 
 	In Windows you can use the backslash \ instead of the forward slash /.
 	Note that Windows system directories, junctions, mount points, and any
@@ -1196,10 +1196,10 @@ Pattern
 	quote them. Otherwise the shell will try to expand them.
 
 Content
-	SnapRAID stores the list and checksums of your files in the content file.
+	SnapRAID stores the list and check-sums of your files in the content file.
 
 	It's a binary file, listing all the files present in your disk array,
-	with all the checksums to verify their integrity.
+	with all the check-sums to verify their integrity.
 
 	This file is read and written by the "sync" and "scrub" commands, and
 	read by "fix", "check" and "status".
@@ -1216,9 +1216,9 @@ Parity
 
 Encoding
 	SnapRAID in Unix ignores any encoding. It reads and stores the
-	file names with the same encoding used by the filesystem.
+	file names with the same encoding used by the file-system.
 
-	In Windows all the names read from the filesystem are converted and
+	In Windows all the names read from the file-system are converted and
 	processed in the UTF-8 format.
 
 	To have the file names printed correctly you have to set the Windows
