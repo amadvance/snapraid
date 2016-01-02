@@ -1112,6 +1112,7 @@ void os_abort(void)
 	char** messages;
 	size_t size;
 	unsigned i;
+#endif
 
 	printf("Stacktrace of " PACKAGE " v" VERSION);
 #ifdef _linux
@@ -1124,6 +1125,7 @@ void os_abort(void)
 	printf(", PATH_MAX=%d", PATH_MAX);
 	printf("\n");
 
+#if HAVE_BACKTRACE && HAVE_BACKTRACE_SYMBOLS
 	size = backtrace(stack, 32);
 
 	messages = backtrace_symbols(stack, size);
@@ -1149,6 +1151,9 @@ void os_abort(void)
 		}
 	}
 #endif
+
+	printf("Please report this error to the SnapRAID Forum:\n");
+	printf("https://sourceforge.net/p/snapraid/discussion/1677233/\n");
 
 	abort();
 }

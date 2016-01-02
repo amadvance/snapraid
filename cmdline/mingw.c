@@ -264,6 +264,9 @@ void os_abort(void)
 	for (i=0; i<size; ++i)
 		printf("[bt] %02u: %p\n", i, stack[i]);
 
+	printf("Please report this error to the SnapRAID Forum:\n");
+	printf("https://sourceforge.net/p/snapraid/discussion/1677233/\n");
+
 	/* use exit() and not abort to avoid the Windows abort dialog */
 	exit(EXIT_FAILURE);
 }
