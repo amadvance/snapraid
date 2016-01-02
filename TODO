@@ -5,6 +5,14 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
+* Handle someway moved file to a different disk.
+In case of a silent error it should be possible to recover.
+Likely an automatic prehash that verifies *only* moved/copied files,
+and delay the content file saving only if everything is good.
+It can be very similar at prehash, but checking only REP blocks
+that already have a hash.
+https://sourceforge.net/p/snapraid/discussion/1677233/thread/6615f0e3/
+
 - Minor
 
 * Some programs are misusing the FILE_ATTRIBUTE_TEMPORARY.
@@ -99,8 +107,6 @@ File with the same name will get an extra extension like ".1", ".2".
 
 - Major
 
-* Use threads to scan all the disks at the same time.
-
 * https://sourceforge.net/p/snapraid/discussion/1677233/thread/2cb97e8a/
 Have two hashes for each file. One for the first segment, that may use only a part of the first parity block.
 And a second hash that takes care of the final segment, also using only part of a parity block.
@@ -137,6 +143,10 @@ Rejected TODO
 =============
 
 This is a list of rejected TODO items.
+
+* Use threads to scan all the disks at the same time.
+After recent Windows changes it seems fast enough even
+with a mono thread implementation.
 
 * Enable storing of creation time NTFS, crtime/birth time EXT4.
 But see: http://unix.stackexchange.com/questions/50177/birth-is-empty-on-ext4
@@ -264,13 +274,12 @@ sys     0m4.398s
 data doesn't overlap, do not recompute it.
 - It's going to work only in RAID5 mode and only in special cases.
 
-* Implements a multithread sync command.
+* Implements a multithread sync command to share HASH and RAID computations
+to different CPUs.
 - At now it's questionable if it will result in a performance improvement.
 The murmur3 hash, and the RAID5/6 computations are so fast that even a single
 thread should be able to do them.
 Use the "snapraid -T" comment to see the speed.
-Also, all the file operations are already done in background by the OS,
-so no improvement is expect from this side.
 
 * In the repair() function the heuristic to detect if we recovered after the sync,
 can be extended to all the previous blocks, because we always proceed in block
