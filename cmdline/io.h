@@ -25,8 +25,21 @@
 
 /**
  * Number of read-ahead buffers.
+ *
+ * More buffers always result in better performance.
+ *
+ * This is the scrub performance on my machine with different buffers:
+ *
+ *  1  - 380 MiB/s, CPU 26%, speed 100% [SnapRAID 9.2]
+ *  2  - 426 MiB/s, CPU 46%, speed 112%
+ *  4  - 452 MiB/s, CPU 54%, speed 118%
+ *  8  - 487 MiB/s, CPU 60%, speed 128%
+ * 16  - 505 MiB/s, CPU 63%, speed 132%
+ * 32  - 520 MiB/s, CPU 64%, speed 136%
+ * 64  - 524 MiB/s, CPU 65%, speed 137%
+ * 128 - 525 MiB/s, CPU 66%, speed 138%
  */
-#define IO_MAX 4
+#define IO_MAX 32
 
 /**
  * State of the task.
