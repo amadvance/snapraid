@@ -7,12 +7,12 @@ SnapRAID HISTORY
    were only partially supported, and their presence could result in
    a content file not readable.
    This also disables multi threads content write, as this was the issue
-   we tried to detect with this feature, as in fact it doesn't provide
-   a performance advantage. Content verification is instead still multi
-   threads because it provides a performance advantage.
+   we tried to detect with this feature, and it doesn't provide a
+   performance advantage. Content verification is instead still multi
+   threads.
  * Autorename disks using the matching UUID. To rename a disk you can
-   now change directly the name in the configuration file,
-   and run a 'sync' command.
+   now change directly the name in the configuration file, and run a 'sync'
+   command.
  * Improves the physical offset ordering for the Btrfs filesystem,
    correctly detecting files that have not a physical offset, for
    whatever reason.
@@ -20,6 +20,10 @@ SnapRAID HISTORY
    'libblkid' library is available on the system.
  * Added a new --no-warnings option to disable some repetitive warnings
    that could be annoying to power users.
+ * Improves the error reporting, printing a complete stack trace, that can
+   be used to track down bugs more easily.
+   For this reason the Windows binaries are now built with optimization
+   option -Og, instead than -O2.
 
 9.1 2015/11
 ===========
