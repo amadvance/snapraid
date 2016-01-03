@@ -1760,7 +1760,7 @@ off_t windows_lseek(int fd, off_t offset, int whence)
 ssize_t windows_pread(int fd, void* buffer, size_t size, off_t offset)
 {
 	HANDLE h;
-	LARGE_INTEGER pos;
+	OVERLAPPED overlapped;
 	DWORD count;
 
 	if (fd == -1) {
@@ -1775,13 +1775,13 @@ ssize_t windows_pread(int fd, void* buffer, size_t size, off_t offset)
 	}
 
 retry:
-	pos.QuadPart = offset;
-	if (!SetFilePointerEx(h, pos, 0, FILE_BEGIN)) {
-		windows_errno(GetLastError());
-		return -1;
-	}
+	overlapped.Internal = 0;
+	overlapped.InternalHigh = 0;
+	overlapped.Offset = offset & 0xFFFFFFFF;
+	overlapped.OffsetHigh = offset >> 32;
+	overlapped.hEvent = 0;
 
-	if (!ReadFile(h, buffer, size, &count, 0)) {
+	if (!ReadFile(h, buffer, size, &count, &overlapped)) {
 		DWORD err = GetLastError();
 		/*
 		 * If Windows is not able to allocate memory from the PagedPool for the disk cache
@@ -1818,7 +1818,7 @@ retry:
 ssize_t windows_pwrite(int fd, const void* buffer, size_t size, off_t offset)
 {
 	HANDLE h;
-	LARGE_INTEGER pos;
+	OVERLAPPED overlapped;
 	DWORD count;
 
 	if (fd == -1) {
@@ -1833,13 +1833,13 @@ ssize_t windows_pwrite(int fd, const void* buffer, size_t size, off_t offset)
 	}
 
 retry:
-	pos.QuadPart = offset;
-	if (!SetFilePointerEx(h, pos, 0, FILE_BEGIN)) {
-		windows_errno(GetLastError());
-		return -1;
-	}
+	overlapped.Internal = 0;
+	overlapped.InternalHigh = 0;
+	overlapped.Offset = offset & 0xFFFFFFFF;
+	overlapped.OffsetHigh = offset >> 32;
+	overlapped.hEvent = 0;
 
-	if (!WriteFile(h, buffer, size, &count, 0)) {
+	if (!WriteFile(h, buffer, size, &count, &overlapped)) {
 		DWORD err = GetLastError();
 		/* See windows_pread() for comments on this error management */
 		if (err == ERROR_NO_SYSTEM_RESOURCES) {
