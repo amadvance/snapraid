@@ -18,7 +18,7 @@ if ! cov-build --dir cov-int make; then
 	exit 1
 fi
 
-REVISION=`git describe`
+REVISION=`sh autover.sh`
 
 tar czf snapraid-$REVISION.tgz cov-int
 
