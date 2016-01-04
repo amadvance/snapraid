@@ -82,7 +82,7 @@ dnl Checks for library functions.
 AC_CHECK_FUNCS([memset strchr strerror strrchr mkdir gettimeofday strtoul])
 AC_CHECK_FUNCS([getopt getopt_long snprintf vsnprintf sigaction])
 AC_CHECK_FUNCS([ftruncate fallocate fsync access posix_fallocate posix_fadvise])
-AC_CHECK_FUNCS([pread pwrite getc_unlocked ferror_unlocked fnmatch])
+AC_CHECK_FUNCS([getc_unlocked ferror_unlocked fnmatch])
 AC_CHECK_FUNCS([futimes futimens futimesat localtime_r])
 AC_CHECK_FUNCS([fstatat flock statfs])
 AC_CHECK_FUNCS([mach_absolute_time])

@@ -433,22 +433,7 @@ int parity_write(struct snapraid_parity_handle* parity, block_off_t pos, unsigne
 
 	offset = pos * (data_off_t)block_size;
 
-#if HAVE_PWRITE
 	write_ret = pwrite(parity->f, block_buffer, block_size, offset);
-#else
-	if (lseek(parity->f, offset, SEEK_SET) != offset) {
-		/* LCOV_EXCL_START */
-		if (errno == ENOSPC) {
-			log_fatal("Failed to grow parity file '%s' using lseek due lack of space.\n", parity->path);
-		} else {
-			log_fatal("Error seeking file '%s'. %s.\n", parity->path, strerror(errno));
-		}
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	write_ret = write(parity->f, block_buffer, block_size);
-#endif
 	if (write_ret != (ssize_t)block_size) { /* conversion is safe because block_size is always small */
 		/* LCOV_EXCL_START */
 		if (errno == ENOSPC) {
@@ -485,23 +470,9 @@ int parity_read(struct snapraid_parity_handle* parity, block_off_t pos, unsigned
 		return -1;
 	}
 
-#if !HAVE_PREAD
-	if (lseek(parity->f, offset, SEEK_SET) != offset) {
-		/* LCOV_EXCL_START */
-		out("Error seeking file '%s' at offset %" PRIu64 ". %s.\n", parity->path, offset, strerror(errno));
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-#endif
-
 	count = 0;
 	do {
-
-#if HAVE_PREAD
 		read_ret = pread(parity->f, block_buffer + count, block_size - count, offset + count);
-#else
-		read_ret = read(parity->f, block_buffer + count, block_size - count);
-#endif
 		if (read_ret < 0) {
 			/* LCOV_EXCL_START */
 			out("Error reading file '%s' at offset %" PRIu64 " for size %u. %s.\n", parity->path, offset + count, block_size - count, strerror(errno));
