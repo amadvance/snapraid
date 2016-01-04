@@ -134,20 +134,22 @@ struct snapraid_io {
 	pthread_mutex_t mutex;
 
 	/**
-	 * Condition for (not) empty queue of tasks.
+	 * Condition for a new read is completed.
 	 *
-	 * The io waits on this condition when the queue is empty,
-	 * and it's signaled by workers.
+	 * The workers signal this condition when a new read is completed.
+	 * The IO waits on this condition when it's waiting for
+	 * a new read to be completed.
 	 */
-	pthread_cond_t not_empty;
+	pthread_cond_t read_done;
 
 	/**
-	 * Condition for (not) full queue of tasks.
+	 * Condition for a new read scheduled.
 	 *
-	 * The workers wait on this condition when the queue is full,
-	 * and it's signaled by the io.
+	 * The workers wait on this condition when they are waiting for a new
+	 * read to process.
+	 * The IO signals this condition when new reads are scheduled.
 	 */
-	pthread_cond_t not_full;
+	pthread_cond_t read_sched;
 
 	struct snapraid_state* state;
 
@@ -191,22 +193,22 @@ struct snapraid_io {
 	/**
 	 * Workers.
 	 *
-	 * A vector of workers, each one representing a different thread.
+	 * A vector of readers, each one representing a different thread.
 	 */
-	unsigned worker_max; /**< Number of workers. */
-	struct snapraid_worker* worker_map; /**< Vector of workers. */
+	unsigned reader_max; /**< Number of workers. */
+	struct snapraid_worker* reader_map; /**< Vector of workers. */
 
 	/**
 	 * List of not yet processed workers.
 	 *
-	 * The list has ::worker_max + 1 elements. Each element contains
-	 * the number of the worker to process.
+	 * The list has ::reader_max + 1 elements. Each element contains
+	 * the number of the reader to process.
 	 *
-	 * At initialization the list is filled with [0..worker_max].
+	 * At initialization the list is filled with [0..reader_max].
 	 * To get the next element to process we use i = list[i + 1].
-	 * The end is when i == worker_max.
+	 * The end is when i == reader_max.
 	 */
-	unsigned char* worker_list;
+	unsigned char* reader_list;
 
 	/**
 	 * Exit condition for all threads.
@@ -218,8 +220,11 @@ struct snapraid_io {
 	 *
 	 * It's a rolling counter, when reaching IO_MAX
 	 * it goes again to 0.
+	 *
+	 * When the caller finish with the current index,
+	 * it's incremented, and a read_sched() signal is sent.
 	 */
-	unsigned index;
+	unsigned reader_index;
 };
 
 /**
@@ -252,16 +257,19 @@ void io_start(struct snapraid_io* io,
 void io_stop(struct snapraid_io* io);
 
 /**
- * Get the next parity position to process.
+ * Next read position.
+ *
+ * This call starts the reading process.
+ * It must be called before io_data_read() and io_parity_read().
  *
  * \param io InputOutput context.
  * \param buffer The data buffers to use for this position.
  * \return The parity position.
  */
-block_off_t io_next(struct snapraid_io* io, void*** buffer);
+block_off_t io_read_next(struct snapraid_io* io, void*** buffer);
 
 /**
- * Get the next data block to process.
+ * Read a data block.
  *
  * It must be called exactly ::handle_max times.
  *
@@ -269,10 +277,10 @@ block_off_t io_next(struct snapraid_io* io, void*** buffer);
  * \param pos The position of the data block in the ::handle_map vector.
  * \return The completed task.
  */
-struct snapraid_task* io_data_next(struct snapraid_io* io, unsigned* pos);
+struct snapraid_task* io_data_read(struct snapraid_io* io, unsigned* diskcur);
 
 /**
- * Get the next parity block to process.
+ * Read a parity block.
  *
  * It must be called exactly ::parity_handle_max times.
  *
@@ -280,6 +288,6 @@ struct snapraid_task* io_data_next(struct snapraid_io* io, unsigned* pos);
  * \param pos The position of the parity block in the ::parity_handle_map vector.
  * \return The completed task.
  */
-struct snapraid_task* io_parity_next(struct snapraid_io* io, unsigned* pos);
+struct snapraid_task* io_parity_read(struct snapraid_io* io, unsigned* levcur);
 
 #endif

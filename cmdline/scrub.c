@@ -319,7 +319,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		void** buffer;
 
 		/* go to the next block */
-		blockcur = io_next(&io, &buffer);
+		blockcur = io_read_next(&io, &buffer);
 		if (blockcur >= blockmax)
 			break;
 
@@ -362,7 +362,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			state_usage_cpu(state);
 
 			/* get the next task */
-			task = io_data_next(&io, &diskcur);
+			task = io_data_read(&io, &diskcur);
 
 			/* get the task results */
 			disk = task->disk;
@@ -485,7 +485,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			struct snapraid_task* task;
 			unsigned levcur;
 
-			task = io_parity_next(&io, &levcur);
+			task = io_parity_read(&io, &levcur);
 
 			/* until now is parity */
 			state_usage_parity(state, levcur);

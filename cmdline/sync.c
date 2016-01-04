@@ -715,7 +715,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		void** buffer;
 
 		/* go to the next block */
-		blockcur = io_next(&io, &buffer);
+		blockcur = io_read_next(&io, &buffer);
 		if (blockcur >= blockmax)
 			break;
 
@@ -766,7 +766,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			/* until now is CPU */
 			state_usage_cpu(state);
 
-			task = io_data_next(&io, &diskcur);
+			task = io_data_read(&io, &diskcur);
 
 			/* get the results */
 			disk = task->disk;
