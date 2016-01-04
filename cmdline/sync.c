@@ -554,7 +554,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		/* have the hash cleared (::clear_past_hash flag), and then they won't never match the hash. */
 		/* We are treating only CHG blocks created at runtime. */
 		/* In such case, we can avoid to update parity, because it would be the same as before */
-		parity_needs_to_be_updated = 0;
+		parity_needs_to_be_updated = state->opt.force_parity_update;
 
 		/* if the block is marked as bad, we force the parity update */
 		/* because the bad block may be the result of a wrong parity */

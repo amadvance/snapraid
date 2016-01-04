@@ -248,6 +248,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_NO_WARNINGS 286
 #define OPT_TEST_FAKE_UUID 287
 #define OPT_TEST_MATCH_FIRST_UUID 288
+#define OPT_TEST_FORCE_PARITY_UPDATE 289
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -371,6 +372,9 @@ struct option long_options[] = {
 
 	/* Match first UUID */
 	{ "test-match-first-uuid", 0, 0, OPT_TEST_MATCH_FIRST_UUID },
+
+	/* Force parity update even if all the data is not changed */
+	{ "test-force-parity-update", 0, 0, OPT_TEST_FORCE_PARITY_UPDATE },
 
 	{ 0, 0, 0, 0 }
 };
@@ -746,6 +750,9 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_TEST_MATCH_FIRST_UUID :
 			opt.match_first_uuid = 1;
+			break;
+		case OPT_TEST_FORCE_PARITY_UPDATE :
+			opt.force_parity_update = 1;
 			break;
 		default :
 			/* LCOV_EXCL_START */
