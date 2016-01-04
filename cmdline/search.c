@@ -89,14 +89,7 @@ int search_file_compare(const void* void_arg, const void* void_data)
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (lseek(f, arg->offset, SEEK_SET) != arg->offset) {
-		/* LCOV_EXCL_START */
-		log_fatal("Error seeking file '%s'. %s.\n", path, strerror(errno));
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	ret = read(f, arg->buffer, arg->read_size);
+	ret = pread(f, arg->buffer, arg->read_size, arg->offset);
 	if (ret < 0 || (unsigned)ret != arg->read_size) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error reading file '%s'. %s.\n", path, strerror(errno));
