@@ -615,7 +615,7 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 	task->state = TASK_STATE_DONE;
 }
 
-static int state_sync_process(struct snapraid_state* state, struct snapraid_parity_handle** parity, block_off_t blockstart, block_off_t blockmax)
+static int state_sync_process(struct snapraid_state* state, struct snapraid_parity_handle* parity_handle, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_io io;
 	struct snapraid_plan plan;
@@ -988,7 +988,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				/* we are sure that parity exists because */
 				/* we have at least one BLK block */
 				for (l = 0; l < state->level; ++l) {
-					ret = parity_read(parity[l], blockcur, buffer[diskmax + l], state->block_size, log_error);
+					ret = parity_read(&parity_handle[l], blockcur, buffer[diskmax + l], state->block_size, log_error);
 					if (ret == -1) {
 						/* LCOV_EXCL_START */
 						if (errno == EIO) {
@@ -1083,7 +1083,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 				/* write the parity */
 				for (l = 0; l < state->level; ++l) {
-					ret = parity_write(parity[l], blockcur, buffer[diskmax + l], state->block_size);
+					ret = parity_write(&parity_handle[l], blockcur, buffer[diskmax + l], state->block_size);
 					if (ret == -1) {
 						/* LCOV_EXCL_START */
 						if (errno == EIO) {
@@ -1208,7 +1208,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			/* before writing the new content file we ensure that */
 			/* the parity is really written flushing the disk cache */
 			for (l = 0; l < state->level; ++l) {
-				ret = parity_sync(parity[l]);
+				ret = parity_sync(&parity_handle[l]);
 				if (ret == -1) {
 					/* LCOV_EXCL_START */
 					log_tag("parity_error:%u:%s: Sync error\n", blockcur, lev_config_name(l));
@@ -1239,7 +1239,7 @@ end:
 	/* before returning we ensure that */
 	/* the parity is really written flushing the disk cache */
 	for (l = 0; l < state->level; ++l) {
-		ret = parity_sync(parity[l]);
+		ret = parity_sync(&parity_handle[l]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
 			log_tag("parity_error:%u:%s: Sync error\n", blockcur, lev_config_name(l));
@@ -1326,10 +1326,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	data_off_t size;
 	data_off_t out_size;
 	int ret;
-	struct snapraid_parity_handle parity[LEV_MAX];
-	/* the following initialization is to avoid clang warnings about */
-	/* potential state->level change, that never happens */
-	struct snapraid_parity_handle* parity_ptr[LEV_MAX] = { 0 };
+	struct snapraid_parity_handle parity_handle[LEV_MAX];
 	unsigned unrecoverable_error;
 	unsigned l;
 	int skip_sync = 0;
@@ -1361,8 +1358,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		block_off_t parityblocks;
 
 		/* create the file and open for writing */
-		parity_ptr[l] = &parity[l];
-		ret = parity_create(parity_ptr[l], l, state->parity[l].path, &out_size, state->file_mode);
+		ret = parity_create(&parity_handle[l], l, state->parity[l].path, &out_size, state->file_mode);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
 			log_fatal("WARNING! Without an accessible %s file, it isn't possible to sync.\n", lev_name(l));
@@ -1408,7 +1404,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		/* change the size of the parity file, truncating or extending it */
 		/* from this point all the DELETED blocks after the end of the parity are invalid */
 		/* and they are automatically removed when we save the new content file */
-		ret = parity_chsize(parity_ptr[l], size, &out_size, state->opt.skip_fallocate);
+		ret = parity_chsize(&parity_handle[l], size, &out_size, state->opt.skip_fallocate);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
 			parity_overflow(state, out_size);
@@ -1444,7 +1440,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 		/* skip degenerated cases of empty parity, or skipping all */
 		if (blockstart < blockmax) {
-			ret = state_sync_process(state, parity_ptr, blockstart, blockmax);
+			ret = state_sync_process(state, parity_handle, blockstart, blockmax);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
 				++unrecoverable_error;
@@ -1457,7 +1453,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	}
 
 	for (l = 0; l < state->level; ++l) {
-		ret = parity_close(parity_ptr[l]);
+		ret = parity_close(&parity_handle[l]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
 			log_fatal("DANGER! Unexpected close error in %s disk.\n", lev_name(l));
