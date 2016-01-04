@@ -275,7 +275,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	buffermax = diskmax + state->level * 2;
 
 	/* initialize the io threads */
-	io_init(&io, state, buffermax, scrub_data_reader, handle, diskmax, scrub_parity_reader, parity_handle, state->level);
+	io_init(&io, state, buffermax, scrub_data_reader, handle, diskmax, scrub_parity_reader, 0, parity_handle, state->level);
 
 	error = 0;
 	silent_error = 0;

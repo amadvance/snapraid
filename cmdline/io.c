@@ -23,6 +23,7 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state, unsigned buff
 	void (*data_reader)(struct snapraid_worker*, struct snapraid_task*),
 	struct snapraid_handle* handle_map, unsigned handle_max,
 	void (*parity_reader)(struct snapraid_worker*, struct snapraid_task*),
+	void (*parity_writer)(struct snapraid_worker*, struct snapraid_task*),
 	struct snapraid_parity_handle* parity_handle_map, unsigned parity_handle_max)
 {
 	unsigned i;
@@ -30,6 +31,8 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state, unsigned buff
 	pthread_mutex_init(&io->mutex, 0);
 	pthread_cond_init(&io->read_done, 0);
 	pthread_cond_init(&io->read_sched, 0);
+	pthread_cond_init(&io->write_done, 0);
+	pthread_cond_init(&io->write_sched, 0);
 
 	io->state = state;
 
@@ -40,9 +43,18 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state, unsigned buff
 			mtest_vector(io->buffer_max, state->block_size, io->buffer_map[i]);
 	}
 
-	io->reader_max = handle_max + parity_handle_max;
+	if (parity_writer) {
+		io->reader_max = handle_max;
+		io->writer_max = parity_handle_max;
+	} else {
+		io->reader_max = handle_max + parity_handle_max;
+		io->writer_max = 0;
+	}
+
 	io->reader_map = malloc_nofail(sizeof(struct snapraid_worker) * io->reader_max);
 	io->reader_list = malloc_nofail(io->reader_max + 1);
+	io->writer_map = malloc_nofail(sizeof(struct snapraid_worker) * io->writer_max);
+	io->writer_list = malloc_nofail(io->writer_max + 1);
 
 	io->data_base = 0;
 	io->data_count = handle_max;
@@ -72,6 +84,20 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state, unsigned buff
 			worker->buffer_skew = parity_handle_max;
 		}
 	}
+
+	for (i = 0; i < io->writer_max; ++i) {
+		struct snapraid_worker* worker = &io->writer_map[i];
+
+		worker->io = io;
+
+		/* it's a parity write */
+		worker->handle = 0;
+		worker->parity_handle = &parity_handle_map[i];
+		worker->func = parity_writer;
+
+		/* parity to write is put after data */
+		worker->buffer_skew = handle_max;
+	}
 }
 
 void io_done(struct snapraid_io* io)
@@ -85,10 +111,14 @@ void io_done(struct snapraid_io* io)
 
 	free(io->reader_map);
 	free(io->reader_list);
+	free(io->writer_map);
+	free(io->writer_list);
 
 	pthread_mutex_destroy(&io->mutex);
 	pthread_cond_destroy(&io->read_done);
 	pthread_cond_destroy(&io->read_sched);
+	pthread_cond_destroy(&io->write_done);
+	pthread_cond_destroy(&io->write_sched);
 }
 
 /**
@@ -143,6 +173,57 @@ static void io_reader_sched(struct snapraid_io* io, int index, block_off_t block
 }
 
 /**
+ * Setup the next pending task for all writers.
+ */
+static void io_writer_sched(struct snapraid_io* io, int index, block_off_t blockcur)
+{
+	unsigned i;
+
+	for (i = 0; i < io->writer_max; ++i) {
+		struct snapraid_worker* worker = &io->writer_map[i];
+		struct snapraid_task* task = &worker->task_map[index];
+
+		/* setup the new pending task */
+		task->state = TASK_STATE_READY;
+		task->path[0] = 0;
+		task->disk = 0;
+		task->buffer = io->buffer_map[index][worker->buffer_skew + i];
+		task->position = blockcur;
+		task->block = 0;
+		task->file = 0;
+		task->file_pos = 0;
+		task->read_size = 0;
+		task->is_timestamp_different = 0;
+	}
+}
+
+/**
+ * Setup an empty next pending task for all writers.
+ */
+static void io_writer_sched_empty(struct snapraid_io* io, int index, block_off_t blockcur)
+{
+	unsigned i;
+
+	for (i = 0; i < io->writer_max; ++i) {
+		struct snapraid_worker* worker = &io->writer_map[i];
+		struct snapraid_task* task = &worker->task_map[index];
+
+		/* setup the new pending task */
+		task->state = TASK_STATE_EMPTY;
+		task->path[0] = 0;
+		task->disk = 0;
+		task->buffer = 0;
+		task->position = blockcur;
+		task->block = 0;
+		task->file = 0;
+		task->file_pos = 0;
+		task->read_size = 0;
+		task->is_timestamp_different = 0;
+	}
+}
+
+
+/**
  * Get the next task to work on for a reader.
  *
  * This is the synchronization point for workers with the io.
@@ -181,6 +262,52 @@ static struct snapraid_task* io_reader_step(struct snapraid_worker* worker)
 
 		/* otherwise wait for a read_sched event */
 		pthread_cond_wait(&io->read_sched, &io->mutex);
+	}
+
+	pthread_mutex_unlock(&io->mutex);
+
+	return task;
+}
+
+/**
+ * Get the next task to work on for a writer.
+ *
+ * This is the synchronization point for workers with the io.
+ */
+static struct snapraid_task* io_writer_step(struct snapraid_worker* worker)
+{
+	struct snapraid_io* io = worker->io;
+	struct snapraid_task* task = 0;
+
+	/* the synchronization is protected by the io mutex */
+	pthread_mutex_lock(&io->mutex);
+
+	while (1) {
+		unsigned index;
+
+		/* get the next pending task */
+		index = (worker->index + 1) % IO_MAX;
+
+		/* if the queue of pending tasks is not empty */
+		if (index != io->writer_index) {
+			/* get the new working task */
+			worker->index = index;
+			task = &worker->task_map[worker->index];
+
+			/* notify the io that a new writer is complete */
+			pthread_cond_signal(&io->write_done);
+
+			/* return the new task */
+			break;
+		}
+
+		/* check if the worker has to exit */
+		/* but only if there is no work to do */
+		if (io->done)
+			break;
+
+		/* otherwise wait for a write_sched event */
+		pthread_cond_wait(&io->write_sched, &io->mutex);
 	}
 
 	pthread_mutex_unlock(&io->mutex);
@@ -230,6 +357,39 @@ block_off_t io_read_next(struct snapraid_io* io, void*** buffer)
 	pthread_mutex_unlock(&io->mutex);
 
 	return blockcur_caller;
+}
+
+void io_write_next(struct snapraid_io* io, unsigned blockcur, int skip)
+{
+	unsigned i;
+
+	/* ensure that all parity was written */
+	assert(io->writer_list[0] == io->writer_max);
+
+	/* setup the list of workers to process */
+	for (i = 0; i <= io->writer_max; ++i)
+		io->writer_list[i] = i;
+	
+	/* the synchronization is protected by the io mutex */
+	pthread_mutex_lock(&io->mutex);
+
+	if (skip) {
+		/* skip the next write */
+		io_writer_sched_empty(io, io->writer_index, blockcur);
+	} else {
+		/* schedule the next write */
+		io_writer_sched(io, io->writer_index, blockcur);
+	}
+
+	assert(io->writer_index == io->reader_index);
+
+	/* get the next task to return to the caller */
+	io->writer_index = (io->writer_index + 1) % IO_MAX;
+
+	/* signal all the workers that there is a new pending task */
+	pthread_cond_broadcast(&io->write_sched);
+
+	pthread_mutex_unlock(&io->mutex);
 }
 
 static struct snapraid_task* io_task_read(struct snapraid_io* io, unsigned base, unsigned count, unsigned* pos)
@@ -299,6 +459,60 @@ struct snapraid_task* io_parity_read(struct snapraid_io* io, unsigned* pos)
 	return io_task_read(io, io->parity_base, io->parity_count, pos);
 }
 
+void io_parity_write(struct snapraid_io* io, unsigned* pos)
+{
+	/* the synchronization is protected by the io mutex */
+	pthread_mutex_lock(&io->mutex);
+
+	while (1) {
+		unsigned char* let;
+		unsigned index;
+
+		/* get the next index the caller is going to use */
+		/* we must ensure that this index has not a write in progress */
+		/* to avoid a concurrent access */
+		/* note that we are already sure that a write is not in progress */
+		/* at the index the caller is using at now */
+		index = (io->writer_index + 1) % IO_MAX;
+
+		/* search for a worker that has already finished */
+		let = &io->writer_list[0];
+		while (1) {
+			unsigned i = *let;
+			struct snapraid_worker* worker;
+
+			/* if we are at the end */
+			if (i == io->writer_max)
+				break;
+
+			worker = &io->writer_map[i];
+
+			/* the two indexes cannot be equal */
+			assert(io->writer_index != worker->index);
+
+			/* if the worker has finished this index */
+			if (index != worker->index) {
+				pthread_mutex_unlock(&io->mutex);
+
+				/* mark the worker as processed */
+				/* setting the previous one to point at the next one */
+				*let = io->writer_list[i + 1];
+
+				/* return the position */
+				*pos = i;
+
+				return;
+			}
+
+			/* next position to check */
+			let = &io->writer_list[i + 1];
+		}
+
+		/* if not worker is ready, wait for an event */
+		pthread_cond_wait(&io->write_done, &io->mutex);
+	}
+}
+
 static void io_reader_worker(struct snapraid_worker* worker, struct snapraid_task* task)
 {
 	/* if we reached the end */
@@ -340,6 +554,33 @@ static void* io_reader_thread(void* arg)
 	return 0;
 }
 
+static void* io_writer_thread(void* arg)
+{
+	struct snapraid_worker* worker = arg;
+
+	while (1) {
+		struct snapraid_task* task;
+
+		/* get the new task */
+		task = io_writer_step(worker);
+
+		/* if no task, it means to exit */
+		if (!task)
+			break;
+
+		/* nothing more to do */
+		if (task->state == TASK_STATE_EMPTY)
+			continue;
+
+		assert(task->state == TASK_STATE_READY);
+
+		/* work on the assigned task */
+		worker->func(worker, task);
+	}
+
+	return 0;
+}
+
 void io_start(struct snapraid_io* io,
 	block_off_t blockstart, block_off_t blockmax,
 	int (*block_is_enabled)(void* arg,block_off_t), void* blockarg)
@@ -354,6 +595,7 @@ void io_start(struct snapraid_io* io,
 
 	io->done = 0;
 	io->reader_index = IO_MAX - 1;
+	io->writer_index = 0;
 
 	/* setup the initial read pending tasks, except the latest one, */
 	/* the latest will be initialized at the fist io_read_next() call */
@@ -365,6 +607,8 @@ void io_start(struct snapraid_io* io,
 
 	/* setup the lists of workers to process */
 	io->reader_list[0] = io->reader_max;
+	for (i = 0; i <= io->writer_max; ++i)
+		io->writer_list[i] = i;
 
 	/* start the reader threads */
 	for (i = 0; i < io->reader_max; ++i) {
@@ -375,6 +619,20 @@ void io_start(struct snapraid_io* io,
 		if (pthread_create(&worker->thread, 0, io_reader_thread, worker) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Failed to create reader thread.\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	/* start the writer threads */
+	for (i = 0; i < io->writer_max; ++i) {
+		struct snapraid_worker* worker = &io->writer_map[i];
+
+		worker->index = IO_MAX - 1;
+
+		if (pthread_create(&worker->thread, 0, io_writer_thread, worker) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Failed to create writer thread.\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -392,6 +650,7 @@ void io_stop(struct snapraid_io* io)
 
 	/* signal all the threads to recognize the new state */
 	pthread_cond_broadcast(&io->read_sched);
+	pthread_cond_broadcast(&io->write_sched);
 
 	pthread_mutex_unlock(&io->mutex);
 
@@ -404,6 +663,20 @@ void io_stop(struct snapraid_io* io)
 		if (pthread_join(worker->thread, &retval) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Failed to join reader thread.\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	/* wait for all writers to terminate */
+	for (i = 0; i < io->writer_max; ++i) {
+		struct snapraid_worker* worker = &io->writer_map[i];
+		void* retval;
+
+		/* wait for thread termination */
+		if (pthread_join(worker->thread, &retval) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Failed to join writer thread.\n");
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}

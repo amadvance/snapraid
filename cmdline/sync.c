@@ -615,6 +615,39 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 	task->state = TASK_STATE_DONE;
 }
 
+static void sync_parity_writer(struct snapraid_worker* worker, struct snapraid_task* task)
+{
+	struct snapraid_io* io = worker->io;
+	struct snapraid_state* state = io->state;
+	struct snapraid_parity_handle* parity_handle = worker->parity_handle;
+	unsigned level = parity_handle->level;
+	block_off_t blockcur = task->position;
+	unsigned char* buffer = task->buffer;
+	int ret;
+
+	/* write parity */
+	ret = parity_write(parity_handle, blockcur, buffer, state->block_size);
+	if (ret == -1) {
+		/* LCOV_EXCL_START */
+		if (errno == EIO) {
+			log_tag("parity_error:%u:%s: Write EIO error. %s\n", blockcur, lev_config_name(level), strerror(errno));
+			log_error("Input/Output error in parity '%s' at position '%u'\n", lev_config_name(level), blockcur);
+			task->state = TASK_STATE_IOERROR_CONTINUE;
+			return;
+		}
+
+		log_tag("parity_error:%u:%s: Write error. %s\n", blockcur, lev_config_name(level), strerror(errno));
+		log_fatal("WARNING! Unexpected write error in the %s disk, it isn't possible to sync.\n", lev_name(level));
+		log_fatal("Ensure that disk '%s' has some free space available.\n", lev_config_name(level));
+		log_fatal("Stopping at block %u\n", blockcur);
+		task->state = TASK_STATE_ERROR;
+		return;
+		/* LCOV_EXCL_STOP */
+	}
+
+	task->state = TASK_STATE_DONE;
+}
+
 static int state_sync_process(struct snapraid_state* state, struct snapraid_parity_handle* parity_handle, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_io io;
@@ -660,7 +693,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	buffermax = 2 * diskmax + state->level;
 
 	/* initialize the io threads */
-	io_init(&io, state, buffermax, sync_data_reader, handle, diskmax, 0, 0, 0);
+	io_init(&io, state, buffermax, sync_data_reader, handle, diskmax, 0, sync_parity_writer, parity_handle, state->level);
 
 	/* fill up the zero buffer */
 	zero = malloc_nofail_align(state->block_size, &zero_alloc);
@@ -710,6 +743,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		int io_error_on_this_block;
 		int fixed_error_on_this_block;
 		int parity_needs_to_be_updated;
+		int parity_going_to_be_updated;
 		snapraid_info info;
 		int rehash;
 		void** buffer;
@@ -738,13 +772,17 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		/* if we have to use the old hash */
 		rehash = info_get_rehash(info);
 
-		/* it could happens that all the blocks are EMPTY/BLK and CHG but with the hash */
+		/* if the parity requires to be updated */
+		/* It could happens that all the blocks are EMPTY/BLK and CHG but with the hash */
 		/* still matching because the specific CHG block was not modified. */
+		/* In such case, we can avoid to update parity, because it would be the same as before */
 		/* Note that CHG/DELETED blocks already present in the content file loaded */
 		/* have the hash cleared (::clear_past_hash flag), and then they won't never match the hash. */
 		/* We are treating only CHG blocks created at runtime. */
-		/* In such case, we can avoid to update parity, because it would be the same as before */
 		parity_needs_to_be_updated = state->opt.force_parity_update;
+
+		/* if the parity is going to be updated */
+		parity_going_to_be_updated = 0;
 
 		/* if the block is marked as bad, we force the parity update */
 		/* because the bad block may be the result of a wrong parity */
@@ -1078,70 +1116,33 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				/* compute the parity */
 				raid_gen(diskmax, state->level, state->block_size, buffer);
 
-				/* until now is CPU */
-				state_usage_cpu(state);
-
-				/* write the parity */
-				for (l = 0; l < state->level; ++l) {
-					ret = parity_write(&parity_handle[l], blockcur, buffer[diskmax + l], state->block_size);
-					if (ret == -1) {
-						/* LCOV_EXCL_START */
-						if (errno == EIO) {
-							log_tag("parity_error:%u:%s: Write EIO error. %s\n", blockcur, lev_config_name(l), strerror(errno));
-							if (io_error >= state->opt.io_error_limit) {
-								log_fatal("DANGER! Unexpected input/output write error in the %s disk, it isn't possible to sync.\n", lev_name(l));
-								log_fatal("Ensure that disk '%s' is sane and can be written.\n", lev_config_name(l));
-								log_fatal("Stopping at block %u\n", blockcur);
-								++io_error;
-								goto bail;
-							}
-
-							log_error("Input/Output error in parity '%s' at position '%u'\n", lev_config_name(l), blockcur);
-							++io_error;
-							io_error_on_this_block = 1;
-							continue;
-						}
-
-						log_tag("parity_error:%u:%s: Write error. %s\n", blockcur, lev_config_name(l), strerror(errno));
-						log_fatal("WARNING! Unexpected write error in the %s disk, it isn't possible to sync.\n", lev_name(l));
-						log_fatal("Ensure that disk '%s' has some free space available.\n", lev_config_name(l));
-						log_fatal("Stopping at block %u\n", blockcur);
-						++error;
-						goto bail;
-						/* LCOV_EXCL_STOP */
-					}
-
-					/* until now is parity */
-					state_usage_parity(state, l);
-				}
+				/* mark that the parity is going to be written */
+				parity_going_to_be_updated = 1;
 			}
 
-			/* if no error in parity write */
-			if (!io_error_on_this_block) {
-				/* for each disk, mark the blocks as processed */
-				for (j = 0; j < diskmax; ++j) {
-					struct snapraid_block* block;
+			/* for each disk, mark the blocks as processed */
+			for (j = 0; j < diskmax; ++j) {
+				struct snapraid_block* block;
 
-					if (!handle[j].disk)
-						continue;
+				if (!handle[j].disk)
+					continue;
 
-					block = fs_par2block_get(handle[j].disk, blockcur);
+				block = fs_par2block_get(handle[j].disk, blockcur);
 
-					if (block == BLOCK_EMPTY) {
-						/* nothing to do */
-						continue;
-					}
-
-					/* if it's a deleted block */
-					if (block_state_get(block) == BLOCK_STATE_DELETED) {
-						/* the parity is now updated without this block, so it's now empty */
-						fs_deallocate(handle[j].disk, blockcur);
-						continue;
-					}
-
-					/* now all the blocks have the hash and the parity computed */
-					block_state_set(block, BLOCK_STATE_BLK);
+				if (block == BLOCK_EMPTY) {
+					/* nothing to do */
+					continue;
 				}
+
+				/* if it's a deleted block */
+				if (block_state_get(block) == BLOCK_STATE_DELETED) {
+					/* the parity is now updated without this block, so it's now empty */
+					fs_deallocate(handle[j].disk, blockcur);
+					continue;
+				}
+
+				/* now all the blocks have the hash and the parity computed */
+				block_state_set(block, BLOCK_STATE_BLK);
 			}
 
 			/* we update the info block only if we really have updated the parity */
@@ -1151,7 +1152,6 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			/* because has no sense to refresh the time for data that we know bad */
 			if (parity_needs_to_be_updated
 				&& !silent_error_on_this_block
-				&& !io_error_on_this_block
 			) {
 				/* if rehash is neeed */
 				if (rehash) {
@@ -1175,6 +1175,25 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			/* set the error status keeping the other info */
 			info_set(&state->infoarr, blockcur, info_set_bad(info));
 		}
+
+		/* finally schedule parity write */
+		/* Note that the calls to io_parity_write() are mandatory */
+		/* even if the parity doesn't need to be updated */
+		/* This because we want to keep track of the time usage */
+		state_usage_cpu(state);
+
+		/* write the parity */
+		for (l = 0; l < state->level; ++l) {
+			unsigned levcur;
+
+			io_parity_write(&io, &levcur);
+
+			/* until now is parity */
+			state_usage_parity(state, levcur);
+		}
+
+		/* write finished */
+		io_write_next(&io, blockcur, !parity_going_to_be_updated);
 
 		/* mark the state as needing write */
 		state->need_write = 1;

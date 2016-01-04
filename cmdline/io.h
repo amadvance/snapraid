@@ -151,6 +151,24 @@ struct snapraid_io {
 	 */
 	pthread_cond_t read_sched;
 
+	/**
+	 * Condition for a new write is completed.
+	 *
+	 * The workers signal this condition when a new write is completed.
+	 * The IO waits on this condition when it's waiting for
+	 * a new write to be completed.
+	 */
+	pthread_cond_t write_done;
+
+	/**
+	 * Condition for a new write scheduled.
+	 *
+	 * The workers wait on this condition when they are waiting for a new
+	 * write to process.
+	 * The IO signals this condition when new writes are scheduled.
+	 */
+	pthread_cond_t write_sched;
+
 	struct snapraid_state* state;
 
 	/**
@@ -168,6 +186,7 @@ struct snapraid_io {
 	 */
 	void (*data_reader)(struct snapraid_worker*, struct snapraid_task*);
 	void (*parity_reader)(struct snapraid_worker*, struct snapraid_task*);
+	void (*parity_writer)(struct snapraid_worker*, struct snapraid_task*);
 
 	/**
 	 * Blocks mapping.
@@ -197,6 +216,8 @@ struct snapraid_io {
 	 */
 	unsigned reader_max; /**< Number of workers. */
 	struct snapraid_worker* reader_map; /**< Vector of workers. */
+	unsigned writer_max; /**< Number of workers. */
+	struct snapraid_worker* writer_map; /**< Vector of workers. */
 
 	/**
 	 * List of not yet processed workers.
@@ -209,6 +230,7 @@ struct snapraid_io {
 	 * The end is when i == reader_max.
 	 */
 	unsigned char* reader_list;
+	unsigned char* writer_list;
 
 	/**
 	 * Exit condition for all threads.
@@ -225,6 +247,17 @@ struct snapraid_io {
 	 * it's incremented, and a read_sched() signal is sent.
 	 */
 	unsigned reader_index;
+
+	/**
+	 * The task currently used by the caller.
+	 *
+	 * It's a rolling counter, when reaching IO_MAX
+	 * it goes again to 0.
+	 *
+	 * When the caller finish with the current index,
+	 * it's incremented, and a write_sched() signal is sent.
+	 */
+	unsigned writer_index;
 };
 
 /**
@@ -237,6 +270,7 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 	void (*data_reader)(struct snapraid_worker*, struct snapraid_task*),
 	struct snapraid_handle* handle_map, unsigned handle_max,
 	void (*parity_reader)(struct snapraid_worker*, struct snapraid_task*),
+	void (*parity_writer)(struct snapraid_worker*, struct snapraid_task*),
 	struct snapraid_parity_handle* parity_handle_map, unsigned parity_handle_max);
 
 /**
@@ -289,5 +323,27 @@ struct snapraid_task* io_data_read(struct snapraid_io* io, unsigned* diskcur);
  * \return The completed task.
  */
 struct snapraid_task* io_parity_read(struct snapraid_io* io, unsigned* levcur);
+
+/**
+ * Write of a parity block.
+ *
+ * It must be called exactly ::parity_handle_max times.
+ *
+ * \param io InputOutput context.
+ * \param pos The position of the parity block in the ::parity_handle_map vector.
+ */
+void io_parity_write(struct snapraid_io* io, unsigned* levcur);
+
+/**
+ * Next write position.
+ *
+ * This call ends the write process.
+ * It must be called after io_parity_write().
+ *
+ * \param io InputOutput context.
+ * \param blockcur The parity position to write.
+ * \param skip Skip the writes, in case parity doesn't need to be updated.
+ */
+void io_write_next(struct snapraid_io* io, unsigned blockcur, int skip);
 
 #endif
