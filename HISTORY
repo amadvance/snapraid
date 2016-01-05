@@ -17,7 +17,9 @@ SnapRAID HISTORY
    correctly detecting files that have not a physical offset, for
    whatever reason.
  * Adds UUID support to Btrfs filesystems. It's present only if the
-   'libblkid' library is available on the system.
+   'libblkid' development library is available on the system.
+   Usually this requires to install the libblkid-dev or libblkid-devel
+   package.
  * Added a new --no-warnings option to disable some repetitive warnings
    that could be annoying to power users.
  * Improves the error reporting, printing a complete stack trace, that can

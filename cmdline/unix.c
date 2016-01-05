@@ -92,6 +92,7 @@ static int devuuid_dev(uint64_t device, char* uuid, size_t uuid_size)
 	/* scan the UUID directory searching for the device */
 	d = opendir("/dev/disk/by-uuid");
 	if (!d) {
+		log_tag("uuid:by-uuidd:%u:%u: opendir(/dev/disk/by-uuid) failed\n", major(device), minor(device));
 		/* directory missing?, likely we are not in Linux */
 		return -1;
 	}
@@ -103,16 +104,30 @@ static int devuuid_dev(uint64_t device, char* uuid, size_t uuid_size)
 
 		ret = fstatat(dirfd(d), dd->d_name, &st, 0);
 		if (ret != 0) {
+			log_tag("uuid:by-uuidd:%u:%u: fstatat(%s) failed\n", major(device), minor(device), dd->d_name);
 			/* generic error, ignore and continue the search */
 			continue;
 		}
 
 		/* if it matches, we have the uuid */
 		if (S_ISBLK(st.st_mode) && st.st_rdev == (dev_t)device) {
+			char buf[PATH_MAX];
+			char path[PATH_MAX];
+
+			/* resolve the link */
+			pathprint(path, sizeof(path), "/dev/disk/by-uuid/%s", dd->d_name);
+			ret = readlink(path, buf, sizeof(buf));
+			if (ret < 0 || ret == sizeof(buf)) {
+				log_tag("uuid:by-uuidd:%u:%u: readlink(/dev/disk/by-uuid/%s) failed\n", major(device), minor(device), dd->d_name);
+				/* generic error, ignore and continue the search */
+				continue;
+			}
+			buf[ret] = 0;
+
 			/* found */
 			pathcpy(uuid, uuid_size, dd->d_name);
 
-			log_tag("uuid:dev:%u:%u:%s:\n", major(device), minor(device), uuid);
+			log_tag("uuid:by-uuid:%u:%u:%s: found %s\n", major(device), minor(device), uuid, buf);
 
 			closedir(d);
 			return 0;
@@ -141,12 +156,14 @@ static int devuuid_blkid(uint64_t device, char* uuid, size_t uuid_size)
 
 	devname = blkid_devno_to_devname(device);
 	if (!devname) {
+		log_tag("uuid:blkid:%u:%u: blkid_devno_to_devname() failed\n", major(device), minor(device));
 		/* device mapping failed */
 		return -1;
 	}
 
 	uuidname = blkid_get_tag_value(cache, "UUID", devname);
 	if (!uuidname) {
+		log_tag("uuid:blkid:%u:%u: blkid_get_tag_value(%s) failed\n", major(device), minor(device), devname);
 		/* uuid mapping failed */
 		free(devname);
 		return -1;
@@ -154,7 +171,7 @@ static int devuuid_blkid(uint64_t device, char* uuid, size_t uuid_size)
 
 	pathcpy(uuid, uuid_size, uuidname);
 
-	log_tag("uuid:dev:%u:%u:%s:\n", major(device), minor(device), uuid);
+	log_tag("uuid:blkid:%u:%u:%s: found %s\n", major(device), minor(device), uuid, devname);
 
 	free(devname);
 	free(uuidname);
