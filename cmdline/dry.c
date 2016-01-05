@@ -26,7 +26,7 @@
 /****************************************************************************/
 /* dry */
 
-static int state_dry_process(struct snapraid_state* state, struct snapraid_parity_handle** parity, block_off_t blockstart, block_off_t blockmax)
+static int state_dry_process(struct snapraid_state* state, struct snapraid_parity_handle* parity_handle, block_off_t blockstart, block_off_t blockmax)
 {
 	struct snapraid_handle* handle;
 	unsigned diskmax;
@@ -124,19 +124,17 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 
 		/* read the parity */
 		for (l = 0; l < state->level; ++l) {
-			if (parity[l]) {
-				/* until now is CPU */
-				state_usage_cpu(state);
+			/* until now is CPU */
+			state_usage_cpu(state);
 
-				ret = parity_read(parity[l], i, buffer_aligned, state->block_size, log_error);
-				if (ret == -1) {
-					log_tag("parity_error:%u:%s: Read error\n", i, lev_config_name(l));
-					++error;
-				}
-
-				/* until now is parity */
-				state_usage_parity(state, l);
+			ret = parity_read(&parity_handle[l], i, buffer_aligned, state->block_size, log_error);
+			if (ret == -1) {
+				log_tag("parity_error:%u:%s: Read error\n", i, lev_config_name(l));
+				++error;
 			}
+
+			/* until now is parity */
+			state_usage_parity(state, l);
 		}
 
 		/* count the number of processed block */
@@ -192,10 +190,7 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 {
 	block_off_t blockmax;
 	int ret;
-	struct snapraid_parity_handle parity[LEV_MAX];
-	/* the following initialization is to avoid clang warnings about */
-	/* potential state->level change, that never happens */
-	struct snapraid_parity_handle* parity_ptr[LEV_MAX] = { 0 };
+	struct snapraid_parity_handle parity_handle[LEV_MAX];
 	unsigned error;
 	unsigned l;
 
@@ -218,12 +213,12 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	/* open the file for reading */
 	/* it may fail if the file doesn't exist, in this case we continue to dry the files */
 	for (l = 0; l < state->level; ++l) {
-		parity_ptr[l] = &parity[l];
-		ret = parity_open(parity_ptr[l], l, state->parity[l].path, state->file_mode);
+		ret = parity_open(&parity_handle[l], l, state->parity[l].path, state->file_mode);
 		if (ret == -1) {
-			msg_status("No accessible %s file.\n", lev_name(l));
-			/* continue anyway */
-			parity_ptr[l] = 0;
+			/* LCOV_EXCL_START */
+			log_fatal("WARNING! Without an accessible %s file, it isn't possible to dry.\n", lev_name(l));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -231,7 +226,7 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	/* skip degenerated cases of empty parity, or skipping all */
 	if (blockstart < blockmax) {
-		ret = state_dry_process(state, parity_ptr, blockstart, blockmax);
+		ret = state_dry_process(state, parity_handle, blockstart, blockmax);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
 			++error;
@@ -242,14 +237,12 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	/* try to close only if opened */
 	for (l = 0; l < state->level; ++l) {
-		if (parity_ptr[l]) {
-			ret = parity_close(parity_ptr[l]);
-			if (ret == -1) {
-				/* LCOV_EXCL_START */
-				++error;
-				/* continue, as we are already exiting */
-				/* LCOV_EXCL_STOP */
-			}
+		ret = parity_close(&parity_handle[l]);
+		if (ret == -1) {
+			/* LCOV_EXCL_START */
+			++error;
+			/* continue, as we are already exiting */
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
