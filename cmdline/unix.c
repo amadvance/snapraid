@@ -1146,7 +1146,7 @@ void os_abort(void)
 			while (msg[j] != '(' && msg[j] != ' ' && msg[j] != 0)
 				++j;
 
-			snprintf(addr2line, sizeof(addr2line), "addr2line %p -e %.*s", stack[i], j, msg);
+			snprintf(addr2line, sizeof(addr2line), "addr2line %p -e %.*s", stack[i], (unsigned)j, msg);
 			system(addr2line);
 		}
 	}
