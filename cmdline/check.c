@@ -764,10 +764,11 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 				log_tag("status:recoverable:%s:%s\n", disk->name, esc(file->sub));
 				msg_info("recoverable %s\n", path);
 			} else {
-				log_tag("status:correct:%s:%s\n", disk->name, esc(file->sub));
 				/* we don't use msg_verbose() because it also goes into the log */
-				if (msg_level >= MSG_VERBOSE)
+				if (msg_level >= MSG_VERBOSE) {
+					log_tag("status:correct:%s:%s\n", disk->name, esc(file->sub));
 					msg_info("correct %s\n", path);
+				}
 			}
 		}
 
