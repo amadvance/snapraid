@@ -274,13 +274,19 @@ static struct snapraid_task* io_reader_step(struct snapraid_worker* worker)
  *
  * This is the synchronization point for workers with the io.
  */
-static struct snapraid_task* io_writer_step(struct snapraid_worker* worker)
+static struct snapraid_task* io_writer_step(struct snapraid_worker* worker, int state)
 {
 	struct snapraid_io* io = worker->io;
 	struct snapraid_task* task = 0;
+	int error_index;
 
 	/* the synchronization is protected by the io mutex */
 	pthread_mutex_lock(&io->mutex);
+
+	/* counts the number of errors in the global state */
+	error_index = state - IO_WRITER_ERROR_BASE;
+	if (error_index >= 0 && error_index < IO_WRITER_ERROR_MAX)
+		++io->writer_error[error_index];
 
 	while (1) {
 		unsigned index;
@@ -359,7 +365,7 @@ block_off_t io_read_next(struct snapraid_io* io, void*** buffer)
 	return blockcur_caller;
 }
 
-void io_write_next(struct snapraid_io* io, unsigned blockcur, int skip)
+void io_write_next(struct snapraid_io* io, unsigned blockcur, int skip, int* writer_error)
 {
 	unsigned i;
 
@@ -372,6 +378,12 @@ void io_write_next(struct snapraid_io* io, unsigned blockcur, int skip)
 	
 	/* the synchronization is protected by the io mutex */
 	pthread_mutex_lock(&io->mutex);
+
+	/* report errors */
+	for (i = 0; i < IO_WRITER_ERROR_MAX; ++i) {
+		writer_error[i] = io->writer_error[i];
+		io->writer_error[i] = 0;
+	}
 
 	if (skip) {
 		/* skip the next write */
@@ -554,28 +566,35 @@ static void* io_reader_thread(void* arg)
 	return 0;
 }
 
+
 static void* io_writer_thread(void* arg)
 {
 	struct snapraid_worker* worker = arg;
+	int latest_state = TASK_STATE_DONE;
 
 	while (1) {
 		struct snapraid_task* task;
 
 		/* get the new task */
-		task = io_writer_step(worker);
+		task = io_writer_step(worker, latest_state);
 
 		/* if no task, it means to exit */
 		if (!task)
 			break;
 
 		/* nothing more to do */
-		if (task->state == TASK_STATE_EMPTY)
+		if (task->state == TASK_STATE_EMPTY) {
+			latest_state = TASK_STATE_DONE;
 			continue;
+		}
 
 		assert(task->state == TASK_STATE_READY);
 
 		/* work on the assigned task */
 		worker->func(worker, task);
+
+		/* save the resulting state */
+		latest_state = task->state;
 	}
 
 	return 0;
@@ -596,6 +615,10 @@ void io_start(struct snapraid_io* io,
 	io->done = 0;
 	io->reader_index = IO_MAX - 1;
 	io->writer_index = 0;
+
+	/* clear writer errors */
+	for (i = 0; i < IO_WRITER_ERROR_MAX; ++i)
+		io->writer_error[i] = 0;
 
 	/* setup the initial read pending tasks, except the latest one, */
 	/* the latest will be initialized at the fist io_read_next() call */

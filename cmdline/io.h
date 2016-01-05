@@ -121,6 +121,12 @@ struct snapraid_worker {
 };
 
 /**
+ * Number of error kind for writers.
+ */
+#define IO_WRITER_ERROR_BASE TASK_STATE_IOERROR_CONTINUE
+#define IO_WRITER_ERROR_MAX (-IO_WRITER_ERROR_BASE)
+
+/**
  * Reader.
  *
  * This represents the pool of worker threads dedicated to read
@@ -258,6 +264,11 @@ struct snapraid_io {
 	 * it's incremented, and a write_sched() signal is sent.
 	 */
 	unsigned writer_index;
+
+	/**
+	 * Counts the error happening in the writers.
+	 */
+	int writer_error[IO_WRITER_ERROR_MAX];
 };
 
 /**
@@ -343,7 +354,8 @@ void io_parity_write(struct snapraid_io* io, unsigned* levcur);
  * \param io InputOutput context.
  * \param blockcur The parity position to write.
  * \param skip Skip the writes, in case parity doesn't need to be updated.
+ * \param writer_error Return the number of errors. Vector of IO_WRITER_ERROR_MAX elements.
  */
-void io_write_next(struct snapraid_io* io, unsigned blockcur, int skip);
+void io_write_next(struct snapraid_io* io, unsigned blockcur, int skip, int* writer_error);
 
 #endif

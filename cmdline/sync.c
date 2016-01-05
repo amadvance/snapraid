@@ -747,6 +747,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		snapraid_info info;
 		int rehash;
 		void** buffer;
+		int writer_error[IO_WRITER_ERROR_MAX];
 
 		/* go to the next block */
 		blockcur = io_read_next(&io, &buffer);
@@ -1193,7 +1194,32 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		}
 
 		/* write finished */
-		io_write_next(&io, blockcur, !parity_going_to_be_updated);
+		io_write_next(&io, blockcur, !parity_going_to_be_updated, writer_error);
+
+		/* handle errors reported */
+		for (j = 0; j < IO_WRITER_ERROR_MAX; ++j) {
+			if (writer_error[j]) {
+				switch (j + IO_WRITER_ERROR_BASE) {
+				case TASK_STATE_IOERROR_CONTINUE :
+					++io_error;
+					if (io_error >= state->opt.io_error_limit) {
+						log_fatal("DANGER! Unexpected input/output write error in a parity disk, it isn't possible to sync.\n");
+						log_fatal("Stopping at block %u\n", blockcur);
+						goto bail;
+					}
+					break;
+				case TASK_STATE_ERROR_CONTINUE :
+					++error;
+					break;
+				case TASK_STATE_IOERROR :
+					++io_error;
+					goto bail;
+				case TASK_STATE_ERROR :
+					++error;
+					goto bail;
+				}
+			}
+		}
 
 		/* mark the state as needing write */
 		state->need_write = 1;
