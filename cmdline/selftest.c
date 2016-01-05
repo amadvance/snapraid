@@ -317,19 +317,19 @@ static void test_tommy(void)
 	}
 
 	if (tommy_array_memory_usage(&array) < TOMMY_SIZE * sizeof(void*))
-		goto bail;
+		/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 	if (tommy_arrayblk_memory_usage(&arrayblk) < TOMMY_SIZE * sizeof(void*))
-		goto bail;
+		/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 	if (tommy_arrayblkof_memory_usage(&arrayblkof) < TOMMY_SIZE * sizeof(unsigned))
-		goto bail;
+		/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	for (i = 0; i < TOMMY_SIZE; ++i) {
 		if (tommy_array_get(&array, i) != &node[i])
-			goto bail;
+			/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 		if (tommy_arrayblk_get(&arrayblk, i) != &node[i])
-			goto bail;
+			/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 		if (*(unsigned*)tommy_arrayblkof_ref(&arrayblkof, i) != i)
-			goto bail;
+			/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 	}
 
 	tommy_arrayblkof_done(&arrayblkof);
@@ -339,13 +339,13 @@ static void test_tommy(void)
 	tommy_list_init(&list);
 
 	if (!tommy_list_empty(&list))
-		goto bail;
+		/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	if (tommy_list_tail(&list))
-		goto bail;
+		/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	if (tommy_list_head(&list))
-		goto bail;
+		/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	tommy_hashdyn_init(&hashdyn);
 
@@ -353,34 +353,34 @@ static void test_tommy(void)
 		tommy_hashdyn_insert(&hashdyn, &node[i], &node[i], i % 64);
 
 	if (tommy_hashdyn_count(&hashdyn) != TOMMY_SIZE)
-		goto bail;
+		/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	if (tommy_hashdyn_memory_usage(&hashdyn) < TOMMY_SIZE * sizeof(tommy_node))
-		goto bail;
+		/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	tommy_test_foreach_count = 0;
 	tommy_hashdyn_foreach(&hashdyn, tommy_test_foreach);
 	if (tommy_test_foreach_count != TOMMY_SIZE)
-		goto bail;
+		/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	tommy_test_foreach_count = 0;
 	tommy_hashdyn_foreach_arg(&hashdyn, tommy_test_foreach_arg, &tommy_test_foreach_count);
 	if (tommy_test_foreach_count != TOMMY_SIZE)
-		goto bail;
+		/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	for (i = 0; i < TOMMY_SIZE / 2; ++i)
 		tommy_hashdyn_remove_existing(&hashdyn, &node[i]);
 
 	for (i = 0; i < TOMMY_SIZE / 2; ++i)
 		if (tommy_hashdyn_remove(&hashdyn, tommy_test_search, &node[i], i % 64) != 0)
-			goto bail;
+			/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	for (i = TOMMY_SIZE / 2; i < TOMMY_SIZE; ++i)
 		if (tommy_hashdyn_remove(&hashdyn, tommy_test_search, &node[i], i % 64) == 0)
-			goto bail;
+			/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	if (tommy_hashdyn_count(&hashdyn) != 0)
-		goto bail;
+		/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	tommy_hashdyn_done(&hashdyn);
 
@@ -391,49 +391,49 @@ static void test_tommy(void)
 
 	/* try to insert a duplicate, count should not change */
 	if (tommy_tree_insert(&tree, &node[TOMMY_SIZE], (void*)1) != (void*)1)
-		goto bail;
+		/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	if (tommy_tree_count(&tree) != TOMMY_SIZE)
-		goto bail;
+		/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	if (tommy_tree_memory_usage(&tree) < TOMMY_SIZE * sizeof(tommy_node))
-		goto bail;
+		/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	if (tommy_tree_search(&tree, (void*)1) != (void*)1)
-		goto bail;
+		/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	if (tommy_tree_search(&tree, (void*)-1) != 0)
-		goto bail;
+		/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	if (tommy_tree_search_compare(&tree, tommy_test_compare, (void*)1) != (void*)1)
-		goto bail;
+		/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	if (tommy_tree_search_compare(&tree, tommy_test_compare, (void*)-1) != 0)
-		goto bail;
+		/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	tommy_test_foreach_count = 0;
 	tommy_tree_foreach(&tree, tommy_test_foreach);
 	if (tommy_test_foreach_count != TOMMY_SIZE)
-		goto bail;
+		/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	tommy_test_foreach_count = 0;
 	tommy_tree_foreach_arg(&tree, tommy_test_foreach_arg, &tommy_test_foreach_count);
 	if (tommy_test_foreach_count != TOMMY_SIZE)
-		goto bail;
+		/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	for (i = 0; i < TOMMY_SIZE / 2; ++i)
 		tommy_tree_remove_existing(&tree, &node[i]);
 
 	for (i = 0; i < TOMMY_SIZE / 2; ++i)
 		if (tommy_tree_remove(&tree, (void*)(uintptr_t)(i+1)) != 0)
-			goto bail;
+			/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	for (i = TOMMY_SIZE / 2; i < TOMMY_SIZE; ++i)
 		if (tommy_tree_remove(&tree, (void*)(uintptr_t)(i+1)) == 0)
-			goto bail;
+			/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	if (tommy_tree_count(&tree) != 0)
-		goto bail;
+		/* LCOV_EXCL_START */ goto bail; /* LCOV_EXCL_STOP */
 
 	return;
 bail:

@@ -1105,6 +1105,7 @@ void os_done(void)
 #endif
 }
 
+/* LCOV_EXCL_START */
 void os_abort(void)
 {
 #if HAVE_BACKTRACE && HAVE_BACKTRACE_SYMBOLS
@@ -1163,6 +1164,7 @@ void os_abort(void)
 
 	abort();
 }
+/* LCOV_EXCL_STOP */
 
 #endif
 
