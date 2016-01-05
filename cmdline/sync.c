@@ -660,6 +660,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	unsigned j;
 	void* zero_alloc;
 	void** zero;
+	void* copy_alloc;
+	void** copy;
 	unsigned buffermax;
 	data_off_t countsize;
 	block_off_t countpos;
@@ -689,13 +691,16 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	/* rehash buffers */
 	rehandle = malloc_nofail_align(diskmax * sizeof(struct snapraid_rehash), &rehandle_alloc);
 
-	/* we need 2 * data + 1 * parity */
-	buffermax = 2 * diskmax + state->level;
+	/* we need 1 * data + 1 * parity */
+	buffermax = diskmax + state->level;
 
 	/* initialize the io threads */
 	io_init(&io, state, buffermax, sync_data_reader, handle, diskmax, 0, sync_parity_writer, parity_handle, state->level);
 
-	/* fill up the zero buffer */
+	/* allocate the copy buffer */
+	copy = malloc_nofail_vector_align(diskmax, diskmax, state->block_size, &copy_alloc);
+
+	/* allocate and fill the zero buffer */
 	zero = malloc_nofail_align(state->block_size, &zero_alloc);
 	memset(zero, 0, state->block_size);
 	raid_zero(zero);
@@ -991,7 +996,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			failed_mac = 0;
 			for (j = 0; j < failed_count; ++j) {
 				unsigned char* block_buffer = buffer[failed[j].index];
-				unsigned char* block_copy = buffer[diskmax + state->level + failed[j].index];
+				unsigned char* block_copy = copy[failed[j].index];
 				unsigned block_state = block_state_get(failed[j].block);
 
 				/* we try to recover only if at least one BLK is present */
@@ -1071,7 +1076,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					for (j = 0; j < failed_count; ++j) {
 						unsigned char hash[HASH_SIZE];
 						unsigned char* block_buffer = buffer[failed[j].index];
-						unsigned char* block_copy = buffer[diskmax + state->level + failed[j].index];
+						unsigned char* block_copy = copy[failed[j].index];
 						unsigned block_state = block_state_get(failed[j].block);
 
 						if (block_state == BLOCK_STATE_BLK) {
@@ -1348,6 +1353,8 @@ bail:
 
 	free(handle);
 	free(zero_alloc);
+	free(copy_alloc);
+	free(copy);
 	free(rehandle_alloc);
 	free(failed);
 	free(failed_map);

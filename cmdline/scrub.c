@@ -271,8 +271,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	/* rehash buffers */
 	rehandle = malloc_nofail_align(diskmax * sizeof(struct snapraid_rehash), &rehandle_alloc);
 
-	/* we need disk + 2 for each parity level buffers */
-	buffermax = diskmax + state->level * 2;
+	/* we need 1 * data + 2 * parity */
+	buffermax = diskmax + 2 * state->level;
 
 	/* initialize the io threads */
 	io_init(&io, state, buffermax, scrub_data_reader, handle, diskmax, scrub_parity_reader, 0, parity_handle, state->level);
