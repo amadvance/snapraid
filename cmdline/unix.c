@@ -1141,13 +1141,19 @@ void os_abort(void)
 		printf("[bt] %02u: %s\n", i, msg);
 
 		if (messages) {
+			int ret;
 			char addr2line[1024];
 			size_t j = 0;
 			while (msg[j] != '(' && msg[j] != ' ' && msg[j] != 0)
 				++j;
 
 			snprintf(addr2line, sizeof(addr2line), "addr2line %p -e %.*s", stack[i], (unsigned)j, msg);
-			system(addr2line);
+
+			ret = system(addr2line);
+			if (WIFEXITED(ret) && WEXITSTATUS(ret) != 0)
+				printf("exit:%d\n", WEXITSTATUS(ret));
+			if (WIFSIGNALED(ret))
+				printf("signal:%d\n", WTERMSIG(ret));
 		}
 	}
 #endif
