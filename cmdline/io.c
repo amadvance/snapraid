@@ -227,7 +227,6 @@ static void io_writer_sched_empty(struct snapraid_io* io, int index, block_off_t
 	}
 }
 
-
 /**
  * Get the next task to work on for a reader.
  *
@@ -353,7 +352,7 @@ block_off_t io_read_next(struct snapraid_io* io, void*** buffer)
 	/* schedule the next read */
 	io_reader_sched(io, io->reader_index, blockcur_schedule);
 
-	/* get the next task to return to the caller */
+	/* set the index for the tasks to return to the caller */
 	io->reader_index = (io->reader_index + 1) % IO_MAX;
 
 	/* get the position to operate at high level from one task */
@@ -380,7 +379,7 @@ void io_write_next(struct snapraid_io* io, unsigned blockcur, int skip, int* wri
 	/* setup the list of workers to process */
 	for (i = 0; i <= io->writer_max; ++i)
 		io->writer_list[i] = i;
-	
+
 	/* the synchronization is protected by the io mutex */
 	pthread_mutex_lock(&io->mutex);
 
@@ -398,9 +397,10 @@ void io_write_next(struct snapraid_io* io, unsigned blockcur, int skip, int* wri
 		io_writer_sched(io, io->writer_index, blockcur);
 	}
 
+	/* at this point the writers must be in sync with the readers */
 	assert(io->writer_index == io->reader_index);
 
-	/* get the next task to return to the caller */
+	/* set the index to be used for the next write */
 	io->writer_index = (io->writer_index + 1) % IO_MAX;
 
 	/* signal all the workers that there is a new pending task */
@@ -607,7 +607,7 @@ static void* io_writer_thread(void* arg)
 
 void io_start(struct snapraid_io* io,
 	block_off_t blockstart, block_off_t blockmax,
-	int (*block_is_enabled)(void* arg,block_off_t), void* blockarg)
+	int (*block_is_enabled)(void* arg, block_off_t), void* blockarg)
 {
 	unsigned i;
 

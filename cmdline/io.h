@@ -203,7 +203,7 @@ struct snapraid_io {
 	block_off_t block_start;
 	block_off_t block_max;
 	block_off_t block_next;
-	int (*block_is_enabled)(void* arg,block_off_t);
+	int (*block_is_enabled)(void* arg, block_off_t);
 	void* block_arg;
 
 	/**
@@ -294,7 +294,7 @@ void io_done(struct snapraid_io* io);
  */
 void io_start(struct snapraid_io* io,
 	block_off_t blockstart, block_off_t blockmax,
-	int (*block_is_enabled)(void* arg,block_off_t), void* blockarg);
+	int (*block_is_enabled)(void* arg, block_off_t), void* blockarg);
 
 /**
  * Stop all the worker threads.
@@ -359,3 +359,4 @@ void io_parity_write(struct snapraid_io* io, unsigned* levcur);
 void io_write_next(struct snapraid_io* io, unsigned blockcur, int skip, int* writer_error);
 
 #endif
+
