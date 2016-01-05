@@ -27,6 +27,7 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state, unsigned buff
 	struct snapraid_parity_handle* parity_handle_map, unsigned parity_handle_max)
 {
 	unsigned i;
+	size_t allocated;
 
 	pthread_mutex_init(&io->mutex, 0);
 	pthread_cond_init(&io->read_done, 0);
@@ -37,11 +38,15 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state, unsigned buff
 	io->state = state;
 
 	io->buffer_max = buffer_max;
+	allocated = 0;
 	for (i = 0; i < IO_MAX; ++i) {
 		io->buffer_map[i] = malloc_nofail_vector_align(handle_max, buffer_max, state->block_size, &io->buffer_alloc_map[i]);
 		if (!state->opt.skip_self)
 			mtest_vector(io->buffer_max, state->block_size, io->buffer_map[i]);
+		allocated += state->block_size * buffer_max;
 	}
+
+	msg_progress("Using %u MiB of memory for the MT buffers.\n", (unsigned)(allocated / (1024 * 1024)));
 
 	if (parity_writer) {
 		io->reader_max = handle_max;
