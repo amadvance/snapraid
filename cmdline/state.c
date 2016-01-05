@@ -3968,8 +3968,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 			msg_bar("%u%%, %u MiB", out_perc, (unsigned)(countsize / MEGA));
 			if (out_speed)
 				msg_bar(", %u MiB/s", out_speed);
-			if (out_cpu)
-				msg_bar(", CPU %u%%", out_cpu);
+			msg_bar(", CPU %u%%", out_cpu);
 			if (out_eta)
 				msg_bar(", %u:%02u ETA", out_eta / 60, out_eta % 60);
 			msg_bar("%s\r", PROGRESS_CLEAR);
