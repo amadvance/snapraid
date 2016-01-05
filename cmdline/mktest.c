@@ -647,6 +647,8 @@ int main(int argc, char* argv[])
 {
 	int i, j, b;
 
+	lock_init();
+
 	if (argc < 2) {
 		help();
 		exit(EXIT_SUCCESS);
@@ -784,6 +786,8 @@ int main(int argc, char* argv[])
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}
+
+	lock_done();
 
 	return 0;
 }

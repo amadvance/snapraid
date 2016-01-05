@@ -463,6 +463,8 @@ int main(int argc, char* argv[])
 	struct tm* tm;
 	int i;
 
+	lock_init();
+
 	/* defaults */
 	config(conf, sizeof(conf), argv[0]);
 	memset(&opt, 0, sizeof(opt));
@@ -1319,6 +1321,7 @@ int main(int argc, char* argv[])
 	tommy_list_foreach(&filterlist_disk, (tommy_foreach_func*)filter_free);
 
 	os_done();
+	lock_done();
 
 	return EXIT_SUCCESS;
 }

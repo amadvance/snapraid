@@ -20,27 +20,65 @@
 #include "support.h"
 
 /****************************************************************************/
+/* lock */
+
+/**
+ * Locks used externally.
+ */
+#if HAVE_PTHREAD
+static pthread_mutex_t msg_lock;
+static pthread_mutex_t memory_lock;
+#endif
+
+void lock_msg(void)
+{
+#if HAVE_PTHREAD
+	pthread_mutex_lock(&msg_lock);
+#endif
+}
+
+void unlock_msg(void)
+{
+#if HAVE_PTHREAD
+	pthread_mutex_unlock(&msg_lock);
+#endif
+}
+
+void lock_memory(void)
+{
+#if HAVE_PTHREAD
+	pthread_mutex_lock(&memory_lock);
+#endif
+}
+
+void unlock_memory(void)
+{
+#if HAVE_PTHREAD
+	pthread_mutex_unlock(&memory_lock);
+#endif
+}
+
+void lock_init(void)
+{
+#if HAVE_PTHREAD
+	/* initialize the locks as first operation as log_fatal depends on them */
+	pthread_mutex_init(&msg_lock, 0);
+	pthread_mutex_init(&memory_lock, 0);
+#endif
+}
+
+void lock_done(void)
+{
+#if HAVE_PTHREAD
+	pthread_mutex_destroy(&msg_lock);
+	pthread_mutex_destroy(&memory_lock);
+#endif
+}
+
+/****************************************************************************/
 /* print */
 
 int msg_level = 0;
-
-/**
- * Mutex used for printf.
- *
- * In Windows printf() is not atomic, and multiple threads
- * will have output interleaved.
- *
- * Note that even defining __USE_MINGW_ANSI_STDIO the problem persists.
- *
- * See for example:
- *
- * Weird output when I use pthread and printf.
- * http://stackoverflow.com/questions/13190254/weird-output-when-i-use-pthread-and-printf
- *
- * This is also required in other OS because we split output in stdlog in
- * two fprintf calls.
- */
-static pthread_mutex_t msg_lock = PTHREAD_MUTEX_INITIALIZER;
 
 /*
  * Note that in the following functions we always flush both
@@ -58,7 +96,7 @@ void log_fatal(const char* format, ...)
 {
 	va_list ap;
 
-	pthread_mutex_lock(&msg_lock);
+	lock_msg();
 
 	if (stdlog) {
 		va_start(ap, format);
@@ -73,14 +111,14 @@ void log_fatal(const char* format, ...)
 	fflush(stderr);
 	va_end(ap);
 
-	pthread_mutex_unlock(&msg_lock);
+	unlock_msg();
 }
 
 void log_error(const char* format, ...)
 {
 	va_list ap;
 
-	pthread_mutex_lock(&msg_lock);
+	lock_msg();
 
 	if (stdlog) {
 		va_start(ap, format);
@@ -95,14 +133,14 @@ void log_error(const char* format, ...)
 		va_end(ap);
 	}
 
-	pthread_mutex_unlock(&msg_lock);
+	unlock_msg();
 }
 
 void log_expected(const char* format, ...)
 {
 	va_list ap;
 
-	pthread_mutex_lock(&msg_lock);
+	lock_msg();
 
 	if (stdlog) {
 		va_start(ap, format);
@@ -112,14 +150,14 @@ void log_expected(const char* format, ...)
 		va_end(ap);
 	}
 
-	pthread_mutex_unlock(&msg_lock);
+	unlock_msg();
 }
 
 void log_tag(const char* format, ...)
 {
 	va_list ap;
 
-	pthread_mutex_lock(&msg_lock);
+	lock_msg();
 
 	if (stdlog) {
 		va_start(ap, format);
@@ -129,26 +167,26 @@ void log_tag(const char* format, ...)
 		va_end(ap);
 	}
 
-	pthread_mutex_unlock(&msg_lock);
+	unlock_msg();
 }
 
 void log_flush(void)
 {
-	pthread_mutex_lock(&msg_lock);
+	lock_msg();
 
 	if (stdlog)
 		fflush(stdlog);
 	fflush(stdout);
 	fflush(stderr);
 
-	pthread_mutex_unlock(&msg_lock);
+	unlock_msg();
 }
 
 void msg_status(const char* format, ...)
 {
 	va_list ap;
 
-	pthread_mutex_lock(&msg_lock);
+	lock_msg();
 
 	if (stdlog) {
 		va_start(ap, format);
@@ -165,14 +203,14 @@ void msg_status(const char* format, ...)
 		va_end(ap);
 	}
 
-	pthread_mutex_unlock(&msg_lock);
+	unlock_msg();
 }
 
 void msg_info(const char* format, ...)
 {
 	va_list ap;
 
-	pthread_mutex_lock(&msg_lock);
+	lock_msg();
 
 	/* don't output in stdlog as these messages */
 	/* are always paired with a msg_tag() call */
@@ -184,14 +222,14 @@ void msg_info(const char* format, ...)
 		va_end(ap);
 	}
 
-	pthread_mutex_unlock(&msg_lock);
+	unlock_msg();
 }
 
 void msg_progress(const char* format, ...)
 {
 	va_list ap;
 
-	pthread_mutex_lock(&msg_lock);
+	lock_msg();
 
 	if (stdlog) {
 		va_start(ap, format);
@@ -208,14 +246,14 @@ void msg_progress(const char* format, ...)
 		va_end(ap);
 	}
 
-	pthread_mutex_unlock(&msg_lock);
+	unlock_msg();
 }
 
 void msg_bar(const char* format, ...)
 {
 	va_list ap;
 
-	pthread_mutex_lock(&msg_lock);
+	lock_msg();
 
 	/* don't output in stdlog as these messages */
 	/* are intended for screen only */
@@ -227,14 +265,14 @@ void msg_bar(const char* format, ...)
 		va_end(ap);
 	}
 
-	pthread_mutex_unlock(&msg_lock);
+	unlock_msg();
 }
 
 void msg_verbose(const char* format, ...)
 {
 	va_list ap;
 
-	pthread_mutex_lock(&msg_lock);
+	lock_msg();
 
 	if (stdlog) {
 		va_start(ap, format);
@@ -251,17 +289,17 @@ void msg_verbose(const char* format, ...)
 		va_end(ap);
 	}
 
-	pthread_mutex_unlock(&msg_lock);
+	unlock_msg();
 }
 
 void msg_flush(void)
 {
-	pthread_mutex_lock(&msg_lock);
+	lock_msg();
 
 	fflush(stdout);
 	fflush(stderr);
 
-	pthread_mutex_unlock(&msg_lock);
+	unlock_msg();
 }
 
 /**
@@ -607,35 +645,27 @@ int fmtime(int f, int64_t mtime_sec, int mtime_nsec)
  */
 static size_t mcounter;
 
-/**
- * Mutex protection for the global memory counter.
- */
-#if HAVE_PTHREAD
-pthread_mutex_t mcounter_mutex = PTHREAD_MUTEX_INITIALIZER;
-#endif
 
 size_t malloc_counter_get(void)
 {
 	size_t ret;
-#if HAVE_PTHREAD
-	pthread_mutex_lock(&mcounter_mutex);
-#endif
+
+	lock_memory();
+
 	ret = mcounter;
-#if HAVE_PTHREAD
-	pthread_mutex_unlock(&mcounter_mutex);
-#endif
+
+	unlock_memory();
+
 	return ret;
 }
 
 void malloc_counter_inc(size_t inc)
 {
-#if HAVE_PTHREAD
-	pthread_mutex_lock(&mcounter_mutex);
-#endif
+	lock_memory();
+
 	mcounter += inc;
-#if HAVE_PTHREAD
-	pthread_mutex_unlock(&mcounter_mutex);
-#endif
+
+	unlock_memory();
 }
 
 /* LCOV_EXCL_START */
