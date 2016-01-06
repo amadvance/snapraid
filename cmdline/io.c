@@ -19,6 +19,25 @@
 
 #include "io.h"
 
+/**
+ * Implementation note about conditional variables.
+ *
+ * In release code the conditional variables are signaled outside the mutex,
+ * to reduce the number of context switches.
+ *
+ * Instead, when testing with helgrind and drd, they are signaled inside the mutex
+ * to help such tools to see the dependency between the signal and the wait.
+ * We use the CHECKER define to detect such case.
+ *
+ * Here some interesting discussion:
+ *
+ * Condvars: signal with mutex locked or not?
+ * http://www.domaigne.com/blog/computing/condvars-signal-with-mutex-locked-or-not/
+ *
+ * Calling pthread_cond_signal without locking mutex
+ * http://stackoverflow.com/questions/4544234/calling-pthread-cond-signal-without-locking-mutex/4544494#4544494
+ */
+
 void io_init(struct snapraid_io* io, struct snapraid_state* state, unsigned buffer_max,
 	void (*data_reader)(struct snapraid_worker*, struct snapraid_task*),
 	struct snapraid_handle* handle_map, unsigned handle_max,
@@ -266,14 +285,22 @@ static struct snapraid_task* io_reader_step(struct snapraid_worker* worker)
 			worker->index = next_index;
 			task = &worker->task_map[worker->index];
 
+#ifndef CHECKER
+			/* without the thread checker unlock before signaling, */
+			/* this reduces the number of context switches */
+			pthread_mutex_unlock(&io->mutex);
+#endif
+
 			/* if the just completed task is at this index */
 			if (done_index == waiting_index)
 				/* notify the IO that a new read is complete */
 				pthread_cond_signal(&io->read_done);
 
-			/* return the new task */
+#ifdef CHECKER
 			pthread_mutex_unlock(&io->mutex);
+#endif
 
+			/* return the new task */
 			return task;
 		}
 
@@ -320,14 +347,22 @@ static struct snapraid_task* io_writer_step(struct snapraid_worker* worker, int 
 			worker->index = next_index;
 			task = &worker->task_map[worker->index];
 
+#ifndef CHECKER
+			/* without the thread checker unlock before signaling, */
+			/* this reduces the number of context switches */
+			pthread_mutex_unlock(&io->mutex);
+#endif
+
 			/* if the just completed task is at this index */
 			if (done_index == waiting_index)
 				/* notify the IO that a new write is complete */
 				pthread_cond_signal(&io->write_done);
 
-			/* return the new task */
+#ifdef CHECKER
 			pthread_mutex_unlock(&io->mutex);
+#endif
 
+			/* return the new task */
 			return task;
 		}
 
@@ -379,10 +414,18 @@ block_off_t io_read_next(struct snapraid_io* io, void*** buffer)
 	/* set the buffer to use */
 	*buffer = io->buffer_map[io->reader_index];
 
+#ifndef CHECKER
+	/* without the thread checker unlock before signaling, */
+	/* this reduces the number of context switches */
+	pthread_mutex_unlock(&io->mutex);
+#endif
+
 	/* signal all the workers that there is a new pending task */
 	pthread_cond_broadcast(&io->read_sched);
 
+#ifdef CHECKER
 	pthread_mutex_unlock(&io->mutex);
+#endif
 
 	return blockcur_caller;
 }
@@ -421,10 +464,18 @@ void io_write_next(struct snapraid_io* io, unsigned blockcur, int skip, int* wri
 	/* set the index to be used for the next write */
 	io->writer_index = (io->writer_index + 1) % IO_MAX;
 
+#ifndef CHECKER
+	/* without the thread checker unlock before signaling, */
+	/* this reduces the number of context switches */
+	pthread_mutex_unlock(&io->mutex);
+#endif
+
 	/* signal all the workers that there is a new pending task */
 	pthread_cond_broadcast(&io->write_sched);
 
+#ifdef CHECKER
 	pthread_mutex_unlock(&io->mutex);
+#endif
 }
 
 static struct snapraid_task* io_task_read(struct snapraid_io* io, unsigned base, unsigned count, unsigned* pos)
