@@ -235,42 +235,51 @@ static void io_writer_sched_empty(struct snapraid_io* io, int index, block_off_t
 static struct snapraid_task* io_reader_step(struct snapraid_worker* worker)
 {
 	struct snapraid_io* io = worker->io;
-	struct snapraid_task* task = 0;
 
 	/* the synchronization is protected by the io mutex */
 	pthread_mutex_lock(&io->mutex);
 
 	while (1) {
-		unsigned index;
+		unsigned next_index;
 
 		/* check if the worker has to exit */
 		/* even if there is work to do */
-		if (io->done)
-			break;
+		if (io->done) {
+			pthread_mutex_unlock(&io->mutex);
+			return 0;
+		}
 
 		/* get the next pending task */
-		index = (worker->index + 1) % IO_MAX;
+		next_index = (worker->index + 1) % IO_MAX;
 
 		/* if the queue of pending tasks is not empty */
-		if (index != io->reader_index) {
+		if (next_index != io->reader_index) {
+			struct snapraid_task* task;
+
+			/* the index that the IO may be waiting for */
+			unsigned waiting_index = io->reader_index;
+
+			/* the index that worker just completed */
+			unsigned done_index = worker->index;
+
 			/* get the new working task */
-			worker->index = index;
+			worker->index = next_index;
 			task = &worker->task_map[worker->index];
 
-			/* notify the io that a new read is complete */
-			pthread_cond_signal(&io->read_done);
+			/* if the just completed task is at this index */
+			if (done_index == waiting_index)
+				/* notify the IO that a new read is complete */
+				pthread_cond_signal(&io->read_done);
 
 			/* return the new task */
-			break;
+			pthread_mutex_unlock(&io->mutex);
+
+			return task;
 		}
 
 		/* otherwise wait for a read_sched event */
 		pthread_cond_wait(&io->read_sched, &io->mutex);
 	}
-
-	pthread_mutex_unlock(&io->mutex);
-
-	return task;
 }
 
 /**
@@ -281,7 +290,6 @@ static struct snapraid_task* io_reader_step(struct snapraid_worker* worker)
 static struct snapraid_task* io_writer_step(struct snapraid_worker* worker, int state)
 {
 	struct snapraid_io* io = worker->io;
-	struct snapraid_task* task = 0;
 	int error_index;
 
 	/* the synchronization is protected by the io mutex */
@@ -293,36 +301,46 @@ static struct snapraid_task* io_writer_step(struct snapraid_worker* worker, int 
 		++io->writer_error[error_index];
 
 	while (1) {
-		unsigned index;
+		unsigned next_index;
 
 		/* get the next pending task */
-		index = (worker->index + 1) % IO_MAX;
+		next_index = (worker->index + 1) % IO_MAX;
 
 		/* if the queue of pending tasks is not empty */
-		if (index != io->writer_index) {
+		if (next_index != io->writer_index) {
+			struct snapraid_task* task;
+		
+			/* the index that the IO may be waiting for */
+			unsigned waiting_index = (io->writer_index + 1) % IO_MAX;
+
+			/* the index that worker just completed */
+			unsigned done_index = worker->index;
+
 			/* get the new working task */
-			worker->index = index;
+			worker->index = next_index;
 			task = &worker->task_map[worker->index];
 
-			/* notify the io that a new writer is complete */
-			pthread_cond_signal(&io->write_done);
+			/* if the just completed task is at this index */
+			if (done_index == waiting_index)
+				/* notify the IO that a new write is complete */
+				pthread_cond_signal(&io->write_done);
 
 			/* return the new task */
-			break;
+			pthread_mutex_unlock(&io->mutex);
+
+			return task;
 		}
 
 		/* check if the worker has to exit */
 		/* but only if there is no work to do */
-		if (io->done)
-			break;
+		if (io->done) {
+			pthread_mutex_unlock(&io->mutex);
+			return 0;
+		}
 
 		/* otherwise wait for a write_sched event */
 		pthread_cond_wait(&io->write_sched, &io->mutex);
 	}
-
-	pthread_mutex_unlock(&io->mutex);
-
-	return task;
 }
 
 /**
@@ -416,12 +434,12 @@ static struct snapraid_task* io_task_read(struct snapraid_io* io, unsigned base,
 
 	while (1) {
 		unsigned char* let;
-		unsigned index;
+		unsigned busy_index;
 
-		/* get the index the caller is using */
+		/* get the index the IO is using */
 		/* we must ensure that this index has not a read in progress */
 		/* to avoid a concurrent access */
-		index = io->reader_index;
+		busy_index = io->reader_index;
 
 		/* search for a worker that has already finished */
 		let = &io->reader_list[0];
@@ -439,7 +457,7 @@ static struct snapraid_task* io_task_read(struct snapraid_io* io, unsigned base,
 				worker = &io->reader_map[i];
 
 				/* if the worker has finished this index */
-				if (index != worker->index) {
+				if (busy_index != worker->index) {
 					struct snapraid_task* task;
 
 					task = &worker->task_map[io->reader_index];
@@ -483,14 +501,14 @@ void io_parity_write(struct snapraid_io* io, unsigned* pos)
 
 	while (1) {
 		unsigned char* let;
-		unsigned index;
+		unsigned busy_index;
 
-		/* get the next index the caller is going to use */
+		/* get the next index the IO is going to use */
 		/* we must ensure that this index has not a write in progress */
 		/* to avoid a concurrent access */
 		/* note that we are already sure that a write is not in progress */
-		/* at the index the caller is using at now */
-		index = (io->writer_index + 1) % IO_MAX;
+		/* at the index the IO is using at now */
+		busy_index = (io->writer_index + 1) % IO_MAX;
 
 		/* search for a worker that has already finished */
 		let = &io->writer_list[0];
@@ -508,7 +526,7 @@ void io_parity_write(struct snapraid_io* io, unsigned* pos)
 			assert(io->writer_index != worker->index);
 
 			/* if the worker has finished this index */
-			if (index != worker->index) {
+			if (busy_index != worker->index) {
 				pthread_mutex_unlock(&io->mutex);
 
 				/* mark the worker as processed */
