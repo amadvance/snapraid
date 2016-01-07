@@ -160,7 +160,7 @@ maintainer-clean-local:
 # --test-force-order-alpha
 # Ensures to process files always in the same order despites
 # the inode, physical location, and dir order assigned by the OS.
-CHECKFLAGS_BASE = --test-skip-device --test-skip-self --test-force-order-alpha --test-force-progress
+CHECKFLAGS_BASE = --test-skip-device --test-skip-self --test-force-order-alpha --test-force-progress --no-warnings
 
 # Physical offset options
 CHECKFLAGS_PHYSICAL = --test-skip-device --test-skip-self --test-force-order-physical -q -q -q
