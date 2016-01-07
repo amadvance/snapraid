@@ -409,7 +409,7 @@ endif
 	mkdir bench/disk3/empty3a
 	mkdir bench/disk3/empty3a/emptyinner
 	mkdir bench/disk3/empty3b
-	echo 1 > bench/disk1/target1
+	echo TARGET1 > bench/disk1/target1
 	ln bench/disk1/target1 bench/disk1/file_hardlink1
 	ln bench/disk1/target1 bench/disk1/file_hardlink2
 	ln bench/disk1/target1 bench/disk1/file_hardlink3
@@ -421,13 +421,16 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-sequential -c $(PAR1) check
 #### CHANGE LINKS ####
-	echo 2 > bench/disk1/target2
+# Use a different size ("22" instead of "1") to ensure to recognize the file different
+# even if it gets the same timestamp in case subsecond timestamp is no available
+	echo TARGET22 > bench/disk1/target2
 	rm bench/disk1/file_hardlink1
 	ln bench/disk1/target2 bench/disk1/file_hardlink1
 	rm bench/disk1/file_symlink1
 	ln -s bench/disk1/target2 bench/disk1/file_symlink1
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) --test-expect-need-sync diff > output.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) sync -l ">&1"
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) check -l ">&1"
 #### MISC COMMANDS ####
 	$(MSG) Some commands with a not empty array
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) dup
@@ -438,7 +441,7 @@ endif
 	$(MSG) Extend PAR1 to max parity with fix and check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(CONF) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) fix -d 2-parity -d 3-parity -d 4-parity -d 5-parity -d 6-parity -l test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check -l ">&1"
 	$(MSG) Fix with unaccessible parity and disk
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(NOACCESS) fix --test-expect-failure
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(NOACCESS) fix --force-device --test-expect-recoverable -l test.log
