@@ -142,24 +142,24 @@ void MurmurHash3_x86_128(const void* data, size_t size, const uint8_t* seed, voi
 		uint32_t k4 = 0;
 
 		switch (size_remainder) {
-		case 15 : k4 ^= tail[14] << 16;
-		case 14 : k4 ^= tail[13] << 8;
-		case 13 : k4 ^= tail[12] << 0;
+		case 15 : k4 ^= (uint32_t)tail[14] << 16;
+		case 14 : k4 ^= (uint32_t)tail[13] << 8;
+		case 13 : k4 ^= (uint32_t)tail[12] << 0;
 			k4 *= c4; k4 = util_rotl32(k4, 18); k4 *= c1; h4 ^= k4;
-		case 12 : k3 ^= tail[11] << 24;
-		case 11 : k3 ^= tail[10] << 16;
-		case 10 : k3 ^= tail[ 9] << 8;
-		case 9 : k3 ^= tail[ 8] << 0;
+		case 12 : k3 ^= (uint32_t)tail[11] << 24;
+		case 11 : k3 ^= (uint32_t)tail[10] << 16;
+		case 10 : k3 ^= (uint32_t)tail[ 9] << 8;
+		case 9 : k3 ^= (uint32_t)tail[ 8] << 0;
 			k3 *= c3; k3 = util_rotl32(k3, 17); k3 *= c4; h3 ^= k3;
-		case 8 : k2 ^= tail[ 7] << 24;
-		case 7 : k2 ^= tail[ 6] << 16;
-		case 6 : k2 ^= tail[ 5] << 8;
-		case 5 : k2 ^= tail[ 4] << 0;
+		case 8 : k2 ^= (uint32_t)tail[ 7] << 24;
+		case 7 : k2 ^= (uint32_t)tail[ 6] << 16;
+		case 6 : k2 ^= (uint32_t)tail[ 5] << 8;
+		case 5 : k2 ^= (uint32_t)tail[ 4] << 0;
 			k2 *= c2; k2 = util_rotl32(k2, 16); k2 *= c3; h2 ^= k2;
-		case 4 : k1 ^= tail[ 3] << 24;
-		case 3 : k1 ^= tail[ 2] << 16;
-		case 2 : k1 ^= tail[ 1] << 8;
-		case 1 : k1 ^= tail[ 0] << 0;
+		case 4 : k1 ^= (uint32_t)tail[ 3] << 24;
+		case 3 : k1 ^= (uint32_t)tail[ 2] << 16;
+		case 2 : k1 ^= (uint32_t)tail[ 1] << 8;
+		case 1 : k1 ^= (uint32_t)tail[ 0] << 0;
 			k1 *= c1; k1 = util_rotl32(k1, 15); k1 *= c2; h1 ^= k1;
 		}
 	}
