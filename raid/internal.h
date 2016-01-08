@@ -16,21 +16,6 @@
 #define __RAID_INTERNAL_H
 
 /*
- * Supported architecture.
- *
- * Detect the target architecture directly from the compiler.
- */
-#if defined(__i386__)
-#define CONFIG_X86 1
-#define CONFIG_X86_32 1
-#endif
-
-#if defined(__x86_64__)
-#define CONFIG_X86 1
-#define CONFIG_X86_64 1
-#endif
-
-/*
  * Supported instruction sets.
  *
  * It may happen that the assembler is too old to support
@@ -45,19 +30,44 @@
 /* Includes the project configuration for HAVE_* defines */
 #include "config.h"
 
-#if HAVE_SSE2 /* Enables SSE2 only if the assembler supports it */
+/* If the compiler supports assembly */
+#if HAVE_ASSEMBLY
+/* Autodetect from the compiler */
+#if defined(__i386__)
+#define CONFIG_X86 1
+#define CONFIG_X86_32 1
+#endif
+#if defined(__x86_64__)
+#define CONFIG_X86 1
+#define CONFIG_X86_64 1
+#endif
+#endif
+
+/* Enables SSE2, SSSE3, AVX2 only if the assembler supports it */
+#if HAVE_SSE2
 #define CONFIG_SSE2 1
 #endif
-
-#if HAVE_SSSE3 /* Enables SSSE3 only if the assembler supports it */
+#if HAVE_SSSE3
 #define CONFIG_SSSE3 1
 #endif
-
-#if HAVE_AVX2 /* Enables AVX2 only if the assembler supports it */
+#if HAVE_AVX2
 #define CONFIG_AVX2 1
 #endif
-#else
-/* If no config file, assumes the assembler supports everything in x86 */
+
+#else /* if HAVE_CONFIG_H is not defined */
+
+/* Assume that assembly is always supported */
+#if defined(__i386__)
+#define CONFIG_X86 1
+#define CONFIG_X86_32 1
+#endif
+
+#if defined(__x86_64__)
+#define CONFIG_X86 1
+#define CONFIG_X86_64 1
+#endif
+
+/* Assumes that the assembler supports everything */
 #ifdef CONFIG_X86
 #define CONFIG_SSE2 1
 #define CONFIG_SSSE3 1

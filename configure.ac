@@ -118,6 +118,14 @@ AC_CHECK_CC_OPT([-Wextra], CFLAGS="$CFLAGS -Wextra", [])
 AC_CHECK_CC_OPT([-Wuninitialized], CFLAGS="$CFLAGS -Wuninitialized", [])
 AC_CHECK_CC_OPT([-Wshadow], CFLAGS="$CFLAGS -Wshadow", [])
 
+dnl Checks for asm
+AC_ARG_ENABLE([asm],
+	AS_HELP_STRING([--disable-asm], [Disable inline assembly]))
+AS_IF([test "x$enable_asm" != "xno"],
+	[AC_DEFINE([HAVE_ASSEMBLY], [1], [Define to 1 if inline assembly should be used.])]
+
+dnl AS_IF(HAVE_ASSEMBLY) NOT closed here
+
 dnl Checks for AS supporting the SSE2 instructions.
 AC_MSG_CHECKING([for sse2])
 asmsse2=no
@@ -182,6 +190,9 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 ]])],
 [AC_DEFINE([HAVE_AVX2], [1], [Define to 1 if avx2 is supported by the assembler.]) asmavx2=yes])
 AC_MSG_RESULT([$asmavx2])
+
+dnl AS_IF(HAVE_ASSEMBLY) closed here
+)
 
 dnl Checks for test environment
 AS_CASE([$host],
