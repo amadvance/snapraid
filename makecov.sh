@@ -1,5 +1,7 @@
 #!/bin/sh
 #
+# Run the Coverage test
+#
 
 make distclean
 

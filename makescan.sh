@@ -1,5 +1,7 @@
 #!/bin/sh
 #
+# Run the Coverity Scan static analyzer
+#
 
 rm -r cov-int
 
