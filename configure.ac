@@ -228,8 +228,6 @@ AC_ARG_ENABLE([sgcheck],
 	],
 	[])
 
-AM_CONDITIONAL(HAVE_MEMORY_CHECKER, [test x"$MEMORY_CHECKER" != x])
-
 AC_ARG_ENABLE([helgrind],
 	[AS_HELP_STRING([--enable-helgrind],[enable the use of helgrind in testing])],
 	[
@@ -250,6 +248,40 @@ AC_ARG_ENABLE([drd],
 	],
 	[])
 
+AC_ARG_ENABLE([asan],
+	[AS_HELP_STRING([--enable-asan],[enable the use of AddressSanitizer in testing])],
+	[
+	CFLAGS="$CFLAGS -DCHECKER -fsanitize=address"
+	MEMORY_CHECKER=1
+	],
+	[])
+
+AC_ARG_ENABLE([msan],
+	[AS_HELP_STRING([--enable-msan],[enable the use of MemorySanitizer in testing])],
+	[
+	CFLAGS="$CFLAGS -DCHECKER -fsanitize=memory"
+	MEMORY_CHECKER=1
+	],
+	[])
+
+AC_ARG_ENABLE([ubsan],
+	[AS_HELP_STRING([--enable-ubsan],[enable the use of UndefinedBehaviourSanitizer in testing])],
+	[
+	CFLAGS="$CFLAGS -DCHECKER -fsanitize=undefined"
+	MEMORY_CHECKER=1
+	],
+	[])
+
+AC_ARG_ENABLE([tsan],
+	[AS_HELP_STRING([--enable-tsan],[enable the use of ThreadSanitizer in testing])],
+	[
+	CFLAGS="$CFLAGS -DCHECKER -fsanitize=thread"
+dnl Use MEMORY_CHECKER instead of THREAD_CHECKER to run the full and long test
+	MEMORY_CHECKER=1
+	],
+	[])
+
+AM_CONDITIONAL(HAVE_MEMORY_CHECKER, [test x"$MEMORY_CHECKER" != x])
 AM_CONDITIONAL(HAVE_THREAD_CHECKER, [test x"$THREAD_CHECKER" != x])
 
 AC_ARG_ENABLE([sde],
