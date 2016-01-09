@@ -274,7 +274,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
 #### CONTROLLED ####
-	@echo -- Filesystem allocation test
+	$(MSG) Filesystem allocation test
 	head -c 8192 /dev/zero > bench/disk1/TEST
 # Copy the file to trigger the copy optimization check
 	cp -a bench/disk1/TEST bench/disk2/TEST
@@ -289,7 +289,7 @@ endif
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync --test-expect-failure
 # Now sync will complete with -E
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -E sync
-	@echo -- Filesystem fragmentation test
+	$(MSG) Filesystem fragmentation test
 	head -c 8192 /dev/zero > bench/disk1/TEST1
 	head -c 8192 /dev/zero > bench/disk1/TEST2
 	head -c 8192 /dev/zero > bench/disk1/TEST3
@@ -445,7 +445,7 @@ endif
 	$(MSG) Fix with unaccessible parity and disk
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(NOACCESS) fix --test-expect-failure
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(NOACCESS) fix --force-device --test-expect-recoverable -l test.log
-	echo -- Rename a disk
+	$(MSG) Rename a disk
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RENAME) --test-match-first-uuid sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-match-first-uuid sync
 #### SCRUB ####
@@ -897,7 +897,7 @@ endif
 endif
 	$(MSG) Regression test completed with SUCCESS!
 	$(MSG) Please ignore any error message printed above, they are expected!
-	$(MSG) Everything is OK
+	$(MSG) Everything OK
 
 # Manual testing
 
