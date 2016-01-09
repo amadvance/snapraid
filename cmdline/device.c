@@ -570,6 +570,10 @@ static double raid_prob_of_one_or_more_failures(double array_failure_rate, doubl
 	 * Garth Alan Gibson, "Redundant Disk Arrays: Reliable, Parallel Secondary Storage", 1990
 	 */
 
+	/* avoid division by zero */
+	if (array_failure_rate == 0)
+		return 0;
+
 	/* get the Mean Time Between Failure of a single disk */
 	/* from the array failure rate */
 	MTBF = n / array_failure_rate;
