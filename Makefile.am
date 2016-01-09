@@ -16,6 +16,7 @@ snapraid_SOURCES = \
 	raid/tag.c \
 	tommyds/tommy.c \
 	cmdline/snapraid.c \
+	cmdline/io.c \
 	cmdline/util.c \
 	cmdline/stream.c \
 	cmdline/support.c \
@@ -70,6 +71,7 @@ noinst_HEADERS = \
 	tommyds/tommytree.c \
 	cmdline/portable.h \
 	cmdline/snapraid.h \
+	cmdline/io.h \
 	cmdline/util.h \
 	cmdline/stream.h \
 	cmdline/support.h \
@@ -158,7 +160,7 @@ maintainer-clean-local:
 # --test-force-order-alpha
 # Ensures to process files always in the same order despites
 # the inode, physical location, and dir order assigned by the OS.
-CHECKFLAGS_BASE = --test-skip-device --test-skip-self --test-force-order-alpha --test-force-progress
+CHECKFLAGS_BASE = --test-skip-device --test-skip-self --test-force-order-alpha --test-force-progress --no-warnings
 
 # Physical offset options
 CHECKFLAGS_PHYSICAL = --test-skip-device --test-skip-self --test-force-order-physical -q -q -q
@@ -227,7 +229,7 @@ if HAVE_THREAD_CHECKER
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 # Other commands that uses threads
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) test-rewrite
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) scrub
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) scrub -p full
 else
 #### COMMAND LINE ####
 	$(MSG) Help
@@ -272,7 +274,7 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
 #### CONTROLLED ####
-	@echo -- Filesystem allocation test
+	$(MSG) Filesystem allocation test
 	head -c 8192 /dev/zero > bench/disk1/TEST
 # Copy the file to trigger the copy optimization check
 	cp -a bench/disk1/TEST bench/disk2/TEST
@@ -287,7 +289,7 @@ endif
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync --test-expect-failure
 # Now sync will complete with -E
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -E sync
-	@echo -- Filesystem fragmentation test
+	$(MSG) Filesystem fragmentation test
 	head -c 8192 /dev/zero > bench/disk1/TEST1
 	head -c 8192 /dev/zero > bench/disk1/TEST2
 	head -c 8192 /dev/zero > bench/disk1/TEST3
@@ -407,7 +409,7 @@ endif
 	mkdir bench/disk3/empty3a
 	mkdir bench/disk3/empty3a/emptyinner
 	mkdir bench/disk3/empty3b
-	echo 1 > bench/disk1/target1
+	echo TARGET1 > bench/disk1/target1
 	ln bench/disk1/target1 bench/disk1/file_hardlink1
 	ln bench/disk1/target1 bench/disk1/file_hardlink2
 	ln bench/disk1/target1 bench/disk1/file_hardlink3
@@ -419,13 +421,16 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-sequential -c $(PAR1) check
 #### CHANGE LINKS ####
-	echo 2 > bench/disk1/target2
+# Use a different size ("22" instead of "1") to ensure to recognize the file different
+# even if it gets the same timestamp in case subsecond timestamp is no available
+	echo TARGET22 > bench/disk1/target2
 	rm bench/disk1/file_hardlink1
 	ln bench/disk1/target2 bench/disk1/file_hardlink1
 	rm bench/disk1/file_symlink1
 	ln -s bench/disk1/target2 bench/disk1/file_symlink1
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) --test-expect-need-sync diff > output.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) sync -l ">&1"
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) check -l ">&1"
 #### MISC COMMANDS ####
 	$(MSG) Some commands with a not empty array
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) dup
@@ -436,11 +441,11 @@ endif
 	$(MSG) Extend PAR1 to max parity with fix and check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(CONF) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) fix -d 2-parity -d 3-parity -d 4-parity -d 5-parity -d 6-parity -l test.log
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check -l ">&1"
 	$(MSG) Fix with unaccessible parity and disk
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(NOACCESS) fix --test-expect-failure
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(NOACCESS) fix --force-device --test-expect-recoverable -l test.log
-	echo -- Rename a disk
+	$(MSG) Rename a disk
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(RENAME) --test-match-first-uuid sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-match-first-uuid sync
 #### SCRUB ####
@@ -892,7 +897,7 @@ endif
 endif
 	$(MSG) Regression test completed with SUCCESS!
 	$(MSG) Please ignore any error message printed above, they are expected!
-	$(MSG) Everything is OK
+	$(MSG) Everything OK
 
 # Manual testing
 

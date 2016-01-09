@@ -109,8 +109,6 @@
 #define write windows_write
 #undef lseek
 #define lseek windows_lseek
-#define HAVE_PREAD 1
-#define HAVE_PWRITE 1
 #undef pread
 #define pread windows_pread
 #undef pwrite

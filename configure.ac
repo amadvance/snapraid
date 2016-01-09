@@ -77,12 +77,26 @@ AC_CHECK_MEMBERS([struct statfs.f_type], [], [], [[
 #include <sys/statfs.h>
 #endif
 ]])
+AC_CHECK_MEMBERS([struct statfs.f_fstypename], [], [], [[
+#if HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+#if HAVE_SYS_MOUNT_H
+#include <sys/mount.h>
+#endif
+#if HAVE_SYS_VFS_H
+#include <sys/vfs.h>
+#endif
+#if HAVE_SYS_STATFS_H
+#include <sys/statfs.h>
+#endif
+]])
 
 dnl Checks for library functions.
 AC_CHECK_FUNCS([memset strchr strerror strrchr mkdir gettimeofday strtoul])
 AC_CHECK_FUNCS([getopt getopt_long snprintf vsnprintf sigaction])
 AC_CHECK_FUNCS([ftruncate fallocate fsync access posix_fallocate posix_fadvise])
-AC_CHECK_FUNCS([pread pwrite getc_unlocked ferror_unlocked fnmatch])
+AC_CHECK_FUNCS([getc_unlocked ferror_unlocked fnmatch])
 AC_CHECK_FUNCS([futimes futimens futimesat localtime_r])
 AC_CHECK_FUNCS([fstatat flock statfs])
 AC_CHECK_FUNCS([mach_absolute_time])
@@ -117,6 +131,14 @@ AC_CHECK_CC_OPT([-Wall], CFLAGS="$CFLAGS -Wall", [])
 AC_CHECK_CC_OPT([-Wextra], CFLAGS="$CFLAGS -Wextra", [])
 AC_CHECK_CC_OPT([-Wuninitialized], CFLAGS="$CFLAGS -Wuninitialized", [])
 AC_CHECK_CC_OPT([-Wshadow], CFLAGS="$CFLAGS -Wshadow", [])
+
+dnl Checks for asm
+AC_ARG_ENABLE([asm],
+	AS_HELP_STRING([--disable-asm], [Disable inline assembly]))
+AS_IF([test "x$enable_asm" != "xno"],
+	[AC_DEFINE([HAVE_ASSEMBLY], [1], [Define to 1 if inline assembly should be used.])]
+
+dnl AS_IF(HAVE_ASSEMBLY) NOT closed here
 
 dnl Checks for AS supporting the SSE2 instructions.
 AC_MSG_CHECKING([for sse2])
@@ -183,6 +205,9 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[
 [AC_DEFINE([HAVE_AVX2], [1], [Define to 1 if avx2 is supported by the assembler.]) asmavx2=yes])
 AC_MSG_RESULT([$asmavx2])
 
+dnl AS_IF(HAVE_ASSEMBLY) closed here
+)
+
 dnl Checks for test environment
 AS_CASE([$host],
 	[*-*-mingw*],
@@ -228,8 +253,6 @@ AC_ARG_ENABLE([sgcheck],
 	],
 	[])
 
-AM_CONDITIONAL(HAVE_MEMORY_CHECKER, [test x"$MEMORY_CHECKER" != x])
-
 AC_ARG_ENABLE([helgrind],
 	[AS_HELP_STRING([--enable-helgrind],[enable the use of helgrind in testing])],
 	[
@@ -250,6 +273,40 @@ AC_ARG_ENABLE([drd],
 	],
 	[])
 
+AC_ARG_ENABLE([asan],
+	[AS_HELP_STRING([--enable-asan],[enable the use of AddressSanitizer in testing])],
+	[
+	CFLAGS="$CFLAGS -DCHECKER -fsanitize=address"
+	MEMORY_CHECKER=1
+	],
+	[])
+
+AC_ARG_ENABLE([msan],
+	[AS_HELP_STRING([--enable-msan],[enable the use of MemorySanitizer in testing])],
+	[
+	CFLAGS="$CFLAGS -DCHECKER -fsanitize=memory"
+	MEMORY_CHECKER=1
+	],
+	[])
+
+AC_ARG_ENABLE([ubsan],
+	[AS_HELP_STRING([--enable-ubsan],[enable the use of UndefinedBehaviourSanitizer in testing])],
+	[
+	CFLAGS="$CFLAGS -DCHECKER -fsanitize=undefined"
+	MEMORY_CHECKER=1
+	],
+	[])
+
+AC_ARG_ENABLE([tsan],
+	[AS_HELP_STRING([--enable-tsan],[enable the use of ThreadSanitizer in testing])],
+	[
+	CFLAGS="$CFLAGS -DCHECKER -fsanitize=thread"
+dnl Use MEMORY_CHECKER instead of THREAD_CHECKER to run the full and long test
+	MEMORY_CHECKER=1
+	],
+	[])
+
+AM_CONDITIONAL(HAVE_MEMORY_CHECKER, [test x"$MEMORY_CHECKER" != x])
 AM_CONDITIONAL(HAVE_THREAD_CHECKER, [test x"$THREAD_CHECKER" != x])
 
 AC_ARG_ENABLE([sde],

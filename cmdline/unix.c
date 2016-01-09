@@ -297,7 +297,10 @@ int filephy(const char* path, uint64_t size, uint64_t* physical)
 
 int fsinfo(const char* path, int* has_persistent_inode, uint64_t* total_space, uint64_t* free_space)
 {
-#if HAVE_STATFS && HAVE_STRUCT_STATFS_F_TYPE
+	char type[64];
+	const char* ptype;
+
+#if HAVE_STATFS
 	struct statfs st;
 
 	if (statfs(path, &st) != 0) {
@@ -325,9 +328,11 @@ int fsinfo(const char* path, int* has_persistent_inode, uint64_t* total_space, u
 		if (statfs(dir, &st) != 0)
 			return -1;
 	}
+#endif
 
 	/* to get the fs type check "man stat" or "stat -f -t FILE" */
-	if (has_persistent_inode)
+	if (has_persistent_inode) {
+#if HAVE_STATFS && HAVE_STRUCT_STATFS_F_TYPE
 		switch (st.f_type) {
 		case 0x65735546 : /* FUSE, "fuseblk" in the stat command */
 		case 0x4d44 : /* VFAT, "msdos" in the stat command */
@@ -338,22 +343,58 @@ int fsinfo(const char* path, int* has_persistent_inode, uint64_t* total_space, u
 			*has_persistent_inode = 1;
 			break;
 		}
+#else
+		/* by default assume yes */
+		*has_persistent_inode = 1;
+#endif
+	}
 
-	if (total_space)
+	if (total_space) {
+#if HAVE_STATFS
 		*total_space = st.f_bsize * (uint64_t)st.f_blocks;
-	if (free_space)
+#else
+		*total_space = 0;
+#endif
+	}
+
+	if (free_space) {
+#if HAVE_STATFS
 		*free_space = st.f_bsize * (uint64_t)st.f_bfree;
 #else
-	(void)path;
-
-	/* by default assume yes */
-	if (has_persistent_inode)
-		*has_persistent_inode = 1;
-	if (total_space)
-		*total_space = 0;
-	if (free_space)
 		*free_space = 0;
 #endif
+	}
+
+#if HAVE_STATFS && HAVE_STRUCT_STATFS_F_FSTYPENAME
+	/* get the filesystem type directly from the struct (Mac OS X) */
+	(void)type;
+	ptype = st.f_fstypename;
+#elif HAVE_STATFS && HAVE_STRUCT_STATFS_F_TYPE
+	/* get the filesystem type from f_type (Linux) */
+	/* from: https://github.com/influxdata/gopsutil/blob/master/disk/disk_linux.go */
+	switch (st.f_type) {
+	case 0x65735546 : ptype = "fuseblk"; break;
+	case 0x4D44 : ptype = "vfat/msdos"; break;
+	case 0xEF53 : ptype = "ext2/3/4"; break;
+	case 0x6969 : ptype = "nfs"; break; /* remote */
+	case 0x6E667364 : ptype = "nfsd"; break; /* remote */
+	case 0x517B : ptype = "smb"; break; /* remote */
+	case 0x5346544E : ptype = "ntfs"; break;
+	case 0x52654973 : ptype = "reiserfs"; break;
+	case 0x3153464A : ptype = "jfs" ; break;
+	case 0x58465342 : ptype = "xfs"; break;
+	case 0x9123683E : ptype = "btrfs"; break;
+	case 0x2FC12FC1 : ptype = "zfs"; break;
+	default:
+		snprintf(type, sizeof(type), "0x%X", (unsigned)st.f_type);
+		ptype = type;
+	}
+#else
+	(void)type;
+	ptype = "unknown";
+#endif
+
+	log_tag("statfs:%s: %s \n", ptype, path);
 
 	return 0;
 }

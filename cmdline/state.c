@@ -1599,9 +1599,9 @@ static void fs_position_clear_deleted(struct snapraid_state* state, block_off_t 
 /**
  * Check if a block position in a disk is deleted.
  */
-static int fs_is_block_deleted_ts(struct snapraid_disk* disk, struct snapraid_chunk** fs_last, block_off_t pos)
+static int fs_is_block_deleted(struct snapraid_disk* disk, block_off_t pos)
 {
-	struct snapraid_block* block = fs_par2block_get_ts(disk, fs_last, pos);
+	struct snapraid_block* block = fs_par2block_get(disk, pos);
 
 	return block_state_get(block) == BLOCK_STATE_DELETED;
 }
@@ -2735,14 +2735,6 @@ static void* state_write_thread(void* arg)
 	for (i = state->disklist; i != 0; i = i->next) {
 		tommy_node* j;
 		struct snapraid_disk* disk = i->data;
-		struct snapraid_chunk* fs_last;
-
-		/**
-		 * This is the last accessed chunk in the tree operations.
-		 * Here we are inside a thread, and we cannot use the
-		 * ::disk member to store this information.
-		 */
-		fs_last = 0;
 
 		/* if the disk is not mapped, skip it */
 		if (disk->mapping_idx < 0)
@@ -2783,7 +2775,7 @@ static void* state_write_thread(void* arg)
 			begin = 0;
 			while (begin < file->blockmax) {
 				unsigned v_state = block_state_get(fs_file2block_get(file, begin));
-				block_off_t v_pos = fs_file2par_get_ts(disk, &fs_last, file, begin);
+				block_off_t v_pos = fs_file2par_get(disk, file, begin);
 				uint32_t v_count;
 
 				block_off_t end;
@@ -2793,7 +2785,7 @@ static void* state_write_thread(void* arg)
 				while (end < file->blockmax) {
 					if (v_state != block_state_get(fs_file2block_get(file, end)))
 						break;
-					if (v_pos + (end - begin) != fs_file2par_get_ts(disk, &fs_last, file, end))
+					if (v_pos + (end - begin) != fs_file2par_get(disk,file, end))
 						break;
 					++end;
 				}
@@ -2898,12 +2890,12 @@ static void* state_write_thread(void* arg)
 			int is_deleted;
 			block_off_t end;
 
-			is_deleted = fs_is_block_deleted_ts(disk, &fs_last, begin);
+			is_deleted = fs_is_block_deleted(disk, begin);
 
 			/* find the end of run of blocks */
 			end = begin + 1;
 			while (end < blockmax
-				&& is_deleted == fs_is_block_deleted_ts(disk, &fs_last, end)
+				&& is_deleted == fs_is_block_deleted(disk, end)
 			) {
 				++end;
 			}
@@ -2916,7 +2908,7 @@ static void* state_write_thread(void* arg)
 
 				/* write all the hash */
 				while (begin < end) {
-					struct snapraid_block* block = fs_par2block_get_ts(disk, &fs_last, begin);
+					struct snapraid_block* block = fs_par2block_get(disk, begin);
 
 					swrite(block->hash, HASH_SIZE, f);
 
@@ -3108,7 +3100,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		}
 
 		/* save the mapping only for not empty disks */
-		if (!disk_is_empty(disk, blockmax)) {
+		if (!fs_is_empty(disk, blockmax)) {
 			/* assign the mapping index used to identify disks */
 			disk->mapping_idx = mapping_idx;
 			++mapping_idx;
@@ -3976,8 +3968,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 			msg_bar("%u%%, %u MiB", out_perc, (unsigned)(countsize / MEGA));
 			if (out_speed)
 				msg_bar(", %u MiB/s", out_speed);
-			if (out_cpu)
-				msg_bar(", CPU %u%%", out_cpu);
+			msg_bar(", CPU %u%%", out_cpu);
 			if (out_eta)
 				msg_bar(", %u:%02u ETA", out_eta / 60, out_eta % 60);
 			msg_bar("%s\r", PROGRESS_CLEAR);

@@ -272,24 +272,9 @@ int handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned c
 
 	read_size = file_block_size(handle->file, file_pos, block_size);
 
-#if !HAVE_PREAD
-	if (lseek(handle->f, offset, SEEK_SET) != offset) {
-		/* LCOV_EXCL_START */
-		out("Error seeking file '%s' at offset %" PRIu64 ". %s.\n", handle->path, offset, strerror(errno));
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-#endif
-
 	count = 0;
 	do {
-
-#if HAVE_PREAD
 		read_ret = pread(handle->f, block_buffer + count, read_size - count, offset + count);
-#else
-		read_ret = read(handle->f, block_buffer + count, read_size - count);
-#endif
-
 		if (read_ret < 0) {
 			/* LCOV_EXCL_START */
 			out("Error reading file '%s' at offset %" PRIu64 " for size %u. %s.\n", handle->path, offset + count, read_size - count, strerror(errno));
@@ -333,18 +318,7 @@ int handle_write(struct snapraid_handle* handle, block_off_t file_pos, unsigned 
 
 	write_size = file_block_size(handle->file, file_pos, block_size);
 
-#if HAVE_PWRITE
 	write_ret = pwrite(handle->f, block_buffer, write_size, offset);
-#else
-	if (lseek(handle->f, offset, SEEK_SET) != offset) {
-		/* LCOV_EXCL_START */
-		log_fatal("Error seeking file '%s'. %s.\n", handle->path, strerror(errno));
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	write_ret = write(handle->f, block_buffer, write_size);
-#endif
 	if (write_ret != (ssize_t)write_size) { /* conversion is safe because block_size is always small */
 		/* LCOV_EXCL_START */
 		log_fatal("Error writing file '%s'. %s.\n", handle->path, strerror(errno));

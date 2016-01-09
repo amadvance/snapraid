@@ -1,6 +1,15 @@
 SnapRAID HISTORY
 ================
 
+10.0 2016/01
+===========
+  * Increases the speed of the 'sync' and 'scrub' commands with a new
+    read-ahead implementation using threads. We have one thread for each
+    disk, dedicated exclusively to read data or parity in advance,
+    and to write parity later.
+    This ensures to keep the disks always busy, maximizing the data
+    throughput.
+
 9.2 2016/01
 ===========
  * Fixes support for symlinks pointing to an empty target. Before they

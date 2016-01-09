@@ -19,6 +19,40 @@
 #define __SUPPORT_H
 
 /****************************************************************************/
+/* lock */
+
+/**
+ * Initialize and destroy the locks.
+ */
+void lock_init(void);
+void lock_done(void);
+
+/**
+ * Lock used for printf.
+ *
+ * In Windows printf() is not atomic, and multiple threads
+ * will have output interleaved.
+ *
+ * Note that even defining __USE_MINGW_ANSI_STDIO the problem persists.
+ *
+ * See for example:
+ *
+ * Weird output when I use pthread and printf.
+ * http://stackoverflow.com/questions/13190254/weird-output-when-i-use-pthread-and-printf
+ *
+ * This is also required in other OS because we split output in stdlog in
+ * two fprintf calls.
+ */
+void lock_msg(void);
+void unlock_msg(void);
+
+/**
+ * Lock used for memory counter.
+ */
+void lock_memory(void);
+void unlock_memory(void);
+
+/****************************************************************************/
 /* log */
 
 /**

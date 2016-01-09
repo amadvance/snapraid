@@ -75,8 +75,9 @@
 
 
 /**
- * Architecture.
+ * Architecture for inline assembly.
  */
+#if HAVE_ASSEMBLY
 #if defined(__i386__)
 #define CONFIG_X86 1
 #define CONFIG_X86_32 1
@@ -85,6 +86,7 @@
 #if defined(__x86_64__)
 #define CONFIG_X86 1
 #define CONFIG_X86_64 1
+#endif
 #endif
 
 /**

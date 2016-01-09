@@ -22,30 +22,174 @@
 #include "state.h"
 #include "parity.h"
 #include "handle.h"
+#include "io.h"
 
 /****************************************************************************/
 /* dry */
 
-static int state_dry_process(struct snapraid_state* state, struct snapraid_parity_handle** parity, block_off_t blockstart, block_off_t blockmax)
+/**
+ * Check if we have to process the specified block index ::i.
+ */
+static int block_is_enabled(void* void_plan, block_off_t i)
 {
+	(void)void_plan;
+	(void)i;
+
+	return 1;
+}
+
+static void dry_data_reader(struct snapraid_worker* worker, struct snapraid_task* task)
+{
+	struct snapraid_io* io = worker->io;
+	struct snapraid_state* state = io->state;
+	struct snapraid_handle* handle = worker->handle;
+	struct snapraid_disk* disk = handle->disk;
+	block_off_t blockcur = task->position;
+	unsigned char* buffer = task->buffer;
+	int ret;
+
+	/* if the disk position is not used */
+	if (!disk) {
+		/* use an empty block */
+		memset(buffer, 0, state->block_size);
+		task->state = TASK_STATE_DONE;
+		return;
+	}
+
+	/* get the block */
+	task->block = fs_par2block_get(disk, blockcur);
+
+	/* if the block is not used */
+	if (!block_has_file(task->block)) {
+		/* use an empty block */
+		memset(buffer, 0, state->block_size);
+		task->state = TASK_STATE_DONE;
+		return;
+	}
+
+	/* get the file of this block */
+	task->file = fs_par2file_get(disk, blockcur, &task->file_pos);
+
+	/* if the file is different than the current one, close it */
+	if (handle->file != 0 && handle->file != task->file) {
+		/* keep a pointer at the file we are going to close for error reporting */
+		struct snapraid_file* report = handle->file;
+		ret = handle_close(handle);
+		if (ret == -1) {
+			/* LCOV_EXCL_START */
+			/* This one is really an unexpected error, because we are only reading */
+			/* and closing a descriptor should never fail */
+			if (errno == EIO) {
+				log_tag("error:%u:%s:%s: Close EIO error. %s\n", blockcur, disk->name, esc(report->sub), strerror(errno));
+				log_fatal("DANGER! Unexpected input/output close error in a data disk, it isn't possible to dry.\n");
+				log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle->path);
+				log_fatal("Stopping at block %u\n", blockcur);
+				task->state = TASK_STATE_IOERROR;
+				return;
+			}
+
+			log_tag("error:%u:%s:%s: Close error. %s\n", blockcur, disk->name, esc(report->sub), strerror(errno));
+			log_fatal("WARNING! Unexpected close error in a data disk, it isn't possible to dry.\n");
+			log_fatal("Ensure that file '%s' can be accessed.\n", handle->path);
+			log_fatal("Stopping at block %u\n", blockcur);
+			task->state = TASK_STATE_ERROR;
+			return;
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	ret = handle_open(handle, task->file, state->file_mode, log_error, 0);
+	if (ret == -1) {
+		if (errno == EIO) {
+			/* LCOV_EXCL_START */
+			log_tag("error:%u:%s:%s: Open EIO error. %s\n", blockcur, disk->name, esc(task->file->sub), strerror(errno));
+			log_fatal("DANGER! Unexpected input/output open error in a data disk, it isn't possible to dry.\n");
+			log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle->path);
+			log_fatal("Stopping at block %u\n", blockcur);
+			task->state = TASK_STATE_IOERROR;
+			return;
+			/* LCOV_EXCL_STOP */
+		}
+
+		log_tag("error:%u:%s:%s: Open error. %s\n", blockcur, disk->name, esc(task->file->sub), strerror(errno));
+		task->state = TASK_STATE_ERROR_CONTINUE;
+		return;
+	}
+
+	task->read_size = handle_read(handle, task->file_pos, buffer, state->block_size, log_error, 0);
+	if (task->read_size == -1) {
+		if (errno == EIO) {
+			log_tag("error:%u:%s:%s: Read EIO error at position %u. %s\n", blockcur, disk->name, esc(task->file->sub), task->file_pos, strerror(errno));
+			log_error("Input/Output error in file '%s' at position '%u'\n", handle->path, task->file_pos);
+			task->state = TASK_STATE_IOERROR_CONTINUE;
+			return;
+		}
+
+		log_tag("error:%u:%s:%s: Read error at position %u. %s\n", blockcur, disk->name, esc(task->file->sub), task->file_pos, strerror(errno));
+		task->state = TASK_STATE_ERROR_CONTINUE;
+		return;
+	}
+
+	/* store the path of the opened file */
+	pathcpy(task->path, sizeof(task->path), handle->path);
+
+	task->state = TASK_STATE_DONE;
+}
+
+static void dry_parity_reader(struct snapraid_worker* worker, struct snapraid_task* task)
+{
+	struct snapraid_io* io = worker->io;
+	struct snapraid_state* state = io->state;
+	struct snapraid_parity_handle* parity_handle = worker->parity_handle;
+	unsigned level = parity_handle->level;
+	block_off_t blockcur = task->position;
+	unsigned char* buffer = task->buffer;
+	int ret;
+
+	/* read the parity */
+	ret = parity_read(parity_handle, blockcur, buffer, state->block_size, log_error);
+	if (ret == -1) {
+		if (errno == EIO) {
+			log_tag("parity_error:%u:%s: Read EIO error. %s\n", blockcur, lev_config_name(level), strerror(errno));
+			log_error("Input/Output error in parity '%s' at position '%u'\n", lev_config_name(level), blockcur);
+			task->state = TASK_STATE_IOERROR_CONTINUE;
+			return;
+		}
+
+		log_tag("parity_error:%u:%s: Read error. %s\n", blockcur, lev_config_name(level), strerror(errno));
+		task->state = TASK_STATE_ERROR_CONTINUE;
+		return;
+	}
+
+	task->state = TASK_STATE_DONE;
+}
+
+static int state_dry_process(struct snapraid_state* state, struct snapraid_parity_handle* parity_handle, block_off_t blockstart, block_off_t blockmax)
+{
+	struct snapraid_io io;
 	struct snapraid_handle* handle;
 	unsigned diskmax;
-	block_off_t i;
+	block_off_t blockcur;
 	unsigned j;
-	void* buffer_alloc;
-	unsigned char* buffer_aligned;
+	unsigned buffermax;
 	int ret;
 	data_off_t countsize;
 	block_off_t countpos;
 	block_off_t countmax;
 	unsigned error;
+	unsigned io_error;
 	unsigned l;
 
 	handle = handle_map(state, &diskmax);
 
-	buffer_aligned = malloc_nofail_align(state->block_size, &buffer_alloc);
+	/* we need 1 * data + 2 * parity */
+	buffermax = diskmax + 2 * state->level;
+
+	/* initialize the io threads */
+	io_init(&io, state, buffermax, dry_data_reader, handle, diskmax, dry_parity_reader, 0, parity_handle, state->level);
 
 	error = 0;
+	io_error = 0;
 
 	/* drop until now */
 	state_usage_waste(state);
@@ -53,89 +197,129 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 	countmax = blockmax - blockstart;
 	countsize = 0;
 	countpos = 0;
+
+	/* start all the worker threads */
+	io_start(&io, blockstart, blockmax, &block_is_enabled, 0);
+
 	state_progress_begin(state, blockstart, blockmax, countmax);
-	for (i = blockstart; i < blockmax; ++i) {
+	while (1) {
+		void** buffer;
+	
+		/* go to the next block */
+		blockcur = io_read_next(&io, &buffer);
+		if (blockcur >= blockmax)
+			break;
+
 		/* for each disk, process the block */
 		for (j = 0; j < diskmax; ++j) {
+			struct snapraid_task* task;
 			int read_size;
 			struct snapraid_block* block;
-			struct snapraid_disk* disk = handle[j].disk;
-			struct snapraid_file* file;
-			block_off_t file_pos;
-
-			if (!disk) {
-				/* if no disk, nothing to do */
-				continue;
-			}
-
-			block = fs_par2block_get(disk, i);
-
-			if (!block_has_file(block)) {
-				/* if no file, nothing to do */
-				continue;
-			}
-
-			/* get the file of this block */
-			file = fs_par2file_get(disk, i, &file_pos);
+			struct snapraid_disk* disk;
+			unsigned diskcur;
 
 			/* until now is CPU */
 			state_usage_cpu(state);
 
-			/* if the file is closed or different than the current one */
-			if (handle[j].file == 0 || handle[j].file != file) {
-				/* close the old one, if any */
-				ret = handle_close(&handle[j]);
-				if (ret == -1) {
-					/* LCOV_EXCL_START */
-					log_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(handle[j].file->sub), strerror(errno));
-					log_fatal("DANGER! Unexpected close error in a data disk, it isn't possible to dry.\n");
-					log_fatal("Stopping at block %u\n", i);
-					++error;
-					goto bail;
-					/* LCOV_EXCL_STOP */
-				}
+			/* get the next task */
+			task = io_data_read(&io, &diskcur);
 
-				/* open the file only for reading */
-				ret = handle_open(&handle[j], file, state->file_mode, log_fatal, 0);
-				if (ret == -1) {
-					/* LCOV_EXCL_START */
-					log_tag("error:%u:%s:%s: Open error. %s\n", i, disk->name, esc(file->sub), strerror(errno));
-					log_fatal("DANGER! Unexpected open error in a data disk, it isn't possible to dry.\n");
-					log_fatal("Stopping at block %u\n", i);
-					++error;
-					goto bail;
-					/* LCOV_EXCL_STOP */
-				}
-			}
+			/* get the task results */
+			disk = task->disk;
+			block = task->block;
+			read_size = task->read_size;
 
-			/* read from the file */
-			read_size = handle_read(&handle[j], file_pos, buffer_aligned, state->block_size, log_error, 0);
-			if (read_size == -1) {
-				log_tag("error:%u:%s:%s: Read error at position %u\n", i, disk->name, esc(file->sub), file_pos);
-				++error;
+			/* if the disk position is not used */
+			if (!disk)
 				continue;
-			}
 
 			/* until now is disk */
 			state_usage_disk(state, disk);
 
+			/* if the block is not used */
+			if (!block_has_file(block))
+				continue;
+
+			/* handle error conditions */
+			if (task->state == TASK_STATE_IOERROR) {
+				++io_error;
+				goto bail;
+			}
+			if (task->state == TASK_STATE_ERROR) {
+				++error;
+				goto bail;
+			}
+			if (task->state == TASK_STATE_ERROR_CONTINUE) {
+				++error;
+				continue;
+			}
+			if (task->state == TASK_STATE_IOERROR_CONTINUE) {
+				++io_error;
+				if (io_error >= state->opt.io_error_limit) {
+					/* LCOV_EXCL_START */
+					log_fatal("DANGER! Too many input/output read error in a data disk, it isn't possible to scrub.\n");
+					log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, task->path);
+					log_fatal("Stopping at block %u\n", blockcur);
+					goto bail;
+					/* LCOV_EXCL_STOP */
+				}
+
+				/* otherwise continue */
+				continue;
+			}
+			if (task->state != TASK_STATE_DONE) {
+				/* LCOV_EXCL_START */
+				log_fatal("Internal inconsistency in task state\n");
+				os_abort();
+				/* LCOV_EXCL_STOP */
+			}
+
 			countsize += read_size;
 		}
 
+		/* until now is CPU */
+		state_usage_cpu(state);
+
 		/* read the parity */
 		for (l = 0; l < state->level; ++l) {
-			if (parity[l]) {
-				/* until now is CPU */
-				state_usage_cpu(state);
+			struct snapraid_task* task;
+			unsigned levcur;
 
-				ret = parity_read(parity[l], i, buffer_aligned, state->block_size, log_error);
-				if (ret == -1) {
-					log_tag("parity_error:%u:%s: Read error\n", i, lev_config_name(l));
-					++error;
+			task = io_parity_read(&io, &levcur);
+
+			/* until now is parity */
+			state_usage_parity(state, levcur);
+
+			/* handle error conditions */
+			if (task->state == TASK_STATE_IOERROR) {
+				++io_error;
+				goto bail;
+			}
+			if (task->state == TASK_STATE_ERROR) {
+				++error;
+				goto bail;
+			}
+			if (task->state == TASK_STATE_ERROR_CONTINUE) {
+				++error;
+				continue;
+			}
+			if (task->state == TASK_STATE_IOERROR_CONTINUE) {
+				++io_error;
+				if (io_error >= state->opt.io_error_limit) {
+					/* LCOV_EXCL_START */
+					log_fatal("DANGER! Too many input/output read error in the %s disk, it isn't possible to scrub.\n", lev_name(levcur));
+					log_fatal("Ensure that disk '%s' is sane and can be read.\n", lev_config_name(levcur));
+					log_fatal("Stopping at block %u\n", blockcur);
+					goto bail;
+					/* LCOV_EXCL_STOP */
 				}
-
-				/* until now is parity */
-				state_usage_parity(state, l);
+				continue;
+			}
+			if (task->state != TASK_STATE_DONE) {
+				/* LCOV_EXCL_START */
+				log_fatal("Internal inconsistency in task state\n");
+				os_abort();
+				/* LCOV_EXCL_STOP */
 			}
 		}
 
@@ -143,7 +327,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 		++countpos;
 
 		/* progress */
-		if (state_progress(state, i, countpos, countmax, countsize)) {
+		if (state_progress(state, blockcur, countpos, countmax, countsize)) {
 			/* LCOV_EXCL_START */
 			break;
 			/* LCOV_EXCL_STOP */
@@ -155,7 +339,9 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 	state_usage_print(state);
 
 bail:
-	/* close all the files left open */
+	/* stop all the worker threads */
+	io_stop(&io);
+
 	for (j = 0; j < diskmax; ++j) {
 		struct snapraid_file* file = handle[j].file;
 		struct snapraid_disk* disk = handle[j].disk;
@@ -170,20 +356,23 @@ bail:
 		}
 	}
 
-	if (error) {
+	if (error || io_error) {
 		msg_status("\n");
-		msg_status("%8u errors\n", error);
+		msg_status("%8u file errors\n", error);
+		msg_status("%8u io errors\n", io_error);
 	} else {
 		msg_status("Everything OK\n");
 	}
 
 	if (error)
 		log_fatal("DANGER! Unexpected errors!\n");
+	if (io_error)
+		log_fatal("DANGER! Unexpected input/output errors!\n");
 
 	free(handle);
-	free(buffer_alloc);
+	io_done(&io);
 
-	if (error != 0)
+	if (error + io_error != 0)
 		return -1;
 	return 0;
 }
@@ -192,10 +381,7 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 {
 	block_off_t blockmax;
 	int ret;
-	struct snapraid_parity_handle parity[LEV_MAX];
-	/* the following initialization is to avoid clang warnings about */
-	/* potential state->level change, that never happens */
-	struct snapraid_parity_handle* parity_ptr[LEV_MAX] = { 0 };
+	struct snapraid_parity_handle parity_handle[LEV_MAX];
 	unsigned error;
 	unsigned l;
 
@@ -218,12 +404,12 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	/* open the file for reading */
 	/* it may fail if the file doesn't exist, in this case we continue to dry the files */
 	for (l = 0; l < state->level; ++l) {
-		parity_ptr[l] = &parity[l];
-		ret = parity_open(parity_ptr[l], state->parity[l].path, state->file_mode);
+		ret = parity_open(&parity_handle[l], l, state->parity[l].path, state->file_mode);
 		if (ret == -1) {
-			msg_status("No accessible %s file.\n", lev_name(l));
-			/* continue anyway */
-			parity_ptr[l] = 0;
+			/* LCOV_EXCL_START */
+			log_fatal("WARNING! Without an accessible %s file, it isn't possible to dry.\n", lev_name(l));
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
 		}
 	}
 
@@ -231,7 +417,7 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	/* skip degenerated cases of empty parity, or skipping all */
 	if (blockstart < blockmax) {
-		ret = state_dry_process(state, parity_ptr, blockstart, blockmax);
+		ret = state_dry_process(state, parity_handle, blockstart, blockmax);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
 			++error;
@@ -242,14 +428,12 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 
 	/* try to close only if opened */
 	for (l = 0; l < state->level; ++l) {
-		if (parity_ptr[l]) {
-			ret = parity_close(parity_ptr[l]);
-			if (ret == -1) {
-				/* LCOV_EXCL_START */
-				++error;
-				/* continue, as we are already exiting */
-				/* LCOV_EXCL_STOP */
-			}
+		ret = parity_close(&parity_handle[l]);
+		if (ret == -1) {
+			/* LCOV_EXCL_START */
+			++error;
+			/* continue, as we are already exiting */
+			/* LCOV_EXCL_STOP */
 		}
 	}
 

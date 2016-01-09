@@ -185,14 +185,7 @@ int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (lseek(f, block->offset, SEEK_SET) != block->offset) {
-		/* LCOV_EXCL_START */
-		log_fatal("Error seeking file '%s'. %s.\n", path, strerror(errno));
-		exit(EXIT_FAILURE);
-		/* LCOV_EXCL_STOP */
-	}
-
-	ret = read(f, buffer, read_size);
+	ret = pread(f, buffer, read_size, block->offset);
 	if (ret < 0 || (unsigned)ret != read_size) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error reading file '%s'. %s.\n", path, strerror(errno));

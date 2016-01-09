@@ -764,10 +764,11 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 				log_tag("status:recoverable:%s:%s\n", disk->name, esc(file->sub));
 				msg_info("recoverable %s\n", path);
 			} else {
-				log_tag("status:correct:%s:%s\n", disk->name, esc(file->sub));
 				/* we don't use msg_verbose() because it also goes into the log */
-				if (msg_level >= MSG_VERBOSE)
+				if (msg_level >= MSG_VERBOSE) {
+					log_tag("status:correct:%s:%s\n", disk->name, esc(file->sub));
 					msg_info("correct %s\n", path);
+				}
 			}
 		}
 
@@ -1942,7 +1943,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 			}
 
 			parity_ptr[l] = &parity[l];
-			ret = parity_create(parity_ptr[l], state->parity[l].path, &out_size, state->file_mode);
+			ret = parity_create(parity_ptr[l], l, state->parity[l].path, &out_size, state->file_mode);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
 				log_fatal("WARNING! Without an accessible %s file, it isn't possible to fix any error.\n", lev_name(l));
@@ -1963,7 +1964,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 		/* it may fail if the file doesn't exist, in this case we continue to check the files */
 		for (l = 0; l < state->level; ++l) {
 			parity_ptr[l] = &parity[l];
-			ret = parity_open(parity_ptr[l], state->parity[l].path, state->file_mode);
+			ret = parity_open(parity_ptr[l], l, state->parity[l].path, state->file_mode);
 			if (ret == -1) {
 				msg_status("No accessible %s file, only files will be checked.\n", lev_name(l));
 				/* continue anyway */

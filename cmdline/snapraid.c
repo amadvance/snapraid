@@ -85,7 +85,7 @@ void memory(void)
 	log_tag("memory:link:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_link)));
 	log_tag("memory:dir:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_dir)));
 
-	msg_progress("Using %u MiB of memory.\n", (unsigned)(malloc_counter_get() / (1024 * 1024)));
+	msg_progress("Using %u MiB of memory for the FileSystem.\n", (unsigned)(malloc_counter_get() / (1024 * 1024)));
 }
 
 /****************************************************************************/
@@ -462,6 +462,8 @@ int main(int argc, char* argv[])
 	time_t t;
 	struct tm* tm;
 	int i;
+
+	lock_init();
 
 	/* defaults */
 	config(conf, sizeof(conf), argv[0]);
@@ -1319,6 +1321,7 @@ int main(int argc, char* argv[])
 	tommy_list_foreach(&filterlist_disk, (tommy_foreach_func*)filter_free);
 
 	os_done();
+	lock_done();
 
 	return EXIT_SUCCESS;
 }
