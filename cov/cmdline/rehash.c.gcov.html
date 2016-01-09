@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-11-20</td>
+            <td class="headerValue">2016-01-09</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">1</td>
@@ -126,28 +126,28 @@
 <span class="lineNum">      64 </span>            :         }
 <span class="lineNum">      65 </span>            : 
 <span class="lineNum">      66 </span>            :         /* mark all the block for rehashing */
-<span class="lineNum">      67 </span><span class="lineCov">       9200 :         for (i = 0; i &lt; blockmax; ++i) {</span>
+<span class="lineNum">      67 </span><span class="lineCov">       9208 :         for (i = 0; i &lt; blockmax; ++i) {</span>
 <span class="lineNum">      68 </span>            :                 snapraid_info info;
 <span class="lineNum">      69 </span>            : 
 <span class="lineNum">      70 </span>            :                 /* if it's unused */
-<span class="lineNum">      71 </span><span class="lineCov">       9199 :                 info = info_get(&amp;state-&gt;infoarr, i);</span>
-<span class="lineNum">      72 </span><span class="lineCov">       9199 :                 if (info == 0) {</span>
+<span class="lineNum">      71 </span><span class="lineCov">       9207 :                 info = info_get(&amp;state-&gt;infoarr, i);</span>
+<span class="lineNum">      72 </span><span class="lineCov">       9207 :                 if (info == 0) {</span>
 <span class="lineNum">      73 </span>            :                         /* skip it */
 <span class="lineNum">      74 </span><span class="lineNoCov">          0 :                         continue;</span>
 <span class="lineNum">      75 </span>            :                 }
 <span class="lineNum">      76 </span>            : 
-<span class="lineNum">      77 </span><span class="lineCov">       9199 :                 if (info_get_rehash(info)) {</span>
+<span class="lineNum">      77 </span><span class="lineCov">       9207 :                 if (info_get_rehash(info)) {</span>
 <span class="lineNum">      78 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">      79 </span>            :                         log_fatal(&quot;Internal inconsistency for a rehash already in progress\n&quot;);
-<span class="lineNum">      80 </span>            :                         exit(EXIT_FAILURE);
+<span class="lineNum">      80 </span>            :                         os_abort();
 <span class="lineNum">      81 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">      82 </span>            :                 }
 <span class="lineNum">      83 </span>            : 
 <span class="lineNum">      84 </span>            :                 /* enable the rehash */
-<span class="lineNum">      85 </span><span class="lineCov">       9199 :                 info = info_set_rehash(info);</span>
+<span class="lineNum">      85 </span><span class="lineCov">       9207 :                 info = info_set_rehash(info);</span>
 <span class="lineNum">      86 </span>            : 
 <span class="lineNum">      87 </span>            :                 /* save it */
-<span class="lineNum">      88 </span><span class="lineCov">       9199 :                 info_set(&amp;state-&gt;infoarr, i, info);</span>
+<span class="lineNum">      88 </span><span class="lineCov">       9207 :                 info_set(&amp;state-&gt;infoarr, i, info);</span>
 <span class="lineNum">      89 </span>            :         }
 <span class="lineNum">      90 </span>            : 
 <span class="lineNum">      91 </span>            :         /* save the new content file */

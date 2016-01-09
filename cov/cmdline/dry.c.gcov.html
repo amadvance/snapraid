@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-11-20</td>
+            <td class="headerValue">2016-01-09</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">2</td>
@@ -116,38 +116,38 @@
 <span class="lineNum">      54 </span><span class="lineCov">          2 :         countsize = 0;</span>
 <span class="lineNum">      55 </span><span class="lineCov">          2 :         countpos = 0;</span>
 <span class="lineNum">      56 </span><span class="lineCov">          2 :         state_progress_begin(state, blockstart, blockmax, countmax);</span>
-<span class="lineNum">      57 </span><span class="lineCov">       7054 :         for (i = blockstart; i &lt; blockmax; ++i) {</span>
+<span class="lineNum">      57 </span><span class="lineCov">       7088 :         for (i = blockstart; i &lt; blockmax; ++i) {</span>
 <span class="lineNum">      58 </span>            :                 /* for each disk, process the block */
-<span class="lineNum">      59 </span><span class="lineCov">      49364 :                 for (j = 0; j &lt; diskmax; ++j) {</span>
+<span class="lineNum">      59 </span><span class="lineCov">      49602 :                 for (j = 0; j &lt; diskmax; ++j) {</span>
 <span class="lineNum">      60 </span>            :                         int read_size;
 <span class="lineNum">      61 </span>            :                         struct snapraid_block* block;
-<span class="lineNum">      62 </span><span class="lineCov">      42312 :                         struct snapraid_disk* disk = handle[j].disk;</span>
+<span class="lineNum">      62 </span><span class="lineCov">      42516 :                         struct snapraid_disk* disk = handle[j].disk;</span>
 <span class="lineNum">      63 </span>            :                         struct snapraid_file* file;
 <span class="lineNum">      64 </span>            :                         block_off_t file_pos;
 <span class="lineNum">      65 </span>            : 
-<span class="lineNum">      66 </span><span class="lineCov">      42312 :                         if (!disk) {</span>
+<span class="lineNum">      66 </span><span class="lineCov">      42516 :                         if (!disk) {</span>
 <span class="lineNum">      67 </span>            :                                 /* if no disk, nothing to do */
-<span class="lineNum">      68 </span><span class="lineCov">       9755 :                                 continue;</span>
+<span class="lineNum">      68 </span><span class="lineCov">       9855 :                                 continue;</span>
 <span class="lineNum">      69 </span>            :                         }
 <span class="lineNum">      70 </span>            : 
-<span class="lineNum">      71 </span><span class="lineCov">      37641 :                         block = fs_par2block_get(disk, i);</span>
+<span class="lineNum">      71 </span><span class="lineCov">      37837 :                         block = fs_par2block_get(disk, i);</span>
 <span class="lineNum">      72 </span>            : 
-<span class="lineNum">      73 </span><span class="lineCov">      37641 :                         if (!block_has_file(block)) {</span>
+<span class="lineNum">      73 </span><span class="lineCov">      37837 :                         if (!block_has_file(block)) {</span>
 <span class="lineNum">      74 </span>            :                                 /* if no file, nothing to do */
-<span class="lineNum">      75 </span><span class="lineCov">        413 :                                 continue;</span>
+<span class="lineNum">      75 </span><span class="lineCov">        497 :                                 continue;</span>
 <span class="lineNum">      76 </span>            :                         }
 <span class="lineNum">      77 </span>            : 
 <span class="lineNum">      78 </span>            :                         /* get the file of this block */
-<span class="lineNum">      79 </span><span class="lineCov">      37228 :                         file = fs_par2file_get(disk, i, &amp;file_pos);</span>
+<span class="lineNum">      79 </span><span class="lineCov">      37340 :                         file = fs_par2file_get(disk, i, &amp;file_pos);</span>
 <span class="lineNum">      80 </span>            : 
 <span class="lineNum">      81 </span>            :                         /* until now is CPU */
-<span class="lineNum">      82 </span><span class="lineCov">      37228 :                         state_usage_cpu(state);</span>
+<span class="lineNum">      82 </span><span class="lineCov">      37340 :                         state_usage_cpu(state);</span>
 <span class="lineNum">      83 </span>            : 
 <span class="lineNum">      84 </span>            :                         /* if the file is closed or different than the current one */
-<span class="lineNum">      85 </span><span class="lineCov">      37228 :                         if (handle[j].file == 0 || handle[j].file != file) {</span>
+<span class="lineNum">      85 </span><span class="lineCov">      37340 :                         if (handle[j].file == 0 || handle[j].file != file) {</span>
 <span class="lineNum">      86 </span>            :                                 /* close the old one, if any */
-<span class="lineNum">      87 </span><span class="lineCov">      15082 :                                 ret = handle_close(&amp;handle[j]);</span>
-<span class="lineNum">      88 </span><span class="lineCov">      15082 :                                 if (ret == -1) {</span>
+<span class="lineNum">      87 </span><span class="lineCov">      15096 :                                 ret = handle_close(&amp;handle[j]);</span>
+<span class="lineNum">      88 </span><span class="lineCov">      15096 :                                 if (ret == -1) {</span>
 <span class="lineNum">      89 </span>            :                                         /* LCOV_EXCL_START */
 <span class="lineNum">      90 </span>            :                                         log_tag(&quot;error:%u:%s:%s: Close error. %s\n&quot;, i, disk-&gt;name, esc(handle[j].file-&gt;sub), strerror(errno));
 <span class="lineNum">      91 </span>            :                                         log_fatal(&quot;DANGER! Unexpected close error in a data disk, it isn't possible to dry.\n&quot;);
@@ -158,8 +158,8 @@
 <span class="lineNum">      96 </span>            :                                 }
 <span class="lineNum">      97 </span>            : 
 <span class="lineNum">      98 </span>            :                                 /* open the file only for reading */
-<span class="lineNum">      99 </span><span class="lineCov">      15082 :                                 ret = handle_open(&amp;handle[j], file, state-&gt;file_mode, log_fatal, 0);</span>
-<span class="lineNum">     100 </span><span class="lineCov">      15082 :                                 if (ret == -1) {</span>
+<span class="lineNum">      99 </span><span class="lineCov">      15096 :                                 ret = handle_open(&amp;handle[j], file, state-&gt;file_mode, log_fatal, 0);</span>
+<span class="lineNum">     100 </span><span class="lineCov">      15096 :                                 if (ret == -1) {</span>
 <span class="lineNum">     101 </span>            :                                         /* LCOV_EXCL_START */
 <span class="lineNum">     102 </span>            :                                         log_tag(&quot;error:%u:%s:%s: Open error. %s\n&quot;, i, disk-&gt;name, esc(file-&gt;sub), strerror(errno));
 <span class="lineNum">     103 </span>            :                                         log_fatal(&quot;DANGER! Unexpected open error in a data disk, it isn't possible to dry.\n&quot;);
@@ -171,41 +171,41 @@
 <span class="lineNum">     109 </span>            :                         }
 <span class="lineNum">     110 </span>            : 
 <span class="lineNum">     111 </span>            :                         /* read from the file */
-<span class="lineNum">     112 </span><span class="lineCov">      37228 :                         read_size = handle_read(&amp;handle[j], file_pos, buffer_aligned, state-&gt;block_size, log_error, 0);</span>
-<span class="lineNum">     113 </span><span class="lineCov">      37228 :                         if (read_size == -1) {</span>
+<span class="lineNum">     112 </span><span class="lineCov">      37340 :                         read_size = handle_read(&amp;handle[j], file_pos, buffer_aligned, state-&gt;block_size, log_error, 0);</span>
+<span class="lineNum">     113 </span><span class="lineCov">      37340 :                         if (read_size == -1) {</span>
 <span class="lineNum">     114 </span><span class="lineNoCov">          0 :                                 log_tag(&quot;error:%u:%s:%s: Read error at position %u\n&quot;, i, disk-&gt;name, esc(file-&gt;sub), file_pos);</span>
 <span class="lineNum">     115 </span><span class="lineNoCov">          0 :                                 ++error;</span>
 <span class="lineNum">     116 </span><span class="lineNoCov">          0 :                                 continue;</span>
 <span class="lineNum">     117 </span>            :                         }
 <span class="lineNum">     118 </span>            : 
 <span class="lineNum">     119 </span>            :                         /* until now is disk */
-<span class="lineNum">     120 </span><span class="lineCov">      37228 :                         state_usage_disk(state, disk);</span>
+<span class="lineNum">     120 </span><span class="lineCov">      37340 :                         state_usage_disk(state, disk);</span>
 <span class="lineNum">     121 </span>            : 
-<span class="lineNum">     122 </span><span class="lineCov">      37228 :                         countsize += read_size;</span>
+<span class="lineNum">     122 </span><span class="lineCov">      37340 :                         countsize += read_size;</span>
 <span class="lineNum">     123 </span>            :                 }
 <span class="lineNum">     124 </span>            : 
 <span class="lineNum">     125 </span>            :                 /* read the parity */
-<span class="lineNum">     126 </span><span class="lineCov">      49364 :                 for (l = 0; l &lt; state-&gt;level; ++l) {</span>
-<span class="lineNum">     127 </span><span class="lineCov">      42312 :                         if (parity[l]) {</span>
+<span class="lineNum">     126 </span><span class="lineCov">      49602 :                 for (l = 0; l &lt; state-&gt;level; ++l) {</span>
+<span class="lineNum">     127 </span><span class="lineCov">      42516 :                         if (parity[l]) {</span>
 <span class="lineNum">     128 </span>            :                                 /* until now is CPU */
-<span class="lineNum">     129 </span><span class="lineCov">      42312 :                                 state_usage_cpu(state);</span>
+<span class="lineNum">     129 </span><span class="lineCov">      42516 :                                 state_usage_cpu(state);</span>
 <span class="lineNum">     130 </span>            : 
-<span class="lineNum">     131 </span><span class="lineCov">      42312 :                                 ret = parity_read(parity[l], i, buffer_aligned, state-&gt;block_size, log_error);</span>
-<span class="lineNum">     132 </span><span class="lineCov">      42312 :                                 if (ret == -1) {</span>
+<span class="lineNum">     131 </span><span class="lineCov">      42516 :                                 ret = parity_read(parity[l], i, buffer_aligned, state-&gt;block_size, log_error);</span>
+<span class="lineNum">     132 </span><span class="lineCov">      42516 :                                 if (ret == -1) {</span>
 <span class="lineNum">     133 </span><span class="lineNoCov">          0 :                                         log_tag(&quot;parity_error:%u:%s: Read error\n&quot;, i, lev_config_name(l));</span>
 <span class="lineNum">     134 </span><span class="lineNoCov">          0 :                                         ++error;</span>
 <span class="lineNum">     135 </span>            :                                 }
 <span class="lineNum">     136 </span>            : 
 <span class="lineNum">     137 </span>            :                                 /* until now is parity */
-<span class="lineNum">     138 </span><span class="lineCov">      42312 :                                 state_usage_parity(state, l);</span>
+<span class="lineNum">     138 </span><span class="lineCov">      42516 :                                 state_usage_parity(state, l);</span>
 <span class="lineNum">     139 </span>            :                         }
 <span class="lineNum">     140 </span>            :                 }
 <span class="lineNum">     141 </span>            : 
 <span class="lineNum">     142 </span>            :                 /* count the number of processed block */
-<span class="lineNum">     143 </span><span class="lineCov">       7052 :                 ++countpos;</span>
+<span class="lineNum">     143 </span><span class="lineCov">       7086 :                 ++countpos;</span>
 <span class="lineNum">     144 </span>            : 
 <span class="lineNum">     145 </span>            :                 /* progress */
-<span class="lineNum">     146 </span><span class="lineCov">       7052 :                 if (state_progress(state, i, countpos, countmax, countsize)) {</span>
+<span class="lineNum">     146 </span><span class="lineCov">       7086 :                 if (state_progress(state, i, countpos, countmax, countsize)) {</span>
 <span class="lineNum">     147 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     148 </span>            :                         break;
 <span class="lineNum">     149 </span>            :                         /* LCOV_EXCL_STOP */

@@ -31,13 +31,13 @@
             <td class="headerValue">lcov.info</td>
             <td></td>
             <td class="headerItem">Lines:</td>
-            <td class="headerCovTableEntry">300</td>
-            <td class="headerCovTableEntry">318</td>
-            <td class="headerCovTableEntryHi">94.3 %</td>
+            <td class="headerCovTableEntry">301</td>
+            <td class="headerCovTableEntry">320</td>
+            <td class="headerCovTableEntryHi">94.1 %</td>
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-11-20</td>
+            <td class="headerValue">2016-01-09</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">11</td>
@@ -100,7 +100,7 @@
 <span class="lineNum">      38 </span>            :  *    they really fail, not counting as a failure.
 <span class="lineNum">      39 </span>            :  *
 <span class="lineNum">      40 </span>            :  * The following tables are computed using the data from 2014-02-14 to 2014-12-31
-<span class="lineNum">      41 </span>            :  * becasue it's the period when more SMART attributes were gathered.
+<span class="lineNum">      41 </span>            :  * because it's the period when more SMART attributes were gathered.
 <span class="lineNum">      42 </span>            :  *
 <span class="lineNum">      43 </span>            :  * In this period there are 47322 disk seen, with 1988 removed because failed,
 <span class="lineNum">      44 </span>            :  * and with 4121 removed because predicted to fail.
@@ -632,451 +632,455 @@
 <span class="lineNum">     570 </span>            :          * Garth Alan Gibson, &quot;Redundant Disk Arrays: Reliable, Parallel Secondary Storage&quot;, 1990
 <span class="lineNum">     571 </span>            :          */
 <span class="lineNum">     572 </span>            : 
-<span class="lineNum">     573 </span>            :         /* get the Mean Time Between Failure of a single disk */
-<span class="lineNum">     574 </span>            :         /* from the array failure rate */
-<span class="lineNum">     575 </span><span class="lineCov">         18 :         MTBF = n / array_failure_rate;</span>
+<span class="lineNum">     573 </span>            :         /* avoid division by zero */
+<span class="lineNum">     574 </span><span class="lineCov">         18 :         if (array_failure_rate == 0)</span>
+<span class="lineNum">     575 </span><span class="lineNoCov">          0 :                 return 0;</span>
 <span class="lineNum">     576 </span>            : 
-<span class="lineNum">     577 </span>            :         /* get the Mean Time Between Repair (the time that a failed disk is replaced) */
-<span class="lineNum">     578 </span>            :         /* from the repair rate */
-<span class="lineNum">     579 </span><span class="lineCov">         18 :         MTTR = 1.0 / replace_rate;</span>
+<span class="lineNum">     577 </span>            :         /* get the Mean Time Between Failure of a single disk */
+<span class="lineNum">     578 </span>            :         /* from the array failure rate */
+<span class="lineNum">     579 </span><span class="lineCov">         18 :         MTBF = n / array_failure_rate;</span>
 <span class="lineNum">     580 </span>            : 
-<span class="lineNum">     581 </span>            :         /* use the approximated MTTDL equation */
-<span class="lineNum">     582 </span><span class="lineCov">         18 :         MTTDL = pow(MTBF, redundancy + 1) / pow(MTTR, redundancy);</span>
-<span class="lineNum">     583 </span><span class="lineCov">         99 :         for (i = 0; i &lt; redundancy + 1; ++i)</span>
-<span class="lineNum">     584 </span><span class="lineCov">         81 :                 MTTDL /= n - i;</span>
-<span class="lineNum">     585 </span>            : 
-<span class="lineNum">     586 </span>            :         /* the raid failure rate is just the inverse of the MTTDL */
-<span class="lineNum">     587 </span><span class="lineCov">         18 :         raid_failure_rate = 1.0 / MTTDL;</span>
-<span class="lineNum">     588 </span>            : 
-<span class="lineNum">     589 </span>            :         /* probability of at least one RAID failure */
-<span class="lineNum">     590 </span>            :         /* note that is almost equal at the probabilty of */
-<span class="lineNum">     591 </span>            :         /* the first failure. */
-<span class="lineNum">     592 </span><span class="lineCov">         18 :         return poisson_prob_n_or_more_failures(raid_failure_rate, 1);</span>
-<span class="lineNum">     593 </span>            : }
-<span class="lineNum">     594 </span>            : 
-<span class="lineNum">     595 </span>            : /**
-<a name="596"><span class="lineNum">     596 </span>            :  * Print a string with space padding.</a>
-<span class="lineNum">     597 </span>            :  */
-<span class="lineNum">     598 </span><span class="lineCov">         52 : static void printl(const char* str, size_t pad)</span>
-<span class="lineNum">     599 </span>            : {
-<span class="lineNum">     600 </span>            :         size_t len;
-<span class="lineNum">     601 </span>            : 
-<span class="lineNum">     602 </span><span class="lineCov">         52 :         printf(&quot;%s&quot;, str);</span>
-<span class="lineNum">     603 </span>            : 
-<span class="lineNum">     604 </span><span class="lineCov">         52 :         len = strlen(str);</span>
+<span class="lineNum">     581 </span>            :         /* get the Mean Time Between Repair (the time that a failed disk is replaced) */
+<span class="lineNum">     582 </span>            :         /* from the repair rate */
+<span class="lineNum">     583 </span><span class="lineCov">         18 :         MTTR = 1.0 / replace_rate;</span>
+<span class="lineNum">     584 </span>            : 
+<span class="lineNum">     585 </span>            :         /* use the approximated MTTDL equation */
+<span class="lineNum">     586 </span><span class="lineCov">         18 :         MTTDL = pow(MTBF, redundancy + 1) / pow(MTTR, redundancy);</span>
+<span class="lineNum">     587 </span><span class="lineCov">         99 :         for (i = 0; i &lt; redundancy + 1; ++i)</span>
+<span class="lineNum">     588 </span><span class="lineCov">         81 :                 MTTDL /= n - i;</span>
+<span class="lineNum">     589 </span>            : 
+<span class="lineNum">     590 </span>            :         /* the raid failure rate is just the inverse of the MTTDL */
+<span class="lineNum">     591 </span><span class="lineCov">         18 :         raid_failure_rate = 1.0 / MTTDL;</span>
+<span class="lineNum">     592 </span>            : 
+<span class="lineNum">     593 </span>            :         /* probability of at least one RAID failure */
+<span class="lineNum">     594 </span>            :         /* note that is almost equal at the probability of */
+<span class="lineNum">     595 </span>            :         /* the first failure. */
+<span class="lineNum">     596 </span><span class="lineCov">         18 :         return poisson_prob_n_or_more_failures(raid_failure_rate, 1);</span>
+<span class="lineNum">     597 </span>            : }
+<span class="lineNum">     598 </span>            : 
+<span class="lineNum">     599 </span>            : /**
+<a name="600"><span class="lineNum">     600 </span>            :  * Print a string with space padding.</a>
+<span class="lineNum">     601 </span>            :  */
+<span class="lineNum">     602 </span><span class="lineCov">         52 : static void printl(const char* str, size_t pad)</span>
+<span class="lineNum">     603 </span>            : {
+<span class="lineNum">     604 </span>            :         size_t len;
 <span class="lineNum">     605 </span>            : 
-<span class="lineNum">     606 </span><span class="lineCov">        245 :         while (len &lt; pad) {</span>
-<span class="lineNum">     607 </span><span class="lineCov">        141 :                 printf(&quot; &quot;);</span>
-<span class="lineNum">     608 </span><span class="lineCov">        141 :                 ++len;</span>
-<span class="lineNum">     609 </span>            :         }
-<span class="lineNum">     610 </span><span class="lineCov">         52 : }</span>
-<span class="lineNum">     611 </span>            : 
-<span class="lineNum">     612 </span>            : /**
-<a name="613"><span class="lineNum">     613 </span>            :  * Print a probability with space padding.</a>
-<span class="lineNum">     614 </span>            :  */
-<span class="lineNum">     615 </span><span class="lineCov">         18 : static void printp(double v, size_t pad)</span>
-<span class="lineNum">     616 </span>            : {
-<span class="lineNum">     617 </span>            :         char buf[64];
-<span class="lineNum">     618 </span><span class="lineCov">         18 :         const char* s = &quot;%&quot;;</span>
-<span class="lineNum">     619 </span>            : 
-<span class="lineNum">     620 </span><span class="lineCov">         18 :         if (v &gt; 0.1)</span>
-<span class="lineNum">     621 </span><span class="lineCov">          4 :                 snprintf(buf, sizeof(buf), &quot;%5.2f%s&quot;, v, s);</span>
-<span class="lineNum">     622 </span><span class="lineCov">         14 :         else if (v &gt; 0.01)</span>
-<span class="lineNum">     623 </span><span class="lineCov">          2 :                 snprintf(buf, sizeof(buf), &quot;%6.3f%s&quot;, v, s);</span>
-<span class="lineNum">     624 </span><span class="lineCov">         12 :         else if (v &gt; 0.001)</span>
-<span class="lineNum">     625 </span><span class="lineCov">          3 :                 snprintf(buf, sizeof(buf), &quot;%7.4f%s&quot;, v, s);</span>
-<span class="lineNum">     626 </span><span class="lineCov">          9 :         else if (v &gt; 0.0001)</span>
-<span class="lineNum">     627 </span><span class="lineCov">          2 :                 snprintf(buf, sizeof(buf), &quot;%8.5f%s&quot;, v, s);</span>
-<span class="lineNum">     628 </span><span class="lineCov">          7 :         else if (v &gt; 0.00001)</span>
-<span class="lineNum">     629 </span><span class="lineCov">          2 :                 snprintf(buf, sizeof(buf), &quot;%9.6f%s&quot;, v, s);</span>
-<span class="lineNum">     630 </span><span class="lineCov">          5 :         else if (v &gt; 0.000001)</span>
-<span class="lineNum">     631 </span><span class="lineCov">          1 :                 snprintf(buf, sizeof(buf), &quot;%10.7f%s&quot;, v, s);</span>
-<span class="lineNum">     632 </span><span class="lineCov">          4 :         else if (v &gt; 0.0000001)</span>
-<span class="lineNum">     633 </span><span class="lineCov">          1 :                 snprintf(buf, sizeof(buf), &quot;%11.8f%s&quot;, v, s);</span>
-<span class="lineNum">     634 </span><span class="lineCov">          3 :         else if (v &gt; 0.00000001)</span>
-<span class="lineNum">     635 </span><span class="lineCov">          1 :                 snprintf(buf, sizeof(buf), &quot;%12.9f%s&quot;, v, s);</span>
-<span class="lineNum">     636 </span><span class="lineCov">          2 :         else if (v &gt; 0.000000001)</span>
-<span class="lineNum">     637 </span><span class="lineCov">          1 :                 snprintf(buf, sizeof(buf), &quot;%13.10f%s&quot;, v, s);</span>
-<span class="lineNum">     638 </span><span class="lineCov">          1 :         else if (v &gt; 0.0000000001)</span>
-<span class="lineNum">     639 </span><span class="lineNoCov">          0 :                 snprintf(buf, sizeof(buf), &quot;%14.11f%s&quot;, v, s);</span>
-<span class="lineNum">     640 </span><span class="lineCov">          1 :         else if (v &gt; 0.00000000001)</span>
-<span class="lineNum">     641 </span><span class="lineCov">          1 :                 snprintf(buf, sizeof(buf), &quot;%15.12f%s&quot;, v, s);</span>
-<span class="lineNum">     642 </span><span class="lineNoCov">          0 :         else if (v &gt; 0.000000000001)</span>
-<span class="lineNum">     643 </span><span class="lineNoCov">          0 :                 snprintf(buf, sizeof(buf), &quot;%16.13f%s&quot;, v, s);</span>
-<span class="lineNum">     644 </span>            :         else
-<span class="lineNum">     645 </span><span class="lineNoCov">          0 :                 snprintf(buf, sizeof(buf), &quot;%17.14f%s&quot;, v, s);</span>
-<span class="lineNum">     646 </span><span class="lineCov">         18 :         printl(buf, pad);</span>
-<a name="647"><span class="lineNum">     647 </span><span class="lineCov">         18 : }</span></a>
-<span class="lineNum">     648 </span>            : 
-<span class="lineNum">     649 </span><span class="lineCov">          1 : static void state_smart(unsigned n, tommy_list* low)</span>
-<span class="lineNum">     650 </span>            : {
-<span class="lineNum">     651 </span>            :         tommy_node* i;
-<span class="lineNum">     652 </span>            :         unsigned j;
-<span class="lineNum">     653 </span>            :         size_t device_pad;
-<span class="lineNum">     654 </span>            :         size_t serial_pad;
-<span class="lineNum">     655 </span>            :         int have_parent;
-<span class="lineNum">     656 </span>            :         double array_failure_rate;
-<span class="lineNum">     657 </span>            :         double p_at_least_one_failure;
-<span class="lineNum">     658 </span><span class="lineCov">          1 :         int make_it_fail = 0;</span>
-<span class="lineNum">     659 </span><span class="lineCov">          1 :         uint64_t mask32 = 0xffffffffU;</span>
-<span class="lineNum">     660 </span><span class="lineCov">          1 :         uint64_t mask16 = 0xffffU;</span>
-<span class="lineNum">     661 </span>            : 
-<span class="lineNum">     662 </span>            :         /* compute lengths for padding */
-<span class="lineNum">     663 </span><span class="lineCov">          1 :         device_pad = 0;</span>
-<span class="lineNum">     664 </span><span class="lineCov">          1 :         serial_pad = 0;</span>
-<span class="lineNum">     665 </span><span class="lineCov">          1 :         have_parent = 0;</span>
-<span class="lineNum">     666 </span><span class="lineCov">         17 :         for (i = tommy_list_head(low); i != 0; i = i-&gt;next) {</span>
-<span class="lineNum">     667 </span>            :                 size_t len;
-<span class="lineNum">     668 </span><span class="lineCov">         16 :                 devinfo_t* devinfo = i-&gt;data;</span>
-<span class="lineNum">     669 </span>            : 
-<span class="lineNum">     670 </span><span class="lineCov">         16 :                 len = strlen(devinfo-&gt;file);</span>
-<span class="lineNum">     671 </span><span class="lineCov">         16 :                 if (len &gt; device_pad)</span>
-<span class="lineNum">     672 </span><span class="lineCov">          1 :                         device_pad = len;</span>
+<span class="lineNum">     606 </span><span class="lineCov">         52 :         printf(&quot;%s&quot;, str);</span>
+<span class="lineNum">     607 </span>            : 
+<span class="lineNum">     608 </span><span class="lineCov">         52 :         len = strlen(str);</span>
+<span class="lineNum">     609 </span>            : 
+<span class="lineNum">     610 </span><span class="lineCov">        245 :         while (len &lt; pad) {</span>
+<span class="lineNum">     611 </span><span class="lineCov">        141 :                 printf(&quot; &quot;);</span>
+<span class="lineNum">     612 </span><span class="lineCov">        141 :                 ++len;</span>
+<span class="lineNum">     613 </span>            :         }
+<span class="lineNum">     614 </span><span class="lineCov">         52 : }</span>
+<span class="lineNum">     615 </span>            : 
+<span class="lineNum">     616 </span>            : /**
+<a name="617"><span class="lineNum">     617 </span>            :  * Print a probability with space padding.</a>
+<span class="lineNum">     618 </span>            :  */
+<span class="lineNum">     619 </span><span class="lineCov">         18 : static void printp(double v, size_t pad)</span>
+<span class="lineNum">     620 </span>            : {
+<span class="lineNum">     621 </span>            :         char buf[64];
+<span class="lineNum">     622 </span><span class="lineCov">         18 :         const char* s = &quot;%&quot;;</span>
+<span class="lineNum">     623 </span>            : 
+<span class="lineNum">     624 </span><span class="lineCov">         18 :         if (v &gt; 0.1)</span>
+<span class="lineNum">     625 </span><span class="lineCov">          4 :                 snprintf(buf, sizeof(buf), &quot;%5.2f%s&quot;, v, s);</span>
+<span class="lineNum">     626 </span><span class="lineCov">         14 :         else if (v &gt; 0.01)</span>
+<span class="lineNum">     627 </span><span class="lineCov">          2 :                 snprintf(buf, sizeof(buf), &quot;%6.3f%s&quot;, v, s);</span>
+<span class="lineNum">     628 </span><span class="lineCov">         12 :         else if (v &gt; 0.001)</span>
+<span class="lineNum">     629 </span><span class="lineCov">          3 :                 snprintf(buf, sizeof(buf), &quot;%7.4f%s&quot;, v, s);</span>
+<span class="lineNum">     630 </span><span class="lineCov">          9 :         else if (v &gt; 0.0001)</span>
+<span class="lineNum">     631 </span><span class="lineCov">          2 :                 snprintf(buf, sizeof(buf), &quot;%8.5f%s&quot;, v, s);</span>
+<span class="lineNum">     632 </span><span class="lineCov">          7 :         else if (v &gt; 0.00001)</span>
+<span class="lineNum">     633 </span><span class="lineCov">          2 :                 snprintf(buf, sizeof(buf), &quot;%9.6f%s&quot;, v, s);</span>
+<span class="lineNum">     634 </span><span class="lineCov">          5 :         else if (v &gt; 0.000001)</span>
+<span class="lineNum">     635 </span><span class="lineCov">          1 :                 snprintf(buf, sizeof(buf), &quot;%10.7f%s&quot;, v, s);</span>
+<span class="lineNum">     636 </span><span class="lineCov">          4 :         else if (v &gt; 0.0000001)</span>
+<span class="lineNum">     637 </span><span class="lineCov">          1 :                 snprintf(buf, sizeof(buf), &quot;%11.8f%s&quot;, v, s);</span>
+<span class="lineNum">     638 </span><span class="lineCov">          3 :         else if (v &gt; 0.00000001)</span>
+<span class="lineNum">     639 </span><span class="lineCov">          1 :                 snprintf(buf, sizeof(buf), &quot;%12.9f%s&quot;, v, s);</span>
+<span class="lineNum">     640 </span><span class="lineCov">          2 :         else if (v &gt; 0.000000001)</span>
+<span class="lineNum">     641 </span><span class="lineCov">          1 :                 snprintf(buf, sizeof(buf), &quot;%13.10f%s&quot;, v, s);</span>
+<span class="lineNum">     642 </span><span class="lineCov">          1 :         else if (v &gt; 0.0000000001)</span>
+<span class="lineNum">     643 </span><span class="lineNoCov">          0 :                 snprintf(buf, sizeof(buf), &quot;%14.11f%s&quot;, v, s);</span>
+<span class="lineNum">     644 </span><span class="lineCov">          1 :         else if (v &gt; 0.00000000001)</span>
+<span class="lineNum">     645 </span><span class="lineCov">          1 :                 snprintf(buf, sizeof(buf), &quot;%15.12f%s&quot;, v, s);</span>
+<span class="lineNum">     646 </span><span class="lineNoCov">          0 :         else if (v &gt; 0.000000000001)</span>
+<span class="lineNum">     647 </span><span class="lineNoCov">          0 :                 snprintf(buf, sizeof(buf), &quot;%16.13f%s&quot;, v, s);</span>
+<span class="lineNum">     648 </span>            :         else
+<span class="lineNum">     649 </span><span class="lineNoCov">          0 :                 snprintf(buf, sizeof(buf), &quot;%17.14f%s&quot;, v, s);</span>
+<span class="lineNum">     650 </span><span class="lineCov">         18 :         printl(buf, pad);</span>
+<a name="651"><span class="lineNum">     651 </span><span class="lineCov">         18 : }</span></a>
+<span class="lineNum">     652 </span>            : 
+<span class="lineNum">     653 </span><span class="lineCov">          1 : static void state_smart(unsigned n, tommy_list* low)</span>
+<span class="lineNum">     654 </span>            : {
+<span class="lineNum">     655 </span>            :         tommy_node* i;
+<span class="lineNum">     656 </span>            :         unsigned j;
+<span class="lineNum">     657 </span>            :         size_t device_pad;
+<span class="lineNum">     658 </span>            :         size_t serial_pad;
+<span class="lineNum">     659 </span>            :         int have_parent;
+<span class="lineNum">     660 </span>            :         double array_failure_rate;
+<span class="lineNum">     661 </span>            :         double p_at_least_one_failure;
+<span class="lineNum">     662 </span><span class="lineCov">          1 :         int make_it_fail = 0;</span>
+<span class="lineNum">     663 </span><span class="lineCov">          1 :         uint64_t mask32 = 0xffffffffU;</span>
+<span class="lineNum">     664 </span><span class="lineCov">          1 :         uint64_t mask16 = 0xffffU;</span>
+<span class="lineNum">     665 </span>            : 
+<span class="lineNum">     666 </span>            :         /* compute lengths for padding */
+<span class="lineNum">     667 </span><span class="lineCov">          1 :         device_pad = 0;</span>
+<span class="lineNum">     668 </span><span class="lineCov">          1 :         serial_pad = 0;</span>
+<span class="lineNum">     669 </span><span class="lineCov">          1 :         have_parent = 0;</span>
+<span class="lineNum">     670 </span><span class="lineCov">         17 :         for (i = tommy_list_head(low); i != 0; i = i-&gt;next) {</span>
+<span class="lineNum">     671 </span>            :                 size_t len;
+<span class="lineNum">     672 </span><span class="lineCov">         16 :                 devinfo_t* devinfo = i-&gt;data;</span>
 <span class="lineNum">     673 </span>            : 
-<span class="lineNum">     674 </span><span class="lineCov">         16 :                 len = strlen(devinfo-&gt;smart_serial);</span>
-<span class="lineNum">     675 </span><span class="lineCov">         16 :                 if (len &gt; serial_pad)</span>
-<span class="lineNum">     676 </span><span class="lineCov">          2 :                         serial_pad = len;</span>
+<span class="lineNum">     674 </span><span class="lineCov">         16 :                 len = strlen(devinfo-&gt;file);</span>
+<span class="lineNum">     675 </span><span class="lineCov">         16 :                 if (len &gt; device_pad)</span>
+<span class="lineNum">     676 </span><span class="lineCov">          1 :                         device_pad = len;</span>
 <span class="lineNum">     677 </span>            : 
-<span class="lineNum">     678 </span><span class="lineCov">         16 :                 if (devinfo-&gt;parent != 0)</span>
-<span class="lineNum">     679 </span><span class="lineNoCov">          0 :                         have_parent = 1;</span>
-<span class="lineNum">     680 </span>            :         }
+<span class="lineNum">     678 </span><span class="lineCov">         16 :                 len = strlen(devinfo-&gt;smart_serial);</span>
+<span class="lineNum">     679 </span><span class="lineCov">         16 :                 if (len &gt; serial_pad)</span>
+<span class="lineNum">     680 </span><span class="lineCov">          2 :                         serial_pad = len;</span>
 <span class="lineNum">     681 </span>            : 
-<span class="lineNum">     682 </span><span class="lineCov">          1 :         printf(&quot;SnapRAID SMART report:\n&quot;);</span>
-<span class="lineNum">     683 </span><span class="lineCov">          1 :         printf(&quot;\n&quot;);</span>
-<span class="lineNum">     684 </span><span class="lineCov">          1 :         printf(&quot;   Temp&quot;);</span>
-<span class="lineNum">     685 </span><span class="lineCov">          1 :         printf(&quot;  Power&quot;);</span>
-<span class="lineNum">     686 </span><span class="lineCov">          1 :         printf(&quot;   Error&quot;);</span>
-<span class="lineNum">     687 </span><span class="lineCov">          1 :         printf(&quot;   FP&quot;);</span>
-<span class="lineNum">     688 </span><span class="lineCov">          1 :         printf(&quot; Size&quot;);</span>
-<span class="lineNum">     689 </span><span class="lineCov">          1 :         printf(&quot;\n&quot;);</span>
-<span class="lineNum">     690 </span><span class="lineCov">          1 :         printf(&quot;      C&quot;);</span>
-<span class="lineNum">     691 </span><span class="lineCov">          1 :         printf(&quot; OnDays&quot;);</span>
-<span class="lineNum">     692 </span><span class="lineCov">          1 :         printf(&quot;   Count&quot;);</span>
-<span class="lineNum">     693 </span><span class="lineCov">          1 :         printf(&quot;     &quot;);</span>
-<span class="lineNum">     694 </span><span class="lineCov">          1 :         printf(&quot;   TB&quot;);</span>
-<span class="lineNum">     695 </span><span class="lineCov">          1 :         printf(&quot;  &quot;); printl(&quot;Serial&quot;, serial_pad);</span>
-<span class="lineNum">     696 </span><span class="lineCov">          1 :         printf(&quot;  &quot;); printl(&quot;Device&quot;, device_pad);</span>
-<span class="lineNum">     697 </span><span class="lineCov">          1 :         printf(&quot;  Disk&quot;);</span>
-<span class="lineNum">     698 </span><span class="lineCov">          1 :         printf(&quot;\n&quot;);</span>
-<span class="lineNum">     699 </span>            :         /*      |&lt;##################################################################72&gt;|####80&gt;| */
-<span class="lineNum">     700 </span><span class="lineCov">          1 :         printf(&quot; -----------------------------------------------------------------------\n&quot;);</span>
-<span class="lineNum">     701 </span>            : 
-<span class="lineNum">     702 </span><span class="lineCov">          1 :         array_failure_rate = 0;</span>
-<span class="lineNum">     703 </span><span class="lineCov">         17 :         for (i = tommy_list_head(low); i != 0; i = i-&gt;next) {</span>
-<span class="lineNum">     704 </span><span class="lineCov">         16 :                 devinfo_t* devinfo = i-&gt;data;</span>
-<span class="lineNum">     705 </span>            :                 double afr;
-<span class="lineNum">     706 </span>            :                 uint64_t flag;
-<span class="lineNum">     707 </span>            : 
-<span class="lineNum">     708 </span><span class="lineCov">         16 :                 if (devinfo-&gt;smart[194] != SMART_UNASSIGNED)</span>
-<span class="lineNum">     709 </span><span class="lineCov">         15 :                         printf(&quot;%7&quot; PRIu64, devinfo-&gt;smart[194] &amp; mask16);</span>
-<span class="lineNum">     710 </span><span class="lineCov">          1 :                 else if (devinfo-&gt;smart[190] != SMART_UNASSIGNED)</span>
-<span class="lineNum">     711 </span><span class="lineNoCov">          0 :                         printf(&quot;%7&quot; PRIu64, devinfo-&gt;smart[190] &amp; mask16);</span>
-<span class="lineNum">     712 </span>            :                 else
-<span class="lineNum">     713 </span><span class="lineCov">          1 :                         printf(&quot;      -&quot;);</span>
-<span class="lineNum">     714 </span>            : 
-<span class="lineNum">     715 </span><span class="lineCov">         16 :                 if (devinfo-&gt;smart[9] != SMART_UNASSIGNED)</span>
-<span class="lineNum">     716 </span><span class="lineCov">         15 :                         printf(&quot;%7&quot; PRIu64, (devinfo-&gt;smart[9] &amp; mask32) / 24);</span>
-<span class="lineNum">     717 </span>            :                 else
-<span class="lineNum">     718 </span><span class="lineCov">          1 :                         printf(&quot;      -&quot;);</span>
-<span class="lineNum">     719 </span>            : 
-<span class="lineNum">     720 </span><span class="lineCov">         16 :                 if (devinfo-&gt;smart[SMART_FLAGS] != SMART_UNASSIGNED)</span>
-<span class="lineNum">     721 </span><span class="lineCov">          8 :                         flag = devinfo-&gt;smart[SMART_FLAGS];</span>
-<span class="lineNum">     722 </span>            :                 else
-<span class="lineNum">     723 </span><span class="lineCov">          8 :                         flag = 0;</span>
-<span class="lineNum">     724 </span><span class="lineCov">         16 :                 if (flag &amp; SMARTCTL_FLAG_FAIL)</span>
-<span class="lineNum">     725 </span><span class="lineCov">          1 :                         printf(&quot;    FAIL&quot;);</span>
-<span class="lineNum">     726 </span><span class="lineCov">         15 :                 else if (flag &amp; SMARTCTL_FLAG_PREFAIL)</span>
-<span class="lineNum">     727 </span><span class="lineCov">          1 :                         printf(&quot; PREFAIL&quot;);</span>
-<span class="lineNum">     728 </span><span class="lineCov">         14 :                 else if (flag &amp; SMARTCTL_FLAG_PREFAIL_LOGGED)</span>
-<span class="lineNum">     729 </span><span class="lineCov">          1 :                         printf(&quot; logfail&quot;);</span>
-<span class="lineNum">     730 </span><span class="lineCov">         13 :                 else if (devinfo-&gt;smart[SMART_ERROR] != SMART_UNASSIGNED</span>
-<span class="lineNum">     731 </span><span class="lineCov">         13 :                         &amp;&amp; devinfo-&gt;smart[SMART_ERROR] != 0)</span>
-<span class="lineNum">     732 </span><span class="lineCov">          1 :                         printf(&quot;%8&quot; PRIu64, devinfo-&gt;smart[SMART_ERROR]);</span>
-<span class="lineNum">     733 </span><span class="lineCov">         12 :                 else if (flag &amp; SMARTCTL_FLAG_ERROR)</span>
-<span class="lineNum">     734 </span><span class="lineCov">          1 :                         printf(&quot;  logerr&quot;);</span>
-<span class="lineNum">     735 </span><span class="lineCov">         11 :                 else if (flag &amp; SMARTCTL_FLAG_ERROR_LOGGED)</span>
-<span class="lineNum">     736 </span><span class="lineCov">          1 :                         printf(&quot; selferr&quot;);</span>
-<span class="lineNum">     737 </span><span class="lineCov">         10 :                 else if (devinfo-&gt;smart[SMART_ERROR] == 0)</span>
-<span class="lineNum">     738 </span><span class="lineCov">         10 :                         printf(&quot;       0&quot;);</span>
-<span class="lineNum">     739 </span>            :                 else
-<span class="lineNum">     740 </span><span class="lineNoCov">          0 :                         printf(&quot;       -&quot;);</span>
-<span class="lineNum">     741 </span>            : 
-<span class="lineNum">     742 </span>            :                 /* if some fail/prefail attribute, make the command to fail */
-<span class="lineNum">     743 </span><span class="lineCov">         16 :                 if (flag &amp; (SMARTCTL_FLAG_FAIL | SMARTCTL_FLAG_PREFAIL))</span>
-<span class="lineNum">     744 </span><span class="lineCov">          2 :                         make_it_fail = 1;</span>
+<span class="lineNum">     682 </span><span class="lineCov">         16 :                 if (devinfo-&gt;parent != 0)</span>
+<span class="lineNum">     683 </span><span class="lineNoCov">          0 :                         have_parent = 1;</span>
+<span class="lineNum">     684 </span>            :         }
+<span class="lineNum">     685 </span>            : 
+<span class="lineNum">     686 </span><span class="lineCov">          1 :         printf(&quot;SnapRAID SMART report:\n&quot;);</span>
+<span class="lineNum">     687 </span><span class="lineCov">          1 :         printf(&quot;\n&quot;);</span>
+<span class="lineNum">     688 </span><span class="lineCov">          1 :         printf(&quot;   Temp&quot;);</span>
+<span class="lineNum">     689 </span><span class="lineCov">          1 :         printf(&quot;  Power&quot;);</span>
+<span class="lineNum">     690 </span><span class="lineCov">          1 :         printf(&quot;   Error&quot;);</span>
+<span class="lineNum">     691 </span><span class="lineCov">          1 :         printf(&quot;   FP&quot;);</span>
+<span class="lineNum">     692 </span><span class="lineCov">          1 :         printf(&quot; Size&quot;);</span>
+<span class="lineNum">     693 </span><span class="lineCov">          1 :         printf(&quot;\n&quot;);</span>
+<span class="lineNum">     694 </span><span class="lineCov">          1 :         printf(&quot;      C&quot;);</span>
+<span class="lineNum">     695 </span><span class="lineCov">          1 :         printf(&quot; OnDays&quot;);</span>
+<span class="lineNum">     696 </span><span class="lineCov">          1 :         printf(&quot;   Count&quot;);</span>
+<span class="lineNum">     697 </span><span class="lineCov">          1 :         printf(&quot;     &quot;);</span>
+<span class="lineNum">     698 </span><span class="lineCov">          1 :         printf(&quot;   TB&quot;);</span>
+<span class="lineNum">     699 </span><span class="lineCov">          1 :         printf(&quot;  &quot;); printl(&quot;Serial&quot;, serial_pad);</span>
+<span class="lineNum">     700 </span><span class="lineCov">          1 :         printf(&quot;  &quot;); printl(&quot;Device&quot;, device_pad);</span>
+<span class="lineNum">     701 </span><span class="lineCov">          1 :         printf(&quot;  Disk&quot;);</span>
+<span class="lineNum">     702 </span><span class="lineCov">          1 :         printf(&quot;\n&quot;);</span>
+<span class="lineNum">     703 </span>            :         /*      |&lt;##################################################################72&gt;|####80&gt;| */
+<span class="lineNum">     704 </span><span class="lineCov">          1 :         printf(&quot; -----------------------------------------------------------------------\n&quot;);</span>
+<span class="lineNum">     705 </span>            : 
+<span class="lineNum">     706 </span><span class="lineCov">          1 :         array_failure_rate = 0;</span>
+<span class="lineNum">     707 </span><span class="lineCov">         17 :         for (i = tommy_list_head(low); i != 0; i = i-&gt;next) {</span>
+<span class="lineNum">     708 </span><span class="lineCov">         16 :                 devinfo_t* devinfo = i-&gt;data;</span>
+<span class="lineNum">     709 </span>            :                 double afr;
+<span class="lineNum">     710 </span>            :                 uint64_t flag;
+<span class="lineNum">     711 </span>            : 
+<span class="lineNum">     712 </span><span class="lineCov">         16 :                 if (devinfo-&gt;smart[194] != SMART_UNASSIGNED)</span>
+<span class="lineNum">     713 </span><span class="lineCov">         15 :                         printf(&quot;%7&quot; PRIu64, devinfo-&gt;smart[194] &amp; mask16);</span>
+<span class="lineNum">     714 </span><span class="lineCov">          1 :                 else if (devinfo-&gt;smart[190] != SMART_UNASSIGNED)</span>
+<span class="lineNum">     715 </span><span class="lineNoCov">          0 :                         printf(&quot;%7&quot; PRIu64, devinfo-&gt;smart[190] &amp; mask16);</span>
+<span class="lineNum">     716 </span>            :                 else
+<span class="lineNum">     717 </span><span class="lineCov">          1 :                         printf(&quot;      -&quot;);</span>
+<span class="lineNum">     718 </span>            : 
+<span class="lineNum">     719 </span><span class="lineCov">         16 :                 if (devinfo-&gt;smart[9] != SMART_UNASSIGNED)</span>
+<span class="lineNum">     720 </span><span class="lineCov">         15 :                         printf(&quot;%7&quot; PRIu64, (devinfo-&gt;smart[9] &amp; mask32) / 24);</span>
+<span class="lineNum">     721 </span>            :                 else
+<span class="lineNum">     722 </span><span class="lineCov">          1 :                         printf(&quot;      -&quot;);</span>
+<span class="lineNum">     723 </span>            : 
+<span class="lineNum">     724 </span><span class="lineCov">         16 :                 if (devinfo-&gt;smart[SMART_FLAGS] != SMART_UNASSIGNED)</span>
+<span class="lineNum">     725 </span><span class="lineCov">          8 :                         flag = devinfo-&gt;smart[SMART_FLAGS];</span>
+<span class="lineNum">     726 </span>            :                 else
+<span class="lineNum">     727 </span><span class="lineCov">          8 :                         flag = 0;</span>
+<span class="lineNum">     728 </span><span class="lineCov">         16 :                 if (flag &amp; SMARTCTL_FLAG_FAIL)</span>
+<span class="lineNum">     729 </span><span class="lineCov">          1 :                         printf(&quot;    FAIL&quot;);</span>
+<span class="lineNum">     730 </span><span class="lineCov">         15 :                 else if (flag &amp; SMARTCTL_FLAG_PREFAIL)</span>
+<span class="lineNum">     731 </span><span class="lineCov">          1 :                         printf(&quot; PREFAIL&quot;);</span>
+<span class="lineNum">     732 </span><span class="lineCov">         14 :                 else if (flag &amp; SMARTCTL_FLAG_PREFAIL_LOGGED)</span>
+<span class="lineNum">     733 </span><span class="lineCov">          1 :                         printf(&quot; logfail&quot;);</span>
+<span class="lineNum">     734 </span><span class="lineCov">         13 :                 else if (devinfo-&gt;smart[SMART_ERROR] != SMART_UNASSIGNED</span>
+<span class="lineNum">     735 </span><span class="lineCov">         13 :                         &amp;&amp; devinfo-&gt;smart[SMART_ERROR] != 0)</span>
+<span class="lineNum">     736 </span><span class="lineCov">          1 :                         printf(&quot;%8&quot; PRIu64, devinfo-&gt;smart[SMART_ERROR]);</span>
+<span class="lineNum">     737 </span><span class="lineCov">         12 :                 else if (flag &amp; SMARTCTL_FLAG_ERROR)</span>
+<span class="lineNum">     738 </span><span class="lineCov">          1 :                         printf(&quot;  logerr&quot;);</span>
+<span class="lineNum">     739 </span><span class="lineCov">         11 :                 else if (flag &amp; SMARTCTL_FLAG_ERROR_LOGGED)</span>
+<span class="lineNum">     740 </span><span class="lineCov">          1 :                         printf(&quot; selferr&quot;);</span>
+<span class="lineNum">     741 </span><span class="lineCov">         10 :                 else if (devinfo-&gt;smart[SMART_ERROR] == 0)</span>
+<span class="lineNum">     742 </span><span class="lineCov">         10 :                         printf(&quot;       0&quot;);</span>
+<span class="lineNum">     743 </span>            :                 else
+<span class="lineNum">     744 </span><span class="lineNoCov">          0 :                         printf(&quot;       -&quot;);</span>
 <span class="lineNum">     745 </span>            : 
-<span class="lineNum">     746 </span>            :                 /* note that in older smartmontools, like 5.x, rotation rate is not present */
-<span class="lineNum">     747 </span>            :                 /* and then it could remain unassigned */
-<span class="lineNum">     748 </span>            : 
-<span class="lineNum">     749 </span><span class="lineCov">         16 :                 if (flag &amp; (SMARTCTL_FLAG_UNSUPPORTED | SMARTCTL_FLAG_OPEN)) {</span>
-<span class="lineNum">     750 </span>            :                         /* if error running smartctl, skip AFR estimation */
-<span class="lineNum">     751 </span><span class="lineCov">          2 :                         afr = 0;</span>
-<span class="lineNum">     752 </span><span class="lineCov">          2 :                         printf(&quot;  n/a&quot;);</span>
-<span class="lineNum">     753 </span><span class="lineCov">         14 :                 } else if (devinfo-&gt;smart[SMART_ROTATION_RATE] == 0) {</span>
-<span class="lineNum">     754 </span>            :                         /* if SSD, skip AFR estimation as data is from not SSD disks */
-<span class="lineNum">     755 </span><span class="lineCov">          1 :                         afr = 0;</span>
-<span class="lineNum">     756 </span><span class="lineCov">          1 :                         printf(&quot;  SSD&quot;);</span>
-<span class="lineNum">     757 </span>            :                 } else {
-<span class="lineNum">     758 </span><span class="lineCov">         13 :                         afr = smart_afr(devinfo-&gt;smart);</span>
-<span class="lineNum">     759 </span>            : 
-<span class="lineNum">     760 </span><span class="lineCov">         13 :                         if (afr == 0) {</span>
-<span class="lineNum">     761 </span>            :                                 /* this happens only if no data */
-<span class="lineNum">     762 </span><span class="lineCov">          1 :                                 printf(&quot;    -&quot;);</span>
-<span class="lineNum">     763 </span>            :                         } else {
-<span class="lineNum">     764 </span>            :                                 /* use only the disks in the array */
-<span class="lineNum">     765 </span><span class="lineCov">         12 :                                 if (devinfo-&gt;parent != 0 || !have_parent)</span>
-<span class="lineNum">     766 </span><span class="lineCov">         12 :                                         array_failure_rate += afr;</span>
-<span class="lineNum">     767 </span>            : 
-<span class="lineNum">     768 </span><span class="lineCov">         12 :                                 printf(&quot;%4.0f%%&quot;, poisson_prob_n_or_more_failures(afr, 1) * 100);</span>
-<span class="lineNum">     769 </span>            :                         }
-<span class="lineNum">     770 </span>            :                 }
+<span class="lineNum">     746 </span>            :                 /* if some fail/prefail attribute, make the command to fail */
+<span class="lineNum">     747 </span><span class="lineCov">         16 :                 if (flag &amp; (SMARTCTL_FLAG_FAIL | SMARTCTL_FLAG_PREFAIL))</span>
+<span class="lineNum">     748 </span><span class="lineCov">          2 :                         make_it_fail = 1;</span>
+<span class="lineNum">     749 </span>            : 
+<span class="lineNum">     750 </span>            :                 /* note that in older smartmontools, like 5.x, rotation rate is not present */
+<span class="lineNum">     751 </span>            :                 /* and then it could remain unassigned */
+<span class="lineNum">     752 </span>            : 
+<span class="lineNum">     753 </span><span class="lineCov">         16 :                 if (flag &amp; (SMARTCTL_FLAG_UNSUPPORTED | SMARTCTL_FLAG_OPEN)) {</span>
+<span class="lineNum">     754 </span>            :                         /* if error running smartctl, skip AFR estimation */
+<span class="lineNum">     755 </span><span class="lineCov">          2 :                         afr = 0;</span>
+<span class="lineNum">     756 </span><span class="lineCov">          2 :                         printf(&quot;  n/a&quot;);</span>
+<span class="lineNum">     757 </span><span class="lineCov">         14 :                 } else if (devinfo-&gt;smart[SMART_ROTATION_RATE] == 0) {</span>
+<span class="lineNum">     758 </span>            :                         /* if SSD, skip AFR estimation as data is from not SSD disks */
+<span class="lineNum">     759 </span><span class="lineCov">          1 :                         afr = 0;</span>
+<span class="lineNum">     760 </span><span class="lineCov">          1 :                         printf(&quot;  SSD&quot;);</span>
+<span class="lineNum">     761 </span>            :                 } else {
+<span class="lineNum">     762 </span><span class="lineCov">         13 :                         afr = smart_afr(devinfo-&gt;smart);</span>
+<span class="lineNum">     763 </span>            : 
+<span class="lineNum">     764 </span><span class="lineCov">         13 :                         if (afr == 0) {</span>
+<span class="lineNum">     765 </span>            :                                 /* this happens only if no data */
+<span class="lineNum">     766 </span><span class="lineCov">          1 :                                 printf(&quot;    -&quot;);</span>
+<span class="lineNum">     767 </span>            :                         } else {
+<span class="lineNum">     768 </span>            :                                 /* use only the disks in the array */
+<span class="lineNum">     769 </span><span class="lineCov">         12 :                                 if (devinfo-&gt;parent != 0 || !have_parent)</span>
+<span class="lineNum">     770 </span><span class="lineCov">         12 :                                         array_failure_rate += afr;</span>
 <span class="lineNum">     771 </span>            : 
-<span class="lineNum">     772 </span><span class="lineCov">         16 :                 if (devinfo-&gt;smart[SMART_SIZE] != SMART_UNASSIGNED)</span>
-<span class="lineNum">     773 </span><span class="lineCov">         15 :                         printf(&quot; %4.1f&quot;, devinfo-&gt;smart[SMART_SIZE] / 1E12);</span>
-<span class="lineNum">     774 </span>            :                 else
-<span class="lineNum">     775 </span><span class="lineCov">          1 :                         printf(&quot;    -&quot;);</span>
-<span class="lineNum">     776 </span>            : 
-<span class="lineNum">     777 </span><span class="lineCov">         16 :                 printf(&quot;  &quot;);</span>
-<span class="lineNum">     778 </span><span class="lineCov">         16 :                 if (*devinfo-&gt;smart_serial)</span>
-<span class="lineNum">     779 </span><span class="lineCov">         15 :                         printl(devinfo-&gt;smart_serial, serial_pad);</span>
-<span class="lineNum">     780 </span>            :                 else
-<span class="lineNum">     781 </span><span class="lineCov">          1 :                         printl(&quot;-&quot;, serial_pad);</span>
-<span class="lineNum">     782 </span>            : 
-<span class="lineNum">     783 </span><span class="lineCov">         16 :                 printf(&quot;  &quot;);</span>
-<span class="lineNum">     784 </span><span class="lineCov">         16 :                 if (*devinfo-&gt;file)</span>
-<span class="lineNum">     785 </span><span class="lineCov">         15 :                         printl(devinfo-&gt;file, device_pad);</span>
-<span class="lineNum">     786 </span>            :                 else
-<span class="lineNum">     787 </span><span class="lineCov">          1 :                         printl(&quot;-&quot;, device_pad);</span>
-<span class="lineNum">     788 </span>            : 
-<span class="lineNum">     789 </span><span class="lineCov">         16 :                 printf(&quot;  &quot;);</span>
-<span class="lineNum">     790 </span><span class="lineCov">         16 :                 if (*devinfo-&gt;name)</span>
-<span class="lineNum">     791 </span><span class="lineCov">         15 :                         printf(&quot;%s&quot;, devinfo-&gt;name);</span>
-<span class="lineNum">     792 </span>            :                 else
-<span class="lineNum">     793 </span><span class="lineCov">          1 :                         printf(&quot;-&quot;);</span>
-<span class="lineNum">     794 </span>            : 
-<span class="lineNum">     795 </span><span class="lineCov">         16 :                 printf(&quot;\n&quot;);</span>
-<span class="lineNum">     796 </span>            : 
-<span class="lineNum">     797 </span><span class="lineCov">         16 :                 log_tag(&quot;smart:%s:%s\n&quot;, devinfo-&gt;file, devinfo-&gt;name);</span>
-<span class="lineNum">     798 </span><span class="lineCov">         16 :                 if (devinfo-&gt;smart_serial[0])</span>
-<span class="lineNum">     799 </span><span class="lineCov">         15 :                         log_tag(&quot;attr:%s:%s:serial:%s\n&quot;, devinfo-&gt;file, devinfo-&gt;name, esc(devinfo-&gt;smart_serial));</span>
-<span class="lineNum">     800 </span><span class="lineCov">         16 :                 if (afr != 0)</span>
-<span class="lineNum">     801 </span><span class="lineCov">         12 :                         log_tag(&quot;attr:%s:%s:afr:%g\n&quot;, devinfo-&gt;file, devinfo-&gt;name, afr);</span>
-<span class="lineNum">     802 </span><span class="lineCov">         16 :                 if (devinfo-&gt;smart[SMART_SIZE] != SMART_UNASSIGNED)</span>
-<span class="lineNum">     803 </span><span class="lineCov">         15 :                         log_tag(&quot;attr:%s:%s:size:%&quot; PRIu64 &quot;\n&quot;, devinfo-&gt;file, devinfo-&gt;name, devinfo-&gt;smart[SMART_SIZE]);</span>
-<span class="lineNum">     804 </span><span class="lineCov">         16 :                 if (devinfo-&gt;smart[SMART_ERROR] != SMART_UNASSIGNED)</span>
-<span class="lineNum">     805 </span><span class="lineCov">         16 :                         log_tag(&quot;attr:%s:%s:error:%&quot; PRIu64 &quot;\n&quot;, devinfo-&gt;file, devinfo-&gt;name, devinfo-&gt;smart[SMART_ERROR]);</span>
-<span class="lineNum">     806 </span><span class="lineCov">         16 :                 if (devinfo-&gt;smart[SMART_ROTATION_RATE] != SMART_UNASSIGNED)</span>
-<span class="lineNum">     807 </span><span class="lineCov">         16 :                         log_tag(&quot;attr:%s:%s:rotationrate:%&quot; PRIu64 &quot;\n&quot;, devinfo-&gt;file, devinfo-&gt;name, devinfo-&gt;smart[SMART_ROTATION_RATE]);</span>
-<span class="lineNum">     808 </span><span class="lineCov">         16 :                 if (devinfo-&gt;smart[SMART_FLAGS] != SMART_UNASSIGNED)</span>
-<span class="lineNum">     809 </span><span class="lineCov">          8 :                         log_tag(&quot;attr:%s:%s:flags:%&quot; PRIu64 &quot;:%&quot; PRIx64 &quot;\n&quot;, devinfo-&gt;file, devinfo-&gt;name, devinfo-&gt;smart[SMART_FLAGS], devinfo-&gt;smart[SMART_FLAGS]);</span>
-<span class="lineNum">     810 </span><span class="lineCov">       4112 :                 for (j = 0; j &lt; 256; ++j)</span>
-<span class="lineNum">     811 </span><span class="lineCov">       4096 :                         if (devinfo-&gt;smart[j] != SMART_UNASSIGNED)</span>
-<span class="lineNum">     812 </span><span class="lineCov">       3840 :                                 log_tag(&quot;attr:%s:%s:%u:%&quot; PRIu64 &quot;:%&quot; PRIx64 &quot;\n&quot;, devinfo-&gt;file, devinfo-&gt;name, j, devinfo-&gt;smart[j], devinfo-&gt;smart[j]);</span>
-<span class="lineNum">     813 </span>            :         }
-<span class="lineNum">     814 </span>            : 
-<span class="lineNum">     815 </span><span class="lineCov">          1 :         printf(&quot;\n&quot;);</span>
-<span class="lineNum">     816 </span>            : 
-<span class="lineNum">     817 </span>            :         /*      |&lt;##################################################################72&gt;|####80&gt;| */
-<span class="lineNum">     818 </span><span class="lineCov">          1 :         printf(&quot;The FP column is the estimated probability (in percentage) that the disk\n&quot;);</span>
-<span class="lineNum">     819 </span><span class="lineCov">          1 :         printf(&quot;is going to fail in the next year.\n&quot;);</span>
-<span class="lineNum">     820 </span><span class="lineCov">          1 :         printf(&quot;\n&quot;);</span>
-<span class="lineNum">     821 </span>            : 
-<span class="lineNum">     822 </span>            :         /*
-<span class="lineNum">     823 </span>            :          * The probability of one and of at least one failure is computed assuming
-<span class="lineNum">     824 </span>            :          * a Poisson distribution with the estimated array failure rate.
-<span class="lineNum">     825 </span>            :          */
-<span class="lineNum">     826 </span><span class="lineCov">          1 :         p_at_least_one_failure = poisson_prob_n_or_more_failures(array_failure_rate, 1);</span>
-<span class="lineNum">     827 </span>            : 
-<span class="lineNum">     828 </span><span class="lineCov">          1 :         printf(&quot;Probability that at least one disk is going to fail in the next year is %.0f%%.\n&quot;, p_at_least_one_failure * 100);</span>
-<span class="lineNum">     829 </span><span class="lineCov">          1 :         log_tag(&quot;summary:array_failure:%g:%g\n&quot;, array_failure_rate, p_at_least_one_failure);</span>
-<span class="lineNum">     830 </span>            : 
-<span class="lineNum">     831 </span>            :         /* print extra stats only in verbose mode */
-<span class="lineNum">     832 </span><span class="lineCov">          1 :         if (msg_level &lt; MSG_VERBOSE)</span>
-<span class="lineNum">     833 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     772 </span><span class="lineCov">         12 :                                 printf(&quot;%4.0f%%&quot;, poisson_prob_n_or_more_failures(afr, 1) * 100);</span>
+<span class="lineNum">     773 </span>            :                         }
+<span class="lineNum">     774 </span>            :                 }
+<span class="lineNum">     775 </span>            : 
+<span class="lineNum">     776 </span><span class="lineCov">         16 :                 if (devinfo-&gt;smart[SMART_SIZE] != SMART_UNASSIGNED)</span>
+<span class="lineNum">     777 </span><span class="lineCov">         15 :                         printf(&quot; %4.1f&quot;, devinfo-&gt;smart[SMART_SIZE] / 1E12);</span>
+<span class="lineNum">     778 </span>            :                 else
+<span class="lineNum">     779 </span><span class="lineCov">          1 :                         printf(&quot;    -&quot;);</span>
+<span class="lineNum">     780 </span>            : 
+<span class="lineNum">     781 </span><span class="lineCov">         16 :                 printf(&quot;  &quot;);</span>
+<span class="lineNum">     782 </span><span class="lineCov">         16 :                 if (*devinfo-&gt;smart_serial)</span>
+<span class="lineNum">     783 </span><span class="lineCov">         15 :                         printl(devinfo-&gt;smart_serial, serial_pad);</span>
+<span class="lineNum">     784 </span>            :                 else
+<span class="lineNum">     785 </span><span class="lineCov">          1 :                         printl(&quot;-&quot;, serial_pad);</span>
+<span class="lineNum">     786 </span>            : 
+<span class="lineNum">     787 </span><span class="lineCov">         16 :                 printf(&quot;  &quot;);</span>
+<span class="lineNum">     788 </span><span class="lineCov">         16 :                 if (*devinfo-&gt;file)</span>
+<span class="lineNum">     789 </span><span class="lineCov">         15 :                         printl(devinfo-&gt;file, device_pad);</span>
+<span class="lineNum">     790 </span>            :                 else
+<span class="lineNum">     791 </span><span class="lineCov">          1 :                         printl(&quot;-&quot;, device_pad);</span>
+<span class="lineNum">     792 </span>            : 
+<span class="lineNum">     793 </span><span class="lineCov">         16 :                 printf(&quot;  &quot;);</span>
+<span class="lineNum">     794 </span><span class="lineCov">         16 :                 if (*devinfo-&gt;name)</span>
+<span class="lineNum">     795 </span><span class="lineCov">         15 :                         printf(&quot;%s&quot;, devinfo-&gt;name);</span>
+<span class="lineNum">     796 </span>            :                 else
+<span class="lineNum">     797 </span><span class="lineCov">          1 :                         printf(&quot;-&quot;);</span>
+<span class="lineNum">     798 </span>            : 
+<span class="lineNum">     799 </span><span class="lineCov">         16 :                 printf(&quot;\n&quot;);</span>
+<span class="lineNum">     800 </span>            : 
+<span class="lineNum">     801 </span><span class="lineCov">         16 :                 log_tag(&quot;smart:%s:%s\n&quot;, devinfo-&gt;file, devinfo-&gt;name);</span>
+<span class="lineNum">     802 </span><span class="lineCov">         16 :                 if (devinfo-&gt;smart_serial[0])</span>
+<span class="lineNum">     803 </span><span class="lineCov">         15 :                         log_tag(&quot;attr:%s:%s:serial:%s\n&quot;, devinfo-&gt;file, devinfo-&gt;name, esc(devinfo-&gt;smart_serial));</span>
+<span class="lineNum">     804 </span><span class="lineCov">         16 :                 if (afr != 0)</span>
+<span class="lineNum">     805 </span><span class="lineCov">         12 :                         log_tag(&quot;attr:%s:%s:afr:%g\n&quot;, devinfo-&gt;file, devinfo-&gt;name, afr);</span>
+<span class="lineNum">     806 </span><span class="lineCov">         16 :                 if (devinfo-&gt;smart[SMART_SIZE] != SMART_UNASSIGNED)</span>
+<span class="lineNum">     807 </span><span class="lineCov">         15 :                         log_tag(&quot;attr:%s:%s:size:%&quot; PRIu64 &quot;\n&quot;, devinfo-&gt;file, devinfo-&gt;name, devinfo-&gt;smart[SMART_SIZE]);</span>
+<span class="lineNum">     808 </span><span class="lineCov">         16 :                 if (devinfo-&gt;smart[SMART_ERROR] != SMART_UNASSIGNED)</span>
+<span class="lineNum">     809 </span><span class="lineCov">         16 :                         log_tag(&quot;attr:%s:%s:error:%&quot; PRIu64 &quot;\n&quot;, devinfo-&gt;file, devinfo-&gt;name, devinfo-&gt;smart[SMART_ERROR]);</span>
+<span class="lineNum">     810 </span><span class="lineCov">         16 :                 if (devinfo-&gt;smart[SMART_ROTATION_RATE] != SMART_UNASSIGNED)</span>
+<span class="lineNum">     811 </span><span class="lineCov">         16 :                         log_tag(&quot;attr:%s:%s:rotationrate:%&quot; PRIu64 &quot;\n&quot;, devinfo-&gt;file, devinfo-&gt;name, devinfo-&gt;smart[SMART_ROTATION_RATE]);</span>
+<span class="lineNum">     812 </span><span class="lineCov">         16 :                 if (devinfo-&gt;smart[SMART_FLAGS] != SMART_UNASSIGNED)</span>
+<span class="lineNum">     813 </span><span class="lineCov">          8 :                         log_tag(&quot;attr:%s:%s:flags:%&quot; PRIu64 &quot;:%&quot; PRIx64 &quot;\n&quot;, devinfo-&gt;file, devinfo-&gt;name, devinfo-&gt;smart[SMART_FLAGS], devinfo-&gt;smart[SMART_FLAGS]);</span>
+<span class="lineNum">     814 </span><span class="lineCov">       4112 :                 for (j = 0; j &lt; 256; ++j)</span>
+<span class="lineNum">     815 </span><span class="lineCov">       4096 :                         if (devinfo-&gt;smart[j] != SMART_UNASSIGNED)</span>
+<span class="lineNum">     816 </span><span class="lineCov">       3840 :                                 log_tag(&quot;attr:%s:%s:%u:%&quot; PRIu64 &quot;:%&quot; PRIx64 &quot;\n&quot;, devinfo-&gt;file, devinfo-&gt;name, j, devinfo-&gt;smart[j], devinfo-&gt;smart[j]);</span>
+<span class="lineNum">     817 </span>            :         }
+<span class="lineNum">     818 </span>            : 
+<span class="lineNum">     819 </span><span class="lineCov">          1 :         printf(&quot;\n&quot;);</span>
+<span class="lineNum">     820 </span>            : 
+<span class="lineNum">     821 </span>            :         /*      |&lt;##################################################################72&gt;|####80&gt;| */
+<span class="lineNum">     822 </span><span class="lineCov">          1 :         printf(&quot;The FP column is the estimated probability (in percentage) that the disk\n&quot;);</span>
+<span class="lineNum">     823 </span><span class="lineCov">          1 :         printf(&quot;is going to fail in the next year.\n&quot;);</span>
+<span class="lineNum">     824 </span><span class="lineCov">          1 :         printf(&quot;\n&quot;);</span>
+<span class="lineNum">     825 </span>            : 
+<span class="lineNum">     826 </span>            :         /*
+<span class="lineNum">     827 </span>            :          * The probability of one and of at least one failure is computed assuming
+<span class="lineNum">     828 </span>            :          * a Poisson distribution with the estimated array failure rate.
+<span class="lineNum">     829 </span>            :          */
+<span class="lineNum">     830 </span><span class="lineCov">          1 :         p_at_least_one_failure = poisson_prob_n_or_more_failures(array_failure_rate, 1);</span>
+<span class="lineNum">     831 </span>            : 
+<span class="lineNum">     832 </span><span class="lineCov">          1 :         printf(&quot;Probability that at least one disk is going to fail in the next year is %.0f%%.\n&quot;, p_at_least_one_failure * 100);</span>
+<span class="lineNum">     833 </span><span class="lineCov">          1 :         log_tag(&quot;summary:array_failure:%g:%g\n&quot;, array_failure_rate, p_at_least_one_failure);</span>
 <span class="lineNum">     834 </span>            : 
-<span class="lineNum">     835 </span>            :         /*      |&lt;##################################################################72&gt;|####80&gt;| */
-<span class="lineNum">     836 </span><span class="lineCov">          1 :         printf(&quot;\n&quot;);</span>
-<span class="lineNum">     837 </span><span class="lineCov">          1 :         printf(&quot;Probability of data loss in the next year for different parity and\n&quot;);</span>
-<span class="lineNum">     838 </span><span class="lineCov">          1 :         printf(&quot;combined scrub and repair time:\n&quot;);</span>
-<span class="lineNum">     839 </span><span class="lineCov">          1 :         printf(&quot;\n&quot;);</span>
-<span class="lineNum">     840 </span><span class="lineCov">          1 :         printf(&quot;  Parity  1 Week                1 Month             3 Months\n&quot;);</span>
-<span class="lineNum">     841 </span><span class="lineCov">          1 :         printf(&quot; -----------------------------------------------------------------------\n&quot;);</span>
-<span class="lineNum">     842 </span><span class="lineCov">          7 :         for (j = 0; j &lt; RAID_PARITY_MAX; ++j) {</span>
-<span class="lineNum">     843 </span><span class="lineCov">          6 :                 printf(&quot;%6u&quot;, j + 1);</span>
-<span class="lineNum">     844 </span><span class="lineCov">          6 :                 printf(&quot;    &quot;);</span>
-<span class="lineNum">     845 </span><span class="lineCov">          6 :                 printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 7, n, j + 1) * 100, 19);</span>
-<span class="lineNum">     846 </span><span class="lineCov">          6 :                 printf(&quot;    &quot;);</span>
-<span class="lineNum">     847 </span><span class="lineCov">          6 :                 printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 30, n, j + 1) * 100, 17);</span>
+<span class="lineNum">     835 </span>            :         /* print extra stats only in verbose mode */
+<span class="lineNum">     836 </span><span class="lineCov">          1 :         if (msg_level &lt; MSG_VERBOSE)</span>
+<span class="lineNum">     837 </span><span class="lineNoCov">          0 :                 goto bail;</span>
+<span class="lineNum">     838 </span>            : 
+<span class="lineNum">     839 </span>            :         /*      |&lt;##################################################################72&gt;|####80&gt;| */
+<span class="lineNum">     840 </span><span class="lineCov">          1 :         printf(&quot;\n&quot;);</span>
+<span class="lineNum">     841 </span><span class="lineCov">          1 :         printf(&quot;Probability of data loss in the next year for different parity and\n&quot;);</span>
+<span class="lineNum">     842 </span><span class="lineCov">          1 :         printf(&quot;combined scrub and repair time:\n&quot;);</span>
+<span class="lineNum">     843 </span><span class="lineCov">          1 :         printf(&quot;\n&quot;);</span>
+<span class="lineNum">     844 </span><span class="lineCov">          1 :         printf(&quot;  Parity  1 Week                1 Month             3 Months\n&quot;);</span>
+<span class="lineNum">     845 </span><span class="lineCov">          1 :         printf(&quot; -----------------------------------------------------------------------\n&quot;);</span>
+<span class="lineNum">     846 </span><span class="lineCov">          7 :         for (j = 0; j &lt; RAID_PARITY_MAX; ++j) {</span>
+<span class="lineNum">     847 </span><span class="lineCov">          6 :                 printf(&quot;%6u&quot;, j + 1);</span>
 <span class="lineNum">     848 </span><span class="lineCov">          6 :                 printf(&quot;    &quot;);</span>
-<span class="lineNum">     849 </span><span class="lineCov">          6 :                 printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 90, n, j + 1) * 100, 13);</span>
-<span class="lineNum">     850 </span><span class="lineCov">          6 :                 printf(&quot;\n&quot;);</span>
-<span class="lineNum">     851 </span>            :         }
-<span class="lineNum">     852 </span>            : 
-<span class="lineNum">     853 </span><span class="lineCov">          1 :         printf(&quot;\n&quot;);</span>
-<span class="lineNum">     854 </span>            : 
-<span class="lineNum">     855 </span>            :         /*      |&lt;##################################################################72&gt;|####80&gt;| */
-<span class="lineNum">     856 </span><span class="lineCov">          1 :         printf(&quot;These values are the probabilities that in the next year you'll have a\n&quot;);</span>
-<span class="lineNum">     857 </span><span class="lineCov">          1 :         printf(&quot;sequence of failures that the parity WONT be able to recover, assuming\n&quot;);</span>
-<span class="lineNum">     858 </span><span class="lineCov">          1 :         printf(&quot;that you regularly scrub, and in case repair, the array in the specified\n&quot;);</span>
-<span class="lineNum">     859 </span><span class="lineCov">          1 :         printf(&quot;time.\n&quot;);</span>
-<span class="lineNum">     860 </span>            : 
-<span class="lineNum">     861 </span>            : bail:
-<span class="lineNum">     862 </span><span class="lineCov">          1 :         if (make_it_fail) {</span>
-<span class="lineNum">     863 </span><span class="lineCov">          1 :                 printf(&quot;\n&quot;);</span>
-<span class="lineNum">     864 </span><span class="lineCov">          1 :                 printf(&quot;DANGER! SMART is reporting that one or more disks are FAILING!\n&quot;);</span>
-<span class="lineNum">     865 </span><span class="lineCov">          1 :                 printf(&quot;Please take immediate action!\n&quot;);</span>
-<span class="lineNum">     866 </span><span class="lineCov">          1 :                 exit(EXIT_FAILURE);</span>
-<span class="lineNum">     867 </span>            :         }
-<span class="lineNum">     868 </span><span class="lineNoCov">          0 : }</span>
-<span class="lineNum">     869 </span>            : 
-<span class="lineNum">     870 </span>            : /**
-<a name="871"><span class="lineNum">     871 </span>            :  * Fill with fake data the device list.</a>
-<span class="lineNum">     872 </span>            :  */
-<span class="lineNum">     873 </span><span class="lineCov">          1 : static int devtest(tommy_list* low, int operation)</span>
-<span class="lineNum">     874 </span>            : {
-<span class="lineNum">     875 </span>            :         unsigned c;
-<span class="lineNum">     876 </span>            : 
-<span class="lineNum">     877 </span><span class="lineCov">          1 :         if (operation != DEVICE_SMART)</span>
-<span class="lineNum">     878 </span><span class="lineNoCov">          0 :                 return -1;</span>
-<span class="lineNum">     879 </span>            : 
-<span class="lineNum">     880 </span>            :         /* add some fake data */
-<span class="lineNum">     881 </span><span class="lineCov">         17 :         for (c = 0; c &lt; 16; ++c) {</span>
-<span class="lineNum">     882 </span>            :                 devinfo_t* entry;
-<span class="lineNum">     883 </span>            :                 int j;
-<span class="lineNum">     884 </span>            : 
-<span class="lineNum">     885 </span><span class="lineCov">         16 :                 entry = calloc_nofail(1, sizeof(devinfo_t));</span>
-<span class="lineNum">     886 </span>            : 
-<span class="lineNum">     887 </span><span class="lineCov">         16 :                 entry-&gt;device = c;</span>
+<span class="lineNum">     849 </span><span class="lineCov">          6 :                 printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 7, n, j + 1) * 100, 19);</span>
+<span class="lineNum">     850 </span><span class="lineCov">          6 :                 printf(&quot;    &quot;);</span>
+<span class="lineNum">     851 </span><span class="lineCov">          6 :                 printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 30, n, j + 1) * 100, 17);</span>
+<span class="lineNum">     852 </span><span class="lineCov">          6 :                 printf(&quot;    &quot;);</span>
+<span class="lineNum">     853 </span><span class="lineCov">          6 :                 printp(raid_prob_of_one_or_more_failures(array_failure_rate, 365.0 / 90, n, j + 1) * 100, 13);</span>
+<span class="lineNum">     854 </span><span class="lineCov">          6 :                 printf(&quot;\n&quot;);</span>
+<span class="lineNum">     855 </span>            :         }
+<span class="lineNum">     856 </span>            : 
+<span class="lineNum">     857 </span><span class="lineCov">          1 :         printf(&quot;\n&quot;);</span>
+<span class="lineNum">     858 </span>            : 
+<span class="lineNum">     859 </span>            :         /*      |&lt;##################################################################72&gt;|####80&gt;| */
+<span class="lineNum">     860 </span><span class="lineCov">          1 :         printf(&quot;These values are the probabilities that in the next year you'll have a\n&quot;);</span>
+<span class="lineNum">     861 </span><span class="lineCov">          1 :         printf(&quot;sequence of failures that the parity WONT be able to recover, assuming\n&quot;);</span>
+<span class="lineNum">     862 </span><span class="lineCov">          1 :         printf(&quot;that you regularly scrub, and in case repair, the array in the specified\n&quot;);</span>
+<span class="lineNum">     863 </span><span class="lineCov">          1 :         printf(&quot;time.\n&quot;);</span>
+<span class="lineNum">     864 </span>            : 
+<span class="lineNum">     865 </span>            : bail:
+<span class="lineNum">     866 </span><span class="lineCov">          1 :         if (make_it_fail) {</span>
+<span class="lineNum">     867 </span><span class="lineCov">          1 :                 printf(&quot;\n&quot;);</span>
+<span class="lineNum">     868 </span><span class="lineCov">          1 :                 printf(&quot;DANGER! SMART is reporting that one or more disks are FAILING!\n&quot;);</span>
+<span class="lineNum">     869 </span><span class="lineCov">          1 :                 printf(&quot;Please take immediate action!\n&quot;);</span>
+<span class="lineNum">     870 </span><span class="lineCov">          1 :                 exit(EXIT_FAILURE);</span>
+<span class="lineNum">     871 </span>            :         }
+<span class="lineNum">     872 </span><span class="lineNoCov">          0 : }</span>
+<span class="lineNum">     873 </span>            : 
+<span class="lineNum">     874 </span>            : /**
+<a name="875"><span class="lineNum">     875 </span>            :  * Fill with fake data the device list.</a>
+<span class="lineNum">     876 </span>            :  */
+<span class="lineNum">     877 </span><span class="lineCov">          1 : static int devtest(tommy_list* low, int operation)</span>
+<span class="lineNum">     878 </span>            : {
+<span class="lineNum">     879 </span>            :         unsigned c;
+<span class="lineNum">     880 </span>            : 
+<span class="lineNum">     881 </span><span class="lineCov">          1 :         if (operation != DEVICE_SMART)</span>
+<span class="lineNum">     882 </span><span class="lineNoCov">          0 :                 return -1;</span>
+<span class="lineNum">     883 </span>            : 
+<span class="lineNum">     884 </span>            :         /* add some fake data */
+<span class="lineNum">     885 </span><span class="lineCov">         17 :         for (c = 0; c &lt; 16; ++c) {</span>
+<span class="lineNum">     886 </span>            :                 devinfo_t* entry;
+<span class="lineNum">     887 </span>            :                 int j;
 <span class="lineNum">     888 </span>            : 
-<span class="lineNum">     889 </span><span class="lineCov">         16 :                 tommy_list_insert_tail(low, &amp;entry-&gt;node, entry);</span>
+<span class="lineNum">     889 </span><span class="lineCov">         16 :                 entry = calloc_nofail(1, sizeof(devinfo_t));</span>
 <span class="lineNum">     890 </span>            : 
-<span class="lineNum">     891 </span><span class="lineCov">       4112 :                 for (j = 0; j &lt; 256; ++j) {</span>
-<span class="lineNum">     892 </span><span class="lineCov">       4096 :                         switch (c) {</span>
-<span class="lineNum">     893 </span><span class="lineCov">        256 :                         case 0 : entry-&gt;smart[j] = 0; break;</span>
-<span class="lineNum">     894 </span><span class="lineCov">        256 :                         case 1 : entry-&gt;smart[j] = SMART_UNASSIGNED; break;</span>
-<span class="lineNum">     895 </span>            :                         default:
-<span class="lineNum">     896 </span><span class="lineCov">       3584 :                                 if (j == 193)</span>
-<span class="lineNum">     897 </span><span class="lineCov">         14 :                                         entry-&gt;smart[j] = c - 2;</span>
-<span class="lineNum">     898 </span>            :                                 else
-<span class="lineNum">     899 </span><span class="lineCov">       3570 :                                         entry-&gt;smart[j] = 0;</span>
-<span class="lineNum">     900 </span><span class="lineCov">       3584 :                                 break;</span>
-<span class="lineNum">     901 </span>            :                         }
-<span class="lineNum">     902 </span>            :                 }
-<span class="lineNum">     903 </span>            : 
-<span class="lineNum">     904 </span><span class="lineCov">         16 :                 if (c == 0) {</span>
-<span class="lineNum">     905 </span><span class="lineCov">          1 :                         entry-&gt;smart_serial[0] = 0;</span>
-<span class="lineNum">     906 </span><span class="lineCov">          1 :                         entry-&gt;file[0] = 0;</span>
-<span class="lineNum">     907 </span><span class="lineCov">          1 :                         entry-&gt;name[0] = 0;</span>
-<span class="lineNum">     908 </span><span class="lineCov">          1 :                         entry-&gt;smart[SMART_SIZE] = SMART_UNASSIGNED;</span>
-<span class="lineNum">     909 </span><span class="lineCov">          1 :                         entry-&gt;smart[SMART_ROTATION_RATE] = 0;</span>
-<span class="lineNum">     910 </span>            :                 } else {
-<span class="lineNum">     911 </span><span class="lineCov">         15 :                         snprintf(entry-&gt;smart_serial, sizeof(entry-&gt;smart_serial), &quot;%u&quot;, c);</span>
-<span class="lineNum">     912 </span><span class="lineCov">         15 :                         pathcpy(entry-&gt;file, sizeof(entry-&gt;name), &quot;file&quot;);</span>
-<span class="lineNum">     913 </span><span class="lineCov">         15 :                         pathcpy(entry-&gt;name, sizeof(entry-&gt;name), &quot;name&quot;);</span>
-<span class="lineNum">     914 </span><span class="lineCov">         15 :                         entry-&gt;smart[SMART_SIZE] = c * TERA;</span>
-<span class="lineNum">     915 </span><span class="lineCov">         15 :                         entry-&gt;smart[SMART_ROTATION_RATE] = 7200;</span>
-<span class="lineNum">     916 </span>            :                 }
-<span class="lineNum">     917 </span>            : 
-<span class="lineNum">     918 </span><span class="lineCov">         16 :                 entry-&gt;smart[SMART_ERROR] = 0;</span>
-<span class="lineNum">     919 </span><span class="lineCov">         16 :                 entry-&gt;smart[SMART_FLAGS] = SMART_UNASSIGNED;</span>
-<span class="lineNum">     920 </span>            : 
-<span class="lineNum">     921 </span><span class="lineCov">         16 :                 switch (c) {</span>
-<span class="lineNum">     922 </span><span class="lineCov">          1 :                 case 3 : entry-&gt;smart[SMART_ERROR] = 1; break;</span>
-<span class="lineNum">     923 </span><span class="lineCov">          1 :                 case 4 : entry-&gt;smart[SMART_FLAGS] = SMARTCTL_FLAG_UNSUPPORTED; break;</span>
-<span class="lineNum">     924 </span><span class="lineCov">          1 :                 case 5 : entry-&gt;smart[SMART_FLAGS] = SMARTCTL_FLAG_COMMAND; break;</span>
-<span class="lineNum">     925 </span><span class="lineCov">          1 :                 case 6 : entry-&gt;smart[SMART_FLAGS] = SMARTCTL_FLAG_OPEN; break;</span>
-<span class="lineNum">     926 </span><span class="lineCov">          1 :                 case 7 : entry-&gt;smart[SMART_FLAGS] = SMARTCTL_FLAG_FAIL; break;</span>
-<span class="lineNum">     927 </span><span class="lineCov">          1 :                 case 8 : entry-&gt;smart[SMART_FLAGS] = SMARTCTL_FLAG_PREFAIL; break;</span>
-<span class="lineNum">     928 </span><span class="lineCov">          1 :                 case 9 : entry-&gt;smart[SMART_FLAGS] = SMARTCTL_FLAG_PREFAIL_LOGGED; break;</span>
-<span class="lineNum">     929 </span><span class="lineCov">          1 :                 case 10 : entry-&gt;smart[SMART_FLAGS] = SMARTCTL_FLAG_ERROR; break;</span>
-<span class="lineNum">     930 </span><span class="lineCov">          1 :                 case 11 : entry-&gt;smart[SMART_FLAGS] = SMARTCTL_FLAG_ERROR_LOGGED; break;</span>
-<span class="lineNum">     931 </span>            :                 }
-<span class="lineNum">     932 </span>            :         }
-<span class="lineNum">     933 </span>            : 
-<span class="lineNum">     934 </span><span class="lineCov">          1 :         return 0;</span>
-<a name="935"><span class="lineNum">     935 </span>            : }</a>
-<span class="lineNum">     936 </span>            : 
-<span class="lineNum">     937 </span><span class="lineCov">          5 : void state_device(struct snapraid_state* state, int operation)</span>
-<span class="lineNum">     938 </span>            : {
-<span class="lineNum">     939 </span>            :         tommy_node* i;
-<span class="lineNum">     940 </span>            :         unsigned j;
-<span class="lineNum">     941 </span>            :         tommy_list high;
-<span class="lineNum">     942 </span>            :         tommy_list low;
-<span class="lineNum">     943 </span>            :         int ret;
-<span class="lineNum">     944 </span>            : 
-<span class="lineNum">     945 </span><span class="lineCov">          5 :         switch (operation) {</span>
-<span class="lineNum">     946 </span><span class="lineCov">          1 :         case DEVICE_UP : msg_progress(&quot;Spinup...\n&quot;); break;</span>
-<span class="lineNum">     947 </span><span class="lineCov">          1 :         case DEVICE_DOWN : msg_progress(&quot;Spindown...\n&quot;); break;</span>
-<span class="lineNum">     948 </span>            :         }
-<span class="lineNum">     949 </span>            : 
-<span class="lineNum">     950 </span><span class="lineCov">          5 :         tommy_list_init(&amp;high);</span>
-<span class="lineNum">     951 </span><span class="lineCov">          5 :         tommy_list_init(&amp;low);</span>
-<span class="lineNum">     952 </span>            : 
-<span class="lineNum">     953 </span>            :         /* for all disks */
-<span class="lineNum">     954 </span><span class="lineCov">         35 :         for (i = state-&gt;disklist; i != 0; i = i-&gt;next) {</span>
-<span class="lineNum">     955 </span><span class="lineCov">         30 :                 struct snapraid_disk* disk = i-&gt;data;</span>
-<span class="lineNum">     956 </span>            :                 devinfo_t* entry;
-<span class="lineNum">     957 </span>            : 
-<span class="lineNum">     958 </span><span class="lineCov">         30 :                 entry = calloc_nofail(1, sizeof(devinfo_t));</span>
-<span class="lineNum">     959 </span>            : 
-<span class="lineNum">     960 </span><span class="lineCov">         30 :                 entry-&gt;device = disk-&gt;device;</span>
-<span class="lineNum">     961 </span><span class="lineCov">         30 :                 pathcpy(entry-&gt;name, sizeof(entry-&gt;name), disk-&gt;name);</span>
-<span class="lineNum">     962 </span><span class="lineCov">         30 :                 pathcpy(entry-&gt;mount, sizeof(entry-&gt;mount), disk-&gt;dir);</span>
-<span class="lineNum">     963 </span><span class="lineCov">         30 :                 pathcpy(entry-&gt;smartctl, sizeof(entry-&gt;smartctl), disk-&gt;smartctl);</span>
-<span class="lineNum">     964 </span>            : 
-<span class="lineNum">     965 </span><span class="lineCov">         30 :                 tommy_list_insert_tail(&amp;high, &amp;entry-&gt;node, entry);</span>
-<span class="lineNum">     966 </span>            :         }
-<span class="lineNum">     967 </span>            : 
-<span class="lineNum">     968 </span>            :         /* for all parities */
-<span class="lineNum">     969 </span><span class="lineCov">         35 :         for (j = 0; j &lt; state-&gt;level; ++j) {</span>
-<span class="lineNum">     970 </span>            :                 devinfo_t* entry;
+<span class="lineNum">     891 </span><span class="lineCov">         16 :                 entry-&gt;device = c;</span>
+<span class="lineNum">     892 </span>            : 
+<span class="lineNum">     893 </span><span class="lineCov">         16 :                 tommy_list_insert_tail(low, &amp;entry-&gt;node, entry);</span>
+<span class="lineNum">     894 </span>            : 
+<span class="lineNum">     895 </span><span class="lineCov">       4112 :                 for (j = 0; j &lt; 256; ++j) {</span>
+<span class="lineNum">     896 </span><span class="lineCov">       4096 :                         switch (c) {</span>
+<span class="lineNum">     897 </span><span class="lineCov">        256 :                         case 0 : entry-&gt;smart[j] = 0; break;</span>
+<span class="lineNum">     898 </span><span class="lineCov">        256 :                         case 1 : entry-&gt;smart[j] = SMART_UNASSIGNED; break;</span>
+<span class="lineNum">     899 </span>            :                         default:
+<span class="lineNum">     900 </span><span class="lineCov">       3584 :                                 if (j == 193)</span>
+<span class="lineNum">     901 </span><span class="lineCov">         14 :                                         entry-&gt;smart[j] = c - 2;</span>
+<span class="lineNum">     902 </span>            :                                 else
+<span class="lineNum">     903 </span><span class="lineCov">       3570 :                                         entry-&gt;smart[j] = 0;</span>
+<span class="lineNum">     904 </span><span class="lineCov">       3584 :                                 break;</span>
+<span class="lineNum">     905 </span>            :                         }
+<span class="lineNum">     906 </span>            :                 }
+<span class="lineNum">     907 </span>            : 
+<span class="lineNum">     908 </span><span class="lineCov">         16 :                 if (c == 0) {</span>
+<span class="lineNum">     909 </span><span class="lineCov">          1 :                         entry-&gt;smart_serial[0] = 0;</span>
+<span class="lineNum">     910 </span><span class="lineCov">          1 :                         entry-&gt;file[0] = 0;</span>
+<span class="lineNum">     911 </span><span class="lineCov">          1 :                         entry-&gt;name[0] = 0;</span>
+<span class="lineNum">     912 </span><span class="lineCov">          1 :                         entry-&gt;smart[SMART_SIZE] = SMART_UNASSIGNED;</span>
+<span class="lineNum">     913 </span><span class="lineCov">          1 :                         entry-&gt;smart[SMART_ROTATION_RATE] = 0;</span>
+<span class="lineNum">     914 </span>            :                 } else {
+<span class="lineNum">     915 </span><span class="lineCov">         15 :                         snprintf(entry-&gt;smart_serial, sizeof(entry-&gt;smart_serial), &quot;%u&quot;, c);</span>
+<span class="lineNum">     916 </span><span class="lineCov">         15 :                         pathcpy(entry-&gt;file, sizeof(entry-&gt;name), &quot;file&quot;);</span>
+<span class="lineNum">     917 </span><span class="lineCov">         15 :                         pathcpy(entry-&gt;name, sizeof(entry-&gt;name), &quot;name&quot;);</span>
+<span class="lineNum">     918 </span><span class="lineCov">         15 :                         entry-&gt;smart[SMART_SIZE] = c * TERA;</span>
+<span class="lineNum">     919 </span><span class="lineCov">         15 :                         entry-&gt;smart[SMART_ROTATION_RATE] = 7200;</span>
+<span class="lineNum">     920 </span>            :                 }
+<span class="lineNum">     921 </span>            : 
+<span class="lineNum">     922 </span><span class="lineCov">         16 :                 entry-&gt;smart[SMART_ERROR] = 0;</span>
+<span class="lineNum">     923 </span><span class="lineCov">         16 :                 entry-&gt;smart[SMART_FLAGS] = SMART_UNASSIGNED;</span>
+<span class="lineNum">     924 </span>            : 
+<span class="lineNum">     925 </span><span class="lineCov">         16 :                 switch (c) {</span>
+<span class="lineNum">     926 </span><span class="lineCov">          1 :                 case 3 : entry-&gt;smart[SMART_ERROR] = 1; break;</span>
+<span class="lineNum">     927 </span><span class="lineCov">          1 :                 case 4 : entry-&gt;smart[SMART_FLAGS] = SMARTCTL_FLAG_UNSUPPORTED; break;</span>
+<span class="lineNum">     928 </span><span class="lineCov">          1 :                 case 5 : entry-&gt;smart[SMART_FLAGS] = SMARTCTL_FLAG_COMMAND; break;</span>
+<span class="lineNum">     929 </span><span class="lineCov">          1 :                 case 6 : entry-&gt;smart[SMART_FLAGS] = SMARTCTL_FLAG_OPEN; break;</span>
+<span class="lineNum">     930 </span><span class="lineCov">          1 :                 case 7 : entry-&gt;smart[SMART_FLAGS] = SMARTCTL_FLAG_FAIL; break;</span>
+<span class="lineNum">     931 </span><span class="lineCov">          1 :                 case 8 : entry-&gt;smart[SMART_FLAGS] = SMARTCTL_FLAG_PREFAIL; break;</span>
+<span class="lineNum">     932 </span><span class="lineCov">          1 :                 case 9 : entry-&gt;smart[SMART_FLAGS] = SMARTCTL_FLAG_PREFAIL_LOGGED; break;</span>
+<span class="lineNum">     933 </span><span class="lineCov">          1 :                 case 10 : entry-&gt;smart[SMART_FLAGS] = SMARTCTL_FLAG_ERROR; break;</span>
+<span class="lineNum">     934 </span><span class="lineCov">          1 :                 case 11 : entry-&gt;smart[SMART_FLAGS] = SMARTCTL_FLAG_ERROR_LOGGED; break;</span>
+<span class="lineNum">     935 </span>            :                 }
+<span class="lineNum">     936 </span>            :         }
+<span class="lineNum">     937 </span>            : 
+<span class="lineNum">     938 </span><span class="lineCov">          1 :         return 0;</span>
+<a name="939"><span class="lineNum">     939 </span>            : }</a>
+<span class="lineNum">     940 </span>            : 
+<span class="lineNum">     941 </span><span class="lineCov">          5 : void state_device(struct snapraid_state* state, int operation)</span>
+<span class="lineNum">     942 </span>            : {
+<span class="lineNum">     943 </span>            :         tommy_node* i;
+<span class="lineNum">     944 </span>            :         unsigned j;
+<span class="lineNum">     945 </span>            :         tommy_list high;
+<span class="lineNum">     946 </span>            :         tommy_list low;
+<span class="lineNum">     947 </span>            :         int ret;
+<span class="lineNum">     948 </span>            : 
+<span class="lineNum">     949 </span><span class="lineCov">          5 :         switch (operation) {</span>
+<span class="lineNum">     950 </span><span class="lineCov">          1 :         case DEVICE_UP : msg_progress(&quot;Spinup...\n&quot;); break;</span>
+<span class="lineNum">     951 </span><span class="lineCov">          1 :         case DEVICE_DOWN : msg_progress(&quot;Spindown...\n&quot;); break;</span>
+<span class="lineNum">     952 </span>            :         }
+<span class="lineNum">     953 </span>            : 
+<span class="lineNum">     954 </span><span class="lineCov">          5 :         tommy_list_init(&amp;high);</span>
+<span class="lineNum">     955 </span><span class="lineCov">          5 :         tommy_list_init(&amp;low);</span>
+<span class="lineNum">     956 </span>            : 
+<span class="lineNum">     957 </span>            :         /* for all disks */
+<span class="lineNum">     958 </span><span class="lineCov">         35 :         for (i = state-&gt;disklist; i != 0; i = i-&gt;next) {</span>
+<span class="lineNum">     959 </span><span class="lineCov">         30 :                 struct snapraid_disk* disk = i-&gt;data;</span>
+<span class="lineNum">     960 </span>            :                 devinfo_t* entry;
+<span class="lineNum">     961 </span>            : 
+<span class="lineNum">     962 </span><span class="lineCov">         30 :                 entry = calloc_nofail(1, sizeof(devinfo_t));</span>
+<span class="lineNum">     963 </span>            : 
+<span class="lineNum">     964 </span><span class="lineCov">         30 :                 entry-&gt;device = disk-&gt;device;</span>
+<span class="lineNum">     965 </span><span class="lineCov">         30 :                 pathcpy(entry-&gt;name, sizeof(entry-&gt;name), disk-&gt;name);</span>
+<span class="lineNum">     966 </span><span class="lineCov">         30 :                 pathcpy(entry-&gt;mount, sizeof(entry-&gt;mount), disk-&gt;dir);</span>
+<span class="lineNum">     967 </span><span class="lineCov">         30 :                 pathcpy(entry-&gt;smartctl, sizeof(entry-&gt;smartctl), disk-&gt;smartctl);</span>
+<span class="lineNum">     968 </span>            : 
+<span class="lineNum">     969 </span><span class="lineCov">         30 :                 tommy_list_insert_tail(&amp;high, &amp;entry-&gt;node, entry);</span>
+<span class="lineNum">     970 </span>            :         }
 <span class="lineNum">     971 </span>            : 
-<span class="lineNum">     972 </span><span class="lineCov">         30 :                 entry = calloc_nofail(1, sizeof(devinfo_t));</span>
-<span class="lineNum">     973 </span>            : 
-<span class="lineNum">     974 </span><span class="lineCov">         30 :                 entry-&gt;device = state-&gt;parity[j].device;</span>
-<span class="lineNum">     975 </span><span class="lineCov">         30 :                 pathcpy(entry-&gt;name, sizeof(entry-&gt;name), lev_config_name(j));</span>
-<span class="lineNum">     976 </span><span class="lineCov">         30 :                 pathcpy(entry-&gt;mount, sizeof(entry-&gt;mount), state-&gt;parity[j].path);</span>
-<span class="lineNum">     977 </span><span class="lineCov">         30 :                 pathcpy(entry-&gt;smartctl, sizeof(entry-&gt;smartctl), state-&gt;parity[j].smartctl);</span>
-<span class="lineNum">     978 </span><span class="lineCov">         30 :                 pathcut(entry-&gt;mount); /* remove the parity file */</span>
-<span class="lineNum">     979 </span>            : 
-<span class="lineNum">     980 </span><span class="lineCov">         30 :                 tommy_list_insert_tail(&amp;high, &amp;entry-&gt;node, entry);</span>
-<span class="lineNum">     981 </span>            :         }
-<span class="lineNum">     982 </span>            : 
-<span class="lineNum">     983 </span><span class="lineCov">          5 :         if (state-&gt;opt.fake_device)</span>
-<span class="lineNum">     984 </span><span class="lineCov">          1 :                 ret = devtest(&amp;low, operation);</span>
-<span class="lineNum">     985 </span>            :         else
-<span class="lineNum">     986 </span><span class="lineCov">          4 :                 ret = devquery(&amp;high, &amp;low, operation);</span>
-<span class="lineNum">     987 </span>            : 
-<span class="lineNum">     988 </span><span class="lineCov">          5 :         if (ret != 0) {</span>
-<span class="lineNum">     989 </span><span class="lineCov">          2 :                 const char* ope = 0;</span>
-<span class="lineNum">     990 </span><span class="lineCov">          2 :                 switch (operation) {</span>
-<span class="lineNum">     991 </span><span class="lineNoCov">          0 :                 case DEVICE_UP : ope = &quot;Spinup&quot;; break;</span>
-<span class="lineNum">     992 </span><span class="lineCov">          1 :                 case DEVICE_DOWN : ope = &quot;Spindown&quot;; break;</span>
-<span class="lineNum">     993 </span><span class="lineNoCov">          0 :                 case DEVICE_LIST : ope = &quot;List&quot;; break;</span>
-<span class="lineNum">     994 </span><span class="lineCov">          1 :                 case DEVICE_SMART : ope = &quot;SMART&quot;; break;</span>
-<span class="lineNum">     995 </span>            :                 }
-<span class="lineNum">     996 </span><span class="lineCov">          2 :                 log_fatal(&quot;%s unsupported in this platform.\n&quot;, ope);</span>
-<span class="lineNum">     997 </span>            :         } else {
-<span class="lineNum">     998 </span><span class="lineCov">          3 :                 if (operation == DEVICE_LIST) {</span>
-<span class="lineNum">     999 </span><span class="lineCov">         13 :                         for (i = tommy_list_head(&amp;low); i != 0; i = i-&gt;next) {</span>
-<span class="lineNum">    1000 </span><span class="lineCov">         12 :                                 devinfo_t* devinfo = i-&gt;data;</span>
-<span class="lineNum">    1001 </span><span class="lineCov">         12 :                                 devinfo_t* parent = devinfo-&gt;parent;</span>
-<span class="lineNum">    1002 </span>            : #ifdef _WIN32
-<span class="lineNum">    1003 </span>            :                                 printf(&quot;%&quot; PRIu64 &quot;\t%s\t%08&quot; PRIx64 &quot;\t%s\t%s\n&quot;, devinfo-&gt;device, devinfo-&gt;wfile, parent-&gt;device, parent-&gt;wfile, parent-&gt;name);
-<span class="lineNum">    1004 </span>            : #else
-<span class="lineNum">    1005 </span><span class="lineCov">         12 :                                 printf(&quot;%u:%u\t%s\t%u:%u\t%s\t%s\n&quot;, major(devinfo-&gt;device), minor(devinfo-&gt;device), devinfo-&gt;file, major(parent-&gt;device), minor(parent-&gt;device), parent-&gt;file, parent-&gt;name);</span>
-<span class="lineNum">    1006 </span>            : #endif
-<span class="lineNum">    1007 </span>            :                         }
-<span class="lineNum">    1008 </span>            :                 }
-<span class="lineNum">    1009 </span>            : 
-<span class="lineNum">    1010 </span><span class="lineCov">          3 :                 if (operation == DEVICE_SMART)</span>
-<span class="lineNum">    1011 </span><span class="lineCov">          1 :                         state_smart(state-&gt;level + tommy_list_count(&amp;state-&gt;disklist), &amp;low);</span>
-<span class="lineNum">    1012 </span>            :         }
+<span class="lineNum">     972 </span>            :         /* for all parities */
+<span class="lineNum">     973 </span><span class="lineCov">         35 :         for (j = 0; j &lt; state-&gt;level; ++j) {</span>
+<span class="lineNum">     974 </span>            :                 devinfo_t* entry;
+<span class="lineNum">     975 </span>            : 
+<span class="lineNum">     976 </span><span class="lineCov">         30 :                 entry = calloc_nofail(1, sizeof(devinfo_t));</span>
+<span class="lineNum">     977 </span>            : 
+<span class="lineNum">     978 </span><span class="lineCov">         30 :                 entry-&gt;device = state-&gt;parity[j].device;</span>
+<span class="lineNum">     979 </span><span class="lineCov">         30 :                 pathcpy(entry-&gt;name, sizeof(entry-&gt;name), lev_config_name(j));</span>
+<span class="lineNum">     980 </span><span class="lineCov">         30 :                 pathcpy(entry-&gt;mount, sizeof(entry-&gt;mount), state-&gt;parity[j].path);</span>
+<span class="lineNum">     981 </span><span class="lineCov">         30 :                 pathcpy(entry-&gt;smartctl, sizeof(entry-&gt;smartctl), state-&gt;parity[j].smartctl);</span>
+<span class="lineNum">     982 </span><span class="lineCov">         30 :                 pathcut(entry-&gt;mount); /* remove the parity file */</span>
+<span class="lineNum">     983 </span>            : 
+<span class="lineNum">     984 </span><span class="lineCov">         30 :                 tommy_list_insert_tail(&amp;high, &amp;entry-&gt;node, entry);</span>
+<span class="lineNum">     985 </span>            :         }
+<span class="lineNum">     986 </span>            : 
+<span class="lineNum">     987 </span><span class="lineCov">          5 :         if (state-&gt;opt.fake_device)</span>
+<span class="lineNum">     988 </span><span class="lineCov">          1 :                 ret = devtest(&amp;low, operation);</span>
+<span class="lineNum">     989 </span>            :         else
+<span class="lineNum">     990 </span><span class="lineCov">          4 :                 ret = devquery(&amp;high, &amp;low, operation);</span>
+<span class="lineNum">     991 </span>            : 
+<span class="lineNum">     992 </span><span class="lineCov">          5 :         if (ret != 0) {</span>
+<span class="lineNum">     993 </span><span class="lineCov">          2 :                 const char* ope = 0;</span>
+<span class="lineNum">     994 </span><span class="lineCov">          2 :                 switch (operation) {</span>
+<span class="lineNum">     995 </span><span class="lineNoCov">          0 :                 case DEVICE_UP : ope = &quot;Spinup&quot;; break;</span>
+<span class="lineNum">     996 </span><span class="lineCov">          1 :                 case DEVICE_DOWN : ope = &quot;Spindown&quot;; break;</span>
+<span class="lineNum">     997 </span><span class="lineNoCov">          0 :                 case DEVICE_LIST : ope = &quot;List&quot;; break;</span>
+<span class="lineNum">     998 </span><span class="lineCov">          1 :                 case DEVICE_SMART : ope = &quot;SMART&quot;; break;</span>
+<span class="lineNum">     999 </span>            :                 }
+<span class="lineNum">    1000 </span><span class="lineCov">          2 :                 log_fatal(&quot;%s unsupported in this platform.\n&quot;, ope);</span>
+<span class="lineNum">    1001 </span>            :         } else {
+<span class="lineNum">    1002 </span><span class="lineCov">          3 :                 if (operation == DEVICE_LIST) {</span>
+<span class="lineNum">    1003 </span><span class="lineCov">         13 :                         for (i = tommy_list_head(&amp;low); i != 0; i = i-&gt;next) {</span>
+<span class="lineNum">    1004 </span><span class="lineCov">         12 :                                 devinfo_t* devinfo = i-&gt;data;</span>
+<span class="lineNum">    1005 </span><span class="lineCov">         12 :                                 devinfo_t* parent = devinfo-&gt;parent;</span>
+<span class="lineNum">    1006 </span>            : #ifdef _WIN32
+<span class="lineNum">    1007 </span>            :                                 printf(&quot;%&quot; PRIu64 &quot;\t%s\t%08&quot; PRIx64 &quot;\t%s\t%s\n&quot;, devinfo-&gt;device, devinfo-&gt;wfile, parent-&gt;device, parent-&gt;wfile, parent-&gt;name);
+<span class="lineNum">    1008 </span>            : #else
+<span class="lineNum">    1009 </span><span class="lineCov">         12 :                                 printf(&quot;%u:%u\t%s\t%u:%u\t%s\t%s\n&quot;, major(devinfo-&gt;device), minor(devinfo-&gt;device), devinfo-&gt;file, major(parent-&gt;device), minor(parent-&gt;device), parent-&gt;file, parent-&gt;name);</span>
+<span class="lineNum">    1010 </span>            : #endif
+<span class="lineNum">    1011 </span>            :                         }
+<span class="lineNum">    1012 </span>            :                 }
 <span class="lineNum">    1013 </span>            : 
-<span class="lineNum">    1014 </span><span class="lineCov">          4 :         tommy_list_foreach(&amp;high, free);</span>
-<span class="lineNum">    1015 </span><span class="lineCov">          4 :         tommy_list_foreach(&amp;low, free);</span>
-<span class="lineNum">    1016 </span><span class="lineCov">          4 : }</span>
+<span class="lineNum">    1014 </span><span class="lineCov">          3 :                 if (operation == DEVICE_SMART)</span>
+<span class="lineNum">    1015 </span><span class="lineCov">          1 :                         state_smart(state-&gt;level + tommy_list_count(&amp;state-&gt;disklist), &amp;low);</span>
+<span class="lineNum">    1016 </span>            :         }
 <span class="lineNum">    1017 </span>            : 
+<span class="lineNum">    1018 </span><span class="lineCov">          4 :         tommy_list_foreach(&amp;high, free);</span>
+<span class="lineNum">    1019 </span><span class="lineCov">          4 :         tommy_list_foreach(&amp;low, free);</span>
+<span class="lineNum">    1020 </span><span class="lineCov">          4 : }</span>
+<span class="lineNum">    1021 </span>            : 
 </pre>
       </td>
     </tr>

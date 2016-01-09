@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2015-11-20</td>
+            <td class="headerValue">2016-01-09</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">5</td>
@@ -98,54 +98,54 @@
 <span class="lineNum">      36 </span>            :         tommy_hashdyn_node node;
 <a name="37"><span class="lineNum">      37 </span>            : };</a>
 <span class="lineNum">      38 </span>            : 
-<span class="lineNum">      39 </span><span class="lineCov">      16956 : struct snapraid_hash* hash_alloc(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)</span>
+<span class="lineNum">      39 </span><span class="lineCov">      16970 : struct snapraid_hash* hash_alloc(struct snapraid_state* state, struct snapraid_disk* disk, struct snapraid_file* file)</span>
 <span class="lineNum">      40 </span>            : {
 <span class="lineNum">      41 </span>            :         struct snapraid_hash* hash;
 <span class="lineNum">      42 </span>            :         block_off_t i;
 <span class="lineNum">      43 </span>            :         unsigned char* buf;
 <span class="lineNum">      44 </span>            : 
-<span class="lineNum">      45 </span><span class="lineCov">      16956 :         hash = malloc_nofail(sizeof(struct snapraid_hash));</span>
-<span class="lineNum">      46 </span><span class="lineCov">      16956 :         hash-&gt;disk = disk;</span>
-<span class="lineNum">      47 </span><span class="lineCov">      16956 :         hash-&gt;file = file;</span>
+<span class="lineNum">      45 </span><span class="lineCov">      16970 :         hash = malloc_nofail(sizeof(struct snapraid_hash));</span>
+<span class="lineNum">      46 </span><span class="lineCov">      16970 :         hash-&gt;disk = disk;</span>
+<span class="lineNum">      47 </span><span class="lineCov">      16970 :         hash-&gt;file = file;</span>
 <span class="lineNum">      48 </span>            : 
-<span class="lineNum">      49 </span><span class="lineCov">      16956 :         buf = malloc_nofail(file-&gt;blockmax * HASH_SIZE);</span>
+<span class="lineNum">      49 </span><span class="lineCov">      16970 :         buf = malloc_nofail(file-&gt;blockmax * HASH_SIZE);</span>
 <span class="lineNum">      50 </span>            : 
 <span class="lineNum">      51 </span>            :         /* set the back pointer */
-<span class="lineNum">      52 </span><span class="lineCov">      58816 :         for (i = 0; i &lt; file-&gt;blockmax; ++i) {</span>
-<span class="lineNum">      53 </span><span class="lineCov">      41860 :                 struct snapraid_block* block = fs_file2block_get(file, i);</span>
+<span class="lineNum">      52 </span><span class="lineCov">      58942 :         for (i = 0; i &lt; file-&gt;blockmax; ++i) {</span>
+<span class="lineNum">      53 </span><span class="lineCov">      41972 :                 struct snapraid_block* block = fs_file2block_get(file, i);</span>
 <span class="lineNum">      54 </span>            : 
-<span class="lineNum">      55 </span><span class="lineCov">      41860 :                 memcpy(buf + i * HASH_SIZE, block-&gt;hash, HASH_SIZE);</span>
+<span class="lineNum">      55 </span><span class="lineCov">      41972 :                 memcpy(buf + i * HASH_SIZE, block-&gt;hash, HASH_SIZE);</span>
 <span class="lineNum">      56 </span>            : 
-<span class="lineNum">      57 </span><span class="lineCov">      41860 :                 if (!block_has_updated_hash(block)) {</span>
+<span class="lineNum">      57 </span><span class="lineCov">      41972 :                 if (!block_has_updated_hash(block)) {</span>
 <span class="lineNum">      58 </span><span class="lineNoCov">          0 :                         free(buf);</span>
 <span class="lineNum">      59 </span><span class="lineNoCov">          0 :                         free(hash);</span>
 <span class="lineNum">      60 </span><span class="lineNoCov">          0 :                         return 0;</span>
 <span class="lineNum">      61 </span>            :                 }
 <span class="lineNum">      62 </span>            :         }
 <span class="lineNum">      63 </span>            : 
-<span class="lineNum">      64 </span><span class="lineCov">      16956 :         memhash(state-&gt;besthash, state-&gt;hashseed, hash-&gt;hash, buf, file-&gt;blockmax * HASH_SIZE);</span>
+<span class="lineNum">      64 </span><span class="lineCov">      16970 :         memhash(state-&gt;besthash, state-&gt;hashseed, hash-&gt;hash, buf, file-&gt;blockmax * HASH_SIZE);</span>
 <span class="lineNum">      65 </span>            : 
-<span class="lineNum">      66 </span><span class="lineCov">      16956 :         free(buf);</span>
+<span class="lineNum">      66 </span><span class="lineCov">      16970 :         free(buf);</span>
 <span class="lineNum">      67 </span>            : 
-<span class="lineNum">      68 </span><span class="lineCov">      16956 :         return hash;</span>
+<span class="lineNum">      68 </span><span class="lineCov">      16970 :         return hash;</span>
 <a name="69"><span class="lineNum">      69 </span>            : }</a>
 <span class="lineNum">      70 </span>            : 
-<span class="lineNum">      71 </span><span class="lineCov">      16956 : static inline tommy_uint32_t hash_hash(struct snapraid_hash* hash)</span>
+<span class="lineNum">      71 </span><span class="lineCov">      16970 : static inline tommy_uint32_t hash_hash(struct snapraid_hash* hash)</span>
 <span class="lineNum">      72 </span>            : {
-<span class="lineNum">      73 </span><span class="lineCov">      16956 :         return tommy_hash_u32(0, hash-&gt;hash, HASH_SIZE);</span>
+<span class="lineNum">      73 </span><span class="lineCov">      16970 :         return tommy_hash_u32(0, hash-&gt;hash, HASH_SIZE);</span>
 <a name="74"><span class="lineNum">      74 </span>            : }</a>
 <span class="lineNum">      75 </span>            : 
-<span class="lineNum">      76 </span><span class="lineCov">      16956 : void hash_free(struct snapraid_hash* hash)</span>
+<span class="lineNum">      76 </span><span class="lineCov">      16970 : void hash_free(struct snapraid_hash* hash)</span>
 <span class="lineNum">      77 </span>            : {
-<span class="lineNum">      78 </span><span class="lineCov">      16956 :         free(hash);</span>
-<a name="79"><span class="lineNum">      79 </span><span class="lineCov">      16956 : }</span></a>
+<span class="lineNum">      78 </span><span class="lineCov">      16970 :         free(hash);</span>
+<a name="79"><span class="lineNum">      79 </span><span class="lineCov">      16970 : }</span></a>
 <span class="lineNum">      80 </span>            : 
-<span class="lineNum">      81 </span><span class="lineCov">          2 : int hash_compare(const void* void_arg, const void* void_data)</span>
+<span class="lineNum">      81 </span><span class="lineCov">         14 : int hash_compare(const void* void_arg, const void* void_data)</span>
 <span class="lineNum">      82 </span>            : {
-<span class="lineNum">      83 </span><span class="lineCov">          2 :         const char* arg = void_arg;</span>
-<span class="lineNum">      84 </span><span class="lineCov">          2 :         const struct snapraid_hash* hash = void_data;</span>
+<span class="lineNum">      83 </span><span class="lineCov">         14 :         const char* arg = void_arg;</span>
+<span class="lineNum">      84 </span><span class="lineCov">         14 :         const struct snapraid_hash* hash = void_data;</span>
 <span class="lineNum">      85 </span>            : 
-<span class="lineNum">      86 </span><span class="lineCov">          2 :         return memcmp(arg, hash-&gt;hash, HASH_SIZE);</span>
+<span class="lineNum">      86 </span><span class="lineCov">         14 :         return memcmp(arg, hash-&gt;hash, HASH_SIZE);</span>
 <a name="87"><span class="lineNum">      87 </span>            : }</a>
 <span class="lineNum">      88 </span>            : 
 <span class="lineNum">      89 </span><span class="lineCov">          3 : void state_dup(struct snapraid_state* state)</span>
@@ -168,32 +168,32 @@
 <span class="lineNum">     106 </span><span class="lineCov">         18 :                 struct snapraid_disk* disk = i-&gt;data;</span>
 <span class="lineNum">     107 </span>            : 
 <span class="lineNum">     108 </span>            :                 /* for each file */
-<span class="lineNum">     109 </span><span class="lineCov">      16998 :                 for (j = disk-&gt;filelist; j != 0; j = j-&gt;next) {</span>
-<span class="lineNum">     110 </span><span class="lineCov">      16980 :                         struct snapraid_file* file = j-&gt;data;</span>
+<span class="lineNum">     109 </span><span class="lineCov">      17012 :                 for (j = disk-&gt;filelist; j != 0; j = j-&gt;next) {</span>
+<span class="lineNum">     110 </span><span class="lineCov">      16994 :                         struct snapraid_file* file = j-&gt;data;</span>
 <span class="lineNum">     111 </span>            :                         struct snapraid_hash* hash;
 <span class="lineNum">     112 </span>            :                         tommy_hash_t hash32;
 <span class="lineNum">     113 </span>            : 
 <span class="lineNum">     114 </span>            :                         /* if empty, skip it */
-<span class="lineNum">     115 </span><span class="lineCov">      16980 :                         if (file-&gt;size == 0)</span>
+<span class="lineNum">     115 </span><span class="lineCov">      16994 :                         if (file-&gt;size == 0)</span>
 <span class="lineNum">     116 </span><span class="lineCov">         24 :                                 continue;</span>
 <span class="lineNum">     117 </span>            : 
-<span class="lineNum">     118 </span><span class="lineCov">      16956 :                         hash = hash_alloc(state, disk, file);</span>
+<span class="lineNum">     118 </span><span class="lineCov">      16970 :                         hash = hash_alloc(state, disk, file);</span>
 <span class="lineNum">     119 </span>            : 
 <span class="lineNum">     120 </span>            :                         /* if no hash, skip it */
-<span class="lineNum">     121 </span><span class="lineCov">      16956 :                         if (!hash)</span>
+<span class="lineNum">     121 </span><span class="lineCov">      16970 :                         if (!hash)</span>
 <span class="lineNum">     122 </span><span class="lineNoCov">          0 :                                 continue;</span>
 <span class="lineNum">     123 </span>            : 
-<span class="lineNum">     124 </span><span class="lineCov">      16956 :                         hash32 = hash_hash(hash);</span>
+<span class="lineNum">     124 </span><span class="lineCov">      16970 :                         hash32 = hash_hash(hash);</span>
 <span class="lineNum">     125 </span>            : 
-<span class="lineNum">     126 </span><span class="lineCov">      16956 :                         struct snapraid_hash* found = tommy_hashdyn_search(&amp;hashset, hash_compare, hash-&gt;hash, hash32);</span>
-<span class="lineNum">     127 </span><span class="lineCov">      16956 :                         if (found) {</span>
-<span class="lineNum">     128 </span><span class="lineCov">          2 :                                 ++count;</span>
-<span class="lineNum">     129 </span><span class="lineCov">          2 :                                 size += found-&gt;file-&gt;size;</span>
-<span class="lineNum">     130 </span><span class="lineCov">          2 :                                 log_tag(&quot;dup:%s:%s:%s:%s:%&quot; PRIu64 &quot;: dup\n&quot;, disk-&gt;name, esc(file-&gt;sub), found-&gt;disk-&gt;name, esc(found-&gt;file-&gt;sub), found-&gt;file-&gt;size);</span>
-<span class="lineNum">     131 </span><span class="lineCov">          2 :                                 printf(&quot;%12&quot; PRIu64 &quot; %s%s = %s%s\n&quot;, file-&gt;size, disk-&gt;dir, file-&gt;sub, found-&gt;disk-&gt;dir, found-&gt;file-&gt;sub);</span>
-<span class="lineNum">     132 </span><span class="lineCov">          2 :                                 hash_free(hash);</span>
+<span class="lineNum">     126 </span><span class="lineCov">      16970 :                         struct snapraid_hash* found = tommy_hashdyn_search(&amp;hashset, hash_compare, hash-&gt;hash, hash32);</span>
+<span class="lineNum">     127 </span><span class="lineCov">      16970 :                         if (found) {</span>
+<span class="lineNum">     128 </span><span class="lineCov">         14 :                                 ++count;</span>
+<span class="lineNum">     129 </span><span class="lineCov">         14 :                                 size += found-&gt;file-&gt;size;</span>
+<span class="lineNum">     130 </span><span class="lineCov">         14 :                                 log_tag(&quot;dup:%s:%s:%s:%s:%&quot; PRIu64 &quot;: dup\n&quot;, disk-&gt;name, esc(file-&gt;sub), found-&gt;disk-&gt;name, esc(found-&gt;file-&gt;sub), found-&gt;file-&gt;size);</span>
+<span class="lineNum">     131 </span><span class="lineCov">         14 :                                 printf(&quot;%12&quot; PRIu64 &quot; %s%s = %s%s\n&quot;, file-&gt;size, disk-&gt;dir, file-&gt;sub, found-&gt;disk-&gt;dir, found-&gt;file-&gt;sub);</span>
+<span class="lineNum">     132 </span><span class="lineCov">         14 :                                 hash_free(hash);</span>
 <span class="lineNum">     133 </span>            :                         } else {
-<span class="lineNum">     134 </span><span class="lineCov">      16954 :                                 tommy_hashdyn_insert(&amp;hashset, &amp;hash-&gt;node, hash, hash32);</span>
+<span class="lineNum">     134 </span><span class="lineCov">      16956 :                                 tommy_hashdyn_insert(&amp;hashset, &amp;hash-&gt;node, hash, hash32);</span>
 <span class="lineNum">     135 </span>            :                         }
 <span class="lineNum">     136 </span>            :                 }
 <span class="lineNum">     137 </span>            :         }
