@@ -77,6 +77,20 @@ AC_CHECK_MEMBERS([struct statfs.f_type], [], [], [[
 #include <sys/statfs.h>
 #endif
 ]])
+AC_CHECK_MEMBERS([struct statfs.f_fstypename], [], [], [[
+#if HAVE_SYS_PARAM_H
+#include <sys/param.h>
+#endif
+#if HAVE_SYS_MOUNT_H
+#include <sys/mount.h>
+#endif
+#if HAVE_SYS_VFS_H
+#include <sys/vfs.h>
+#endif
+#if HAVE_SYS_STATFS_H
+#include <sys/statfs.h>
+#endif
+]])
 
 dnl Checks for library functions.
 AC_CHECK_FUNCS([memset strchr strerror strrchr mkdir gettimeofday strtoul])
