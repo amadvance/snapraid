@@ -51,12 +51,19 @@ The result is a simple architecture and an easy to understand implementation,
 following the <a href="http://en.wikipedia.org/wiki/Edsger_W._Dijkstra">Dijkstra</a>
 quote <i>Simplicity is prerequisite for reliability</i>.
 </p>
+
 <p>
-Extensive and automated tests with the runtime checker <a href="http://valgrind.org/">valgrind (memcheck/helgrind/drd)</a>,
-the <a href="https://github.com/google/sanitizers">Google sanitizer (asan/msan/tsan/ubsan)</a>
-and the <a href="http://clang-analyzer.llvm.org/">clang static analyzer</a>
+Extensive and automated tests with the runtime checker <a href="http://valgrind.org/">valgrind</a>,
+the <a href="https://github.com/google/sanitizers">Google sanitizer</a>.
 are done to ensure the correctness of the final application.
 The test has a <a href="cov/">code coverage of over 90%</a>, measured with <a href="http://ltp.sourceforge.net/coverage/lcov.php">lcov</a>.
+</p>
+
+<p>
+The source code is also verified with the
+<a href="https://scan.coverity.com/projects/snapraid">coverity scan</a>
+and <a href="http://clang-analyzer.llvm.org/">clang</a>
+static analyzers.
 </p>
 
 <p>
