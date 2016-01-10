@@ -5,14 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
-* Handle someway moved file to a different disk.
-In case of a silent error it should be possible to recover.
-Likely an automatic prehash that verifies *only* moved/copied files,
-and delay the content file saving only if everything is good.
-It can be very similar at prehash, but checking only REP blocks
-that already have a hash.
-https://sourceforge.net/p/snapraid/discussion/1677233/thread/6615f0e3/
-
 * smart/up/down working without a configuration file
 
 - Minor

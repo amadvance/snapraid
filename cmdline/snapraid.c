@@ -1129,23 +1129,6 @@ int main(int argc, char* argv[])
 		/* intercept signals while operating */
 		signal_init();
 
-		/* save the new state before the sync */
-		/* this allow to recover the case of the changes in the array after an aborted sync. */
-
-		/* for example, think at this case: */
-		/* - add some files at the array */
-		/* - run a sync command, it will recompute the parity adding the new files */
-		/* - abort the sync command before it stores the new content file */
-		/* - delete the not yet synced files from the array */
-		/* - run a new sync command */
-
-		/* the new sync command has now way to know that the parity file was modified */
-		/* because the files triggering these changes are now deleted */
-		/* and they aren't listed in the content file */
-
-		if (state.need_write)
-			state_write(&state);
-
 		/* run a test command if required */
 		if (run != 0) {
 			ret = system(run); /* ignore error */

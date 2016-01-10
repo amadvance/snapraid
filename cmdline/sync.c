@@ -28,14 +28,6 @@
 /****************************************************************************/
 /* hash */
 
-/**
- * Sync plan to use.
- */
-struct snapraid_plan {
-	unsigned handle_max;
-	struct snapraid_handle* handle_map;
-};
-
 static int state_hash_process(struct snapraid_state* state, block_off_t blockstart, block_off_t blockmax, int* skip_sync)
 {
 	struct snapraid_handle* handle;
@@ -395,6 +387,14 @@ finish:
 
 /****************************************************************************/
 /* sync */
+
+/**
+ * Sync plan to use.
+ */
+struct snapraid_plan {
+	unsigned handle_max;
+	struct snapraid_handle* handle_map;
+};
 
 /**
  * A block that failed the hash check, or that was deleted.
@@ -1455,24 +1455,6 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		}
 	}
 
-	/* now change the size of all parities */
-	for (l = 0; l < state->level; ++l) {
-		/* change the size of the parity file, truncating or extending it */
-		/* from this point all the DELETED blocks after the end of the parity are invalid */
-		/* and they are automatically removed when we save the new content file */
-		ret = parity_chsize(&parity_handle[l], size, &out_size, state->opt.skip_fallocate);
-		if (ret == -1) {
-			/* LCOV_EXCL_START */
-			parity_overflow(state, out_size);
-			log_fatal("WARNING! Without an accessible %s file, it isn't possible to sync.\n", lev_name(l));
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
-	}
-
-	/* after resizing parity files, refresh again the free info */
-	state_refresh(state);
-
 	unrecoverable_error = 0;
 
 	if (state->opt.prehash) {
@@ -1482,16 +1464,53 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
 			++unrecoverable_error;
-			/* continue, in case also doing the sync */
+			/* continue, in case also doing the sync if ::skip_sync is not set */
 			/* LCOV_EXCL_STOP */
 		}
-
-		/* save with the new hash information */
-		if (state->need_write)
-			state_write(state);
 	}
 
 	if (!skip_sync) {
+		/**
+		 * Save the new state before the sync but after the hashing phase
+		 *
+		 * This allows to recover after an aborted sync, and at the same time
+		 * it allows to recover broken copied/moved files identified in the
+		 * hashing phase.
+		 *
+		 * For example, think at this case:
+		 * - Add some files at the array
+		 * - Run a sync command, it will recompute the parity adding the new files
+		 * - Abort the sync command before it stores the new content file
+		 * - Delete the not yet synced files from the array
+		 * - Run a new sync command
+		 *
+		 * The sync command has no way to know that the parity file was modified
+		 * because the files triggering these changes are now deleted and they aren't
+		 * listed in the content file.
+		 * Instead, saving the new content file in advance, keeps track of all the parity
+		 * that may be modified.
+		 */
+		if (state->need_write)
+			state_write(state);
+
+		/* now change the size of all parities */
+		for (l = 0; l < state->level; ++l) {
+			/* change the size of the parity file, truncating or extending it */
+			/* from this point all the DELETED blocks after the end of the parity are invalid */
+			/* and they are automatically removed when we save the new content file */
+			ret = parity_chsize(&parity_handle[l], size, &out_size, state->opt.skip_fallocate);
+			if (ret == -1) {
+				/* LCOV_EXCL_START */
+				parity_overflow(state, out_size);
+				log_fatal("WARNING! Without an accessible %s file, it isn't possible to sync.\n", lev_name(l));
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+		}
+
+		/* after resizing parity files, refresh again the free info */
+		state_refresh(state);
+
 		msg_progress("Syncing...\n");
 
 		/* skip degenerated cases of empty parity, or skipping all */

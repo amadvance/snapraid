@@ -11,6 +11,9 @@ SnapRAID HISTORY
     You can control the number of blocks to cache with the option
     --test-io-cache=NUMBER, where the number is between 3 and 128.
     The default is 32.
+  * The -h, --pre-hash command, saves the content file only after having
+    verified all the hashes. This allows recovering of moved files in case
+    a silent error is found during the hash verification check.
   * In the configuration file 'data' is now a synonymous of 'disk'.
 
 9.2 2016/01
