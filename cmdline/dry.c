@@ -186,7 +186,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 	buffermax = diskmax + 2 * state->level;
 
 	/* initialize the io threads */
-	io_init(&io, state, buffermax, dry_data_reader, handle, diskmax, dry_parity_reader, 0, parity_handle, state->level);
+	io_init(&io, state, state->opt.io_cache, buffermax, dry_data_reader, handle, diskmax, dry_parity_reader, 0, parity_handle, state->level);
 
 	error = 0;
 	io_error = 0;

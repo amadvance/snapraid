@@ -108,6 +108,7 @@ struct snapraid_option {
 	int fake_uuid; /**< Set fakes UUID for testing. */
 	int match_first_uuid; /**< Force the matching of the first UUID. */
 	int force_parity_update; /**< Force parity update even if data is not changed. */
+	unsigned io_cache; /**< Number of IO buffers to use. 0 for default. */
 };
 
 /**

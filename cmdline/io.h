@@ -39,7 +39,8 @@
  * 64  - 524 MiB/s, CPU 65%, speed 137%
  * 128 - 525 MiB/s, CPU 66%, speed 138%
  */
-#define IO_MAX 32
+#define IO_MIN 3 /* required by writers, readers can work also with 2 */
+#define IO_MAX 128
 
 /**
  * State of the task.
@@ -133,6 +134,13 @@ struct snapraid_worker {
  * data from the disks.
  */
 struct snapraid_io {
+	struct snapraid_state* state;
+
+	/**
+	 * Number of read-ahead buffers to use.
+	 */
+	unsigned io_max;
+
 	/**
 	 * Mutex used to protect the synchronization
 	 * between the io and the workers.
@@ -174,8 +182,6 @@ struct snapraid_io {
 	 * The IO signals this condition when new writes are scheduled.
 	 */
 	pthread_cond_t write_sched;
-
-	struct snapraid_state* state;
 
 	/**
 	 * Base position for workers.
@@ -246,7 +252,7 @@ struct snapraid_io {
 	/**
 	 * The task currently used by the caller.
 	 *
-	 * It's a rolling counter, when reaching IO_MAX
+	 * It's a rolling counter, when reaching ::io_max
 	 * it goes again to 0.
 	 *
 	 * When the caller finish with the current index,
@@ -257,7 +263,7 @@ struct snapraid_io {
 	/**
 	 * The task currently used by the caller.
 	 *
-	 * It's a rolling counter, when reaching IO_MAX
+	 * It's a rolling counter, when reaching ::io_max
 	 * it goes again to 0.
 	 *
 	 * When the caller finish with the current index,
@@ -274,10 +280,11 @@ struct snapraid_io {
 /**
  * Initialize the InputOutput workers.
  *
+ * \param io_cache The number of IO buffers for read-ahead and write-behind. 0 for default.
  * \param buffer_max The number of data/parity buffers to allocate.
  */
 void io_init(struct snapraid_io* io, struct snapraid_state* state,
-	unsigned buffer_max,
+	unsigned io_cache, unsigned buffer_max,
 	void (*data_reader)(struct snapraid_worker*, struct snapraid_task*),
 	struct snapraid_handle* handle_map, unsigned handle_max,
 	void (*parity_reader)(struct snapraid_worker*, struct snapraid_task*),

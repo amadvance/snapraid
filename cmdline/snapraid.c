@@ -23,6 +23,7 @@
 #include "import.h"
 #include "search.h"
 #include "state.h"
+#include "io.h"
 #include "raid/raid.h"
 
 /****************************************************************************/
@@ -249,6 +250,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_FAKE_UUID 287
 #define OPT_TEST_MATCH_FIRST_UUID 288
 #define OPT_TEST_FORCE_PARITY_UPDATE 289
+#define OPT_TEST_IO_CACHE 290
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -375,6 +377,9 @@ struct option long_options[] = {
 
 	/* Force parity update even if all the data is not changed */
 	{ "test-force-parity-update", 0, 0, OPT_TEST_FORCE_PARITY_UPDATE },
+
+	/* Number of read-ahead buffers */
+	{ "test-io-cache", 1, 0, OPT_TEST_IO_CACHE },
 
 	{ 0, 0, 0, 0 }
 };
@@ -755,6 +760,15 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_TEST_FORCE_PARITY_UPDATE :
 			opt.force_parity_update = 1;
+			break;
+		case OPT_TEST_IO_CACHE :
+			opt.io_cache = atoi(optarg);
+			if (opt.io_cache < IO_MIN || opt.io_cache > IO_MAX) {
+				/* LCOV_EXCL_START */
+				log_fatal("The IO cache should be between %u and %u.\n", IO_MIN, IO_MAX);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
 			break;
 		default :
 			/* LCOV_EXCL_START */

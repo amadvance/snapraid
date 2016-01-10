@@ -4,11 +4,13 @@ SnapRAID HISTORY
 10.0 2016/01
 ===========
   * Increases the speed of the 'sync' and 'scrub' commands with a new
-    read-ahead implementation using threads. We have one thread for each
-    disk, dedicated exclusively to read data or parity in advance,
-    and to write parity later.
-    This ensures to keep the disks always busy, maximizing the data
-    throughput.
+    multithread implementation. It uses one thread for each disk, dedicated
+    exclusively to read-ahead data or parity early and to write-behind
+    parity later. This ensures to keep the disks always busy, maximizing
+    the data throughput.
+    You can control the number of blocks to cache with the option
+    --test-io-cache=NUMBER, where the number is between 3 and 128.
+    The default is 32.
 
 9.2 2016/01
 ===========

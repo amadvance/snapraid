@@ -38,7 +38,8 @@
  * http://stackoverflow.com/questions/4544234/calling-pthread-cond-signal-without-locking-mutex/4544494#4544494
  */
 
-void io_init(struct snapraid_io* io, struct snapraid_state* state, unsigned buffer_max,
+void io_init(struct snapraid_io* io, struct snapraid_state* state,
+	unsigned io_cache, unsigned buffer_max,
 	void (*data_reader)(struct snapraid_worker*, struct snapraid_task*),
 	struct snapraid_handle* handle_map, unsigned handle_max,
 	void (*parity_reader)(struct snapraid_worker*, struct snapraid_task*),
@@ -55,10 +56,16 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state, unsigned buff
 	pthread_cond_init(&io->write_sched, 0);
 
 	io->state = state;
+	if (io_cache == 0)
+		io->io_max = 32;
+	else
+		io->io_max = io_cache;
+
+	assert(io->io_max >= IO_MIN && io->io_max <= IO_MAX);
 
 	io->buffer_max = buffer_max;
 	allocated = 0;
-	for (i = 0; i < IO_MAX; ++i) {
+	for (i = 0; i < io->io_max; ++i) {
 		io->buffer_map[i] = malloc_nofail_vector_align(handle_max, buffer_max, state->block_size, &io->buffer_alloc_map[i]);
 		if (!state->opt.skip_self)
 			mtest_vector(io->buffer_max, state->block_size, io->buffer_map[i]);
@@ -128,7 +135,7 @@ void io_done(struct snapraid_io* io)
 {
 	unsigned i;
 
-	for (i = 0; i < IO_MAX; ++i) {
+	for (i = 0; i < io->io_max; ++i) {
 		free(io->buffer_map[i]);
 		free(io->buffer_alloc_map[i]);
 	}
@@ -269,7 +276,7 @@ static struct snapraid_task* io_reader_step(struct snapraid_worker* worker)
 		}
 
 		/* get the next pending task */
-		next_index = (worker->index + 1) % IO_MAX;
+		next_index = (worker->index + 1) % io->io_max;
 
 		/* if the queue of pending tasks is not empty */
 		if (next_index != io->reader_index) {
@@ -331,14 +338,14 @@ static struct snapraid_task* io_writer_step(struct snapraid_worker* worker, int 
 		unsigned next_index;
 
 		/* get the next pending task */
-		next_index = (worker->index + 1) % IO_MAX;
+		next_index = (worker->index + 1) % io->io_max;
 
 		/* if the queue of pending tasks is not empty */
 		if (next_index != io->writer_index) {
 			struct snapraid_task* task;
 		
 			/* the index that the IO may be waiting for */
-			unsigned waiting_index = (io->writer_index + 1) % IO_MAX;
+			unsigned waiting_index = (io->writer_index + 1) % io->io_max;
 
 			/* the index that worker just completed */
 			unsigned done_index = worker->index;
@@ -406,7 +413,7 @@ block_off_t io_read_next(struct snapraid_io* io, void*** buffer)
 	io_reader_sched(io, io->reader_index, blockcur_schedule);
 
 	/* set the index for the tasks to return to the caller */
-	io->reader_index = (io->reader_index + 1) % IO_MAX;
+	io->reader_index = (io->reader_index + 1) % io->io_max;
 
 	/* get the position to operate at high level from one task */
 	blockcur_caller = io->reader_map[0].task_map[io->reader_index].position;
@@ -462,7 +469,7 @@ void io_write_next(struct snapraid_io* io, unsigned blockcur, int skip, int* wri
 	assert(io->writer_index == io->reader_index);
 
 	/* set the index to be used for the next write */
-	io->writer_index = (io->writer_index + 1) % IO_MAX;
+	io->writer_index = (io->writer_index + 1) % io->io_max;
 
 #ifndef CHECKER
 	/* without the thread checker unlock before signaling, */
@@ -559,7 +566,7 @@ void io_parity_write(struct snapraid_io* io, unsigned* pos)
 		/* to avoid a concurrent access */
 		/* note that we are already sure that a write is not in progress */
 		/* at the index the IO is using at now */
-		busy_index = (io->writer_index + 1) % IO_MAX;
+		busy_index = (io->writer_index + 1) % io->io_max;
 
 		/* search for a worker that has already finished */
 		let = &io->writer_list[0];
@@ -687,7 +694,7 @@ void io_start(struct snapraid_io* io,
 	io->block_next = blockstart;
 
 	io->done = 0;
-	io->reader_index = IO_MAX - 1;
+	io->reader_index = io->io_max - 1;
 	io->writer_index = 0;
 
 	/* clear writer errors */
@@ -696,7 +703,7 @@ void io_start(struct snapraid_io* io,
 
 	/* setup the initial read pending tasks, except the latest one, */
 	/* the latest will be initialized at the fist io_read_next() call */
-	for (i = 0; i < IO_MAX - 1; ++i) {
+	for (i = 0; i < io->io_max - 1; ++i) {
 		block_off_t blockcur = io_position_next(io);
 
 		io_reader_sched(io, i, blockcur);
@@ -725,7 +732,7 @@ void io_start(struct snapraid_io* io,
 	for (i = 0; i < io->writer_max; ++i) {
 		struct snapraid_worker* worker = &io->writer_map[i];
 
-		worker->index = IO_MAX - 1;
+		worker->index = io->io_max - 1;
 
 		if (pthread_create(&worker->thread, 0, io_writer_thread, worker) != 0) {
 			/* LCOV_EXCL_START */
