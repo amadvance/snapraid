@@ -48,6 +48,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 	block_off_t countmax;
 	int ret;
 	unsigned error;
+	unsigned silent_error;
 	unsigned io_error;
 
 	/* maps the disks to handles */
@@ -59,6 +60,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 		mtest_vector(1, state->block_size, &buffer);
 
 	error = 0;
+	silent_error = 0;
 	io_error = 0;
 
 	/* first count the number of blocks to process */
@@ -281,7 +283,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 					/* the parity needed to make such recovery */
 					*skip_sync = 1; /* avoid to run the next sync */
 
-					++error;
+					++silent_error;
 					continue;
 				}
 			} else {
@@ -346,9 +348,11 @@ end:
 	/* becasue at the first one we bail out */
 	assert(io_error == 0);
 
-	if (error) {
+	if (error || io_error || silent_error) {
 		msg_status("\n");
 		msg_status("%8u file errors\n", error);
+		msg_status("%8u io errors\n", io_error);
+		msg_status("%8u data errors\n", silent_error);
 	} else {
 		/* print the result only if processed something */
 		if (countpos != 0)
@@ -384,7 +388,7 @@ finish:
 	free(handle);
 	free(buffer);
 
-	if (error + io_error != 0)
+	if (error + io_error + silent_error != 0)
 		return -1;
 	return 0;
 }
