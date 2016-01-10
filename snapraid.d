@@ -125,9 +125,9 @@ Getting Started
 		:content /var/snapraid/snapraid.content
 		:content /mnt/disk1/snapraid.content
 		:content /mnt/disk2/snapraid.content
-		:disk d1 /mnt/disk1/
-		:disk d2 /mnt/disk2/
-		:disk d3 /mnt/disk3/
+		:data d1 /mnt/disk1/
+		:data d2 /mnt/disk2/
+		:data d3 /mnt/disk3/
 
 	If you are in Windows, you should use the Windows path format, with drive
 	letters and backslashes instead of slashes.
@@ -136,9 +136,9 @@ Getting Started
 		:content C:\snapraid\snapraid.content
 		:content F:\array\snapraid.content
 		:content G:\array\snapraid.content
-		:disk d1 F:\array\
-		:disk d2 G:\array\
-		:disk d3 H:\array\
+		:data d1 F:\array\
+		:data d2 G:\array\
+		:data d3 H:\array\
 
 	If you have many disks, and you run out of drive letters, you can mount
 	disks directly in sub folders. See:
@@ -247,9 +247,9 @@ Getting Started
 	For example, operating from a server named "darkstar", you can use
 	the options:
 
-		:disk d1 F:\array\
-		:disk d2 G:\array\
-		:disk d3 H:\array\
+		:data d1 F:\array\
+		:data d2 G:\array\
+		:data d3 H:\array\
 		:pool C:\pool
 		:share \\darkstar
 
@@ -309,11 +309,11 @@ Getting Started
 
 	For example, if you have that disk "d1" failed, you can change from:
 
-		:disk d1 /mnt/disk1/
+		:data d1 /mnt/disk1/
 
 	to:
 
-		:disk d1 /mnt/new_spare_disk/
+		:data d1 /mnt/new_spare_disk/
 
     STEP 2 -> Fix
 	Run the fix command, storing the log in an external file with:
@@ -953,15 +953,21 @@ Configuration
 	You have to store at least one copy for each parity disk used
 	plus one. Using some more doesn't hurt.
 
-  disk NAME DIR
-	Defines the name and the mount point of the disks of the array.
-	NAME is used to identify the disk, and it must be unique.
-	DIR is the mount point of the disk in the file-system.
+  data NAME DIR
+	Defines the name and the mount point of the data disks of
+	the array. NAME is used to identify the disk, and it must
+	be unique. DIR is the mount point of the disk in the
+	file-system.
 
 	You can change the mount point as you like, as long you
 	keep the NAME fixed.
 
-	You should use one option for each disk of the array.
+	You should use one option for each data disk of the array.
+
+	You can rename later a disk, changing the NAME directly
+	in the configuration file, and then run a 'sync' command.
+	In the rename case, the association is done using the stored
+	UUID of the disks.
 
   nohidden
 	Excludes all the hidden files and directory.
@@ -1088,9 +1094,9 @@ Configuration
 		:parity /mnt/diskp/snapraid.parity
 		:content /mnt/diskp/snapraid.content
 		:content /var/snapraid/snapraid.content
-		:disk d1 /mnt/disk1/
-		:disk d2 /mnt/disk2/
-		:disk d3 /mnt/disk3/
+		:data d1 /mnt/disk1/
+		:data d2 /mnt/disk2/
+		:data d3 /mnt/disk3/
 		:exclude /lost+found/
 		:exclude /tmp/
 		:smartctl d1 -d sat %s
@@ -1103,9 +1109,9 @@ Configuration
 		:parity E:\snapraid.parity
 		:content E:\snapraid.content
 		:content C:\snapraid\snapraid.content
-		:disk d1 G:\array\
-		:disk d2 H:\array\
-		:disk d3 I:\array\
+		:data d1 G:\array\
+		:data d2 H:\array\
+		:data d3 I:\array\
 		:exclude Thumbs.db
 		:exclude \$RECYCLE.BIN
 		:exclude \System Volume Information

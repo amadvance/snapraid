@@ -802,7 +802,8 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			content = content_alloc(buffer, dev);
 
 			tommy_list_insert_tail(&state->contentlist, &content->node, content);
-		} else if (strcmp(tag, "disk") == 0) {
+		} else if (strcmp(tag, "data") == 0 || strcmp(tag, "disk") == 0) {
+			/* "disk" is the deprecated name up to SnapRAID 9.x */
 			char dir[PATH_MAX];
 			char device[PATH_MAX];
 			char uuid[UUID_MAX];
@@ -813,14 +814,14 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			ret = sgettok(f, buffer, sizeof(buffer));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				log_fatal("Invalid 'disk' name specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'data' name specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (!*buffer) {
 				/* LCOV_EXCL_START */
-				log_fatal("Empty 'disk' name specification in '%s' at line %u\n", path, line);
+				log_fatal("Empty 'data' name specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -830,14 +831,14 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			ret = sgetlasttok(f, dir, sizeof(dir));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
-				log_fatal("Invalid 'disk' dir specification in '%s' at line %u\n", path, line);
+				log_fatal("Invalid 'data' dir specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
 
 			if (!*dir) {
 				/* LCOV_EXCL_START */
-				log_fatal("Empty 'disk' dir specification in '%s' at line %u\n", path, line);
+				log_fatal("Empty 'data' dir specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -853,7 +854,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			}
 			if (i) {
 				/* LCOV_EXCL_START */
-				log_fatal("Duplicate disk name '%s' at line %u\n", buffer, line);
+				log_fatal("Duplicate 'data' name '%s' at line %u\n", buffer, line);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -1150,7 +1151,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	log_tag("blocksize:%u\n", state->block_size);
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
-		log_tag("disk:%s:%s\n", disk->name, disk->dir);
+		log_tag("data:%s:%s\n", disk->name, disk->dir);
 	}
 
 	log_tag("mode:%s\n", lev_raid_name(state->raid_mode, state->level));
@@ -4123,7 +4124,7 @@ void generate_configuration(const char* path)
 				printf("# and containing: %s\n", file->sub);
 			}
 		}
-		printf("disk %s ENTER_HERE_THE_DIR\n", map->name);
+		printf("data %s ENTER_HERE_THE_DIR\n", map->name);
 		printf("\n");
 	}
 

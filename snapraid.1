@@ -214,15 +214,15 @@ content /mnt/disk2/snapraid.content
 .PD 0
 .PP
 .PD
-disk d1 /mnt/disk1/
+data d1 /mnt/disk1/
 .PD 0
 .PP
 .PD
-disk d2 /mnt/disk2/
+data d2 /mnt/disk2/
 .PD 0
 .PP
 .PD
-disk d3 /mnt/disk3/
+data d3 /mnt/disk3/
 .PD 0
 .PP
 .PD
@@ -248,15 +248,15 @@ content G:\\array\\snapraid.content
 .PD 0
 .PP
 .PD
-disk d1 F:\\array\\
+data d1 F:\\array\\
 .PD 0
 .PP
 .PD
-disk d2 G:\\array\\
+data d2 G:\\array\\
 .PD 0
 .PP
 .PD
-disk d3 H:\\array\\
+data d3 H:\\array\\
 .PD 0
 .PP
 .PD
@@ -452,15 +452,15 @@ For example, operating from a server named \[dq]darkstar\[dq], you can use
 the options:
 .PP
 .RS 4
-disk d1 F:\\array\\
+data d1 F:\\array\\
 .PD 0
 .PP
 .PD
-disk d2 G:\\array\\
+data d2 G:\\array\\
 .PD 0
 .PP
 .PD
-disk d3 H:\\array\\
+data d3 H:\\array\\
 .PD 0
 .PP
 .PD
@@ -567,7 +567,7 @@ space to recover the files.
 For example, if you have that disk \[dq]d1\[dq] failed, you can change from:
 .PP
 .RS 4
-disk d1 /mnt/disk1/
+data d1 /mnt/disk1/
 .PD 0
 .PP
 .PD
@@ -576,7 +576,7 @@ disk d1 /mnt/disk1/
 to:
 .PP
 .RS 4
-disk d1 /mnt/new_spare_disk/
+data d1 /mnt/new_spare_disk/
 .PD 0
 .PP
 .PD
@@ -1235,15 +1235,21 @@ more copies of the same files.
 .PP
 You have to store at least one copy for each parity disk used
 plus one. Using some more doesn\'t hurt.
-.SS disk NAME DIR 
-Defines the name and the mount point of the disks of the array.
-NAME is used to identify the disk, and it must be unique.
-DIR is the mount point of the disk in the file\-system.
+.SS data NAME DIR 
+Defines the name and the mount point of the data disks of
+the array. NAME is used to identify the disk, and it must
+be unique. DIR is the mount point of the disk in the
+file\-system.
 .PP
 You can change the mount point as you like, as long you
 keep the NAME fixed.
 .PP
-You should use one option for each disk of the array.
+You should use one option for each data disk of the array.
+.PP
+You can rename later a disk, changing the NAME directly
+in the configuration file, and then run a \'sync\' command.
+In the rename case, the association is done using the stored
+UUID of the disks.
 .SS nohidden 
 Excludes all the hidden files and directory.
 In Unix hidden files are the ones starting with \[dq].\[dq].
@@ -1388,15 +1394,15 @@ content /var/snapraid/snapraid.content
 .PD 0
 .PP
 .PD
-disk d1 /mnt/disk1/
+data d1 /mnt/disk1/
 .PD 0
 .PP
 .PD
-disk d2 /mnt/disk2/
+data d2 /mnt/disk2/
 .PD 0
 .PP
 .PD
-disk d3 /mnt/disk3/
+data d3 /mnt/disk3/
 .PD 0
 .PP
 .PD
@@ -1441,15 +1447,15 @@ content C:\\snapraid\\snapraid.content
 .PD 0
 .PP
 .PD
-disk d1 G:\\array\\
+data d1 G:\\array\\
 .PD 0
 .PP
 .PD
-disk d2 H:\\array\\
+data d2 H:\\array\\
 .PD 0
 .PP
 .PD
-disk d3 I:\\array\\
+data d3 I:\\array\\
 .PD 0
 .PP
 .PD

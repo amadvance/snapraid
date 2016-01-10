@@ -11,6 +11,7 @@ SnapRAID HISTORY
     You can control the number of blocks to cache with the option
     --test-io-cache=NUMBER, where the number is between 3 and 128.
     The default is 32.
+  * In the configuration file 'data' is now a synonymous of 'disk'.
 
 9.2 2016/01
 ===========
@@ -288,7 +289,7 @@ SnapRAID HISTORY
  * For files with changes only in some blocks, updates the parity
    only for blocks that really are changed.
    This improves the performance in sync for modified files.
- * Added a new "list" command to see the stored list of files.   
+ * Added a new "list" command to see the stored list of files.
  * Removed the detailed list of errors from the screen output.
    To get it you must explicitly use the -l, --log option.
    It's now too detailed for the screen, because it contains a lot
@@ -465,7 +466,7 @@ SnapRAID HISTORY
  * Fixed very long paths in Windows. We now always use the special '\\?' prefix
    to remove the 260 chars limitation.
  * If a file is excluded, it prints explicitly which attribute caused the
-   exclusion.   
+   exclusion.
  * Automatically excludes also the temporary copy of content file,
    the one with the ".tmp" extension.
  * Avoid Windows to go in automatic sleep mode when running.

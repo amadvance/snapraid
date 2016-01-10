@@ -13,8 +13,6 @@ It can be very similar at prehash, but checking only REP blocks
 that already have a hash.
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/6615f0e3/
 
-* Use "data" in the configuration file for "disk".
-
 * smart/up/down working without a configuration file
 
 - Minor

@@ -33,9 +33,9 @@ content /mnt/disk2/snapraid.content
 # WARNING: Adding here your /home, /var or /tmp disks is NOT a good idea!
 # SnapRAID is better suited for files that rarely changes!
 # Format: "disk DISK_NAME DISK_MOUNT_POINT"
-disk d1 /mnt/disk1/
-disk d2 /mnt/disk2/
-disk d3 /mnt/disk3/
+data d1 /mnt/disk1/
+data d2 /mnt/disk2/
+data d3 /mnt/disk3/
 
 # Excludes hidden files and directories (uncomment to enable).
 #nohidden

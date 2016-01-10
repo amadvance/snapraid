@@ -33,9 +33,9 @@ content L:\array\snapraid.content
 # WARNING: Adding here your boot C:\ disk is NOT a good idea!
 # SnapRAID is better suited for files that rarely changes!
 # Format: "disk DISK_NAME DISK_MOUNT_POINT"
-disk d1 K:\array\
-disk d2 L:\array\
-disk d3 M:\array\
+data d1 K:\array\
+data d2 L:\array\
+data d3 M:\array\
 
 # Excludes hidden files and directories (uncomment to enable).
 #nohidden
