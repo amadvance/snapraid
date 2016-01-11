@@ -66,7 +66,7 @@ Frequently Asked Questions for <span class="bold">SnapRAID</span>.
 
 <ul>
 <li><a href="#howmanypar">Do I need one or more parity disks?</a></li>
-<li><a href="#fs">Which filesystem is recommended for SnapRAID ?</a></li>
+<li><a href="#fs">Which file-system is recommended for SnapRAID ?</a></li>
 <li><a href="#hardware">Which hardware configuration is recommended?</a></li>
 <li><a href="#cpu">Is a multi-core CPU recommended?</a></li>
 <li><a href="#bit64">Is a 64 bit operating system recommended?</a></li>
@@ -143,7 +143,7 @@ Frequently Asked Questions for <span class="bold">SnapRAID</span>.
 <ul>
 <li><a href="#oomkiller">Why in Linux does SnapRAID abort without any error message?</a></li>
 <li><a href="#pargrowerror">Why in 'sync' do I get the error 'Failed to grow parity file 'xxx' to size xxx due lack of space.'?</a></li>
-<li><a href="#dupinode">Why do I get the error 'Internal inode xxx incosistency...'?</a></li>
+<li><a href="#dupinode">Why do I get the error 'Internal inode xxx inconsistency...'?</a></li>
 <li><a href="#xls">Why with .xls files do I get the error 'Data change at file...'?</a></li>
 <li><a href="#truecrypttimestamp">Why are TrueCrypt containers never saved?</a></li>
 </ul>
@@ -192,7 +192,7 @@ What is best for you, depends on your specific use case.
 
 <h3 id="difffile">How is it different than ZFS/Btrfs snapshots and NTFS Shadow Copy?</h3>
 <p>
-SnapRAID creates a filesystem snapshot conceptually similar at other snapshot solutions.
+SnapRAID creates a file-system snapshot conceptually similar at other snapshot solutions.
 The difference is that the purpose of SnapRAID is to be able to recover a disk to the saved state
 after a complete disk failure.
 </p>
@@ -234,7 +234,7 @@ You can see the <a href="compare">Compare</a> page to see it compared to other s
 </p>
 <p>
 A strong advantage of SnapRAID is the <span class="bold">integrity and silent error management</span> that is at the same level (if not better)
-of the ZFS and Btrfs filesystems. Instead, unRAID and Storage Space have no integrity check at all!
+of the ZFS and Btrfs file-systems. Instead, unRAID and Storage Space have no integrity check at all!
 FlexRAID is at least able to report silent errors, <a href="http://forum.flexraid.com/index.php/topic,3233.0.html">but not to fix them</a>.
 </p>
 
@@ -420,7 +420,7 @@ their failures could be correlated.
 
 <p>
 Take care that multiple failures happen. At now the worst case reported in the SnapRAID history,
-is a <a href="https://sourceforge.net/p/snapraid/discussion/1677233/thread/eca5ed3d/">four disks failure, succesfully recovered using four parities</a>.
+is a <a href="https://sourceforge.net/p/snapraid/discussion/1677233/thread/eca5ed3d/">four disks failure, successfully recovered using four parities</a>.
 </p>
 
 <p>
@@ -432,7 +432,7 @@ Some interesting articles about number of parity levels and failure rate of disk
 <a href="http://blog.backblaze.com/2013/11/12/how-long-do-disk-drives-last/">How long do disk drives last?</a>.
 </p>
 
-<h3 id="fs">Which filesystem is recommended for SnapRAID ?</h3>
+<h3 id="fs">Which file-system is recommended for SnapRAID ?</h3>
 <p>
 For the data disks, follow these suggestions:
 </p>
@@ -441,7 +441,7 @@ For the data disks, follow these suggestions:
 <tr><th>Data</th><th>Result</th></tr>
 <tr>
 <td>Any</td>
-<td>OK. In general you can use whatever filesytem you like. Just see the following notes for some exceptions.</td>
+<td>OK. In general you can use whatever file-sytem you like. Just see the following notes for some exceptions.</td>
 </tr>
 <td>Btrfs</td>
 <td>OK. But ensure to build SnapRAID with the libblkid library to get UUID support.
@@ -450,7 +450,7 @@ You will be warned at every run if this doesn't happen.</td>
 <tr>
 <td>ReiserFS</td>
 <td>Unsure. Where are <a href="https://sourceforge.net/p/snapraid/discussion/1677233/thread/194dee16">reports</a>
-of speed increase when switching from ReiserFS to other filesystem.
+of speed increase when switching from ReiserFS to other file-system.
 ext4 and XFS are anyway better. Use them instead.</td>
 </tr>
 <tr>
@@ -500,7 +500,7 @@ It also doesn't seem to implement at the best the <a href="http://pubs.opengroup
 <tr>
 <td>ReiserFS</td>
 <td>Unsure. Where are <a href="https://sourceforge.net/p/snapraid/discussion/1677233/thread/194dee16">reports</a>
-of speed increase when switching from ReiserFS to other filesystem.
+of speed increase when switching from ReiserFS to other file-system.
 ext4 and XFS are anyway better. Use them instead.</td>
 </tr>
 <tr>
@@ -520,7 +520,7 @@ You can anyway use it if you limit the use of the parity disk to contain only th
 </table>
 
 <p>
-In Linux, to get more space for the parity, it's recommended to format the parity filesystem with the <em>-m 0 -T largefile4</em> options.
+In Linux, to get more space for the parity, it's recommended to format the parity file-system with the <em>-m 0 -T largefile4</em> options.
 Like:
 </p>
 <pre>mkfs.ext4 -m 0 -T largefile4 DEVICE</pre>
@@ -773,7 +773,7 @@ In such case you have to fix it, until "diff" reports only "equal", "restored" o
 </p>
 <p>
 Now you can check that the files were really copied correctly, you can run a "check" audit command
-limited to the replaced disk to check the checksum of all the files.
+limited to the replaced disk to check the check-sum of all the files.
 </p>
 <pre>
 snapraid check -a -d DISK_NAME
@@ -787,7 +787,7 @@ snapraid sync
 
 <h3 id="reppardisk">How can I replace a parity disk?</h3>
 <p>
-If the disk is still accessible, first ensure to have a synched array running a sync command:
+If the disk is still accessible, first ensure to have a synced array running a sync command:
 </p>
 <pre>
 snapraid sync
@@ -931,7 +931,7 @@ Try with 'snapraid -e fix' to recover!
 <p>
 Data errors happen when SnapRAID detects that the content of a file changed but the write time of the file didn't.
 This is a condition that normally should never happen and it may be the result of a silent error in the disk,
-or the signal that something got wrong at the filesystem level, like when you poweroff the machine without a
+or the signal that something got wrong at the file-system level, like when you poweroff the machine without a
 proper shutdown.
 </p>
 <p>If a data error is found, the "sync" process continues, and erroneous blocks are marked as bad
@@ -966,9 +966,9 @@ because Windows doesn't do it automatically.
 See the <a href="http://msdn.microsoft.com/en-us/library/windows/desktop/aa366537%28v=vs.85%29.aspx">MSDN CreateFileMapping():</a>
 </p>
 <pre>
-When modifying a file through a mapped view, the last modification timestamp
+When modifying a file through a mapped view, the last modification time-stamp
 may not be updated automatically. If required, the caller should use SetFileTime
-to set the timestamp.
+to set the time-stamp.
 </pre>
 <p>
 To avoid all these Windows problems, simply ensure to run "sync" when no program is using the files into the array.
@@ -996,7 +996,7 @@ snapraid -C snapraid.content > snapraid.conf.new
 <h2>Tech</h2>
 
 <h3 id="checkinfo">If the SnapRAID "check" command says it's all OK. Is it really OK?</h3>
-Yes. SnapRAID checks all your files with a 128 bit checksum.
+Yes. SnapRAID checks all your files with a 128 bit check-sum.
 If it says that they are correct, they really are.
 
 <h3 id="checksum">What integrity checksum is used?</h3>
@@ -1004,7 +1004,7 @@ SnapRAID uses <a href="http://code.google.com/p/smhasher/">Murmur3</a> and <a hr
 Murmur3 is the default in 32 bit platforms, SpookyHash in the default for 64 bit ones.
 
 <h3 id="checksuminfo">Why integrity checksum are important?</h3>
-Integrity checksum are important to detect silent errors,
+Integrity check-sum are important to detect silent errors,
 when the HD is returning garbage without reporting any error.
 
 <p>
@@ -1111,7 +1111,7 @@ You can detect if the CPU is a limiting factor, checking the CPU usage during sy
 The default blocksize should be already the best one.
 </p>
 <p>
-Note that increasing it doesn't necessarely improve the performance.
+Note that increasing it doesn't necessarily improve the performance.
 In some cases, it could decrease it.
 </p>
 
@@ -1229,7 +1229,7 @@ mkfs.ext4 -m 0 -T largefile4 DEVICE
 The '-T largefile4' and '-m 0' options should give more space available for the parity file.
 </p>
 
-<h3 id="dupinode">Why do I get the error 'Internal inode xxx incosistency...'?</h3>
+<h3 id="dupinode">Why do I get the error 'Internal inode xxx inconsistency...'?</h3>
 <p>
 This means that SnapRAID found two different files using the same inode.
 This is theoretically something that should never happen,
@@ -1241,7 +1241,7 @@ If files are renamed, deleted or recreated while SnapRAID is running, it's possi
 that inodes are reused, causing this condition.
 </p>
 <p>
-If you are using a FAT filesystem in Windows, try to convert it to NTFS.
+If you are using a FAT file-system in Windows, try to convert it to NTFS.
 Theoretically inodes (FileIndex) are
 <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa363788%28v=vs.85%29.aspx">unique even in FAT</a>,
 but this condition was already seen in the field.
@@ -1251,7 +1251,7 @@ but this condition was already seen in the field.
 
 <p>
 Unfortunately the Excel application does dirty tricks when handling .xls files,
-that may cause the folllowing data error:
+that may cause the followings data error:
 </p>
 
 <pre>
@@ -1263,11 +1263,11 @@ WARNING! Unexpected data modification of a file without parity!
 This happens because Excel modifies the files after opening them, even you don't press 'Save'.
 It stores the name of the last user that opened it to be able to report if another user tries
 to open the same file at the same time.
-But to avoid to have the file triggered as modified, it restores the timestamp to its original value.
+But to avoid to have the file triggered as modified, it restores the time-stamp to its original value.
 </p>
 
 <p>
-You have then a file with the same timestamp but different content. And this is not good for SnapRAID.
+You have then a file with the same time-stamp but different content. And this is not good for SnapRAID.
 </p>
 
 <p>
@@ -1278,7 +1278,7 @@ or you can switch to the .xlsx format.
 
 <h3 id="truecrypttimestamp">Why are TrueCrypt containers never saved?</h3>
 <p>
-TrueCrypt by default has enabled the option <i>Preserve modification timestamp of file containers</i>
+TrueCrypt by default has enabled the option <i>Preserve modification time-stamp of file containers</i>
 that makes impossible at SnapRAID, and at other backup programs, to detect that a file container is changed.
 Ensure to disable this option in TrueCrypt.
 </p>
