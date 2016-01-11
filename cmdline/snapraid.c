@@ -828,7 +828,7 @@ int main(int argc, char* argv[])
 		operation = OPERATION_REWRITE;
 	} else if (strcmp(argv[optind], "test-read") == 0) {
 		operation = OPERATION_READ;
-	} else if (strcmp(argv[optind], "test-nano") == 0) {
+	} else if (strcmp(argv[optind], "nano") == 0) {
 		operation = OPERATION_NANO;
 	} else if (strcmp(argv[optind], "up") == 0) {
 		operation = OPERATION_SPINUP;

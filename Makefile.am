@@ -377,7 +377,7 @@ endif
 	$(MSG) Nano
 	touch -t 200102011234.56 bench/disk1/a/a*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) test-nano
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) nano
 	$(MSG) Check the --gen-conf command
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --gen-conf bench/content
 	$(MSG) Filter

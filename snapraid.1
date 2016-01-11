@@ -54,7 +54,7 @@ snapraid [\-c, \-\-conf CONFIG]
 .PD 0
 .PP
 .PD
-	|up|down|pool|devices|rehash
+	|up|down|pool|devices|nano|rehash
 .PD 0
 .PP
 .PD
@@ -913,6 +913,22 @@ array, but in some more complex configurations, you may have multiple
 low level devices used by a single disk in the array.
 .PP
 Nothing is modified.
+.SS nano 
+Sets arbitrarely the sub\-second timestamp of all the files
+that have it at zero.
+.PP
+This improves the SnapRAID capability to recognize moved
+and copied files as it makes the timestamp almost unique,
+removing possible duplicates.
+.PP
+More specifically, if the sub\-second timestamp is not zero,
+a moved or copied file is identified as such if it matches
+the name, size and timestamp. If instead the sub\-second timestamp
+is zero, it\'s cosidered a copy only if it matches the full path,
+size and timestamp.
+.PP
+Note that the second precision timestamp is not modified,
+and all the dates and times of your files will be maintained.
 .SS rehash 
 Schedules a rehash of the whole array.
 .PP

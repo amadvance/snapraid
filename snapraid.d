@@ -15,7 +15,7 @@ Synopsis
 	:	[-L, --error-limit NUMBER]
 	:	[-v, --verbose] [-q, --quiet]
 	:	status|smart|up|down|diff|sync|scrub|fix|check|list|dup
-	:	|up|down|pool|devices|rehash
+	:	|up|down|pool|devices|nano|rehash
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
@@ -629,6 +629,23 @@ Commands
 	low level devices used by a single disk in the array.
 
 	Nothing is modified.
+
+  nano
+	Sets arbitrarely the sub-second timestamp of all the files
+	that have it at zero.
+
+	This improves the SnapRAID capability to recognize moved
+	and copied files as it makes the timestamp almost unique,
+	removing possible duplicates.
+
+	More specifically, if the sub-second timestamp is not zero,
+	a moved or copied file is identified as such if it matches
+	the name, size and timestamp. If instead the sub-second timestamp
+	is zero, it's cosidered a copy only if it matches the full path,
+	size and timestamp.
+
+	Note that the second precision timestamp is not modified,
+	and all the dates and times of your files will be maintained.
 
   rehash
 	Schedules a rehash of the whole array.
