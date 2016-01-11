@@ -141,11 +141,11 @@ Frequently Asked Questions for <span class="bold">SnapRAID</span>.
 <h3>Know Problems</h3>
 
 <ul>
-<li><a href="#oomkiller">In Linux SnapRAID aborts without any error message</a></li>
-<li><a href="#pargrowerror">Why in 'sync' do I get the error 'Failed to grow parity file 'xxx' to size xxx due lack of space.'</a></li>
-<li><a href="#dupinode">Why do I get the error 'Internal inode xxx incosistency...'</a></li>
-<li><a href="#xls">Why with with .xls files do I get the error 'Data change at file...'</a></li>
-<li><a href="#truecrypttimestamp">Why are TrueCrypt containers never saved by SnapRAID?</a></li>
+<li><a href="#oomkiller">Why in Linux does SnapRAID abort without any error message?</a></li>
+<li><a href="#pargrowerror">Why in 'sync' do I get the error 'Failed to grow parity file 'xxx' to size xxx due lack of space.'?</a></li>
+<li><a href="#dupinode">Why do I get the error 'Internal inode xxx incosistency...'?</a></li>
+<li><a href="#xls">Why with with .xls files do I get the error 'Data change at file...'?</a></li>
+<li><a href="#truecrypttimestamp">Why are TrueCrypt containers never saved?</a></li>
 </ul>
 
 
@@ -1194,7 +1194,7 @@ RAID functions used for recovering with 'fix':
 
 <h2>Know Problems</h2>
 
-<h3 id="oomkiller">In Linux SnapRAID aborts without any error message</h3>
+<h3 id="oomkiller">Why in Linux does SnapRAID abort without any error message?</h3>
 <p>
 Likely you have too few free memory, and the Linux out-of-memory OOM killer terminates SnapRAID
 because it's using too much memory.
@@ -1207,7 +1207,7 @@ free -m
 If it's too small, you have to install more memory in the machine.
 </p>
 
-<h3 id="pargrowerror">Why in 'sync' do I get the error 'Failed to grow parity file 'xxx' to size xxx due lack of space.'</h3>
+<h3 id="pargrowerror">Why in 'sync' do I get the error 'Failed to grow parity file 'xxx' to size xxx due lack of space.'?</h3>
 <p>
 This means that SnapRAID needs to grow the parity file to a size that cannot be contained in the
 parity disk.
@@ -1229,7 +1229,7 @@ mkfs.ext4 -m 0 -T largefile4 DEVICE
 The '-T largefile4' and '-m 0' options should give more space available for the parity file.
 </p>
 
-<h3 id="dupinode">Why do I get the error 'Internal inode xxx incosistency...'</h3>
+<h3 id="dupinode">Why do I get the error 'Internal inode xxx incosistency...'?</h3>
 <p>
 This means that SnapRAID found two different files using the same inode.
 This is theoretically something that should never happen,
@@ -1247,7 +1247,7 @@ Theoretically inodes (FileIndex) are
 but this condition was already seen in the field.
 </p>
 
-<h3 id="xls">Why with with .xls files do I get the error 'Data change at file...'</h3>
+<h3 id="xls">Why with with .xls files do I get the error 'Data change at file...'?</h3>
 
 <p>
 Unfortunately the Excel application does dirty tricks when handling .xls files,
@@ -1276,7 +1276,7 @@ To workaround the problem you can see
 or you can switch to the .xlsx format.
 </p>
 
-<h3 id="truecrypttimestamp">Why are TrueCrypt containers never saved by SnapRAID?</h3>
+<h3 id="truecrypttimestamp">Why are TrueCrypt containers never saved?</h3>
 <p>
 TrueCrypt by default has enabled the option <i>Preserve modification timestamp of file containers</i>
 that makes impossible to SnapRAID, and other backup programs, to detect that a file container is changed.
