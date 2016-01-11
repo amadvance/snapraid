@@ -92,7 +92,7 @@ Frequently Asked Questions for <span class="bold">SnapRAID</span>.
 <li><a href="#guidelines">What are the most important things to do to prevent damages?</a></li>
 <li><a href="#adddatadisk">How can I add an additional data disk to an existing array?</a></li>
 <li><a href="#remdatadisk">How can I remove a data disk from an existing array?</a></li>
-<li><a href="#addpardisk">How can I add an additional parity disk to an existing array?</a></li>
+<li><a href="#addpardisk">How can I add, or remove, a parity disk to an existing array?</a></li>
 <li><a href="#repdatadisk">How can I replace a data disk?</a></li>
 <li><a href="#reppardisk">How can I replace a parity disk?</a></li>
 <li><a href="#move">How can I safely move files from one disk to another?</a></li>
@@ -675,7 +675,7 @@ The "-E" option tells at SnapRAID to proceed even when detecting an empty disk.<
 Your array is now without any reference to the removed disk.
 </p>
 
-<h3 id="addpardisk">How can I add an additional parity disk to an existing array?</h3>
+<h3 id="addpardisk">How can I add, or remove, a parity disk to an existing array?</h3>
 <p>
 To add a new parity level, add the proper "N-parity" option in the configuration file, and then run the "sync" command,
 using the "-F, --force-full" option:
