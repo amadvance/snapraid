@@ -1196,9 +1196,9 @@ RAID functions used for recovering with 'fix':
 
 <h3 id="oomkiller">Why in Linux does SnapRAID abort without any error message?</h3>
 <p>
-Likely you have too few free memory, and the Linux out-of-memory OOM killer terminates SnapRAID
-because it's using too much memory.
-You can use the free command to check how much free memory you have.
+Likely you have too few free memory, and the Linux OOM (out-of-memory) killer
+terminates SnapRAID because it's using too much memory.
+You can use the Linux 'free' command to check how much free memory you have.
 </p>
 <pre>
 free -m
