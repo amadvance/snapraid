@@ -98,7 +98,6 @@ Frequently Asked Questions for <span class="bold">SnapRAID</span>.
 <li><a href="#move">How can I safely move files from one disk to another?</a></li>
 <li><a href="#defrag">Can I defragment the data and parity disks?</a></li>
 <li><a href="#upgrade">How can I upgrade to a newer version of SnapRAID ?</a></li>
-<li><a href="#truecrypttimestamp">Why TrueCrypt containers are never saved by SnapRAID?</a></li>
 </ul>
 
 
@@ -145,7 +144,8 @@ Frequently Asked Questions for <span class="bold">SnapRAID</span>.
 <li><a href="#oomkiller">In Linux SnapRAID aborts without any error message</a></li>
 <li><a href="#pargrowerror">Running 'sync' I get the error 'Failed to grow parity file 'xxx' to size xxx due lack of space.'</a></li>
 <li><a href="#dupinode">I get the error 'Internal inode xxx incosistency...'</a></li>
-<li><a href="#xls">I get the error 'Data change at file...' for .xls files</a></li>
+<li><a href="#xls">With .xls files I get the error 'Data change at file...'</a></li>
+<li><a href="#truecrypttimestamp">Why TrueCrypt containers are never saved by SnapRAID?</a></li>
 </ul>
 
 
@@ -863,13 +863,6 @@ You can anyway try, and if the old SnapRAID is not able to read the new content 
 you will be advised by a proper message.
 </p>
 
-<h3 id="truecrypttimestamp">Why TrueCrypt containers are never saved by SnapRAID?</h3>
-<p>
-TrueCrypt by default has enabled the option <i>Preserve modification timestamp of file containers</i>
-that makes impossible to SnapRAID, and other backup programs, to detect that a file container is changed.
-Ensure to disable this option in TrueCrypt.
-</p>
-
 <h2>Recover</h2>
 
 <h3 id="undelete">How can I undelete a just deleted file?</h3>
@@ -1254,7 +1247,7 @@ Theoretically inodes (FileIndex) are
 but this condition was already seen in the field.
 </p>
 
-<h3 id="xls">I get the error 'Data change at file...' for .xls files</h3>
+<h3 id="xls">With .xls files I get the error 'Data change at file...'</h3>
 
 <p>
 Unfortunately the Excel application does dirty tricks when handling .xls files,
@@ -1265,7 +1258,6 @@ that may cause the folllowing data error:
 Data change at file '/xxx/xxx.xls' at position '0'
 WARNING! Unexpected data modification of a file without parity!
 </pre>
-
 
 <p>
 This happens because Excel modifies the files after opening them, even you don't press 'Save'.
@@ -1282,6 +1274,13 @@ You have then a file with the same timestamp but different content. And this is 
 To workaround the problem you can see
 <a href="http://superuser.com/questions/664549/how-to-prevent-excel-from-modifying-the-file-on-exit">How to prevent Excel from modifying the file on exit?</a>,
 or you can switch to the .xlsx format.
+</p>
+
+<h3 id="truecrypttimestamp">Why TrueCrypt containers are never saved by SnapRAID?</h3>
+<p>
+TrueCrypt by default has enabled the option <i>Preserve modification timestamp of file containers</i>
+that makes impossible to SnapRAID, and other backup programs, to detect that a file container is changed.
+Ensure to disable this option in TrueCrypt.
 </p>
 
 
