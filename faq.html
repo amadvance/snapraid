@@ -143,7 +143,7 @@ Frequently Asked Questions for <span class="bold">SnapRAID</span>.
 <ul>
 <li><a href="#oomkiller">In Linux SnapRAID aborts without any error message</a></li>
 <li><a href="#pargrowerror">Running 'sync' I get the error 'Failed to grow parity file 'xxx' to size xxx due lack of space.'</a></li>
-<li><a href="#dupinode">I get the error 'Internal inode 'xxxxxx' incosistency...'</a></li>
+<li><a href="#dupinode">I get the error 'Internal inode xxx incosistency...'</a></li>
 </ul>
 
 
@@ -1174,7 +1174,7 @@ mkfs.ext4 -m 0 -T largefile4 DEVICE
 The '-T largefile4' and '-m 0' options should give more space available for the parity file.
 </p>
 
-<h3 id="dupinode">I get the error 'Internal inode 'xxxxxx' incosistency...'</h3>
+<h3 id="dupinode">I get the error 'Internal inode xxx incosistency...'</h3>
 <p>
 This means that SnapRAID found two different files using the same inode.
 This is theoretically something that should never happen,
