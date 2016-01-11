@@ -433,12 +433,34 @@ Some interesting articles about number of parity levels and failure rate of disk
 
 <h3 id="fs">Which filesystem is recommended for SnapRAID ?</h3>
 <p>
-For the data disks, you can use whatever filesystem you like.
+For the data disks, follow these suggestions:
+</p>
+
+<table class="download">
+<tr><th>Data FileSystem</th><th>Result</th></tr>
+<tr>
+<td>Any</td>
+<td>OK. In general you can use whatever filesytem you like. Just see the following notes for some exceptions.</td>
+</tr>
+<td>Btrfs</td>
+<td>OK. But ensure to build SnapRAID with the libblkid library to get UUID support. You will be warned if this doesn't happen.</td>
+</tr>
+<tr>
+<td>ReiserFS</td>
+<td>Unsure. Where are user <a href="https://sourceforge.net/p/snapraid/discussion/1677233/thread/194dee16">reports</a> reporting speed increase when switching from ReiserFS to other filesystem.
+</tr>
+<tr>
+<td>FAT</td>
+<td>Unsure. There are resports of duplicate inodes cases. NTFS is anyway a lot faster. Use it insted.</td>
+</tr>
+</table>
+
+<p>
 For the parity disks, follow these suggestions:
 </p>
 
 <table class="download">
-<tr><th>FileSystem</th><th>Result</th></tr>
+<tr><th>Parity FileSystem</th><th>Result</th></tr>
 <tr>
 <td>ext3</td>
 <td>No. It doesn't support the <a href="http://www.kernel.org/doc/man-pages/online/pages/man2/fallocate.2.html">fallocate()</a> command needed to allocated the parity files.
