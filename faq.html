@@ -95,6 +95,7 @@ Frequently Asked Questions for <span class="bold">SnapRAID</span>.
 <li><a href="#addpardisk">How can I add an additional parity disk to an existing array?</a></li>
 <li><a href="#repdatadisk">How can I replace a data disk?</a></li>
 <li><a href="#reppardisk">How can I replace a parity disk?</a></li>
+<li><a href="#move">How can I safely move files from one disk to another?</a></li>
 <li><a href="#defrag">Can I defragment the data and parity disks?</a></li>
 <li><a href="#upgrade">How can I upgrade to a newer version of SnapRAID ?</a></li>
 <li><a href="#truecrypttimestamp">Why TrueCrypt containers are never saved by SnapRAID?</a></li>
@@ -780,6 +781,25 @@ but ensure to use the -d option to fix only the interested parity and not the ot
 <pre>
 snapraid fix -d PARITY_NAME
 </pre>
+
+<h3 id="move">How can I safely move files from one disk to another?</h3>
+<p>
+In case you need to move files from one data disk of the array to another disk
+also in the array, the 100% safe way to proceed is:
+</p>
+
+<li>
+<ul>Copy the files to the new location.
+<ul>Run a 'sync' command.
+<ul>Delete the files from the original location.
+<ul>Run again a 'sync' command.
+</li>
+
+<p>
+This process gives the guarantee that even if disks die during the sync process,
+you will be able to recover everything. It also verifies the hashes of all the
+moved files are matching the original ones.
+</p>
 
 <h3 id="defrag">Can I defragment the data and parity disks?</h3>
 <p>
