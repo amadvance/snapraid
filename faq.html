@@ -774,10 +774,11 @@ data as long it uses the valid part. To restore it to full functionality,
 just run a "fix" command.
 </p>
 <p>
-If instead you completely lost the parity file, you can run the "fix" command to recreate it.
+If instead you completely lost the parity file, you can run the "fix" command to recreate it,
+but ensure to use the -d option to fix only the interested parity and not the other disks.
 </p>
 <pre>
-snapraid fix
+snapraid fix -d PARITY_NAME
 </pre>
 
 <h3 id="defrag">Can I defragment the data and parity disks?</h3>
