@@ -145,6 +145,7 @@ Frequently Asked Questions for <span class="bold">SnapRAID</span>.
 <li><a href="#oomkiller">In Linux SnapRAID aborts without any error message</a></li>
 <li><a href="#pargrowerror">Running 'sync' I get the error 'Failed to grow parity file 'xxx' to size xxx due lack of space.'</a></li>
 <li><a href="#dupinode">I get the error 'Internal inode xxx incosistency...'</a></li>
+<li><a href="#xls">I get the error 'Data change at file...' for .xls files</a></li>
 </ul>
 
 
@@ -1251,6 +1252,36 @@ If you are using a FAT filesystem in Windows, try to convert it to NTFS.
 Theoretically inodes (FileIndex) are
 <a href="https://msdn.microsoft.com/en-us/library/windows/desktop/aa363788%28v=vs.85%29.aspx">unique even in FAT</a>,
 but this condition was already seen in the field.
+</p>
+
+<h3 id="xls">I get the error 'Data change at file...' for .xls files</h3>
+
+<p>
+Unfortunately the Excel application does dirty tricks when handling .xls files,
+that may cause the folllowing data error.
+</p>
+
+<pre>
+Data change at file '/xxx/xxx.xls' at position '0'
+WARNING! Unexpected data modification of a file without parity!
+</pre>
+
+
+<p>
+This happens because Excel modifies the files after opening them, even you don't press 'Save'.
+It stores the name of the last user that opened them, to be able to report it, if another user tries
+to open the same file at the same time.
+But to avoid to have the file triggered as modified, it restores the timestamp to its original value.
+</p>
+
+<p>
+You have then a file with the same timestamp but different content. And this is not good for SnapRAID.
+</p>
+
+<p>
+To workaround the problem you can see
+<a href="http://superuser.com/questions/664549/how-to-prevent-excel-from-modifying-the-file-on-exit">How to prevent Excel from modifying the file on exit?</a>,
+or you can switch to the .xlsx format.
 </p>
 
 
