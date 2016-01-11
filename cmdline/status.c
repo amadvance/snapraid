@@ -71,6 +71,7 @@ int state_status(struct snapraid_state* state)
 	unsigned file_count;
 	unsigned file_fragmented;
 	unsigned extra_fragment;
+	unsigned file_zerosubsecond;
 	uint64_t file_size;
 	uint64_t file_block_count;
 	uint64_t file_block_free;
@@ -115,6 +116,7 @@ int state_status(struct snapraid_state* state)
 	file_block_free = 0;
 	file_fragmented = 0;
 	extra_fragment = 0;
+	file_zerosubsecond = 0;
 	all_wasted = 0;
 	for (node_disk = state->disklist; node_disk != 0; node_disk = node_disk->next) {
 		struct snapraid_disk* disk = node_disk->data;
@@ -123,6 +125,7 @@ int state_status(struct snapraid_state* state)
 		unsigned disk_file_count = 0;
 		unsigned disk_file_fragmented = 0;
 		unsigned disk_extra_fragment = 0;
+		unsigned disk_file_zerosubsecond = 0;
 		block_off_t disk_block_count = 0;
 		uint64_t disk_file_size = 0;
 		block_off_t disk_block_latest_used = 0;
@@ -138,6 +141,17 @@ int state_status(struct snapraid_state* state)
 
 			file = node->data;
 			node = node->next; /* next node */
+
+			if (file->mtime_nsec == STAT_NSEC_INVALID
+				|| file->mtime_nsec == 0
+			) {
+				++file_zerosubsecond;
+				++disk_file_zerosubsecond;
+				if (disk_file_zerosubsecond < 50)
+					log_tag("zerosubsecond:%s:%s: \n", disk->name, file->sub);
+				if (disk_file_zerosubsecond == 50)
+					log_tag("zerosubsecond:%s:%s: (more follow)\n", disk->name, file->sub);
+			}
 
 			/* check fragmentation */
 			if (file->blockmax != 0) {
@@ -229,6 +243,7 @@ int state_status(struct snapraid_state* state)
 		log_tag("summary:disk_block_count:%s:%u\n", disk->name, disk_block_count);
 		log_tag("summary:disk_fragmented_file_count:%s:%u\n", disk->name, disk_file_fragmented);
 		log_tag("summary:disk_excess_fragment_count:%s:%u\n", disk->name, disk_extra_fragment);
+		log_tag("summary:disk_zerosubsecond_file_count:%s:%u\n", disk->name, disk_file_zerosubsecond);
 		log_tag("summary:disk_file_size:%s:%" PRIu64 "\n", disk->name, disk_file_size);
 		log_tag("summary:disk_block_allocated:%s:%u\n", disk->name, disk_block_latest_used + 1);
 		log_tag("summary:disk_block_total:%s:%u\n", disk->name, disk->total_blocks);
@@ -258,6 +273,7 @@ int state_status(struct snapraid_state* state)
 	log_tag("summary:file_block_count:%" PRIu64 "\n", file_block_count);
 	log_tag("summary:fragmented_file_count:%u\n", file_fragmented);
 	log_tag("summary:excess_fragment_count:%u\n", extra_fragment);
+	log_tag("summary:zerosubsecond_file_count:%u\n", file_zerosubsecond);
 	log_tag("summary:file_size:%" PRIu64 "\n", file_size);
 	log_tag("summary:parity_size:%" PRIu64 "\n", blockmax * (uint64_t)state->block_size);
 	log_tag("summary:parity_size_max:%" PRIu64 "\n", (blockmax + parity_block_free) * (uint64_t)state->block_size);
@@ -453,6 +469,13 @@ int state_status(struct snapraid_state* state)
 		printf("The %u%% of the array is not scrubbed.\n", (unscrubbed_blocks * 100 + blockmax - 1) / blockmax);
 	} else {
 		printf("The full array was scrubbed at least one time.\n");
+	}
+
+	if (file_zerosubsecond) {
+		printf("You have %u files with zero subsecond timestamp. ", file_zerosubsecond);
+		printf("Run the 'nano' command.\n");
+	} else {
+		printf("No file has a zero subsecond timestamp.\n");
 	}
 
 	if (rehash) {
