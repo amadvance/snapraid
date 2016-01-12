@@ -1750,6 +1750,14 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
+			if (state->block_size == 0) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal("Internal incosistency due zero blocksize!\n");
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
 			/* check for impossible file size to avoid to crash for a too big allocation */
 			if (v_size / state->block_size > blockmax) {
 				/* LCOV_EXCL_START */
@@ -2353,6 +2361,14 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
+			if (blksize == 0) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal("Zero 'blocksize' specification in the content file!\n");
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
 			/* without configuration, auto assign the block size */
 			if (state->no_conf) {
 				state->block_size = blksize;
@@ -2361,7 +2377,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			if (blksize != state->block_size) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
-				log_fatal("Mismatching 'blksize' and 'blocksize' specification!\n");
+				log_fatal("Mismatching 'blocksize' specification in the content file!\n");
 				log_fatal("Please restore the 'blocksize' value in the configuration file to '%u'\n", blksize / 1024);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
