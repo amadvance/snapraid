@@ -934,7 +934,25 @@ struct snapraid_block* fs_file2block_get(struct snapraid_file* file, block_off_t
  * Get the file position from the parity position.
  * Return 0 if no file is using it.
  */
-struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos);
+struct snapraid_file* fs_par2file_maybe(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos);
+
+/**
+ * Get the file position from the parity position.
+ */
+static inline struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos)
+{
+	struct snapraid_file* ret;
+
+	ret = fs_par2file_maybe(disk, parity_pos, file_pos);
+	if (ret == 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Internal inconsistency when deresolving parity position '%u' in disk '%s'\n", parity_pos, disk->name);
+		os_abort();
+		/* LCOV_EXCL_STOP */
+	}
+
+	return ret;
+}
 
 /**
  * Get the parity position from the file position.

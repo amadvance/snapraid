@@ -1171,7 +1171,7 @@ static struct snapraid_chunk* fs_file2chunk_get_unlock(struct snapraid_disk* dis
 	return chunk;
 }
 
-struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos)
+struct snapraid_file* fs_par2file_maybe(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos)
 {
 	struct snapraid_chunk* chunk;
 	struct snapraid_file* file;
@@ -1358,8 +1358,8 @@ struct snapraid_block* fs_par2block_get(struct snapraid_disk* disk, block_off_t 
 	struct snapraid_file* file;
 	block_off_t file_pos;
 
-	file = fs_par2file_get(disk, parity_pos, &file_pos);
-	if (!file)
+	file = fs_par2file_maybe(disk, parity_pos, &file_pos);
+	if (file == 0)
 		return BLOCK_EMPTY;
 
 	return fs_file2block_get(file, file_pos);
