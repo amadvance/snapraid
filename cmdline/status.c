@@ -303,7 +303,7 @@ int state_status(struct snapraid_state* state)
 		one_valid = 0;
 		for (node_disk = state->disklist; node_disk != 0; node_disk = node_disk->next) {
 			struct snapraid_disk* disk = node_disk->data;
-			struct snapraid_block* block = fs_par2block_get(disk, i);
+			struct snapraid_block* block = fs_par2block_maybe(disk, i);
 
 			if (block_has_file(block))
 				one_valid = 1;

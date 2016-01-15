@@ -175,11 +175,11 @@ static void scan_file_allocate(struct snapraid_scan* scan, struct snapraid_file*
 		snapraid_info info;
 
 		/* increment the position until the first really free block */
-		while (block_has_file(fs_par2block_get(disk, parity_pos)))
+		while (block_has_file(fs_par2block_maybe(disk, parity_pos)))
 			++parity_pos;
 
 		/* get block we are going to overwrite, if any */
-		over_block = fs_par2block_get(disk, parity_pos);
+		over_block = fs_par2block_maybe(disk, parity_pos);
 
 		/* deallocate it */
 		if (over_block != BLOCK_EMPTY)

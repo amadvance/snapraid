@@ -68,7 +68,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			struct snapraid_block* block;
 			unsigned block_state;
 
-			block = fs_par2block_get(disk, i);
+			block = fs_par2block_maybe(disk, i);
 
 			/* get the state of the block */
 			block_state = block_state_get(block);
@@ -106,7 +106,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			struct snapraid_file* file;
 			block_off_t file_pos;
 
-			block = fs_par2block_get(disk, i);
+			block = fs_par2block_maybe(disk, i);
 
 			/* get the state of the block */
 			block_state = block_state_get(block);
@@ -450,7 +450,7 @@ static int block_is_enabled(void* void_plan, block_off_t i)
 		if (!disk)
 			continue;
 
-		block = fs_par2block_get(disk, i);
+		block = fs_par2block_maybe(disk, i);
 
 		if (block_has_file(block))
 			one_valid = 1;
@@ -485,7 +485,7 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 	}
 
 	/* get the block */
-	task->block = fs_par2block_get(disk, blockcur);
+	task->block = fs_par2block_maybe(disk, blockcur);
 
 	/* if the block has no file, meanining that it's EMPTY or DELETED, */
 	/* it doesn't partecipate in the new parity computation */
@@ -1137,7 +1137,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				if (!handle[j].disk)
 					continue;
 
-				block = fs_par2block_get(handle[j].disk, blockcur);
+				block = fs_par2block_maybe(handle[j].disk, blockcur);
 
 				if (block == BLOCK_EMPTY) {
 					/* nothing to do */

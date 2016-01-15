@@ -1541,7 +1541,7 @@ static int fs_position_is_required(struct snapraid_state* state, block_off_t pos
 	/* check for each disk */
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
-		struct snapraid_block* block = fs_par2block_get(disk, pos);
+		struct snapraid_block* block = fs_par2block_maybe(disk, pos);
 
 		/* if we have at least one file, the position is needed */
 		if (block_has_file(block))
@@ -1570,7 +1570,7 @@ static int fs_info_is_required(struct snapraid_state* state, block_off_t pos)
 	/* check for each disk */
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
-		struct snapraid_block* block = fs_par2block_get(disk, pos);
+		struct snapraid_block* block = fs_par2block_maybe(disk, pos);
 
 		/* if we have at least one synced file, the info is required */
 		if (block_state_get(block) == BLOCK_STATE_BLK)
@@ -1587,7 +1587,7 @@ static void fs_position_clear_deleted(struct snapraid_state* state, block_off_t 
 	/* check for each disk if block is really used */
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
-		struct snapraid_block* block = fs_par2block_get(disk, pos);
+		struct snapraid_block* block = fs_par2block_maybe(disk, pos);
 
 		/* if the block is deleted */
 		if (block_state_get(block) == BLOCK_STATE_DELETED) {
@@ -1602,7 +1602,7 @@ static void fs_position_clear_deleted(struct snapraid_state* state, block_off_t 
  */
 static int fs_is_block_deleted(struct snapraid_disk* disk, block_off_t pos)
 {
-	struct snapraid_block* block = fs_par2block_get(disk, pos);
+	struct snapraid_block* block = fs_par2block_maybe(disk, pos);
 
 	return block_state_get(block) == BLOCK_STATE_DELETED;
 }

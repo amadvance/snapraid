@@ -620,7 +620,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 			continue;
 		}
 
-		block = fs_par2block_get(disk, i);
+		block = fs_par2block_maybe(disk, i);
 		if (!block_has_file(block)) {
 			/* if no file, nothing to do */
 			continue;
@@ -827,7 +827,7 @@ static int block_is_enabled(struct snapraid_state* state, block_off_t i, struct 
 		if (!handle[j].disk)
 			continue;
 
-		block = fs_par2block_get(handle[j].disk, i);
+		block = fs_par2block_maybe(handle[j].disk, i);
 
 		/* try to recover all files, even the ones without hash */
 		/* because in some cases we can recover also them */
@@ -948,7 +948,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			}
 
 			/* if the disk block is not used */
-			block = fs_par2block_get(disk, i);
+			block = fs_par2block_maybe(disk, i);
 			if (block == BLOCK_EMPTY) {
 				/* use an empty block */
 				memset(buffer[j], 0, state->block_size);

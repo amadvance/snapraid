@@ -1353,7 +1353,7 @@ struct snapraid_block* fs_file2block_get(struct snapraid_file* file, block_off_t
 	return &file->blockvec[file_pos];
 }
 
-struct snapraid_block* fs_par2block_get(struct snapraid_disk* disk, block_off_t parity_pos)
+struct snapraid_block* fs_par2block_maybe(struct snapraid_disk* disk, block_off_t parity_pos)
 {
 	struct snapraid_file* file;
 	block_off_t file_pos;

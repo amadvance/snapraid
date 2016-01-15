@@ -946,7 +946,7 @@ static inline struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, 
 	ret = fs_par2file_maybe(disk, parity_pos, file_pos);
 	if (ret == 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency when deresolving parity position '%u' in disk '%s'\n", parity_pos, disk->name);
+		log_fatal("Internal inconsistency when deresolving parity to file at position '%u' in disk '%s'\n", parity_pos, disk->name);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -981,9 +981,26 @@ static inline block_off_t fs_file2par_get(struct snapraid_disk* disk, struct sna
 /**
  * Get the block from the parity position.
  * Return BLOCK_EMPTY==0 if the block is over the end of the disk or not used.
- * \note This function is NOT thread-safe as it uses the the disk cache. 
  */
-struct snapraid_block* fs_par2block_get(struct snapraid_disk* disk, block_off_t parity_pos);
+struct snapraid_block* fs_par2block_maybe(struct snapraid_disk* disk, block_off_t parity_pos);
+
+/**
+ * Get the block from the parity position.
+ */
+static inline struct snapraid_block* fs_par2block_get(struct snapraid_disk* disk, block_off_t parity_pos)
+{
+	struct snapraid_block* ret;
+
+	ret = fs_par2block_maybe(disk, parity_pos);
+	if (ret == BLOCK_EMPTY) {
+		/* LCOV_EXCL_START */
+		log_fatal("Internal inconsistency when deresolving parity to block at position '%u' in disk '%s'\n", parity_pos, disk->name);
+		os_abort();
+		/* LCOV_EXCL_STOP */
+	}
+
+	return ret;
+}
 
 /**
  * Allocate a disk mapping.
