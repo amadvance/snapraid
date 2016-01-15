@@ -303,6 +303,17 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync -l ">&1"
 	rm -r bench/disk1/TEST*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -E sync
+# Now enforce copy detection of a file without parity
+# Create a file in a high number disk
+	head -c 8192 /dev/urandom > bench/disk6/STEP1
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
+# Create two new copies. The one in disk1 will copy
+# the hash from the one in disk6, and the one in disk2
+# will copy the hash from the one in disk1, that
+# doesn't have parity
+	cp -a bench/disk6/STEP1 bench/disk1/STEP1
+	cp -a bench/disk6/STEP1 bench/disk2/STEP1
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
 # Now create, duplicate, move and partial sync
 	head -c 8192 /dev/zero > bench/disk1/INVA1
 	head -c 8192 /dev/zero > bench/disk1/INVA2

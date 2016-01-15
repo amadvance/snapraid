@@ -941,6 +941,7 @@ block_off_t fs_file2par_get_ts(struct snapraid_disk* disk, struct snapraid_chunk
 
 /**
  * Get the parity position from the file position.
+ * Return POS_INVALID if no parity is allocated.
  * \note This function is NOT thread-safe as it uses the the disk cache.
  */
 static inline block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)

@@ -1160,12 +1160,8 @@ block_off_t fs_file2par_get_ts(struct snapraid_disk* disk, struct snapraid_chunk
 	struct snapraid_chunk* chunk;
 
 	chunk = fs_file2chunk_get_ts(disk, fs_last, file, file_pos);
-	if (!chunk) {
-		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency when resolving file '%s' at position '%u/%u' in disk '%s'\n", file->sub, file_pos, file->blockmax, disk->name);
-		os_abort();
-		/* LCOV_EXCL_STOP */
-	}
+	if (!chunk)
+		return POS_INVALID;
 
 	return chunk->parity_pos + (file_pos - chunk->file_pos);
 }
