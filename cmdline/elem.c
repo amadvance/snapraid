@@ -1194,7 +1194,7 @@ struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, block_off_t pa
 	return file;
 }
 
-block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)
+block_off_t fs_file2par_maybe(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)
 {
 	struct snapraid_chunk* chunk;
 	block_off_t ret;
@@ -1203,10 +1203,8 @@ block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* fi
 
 	chunk = fs_file2chunk_get_unlock(disk, &disk->fs_last, file, file_pos);
 	if (!chunk) {
-		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency when resolving file '%s' at position '%u/%u' in disk '%s'\n", file->sub, file_pos, file->blockmax, disk->name);
-		os_abort();
-		/* LCOV_EXCL_STOP */
+		fs_unlock(disk);
+		return POS_INVALID;
 	}
 
 	ret = chunk->parity_pos + (file_pos - chunk->file_pos);

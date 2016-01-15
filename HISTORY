@@ -2,7 +2,7 @@ SnapRAID HISTORY
 ================
 
 10.0 2016/01
-===========
+============
   * Increases the speed of the 'sync' and 'scrub' commands with a new
     multithread implementation. It uses one thread for each disk, dedicated
     exclusively to read-ahead data or parity early and to write-behind
@@ -19,6 +19,18 @@ SnapRAID HISTORY
     subsecond timestamps. This improves the SnapRAID capabilities to
     identify files. The 'status' command recommend to run 'nano' if
     required.
+
+9.3 2016/01
+===========
+ * Fixes an invalid assumption in the copy detection mechanism that
+   could result in an internal inconsistency, and with the impossibility
+   to run the 'sync' and 'diff' commands.
+   This was triggered by a very specific pattern of identical files.
+   At least three of them, with one already in the parity, and at a
+   higher disk number than the others that should be instead new ones.
+   This had no bad effect, if not preventing the 'sync' command to run.
+   A workaround was to just run 'sync' one time with the -N, --force-nocopy
+   option to disable the copy detection.
 
 9.2 2016/01
 ===========

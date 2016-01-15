@@ -378,19 +378,24 @@ static int file_is_full_invalid_parity_and_stable(struct snapraid_state* state, 
 			return 0;
 
 		/*
-		 * Get the parity position, but only after checking
-		 * that the file has invalid parity.
-		 * This is not really required, as we are sure
-		 * that 'kept" files are mapped into parity.
+		 * Get the parity position.
+		 *
+		 * Note that here we expect to always have mapped
+		 * parity, because kept files always have it.
+		 *
+		 * Anyway, checking for POS_INVALID doesn't hurt.
 		 */
-		parity_pos = fs_file2par_get(disk, file, i);
+		parity_pos = fs_file2par_maybe(disk, file, i);
 
-		/* get block specific info */
-		info = info_get(&state->infoarr, parity_pos);
+		/* if it's not mapped, it cannot have rehash */
+		if (parity_pos != POS_INVALID) {
+			/* get block specific info */
+			info = info_get(&state->infoarr, parity_pos);
 
-		/* if rehash fails */
-		if (info_get_rehash(info))
-			return 0;
+			/* if rehash fails */
+			if (info_get_rehash(info))
+				return 0;
+		}
 	}
 
 	return 1;
@@ -419,25 +424,30 @@ static int file_is_full_hashed_and_stable(struct snapraid_state* state, struct s
 			return 0;
 
 		/*
-		 * Get the parity position, but only AFTER checking
-		 * that the file has an updated hash.
-		 * This is required because not hashed files may be
-		 * not yet mapped into parity.
+		 * Get the parity position.
 		 *
-		 * This happens when a new file is in the delayed insertion
-		 * list, and scan finds a copy of it, and it tries to copy
-		 * the hash info.
-		 * As just allocated files have only CHG blocks, checking that
-		 * the hash is updated is enough to exclude such cases.
+		 * Note that it's possible to have files
+		 * not mapped into the parity, even if they
+		 * have a valid hash.
+		 *
+		 * This happens for example, for 'copied' files
+		 * that have REP blocks, but not yet mapped.
+		 *
+		 * If there are multiple copies, it's also possible
+		 * that such files are used as 'source' to copy
+		 * hashes, and then to get them inside this function.
 		 */
-		parity_pos = fs_file2par_get(disk, file, i);
+		parity_pos = fs_file2par_maybe(disk, file, i);
 
-		/* get block specific info */
-		info = info_get(&state->infoarr, parity_pos);
+		/* if it's not mapped, it cannot have rehash */
+		if (parity_pos != POS_INVALID) {
+			/* get block specific info */
+			info = info_get(&state->infoarr, parity_pos);
 
-		/* exclude blocks needing a rehash */
-		if (info_get_rehash(info))
-			return 0;
+			/* exclude blocks needing a rehash */
+			if (info_get_rehash(info))
+				return 0;
+		}
 	}
 
 	return 1;
