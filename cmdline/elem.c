@@ -1155,7 +1155,7 @@ struct snapraid_file* fs_par2file_get_ts(struct snapraid_disk* disk, struct snap
 	return chunk->file;
 }
 
-block_off_t fs_file2par_get_ts(struct snapraid_disk* disk, struct snapraid_chunk** fs_last, struct snapraid_file* file, block_off_t file_pos)
+block_off_t fs_file2par_maybe_ts(struct snapraid_disk* disk, struct snapraid_chunk** fs_last, struct snapraid_file* file, block_off_t file_pos)
 {
 	struct snapraid_chunk* chunk;
 

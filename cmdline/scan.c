@@ -385,7 +385,7 @@ static int file_is_full_invalid_parity_and_stable(struct snapraid_state* state, 
 		 *
 		 * Anyway, checking for POS_INVALID doesn't hurt.
 		 */
-		parity_pos = fs_file2par_get(disk, file, i);
+		parity_pos = fs_file2par_maybe(disk, file, i);
 
 		/* if it's not mapped, it cannot have rehash */
 		if (parity_pos != POS_INVALID) {
@@ -437,7 +437,7 @@ static int file_is_full_hashed_and_stable(struct snapraid_state* state, struct s
 		 * that such files are used as 'source' to copy
 		 * hashes, and then to get them inside this function.
 		 */
-		parity_pos = fs_file2par_get(disk, file, i);
+		parity_pos = fs_file2par_maybe(disk, file, i);
 
 		/* if it's not mapped, it cannot have rehash */
 		if (parity_pos != POS_INVALID) {

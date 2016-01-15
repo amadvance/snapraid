@@ -937,11 +937,38 @@ static inline struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, 
 /**
  * Like fs_file2par_get() but thread-safe.
  */
-block_off_t fs_file2par_get_ts(struct snapraid_disk* disk, struct snapraid_chunk** fs_last, struct snapraid_file* file, block_off_t file_pos);
+block_off_t fs_file2par_maybe_ts(struct snapraid_disk* disk, struct snapraid_chunk** fs_last, struct snapraid_file* file, block_off_t file_pos);
 
 /**
  * Get the parity position from the file position.
  * Return POS_INVALID if no parity is allocated.
+ * \note This function is NOT thread-safe as it uses the the disk cache.
+ */
+static inline block_off_t fs_file2par_maybe(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)
+{
+	return fs_file2par_maybe_ts(disk, &disk->fs_last, file, file_pos);
+}
+
+/**
+ * Like fs_file2par_get() but thread-safe.
+ */
+static inline block_off_t fs_file2par_get_ts(struct snapraid_disk* disk, struct snapraid_chunk** fs_last, struct snapraid_file* file, block_off_t file_pos)
+{
+	block_off_t ret;
+
+	ret = fs_file2par_maybe_ts(disk, fs_last, file, file_pos);
+	if (ret == POS_INVALID) {
+		/* LCOV_EXCL_START */
+		log_fatal("Internal inconsistency when resolving file '%s' at position '%u/%u' in disk '%s'\n", file->sub, file_pos, file->blockmax, disk->name);
+		os_abort();
+		/* LCOV_EXCL_STOP */
+	}
+
+	return ret;
+}
+
+/**
+ * Get the parity position from the file position.
  * \note This function is NOT thread-safe as it uses the the disk cache.
  */
 static inline block_off_t fs_file2par_get(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)
