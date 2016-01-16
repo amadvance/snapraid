@@ -12,6 +12,8 @@ SnapRAID HISTORY
    This had no bad effect, if not preventing the 'sync' command to run.
    A workaround was to just run 'sync' one time with the -N, --force-nocopy
    option to disable the copy detection.
+ * Restored the -O2 optimization option for Windows binaries, as -Og has a
+   too big performance penality.
 
 9.2 2016/01
 ===========
