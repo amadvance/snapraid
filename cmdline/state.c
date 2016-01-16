@@ -3956,7 +3956,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 			delta_tick_total = tick_total - state->progress_tick_total[oldest];
 			delta_tick_cpu = tick_cpu - state->progress_tick_cpu[oldest];
 
-			/* estimate the speed in MiB/s */
+			/* estimate the speed in MB/s */
 			if (delta_time != 0)
 				out_speed = (unsigned)(delta_size / MEGA / delta_time);
 
@@ -3973,9 +3973,9 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 			log_tag("run:pos:%u:%u:%" PRIu64 ":%u:%u:%u:%u:%" PRIu64 "\n", blockpos, countpos, countsize, out_perc, out_eta, out_speed, out_cpu, (uint64_t)elapsed);
 			log_flush();
 		} else {
-			msg_bar("%u%%, %u MiB", out_perc, (unsigned)(countsize / MEGA));
+			msg_bar("%u%%, %u MB", out_perc, (unsigned)(countsize / MEGA));
 			if (out_speed)
-				msg_bar(", %u MiB/s", out_speed);
+				msg_bar(", %u MB/s", out_speed);
 			if (out_cpu)
 				msg_bar(", CPU %u%%", out_cpu);
 			if (out_eta)
