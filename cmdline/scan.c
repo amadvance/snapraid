@@ -175,14 +175,14 @@ static void scan_file_allocate(struct snapraid_scan* scan, struct snapraid_file*
 		snapraid_info info;
 
 		/* increment the position until the first really free block */
-		while (block_has_file(fs_par2block_maybe(disk, parity_pos)))
+		while (block_has_file(fs_par2block_find(disk, parity_pos)))
 			++parity_pos;
 
 		/* get block we are going to overwrite, if any */
-		over_block = fs_par2block_maybe(disk, parity_pos);
+		over_block = fs_par2block_find(disk, parity_pos);
 
 		/* deallocate it */
-		if (over_block != BLOCK_EMPTY)
+		if (over_block != BLOCK_NULL)
 			fs_deallocate(disk, parity_pos);
 
 		/* get block specific info */
@@ -383,12 +383,12 @@ static int file_is_full_invalid_parity_and_stable(struct snapraid_state* state, 
 		 * Note that here we expect to always have mapped
 		 * parity, because kept files always have it.
 		 *
-		 * Anyway, checking for POS_INVALID doesn't hurt.
+		 * Anyway, checking for POS_NULL doesn't hurt.
 		 */
-		parity_pos = fs_file2par_maybe(disk, file, i);
+		parity_pos = fs_file2par_find(disk, file, i);
 
 		/* if it's not mapped, it cannot have rehash */
-		if (parity_pos != POS_INVALID) {
+		if (parity_pos != POS_NULL) {
 			/* get block specific info */
 			info = info_get(&state->infoarr, parity_pos);
 
@@ -437,10 +437,10 @@ static int file_is_full_hashed_and_stable(struct snapraid_state* state, struct s
 		 * that such files are used as 'source' to copy
 		 * hashes, and then to get them inside this function.
 		 */
-		parity_pos = fs_file2par_maybe(disk, file, i);
+		parity_pos = fs_file2par_find(disk, file, i);
 
 		/* if it's not mapped, it cannot have rehash */
-		if (parity_pos != POS_INVALID) {
+		if (parity_pos != POS_NULL) {
 			/* get block specific info */
 			info = info_get(&state->infoarr, parity_pos);
 

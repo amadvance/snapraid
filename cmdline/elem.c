@@ -1171,7 +1171,7 @@ static struct snapraid_chunk* fs_file2chunk_get_unlock(struct snapraid_disk* dis
 	return chunk;
 }
 
-struct snapraid_file* fs_par2file_maybe(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos)
+struct snapraid_file* fs_par2file_find(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos)
 {
 	struct snapraid_chunk* chunk;
 	struct snapraid_file* file;
@@ -1194,7 +1194,7 @@ struct snapraid_file* fs_par2file_maybe(struct snapraid_disk* disk, block_off_t 
 	return file;
 }
 
-block_off_t fs_file2par_maybe(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)
+block_off_t fs_file2par_find(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)
 {
 	struct snapraid_chunk* chunk;
 	block_off_t ret;
@@ -1204,7 +1204,7 @@ block_off_t fs_file2par_maybe(struct snapraid_disk* disk, struct snapraid_file* 
 	chunk = fs_file2chunk_get_unlock(disk, &disk->fs_last, file, file_pos);
 	if (!chunk) {
 		fs_unlock(disk);
-		return POS_INVALID;
+		return POS_NULL;
 	}
 
 	ret = chunk->parity_pos + (file_pos - chunk->file_pos);
@@ -1353,14 +1353,14 @@ struct snapraid_block* fs_file2block_get(struct snapraid_file* file, block_off_t
 	return &file->blockvec[file_pos];
 }
 
-struct snapraid_block* fs_par2block_maybe(struct snapraid_disk* disk, block_off_t parity_pos)
+struct snapraid_block* fs_par2block_find(struct snapraid_disk* disk, block_off_t parity_pos)
 {
 	struct snapraid_file* file;
 	block_off_t file_pos;
 
-	file = fs_par2file_maybe(disk, parity_pos, &file_pos);
+	file = fs_par2file_find(disk, parity_pos, &file_pos);
 	if (file == 0)
-		return BLOCK_EMPTY;
+		return BLOCK_NULL;
 
 	return fs_file2block_get(file, file_pos);
 }

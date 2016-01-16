@@ -42,7 +42,7 @@ block_off_t parity_allocated_size(struct snapraid_state* state)
 		/* decrease the block until an allocated one, but part of a file */
 		/* we don't stop at deleted blocks, because we want to have them cleared */
 		/* if they are at the end of the parity */
-		while (block > parity_block && !block_has_file(fs_par2block_maybe(disk, block - 1)))
+		while (block > parity_block && !block_has_file(fs_par2block_find(disk, block - 1)))
 			--block;
 
 		/* get the highest value */
@@ -67,7 +67,7 @@ block_off_t parity_used_size(struct snapraid_state* state)
 		block_off_t block = fs_size(disk);
 
 		/* decrease the block until an used one */
-		while (block > parity_block && !block_has_file_and_valid_parity(fs_par2block_maybe(disk, block - 1)))
+		while (block > parity_block && !block_has_file_and_valid_parity(fs_par2block_find(disk, block - 1)))
 			--block;
 
 		/* get the highest value */
@@ -95,7 +95,7 @@ int parity_is_invalid(struct snapraid_state* state)
 		one_valid = 0;
 		for (node_disk = state->disklist; node_disk != 0; node_disk = node_disk->next) {
 			struct snapraid_disk* disk = node_disk->data;
-			struct snapraid_block* block = fs_par2block_maybe(disk, i);
+			struct snapraid_block* block = fs_par2block_find(disk, i);
 
 			if (block_has_file(block))
 				one_valid = 1;

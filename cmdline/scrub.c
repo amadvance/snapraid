@@ -121,7 +121,7 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 	}
 
 	/* get the block */
-	task->block = fs_par2block_maybe(disk, blockcur);
+	task->block = fs_par2block_find(disk, blockcur);
 
 	/* if the block is not used */
 	if (!block_has_file(task->block)) {

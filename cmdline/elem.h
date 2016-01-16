@@ -39,7 +39,7 @@
 /**
  * Invalid position.
  */
-#define POS_INVALID ((block_off_t)-1)
+#define POS_NULL ((block_off_t)-1)
 
 /**
  * Basic block position type.
@@ -78,11 +78,11 @@ struct snapraid_filter {
 /**
  * Block pointer used to represent unused blocks.
  */
-#define BLOCK_EMPTY 0
+#define BLOCK_NULL 0
 
 /**
  * This block is an empty one.
- * Note that an empty block is represent with ::BLOCK_EMPTY.
+ * Note that an empty block is represent with ::BLOCK_NULL.
  */
 #define BLOCK_STATE_EMPTY 0
 
@@ -574,7 +574,7 @@ static inline void hash_zero_set(unsigned char* hash)
  */
 static inline unsigned block_state_get(const struct snapraid_block* block)
 {
-	if (block == BLOCK_EMPTY)
+	if (block == BLOCK_NULL)
 		return BLOCK_STATE_EMPTY;
 
 	return block->state;
@@ -934,7 +934,7 @@ struct snapraid_block* fs_file2block_get(struct snapraid_file* file, block_off_t
  * Get the file position from the parity position.
  * Return 0 if no file is using it.
  */
-struct snapraid_file* fs_par2file_maybe(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos);
+struct snapraid_file* fs_par2file_find(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos);
 
 /**
  * Get the file position from the parity position.
@@ -943,7 +943,7 @@ static inline struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, 
 {
 	struct snapraid_file* ret;
 
-	ret = fs_par2file_maybe(disk, parity_pos, file_pos);
+	ret = fs_par2file_find(disk, parity_pos, file_pos);
 	if (ret == 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Internal inconsistency when deresolving parity to file at position '%u' in disk '%s'\n", parity_pos, disk->name);
@@ -956,9 +956,9 @@ static inline struct snapraid_file* fs_par2file_get(struct snapraid_disk* disk, 
 
 /**
  * Get the parity position from the file position.
- * Return POS_INVALID if no parity is allocated.
+ * Return POS_NULL if no parity is allocated.
  */
-block_off_t fs_file2par_maybe(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos);
+block_off_t fs_file2par_find(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos);
 
 /**
  * Get the parity position from the file position.
@@ -967,8 +967,8 @@ static inline block_off_t fs_file2par_get(struct snapraid_disk* disk, struct sna
 {
 	block_off_t ret;
 
-	ret = fs_file2par_maybe(disk, file, file_pos);
-	if (ret == POS_INVALID) {
+	ret = fs_file2par_find(disk, file, file_pos);
+	if (ret == POS_NULL) {
 		/* LCOV_EXCL_START */
 		log_fatal("Internal inconsistency when resolving file '%s' at position '%u/%u' in disk '%s'\n", file->sub, file_pos, file->blockmax, disk->name);
 		os_abort();
@@ -980,9 +980,9 @@ static inline block_off_t fs_file2par_get(struct snapraid_disk* disk, struct sna
 
 /**
  * Get the block from the parity position.
- * Return BLOCK_EMPTY==0 if the block is over the end of the disk or not used.
+ * Return BLOCK_NULL==0 if the block is over the end of the disk or not used.
  */
-struct snapraid_block* fs_par2block_maybe(struct snapraid_disk* disk, block_off_t parity_pos);
+struct snapraid_block* fs_par2block_find(struct snapraid_disk* disk, block_off_t parity_pos);
 
 /**
  * Get the block from the parity position.
@@ -991,8 +991,8 @@ static inline struct snapraid_block* fs_par2block_get(struct snapraid_disk* disk
 {
 	struct snapraid_block* ret;
 
-	ret = fs_par2block_maybe(disk, parity_pos);
-	if (ret == BLOCK_EMPTY) {
+	ret = fs_par2block_find(disk, parity_pos);
+	if (ret == BLOCK_NULL) {
 		/* LCOV_EXCL_START */
 		log_fatal("Internal inconsistency when deresolving parity to block at position '%u' in disk '%s'\n", parity_pos, disk->name);
 		os_abort();
@@ -1094,7 +1094,7 @@ static inline snapraid_info info_set_rehash(snapraid_info info)
  * Set the info at the specified position.
  * The position is allocated if not yet done.
  */
-static inline void info_set(tommy_arrayblkof* array, unsigned pos, snapraid_info info)
+static inline void info_set(tommy_arrayblkof* array, block_off_t pos, snapraid_info info)
 {
 	tommy_arrayblkof_grow(array, pos + 1);
 
@@ -1105,7 +1105,7 @@ static inline void info_set(tommy_arrayblkof* array, unsigned pos, snapraid_info
  * Get the info at the specified position.
  * For not allocated position, 0 is returned.
  */
-static inline snapraid_info info_get(tommy_arrayblkof* array, unsigned pos)
+static inline snapraid_info info_get(tommy_arrayblkof* array, block_off_t pos)
 {
 	snapraid_info info;
 
