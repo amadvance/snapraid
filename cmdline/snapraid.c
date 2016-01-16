@@ -86,7 +86,7 @@ void memory(void)
 	log_tag("memory:link:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_link)));
 	log_tag("memory:dir:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_dir)));
 
-	msg_progress("Using %u MiB of memory for the FileSystem.\n", (unsigned)(malloc_counter_get() / (1024 * 1024)));
+	msg_progress("Using %u MiB of memory for the FileSystem.\n", (unsigned)(malloc_counter_get() / MEBI));
 }
 
 /****************************************************************************/

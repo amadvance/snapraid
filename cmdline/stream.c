@@ -24,7 +24,7 @@
 /****************************************************************************/
 /* stream */
 
-unsigned STREAM_SIZE = 1024 * 64;
+unsigned STREAM_SIZE = 64 * 1024;
 
 STREAM* sopen_read(const char* file)
 {

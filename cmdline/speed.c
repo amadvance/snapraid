@@ -28,7 +28,7 @@
 /*
  * Size of the blocks to test.
  */
-#define TEST_SIZE (256 * 1024)
+#define TEST_SIZE (256 * KIBI)
 
 /*
  * Number of data blocks to test.
@@ -160,9 +160,9 @@ void speed(int period)
 
 	printf("\n");
 
-	printf("Speed test using %u data buffers of %u bytes, for a total of %u KiB.\n", nd, size, nd * size / 1024);
+	printf("Speed test using %u data buffers of %u bytes, for a total of %u KiB.\n", nd, size, nd * size / KIBI);
 	printf("Memory blocks have a displacement of %u bytes to improve cache performance.\n", RAID_MALLOC_DISPLACEMENT);
-	printf("The reported values are the aggregate bandwidth of all data blocks in MiB/s,\n");
+	printf("The reported values are the aggregate bandwidth of all data blocks in MB/s,\n");
 	printf("not counting parity blocks.\n");
 	printf("\n");
 

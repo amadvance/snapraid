@@ -72,7 +72,7 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 		allocated += state->block_size * buffer_max;
 	}
 
-	msg_progress("Using %u MiB of memory for the MT buffers.\n", (unsigned)(allocated / (1024 * 1024)));
+	msg_progress("Using %u MiB of memory for the IO cache.\n", (unsigned)(allocated / MEBI));
 
 	if (parity_writer) {
 		io->reader_max = handle_max;

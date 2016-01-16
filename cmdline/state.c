@@ -143,7 +143,7 @@ void state_init(struct snapraid_state* state)
 	state->autosave = 0;
 	state->need_write = 0;
 	state->checked_read = 0;
-	state->block_size = 256 * 1024; /* default 256 KiB */
+	state->block_size = 256 * KIBI; /* default 256 KiB */
 	state->raid_mode = RAID_MODE_CAUCHY;
 	state->file_mode = MODE_SEQUENTIAL;
 	for (l = 0; l < LEV_MAX; ++l) {
@@ -581,7 +581,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
-			if (state->block_size > 16 * 1024) {
+			if (state->block_size > 16 * KIBI) {
 				/* LCOV_EXCL_START */
 				log_fatal("Too big 'blocksize' specification in '%s' at line %u\n", path, line);
 				exit(EXIT_FAILURE);
@@ -594,7 +594,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
-			state->block_size *= 1024;
+			state->block_size *= KIBI;
 		} else if (lev_config_scan(tag, &level, &state->raid_mode) == 0) {
 			char device[PATH_MAX];
 			char* slash;
@@ -2378,7 +2378,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
 				log_fatal("Mismatching 'blocksize' specification in the content file!\n");
-				log_fatal("Please restore the 'blocksize' value in the configuration file to '%u'\n", blksize / 1024);
+				log_fatal("Please restore the 'blocksize' value in the configuration file to '%u'\n", blksize / KIBI);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -3965,7 +3965,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 			delta_tick_total = tick_total - state->progress_tick_total[oldest];
 			delta_tick_cpu = tick_cpu - state->progress_tick_cpu[oldest];
 
-			/* estimate the speed in MiB/s */
+			/* estimate the speed in MB/s */
 			if (delta_time != 0)
 				out_speed = (unsigned)(delta_size / MEGA / delta_time);
 
@@ -3982,9 +3982,9 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 			log_tag("run:pos:%u:%u:%" PRIu64 ":%u:%u:%u:%u:%" PRIu64 "\n", blockpos, countpos, countsize, out_perc, out_eta, out_speed, out_cpu, (uint64_t)elapsed);
 			log_flush();
 		} else {
-			msg_bar("%u%%, %u MiB", out_perc, (unsigned)(countsize / MEGA));
+			msg_bar("%u%%, %u MB", out_perc, (unsigned)(countsize / MEGA));
 			if (out_speed)
-				msg_bar(", %u MiB/s", out_speed);
+				msg_bar(", %u MB/s", out_speed);
 			msg_bar(", CPU %u%%", out_cpu);
 			if (out_eta)
 				msg_bar(", %u:%02u ETA", out_eta / 60, out_eta % 60);
@@ -4115,7 +4115,7 @@ void generate_configuration(const char* path)
 	printf("# Configuration file generated from %s\n", path);
 	printf("\n");
 	printf("# Use this blocksize\n");
-	printf("blocksize %u\n", state.block_size / 1024);
+	printf("blocksize %u\n", state.block_size / KIBI);
 	printf("\n");
 	for (i = 0; i < state.level; ++i) {
 		printf("# Set the correct path for the %s file\n", lev_name(i));
