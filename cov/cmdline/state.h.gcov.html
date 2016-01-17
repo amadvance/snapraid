@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2016-01-09</td>
+            <td class="headerValue">2016-01-16</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">4</td>
@@ -388,58 +388,58 @@
 <span class="lineNum">     326 </span>            : /**
 <a name="327"><span class="lineNum">     327 </span>            :  * Set the usage time as wasted one not counted.</a>
 <span class="lineNum">     328 </span>            :  */
-<span class="lineNum">     329 </span><span class="lineCov">         97 : static inline void state_usage_waste(struct snapraid_state* state)</span>
+<span class="lineNum">     329 </span><span class="lineCov">         99 : static inline void state_usage_waste(struct snapraid_state* state)</span>
 <span class="lineNum">     330 </span>            : {
-<span class="lineNum">     331 </span><span class="lineCov">         97 :         uint64_t now = tick();</span>
+<span class="lineNum">     331 </span><span class="lineCov">         99 :         uint64_t now = tick();</span>
 <span class="lineNum">     332 </span>            : 
-<span class="lineNum">     333 </span><span class="lineCov">         97 :         state-&gt;tick_last = now;</span>
-<span class="lineNum">     334 </span><span class="lineCov">         97 : }</span>
+<span class="lineNum">     333 </span><span class="lineCov">         99 :         state-&gt;tick_last = now;</span>
+<span class="lineNum">     334 </span><span class="lineCov">         99 : }</span>
 <span class="lineNum">     335 </span>            : 
 <span class="lineNum">     336 </span>            : /**
 <a name="337"><span class="lineNum">     337 </span>            :  * Set the usage time for CPU.</a>
 <span class="lineNum">     338 </span>            :  */
-<span class="lineNum">     339 </span><span class="lineCov">     833206 : static inline void state_usage_cpu(struct snapraid_state* state)</span>
+<span class="lineNum">     339 </span><span class="lineCov">     833647 : static inline void state_usage_cpu(struct snapraid_state* state)</span>
 <span class="lineNum">     340 </span>            : {
-<span class="lineNum">     341 </span><span class="lineCov">     833206 :         uint64_t now = tick();</span>
-<span class="lineNum">     342 </span><span class="lineCov">     833206 :         uint64_t delta = now - state-&gt;tick_last;</span>
+<span class="lineNum">     341 </span><span class="lineCov">     833647 :         uint64_t now = tick();</span>
+<span class="lineNum">     342 </span><span class="lineCov">     833647 :         uint64_t delta = now - state-&gt;tick_last;</span>
 <span class="lineNum">     343 </span>            : 
 <span class="lineNum">     344 </span>            :         /* increment the time spent in computations */
-<span class="lineNum">     345 </span><span class="lineCov">     833206 :         state-&gt;tick_cpu += delta;</span>
+<span class="lineNum">     345 </span><span class="lineCov">     833647 :         state-&gt;tick_cpu += delta;</span>
 <span class="lineNum">     346 </span>            : 
-<span class="lineNum">     347 </span><span class="lineCov">     833206 :         state-&gt;tick_last = now;</span>
-<span class="lineNum">     348 </span><span class="lineCov">     833206 : }</span>
+<span class="lineNum">     347 </span><span class="lineCov">     833647 :         state-&gt;tick_last = now;</span>
+<span class="lineNum">     348 </span><span class="lineCov">     833647 : }</span>
 <span class="lineNum">     349 </span>            : 
 <span class="lineNum">     350 </span>            : /**
 <a name="351"><span class="lineNum">     351 </span>            :  * Set the usage time for data disk.</a>
 <span class="lineNum">     352 </span>            :  */
-<span class="lineNum">     353 </span><span class="lineCov">     673880 : static inline void state_usage_disk(struct snapraid_state* state, struct snapraid_disk* disk)</span>
+<span class="lineNum">     353 </span><span class="lineCov">     674079 : static inline void state_usage_disk(struct snapraid_state* state, struct snapraid_disk* disk)</span>
 <span class="lineNum">     354 </span>            : {
-<span class="lineNum">     355 </span><span class="lineCov">     673880 :         uint64_t now = tick();</span>
-<span class="lineNum">     356 </span><span class="lineCov">     673880 :         uint64_t delta = now - state-&gt;tick_last;</span>
+<span class="lineNum">     355 </span><span class="lineCov">     674079 :         uint64_t now = tick();</span>
+<span class="lineNum">     356 </span><span class="lineCov">     674079 :         uint64_t delta = now - state-&gt;tick_last;</span>
 <span class="lineNum">     357 </span>            : 
 <span class="lineNum">     358 </span>            :         /* increment the time spent in the data disk */
-<span class="lineNum">     359 </span><span class="lineCov">     673880 :         disk-&gt;tick += delta;</span>
-<span class="lineNum">     360 </span><span class="lineCov">     673880 :         state-&gt;tick_io += delta;</span>
+<span class="lineNum">     359 </span><span class="lineCov">     674079 :         disk-&gt;tick += delta;</span>
+<span class="lineNum">     360 </span><span class="lineCov">     674079 :         state-&gt;tick_io += delta;</span>
 <span class="lineNum">     361 </span>            : 
-<span class="lineNum">     362 </span><span class="lineCov">     673880 :         state-&gt;tick_last = now;</span>
-<span class="lineNum">     363 </span><span class="lineCov">     673880 : }</span>
+<span class="lineNum">     362 </span><span class="lineCov">     674079 :         state-&gt;tick_last = now;</span>
+<span class="lineNum">     363 </span><span class="lineCov">     674079 : }</span>
 <span class="lineNum">     364 </span>            : 
 <span class="lineNum">     365 </span>            : /**
 <a name="366"><span class="lineNum">     366 </span>            :  * Set the usage time for parity disk.</a>
 <span class="lineNum">     367 </span>            :  */
-<span class="lineNum">     368 </span><span class="lineCov">     706913 : static inline void state_usage_parity(struct snapraid_state* state, unsigned level)</span>
+<span class="lineNum">     368 </span><span class="lineCov">     707815 : static inline void state_usage_parity(struct snapraid_state* state, unsigned level)</span>
 <span class="lineNum">     369 </span>            : {
-<span class="lineNum">     370 </span><span class="lineCov">     706913 :         uint64_t now = tick();</span>
-<span class="lineNum">     371 </span><span class="lineCov">     706913 :         uint64_t delta = now - state-&gt;tick_last;</span>
+<span class="lineNum">     370 </span><span class="lineCov">     707815 :         uint64_t now = tick();</span>
+<span class="lineNum">     371 </span><span class="lineCov">     707815 :         uint64_t delta = now - state-&gt;tick_last;</span>
 <span class="lineNum">     372 </span>            : 
-<span class="lineNum">     373 </span><span class="lineCov">     706913 :         assert(level &lt; LEV_MAX);</span>
+<span class="lineNum">     373 </span><span class="lineCov">     707815 :         assert(level &lt; LEV_MAX);</span>
 <span class="lineNum">     374 </span>            : 
 <span class="lineNum">     375 </span>            :         /* increment the time spent in the parity disk */
-<span class="lineNum">     376 </span><span class="lineCov">     706913 :         state-&gt;parity[level].tick += delta;</span>
-<span class="lineNum">     377 </span><span class="lineCov">     706913 :         state-&gt;tick_io += delta;</span>
+<span class="lineNum">     376 </span><span class="lineCov">     707815 :         state-&gt;parity[level].tick += delta;</span>
+<span class="lineNum">     377 </span><span class="lineCov">     707815 :         state-&gt;tick_io += delta;</span>
 <span class="lineNum">     378 </span>            : 
-<span class="lineNum">     379 </span><span class="lineCov">     706913 :         state-&gt;tick_last = now;</span>
-<span class="lineNum">     380 </span><span class="lineCov">     706913 : }</span>
+<span class="lineNum">     379 </span><span class="lineCov">     707815 :         state-&gt;tick_last = now;</span>
+<span class="lineNum">     380 </span><span class="lineCov">     707815 : }</span>
 <span class="lineNum">     381 </span>            : 
 <span class="lineNum">     382 </span>            : /**
 <span class="lineNum">     383 </span>            :  * Print the stats of the usage time.

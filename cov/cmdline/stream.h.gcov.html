@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2016-01-09</td>
+            <td class="headerValue">2016-01-16</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">10</td>
@@ -221,33 +221,33 @@
 <span class="lineNum">     159 </span>            : /**
 <a name="160"><span class="lineNum">     160 </span>            :  * Check if the buffer has enough data loaded.</a>
 <span class="lineNum">     161 </span>            :  */
-<span class="lineNum">     162 </span><span class="lineCov">   33182199 : static inline int sptrlookup(STREAM* s, int size)</span>
+<span class="lineNum">     162 </span><span class="lineCov">   32999499 : static inline int sptrlookup(STREAM* s, int size)</span>
 <span class="lineNum">     163 </span>            : {
-<span class="lineNum">     164 </span><span class="lineCov">   33182199 :         return s-&gt;pos + size &lt;= s-&gt;end;</span>
+<span class="lineNum">     164 </span><span class="lineCov">   32999499 :         return s-&gt;pos + size &lt;= s-&gt;end;</span>
 <span class="lineNum">     165 </span>            : }
 <span class="lineNum">     166 </span>            : 
 <span class="lineNum">     167 </span>            : /**
 <a name="168"><span class="lineNum">     168 </span>            :  * Get the current stream ptr.</a>
 <span class="lineNum">     169 </span>            :  */
-<span class="lineNum">     170 </span><span class="lineCov">   33144603 : static inline unsigned char* sptrget(STREAM* s)</span>
+<span class="lineNum">     170 </span><span class="lineCov">   32961837 : static inline unsigned char* sptrget(STREAM* s)</span>
 <span class="lineNum">     171 </span>            : {
-<span class="lineNum">     172 </span><span class="lineCov">   33144603 :         return s-&gt;pos;</span>
+<span class="lineNum">     172 </span><span class="lineCov">   32961837 :         return s-&gt;pos;</span>
 <span class="lineNum">     173 </span>            : }
 <span class="lineNum">     174 </span>            : 
 <span class="lineNum">     175 </span>            : /**
 <a name="176"><span class="lineNum">     176 </span>            :  * Set the current stream ptr.</a>
 <span class="lineNum">     177 </span>            :  */
-<span class="lineNum">     178 </span><span class="lineCov">   33144603 : static inline void sptrset(STREAM* s, unsigned char* ptr)</span>
+<span class="lineNum">     178 </span><span class="lineCov">   32961837 : static inline void sptrset(STREAM* s, unsigned char* ptr)</span>
 <span class="lineNum">     179 </span>            : {
-<span class="lineNum">     180 </span><span class="lineCov">   33144603 :         s-&gt;pos = ptr;</span>
-<span class="lineNum">     181 </span><span class="lineCov">   33144603 : }</span>
+<span class="lineNum">     180 </span><span class="lineCov">   32961837 :         s-&gt;pos = ptr;</span>
+<span class="lineNum">     181 </span><span class="lineCov">   32961837 : }</span>
 <span class="lineNum">     182 </span>            : 
 <span class="lineNum">     183 </span>            : /**
 <a name="184"><span class="lineNum">     184 </span>            :  * Check the error status. Like ferror().</a>
 <span class="lineNum">     185 </span>            :  */
-<span class="lineNum">     186 </span><span class="lineCov">    3632818 : static inline int serror(STREAM* s)</span>
+<span class="lineNum">     186 </span><span class="lineCov">    3599296 : static inline int serror(STREAM* s)</span>
 <span class="lineNum">     187 </span>            : {
-<span class="lineNum">     188 </span><span class="lineCov">    3632818 :         return s-&gt;state == STREAM_STATE_ERROR;</span>
+<span class="lineNum">     188 </span><span class="lineCov">    3599296 :         return s-&gt;state == STREAM_STATE_ERROR;</span>
 <span class="lineNum">     189 </span>            : }
 <span class="lineNum">     190 </span>            : 
 <span class="lineNum">     191 </span>            : /**
@@ -291,22 +291,22 @@
 <span class="lineNum">     229 </span>            : /**
 <a name="230"><span class="lineNum">     230 </span>            :  * Read a char. Like fgetc().</a>
 <span class="lineNum">     231 </span>            :  */
-<span class="lineNum">     232 </span><span class="lineCov">   82747474 : static inline int sgetc(STREAM* s)</span>
+<span class="lineNum">     232 </span><span class="lineCov">   82464911 : static inline int sgetc(STREAM* s)</span>
 <span class="lineNum">     233 </span>            : {
-<span class="lineNum">     234 </span><span class="lineCov">   82747474 :         if (tommy_unlikely(s-&gt;pos == s-&gt;end))</span>
-<span class="lineNum">     235 </span><span class="lineCov">     298684 :                 return sgetc_uncached(s);</span>
-<span class="lineNum">     236 </span><span class="lineCov">   82448790 :         return *s-&gt;pos++;</span>
+<span class="lineNum">     234 </span><span class="lineCov">   82464911 :         if (tommy_unlikely(s-&gt;pos == s-&gt;end))</span>
+<span class="lineNum">     235 </span><span class="lineCov">     298700 :                 return sgetc_uncached(s);</span>
+<span class="lineNum">     236 </span><span class="lineCov">   82166211 :         return *s-&gt;pos++;</span>
 <span class="lineNum">     237 </span>            : }
 <span class="lineNum">     238 </span>            : 
 <span class="lineNum">     239 </span>            : /**
 <span class="lineNum">     240 </span>            :  * Unread a char.
 <a name="241"><span class="lineNum">     241 </span>            :  * Like ungetc() but you have to unget the same char read.</a>
 <span class="lineNum">     242 </span>            :  */
-<span class="lineNum">     243 </span><span class="lineCov">      33308 : static inline void sungetc(int c, STREAM* s)</span>
+<span class="lineNum">     243 </span><span class="lineCov">      33596 : static inline void sungetc(int c, STREAM* s)</span>
 <span class="lineNum">     244 </span>            : {
-<span class="lineNum">     245 </span><span class="lineCov">      33308 :         if (c != EOF)</span>
-<span class="lineNum">     246 </span><span class="lineCov">      32546 :                 --s-&gt;pos;</span>
-<span class="lineNum">     247 </span><span class="lineCov">      33308 : }</span>
+<span class="lineNum">     245 </span><span class="lineCov">      33596 :         if (c != EOF)</span>
+<span class="lineNum">     246 </span><span class="lineCov">      32828 :                 --s-&gt;pos;</span>
+<span class="lineNum">     247 </span><span class="lineCov">      33596 : }</span>
 <span class="lineNum">     248 </span>            : 
 <span class="lineNum">     249 </span>            : /**
 <span class="lineNum">     250 </span>            :  * Read a fixed amount of chars.
@@ -317,34 +317,34 @@
 <span class="lineNum">     255 </span>            : /**
 <a name="256"><span class="lineNum">     256 </span>            :  * Get a char from a stream, ignoring one '\r'.</a>
 <span class="lineNum">     257 </span>            :  */
-<span class="lineNum">     258 </span><span class="lineCov">       6014 : static inline int sgeteol(STREAM* f)</span>
+<span class="lineNum">     258 </span><span class="lineCov">       6066 : static inline int sgeteol(STREAM* f)</span>
 <span class="lineNum">     259 </span>            : {
 <span class="lineNum">     260 </span>            :         int c;
 <span class="lineNum">     261 </span>            : 
-<span class="lineNum">     262 </span><span class="lineCov">       6014 :         c = sgetc(f);</span>
-<span class="lineNum">     263 </span><span class="lineCov">       6014 :         if (c == '\r')</span>
+<span class="lineNum">     262 </span><span class="lineCov">       6066 :         c = sgetc(f);</span>
+<span class="lineNum">     263 </span><span class="lineCov">       6066 :         if (c == '\r')</span>
 <span class="lineNum">     264 </span><span class="lineNoCov">          0 :                 c = sgetc(f);</span>
 <span class="lineNum">     265 </span>            : 
-<span class="lineNum">     266 </span><span class="lineCov">       6014 :         return c;</span>
+<span class="lineNum">     266 </span><span class="lineCov">       6066 :         return c;</span>
 <span class="lineNum">     267 </span>            : }
 <span class="lineNum">     268 </span>            : 
 <span class="lineNum">     269 </span>            : /**
 <span class="lineNum">     270 </span>            :  * Read all the spaces and tabs.
 <a name="271"><span class="lineNum">     271 </span>            :  * Return the number of spaces and tabs read.</a>
 <span class="lineNum">     272 </span>            :  */
-<span class="lineNum">     273 </span><span class="lineCov">      19921 : static inline int sgetspace(STREAM* f)</span>
+<span class="lineNum">     273 </span><span class="lineCov">      20093 : static inline int sgetspace(STREAM* f)</span>
 <span class="lineNum">     274 </span>            : {
-<span class="lineNum">     275 </span><span class="lineCov">      19921 :         int count = 0;</span>
+<span class="lineNum">     275 </span><span class="lineCov">      20093 :         int count = 0;</span>
 <span class="lineNum">     276 </span>            :         int c;
 <span class="lineNum">     277 </span>            : 
-<span class="lineNum">     278 </span><span class="lineCov">      19921 :         c = sgetc(f);</span>
-<span class="lineNum">     279 </span><span class="lineCov">      47225 :         while (c == ' ' || c == '\t') {</span>
-<span class="lineNum">     280 </span><span class="lineCov">       7383 :                 ++count;</span>
-<span class="lineNum">     281 </span><span class="lineCov">       7383 :                 c = sgetc(f);</span>
+<span class="lineNum">     278 </span><span class="lineCov">      20093 :         c = sgetc(f);</span>
+<span class="lineNum">     279 </span><span class="lineCov">      47633 :         while (c == ' ' || c == '\t') {</span>
+<span class="lineNum">     280 </span><span class="lineCov">       7447 :                 ++count;</span>
+<span class="lineNum">     281 </span><span class="lineCov">       7447 :                 c = sgetc(f);</span>
 <span class="lineNum">     282 </span>            :         }
 <span class="lineNum">     283 </span>            : 
-<span class="lineNum">     284 </span><span class="lineCov">      19921 :         sungetc(c, f);</span>
-<span class="lineNum">     285 </span><span class="lineCov">      19921 :         return count;</span>
+<span class="lineNum">     284 </span><span class="lineCov">      20093 :         sungetc(c, f);</span>
+<span class="lineNum">     285 </span><span class="lineCov">      20093 :         return count;</span>
 <span class="lineNum">     286 </span>            : }
 <span class="lineNum">     287 </span>            : 
 <span class="lineNum">     288 </span>            : /**
@@ -407,10 +407,10 @@
 <span class="lineNum">     345 </span>            :  * Write a char. Like fputc().
 <a name="346"><span class="lineNum">     346 </span>            :  * Return 0 on success or -1 on error.</a>
 <span class="lineNum">     347 </span>            :  */
-<span class="lineNum">     348 </span><span class="lineCov">    3794625 : static inline int sputc(int c, STREAM* s)</span>
+<span class="lineNum">     348 </span><span class="lineCov">    3760808 : static inline int sputc(int c, STREAM* s)</span>
 <span class="lineNum">     349 </span>            : {
-<span class="lineNum">     350 </span><span class="lineCov">    3794625 :         if (s-&gt;pos == s-&gt;end) {</span>
-<span class="lineNum">     351 </span><span class="lineCov">      38573 :                 if (sflush(s) != 0)</span>
+<span class="lineNum">     350 </span><span class="lineCov">    3760808 :         if (s-&gt;pos == s-&gt;end) {</span>
+<span class="lineNum">     351 </span><span class="lineCov">      38554 :                 if (sflush(s) != 0)</span>
 <span class="lineNum">     352 </span><span class="lineNoCov">          0 :                         return -1;</span>
 <span class="lineNum">     353 </span>            :         }
 <span class="lineNum">     354 </span>            : 
@@ -421,11 +421,11 @@
 <span class="lineNum">     359 </span>            :          * to be able to detect memory errors on the buffer,
 <span class="lineNum">     360 </span>            :          * happening before we write it on the file.
 <span class="lineNum">     361 </span>            :          */
-<span class="lineNum">     362 </span><span class="lineCov">    3794625 :         s-&gt;crc_stream = crc32c_plain_char(s-&gt;crc_stream, c);</span>
+<span class="lineNum">     362 </span><span class="lineCov">    3760808 :         s-&gt;crc_stream = crc32c_plain_char(s-&gt;crc_stream, c);</span>
 <span class="lineNum">     363 </span>            : 
-<span class="lineNum">     364 </span><span class="lineCov">    3794625 :         *s-&gt;pos++ = c;</span>
+<span class="lineNum">     364 </span><span class="lineCov">    3760808 :         *s-&gt;pos++ = c;</span>
 <span class="lineNum">     365 </span>            : 
-<span class="lineNum">     366 </span><span class="lineCov">    3794625 :         return 0;</span>
+<span class="lineNum">     366 </span><span class="lineCov">    3760808 :         return 0;</span>
 <span class="lineNum">     367 </span>            : }
 <span class="lineNum">     368 </span>            : 
 <span class="lineNum">     369 </span>            : /**

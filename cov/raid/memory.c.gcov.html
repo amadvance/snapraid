@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2016-01-09</td>
+            <td class="headerValue">2016-01-16</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">4</td>
@@ -77,66 +77,66 @@
 <span class="lineNum">      15 </span>            : #include &quot;internal.h&quot;
 <a name="16"><span class="lineNum">      16 </span>            : #include &quot;memory.h&quot;</a>
 <span class="lineNum">      17 </span>            : 
-<span class="lineNum">      18 </span><span class="lineCov">        306 : void *raid_malloc_align(size_t size, void **freeptr)</span>
+<span class="lineNum">      18 </span><span class="lineCov">        310 : void *raid_malloc_align(size_t size, void **freeptr)</span>
 <span class="lineNum">      19 </span>            : {
 <span class="lineNum">      20 </span>            :         unsigned char *ptr;
 <span class="lineNum">      21 </span>            :         uintptr_t offset;
 <span class="lineNum">      22 </span>            : 
-<span class="lineNum">      23 </span><span class="lineCov">        306 :         ptr = malloc(size + RAID_MALLOC_ALIGN);</span>
-<span class="lineNum">      24 </span><span class="lineCov">        306 :         if (!ptr) {</span>
+<span class="lineNum">      23 </span><span class="lineCov">        310 :         ptr = malloc(size + RAID_MALLOC_ALIGN);</span>
+<span class="lineNum">      24 </span><span class="lineCov">        310 :         if (!ptr) {</span>
 <span class="lineNum">      25 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">      26 </span>            :                 return 0;
 <span class="lineNum">      27 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">      28 </span>            :         }
 <span class="lineNum">      29 </span>            : 
-<span class="lineNum">      30 </span><span class="lineCov">        306 :         *freeptr = ptr;</span>
+<span class="lineNum">      30 </span><span class="lineCov">        310 :         *freeptr = ptr;</span>
 <span class="lineNum">      31 </span>            : 
-<span class="lineNum">      32 </span><span class="lineCov">        306 :         offset = ((uintptr_t)ptr) % RAID_MALLOC_ALIGN;</span>
+<span class="lineNum">      32 </span><span class="lineCov">        310 :         offset = ((uintptr_t)ptr) % RAID_MALLOC_ALIGN;</span>
 <span class="lineNum">      33 </span>            : 
-<span class="lineNum">      34 </span><span class="lineCov">        306 :         if (offset != 0)</span>
-<span class="lineNum">      35 </span><span class="lineCov">        297 :                 ptr += RAID_MALLOC_ALIGN - offset;</span>
+<span class="lineNum">      34 </span><span class="lineCov">        310 :         if (offset != 0)</span>
+<span class="lineNum">      35 </span><span class="lineCov">        299 :                 ptr += RAID_MALLOC_ALIGN - offset;</span>
 <span class="lineNum">      36 </span>            : 
-<span class="lineNum">      37 </span><span class="lineCov">        306 :         return ptr;</span>
+<span class="lineNum">      37 </span><span class="lineCov">        310 :         return ptr;</span>
 <a name="38"><span class="lineNum">      38 </span>            : }</a>
 <span class="lineNum">      39 </span>            : 
-<span class="lineNum">      40 </span><span class="lineCov">        215 : void **raid_malloc_vector(int nd, int n, size_t size, void **freeptr)</span>
+<span class="lineNum">      40 </span><span class="lineCov">        217 : void **raid_malloc_vector(int nd, int n, size_t size, void **freeptr)</span>
 <span class="lineNum">      41 </span>            : {
 <span class="lineNum">      42 </span>            :         void **v;
 <span class="lineNum">      43 </span>            :         unsigned char *va;
 <span class="lineNum">      44 </span>            :         int i;
 <span class="lineNum">      45 </span>            : 
-<span class="lineNum">      46 </span><span class="lineCov">        215 :         BUG_ON(n &lt;= 0 || nd &lt; 0);</span>
+<span class="lineNum">      46 </span><span class="lineCov">        217 :         BUG_ON(n &lt;= 0 || nd &lt; 0);</span>
 <span class="lineNum">      47 </span>            : 
-<span class="lineNum">      48 </span><span class="lineCov">        215 :         v = malloc(n * sizeof(void *));</span>
-<span class="lineNum">      49 </span><span class="lineCov">        215 :         if (!v) {</span>
+<span class="lineNum">      48 </span><span class="lineCov">        217 :         v = malloc(n * sizeof(void *));</span>
+<span class="lineNum">      49 </span><span class="lineCov">        217 :         if (!v) {</span>
 <span class="lineNum">      50 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">      51 </span>            :                 return 0;
 <span class="lineNum">      52 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">      53 </span>            :         }
 <span class="lineNum">      54 </span>            : 
-<span class="lineNum">      55 </span><span class="lineCov">        215 :         va = raid_malloc_align(n * (size + RAID_MALLOC_DISPLACEMENT), freeptr);</span>
-<span class="lineNum">      56 </span><span class="lineCov">        215 :         if (!va) {</span>
+<span class="lineNum">      55 </span><span class="lineCov">        217 :         va = raid_malloc_align(n * (size + RAID_MALLOC_DISPLACEMENT), freeptr);</span>
+<span class="lineNum">      56 </span><span class="lineCov">        217 :         if (!va) {</span>
 <span class="lineNum">      57 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">      58 </span>            :                 free(v);
 <span class="lineNum">      59 </span>            :                 return 0;
 <span class="lineNum">      60 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">      61 </span>            :         }
 <span class="lineNum">      62 </span>            : 
-<span class="lineNum">      63 </span><span class="lineCov">       3836 :         for (i = 0; i &lt; n; ++i) {</span>
-<span class="lineNum">      64 </span><span class="lineCov">       3621 :                 v[i] = va;</span>
-<span class="lineNum">      65 </span><span class="lineCov">       3621 :                 va += size + RAID_MALLOC_DISPLACEMENT;</span>
+<span class="lineNum">      63 </span><span class="lineCov">       3876 :         for (i = 0; i &lt; n; ++i) {</span>
+<span class="lineNum">      64 </span><span class="lineCov">       3659 :                 v[i] = va;</span>
+<span class="lineNum">      65 </span><span class="lineCov">       3659 :                 va += size + RAID_MALLOC_DISPLACEMENT;</span>
 <span class="lineNum">      66 </span>            :         }
 <span class="lineNum">      67 </span>            : 
 <span class="lineNum">      68 </span>            :         /* reverse order of the data blocks */
 <span class="lineNum">      69 </span>            :         /* because they are usually accessed from the last one */
-<span class="lineNum">      70 </span><span class="lineCov">        898 :         for (i = 0; i &lt; nd / 2; ++i) {</span>
-<span class="lineNum">      71 </span><span class="lineCov">        683 :                 void *ptr = v[i];</span>
+<span class="lineNum">      70 </span><span class="lineCov">        906 :         for (i = 0; i &lt; nd / 2; ++i) {</span>
+<span class="lineNum">      71 </span><span class="lineCov">        689 :                 void *ptr = v[i];</span>
 <span class="lineNum">      72 </span>            : 
-<span class="lineNum">      73 </span><span class="lineCov">        683 :                 v[i] = v[nd - 1 - i];</span>
-<span class="lineNum">      74 </span><span class="lineCov">        683 :                 v[nd - 1 - i] = ptr;</span>
+<span class="lineNum">      73 </span><span class="lineCov">        689 :                 v[i] = v[nd - 1 - i];</span>
+<span class="lineNum">      74 </span><span class="lineCov">        689 :                 v[nd - 1 - i] = ptr;</span>
 <span class="lineNum">      75 </span>            :         }
 <span class="lineNum">      76 </span>            : 
-<span class="lineNum">      77 </span><span class="lineCov">        215 :         return v;</span>
+<span class="lineNum">      77 </span><span class="lineCov">        217 :         return v;</span>
 <a name="78"><span class="lineNum">      78 </span>            : }</a>
 <span class="lineNum">      79 </span>            : 
 <span class="lineNum">      80 </span><span class="lineCov">          5 : void raid_mrand_vector(unsigned seed, int n, size_t size, void **vv)</span>
@@ -154,9 +154,9 @@
 <span class="lineNum">      92 </span>            :                 }
 <a name="93"><span class="lineNum">      93 </span><span class="lineCov">          5 : }</span></a>
 <span class="lineNum">      94 </span>            : 
-<span class="lineNum">      95 </span><span class="lineCov">       1908 : int raid_mtest_vector(int n, size_t size, void **vv)</span>
+<span class="lineNum">      95 </span><span class="lineCov">       1936 : int raid_mtest_vector(int n, size_t size, void **vv)</span>
 <span class="lineNum">      96 </span>            : {
-<span class="lineNum">      97 </span><span class="lineCov">       1908 :         unsigned char **v = (unsigned char **)vv;</span>
+<span class="lineNum">      97 </span><span class="lineCov">       1936 :         unsigned char **v = (unsigned char **)vv;</span>
 <span class="lineNum">      98 </span>            :         int i;
 <span class="lineNum">      99 </span>            :         size_t j;
 <span class="lineNum">     100 </span>            :         unsigned k;
@@ -164,44 +164,44 @@
 <span class="lineNum">     102 </span>            :         unsigned char p;
 <span class="lineNum">     103 </span>            : 
 <span class="lineNum">     104 </span>            :         /* fill with 0 */
-<span class="lineNum">     105 </span><span class="lineCov">       1908 :         d = 0;</span>
-<span class="lineNum">     106 </span><span class="lineCov">       3908 :         for (i = 0; i &lt; n; ++i)</span>
-<span class="lineNum">     107 </span><span class="lineCov">  107048920 :                 for (j = 0; j &lt; size; ++j)</span>
-<span class="lineNum">     108 </span><span class="lineCov">  107046920 :                         v[i][j] = d;</span>
+<span class="lineNum">     105 </span><span class="lineCov">       1936 :         d = 0;</span>
+<span class="lineNum">     106 </span><span class="lineCov">       3964 :         for (i = 0; i &lt; n; ++i)</span>
+<span class="lineNum">     107 </span><span class="lineCov">  108883956 :                 for (j = 0; j &lt; size; ++j)</span>
+<span class="lineNum">     108 </span><span class="lineCov">  108881928 :                         v[i][j] = d;</span>
 <span class="lineNum">     109 </span>            : 
 <span class="lineNum">     110 </span>            :         /* test with all the byte patterns */
-<span class="lineNum">     111 </span><span class="lineCov">     488448 :         for (k = 1; k &lt; 256; ++k) {</span>
-<span class="lineNum">     112 </span><span class="lineCov">     486540 :                 p = d;</span>
-<span class="lineNum">     113 </span><span class="lineCov">     486540 :                 d = k;</span>
+<span class="lineNum">     111 </span><span class="lineCov">     495616 :         for (k = 1; k &lt; 256; ++k) {</span>
+<span class="lineNum">     112 </span><span class="lineCov">     493680 :                 p = d;</span>
+<span class="lineNum">     113 </span><span class="lineCov">     493680 :                 d = k;</span>
 <span class="lineNum">     114 </span>            : 
 <span class="lineNum">     115 </span>            :                 /* forward fill */
-<span class="lineNum">     116 </span><span class="lineCov">     996540 :                 for (i = 0; i &lt; n; ++i) {</span>
-<span class="lineNum">     117 </span><span class="lineCov">27297474600 :                         for (j = 0; j &lt; size; ++j) {</span>
-<span class="lineNum">     118 </span><span class="lineCov">27296964600 :                                 if (v[i][j] != p) {</span>
+<span class="lineNum">     116 </span><span class="lineCov">    1010820 :                 for (i = 0; i &lt; n; ++i) {</span>
+<span class="lineNum">     117 </span><span class="lineCov">27765408780 :                         for (j = 0; j &lt; size; ++j) {</span>
+<span class="lineNum">     118 </span><span class="lineCov">27764891640 :                                 if (v[i][j] != p) {</span>
 <span class="lineNum">     119 </span>            :                                         /* LCOV_EXCL_START */
 <span class="lineNum">     120 </span>            :                                         return -1;
 <span class="lineNum">     121 </span>            :                                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     122 </span>            :                                 }
-<span class="lineNum">     123 </span><span class="lineCov">27296964600 :                                 v[i][j] = d;</span>
+<span class="lineNum">     123 </span><span class="lineCov">27764891640 :                                 v[i][j] = d;</span>
 <span class="lineNum">     124 </span>            :                         }
 <span class="lineNum">     125 </span>            :                 }
 <span class="lineNum">     126 </span>            : 
-<span class="lineNum">     127 </span><span class="lineCov">     486540 :                 p = d;</span>
-<span class="lineNum">     128 </span><span class="lineCov">     486540 :                 d = ~p;</span>
+<span class="lineNum">     127 </span><span class="lineCov">     493680 :                 p = d;</span>
+<span class="lineNum">     128 </span><span class="lineCov">     493680 :                 d = ~p;</span>
 <span class="lineNum">     129 </span>            :                 /* backward fill with complement */
-<span class="lineNum">     130 </span><span class="lineCov">     996540 :                 for (i = 0; i &lt; n; ++i) {</span>
-<span class="lineNum">     131 </span><span class="lineCov">27297474600 :                         for (j = size; j &gt; 0; --j) {</span>
-<span class="lineNum">     132 </span><span class="lineCov">27296964600 :                                 if (v[i][j - 1] != p) {</span>
+<span class="lineNum">     130 </span><span class="lineCov">    1010820 :                 for (i = 0; i &lt; n; ++i) {</span>
+<span class="lineNum">     131 </span><span class="lineCov">27765408780 :                         for (j = size; j &gt; 0; --j) {</span>
+<span class="lineNum">     132 </span><span class="lineCov">27764891640 :                                 if (v[i][j - 1] != p) {</span>
 <span class="lineNum">     133 </span>            :                                         /* LCOV_EXCL_START */
 <span class="lineNum">     134 </span>            :                                         return -1;
 <span class="lineNum">     135 </span>            :                                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     136 </span>            :                                 }
-<span class="lineNum">     137 </span><span class="lineCov">27296964600 :                                 v[i][j - 1] = d;</span>
+<span class="lineNum">     137 </span><span class="lineCov">27764891640 :                                 v[i][j - 1] = d;</span>
 <span class="lineNum">     138 </span>            :                         }
 <span class="lineNum">     139 </span>            :                 }
 <span class="lineNum">     140 </span>            :         }
 <span class="lineNum">     141 </span>            : 
-<span class="lineNum">     142 </span><span class="lineCov">       1908 :         return 0;</span>
+<span class="lineNum">     142 </span><span class="lineCov">       1936 :         return 0;</span>
 <span class="lineNum">     143 </span>            : }
 <span class="lineNum">     144 </span>            : 
 </pre>

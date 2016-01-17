@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2016-01-09</td>
+            <td class="headerValue">2016-01-16</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">8</td>
@@ -136,24 +136,24 @@
 <span class="lineNum">      74 </span><span class="lineCov">          1 :         printf(&quot;  &quot; SWITCH_GETOPT_LONG(&quot;-v, --verbose         &quot;, &quot;-v&quot;) &quot;  Verbose\n&quot;);</span>
 <a name="75"><span class="lineNum">      75 </span><span class="lineCov">          1 : }</span></a>
 <span class="lineNum">      76 </span>            : 
-<span class="lineNum">      77 </span><span class="lineCov">        230 : void memory(void)</span>
+<span class="lineNum">      77 </span><span class="lineCov">        232 : void memory(void)</span>
 <span class="lineNum">      78 </span>            : {
-<span class="lineNum">      79 </span><span class="lineCov">        230 :         log_tag(&quot;memory:used:%&quot; PRIu64 &quot;\n&quot;, (uint64_t)malloc_counter_get());</span>
+<span class="lineNum">      79 </span><span class="lineCov">        232 :         log_tag(&quot;memory:used:%&quot; PRIu64 &quot;\n&quot;, (uint64_t)malloc_counter_get());</span>
 <span class="lineNum">      80 </span>            : 
 <span class="lineNum">      81 </span>            :         /* size of the block */
-<span class="lineNum">      82 </span><span class="lineCov">        230 :         log_tag(&quot;memory:block:%&quot; PRIu64 &quot;\n&quot;, (uint64_t)(sizeof(struct snapraid_block)));</span>
-<span class="lineNum">      83 </span><span class="lineCov">        230 :         log_tag(&quot;memory:chunk:%&quot; PRIu64 &quot;\n&quot;, (uint64_t)(sizeof(struct snapraid_chunk)));</span>
-<span class="lineNum">      84 </span><span class="lineCov">        230 :         log_tag(&quot;memory:file:%&quot; PRIu64 &quot;\n&quot;, (uint64_t)(sizeof(struct snapraid_file)));</span>
-<span class="lineNum">      85 </span><span class="lineCov">        230 :         log_tag(&quot;memory:link:%&quot; PRIu64 &quot;\n&quot;, (uint64_t)(sizeof(struct snapraid_link)));</span>
-<span class="lineNum">      86 </span><span class="lineCov">        230 :         log_tag(&quot;memory:dir:%&quot; PRIu64 &quot;\n&quot;, (uint64_t)(sizeof(struct snapraid_dir)));</span>
+<span class="lineNum">      82 </span><span class="lineCov">        232 :         log_tag(&quot;memory:block:%&quot; PRIu64 &quot;\n&quot;, (uint64_t)(sizeof(struct snapraid_block)));</span>
+<span class="lineNum">      83 </span><span class="lineCov">        232 :         log_tag(&quot;memory:chunk:%&quot; PRIu64 &quot;\n&quot;, (uint64_t)(sizeof(struct snapraid_chunk)));</span>
+<span class="lineNum">      84 </span><span class="lineCov">        232 :         log_tag(&quot;memory:file:%&quot; PRIu64 &quot;\n&quot;, (uint64_t)(sizeof(struct snapraid_file)));</span>
+<span class="lineNum">      85 </span><span class="lineCov">        232 :         log_tag(&quot;memory:link:%&quot; PRIu64 &quot;\n&quot;, (uint64_t)(sizeof(struct snapraid_link)));</span>
+<span class="lineNum">      86 </span><span class="lineCov">        232 :         log_tag(&quot;memory:dir:%&quot; PRIu64 &quot;\n&quot;, (uint64_t)(sizeof(struct snapraid_dir)));</span>
 <span class="lineNum">      87 </span>            : 
-<span class="lineNum">      88 </span><span class="lineCov">        230 :         msg_progress(&quot;Using %u MiB of memory.\n&quot;, (unsigned)(malloc_counter_get() / (1024 * 1024)));</span>
-<span class="lineNum">      89 </span><span class="lineCov">        230 : }</span>
+<span class="lineNum">      88 </span><span class="lineCov">        232 :         msg_progress(&quot;Using %u MiB of memory.\n&quot;, (unsigned)(malloc_counter_get() / (1024 * 1024)));</span>
+<span class="lineNum">      89 </span><span class="lineCov">        232 : }</span>
 <span class="lineNum">      90 </span>            : 
 <span class="lineNum">      91 </span>            : /****************************************************************************/
 <a name="92"><span class="lineNum">      92 </span>            : /* log */</a>
 <span class="lineNum">      93 </span>            : 
-<span class="lineNum">      94 </span><span class="lineCov">        255 : void log_open(const char* file)</span>
+<span class="lineNum">      94 </span><span class="lineCov">        257 : void log_open(const char* file)</span>
 <span class="lineNum">      95 </span>            : {
 <span class="lineNum">      96 </span>            :         char path[PATH_MAX];
 <span class="lineNum">      97 </span>            :         const char* mode;
@@ -163,8 +163,8 @@
 <span class="lineNum">     101 </span>            :         struct tm* tm;
 <span class="lineNum">     102 </span>            : 
 <span class="lineNum">     103 </span>            :         /* leave stdlog at 0 if not specified */
-<span class="lineNum">     104 </span><span class="lineCov">        255 :         if (file == 0)</span>
-<span class="lineNum">     105 </span><span class="lineCov">        359 :                 return;</span>
+<span class="lineNum">     104 </span><span class="lineCov">        257 :         if (file == 0)</span>
+<span class="lineNum">     105 </span><span class="lineCov">        363 :                 return;</span>
 <span class="lineNum">     106 </span>            : 
 <span class="lineNum">     107 </span><span class="lineCov">         77 :         t = time(0);</span>
 <span class="lineNum">     108 </span><span class="lineCov">         77 :         tm = localtime(&amp;t);</span>
@@ -237,9 +237,9 @@
 <span class="lineNum">     175 </span>            :         }
 <a name="176"><span class="lineNum">     176 </span>            : }</a>
 <span class="lineNum">     177 </span>            : 
-<span class="lineNum">     178 </span><span class="lineCov">        233 : void log_close(const char* file)</span>
+<span class="lineNum">     178 </span><span class="lineCov">        235 : void log_close(const char* file)</span>
 <span class="lineNum">     179 </span>            : {
-<span class="lineNum">     180 </span><span class="lineCov">        233 :         if (stdlog != stdout &amp;&amp; stdlog != stderr &amp;&amp; stdlog != 0) {</span>
+<span class="lineNum">     180 </span><span class="lineCov">        235 :         if (stdlog != stdout &amp;&amp; stdlog != stderr &amp;&amp; stdlog != 0) {</span>
 <span class="lineNum">     181 </span><span class="lineCov">         74 :                 if (fclose(stdlog) != 0) {</span>
 <span class="lineNum">     182 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     183 </span>            :                         log_fatal(&quot;Error closing the log file '%s'. %s.\n&quot;, file, strerror(errno));
@@ -248,13 +248,13 @@
 <span class="lineNum">     186 </span>            :                 }
 <span class="lineNum">     187 </span>            :         }
 <span class="lineNum">     188 </span>            : 
-<span class="lineNum">     189 </span><span class="lineCov">        233 :         stdlog = 0;</span>
-<span class="lineNum">     190 </span><span class="lineCov">        233 : }</span>
+<span class="lineNum">     189 </span><span class="lineCov">        235 :         stdlog = 0;</span>
+<span class="lineNum">     190 </span><span class="lineCov">        235 : }</span>
 <span class="lineNum">     191 </span>            : 
 <span class="lineNum">     192 </span>            : /****************************************************************************/
 <a name="193"><span class="lineNum">     193 </span>            : /* config */</a>
 <span class="lineNum">     194 </span>            : 
-<span class="lineNum">     195 </span><span class="lineCov">        265 : void config(char* conf, size_t conf_size, const char* argv0)</span>
+<span class="lineNum">     195 </span><span class="lineCov">        267 : void config(char* conf, size_t conf_size, const char* argv0)</span>
 <span class="lineNum">     196 </span>            : {
 <span class="lineNum">     197 </span>            : #ifdef _WIN32
 <span class="lineNum">     198 </span>            :         char* slash;
@@ -271,9 +271,9 @@
 <span class="lineNum">     209 </span>            : #else
 <span class="lineNum">     210 </span>            :         (void)argv0;
 <span class="lineNum">     211 </span>            : 
-<span class="lineNum">     212 </span><span class="lineCov">        265 :         pathcpy(conf, conf_size, &quot;/etc/&quot; PACKAGE &quot;.conf&quot;);</span>
+<span class="lineNum">     212 </span><span class="lineCov">        267 :         pathcpy(conf, conf_size, &quot;/etc/&quot; PACKAGE &quot;.conf&quot;);</span>
 <span class="lineNum">     213 </span>            : #endif
-<span class="lineNum">     214 </span><span class="lineCov">        265 : }</span>
+<span class="lineNum">     214 </span><span class="lineCov">        267 : }</span>
 <span class="lineNum">     215 </span>            : 
 <span class="lineNum">     216 </span>            : /****************************************************************************/
 <span class="lineNum">     217 </span>            : /* main */
@@ -456,25 +456,25 @@
 <span class="lineNum">     394 </span>            : }
 <a name="395"><span class="lineNum">     395 </span>            : /* LCOV_EXCL_STOP */</a>
 <span class="lineNum">     396 </span>            : 
-<span class="lineNum">     397 </span><span class="lineCov">        216 : void signal_init(void)</span>
+<span class="lineNum">     397 </span><span class="lineCov">        218 : void signal_init(void)</span>
 <span class="lineNum">     398 </span>            : {
 <span class="lineNum">     399 </span>            : #if HAVE_SIGACTION
 <span class="lineNum">     400 </span>            :         struct sigaction sa;
 <span class="lineNum">     401 </span>            : 
-<span class="lineNum">     402 </span><span class="lineCov">        216 :         sa.sa_handler = signal_handler;</span>
-<span class="lineNum">     403 </span><span class="lineCov">        216 :         sigemptyset(&amp;sa.sa_mask);</span>
+<span class="lineNum">     402 </span><span class="lineCov">        218 :         sa.sa_handler = signal_handler;</span>
+<span class="lineNum">     403 </span><span class="lineCov">        218 :         sigemptyset(&amp;sa.sa_mask);</span>
 <span class="lineNum">     404 </span>            : 
 <span class="lineNum">     405 </span>            :         /* use the SA_RESTART to automatically restart interrupted system calls */
-<span class="lineNum">     406 </span><span class="lineCov">        216 :         sa.sa_flags = SA_RESTART;</span>
+<span class="lineNum">     406 </span><span class="lineCov">        218 :         sa.sa_flags = SA_RESTART;</span>
 <span class="lineNum">     407 </span>            : 
-<span class="lineNum">     408 </span><span class="lineCov">        216 :         sigaction(SIGHUP, &amp;sa, 0);</span>
-<span class="lineNum">     409 </span><span class="lineCov">        216 :         sigaction(SIGTERM, &amp;sa, 0);</span>
-<span class="lineNum">     410 </span><span class="lineCov">        216 :         sigaction(SIGINT, &amp;sa, 0);</span>
-<span class="lineNum">     411 </span><span class="lineCov">        216 :         sigaction(SIGQUIT, &amp;sa, 0);</span>
+<span class="lineNum">     408 </span><span class="lineCov">        218 :         sigaction(SIGHUP, &amp;sa, 0);</span>
+<span class="lineNum">     409 </span><span class="lineCov">        218 :         sigaction(SIGTERM, &amp;sa, 0);</span>
+<span class="lineNum">     410 </span><span class="lineCov">        218 :         sigaction(SIGINT, &amp;sa, 0);</span>
+<span class="lineNum">     411 </span><span class="lineCov">        218 :         sigaction(SIGQUIT, &amp;sa, 0);</span>
 <span class="lineNum">     412 </span>            : #else
 <span class="lineNum">     413 </span>            :         signal(SIGINT, signal_handler);
 <span class="lineNum">     414 </span>            : #endif
-<span class="lineNum">     415 </span><span class="lineCov">        216 : }</span>
+<span class="lineNum">     415 </span><span class="lineCov">        218 : }</span>
 <span class="lineNum">     416 </span>            : 
 <span class="lineNum">     417 </span>            : #define OPERATION_DIFF 0
 <span class="lineNum">     418 </span>            : #define OPERATION_SYNC 1
@@ -495,7 +495,7 @@
 <span class="lineNum">     433 </span>            : #define OPERATION_DEVICES 16
 <a name="434"><span class="lineNum">     434 </span>            : #define OPERATION_SMART 17</a>
 <span class="lineNum">     435 </span>            : 
-<span class="lineNum">     436 </span><span class="lineCov">        265 : int main(int argc, char* argv[])</span>
+<span class="lineNum">     436 </span><span class="lineCov">        267 : int main(int argc, char* argv[])</span>
 <span class="lineNum">     437 </span>            : {
 <span class="lineNum">     438 </span>            :         int c;
 <span class="lineNum">     439 </span>            :         struct snapraid_option opt;
@@ -526,38 +526,38 @@
 <span class="lineNum">     464 </span>            :         int i;
 <span class="lineNum">     465 </span>            : 
 <span class="lineNum">     466 </span>            :         /* defaults */
-<span class="lineNum">     467 </span><span class="lineCov">        265 :         config(conf, sizeof(conf), argv[0]);</span>
-<span class="lineNum">     468 </span><span class="lineCov">        265 :         memset(&amp;opt, 0, sizeof(opt));</span>
-<span class="lineNum">     469 </span><span class="lineCov">        265 :         opt.io_error_limit = 100;</span>
-<span class="lineNum">     470 </span><span class="lineCov">        265 :         blockstart = 0;</span>
-<span class="lineNum">     471 </span><span class="lineCov">        265 :         blockcount = 0;</span>
-<span class="lineNum">     472 </span><span class="lineCov">        265 :         tommy_list_init(&amp;filterlist_file);</span>
-<span class="lineNum">     473 </span><span class="lineCov">        265 :         tommy_list_init(&amp;filterlist_disk);</span>
-<span class="lineNum">     474 </span><span class="lineCov">        265 :         period = 1000;</span>
-<span class="lineNum">     475 </span><span class="lineCov">        265 :         filter_missing = 0;</span>
-<span class="lineNum">     476 </span><span class="lineCov">        265 :         filter_error = 0;</span>
-<span class="lineNum">     477 </span><span class="lineCov">        265 :         plan = SCRUB_AUTO;</span>
-<span class="lineNum">     478 </span><span class="lineCov">        265 :         olderthan = SCRUB_AUTO;</span>
-<span class="lineNum">     479 </span><span class="lineCov">        265 :         import_timestamp = 0;</span>
-<span class="lineNum">     480 </span><span class="lineCov">        265 :         import_content = 0;</span>
-<span class="lineNum">     481 </span><span class="lineCov">        265 :         log_file = 0;</span>
-<span class="lineNum">     482 </span><span class="lineCov">        265 :         lock = 0;</span>
-<span class="lineNum">     483 </span><span class="lineCov">        265 :         gen_conf = 0;</span>
-<span class="lineNum">     484 </span><span class="lineCov">        265 :         speedtest = 0;</span>
-<span class="lineNum">     485 </span><span class="lineCov">        265 :         run = 0;</span>
+<span class="lineNum">     467 </span><span class="lineCov">        267 :         config(conf, sizeof(conf), argv[0]);</span>
+<span class="lineNum">     468 </span><span class="lineCov">        267 :         memset(&amp;opt, 0, sizeof(opt));</span>
+<span class="lineNum">     469 </span><span class="lineCov">        267 :         opt.io_error_limit = 100;</span>
+<span class="lineNum">     470 </span><span class="lineCov">        267 :         blockstart = 0;</span>
+<span class="lineNum">     471 </span><span class="lineCov">        267 :         blockcount = 0;</span>
+<span class="lineNum">     472 </span><span class="lineCov">        267 :         tommy_list_init(&amp;filterlist_file);</span>
+<span class="lineNum">     473 </span><span class="lineCov">        267 :         tommy_list_init(&amp;filterlist_disk);</span>
+<span class="lineNum">     474 </span><span class="lineCov">        267 :         period = 1000;</span>
+<span class="lineNum">     475 </span><span class="lineCov">        267 :         filter_missing = 0;</span>
+<span class="lineNum">     476 </span><span class="lineCov">        267 :         filter_error = 0;</span>
+<span class="lineNum">     477 </span><span class="lineCov">        267 :         plan = SCRUB_AUTO;</span>
+<span class="lineNum">     478 </span><span class="lineCov">        267 :         olderthan = SCRUB_AUTO;</span>
+<span class="lineNum">     479 </span><span class="lineCov">        267 :         import_timestamp = 0;</span>
+<span class="lineNum">     480 </span><span class="lineCov">        267 :         import_content = 0;</span>
+<span class="lineNum">     481 </span><span class="lineCov">        267 :         log_file = 0;</span>
+<span class="lineNum">     482 </span><span class="lineCov">        267 :         lock = 0;</span>
+<span class="lineNum">     483 </span><span class="lineCov">        267 :         gen_conf = 0;</span>
+<span class="lineNum">     484 </span><span class="lineCov">        267 :         speedtest = 0;</span>
+<span class="lineNum">     485 </span><span class="lineCov">        267 :         run = 0;</span>
 <span class="lineNum">     486 </span>            : 
-<span class="lineNum">     487 </span><span class="lineCov">        265 :         opterr = 0;</span>
-<span class="lineNum">     488 </span><span class="lineCov">       2809 :         while ((c =</span>
+<span class="lineNum">     487 </span><span class="lineCov">        267 :         opterr = 0;</span>
+<span class="lineNum">     488 </span><span class="lineCov">       2829 :         while ((c =</span>
 <span class="lineNum">     489 </span>            : #if HAVE_GETOPT_LONG
 <span class="lineNum">     490 </span>            :                 getopt_long(argc, argv, OPTIONS, long_options, 0))
 <span class="lineNum">     491 </span>            : #else
 <span class="lineNum">     492 </span>            :                 getopt(argc, argv, OPTIONS))
 <span class="lineNum">     493 </span>            : #endif
 <span class="lineNum">     494 </span>            :                 != EOF) {
-<span class="lineNum">     495 </span><span class="lineCov">       2284 :                 switch (c) {</span>
+<span class="lineNum">     495 </span><span class="lineCov">       2300 :                 switch (c) {</span>
 <span class="lineNum">     496 </span>            :                 case 'c' :
-<span class="lineNum">     497 </span><span class="lineCov">        258 :                         pathimport(conf, sizeof(conf), optarg);</span>
-<span class="lineNum">     498 </span><span class="lineCov">        258 :                         break;</span>
+<span class="lineNum">     497 </span><span class="lineCov">        260 :                         pathimport(conf, sizeof(conf), optarg);</span>
+<span class="lineNum">     498 </span><span class="lineCov">        260 :                         break;</span>
 <span class="lineNum">     499 </span>            :                 case 'f' : {
 <span class="lineNum">     500 </span><span class="lineCov">          6 :                         struct snapraid_filter* filter = filter_alloc_file(1, optarg);</span>
 <span class="lineNum">     501 </span><span class="lineCov">          6 :                         if (!filter) {</span>
@@ -698,8 +698,8 @@
 <span class="lineNum">     636 </span><span class="lineCov">         23 :                         ++msg_level;</span>
 <span class="lineNum">     637 </span><span class="lineCov">         23 :                         break;</span>
 <span class="lineNum">     638 </span>            :                 case 'q' :
-<span class="lineNum">     639 </span><span class="lineCov">        705 :                         --msg_level;</span>
-<span class="lineNum">     640 </span><span class="lineCov">        705 :                         break;</span>
+<span class="lineNum">     639 </span><span class="lineCov">        711 :                         --msg_level;</span>
+<span class="lineNum">     640 </span><span class="lineCov">        711 :                         break;</span>
 <span class="lineNum">     641 </span>            :                 case 'G' :
 <span class="lineNum">     642 </span><span class="lineCov">         23 :                         opt.gui = 1;</span>
 <span class="lineNum">     643 </span><span class="lineCov">         23 :                         break;</span>
@@ -725,8 +725,8 @@
 <span class="lineNum">     663 </span><span class="lineCov">         23 :                         opt.expect_recoverable = 1;</span>
 <span class="lineNum">     664 </span><span class="lineCov">         23 :                         break;</span>
 <span class="lineNum">     665 </span>            :                 case OPT_TEST_SKIP_SELF :
-<span class="lineNum">     666 </span><span class="lineCov">        258 :                         opt.skip_self = 1;</span>
-<span class="lineNum">     667 </span><span class="lineCov">        258 :                         break;</span>
+<span class="lineNum">     666 </span><span class="lineCov">        260 :                         opt.skip_self = 1;</span>
+<span class="lineNum">     667 </span><span class="lineCov">        260 :                         break;</span>
 <span class="lineNum">     668 </span>            :                 case OPT_TEST_SKIP_SIGN :
 <span class="lineNum">     669 </span><span class="lineNoCov">          0 :                         opt.skip_sign = 1;</span>
 <span class="lineNum">     670 </span><span class="lineNoCov">          0 :                         break;</span>
@@ -737,9 +737,9 @@
 <span class="lineNum">     675 </span><span class="lineCov">          1 :                         opt.skip_sequential = 1;</span>
 <span class="lineNum">     676 </span><span class="lineCov">          1 :                         break;</span>
 <span class="lineNum">     677 </span>            :                 case OPT_TEST_SKIP_DEVICE :
-<span class="lineNum">     678 </span><span class="lineCov">        265 :                         opt.skip_device = 1;</span>
-<span class="lineNum">     679 </span><span class="lineCov">        265 :                         period = 50; /* reduce period of the speed test */</span>
-<span class="lineNum">     680 </span><span class="lineCov">        265 :                         break;</span>
+<span class="lineNum">     678 </span><span class="lineCov">        267 :                         opt.skip_device = 1;</span>
+<span class="lineNum">     679 </span><span class="lineCov">        267 :                         period = 50; /* reduce period of the speed test */</span>
+<span class="lineNum">     680 </span><span class="lineCov">        267 :                         break;</span>
 <span class="lineNum">     681 </span>            :                 case OPT_TEST_SKIP_CONTENT_CHECK :
 <span class="lineNum">     682 </span><span class="lineNoCov">          0 :                         opt.skip_content_check = 1;</span>
 <span class="lineNum">     683 </span><span class="lineNoCov">          0 :                         break;</span>
@@ -765,8 +765,8 @@
 <span class="lineNum">     703 </span><span class="lineNoCov">          0 :                         opt.force_order = SORT_INODE;</span>
 <span class="lineNum">     704 </span><span class="lineNoCov">          0 :                         break;</span>
 <span class="lineNum">     705 </span>            :                 case OPT_TEST_FORCE_ORDER_ALPHA :
-<span class="lineNum">     706 </span><span class="lineCov">        256 :                         opt.force_order = SORT_ALPHA;</span>
-<span class="lineNum">     707 </span><span class="lineCov">        256 :                         break;</span>
+<span class="lineNum">     706 </span><span class="lineCov">        258 :                         opt.force_order = SORT_ALPHA;</span>
+<span class="lineNum">     707 </span><span class="lineCov">        258 :                         break;</span>
 <span class="lineNum">     708 </span>            :                 case OPT_TEST_FORCE_ORDER_DIR :
 <span class="lineNum">     709 </span><span class="lineNoCov">          0 :                         opt.force_order = SORT_DIR;</span>
 <span class="lineNum">     710 </span><span class="lineNoCov">          0 :                         break;</span>
@@ -796,8 +796,8 @@
 <span class="lineNum">     734 </span><span class="lineNoCov">          0 :                         opt.force_scan_winfind = 1;</span>
 <span class="lineNum">     735 </span><span class="lineNoCov">          0 :                         break;</span>
 <span class="lineNum">     736 </span>            :                 case OPT_TEST_FORCE_PROGRESS :
-<span class="lineNum">     737 </span><span class="lineCov">        256 :                         opt.force_progress = 1;</span>
-<span class="lineNum">     738 </span><span class="lineCov">        256 :                         break;</span>
+<span class="lineNum">     737 </span><span class="lineCov">        258 :                         opt.force_progress = 1;</span>
+<span class="lineNum">     738 </span><span class="lineCov">        258 :                         break;</span>
 <span class="lineNum">     739 </span>            :                 case OPT_TEST_FORCE_AUTOSAVE_AT :
 <span class="lineNum">     740 </span><span class="lineCov">          1 :                         opt.force_autosave_at = atoi(optarg);</span>
 <span class="lineNum">     741 </span><span class="lineCov">          1 :                         break;</span>
@@ -824,34 +824,34 @@
 <span class="lineNum">     762 </span>            :                 }
 <span class="lineNum">     763 </span>            :         }
 <span class="lineNum">     764 </span>            : 
-<span class="lineNum">     765 </span><span class="lineCov">        260 :         os_init(opt.force_scan_winfind);</span>
-<span class="lineNum">     766 </span><span class="lineCov">        260 :         raid_init();</span>
-<span class="lineNum">     767 </span><span class="lineCov">        260 :         crc32c_init();</span>
+<span class="lineNum">     765 </span><span class="lineCov">        262 :         os_init(opt.force_scan_winfind);</span>
+<span class="lineNum">     766 </span><span class="lineCov">        262 :         raid_init();</span>
+<span class="lineNum">     767 </span><span class="lineCov">        262 :         crc32c_init();</span>
 <span class="lineNum">     768 </span>            : 
-<span class="lineNum">     769 </span><span class="lineCov">        260 :         if (speedtest != 0) {</span>
+<span class="lineNum">     769 </span><span class="lineCov">        262 :         if (speedtest != 0) {</span>
 <span class="lineNum">     770 </span><span class="lineCov">          4 :                 speed(period);</span>
 <span class="lineNum">     771 </span><span class="lineCov">          4 :                 os_done();</span>
 <span class="lineNum">     772 </span><span class="lineCov">          4 :                 exit(EXIT_SUCCESS);</span>
 <span class="lineNum">     773 </span>            :         }
 <span class="lineNum">     774 </span>            : 
-<span class="lineNum">     775 </span><span class="lineCov">        256 :         if (gen_conf != 0) {</span>
+<span class="lineNum">     775 </span><span class="lineCov">        258 :         if (gen_conf != 0) {</span>
 <span class="lineNum">     776 </span><span class="lineCov">          1 :                 generate_configuration(gen_conf);</span>
 <span class="lineNum">     777 </span><span class="lineCov">          1 :                 os_done();</span>
 <span class="lineNum">     778 </span><span class="lineCov">          1 :                 exit(EXIT_SUCCESS);</span>
 <span class="lineNum">     779 </span>            :         }
 <span class="lineNum">     780 </span>            : 
-<span class="lineNum">     781 </span><span class="lineCov">        255 :         if (optind + 1 != argc) {</span>
+<span class="lineNum">     781 </span><span class="lineCov">        257 :         if (optind + 1 != argc) {</span>
 <span class="lineNum">     782 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     783 </span>            :                 usage();
 <span class="lineNum">     784 </span>            :                 exit(EXIT_FAILURE);
 <span class="lineNum">     785 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     786 </span>            :         }
 <span class="lineNum">     787 </span>            : 
-<span class="lineNum">     788 </span><span class="lineCov">        255 :         command = argv[optind];</span>
-<span class="lineNum">     789 </span><span class="lineCov">        255 :         if (strcmp(command, &quot;diff&quot;) == 0) {</span>
+<span class="lineNum">     788 </span><span class="lineCov">        257 :         command = argv[optind];</span>
+<span class="lineNum">     789 </span><span class="lineCov">        257 :         if (strcmp(command, &quot;diff&quot;) == 0) {</span>
 <span class="lineNum">     790 </span><span class="lineCov">          7 :                 operation = OPERATION_DIFF;</span>
-<span class="lineNum">     791 </span><span class="lineCov">        248 :         } else if (strcmp(argv[optind], &quot;sync&quot;) == 0) {</span>
-<span class="lineNum">     792 </span><span class="lineCov">         82 :                 operation = OPERATION_SYNC;</span>
+<span class="lineNum">     791 </span><span class="lineCov">        250 :         } else if (strcmp(argv[optind], &quot;sync&quot;) == 0) {</span>
+<span class="lineNum">     792 </span><span class="lineCov">         84 :                 operation = OPERATION_SYNC;</span>
 <span class="lineNum">     793 </span><span class="lineCov">        166 :         } else if (strcmp(argv[optind], &quot;check&quot;) == 0) {</span>
 <span class="lineNum">     794 </span><span class="lineCov">         75 :                 operation = OPERATION_CHECK;</span>
 <span class="lineNum">     795 </span><span class="lineCov">         91 :         } else if (strcmp(argv[optind], &quot;fix&quot;) == 0) {</span>
@@ -892,11 +892,11 @@
 <span class="lineNum">     830 </span>            :         }
 <span class="lineNum">     831 </span>            : 
 <span class="lineNum">     832 </span>            :         /* check options compatibility */
-<span class="lineNum">     833 </span><span class="lineCov">        255 :         switch (operation) {</span>
+<span class="lineNum">     833 </span><span class="lineCov">        257 :         switch (operation) {</span>
 <span class="lineNum">     834 </span>            :         case OPERATION_CHECK :
 <span class="lineNum">     835 </span><span class="lineCov">         75 :                 break;</span>
 <span class="lineNum">     836 </span>            :         default :
-<span class="lineNum">     837 </span><span class="lineCov">        180 :                 if (opt.auditonly) {</span>
+<span class="lineNum">     837 </span><span class="lineCov">        182 :                 if (opt.auditonly) {</span>
 <span class="lineNum">     838 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     839 </span>            :                         log_fatal(&quot;You cannot use -a, --audit-only with the '%s' command\n&quot;, command);
 <span class="lineNum">     840 </span>            :                         exit(EXIT_FAILURE);
@@ -904,11 +904,11 @@
 <span class="lineNum">     842 </span>            :                 }
 <span class="lineNum">     843 </span>            :         }
 <span class="lineNum">     844 </span>            : 
-<span class="lineNum">     845 </span><span class="lineCov">        255 :         switch (operation) {</span>
+<span class="lineNum">     845 </span><span class="lineCov">        257 :         switch (operation) {</span>
 <span class="lineNum">     846 </span>            :         case OPERATION_FIX :
 <span class="lineNum">     847 </span><span class="lineCov">         46 :                 break;</span>
 <span class="lineNum">     848 </span>            :         default :
-<span class="lineNum">     849 </span><span class="lineCov">        209 :                 if (opt.force_device) {</span>
+<span class="lineNum">     849 </span><span class="lineCov">        211 :                 if (opt.force_device) {</span>
 <span class="lineNum">     850 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     851 </span>            :                         log_fatal(&quot;You cannot use -D, --force-device with the '%s' command\n&quot;, command);
 <span class="lineNum">     852 </span>            :                         exit(EXIT_FAILURE);
@@ -916,11 +916,11 @@
 <span class="lineNum">     854 </span>            :                 }
 <span class="lineNum">     855 </span>            :         }
 <span class="lineNum">     856 </span>            : 
-<span class="lineNum">     857 </span><span class="lineCov">        255 :         switch (operation) {</span>
+<span class="lineNum">     857 </span><span class="lineCov">        257 :         switch (operation) {</span>
 <span class="lineNum">     858 </span>            :         case OPERATION_SYNC :
 <span class="lineNum">     859 </span>            :         case OPERATION_CHECK :
 <span class="lineNum">     860 </span>            :         case OPERATION_FIX :
-<span class="lineNum">     861 </span><span class="lineCov">        203 :                 break;</span>
+<span class="lineNum">     861 </span><span class="lineCov">        205 :                 break;</span>
 <span class="lineNum">     862 </span>            :         default :
 <span class="lineNum">     863 </span><span class="lineCov">         52 :                 if (opt.force_nocopy) {</span>
 <span class="lineNum">     864 </span>            :                         /* LCOV_EXCL_START */
@@ -930,9 +930,9 @@
 <span class="lineNum">     868 </span>            :                 }
 <span class="lineNum">     869 </span>            :         }
 <span class="lineNum">     870 </span>            : 
-<span class="lineNum">     871 </span><span class="lineCov">        255 :         switch (operation) {</span>
+<span class="lineNum">     871 </span><span class="lineCov">        257 :         switch (operation) {</span>
 <span class="lineNum">     872 </span>            :         case OPERATION_SYNC :
-<span class="lineNum">     873 </span><span class="lineCov">         82 :                 break;</span>
+<span class="lineNum">     873 </span><span class="lineCov">         84 :                 break;</span>
 <span class="lineNum">     874 </span>            :         default :
 <span class="lineNum">     875 </span><span class="lineCov">        173 :                 if (opt.prehash) {</span>
 <span class="lineNum">     876 </span>            :                         /* LCOV_EXCL_START */
@@ -949,45 +949,45 @@
 <span class="lineNum">     887 </span>            :                 }
 <span class="lineNum">     888 </span>            :         }
 <span class="lineNum">     889 </span>            : 
-<span class="lineNum">     890 </span><span class="lineCov">        255 :         if (opt.force_full &amp;&amp; opt.force_nocopy) {</span>
+<span class="lineNum">     890 </span><span class="lineCov">        257 :         if (opt.force_full &amp;&amp; opt.force_nocopy) {</span>
 <span class="lineNum">     891 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     892 </span>            :                 log_fatal(&quot;You cannot use the -F, --force-full and -N, --force-nocopy options at the same time\n&quot;);
 <span class="lineNum">     893 </span>            :                 exit(EXIT_FAILURE);
 <span class="lineNum">     894 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     895 </span>            :         }
 <span class="lineNum">     896 </span>            : 
-<span class="lineNum">     897 </span><span class="lineCov">        255 :         if (opt.prehash &amp;&amp; opt.force_nocopy) {</span>
+<span class="lineNum">     897 </span><span class="lineCov">        257 :         if (opt.prehash &amp;&amp; opt.force_nocopy) {</span>
 <span class="lineNum">     898 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     899 </span>            :                 log_fatal(&quot;You cannot use the -h, --pre-hash and -N, --force-nocopy options at the same time\n&quot;);
 <span class="lineNum">     900 </span>            :                 exit(EXIT_FAILURE);
 <span class="lineNum">     901 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     902 </span>            :         }
 <span class="lineNum">     903 </span>            : 
-<span class="lineNum">     904 </span><span class="lineCov">        255 :         switch (operation) {</span>
+<span class="lineNum">     904 </span><span class="lineCov">        257 :         switch (operation) {</span>
 <span class="lineNum">     905 </span>            :         case OPERATION_CHECK :
 <span class="lineNum">     906 </span>            :         case OPERATION_FIX :
 <span class="lineNum">     907 </span>            :         case OPERATION_DRY :
 <span class="lineNum">     908 </span><span class="lineCov">        123 :                 break;</span>
 <span class="lineNum">     909 </span>            :         default :
-<span class="lineNum">     910 </span><span class="lineCov">        132 :                 if (!tommy_list_empty(&amp;filterlist_file)) {</span>
+<span class="lineNum">     910 </span><span class="lineCov">        134 :                 if (!tommy_list_empty(&amp;filterlist_file)) {</span>
 <span class="lineNum">     911 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     912 </span>            :                         log_fatal(&quot;You cannot use -f, --filter with the '%s' command\n&quot;, command);
 <span class="lineNum">     913 </span>            :                         exit(EXIT_FAILURE);
 <span class="lineNum">     914 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     915 </span>            :                 }
-<span class="lineNum">     916 </span><span class="lineCov">        132 :                 if (!tommy_list_empty(&amp;filterlist_disk)) {</span>
+<span class="lineNum">     916 </span><span class="lineCov">        134 :                 if (!tommy_list_empty(&amp;filterlist_disk)) {</span>
 <span class="lineNum">     917 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     918 </span>            :                         log_fatal(&quot;You cannot use -d, --filter-disk with the '%s' command\n&quot;, command);
 <span class="lineNum">     919 </span>            :                         exit(EXIT_FAILURE);
 <span class="lineNum">     920 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     921 </span>            :                 }
-<span class="lineNum">     922 </span><span class="lineCov">        132 :                 if (filter_missing != 0) {</span>
+<span class="lineNum">     922 </span><span class="lineCov">        134 :                 if (filter_missing != 0) {</span>
 <span class="lineNum">     923 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     924 </span>            :                         log_fatal(&quot;You cannot use -m, --filter-missing with the '%s' command\n&quot;, command);
 <span class="lineNum">     925 </span>            :                         exit(EXIT_FAILURE);
 <span class="lineNum">     926 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     927 </span>            :                 }
-<span class="lineNum">     928 </span><span class="lineCov">        132 :                 if (filter_error != 0) {</span>
+<span class="lineNum">     928 </span><span class="lineCov">        134 :                 if (filter_error != 0) {</span>
 <span class="lineNum">     929 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     930 </span>            :                         log_fatal(&quot;You cannot use -e, --filter-error with the '%s' command\n&quot;, command);
 <span class="lineNum">     931 </span>            :                         exit(EXIT_FAILURE);
@@ -997,19 +997,19 @@
 <span class="lineNum">     935 </span>            : 
 <span class="lineNum">     936 </span>            :         /* errors must be always fixed on all disks */
 <span class="lineNum">     937 </span>            :         /* because we don't keep the information on what disk is the error */
-<span class="lineNum">     938 </span><span class="lineCov">        255 :         if (filter_error != 0 &amp;&amp; !tommy_list_empty(&amp;filterlist_disk)) {</span>
+<span class="lineNum">     938 </span><span class="lineCov">        257 :         if (filter_error != 0 &amp;&amp; !tommy_list_empty(&amp;filterlist_disk)) {</span>
 <span class="lineNum">     939 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     940 </span>            :                 log_fatal(&quot;You cannot use -e, --filter-error and -d, --filter-disk at the same time\n&quot;);
 <span class="lineNum">     941 </span>            :                 exit(EXIT_FAILURE);
 <span class="lineNum">     942 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     943 </span>            :         }
 <span class="lineNum">     944 </span>            : 
-<span class="lineNum">     945 </span><span class="lineCov">        255 :         switch (operation) {</span>
+<span class="lineNum">     945 </span><span class="lineCov">        257 :         switch (operation) {</span>
 <span class="lineNum">     946 </span>            :         case OPERATION_CHECK :
 <span class="lineNum">     947 </span>            :         case OPERATION_FIX :
 <span class="lineNum">     948 </span><span class="lineCov">        121 :                 break;</span>
 <span class="lineNum">     949 </span>            :         default :
-<span class="lineNum">     950 </span><span class="lineCov">        134 :                 if (import_timestamp != 0 || import_content != 0) {</span>
+<span class="lineNum">     950 </span><span class="lineCov">        136 :                 if (import_timestamp != 0 || import_content != 0) {</span>
 <span class="lineNum">     951 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     952 </span>            :                         log_fatal(&quot;You cannot import with the '%s' command\n&quot;, command);
 <span class="lineNum">     953 </span>            :                         exit(EXIT_FAILURE);
@@ -1017,7 +1017,7 @@
 <span class="lineNum">     955 </span>            :                 }
 <span class="lineNum">     956 </span>            :         }
 <span class="lineNum">     957 </span>            : 
-<span class="lineNum">     958 </span><span class="lineCov">        255 :         switch (operation) {</span>
+<span class="lineNum">     958 </span><span class="lineCov">        257 :         switch (operation) {</span>
 <span class="lineNum">     959 </span>            :         case OPERATION_LIST :
 <span class="lineNum">     960 </span>            :         case OPERATION_DUP :
 <span class="lineNum">     961 </span>            :         case OPERATION_STATUS :
@@ -1030,7 +1030,7 @@
 <span class="lineNum">     968 </span><span class="lineCov">         24 :                 break;</span>
 <span class="lineNum">     969 </span>            :         }
 <span class="lineNum">     970 </span>            : 
-<span class="lineNum">     971 </span><span class="lineCov">        255 :         switch (operation) {</span>
+<span class="lineNum">     971 </span><span class="lineCov">        257 :         switch (operation) {</span>
 <span class="lineNum">     972 </span>            :         case OPERATION_DIFF :
 <span class="lineNum">     973 </span>            :         case OPERATION_LIST :
 <span class="lineNum">     974 </span>            :         case OPERATION_DUP :
@@ -1046,7 +1046,7 @@
 <span class="lineNum">     984 </span><span class="lineCov">         35 :                 break;</span>
 <span class="lineNum">     985 </span>            :         }
 <span class="lineNum">     986 </span>            : 
-<span class="lineNum">     987 </span><span class="lineCov">        255 :         switch (operation) {</span>
+<span class="lineNum">     987 </span><span class="lineCov">        257 :         switch (operation) {</span>
 <span class="lineNum">     988 </span>            :         case OPERATION_FIX :
 <span class="lineNum">     989 </span>            :         case OPERATION_CHECK :
 <span class="lineNum">     990 </span>            :                 /* avoid to stop processing if a content file is not accessible */
@@ -1054,7 +1054,7 @@
 <span class="lineNum">     992 </span><span class="lineCov">        121 :                 break;</span>
 <span class="lineNum">     993 </span>            :         }
 <span class="lineNum">     994 </span>            : 
-<span class="lineNum">     995 </span><span class="lineCov">        255 :         switch (operation) {</span>
+<span class="lineNum">     995 </span><span class="lineCov">        257 :         switch (operation) {</span>
 <span class="lineNum">     996 </span>            :         case OPERATION_DIFF :
 <span class="lineNum">     997 </span>            :         case OPERATION_LIST :
 <span class="lineNum">     998 </span>            :         case OPERATION_DUP :
@@ -1068,7 +1068,7 @@
 <span class="lineNum">    1006 </span><span class="lineCov">         22 :                 break;</span>
 <span class="lineNum">    1007 </span>            :         }
 <span class="lineNum">    1008 </span>            : 
-<span class="lineNum">    1009 </span><span class="lineCov">        255 :         switch (operation) {</span>
+<span class="lineNum">    1009 </span><span class="lineCov">        257 :         switch (operation) {</span>
 <span class="lineNum">    1010 </span>            :         case OPERATION_DEVICES :
 <span class="lineNum">    1011 </span>            :         case OPERATION_SMART :
 <span class="lineNum">    1012 </span>            :                 /* we may need to use these commands during operations */
@@ -1077,39 +1077,39 @@
 <span class="lineNum">    1015 </span>            :         }
 <span class="lineNum">    1016 </span>            : 
 <span class="lineNum">    1017 </span>            :         /* open the log file */
-<span class="lineNum">    1018 </span><span class="lineCov">        255 :         log_open(log_file);</span>
+<span class="lineNum">    1018 </span><span class="lineCov">        257 :         log_open(log_file);</span>
 <span class="lineNum">    1019 </span>            : 
 <span class="lineNum">    1020 </span>            :         /* print generic info into the log */
-<span class="lineNum">    1021 </span><span class="lineCov">        255 :         t = time(0);</span>
-<span class="lineNum">    1022 </span><span class="lineCov">        255 :         tm = localtime(&amp;t);</span>
-<span class="lineNum">    1023 </span><span class="lineCov">        255 :         log_tag(&quot;version:%s\n&quot;, PACKAGE_VERSION);</span>
-<span class="lineNum">    1024 </span><span class="lineCov">        255 :         log_tag(&quot;unixtime:%&quot; PRIi64 &quot;\n&quot;, (int64_t)t);</span>
-<span class="lineNum">    1025 </span><span class="lineCov">        255 :         if (tm) {</span>
+<span class="lineNum">    1021 </span><span class="lineCov">        257 :         t = time(0);</span>
+<span class="lineNum">    1022 </span><span class="lineCov">        257 :         tm = localtime(&amp;t);</span>
+<span class="lineNum">    1023 </span><span class="lineCov">        257 :         log_tag(&quot;version:%s\n&quot;, PACKAGE_VERSION);</span>
+<span class="lineNum">    1024 </span><span class="lineCov">        257 :         log_tag(&quot;unixtime:%&quot; PRIi64 &quot;\n&quot;, (int64_t)t);</span>
+<span class="lineNum">    1025 </span><span class="lineCov">        257 :         if (tm) {</span>
 <span class="lineNum">    1026 </span>            :                 char datetime[64];
-<span class="lineNum">    1027 </span><span class="lineCov">        255 :                 strftime(datetime, sizeof(datetime), &quot;%Y-%m-%d %H:%M:%S&quot;, tm);</span>
-<span class="lineNum">    1028 </span><span class="lineCov">        255 :                 log_tag(&quot;time:%s\n&quot;, datetime);</span>
+<span class="lineNum">    1027 </span><span class="lineCov">        257 :                 strftime(datetime, sizeof(datetime), &quot;%Y-%m-%d %H:%M:%S&quot;, tm);</span>
+<span class="lineNum">    1028 </span><span class="lineCov">        257 :                 log_tag(&quot;time:%s\n&quot;, datetime);</span>
 <span class="lineNum">    1029 </span>            :         }
-<span class="lineNum">    1030 </span><span class="lineCov">        255 :         log_tag(&quot;command:%s\n&quot;, command);</span>
-<span class="lineNum">    1031 </span><span class="lineCov">       3377 :         for (i = 0; i &lt; argc; ++i)</span>
-<span class="lineNum">    1032 </span><span class="lineCov">       3122 :                 log_tag(&quot;argv:%u:%s\n&quot;, i, argv[i]);</span>
-<span class="lineNum">    1033 </span><span class="lineCov">        255 :         log_flush();</span>
+<span class="lineNum">    1030 </span><span class="lineCov">        257 :         log_tag(&quot;command:%s\n&quot;, command);</span>
+<span class="lineNum">    1031 </span><span class="lineCov">       3401 :         for (i = 0; i &lt; argc; ++i)</span>
+<span class="lineNum">    1032 </span><span class="lineCov">       3144 :                 log_tag(&quot;argv:%u:%s\n&quot;, i, argv[i]);</span>
+<span class="lineNum">    1033 </span><span class="lineCov">        257 :         log_flush();</span>
 <span class="lineNum">    1034 </span>            : 
-<span class="lineNum">    1035 </span><span class="lineCov">        255 :         if (!opt.skip_self)</span>
+<span class="lineNum">    1035 </span><span class="lineCov">        257 :         if (!opt.skip_self)</span>
 <span class="lineNum">    1036 </span><span class="lineCov">          1 :                 selftest();</span>
 <span class="lineNum">    1037 </span>            : 
-<span class="lineNum">    1038 </span><span class="lineCov">        255 :         state_init(&amp;state);</span>
+<span class="lineNum">    1038 </span><span class="lineCov">        257 :         state_init(&amp;state);</span>
 <span class="lineNum">    1039 </span>            : 
 <span class="lineNum">    1040 </span>            :         /* read the configuration file */
-<span class="lineNum">    1041 </span><span class="lineCov">        255 :         state_config(&amp;state, conf, command, &amp;opt, &amp;filterlist_disk);</span>
+<span class="lineNum">    1041 </span><span class="lineCov">        257 :         state_config(&amp;state, conf, command, &amp;opt, &amp;filterlist_disk);</span>
 <span class="lineNum">    1042 </span>            : 
 <span class="lineNum">    1043 </span>            :         /* set the raid mode */
-<span class="lineNum">    1044 </span><span class="lineCov">        254 :         raid_mode(state.raid_mode);</span>
+<span class="lineNum">    1044 </span><span class="lineCov">        256 :         raid_mode(state.raid_mode);</span>
 <span class="lineNum">    1045 </span>            : 
 <span class="lineNum">    1046 </span>            : #if HAVE_LOCKFILE
 <span class="lineNum">    1047 </span>            :         /* create the lock file */
-<span class="lineNum">    1048 </span><span class="lineCov">        254 :         if (!opt.skip_lock &amp;&amp; state.lockfile[0]) {</span>
-<span class="lineNum">    1049 </span><span class="lineCov">        251 :                 lock = lock_lock(state.lockfile);</span>
-<span class="lineNum">    1050 </span><span class="lineCov">        251 :                 if (lock == -1) {</span>
+<span class="lineNum">    1048 </span><span class="lineCov">        256 :         if (!opt.skip_lock &amp;&amp; state.lockfile[0]) {</span>
+<span class="lineNum">    1049 </span><span class="lineCov">        253 :                 lock = lock_lock(state.lockfile);</span>
+<span class="lineNum">    1050 </span><span class="lineCov">        253 :                 if (lock == -1) {</span>
 <span class="lineNum">    1051 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">    1052 </span>            :                         if (errno != EWOULDBLOCK) {
 <span class="lineNum">    1053 </span>            :                                 log_fatal(&quot;Error creating the lock file '%s'. %s.\n&quot;, state.lockfile, strerror(errno));
@@ -1125,7 +1125,7 @@
 <span class="lineNum">    1063 </span>            :         (void)lock;
 <span class="lineNum">    1064 </span>            : #endif
 <span class="lineNum">    1065 </span>            : 
-<span class="lineNum">    1066 </span><span class="lineCov">        254 :         if (operation == OPERATION_DIFF) {</span>
+<span class="lineNum">    1066 </span><span class="lineCov">        256 :         if (operation == OPERATION_DIFF) {</span>
 <span class="lineNum">    1067 </span><span class="lineCov">          7 :                 state_read(&amp;state);</span>
 <span class="lineNum">    1068 </span>            : 
 <span class="lineNum">    1069 </span><span class="lineCov">          7 :                 ret = state_diff(&amp;state);</span>
@@ -1133,7 +1133,7 @@
 <span class="lineNum">    1071 </span>            :                 /* abort if sync needed */
 <span class="lineNum">    1072 </span><span class="lineCov">          7 :                 if (ret &gt; 0)</span>
 <span class="lineNum">    1073 </span><span class="lineCov">          6 :                         exit(EXIT_SYNC_NEEDED);</span>
-<span class="lineNum">    1074 </span><span class="lineCov">        247 :         } else if (operation == OPERATION_SYNC) {</span>
+<span class="lineNum">    1074 </span><span class="lineCov">        249 :         } else if (operation == OPERATION_SYNC) {</span>
 <span class="lineNum">    1075 </span>            : 
 <span class="lineNum">    1076 </span>            :                 /* in the next state read ensures to clear all the past hashes in case */
 <span class="lineNum">    1077 </span>            :                 /* we are reading from an incomplete sync */
@@ -1161,19 +1161,19 @@
 <span class="lineNum">    1099 </span>            :                 /*   but without saving the content file representing this new EMPTY state. */
 <span class="lineNum">    1100 </span>            :                 /* - Another file is added again over the DELETE ones */
 <span class="lineNum">    1101 </span>            :                 /*   with the hash of DELETED blocks not representing the real parity state */
-<span class="lineNum">    1102 </span><span class="lineCov">         82 :                 state.clear_past_hash = 1;</span>
+<span class="lineNum">    1102 </span><span class="lineCov">         84 :                 state.clear_past_hash = 1;</span>
 <span class="lineNum">    1103 </span>            : 
-<span class="lineNum">    1104 </span><span class="lineCov">         82 :                 state_read(&amp;state);</span>
+<span class="lineNum">    1104 </span><span class="lineCov">         84 :                 state_read(&amp;state);</span>
 <span class="lineNum">    1105 </span>            : 
-<span class="lineNum">    1106 </span><span class="lineCov">         81 :                 state_scan(&amp;state);</span>
+<span class="lineNum">    1106 </span><span class="lineCov">         83 :                 state_scan(&amp;state);</span>
 <span class="lineNum">    1107 </span>            : 
 <span class="lineNum">    1108 </span>            :                 /* refresh the size info before the content write */
-<span class="lineNum">    1109 </span><span class="lineCov">         80 :                 state_refresh(&amp;state);</span>
+<span class="lineNum">    1109 </span><span class="lineCov">         82 :                 state_refresh(&amp;state);</span>
 <span class="lineNum">    1110 </span>            : 
-<span class="lineNum">    1111 </span><span class="lineCov">         80 :                 memory();</span>
+<span class="lineNum">    1111 </span><span class="lineCov">         82 :                 memory();</span>
 <span class="lineNum">    1112 </span>            : 
 <span class="lineNum">    1113 </span>            :                 /* intercept signals while operating */
-<span class="lineNum">    1114 </span><span class="lineCov">         80 :                 signal_init();</span>
+<span class="lineNum">    1114 </span><span class="lineCov">         82 :                 signal_init();</span>
 <span class="lineNum">    1115 </span>            : 
 <span class="lineNum">    1116 </span>            :                 /* save the new state before the sync */
 <span class="lineNum">    1117 </span>            :                 /* this allow to recover the case of the changes in the array after an aborted sync. */
@@ -1189,11 +1189,11 @@
 <span class="lineNum">    1127 </span>            :                 /* because the files triggering these changes are now deleted */
 <span class="lineNum">    1128 </span>            :                 /* and they aren't listed in the content file */
 <span class="lineNum">    1129 </span>            : 
-<span class="lineNum">    1130 </span><span class="lineCov">         80 :                 if (state.need_write)</span>
-<span class="lineNum">    1131 </span><span class="lineCov">         78 :                         state_write(&amp;state);</span>
+<span class="lineNum">    1130 </span><span class="lineCov">         82 :                 if (state.need_write)</span>
+<span class="lineNum">    1131 </span><span class="lineCov">         80 :                         state_write(&amp;state);</span>
 <span class="lineNum">    1132 </span>            : 
 <span class="lineNum">    1133 </span>            :                 /* run a test command if required */
-<span class="lineNum">    1134 </span><span class="lineCov">         80 :                 if (run != 0) {</span>
+<span class="lineNum">    1134 </span><span class="lineCov">         82 :                 if (run != 0) {</span>
 <span class="lineNum">    1135 </span><span class="lineCov">         10 :                         ret = system(run); /* ignore error */</span>
 <span class="lineNum">    1136 </span><span class="lineCov">         10 :                         if (ret != 0) {</span>
 <span class="lineNum">    1137 </span>            :                                 /* LCOV_EXCL_START */
@@ -1210,21 +1210,21 @@
 <span class="lineNum">    1148 </span>            :                 /* The worst case is the FAT file-system with a two seconds resolution for mtime. */
 <span class="lineNum">    1149 </span>            :                 /* If you don't use FAT, the wait is not needed, because most file-systems have now */
 <span class="lineNum">    1150 </span>            :                 /* at least microseconds resolution, but better to be safe. */
-<span class="lineNum">    1151 </span><span class="lineCov">         80 :                 if (!opt.skip_self)</span>
+<span class="lineNum">    1151 </span><span class="lineCov">         82 :                 if (!opt.skip_self)</span>
 <span class="lineNum">    1152 </span><span class="lineNoCov">          0 :                         sleep(2);</span>
 <span class="lineNum">    1153 </span>            : 
-<span class="lineNum">    1154 </span><span class="lineCov">         80 :                 ret = state_sync(&amp;state, blockstart, blockcount);</span>
+<span class="lineNum">    1154 </span><span class="lineCov">         82 :                 ret = state_sync(&amp;state, blockstart, blockcount);</span>
 <span class="lineNum">    1155 </span>            : 
 <span class="lineNum">    1156 </span>            :                 /* save the new state if required */
-<span class="lineNum">    1157 </span><span class="lineCov">         80 :                 if (!opt.kill_after_sync) {</span>
-<span class="lineNum">    1158 </span><span class="lineCov">         70 :                         if ((state.need_write || state.opt.force_content_write))</span>
-<span class="lineNum">    1159 </span><span class="lineCov">         51 :                                 state_write(&amp;state);</span>
+<span class="lineNum">    1157 </span><span class="lineCov">         82 :                 if (!opt.kill_after_sync) {</span>
+<span class="lineNum">    1158 </span><span class="lineCov">         72 :                         if ((state.need_write || state.opt.force_content_write))</span>
+<span class="lineNum">    1159 </span><span class="lineCov">         52 :                                 state_write(&amp;state);</span>
 <span class="lineNum">    1160 </span>            :                 } else {
 <span class="lineNum">    1161 </span><span class="lineCov">         10 :                         log_fatal(&quot;WARNING! Skipped state write for --test-kill-after-sync option.\n&quot;);</span>
 <span class="lineNum">    1162 </span>            :                 }
 <span class="lineNum">    1163 </span>            : 
 <span class="lineNum">    1164 </span>            :                 /* abort if required */
-<span class="lineNum">    1165 </span><span class="lineCov">         80 :                 if (ret != 0) {</span>
+<span class="lineNum">    1165 </span><span class="lineCov">         82 :                 if (ret != 0) {</span>
 <span class="lineNum">    1166 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">    1167 </span>            :                         exit(EXIT_FAILURE);
 <span class="lineNum">    1168 </span>            :                         /* LCOV_EXCL_STOP */
@@ -1363,11 +1363,11 @@
 <span class="lineNum">    1301 </span>            :         }
 <span class="lineNum">    1302 </span>            : 
 <span class="lineNum">    1303 </span>            :         /* close log file */
-<span class="lineNum">    1304 </span><span class="lineCov">        233 :         log_close(log_file);</span>
+<span class="lineNum">    1304 </span><span class="lineCov">        235 :         log_close(log_file);</span>
 <span class="lineNum">    1305 </span>            : 
 <span class="lineNum">    1306 </span>            : #if HAVE_LOCKFILE
-<span class="lineNum">    1307 </span><span class="lineCov">        233 :         if (!opt.skip_lock &amp;&amp; state.lockfile[0]) {</span>
-<span class="lineNum">    1308 </span><span class="lineCov">        231 :                 if (lock_unlock(lock) == -1) {</span>
+<span class="lineNum">    1307 </span><span class="lineCov">        235 :         if (!opt.skip_lock &amp;&amp; state.lockfile[0]) {</span>
+<span class="lineNum">    1308 </span><span class="lineCov">        233 :                 if (lock_unlock(lock) == -1) {</span>
 <span class="lineNum">    1309 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">    1310 </span>            :                         log_fatal(&quot;Error closing the lock file '%s'. %s.\n&quot;, state.lockfile, strerror(errno));
 <span class="lineNum">    1311 </span>            :                         exit(EXIT_FAILURE);
@@ -1376,13 +1376,13 @@
 <span class="lineNum">    1314 </span>            :         }
 <span class="lineNum">    1315 </span>            : #endif
 <span class="lineNum">    1316 </span>            : 
-<span class="lineNum">    1317 </span><span class="lineCov">        233 :         state_done(&amp;state);</span>
-<span class="lineNum">    1318 </span><span class="lineCov">        233 :         tommy_list_foreach(&amp;filterlist_file, (tommy_foreach_func*)filter_free);</span>
-<span class="lineNum">    1319 </span><span class="lineCov">        233 :         tommy_list_foreach(&amp;filterlist_disk, (tommy_foreach_func*)filter_free);</span>
+<span class="lineNum">    1317 </span><span class="lineCov">        235 :         state_done(&amp;state);</span>
+<span class="lineNum">    1318 </span><span class="lineCov">        235 :         tommy_list_foreach(&amp;filterlist_file, (tommy_foreach_func*)filter_free);</span>
+<span class="lineNum">    1319 </span><span class="lineCov">        235 :         tommy_list_foreach(&amp;filterlist_disk, (tommy_foreach_func*)filter_free);</span>
 <span class="lineNum">    1320 </span>            : 
-<span class="lineNum">    1321 </span><span class="lineCov">        233 :         os_done();</span>
+<span class="lineNum">    1321 </span><span class="lineCov">        235 :         os_done();</span>
 <span class="lineNum">    1322 </span>            : 
-<span class="lineNum">    1323 </span><span class="lineCov">        233 :         return EXIT_SUCCESS;</span>
+<span class="lineNum">    1323 </span><span class="lineCov">        235 :         return EXIT_SUCCESS;</span>
 <span class="lineNum">    1324 </span>            : }
 <span class="lineNum">    1325 </span>            : 
 </pre>

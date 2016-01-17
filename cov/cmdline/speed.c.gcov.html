@@ -37,7 +37,7 @@
           </tr>
           <tr>
             <td class="headerItem">Date:</td>
-            <td class="headerValue">2016-01-09</td>
+            <td class="headerValue">2016-01-16</td>
             <td></td>
             <td class="headerItem">Functions:</td>
             <td class="headerCovTableEntry">2</td>
@@ -100,14 +100,14 @@
 <span class="lineNum">      38 </span>            : /**
 <a name="39"><span class="lineNum">      39 </span>            :  * Differential us of two timeval.</a>
 <span class="lineNum">      40 </span>            :  */
-<span class="lineNum">      41 </span><span class="lineCov">       1878 : static int64_t diffgettimeofday(struct timeval *start, struct timeval *stop)</span>
+<span class="lineNum">      41 </span><span class="lineCov">       1889 : static int64_t diffgettimeofday(struct timeval *start, struct timeval *stop)</span>
 <span class="lineNum">      42 </span>            : {
 <span class="lineNum">      43 </span>            :         int64_t d;
 <span class="lineNum">      44 </span>            : 
-<span class="lineNum">      45 </span><span class="lineCov">       1878 :         d = 1000000LL * (stop-&gt;tv_sec - start-&gt;tv_sec);</span>
-<span class="lineNum">      46 </span><span class="lineCov">       1878 :         d += stop-&gt;tv_usec - start-&gt;tv_usec;</span>
+<span class="lineNum">      45 </span><span class="lineCov">       1889 :         d = 1000000LL * (stop-&gt;tv_sec - start-&gt;tv_sec);</span>
+<span class="lineNum">      46 </span><span class="lineCov">       1889 :         d += stop-&gt;tv_usec - start-&gt;tv_usec;</span>
 <span class="lineNum">      47 </span>            : 
-<span class="lineNum">      48 </span><span class="lineCov">       1878 :         return d;</span>
+<span class="lineNum">      48 </span><span class="lineCov">       1889 :         return d;</span>
 <span class="lineNum">      49 </span>            : }
 <span class="lineNum">      50 </span>            : 
 <span class="lineNum">      51 </span>            : /**
@@ -224,7 +224,7 @@
 <span class="lineNum">     162 </span>            : 
 <span class="lineNum">     163 </span><span class="lineCov">          4 :         printf(&quot;Speed test using %u data buffers of %u bytes, for a total of %u KiB.\n&quot;, nd, size, nd * size / 1024);</span>
 <span class="lineNum">     164 </span><span class="lineCov">          4 :         printf(&quot;Memory blocks have a displacement of %u bytes to improve cache performance.\n&quot;, RAID_MALLOC_DISPLACEMENT);</span>
-<span class="lineNum">     165 </span><span class="lineCov">          4 :         printf(&quot;The reported values are the aggregate bandwidth of all data blocks in MiB/s,\n&quot;);</span>
+<span class="lineNum">     165 </span><span class="lineCov">          4 :         printf(&quot;The reported values are the aggregate bandwidth of all data blocks in MB/s,\n&quot;);</span>
 <span class="lineNum">     166 </span><span class="lineCov">          4 :         printf(&quot;not counting parity blocks.\n&quot;);</span>
 <span class="lineNum">     167 </span><span class="lineCov">          4 :         printf(&quot;\n&quot;);</span>
 <span class="lineNum">     168 </span>            : 
@@ -232,10 +232,10 @@
 <span class="lineNum">     170 </span><span class="lineCov">          4 :         printf(&quot;%8s&quot;, &quot;memset&quot;);</span>
 <span class="lineNum">     171 </span><span class="lineCov">          4 :         fflush(stdout);</span>
 <span class="lineNum">     172 </span>            : 
-<span class="lineNum">     173 </span><span class="lineCov">        375 :         SPEED_START {</span>
-<span class="lineNum">     174 </span><span class="lineCov">       3339 :                 for (j = 0; j &lt; nd; ++j)</span>
-<span class="lineNum">     175 </span><span class="lineCov">       2968 :                         memset(v[j], j, size);</span>
-<span class="lineNum">     176 </span><span class="lineCov">        371 :         } SPEED_STOP</span>
+<span class="lineNum">     173 </span><span class="lineCov">        388 :         SPEED_START {</span>
+<span class="lineNum">     174 </span><span class="lineCov">       3456 :                 for (j = 0; j &lt; nd; ++j)</span>
+<span class="lineNum">     175 </span><span class="lineCov">       3072 :                         memset(v[j], j, size);</span>
+<span class="lineNum">     176 </span><span class="lineCov">        384 :         } SPEED_STOP</span>
 <span class="lineNum">     177 </span>            : 
 <span class="lineNum">     178 </span><span class="lineCov">          4 :         printf(&quot;%8&quot; PRIu64, ds / dt);</span>
 <span class="lineNum">     179 </span><span class="lineCov">          4 :         printf(&quot;\n&quot;);</span>
@@ -358,9 +358,9 @@
 <span class="lineNum">     296 </span>            : #ifdef CONFIG_X86
 <span class="lineNum">     297 </span>            : #ifdef CONFIG_SSE2
 <span class="lineNum">     298 </span><span class="lineCov">          4 :         if (raid_cpu_has_sse2()) {</span>
-<span class="lineNum">     299 </span><span class="lineCov">        317 :                 SPEED_START {</span>
-<span class="lineNum">     300 </span><span class="lineCov">        313 :                         raid_gen1_sse2(nd, size, v);</span>
-<span class="lineNum">     301 </span><span class="lineCov">        313 :                 } SPEED_STOP</span>
+<span class="lineNum">     299 </span><span class="lineCov">        316 :                 SPEED_START {</span>
+<span class="lineNum">     300 </span><span class="lineCov">        312 :                         raid_gen1_sse2(nd, size, v);</span>
+<span class="lineNum">     301 </span><span class="lineCov">        312 :                 } SPEED_STOP</span>
 <span class="lineNum">     302 </span>            : 
 <span class="lineNum">     303 </span><span class="lineCov">          4 :                 printf(&quot;%8&quot; PRIu64, ds / dt);</span>
 <span class="lineNum">     304 </span><span class="lineCov">          4 :                 fflush(stdout);</span>
@@ -707,9 +707,9 @@
 <span class="lineNum">     645 </span><span class="lineCov">          4 :         printf(&quot;%8s&quot;, raid_gen6_tag());</span>
 <span class="lineNum">     646 </span><span class="lineCov">          4 :         fflush(stdout);</span>
 <span class="lineNum">     647 </span>            : 
-<span class="lineNum">     648 </span><span class="lineCov">         12 :         SPEED_START {</span>
-<span class="lineNum">     649 </span><span class="lineCov">          8 :                 raid_gen6_int8(nd, size, v);</span>
-<span class="lineNum">     650 </span><span class="lineCov">          8 :         } SPEED_STOP</span>
+<span class="lineNum">     648 </span><span class="lineCov">         11 :         SPEED_START {</span>
+<span class="lineNum">     649 </span><span class="lineCov">          7 :                 raid_gen6_int8(nd, size, v);</span>
+<span class="lineNum">     650 </span><span class="lineCov">          7 :         } SPEED_STOP</span>
 <span class="lineNum">     651 </span>            : 
 <span class="lineNum">     652 </span><span class="lineCov">          4 :         printf(&quot;%8&quot; PRIu64, ds / dt);</span>
 <span class="lineNum">     653 </span><span class="lineCov">          4 :         fflush(stdout);</span>
