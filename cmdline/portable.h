@@ -446,7 +446,7 @@ typedef struct devinfo_struct devinfo_t;
  *
  * The passed "low" device list must be already initialized.
  */
-int devquery(tommy_list* high, tommy_list* low, int operation);
+int devquery(tommy_list* high, tommy_list* low, int operation, int others);
 
 #endif
 

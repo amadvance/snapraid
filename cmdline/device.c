@@ -984,10 +984,13 @@ void state_device(struct snapraid_state* state, int operation)
 		tommy_list_insert_tail(&high, &entry->node, entry);
 	}
 
-	if (state->opt.fake_device)
+	if (state->opt.fake_device) {
 		ret = devtest(&low, operation);
-	else
-		ret = devquery(&high, &low, operation);
+	} else {
+		int others = operation == DEVICE_SMART;
+
+		ret = devquery(&high, &low, operation, others);
+	}
 
 	if (ret != 0) {
 		const char* ope = 0;

@@ -1030,6 +1030,13 @@ int main(int argc, char* argv[])
 		break;
 	}
 
+	switch (operation) {
+	case OPERATION_SMART :
+		/* allow to run without configuration file */
+		opt.auto_conf = 1;
+		break;
+	}
+
 	/* open the log file */
 	log_open(log_file);
 

@@ -2433,7 +2433,7 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 	return 0;
 }
 
-int devquery(tommy_list* high, tommy_list* low, int operation)
+int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 {
 	tommy_node* i;
 	void* (*func)(void* arg) = 0;
@@ -2478,7 +2478,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation)
 	}
 
 	/* add other devices */
-	if (operation == DEVICE_SMART) {
+	if (others) {
 		if (devscan(low) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Failed to list other devices.\n");
