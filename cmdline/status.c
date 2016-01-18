@@ -472,10 +472,10 @@ int state_status(struct snapraid_state* state)
 	}
 
 	if (file_zerosubsecond) {
-		printf("You have %u files with zero subsecond timestamp. ", file_zerosubsecond);
-		printf("Run the 'nano' command.\n");
+		printf("You have %u files with zero sub-second timestamp.\n", file_zerosubsecond);
+		printf("Run the 'nano' command to set it to a not zero value.\n");
 	} else {
-		printf("No file has a zero subsecond timestamp.\n");
+		printf("No file has a zero sub-second timestamp.\n");
 	}
 
 	if (rehash) {
