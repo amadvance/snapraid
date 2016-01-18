@@ -174,13 +174,13 @@ static block_off_t io_position_next(struct snapraid_io* io)
 /**
  * Setup the next pending task for all readers.
  */
-static void io_reader_sched(struct snapraid_io* io, int index, block_off_t blockcur)
+static void io_reader_sched(struct snapraid_io* io, int task_index, block_off_t blockcur)
 {
 	unsigned i;
 
 	for (i = 0; i < io->reader_max; ++i) {
 		struct snapraid_worker* worker = &io->reader_map[i];
-		struct snapraid_task* task = &worker->task_map[index];
+		struct snapraid_task* task = &worker->task_map[task_index];
 
 		/* setup the new pending task */
 		if (blockcur < io->block_max)
@@ -193,7 +193,7 @@ static void io_reader_sched(struct snapraid_io* io, int index, block_off_t block
 			task->disk = worker->handle->disk;
 		else
 			task->disk = 0;
-		task->buffer = io->buffer_map[index][worker->buffer_skew + i];
+		task->buffer = io->buffer_map[task_index][worker->buffer_skew + i];
 		task->position = blockcur;
 		task->block = 0;
 		task->file = 0;
@@ -206,19 +206,19 @@ static void io_reader_sched(struct snapraid_io* io, int index, block_off_t block
 /**
  * Setup the next pending task for all writers.
  */
-static void io_writer_sched(struct snapraid_io* io, int index, block_off_t blockcur)
+static void io_writer_sched(struct snapraid_io* io, int task_index, block_off_t blockcur)
 {
 	unsigned i;
 
 	for (i = 0; i < io->writer_max; ++i) {
 		struct snapraid_worker* worker = &io->writer_map[i];
-		struct snapraid_task* task = &worker->task_map[index];
+		struct snapraid_task* task = &worker->task_map[task_index];
 
 		/* setup the new pending task */
 		task->state = TASK_STATE_READY;
 		task->path[0] = 0;
 		task->disk = 0;
-		task->buffer = io->buffer_map[index][worker->buffer_skew + i];
+		task->buffer = io->buffer_map[task_index][worker->buffer_skew + i];
 		task->position = blockcur;
 		task->block = 0;
 		task->file = 0;
@@ -231,13 +231,13 @@ static void io_writer_sched(struct snapraid_io* io, int index, block_off_t block
 /**
  * Setup an empty next pending task for all writers.
  */
-static void io_writer_sched_empty(struct snapraid_io* io, int index, block_off_t blockcur)
+static void io_writer_sched_empty(struct snapraid_io* io, int task_index, block_off_t blockcur)
 {
 	unsigned i;
 
 	for (i = 0; i < io->writer_max; ++i) {
 		struct snapraid_worker* worker = &io->writer_map[i];
-		struct snapraid_task* task = &worker->task_map[index];
+		struct snapraid_task* task = &worker->task_map[task_index];
 
 		/* setup the new pending task */
 		task->state = TASK_STATE_EMPTY;
