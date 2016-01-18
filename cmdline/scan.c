@@ -879,6 +879,10 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		scan_file_remove(scan, file);
 
 		/* and continue to insert it again */
+	} else {
+		file_already_present_size = 0;
+		file_already_present_mtime_sec = 0;
+		file_already_present_mtime_nsec = 0;
 	}
 
 	/* refresh the info, to ensure that they are synced, */
