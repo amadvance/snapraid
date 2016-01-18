@@ -81,7 +81,7 @@ int handle_utime(struct snapraid_handle* handle);
  * \param diskmax The size of the vector.
  * \return The allocated vector of pointers.
  */
-struct snapraid_handle* handle_map(struct snapraid_state* state, unsigned* diskmax);
+struct snapraid_handle* handle_mapping(struct snapraid_state* state, unsigned* diskmax);
 
 #endif
 

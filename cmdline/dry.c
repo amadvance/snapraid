@@ -180,7 +180,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 	unsigned io_error;
 	unsigned l;
 
-	handle = handle_map(state, &diskmax);
+	handle = handle_mapping(state, &diskmax);
 
 	/* we need 1 * data + 2 * parity */
 	buffermax = diskmax + 2 * state->level;

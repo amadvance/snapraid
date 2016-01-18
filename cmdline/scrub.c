@@ -266,7 +266,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	unsigned l;
 
 	/* maps the disks to handles */
-	handle = handle_map(state, &diskmax);
+	handle = handle_mapping(state, &diskmax);
 
 	/* rehash buffers */
 	rehandle = malloc_nofail_align(diskmax * sizeof(struct snapraid_rehash), &rehandle_alloc);

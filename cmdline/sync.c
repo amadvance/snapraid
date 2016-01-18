@@ -44,7 +44,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 	unsigned io_error;
 
 	/* maps the disks to handles */
-	handle = handle_map(state, &diskmax);
+	handle = handle_mapping(state, &diskmax);
 
 	/* buffer for reading */
 	buffer = malloc_nofail(state->block_size);
@@ -690,7 +690,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	now = time(0);
 
 	/* maps the disks to handles */
-	handle = handle_map(state, &diskmax);
+	handle = handle_mapping(state, &diskmax);
 
 	/* rehash buffers */
 	rehandle = malloc_nofail_align(diskmax * sizeof(struct snapraid_rehash), &rehandle_alloc);

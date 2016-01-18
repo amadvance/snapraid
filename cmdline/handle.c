@@ -357,7 +357,7 @@ int handle_utime(struct snapraid_handle* handle)
 	return 0;
 }
 
-struct snapraid_handle* handle_map(struct snapraid_state* state, unsigned* handlemax)
+struct snapraid_handle* handle_mapping(struct snapraid_state* state, unsigned* handlemax)
 {
 	tommy_node* i;
 	unsigned j;

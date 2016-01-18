@@ -862,7 +862,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 	unsigned* failed_map;
 	unsigned l;
 
-	handle = handle_map(state, &diskmax);
+	handle = handle_mapping(state, &diskmax);
 
 	/* we need 1 * data + 2 * parity + 1 * zero */
 	buffermax = diskmax + 2 * state->level + 1;
