@@ -432,7 +432,7 @@ void signal_init(void)
 #define OPERATION_STATUS 10
 #define OPERATION_REWRITE 11
 #define OPERATION_READ 12
-#define OPERATION_NANO 13
+#define OPERATION_TOUCH 13
 #define OPERATION_SPINUP 14
 #define OPERATION_SPINDOWN 15
 #define OPERATION_DEVICES 16
@@ -828,8 +828,8 @@ int main(int argc, char* argv[])
 		operation = OPERATION_REWRITE;
 	} else if (strcmp(argv[optind], "test-read") == 0) {
 		operation = OPERATION_READ;
-	} else if (strcmp(argv[optind], "nano") == 0) {
-		operation = OPERATION_NANO;
+	} else if (strcmp(argv[optind], "touch") == 0) {
+		operation = OPERATION_TOUCH;
 	} else if (strcmp(argv[optind], "up") == 0) {
 		operation = OPERATION_SPINUP;
 	} else if (strcmp(argv[optind], "down") == 0) {
@@ -993,7 +993,7 @@ int main(int argc, char* argv[])
 	case OPERATION_REWRITE :
 	case OPERATION_READ :
 	case OPERATION_REHASH :
-	case OPERATION_NANO :
+	case OPERATION_TOUCH :
 	case OPERATION_SPINUP : /* we want to do it in different threads to avoid blocking */
 		/* avoid to check and access parity disks if not needed */
 		opt.skip_parity_access = 1;
@@ -1013,7 +1013,7 @@ int main(int argc, char* argv[])
 	case OPERATION_LIST :
 	case OPERATION_DUP :
 	case OPERATION_POOL :
-	case OPERATION_NANO :
+	case OPERATION_TOUCH :
 	case OPERATION_SPINUP :
 	case OPERATION_SPINDOWN :
 	case OPERATION_DEVICES :
@@ -1223,10 +1223,10 @@ int main(int argc, char* argv[])
 		state_read(&state);
 
 		memory();
-	} else if (operation == OPERATION_NANO) {
+	} else if (operation == OPERATION_TOUCH) {
 		state_read(&state);
 
-		state_nano(&state);
+		state_touch(&state);
 
 		/* intercept signals while operating */
 		signal_init();

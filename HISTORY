@@ -16,9 +16,9 @@ SnapRAID HISTORY
     files in case a silent error is found during the hash verification
     check.
   * In the configuration file 'data' is now a synonymous of 'disk'.
-  * Adds the 'nano' command intended to arbitrarely set all the zero
+  * Adds the 'touch' command intended to arbitrarely set all the zero
     subsecond timestamps. This improves the SnapRAID capabilities to
-    identify files. The 'status' command recommend to run 'nano' if
+    identify files. The 'status' command recommends to run 'touch' if
     required.
 
 9.3 2016/01

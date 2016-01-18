@@ -34,7 +34,7 @@ snapraid_SOURCES = \
 	cmdline/pool.c \
 	cmdline/parity.c \
 	cmdline/handle.c \
-	cmdline/nano.c \
+	cmdline/touch.c \
 	cmdline/device.c \
 	cmdline/fnmatch.c \
 	cmdline/selftest.c \
@@ -388,7 +388,7 @@ endif
 	$(MSG) Nano
 	touch -t 200102011234.56 bench/disk1/a/a*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) sync
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) nano
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) touch
 	$(MSG) Check the --gen-conf command
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --gen-conf bench/content
 	$(MSG) Filter

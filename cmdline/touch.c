@@ -22,11 +22,11 @@
 #include "state.h"
 #include "handle.h"
 
-void state_nano(struct snapraid_state* state)
+void state_touch(struct snapraid_state* state)
 {
 	tommy_node* i;
 
-	msg_progress("Setting nanosecond timestamps...\n");
+	msg_progress("Setting sub-second timestamps...\n");
 
 	/* for all disks */
 	for (i = state->disklist; i != 0; i = i->next) {
@@ -125,8 +125,8 @@ void state_nano(struct snapraid_state* state)
 				/* state changed, we need to update it */
 				state->need_write = 1;
 
-				log_tag("nano:%s:%s\n", disk->name, esc(file->sub));
-				msg_info("nano %s%s\n", disk->dir, file->sub);
+				log_tag("touch:%s:%s: %" PRIu64 ".%d\n", disk->name, esc(file->sub), (uint64_t)st.st_mtime, (int)STAT_NSEC(&st));
+				msg_info("touch %s%s\n", disk->dir, file->sub);
 			}
 		}
 	}

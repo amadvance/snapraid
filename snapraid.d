@@ -15,7 +15,7 @@ Synopsis
 	:	[-L, --error-limit NUMBER]
 	:	[-v, --verbose] [-q, --quiet]
 	:	status|smart|up|down|diff|sync|scrub|fix|check|list|dup
-	:	|up|down|pool|devices|nano|rehash
+	:	|up|down|pool|devices|touch|rehash
 
 	:snapraid [-V, --version] [-H, --help] [-C, --gen-conf CONTENT]
 
@@ -630,7 +630,7 @@ Commands
 
 	Nothing is modified.
 
-  nano
+  touch
 	Sets arbitrarely the sub-second timestamp of all the files
 	that have it at zero.
 

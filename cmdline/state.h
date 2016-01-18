@@ -223,7 +223,7 @@ void state_scan(struct snapraid_state* state);
 /**
  * Set the nanosecond timestamp of all files that have a zero value.
  */
-void state_nano(struct snapraid_state* state);
+void state_touch(struct snapraid_state* state);
 
 /**
  * Devices operations.

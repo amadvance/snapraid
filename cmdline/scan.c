@@ -625,7 +625,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	 * Cases found are:
 	 * - Linux FUSE with exFAT driver from https://code.google.com/p/exfat/.
 	 *   Inodes are reassigned at every mount restarting from 1 and incrementing.
-	 *   As worse, the exFAT support in FUSE doesn't use subsecond precision in timestamps
+	 *   As worse, the exFAT support in FUSE doesn't use sub-second precision in timestamps
 	 *   making inode collision more easy (exFAT by design supports 10ms precision).
 	 * - Linux VFAT kernel (3.2) driver. Inodes are fully reassigned at every mount.
 	 *
