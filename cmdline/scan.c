@@ -610,6 +610,9 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	tommy_node* i;
 	int is_original_file_size_different_than_zero;
 	int is_file_already_present;
+	data_off_t file_already_present_size;
+	int64_t file_already_present_mtime_sec;
+	int file_already_present_mtime_nsec;
 	int is_file_reported;
 
 	/*
@@ -738,8 +741,8 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 
 		/* assume a previously used inode, it's the worst case */
 		/* and we handle it removing the duplicate stored inode. */
-		/* If the file is found by name (not necessarily in this function call), */
-		/* it will have the inode restored, otherwise, it will get removed */
+		/* If the file is found by name later, it will have the inode restored, */
+		/* otherwise, it will get removed */
 
 		/* remove from the inode set */
 		tommy_hashdyn_remove_existing(&disk->inodeset, &file->nodeset);
@@ -864,6 +867,11 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 
 		/* here if the file is changed but with the correct name */
 
+		/* save the info for later printout */
+		file_already_present_size = file->size;
+		file_already_present_mtime_sec = file->mtime_sec;
+		file_already_present_mtime_nsec = file->mtime_nsec;
+
 		/* keep track if the original file was not of zero size */
 		is_original_file_size_different_than_zero = file->size != 0;
 
@@ -949,11 +957,16 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	}
 
 	/* if not yet reported, do it now */
+	/* we postpone this to avoid to print two times the copied files */
 	if (!is_file_reported) {
 		if (is_file_already_present) {
 			++scan->count_change;
 
-			log_tag("scan:update:%s:%s\n", disk->name, esc(sub));
+			log_tag("scan:update:%s:%s: %" PRIu64 " %" PRIu64 ".%d -> %" PRIu64 " %" PRIu64 ".%d\n", disk->name, esc(sub),
+				(uint64_t)file_already_present_size, (uint64_t)file_already_present_mtime_sec, file_already_present_mtime_nsec,
+				(uint64_t)file->size, (uint64_t)file->mtime_sec, file->mtime_nsec
+			);
+
 			if (is_diff) {
 				printf("update %s%s\n", disk->dir, sub);
 			}
