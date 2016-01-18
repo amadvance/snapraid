@@ -5,8 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
-* smart/up/down working without a configuration file
-
 - Minor
 
 * Some programs are misusing the FILE_ATTRIBUTE_TEMPORARY.
