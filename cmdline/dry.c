@@ -23,6 +23,7 @@
 #include "parity.h"
 #include "handle.h"
 #include "io.h"
+#include "raid/raid.h"
 
 /****************************************************************************/
 /* dry */
@@ -179,6 +180,8 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 	unsigned error;
 	unsigned io_error;
 	unsigned l;
+	unsigned* waiting_map;
+	unsigned waiting_mac;
 
 	handle = handle_mapping(state, &diskmax);
 
@@ -187,6 +190,8 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 
 	/* initialize the io threads */
 	io_init(&io, state, state->opt.io_cache, buffermax, dry_data_reader, handle, diskmax, dry_parity_reader, 0, parity_handle, state->level);
+
+	waiting_map = malloc_nofail((diskmax + RAID_PARITY_MAX) * sizeof(unsigned));
 
 	error = 0;
 	io_error = 0;
@@ -222,7 +227,10 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			state_usage_cpu(state);
 
 			/* get the next task */
-			task = io_data_read(&io, &diskcur);
+			task = io_data_read(&io, &diskcur, waiting_map, &waiting_mac);
+
+			/* until now is disk */
+			state_usage_disk(state, handle, waiting_map, waiting_mac);
 
 			/* get the task results */
 			disk = task->disk;
@@ -232,9 +240,6 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			/* if the disk position is not used */
 			if (!disk)
 				continue;
-
-			/* until now is disk */
-			state_usage_disk(state, disk);
 
 			/* if the block is not used */
 			if (!block_has_file(block))
@@ -285,10 +290,10 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			struct snapraid_task* task;
 			unsigned levcur;
 
-			task = io_parity_read(&io, &levcur);
+			task = io_parity_read(&io, &levcur, waiting_map, &waiting_mac);
 
 			/* until now is parity */
-			state_usage_parity(state, levcur);
+			state_usage_parity(state, waiting_map, waiting_mac);
 
 			/* handle error conditions */
 			if (task->state == TASK_STATE_IOERROR) {
@@ -370,6 +375,7 @@ bail:
 		log_fatal("DANGER! Unexpected input/output errors!\n");
 
 	free(handle);
+	free(waiting_map);
 	io_done(&io);
 
 	if (error + io_error != 0)

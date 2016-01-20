@@ -244,7 +244,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			}
 
 			/* until now is disk */
-			state_usage_disk(state, disk);
+			state_usage_disk(state, handle, &j, 1);
 
 			countsize += read_size;
 
@@ -681,6 +681,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	struct failed_struct* failed;
 	int* failed_map;
 	unsigned l;
+	unsigned* waiting_map;
+	unsigned waiting_mac;
 
 	/* the sync process assumes that all the hashes are correct */
 	/* including the ones from CHG and DELETED blocks */
@@ -711,6 +713,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 	failed = malloc_nofail(diskmax * sizeof(struct failed_struct));
 	failed_map = malloc_nofail(diskmax * sizeof(unsigned));
+	waiting_map = malloc_nofail((diskmax + RAID_PARITY_MAX) * sizeof(unsigned));
 
 	error = 0;
 	silent_error = 0;
@@ -814,7 +817,10 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			/* until now is CPU */
 			state_usage_cpu(state);
 
-			task = io_data_read(&io, &diskcur);
+			task = io_data_read(&io, &diskcur, waiting_map, &waiting_mac);
+
+			/* until now is disk */
+			state_usage_disk(state, handle, waiting_map, waiting_mac);
 
 			/* get the results */
 			disk = task->disk;
@@ -829,9 +835,6 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			/* if the disk position is not used */
 			if (!disk)
 				continue;
-
-			/* until now is disk */
-			state_usage_disk(state, disk);
 
 			/* get the state of the block */
 			block_state = block_state_get(block);
@@ -1065,7 +1068,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					}
 
 					/* until now is parity */
-					state_usage_parity(state, l);
+					state_usage_parity(state, &l, 1);
 				}
 
 				/* if no error in parity read */
@@ -1196,10 +1199,10 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		for (l = 0; l < state->level; ++l) {
 			unsigned levcur;
 
-			io_parity_write(&io, &levcur);
+			io_parity_write(&io, &levcur, waiting_map, &waiting_mac);
 
 			/* until now is parity */
-			state_usage_parity(state, levcur);
+			state_usage_parity(state, waiting_map, waiting_mac);
 		}
 
 		/* write finished */
@@ -1362,6 +1365,7 @@ bail:
 	free(rehandle_alloc);
 	free(failed);
 	free(failed_map);
+	free(waiting_map);
 	io_done(&io);
 
 	if (state->opt.expect_recoverable) {

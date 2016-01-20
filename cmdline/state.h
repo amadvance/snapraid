@@ -20,6 +20,8 @@
 
 #include "elem.h"
 
+struct snapraid_handle;
+
 /****************************************************************************/
 /* parity level */
 
@@ -333,58 +335,22 @@ void state_progress_restart(struct snapraid_state* state);
 /**
  * Set the usage time as wasted one not counted.
  */
-static inline void state_usage_waste(struct snapraid_state* state)
-{
-	uint64_t now = tick();
-
-	state->tick_last = now;
-}
+void state_usage_waste(struct snapraid_state* state);
 
 /**
  * Set the usage time for CPU.
  */
-static inline void state_usage_cpu(struct snapraid_state* state)
-{
-	uint64_t now = tick();
-	uint64_t delta = now - state->tick_last;
-
-	/* increment the time spent in computations */
-	state->tick_cpu += delta;
-
-	state->tick_last = now;
-}
+void state_usage_cpu(struct snapraid_state* state);
 
 /**
- * Set the usage time for data disk.
+ * Set the usage time for a set of data disks.
  */
-static inline void state_usage_disk(struct snapraid_state* state, struct snapraid_disk* disk)
-{
-	uint64_t now = tick();
-	uint64_t delta = now - state->tick_last;
-
-	/* increment the time spent in the data disk */
-	disk->tick += delta;
-	state->tick_io += delta;
-
-	state->tick_last = now;
-}
+void state_usage_disk(struct snapraid_state* state, struct snapraid_handle* handle_map, unsigned* waiting_map, unsigned waiting_mac);
 
 /**
- * Set the usage time for parity disk.
+ * Set the usage time for a set of parity disk.
  */
-static inline void state_usage_parity(struct snapraid_state* state, unsigned level)
-{
-	uint64_t now = tick();
-	uint64_t delta = now - state->tick_last;
-
-	assert(level < LEV_MAX);
-
-	/* increment the time spent in the parity disk */
-	state->parity[level].tick += delta;
-	state->tick_io += delta;
-
-	state->tick_last = now;
-}
+void state_usage_parity(struct snapraid_state* state, unsigned* waiting_map, unsigned waiting_mac);
 
 /**
  * Print the stats of the usage time.

@@ -24,6 +24,7 @@
 #include "support.h"
 #include "parity.h"
 #include "stream.h"
+#include "handle.h"
 #include "raid/raid.h"
 #include "raid/cpu.h"
 
@@ -4030,6 +4031,58 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 	}
 
 	return 0;
+}
+
+void state_usage_waste(struct snapraid_state* state)
+{
+	uint64_t now = tick();
+
+	state->tick_last = now;
+}
+
+void state_usage_cpu(struct snapraid_state* state)
+{
+	uint64_t now = tick();
+	uint64_t delta = now - state->tick_last;
+
+	/* increment the time spent in computations */
+	state->tick_cpu += delta;
+
+	state->tick_last = now;
+}
+
+void state_usage_disk(struct snapraid_state* state, struct snapraid_handle* handle_map, unsigned* waiting_map, unsigned waiting_mac)
+{
+	uint64_t now = tick();
+	uint64_t delta = now - state->tick_last;
+	unsigned i;
+
+	/* increment the time spent in the data disks */
+	for (i = 0; i < waiting_mac; ++i) {
+		struct snapraid_disk* disk = handle_map[waiting_map[i]].disk;
+
+		if (!disk)
+			continue;
+
+		disk->tick += delta;
+	}
+	state->tick_io += delta;
+
+	state->tick_last = now;
+}
+
+void state_usage_parity(struct snapraid_state* state, unsigned* waiting_map, unsigned waiting_mac)
+{
+	uint64_t now = tick();
+	uint64_t delta = now - state->tick_last;
+	unsigned i;
+
+	/* increment the time spent in the parity disk */
+	for (i = 0; i < waiting_mac; ++i)
+		state->parity[waiting_map[i]].tick += delta;
+	state->tick_io += delta;
+
+	state->tick_last = now;
 }
 
 void state_usage_print(struct snapraid_state* state)

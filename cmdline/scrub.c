@@ -264,6 +264,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	unsigned silent_error;
 	unsigned io_error;
 	unsigned l;
+	unsigned* waiting_map;
+	unsigned waiting_mac;
 
 	/* maps the disks to handles */
 	handle = handle_mapping(state, &diskmax);
@@ -276,6 +278,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 	/* initialize the io threads */
 	io_init(&io, state, state->opt.io_cache, buffermax, scrub_data_reader, handle, diskmax, scrub_parity_reader, 0, parity_handle, state->level);
+
+	waiting_map = malloc_nofail((diskmax + RAID_PARITY_MAX) * sizeof(unsigned));
 
 	error = 0;
 	silent_error = 0;
@@ -362,7 +366,10 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			state_usage_cpu(state);
 
 			/* get the next task */
-			task = io_data_read(&io, &diskcur);
+			task = io_data_read(&io, &diskcur, waiting_map, &waiting_mac);
+
+			/* until now is disk */
+			state_usage_disk(state, handle, waiting_map, waiting_mac);
 
 			/* get the task results */
 			disk = task->disk;
@@ -377,9 +384,6 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			/* if the disk position is not used */
 			if (!disk)
 				continue;
-
-			/* until now is disk */
-			state_usage_disk(state, disk);
 
 			/* if the block is unsynced, errors are expected */
 			if (block_has_invalid_parity(block)) {
@@ -485,10 +489,10 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			struct snapraid_task* task;
 			unsigned levcur;
 
-			task = io_parity_read(&io, &levcur);
+			task = io_parity_read(&io, &levcur, waiting_map, &waiting_mac);
 
 			/* until now is parity */
-			state_usage_parity(state, levcur);
+			state_usage_parity(state, waiting_map, waiting_mac);
 
 			/* handle error conditions */
 			if (task->state == TASK_STATE_IOERROR) {
@@ -670,6 +674,7 @@ bail:
 
 	free(handle);
 	free(rehandle_alloc);
+	free(waiting_map);
 	io_done(&io);
 
 	if (state->opt.expect_recoverable) {

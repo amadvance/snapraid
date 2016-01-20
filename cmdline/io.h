@@ -329,7 +329,7 @@ block_off_t io_read_next(struct snapraid_io* io, void*** buffer);
  * \param pos The position of the data block in the ::handle_map vector.
  * \return The completed task.
  */
-struct snapraid_task* io_data_read(struct snapraid_io* io, unsigned* diskcur);
+struct snapraid_task* io_data_read(struct snapraid_io* io, unsigned* diskcur, unsigned* waiting_map, unsigned* waiting_mac);
 
 /**
  * Read a parity block.
@@ -340,7 +340,7 @@ struct snapraid_task* io_data_read(struct snapraid_io* io, unsigned* diskcur);
  * \param pos The position of the parity block in the ::parity_handle_map vector.
  * \return The completed task.
  */
-struct snapraid_task* io_parity_read(struct snapraid_io* io, unsigned* levcur);
+struct snapraid_task* io_parity_read(struct snapraid_io* io, unsigned* levcur, unsigned* waiting_map, unsigned* waiting_mac);
 
 /**
  * Write of a parity block.
@@ -350,7 +350,7 @@ struct snapraid_task* io_parity_read(struct snapraid_io* io, unsigned* levcur);
  * \param io InputOutput context.
  * \param pos The position of the parity block in the ::parity_handle_map vector.
  */
-void io_parity_write(struct snapraid_io* io, unsigned* levcur);
+void io_parity_write(struct snapraid_io* io, unsigned* levcur, unsigned* waiting_map, unsigned* waiting_mac);
 
 /**
  * Next write position.

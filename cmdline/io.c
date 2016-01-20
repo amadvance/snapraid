@@ -485,8 +485,16 @@ void io_write_next(struct snapraid_io* io, unsigned blockcur, int skip, int* wri
 #endif
 }
 
-static struct snapraid_task* io_task_read(struct snapraid_io* io, unsigned base, unsigned count, unsigned* pos)
+static struct snapraid_task* io_task_read(struct snapraid_io* io, unsigned base, unsigned count, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)
 {
+	unsigned waiting_cycle;
+
+	/* count the waiting cycle */
+	waiting_cycle = 0;
+
+	/* clear the waiting indexes */
+	*waiting_mac = 0;
+
 	/* the synchronization is protected by the io mutex */
 	pthread_mutex_lock(&io->mutex);
 
@@ -512,6 +520,12 @@ static struct snapraid_task* io_task_read(struct snapraid_io* io, unsigned base,
 			if (base <= i && i < base + count) {
 				struct snapraid_worker* worker;
 
+				/* if it's the first cycle */
+				if (waiting_cycle == 0) {
+					/* store the waiting indexes */
+					waiting_map[(*waiting_mac)++] = i - base;
+				}
+
 				worker = &io->reader_map[i];
 
 				/* if the worker has finished this index */
@@ -529,6 +543,10 @@ static struct snapraid_task* io_task_read(struct snapraid_io* io, unsigned base,
 					/* return the position */
 					*pos = i - base;
 
+					/* on the first cycle, no one is waiting */
+					if (waiting_cycle == 0)
+						*waiting_mac = 0;
+
 					return task;
 				}
 			}
@@ -537,23 +555,34 @@ static struct snapraid_task* io_task_read(struct snapraid_io* io, unsigned base,
 			let = &io->reader_list[i + 1];
 		}
 
-		/* if not worker is ready, wait for an event */
+		/* if no worker is ready, wait for an event */
 		pthread_cond_wait(&io->read_done, &io->mutex);
+
+		/* count the cycles */
+		++waiting_cycle;
 	}
 }
 
-struct snapraid_task* io_data_read(struct snapraid_io* io, unsigned* pos)
+struct snapraid_task* io_data_read(struct snapraid_io* io, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)
 {
-	return io_task_read(io, io->data_base, io->data_count, pos);
+	return io_task_read(io, io->data_base, io->data_count, pos, waiting_map, waiting_mac);
 }
 
-struct snapraid_task* io_parity_read(struct snapraid_io* io, unsigned* pos)
+struct snapraid_task* io_parity_read(struct snapraid_io* io, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)
 {
-	return io_task_read(io, io->parity_base, io->parity_count, pos);
+	return io_task_read(io, io->parity_base, io->parity_count, pos, waiting_map, waiting_mac);
 }
 
-void io_parity_write(struct snapraid_io* io, unsigned* pos)
+void io_parity_write(struct snapraid_io* io, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)
 {
+	unsigned waiting_cycle;
+
+	/* count the waiting cycle */
+	waiting_cycle = 0;
+
+	/* clear the waiting indexes */
+	*waiting_mac = 0;
+
 	/* the synchronization is protected by the io mutex */
 	pthread_mutex_lock(&io->mutex);
 
@@ -578,6 +607,12 @@ void io_parity_write(struct snapraid_io* io, unsigned* pos)
 			if (i == io->writer_max)
 				break;
 
+			/* if it's the first cycle */
+			if (waiting_cycle == 0) {
+				/* store the waiting indexes */
+				waiting_map[(*waiting_mac)++] = i;
+			}
+
 			worker = &io->writer_map[i];
 
 			/* the two indexes cannot be equal */
@@ -594,6 +629,10 @@ void io_parity_write(struct snapraid_io* io, unsigned* pos)
 				/* return the position */
 				*pos = i;
 
+				/* on the first cycle, no one is waiting */
+				if (waiting_cycle == 0)
+					*waiting_mac = 0;
+
 				return;
 			}
 
@@ -601,8 +640,11 @@ void io_parity_write(struct snapraid_io* io, unsigned* pos)
 			let = &io->writer_list[i + 1];
 		}
 
-		/* if not worker is ready, wait for an event */
+		/* if no worker is ready, wait for an event */
 		pthread_cond_wait(&io->write_done, &io->mutex);
+
+		/* count the cycles */
+		++waiting_cycle;
 	}
 }
 
