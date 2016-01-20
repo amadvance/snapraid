@@ -56,10 +56,17 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 	pthread_cond_init(&io->write_sched, 0);
 
 	io->state = state;
-	if (io_cache == 0)
-		io->io_max = 32;
-	else
+	if (io_cache == 0) {
+		/* default is 8 MiB of cache */
+		/* this seems to be a good tradeoff between speed and memory usage */
+		io->io_max = 8 * 1024 * 1024 / state->block_size;
+		if (io->io_max < IO_MIN)
+			io->io_max = IO_MIN;
+		if (io->io_max > IO_MAX)
+			io->io_max = IO_MAX;
+	} else {
 		io->io_max = io_cache;
+	}
 
 	assert(io->io_max >= IO_MIN && io->io_max <= IO_MAX);
 
@@ -72,7 +79,7 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 		allocated += state->block_size * buffer_max;
 	}
 
-	msg_progress("Using %u MiB of memory for the IO cache.\n", (unsigned)(allocated / MEBI));
+	msg_progress("Using %u MiB of memory for %u blocks of IO cache.\n", (unsigned)(allocated / MEBI), io->io_max);
 
 	if (parity_writer) {
 		io->reader_max = handle_max;
