@@ -279,7 +279,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 	/* initialize the io threads */
 	io_init(&io, state, state->opt.io_cache, buffermax, scrub_data_reader, handle, diskmax, scrub_parity_reader, 0, parity_handle, state->level);
 
-	waiting_map = malloc_nofail((diskmax + RAID_PARITY_MAX) * sizeof(unsigned));
+	/* possibly waiting disks */
+	waiting_mac = diskmax > RAID_PARITY_MAX ? diskmax : RAID_PARITY_MAX;
+	waiting_map = malloc_nofail(waiting_mac * sizeof(unsigned));
 
 	error = 0;
 	silent_error = 0;

@@ -713,7 +713,10 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 	failed = malloc_nofail(diskmax * sizeof(struct failed_struct));
 	failed_map = malloc_nofail(diskmax * sizeof(unsigned));
-	waiting_map = malloc_nofail((diskmax + RAID_PARITY_MAX) * sizeof(unsigned));
+
+	/* possibly waiting disks */
+	waiting_mac = diskmax > RAID_PARITY_MAX ? diskmax : RAID_PARITY_MAX;
+	waiting_map = malloc_nofail(waiting_mac * sizeof(unsigned));
 
 	error = 0;
 	silent_error = 0;
