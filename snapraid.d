@@ -435,6 +435,8 @@ Commands
   up
 	Spins up all the disks of the array.
 
+	You can spin-up only some specific disks using the -d, --filter-disk option.
+
 	Nothing is modified.
 
   down
@@ -442,6 +444,8 @@ Commands
 
 	This command uses the "smartctl" tool, and it's equivalent to run
 	"smartctl -s standby,now" on all the devices.
+
+	You can spin-down only some specific disks using the -d, --filter-disk option.
 
 	Nothing is modified.
 
@@ -686,18 +690,15 @@ Options
 		process the whole array.
 
 	-d, --filter-disk NAME
-		Filters the files to process in "check" and "fix".
-		Only the files present in the specified disk are processed.
+		Filters the disks to process in "check", "fix", "up" and "down".
 		You must specify a disk name as named in the configuration
 		file.
-		In "check", you can make it faster, specifying also -a, --audit-only
-		option, to avoid to access other disks to check parity data.
-		If you combine more --filter, --filter-disk and --filter-missing options,
-		only files matching all the set of filters are selected.
 		You can also specify parity disks with the names: "parity", "2-parity",
 		"3-parity", ... to limit the operations a specific parity disk.
+		If you combine more --filter, --filter-disk and --filter-missing options,
+		only files matching all the set of filters are selected.
 		This option can be used many times.
-		This option can be used only with "check" and "fix".
+		This option can be used only with "check", "fix", "up" and "down".
 		Note that it cannot be used with "sync" and "scrub", because they always
 		process the whole array.
 

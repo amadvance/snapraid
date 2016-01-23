@@ -731,12 +731,16 @@ Nothing is modified.
 .SS up 
 Spins up all the disks of the array.
 .PP
+You can spin\-up only some specific disks using the \-d, \-\-filter\-disk option.
+.PP
 Nothing is modified.
 .SS down 
 Spins down all the disks of the array.
 .PP
 This command uses the \[dq]smartctl\[dq] tool, and it\'s equivalent to run
 \[dq]smartctl \-s standby,now\[dq] on all the devices.
+.PP
+You can spin\-down only some specific disks using the \-d, \-\-filter\-disk option.
 .PP
 Nothing is modified.
 .SS diff 
@@ -967,18 +971,15 @@ Note that it cannot be used with \[dq]sync\[dq] and \[dq]scrub\[dq], because the
 process the whole array.
 .TP
 .B \-d, \-\-filter\-disk NAME
-Filters the files to process in \[dq]check\[dq] and \[dq]fix\[dq].
-Only the files present in the specified disk are processed.
+Filters the disks to process in \[dq]check\[dq], \[dq]fix\[dq], \[dq]up\[dq] and \[dq]down\[dq].
 You must specify a disk name as named in the configuration
 file.
-In \[dq]check\[dq], you can make it faster, specifying also \-a, \-\-audit\-only
-option, to avoid to access other disks to check parity data.
-If you combine more \-\-filter, \-\-filter\-disk and \-\-filter\-missing options,
-only files matching all the set of filters are selected.
 You can also specify parity disks with the names: \[dq]parity\[dq], \[dq]2\-parity\[dq],
 \[dq]3\-parity\[dq], ... to limit the operations a specific parity disk.
+If you combine more \-\-filter, \-\-filter\-disk and \-\-filter\-missing options,
+only files matching all the set of filters are selected.
 This option can be used many times.
-This option can be used only with \[dq]check\[dq] and \[dq]fix\[dq].
+This option can be used only with \[dq]check\[dq], \[dq]fix\[dq], \[dq]up\[dq] and \[dq]down\[dq].
 Note that it cannot be used with \[dq]sync\[dq] and \[dq]scrub\[dq], because they always
 process the whole array.
 .TP

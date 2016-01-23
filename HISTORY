@@ -15,6 +15,8 @@ SnapRAID HISTORY
     having verified all the hashes. This allows recovering of moved
     files in case a silent error is found during the hash verification
     check.
+  * Allows to use the -d, --filter-disk option in the 'up' and
+    'down' commands.
   * Allows to run the 'smart' command without a configuration file.
     In such case it operates on all the disks of the machine.
   * In the configuration file 'data' is now a synonymous of 'disk'.

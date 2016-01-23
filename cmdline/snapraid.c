@@ -923,15 +923,18 @@ int main(int argc, char* argv[])
 	case OPERATION_DRY :
 		break;
 	default :
-		if (!tommy_list_empty(&filterlist_file)) {
-			/* LCOV_EXCL_START */
-			log_fatal("You cannot use -f, --filter with the '%s' command\n", command);
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
 		if (!tommy_list_empty(&filterlist_disk)) {
 			/* LCOV_EXCL_START */
 			log_fatal("You cannot use -d, --filter-disk with the '%s' command\n", command);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+		/* follow */
+	case OPERATION_SPINUP :
+	case OPERATION_SPINDOWN :
+		if (!tommy_list_empty(&filterlist_file)) {
+			/* LCOV_EXCL_START */
+			log_fatal("You cannot use -f, --filter with the '%s' command\n", command);
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
@@ -1242,13 +1245,13 @@ int main(int argc, char* argv[])
 
 		memory();
 	} else if (operation == OPERATION_SPINUP) {
-		state_device(&state, DEVICE_UP);
+		state_device(&state, DEVICE_UP, &filterlist_disk);
 	} else if (operation == OPERATION_SPINDOWN) {
-		state_device(&state, DEVICE_DOWN);
+		state_device(&state, DEVICE_DOWN, &filterlist_disk);
 	} else if (operation == OPERATION_DEVICES) {
-		state_device(&state, DEVICE_LIST);
+		state_device(&state, DEVICE_LIST, 0);
 	} else if (operation == OPERATION_SMART) {
-		state_device(&state, DEVICE_SMART);
+		state_device(&state, DEVICE_SMART, 0);
 	} else if (operation == OPERATION_STATUS) {
 		state_read(&state);
 

@@ -231,7 +231,7 @@ void state_touch(struct snapraid_state* state);
 /**
  * Devices operations.
  */
-void state_device(struct snapraid_state* state, int operation);
+void state_device(struct snapraid_state* state, int operation, tommy_list* filterlist_disk);
 
 /**
  * Sync the parity data.

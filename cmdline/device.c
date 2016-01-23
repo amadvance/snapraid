@@ -938,7 +938,7 @@ static int devtest(tommy_list* low, int operation)
 	return 0;
 }
 
-void state_device(struct snapraid_state* state, int operation)
+void state_device(struct snapraid_state* state, int operation, tommy_list* filterlist_disk)
 {
 	tommy_node* i;
 	unsigned j;
@@ -959,6 +959,9 @@ void state_device(struct snapraid_state* state, int operation)
 		struct snapraid_disk* disk = i->data;
 		devinfo_t* entry;
 
+		if (filterlist_disk != 0 && filter_path(filterlist_disk, 0, disk->name, 0) != 0)
+			continue;
+
 		entry = calloc_nofail(1, sizeof(devinfo_t));
 
 		entry->device = disk->device;
@@ -972,6 +975,9 @@ void state_device(struct snapraid_state* state, int operation)
 	/* for all parities */
 	for (j = 0; j < state->level; ++j) {
 		devinfo_t* entry;
+
+		if (filterlist_disk != 0 && filter_path(filterlist_disk, 0, lev_config_name(j), 0) != 0)
+			continue;
 
 		entry = calloc_nofail(1, sizeof(devinfo_t));
 
