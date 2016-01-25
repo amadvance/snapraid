@@ -7,8 +7,8 @@ This is the list of TODO items for SnapRAID.
 
 - Minor
 
-* Allow to specify more than one parition for each parity disk.
-Checking the UUID, we can avoid that users messup with disk specifications.
+* Allow to specify more than one partition for each parity disk.
+Checking the UUID, we can avoid that users mess-up with disk specifications.
 See discussion at:
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/02b2a2ae/
 
@@ -148,7 +148,7 @@ resulting in wrong data.
 But if the sync process is killed we need a way to resyncronize them.
 Or maybe we should allow parity newer than content, but not viceversa.
 - The corner cases are too many. A fixed parity may be never.
-A someway modified content may be never. So, the time is not really significative.
+A someway modified content may be never. So, the time is not really significant.
 
 * Use Async IO for Linux (libaio).
 See thread: https://sourceforge.net/p/snapraid/discussion/1677233/thread/a300a10b/
