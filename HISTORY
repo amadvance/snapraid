@@ -1,16 +1,16 @@
 SnapRAID HISTORY
 ================
 
-10.0 2016/01
+10.0 2016/02
 ============
   * Boosts the speed of the 'sync' and 'scrub' commands with a new
-    multithread implementation. It uses one thread for each disk,
+    multi-thread implementation. It uses one thread for each disk,
     dedicated exclusively to read-ahead data and parity and to
     write-behind parity. This maximizes the data throughput keeping
     disks always busy.
     You can control the number of blocks to cache with the option
     --test-io-cache=NUMBER, where the number is between 3 and 128.
-    The default is 32.
+    The default is 8 MiB of blocks.
   * The -h, --pre-hash command, saves the content file only after
     having verified all the hashes. This allows recovering of moved
     files in case a silent error is found during the hash verification
@@ -20,8 +20,8 @@ SnapRAID HISTORY
   * Allows to run the 'smart' command without a configuration file.
     In such case it operates on all the disks of the machine.
   * In the configuration file 'data' is now a synonymous of 'disk'.
-  * Adds the 'touch' command intended to arbitrarely set all the zero
-    subsecond timestamps. This improves the SnapRAID capabilities to
+  * Adds the 'touch' command intended to arbitrarily set all the zero
+    sub-second timestamps. This improves the SnapRAID capabilities to
     identify files. The 'status' command recommends to run 'touch' if
     required.
 
@@ -34,100 +34,101 @@ SnapRAID HISTORY
    At least three of them, with one already in the parity, and at a
    higher disk number than the others that should be instead new ones.
    This had no bad effect, if not preventing the 'sync' command to run.
-   A workaround was to just run 'sync' one time with the -N, --force-nocopy
-   option to disable the copy detection.
- * Restored the -O2 optimization option for Windows binaries, as -Og has a
-   too big performance penality.
+   A workaround was to just run 'sync' one time with the -N,
+   --force-nocopy option to disable the copy detection.
+ * Restored the -O2 optimization option for Windows binaries, as -Og has
+   a too big performance penality.
 
 9.2 2016/01
 ===========
  * Fixes support for symlinks pointing to an empty target. Before they
-   were only partially supported, and their presence could result in
-   a content file not readable.
-   This also disables multi threads content write, as this was the issue
+   were only partially supported, and their presence could result in a
+   content file not readable.
+   This also disables multi-thread content write, as this was the issue
    we tried to detect with this feature, and it doesn't provide a
    performance advantage. Content verification is instead still multi
-   threads.
+   thread.
  * Autorename disks using the matching UUID. To rename a disk you can
-   now change directly the name in the configuration file, and run a 'sync'
-   command.
- * Improves the physical offset ordering for the Btrfs filesystem,
+   now change directly the name in the configuration file, and run a
+   'sync' command.
+ * Improves the physical offset ordering for the Btrfs file-system,
    correctly detecting files that have not a physical offset, for
    whatever reason.
- * Adds UUID support to Btrfs filesystems. It's present only if the
+ * Adds UUID support to Btrfs file-systems. It's present only if the
    'libblkid' development library is available on the system.
    Usually this requires to install the libblkid-dev or libblkid-devel
    package.
  * Added a new --no-warnings option to disable some repetitive warnings
    that could be annoying to power users.
- * Improves the error reporting, printing a complete stack trace, that can
-   be used to track down bugs more easily.
+ * Improves the error reporting, printing a complete stack trace, that
+   can be used to track down bugs more easily.
    For this reason the Windows binaries are now built with optimization
    option -Og, instead than -O2.
 
 9.1 2015/11
 ===========
  * Fixes a bug when reading a content file with a deleted entry bigger
-   than 4 GB. This was a regression introduced in version 9.0 that
-   could result in the impossibility to read a valid content file,
-   after a deletion of a file bigger than 4 GB in the array.
+   than 4 GB. This was a regression introduced in version 9.0 that could
+   result in the impossibility to read a valid content file, after a
+   deletion of a file bigger than 4 GB in the array.
    If this happened to you, just upgrading to 9.1 fixes the issue, and
    it allows you to continue to work.
    Note that this bug only prevented to run 9.0, but your data was still
-   protected and could have been recovered using the versions 8.1 or 9.1.
+   protected and could have been recovered using the versions 8.1 or
+   9.1.
  * In Windows disables the file zero check requiring the --force-zero
-   option. This check is intended for possible case using ext3/4 in Linux,
-   and there is no evidence that in Windows it's possible at all.
+   option. This check is intended for possible case using ext3/4 in
+   Linux, and there is no evidence that in Windows it's possible at all.
  * Windows binaries built with gcc 4.9.3 using the MXE cross compiler at
    commit 62bcdbee56e87c81f1faa105b8777a5879d4e2e with targets
    i686-w64-mingw32 and x86_64-w64-mingw32 and optimization -O2.
 
 9.0 2015/11
 ===========
- * Fixes an invalid assumption that could happen when using the
-   -e, --filter-error option with "fix" or "check".
+ * Fixes an invalid assumption that could happen when using the -e,
+   --filter-error option with "fix" or "check".
    This was triggered by a very specific pattern of fragmented files
    and bad blocks combination, not so easy to reproduce.
    This had no bad effect, if not preventing the command to run.
- * Drastically reduces the memory usage. For each block, it now
-   uses 17 bytes of memory, instead of the previous 28 bytes
-   (for 32 bit) or 36 bytes (for 64 bit).
+ * Drastically reduces the memory usage. For each block, it now uses 17
+   bytes of memory, instead of the previous 28 bytes (for 32 bit) or 36
+   bytes (for 64 bit).
    This could result is a memory saving of up the 50%.
- * The -p, --plan option (old --percentage) can be used to
-   define a scrub plan: "new", "bad" and "full".
+ * The -p, --plan option (old --percentage) can be used to define a
+   scrub plan: "new", "bad" and "full".
    The "new" plan scrubs all the new synced  blocks not yet scrubbed.
-   This allows to verify as early as possible that the written
-   parity during sync is really correct. You can use the "status"
-   command to show the amount blocks not yet scrubbed.
+   This allows to verify as early as possible that the written parity
+   during sync is really correct. You can use the "status" command to
+   show the amount blocks not yet scrubbed.
    The "bad" plan scrubs only bad blocks.
    The "full" plan scrubs all blocks.
- * The graph in the "status" command now show scrubbed blocks
-   with '*', and synced, but not yet scrubbed, blocks with 'o'.
-   Note that when upgrading from a previous version, all blocks
-   are assumed scrubbed the first time.
- * Content files are now written asyncronously from different
-   threads to avoid the unfortunate condition that a memory
-   error affects all of them in the same way.
+ * The graph in the "status" command now show scrubbed blocks with '*',
+   and synced, but not yet scrubbed, blocks with 'o'.
+   Note that when upgrading from a previous version, all blocks are
+   assumed scrubbed the first time.
+ * Content files are now written asynchronously from different threads
+   to avoid the unfortunate condition that a memory error affects all of
+   them in the same way.
    After writing, they are read again to verify their CRC.
-   This is done to ensure thay they are really OK, even in the
-   case of the worst possible silent errors.
- * Extends the -D, --force-device option to ignore more
-   erroneous conditions in the 'fix' command, like unaccessible
-   disks, or disks sharing the same physical device.
- * Extends the -d, --filter-disk option to allow to filter also
-   by parity disk.
- * Extends the -h, --pre-hash option to also verify moved and
-   copied files into the array before running a 'sync'.
+   This is done to ensure that they are really OK, even in the case of
+   the worst possible silent errors.
+ * Extends the -D, --force-device option to ignore more erroneous
+   conditions in the 'fix' command, like inaccessible disks,  or disks
+   sharing the same physical device.
+ * Extends the -d, --filter-disk option to allow to filter also by
+   parity disk.
+ * Extends the -h, --pre-hash option to also verify moved and copied
+   files into the array before running a 'sync'.
  * Updates 'best' RAID functions for recent Atom CPUs.
  * Validates filters specifications rejecting relative paths.
 
 8.1 2015/05
 ===========
  * Fixes build issues in generic Unix platforms, including Mac OS X.
- * The "diff" command returns with error code 2 if a "sync" is
-   required, to differentiate with the generic error code 1.
- * Reduces the effect of SMART attribute 193 on the failure
-   probability to avoid some false positive reports.
+ * The "diff" command returns with error code 2 if a "sync" is required,
+   to differentiate with the generic error code 1.
+ * Reduces the effect of SMART attribute 193 on the failure probability
+   to avoid some false positive reports.
 
 8.0 2015/04
 ===========
@@ -148,8 +149,8 @@ SnapRAID HISTORY
  * Adds new "smart" command to print a SMART report of the array.
  * Adds new "up" and "down" commands to spin up and down the disks of
    the array.
- * Adds new "devices" command to print the devices associations in
-   the array.
+ * Adds new "devices" command to print the devices associations in the
+   array.
  * Changes the log handling. If no log file is specified, all the
    warnings and not fatal errors messages goes to stderr. If a log file
    is specified, only fatal error messages are printed on the screen.
@@ -163,9 +164,9 @@ SnapRAID HISTORY
    when referring to disk space.
  * Renames the -s and -t options to -S and -B as they are intended to
    be manual only operations.
- * Windows binary built with gcc 4.8.1 using the MXE cross compiler 2.23,
-   with targets i686-w64-mingw32 and x86_64-w64-mingw32. Before the x86
-   target was i686-pc-mingw32.
+ * Windows binary built with gcc 4.8.1 using the MXE cross compiler
+   2.23, with targets i686-w64-mingw32 and x86_64-w64-mingw32. Before
+   the x86 target was i686-pc-mingw32.
 
 7.1 2015/01
 ===========
@@ -180,23 +181,24 @@ SnapRAID HISTORY
 ===========
  * In 'check' and 'fix' the array is scanned to find any moved files
    that could be used to recover missing data. Files are identified by
-   timestamp, and then they are recognized also if moved to a different
+   time-stamp, and then they are recognized also if moved to a different
    disk. Note that even if there are false positive they are identified
    checking the hash, so they have not effect, besides making the
    process a little slower. To disable this new behavior you can use
    the -N, --force-nocopy option.
- * The -i, --import command now identifies files by timestamp making it
+ * The -i, --import command now identifies files by time-stamp making it
    very fast in importing directories.
  * More detailed 'status' report with single disk stats and free space
    available.
  * A lot faster directory listing for Windows.
  * Adds AVX2 support to improve parity generation speed.
  * Prints the time spent waiting for each disk also in 'scrub'.
- * The CPU usage, speed and ETA estimations are now based on the last 100
-   seconds rather than from the start.
+ * The CPU usage, speed and ETA estimations are now based on the last
+   100 seconds rather than from the start.
  * Keeps track of the UUID of the parity disks to check them before
    operating.
- * Windows binary built with gcc 4.8.1 using the MXE cross compiler 2.23.
+ * Windows binary built with gcc 4.8.1 using the MXE cross compiler
+   2.23.
 
 6.4 2014/11
 ===========
@@ -207,8 +209,8 @@ SnapRAID HISTORY
 ==========
  * The -N, --force-nocopy option now also works if you used previously
    "sync" commands without it.
- * In 'sync' keeps stats about the amount of time spent waiting for
-   each disk and what is spent in CPU computation.
+ * In 'sync' keeps stats about the amount of time spent waiting for each
+   disk and what is spent in CPU computation.
  * Auto exclude the lock file.
  * A more precise counting of how may block to scrub. Now it's exact
    regardless the order of the blocks timing.
@@ -223,13 +225,12 @@ SnapRAID HISTORY
 ==========
  * Fixed the regression test when run as root.
  * Added a new heuristic to detect file copies. Now a file is assumed
-   to be a copy if name, size and nanosecond timestamp are matching,
-   but if the nanosecond part of the timestamp is 0, it requires
+   to be a copy if name, size and nanosecond time-stamp are matching,
+   but if the nanosecond part of the time-stamp is 0, it requires
    the full path matching and not only the name.
- * Added the -N, --force-nocopy option to disable completely
-   the copy detection. SnapRAID also suggests to use this option
-   in the error message of a data mismatch if likely caused by the
-   copy detection.
+ * Added the -N, --force-nocopy option to disable completely the copy
+   detection. SnapRAID also suggests to use this option in the error
+   message of a data mismatch if likely caused by the copy detection.
 
 6.1 2014/4
 ==========
@@ -237,16 +238,17 @@ SnapRAID HISTORY
 
 6.0 2014/3
 ==========
- * In "sync", even if a silent error is found, continue to update
-   the parity if it's possible to correct the error.
-   Note that the block will be marked bad, and the data
-   will be fixed only at the next "fix -e" call.
-   But any new data added will be protected if you are using
-   enough parity to fix both the silent error and at least
-   another potential error.
+ * In "sync", even if a silent error is found, continue to update the
+   parity if it's possible to correct the error.
+   Note that the block will be marked bad, and the data will be fixed
+   only at the next "fix -e" call.
+   But any new data added will be protected if you are using enough
+   parity to fix both the silent error and at least another potential
+   error.
  * Detect copied files from one disk to another and reuse the already
    computed hash information to validate them in "sync".
-   Files are assumed copied if they matches the name, size and timestamp.
+   Files are assumed copied if they matches the name, size and
+   time-stamp.
  * For "sync", added a new -h, --pre-hash option to run a preliminary
    hashing step for all the new files to ensure to detect silent errors
    caused by the heavy machine usage of the parity computation.
@@ -263,8 +265,8 @@ SnapRAID HISTORY
    anymore the parity disks that can now stay powered down.
  * The default configuration file in Windows is now searched in the same
    directory where the snapraid.exe file resides.
- * New source code organization. The RAID engine is now
-   an external component usable also in other projects.
+ * New source code organization. The RAID engine is now an external
+   component usable also in other projects.
 
 5.3 2014/3
 ==========
@@ -276,9 +278,9 @@ SnapRAID HISTORY
 5.2 2013/12
 ===========
  * If a disk changes UUID, automatically disable the inode
-   recognition, because this is likely a new filesystem with
+   recognition, because this is likely a new file-system with
    all the inodes reassigned, and we don't want to risk a false
-   positive when searching for inode/timestamp/size.
+   positive when searching for inode/time-stamp/size.
  * Allow to run a fix command with disks that doesn't need to be
    fixed mounted as read-only.
  * After a failed sync, always reallocates new files with a not
@@ -294,11 +296,11 @@ SnapRAID HISTORY
 ===========
  * Fixed a potential crash if a file is deleted during a "sync/scrub".
    This is a problem introduced in version 5.0 due new logging.
-   If happened to you to have a crash in sync, you don't need to
-   take any special action, just run "sync" again.
+   If happened to you to have a crash in sync, you don't need to take
+   any special action, just run "sync" again.
  * Restored the functionality of -C, --gen-conf command.
- * Prints the files with duplicate physical offset if the
-   -v, --verbose option is specified.
+ * Prints the files with duplicate physical offset if the -v, --verbose
+   option is specified.
 
 5.0 2013/11
 ===========
@@ -323,13 +325,13 @@ SnapRAID HISTORY
  * Changed the output format of some commands to make it similar
    at the new "list" one.
  * Reduced memory usage removing some unnecessary allocations.
- * Added a memory test on the memory buffers used in sync/scrub/check/fix
-   before using them.
+ * Added a memory test on the memory buffers used in sync, scrub, check,
+   fix before using them.
 
 4.4 2013/10
 ===========
- * Relaxed the check about small parity files, to allow to recover
-   after a failed sync before resizing the parity files.
+ * Relaxed the check about small parity files, to allow to recover after
+   a failed sync before resizing the parity files.
 
 4.3 2013/10
 ===========
@@ -343,15 +345,16 @@ SnapRAID HISTORY
    For example, in NTFS it's possible to store such files in the MFT.
    It's just a cosmetic change, and not a functional one.
  * Remove unexpected 'Restore' entries in the diff output when dealing
-   with filesystem without persistent inodes like NTFS in Linux.
- * Added support for filenames containing newlines. This happens in Mac OS X.
+   with file-system without persistent inodes like NTFS in Linux.
+ * Added support for filenames containing newlines. This happens in Mac
+   OS X.
 
 4.1 2013/9
 ==========
- * If the underline filesystem doesn't support the FIEMAP command,
+ * If the underline file-system doesn't support the FIEMAP command,
    automatically fall back to use FIBMAP for sorting files.
- * Fixed the import of content files from previous version of SnapRAID that
-   are the result of an incomplete sync.
+ * Fixed the import of content files from previous version of SnapRAID
+   that are the result of an incomplete sync.
  * Added a new -C, --gen-conf option to generate a dummy configuration
    file from the info in the content file.
    Just in case that you lose everything, except the content file.
@@ -360,8 +363,8 @@ SnapRAID HISTORY
 
 4.0 2013/9
 ==========
- * New 'scrub' command to periodically check the oldest blocks for silent
-   errors without the need to scan the whole array.
+ * New 'scrub' command to periodically check the oldest blocks for
+   silent errors without the need to scan the whole array.
  * New 'status' command to check the fragmentation, the last check time
    distribution, and the silent error status of the array.
  * Added the new Spooky hash. It's faster in 64 bit architectures.
@@ -386,24 +389,27 @@ SnapRAID HISTORY
    There is also the undocumented --test-skip-lock to avoid to check it.
  * Automatically ignores, with warning, mount points inside the array
    directory tree.
- * Changes the 'dup' output format to include the size of each duplicate file.
+ * Changes the 'dup' output format to include the size of each duplicate
+   file.
 
 3.2 2013/7
 ==========
- * Fixed a directory creation problem in Windows when the "disk" option points to
-   the root directory of a drive. Now SnapRAID won't complain about the
-   inability to create such directory.
-   If you encounter this problem when trying to recover your data, just upgrade
-   to this version, and you'll be able to complete the recovering process.
+ * Fixed a directory creation problem in Windows when the "disk" option
+   points to the root directory of a drive. Now SnapRAID won't complain
+   about the inability to create such directory.
+   If you encounter this problem when trying to recover your data, just
+   upgrade to this version, and you'll be able to complete the
+   recovering process.
    No need to upgrade for platforms different than Windows.
 
 3.1 2013/5
 ==========
  * Direct use of Windows API for disk access to improve error reporting.
- * If the 'fix' process is aborted, it removes all the new files partially
-   recovered, to allow to reuse again the '-m, --filter-missing' flag.
- * In Windows don't exclude anymore system files. Only system directories are
-   excluded.
+ * If the 'fix' process is aborted, it removes all the new files
+   partially recovered, to allow to reuse again the -m, --filter-missing
+   flag.
+ * In Windows don't exclude anymore system files. Only system
+   directories are excluded.
  * In Windows applies filters in case insensitive way.
  * The Windows binaries are now built with gcc 4.7.2.
  * Reduced memory occupation for hardlinks and directories.
@@ -411,22 +417,24 @@ SnapRAID HISTORY
 
 3.0 2013/3
 ==========
- * Added pooling support with the new 'pool' command. It creates a virtual
-   view of the array using symbolic links pointing to the original files.
+ * Added pooling support with the new 'pool' command. It creates a
+   virtual view of the array using symbolic links pointing to the
+   original files.
  * Added a new -m, --filter-missing option that allow to undelete files,
    without checking/fixing the others.
  * Added a new -i, --import option to automatically import deleted files
    when fixing.
  * Added a new -l, --log option to save to disk the detailed log.
  * Added support for hardlinks and empty directories.
- * Added support to save symlinks to files in Windows. Note that only the
-   symlink is saved and not the linked file.
-   Note that Windows Symlinks to dirs and junctions are still not supported.
+ * Added support to save symlinks to files in Windows. Note that only
+   the symlink is saved and not the linked file.
+   Note that Windows Symlinks to dirs and junctions are still not
+   supported.
  * Files without read permission generate an error instead of a warning.
    You now must explicitly exclude them in the configuration file with
    exclusion rules.
- * In 'check' and 'fix', if verbose is enabled, prints the result for each
-   processed file.
+ * In 'check' and 'fix', if verbose is enabled, prints the result for
+   each processed file.
  * Added an UUID check to detect when a disk is replaced, and to prevent
    unwanted disk swaps.
 
@@ -437,27 +445,28 @@ SnapRAID HISTORY
 
 2.0 2012/12
 ===========
- * Added a new -a option to make the 'check' command to only check file hashes
-   without checking the parity data.
+ * Added a new -a option to make the 'check' command to only check file
+   hashes without checking the parity data.
  * Added a new -d option to filter by disk name.
  * The file modification time is now saved using nanosecond precision.
    This allows to restore the exact modification time in 'fix'.
    The new 'content' files written with this version are not backward
    compatible, but it's still possible to read the old format.
- * Fixed hard-links automatic exclusion. All the hardlinks after the first one
-   are now correctly ignored.
+ * Fixed hard-links automatic exclusion. All the hardlinks after the
+   first one are now correctly ignored.
  * If it isn't possible to grow a parity file, prints the list of files
    outside the maximum size allocated.
- * Autosave isn't triggered if we are near the end of the 'sync' process.
- * Before starting a 'sync', we wait for two seconds, to workaround the FAT
-   limitation of having two seconds modification time precision.
+ * Autosave isn't triggered if we are near the end of the 'sync'
+   process.
+ * Before starting a 'sync', we wait for two seconds, to workaround the
+   FAT limitation of having two seconds modification time precision.
    This a safe measure to be 100% sure to always detect file changes.
- * Always fill the memory after allocating it to avoid the OOM (Out Of Memory)
-   killer in Linux.
+ * Always fill the memory after allocating it to avoid the OOM (Out Of
+   Memory) killer in Linux.
  * Fixed compilation in Solaris/OpenIndiana for lacking both futimes()
    and futimens().
- * Now 'sync' ensures that the parity files are not too small to contain the
-   just loaded data.
+ * Now 'sync' ensures that the parity files are not too small to contain
+   the just loaded data.
  * Removed the '-H,--filter-nohidden' option. It doesn't make sense to
    have it as command line option.
    You must use the 'nohidden' option in the configuration file.
@@ -479,33 +488,36 @@ SnapRAID HISTORY
 1.12 2012/9
 ===========
  * Fixed file renaming in Windows during a 'fix' command.
-   This is only a Windows only issue, no reason to upgrade for other platforms.
+   This is only a Windows only issue, no reason to upgrade for other
+   platforms.
 
 1.11 2012/7
 ===========
- * Fixed again directories inclusion. Exclusion rules for directories were
-   ignored.
+ * Fixed again directories inclusion. Exclusion rules for directories
+   were ignored.
 
 1.10 2012/6
 ===========
  * Fixed directory inclusion, in case the last rule is an "include" one.
- * Fixed very long paths in Windows. We now always use the special '\\?' prefix
-   to remove the 260 chars limitation.
- * If a file is excluded, it prints explicitly which attribute caused the
-   exclusion.
+ * Fixed very long paths in Windows. We now always use the special '\\?'
+   prefix to remove the 260 chars limitation.
+ * If a file is excluded, it prints explicitly which attribute caused
+   the exclusion.
  * Automatically excludes also the temporary copy of content file,
    the one with the ".tmp" extension.
  * Avoid Windows to go in automatic sleep mode when running.
 
 1.9 2012/3
 ==========
- * Implemented a more sophisticated recovering in case a harddisk failure
-   happens during a 'sync' command.
-   When using RAID6 it improves the chances of recovering data with partially
-   computed parity, after an aborted 'sync'.
+ * Implemented a more sophisticated recovering in case a harddisk
+   failure happens during a 'sync' command.
+   When using RAID6 it improves the chances of recovering data with
+   partially computed parity, after an aborted 'sync'.
  * Fixed the count of new files.
- * Added a new 'autosave' configuration option to save the intermediate 'sync' state.
- * Supported filesystems with read requests returning less data than requested.
+ * Added a new 'autosave' configuration option to save the intermediate
+   'sync' state.
+ * Supported file-systems with read requests returning less data than
+   requested.
  * In Windows ensures that the disk serial number is not zero.
 
 1.8 2012/1
@@ -521,30 +533,32 @@ SnapRAID HISTORY
 
 1.7 2011/11
 ===========
-* If a file is modified or removed during a sync, the sync process doesn't
-  stop anymore, but it will simply skip the file, resulting in an incomplete
-  sync. Note that the sync will terminate with an error.
-* If the content file is placed in a data disk, it's automatically excluded
-  from the sync process.
-* Increased by one the minimum number of content files. Before it was only
-  a suggestion, but now it's a requirement because you are allowed to put
-  content files in data disks.
-* Added checks to ensure that data and parity disks are different, and to
-  correctly count the number of copies of "content" files in different disks.
-* Removed the dependency of the "disk" order specification in the configuration
-  file. The used order is now saved in the content file to avoid to damage the
-  dual parity in case the order is changed by the user.
-  It easily allows to remove or add disks from the array when using a
-  dual parity.
-* Improved the "fix" performance when a lot of files or the parity have to be
-  recreated from scratch.
-* When getting unrecoverable errors, the printed log line now starts with
-  "unrecoverable:" instead of "error:" to allow an easier identification.
+* If a file is modified or removed during a sync, the sync process
+  doesn't stop anymore, but it will simply skip the file, resulting in
+  an incomplete sync. Note that the sync will terminate with an error.
+* If the content file is placed in a data disk, it's automatically
+  excluded from the sync process.
+* Increased by one the minimum number of content files. Before it was
+  only a suggestion, but now it's a requirement because you are allowed
+  to put content files in data disks.
+* Added checks to ensure that data and parity disks are different, and
+  to correctly count the number of copies of "content" files in
+  different disks.
+* Removed the dependency of the "disk" order specification in the
+  configuration file. The used order is now saved in the content file to
+  avoid to damage the dual parity in case the order is changed by the
+  user. It easily allows to remove or add disks from the array when
+  using a dual parity.
+* Improved the "fix" performance when a lot of files or the parity have
+  to be recreated from scratch.
+* When getting unrecoverable errors, the printed log line now starts
+  with "unrecoverable:" instead of "error:" to allow an easier
+  identification.
 * Added a new option "--find-by-name" to allow to sync using only the
-  file path and not the inode. This is useful to avoid long sync
-  when you replace one disk with another copying manually the files.
-* If "fix" cannot recover a file, it's renamed adding the ".unrecoverable"
-  extension.
+  file path and not the inode. This is useful to avoid long sync when
+  you replace one disk with another copying manually the files.
+* If "fix" cannot recover a file, it's renamed adding the
+  ".unrecoverable" extension.
 * Checking and fixing also empty files with size 0.
 
 1.6 2011/9
@@ -554,11 +568,11 @@ SnapRAID HISTORY
   saving the content file and you made changes at the disk array before
   another "sync" command was done.
   More specifically, deletions or truncations of not yet synced files
-  after the aborted sync, and before the next sync command, may have damaged
-  the parity data. New file additions were instead safe.
+  after the aborted sync, and before the next sync command, may have
+  damaged the parity data. New file additions were instead safe.
   If these conditions may have happened to you a "check" command (also
-  with older version of the program) is recommended to ensure the correctness
-  of your parity data.
+  with older version of the program) is recommended to ensure the
+  correctness of your parity data.
 * The "diff" command now recognizes the reuse of inodes.
 * Windows hidden files are now saved like any other files.
 * Symbolic links are now saved in *nix. Not supported in Windows.
@@ -569,22 +583,22 @@ SnapRAID HISTORY
 1.5 2011/7
 ==========
 * Ignores extra spaces in the configuration file.
-* Changed the output of check/fix to allow a more easy postprocessing
+* Changed the output of check/fix to allow a more easy post-processing
   with other tools like awk and sort.
 * Added the hidden option -G/--gui to enable the output of progress
   information for a potential GUI for SnapRAID.
-* Added a new "diff" command to print the list of changes detected
-  at file level.
+* Added a new "diff" command to print the list of changes detected at
+  file level.
 * Faster loading of content file. Approx three times faster.
 
 1.4 2011/6
 ==========
 * Ignoring in sync System and Hidden files in Windows.
 * Files without read permission are ignored in sync.
-* If a file is ignored a warning message is printed. You have to exclude it
-  to remove the warning.
-* In fixing, if a file cannot be written for missing permission, an error is
-  reported only if a write is effectively required.
+* If a file is ignored a warning message is printed. You have to exclude
+  it to remove the warning.
+* In fixing, if a file cannot be written for missing permission, an
+  error is reported only if a write is effectively required.
 * Ignores any symbolic links. They are not saved.
 
 1.3 2011/5
@@ -602,29 +616,29 @@ SnapRAID HISTORY
 ==========
 * Fixed a bug in the check command when detecting garbage data over the
   expected end of the file.
-  The parity data was anyway computed correctly, and no special action is
-  required to update.
-* Changed the default checksum to Murmur3 hash. It's a lot faster than MD5.
-  You can check its speed with the "snapraid -T" command.
+  The parity data was anyway computed correctly, and no special action
+  is required to update.
+* Changed the default checksum to Murmur3 hash. It's a lot faster than
+  MD5. You can check its speed with the "snapraid -T" command.
   MD5 is still supported for backward compatibility.
   To convert to the new Murmur3 hash, simply remove the 'content' file,
   and start a new complete 'sync'.
-* Added RAID6 support. It's used the very good RAID6 library made by H. Peter
-  Anvin also used in the Linux Kernel. It contains optimized implementations
-  for SSE2 and MMX.
-* Added support for multiple 'content' files. You can save extra copies to be
-  able to verify the checksums also if you lose all the 'content' files in the
-  parity disks.
-* Added a filtering include logic, where anything not explicitly included
-  is excluded. For example, it allow to include only the files in a predefined
-  set of directories.
-* The check command returns with an error code if any kind of error is present.
-  Previously it was returning an error only if unrecoverable errors were
-  present.
-* Opening the files in sequential mode in Windows. This should give a speedup
-  in Windows.
-* In Windows you can use the backslash \ in the filter definitions instead
-  of the forward slash /.
+* Added RAID6 support. It's used the very good RAID6 library made by H.
+  Peter Anvin also used in the Linux Kernel. It contains optimized
+  implementations for SSE2 and MMX.
+* Added support for multiple 'content' files. You can save extra copies
+  to be able to verify the checksums also if you lose all the 'content'
+  files in the parity disks.
+* Added a filtering include logic, where anything not explicitly
+  included is excluded. For example, it allow to include only the files
+  in a predefined set of directories.
+* The check command returns with an error code if any kind of error is
+  present. Previously it was returning an error only if unrecoverable
+  errors were present.
+* Opening the files in sequential mode in Windows. This should give a
+  speedup in Windows.
+* In Windows you can use the backslash \ in the filter definitions
+  instead of the forward slash /.
 
 1.0 2011/4
 ==========
@@ -639,7 +653,8 @@ SnapRAID HISTORY
 ==========
 * Added --filter option to select a subset of file in check and fix.
 * Better ETA estimation in all the commands.
-* Added support for OpenSSL crypto library to use its optimized MD5 implementation.
+* Added support for OpenSSL crypto library to use its optimized MD5
+  implementation.
 * Added test vectors and a speed test for MD5.
 
 0.2 2011/3
@@ -654,4 +669,3 @@ SnapRAID HISTORY
 0.1 2011/3
 ==========
 * First public test release of SnapRAID.
-
