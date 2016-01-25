@@ -7,6 +7,21 @@ This is the list of TODO items for SnapRAID.
 
 - Minor
 
+* Allow to specify more than one parition for each parity disk.
+Checking the UUID, we can avoid that users messup with disk specifications.
+See discussion at:
+https://sourceforge.net/p/snapraid/discussion/1677233/thread/02b2a2ae/
+
+* How to handle corrupt copied/moved files ? At now pre-hash checks them,
+but if a corruption is found, it stops the sync process.
+This is not optimal, because the 'sync' command is stopped instead to continue.
+A possible solution could be:
+If a copied block is corrupt, we can recover the original one from parity (if moved),
+or read it directly from disk (if copied), and we can use this one to build the parity,
+working around the corruption, that can be later fixed with "fix".
+This requires to allocate blocks of moved files in parity positions *after* the
+currently used one.
+
 * Some programs are misusing the FILE_ATTRIBUTE_TEMPORARY.
 In fact, it makes sense as it's a good way to control the cache on the file,
 so, despite the name, that usage could be common for not temporary files.
@@ -15,11 +30,6 @@ https://sourceforge.net/p/snapraid/discussion/1677233/thread/57d40108/
 * Restore ownership and permissions, at least in Unix.
 
 * Restore directory timestamps.
-
-* Provides a way to rename disks in content file.
-
-* When a bad block with silent error is corrected,
-print some stats in the log about the error bit pattern.
 
 * Allow to filter also in diff, to limit the output
 to some dir or disk. Also excluding a specific disk could
@@ -31,22 +41,18 @@ applications.
 * Add an option for dup to list only duplicates with different name.
 This supposing that if a file has the same name, it's intentionally duplicated.
 
-* Checks if splitting hash/parity computation in 4K pages
-can improve speed in sync. That should increase cache locality,
-because we read the data two times for hash and and parity,
-and if we manage to keep it in the cache, we should save time.
-
-* A new 'init' command to differentiate the first 'sync' operation.
-This 'init' will work also without a content file, and parity files.
-Instead 'sync' will require all of them.
-This will also help when running with the parity filesystem unmounted.
-
 * In fix an existing symlink with the same name of a file to be recovered may stop
 the process making the create() operation to fail.
 The same for directories, when recreating the directory tree.
 
 * If a directory exists with the same name of a parity/content file be more explicative
 on the error message. See: https://sourceforge.net/projects/snapraid/forums/forum/1677233/topic/4861034
+
+* We don't try to do partial block recovering. A block is correct or not.
+But if only some bytes, or a sector, is wrong, it should be possible to recover all the
+rest of the block.
+The problem is that we don't have any hash to ensure that the block is partially recovered,
+or completely garbage. But it makes sense to anyway write the "most likely" correct one.
 
 * Allow to specify more than one disk directories to cover the case of multi partitions.
 Different partitions have duplicate inode. The only way to support this is to
@@ -55,32 +61,15 @@ But it should be only few bits for each file. So, it should be manageable.
 A lot of discussions about this feature :)
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/b2cd9385/
 
-* Like the previous one, but only for parity. This is simpler as it doesn't
-has the inode issue, but in true you can do the same just merging the disks
-with LVM or similar.
-Anyway, checking the UUID, we can avoid that users messup with disk specifications.
-See discussion at:
-https://sourceforge.net/p/snapraid/discussion/1677233/thread/02b2a2ae/
+- Naming
+
+* A new 'init' command to differentiate the first 'sync' operation.
+This 'init' will work also without a content file, and parity files.
+Instead 'sync' will require all of them.
+This will also help when running with the parity filesystem unmounted.
 
 * Rename sync->backup and fix->restore. It seems to me a naming expressing
 better the meaning of the commands. But not yet sure.
-
-* We don't try to do partial block recovering. A block is correct or not.
-But if only some bytes, or a sector, is wrong, it should be possible to recover all the
-rest of the block.
-The problem is that we don't have any hash to ensure that the block is partially recovered,
-or completely garbage. But it makes sense to anyway write the "most likely" correct one.
-
-* How to handle corrupt copied/moved files ? At now pre-hash checks them,
-but if a corruption is found, it stops the sync process.
-This is not optimal, as that blocks sync until a manual intervention.
-This is the reason why the check of REP (copied) blocks is not enabled by default,
-but only inside pre-hash.
-A possible solution could be:
-If a copied block is corrupt, we can recover the original one from parity (if moved),
-or read it directly from disk (if copied), and we can use this one to build the parity,
-working around the corruption, that can be later fixed with "fix".
-This requires to process first copied blocks, with a possible complex dependency chain.
 
 - Pooling
 
@@ -136,8 +125,15 @@ Rejected TODO
 
 This is a list of rejected TODO items.
 
+* Checks if splitting hash/parity computation in 4K pages
+can improve speed in sync. That should increase cache locality,
+because we read the data two times for hash and and parity,
+and if we manage to keep it in the cache, we should save time.
+- We now hash first the faster disks, and this could
+reduce performance as we'll have to wait for all disks.
+
 * Use threads to scan all the disks at the same time.
-After recent Windows changes it seems fast enough even
+- After 7.0 Windows changes it seems fast enough even
 with a mono thread implementation.
 
 * Enable storing of creation time NTFS, crtime/birth time EXT4.
