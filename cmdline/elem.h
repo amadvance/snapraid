@@ -32,6 +32,11 @@
 /* snapraid */
 
 /**
+ * Number of measures of the operation progress.
+ */
+#define PROGRESS_MAX 100
+
+/**
  * Max UUID length.
  */
 #define UUID_MAX 128
@@ -328,9 +333,11 @@ struct snapraid_disk {
 	char uuid[UUID_MAX]; /**< UUID of the disk. */
 
 	uint64_t device; /**< Device identifier. */
-	uint64_t tick; /**< Usage time of the disk. */
 	block_off_t total_blocks; /**< Number of total blocks. */
 	block_off_t free_blocks; /**< Number of free blocks at the last sync. */
+
+	uint64_t tick; /**< Usage time. */
+	uint64_t progress_tick[PROGRESS_MAX]; /**< Last ticks of progress. */
 
 	/**
 	 * First free searching block.
@@ -423,10 +430,8 @@ struct snapraid_parity {
 	int skip_access; /**< If the disk is inaccessible and it should be skipped. */
 	int is_excluded; /**< If the parity is excluded by disk filter. */
 
-	/**
-	 * Cumulative time used for parity disks.
-	 */
-	uint64_t tick;
+	uint64_t tick; /**< Usage time. */
+	uint64_t progress_tick[PROGRESS_MAX]; /**< Last cpu ticks of progress. */
 };
 
 /**

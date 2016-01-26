@@ -364,8 +364,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 			/* if not, silent errors are assumed as expected error */
 			file_is_unsynced = 0;
 
-			/* until now is CPU */
-			state_usage_cpu(state);
+			/* until now is misc */
+			state_usage_misc(state);
 
 			/* get the next task */
 			task = io_data_read(&io, &diskcur, waiting_map, &waiting_mac);
@@ -456,6 +456,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				memhash(state->hash, state->hashseed, hash, buffer[diskcur], read_size);
 			}
 
+			/* until now is hash */
+			state_usage_hash(state);
+
 			if (block_has_updated_hash(block)) {
 				/* compare the hash */
 				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
@@ -483,8 +486,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		for (; l < LEV_MAX; ++l)
 			buffer_recov[l] = 0;
 
-		/* until now is CPU */
-		state_usage_cpu(state);
+		/* until now is misc */
+		state_usage_misc(state);
 
 		/* read the parity */
 		for (l = 0; l < state->level; ++l) {
@@ -563,6 +566,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 					}
 				}
 			}
+
+			/* until now is raid */
+			state_usage_raid(state);
 		}
 
 		if (silent_error_on_this_block || io_error_on_this_block) {
@@ -606,8 +612,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		) {
 			autosavedone = 0; /* restart the counter */
 
-			/* until now is CPU */
-			state_usage_cpu(state);
+			/* until now is misc */
+			state_usage_misc(state);
 
 			state_progress_stop(state);
 

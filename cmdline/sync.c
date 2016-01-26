@@ -124,8 +124,8 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			/* if we have to use the old hash */
 			rehash = info_get_rehash(info);
 
-			/* until now is CPU */
-			state_usage_cpu(state);
+			/* until now is misc */
+			state_usage_misc(state);
 
 			/* if the file is different than the current one, close it */
 			if (handle[j].file != 0 && handle[j].file != file) {
@@ -254,6 +254,9 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			} else {
 				memhash(state->hash, state->hashseed, hash, buffer, read_size);
 			}
+
+			/* until now is hash */
+			state_usage_hash(state);
 
 			if (block_state == BLOCK_STATE_REP) {
 				/* compare the hash */
@@ -817,8 +820,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			block_off_t file_pos;
 			unsigned diskcur;
 
-			/* until now is CPU */
-			state_usage_cpu(state);
+			/* until now is misc */
+			state_usage_misc(state);
 
 			task = io_data_read(&io, &diskcur, waiting_map, &waiting_mac);
 
@@ -916,6 +919,9 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			} else {
 				memhash(state->hash, state->hashseed, hash, buffer[diskcur], read_size);
 			}
+
+			/* until now is hash */
+			state_usage_hash(state);
 
 			if (block_has_updated_hash(block)) {
 				/* compare the hash */
@@ -1035,8 +1041,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 			/* if we have something to recover and enough parity */
 			if (something_to_recover && j == failed_count) {
-				/* until now is CPU */
-				state_usage_cpu(state);
+				/* until now is misc */
+				state_usage_misc(state);
 
 				/* read the parity */
 				/* we are sure that parity exists because */
@@ -1082,6 +1088,9 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					/* only 'fix' supports the most advanced fixing */
 					raid_rec(failed_mac, failed_map, diskmax, state->level, state->block_size, buffer);
 
+					/* until now is raid */
+					state_usage_raid(state);
+
 					/* check the result and prepare the data */
 					for (j = 0; j < failed_count; ++j) {
 						unsigned char hash[HASH_SIZE];
@@ -1098,6 +1107,9 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 							} else {
 								memhash(state->hash, state->hashseed, hash, block_buffer, size);
 							}
+
+							/* until now is hash */
+							state_usage_hash(state);
 
 							/* if the hash doesn't match */
 							if (memcmp(hash, failed[j].block->hash, HASH_SIZE) != 0) {
@@ -1131,6 +1143,9 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			if (parity_needs_to_be_updated) {
 				/* compute the parity */
 				raid_gen(diskmax, state->level, state->block_size, buffer);
+
+				/* until now is raid */
+				state_usage_raid(state);
 
 				/* mark that the parity is going to be written */
 				parity_going_to_be_updated = 1;
@@ -1196,7 +1211,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		/* Note that the calls to io_parity_write() are mandatory */
 		/* even if the parity doesn't need to be updated */
 		/* This because we want to keep track of the time usage */
-		state_usage_cpu(state);
+		state_usage_misc(state);
 
 		/* write the parity */
 		for (l = 0; l < state->level; ++l) {
@@ -1258,8 +1273,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		) {
 			autosavedone = 0; /* restart the counter */
 
-			/* until now is CPU */
-			state_usage_cpu(state);
+			/* until now is misc */
+			state_usage_misc(state);
 
 			state_progress_stop(state);
 

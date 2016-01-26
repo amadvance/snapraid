@@ -608,7 +608,7 @@ static void printl(const char* str, size_t pad)
 	len = strlen(str);
 
 	while (len < pad) {
-		printf(" ");
+		putchar(' ');
 		++len;
 	}
 }

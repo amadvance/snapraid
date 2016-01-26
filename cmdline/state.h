@@ -119,11 +119,6 @@ struct snapraid_option {
 	int auto_conf; /**< Allow to run without configuration file. */
 };
 
-/**
- * Number of measures of the operation progress.
- */
-#define PROGRESS_MAX 100
-
 struct snapraid_state {
 	struct snapraid_option opt; /**< Setup options. */
 	int filter_hidden; /**< Filter out hidden files. */
@@ -158,7 +153,9 @@ struct snapraid_state {
 	/**
 	 * Cumulative time used for computations.
 	 */
-	uint64_t tick_cpu;
+	uint64_t tick_misc;
+	uint64_t tick_raid;
+	uint64_t tick_hash;
 
 	/**
 	 * Cumulative time used for all io operations of disks.
@@ -179,8 +176,10 @@ struct snapraid_state {
 	time_t progress_time[PROGRESS_MAX]; /**< Last times of progress. */
 	block_off_t progress_pos[PROGRESS_MAX]; /**< Last positions of progress. */
 	data_off_t progress_size[PROGRESS_MAX]; /**< Last sizes of progress. */
-	uint64_t progress_tick_cpu[PROGRESS_MAX]; /**< Last cpu ticks of progress. */
-	uint64_t progress_tick_total[PROGRESS_MAX]; /**< Last total ticks of progress. */
+	uint64_t progress_tick_misc[PROGRESS_MAX]; /**< Last cpu ticks of progress. */
+	uint64_t progress_tick_raid[PROGRESS_MAX]; /**< Last raid ticks of progress. */
+	uint64_t progress_tick_hash[PROGRESS_MAX]; /**< Last hash ticks of progress. */
+	uint64_t progress_tick_io[PROGRESS_MAX]; /**< Last io ticks of progress. */
 
 	int progress_ptr; /**< Pointer to the next position to fill. Rolling over. */
 	int progress_tick; /**< Number of measures done. */
@@ -340,7 +339,9 @@ void state_usage_waste(struct snapraid_state* state);
 /**
  * Set the usage time for CPU.
  */
-void state_usage_cpu(struct snapraid_state* state);
+void state_usage_misc(struct snapraid_state* state);
+void state_usage_raid(struct snapraid_state* state);
+void state_usage_hash(struct snapraid_state* state);
 
 /**
  * Set the usage time for a set of data disks.
@@ -356,6 +357,11 @@ void state_usage_parity(struct snapraid_state* state, unsigned* waiting_map, uns
  * Print the stats of the usage time.
  */
 void state_usage_print(struct snapraid_state* state);
+
+/**
+ * Print a graph of usage time.
+ */
+void state_usage_graph(struct snapraid_state* state);
 
 /**
  * Check the file-system on all disks.

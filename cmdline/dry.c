@@ -225,8 +225,8 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			struct snapraid_disk* disk;
 			unsigned diskcur;
 
-			/* until now is CPU */
-			state_usage_cpu(state);
+			/* until now is misc */
+			state_usage_misc(state);
 
 			/* get the next task */
 			task = io_data_read(&io, &diskcur, waiting_map, &waiting_mac);
@@ -284,8 +284,8 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 			countsize += read_size;
 		}
 
-		/* until now is CPU */
-		state_usage_cpu(state);
+		/* until now is misc */
+		state_usage_misc(state);
 
 		/* read the parity */
 		for (l = 0; l < state->level; ++l) {

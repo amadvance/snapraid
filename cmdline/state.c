@@ -159,7 +159,9 @@ void state_init(struct snapraid_state* state)
 		state->parity[l].is_excluded = 0;
 	}
 	state->tick_io = 0;
-	state->tick_cpu = 0;
+	state->tick_misc = 0;
+	state->tick_raid = 0;
+	state->tick_hash = 0;
 	state->tick_last = tick();
 	state->share[0] = 0;
 	state->pool[0] = 0;
@@ -3908,6 +3910,8 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 {
 	time_t now;
 	int pred;
+	tommy_node* i;
+	unsigned l;
 
 	now = time(0);
 
@@ -3920,16 +3924,16 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 	if (state->progress_tick == 0
 		|| state->progress_time[pred] != now
 	) {
-		uint64_t tick_total;
 		uint64_t tick_cpu;
+		uint64_t tick_total;
 		time_t elapsed;
 		unsigned out_perc = 0;
 		unsigned out_speed = 0;
 		unsigned out_cpu = 0;
 		unsigned out_eta = 0;
 
-		tick_total = state->tick_cpu + state->tick_io;
-		tick_cpu = state->tick_cpu;
+		tick_cpu = state->tick_misc + state->tick_raid + state->tick_hash;
+		tick_total = tick_cpu + state->tick_io;
 		elapsed = now - state->progress_whole_start - state->progress_wasted;
 
 		/* completion percentage */
@@ -3946,8 +3950,10 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 			time_t delta_time;
 			block_off_t delta_pos;
 			data_off_t delta_size;
-			uint64_t delta_tick_total;
 			uint64_t delta_tick_cpu;
+			uint64_t delta_tick_total;
+			uint64_t oldest_tick_cpu;
+			uint64_t oldest_tick_total;
 
 			/* number of past measures */
 			past = state->progress_tick;
@@ -3968,11 +3974,16 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 					oldest -= PROGRESS_MAX;
 			}
 
+			oldest_tick_cpu = state->progress_tick_misc[oldest]
+				+ state->progress_tick_raid[oldest]
+				+ state->progress_tick_hash[oldest];
+			oldest_tick_total = oldest_tick_cpu + state->progress_tick_io[oldest];
+
 			delta_time = now - state->progress_time[oldest];
 			delta_pos = countpos - state->progress_pos[oldest];
 			delta_size = countsize - state->progress_size[oldest];
-			delta_tick_total = tick_total - state->progress_tick_total[oldest];
-			delta_tick_cpu = tick_cpu - state->progress_tick_cpu[oldest];
+			delta_tick_cpu = tick_cpu - oldest_tick_cpu;
+			delta_tick_total = tick_total - oldest_tick_total;
 
 			/* estimate the speed in MB/s */
 			if (delta_time != 0)
@@ -3991,6 +4002,11 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 			log_tag("run:pos:%u:%u:%" PRIu64 ":%u:%u:%u:%u:%" PRIu64 "\n", blockpos, countpos, countsize, out_perc, out_eta, out_speed, out_cpu, (uint64_t)elapsed);
 			log_flush();
 		} else {
+			if (msg_level >= MSG_VERBOSE) {
+				printf("\n\n");
+				state_usage_graph(state);
+			}
+
 			msg_bar("%u%%, %u MB", out_perc, (unsigned)(countsize / MEGA));
 			if (out_speed)
 				msg_bar(", %u MB/s", out_speed);
@@ -4005,8 +4021,16 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 		state->progress_time[state->progress_ptr] = now;
 		state->progress_pos[state->progress_ptr] = countpos;
 		state->progress_size[state->progress_ptr] = countsize;
-		state->progress_tick_cpu[state->progress_ptr] = tick_cpu;
-		state->progress_tick_total[state->progress_ptr] = tick_total;
+		state->progress_tick_misc[state->progress_ptr] = state->tick_misc;
+		state->progress_tick_raid[state->progress_ptr] = state->tick_raid;
+		state->progress_tick_hash[state->progress_ptr] = state->tick_hash;
+		state->progress_tick_io[state->progress_ptr] = state->tick_io;
+		for (i = state->disklist; i != 0; i = i->next) {
+			struct snapraid_disk* disk = i->data;
+			disk->progress_tick[state->progress_ptr] = disk->tick;
+		}
+		for (l = 0; l < state->level; ++l)
+			state->parity[l].progress_tick[state->progress_ptr] = state->parity[l].tick;
 
 		/* next position */
 		++state->progress_ptr;
@@ -4040,13 +4064,35 @@ void state_usage_waste(struct snapraid_state* state)
 	state->tick_last = now;
 }
 
-void state_usage_cpu(struct snapraid_state* state)
+void state_usage_misc(struct snapraid_state* state)
 {
 	uint64_t now = tick();
 	uint64_t delta = now - state->tick_last;
 
 	/* increment the time spent in computations */
-	state->tick_cpu += delta;
+	state->tick_misc += delta;
+
+	state->tick_last = now;
+}
+
+void state_usage_raid(struct snapraid_state* state)
+{
+	uint64_t now = tick();
+	uint64_t delta = now - state->tick_last;
+
+	/* increment the time spent in computations */
+	state->tick_raid += delta;
+
+	state->tick_last = now;
+}
+
+void state_usage_hash(struct snapraid_state* state)
+{
+	uint64_t now = tick();
+	uint64_t delta = now - state->tick_last;
+
+	/* increment the time spent in computations */
+	state->tick_hash += delta;
 
 	state->tick_last = now;
 }
@@ -4083,6 +4129,100 @@ void state_usage_parity(struct snapraid_state* state, unsigned* waiting_map, uns
 	state->tick_io += delta;
 
 	state->tick_last = now;
+}
+
+/**
+ * Print a repeated char.
+ */
+static void printc(char c, size_t pad)
+{
+	while (pad) {
+		putchar(c);
+		--pad;
+	}
+}
+
+/**
+ * Print a string with space padding.
+ */
+static void printr(const char* str, size_t pad)
+{
+	size_t len;
+
+	len = strlen(str);
+
+	while (len < pad) {
+		putchar(' ');
+		++len;
+	}
+
+	printf("%s", str);
+}
+
+#define USAGE_COLUMN 60
+
+void state_usage_graph(struct snapraid_state* state)
+{
+	uint64_t tick_total;
+	tommy_node* i;
+	unsigned l;
+	size_t pad;
+
+	tick_total = state->tick_misc + state->tick_raid + state->tick_hash + state->tick_io;
+	if (!tick_total)
+		return;
+
+	pad = 4;
+	for (i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+		size_t len = strlen(disk->name);
+		if (pad < len)
+			pad = len;
+	}
+	for (l = 0; l < state->level; ++l) {
+		size_t len = strlen(lev_config_name(l));
+		if (pad < len)
+			pad = len;
+	}
+
+	/* extra space */
+	pad += 1;
+
+	/* here we don't use msg_progress() because it doesn't allow partial output */
+	for (i = state->disklist; i != 0; i = i->next) {
+		struct snapraid_disk* disk = i->data;
+		printr(disk->name, pad);
+		printf("%3" PRIu64 "%% | ", disk->tick * 100 / tick_total);
+		printc('*', disk->tick * USAGE_COLUMN / tick_total);
+		printf("\n");
+	}
+
+	for (l = 0; l < state->level; ++l) {
+		printr(lev_config_name(l), pad);
+		printf("%3" PRIu64 "%% | ", state->parity[l].tick * 100 / tick_total);
+		printc('*', state->parity[l].tick * USAGE_COLUMN / tick_total);
+		printf("\n");
+	}
+
+	printr("raid", pad);
+	printf("%3" PRIu64 "%% | ", state->tick_raid * 100 / tick_total);
+	printc('*', state->tick_raid * USAGE_COLUMN / tick_total);
+	printf("\n");
+
+	printr("hash", pad);
+	printf("%3" PRIu64 "%% | ", state->tick_hash * 100 / tick_total);
+	printc('*', state->tick_hash * USAGE_COLUMN / tick_total);
+	printf("\n");
+
+	printr("misc", pad);
+	printf("%3" PRIu64 "%% | ", state->tick_misc * 100 / tick_total);
+	printc('*', state->tick_misc * USAGE_COLUMN / tick_total);
+	printf("\n");
+
+	printr("", pad);
+	printf("     +-");
+	printc('-', USAGE_COLUMN);
+	printf("\n");
 }
 
 void state_usage_print(struct snapraid_state* state)
