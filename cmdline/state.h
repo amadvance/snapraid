@@ -361,7 +361,7 @@ void state_usage_print(struct snapraid_state* state);
 /**
  * Print a graph of usage time.
  */
-void state_usage_graph(struct snapraid_state* state);
+void state_usage_graph(struct snapraid_state* state, unsigned current, unsigned oldest);
 
 /**
  * Check the file-system on all disks.
