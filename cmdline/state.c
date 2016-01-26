@@ -3924,16 +3924,27 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 	if (state->progress_tick == 0
 		|| state->progress_time[pred] != now
 	) {
-		uint64_t tick_cpu;
-		uint64_t tick_total;
 		time_t elapsed;
 		unsigned out_perc = 0;
 		unsigned out_speed = 0;
 		unsigned out_cpu = 0;
 		unsigned out_eta = 0;
 
-		tick_cpu = state->tick_misc + state->tick_raid + state->tick_hash;
-		tick_total = tick_cpu + state->tick_io;
+		/* store the new measure */
+		state->progress_time[state->progress_ptr] = now;
+		state->progress_pos[state->progress_ptr] = countpos;
+		state->progress_size[state->progress_ptr] = countsize;
+		state->progress_tick_misc[state->progress_ptr] = state->tick_misc;
+		state->progress_tick_raid[state->progress_ptr] = state->tick_raid;
+		state->progress_tick_hash[state->progress_ptr] = state->tick_hash;
+		state->progress_tick_io[state->progress_ptr] = state->tick_io;
+		for (i = state->disklist; i != 0; i = i->next) {
+			struct snapraid_disk* disk = i->data;
+			disk->progress_tick[state->progress_ptr] = disk->tick;
+		}
+		for (l = 0; l < state->level; ++l)
+			state->parity[l].progress_tick[state->progress_ptr] = state->parity[l].tick;
+
 		elapsed = now - state->progress_whole_start - state->progress_wasted;
 
 		/* completion percentage */
@@ -3950,6 +3961,8 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 			time_t delta_time;
 			block_off_t delta_pos;
 			data_off_t delta_size;
+			uint64_t tick_cpu;
+			uint64_t tick_total;
 			uint64_t delta_tick_cpu;
 			uint64_t delta_tick_total;
 			uint64_t oldest_tick_cpu;
@@ -3963,16 +3976,21 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 			past -= past / 5;
 
 			/* check how much we can go in the past */
-			if (past >= PROGRESS_MAX) {
+			if (past >= PROGRESS_MAX - 1) {
 				/* the vector is filled, so we are already in position */
 				/* to get the possible oldest one */
-				oldest = state->progress_ptr;
+				oldest = state->progress_ptr + 1;
 			} else {
 				/* go backward the number of positions selected */
 				oldest = state->progress_ptr + PROGRESS_MAX - past;
-				if (oldest >= PROGRESS_MAX)
-					oldest -= PROGRESS_MAX;
 			}
+			if (oldest >= PROGRESS_MAX)
+				oldest -= PROGRESS_MAX;
+
+			tick_cpu = state->progress_tick_misc[state->progress_ptr]
+				+ state->progress_tick_raid[state->progress_ptr]
+				+ state->progress_tick_hash[state->progress_ptr];
+			tick_total = tick_cpu + state->progress_tick_io[state->progress_ptr];
 
 			oldest_tick_cpu = state->progress_tick_misc[oldest]
 				+ state->progress_tick_raid[oldest]
@@ -4017,22 +4035,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 			msg_flush();
 		}
 
-		/* store the new measure */
-		state->progress_time[state->progress_ptr] = now;
-		state->progress_pos[state->progress_ptr] = countpos;
-		state->progress_size[state->progress_ptr] = countsize;
-		state->progress_tick_misc[state->progress_ptr] = state->tick_misc;
-		state->progress_tick_raid[state->progress_ptr] = state->tick_raid;
-		state->progress_tick_hash[state->progress_ptr] = state->tick_hash;
-		state->progress_tick_io[state->progress_ptr] = state->tick_io;
-		for (i = state->disklist; i != 0; i = i->next) {
-			struct snapraid_disk* disk = i->data;
-			disk->progress_tick[state->progress_ptr] = disk->tick;
-		}
-		for (l = 0; l < state->level; ++l)
-			state->parity[l].progress_tick[state->progress_ptr] = state->parity[l].tick;
-
-		/* next position */
+		/* next position to fill */
 		++state->progress_ptr;
 		if (state->progress_ptr >= PROGRESS_MAX)
 			state->progress_ptr -= PROGRESS_MAX;
