@@ -21,6 +21,7 @@
 #include "elem.h"
 
 struct snapraid_handle;
+struct snapraid_io;
 
 /****************************************************************************/
 /* parity level */
@@ -319,7 +320,7 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 /**
  * Write the progress.
  */
-int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize);
+int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize);
 
 /**
  * Stop temporarily the progress.
@@ -361,7 +362,7 @@ void state_usage_print(struct snapraid_state* state);
 /**
  * Print a graph of usage time.
  */
-void state_usage_graph(struct snapraid_state* state, unsigned current, unsigned oldest);
+void state_usage_graph(struct snapraid_state* state, struct snapraid_io* io, unsigned current, unsigned oldest);
 
 /**
  * Check the file-system on all disks.

@@ -25,6 +25,7 @@
 #include "parity.h"
 #include "stream.h"
 #include "handle.h"
+#include "io.h"
 #include "raid/raid.h"
 #include "raid/cpu.h"
 
@@ -155,6 +156,7 @@ void state_init(struct snapraid_state* state)
 		state->parity[l].total_blocks = 0;
 		state->parity[l].free_blocks = 0;
 		state->parity[l].tick = 0;
+		state->parity[l].cached = 0;
 		state->parity[l].skip_access = 0;
 		state->parity[l].is_excluded = 0;
 	}
@@ -3906,7 +3908,7 @@ void state_progress_restart(struct snapraid_state* state)
 
 #define PROGRESS_CLEAR "          "
 
-int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize)
+int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize)
 {
 	time_t now;
 	int pred;
@@ -4016,8 +4018,7 @@ int state_progress(struct snapraid_state* state, block_off_t blockpos, block_off
 				out_eta = (countmax - countpos) * delta_time / (60 * delta_pos);
 
 			if (msg_level >= MSG_VERBOSE) {
-				printf("\n\n");
-				state_usage_graph(state, state->progress_ptr, oldest);
+				state_usage_graph(state, io, state->progress_ptr, oldest);
 			}
 		}
 
@@ -4164,7 +4165,7 @@ static void printr(const char* str, size_t pad)
 
 #define USAGE_COLUMN 60
 
-void state_usage_graph(struct snapraid_state* state, unsigned current, unsigned oldest)
+void state_usage_graph(struct snapraid_state* state, struct snapraid_io* io, unsigned current, unsigned oldest)
 {
 	uint64_t v;
 	uint64_t tick_total;
@@ -4197,7 +4198,37 @@ void state_usage_graph(struct snapraid_state* state, unsigned current, unsigned 
 	/* extra space */
 	pad += 1;
 
-	/* here we don't use msg_progress() because it doesn't allow partial output */
+	if (io) {
+		/* refresh the cached blocks info */
+		io_refresh(io);
+
+		printf("\ncached blocks (instant)\n");
+
+		for (i = state->disklist; i != 0; i = i->next) {
+			struct snapraid_disk* disk = i->data;
+			v = disk->cached;
+			printr(disk->name, pad);
+			printf("%4" PRIu64 " | ", v);
+			printc('*', v * USAGE_COLUMN / io->io_max);
+			printf("\n");
+		}
+
+		for (l = 0; l < state->level; ++l) {
+			v = state->parity[l].cached;
+			printr(lev_config_name(l), pad);
+			printf("%4" PRIu64 " | ", v);
+			printc('*', v * USAGE_COLUMN / io->io_max);
+			printf("\n");
+		}
+
+		printr("", pad);
+		printf("     +-");
+		printc('-', USAGE_COLUMN);
+		printf("\n");
+	}
+
+	printf("\nwait time %% (latest %d seconds)\n", PROGRESS_MAX);
+
 	for (i = state->disklist; i != 0; i = i->next) {
 		struct snapraid_disk* disk = i->data;
 		v = disk->progress_tick[current] - disk->progress_tick[oldest];

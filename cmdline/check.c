@@ -1388,7 +1388,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		++countpos;
 
 		/* progress */
-		if (state_progress(state, i, countpos, countmax, countsize)) {
+		if (state_progress(state, 0, i, countpos, countmax, countsize)) {
 			/* LCOV_EXCL_START */
 			break;
 			/* LCOV_EXCL_STOP */

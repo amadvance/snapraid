@@ -338,6 +338,7 @@ struct snapraid_disk {
 
 	uint64_t tick; /**< Usage time. */
 	uint64_t progress_tick[PROGRESS_MAX]; /**< Last ticks of progress. */
+	unsigned cached; /**< Number of IO blocks cached. */
 
 	/**
 	 * First free searching block.
@@ -432,6 +433,7 @@ struct snapraid_parity {
 
 	uint64_t tick; /**< Usage time. */
 	uint64_t progress_tick[PROGRESS_MAX]; /**< Last cpu ticks of progress. */
+	unsigned cached; /**< Number of IO blocks cached. */
 };
 
 /**

@@ -365,5 +365,10 @@ void io_parity_write(struct snapraid_io* io, unsigned* levcur, unsigned* waiting
  */
 void io_write_next(struct snapraid_io* io, unsigned blockcur, int skip, int* writer_error);
 
+/**
+ * Refresh the number of cached blocks for all data and parity disks.
+ */
+void io_refresh(struct snapraid_io* io);
+
 #endif
 

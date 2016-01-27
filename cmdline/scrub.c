@@ -599,7 +599,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		++countpos;
 
 		/* progress */
-		if (state_progress(state, blockcur, countpos, countmax, countsize)) {
+		if (state_progress(state, &io, blockcur, countpos, countmax, countsize)) {
 			/* LCOV_EXCL_START */
 			break;
 			/* LCOV_EXCL_STOP */

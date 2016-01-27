@@ -492,6 +492,52 @@ void io_write_next(struct snapraid_io* io, unsigned blockcur, int skip, int* wri
 #endif
 }
 
+void io_refresh(struct snapraid_io* io)
+{
+	unsigned i;
+
+	/* the synchronization is protected by the io mutex */
+	pthread_mutex_lock(&io->mutex);
+
+	/* for all readers, count the number of read blocks */
+	for (i = 0; i < io->reader_max; ++i) {
+		unsigned begin, end, cached;
+		struct snapraid_worker* worker = &io->reader_map[i];
+
+		/* the first block read */
+		begin = io->reader_index + 1;
+		/* the block in reading */
+		end = worker->index;
+		if (begin > end)
+			end += io->io_max;
+		cached = end - begin;
+
+		if (worker->parity_handle)
+			io->state->parity[worker->parity_handle->level].cached = cached;
+		else
+			worker->handle->disk->cached = cached;
+	}
+
+	/* for all writers, count the number of written blocks */
+	/* note that this is a kind of "opposite" of cached blocks */
+	for (i = 0; i < io->writer_max; ++i) {
+		unsigned begin, end, cached;
+		struct snapraid_worker* worker = &io->writer_map[i];
+
+		/* the first block written */
+		begin = io->writer_index + 1;
+		/* the block in writing */
+		end = worker->index;
+		if (begin > end)
+			end += io->io_max;
+		cached = end - begin;
+
+		io->state->parity[worker->parity_handle->level].cached = cached;
+	}
+
+	pthread_mutex_unlock(&io->mutex);
+}
+
 static struct snapraid_task* io_task_read(struct snapraid_io* io, unsigned base, unsigned count, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)
 {
 	unsigned waiting_cycle;

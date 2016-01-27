@@ -299,7 +299,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			++countpos;
 
 			/* progress */
-			if (state_progress(state, i, countpos, countmax, countsize)) {
+			if (state_progress(state, 0, i, countpos, countmax, countsize)) {
 				/* LCOV_EXCL_START */
 				*skip_sync = 1; /* avoid to run the next sync */
 				break;
@@ -1258,7 +1258,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		++countpos;
 
 		/* progress */
-		if (state_progress(state, blockcur, countpos, countmax, countsize)) {
+		if (state_progress(state, &io, blockcur, countpos, countmax, countsize)) {
 			/* LCOV_EXCL_START */
 			break;
 			/* LCOV_EXCL_STOP */
