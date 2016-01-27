@@ -4018,6 +4018,7 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 				out_eta = (countmax - countpos) * delta_time / (60 * delta_pos);
 
 			if (msg_level >= MSG_VERBOSE) {
+				os_clear();
 				state_usage_graph(state, io, state->progress_ptr, oldest);
 			}
 		}

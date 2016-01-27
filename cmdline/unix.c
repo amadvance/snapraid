@@ -1226,5 +1226,11 @@ void os_abort(void)
 }
 /* LCOV_EXCL_STOP */
 
+void os_clear(void)
+{
+	/* ANSI code for clear screen */
+	printf("\033[2J");
+}
+
 #endif
 

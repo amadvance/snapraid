@@ -353,6 +353,11 @@ void os_done(void);
 void os_abort(void) __noreturn;
 
 /**
+ * Clear the screen.
+ */
+void os_clear(void);
+
+/**
  * Log file.
  *
  * This stream if fully buffered.

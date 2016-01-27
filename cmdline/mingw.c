@@ -271,6 +271,28 @@ void os_abort(void)
 	exit(EXIT_FAILURE);
 }
 
+void os_clear(void)
+{
+	HANDLE console;
+	CONSOLE_SCREEN_BUFFER_INFO screen;
+	COORD coord;
+	DWORD written;
+
+	/* get the console */
+	console = GetStdHandle(STD_OUTPUT_HANDLE);
+	if (console == INVALID_HANDLE_VALUE)
+		return;
+
+	/* get the screen size */
+	if (!GetConsoleScreenBufferInfo(console, &screen))
+		return;
+
+	/* fill the screen with spaces */
+	coord.X = 0;
+	coord.Y = 0;
+	FillConsoleOutputCharacterA(console, ' ', screen.dwSize.X * screen.dwSize.Y, coord, &written);
+}
+
 /**
  * Size in chars of conversion buffers for u8to16() and u16to8().
  */
