@@ -251,6 +251,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_MATCH_FIRST_UUID 288
 #define OPT_TEST_FORCE_PARITY_UPDATE 289
 #define OPT_TEST_IO_CACHE 290
+#define OPT_TEST_IO_STATS 291
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -378,8 +379,11 @@ struct option long_options[] = {
 	/* Force parity update even if all the data is not changed */
 	{ "test-force-parity-update", 0, 0, OPT_TEST_FORCE_PARITY_UPDATE },
 
-	/* Number of read-ahead buffers */
+	/* Number of IO buffers */
 	{ "test-io-cache", 1, 0, OPT_TEST_IO_CACHE },
+
+	/* Print IO stats */
+	{ "test-io-stats", 0, 0, OPT_TEST_IO_STATS },
 
 	{ 0, 0, 0, 0 }
 };
@@ -769,6 +773,9 @@ int main(int argc, char* argv[])
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
+			break;
+		case OPT_TEST_IO_STATS :
+			opt.force_stats = 1;
 			break;
 		default :
 			/* LCOV_EXCL_START */

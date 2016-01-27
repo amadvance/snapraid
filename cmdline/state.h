@@ -118,6 +118,7 @@ struct snapraid_option {
 	int force_parity_update; /**< Force parity update even if data is not changed. */
 	unsigned io_cache; /**< Number of IO buffers to use. 0 for default. */
 	int auto_conf; /**< Allow to run without configuration file. */
+	int force_stats; /**< Force stats print during process. */
 };
 
 struct snapraid_state {
@@ -358,11 +359,6 @@ void state_usage_parity(struct snapraid_state* state, unsigned* waiting_map, uns
  * Print the stats of the usage time.
  */
 void state_usage_print(struct snapraid_state* state);
-
-/**
- * Print a graph of usage time.
- */
-void state_usage_graph(struct snapraid_state* state, struct snapraid_io* io, unsigned current, unsigned oldest);
 
 /**
  * Check the file-system on all disks.
