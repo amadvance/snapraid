@@ -4136,34 +4136,6 @@ void state_usage_parity(struct snapraid_state* state, unsigned* waiting_map, uns
 	state->tick_last = now;
 }
 
-/**
- * Print a repeated char.
- */
-static void printc(char c, size_t pad)
-{
-	while (pad) {
-		putchar(c);
-		--pad;
-	}
-}
-
-/**
- * Print a string with space padding.
- */
-static void printr(const char* str, size_t pad)
-{
-	size_t len;
-
-	len = strlen(str);
-
-	while (len < pad) {
-		putchar(' ');
-		++len;
-	}
-
-	printf("%s", str);
-}
-
 #define USAGE_COLUMN 60
 
 void state_usage_graph(struct snapraid_state* state, struct snapraid_io* io, unsigned current, unsigned oldest)

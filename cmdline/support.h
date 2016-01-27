@@ -186,6 +186,30 @@ void msg_verbose(const char* format, ...) __attribute__((format(attribute_printf
  */
 void msg_flush(void);
 
+
+/****************************************************************************/
+/* print */
+
+/**
+ * Print a repeated char.
+ */
+void printc(char c, size_t pad);
+
+/**
+ * Print a string with right space padding.
+ */
+void printr(const char* str, size_t pad);
+
+/**
+ * Print a string with left space padding.
+ */
+void printl(const char* str, size_t pad);
+
+/**
+ * Print a probability with space padding.
+ */
+void printp(double v, size_t pad);
+
 /****************************************************************************/
 /* escape */
 

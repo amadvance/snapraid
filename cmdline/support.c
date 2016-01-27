@@ -302,6 +302,76 @@ void msg_flush(void)
 	unlock_msg();
 }
 
+void printc(char c, size_t pad)
+{
+	while (pad) {
+		putchar(c);
+		--pad;
+	}
+}
+
+void printr(const char* str, size_t pad)
+{
+	size_t len;
+
+	len = strlen(str);
+
+	while (len < pad) {
+		putchar(' ');
+		++len;
+	}
+
+	printf("%s", str);
+}
+
+void printl(const char* str, size_t pad)
+{
+	size_t len;
+
+	printf("%s", str);
+
+	len = strlen(str);
+
+	while (len < pad) {
+		putchar(' ');
+		++len;
+	}
+}
+
+void printp(double v, size_t pad)
+{
+	char buf[64];
+	const char* s = "%";
+
+	if (v > 0.1)
+		snprintf(buf, sizeof(buf), "%5.2f%s", v, s);
+	else if (v > 0.01)
+		snprintf(buf, sizeof(buf), "%6.3f%s", v, s);
+	else if (v > 0.001)
+		snprintf(buf, sizeof(buf), "%7.4f%s", v, s);
+	else if (v > 0.0001)
+		snprintf(buf, sizeof(buf), "%8.5f%s", v, s);
+	else if (v > 0.00001)
+		snprintf(buf, sizeof(buf), "%9.6f%s", v, s);
+	else if (v > 0.000001)
+		snprintf(buf, sizeof(buf), "%10.7f%s", v, s);
+	else if (v > 0.0000001)
+		snprintf(buf, sizeof(buf), "%11.8f%s", v, s);
+	else if (v > 0.00000001)
+		snprintf(buf, sizeof(buf), "%12.9f%s", v, s);
+	else if (v > 0.000000001)
+		snprintf(buf, sizeof(buf), "%13.10f%s", v, s);
+	else if (v > 0.0000000001)
+		snprintf(buf, sizeof(buf), "%14.11f%s", v, s);
+	else if (v > 0.00000000001)
+		snprintf(buf, sizeof(buf), "%15.12f%s", v, s);
+	else if (v > 0.000000000001)
+		snprintf(buf, sizeof(buf), "%16.13f%s", v, s);
+	else
+		snprintf(buf, sizeof(buf), "%17.14f%s", v, s);
+	printl(buf, pad);
+}
+
 /**
  * Number of buffers for esc().
  */
