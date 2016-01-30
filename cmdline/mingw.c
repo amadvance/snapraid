@@ -291,6 +291,9 @@ void os_clear(void)
 	coord.X = 0;
 	coord.Y = 0;
 	FillConsoleOutputCharacterA(console, ' ', screen.dwSize.X * screen.dwSize.Y, coord, &written);
+
+	/* set the cursor at the top left corner */
+	SetConsoleCursorPosition(console, coord);
 }
 
 /**

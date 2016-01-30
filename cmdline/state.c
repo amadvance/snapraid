@@ -4055,7 +4055,7 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 	printf("\n");
 
 	if (oldest == PROGRESS_MAX) {
-		const char* legend = "wait time";
+		const char* legend = "wait time (total)";
 		printc(' ', 5 + pad + 1 + bar / 2 - strlen(legend) / 2);
 		printf("%s", legend);
 		printf("\n");
@@ -4065,6 +4065,8 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 		printf(legend_d, PROGRESS_MAX);
 		printf("\n");
 	}
+
+	printf("\n");
 }
 
 int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize)

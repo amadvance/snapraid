@@ -1228,8 +1228,9 @@ void os_abort(void)
 
 void os_clear(void)
 {
-	/* ANSI code for clear screen */
-	printf("\033[2J");
+	/* ANSI codes */
+	printf("\033[H"); /* cursor at topleft */
+	printf("\033[2J"); /* clear screen */
 }
 
 #endif
