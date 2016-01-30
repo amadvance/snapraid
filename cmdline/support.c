@@ -305,8 +305,19 @@ void msg_flush(void)
 void printc(char c, size_t pad)
 {
 	while (pad) {
-		putchar(c);
-		--pad;
+		/* group writes in long pieces */
+		char buf[128];
+		size_t len = pad;
+
+		if (len >= sizeof(buf))
+			len = sizeof(buf) - 1;
+
+		memset(buf, c, len);
+		buf[len] = 0;
+
+		fputs(buf, stdout);
+
+		pad -= len;
 	}
 }
 
@@ -316,26 +327,22 @@ void printr(const char* str, size_t pad)
 
 	len = strlen(str);
 
-	while (len < pad) {
-		putchar(' ');
-		++len;
-	}
+	if (len < pad)
+		printc(' ', pad - len);
 
-	printf("%s", str);
+	fputs(str, stdout);
 }
 
 void printl(const char* str, size_t pad)
 {
 	size_t len;
 
-	printf("%s", str);
+	fputs(str, stdout);
 
 	len = strlen(str);
 
-	while (len < pad) {
-		putchar(' ');
-		++len;
-	}
+	if (len < pad)
+		printc(' ', pad - len);
 }
 
 void printp(double v, size_t pad)

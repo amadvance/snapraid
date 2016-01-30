@@ -4002,7 +4002,7 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 			printf("\n");
 		}
 
-		printr("", pad);
+		printc(' ', pad);
 		printf("     |_");
 		printc('_', bar);
 		printf("\n");
@@ -4049,7 +4049,7 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 	printc('*', v * bar / tick_total);
 	printf("\n");
 
-	printr("", pad);
+	printc(' ', pad);
 	printf("     |_");
 	printc('_', bar);
 	printf("\n");
