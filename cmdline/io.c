@@ -742,7 +742,6 @@ static void* io_reader_thread(void* arg)
 	return 0;
 }
 
-
 static void* io_writer_thread(void* arg)
 {
 	struct snapraid_worker* worker = arg;
@@ -776,11 +775,21 @@ static void* io_writer_thread(void* arg)
 	return 0;
 }
 
+#if USE_SCHED
+#define SCHED_ATTR &attr
+#else
+#define SCHED_ATTR 0
+#endif
+
 void io_start(struct snapraid_io* io,
 	block_off_t blockstart, block_off_t blockmax,
 	int (*block_is_enabled)(void* arg, block_off_t), void* blockarg)
 {
 	unsigned i;
+#if USE_SCHED
+	struct sched_param param;
+	int priority_base;
+#endif
 
 	io->block_start = blockstart;
 	io->block_max = blockmax;
@@ -809,13 +818,50 @@ void io_start(struct snapraid_io* io,
 	for (i = 0; i <= io->writer_max; ++i)
 		io->writer_list[i] = i;
 
+#if USE_SCHED
+	/* base priority for threads */
+	priority_base = sched_get_priority_max(SCHED_FIFO);
+
+	param.sched_priority = priority_base;
+	if (pthread_setschedparam(pthread_self(), SCHED_FIFO, &param) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Failed to set main thread policy and priority.\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+#endif
+
 	/* start the reader threads */
 	for (i = 0; i < io->reader_max; ++i) {
 		struct snapraid_worker* worker = &io->reader_map[i];
+#if USE_SCHED
+		pthread_attr_t attr;
+
+		if (pthread_attr_init(&attr) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Failed to initialize thread attribute.\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (pthread_attr_setschedpolicy(&attr, SCHED_FIFO) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Failed to set thread policy.\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		param.sched_priority = priority_base;
+		if (pthread_attr_setschedparam(&attr, &param) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Failed to set thread priority.\n");
+			exit(EXIT_FAILURE);
+		}
+#endif
 
 		worker->index = 0;
 
-		if (pthread_create(&worker->thread, 0, io_reader_thread, worker) != 0) {
+		if (pthread_create(&worker->thread, SCHED_ATTR, io_reader_thread, worker) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Failed to create reader thread.\n");
 			exit(EXIT_FAILURE);
@@ -826,10 +872,34 @@ void io_start(struct snapraid_io* io,
 	/* start the writer threads */
 	for (i = 0; i < io->writer_max; ++i) {
 		struct snapraid_worker* worker = &io->writer_map[i];
+#if USE_SCHED
+		pthread_attr_t attr;
+
+		if (pthread_attr_init(&attr) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Failed to initialize thread attribute.\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		if (pthread_attr_setschedpolicy(&attr, SCHED_FIFO) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Failed to set thread policy.\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+
+		param.sched_priority = priority_base;
+		if (pthread_attr_setschedparam(&attr, &param) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Failed to set thread priority.\n");
+			exit(EXIT_FAILURE);
+		}
+#endif
 
 		worker->index = io->io_max - 1;
 
-		if (pthread_create(&worker->thread, 0, io_writer_thread, worker) != 0) {
+		if (pthread_create(&worker->thread, SCHED_ATTR, io_writer_thread, worker) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Failed to create writer thread.\n");
 			exit(EXIT_FAILURE);
