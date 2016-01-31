@@ -363,7 +363,7 @@ void io_parity_write(struct snapraid_io* io, unsigned* levcur, unsigned* waiting
  * \param skip Skip the writes, in case parity doesn't need to be updated.
  * \param writer_error Return the number of errors. Vector of IO_WRITER_ERROR_MAX elements.
  */
-void io_write_next(struct snapraid_io* io, unsigned blockcur, int skip, int* writer_error);
+void io_write_next(struct snapraid_io* io, block_off_t blockcur, int skip, int* writer_error);
 
 /**
  * Refresh the number of cached blocks for all data and parity disks.

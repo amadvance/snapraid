@@ -444,7 +444,7 @@ block_off_t io_read_next(struct snapraid_io* io, void*** buffer)
 	return blockcur_caller;
 }
 
-void io_write_next(struct snapraid_io* io, unsigned blockcur, int skip, int* writer_error)
+void io_write_next(struct snapraid_io* io, block_off_t blockcur, int skip, int* writer_error)
 {
 	unsigned i;
 
