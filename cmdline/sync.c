@@ -686,6 +686,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	unsigned l;
 	unsigned* waiting_map;
 	unsigned waiting_mac;
+	block_off_t blocknext;
+	void** buffernext;
 
 	/* the sync process assumes that all the hashes are correct */
 	/* including the ones from CHG and DELETED blocks */
@@ -754,6 +756,10 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	if (!state_progress_begin(state, blockstart, blockmax, countmax))
 		goto end;
 
+	/* scheduling helper */
+	buffernext = 0;
+	blocknext = 0;
+
 	while (1) {
 		unsigned failed_count;
 		int error_on_this_block;
@@ -768,7 +774,14 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		int writer_error[IO_WRITER_ERROR_MAX];
 
 		/* go to the next block */
-		blockcur = io_read_next(&io, &buffer);
+		if (buffernext != 0) {
+			/* if already computed, use it */
+			buffer = buffernext;
+			blockcur = blocknext;
+		} else {
+			/* otherwise do it now */
+			blockcur = io_read_next(&io, &buffer);
+		}
 		if (blockcur >= blockmax)
 			break;
 
@@ -1227,7 +1240,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		}
 
 		/* write finished */
-		io_write_next(&io, blockcur, !parity_going_to_be_updated, writer_error);
+		blocknext = io_write_and_read_next(&io, blockcur, !parity_going_to_be_updated, writer_error, &buffernext);
 
 		/* handle errors reported */
 		for (j = 0; j < IO_WRITER_ERROR_MAX; ++j) {

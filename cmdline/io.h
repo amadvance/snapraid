@@ -366,6 +366,14 @@ void io_parity_write(struct snapraid_io* io, unsigned* levcur, unsigned* waiting
 void io_write_next(struct snapraid_io* io, block_off_t blockcur, int skip, int* writer_error);
 
 /**
+ * Next write and read position.
+ *
+ * It's a combination of io_write_next() and io_read_next() that
+ * locks only one time the scheduling mutex.
+ */
+block_off_t io_write_and_read_next(struct snapraid_io* io, block_off_t blockcur, int skip, int* writer_error, void*** buffer);
+
+/**
  * Refresh the number of cached blocks for all data and parity disks.
  */
 void io_refresh(struct snapraid_io* io);

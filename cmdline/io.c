@@ -489,7 +489,7 @@ static void io_write_next_outside(struct snapraid_io* io)
  *
  * It must be called inside the lock.
  */
-static void io_write_next_inside(struct snapraid_io* io, unsigned blockcur, int skip, int* writer_error)
+static void io_write_next_inside(struct snapraid_io* io, block_off_t blockcur, int skip, int* writer_error)
 {
 	unsigned i;
 
@@ -535,6 +535,38 @@ void io_write_next(struct snapraid_io* io, unsigned blockcur, int skip, int* wri
 #ifdef CHECKER
 	pthread_mutex_unlock(&io->mutex);
 #endif
+}
+
+block_off_t io_write_and_read_next(struct snapraid_io* io, block_off_t blockcur, int skip, int* writer_error, void*** buffer)
+{
+	block_off_t blockcur_schedule;
+	block_off_t blockcur_caller;
+
+	io_write_next_outside(io);
+	blockcur_schedule = io_read_next_outside(io);
+
+	/* the synchronization is protected by the io mutex */
+	pthread_mutex_lock(&io->mutex);
+
+	io_write_next_inside(io, blockcur, skip, writer_error);
+
+	blockcur_caller = io_read_next_inside(io, blockcur_schedule, buffer);
+
+#ifndef CHECKER
+	/* without the thread checker unlock before signaling, */
+	/* this reduces the number of context switches */
+	pthread_mutex_unlock(&io->mutex);
+#endif
+
+	/* signal all the workers that there is a new pending task */
+	pthread_cond_broadcast(&io->write_sched);
+	pthread_cond_broadcast(&io->read_sched);
+
+#ifdef CHECKER
+	pthread_mutex_unlock(&io->mutex);
+#endif
+
+	return blockcur_caller;
 }
 
 void io_refresh(struct snapraid_io* io)
