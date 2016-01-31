@@ -162,6 +162,7 @@ void state_init(struct snapraid_state* state)
 	}
 	state->tick_io = 0;
 	state->tick_misc = 0;
+	state->tick_sched = 0;
 	state->tick_raid = 0;
 	state->tick_hash = 0;
 	state->tick_last = tick();
@@ -3917,6 +3918,7 @@ static void state_progress_latest(struct snapraid_state* state)
 	unsigned l;
 
 	state->progress_tick_misc[state->progress_ptr] = state->tick_misc;
+	state->progress_tick_sched[state->progress_ptr] = state->tick_sched;
 	state->progress_tick_raid[state->progress_ptr] = state->tick_raid;
 	state->progress_tick_hash[state->progress_ptr] = state->tick_hash;
 	state->progress_tick_io[state->progress_ptr] = state->tick_io;
@@ -3950,6 +3952,7 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 	tick_total = 0;
 
 	tick_total += state->progress_tick_misc[current] - ref(state->progress_tick_misc, oldest);
+	tick_total += state->progress_tick_sched[current] - ref(state->progress_tick_sched, oldest);
 	tick_total += state->progress_tick_raid[current] - ref(state->progress_tick_raid, oldest);
 	tick_total += state->progress_tick_hash[current] - ref(state->progress_tick_hash, oldest);
 	tick_total += state->progress_tick_io[current] - ref(state->progress_tick_io, oldest);
@@ -4039,6 +4042,12 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 
 	v = state->progress_tick_hash[current] - ref(state->progress_tick_hash, oldest);
 	printr("hash", pad);
+	printf("%3" PRIu64 "%% | ", v * 100 / tick_total);
+	printc('*', v * bar / tick_total);
+	printf("\n");
+
+	v = state->progress_tick_sched[current] - ref(state->progress_tick_sched, oldest);
+	printr("sched", pad);
 	printf("%3" PRIu64 "%% | ", v * 100 / tick_total);
 	printc('*', v * bar / tick_total);
 	printf("\n");
@@ -4140,11 +4149,13 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 				oldest -= PROGRESS_MAX;
 
 			tick_cpu = state->progress_tick_misc[state->progress_ptr]
+				+ state->progress_tick_sched[state->progress_ptr]
 				+ state->progress_tick_raid[state->progress_ptr]
 				+ state->progress_tick_hash[state->progress_ptr];
 			tick_total = tick_cpu + state->progress_tick_io[state->progress_ptr];
 
 			oldest_tick_cpu = state->progress_tick_misc[oldest]
+				+ state->progress_tick_sched[oldest]
 				+ state->progress_tick_raid[oldest]
 				+ state->progress_tick_hash[oldest];
 			oldest_tick_total = oldest_tick_cpu + state->progress_tick_io[oldest];
@@ -4226,6 +4237,17 @@ void state_usage_misc(struct snapraid_state* state)
 
 	/* increment the time spent in computations */
 	state->tick_misc += delta;
+
+	state->tick_last = now;
+}
+
+void state_usage_sched(struct snapraid_state* state)
+{
+	uint64_t now = tick();
+	uint64_t delta = now - state->tick_last;
+
+	/* increment the time spent in computations */
+	state->tick_sched += delta;
 
 	state->tick_last = now;
 }

@@ -217,6 +217,9 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 		if (blockcur >= blockmax)
 			break;
 
+		/* until now is scheduling */
+		state_usage_sched(state);
+
 		/* for each disk, process the block */
 		for (j = 0; j < diskmax; ++j) {
 			struct snapraid_task* task;

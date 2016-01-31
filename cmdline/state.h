@@ -156,6 +156,7 @@ struct snapraid_state {
 	 * Cumulative time used for computations.
 	 */
 	uint64_t tick_misc;
+	uint64_t tick_sched;
 	uint64_t tick_raid;
 	uint64_t tick_hash;
 
@@ -179,6 +180,7 @@ struct snapraid_state {
 	block_off_t progress_pos[PROGRESS_MAX]; /**< Last positions of progress. */
 	data_off_t progress_size[PROGRESS_MAX]; /**< Last sizes of progress. */
 	uint64_t progress_tick_misc[PROGRESS_MAX]; /**< Last cpu ticks of progress. */
+	uint64_t progress_tick_sched[PROGRESS_MAX]; /**< Last scheduling ticks of progress. */
 	uint64_t progress_tick_raid[PROGRESS_MAX]; /**< Last raid ticks of progress. */
 	uint64_t progress_tick_hash[PROGRESS_MAX]; /**< Last hash ticks of progress. */
 	uint64_t progress_tick_io[PROGRESS_MAX]; /**< Last io ticks of progress. */
@@ -342,6 +344,7 @@ void state_usage_waste(struct snapraid_state* state);
  * Set the usage time for CPU.
  */
 void state_usage_misc(struct snapraid_state* state);
+void state_usage_sched(struct snapraid_state* state);
 void state_usage_raid(struct snapraid_state* state);
 void state_usage_hash(struct snapraid_state* state);
 

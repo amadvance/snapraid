@@ -329,6 +329,9 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		if (blockcur >= blockmax)
 			break;
 
+		/* until now is scheduling */
+		state_usage_sched(state);
+
 		/* one more block processed for autosave */
 		++autosavedone;
 		--autosavemissing;
