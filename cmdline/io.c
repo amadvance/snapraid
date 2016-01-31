@@ -393,14 +393,13 @@ static struct snapraid_task* io_writer_step(struct snapraid_worker* worker, int 
 }
 
 /**
- * Get the next block position to operate on.
+ * Preset the reader data before scheduling a new position.
  *
- * This is the synchronization point for workers with the io.
+ * It can be be called ouside the lock.
  */
-block_off_t io_read_next(struct snapraid_io* io, void*** buffer)
+static block_off_t io_read_next_outside(struct snapraid_io* io)
 {
 	block_off_t blockcur_schedule;
-	block_off_t blockcur_caller;
 	unsigned i;
 
 	/* get the next parity position to process */
@@ -413,8 +412,17 @@ block_off_t io_read_next(struct snapraid_io* io, void*** buffer)
 	for (i = 0; i <= io->reader_max; ++i)
 		io->reader_list[i] = i;
 
-	/* the synchronization is protected by the io mutex */
-	pthread_mutex_lock(&io->mutex);
+	return blockcur_schedule;
+}
+
+/**
+ * Schedule a new reader task.
+ *
+ * It must be called inside the lock.
+ */
+static block_off_t io_read_next_inside(struct snapraid_io* io, block_off_t blockcur_schedule, void*** buffer)
+{
+	block_off_t blockcur_caller;
 
 	/* schedule the next read */
 	io_reader_sched(io, io->reader_index, blockcur_schedule);
@@ -427,6 +435,21 @@ block_off_t io_read_next(struct snapraid_io* io, void*** buffer)
 
 	/* set the buffer to use */
 	*buffer = io->buffer_map[io->reader_index];
+
+	return blockcur_caller;
+}
+
+block_off_t io_read_next(struct snapraid_io* io, void*** buffer)
+{
+	block_off_t blockcur_schedule;
+	block_off_t blockcur_caller;
+
+	blockcur_schedule = io_read_next_outside(io);
+
+	/* the synchronization is protected by the io mutex */
+	pthread_mutex_lock(&io->mutex);
+
+	blockcur_caller = io_read_next_inside(io, blockcur_schedule, buffer);
 
 #ifndef CHECKER
 	/* without the thread checker unlock before signaling, */
@@ -444,7 +467,12 @@ block_off_t io_read_next(struct snapraid_io* io, void*** buffer)
 	return blockcur_caller;
 }
 
-void io_write_next(struct snapraid_io* io, block_off_t blockcur, int skip, int* writer_error)
+/**
+ * Preset the writer data before scheduling a new position.
+ *
+ * It can be be called ouside the lock.
+ */
+static void io_write_next_outside(struct snapraid_io* io)
 {
 	unsigned i;
 
@@ -454,9 +482,16 @@ void io_write_next(struct snapraid_io* io, block_off_t blockcur, int skip, int* 
 	/* setup the list of workers to process */
 	for (i = 0; i <= io->writer_max; ++i)
 		io->writer_list[i] = i;
+}
 
-	/* the synchronization is protected by the io mutex */
-	pthread_mutex_lock(&io->mutex);
+/**
+ * Schedule a new writer task.
+ *
+ * It must be called inside the lock.
+ */
+static void io_write_next_inside(struct snapraid_io* io, unsigned blockcur, int skip, int* writer_error)
+{
+	unsigned i;
 
 	/* report errors */
 	for (i = 0; i < IO_WRITER_ERROR_MAX; ++i) {
@@ -477,6 +512,16 @@ void io_write_next(struct snapraid_io* io, block_off_t blockcur, int skip, int* 
 
 	/* set the index to be used for the next write */
 	io->writer_index = (io->writer_index + 1) % io->io_max;
+}
+
+void io_write_next(struct snapraid_io* io, unsigned blockcur, int skip, int* writer_error)
+{
+	io_write_next_outside(io);
+
+	/* the synchronization is protected by the io mutex */
+	pthread_mutex_lock(&io->mutex);
+
+	io_write_next_inside(io, blockcur, skip, writer_error);
 
 #ifndef CHECKER
 	/* without the thread checker unlock before signaling, */
