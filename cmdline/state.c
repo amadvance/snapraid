@@ -4099,6 +4099,7 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 		unsigned out_speed = 0;
 		unsigned out_cpu = 0;
 		unsigned out_eta = 0;
+		int out_computed = 0;
 
 		/* store the new measure */
 		state->progress_time[state->progress_ptr] = now;
@@ -4182,6 +4183,9 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 				os_clear();
 				state_progress_graph(state, io, state->progress_ptr, oldest);
 			}
+
+			/* we have the output value */
+			out_computed = 1;
 		}
 
 		if (state->opt.gui) {
@@ -4189,11 +4193,11 @@ int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_o
 			log_flush();
 		} else {
 			msg_bar("%u%%, %u MB", out_perc, (unsigned)(countsize / MEGA));
-			if (out_speed)
+			if (out_computed) {
 				msg_bar(", %u MB/s", out_speed);
-			msg_bar(", CPU %u%%", out_cpu);
-			if (out_eta)
+				msg_bar(", CPU %u%%", out_cpu);
 				msg_bar(", %u:%02u ETA", out_eta / 60, out_eta % 60);
+			}
 			msg_bar("%s\r", PROGRESS_CLEAR);
 			msg_flush();
 		}
