@@ -46,6 +46,7 @@ void state_touch(struct snapraid_state* state)
 				int f;
 				int ret;
 				int nsec;
+				int flags;
 
 				pathprint(path, sizeof(path), "%s%s", disk->dir, file->sub);
 
@@ -64,9 +65,19 @@ void state_touch(struct snapraid_state* state)
 					nsec = nano % 1000000000;
 				} while (nsec == 0);
 
-				/* open it */
+				/* O_BINARY: open as binary file (Windows only) */
 				/* O_NOFOLLOW: do not follow links to ensure to open the real file */
-				f = open(path, O_RDONLY | O_BINARY | O_NOFOLLOW);
+				flags = O_BINARY | O_NOFOLLOW;
+#ifdef _WIN32
+				/* in Windows we must have write access at the file */
+				flags |= O_RDWR;
+#else
+				/* in all others platforms, read access is enough */
+				flags |= O_RDONLY;
+#endif
+
+				/* open it */
+				f = open(path, flags);
 				if (f == -1) {
 					/* LCOV_EXCL_START */
 					log_fatal("Error opening file '%s'. %s.\n", path, strerror(errno));
