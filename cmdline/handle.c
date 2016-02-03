@@ -157,7 +157,7 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 		out_missing = out;
 
 	/* if already opened, nothing to do */
-	if (handle->file == file && handle->f != -1) {
+	if (handle->file == file && handle->file != 0 && handle->f != -1) {
 		return 0;
 	}
 
