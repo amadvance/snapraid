@@ -3981,7 +3981,7 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 		bar = 30;
 
 	if (io) {
-		const char* legend = "cached blocks (instant, higher is better)";
+		const char* legend = "cached blocks (instant, more is better)";
 
 		/* refresh the cached blocks info */
 		io_refresh(io);
@@ -4064,12 +4064,12 @@ static void state_progress_graph(struct snapraid_state* state, struct snapraid_i
 	printf("\n");
 
 	if (oldest == PROGRESS_MAX) {
-		const char* legend = "wait time (total)";
+		const char* legend = "wait time (total, less is better)";
 		printc(' ', 5 + pad + 1 + bar / 2 - strlen(legend) / 2);
 		printf("%s", legend);
 		printf("\n");
 	} else {
-		const char* legend_d = "wait time (%d secs, lower is better)";
+		const char* legend_d = "wait time (last %d secs, less is better)";
 		printc(' ', 5 + pad + 1 + bar / 2 - strlen(legend_d) / 2);
 		printf(legend_d, PROGRESS_MAX);
 		printf("\n");
