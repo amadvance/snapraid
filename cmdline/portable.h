@@ -232,7 +232,7 @@
 /**
  * Enable thread use.
  */
-#if HAVE_PTHREAD_H && HAVE_PTHREAD_CREATE
+#if HAVE_PTHREAD_CREATE
 #define HAVE_PTHREAD 1
 #endif
 

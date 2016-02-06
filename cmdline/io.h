@@ -87,7 +87,9 @@ struct snapraid_task {
  * from a specific disk.
  */
 struct snapraid_worker {
-	pthread_t thread;
+#if HAVE_PTHREAD
+	pthread_t thread; /**< Thread context for the worker. */
+#endif
 
 	struct snapraid_io* io; /**< Parent pointer. */
 
@@ -141,6 +143,7 @@ struct snapraid_io {
 	 */
 	unsigned io_max;
 
+#if HAVE_PTHREAD
 	/**
 	 * Mutex used to protect the synchronization
 	 * between the io and the workers.
@@ -182,6 +185,7 @@ struct snapraid_io {
 	 * The IO signals this condition when new writes are scheduled.
 	 */
 	pthread_cond_t write_sched;
+#endif
 
 	/**
 	 * Base position for workers.
