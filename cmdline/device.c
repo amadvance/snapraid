@@ -944,15 +944,19 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 		ret = devquery(&high, &low, operation, others);
 	}
 
+	/* if the list is empty, it's not supported in this platform */
+	if (ret == 0 && tommy_list_empty(&low))
+		ret = -1;
+
 	if (ret != 0) {
 		const char* ope = 0;
 		switch (operation) {
 		case DEVICE_UP : ope = "Spinup"; break;
 		case DEVICE_DOWN : ope = "Spindown"; break;
-		case DEVICE_LIST : ope = "List"; break;
-		case DEVICE_SMART : ope = "SMART"; break;
+		case DEVICE_LIST : ope = "Device listing"; break;
+		case DEVICE_SMART : ope = "Smart"; break;
 		}
-		log_fatal("%s unsupported in this platform.\n", ope);
+		log_fatal("%s is unsupported in this platform.\n", ope);
 	} else {
 		if (operation == DEVICE_LIST) {
 			for (i = tommy_list_head(&low); i != 0; i = i->next) {

@@ -759,6 +759,7 @@ static int devscan(tommy_list* list)
 /**
  * Get SMART attributes.
  */
+#if HAVE_LINUX_DEVICE
 static int devsmart(dev_t device, const char* name, const char* custom, uint64_t* smart, char* serial)
 {
 	char cmd[128];
@@ -816,6 +817,7 @@ static int devsmart(dev_t device, const char* name, const char* custom, uint64_t
 
 	return 0;
 }
+#endif
 
 /**
  * Spin down a specific device.
@@ -993,6 +995,7 @@ static void* thread_spindown(void* arg)
  */
 static void* thread_smart(void* arg)
 {
+#if HAVE_LINUX_DEVICE
 	devinfo_t* devinfo = arg;
 
 	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->smart_serial) != 0) {
@@ -1002,6 +1005,10 @@ static void* thread_smart(void* arg)
 	}
 
 	return 0;
+#else
+	(void)arg;
+	return (void*)-1;
+#endif
 }
 
 static int device_thread(tommy_list* list, void* (*func)(void* arg))
