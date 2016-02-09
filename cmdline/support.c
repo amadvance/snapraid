@@ -379,11 +379,11 @@ void printp(double v, size_t pad)
 	printl(buf, pad);
 }
 
-#define ESCAPE(from,to) \
+#define ESCAPE(from,escape,to) \
 	case from : \
 		if (p == end) \
 			goto bail; \
-		*p++ = '\\'; \
+		*p++ = escape; \
 		if (p == end) \
 			goto bail; \
 		*p++ = to; \
@@ -401,10 +401,10 @@ const char* esc(const char* str, char* buffer)
 
 		switch (c) {
 
-		ESCAPE('\n', 'n');
-		ESCAPE('\r', 'r');
-		ESCAPE(':', 'd');
-		ESCAPE('\\', '\\');
+		ESCAPE('\n', '\\', 'n');
+		ESCAPE('\r', '\\', 'r');
+		ESCAPE(':', '\\', 'd');
+		ESCAPE('\\', '\\', '\\');
 
 		default:
 			if (p == end)
@@ -426,6 +426,149 @@ const char* esc(const char* str, char* buffer)
 bail:
 	/* LCOV_EXCL_START */
 	log_fatal("Escape too long\n");
+	exit(EXIT_FAILURE);
+	/* LCOV_EXCL_STOP */
+}
+
+const char* quote(char prefix, const char* str, char* buffer)
+{
+	char* begin = buffer;
+	char* end = begin + QUOTE_MAX;
+	char* p = begin;
+
+#ifdef _WIN32
+	int has_quote = strchr(str, ' ') != 0;
+
+	if (has_quote) {
+		if (p == end)
+			goto bail;
+		*p++ = '"';
+	}
+#endif
+
+	/* add the prefix char, if any */
+	if (prefix) {
+		if (p == end)
+			goto bail;
+		*p++ = prefix;
+	}
+
+	/* copy string with escaping */
+	while (*str) {
+		char c = *str;
+
+		switch (c) {
+#ifdef _WIN32
+		/*
+		 * Windows shell escape
+		 *
+		 * The Windows NT Command Shell
+		 * https://technet.microsoft.com/en-us/library/cc723564.aspx
+		 */
+		case '"' :
+			/* double quote, it needs to be quoted with \ */
+			if (has_quote) {
+				/* " -> "\"" -> (close quote)(quoted with \ ")(reopen quote) */
+				if (p == end)
+					goto bail;
+				*p++ = '"';
+				if (p == end)
+					goto bail;
+				*p++ = '\\';
+				if (p == end)
+					goto bail;
+				*p++ = '"';
+				if (p == end)
+					goto bail;
+				*p++ = '"';
+			} else {
+				/* " -> \" */
+				if (p == end)
+					goto bail;
+				*p++ = '\\';
+				if (p == end)
+					goto bail;
+				*p++ = '"';
+			}
+			break;
+		case '&' :
+		case '|' :
+		case '(' :
+		case ')' :
+		case '<' :
+		case '>' :
+		case '^' :
+			/* reserved chars, they need to be quoted with ^ */
+			if (has_quote) {
+				if (p == end)
+					goto bail;
+				*p++ = c;
+			} else {
+				if (p == end)
+					goto bail;
+				*p++ = '^';
+				if (p == end)
+					goto bail;
+				*p++ = c;
+			}
+			break;
+		default:
+			/* unquoted */
+			if (p == end)
+				goto bail;
+			*p++ = c;
+			break;
+#else
+		case 'a' ... 'z' :
+		case 'A' ... 'Z' :
+		case '0' ... '9' :
+		case ',' :
+		case '.' :
+		case '_' :
+		case '+' :
+		case ':' :
+		case '@' :
+		case '%' :
+		case '/' :
+		case '-' :
+			/* safe chars for all shells, unquoted */
+			if (p == end)
+				goto bail;
+			*p++ = c;
+			break;
+		default:
+			/* all the others are quoted with \ */
+			if (p == end)
+				goto bail;
+			*p++ = '\\';
+			if (p == end)
+				goto bail;
+			*p++ = c;
+			break;
+#endif
+		}
+
+		++str;
+	}
+
+#ifdef _WIN32
+	if (has_quote) {
+		if (p == end)
+			goto bail;
+		*p++ = '"';
+	}
+#endif
+
+	/* put final 0 */
+	if (p == end)
+		goto bail;
+	*p = 0;
+
+	return begin;
+
+bail:
+	/* LCOV_EXCL_START */
+	log_fatal("Quote too long\n");
 	exit(EXIT_FAILURE);
 	/* LCOV_EXCL_STOP */
 }

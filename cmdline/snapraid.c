@@ -89,6 +89,36 @@ void memory(void)
 	msg_progress("Using %u MiB of memory for the FileSystem.\n", (unsigned)(malloc_counter_get() / MEBI));
 }
 
+void test(int argc, char* argv[])
+{
+	int i;
+	char buffer[QUOTE_MAX];
+
+	/* special testing code for quoting */
+	if (argc < 2 || strcmp(argv[1], "test") != 0)
+		return;
+
+	for (i = 2; i < argc; ++i) {
+		printf("argv[%d]\n", i);
+		printf("\t#%s#\n", argv[i]);
+		printf("\t#%s#\n", quote(0, argv[i], buffer));
+	}
+
+#ifdef _WIN32
+	assert(strcmp(quote(0, " ", buffer), "\" \"") == 0);
+	assert(strcmp(quote(0, " \" ", buffer), "\" \"\\\"\" \"") == 0);
+	assert(strcmp(quote(0, "&|()<>^", buffer), "^&^|^(^)^<^>^^") == 0);
+	assert(strcmp(quote(0, "&|()<>^ ", buffer), "\"&|()<>^ \"") == 0);
+#else
+	assert(strcmp(quote(0, ",._+:@%%/-", buffer), ",._+:@%%/-") == 0);
+	assert(strcmp(quote(0, " ", buffer), "\\ ") == 0);
+#endif
+
+	printf("Everything OK\n");
+
+	exit(EXIT_SUCCESS);
+}
+
 /****************************************************************************/
 /* log */
 
@@ -471,6 +501,8 @@ int main(int argc, char* argv[])
 	time_t t;
 	struct tm* tm;
 	int i;
+
+	test(argc, argv);
 
 	lock_init();
 

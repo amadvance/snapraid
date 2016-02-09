@@ -216,13 +216,23 @@ void printp(double v, size_t pad);
 #define ESC_MAX (PATH_MAX*2+1)
 
 /**
- * Escape a string.
+ * Escape a string for the log.
  *
  * \param buffer Preallocated buffer of ESC_MAX size.
  *
  * Chars ':', '\n', '\r' and '\' are escaped to '\d', '\\n', '\\r' and '\\'.
  */
 const char* esc(const char* str, char* buffer);
+
+#define QUOTE_MAX (PATH_MAX*2+1)
+
+/**
+ * Quote a string for the shell.
+ *
+ * \param prefix Char to prefix at the string.
+ * \param buffer Preallocated buffer of QUOTE_MAX size.
+ */
+const char* quote(char prefix, const char* str, char* buffer);
 
 /**
  * Polish a string.

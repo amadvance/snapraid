@@ -234,12 +234,14 @@ if HAVE_THREAD_CHECKER
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) scrub -p full -test-io-cache 128
 else
 #### COMMAND LINE ####
-	$(MSG) Help
+	$(MSG) Pre test
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -H
 	$(TESTENV) ./snapraid$(EXEEXT) --test-skip-device -V
+	$(TESTENV) ./snapraid$(EXEEXT) test
 	$(TESTENV) ./mktest$(EXEEXT)
 if !HAVE_MEMORY_CHECKER
 if HAVE_EMULATOR
+	$(MSG) Speed
 # Run the self test in AVX2
 	$(TESTENV_AVX2) ./snapraid$(EXEEXT) --test-skip-device -c $(CONF) status
 # Run the speed test in different architectures
