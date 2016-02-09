@@ -273,9 +273,9 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 				struct snapraid_disk* other = j->data;
 				if (disk->device == other->device) {
 					if (state->opt.force_device) {
-						/* mark disks to be skipped */
-						disk->skip_access = 1;
-						other->skip_access = 1;
+						/* note tha we just ignore the issue */
+						/* and we DON'T mark the disk to be skipped */
+						/* because we want to use these disks */
 						if (!state->opt.no_warnings)
 							log_fatal("DANGER! Ignoring that disks '%s' and '%s' are on the same device\n", disk->name, other->name);
 					} else {
@@ -354,9 +354,9 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 			for (j = l + 1; j < state->level; ++j) {
 				if (state->parity[l].device == state->parity[j].device) {
 					if (state->opt.force_device) {
-						/* mark disks to be skipped */
-						state->parity[l].skip_access = 1;
-						state->parity[j].skip_access = 1;
+						/* note tha we just ignore the issue */
+						/* and we DON'T mark the disk to be skipped */
+						/* because we want to use these disks */
 						if (!state->opt.no_warnings)
 							log_fatal("DANGER! Skipping parities '%s' and '%s' on the same device\n", lev_config_name(l), lev_config_name(j));
 					} else {

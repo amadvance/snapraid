@@ -867,6 +867,7 @@ int main(int argc, char* argv[])
 
 	switch (operation) {
 	case OPERATION_FIX :
+	case OPERATION_CHECK :
 		break;
 	default :
 		if (opt.force_device) {

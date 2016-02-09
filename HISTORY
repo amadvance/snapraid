@@ -29,6 +29,12 @@ SnapRAID HISTORY
    identify files. The 'status' command recommends to run 'touch' if
    required.
 
+9.4 2016/02
+===========
+ * Restores the functionality of the -D, --force-device option when used to
+   workaround the use of the same disk for two logical data drives when
+   running the 'fix' command.
+
 9.3 2016/01
 ===========
  * Fixes an invalid assumption in the copy detection mechanism that
