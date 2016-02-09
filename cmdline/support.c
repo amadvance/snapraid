@@ -379,21 +379,6 @@ void printp(double v, size_t pad)
 	printl(buf, pad);
 }
 
-/**
- * Number of buffers for esc().
- */
-#define ESC_MAX 4
-
-/**
- * Buffer table to allow multiple calls to esc().
- */
-static char esc_table[ESC_MAX][PATH_MAX*2+1];
-
-/**
- * Next buffer to use.
- */
-static unsigned esc_index = 0;
-
 #define ESCAPE(from,to) \
 	case from : \
 		if (p == end) \
@@ -404,14 +389,11 @@ static unsigned esc_index = 0;
 		*p++ = to; \
 		break
 
-const char* esc(const char* str)
+const char* esc(const char* str, char* buffer)
 {
-	char* begin = esc_table[esc_index];
-	char* end = begin + PATH_MAX;
+	char* begin = buffer;
+	char* end = begin + ESC_MAX;
 	char* p = begin;
-
-	/* next call uses the next buffer */
-	esc_index = (esc_index + 1) % ESC_MAX;
 
 	/* copy string with escaping */
 	while (*str) {

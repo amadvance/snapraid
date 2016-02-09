@@ -92,6 +92,8 @@ void state_dup(struct snapraid_state* state)
 	tommy_node* i;
 	unsigned count;
 	data_off_t size;
+	char esc_buffer[ESC_MAX];
+	char esc_buffer_alt[ESC_MAX];
 
 	tommy_hashdyn_init(&hashset);
 
@@ -127,7 +129,7 @@ void state_dup(struct snapraid_state* state)
 			if (found) {
 				++count;
 				size += found->file->size;
-				log_tag("dup:%s:%s:%s:%s:%" PRIu64 ": dup\n", disk->name, esc(file->sub), found->disk->name, esc(found->file->sub), found->file->size);
+				log_tag("dup:%s:%s:%s:%s:%" PRIu64 ": dup\n", disk->name, esc(file->sub, esc_buffer), found->disk->name, esc(found->file->sub, esc_buffer_alt), found->file->size);
 				printf("%12" PRIu64 " %s%s = %s%s\n", file->size, disk->dir, file->sub, found->disk->dir, found->file->sub);
 				hash_free(hash);
 			} else {

@@ -608,6 +608,7 @@ static void state_smart(unsigned n, tommy_list* low)
 	int make_it_fail = 0;
 	uint64_t mask32 = 0xffffffffU;
 	uint64_t mask16 = 0xffffU;
+	char esc_buffer[ESC_MAX];
 
 	/* compute lengths for padding */
 	device_pad = 0;
@@ -746,7 +747,7 @@ static void state_smart(unsigned n, tommy_list* low)
 
 		log_tag("smart:%s:%s\n", devinfo->file, devinfo->name);
 		if (devinfo->smart_serial[0])
-			log_tag("attr:%s:%s:serial:%s\n", devinfo->file, devinfo->name, esc(devinfo->smart_serial));
+			log_tag("attr:%s:%s:serial:%s\n", devinfo->file, devinfo->name, esc(devinfo->smart_serial, esc_buffer));
 		if (afr != 0)
 			log_tag("attr:%s:%s:afr:%g\n", devinfo->file, devinfo->name, afr);
 		if (devinfo->smart[SMART_SIZE] != SMART_UNASSIGNED)

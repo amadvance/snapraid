@@ -32,6 +32,8 @@ void state_list(struct snapraid_state* state)
 	unsigned file_count;
 	data_off_t file_size;
 	unsigned link_count;
+	char esc_buffer[ESC_MAX];
+	char esc_buffer_alt[ESC_MAX];
 
 	file_count = 0;
 	file_size = 0;
@@ -59,7 +61,7 @@ void state_list(struct snapraid_state* state)
 			++file_count;
 			file_size += file->size;
 
-			log_tag("file:%s:%s:%" PRIu64 ":%" PRIi64 ":%u:%" PRIi64 "\n", disk->name, esc(file->sub), file->size, file->mtime_sec, file->mtime_nsec, file->inode);
+			log_tag("file:%s:%s:%" PRIu64 ":%" PRIi64 ":%u:%" PRIi64 "\n", disk->name, esc(file->sub, esc_buffer), file->size, file->mtime_sec, file->mtime_nsec, file->inode);
 
 			t = file->mtime_sec;
 #if HAVE_LOCALTIME_R
@@ -98,7 +100,7 @@ void state_list(struct snapraid_state* state)
 
 			++link_count;
 
-			log_tag("link_%s:%s:%s:%s\n", type, disk->name, esc(slink->sub), esc(slink->linkto));
+			log_tag("link_%s:%s:%s:%s\n", type, disk->name, esc(slink->sub, esc_buffer), esc(slink->linkto, esc_buffer_alt));
 
 			printf("%12s ", type);
 			printf("                 ");

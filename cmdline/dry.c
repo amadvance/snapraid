@@ -48,6 +48,7 @@ static void dry_data_reader(struct snapraid_worker* worker, struct snapraid_task
 	block_off_t blockcur = task->position;
 	unsigned char* buffer = task->buffer;
 	int ret;
+	char esc_buffer[ESC_MAX];
 
 	/* if the disk position is not used */
 	if (!disk) {
@@ -81,7 +82,7 @@ static void dry_data_reader(struct snapraid_worker* worker, struct snapraid_task
 			/* This one is really an unexpected error, because we are only reading */
 			/* and closing a descriptor should never fail */
 			if (errno == EIO) {
-				log_tag("error:%u:%s:%s: Close EIO error. %s\n", blockcur, disk->name, esc(report->sub), strerror(errno));
+				log_tag("error:%u:%s:%s: Close EIO error. %s\n", blockcur, disk->name, esc(report->sub, esc_buffer), strerror(errno));
 				log_fatal("DANGER! Unexpected input/output close error in a data disk, it isn't possible to dry.\n");
 				log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle->path);
 				log_fatal("Stopping at block %u\n", blockcur);
@@ -89,7 +90,7 @@ static void dry_data_reader(struct snapraid_worker* worker, struct snapraid_task
 				return;
 			}
 
-			log_tag("error:%u:%s:%s: Close error. %s\n", blockcur, disk->name, esc(report->sub), strerror(errno));
+			log_tag("error:%u:%s:%s: Close error. %s\n", blockcur, disk->name, esc(report->sub, esc_buffer), strerror(errno));
 			log_fatal("WARNING! Unexpected close error in a data disk, it isn't possible to dry.\n");
 			log_fatal("Ensure that file '%s' can be accessed.\n", handle->path);
 			log_fatal("Stopping at block %u\n", blockcur);
@@ -103,7 +104,7 @@ static void dry_data_reader(struct snapraid_worker* worker, struct snapraid_task
 	if (ret == -1) {
 		if (errno == EIO) {
 			/* LCOV_EXCL_START */
-			log_tag("error:%u:%s:%s: Open EIO error. %s\n", blockcur, disk->name, esc(task->file->sub), strerror(errno));
+			log_tag("error:%u:%s:%s: Open EIO error. %s\n", blockcur, disk->name, esc(task->file->sub, esc_buffer), strerror(errno));
 			log_fatal("DANGER! Unexpected input/output open error in a data disk, it isn't possible to dry.\n");
 			log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle->path);
 			log_fatal("Stopping at block %u\n", blockcur);
@@ -112,7 +113,7 @@ static void dry_data_reader(struct snapraid_worker* worker, struct snapraid_task
 			/* LCOV_EXCL_STOP */
 		}
 
-		log_tag("error:%u:%s:%s: Open error. %s\n", blockcur, disk->name, esc(task->file->sub), strerror(errno));
+		log_tag("error:%u:%s:%s: Open error. %s\n", blockcur, disk->name, esc(task->file->sub, esc_buffer), strerror(errno));
 		task->state = TASK_STATE_ERROR_CONTINUE;
 		return;
 	}
@@ -120,13 +121,13 @@ static void dry_data_reader(struct snapraid_worker* worker, struct snapraid_task
 	task->read_size = handle_read(handle, task->file_pos, buffer, state->block_size, log_error, 0);
 	if (task->read_size == -1) {
 		if (errno == EIO) {
-			log_tag("error:%u:%s:%s: Read EIO error at position %u. %s\n", blockcur, disk->name, esc(task->file->sub), task->file_pos, strerror(errno));
+			log_tag("error:%u:%s:%s: Read EIO error at position %u. %s\n", blockcur, disk->name, esc(task->file->sub, esc_buffer), task->file_pos, strerror(errno));
 			log_error("Input/Output error in file '%s' at position '%u'\n", handle->path, task->file_pos);
 			task->state = TASK_STATE_IOERROR_CONTINUE;
 			return;
 		}
 
-		log_tag("error:%u:%s:%s: Read error at position %u. %s\n", blockcur, disk->name, esc(task->file->sub), task->file_pos, strerror(errno));
+		log_tag("error:%u:%s:%s: Read error at position %u. %s\n", blockcur, disk->name, esc(task->file->sub, esc_buffer), task->file_pos, strerror(errno));
 		task->state = TASK_STATE_ERROR_CONTINUE;
 		return;
 	}
@@ -182,6 +183,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 	unsigned l;
 	unsigned* waiting_map;
 	unsigned waiting_mac;
+	char esc_buffer[ESC_MAX];
 
 	handle = handle_mapping(state, &diskmax);
 
@@ -358,7 +360,7 @@ bail:
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			log_tag("error:%u:%s:%s: Close error. %s\n", blockmax, disk->name, esc(file->sub), strerror(errno));
+			log_tag("error:%u:%s:%s: Close error. %s\n", blockmax, disk->name, esc(file->sub, esc_buffer), strerror(errno));
 			log_fatal("DANGER! Unexpected close error in a data disk.\n");
 			++error;
 			/* continue, as we are already exiting */

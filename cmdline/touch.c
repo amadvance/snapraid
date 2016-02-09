@@ -25,6 +25,7 @@
 void state_touch(struct snapraid_state* state)
 {
 	tommy_node* i;
+	char esc_buffer[ESC_MAX];
 
 	msg_progress("Setting sub-second timestamps...\n");
 
@@ -136,7 +137,7 @@ void state_touch(struct snapraid_state* state)
 				/* state changed, we need to update it */
 				state->need_write = 1;
 
-				log_tag("touch:%s:%s: %" PRIu64 ".%d\n", disk->name, esc(file->sub), (uint64_t)st.st_mtime, (int)STAT_NSEC(&st));
+				log_tag("touch:%s:%s: %" PRIu64 ".%d\n", disk->name, esc(file->sub, esc_buffer), (uint64_t)st.st_mtime, (int)STAT_NSEC(&st));
 				msg_info("touch %s%s\n", disk->dir, file->sub);
 			}
 		}
