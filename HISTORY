@@ -15,12 +15,11 @@ SnapRAID HISTORY
    --test-io-stats option. You will see a graph with the number of
    cached blocks (higher is better), and a graph with the wait time
    percentage (lower is better) for all the disks and computations.
- * The -h, --pre-hash command, saves the content file only after
-   having verified all the hashes. This allows recovering of moved
-   files in case a silent error is found during the hash verification
-   check.
- * Allows to use the -d, --filter-disk option in the 'up' and
-   'down' commands.
+ * The -h, --pre-hash command, saves the content file only after having
+   verified all the hashes. This allows recovering of moved files in
+   case a silent error is found during the hash verification check.
+ * Allows to use the -d, --filter-disk option in the 'up' and 'down'
+   commands.
  * Allows to run the 'smart' command without a configuration file.
    In such case it operates on all the disks of the machine.
  * In the configuration file 'data' is now a synonymous of 'disk'.
@@ -28,12 +27,11 @@ SnapRAID HISTORY
    sub-second timestamps. This improves the SnapRAID capabilities to
    identify files. The 'status' command recommends to run 'touch' if
    required.
-
-9.4 2016/02
-===========
- * Restores the functionality of the -D, --force-device option when used to
-   workaround the use of the same disk for two logical data drives when
-   running the 'fix' command.
+ * Restores the functionality of the -D, --force-device option when used
+   to workaround the use of the same disk for two logical data drives
+   when running the 'fix' command.
+ * Uses a correct shell quoting in the example commands that involve
+   files.
 
 9.3 2016/01
 ===========
