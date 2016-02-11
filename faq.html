@@ -751,7 +751,8 @@ In Linux use the command:
 cp -av /from_dir/. /to_dir
 </pre>
 <p>
-WARNING! Do not use the 'rsync' command because <a href="https://bugzilla.samba.org/show_bug.cgi?id=6672">it's not able to copy the sub-second timestamps</a>.
+WARNING! If you want to use the 'rsync' command, ensure that it's at least version 3.1.0.
+Older versions are not able to copy the sub-second timestamps.
 </p>
 <p>
 In Windows use the command:
