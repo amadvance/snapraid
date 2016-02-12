@@ -44,9 +44,20 @@
  * Calling pthread_cond_signal without locking mutex
  * http://stackoverflow.com/questions/4544234/calling-pthread-cond-signal-without-locking-mutex/4544494#4544494
  */
+
+/* with checkers use the safe signaling */
+#ifdef CHECKER
+#define USE_SAFE_SIGNAL 1
+#endif
+
+/* in Windows also use the safe signaling */
+#ifdef _WIN32
+#define USE_SAFE_SIGNAL 1
+#endif
+
 static void pthread_cond_signal_and_unlock(pthread_cond_t* cond, pthread_mutex_t* mutex)
 {
-#ifndef CHECKER
+#ifndef USE_SAFE_SIGNAL
 	/* without the thread checker unlock before signaling, */
 	/* this reduces the number of context switches */
 	pthread_mutex_unlock(mutex);
@@ -54,7 +65,7 @@ static void pthread_cond_signal_and_unlock(pthread_cond_t* cond, pthread_mutex_t
 
 	pthread_cond_signal(cond);
 
-#ifdef CHECKER
+#ifdef USE_SAFE_SIGNAL
 	/* with the thread checker unlock after signaling */
 	/* to make explicit the condition and mutex relation */
 	pthread_mutex_unlock(mutex);
@@ -63,7 +74,7 @@ static void pthread_cond_signal_and_unlock(pthread_cond_t* cond, pthread_mutex_t
 
 static void pthread_cond_broadcast_and_unlock(pthread_cond_t* cond, pthread_mutex_t* mutex)
 {
-#ifndef CHECKER
+#ifndef USE_SAFE_SIGNAL
 	/* without the thread checker unlock before signaling, */
 	/* this reduces the number of context switches */
 	pthread_mutex_unlock(mutex);
@@ -71,7 +82,7 @@ static void pthread_cond_broadcast_and_unlock(pthread_cond_t* cond, pthread_mute
 
 	pthread_cond_broadcast(cond);
 
-#ifdef CHECKER
+#ifdef USE_SAFE_SIGNAL
 	/* with the thread checker unlock after signaling */
 	/* to make explicit the condition and mutex relation */
 	pthread_mutex_unlock(mutex);
