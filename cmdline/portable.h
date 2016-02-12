@@ -40,11 +40,11 @@
 #define __MSVCRT_VERSION__ 0x0601
 
 /**
- * Include Windows XP headers.
+ * Include Windows Vista headers.
  *
- * Like for CreateHardLinkW().
+ * Like for InitializeCriticalSection().
  */
-#define _WIN32_WINNT 0x501
+#define _WIN32_WINNT 0x600
 
 #include <windows.h>
 #endif

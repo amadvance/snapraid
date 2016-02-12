@@ -250,6 +250,9 @@ void test(void)
 int main(void)
 {
 	unsigned i;
+
+	lock_init();
+
 	for (i = 1; i <= 16; ++i) {
 
 		/* test with different stream buffer size */

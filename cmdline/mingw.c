@@ -29,44 +29,6 @@ int exit_failure = 1;
 int exit_sync_needed = 2;
 
 /* Add missing Windows declaration */
-typedef struct _FILE_ATTRIBUTE_TAG_INFO {
-	DWORD FileAttributes;
-	DWORD ReparseTag;
-} FILE_ATTRIBUTE_TAG_INFO;
-
-typedef struct _FILE_ID_BOTH_DIR_INFO {
-	DWORD NextEntryOffset;
-	DWORD FileIndex;
-	LARGE_INTEGER CreationTime;
-	LARGE_INTEGER LastAccessTime;
-	LARGE_INTEGER LastWriteTime;
-	LARGE_INTEGER ChangeTime;
-	LARGE_INTEGER EndOfFile;
-	LARGE_INTEGER AllocationSize;
-	DWORD FileAttributes;
-	DWORD FileNameLength;
-	DWORD EaSize;
-	CCHAR ShortNameLength;
-	WCHAR ShortName[12];
-	LARGE_INTEGER FileId;
-	WCHAR FileName[1];
-} FILE_ID_BOTH_DIR_INFO;
-
-#define FileAttributeTagInfo 9
-#define FileIdBothDirectoryInfo 10
-
-#ifndef IO_REPARSE_TAG_DEDUP
-#define IO_REPARSE_TAG_DEDUP (0x80000013)
-#endif
-#ifndef IO_REPARSE_TAG_NFS
-#define IO_REPARSE_TAG_NFS (0x80000014)
-#endif
-#ifndef IO_REPARSE_TAG_MOUNT_POINT
-#define IO_REPARSE_TAG_MOUNT_POINT (0xA0000003)
-#endif
-#ifndef IO_REPARSE_TAG_SYMLINK
-#define IO_REPARSE_TAG_SYMLINK (0xA000000C)
-#endif
 
 /* For SetThreadExecutionState */
 #define WIN32_ES_SYSTEM_REQUIRED      0x00000001L
@@ -74,50 +36,6 @@ typedef struct _FILE_ID_BOTH_DIR_INFO {
 #define WIN32_ES_USER_PRESENT         0x00000004L
 #define WIN32_ES_AWAYMODE_REQUIRED    0x00000040L
 #define WIN32_ES_CONTINUOUS           0x80000000L
-
-#ifndef FSCTL_GET_RETRIEVAL_POINTERS
-#define FSCTL_GET_RETRIEVAL_POINTERS 0x00090073
-
-typedef struct RETRIEVAL_POINTERS_BUFFER {
-	DWORD ExtentCount;
-	LARGE_INTEGER StartingVcn;
-	struct {
-		LARGE_INTEGER NextVcn;
-		LARGE_INTEGER Lcn;
-	} Extents[1];
-} RETRIEVAL_POINTERS_BUFFER;
-
-typedef struct {
-	LARGE_INTEGER StartingVcn;
-} STARTING_VCN_INPUT_BUFFER;
-#endif
-
-#ifndef IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS
-#define IOCTL_VOLUME_GET_VOLUME_DISK_EXTENTS 0x560000
-
-typedef struct DISK_EXTENT {
-	DWORD DiskNumber;
-	LARGE_INTEGER StartingOffset;
-	LARGE_INTEGER ExtentLength;
-} DISK_EXTENT;
-
-typedef struct VOLUME_DISK_EXTENTS {
-	DWORD NumberOfDiskExtents;
-	DISK_EXTENT Extents[ANYSIZE_ARRAY];
-} VOLUME_DISK_EXTENTS;
-#endif
-
-/**
- * Portable implementation of GetFileInformationByHandleEx.
- * This function is not available in Windows XP.
- */
-static BOOL (WINAPI* ptr_GetFileInformationByHandleEx)(HANDLE, DWORD, LPVOID, DWORD);
-
-/**
- * Portable implementation of CreateSymbolicLinkW.
- * This function is not available in Windows XP.
- */
-static BOOLEAN (WINAPI* ptr_CreateSymbolicLinkW)(LPWSTR, LPWSTR, DWORD);
 
 /**
  * Direct access to RtlGenRandom().
@@ -213,9 +131,6 @@ void os_init(int opt)
 	is_wine = GetProcAddress(ntdll, "wine_get_version") != 0;
 
 	/* load functions not always available */
-	ptr_GetFileInformationByHandleEx = (void*)GetProcAddress(kernel32, "GetFileInformationByHandleEx");
-	ptr_CreateSymbolicLinkW = (void*)GetProcAddress(kernel32, "CreateSymbolicLinkW");
-
 	ptr_RtlGenRandom = (void*)GetProcAddress(dll_advapi32, "SystemFunction036");
 	if (!ptr_RtlGenRandom) {
 		log_fatal("Error loading RtlGenRandom() from the ADVAPI32 module.\n");
@@ -448,15 +363,8 @@ static BOOL GetReparseTagInfoByHandle(HANDLE hFile, FILE_ATTRIBUTE_TAG_INFO* lpF
 		return TRUE;
 	}
 
-	/* if not available, return no info */
-	if (!ptr_GetFileInformationByHandleEx) {
-		lpFileAttributeTagInfo->FileAttributes = dwFileAttributes;
-		lpFileAttributeTagInfo->ReparseTag = 0;
-		return TRUE;
-	}
-
 	/* do the real call */
-	return ptr_GetFileInformationByHandleEx(hFile, FileAttributeTagInfo, lpFileAttributeTagInfo, sizeof(FILE_ATTRIBUTE_TAG_INFO));
+	return GetFileInformationByHandleEx(hFile, FileAttributeTagInfo, lpFileAttributeTagInfo, sizeof(FILE_ATTRIBUTE_TAG_INFO));
 }
 
 /**
@@ -1262,7 +1170,7 @@ static int windows_first_stream(windows_dir* dirstream)
 {
 	FILE_ID_BOTH_DIR_INFO* fd;
 
-	if (!ptr_GetFileInformationByHandleEx(dirstream->h, FileIdBothDirectoryInfo, dirstream->buffer, dirstream->buffer_size)) {
+	if (!GetFileInformationByHandleEx(dirstream->h, FileIdBothDirectoryInfo, dirstream->buffer, dirstream->buffer_size)) {
 		DWORD error = GetLastError();
 
 		if (error == ERROR_NO_MORE_FILES) {
@@ -1403,9 +1311,7 @@ static int windows_closedir_stream(windows_dir* dirstream)
 
 windows_dir* windows_opendir(const char* dir)
 {
-	/* if we have GetFileInformationByHandleEx() we can read */
-	/* the directory using a stream */
-	if (!is_scan_winfind && ptr_GetFileInformationByHandleEx != 0)
+	if (!is_scan_winfind)
 		return windows_opendir_stream(dir);
 	else
 		return windows_opendir_find(dir);
@@ -1413,7 +1319,7 @@ windows_dir* windows_opendir(const char* dir)
 
 struct windows_dirent* windows_readdir(windows_dir* dirstream)
 {
-	if (!is_scan_winfind && ptr_GetFileInformationByHandleEx != 0)
+	if (!is_scan_winfind)
 		return windows_readdir_stream(dirstream);
 	else
 		return windows_readdir_find(dirstream);
@@ -1421,7 +1327,7 @@ struct windows_dirent* windows_readdir(windows_dir* dirstream)
 
 int windows_closedir(windows_dir* dirstream)
 {
-	if (!is_scan_winfind && ptr_GetFileInformationByHandleEx != 0)
+	if (!is_scan_winfind)
 		return windows_closedir_stream(dirstream);
 	else
 		return windows_closedir_find(dirstream);
@@ -1460,16 +1366,11 @@ int windows_symlink(const char* existing, const char* file)
 	wchar_t conv_buf_file[CONV_MAX];
 	wchar_t conv_buf_existing[CONV_MAX];
 
-	if (!ptr_CreateSymbolicLinkW) {
-		windows_errno(ERROR_NOT_SUPPORTED);
-		return -1;
-	}
-
 	/* We must convert to the extended-length \\?\ format if the path is too long */
 	/* otherwise the link creation fails. */
 	/* But we don't want to always convert it, to avoid to recreate */
 	/* user symlinks different than they were before */
-	if (!ptr_CreateSymbolicLinkW(convert(conv_buf_file, file), convert_if_required(conv_buf_existing, existing), 0)) {
+	if (!CreateSymbolicLinkW(convert(conv_buf_file, file), convert_if_required(conv_buf_existing, existing), 0)) {
 		windows_errno(GetLastError());
 		return -1;
 	}
@@ -2524,5 +2425,116 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 	return device_thread(low, func);
 }
 
-#endif
+/****************************************************************************/
+/* thread */
 
+int windows_mutex_init(windows_mutex_t* mutex, void* attr)
+{
+	CRITICAL_SECTION* cs;
+
+	(void)attr;
+
+	cs = malloc(sizeof(CRITICAL_SECTION));
+	if (!cs) {
+		printf("FATAL! Failed allocation for mutex\n");
+		os_abort();
+	}
+
+	InitializeCriticalSection(cs);
+
+	*mutex = cs;
+
+	return 0;
+}
+
+int windows_mutex_destroy(windows_mutex_t* mutex)
+{
+	CRITICAL_SECTION* cs = *mutex;
+
+	DeleteCriticalSection(cs);
+
+	free(cs);
+
+	return 0;
+}
+
+int windows_mutex_lock(windows_mutex_t* mutex)
+{
+	CRITICAL_SECTION* cs = *mutex;
+
+	EnterCriticalSection(cs);
+
+	return 0;
+}
+
+int windows_mutex_unlock(windows_mutex_t* mutex)
+{
+	CRITICAL_SECTION* cs = *mutex;
+
+	LeaveCriticalSection(cs);
+
+	return 0;
+}
+
+int windows_cond_init(windows_cond_t* cond, void* attr)
+{
+	CONDITION_VARIABLE* cv;
+
+	(void)attr;
+
+	cv = malloc(sizeof(CONDITION_VARIABLE));
+	if (!cv) {
+		printf("FATAL! Failed allocation for condition variable\n");
+		os_abort();
+	}
+
+	InitializeConditionVariable(cv);
+
+	*cond = cv;
+
+	return 0;
+}
+
+int windows_cond_destroy(windows_cond_t* cond)
+{
+	CONDITION_VARIABLE* cv = *cond;
+
+	/* note that in Windows there is no DeleteConditionVariable() to call */
+	free(cv);
+
+	return 0;
+}
+
+int windows_cond_signal(windows_cond_t* cond)
+{
+	CONDITION_VARIABLE* cv = *cond;
+
+	WakeConditionVariable(cv);
+
+	return 0;
+}
+
+int windows_cond_broadcast(windows_cond_t* cond)
+{
+	CONDITION_VARIABLE* cv = *cond;
+
+	WakeAllConditionVariable(cv);
+
+	return 0;
+}
+
+int windows_cond_wait(windows_cond_t* cond, windows_mutex_t* mutex)
+{
+	CONDITION_VARIABLE* cv = *cond;
+	CRITICAL_SECTION* cs = *mutex;
+
+	if (!SleepConditionVariableCS(cv, cs, INFINITE)) {
+		DWORD error = GetLastError();
+		printf("FATAL! SleepConditionVariableCS failed with error %u\n", (unsigned)error);
+		os_abort();
+	}
+
+	return 0;
+}
+
+#endif
