@@ -26,69 +26,6 @@
 #error Pthread library is required for InputOutput!
 #endif
 
-/**
- * Implementation note about conditional variables.
- *
- * In release code the conditional variables are signaled outside the mutex,
- * to reduce the number of context switches.
- *
- * Instead, when testing with helgrind and drd, they are signaled inside the mutex
- * to help such tools to see the dependency between the signal and the wait.
- * We use the CHECKER define to detect such case.
- *
- * Here some interesting discussion:
- *
- * Condvars: signal with mutex locked or not?
- * http://www.domaigne.com/blog/computing/condvars-signal-with-mutex-locked-or-not/
- *
- * Calling pthread_cond_signal without locking mutex
- * http://stackoverflow.com/questions/4544234/calling-pthread-cond-signal-without-locking-mutex/4544494#4544494
- */
-
-/* with checkers use the safe signaling */
-#ifdef CHECKER
-#define USE_SAFE_SIGNAL 1
-#endif
-
-/* in Windows also use the safe signaling */
-#ifdef _WIN32
-#define USE_SAFE_SIGNAL 1
-#endif
-
-static void pthread_cond_signal_and_unlock(pthread_cond_t* cond, pthread_mutex_t* mutex)
-{
-#ifndef USE_SAFE_SIGNAL
-	/* without the thread checker unlock before signaling, */
-	/* this reduces the number of context switches */
-	pthread_mutex_unlock(mutex);
-#endif
-
-	pthread_cond_signal(cond);
-
-#ifdef USE_SAFE_SIGNAL
-	/* with the thread checker unlock after signaling */
-	/* to make explicit the condition and mutex relation */
-	pthread_mutex_unlock(mutex);
-#endif
-}
-
-static void pthread_cond_broadcast_and_unlock(pthread_cond_t* cond, pthread_mutex_t* mutex)
-{
-#ifndef USE_SAFE_SIGNAL
-	/* without the thread checker unlock before signaling, */
-	/* this reduces the number of context switches */
-	pthread_mutex_unlock(mutex);
-#endif
-
-	pthread_cond_broadcast(cond);
-
-#ifdef USE_SAFE_SIGNAL
-	/* with the thread checker unlock after signaling */
-	/* to make explicit the condition and mutex relation */
-	pthread_mutex_unlock(mutex);
-#endif
-}
-
 void io_init(struct snapraid_io* io, struct snapraid_state* state,
 	unsigned io_cache, unsigned buffer_max,
 	void (*data_reader)(struct snapraid_worker*, struct snapraid_task*),
@@ -758,7 +695,6 @@ static void* io_reader_thread(void* arg)
 
 	return 0;
 }
-
 
 static void* io_writer_thread(void* arg)
 {

@@ -282,6 +282,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_FORCE_PARITY_UPDATE 289
 #define OPT_TEST_IO_CACHE 290
 #define OPT_TEST_IO_STATS 291
+#define OPT_TEST_COND_SIGNAL_OUTSIDE 292
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -414,6 +415,9 @@ struct option long_options[] = {
 
 	/* Print IO stats */
 	{ "test-io-stats", 0, 0, OPT_TEST_IO_STATS },
+
+	/* Signal condition variable outside the mutex */
+	{ "test-cond-signal-oustide", 0, 0, OPT_TEST_COND_SIGNAL_OUTSIDE },
 
 	{ 0, 0, 0, 0 }
 };
@@ -808,6 +812,9 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_TEST_IO_STATS :
 			opt.force_stats = 1;
+			break;
+		case OPT_TEST_COND_SIGNAL_OUTSIDE :
+			pthread_cond_signal_outside = 1;
 			break;
 		default :
 			/* LCOV_EXCL_START */

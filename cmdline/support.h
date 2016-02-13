@@ -360,5 +360,25 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
  */
 int smartctl_flush(FILE* f, const char* file, const char* name);
 
+/****************************************************************************/
+/* thread */
+
+#if HAVE_PTHREAD
+/**
+ * Control when to signal the condition variables.
+ *
+ * Default is inside the mutex.
+ *
+ * Ensure to change that before starting any thread.
+ */
+int pthread_cond_signal_outside;
+
+/**
+ * Signal and unlock condition variables.
+ */
+void pthread_cond_signal_and_unlock(pthread_cond_t* cond, pthread_mutex_t* mutex);
+void pthread_cond_broadcast_and_unlock(pthread_cond_t* cond, pthread_mutex_t* mutex);
+#endif
+
 #endif
 

@@ -1110,3 +1110,71 @@ int smartctl_flush(FILE* f, const char* file, const char* name)
 	return 0;
 }
 
+/****************************************************************************/
+/* thread */
+
+#if HAVE_PTHREAD
+/**
+ * Implementation note about conditional variables.
+ *
+ * The conditional variables can be signaled inside or ouside the mutex,
+ * what is better it's debatable but in general doing that ouside the mutex,
+ * reduces the number of context switches.
+ *
+ * But when when testing with helgrind and drd, this disallows such tools to
+ * to see the dependency between the signal and the wait.
+ *
+ * To avoid it we signal everything inside the mutex. And we do this in both
+ * test mode (with CHERCKER defined) and release mode (CHECKER not defined),
+ * to be on the safe side and avoid any difference in beaviour between test and
+ * release.
+ *
+ * Here some interesting discussion:
+ *
+ * Condvars: signal with mutex locked or not?
+ * http://www.domaigne.com/blog/computing/condvars-signal-with-mutex-locked-or-not/
+ *
+ * Calling pthread_cond_signal without locking mutex
+ * http://stackoverflow.com/questions/4544234/calling-pthread-cond-signal-without-locking-mutex/4544494#4544494
+ */
+
+/**
+ * Control when to signal the condition variables.
+ */
+int pthread_cond_signal_outside = 0;
+
+void pthread_cond_signal_and_unlock(pthread_cond_t* cond, pthread_mutex_t* mutex)
+{
+	if (pthread_cond_signal_outside) {
+		/* without the thread checker unlock before signaling, */
+		/* this reduces the number of context switches */
+		pthread_mutex_unlock(mutex);
+	}
+
+	pthread_cond_signal(cond);
+
+	if (!pthread_cond_signal_outside) {
+		/* with the thread checker unlock after signaling */
+		/* to make explicit the condition and mutex relation */
+		pthread_mutex_unlock(mutex);
+	}
+}
+
+void pthread_cond_broadcast_and_unlock(pthread_cond_t* cond, pthread_mutex_t* mutex)
+{
+	if (pthread_cond_signal_outside) {
+		/* without the thread checker unlock before signaling, */
+		/* this reduces the number of context switches */
+		pthread_mutex_unlock(mutex);
+	}
+
+	pthread_cond_broadcast(cond);
+
+	if (!pthread_cond_signal_outside) {
+		/* with the thread checker unlock after signaling */
+		/* to make explicit the condition and mutex relation */
+		pthread_mutex_unlock(mutex);
+	}
+}
+#endif
+
