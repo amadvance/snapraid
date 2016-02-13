@@ -148,7 +148,7 @@ struct snapraid_io {
 	 * Mutex used to protect the synchronization
 	 * between the io and the workers.
 	 */
-	pthread_mutex_t mutex;
+	pthread_mutex_t io_mutex;
 
 	/**
 	 * Condition for a new read is completed.
