@@ -371,13 +371,24 @@ int smartctl_flush(FILE* f, const char* file, const char* name);
  *
  * Ensure to change that before starting any thread.
  */
-int pthread_cond_signal_outside;
+int thread_cond_signal_outside;
 
 /**
- * Signal and unlock condition variables.
+ * Thread wrappers to handle error conditions.
  */
-void pthread_cond_signal_and_unlock(pthread_cond_t* cond, pthread_mutex_t* mutex);
-void pthread_cond_broadcast_and_unlock(pthread_cond_t* cond, pthread_mutex_t* mutex);
+void thread_mutex_init(pthread_mutex_t* mutex, pthread_mutexattr_t* attr);
+void thread_mutex_destroy(pthread_mutex_t* mutex);
+void thread_mutex_lock(pthread_mutex_t* mutex);
+void thread_mutex_unlock(pthread_mutex_t* mutex);
+void thread_cond_init(pthread_cond_t* cond, pthread_condattr_t* attr);
+void thread_cond_destroy(pthread_cond_t* cond);
+void thread_cond_signal(pthread_cond_t* cond);
+void thread_cond_broadcast(pthread_cond_t* cond);
+void thread_cond_wait(pthread_cond_t* cond, pthread_mutex_t* mutex);
+void thread_cond_signal_and_unlock(pthread_cond_t* cond, pthread_mutex_t* mutex);
+void thread_cond_broadcast_and_unlock(pthread_cond_t* cond, pthread_mutex_t* mutex);
+void thread_create(pthread_t* thread, pthread_attr_t* attr, void *(* func)(void *), void *arg);
+void thread_join(pthread_t thread, void** retval);
 #endif
 
 #endif

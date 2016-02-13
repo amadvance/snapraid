@@ -1021,12 +1021,7 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 	for (i = tommy_list_head(list); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
 
-		if (pthread_create(&devinfo->thread, 0, func, devinfo) != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal("Failed to create thread.\n");
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
+		thread_create(&devinfo->thread, 0, func, devinfo);
 	}
 
 	/* join all threads */
@@ -1034,12 +1029,7 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 		devinfo_t* devinfo = i->data;
 		void* retval;
 
-		if (pthread_join(devinfo->thread, &retval) != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal("Failed to join thread.\n");
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
+		thread_join(devinfo->thread, &retval);
 
 		if (retval != 0)
 			++fail;

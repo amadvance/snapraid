@@ -814,7 +814,7 @@ int main(int argc, char* argv[])
 			opt.force_stats = 1;
 			break;
 		case OPT_TEST_COND_SIGNAL_OUTSIDE :
-			pthread_cond_signal_outside = 1;
+			thread_cond_signal_outside = 1;
 			break;
 		default :
 			/* LCOV_EXCL_START */

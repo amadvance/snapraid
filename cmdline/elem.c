@@ -737,7 +737,7 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 	/* ensure that the dir terminate with "/" if it isn't empty */
 	pathslash(disk->dir, sizeof(disk->dir));
 
-	pthread_mutex_init(&disk->fs_mutex, 0);
+	thread_mutex_init(&disk->fs_mutex, 0);
 
 	disk->smartctl[0] = 0;
 	disk->device = dev;
@@ -782,19 +782,19 @@ void disk_free(struct snapraid_disk* disk)
 	tommy_list_foreach(&disk->dirlist, (tommy_foreach_func*)dir_free);
 	tommy_hashdyn_done(&disk->dirset);
 
-	pthread_mutex_destroy(&disk->fs_mutex);
+	thread_mutex_destroy(&disk->fs_mutex);
 
 	free(disk);
 }
 
 static inline void fs_lock(struct snapraid_disk* disk)
 {
-	pthread_mutex_lock(&disk->fs_mutex);
+	thread_mutex_lock(&disk->fs_mutex);
 }
 
 static inline void fs_unlock(struct snapraid_disk* disk)
 {
-	pthread_mutex_unlock(&disk->fs_mutex);
+	thread_mutex_unlock(&disk->fs_mutex);
 }
 
 struct chunk_disk_empty {

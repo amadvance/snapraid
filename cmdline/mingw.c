@@ -2326,12 +2326,7 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 	for (i = tommy_list_head(list); i != 0; i = i->next) {
 		devinfo_t* devinfo = i->data;
 
-		if (pthread_create(&devinfo->thread, 0, func, devinfo) != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal("Failed to create thread.\n");
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
+		thread_create(&devinfo->thread, 0, func, devinfo);
 	}
 
 	/* joins all threads */
@@ -2339,12 +2334,7 @@ static int device_thread(tommy_list* list, void* (*func)(void* arg))
 		devinfo_t* devinfo = i->data;
 		void* retval;
 
-		if (pthread_join(devinfo->thread, &retval) != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal("Failed to join thread.\n");
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
+		thread_join(devinfo->thread, &retval);
 
 		if (retval != 0)
 			++fail;
@@ -2435,10 +2425,8 @@ int windows_mutex_init(windows_mutex_t* mutex, void* attr)
 	(void)attr;
 
 	cs = malloc(sizeof(CRITICAL_SECTION));
-	if (!cs) {
-		printf("FATAL! Failed allocation for mutex\n");
-		os_abort();
-	}
+	if (!cs)
+		return -1;
 
 	InitializeCriticalSection(cs);
 
@@ -2483,10 +2471,8 @@ int windows_cond_init(windows_cond_t* cond, void* attr)
 	(void)attr;
 
 	cv = malloc(sizeof(CONDITION_VARIABLE));
-	if (!cv) {
-		printf("FATAL! Failed allocation for condition variable\n");
-		os_abort();
-	}
+	if (!cv)
+		return -1;
 
 	InitializeConditionVariable(cv);
 
@@ -2528,11 +2514,8 @@ int windows_cond_wait(windows_cond_t* cond, windows_mutex_t* mutex)
 	CONDITION_VARIABLE* cv = *cond;
 	CRITICAL_SECTION* cs = *mutex;
 
-	if (!SleepConditionVariableCS(cv, cs, INFINITE)) {
-		DWORD error = GetLastError();
-		printf("FATAL! SleepConditionVariableCS failed with error %u\n", (unsigned)error);
-		os_abort();
-	}
+	if (!SleepConditionVariableCS(cv, cs, INFINITE))
+		return -1;
 
 	return 0;
 }

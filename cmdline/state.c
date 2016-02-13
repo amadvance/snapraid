@@ -3172,12 +3172,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		context->info_has_rehash = info_has_rehash;
 		context->f = f;
 
-		if (pthread_create(&context->thread, 0, state_write_thread, context) != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal("Failed to create thread.\n");
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
+		thread_create(&context->thread, 0, state_write_thread, context);
 
 		i = i->next;
 	}
@@ -3196,12 +3191,7 @@ static void state_write_content(struct snapraid_state* state, uint32_t* out_crc)
 		struct state_write_thread_context* context = content->context;
 		void* retval;
 
-		if (pthread_join(context->thread, &retval) != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal("Failed to join thread.\n");
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
+		thread_join(context->thread, &retval);
 
 		if (retval) {
 			/* LCOV_EXCL_START */
@@ -3600,12 +3590,7 @@ static void state_verify_content(struct snapraid_state* state, uint32_t crc)
 		context->f = f;
 
 #if HAVE_MT_VERIFY
-		if (pthread_create(&context->thread, 0, state_verify_thread, context) != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal("Failed to create thread.\n");
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
+		thread_create(&context->thread, 0, state_verify_thread, context);
 #else
 		context->retval = state_verify_thread(context);
 #endif
@@ -3622,12 +3607,7 @@ static void state_verify_content(struct snapraid_state* state, uint32_t crc)
 		void* retval;
 
 #if HAVE_MT_VERIFY
-		if (pthread_join(context->thread, &retval) != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal("Failed to join thread.\n");
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
+		thread_join(context->thread, &retval);
 #else
 		retval = context->retval;
 #endif
