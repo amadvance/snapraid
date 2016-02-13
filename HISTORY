@@ -11,7 +11,7 @@ SnapRAID HISTORY
    You can control the number of blocks to cache with the option
    --test-io-cache=NUMBER, where the number is between 3 and 128.
    The default is 8 MiB of blocks.
-   You can show runtime stats during the process with the
+   You can show run-time stats during the process with the
    --test-io-stats option. You will see a graph with the number of
    cached blocks, and a graph with the wait time percentage for all the
    disks and computations.
@@ -32,6 +32,10 @@ SnapRAID HISTORY
    when running the 'fix' command.
  * Uses a correct shell quoting in the example commands that involve
    files.
+ * The minimum Windows version supported is now Windows Vista. This is
+   required to use the native Windows thread support for the new
+   multi-thread implementation. If you need to run on Windows XP, you
+   have to stick on SnapRAID 9.x.
 
 9.3 2016/01
 ===========
