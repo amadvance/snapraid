@@ -417,7 +417,7 @@ struct option long_options[] = {
 	{ "test-io-stats", 0, 0, OPT_TEST_IO_STATS },
 
 	/* Signal condition variable outside the mutex */
-	{ "test-cond-signal-oustide", 0, 0, OPT_TEST_COND_SIGNAL_OUTSIDE },
+	{ "test-cond-signal-outside", 0, 0, OPT_TEST_COND_SIGNAL_OUTSIDE },
 
 	{ 0, 0, 0, 0 }
 };
