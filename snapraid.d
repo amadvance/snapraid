@@ -456,6 +456,25 @@ Commands
 	This command doesn't check the file data, but only the file time-stamp
 	size and inode.
 
+	At the end of the command, you'll get a summary of the file changes
+	grouped by:
+		equal - Files equal at before.
+		added - Files added that were not present before.
+		removed - Files removed.
+		updated - Files with a different size or time-stamp, meaning that
+			they were modified.
+		moved - Files moved to a different directory of the same disk.
+			They are identified by having the same name, size, time-stamp
+			and inode, but different directory.
+		copied - Files copied in the same or different disk. Note that if in
+			true they are moved to a different disk, you'll also have
+			them counted in "removed".
+			They are identified by having the same name, size, and
+			time-stamp. But if the sub-second time-stamp is zero,
+			then the full path should match, and not only the name.
+		restored - Files with a different inode but with name, size and time-stamp
+			matching. These are usually files restored after being deleted.
+
 	If a "sync" is required, the process return code is 2, instead of the
 	default 0. The return code 1 is instead for a generic error condition.
 

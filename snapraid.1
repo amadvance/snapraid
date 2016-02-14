@@ -750,6 +750,43 @@ their parity data recomputed.
 This command doesn\'t check the file data, but only the file time\-stamp
 size and inode.
 .PP
+At the end of the command, you\'ll get a summary of the file changes
+grouped by:
+.RS 4
+.PD 0
+.HP 4
+.I equal
+Files equal at before.
+.HP 4
+.I added
+Files added that were not present before.
+.HP 4
+.I removed
+Files removed.
+.HP 4
+.I updated
+Files with a different size or time\-stamp, meaning that
+they were modified.
+.HP 4
+.I moved
+Files moved to a different directory of the same disk.
+They are identified by having the same name, size, time\-stamp
+and inode, but different directory.
+.HP 4
+.I copied
+Files copied in the same or different disk. Note that if in
+true they are moved to a different disk, you\'ll also have
+them counted in \[dq]removed\[dq].
+They are identified by having the same name, size, and
+time\-stamp. But if the sub\-second time\-stamp is zero,
+then the full path should match, and not only the name.
+.HP 4
+.I restored
+Files with a different inode but with name, size and time\-stamp
+matching. These are usually files restored after being deleted.
+.PD
+.RE
+.PP
 If a \[dq]sync\[dq] is required, the process return code is 2, instead of the
 default 0. The return code 1 is instead for a generic error condition.
 .PP

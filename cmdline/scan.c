@@ -1811,20 +1811,20 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 	}
 
 	msg("%8u equal\n", total.count_equal);
+	msg("%8u added\n", total.count_insert);
+	msg("%8u removed\n", total.count_remove);
+	msg("%8u updated\n", total.count_change);
 	msg("%8u moved\n", total.count_move);
 	msg("%8u copied\n", total.count_copy);
 	msg("%8u restored\n", total.count_restore);
-	msg("%8u updated\n", total.count_change);
-	msg("%8u removed\n", total.count_remove);
-	msg("%8u added\n", total.count_insert);
 
 	log_tag("summary:equal:%u\n", total.count_equal);
+	log_tag("summary:added:%u\n", total.count_insert);
+	log_tag("summary:removed:%u\n", total.count_remove);
+	log_tag("summary:updated:%u\n", total.count_change);
 	log_tag("summary:moved:%u\n", total.count_move);
 	log_tag("summary:copied:%u\n", total.count_copy);
 	log_tag("summary:restored:%u\n", total.count_restore);
-	log_tag("summary:updated:%u\n", total.count_change);
-	log_tag("summary:removed:%u\n", total.count_remove);
-	log_tag("summary:added:%u\n", total.count_insert);
 
 	no_difference = !total.count_move && !total.count_copy && !total.count_restore
 		&& !total.count_change && !total.count_remove && !total.count_insert;
