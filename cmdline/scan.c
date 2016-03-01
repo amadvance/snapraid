@@ -1780,7 +1780,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 		log_fatal(". Move operations won't be optimal.\n");
 #if defined(_linux) && !HAVE_BLKID
 		log_fatal("The 'blkid' library is not linked in SnapRAID!\n");
-		log_fatal("Try rebuilding it after installing the libblkid-dev/devel package.\n");
+		log_fatal("Try rebuilding it after installing the libblkid-dev or libblkid-devel package.\n");
 #endif
 	}
 
