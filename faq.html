@@ -1092,7 +1092,7 @@ It's created where the first content file is placed.
 
 <h3 id="subsecond">What's the notice about zero sub-second timestamp?</h3>
 <p>
-In the status command you may now get a notice like:
+In the 'status' command you may now get a notice like:
 </p>
 <pre>
 You have XXXXX files with zero sub-second timestamp.
@@ -1101,8 +1101,8 @@ Run the 'touch' command to set it to a not zero value.
 <p>
 It means that a number of your files have a timestamp approximated at the second value,
 when instead your filesystem can store a more precise timestamp, with a sub-second precision.
-This is not a problem by itself, but it could limit the SnapRAID effectiviness when detecting
-moved or copied files.
+This is not a problem by itself, but it could limit the SnapRAID effectiviness to detect
+moved or copied files between different disks.
 You have the option to set that subsecond timestamp to a random value using the new 'touch' command.
 Note that the second part of the timestamp is not modified.
 </p>
