@@ -125,6 +125,7 @@ Frequently Asked Questions for <span class="bold">SnapRAID</span>.
 <li><a href="#syncaccess">Does SnapRAID allow to access data disks during a 'sync'?</a></li>
 <li><a href="#retryop">Does SnapRAID retry reads or writes if a disk is not working?</a></li>
 <li><a href="#lock">What's the snapraid.content.lock file?</a></li>
+<li><a href="#subsecond">What's the notice about zero sub-second timestamp?</a></li>
 </ul>
 
 
@@ -1087,6 +1088,23 @@ So, just restarting it will continue where stopped.
 <p>
 It's a file used by SnapRAID to check if another SnapRAID instance is already running.
 It's created where the first content file is placed.
+</p>
+
+<h3 id="subsecond">What's the notice about zero sub-second timestamp?</h3>
+<p>
+In the status command you may now get a notice like:
+</p>
+<pre>
+You have XXXXX files with zero sub-second timestamp.
+Run the 'touch' command to set it to a not zero value.
+</pre>
+<p>
+It means that a number of your files have a timestamp approximated at the second value,
+when instead your filesystem can store a more precise timestamp, with a sub-second precision.
+This is not a problem by itself, but it could limit the SnapRAID effectiviness when detecting
+moved or copied files.
+You have the option to set that subsecond timestamp to a random value using the new 'touch' command.
+Note that the second part of the timestamp is not modified.
 </p>
 
 <h2>Performance</h2>
