@@ -1101,8 +1101,12 @@ Run the 'touch' command to set it to a not zero value.
 <p>
 It means that a number of your files have a timestamp approximated at the second value,
 when instead your filesystem can store a more precise timestamp, with a sub-second precision.
+</p>
+<p>
 This is not a problem by itself, but it could limit the SnapRAID effectiviness to detect
 moved or copied files between different disks.
+</p>
+<p>
 You have the option to set that subsecond timestamp to a random value using the new 'touch' command.
 Note that the second part of the timestamp is not modified.
 </p>
