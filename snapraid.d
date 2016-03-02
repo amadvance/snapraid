@@ -1165,7 +1165,7 @@ Pattern
 
 	=FILE
 		Selects any file named as FILE. You can use any globbing
-		character like * and ?.
+		character like * and ?, and char classes like [a-z].
 		This pattern is applied only to files and not to directories.
 
 	=DIR/
@@ -1192,6 +1192,12 @@ Pattern
 	Note that Windows system directories, junctions, mount points, and any
 	other Windows special directory are treated just as files, meaning that
 	to exclude them you must use a file rule, and not a directory one.
+
+	If the file name you want to use really contains a '*', '?', '[',
+	or ']' char, you have to escape it to avoid to have interpreted as a
+	globbing character. In Unix the escape char is '\' in Windows it's '^'.
+	Note that when the pattern is on the command line, you have to double the
+	escape character to avoid to have it interpreted by the command shell.
 
 	In the configuration file, you can use different strategies to filter
 	the files to process.

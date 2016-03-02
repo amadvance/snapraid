@@ -1,6 +1,13 @@
 SnapRAID HISTORY
 ================
 
+10.1 2016/03
+============
+ * In the Windows version allow to use the escape char '^' to handle
+   file patterns containing real characters matching the globbing '*?[]'
+   ones. In Unix it was already possible to do the same escaping with
+   '\'.
+
 10.0 2016/02
 ============
  * Boosts the speed of the 'sync' and 'scrub' commands with a new
