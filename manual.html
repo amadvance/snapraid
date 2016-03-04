@@ -61,7 +61,7 @@ snapraid [-c, --conf CONFIG]
 &nbsp;&nbsp;&nbsp;&nbsp;[-L, --error-limit NUMBER]
 &nbsp;&nbsp;&nbsp;&nbsp;[-v, --verbose] [-q, --quiet]
 &nbsp;&nbsp;&nbsp;&nbsp;status|smart|up|down|diff|sync|scrub|fix|check|list|dup
-&nbsp;&nbsp;&nbsp;&nbsp;|up|down|pool|devices|rehash
+&nbsp;&nbsp;&nbsp;&nbsp;|up|down|pool|devices|touch|rehash
 </pre>
 <p>
 <pre>
@@ -158,7 +158,7 @@ With a Backup you are able to recover from a complete
 failure of the whole disk array.
 </li>
 <li>
-Only file, timestamps, symlinks and hardlinks are saved.
+Only file, time-stamps, symlinks and hardlinks are saved.
 Permissions, ownership and extended attributes are not saved.
 </li>
 </ul>
@@ -189,7 +189,7 @@ disks.
 The list of files is saved in the "content" files, usually
 stored in the data, parity or boot disks.
 These files contain the details of your backup, with all the
-checksums to verify its integrity.
+check-sums to verify its integrity.
 The "content" file is stored in multiple copies, and each one must
 be in a different disk, to ensure that in even in case of multiple
 disk failures at least one copy is available.
@@ -215,9 +215,9 @@ parity /mnt/diskp/snapraid.parity
 content /var/snapraid/snapraid.content
 content /mnt/disk1/snapraid.content
 content /mnt/disk2/snapraid.content
-disk d1 /mnt/disk1/
-disk d2 /mnt/disk2/
-disk d3 /mnt/disk3/
+data d1 /mnt/disk1/
+data d2 /mnt/disk2/
+data d3 /mnt/disk3/
 </pre>
 </td></tr></table>
 <p>
@@ -230,9 +230,9 @@ parity E:\snapraid.parity
 content C:\snapraid\snapraid.content
 content F:\array\snapraid.content
 content G:\array\snapraid.content
-disk d1 F:\array\
-disk d2 G:\array\
-disk d3 H:\array\
+data d1 F:\array\
+data d2 G:\array\
+data d3 H:\array\
 </pre>
 </td></tr></table>
 <p>
@@ -386,7 +386,7 @@ requires the network clients to resolve them remotely.
 <p>
 To make it working, besides sharing in the network the pool directory,
 you must also share all the disks independently, using as share points
-the disk names as defined in the config file. You must also specify in
+the disk names as defined in the configuration file. You must also specify in
 the "share" option of the configure file, the Windows UNC path that remote
 clients needs to use to access such shared disks.
 <p>
@@ -395,9 +395,9 @@ the options:
 <p>
 <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
-disk d1 F:\array\
-disk d2 G:\array\
-disk d3 H:\array\
+data d1 F:\array\
+data d2 G:\array\
+data d3 H:\array\
 pool C:\pool
 share \\darkstar
 </pre>
@@ -488,7 +488,7 @@ For example, if you have that disk "d1" failed, you can change from:
 <p>
 <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
-disk d1 /mnt/disk1/
+data d1 /mnt/disk1/
 </pre>
 </td></tr></table>
 <p>
@@ -496,7 +496,7 @@ to:
 <p>
 <table width="100%" border="0" cellspacing="0" cellpadding="2"><tr><td width="5%"></td><td width="95%">
 <pre>
-disk d1 /mnt/new_spare_disk/
+data d1 /mnt/new_spare_disk/
 </pre>
 </td></tr></table>
 <h4><a name="4.4.2">4.4.2</a> 
@@ -658,7 +658,7 @@ or less parity.
 This command uses the "smartctl" tool, and it's equivalent to run
 "smartctl -a" on all the devices.
 <p>
-If your devices are not autodetected correctly, you can configure
+If your devices are not auto-detected correctly, you can configure
 a custom command using the "smartctl" option in the configuration
 file.
 <p>
@@ -667,6 +667,8 @@ Nothing is modified.
 up
 </h3>
 Spins up all the disks of the array.
+<p>
+You can spin-up only some specific disks using the -d, --filter-disk option.
 <p>
 Nothing is modified.
 <h3><a name="5.4">5.4</a> 
@@ -677,6 +679,8 @@ Spins down all the disks of the array.
 This command uses the "smartctl" tool, and it's equivalent to run
 "smartctl -s standby,now" on all the devices.
 <p>
+You can spin-down only some specific disks using the -d, --filter-disk option.
+<p>
 Nothing is modified.
 <h3><a name="5.5">5.5</a> 
 diff
@@ -684,8 +688,57 @@ diff
 Lists all the files modified from the last "sync" that need to have
 their parity data recomputed.
 <p>
-This command doesn't check the file data, but only the file timestamp
+This command doesn't check the file data, but only the file time-stamp
 size and inode.
+<p>
+At the end of the command, you'll get a summary of the file changes
+grouped by:
+<table width="100%" border="0" cellspacing="0" cellpadding="2">
+<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+equal
+</em></td><td width="90%">
+Files equal at before.
+</td></tr>
+<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+added
+</em></td><td width="90%">
+Files added that were not present before.
+</td></tr>
+<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+removed
+</em></td><td width="90%">
+Files removed.
+</td></tr>
+<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+updated
+</em></td><td width="90%">
+Files with a different size or time-stamp, meaning that
+they were modified.
+</td></tr>
+<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+moved
+</em></td><td width="90%">
+Files moved to a different directory of the same disk.
+They are identified by having the same name, size, time-stamp
+and inode, but different directory.
+</td></tr>
+<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+copied
+</em></td><td width="90%">
+Files copied in the same or different disk. Note that if in
+true they are moved to a different disk, you'll also have
+them counted in "removed".
+They are identified by having the same name, size, and
+time-stamp. But if the sub-second time-stamp is zero,
+then the full path should match, and not only the name.
+</td></tr>
+<tr valign="top" align="left"><td width="5%"></td><td width="5%"><em>
+restored
+</em></td><td width="90%">
+Files with a different inode but with name, size and time-stamp
+matching. These are usually files restored after being deleted.
+</td></tr>
+</table>
 <p>
 If a "sync" is required, the process return code is 2, instead of the
 default 0. The return code 1 is instead for a generic error condition.
@@ -707,8 +760,8 @@ If during the process, silent or input/output errors are found,
 the corresponding blocks are marked as bad.
 <p>
 Files are identified by path and/or inode and checked by
-size and timestamp.
-If the file size or timestamp are different, the parity data
+size and time-stamp.
+If the file size or time-stamp are different, the parity data
 is recomputed for the whole file.
 If the file is moved or renamed in the same disk, keeping the
 same inode, the parity is not recomputed.
@@ -787,7 +840,7 @@ All the files that cannot be fixed are renamed adding the
 <p>
 Before fixing, the full array is scanned to find any moved file,
 after the last "sync" operation.
-These files are identified by their timestamp, ignoring their name
+These files are identified by their time-stamp, ignoring their name
 and directory, and are used in the recovering process if necessary.
 If you moved some of them outside the array, you can use the -i, --import
 option to specify additional directories to scan.
@@ -875,6 +928,24 @@ low level devices used by a single disk in the array.
 <p>
 Nothing is modified.
 <h3><a name="5.16">5.16</a> 
+touch
+</h3>
+Sets arbitrarely the sub-second timestamp of all the files
+that have it at zero.
+<p>
+This improves the SnapRAID capability to recognize moved
+and copied files as it makes the timestamp almost unique,
+removing possible duplicates.
+<p>
+More specifically, if the sub-second timestamp is not zero,
+a moved or copied file is identified as such if it matches
+the name, size and timestamp. If instead the sub-second timestamp
+is zero, it's cosidered a copy only if it matches the full path,
+size and timestamp.
+<p>
+Note that the second precision timestamp is not modified,
+and all the dates and times of your files will be maintained.
+<h3><a name="5.17">5.17</a> 
 rehash
 </h3>
 Schedules a rehash of the whole array.
@@ -926,18 +997,15 @@ process the whole array.
 <tr valign="top" align="left"><td><strong>
 -d, --filter-disk NAME
 </strong></td></tr><tr><td>
-Filters the files to process in "check" and "fix".
-Only the files present in the specified disk are processed.
+Filters the disks to process in "check", "fix", "up" and "down".
 You must specify a disk name as named in the configuration
 file.
-In "check", you can make it faster, specifying also -a, --audit-only
-option, to avoid to access other disks to check parity data.
-If you combine more --filter, --filter-disk and --filter-missing options,
-only files matching all the set of filters are selected.
 You can also specify parity disks with the names: "parity", "2-parity",
 "3-parity", ... to limit the operations a specific parity disk.
+If you combine more --filter, --filter-disk and --filter-missing options,
+only files matching all the set of filters are selected.
 This option can be used many times.
-This option can be used only with "check" and "fix".
+This option can be used only with "check", "fix", "up" and "down".
 Note that it cannot be used with "sync" and "scrub", because they always
 process the whole array.
 </td></tr>
@@ -1017,7 +1085,7 @@ what cannot be detected because the data is not yet hashed.
 To avoid this risk, you can enable the "pre-hash" mode and have
 all the data read two times to ensure its integrity.
 This option also verifies the files moved inside the array,
-to ensure that the move operation went succesfully, and in case
+to ensure that the move operation went successfully, and in case
 to block the sync and to allow to run a fix operation.
 This option can be used only with "sync".
 </td></tr>
@@ -1046,7 +1114,7 @@ unless you specify this option.
 This allows to easily detect when after a system crash,
 some accessed files were truncated.
 This is a possible condition in Linux with the ext3/ext4
-filesystems.
+file-systems.
 This option can be used only with "sync".
 </td></tr>
 </table>
@@ -1085,10 +1153,10 @@ This option can be used only with "sync", "check" or
 <tr valign="top" align="left"><td><strong>
 -D, --force-device
 </strong></td></tr><tr><td>
-Forces the insecure operation of fixing with unaccessible disks,
+Forces the insecure operation of fixing with inaccessible disks,
 or with disks on the same physical device.
 Like if you lost two data disks, and you have a spare disk to recover
-only the first one, and you want to ignore the second unaccessible disk.
+only the first one, and you want to ignore the second inaccessible disk.
 Or if you want to recover a disk in the free space left in an
 already used disk, sharing the same physical device.
 This option can be used only with "fix".
@@ -1100,7 +1168,7 @@ This option can be used only with "fix".
 </strong></td></tr><tr><td>
 In "sync", "check and "fix", disables the copy detection heuristic.
 Without this option SnapRAID assumes that files with same
-attributes, like name, size and timestamp are copies with the
+attributes, like name, size and time-stamp are copies with the
 same data.
 This allows to identify copied or moved files from one disk
 to another, and to reuse the already computed hash information
@@ -1302,7 +1370,7 @@ and using 'fix' to recreate it.
 <h3><a name="7.4">7.4</a> 
 content FILE
 </h3>
-Defines the file to use to store the list and checksums of all the
+Defines the file to use to store the list and check-sums of all the
 files present in your disk array.
 <p>
 It can be placed in the disk used to store data, parity, or
@@ -1316,16 +1384,22 @@ more copies of the same files.
 You have to store at least one copy for each parity disk used
 plus one. Using some more doesn't hurt.
 <h3><a name="7.5">7.5</a> 
-disk NAME DIR
+data NAME DIR
 </h3>
-Defines the name and the mount point of the disks of the array.
-NAME is used to identify the disk, and it must be unique.
-DIR is the mount point of the disk in the filesystem.
+Defines the name and the mount point of the data disks of
+the array. NAME is used to identify the disk, and it must
+be unique. DIR is the mount point of the disk in the
+file-system.
 <p>
 You can change the mount point as you like, as long you
 keep the NAME fixed.
 <p>
-You should use one option for each disk of the array.
+You should use one option for each data disk of the array.
+<p>
+You can rename later a disk, changing the NAME directly
+in the configuration file, and then run a 'sync' command.
+In the rename case, the association is done using the stored
+UUID of the disks.
 <h3><a name="7.6">7.6</a> 
 nohidden
 </h3>
@@ -1445,7 +1519,7 @@ smartctl DISK/PARITY OPTIONS...
 </h3>
 Defines a custom smartctl command to obtain the SMART attributes
 for each disk. This may be required for RAID controllers and for
-some USB disk that cannot be autodetected.
+some USB disk that cannot be auto-detected.
 <p>
 DISK is the same disk name specified in the "disk" option.
 PARITY is one of the parity name as "parity,[1,2,3,4,5,6,z]-parity".
@@ -1472,9 +1546,9 @@ An example of a typical configuration for Unix is:
 parity /mnt/diskp/snapraid.parity
 content /mnt/diskp/snapraid.content
 content /var/snapraid/snapraid.content
-disk d1 /mnt/disk1/
-disk d2 /mnt/disk2/
-disk d3 /mnt/disk3/
+data d1 /mnt/disk1/
+data d2 /mnt/disk2/
+data d3 /mnt/disk3/
 exclude /lost+found/
 exclude /tmp/
 smartctl d1 -d sat %s
@@ -1491,9 +1565,9 @@ An example of a typical configuration for Windows is:
 parity E:\snapraid.parity
 content E:\snapraid.content
 content C:\snapraid\snapraid.content
-disk d1 G:\array\
-disk d2 H:\array\
-disk d3 I:\array\
+data d1 G:\array\
+data d2 H:\array\
+data d3 I:\array\
 exclude Thumbs.db
 exclude \$RECYCLE.BIN
 exclude \System Volume Information
@@ -1515,7 +1589,7 @@ There are four different types of patterns:
 FILE
 </strong></td></tr><tr><td>
 Selects any file named as FILE. You can use any globbing
-character like * and ?.
+character like * and ?, and char classes like [a-z].
 This pattern is applied only to files and not to directories.
 </td></tr>
 </table>
@@ -1550,12 +1624,18 @@ This pattern is applied only to directories and not to files.
 </table>
 <p>
 Note that when you specify an absolute path starting with /, it's
-applied at the array root dir and not at the local filesystem root dir.
+applied at the array root dir and not at the local file-system root dir.
 <p>
 In Windows you can use the backslash \ instead of the forward slash /.
 Note that Windows system directories, junctions, mount points, and any
 other Windows special directory are treated just as files, meaning that
 to exclude them you must use a file rule, and not a directory one.
+<p>
+If the file name you want to use really contains a '*', '?', '[',
+or ']' char, you have to escape it to avoid to have interpreted as a
+globbing character. In Unix the escape char is '\' in Windows it's '^'.
+Note that when the pattern is on the command line, you have to double the
+escape character to avoid to have it interpreted by the command shell.
 <p>
 In the configuration file, you can use different strategies to filter
 the files to process.
@@ -1620,10 +1700,10 @@ quote them. Otherwise the shell will try to expand them.
 <h2><a name="9">9</a> 
 Content
 </h2>
-SnapRAID stores the list and checksums of your files in the content file.
+SnapRAID stores the list and check-sums of your files in the content file.
 <p>
 It's a binary file, listing all the files present in your disk array,
-with all the checksums to verify their integrity.
+with all the check-sums to verify their integrity.
 <p>
 This file is read and written by the "sync" and "scrub" commands, and
 read by "fix", "check" and "status".
@@ -1642,9 +1722,9 @@ only read by "scrub" and "check".
 Encoding
 </h2>
 SnapRAID in Unix ignores any encoding. It reads and stores the
-file names with the same encoding used by the filesystem.
+file names with the same encoding used by the file-system.
 <p>
-In Windows all the names read from the filesystem are converted and
+In Windows all the names read from the file-system are converted and
 processed in the UTF-8 format.
 <p>
 To have the file names printed correctly you have to set the Windows
