@@ -5,6 +5,8 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
+* Allow to disable multithread
+
 - Minor
 
 * Allow to specify more than one partition for each parity disk.
