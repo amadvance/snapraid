@@ -140,6 +140,10 @@ struct snapraid_io {
 
 	/**
 	 * Number of read-ahead buffers to use.
+	 *
+	 * Between IO_MIN and IO_MAX for thread use.
+	 *
+	 * If equal to 1, it means to work without any thread.
 	 */
 	unsigned io_max;
 
@@ -261,6 +265,9 @@ struct snapraid_io {
 	 *
 	 * When the caller finish with the current index,
 	 * it's incremented, and a read_sched() signal is sent.
+	 *
+	 * In monothread mode it isn't the task index,
+	 * but the worker index.
 	 */
 	unsigned reader_index;
 
@@ -272,6 +279,9 @@ struct snapraid_io {
 	 *
 	 * When the caller finish with the current index,
 	 * it's incremented, and a write_sched() signal is sent.
+	 *
+	 * In monothread mode it isn't the task index,
+	 * but the worker index.
 	 */
 	unsigned writer_index;
 
@@ -303,14 +313,14 @@ void io_done(struct snapraid_io* io);
 /**
  * Start all the worker threads.
  */
-void io_start(struct snapraid_io* io,
+void (*io_start)(struct snapraid_io* io,
 	block_off_t blockstart, block_off_t blockmax,
 	int (*block_is_enabled)(void* arg, block_off_t), void* blockarg);
 
 /**
  * Stop all the worker threads.
  */
-void io_stop(struct snapraid_io* io);
+void (*io_stop)(struct snapraid_io* io);
 
 /**
  * Next read position.
@@ -322,7 +332,7 @@ void io_stop(struct snapraid_io* io);
  * \param buffer The data buffers to use for this position.
  * \return The parity position.
  */
-block_off_t io_read_next(struct snapraid_io* io, void*** buffer);
+block_off_t (*io_read_next)(struct snapraid_io* io, void*** buffer);
 
 /**
  * Read a data block.
@@ -330,10 +340,10 @@ block_off_t io_read_next(struct snapraid_io* io, void*** buffer);
  * It must be called exactly ::handle_max times.
  *
  * \param io InputOutput context.
- * \param pos The position of the data block in the ::handle_map vector.
+ * \param diskcur The position of the data block in the ::handle_map vector.
  * \return The completed task.
  */
-struct snapraid_task* io_data_read(struct snapraid_io* io, unsigned* diskcur, unsigned* waiting_map, unsigned* waiting_mac);
+struct snapraid_task* (*io_data_read)(struct snapraid_io* io, unsigned* diskcur, unsigned* waiting_map, unsigned* waiting_mac);
 
 /**
  * Read a parity block.
@@ -341,10 +351,10 @@ struct snapraid_task* io_data_read(struct snapraid_io* io, unsigned* diskcur, un
  * It must be called exactly ::parity_handle_max times.
  *
  * \param io InputOutput context.
- * \param pos The position of the parity block in the ::parity_handle_map vector.
+ * \param levcur The position of the parity block in the ::parity_handle_map vector.
  * \return The completed task.
  */
-struct snapraid_task* io_parity_read(struct snapraid_io* io, unsigned* levcur, unsigned* waiting_map, unsigned* waiting_mac);
+struct snapraid_task* (*io_parity_read)(struct snapraid_io* io, unsigned* levcur, unsigned* waiting_map, unsigned* waiting_mac);
 
 /**
  * Write of a parity block.
@@ -352,9 +362,21 @@ struct snapraid_task* io_parity_read(struct snapraid_io* io, unsigned* levcur, u
  * It must be called exactly ::parity_handle_max times.
  *
  * \param io InputOutput context.
- * \param pos The position of the parity block in the ::parity_handle_map vector.
+ * \param levcur The position of the parity block in the ::parity_handle_map vector.
  */
-void io_parity_write(struct snapraid_io* io, unsigned* levcur, unsigned* waiting_map, unsigned* waiting_mac);
+void (*io_parity_write)(struct snapraid_io* io, unsigned* levcur, unsigned* waiting_map, unsigned* waiting_mac);
+
+/**
+ * Preset the write position.
+ *
+ * This call starts the write process.
+ * It must be called before io_parity_write().
+ *
+ * \param io InputOutput context.
+ * \param blockcur The parity position to write.
+ * \param skip Skip the writes, in case parity doesn't need to be updated.
+ */
+void (*io_write_preset)(struct snapraid_io* io, block_off_t blockcur, int skip);
 
 /**
  * Next write position.
@@ -367,12 +389,12 @@ void io_parity_write(struct snapraid_io* io, unsigned* levcur, unsigned* waiting
  * \param skip Skip the writes, in case parity doesn't need to be updated.
  * \param writer_error Return the number of errors. Vector of IO_WRITER_ERROR_MAX elements.
  */
-void io_write_next(struct snapraid_io* io, block_off_t blockcur, int skip, int* writer_error);
+void (*io_write_next)(struct snapraid_io* io, block_off_t blockcur, int skip, int* writer_error);
 
 /**
  * Refresh the number of cached blocks for all data and parity disks.
  */
-void io_refresh(struct snapraid_io* io);
+void (*io_refresh)(struct snapraid_io* io);
 
 #endif
 

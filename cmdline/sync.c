@@ -1221,6 +1221,9 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		/* This because we want to keep track of the time usage */
 		state_usage_misc(state);
 
+		/* write start */
+		io_write_preset(&io, blockcur, !parity_going_to_be_updated);
+
 		/* write the parity */
 		for (l = 0; l < state->level; ++l) {
 			unsigned levcur;

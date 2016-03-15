@@ -803,7 +803,7 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_TEST_IO_CACHE :
 			opt.io_cache = atoi(optarg);
-			if (opt.io_cache < IO_MIN || opt.io_cache > IO_MAX) {
+			if (opt.io_cache != 1 && (opt.io_cache < IO_MIN || opt.io_cache > IO_MAX)) {
 				/* LCOV_EXCL_START */
 				log_fatal("The IO cache should be between %u and %u.\n", IO_MIN, IO_MAX);
 				exit(EXIT_FAILURE);

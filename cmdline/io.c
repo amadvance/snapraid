@@ -26,125 +26,9 @@
 #error Pthread library is required for InputOutput!
 #endif
 
-void io_init(struct snapraid_io* io, struct snapraid_state* state,
-	unsigned io_cache, unsigned buffer_max,
-	void (*data_reader)(struct snapraid_worker*, struct snapraid_task*),
-	struct snapraid_handle* handle_map, unsigned handle_max,
-	void (*parity_reader)(struct snapraid_worker*, struct snapraid_task*),
-	void (*parity_writer)(struct snapraid_worker*, struct snapraid_task*),
-	struct snapraid_parity_handle* parity_handle_map, unsigned parity_handle_max)
+static inline int io_thread(struct snapraid_io* io)
 {
-	unsigned i;
-	size_t allocated;
-
-	thread_mutex_init(&io->io_mutex, 0);
-	thread_cond_init(&io->read_done, 0);
-	thread_cond_init(&io->read_sched, 0);
-	thread_cond_init(&io->write_done, 0);
-	thread_cond_init(&io->write_sched, 0);
-
-	io->state = state;
-	if (io_cache == 0) {
-		/* default is 8 MiB of cache */
-		/* this seems to be a good tradeoff between speed and memory usage */
-		io->io_max = 8 * 1024 * 1024 / state->block_size;
-		if (io->io_max < IO_MIN)
-			io->io_max = IO_MIN;
-		if (io->io_max > IO_MAX)
-			io->io_max = IO_MAX;
-	} else {
-		io->io_max = io_cache;
-	}
-
-	assert(io->io_max >= IO_MIN && io->io_max <= IO_MAX);
-
-	io->buffer_max = buffer_max;
-	allocated = 0;
-	for (i = 0; i < io->io_max; ++i) {
-		io->buffer_map[i] = malloc_nofail_vector_align(handle_max, buffer_max, state->block_size, &io->buffer_alloc_map[i]);
-		if (!state->opt.skip_self)
-			mtest_vector(io->buffer_max, state->block_size, io->buffer_map[i]);
-		allocated += state->block_size * buffer_max;
-	}
-
-	msg_progress("Using %u MiB of memory for %u blocks of IO cache.\n", (unsigned)(allocated / MEBI), io->io_max);
-
-	if (parity_writer) {
-		io->reader_max = handle_max;
-		io->writer_max = parity_handle_max;
-	} else {
-		io->reader_max = handle_max + parity_handle_max;
-		io->writer_max = 0;
-	}
-
-	io->reader_map = malloc_nofail(sizeof(struct snapraid_worker) * io->reader_max);
-	io->reader_list = malloc_nofail(io->reader_max + 1);
-	io->writer_map = malloc_nofail(sizeof(struct snapraid_worker) * io->writer_max);
-	io->writer_list = malloc_nofail(io->writer_max + 1);
-
-	io->data_base = 0;
-	io->data_count = handle_max;
-	io->parity_base = handle_max;
-	io->parity_count = parity_handle_max;
-
-	for (i = 0; i < io->reader_max; ++i) {
-		struct snapraid_worker* worker = &io->reader_map[i];
-
-		worker->io = io;
-
-		if (i < handle_max) {
-			/* it's a data read */
-			worker->handle = &handle_map[i];
-			worker->parity_handle = 0;
-			worker->func = data_reader;
-
-			/* data read is put in lower buffer index */
-			worker->buffer_skew = 0;
-		} else {
-			/* it's a parity read */
-			worker->handle = 0;
-			worker->parity_handle = &parity_handle_map[i - handle_max];
-			worker->func = parity_reader;
-
-			/* parity read is put after data and computed parity */
-			worker->buffer_skew = parity_handle_max;
-		}
-	}
-
-	for (i = 0; i < io->writer_max; ++i) {
-		struct snapraid_worker* worker = &io->writer_map[i];
-
-		worker->io = io;
-
-		/* it's a parity write */
-		worker->handle = 0;
-		worker->parity_handle = &parity_handle_map[i];
-		worker->func = parity_writer;
-
-		/* parity to write is put after data */
-		worker->buffer_skew = handle_max;
-	}
-}
-
-void io_done(struct snapraid_io* io)
-{
-	unsigned i;
-
-	for (i = 0; i < io->io_max; ++i) {
-		free(io->buffer_map[i]);
-		free(io->buffer_alloc_map[i]);
-	}
-
-	free(io->reader_map);
-	free(io->reader_list);
-	free(io->writer_map);
-	free(io->writer_list);
-
-	thread_mutex_destroy(&io->io_mutex);
-	thread_cond_destroy(&io->read_done);
-	thread_cond_destroy(&io->read_sched);
-	thread_cond_destroy(&io->write_done);
-	thread_cond_destroy(&io->write_sched);
+	return io->io_max > 1;
 }
 
 /**
@@ -248,6 +132,147 @@ static void io_writer_sched_empty(struct snapraid_io* io, int task_index, block_
 	}
 }
 
+/*****************************************************************************/
+/* mono thread */
+
+static block_off_t io_read_next_mono(struct snapraid_io* io, void*** buffer)
+{
+	block_off_t blockcur_schedule;
+
+	/* reset the index */
+	io->reader_index = 0;
+
+	blockcur_schedule = io_position_next(io);
+
+	/* schedule the next read */
+	io_reader_sched(io, 0, blockcur_schedule);
+
+	/* set the buffer to use */
+	*buffer = io->buffer_map[0];
+
+	return blockcur_schedule;
+}
+
+static void io_write_preset_mono(struct snapraid_io* io, block_off_t blockcur, int skip)
+{
+	unsigned i;
+
+	/* reset the index */
+	io->writer_index = 0;
+
+	/* clear errors */
+	for (i = 0; i < IO_WRITER_ERROR_MAX; ++i)
+		io->writer_error[i] = 0;
+
+	if (skip) {
+		/* skip the next write */
+		io_writer_sched_empty(io, 0, blockcur);
+	} else {
+		/* schedule the next write */
+		io_writer_sched(io, 0, blockcur);
+	}
+}
+
+static void io_write_next_mono(struct snapraid_io* io, block_off_t blockcur, int skip, int* writer_error)
+{
+	unsigned i;
+
+	(void)blockcur;
+	(void)skip;
+
+	/* report errors */
+	for (i = 0; i < IO_WRITER_ERROR_MAX; ++i)
+		writer_error[i] = io->writer_error[i];
+}
+
+static void io_refresh_mono(struct snapraid_io* io)
+{
+	(void)io;
+}
+
+static struct snapraid_task* io_task_read_mono(struct snapraid_io* io, unsigned base, unsigned count, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)
+{
+	struct snapraid_worker* worker;
+	struct snapraid_task* task;
+	unsigned i;
+
+	/* get the next task */
+	i = io->reader_index++;
+
+	assert(base <= i && i < base + count);
+
+	worker = &io->reader_map[i];
+	task = &worker->task_map[0];
+
+	/* do the work */
+	if (task->state != TASK_STATE_EMPTY)
+		worker->func(worker, task);
+
+	/* return the position */
+	*pos = i - base;
+
+	/* store the waiting index */
+	waiting_map[0] = i - base;
+	*waiting_mac = 1;
+
+	return task;
+}
+
+static struct snapraid_task* io_data_read_mono(struct snapraid_io* io, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)
+{
+	return io_task_read_mono(io, io->data_base, io->data_count, pos, waiting_map, waiting_mac);
+}
+
+static struct snapraid_task* io_parity_read_mono(struct snapraid_io* io, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)
+{
+	return io_task_read_mono(io, io->parity_base, io->parity_count, pos, waiting_map, waiting_mac);
+}
+
+static void io_parity_write_mono(struct snapraid_io* io, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)
+{
+	struct snapraid_worker* worker;
+	struct snapraid_task* task;
+	unsigned i;
+
+	/* get the next task */
+	i = io->writer_index++;
+
+	worker = &io->writer_map[i];
+	task = &worker->task_map[0];
+
+	io->writer_error[i] = 0;
+
+	/* do the work */
+	if (task->state != TASK_STATE_EMPTY)
+		worker->func(worker, task);
+
+	/* return the position */
+	*pos = i;
+
+	/* store the waiting index */
+	waiting_map[0] = i;
+	*waiting_mac = 1;
+}
+
+static void io_start_mono(struct snapraid_io* io,
+	block_off_t blockstart, block_off_t blockmax,
+	int (*block_is_enabled)(void* arg, block_off_t), void* blockarg)
+{
+	io->block_start = blockstart;
+	io->block_max = blockmax;
+	io->block_is_enabled = block_is_enabled;
+	io->block_arg = blockarg;
+	io->block_next = blockstart;
+}
+
+static void io_stop_mono(struct snapraid_io* io)
+{
+	(void)io;
+}
+
+/*****************************************************************************/
+/* multi thread */
+
 /**
  * Get the next task to work on for a reader.
  *
@@ -331,7 +356,7 @@ static struct snapraid_task* io_writer_step(struct snapraid_worker* worker, int 
 		/* if the queue of pending tasks is not empty */
 		if (next_index != io->writer_index) {
 			struct snapraid_task* task;
-		
+
 			/* the index that the IO may be waiting for */
 			unsigned waiting_index = (io->writer_index + 1) % io->io_max;
 
@@ -371,7 +396,7 @@ static struct snapraid_task* io_writer_step(struct snapraid_worker* worker, int 
  *
  * This is the synchronization point for workers with the io.
  */
-block_off_t io_read_next(struct snapraid_io* io, void*** buffer)
+static block_off_t io_read_next_thread(struct snapraid_io* io, void*** buffer)
 {
 	block_off_t blockcur_schedule;
 	block_off_t blockcur_caller;
@@ -408,7 +433,14 @@ block_off_t io_read_next(struct snapraid_io* io, void*** buffer)
 	return blockcur_caller;
 }
 
-void io_write_next(struct snapraid_io* io, block_off_t blockcur, int skip, int* writer_error)
+static void io_write_preset_thread(struct snapraid_io* io, block_off_t blockcur, int skip)
+{
+	(void)io;
+	(void)blockcur;
+	(void)skip;
+}
+
+static void io_write_next_thread(struct snapraid_io* io, block_off_t blockcur, int skip, int* writer_error)
 {
 	unsigned i;
 
@@ -446,7 +478,7 @@ void io_write_next(struct snapraid_io* io, block_off_t blockcur, int skip, int* 
 	thread_cond_broadcast_and_unlock(&io->write_sched, &io->io_mutex);
 }
 
-void io_refresh(struct snapraid_io* io)
+static void io_refresh_thread(struct snapraid_io* io)
 {
 	unsigned i;
 
@@ -492,7 +524,7 @@ void io_refresh(struct snapraid_io* io)
 	thread_mutex_unlock(&io->io_mutex);
 }
 
-static struct snapraid_task* io_task_read(struct snapraid_io* io, unsigned base, unsigned count, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)
+static struct snapraid_task* io_task_read_thread(struct snapraid_io* io, unsigned base, unsigned count, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)
 {
 	unsigned waiting_cycle;
 
@@ -570,17 +602,17 @@ static struct snapraid_task* io_task_read(struct snapraid_io* io, unsigned base,
 	}
 }
 
-struct snapraid_task* io_data_read(struct snapraid_io* io, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)
+static struct snapraid_task* io_data_read_thread(struct snapraid_io* io, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)
 {
-	return io_task_read(io, io->data_base, io->data_count, pos, waiting_map, waiting_mac);
+	return io_task_read_thread(io, io->data_base, io->data_count, pos, waiting_map, waiting_mac);
 }
 
-struct snapraid_task* io_parity_read(struct snapraid_io* io, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)
+static struct snapraid_task* io_parity_read_thread(struct snapraid_io* io, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)
 {
-	return io_task_read(io, io->parity_base, io->parity_count, pos, waiting_map, waiting_mac);
+	return io_task_read_thread(io, io->parity_base, io->parity_count, pos, waiting_map, waiting_mac);
 }
 
-void io_parity_write(struct snapraid_io* io, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)
+static void io_parity_write_thread(struct snapraid_io* io, unsigned* pos, unsigned* waiting_map, unsigned* waiting_mac)
 {
 	unsigned waiting_cycle;
 
@@ -729,7 +761,7 @@ static void* io_writer_thread(void* arg)
 	return 0;
 }
 
-void io_start(struct snapraid_io* io,
+static void io_start_thread(struct snapraid_io* io,
 	block_off_t blockstart, block_off_t blockmax,
 	int (*block_is_enabled)(void* arg, block_off_t), void* blockarg)
 {
@@ -781,7 +813,7 @@ void io_start(struct snapraid_io* io,
 	}
 }
 
-void io_stop(struct snapraid_io* io)
+static void io_stop_thread(struct snapraid_io* io)
 {
 	unsigned i;
 
@@ -812,6 +844,154 @@ void io_stop(struct snapraid_io* io)
 
 		/* wait for thread termination */
 		thread_join(worker->thread, &retval);
+	}
+}
+
+/*****************************************************************************/
+/* global */
+
+void io_init(struct snapraid_io* io, struct snapraid_state* state,
+	unsigned io_cache, unsigned buffer_max,
+	void (*data_reader)(struct snapraid_worker*, struct snapraid_task*),
+	struct snapraid_handle* handle_map, unsigned handle_max,
+	void (*parity_reader)(struct snapraid_worker*, struct snapraid_task*),
+	void (*parity_writer)(struct snapraid_worker*, struct snapraid_task*),
+	struct snapraid_parity_handle* parity_handle_map, unsigned parity_handle_max)
+{
+	unsigned i;
+	size_t allocated;
+
+	io->state = state;
+	if (io_cache == 0) {
+		/* default is 8 MiB of cache */
+		/* this seems to be a good tradeoff between speed and memory usage */
+		io->io_max = 8 * 1024 * 1024 / state->block_size;
+		if (io->io_max < IO_MIN)
+			io->io_max = IO_MIN;
+		if (io->io_max > IO_MAX)
+			io->io_max = IO_MAX;
+	} else {
+		io->io_max = io_cache;
+	}
+
+	assert(io->io_max == 1 || (io->io_max >= IO_MIN && io->io_max <= IO_MAX));
+
+	io->buffer_max = buffer_max;
+	allocated = 0;
+	for (i = 0; i < io->io_max; ++i) {
+		io->buffer_map[i] = malloc_nofail_vector_align(handle_max, buffer_max, state->block_size, &io->buffer_alloc_map[i]);
+		if (!state->opt.skip_self)
+			mtest_vector(io->buffer_max, state->block_size, io->buffer_map[i]);
+		allocated += state->block_size * buffer_max;
+	}
+
+	msg_progress("Using %u MiB of memory for %u blocks of IO cache.\n", (unsigned)(allocated / MEBI), io->io_max);
+
+	if (parity_writer) {
+		io->reader_max = handle_max;
+		io->writer_max = parity_handle_max;
+	} else {
+		io->reader_max = handle_max + parity_handle_max;
+		io->writer_max = 0;
+	}
+
+	io->reader_map = malloc_nofail(sizeof(struct snapraid_worker) * io->reader_max);
+	io->reader_list = malloc_nofail(io->reader_max + 1);
+	io->writer_map = malloc_nofail(sizeof(struct snapraid_worker) * io->writer_max);
+	io->writer_list = malloc_nofail(io->writer_max + 1);
+
+	io->data_base = 0;
+	io->data_count = handle_max;
+	io->parity_base = handle_max;
+	io->parity_count = parity_handle_max;
+
+	for (i = 0; i < io->reader_max; ++i) {
+		struct snapraid_worker* worker = &io->reader_map[i];
+
+		worker->io = io;
+
+		if (i < handle_max) {
+			/* it's a data read */
+			worker->handle = &handle_map[i];
+			worker->parity_handle = 0;
+			worker->func = data_reader;
+
+			/* data read is put in lower buffer index */
+			worker->buffer_skew = 0;
+		} else {
+			/* it's a parity read */
+			worker->handle = 0;
+			worker->parity_handle = &parity_handle_map[i - handle_max];
+			worker->func = parity_reader;
+
+			/* parity read is put after data and computed parity */
+			worker->buffer_skew = parity_handle_max;
+		}
+	}
+
+	for (i = 0; i < io->writer_max; ++i) {
+		struct snapraid_worker* worker = &io->writer_map[i];
+
+		worker->io = io;
+
+		/* it's a parity write */
+		worker->handle = 0;
+		worker->parity_handle = &parity_handle_map[i];
+		worker->func = parity_writer;
+
+		/* parity to write is put after data */
+		worker->buffer_skew = handle_max;
+	}
+
+	if (io_thread(io)) {
+		io_read_next = io_read_next_thread;
+		io_write_preset = io_write_preset_thread;
+		io_write_next = io_write_next_thread;
+		io_refresh = io_refresh_thread;
+		io_data_read = io_data_read_thread;
+		io_parity_read = io_parity_read_thread;
+		io_parity_write = io_parity_write_thread;
+		io_start = io_start_thread;
+		io_stop = io_stop_thread;
+
+		thread_mutex_init(&io->io_mutex, 0);
+		thread_cond_init(&io->read_done, 0);
+		thread_cond_init(&io->read_sched, 0);
+		thread_cond_init(&io->write_done, 0);
+		thread_cond_init(&io->write_sched, 0);
+	} else {
+		io_read_next = io_read_next_mono;
+		io_write_preset = io_write_preset_mono;
+		io_write_next = io_write_next_mono;
+		io_refresh = io_refresh_mono;
+		io_data_read = io_data_read_mono;
+		io_parity_read = io_parity_read_mono;
+		io_parity_write = io_parity_write_mono;
+		io_start = io_start_mono;
+		io_stop = io_stop_mono;
+	}
+}
+
+void io_done(struct snapraid_io* io)
+{
+	unsigned i;
+
+	for (i = 0; i < io->io_max; ++i) {
+		free(io->buffer_map[i]);
+		free(io->buffer_alloc_map[i]);
+	}
+
+	free(io->reader_map);
+	free(io->reader_list);
+	free(io->writer_map);
+	free(io->writer_list);
+
+	if (io_thread(io)) {
+		thread_mutex_destroy(&io->io_mutex);
+		thread_cond_destroy(&io->read_done);
+		thread_cond_destroy(&io->read_sched);
+		thread_cond_destroy(&io->write_done);
+		thread_cond_destroy(&io->write_sched);
 	}
 }
 
