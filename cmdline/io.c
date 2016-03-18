@@ -20,18 +20,6 @@
 #include "io.h"
 
 /**
- * At now pthread is required.
- */
-#if !HAVE_PTHREAD
-#error Pthread library is required for InputOutput!
-#endif
-
-static inline int io_thread(struct snapraid_io* io)
-{
-	return io->io_max > 1;
-}
-
-/**
  * Get the next block position to process.
  */
 static block_off_t io_position_next(struct snapraid_io* io)
@@ -272,6 +260,9 @@ static void io_stop_mono(struct snapraid_io* io)
 
 /*****************************************************************************/
 /* multi thread */
+
+/* disable multithread if pthread is not present */
+#if HAVE_PTHREAD
 
 /**
  * Get the next task to work on for a reader.
@@ -847,6 +838,8 @@ static void io_stop_thread(struct snapraid_io* io)
 	}
 }
 
+#endif
+
 /*****************************************************************************/
 /* global */
 
@@ -862,6 +855,8 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 	size_t allocated;
 
 	io->state = state;
+
+#if HAVE_PTHREAD
 	if (io_cache == 0) {
 		/* default is 8 MiB of cache */
 		/* this seems to be a good tradeoff between speed and memory usage */
@@ -873,6 +868,12 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 	} else {
 		io->io_max = io_cache;
 	}
+#else
+	(void)io_cache;
+
+	/* without pthread force the mono thread mode */
+	io->io_max = 1;
+#endif
 
 	assert(io->io_max == 1 || (io->io_max >= IO_MIN && io->io_max <= IO_MAX));
 
@@ -943,7 +944,8 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 		worker->buffer_skew = handle_max;
 	}
 
-	if (io_thread(io)) {
+#if HAVE_PTHREAD
+	if (io->io_max > 1) {
 		io_read_next = io_read_next_thread;
 		io_write_preset = io_write_preset_thread;
 		io_write_next = io_write_next_thread;
@@ -959,7 +961,9 @@ void io_init(struct snapraid_io* io, struct snapraid_state* state,
 		thread_cond_init(&io->read_sched, 0);
 		thread_cond_init(&io->write_done, 0);
 		thread_cond_init(&io->write_sched, 0);
-	} else {
+	} else
+#endif
+	{
 		io_read_next = io_read_next_mono;
 		io_write_preset = io_write_preset_mono;
 		io_write_next = io_write_next_mono;
@@ -986,12 +990,14 @@ void io_done(struct snapraid_io* io)
 	free(io->writer_map);
 	free(io->writer_list);
 
-	if (io_thread(io)) {
+#if HAVE_PTHREAD
+	if (io->io_max > 1) {
 		thread_mutex_destroy(&io->io_mutex);
 		thread_cond_destroy(&io->read_done);
 		thread_cond_destroy(&io->read_sched);
 		thread_cond_destroy(&io->write_done);
 		thread_cond_destroy(&io->write_sched);
 	}
+#endif
 }
 
