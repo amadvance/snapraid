@@ -34,10 +34,10 @@
  */
 #define __USE_MINGW_ANSI_STDIO 1
 
-/*
- * Define the MSVCRT version targetting Windows XP.
+/**
+ * Define the MSVCRT version targetting Windows Vista.
  */
-#define __MSVCRT_VERSION__ 0x0601
+#define __MSVCRT_VERSION__ 0x0600
 
 /**
  * Include Windows Vista headers.
@@ -45,6 +45,11 @@
  * Like for InitializeCriticalSection().
  */
 #define _WIN32_WINNT 0x600
+
+/**
+ * Enable the rand_s() function.l
+ */
+#define _CRT_RAND_S
 
 #include <windows.h>
 #endif

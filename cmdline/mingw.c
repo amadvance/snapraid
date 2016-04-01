@@ -130,12 +130,11 @@ void os_init(int opt)
 	/* check for Wine presence */
 	is_wine = GetProcAddress(ntdll, "wine_get_version") != 0;
 
-	/* load functions not always available */
+	/* setup the standard random generator used as fallback */
+	srand(GetTickCount());
+
+	/* get pointer to RtlGenRandom, note that it was reported missing in some cases */
 	ptr_RtlGenRandom = (void*)GetProcAddress(dll_advapi32, "SystemFunction036");
-	if (!ptr_RtlGenRandom) {
-		log_fatal("Error loading RtlGenRandom() from the ADVAPI32 module.\n");
-		exit(EXIT_FAILURE);
-	}
 
 	/* set the thread execution level to avoid sleep */
 	/* first try for Windows 7 */
@@ -1797,12 +1796,30 @@ uint64_t tick_ms(void)
 	return GetTickCount();
 }
 
-int randomize(void* ptr, size_t size)
+int randomize(void* void_ptr, size_t size)
 {
-	if (!ptr_RtlGenRandom(ptr, size)) {
-		windows_errno(GetLastError());
-		return -1;
+	size_t i;
+	unsigned char* ptr = void_ptr;
+
+	/* try RtlGenRandom */
+	if (ptr_RtlGenRandom != 0 && ptr_RtlGenRandom(ptr, size) != 0)
+		return 0;
+
+	/* try rand_s */
+	for (i = 0; i < size; ++i) {
+		unsigned v = 0;
+
+		if (rand_s(&v) != 0)
+			break;
+
+		ptr[i] = v;
 	}
+	if (i == size)
+		return 0;
+
+	/* fallback to standard rand */
+	for (i = 0; i < size; ++i)
+		ptr[i] = rand();
 
 	return 0;
 }
