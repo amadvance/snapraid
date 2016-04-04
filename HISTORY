@@ -1,12 +1,14 @@
 SnapRAID HISTORY
 ================
 
-10.1 2016/03
+10.1 2016/04
 ============
  * In the Windows version allow to use the escape char '^' to handle
    file patterns containing real characters matching the globbing '*?[]'
    ones. In Unix it was already possible to do the same escaping with
    '\'.
+ * Fixed running in Windows platforms that miss the RtlGenRandom
+   function.
  * Added the --test-io-cache=1 option to disable the multithread IO
    mode.
 
