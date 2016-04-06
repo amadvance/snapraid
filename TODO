@@ -5,14 +5,19 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
-* Allow to disable multithread
-
-- Minor
+* Use smaller hashes to reduce the memory occupation. We can truncate the 128 bits hash
+to 32 or 64 bits and reduce the memory usage by a factor of 4 or 2.
+ZFS, and Btrfs supports the 32 bit CRCs. To identify bad blocks it should be enough.
+But this likely means to drop the dup and --import feature. We cannot trust a 32 bits hash
+as a 128 bits one to search for blocks.
+It should be optional, only for architectures with very low memory.
 
 * Allow to specify more than one partition for each parity disk.
 Checking the UUID, we can avoid that users mess-up with disk specifications.
 See discussion at:
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/02b2a2ae/
+
+- Minor
 
 * How to handle corrupt copied/moved files ? At now pre-hash checks them,
 but if a corruption is found, it stops the sync process.
@@ -114,13 +119,6 @@ Unix using ZFS.
 See Jens's Windows script at: http://sourceforge.net/p/snapraid/discussion/1677233/thread/a1707211/
 Note that a different between Windows and Unix is that in Windows old snapshots
 are automatically deleted.
-
-* Use smaller hashes to reduce the memory occupation. We can truncate the 128 bits hash
-to 32 or 64 bits and reduce the memory usage by a factor of 4 or 2.
-ZFS, and Btrfs supports the 32 bit CRCs. To identify bad blocks it should be enough.
-But this likely means to drop the dup and --import feature. We cannot trust a 32 bits hash
-as a 128 bits one to search for blocks.
-It should be optional, only for architectures with very low memory.
 
 Rejected TODO
 =============
