@@ -609,6 +609,37 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				/* LCOV_EXCL_STOP */
 			}
 			state->block_size *= KIBI;
+		} else if (strcmp(tag, "hash_size") == 0) {
+			uint32_t hash_size;
+
+			ret = sgetu32(f, &hash_size);
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				log_fatal("Invalid 'hashsize' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+			if (hash_size < 2) {
+				/* LCOV_EXCL_START */
+				log_fatal("Too small 'hashsize' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+			if (hash_size > HASH_MAX) {
+				/* LCOV_EXCL_START */
+				log_fatal("Too big 'hashsize' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+			/* check if it's a power of 2 */
+			if ((hash_size & (hash_size - 1)) != 0) {
+				/* LCOV_EXCL_START */
+				log_fatal("Not power of 2 'hashsize' specification in '%s' at line %u\n", path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			BLOCK_HASH_SIZE = hash_size;
 		} else if (lev_config_scan(tag, &level, &state->raid_mode) == 0) {
 			char device[PATH_MAX];
 			char* slash;
@@ -1710,9 +1741,12 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	 *  - SNAPCNT2/SnapRAID 7.0 Adds entries 'M' and 'P', to add free_blocks support.
 	 *    The previous 'm' entry is now deprecated, but supported for importing.
 	 *    Similarly for text file, we add 'mapping' and 'parity' deprecating 'map'.
+	 *  - SNAPCNT3/SnapRAID 11.0 Adds entry 'y' for hash size.
 	 */
 	if (memcmp(buffer, "SNAPCNT1\n\3\0\0", 12) != 0
-		&& memcmp(buffer, "SNAPCNT2\n\3\0\0", 12) != 0) {
+		&& memcmp(buffer, "SNAPCNT2\n\3\0\0", 12) != 0
+		&& memcmp(buffer, "SNAPCNT3\n\3\0\0", 12) != 0
+	) {
 		/* LCOV_EXCL_START */
 		if (memcmp(buffer, "SNAPCNT", 7) != 0) {
 			decoding_error(path, f);
@@ -2365,9 +2399,9 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 		} else if (c == 'z') {
-			block_off_t blksize;
+			uint32_t block_size;
 
-			ret = sgetb32(f, &blksize);
+			ret = sgetb32(f, &block_size);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
@@ -2375,7 +2409,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			if (blksize == 0) {
+			if (block_size == 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
 				log_fatal("Zero 'blocksize' specification in the content file!\n");
@@ -2385,14 +2419,46 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 
 			/* without configuration, auto assign the block size */
 			if (state->no_conf) {
-				state->block_size = blksize;
+				state->block_size = block_size;
 			}
 
-			if (blksize != state->block_size) {
+			if (block_size != state->block_size) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
 				log_fatal("Mismatching 'blocksize' specification in the content file!\n");
-				log_fatal("Please restore the 'blocksize' value in the configuration file to '%u'\n", blksize / KIBI);
+				log_fatal("Please restore the 'blocksize' value in the configuration file to '%u'\n", block_size / KIBI);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+		} else if (c == 'y') {
+			uint32_t hash_size;
+
+			ret = sgetb32(f, &hash_size);
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				os_abort();
+				/* LCOV_EXCL_STOP */
+			}
+
+			if (hash_size < 2 || hash_size > HASH_MAX) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal("Invalid 'hashsize' specification in the content file!\n");
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			/* without configuration, auto assign the block size */
+			if (state->no_conf) {
+				BLOCK_HASH_SIZE = hash_size;
+			}
+
+			if ((int)hash_size != BLOCK_HASH_SIZE) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal("Mismatching 'hashsize' specification in the content file!\n");
+				log_fatal("Please restore the 'hashsize' value in the configuration file to '%u'\n", hash_size);
 				exit(EXIT_FAILURE);
 				/* LCOV_EXCL_STOP */
 			}
@@ -2658,13 +2724,25 @@ static void* state_write_thread(void* arg)
 	count_dir = 0;
 
 	/* write header */
-	swrite("SNAPCNT2\n\3\0\0", 12, f);
+	if (BLOCK_HASH_SIZE == HASH_MAX) {
+		swrite("SNAPCNT2\n\3\0\0", 12, f);
+	} else {
+		/* use version 3 only if the hash size is not standard */
+		swrite("SNAPCNT3\n\3\0\0", 12, f);
+	}
 
 	/* write block size and block max */
 	sputc('z', f);
 	sputb32(state->block_size, f);
 	sputc('x', f);
 	sputb32(blockmax, f);
+
+	/* write hash size only if not the standard one */
+	if (BLOCK_HASH_SIZE != HASH_MAX) {
+		sputc('y', f);
+		sputb32(BLOCK_HASH_SIZE, f);
+	}
+
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
@@ -4347,6 +4425,9 @@ void generate_configuration(const char* path)
 	printf("\n");
 	printf("# Use this blocksize\n");
 	printf("blocksize %u\n", state.block_size / KIBI);
+	printf("\n");
+	printf("# Use this hashsize\n");
+	printf("hashsize %u\n", BLOCK_HASH_SIZE);
 	printf("\n");
 	for (i = 0; i < state.level; ++i) {
 		printf("# Set the correct path for the %s file\n", lev_name(i));

@@ -1043,7 +1043,11 @@ Configuration
 	For example with 8 disks of 4 TB and a block size of 256 KiB
 	(1 KiB = 1024 bytes) you have:
 
-	:RAM = (8 * 4 * 10^12) * 17 / (256 * 2^10) = 1.9 GiB
+	:RAM = (8 * 4 * 10^12) * 17 / (256 * 2^10) = 1.93 GiB
+
+	Switching to a block size of 512 KiB, you have:
+
+	:RAM = (8 * 4 * 10^12) * 17 / (512 * 2^10) = 0.97 GiB
 
 	Another reason to use a different blocksize is if you have a lot of
 	small files. In the order of many millions.
@@ -1080,6 +1084,28 @@ Configuration
 	This results in about 1.5% of extra space. Meaning about 60 GB for
 	a 4 TB disk, that allows about 460000 files in each data disk without
 	any wasted space.
+
+  hashsize SIZE_IN_BYTES
+	Defines the basic hash size in bytes of the saved blocks.
+	The default hashsize is 16 bytes -> 128 bits, and it should work
+	for most cases.
+
+	A reason to use a different hashsize is if your system has less
+	than 1 GiB of memory. As a rule of thumb, with 1 GiB or more memory
+	use the default 16, with 512 MiB use 8, and with 256 GiB use 4.
+
+	In more details SnapRAID requires about TS*(1+HS)/BS bytes of RAM memory.
+	Where TS is the total size in bytes of your disk array, BS is the
+	block size in bytes, and HS is the hash size in bytes.
+
+	For example with 8 disks of 4 TB and a block size of 256 KiB
+	(1 KiB = 1024 bytes), and an hash size of 16, you have:
+
+	:RAM = (8 * 4 * 10^12) * (1+16) / (256 * 2^10) = 1.93 GiB
+
+	Switching to a hash size of 8, you have:
+
+	:RAM = (8 * 4 * 10^12) * (1+8) / (256 * 2^10) = 1.02 GiB
 
   autosave SIZE_IN_GIGABYTES
 	Automatically save the state when syncing or scrubbing after the specified amount

@@ -51,9 +51,16 @@ exclude /tmp/
 exclude /lost+found/
 
 # Defines the block size in kibi bytes (1024 bytes) (uncomment to enable).
+# WARNING: Changing this value is for experts only!
 # Default value is 256 -> 256 kibi bytes -> 262144 bytes
 # Format: "blocksize SIZE_IN_KiB"
 #blocksize 256
+
+# Defines the hash size in bytes (uncomment to enable).
+# WARNING: Changing this value is for experts only!
+# Default value is 16 -> 128 bits
+# Format: "hashsize SIZE_IN_BYTES"
+#hashsize 16
 
 # Automatically save the state when syncing after the specified amount
 # of GB processed (uncomment to enable).
