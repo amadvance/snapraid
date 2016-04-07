@@ -165,11 +165,24 @@ struct snapraid_filter {
 #define BLOCK_STATE_DELETED 4
 
 /**
+ * Block hash size.
+ *
+ * At max HASH_MAX.
+ */
+extern int BLOCK_HASH_SIZE;
+
+/**
  * Block of a file.
  */
 struct snapraid_block {
-	unsigned char hash[HASH_SIZE]; /**< Hash of the block. */
 	unsigned char state; /**< State of the block. */
+
+	/**
+	 * Hash of the block.
+	 *
+	 * The effective stored size is BLOCK_HASH_SIZE.
+	 */
+	unsigned char hash[HASH_MAX];
 };
 
 /**
@@ -526,9 +539,9 @@ int filter_content(tommy_list* contentlist, const char* path);
  */
 static inline int hash_is_invalid(const unsigned char* hash)
 {
-	unsigned i;
+	int i;
 
-	for (i = 0; i < HASH_SIZE; ++i)
+	for (i = 0; i < BLOCK_HASH_SIZE; ++i)
 		if (hash[i] != 0x00)
 			return 0;
 
@@ -542,9 +555,9 @@ static inline int hash_is_invalid(const unsigned char* hash)
  */
 static inline int hash_is_zero(const unsigned char* hash)
 {
-	unsigned i;
+	int i;
 
-	for (i = 0; i < HASH_SIZE; ++i)
+	for (i = 0; i < BLOCK_HASH_SIZE; ++i)
 		if (hash[i] != 0xFF)
 			return 0;
 
@@ -564,7 +577,7 @@ static inline int hash_is_real(const unsigned char* hash)
  */
 static inline void hash_invalid_set(unsigned char* hash)
 {
-	memset(hash, 0x00, HASH_SIZE);
+	memset(hash, 0x00, BLOCK_HASH_SIZE);
 }
 
 /**
@@ -572,7 +585,15 @@ static inline void hash_invalid_set(unsigned char* hash)
  */
 static inline void hash_zero_set(unsigned char* hash)
 {
-	memset(hash, 0xFF, HASH_SIZE);
+	memset(hash, 0xFF, BLOCK_HASH_SIZE);
+}
+
+/**
+ * Allocated space for block.
+ */
+static inline size_t block_sizeof(void)
+{
+	return 1 + BLOCK_HASH_SIZE;
 }
 
 /**
@@ -699,6 +720,18 @@ void file_rename(struct snapraid_file* file, const char* sub);
  * Copy a file.
  */
 void file_copy(struct snapraid_file* src_file, struct snapraid_file* dest_file);
+
+/**
+ * Return the block at the specified position.
+ *
+ * Note that the block size if a runtime value.
+ */
+static inline struct snapraid_block* file_block(struct snapraid_file* file, size_t pos)
+{
+	unsigned char* ptr = (unsigned char*)file->blockvec;
+
+	return (struct snapraid_block*)(ptr + pos * block_sizeof());
+}
 
 /**
  * Return the name of the file, without the dir.

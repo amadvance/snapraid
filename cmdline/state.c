@@ -1150,7 +1150,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	state->hash = state->besthash;
 
 	/* by default use a random hash seed */
-	if (randomize(state->hashseed, HASH_SIZE) != 0) {
+	if (randomize(state->hashseed, HASH_MAX) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Failed to get random values.\n");
 		exit(EXIT_FAILURE);
@@ -1904,7 +1904,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 
 					/* read the hash only for 'blk/chg/rep', and not for 'new' */
 					if (c != 'n') {
-						ret = sread(f, block->hash, HASH_SIZE);
+						ret = sread(f, block->hash, BLOCK_HASH_SIZE);
 						if (ret < 0) {
 							/* LCOV_EXCL_START */
 							decoding_error(path, f);
@@ -2123,7 +2123,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 						block_state_set(block, BLOCK_STATE_DELETED);
 
 						/* read the hash */
-						ret = sread(f, block->hash, HASH_SIZE);
+						ret = sread(f, block->hash, BLOCK_HASH_SIZE);
 						if (ret < 0) {
 							/* LCOV_EXCL_START */
 							decoding_error(path, f);
@@ -2330,7 +2330,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			}
 
 			/* read the seed */
-			ret = sread(f, state->hashseed, HASH_SIZE);
+			ret = sread(f, state->hashseed, HASH_MAX);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
@@ -2357,7 +2357,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			}
 
 			/* read the seed */
-			ret = sread(f, state->prevhashseed, HASH_SIZE);
+			ret = sread(f, state->prevhashseed, HASH_MAX);
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
@@ -2683,7 +2683,7 @@ static void* state_write_thread(void* arg)
 		return context;
 		/* LCOV_EXCL_STOP */
 	}
-	swrite(state->hashseed, HASH_SIZE, f);
+	swrite(state->hashseed, HASH_MAX, f);
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
@@ -2706,7 +2706,7 @@ static void* state_write_thread(void* arg)
 				return context;
 				/* LCOV_EXCL_STOP */
 			}
-			swrite(state->prevhashseed, HASH_SIZE, f);
+			swrite(state->prevhashseed, HASH_MAX, f);
 			if (serror(f)) {
 				/* LCOV_EXCL_START */
 				log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
@@ -2847,7 +2847,7 @@ static void* state_write_thread(void* arg)
 				for (idx = begin; idx < end; ++idx) {
 					struct snapraid_block* block = fs_file2block_get(file, idx);
 
-					swrite(block->hash, HASH_SIZE, f);
+					swrite(block->hash, BLOCK_HASH_SIZE, f);
 				}
 
 				if (serror(f)) {
@@ -2941,7 +2941,7 @@ static void* state_write_thread(void* arg)
 				while (begin < end) {
 					struct snapraid_block* block = fs_par2block_get(disk, begin);
 
-					swrite(block->hash, HASH_SIZE, f);
+					swrite(block->hash, BLOCK_HASH_SIZE, f);
 
 					++begin;
 				}
@@ -3457,7 +3457,7 @@ void state_read(struct snapraid_state* state)
 	state->hash = HASH_UNDEFINED;
 
 	/* start with a zero seed, it was the default in old versions */
-	memset(state->hashseed, 0, HASH_SIZE);
+	memset(state->hashseed, 0, HASH_MAX);
 
 	/* previous hash, start with an undefined value */
 	state->prevhash = HASH_UNDEFINED;

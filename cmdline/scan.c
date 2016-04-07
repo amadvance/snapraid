@@ -220,7 +220,7 @@ static void scan_file_allocate(struct snapraid_scan* scan, struct snapraid_file*
 				assert(over_state == BLOCK_STATE_DELETED);
 
 				/* copy the past hash of the block */
-				memcpy(block->hash, over_block->hash, HASH_SIZE);
+				memcpy(block->hash, over_block->hash, BLOCK_HASH_SIZE);
 
 				/* if we have not already cleared the past hash */
 				if (!state->clear_past_hash) {

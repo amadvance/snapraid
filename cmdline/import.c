@@ -31,7 +31,7 @@ int import_block_hash_compare(const void* void_arg, const void* void_data)
 	const unsigned char* arg = void_arg;
 	const struct snapraid_import_block* block = void_data;
 
-	return memcmp(arg, block->hash, HASH_SIZE);
+	return memcmp(arg, block->hash, BLOCK_HASH_SIZE);
 }
 
 int import_block_prevhash_compare(const void* void_arg, const void* void_data)
@@ -39,7 +39,7 @@ int import_block_prevhash_compare(const void* void_arg, const void* void_data)
 	const unsigned char* arg = void_arg;
 	const struct snapraid_import_block* block = void_data;
 
-	return memcmp(arg, block->prevhash, HASH_SIZE);
+	return memcmp(arg, block->prevhash, BLOCK_HASH_SIZE);
 }
 
 /**
@@ -158,7 +158,7 @@ int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid
 	const unsigned char* hash = missing_block->hash;
 	unsigned block_size = state->block_size;
 	unsigned read_size;
-	unsigned char buffer_hash[HASH_SIZE];
+	unsigned char buffer_hash[HASH_MAX];
 	const char* path;
 
 	if (rehash) {
@@ -212,7 +212,7 @@ int state_import_fetch(struct snapraid_state* state, int rehash, struct snapraid
 	else
 		memhash(state->hash, state->hashseed, buffer_hash, buffer, read_size);
 
-	if (memcmp(buffer_hash, hash, HASH_SIZE) != 0) {
+	if (memcmp(buffer_hash, hash, BLOCK_HASH_SIZE) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Error in data reading file '%s'.\n", path);
 		log_fatal("Please don't change imported files while running.\n");

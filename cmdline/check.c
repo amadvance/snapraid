@@ -69,7 +69,7 @@ struct failed_struct {
  */
 static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_block* block, unsigned pos_size, unsigned char* buffer, unsigned char* buffer_zero)
 {
-	unsigned char hash[HASH_SIZE];
+	unsigned char hash[HASH_MAX];
 
 	/* now compute the hash of the valid part */
 	if (rehash) {
@@ -79,7 +79,7 @@ static int blockcmp(struct snapraid_state* state, int rehash, struct snapraid_bl
 	}
 
 	/* compare the hash */
-	if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
+	if (memcmp(hash, block->hash, BLOCK_HASH_SIZE) != 0) {
 		return -1;
 	}
 
@@ -937,7 +937,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		/* for each disk, process the block */
 		for (j = 0; j < diskmax; ++j) {
 			int read_size;
-			unsigned char hash[HASH_SIZE];
+			unsigned char hash[HASH_MAX];
 			struct snapraid_disk* disk;
 			struct snapraid_block* block;
 			struct snapraid_file* file;
@@ -1166,8 +1166,8 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			}
 
 			/* compare the hash */
-			if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
-				unsigned diff = memdiff(hash, block->hash, HASH_SIZE);
+			if (memcmp(hash, block->hash, BLOCK_HASH_SIZE) != 0) {
+				unsigned diff = memdiff(hash, block->hash, BLOCK_HASH_SIZE);
 
 				/* save the failed block for the check/fix */
 				failed[failed_count].is_bad = 1; /* it's bad because the hash doesn't match */

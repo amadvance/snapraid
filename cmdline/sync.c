@@ -103,7 +103,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			int rehash;
 			struct snapraid_block* block;
 			int read_size;
-			unsigned char hash[HASH_SIZE];
+			unsigned char hash[HASH_MAX];
 			unsigned block_state;
 			struct snapraid_file* file;
 			block_off_t file_pos;
@@ -262,7 +262,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 
 			if (block_state == BLOCK_STATE_REP) {
 				/* compare the hash */
-				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
+				if (memcmp(hash, block->hash, BLOCK_HASH_SIZE) != 0) {
 					log_tag("error:%u:%s:%s: Unexpected data change\n", i, disk->name, esc(file->sub, esc_buffer));
 					log_error("Data change at file '%s' at position '%u'\n", handle[j].path, file_pos);
 					log_error("WARNING! Unexpected data modification of a file without parity!\n");
@@ -288,7 +288,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				assert(block_state == BLOCK_STATE_CHG);
 
 				/* copy the hash in the block */
-				memcpy(block->hash, hash, HASH_SIZE);
+				memcpy(block->hash, hash, BLOCK_HASH_SIZE);
 
 				/* and mark the block as hashed */
 				block_state_set(block, BLOCK_STATE_REP);
@@ -430,7 +430,7 @@ int failed_compare_by_index(const void* void_a, const void* void_b)
  * Buffer for storing the new hashes.
  */
 struct snapraid_rehash {
-	unsigned char hash[HASH_SIZE];
+	unsigned char hash[HASH_MAX];
 	struct snapraid_block* block;
 };
 
@@ -820,7 +820,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		for (j = 0; j < diskmax; ++j) {
 			struct snapraid_task* task;
 			int read_size;
-			unsigned char hash[HASH_SIZE];
+			unsigned char hash[HASH_MAX];
 			struct snapraid_block* block;
 			unsigned block_state;
 			struct snapraid_disk* disk;
@@ -933,7 +933,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 			if (block_has_updated_hash(block)) {
 				/* compare the hash */
-				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
+				if (memcmp(hash, block->hash, BLOCK_HASH_SIZE) != 0) {
 					/* if the file has invalid parity, it's a REP changed during the sync */
 					if (block_has_invalid_parity(block)) {
 						log_tag("error:%u:%s:%s: Unexpected data change\n", blockcur, disk->name, esc(file->sub, esc_buffer));
@@ -956,7 +956,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 						error_on_this_block = 1;
 						continue;
 					} else { /* otherwise it's a BLK with silent error */
-						unsigned diff = memdiff(hash, block->hash, HASH_SIZE);
+						unsigned diff = memdiff(hash, block->hash, BLOCK_HASH_SIZE);
 						log_tag("error:%u:%s:%s: Data error at position %u, diff bits %u\n", blockcur, disk->name, esc(file->sub, esc_buffer), file_pos, diff);
 						log_error("Data error in file '%s' at position '%u', diff bits %u\n", task->path, file_pos, diff);
 
@@ -985,7 +985,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					/* if there is an hash */
 					if (hash_is_real(block->hash)) {
 						/* check if the hash is changed */
-						if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
+						if (memcmp(hash, block->hash, BLOCK_HASH_SIZE) != 0) {
 							/* the block is different, and we must update parity */
 							parity_needs_to_be_updated = 1;
 						}
@@ -997,7 +997,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 				/* copy the hash in the block, but doesn't mark the block as hashed */
 				/* this allow in case of skipped block to do not save the failed computation */
-				memcpy(block->hash, hash, HASH_SIZE);
+				memcpy(block->hash, hash, BLOCK_HASH_SIZE);
 
 				/* note that in case of rehash, this is the wrong hash, */
 				/* but it will be overwritten later */
@@ -1101,7 +1101,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 					/* check the result and prepare the data */
 					for (j = 0; j < failed_count; ++j) {
-						unsigned char hash[HASH_SIZE];
+						unsigned char hash[HASH_MAX];
 						unsigned char* block_buffer = buffer[failed[j].index];
 						unsigned char* block_copy = copy[failed[j].index];
 						unsigned block_state = block_state_get(failed[j].block);
@@ -1120,7 +1120,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 							state_usage_hash(state);
 
 							/* if the hash doesn't match */
-							if (memcmp(hash, failed[j].block->hash, HASH_SIZE) != 0) {
+							if (memcmp(hash, failed[j].block->hash, BLOCK_HASH_SIZE) != 0) {
 								/* we have not recovered */
 								break;
 							}
@@ -1197,7 +1197,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					/* store all the new hash already computed */
 					for (j = 0; j < diskmax; ++j) {
 						if (rehandle[j].block)
-							memcpy(rehandle[j].block->hash, rehandle[j].hash, HASH_SIZE);
+							memcpy(rehandle[j].block->hash, rehandle[j].hash, BLOCK_HASH_SIZE);
 					}
 				}
 

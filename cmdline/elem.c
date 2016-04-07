@@ -24,6 +24,8 @@
 /****************************************************************************/
 /* snapraid */
 
+int BLOCK_HASH_SIZE = HASH_MAX;
+
 struct snapraid_content* content_alloc(const char* path, uint64_t dev)
 {
 	struct snapraid_content* content;
@@ -369,11 +371,12 @@ struct snapraid_file* file_alloc(unsigned block_size, const char* sub, data_off_
 	file->inode = inode;
 	file->physical = physical;
 	file->flag = 0;
-	file->blockvec = malloc_nofail(file->blockmax * sizeof(struct snapraid_block));
+	file->blockvec = malloc_nofail(file->blockmax * block_sizeof());
 
 	for (i = 0; i < file->blockmax; ++i) {
-		block_state_set(&file->blockvec[i], BLOCK_STATE_CHG);
-		hash_invalid_set(file->blockvec[i].hash);
+		struct snapraid_block* block = file_block(file, i);
+		block_state_set(block, BLOCK_STATE_CHG);
+		hash_invalid_set(block->hash);
 	}
 
 	return file;
@@ -393,11 +396,13 @@ struct snapraid_file* file_dup(struct snapraid_file* copy)
 	file->inode = copy->inode;
 	file->physical = copy->physical;
 	file->flag = copy->flag;
-	file->blockvec = malloc_nofail(file->blockmax * sizeof(struct snapraid_block));
+	file->blockvec = malloc_nofail(file->blockmax * block_sizeof());
 
 	for (i = 0; i < file->blockmax; ++i) {
-		file->blockvec[i].state = copy->blockvec[i].state;
-		memcpy(file->blockvec[i].hash, copy->blockvec[i].hash, HASH_SIZE);
+		struct snapraid_block* block = file_block(file, i);
+		struct snapraid_block* copy_block = file_block(copy, i);
+		block->state = copy_block->state;
+		memcpy(block->hash, copy_block->hash, BLOCK_HASH_SIZE);
 	}
 
 	return file;
@@ -445,10 +450,10 @@ void file_copy(struct snapraid_file* src_file, struct snapraid_file* dst_file)
 
 	for (i = 0; i < dst_file->blockmax; ++i) {
 		/* set a block with hash computed but without parity */
-		block_state_set(&dst_file->blockvec[i], BLOCK_STATE_REP);
+		block_state_set(file_block(dst_file, i), BLOCK_STATE_REP);
 
 		/* copy the hash */
-		memcpy(dst_file->blockvec[i].hash, src_file->blockvec[i].hash, HASH_SIZE);
+		memcpy(file_block(dst_file, i)->hash, file_block(src_file, i)->hash, BLOCK_HASH_SIZE);
 	}
 
 	file_flag_set(dst_file, FILE_IS_COPY);
@@ -1363,7 +1368,7 @@ struct snapraid_block* fs_file2block_get(struct snapraid_file* file, block_off_t
 		/* LCOV_EXCL_STOP */
 	}
 
-	return &file->blockvec[file_pos];
+	return file_block(file, file_pos);
 }
 
 struct snapraid_block* fs_par2block_find(struct snapraid_disk* disk, block_off_t parity_pos)

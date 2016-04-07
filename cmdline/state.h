@@ -134,8 +134,8 @@ struct snapraid_state {
 	char share[PATH_MAX]; /**< Path of the share tree. If !=0 pool links are created in a different way. */
 	char pool[PATH_MAX]; /**< Path of the pool tree. */
 	uint64_t pool_device; /**< Device identifier of the pool. */
-	unsigned char hashseed[HASH_SIZE]; /**< Hash seed. Just after a uint64 to provide a minimal alignment. */
-	unsigned char prevhashseed[HASH_SIZE]; /**< Previous hash seed. In case of rehash. */
+	unsigned char hashseed[HASH_MAX]; /**< Hash seed. Just after a uint64 to provide a minimal alignment. */
+	unsigned char prevhashseed[HASH_MAX]; /**< Previous hash seed. In case of rehash. */
 	char lockfile[PATH_MAX]; /**< Path of the lock file to use. */
 	unsigned level; /**< Number of parity levels. 1 for PAR1, 2 for PAR2. */
 	unsigned hash; /**< Hash kind used. */

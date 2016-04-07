@@ -82,8 +82,8 @@ void speed(int period)
 	int64_t ds;
 	int64_t dt;
 	int i, j;
-	unsigned char digest[HASH_SIZE];
-	unsigned char seed[HASH_SIZE];
+	unsigned char digest[HASH_MAX];
+	unsigned char seed[HASH_MAX];
 	int id[RAID_PARITY_MAX];
 	int ip[RAID_PARITY_MAX];
 	int count;
@@ -107,7 +107,7 @@ void speed(int period)
 	raid_zero(v[nd + RAID_PARITY_MAX]);
 
 	/* hash seed */
-	for (i = 0; i < HASH_SIZE; ++i)
+	for (i = 0; i < HASH_MAX; ++i)
 		seed[i] = i;
 
 	/* basic disks and parity mapping */

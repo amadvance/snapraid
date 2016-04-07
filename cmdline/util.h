@@ -169,8 +169,7 @@ void crc32c_init(void);
 /**
  * Size of the hash.
  */
-
-#define HASH_SIZE 16
+#define HASH_MAX 16
 
 /**
  * Hash kinds.

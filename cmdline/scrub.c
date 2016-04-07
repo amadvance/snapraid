@@ -32,7 +32,7 @@
  * Buffer for storing the new hashes.
  */
 struct snapraid_rehash {
-	unsigned char hash[HASH_SIZE];
+	unsigned char hash[HASH_MAX];
 	struct snapraid_block* block;
 };
 
@@ -357,7 +357,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 		for (j = 0; j < diskmax; ++j) {
 			struct snapraid_task* task;
 			int read_size;
-			unsigned char hash[HASH_SIZE];
+			unsigned char hash[HASH_MAX];
 			struct snapraid_block* block;
 			int file_is_unsynced;
 			struct snapraid_disk* disk;
@@ -466,8 +466,8 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 			if (block_has_updated_hash(block)) {
 				/* compare the hash */
-				if (memcmp(hash, block->hash, HASH_SIZE) != 0) {
-					unsigned diff = memdiff(hash, block->hash, HASH_SIZE);
+				if (memcmp(hash, block->hash, BLOCK_HASH_SIZE) != 0) {
+					unsigned diff = memdiff(hash, block->hash, BLOCK_HASH_SIZE);
 
 					log_tag("error:%u:%s:%s: Data error at position %u, diff bits %u\n", blockcur, disk->name, esc(file->sub, esc_buffer), file_pos, diff);
 
@@ -588,7 +588,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				/* store all the new hash already computed */
 				for (j = 0; j < diskmax; ++j) {
 					if (rehandle[j].block)
-						memcpy(rehandle[j].block->hash, rehandle[j].hash, HASH_SIZE);
+						memcpy(rehandle[j].block->hash, rehandle[j].hash, BLOCK_HASH_SIZE);
 				}
 			}
 

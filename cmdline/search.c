@@ -60,7 +60,7 @@ int search_file_compare(const void* void_arg, const void* void_data)
 	const struct search_file_compare_arg* arg = void_arg;
 	const struct snapraid_search_file* file = void_data;
 	const struct snapraid_state* state = arg->state;
-	unsigned char buffer_hash[HASH_SIZE];
+	unsigned char buffer_hash[HASH_MAX];
 	const char* path = file->path;
 	int f;
 	ssize_t ret;
@@ -112,7 +112,7 @@ int search_file_compare(const void* void_arg, const void* void_data)
 		memhash(state->hash, state->hashseed, buffer_hash, arg->buffer, arg->read_size);
 
 	/* check if the hash is matching */
-	if (memcmp(buffer_hash, arg->block->hash, HASH_SIZE) != 0)
+	if (memcmp(buffer_hash, arg->block->hash, BLOCK_HASH_SIZE) != 0)
 		return -1;
 
 	if (arg->read_size != state->block_size) {

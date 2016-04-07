@@ -30,7 +30,7 @@
 struct snapraid_hash {
 	struct snapraid_disk* disk; /**< Disk. */
 	struct snapraid_file* file; /**< File. */
-	unsigned char hash[HASH_SIZE]; /**< Hash of the whole file. */
+	unsigned char hash[HASH_MAX]; /**< Hash of the whole file. */
 
 	/* nodes for data structures */
 	tommy_hashdyn_node node;
@@ -46,13 +46,13 @@ struct snapraid_hash* hash_alloc(struct snapraid_state* state, struct snapraid_d
 	hash->disk = disk;
 	hash->file = file;
 
-	buf = malloc_nofail(file->blockmax * HASH_SIZE);
+	buf = malloc_nofail(file->blockmax * BLOCK_HASH_SIZE);
 
 	/* set the back pointer */
 	for (i = 0; i < file->blockmax; ++i) {
 		struct snapraid_block* block = fs_file2block_get(file, i);
 
-		memcpy(buf + i * HASH_SIZE, block->hash, HASH_SIZE);
+		memcpy(buf + i * BLOCK_HASH_SIZE, block->hash, BLOCK_HASH_SIZE);
 
 		if (!block_has_updated_hash(block)) {
 			free(buf);
@@ -61,7 +61,7 @@ struct snapraid_hash* hash_alloc(struct snapraid_state* state, struct snapraid_d
 		}
 	}
 
-	memhash(state->besthash, state->hashseed, hash->hash, buf, file->blockmax * HASH_SIZE);
+	memhash(state->besthash, state->hashseed, hash->hash, buf, file->blockmax * BLOCK_HASH_SIZE);
 
 	free(buf);
 
@@ -70,7 +70,7 @@ struct snapraid_hash* hash_alloc(struct snapraid_state* state, struct snapraid_d
 
 static inline tommy_uint32_t hash_hash(struct snapraid_hash* hash)
 {
-	return tommy_hash_u32(0, hash->hash, HASH_SIZE);
+	return tommy_hash_u32(0, hash->hash, HASH_MAX);
 }
 
 void hash_free(struct snapraid_hash* hash)
@@ -83,7 +83,7 @@ int hash_compare(const void* void_arg, const void* void_data)
 	const char* arg = void_arg;
 	const struct snapraid_hash* hash = void_data;
 
-	return memcmp(arg, hash->hash, HASH_SIZE);
+	return memcmp(arg, hash->hash, HASH_MAX);
 }
 
 void state_dup(struct snapraid_state* state)

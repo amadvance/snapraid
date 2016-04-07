@@ -52,11 +52,11 @@ void state_rehash(struct snapraid_state* state)
 
 	/* copy the present hash as previous one */
 	state->prevhash = state->hash;
-	memcpy(state->prevhashseed, state->hashseed, HASH_SIZE);
+	memcpy(state->prevhashseed, state->hashseed, HASH_MAX);
 
 	/* set the new hash and seed */
 	state->hash = state->besthash;
-	if (randomize(state->hashseed, HASH_SIZE) != 0) {
+	if (randomize(state->hashseed, HASH_MAX) != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Failed to get random values.\n");
 		exit(EXIT_FAILURE);

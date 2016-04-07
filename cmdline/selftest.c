@@ -48,7 +48,7 @@ struct hash64_test_vector {
 struct hash_test_vector {
 	const char* data;
 	int len;
-	unsigned char digest[HASH_SIZE];
+	unsigned char digest[HASH_MAX];
 };
 
 /**
@@ -131,7 +131,7 @@ static void test_hash(void)
 	uint32_t seed32;
 	uint64_t seed64;
 
-	seed_aligned = malloc_nofail_align(HASH_SIZE, &seed_alloc);
+	seed_aligned = malloc_nofail_align(HASH_MAX, &seed_alloc);
 	buffer_aligned = malloc_nofail_align(HASH_TEST_MAX, &buffer_alloc);
 
 	seed32 = 0xa766795d;
@@ -180,10 +180,10 @@ static void test_hash(void)
 
 
 	for (i = 0; TEST_MURMUR3[i].data; ++i) {
-		unsigned char digest[HASH_SIZE];
+		unsigned char digest[HASH_MAX];
 		memcpy(buffer_aligned, TEST_MURMUR3[i].data, TEST_MURMUR3[i].len);
 		memhash(HASH_MURMUR3, seed_aligned, digest, buffer_aligned, TEST_MURMUR3[i].len);
-		if (memcmp(digest, TEST_MURMUR3[i].digest, HASH_SIZE) != 0) {
+		if (memcmp(digest, TEST_MURMUR3[i].digest, HASH_MAX) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Failed Murmur3 test\n");
 			exit(EXIT_FAILURE);
@@ -192,10 +192,10 @@ static void test_hash(void)
 	}
 
 	for (i = 0; TEST_SPOOKY2[i].data; ++i) {
-		unsigned char digest[HASH_SIZE];
+		unsigned char digest[HASH_MAX];
 		memcpy(buffer_aligned, TEST_SPOOKY2[i].data, TEST_SPOOKY2[i].len);
 		memhash(HASH_SPOOKY2, seed_aligned, digest, buffer_aligned, TEST_SPOOKY2[i].len);
-		if (memcmp(digest, TEST_SPOOKY2[i].digest, HASH_SIZE) != 0) {
+		if (memcmp(digest, TEST_SPOOKY2[i].digest, HASH_MAX) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Failed Spooky2 test\n");
 			exit(EXIT_FAILURE);
