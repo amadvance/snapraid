@@ -982,8 +982,8 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					/* have "parity_needs_to_be_updated" already at 1 */
 					assert(block_state_get(block) == BLOCK_STATE_CHG);
 
-					/* if there is an hash */
-					if (hash_is_real(block->hash)) {
+					/* if the hash represents the data uniquievocally */
+					if (hash_is_unique(block->hash)) {
 						/* check if the hash is changed */
 						if (memcmp(hash, block->hash, BLOCK_HASH_SIZE) != 0) {
 							/* the block is different, and we must update parity */

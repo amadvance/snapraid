@@ -501,7 +501,7 @@ static int repair(struct snapraid_state* state, int rehash, unsigned pos, unsign
 
 				/* try to fetch the old block using the old hash for CHG and DELETED blocks */
 			} else if ((block_state == BLOCK_STATE_CHG || block_state == BLOCK_STATE_DELETED)
-				&& hash_is_real(failed[j].block->hash)
+				&& hash_is_unique(failed[j].block->hash)
 				&& state_import_fetch(state, rehash, failed[j].block, buffer[failed[j].index]) == 0) {
 
 				/* note that from now the buffer is definitively lost */

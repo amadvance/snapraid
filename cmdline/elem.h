@@ -536,10 +536,16 @@ int filter_content(tommy_list* contentlist, const char* path);
  * Check if the specified hash is invalid.
  *
  * An invalid hash is represented with all bytes at 0x00.
+ *
+ * If working with reduced hash lengths, this function always return 0.
  */
 static inline int hash_is_invalid(const unsigned char* hash)
 {
 	int i;
+
+	/* if the hash is reduced, we cannot grant that it's a specific kind of hash */
+	if (BLOCK_HASH_SIZE != HASH_MAX)
+		return 0;
 
 	for (i = 0; i < BLOCK_HASH_SIZE; ++i)
 		if (hash[i] != 0x00)
@@ -552,10 +558,16 @@ static inline int hash_is_invalid(const unsigned char* hash)
  * Check if the specified hash represent the zero block.
  *
  * A zero hash is represented with all bytes at 0xFF.
+ *
+ * If working with reduced hash lengths, this function always return 0.
  */
 static inline int hash_is_zero(const unsigned char* hash)
 {
 	int i;
+
+	/* if the hash is reduced, we cannot grant that it's a specific kind of hash */
+	if (BLOCK_HASH_SIZE != HASH_MAX)
+		return 0;
 
 	for (i = 0; i < BLOCK_HASH_SIZE; ++i)
 		if (hash[i] != 0xFF)
@@ -565,10 +577,16 @@ static inline int hash_is_zero(const unsigned char* hash)
 }
 
 /**
- * Check if the specified hash is a real hash.
+ * Check if the specified hash is uniquievocally repesenting the data.
+ *
+ * If working with reduced hash lengths, this function always return 0.
  */
-static inline int hash_is_real(const unsigned char* hash)
+static inline int hash_is_unique(const unsigned char* hash)
 {
+	/* if the hash is reduced, we cannot grant that it's a specific kind of hash */
+	if (BLOCK_HASH_SIZE != HASH_MAX)
+		return 0;
+
 	return !hash_is_zero(hash) && !hash_is_invalid(hash);
 }
 

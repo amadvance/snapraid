@@ -310,6 +310,14 @@ void state_import(struct snapraid_state* state, const char* dir)
 
 	msg_progress("Importing...\n");
 
+	/* if the hash is not full */
+	if (BLOCK_HASH_SIZE != HASH_MAX) {
+		/* LCOV_EXCL_START */
+		log_fatal("You cannot import files when using a reduced hash.\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
 	/* add the final slash */
 	pathimport(path, sizeof(path), dir);
 	pathslash(path, sizeof(path));
