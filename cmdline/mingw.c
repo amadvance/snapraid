@@ -1700,11 +1700,9 @@ ssize_t windows_pread(int fd, void* buffer, size_t size, off_t offset)
 	}
 
 retry:
-	overlapped.Internal = 0;
-	overlapped.InternalHigh = 0;
+	memset(&overlapped, 0, sizeof(overlapped));
 	overlapped.Offset = offset & 0xFFFFFFFF;
 	overlapped.OffsetHigh = offset >> 32;
-	overlapped.hEvent = 0;
 
 	if (!ReadFile(h, buffer, size, &count, &overlapped)) {
 		DWORD err = GetLastError();
@@ -1758,11 +1756,9 @@ ssize_t windows_pwrite(int fd, const void* buffer, size_t size, off_t offset)
 	}
 
 retry:
-	overlapped.Internal = 0;
-	overlapped.InternalHigh = 0;
+	memset(&overlapped, 0, sizeof(overlapped));
 	overlapped.Offset = offset & 0xFFFFFFFF;
 	overlapped.OffsetHigh = offset >> 32;
-	overlapped.hEvent = 0;
 
 	if (!WriteFile(h, buffer, size, &count, &overlapped)) {
 		DWORD err = GetLastError();
