@@ -2894,7 +2894,7 @@ static void* state_write_thread(void* arg)
 				while (end < file->blockmax) {
 					if (v_state != block_state_get(fs_file2block_get(file, end)))
 						break;
-					if (v_pos + (end - begin) != fs_file2par_get(disk,file, end))
+					if (v_pos + (end - begin) != fs_file2par_get(disk, file, end))
 						break;
 					++end;
 				}
@@ -3996,7 +3996,7 @@ static void state_progress_latest(struct snapraid_state* state)
 /**
  * Get the reference value, 0 if index is PROGRESS_MAX
  */
-#define ref(map,index) (index < PROGRESS_MAX ? map[index] : 0)
+#define ref(map, index) (index < PROGRESS_MAX ? map[index] : 0)
 
 static void state_progress_graph(struct snapraid_state* state, struct snapraid_io* io, unsigned current, unsigned oldest)
 {

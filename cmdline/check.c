@@ -189,7 +189,7 @@ static int repair_step(struct snapraid_state* state, int rehash, unsigned pos, u
 	for (i = 0; i < failed_count; ++i) {
 		/* if we are expected to recover this block */
 		if (!failed[failed_map[i]].is_outofdate
-			/* if the block has a hash to check */
+		        /* if the block has a hash to check */
 			&& block_has_updated_hash(failed[failed_map[i]].block)
 		)
 			has_hash = 1;
@@ -1077,7 +1077,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 					if (handle[j].st.st_size != file->size
 						|| handle[j].st.st_mtime != file->mtime_sec
 						|| STAT_NSEC(&handle[j].st) != file->mtime_nsec
-						/* don't check the inode to support file-system without persistent inodes */
+					        /* don't check the inode to support file-system without persistent inodes */
 					) {
 						/* report that the file is not synced */
 						file_flag_set(file, FILE_IS_UNSYNCED);
@@ -1340,9 +1340,9 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 						for (l = 0; l < state->level; ++l) {
 							/* if the parity on disk is wrong */
 							if (buffer_recov[l] == 0
-								/* and we have access at the parity */
+							        /* and we have access at the parity */
 								&& parity[l] != 0
-								/* and the parity is not excluded */
+							        /* and the parity is not excluded */
 								&& !state->parity[l].is_excluded
 							) {
 								ret = parity_write(parity[l], i, buffer[diskmax + l], state->block_size);

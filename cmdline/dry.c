@@ -213,7 +213,7 @@ static int state_dry_process(struct snapraid_state* state, struct snapraid_parit
 	state_progress_begin(state, blockstart, blockmax, countmax);
 	while (1) {
 		void** buffer;
-	
+
 		/* go to the next block */
 		blockcur = io_read_next(&io, &buffer);
 		if (blockcur >= blockmax)

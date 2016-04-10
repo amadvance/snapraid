@@ -39,8 +39,8 @@ void test(void)
 	crc32c_init();
 
 	s = sopen_multi_write(STREAM_MAX);
-	for (i = 0;i < STREAM_MAX; ++i) {
-		snprintf(file, sizeof(file),  "stream%u.bin", i);
+	for (i = 0; i < STREAM_MAX; ++i) {
+		snprintf(file, sizeof(file), "stream%u.bin", i);
 		if (sopen_multi_file(s, i, file) != 0) {
 			/* LCOV_EXCL_START */
 			exit(EXIT_FAILURE);
@@ -48,7 +48,7 @@ void test(void)
 		}
 	}
 
-	for(j=0;j<256;++j) {
+	for (j = 0; j < 256; ++j) {
 		if (sputc(j, s) != 0) {
 			/* LCOV_EXCL_START */
 			exit(EXIT_FAILURE);
@@ -56,7 +56,7 @@ void test(void)
 		}
 	}
 
-	for(j=0;j<32;++j) {
+	for (j = 0; j < 32; ++j) {
 		if (sputb32(u32 >> j, s) != 0) {
 			/* LCOV_EXCL_START */
 			exit(EXIT_FAILURE);
@@ -64,7 +64,7 @@ void test(void)
 		}
 	}
 
-	for(j=0;j<64;++j) {
+	for (j = 0; j < 64; ++j) {
 		if (sputb64(u64 >> j, s) != 0) {
 			/* LCOV_EXCL_START */
 			exit(EXIT_FAILURE);
@@ -72,7 +72,7 @@ void test(void)
 		}
 	}
 
-	for(j=0;j<BUFFER_MAX;++j) {
+	for (j = 0; j < BUFFER_MAX; ++j) {
 		memset(buffer, j, j);
 		if (swrite(buffer, j, s) != 0) {
 			/* LCOV_EXCL_START */
@@ -81,9 +81,9 @@ void test(void)
 		}
 	}
 
-	for(j=1;j<STR_MAX;++j) {
-		memset(str, ' ' + j, j-1);
-		str[j-1] = 0;
+	for (j = 1; j < STR_MAX; ++j) {
+		memset(str, ' ' + j, j - 1);
+		str[j - 1] = 0;
 		if (sputbs(str, s) != 0) {
 			/* LCOV_EXCL_START */
 			exit(EXIT_FAILURE);
@@ -115,7 +115,7 @@ void test(void)
 	for (i = 0; i < STREAM_MAX; ++i) {
 		uint32_t get_crc_stored;
 		uint32_t get_crc_computed;
-		snprintf(file, sizeof(file),  "stream%u.bin", i);
+		snprintf(file, sizeof(file), "stream%u.bin", i);
 
 		s = sopen_read(file);
 		if (s == 0) {
@@ -124,7 +124,7 @@ void test(void)
 			/* LCOV_EXCL_STOP */
 		}
 
-		for(j=0;j<256;++j) {
+		for (j = 0; j < 256; ++j) {
 			int c = sgetc(s);
 			if (c == EOF || (unsigned char)c != j) {
 				/* LCOV_EXCL_START */
@@ -133,7 +133,7 @@ void test(void)
 			}
 		}
 
-		for(j=0;j<32;++j) {
+		for (j = 0; j < 32; ++j) {
 			uint32_t v32;
 			if (sgetb32(s, &v32) != 0 || v32 != (u32 >> j)) {
 				/* LCOV_EXCL_START */
@@ -142,7 +142,7 @@ void test(void)
 			}
 		}
 
-		for(j=0;j<64;++j) {
+		for (j = 0; j < 64; ++j) {
 			uint64_t v64;
 			if (sgetb64(s, &v64) != 0 || v64 != (u64 >> j)) {
 				/* LCOV_EXCL_START */
@@ -151,7 +151,7 @@ void test(void)
 			}
 		}
 
-		for(j=1;j<BUFFER_MAX;++j) {
+		for (j = 1; j < BUFFER_MAX; ++j) {
 			char copy[BUFFER_MAX];
 			memset(buffer, j, j);
 			if (sread(s, copy, j) != 0 || memcmp(copy, buffer, j) != 0) {
@@ -161,10 +161,10 @@ void test(void)
 			}
 		}
 
-		for(j=1;j<STR_MAX;++j) {
+		for (j = 1; j < STR_MAX; ++j) {
 			char copy[STR_MAX];
-			memset(str, ' ' + j, j-1);
-			str[j-1] = 0;
+			memset(str, ' ' + j, j - 1);
+			str[j - 1] = 0;
 			if (sgetbs(s, copy, sizeof(copy)) != 0 || strcmp(copy, str) != 0) {
 				/* LCOV_EXCL_START */
 				exit(EXIT_FAILURE);
@@ -204,7 +204,7 @@ void test(void)
 		uint32_t get_crc_stored;
 		uint32_t get_crc_computed;
 		unsigned char buf[4];
-		snprintf(file, sizeof(file),  "stream%u.bin", i);
+		snprintf(file, sizeof(file), "stream%u.bin", i);
 
 		s = sopen_read(file);
 		if (s == 0) {

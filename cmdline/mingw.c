@@ -175,7 +175,7 @@ void os_abort(void)
 	/* get stackstrace, but without symbols */
 	size = CaptureStackBackTrace(0, 32, stack, NULL);
 
-	for (i=0; i<size; ++i)
+	for (i = 0; i < size; ++i)
 		printf("[bt] %02u: %p\n", i, stack[i]);
 
 	printf("Please report this error to the SnapRAID Forum:\n");
@@ -1853,8 +1853,8 @@ static int devresolve(const char* mount, char* file, size_t file_size, char* wfi
 	i = 0;
 	while (volume_guid[i] != 0)
 		++i;
-	if (i != 0 && volume_guid[i-1] == '\\')
-		volume_guid[i-1] = 0;
+	if (i != 0 && volume_guid[i - 1] == '\\')
+		volume_guid[i - 1] = 0;
 
 	pathcpy(wfile, wfile_size, u16tou8(conv_buf_volume_guid, volume_guid));
 
@@ -2245,7 +2245,7 @@ static int devup(const char* mount)
 	pathprint(path, sizeof(path), "%s.snapraid-spinup.tmp", mount);
 
 	/* create a temporary file, automatically deleted on close */
-	f = _wopen(convert(conv_buf, path), _O_CREAT | _O_TEMPORARY | _O_RDWR,  _S_IREAD | _S_IWRITE);
+	f = _wopen(convert(conv_buf, path), _O_CREAT | _O_TEMPORARY | _O_RDWR, _S_IREAD | _S_IWRITE);
 	if (f != -1)
 		close(f);
 
@@ -2538,3 +2538,4 @@ int windows_cond_wait(windows_cond_t* cond, windows_mutex_t* mutex)
 }
 
 #endif
+

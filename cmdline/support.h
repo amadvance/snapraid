@@ -213,7 +213,7 @@ void printp(double v, size_t pad);
 /****************************************************************************/
 /* escape */
 
-#define ESC_MAX (PATH_MAX*2+1)
+#define ESC_MAX (PATH_MAX*2 + 1)
 
 /**
  * Escape a string for the log.
@@ -224,7 +224,7 @@ void printp(double v, size_t pad);
  */
 const char* esc(const char* str, char* buffer);
 
-#define QUOTE_MAX (PATH_MAX*2+1)
+#define QUOTE_MAX (PATH_MAX*2 + 1)
 
 /**
  * Quote a string for the shell.

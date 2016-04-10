@@ -116,6 +116,7 @@ void SpookyHash128(const void* data, size_t size, const uint8_t* seed, uint8_t* 
 	const uint64_t* blocks;
 	const uint64_t* end;
 	size_t size_remainder;
+
 #if WORDS_BIGENDIAN
 	unsigned i;
 #endif

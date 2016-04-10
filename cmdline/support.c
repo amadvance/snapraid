@@ -512,7 +512,7 @@ const char* quote(char prefix, const char* str, char* buffer)
 				*p++ = c;
 			}
 			break;
-		default:
+		default :
 			/* unquoted */
 			if (p == end)
 				goto bail;
@@ -536,7 +536,7 @@ const char* quote(char prefix, const char* str, char* buffer)
 				goto bail;
 			*p++ = c;
 			break;
-		default:
+		default :
 			/* all the others are quoted with \ */
 			if (p == end)
 				goto bail;
@@ -716,6 +716,7 @@ void pathslash(char* dst, size_t size)
 void pathcut(char* dst)
 {
 	char* slash = strrchr(dst, '/');
+
 	if (slash)
 		slash[1] = 0;
 	else
@@ -887,6 +888,7 @@ void malloc_counter_inc(size_t inc)
 static ssize_t malloc_print(int f, const char* str)
 {
 	ssize_t len = 0;
+
 	while (str[len])
 		++len;
 	return write(f, str, len);

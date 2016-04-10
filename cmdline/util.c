@@ -87,11 +87,11 @@ static int fast_mtest_vector(int n, size_t size, void** vv)
 
 		/* copy to the next */
 		for (j = 1; j < n; ++j)
-			memcpy(vv[j], vv[j-1], size);
+			memcpy(vv[j], vv[j - 1], size);
 
 		/* compare with the previous */
 		for (j = 1; j <= n; ++j)
-			if (memcmp(vv[j % n], vv[j-1], size) != 0)
+			if (memcmp(vv[j % n], vv[j - 1], size) != 0)
 				return -1;
 	}
 

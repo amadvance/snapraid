@@ -387,11 +387,11 @@ int fsinfo(const char* path, int* has_persistent_inode, uint64_t* total_space, u
 	case 0x517B : ptype = "smb"; break; /* remote */
 	case 0x5346544E : ptype = "ntfs"; break;
 	case 0x52654973 : ptype = "reiserfs"; break;
-	case 0x3153464A : ptype = "jfs" ; break;
+	case 0x3153464A : ptype = "jfs"; break;
 	case 0x58465342 : ptype = "xfs"; break;
 	case 0x9123683E : ptype = "btrfs"; break;
 	case 0x2FC12FC1 : ptype = "zfs"; break;
-	default:
+	default :
 		snprintf(type, sizeof(type), "0x%X", (unsigned)st.f_type);
 		ptype = type;
 	}
@@ -517,7 +517,7 @@ static dev_t devread(const char* path)
 		/* LCOV_EXCL_STOP */
 	}
 
-	mi = strtoul(e+1, &e, 10);
+	mi = strtoul(e + 1, &e, 10);
 	if (*e != 0 && !isspace(*e)) {
 		/* LCOV_EXCL_START */
 		close(f);
@@ -1194,7 +1194,7 @@ void os_abort(void)
 
 	messages = backtrace_symbols(stack, size);
 
-	for (i=1; i<size; ++i) {
+	for (i = 1; i < size; ++i) {
 		const char* msg;
 
 		if (messages)

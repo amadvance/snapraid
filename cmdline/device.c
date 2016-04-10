@@ -843,7 +843,7 @@ static int devtest(tommy_list* low, int operation)
 			switch (c) {
 			case 0 : entry->smart[j] = 0; break;
 			case 1 : entry->smart[j] = SMART_UNASSIGNED; break;
-			default:
+			default :
 				if (j == 193)
 					entry->smart[j] = c - 2;
 				else

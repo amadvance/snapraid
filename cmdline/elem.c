@@ -153,6 +153,7 @@ void filter_free(struct snapraid_filter* filter)
 const char* filter_type(struct snapraid_filter* filter, char* out, size_t out_size)
 {
 	const char* direction;
+
 	if (filter->direction < 0)
 		direction = "exclude";
 	else
@@ -1413,3 +1414,4 @@ int time_compare(const void* void_a, const void* void_b)
 		return 1;
 	return 0;
 }
+

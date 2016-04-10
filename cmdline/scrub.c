@@ -185,7 +185,7 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 	if (handle->st.st_size != task->file->size
 		|| handle->st.st_mtime != task->file->mtime_sec
 		|| STAT_NSEC(&handle->st) != task->file->mtime_nsec
-		/* don't check the inode to support filesystem without persistent inodes */
+	        /* don't check the inode to support filesystem without persistent inodes */
 	) {
 		/* report that the block and the file are not synced */
 		task->is_timestamp_different = 1;
