@@ -1325,34 +1325,16 @@ specifications.
 This option can be used many times.
 .SS blocksize SIZE_IN_KIBIBYTES 
 Defines the basic block size in kibi bytes of the parity.
-One kibi bytes is 1024 bytes. The default blocksize is 256
-and it should work for most cases.
+One kibi bytes is 1024 bytes.
 .PP
-A reason to use a different blocksize is if your system has less
-than 4 GiB of memory. As a rule of thumb, with 4 GiB or more memory
-use the default 256, with 2 GiB use 512, and with 1 GiB use 1024.
+The default blocksize is 256 and it should work for most cases.
 .PP
-In more details SnapRAID requires about TS*17/BS bytes of RAM memory.
-Where TS is the total size in bytes of your disk array, and BS is the
-block size in bytes.
+WARNING! This option is for experts only, and it\'s highly
+recommended to not change it. To change again this value in
+future you\'ll have to recreate the whole parity.
 .PP
-For example with 8 disks of 4 TB and a block size of 256 KiB
-(1 KiB = 1024 bytes) you have:
-.PP
-RAM = (8 * 4 * 10^12) * 17 / (256 * 2^10) = 1.93 GiB
-.PD 0
-.PP
-.PD
-.PP
-Switching to a block size of 512 KiB, you have:
-.PP
-RAM = (8 * 4 * 10^12) * 17 / (512 * 2^10) = 0.97 GiB
-.PD 0
-.PP
-.PD
-.PP
-Another reason to use a different blocksize is if you have a lot of
-small files. In the order of many millions.
+A reason to use a different hashsize is if you have a lot of small
+files. In the order of many millions.
 .PP
 For each file, even of few bytes, a whole block of parity is allocated,
 and with many files this may result in a lot of unused parity space.
@@ -1392,29 +1374,49 @@ This results in about 1.5% of extra space. Meaning about 60 GB for
 a 4 TB disk, that allows about 460000 files in each data disk without
 any wasted space.
 .SS hashsize SIZE_IN_BYTES 
-Defines the basic hash size in bytes of the saved blocks.
-The default hashsize is 16 bytes \-> 128 bits, and it should work
+Defines the hash size in bytes of the saved blocks.
+.PP
+The default hashsize is 16 bytes (128 bits), and it should work
 for most cases.
 .PP
-A reason to use a different hashsize is if your system has less
-than 1 GiB of memory. As a rule of thumb, with 1 GiB or more memory
-use the default 16, with 512 MiB use 8, and with 256 GiB use 4.
+WARNING! This option is for experts only, and it\'s highly
+recommended to not change it. To change again this value in
+future you\'ll have to recreate the whole parity.
 .PP
-In more details SnapRAID requires about TS*(1+HS)/BS bytes of RAM memory.
+A reason to use a different hashsize is if your system has
+small memory. As a rule of thumb SnapRAID usually requires
+1 GiB of RAM memory for each 16 TB of data in the array.
+.PP
+Specifically, to store the hashes of the data, SnapRAID requires
+about TS*(1+HS)/BS bytes of RAM memory.
 Where TS is the total size in bytes of your disk array, BS is the
 block size in bytes, and HS is the hash size in bytes.
 .PP
 For example with 8 disks of 4 TB and a block size of 256 KiB
-(1 KiB = 1024 bytes), and an hash size of 16, you have:
+(1 KiB = 1024 bytes), and an hash size of 16, you get:
 .PP
 RAM = (8 * 4 * 10^12) * (1+16) / (256 * 2^10) = 1.93 GiB
 .PD 0
 .PP
 .PD
 .PP
-Switching to a hash size of 8, you have:
+Switching to a hash size of 8, you get:
 .PP
 RAM = (8 * 4 * 10^12) * (1+8) / (256 * 2^10) = 1.02 GiB
+.PD 0
+.PP
+.PD
+.PP
+Switching to a block size of 512, you get:
+.PP
+RAM = (8 * 4 * 10^12) * (1+16) / (512 * 2^10) = 0.96 GiB
+.PD 0
+.PP
+.PD
+.PP
+Switching to both a hash size of 8, and a block size of 512 you get:
+.PP
+RAM = (8 * 4 * 10^12) * (1+8) / (512 * 2^10) = 0.51 GiB
 .PD 0
 .PP
 .PD
