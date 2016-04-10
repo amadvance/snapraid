@@ -332,7 +332,10 @@ int handle_write(struct snapraid_handle* handle, block_off_t file_pos, unsigned 
 	}
 
 	/* Here doesn't make sense to call posix_fadvise(..., POSIX_FADV_DONTNEED) because */
-	/* at this time the data is still not yet written and it cannot be discharged. */
+	/* at this time the data is still not yet written and it cannot be discharged */
+	/* from the system cache. */
+	/* This is at least true for Linux 2.6.21 that just ignores POSIX_FADV_DONTNEED */
+	/* if the data is not yet written. */
 
 	return 0;
 }
