@@ -559,16 +559,15 @@ operating system.
 
 <h3 id="mem">How much memory SnapRAID requires to run?</h3>
 <p>
-Approximatively, the 32 bits version of SnapRAID requires 1 GiB of memory for 9 TB of data.
-The 64 bits version requires 1 GiB of memory for 7 TB of data.
+Approximatively, SnapRAID requires 1 GiB of memory for 16 TB of data.
 </p>
 <p>
 If you have less memory than required, the recommended option is to install more memory in the machine.
 </p>
 <p>
-Otherwise you have to increase the block_size option in the configuration file.
+Otherwise you have to increase the blocksize option in the configuration file.
 The memory occupation is inversely proportional at the select block_size.
-For example, using "block_size 512", instead of the default 256, halves the memory occupation.
+For example, using "blocksize 512", instead of the default 256, halves the memory occupation.
 But take care that using a bigger block size will also increase the amount of wasted space
 in the parity files.
 </p>
