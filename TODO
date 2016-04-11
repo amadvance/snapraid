@@ -54,13 +54,6 @@ rest of the block.
 The problem is that we don't have any hash to ensure that the block is partially recovered,
 or completely garbage. But it makes sense to anyway write the "most likely" correct one.
 
-* Allow to specify more than one disk directories to cover the case of multi partitions.
-Different partitions have duplicate inode. The only way to support this is to
-add also a kind of device_id, increasing the memory required.
-But it should be only few bits for each file. So, it should be manageable.
-A lot of discussions about this feature :)
-https://sourceforge.net/p/snapraid/discussion/1677233/thread/b2cd9385/
-
 - Naming
 
 * A new 'init' command to differentiate the first 'sync' operation.
@@ -88,6 +81,34 @@ File with the same name will get an extra extension like ".1", ".2".
 
 - Major
 
+* Split the parity in multiple files and allow it to coexist with data
+in the same disk.
+This is possible if the data in the same disk uses parity addresses not
+contained in the parity file present in the same disk.
++ It's a nice trick. The disk containing parity, will have less space available,
+and then it will need less parity, resolving the problem of the parity disk being too small.
++ We can also think at an automated parity files naming and creation, removing
+the need of the user to specify that. We can also completely remove the
+concept of parity drive, automatically allocating parity in the most free data drives.
+- The problem is that it would be not nice to have the program to automatically
+choose where to create the parity, because the choice cannot be optimal.
+With a dedicated disk manually chosen, it's instead optimal.
+
+Rejected TODO
+=============
+
+This is a list of rejected TODO items.
+
+* Allow to specify more than one disk directories to cover the case of multi partitions.
+Different partitions have duplicate inode. The only way to support this is to
+add also a kind of device_id, increasing the memory required.
+But it should be only few bits for each file. So, it should be manageable.
+A lot of discussions about this feature :)
+https://sourceforge.net/p/snapraid/discussion/1677233/thread/b2cd9385/
+- The only benefit is to distribute better the data. This could help the recovery process,
+in case of multiple failures. But no real usability or funtionality benefit in the normal
+case.
+
 * https://sourceforge.net/p/snapraid/discussion/1677233/thread/2cb97e8a/
 Have two hashes for each file. One for the first segment, that may use only a part of the first parity block.
 And a second hash that takes care of the final segment, also using only part of a parity block.
@@ -112,11 +133,6 @@ Unix using ZFS.
 See Jens's Windows script at: http://sourceforge.net/p/snapraid/discussion/1677233/thread/a1707211/
 Note that a different between Windows and Unix is that in Windows old snapshots
 are automatically deleted.
-
-Rejected TODO
-=============
-
-This is a list of rejected TODO items.
 
 * Checks if splitting hash/parity computation in 4K pages
 can improve speed in sync. That should increase cache locality,
@@ -160,20 +176,6 @@ In the order of 0.01%. Not really worth to do it.
 - With NTFS the saving is also limited, because the "reserved" MFT of 12.5% is
 not really exclusively reserved, but can be used also for normal files,
 when all the remaining space is filled.
-
-* Split the parity in multiple files and allow it to coexist with data
-in the same disk.
-This is possible if the data in the same disk uses parity addresses not
-contained in the parity file present in the same disk.
-- It could be more complex to setup for the user.
-+ It's a nice trick. The disk containing parity, will have less space available,
-and then it will need less parity, resolving the problem of the parity disk being too small.
-+ We can also think at an automated parity files naming and creation, removing
-the need of the user to specify that. We can also completely remove the
-concept of parity drive, automatically allocating parity in the most free data drives.
-- The problem is that it would be not nice to have the program to automatically
-choose where to create the parity, because the choice cannot be optimal.
-With a dedicated disk manually chosen, it's instead optimal.
 
 * The data could be compressed before processing, resulting in parity block of
 fixed size, but matching different data block sizes.
