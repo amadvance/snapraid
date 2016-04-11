@@ -12,6 +12,9 @@ https://sourceforge.net/p/snapraid/discussion/1677233/thread/02b2a2ae/
 
 - Minor
 
+* Allow to have "parial" parity disks, smaller than required ?
+See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/e924c663/
+
 * How to handle corrupt copied/moved files ? At now pre-hash checks them,
 but if a corruption is found, it stops the sync process.
 This is not optimal, because the 'sync' command is stopped instead to continue.
