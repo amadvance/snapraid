@@ -144,10 +144,10 @@ static int devuuid_dev(uint64_t device, char* uuid, size_t uuid_size)
 
 /**
  * Get the UUID using liblkid.
- * It uses a cache to work without root permission, resultin in UUID
+ * It uses a cache to work without root permission, resulting in UUID
  * not necessarily recent.
  * We could call blkid_probe_all() to refresh the UUID, but it would
- * require root permission to read the superblocks, and to have
+ * require root permission to read the superblocks, and resulting in
  * all the disks spinning.
  */
 #if HAVE_BLKID
