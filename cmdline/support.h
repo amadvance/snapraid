@@ -211,7 +211,7 @@ void printl(const char* str, size_t pad);
 void printp(double v, size_t pad);
 
 /****************************************************************************/
-/* escape */
+/* string */
 
 #define ESC_MAX (PATH_MAX*2 + 1)
 
@@ -242,6 +242,13 @@ const char* quote(char prefix, const char* str, char* buffer);
  * Note that the passed string is modified.
  */
 char* polish(char* s);
+
+/**
+ * Split a string in multiple tokens separated by spaces.
+ *
+ * Multiple spaces are grouped together.
+ */
+unsigned split(char** split_map, unsigned split_max, char* line);
 
 /****************************************************************************/
 /* path */

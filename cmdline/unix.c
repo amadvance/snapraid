@@ -69,6 +69,189 @@ const char* stat_desc(struct stat* st)
 }
 
 /**
+ * Get the device file from the device number.
+ *
+ * It uses /proc/self/mountinfo.
+ *
+ * Null devices (major==0) are resolved to the device indicated in mountinfo.
+ */
+#if HAVE_LINUX_DEVICE
+static int devresolve_proc(uint64_t device, char* path, size_t path_size)
+{
+	FILE* f;
+	char match[32];
+
+	/* generate the matching string */
+	snprintf(match, sizeof(match), "%u:%u", major(device), minor(device));
+
+	f = fopen("/proc/self/mountinfo", "r");
+	if (!f) {
+		log_tag("resolve:proc:%u:%u: failed to open /proc/self/mountinfo\n", major(device), minor(device));
+		return -1;
+	}
+
+	while (1) {
+		char buf[256];
+		char* split_map[9];
+		unsigned split_mac;
+		char* s;
+
+		s = fgets(buf, sizeof(buf), f);
+		if (s == 0)
+			break;
+
+		/* split the line */
+		split_mac = split(split_map, 9, s);
+
+		/* if too short, it's the wrong line */
+		if (split_mac < 9)
+			continue;
+
+		/* if it's the right line */
+		if (strcmp(split_map[2], match) == 0) {
+			pathcpy(path, path_size, split_map[8]);
+
+			log_tag("resolve:proc:%u:%u:%s: found\n", major(device), minor(device), path);
+
+			fclose(f);
+			return 0;
+		}
+	}
+
+	log_tag("resolve:proc:%u:%u: not found\n", major(device), minor(device));
+
+	fclose(f);
+	return -1;
+}
+#endif
+
+/**
+ * Resolve and get again the device number.
+ *
+ * This is intended to resolve the case of null devices (major==0).
+ */
+static int devdereference(uint64_t device, uint64_t* new_device)
+{
+	char path[PATH_MAX];
+	struct stat st;
+
+	/* use the proc interface to get the device containinig the filesystem */
+	if (devresolve_proc(device, path, sizeof(path)) != 0) {
+		/* LCOV_EXCL_START */
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* check the device */
+	if (stat(path, &st) != 0) {
+		/* LCOV_EXCL_START */
+		log_tag("dereference:%u:%u: failed to stat %s\n", major(device), minor(device), path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (major(st.st_rdev) == 0) {
+		/* LCOV_EXCL_START */
+		log_tag("dereference:%u:%u: still null device %s -> %u:%u\n", major(device), minor(device), path, major(st.st_rdev), minor(st.st_rdev));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	*new_device = st.st_rdev;
+	log_tag("dereference:%u:%u: found %u:%u\n", major(device), minor(device), major(st.st_rdev), minor(st.st_rdev));
+	return 0;
+}
+
+/**
+ * Get the device file from the device number.
+ *
+ * It uses /dev/block.
+ *
+ * For null device (major==0) it fails.
+ */
+#if HAVE_LINUX_DEVICE
+static int devresolve_dev(dev_t device, char* path, size_t path_size)
+{
+	struct stat st;
+	char buf[PATH_MAX];
+	int ret;
+
+	/* default device path from device number */
+	pathprint(path, path_size, "/dev/block/%u:%u", major(device), minor(device));
+
+	/* resolve the link from /dev/block */
+	ret = readlink(path, buf, sizeof(buf));
+	if (ret < 0) {
+		/* LCOV_EXCL_START */
+		log_tag("resolve:dev:%u:%u: failed to readlink '%s'\n", major(device), minor(device), path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+	if (ret == sizeof(buf)) {
+		/* LCOV_EXCL_START */
+		log_tag("resolve:dev:%u:%u: too long readlink '%s'\n", major(device), minor(device), path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	buf[ret] = 0;
+
+	if (buf[0] != '.' || buf[1] != '.' || buf[2] != '/') {
+		/* LCOV_EXCL_START */
+		log_tag("resolve:dev:%u:%u: unexpected link '%s' at '%s'\n", major(device), minor(device), buf, path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* set the real device path */
+	pathprint(path, path_size, "/dev/%s", buf + 3);
+
+	/* check the device */
+	if (stat(path, &st) != 0) {
+		/* LCOV_EXCL_START */
+		log_tag("resolve:dev:%u:%u: failed to stat '%s'\n", major(device), minor(device), path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+	if (st.st_rdev != device) {
+		/* LCOV_EXCL_START */
+		log_tag("resolve:dev:%u:%u: unexpected device '%u:%u' for '%s'.\n", major(device), minor(device), major(st.st_rdev), minor(st.st_rdev), path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	log_tag("resolve:dev:%u:%u:%s: found\n", major(device), minor(device), path);
+
+	return 0;
+}
+#endif
+
+/**
+ * Get the device file from the device number.
+ */
+#if HAVE_LINUX_DEVICE
+static int devresolve(uint64_t device, char* path, size_t path_size)
+{
+	/* if the major is the null device */
+	if (major(device) == 0) {
+		/* obtain the real device */
+		if (devdereference(device, &device) != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Failed to map device %u:%u.\n", major(device), minor(device));
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
+	if (devresolve_dev(device, path, path_size) == 0)
+		return 0;
+
+	log_fatal("Failed to map device %u:%u.\n", major(device), minor(device));
+	return -1;
+}
+#endif
+
+/**
  * Cache used by blkid.
  */
 #if HAVE_BLKID
@@ -81,7 +264,7 @@ static blkid_cache cache = 0;
  * It doesn't work with Btrfs file-systems that don't export the main UUID
  * in /dev/disk/by-uuid/.
  */
-#if HAVE_FSTATAT
+#if HAVE_LINUX_DEVICE
 static int devuuid_dev(uint64_t device, char* uuid, size_t uuid_size)
 {
 	int ret;
@@ -183,8 +366,20 @@ static int devuuid_blkid(uint64_t device, char* uuid, size_t uuid_size)
 
 int devuuid(uint64_t device, char* uuid, size_t uuid_size)
 {
+#if HAVE_LINUX_DEVICE
+	/* if the major is the null device */
+	if (major(device) == 0) {
+		/* obtain the real device */
+		if (devdereference(device, &device) != 0) {
+			/* LCOV_EXCL_START */
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+	}
+#endif
+
 	/* first try with the /dev/disk/by-uuid version */
-#if HAVE_FSTATAT
+#if HAVE_LINUX_DEVICE
 	if (devuuid_dev(device, uuid, uuid_size) == 0)
 		return 0;
 #else
@@ -535,64 +730,6 @@ static dev_t devread(const char* path)
 	}
 
 	return makedev(ma, mi);
-}
-#endif
-
-#if HAVE_LINUX_DEVICE
-/**
- * Get the device file from the device number.
- */
-static int devresolve(dev_t device, char* path, size_t path_size)
-{
-	struct stat st;
-	char buf[PATH_MAX];
-	int ret;
-
-	/* default device path from device number */
-	pathprint(path, path_size, "/dev/block/%u:%u", major(device), minor(device));
-
-	/* resolve the link from /dev/block */
-	ret = readlink(path, buf, sizeof(buf));
-	if (ret < 0) {
-		/* LCOV_EXCL_START */
-		log_fatal("Failed to readlink '%s'.\n", path);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-	if (ret == sizeof(buf)) {
-		/* LCOV_EXCL_START */
-		log_fatal("Too long readlink '%s'.\n", path);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	buf[ret] = 0;
-
-	if (buf[0] != '.' || buf[1] != '.' || buf[2] != '/') {
-		/* LCOV_EXCL_START */
-		log_fatal("Unexpected link '%s' at '%s'.\n", buf, path);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* set the real device path */
-	pathprint(path, path_size, "/dev/%s", buf + 3);
-
-	/* check the device */
-	if (stat(path, &st) != 0) {
-		/* LCOV_EXCL_START */
-		log_fatal("Failed to stat '%s'.\n", path);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-	if (st.st_rdev != device) {
-		/* LCOV_EXCL_START */
-		log_fatal("Unexpected device '%u:%u' instead of '%u:%u' for '%s'.\n", major(st.st_rdev), minor(st.st_rdev), major(device), minor(device), path);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	return 0;
 }
 #endif
 

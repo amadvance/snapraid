@@ -3,6 +3,9 @@ SnapRAID HISTORY
 
 11.0 2016/05
 ============
+ * In Linux add the missing support for filesystems using null device
+   numbers, like Btrfs. Note that to have full support you need also
+   the 'libblkid' library, otherwise you won't get the UUIDs.
  * In the Windows version allow to use the escape char '^' to handle
    file patterns containing real characters matching the globbing '*?[]'
    ones. In Unix it was already possible to do the same escaping with
