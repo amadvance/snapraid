@@ -262,7 +262,7 @@ Getting Started
 
 	to allow remote clients to access all the files at \\darkstar\\pool.
 
-	You may also need to configure remote clients enablinh access at remote
+	You may also need to configure remote clients enabling access at remote
 	symlinks with the command:
 
 		:fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
