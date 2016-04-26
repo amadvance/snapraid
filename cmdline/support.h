@@ -244,11 +244,11 @@ const char* quote(char prefix, const char* str, char* buffer);
 char* polish(char* s);
 
 /**
- * Split a string in multiple tokens separated by spaces.
+ * Split a string in multiple tokens separated by delimiters.
  *
- * Multiple spaces are grouped together.
+ * Multiple delimiters are grouped together.
  */
-unsigned split(char** split_map, unsigned split_max, char* line);
+unsigned split(char** split_map, unsigned split_max, char* line, const char* delimiters);
 
 /****************************************************************************/
 /* path */

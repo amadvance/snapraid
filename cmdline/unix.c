@@ -101,7 +101,7 @@ static int devresolve_proc(uint64_t device, char* path, size_t path_size)
 			break;
 
 		/* split the line */
-		split_mac = split(split_map, 9, s);
+		split_mac = split(split_map, 9, s, " \t\r\n");
 
 		/* if too short, it's the wrong line */
 		if (split_mac < 9)

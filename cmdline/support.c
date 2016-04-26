@@ -586,30 +586,27 @@ char* polish(char* s)
 	return s;
 }
 
-unsigned split(char** split_map, unsigned split_max, char* str)
+unsigned split(char** split_map, unsigned split_max, char* str, const char* delimiters)
 {
 	unsigned mac = 0;
 
-	/* skip initial spaces */
-	while (isspace(*str))
-		++str;
+	/* skip initial delimiers */
+	str += strspn(str, delimiters);
 
 	while (*str != 0 || mac == split_max) {
 		/* start of the token */
 		split_map[mac] = str;
 		++mac;
 
-		/* find the first separator or the end of the string */
-		while (*str != 0 && !isspace(*str))
-			++str;
+		/* find the first delimiter or the end of the string */
+		str += strcspn(str, delimiters);
 
 		/* put the final terminator if missing */
 		if (*str != 0)
 			*str++ = 0;
 
-		/* skip trailing spaces */
-		while (isspace(*str))
-			++str;
+		/* skip trailing delimiters */
+		str += strspn(str, delimiters);
 	}
 
 	return mac;
