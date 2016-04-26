@@ -922,19 +922,22 @@ void state_device(struct snapraid_state* state, int operation, tommy_list* filte
 	/* for all parities */
 	for (j = 0; j < state->level; ++j) {
 		devinfo_t* entry;
+		unsigned s;
 
 		if (filterlist_disk != 0 && filter_path(filterlist_disk, 0, lev_config_name(j), 0) != 0)
 			continue;
 
-		entry = calloc_nofail(1, sizeof(devinfo_t));
+		for (s = 0; s < state->parity[j].split_mac; ++s) {
+			entry = calloc_nofail(1, sizeof(devinfo_t));
 
-		entry->device = state->parity[j].device;
-		pathcpy(entry->name, sizeof(entry->name), lev_config_name(j));
-		pathcpy(entry->mount, sizeof(entry->mount), state->parity[j].path);
-		pathcpy(entry->smartctl, sizeof(entry->smartctl), state->parity[j].smartctl);
-		pathcut(entry->mount); /* remove the parity file */
+			entry->device = state->parity[j].split_map[s].device;
+			pathcpy(entry->name, sizeof(entry->name), lev_config_name(j));
+			pathcpy(entry->mount, sizeof(entry->mount), state->parity[j].split_map[s].path);
+			pathcpy(entry->smartctl, sizeof(entry->smartctl), state->parity[j].smartctl);
+			pathcut(entry->mount); /* remove the parity file */
 
-		tommy_list_insert_tail(&high, &entry->node, entry);
+			tommy_list_insert_tail(&high, &entry->node, entry);
+		}
 	}
 
 	if (state->opt.fake_device) {

@@ -138,7 +138,7 @@ const char* lev_raid_name(unsigned mode, unsigned n)
 
 void state_init(struct snapraid_state* state)
 {
-	unsigned l;
+	unsigned l, s;
 
 	memset(&state->opt, 0, sizeof(state->opt));
 	state->filter_hidden = 0;
@@ -149,15 +149,19 @@ void state_init(struct snapraid_state* state)
 	state->raid_mode = RAID_MODE_CAUCHY;
 	state->file_mode = MODE_SEQUENTIAL;
 	for (l = 0; l < LEV_MAX; ++l) {
-		state->parity[l].path[0] = 0;
+		state->parity[l].split_mac = 0;
+		for (s = 0; s < SPLIT_MAX; ++s) {
+			state->parity[l].split_map[s].path[0] = 0;
+			state->parity[l].split_map[s].uuid[0] = 0;
+			state->parity[l].split_map[s].size = PARITY_SIZE_INVALID;
+			state->parity[l].split_map[s].device = 0;
+		}
 		state->parity[l].smartctl[0] = 0;
-		state->parity[l].uuid[0] = 0;
-		state->parity[l].device = 0;
 		state->parity[l].total_blocks = 0;
 		state->parity[l].free_blocks = 0;
+		state->parity[l].skip_access = 0;
 		state->parity[l].tick = 0;
 		state->parity[l].cached = 0;
-		state->parity[l].skip_access = 0;
 		state->parity[l].is_excluded = 0;
 	}
 	state->tick_io = 0;
@@ -205,7 +209,7 @@ void state_done(struct snapraid_state* state)
 static void state_config_check(struct snapraid_state* state, const char* path, tommy_list* filterlist_disk)
 {
 	tommy_node* i;
-	unsigned l;
+	unsigned l, s;
 
 	/* check for parity level */
 	if (state->raid_mode == RAID_MODE_VANDERMONDE) {
@@ -218,7 +222,7 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 	}
 
 	for (l = 0; l < state->level; ++l) {
-		if (state->parity[l].path[0] == 0) {
+		if (state->parity[l].split_mac == 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("No '%s' specification in '%s'\n", lev_config_name(l), path);
 			exit(EXIT_FAILURE);
@@ -238,11 +242,13 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 		struct snapraid_content* content = i->data;
 
 		for (l = 0; l < state->level; ++l) {
-			if (pathcmp(state->parity[l].path, content->content) == 0) {
-				/* LCOV_EXCL_START */
-				log_fatal("Same path used for '%s' and 'content' as '%s'\n", lev_config_name(l), content->content);
-				exit(EXIT_FAILURE);
-				/* LCOV_EXCL_STOP */
+			for (s = 0; s < state->parity[l].split_mac; ++s) {
+				if (pathcmp(state->parity[l].split_map[s].path, content->content) == 0) {
+					/* LCOV_EXCL_START */
+					log_fatal("Same path used for '%s' and 'content' as '%s'\n", lev_config_name(l), content->content);
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
 			}
 		}
 	}
@@ -302,16 +308,18 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 
 			if (!state->opt.skip_parity_access) {
 				for (l = 0; l < state->level; ++l) {
-					if (disk->device == state->parity[l].device) {
-						/* LCOV_EXCL_START */
-						log_fatal("Disk '%s' and %s '%s' are on the same device.\n", disk->dir, lev_name(l), state->parity[l].path);
+					for (s = 0; s < state->parity[l].split_mac; ++s) {
+						if (disk->device == state->parity[l].split_map[s].device) {
+							/* LCOV_EXCL_START */
+							log_fatal("Disk '%s' and %s '%s' are on the same device.\n", disk->dir, lev_name(l), state->parity[l].split_map[s].path);
 #ifdef _WIN32
-						log_fatal("Both have the serial number '%" PRIx64 "'.\n", disk->device);
-						log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
-						log_fatal("to change one of the disk serial.\n");
+							log_fatal("Both have the serial number '%" PRIx64 "'.\n", disk->device);
+							log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
+							log_fatal("to change one of the disk serial.\n");
 #endif
-						exit(EXIT_FAILURE);
-						/* LCOV_EXCL_STOP */
+							exit(EXIT_FAILURE);
+							/* LCOV_EXCL_STOP */
+						}
 					}
 				}
 			}
@@ -333,64 +341,64 @@ static void state_config_check(struct snapraid_state* state, const char* path, t
 	/* check device of parity disks */
 	if (!state->opt.skip_device && !state->opt.skip_parity_access) {
 		for (l = 0; l < state->level; ++l) {
-			unsigned j;
+			for (s = 0; s < state->parity[l].split_mac; ++s) {
+				unsigned j,t;
 
-			/* skip parity disks that are not accessible */
-			if (state->parity[l].skip_access)
-				continue;
+				/* skip parity disks that are not accessible */
+				if (state->parity[l].skip_access)
+					continue;
 
 #ifdef _WIN32
-			if (state->parity[l].device == 0) {
-				/* LCOV_EXCL_START */
-				log_fatal("Disk '%s' has a zero serial number.\n", state->parity[l].path);
-				log_fatal("This is not necessarily wrong, but for using SnapRAID\n");
-				log_fatal("it's better to change the serial number of the disk.\n");
-				log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'.\n");
-				exit(EXIT_FAILURE);
-				/* LCOV_EXCL_STOP */
-			}
+				if (state->parity[l].split_map[s].device == 0) {
+					/* LCOV_EXCL_START */
+					log_fatal("Disk '%s' has a zero serial number.\n", state->parity[l].split_map[s].path);
+					log_fatal("This is not necessarily wrong, but for using SnapRAID\n");
+					log_fatal("it's better to change the serial number of the disk.\n");
+					log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'.\n");
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
 #endif
 
-			for (j = l + 1; j < state->level; ++j) {
-				if (state->parity[l].device == state->parity[j].device) {
-					if (state->opt.force_device) {
-						/* note tha we just ignore the issue */
-						/* and we DON'T mark the disk to be skipped */
-						/* because we want to use these disks */
-						if (!state->opt.no_warnings)
-							log_fatal("DANGER! Skipping parities '%s' and '%s' on the same device\n", lev_config_name(l), lev_config_name(j));
-					} else {
-						/* LCOV_EXCL_START */
-						log_fatal("Parity '%s' and '%s' are on the same device.\n", state->parity[l].path, state->parity[j].path);
+				for (j = l + 1; j < state->level; ++j) {
+					for (t = 0; t < state->parity[j].split_mac; ++t) {
+						if (state->parity[l].split_map[s].device == state->parity[j].split_map[t].device) {
+							if (state->opt.force_device) {
+								/* note tha we just ignore the issue */
+								/* and we DON'T mark the disk to be skipped */
+								/* because we want to use these disks */
+								if (!state->opt.no_warnings)
+									log_fatal("DANGER! Skipping parities '%s' and '%s' on the same device\n", lev_config_name(l), lev_config_name(j));
+							} else {
+								/* LCOV_EXCL_START */
+								log_fatal("Parity '%s' and '%s' are on the same device.\n", state->parity[l].split_map[s].path, state->parity[j].split_map[t].path);
 #ifdef _WIN32
-						log_fatal("Both have the serial number '%" PRIx64 "'.\n", state->parity[l].device);
-						log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
-						log_fatal("to change one of the disk serial.\n");
+								log_fatal("Both have the serial number '%" PRIx64 "'.\n", state->parity[l].split_map[s].device);
+								log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
+								log_fatal("to change one of the disk serial.\n");
 #endif
-						/* in "fix" we allow to continue anyway */
-						if (strcmp(state->command, "fix") == 0) {
-							log_fatal("You can '%s' anyway, using 'snapraid --force-device %s'.\n", state->command, state->command);
+								/* in "fix" we allow to continue anyway */
+								if (strcmp(state->command, "fix") == 0) {
+									log_fatal("You can '%s' anyway, using 'snapraid --force-device %s'.\n", state->command, state->command);
+								}
+								exit(EXIT_FAILURE);
+								/* LCOV_EXCL_STOP */
+							}
 						}
-						exit(EXIT_FAILURE);
-						/* LCOV_EXCL_STOP */
 					}
 				}
-			}
 
-			/* skip parity disks that are not accessible */
-			if (state->parity[l].skip_access)
-				continue;
-
-			if (state->pool[0] != 0 && state->pool_device == state->parity[l].device) {
-				/* LCOV_EXCL_START */
-				log_fatal("Pool '%s' and parity '%s' are on the same device.\n", state->pool, state->parity[l].path);
+				if (state->pool[0] != 0 && state->pool_device == state->parity[l].split_map[s].device) {
+					/* LCOV_EXCL_START */
+					log_fatal("Pool '%s' and parity '%s' are on the same device.\n", state->pool, state->parity[l].split_map[s].path);
 #ifdef _WIN32
-				log_fatal("Both have the serial number '%" PRIx64 "'.\n", state->pool_device);
-				log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
-				log_fatal("to change one of the disk serial.\n");
+					log_fatal("Both have the serial number '%" PRIx64 "'.\n", state->pool_device);
+					log_fatal("Try using the 'VolumeID' tool by 'Mark Russinovich'\n");
+					log_fatal("to change one of the disk serial.\n");
 #endif
-				exit(EXIT_FAILURE);
-				/* LCOV_EXCL_STOP */
+					exit(EXIT_FAILURE);
+					/* LCOV_EXCL_STOP */
+				}
 			}
 		}
 	}
@@ -515,7 +523,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 	STREAM* f;
 	unsigned line;
 	tommy_node* i;
-	unsigned l;
+	unsigned l, s;
 
 	/* copy the options */
 	state->opt = *opt;
@@ -642,11 +650,13 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 			BLOCK_HASH_SIZE = hash_size;
 		} else if (lev_config_scan(tag, &level, &state->raid_mode) == 0) {
 			char device[PATH_MAX];
+			char* split_map[SPLIT_MAX+1];
+			unsigned split_mac;
 			char* slash;
 			uint64_t dev;
 			int skip_access;
 
-			if (*state->parity[level].path) {
+			if (state->parity[level].split_mac != 0) {
 				/* LCOV_EXCL_START */
 				log_fatal("Multiple '%s' specification in '%s' at line %u\n", tag, path, line);
 				exit(EXIT_FAILURE);
@@ -668,47 +678,61 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				/* LCOV_EXCL_STOP */
 			}
 
-			pathimport(state->parity[level].path, sizeof(state->parity[level].path), buffer);
+			split_mac = split(split_map, SPLIT_MAX+1, buffer, ",");
 
-			skip_access = 0;
-			if (!state->opt.skip_parity_access) {
-				struct stat st;
-
-				/* get the device of the directory containing the parity file */
-				pathimport(device, sizeof(device), buffer);
-				slash = strrchr(device, '/');
-				if (slash)
-					*slash = 0;
-				else
-					pathcpy(device, sizeof(device), ".");
-
-				if (stat(device, &st) == 0) {
-					dev = st.st_dev;
-				} else {
-					/* if the disk can be skipped */
-					if (state->opt.force_device) {
-						/* use a fake device, and mark the disk to be skipped */
-						dev = 0;
-						skip_access = 1;
-						log_fatal("DANGER! Skipping inaccessible parity disk '%s'...\n", tag);
-					} else {
-						/* LCOV_EXCL_START */
-						log_fatal("Error accessing 'parity' dir '%s' specification in '%s' at line %u\n", device, path, line);
-
-						/* in "fix" we allow to continue anyway */
-						if (strcmp(state->command, "fix") == 0) {
-							log_fatal("You can '%s' anyway, using 'snapraid --force-device %s'.\n", state->command, state->command);
-						}
-						exit(EXIT_FAILURE);
-						/* LCOV_EXCL_STOP */
-					}
-				}
-			} else {
-				/* use a fake device */
-				dev = 0;
+			if (split_mac > SPLIT_MAX) {
+				/* LCOV_EXCL_START */
+				log_fatal("Too many files in '%s' specification in '%s' at line %u\n", tag, path, line);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
 			}
 
-			state->parity[level].device = dev;
+			skip_access = 0;
+			state->parity[level].split_mac = split_mac;
+			for (s = 0; s < split_mac; ++s) {
+				pathimport(state->parity[level].split_map[s].path, sizeof(state->parity[level].split_map[s].path), split_map[s]);
+
+				if (!state->opt.skip_parity_access) {
+					struct stat st;
+
+					/* get the device of the directory containing the parity file */
+					pathimport(device, sizeof(device), split_map[s]);
+					slash = strrchr(device, '/');
+					if (slash)
+						*slash = 0;
+					else
+						pathcpy(device, sizeof(device), ".");
+
+					if (stat(device, &st) == 0) {
+						dev = st.st_dev;
+					} else {
+						/* if the disk can be skipped */
+						if (state->opt.force_device) {
+							/* use a fake device, and mark the disk to be skipped */
+							dev = 0;
+							skip_access = 1;
+							log_fatal("DANGER! Skipping inaccessible parity disk '%s'...\n", tag);
+						} else {
+							/* LCOV_EXCL_START */
+							log_fatal("Error accessing 'parity' dir '%s' specification in '%s' at line %u\n", device, path, line);
+
+							/* in "fix" we allow to continue anyway */
+							if (strcmp(state->command, "fix") == 0) {
+								log_fatal("You can '%s' anyway, using 'snapraid --force-device %s'.\n", state->command, state->command);
+							}
+							exit(EXIT_FAILURE);
+							/* LCOV_EXCL_STOP */
+						}
+					}
+				} else {
+					/* use a fake device */
+					dev = 0;
+				}
+
+				state->parity[level].split_map[s].device = dev;
+			}
+
+			/* store the global parity skip_access */
 			state->parity[level].skip_access = skip_access;
 
 			/* adjust the level */
@@ -1201,7 +1225,8 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 
 	log_tag("mode:%s\n", lev_raid_name(state->raid_mode, state->level));
 	for (l = 0; l < state->level; ++l)
-		log_tag("%s:%s\n", lev_config_name(l), state->parity[l].path);
+		for (s = 0; s < state->parity[l].split_mac; ++s)
+			log_tag("%s:%u:%s\n", lev_config_name(l), s, state->parity[l].split_map[s].path);
 	if (state->pool[0] != 0)
 		log_tag("pool:%s\n", state->pool);
 	if (state->share[0] != 0)
@@ -1287,7 +1312,7 @@ static void state_map(struct snapraid_state* state)
 	tommy_node* i;
 	unsigned uuid_mismatch;
 	unsigned diskcount;
-	unsigned l;
+	unsigned l, s;
 
 	/* remove all the mapping without a disk */
 	/* this happens when a disk is removed from the configuration file */
@@ -1410,29 +1435,31 @@ static void state_map(struct snapraid_state* state)
 	/* check the parity uuid */
 	if (!state->opt.skip_parity_access) {
 		for (l = 0; l < state->level; ++l) {
-			char uuid[UUID_MAX];
-			int ret;
+			for (s = 0; s < state->parity[l].split_mac; ++s) {
+				char uuid[UUID_MAX];
+				int ret;
 
-			ret = devuuid(state->parity[l].device, uuid, sizeof(uuid));
-			if (ret != 0) {
-				/* uuid not available, just ignore */
-				continue;
-			}
-
-			/* if the uuid is changed */
-			if (strcmp(uuid, state->parity[l].uuid) != 0) {
-				/* if the previous uuid is available */
-				if (state->parity[l].uuid[0] != 0) {
-					/* count the number of uuid change */
-					++uuid_mismatch;
-					log_fatal("UUID change for parity '%s' from '%s' to '%s'\n", lev_config_name(l), state->parity[l].uuid, uuid);
+				ret = devuuid(state->parity[l].split_map[s].device, uuid, sizeof(uuid));
+				if (ret != 0) {
+					/* uuid not available, just ignore */
+					continue;
 				}
 
-				/* update the uuid */
-				pathcpy(state->parity[l].uuid, sizeof(state->parity[l].uuid), uuid);
+				/* if the uuid is changed */
+				if (strcmp(uuid, state->parity[l].split_map[s].uuid) != 0) {
+					/* if the previous uuid is available */
+					if (state->parity[l].split_map[s].uuid[0] != 0) {
+						/* count the number of uuid change */
+						++uuid_mismatch;
+						log_fatal("UUID change for parity '%s[%u]' from '%s' to '%s'\n", lev_config_name(l), s, state->parity[l].split_map[s].uuid, uuid);
+					}
 
-				/* write the new state with the new uuid */
-				state->need_write = 1;
+					/* update the uuid */
+					pathcpy(state->parity[l].split_map[s].uuid, sizeof(state->parity[l].split_map[s].uuid), uuid);
+
+					/* write the new state with the new uuid */
+					state->need_write = 1;
+				}
 			}
 		}
 	}
@@ -1487,7 +1514,7 @@ static void state_map(struct snapraid_state* state)
 void state_refresh(struct snapraid_state* state)
 {
 	tommy_node* i;
-	unsigned l;
+	unsigned l, s;
 
 	/* for all disks */
 	for (i = state->maplist; i != 0; i = i->next) {
@@ -1524,21 +1551,27 @@ void state_refresh(struct snapraid_state* state)
 
 	/* for all parities */
 	for (l = 0; l < state->level; ++l) {
-		uint64_t total_space;
-		uint64_t free_space;
-		int ret;
-
-		ret = fsinfo(state->parity[l].path, 0, &total_space, &free_space);
-		if (ret != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal("Error accessing file '%s' to get file-system info. %s.\n", state->parity[l].path, strerror(errno));
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
-
 		/* set the new free blocks */
-		state->parity[l].total_blocks = total_space / state->block_size;
-		state->parity[l].free_blocks = free_space / state->block_size;
+		state->parity[l].total_blocks = 0;
+		state->parity[l].free_blocks = 0;
+
+		for (s = 0; s < state->parity[l].split_mac; ++s) {
+			uint64_t total_space;
+			uint64_t free_space;
+			int ret;
+
+			ret = fsinfo(state->parity[l].split_map[s].path, 0, &total_space, &free_space);
+			if (ret != 0) {
+				/* LCOV_EXCL_START */
+				log_fatal("Error accessing file '%s' to get file-system info. %s.\n", state->parity[l].split_map[s].path, strerror(errno));
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			/* add the new free blocks */
+			state->parity[l].total_blocks += total_space / state->block_size;
+			state->parity[l].free_blocks += free_space / state->block_size;
+		}
 	}
 
 	/* note what we don't set need_write = 1, because we don't want */
@@ -1742,6 +1775,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 	 *    The previous 'm' entry is now deprecated, but supported for importing.
 	 *    Similarly for text file, we add 'mapping' and 'parity' deprecating 'map'.
 	 *  - SNAPCNT3/SnapRAID 11.0 Adds entry 'y' for hash size.
+	 *  - SNAPCNT3/SnapRAID 11.0 Adds entry 'Q' for multi parity file.
+	 *    The previous 'P' entry is now deprecated, but supported for importing.
 	 */
 	if (memcmp(buffer, "SNAPCNT1\n\3\0\0", 12) != 0
 		&& memcmp(buffer, "SNAPCNT2\n\3\0\0", 12) != 0
@@ -2559,7 +2594,8 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			++mapping_max;
 		} else if (c == 'P') {
 			/* from SnapRAID 7.0 the 'P' command includes the free space */
-			char uuid[UUID_MAX];
+			/* from SnapRAID 11.0 the 'P' command is deprecated by 'Q' */
+			char v_uuid[UUID_MAX];
 			uint32_t v_level;
 			uint32_t v_total_blocks;
 			uint32_t v_free_blocks;
@@ -2588,7 +2624,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
-			ret = sgetbs(f, uuid, sizeof(uuid));
+			ret = sgetbs(f, v_uuid, sizeof(v_uuid));
 			if (ret < 0) {
 				/* LCOV_EXCL_START */
 				decoding_error(path, f);
@@ -2603,9 +2639,100 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			/* if we use this parity entry */
 			if (v_level < state->level) {
 				/* set the parity info */
-				pathcpy(state->parity[v_level].uuid, sizeof(state->parity[v_level].uuid), uuid);
+				state->parity[v_level].split_mac = 1;
+				pathcpy(state->parity[v_level].split_map[0].uuid, sizeof(state->parity[v_level].split_map[0].uuid), v_uuid);
 				state->parity[v_level].total_blocks = v_total_blocks;
 				state->parity[v_level].free_blocks = v_free_blocks;
+			}
+		} else if (c == 'Q') {
+			/* from SnapRAID 11.0 the 'Q' command include size info and multi file support  */
+			uint32_t v_level;
+			uint32_t v_total_blocks;
+			uint32_t v_free_blocks;
+			uint32_t v_split_mac;
+			unsigned s;
+
+			ret = sgetb32(f, &v_level);
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				os_abort();
+				/* LCOV_EXCL_STOP */
+			}
+
+			ret = sgetb32(f, &v_total_blocks);
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				os_abort();
+				/* LCOV_EXCL_STOP */
+			}
+
+			ret = sgetb32(f, &v_free_blocks);
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				os_abort();
+				/* LCOV_EXCL_STOP */
+			}
+
+			ret = sgetb32(f, &v_split_mac);
+			if (ret < 0) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				os_abort();
+				/* LCOV_EXCL_STOP */
+			}
+
+			/* auto configure if configuration is missing */
+			if (state->no_conf && v_level < LEV_MAX && v_level >= state->level)
+				state->level = v_level + 1;
+
+			/* if we use this parity entry */
+			if (v_level < state->level) {
+				/* set the parity info */
+				state->parity[v_level].split_mac = v_split_mac;
+				state->parity[v_level].total_blocks = v_total_blocks;
+				state->parity[v_level].free_blocks = v_free_blocks;
+			}
+
+			for (s = 0; s < v_split_mac; ++s) {
+				char v_path[PATH_MAX];
+				char v_uuid[UUID_MAX];
+				uint64_t v_size;
+
+				ret = sgetbs(f, v_path, sizeof(v_path));
+				if (ret < 0) {
+					/* LCOV_EXCL_START */
+					decoding_error(path, f);
+					os_abort();
+					/* LCOV_EXCL_STOP */
+				}
+
+				ret = sgetbs(f, v_uuid, sizeof(v_uuid));
+				if (ret < 0) {
+					/* LCOV_EXCL_START */
+					decoding_error(path, f);
+					os_abort();
+					/* LCOV_EXCL_STOP */
+				}
+
+				ret = sgetb64(f, &v_size);
+				if (ret < 0) {
+					/* LCOV_EXCL_START */
+					decoding_error(path, f);
+					os_abort();
+					/* LCOV_EXCL_STOP */
+				}
+
+				/* if we use this parity entry */
+				if (v_level < state->level) {
+					/* we copy the path only if without configuration file */
+					if (state->no_conf)
+						pathcpy(state->parity[v_level].split_map[s].path, sizeof(state->parity[v_level].split_map[s].path), v_path);
+					pathcpy(state->parity[v_level].split_map[s].uuid, sizeof(state->parity[v_level].split_map[s].uuid), v_uuid);
+					state->parity[v_level].split_map[s].size = v_size;
+				}
 			}
 		} else if (c == 'N') {
 			uint32_t crc_stored;
@@ -2716,7 +2843,7 @@ static void* state_write_thread(void* arg)
 	tommy_node* i;
 	block_off_t idx;
 	block_off_t begin;
-	unsigned l;
+	unsigned l, s;
 
 	count_file = 0;
 	count_hardlink = 0;
@@ -2724,12 +2851,7 @@ static void* state_write_thread(void* arg)
 	count_dir = 0;
 
 	/* write header */
-	if (BLOCK_HASH_SIZE == HASH_MAX) {
-		swrite("SNAPCNT2\n\3\0\0", 12, f);
-	} else {
-		/* use version 3 only if the hash size is not standard */
-		swrite("SNAPCNT3\n\3\0\0", 12, f);
-	}
+	swrite("SNAPCNT3\n\3\0\0", 12, f);
 
 	/* write block size and block max */
 	sputc('z', f);
@@ -2737,11 +2859,9 @@ static void* state_write_thread(void* arg)
 	sputc('x', f);
 	sputb32(blockmax, f);
 
-	/* write hash size only if not the standard one */
-	if (BLOCK_HASH_SIZE != HASH_MAX) {
-		sputc('y', f);
-		sputb32(BLOCK_HASH_SIZE, f);
-	}
+	/* hash size */
+	sputc('y', f);
+	sputb32(BLOCK_HASH_SIZE, f);
 
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
@@ -2827,11 +2947,16 @@ static void* state_write_thread(void* arg)
 
 	/* for each parity */
 	for (l = 0; l < state->level; ++l) {
-		sputc('P', f);
+		sputc('Q', f);
 		sputb32(l, f);
 		sputb32(state->parity[l].total_blocks, f);
 		sputb32(state->parity[l].free_blocks, f);
-		sputbs(state->parity[l].uuid, f);
+		sputb32(state->parity[l].split_mac, f);
+		for (s = 0; s < state->parity[l].split_mac; ++s) {
+			sputbs(state->parity[l].split_map[s].path, f);
+			sputbs(state->parity[l].split_map[s].uuid, f);
+			sputb64(state->parity[l].split_map[s].size, f);
+		}
 		if (serror(f)) {
 			/* LCOV_EXCL_START */
 			log_fatal("Error writing the content file '%s'. %s.\n", serrorfile(f), strerror(errno));
@@ -4403,7 +4528,7 @@ void generate_configuration(const char* path)
 {
 	struct snapraid_state state;
 	struct snapraid_content* content;
-	unsigned i;
+	unsigned l, s;
 	tommy_node* j;
 
 	state_init(&state);
@@ -4429,11 +4554,32 @@ void generate_configuration(const char* path)
 	printf("# Use this hashsize\n");
 	printf("hashsize %u\n", BLOCK_HASH_SIZE);
 	printf("\n");
-	for (i = 0; i < state.level; ++i) {
-		printf("# Set the correct path for the %s file\n", lev_name(i));
-		if (state.parity[i].uuid[0])
-			printf("# The file was in the disk with id '%s'\n", state.parity[i].uuid);
-		printf("%s ENTER_HERE_THE_PARITY_FILE\n", lev_config_name(i));
+	for (l = 0; l < state.level; ++l) {
+		printf("# Set the correct path for the %s files\n", lev_name(l));
+		printf("# You had %u of them:\n", state.parity[l].split_mac);
+		for (s = 0; s < state.parity[l].split_mac; ++s) {
+			printf("# %u:\n", s);
+			printf("# PATH:");
+			if (state.parity[l].split_map[s].path[0])
+				printf("%s", state.parity[l].split_map[s].path);
+			else
+				printf("?");
+			printf("\n");
+			printf("# SIZE:");
+			if (state.parity[l].split_map[s].size != PARITY_SIZE_INVALID)
+				printf("%" PRIu64, state.parity[l].split_map[s].size);
+			else
+				printf("?");
+			printf("\n");
+			printf("# UUID:");
+			if (state.parity[l].split_map[s].uuid[0])
+				printf("%s", state.parity[l].split_map[s].uuid);
+			else
+				printf("?");
+			printf("\n");
+			printf("#\n");
+		}
+		printf("%s ENTER_HERE_THE_PARITY_FILES_COMMA_SEPARATED\n", lev_config_name(l));
 		printf("\n");
 	}
 	printf("# Add any other content file\n");

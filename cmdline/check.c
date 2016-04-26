@@ -1913,7 +1913,6 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 {
 	block_off_t blockmax;
 	data_off_t size;
-	data_off_t out_size;
 	int ret;
 	struct snapraid_parity_handle parity[LEV_MAX];
 	struct snapraid_parity_handle* parity_ptr[LEV_MAX];
@@ -1948,7 +1947,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 			}
 
 			parity_ptr[l] = &parity[l];
-			ret = parity_create(parity_ptr[l], l, state->parity[l].path, &out_size, state->file_mode);
+			ret = parity_create(parity_ptr[l], &state->parity[l], l, state->file_mode);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
 				log_fatal("WARNING! Without an accessible %s file, it isn't possible to fix any error.\n", lev_name(l));
@@ -1956,7 +1955,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 				/* LCOV_EXCL_STOP */
 			}
 
-			ret = parity_chsize(parity_ptr[l], size, &out_size, state->opt.skip_fallocate);
+			ret = parity_chsize(parity_ptr[l], &state->parity[l], 0, size, state->block_size, state->opt.skip_fallocate);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
 				log_fatal("WARNING! Without an accessible %s file, it isn't possible to sync.\n", lev_name(l));
@@ -1969,7 +1968,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 		/* it may fail if the file doesn't exist, in this case we continue to check the files */
 		for (l = 0; l < state->level; ++l) {
 			parity_ptr[l] = &parity[l];
-			ret = parity_open(parity_ptr[l], l, state->parity[l].path, state->file_mode);
+			ret = parity_open(parity_ptr[l], &state->parity[l], l, state->file_mode);
 			if (ret == -1) {
 				msg_status("No accessible %s file, only files will be checked.\n", lev_name(l));
 				/* continue anyway */

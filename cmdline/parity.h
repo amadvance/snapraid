@@ -23,12 +23,23 @@
 /****************************************************************************/
 /* parity */
 
-struct snapraid_parity_handle {
+struct snapraid_split_handle {
 	char path[PATH_MAX]; /**< Path of the file. */
-	unsigned level; /**< Level of the parity. */
-	int f; /**< Handle of the file. */
+	int f; /**< Handle of the files. */
 	struct stat st; /**< Stat info of the opened file. */
-	data_off_t valid_size; /**< Size of the valid data. */
+
+	/**
+	 * Size of the parity split.
+	 * Only the latest not zero size is allowed to grow.
+	 * Note that this value CANNOT be PARITY_SIZE_INVALID.
+	 */
+	uint64_t size;
+};
+
+struct snapraid_parity_handle {
+	struct snapraid_split_handle split_map[SPLIT_MAX];
+	unsigned split_mac; /**< Number of parity splits. */
+	unsigned level; /**< Level of the parity. */
 };
 
 /**
@@ -62,51 +73,54 @@ block_off_t parity_used_size(struct snapraid_state* state);
 int parity_is_invalid(struct snapraid_state* state);
 
 /**
- * If parity has some
- */
-int parity_is_invalid(struct snapraid_state* state);
-
-/**
  * Report all the files outside the specified parity size.
  */
 void parity_overflow(struct snapraid_state* state, data_off_t size);
+
 
 /**
  * Create the parity file.
  * \param out_size Return the size of the parity file.
  */
-int parity_create(struct snapraid_parity_handle* parity, unsigned level, const char* path, data_off_t* out_size, int mode);
+int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode);
 
 /**
  * Change the parity size.
  * \param out_size Return the size of the parity file. The out_size is set also on error to reflect a partial resize.
  */
-int parity_chsize(struct snapraid_parity_handle* parity, data_off_t size, data_off_t* out_size, int skip_fallocate);
+int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity* parity, int* is_modified, data_off_t size, uint32_t block_size, int skip_fallocate);
+
+/**
+ * Get the size of opened parity file.
+ *
+ * This function never fails as it returns the cached size.
+ */
+void parity_size(struct snapraid_parity_handle* handle, data_off_t* out_size);
 
 /**
  * Open an already existing parity file.
  */
-int parity_open(struct snapraid_parity_handle* parity, unsigned level, const char* path, int mode);
+int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode);
 
 /**
  * Flush the parity file in the disk.
  */
-int parity_sync(struct snapraid_parity_handle* parity);
+int parity_sync(struct snapraid_parity_handle* handle);
 
 /**
  * Close the parity file.
  */
-int parity_close(struct snapraid_parity_handle* parity);
+int parity_close(struct snapraid_parity_handle* handle);
 
 /**
  * Read a block from the parity file.
  */
-int parity_read(struct snapraid_parity_handle* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size, fptr* out);
+int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned char* block_buffer, unsigned block_size, fptr* out);
 
 /**
  * Write a block in the parity file.
  */
-int parity_write(struct snapraid_parity_handle* parity, block_off_t pos, unsigned char* block_buffer, unsigned block_size);
+int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigned char* block_buffer, unsigned block_size);
 
 #endif
 

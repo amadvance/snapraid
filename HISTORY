@@ -3,7 +3,10 @@ SnapRAID HISTORY
 
 11.0 2016/05
 ============
- * In Linux add the missing support for filesystems using null device
+ * Added support for splitting the parity in multiple partitions. You can
+   now specify multiple files for a single parity. As soon a file
+   cannot grow anymore, the next one starts growing.
+ * In Linux added the missing support for filesystems using null device
    numbers, like Btrfs. Note that to have full support you need also
    the 'libblkid' library, otherwise you won't get the UUIDs.
  * In the Windows version allow to use the escape char '^' to handle

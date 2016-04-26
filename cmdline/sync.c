@@ -1413,7 +1413,6 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	block_off_t used_paritymax;
 	block_off_t file_paritymax;
 	data_off_t size;
-	data_off_t out_size;
 	int ret;
 	struct snapraid_parity_handle parity_handle[LEV_MAX];
 	unsigned unrecoverable_error;
@@ -1425,7 +1424,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	blockmax = parity_allocated_size(state);
 	size = blockmax * (data_off_t)state->block_size;
 
-	/* minum size of the parity files we expect */
+	/* minimum size of the parity files we expect */
 	used_paritymax = parity_used_size(state);
 
 	/* effective size of the parity files */
@@ -1444,10 +1443,11 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	}
 
 	for (l = 0; l < state->level; ++l) {
+		data_off_t out_size;
 		block_off_t parityblocks;
 
 		/* create the file and open for writing */
-		ret = parity_create(&parity_handle[l], l, state->parity[l].path, &out_size, state->file_mode);
+		ret = parity_create(&parity_handle[l], &state->parity[l], l, state->file_mode);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
 			log_fatal("WARNING! Without an accessible %s file, it isn't possible to sync.\n", lev_name(l));
@@ -1456,11 +1456,12 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		}
 
 		/* number of block in the parity file */
+		parity_size(&parity_handle[l], &out_size);
 		parityblocks = out_size / state->block_size;
 
 		/* if the file is too small */
 		if (parityblocks < used_paritymax) {
-			log_fatal("WARNING! The %s file %s has data only %u blocks instead of %u.\n", lev_name(l), state->parity[l].path, parityblocks, used_paritymax);
+			log_fatal("WARNING! The %s parity has data only %u blocks instead of %u.\n", lev_name(l), parityblocks, used_paritymax);
 		}
 
 		/* keep the smallest parity number of blocks */
@@ -1503,6 +1504,33 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	}
 
 	if (!skip_sync) {
+		msg_progress("Resizing...\n");
+
+		/* now change the size of all parities */
+		for (l = 0; l < state->level; ++l) {
+			int is_modified;
+
+			/* change the size of the parity file, truncating or extending it */
+			/* from this point all the DELETED blocks after the end of the parity are invalid */
+			/* and they are automatically removed when we save the new content file */
+			ret = parity_chsize(&parity_handle[l], &state->parity[l], &is_modified, size, state->block_size, state->opt.skip_fallocate);
+			if (ret == -1) {
+				/* LCOV_EXCL_START */
+				data_off_t out_size;
+				parity_size(&parity_handle[l], &out_size);
+				parity_overflow(state, out_size);
+				log_fatal("WARNING! Without an accessible %s file, it isn't possible to sync.\n", lev_name(l));
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
+			if (is_modified)
+				state->need_write = 1;
+		}
+
+		/* after resizing parity files, refresh again the free info */
+		state_refresh(state);
+
 		/**
 		 * Save the new state before the sync but after the hashing phase
 		 *
@@ -1525,24 +1553,6 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		 */
 		if (state->need_write)
 			state_write(state);
-
-		/* now change the size of all parities */
-		for (l = 0; l < state->level; ++l) {
-			/* change the size of the parity file, truncating or extending it */
-			/* from this point all the DELETED blocks after the end of the parity are invalid */
-			/* and they are automatically removed when we save the new content file */
-			ret = parity_chsize(&parity_handle[l], size, &out_size, state->opt.skip_fallocate);
-			if (ret == -1) {
-				/* LCOV_EXCL_START */
-				parity_overflow(state, out_size);
-				log_fatal("WARNING! Without an accessible %s file, it isn't possible to sync.\n", lev_name(l));
-				exit(EXIT_FAILURE);
-				/* LCOV_EXCL_STOP */
-			}
-		}
-
-		/* after resizing parity files, refresh again the free info */
-		state_refresh(state);
 
 		msg_progress("Syncing...\n");
 

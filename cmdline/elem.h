@@ -434,18 +434,50 @@ struct snapraid_map {
 };
 
 /**
+ * Max number of parity split.
+ */
+#define SPLIT_MAX 8
+
+/**
+ * Invalid parity size.
+ *
+ * This value is used to identify new parities,
+ * like when you alter the configuration adding
+ * a new parity level, creating it with 'fix'.
+ * Given that 'fix' doesn't write the content file,
+ * the new size will be written only at the next
+ * 'sync'.
+ */
+#define PARITY_SIZE_INVALID -1ULL
+
+/**
+ * Parity split.
+ */
+struct snapraid_split {
+	char path[PATH_MAX]; /**< Path of the parity file. */
+	char uuid[UUID_MAX]; /**< UUID of the disk. Empty if unknown. */
+
+	/**
+	 * Size of the parity split.
+	 * Only the latest not zero size is allowed to grow.
+	 * If the value is unset, it's PARITY_SIZE_INVALID.
+	 */
+	uint64_t size;
+
+	uint64_t device; /**< Device identifier of the parity. */
+};
+
+/**
  * Parity.
  */
 struct snapraid_parity {
-	char path[PATH_MAX]; /**< Path of the parity file. */
-	char uuid[UUID_MAX]; /**< UUID of the disk. Empty if unknown. */
+	struct snapraid_split split_map[SPLIT_MAX]; /**< Parity splits. */
+	unsigned split_mac; /**< Number of parity splits. */
 	char smartctl[PATH_MAX]; /**< Custom command for smartctl. Empty means auto. */
-	uint64_t device; /**< Device identifier of the parity. */
 	block_off_t total_blocks; /**< Number of total blocks. */
 	block_off_t free_blocks; /**< Number of free blocks at the last sync. */
-	int skip_access; /**< If the disk is inaccessible and it should be skipped. */
 	int is_excluded; /**< If the parity is excluded by disk filter. */
-
+	int skip_access; /**< If at least one of the parity disk is inaccessible and it should be skipped. */
 	uint64_t tick; /**< Usage time. */
 	uint64_t progress_tick[PROGRESS_MAX]; /**< Last cpu ticks of progress. */
 	unsigned cached; /**< Number of IO blocks cached. */

@@ -5,11 +5,6 @@ This is the list of TODO items for SnapRAID.
 
 - Next
 
-* Allow to specify more than one partition for each parity disk.
-Checking the UUID, we can avoid that users mess-up with disk specifications.
-See discussion at:
-https://sourceforge.net/p/snapraid/discussion/1677233/thread/02b2a2ae/
-
 - Minor
 
 * Allow to have "parial" parity disks, smaller than required ?
