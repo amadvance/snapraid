@@ -90,28 +90,79 @@ static int devresolve_proc(uint64_t device, char* path, size_t path_size)
 		return -1;
 	}
 
+	/*
+	 * mountinfo format
+	 * 0 - mount ID
+	 * 1 - parent ID
+	 * 2 - major:minor
+	 * 3 - root
+	 * 4 - mount point
+	 * 5 - options
+	 * 6 - "-" (separator)
+	 * 7 - fs
+	 * 8 - mount source - /dev/device
+	 */
+
 	while (1) {
 		char buf[256];
-		char* split_map[9];
-		unsigned split_mac;
+		char* first_map[8];
+		unsigned first_mac;
+		char* second_map[8];
+		unsigned second_mac;
 		char* s;
+		struct stat st;
+		char* separator;
+		char* majorminor;
+		char* mountpoint;
+		char* mountsource;
 
 		s = fgets(buf, sizeof(buf), f);
 		if (s == 0)
 			break;
 
-		/* split the line */
-		split_mac = split(split_map, 9, s, " \t\r\n");
-
-		/* if too short, it's the wrong line */
-		if (split_mac < 9)
+		/* find the separator position */
+		separator = strstr(s, " - ");
+		if (!separator)
 			continue;
 
-		/* if it's the right line */
-		if (strcmp(split_map[2], match) == 0) {
-			pathcpy(path, path_size, split_map[8]);
+		/* skip the separator */
+		*separator = 0;
+		separator += 3;
 
-			log_tag("resolve:proc:%u:%u:%s: found\n", major(device), minor(device), path);
+		/* split the line */
+		first_mac = split(first_map, 8, s, " \t\r\n");
+		second_mac = split(second_map, 8, separator, " \t\r\n");
+
+		/* if too short, it's the wrong line */
+		if (first_mac < 5)
+			continue;
+		if (second_mac < 2)
+			continue;
+
+		majorminor = first_map[2];
+		mountpoint = first_map[4];
+		mountsource = second_map[1];
+
+		/* accept only /dev/... mountsource */
+		if (strncmp(mountsource, "/dev/", 5) != 0)
+			continue;
+
+		/* compare major:minor from mountinfo */
+		if (strcmp(majorminor, match) == 0) {
+			pathcpy(path, path_size, mountsource);
+
+			log_tag("resolve:proc:%u:%u:%s: found mountinfo device %s\n", major(device), minor(device), path, match);
+
+			fclose(f);
+			return 0;
+		}
+
+		/* get the device of the mount point */
+		/* in btrfs it could be different than the one in mountinfo */
+		if (stat(mountpoint, &st) == 0 && st.st_dev == device) {
+			pathcpy(path, path_size, mountsource);
+
+			log_tag("resolve:proc:%u:%u:%s: found mountpoint %s\n", major(device), minor(device), path, mountpoint);
 
 			fclose(f);
 			return 0;
