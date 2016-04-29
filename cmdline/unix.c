@@ -144,6 +144,7 @@ static int devresolve_proc(uint64_t device, char* path, size_t path_size)
 		mountsource = second_map[1];
 
 		/* accept only /dev/... mountsource */
+		/* this excludes ZFS that has the bare label, like "tank" */
 		if (strncmp(mountsource, "/dev/", 5) != 0)
 			continue;
 
@@ -158,7 +159,7 @@ static int devresolve_proc(uint64_t device, char* path, size_t path_size)
 		}
 
 		/* get the device of the mount point */
-		/* in btrfs it could be different than the one in mountinfo */
+		/* in Btrfs it could be different than the one in mountinfo */
 		if (stat(mountpoint, &st) == 0 && st.st_dev == device) {
 			pathcpy(path, path_size, mountsource);
 
@@ -177,9 +178,15 @@ static int devresolve_proc(uint64_t device, char* path, size_t path_size)
 #endif
 
 /**
- * Resolve and get again the device number.
+ * Get the device of a virtual superblock.
  *
- * This is intended to resolve the case of null devices (major==0).
+ * This is intended to resolve the case of Btrfs filesystems that
+ * create a virtual superblock (major==0) not backed by any low
+ * level device.
+ *
+ * See:
+ * Bug 711881 - too funny btrfs st_dev numbers
+ * https://bugzilla.redhat.com/show_bug.cgi?id=711881
  */
 static int devdereference(uint64_t device, uint64_t* new_device)
 {
@@ -283,17 +290,6 @@ static int devresolve_dev(dev_t device, char* path, size_t path_size)
 #if HAVE_LINUX_DEVICE
 static int devresolve(uint64_t device, char* path, size_t path_size)
 {
-	/* if the major is the null device */
-	if (major(device) == 0) {
-		/* obtain the real device */
-		if (devdereference(device, &device) != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal("Failed to map device %u:%u.\n", major(device), minor(device));
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-	}
-
 	if (devresolve_dev(device, path, path_size) == 0)
 		return 0;
 
@@ -1134,26 +1130,13 @@ static void* thread_spinup(void* arg)
 	/* set the device number for printing */
 	devinfo->device = st.st_dev;
 
-#if HAVE_LINUX_DEVICE
-	/* get the device file, but only in Linux and only for the message */
-	if (devresolve(devinfo->device, devinfo->file, sizeof(devinfo->file)) != 0) {
-		/* LCOV_EXCL_START */
-		return (void*)-1;
-		/* LCOV_EXCL_STOP */
-	}
-#endif
-
 	if (devup(devinfo->mount) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */
 	}
 
-#if HAVE_LINUX_DEVICE
-	msg_status("Spunup device '%s' for disk '%s' in %" PRIu64 " ms.\n", devinfo->file, devinfo->name, tick_ms() - start);
-#else
 	msg_status("Spunup device '%u:%u' for disk '%s' in %" PRIu64 " ms.\n", major(devinfo->device), minor(devinfo->device), devinfo->name, tick_ms() - start);
-#endif
 
 	return 0;
 }
@@ -1270,19 +1253,31 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 		/* for each device */
 		for (i = tommy_list_head(high); i != 0; i = i->next) {
 			devinfo_t* devinfo = i->data;
+			uint64_t device = devinfo->device;
+
+			/* if the major is the null device, find the real one */
+			if (major(device) == 0) {
+				/* obtain the real device */
+				if (devdereference(device, &device) != 0) {
+					/* LCOV_EXCL_START */
+					log_fatal("Failed to map device %u:%u.\n", major(device), minor(device));
+					return -1;
+					/* LCOV_EXCL_STOP */
+				}
+			}
 
 			/* get the device file */
-			if (devresolve(devinfo->device, devinfo->file, sizeof(devinfo->file)) != 0) {
+			if (devresolve(device, devinfo->file, sizeof(devinfo->file)) != 0) {
 				/* LCOV_EXCL_START */
-				log_fatal("Failed to resolve device '%u:%u'.\n", major(devinfo->device), minor(devinfo->device));
+				log_fatal("Failed to resolve device '%u:%u'.\n", major(device), minor(device));
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
 
 			/* expand the tree of devices */
-			if (devtree(devinfo->name, devinfo->smartctl, devinfo->device, devinfo, low) != 0) {
+			if (devtree(devinfo->name, devinfo->smartctl, device, devinfo, low) != 0) {
 				/* LCOV_EXCL_START */
-				log_fatal("Failed to expand device '%u:%u'.\n", major(devinfo->device), minor(devinfo->device));
+				log_fatal("Failed to expand device '%u:%u'.\n", major(device), minor(device));
 				return -1;
 				/* LCOV_EXCL_STOP */
 			}
