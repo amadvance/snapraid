@@ -258,16 +258,32 @@ static int parity_handle_grow(struct snapraid_split_handle* split, data_off_t si
 
 #if HAVE_FALLOCATE
 	if (!skip_fallocate) {
-		/* allocate real space using the specific Linux fallocate() operation. */
-		/* If the underline file-system doesn't support it, this operation fails, */
-		/* instead posix_fallocate() fallbacks to write the whole file. */
+		/*
+		 * Allocate real space using the specific Linux fallocate() operation.
+		 * If the underline file-system doesn't support it, this operation fails.
+		 *
+		 * Instead posix_fallocate() fallbacks to write the whole file,
+		 * and we cannot use it as we may need to initialize a multi terabyte
+		 * file.
+		 *
+		 * See: fallocate vs posix_fallocate
+		 * http://stackoverflow.com/questions/14063046/fallocate-vs-posix-fallocate
+		 */
 		ret = fallocate(split->f, 0, 0, size);
 
-		/* fallocate() returns the error number as positive integer, */
-		/* and in this case it doesn't set errno, just like posix_fallocate() */
-		/* Checking the glibc code (2.11.1 and 2.14.1) it seems that ENOSYS */
-		/* may be returned in errno, so we support both the return way */
-		if (ret > 0) { /* if a positive error is returned, convert it to errno */
+		/*
+		 * In some legacy system fallocate() may return the error number
+		 * as  positive integer, and in this case it doesn't set errno.
+		 *
+		 * Detect and handle this case.
+		 *
+		 * See: Fix fallocate error return on i386
+		 * https://sourceware.org/ml/libc-hacker/2010-04/msg00000.html
+		 *
+		 * See: [PATCH XFS] Fix error return for fallocate() on XFS
+		 * http://oss.sgi.com/archives/xfs/2009-11/msg00201.html
+		 */
+		if (ret > 0) {
 			/* LCOV_EXCL_START */
 			errno = ret;
 			ret = -1;
@@ -278,9 +294,18 @@ static int parity_handle_grow(struct snapraid_split_handle* split, data_off_t si
 		ret = -1;
 	}
 
-	/* we get EOPNOTSUPP if the operation is not supported, like in ext3/ext2 */
-	/* or ENOSYS with kernel before 2.6.23 */
-	if (errno == EOPNOTSUPP || errno == ENOSYS) {
+	/*
+	 * Fallback to ftruncate() if the operation is not supported.
+	 *
+	 * We get EOPNOTSUPP if the operation is not supported, like in ext3/ext2
+	 * or ENOSYS with kernel before 2.6.23, because fallocate is not supported
+	 * at all.
+	 *
+	 * See: man fallocate
+	 * ENOSYS - This kernel does not implement fallocate().
+         * EOPNOTSUPP - The file system containing the file referred to by fd does not support this operation
+	 */
+	if (ret != 0 && (errno == EOPNOTSUPP || errno == ENOSYS)) {
 		/* fallback using ftruncate() */
 		ret = ftruncate(split->f, size);
 	}

@@ -58,6 +58,9 @@
 #define HAVE_FTRUNCATE 1
 #undef ftruncate
 #define ftruncate windows_ftruncate
+#define HAVE_FALLOCATE 1
+#undef fallocate
+#define fallocate windows_fallocate
 #define HAVE_FSYNC 1
 #undef fsync
 #define fsync windows_fsync
@@ -206,6 +209,11 @@ int lstat_sync(const char* file, struct windows_stat* st, uint64_t* physical);
  * Like the C ftruncate().
  */
 int windows_ftruncate(int fd, off64_t off);
+
+/**
+ * Like the C fallocate().
+ */
+int windows_fallocate(int fd, int mode, off64_t off, off64_t len);
 
 /**
  * Like the C fsync().

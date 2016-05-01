@@ -904,6 +904,15 @@ int windows_ftruncate(int fd, off64_t off)
 	return 0;
 }
 
+int windows_fallocate(int fd, int mode, off64_t off, off64_t len)
+{
+	if (mode != 0)
+		return -1;
+
+	/* no difference with ftruncate because Windows doesn't use sparse files */
+	return windows_ftruncate(fd, off + len);
+}
+
 int windows_fsync(int fd)
 {
 	HANDLE h;
