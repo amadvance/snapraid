@@ -900,9 +900,10 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	if (is_original_file_size_different_than_zero && st->st_size == 0) {
 		if (!state->opt.force_zero) {
 			/* LCOV_EXCL_START */
+			char quote_buffer[QUOTE_MAX];
 			log_fatal("The file '%s%s' has unexpected zero size!\n", disk->dir, sub);
 			log_fatal("It's possible that after a kernel crash this file was lost,\n");
-			log_fatal("and you can use 'snapraid --filter %s fix' to recover it.\n", sub);
+			log_fatal("and you can use 'snapraid fix -f %s' to recover it.\n", quote('/', sub, quote_buffer));
 			if (!is_diff) {
 				log_fatal("If this an expected condition you can '%s' anyway using 'snapraid --force-zero %s'\n", state->command, state->command);
 				exit(EXIT_FAILURE);
