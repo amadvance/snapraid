@@ -1369,7 +1369,7 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 				msg_verbose("Excluding link '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
 			}
 		} else if (type == 2) { /* DIR */
-			if (filter_dir(&state->filterlist, &reason, disk->name, sub_next) == 0) {
+			if (filter_subdir(&state->filterlist, &reason, disk->name, sub_next) == 0) {
 #ifndef _WIN32
 				/* late stat, if not yet called */
 				if (!st)

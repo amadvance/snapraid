@@ -228,7 +228,7 @@ static int filter_recurse(struct snapraid_filter* filter, struct snapraid_filter
 	return 0;
 }
 
-static int filter_element(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub, int is_dir)
+static int filter_element(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub, int is_dir, int is_def_include)
 {
 	tommy_node* i;
 
@@ -267,7 +267,7 @@ static int filter_element(tommy_list* filterlist, struct snapraid_filter** reaso
 
 	/* directories are always included by default, otherwise we cannot apply rules */
 	/* to the contained files */
-	if (is_dir)
+	if (is_def_include)
 		return 0;
 
 	/* files are excluded/included depending of the last rule processed */
@@ -279,12 +279,17 @@ static int filter_element(tommy_list* filterlist, struct snapraid_filter** reaso
 
 int filter_path(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub)
 {
-	return filter_element(filterlist, reason, disk, sub, 0);
+	return filter_element(filterlist, reason, disk, sub, 0, 0);
 }
 
-int filter_dir(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub)
+int filter_subdir(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub)
 {
-	return filter_element(filterlist, reason, disk, sub, 1);
+	return filter_element(filterlist, reason, disk, sub, 1, 1);
+}
+
+int filter_emptydir(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub)
+{
+	return filter_element(filterlist, reason, disk, sub, 1, 0);
 }
 
 int filter_existence(int filter_missing, const char* dir, const char* sub)

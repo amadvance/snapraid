@@ -236,7 +236,7 @@ static void search_dir(struct snapraid_state* state, struct snapraid_disk* disk,
 				msg_verbose("Excluding link '%s' for rule '%s'\n", path_next, filter_type(reason, out, sizeof(out)));
 			}
 		} else if (S_ISDIR(st.st_mode)) {
-			if (disk == 0 || filter_dir(&state->filterlist, &reason, disk->name, sub_next) == 0) {
+			if (disk == 0 || filter_subdir(&state->filterlist, &reason, disk->name, sub_next) == 0) {
 				pathslash(path_next, sizeof(path_next));
 				pathslash(sub_next, sizeof(sub_next));
 				search_dir(state, disk, path_next, sub_next);

@@ -412,8 +412,8 @@ struct snapraid_disk {
 	tommy_hashdyn stampset; /**< Hashtable by stamp (size and time) of all the files. */
 	tommy_list linklist; /**< List of all the links. */
 	tommy_hashdyn linkset; /**< Hashtable by name of all the links. */
-	tommy_list dirlist; /**< List of all the dirs. */
-	tommy_hashdyn dirset; /**< Hashtable by name of all the dirs. */
+	tommy_list dirlist; /**< List of all the empty dirs. */
+	tommy_hashdyn dirset; /**< Hashtable by name of all the empty dirs. */
 
 	/* nodes for data structures */
 	tommy_node node;
@@ -554,9 +554,17 @@ int filter_correctness(int filter_error, tommy_arrayblkof* infoarr, struct snapr
 /**
  * Filter a dir using a list of filters.
  * For each element of the path all the filters are applied, until the first one that matches.
+ * Thesesdir are always by included by default, to allow to apply rules at the contained files.
  * Return !=0 if should be excluded.
  */
-int filter_dir(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub);
+int filter_subdir(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub);
+
+/**
+ * Filter a dir using a list of filters.
+ * For each element of the path all the filters are applied, until the first one that matches.
+ * Return !=0 if should be excluded.
+ */
+int filter_emptydir(tommy_list* filterlist, struct snapraid_filter** reason, const char* disk, const char* sub);
 
 /**
  * Filter a path if it's a content file.

@@ -3971,12 +3971,12 @@ void state_filter(struct snapraid_state* state, tommy_list* filterlist_file, tom
 			}
 		}
 
-		/* for each dir */
+		/* for each empty dir */
 		for (j = tommy_list_head(&disk->dirlist); j != 0; j = j->next) {
 			struct snapraid_dir* dir = j->data;
 
-			if (filter_dir(filterlist_disk, 0, disk->name, dir->sub) != 0
-				|| filter_dir(filterlist_file, 0, disk->name, dir->sub) != 0
+			if (filter_emptydir(filterlist_disk, 0, disk->name, dir->sub) != 0
+				|| filter_emptydir(filterlist_file, 0, disk->name, dir->sub) != 0
 				|| filter_existence(filter_missing, disk->dir, dir->sub) != 0
 			) {
 				dir_flag_set(dir, FILE_IS_EXCLUDED);
