@@ -2848,14 +2848,27 @@ static void* state_write_thread(void* arg)
 	block_off_t idx;
 	block_off_t begin;
 	unsigned l, s;
+	int version;
 
 	count_file = 0;
 	count_hardlink = 0;
 	count_symlink = 0;
 	count_dir = 0;
 
+	/* check what version to use */
+	version = 2;
+	for (l = 0; l < state->level; ++l) {
+		if (state->parity[l].split_mac > 1)
+			version = 3;
+	}
+	if (BLOCK_HASH_SIZE != 16)
+		version = 3;
+
 	/* write header */
-	swrite("SNAPCNT3\n\3\0\0", 12, f);
+	if (version == 3)
+		swrite("SNAPCNT3\n\3\0\0", 12, f);
+	else
+		swrite("SNAPCNT2\n\3\0\0", 12, f);
 
 	/* write block size and block max */
 	sputc('z', f);
@@ -2864,8 +2877,10 @@ static void* state_write_thread(void* arg)
 	sputb32(blockmax, f);
 
 	/* hash size */
-	sputc('y', f);
-	sputb32(BLOCK_HASH_SIZE, f);
+	if (version == 3) {
+		sputc('y', f);
+		sputb32(BLOCK_HASH_SIZE, f);
+	}
 
 	if (serror(f)) {
 		/* LCOV_EXCL_START */
@@ -2951,15 +2966,23 @@ static void* state_write_thread(void* arg)
 
 	/* for each parity */
 	for (l = 0; l < state->level; ++l) {
-		sputc('Q', f);
-		sputb32(l, f);
-		sputb32(state->parity[l].total_blocks, f);
-		sputb32(state->parity[l].free_blocks, f);
-		sputb32(state->parity[l].split_mac, f);
-		for (s = 0; s < state->parity[l].split_mac; ++s) {
-			sputbs(state->parity[l].split_map[s].path, f);
-			sputbs(state->parity[l].split_map[s].uuid, f);
-			sputb64(state->parity[l].split_map[s].size, f);
+		if (version == 3) {
+			sputc('Q', f);
+			sputb32(l, f);
+			sputb32(state->parity[l].total_blocks, f);
+			sputb32(state->parity[l].free_blocks, f);
+			sputb32(state->parity[l].split_mac, f);
+			for (s = 0; s < state->parity[l].split_mac; ++s) {
+				sputbs(state->parity[l].split_map[s].path, f);
+				sputbs(state->parity[l].split_map[s].uuid, f);
+				sputb64(state->parity[l].split_map[s].size, f);
+			}
+		} else {
+			sputc('P', f);
+			sputb32(l, f);
+			sputb32(state->parity[l].total_blocks, f);
+			sputb32(state->parity[l].free_blocks, f);
+			sputbs(state->parity[l].split_map[0].uuid, f);
 		}
 		if (serror(f)) {
 			/* LCOV_EXCL_START */
