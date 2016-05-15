@@ -880,6 +880,262 @@ int fmtime(int f, int64_t mtime_sec, int mtime_nsec)
 }
 
 /****************************************************************************/
+/* advise */
+
+void advise_init(struct advise_struct* advise, int mode)
+{
+	advise->mode = mode;
+	advise->dirty_begin = 0;
+	advise->dirty_end = 0;
+}
+
+int advise_flags(struct advise_struct* advise)
+{
+	int flags = 0;
+
+	if (advise->mode == ADVISE_SEQUENTIAL
+		|| advise->mode == ADVISE_FLUSH
+		|| advise->mode == ADVISE_DISCARD
+		|| advise->mode == ADVISE_DISCARD_2
+		|| advise->mode == ADVISE_DISCARD_8
+		|| advise->mode == ADVISE_DISCARD_32
+	)
+		flags |= O_SEQUENTIAL;
+
+#if HAVE_DIRECT_IO
+	if (advise->mode == ADVISE_DIRECT)
+		flags |= O_DIRECT;
+#endif
+
+	return flags;
+}
+
+int advise_open(struct advise_struct* advise, int f)
+{
+	(void)advise;
+	(void)f;
+
+#if HAVE_POSIX_FADVISE
+	if (advise->mode == ADVISE_SEQUENTIAL
+		|| advise->mode == ADVISE_FLUSH
+		|| advise->mode == ADVISE_DISCARD
+		|| advise->mode == ADVISE_DISCARD_2
+		|| advise->mode == ADVISE_DISCARD_8
+		|| advise->mode == ADVISE_DISCARD_32
+	) {
+		int ret;
+
+		/* advise sequential access */
+		ret = posix_fadvise(f, 0, 0, POSIX_FADV_SEQUENTIAL);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			errno = ret; /* posix_fadvise return the error code */
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+	}
+#endif
+
+	return 0;
+}
+
+int advise_write(struct advise_struct* advise, int f, size_t offset, size_t size)
+{
+	(void)advise;
+	(void)f;
+	(void)offset;
+	(void)size;
+
+#if HAVE_SYNC_FILE_RANGE
+	if (advise->mode == ADVISE_FLUSH) {
+		int ret;
+
+		/* start writing immediately */
+		ret = sync_file_range(f, offset, size, SYNC_FILE_RANGE_WRITE);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+	}
+#endif
+
+	/*
+	 * Follow Linus recommendations about fast writes.
+	 *
+	 * Linus "Unexpected splice "always copy" behavior observed"
+	 * http://thread.gmane.org/gmane.linux.kernel/987247/focus=988070
+	 * ---
+	 * I have had _very_ good experiences with even a rather trivial
+	 * file writer that basically used (iirc) 8MB windows, and the logic was very
+	 * trivial:
+	 *
+	 *  - before writing a new 8M window, do "start writeback"
+	 *    (SYNC_FILE_RANGE_WRITE) on the previous window, and do
+	 *    a wait (SYNC_FILE_RANGE_WAIT_AFTER) on the window before that.
+	 *
+	 * in fact, in its simplest form, you can do it like this (this is from my
+	 * "overwrite disk images" program that I use on old disks):
+	 *
+	 * for (index = 0; index < max_index ;index++) {
+	 *   if (write(fd, buffer, BUFSIZE) != BUFSIZE)
+	 *     break;
+	 *   // This won't block, but will start writeout asynchronously
+	 *   sync_file_range(fd, index*BUFSIZE, BUFSIZE, SYNC_FILE_RANGE_WRITE);
+	 *   // This does a blocking write-and-wait on any old ranges
+	 *   if (index)
+	 *     sync_file_range(fd, (index-1)*BUFSIZE, BUFSIZE, SYNC_FILE_RANGE_WAIT_BEFORE|SYNC_FILE_RANGE_WRITE|SYNC_FILE_RANGE_WAIT_AFTER);
+	 * }
+	 *
+	 * and even if you don't actually do a discard (maybe we should add a
+	 * SYNC_FILE_RANGE_DISCARD bit, right now you'd need to do a separate
+	 * fadvise(FADV_DONTNEED) to throw it out) the system behavior is pretty
+	 * nice, because the heavy writer gets good IO performance _and_ leaves only
+	 * easy-to-free pages around after itself.
+	 * ---
+	 *
+	 * Linus "Unexpected splice "always copy" behavior observed"
+	 * http://thread.gmane.org/gmane.linux.kernel/987247/focus=988176
+	 * ---
+	 * The behavior for dirty page writeback is _not_ welldefined, and
+	 * if you do POSIX_FADV_DONTNEED, I would suggest you do it as part of that
+	 * writeback logic, ie you do it only on ranges that you have just waited on.
+	 *
+	 * IOW, in my example, you'd couple the
+	 *
+	 *   sync_file_range(fd, (index-1)*BUFSIZE, BUFSIZE, SYNC_FILE_RANGE_WAIT_BEFORE|SYNC_FILE_RANGE_WRITE|SYNC_FILE_RANGE_WAIT_AFTER);
+	 *
+	 * with a
+	 *
+	 *   posix_fadvise(fd, (index-1)*BUFSIZE, BUFSIZE, POSIX_FADV_DONTNEED);
+	 *
+	 * afterwards to throw out the pages that you just waited for.
+	 * ---
+	 */
+
+#if HAVE_SYNC_FILE_RANGE && HAVE_POSIX_FADVISE
+	if (advise->mode == ADVISE_DISCARD
+		|| advise->mode == ADVISE_DISCARD_2
+		|| advise->mode == ADVISE_DISCARD_8
+		|| advise->mode == ADVISE_DISCARD_32
+	) {
+		size_t dirty_offset = advise->dirty_begin;
+		size_t dirty_size = advise->dirty_end - advise->dirty_begin;
+		size_t limit;
+
+		switch (advise->mode) {
+		default:
+		case ADVISE_DISCARD : limit = 1; break;
+		case ADVISE_DISCARD_2 : limit = 2 * 1024 * 1024; break;
+		case ADVISE_DISCARD_8 : limit = 8 * 1024 * 1024; break;
+		case ADVISE_DISCARD_32 : limit = 32 * 1024 * 1024; break;
+		}
+
+		/* if we have to discard */
+		if (dirty_size >= limit) {
+			int ret;
+
+			/* send the data to the disk and wait until it's written */
+			ret = sync_file_range(f, dirty_offset, dirty_size, SYNC_FILE_RANGE_WAIT_BEFORE | SYNC_FILE_RANGE_WRITE | SYNC_FILE_RANGE_WAIT_AFTER);
+			if (ret != 0) {
+				/* LCOV_EXCL_START */
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+
+			/* flush the data from the cache */
+			ret = posix_fadvise(f, dirty_offset, dirty_size, POSIX_FADV_DONTNEED);
+			if (ret != 0) {
+				/* LCOV_EXCL_START */
+				errno = ret; /* posix_fadvise return the error code */
+				return -1;
+				/* LCOV_EXCL_STOP */
+			}
+
+			/* set the new dirty range */
+			advise->dirty_begin = offset;
+			advise->dirty_end = offset + size;
+		} else {
+			/* extend the dirty range */
+			if (advise->dirty_begin > offset)
+				advise->dirty_begin = offset;
+			if (advise->dirty_end < offset + size)
+				advise->dirty_end = offset + size;
+		}
+	}
+#endif
+
+	return 0;
+}
+
+int advise_read(struct advise_struct* advise, int f, size_t offset, size_t size)
+{
+	(void)advise;
+	(void)f;
+	(void)offset;
+	(void)size;
+
+#if HAVE_POSIX_FADVISE
+	if (advise->mode == ADVISE_DISCARD
+		|| advise->mode == ADVISE_DISCARD_2
+		|| advise->mode == ADVISE_DISCARD_8
+		|| advise->mode == ADVISE_DISCARD_32
+	) {
+		int ret;
+
+		/* flush the data from the cache */
+		ret = posix_fadvise(f, offset, size, POSIX_FADV_DONTNEED);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			errno = ret; /* posix_fadvise return the error code */
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+	}
+#endif
+
+	/*
+	 * Here we cannot call posix_fadvise(..., POSIX_FADV_WILLNEED) for the next block
+	 * because it may be blocking.
+	 *
+	 * Ted Ts'o "posix_fadvise(POSIX_FADV_WILLNEED) waits before returning?"
+	 * https://lkml.org/lkml/2010/12/6/122
+	 * ---
+	 * readahead and posix_fadvise(POSIX_FADV_WILLNEED) work exactly the same
+	 * way, and in fact share mostly the same code path (see
+	 * force_page_cache_readahead() in mm/readahead.c).
+	 *
+	 * They are asynchronous in that there is no guarantee the pages will be
+	 * in the page cache by the time they return.  But at the same time, they
+	 * are not guaranteed to be non-blocking.  That is, the work of doing the
+	 * readahead does not take place in a kernel thread.  So if you try to
+	 * request I/O than will fit in the request queue, the system call will
+	 * block until some I/O is completed so that more I/O requested cam be
+	 * loaded onto the request queue.
+	 *
+	 * The only way to fix this would be to either put the work on a kernel
+	 * thread (i.e., some kind of workqueue) or in a userspace thread.  For
+	 * ion programmer wondering what to do today, I'd suggest the
+	 * latter since it will be more portable across various kernel versions.
+	 *
+	 * This does leave the question about whether we should change the kernel
+	 * to allow readahead() and posix_fadvise(POSIX_FADV_WILLNEED) to be
+	 * non-blocking and do this work in a workqueue (or via some kind of
+	 * callback/continuation scheme).  My worry is just doing this if a user
+	 * application does something crazy, like request gigabytes and gigabytes
+	 * of readahead, and then repents of their craziness, there should be a
+	 * way of cancelling the readahead request.  Today, the user can just
+	 * kill the application.  But if we simply shove the work to a kernel
+	 * thread, it becomes a lot harder to cancel the readahead request.  We'd
+	 * have to invent a new API, and then have a way to know whether the user
+	 * has access to kill a particular readahead request, etc.
+	 * ---
+	 */
+
+	return 0;
+}
+
+/****************************************************************************/
 /* memory */
 
 /**

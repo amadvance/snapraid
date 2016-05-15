@@ -30,6 +30,7 @@ struct snapraid_handle {
 	struct snapraid_file* file; /**< File opened. When the file is closed, it's set to 0. */
 	int f; /**< Handle of the file. */
 	struct stat st; /**< Stat info of the opened file. */
+	struct advise_struct advise; /**< Advise information. */
 	data_off_t valid_size; /**< Size of the valid data. */
 	int created; /**< If the file was created, otherwise it was already existing. */
 };

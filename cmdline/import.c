@@ -62,6 +62,7 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 	int f;
 	int flags;
 	unsigned block_size = state->block_size;
+	struct advise_struct advise;
 
 	file = malloc_nofail(sizeof(struct snapraid_import_file));
 	file->path = strdup_nofail(path);
@@ -71,11 +72,10 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 
 	buffer = malloc_nofail(block_size);
 
+	advise_init(&advise, state->file_mode);
+
 	/* open for read */
-	/* O_SEQUENTIAL: opening in sequential mode in Windows */
-	flags = O_RDONLY | O_BINARY;
-	if ((state->file_mode & MODE_SEQUENTIAL) != 0)
-		flags |= O_SEQUENTIAL;
+	flags = O_RDONLY | O_BINARY | advise_flags(&advise);
 	f = open(path, flags);
 	if (f == -1) {
 		/* LCOV_EXCL_START */
@@ -84,18 +84,13 @@ static void import_file(struct snapraid_state* state, const char* path, uint64_t
 		/* LCOV_EXCL_STOP */
 	}
 
-#if HAVE_POSIX_FADVISE
-	if ((state->file_mode & MODE_SEQUENTIAL) != 0) {
-		/* advise sequential access */
-		ret = posix_fadvise(f, 0, 0, POSIX_FADV_SEQUENTIAL);
-		if (ret != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal("Error advising file '%s'. %s.\n", path, strerror(ret));
-			exit(EXIT_FAILURE);
-			/* LCOV_EXCL_STOP */
-		}
+	ret = advise_open(&advise, f);
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Error advising file '%s'. %s.\n", path, strerror(errno));
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
 	}
-#endif
 
 	offset = 0;
 	for (i = 0; i < file->blockmax; ++i) {

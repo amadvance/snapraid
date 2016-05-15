@@ -323,6 +323,34 @@ int mkancestor(const char* file);
 int fmtime(int f, int64_t mtime_sec, int mtime_nsec);
 
 /****************************************************************************/
+/* advise */
+
+/**
+ * Advise modes.
+ */
+#define ADVISE_DEFAULT 0 /**< Default mode. */
+#define ADVISE_NONE 1 /**< Bare read/write mode. */
+#define ADVISE_SEQUENTIAL 2 /**< Sequential mode. */
+#define ADVISE_FLUSH 3 /**< Flush mode. */
+#define ADVISE_DISCARD 4 /**< Discard the cache after every operation. */
+#define ADVISE_DISCARD_2 5 /**< Discard the cache every 2MB. */
+#define ADVISE_DISCARD_8 6 /**< Discard the cache every 8MB. */
+#define ADVISE_DISCARD_32 7 /**< Discard the cache every 32MB. */
+#define ADVISE_DIRECT 8 /**< Direct mode. */
+
+struct advise_struct {
+	int mode;
+	size_t dirty_begin;
+	size_t dirty_end;
+};
+
+void advise_init(struct advise_struct* advise, int mode);
+int advise_flags(struct advise_struct* advise);
+int advise_open(struct advise_struct* advise, int f);
+int advise_write(struct advise_struct* advise, int f, size_t offset, size_t size);
+int advise_read(struct advise_struct* advise, int f, size_t offset, size_t size);
+
+/****************************************************************************/
 /* memory */
 
 /**

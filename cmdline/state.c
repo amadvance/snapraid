@@ -147,7 +147,7 @@ void state_init(struct snapraid_state* state)
 	state->checked_read = 0;
 	state->block_size = 256 * KIBI; /* default 256 KiB */
 	state->raid_mode = RAID_MODE_CAUCHY;
-	state->file_mode = MODE_SEQUENTIAL;
+	state->file_mode = ADVISE_DEFAULT;
 	for (l = 0; l < LEV_MAX; ++l) {
 		state->parity[l].split_mac = 0;
 		for (s = 0; s < SPLIT_MAX; ++s) {
@@ -533,8 +533,12 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 		state->opt.force_order = SORT_PHYSICAL;
 
 	/* adjust file mode */
-	if (state->opt.skip_sequential)
-		state->file_mode &= ~MODE_SEQUENTIAL;
+	if (state->opt.file_mode != ADVISE_DEFAULT) {
+		state->file_mode = state->opt.file_mode;
+	} else {
+		/* default mode, if nothing is specified */
+		state->file_mode = ADVISE_SEQUENTIAL;
+	}
 
 	/* store current command */
 	state->command = command;

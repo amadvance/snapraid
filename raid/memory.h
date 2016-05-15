@@ -16,7 +16,7 @@
 #define __RAID_MEMORY_H
 
 /**
- * Memory alignment provided by raid_malloc_align().
+ * Memory alignment provided by raid_malloc().
  *
  * It should guarantee good cache performance everywhere.
  */
@@ -58,16 +58,28 @@
 
 /**
  * Aligned malloc.
+ * Use an alignment suitable for the raid functions.
  */
-void *raid_malloc_align(size_t size, void **freeptr);
+void *raid_malloc(size_t size, void **freeptr);
+
+/**
+ * Arbitrary aligned malloc.
+ */
+void *raid_malloc_align(size_t size, size_t align_size, void **freeptr);
 
 /**
  * Aligned vector allocation.
+ * Use an alignment suitable for the raid functions.
  * Returns a vector of @n pointers, each one pointing to a block of
  * the specified @size.
  * The first @nd elements are reversed in order.
  */
 void **raid_malloc_vector(int nd, int n, size_t size, void **freeptr);
+
+/**
+ * Arbitrary aligned vector allocation.
+ */
+void **raid_malloc_vector_align(int nd, int n, size_t size, size_t align_size, size_t displacement_size, void **freeptr);
 
 /**
  * Fills the memory vector with pseudo-random data based on the specified seed.

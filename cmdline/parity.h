@@ -27,6 +27,7 @@ struct snapraid_split_handle {
 	char path[PATH_MAX]; /**< Path of the file. */
 	int f; /**< Handle of the files. */
 	struct stat st; /**< Stat info of the opened file. */
+	struct advise_struct advise; /**< Advise information. */
 
 	/**
 	 * Size of the parity split.

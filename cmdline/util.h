@@ -28,10 +28,21 @@
 void* malloc_nofail_align(size_t size, void** freeptr);
 
 /**
+ * Safe aligned malloc. Usable for direct io.
+ */
+void* malloc_nofail_direct(size_t size, void** freeptr);
+
+/**
  * Safe aligned vector allocation.
  * If no memory is available, it aborts.
  */
 void** malloc_nofail_vector_align(int nd, int n, size_t size, void** freeptr);
+
+/**
+ * Safe page vector allocation. Usable for direct io.
+ * If no memory is available, it aborts.
+ */
+void** malloc_nofail_vector_direct(int nd, int n, size_t size, void** freeptr);
 
 /**
  * Safe allocation with memory test.

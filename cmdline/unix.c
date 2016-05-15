@@ -1419,5 +1419,21 @@ void os_clear(void)
 	printf("\033[2J"); /* clear screen */
 }
 
+size_t direct_size(void)
+{
+	long size;
+
+	size = sysconf(_SC_PAGESIZE);
+
+	if (size == -1) {
+		/* LCOV_EXCL_START */
+		log_fatal("No page size\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	return size;
+}
+
 #endif
 

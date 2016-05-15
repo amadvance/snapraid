@@ -190,17 +190,14 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 		int ret;
 		int flags;
 
-		/* mark it as initialized */
+		advise_init(&split->advise, mode);
 		pathcpy(split->path, sizeof(split->path), parity->split_map[s].path);
 		split->f = -1;
 		split->size = parity->split_map[s].size;
 		++handle->split_mac;
 
 		/* opening in sequential mode in Windows */
-		/* O_SEQUENTIAL: opening in sequential mode in Windows */
-		flags = O_RDWR | O_CREAT | O_BINARY;
-		if ((mode & MODE_SEQUENTIAL) != 0)
-			flags |= O_SEQUENTIAL;
+		flags = O_RDWR | O_CREAT | O_BINARY | advise_flags(&split->advise);
 		split->f = open(split->path, flags, 0600);
 		if (split->f == -1) {
 			/* LCOV_EXCL_START */
@@ -225,18 +222,13 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 		if (split->size == PARITY_SIZE_INVALID)
 			split->size = split->st.st_size;
 
-#if HAVE_POSIX_FADVISE
-		if ((mode & MODE_SEQUENTIAL) != 0) {
-			/* advise sequential access */
-			ret = posix_fadvise(split->f, 0, 0, POSIX_FADV_SEQUENTIAL);
-			if (ret != 0) {
-				/* LCOV_EXCL_START */
-				log_fatal("Error advising parity file '%s'. %s.\n", split->path, strerror(ret));
-				goto bail;
-				/* LCOV_EXCL_STOP */
-			}
+		ret = advise_open(&split->advise, split->f);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Error advising parity file '%s'. %s.\n", split->path, strerror(errno));
+			goto bail;
+			/* LCOV_EXCL_STOP */
 		}
-#endif
 	}
 
 	return 0;
@@ -520,18 +512,16 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 		int ret;
 		int flags;
 
-		/* mark it as initialized */
+		advise_init(&split->advise, mode);
 		pathcpy(split->path, sizeof(split->path), parity->split_map[s].path);
 		split->f = -1;
 		split->size = parity->split_map[s].size;
 		++handle->split_mac;
 
 		/* open for read */
-		/* O_SEQUENTIAL: opening in sequential mode in Windows */
 		/* O_NOATIME: do not change access time */
-		flags = O_RDONLY | O_BINARY;
-		if ((mode & MODE_SEQUENTIAL) != 0)
-			flags |= O_SEQUENTIAL;
+		flags = O_RDONLY | O_BINARY | advise_flags(&split->advise);
+
 		split->f = open_noatime(split->path, flags);
 		if (split->f == -1) {
 			log_fatal("Error opening parity file '%s'. %s.\n", split->path, strerror(errno));
@@ -554,18 +544,13 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 		if (split->size == PARITY_SIZE_INVALID)
 			split->size = split->st.st_size;
 
-#if HAVE_POSIX_FADVISE
-		if ((mode & MODE_SEQUENTIAL) != 0) {
-			/* advise sequential access */
-			ret = posix_fadvise(split->f, 0, 0, POSIX_FADV_SEQUENTIAL);
-			if (ret != 0) {
-				/* LCOV_EXCL_START */
-				log_fatal("Error advising parity file '%s'. %s.\n", split->path, strerror(ret));
-				goto bail;
-				/* LCOV_EXCL_STOP */
-			}
+		ret = advise_open(&split->advise, split->f);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			log_fatal("Error advising parity file '%s'. %s.\n", split->path, strerror(errno));
+			goto bail;
+			/* LCOV_EXCL_STOP */
 		}
-#endif
 	}
 
 	return 0;
@@ -659,6 +644,7 @@ int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigne
 	ssize_t write_ret;
 	data_off_t offset;
 	struct snapraid_split_handle* split;
+	int ret;
 
 	offset = pos * (data_off_t)block_size;
 
@@ -682,8 +668,13 @@ int parity_write(struct snapraid_parity_handle* handle, block_off_t pos, unsigne
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* Here doesn't make sense to call posix_fadvise(..., POSIX_FADV_DONTNEED) because */
-	/* at this time the data is still in not yet written and it cannot be discharged. */
+	ret = advise_write(&split->advise, split->f, offset, block_size);
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Error advising parity file '%s'. %s.\n", split->path, strerror(errno));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	return 0;
 }
@@ -694,6 +685,7 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 	data_off_t offset;
 	unsigned count;
 	struct snapraid_split_handle* split;
+	int ret;
 
 	offset = pos * (data_off_t)block_size;
 
@@ -724,10 +716,13 @@ int parity_read(struct snapraid_parity_handle* handle, block_off_t pos, unsigned
 		count += read_ret;
 	} while (count < block_size);
 
-	/* Here isn't needed to call posix_fadvise(..., POSIX_FADV_DONTNEED) */
-	/* because we already advised sequential access with POSIX_FADV_SEQUENTIAL. */
-	/* In Linux 2.6.33 it's enough to ensure that data is not kept in the cache. */
-	/* Better to do nothing and save a syscall for each block. */
+	ret = advise_read(&split->advise, split->f, offset, block_size);
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		out("Error advising parity file '%s'. %s.\n", split->path, strerror(errno));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	return block_size;
 }

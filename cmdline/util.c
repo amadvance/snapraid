@@ -29,7 +29,23 @@ void* malloc_nofail_align(size_t size, void** freeptr)
 {
 	void* ptr;
 
-	ptr = raid_malloc_align(size, freeptr);
+	ptr = raid_malloc(size, freeptr);
+
+	if (!ptr) {
+		/* LCOV_EXCL_START */
+		malloc_fail(size);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	return ptr;
+}
+
+void* malloc_nofail_direct(size_t size, void** freeptr)
+{
+	void* ptr;
+
+	ptr = raid_malloc_align(size, direct_size(), freeptr);
 
 	if (!ptr) {
 		/* LCOV_EXCL_START */
@@ -46,6 +62,22 @@ void** malloc_nofail_vector_align(int nd, int n, size_t size, void** freeptr)
 	void* ptr;
 
 	ptr = raid_malloc_vector(nd, n, size, freeptr);
+
+	if (!ptr) {
+		/* LCOV_EXCL_START */
+		malloc_fail(n * size);
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	return ptr;
+}
+
+void** malloc_nofail_vector_direct(int nd, int n, size_t size, void** freeptr)
+{
+	void* ptr;
+
+	ptr = raid_malloc_vector_align(nd, n, size, direct_size(), 0, freeptr);
 
 	if (!ptr) {
 		/* LCOV_EXCL_START */

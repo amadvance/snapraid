@@ -20,6 +20,7 @@
 
 #ifdef __linux__
 #define HAVE_LINUX_DEVICE 1 /**< In Linux enables special device support. */
+#define HAVE_DIRECT_IO 1 /**< Support O_DIRECT in open(). */
 #endif
 
 #define O_BINARY 0 /**< Not used in Unix. */
@@ -56,6 +57,11 @@ int dirent_hidden(struct dirent* dd);
  * Return a description of the file type.
  */
 const char* stat_desc(struct stat* st);
+
+/**
+ * Return the aligment requirement for direct IO.
+ */
+size_t direct_size(void);
 
 #endif
 

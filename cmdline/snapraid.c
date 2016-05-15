@@ -254,7 +254,6 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_SKIP_SIGN 260
 #define OPT_TEST_SKIP_FALLOCATE 261
 #define OPT_TEST_SKIP_DEVICE 262
-#define OPT_TEST_SKIP_SEQUENTIAL 263
 #define OPT_TEST_FORCE_MURMUR3 264
 #define OPT_TEST_FORCE_SPOOKY2 265
 #define OPT_TEST_SKIP_LOCK 266
@@ -283,6 +282,14 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_IO_CACHE 290
 #define OPT_TEST_IO_STATS 291
 #define OPT_TEST_COND_SIGNAL_OUTSIDE 292
+#define OPT_TEST_IO_ADVISE_NONE 293
+#define OPT_TEST_IO_ADVISE_SEQUENTIAL 294
+#define OPT_TEST_IO_ADVISE_FLUSH 295
+#define OPT_TEST_IO_ADVISE_DISCARD 296
+#define OPT_TEST_IO_ADVISE_DISCARD_2 297
+#define OPT_TEST_IO_ADVISE_DISCARD_8 298
+#define OPT_TEST_IO_ADVISE_DISCARD_32 299
+#define OPT_TEST_IO_ADVISE_DIRECT 300
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -334,9 +341,6 @@ struct option long_options[] = {
 
 	/* Skip the fallocate() when growing the parity files */
 	{ "test-skip-fallocate", 0, 0, OPT_TEST_SKIP_FALLOCATE },
-
-	/* Skip the sequential hint when reading files */
-	{ "test-skip-sequential", 0, 0, OPT_TEST_SKIP_SEQUENTIAL },
 
 	/* Skip the device check */
 	{ "test-skip-device", 0, 0, OPT_TEST_SKIP_DEVICE },
@@ -418,6 +422,30 @@ struct option long_options[] = {
 
 	/* Signal condition variable outside the mutex */
 	{ "test-cond-signal-outside", 0, 0, OPT_TEST_COND_SIGNAL_OUTSIDE },
+
+	/* Set the io advise to none */
+	{ "test-io-advise-none", 0, 0, OPT_TEST_IO_ADVISE_NONE },
+
+	/* Set the io advise to sequential */
+	{ "test-io-advise-sequential", 0, 0, OPT_TEST_IO_ADVISE_SEQUENTIAL },
+
+	/* Set the io advise to flush */
+	{ "test-io-advise-flush", 0, 0, OPT_TEST_IO_ADVISE_FLUSH },
+
+	/* Set the io advise to discard */
+	{ "test-io-advise-discard", 0, 0, OPT_TEST_IO_ADVISE_DISCARD },
+
+	/* Set the io advise to discard */
+	{ "test-io-advise-discard-2", 0, 0, OPT_TEST_IO_ADVISE_DISCARD_2 },
+
+	/* Set the io advise to discard */
+	{ "test-io-advise-discard-8", 0, 0, OPT_TEST_IO_ADVISE_DISCARD_8 },
+
+	/* Set the io advise to discard */
+	{ "test-io-advise-discard-32", 0, 0, OPT_TEST_IO_ADVISE_DISCARD_32 },
+
+	/* Set the io advise to direct */
+	{ "test-io-advise-direct", 0, 0, OPT_TEST_IO_ADVISE_DIRECT },
 
 	{ 0, 0, 0, 0 }
 };
@@ -718,9 +746,6 @@ int main(int argc, char* argv[])
 		case OPT_TEST_SKIP_FALLOCATE :
 			opt.skip_fallocate = 1;
 			break;
-		case OPT_TEST_SKIP_SEQUENTIAL :
-			opt.skip_sequential = 1;
-			break;
 		case OPT_TEST_SKIP_DEVICE :
 			opt.skip_device = 1;
 			period = 50; /* reduce period of the speed test */
@@ -817,6 +842,30 @@ int main(int argc, char* argv[])
 #if HAVE_PTHREAD
 			thread_cond_signal_outside = 1;
 #endif
+			break;
+		case OPT_TEST_IO_ADVISE_NONE :
+			opt.file_mode = ADVISE_NONE;
+			break;
+		case OPT_TEST_IO_ADVISE_SEQUENTIAL :
+			opt.file_mode = ADVISE_SEQUENTIAL;
+			break;
+		case OPT_TEST_IO_ADVISE_FLUSH :
+			opt.file_mode = ADVISE_FLUSH;
+			break;
+		case OPT_TEST_IO_ADVISE_DISCARD :
+			opt.file_mode = ADVISE_DISCARD;
+			break;
+		case OPT_TEST_IO_ADVISE_DISCARD_2 :
+			opt.file_mode = ADVISE_DISCARD_2;
+			break;
+		case OPT_TEST_IO_ADVISE_DISCARD_8 :
+			opt.file_mode = ADVISE_DISCARD_8;
+			break;
+		case OPT_TEST_IO_ADVISE_DISCARD_32 :
+			opt.file_mode = ADVISE_DISCARD_32;
+			break;
+		case OPT_TEST_IO_ADVISE_DIRECT :
+			opt.file_mode = ADVISE_DIRECT;
 			break;
 		default :
 			/* LCOV_EXCL_START */
@@ -1071,6 +1120,20 @@ int main(int argc, char* argv[])
 	case OPERATION_DEVICES :
 	case OPERATION_SMART :
 		opt.skip_self = 1;
+		break;
+	}
+
+	switch (operation) {
+#if HAVE_DIRECT_IO
+	case OPERATION_SYNC :
+	case OPERATION_SCRUB :
+	case OPERATION_DRY :
+		break;
+#endif
+	default:
+		/* we allow direct IO only on some commands */
+		if (opt.file_mode == ADVISE_DIRECT)
+			opt.file_mode = ADVISE_SEQUENTIAL;
 		break;
 	}
 

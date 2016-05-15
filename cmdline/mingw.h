@@ -119,6 +119,10 @@
 #define pread windows_pread
 #undef pwrite
 #define pwrite windows_pwrite
+#define direct_size windows_direct_size
+#define HAVE_DIRECT_IO 1
+#define O_DIRECT 0x10000000
+#define O_DSYNC 0x20000000
 
 /**
  * If nanoseconds are not supported, we report the special STAT_NSEC_INVALID value,
@@ -361,6 +365,11 @@ ssize_t windows_pread(int f, void* buffer, size_t size, off_t offset);
  * Like pwrite().
  */
 ssize_t windows_pwrite(int f, const void* buffer, size_t size, off_t offset);
+
+/**
+ * List direct_size().
+ */
+size_t windows_direct_size(void);
 
 /****************************************************************************/
 /* thread */

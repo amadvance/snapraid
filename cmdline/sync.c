@@ -35,6 +35,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 	block_off_t i;
 	unsigned j;
 	void* buffer;
+	void* buffer_alloc;
 	data_off_t countsize;
 	block_off_t countpos;
 	block_off_t countmax;
@@ -49,7 +50,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 	handle = handle_mapping(state, &diskmax);
 
 	/* buffer for reading */
-	buffer = malloc_nofail(state->block_size);
+	buffer = malloc_nofail_direct(state->block_size, &buffer_alloc);
 	if (!state->opt.skip_self)
 		mtest_vector(1, state->block_size, &buffer);
 
@@ -383,7 +384,7 @@ bail:
 
 finish:
 	free(handle);
-	free(buffer);
+	free(buffer_alloc);
 
 	if (error + io_error + silent_error != 0)
 		return -1;

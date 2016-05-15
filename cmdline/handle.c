@@ -34,6 +34,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 		return 0;
 	}
 
+	advise_init(&handle->advise, mode);
 	pathprint(handle->path, sizeof(handle->path), "%s%s", handle->disk->dir, file->sub);
 
 	ret = mkancestor(handle->path);
@@ -49,10 +50,7 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 	/* flags for opening */
 	/* O_BINARY: open as binary file (Windows only) */
 	/* O_NOFOLLOW: do not follow links to ensure to open the real file */
-	/* O_SEQUENTIAL: improve performance for sequential access (Windows only) */
-	flags = O_BINARY | O_NOFOLLOW;
-	if ((mode & MODE_SEQUENTIAL) != 0)
-		flags |= O_SEQUENTIAL;
+	flags = O_BINARY | O_NOFOLLOW | advise_flags(&handle->advise);
 
 	/* open for read write */
 	handle->f = open(handle->path, flags | O_RDWR);
@@ -110,18 +108,13 @@ int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, in
 	/* get the size of the existing data */
 	handle->valid_size = handle->st.st_size;
 
-#if HAVE_POSIX_FADVISE
-	if ((mode & MODE_SEQUENTIAL) != 0) {
-		/* advise sequential access */
-		ret = posix_fadvise(handle->f, 0, 0, POSIX_FADV_SEQUENTIAL);
-		if (ret != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal("Error advising file '%s'. %s.\n", handle->path, strerror(ret));
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
+	ret = advise_open(&handle->advise, handle->f);
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Error advising file '%s'. %s.\n", handle->path, strerror(errno));
+		return -1;
+		/* LCOV_EXCL_STOP */
 	}
-#endif
 
 	return 0;
 }
@@ -161,6 +154,7 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 		return 0;
 	}
 
+	advise_init(&handle->advise, mode);
 	pathprint(handle->path, sizeof(handle->path), "%s%s", handle->disk->dir, file->sub);
 
 	/* for sure not created */
@@ -169,10 +163,7 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 	/* flags for opening */
 	/* O_BINARY: open as binary file (Windows only) */
 	/* O_NOFOLLOW: do not follow links to ensure to open the real file */
-	/* O_SEQUENTIAL: improve performance for sequential access (Windows only) */
-	flags = O_BINARY | O_NOFOLLOW;
-	if ((mode & MODE_SEQUENTIAL) != 0)
-		flags |= O_SEQUENTIAL;
+	flags = O_BINARY | O_NOFOLLOW | advise_flags(&handle->advise);
 
 	/* open for read */
 	handle->f = open_noatime(handle->path, flags | O_RDONLY);
@@ -204,18 +195,13 @@ int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int 
 	/* get the size of the existing data */
 	handle->valid_size = handle->st.st_size;
 
-#if HAVE_POSIX_FADVISE
-	if ((mode & MODE_SEQUENTIAL) != 0) {
-		/* advise sequential access */
-		ret = posix_fadvise(handle->f, 0, 0, POSIX_FADV_SEQUENTIAL);
-		if (ret != 0) {
-			/* LCOV_EXCL_START */
-			out("Error advising file '%s'. %s.\n", handle->path, strerror(ret));
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
+	ret = advise_open(&handle->advise, handle->f);
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		out("Error advising file '%s'. %s.\n", handle->path, strerror(errno));
+		return -1;
+		/* LCOV_EXCL_STOP */
 	}
-#endif
 
 	return 0;
 }
@@ -254,6 +240,7 @@ int handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned c
 	data_off_t offset;
 	unsigned read_size;
 	unsigned count;
+	int ret;
 
 	offset = file_pos * (data_off_t)block_size;
 
@@ -274,10 +261,11 @@ int handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned c
 
 	count = 0;
 	do {
-		read_ret = pread(handle->f, block_buffer + count, read_size - count, offset + count);
+		/* read the full block to support O_DIRECT */
+		read_ret = pread(handle->f, block_buffer + count, block_size - count, offset + count);
 		if (read_ret < 0) {
 			/* LCOV_EXCL_START */
-			out("Error reading file '%s' at offset %" PRIu64 " for size %u. %s.\n", handle->path, offset + count, read_size - count, strerror(errno));
+			out("Error reading file '%s' at offset %" PRIu64 " for size %u. %s.\n", handle->path, offset + count, block_size - count, strerror(errno));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -294,16 +282,13 @@ int handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned c
 		memset(block_buffer + read_size, 0, block_size - read_size);
 	}
 
-	/* Here isn't needed to call posix_fadvise(..., POSIX_FADV_DONTNEED) */
-	/* because we already advised sequential access with POSIX_FADV_SEQUENTIAL. */
-	/* In Linux 2.6.33 it's enough to ensure that data is not kept in the cache. */
-	/* Better to do nothing and save a syscall for each block. */
-
-	/* Here we cannot call posix_fadvise(..., POSIX_FADV_WILLNEED) for the next block */
-	/* because it may be blocking */
-	/* See Ted Ts'o comment in "posix_fadvise(POSIX_FADV_WILLNEED) waits before returning?" */
-	/* at: https://lkml.org/lkml/2010/12/6/122 */
-	/* We relay only on the automatic readahead triggered by POSIX_FADV_SEQUENTIAL. */
+	ret = advise_read(&handle->advise, handle->f, offset, block_size);
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		out("Error advising file '%s'. %s.\n", handle->path, strerror(errno));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	return read_size;
 }
@@ -313,6 +298,7 @@ int handle_write(struct snapraid_handle* handle, block_off_t file_pos, unsigned 
 	ssize_t write_ret;
 	data_off_t offset;
 	unsigned write_size;
+	int ret;
 
 	offset = file_pos * (data_off_t)block_size;
 
@@ -331,11 +317,13 @@ int handle_write(struct snapraid_handle* handle, block_off_t file_pos, unsigned 
 		handle->valid_size = offset + write_size;
 	}
 
-	/* Here doesn't make sense to call posix_fadvise(..., POSIX_FADV_DONTNEED) because */
-	/* at this time the data is still not yet written and it cannot be discharged */
-	/* from the system cache. */
-	/* This is at least true for Linux 2.6.21 that just ignores POSIX_FADV_DONTNEED */
-	/* if the data is not yet written. */
+	ret = advise_write(&handle->advise, handle->f, offset, block_size);
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Error advising file '%s'. %s.\n", handle->path, strerror(errno));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	return 0;
 }

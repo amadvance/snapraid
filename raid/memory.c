@@ -15,12 +15,12 @@
 #include "internal.h"
 #include "memory.h"
 
-void *raid_malloc_align(size_t size, void **freeptr)
+void *raid_malloc_align(size_t size, size_t align_size, void **freeptr)
 {
 	unsigned char *ptr;
 	uintptr_t offset;
 
-	ptr = malloc(size + RAID_MALLOC_ALIGN);
+	ptr = malloc(size + align_size);
 	if (!ptr) {
 		/* LCOV_EXCL_START */
 		return 0;
@@ -29,15 +29,20 @@ void *raid_malloc_align(size_t size, void **freeptr)
 
 	*freeptr = ptr;
 
-	offset = ((uintptr_t)ptr) % RAID_MALLOC_ALIGN;
+	offset = ((uintptr_t)ptr) % align_size;
 
 	if (offset != 0)
-		ptr += RAID_MALLOC_ALIGN - offset;
+		ptr += align_size - offset;
 
 	return ptr;
 }
 
-void **raid_malloc_vector(int nd, int n, size_t size, void **freeptr)
+void *raid_malloc(size_t size, void **freeptr)
+{
+    return raid_malloc_align(size, RAID_MALLOC_ALIGN, freeptr);
+}
+
+void **raid_malloc_vector_align(int nd, int n, size_t size, size_t align_size, size_t displacement_size, void **freeptr)
 {
 	void **v;
 	unsigned char *va;
@@ -52,7 +57,7 @@ void **raid_malloc_vector(int nd, int n, size_t size, void **freeptr)
 		/* LCOV_EXCL_STOP */
 	}
 
-	va = raid_malloc_align(n * (size + RAID_MALLOC_DISPLACEMENT), freeptr);
+	va = raid_malloc_align(n * (size + displacement_size), align_size, freeptr);
 	if (!va) {
 		/* LCOV_EXCL_START */
 		free(v);
@@ -62,7 +67,7 @@ void **raid_malloc_vector(int nd, int n, size_t size, void **freeptr)
 
 	for (i = 0; i < n; ++i) {
 		v[i] = va;
-		va += size + RAID_MALLOC_DISPLACEMENT;
+		va += size + displacement_size;
 	}
 
 	/* reverse order of the data blocks */
@@ -75,6 +80,11 @@ void **raid_malloc_vector(int nd, int n, size_t size, void **freeptr)
 	}
 
 	return v;
+}
+
+void **raid_malloc_vector(int nd, int n, size_t size, void **freeptr)
+{
+    return raid_malloc_vector_align(nd, n, size, RAID_MALLOC_ALIGN, RAID_MALLOC_DISPLACEMENT, freeptr);
 }
 
 void raid_mrand_vector(unsigned seed, int n, size_t size, void **vv)

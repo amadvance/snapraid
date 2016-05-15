@@ -602,6 +602,9 @@ static void windows_errno(DWORD error)
 		/* Other cases are here identified with EINVAL */
 		errno = EINVAL;
 		break;
+	case ERROR_HANDLE_EOF : /* in ReadFile() over the end of the file */
+		errno = EINVAL;
+		break;
 	case ERROR_FILE_NOT_FOUND :
 	case ERROR_PATH_NOT_FOUND : /* in GetFileAttributeW() if internal path not found */
 		errno = ENOENT;
@@ -1056,17 +1059,82 @@ FILE* windows_fopen(const char* file, const char* mode)
 int windows_open(const char* file, int flags, ...)
 {
 	wchar_t conv_buf[CONV_MAX];
-	va_list args;
-	int ret;
+	HANDLE h;
+	int f;
+	DWORD access;
+	DWORD share;
+	DWORD create;
+	DWORD attr;
 
-	va_start(args, flags);
-	if ((flags & O_CREAT) != 0)
-		ret = _wopen(convert(conv_buf, file), flags, va_arg(args, int));
-	else
-		ret = _wopen(convert(conv_buf, file), flags);
-	va_end(args);
+	switch (flags & O_ACCMODE) {
+	case O_RDONLY :
+		access = GENERIC_READ;
+		break;
+	case O_WRONLY :
+		access = GENERIC_WRITE;
+		break;
+	case O_RDWR :
+		access = GENERIC_READ | GENERIC_WRITE;
+		break;
+	default:
+		errno = EINVAL;
+		return -1;
+	}
 
-	return ret;
+	share = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
+
+	switch (flags & (O_CREAT | O_EXCL | O_TRUNC)) {
+	case 0 :
+		create = OPEN_EXISTING;
+		break;
+	case O_CREAT :
+		create = OPEN_ALWAYS;
+		break;
+	case O_CREAT | O_EXCL :
+	case O_CREAT | O_EXCL | O_TRUNC :
+		create = CREATE_NEW;
+		break;
+	case O_CREAT | O_TRUNC :
+		create = CREATE_ALWAYS;
+		break;
+	case O_TRUNC :
+		create = TRUNCATE_EXISTING;
+		break;
+	default:
+		errno = EINVAL;
+		return -1;
+	}
+
+	attr = FILE_ATTRIBUTE_NORMAL;
+	if ((flags & O_DIRECT) != 0)
+		attr |= FILE_FLAG_NO_BUFFERING;
+	if ((flags & O_DSYNC) != 0)
+		attr |= FILE_FLAG_WRITE_THROUGH;
+	if ((flags & O_RANDOM) != 0)
+		attr |= FILE_FLAG_RANDOM_ACCESS;
+	if ((flags & O_SEQUENTIAL) != 0)
+		attr |= FILE_FLAG_SEQUENTIAL_SCAN;
+	if ((flags & _O_SHORT_LIVED) != 0)
+		attr |= FILE_ATTRIBUTE_TEMPORARY;
+	if ((flags & O_TEMPORARY) != 0)
+		attr |= FILE_FLAG_DELETE_ON_CLOSE;
+
+	h = CreateFileW(convert(conv_buf, file), access, share, 0, create, attr, 0);
+	if (h == INVALID_HANDLE_VALUE) {
+		windows_errno(GetLastError());
+		return -1;
+	}
+
+	/* mask out flags unknown by Windows */
+	flags &= ~(O_DIRECT | O_DSYNC);
+
+	f = _open_osfhandle((intptr_t)h, flags);
+	if (f == -1) {
+		CloseHandle(h);
+		return -1;
+	}
+
+	return f;
 }
 
 struct windows_dir_struct {
@@ -1783,6 +1851,22 @@ retry:
 	}
 
 	return count;
+}
+
+size_t windows_direct_size(void)
+{
+	SYSTEM_INFO si;
+
+	GetSystemInfo(&si);
+
+	/*
+	 * MSDN 'File Buffering'
+	 * https://msdn.microsoft.com/en-us/library/windows/desktop/cc644950%28v=vs.85%29.aspx
+	 *
+	 * "Therefore, in most situations, page-aligned memory will also be sector-aligned,"
+	 * "because the case where the sector size is larger than the page size is rare."
+	 */
+	return si.dwPageSize;
 }
 
 uint64_t tick(void)

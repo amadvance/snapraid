@@ -13,6 +13,15 @@ SnapRAID HISTORY
    file patterns containing real characters matching the globbing '*?[]'
    ones. In Unix it was already possible to do the same escaping with
    '\'.
+ * Added test options for selecting the file advise mode to use:
+   --test-io-advise-none for standard mode
+   --test-io-advise-sequential advise sequential operations (Linux/Windows)
+   --test-io-advise-flush flush data after every operation (Linux)
+   --test-io-advise-discard discard cache after every operation (Linux)
+   --test-io-advise-discard-2 discard cache every 2 MB (Linux)
+   --test-io-advise-discard-8 discard cache every 8 MB (Linux)
+   --test-io-advise-discard-32 discard cache every 32 MB (Linux)
+   --test-io-advise-direct use direct mode (Linux/Windows)
  * Fixed running in Windows platforms that miss the RtlGenRandom
    function.
  * Added a new 'hashsize' configuration option. It could be useful in

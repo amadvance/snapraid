@@ -57,11 +57,6 @@ const char* lev_config_name(unsigned level);
 #define TEBI (1024 * 1024 * 1024 * 1024LL)
 
 /**
- * File modes.
- */
-#define MODE_SEQUENTIAL 1 /**< Open the file in sequential mode. */
-
-/**
  * Global variable to identify if Ctrl+C is pressed.
  */
 extern volatile int global_interrupt;
@@ -93,7 +88,7 @@ struct snapraid_option {
 	int skip_device; /**< Skip devices matching checks. */
 	int skip_sign; /**< Skip the sign check for content files. */
 	int skip_fallocate; /**< Skip the use of fallocate(). */
-	int skip_sequential; /**< Skip sequential hint. */
+	int file_mode; /**< File mode. Mask of ADVISE_* flags. */
 	int skip_lock; /**< Skip the lock file protection. */
 	int skip_self; /**< Skip the self-test. */
 	int skip_content_check; /**< Relax some content file checks. */
@@ -129,7 +124,7 @@ struct snapraid_state {
 	int checked_read; /**< If the state was read and checked. */
 	uint32_t block_size; /**< Block size in bytes. */
 	unsigned raid_mode; /**< Raid mode to use. RAID_MODE_DEFAULT or RAID_MODE_ALTERNATE. */
-	int file_mode; /**< File access mode. Combination of MODE_* flags. */
+	int file_mode; /**< File access mode. Combination of ADVISE_* flags. */
 	struct snapraid_parity parity[LEV_MAX]; /**< Parity vector. */
 	char share[PATH_MAX]; /**< Path of the share tree. If !=0 pool links are created in a different way. */
 	char pool[PATH_MAX]; /**< Path of the pool tree. */
