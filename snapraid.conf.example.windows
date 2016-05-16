@@ -2,7 +2,7 @@
 
 # Defines the file to use as parity storage
 # It must NOT be in a data disk
-# Format: "parity FILE_PATH"
+# Format: "parity FILE [,FILE] ..."
 parity E:\snapraid.parity
 
 # Defines the files to use as additional parity storage.
@@ -11,7 +11,7 @@ parity E:\snapraid.parity
 # To enable, uncomment one parity file for each level of extra
 # protection required. Start from 2-parity, and follow in order.
 # It must NOT be in a data disk
-# Format: "X-parity FILE_PATH"
+# Format: "X-parity FILE [,FILE] ..."
 #2-parity F:\snapraid.2-parity
 #3-parity G:\snapraid.3-parity
 #4-parity H:\snapraid.4-parity
@@ -23,7 +23,7 @@ parity E:\snapraid.parity
 # You must have least one copy for each parity file plus one. Some more don't hurt
 # They can be in the disks used for data, parity or boot,
 # but each file must be in a different disk
-# Format: "content FILE_PATH"
+# Format: "content FILE"
 content C:\snapraid\snapraid.content
 content K:\array\snapraid.content
 content L:\array\snapraid.content

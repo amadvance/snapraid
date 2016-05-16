@@ -925,48 +925,56 @@ Configuration
 
 	It should contain the following options (case sensitive):
 
-  parity FILE
-	Defines the file to use to store the parity information.
+  parity FILE [,FILE] ...
+	Defines the files to use to store the parity information.
 	The parity enables the protection from a single disk
 	failure, like RAID5.
-	
-	It must be placed in a disk dedicated for this purpose with
-	as much free space as the biggest disk in the array.
-	Leaving the parity disk reserved for only this file ensures that
+
+	You can specify multiples files that should be in different disks.
+	When the first file cannot grow anymore, the next one is used.
+	The total space available must be as big as the biggest data disk in
+	the array.
+
+	Leaving the parity disks reserved for parity ensures that
 	it doesn't get fragmented, improving the performance.
 
 	This option is mandatory and it can be used only one time.
 
-  [2,3,4,5,6]-parity FILE
+  (2,3,4,5,6)-parity FILE [,FILE] ...
 	Defines the files to use to store extra parity information.
-	For each parity file specified, one additional level of protection
+
+	For each parity specified, one additional level of protection
 	is enabled:
 
-	* 2-parity enables RAID6 double parity.
+	* 2-parity enables RAID6 dual parity.
 	* 3-parity enables triple parity
-	* 4-parity enables quad parity
+	* 4-parity enables quad (four) parity
 	* 5-parity enables penta (five) parity
 	* 6-parity enables hexa (six) parity
 
-	Each parity level requires also all the files of the previous levels.
+	Each parity level requires the precence of all the previous parity
+	levels.
 
-	Each file must be placed in a disk dedicated for this purpose with
-	as much free space as the biggest disk in the array.
-	Leaving the parity disks reserved for only these files ensures that
-	they doesn't get fragmented, improving the performance.
+	You can specify multiples files that should be in different disks.
+	When the first file cannot grow anymore, the next one is used.
+	The total space available must be as big as the biggest data disk in
+	the array.
+
+	Leaving the parity disks reserved for parity ensures that
+	it doesn't get fragmented, improving the performance.
 
 	These options are optional and they can be used only one time.
 
-  z-parity FILE
+  z-parity FILE [,FILE] ...
 	Defines an alternate file and format to store the triple parity.
 
 	This option is an alternative at '3-parity' mainly intended for
 	low-end CPUs like ARM or AMD Phenom, Athlon and Opteron that don't
-	support the SSSE3 instructions set, and in such case it provides
+	support the SSSE3 instructions set. In such cases it provides
 	a better performance.
 
-	This format is similar, but faster, at the one used by the ZFS RAIDZ3,
-	but it doesn't work beyond triple parity.
+	This format is similar, but faster, at the one used by the ZFS RAIDZ3.
+	Like ZFS, it doesn't work beyond triple parity.
 
 	When using '3-parity' you will be warned if it's recommended to use
 	the 'z-parity' format for a performance improvement.
@@ -1142,7 +1150,7 @@ Configuration
 	some USB disk that cannot be auto-detected.
 
 	DISK is the same disk name specified in the "disk" option.
-	PARITY is one of the parity name as "parity,[1,2,3,4,5,6,z]-parity".
+	PARITY is one of the parity name as "parity,(1,2,3,4,5,6,z)-parity".
 
 	In the specified OPTIONS, the "%s" string is replaced by the
 	device name. Note that in case of RAID controllers the device is likely
