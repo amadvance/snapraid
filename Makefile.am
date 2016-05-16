@@ -150,26 +150,27 @@ maintainer-clean-local:
 
 # Automatic testing
 
-# Base options
+# Common options
 # --test-skip-device
 # Is required to allow testing in the same disk
 #
 # --test-skip-self
 # It just makes the test a little faster
-#
+CHECKFLAGS_COMMON = --test-skip-device --test-skip-self --test-force-progress --no-warnings --test-parity-limit=3333333
+
 # --test-force-order-alpha
 # Ensures to process files always in the same order despites
 # the inode, physical location, and dir order assigned by the OS.
-CHECKFLAGS_BASE = --test-skip-device --test-skip-self --test-force-order-alpha --test-force-progress --no-warnings
+CHECKFLAGS_ALPHA = $(CHECKFLAGS_COMMON) --test-force-order-alpha
 
 # Physical offset options
-CHECKFLAGS_PHYSICAL = --test-skip-device --test-skip-self --test-force-order-physical -q -q -q
+CHECKFLAGS_PHYSICAL = $(CHECKFLAGS_COMMON) --test-force-order-physical -q -q -q
 
 # Verbose options
-CHECKFLAGS_VERBOSE = $(CHECKFLAGS_BASE) -v -G
+CHECKFLAGS_VERBOSE = $(CHECKFLAGS_ALPHA) -v -G
 
 # Quiet options
-CHECKFLAGS = $(CHECKFLAGS_BASE) -q -q -q
+CHECKFLAGS = $(CHECKFLAGS_ALPHA) -q -q -q
 
 # Number of files to create
 if !HAVE_MEMORY_CHECKER
@@ -842,34 +843,34 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 #### RECOVER PARITY ####
 	$(MSG) Delete the parity, fix and check with PAR1
-	rm bench/parity
+	rm bench/parity*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(MSG) Delete the parity and the 2-parity, fix and check with PAR2
-	rm bench/parity
-	rm bench/2-parity
+	rm bench/parity*
+	rm bench/2-parity*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(MSG) Delete the parity and a disk, fix and check with PAR2
-	rm bench/parity
+	rm bench/parity*
 	rm -r bench/disk2/b
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(MSG) Delete the 2-parity and a disk, fix and check with PAR2
-	rm bench/2-parity
+	rm bench/2-parity*
 	rm -r bench/disk3/a
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(MSG) Corrupt the parity, fix and check with PAR1
-	$(TESTENV) ./mktest$(EXEEXT) write 1 100 10000 bench/parity
+	$(TESTENV) ./mktest$(EXEEXT) write 1 100 10000 bench/parity*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR1) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) -a check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR1) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(MSG) Corrupt the parity and the 2-parity, fix and check with PAR2
-	$(TESTENV) ./mktest$(EXEEXT) write 2 100 10000 bench/parity
-	$(TESTENV) ./mktest$(EXEEXT) write 2 100 10000 bench/2-parity
+	$(TESTENV) ./mktest$(EXEEXT) write 2 100 10000 bench/parity*
+	$(TESTENV) ./mktest$(EXEEXT) write 2 100 10000 bench/2-parity*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR2) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -a check
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
@@ -898,14 +899,14 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(MSG) Corrupt the parity and some files, fix and check with PAR2
-	$(TESTENV) ./mktest$(EXEEXT) write 6 100 10000 bench/parity
+	$(TESTENV) ./mktest$(EXEEXT) write 6 100 10000 bench/parity*
 	$(TESTENV) ./mktest$(EXEEXT) change 6 500 bench/disk1/a/*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-unrecoverable -c $(PAR1) check -l test-fail-corrupt-parity.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR2) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(PAR2) fix -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check
 	$(MSG) Corrupt the 2-parity and some files, fix and check with PAR2
-	$(TESTENV) ./mktest$(EXEEXT) write 7 100 10000 bench/2-parity
+	$(TESTENV) ./mktest$(EXEEXT) write 7 100 10000 bench/2-parity*
 	$(TESTENV) ./mktest$(EXEEXT) change 7 500 bench/disk1/a/*
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR1) check -l test.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-expect-recoverable -c $(PAR2) check -l test.log

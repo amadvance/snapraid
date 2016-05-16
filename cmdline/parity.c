@@ -23,6 +23,12 @@
 #include "parity.h"
 #include "handle.h"
 
+/**
+ * Pseudo random limits for parity
+ */
+#define PARITY_LIMIT(size,split,level) \
+	size ? size + (123562341 + split * 634542351 + level * 983491341) % size : 0
+
 /****************************************************************************/
 /* parity */
 
@@ -178,7 +184,7 @@ void parity_size(struct snapraid_parity_handle* handle, data_off_t* out_size)
 	*out_size = size;
 }
 
-int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode)
+int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode, uint64_t limit_size)
 {
 	unsigned s;
 
@@ -194,6 +200,7 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 		pathcpy(split->path, sizeof(split->path), parity->split_map[s].path);
 		split->f = -1;
 		split->size = parity->split_map[s].size;
+		split->limit_size = PARITY_LIMIT(limit_size, s, level);
 		++handle->split_mac;
 
 		/* opening in sequential mode in Windows */
@@ -247,6 +254,10 @@ bail:
 static int parity_handle_grow(struct snapraid_split_handle* split, data_off_t size, int skip_fallocate)
 {
 	int ret;
+
+	/* simulate a failure for testing limits */
+	if (split->limit_size != 0 && size > (data_off_t)split->limit_size)
+		return -1;
 
 #if HAVE_FALLOCATE
 	if (!skip_fallocate) {
@@ -500,7 +511,7 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 	return 0;
 }
 
-int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode)
+int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode, uint64_t limit_size)
 {
 	unsigned s;
 
@@ -516,6 +527,7 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 		pathcpy(split->path, sizeof(split->path), parity->split_map[s].path);
 		split->f = -1;
 		split->size = parity->split_map[s].size;
+		split->limit_size = PARITY_LIMIT(limit_size, s, level);
 		++handle->split_mac;
 
 		/* open for read */

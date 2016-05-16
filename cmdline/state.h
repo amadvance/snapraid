@@ -114,6 +114,7 @@ struct snapraid_option {
 	unsigned io_cache; /**< Number of IO buffers to use. 0 for default. */
 	int auto_conf; /**< Allow to run without configuration file. */
 	int force_stats; /**< Force stats print during process. */
+	uint64_t parity_limit_size; /**< Test limit for parity files. */
 };
 
 struct snapraid_state {

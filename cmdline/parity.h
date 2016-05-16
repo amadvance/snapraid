@@ -35,6 +35,12 @@ struct snapraid_split_handle {
 	 * Note that this value CANNOT be PARITY_SIZE_INVALID.
 	 */
 	uint64_t size;
+
+	/**
+	 * Artificial size limit for testing.
+	 * 0 means unlimited.
+	 */
+	uint64_t limit_size;
 };
 
 struct snapraid_parity_handle {
@@ -78,12 +84,11 @@ int parity_is_invalid(struct snapraid_state* state);
  */
 void parity_overflow(struct snapraid_state* state, data_off_t size);
 
-
 /**
  * Create the parity file.
  * \param out_size Return the size of the parity file.
  */
-int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode);
+int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode, uint64_t limit_size);
 
 /**
  * Change the parity size.
@@ -101,7 +106,7 @@ void parity_size(struct snapraid_parity_handle* handle, data_off_t* out_size);
 /**
  * Open an already existing parity file.
  */
-int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode);
+int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode, uint64_t limit_size);
 
 /**
  * Flush the parity file in the disk.
