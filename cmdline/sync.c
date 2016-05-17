@@ -1552,8 +1552,12 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		 * Instead, saving the new content file in advance, keeps track of all the parity
 		 * that may be modified.
 		 */
-		if (state->need_write)
-			state_write(state);
+		if (!state->opt.skip_content_write) {
+			if (state->need_write)
+				state_write(state);
+		} else {
+			log_fatal("WARNING! Skipped state write for --test-skip-content-write option.\n");
+		}
 
 		msg_progress("Syncing...\n");
 

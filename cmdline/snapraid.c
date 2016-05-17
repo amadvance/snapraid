@@ -291,6 +291,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_IO_ADVISE_DISCARD_32 299
 #define OPT_TEST_IO_ADVISE_DIRECT 300
 #define OPT_TEST_PARITY_LIMIT 301
+#define OPT_TEST_SKIP_CONTENT_WRITE 302
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -450,6 +451,9 @@ struct option long_options[] = {
 
 	/* Set an artificial parity limit */
 	{ "test-parity-limit", 1, 0, OPT_TEST_PARITY_LIMIT },
+
+	/* Skip content write */
+	{ "test-skip-content-write", 0, 0, OPT_TEST_SKIP_CONTENT_WRITE },
 
 	{ 0, 0, 0, 0 }
 };
@@ -873,6 +877,9 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_TEST_PARITY_LIMIT :
 			opt.parity_limit_size = atoll(optarg);
+			break;
+		case OPT_TEST_SKIP_CONTENT_WRITE :
+			opt.skip_content_write = 1;
 			break;
 		default :
 			/* LCOV_EXCL_START */
