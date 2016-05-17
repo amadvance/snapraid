@@ -21,6 +21,7 @@ SnapRAID HISTORY
    --test-io-advise-discard discard cache after every operation (Linux)
    --test-io-advise-discard-window discard cache every 8 MB (Linux)
    --test-io-advise-direct use direct/unbuffered mode (Linux/Windows)
+   The default mode is 'flush' in Linux and 'sequential' in Windows.
  * Fixed running in Windows platforms that miss the RtlGenRandom
    function.
  * Added a new 'hashsize' configuration option. It could be useful in
