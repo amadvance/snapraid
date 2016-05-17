@@ -285,11 +285,10 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_IO_ADVISE_NONE 293
 #define OPT_TEST_IO_ADVISE_SEQUENTIAL 294
 #define OPT_TEST_IO_ADVISE_FLUSH 295
-#define OPT_TEST_IO_ADVISE_DISCARD 296
-#define OPT_TEST_IO_ADVISE_DISCARD_2 297
-#define OPT_TEST_IO_ADVISE_DISCARD_8 298
-#define OPT_TEST_IO_ADVISE_DISCARD_32 299
-#define OPT_TEST_IO_ADVISE_DIRECT 300
+#define OPT_TEST_IO_ADVISE_FLUSH_WINDOW 296
+#define OPT_TEST_IO_ADVISE_DISCARD 297
+#define OPT_TEST_IO_ADVISE_DISCARD_WINDOW 298
+#define OPT_TEST_IO_ADVISE_DIRECT 299
 #define OPT_TEST_PARITY_LIMIT 301
 #define OPT_TEST_SKIP_CONTENT_WRITE 302
 
@@ -434,17 +433,14 @@ struct option long_options[] = {
 	/* Set the io advise to flush */
 	{ "test-io-advise-flush", 0, 0, OPT_TEST_IO_ADVISE_FLUSH },
 
+	/* Set the io advise to flush window */
+	{ "test-io-advise-flush-window", 0, 0, OPT_TEST_IO_ADVISE_FLUSH_WINDOW },
+
 	/* Set the io advise to discard */
 	{ "test-io-advise-discard", 0, 0, OPT_TEST_IO_ADVISE_DISCARD },
 
-	/* Set the io advise to discard */
-	{ "test-io-advise-discard-2", 0, 0, OPT_TEST_IO_ADVISE_DISCARD_2 },
-
-	/* Set the io advise to discard */
-	{ "test-io-advise-discard-8", 0, 0, OPT_TEST_IO_ADVISE_DISCARD_8 },
-
-	/* Set the io advise to discard */
-	{ "test-io-advise-discard-32", 0, 0, OPT_TEST_IO_ADVISE_DISCARD_32 },
+	/* Set the io advise to discard window */
+	{ "test-io-advise-discard-window", 0, 0, OPT_TEST_IO_ADVISE_DISCARD_WINDOW },
 
 	/* Set the io advise to direct */
 	{ "test-io-advise-direct", 0, 0, OPT_TEST_IO_ADVISE_DIRECT },
@@ -860,17 +856,14 @@ int main(int argc, char* argv[])
 		case OPT_TEST_IO_ADVISE_FLUSH :
 			opt.file_mode = ADVISE_FLUSH;
 			break;
+		case OPT_TEST_IO_ADVISE_FLUSH_WINDOW :
+			opt.file_mode = ADVISE_FLUSH_WINDOW;
+			break;
 		case OPT_TEST_IO_ADVISE_DISCARD :
 			opt.file_mode = ADVISE_DISCARD;
 			break;
-		case OPT_TEST_IO_ADVISE_DISCARD_2 :
-			opt.file_mode = ADVISE_DISCARD_2;
-			break;
-		case OPT_TEST_IO_ADVISE_DISCARD_8 :
-			opt.file_mode = ADVISE_DISCARD_8;
-			break;
-		case OPT_TEST_IO_ADVISE_DISCARD_32 :
-			opt.file_mode = ADVISE_DISCARD_32;
+		case OPT_TEST_IO_ADVISE_DISCARD_WINDOW :
+			opt.file_mode = ADVISE_DISCARD_WINDOW;
 			break;
 		case OPT_TEST_IO_ADVISE_DIRECT :
 			opt.file_mode = ADVISE_DIRECT;

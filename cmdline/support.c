@@ -895,10 +895,9 @@ int advise_flags(struct advise_struct* advise)
 
 	if (advise->mode == ADVISE_SEQUENTIAL
 		|| advise->mode == ADVISE_FLUSH
+		|| advise->mode == ADVISE_FLUSH_WINDOW
 		|| advise->mode == ADVISE_DISCARD
-		|| advise->mode == ADVISE_DISCARD_2
-		|| advise->mode == ADVISE_DISCARD_8
-		|| advise->mode == ADVISE_DISCARD_32
+		|| advise->mode == ADVISE_DISCARD_WINDOW
 	)
 		flags |= O_SEQUENTIAL;
 
@@ -918,10 +917,9 @@ int advise_open(struct advise_struct* advise, int f)
 #if HAVE_POSIX_FADVISE
 	if (advise->mode == ADVISE_SEQUENTIAL
 		|| advise->mode == ADVISE_FLUSH
+		|| advise->mode == ADVISE_FLUSH_WINDOW
 		|| advise->mode == ADVISE_DISCARD
-		|| advise->mode == ADVISE_DISCARD_2
-		|| advise->mode == ADVISE_DISCARD_8
-		|| advise->mode == ADVISE_DISCARD_32
+		|| advise->mode == ADVISE_DISCARD_WINDOW
 	) {
 		int ret;
 
@@ -939,26 +937,15 @@ int advise_open(struct advise_struct* advise, int f)
 	return 0;
 }
 
-int advise_write(struct advise_struct* advise, int f, size_t offset, size_t size)
+int advise_write(struct advise_struct* advise, int f, uint64_t offset, uint64_t size)
 {
-	(void)advise;
+	uint64_t handle_offset;
+	uint64_t handle_size;
+
 	(void)f;
-	(void)offset;
-	(void)size;
 
-#if HAVE_SYNC_FILE_RANGE
-	if (advise->mode == ADVISE_FLUSH) {
-		int ret;
-
-		/* start writing immediately */
-		ret = sync_file_range(f, offset, size, SYNC_FILE_RANGE_WRITE);
-		if (ret != 0) {
-			/* LCOV_EXCL_START */
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-	}
-#endif
+	handle_offset = 0;
+	handle_size = 0;
 
 	/*
 	 * Follow Linus recommendations about fast writes.
@@ -1013,54 +1000,74 @@ int advise_write(struct advise_struct* advise, int f, size_t offset, size_t size
 	 * ---
 	 */
 
-#if HAVE_SYNC_FILE_RANGE && HAVE_POSIX_FADVISE
-	if (advise->mode == ADVISE_DISCARD
-		|| advise->mode == ADVISE_DISCARD_2
-		|| advise->mode == ADVISE_DISCARD_8
-		|| advise->mode == ADVISE_DISCARD_32
-	) {
-		size_t dirty_offset = advise->dirty_begin;
-		size_t dirty_size = advise->dirty_end - advise->dirty_begin;
-		size_t limit;
+	if (advise->mode == ADVISE_FLUSH || advise->mode == ADVISE_DISCARD) {
+		handle_offset = offset;
+		handle_size = size;
+	}
 
-		switch (advise->mode) {
-		default:
-		case ADVISE_DISCARD : limit = 1; break;
-		case ADVISE_DISCARD_2 : limit = 2 * 1024 * 1024; break;
-		case ADVISE_DISCARD_8 : limit = 8 * 1024 * 1024; break;
-		case ADVISE_DISCARD_32 : limit = 32 * 1024 * 1024; break;
-		}
+	if (advise->mode == ADVISE_FLUSH_WINDOW || advise->mode == ADVISE_DISCARD_WINDOW) {
+		/* if the dirty range can be extended */
+		if (advise->dirty_end == offset) {
+			/* extent the dirty range */
+			advise->dirty_end += size;
 
-		/* if we have to discard */
-		if (dirty_size >= limit) {
-			int ret;
+			/* if we reached the double window size */
+			if (advise->dirty_end - advise->dirty_begin >= 2 * ADVISE_WINDOW_SIZE) {
+				/* handle the first window  */
+				handle_offset = advise->dirty_begin;
+				handle_size = ADVISE_WINDOW_SIZE;
 
-			/* send the data to the disk and wait until it's written */
-			ret = sync_file_range(f, dirty_offset, dirty_size, SYNC_FILE_RANGE_WAIT_BEFORE | SYNC_FILE_RANGE_WRITE | SYNC_FILE_RANGE_WAIT_AFTER);
-			if (ret != 0) {
-				/* LCOV_EXCL_START */
-				return -1;
-				/* LCOV_EXCL_STOP */
+				/* remove it from the dirty range */
+				advise->dirty_begin += ADVISE_WINDOW_SIZE;
 			}
+		} else {
+			/* otherwise flush the existing dirty */
+			handle_offset = advise->dirty_begin;
+			handle_size = advise->dirty_end - advise->dirty_begin;
 
-			/* flush the data from the cache */
-			ret = posix_fadvise(f, dirty_offset, dirty_size, POSIX_FADV_DONTNEED);
-			if (ret != 0) {
-				/* LCOV_EXCL_START */
-				errno = ret; /* posix_fadvise return the error code */
-				return -1;
-				/* LCOV_EXCL_STOP */
-			}
-
-			/* set the new dirty range */
+			/* and set the new range as dirty */
 			advise->dirty_begin = offset;
 			advise->dirty_end = offset + size;
-		} else {
-			/* extend the dirty range */
-			if (advise->dirty_begin > offset)
-				advise->dirty_begin = offset;
-			if (advise->dirty_end < offset + size)
-				advise->dirty_end = offset + size;
+		}
+	}
+
+#if HAVE_SYNC_FILE_RANGE
+	if ((advise->mode == ADVISE_FLUSH || advise->mode == ADVISE_FLUSH_WINDOW)
+		&& handle_size != 0
+	) {
+		int ret;
+
+		/* start writing immediately */
+		ret = sync_file_range(f, handle_offset, handle_size, SYNC_FILE_RANGE_WRITE);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+	}
+#endif
+
+#if HAVE_SYNC_FILE_RANGE && HAVE_POSIX_FADVISE
+	if ((advise->mode == ADVISE_DISCARD || advise->mode == ADVISE_DISCARD_WINDOW)
+		&& handle_size != 0
+	) {
+		int ret;
+
+		/* send the data to the disk and wait until it's written */
+		ret = sync_file_range(f, handle_offset, handle_size, SYNC_FILE_RANGE_WAIT_BEFORE | SYNC_FILE_RANGE_WRITE | SYNC_FILE_RANGE_WAIT_AFTER);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			return -1;
+			/* LCOV_EXCL_STOP */
+		}
+
+		/* flush the data from the cache */
+		ret = posix_fadvise(f, handle_offset, handle_size, POSIX_FADV_DONTNEED);
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
+			errno = ret; /* posix_fadvise return the error code */
+			return -1;
+			/* LCOV_EXCL_STOP */
 		}
 	}
 #endif
@@ -1068,7 +1075,7 @@ int advise_write(struct advise_struct* advise, int f, size_t offset, size_t size
 	return 0;
 }
 
-int advise_read(struct advise_struct* advise, int f, size_t offset, size_t size)
+int advise_read(struct advise_struct* advise, int f, uint64_t offset, uint64_t size)
 {
 	(void)advise;
 	(void)f;
@@ -1077,9 +1084,7 @@ int advise_read(struct advise_struct* advise, int f, size_t offset, size_t size)
 
 #if HAVE_POSIX_FADVISE
 	if (advise->mode == ADVISE_DISCARD
-		|| advise->mode == ADVISE_DISCARD_2
-		|| advise->mode == ADVISE_DISCARD_8
-		|| advise->mode == ADVISE_DISCARD_32
+		|| advise->mode == ADVISE_DISCARD_WINDOW
 	) {
 		int ret;
 
@@ -1142,7 +1147,6 @@ int advise_read(struct advise_struct* advise, int f, size_t offset, size_t size)
  * Total amount of memory allocated.
  */
 static size_t mcounter;
-
 
 size_t malloc_counter_get(void)
 {

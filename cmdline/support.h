@@ -332,23 +332,24 @@ int fmtime(int f, int64_t mtime_sec, int mtime_nsec);
 #define ADVISE_NONE 1 /**< Bare read/write mode. */
 #define ADVISE_SEQUENTIAL 2 /**< Sequential mode. */
 #define ADVISE_FLUSH 3 /**< Flush mode. */
-#define ADVISE_DISCARD 4 /**< Discard the cache after every operation. */
-#define ADVISE_DISCARD_2 5 /**< Discard the cache every 2MB. */
-#define ADVISE_DISCARD_8 6 /**< Discard the cache every 8MB. */
-#define ADVISE_DISCARD_32 7 /**< Discard the cache every 32MB. */
-#define ADVISE_DIRECT 8 /**< Direct mode. */
+#define ADVISE_FLUSH_WINDOW 4 /**< Flush mode with a window of 8MB. */
+#define ADVISE_DISCARD 5 /**< Discard the cache after every operation. */
+#define ADVISE_DISCARD_WINDOW 6 /**< Discard the cache with a window of 8MB. */
+#define ADVISE_DIRECT 7 /**< Direct mode. */
+
+#define ADVISE_WINDOW_SIZE (8 * 1024 * 1024) /**< Window size. */
 
 struct advise_struct {
 	int mode;
-	size_t dirty_begin;
-	size_t dirty_end;
+	uint64_t dirty_begin;
+	uint64_t dirty_end;
 };
 
 void advise_init(struct advise_struct* advise, int mode);
 int advise_flags(struct advise_struct* advise);
 int advise_open(struct advise_struct* advise, int f);
-int advise_write(struct advise_struct* advise, int f, size_t offset, size_t size);
-int advise_read(struct advise_struct* advise, int f, size_t offset, size_t size);
+int advise_write(struct advise_struct* advise, int f, uint64_t offset, uint64_t size);
+int advise_read(struct advise_struct* advise, int f, uint64_t offset, uint64_t size);
 
 /****************************************************************************/
 /* memory */

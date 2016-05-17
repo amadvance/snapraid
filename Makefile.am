@@ -439,8 +439,8 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-io-advise-none -c $(PAR1) sync -F
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-io-advise-sequential -c $(PAR1) sync -F
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-io-advise-flush -c $(PAR1) sync -F
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-io-advise-discard -c $(PAR1) sync -F
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-io-advise-flush-window -c $(PAR1) sync -F
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-io-advise-discard-window -c $(PAR1) sync -F
 #### CHANGE LINKS ####
 # Use a different size ("22" instead of "1") to ensure to recognize the file different
 # even if it gets the same timestamp in case subsecond timestamp is no available
