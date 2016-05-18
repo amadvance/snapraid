@@ -268,6 +268,18 @@
 #endif
 
 /**
+ * Basic block position type.
+ * With 32 bits and 128k blocks you can address 256 TB.
+ */
+typedef uint32_t block_off_t;
+
+/**
+ * Basic data position type.
+ * It's signed as file size and offset are usually signed.
+ */
+typedef int64_t data_off_t;
+
+/**
  * Includes specific support for Windows or Linux.
  */
 #ifdef __MINGW32__

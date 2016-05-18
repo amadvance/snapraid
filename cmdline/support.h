@@ -341,15 +341,15 @@ int fmtime(int f, int64_t mtime_sec, int mtime_nsec);
 
 struct advise_struct {
 	int mode;
-	uint64_t dirty_begin;
-	uint64_t dirty_end;
+	data_off_t dirty_begin;
+	data_off_t dirty_end;
 };
 
 void advise_init(struct advise_struct* advise, int mode);
 int advise_flags(struct advise_struct* advise);
 int advise_open(struct advise_struct* advise, int f);
-int advise_write(struct advise_struct* advise, int f, uint64_t offset, uint64_t size);
-int advise_read(struct advise_struct* advise, int f, uint64_t offset, uint64_t size);
+int advise_write(struct advise_struct* advise, int f, data_off_t offset, data_off_t size);
+int advise_read(struct advise_struct* advise, int f, data_off_t offset, data_off_t size);
 
 /****************************************************************************/
 /* memory */

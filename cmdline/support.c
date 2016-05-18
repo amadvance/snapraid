@@ -937,10 +937,10 @@ int advise_open(struct advise_struct* advise, int f)
 	return 0;
 }
 
-int advise_write(struct advise_struct* advise, int f, uint64_t offset, uint64_t size)
+int advise_write(struct advise_struct* advise, int f, data_off_t offset, data_off_t size)
 {
-	uint64_t handle_offset;
-	uint64_t handle_size;
+	data_off_t handle_offset;
+	data_off_t handle_size;
 
 	(void)f;
 
@@ -1075,7 +1075,7 @@ int advise_write(struct advise_struct* advise, int f, uint64_t offset, uint64_t 
 	return 0;
 }
 
-int advise_read(struct advise_struct* advise, int f, uint64_t offset, uint64_t size)
+int advise_read(struct advise_struct* advise, int f, data_off_t offset, data_off_t size)
 {
 	(void)advise;
 	(void)f;

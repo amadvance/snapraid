@@ -170,7 +170,7 @@ void parity_size(struct snapraid_parity_handle* handle, data_off_t* out_size)
 		if (split->st.st_size < 0)
 			break;
 
-		if ((uint64_t)split->st.st_size < split->size) {
+		if (split->st.st_size < split->size) {
 			/* this is a size error, so report only up to this size */
 			/* but don't fail the function */
 			size += split->st.st_size;
@@ -184,7 +184,7 @@ void parity_size(struct snapraid_parity_handle* handle, data_off_t* out_size)
 	*out_size = size;
 }
 
-int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode, uint64_t limit_size)
+int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode, data_off_t limit_size)
 {
 	unsigned s;
 
@@ -464,7 +464,7 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 		data_off_t run;
 
 		if (is_fixed) {
-			if ((uint64_t)size <= split->size) {
+			if (size <= split->size) {
 				is_fixed = 0; /* not fixed anymore */
 				run = size;
 			} else {
@@ -511,7 +511,7 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 	return 0;
 }
 
-int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode, uint64_t limit_size)
+int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode, data_off_t limit_size)
 {
 	unsigned s;
 
@@ -642,7 +642,7 @@ struct snapraid_split_handle* parity_split_find(struct snapraid_parity_handle* h
 	for (s = 0;s < handle->split_mac;++s) {
 		struct snapraid_split_handle* split = &handle->split_map[s];
 
-		if ((uint64_t)*offset < split->size)
+		if (*offset < split->size)
 			return split;
 
 		*offset -= split->size;

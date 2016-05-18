@@ -47,18 +47,6 @@
 #define POS_NULL ((block_off_t)-1)
 
 /**
- * Basic block position type.
- * With 32 bits and 128k blocks you can address 256 TB.
- */
-typedef uint32_t block_off_t;
-
-/**
- * Basic data position type.
- * It's signed as file size and offset are usually signed.
- */
-typedef int64_t data_off_t;
-
-/**
  * Content file specification.
  */
 struct snapraid_content {
@@ -448,7 +436,7 @@ struct snapraid_map {
  * the new size will be written only at the next
  * 'sync'.
  */
-#define PARITY_SIZE_INVALID -1ULL
+#define PARITY_SIZE_INVALID -1LL
 
 /**
  * Parity split.
@@ -462,7 +450,7 @@ struct snapraid_split {
 	 * Only the latest not zero size is allowed to grow.
 	 * If the value is unset, it's PARITY_SIZE_INVALID.
 	 */
-	uint64_t size;
+	data_off_t size;
 
 	uint64_t device; /**< Device identifier of the parity. */
 };
