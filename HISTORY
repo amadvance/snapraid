@@ -1,18 +1,25 @@
 SnapRAID HISTORY
 ================
 
-11.0 2016/05
+11.0 2016/06
 ============
- * Added support for splitting the parity in multiple partitions. You can
-   now specify multiple files for a single parity. As soon a file
+ * Added support for splitting the parity in multiple partitions. You
+   can now specify multiple files for a single parity. As soon a file
    cannot grow anymore, the next one starts growing.
- * In Linux added the missing support for Btrfs filesystems. Note that
+   In the configuration file, just put more file in the same 'parity'
+   line, separated by , (comma).
+   Note that if this feature is used, the saved content file won't be
+   read by older SnapRAID versions.
+* Added a new 'hashsize' configuration option. It could be useful in
+   systems with low memory, to reduce the memory usage.
+   Note that if this feature is used, the saved content file won't be
+   read by older SnapRAID versions.
+ * In Linux added the missing support for Btrfs file-systems. Note that
    to have full support you need also the 'libblkid' library, otherwise
    you won't get the UUIDs.
- * In the Windows version allowes to use the escape char '^' to handle
-   file patterns containing real characters matching the globbing '*?[]'
-   ones. In Unix it was already possible to do the same escaping with
-   '\'.
+ * In Windows allows to use the escape char '^' to handle file patterns
+   containing real characters matching the globbing '*?[]' ones. In Unix
+   it was already possible to do the same escaping with '\'.
  * Added test options for selecting the file advise mode to use:
    --test-io-advise-none for standard mode
    --test-io-advise-sequential advise sequential access (Linux/Windows)
@@ -24,9 +31,7 @@ SnapRAID HISTORY
    The default mode is 'flush' in Linux and 'sequential' in Windows.
  * Fixed running in Windows platforms that miss the RtlGenRandom
    function.
- * Added a new 'hashsize' configuration option. It could be useful in
-   systems with low memory, to reduce the memory usage.
- * Added the --test-io-cache=1 option to disable the multithread IO
+ * Added the --test-io-cache=1 option to disable the multi-thread IO
    mode.
 
 10.0 2016/02
