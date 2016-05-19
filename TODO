@@ -7,8 +7,15 @@ This is the list of TODO items for SnapRAID.
 
 - Minor
 
-* Allow to have "parial" parity disks, smaller than required ?
-See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/e924c663/
+* Change all the path printed in the terminal as relative and not absolute.
+https://sourceforge.net/p/snapraid/discussion/1677233/thread/648955ec/ (Leifi in diff)
+https://sourceforge.net/p/snapraid/discussion/1677233/thread/5b6ef1b9/ (Miles in check + filter)
+
+* In fix, automatic --import excluded directory in the config file.
+https://sourceforge.net/p/snapraid/discussion/1677233/thread/c80c42e5/?limit=25
+
+* Allow to have "partial" parity disks, smaller than required ?
+https://sourceforge.net/p/snapraid/discussion/1677233/thread/e924c663/
 
 * How to handle corrupt copied/moved files ? At now pre-hash checks them,
 but if a corruption is found, it stops the sync process.
