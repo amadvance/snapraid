@@ -262,7 +262,7 @@ Getting Started
 
 	to allow remote clients to access all the files at \\darkstar\\pool.
 
-	You may also need to configure remote clients enablinh access at remote
+	You may also need to configure remote clients enabling access at remote
 	symlinks with the command:
 
 		:fsutil behavior set SymlinkEvaluation L2L:1 R2R:1 L2R:1 R2L:1
@@ -302,7 +302,7 @@ Getting Started
     STEP 1 -> Reconfigure
 	You need some space to recover, even better if you already have an additional
 	disk, but in case, also an external USB or remote disk is enough.
-    
+
 	Change the SnapRAID configuration file to make the "disk" option
 	of the failed disk to point to the place where you have enough empty
 	space to recover the files.
@@ -664,7 +664,7 @@ Commands
 	More specifically, if the sub-second timestamp is not zero,
 	a moved or copied file is identified as such if it matches
 	the name, size and timestamp. If instead the sub-second timestamp
-	is zero, it's cosidered a copy only if it matches the full path,
+	is zero, it's considered a copy only if it matches the full path,
 	size and timestamp.
 
 	Note that the second precision timestamp is not modified,
@@ -1043,7 +1043,7 @@ Configuration
 
 	WARNING! This option is for experts only, and it's highly
 	recommended to not change it. To change again this value in
-	future you'll have to recreate the whole parity.
+	future you'll have to recreate the whole parity!
 
 	A reason to use a different hashsize is if you have a lot of small
 	files. In the order of many millions.
@@ -1089,7 +1089,7 @@ Configuration
 
 	WARNING! This option is for experts only, and it's highly
 	recommended to not change it. To change again this value in
-	future you'll have to recreate the whole parity.
+	future you'll have to recreate the whole parity!
 
 	A reason to use a different hashsize is if your system has
 	small memory. As a rule of thumb SnapRAID usually requires
@@ -1231,7 +1231,7 @@ Pattern
 
 	If the file name you want to use really contains a '*', '?', '[',
 	or ']' char, you have to escape it to avoid to have interpreted as a
-	globbing character. In Unix the escape char is '\' in Windows it's '^'.
+	globbing character. In Unix the escape char is '\', in Windows it's '^'.
 	Note that when the pattern is on the command line, you have to double the
 	escape character to avoid to have it interpreted by the command shell.
 
