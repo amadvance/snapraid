@@ -361,7 +361,7 @@ struct snapraid_disk {
 	 * Mutex for protecting the filesystem structure.
 	 *
 	 * Specifically, this protects ::fs_parity, ::fs_file, and ::fs_last,
-	 * meaning that it protectes only extents.
+	 * meaning that it protects only extents.
 	 *
 	 * Files, links and dirs are not protected as they are not expected to
 	 * change during multithread processing.
@@ -605,7 +605,7 @@ static inline int hash_is_zero(const unsigned char* hash)
 }
 
 /**
- * Check if the specified hash is uniquievocally repesenting the data.
+ * Check if the specified hash is unequivocally representing the data.
  *
  * If working with reduced hash lengths, this function always return 0.
  */

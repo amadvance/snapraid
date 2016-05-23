@@ -590,7 +590,7 @@ unsigned split(char** split_map, unsigned split_max, char* str, const char* deli
 {
 	unsigned mac = 0;
 
-	/* skip initial delimiers */
+	/* skip initial delimiters */
 	str += strspn(str, delimiters);
 
 	while (*str != 0 || mac == split_max) {
@@ -808,7 +808,7 @@ int mkancestor(const char* file)
 	 * the EEXIST error because the call will fail with ERROR_WRITE_PROTECTED.
 	 *
 	 * Also in Windows it's better to use lstat() than stat() because it
-	 * doen't need to open the dir with CreateFile().
+	 * doesn't need to open the dir with CreateFile().
 	 */
 	if (lstat(dir, &st) == 0) {
 		/* it already exists */
@@ -984,7 +984,7 @@ int advise_write(struct advise_struct* advise, int f, data_off_t offset, data_of
 	 * Linus "Unexpected splice "always copy" behavior observed"
 	 * http://thread.gmane.org/gmane.linux.kernel/987247/focus=988176
 	 * ---
-	 * The behavior for dirty page writeback is _not_ welldefined, and
+	 * The behavior for dirty page writeback is _not_ well defined, and
 	 * if you do POSIX_FADV_DONTNEED, I would suggest you do it as part of that
 	 * writeback logic, ie you do it only on ranges that you have just waited on.
 	 *

@@ -103,7 +103,7 @@ void* malloc_nofail_test(size_t size)
 /**
  * Fast memory test.
  *
- * It's similat at raid_mtest_vector() but faster because
+ * It's similar at raid_mtest_vector() but faster because
  * we have a lot of buffers to verify.
  */
 static int fast_mtest_vector(int n, size_t size, void** vv)

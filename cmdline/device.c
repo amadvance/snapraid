@@ -486,7 +486,7 @@ static double smart_afr(uint64_t* smart)
 
 	if (smart[188] != SMART_UNASSIGNED) {
 		/* with Seagate disks, there are three different 16 bits value reported */
-		/* the lowest one is the most significative */
+		/* the lowest one is the most significant */
 		double r = smart_afr_value(SMART_188_R, SMART_188_STEP, smart[188] & mask16);
 		if (afr < r)
 			afr = r;

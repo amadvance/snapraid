@@ -396,7 +396,7 @@ int exit_sync_needed;
 #define EXIT_SYNC_NEEDED exit_sync_needed
 
 /**
- * Fill memory with psudeo-random values.
+ * Fill memory with pseudo-random values.
  */
 int randomize(void* ptr, size_t size);
 

@@ -343,7 +343,7 @@ end:
 	state_progress_end(state, countpos, countmax, countsize);
 
 	/* note that at this point no io_error is possible */
-	/* becasue at the first one we bail out */
+	/* because at the first one we bail out */
 	assert(io_error == 0);
 
 	if (error || io_error || silent_error) {
@@ -495,8 +495,8 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 	/* get the block */
 	task->block = fs_par2block_find(disk, blockcur);
 
-	/* if the block has no file, meanining that it's EMPTY or DELETED, */
-	/* it doesn't partecipate in the new parity computation */
+	/* if the block has no file, meaning that it's EMPTY or DELETED, */
+	/* it doesn't participate in the new parity computation */
 	if (!block_has_file(task->block)) {
 		/* use an empty block */
 		memset(buffer, 0, state->block_size);
@@ -983,7 +983,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 					/* have "parity_needs_to_be_updated" already at 1 */
 					assert(block_state_get(block) == BLOCK_STATE_CHG);
 
-					/* if the hash represents the data uniquievocally */
+					/* if the hash represents the data unequivocally */
 					if (hash_is_unique(block->hash)) {
 						/* check if the hash is changed */
 						if (memcmp(hash, block->hash, BLOCK_HASH_SIZE) != 0) {
@@ -1193,7 +1193,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			if (parity_needs_to_be_updated
 				&& !silent_error_on_this_block
 			) {
-				/* if rehash is neeed */
+				/* if rehash is needed */
 				if (rehash) {
 					/* store all the new hash already computed */
 					for (j = 0; j < diskmax; ++j) {

@@ -193,7 +193,7 @@ static int devdereference(uint64_t device, uint64_t* new_device)
 	char path[PATH_MAX];
 	struct stat st;
 
-	/* use the proc interface to get the device containinig the filesystem */
+	/* use the proc interface to get the device containing the filesystem */
 	if (devresolve_proc(device, path, sizeof(path)) != 0) {
 		/* LCOV_EXCL_START */
 		return -1;

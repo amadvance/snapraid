@@ -1990,7 +1990,7 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 					}
 
 					/* if the block contains a hash of past data */
-					/* and we are clearing such undeterminated hashes */
+					/* and we are clearing such indeterminate hashes */
 					if (state->clear_past_hash
 						&& block_has_past_hash(block)
 					) {
