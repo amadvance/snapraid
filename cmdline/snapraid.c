@@ -81,7 +81,7 @@ void memory(void)
 
 	/* size of the block */
 	log_tag("memory:block:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_block)));
-	log_tag("memory:chunk:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_chunk)));
+	log_tag("memory:extent:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_extent)));
 	log_tag("memory:file:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_file)));
 	log_tag("memory:link:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_link)));
 	log_tag("memory:dir:%" PRIu64 "\n", (uint64_t)(sizeof(struct snapraid_dir)));

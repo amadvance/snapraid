@@ -614,41 +614,41 @@ int file_pathstamp_compare(const void* void_a, const void* void_b)
 	return file_stamp_compare(void_a, void_b);
 }
 
-struct snapraid_chunk* chunk_alloc(block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos, block_off_t count)
+struct snapraid_extent* extent_alloc(block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos, block_off_t count)
 {
-	struct snapraid_chunk* chunk;
+	struct snapraid_extent* extent;
 
 	if (count == 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency when allocating empty chunk for file '%s' at position '%u/%u'\n", file->sub, file_pos, file->blockmax);
+		log_fatal("Internal inconsistency when allocating empty extent for file '%s' at position '%u/%u'\n", file->sub, file_pos, file->blockmax);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 	if (file_pos + count > file->blockmax) {
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency when allocating overflowing chunk for file '%s' at position '%u:%u/%u'\n", file->sub, file_pos, count, file->blockmax);
+		log_fatal("Internal inconsistency when allocating overflowing extent for file '%s' at position '%u:%u/%u'\n", file->sub, file_pos, count, file->blockmax);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 
-	chunk = malloc_nofail(sizeof(struct snapraid_chunk));
-	chunk->parity_pos = parity_pos;
-	chunk->file = file;
-	chunk->file_pos = file_pos;
-	chunk->count = count;
+	extent = malloc_nofail(sizeof(struct snapraid_extent));
+	extent->parity_pos = parity_pos;
+	extent->file = file;
+	extent->file_pos = file_pos;
+	extent->count = count;
 
-	return chunk;
+	return extent;
 }
 
-void chunk_free(struct snapraid_chunk* chunk)
+void extent_free(struct snapraid_extent* extent)
 {
-	free(chunk);
+	free(extent);
 }
 
-int chunk_parity_compare(const void* void_a, const void* void_b)
+int extent_parity_compare(const void* void_a, const void* void_b)
 {
-	const struct snapraid_chunk* arg_a = void_a;
-	const struct snapraid_chunk* arg_b = void_b;
+	const struct snapraid_extent* arg_a = void_a;
+	const struct snapraid_extent* arg_b = void_b;
 
 	if (arg_a->parity_pos < arg_b->parity_pos)
 		return -1;
@@ -658,10 +658,10 @@ int chunk_parity_compare(const void* void_a, const void* void_b)
 	return 0;
 }
 
-int chunk_file_compare(const void* void_a, const void* void_b)
+int extent_file_compare(const void* void_a, const void* void_b)
 {
-	const struct snapraid_chunk* arg_a = void_a;
-	const struct snapraid_chunk* arg_b = void_b;
+	const struct snapraid_extent* arg_a = void_a;
+	const struct snapraid_extent* arg_b = void_b;
 
 	if (arg_a->file < arg_b->file)
 		return -1;
@@ -775,8 +775,8 @@ struct snapraid_disk* disk_alloc(const char* name, const char* dir, uint64_t dev
 	tommy_hashdyn_init(&disk->linkset);
 	tommy_list_init(&disk->dirlist);
 	tommy_hashdyn_init(&disk->dirset);
-	tommy_tree_init(&disk->fs_parity, chunk_parity_compare);
-	tommy_tree_init(&disk->fs_file, chunk_file_compare);
+	tommy_tree_init(&disk->fs_parity, extent_parity_compare);
+	tommy_tree_init(&disk->fs_file, extent_file_compare);
 	disk->fs_last = 0;
 
 	return disk;
@@ -786,7 +786,7 @@ void disk_free(struct snapraid_disk* disk)
 {
 	tommy_list_foreach(&disk->filelist, (tommy_foreach_func*)file_free);
 	tommy_list_foreach(&disk->deletedlist, (tommy_foreach_func*)file_free);
-	tommy_tree_foreach(&disk->fs_file, (tommy_foreach_func*)chunk_free);
+	tommy_tree_foreach(&disk->fs_file, (tommy_foreach_func*)extent_free);
 	tommy_hashdyn_done(&disk->inodeset);
 	tommy_hashdyn_done(&disk->pathset);
 	tommy_hashdyn_done(&disk->stampset);
@@ -820,17 +820,17 @@ static inline void fs_unlock(struct snapraid_disk* disk)
 #endif
 }
 
-struct chunk_disk_empty {
+struct extent_disk_empty {
 	block_off_t blockmax;
 };
 
 /**
- * Compare the chunk if inside the specified blockmax.
+ * Compare the extent if inside the specified blockmax.
  */
-static int chunk_disk_empty_compare_unlock(const void* void_a, const void* void_b)
+static int extent_disk_empty_compare_unlock(const void* void_a, const void* void_b)
 {
-	const struct chunk_disk_empty* arg_a = void_a;
-	const struct snapraid_chunk* arg_b = void_b;
+	const struct extent_disk_empty* arg_a = void_a;
+	const struct snapraid_extent* arg_b = void_b;
 
 	/* if the block is inside the specified blockmax, it's found */
 	if (arg_a->blockmax > arg_b->parity_pos)
@@ -842,7 +842,7 @@ static int chunk_disk_empty_compare_unlock(const void* void_a, const void* void_
 
 int fs_is_empty(struct snapraid_disk* disk, block_off_t blockmax)
 {
-	struct chunk_disk_empty arg = { blockmax };
+	struct extent_disk_empty arg = { blockmax };
 
 	/* if there is an element, it's not empty */
 	/* even if links and dirs have no block allocation */
@@ -855,8 +855,8 @@ int fs_is_empty(struct snapraid_disk* disk, block_off_t blockmax)
 
 	fs_lock(disk);
 
-	/* search for any chunk inside blockmax */
-	if (tommy_tree_search_compare(&disk->fs_parity, chunk_disk_empty_compare_unlock, &arg) != 0) {
+	/* search for any extent inside blockmax */
+	if (tommy_tree_search_compare(&disk->fs_parity, extent_disk_empty_compare_unlock, &arg) != 0) {
 		fs_unlock(disk);
 		return 0;
 	}
@@ -866,19 +866,19 @@ int fs_is_empty(struct snapraid_disk* disk, block_off_t blockmax)
 	return 1;
 }
 
-struct chunk_disk_size {
+struct extent_disk_size {
 	block_off_t size;
 };
 
 /**
- * Compare the chunk by highest parity position.
+ * Compare the extent by highest parity position.
  *
  * The maximum parity position is stored as size.
  */
-static int chunk_disk_size_compare_unlock(const void* void_a, const void* void_b)
+static int extent_disk_size_compare_unlock(const void* void_a, const void* void_b)
 {
-	struct chunk_disk_size* arg_a = (void*)void_a;
-	const struct snapraid_chunk* arg_b = void_b;
+	struct extent_disk_size* arg_a = (void*)void_a;
+	const struct snapraid_extent* arg_b = void_b;
 
 	/* get the maximum size */
 	if (arg_a->size < arg_b->parity_pos + arg_b->count)
@@ -890,27 +890,27 @@ static int chunk_disk_size_compare_unlock(const void* void_a, const void* void_b
 
 block_off_t fs_size(struct snapraid_disk* disk)
 {
-	struct chunk_disk_size arg = { 0 };
+	struct extent_disk_size arg = { 0 };
 
 	fs_lock(disk);
 
-	tommy_tree_search_compare(&disk->fs_parity, chunk_disk_size_compare_unlock, &arg);
+	tommy_tree_search_compare(&disk->fs_parity, extent_disk_size_compare_unlock, &arg);
 
 	fs_unlock(disk);
 
 	return arg.size;
 }
 
-struct chunk_check {
-	const struct snapraid_chunk* prev;
+struct extent_check {
+	const struct snapraid_extent* prev;
 	int result;
 };
 
-static void chunk_parity_check_foreach_unlock(void* void_arg, void* void_obj)
+static void extent_parity_check_foreach_unlock(void* void_arg, void* void_obj)
 {
-	struct chunk_check* arg = void_arg;
-	const struct snapraid_chunk* obj = void_obj;
-	const struct snapraid_chunk* prev = arg->prev;
+	struct extent_check* arg = void_arg;
+	const struct snapraid_extent* obj = void_obj;
+	const struct snapraid_extent* prev = arg->prev;
 
 	/* set the next previous block */
 	arg->prev = obj;
@@ -945,7 +945,7 @@ static void chunk_parity_check_foreach_unlock(void* void_arg, void* void_obj)
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* check that the chunks don't overlap */
+	/* check that the extents don't overlap */
 	if (prev->parity_pos + prev->count > obj->parity_pos) {
 		/* LCOV_EXCL_START */
 		log_fatal("Internal inconsistency for parity overlap for files '%s' at '%u:%u' and '%s' at '%u:%u'\n",
@@ -956,11 +956,11 @@ static void chunk_parity_check_foreach_unlock(void* void_arg, void* void_obj)
 	}
 }
 
-static void chunk_file_check_foreach_unlock(void* void_arg, void* void_obj)
+static void extent_file_check_foreach_unlock(void* void_arg, void* void_obj)
 {
-	struct chunk_check* arg = void_arg;
-	const struct snapraid_chunk* obj = void_obj;
-	const struct snapraid_chunk* prev = arg->prev;
+	struct extent_check* arg = void_arg;
+	const struct snapraid_extent* obj = void_obj;
+	const struct snapraid_extent* prev = arg->prev;
 
 	/* set the next previous block */
 	arg->prev = obj;
@@ -981,13 +981,13 @@ static void chunk_file_check_foreach_unlock(void* void_arg, void* void_obj)
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* note that for deleted files, some chunks may be missing */
+	/* note that for deleted files, some extents may be missing */
 
 	/* if the files are different */
 	if (!prev || prev->file != obj->file) {
 		if (prev != 0) {
 			if (file_flag_has(prev->file, FILE_IS_DELETED)) {
-				/* check that the chunk doesn't overflow the file */
+				/* check that the extent doesn't overflow the file */
 				if (prev->file_pos + prev->count > prev->file->blockmax) {
 					/* LCOV_EXCL_START */
 					log_fatal("Internal inconsistency in delete end for file '%s' at '%u:%u' overflowing size '%u'\n",
@@ -997,7 +997,7 @@ static void chunk_file_check_foreach_unlock(void* void_arg, void* void_obj)
 					/* LCOV_EXCL_STOP */
 				}
 			} else {
-				/* check that the chunk ends the file */
+				/* check that the extent ends the file */
 				if (prev->file_pos + prev->count != prev->file->blockmax) {
 					/* LCOV_EXCL_START */
 					log_fatal("Internal inconsistency in file end for file '%s' at '%u:%u' instead of size '%u'\n",
@@ -1010,7 +1010,7 @@ static void chunk_file_check_foreach_unlock(void* void_arg, void* void_obj)
 		}
 
 		if (file_flag_has(obj->file, FILE_IS_DELETED)) {
-			/* check that the chunk doesn't overflow the file */
+			/* check that the extent doesn't overflow the file */
 			if (obj->file_pos + obj->count > obj->file->blockmax) {
 				/* LCOV_EXCL_START */
 				log_fatal("Internal inconsistency in delete start for file '%s' at '%u:%u' overflowing size '%u'\n",
@@ -1020,7 +1020,7 @@ static void chunk_file_check_foreach_unlock(void* void_arg, void* void_obj)
 				/* LCOV_EXCL_STOP */
 			}
 		} else {
-			/* check that the chunk starts the file */
+			/* check that the extent starts the file */
 			if (obj->file_pos != 0) {
 				/* LCOV_EXCL_START */
 				log_fatal("Internal inconsistency in file start for file '%s' at '%u:%u'\n",
@@ -1042,7 +1042,7 @@ static void chunk_file_check_foreach_unlock(void* void_arg, void* void_obj)
 		}
 
 		if (file_flag_has(obj->file, FILE_IS_DELETED)) {
-			/* check that the chunks don't overlap */
+			/* check that the extents don't overlap */
 			if (prev->file_pos + prev->count > obj->file_pos) {
 				/* LCOV_EXCL_START */
 				log_fatal("Internal inconsistency in delete sequence for file '%s' at '%u:%u' and at '%u:%u'\n",
@@ -1052,7 +1052,7 @@ static void chunk_file_check_foreach_unlock(void* void_arg, void* void_obj)
 				/* LCOV_EXCL_STOP */
 			}
 		} else {
-			/* check that the chunks are sequential */
+			/* check that the extents are sequential */
 			if (prev->file_pos + prev->count != obj->file_pos) {
 				/* LCOV_EXCL_START */
 				log_fatal("Internal inconsistency in file sequence for file '%s' at '%u:%u' and at '%u:%u'\n",
@@ -1067,7 +1067,7 @@ static void chunk_file_check_foreach_unlock(void* void_arg, void* void_obj)
 
 int fs_check(struct snapraid_disk* disk)
 {
-	struct chunk_check arg;
+	struct extent_check arg;
 
 	/* error count starts from 0 */
 	arg.result = 0;
@@ -1076,11 +1076,11 @@ int fs_check(struct snapraid_disk* disk)
 
 	/* check parity sequence */
 	arg.prev = 0;
-	tommy_tree_foreach_arg(&disk->fs_parity, chunk_parity_check_foreach_unlock, &arg);
+	tommy_tree_foreach_arg(&disk->fs_parity, extent_parity_check_foreach_unlock, &arg);
 
 	/* check file sequence */
 	arg.prev = 0;
-	tommy_tree_foreach_arg(&disk->fs_file, chunk_file_check_foreach_unlock, &arg);
+	tommy_tree_foreach_arg(&disk->fs_file, extent_file_check_foreach_unlock, &arg);
 
 	fs_unlock(disk);
 
@@ -1090,17 +1090,17 @@ int fs_check(struct snapraid_disk* disk)
 	return 0;
 }
 
-struct chunk_parity_inside {
+struct extent_parity_inside {
 	block_off_t parity_pos;
 };
 
 /**
- * Compare the chunk if containing the specified parity position.
+ * Compare the extent if containing the specified parity position.
  */
-static int chunk_parity_inside_compare_unlock(const void* void_a, const void* void_b)
+static int extent_parity_inside_compare_unlock(const void* void_a, const void* void_b)
 {
-	const struct chunk_parity_inside* arg_a = void_a;
-	const struct snapraid_chunk* arg_b = void_b;
+	const struct extent_parity_inside* arg_a = void_a;
+	const struct snapraid_extent* arg_b = void_b;
 
 	if (arg_a->parity_pos < arg_b->parity_pos)
 		return -1;
@@ -1111,46 +1111,46 @@ static int chunk_parity_inside_compare_unlock(const void* void_a, const void* vo
 }
 
 /**
- * Seach the chunk at the specified parity position.
+ * Search the extent at the specified parity position.
  * The search is optimized for sequential accesses.
  * \return If not found return 0
  */
-static struct snapraid_chunk* fs_par2chunk_get_unlock(struct snapraid_disk* disk, struct snapraid_chunk** fs_last, block_off_t parity_pos)
+static struct snapraid_extent* fs_par2extent_get_unlock(struct snapraid_disk* disk, struct snapraid_extent** fs_last, block_off_t parity_pos)
 {
-	struct snapraid_chunk* chunk;
+	struct snapraid_extent* extent;
 
-	/* check if the last accessed chunk matches */
+	/* check if the last accessed extent matches */
 	if (*fs_last
 		&& parity_pos >= (*fs_last)->parity_pos
 		&& parity_pos < (*fs_last)->parity_pos + (*fs_last)->count
 	) {
-		chunk = *fs_last;
+		extent = *fs_last;
 	} else {
-		struct chunk_parity_inside arg = { parity_pos };
-		chunk = tommy_tree_search_compare(&disk->fs_parity, chunk_parity_inside_compare_unlock, &arg);
+		struct extent_parity_inside arg = { parity_pos };
+		extent = tommy_tree_search_compare(&disk->fs_parity, extent_parity_inside_compare_unlock, &arg);
 	}
 
-	if (!chunk)
+	if (!extent)
 		return 0;
 
-	/* store the last accessed chunk */
-	*fs_last = chunk;
+	/* store the last accessed extent */
+	*fs_last = extent;
 
-	return chunk;
+	return extent;
 }
 
-struct chunk_file_inside {
+struct extent_file_inside {
 	struct snapraid_file* file;
 	block_off_t file_pos;
 };
 
 /**
- * Compare the chunk if containing the specified file position.
+ * Compare the extent if containing the specified file position.
  */
-static int chunk_file_inside_compare_unlock(const void* void_a, const void* void_b)
+static int extent_file_inside_compare_unlock(const void* void_a, const void* void_b)
 {
-	const struct chunk_file_inside* arg_a = void_a;
-	const struct snapraid_chunk* arg_b = void_b;
+	const struct extent_file_inside* arg_a = void_a;
+	const struct snapraid_extent* arg_b = void_b;
 
 	if (arg_a->file < arg_b->file)
 		return -1;
@@ -1166,53 +1166,53 @@ static int chunk_file_inside_compare_unlock(const void* void_a, const void* void
 }
 
 /**
- * Search the chunk at the specified file position.
+ * Search the extent at the specified file position.
  * The search is optimized for sequential accesses.
  * \return If not found return 0
  */
-static struct snapraid_chunk* fs_file2chunk_get_unlock(struct snapraid_disk* disk, struct snapraid_chunk** fs_last, struct snapraid_file* file, block_off_t file_pos)
+static struct snapraid_extent* fs_file2extent_get_unlock(struct snapraid_disk* disk, struct snapraid_extent** fs_last, struct snapraid_file* file, block_off_t file_pos)
 {
-	struct snapraid_chunk* chunk;
+	struct snapraid_extent* extent;
 
-	/* check if the last accessed chunk matches */
+	/* check if the last accessed extent matches */
 	if (*fs_last
 		&& file == (*fs_last)->file
 		&& file_pos >= (*fs_last)->file_pos
 		&& file_pos < (*fs_last)->file_pos + (*fs_last)->count
 	) {
-		chunk = *fs_last;
+		extent = *fs_last;
 	} else {
-		struct chunk_file_inside arg = { file, file_pos };
-		chunk = tommy_tree_search_compare(&disk->fs_file, chunk_file_inside_compare_unlock, &arg);
+		struct extent_file_inside arg = { file, file_pos };
+		extent = tommy_tree_search_compare(&disk->fs_file, extent_file_inside_compare_unlock, &arg);
 	}
 
-	if (!chunk)
+	if (!extent)
 		return 0;
 
-	/* store the last accessed chunk */
-	*fs_last = chunk;
+	/* store the last accessed extent */
+	*fs_last = extent;
 
-	return chunk;
+	return extent;
 }
 
 struct snapraid_file* fs_par2file_find(struct snapraid_disk* disk, block_off_t parity_pos, block_off_t* file_pos)
 {
-	struct snapraid_chunk* chunk;
+	struct snapraid_extent* extent;
 	struct snapraid_file* file;
 
 	fs_lock(disk);
 
-	chunk = fs_par2chunk_get_unlock(disk, &disk->fs_last, parity_pos);
+	extent = fs_par2extent_get_unlock(disk, &disk->fs_last, parity_pos);
 
-	if (!chunk) {
+	if (!extent) {
 		fs_unlock(disk);
 		return 0;
 	}
 
 	if (file_pos)
-		*file_pos = chunk->file_pos + (parity_pos - chunk->parity_pos);
+		*file_pos = extent->file_pos + (parity_pos - extent->parity_pos);
 
-	file = chunk->file;
+	file = extent->file;
 
 	fs_unlock(disk);
 	return file;
@@ -1220,18 +1220,18 @@ struct snapraid_file* fs_par2file_find(struct snapraid_disk* disk, block_off_t p
 
 block_off_t fs_file2par_find(struct snapraid_disk* disk, struct snapraid_file* file, block_off_t file_pos)
 {
-	struct snapraid_chunk* chunk;
+	struct snapraid_extent* extent;
 	block_off_t ret;
 
 	fs_lock(disk);
 
-	chunk = fs_file2chunk_get_unlock(disk, &disk->fs_last, file, file_pos);
-	if (!chunk) {
+	extent = fs_file2extent_get_unlock(disk, &disk->fs_last, file, file_pos);
+	if (!extent) {
 		fs_unlock(disk);
 		return POS_NULL;
 	}
 
-	ret = chunk->parity_pos + (file_pos - chunk->file_pos);
+	ret = extent->parity_pos + (file_pos - extent->file_pos);
 
 	fs_unlock(disk);
 	return ret;
@@ -1239,128 +1239,128 @@ block_off_t fs_file2par_find(struct snapraid_disk* disk, struct snapraid_file* f
 
 void fs_allocate(struct snapraid_disk* disk, block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos)
 {
-	struct snapraid_chunk* chunk;
-	struct snapraid_chunk* parity_chunk;
-	struct snapraid_chunk* file_chunk;
+	struct snapraid_extent* extent;
+	struct snapraid_extent* parity_extent;
+	struct snapraid_extent* file_extent;
 
 	fs_lock(disk);
 
 	if (file_pos > 0) {
-		/* search an existing chunk for the previous file_pos */
-		chunk = fs_file2chunk_get_unlock(disk, &disk->fs_last, file, file_pos - 1);
+		/* search an existing extent for the previous file_pos */
+		extent = fs_file2extent_get_unlock(disk, &disk->fs_last, file, file_pos - 1);
 
-		if (chunk != 0 && parity_pos == chunk->parity_pos + chunk->count) {
-			/* ensure that we are extending the chunk at the end */
-			if (file_pos != chunk->file_pos + chunk->count) {
+		if (extent != 0 && parity_pos == extent->parity_pos + extent->count) {
+			/* ensure that we are extending the extent at the end */
+			if (file_pos != extent->file_pos + extent->count) {
 				/* LCOV_EXCL_START */
-				log_fatal("Internal inconsistency when allocating file '%s' at position '%u/%u' in the middle of chunk '%u:%u' in disk '%s'\n", file->sub, file_pos, file->blockmax, chunk->file_pos, chunk->count, disk->name);
+				log_fatal("Internal inconsistency when allocating file '%s' at position '%u/%u' in the middle of extent '%u:%u' in disk '%s'\n", file->sub, file_pos, file->blockmax, extent->file_pos, extent->count, disk->name);
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
 
-			/* extend the existing chunk */
-			++chunk->count;
+			/* extend the existing extent */
+			++extent->count;
 
 			fs_unlock(disk);
 			return;
 		}
 	}
 
-	/* a chunk doesn't exist, and we have to create a new one */
-	chunk = chunk_alloc(parity_pos, file, file_pos, 1);
+	/* a extent doesn't exist, and we have to create a new one */
+	extent = extent_alloc(parity_pos, file, file_pos, 1);
 
-	/* insert the chunk in the trees */
-	parity_chunk = tommy_tree_insert(&disk->fs_parity, &chunk->parity_node, chunk);
-	file_chunk = tommy_tree_insert(&disk->fs_file, &chunk->file_node, chunk);
+	/* insert the extent in the trees */
+	parity_extent = tommy_tree_insert(&disk->fs_parity, &extent->parity_node, extent);
+	file_extent = tommy_tree_insert(&disk->fs_file, &extent->file_node, extent);
 
-	if (parity_chunk != chunk || file_chunk != chunk) {
+	if (parity_extent != extent || file_extent != extent) {
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency when allocating file '%s' at position '%u/%u' for existing chunk '%u:%u' in disk '%s'\n", file->sub, file_pos, file->blockmax, chunk->file_pos, chunk->count, disk->name);
+		log_fatal("Internal inconsistency when allocating file '%s' at position '%u/%u' for existing extent '%u:%u' in disk '%s'\n", file->sub, file_pos, file->blockmax, extent->file_pos, extent->count, disk->name);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* store the last accessed chunk */
-	disk->fs_last = chunk;
+	/* store the last accessed extent */
+	disk->fs_last = extent;
 
 	fs_unlock(disk);
 }
 
 void fs_deallocate(struct snapraid_disk* disk, block_off_t parity_pos)
 {
-	struct snapraid_chunk* chunk;
-	struct snapraid_chunk* second_chunk;
-	struct snapraid_chunk* parity_chunk;
-	struct snapraid_chunk* file_chunk;
+	struct snapraid_extent* extent;
+	struct snapraid_extent* second_extent;
+	struct snapraid_extent* parity_extent;
+	struct snapraid_extent* file_extent;
 	block_off_t first_count, second_count;
 
 	fs_lock(disk);
 
-	chunk = fs_par2chunk_get_unlock(disk, &disk->fs_last, parity_pos);
-	if (!chunk) {
+	extent = fs_par2extent_get_unlock(disk, &disk->fs_last, parity_pos);
+	if (!extent) {
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency when deallocating parity position '%u' for not existing chunk in disk '%s'\n", parity_pos, disk->name);
+		log_fatal("Internal inconsistency when deallocating parity position '%u' for not existing extent in disk '%s'\n", parity_pos, disk->name);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* if it's the only block of the chunk, delete it */
-	if (chunk->count == 1) {
+	/* if it's the only block of the extent, delete it */
+	if (extent->count == 1) {
 		/* remove from the trees */
-		tommy_tree_remove(&disk->fs_parity, chunk);
-		tommy_tree_remove(&disk->fs_file, chunk);
+		tommy_tree_remove(&disk->fs_parity, extent);
+		tommy_tree_remove(&disk->fs_file, extent);
 
 		/* deallocate */
-		chunk_free(chunk);
+		extent_free(extent);
 
-		/* clear the last accessed chunk */
+		/* clear the last accessed extent */
 		disk->fs_last = 0;
 
 		fs_unlock(disk);
 		return;
 	}
 
-	/* if it's at the start of the chunk, shrink the chunk */
-	if (parity_pos == chunk->parity_pos) {
-		++chunk->parity_pos;
-		++chunk->file_pos;
-		--chunk->count;
+	/* if it's at the start of the extent, shrink the extent */
+	if (parity_pos == extent->parity_pos) {
+		++extent->parity_pos;
+		++extent->file_pos;
+		--extent->count;
 
 		fs_unlock(disk);
 		return;
 	}
 
-	/* if it's at the end of the chunk, shrink the chunk */
-	if (parity_pos == chunk->parity_pos + chunk->count - 1) {
-		--chunk->count;
+	/* if it's at the end of the extent, shrink the extent */
+	if (parity_pos == extent->parity_pos + extent->count - 1) {
+		--extent->count;
 
 		fs_unlock(disk);
 		return;
 	}
 
 	/* otherwise it's in the middle */
-	first_count = parity_pos - chunk->parity_pos;
-	second_count = chunk->count - first_count - 1;
+	first_count = parity_pos - extent->parity_pos;
+	second_count = extent->count - first_count - 1;
 
-	/* adjust the first chunk */
-	chunk->count = first_count;
+	/* adjust the first extent */
+	extent->count = first_count;
 
-	/* allocate the second chunk */
-	second_chunk = chunk_alloc(chunk->parity_pos + first_count + 1, chunk->file, chunk->file_pos + first_count + 1, second_count);
+	/* allocate the second extent */
+	second_extent = extent_alloc(extent->parity_pos + first_count + 1, extent->file, extent->file_pos + first_count + 1, second_count);
 
-	/* insert the chunk in the trees */
-	parity_chunk = tommy_tree_insert(&disk->fs_parity, &second_chunk->parity_node, second_chunk);
-	file_chunk = tommy_tree_insert(&disk->fs_file, &second_chunk->file_node, second_chunk);
+	/* insert the extent in the trees */
+	parity_extent = tommy_tree_insert(&disk->fs_parity, &second_extent->parity_node, second_extent);
+	file_extent = tommy_tree_insert(&disk->fs_file, &second_extent->file_node, second_extent);
 
-	if (parity_chunk != second_chunk || file_chunk != second_chunk) {
+	if (parity_extent != second_extent || file_extent != second_extent) {
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency when deallocating parity position '%u' for splitting chunk '%u:%u' in disk '%s'\n", parity_pos, second_chunk->file_pos, second_chunk->count, disk->name);
+		log_fatal("Internal inconsistency when deallocating parity position '%u' for splitting extent '%u:%u' in disk '%s'\n", parity_pos, second_extent->file_pos, second_extent->count, disk->name);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
 
-	/* store the last accessed chunk */
-	disk->fs_last = second_chunk;
+	/* store the last accessed extent */
+	disk->fs_last = second_extent;
 
 	fs_unlock(disk);
 }

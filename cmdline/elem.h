@@ -313,10 +313,10 @@ struct snapraid_dir {
 /**
  * Chunk.
  *
- * A chunk represents a fragment of a file mapped into the parity.
+ * A extent represents a fragment of a file mapped into the parity.
  */
-struct snapraid_chunk {
-	struct snapraid_file* file; /**< File containing this chunk. */
+struct snapraid_extent {
+	struct snapraid_file* file; /**< File containing this extent. */
 	block_off_t parity_pos; /**< Parity position. */
 	block_off_t file_pos; /**< Position in the file. */
 	block_off_t count; /**< Number of sequential blocks in the file and parity. */
@@ -361,7 +361,7 @@ struct snapraid_disk {
 	 * Mutex for protecting the filesystem structure.
 	 *
 	 * Specifically, this protects ::fs_parity, ::fs_file, and ::fs_last,
-	 * meaning that it protectes only chunks.
+	 * meaning that it protectes only extents.
 	 *
 	 * Files, links and dirs are not protected as they are not expected to
 	 * change during multithread processing.
@@ -370,17 +370,17 @@ struct snapraid_disk {
 #endif
 
 	/**
-	 * Mapping of chunks in the parity.
+	 * Mapping of extents in the parity.
 	 * Sorted by <parity_pos> and by <file,file_pos>
 	 */
 	tommy_tree fs_parity;
 	tommy_tree fs_file;
 
 	/**
-	 * Last chunk we accessed.
+	 * Last extent we accessed.
 	 * It's used to optimize access of sequential blocks.
 	 */
-	struct snapraid_chunk* fs_last;
+	struct snapraid_extent* fs_last;
 
 	/**
 	 * List of all the snapraid_file for the disk.
@@ -853,24 +853,24 @@ static inline tommy_uint32_t file_stamp_hash(data_off_t size, int64_t mtime_sec,
 }
 
 /**
- * Allocate a chunk.
+ * Allocate a extent.
  */
-struct snapraid_chunk* chunk_alloc(block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos, block_off_t count);
+struct snapraid_extent* extent_alloc(block_off_t parity_pos, struct snapraid_file* file, block_off_t file_pos, block_off_t count);
 
 /**
- * Deallocate a chunk.
+ * Deallocate a extent.
  */
-void chunk_free(struct snapraid_chunk* chunk);
+void extent_free(struct snapraid_extent* extent);
 
 /**
- * Compare chunk by parity position.
+ * Compare extent by parity position.
  */
-int chunk_parity_compare(const void* void_a, const void* void_b);
+int extent_parity_compare(const void* void_a, const void* void_b);
 
 /**
- * Compare chunk by file and file position.
+ * Compare extent by file and file position.
  */
-int chunk_file_compare(const void* void_a, const void* void_b);
+int extent_file_compare(const void* void_a, const void* void_b);
 
 static inline int link_flag_has(const struct snapraid_link* slink, unsigned mask)
 {
