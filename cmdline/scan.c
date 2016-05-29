@@ -110,7 +110,7 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 			++scan->count_equal;
 
 			if (state->opt.gui) {
-				log_tag("scan:equal:%s:%s\n", disk->name, esc(slink->sub, esc_buffer));
+				log_tag("scan:equal:%s:%s\n", disk->name, esc_tag(slink->sub, esc_buffer));
 			}
 		} else {
 			/* it's an update */
@@ -120,7 +120,7 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 
 			++scan->count_change;
 
-			log_tag("scan:update:%s:%s\n", disk->name, esc(slink->sub, esc_buffer));
+			log_tag("scan:update:%s:%s\n", disk->name, esc_tag(slink->sub, esc_buffer));
 			if (is_diff) {
 				printf("update %s%s\n", disk->dir, slink->sub);
 			}
@@ -137,7 +137,7 @@ static void scan_link(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		/* create the new link */
 		++scan->count_insert;
 
-		log_tag("scan:add:%s:%s\n", disk->name, esc(sub, esc_buffer));
+		log_tag("scan:add:%s:%s\n", disk->name, esc_tag(sub, esc_buffer));
 		if (is_diff) {
 			printf("add %s%s\n", disk->dir, sub);
 		}
@@ -697,7 +697,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				/* if the path is different, it means a moved file with the same inode */
 				++scan->count_move;
 
-				log_tag("scan:move:%s:%s:%s\n", disk->name, esc(file->sub, esc_buffer), esc(sub, esc_buffer_alt));
+				log_tag("scan:move:%s:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer), esc_tag(sub, esc_buffer_alt));
 				if (is_diff) {
 					printf("move %s%s -> %s%s\n", disk->dir, file->sub, disk->dir, sub);
 				}
@@ -718,7 +718,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				++scan->count_equal;
 
 				if (state->opt.gui) {
-					log_tag("scan:equal:%s:%s\n", disk->name, esc(file->sub, esc_buffer));
+					log_tag("scan:equal:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
 				}
 			}
 
@@ -834,7 +834,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				/* like when restoring a backup that restores also the timestamp */
 				++scan->count_restore;
 
-				log_tag("scan:restore:%s:%s\n", disk->name, esc(sub, esc_buffer));
+				log_tag("scan:restore:%s:%s\n", disk->name, esc_tag(sub, esc_buffer));
 				if (is_diff) {
 					printf("restore %s%s\n", disk->dir, sub);
 				}
@@ -857,7 +857,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				++scan->count_equal;
 
 				if (state->opt.gui) {
-					log_tag("scan:equal:%s:%s\n", disk->name, esc(file->sub, esc_buffer));
+					log_tag("scan:equal:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
 				}
 			}
 
@@ -900,10 +900,9 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 	if (is_original_file_size_different_than_zero && st->st_size == 0) {
 		if (!state->opt.force_zero) {
 			/* LCOV_EXCL_START */
-			char quote_buffer[QUOTE_MAX];
 			log_fatal("The file '%s%s' has unexpected zero size!\n", disk->dir, sub);
 			log_fatal("It's possible that after a kernel crash this file was lost,\n");
-			log_fatal("and you can use 'snapraid fix -f %s' to recover it.\n", quote('/', sub, quote_buffer));
+			log_fatal("and you can use 'snapraid fix -f %s' to recover it.\n", esc_shell('/', sub, esc_buffer));
 			if (!is_diff) {
 				log_fatal("If this an expected condition you can '%s' anyway using 'snapraid --force-zero %s'\n", state->command, state->command);
 				exit(EXIT_FAILURE);
@@ -950,7 +949,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 				/* revert old counter and use the copy one */
 				++scan->count_copy;
 
-				log_tag("scan:copy:%s:%s:%s:%s\n", other_disk->name, esc(other_file->sub, esc_buffer), disk->name, esc(file->sub, esc_buffer_alt));
+				log_tag("scan:copy:%s:%s:%s:%s\n", other_disk->name, esc_tag(other_file->sub, esc_buffer), disk->name, esc_tag(file->sub, esc_buffer_alt));
 				if (is_diff) {
 					printf("copy %s%s -> %s%s\n", other_disk->dir, other_file->sub, disk->dir, file->sub);
 				}
@@ -970,7 +969,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		if (is_file_already_present) {
 			++scan->count_change;
 
-			log_tag("scan:update:%s:%s: %" PRIu64 " %" PRIu64 ".%d -> %" PRIu64 " %" PRIu64 ".%d\n", disk->name, esc(sub, esc_buffer),
+			log_tag("scan:update:%s:%s: %" PRIu64 " %" PRIu64 ".%d -> %" PRIu64 " %" PRIu64 ".%d\n", disk->name, esc_tag(sub, esc_buffer),
 				(uint64_t)file_already_present_size, (uint64_t)file_already_present_mtime_sec, file_already_present_mtime_nsec,
 				(uint64_t)file->size, (uint64_t)file->mtime_sec, file->mtime_nsec
 			);
@@ -981,7 +980,7 @@ static void scan_file(struct snapraid_scan* scan, int is_diff, const char* sub, 
 		} else {
 			++scan->count_insert;
 
-			log_tag("scan:add:%s:%s\n", disk->name, esc(sub, esc_buffer));
+			log_tag("scan:add:%s:%s\n", disk->name, esc_tag(sub, esc_buffer));
 			if (is_diff) {
 				printf("add %s%s\n", disk->dir, sub);
 			}
@@ -1527,7 +1526,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			if (!file_flag_has(file, FILE_IS_PRESENT)) {
 				++scan->count_remove;
 
-				log_tag("scan:remove:%s:%s\n", disk->name, esc(file->sub, esc_buffer));
+				log_tag("scan:remove:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
 				if (is_diff) {
 					printf("remove %s%s\n", disk->dir, file->sub);
 				}
@@ -1548,7 +1547,7 @@ static int state_diffscan(struct snapraid_state* state, int is_diff)
 			if (!link_flag_has(slink, FILE_IS_PRESENT)) {
 				++scan->count_remove;
 
-				log_tag("scan:remove:%s:%s\n", disk->name, esc(slink->sub, esc_buffer));
+				log_tag("scan:remove:%s:%s\n", disk->name, esc_tag(slink->sub, esc_buffer));
 				if (is_diff) {
 					printf("remove %s%s\n", disk->dir, slink->sub);
 				}

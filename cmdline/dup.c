@@ -129,7 +129,7 @@ void state_dup(struct snapraid_state* state)
 			if (found) {
 				++count;
 				size += found->file->size;
-				log_tag("dup:%s:%s:%s:%s:%" PRIu64 ": dup\n", disk->name, esc(file->sub, esc_buffer), found->disk->name, esc(found->file->sub, esc_buffer_alt), found->file->size);
+				log_tag("dup:%s:%s:%s:%s:%" PRIu64 ": dup\n", disk->name, esc_tag(file->sub, esc_buffer), found->disk->name, esc_tag(found->file->sub, esc_buffer_alt), found->file->size);
 				printf("%12" PRIu64 " %s%s = %s%s\n", file->size, disk->dir, file->sub, found->disk->dir, found->file->sub);
 				hash_free(hash);
 			} else {

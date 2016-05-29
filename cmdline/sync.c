@@ -44,7 +44,6 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 	unsigned silent_error;
 	unsigned io_error;
 	char esc_buffer[ESC_MAX];
-	char quote_buffer[QUOTE_MAX];
 
 	/* maps the disks to handles */
 	handle = handle_mapping(state, &diskmax);
@@ -140,7 +139,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 					/* This one is really an unexpected error, because we are only reading */
 					/* and closing a descriptor should never fail */
 					if (errno == EIO) {
-						log_tag("error:%u:%s:%s: Close EIO error. %s\n", i, disk->name, esc(report->sub, esc_buffer), strerror(errno));
+						log_tag("error:%u:%s:%s: Close EIO error. %s\n", i, disk->name, esc_tag(report->sub, esc_buffer), strerror(errno));
 						log_fatal("DANGER! Unexpected input/output close error in a data disk, it isn't possible to sync.\n");
 						log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
 						log_fatal("Stopping at block %u\n", i);
@@ -148,7 +147,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 						goto bail;
 					}
 
-					log_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(report->sub, esc_buffer), strerror(errno));
+					log_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc_tag(report->sub, esc_buffer), strerror(errno));
 					log_fatal("WARNING! Unexpected close error in a data disk, it isn't possible to sync.\n");
 					log_fatal("Ensure that file '%s' can be accessed.\n", handle[j].path);
 					log_fatal("Stopping at block %u\n", i);
@@ -162,7 +161,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			if (ret == -1) {
 				if (errno == EIO) {
 					/* LCOV_EXCL_START */
-					log_tag("error:%u:%s:%s: Open EIO error. %s\n", i, disk->name, esc(file->sub, esc_buffer), strerror(errno));
+					log_tag("error:%u:%s:%s: Open EIO error. %s\n", i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
 					log_fatal("DANGER! Unexpected input/output open error in a data disk, it isn't possible to sync.\n");
 					log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
 					log_fatal("Stopping at block %u\n", i);
@@ -172,7 +171,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				}
 
 				if (errno == ENOENT) {
-					log_tag("error:%u:%s:%s: Open ENOENT error. %s\n", i, disk->name, esc(file->sub, esc_buffer), strerror(errno));
+					log_tag("error:%u:%s:%s: Open ENOENT error. %s\n", i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
 					log_error("Missing file '%s'.\n", handle[j].path);
 					log_error("WARNING! You cannot modify data disk during a sync.\n");
 					log_error("Rerun the sync command when finished.\n");
@@ -183,7 +182,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				}
 
 				if (errno == EACCES) {
-					log_tag("error:%u:%s:%s: Open EACCES error. %s\n", i, disk->name, esc(file->sub, esc_buffer), strerror(errno));
+					log_tag("error:%u:%s:%s: Open EACCES error. %s\n", i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
 					log_error("No access at file '%s'.\n", handle[j].path);
 					log_error("WARNING! Please fix the access permission in the data disk.\n");
 					log_error("Rerun the sync command when finished.\n");
@@ -193,10 +192,10 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				}
 
 				/* LCOV_EXCL_START */
-				log_tag("error:%u:%s:%s: Open error. %s\n", i, disk->name, esc(file->sub, esc_buffer), strerror(errno));
+				log_tag("error:%u:%s:%s: Open error. %s\n", i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
 				log_fatal("WARNING! Unexpected open error in a data disk, it isn't possible to sync.\n");
 				log_fatal("Ensure that file '%s' can be accessed.\n", handle[j].path);
-				log_fatal("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", quote('/', file->sub, quote_buffer));
+				log_fatal("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", esc_shell('/', file->sub, esc_buffer));
 				++error;
 				goto bail;
 				/* LCOV_EXCL_STOP */
@@ -208,7 +207,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				|| STAT_NSEC(&handle[j].st) != file->mtime_nsec
 				|| handle[j].st.st_ino != file->inode
 			) {
-				log_tag("error:%u:%s:%s: Unexpected attribute change\n", i, disk->name, esc(file->sub, esc_buffer));
+				log_tag("error:%u:%s:%s: Unexpected attribute change\n", i, disk->name, esc_tag(file->sub, esc_buffer));
 				if (handle[j].st.st_size != file->size) {
 					log_error("Unexpected size change at file '%s' from %" PRIu64 " to %" PRIu64 ".\n", handle[j].path, file->size, handle[j].st.st_size);
 				} else if (handle[j].st.st_mtime != file->mtime_sec
@@ -229,7 +228,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			if (read_size == -1) {
 				/* LCOV_EXCL_START */
 				if (errno == EIO) {
-					log_tag("error:%u:%s:%s: Read EIO error at position %u. %s\n", i, disk->name, esc(file->sub, esc_buffer), file_pos, strerror(errno));
+					log_tag("error:%u:%s:%s: Read EIO error at position %u. %s\n", i, disk->name, esc_tag(file->sub, esc_buffer), file_pos, strerror(errno));
 					log_fatal("DANGER! Unexpected input/output read error in a data disk, it isn't possible to sync.\n");
 					log_fatal("Ensure that disk '%s' is sane and that file '%s' can be read.\n", disk->dir, handle[j].path);
 					log_fatal("Stopping at block %u\n", i);
@@ -237,10 +236,10 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 					goto bail;
 				}
 
-				log_tag("error:%u:%s:%s: Read error at position %u. %s\n", i, disk->name, esc(file->sub, esc_buffer), file_pos, strerror(errno));
+				log_tag("error:%u:%s:%s: Read error at position %u. %s\n", i, disk->name, esc_tag(file->sub, esc_buffer), file_pos, strerror(errno));
 				log_fatal("WARNING! Unexpected read error in a data disk, it isn't possible to sync.\n");
 				log_fatal("Ensure that file '%s' can be read.\n", handle[j].path);
-				log_fatal("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", quote('/', file->sub, quote_buffer));
+				log_fatal("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", esc_shell('/', file->sub, esc_buffer));
 				++error;
 				goto bail;
 				/* LCOV_EXCL_STOP */
@@ -264,7 +263,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 			if (block_state == BLOCK_STATE_REP) {
 				/* compare the hash */
 				if (memcmp(hash, block->hash, BLOCK_HASH_SIZE) != 0) {
-					log_tag("error:%u:%s:%s: Unexpected data change\n", i, disk->name, esc(file->sub, esc_buffer));
+					log_tag("error:%u:%s:%s: Unexpected data change\n", i, disk->name, esc_tag(file->sub, esc_buffer));
 					log_error("Data change at file '%s' at position '%u'\n", handle[j].path, file_pos);
 					log_error("WARNING! Unexpected data modification of a file without parity!\n");
 
@@ -320,7 +319,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				/* This one is really an unexpected error, because we are only reading */
 				/* and closing a descriptor should never fail */
 				if (errno == EIO) {
-					log_tag("error:%u:%s:%s: Close EIO error. %s\n", blockmax, disk->name, esc(report->sub, esc_buffer), strerror(errno));
+					log_tag("error:%u:%s:%s: Close EIO error. %s\n", blockmax, disk->name, esc_tag(report->sub, esc_buffer), strerror(errno));
 					log_fatal("DANGER! Unexpected input/output close error in a data disk, it isn't possible to sync.\n");
 					log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle[j].path);
 					log_fatal("Stopping at block %u\n", blockmax);
@@ -328,7 +327,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 					goto bail;
 				}
 
-				log_tag("error:%u:%s:%s: Close error. %s\n", blockmax, disk->name, esc(report->sub, esc_buffer), strerror(errno));
+				log_tag("error:%u:%s:%s: Close error. %s\n", blockmax, disk->name, esc_tag(report->sub, esc_buffer), strerror(errno));
 				log_fatal("WARNING! Unexpected close error in a data disk, it isn't possible to sync.\n");
 				log_fatal("Ensure that file '%s' can be accessed.\n", handle[j].path);
 				log_fatal("Stopping at block %u\n", blockmax);
@@ -375,7 +374,7 @@ bail:
 		struct snapraid_disk* disk = handle[j].disk;
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
-			log_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc(file->sub, esc_buffer), strerror(errno));
+			log_tag("error:%u:%s:%s: Close error. %s\n", i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
 			log_fatal("DANGER! Unexpected close error in a data disk.\n");
 			++error;
 			/* continue, as we are already exiting */
@@ -482,7 +481,6 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 	unsigned char* buffer = task->buffer;
 	int ret;
 	char esc_buffer[ESC_MAX];
-	char quote_buffer[QUOTE_MAX];
 
 	/* if the disk position is not used */
 	if (!disk) {
@@ -517,7 +515,7 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 			/* This one is really an unexpected error, because we are only reading */
 			/* and closing a descriptor should never fail */
 			if (errno == EIO) {
-				log_tag("error:%u:%s:%s: Close EIO error. %s\n", blockcur, disk->name, esc(report->sub, esc_buffer), strerror(errno));
+				log_tag("error:%u:%s:%s: Close EIO error. %s\n", blockcur, disk->name, esc_tag(report->sub, esc_buffer), strerror(errno));
 				log_fatal("DANGER! Unexpected input/output close error in a data disk, it isn't possible to sync.\n");
 				log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle->path);
 				log_fatal("Stopping at block %u\n", blockcur);
@@ -525,7 +523,7 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 				return;
 			}
 
-			log_tag("error:%u:%s:%s: Close error. %s\n", blockcur, disk->name, esc(report->sub, esc_buffer), strerror(errno));
+			log_tag("error:%u:%s:%s: Close error. %s\n", blockcur, disk->name, esc_tag(report->sub, esc_buffer), strerror(errno));
 			log_fatal("WARNING! Unexpected close error in a data disk, it isn't possible to sync.\n");
 			log_fatal("Ensure that file '%s' can be accessed.\n", handle->path);
 			log_fatal("Stopping at block %u\n", blockcur);
@@ -539,7 +537,7 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 	if (ret == -1) {
 		if (errno == EIO) {
 			/* LCOV_EXCL_START */
-			log_tag("error:%u:%s:%s: Open EIO error. %s\n", blockcur, disk->name, esc(task->file->sub, esc_buffer), strerror(errno));
+			log_tag("error:%u:%s:%s: Open EIO error. %s\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), strerror(errno));
 			log_fatal("DANGER! Unexpected input/output open error in a data disk, it isn't possible to sync.\n");
 			log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle->path);
 			log_fatal("Stopping at block %u\n", blockcur);
@@ -549,7 +547,7 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 		}
 
 		if (errno == ENOENT) {
-			log_tag("error:%u:%s:%s: Open ENOENT error. %s\n", blockcur, disk->name, esc(task->file->sub, esc_buffer), strerror(errno));
+			log_tag("error:%u:%s:%s: Open ENOENT error. %s\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), strerror(errno));
 			log_error("Missing file '%s'.\n", handle->path);
 			log_error("WARNING! You cannot modify data disk during a sync.\n");
 			log_error("Rerun the sync command when finished.\n");
@@ -560,7 +558,7 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 		}
 
 		if (errno == EACCES) {
-			log_tag("error:%u:%s:%s: Open EACCES error. %s\n", blockcur, disk->name, esc(task->file->sub, esc_buffer), strerror(errno));
+			log_tag("error:%u:%s:%s: Open EACCES error. %s\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), strerror(errno));
 			log_error("No access at file '%s'.\n", handle->path);
 			log_error("WARNING! Please fix the access permission in the data disk.\n");
 			log_error("Rerun the sync command when finished.\n");
@@ -570,10 +568,10 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 		}
 
 		/* LCOV_EXCL_START */
-		log_tag("error:%u:%s:%s: Open error. %s\n", blockcur, disk->name, esc(task->file->sub, esc_buffer), strerror(errno));
+		log_tag("error:%u:%s:%s: Open error. %s\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), strerror(errno));
 		log_fatal("WARNING! Unexpected open error in a data disk, it isn't possible to sync.\n");
 		log_fatal("Ensure that file '%s' can be accessed.\n", handle->path);
-		log_fatal("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", quote('/', task->file->sub, quote_buffer));
+		log_fatal("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", esc_shell('/', task->file->sub, esc_buffer));
 		task->state = TASK_STATE_ERROR;
 		return;
 		/* LCOV_EXCL_STOP */
@@ -585,7 +583,7 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 		|| STAT_NSEC(&handle->st) != task->file->mtime_nsec
 		|| handle->st.st_ino != task->file->inode
 	) {
-		log_tag("error:%u:%s:%s: Unexpected attribute change\n", blockcur, disk->name, esc(task->file->sub, esc_buffer));
+		log_tag("error:%u:%s:%s: Unexpected attribute change\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer));
 		if (handle->st.st_size != task->file->size) {
 			log_error("Unexpected size change at file '%s' from %" PRIu64 " to %" PRIu64 ".\n", handle->path, task->file->size, handle->st.st_size);
 		} else if (handle->st.st_mtime != task->file->mtime_sec
@@ -606,16 +604,16 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 	if (task->read_size == -1) {
 		/* LCOV_EXCL_START */
 		if (errno == EIO) {
-			log_tag("error:%u:%s:%s: Read EIO error at position %u. %s\n", blockcur, disk->name, esc(task->file->sub, esc_buffer), task->file_pos, strerror(errno));
+			log_tag("error:%u:%s:%s: Read EIO error at position %u. %s\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), task->file_pos, strerror(errno));
 			log_error("Input/Output error in file '%s' at position '%u'\n", handle->path, task->file_pos);
 			task->state = TASK_STATE_IOERROR_CONTINUE;
 			return;
 		}
 
-		log_tag("error:%u:%s:%s: Read error at position %u. %s\n", blockcur, disk->name, esc(task->file->sub, esc_buffer), task->file_pos, strerror(errno));
+		log_tag("error:%u:%s:%s: Read error at position %u. %s\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), task->file_pos, strerror(errno));
 		log_fatal("WARNING! Unexpected read error in a data disk, it isn't possible to sync.\n");
 		log_fatal("Ensure that file '%s' can be read.\n", handle->path);
-		log_fatal("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", quote('/', task->file->sub, quote_buffer));
+		log_fatal("Stopping to allow recovery. Try with 'snapraid check -f %s'\n", esc_shell('/', task->file->sub, esc_buffer));
 		task->state = TASK_STATE_ERROR;
 		return;
 		/* LCOV_EXCL_STOP */
@@ -937,7 +935,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				if (memcmp(hash, block->hash, BLOCK_HASH_SIZE) != 0) {
 					/* if the file has invalid parity, it's a REP changed during the sync */
 					if (block_has_invalid_parity(block)) {
-						log_tag("error:%u:%s:%s: Unexpected data change\n", blockcur, disk->name, esc(file->sub, esc_buffer));
+						log_tag("error:%u:%s:%s: Unexpected data change\n", blockcur, disk->name, esc_tag(file->sub, esc_buffer));
 						log_error("Data change at file '%s' at position '%u'\n", task->path, file_pos);
 						log_error("WARNING! Unexpected data modification of a file without parity!\n");
 
@@ -958,7 +956,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 						continue;
 					} else { /* otherwise it's a BLK with silent error */
 						unsigned diff = memdiff(hash, block->hash, BLOCK_HASH_SIZE);
-						log_tag("error:%u:%s:%s: Data error at position %u, diff bits %u\n", blockcur, disk->name, esc(file->sub, esc_buffer), file_pos, diff);
+						log_tag("error:%u:%s:%s: Data error at position %u, diff bits %u\n", blockcur, disk->name, esc_tag(file->sub, esc_buffer), file_pos, diff);
 						log_error("Data error in file '%s' at position '%u', diff bits %u\n", task->path, file_pos, diff);
 
 						/* save the failed block for the fix */
@@ -1380,7 +1378,7 @@ bail:
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			log_tag("error:%u:%s:%s: Close error. %s\n", blockcur, disk->name, esc(file->sub, esc_buffer), strerror(errno));
+			log_tag("error:%u:%s:%s: Close error. %s\n", blockcur, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
 			log_fatal("DANGER! Unexpected close error in a data disk.\n");
 			++error;
 			/* continue, as we are already exiting */

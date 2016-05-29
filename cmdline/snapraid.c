@@ -92,7 +92,7 @@ void memory(void)
 void test(int argc, char* argv[])
 {
 	int i;
-	char buffer[QUOTE_MAX];
+	char buffer[ESC_MAX];
 
 	/* special testing code for quoting */
 	if (argc < 2 || strcmp(argv[1], "test") != 0)
@@ -101,17 +101,17 @@ void test(int argc, char* argv[])
 	for (i = 2; i < argc; ++i) {
 		printf("argv[%d]\n", i);
 		printf("\t#%s#\n", argv[i]);
-		printf("\t#%s#\n", quote(0, argv[i], buffer));
+		printf("\t#%s#\n", esc_shell(0, argv[i], buffer));
 	}
 
 #ifdef _WIN32
-	assert(strcmp(quote(0, " ", buffer), "\" \"") == 0);
-	assert(strcmp(quote(0, " \" ", buffer), "\" \"\\\"\" \"") == 0);
-	assert(strcmp(quote(0, "&|()<>^", buffer), "^&^|^(^)^<^>^^") == 0);
-	assert(strcmp(quote(0, "&|()<>^ ", buffer), "\"&|()<>^ \"") == 0);
+	assert(strcmp(esc_shell(0, " ", buffer), "\" \"") == 0);
+	assert(strcmp(esc_shell(0, " \" ", buffer), "\" \"\\\"\" \"") == 0);
+	assert(strcmp(esc_shell(0, "&|()<>^", buffer), "^&^|^(^)^<^>^^") == 0);
+	assert(strcmp(esc_shell(0, "&|()<>^ ", buffer), "\"&|()<>^ \"") == 0);
 #else
-	assert(strcmp(quote(0, ",._+:@%%/-", buffer), ",._+:@%%/-") == 0);
-	assert(strcmp(quote(0, " ", buffer), "\\ ") == 0);
+	assert(strcmp(esc_shell(0, ",._+:@%%/-", buffer), ",._+:@%%/-") == 0);
+	assert(strcmp(esc_shell(0, " ", buffer), "\\ ") == 0);
 #endif
 
 	printf("Everything OK\n");

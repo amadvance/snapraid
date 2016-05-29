@@ -145,7 +145,7 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 			/* This one is really an unexpected error, because we are only reading */
 			/* and closing a descriptor should never fail */
 			if (errno == EIO) {
-				log_tag("error:%u:%s:%s: Close EIO error. %s\n", blockcur, disk->name, esc(report->sub, esc_buffer), strerror(errno));
+				log_tag("error:%u:%s:%s: Close EIO error. %s\n", blockcur, disk->name, esc_tag(report->sub, esc_buffer), strerror(errno));
 				log_fatal("DANGER! Unexpected input/output close error in a data disk, it isn't possible to scrub.\n");
 				log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle->path);
 				log_fatal("Stopping at block %u\n", blockcur);
@@ -153,7 +153,7 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 				return;
 			}
 
-			log_tag("error:%u:%s:%s: Close error. %s\n", blockcur, disk->name, esc(report->sub, esc_buffer), strerror(errno));
+			log_tag("error:%u:%s:%s: Close error. %s\n", blockcur, disk->name, esc_tag(report->sub, esc_buffer), strerror(errno));
 			log_fatal("WARNING! Unexpected close error in a data disk, it isn't possible to scrub.\n");
 			log_fatal("Ensure that file '%s' can be accessed.\n", handle->path);
 			log_fatal("Stopping at block %u\n", blockcur);
@@ -167,7 +167,7 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 	if (ret == -1) {
 		if (errno == EIO) {
 			/* LCOV_EXCL_START */
-			log_tag("error:%u:%s:%s: Open EIO error. %s\n", blockcur, disk->name, esc(task->file->sub, esc_buffer), strerror(errno));
+			log_tag("error:%u:%s:%s: Open EIO error. %s\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), strerror(errno));
 			log_fatal("DANGER! Unexpected input/output open error in a data disk, it isn't possible to scrub.\n");
 			log_fatal("Ensure that disk '%s' is sane and that file '%s' can be accessed.\n", disk->dir, handle->path);
 			log_fatal("Stopping at block %u\n", blockcur);
@@ -176,7 +176,7 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 			/* LCOV_EXCL_STOP */
 		}
 
-		log_tag("error:%u:%s:%s: Open error. %s\n", blockcur, disk->name, esc(task->file->sub, esc_buffer), strerror(errno));
+		log_tag("error:%u:%s:%s: Open error. %s\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), strerror(errno));
 		task->state = TASK_STATE_ERROR_CONTINUE;
 		return;
 	}
@@ -199,13 +199,13 @@ static void scrub_data_reader(struct snapraid_worker* worker, struct snapraid_ta
 	task->read_size = handle_read(handle, task->file_pos, buffer, state->block_size, log_error, 0);
 	if (task->read_size == -1) {
 		if (errno == EIO) {
-			log_tag("error:%u:%s:%s: Read EIO error at position %u. %s\n", blockcur, disk->name, esc(task->file->sub, esc_buffer), task->file_pos, strerror(errno));
+			log_tag("error:%u:%s:%s: Read EIO error at position %u. %s\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), task->file_pos, strerror(errno));
 			log_error("Input/Output error in file '%s' at position '%u'\n", handle->path, task->file_pos);
 			task->state = TASK_STATE_IOERROR_CONTINUE;
 			return;
 		}
 
-		log_tag("error:%u:%s:%s: Read error at position %u. %s\n", blockcur, disk->name, esc(task->file->sub, esc_buffer), task->file_pos, strerror(errno));
+		log_tag("error:%u:%s:%s: Read error at position %u. %s\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), task->file_pos, strerror(errno));
 		task->state = TASK_STATE_ERROR_CONTINUE;
 		return;
 	}
@@ -469,7 +469,7 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 				if (memcmp(hash, block->hash, BLOCK_HASH_SIZE) != 0) {
 					unsigned diff = memdiff(hash, block->hash, BLOCK_HASH_SIZE);
 
-					log_tag("error:%u:%s:%s: Data error at position %u, diff bits %u\n", blockcur, disk->name, esc(file->sub, esc_buffer), file_pos, diff);
+					log_tag("error:%u:%s:%s: Data error at position %u, diff bits %u\n", blockcur, disk->name, esc_tag(file->sub, esc_buffer), file_pos, diff);
 
 					/* it's a silent error only if we are dealing with synced files */
 					if (file_is_unsynced) {
@@ -677,7 +677,7 @@ bail:
 		ret = handle_close(&handle[j]);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
-			log_tag("error:%u:%s:%s: Close error. %s\n", blockcur, disk->name, esc(file->sub, esc_buffer), strerror(errno));
+			log_tag("error:%u:%s:%s: Close error. %s\n", blockcur, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
 			log_fatal("DANGER! Unexpected close error in a data disk.\n");
 			++error;
 			/* continue, as we are already exiting */

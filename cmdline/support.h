@@ -222,17 +222,15 @@ void printp(double v, size_t pad);
  *
  * Chars ':', '\n', '\r' and '\' are escaped to '\d', '\\n', '\\r' and '\\'.
  */
-const char* esc(const char* str, char* buffer);
-
-#define QUOTE_MAX (PATH_MAX*2 + 1)
+const char* esc_tag(const char* str, char* buffer);
 
 /**
- * Quote a string for the shell.
+ * Escape a string for the shell.
  *
  * \param prefix Char to prefix at the string.
- * \param buffer Preallocated buffer of QUOTE_MAX size.
+ * \param buffer Preallocated buffer of ESC_MAX size.
  */
-const char* quote(char prefix, const char* str, char* buffer);
+const char* esc_shell(char prefix, const char* str, char* buffer);
 
 /**
  * Polish a string.

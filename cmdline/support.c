@@ -389,7 +389,7 @@ void printp(double v, size_t pad)
 		*p++ = to; \
 		break
 
-const char* esc(const char* str, char* buffer)
+const char* esc_tag(const char* str, char* buffer)
 {
 	char* begin = buffer;
 	char* end = begin + ESC_MAX;
@@ -425,15 +425,15 @@ const char* esc(const char* str, char* buffer)
 
 bail:
 	/* LCOV_EXCL_START */
-	log_fatal("Escape too long\n");
+	log_fatal("Escape for log too long\n");
 	exit(EXIT_FAILURE);
 	/* LCOV_EXCL_STOP */
 }
 
-const char* quote(char prefix, const char* str, char* buffer)
+const char* esc_shell(char prefix, const char* str, char* buffer)
 {
 	char* begin = buffer;
-	char* end = begin + QUOTE_MAX;
+	char* end = begin + ESC_MAX;
 	char* p = begin;
 
 #ifdef _WIN32
@@ -568,7 +568,7 @@ const char* quote(char prefix, const char* str, char* buffer)
 
 bail:
 	/* LCOV_EXCL_START */
-	log_fatal("Quote too long\n");
+	log_fatal("Escape for shell too long\n");
 	exit(EXIT_FAILURE);
 	/* LCOV_EXCL_STOP */
 }

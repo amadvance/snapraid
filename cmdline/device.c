@@ -747,7 +747,7 @@ static void state_smart(unsigned n, tommy_list* low)
 
 		log_tag("smart:%s:%s\n", devinfo->file, devinfo->name);
 		if (devinfo->smart_serial[0])
-			log_tag("attr:%s:%s:serial:%s\n", devinfo->file, devinfo->name, esc(devinfo->smart_serial, esc_buffer));
+			log_tag("attr:%s:%s:serial:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->smart_serial, esc_buffer));
 		if (afr != 0)
 			log_tag("attr:%s:%s:afr:%g\n", devinfo->file, devinfo->name, afr);
 		if (devinfo->smart[SMART_SIZE] != SMART_UNASSIGNED)
