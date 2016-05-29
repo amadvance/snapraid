@@ -101,17 +101,17 @@ void test(int argc, char* argv[])
 	for (i = 2; i < argc; ++i) {
 		printf("argv[%d]\n", i);
 		printf("\t#%s#\n", argv[i]);
-		printf("\t#%s#\n", esc_shell(0, argv[i], buffer));
+		printf("\t#%s#\n", esc_shell(argv[i], buffer));
 	}
 
 #ifdef _WIN32
-	assert(strcmp(esc_shell(0, " ", buffer), "\" \"") == 0);
-	assert(strcmp(esc_shell(0, " \" ", buffer), "\" \"\\\"\" \"") == 0);
-	assert(strcmp(esc_shell(0, "&|()<>^", buffer), "^&^|^(^)^<^>^^") == 0);
-	assert(strcmp(esc_shell(0, "&|()<>^ ", buffer), "\"&|()<>^ \"") == 0);
+	assert(strcmp(esc_shell(" ", buffer), "\" \"") == 0);
+	assert(strcmp(esc_shell(" \" ", buffer), "\" \"\\\"\" \"") == 0);
+	assert(strcmp(esc_shell("&|()<>^", buffer), "^&^|^(^)^<^>^^") == 0);
+	assert(strcmp(esc_shell("&|()<>^ ", buffer), "\"&|()<>^ \"") == 0);
 #else
-	assert(strcmp(esc_shell(0, ",._+:@%%/-", buffer), ",._+:@%%/-") == 0);
-	assert(strcmp(esc_shell(0, " ", buffer), "\\ ") == 0);
+	assert(strcmp(esc_shell(",._+:@%%/-", buffer), ",._+:@%%/-") == 0);
+	assert(strcmp(esc_shell(" ", buffer), "\\ ") == 0);
 #endif
 
 	printf("Everything OK\n");

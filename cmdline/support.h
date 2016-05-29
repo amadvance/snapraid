@@ -227,10 +227,9 @@ const char* esc_tag(const char* str, char* buffer);
 /**
  * Escape a string for the shell.
  *
- * \param prefix Char to prefix at the string.
  * \param buffer Preallocated buffer of ESC_MAX size.
  */
-const char* esc_shell(char prefix, const char* str, char* buffer);
+const char* esc_shell(const char* str, char* buffer);
 
 /**
  * Polish a string.

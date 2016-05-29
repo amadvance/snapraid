@@ -430,7 +430,7 @@ bail:
 	/* LCOV_EXCL_STOP */
 }
 
-const char* esc_shell(char prefix, const char* str, char* buffer)
+const char* esc_shell(const char* str, char* buffer)
 {
 	char* begin = buffer;
 	char* end = begin + ESC_MAX;
@@ -445,13 +445,6 @@ const char* esc_shell(char prefix, const char* str, char* buffer)
 		*p++ = '"';
 	}
 #endif
-
-	/* add the prefix char, if any */
-	if (prefix) {
-		if (p == end)
-			goto bail;
-		*p++ = prefix;
-	}
 
 	/* copy string with escaping */
 	while (*str) {
