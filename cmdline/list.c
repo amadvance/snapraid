@@ -77,7 +77,7 @@ void state_list(struct snapraid_state* state)
 					printf(":%02u.%03u", tm->tm_sec, file->mtime_nsec / 1000000);
 				printf(" ");
 			}
-			printf("%s%s\n", disk->dir, file->sub);
+			printf("%s\n", fmt_term(disk, file->sub, esc_buffer));
 		}
 
 		/* sort by name */
@@ -106,7 +106,7 @@ void state_list(struct snapraid_state* state)
 			printf("                 ");
 			if (msg_level >= MSG_VERBOSE)
 				printf("       ");
-			printf("%s%s -> %s%s\n", disk->dir, slink->sub, disk->dir, slink->linkto);
+			printf("%s -> %s\n", fmt_term(disk, slink->sub, esc_buffer), fmt_term(disk, slink->linkto, esc_buffer_alt));
 		}
 	}
 

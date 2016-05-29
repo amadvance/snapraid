@@ -4555,6 +4555,7 @@ void generate_configuration(const char* path)
 {
 	struct snapraid_state state;
 	struct snapraid_content* content;
+	char esc_buffer[ESC_MAX];
 	unsigned l, s;
 	tommy_node* j;
 
@@ -4622,7 +4623,7 @@ void generate_configuration(const char* path)
 		if (disk && disk->filelist) {
 			struct snapraid_file* file = disk->filelist->data;
 			if (file) {
-				printf("# and containing: %s\n", file->sub);
+				printf("# and containing: %s\n", fmt_poll(disk, file->sub, esc_buffer));
 			}
 		}
 		printf("data %s ENTER_HERE_THE_DIR\n", map->name);

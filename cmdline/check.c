@@ -680,7 +680,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 				}
 
 				log_tag("status:unrecoverable:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
-				msg_info("unrecoverable %s\n", path);
+				msg_info("unrecoverable %s\n", fmt_term(disk, file->sub, esc_buffer));
 
 				/* and do not set the time if damaged */
 				goto close_and_continue;
@@ -718,7 +718,7 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 			}
 
 			log_tag("status:recovered:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
-			msg_info("recovered %s\n", path);
+			msg_info("recovered %s\n", fmt_term(disk, file->sub, esc_buffer));
 
 			inode = handle[j].st.st_ino;
 
@@ -758,19 +758,19 @@ static int file_post(struct snapraid_state* state, int fix, unsigned i, struct s
 			if (file_flag_has(file, FILE_IS_DAMAGED)) {
 				if (state->opt.auditonly) {
 					log_tag("status:damaged:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
-					msg_info("damaged %s\n", path);
+					msg_info("damaged %s\n", fmt_term(disk, file->sub, esc_buffer));
 				} else {
 					log_tag("status:unrecoverable:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
-					msg_info("unrecoverable %s\n", path);
+					msg_info("unrecoverable %s\n", fmt_term(disk, file->sub, esc_buffer));
 				}
 			} else if (file_flag_has(file, FILE_IS_FIXED)) {
 				log_tag("status:recoverable:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
-				msg_info("recoverable %s\n", path);
+				msg_info("recoverable %s\n", fmt_term(disk, file->sub, esc_buffer));
 			} else {
 				/* we don't use msg_verbose() because it also goes into the log */
 				if (msg_level >= MSG_VERBOSE) {
 					log_tag("status:correct:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
-					msg_info("correct %s\n", path);
+					msg_info("correct %s\n", fmt_term(disk, file->sub, esc_buffer));
 				}
 			}
 		}
@@ -1512,7 +1512,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				++recovered_error;
 
 				log_tag("status:recovered:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
-				msg_info("recovered %s%s\n", disk->dir, file->sub);
+				msg_info("recovered %s\n", fmt_term(disk, file->sub, esc_buffer));
 			}
 		}
 
@@ -1683,7 +1683,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				}
 
 				log_tag("status:recovered:%s:%s\n", disk->name, esc_tag(slink->sub, esc_buffer));
-				msg_info("recovered %s%s\n", disk->dir, slink->sub);
+				msg_info("recovered %s\n", fmt_term(disk, slink->sub, esc_buffer));
 			}
 		}
 
@@ -1753,7 +1753,7 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 				++recovered_error;
 
 				log_tag("status:recovered:%s:%s\n", disk->name, esc_tag(dir->sub, esc_buffer));
-				msg_info("recovered %s%s\n", disk->dir, dir->sub);
+				msg_info("recovered %s\n", fmt_term(disk, dir->sub, esc_buffer));
 			}
 		}
 	}

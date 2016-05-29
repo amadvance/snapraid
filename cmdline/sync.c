@@ -195,7 +195,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				log_tag("error:%u:%s:%s: Open error. %s\n", i, disk->name, esc_tag(file->sub, esc_buffer), strerror(errno));
 				log_fatal("WARNING! Unexpected open error in a data disk, it isn't possible to sync.\n");
 				log_fatal("Ensure that file '%s' can be accessed.\n", handle[j].path);
-				log_fatal("Stopping to allow recovery. Try with 'snapraid check -f /%s'\n", esc_shell(file->sub, esc_buffer));
+				log_fatal("Stopping to allow recovery. Try with 'snapraid check -f /%s'\n", fmt_poll(disk, file->sub, esc_buffer));
 				++error;
 				goto bail;
 				/* LCOV_EXCL_STOP */
@@ -239,7 +239,7 @@ static int state_hash_process(struct snapraid_state* state, block_off_t blocksta
 				log_tag("error:%u:%s:%s: Read error at position %u. %s\n", i, disk->name, esc_tag(file->sub, esc_buffer), file_pos, strerror(errno));
 				log_fatal("WARNING! Unexpected read error in a data disk, it isn't possible to sync.\n");
 				log_fatal("Ensure that file '%s' can be read.\n", handle[j].path);
-				log_fatal("Stopping to allow recovery. Try with 'snapraid check -f /%s'\n", esc_shell(file->sub, esc_buffer));
+				log_fatal("Stopping to allow recovery. Try with 'snapraid check -f /%s'\n", fmt_poll(disk, file->sub, esc_buffer));
 				++error;
 				goto bail;
 				/* LCOV_EXCL_STOP */
@@ -571,7 +571,7 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 		log_tag("error:%u:%s:%s: Open error. %s\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), strerror(errno));
 		log_fatal("WARNING! Unexpected open error in a data disk, it isn't possible to sync.\n");
 		log_fatal("Ensure that file '%s' can be accessed.\n", handle->path);
-		log_fatal("Stopping to allow recovery. Try with 'snapraid check -f /%s'\n", esc_shell(task->file->sub, esc_buffer));
+		log_fatal("Stopping to allow recovery. Try with 'snapraid check -f /%s'\n", fmt_poll(disk, task->file->sub, esc_buffer));
 		task->state = TASK_STATE_ERROR;
 		return;
 		/* LCOV_EXCL_STOP */
@@ -613,7 +613,7 @@ static void sync_data_reader(struct snapraid_worker* worker, struct snapraid_tas
 		log_tag("error:%u:%s:%s: Read error at position %u. %s\n", blockcur, disk->name, esc_tag(task->file->sub, esc_buffer), task->file_pos, strerror(errno));
 		log_fatal("WARNING! Unexpected read error in a data disk, it isn't possible to sync.\n");
 		log_fatal("Ensure that file '%s' can be read.\n", handle->path);
-		log_fatal("Stopping to allow recovery. Try with 'snapraid check -f /%s'\n", esc_shell(task->file->sub, esc_buffer));
+		log_fatal("Stopping to allow recovery. Try with 'snapraid check -f /%s'\n", fmt_poll(disk, task->file->sub, esc_buffer));
 		task->state = TASK_STATE_ERROR;
 		return;
 		/* LCOV_EXCL_STOP */
