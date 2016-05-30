@@ -749,7 +749,7 @@ static void state_smart(unsigned n, tommy_list* low)
 		if (devinfo->smart_serial[0])
 			log_tag("attr:%s:%s:serial:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->smart_serial, esc_buffer));
 		if (afr != 0)
-			log_tag("attr:%s:%s:afr:%g\n", devinfo->file, devinfo->name, afr);
+			log_tag("attr:%s:%s:afr:%g:%g\n", devinfo->file, devinfo->name, afr, poisson_prob_n_or_more_failures(afr, 1));
 		if (devinfo->smart[SMART_SIZE] != SMART_UNASSIGNED)
 			log_tag("attr:%s:%s:size:%" PRIu64 "\n", devinfo->file, devinfo->name, devinfo->smart[SMART_SIZE]);
 		if (devinfo->smart[SMART_ERROR] != SMART_UNASSIGNED)
