@@ -6,11 +6,11 @@ SnapRAID HISTORY
  * Added support for splitting the parity in multiple partitions. You
    can now specify multiple files for a single parity. As soon a file
    cannot grow anymore, the next one starts growing.
-   In the configuration file, just put more file in the same 'parity'
+   In the configuration file, just put more files in the same 'parity'
    line, separated by , (comma).
    Note that if this feature is used, the saved content file won't be
    read by older SnapRAID versions.
-* Added a new 'hashsize' configuration option. It could be useful in
+ * Added a new 'hashsize' configuration option. It could be useful in
    systems with low memory, to reduce the memory usage.
    Note that if this feature is used, the saved content file won't be
    read by older SnapRAID versions.
@@ -29,8 +29,9 @@ SnapRAID HISTORY
    --test-io-advise-discard discard cache after every operation (Linux)
    --test-io-advise-discard-window discard cache every 8 MB (Linux)
    --test-io-advise-direct use direct/unbuffered mode (Linux/Windows)
-   The default mode is 'flush' in Linux and 'sequential' in Windows.
- * Fixed running in Windows platforms that miss the RtlGenRandom
+   The new default mode is 'flush' in Linux (before it was 'sequential'),
+   and 'sequential' in Windows (like before).
+ * Fixed running in Windows platforms that miss the RtlGenRandom()
    function.
  * Added the --test-io-cache=1 option to disable the multi-thread IO
    mode.
