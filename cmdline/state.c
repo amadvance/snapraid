@@ -2689,13 +2689,16 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 			}
 
 			/* auto configure if configuration is missing */
-			if (state->no_conf && v_level < LEV_MAX && v_level >= state->level)
-				state->level = v_level + 1;
+			if (state->no_conf) {
+				if (v_level < LEV_MAX && v_level >= state->level)
+					state->level = v_level + 1;
+				if (state->parity[v_level].split_mac < v_split_mac)
+					state->parity[v_level].split_mac = v_split_mac;
+			}
 
 			/* if we use this parity entry */
 			if (v_level < state->level) {
 				/* set the parity info */
-				state->parity[v_level].split_mac = v_split_mac;
 				state->parity[v_level].total_blocks = v_total_blocks;
 				state->parity[v_level].free_blocks = v_free_blocks;
 			}
@@ -2731,11 +2734,35 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 
 				/* if we use this parity entry */
 				if (v_level < state->level) {
-					/* we copy the path only if without configuration file */
-					if (state->no_conf)
-						pathcpy(state->parity[v_level].split_map[s].path, sizeof(state->parity[v_level].split_map[s].path), v_path);
-					pathcpy(state->parity[v_level].split_map[s].uuid, sizeof(state->parity[v_level].split_map[s].uuid), v_uuid);
-					state->parity[v_level].split_map[s].size = v_size;
+					/* if this split was removed from the configuration */
+					if (s >= state->parity[v_level].split_mac) {
+						/* if the file is used, we really need it */
+						if (v_size != 0) {
+							/* LCOV_EXCL_START */
+							decoding_error(path, f);
+							log_fatal("Parity '%s' misses used file '%u'!\n", lev_config_name(v_level), s);
+							log_fatal("If you have removed it from the configuration file, please restore it\n");
+							exit(EXIT_FAILURE);
+							/* LCOV_EXCL_STOP */
+						}
+
+						/* otherwise we can drop it */
+						log_fatal("WARNING! Dropping from '%s' unused split '%u'\n", lev_config_name(v_level), s);
+					} else {
+						/* we copy the path only if without configuration file */
+						if (state->no_conf)
+							pathcpy(state->parity[v_level].split_map[s].path, sizeof(state->parity[v_level].split_map[s].path), v_path);
+
+						/* set the split info */
+						pathcpy(state->parity[v_level].split_map[s].uuid, sizeof(state->parity[v_level].split_map[s].uuid), v_uuid);
+						state->parity[v_level].split_map[s].size = v_size;
+
+						/* log the info read from the content file */
+						log_tag("content:%s:%u:%s:%s:%" PRIi64 "\n", lev_config_name(v_level), s,
+							state->parity[v_level].split_map[s].path,
+							state->parity[v_level].split_map[s].uuid,
+							state->parity[v_level].split_map[s].size);
+					}
 				}
 			}
 		} else if (c == 'N') {
