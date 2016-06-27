@@ -1219,17 +1219,23 @@ RAID functions used for recovering with 'fix':
 
 <h3 id="panic">Why does my machine reboots or crashes while SnapRAID is running?</h3>
 <p>
-When the machine reboots or crashes, it's clearly a hardware issue.
-SnapRAID cannot reboot or crash the system.
+SnapRAID pushes the system to extreme conditions, and if the machine has a latent problem,
+it could result in an unexpected system crash or reboot.
+</p>
+<p>
+Even if the problem happens only when SnapRAID is running, it's without any doubt a hardware
+or driver issue because SnapRAID is just a standard user application that cannot reboot or
+crash the system.
 </p>
 <p>
 Possible thing to checks are:
 <ul>
-<li>Check your memory with <a href="http://www.memtest86.com/">memtest86</a></li>
-<li>Check your HD cabling</li>
-<li>Ensure that your power supply can sustatin all the HDs spinning at the same time</li>
-<li>Check that the temperature of your system is not too high</li>
-<li>Check in systemlog or EventViewer if there is any hint of the possible issue</li>
+<li>Check your system memory with <a href="http://www.memtest86.com/">memtest86</a>.</li>
+<li>Check your HD cabling.</li>
+<li>Ensure that your power supply can sustatin all the HDs spinning at the same time.</li>
+<li>Check that the temperature of your system is not too high.</li>
+<li>Update any system driver related to storage.</li>
+<li>Check in systemlog or EventViewer if there is any hint of the possible issue.</li>
 </ul>
 </p>
 
