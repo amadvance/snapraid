@@ -936,6 +936,8 @@ int advise_write(struct advise_struct* advise, int f, data_off_t offset, data_of
 	data_off_t handle_size;
 
 	(void)f;
+	(void)handle_offset;
+	(void)handle_size;
 
 	handle_offset = 0;
 	handle_size = 0;
