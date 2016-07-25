@@ -322,6 +322,11 @@ static int parity_handle_grow(struct snapraid_split_handle* split, data_off_t si
 	return ret;
 }
 
+static int parity_handle_shrink(struct snapraid_split_handle* split, data_off_t size)
+{
+	return ftruncate(split->f, size);
+}
+
 /**
  * Get the highest bit set.
  */
@@ -360,29 +365,33 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 		int ret;
 		data_off_t run = hbit_u64(delta);
 
-		ret = parity_handle_grow(split, base + run, skip_fallocate);
+		/* mask out the bit we process */
+		delta &= ~run;
 
+		ret = parity_handle_grow(split, base + run, skip_fallocate);
 		if (ret != 0) {
-			/* we cannot grow, fallback to the smaller bits */
+			/* we cannot grow, fallback enabling all the smaller bits */
 			delta = run - 1;
 
 			/* mask out the block size */
 			delta &= ~block_mask;
 		} else {
-			/* mask out this bit */
-			delta &= ~run;
+			/* increase the effective size */
 			base += run;
 		}
 	}
 
-	/* reallocate the expected size */
-	/* if this fail, is there a problem */
-	return parity_handle_grow(split, base, skip_fallocate);
-}
+	/* ensure that the resulting size if block aligned */
+	if ((base & block_mask) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Internal inconsistency in requested parity size %llu with block %u\n", base, block_size);
+		os_abort();
+		/* LCOV_EXCL_STOP */
+	}
 
-static int parity_handle_shrink(struct snapraid_split_handle* split, data_off_t size)
-{
-	return ftruncate(split->f, size);
+	/* shrink to the expected size to ensure to throw away any extra */
+	/* data allocated when the grow operation fails */
+	return parity_handle_shrink(split, base);
 }
 
 static int parity_handle_chsize(struct snapraid_split_handle* split, data_off_t size, uint32_t block_size, int skip_fallocate)
@@ -454,6 +463,10 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 {
 	int ret;
 	unsigned s;
+	data_off_t block_mask;
+
+	/* mask of bits used by the block size */
+	block_mask = ((data_off_t)block_size) - 1;
 
 	if (size < 0)
 		return -1;
@@ -489,8 +502,17 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 			return -1;
 			/* LCOV_EXCL_STOP */
 		} else {
-			size -= split->st.st_size;
-			split->size = split->st.st_size;
+			run = split->st.st_size;
+
+			if ((run & block_mask) != 0) {
+				/* LCOV_EXCL_START */
+				log_fatal("Internal inconsistency in final parity size %llu with block size %u\n", run, block_size);
+				os_abort();
+				/* LCOV_EXCL_STOP */
+			}
+
+			size -= run;
+			split->size = run;
 		}
 	}
 
