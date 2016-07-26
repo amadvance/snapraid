@@ -201,7 +201,6 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 		split->f = -1;
 		split->size = parity->split_map[s].size;
 		split->limit_size = PARITY_LIMIT(limit_size, s, level);
-		++handle->split_mac;
 
 		/* opening in sequential mode in Windows */
 		flags = O_RDWR | O_CREAT | O_BINARY | advise_flags(&split->advise);
@@ -212,6 +211,9 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
+
+		/* we have a valid file handle */
+		++handle->split_mac;
 
 		/* get the stat info */
 		ret = fstat(split->f, &split->st);
@@ -558,7 +560,6 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 		split->f = -1;
 		split->size = parity->split_map[s].size;
 		split->limit_size = PARITY_LIMIT(limit_size, s, level);
-		++handle->split_mac;
 
 		/* open for read */
 		/* O_NOATIME: do not change access time */
@@ -569,6 +570,9 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 			log_fatal("Error opening parity file '%s'. %s.\n", split->path, strerror(errno));
 			goto bail;
 		}
+
+		/* we have a valid file handle */
+		++handle->split_mac;
 
 		/* get the stat info */
 		ret = fstat(split->f, &split->st);
