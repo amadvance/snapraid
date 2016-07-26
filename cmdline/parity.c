@@ -483,10 +483,12 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 			} else {
 				run = split->size;
 
-				/* in some 11.0 BETA it was possible to get wrong split size, adjust them here */
+				/* in the < 11.0-38 BETA it was possible to get wrong split size */
 				if ((run & block_mask) != 0) {
-					log_fatal("WARNING! Shrink split '%s' to block alignment removing extra '%llu' bytes\n", split->path, run & block_mask);
-					run &= ~block_mask;
+					/* LCOV_EXCL_START */
+					log_fatal("Invalid split '%s' size with extra '%llu' bytes.\n", split->path, run & block_mask);
+					return -1;
+					/* LCOV_EXCL_STOP */
 				}
 			}
 		} else {
