@@ -2636,9 +2636,19 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
+			if (v_level >= LEV_MAX) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal("Invalid parity level '%u' in the configuration file!\n", v_level);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
 			/* auto configure if configuration is missing */
-			if (state->no_conf && v_level < LEV_MAX && v_level >= state->level)
-				state->level = v_level + 1;
+			if (state->no_conf) {
+				if (v_level >= state->level)
+					state->level = v_level + 1;
+			}
 
 			/* if we use this parity entry */
 			if (v_level < state->level) {
@@ -2688,9 +2698,17 @@ static void state_read_content(struct snapraid_state* state, const char* path, S
 				/* LCOV_EXCL_STOP */
 			}
 
+			if (v_level >= LEV_MAX) {
+				/* LCOV_EXCL_START */
+				decoding_error(path, f);
+				log_fatal("Invalid parity level '%u' in the configuration file!\n", v_level);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
+
 			/* auto configure if configuration is missing */
 			if (state->no_conf) {
-				if (v_level < LEV_MAX && v_level >= state->level)
+				if (v_level >= state->level)
 					state->level = v_level + 1;
 				if (state->parity[v_level].split_mac < v_split_mac)
 					state->parity[v_level].split_mac = v_split_mac;
