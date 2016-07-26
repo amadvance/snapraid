@@ -198,7 +198,6 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 
 		advise_init(&split->advise, mode);
 		pathcpy(split->path, sizeof(split->path), parity->split_map[s].path);
-		split->f = -1;
 		split->size = parity->split_map[s].size;
 		split->limit_size = PARITY_LIMIT(limit_size, s, level);
 
@@ -557,7 +556,6 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 
 		advise_init(&split->advise, mode);
 		pathcpy(split->path, sizeof(split->path), parity->split_map[s].path);
-		split->f = -1;
 		split->size = parity->split_map[s].size;
 		split->limit_size = PARITY_LIMIT(limit_size, s, level);
 
