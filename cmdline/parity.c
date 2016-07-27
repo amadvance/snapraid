@@ -348,6 +348,49 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 	data_off_t delta;
 	data_off_t block_mask;
 
+#ifdef _WIN32
+	/*
+	 * In Windows we want to avoid the annoying warning
+	 * message of disk full.
+	 *
+	 * To ensure to leave some space available, we first create
+	 * a spaceholder file >200 MB, to ensure to not fill completely
+	 * the disk.
+	 */
+	char spaceholder_path[PATH_MAX];
+	data_off_t spaceholder_size = 256 * 1024 * 1024;
+	int spaceholder_f;
+
+	pathprint(spaceholder_path, sizeof(spaceholder_path), "%s%s", split->path, ".spaceholder");
+
+	spaceholder_f = open(spaceholder_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600);
+	if (spaceholder_f == -1) {
+		log_fatal("Failed to create space holder file '%s'.\n", spaceholder_path);
+		return -1;
+	}
+
+	if (ftruncate(spaceholder_f, spaceholder_size) != 0) {
+		log_fatal("WARNING Failed to resize the space holder file '%s' to %llu bytes.\n", spaceholder_path, spaceholder_size);
+		log_fatal("Assuming that no more space is available.\n");
+		close(spaceholder_f);
+		remove(spaceholder_path);
+		return 0;
+	}
+
+	if (fsync(spaceholder_f) != 0) {
+		log_fatal("Failed to sync the space holder file '%s'.\n", spaceholder_path);
+		close(spaceholder_f);
+		remove(spaceholder_path);
+		return -1;
+	}
+
+	if (close(spaceholder_f) != 0) {
+		log_fatal("Failed to close the space holder file '%s'.\n", spaceholder_path);
+		remove(spaceholder_path);
+		return -1;
+	}
+#endif
+
 	/* mask of bits used by the block size */
 	block_mask = ((data_off_t)block_size) - 1;
 
@@ -389,6 +432,14 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
+
+#ifdef _WIN32
+	/* now delete the spaceholder file */
+	if (remove(spaceholder_path) != 0) {
+		log_fatal("WARNING Failed to remove the space holder file '%s'.\n", spaceholder_path);
+		log_fatal("Continuing anyway.\n");
+	}
+#endif
 
 	/* shrink to the expected size to ensure to throw away any extra */
 	/* data allocated when the grow operation fails */
