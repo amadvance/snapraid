@@ -86,7 +86,22 @@ File with the same name will get an extra extension like ".1", ".2".
 
 - Major
 
-* Split the parity in multiple files and allow it to coexist with data
+* Uses a separated file for storing hashes, to allow to use a memory
+mapped file to decrease memory utilization.
+The file can contains hashes stored in the same order they are accessed
+in sync/check/scrub.
++ A lot less memory utilization
+- It will be slow in --pre-hash as the files are accessed in another order,
+but no much slow.
+- How to handle multiple .content file copy ? When working we can have
+only a single file. When storing the .content we'll have to copy it
+in all the places.
+* Can we mix the existing and new approach ? We can create this
+hash file at startup in a memory mapped "temporary" file.
+It may takes some time to create it, but then it will be fast.
+See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/cdea773f/
+
+* Allow multiple parity files and to coexist with data
 in the same disk.
 This is possible if the data in the same disk uses parity addresses not
 contained in the parity file present in the same disk.
@@ -98,6 +113,8 @@ concept of parity drive, automatically allocating parity in the most free data d
 - The problem is that it would be not nice to have the program to automatically
 choose where to create the parity, because the choice cannot be optimal.
 With a dedicated disk manually chosen, it's instead optimal.
++ We can limit this coexist possibility only to latest parity file,
+allowing the user to choose where to put it.
 
 Rejected TODO
 =============
