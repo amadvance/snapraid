@@ -116,6 +116,18 @@ With a dedicated disk manually chosen, it's instead optimal.
 + We can limit this coexist possibility only to latest parity file,
 allowing the user to choose where to put it.
 
+* Allocate parity minimizing concurreng use of it
+Each parity allocation should check for a parity
+range with less utilization by other disks.
+We need to take care do disable this meachnism when the parity space
+is near to fillup the parity partition.
+See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/1797bf7d/
++ This increase the possibility of recovering with multiple failures with not
+enough parity, as the benefit of existing parity is maximized.
+- Possible increase of fragmentation of parity allocation
+- No real benefit when the array is filled
+
+
 Rejected TODO
 =============
 
