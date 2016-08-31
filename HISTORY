@@ -10,6 +10,8 @@ SnapRAID HISTORY
    line, separated by , (comma).
    Note that if this feature is used, the saved content file won't be
    read by older SnapRAID versions.
+   In Windows, 256 MB are left free in each disk to avoid the warning
+   about full disks.
  * Added a new 'hashsize' configuration option. It could be useful in
    systems with low memory, to reduce the memory usage.
    Note that if this feature is used, the saved content file won't be

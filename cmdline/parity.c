@@ -369,6 +369,7 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 		return -1;
 	}
 
+	/* note that in Windows ftruncate is really allocating space */
 	if (ftruncate(spaceholder_f, spaceholder_size) != 0) {
 		log_fatal("WARNING Failed to resize the space holder file '%s' to %llu bytes.\n", spaceholder_path, spaceholder_size);
 		log_fatal("Assuming that no more space is available.\n");

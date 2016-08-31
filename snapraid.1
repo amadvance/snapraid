@@ -1228,12 +1228,15 @@ The parity enables the protection from a single disk
 failure, like RAID5.
 .PP
 You can specify multiples files that should be in different disks.
-When the first file cannot grow anymore, the next one is used.
+When a file cannot grow anymore, the next one is used.
 The total space available must be as big as the biggest data disk in
 the array.
 .PP
 Leaving the parity disks reserved for parity ensures that
 it doesn\'t get fragmented, improving the performance.
+.PP
+In Windows 256 MB are left unused in each disk to avoid the
+warning about full disks.
 .PP
 This option is mandatory and it can be used only one time.
 .SS (2,3,4,5,6)\-parity FILE [,FILE] ... 
@@ -1257,13 +1260,7 @@ is enabled:
 Each parity level requires the precence of all the previous parity
 levels.
 .PP
-You can specify multiples files that should be in different disks.
-When the first file cannot grow anymore, the next one is used.
-The total space available must be as big as the biggest data disk in
-the array.
-.PP
-Leaving the parity disks reserved for parity ensures that
-it doesn\'t get fragmented, improving the performance.
+The same considerations of the \'parity\' option apply.
 .PP
 These options are optional and they can be used only one time.
 .SS z\-parity FILE [,FILE] ... 

@@ -931,12 +931,15 @@ Configuration
 	failure, like RAID5.
 
 	You can specify multiples files that should be in different disks.
-	When the first file cannot grow anymore, the next one is used.
+	When a file cannot grow anymore, the next one is used.
 	The total space available must be as big as the biggest data disk in
 	the array.
 
 	Leaving the parity disks reserved for parity ensures that
 	it doesn't get fragmented, improving the performance.
+
+	In Windows 256 MB are left unused in each disk to avoid the
+	warning about full disks.
 
 	This option is mandatory and it can be used only one time.
 
@@ -955,13 +958,7 @@ Configuration
 	Each parity level requires the precence of all the previous parity
 	levels.
 
-	You can specify multiples files that should be in different disks.
-	When the first file cannot grow anymore, the next one is used.
-	The total space available must be as big as the biggest data disk in
-	the array.
-
-	Leaving the parity disks reserved for parity ensures that
-	it doesn't get fragmented, improving the performance.
+	The same considerations of the 'parity' option apply.
 
 	These options are optional and they can be used only one time.
 
