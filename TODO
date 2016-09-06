@@ -7,6 +7,9 @@ This is the list of TODO items for SnapRAID.
 
 - Minor
 
+* Add ZFS support for SMART and UUID.
+See latest messages at: https://sourceforge.net/p/snapraid/discussion/1677233/thread/42defa3b/
+
 * Change all the path printed in the terminal as relative and not absolute.
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/648955ec/ (Leifi in diff)
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/5b6ef1b9/ (Miles in check + filter)
