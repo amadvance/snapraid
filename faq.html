@@ -445,9 +445,13 @@ For the data disks, follow these suggestions:
 <td>Any</td>
 <td>OK. In general you can use whatever file-sytem you like. Just see the following notes for some exceptions.</td>
 </tr>
+<tr>
 <td>Btrfs</td>
 <td>OK. But ensure to build SnapRAID with the libblkid library to get UUID support.
 You will be warned at every run if this doesn't happen.</td>
+</tr>
+<td>ZFS</td>
+<td>Partial. You won't get UUID support, but this doesn't prevent the core SnapRAID functionalities.</td>
 </tr>
 <tr>
 <td>ReiserFS</td>
