@@ -932,15 +932,21 @@ int advise_open(struct advise_struct* advise, int f)
 
 int advise_write(struct advise_struct* advise, int f, data_off_t offset, data_off_t size)
 {
-	data_off_t handle_offset;
-	data_off_t handle_size;
+	data_off_t flush_offset;
+	data_off_t flush_size;
+	data_off_t discard_offset;
+	data_off_t discard_size;
 
 	(void)f;
-	(void)handle_offset;
-	(void)handle_size;
+	(void)flush_offset;
+	(void)flush_size;
+	(void)discard_offset;
+	(void)discard_size;
 
-	handle_offset = 0;
-	handle_size = 0;
+	flush_offset = 0;
+	flush_size = 0;
+	discard_offset = 0;
+	discard_size = 0;
 
 	/*
 	 * Follow Linus recommendations about fast writes.
@@ -995,12 +1001,41 @@ int advise_write(struct advise_struct* advise, int f, data_off_t offset, data_of
 	 * ---
 	 */
 
-	if (advise->mode == ADVISE_FLUSH || advise->mode == ADVISE_DISCARD) {
-		handle_offset = offset;
-		handle_size = size;
-	}
+	switch (advise->mode) {
+	case ADVISE_FLUSH :
+		flush_offset = offset;
+		flush_size = size;
+		break;
+	case ADVISE_DISCARD :
+		discard_offset = offset;
+		discard_size = size;
+		break;
+	case ADVISE_FLUSH_WINDOW :
+		/* if the dirty range can be extended */
+		if (advise->dirty_end == offset) {
+			/* extent the dirty range */
+			advise->dirty_end += size;
 
-	if (advise->mode == ADVISE_FLUSH_WINDOW || advise->mode == ADVISE_DISCARD_WINDOW) {
+			/* if we reached the window size */
+			if (advise->dirty_end - advise->dirty_begin >= ADVISE_WINDOW_SIZE) {
+				/* flush the window  */
+				flush_offset = advise->dirty_begin;
+				flush_size = ADVISE_WINDOW_SIZE;
+
+				/* remove it from the dirty range */
+				advise->dirty_begin += ADVISE_WINDOW_SIZE;
+			}
+		} else {
+			/* otherwise flush the existing dirty */
+			flush_offset = advise->dirty_begin;
+			flush_size = advise->dirty_end - advise->dirty_begin;
+
+			/* and set the new range as dirty */
+			advise->dirty_begin = offset;
+			advise->dirty_end = offset + size;
+		}
+		break;
+	case ADVISE_DISCARD_WINDOW :
 		/* if the dirty range can be extended */
 		if (advise->dirty_end == offset) {
 			/* extent the dirty range */
@@ -1008,32 +1043,35 @@ int advise_write(struct advise_struct* advise, int f, data_off_t offset, data_of
 
 			/* if we reached the double window size */
 			if (advise->dirty_end - advise->dirty_begin >= 2 * ADVISE_WINDOW_SIZE) {
-				/* handle the first window  */
-				handle_offset = advise->dirty_begin;
-				handle_size = ADVISE_WINDOW_SIZE;
+				/* discard the first window */
+				discard_offset = advise->dirty_begin;
+				discard_size = ADVISE_WINDOW_SIZE;
 
 				/* remove it from the dirty range */
 				advise->dirty_begin += ADVISE_WINDOW_SIZE;
+
+				/* flush the second window */
+				flush_offset = advise->dirty_begin;
+				flush_size = ADVISE_WINDOW_SIZE;
 			}
 		} else {
-			/* otherwise flush the existing dirty */
-			handle_offset = advise->dirty_begin;
-			handle_size = advise->dirty_end - advise->dirty_begin;
+			/* otherwise discard the existing dirty */
+			discard_offset = advise->dirty_begin;
+			discard_size = advise->dirty_end - advise->dirty_begin;
 
 			/* and set the new range as dirty */
 			advise->dirty_begin = offset;
 			advise->dirty_end = offset + size;
 		}
+		break;
 	}
 
 #if HAVE_SYNC_FILE_RANGE
-	if ((advise->mode == ADVISE_FLUSH || advise->mode == ADVISE_FLUSH_WINDOW)
-		&& handle_size != 0
-	) {
+	if (flush_size != 0) {
 		int ret;
 
 		/* start writing immediately */
-		ret = sync_file_range(f, handle_offset, handle_size, SYNC_FILE_RANGE_WRITE);
+		ret = sync_file_range(f, flush_offset, flush_size, SYNC_FILE_RANGE_WRITE);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			return -1;
@@ -1043,13 +1081,11 @@ int advise_write(struct advise_struct* advise, int f, data_off_t offset, data_of
 #endif
 
 #if HAVE_SYNC_FILE_RANGE && HAVE_POSIX_FADVISE
-	if ((advise->mode == ADVISE_DISCARD || advise->mode == ADVISE_DISCARD_WINDOW)
-		&& handle_size != 0
-	) {
+	if (discard_size != 0) {
 		int ret;
 
 		/* send the data to the disk and wait until it's written */
-		ret = sync_file_range(f, handle_offset, handle_size, SYNC_FILE_RANGE_WAIT_BEFORE | SYNC_FILE_RANGE_WRITE | SYNC_FILE_RANGE_WAIT_AFTER);
+		ret = sync_file_range(f, discard_offset, discard_size, SYNC_FILE_RANGE_WAIT_BEFORE | SYNC_FILE_RANGE_WRITE | SYNC_FILE_RANGE_WAIT_AFTER);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			return -1;
@@ -1057,7 +1093,7 @@ int advise_write(struct advise_struct* advise, int f, data_off_t offset, data_of
 		}
 
 		/* flush the data from the cache */
-		ret = posix_fadvise(f, handle_offset, handle_size, POSIX_FADV_DONTNEED);
+		ret = posix_fadvise(f, discard_offset, discard_size, POSIX_FADV_DONTNEED);
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			errno = ret; /* posix_fadvise return the error code */
