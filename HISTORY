@@ -1,7 +1,7 @@
 SnapRAID HISTORY
 ================
 
-11.0 2016/06
+11.0 2016/09
 ============
  * Added support for splitting the parity in multiple partitions. You
    can now specify multiple files for a single parity. As soon a file
