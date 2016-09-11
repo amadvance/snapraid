@@ -14,6 +14,10 @@ See latest messages at: https://sourceforge.net/p/snapraid/discussion/1677233/th
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/648955ec/ (Leifi in diff)
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/5b6ef1b9/ (Miles in check + filter)
 
+* When a disk is replaced, and SnapRAID detect this by a UUID change, we could clear the
+scrub information for that disk.
+https://sourceforge.net/p/snapraid/discussion/1677233/thread/ee87901b/
+
 * In fix, automatic --import excluded directory in the config file.
 https://sourceforge.net/p/snapraid/discussion/1677233/thread/c80c42e5/?limit=25
 
