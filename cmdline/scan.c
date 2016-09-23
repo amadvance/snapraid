@@ -1162,7 +1162,13 @@ static int scan_dir(struct snapraid_scan* scan, int level, int is_diff, const ch
 		struct dirent* dd;
 		size_t name_len;
 
-		/* clear errno to detect erroneous conditions */
+		/*
+		 * Clear errno to differentiate the end of the stream and an error condition
+		 *
+		 * From the Linux readdir() manpage:
+		 * "If the end of the directory stream is reached, NULL is returned and errno is not changed.
+		 * If an error occurs, NULL is returned and errno is set appropriately."
+		 */
 		errno = 0;
 		dd = readdir(d);
 		if (dd == 0 && errno != 0) {
