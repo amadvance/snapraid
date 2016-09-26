@@ -97,6 +97,7 @@ Frequently Asked Questions for <span class="bold">SnapRAID</span>.
 <li><a href="#reppardisk">How can I replace a parity disk?</a></li>
 <li><a href="#move">How can I safely move files from one disk to another?</a></li>
 <li><a href="#defrag">Can I defragment the data and parity disks?</a></li>
+<li><a href="#ionice">How can I make SnapRAID nicer with other processes?</a></li>
 <li><a href="#upgrade">How can I upgrade to a newer version of SnapRAID ?</a></li>
 </ul>
 
@@ -853,6 +854,14 @@ moved files are matching the original ones.
 <h3 id="defrag">Can I defragment the data and parity disks?</h3>
 <p>
 Yes, you can defragment data and parity disks. Defragmentation doesn't invalidate the SnapRAID data.
+</p>
+
+<h3 id="ionice">How can I make SnapRAID nicer with other processes?</h3>
+<p>
+In Linux, you can use the <a href="https://linux.die.net/man/1/ionice">ionice</a> command with Idle priority. Like:
+<pre>
+ionice -c 3 snapraid sync
+</pre>
 </p>
 
 <h3 id="upgrade">How can I upgrade to a newer version of SnapRAID ?</h3>
