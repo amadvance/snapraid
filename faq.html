@@ -120,7 +120,6 @@ Frequently Asked Questions for <span class="bold">SnapRAID</span>.
 <li><a href="#checkinfo">If the SnapRAID "check" command says it's all OK. Is it really OK?</a></li>
 <li><a href="#checksum">What integrity checksum is used?</a></li>
 <li><a href="#checksuminfo">Why integrity checksum are important?</a></li>
-<li><a href="#multithread">Is SnapRAID multithread?</a></li>
 <li><a href="#syncbreakinfo">How can SnapRAID recover also if a disk break during a 'sync'?</a></li>
 <li><a href="#syncaccess">Does SnapRAID allow to access data disks during a 'sync'?</a></li>
 <li><a href="#retryop">Does SnapRAID retry reads or writes if a disk is not working?</a></li>
@@ -1030,14 +1029,6 @@ are detected during RAID reconstruction, creating the
 possibility of data loss. In this case, protection against
 double disk failures is necessary to prevent data loss.
 </pre>
-
-<h3 id="multithread">Is SnapRAID multithread?</h3>
-<p>
-No. SnapRAID is a single thread application. Considering that SnapRAID is usually not CPU bound,
-there is no need to have a multithread application.
-Take care that that being singlethread doesn't mean that SnapRAID has to wait when reading data from the disks.
-The read-ahead functionality of modern operating systems, ensures that SnapRAID never has to wait for data.
-</p>
 
 <h3 id="syncbreakinfo">How can SnapRAID recover also if a disk break during a 'sync'?</h3>
 <p>
