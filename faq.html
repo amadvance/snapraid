@@ -147,7 +147,7 @@ Frequently Asked Questions for <span class="bold">SnapRAID</span>.
 <li><a href="#pargrowerror">Why in 'sync' do I get the error 'Failed to grow parity file 'xxx' to size xxx due lack of space.'?</a></li>
 <li><a href="#dupinode">Why do I get the error 'Internal inode xxx inconsistency...'?</a></li>
 <li><a href="#xls">Why with .xls files do I get the error 'Data change at file...'?</a></li>
-<li><a href="#truecrypttimestamp">Why are VeraCrypt/TrueCrypt containers never saved?</a></li>
+<li><a href="#truecrypttimestamp">Why are VeraCrypt containers never saved?</a></li>
 </ul>
 
 
@@ -1325,11 +1325,11 @@ To workaround the problem you can see
 or you can switch to the .xlsx format.
 </p>
 
-<h3 id="truecrypttimestamp">Why are VeraCrypt/TrueCrypt containers never saved?</h3>
+<h3 id="truecrypttimestamp">Why are VeraCrypt containers never saved?</h3>
 <p>
-VeraCrypt (former TrueCrypt) by default has enabled the option <i>Preserve modification time-stamp of file containers</i>
+VeraCrypt (a fork of TrueCrypt) by default has enabled the option <i>Preserve modification time-stamp of file containers</i>
 that makes impossible at SnapRAID, and at other backup programs, to detect that a file container is changed.
-Ensure to disable this option in VeraCrypt/TrueCrypt.
+Ensure to disable this option in VeraCrypt.
 </p>
 
 
