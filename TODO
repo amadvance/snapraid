@@ -7,6 +7,10 @@ This is the list of TODO items for SnapRAID.
 
 - Minor
 
+* Add a "noaccessdenied" config option to exclude not readable files/dirs.
+Like the "nohidden".
+See: https://sourceforge.net/p/snapraid/discussion/1677233/thread/1409c26a/
+
 * Add ZFS support for SMART and UUID.
 See latest messages at: https://sourceforge.net/p/snapraid/discussion/1677233/thread/42defa3b/
 
