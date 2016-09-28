@@ -577,6 +577,12 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 		}
 	}
 
+	/* if we cannot allocate all the space */
+	if (size != 0) {
+		log_fatal("Failed to allocate all the required parity space. You miss %" PRIu64 " bytes.\n", size);
+		return -1;
+	}
+
 	/* now copy the new size in the parity data */
 	if (is_modified)
 		*is_modified = 0;
