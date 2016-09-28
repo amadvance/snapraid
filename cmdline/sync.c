@@ -1446,7 +1446,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 		block_off_t parityblocks;
 
 		/* create the file and open for writing */
-		ret = parity_create(&parity_handle[l], &state->parity[l], l, state->file_mode, state->opt.parity_limit_size);
+		ret = parity_create(&parity_handle[l], &state->parity[l], l, state->file_mode, state->block_size, state->opt.parity_limit_size);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
 			log_fatal("WARNING! Without an accessible %s file, it isn't possible to sync.\n", lev_name(l));

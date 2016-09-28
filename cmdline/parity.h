@@ -88,7 +88,7 @@ void parity_overflow(struct snapraid_state* state, data_off_t size);
  * Create the parity file.
  * \param out_size Return the size of the parity file.
  */
-int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode, data_off_t limit_size);
+int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode, uint32_t block_size, data_off_t limit_size);
 
 /**
  * Change the parity size.
@@ -97,16 +97,16 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity* parity, int* is_modified, data_off_t size, uint32_t block_size, int skip_fallocate);
 
 /**
- * Get the size of opened parity file.
+ * Get the size of the parity.
  *
- * This function never fails as it returns the cached size.
+ * This returns the cached/expected version of the split sizes, and not the real file size.
  */
 void parity_size(struct snapraid_parity_handle* handle, data_off_t* out_size);
 
 /**
  * Open an already existing parity file.
  */
-int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode, data_off_t limit_size);
+int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode, uint32_t block_size, data_off_t limit_size);
 
 /**
  * Flush the parity file in the disk.

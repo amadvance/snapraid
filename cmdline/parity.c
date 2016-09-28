@@ -161,32 +161,25 @@ void parity_size(struct snapraid_parity_handle* handle, data_off_t* out_size)
 	unsigned s;
 	data_off_t size;
 
-	/* now compute the size */
+	/* now compute the size summing all the parity splits */
 	size = 0;
+
 	for (s = 0;s < handle->split_mac;++s) {
 		struct snapraid_split_handle* split = &handle->split_map[s];
 
-		/* check for validity */
-		if (split->st.st_size < 0)
-			break;
-
-		if (split->st.st_size < split->size) {
-			/* this is a size error, so report only up to this size */
-			/* but don't fail the function */
-			size += split->st.st_size;
-			break;
-		}
-
-		/* ignore instead size bigger than expected */
 		size += split->size;
 	}
 
 	*out_size = size;
 }
 
-int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode, data_off_t limit_size)
+int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode, uint32_t block_size, data_off_t limit_size)
 {
 	unsigned s;
+	data_off_t block_mask;
+
+	/* mask of bits used by the block size */
+	block_mask = ((data_off_t)block_size) - 1;
 
 	handle->level = level;
 	handle->split_mac = 0;
@@ -225,10 +218,20 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 
 		/**
 		 * If the parity size is not yet set, set it now.
-		 * This happens when expanding the number of parities.
+		 * This happens when expanding the number of parities,
+		 * or when upgrading from a content file that has not split->size data.
 		 */
-		if (split->size == PARITY_SIZE_INVALID)
+		if (split->size == PARITY_SIZE_INVALID) {
 			split->size = split->st.st_size;
+
+			/* ensure that the resulting size if block aligned */
+			if ((split->size & block_mask) != 0) {
+				/* LCOV_EXCL_START */
+				log_fatal("Error in preallocated size of parity file '%s' with size %llu and block %u .\n", split->path, split->size, block_size);
+				goto bail;
+				/* LCOV_EXCL_STOP */
+			}
+		}
 
 		ret = advise_open(&split->advise, split->f);
 		if (ret != 0) {
@@ -530,21 +533,26 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 		data_off_t run;
 
 		if (is_fixed) {
+			/* if the required size is smaller, we have to reduce also the file */
+			/* ignoring the previous size */
 			if (size <= split->size) {
-				is_fixed = 0; /* not fixed anymore */
-				run = size;
+				/* mark it as not fixed anymore for the later check */
+				is_fixed = 0;
+
+				run = size; /* allocate only the needed size */
 			} else {
+				/* if the size cannot be changed, use the fixed one */
 				run = split->size;
 
-				/* in the < 11.0-38 BETA it was possible to get wrong split size */
 				if ((run & block_mask) != 0) {
 					/* LCOV_EXCL_START */
-					log_fatal("Invalid split '%s' size with extra '%llu' bytes.\n", split->path, run & block_mask);
+					log_fatal("Internal inconsistency in split '%s' size with extra '%llu' bytes.\n", split->path, run & block_mask);
 					return -1;
 					/* LCOV_EXCL_STOP */
 				}
 			}
 		} else {
+			/* otherwise tries to allocate all the needed remaining size */
 			run = size;
 		}
 		
@@ -563,6 +571,7 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 			return -1;
 			/* LCOV_EXCL_STOP */
 		} else {
+			/* here it's possible to get less than the requested size */
 			run = split->st.st_size;
 
 			if ((run & block_mask) != 0) {
@@ -572,8 +581,11 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 				/* LCOV_EXCL_STOP */
 			}
 
-			size -= run;
+			/* store what we have allocated */
 			split->size = run;
+
+			/* decrease the remaining size */
+			size -= run;
 		}
 	}
 
@@ -600,12 +612,16 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 	return 0;
 }
 
-int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode, data_off_t limit_size)
+int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_parity* parity, unsigned level, int mode, uint32_t block_size, data_off_t limit_size)
 {
 	unsigned s;
+	data_off_t block_mask;
 
 	handle->level = level;
 	handle->split_mac = 0;
+
+	/* mask of bits used by the block size */
+	block_mask = ((data_off_t)block_size) - 1;
 
 	for (s = 0;s < parity->split_mac;++s) {
 		struct snapraid_split_handle* split = &handle->split_map[s];
@@ -623,8 +639,10 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 
 		split->f = open_noatime(split->path, flags);
 		if (split->f == -1) {
+			/* LCOV_EXCL_START */
 			log_fatal("Error opening parity file '%s'. %s.\n", split->path, strerror(errno));
 			goto bail;
+			/* LCOV_EXCL_STOP */
 		}
 
 		/* we have a valid file handle */
@@ -641,10 +659,20 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 
 		/**
 		 * If the parity size is not yet set, set it now.
-		 * This happens when expanding the number of parities.
+		 * This happens when expanding the number of parities,
+		 * or when upgrading from a content file that has not split->size data.
 		 */
-		if (split->size == PARITY_SIZE_INVALID)
+		if (split->size == PARITY_SIZE_INVALID) {
 			split->size = split->st.st_size;
+
+			/* ensure that the resulting size if block aligned */
+			if ((split->size & block_mask) != 0) {
+				/* LCOV_EXCL_START */
+				log_fatal("Error in preallocated size of parity file '%s' with size %llu and block %u .\n", split->path, split->size, block_size);
+				goto bail;
+				/* LCOV_EXCL_STOP */
+			}
+		}
 
 		ret = advise_open(&split->advise, split->f);
 		if (ret != 0) {

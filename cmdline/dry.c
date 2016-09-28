@@ -417,7 +417,7 @@ void state_dry(struct snapraid_state* state, block_off_t blockstart, block_off_t
 	/* open the file for reading */
 	/* it may fail if the file doesn't exist, in this case we continue to dry the files */
 	for (l = 0; l < state->level; ++l) {
-		ret = parity_open(&parity_handle[l], &state->parity[l], l, state->file_mode, state->opt.parity_limit_size);
+		ret = parity_open(&parity_handle[l], &state->parity[l], l, state->file_mode, state->block_size, state->opt.parity_limit_size);
 		if (ret == -1) {
 			/* LCOV_EXCL_START */
 			log_fatal("WARNING! Without an accessible %s file, it isn't possible to dry.\n", lev_name(l));
