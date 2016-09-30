@@ -4126,7 +4126,7 @@ void state_progress_end(struct snapraid_state* state, block_off_t countpos, bloc
 
 		elapsed = now - state->progress_whole_start - state->progress_wasted;
 
-		msg_bar("%u%% completed, %u MB processed", countpos * 100 / countmax, countsize_MB);
+		msg_bar("%u%% completed, %u MB accessed", countpos * 100 / countmax, countsize_MB);
 		if (elapsed >= 60)
 			msg_bar(" in %u:%02u", (unsigned)(elapsed / 3600), (unsigned)((elapsed % 3600) / 60));
 		msg_bar("\n");
