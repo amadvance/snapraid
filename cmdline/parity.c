@@ -143,7 +143,7 @@ void parity_overflow(struct snapraid_state* state, data_off_t size)
 			if (file->blockmax > 0) {
 				block_off_t parity_pos = fs_file2par_get(disk, file, file->blockmax - 1);
 				if (parity_pos >= blockalloc) {
-					found = 0;
+					found = 1;
 					log_tag("outofparity:%s:%s\n", disk->name, esc_tag(file->sub, esc_buffer));
 					log_fatal("outofparity %s%s\n", disk->dir, file->sub);
 				}
