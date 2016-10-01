@@ -23,6 +23,10 @@ SnapRAID HISTORY
  * In Windows allows to use the escape char '^' to handle file patterns
    containing real characters matching the globbing '*?[]' ones. In Unix
    it was already possible to do the same escaping with '\'.
+ * Added a new -R, --force-realloc option to reallocate all the
+   parity information keeping the precomputed hash.
+   This is the previous -F, --force-full that instead now maintains the
+   same parity organization and just recomputes it.
  * Added test options for selecting the file advise mode to use:
    --test-io-advise-none for standard mode
    --test-io-advise-sequential advise sequential access (Linux/Windows)

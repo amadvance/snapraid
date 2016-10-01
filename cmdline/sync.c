@@ -399,6 +399,7 @@ finish:
 struct snapraid_plan {
 	unsigned handle_max;
 	struct snapraid_handle* handle_map;
+	int force_full;
 };
 
 /**
@@ -460,7 +461,7 @@ static int block_is_enabled(void* void_plan, block_off_t i)
 		if (block_has_file(block))
 			one_valid = 1;
 
-		if (block_has_invalid_parity(block))
+		if (block_has_invalid_parity(block) || plan->force_full)
 			one_invalid = 1;
 	}
 
@@ -733,6 +734,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 	countmax = 0;
 	plan.handle_max = diskmax;
 	plan.handle_map = handle;
+	plan.force_full = state->opt.force_full;
 	for (blockcur = blockstart; blockcur < blockmax; ++blockcur) {
 		if (!block_is_enabled(&plan, blockcur))
 			continue;
@@ -805,7 +807,7 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 		/* Note that CHG/DELETED blocks already present in the content file loaded */
 		/* have the hash cleared (::clear_past_hash flag), and then they won't never match the hash. */
 		/* We are treating only CHG blocks created at runtime. */
-		parity_needs_to_be_updated = state->opt.force_parity_update;
+		parity_needs_to_be_updated = state->opt.force_full || state->opt.force_parity_update;
 
 		/* if the parity is going to be updated */
 		parity_going_to_be_updated = 0;
@@ -1468,8 +1470,8 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 			file_paritymax = parityblocks;
 	}
 
-	/* if we do a full sync, having a wrong parity size is expected */
-	if (!state->opt.force_full) {
+	/* if we do a full parity realloc or computation, having a wrong parity size is expected */
+	if (!state->opt.force_realloc && !state->opt.force_full) {
 		/* if the parities are too small */
 		if (file_paritymax < used_paritymax) {
 			/* LCOV_EXCL_START */

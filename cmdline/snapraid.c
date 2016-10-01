@@ -71,7 +71,8 @@ void usage(void)
 	printf("  " SWITCH_GETOPT_LONG("-U, --force-uuid      ", "-U") "  Force commands on disks with uuid changed\n");
 	printf("  " SWITCH_GETOPT_LONG("-D, --force-device    ", "-D") "  Force commands with inaccessible/shared disks\n");
 	printf("  " SWITCH_GETOPT_LONG("-N, --force-nocopy    ", "-N") "  Force commands disabling the copy detection\n");
-	printf("  " SWITCH_GETOPT_LONG("-F, --force-full      ", "-F") "  Force commands requiring a full sync\n");
+	printf("  " SWITCH_GETOPT_LONG("-F, --force-full      ", "-F") "  Force a full parity computation in sync\n");
+	printf("  " SWITCH_GETOPT_LONG("-R, --force-realloc   ", "-R") "  Force a full parity reallocation in sync\n");
 	printf("  " SWITCH_GETOPT_LONG("-v, --verbose         ", "-v") "  Verbose\n");
 }
 
@@ -313,6 +314,7 @@ struct option long_options[] = {
 	{ "force-device", 0, 0, 'D' },
 	{ "force-nocopy", 0, 0, 'N' },
 	{ "force-full", 0, 0, 'F' },
+	{ "force-realloc", 0, 0, 'R' },
 	{ "audit-only", 0, 0, 'a' },
 	{ "pre-hash", 0, 0, 'h' },
 	{ "speed-test", 0, 0, 'T' }, /* undocumented speed test command */
@@ -412,7 +414,7 @@ struct option long_options[] = {
 	/* Match first UUID */
 	{ "test-match-first-uuid", 0, 0, OPT_TEST_MATCH_FIRST_UUID },
 
-	/* Force parity update even if all the data is not changed */
+	/* Force parity update even if all the data hash is already matching */
 	{ "test-force-parity-update", 0, 0, OPT_TEST_FORCE_PARITY_UPDATE },
 
 	/* Number of IO buffers */
@@ -455,7 +457,7 @@ struct option long_options[] = {
 };
 #endif
 
-#define OPTIONS "c:f:d:mep:o:S:B:L:i:l:ZEUDNFahTC:vqHVG"
+#define OPTIONS "c:f:d:mep:o:S:B:L:i:l:ZEUDNFRahTC:vqHVG"
 
 volatile int global_interrupt = 0;
 
@@ -704,6 +706,9 @@ int main(int argc, char* argv[])
 			break;
 		case 'F' :
 			opt.force_full = 1;
+			break;
+		case 'R' :
+			opt.force_realloc = 1;
 			break;
 		case 'a' :
 			opt.auditonly = 1;
@@ -1006,11 +1011,32 @@ int main(int argc, char* argv[])
 			exit(EXIT_FAILURE);
 			/* LCOV_EXCL_STOP */
 		}
+
+		if (opt.force_realloc) {
+			/* LCOV_EXCL_START */
+			log_fatal("You cannot use -R, --force-realloc with the '%s' command\n", command);
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
 	}
 
 	if (opt.force_full && opt.force_nocopy) {
 		/* LCOV_EXCL_START */
 		log_fatal("You cannot use the -F, --force-full and -N, --force-nocopy options at the same time\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (opt.force_realloc && opt.force_nocopy) {
+		/* LCOV_EXCL_START */
+		log_fatal("You cannot use the -R, --force-realloc and -N, --force-nocopy options at the same time\n");
+		exit(EXIT_FAILURE);
+		/* LCOV_EXCL_STOP */
+	}
+
+	if (opt.force_realloc && opt.force_full) {
+		/* LCOV_EXCL_START */
+		log_fatal("You cannot use the -R, --force-realloc and -F, --force-full options at the same time\n");
 		exit(EXIT_FAILURE);
 		/* LCOV_EXCL_STOP */
 	}

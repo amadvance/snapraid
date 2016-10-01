@@ -540,8 +540,10 @@ endif
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) check --test-expect-recoverable
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) fix
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -p full scrub
-	$(MSG) Full sync forced
+	$(MSG) Full sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -F sync
+	$(MSG) Realloc sync
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) -R sync
 #### SYNC PARTIAL ####
 	$(MSG) Abort sync with additions. Delete some of them, and add others and sync again.
 	$(MSG) This triggers files reallocation inside parity

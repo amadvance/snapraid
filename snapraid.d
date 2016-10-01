@@ -11,6 +11,7 @@ Synopsis
 	:	[-Z, --force-zero] [-E, --force-empty]
 	:	[-U, --force-uuid] [-D, --force-device]
 	:	[-N, --force-nocopy] [-F, --force-full]
+	:	[-R, --force-realloc]
 	:	[-S, --start BLKSTART] [-B, --count BLKCOUNT]
 	:	[-L, --error-limit NUMBER]
 	:	[-v, --verbose] [-q, --quiet]
@@ -844,12 +845,21 @@ Options
 
 	-F, --force-full
 		In "sync" forces a full rebuild of the parity.
-		This option can be used when you reverted back to an old content
-		file, but using a more recent parity data.
+		This option can be used when you add a new parity level, or if
+		you reverted back to an old content file using a more recent parity data.
 		Instead of recomputing the parity from scratch, this allows
 		to reuse the hashes present in the content file to validate data,
 		and to maintain data protection during the "sync" process using
-		the old content file and the parity data you have.
+		the parity data you have.
+		This option can be used only with "sync".
+
+	-R, --force-realloc
+		In "sync" forces a full reallocation of files and rebuild of the parity.
+		This option can be used to completely reallocate all the files
+		removing the fragmentation, but reusing the hashes present in the content
+		file to validate data.
+		Compared to -F, --force-full, this option reallocates all the parity
+		not having data protection during the operation.
 		This option can be used only with "sync".
 
 	-l, --log FILE
