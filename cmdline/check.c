@@ -1955,7 +1955,7 @@ int state_check(struct snapraid_state* state, int fix, block_off_t blockstart, b
 				/* LCOV_EXCL_STOP */
 			}
 
-			ret = parity_chsize(parity_ptr[l], &state->parity[l], 0, size, state->block_size, state->opt.skip_fallocate);
+			ret = parity_chsize(parity_ptr[l], &state->parity[l], 0, size, state->block_size, state->opt.skip_fallocate, state->opt.skip_space_holder);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
 				log_fatal("WARNING! Without an accessible %s file, it isn't possible to sync.\n", lev_name(l));

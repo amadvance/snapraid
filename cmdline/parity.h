@@ -94,7 +94,7 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
  * Change the parity size.
  * \param out_size Return the size of the parity file. The out_size is set also on error to reflect a partial resize.
  */
-int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity* parity, int* is_modified, data_off_t size, uint32_t block_size, int skip_fallocate);
+int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity* parity, int* is_modified, data_off_t size, uint32_t block_size, int skip_fallocate, int skip_space_holder);
 
 /**
  * Get the size of the parity.

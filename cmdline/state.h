@@ -89,6 +89,7 @@ struct snapraid_option {
 	int skip_device; /**< Skip devices matching checks. */
 	int skip_sign; /**< Skip the sign check for content files. */
 	int skip_fallocate; /**< Skip the use of fallocate(). */
+	int skip_space_holder; /**< Skip the use of spaceholder file. */
 	int file_mode; /**< File mode. Mask of ADVISE_* flags. */
 	int skip_lock; /**< Skip the lock file protection. */
 	int skip_self; /**< Skip the self-test. */

@@ -346,7 +346,7 @@ uint64_t hbit_u64(uint64_t v)
 	return 1ULL << ilog;
 }
 
-static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t size, uint32_t block_size, int skip_fallocate)
+static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t size, uint32_t block_size, int skip_fallocate, int skip_space_holder)
 {
 	data_off_t base;
 	data_off_t delta;
@@ -362,38 +362,43 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 	 * the disk.
 	 */
 	char spaceholder_path[PATH_MAX];
-	data_off_t spaceholder_size = 256 * 1024 * 1024;
-	int spaceholder_f;
 
 	pathprint(spaceholder_path, sizeof(spaceholder_path), "%s%s", split->path, ".spaceholder");
 
-	spaceholder_f = open(spaceholder_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600);
-	if (spaceholder_f == -1) {
-		log_fatal("Failed to create space holder file '%s'.\n", spaceholder_path);
-		return -1;
-	}
+	if (!skip_space_holder) {
+		data_off_t spaceholder_size = 256 * 1024 * 1024;
+		int spaceholder_f;
 
-	/* note that in Windows ftruncate is really allocating space */
-	if (ftruncate(spaceholder_f, spaceholder_size) != 0) {
-		log_fatal("WARNING Failed to resize the space holder file '%s' to %llu bytes.\n", spaceholder_path, spaceholder_size);
-		log_fatal("Assuming that no more space is available.\n");
-		close(spaceholder_f);
-		remove(spaceholder_path);
-		return 0;
-	}
+		spaceholder_f = open(spaceholder_path, O_RDWR | O_CREAT | O_TRUNC | O_BINARY, 0600);
+		if (spaceholder_f == -1) {
+			log_fatal("Failed to create space holder file '%s'.\n", spaceholder_path);
+			return -1;
+		}
 
-	if (fsync(spaceholder_f) != 0) {
-		log_fatal("Failed to sync the space holder file '%s'.\n", spaceholder_path);
-		close(spaceholder_f);
-		remove(spaceholder_path);
-		return -1;
-	}
+		/* note that in Windows ftruncate is really allocating space */
+		if (ftruncate(spaceholder_f, spaceholder_size) != 0) {
+			log_fatal("WARNING Failed to resize the space holder file '%s' to %llu bytes.\n", spaceholder_path, spaceholder_size);
+			log_fatal("Assuming that no more space is available.\n");
+			close(spaceholder_f);
+			remove(spaceholder_path);
+			return 0;
+		}
 
-	if (close(spaceholder_f) != 0) {
-		log_fatal("Failed to close the space holder file '%s'.\n", spaceholder_path);
-		remove(spaceholder_path);
-		return -1;
+		if (fsync(spaceholder_f) != 0) {
+			log_fatal("Failed to sync the space holder file '%s'.\n", spaceholder_path);
+			close(spaceholder_f);
+			remove(spaceholder_path);
+			return -1;
+		}
+
+		if (close(spaceholder_f) != 0) {
+			log_fatal("Failed to close the space holder file '%s'.\n", spaceholder_path);
+			remove(spaceholder_path);
+			return -1;
+		}
 	}
+#else
+	(void)skip_space_holder;
 #endif
 
 	/* mask of bits used by the block size */
@@ -451,7 +456,7 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 	return parity_handle_shrink(split, base);
 }
 
-static int parity_handle_chsize(struct snapraid_split_handle* split, data_off_t size, uint32_t block_size, int skip_fallocate)
+static int parity_handle_chsize(struct snapraid_split_handle* split, data_off_t size, uint32_t block_size, int skip_fallocate, int skip_space_holder)
 {
 	int ret;
 	int f_ret;
@@ -459,7 +464,7 @@ static int parity_handle_chsize(struct snapraid_split_handle* split, data_off_t 
 	int f_dir;
 
 	if (split->st.st_size < size) {
-		f_ret = parity_handle_fill(split, size, block_size, skip_fallocate);
+		f_ret = parity_handle_fill(split, size, block_size, skip_fallocate, skip_space_holder);
 		f_errno = errno;
 		f_dir = 1;
 	} else if (split->st.st_size > size) {
@@ -516,7 +521,7 @@ static int parity_split_is_fixed(struct snapraid_parity_handle* handle, unsigned
 	return 1;
 }
 
-int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity* parity, int* is_modified, data_off_t size, uint32_t block_size, int skip_fallocate)
+int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity* parity, int* is_modified, data_off_t size, uint32_t block_size, int skip_fallocate, int skip_space_holder)
 {
 	int ret;
 	unsigned s;
@@ -557,7 +562,7 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 			run = size;
 		}
 		
-		ret = parity_handle_chsize(split, run, block_size, skip_fallocate);
+		ret = parity_handle_chsize(split, run, block_size, skip_fallocate, skip_space_holder);
 		if (ret != 0)
 			return -1;
 

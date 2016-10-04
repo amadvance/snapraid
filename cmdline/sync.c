@@ -1514,7 +1514,7 @@ int state_sync(struct snapraid_state* state, block_off_t blockstart, block_off_t
 			/* change the size of the parity file, truncating or extending it */
 			/* from this point all the DELETED blocks after the end of the parity are invalid */
 			/* and they are automatically removed when we save the new content file */
-			ret = parity_chsize(&parity_handle[l], &state->parity[l], &is_modified, size, state->block_size, state->opt.skip_fallocate);
+			ret = parity_chsize(&parity_handle[l], &state->parity[l], &is_modified, size, state->block_size, state->opt.skip_fallocate, state->opt.skip_space_holder);
 			if (ret == -1) {
 				/* LCOV_EXCL_START */
 				data_off_t out_size;

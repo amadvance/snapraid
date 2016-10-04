@@ -292,6 +292,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_IO_ADVISE_DIRECT 299
 #define OPT_TEST_PARITY_LIMIT 301
 #define OPT_TEST_SKIP_CONTENT_WRITE 302
+#define OPT_TEST_SKIP_SPACE_HOLDER 303
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -452,6 +453,9 @@ struct option long_options[] = {
 
 	/* Skip content write */
 	{ "test-skip-content-write", 0, 0, OPT_TEST_SKIP_CONTENT_WRITE },
+
+	/* Skip space holder file in parity disks */
+	{ "test-skip-space-holder", 0, 0, OPT_TEST_SKIP_SPACE_HOLDER },
 
 	{ 0, 0, 0, 0 }
 };
@@ -878,6 +882,9 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_TEST_SKIP_CONTENT_WRITE :
 			opt.skip_content_write = 1;
+			break;
+		case OPT_TEST_SKIP_SPACE_HOLDER :
+			opt.skip_space_holder = 1;
 			break;
 		default :
 			/* LCOV_EXCL_START */
