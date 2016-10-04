@@ -656,15 +656,15 @@ static void state_smart(unsigned n, tommy_list* low)
 		double afr;
 		uint64_t flag;
 
-		if (devinfo->smart[194] != SMART_UNASSIGNED)
-			printf("%7" PRIu64, devinfo->smart[194] & mask16);
-		else if (devinfo->smart[190] != SMART_UNASSIGNED)
-			printf("%7" PRIu64, devinfo->smart[190] & mask16);
+		if (devinfo->smart[SMART_TEMPERATURE_CELSIUS] != SMART_UNASSIGNED)
+			printf("%7" PRIu64, devinfo->smart[SMART_TEMPERATURE_CELSIUS] & mask16);
+		else if (devinfo->smart[SMART_AIRFLOW_TEMPERATURE_CELSIUS] != SMART_UNASSIGNED)
+			printf("%7" PRIu64, devinfo->smart[SMART_AIRFLOW_TEMPERATURE_CELSIUS] & mask16);
 		else
 			printf("      -");
 
-		if (devinfo->smart[9] != SMART_UNASSIGNED)
-			printf("%7" PRIu64, (devinfo->smart[9] & mask32) / 24);
+		if (devinfo->smart[SMART_POWER_ON_HOURS] != SMART_UNASSIGNED)
+			printf("%7" PRIu64, (devinfo->smart[SMART_POWER_ON_HOURS] & mask32) / 24);
 		else
 			printf("      -");
 

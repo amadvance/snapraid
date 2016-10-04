@@ -401,6 +401,16 @@ int exit_sync_needed;
 int randomize(void* ptr, size_t size);
 
 /**
+ * Standard SMART attributes.
+ */
+#define SMART_START_STOP_COUNT 4
+#define SMART_REALLOCATED_SECTOR_COUNT 5
+#define SMART_POWER_ON_HOURS 9
+#define SMART_AIRFLOW_TEMPERATURE_CELSIUS 190
+#define SMART_LOAD_CYCLE_COUNT 193
+#define SMART_TEMPERATURE_CELSIUS 194
+
+/**
  * Additional SMART attributes.
  */
 #define SMART_ERROR 256 /**< ATA Error count. */
