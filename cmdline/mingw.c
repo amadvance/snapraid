@@ -37,6 +37,9 @@ int exit_sync_needed = 2;
 #define WIN32_ES_AWAYMODE_REQUIRED    0x00000040L
 #define WIN32_ES_CONTINUOUS           0x80000000L
 
+/* File Index */
+#define FILE_INVALID_FILE_ID          ((ULONGLONG)-1LL)
+
 /**
  * Direct access to RtlGenRandom().
  * This function is accessible only with LoadLibrary() and it's available from Windows XP.
@@ -447,7 +450,7 @@ static void windows_attr2stat(DWORD FileAttributes, DWORD ReparseTag, struct win
 /**
  * Convert Windows info to the Unix stat format.
  */
-static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_ATTRIBUTE_TAG_INFO* tag, struct windows_stat* st)
+static int windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_ATTRIBUTE_TAG_INFO* tag, struct windows_stat* st)
 {
 	uint64_t mtime;
 
@@ -479,12 +482,30 @@ static void windows_info2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE
 
 	/* GetFileInformationByHandle() ensures to return synced information */
 	st->st_sync = 1;
+
+	/**
+	 * In ReFS the IDs are 128 bit, and the 64 bit interface may fail.
+	 *
+	 * From Microsoft "Application Compatibility with ReFS"
+	 * http://download.microsoft.com/download/C/B/3/CB3561DC-6BF6-443D-B5B9-9676ACDF7F75/Application%20Compatibility%20with%20ReFS.docx
+	 * "64-bit file identifier can be obtained from GetFileInformationByHandle in"
+	 * "the nFileIndexHigh and nFileIndexLow members. This API is an extended version"
+	 * "that includes 128-bit file identifiers.  If GetFileInformationByHandle returns"
+	 * "FILE_INVALID_FILE_ID, the identifier may only be described in 128 bit form."
+	 */
+	if (st->st_ino == FILE_INVALID_FILE_ID) {
+		log_fatal("Invalid inode number! Is this ReFS?\n");
+		errno = EINVAL;
+		return -1;
+	}
+
+	return 0;
 }
 
 /**
  * Convert Windows info to the Unix stat format.
  */
-static void windows_stream2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_ID_BOTH_DIR_INFO* stream, struct windows_stat* st)
+static int windows_stream2stat(const BY_HANDLE_FILE_INFORMATION* info, const FILE_ID_BOTH_DIR_INFO* stream, struct windows_stat* st)
 {
 	uint64_t mtime;
 
@@ -513,6 +534,15 @@ static void windows_stream2stat(const BY_HANDLE_FILE_INFORMATION* info, const FI
 
 	/* directory listing doesn't ensure to return synced information */
 	st->st_sync = 0;
+
+	/* in ReFS the IDs are 128 bit, and the 64 bit interface may fail */
+	if (st->st_ino == FILE_INVALID_FILE_ID) {
+		log_fatal("Invalid inode number! Is this ReFS?\n");
+		errno = EINVAL;
+		return -1;
+	}
+
+	return 0;
 }
 
 /**
@@ -571,7 +601,7 @@ static void windows_finddata2dirent(const WIN32_FIND_DATAW* info, struct windows
 	windows_finddata2stat(info, &dirent->d_stat);
 }
 
-static void windows_stream2dirent(const BY_HANDLE_FILE_INFORMATION* info, const FILE_ID_BOTH_DIR_INFO* stream, struct windows_dirent* dirent)
+static int windows_stream2dirent(const BY_HANDLE_FILE_INFORMATION* info, const FILE_ID_BOTH_DIR_INFO* stream, struct windows_dirent* dirent)
 {
 	char conv_buf[CONV_MAX];
 	const char* name;
@@ -587,7 +617,7 @@ static void windows_stream2dirent(const BY_HANDLE_FILE_INFORMATION* info, const 
 	memcpy(dirent->d_name, name, len);
 	dirent->d_name[len] = 0;
 
-	windows_stream2stat(info, stream, &dirent->d_stat);
+	return windows_stream2stat(info, stream, &dirent->d_stat);
 }
 
 /**
@@ -662,9 +692,7 @@ int windows_fstat(int fd, struct windows_stat* st)
 		return -1;
 	}
 
-	windows_info2stat(&info, &tag, st);
-
-	return 0;
+	return windows_info2stat(&info, &tag, st);
 }
 
 int windows_lstat(const char* file, struct windows_stat* st)
@@ -821,9 +849,7 @@ int lstat_sync(const char* file, struct windows_stat* st, uint64_t* physical)
 		return -1;
 	}
 
-	windows_info2stat(&info, &tag, st);
-
-	return 0;
+	return windows_info2stat(&info, &tag, st);
 }
 
 int windows_stat(const char* file, struct windows_stat* st)
@@ -863,9 +889,7 @@ int windows_stat(const char* file, struct windows_stat* st)
 		return -1;
 	}
 
-	windows_info2stat(&info, &tag, st);
-
-	return 0;
+	return windows_info2stat(&info, &tag, st);
 }
 
 int windows_ftruncate(int fd, off64_t off)
@@ -1259,12 +1283,10 @@ static int windows_first_stream(windows_dir* dirstream)
 	}
 
 	/* get the first entry */
+	dirstream->state = DIR_STATE_FILLED;
 	dirstream->buffer_pos = 0;
 	fd = (FILE_ID_BOTH_DIR_INFO*)dirstream->buffer;
-	windows_stream2dirent(&dirstream->info, fd, &dirstream->entry);
-	dirstream->state = DIR_STATE_FILLED;
-
-	return 0;
+	return windows_stream2dirent(&dirstream->info, fd, &dirstream->entry);
 }
 
 static int windows_next_stream(windows_dir* dirstream)
@@ -1283,12 +1305,10 @@ static int windows_next_stream(windows_dir* dirstream)
 	}
 
 	/* go to the next one */
+	dirstream->state = DIR_STATE_FILLED;
 	dirstream->buffer_pos += fd->NextEntryOffset;
 	fd = (FILE_ID_BOTH_DIR_INFO*)(dirstream->buffer + dirstream->buffer_pos);
-	windows_stream2dirent(&dirstream->info, fd, &dirstream->entry);
-	dirstream->state = DIR_STATE_FILLED;
-
-	return 0;
+	return windows_stream2dirent(&dirstream->info, fd, &dirstream->entry);
 }
 
 static windows_dir* windows_opendir_stream(const char* dir)
