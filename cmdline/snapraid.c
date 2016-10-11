@@ -293,6 +293,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #define OPT_TEST_PARITY_LIMIT 301
 #define OPT_TEST_SKIP_CONTENT_WRITE 302
 #define OPT_TEST_SKIP_SPACE_HOLDER 303
+#define OPT_TEST_FORMAT 304
 
 #if HAVE_GETOPT_LONG
 struct option long_options[] = {
@@ -456,6 +457,9 @@ struct option long_options[] = {
 
 	/* Skip space holder file in parity disks */
 	{ "test-skip-space-holder", 0, 0, OPT_TEST_SKIP_SPACE_HOLDER },
+
+	/* Set the ourput format */
+	{ "test-fmt", 1, 0, OPT_TEST_FORMAT },
 
 	{ 0, 0, 0, 0 }
 };
@@ -885,6 +889,20 @@ int main(int argc, char* argv[])
 			break;
 		case OPT_TEST_SKIP_SPACE_HOLDER :
 			opt.skip_space_holder = 1;
+			break;
+		case OPT_TEST_FORMAT :
+			if (strcmp(optarg, "file") == 0)
+				FMT_MODE = FMT_FILE;
+			else if (strcmp(optarg, "disk") == 0)
+				FMT_MODE = FMT_DISK;
+			else if (strcmp(optarg, "path") == 0)
+				FMT_MODE = FMT_PATH;
+			else {
+				/* LCOV_EXCL_START */
+				log_fatal("Unknown format '%s'\n", optarg);
+				exit(EXIT_FAILURE);
+				/* LCOV_EXCL_STOP */
+			}
 			break;
 		default :
 			/* LCOV_EXCL_START */

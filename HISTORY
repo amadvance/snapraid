@@ -19,7 +19,9 @@ SnapRAID HISTORY
  * In Linux added the missing support for Btrfs file-systems. Note that
    to have full support you need also the 'libblkid' library, otherwise
    you won't get the UUIDs.
- * In informative messages does't print the disk directory in file path.
+ * In screen messages don't print the disk directory in file path. You
+   can control the format with the test option:
+   --test-fmt file|disk|path.
  * In Windows allows to use the escape char '^' to handle file patterns
    containing real characters matching the globbing '*?[]' ones. In Unix
    it was already possible to do the same escaping with '\'.

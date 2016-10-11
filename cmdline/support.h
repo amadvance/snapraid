@@ -186,7 +186,6 @@ void msg_verbose(const char* format, ...) __attribute__((format(attribute_printf
  */
 void msg_flush(void);
 
-
 /****************************************************************************/
 /* print */
 
@@ -229,7 +228,11 @@ const char* esc_tag(const char* str, char* buffer);
  *
  * \param buffer Preallocated buffer of ESC_MAX size.
  */
-const char* esc_shell(const char* str, char* buffer);
+const char* esc_shell_multi(const char** str_map, unsigned str_max, char* buffer);
+static inline const char* esc_shell(const char* str, char* buffer)
+{
+	return esc_shell_multi(&str, 1, buffer);
+}
 
 /**
  * Polish a string.

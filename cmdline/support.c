@@ -430,14 +430,22 @@ bail:
 	/* LCOV_EXCL_STOP */
 }
 
-const char* esc_shell(const char* str, char* buffer)
+const char* esc_shell_multi(const char** str_map, unsigned str_max, char* buffer)
 {
 	char* begin = buffer;
 	char* end = begin + ESC_MAX;
 	char* p = begin;
+	unsigned str_mac;
+	const char* str;
 
 #ifdef _WIN32
-	int has_quote = strchr(str, ' ') != 0;
+	int has_quote = 0;
+
+	for (str_mac = 0; str_mac < str_max; ++str_mac) {
+		str = str_map[str_mac];
+		if (strchr(str, ' ') != 0)
+			has_quote = 1;
+	}
 
 	if (has_quote) {
 		if (p == end)
@@ -447,8 +455,22 @@ const char* esc_shell(const char* str, char* buffer)
 #endif
 
 	/* copy string with escaping */
-	while (*str) {
+	str_mac = 0;
+	str = str_map[str_mac];
+	while (1) {
+		/* get the next char */
 		char c = *str;
+
+		/* if one string is finished, go to the next */
+		while (c == 0 && str_mac + 1 < str_max) {
+			++str_mac;
+			str = str_map[str_mac];
+			c = *str;
+		}
+
+		/* if we read all the strings, stop */
+		if (!c)
+			break;
 
 		switch (c) {
 #ifdef _WIN32

@@ -1210,23 +1210,24 @@ static inline snapraid_info info_get(tommy_arrayblkof* array, block_off_t pos)
  */
 int time_compare(const void* void_a, const void* void_b);
 
+/****************************************************************************/
+/* format */
+
+#define FMT_FILE 0 /**< Print only the file. */
+#define FMT_DISK 1 /**< Print the disk name and the file. */
+#define FMT_PATH 2 /**< Print the full path. */
+
+extern int FMT_MODE;
+
 /**
  * Format a file path for poll reference
  */
-static inline const char* fmt_poll(const struct snapraid_disk* disk, const char* str, char* buffer)
-{
-	(void)disk;
-	return esc_shell(str, buffer);
-}
+const char* fmt_poll(const struct snapraid_disk* disk, const char* str, char* buffer);
 
 /**
  * Format a path name for terminal reference
  */
-static inline const char* fmt_term(const struct snapraid_disk* disk, const char* str, char* buffer)
-{
-	(void)disk;
-	return esc_shell(str, buffer);
-}
+const char* fmt_term(const struct snapraid_disk* disk, const char* str, char* buffer);
 
 #endif
 
