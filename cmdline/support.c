@@ -1370,7 +1370,7 @@ static int smatch(const char* str, const char* pattern)
 	return 0;
 }
 
-int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* smart, char* serial)
+int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* smart, char* serial, char* vendor, char* model)
 {
 	unsigned i;
 	int inside;
@@ -1416,6 +1416,8 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 					smart[SMART_SIZE] += attr[i] - '0';
 				}
 			}
+		} else if (sscanf(s, "Device Model: %63s %63s", vendor, model) == 2) {
+		} else if (sscanf(s, "Device Model: %63s", model) == 1) {
 		/* SCSI */
 		} else if (sscanf(s, "Serial number: %63s", serial) == 1) { /* note "n" of "number" lower case */
 		} else if (sscanf(s, "Elements in grown defect list: %" SCNu64, &smart[SMART_REALLOCATED_SECTOR_COUNT]) == 1) {

@@ -2172,7 +2172,7 @@ static int devscan(tommy_list* list)
 /**
  * Get SMART attributes.
  */
-static int devsmart(uint64_t device, const char* name, const char* custom, uint64_t* smart, char* serial)
+static int devsmart(uint64_t device, const char* name, const char* custom, uint64_t* smart, char* serial, char* vendor, char* model)
 {
 	char conv_buf[CONV_MAX];
 	WCHAR cmd[MAX_PATH + 128];
@@ -2205,7 +2205,7 @@ retry:
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (smartctl_attribute(f, file, name, smart, serial) != 0) {
+	if (smartctl_attribute(f, file, name, smart, serial, vendor, model) != 0) {
 		/* LCOV_EXCL_START */
 		pclose(f);
 		return -1;
@@ -2434,7 +2434,7 @@ static void* thread_smart(void* arg)
 {
 	devinfo_t* devinfo = arg;
 
-	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->smart_serial) != 0) {
+	if (devsmart(devinfo->device, devinfo->name, devinfo->smartctl, devinfo->smart, devinfo->smart_serial, devinfo->smart_vendor, devinfo->smart_model) != 0) {
 		/* LCOV_EXCL_START */
 		return (void*)-1;
 		/* LCOV_EXCL_STOP */

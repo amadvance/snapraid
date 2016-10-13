@@ -39,6 +39,8 @@ SnapRAID HISTORY
    --test-io-advise-direct use direct/unbuffered mode (Linux/Windows)
    The new default mode is 'flush' in Linux (before it was 'sequential'),
    and 'sequential' in Windows (like before).
+ * For Seagate SMR (Shingled Magnetic Recording) ignore the SMART
+   attribute Command_Timeout 188 as not reliable.
  * Fixed running in Windows platforms that miss the RtlGenRandom()
    function.
  * Added the --test-io-cache=1 option to disable the multi-thread IO

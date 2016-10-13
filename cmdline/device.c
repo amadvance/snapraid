@@ -464,7 +464,7 @@ static double smart_afr_value(double* tab, unsigned step, uint64_t value)
  * we use the maximum rate reported, and we do not sum them,
  * because the attributes are not independent.
  */
-static double smart_afr(uint64_t* smart)
+static double smart_afr(uint64_t* smart, const char* model)
 {
 	double afr = 0;
 	uint64_t mask32 = 0xffffffffU;
@@ -484,7 +484,17 @@ static double smart_afr(uint64_t* smart)
 			afr = r;
 	}
 
-	if (smart[188] != SMART_UNASSIGNED) {
+	if (
+		/**
+		 * Don't check Command_Timeout (188) for Seagate SMR (Shingled
+		 * Magnetic Recording) disks.
+		 *
+		 * It's reported by users to be a not significative test as
+		 * this value increases too often also on sane disks.
+		 */
+		strcmp(model, "ST8000AS0002-1NA17Z") != 0
+		&& smart[188] != SMART_UNASSIGNED
+	) {
 		/* with Seagate disks, there are three different 16 bits value reported */
 		/* the lowest one is the most significant */
 		double r = smart_afr_value(SMART_188_R, SMART_188_STEP, smart[188] & mask16);
@@ -706,7 +716,7 @@ static void state_smart(unsigned n, tommy_list* low)
 			afr = 0;
 			printf("  SSD");
 		} else {
-			afr = smart_afr(devinfo->smart);
+			afr = smart_afr(devinfo->smart, devinfo->smart_model);
 
 			if (afr == 0) {
 				/* this happens only if no data */
@@ -748,6 +758,10 @@ static void state_smart(unsigned n, tommy_list* low)
 		log_tag("smart:%s:%s\n", devinfo->file, devinfo->name);
 		if (devinfo->smart_serial[0])
 			log_tag("attr:%s:%s:serial:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->smart_serial, esc_buffer));
+		if (devinfo->smart_vendor[0])
+			log_tag("attr:%s:%s:vendor:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->smart_vendor, esc_buffer));
+		if (devinfo->smart_model[0])
+			log_tag("attr:%s:%s:model:%s\n", devinfo->file, devinfo->name, esc_tag(devinfo->smart_model, esc_buffer));
 		if (afr != 0)
 			log_tag("attr:%s:%s:afr:%g:%g\n", devinfo->file, devinfo->name, afr, poisson_prob_n_or_more_failures(afr, 1));
 		if (devinfo->smart[SMART_SIZE] != SMART_UNASSIGNED)
@@ -854,12 +868,16 @@ static int devtest(tommy_list* low, int operation)
 
 		if (c == 0) {
 			entry->smart_serial[0] = 0;
+			entry->smart_vendor[0] = 0;
+			entry->smart_model[0] = 0;
 			entry->file[0] = 0;
 			entry->name[0] = 0;
 			entry->smart[SMART_SIZE] = SMART_UNASSIGNED;
 			entry->smart[SMART_ROTATION_RATE] = 0;
 		} else {
-			snprintf(entry->smart_serial, sizeof(entry->smart_serial), "%u", c);
+			snprintf(entry->smart_serial, sizeof(entry->smart_serial), "S%u", c);
+			snprintf(entry->smart_vendor, sizeof(entry->smart_vendor), "V%u", c);
+			snprintf(entry->smart_model, sizeof(entry->smart_model), "M%u", c);
 			pathcpy(entry->file, sizeof(entry->name), "file");
 			pathcpy(entry->name, sizeof(entry->name), "name");
 			entry->smart[SMART_SIZE] = c * TERA;

@@ -460,6 +460,8 @@ struct devinfo_struct {
 	struct devinfo_struct* parent; /**< Pointer at the parent if any. */
 	uint64_t smart[SMART_COUNT]; /**< SMART raw attributes. */
 	char smart_serial[SMART_MAX]; /**< SMART serial number. */
+	char smart_vendor[SMART_MAX]; /**< SMART vendor. */
+	char smart_model[SMART_MAX]; /**< SMART model. */
 #if HAVE_PTHREAD
 	pthread_t thread;
 #endif
