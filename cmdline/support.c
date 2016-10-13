@@ -1384,7 +1384,6 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 	inside = 0;
 	while (1) {
 		char buf[256];
-		char attr[64];
 		unsigned id;
 		uint64_t raw;
 		char* s;
@@ -1408,12 +1407,17 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 		} else if (smatch(s, "Rotation Rate: Solid State") == 0) {
 			smart[SMART_ROTATION_RATE] = 0;
 		} else if (sscanf(s, "Rotation Rate: %" SCNu64, &smart[SMART_ROTATION_RATE]) == 1) {
-		} else if (sscanf(s, "User Capacity: %63s", attr) == 1) {
-			smart[SMART_SIZE] = 0;
-			for (i = 0; attr[i]; ++i) {
-				if (isdigit(attr[i])) {
-					smart[SMART_SIZE] *= 10;
-					smart[SMART_SIZE] += attr[i] - '0';
+		} else if (smatch(s, "User Capacity:") == 0) {
+			char* begin = strchr(s, ':');
+			char* end = strstr(s, "bytes");
+			if (begin != 0 && end != 0 && begin < end) {
+				char* p;
+				smart[SMART_SIZE] = 0;
+				for (p = begin; p != end; ++p) {
+					if (isdigit(*p)) {
+						smart[SMART_SIZE] *= 10;
+						smart[SMART_SIZE] += *p - '0';
+					}
 				}
 			}
 		} else if (sscanf(s, "Device Model: %63s %63s", vendor, model) == 2) {
