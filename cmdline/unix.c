@@ -890,55 +890,56 @@ static int devscan(tommy_list* list)
 	}
 
 	while ((dd = readdir(d)) != 0) {
-		if (dd->d_name[0] != '.') {
-			char path[PATH_MAX];
+		char path[PATH_MAX];
+		tommy_node* i;
+		dev_t device;
+		devinfo_t* devinfo;
 
-			pathprint(path, sizeof(path), "/sys/dev/block/%s/device", dd->d_name);
+		if (dd->d_name[0] == '.')
+			continue;
 
-			/* check if it's a real device */
-			if (access(path, F_OK) == 0) {
-				tommy_node* i;
-				dev_t device;
+		pathprint(path, sizeof(path), "/sys/dev/block/%s/device", dd->d_name);
 
-				pathprint(path, sizeof(path), "/sys/dev/block/%s/dev", dd->d_name);
+		/* check if it's a real device */
+		if (access(path, F_OK) != 0)
+			continue;
 
-				device = devread(path);
-				if (!device) {
-					/* LCOV_EXCL_START */
-					closedir(d);
-					return -1;
-					/* LCOV_EXCL_STOP */
-				}
+		pathprint(path, sizeof(path), "/sys/dev/block/%s/dev", dd->d_name);
 
-				/* check if already present */
-				for (i = tommy_list_head(list); i != 0; i = i->next) {
-					devinfo_t* devinfo = i->data;
-					if (devinfo->device == device)
-						break;
-				}
-
-				/* if not found */
-				if (i == 0) {
-					devinfo_t* devinfo;
-
-					/* get the device file */
-					if (devresolve(device, path, sizeof(path)) != 0) {
-						/* LCOV_EXCL_START */
-						closedir(d);
-						return -1;
-						/* LCOV_EXCL_STOP */
-					}
-
-					devinfo = calloc_nofail(1, sizeof(devinfo_t));
-
-					devinfo->device = device;
-					pathcpy(devinfo->file, sizeof(devinfo->file), path);
-
-					/* insert in the list */
-					tommy_list_insert_tail(list, &devinfo->node, devinfo);
-				}
-			}
+		device = devread(path);
+		if (!device) {
+			/* LCOV_EXCL_START */
+			log_tag("scan:skip: Skipping device %s because failed to read its device number.\n", dd->d_name);
+			continue;
+			/* LCOV_EXCL_STOP */
 		}
+
+		/* check if already present */
+		for (i = tommy_list_head(list); i != 0; i = i->next) {
+			devinfo = i->data;
+			if (devinfo->device == device)
+				break;
+		}
+
+		/* if already present */
+		if (i != 0)
+			continue;
+
+		/* get the device file */
+		if (devresolve_dev(device, path, sizeof(path)) != 0) {
+			/* LCOV_EXCL_START */
+			log_tag("scan:skip: Skipping device %u:%u because failed to resolve.\n", major(device), minor(device));
+			continue;
+			/* LCOV_EXCL_STOP */
+		}
+
+		devinfo = calloc_nofail(1, sizeof(devinfo_t));
+
+		devinfo->device = device;
+		pathcpy(devinfo->file, sizeof(devinfo->file), path);
+
+		/* insert in the list */
+		tommy_list_insert_tail(list, &devinfo->node, devinfo);
 	}
 
 	closedir(d);
