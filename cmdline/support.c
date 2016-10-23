@@ -940,6 +940,10 @@ int advise_open(struct advise_struct* advise, int f)
 
 		/* advise sequential access */
 		ret = posix_fadvise(f, 0, 0, POSIX_FADV_SEQUENTIAL);
+		if (ret == ENOSYS) {
+			/* call is not supported, like in armhf, see posix_fadvise manpage */
+			ret = 0;
+		}
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			errno = ret; /* posix_fadvise return the error code */
@@ -1116,6 +1120,10 @@ int advise_write(struct advise_struct* advise, int f, data_off_t offset, data_of
 
 		/* flush the data from the cache */
 		ret = posix_fadvise(f, discard_offset, discard_size, POSIX_FADV_DONTNEED);
+		if (ret == ENOSYS) {
+			/* call is not supported, like in armhf, see posix_fadvise manpage */
+			ret = 0;
+		}
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			errno = ret; /* posix_fadvise return the error code */
@@ -1143,6 +1151,10 @@ int advise_read(struct advise_struct* advise, int f, data_off_t offset, data_off
 
 		/* flush the data from the cache */
 		ret = posix_fadvise(f, offset, size, POSIX_FADV_DONTNEED);
+		if (ret == ENOSYS) {
+			/* call is not supported, like in armhf, see posix_fadvise manpage */
+			ret = 0;
+		}
 		if (ret != 0) {
 			/* LCOV_EXCL_START */
 			errno = ret; /* posix_fadvise return the error code */

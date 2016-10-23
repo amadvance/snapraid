@@ -47,11 +47,16 @@ STREAM* sopen_read(const char* file)
 #if HAVE_POSIX_FADVISE
 	/* advise sequential access */
 	ret = posix_fadvise(s->handle[0].f, 0, 0, POSIX_FADV_SEQUENTIAL);
+	if (ret == ENOSYS) {
+		/* call is not supported, like in armhf, see posix_fadvise manpage */
+		ret = 0;
+	}
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
 		close(s->handle[0].f);
 		free(s->handle);
 		free(s);
+		errno = ret; /* posix_fadvise return the error code */
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
@@ -116,9 +121,14 @@ int sopen_multi_file(STREAM* s, unsigned i, const char* file)
 #if HAVE_POSIX_FADVISE
 	/* advise sequential access */
 	ret = posix_fadvise(f, 0, 0, POSIX_FADV_SEQUENTIAL);
+	if (ret == ENOSYS) {
+		/* call is not supported, like in armhf, see posix_fadvise manpage */
+		ret = 0;
+	}
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
 		close(f);
+		errno = ret; /* posix_fadvise return the error code */
 		return -1;
 		/* LCOV_EXCL_STOP */
 	}
