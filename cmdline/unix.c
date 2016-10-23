@@ -221,70 +221,6 @@ static int devdereference(uint64_t device, uint64_t* new_device)
 }
 
 /**
- * Get the device file from the device number.
- *
- * It uses /dev/block.
- *
- * For null device (major==0) it fails.
- */
-#if HAVE_LINUX_DEVICE
-static int devresolve_dev(dev_t device, char* path, size_t path_size)
-{
-	struct stat st;
-	char buf[PATH_MAX];
-	int ret;
-
-	/* default device path from device number */
-	pathprint(path, path_size, "/dev/block/%u:%u", major(device), minor(device));
-
-	/* resolve the link from /dev/block */
-	ret = readlink(path, buf, sizeof(buf));
-	if (ret < 0) {
-		/* LCOV_EXCL_START */
-		log_tag("resolve:dev:%u:%u: failed to readlink '%s'\n", major(device), minor(device), path);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-	if (ret == sizeof(buf)) {
-		/* LCOV_EXCL_START */
-		log_tag("resolve:dev:%u:%u: too long readlink '%s'\n", major(device), minor(device), path);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	buf[ret] = 0;
-
-	if (buf[0] != '.' || buf[1] != '.' || buf[2] != '/') {
-		/* LCOV_EXCL_START */
-		log_tag("resolve:dev:%u:%u: unexpected link '%s' at '%s'\n", major(device), minor(device), buf, path);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	/* set the real device path */
-	pathprint(path, path_size, "/dev/%s", buf + 3);
-
-	/* check the device */
-	if (stat(path, &st) != 0) {
-		/* LCOV_EXCL_START */
-		log_tag("resolve:dev:%u:%u: failed to stat '%s'\n", major(device), minor(device), path);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-	if (st.st_rdev != device) {
-		/* LCOV_EXCL_START */
-		log_tag("resolve:dev:%u:%u: unexpected device '%u:%u' for '%s'.\n", major(device), minor(device), major(st.st_rdev), minor(st.st_rdev), path);
-		return -1;
-		/* LCOV_EXCL_STOP */
-	}
-
-	log_tag("resolve:dev:%u:%u:%s: found\n", major(device), minor(device), path);
-
-	return 0;
-}
-#endif
-
-/**
  * Read a file extracting the specified tag TAG=VALUE format.
  * Return !=0 on error.
  */
@@ -435,12 +371,7 @@ static int devresolve_sys(dev_t device, char* path, size_t path_size)
 #if HAVE_LINUX_DEVICE
 static int devresolve(uint64_t device, char* path, size_t path_size)
 {
-	/* use /sys/dev/block and requires UEVENT */
 	if (devresolve_sys(device, path, path_size) == 0)
-		return 0;
-
-	/* use dev/block, then depending on UDEV */
-	if (devresolve_dev(device, path, path_size) == 0)
 		return 0;
 
 	return -1;
