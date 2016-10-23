@@ -285,15 +285,164 @@ static int devresolve_dev(dev_t device, char* path, size_t path_size)
 #endif
 
 /**
+ * Read a file extracting the specified tag TAG=VALUE format.
+ * Return !=0 on error.
+ */
+#if HAVE_LINUX_DEVICE
+static int tagread(const char* path, const char* tag, char* value, size_t value_size)
+{
+	int f;
+	int ret;
+	int len;
+	char buf[512];
+	size_t tag_len;
+	char* i;
+	char* e;
+
+	f = open(path, O_RDONLY);
+	if (f == -1) {
+		/* LCOV_EXCL_START */
+		log_fatal("Failed to open '%s'.\n", path);
+		return 0;
+		/* LCOV_EXCL_STOP */
+	}
+
+	len = read(f, buf, sizeof(buf));
+	if (len < 0) {
+		/* LCOV_EXCL_START */
+		close(f);
+		log_fatal("Failed to read '%s'.\n", path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+	if (len == sizeof(buf)) {
+		/* LCOV_EXCL_START */
+		close(f);
+		log_fatal("Too long read '%s'.\n", path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	ret = close(f);
+	if (ret != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Failed to close '%s'.\n", path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	buf[len] = 0;
+	tag_len = strlen(tag);
+
+	for (i = buf; *i; ++i) {
+		char* p = i;
+
+		/* start with a space */
+		if (p != buf) {
+			if (!isspace(*p))
+				continue;
+			++p;
+		}
+
+		if (strncmp(p, tag, tag_len) != 0)
+			continue;
+		p += tag_len;
+
+		/* end with a = */
+		if (*p != '=')
+			continue;
+		++p;
+
+		/* found */
+		i = p;
+		break;
+	}
+	if (!*i) {
+		/* LCOV_EXCL_START */
+		log_fatal("Missing tag '%s' for '%s'.\n", tag, path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* terminate at the first space */
+	e = i;
+	while (*e != 0 && !isspace(*e))
+		++e;
+	*e = 0;
+
+	if (!*i) {
+		/* LCOV_EXCL_START */
+		log_fatal("Empty tag '%s' for '%s'.\n", tag, path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	pathprint(value, value_size, "%s", i);
+
+	return 0;
+}
+#endif
+
+/**
+ * Get the device file from the device number.
+ *
+ * It uses /sys/dev/block/.../uevent.
+ *
+ * For null device (major==0) it fails.
+ */
+#if HAVE_LINUX_DEVICE
+static int devresolve_sys(dev_t device, char* path, size_t path_size)
+{
+	struct stat st;
+	char buf[PATH_MAX];
+
+	/* default device path from device number */
+	pathprint(path, path_size, "/sys/dev/block/%u:%u/uevent", major(device), minor(device));
+
+	if (tagread(path, "DEVNAME", buf, sizeof(buf)) != 0) {
+		/* LCOV_EXCL_START */
+		log_tag("resolve:sys:%u:%u: failed to read DEVNAME tag '%s'\n", major(device), minor(device), path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	/* set the real device path */
+	pathprint(path, path_size, "/dev/%s", buf);
+
+	/* check the device */
+	if (stat(path, &st) != 0) {
+		/* LCOV_EXCL_START */
+		log_tag("resolve:sys:%u:%u: failed to stat '%s'\n", major(device), minor(device), path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+	if (st.st_rdev != device) {
+		/* LCOV_EXCL_START */
+		log_tag("resolve:sys:%u:%u: unexpected device '%u:%u' for '%s'.\n", major(device), minor(device), major(st.st_rdev), minor(st.st_rdev), path);
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
+
+	log_tag("resolve:sys:%u:%u:%s: found\n", major(device), minor(device), path);
+
+	return 0;
+}
+#endif
+
+/**
  * Get the device file from the device number.
  */
 #if HAVE_LINUX_DEVICE
 static int devresolve(uint64_t device, char* path, size_t path_size)
 {
+	/* use /sys/dev/block and requires UEVENT */
+	if (devresolve_sys(device, path, path_size) == 0)
+		return 0;
+
+	/* use dev/block, then depending on UDEV */
 	if (devresolve_dev(device, path, path_size) == 0)
 		return 0;
 
-	log_fatal("Failed to map device %u:%u.\n", major(device), minor(device));
 	return -1;
 }
 #endif
@@ -719,6 +868,7 @@ static dev_t devread(const char* path)
 {
 	int f;
 	int ret;
+	int len;
 	char buf[64];
 	char* e;
 	unsigned ma;
@@ -732,38 +882,18 @@ static dev_t devread(const char* path)
 		/* LCOV_EXCL_STOP */
 	}
 
-	ret = read(f, buf, sizeof(buf));
-	if (ret < 0) {
+	len = read(f, buf, sizeof(buf));
+	if (len < 0) {
 		/* LCOV_EXCL_START */
 		close(f);
 		log_fatal("Failed to read '%s'.\n", path);
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
-	if (ret == sizeof(buf)) {
+	if (len == sizeof(buf)) {
 		/* LCOV_EXCL_START */
 		close(f);
 		log_fatal("Too long read '%s'.\n", path);
-		return 0;
-		/* LCOV_EXCL_STOP */
-	}
-
-	buf[ret] = 0;
-
-	ma = strtoul(buf, &e, 10);
-	if (*e != ':') {
-		/* LCOV_EXCL_START */
-		close(f);
-		log_fatal("Invalid format in '%s' for '%s'.\n", path, buf);
-		return 0;
-		/* LCOV_EXCL_STOP */
-	}
-
-	mi = strtoul(e + 1, &e, 10);
-	if (*e != 0 && !isspace(*e)) {
-		/* LCOV_EXCL_START */
-		close(f);
-		log_fatal("Invalid format in '%s' for '%s'.\n", path, buf);
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
@@ -772,6 +902,24 @@ static dev_t devread(const char* path)
 	if (ret != 0) {
 		/* LCOV_EXCL_START */
 		log_fatal("Failed to close '%s'.\n", path);
+		return 0;
+		/* LCOV_EXCL_STOP */
+	}
+
+	buf[len] = 0;
+
+	ma = strtoul(buf, &e, 10);
+	if (*e != ':') {
+		/* LCOV_EXCL_START */
+		log_fatal("Invalid format in '%s' for '%s'.\n", path, buf);
+		return 0;
+		/* LCOV_EXCL_STOP */
+	}
+
+	mi = strtoul(e + 1, &e, 10);
+	if (*e != 0 && !isspace(*e)) {
+		/* LCOV_EXCL_START */
+		log_fatal("Invalid format in '%s' for '%s'.\n", path, buf);
 		return 0;
 		/* LCOV_EXCL_STOP */
 	}
@@ -846,6 +994,7 @@ static int devtree(const char* name, const char* custom, dev_t device, devinfo_t
 		/* get the device file */
 		if (devresolve(device, path, sizeof(path)) != 0) {
 			/* LCOV_EXCL_START */
+			log_fatal("Failed to resolve device '%u:%u'.\n", major(device), minor(device));
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -926,7 +1075,7 @@ static int devscan(tommy_list* list)
 			continue;
 
 		/* get the device file */
-		if (devresolve_dev(device, path, sizeof(path)) != 0) {
+		if (devresolve(device, path, sizeof(path)) != 0) {
 			/* LCOV_EXCL_START */
 			log_tag("scan:skip: Skipping device %u:%u because failed to resolve.\n", major(device), minor(device));
 			continue;
@@ -958,7 +1107,12 @@ static int devsmart(dev_t device, const char* name, const char* custom, uint64_t
 	FILE* f;
 	int ret;
 
-	snprintf(file, sizeof(file), "/dev/block/%u:%u", major(device), minor(device));
+	if (devresolve(device, file, sizeof(file)) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Failed to resolve device '%u:%u'.\n", major(device), minor(device));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	/* if there is a custom command */
 	if (custom[0]) {
@@ -1021,7 +1175,12 @@ static int devdown(dev_t device, const char* name, const char* custom)
 	FILE* f;
 	int ret;
 
-	snprintf(file, sizeof(file), "/dev/block/%u:%u", major(device), minor(device));
+	if (devresolve(device, file, sizeof(file)) != 0) {
+		/* LCOV_EXCL_START */
+		log_fatal("Failed to resolve device '%u:%u'.\n", major(device), minor(device));
+		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	/* if there is a custom command */
 	if (custom[0]) {
@@ -1237,16 +1396,10 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 #if HAVE_LINUX_DEVICE
 	if (operation != DEVICE_UP) {
 		struct stat st;
-		/* sysfs and devfs interfaces are required */
+		/* sysfs interface is required */
 		if (stat("/sys/dev/block", &st) != 0) {
 			/* LCOV_EXCL_START */
 			log_fatal("Missing interface /sys/dev/block.\n");
-			return -1;
-			/* LCOV_EXCL_STOP */
-		}
-		if (stat("/dev/block", &st) != 0) {
-			/* LCOV_EXCL_START */
-			log_fatal("Missing interface /dev/block.\n");
 			return -1;
 			/* LCOV_EXCL_STOP */
 		}
@@ -1261,7 +1414,7 @@ int devquery(tommy_list* high, tommy_list* low, int operation, int others)
 				/* obtain the real device */
 				if (devdereference(device, &device) != 0) {
 					/* LCOV_EXCL_START */
-					log_fatal("Failed to map device %u:%u.\n", major(device), minor(device));
+					log_fatal("Failed to dereference device '%u:%u'.\n", major(device), minor(device));
 					return -1;
 					/* LCOV_EXCL_STOP */
 				}
