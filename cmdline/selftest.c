@@ -39,6 +39,11 @@ struct hash32_test_vector {
 	uint32_t digest;
 };
 
+struct strhash32_test_vector {
+	char* data;
+	uint32_t digest;
+};
+
 struct hash64_test_vector {
 	const char* data;
 	int len;
@@ -75,6 +80,36 @@ static struct hash32_test_vector TEST_HASH32[] = {
 	{ "\x65\xc4\x8a\xb8\x80\x86\x9a\x79\x00\xb7\xae", 11, 0x7f75dd0f },
 	{ "\x77\xe9\xd7\x80\x0e\x3f\x5c\x43\xc8\xc2\x46\x39", 12, 0xb9154382 },
 	{ 0, 0, 0 }
+};
+
+/**
+ * Test vectors for tommy_strhash32
+ */
+struct strhash32_test_vector TEST_STRHASH32[] = {
+	{ "", 0x0af1416d },
+	{ "a", 0x68fa0f3f },
+	{ "abc", 0xfc68ffc5 },
+	{ "message digest", 0x08477b63 },
+	{ "abcdefghijklmnopqrstuvwxyz", 0x5b9c25e5 },
+	{ "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789", 0x1e530ce7 },
+	{ "The quick brown fox jumps over the lazy dog", 0xaf93eefe },
+	{ "\xff", 0xfc88801b },
+	{ "\x16\x27", 0xcd7216db },
+	{ "\xe2\x56\xb4", 0x05f98d02 },
+	{ "\xc9\x4d\x9c\xda", 0xf65206f8 },
+	{ "\x79\xf1\x29\x69\x5d", 0x72bd6bda },
+	{ "\xff\x7e\xdf\x1e\x31\x1c", 0x57dfb9b4 },
+	{ "\x2a\x4c\xe1\xff\x9e\x6f\x53", 0x499ff634 },
+	{ "\xba\x02\xab\x18\x30\xc5\x0e\x8a", 0xe896b7ce },
+	{ "\xec\x4e\x7a\x72\x1e\x71\x2a\xc9\x33", 0xfe3939f0 },
+	{ "\xfd\xe2\x9c\x0f\x72\xb7\x08\xea\xd0\x78", 0x4351d482 },
+	{ "\x65\xc4\x8a\xb8\x80\x86\x9a\x79\xff\xb7\xae", 0x88e92135 },
+	{ "\x77\xe9\xd7\x80\x0e\x3f\x5c\x43\xc8\xc2\x46\x39", 0x01109c16 },
+	{ "\x87\xd8\x61\x61\x4c\x89\x17\x4e\xa1\xa4\xef\x13\xa9", 0xbcb050dc },
+	{ "\xfe\xa6\x5b\xc2\xda\xe8\x95\xd4\x64\xab\x4c\x39\x58\x29", 0xbe5e1fd5 },
+	{ "\x94\x49\xc0\x78\xa0\x80\xda\xc7\x71\x4e\x17\x37\xa9\x7c\x40", 0x70d8c97f },
+	{ "\x53\x7e\x36\xb4\x2e\xc9\xb9\xcc\x18\x3e\x9a\x5f\xfc\xb7\xb0\x61", 0x957440a9 },
+	{ 0, 0 }
 };
 
 /**
@@ -157,7 +192,7 @@ static void test_hash(void)
 	for (i = 0; TEST_HASH32[i].data; ++i) {
 		uint32_t digest;
 		memcpy(buffer_aligned, TEST_HASH32[i].data, TEST_HASH32[i].len);
-		digest = tommy_hash_u32(seed32, buffer_aligned, TEST_MURMUR3[i].len);
+		digest = tommy_hash_u32(seed32, buffer_aligned, TEST_HASH32[i].len);
 		if (digest != TEST_HASH32[i].digest) {
 			/* LCOV_EXCL_START */
 			log_fatal("Failed hash32 test\n");
@@ -166,10 +201,22 @@ static void test_hash(void)
 		}
 	}
 
+	for (i = 0; TEST_STRHASH32[i].data; ++i) {
+		uint32_t digest;
+		memcpy(buffer_aligned, TEST_STRHASH32[i].data, strlen(TEST_STRHASH32[i].data) + 1);
+		digest = tommy_strhash_u32(seed32, buffer_aligned);
+		if (digest != TEST_STRHASH32[i].digest) {
+			/* LCOV_EXCL_START */
+			log_fatal("Failed strhash32 test\n");
+			exit(EXIT_FAILURE);
+			/* LCOV_EXCL_STOP */
+		}
+	}
+
 	for (i = 0; TEST_HASH64[i].data; ++i) {
 		uint64_t digest;
 		memcpy(buffer_aligned, TEST_HASH64[i].data, TEST_HASH64[i].len);
-		digest = tommy_hash_u64(seed64, buffer_aligned, TEST_MURMUR3[i].len);
+		digest = tommy_hash_u64(seed64, buffer_aligned, TEST_HASH64[i].len);
 		if (digest != TEST_HASH64[i].digest) {
 			/* LCOV_EXCL_START */
 			log_fatal("Failed hash64 test\n");

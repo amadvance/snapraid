@@ -194,7 +194,7 @@ typedef struct tommy_node_struct {
 	struct tommy_node_struct* prev;
 
 	/**
-	 * Pointer at the object containing the node.
+	 * Pointer to the object containing the node.
 	 * This field is initialized when inserting nodes into a data structure.
 	 */
 	void* data;
@@ -212,8 +212,8 @@ typedef struct tommy_node_struct {
 
 /**
  * Compare function for elements.
- * \param obj_a Pointer at the first object to compare.
- * \param obj_b Pointer at the second object to compare.
+ * \param obj_a Pointer to the first object to compare.
+ * \param obj_b Pointer to the second object to compare.
  * \return <0 if the first element is less than the second, ==0 equal, >0 if greather.
  *
  * This function is like the C strcmp().
@@ -241,13 +241,15 @@ typedef int tommy_compare_func(const void* obj_a, const void* obj_b);
 
 /**
  * Search function for elements.
- * \param arg Pointer at the value to search.
- * \param obj Pointer at the object to compare to.
+ * \param arg Pointer to the value to search as passed at the search function.
+ * \param obj Pointer to the object to compare to.
  * \return ==0 if the value matches the element. !=0 if different.
  *
- * Note that the first argument is a pointer to the value to search and
- * the second one is a pointer to the object to compare.
- * They are pointers of two different types.
+ * The first argument is a pointer to the value to search exactly
+ * as it's passed at the search function called.
+ * The second argument is a pointer to the object inside the hashtable to compare.
+ *
+ * The return value has to be 0 if the values are equal. != 0 if they are different.
  *
  * \code
  * struct object {
@@ -257,7 +259,10 @@ typedef int tommy_compare_func(const void* obj_a, const void* obj_b);
  *
  * int compare(const void* arg, const void* obj)
  * {
- *     return *(const int*)arg != ((const struct object*)obj)->value;
+ *     const int* value_to_find = arg;
+ *     const struct object* object_to_compare = obj;
+ *
+ *     return *value_to_find != object_to_compare->value;
  * }
  *
  * int value_to_find = 1;
@@ -274,7 +279,7 @@ typedef int tommy_search_func(const void* arg, const void* obj);
 
 /**
  * Foreach function.
- * \param obj Pointer at the object to iterate.
+ * \param obj Pointer to the object to iterate.
  *
  * A typical example is to use free() to deallocate all the objects in a list.
  * \code
@@ -285,8 +290,8 @@ typedef void tommy_foreach_func(void* obj);
 
 /**
  * Foreach function with an argument.
- * \param arg Pointer at a generic argument.
- * \param obj Pointer at the object to iterate.
+ * \param arg Pointer to a generic argument.
+ * \param obj Pointer to the object to iterate.
  */
 typedef void tommy_foreach_arg_func(void* arg, void* obj);
 
@@ -394,7 +399,7 @@ tommy_inline tommy_uint_t tommy_ctz_u32(tommy_uint32_t value)
 tommy_inline tommy_uint32_t tommy_roundup_pow2_u32(tommy_uint32_t value)
 {
 	/* Round up to the next highest power of 2 */
-	/* from http://www-graphics.stanford.edu/~seander/bithacks.html */
+	/* from http://graphics.stanford.edu/~seander/bithacks.html */
 
 	--value;
 	value |= value >> 1;
@@ -405,6 +410,15 @@ tommy_inline tommy_uint32_t tommy_roundup_pow2_u32(tommy_uint32_t value)
 	++value;
 
 	return value;
+}
+
+/**
+ * Check if the specified word has a byte at 0.
+ * \return 0 or 1.
+ */
+tommy_inline int tommy_haszero_u32(tommy_uint32_t value)
+{
+	return ((value - 0x01010101) & ~value & 0x80808080) != 0;
 }
 #endif
 

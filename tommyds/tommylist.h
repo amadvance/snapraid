@@ -57,9 +57,9 @@
  *
  * \code
  * struct object {
- *     tommy_node node;
- *     // other fields
  *     int value;
+ *     // other fields
+ *     tommy_node node;
  * };
  *
  * struct object* obj = malloc(sizeof(struct object)); // creates the object
@@ -278,7 +278,34 @@ tommy_inline void* tommy_list_remove_existing(tommy_list* list, tommy_node* node
  * \param second The second list. After this call the list content is undefined,
  * and you should not use it anymore.
  */
-void tommy_list_concat(tommy_list* first, tommy_list* second);
+tommy_inline void tommy_list_concat(tommy_list* first, tommy_list* second)
+{
+	tommy_node* first_head;
+	tommy_node* first_tail;
+	tommy_node* second_head;
+
+	/* if the second is empty, nothing to do */
+	second_head = tommy_list_head(second);
+	if (second_head == 0)
+		return;
+
+	/* if the first is empty, copy the second */
+	first_head = tommy_list_head(first);
+	if (first_head == 0) {
+		*first = *second;
+		return;
+	}
+
+	/* tail of the first list */
+	first_tail = first_head->prev;
+
+	/* set the "circular" prev list */
+	first_head->prev = second_head->prev;
+	second_head->prev = first_tail;
+
+	/* set the "0 terminated" next list */
+	first_tail->next = second_head;
+}
 
 /**
  * Sorts a list.
@@ -318,8 +345,8 @@ tommy_inline tommy_count_t tommy_list_count(tommy_list* list)
 /**
  * Calls the specified function for each element in the list.
  *
- * You can use this function to deallocate all the elements
- * inserted in a list.
+ * You cannot add or remove elements from the inside of the callback,
+ * but can use it to deallocate them.
  *
  * \code
  * tommy_list list;

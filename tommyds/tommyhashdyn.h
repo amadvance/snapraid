@@ -60,9 +60,9 @@
  *
  * \code
  * struct object {
- *     tommy_node node;
- *     // other fields
  *     int value;
+ *     // other fields
+ *     tommy_node node;
  * };
  *
  * struct object* obj = malloc(sizeof(struct object)); // creates the object
@@ -243,7 +243,8 @@ void* tommy_hashdyn_remove_existing(tommy_hashdyn* hashdyn, tommy_hashdyn_node* 
 /**
  * Calls the specified function for each element in the hashtable.
  *
- * You can use this function to deallocate all the elements inserted.
+ * You cannot add or remove elements from the inside of the callback,
+ * but can use it to deallocate them.
  *
  * \code
  * tommy_hashdyn hashdyn;

@@ -50,8 +50,8 @@
  * - All the other inner prev and next fields are correctly set.
  */
 typedef struct tommy_chain_struct {
-	tommy_node* head; /**< Pointer at the head of the chain. */
-	tommy_node* tail; /**< Pointer at the tail of the chain. */
+	tommy_node* head; /**< Pointer to the head of the chain. */
+	tommy_node* tail; /**< Pointer to the tail of the chain. */
 } tommy_chain;
 
 /**

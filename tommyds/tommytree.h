@@ -29,15 +29,15 @@
  * AVL tree.
  *
  * This tree is a standard AVL tree implementation that stores elements in the
- * order defined by the comparsion function.
+ * order defined by the comparison function.
  *
- * As difference from other tommy containers, duplicate elements cannot be inserted.
- *
- * \code
- * tommy_tree tree;
+ * As difference than other tommy containers, duplicate elements cannot be inserted.
  *
  * To initialize a tree you have to call tommy_tree_init() specifing a comparison
  * function that will define the order in the tree.
+ *
+ * \code
+ * tommy_tree tree;
  *
  * tommy_tree_init(&tree, cmp);
  * \endcode
@@ -79,7 +79,7 @@
  * To remove an element from the tree you have to call tommy_tree_remove()
  * providing the key to search and remove.
  *
- * \code
+ * \code
  * struct object value_to_remove = { 1 };
  * struct object* obj = tommy_tree_remove(&tree, &value_to_remove);
  * if (obj) {
@@ -87,7 +87,8 @@
  * }
  * \endcode
  *
- * To destroy the tree you have to remove all the elements.
+ * To destroy the tree you have to remove or destroy all the contained elements.
+ * The tree itself doesn't have or need a deallocation function.
  *
  * If you need to iterate over all the elements in the tree, you can use
  * tommy_tree_foreach() or tommy_tree_foreach_arg().
@@ -129,10 +130,11 @@ void tommy_tree_init(tommy_tree* tree, tommy_compare_func* cmp);
 /**
  * Inserts an element in the tree.
  * If the element is already present, it's not inserted again.
+ * Check the return value to identify if the element was already present or not.
  * You have to provide the pointer of the node embedded into the object and
  * the pointer at the object.
- * \param node Pointer at the node embedded into the object to insert.
- * \param data Pointer at the object to insert.
+ * \param node Pointer to the node embedded into the object to insert.
+ * \param data Pointer to the object to insert.
  * \return The element in the tree. Either the already existing one, or the one just inserted.
  */
 void* tommy_tree_insert(tommy_tree* tree, tommy_tree_node* node, void* data);
@@ -176,7 +178,8 @@ void* tommy_tree_remove_existing(tommy_tree* tree, tommy_tree_node* node);
  *
  * The elements are processed in order.
  *
- * You can use this function to deallocate all the elements inserted.
+ * You cannot add or remove elements from the inside of the callback,
+ * but can use it to deallocate them.
  *
  * \code
  * tommy_tree tree;

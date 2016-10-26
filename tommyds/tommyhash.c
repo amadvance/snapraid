@@ -165,3 +165,77 @@ tommy_uint64_t tommy_hash_u64(tommy_uint64_t init_val, const void* void_key, tom
 	return c + ((tommy_uint64_t)b << 32);
 }
 
+tommy_uint32_t tommy_strhash_u32(tommy_uint64_t init_val, const void* void_key)
+{
+	const unsigned char* key = tommy_cast(const unsigned char*, void_key);
+	tommy_uint32_t a, b, c;
+	tommy_uint32_t m[3] = { 0xff, 0xff00, 0xff0000 };
+
+	a = b = c = 0xdeadbeef + init_val;
+	/* this is different than original lookup3 and the result won't match */
+
+	while (1) {
+		tommy_uint32_t v = tommy_le_uint32_read(key);
+
+		if (tommy_haszero_u32(v)) {
+			if (v & m[0]) {
+				a += v & m[0];
+				if (v & m[1]) {
+					a += v & m[1];
+					if (v & m[2])
+						a += v & m[2];
+				}
+			}
+
+			break;
+		}
+
+		a += v;
+
+		v = tommy_le_uint32_read(key + 4);
+
+		if (tommy_haszero_u32(v)) {
+			if (v & m[0]) {
+				b += v & m[0];
+				if (v & m[1]) {
+					b += v & m[1];
+					if (v & m[2])
+						b += v & m[2];
+				}
+			}
+
+			break;
+		}
+
+		b += v;
+
+		v = tommy_le_uint32_read(key + 8);
+
+		if (tommy_haszero_u32(v)) {
+			if (v & m[0]) {
+				c += v & m[0];
+				if (v & m[1]) {
+					c += v & m[1];
+					if (v & m[2])
+						c += v & m[2];
+				}
+			}
+
+			break;
+		}
+
+		c += v;
+
+		tommy_mix(a, b, c);
+
+		key += 12;
+	}
+
+	/* for lengths that are multiplers of 12 we already have called mix */
+	/* this is different than the original lookup3 and the result won't match */
+
+	tommy_final(a, b, c);
+
+	return c;
+}
+

@@ -28,32 +28,6 @@
 #include "tommylist.h"
 #include "tommychain.h"
 
-void tommy_list_concat(tommy_list* first, tommy_list* second)
-{
-	tommy_node* first_head;
-	tommy_node* first_tail;
-	tommy_node* second_head;
-
-	if (tommy_list_empty(second))
-		return;
-
-	if (tommy_list_empty(first)) {
-		*first = *second;
-		return;
-	}
-
-	first_head = tommy_list_head(first);
-	second_head = tommy_list_head(second);
-	first_tail = tommy_list_tail(first);
-
-	/* set the "circular" prev list */
-	first_head->prev = second_head->prev;
-	second_head->prev = first_tail;
-
-	/* set the "0 terminated" next list */
-	first_tail->next = second_head;
-}
-
 /** \internal
  * Setup a list.
  */
