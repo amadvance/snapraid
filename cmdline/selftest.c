@@ -439,11 +439,8 @@ static void test_tommy(void)
 		tommy_tree_insert(&tree, &node[i], (void*)(uintptr_t)(i + 1));
 
 	/* try to insert a duplicate, count should not change */
-	if (tommy_tree_insert(&tree, &node[TOMMY_SIZE], (void*)1) != (void*)1) {
-		/* LCOV_EXCL_START */
-		goto bail;
-		/* LCOV_EXCL_STOP */
-	}
+	tommy_tree_insert(&tree, &node[TOMMY_SIZE], (void*)(uintptr_t)1);
+
 	if (tommy_tree_count(&tree) != TOMMY_SIZE) {
 		/* LCOV_EXCL_START */
 		goto bail;

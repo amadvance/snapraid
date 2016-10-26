@@ -152,7 +152,7 @@ void* tommy_tree_insert(tommy_tree* tree, tommy_tree_node* node, void* data)
 	if (insert == node)
 		++tree->count;
 
-	return node->data;
+	return insert->data;
 }
 
 static tommy_tree_node* tommy_tree_remove_node(tommy_compare_func* cmp, tommy_tree_node* root, void* data, tommy_tree_node** let)
