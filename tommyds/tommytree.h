@@ -132,7 +132,7 @@ void tommy_tree_init(tommy_tree* tree, tommy_compare_func* cmp);
  * If the element is already present, it's not inserted again.
  * Check the return value to identify if the element was already present or not.
  * You have to provide the pointer of the node embedded into the object and
- * the pointer at the object.
+ * the pointer to the object.
  * \param node Pointer to the node embedded into the object to insert.
  * \param data Pointer to the object to insert.
  * \return The element in the tree. Either the already existing one, or the one just inserted.

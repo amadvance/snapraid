@@ -33,7 +33,7 @@
  * This is very similar at ::tommy_arrayblk, but it allows to store elements of any
  * size and not just pointers.
  *
- * Note that in this case tommy_arrayblkof_ref() returns a pointer at the element,
+ * Note that in this case tommy_arrayblkof_ref() returns a pointer to the element,
  * that should be used for getting and setting elements in the array,
  * as generic getter and setter are not available.
  */
