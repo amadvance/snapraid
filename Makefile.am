@@ -54,7 +54,6 @@ noinst_HEADERS = \
 	raid/memory.h \
 	raid/test.h \
 	tommyds/tommyarray.h \
-	tommyds/tommyarrayblk.h \
 	tommyds/tommyarrayblkof.h \
 	tommyds/tommychain.h \
 	tommyds/tommyhash.h \
@@ -63,7 +62,6 @@ noinst_HEADERS = \
 	tommyds/tommytree.h \
 	tommyds/tommytypes.h \
 	tommyds/tommyarray.c \
-	tommyds/tommyarrayblk.c \
 	tommyds/tommyarrayblkof.c \
 	tommyds/tommyhash.c \
 	tommyds/tommyhashdyn.c \

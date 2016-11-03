@@ -29,7 +29,6 @@
 #include "support.h"
 #include "tommyds/tommyhash.h"
 #include "tommyds/tommyarray.h"
-#include "tommyds/tommyarrayblk.h"
 #include "tommyds/tommyarrayblkof.h"
 #include "tommyds/tommyhashdyn.h"
 
@@ -344,7 +343,6 @@ static void tommy_test_foreach_arg(void* void_arg, void* obj)
 static void test_tommy(void)
 {
 	tommy_array array;
-	tommy_arrayblk arrayblk;
 	tommy_arrayblkof arrayblkof;
 	tommy_list list;
 	tommy_hashdyn hashdyn;
@@ -353,22 +351,15 @@ static void test_tommy(void)
 	unsigned i;
 
 	tommy_array_init(&array);
-	tommy_arrayblk_init(&arrayblk);
 	tommy_arrayblkof_init(&arrayblkof, sizeof(unsigned));
 
 	for (i = 0; i < TOMMY_SIZE; ++i) {
 		tommy_array_insert(&array, &node[i]);
-		tommy_arrayblk_insert(&arrayblk, &node[i]);
 		tommy_arrayblkof_grow(&arrayblkof, i + 1);
 		*(unsigned*)tommy_arrayblkof_ref(&arrayblkof, i) = i;
 	}
 
 	if (tommy_array_memory_usage(&array) < TOMMY_SIZE * sizeof(void*)) {
-		/* LCOV_EXCL_START */
-		goto bail;
-		/* LCOV_EXCL_STOP */
-	}
-	if (tommy_arrayblk_memory_usage(&arrayblk) < TOMMY_SIZE * sizeof(void*)) {
 		/* LCOV_EXCL_START */
 		goto bail;
 		/* LCOV_EXCL_STOP */
@@ -385,11 +376,6 @@ static void test_tommy(void)
 			goto bail;
 			/* LCOV_EXCL_STOP */
 		}
-		if (tommy_arrayblk_get(&arrayblk, i) != &node[i]) {
-			/* LCOV_EXCL_START */
-			goto bail;
-			/* LCOV_EXCL_STOP */
-		}
 		if (*(unsigned*)tommy_arrayblkof_ref(&arrayblkof, i) != i) {
 			/* LCOV_EXCL_START */
 			goto bail;
@@ -398,7 +384,6 @@ static void test_tommy(void)
 	}
 
 	tommy_arrayblkof_done(&arrayblkof);
-	tommy_arrayblk_done(&arrayblk);
 	tommy_array_done(&array);
 
 	tommy_list_init(&list);
