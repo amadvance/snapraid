@@ -335,6 +335,11 @@ AC_ARG_ENABLE([debug],
 	],
 	[])
 
+AC_ARG_ENABLE([warning-as-error],
+	[AS_HELP_STRING([--enable-warning-as-error],[stop build on warnings])],
+	CFLAGS="$CFLAGS -Werror",
+	[])
+
 AC_ARG_ENABLE([warning],
 	[AS_HELP_STRING([--enable-warning],[enable extra warning])],
 	[
@@ -343,7 +348,6 @@ AC_ARG_ENABLE([warning],
 	AC_CHECK_CC_OPT([-Wunused], CFLAGS="$CFLAGS -Wunused", [])
 	AC_CHECK_CC_OPT([-Wunreachable-code], CFLAGS="$CFLAGS -Wunreachable-code", [])
 	AC_CHECK_CC_OPT([-Wpadded], CFLAGS="$CFLAGS -Wpadded", [])
-	AC_CHECK_CC_OPT([-Wshadow], CFLAGS="$CFLAGS -Wshadow", [])
 	AC_CHECK_CC_OPT([-Weverything], CFLAGS="$CFLAGS -Weverything", [])
 	],
 	[])

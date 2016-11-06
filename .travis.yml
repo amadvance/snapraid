@@ -4,7 +4,7 @@ sudo: false
 
 language: c
 
-script: autoreconf -i && ./configure && make distcheck
+script: autoreconf -i && ./configure --enable-warning-as-error && make all distcheck
 
 compiler:
   - clang
