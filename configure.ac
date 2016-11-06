@@ -337,7 +337,12 @@ AC_ARG_ENABLE([debug],
 
 AC_ARG_ENABLE([warning-as-error],
 	[AS_HELP_STRING([--enable-warning-as-error],[stop build on warnings])],
-	CFLAGS="$CFLAGS -Werror",
+	[
+	AC_CHECK_CC_OPT([-Werror], CFLAGS="$CFLAGS -Werror", [])
+	dnl This avoid the Darwin error: clang: error: argument unused during compilation: '-pthread'
+	dnl See: https://llvm.org/bugs/show_bug.cgi?id=7798
+	AC_CHECK_CC_OPT([-Wno-error=unused-command-line-argument], CFLAGS="$CFLAGS -Wno-error=unused-command-line-argument", [])
+	],
 	[])
 
 AC_ARG_ENABLE([warning],
