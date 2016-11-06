@@ -996,9 +996,11 @@ files using a different hash.
 SnapRAID provides the following options:
 .TP
 .B \-c, \-\-conf CONFIG
-Selects the configuration file. If not specified it\'s assumed
-the file \[dq]/etc/snapraid.conf\[dq] in Unix, and \[dq]snapraid.conf\[dq] in
-the current directory in Windows.
+Selects the configuration file to use. If not specified in Unix
+it\'s used the file \[dq]/usr/local/etc/snapraid.conf\[dq] if it exists,
+or \[dq]/etc/snapraid.conf\[dq] otherwise.
+In Windows it\'s used the file \[dq]snapraid.conf\[dq] in the same
+directory of \[dq]snapraid.exe\[dq].
 .TP
 .B \-f, \-\-filter PATTERN
 Filters the files to process in \[dq]check\[dq] and \[dq]fix\[dq].
@@ -1231,8 +1233,10 @@ Prints the program version.
 SnapRAID requires a configuration file to know where your disk array
 is located, and where storing the parity information.
 .PP
-This configuration file is located in /etc/snapraid.conf in Unix or
-in the execution directory in Windows.
+In Unix it\'s used the file \[dq]/usr/local/etc/snapraid.conf\[dq] if it exists,
+or \[dq]/etc/snapraid.conf\[dq] otherwise.
+In Windows it\'s used the file \[dq]snapraid.conf\[dq] in the same
+directory of \[dq]snapraid.exe\[dq].
 .PP
 It should contain the following options (case sensitive):
 .SS parity FILE [,FILE] ... 

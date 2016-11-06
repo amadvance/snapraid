@@ -694,9 +694,11 @@ Options
 	SnapRAID provides the following options:
 
 	-c, --conf CONFIG
-		Selects the configuration file. If not specified it's assumed
-		the file "/etc/snapraid.conf" in Unix, and "snapraid.conf" in
-		the current directory in Windows.
+		Selects the configuration file to use. If not specified in Unix
+		it's used the file "/usr/local/etc/snapraid.conf" if it exists,
+		or "/etc/snapraid.conf" otherwise.
+		In Windows it's used the file "snapraid.conf" in the same
+		directory of "snapraid.exe".
 
 	-f, --filter PATTERN
 		Filters the files to process in "check" and "fix".
@@ -930,8 +932,10 @@ Configuration
 	SnapRAID requires a configuration file to know where your disk array
 	is located, and where storing the parity information.
 
-	This configuration file is located in /etc/snapraid.conf in Unix or
-	in the execution directory in Windows.
+	In Unix it's used the file "/usr/local/etc/snapraid.conf" if it exists,
+	or "/etc/snapraid.conf" otherwise.
+	In Windows it's used the file "snapraid.conf" in the same
+	directory of "snapraid.exe".
 
 	It should contain the following options (case sensitive):
 

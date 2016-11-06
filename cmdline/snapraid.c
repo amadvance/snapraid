@@ -241,7 +241,13 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #else
 	(void)argv0;
 
-	pathcpy(conf, conf_size, "/etc/" PACKAGE ".conf");
+#ifdef SYSCONFDIR
+	/* if it exists, give precedence at sysconfdir, usually /usr/local/etc */
+	if (access(SYSCONFDIR "/" PACKAGE ".conf", F_OK) == 0)
+		pathcpy(conf, conf_size, SYSCONFDIR "/" PACKAGE ".conf");
+	else /* otherwise fallback to plain /etc */
+#endif
+		pathcpy(conf, conf_size, "/etc/" PACKAGE ".conf");
 #endif
 }
 
