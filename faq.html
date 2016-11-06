@@ -93,6 +93,7 @@ Frequently Asked Questions for <span class="bold">SnapRAID</span>.
 <li><a href="#adddatadisk">How can I add an additional data disk to an existing array?</a></li>
 <li><a href="#remdatadisk">How can I remove a data disk from an existing array?</a></li>
 <li><a href="#addpardisk">How can I add, or remove, a parity disk to an existing array?</a></li>
+<li><a href="#checkdisk">How can I verify a single data disk?</a></li>
 <li><a href="#repdatadisk">How can I replace a data disk?</a></li>
 <li><a href="#reppardisk">How can I replace a parity disk?</a></li>
 <li><a href="#move">How can I safely move files from one disk to another?</a></li>
@@ -740,6 +741,21 @@ Take care that after removing a parity file, you cannot reuse it anymore,
 because it gets outdated after the next "sync" command.
 </p>
 
+<h3 id="checkdisk">How can I verify a single data disk?</h3>
+<p>
+The "scrub" command verifies all the content of the array,
+and it's not possible to limit the verification to a single data disk.
+To verify only a data single disk, you can run a "check" audit
+command limited to the disk you want to verify.
+</p>
+<pre>
+snapraid check -a -d DISK_NAME
+</pre>
+<p>
+This command will verify all the check-sum of files in the disk specified.
+The other data and parity disks won't be read and they won't be verified.
+</p>
+
 <h3 id="repdatadisk">How can I replace a data disk?</h3>
 <p>
 If you lost the disk, see the recovering section in the manual.
@@ -850,7 +866,7 @@ moved files are matching the original ones.
 
 <h3 id="defrag">Can I defragment the data and parity disks?</h3>
 <p>
-Yes, you can defragment data and parity disks. Defragmentation doesn't invalidate the SnapRAID data.
+Yes, you can defragment data and parity disks. Defragmentation doesn't affect SnapRAID.
 </p>
 
 <h3 id="ionice">How can I make SnapRAID nicer with other processes?</h3>
