@@ -86,64 +86,64 @@
 <span class="lineNum">      24 </span>            : /****************************************************************************/
 <a name="25"><span class="lineNum">      25 </span>            : /* handle */</a>
 <span class="lineNum">      26 </span>            : 
-<span class="lineNum">      27 </span><span class="lineCov">     771297 : int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, int mode)</span>
+<span class="lineNum">      27 </span><span class="lineCov">     771311 : int handle_create(struct snapraid_handle* handle, struct snapraid_file* file, int mode)</span>
 <span class="lineNum">      28 </span>            : {
 <span class="lineNum">      29 </span>            :         int ret;
 <span class="lineNum">      30 </span>            :         int flags;
 <span class="lineNum">      31 </span>            : 
 <span class="lineNum">      32 </span>            :         /* if it's the same file, and already opened, nothing to do */
-<span class="lineNum">      33 </span><span class="lineCov">     771297 :         if (handle-&gt;file == file &amp;&amp; handle-&gt;f != -1) {</span>
+<span class="lineNum">      33 </span><span class="lineCov">     771311 :         if (handle-&gt;file == file &amp;&amp; handle-&gt;f != -1) {</span>
 <span class="lineNum">      34 </span><span class="lineNoCov">          0 :                 return 0;</span>
 <span class="lineNum">      35 </span>            :         }
 <span class="lineNum">      36 </span>            : 
-<span class="lineNum">      37 </span><span class="lineCov">     771297 :         advise_init(&amp;handle-&gt;advise, mode);</span>
-<span class="lineNum">      38 </span><span class="lineCov">     771297 :         pathprint(handle-&gt;path, sizeof(handle-&gt;path), &quot;%s%s&quot;, handle-&gt;disk-&gt;dir, file-&gt;sub);</span>
+<span class="lineNum">      37 </span><span class="lineCov">     771311 :         advise_init(&amp;handle-&gt;advise, mode);</span>
+<span class="lineNum">      38 </span><span class="lineCov">     771311 :         pathprint(handle-&gt;path, sizeof(handle-&gt;path), &quot;%s%s&quot;, handle-&gt;disk-&gt;dir, file-&gt;sub);</span>
 <span class="lineNum">      39 </span>            : 
-<span class="lineNum">      40 </span><span class="lineCov">     771297 :         ret = mkancestor(handle-&gt;path);</span>
-<span class="lineNum">      41 </span><span class="lineCov">     771297 :         if (ret != 0) {</span>
+<span class="lineNum">      40 </span><span class="lineCov">     771311 :         ret = mkancestor(handle-&gt;path);</span>
+<span class="lineNum">      41 </span><span class="lineCov">     771311 :         if (ret != 0) {</span>
 <span class="lineNum">      42 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">      43 </span>            :                 return -1;
 <span class="lineNum">      44 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">      45 </span>            :         }
 <span class="lineNum">      46 </span>            : 
 <span class="lineNum">      47 </span>            :         /* initial values, changed later if required */
-<span class="lineNum">      48 </span><span class="lineCov">     771297 :         handle-&gt;created = 0;</span>
+<span class="lineNum">      48 </span><span class="lineCov">     771311 :         handle-&gt;created = 0;</span>
 <span class="lineNum">      49 </span>            : 
 <span class="lineNum">      50 </span>            :         /* flags for opening */
 <span class="lineNum">      51 </span>            :         /* O_BINARY: open as binary file (Windows only) */
 <span class="lineNum">      52 </span>            :         /* O_NOFOLLOW: do not follow links to ensure to open the real file */
-<span class="lineNum">      53 </span><span class="lineCov">     771297 :         flags = O_BINARY | O_NOFOLLOW | advise_flags(&amp;handle-&gt;advise);</span>
+<span class="lineNum">      53 </span><span class="lineCov">     771311 :         flags = O_BINARY | O_NOFOLLOW | advise_flags(&amp;handle-&gt;advise);</span>
 <span class="lineNum">      54 </span>            : 
 <span class="lineNum">      55 </span>            :         /* open for read write */
-<span class="lineNum">      56 </span><span class="lineCov">     771297 :         handle-&gt;f = open(handle-&gt;path, flags | O_RDWR);</span>
+<span class="lineNum">      56 </span><span class="lineCov">     771311 :         handle-&gt;f = open(handle-&gt;path, flags | O_RDWR);</span>
 <span class="lineNum">      57 </span>            : 
 <span class="lineNum">      58 </span>            :         /* if failed for missing write permission */
-<span class="lineNum">      59 </span><span class="lineCov">     771297 :         if (handle-&gt;f == -1 &amp;&amp; (errno == EACCES || errno == EROFS)) {</span>
+<span class="lineNum">      59 </span><span class="lineCov">     771311 :         if (handle-&gt;f == -1 &amp;&amp; (errno == EACCES || errno == EROFS)) {</span>
 <span class="lineNum">      60 </span>            :                 /* open for real-only */
 <span class="lineNum">      61 </span><span class="lineNoCov">          0 :                 handle-&gt;f = open(handle-&gt;path, flags | O_RDONLY);</span>
 <span class="lineNum">      62 </span>            :         }
 <span class="lineNum">      63 </span>            : 
 <span class="lineNum">      64 </span>            :         /* if failed for missing file */
-<span class="lineNum">      65 </span><span class="lineCov">     771297 :         if (handle-&gt;f == -1 &amp;&amp; errno == ENOENT) {</span>
+<span class="lineNum">      65 </span><span class="lineCov">     771311 :         if (handle-&gt;f == -1 &amp;&amp; errno == ENOENT) {</span>
 <span class="lineNum">      66 </span>            :                 char path_from[PATH_MAX];
 <span class="lineNum">      67 </span>            : 
 <span class="lineNum">      68 </span>            :                 /* check if exists a .unrecoverable copy, and rename to the real one */
-<span class="lineNum">      69 </span><span class="lineCov">     176226 :                 pathprint(path_from, sizeof(path_from), &quot;%s.unrecoverable&quot;, handle-&gt;path);</span>
+<span class="lineNum">      69 </span><span class="lineCov">     176417 :                 pathprint(path_from, sizeof(path_from), &quot;%s.unrecoverable&quot;, handle-&gt;path);</span>
 <span class="lineNum">      70 </span>            : 
-<span class="lineNum">      71 </span><span class="lineCov">     176226 :                 if (rename(path_from, handle-&gt;path) == 0) {</span>
+<span class="lineNum">      71 </span><span class="lineCov">     176417 :                 if (rename(path_from, handle-&gt;path) == 0) {</span>
 <span class="lineNum">      72 </span>            :                         /* open for read write */
-<span class="lineNum">      73 </span><span class="lineCov">      63228 :                         handle-&gt;f = open(handle-&gt;path, flags | O_RDWR);</span>
+<span class="lineNum">      73 </span><span class="lineCov">      63282 :                         handle-&gt;f = open(handle-&gt;path, flags | O_RDWR);</span>
 <span class="lineNum">      74 </span>            :                 } else {
 <span class="lineNum">      75 </span>            :                         /* create it */
-<span class="lineNum">      76 </span><span class="lineCov">     112998 :                         handle-&gt;f = open(handle-&gt;path, flags | O_RDWR | O_CREAT, 0600);</span>
-<span class="lineNum">      77 </span><span class="lineCov">     112998 :                         if (handle-&gt;f != -1) {</span>
+<span class="lineNum">      76 </span><span class="lineCov">     113135 :                         handle-&gt;f = open(handle-&gt;path, flags | O_RDWR | O_CREAT, 0600);</span>
+<span class="lineNum">      77 </span><span class="lineCov">     113135 :                         if (handle-&gt;f != -1) {</span>
 <span class="lineNum">      78 </span>            :                                 /* mark it as created if really done */
-<span class="lineNum">      79 </span><span class="lineCov">     112998 :                                 handle-&gt;created = 1;</span>
+<span class="lineNum">      79 </span><span class="lineCov">     113135 :                                 handle-&gt;created = 1;</span>
 <span class="lineNum">      80 </span>            :                         }
 <span class="lineNum">      81 </span>            :                 }
 <span class="lineNum">      82 </span>            :         }
 <span class="lineNum">      83 </span>            : 
-<span class="lineNum">      84 </span><span class="lineCov">     771297 :         if (handle-&gt;f == -1) {</span>
+<span class="lineNum">      84 </span><span class="lineCov">     771311 :         if (handle-&gt;f == -1) {</span>
 <span class="lineNum">      85 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">      86 </span>            :                 /* invalidate for error */
 <span class="lineNum">      87 </span>            :                 handle-&gt;file = 0;
@@ -156,11 +156,11 @@
 <span class="lineNum">      94 </span>            :         }
 <span class="lineNum">      95 </span>            : 
 <span class="lineNum">      96 </span>            :         /* just opened */
-<span class="lineNum">      97 </span><span class="lineCov">     771297 :         handle-&gt;file = file;</span>
+<span class="lineNum">      97 </span><span class="lineCov">     771311 :         handle-&gt;file = file;</span>
 <span class="lineNum">      98 </span>            : 
 <span class="lineNum">      99 </span>            :         /* get the stat info */
-<span class="lineNum">     100 </span><span class="lineCov">     771297 :         ret = fstat(handle-&gt;f, &amp;handle-&gt;st);</span>
-<span class="lineNum">     101 </span><span class="lineCov">     771297 :         if (ret != 0) {</span>
+<span class="lineNum">     100 </span><span class="lineCov">     771311 :         ret = fstat(handle-&gt;f, &amp;handle-&gt;st);</span>
+<span class="lineNum">     101 </span><span class="lineCov">     771311 :         if (ret != 0) {</span>
 <span class="lineNum">     102 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     103 </span>            :                 log_fatal(&quot;Error accessing file '%s'. %s.\n&quot;, handle-&gt;path, strerror(errno));
 <span class="lineNum">     104 </span>            :                 return -1;
@@ -168,25 +168,25 @@
 <span class="lineNum">     106 </span>            :         }
 <span class="lineNum">     107 </span>            : 
 <span class="lineNum">     108 </span>            :         /* get the size of the existing data */
-<span class="lineNum">     109 </span><span class="lineCov">     771297 :         handle-&gt;valid_size = handle-&gt;st.st_size;</span>
+<span class="lineNum">     109 </span><span class="lineCov">     771311 :         handle-&gt;valid_size = handle-&gt;st.st_size;</span>
 <span class="lineNum">     110 </span>            : 
-<span class="lineNum">     111 </span><span class="lineCov">     771297 :         ret = advise_open(&amp;handle-&gt;advise, handle-&gt;f);</span>
-<span class="lineNum">     112 </span><span class="lineCov">     771297 :         if (ret != 0) {</span>
+<span class="lineNum">     111 </span><span class="lineCov">     771311 :         ret = advise_open(&amp;handle-&gt;advise, handle-&gt;f);</span>
+<span class="lineNum">     112 </span><span class="lineCov">     771311 :         if (ret != 0) {</span>
 <span class="lineNum">     113 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     114 </span>            :                 log_fatal(&quot;Error advising file '%s'. %s.\n&quot;, handle-&gt;path, strerror(errno));
 <span class="lineNum">     115 </span>            :                 return -1;
 <span class="lineNum">     116 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     117 </span>            :         }
 <span class="lineNum">     118 </span>            : 
-<span class="lineNum">     119 </span><span class="lineCov">     771297 :         return 0;</span>
+<span class="lineNum">     119 </span><span class="lineCov">     771311 :         return 0;</span>
 <a name="120"><span class="lineNum">     120 </span>            : }</a>
 <span class="lineNum">     121 </span>            : 
-<span class="lineNum">     122 </span><span class="lineCov">       3236 : int handle_truncate(struct snapraid_handle* handle, struct snapraid_file* file)</span>
+<span class="lineNum">     122 </span><span class="lineCov">       3222 : int handle_truncate(struct snapraid_handle* handle, struct snapraid_file* file)</span>
 <span class="lineNum">     123 </span>            : {
 <span class="lineNum">     124 </span>            :         int ret;
 <span class="lineNum">     125 </span>            : 
-<span class="lineNum">     126 </span><span class="lineCov">       3236 :         ret = ftruncate(handle-&gt;f, file-&gt;size);</span>
-<span class="lineNum">     127 </span><span class="lineCov">       3236 :         if (ret != 0) {</span>
+<span class="lineNum">     126 </span><span class="lineCov">       3222 :         ret = ftruncate(handle-&gt;f, file-&gt;size);</span>
+<span class="lineNum">     127 </span><span class="lineCov">       3222 :         if (ret != 0) {</span>
 <span class="lineNum">     128 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     129 </span>            :                 if (errno == EACCES) {
 <span class="lineNum">     130 </span>            :                         log_fatal(&quot;Failed to truncate file '%s' for missing write permission.\n&quot;, handle-&gt;path);
@@ -198,56 +198,56 @@
 <span class="lineNum">     136 </span>            :         }
 <span class="lineNum">     137 </span>            : 
 <span class="lineNum">     138 </span>            :         /* adjust the size to the truncated size */
-<span class="lineNum">     139 </span><span class="lineCov">       3236 :         handle-&gt;valid_size = file-&gt;size;</span>
+<span class="lineNum">     139 </span><span class="lineCov">       3222 :         handle-&gt;valid_size = file-&gt;size;</span>
 <span class="lineNum">     140 </span>            : 
-<span class="lineNum">     141 </span><span class="lineCov">       3236 :         return 0;</span>
+<span class="lineNum">     141 </span><span class="lineCov">       3222 :         return 0;</span>
 <a name="142"><span class="lineNum">     142 </span>            : }</a>
 <span class="lineNum">     143 </span>            : 
-<span class="lineNum">     144 </span><span class="lineCov">    2186381 : int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int mode, fptr* out, fptr* out_missing)</span>
+<span class="lineNum">     144 </span><span class="lineCov">    2185867 : int handle_open(struct snapraid_handle* handle, struct snapraid_file* file, int mode, fptr* out, fptr* out_missing)</span>
 <span class="lineNum">     145 </span>            : {
 <span class="lineNum">     146 </span>            :         int ret;
 <span class="lineNum">     147 </span>            :         int flags;
 <span class="lineNum">     148 </span>            : 
-<span class="lineNum">     149 </span><span class="lineCov">    2186381 :         if (!out_missing)</span>
-<span class="lineNum">     150 </span><span class="lineCov">    2186033 :                 out_missing = out;</span>
+<span class="lineNum">     149 </span><span class="lineCov">    2185867 :         if (!out_missing)</span>
+<span class="lineNum">     150 </span><span class="lineCov">    2185464 :                 out_missing = out;</span>
 <span class="lineNum">     151 </span>            : 
 <span class="lineNum">     152 </span>            :         /* if already opened, nothing to do */
-<span class="lineNum">     153 </span><span class="lineCov">    2186381 :         if (handle-&gt;file == file &amp;&amp; handle-&gt;file != 0 &amp;&amp; handle-&gt;f != -1) {</span>
-<span class="lineNum">     154 </span><span class="lineCov">     468716 :                 return 0;</span>
+<span class="lineNum">     153 </span><span class="lineCov">    2185867 :         if (handle-&gt;file == file &amp;&amp; handle-&gt;file != 0 &amp;&amp; handle-&gt;f != -1) {</span>
+<span class="lineNum">     154 </span><span class="lineCov">     468345 :                 return 0;</span>
 <span class="lineNum">     155 </span>            :         }
 <span class="lineNum">     156 </span>            : 
-<span class="lineNum">     157 </span><span class="lineCov">    1717665 :         advise_init(&amp;handle-&gt;advise, mode);</span>
-<span class="lineNum">     158 </span><span class="lineCov">    1717888 :         pathprint(handle-&gt;path, sizeof(handle-&gt;path), &quot;%s%s&quot;, handle-&gt;disk-&gt;dir, file-&gt;sub);</span>
+<span class="lineNum">     157 </span><span class="lineCov">    1717522 :         advise_init(&amp;handle-&gt;advise, mode);</span>
+<span class="lineNum">     158 </span><span class="lineCov">    1717676 :         pathprint(handle-&gt;path, sizeof(handle-&gt;path), &quot;%s%s&quot;, handle-&gt;disk-&gt;dir, file-&gt;sub);</span>
 <span class="lineNum">     159 </span>            : 
 <span class="lineNum">     160 </span>            :         /* for sure not created */
-<span class="lineNum">     161 </span><span class="lineCov">    1718027 :         handle-&gt;created = 0;</span>
+<span class="lineNum">     161 </span><span class="lineCov">    1717807 :         handle-&gt;created = 0;</span>
 <span class="lineNum">     162 </span>            : 
 <span class="lineNum">     163 </span>            :         /* flags for opening */
 <span class="lineNum">     164 </span>            :         /* O_BINARY: open as binary file (Windows only) */
 <span class="lineNum">     165 </span>            :         /* O_NOFOLLOW: do not follow links to ensure to open the real file */
-<span class="lineNum">     166 </span><span class="lineCov">    1718027 :         flags = O_BINARY | O_NOFOLLOW | advise_flags(&amp;handle-&gt;advise);</span>
+<span class="lineNum">     166 </span><span class="lineCov">    1717807 :         flags = O_BINARY | O_NOFOLLOW | advise_flags(&amp;handle-&gt;advise);</span>
 <span class="lineNum">     167 </span>            : 
 <span class="lineNum">     168 </span>            :         /* open for read */
-<span class="lineNum">     169 </span><span class="lineCov">    1717978 :         handle-&gt;f = open_noatime(handle-&gt;path, flags | O_RDONLY);</span>
-<span class="lineNum">     170 </span><span class="lineCov">    1718011 :         if (handle-&gt;f == -1) {</span>
+<span class="lineNum">     169 </span><span class="lineCov">    1717764 :         handle-&gt;f = open_noatime(handle-&gt;path, flags | O_RDONLY);</span>
+<span class="lineNum">     170 </span><span class="lineCov">    1717748 :         if (handle-&gt;f == -1) {</span>
 <span class="lineNum">     171 </span>            :                 /* invalidate for error */
-<span class="lineNum">     172 </span><span class="lineCov">      78453 :                 handle-&gt;file = 0;</span>
-<span class="lineNum">     173 </span><span class="lineCov">      78453 :                 handle-&gt;f = -1;</span>
-<span class="lineNum">     174 </span><span class="lineCov">      78453 :                 handle-&gt;valid_size = 0;</span>
+<span class="lineNum">     172 </span><span class="lineCov">      78757 :                 handle-&gt;file = 0;</span>
+<span class="lineNum">     173 </span><span class="lineCov">      78757 :                 handle-&gt;f = -1;</span>
+<span class="lineNum">     174 </span><span class="lineCov">      78757 :                 handle-&gt;valid_size = 0;</span>
 <span class="lineNum">     175 </span>            : 
-<span class="lineNum">     176 </span><span class="lineCov">      78453 :                 if (errno == ENOENT)</span>
-<span class="lineNum">     177 </span><span class="lineCov">      78441 :                         out_missing(&quot;Missing file '%s'.\n&quot;, handle-&gt;path);</span>
+<span class="lineNum">     176 </span><span class="lineCov">      78757 :                 if (errno == ENOENT)</span>
+<span class="lineNum">     177 </span><span class="lineCov">      78745 :                         out_missing(&quot;Missing file '%s'.\n&quot;, handle-&gt;path);</span>
 <span class="lineNum">     178 </span>            :                 else
 <span class="lineNum">     179 </span><span class="lineCov">         12 :                         out(&quot;Error opening file '%s'. %s.\n&quot;, handle-&gt;path, strerror(errno));</span>
-<span class="lineNum">     180 </span><span class="lineCov">      78453 :                 return -1;</span>
+<span class="lineNum">     180 </span><span class="lineCov">      78757 :                 return -1;</span>
 <span class="lineNum">     181 </span>            :         }
 <span class="lineNum">     182 </span>            : 
 <span class="lineNum">     183 </span>            :         /* just opened */
-<span class="lineNum">     184 </span><span class="lineCov">    1639558 :         handle-&gt;file = file;</span>
+<span class="lineNum">     184 </span><span class="lineCov">    1638991 :         handle-&gt;file = file;</span>
 <span class="lineNum">     185 </span>            : 
 <span class="lineNum">     186 </span>            :         /* get the stat info */
-<span class="lineNum">     187 </span><span class="lineCov">    1639558 :         ret = fstat(handle-&gt;f, &amp;handle-&gt;st);</span>
-<span class="lineNum">     188 </span><span class="lineCov">    1639532 :         if (ret != 0) {</span>
+<span class="lineNum">     187 </span><span class="lineCov">    1638991 :         ret = fstat(handle-&gt;f, &amp;handle-&gt;st);</span>
+<span class="lineNum">     188 </span><span class="lineCov">    1639031 :         if (ret != 0) {</span>
 <span class="lineNum">     189 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     190 </span>            :                 out(&quot;Error accessing file '%s'. %s.\n&quot;, handle-&gt;path, strerror(errno));
 <span class="lineNum">     191 </span>            :                 return -1;
@@ -255,27 +255,27 @@
 <span class="lineNum">     193 </span>            :         }
 <span class="lineNum">     194 </span>            : 
 <span class="lineNum">     195 </span>            :         /* get the size of the existing data */
-<span class="lineNum">     196 </span><span class="lineCov">    1639532 :         handle-&gt;valid_size = handle-&gt;st.st_size;</span>
+<span class="lineNum">     196 </span><span class="lineCov">    1639031 :         handle-&gt;valid_size = handle-&gt;st.st_size;</span>
 <span class="lineNum">     197 </span>            : 
-<span class="lineNum">     198 </span><span class="lineCov">    1639532 :         ret = advise_open(&amp;handle-&gt;advise, handle-&gt;f);</span>
-<span class="lineNum">     199 </span><span class="lineCov">    1639561 :         if (ret != 0) {</span>
+<span class="lineNum">     198 </span><span class="lineCov">    1639031 :         ret = advise_open(&amp;handle-&gt;advise, handle-&gt;f);</span>
+<span class="lineNum">     199 </span><span class="lineCov">    1639026 :         if (ret != 0) {</span>
 <span class="lineNum">     200 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     201 </span>            :                 out(&quot;Error advising file '%s'. %s.\n&quot;, handle-&gt;path, strerror(errno));
 <span class="lineNum">     202 </span>            :                 return -1;
 <span class="lineNum">     203 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     204 </span>            :         }
 <span class="lineNum">     205 </span>            : 
-<span class="lineNum">     206 </span><span class="lineCov">    1639561 :         return 0;</span>
+<span class="lineNum">     206 </span><span class="lineCov">    1639026 :         return 0;</span>
 <a name="207"><span class="lineNum">     207 </span>            : }</a>
 <span class="lineNum">     208 </span>            : 
-<span class="lineNum">     209 </span><span class="lineCov">    4647242 : int handle_close(struct snapraid_handle* handle)</span>
+<span class="lineNum">     209 </span><span class="lineCov">    4647511 : int handle_close(struct snapraid_handle* handle)</span>
 <span class="lineNum">     210 </span>            : {
 <span class="lineNum">     211 </span>            :         int ret;
 <span class="lineNum">     212 </span>            : 
 <span class="lineNum">     213 </span>            :         /* close if open */
-<span class="lineNum">     214 </span><span class="lineCov">    4647242 :         if (handle-&gt;f != -1) {</span>
-<span class="lineNum">     215 </span><span class="lineCov">    2410862 :                 ret = close(handle-&gt;f);</span>
-<span class="lineNum">     216 </span><span class="lineCov">    2410894 :                 if (ret != 0) {</span>
+<span class="lineNum">     214 </span><span class="lineCov">    4647511 :         if (handle-&gt;f != -1) {</span>
+<span class="lineNum">     215 </span><span class="lineCov">    2410343 :                 ret = close(handle-&gt;f);</span>
+<span class="lineNum">     216 </span><span class="lineCov">    2410377 :                 if (ret != 0) {</span>
 <span class="lineNum">     217 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     218 </span>            :                         log_fatal(&quot;Error closing file '%s'. %s.\n&quot;, handle-&gt;file-&gt;sub, strerror(errno));
 <span class="lineNum">     219 </span>            : 
@@ -289,14 +289,14 @@
 <span class="lineNum">     227 </span>            :         }
 <span class="lineNum">     228 </span>            : 
 <span class="lineNum">     229 </span>            :         /* reset the descriptor */
-<span class="lineNum">     230 </span><span class="lineCov">    4647274 :         handle-&gt;file = 0;</span>
-<span class="lineNum">     231 </span><span class="lineCov">    4647274 :         handle-&gt;f = -1;</span>
-<span class="lineNum">     232 </span><span class="lineCov">    4647274 :         handle-&gt;valid_size = 0;</span>
+<span class="lineNum">     230 </span><span class="lineCov">    4647545 :         handle-&gt;file = 0;</span>
+<span class="lineNum">     231 </span><span class="lineCov">    4647545 :         handle-&gt;f = -1;</span>
+<span class="lineNum">     232 </span><span class="lineCov">    4647545 :         handle-&gt;valid_size = 0;</span>
 <span class="lineNum">     233 </span>            : 
-<span class="lineNum">     234 </span><span class="lineCov">    4647274 :         return 0;</span>
+<span class="lineNum">     234 </span><span class="lineCov">    4647545 :         return 0;</span>
 <a name="235"><span class="lineNum">     235 </span>            : }</a>
 <span class="lineNum">     236 </span>            : 
-<span class="lineNum">     237 </span><span class="lineCov">    5856976 : int handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned char* block_buffer, unsigned block_size, fptr* out, fptr* out_missing)</span>
+<span class="lineNum">     237 </span><span class="lineCov">    5855349 : int handle_read(struct snapraid_handle* handle, block_off_t file_pos, unsigned char* block_buffer, unsigned block_size, fptr* out, fptr* out_missing)</span>
 <span class="lineNum">     238 </span>            : {
 <span class="lineNum">     239 </span>            :         ssize_t read_ret;
 <span class="lineNum">     240 </span>            :         data_off_t offset;
@@ -304,70 +304,70 @@
 <span class="lineNum">     242 </span>            :         unsigned count;
 <span class="lineNum">     243 </span>            :         int ret;
 <span class="lineNum">     244 </span>            : 
-<span class="lineNum">     245 </span><span class="lineCov">    5856976 :         offset = file_pos * (data_off_t)block_size;</span>
+<span class="lineNum">     245 </span><span class="lineCov">    5855349 :         offset = file_pos * (data_off_t)block_size;</span>
 <span class="lineNum">     246 </span>            : 
-<span class="lineNum">     247 </span><span class="lineCov">    5856976 :         if (!out_missing)</span>
-<span class="lineNum">     248 </span><span class="lineCov">    5844038 :                 out_missing = out;</span>
+<span class="lineNum">     247 </span><span class="lineCov">    5855349 :         if (!out_missing)</span>
+<span class="lineNum">     248 </span><span class="lineCov">    5842393 :                 out_missing = out;</span>
 <span class="lineNum">     249 </span>            : 
 <span class="lineNum">     250 </span>            :         /* check if we are going to read only not initialized data */
-<span class="lineNum">     251 </span><span class="lineCov">    5856976 :         if (offset &gt;= handle-&gt;valid_size) {</span>
+<span class="lineNum">     251 </span><span class="lineCov">    5855349 :         if (offset &gt;= handle-&gt;valid_size) {</span>
 <span class="lineNum">     252 </span>            :                 /* if the file is missing, it's at 0 size, or it's rebuilt while reading */
-<span class="lineNum">     253 </span><span class="lineCov">     433024 :                 if (offset == handle-&gt;valid_size || handle-&gt;valid_size == 0)</span>
-<span class="lineNum">     254 </span><span class="lineCov">     431748 :                         out_missing(&quot;Reading data from missing file '%s' at offset %&quot; PRIu64 &quot;.\n&quot;, handle-&gt;path, offset);</span>
+<span class="lineNum">     253 </span><span class="lineCov">     433464 :                 if (offset == handle-&gt;valid_size || handle-&gt;valid_size == 0)</span>
+<span class="lineNum">     254 </span><span class="lineCov">     432215 :                         out_missing(&quot;Reading data from missing file '%s' at offset %&quot; PRIu64 &quot;.\n&quot;, handle-&gt;path, offset);</span>
 <span class="lineNum">     255 </span>            :                 else
-<span class="lineNum">     256 </span><span class="lineCov">       1276 :                         out(&quot;Reading missing data from file '%s' at offset %&quot; PRIu64 &quot;.\n&quot;, handle-&gt;path, offset);</span>
-<span class="lineNum">     257 </span><span class="lineCov">     433024 :                 return -1;</span>
+<span class="lineNum">     256 </span><span class="lineCov">       1249 :                         out(&quot;Reading missing data from file '%s' at offset %&quot; PRIu64 &quot;.\n&quot;, handle-&gt;path, offset);</span>
+<span class="lineNum">     257 </span><span class="lineCov">     433464 :                 return -1;</span>
 <span class="lineNum">     258 </span>            :         }
 <span class="lineNum">     259 </span>            : 
-<span class="lineNum">     260 </span><span class="lineCov">    5423952 :         read_size = file_block_size(handle-&gt;file, file_pos, block_size);</span>
+<span class="lineNum">     260 </span><span class="lineCov">    5421885 :         read_size = file_block_size(handle-&gt;file, file_pos, block_size);</span>
 <span class="lineNum">     261 </span>            : 
-<span class="lineNum">     262 </span><span class="lineCov">    5423917 :         count = 0;</span>
+<span class="lineNum">     262 </span><span class="lineCov">    5421858 :         count = 0;</span>
 <span class="lineNum">     263 </span>            :         do {
 <span class="lineNum">     264 </span>            :                 /* read the full block to support O_DIRECT */
-<span class="lineNum">     265 </span><span class="lineCov">    5432696 :                 read_ret = pread(handle-&gt;f, block_buffer + count, block_size - count, offset + count);</span>
-<span class="lineNum">     266 </span><span class="lineCov">    5432323 :                 if (read_ret &lt; 0) {</span>
+<span class="lineNum">     265 </span><span class="lineCov">    5430464 :                 read_ret = pread(handle-&gt;f, block_buffer + count, block_size - count, offset + count);</span>
+<span class="lineNum">     266 </span><span class="lineCov">    5430098 :                 if (read_ret &lt; 0) {</span>
 <span class="lineNum">     267 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     268 </span>            :                         out(&quot;Error reading file '%s' at offset %&quot; PRIu64 &quot; for size %u. %s.\n&quot;, handle-&gt;path, offset + count, block_size - count, strerror(errno));
 <span class="lineNum">     269 </span>            :                         return -1;
 <span class="lineNum">     270 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">     271 </span>            :                 }
-<span class="lineNum">     272 </span><span class="lineCov">    5432323 :                 if (read_ret == 0) {</span>
-<span class="lineNum">     273 </span><span class="lineCov">       8940 :                         out(&quot;Unexpected end of file '%s' at offset %&quot; PRIu64 &quot;. %s.\n&quot;, handle-&gt;path, offset, strerror(errno));</span>
-<span class="lineNum">     274 </span><span class="lineCov">       8940 :                         return -1;</span>
+<span class="lineNum">     272 </span><span class="lineCov">    5430098 :                 if (read_ret == 0) {</span>
+<span class="lineNum">     273 </span><span class="lineCov">       8705 :                         out(&quot;Unexpected end of file '%s' at offset %&quot; PRIu64 &quot;. %s.\n&quot;, handle-&gt;path, offset, strerror(errno));</span>
+<span class="lineNum">     274 </span><span class="lineCov">       8705 :                         return -1;</span>
 <span class="lineNum">     275 </span>            :                 }
 <span class="lineNum">     276 </span>            : 
-<span class="lineNum">     277 </span><span class="lineCov">    5423383 :                 count += read_ret;</span>
-<span class="lineNum">     278 </span><span class="lineCov">    5423383 :         } while (count &lt; read_size);</span>
+<span class="lineNum">     277 </span><span class="lineCov">    5421393 :                 count += read_ret;</span>
+<span class="lineNum">     278 </span><span class="lineCov">    5421393 :         } while (count &lt; read_size);</span>
 <span class="lineNum">     279 </span>            : 
 <span class="lineNum">     280 </span>            :         /* pad with 0 */
-<span class="lineNum">     281 </span><span class="lineCov">    5414604 :         if (read_size &lt; block_size) {</span>
-<span class="lineNum">     282 </span><span class="lineCov">    2188899 :                 memset(block_buffer + read_size, 0, block_size - read_size);</span>
+<span class="lineNum">     281 </span><span class="lineCov">    5412787 :         if (read_size &lt; block_size) {</span>
+<span class="lineNum">     282 </span><span class="lineCov">    2188487 :                 memset(block_buffer + read_size, 0, block_size - read_size);</span>
 <span class="lineNum">     283 </span>            :         }
 <span class="lineNum">     284 </span>            : 
-<span class="lineNum">     285 </span><span class="lineCov">    5414604 :         ret = advise_read(&amp;handle-&gt;advise, handle-&gt;f, offset, block_size);</span>
-<span class="lineNum">     286 </span><span class="lineCov">    5414548 :         if (ret != 0) {</span>
+<span class="lineNum">     285 </span><span class="lineCov">    5412787 :         ret = advise_read(&amp;handle-&gt;advise, handle-&gt;f, offset, block_size);</span>
+<span class="lineNum">     286 </span><span class="lineCov">    5412784 :         if (ret != 0) {</span>
 <span class="lineNum">     287 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     288 </span>            :                 out(&quot;Error advising file '%s'. %s.\n&quot;, handle-&gt;path, strerror(errno));
 <span class="lineNum">     289 </span>            :                 return -1;
 <span class="lineNum">     290 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     291 </span>            :         }
 <span class="lineNum">     292 </span>            : 
-<span class="lineNum">     293 </span><span class="lineCov">    5414548 :         return read_size;</span>
+<span class="lineNum">     293 </span><span class="lineCov">    5412784 :         return read_size;</span>
 <a name="294"><span class="lineNum">     294 </span>            : }</a>
 <span class="lineNum">     295 </span>            : 
-<span class="lineNum">     296 </span><span class="lineCov">     288368 : int handle_write(struct snapraid_handle* handle, block_off_t file_pos, unsigned char* block_buffer, unsigned block_size)</span>
+<span class="lineNum">     296 </span><span class="lineCov">     288562 : int handle_write(struct snapraid_handle* handle, block_off_t file_pos, unsigned char* block_buffer, unsigned block_size)</span>
 <span class="lineNum">     297 </span>            : {
 <span class="lineNum">     298 </span>            :         ssize_t write_ret;
 <span class="lineNum">     299 </span>            :         data_off_t offset;
 <span class="lineNum">     300 </span>            :         unsigned write_size;
 <span class="lineNum">     301 </span>            :         int ret;
 <span class="lineNum">     302 </span>            : 
-<span class="lineNum">     303 </span><span class="lineCov">     288368 :         offset = file_pos * (data_off_t)block_size;</span>
+<span class="lineNum">     303 </span><span class="lineCov">     288562 :         offset = file_pos * (data_off_t)block_size;</span>
 <span class="lineNum">     304 </span>            : 
-<span class="lineNum">     305 </span><span class="lineCov">     288368 :         write_size = file_block_size(handle-&gt;file, file_pos, block_size);</span>
+<span class="lineNum">     305 </span><span class="lineCov">     288562 :         write_size = file_block_size(handle-&gt;file, file_pos, block_size);</span>
 <span class="lineNum">     306 </span>            : 
-<span class="lineNum">     307 </span><span class="lineCov">     288368 :         write_ret = pwrite(handle-&gt;f, block_buffer, write_size, offset);</span>
-<span class="lineNum">     308 </span><span class="lineCov">     288368 :         if (write_ret != (ssize_t)write_size) { /* conversion is safe because block_size is always small */</span>
+<span class="lineNum">     307 </span><span class="lineCov">     288562 :         write_ret = pwrite(handle-&gt;f, block_buffer, write_size, offset);</span>
+<span class="lineNum">     308 </span><span class="lineCov">     288562 :         if (write_ret != (ssize_t)write_size) { /* conversion is safe because block_size is always small */</span>
 <span class="lineNum">     309 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     310 </span>            :                 log_fatal(&quot;Error writing file '%s'. %s.\n&quot;, handle-&gt;path, strerror(errno));
 <span class="lineNum">     311 </span>            :                 return -1;
@@ -375,39 +375,39 @@
 <span class="lineNum">     313 </span>            :         }
 <span class="lineNum">     314 </span>            : 
 <span class="lineNum">     315 </span>            :         /* adjust the size of the valid data */
-<span class="lineNum">     316 </span><span class="lineCov">     288368 :         if (handle-&gt;valid_size &lt; offset + write_size) {</span>
-<span class="lineNum">     317 </span><span class="lineCov">     282259 :                 handle-&gt;valid_size = offset + write_size;</span>
+<span class="lineNum">     316 </span><span class="lineCov">     288562 :         if (handle-&gt;valid_size &lt; offset + write_size) {</span>
+<span class="lineNum">     317 </span><span class="lineCov">     282510 :                 handle-&gt;valid_size = offset + write_size;</span>
 <span class="lineNum">     318 </span>            :         }
 <span class="lineNum">     319 </span>            : 
-<span class="lineNum">     320 </span><span class="lineCov">     288368 :         ret = advise_write(&amp;handle-&gt;advise, handle-&gt;f, offset, block_size);</span>
-<span class="lineNum">     321 </span><span class="lineCov">     288368 :         if (ret != 0) {</span>
+<span class="lineNum">     320 </span><span class="lineCov">     288562 :         ret = advise_write(&amp;handle-&gt;advise, handle-&gt;f, offset, block_size);</span>
+<span class="lineNum">     321 </span><span class="lineCov">     288562 :         if (ret != 0) {</span>
 <span class="lineNum">     322 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     323 </span>            :                 log_fatal(&quot;Error advising file '%s'. %s.\n&quot;, handle-&gt;path, strerror(errno));
 <span class="lineNum">     324 </span>            :                 return -1;
 <span class="lineNum">     325 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     326 </span>            :         }
 <span class="lineNum">     327 </span>            : 
-<span class="lineNum">     328 </span><span class="lineCov">     288368 :         return 0;</span>
+<span class="lineNum">     328 </span><span class="lineCov">     288562 :         return 0;</span>
 <a name="329"><span class="lineNum">     329 </span>            : }</a>
 <span class="lineNum">     330 </span>            : 
-<span class="lineNum">     331 </span><span class="lineCov">     119415 : int handle_utime(struct snapraid_handle* handle)</span>
+<span class="lineNum">     331 </span><span class="lineCov">     119431 : int handle_utime(struct snapraid_handle* handle)</span>
 <span class="lineNum">     332 </span>            : {
 <span class="lineNum">     333 </span>            :         int ret;
 <span class="lineNum">     334 </span>            : 
 <span class="lineNum">     335 </span>            :         /* do nothing if not opened */
-<span class="lineNum">     336 </span><span class="lineCov">     119415 :         if (handle-&gt;f == -1)</span>
+<span class="lineNum">     336 </span><span class="lineCov">     119431 :         if (handle-&gt;f == -1)</span>
 <span class="lineNum">     337 </span><span class="lineNoCov">          0 :                 return 0;</span>
 <span class="lineNum">     338 </span>            : 
-<span class="lineNum">     339 </span><span class="lineCov">     119415 :         ret = fmtime(handle-&gt;f, handle-&gt;file-&gt;mtime_sec, handle-&gt;file-&gt;mtime_nsec);</span>
+<span class="lineNum">     339 </span><span class="lineCov">     119431 :         ret = fmtime(handle-&gt;f, handle-&gt;file-&gt;mtime_sec, handle-&gt;file-&gt;mtime_nsec);</span>
 <span class="lineNum">     340 </span>            : 
-<span class="lineNum">     341 </span><span class="lineCov">     119415 :         if (ret != 0) {</span>
+<span class="lineNum">     341 </span><span class="lineCov">     119431 :         if (ret != 0) {</span>
 <span class="lineNum">     342 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     343 </span>            :                 log_fatal(&quot;Error timing file '%s'. %s.\n&quot;, handle-&gt;file-&gt;sub, strerror(errno));
 <span class="lineNum">     344 </span>            :                 return -1;
 <span class="lineNum">     345 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     346 </span>            :         }
 <span class="lineNum">     347 </span>            : 
-<span class="lineNum">     348 </span><span class="lineCov">     119415 :         return 0;</span>
+<span class="lineNum">     348 </span><span class="lineCov">     119431 :         return 0;</span>
 <a name="349"><span class="lineNum">     349 </span>            : }</a>
 <span class="lineNum">     350 </span>            : 
 <span class="lineNum">     351 </span><span class="lineCov">        221 : struct snapraid_handle* handle_mapping(struct snapraid_state* state, unsigned* handlemax)</span>

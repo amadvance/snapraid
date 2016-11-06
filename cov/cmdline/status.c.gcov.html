@@ -395,10 +395,10 @@
 <span class="lineNum">     333 </span><span class="lineCov">      39752 :                         scrub_time = info_get_time(info);</span>
 <span class="lineNum">     334 </span>            : 
 <span class="lineNum">     335 </span><span class="lineCov">      39752 :                         if (info_get_justsynced(info)) {</span>
-<span class="lineNum">     336 </span><span class="lineCov">      20457 :                                 ++unscrubbed_blocks;</span>
+<span class="lineNum">     336 </span><span class="lineCov">      20453 :                                 ++unscrubbed_blocks;</span>
 <span class="lineNum">     337 </span>            : 
 <span class="lineNum">     338 </span>            :                                 /* mark the time as not scrubbed */
-<span class="lineNum">     339 </span><span class="lineCov">      20457 :                                 scrub_time |= TIME_NEW;</span>
+<span class="lineNum">     339 </span><span class="lineCov">      20453 :                                 scrub_time |= TIME_NEW;</span>
 <span class="lineNum">     340 </span>            :                         }
 <span class="lineNum">     341 </span>            : 
 <span class="lineNum">     342 </span><span class="lineCov">      39752 :                         timemap[count++] = scrub_time;</span>
@@ -430,16 +430,16 @@
 <span class="lineNum">     368 </span>            :         /* output the info map */
 <span class="lineNum">     369 </span><span class="lineCov">          8 :         i = 0;</span>
 <span class="lineNum">     370 </span><span class="lineCov">          8 :         log_tag(&quot;info_count:%u\n&quot;, count);</span>
-<span class="lineNum">     371 </span><span class="lineCov">         33 :         while (i &lt; count) {</span>
-<span class="lineNum">     372 </span><span class="lineCov">         17 :                 unsigned j = i + 1;</span>
-<span class="lineNum">     373 </span><span class="lineCov">      39769 :                 while (j &lt; count &amp;&amp; timemap[i] == timemap[j])</span>
-<span class="lineNum">     374 </span><span class="lineCov">      39735 :                         ++j;</span>
-<span class="lineNum">     375 </span><span class="lineCov">         17 :                 if ((timemap[i] &amp; TIME_NEW) == 0) {</span>
-<span class="lineNum">     376 </span><span class="lineCov">          8 :                         log_tag(&quot;info_time:%&quot; PRIu64 &quot;:%u:scrubbed\n&quot;, (uint64_t)timemap[i], j - i);</span>
+<span class="lineNum">     371 </span><span class="lineCov">         35 :         while (i &lt; count) {</span>
+<span class="lineNum">     372 </span><span class="lineCov">         19 :                 unsigned j = i + 1;</span>
+<span class="lineNum">     373 </span><span class="lineCov">      39771 :                 while (j &lt; count &amp;&amp; timemap[i] == timemap[j])</span>
+<span class="lineNum">     374 </span><span class="lineCov">      39733 :                         ++j;</span>
+<span class="lineNum">     375 </span><span class="lineCov">         19 :                 if ((timemap[i] &amp; TIME_NEW) == 0) {</span>
+<span class="lineNum">     376 </span><span class="lineCov">          7 :                         log_tag(&quot;info_time:%&quot; PRIu64 &quot;:%u:scrubbed\n&quot;, (uint64_t)timemap[i], j - i);</span>
 <span class="lineNum">     377 </span>            :                 } else {
-<span class="lineNum">     378 </span><span class="lineCov">          9 :                         log_tag(&quot;info_time:%&quot; PRIu64 &quot;:%u:new\n&quot;, (uint64_t)(timemap[i] &amp; ~TIME_NEW), j - i);</span>
+<span class="lineNum">     378 </span><span class="lineCov">         12 :                         log_tag(&quot;info_time:%&quot; PRIu64 &quot;:%u:new\n&quot;, (uint64_t)(timemap[i] &amp; ~TIME_NEW), j - i);</span>
 <span class="lineNum">     379 </span>            :                 }
-<span class="lineNum">     380 </span><span class="lineCov">         17 :                 i = j;</span>
+<span class="lineNum">     380 </span><span class="lineCov">         19 :                 i = j;</span>
 <span class="lineNum">     381 </span>            :         }
 <span class="lineNum">     382 </span>            : 
 <span class="lineNum">     383 </span><span class="lineCov">          8 :         oldest = timemap[0];</span>
@@ -462,9 +462,9 @@
 <span class="lineNum">     400 </span><span class="lineCov">        560 :                 step_new = 0;</span>
 <span class="lineNum">     401 </span><span class="lineCov">      40872 :                 while (barpos &lt; count &amp;&amp; timemap[barpos] &lt;= limit) {</span>
 <span class="lineNum">     402 </span><span class="lineCov">      39752 :                         if ((timemap[barpos] &amp; TIME_NEW) != 0)</span>
-<span class="lineNum">     403 </span><span class="lineCov">      20457 :                                 ++step_new;</span>
+<span class="lineNum">     403 </span><span class="lineCov">      20453 :                                 ++step_new;</span>
 <span class="lineNum">     404 </span>            :                         else
-<span class="lineNum">     405 </span><span class="lineCov">      19295 :                                 ++step_scrubbed;</span>
+<span class="lineNum">     405 </span><span class="lineCov">      19299 :                                 ++step_scrubbed;</span>
 <span class="lineNum">     406 </span><span class="lineCov">      39752 :                         ++barpos;</span>
 <span class="lineNum">     407 </span>            :                 }
 <span class="lineNum">     408 </span>            : 
@@ -494,20 +494,20 @@
 <span class="lineNum">     432 </span><span class="lineCov">       8400 :                         unsigned scrubbed = bar_scrubbed[x];</span>
 <span class="lineNum">     433 </span>            : 
 <span class="lineNum">     434 </span><span class="lineCov">       8400 :                         if (both &gt; pivot_upper) {</span>
-<span class="lineNum">     435 </span><span class="lineCov">        149 :                                 if (scrubbed &gt; pivot_lower)</span>
-<span class="lineNum">     436 </span><span class="lineCov">         71 :                                         printf(&quot;*&quot;);</span>
+<span class="lineNum">     435 </span><span class="lineCov">        145 :                                 if (scrubbed &gt; pivot_lower)</span>
+<span class="lineNum">     436 </span><span class="lineCov">         63 :                                         printf(&quot;*&quot;);</span>
 <span class="lineNum">     437 </span>            :                                 else
-<span class="lineNum">     438 </span><span class="lineCov">         78 :                                         printf(&quot;o&quot;);</span>
-<span class="lineNum">     439 </span><span class="lineCov">       8251 :                         } else if (both &gt; pivot_lower) {</span>
-<span class="lineNum">     440 </span><span class="lineCov">         16 :                                 if (scrubbed == both)</span>
+<span class="lineNum">     438 </span><span class="lineCov">         82 :                                         printf(&quot;o&quot;);</span>
+<span class="lineNum">     439 </span><span class="lineCov">       8255 :                         } else if (both &gt; pivot_lower) {</span>
+<span class="lineNum">     440 </span><span class="lineCov">         19 :                                 if (scrubbed == both)</span>
 <span class="lineNum">     441 </span><span class="lineCov">          7 :                                         printf(&quot;*&quot;);</span>
 <span class="lineNum">     442 </span>            :                                 else
-<span class="lineNum">     443 </span><span class="lineCov">          9 :                                         printf(&quot;o&quot;);</span>
+<span class="lineNum">     443 </span><span class="lineCov">         12 :                                         printf(&quot;o&quot;);</span>
 <span class="lineNum">     444 </span>            :                         } else {
-<span class="lineNum">     445 </span><span class="lineCov">       8235 :                                 if (y == GRAPH_ROW - 1)</span>
-<span class="lineNum">     446 </span><span class="lineCov">        544 :                                         printf(&quot;_&quot;);</span>
+<span class="lineNum">     445 </span><span class="lineCov">       8236 :                                 if (y == GRAPH_ROW - 1)</span>
+<span class="lineNum">     446 </span><span class="lineCov">        541 :                                         printf(&quot;_&quot;);</span>
 <span class="lineNum">     447 </span>            :                                 else
-<span class="lineNum">     448 </span><span class="lineCov">       7691 :                                         printf(&quot; &quot;);</span>
+<span class="lineNum">     448 </span><span class="lineCov">       7695 :                                         printf(&quot; &quot;);</span>
 <span class="lineNum">     449 </span>            :                         }
 <span class="lineNum">     450 </span>            :                 }
 <span class="lineNum">     451 </span><span class="lineCov">        120 :                 printf(&quot;\n&quot;);</span>
@@ -559,19 +559,19 @@
 <span class="lineNum">     497 </span>            : 
 <span class="lineNum">     498 </span>            :                 /* print some of the errors */
 <span class="lineNum">     499 </span><span class="lineCov">          2 :                 bad_print = 0;</span>
-<span class="lineNum">     500 </span><span class="lineCov">        723 :                 for (i = 0; i &lt; blockmax; ++i) {</span>
-<span class="lineNum">     501 </span><span class="lineCov">        723 :                         snapraid_info info = info_get(&amp;state-&gt;infoarr, i);</span>
+<span class="lineNum">     500 </span><span class="lineCov">        720 :                 for (i = 0; i &lt; blockmax; ++i) {</span>
+<span class="lineNum">     501 </span><span class="lineCov">        720 :                         snapraid_info info = info_get(&amp;state-&gt;infoarr, i);</span>
 <span class="lineNum">     502 </span>            : 
 <span class="lineNum">     503 </span>            :                         /* skip unused blocks */
-<span class="lineNum">     504 </span><span class="lineCov">        723 :                         if (info == 0)</span>
+<span class="lineNum">     504 </span><span class="lineCov">        720 :                         if (info == 0)</span>
 <span class="lineNum">     505 </span><span class="lineNoCov">          0 :                                 continue;</span>
 <span class="lineNum">     506 </span>            : 
-<span class="lineNum">     507 </span><span class="lineCov">        723 :                         if (info_get_bad(info)) {</span>
+<span class="lineNum">     507 </span><span class="lineCov">        720 :                         if (info_get_bad(info)) {</span>
 <span class="lineNum">     508 </span><span class="lineCov">        202 :                                 printf(&quot; %u&quot;, i);</span>
 <span class="lineNum">     509 </span><span class="lineCov">        202 :                                 ++bad_print;</span>
 <span class="lineNum">     510 </span>            :                         }
 <span class="lineNum">     511 </span>            : 
-<span class="lineNum">     512 </span><span class="lineCov">        723 :                         if (bad_print &gt; 100) {</span>
+<span class="lineNum">     512 </span><span class="lineCov">        720 :                         if (bad_print &gt; 100) {</span>
 <span class="lineNum">     513 </span><span class="lineCov">          2 :                                 printf(&quot; and %u more...&quot;, bad - bad_print);</span>
 <span class="lineNum">     514 </span><span class="lineCov">          2 :                                 break;</span>
 <span class="lineNum">     515 </span>            :                         }

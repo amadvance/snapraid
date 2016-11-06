@@ -221,33 +221,33 @@
 <span class="lineNum">     159 </span>            : /**
 <a name="160"><span class="lineNum">     160 </span>            :  * Check if the buffer has enough data loaded.</a>
 <span class="lineNum">     161 </span>            :  */
-<span class="lineNum">     162 </span><span class="lineCov">   33528259 : static inline int sptrlookup(STREAM* s, int size)</span>
+<span class="lineNum">     162 </span><span class="lineCov">   33541405 : static inline int sptrlookup(STREAM* s, int size)</span>
 <span class="lineNum">     163 </span>            : {
-<span class="lineNum">     164 </span><span class="lineCov">   33528259 :         return s-&gt;pos + size &lt;= s-&gt;end;</span>
+<span class="lineNum">     164 </span><span class="lineCov">   33541405 :         return s-&gt;pos + size &lt;= s-&gt;end;</span>
 <span class="lineNum">     165 </span>            : }
 <span class="lineNum">     166 </span>            : 
 <span class="lineNum">     167 </span>            : /**
 <a name="168"><span class="lineNum">     168 </span>            :  * Get the current stream ptr.</a>
 <span class="lineNum">     169 </span>            :  */
-<span class="lineNum">     170 </span><span class="lineCov">   33490476 : static inline unsigned char* sptrget(STREAM* s)</span>
+<span class="lineNum">     170 </span><span class="lineCov">   33503384 : static inline unsigned char* sptrget(STREAM* s)</span>
 <span class="lineNum">     171 </span>            : {
-<span class="lineNum">     172 </span><span class="lineCov">   33490476 :         return s-&gt;pos;</span>
+<span class="lineNum">     172 </span><span class="lineCov">   33503384 :         return s-&gt;pos;</span>
 <span class="lineNum">     173 </span>            : }
 <span class="lineNum">     174 </span>            : 
 <span class="lineNum">     175 </span>            : /**
 <a name="176"><span class="lineNum">     176 </span>            :  * Set the current stream ptr.</a>
 <span class="lineNum">     177 </span>            :  */
-<span class="lineNum">     178 </span><span class="lineCov">   33490476 : static inline void sptrset(STREAM* s, unsigned char* ptr)</span>
+<span class="lineNum">     178 </span><span class="lineCov">   33503384 : static inline void sptrset(STREAM* s, unsigned char* ptr)</span>
 <span class="lineNum">     179 </span>            : {
-<span class="lineNum">     180 </span><span class="lineCov">   33490476 :         s-&gt;pos = ptr;</span>
-<span class="lineNum">     181 </span><span class="lineCov">   33490476 : }</span>
+<span class="lineNum">     180 </span><span class="lineCov">   33503384 :         s-&gt;pos = ptr;</span>
+<span class="lineNum">     181 </span><span class="lineCov">   33503384 : }</span>
 <span class="lineNum">     182 </span>            : 
 <span class="lineNum">     183 </span>            : /**
 <a name="184"><span class="lineNum">     184 </span>            :  * Check the error status. Like ferror().</a>
 <span class="lineNum">     185 </span>            :  */
-<span class="lineNum">     186 </span><span class="lineCov">    3630957 : static inline int serror(STREAM* s)</span>
+<span class="lineNum">     186 </span><span class="lineCov">    3635503 : static inline int serror(STREAM* s)</span>
 <span class="lineNum">     187 </span>            : {
-<span class="lineNum">     188 </span><span class="lineCov">    3630957 :         return s-&gt;state == STREAM_STATE_ERROR;</span>
+<span class="lineNum">     188 </span><span class="lineCov">    3635503 :         return s-&gt;state == STREAM_STATE_ERROR;</span>
 <span class="lineNum">     189 </span>            : }
 <span class="lineNum">     190 </span>            : 
 <span class="lineNum">     191 </span>            : /**
@@ -291,11 +291,11 @@
 <span class="lineNum">     229 </span>            : /**
 <a name="230"><span class="lineNum">     230 </span>            :  * Read a char. Like fgetc().</a>
 <span class="lineNum">     231 </span>            :  */
-<span class="lineNum">     232 </span><span class="lineCov">   84208356 : static inline int sgetc(STREAM* s)</span>
+<span class="lineNum">     232 </span><span class="lineCov">   85203689 : static inline int sgetc(STREAM* s)</span>
 <span class="lineNum">     233 </span>            : {
-<span class="lineNum">     234 </span><span class="lineCov">   84208356 :         if (tommy_unlikely(s-&gt;pos == s-&gt;end))</span>
+<span class="lineNum">     234 </span><span class="lineCov">   85203689 :         if (tommy_unlikely(s-&gt;pos == s-&gt;end))</span>
 <span class="lineNum">     235 </span><span class="lineCov">     298847 :                 return sgetc_uncached(s);</span>
-<span class="lineNum">     236 </span><span class="lineCov">   83909509 :         return *s-&gt;pos++;</span>
+<span class="lineNum">     236 </span><span class="lineCov">   84904842 :         return *s-&gt;pos++;</span>
 <span class="lineNum">     237 </span>            : }
 <span class="lineNum">     238 </span>            : 
 <span class="lineNum">     239 </span>            : /**
@@ -407,9 +407,9 @@
 <span class="lineNum">     345 </span>            :  * Write a char. Like fputc().
 <a name="346"><span class="lineNum">     346 </span>            :  * Return 0 on success or -1 on error.</a>
 <span class="lineNum">     347 </span>            :  */
-<span class="lineNum">     348 </span><span class="lineCov">    3807708 : static inline int sputc(int c, STREAM* s)</span>
+<span class="lineNum">     348 </span><span class="lineCov">    3808841 : static inline int sputc(int c, STREAM* s)</span>
 <span class="lineNum">     349 </span>            : {
-<span class="lineNum">     350 </span><span class="lineCov">    3807708 :         if (s-&gt;pos == s-&gt;end) {</span>
+<span class="lineNum">     350 </span><span class="lineCov">    3808841 :         if (s-&gt;pos == s-&gt;end) {</span>
 <span class="lineNum">     351 </span><span class="lineCov">      38580 :                 if (sflush(s) != 0)</span>
 <span class="lineNum">     352 </span><span class="lineNoCov">          0 :                         return -1;</span>
 <span class="lineNum">     353 </span>            :         }
@@ -421,11 +421,11 @@
 <span class="lineNum">     359 </span>            :          * to be able to detect memory errors on the buffer,
 <span class="lineNum">     360 </span>            :          * happening before we write it on the file.
 <span class="lineNum">     361 </span>            :          */
-<span class="lineNum">     362 </span><span class="lineCov">    3807708 :         s-&gt;crc_stream = crc32c_plain_char(s-&gt;crc_stream, c);</span>
+<span class="lineNum">     362 </span><span class="lineCov">    3808841 :         s-&gt;crc_stream = crc32c_plain_char(s-&gt;crc_stream, c);</span>
 <span class="lineNum">     363 </span>            : 
-<span class="lineNum">     364 </span><span class="lineCov">    3807708 :         *s-&gt;pos++ = c;</span>
+<span class="lineNum">     364 </span><span class="lineCov">    3808841 :         *s-&gt;pos++ = c;</span>
 <span class="lineNum">     365 </span>            : 
-<span class="lineNum">     366 </span><span class="lineCov">    3807708 :         return 0;</span>
+<span class="lineNum">     366 </span><span class="lineCov">    3808841 :         return 0;</span>
 <span class="lineNum">     367 </span>            : }
 <span class="lineNum">     368 </span>            : 
 <span class="lineNum">     369 </span>            : /**

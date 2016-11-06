@@ -110,13 +110,13 @@
 <span class="lineNum">      48 </span><span class="lineCov">        244 :         tommy_array_done(&amp;array-&gt;block);</span>
 <a name="49"><span class="lineNum">      49 </span><span class="lineCov">        244 : }</span></a>
 <span class="lineNum">      50 </span>            : 
-<span class="lineNum">      51 </span><span class="lineCov">    1698291 : void tommy_arrayblkof_grow(tommy_arrayblkof* array, tommy_count_t count)</span>
+<span class="lineNum">      51 </span><span class="lineCov">    1698221 : void tommy_arrayblkof_grow(tommy_arrayblkof* array, tommy_count_t count)</span>
 <span class="lineNum">      52 </span>            : {
 <span class="lineNum">      53 </span>            :         tommy_count_t block_max;
 <span class="lineNum">      54 </span>            :         tommy_count_t block_mac;
 <span class="lineNum">      55 </span>            : 
-<span class="lineNum">      56 </span><span class="lineCov">    1698291 :         if (array-&gt;count &gt;= count)</span>
-<span class="lineNum">      57 </span><span class="lineCov">    1821687 :                 return;</span>
+<span class="lineNum">      56 </span><span class="lineCov">    1698221 :         if (array-&gt;count &gt;= count)</span>
+<span class="lineNum">      57 </span><span class="lineCov">    1821547 :                 return;</span>
 <span class="lineNum">      58 </span><span class="lineCov">    1574895 :         array-&gt;count = count;</span>
 <span class="lineNum">      59 </span>            : 
 <span class="lineNum">      60 </span><span class="lineCov">    1574895 :         block_max = (count + TOMMY_ARRAYBLKOF_SIZE - 1) / TOMMY_ARRAYBLKOF_SIZE;</span>

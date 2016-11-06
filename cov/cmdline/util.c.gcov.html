@@ -119,20 +119,20 @@
 <span class="lineNum">      57 </span><span class="lineCov">          7 :         return ptr;</span>
 <a name="58"><span class="lineNum">      58 </span>            : }</a>
 <span class="lineNum">      59 </span>            : 
-<span class="lineNum">      60 </span><span class="lineCov">      12490 : void** malloc_nofail_vector_align(int nd, int n, size_t size, void** freeptr)</span>
+<span class="lineNum">      60 </span><span class="lineCov">      12366 : void** malloc_nofail_vector_align(int nd, int n, size_t size, void** freeptr)</span>
 <span class="lineNum">      61 </span>            : {
 <span class="lineNum">      62 </span>            :         void* ptr;
 <span class="lineNum">      63 </span>            : 
-<span class="lineNum">      64 </span><span class="lineCov">      12490 :         ptr = raid_malloc_vector(nd, n, size, freeptr);</span>
+<span class="lineNum">      64 </span><span class="lineCov">      12366 :         ptr = raid_malloc_vector(nd, n, size, freeptr);</span>
 <span class="lineNum">      65 </span>            : 
-<span class="lineNum">      66 </span><span class="lineCov">      12490 :         if (!ptr) {</span>
+<span class="lineNum">      66 </span><span class="lineCov">      12366 :         if (!ptr) {</span>
 <span class="lineNum">      67 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">      68 </span>            :                 malloc_fail(n * size);
 <span class="lineNum">      69 </span>            :                 exit(EXIT_FAILURE);
 <span class="lineNum">      70 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">      71 </span>            :         }
 <span class="lineNum">      72 </span>            : 
-<span class="lineNum">      73 </span><span class="lineCov">      12490 :         return ptr;</span>
+<span class="lineNum">      73 </span><span class="lineCov">      12366 :         return ptr;</span>
 <a name="74"><span class="lineNum">      74 </span>            : }</a>
 <span class="lineNum">      75 </span>            : 
 <span class="lineNum">      76 </span><span class="lineNoCov">          0 : void** malloc_nofail_vector_direct(int nd, int n, size_t size, void** freeptr)</span>
@@ -478,42 +478,42 @@
 <span class="lineNum">     416 </span>            : int crc_x86;
 <a name="417"><span class="lineNum">     417 </span>            : #endif</a>
 <span class="lineNum">     418 </span>            : 
-<span class="lineNum">     419 </span><span class="lineCov">        105 : uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size)</span>
+<span class="lineNum">     419 </span><span class="lineCov">        361 : uint32_t crc32c_gen(uint32_t crc, const unsigned char* ptr, unsigned size)</span>
 <span class="lineNum">     420 </span>            : {
-<span class="lineNum">     421 </span><span class="lineCov">        105 :         crc ^= CRC_IV;</span>
+<span class="lineNum">     421 </span><span class="lineCov">        361 :         crc ^= CRC_IV;</span>
 <span class="lineNum">     422 </span>            : 
-<span class="lineNum">     423 </span><span class="lineCov">        105 :         crc = crc32c_gen_plain(crc, ptr, size);</span>
+<span class="lineNum">     423 </span><span class="lineCov">        361 :         crc = crc32c_gen_plain(crc, ptr, size);</span>
 <span class="lineNum">     424 </span>            : 
-<span class="lineNum">     425 </span><span class="lineCov">        105 :         crc ^= CRC_IV;</span>
+<span class="lineNum">     425 </span><span class="lineCov">        361 :         crc ^= CRC_IV;</span>
 <span class="lineNum">     426 </span>            : 
-<span class="lineNum">     427 </span><span class="lineCov">        105 :         return crc;</span>
+<span class="lineNum">     427 </span><span class="lineCov">        361 :         return crc;</span>
 <span class="lineNum">     428 </span>            : }
 <a name="429"><span class="lineNum">     429 </span>            : </a>
 <span class="lineNum">     430 </span>            : #if HAVE_SSE42
-<span class="lineNum">     431 </span><span class="lineCov">     646398 : uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size)</span>
+<span class="lineNum">     431 </span><span class="lineCov">     646614 : uint32_t crc32c_x86(uint32_t crc, const unsigned char* ptr, unsigned size)</span>
 <span class="lineNum">     432 </span>            : {
-<span class="lineNum">     433 </span><span class="lineCov">     646398 :         crc ^= CRC_IV;</span>
+<span class="lineNum">     433 </span><span class="lineCov">     646614 :         crc ^= CRC_IV;</span>
 <span class="lineNum">     434 </span>            : 
-<span class="lineNum">     435 </span><span class="lineCov">     646398 :         crc = crc32c_x86_plain(crc, ptr, size);</span>
+<span class="lineNum">     435 </span><span class="lineCov">     646614 :         crc = crc32c_x86_plain(crc, ptr, size);</span>
 <span class="lineNum">     436 </span>            : 
-<span class="lineNum">     437 </span><span class="lineCov">     646395 :         crc ^= CRC_IV;</span>
+<span class="lineNum">     437 </span><span class="lineCov">     646610 :         crc ^= CRC_IV;</span>
 <span class="lineNum">     438 </span>            : 
-<span class="lineNum">     439 </span><span class="lineCov">     646395 :         return crc;</span>
+<span class="lineNum">     439 </span><span class="lineCov">     646610 :         return crc;</span>
 <span class="lineNum">     440 </span>            : }
 <span class="lineNum">     441 </span>            : #endif
 <span class="lineNum">     442 </span>            : 
 <a name="443"><span class="lineNum">     443 </span>            : uint32_t (*crc32c)(uint32_t crc, const unsigned char* ptr, unsigned size);</a>
 <span class="lineNum">     444 </span>            : 
-<span class="lineNum">     445 </span><span class="lineCov">        282 : void crc32c_init(void)</span>
+<span class="lineNum">     445 </span><span class="lineCov">        285 : void crc32c_init(void)</span>
 <span class="lineNum">     446 </span>            : {
-<span class="lineNum">     447 </span><span class="lineCov">        282 :         crc32c = crc32c_gen;</span>
+<span class="lineNum">     447 </span><span class="lineCov">        285 :         crc32c = crc32c_gen;</span>
 <span class="lineNum">     448 </span>            : #if HAVE_SSE42
-<span class="lineNum">     449 </span><span class="lineCov">        282 :         if (raid_cpu_has_crc32()) {</span>
-<span class="lineNum">     450 </span><span class="lineCov">        282 :                 crc_x86 = 1;</span>
-<span class="lineNum">     451 </span><span class="lineCov">        282 :                 crc32c = crc32c_x86;</span>
+<span class="lineNum">     449 </span><span class="lineCov">        285 :         if (raid_cpu_has_crc32()) {</span>
+<span class="lineNum">     450 </span><span class="lineCov">        283 :                 crc_x86 = 1;</span>
+<span class="lineNum">     451 </span><span class="lineCov">        283 :                 crc32c = crc32c_x86;</span>
 <span class="lineNum">     452 </span>            :         }
 <span class="lineNum">     453 </span>            : #endif
-<span class="lineNum">     454 </span><span class="lineCov">        282 : }</span>
+<span class="lineNum">     454 </span><span class="lineCov">        285 : }</span>
 <span class="lineNum">     455 </span>            : 
 <span class="lineNum">     456 </span>            : /****************************************************************************/
 <span class="lineNum">     457 </span>            : /* byte operations */
@@ -522,14 +522,14 @@
 <span class="lineNum">     460 </span>            :  * Rotate left.
 <a name="461"><span class="lineNum">     461 </span>            :  * In x86/x64 they are optimized with a single assembler instruction.</a>
 <span class="lineNum">     462 </span>            :  */
-<span class="lineNum">     463 </span><span class="lineCov">  845729469 : static inline uint32_t util_rotl32(uint32_t x, int8_t r)</span>
+<span class="lineNum">     463 </span><span class="lineCov">  854114224 : static inline uint32_t util_rotl32(uint32_t x, int8_t r)</span>
 <span class="lineNum">     464 </span>            : {
-<span class="lineNum">     465 </span><span class="lineCov">  845729469 :         return (x &lt;&lt; r) | (x &gt;&gt; (32 - r));</span>
+<span class="lineNum">     465 </span><span class="lineCov">  854114224 :         return (x &lt;&lt; r) | (x &gt;&gt; (32 - r));</span>
 <a name="466"><span class="lineNum">     466 </span>            : }</a>
 <span class="lineNum">     467 </span>            : 
-<span class="lineNum">     468 </span><span class="lineCov">  507650352 : static inline uint64_t util_rotl64(uint64_t x, int8_t r)</span>
+<span class="lineNum">     468 </span><span class="lineCov">  512217108 : static inline uint64_t util_rotl64(uint64_t x, int8_t r)</span>
 <span class="lineNum">     469 </span>            : {
-<span class="lineNum">     470 </span><span class="lineCov">  507650352 :         return (x &lt;&lt; r) | (x &gt;&gt; (64 - r));</span>
+<span class="lineNum">     470 </span><span class="lineCov">  512217108 :         return (x &lt;&lt; r) | (x &gt;&gt; (64 - r));</span>
 <span class="lineNum">     471 </span>            : }
 <span class="lineNum">     472 </span>            : 
 <span class="lineNum">     473 </span>            : /**
@@ -570,15 +570,15 @@
 <span class="lineNum">     508 </span>            : #include &quot;murmur3.c&quot;
 <a name="509"><span class="lineNum">     509 </span>            : #include &quot;spooky2.c&quot;</a>
 <span class="lineNum">     510 </span>            : 
-<span class="lineNum">     511 </span><span class="lineCov">    5938819 : void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, size_t size)</span>
+<span class="lineNum">     511 </span><span class="lineCov">    5937808 : void memhash(unsigned kind, const unsigned char* seed, void* digest, const void* src, size_t size)</span>
 <span class="lineNum">     512 </span>            : {
-<span class="lineNum">     513 </span><span class="lineCov">    5938819 :         switch (kind) {</span>
+<span class="lineNum">     513 </span><span class="lineCov">    5937808 :         switch (kind) {</span>
 <span class="lineNum">     514 </span>            :         case HASH_MURMUR3 :
-<span class="lineNum">     515 </span><span class="lineCov">    2076783 :                 MurmurHash3_x86_128(src, size, seed, digest);</span>
-<span class="lineNum">     516 </span><span class="lineCov">    2076783 :                 break;</span>
+<span class="lineNum">     515 </span><span class="lineCov">    2076827 :                 MurmurHash3_x86_128(src, size, seed, digest);</span>
+<span class="lineNum">     516 </span><span class="lineCov">    2076827 :                 break;</span>
 <span class="lineNum">     517 </span>            :         case HASH_SPOOKY2 :
-<span class="lineNum">     518 </span><span class="lineCov">    3862036 :                 SpookyHash128(src, size, seed, digest);</span>
-<span class="lineNum">     519 </span><span class="lineCov">    3862036 :                 break;</span>
+<span class="lineNum">     518 </span><span class="lineCov">    3860981 :                 SpookyHash128(src, size, seed, digest);</span>
+<span class="lineNum">     519 </span><span class="lineCov">    3860981 :                 break;</span>
 <span class="lineNum">     520 </span>            :         default :
 <span class="lineNum">     521 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">     522 </span>            :                 log_fatal(&quot;Internal inconsistency in hash function %u\n&quot;, kind);
@@ -586,7 +586,7 @@
 <span class="lineNum">     524 </span>            :                 break;
 <span class="lineNum">     525 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">     526 </span>            :         }
-<a name="527"><span class="lineNum">     527 </span><span class="lineCov">    5938819 : }</span></a>
+<a name="527"><span class="lineNum">     527 </span><span class="lineCov">    5937808 : }</span></a>
 <span class="lineNum">     528 </span>            : 
 <span class="lineNum">     529 </span><span class="lineCov">         42 : const char* hash_config_name(unsigned kind)</span>
 <span class="lineNum">     530 </span>            : {
@@ -601,23 +601,23 @@
 <span class="lineNum">     539 </span>            :         }
 <a name="540"><span class="lineNum">     540 </span>            : }</a>
 <span class="lineNum">     541 </span>            : 
-<span class="lineNum">     542 </span><span class="lineCov">      93443 : unsigned memdiff(const unsigned char* data1, const unsigned char* data2, size_t size)</span>
+<span class="lineNum">     542 </span><span class="lineCov">      93184 : unsigned memdiff(const unsigned char* data1, const unsigned char* data2, size_t size)</span>
 <span class="lineNum">     543 </span>            : {
 <span class="lineNum">     544 </span>            :         size_t i;
 <span class="lineNum">     545 </span>            :         unsigned count;
 <span class="lineNum">     546 </span>            : 
-<span class="lineNum">     547 </span><span class="lineCov">      93443 :         count = 0;</span>
-<span class="lineNum">     548 </span><span class="lineCov">   80900995 :         for (i = 0; i &lt; size; ++i) {</span>
+<span class="lineNum">     547 </span><span class="lineCov">      93184 :         count = 0;</span>
+<span class="lineNum">     548 </span><span class="lineCov">   80903648 :         for (i = 0; i &lt; size; ++i) {</span>
 <span class="lineNum">     549 </span>            :                 unsigned j;
-<span class="lineNum">     550 </span><span class="lineCov">   80807552 :                 unsigned char diff = data1[i] ^ data2[i];</span>
-<span class="lineNum">     551 </span><span class="lineCov">  727267968 :                 for (j = 0; j &lt; 8; ++j) {</span>
-<span class="lineNum">     552 </span><span class="lineCov">  646460416 :                         if ((diff &amp; 1) != 0)</span>
-<span class="lineNum">     553 </span><span class="lineCov">  311440935 :                                 ++count;</span>
-<span class="lineNum">     554 </span><span class="lineCov">  646460416 :                         diff &gt;&gt;= 1;</span>
+<span class="lineNum">     550 </span><span class="lineCov">   80810464 :                 unsigned char diff = data1[i] ^ data2[i];</span>
+<span class="lineNum">     551 </span><span class="lineCov">  727294176 :                 for (j = 0; j &lt; 8; ++j) {</span>
+<span class="lineNum">     552 </span><span class="lineCov">  646483712 :                         if ((diff &amp; 1) != 0)</span>
+<span class="lineNum">     553 </span><span class="lineCov">  311410983 :                                 ++count;</span>
+<span class="lineNum">     554 </span><span class="lineCov">  646483712 :                         diff &gt;&gt;= 1;</span>
 <span class="lineNum">     555 </span>            :                 }
 <span class="lineNum">     556 </span>            :         }
 <span class="lineNum">     557 </span>            : 
-<span class="lineNum">     558 </span><span class="lineCov">      93443 :         return count;</span>
+<span class="lineNum">     558 </span><span class="lineCov">      93184 :         return count;</span>
 <span class="lineNum">     559 </span>            : }
 <span class="lineNum">     560 </span>            : 
 <span class="lineNum">     561 </span>            : /****************************************************************************/

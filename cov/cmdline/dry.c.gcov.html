@@ -101,30 +101,30 @@
 <span class="lineNum">      39 </span><span class="lineCov">       7102 :         return 1;</span>
 <a name="40"><span class="lineNum">      40 </span>            : }</a>
 <span class="lineNum">      41 </span>            : 
-<span class="lineNum">      42 </span><span class="lineCov">      42603 : static void dry_data_reader(struct snapraid_worker* worker, struct snapraid_task* task)</span>
+<span class="lineNum">      42 </span><span class="lineCov">      42590 : static void dry_data_reader(struct snapraid_worker* worker, struct snapraid_task* task)</span>
 <span class="lineNum">      43 </span>            : {
-<span class="lineNum">      44 </span><span class="lineCov">      42603 :         struct snapraid_io* io = worker-&gt;io;</span>
-<span class="lineNum">      45 </span><span class="lineCov">      42603 :         struct snapraid_state* state = io-&gt;state;</span>
-<span class="lineNum">      46 </span><span class="lineCov">      42603 :         struct snapraid_handle* handle = worker-&gt;handle;</span>
-<span class="lineNum">      47 </span><span class="lineCov">      42603 :         struct snapraid_disk* disk = handle-&gt;disk;</span>
-<span class="lineNum">      48 </span><span class="lineCov">      42603 :         block_off_t blockcur = task-&gt;position;</span>
-<span class="lineNum">      49 </span><span class="lineCov">      42603 :         unsigned char* buffer = task-&gt;buffer;</span>
+<span class="lineNum">      44 </span><span class="lineCov">      42590 :         struct snapraid_io* io = worker-&gt;io;</span>
+<span class="lineNum">      45 </span><span class="lineCov">      42590 :         struct snapraid_state* state = io-&gt;state;</span>
+<span class="lineNum">      46 </span><span class="lineCov">      42590 :         struct snapraid_handle* handle = worker-&gt;handle;</span>
+<span class="lineNum">      47 </span><span class="lineCov">      42590 :         struct snapraid_disk* disk = handle-&gt;disk;</span>
+<span class="lineNum">      48 </span><span class="lineCov">      42590 :         block_off_t blockcur = task-&gt;position;</span>
+<span class="lineNum">      49 </span><span class="lineCov">      42590 :         unsigned char* buffer = task-&gt;buffer;</span>
 <span class="lineNum">      50 </span>            :         int ret;
 <span class="lineNum">      51 </span>            :         char esc_buffer[ESC_MAX];
 <span class="lineNum">      52 </span>            : 
 <span class="lineNum">      53 </span>            :         /* if the disk position is not used */
-<span class="lineNum">      54 </span><span class="lineCov">      42603 :         if (!disk) {</span>
+<span class="lineNum">      54 </span><span class="lineCov">      42590 :         if (!disk) {</span>
 <span class="lineNum">      55 </span>            :                 /* use an empty block */
-<span class="lineNum">      56 </span><span class="lineCov">       4687 :                 memset(buffer, 0, state-&gt;block_size);</span>
-<span class="lineNum">      57 </span><span class="lineCov">       4687 :                 task-&gt;state = TASK_STATE_DONE;</span>
-<span class="lineNum">      58 </span><span class="lineCov">       9918 :                 return;</span>
+<span class="lineNum">      56 </span><span class="lineCov">       4686 :                 memset(buffer, 0, state-&gt;block_size);</span>
+<span class="lineNum">      57 </span><span class="lineCov">       4686 :                 task-&gt;state = TASK_STATE_DONE;</span>
+<span class="lineNum">      58 </span><span class="lineCov">       9916 :                 return;</span>
 <span class="lineNum">      59 </span>            :         }
 <span class="lineNum">      60 </span>            : 
 <span class="lineNum">      61 </span>            :         /* get the block */
-<span class="lineNum">      62 </span><span class="lineCov">      37916 :         task-&gt;block = fs_par2block_find(disk, blockcur);</span>
+<span class="lineNum">      62 </span><span class="lineCov">      37904 :         task-&gt;block = fs_par2block_find(disk, blockcur);</span>
 <span class="lineNum">      63 </span>            : 
 <span class="lineNum">      64 </span>            :         /* if the block is not used */
-<span class="lineNum">      65 </span><span class="lineCov">      37888 :         if (!block_has_file(task-&gt;block)) {</span>
+<span class="lineNum">      65 </span><span class="lineCov">      37878 :         if (!block_has_file(task-&gt;block)) {</span>
 <span class="lineNum">      66 </span>            :                 /* use an empty block */
 <span class="lineNum">      67 </span><span class="lineCov">        544 :                 memset(buffer, 0, state-&gt;block_size);</span>
 <span class="lineNum">      68 </span><span class="lineCov">        544 :                 task-&gt;state = TASK_STATE_DONE;</span>
@@ -132,13 +132,13 @@
 <span class="lineNum">      70 </span>            :         }
 <span class="lineNum">      71 </span>            : 
 <span class="lineNum">      72 </span>            :         /* get the file of this block */
-<span class="lineNum">      73 </span><span class="lineCov">      37334 :         task-&gt;file = fs_par2file_get(disk, blockcur, &amp;task-&gt;file_pos);</span>
+<span class="lineNum">      73 </span><span class="lineCov">      37320 :         task-&gt;file = fs_par2file_get(disk, blockcur, &amp;task-&gt;file_pos);</span>
 <span class="lineNum">      74 </span>            : 
 <span class="lineNum">      75 </span>            :         /* if the file is different than the current one, close it */
-<span class="lineNum">      76 </span><span class="lineCov">      37352 :         if (handle-&gt;file != 0 &amp;&amp; handle-&gt;file != task-&gt;file) {</span>
+<span class="lineNum">      76 </span><span class="lineCov">      37335 :         if (handle-&gt;file != 0 &amp;&amp; handle-&gt;file != task-&gt;file) {</span>
 <span class="lineNum">      77 </span>            :                 /* keep a pointer at the file we are going to close for error reporting */
-<span class="lineNum">      78 </span><span class="lineCov">      15083 :                 struct snapraid_file* report = handle-&gt;file;</span>
-<span class="lineNum">      79 </span><span class="lineCov">      15083 :                 ret = handle_close(handle);</span>
+<span class="lineNum">      78 </span><span class="lineCov">      15082 :                 struct snapraid_file* report = handle-&gt;file;</span>
+<span class="lineNum">      79 </span><span class="lineCov">      15082 :                 ret = handle_close(handle);</span>
 <span class="lineNum">      80 </span><span class="lineCov">      15071 :                 if (ret == -1) {</span>
 <span class="lineNum">      81 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">      82 </span>            :                         /* This one is really an unexpected error, because we are only reading */
@@ -162,8 +162,8 @@
 <span class="lineNum">     100 </span>            :                 }
 <span class="lineNum">     101 </span>            :         }
 <span class="lineNum">     102 </span>            : 
-<span class="lineNum">     103 </span><span class="lineCov">      37340 :         ret = handle_open(handle, task-&gt;file, state-&gt;file_mode, log_error, 0);</span>
-<span class="lineNum">     104 </span><span class="lineCov">      37368 :         if (ret == -1) {</span>
+<span class="lineNum">     103 </span><span class="lineCov">      37324 :         ret = handle_open(handle, task-&gt;file, state-&gt;file_mode, log_error, 0);</span>
+<span class="lineNum">     104 </span><span class="lineCov">      37350 :         if (ret == -1) {</span>
 <span class="lineNum">     105 </span><span class="lineNoCov">          0 :                 if (errno == EIO) {</span>
 <span class="lineNum">     106 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">     107 </span>            :                         log_tag(&quot;error:%u:%s:%s: Open EIO error. %s\n&quot;, blockcur, disk-&gt;name, esc_tag(task-&gt;file-&gt;sub, esc_buffer), strerror(errno));
@@ -180,8 +180,8 @@
 <span class="lineNum">     118 </span><span class="lineNoCov">          0 :                 return;</span>
 <span class="lineNum">     119 </span>            :         }
 <span class="lineNum">     120 </span>            : 
-<span class="lineNum">     121 </span><span class="lineCov">      37368 :         task-&gt;read_size = handle_read(handle, task-&gt;file_pos, buffer, state-&gt;block_size, log_error, 0);</span>
-<span class="lineNum">     122 </span><span class="lineCov">      37295 :         if (task-&gt;read_size == -1) {</span>
+<span class="lineNum">     121 </span><span class="lineCov">      37350 :         task-&gt;read_size = handle_read(handle, task-&gt;file_pos, buffer, state-&gt;block_size, log_error, 0);</span>
+<span class="lineNum">     122 </span><span class="lineCov">      37281 :         if (task-&gt;read_size == -1) {</span>
 <span class="lineNum">     123 </span><span class="lineNoCov">          0 :                 if (errno == EIO) {</span>
 <span class="lineNum">     124 </span><span class="lineNoCov">          0 :                         log_tag(&quot;error:%u:%s:%s: Read EIO error at position %u. %s\n&quot;, blockcur, disk-&gt;name, esc_tag(task-&gt;file-&gt;sub, esc_buffer), task-&gt;file_pos, strerror(errno));</span>
 <span class="lineNum">     125 </span><span class="lineNoCov">          0 :                         log_error(&quot;Input/Output error in file '%s' at position '%u'\n&quot;, handle-&gt;path, task-&gt;file_pos);</span>
@@ -195,24 +195,24 @@
 <span class="lineNum">     133 </span>            :         }
 <span class="lineNum">     134 </span>            : 
 <span class="lineNum">     135 </span>            :         /* store the path of the opened file */
-<span class="lineNum">     136 </span><span class="lineCov">      37295 :         pathcpy(task-&gt;path, sizeof(task-&gt;path), handle-&gt;path);</span>
+<span class="lineNum">     136 </span><span class="lineCov">      37281 :         pathcpy(task-&gt;path, sizeof(task-&gt;path), handle-&gt;path);</span>
 <span class="lineNum">     137 </span>            : 
-<span class="lineNum">     138 </span><span class="lineCov">      37327 :         task-&gt;state = TASK_STATE_DONE;</span>
+<span class="lineNum">     138 </span><span class="lineCov">      37299 :         task-&gt;state = TASK_STATE_DONE;</span>
 <a name="139"><span class="lineNum">     139 </span>            : }</a>
 <span class="lineNum">     140 </span>            : 
-<span class="lineNum">     141 </span><span class="lineCov">      42602 : static void dry_parity_reader(struct snapraid_worker* worker, struct snapraid_task* task)</span>
+<span class="lineNum">     141 </span><span class="lineCov">      42604 : static void dry_parity_reader(struct snapraid_worker* worker, struct snapraid_task* task)</span>
 <span class="lineNum">     142 </span>            : {
-<span class="lineNum">     143 </span><span class="lineCov">      42602 :         struct snapraid_io* io = worker-&gt;io;</span>
-<span class="lineNum">     144 </span><span class="lineCov">      42602 :         struct snapraid_state* state = io-&gt;state;</span>
-<span class="lineNum">     145 </span><span class="lineCov">      42602 :         struct snapraid_parity_handle* parity_handle = worker-&gt;parity_handle;</span>
-<span class="lineNum">     146 </span><span class="lineCov">      42602 :         unsigned level = parity_handle-&gt;level;</span>
-<span class="lineNum">     147 </span><span class="lineCov">      42602 :         block_off_t blockcur = task-&gt;position;</span>
-<span class="lineNum">     148 </span><span class="lineCov">      42602 :         unsigned char* buffer = task-&gt;buffer;</span>
+<span class="lineNum">     143 </span><span class="lineCov">      42604 :         struct snapraid_io* io = worker-&gt;io;</span>
+<span class="lineNum">     144 </span><span class="lineCov">      42604 :         struct snapraid_state* state = io-&gt;state;</span>
+<span class="lineNum">     145 </span><span class="lineCov">      42604 :         struct snapraid_parity_handle* parity_handle = worker-&gt;parity_handle;</span>
+<span class="lineNum">     146 </span><span class="lineCov">      42604 :         unsigned level = parity_handle-&gt;level;</span>
+<span class="lineNum">     147 </span><span class="lineCov">      42604 :         block_off_t blockcur = task-&gt;position;</span>
+<span class="lineNum">     148 </span><span class="lineCov">      42604 :         unsigned char* buffer = task-&gt;buffer;</span>
 <span class="lineNum">     149 </span>            :         int ret;
 <span class="lineNum">     150 </span>            : 
 <span class="lineNum">     151 </span>            :         /* read the parity */
-<span class="lineNum">     152 </span><span class="lineCov">      42602 :         ret = parity_read(parity_handle, blockcur, buffer, state-&gt;block_size, log_error);</span>
-<span class="lineNum">     153 </span><span class="lineCov">      42572 :         if (ret == -1) {</span>
+<span class="lineNum">     152 </span><span class="lineCov">      42604 :         ret = parity_read(parity_handle, blockcur, buffer, state-&gt;block_size, log_error);</span>
+<span class="lineNum">     153 </span><span class="lineCov">      42568 :         if (ret == -1) {</span>
 <span class="lineNum">     154 </span><span class="lineNoCov">          0 :                 if (errno == EIO) {</span>
 <span class="lineNum">     155 </span><span class="lineNoCov">          0 :                         log_tag(&quot;parity_error:%u:%s: Read EIO error. %s\n&quot;, blockcur, lev_config_name(level), strerror(errno));</span>
 <span class="lineNum">     156 </span><span class="lineNoCov">          0 :                         log_error(&quot;Input/Output error in parity '%s' at position '%u'\n&quot;, lev_config_name(level), blockcur);</span>
@@ -225,7 +225,7 @@
 <span class="lineNum">     163 </span><span class="lineNoCov">          0 :                 return;</span>
 <span class="lineNum">     164 </span>            :         }
 <span class="lineNum">     165 </span>            : 
-<span class="lineNum">     166 </span><span class="lineCov">      42572 :         task-&gt;state = TASK_STATE_DONE;</span>
+<span class="lineNum">     166 </span><span class="lineCov">      42568 :         task-&gt;state = TASK_STATE_DONE;</span>
 <a name="167"><span class="lineNum">     167 </span>            : }</a>
 <span class="lineNum">     168 </span>            : 
 <span class="lineNum">     169 </span><span class="lineCov">          2 : static int state_dry_process(struct snapraid_state* state, struct snapraid_parity_handle* parity_handle, block_off_t blockstart, block_off_t blockmax)</span>

@@ -125,10 +125,10 @@
 <span class="lineNum">      63 </span><span class="lineNoCov">          0 :         return 0;</span>
 <a name="64"><span class="lineNum">      64 </span>            : }</a>
 <span class="lineNum">      65 </span>            : 
-<span class="lineNum">      66 </span><span class="lineCov">     186562 : const char* lev_config_name(unsigned l)</span>
+<span class="lineNum">      66 </span><span class="lineCov">     186548 : const char* lev_config_name(unsigned l)</span>
 <span class="lineNum">      67 </span>            : {
-<span class="lineNum">      68 </span><span class="lineCov">     186562 :         switch (l) {</span>
-<span class="lineNum">      69 </span><span class="lineCov">      86860 :         case 0 : return &quot;parity&quot;;</span>
+<span class="lineNum">      68 </span><span class="lineCov">     186548 :         switch (l) {</span>
+<span class="lineNum">      69 </span><span class="lineCov">      86846 :         case 0 : return &quot;parity&quot;;</span>
 <span class="lineNum">      70 </span><span class="lineCov">      60620 :         case 1 : return &quot;2-parity&quot;;</span>
 <span class="lineNum">      71 </span><span class="lineCov">       9810 :         case 2 : return &quot;3-parity&quot;;</span>
 <span class="lineNum">      72 </span><span class="lineCov">       9785 :         case 3 : return &quot;4-parity&quot;;</span>
@@ -1864,12 +1864,12 @@
 <span class="lineNum">    1802 </span>            :                 int c;
 <span class="lineNum">    1803 </span>            : 
 <span class="lineNum">    1804 </span>            :                 /* read the command */
-<span class="lineNum">    1805 </span><span class="lineCov">    3735977 :                 c = sgetc(f);</span>
-<span class="lineNum">    1806 </span><span class="lineCov">    3735977 :                 if (c == EOF) {</span>
+<span class="lineNum">    1805 </span><span class="lineCov">    3735825 :                 c = sgetc(f);</span>
+<span class="lineNum">    1806 </span><span class="lineCov">    3735825 :                 if (c == EOF) {</span>
 <span class="lineNum">    1807 </span><span class="lineCov">        251 :                         break;</span>
 <span class="lineNum">    1808 </span>            :                 }
 <span class="lineNum">    1809 </span>            : 
-<span class="lineNum">    1810 </span><span class="lineCov">    3735726 :                 if (c == 'f') {</span>
+<span class="lineNum">    1810 </span><span class="lineCov">    3735574 :                 if (c == 'f') {</span>
 <span class="lineNum">    1811 </span>            :                         /* file */
 <span class="lineNum">    1812 </span>            :                         char sub[PATH_MAX];
 <span class="lineNum">    1813 </span>            :                         uint64_t v_size;
@@ -1881,25 +1881,25 @@
 <span class="lineNum">    1819 </span>            :                         struct snapraid_disk* disk;
 <span class="lineNum">    1820 </span>            :                         uint32_t mapping;
 <span class="lineNum">    1821 </span>            : 
-<span class="lineNum">    1822 </span><span class="lineCov">    3612169 :                         ret = sgetb32(f, &amp;mapping);</span>
-<span class="lineNum">    1823 </span><span class="lineCov">    3612169 :                         if (ret &lt; 0 || mapping &gt;= mapping_max) {</span>
+<span class="lineNum">    1822 </span><span class="lineCov">    3612018 :                         ret = sgetb32(f, &amp;mapping);</span>
+<span class="lineNum">    1823 </span><span class="lineCov">    3612018 :                         if (ret &lt; 0 || mapping &gt;= mapping_max) {</span>
 <span class="lineNum">    1824 </span>            :                                 /* LCOV_EXCL_START */
 <span class="lineNum">    1825 </span>            :                                 decoding_error(path, f);
 <span class="lineNum">    1826 </span>            :                                 log_fatal(&quot;Internal inconsistency in mapping index!\n&quot;);
 <span class="lineNum">    1827 </span>            :                                 os_abort();
 <span class="lineNum">    1828 </span>            :                                 /* LCOV_EXCL_STOP */
 <span class="lineNum">    1829 </span>            :                         }
-<span class="lineNum">    1830 </span><span class="lineCov">    3612169 :                         disk = tommy_array_get(&amp;disk_mapping, mapping);</span>
+<span class="lineNum">    1830 </span><span class="lineCov">    3612018 :                         disk = tommy_array_get(&amp;disk_mapping, mapping);</span>
 <span class="lineNum">    1831 </span>            : 
-<span class="lineNum">    1832 </span><span class="lineCov">    3612169 :                         ret = sgetb64(f, &amp;v_size);</span>
-<span class="lineNum">    1833 </span><span class="lineCov">    3612169 :                         if (ret &lt; 0) {</span>
+<span class="lineNum">    1832 </span><span class="lineCov">    3612018 :                         ret = sgetb64(f, &amp;v_size);</span>
+<span class="lineNum">    1833 </span><span class="lineCov">    3612018 :                         if (ret &lt; 0) {</span>
 <span class="lineNum">    1834 </span>            :                                 /* LCOV_EXCL_START */
 <span class="lineNum">    1835 </span>            :                                 decoding_error(path, f);
 <span class="lineNum">    1836 </span>            :                                 os_abort();
 <span class="lineNum">    1837 </span>            :                                 /* LCOV_EXCL_STOP */
 <span class="lineNum">    1838 </span>            :                         }
 <span class="lineNum">    1839 </span>            : 
-<span class="lineNum">    1840 </span><span class="lineCov">    3612169 :                         if (state-&gt;block_size == 0) {</span>
+<span class="lineNum">    1840 </span><span class="lineCov">    3612018 :                         if (state-&gt;block_size == 0) {</span>
 <span class="lineNum">    1841 </span>            :                                 /* LCOV_EXCL_START */
 <span class="lineNum">    1842 </span>            :                                 decoding_error(path, f);
 <span class="lineNum">    1843 </span>            :                                 log_fatal(&quot;Internal incosistency due zero blocksize!\n&quot;);
@@ -1908,7 +1908,7 @@
 <span class="lineNum">    1846 </span>            :                         }
 <span class="lineNum">    1847 </span>            : 
 <span class="lineNum">    1848 </span>            :                         /* check for impossible file size to avoid to crash for a too big allocation */
-<span class="lineNum">    1849 </span><span class="lineCov">    3612169 :                         if (v_size / state-&gt;block_size &gt; blockmax) {</span>
+<span class="lineNum">    1849 </span><span class="lineCov">    3612018 :                         if (v_size / state-&gt;block_size &gt; blockmax) {</span>
 <span class="lineNum">    1850 </span>            :                                 /* LCOV_EXCL_START */
 <span class="lineNum">    1851 </span>            :                                 decoding_error(path, f);
 <span class="lineNum">    1852 </span>            :                                 log_fatal(&quot;Internal inconsistency in file size too big!\n&quot;);
@@ -1916,16 +1916,16 @@
 <span class="lineNum">    1854 </span>            :                                 /* LCOV_EXCL_STOP */
 <span class="lineNum">    1855 </span>            :                         }
 <span class="lineNum">    1856 </span>            : 
-<span class="lineNum">    1857 </span><span class="lineCov">    3612169 :                         ret = sgetb64(f, &amp;v_mtime_sec);</span>
-<span class="lineNum">    1858 </span><span class="lineCov">    3612169 :                         if (ret &lt; 0) {</span>
+<span class="lineNum">    1857 </span><span class="lineCov">    3612018 :                         ret = sgetb64(f, &amp;v_mtime_sec);</span>
+<span class="lineNum">    1858 </span><span class="lineCov">    3612018 :                         if (ret &lt; 0) {</span>
 <span class="lineNum">    1859 </span>            :                                 /* LCOV_EXCL_START */
 <span class="lineNum">    1860 </span>            :                                 decoding_error(path, f);
 <span class="lineNum">    1861 </span>            :                                 os_abort();
 <span class="lineNum">    1862 </span>            :                                 /* LCOV_EXCL_STOP */
 <span class="lineNum">    1863 </span>            :                         }
 <span class="lineNum">    1864 </span>            : 
-<span class="lineNum">    1865 </span><span class="lineCov">    3612169 :                         ret = sgetb32(f, &amp;v_mtime_nsec);</span>
-<span class="lineNum">    1866 </span><span class="lineCov">    3612169 :                         if (ret &lt; 0) {</span>
+<span class="lineNum">    1865 </span><span class="lineCov">    3612018 :                         ret = sgetb32(f, &amp;v_mtime_nsec);</span>
+<span class="lineNum">    1866 </span><span class="lineCov">    3612018 :                         if (ret &lt; 0) {</span>
 <span class="lineNum">    1867 </span>            :                                 /* LCOV_EXCL_START */
 <span class="lineNum">    1868 </span>            :                                 decoding_error(path, f);
 <span class="lineNum">    1869 </span>            :                                 os_abort();
@@ -1933,27 +1933,27 @@
 <span class="lineNum">    1871 </span>            :                         }
 <span class="lineNum">    1872 </span>            : 
 <span class="lineNum">    1873 </span>            :                         /* STAT_NSEC_INVALID is encoded as 0 */
-<span class="lineNum">    1874 </span><span class="lineCov">    3612169 :                         if (v_mtime_nsec == 0)</span>
+<span class="lineNum">    1874 </span><span class="lineCov">    3612018 :                         if (v_mtime_nsec == 0)</span>
 <span class="lineNum">    1875 </span><span class="lineNoCov">          0 :                                 v_mtime_nsec = STAT_NSEC_INVALID;</span>
 <span class="lineNum">    1876 </span>            :                         else
-<span class="lineNum">    1877 </span><span class="lineCov">    3612169 :                                 --v_mtime_nsec;</span>
+<span class="lineNum">    1877 </span><span class="lineCov">    3612018 :                                 --v_mtime_nsec;</span>
 <span class="lineNum">    1878 </span>            : 
-<span class="lineNum">    1879 </span><span class="lineCov">    3612169 :                         ret = sgetb64(f, &amp;v_inode);</span>
-<span class="lineNum">    1880 </span><span class="lineCov">    3612169 :                         if (ret &lt; 0) {</span>
+<span class="lineNum">    1879 </span><span class="lineCov">    3612018 :                         ret = sgetb64(f, &amp;v_inode);</span>
+<span class="lineNum">    1880 </span><span class="lineCov">    3612018 :                         if (ret &lt; 0) {</span>
 <span class="lineNum">    1881 </span>            :                                 /* LCOV_EXCL_START */
 <span class="lineNum">    1882 </span>            :                                 decoding_error(path, f);
 <span class="lineNum">    1883 </span>            :                                 os_abort();
 <span class="lineNum">    1884 </span>            :                                 /* LCOV_EXCL_STOP */
 <span class="lineNum">    1885 </span>            :                         }
 <span class="lineNum">    1886 </span>            : 
-<span class="lineNum">    1887 </span><span class="lineCov">    3612169 :                         ret = sgetbs(f, sub, sizeof(sub));</span>
-<span class="lineNum">    1888 </span><span class="lineCov">    3612169 :                         if (ret &lt; 0) {</span>
+<span class="lineNum">    1887 </span><span class="lineCov">    3612018 :                         ret = sgetbs(f, sub, sizeof(sub));</span>
+<span class="lineNum">    1888 </span><span class="lineCov">    3612018 :                         if (ret &lt; 0) {</span>
 <span class="lineNum">    1889 </span>            :                                 /* LCOV_EXCL_START */
 <span class="lineNum">    1890 </span>            :                                 decoding_error(path, f);
 <span class="lineNum">    1891 </span>            :                                 os_abort();
 <span class="lineNum">    1892 </span>            :                                 /* LCOV_EXCL_STOP */
 <span class="lineNum">    1893 </span>            :                         }
-<span class="lineNum">    1894 </span><span class="lineCov">    3612169 :                         if (!*sub) {</span>
+<span class="lineNum">    1894 </span><span class="lineCov">    3612018 :                         if (!*sub) {</span>
 <span class="lineNum">    1895 </span>            :                                 /* LCOV_EXCL_START */
 <span class="lineNum">    1896 </span>            :                                 decoding_error(path, f);
 <span class="lineNum">    1897 </span>            :                                 log_fatal(&quot;Internal inconsistency for null file!\n&quot;);
@@ -1962,40 +1962,40 @@
 <span class="lineNum">    1900 </span>            :                         }
 <span class="lineNum">    1901 </span>            : 
 <span class="lineNum">    1902 </span>            :                         /* allocate the file */
-<span class="lineNum">    1903 </span><span class="lineCov">    3612169 :                         file = file_alloc(state-&gt;block_size, sub, v_size, v_mtime_sec, v_mtime_nsec, v_inode, 0);</span>
+<span class="lineNum">    1903 </span><span class="lineCov">    3612018 :                         file = file_alloc(state-&gt;block_size, sub, v_size, v_mtime_sec, v_mtime_nsec, v_inode, 0);</span>
 <span class="lineNum">    1904 </span>            : 
 <span class="lineNum">    1905 </span>            :                         /* insert the file in the file containers */
-<span class="lineNum">    1906 </span><span class="lineCov">    3612169 :                         tommy_hashdyn_insert(&amp;disk-&gt;inodeset, &amp;file-&gt;nodeset, file, file_inode_hash(file-&gt;inode));</span>
-<span class="lineNum">    1907 </span><span class="lineCov">    3612169 :                         tommy_hashdyn_insert(&amp;disk-&gt;pathset, &amp;file-&gt;pathset, file, file_path_hash(file-&gt;sub));</span>
-<span class="lineNum">    1908 </span><span class="lineCov">    3612169 :                         tommy_hashdyn_insert(&amp;disk-&gt;stampset, &amp;file-&gt;stampset, file, file_stamp_hash(file-&gt;size, file-&gt;mtime_sec, file-&gt;mtime_nsec));</span>
-<span class="lineNum">    1909 </span><span class="lineCov">    3612169 :                         tommy_list_insert_tail(&amp;disk-&gt;filelist, &amp;file-&gt;nodelist, file);</span>
+<span class="lineNum">    1906 </span><span class="lineCov">    3612018 :                         tommy_hashdyn_insert(&amp;disk-&gt;inodeset, &amp;file-&gt;nodeset, file, file_inode_hash(file-&gt;inode));</span>
+<span class="lineNum">    1907 </span><span class="lineCov">    3612018 :                         tommy_hashdyn_insert(&amp;disk-&gt;pathset, &amp;file-&gt;pathset, file, file_path_hash(file-&gt;sub));</span>
+<span class="lineNum">    1908 </span><span class="lineCov">    3612018 :                         tommy_hashdyn_insert(&amp;disk-&gt;stampset, &amp;file-&gt;stampset, file, file_stamp_hash(file-&gt;size, file-&gt;mtime_sec, file-&gt;mtime_nsec));</span>
+<span class="lineNum">    1909 </span><span class="lineCov">    3612018 :                         tommy_list_insert_tail(&amp;disk-&gt;filelist, &amp;file-&gt;nodelist, file);</span>
 <span class="lineNum">    1910 </span>            : 
 <span class="lineNum">    1911 </span>            :                         /* read all the blocks */
-<span class="lineNum">    1912 </span><span class="lineCov">    3612169 :                         v_idx = 0;</span>
-<span class="lineNum">    1913 </span><span class="lineCov">   10857200 :                         while (v_idx &lt; file-&gt;blockmax) {</span>
+<span class="lineNum">    1912 </span><span class="lineCov">    3612018 :                         v_idx = 0;</span>
+<span class="lineNum">    1913 </span><span class="lineCov">   10856725 :                         while (v_idx &lt; file-&gt;blockmax) {</span>
 <span class="lineNum">    1914 </span>            :                                 block_off_t v_pos;
 <span class="lineNum">    1915 </span>            :                                 uint32_t v_count;
 <span class="lineNum">    1916 </span>            : 
 <span class="lineNum">    1917 </span>            :                                 /* get the &quot;subcommand */
-<span class="lineNum">    1918 </span><span class="lineCov">    3632862 :                                 c = sgetc(f);</span>
+<span class="lineNum">    1918 </span><span class="lineCov">    3632690 :                                 c = sgetc(f);</span>
 <span class="lineNum">    1919 </span>            : 
-<span class="lineNum">    1920 </span><span class="lineCov">    3632862 :                                 ret = sgetb32(f, &amp;v_pos);</span>
-<span class="lineNum">    1921 </span><span class="lineCov">    3632862 :                                 if (ret &lt; 0) {</span>
+<span class="lineNum">    1920 </span><span class="lineCov">    3632690 :                                 ret = sgetb32(f, &amp;v_pos);</span>
+<span class="lineNum">    1921 </span><span class="lineCov">    3632690 :                                 if (ret &lt; 0) {</span>
 <span class="lineNum">    1922 </span>            :                                         /* LCOV_EXCL_START */
 <span class="lineNum">    1923 </span>            :                                         decoding_error(path, f);
 <span class="lineNum">    1924 </span>            :                                         os_abort();
 <span class="lineNum">    1925 </span>            :                                         /* LCOV_EXCL_STOP */
 <span class="lineNum">    1926 </span>            :                                 }
 <span class="lineNum">    1927 </span>            : 
-<span class="lineNum">    1928 </span><span class="lineCov">    3632862 :                                 ret = sgetb32(f, &amp;v_count);</span>
-<span class="lineNum">    1929 </span><span class="lineCov">    3632862 :                                 if (ret &lt; 0) {</span>
+<span class="lineNum">    1928 </span><span class="lineCov">    3632690 :                                 ret = sgetb32(f, &amp;v_count);</span>
+<span class="lineNum">    1929 </span><span class="lineCov">    3632690 :                                 if (ret &lt; 0) {</span>
 <span class="lineNum">    1930 </span>            :                                         /* LCOV_EXCL_START */
 <span class="lineNum">    1931 </span>            :                                         decoding_error(path, f);
 <span class="lineNum">    1932 </span>            :                                         os_abort();
 <span class="lineNum">    1933 </span>            :                                         /* LCOV_EXCL_STOP */
 <span class="lineNum">    1934 </span>            :                                 }
 <span class="lineNum">    1935 </span>            : 
-<span class="lineNum">    1936 </span><span class="lineCov">    3632862 :                                 if (v_idx + v_count &gt; file-&gt;blockmax) {</span>
+<span class="lineNum">    1936 </span><span class="lineCov">    3632690 :                                 if (v_idx + v_count &gt; file-&gt;blockmax) {</span>
 <span class="lineNum">    1937 </span>            :                                         /* LCOV_EXCL_START */
 <span class="lineNum">    1938 </span>            :                                         decoding_error(path, f);
 <span class="lineNum">    1939 </span>            :                                         log_fatal(&quot;Internal inconsistency in block number!\n&quot;);
@@ -2003,7 +2003,7 @@
 <span class="lineNum">    1941 </span>            :                                         /* LCOV_EXCL_STOP */
 <span class="lineNum">    1942 </span>            :                                 }
 <span class="lineNum">    1943 </span>            : 
-<span class="lineNum">    1944 </span><span class="lineCov">    3632862 :                                 if (v_pos + v_count &gt; blockmax) {</span>
+<span class="lineNum">    1944 </span><span class="lineCov">    3632689 :                                 if (v_pos + v_count &gt; blockmax) {</span>
 <span class="lineNum">    1945 </span>            :                                         /* LCOV_EXCL_START */
 <span class="lineNum">    1946 </span>            :                                         decoding_error(path, f);
 <span class="lineNum">    1947 </span>            :                                         log_fatal(&quot;Internal inconsistency in block size %u/%u!\n&quot;, blockmax, v_pos + v_count);
@@ -2038,9 +2038,9 @@
 <span class="lineNum">    1976 </span>            :                                         }
 <span class="lineNum">    1977 </span>            : 
 <span class="lineNum">    1978 </span>            :                                         /* read the hash only for 'blk/chg/rep', and not for 'new' */
-<span class="lineNum">    1979 </span><span class="lineCov">    8897030 :                                         if (c != 'n') {</span>
-<span class="lineNum">    1980 </span><span class="lineCov">    8897030 :                                                 ret = sread(f, block-&gt;hash, BLOCK_HASH_SIZE);</span>
-<span class="lineNum">    1981 </span><span class="lineCov">    8897030 :                                                 if (ret &lt; 0) {</span>
+<span class="lineNum">    1979 </span><span class="lineCov">    8896647 :                                         if (c != 'n') {</span>
+<span class="lineNum">    1980 </span><span class="lineCov">    8896647 :                                                 ret = sread(f, block-&gt;hash, BLOCK_HASH_SIZE);</span>
+<span class="lineNum">    1981 </span><span class="lineCov">    8896647 :                                                 if (ret &lt; 0) {</span>
 <span class="lineNum">    1982 </span>            :                                                         /* LCOV_EXCL_START */
 <span class="lineNum">    1983 </span>            :                                                         decoding_error(path, f);
 <span class="lineNum">    1984 </span>            :                                                         os_abort();
@@ -2053,8 +2053,8 @@
 <span class="lineNum">    1991 </span>            : 
 <span class="lineNum">    1992 </span>            :                                         /* if the block contains a hash of past data */
 <span class="lineNum">    1993 </span>            :                                         /* and we are clearing such indeterminate hashes */
-<span class="lineNum">    1994 </span><span class="lineCov">    8897030 :                                         if (state-&gt;clear_past_hash</span>
-<span class="lineNum">    1995 </span><span class="lineCov">    2543126 :                                                 &amp;&amp; block_has_past_hash(block)</span>
+<span class="lineNum">    1994 </span><span class="lineCov">    8896647 :                                         if (state-&gt;clear_past_hash</span>
+<span class="lineNum">    1995 </span><span class="lineCov">    2542743 :                                                 &amp;&amp; block_has_past_hash(block)</span>
 <span class="lineNum">    1996 </span>            :                                         ) {
 <span class="lineNum">    1997 </span>            :                                                 /* set the hash value to INVALID */
 <span class="lineNum">    1998 </span><span class="lineCov">      28006 :                                                 hash_invalid_set(block-&gt;hash);</span>
@@ -2065,8 +2065,8 @@
 <span class="lineNum">    2003 </span>            :                                         /* in other sync commands */
 <span class="lineNum">    2004 </span>            :                                         /* note that this is required only in sync, and we detect */
 <span class="lineNum">    2005 </span>            :                                         /* this using the clear_past_hash flag */
-<span class="lineNum">    2006 </span><span class="lineCov">    8897030 :                                         if (state-&gt;clear_past_hash</span>
-<span class="lineNum">    2007 </span><span class="lineCov">    2543126 :                                                 &amp;&amp; state-&gt;opt.force_nocopy</span>
+<span class="lineNum">    2006 </span><span class="lineCov">    8896647 :                                         if (state-&gt;clear_past_hash</span>
+<span class="lineNum">    2007 </span><span class="lineCov">    2542743 :                                                 &amp;&amp; state-&gt;opt.force_nocopy</span>
 <span class="lineNum">    2008 </span><span class="lineCov">      14195 :                                                 &amp;&amp; block_state_get(block) == BLOCK_STATE_REP</span>
 <span class="lineNum">    2009 </span>            :                                         ) {
 <span class="lineNum">    2010 </span>            :                                                 /* set the hash value to INVALID */
@@ -2078,25 +2078,25 @@
 <span class="lineNum">    2016 </span>            :                                         /* if we want a full reallocation, marks block as invalid parity */
 <span class="lineNum">    2017 </span>            :                                         /* note that we do this after the force_nocopy option */
 <span class="lineNum">    2018 </span>            :                                         /* to avoid to mixup the two things */
-<span class="lineNum">    2019 </span><span class="lineCov">    8897030 :                                         if (state-&gt;opt.force_realloc</span>
+<span class="lineNum">    2019 </span><span class="lineCov">    8896647 :                                         if (state-&gt;opt.force_realloc</span>
 <span class="lineNum">    2020 </span><span class="lineCov">      27826 :                                                 &amp;&amp; block_state_get(block) == BLOCK_STATE_BLK) {</span>
 <span class="lineNum">    2021 </span>            :                                                 /* convert from BLK to REP */
 <span class="lineNum">    2022 </span><span class="lineCov">      27826 :                                                 block_state_set(block, BLOCK_STATE_REP);</span>
 <span class="lineNum">    2023 </span>            :                                         }
 <span class="lineNum">    2024 </span>            : 
 <span class="lineNum">    2025 </span>            :                                         /* set the parity association */
-<span class="lineNum">    2026 </span><span class="lineCov">    8897030 :                                         fs_allocate(disk, v_pos, file, v_idx);</span>
+<span class="lineNum">    2026 </span><span class="lineCov">    8896647 :                                         fs_allocate(disk, v_pos, file, v_idx);</span>
 <span class="lineNum">    2027 </span>            : 
 <span class="lineNum">    2028 </span>            :                                         /* go to the next block */
-<span class="lineNum">    2029 </span><span class="lineCov">    8897030 :                                         ++v_idx;</span>
-<span class="lineNum">    2030 </span><span class="lineCov">    8897030 :                                         ++v_pos;</span>
-<span class="lineNum">    2031 </span><span class="lineCov">    8897030 :                                         --v_count;</span>
+<span class="lineNum">    2029 </span><span class="lineCov">    8896647 :                                         ++v_idx;</span>
+<span class="lineNum">    2030 </span><span class="lineCov">    8896647 :                                         ++v_pos;</span>
+<span class="lineNum">    2031 </span><span class="lineCov">    8896647 :                                         --v_count;</span>
 <span class="lineNum">    2032 </span>            :                                 }
 <span class="lineNum">    2033 </span>            :                         }
 <span class="lineNum">    2034 </span>            : 
 <span class="lineNum">    2035 </span>            :                         /* stat */
-<span class="lineNum">    2036 </span><span class="lineCov">    3612169 :                         ++count_file;</span>
-<span class="lineNum">    2037 </span><span class="lineCov">     123557 :                 } else if (c == 'i') {</span>
+<span class="lineNum">    2036 </span><span class="lineCov">    3612017 :                         ++count_file;</span>
+<span class="lineNum">    2037 </span><span class="lineCov">     123556 :                 } else if (c == 'i') {</span>
 <span class="lineNum">    2038 </span>            :                         /* &quot;inf&quot; command */
 <span class="lineNum">    2039 </span>            :                         snapraid_info info;
 <span class="lineNum">    2040 </span>            :                         uint32_t v_pos;
@@ -2111,7 +2111,7 @@
 <span class="lineNum">    2049 </span>            :                         }
 <span class="lineNum">    2050 </span>            : 
 <span class="lineNum">    2051 </span><span class="lineCov">        251 :                         v_pos = 0;</span>
-<span class="lineNum">    2052 </span><span class="lineCov">      44707 :                         while (v_pos &lt; blockmax) {</span>
+<span class="lineNum">    2052 </span><span class="lineCov">      55933 :                         while (v_pos &lt; blockmax) {</span>
 <span class="lineNum">    2053 </span>            :                                 int bad;
 <span class="lineNum">    2054 </span>            :                                 int rehash;
 <span class="lineNum">    2055 </span>            :                                 int justsynced;
@@ -2119,15 +2119,15 @@
 <span class="lineNum">    2057 </span>            :                                 uint32_t flag;
 <span class="lineNum">    2058 </span>            :                                 uint32_t v_count;
 <span class="lineNum">    2059 </span>            : 
-<span class="lineNum">    2060 </span><span class="lineCov">      44205 :                                 ret = sgetb32(f, &amp;v_count);</span>
-<span class="lineNum">    2061 </span><span class="lineCov">      44205 :                                 if (ret &lt; 0) {</span>
+<span class="lineNum">    2060 </span><span class="lineCov">      55431 :                                 ret = sgetb32(f, &amp;v_count);</span>
+<span class="lineNum">    2061 </span><span class="lineCov">      55431 :                                 if (ret &lt; 0) {</span>
 <span class="lineNum">    2062 </span>            :                                         /* LCOV_EXCL_START */
 <span class="lineNum">    2063 </span>            :                                         decoding_error(path, f);
 <span class="lineNum">    2064 </span>            :                                         os_abort();
 <span class="lineNum">    2065 </span>            :                                         /* LCOV_EXCL_STOP */
 <span class="lineNum">    2066 </span>            :                                 }
 <span class="lineNum">    2067 </span>            : 
-<span class="lineNum">    2068 </span><span class="lineCov">      44205 :                                 if (v_pos + v_count &gt; blockmax) {</span>
+<span class="lineNum">    2068 </span><span class="lineCov">      55431 :                                 if (v_pos + v_count &gt; blockmax) {</span>
 <span class="lineNum">    2069 </span>            :                                         /* LCOV_EXCL_START */
 <span class="lineNum">    2070 </span>            :                                         decoding_error(path, f);
 <span class="lineNum">    2071 </span>            :                                         log_fatal(&quot;Internal inconsistency in info size %u/%u!\n&quot;, blockmax, v_pos + v_count);
@@ -2135,8 +2135,8 @@
 <span class="lineNum">    2073 </span>            :                                         /* LCOV_EXCL_STOP */
 <span class="lineNum">    2074 </span>            :                                 }
 <span class="lineNum">    2075 </span>            : 
-<span class="lineNum">    2076 </span><span class="lineCov">      44205 :                                 ret = sgetb32(f, &amp;flag);</span>
-<span class="lineNum">    2077 </span><span class="lineCov">      44205 :                                 if (ret &lt; 0) {</span>
+<span class="lineNum">    2076 </span><span class="lineCov">      55431 :                                 ret = sgetb32(f, &amp;flag);</span>
+<span class="lineNum">    2077 </span><span class="lineCov">      55431 :                                 if (ret &lt; 0) {</span>
 <span class="lineNum">    2078 </span>            :                                         /* LCOV_EXCL_START */
 <span class="lineNum">    2079 </span>            :                                         decoding_error(path, f);
 <span class="lineNum">    2080 </span>            :                                         os_abort();
@@ -2144,10 +2144,10 @@
 <span class="lineNum">    2082 </span>            :                                 }
 <span class="lineNum">    2083 </span>            : 
 <span class="lineNum">    2084 </span>            :                                 /* if there is an info */
-<span class="lineNum">    2085 </span><span class="lineCov">      44205 :                                 if ((flag &amp; 1) != 0) {</span>
+<span class="lineNum">    2085 </span><span class="lineCov">      55431 :                                 if ((flag &amp; 1) != 0) {</span>
 <span class="lineNum">    2086 </span>            :                                         /* read the time */
-<span class="lineNum">    2087 </span><span class="lineCov">      44190 :                                         ret = sgetb32(f, &amp;t);</span>
-<span class="lineNum">    2088 </span><span class="lineCov">      44190 :                                         if (ret &lt; 0) {</span>
+<span class="lineNum">    2087 </span><span class="lineCov">      55416 :                                         ret = sgetb32(f, &amp;t);</span>
+<span class="lineNum">    2088 </span><span class="lineCov">      55416 :                                         if (ret &lt; 0) {</span>
 <span class="lineNum">    2089 </span>            :                                                 /* LCOV_EXCL_START */
 <span class="lineNum">    2090 </span>            :                                                 decoding_error(path, f);
 <span class="lineNum">    2091 </span>            :                                                 os_abort();
@@ -2155,11 +2155,11 @@
 <span class="lineNum">    2093 </span>            :                                         }
 <span class="lineNum">    2094 </span>            : 
 <span class="lineNum">    2095 </span>            :                                         /* analyze the flags */
-<span class="lineNum">    2096 </span><span class="lineCov">      44190 :                                         bad = (flag &amp; 2) != 0;</span>
-<span class="lineNum">    2097 </span><span class="lineCov">      44190 :                                         rehash = (flag &amp; 4) != 0;</span>
-<span class="lineNum">    2098 </span><span class="lineCov">      44190 :                                         justsynced = (flag &amp; 8) != 0;</span>
+<span class="lineNum">    2096 </span><span class="lineCov">      55416 :                                         bad = (flag &amp; 2) != 0;</span>
+<span class="lineNum">    2097 </span><span class="lineCov">      55416 :                                         rehash = (flag &amp; 4) != 0;</span>
+<span class="lineNum">    2098 </span><span class="lineCov">      55416 :                                         justsynced = (flag &amp; 8) != 0;</span>
 <span class="lineNum">    2099 </span>            : 
-<span class="lineNum">    2100 </span><span class="lineCov">      44190 :                                         if (rehash &amp;&amp; state-&gt;prevhash == HASH_UNDEFINED) {</span>
+<span class="lineNum">    2100 </span><span class="lineCov">      55416 :                                         if (rehash &amp;&amp; state-&gt;prevhash == HASH_UNDEFINED) {</span>
 <span class="lineNum">    2101 </span>            :                                                 /* LCOV_EXCL_START */
 <span class="lineNum">    2102 </span>            :                                                 decoding_error(path, f);
 <span class="lineNum">    2103 </span>            :                                                 log_fatal(&quot;Internal inconsistency for missing previous checksum!\n&quot;);
@@ -2167,12 +2167,12 @@
 <span class="lineNum">    2105 </span>            :                                                 /* LCOV_EXCL_STOP */
 <span class="lineNum">    2106 </span>            :                                         }
 <span class="lineNum">    2107 </span>            : 
-<span class="lineNum">    2108 </span><span class="lineCov">      44190 :                                         info = info_make(t + v_oldest, bad, rehash, justsynced);</span>
+<span class="lineNum">    2108 </span><span class="lineCov">      55416 :                                         info = info_make(t + v_oldest, bad, rehash, justsynced);</span>
 <span class="lineNum">    2109 </span>            :                                 } else {
 <span class="lineNum">    2110 </span><span class="lineCov">         15 :                                         info = 0;</span>
 <span class="lineNum">    2111 </span>            :                                 }
 <span class="lineNum">    2112 </span>            : 
-<span class="lineNum">    2113 </span><span class="lineCov">    1636221 :                                 while (v_count) {</span>
+<span class="lineNum">    2113 </span><span class="lineCov">    1658673 :                                 while (v_count) {</span>
 <span class="lineNum">    2114 </span>            :                                         /* insert the info in the array */
 <span class="lineNum">    2115 </span><span class="lineCov">    1547811 :                                         info_set(&amp;state-&gt;infoarr, v_pos, info);</span>
 <span class="lineNum">    2116 </span>            : 
@@ -2195,7 +2195,7 @@
 <span class="lineNum">    2133 </span><span class="lineCov">    1547811 :                                         --v_count;</span>
 <span class="lineNum">    2134 </span>            :                                 }
 <span class="lineNum">    2135 </span>            :                         }
-<span class="lineNum">    2136 </span><span class="lineCov">     123306 :                 } else if (c == 'h') {</span>
+<span class="lineNum">    2136 </span><span class="lineCov">     123305 :                 } else if (c == 'h') {</span>
 <span class="lineNum">    2137 </span>            :                         /* hole */
 <span class="lineNum">    2138 </span>            :                         uint32_t v_pos;
 <span class="lineNum">    2139 </span>            :                         struct snapraid_disk* disk;
@@ -2293,7 +2293,7 @@
 <span class="lineNum">    2231 </span>            :                                         /* LCOV_EXCL_STOP */
 <span class="lineNum">    2232 </span>            :                                 }
 <span class="lineNum">    2233 </span>            :                         }
-<span class="lineNum">    2234 </span><span class="lineCov">     121919 :                 } else if (c == 's') {</span>
+<span class="lineNum">    2234 </span><span class="lineCov">     121918 :                 } else if (c == 's') {</span>
 <span class="lineNum">    2235 </span>            :                         /* symlink */
 <span class="lineNum">    2236 </span>            :                         char sub[PATH_MAX];
 <span class="lineNum">    2237 </span>            :                         char linkto[PATH_MAX];
@@ -2344,7 +2344,7 @@
 <span class="lineNum">    2282 </span>            : 
 <span class="lineNum">    2283 </span>            :                         /* stat */
 <span class="lineNum">    2284 </span><span class="lineCov">     116468 :                         ++count_symlink;</span>
-<span class="lineNum">    2285 </span><span class="lineCov">       5451 :                 } else if (c == 'a') {</span>
+<span class="lineNum">    2285 </span><span class="lineCov">       5450 :                 } else if (c == 'a') {</span>
 <span class="lineNum">    2286 </span>            :                         /* hardlink */
 <span class="lineNum">    2287 </span>            :                         char sub[PATH_MAX];
 <span class="lineNum">    2288 </span>            :                         char linkto[PATH_MAX];
@@ -2403,7 +2403,7 @@
 <span class="lineNum">    2341 </span>            : 
 <span class="lineNum">    2342 </span>            :                         /* stat */
 <span class="lineNum">    2343 </span><span class="lineCov">        597 :                         ++count_hardlink;</span>
-<span class="lineNum">    2344 </span><span class="lineCov">       4854 :                 } else if (c == 'r') {</span>
+<span class="lineNum">    2344 </span><span class="lineCov">       4853 :                 } else if (c == 'r') {</span>
 <span class="lineNum">    2345 </span>            :                         /* dir */
 <span class="lineNum">    2346 </span>            :                         char sub[PATH_MAX];
 <span class="lineNum">    2347 </span>            :                         struct snapraid_dir* dir;
@@ -2445,7 +2445,7 @@
 <span class="lineNum">    2383 </span>            : 
 <span class="lineNum">    2384 </span>            :                         /* stat */
 <span class="lineNum">    2385 </span><span class="lineCov">        790 :                         ++count_dir;</span>
-<span class="lineNum">    2386 </span><span class="lineCov">       4064 :                 } else if (c == 'c') {</span>
+<span class="lineNum">    2386 </span><span class="lineCov">       4063 :                 } else if (c == 'c') {</span>
 <span class="lineNum">    2387 </span>            :                         /* get the subcommand */
 <span class="lineNum">    2388 </span><span class="lineCov">        252 :                         c = sgetc(f);</span>
 <span class="lineNum">    2389 </span>            : 
@@ -2472,7 +2472,7 @@
 <span class="lineNum">    2410 </span>            :                                 os_abort();
 <span class="lineNum">    2411 </span>            :                                 /* LCOV_EXCL_STOP */
 <span class="lineNum">    2412 </span>            :                         }
-<span class="lineNum">    2413 </span><span class="lineCov">       3812 :                 } else if (c == 'C') {</span>
+<span class="lineNum">    2413 </span><span class="lineCov">       3811 :                 } else if (c == 'C') {</span>
 <span class="lineNum">    2414 </span>            :                         /* get the sub-command */
 <span class="lineNum">    2415 </span><span class="lineCov">          4 :                         c = sgetc(f);</span>
 <span class="lineNum">    2416 </span>            : 
@@ -2499,7 +2499,7 @@
 <span class="lineNum">    2437 </span>            :                                 os_abort();
 <span class="lineNum">    2438 </span>            :                                 /* LCOV_EXCL_STOP */
 <span class="lineNum">    2439 </span>            :                         }
-<span class="lineNum">    2440 </span><span class="lineCov">       3808 :                 } else if (c == 'z') {</span>
+<span class="lineNum">    2440 </span><span class="lineCov">       3807 :                 } else if (c == 'z') {</span>
 <span class="lineNum">    2441 </span>            :                         uint32_t block_size;
 <span class="lineNum">    2442 </span>            : 
 <span class="lineNum">    2443 </span><span class="lineCov">        252 :                         ret = sgetb32(f, &amp;block_size);</span>
@@ -2531,7 +2531,7 @@
 <span class="lineNum">    2469 </span>            :                                 exit(EXIT_FAILURE);
 <span class="lineNum">    2470 </span>            :                                 /* LCOV_EXCL_STOP */
 <span class="lineNum">    2471 </span>            :                         }
-<span class="lineNum">    2472 </span><span class="lineCov">       3556 :                 } else if (c == 'y') {</span>
+<span class="lineNum">    2472 </span><span class="lineCov">       3555 :                 } else if (c == 'y') {</span>
 <span class="lineNum">    2473 </span>            :                         uint32_t hash_size;
 <span class="lineNum">    2474 </span>            : 
 <span class="lineNum">    2475 </span><span class="lineCov">        252 :                         ret = sgetb32(f, &amp;hash_size);</span>
@@ -2563,7 +2563,7 @@
 <span class="lineNum">    2501 </span>            :                                 exit(EXIT_FAILURE);
 <span class="lineNum">    2502 </span>            :                                 /* LCOV_EXCL_STOP */
 <span class="lineNum">    2503 </span>            :                         }
-<span class="lineNum">    2504 </span><span class="lineCov">       3304 :                 } else if (c == 'x') {</span>
+<span class="lineNum">    2504 </span><span class="lineCov">       3303 :                 } else if (c == 'x') {</span>
 <span class="lineNum">    2505 </span><span class="lineCov">        252 :                         ret = sgetb32(f, &amp;blockmax);</span>
 <span class="lineNum">    2506 </span><span class="lineCov">        252 :                         if (ret &lt; 0) {</span>
 <span class="lineNum">    2507 </span>            :                                 /* LCOV_EXCL_START */
@@ -2571,7 +2571,7 @@
 <span class="lineNum">    2509 </span>            :                                 os_abort();
 <span class="lineNum">    2510 </span>            :                                 /* LCOV_EXCL_STOP */
 <span class="lineNum">    2511 </span>            :                         }
-<span class="lineNum">    2512 </span><span class="lineCov">       4445 :                 } else if (c == 'm' || c == 'M') {</span>
+<span class="lineNum">    2512 </span><span class="lineCov">       4444 :                 } else if (c == 'm' || c == 'M') {</span>
 <span class="lineNum">    2513 </span>            :                         struct snapraid_map* map;
 <span class="lineNum">    2514 </span>            :                         char uuid[UUID_MAX];
 <span class="lineNum">    2515 </span>            :                         uint32_t v_pos;
@@ -2658,7 +2658,7 @@
 <span class="lineNum">    2596 </span><span class="lineCov">       1393 :                         tommy_array_grow(&amp;disk_mapping, mapping_max + 1);</span>
 <span class="lineNum">    2597 </span><span class="lineCov">       1393 :                         tommy_array_set(&amp;disk_mapping, mapping_max, disk);</span>
 <span class="lineNum">    2598 </span><span class="lineCov">       1393 :                         ++mapping_max;</span>
-<span class="lineNum">    2599 </span><span class="lineCov">       1659 :                 } else if (c == 'P') {</span>
+<span class="lineNum">    2599 </span><span class="lineCov">       1658 :                 } else if (c == 'P') {</span>
 <span class="lineNum">    2600 </span>            :                         /* from SnapRAID 7.0 the 'P' command includes the free space */
 <span class="lineNum">    2601 </span>            :                         /* from SnapRAID 11.0 the 'P' command is deprecated by 'Q' */
 <span class="lineNum">    2602 </span>            :                         char v_uuid[UUID_MAX];
@@ -2720,7 +2720,7 @@
 <span class="lineNum">    2658 </span><span class="lineNoCov">          0 :                                 state-&gt;parity[v_level].total_blocks = v_total_blocks;</span>
 <span class="lineNum">    2659 </span><span class="lineNoCov">          0 :                                 state-&gt;parity[v_level].free_blocks = v_free_blocks;</span>
 <span class="lineNum">    2660 </span>            :                         }
-<span class="lineNum">    2661 </span><span class="lineCov">       1659 :                 } else if (c == 'Q') {</span>
+<span class="lineNum">    2661 </span><span class="lineCov">       1658 :                 } else if (c == 'Q') {</span>
 <span class="lineNum">    2662 </span>            :                         /* from SnapRAID 11.0 the 'Q' command include size info and multi file support  */
 <span class="lineNum">    2663 </span>            :                         uint32_t v_level;
 <span class="lineNum">    2664 </span>            :                         uint32_t v_total_blocks;
@@ -2845,7 +2845,7 @@
 <span class="lineNum">    2783 </span>            :                                         }
 <span class="lineNum">    2784 </span>            :                                 }
 <span class="lineNum">    2785 </span>            :                         }
-<span class="lineNum">    2786 </span><span class="lineCov">        252 :                 } else if (c == 'N') {</span>
+<span class="lineNum">    2786 </span><span class="lineCov">        251 :                 } else if (c == 'N') {</span>
 <span class="lineNum">    2787 </span>            :                         uint32_t crc_stored;
 <span class="lineNum">    2788 </span>            :                         uint32_t crc_computed;
 <span class="lineNum">    2789 </span>            : 
@@ -2879,7 +2879,7 @@
 <span class="lineNum">    2817 </span>            :                         os_abort();
 <span class="lineNum">    2818 </span>            :                         /* LCOV_EXCL_STOP */
 <span class="lineNum">    2819 </span>            :                 }
-<span class="lineNum">    2820 </span><span class="lineCov">    3735725 :         }</span>
+<span class="lineNum">    2820 </span><span class="lineCov">    3735573 :         }</span>
 <span class="lineNum">    2821 </span>            : 
 <span class="lineNum">    2822 </span><span class="lineCov">        251 :         tommy_array_done(&amp;disk_mapping);</span>
 <span class="lineNum">    2823 </span>            : 
@@ -3141,30 +3141,30 @@
 <span class="lineNum">    3079 </span>            : 
 <span class="lineNum">    3080 </span>            :                         /* for all the blocks of the file */
 <span class="lineNum">    3081 </span><span class="lineCov">    1770884 :                         begin = 0;</span>
-<span class="lineNum">    3082 </span><span class="lineCov">    5323009 :                         while (begin &lt; file-&gt;blockmax) {</span>
-<span class="lineNum">    3083 </span><span class="lineCov">    1781241 :                                 unsigned v_state = block_state_get(fs_file2block_get(file, begin));</span>
-<span class="lineNum">    3084 </span><span class="lineCov">    1781241 :                                 block_off_t v_pos = fs_file2par_get(disk, file, begin);</span>
+<span class="lineNum">    3082 </span><span class="lineCov">    5322967 :                         while (begin &lt; file-&gt;blockmax) {</span>
+<span class="lineNum">    3083 </span><span class="lineCov">    1781199 :                                 unsigned v_state = block_state_get(fs_file2block_get(file, begin));</span>
+<span class="lineNum">    3084 </span><span class="lineCov">    1781199 :                                 block_off_t v_pos = fs_file2par_get(disk, file, begin);</span>
 <span class="lineNum">    3085 </span>            :                                 uint32_t v_count;
 <span class="lineNum">    3086 </span>            : 
 <span class="lineNum">    3087 </span>            :                                 block_off_t end;
 <span class="lineNum">    3088 </span>            : 
 <span class="lineNum">    3089 </span>            :                                 /* find the end of run of blocks */
-<span class="lineNum">    3090 </span><span class="lineCov">    1781241 :                                 end = begin + 1;</span>
-<span class="lineNum">    3091 </span><span class="lineCov">    6146381 :                                 while (end &lt; file-&gt;blockmax) {</span>
+<span class="lineNum">    3090 </span><span class="lineCov">    1781199 :                                 end = begin + 1;</span>
+<span class="lineNum">    3091 </span><span class="lineCov">    6146339 :                                 while (end &lt; file-&gt;blockmax) {</span>
 <span class="lineNum">    3092 </span><span class="lineCov">    2596728 :                                         if (v_state != block_state_get(fs_file2block_get(file, end)))</span>
 <span class="lineNum">    3093 </span><span class="lineCov">         12 :                                                 break;</span>
 <span class="lineNum">    3094 </span><span class="lineCov">    2596716 :                                         if (v_pos + (end - begin) != fs_file2par_get(disk, file, end))</span>
-<span class="lineNum">    3095 </span><span class="lineCov">      12817 :                                                 break;</span>
-<span class="lineNum">    3096 </span><span class="lineCov">    2583899 :                                         ++end;</span>
+<span class="lineNum">    3095 </span><span class="lineCov">      12775 :                                                 break;</span>
+<span class="lineNum">    3096 </span><span class="lineCov">    2583941 :                                         ++end;</span>
 <span class="lineNum">    3097 </span>            :                                 }
 <span class="lineNum">    3098 </span>            : 
-<span class="lineNum">    3099 </span><span class="lineCov">    1781241 :                                 switch (v_state) {</span>
+<span class="lineNum">    3099 </span><span class="lineCov">    1781199 :                                 switch (v_state) {</span>
 <span class="lineNum">    3100 </span>            :                                 case BLOCK_STATE_BLK :
-<span class="lineNum">    3101 </span><span class="lineCov">    1678555 :                                         sputc('b', f);</span>
-<span class="lineNum">    3102 </span><span class="lineCov">    1678555 :                                         break;</span>
+<span class="lineNum">    3101 </span><span class="lineCov">    1678581 :                                         sputc('b', f);</span>
+<span class="lineNum">    3102 </span><span class="lineCov">    1678581 :                                         break;</span>
 <span class="lineNum">    3103 </span>            :                                 case BLOCK_STATE_CHG :
-<span class="lineNum">    3104 </span><span class="lineCov">      67768 :                                         sputc('g', f);</span>
-<span class="lineNum">    3105 </span><span class="lineCov">      67768 :                                         break;</span>
+<span class="lineNum">    3104 </span><span class="lineCov">      67700 :                                         sputc('g', f);</span>
+<span class="lineNum">    3105 </span><span class="lineCov">      67700 :                                         break;</span>
 <span class="lineNum">    3106 </span>            :                                 case BLOCK_STATE_REP :
 <span class="lineNum">    3107 </span><span class="lineCov">      34918 :                                         sputc('p', f);</span>
 <span class="lineNum">    3108 </span><span class="lineCov">      34918 :                                         break;</span>
@@ -3175,19 +3175,19 @@
 <span class="lineNum">    3113 </span>            :                                         /* LCOV_EXCL_STOP */
 <span class="lineNum">    3114 </span>            :                                 }
 <span class="lineNum">    3115 </span>            : 
-<span class="lineNum">    3116 </span><span class="lineCov">    1781241 :                                 sputb32(v_pos, f);</span>
+<span class="lineNum">    3116 </span><span class="lineCov">    1781199 :                                 sputb32(v_pos, f);</span>
 <span class="lineNum">    3117 </span>            : 
-<span class="lineNum">    3118 </span><span class="lineCov">    1781241 :                                 v_count = end - begin;</span>
-<span class="lineNum">    3119 </span><span class="lineCov">    1781241 :                                 sputb32(v_count, f);</span>
+<span class="lineNum">    3118 </span><span class="lineCov">    1781199 :                                 v_count = end - begin;</span>
+<span class="lineNum">    3119 </span><span class="lineCov">    1781199 :                                 sputb32(v_count, f);</span>
 <span class="lineNum">    3120 </span>            : 
 <span class="lineNum">    3121 </span>            :                                 /* write hashes */
-<span class="lineNum">    3122 </span><span class="lineCov">    6146381 :                                 for (idx = begin; idx &lt; end; ++idx) {</span>
+<span class="lineNum">    3122 </span><span class="lineCov">    6146339 :                                 for (idx = begin; idx &lt; end; ++idx) {</span>
 <span class="lineNum">    3123 </span><span class="lineCov">    4365140 :                                         struct snapraid_block* block = fs_file2block_get(file, idx);</span>
 <span class="lineNum">    3124 </span>            : 
 <span class="lineNum">    3125 </span><span class="lineCov">    4365140 :                                         swrite(block-&gt;hash, BLOCK_HASH_SIZE, f);</span>
 <span class="lineNum">    3126 </span>            :                                 }
 <span class="lineNum">    3127 </span>            : 
-<span class="lineNum">    3128 </span><span class="lineCov">    1781241 :                                 if (serror(f)) {</span>
+<span class="lineNum">    3128 </span><span class="lineCov">    1781199 :                                 if (serror(f)) {</span>
 <span class="lineNum">    3129 </span>            :                                         /* LCOV_EXCL_START */
 <span class="lineNum">    3130 </span>            :                                         log_fatal(&quot;Error writing the content file '%s'. %s.\n&quot;, serrorfile(f), strerror(errno));
 <span class="lineNum">    3131 </span>            :                                         return context;
@@ -3195,7 +3195,7 @@
 <span class="lineNum">    3133 </span>            :                                 }
 <span class="lineNum">    3134 </span>            : 
 <span class="lineNum">    3135 </span>            :                                 /* next begin position */
-<span class="lineNum">    3136 </span><span class="lineCov">    1781241 :                                 begin = end;</span>
+<span class="lineNum">    3136 </span><span class="lineCov">    1781199 :                                 begin = end;</span>
 <span class="lineNum">    3137 </span>            :                         }
 <span class="lineNum">    3138 </span>            : 
 <span class="lineNum">    3139 </span><span class="lineCov">    1770884 :                         ++count_file;</span>
@@ -3304,44 +3304,44 @@
 <span class="lineNum">    3242 </span><span class="lineCov">        151 :         sputc('i', f);</span>
 <span class="lineNum">    3243 </span><span class="lineCov">        151 :         sputb32(info_oldest, f);</span>
 <span class="lineNum">    3244 </span><span class="lineCov">        151 :         begin = 0;</span>
-<span class="lineNum">    3245 </span><span class="lineCov">      15146 :         while (begin &lt; blockmax) {</span>
+<span class="lineNum">    3245 </span><span class="lineCov">      19734 :         while (begin &lt; blockmax) {</span>
 <span class="lineNum">    3246 </span>            :                 snapraid_info info;
 <span class="lineNum">    3247 </span>            :                 block_off_t end;
 <span class="lineNum">    3248 </span>            :                 time_t t;
 <span class="lineNum">    3249 </span>            :                 unsigned flag;
 <span class="lineNum">    3250 </span>            : 
-<span class="lineNum">    3251 </span><span class="lineCov">      14844 :                 info = info_get(&amp;state-&gt;infoarr, begin);</span>
+<span class="lineNum">    3251 </span><span class="lineCov">      19432 :                 info = info_get(&amp;state-&gt;infoarr, begin);</span>
 <span class="lineNum">    3252 </span>            : 
 <span class="lineNum">    3253 </span>            :                 /* find the end of run of blocks */
-<span class="lineNum">    3254 </span><span class="lineCov">      14844 :                 end = begin + 1;</span>
-<span class="lineNum">    3255 </span><span class="lineCov">     770943 :                 while (end &lt; blockmax</span>
+<span class="lineNum">    3254 </span><span class="lineCov">      19432 :                 end = begin + 1;</span>
+<span class="lineNum">    3255 </span><span class="lineCov">     775531 :                 while (end &lt; blockmax</span>
 <span class="lineNum">    3256 </span><span class="lineCov">     755951 :                         &amp;&amp; info == info_get(&amp;state-&gt;infoarr, end)</span>
 <span class="lineNum">    3257 </span>            :                 ) {
-<span class="lineNum">    3258 </span><span class="lineCov">     741255 :                         ++end;</span>
+<span class="lineNum">    3258 </span><span class="lineCov">     736667 :                         ++end;</span>
 <span class="lineNum">    3259 </span>            :                 }
 <span class="lineNum">    3260 </span>            : 
-<span class="lineNum">    3261 </span><span class="lineCov">      14844 :                 sputb32(end - begin, f);</span>
+<span class="lineNum">    3261 </span><span class="lineCov">      19432 :                 sputb32(end - begin, f);</span>
 <span class="lineNum">    3262 </span>            : 
 <span class="lineNum">    3263 </span>            :                 /* if there is info */
-<span class="lineNum">    3264 </span><span class="lineCov">      14844 :                 if (info) {</span>
+<span class="lineNum">    3264 </span><span class="lineCov">      19432 :                 if (info) {</span>
 <span class="lineNum">    3265 </span>            :                         /* other flags */
-<span class="lineNum">    3266 </span><span class="lineCov">      14821 :                         flag = 1; /* info is present */</span>
-<span class="lineNum">    3267 </span><span class="lineCov">      14821 :                         if (info_get_bad(info))</span>
-<span class="lineNum">    3268 </span><span class="lineCov">       1340 :                                 flag |= 2;</span>
-<span class="lineNum">    3269 </span><span class="lineCov">      14821 :                         if (info_get_rehash(info))</span>
-<span class="lineNum">    3270 </span><span class="lineCov">       4967 :                                 flag |= 4;</span>
-<span class="lineNum">    3271 </span><span class="lineCov">      14821 :                         if (info_get_justsynced(info))</span>
-<span class="lineNum">    3272 </span><span class="lineCov">       7432 :                                 flag |= 8;</span>
-<span class="lineNum">    3273 </span><span class="lineCov">      14821 :                         sputb32(flag, f);</span>
+<span class="lineNum">    3266 </span><span class="lineCov">      19409 :                         flag = 1; /* info is present */</span>
+<span class="lineNum">    3267 </span><span class="lineCov">      19409 :                         if (info_get_bad(info))</span>
+<span class="lineNum">    3268 </span><span class="lineCov">       1358 :                                 flag |= 2;</span>
+<span class="lineNum">    3269 </span><span class="lineCov">      19409 :                         if (info_get_rehash(info))</span>
+<span class="lineNum">    3270 </span><span class="lineCov">       5212 :                                 flag |= 4;</span>
+<span class="lineNum">    3271 </span><span class="lineCov">      19409 :                         if (info_get_justsynced(info))</span>
+<span class="lineNum">    3272 </span><span class="lineCov">      12050 :                                 flag |= 8;</span>
+<span class="lineNum">    3273 </span><span class="lineCov">      19409 :                         sputb32(flag, f);</span>
 <span class="lineNum">    3274 </span>            : 
-<span class="lineNum">    3275 </span><span class="lineCov">      14821 :                         t = info_get_time(info) - info_oldest;</span>
-<span class="lineNum">    3276 </span><span class="lineCov">      14821 :                         sputb32(t, f);</span>
+<span class="lineNum">    3275 </span><span class="lineCov">      19409 :                         t = info_get_time(info) - info_oldest;</span>
+<span class="lineNum">    3276 </span><span class="lineCov">      19409 :                         sputb32(t, f);</span>
 <span class="lineNum">    3277 </span>            :                 } else {
 <span class="lineNum">    3278 </span>            :                         /* write a special 0 flag to mark missing info */
 <span class="lineNum">    3279 </span><span class="lineCov">         23 :                         sputb32(0, f);</span>
 <span class="lineNum">    3280 </span>            :                 }
 <span class="lineNum">    3281 </span>            : 
-<span class="lineNum">    3282 </span><span class="lineCov">      14844 :                 if (serror(f)) {</span>
+<span class="lineNum">    3282 </span><span class="lineCov">      19432 :                 if (serror(f)) {</span>
 <span class="lineNum">    3283 </span>            :                         /* LCOV_EXCL_START */
 <span class="lineNum">    3284 </span>            :                         log_fatal(&quot;Error writing the content file '%s'. %s.\n&quot;, serrorfile(f), strerror(errno));
 <span class="lineNum">    3285 </span>            :                         return context;
@@ -3349,7 +3349,7 @@
 <span class="lineNum">    3287 </span>            :                 }
 <span class="lineNum">    3288 </span>            : 
 <span class="lineNum">    3289 </span>            :                 /* next begin position */
-<span class="lineNum">    3290 </span><span class="lineCov">      14844 :                 begin = end;</span>
+<span class="lineNum">    3290 </span><span class="lineCov">      19432 :                 begin = end;</span>
 <span class="lineNum">    3291 </span>            :         }
 <span class="lineNum">    3292 </span>            : 
 <span class="lineNum">    3293 </span><span class="lineCov">        151 :         sputc('N', f);</span>
@@ -3438,7 +3438,7 @@
 <span class="lineNum">    3376 </span><span class="lineCov">     711614 :                                 time_t info_time = info_get_time(info);</span>
 <span class="lineNum">    3377 </span>            : 
 <span class="lineNum">    3378 </span><span class="lineCov">     711614 :                                 if (!info_oldest || info_time &lt; info_oldest)</span>
-<span class="lineNum">    3379 </span><span class="lineCov">        152 :                                         info_oldest = info_time;</span>
+<span class="lineNum">    3379 </span><span class="lineCov">        150 :                                         info_oldest = info_time;</span>
 <span class="lineNum">    3380 </span>            : 
 <span class="lineNum">    3381 </span><span class="lineCov">     711614 :                                 if (info_get_rehash(info))</span>
 <span class="lineNum">    3382 </span><span class="lineCov">      13822 :                                         info_has_rehash = 1;</span>
@@ -4089,7 +4089,7 @@
 <span class="lineNum">    4027 </span><span class="lineCov">      78138 :                                 || filter_existence(filter_missing, disk-&gt;dir, file-&gt;sub) != 0</span>
 <span class="lineNum">    4028 </span><span class="lineCov">      38646 :                                 || filter_correctness(filter_error, &amp;state-&gt;infoarr, disk, file) != 0</span>
 <span class="lineNum">    4029 </span>            :                         ) {
-<span class="lineNum">    4030 </span><span class="lineCov">     109469 :                                 file_flag_set(file, FILE_IS_EXCLUDED);</span>
+<span class="lineNum">    4030 </span><span class="lineCov">     109457 :                                 file_flag_set(file, FILE_IS_EXCLUDED);</span>
 <span class="lineNum">    4031 </span>            :                         }
 <span class="lineNum">    4032 </span>            :                 }
 <span class="lineNum">    4033 </span>            : 
@@ -4229,23 +4229,23 @@
 <span class="lineNum">    4167 </span>            : /**
 <a name="4168"><span class="lineNum">    4168 </span>            :  * Set the latest tick data in the progress vector.</a>
 <span class="lineNum">    4169 </span>            :  */
-<span class="lineNum">    4170 </span><span class="lineCov">        489 : static void state_progress_latest(struct snapraid_state* state)</span>
+<span class="lineNum">    4170 </span><span class="lineCov">        495 : static void state_progress_latest(struct snapraid_state* state)</span>
 <span class="lineNum">    4171 </span>            : {
 <span class="lineNum">    4172 </span>            :         tommy_node* i;
 <span class="lineNum">    4173 </span>            :         unsigned l;
 <span class="lineNum">    4174 </span>            : 
-<span class="lineNum">    4175 </span><span class="lineCov">        489 :         state-&gt;progress_tick_misc[state-&gt;progress_ptr] = state-&gt;tick_misc;</span>
-<span class="lineNum">    4176 </span><span class="lineCov">        489 :         state-&gt;progress_tick_sched[state-&gt;progress_ptr] = state-&gt;tick_sched;</span>
-<span class="lineNum">    4177 </span><span class="lineCov">        489 :         state-&gt;progress_tick_raid[state-&gt;progress_ptr] = state-&gt;tick_raid;</span>
-<span class="lineNum">    4178 </span><span class="lineCov">        489 :         state-&gt;progress_tick_hash[state-&gt;progress_ptr] = state-&gt;tick_hash;</span>
-<span class="lineNum">    4179 </span><span class="lineCov">        489 :         state-&gt;progress_tick_io[state-&gt;progress_ptr] = state-&gt;tick_io;</span>
-<span class="lineNum">    4180 </span><span class="lineCov">       3416 :         for (i = state-&gt;disklist; i != 0; i = i-&gt;next) {</span>
-<span class="lineNum">    4181 </span><span class="lineCov">       2927 :                 struct snapraid_disk* disk = i-&gt;data;</span>
-<span class="lineNum">    4182 </span><span class="lineCov">       2927 :                 disk-&gt;progress_tick[state-&gt;progress_ptr] = disk-&gt;tick;</span>
+<span class="lineNum">    4175 </span><span class="lineCov">        495 :         state-&gt;progress_tick_misc[state-&gt;progress_ptr] = state-&gt;tick_misc;</span>
+<span class="lineNum">    4176 </span><span class="lineCov">        495 :         state-&gt;progress_tick_sched[state-&gt;progress_ptr] = state-&gt;tick_sched;</span>
+<span class="lineNum">    4177 </span><span class="lineCov">        495 :         state-&gt;progress_tick_raid[state-&gt;progress_ptr] = state-&gt;tick_raid;</span>
+<span class="lineNum">    4178 </span><span class="lineCov">        495 :         state-&gt;progress_tick_hash[state-&gt;progress_ptr] = state-&gt;tick_hash;</span>
+<span class="lineNum">    4179 </span><span class="lineCov">        495 :         state-&gt;progress_tick_io[state-&gt;progress_ptr] = state-&gt;tick_io;</span>
+<span class="lineNum">    4180 </span><span class="lineCov">       3457 :         for (i = state-&gt;disklist; i != 0; i = i-&gt;next) {</span>
+<span class="lineNum">    4181 </span><span class="lineCov">       2962 :                 struct snapraid_disk* disk = i-&gt;data;</span>
+<span class="lineNum">    4182 </span><span class="lineCov">       2962 :                 disk-&gt;progress_tick[state-&gt;progress_ptr] = disk-&gt;tick;</span>
 <span class="lineNum">    4183 </span>            :         }
-<span class="lineNum">    4184 </span><span class="lineCov">       2774 :         for (l = 0; l &lt; state-&gt;level; ++l)</span>
-<span class="lineNum">    4185 </span><span class="lineCov">       2285 :                 state-&gt;parity[l].progress_tick[state-&gt;progress_ptr] = state-&gt;parity[l].tick;</span>
-<span class="lineNum">    4186 </span><span class="lineCov">        489 : }</span>
+<span class="lineNum">    4184 </span><span class="lineCov">       2811 :         for (l = 0; l &lt; state-&gt;level; ++l)</span>
+<span class="lineNum">    4185 </span><span class="lineCov">       2316 :                 state-&gt;parity[l].progress_tick[state-&gt;progress_ptr] = state-&gt;parity[l].tick;</span>
+<span class="lineNum">    4186 </span><span class="lineCov">        495 : }</span>
 <span class="lineNum">    4187 </span>            : 
 <span class="lineNum">    4188 </span>            : /**
 <span class="lineNum">    4189 </span>            :  * Number of columns
@@ -4395,45 +4395,45 @@
 <span class="lineNum">    4333 </span><span class="lineCov">          1 :         printf(&quot;\n&quot;);</span>
 <a name="4334"><span class="lineNum">    4334 </span>            : }</a>
 <span class="lineNum">    4335 </span>            : 
-<span class="lineNum">    4336 </span><span class="lineCov">    1073508 : int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize)</span>
+<span class="lineNum">    4336 </span><span class="lineCov">    1073409 : int state_progress(struct snapraid_state* state, struct snapraid_io* io, block_off_t blockpos, block_off_t countpos, block_off_t countmax, data_off_t countsize)</span>
 <span class="lineNum">    4337 </span>            : {
 <span class="lineNum">    4338 </span>            :         time_t now;
 <span class="lineNum">    4339 </span>            :         int pred;
 <span class="lineNum">    4340 </span>            : 
-<span class="lineNum">    4341 </span><span class="lineCov">    1073508 :         now = time(0);</span>
+<span class="lineNum">    4341 </span><span class="lineCov">    1073409 :         now = time(0);</span>
 <span class="lineNum">    4342 </span>            : 
 <span class="lineNum">    4343 </span>            :         /* previous position */
-<span class="lineNum">    4344 </span><span class="lineCov">    1073508 :         pred = state-&gt;progress_ptr + PROGRESS_MAX - 1;</span>
-<span class="lineNum">    4345 </span><span class="lineCov">    1073508 :         if (pred &gt;= PROGRESS_MAX)</span>
-<span class="lineNum">    4346 </span><span class="lineCov">    1073309 :                 pred -= PROGRESS_MAX;</span>
+<span class="lineNum">    4344 </span><span class="lineCov">    1073409 :         pred = state-&gt;progress_ptr + PROGRESS_MAX - 1;</span>
+<span class="lineNum">    4345 </span><span class="lineCov">    1073409 :         if (pred &gt;= PROGRESS_MAX)</span>
+<span class="lineNum">    4346 </span><span class="lineCov">    1073210 :                 pred -= PROGRESS_MAX;</span>
 <span class="lineNum">    4347 </span>            : 
 <span class="lineNum">    4348 </span>            :         /* if the previous measure is different */
-<span class="lineNum">    4349 </span><span class="lineCov">    1073508 :         if (state-&gt;progress_tick == 0</span>
-<span class="lineNum">    4350 </span><span class="lineCov">    1073309 :                 || state-&gt;progress_time[pred] != now</span>
+<span class="lineNum">    4349 </span><span class="lineCov">    1073409 :         if (state-&gt;progress_tick == 0</span>
+<span class="lineNum">    4350 </span><span class="lineCov">    1073210 :                 || state-&gt;progress_time[pred] != now</span>
 <span class="lineNum">    4351 </span>            :         ) {
 <span class="lineNum">    4352 </span>            :                 time_t elapsed;
-<span class="lineNum">    4353 </span><span class="lineCov">        393 :                 unsigned out_perc = 0;</span>
-<span class="lineNum">    4354 </span><span class="lineCov">        393 :                 unsigned out_speed = 0;</span>
-<span class="lineNum">    4355 </span><span class="lineCov">        393 :                 unsigned out_cpu = 0;</span>
-<span class="lineNum">    4356 </span><span class="lineCov">        393 :                 unsigned out_eta = 0;</span>
-<span class="lineNum">    4357 </span><span class="lineCov">        393 :                 int out_computed = 0;</span>
+<span class="lineNum">    4353 </span><span class="lineCov">        399 :                 unsigned out_perc = 0;</span>
+<span class="lineNum">    4354 </span><span class="lineCov">        399 :                 unsigned out_speed = 0;</span>
+<span class="lineNum">    4355 </span><span class="lineCov">        399 :                 unsigned out_cpu = 0;</span>
+<span class="lineNum">    4356 </span><span class="lineCov">        399 :                 unsigned out_eta = 0;</span>
+<span class="lineNum">    4357 </span><span class="lineCov">        399 :                 int out_computed = 0;</span>
 <span class="lineNum">    4358 </span>            : 
 <span class="lineNum">    4359 </span>            :                 /* store the new measure */
-<span class="lineNum">    4360 </span><span class="lineCov">        393 :                 state-&gt;progress_time[state-&gt;progress_ptr] = now;</span>
-<span class="lineNum">    4361 </span><span class="lineCov">        393 :                 state-&gt;progress_pos[state-&gt;progress_ptr] = countpos;</span>
-<span class="lineNum">    4362 </span><span class="lineCov">        393 :                 state-&gt;progress_size[state-&gt;progress_ptr] = countsize;</span>
-<span class="lineNum">    4363 </span><span class="lineCov">        393 :                 state_progress_latest(state);</span>
+<span class="lineNum">    4360 </span><span class="lineCov">        399 :                 state-&gt;progress_time[state-&gt;progress_ptr] = now;</span>
+<span class="lineNum">    4361 </span><span class="lineCov">        399 :                 state-&gt;progress_pos[state-&gt;progress_ptr] = countpos;</span>
+<span class="lineNum">    4362 </span><span class="lineCov">        399 :                 state-&gt;progress_size[state-&gt;progress_ptr] = countsize;</span>
+<span class="lineNum">    4363 </span><span class="lineCov">        399 :                 state_progress_latest(state);</span>
 <span class="lineNum">    4364 </span>            : 
-<span class="lineNum">    4365 </span><span class="lineCov">        393 :                 elapsed = now - state-&gt;progress_whole_start - state-&gt;progress_wasted;</span>
+<span class="lineNum">    4365 </span><span class="lineCov">        399 :                 elapsed = now - state-&gt;progress_whole_start - state-&gt;progress_wasted;</span>
 <span class="lineNum">    4366 </span>            : 
 <span class="lineNum">    4367 </span>            :                 /* completion percentage */
-<span class="lineNum">    4368 </span><span class="lineCov">        393 :                 if (countmax)</span>
-<span class="lineNum">    4369 </span><span class="lineCov">        393 :                         out_perc = countpos * 100 / countmax;</span>
+<span class="lineNum">    4368 </span><span class="lineCov">        399 :                 if (countmax)</span>
+<span class="lineNum">    4369 </span><span class="lineCov">        399 :                         out_perc = countpos * 100 / countmax;</span>
 <span class="lineNum">    4370 </span>            : 
 <span class="lineNum">    4371 </span>            :                 /* if we have at least 5 measures */
-<span class="lineNum">    4372 </span><span class="lineCov">        393 :                 if (state-&gt;progress_tick &gt;= 5</span>
+<span class="lineNum">    4372 </span><span class="lineCov">        399 :                 if (state-&gt;progress_tick &gt;= 5</span>
 <span class="lineNum">    4373 </span>            :                         /* or if we are running in test mode, with at least one measure */
-<span class="lineNum">    4374 </span><span class="lineCov">        369 :                         || (state-&gt;opt.force_progress &amp;&amp; state-&gt;progress_tick &gt;= 1)</span>
+<span class="lineNum">    4374 </span><span class="lineCov">        378 :                         || (state-&gt;opt.force_progress &amp;&amp; state-&gt;progress_tick &gt;= 1)</span>
 <span class="lineNum">    4375 </span>            :                 ) {
 <span class="lineNum">    4376 </span>            :                         int oldest;
 <span class="lineNum">    4377 </span>            :                         int past;
@@ -4448,88 +4448,88 @@
 <span class="lineNum">    4386 </span>            :                         uint64_t oldest_tick_total;
 <span class="lineNum">    4387 </span>            : 
 <span class="lineNum">    4388 </span>            :                         /* number of past measures */
-<span class="lineNum">    4389 </span><span class="lineCov">        194 :                         past = state-&gt;progress_tick;</span>
+<span class="lineNum">    4389 </span><span class="lineCov">        200 :                         past = state-&gt;progress_tick;</span>
 <span class="lineNum">    4390 </span>            : 
 <span class="lineNum">    4391 </span>            :                         /* drop the oldest ones, to promptly */
 <span class="lineNum">    4392 </span>            :                         /* skip the startup phase */
-<span class="lineNum">    4393 </span><span class="lineCov">        194 :                         past -= past / 5;</span>
+<span class="lineNum">    4393 </span><span class="lineCov">        200 :                         past -= past / 5;</span>
 <span class="lineNum">    4394 </span>            : 
 <span class="lineNum">    4395 </span>            :                         /* check how much we can go in the past */
-<span class="lineNum">    4396 </span><span class="lineCov">        194 :                         if (past &gt;= PROGRESS_MAX - 1) {</span>
+<span class="lineNum">    4396 </span><span class="lineCov">        200 :                         if (past &gt;= PROGRESS_MAX - 1) {</span>
 <span class="lineNum">    4397 </span>            :                                 /* the vector is filled, so we are already in position */
 <span class="lineNum">    4398 </span>            :                                 /* to get the possible oldest one */
 <span class="lineNum">    4399 </span><span class="lineNoCov">          0 :                                 oldest = state-&gt;progress_ptr + 1;</span>
 <span class="lineNum">    4400 </span>            :                         } else {
 <span class="lineNum">    4401 </span>            :                                 /* go backward the number of positions selected */
-<span class="lineNum">    4402 </span><span class="lineCov">        194 :                                 oldest = state-&gt;progress_ptr + PROGRESS_MAX - past;</span>
+<span class="lineNum">    4402 </span><span class="lineCov">        200 :                                 oldest = state-&gt;progress_ptr + PROGRESS_MAX - past;</span>
 <span class="lineNum">    4403 </span>            :                         }
-<span class="lineNum">    4404 </span><span class="lineCov">        194 :                         if (oldest &gt;= PROGRESS_MAX)</span>
-<span class="lineNum">    4405 </span><span class="lineCov">        194 :                                 oldest -= PROGRESS_MAX;</span>
+<span class="lineNum">    4404 </span><span class="lineCov">        200 :                         if (oldest &gt;= PROGRESS_MAX)</span>
+<span class="lineNum">    4405 </span><span class="lineCov">        200 :                                 oldest -= PROGRESS_MAX;</span>
 <span class="lineNum">    4406 </span>            : 
-<span class="lineNum">    4407 </span><span class="lineCov">        388 :                         tick_cpu = state-&gt;progress_tick_misc[state-&gt;progress_ptr]</span>
-<span class="lineNum">    4408 </span><span class="lineCov">        194 :                                 + state-&gt;progress_tick_sched[state-&gt;progress_ptr]</span>
-<span class="lineNum">    4409 </span><span class="lineCov">        194 :                                 + state-&gt;progress_tick_raid[state-&gt;progress_ptr]</span>
-<span class="lineNum">    4410 </span><span class="lineCov">        194 :                                 + state-&gt;progress_tick_hash[state-&gt;progress_ptr];</span>
-<span class="lineNum">    4411 </span><span class="lineCov">        194 :                         tick_total = tick_cpu + state-&gt;progress_tick_io[state-&gt;progress_ptr];</span>
+<span class="lineNum">    4407 </span><span class="lineCov">        400 :                         tick_cpu = state-&gt;progress_tick_misc[state-&gt;progress_ptr]</span>
+<span class="lineNum">    4408 </span><span class="lineCov">        200 :                                 + state-&gt;progress_tick_sched[state-&gt;progress_ptr]</span>
+<span class="lineNum">    4409 </span><span class="lineCov">        200 :                                 + state-&gt;progress_tick_raid[state-&gt;progress_ptr]</span>
+<span class="lineNum">    4410 </span><span class="lineCov">        200 :                                 + state-&gt;progress_tick_hash[state-&gt;progress_ptr];</span>
+<span class="lineNum">    4411 </span><span class="lineCov">        200 :                         tick_total = tick_cpu + state-&gt;progress_tick_io[state-&gt;progress_ptr];</span>
 <span class="lineNum">    4412 </span>            : 
-<span class="lineNum">    4413 </span><span class="lineCov">        388 :                         oldest_tick_cpu = state-&gt;progress_tick_misc[oldest]</span>
-<span class="lineNum">    4414 </span><span class="lineCov">        194 :                                 + state-&gt;progress_tick_sched[oldest]</span>
-<span class="lineNum">    4415 </span><span class="lineCov">        194 :                                 + state-&gt;progress_tick_raid[oldest]</span>
-<span class="lineNum">    4416 </span><span class="lineCov">        194 :                                 + state-&gt;progress_tick_hash[oldest];</span>
-<span class="lineNum">    4417 </span><span class="lineCov">        194 :                         oldest_tick_total = oldest_tick_cpu + state-&gt;progress_tick_io[oldest];</span>
+<span class="lineNum">    4413 </span><span class="lineCov">        400 :                         oldest_tick_cpu = state-&gt;progress_tick_misc[oldest]</span>
+<span class="lineNum">    4414 </span><span class="lineCov">        200 :                                 + state-&gt;progress_tick_sched[oldest]</span>
+<span class="lineNum">    4415 </span><span class="lineCov">        200 :                                 + state-&gt;progress_tick_raid[oldest]</span>
+<span class="lineNum">    4416 </span><span class="lineCov">        200 :                                 + state-&gt;progress_tick_hash[oldest];</span>
+<span class="lineNum">    4417 </span><span class="lineCov">        200 :                         oldest_tick_total = oldest_tick_cpu + state-&gt;progress_tick_io[oldest];</span>
 <span class="lineNum">    4418 </span>            : 
-<span class="lineNum">    4419 </span><span class="lineCov">        194 :                         delta_time = now - state-&gt;progress_time[oldest];</span>
-<span class="lineNum">    4420 </span><span class="lineCov">        194 :                         delta_pos = countpos - state-&gt;progress_pos[oldest];</span>
-<span class="lineNum">    4421 </span><span class="lineCov">        194 :                         delta_size = countsize - state-&gt;progress_size[oldest];</span>
-<span class="lineNum">    4422 </span><span class="lineCov">        194 :                         delta_tick_cpu = tick_cpu - oldest_tick_cpu;</span>
-<span class="lineNum">    4423 </span><span class="lineCov">        194 :                         delta_tick_total = tick_total - oldest_tick_total;</span>
+<span class="lineNum">    4419 </span><span class="lineCov">        200 :                         delta_time = now - state-&gt;progress_time[oldest];</span>
+<span class="lineNum">    4420 </span><span class="lineCov">        200 :                         delta_pos = countpos - state-&gt;progress_pos[oldest];</span>
+<span class="lineNum">    4421 </span><span class="lineCov">        200 :                         delta_size = countsize - state-&gt;progress_size[oldest];</span>
+<span class="lineNum">    4422 </span><span class="lineCov">        200 :                         delta_tick_cpu = tick_cpu - oldest_tick_cpu;</span>
+<span class="lineNum">    4423 </span><span class="lineCov">        200 :                         delta_tick_total = tick_total - oldest_tick_total;</span>
 <span class="lineNum">    4424 </span>            : 
 <span class="lineNum">    4425 </span>            :                         /* estimate the speed in MB/s */
-<span class="lineNum">    4426 </span><span class="lineCov">        194 :                         if (delta_time != 0)</span>
-<span class="lineNum">    4427 </span><span class="lineCov">        194 :                                 out_speed = (unsigned)(delta_size / MEGA / delta_time);</span>
+<span class="lineNum">    4426 </span><span class="lineCov">        200 :                         if (delta_time != 0)</span>
+<span class="lineNum">    4427 </span><span class="lineCov">        200 :                                 out_speed = (unsigned)(delta_size / MEGA / delta_time);</span>
 <span class="lineNum">    4428 </span>            : 
 <span class="lineNum">    4429 </span>            :                         /* estimate the cpu usage percentage */
-<span class="lineNum">    4430 </span><span class="lineCov">        194 :                         if (delta_tick_total != 0)</span>
-<span class="lineNum">    4431 </span><span class="lineCov">         74 :                                 out_cpu = (unsigned)(delta_tick_cpu * 100U / delta_tick_total);</span>
+<span class="lineNum">    4430 </span><span class="lineCov">        200 :                         if (delta_tick_total != 0)</span>
+<span class="lineNum">    4431 </span><span class="lineCov">         82 :                                 out_cpu = (unsigned)(delta_tick_cpu * 100U / delta_tick_total);</span>
 <span class="lineNum">    4432 </span>            : 
 <span class="lineNum">    4433 </span>            :                         /* estimate the remaining time in minutes */
-<span class="lineNum">    4434 </span><span class="lineCov">        194 :                         if (delta_pos != 0)</span>
-<span class="lineNum">    4435 </span><span class="lineCov">        194 :                                 out_eta = (countmax - countpos) * delta_time / (60 * delta_pos);</span>
+<span class="lineNum">    4434 </span><span class="lineCov">        200 :                         if (delta_pos != 0)</span>
+<span class="lineNum">    4435 </span><span class="lineCov">        200 :                                 out_eta = (countmax - countpos) * delta_time / (60 * delta_pos);</span>
 <span class="lineNum">    4436 </span>            : 
-<span class="lineNum">    4437 </span><span class="lineCov">        194 :                         if (state-&gt;opt.force_stats) {</span>
+<span class="lineNum">    4437 </span><span class="lineCov">        200 :                         if (state-&gt;opt.force_stats) {</span>
 <span class="lineNum">    4438 </span><span class="lineNoCov">          0 :                                 os_clear();</span>
 <span class="lineNum">    4439 </span><span class="lineNoCov">          0 :                                 state_progress_graph(state, io, state-&gt;progress_ptr, oldest);</span>
 <span class="lineNum">    4440 </span>            :                         }
 <span class="lineNum">    4441 </span>            : 
 <span class="lineNum">    4442 </span>            :                         /* we have the output value */
-<span class="lineNum">    4443 </span><span class="lineCov">        194 :                         out_computed = 1;</span>
+<span class="lineNum">    4443 </span><span class="lineCov">        200 :                         out_computed = 1;</span>
 <span class="lineNum">    4444 </span>            :                 }
 <span class="lineNum">    4445 </span>            : 
-<span class="lineNum">    4446 </span><span class="lineCov">        393 :                 if (state-&gt;opt.gui) {</span>
+<span class="lineNum">    4446 </span><span class="lineCov">        399 :                 if (state-&gt;opt.gui) {</span>
 <span class="lineNum">    4447 </span><span class="lineCov">          6 :                         log_tag(&quot;run:pos:%u:%u:%&quot; PRIu64 &quot;:%u:%u:%u:%u:%&quot; PRIu64 &quot;\n&quot;, blockpos, countpos, countsize, out_perc, out_eta, out_speed, out_cpu, (uint64_t)elapsed);</span>
 <span class="lineNum">    4448 </span><span class="lineCov">          6 :                         log_flush();</span>
 <span class="lineNum">    4449 </span>            :                 } else {
-<span class="lineNum">    4450 </span><span class="lineCov">        387 :                         msg_bar(&quot;%u%%, %u MB&quot;, out_perc, (unsigned)(countsize / MEGA));</span>
-<span class="lineNum">    4451 </span><span class="lineCov">        387 :                         if (out_computed) {</span>
-<span class="lineNum">    4452 </span><span class="lineCov">        193 :                                 msg_bar(&quot;, %u MB/s&quot;, out_speed);</span>
-<span class="lineNum">    4453 </span><span class="lineCov">        193 :                                 msg_bar(&quot;, CPU %u%%&quot;, out_cpu);</span>
-<span class="lineNum">    4454 </span><span class="lineCov">        193 :                                 msg_bar(&quot;, %u:%02u ETA&quot;, out_eta / 60, out_eta % 60);</span>
+<span class="lineNum">    4450 </span><span class="lineCov">        393 :                         msg_bar(&quot;%u%%, %u MB&quot;, out_perc, (unsigned)(countsize / MEGA));</span>
+<span class="lineNum">    4451 </span><span class="lineCov">        393 :                         if (out_computed) {</span>
+<span class="lineNum">    4452 </span><span class="lineCov">        199 :                                 msg_bar(&quot;, %u MB/s&quot;, out_speed);</span>
+<span class="lineNum">    4453 </span><span class="lineCov">        199 :                                 msg_bar(&quot;, CPU %u%%&quot;, out_cpu);</span>
+<span class="lineNum">    4454 </span><span class="lineCov">        199 :                                 msg_bar(&quot;, %u:%02u ETA&quot;, out_eta / 60, out_eta % 60);</span>
 <span class="lineNum">    4455 </span>            :                         }
-<span class="lineNum">    4456 </span><span class="lineCov">        387 :                         msg_bar(&quot;%s\r&quot;, PROGRESS_CLEAR);</span>
-<span class="lineNum">    4457 </span><span class="lineCov">        387 :                         msg_flush();</span>
+<span class="lineNum">    4456 </span><span class="lineCov">        393 :                         msg_bar(&quot;%s\r&quot;, PROGRESS_CLEAR);</span>
+<span class="lineNum">    4457 </span><span class="lineCov">        393 :                         msg_flush();</span>
 <span class="lineNum">    4458 </span>            :                 }
 <span class="lineNum">    4459 </span>            : 
 <span class="lineNum">    4460 </span>            :                 /* next position to fill */
-<span class="lineNum">    4461 </span><span class="lineCov">        393 :                 ++state-&gt;progress_ptr;</span>
-<span class="lineNum">    4462 </span><span class="lineCov">        393 :                 if (state-&gt;progress_ptr &gt;= PROGRESS_MAX)</span>
+<span class="lineNum">    4461 </span><span class="lineCov">        399 :                 ++state-&gt;progress_ptr;</span>
+<span class="lineNum">    4462 </span><span class="lineCov">        399 :                 if (state-&gt;progress_ptr &gt;= PROGRESS_MAX)</span>
 <span class="lineNum">    4463 </span><span class="lineNoCov">          0 :                         state-&gt;progress_ptr -= PROGRESS_MAX;</span>
 <span class="lineNum">    4464 </span>            : 
 <span class="lineNum">    4465 </span>            :                 /* one more measure */
-<span class="lineNum">    4466 </span><span class="lineCov">        393 :                 ++state-&gt;progress_tick;</span>
+<span class="lineNum">    4466 </span><span class="lineCov">        399 :                 ++state-&gt;progress_tick;</span>
 <span class="lineNum">    4467 </span>            :         }
 <span class="lineNum">    4468 </span>            : 
 <span class="lineNum">    4469 </span>            :         /* stop if requested */
-<span class="lineNum">    4470 </span><span class="lineCov">    1073508 :         if (global_interrupt) {</span>
+<span class="lineNum">    4470 </span><span class="lineCov">    1073409 :         if (global_interrupt) {</span>
 <span class="lineNum">    4471 </span>            :                 /* LCOV_EXCL_START */
 <span class="lineNum">    4472 </span>            :                 if (!state-&gt;opt.gui) {
 <span class="lineNum">    4473 </span>            :                         log_fatal(&quot;\n&quot;);
@@ -4541,7 +4541,7 @@
 <span class="lineNum">    4479 </span>            :                 /* LCOV_EXCL_STOP */
 <span class="lineNum">    4480 </span>            :         }
 <span class="lineNum">    4481 </span>            : 
-<span class="lineNum">    4482 </span><span class="lineCov">    1073508 :         return 0;</span>
+<span class="lineNum">    4482 </span><span class="lineCov">    1073409 :         return 0;</span>
 <a name="4483"><span class="lineNum">    4483 </span>            : }</a>
 <span class="lineNum">    4484 </span>            : 
 <span class="lineNum">    4485 </span><span class="lineCov">        104 : void state_usage_waste(struct snapraid_state* state)</span>
@@ -4551,83 +4551,83 @@
 <span class="lineNum">    4489 </span><span class="lineCov">        104 :         state-&gt;tick_last = now;</span>
 <a name="4490"><span class="lineNum">    4490 </span><span class="lineCov">        104 : }</span></a>
 <span class="lineNum">    4491 </span>            : 
-<span class="lineNum">    4492 </span><span class="lineCov">    1063748 : void state_usage_misc(struct snapraid_state* state)</span>
+<span class="lineNum">    4492 </span><span class="lineCov">    1063055 : void state_usage_misc(struct snapraid_state* state)</span>
 <span class="lineNum">    4493 </span>            : {
-<span class="lineNum">    4494 </span><span class="lineCov">    1063748 :         uint64_t now = tick();</span>
-<span class="lineNum">    4495 </span><span class="lineCov">    1063748 :         uint64_t delta = now - state-&gt;tick_last;</span>
+<span class="lineNum">    4494 </span><span class="lineCov">    1063055 :         uint64_t now = tick();</span>
+<span class="lineNum">    4495 </span><span class="lineCov">    1063055 :         uint64_t delta = now - state-&gt;tick_last;</span>
 <span class="lineNum">    4496 </span>            : 
 <span class="lineNum">    4497 </span>            :         /* increment the time spent in computations */
-<span class="lineNum">    4498 </span><span class="lineCov">    1063748 :         state-&gt;tick_misc += delta;</span>
+<span class="lineNum">    4498 </span><span class="lineCov">    1063055 :         state-&gt;tick_misc += delta;</span>
 <span class="lineNum">    4499 </span>            : 
-<span class="lineNum">    4500 </span><span class="lineCov">    1063748 :         state-&gt;tick_last = now;</span>
-<a name="4501"><span class="lineNum">    4501 </span><span class="lineCov">    1063748 : }</span></a>
+<span class="lineNum">    4500 </span><span class="lineCov">    1063055 :         state-&gt;tick_last = now;</span>
+<a name="4501"><span class="lineNum">    4501 </span><span class="lineCov">    1063055 : }</span></a>
 <span class="lineNum">    4502 </span>            : 
-<span class="lineNum">    4503 </span><span class="lineCov">     149935 : void state_usage_sched(struct snapraid_state* state)</span>
+<span class="lineNum">    4503 </span><span class="lineCov">     149836 : void state_usage_sched(struct snapraid_state* state)</span>
 <span class="lineNum">    4504 </span>            : {
-<span class="lineNum">    4505 </span><span class="lineCov">     149935 :         uint64_t now = tick();</span>
-<span class="lineNum">    4506 </span><span class="lineCov">     149935 :         uint64_t delta = now - state-&gt;tick_last;</span>
+<span class="lineNum">    4505 </span><span class="lineCov">     149836 :         uint64_t now = tick();</span>
+<span class="lineNum">    4506 </span><span class="lineCov">     149836 :         uint64_t delta = now - state-&gt;tick_last;</span>
 <span class="lineNum">    4507 </span>            : 
 <span class="lineNum">    4508 </span>            :         /* increment the time spent in computations */
-<span class="lineNum">    4509 </span><span class="lineCov">     149935 :         state-&gt;tick_sched += delta;</span>
+<span class="lineNum">    4509 </span><span class="lineCov">     149836 :         state-&gt;tick_sched += delta;</span>
 <span class="lineNum">    4510 </span>            : 
-<span class="lineNum">    4511 </span><span class="lineCov">     149935 :         state-&gt;tick_last = now;</span>
-<a name="4512"><span class="lineNum">    4512 </span><span class="lineCov">     149935 : }</span></a>
+<span class="lineNum">    4511 </span><span class="lineCov">     149836 :         state-&gt;tick_last = now;</span>
+<a name="4512"><span class="lineNum">    4512 </span><span class="lineCov">     149836 : }</span></a>
 <span class="lineNum">    4513 </span>            : 
-<span class="lineNum">    4514 </span><span class="lineCov">     140430 : void state_usage_raid(struct snapraid_state* state)</span>
+<span class="lineNum">    4514 </span><span class="lineCov">     140365 : void state_usage_raid(struct snapraid_state* state)</span>
 <span class="lineNum">    4515 </span>            : {
-<span class="lineNum">    4516 </span><span class="lineCov">     140430 :         uint64_t now = tick();</span>
-<span class="lineNum">    4517 </span><span class="lineCov">     140430 :         uint64_t delta = now - state-&gt;tick_last;</span>
+<span class="lineNum">    4516 </span><span class="lineCov">     140365 :         uint64_t now = tick();</span>
+<span class="lineNum">    4517 </span><span class="lineCov">     140365 :         uint64_t delta = now - state-&gt;tick_last;</span>
 <span class="lineNum">    4518 </span>            : 
 <span class="lineNum">    4519 </span>            :         /* increment the time spent in computations */
-<span class="lineNum">    4520 </span><span class="lineCov">     140430 :         state-&gt;tick_raid += delta;</span>
+<span class="lineNum">    4520 </span><span class="lineCov">     140365 :         state-&gt;tick_raid += delta;</span>
 <span class="lineNum">    4521 </span>            : 
-<span class="lineNum">    4522 </span><span class="lineCov">     140430 :         state-&gt;tick_last = now;</span>
-<a name="4523"><span class="lineNum">    4523 </span><span class="lineCov">     140430 : }</span></a>
+<span class="lineNum">    4522 </span><span class="lineCov">     140365 :         state-&gt;tick_last = now;</span>
+<a name="4523"><span class="lineNum">    4523 </span><span class="lineCov">     140365 : }</span></a>
 <span class="lineNum">    4524 </span>            : 
-<span class="lineNum">    4525 </span><span class="lineCov">     777372 : void state_usage_hash(struct snapraid_state* state)</span>
+<span class="lineNum">    4525 </span><span class="lineCov">     776808 : void state_usage_hash(struct snapraid_state* state)</span>
 <span class="lineNum">    4526 </span>            : {
-<span class="lineNum">    4527 </span><span class="lineCov">     777372 :         uint64_t now = tick();</span>
-<span class="lineNum">    4528 </span><span class="lineCov">     777372 :         uint64_t delta = now - state-&gt;tick_last;</span>
+<span class="lineNum">    4527 </span><span class="lineCov">     776808 :         uint64_t now = tick();</span>
+<span class="lineNum">    4528 </span><span class="lineCov">     776808 :         uint64_t delta = now - state-&gt;tick_last;</span>
 <span class="lineNum">    4529 </span>            : 
 <span class="lineNum">    4530 </span>            :         /* increment the time spent in computations */
-<span class="lineNum">    4531 </span><span class="lineCov">     777372 :         state-&gt;tick_hash += delta;</span>
+<span class="lineNum">    4531 </span><span class="lineCov">     776808 :         state-&gt;tick_hash += delta;</span>
 <span class="lineNum">    4532 </span>            : 
-<span class="lineNum">    4533 </span><span class="lineCov">     777372 :         state-&gt;tick_last = now;</span>
-<a name="4534"><span class="lineNum">    4534 </span><span class="lineCov">     777372 : }</span></a>
+<span class="lineNum">    4533 </span><span class="lineCov">     776808 :         state-&gt;tick_last = now;</span>
+<a name="4534"><span class="lineNum">    4534 </span><span class="lineCov">     776808 : }</span></a>
 <span class="lineNum">    4535 </span>            : 
-<span class="lineNum">    4536 </span><span class="lineCov">     912951 : void state_usage_disk(struct snapraid_state* state, struct snapraid_handle* handle_map, unsigned* waiting_map, unsigned waiting_mac)</span>
+<span class="lineNum">    4536 </span><span class="lineCov">     912357 : void state_usage_disk(struct snapraid_state* state, struct snapraid_handle* handle_map, unsigned* waiting_map, unsigned waiting_mac)</span>
 <span class="lineNum">    4537 </span>            : {
-<span class="lineNum">    4538 </span><span class="lineCov">     912951 :         uint64_t now = tick();</span>
-<span class="lineNum">    4539 </span><span class="lineCov">     912951 :         uint64_t delta = now - state-&gt;tick_last;</span>
+<span class="lineNum">    4538 </span><span class="lineCov">     912357 :         uint64_t now = tick();</span>
+<span class="lineNum">    4539 </span><span class="lineCov">     912357 :         uint64_t delta = now - state-&gt;tick_last;</span>
 <span class="lineNum">    4540 </span>            :         unsigned i;
 <span class="lineNum">    4541 </span>            : 
 <span class="lineNum">    4542 </span>            :         /* increment the time spent in the data disks */
-<span class="lineNum">    4543 </span><span class="lineCov">     927928 :         for (i = 0; i &lt; waiting_mac; ++i) {</span>
-<span class="lineNum">    4544 </span><span class="lineCov">      14977 :                 struct snapraid_disk* disk = handle_map[waiting_map[i]].disk;</span>
+<span class="lineNum">    4543 </span><span class="lineCov">     956230 :         for (i = 0; i &lt; waiting_mac; ++i) {</span>
+<span class="lineNum">    4544 </span><span class="lineCov">      43873 :                 struct snapraid_disk* disk = handle_map[waiting_map[i]].disk;</span>
 <span class="lineNum">    4545 </span>            : 
-<span class="lineNum">    4546 </span><span class="lineCov">      14977 :                 if (!disk)</span>
-<span class="lineNum">    4547 </span><span class="lineCov">          5 :                         continue;</span>
+<span class="lineNum">    4546 </span><span class="lineCov">      43873 :                 if (!disk)</span>
+<span class="lineNum">    4547 </span><span class="lineCov">          6 :                         continue;</span>
 <span class="lineNum">    4548 </span>            : 
-<span class="lineNum">    4549 </span><span class="lineCov">      14972 :                 disk-&gt;tick += delta;</span>
+<span class="lineNum">    4549 </span><span class="lineCov">      43867 :                 disk-&gt;tick += delta;</span>
 <span class="lineNum">    4550 </span>            :         }
-<span class="lineNum">    4551 </span><span class="lineCov">     912951 :         state-&gt;tick_io += delta;</span>
+<span class="lineNum">    4551 </span><span class="lineCov">     912357 :         state-&gt;tick_io += delta;</span>
 <span class="lineNum">    4552 </span>            : 
-<span class="lineNum">    4553 </span><span class="lineCov">     912951 :         state-&gt;tick_last = now;</span>
-<a name="4554"><span class="lineNum">    4554 </span><span class="lineCov">     912951 : }</span></a>
+<span class="lineNum">    4553 </span><span class="lineCov">     912357 :         state-&gt;tick_last = now;</span>
+<a name="4554"><span class="lineNum">    4554 </span><span class="lineCov">     912357 : }</span></a>
 <span class="lineNum">    4555 </span>            : 
-<span class="lineNum">    4556 </span><span class="lineCov">     774617 : void state_usage_parity(struct snapraid_state* state, unsigned* waiting_map, unsigned waiting_mac)</span>
+<span class="lineNum">    4556 </span><span class="lineCov">     774023 : void state_usage_parity(struct snapraid_state* state, unsigned* waiting_map, unsigned waiting_mac)</span>
 <span class="lineNum">    4557 </span>            : {
-<span class="lineNum">    4558 </span><span class="lineCov">     774617 :         uint64_t now = tick();</span>
-<span class="lineNum">    4559 </span><span class="lineCov">     774617 :         uint64_t delta = now - state-&gt;tick_last;</span>
+<span class="lineNum">    4558 </span><span class="lineCov">     774023 :         uint64_t now = tick();</span>
+<span class="lineNum">    4559 </span><span class="lineCov">     774023 :         uint64_t delta = now - state-&gt;tick_last;</span>
 <span class="lineNum">    4560 </span>            :         unsigned i;
 <span class="lineNum">    4561 </span>            : 
 <span class="lineNum">    4562 </span>            :         /* increment the time spent in the parity disk */
-<span class="lineNum">    4563 </span><span class="lineCov">     848719 :         for (i = 0; i &lt; waiting_mac; ++i)</span>
-<span class="lineNum">    4564 </span><span class="lineCov">      74102 :                 state-&gt;parity[waiting_map[i]].tick += delta;</span>
-<span class="lineNum">    4565 </span><span class="lineCov">     774617 :         state-&gt;tick_io += delta;</span>
+<span class="lineNum">    4563 </span><span class="lineCov">     851328 :         for (i = 0; i &lt; waiting_mac; ++i)</span>
+<span class="lineNum">    4564 </span><span class="lineCov">      77305 :                 state-&gt;parity[waiting_map[i]].tick += delta;</span>
+<span class="lineNum">    4565 </span><span class="lineCov">     774023 :         state-&gt;tick_io += delta;</span>
 <span class="lineNum">    4566 </span>            : 
-<span class="lineNum">    4567 </span><span class="lineCov">     774617 :         state-&gt;tick_last = now;</span>
-<a name="4568"><span class="lineNum">    4568 </span><span class="lineCov">     774617 : }</span></a>
+<span class="lineNum">    4567 </span><span class="lineCov">     774023 :         state-&gt;tick_last = now;</span>
+<a name="4568"><span class="lineNum">    4568 </span><span class="lineCov">     774023 : }</span></a>
 <span class="lineNum">    4569 </span>            : 
 <span class="lineNum">    4570 </span><span class="lineCov">         96 : void state_usage_print(struct snapraid_state* state)</span>
 <span class="lineNum">    4571 </span>            : {
