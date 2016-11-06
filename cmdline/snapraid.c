@@ -241,7 +241,7 @@ void config(char* conf, size_t conf_size, const char* argv0)
 #else
 	(void)argv0;
 
-	pathcpy(conf, conf_size, "/etc/" PACKAGE ".conf");
+	pathcpy(conf, conf_size, SYSCONFDIR "/" PACKAGE ".conf");
 #endif
 }
 
