@@ -80,9 +80,9 @@
 <span class="lineNum">      18 </span>            : /*
 <a name="19"><span class="lineNum">      19 </span>            :  * GENz (triple parity with powers of 2^-1) 32bit C implementation</a>
 <span class="lineNum">      20 </span>            :  */
-<span class="lineNum">      21 </span><span class="lineCov">         29 : void raid_genz_int32(int nd, size_t size, void **vv)</span>
+<span class="lineNum">      21 </span><span class="lineCov">         28 : void raid_genz_int32(int nd, size_t size, void **vv)</span>
 <span class="lineNum">      22 </span>            : {
-<span class="lineNum">      23 </span><span class="lineCov">         29 :         uint8_t **v = (uint8_t**)vv;</span>
+<span class="lineNum">      23 </span><span class="lineCov">         28 :         uint8_t **v = (uint8_t**)vv;</span>
 <span class="lineNum">      24 </span>            :         uint8_t *p;
 <span class="lineNum">      25 </span>            :         uint8_t *q;
 <span class="lineNum">      26 </span>            :         uint8_t *r;
@@ -92,41 +92,41 @@
 <span class="lineNum">      30 </span>            :         uint32_t d0, r0, q0, p0;
 <span class="lineNum">      31 </span>            :         uint32_t d1, r1, q1, p1;
 <span class="lineNum">      32 </span>            : 
-<span class="lineNum">      33 </span><span class="lineCov">         29 :         l = nd - 1;</span>
-<span class="lineNum">      34 </span><span class="lineCov">         29 :         p = v[nd];</span>
-<span class="lineNum">      35 </span><span class="lineCov">         29 :         q = v[nd + 1];</span>
-<span class="lineNum">      36 </span><span class="lineCov">         29 :         r = v[nd + 2];</span>
+<span class="lineNum">      33 </span><span class="lineCov">         28 :         l = nd - 1;</span>
+<span class="lineNum">      34 </span><span class="lineCov">         28 :         p = v[nd];</span>
+<span class="lineNum">      35 </span><span class="lineCov">         28 :         q = v[nd + 1];</span>
+<span class="lineNum">      36 </span><span class="lineCov">         28 :         r = v[nd + 2];</span>
 <span class="lineNum">      37 </span>            : 
-<span class="lineNum">      38 </span><span class="lineCov">     917565 :         for (i = 0; i &lt; size; i += 8) {</span>
-<span class="lineNum">      39 </span><span class="lineCov">     917536 :                 r0 = q0 = p0 = v_32(v[l][i]);</span>
-<span class="lineNum">      40 </span><span class="lineCov">     917536 :                 r1 = q1 = p1 = v_32(v[l][i + 4]);</span>
-<span class="lineNum">      41 </span><span class="lineCov">    7341056 :                 for (d = l - 1; d &gt;= 0; --d) {</span>
-<span class="lineNum">      42 </span><span class="lineCov">    6423520 :                         d0 = v_32(v[d][i]);</span>
-<span class="lineNum">      43 </span><span class="lineCov">    6423520 :                         d1 = v_32(v[d][i + 4]);</span>
+<span class="lineNum">      38 </span><span class="lineCov">     884796 :         for (i = 0; i &lt; size; i += 8) {</span>
+<span class="lineNum">      39 </span><span class="lineCov">     884768 :                 r0 = q0 = p0 = v_32(v[l][i]);</span>
+<span class="lineNum">      40 </span><span class="lineCov">     884768 :                 r1 = q1 = p1 = v_32(v[l][i + 4]);</span>
+<span class="lineNum">      41 </span><span class="lineCov">    7078912 :                 for (d = l - 1; d &gt;= 0; --d) {</span>
+<span class="lineNum">      42 </span><span class="lineCov">    6194144 :                         d0 = v_32(v[d][i]);</span>
+<span class="lineNum">      43 </span><span class="lineCov">    6194144 :                         d1 = v_32(v[d][i + 4]);</span>
 <span class="lineNum">      44 </span>            : 
-<span class="lineNum">      45 </span><span class="lineCov">    6423520 :                         p0 ^= d0;</span>
-<span class="lineNum">      46 </span><span class="lineCov">    6423520 :                         p1 ^= d1;</span>
+<span class="lineNum">      45 </span><span class="lineCov">    6194144 :                         p0 ^= d0;</span>
+<span class="lineNum">      46 </span><span class="lineCov">    6194144 :                         p1 ^= d1;</span>
 <span class="lineNum">      47 </span>            : 
-<span class="lineNum">      48 </span><span class="lineCov">    6423520 :                         q0 = x2_32(q0);</span>
-<span class="lineNum">      49 </span><span class="lineCov">    6423520 :                         q1 = x2_32(q1);</span>
+<span class="lineNum">      48 </span><span class="lineCov">    6194144 :                         q0 = x2_32(q0);</span>
+<span class="lineNum">      49 </span><span class="lineCov">    6194144 :                         q1 = x2_32(q1);</span>
 <span class="lineNum">      50 </span>            : 
-<span class="lineNum">      51 </span><span class="lineCov">    6423520 :                         q0 ^= d0;</span>
-<span class="lineNum">      52 </span><span class="lineCov">    6423520 :                         q1 ^= d1;</span>
+<span class="lineNum">      51 </span><span class="lineCov">    6194144 :                         q0 ^= d0;</span>
+<span class="lineNum">      52 </span><span class="lineCov">    6194144 :                         q1 ^= d1;</span>
 <span class="lineNum">      53 </span>            : 
-<span class="lineNum">      54 </span><span class="lineCov">    6423520 :                         r0 = d2_32(r0);</span>
-<span class="lineNum">      55 </span><span class="lineCov">    6423520 :                         r1 = d2_32(r1);</span>
+<span class="lineNum">      54 </span><span class="lineCov">    6194144 :                         r0 = d2_32(r0);</span>
+<span class="lineNum">      55 </span><span class="lineCov">    6194144 :                         r1 = d2_32(r1);</span>
 <span class="lineNum">      56 </span>            : 
-<span class="lineNum">      57 </span><span class="lineCov">    6423520 :                         r0 ^= d0;</span>
-<span class="lineNum">      58 </span><span class="lineCov">    6423520 :                         r1 ^= d1;</span>
+<span class="lineNum">      57 </span><span class="lineCov">    6194144 :                         r0 ^= d0;</span>
+<span class="lineNum">      58 </span><span class="lineCov">    6194144 :                         r1 ^= d1;</span>
 <span class="lineNum">      59 </span>            :                 }
-<span class="lineNum">      60 </span><span class="lineCov">     917536 :                 v_32(p[i]) = p0;</span>
-<span class="lineNum">      61 </span><span class="lineCov">     917536 :                 v_32(p[i + 4]) = p1;</span>
-<span class="lineNum">      62 </span><span class="lineCov">     917536 :                 v_32(q[i]) = q0;</span>
-<span class="lineNum">      63 </span><span class="lineCov">     917536 :                 v_32(q[i + 4]) = q1;</span>
-<span class="lineNum">      64 </span><span class="lineCov">     917536 :                 v_32(r[i]) = r0;</span>
-<span class="lineNum">      65 </span><span class="lineCov">     917536 :                 v_32(r[i + 4]) = r1;</span>
+<span class="lineNum">      60 </span><span class="lineCov">     884768 :                 v_32(p[i]) = p0;</span>
+<span class="lineNum">      61 </span><span class="lineCov">     884768 :                 v_32(p[i + 4]) = p1;</span>
+<span class="lineNum">      62 </span><span class="lineCov">     884768 :                 v_32(q[i]) = q0;</span>
+<span class="lineNum">      63 </span><span class="lineCov">     884768 :                 v_32(q[i + 4]) = q1;</span>
+<span class="lineNum">      64 </span><span class="lineCov">     884768 :                 v_32(r[i]) = r0;</span>
+<span class="lineNum">      65 </span><span class="lineCov">     884768 :                 v_32(r[i + 4]) = r1;</span>
 <span class="lineNum">      66 </span>            :         }
-<span class="lineNum">      67 </span><span class="lineCov">         29 : }</span>
+<span class="lineNum">      67 </span><span class="lineCov">         28 : }</span>
 <span class="lineNum">      68 </span>            : 
 <span class="lineNum">      69 </span>            : /*
 <a name="70"><span class="lineNum">      70 </span>            :  * GENz (triple parity with powers of 2^-1) 64bit C implementation</a>

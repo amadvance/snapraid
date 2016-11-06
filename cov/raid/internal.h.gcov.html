@@ -169,11 +169,11 @@
 <span class="lineNum">     107 </span>            :  */
 <span class="lineNum">     108 </span>            : static __always_inline void *__align_ptr(void *ptr, uintptr_t size)
 <span class="lineNum">     109 </span>            : {
-<span class="lineNum">     110 </span><span class="lineCov">     711847 :         uintptr_t offset = (uintptr_t)ptr;</span>
+<span class="lineNum">     110 </span><span class="lineCov">     711919 :         uintptr_t offset = (uintptr_t)ptr;</span>
 <span class="lineNum">     111 </span>            : 
-<span class="lineNum">     112 </span><span class="lineCov">     711847 :         offset = (offset + size - 1U) &amp; ~(size - 1U);</span>
+<span class="lineNum">     112 </span><span class="lineCov">     711919 :         offset = (offset + size - 1U) &amp; ~(size - 1U);</span>
 <span class="lineNum">     113 </span>            : 
-<span class="lineNum">     114 </span><span class="lineCov">     711847 :         return (void *)offset;</span>
+<span class="lineNum">     114 </span><span class="lineCov">     711919 :         return (void *)offset;</span>
 <span class="lineNum">     115 </span>            : }
 <span class="lineNum">     116 </span>            : 
 <span class="lineNum">     117 </span>            : /*
@@ -294,7 +294,7 @@
 <span class="lineNum">     232 </span>            :         /* that use a weak memory model. To ensure that other processors */
 <span class="lineNum">     233 </span>            :         /* see correctly the data written, we use a store-store memory */
 <span class="lineNum">     234 </span>            :         /* barrier at the end of the asm code */
-<span class="lineNum">     235 </span><span class="lineCov">    1388678 :         asm volatile (&quot;sfence&quot; : : : &quot;memory&quot;);</span>
+<span class="lineNum">     235 </span><span class="lineCov">    1388842 :         asm volatile (&quot;sfence&quot; : : : &quot;memory&quot;);</span>
 <span class="lineNum">     236 </span>            : 
 <span class="lineNum">     237 </span>            :         /* clobbers registers used in the asm code */
 <span class="lineNum">     238 </span>            :         /* this is required because in the Windows ABI, */
