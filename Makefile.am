@@ -1,6 +1,8 @@
 bin_PROGRAMS = snapraid
 check_PROGRAMS = mktest mkstream
 
+AM_CPPFLAGS = -DSYSCONFDIR=\"${sysconfdir}\"
+
 snapraid_SOURCES = \
 	raid/raid.c \
 	raid/check.c \
