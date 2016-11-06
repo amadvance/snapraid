@@ -2071,7 +2071,7 @@ static int smartctl_scan(FILE* f, tommy_list* list)
 			break;
 
 		/* remove extraneous chars */
-		s = polish(buf);
+		s = strpolish(buf);
 
 		log_tag("smartctl:scan::text: %s\n", s);
 

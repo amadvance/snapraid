@@ -588,7 +588,7 @@ bail:
 	/* LCOV_EXCL_STOP */
 }
 
-char* polish(char* s)
+char* strpolish(char* s)
 {
 	char* i = s;
 
@@ -601,7 +601,7 @@ char* polish(char* s)
 	return s;
 }
 
-unsigned split(char** split_map, unsigned split_max, char* str, const char* delimiters)
+unsigned strsplit(char** split_map, unsigned split_max, char* str, const char* delimiters)
 {
 	unsigned mac = 0;
 
@@ -1399,7 +1399,7 @@ int smartctl_attribute(FILE* f, const char* file, const char* name, uint64_t* sm
 			break;
 
 		/* remove extraneous chars */
-		s = polish(buf);
+		s = strpolish(buf);
 
 		log_tag("smartctl:%s:%s:out: %s\n", file, name, s);
 
@@ -1478,7 +1478,7 @@ int smartctl_flush(FILE* f, const char* file, const char* name)
 			break;
 
 		/* remove extraneous chars */
-		s = polish(buf);
+		s = strpolish(buf);
 
 		log_tag("smartctl:%s:%s:out: %s\n", file, name, s);
 	}

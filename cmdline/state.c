@@ -682,7 +682,7 @@ void state_config(struct snapraid_state* state, const char* path, const char* co
 				/* LCOV_EXCL_STOP */
 			}
 
-			split_mac = split(split_map, SPLIT_MAX+1, buffer, ",");
+			split_mac = strsplit(split_map, SPLIT_MAX+1, buffer, ",");
 
 			if (split_mac > SPLIT_MAX) {
 				/* LCOV_EXCL_START */

@@ -241,14 +241,14 @@ static inline const char* esc_shell(const char* str, char* buffer)
  *
  * Note that the passed string is modified.
  */
-char* polish(char* s);
+char* strpolish(char* s);
 
 /**
  * Split a string in multiple tokens separated by delimiters.
  *
  * Multiple delimiters are grouped together.
  */
-unsigned split(char** split_map, unsigned split_max, char* line, const char* delimiters);
+unsigned strsplit(char** split_map, unsigned split_max, char* line, const char* delimiters);
 
 /****************************************************************************/
 /* path */

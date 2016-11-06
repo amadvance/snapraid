@@ -130,8 +130,8 @@ static int devresolve_proc(uint64_t device, char* path, size_t path_size)
 		separator += 3;
 
 		/* split the line */
-		first_mac = split(first_map, 8, s, " \t\r\n");
-		second_mac = split(second_map, 8, separator, " \t\r\n");
+		first_mac = strsplit(first_map, 8, s, " \t\r\n");
+		second_mac = strsplit(second_map, 8, separator, " \t\r\n");
 
 		/* if too short, it's the wrong line */
 		if (first_mac < 5)
