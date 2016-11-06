@@ -414,12 +414,16 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 			/* handle error conditions */
 			if (task->state == TASK_STATE_IOERROR) {
+				/* LCOV_EXCL_START */
 				++io_error;
 				goto bail;
+				/* LCOV_EXCL_STOP */
 			}
 			if (task->state == TASK_STATE_ERROR) {
+				/* LCOV_EXCL_START */
 				++error;
 				goto bail;
+				/* LCOV_EXCL_STOP */
 			}
 			if (task->state == TASK_STATE_ERROR_CONTINUE) {
 				++error;
@@ -506,12 +510,16 @@ static int state_scrub_process(struct snapraid_state* state, struct snapraid_par
 
 			/* handle error conditions */
 			if (task->state == TASK_STATE_IOERROR) {
+				/* LCOV_EXCL_START */
 				++io_error;
 				goto bail;
+				/* LCOV_EXCL_STOP */
 			}
 			if (task->state == TASK_STATE_ERROR) {
+				/* LCOV_EXCL_START */
 				++error;
 				goto bail;
+				/* LCOV_EXCL_STOP */
 			}
 			if (task->state == TASK_STATE_ERROR_CONTINUE) {
 				++error;

@@ -530,8 +530,11 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 	/* mask of bits used by the block size */
 	block_mask = ((data_off_t)block_size) - 1;
 
-	if (size < 0)
+	if (size < 0) {
+		/* LCOV_EXCL_START */
 		return -1;
+		/* LCOV_EXCL_STOP */
+	}
 
 	for (s = 0;s < handle->split_mac;++s) {
 		struct snapraid_split_handle* split = &handle->split_map[s];
@@ -563,8 +566,11 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 		}
 		
 		ret = parity_handle_chsize(split, run, block_size, skip_fallocate, skip_space_holder);
-		if (ret != 0)
+		if (ret != 0) {
+			/* LCOV_EXCL_START */
 			return -1;
+			/* LCOV_EXCL_STOP */
+		}
 
 		if (split->st.st_size > run) {
 			/* LCOV_EXCL_START */
@@ -597,8 +603,10 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 
 	/* if we cannot allocate all the space */
 	if (size != 0) {
+		/* LCOV_EXCL_START */
 		log_fatal("Failed to allocate all the required parity space. You miss %" PRIu64 " bytes.\n", size);
 		return -1;
+		/* LCOV_EXCL_STOP */
 	}
 
 	/* now copy the new size in the parity data */

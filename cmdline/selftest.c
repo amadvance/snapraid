@@ -406,6 +406,14 @@ static void test_tommy(void)
 		/* LCOV_EXCL_STOP */
 	}
 
+	tommy_list_insert_tail(&list, &node[0], &node[0]);
+
+	if (tommy_list_tail(&list) != tommy_list_head(&list)) {
+		/* LCOV_EXCL_START */
+		goto bail;
+		/* LCOV_EXCL_STOP */
+	}
+
 	tommy_hashdyn_init(&hashdyn);
 
 	for (i = 0; i < TOMMY_SIZE; ++i)

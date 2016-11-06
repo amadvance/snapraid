@@ -139,7 +139,6 @@ clean-local:
 	rm -f cmdline/*.gcda cmdline/*.gcno cmdline/*.gcov
 	rm -f raid/*.gcda raid/*.gcno raid/*.gcov
 	rm -f tommyds/*.gcda tommyds/*.gcno tommyds/*.gcov
-	rm -rf cov
 	rm -f lcov.info
 	rm -f gmon.out
 
@@ -338,6 +337,9 @@ endif
 	rm bench/disk1/INVA1
 	touch bench/disk1/INVA2
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) --test-kill-after-sync sync
+# Diff should report the need of a sync for invalid parity
+	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) --test-expect-need-sync diff
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
 	mv bench/disk2/MOVE2 bench/disk4/MOVE4
 	mv bench/disk3/MOVE3 bench/disk5/MOVE5
 	mv bench/disk4/MOVE4 bench/disk6/MOVE6
@@ -435,8 +437,8 @@ endif
 	$(FAILENV) ./snapraid$(EXEEXT) $(CHECKFLAGS_VERBOSE) -c $(PAR1) --test-expect-need-sync diff > output.log
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-skip-fallocate -c $(PAR1) sync
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) -c $(CONF) status
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-io-advise-none -c $(PAR1) sync -F
-	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-io-advise-sequential -c $(PAR1) sync -F
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-io-advise-none -c $(PAR1) sync -F --test-io-cache 1
+	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-io-advise-sequential -c $(PAR1) sync -F --test-io-stats
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-io-advise-flush-window -c $(PAR1) sync -F
 	$(TESTENV) ./snapraid$(EXEEXT) $(CHECKFLAGS) --test-io-advise-discard-window -c $(PAR1) sync -F
 #### CHANGE LINKS ####

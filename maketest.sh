@@ -14,10 +14,6 @@ if ! make lcov_reset check lcov_capture lcov_html; then
 	exit 1
 fi
 
-# Keep a copy of the coverage results
-rm -rf cov_release
-mv cov cov_release
-
 if ! make distclean; then
 	exit 1
 fi

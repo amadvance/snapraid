@@ -884,12 +884,16 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 
 			/* handle error conditions */
 			if (task->state == TASK_STATE_IOERROR) {
+				/* LCOV_EXCL_START */
 				++io_error;
 				goto bail;
+				/* LCOV_EXCL_STOP */
 			}
 			if (task->state == TASK_STATE_ERROR) {
+				/* LCOV_EXCL_START */
 				++error;
 				goto bail;
+				/* LCOV_EXCL_STOP */
 			}
 			if (task->state == TASK_STATE_ERROR_CONTINUE) {
 				++error;
@@ -899,10 +903,12 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 			if (task->state == TASK_STATE_IOERROR_CONTINUE) {
 				++io_error;
 				if (io_error >= state->opt.io_error_limit) {
+					/* LCOV_EXCL_START */
 					log_fatal("DANGER! Unexpected input/output read error in a data disk, it isn't possible to sync.\n");
 					log_fatal("Ensure that disk '%s' is sane and that file '%s' can be read.\n", disk->dir, task->path);
 					log_fatal("Stopping at block %u\n", blockcur);
 					goto bail;
+					/* LCOV_EXCL_STOP */
 				}
 
 				/* otherwise continue */
@@ -1245,20 +1251,26 @@ static int state_sync_process(struct snapraid_state* state, struct snapraid_pari
 				case TASK_STATE_IOERROR_CONTINUE :
 					++io_error;
 					if (io_error >= state->opt.io_error_limit) {
+						/* LCOV_EXCL_START */
 						log_fatal("DANGER! Unexpected input/output write error in a parity disk, it isn't possible to sync.\n");
 						log_fatal("Stopping at block %u\n", blockcur);
 						goto bail;
+						/* LCOV_EXCL_STOP */
 					}
 					break;
 				case TASK_STATE_ERROR_CONTINUE :
 					++error;
 					break;
 				case TASK_STATE_IOERROR :
+					/* LCOV_EXCL_START */
 					++io_error;
 					goto bail;
+					/* LCOV_EXCL_STOP */
 				case TASK_STATE_ERROR :
+					/* LCOV_EXCL_START */
 					++error;
 					goto bail;
+					/* LCOV_EXCL_STOP */
 				}
 			}
 		}

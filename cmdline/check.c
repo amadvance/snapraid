@@ -909,9 +909,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 			/* post process the files */
 			ret = file_post(state, fix, i, handle, diskmax);
 			if (ret == -1) {
+				/* LCOV_EXCL_START */
 				log_fatal("Stopping at block %u\n", i);
 				++unrecoverable_error;
 				goto bail;
+				/* LCOV_EXCL_STOP */
 			}
 
 			/* and now continue with the next block */
@@ -1384,9 +1386,11 @@ static int state_check_process(struct snapraid_state* state, int fix, struct sna
 		/* post process the files */
 		ret = file_post(state, fix, i, handle, diskmax);
 		if (ret == -1) {
+			/* LCOV_EXCL_START */
 			log_fatal("Stopping at block %u\n", i);
 			++unrecoverable_error;
 			goto bail;
+			/* LCOV_EXCL_STOP */
 		}
 
 		/* count the number of processed block */
