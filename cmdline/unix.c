@@ -188,6 +188,7 @@ static int devresolve_proc(uint64_t device, char* path, size_t path_size)
  * Bug 711881 - too funny btrfs st_dev numbers
  * https://bugzilla.redhat.com/show_bug.cgi?id=711881
  */
+#if HAVE_LINUX_DEVICE
 static int devdereference(uint64_t device, uint64_t* new_device)
 {
 	char path[PATH_MAX];
@@ -219,6 +220,7 @@ static int devdereference(uint64_t device, uint64_t* new_device)
 	log_tag("dereference:%u:%u: found %u:%u\n", major(device), minor(device), major(st.st_rdev), minor(st.st_rdev));
 	return 0;
 }
+#endif
 
 /**
  * Read a file extracting the specified tag TAG=VALUE format.
