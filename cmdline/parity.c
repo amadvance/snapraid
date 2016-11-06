@@ -228,7 +228,7 @@ int parity_create(struct snapraid_parity_handle* handle, const struct snapraid_p
 			/* ensure that the resulting size if block aligned */
 			if ((split->size & block_mask) != 0) {
 				/* LCOV_EXCL_START */
-				log_fatal("Error in preallocated size of parity file '%s' with size %llu and block %u .\n", split->path, split->size, block_size);
+				log_fatal("Error in preallocated size of parity file '%s' with size %" PRIu64 " and block %u .\n", split->path, split->size, block_size);
 				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
@@ -377,7 +377,7 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 
 		/* note that in Windows ftruncate is really allocating space */
 		if (ftruncate(spaceholder_f, spaceholder_size) != 0) {
-			log_fatal("WARNING Failed to resize the space holder file '%s' to %llu bytes.\n", spaceholder_path, spaceholder_size);
+			log_fatal("WARNING Failed to resize the space holder file '%s' to %" PRIu64 " bytes.\n", spaceholder_path, spaceholder_size);
 			log_fatal("Assuming that no more space is available.\n");
 			close(spaceholder_f);
 			remove(spaceholder_path);
@@ -438,7 +438,7 @@ static int parity_handle_fill(struct snapraid_split_handle* split, data_off_t si
 	/* ensure that the resulting size if block aligned */
 	if ((base & block_mask) != 0) {
 		/* LCOV_EXCL_START */
-		log_fatal("Internal inconsistency in requested parity size %llu with block %u\n", base, block_size);
+		log_fatal("Internal inconsistency in requested parity size %" PRIu64 " with block %u\n", base, block_size);
 		os_abort();
 		/* LCOV_EXCL_STOP */
 	}
@@ -552,7 +552,7 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 
 				if ((run & block_mask) != 0) {
 					/* LCOV_EXCL_START */
-					log_fatal("Internal inconsistency in split '%s' size with extra '%llu' bytes.\n", split->path, run & block_mask);
+					log_fatal("Internal inconsistency in split '%s' size with extra '%" PRIu64 "' bytes.\n", split->path, run & block_mask);
 					return -1;
 					/* LCOV_EXCL_STOP */
 				}
@@ -582,7 +582,7 @@ int parity_chsize(struct snapraid_parity_handle* handle, struct snapraid_parity*
 
 			if ((run & block_mask) != 0) {
 				/* LCOV_EXCL_START */
-				log_fatal("Internal inconsistency in final parity size %llu with block size %u\n", run, block_size);
+				log_fatal("Internal inconsistency in final parity size %" PRIu64 " with block size %u\n", run, block_size);
 				os_abort();
 				/* LCOV_EXCL_STOP */
 			}
@@ -674,7 +674,7 @@ int parity_open(struct snapraid_parity_handle* handle, const struct snapraid_par
 			/* ensure that the resulting size if block aligned */
 			if ((split->size & block_mask) != 0) {
 				/* LCOV_EXCL_START */
-				log_fatal("Error in preallocated size of parity file '%s' with size %llu and block %u .\n", split->path, split->size, block_size);
+				log_fatal("Error in preallocated size of parity file '%s' with size %" PRIu64 " and block %u .\n", split->path, split->size, block_size);
 				goto bail;
 				/* LCOV_EXCL_STOP */
 			}
