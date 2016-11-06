@@ -4,7 +4,7 @@
 #
 
 # Compiler to use
-COMPILER=clang-3.6
+COMPILER=clang-3.9
 
 # Options for configure
 # --disable-asm
