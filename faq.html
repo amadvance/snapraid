@@ -745,14 +745,14 @@ because it gets outdated after the next "sync" command.
 <p>
 The "scrub" command verifies all the content of the array,
 and it's not possible to limit the verification to a single data disk.
-To verify only a data single disk, you can run a "check" audit
+To verify only a data disk, you can run a "check" audit
 command limited to the disk you want to verify.
 </p>
 <pre>
 snapraid check -a -d DISK_NAME
 </pre>
 <p>
-This command will verify all the check-sum of files in the disk specified.
+This command will verify all the check-sums of the files in the disk specified.
 The other data and parity disks won't be read and they won't be verified.
 </p>
 
